@@ -1,5 +1,17 @@
 import React, { useState, useMemo } from 'react'
-import { FileText, ChevronDown, ChevronRight, Plus, Search, FileCode, Hash, RefreshCw, Star, Clock } from 'lucide-react'
+import {
+  FileText,
+  ChevronDown,
+  ChevronRight,
+  Plus,
+  Search,
+  FileCode,
+  Hash,
+  RefreshCw,
+  Star,
+  Clock,
+  Database
+} from 'lucide-react'
 import { FixedSizeList as List } from '../../components/utils/VirtualList'
 import { AutoSizer } from '../../components/utils/AutoSizer'
 import { useVaultStore } from '../../core/store/useVaultStore'
@@ -18,10 +30,10 @@ const FileExplorer = () => {
     all: false
   }
 
-  const { 
-    snippets, 
-    selectedSnippet, 
-    setSelectedSnippet, 
+  const {
+    snippets,
+    selectedSnippet,
+    setSelectedSnippet,
     isLoading,
     searchQuery,
     setSearchQuery,
@@ -60,27 +72,31 @@ const FileExplorer = () => {
   // Filtered and Sorted Data
   const filtered = useMemo(() => {
     const query = searchQuery.toLowerCase()
-    return snippets.filter(s => (s.title || '').toLowerCase().includes(query))
+    return snippets.filter((s) => (s.title || '').toLowerCase().includes(query))
   }, [snippets, searchQuery])
 
-  const pinnedItems = useMemo(() => filtered.filter(s => s.isPinned), [filtered])
-  const recentItems = useMemo(() => [...filtered].sort((a, b) => b.timestamp - a.timestamp).slice(0, 5), [filtered])
+  const pinnedItems = useMemo(() => filtered.filter((s) => s.isPinned), [filtered])
+  const recentItems = useMemo(
+    () => [...filtered].sort((a, b) => b.timestamp - a.timestamp).slice(0, 5),
+    [filtered]
+  )
 
   const Row = ({ index, style }) => {
     const snippet = filtered[index]
     if (!snippet) return null
 
     const isActive = selectedSnippet?.id === snippet.id
-    
+
     const getIcon = () => {
       const lang = (snippet.language || 'markdown').toLowerCase()
-      if (['javascript', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'python', 'py'].includes(lang)) return <FileCode size={14} className="item-icon" />
+      if (['javascript', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'python', 'py'].includes(lang))
+        return <FileCode size={14} className="item-icon" />
       if (lang === 'markdown' || lang === 'md') return <Hash size={14} className="item-icon" />
       return <FileText size={14} className="item-icon" />
     }
 
     return (
-      <div 
+      <div
         style={style}
         className={`tree-item ${isActive ? 'active' : ''}`}
         onClick={() => setSelectedSnippet(snippet)}
@@ -88,7 +104,9 @@ const FileExplorer = () => {
       >
         {getIcon()}
         <span className="item-title">{snippet.title || 'Untitled'}</span>
-        {snippet.isPinned && <Star size={10} fill="currentColor" style={{ marginLeft: 'auto', opacity: 0.5 }} />}
+        {snippet.isPinned && (
+          <Star size={10} fill="currentColor" style={{ marginLeft: 'auto', opacity: 0.5 }} />
+        )}
       </div>
     )
   }
@@ -98,12 +116,8 @@ const FileExplorer = () => {
       <header className="pane-header">
         <div className="pane-title">EXPLORER</div>
         <div className="pane-actions">
-          <button 
-            className="icon-btn" 
-            onClick={handleRefresh} 
-            title="Refresh Vault (Sync Disk)"
-          >
-            <RefreshCw size={14} className={isRefreshing ? 'rotating' : ''} /> 
+          <button className="icon-btn" onClick={handleRefresh} title="Refresh Vault (Sync Disk)">
+            <RefreshCw size={14} className={isRefreshing ? 'rotating' : ''} />
           </button>
           <button className="icon-btn" onClick={handleNew} title="New Note">
             <Plus size={16} />
@@ -114,9 +128,9 @@ const FileExplorer = () => {
       <div className="explorer-toolbar">
         <div className="explorer-search">
           <Search size={12} />
-          <input 
-            type="text" 
-            placeholder="Search notes..." 
+          <input
+            type="text"
+            placeholder="Search notes..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -134,8 +148,12 @@ const FileExplorer = () => {
             </div>
             {!collapsedSections.pinned && (
               <div className="section-static-items">
-                {pinnedItems.map(item => (
-                  <div key={item.id} className={`tree-item ${selectedSnippet?.id === item.id ? 'active' : ''}`} onClick={() => setSelectedSnippet(item)}>
+                {pinnedItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`tree-item ${selectedSnippet?.id === item.id ? 'active' : ''}`}
+                    onClick={() => setSelectedSnippet(item)}
+                  >
                     <Hash size={14} className="item-icon" />
                     <span className="item-title">{item.title}</span>
                   </div>
@@ -155,8 +173,12 @@ const FileExplorer = () => {
             </div>
             {!collapsedSections.recent && (
               <div className="section-static-items">
-                {recentItems.map(item => (
-                  <div key={item.id} className={`tree-item ${selectedSnippet?.id === item.id ? 'active' : ''}`} onClick={() => setSelectedSnippet(item)}>
+                {recentItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`tree-item ${selectedSnippet?.id === item.id ? 'active' : ''}`}
+                    onClick={() => setSelectedSnippet(item)}
+                  >
                     <Hash size={14} className="item-icon" />
                     <span className="item-title">{item.title}</span>
                   </div>
@@ -167,7 +189,15 @@ const FileExplorer = () => {
         )}
 
         {/* ALL NOTES SECTION */}
-        <div className="tree-section" style={{ flex: collapsedSections.all ? '0 0 auto' : 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        <div
+          className="tree-section"
+          style={{
+            flex: collapsedSections.all ? '0 0 auto' : 1,
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: 0
+          }}
+        >
           <div className="section-header" onClick={() => toggleSection('all')}>
             {collapsedSections.all ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
             <FileText size={12} className="section-icon" />
@@ -179,7 +209,7 @@ const FileExplorer = () => {
             <div style={{ flex: 1, minHeight: 0 }}>
               {isLoading ? (
                 <div className="section-items">
-                  {[1,2,3,4].map(i => (
+                  {[1, 2, 3, 4].map((i) => (
                     <div key={i} className="tree-item skeleton-item">
                       <div className="skeleton skeleton-icon" />
                       <div className="skeleton skeleton-text" />
@@ -213,9 +243,14 @@ const FileExplorer = () => {
 
       <footer className="pane-footer">
         <div className="footer-stat">
-          Vault: <strong>Lumina</strong>
+          <Database size={10} style={{ opacity: 0.5 }} />
+          <span>VAULT:</span>
+          <strong>Lumina</strong>
         </div>
-        <div className="footer-stat">{snippets.length} Notes</div>
+        <div className="footer-stat">
+          <FileText size={10} style={{ opacity: 0.5 }} />
+          {snippets.length} Notes
+        </div>
       </footer>
     </div>
   )

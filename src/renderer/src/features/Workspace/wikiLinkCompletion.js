@@ -1,4 +1,4 @@
-import { syntaxTree } from "@codemirror/language"
+import { syntaxTree } from '@codemirror/language'
 
 /**
  * WikiLink Autocompletion
@@ -10,7 +10,7 @@ export function wikiLinkCompletion(getSnippets) {
     // 1. Check if we are typing a WikiLink
     let word = context.matchBefore(/\[\[[^\]]*$/)
     if (!word) return null
-    
+
     // 2. Extract search query (text after [[)
     let searchText = word.text.slice(2).toLowerCase()
 
@@ -19,14 +19,14 @@ export function wikiLinkCompletion(getSnippets) {
 
     // 4. Filter snippets
     const options = snippets
-      .filter(s => s.title.toLowerCase().includes(searchText))
-      .map(s => ({
+      .filter((s) => s.title.toLowerCase().includes(searchText))
+      .map((s) => ({
         label: s.title,
         type: 'text',
-        // When selected, just insert title. 
+        // When selected, just insert title.
         // closeBrackets() usually adds the closing brackets, or user types ']]'
         apply: s.title,
-        detail: 'Note' 
+        detail: 'Note'
       }))
 
     return {

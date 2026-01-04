@@ -67,7 +67,7 @@ const ThemeSettings = ({ isOpen, onClose }) => {
 
   return (
     <div className="modal-overlay theme-overlay" onClick={onClose}>
-      <div className="modal-container theme-modal" onClick={e => e.stopPropagation()}>
+      <div className="modal-container theme-modal" onClick={(e) => e.stopPropagation()}>
         <header className="modal-header">
           <div className="modal-title">Theme Gallery</div>
           <button className="modal-close" onClick={onClose}>
@@ -77,7 +77,7 @@ const ThemeSettings = ({ isOpen, onClose }) => {
 
         <div className="theme-grid">
           {themes.map((t) => (
-            <div 
+            <div
               key={t.name}
               className={`theme-card ${theme === t.name ? 'active' : ''}`}
               onClick={() => setTheme(t.name, t.colors)}

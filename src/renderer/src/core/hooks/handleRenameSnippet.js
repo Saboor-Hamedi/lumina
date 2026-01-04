@@ -17,17 +17,17 @@ export const handleRenameSnippet = async ({
   const extMap = {
     md: 'markdown',
     markdown: 'markdown',
-    js: 'javascript', 
+    js: 'javascript',
     jsx: 'javascript',
     ts: 'typescript',
     tsx: 'typescript',
     json: 'json',
     html: 'html',
-    css: 'css', 
+    css: 'css',
     py: 'python'
   }
   let lang = renameModal.item.language || 'markdown'
-  
+
   if (hasExt) {
     const ext = baseName.split('.').pop().toLowerCase()
     if (extMap[ext]) {
@@ -55,7 +55,6 @@ export const handleRenameSnippet = async ({
   try {
     await saveSnippet(updatedItem)
     if (showToast) showToast('✓ Snippet renamed successfully', 'success')
-  
   } catch (error) {
     console.error('Failed to save item after rename:', error)
     if (showToast) showToast('❌ Failed to rename snippet.', 'error')

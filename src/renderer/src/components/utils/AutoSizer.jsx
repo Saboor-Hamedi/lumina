@@ -18,7 +18,7 @@ export const AutoSizer = ({ children }) => {
         if (entry.contentRect) {
           const { width, height } = entry.contentRect
           // Only update if dimensions actually changed to prevent loops
-          setDimensions(prev => {
+          setDimensions((prev) => {
             if (prev.width === width && prev.height === height) return prev
             return { width, height }
           })
@@ -32,13 +32,13 @@ export const AutoSizer = ({ children }) => {
   }, [])
 
   return (
-    <div 
-      ref={containerRef} 
-      style={{ 
-        flex: 1, 
-        width: '100%', 
-        height: '100%', 
-        overflow: 'hidden' 
+    <div
+      ref={containerRef}
+      style={{
+        flex: 1,
+        width: '100%',
+        height: '100%',
+        overflow: 'hidden'
       }}
     >
       {dimensions.width > 0 && dimensions.height > 0 && children(dimensions)}

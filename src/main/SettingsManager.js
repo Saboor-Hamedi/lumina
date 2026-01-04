@@ -58,7 +58,7 @@ class SettingsManager {
   }
 
   getAll() {
-     return this.cache || this.defaultSettings
+    return this.cache || this.defaultSettings
   }
 }
 

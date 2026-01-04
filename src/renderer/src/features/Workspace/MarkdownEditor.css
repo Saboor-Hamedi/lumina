@@ -22,7 +22,7 @@
   justify-content: space-between;
   padding: 8px 16px;
   background: transparent;
-  border-bottom: 1px solid var(--border-card);
+  border-bottom: 1px solid var(--border-subtle);
   flex-wrap: wrap;
   gap: 12px;
 }
@@ -86,7 +86,8 @@
 .editor-canvas-wrap {
   width: 100%;
   max-width: 720px;
-  padding: 8vh 40px 10vh 40px;
+  max-width: 720px;
+  padding: 8vh 40px 12vh 40px; /* Increased bottom padding for sticky footer */
   display: flex;
   flex-direction: column;
   flex: 1; 
@@ -131,7 +132,10 @@
 .cm-content {
   line-height: 1.8;
   color: var(--text-main) !important;
-  padding: 0 !important;
+  /* Allow CodeMirror to manage padding-bottom for scrollPastEnd */
+  padding-top: 0;
+  padding-left: 0;
+  padding-right: 0;
   min-height: 70vh; /* Ensures clicking empty space at the bottom still focuses the editor */
 }
 
@@ -180,9 +184,9 @@
 .mode-btn {
   background: transparent;
   border: none;
-  padding: 3px 12px;
+  padding: 2px 8px; /* Tighter padding */
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text-faint);
   border-radius: 4px;
   cursor: pointer;
@@ -257,6 +261,57 @@
   cursor: default;
 }
 
+/* --- Export Dropdown --- */
+.export-menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background: var(--bg-panel);
+  box-shadow: none;
+  min-width: 220px; /* Standard robust width */
+  z-index: 9999;
+  animation: fadeIn 0.1s ease-out;
+  overflow: visible;
+  backdrop-filter: blur(20px);
+  padding: 4px; /* Tight container padding */
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Tighter gap */
+  padding: 4px 8px; /* Compact "Obsidian" padding */
+  font-size: 11px; /* Tiny font as requested */
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.1s;
+  border-radius: 4px;
+  margin-bottom: 0;
+}
+
+.dropdown-item:hover {
+  background: var(--bg-active); /* Clear hover state */
+  color: var(--text-main);
+}
+
+.menu-icon {
+  opacity: 0.8;
+  color: var(--text-muted);
+}
+
+.menu-label {
+  flex: 1; /* Pushes shortcut to right */
+  font-weight: 400; /* No bold */
+  transform: translateY(0.5px); /* Optical alignment */
+}
+
+.shortcut-label {
+  font-size: 11px;
+  color: var(--text-faint);
+  padding: 4px;
+}
+
 .mode-reading .cm-content,
 .mode-live .cm-content,
 .mode-source .cm-content {
@@ -276,16 +331,39 @@
   backdrop-filter: blur(10px);
 }
 
-/* Inline Metadata Bar */
+/* Inline Metadata Bar - Moved under Title */
 .editor-metadata-bar {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 8px 40px;
-  border-bottom: 1px solid var(--border-subtle);
-  margin-bottom: 20px;
+  padding: 0 0 16px 0; /* Remove horizontal padding to align with title text */
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border-subtle); /* Keep subtle separator */
   font-size: 0.85rem;
   color: var(--text-muted);
+  width: 100%;
+}
+
+/* --- Image Hover Preview --- */
+.image-hover-preview {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  border-radius: 6px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  padding: 2px;
+  z-index: 2000; /* Ensure it is above everything */
+  overflow: hidden;
+  animation: fadeIn 0.1s ease-out; /* Snappier fade in */
+  max-width: fit-content;
+  pointer-events: none; /* Ensure it doesn't block mouse */
+  transition: opacity 0.1s ease-out; /* Smooth fade */
+}
+
+.image-hover-preview img {
+    max-height: 280px; /* Smaller max height */
+    max-width: 100%;
+    border-radius: 4px;
+    display: block;
 }
 
 .meta-tag-container {
@@ -309,25 +387,41 @@
   gap: 4px;
   background: var(--bg-active);
   color: var(--text-accent);
-  padding: 2px 8px;
-  border-radius: 12px;
+  padding: 3px 8px; /* Slightly more padding for rectangular look */
+  border-radius: 5px; /* Requested 5px */
   font-size: 11px;
-  font-weight: 600;
-  border: 1px solid rgba(var(--text-accent-rgb), 0.2);
+  font-weight: 500;
+  border: 1px solid rgba(var(--text-accent-rgb), 0.15);
+  transition: all 0.2s;
+}
+
+.tag-pill:hover {
+  background: rgba(var(--text-accent-rgb), 0.15);
+  border-color: rgba(var(--text-accent-rgb), 0.3);
 }
 
 .tag-remove {
   background: transparent;
   border: none;
-  color: var(--text-accent);
+  color: currentColor;
   font-size: 14px;
+  line-height: 1;
   cursor: pointer;
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.5;
-  transition: opacity 0.2s;
+  opacity: 0.6;
+  transition: all 0.2s;
+  margin-left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+
+.tag-remove:hover {
+  opacity: 1;
+  background: rgba(0,0,0,0.1);
 }
 
 .tag-remove:hover {
@@ -387,7 +481,8 @@
 
 .meta-icon {
   color: var(--text-accent);
-  opacity: 0.7;
+  opacity: 0.8;
+  margin-right: 4px; /* Give the icon some breathing room */
 }
 
 .editor-metadata-bar kbd {
@@ -521,11 +616,62 @@
 
 .mode-reading .cm-content {
   line-height: 2 !important; /* Increased for readability */
-  cursor: default !important;
+  cursor: text !important; /* Allow text selection */
+  pointer-events: auto !important; /* Critical for hover tooltips */
+  user-select: text !important;
 }
 
 .mode-reading .cm-activeLine {
   border-left-color: transparent !important;
+}
+
+/* GLOBAL TOOLTIP FIX */
+.cm-tooltip {
+  z-index: 99999 !important;
+}
+
+/* Image Alt Text in Live Preview */
+.cm-image-alt-text {
+  color: var(--text-accent);
+  font-weight: 500;
+  background: rgba(var(--text-accent-rgb), 0.1);
+  border-radius: 4px;
+  padding: 0 4px;
+  cursor: zoom-in; /* clearly indicates interactivity */
+  display: inline-block; /* better hover targeting */
+}
+
+.cm-image-alt-text::before {
+  content: '🖼️ '; /* Simple icon indicator */
+  font-size: 0.8em;
+  opacity: 0.7;
+}
+
+/* --- BOTTOM STICKY FOOTER --- */
+.editor-footer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px; /* Horizontal padding only */
+  height: 32px; /* Fixed slim height */
+  background: var(--bg-panel); /* Theme-aware background */
+  border-top: 1px solid var(--border-subtle);
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+  box-shadow: none;
+  margin-top: auto;
+  font-size: 11px; /* Base font size for footer */
+}
+
+.seamless-editor {
+  /* Ensure footer stays at bottom */
+  display: flex;
+  flex-direction: column;
+}
+/* Recalculate editor-scroller to take remaining space */
+.editor-scroller {
+  flex: 1;
+  min-height: 0;
 }
 
 /* Selection layers removed above to fix dual-color issue */
@@ -557,7 +703,13 @@
 
 /* Smooth Scrolling & Transitions */
 .cm-scroller {
-  scroll-behavior: smooth;
+  scrollbar-width: none; /* Hide standard */
+  overflow: visible !important; /* Disable internal scroll */
+}
+
+/* Ensure editor grows to fit content so outer scroller works */
+.cm-editor {
+  height: auto !important;
 }
 
 /* Scrollbar Styling */

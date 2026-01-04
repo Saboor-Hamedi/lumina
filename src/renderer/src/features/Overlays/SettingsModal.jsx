@@ -50,7 +50,7 @@ const SettingsModal = ({ onClose }) => {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container settings-container" onClick={e => e.stopPropagation()}>
+      <div className="modal-container settings-container" onClick={(e) => e.stopPropagation()}>
         <header className="pane-header">
           <div className="modal-title-stack">
             <Settings size={16} />
@@ -63,13 +63,13 @@ const SettingsModal = ({ onClose }) => {
 
         <div className="settings-layout">
           <aside className="settings-sidebar">
-            <button 
+            <button
               className={`nav-item ${activeTab === 'general' ? 'active' : ''}`}
               onClick={() => setActiveTab('general')}
             >
               General
             </button>
-            <button 
+            <button
               className={`nav-item ${activeTab === 'appearance' ? 'active' : ''}`}
               onClick={() => setActiveTab('appearance')}
             >
@@ -88,8 +88,12 @@ const SettingsModal = ({ onClose }) => {
                       <div className="row-hint">Your notes are stored as local Markdown files.</div>
                     </div>
                     <div className="row-actions">
-                      <button className="btn" onClick={handleOpenFolder}>Open in Explorer</button>
-                      <button className="btn btn-primary" onClick={handleSwitchVault}>Change Location</button>
+                      <button className="btn" onClick={handleOpenFolder}>
+                        Open in Explorer
+                      </button>
+                      <button className="btn btn-primary" onClick={handleSwitchVault}>
+                        Change Location
+                      </button>
                     </div>
                   </div>
                 </section>
@@ -114,7 +118,7 @@ const SettingsModal = ({ onClose }) => {
                       <div className="row-label">Font Family</div>
                       <div className="row-hint">The font used in the editor area.</div>
                     </div>
-                    <select 
+                    <select
                       value={settings.fontFamily}
                       onChange={(e) => updateSetting('fontFamily', e.target.value)}
                       className="settings-select"
@@ -130,12 +134,12 @@ const SettingsModal = ({ onClose }) => {
                       <div className="row-hint">Adjust the text size for readability.</div>
                     </div>
                     <div className="range-wrap">
-                      <input 
-                        type="range" 
-                        min="12" 
-                        max="24" 
-                        step="1" 
-                        value={settings.fontSize} 
+                      <input
+                        type="range"
+                        min="12"
+                        max="24"
+                        step="1"
+                        value={settings.fontSize}
                         onChange={(e) => updateSetting('fontSize', parseInt(e.target.value))}
                       />
                       <span>{settings.fontSize}px</span>
@@ -146,7 +150,7 @@ const SettingsModal = ({ onClose }) => {
                       <div className="row-label">Cursor Style</div>
                       <div className="row-hint">Customize the caret appearance.</div>
                     </div>
-                    <select 
+                    <select
                       value={settings.cursorStyle}
                       onChange={(e) => updateSetting('cursorStyle', e.target.value)}
                       className="settings-select"
@@ -159,11 +163,14 @@ const SettingsModal = ({ onClose }) => {
                   <div className="settings-row">
                     <div className="row-info">
                       <div className="row-label">Full Translucency</div>
-                      <div className="row-hint">Enable Acrylic backdrop blur (Windows 11). Requires restart for best results.</div>
+                      <div className="row-hint">
+                        Enable Acrylic backdrop blur (Windows 11). Requires restart for best
+                        results.
+                      </div>
                     </div>
                     <label className="switch">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         checked={settings.translucency}
                         onChange={(e) => updateSetting('translucency', e.target.checked)}
                       />
@@ -180,8 +187,8 @@ const SettingsModal = ({ onClose }) => {
                       <div className="row-hint">Automatically save changes while typing.</div>
                     </div>
                     <label className="switch">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         checked={settings.autoSave}
                         onChange={(e) => updateSetting('autoSave', e.target.checked)}
                       />
@@ -191,11 +198,13 @@ const SettingsModal = ({ onClose }) => {
                   <div className="settings-row">
                     <div className="row-info">
                       <div className="row-label">Inline Metadata</div>
-                      <div className="row-hint">Show tags and properties bar inside the editor.</div>
+                      <div className="row-hint">
+                        Show tags and properties bar inside the editor.
+                      </div>
                     </div>
                     <label className="switch">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         checked={settings.inlineMetadata}
                         onChange={(e) => updateSetting('inlineMetadata', e.target.checked)}
                       />

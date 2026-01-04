@@ -27,9 +27,31 @@ const CommandPalette = ({ isOpen, onClose, items, onSelect }) => {
   }, [isOpen])
 
   const filtered = useMemo(() => {
-    return items.filter(item => 
-      (item.title || '').toLowerCase().includes(query.toLowerCase())
-    )
+    if (!query) return items.slice(0, 50) // Show recent/all if empty
+
+    const lowerQuery = query.toLowerCase()
+    return items
+      .map((item) => {
+        // 1. Title Match (High Priority)
+        if (item.title.toLowerCase().includes(lowerQuery)) {
+          return { ...item, matchType: 'title', score: 10 }
+        }
+        // 2. Content Match (Lower Priority)
+        const code = item.code || ''
+        const codeIndex = code.toLowerCase().indexOf(lowerQuery)
+        if (codeIndex !== -1) {
+          // Extract text snippet around match
+          const start = Math.max(0, codeIndex - 20)
+          const end = Math.min(code.length, codeIndex + lowerQuery.length + 40)
+          const snippet =
+            (start > 0 ? '...' : '') + code.slice(start, end) + (end < code.length ? '...' : '')
+          return { ...item, matchType: 'content', matchSnippet: snippet, score: 5 }
+        }
+        return null
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 50)
   }, [items, query])
 
   useEffect(() => {
@@ -41,10 +63,10 @@ const CommandPalette = ({ isOpen, onClose, items, onSelect }) => {
   const handleKeyDown = (e) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault()
-      setSelectedIndex(prev => (prev + 1) % filtered.length)
+      setSelectedIndex((prev) => (prev + 1) % filtered.length)
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
-      setSelectedIndex(prev => (prev - 1 + filtered.length) % filtered.length)
+      setSelectedIndex((prev) => (prev - 1 + filtered.length) % filtered.length)
     } else if (e.key === 'Enter') {
       if (filtered[selectedIndex]) {
         onSelect(filtered[selectedIndex])
@@ -60,9 +82,11 @@ const CommandPalette = ({ isOpen, onClose, items, onSelect }) => {
     const parts = text.split(regex)
     return (
       <span>
-        {parts.map((part, i) => 
+        {parts.map((part, i) =>
           regex.test(part) ? (
-            <mark key={i} className="palette-match">{part}</mark>
+            <mark key={i} className="palette-match">
+              {part}
+            </mark>
           ) : (
             <span key={i}>{part}</span>
           )
@@ -76,10 +100,13 @@ const CommandPalette = ({ isOpen, onClose, items, onSelect }) => {
     const isActive = index === selectedIndex
 
     return (
-      <div 
+      <div
         style={style}
         className={`palette-item ${isActive ? 'active' : ''}`}
-        onClick={() => { onSelect(item); onClose(); }}
+        onClick={() => {
+          onSelect(item)
+          onClose()
+        }}
         onMouseEnter={() => setSelectedIndex(index)}
       >
         <FileText size={18} className="item-icon" />
@@ -87,6 +114,11 @@ const CommandPalette = ({ isOpen, onClose, items, onSelect }) => {
           <div className="item-title">
             <HighlightText text={item.title || 'Untitled'} highlight={query} />
           </div>
+          {item.matchSnippet && (
+            <div className="item-secondary">
+              <HighlightText text={item.matchSnippet} highlight={query} />
+            </div>
+          )}
         </div>
         {isActive && <Zap size={14} className="item-zap" />}
       </div>
@@ -97,21 +129,27 @@ const CommandPalette = ({ isOpen, onClose, items, onSelect }) => {
 
   return (
     <div className="command-palette-overlay" onClick={onClose}>
-      <div className="command-palette-container" onClick={e => e.stopPropagation()}>
+      <div className="command-palette-container" onClick={(e) => e.stopPropagation()}>
         <div className="palette-input-wrap">
           <Search size={18} className="palette-search-icon" />
-          <input 
+          <input
             ref={inputRef}
-            type="text" 
-            placeholder="Search notes..." 
+            type="text"
+            placeholder="Search notes..."
             value={query}
-            onChange={(e) => { setQuery(e.target.value); setSelectedIndex(0); }}
+            onChange={(e) => {
+              setQuery(e.target.value)
+              setSelectedIndex(0)
+            }}
             onKeyDown={handleKeyDown}
           />
           <div className="palette-hint">ESC to close</div>
         </div>
 
-        <div className="palette-results" style={{ height: filtered.length > 0 ? Math.min(filtered.length * 48, 440) : 100 }}>
+        <div
+          className="palette-results"
+          style={{ height: filtered.length > 0 ? Math.min(filtered.length * 48, 440) : 100 }}
+        >
           {filtered.length > 0 ? (
             <List
               ref={listRef}
@@ -129,11 +167,17 @@ const CommandPalette = ({ isOpen, onClose, items, onSelect }) => {
 
         <div className="palette-footer">
           <div className="footer-tip">
-            <span><kbd>↑</kbd> <kbd>↓</kbd> to navigate</span>
-            <span><kbd>↵</kbd> to open</span>
+            <span>
+              <kbd>↑</kbd> <kbd>↓</kbd> to navigate
+            </span>
+            <span>
+              <kbd>↵</kbd> to open
+            </span>
           </div>
           <div className="footer-tip">
-            <span><kbd>ESC</kbd> to dismiss</span>
+            <span>
+              <kbd>ESC</kbd> to dismiss
+            </span>
           </div>
         </div>
       </div>

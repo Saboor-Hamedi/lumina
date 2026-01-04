@@ -6,7 +6,7 @@ import { marked } from 'marked'
  */
 self.onmessage = async (e) => {
   const { code, id } = e.data
-  
+
   try {
     // Heavy lifting happens here
     const html = marked.parse(code || '')

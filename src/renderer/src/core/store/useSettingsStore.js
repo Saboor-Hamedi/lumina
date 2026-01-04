@@ -19,9 +19,9 @@ export const useSettingsStore = create((set, get) => ({
     translucency: false,
     inlineMetadata: true
   },
-  
+
   isLoading: true,
-  
+
   // Initialize from robust settings.json via IPC
   init: async () => {
     try {
@@ -52,33 +52,35 @@ export const useSettingsStore = create((set, get) => ({
       set({ isLoading: false })
       // Retry once after 1s
       setTimeout(async () => {
-         try {
-            if (window.api && window.api.getSetting) {
-              const allSettings = await window.api.getSetting().catch(() => null) // Catch IPC error
-              if (allSettings) {
-                set({ settings: allSettings })
-                const root = document.documentElement
-                root.setAttribute('data-theme', allSettings.theme)
-                root.style.setProperty('--font-editor', allSettings.fontFamily)
-                root.style.setProperty('--font-size-editor', `${allSettings.fontSize}px`)
-                root.style.setProperty('--cursor-style', allSettings.cursorStyle)
-                root.setAttribute('data-translucency', allSettings.translucency ? 'true' : 'false')
-                if (window.api && window.api.setTranslucency) {
-                  window.api.setTranslucency(allSettings.translucency)
-                }
-              } else {
-                 console.warn('Backend settings unavailable, using defaults.')
-                 // Defaults are already set in initialState
+        try {
+          if (window.api && window.api.getSetting) {
+            const allSettings = await window.api.getSetting().catch(() => null) // Catch IPC error
+            if (allSettings) {
+              set({ settings: allSettings })
+              const root = document.documentElement
+              root.setAttribute('data-theme', allSettings.theme)
+              root.style.setProperty('--font-editor', allSettings.fontFamily)
+              root.style.setProperty('--font-size-editor', `${allSettings.fontSize}px`)
+              root.style.setProperty('--cursor-style', allSettings.cursorStyle)
+              root.setAttribute('data-translucency', allSettings.translucency ? 'true' : 'false')
+              if (window.api && window.api.setTranslucency) {
+                window.api.setTranslucency(allSettings.translucency)
               }
+            } else {
+              console.warn('Backend settings unavailable, using defaults.')
+              // Defaults are already set in initialState
             }
-         } catch(e) { console.warn('Retry failed', e) }
+          }
+        } catch (e) {
+          console.warn('Retry failed', e)
+        }
       }, 1000)
     }
   },
 
   updateSetting: async (key, value) => {
     // Optimistic Update
-    set(state => ({
+    set((state) => ({
       settings: { ...state.settings, [key]: value }
     }))
 

@@ -147,14 +147,7 @@
   padding: 0;
 }
 
-/* Better Selection (Localized) */
-.cm-selectionBackground,
-.cm-content ::selection,
-.cm-editor ::selection,
-.editor-large-title ::selection {
-  background-color: var(--bg-selection) !important;
-  color: inherit;
-}
+/* Better Selection (Localized) - Handled in MarkdownEditor.css */
 
 body {
   margin: 0;

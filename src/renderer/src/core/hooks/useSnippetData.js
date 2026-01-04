@@ -26,10 +26,10 @@ export const useSnippetData = () => {
     try {
       if (window.api?.saveSnippet) {
         await window.api.saveSnippet(snippet)
-        
+
         // Refresh local state to ensure consistency with FS
         await loadData()
-        
+
         if (!options.skipSelectedUpdate) {
           if (selectedSnippet && selectedSnippet.id === snippet.id) {
             setSelectedSnippet(snippet)
@@ -46,13 +46,15 @@ export const useSnippetData = () => {
   const deleteItem = async (id) => {
     try {
       if (window.api?.deleteSnippet) {
-        const confirmed = await window.api.confirmDelete('Are you sure you want to delete this snippet from the vault?')
+        const confirmed = await window.api.confirmDelete(
+          'Are you sure you want to delete this snippet from the vault?'
+        )
         if (!confirmed) return
 
         await window.api.deleteSnippet(id)
         const next = snippets.filter((s) => s.id !== id)
         setSnippets(next)
-        
+
         if (selectedSnippet?.id === id) {
           setSelectedSnippet(next.length ? next[0] : null)
         }

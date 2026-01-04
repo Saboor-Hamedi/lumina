@@ -11,14 +11,8 @@ import { useSettingsStore } from '../../core/store/useSettingsStore'
 import './AppShell.css'
 
 const AppShell = () => {
-  const { 
-    snippets, 
-    selectedSnippet, 
-    setSelectedSnippet, 
-    saveSnippet, 
-    isLoading,
-    loadVault
-  } = useVaultStore()
+  const { snippets, selectedSnippet, setSelectedSnippet, saveSnippet, isLoading, loadVault } =
+    useVaultStore()
 
   const [activeTab, setActiveTab] = useState('files')
   const [showSettings, setShowSettings] = useState(false)
@@ -36,9 +30,9 @@ const AppShell = () => {
         // We need to wait for snippets to load... loadVault loads them.
         // We can access fresh snippets via useVaultStore.getState().snippets
         const allSnippets = useVaultStore.getState().snippets
-        const last = allSnippets.find(s => s.id === settings.lastSnippetId)
+        const last = allSnippets.find((s) => s.id === settings.lastSnippetId)
         if (last) {
-           setSelectedSnippet(last)
+          setSelectedSnippet(last)
         }
       }
     })
@@ -80,14 +74,16 @@ const AppShell = () => {
   }
 
   return (
-    <div className={`app-shell ${isLeftSidebarOpen ? 'left-open' : 'left-closed'} ${isRightSidebarOpen ? 'right-open' : 'right-closed'}`}>
+    <div
+      className={`app-shell ${isLeftSidebarOpen ? 'left-open' : 'left-closed'} ${isRightSidebarOpen ? 'right-open' : 'right-closed'}`}
+    >
       <header className="shell-header">
         <TitleBar />
       </header>
 
       <nav className="shell-ribbon">
-        <ActivityBar 
-          activeTab={activeTab} 
+        <ActivityBar
+          activeTab={activeTab}
           onTabChange={setActiveTab}
           onSettingsClick={() => setShowSettings(true)}
         />
@@ -99,9 +95,9 @@ const AppShell = () => {
 
       <main className="shell-main">
         {selectedSnippet ? (
-          <MarkdownEditor 
-            snippet={selectedSnippet} 
-            onSave={saveSnippet} 
+          <MarkdownEditor
+            snippet={selectedSnippet}
+            onSave={saveSnippet}
             onToggleInspector={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
           />
         ) : (
@@ -109,7 +105,9 @@ const AppShell = () => {
             <div className="welcome-hero">
               <h1 className="hero-title">Lumina</h1>
               <p className="hero-subtitle">Your personal knowledge vault.</p>
-              <button className="btn btn-primary big-new-btn" onClick={handleNew}>Create New Note</button>
+              <button className="btn btn-primary big-new-btn" onClick={handleNew}>
+                Create New Note
+              </button>
             </div>
           </div>
         )}
@@ -121,8 +119,14 @@ const AppShell = () => {
           <div className="panel-content">
             {isLoading ? (
               <div className="skeleton-inspector">
-                <div className="skeleton skeleton-text" style={{ width: '40%', marginBottom: '12px' }} />
-                <div className="skeleton skeleton-text" style={{ width: '80%', marginBottom: '12px' }} />
+                <div
+                  className="skeleton skeleton-text"
+                  style={{ width: '40%', marginBottom: '12px' }}
+                />
+                <div
+                  className="skeleton skeleton-text"
+                  style={{ width: '80%', marginBottom: '12px' }}
+                />
                 <div className="skeleton skeleton-text" style={{ width: '60%' }} />
               </div>
             ) : selectedSnippet ? (
@@ -131,7 +135,9 @@ const AppShell = () => {
                   <div className="meta-label">Properties</div>
                   <div className="meta-row">
                     <span>Modified</span>
-                    <span className="meta-value">{new Date(selectedSnippet.timestamp).toLocaleDateString()}</span>
+                    <span className="meta-value">
+                      {new Date(selectedSnippet.timestamp).toLocaleDateString()}
+                    </span>
                   </div>
                   <div className="meta-row">
                     <span>Type</span>
@@ -139,8 +145,13 @@ const AppShell = () => {
                   </div>
                   <div className="meta-row">
                     <span>Location</span>
-                    <span className="meta-value path-hint" title={useSettingsStore.getState().settings.vaultPath || 'Default'}>
-                      {(useSettingsStore.getState().settings.vaultPath || 'Default Vault').split(/[\\\/]/).pop()}
+                    <span
+                      className="meta-value path-hint"
+                      title={useSettingsStore.getState().settings.vaultPath || 'Default'}
+                    >
+                      {(useSettingsStore.getState().settings.vaultPath || 'Default Vault')
+                        .split(/[\\\/]/)
+                        .pop()}
                     </span>
                   </div>
                 </div>
@@ -156,7 +167,9 @@ const AppShell = () => {
                     </div>
                     <div className="stat-box">
                       <div className="stat-value">
-                        {selectedSnippet.code?.trim() ? selectedSnippet.code.trim().split(/\s+/).length : 0}
+                        {selectedSnippet.code?.trim()
+                          ? selectedSnippet.code.trim().split(/\s+/).length
+                          : 0}
                       </div>
                       <div className="stat-label">Words</div>
                     </div>
@@ -176,13 +189,11 @@ const AppShell = () => {
         </div>
       </aside>
 
-      {showSettings && (
-        <SettingsModal onClose={() => setShowSettings(false)} />
-      )}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
 
-      <CommandPalette 
-        isOpen={showPalette} 
-        onClose={() => setShowPalette(false)} 
+      <CommandPalette
+        isOpen={showPalette}
+        onClose={() => setShowPalette(false)}
         items={snippets}
         onSelect={setSelectedSnippet}
       />

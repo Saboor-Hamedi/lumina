@@ -15,10 +15,8 @@ const TitleBar = () => {
           <span className="app-name">Lumina</span>
         </div>
       </div>
-      
-      <div className="title-center">
-        {/* Obsidian-like document title could go here */}
-      </div>
+
+      <div className="title-center">{/* Obsidian-like document title could go here */}</div>
 
       <div className="title-right">
         <div className="window-controls">

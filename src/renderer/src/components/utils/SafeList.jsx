@@ -8,7 +8,7 @@ import * as ReactWindow from 'react-window'
 function resolveList() {
   // 1. Direct Named Export (ESM)
   if (ReactWindow.FixedSizeList) return ReactWindow.FixedSizeList
-  
+
   // 2. Default Export (CommonJS)
   if (ReactWindow.default) {
     // 2a. Default is the object containing named exports
@@ -17,7 +17,11 @@ function resolveList() {
   }
 
   // 3. Double-Default (Vite sometimes double-wraps CJS)
-  if (ReactWindow.default && ReactWindow.default.default && ReactWindow.default.default.FixedSizeList) {
+  if (
+    ReactWindow.default &&
+    ReactWindow.default.default &&
+    ReactWindow.default.default.FixedSizeList
+  ) {
     return ReactWindow.default.default.FixedSizeList
   }
 

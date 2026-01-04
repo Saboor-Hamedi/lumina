@@ -71,10 +71,16 @@ export const useKeyboardShortcuts = (shortcuts) => {
         shortcutsRef.current.onTogglePalette()
       }
 
+      // Toggle Inspector: Ctrl+I (Strictly no Shift)
+      if (isCmd && !e.shiftKey && key === 'i' && shortcutsRef.current.onToggleInspector) {
+        e.preventDefault()
+        shortcutsRef.current.onToggleInspector()
+      }
+
       // Toggle Preview: Ctrl+\ or Ctrl+Shift+V
       const isBackslash = e.key === '\\' || e.key === '|'
       const triggerPreview = (isCmd && isBackslash) || (isCmd && e.shiftKey && key === 'v')
-      
+
       if (triggerPreview) {
         if (shortcutsRef.current.onTogglePreview) {
           e.preventDefault()

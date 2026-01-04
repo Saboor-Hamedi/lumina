@@ -16,9 +16,9 @@ export const cacheSnippets = async (snippets) => {
     // Use bulkPut instead of bulkAdd to handle duplicates
     // bulkPut will update existing records instead of failing
     await db.snippets.clear()
-    
+
     // Store complete snippet data for instant restore
-    const cacheData = snippets.map(s => ({
+    const cacheData = snippets.map((s) => ({
       id: s.id,
       title: s.title || 'Untitled',
       code: s.code || '',
@@ -29,7 +29,7 @@ export const cacheSnippets = async (snippets) => {
       type: s.type || 'snippet',
       is_draft: s.is_draft || 0
     }))
-    
+
     await db.snippets.bulkPut(cacheData)
   } catch (err) {
     console.error('Cache failed:', err)

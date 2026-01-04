@@ -6,14 +6,14 @@ const ActivityBar = ({ activeTab, onTabChange, onSettingsClick }) => {
   return (
     <div className="activity-bar">
       <div className="bar-top">
-        <button 
+        <button
           className={`bar-item ${activeTab === 'files' ? 'active' : ''}`}
           onClick={() => onTabChange('files')}
           title="Explorer"
         >
           <Files size={24} strokeWidth={1.5} />
         </button>
-        <button 
+        <button
           className={`bar-item ${activeTab === 'search' ? 'active' : ''}`}
           onClick={() => onTabChange('search')}
           title="Search"
@@ -21,13 +21,9 @@ const ActivityBar = ({ activeTab, onTabChange, onSettingsClick }) => {
           <Search size={24} strokeWidth={1.5} />
         </button>
       </div>
-      
+
       <div className="bar-bottom">
-        <button 
-          className="bar-item" 
-          title="Settings" 
-          onClick={onSettingsClick}
-        >
+        <button className="bar-item" title="Settings" onClick={onSettingsClick}>
           <Settings size={22} strokeWidth={1.5} />
         </button>
       </div>

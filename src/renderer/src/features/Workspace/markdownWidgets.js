@@ -20,7 +20,7 @@ export class CodeBlockHeaderWidget extends WidgetType {
     this.lang = lang || 'text'
     this.code = code
   }
-  
+
   eq(other) {
     return other.lang === this.lang && other.code === this.code
   }
@@ -28,25 +28,25 @@ export class CodeBlockHeaderWidget extends WidgetType {
   toDOM() {
     const wrap = document.createElement('div')
     wrap.className = 'cm-codeblock-header'
-    
+
     const label = document.createElement('span')
     label.className = 'cm-lang-label'
     label.textContent = this.lang.toUpperCase()
-    
+
     const copyBtn = document.createElement('button')
     copyBtn.className = 'cm-copy-btn'
     copyBtn.textContent = 'Copy'
-    copyBtn.title = "Copy Code"
-    
+    copyBtn.title = 'Copy Code'
+
     copyBtn.onclick = (e) => {
       e.preventDefault()
       e.stopPropagation() // Prevent cursor move
       navigator.clipboard.writeText(this.code).then(() => {
         copyBtn.textContent = 'Copied!'
-        setTimeout(() => copyBtn.textContent = 'Copy', 2000)
+        setTimeout(() => (copyBtn.textContent = 'Copy'), 2000)
       })
     }
-    
+
     wrap.appendChild(label)
     wrap.appendChild(copyBtn)
     return wrap

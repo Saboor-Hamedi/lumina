@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding-bottom: 20px;
+  padding-bottom: 0;
   background: var(--bg-sidebar);
 }
 
@@ -172,30 +172,44 @@
   margin-bottom: 4px;
 }
 
+/* --- PREMIUM DOCK FOOTER --- */
 .pane-footer {
-  height: 36px;
+  height: 32px; /* Matching editor footer */
   flex-shrink: 0; 
   border-top: 1px solid var(--border-dim);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-faint);
-  letter-spacing: 0.05em;
+  padding: 0 8px;
   background: var(--bg-sidebar);
+  position: relative;
+  font-size: 11px;
 }
 
+/* Status Pill Atom */
 .footer-stat {
   display: flex;
   align-items: center;
   gap: 6px;
-  text-transform: uppercase;
+  font-size: 10px;
+  color: var(--text-faint);
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: rgba(0,0,0,0.02);
+  border: 1px solid transparent;
+}
+
+.footer-stat:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+  border-color: var(--border-card);
 }
 
 .footer-stat strong {
-  color: var(--text-muted);
+  color: var(--text-main);
   font-weight: 700;
 }
 

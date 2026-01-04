@@ -44,7 +44,7 @@ class MarkdownFormatter {
       { pattern: /^___$/gm, replacement: '<hr>' },
 
       // Line breaks
-      { pattern: /  $/gm, replacement: '<br>' },
+      { pattern: / {2}$/gm, replacement: '<br>' },
 
       // Tables (basic support)
       { pattern: /\|(.+)\|/g, replacement: '<table><tr><td>$1</td></tr></table>' },
