@@ -1,21 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react'
 import {
-  Save,
-  Eye,
-  Sidebar,
-  ChevronRight,
-  Hash,
-  FileCode,
-  FileJson,
-  FileType,
-  Calendar,
-  Share,
-  Download,
-  MoreVertical,
-  Trash2,
-  Copy,
-  Printer
+  MoreVertical, // Still used for ref checks or we can move ref check logic
+  Save // For manual save call if needed
 } from 'lucide-react'
+import EditorTitleBar from './components/EditorTitleBar'
+import EditorFooter from './components/EditorFooter'
+import EditorMetadata from './components/EditorMetadata'
 import PreviewModal from '../Overlays/PreviewModal'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { richMarkdown } from './richMarkdown'
@@ -59,15 +49,11 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
   const viewRef = useRef(null)
   const workerRef = useRef(null)
   const titleRef = useRef(null)
-  const menuRef = useRef(null)
-  const buttonRef = useRef(null)
 
   const { settings } = useSettingsStore()
   const { snippets, setSelectedSnippet, updateSnippetSelection } = useVaultStore()
   const snippetsRef = useRef(snippets)
   const [title, setTitle] = useState(snippet?.title || '')
-  const [tagInput, setTagInput] = useState('')
-  const [showTagSuggestions, setShowTagSuggestions] = useState(false)
 
   useEffect(() => {
     snippetsRef.current = snippets
@@ -81,27 +67,6 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
   const [viewMode, setViewMode] = useState('live') // 'source' | 'live' | 'reading'
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [previewContent, setPreviewContent] = useState('')
-  const [showMoreMenu, setShowMoreMenu] = useState(false)
-
-  // Click Outside to Close Menu
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        showMoreMenu &&
-        menuRef.current &&
-        !menuRef.current.contains(event.target) &&
-        buttonRef.current &&
-        !buttonRef.current.contains(event.target)
-      ) {
-        setShowMoreMenu(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside, true)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside, true)
-    }
-  }, [showMoreMenu])
 
   useEffect(() => {
     workerRef.current = new Worker(
@@ -311,7 +276,7 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
   }
 
   const handleExport = async (format) => {
-    setShowExportMenu(false)
+    // Menu closing is handled by the child component
 
     // We need the rendered HTML. If previewContent matches current code, use it.
     // Otherwise we might need to wait for worker. But usually preview updates fast.
@@ -375,89 +340,16 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
       className={`markdown-editor seamless-editor mode-${viewMode} cursor-${settings.cursorStyle}`}
     >
       <div className="editor-titlebar">
-        {/* Breadcrumb Polish (Standard #9) */}
-        <div className="editor-breadcrumb">
-          <div className="breadcrumb-item clickable" onClick={() => setSelectedSnippet(null)}>
-            <FileType size={12} className="breadcrumb-icon" />
-            <span>Vault</span>
-          </div>
-          <ChevronRight size={12} className="breadcrumb-sep" />
-          <div className="breadcrumb-item">
-            {(() => {
-              const lang = (snippet?.language || 'markdown').toLowerCase()
-              if (
-                ['javascript', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'python', 'py'].includes(
-                  lang
-                )
-              )
-                return <FileCode size={12} className="breadcrumb-icon" />
-              if (lang === 'json') return <FileJson size={12} className="breadcrumb-icon" />
-              if (lang === 'markdown' || lang === 'md')
-                return <Hash size={12} className="breadcrumb-icon" />
-              return <FileType size={12} className="breadcrumb-icon" />
-            })()}
-            <span className="breadcrumb-active">{title || 'Untitled'}</span>
-          </div>
-        </div>
-
-        <div className="editor-controls">
-          <div style={{ position: 'relative' }}>
-            <button
-              className="icon-btn"
-              ref={buttonRef}
-              onClick={() => setShowMoreMenu(!showMoreMenu)}
-              title="More Options"
-            >
-              <MoreVertical size={18} />
-            </button>
-            {showMoreMenu && (
-              <div className="export-menu-dropdown" ref={menuRef}>
-                <div
-                  className="dropdown-item"
-                  onClick={() => {
-                    handleSave()
-                    setShowMoreMenu(false)
-                  }}
-                >
-                  <Save size={11} className="menu-icon" />
-                  <span className="menu-label">Save File</span>
-                  <span className="shortcut-label">Ctrl+S</span>
-                </div>
-                <div className="dropdown-divider" />
-                <div
-                  className="dropdown-item"
-                  onClick={() => {
-                    navigator.clipboard.writeText(snippet.code)
-                    setShowMoreMenu(false)
-                  }}
-                >
-                  <Copy size={11} className="menu-icon" />
-                  <span className="menu-label">Copy Raw Markdown</span>
-                </div>
-                <div className="dropdown-item" onClick={() => handleExport('html')}>
-                  <FileCode size={11} className="menu-icon" />
-                  <span className="menu-label">Copy HTML Code</span>
-                </div>
-                <div className="dropdown-item" onClick={() => handleExport('pdf')}>
-                  <Printer size={11} className="menu-icon" />
-                  <span className="menu-label">Export to PDF</span>
-                </div>
-                <div className="dropdown-divider" />
-                <div
-                  className="dropdown-item"
-                  onClick={() => {
-                    onToggleInspector()
-                    setShowMoreMenu(false)
-                  }}
-                >
-                  <Sidebar size={11} className="menu-icon" />
-                  <span className="menu-label">Toggle Inspector</span>
-                  <span className="shortcut-label">Ctrl+I</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        <EditorTitleBar
+          title={title}
+          snippet={snippet}
+          setSelectedSnippet={setSelectedSnippet}
+          isDirty={isDirty}
+          onSave={handleSave}
+          onToggleInspector={onToggleInspector}
+          onExportHTML={() => handleExport('html')}
+          onExportPDF={() => handleExport('pdf')}
+        />
       </div>
 
       <div className="editor-scroller">
@@ -477,134 +369,12 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
           />
 
           {settings.inlineMetadata && (
-            <div className="editor-metadata-bar">
-              <div className="meta-tag-container">
-                <Hash size={12} className="meta-icon" />
-                <div className="tag-pills">
-                  {(snippet.tags || '')
-                    .split(',')
-                    .filter((t) => t.trim())
-                    .map((tag, i) => (
-                      <span key={i} className="tag-pill">
-                        {tag.trim()}
-                        <button
-                          className="tag-remove"
-                          onClick={() => {
-                            const tags = (snippet.tags || '')
-                              .split(',')
-                              .filter((_, idx) => idx !== i)
-                              .join(',')
-                            onSave({ ...snippet, tags })
-                          }}
-                        >
-                          &times;
-                        </button>
-                      </span>
-                    ))}
-                </div>
-                <div className="tag-input-wrap">
-                  <input
-                    type="text"
-                    placeholder="Add tag..."
-                    value={tagInput}
-                    onChange={(e) => {
-                      setTagInput(e.target.value)
-                      setShowTagSuggestions(true)
-                    }}
-                    onFocus={() => setShowTagSuggestions(true)}
-                    onBlur={() => setTimeout(() => setShowTagSuggestions(false), 200)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && tagInput.trim()) {
-                        const currentTags = (snippet.tags || '')
-                          .split(',')
-                          .map((t) => t.trim())
-                          .filter(Boolean)
-                        if (!currentTags.includes(tagInput.trim())) {
-                          const tags = [...currentTags, tagInput.trim()].join(',')
-                          onSave({ ...snippet, tags })
-                        }
-                        setTagInput('')
-                      }
-                    }}
-                  />
-                  {showTagSuggestions && tagInput.trim() && (
-                    <div className="tag-suggestions">
-                      {Array.from(
-                        new Set(
-                          snippets.flatMap((s) =>
-                            (s.tags || '')
-                              .split(',')
-                              .map((t) => t.trim())
-                              .filter(Boolean)
-                          )
-                        )
-                      )
-                        .filter((t) => t.toLowerCase().includes(tagInput.toLowerCase()))
-                        .slice(0, 5)
-                        .map((suggestion, i) => (
-                          <div
-                            key={i}
-                            className="suggestion-item"
-                            onClick={() => {
-                              const currentTags = (snippet.tags || '')
-                                .split(',')
-                                .map((t) => t.trim())
-                                .filter(Boolean)
-                              if (!currentTags.includes(suggestion)) {
-                                const tags = [...currentTags, suggestion].join(',')
-                                onSave({ ...snippet, tags })
-                              }
-                              setTagInput('')
-                              setShowTagSuggestions(false)
-                            }}
-                          >
-                            {suggestion}
-                          </div>
-                        ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="meta-info-pill">
-                <Calendar size={12} className="meta-icon" />
-                <span>{new Date(snippet.timestamp).toLocaleDateString()}</span>
-              </div>
-            </div>
+            <EditorMetadata snippet={snippet} onSave={onSave} snippets={snippets} />
           )}
           <div className="cm-host-container" ref={editorRef} />
         </div>
       </div>
-      <div className="editor-footer-bar">
-        <div className="editor-status-icons">
-          <div className={`status-pill ${isDirty ? 'dirty' : 'saved'}`}>
-            {isDirty ? 'Unsaved' : 'Saved'}
-          </div>
-        </div>
-
-        <div className="mode-toggle">
-          <button
-            className={`mode-btn ${viewMode === 'source' ? 'active' : ''}`}
-            onClick={() => setViewMode('source')}
-            title="Source Mode"
-          >
-            Src
-          </button>
-          <button
-            className={`mode-btn ${viewMode === 'live' ? 'active' : ''}`}
-            onClick={() => setViewMode('live')}
-            title="Live Mode"
-          >
-            Live
-          </button>
-          <button
-            className={`mode-btn ${viewMode === 'reading' ? 'active' : ''}`}
-            onClick={() => setViewMode('reading')}
-            title="Reading Mode"
-          >
-            Read
-          </button>
-        </div>
-      </div>
+      <EditorFooter isDirty={isDirty} viewMode={viewMode} setViewMode={setViewMode} />
       <PreviewModal
         isOpen={isPreviewOpen}
         onClose={() => setIsPreviewOpen(false)}

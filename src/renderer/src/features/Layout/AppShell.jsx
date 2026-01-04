@@ -5,9 +5,11 @@ import FileExplorer from '../Navigation/FileExplorer'
 import MarkdownEditor from '../Workspace/MarkdownEditor'
 import SettingsModal from '../Overlays/SettingsModal'
 import CommandPalette from '../Overlays/CommandPalette'
+import GraphView from '../Graph/GraphView'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
+import { useAIStore } from '../../core/store/useAIStore'
 import './AppShell.css'
 
 const AppShell = () => {
@@ -39,12 +41,30 @@ const AppShell = () => {
     useSettingsStore.getState().init()
   }, [])
 
+  // ... imports
+
   // Persist Last Snippet
   useEffect(() => {
     if (selectedSnippet) {
       useSettingsStore.getState().updateSetting('lastSnippetId', selectedSnippet.id)
     }
   }, [selectedSnippet?.id])
+
+  // Trigger AI Indexing when snippets change (Background)
+  useEffect(() => {
+    if (snippets.length > 0) {
+      // Debounce slightly or just run?
+      // Let's run it. The store mostly skips existing ones.
+      useAIStore.getState().indexVault(snippets)
+    }
+  }, [snippets])
+
+  // Close Inspector when switching to Graph
+  useEffect(() => {
+    if (activeTab === 'graph') {
+      setIsRightSidebarOpen(false)
+    }
+  }, [activeTab])
 
   useKeyboardShortcuts({
     onEscape: () => {
@@ -80,7 +100,6 @@ const AppShell = () => {
       <header className="shell-header">
         <TitleBar />
       </header>
-
       <nav className="shell-ribbon">
         <ActivityBar
           activeTab={activeTab}
@@ -88,13 +107,18 @@ const AppShell = () => {
           onSettingsClick={() => setShowSettings(true)}
         />
       </nav>
-
       <aside className="shell-sidebar-left">
         <FileExplorer />
       </aside>
-
       <main className="shell-main">
-        {selectedSnippet ? (
+        {activeTab === 'graph' ? (
+          <GraphView
+            onNodeClick={(snippet) => {
+              setSelectedSnippet(snippet)
+              setActiveTab('files')
+            }}
+          />
+        ) : selectedSnippet ? (
           <MarkdownEditor
             snippet={selectedSnippet}
             onSave={saveSnippet}
@@ -112,7 +136,6 @@ const AppShell = () => {
           </div>
         )}
       </main>
-
       <aside className="shell-sidebar-right">
         <div className="inspector-panel">
           <div className="panel-header">Metadata & Stats</div>
@@ -188,9 +211,7 @@ const AppShell = () => {
           </div>
         </div>
       </aside>
-
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
-
       <CommandPalette
         isOpen={showPalette}
         onClose={() => setShowPalette(false)}

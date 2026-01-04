@@ -1,5 +1,5 @@
 import React from 'react'
-import { Files, Search, Settings } from 'lucide-react'
+import { Files, Search, Settings, Network } from 'lucide-react'
 import './ActivityBar.css'
 
 const ActivityBar = ({ activeTab, onTabChange, onSettingsClick }) => {
@@ -19,6 +19,13 @@ const ActivityBar = ({ activeTab, onTabChange, onSettingsClick }) => {
           title="Search"
         >
           <Search size={24} strokeWidth={1.5} />
+        </button>
+        <button
+          className={`bar-item ${activeTab === 'graph' ? 'active' : ''}`}
+          onClick={() => onTabChange('graph')}
+          title="Graph View"
+        >
+          <Network size={24} strokeWidth={1.5} />
         </button>
       </div>
 
