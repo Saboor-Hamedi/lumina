@@ -25,6 +25,7 @@ const api = {
   toggleMaximize: () => electronAPI.ipcRenderer.invoke('window:toggle-maximize'),
   closeWindow: () => electronAPI.ipcRenderer.invoke('window:close'),
   setTranslucency: (enabled) => electronAPI.ipcRenderer.invoke('window:set-translucency', enabled),
+  getVersion: () => electronAPI.ipcRenderer.invoke('app:getVersion'),
   // Auto-Updater
   checkForUpdates: () => electronAPI.ipcRenderer.invoke('update:check'),
   downloadUpdate: () => electronAPI.ipcRenderer.invoke('update:download'),

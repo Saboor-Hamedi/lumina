@@ -15,6 +15,7 @@ import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useAIStore } from '../../core/store/useAIStore'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
 import ConfirmModal from '../Overlays/ConfirmModal'
+import UpdateToast from '../Overlays/UpdateToast'
 import './AppShell.css'
 import '../Overlays/ConfirmModal.css'
 import AIChatPanel from '../AI/AIChatPanel'
@@ -412,6 +413,7 @@ const AppShell = () => {
         title="Delete Note?"
         message={`Are you sure you want to delete "${snippetToDelete?.title || 'this note'}"? This cannot be undone.`}
       />
+      <UpdateToast />
     </div>
   )
 }

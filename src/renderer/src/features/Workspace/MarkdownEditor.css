@@ -695,8 +695,8 @@
   font-family: var(--font-editor);
   font-weight: 700;
   color: var(--text-main);
-  padding-top: 0.8em; /* Reduced from 1.2em */
-  padding-bottom: 0.2rem;
+  padding-top: 0.4em; /* Drastically Reduced from 1.2em -> 0.8em -> 0.4em */
+  padding-bottom: 0.1rem;
   letter-spacing: -0.01em;
 }
 
@@ -769,11 +769,13 @@
 
 /* 3. READING MODE: Pure focus, clean and centered */
 .mode-reading .editor-canvas-wrap {
-  max-width: 800px;
+  /* Match Live Mode Width for Zero Shift */
+  max-width: 720px; 
 }
 
 .mode-reading .cm-content {
-  line-height: 2 !important; /* Increased for readability */
+  /* Match Live Mode Line Height */
+  line-height: var(--line-height-editor, 1.6) !important;
   cursor: text !important; /* Allow text selection */
   pointer-events: auto !important; /* Critical for hover tooltips */
   user-select: text !important;
@@ -1277,4 +1279,69 @@
   opacity: 0.5 !important;
   font-style: italic !important;
   margin-left: auto !important;
+}
+
+/* Hidden Mark Styling (Critical for Live Preview) */
+.cm-hidden-mark {
+  display: none !important;
+  /* font-size: 0; */
+}
+
+/* Horizontal Rule Compact Styling */
+.cm-hr {
+  margin: 0.5em 0 !important; /* Compact spacing */
+  height: 2px !important;
+  background-color: var(--border-dim) !important; /* Use background for HR line */
+  border: none !important;
+  padding: 0 !important;
+}
+
+/* Code Block Compact Styling */
+.cm-codeblock-header {
+  background: rgba(127, 127, 127, 0.05);
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  padding: 4px 12px;
+  margin-top: 0.5em !important; /* Tight margin */
+  font-size: 0.85em;
+  color: var(--text-faint);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+}
+
+.cm-codeblock-body {
+  background: rgba(127, 127, 127, 0.05); /* Continuous background */
+  padding-left: 12px !important; /* Indent code text */
+}
+
+.cm-codeblock-footer {
+  background: rgba(127, 127, 127, 0.05);
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+  margin-bottom: 0.5em !important;
+  height: 6px; /* Minimal visual footer */
+}
+
+/* Copy Button Styling */
+.cm-copy-btn {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  color: var(--text-faint);
+  font-size: 0.8em;
+  cursor: pointer;
+  opacity: 0;
+  padding: 2px 6px;
+  transition: all 0.2s;
+}
+
+.cm-codeblock-header:hover .cm-copy-btn {
+  opacity: 1;
+}
+
+.cm-copy-btn:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
 }

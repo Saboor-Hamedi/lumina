@@ -4,32 +4,37 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(16px);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
   z-index: 9999;
-  animation: nexusFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: nexusFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes nexusFadeIn {
   from { opacity: 0; backdrop-filter: blur(0px); }
-  to { opacity: 1; backdrop-filter: blur(16px); }
+  to { opacity: 1; backdrop-filter: blur(8px); }
 }
 
+/* Nexus Container */
 .nexus-container {
-  width: 85vw;
-  height: 80vh;
-  background: var(--bg-panel);
-  background: color-mix(in srgb, var(--bg-panel), transparent 30%);
-  border: 1px solid var(--border-subtle);
-  border-radius: 20px;
+  width: 95vw;
+  height: 92vh;
+  background: color-mix(in srgb, var(--bg-panel), transparent 10%);
+  backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: nexusScaleUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 
+    0 0 0 1px rgba(0, 0, 0, 0.2),
+    0 24px 48px -12px rgba(0, 0, 0, 0.6),
+    0 0 30px rgba(var(--text-accent-rgb, 64, 186, 250), 0.05);
+  animation: nexusScaleUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes nexusScaleUp {
-  from { transform: scale(0.9) translateY(20px); opacity: 0; }
+  from { transform: scale(0.96) translateY(10px); opacity: 0; }
   to { transform: scale(1) translateY(0); opacity: 1; }
 }
 
@@ -56,26 +61,26 @@
 .nexus-icon {
   color: var(--text-accent);
 }
-
+/* tab for the modal*/
 .nexus-tabs {
   display: flex;
   background: rgba(0, 0, 0, 0.2);
-  padding: 4px;
-  border-radius: 12px;
-  gap: 4px;
+  padding: 3px;
+  border-radius: 6px;
+  gap: 2px;
 }
 
 .nexus-tab {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 16px;
+  padding: 4px 12px;
   border: none;
   background: transparent;
   color: var(--text-faint);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  border-radius: 8px;
+  border-radius: 5px;
   cursor: pointer;
   transition: all 0.2s;
 }

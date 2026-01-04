@@ -61,9 +61,19 @@ async function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       webSecurity: true,
-      sandbox: false
+      sandbox: false,
+      devTools: !app.isPackaged // Explicitly disable access via API if packaged
     }
   })
+
+  // Disable DevTools Shortcuts in Production
+  if (app.isPackaged) {
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+      if ((input.control && input.shift && input.key.toLowerCase() === 'i') || input.key === 'F12') {
+        event.preventDefault()
+      }
+    })
+  }
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
@@ -159,6 +169,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('db:saveSetting', (_, key, value) => SettingsManager.set(key, value))
   ipcMain.handle('db:getTheme', () => SettingsManager.get('theme'))
   ipcMain.handle('db:saveTheme', (_, theme) => SettingsManager.set('theme', theme))
+  ipcMain.handle('app:getVersion', () => app.getVersion())
 
   ipcMain.handle('window:minimize', () => mainWindow?.minimize())
   ipcMain.handle('window:toggle-maximize', () => {

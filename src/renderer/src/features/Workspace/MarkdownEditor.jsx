@@ -50,6 +50,9 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
   const viewRef = useRef(null)
   const workerRef = useRef(null)
   const titleRef = useRef(null)
+  const scrollerRef = useRef(null)
+  const scrollPosRef = useRef(0)
+  const prevIdRef = useRef(snippet?.id)
   const previewTimeoutRef = useRef(null)
   const selectionTimeoutRef = useRef(null)
 
@@ -244,7 +247,6 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
       } else {
         view.focus()
         // Restore caret position (FB Standard #11 Persistence)
-        // Use snippetRef for most up-to-date state if available
         const targetSelection = snippetRef.current?.selection || snippet?.selection
         if (targetSelection) {
           try {
@@ -254,16 +256,28 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
             const safeHead = Math.min(head, docLen)
             view.dispatch({
               selection: { anchor: safeAnchor, head: safeHead },
-              scrollIntoView: true
+              // Only scroll into view if it's a NEW note. If switching modes, we handle scroll manually.
+              scrollIntoView: snippet.id !== prevIdRef.current
             })
           } catch (e) {
             console.warn('Failed to restore selection:', e)
           }
         }
+
+        // Mode Persistence: Restore Scroll Position if staying on same note
+        if (snippet.id === prevIdRef.current && scrollPosRef.current > 0) {
+          if (scrollerRef.current) scrollerRef.current.scrollTop = scrollPosRef.current
+        } else {
+          // New Note: Update ID reference
+          prevIdRef.current = snippet.id
+        }
       }
     }, 50) // Faster restoration
 
-    return () => view.destroy()
+    return () => {
+      if (scrollerRef.current) scrollPosRef.current = scrollerRef.current.scrollTop
+      view.destroy()
+    }
   }, [snippet.id, viewMode])
 
   useEffect(() => {
@@ -373,7 +387,7 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
         onExportPDF={() => handleExport('pdf')}
       />
 
-      <div className="editor-scroller">
+      <div className="editor-scroller" ref={scrollerRef}>
         <div className="editor-canvas-wrap">
           <input
             type="text"

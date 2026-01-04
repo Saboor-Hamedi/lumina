@@ -173,14 +173,6 @@ const livePreviewPlugin = ViewPlugin.fromClass(
               const level = parseInt(name.slice(-1)) || 1
               const line = view.state.doc.lineAt(nFrom)
               add(line.from, line.from, headingDeco(level))
-
-              // Highlight the Header Mark (#) when not active
-              if (!shouldRevealSyntax(nFrom)) {
-                const mark = node.node.firstChild
-                if (mark && mark.name === 'HeaderMark') {
-                  add(mark.from, mark.to, hideDeco)
-                }
-              }
             }
 
             // Blockquotes

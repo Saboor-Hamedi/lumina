@@ -1,5 +1,5 @@
 import { autoUpdater } from 'electron-updater'
-import { ipcMain } from 'electron'
+import { ipcMain, app } from 'electron'
 
 /**
  * Robust App Updater (Engineering Std #12)
@@ -13,6 +13,13 @@ class AppUpdater {
     autoUpdater.autoInstallOnAppQuit = true
     
     this.setupListeners()
+
+    // Auto-check on initialization (if packaged)
+    if (app.isPackaged) {
+      setTimeout(() => {
+        autoUpdater.checkForUpdates().catch(err => console.error('Auto-check error:', err))
+      }, 1000)
+    }
   }
 
   setupListeners() {

@@ -15,7 +15,10 @@ const GraphNexus = ({ isOpen, onClose, onNavigate }) => {
   const [hoverNode, setHoverNode] = useState(null)
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 })
   const graphRef = useRef()
-  const [dimensions, setDimensions] = useState({ width: window.innerWidth * 0.85, height: window.innerHeight * 0.8 })
+  const [dimensions, setDimensions] = useState({
+    width: window.innerWidth * 0.95,
+    height: window.innerHeight * 0.92
+  })
 
   // Localized Escape Handler
   useKeyboardShortcuts({
@@ -31,9 +34,9 @@ const GraphNexus = ({ isOpen, onClose, onNavigate }) => {
   // Handle Resize
   useEffect(() => {
     const handleResize = () => {
-      setDimensions({ 
-        width: window.innerWidth * 0.85, 
-        height: window.innerHeight * 0.8 
+      setDimensions({
+        width: window.innerWidth * 0.95,
+        height: window.innerHeight * 0.92
       })
     }
     window.addEventListener('resize', handleResize)
