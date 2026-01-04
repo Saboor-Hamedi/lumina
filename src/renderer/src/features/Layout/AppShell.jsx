@@ -1,3 +1,4 @@
+// This is a comment to indicate I will read the file before writing.
 import React, { useState, useEffect } from 'react'
 import TitleBar from './TitleBar'
 import ActivityBar from '../Navigation/ActivityBar'
@@ -16,6 +17,7 @@ import { useUpdateStore } from '../../core/store/useUpdateStore'
 import ConfirmModal from '../Overlays/ConfirmModal'
 import './AppShell.css'
 import '../Overlays/ConfirmModal.css'
+import AIChatPanel from '../AI/AIChatPanel'
 
 const AppShell = () => {
   const { snippets, selectedSnippet, setSelectedSnippet, saveSnippet, isLoading, loadVault } =
@@ -27,9 +29,31 @@ const AppShell = () => {
   const [showGraph, setShowGraph] = useState(false)
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true)
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false)
-  const [sidebarWidth, setSidebarWidth] = useState(260)
-  const [isResizing, setIsResizing] = useState(false)
+  const [leftWidth, setLeftWidth] = useState(260)
+  const [rightWidth, setRightWidth] = useState(300)
+  const [resizingSide, setResizingSide] = useState(null) // 'left', 'right', or null
   const [isRestoring, setIsRestoring] = useState(true)
+  const [rightPanelMode, setRightPanelMode] = useState('metadata')
+
+  // Width Refs for Persistence
+  const widthRef = React.useRef({ left: 260, right: 300 })
+  useEffect(() => {
+    widthRef.current.left = leftWidth
+  }, [leftWidth])
+  useEffect(() => {
+    widthRef.current.right = rightWidth
+  }, [rightWidth])
+
+  // Persist Sidebar Toggles
+  useEffect(() => {
+    if (isRestoring) return
+    useSettingsStore.getState().updateSetting('isLeftSidebarOpen', isLeftSidebarOpen)
+  }, [isLeftSidebarOpen, isRestoring])
+
+  useEffect(() => {
+    if (isRestoring) return
+    useSettingsStore.getState().updateSetting('isRightSidebarOpen', isRightSidebarOpen)
+  }, [isRightSidebarOpen, isRestoring])
 
   // Deletion State
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -38,16 +62,32 @@ const AppShell = () => {
   // Sidebar Resizing Logic
   useEffect(() => {
     const handleMouseMove = (e) => {
-      if (!isResizing) return
-      let newWidth = e.clientX - 60 // Compensate for Ribbon
-      if (newWidth < 180) newWidth = 180
-      if (newWidth > 500) newWidth = 500
-      setSidebarWidth(newWidth)
+      if (!resizingSide) return
+
+      if (resizingSide === 'left') {
+        let newWidth = e.clientX - 60 // Compensate for Ribbon
+        if (newWidth < 180) newWidth = 180
+        if (newWidth > 500) newWidth = 500
+        setLeftWidth(newWidth)
+      } else {
+        // Right Resizer
+        let newWidth = window.innerWidth - e.clientX
+        if (newWidth < 250) newWidth = 250
+        if (newWidth > 600) newWidth = 600
+        setRightWidth(newWidth)
+      }
     }
 
-    const handleMouseUp = () => setIsResizing(false)
+    const handleMouseUp = () => {
+      // Persist new widths
+      if (resizingSide) {
+        useSettingsStore.getState().updateSetting('leftWidth', widthRef.current.left)
+        useSettingsStore.getState().updateSetting('rightWidth', widthRef.current.right)
+      }
+      setResizingSide(null)
+    }
 
-    if (isResizing) {
+    if (resizingSide) {
       window.addEventListener('mousemove', handleMouseMove)
       window.addEventListener('mouseup', handleMouseUp)
     }
@@ -56,7 +96,7 @@ const AppShell = () => {
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
     }
-  }, [isResizing])
+  }, [resizingSide]) // Only re-run when resizing starts/stops
 
   // Initialize vault & settings on mount
   // Initialize vault & settings on mount
@@ -72,6 +112,17 @@ const AppShell = () => {
         const last = allSnippets.find((s) => s.id === settings.lastSnippetId)
         if (last) setSelectedSnippet(last)
       }
+      if (settings.rightPanelMode) {
+        setRightPanelMode(settings.rightPanelMode)
+      }
+      // Restore Widths & Toggles
+      if (settings.leftWidth) setLeftWidth(settings.leftWidth)
+      if (settings.rightWidth) setRightWidth(settings.rightWidth)
+      if (typeof settings.isLeftSidebarOpen === 'boolean')
+        setIsLeftSidebarOpen(settings.isLeftSidebarOpen)
+      if (typeof settings.isRightSidebarOpen === 'boolean')
+        setIsRightSidebarOpen(settings.isRightSidebarOpen)
+
       setIsRestoring(false)
     }
 
@@ -136,6 +187,7 @@ const AppShell = () => {
     onTogglePalette: () => setShowPalette(true),
     onToggleSettings: () => setShowSettings(true),
     onToggleGraph: () => setShowGraph(true),
+    onToggleSidebar: () => setIsLeftSidebarOpen((prev) => !prev),
     onNew: () => handleNew(),
     onDelete: () => {
       if (selectedSnippet) {
@@ -175,9 +227,11 @@ const AppShell = () => {
 
   return (
     <div
-      className={`app-shell ${isLeftSidebarOpen ? 'left-open' : 'left-closed'} ${isRightSidebarOpen ? 'right-open' : 'right-closed'} ${isResizing ? 'is-resizing' : ''}`}
+      className={`app-shell ${isLeftSidebarOpen ? 'left-open' : 'left-closed'} ${isRightSidebarOpen ? 'right-open' : 'right-closed'} ${resizingSide ? 'is-resizing' : ''}`}
       style={{
-        gridTemplateColumns: `var(--ribbon-width) ${isLeftSidebarOpen ? sidebarWidth + 'px' : '0px'} 1fr ${isRightSidebarOpen ? 'var(--sidebar-width)' : '0px'}`
+        opacity: isRestoring ? 0 : 1,
+        transition: 'opacity 0.2s ease-in-out',
+        gridTemplateColumns: `var(--ribbon-width) ${isLeftSidebarOpen ? leftWidth + 'px' : '0px'} 1fr ${isRightSidebarOpen ? rightWidth + 'px' : '0px'}`
       }}
     >
       <header className="shell-header">
@@ -193,7 +247,13 @@ const AppShell = () => {
       <aside className="shell-sidebar-left">
         <FileExplorer onNavigate={() => setActiveTab('files')} />
       </aside>
-      <div className="sidebar-resizer" onMouseDown={() => setIsResizing(true)} />
+      {isLeftSidebarOpen && (
+        <div
+          className="sidebar-resizer left"
+          onMouseDown={() => setResizingSide('left')}
+          style={{ left: `calc(60px + ${leftWidth}px)` }}
+        />
+      )}
       <main className="shell-main">
         {activeTab === 'graph' ? (
           <GraphView
@@ -214,77 +274,109 @@ const AppShell = () => {
           <Dashboard onNew={handleNew} />
         )}
       </main>
+      {isRightSidebarOpen && (
+        <div
+          className="sidebar-resizer right"
+          onMouseDown={() => setResizingSide('right')}
+          style={{ right: `${rightWidth}px` }}
+        />
+      )}
       <aside className="shell-sidebar-right">
         <div className="inspector-panel">
-          <div className="panel-header">Metadata & Stats</div>
+          <div className="panel-header-tabs">
+            <button
+              className={`panel-tab ${rightPanelMode === 'metadata' ? 'active' : ''}`}
+              onClick={() => {
+                setRightPanelMode('metadata')
+                useSettingsStore.getState().updateSetting('rightPanelMode', 'metadata')
+              }}
+            >
+              Metadata
+            </button>
+            <button
+              className={`panel-tab ${rightPanelMode === 'chat' ? 'active' : ''}`}
+              onClick={() => {
+                setRightPanelMode('chat')
+                useSettingsStore.getState().updateSetting('rightPanelMode', 'chat')
+              }}
+            >
+              AI Chat
+            </button>
+          </div>
+
           <div className="panel-content">
-            {isLoading ? (
-              <div className="skeleton-inspector">
-                <div
-                  className="skeleton skeleton-text"
-                  style={{ width: '40%', marginBottom: '12px' }}
-                />
-                <div
-                  className="skeleton skeleton-text"
-                  style={{ width: '80%', marginBottom: '12px' }}
-                />
-                <div className="skeleton skeleton-text" style={{ width: '60%' }} />
-              </div>
-            ) : selectedSnippet ? (
-              <div className="meta-info">
-                <div className="meta-section">
-                  <div className="meta-label">Properties</div>
-                  <div className="meta-row">
-                    <span>Modified</span>
-                    <span className="meta-value">
-                      {new Date(selectedSnippet.timestamp).toLocaleDateString()}
-                    </span>
+            {rightPanelMode === 'metadata' ? (
+              isLoading ? (
+                <div className="skeleton-inspector">
+                  <div
+                    className="skeleton skeleton-text"
+                    style={{ width: '40%', marginBottom: '12px' }}
+                  />
+                  <div
+                    className="skeleton skeleton-text"
+                    style={{ width: '80%', marginBottom: '12px' }}
+                  />
+                  <div className="skeleton skeleton-text" style={{ width: '60%' }} />
+                </div>
+              ) : selectedSnippet ? (
+                <div className="meta-info">
+                  <div className="meta-section">
+                    <div className="meta-label">Properties</div>
+                    <div className="meta-row">
+                      <span>Modified</span>
+                      <span className="meta-value">
+                        {new Date(selectedSnippet.timestamp).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="meta-row">
+                      <span>Type</span>
+                      <span className="meta-value badge">{selectedSnippet.language}</span>
+                    </div>
+                    <div className="meta-row">
+                      <span>Location</span>
+                      <span
+                        className="meta-value path-hint"
+                        title={useSettingsStore.getState().settings.vaultPath || 'Default'}
+                      >
+                        {(useSettingsStore.getState().settings.vaultPath || 'Default Vault')
+                          .split(/[\\\/]/)
+                          .pop()}
+                      </span>
+                    </div>
                   </div>
-                  <div className="meta-row">
-                    <span>Type</span>
-                    <span className="meta-value badge">{selectedSnippet.language}</span>
-                  </div>
-                  <div className="meta-row">
-                    <span>Location</span>
-                    <span
-                      className="meta-value path-hint"
-                      title={useSettingsStore.getState().settings.vaultPath || 'Default'}
-                    >
-                      {(useSettingsStore.getState().settings.vaultPath || 'Default Vault')
-                        .split(/[\\\/]/)
-                        .pop()}
-                    </span>
+
+                  <div className="meta-separator" />
+
+                  <div className="meta-section">
+                    <div className="meta-label">Statistics</div>
+                    <div className="meta-grid">
+                      <div className="stat-box">
+                        <div className="stat-value">{selectedSnippet.code?.length || 0}</div>
+                        <div className="stat-label">Chars</div>
+                      </div>
+                      <div className="stat-box">
+                        <div className="stat-value">
+                          {selectedSnippet.code?.trim()
+                            ? selectedSnippet.code.trim().split(/\s+/).length
+                            : 0}
+                        </div>
+                        <div className="stat-label">Words</div>
+                      </div>
+                      <div className="stat-box">
+                        <div className="stat-value">
+                          {Math.ceil((selectedSnippet.code?.trim().split(/\s+/).length || 0) / 200)}
+                          m
+                        </div>
+                        <div className="stat-label">Read</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-
-                <div className="meta-separator" />
-
-                <div className="meta-section">
-                  <div className="meta-label">Statistics</div>
-                  <div className="meta-grid">
-                    <div className="stat-box">
-                      <div className="stat-value">{selectedSnippet.code?.length || 0}</div>
-                      <div className="stat-label">Chars</div>
-                    </div>
-                    <div className="stat-box">
-                      <div className="stat-value">
-                        {selectedSnippet.code?.trim()
-                          ? selectedSnippet.code.trim().split(/\s+/).length
-                          : 0}
-                      </div>
-                      <div className="stat-label">Words</div>
-                    </div>
-                    <div className="stat-box">
-                      <div className="stat-value">
-                        {Math.ceil((selectedSnippet.code?.trim().split(/\s+/).length || 0) / 200)}m
-                      </div>
-                      <div className="stat-label">Read</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              ) : (
+                <div className="panel-empty">No file selected</div>
+              )
             ) : (
-              <div className="panel-empty">No file selected</div>
+              <AIChatPanel />
             )}
           </div>
         </div>

@@ -114,6 +114,105 @@ export const useAIStore = create((set, get) => {
         console.error('Semantic search failed', err)
         return []
       }
+    },
+
+    // --- DeepSeek Chat Integration ---
+    chatMessages: [],
+    isChatLoading: false,
+    chatError: null,
+
+    clearChat: () => set({ chatMessages: [], chatError: null }),
+
+    sendChatMessage: async (message, contextSnippets = []) => {
+      const { settings } = (await import('../../core/store/useSettingsStore')).useSettingsStore.getState()
+      const { deepSeekKey, deepSeekModel } = settings
+
+      // 1. Connectivity Check
+      if (!navigator.onLine) {
+        set({ isChatLoading: false, chatError: 'No internet connection. Please check your network.' })
+        return
+      }
+
+      // 2. Validate Key
+      const visibleKey = deepSeekKey || import.meta.env.VITE_DEEPSEEK_KEY
+      if (!visibleKey) {
+        set({ chatError: 'Missing API Key. Please configure it in Settings > AI Models or add VITE_DEEPSEEK_KEY to .env' })
+        return
+      }
+
+      // Add user message to UI immediately
+      const userMsg = { role: 'user', content: message }
+      const newHistory = [...get().chatMessages, userMsg]
+      set({ chatMessages: newHistory, isChatLoading: true, chatError: null })
+
+      try {
+        // Construct System Prompt with Context
+        let systemPrompt = `You are Lumina AI, an intelligent knowledge assistant inside a modern Markdown editor. You help users with writing, coding, and organizing thoughts.
+You are capable of:
+- **Code & Tech**: Explaining, debugging, and refactoring code.
+- **Content Creation**: Drafting, editing, and polishing markdown notes.
+- **Knowledge Management**: Summarizing and structuring complex ideas.
+
+Be concise, helpful, and use beautiful Markdown formatting.`
+        
+        if (contextSnippets.length > 0) {
+          systemPrompt += '\n\nActive Context from User Notes:\n'
+          contextSnippets.forEach(snip => {
+            systemPrompt += `--- [${snip.title}] ---\n${snip.code.slice(0, 2000)}\n\n`
+          })
+        }
+
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 30000) // 30s Timeout
+
+        const response = await fetch('https://api.deepseek.com/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${visibleKey}`
+          },
+          body: JSON.stringify({
+            model: deepSeekModel || 'deepseek-chat',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              ...newHistory
+            ],
+            stream: false
+          }),
+          signal: controller.signal
+        })
+
+        clearTimeout(timeoutId)
+
+        if (!response.ok) {
+          if (response.status === 401) throw new Error('Invalid API Key. Please check your settings.')
+          if (response.status === 429) throw new Error('Rate limit exceeded. Please try again later.')
+          if (response.status >= 500) throw new Error('DeepSeek Server Error. Please try again later.')
+          
+          const errData = await response.json().catch(() => ({}))
+          throw new Error(errData.error?.message || `API Error: ${response.status}`)
+        }
+
+        const data = await response.json()
+        const botMsg = data.choices[0].message
+
+        set((state) => ({
+          chatMessages: [...state.chatMessages, botMsg],
+          isChatLoading: false
+        }))
+      } catch (error) {
+        console.error('DeepSeek Chat Error:', error)
+        let errorMessage = error.message || 'Failed to connect to AI server.'
+        
+        if (error.name === 'AbortError') {
+          errorMessage = 'Request timed out. The AI is taking too long to respond.'
+        }
+
+        set({ 
+          isChatLoading: false, 
+          chatError: errorMessage 
+        })
+      }
     }
   }
 })

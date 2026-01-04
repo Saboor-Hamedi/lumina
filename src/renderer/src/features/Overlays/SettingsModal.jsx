@@ -81,6 +81,12 @@ const SettingsModal = ({ onClose }) => {
             >
               Shortcuts
             </button>
+            <button
+              className={`nav-item ${activeTab === 'ai' ? 'active' : ''}`}
+              onClick={() => setActiveTab('ai')}
+            >
+              AI Models
+            </button>
           </aside>
 
           <main className="settings-body">
@@ -101,6 +107,65 @@ const SettingsModal = ({ onClose }) => {
                         Change Location
                       </button>
                     </div>
+                  </div>
+                </section>
+              </div>
+            )}
+
+            {activeTab === 'ai' && (
+              <div className="settings-pane">
+                <section>
+                  <h3>DeepSeek Integration</h3>
+                  <div className="settings-row">
+                    <div className="row-info">
+                      <div className="row-label">API Key</div>
+                      <div className="row-hint">
+                        Enter your DeepSeek API key (starts with sk-...).
+                      </div>
+                    </div>
+                    <input
+                      type="password"
+                      className="settings-select"
+                      style={{ width: '240px' }}
+                      value={settings.deepSeekKey || ''}
+                      onChange={(e) => updateSetting('deepSeekKey', e.target.value)}
+                      placeholder="sk-..."
+                    />
+                  </div>
+                  <div className="settings-row">
+                    <div className="row-info">
+                      <div className="row-label">Model</div>
+                      <div className="row-hint">
+                        Select the model to use for chat and generation.
+                      </div>
+                    </div>
+                    <select
+                      value={settings.deepSeekModel || 'deepseek-chat'}
+                      onChange={(e) => updateSetting('deepSeekModel', e.target.value)}
+                      className="settings-select"
+                    >
+                      <option value="deepseek-chat">DeepSeek Chat (V3)</option>
+                      <option value="deepseek-coder">DeepSeek Coder</option>
+                    </select>
+                  </div>
+                </section>
+                <section>
+                  <h3>Local Intelligence (Offline)</h3>
+                  <div className="settings-row">
+                    <div className="row-info">
+                      <div className="row-label">Context Indexing</div>
+                      <div className="row-hint">
+                        Automatically index notes for semantic search (RAG).
+                      </div>
+                    </div>
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={settings.enableLocalAI ?? true}
+                        onChange={(e) => updateSetting('enableLocalAI', e.target.checked)}
+                      />
+                      <span className="slider round"></span>
+                    </label>
                   </div>
                 </section>
               </div>

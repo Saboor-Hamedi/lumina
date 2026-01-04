@@ -54,6 +54,8 @@
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.9.6",
     "react-syntax-highlighter": "^16.1.0",
+    "react-virtuoso": "^4.18.1",
+    "remark-gfm": "^4.0.1",
     "slugify": "^1.6.6",
     "zustand": "^5.0.9"
   },

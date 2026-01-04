@@ -40,7 +40,8 @@ class AppUpdater {
       this.sendStatusToWindow('ready', info)
     })
 
-    // Bridge IPC commands
+    // Bridge IPC commands - Remove existing handlers first to avoid "Attempted to register a second handler" error
+    ipcMain.removeHandler('update:check')
     ipcMain.handle('update:check', () => {
       autoUpdater.checkForUpdates().catch(err => {
         console.error('Check for updates failed:', err)
@@ -48,10 +49,12 @@ class AppUpdater {
       })
     })
 
+    ipcMain.removeHandler('update:download')
     ipcMain.handle('update:download', () => {
       autoUpdater.downloadUpdate()
     })
 
+    ipcMain.removeHandler('update:install')
     ipcMain.handle('update:install', () => {
       autoUpdater.quitAndInstall()
     })

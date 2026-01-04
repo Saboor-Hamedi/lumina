@@ -12,7 +12,8 @@
   grid-template-rows: var(--header-height) 1fr;
   grid-template-columns: var(--ribbon-width) var(--sidebar-width) 1fr var(--sidebar-width);
   
-  transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: grid-template-columns 0.2s cubic-bezier(0.2, 0, 0, 1);
+  will-change: grid-template-columns;
 }
 
 .app-shell.is-resizing {
@@ -22,13 +23,21 @@
 }
 
 .sidebar-resizer {
-  width: 4px;
-  height: 100%;
+  position: absolute;
+  top: var(--header-height);
+  bottom: 0;
+  width: 6px;
   cursor: col-resize;
   background: transparent;
   transition: background 0.2s;
   z-index: 1000;
-  margin-left: -2px; /* Center over border */
+  margin: 0;
+  transform: translateX(-50%); /* Center on the edge */
+}
+
+/* Specific offsets for centering are handled by left/right in JSX + transform */
+.sidebar-resizer.right {
+  transform: translateX(50%);
 }
 
 .sidebar-resizer:hover, .app-shell.is-resizing .sidebar-resizer {
@@ -94,23 +103,56 @@
   height: 100%;
 }
 
-.panel-header {
-  height: 48px;
+/* Inspector Tabs */
+.panel-header-tabs {
+  height: 40px;
   display: flex;
-  align-items: center;
-  padding: 0 16px;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  border-bottom: 1px solid var(--border-card);
   background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border-card);
+}
+
+.panel-tab {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.panel-tab:hover {
+  color: var(--text-main);
+}
+
+.panel-tab.active {
+  color: var(--text-accent);
+  border-bottom-color: var(--text-accent);
 }
 
 .panel-content {
+  padding: 0; /* Remove padding to let chat fill full height */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Adjust meta info to have padding since panel-content has 0 now */
+.meta-info {
   padding: 20px;
-  font-size: 13px;
-  color: var(--text-muted);
+  overflow-y: auto;
+}
+
+.skeleton-inspector {
+  padding: 20px;
+}
+
+.panel-empty {
+  padding: 20px;
 }
 
 .skeleton-inspector {
@@ -351,4 +393,267 @@
 .s-meta {
   font-size: 11px;
   color: var(--text-faint);
+}
+
+/* --- Chat Interface --- */
+.chat-interface {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative; /* For absolute positioning if needed */
+}
+
+.chat-clear-btn {
+  align-self: flex-end;
+  margin: 8px 16px 0 0;
+  background: transparent;
+  border: 1px solid var(--border-dim);
+  color: var(--text-faint);
+  font-size: 10px;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.chat-clear-btn:hover {
+  background: var(--bg-active);
+  color: var(--text-muted);
+  border-color: var(--text-muted);
+}
+
+.chat-messages {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.chat-empty {
+  text-align: center;
+  color: var(--text-faint);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+}
+
+.chat-empty-icon {
+  font-size: 32px;
+}
+
+.chat-suggestion-btn {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  color: var(--text-main);
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-suggestion-btn:hover {
+  border-color: var(--text-accent);
+  color: var(--text-accent);
+}
+
+.chat-bubble {
+  padding: 10px 14px;
+  border-radius: 12px;
+  max-width: 90%;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Markdown Styles inside Bubbles */
+.chat-bubble p {
+  margin: 0 0 8px 0;
+}
+.chat-bubble p:last-child {
+  margin-bottom: 0;
+}
+
+.chat-bubble ul, .chat-bubble ol {
+  margin: 4px 0 8px 0;
+  padding-left: 20px;
+}
+
+.chat-bubble li {
+  margin-bottom: 4px;
+}
+
+.chat-bubble strong, .chat-bubble b {
+  font-weight: 600;
+  color: inherit; /* Ensure it works in user bubbles too */
+}
+
+.chat-bubble pre {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 8px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  margin: 8px 0;
+}
+
+/* Specific tweaks for dark user bubble */
+.chat-bubble.user pre {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.chat-bubble code {
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(0, 0, 0, 0.05); /* Inline code bg */
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 0.95em;
+}
+
+.chat-bubble.user code {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.chat-bubble.user {
+  align-self: flex-end;
+  background: var(--text-accent);
+  color: white; /* Always white for readability on accent */
+  border-bottom-right-radius: 2px;
+}
+
+.chat-bubble.assistant {
+  align-self: flex-start;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  border-bottom-left-radius: 2px;
+  color: var(--text-main);
+}
+
+.chat-bubble.typing {
+  display: flex;
+  gap: 4px;
+  padding: 12px 16px;
+}
+
+.chat-bubble.typing span {
+  width: 4px;
+  height: 4px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  animation: typing 1.4s infinite ease-in-out both;
+}
+
+.chat-bubble.typing span:nth-child(1) { animation-delay: -0.32s; }
+.chat-bubble.typing span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes typing {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
+}
+
+.chat-error {
+  font-size: 11px;
+  color: #ef4444;
+  text-align: center;
+  padding: 8px;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 6px;
+}
+
+.chat-input-area {
+  padding: 16px;
+  border-top: 1px solid var(--border-dim);
+  background: var(--bg-sidebar);
+}
+
+.chat-input-area textarea {
+  width: 100%;
+  border: 1px solid var(--border-card);
+  background: var(--bg-app);
+  color: var(--text-main);
+  padding: 10px;
+  border-radius: 8px;
+  resize: none;
+  height: 80px;
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.chat-input-area textarea:focus {
+  border-color: var(--text-accent);
+}
+
+.chat-input-hint {
+  font-size: 10px;
+  color: var(--text-faint);
+  text-align: right;
+  margin-top: 4px;
+}
+
+/* Code Blocks in Chat */
+.chat-code-block {
+  margin: 12px 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-dim);
+}
+
+.chat-code-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid var(--border-dim);
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.chat-code-lang {
+  text-transform: uppercase;
+  font-weight: 600;
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+button.chat-copy-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 10px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin: 0;
+  width: auto;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+button.chat-copy-btn:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+/* Reset inner pre since wrapper handles container */
+.chat-bubble .chat-code-block pre {
+  margin: 0;
+  background: transparent;
+  border-radius: 0;
+  border: none;
+  padding: 12px;
+  font-size: 12px;
 }

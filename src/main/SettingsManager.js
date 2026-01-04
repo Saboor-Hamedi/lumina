@@ -12,8 +12,6 @@ class SettingsManager {
       showLineNumbers: false,
       autoSave: true,
       vimMode: false,
-      autoSave: true,
-      vimMode: false,
       cursorStyle: 'smooth', // 'block', 'line', 'smooth'
       smoothScrolling: true,
       lastSnippetId: null, // Persist last open note

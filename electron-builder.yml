@@ -1,5 +1,5 @@
-appId: com.devsnippet.app
-productName: dev-snippet
+appId: io.lumina.app
+productName: Lumina
 icon: build/icon
 directories:
   buildResources: build
@@ -13,7 +13,7 @@ asarUnpack:
   - resources/**
 win:
   icon: build/icon.ico
-  executableName: dev-snippet
+  executableName: Lumina
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
@@ -41,5 +41,6 @@ appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
 publish:
-  provider: generic
-  url: https://example.com/auto-updates
+  provider: github
+  owner: Saboor-Hamedi
+  repo: lumina

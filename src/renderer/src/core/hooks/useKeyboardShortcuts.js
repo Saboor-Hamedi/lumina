@@ -129,6 +129,13 @@ export const useKeyboardShortcuts = (shortcuts) => {
           shortcutsRef.current.onTogglePreview()
         }
       }
+      // Toggle Sidebar: Ctrl+B
+      if (isCmd && !e.shiftKey && key === 'b') {
+        if (shortcutsRef.current.onToggleSidebar) {
+          e.preventDefault()
+          shortcutsRef.current.onToggleSidebar()
+        }
+      }
     }
 
     window.addEventListener('keydown', handleOtherKeys)
