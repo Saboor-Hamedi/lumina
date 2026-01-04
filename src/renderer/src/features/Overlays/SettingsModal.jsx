@@ -75,6 +75,12 @@ const SettingsModal = ({ onClose }) => {
             >
               Appearance
             </button>
+            <button
+              className={`nav-item ${activeTab === 'shortcuts' ? 'active' : ''}`}
+              onClick={() => setActiveTab('shortcuts')}
+            >
+              Shortcuts
+            </button>
           </aside>
 
           <main className="settings-body">
@@ -210,6 +216,64 @@ const SettingsModal = ({ onClose }) => {
                       />
                       <span className="slider round"></span>
                     </label>
+                  </div>
+                </section>
+              </div>
+            )}
+
+            {activeTab === 'shortcuts' && (
+              <div className="settings-pane">
+                <section>
+                  <h3>General</h3>
+                  <div className="settings-row">
+                    <div className="row-info">Settings</div>
+                    <div className="shortcut-badge">Ctrl + ,</div>
+                  </div>
+                  <div className="settings-row">
+                    <div className="row-info">Command Palette</div>
+                    <div className="shortcut-badge">Ctrl + P</div>
+                  </div>
+                </section>
+
+                <section>
+                  <h3>File</h3>
+                  <div className="settings-row">
+                    <div className="row-info">New Note</div>
+                    <div className="shortcut-badge">Ctrl + N</div>
+                  </div>
+                  <div className="settings-row">
+                    <div className="row-info">Save</div>
+                    <div className="shortcut-badge">Ctrl + S</div>
+                  </div>
+                  <div className="settings-row">
+                    <div className="row-info">Close Tab</div>
+                    <div className="shortcut-badge">Ctrl + W</div>
+                  </div>
+                  <div className="settings-row">
+                    <div className="row-info">Close Window</div>
+                    <div className="shortcut-badge">Ctrl + Shift + W</div>
+                  </div>
+                  <div className="settings-row">
+                    <div className="row-info" style={{ color: '#ef4444' }}>
+                      Delete Note
+                    </div>
+                    <div className="shortcut-badge">Ctrl + Shift + D</div>
+                  </div>
+                </section>
+
+                <section>
+                  <h3>Navigation</h3>
+                  <div className="settings-row">
+                    <div className="row-info">Graph View</div>
+                    <div className="shortcut-badge">Ctrl + G</div>
+                  </div>
+                  <div className="settings-row">
+                    <div className="row-info">Toggle Inspector</div>
+                    <div className="shortcut-badge">Ctrl + I</div>
+                  </div>
+                  <div className="settings-row">
+                    <div className="row-info">Toggle Preview</div>
+                    <div className="shortcut-badge">Ctrl + \</div>
                   </div>
                 </section>
               </div>

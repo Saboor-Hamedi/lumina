@@ -12,11 +12,76 @@ export const useVaultStore = create((set, get) => ({
   selectedSnippet: null,
   isLoading: true,
   searchQuery: '',
+  dirtySnippetIds: [],
+  openTabs: [], // List of snippet IDs currently open
+  activeTabId: null, // The ID of the currently focused tab
 
   setSnippets: (snippets) => set({ snippets }),
-  setSelectedSnippet: (snippet) => set({ selectedSnippet: snippet }),
+
+  restoreSession: (tabs, activeId) => {
+    set((state) => {
+      const validTabs = tabs.filter((id) => state.snippets.some((s) => s.id === id))
+      const activeSnippet =
+        state.snippets.find((s) => s.id === activeId) ||
+        (validTabs.length ? state.snippets.find((s) => s.id === validTabs[0]) : null)
+
+      return {
+        openTabs: validTabs,
+        activeTabId: activeSnippet ? activeSnippet.id : null,
+        selectedSnippet: activeSnippet
+      }
+    })
+  },
+
+  // Enhanced selection: Sync with Tab System
+  setSelectedSnippet: (snippet) => {
+    if (!snippet) {
+      set({ selectedSnippet: null, activeTabId: null })
+      return
+    }
+
+    set((state) => {
+      const isAlreadyOpen = state.openTabs.includes(snippet.id)
+      const nextTabs = isAlreadyOpen ? state.openTabs : [...state.openTabs, snippet.id]
+      return {
+        selectedSnippet: snippet,
+        openTabs: nextTabs,
+        activeTabId: snippet.id
+      }
+    })
+  },
+
+  closeTab: (id) =>
+    set((state) => {
+      const nextTabs = state.dirtySnippetIds.includes(id)
+        ? state.openTabs // Prevent closing if dirty? Or let the component handle the modal?
+        : state.openTabs.filter((tid) => tid !== id)
+
+      // If we are closing the active tab, find a new one
+      let nextActiveId = state.activeTabId
+      if (state.activeTabId === id) {
+        const idx = state.openTabs.indexOf(id)
+        nextActiveId = state.openTabs[idx + 1] || state.openTabs[idx - 1] || null
+      }
+
+      const nextSelected = nextActiveId ? state.snippets.find((s) => s.id === nextActiveId) : null
+
+      return {
+        openTabs: state.openTabs.filter((tid) => tid !== id),
+        activeTabId: nextActiveId,
+        selectedSnippet: nextSelected
+      }
+    }),
+
   setLoading: (isLoading) => set({ isLoading }),
   setSearchQuery: (query) => set({ searchQuery: query }),
+  setDirty: (id, isDirty) =>
+    set((state) => {
+      const next = isDirty
+        ? [...new Set([...state.dirtySnippetIds, id])]
+        : state.dirtySnippetIds.filter((dId) => dId !== id)
+      return { dirtySnippetIds: next }
+    }),
 
   loadVault: async () => {
     console.log('[VaultStore] 🚀 Initializing Vault Load...')
@@ -79,11 +144,13 @@ export const useVaultStore = create((set, get) => ({
     }
   },
 
-  deleteSnippet: async (id) => {
+  deleteSnippet: async (id, skipConfirm = false) => {
     try {
       if (window.api?.deleteSnippet) {
-        const confirmed = await window.api.confirmDelete('Permenantly delete this note?')
-        if (!confirmed) return
+        if (!skipConfirm) {
+          const confirmed = await window.api.confirmDelete('Permenantly delete this note?')
+          if (!confirmed) return
+        }
 
         await window.api.deleteSnippet(id)
         const next = get().snippets.filter((s) => s.id !== id)

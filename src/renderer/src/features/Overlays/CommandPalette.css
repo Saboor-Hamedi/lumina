@@ -101,11 +101,29 @@
   color: var(--text-faint);
   opacity: 0.6;
   flex-shrink: 0;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.item-icon.semantic {
+  color: var(--text-accent);
+  opacity: 0.8;
+  filter: drop-shadow(0 0 3px rgba(var(--text-accent-rgb), 0.3));
 }
 
 .palette-item.active .item-icon {
   color: var(--text-accent);
   opacity: 1;
+  transform: scale(1.1);
+}
+
+.item-icon.action-icon {
+  color: #ffaa00; /* Distinct color for actions */
+  opacity: 0.8;
+}
+
+.palette-item.is-action .item-title {
+  font-weight: 600;
+  color: var(--text-main);
 }
 
 .item-info {

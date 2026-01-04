@@ -6,7 +6,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 12px 0 32px 0; /* Standardized robust bottom padding */
+  padding: 12px 0 20px 0; /* Standardized robust bottom padding */
   flex-shrink: 0;
 }
 
@@ -55,4 +55,46 @@
 
 .bar-item:active {
   transform: scale(0.92);
+}
+
+.update-btn {
+  position: relative;
+}
+
+.update-btn.error {
+  color: #ef4444; /* Red-500 */
+}
+
+.update-progress-mini {
+  position: absolute;
+  right: 6px;
+  bottom: 10px;
+  width: 4px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-inner {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: var(--text-accent);
+  transition: height 0.3s ease;
+}
+
+.spin-slow {
+  animation: spin 3s linear infinite;
+  color: #10b981; /* Green for ready */
+}
+
+.checking-spin {
+  color: var(--text-faint); /* Neutral for checking */
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }

@@ -12,6 +12,7 @@ import {
   Clock,
   Database
 } from 'lucide-react'
+import SidebarItem from './components/SidebarItem'
 import { FixedSizeList as List } from '../../components/utils/VirtualList'
 import { AutoSizer } from '../../components/utils/AutoSizer'
 import { useVaultStore } from '../../core/store/useVaultStore'
@@ -22,7 +23,7 @@ import './FileExplorer.css'
  * Robust Virtualized File Explorer (Google/FB Standard #1)
  * Upgraded to PKM Hub with Sections and Kinetic Icons.
  */
-const FileExplorer = () => {
+const FileExplorer = ({ onNavigate }) => {
   const { settings, updateSetting } = useSettingsStore()
   const collapsedSections = settings.sidebarCollapsedSections || {
     pinned: false,
@@ -38,8 +39,18 @@ const FileExplorer = () => {
     searchQuery,
     setSearchQuery,
     loadVault,
-    saveSnippet
+    saveSnippet,
+    dirtySnippetIds
   } = useVaultStore()
+
+  // Track which section user clicked from to avoid "Triple Highlight" annoyance
+  const [activeSection, setActiveSection] = useState('all')
+
+  const handleSelect = (snippet, section = 'all') => {
+    setSelectedSnippet(snippet)
+    setActiveSection(section)
+    if (onNavigate) onNavigate()
+  }
 
   const [isRefreshing, setIsRefreshing] = useState(false)
 
@@ -59,14 +70,14 @@ const FileExplorer = () => {
   const handleNew = async () => {
     const newSnippet = {
       id: crypto.randomUUID(),
-      title: 'New Note',
+      title: 'New Notes',
       code: '',
       language: 'markdown',
       timestamp: Date.now(),
       isPinned: false
     }
     await saveSnippet(newSnippet)
-    setSelectedSnippet(newSnippet)
+    handleSelect(newSnippet, 'all')
   }
 
   // Filtered and Sorted Data
@@ -84,30 +95,13 @@ const FileExplorer = () => {
   const Row = ({ index, style }) => {
     const snippet = filtered[index]
     if (!snippet) return null
-
-    const isActive = selectedSnippet?.id === snippet.id
-
-    const getIcon = () => {
-      const lang = (snippet.language || 'markdown').toLowerCase()
-      if (['javascript', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'python', 'py'].includes(lang))
-        return <FileCode size={14} className="item-icon" />
-      if (lang === 'markdown' || lang === 'md') return <Hash size={14} className="item-icon" />
-      return <FileText size={14} className="item-icon" />
-    }
-
     return (
-      <div
+      <SidebarItem
+        snippet={snippet}
+        isActive={selectedSnippet?.id === snippet.id && activeSection === 'all'}
+        onClick={() => handleSelect(snippet, 'all')}
         style={style}
-        className={`tree-item ${isActive ? 'active' : ''}`}
-        onClick={() => setSelectedSnippet(snippet)}
-        title={snippet.title}
-      >
-        {getIcon()}
-        <span className="item-title">{snippet.title || 'Untitled'}</span>
-        {snippet.isPinned && (
-          <Star size={10} fill="currentColor" style={{ marginLeft: 'auto', opacity: 0.5 }} />
-        )}
-      </div>
+      />
     )
   }
 
@@ -149,14 +143,12 @@ const FileExplorer = () => {
             {!collapsedSections.pinned && (
               <div className="section-static-items">
                 {pinnedItems.map((item) => (
-                  <div
+                  <SidebarItem
                     key={item.id}
-                    className={`tree-item ${selectedSnippet?.id === item.id ? 'active' : ''}`}
-                    onClick={() => setSelectedSnippet(item)}
-                  >
-                    <Hash size={14} className="item-icon" />
-                    <span className="item-title">{item.title}</span>
-                  </div>
+                    snippet={item}
+                    isActive={selectedSnippet?.id === item.id && activeSection === 'pinned'}
+                    onClick={() => handleSelect(item, 'pinned')}
+                  />
                 ))}
               </div>
             )}
@@ -174,14 +166,12 @@ const FileExplorer = () => {
             {!collapsedSections.recent && (
               <div className="section-static-items">
                 {recentItems.map((item) => (
-                  <div
+                  <SidebarItem
                     key={item.id}
-                    className={`tree-item ${selectedSnippet?.id === item.id ? 'active' : ''}`}
-                    onClick={() => setSelectedSnippet(item)}
-                  >
-                    <Hash size={14} className="item-icon" />
-                    <span className="item-title">{item.title}</span>
-                  </div>
+                    snippet={item}
+                    isActive={selectedSnippet?.id === item.id && activeSection === 'recent'}
+                    onClick={() => handleSelect(item, 'recent')}
+                  />
                 ))}
               </div>
             )}

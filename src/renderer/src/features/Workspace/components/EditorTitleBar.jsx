@@ -16,7 +16,9 @@ const EditorTitleBar = ({
   title,
   snippet,
   setSelectedSnippet,
-  isDirty, // Unused here?
+  isDirty,
+  viewMode,
+  setViewMode,
   onSave,
   onToggleInspector,
   onExportHTML,
@@ -56,7 +58,9 @@ const EditorTitleBar = ({
         <div className="breadcrumb-item">
           {(() => {
             const lang = (snippet?.language || 'markdown').toLowerCase()
-            if (['javascript', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'python', 'py'].includes(lang))
+            if (
+              ['javascript', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'python', 'py'].includes(lang)
+            )
               return <FileCode size={12} className="breadcrumb-icon" />
             if (lang === 'json') return <FileJson size={12} className="breadcrumb-icon" />
             if (lang === 'markdown' || lang === 'md')
@@ -64,25 +68,33 @@ const EditorTitleBar = ({
             return <FileType size={12} className="breadcrumb-icon" />
           })()}
           <span className="breadcrumb-active">{title || 'Untitled'}</span>
+          {isDirty && <div className="dirty-indicator" style={{ marginLeft: '8px' }} />}
         </div>
       </div>
 
       <div className="editor-controls">
-        <div style={{ position: 'relative' }}>
+        <button className="icon-btn" onClick={onSave} title="Save (Ctrl+S)">
+          <Save size={16} />
+        </button>
+        <div className="menu-container">
           <button
-            className="icon-btn"
+            className={`icon-btn menu-trigger ${showMoreMenu ? 'active' : ''}`}
             ref={buttonRef}
             onClick={(e) => {
-                e.stopPropagation(); // Prevent immediate close
-                setShowMoreMenu(!showMoreMenu);
+              e.stopPropagation()
+              setShowMoreMenu(!showMoreMenu)
             }}
-            title="More Options"
+            title="More Options (Ctrl+I)"
           >
             <MoreVertical size={18} />
           </button>
-          
+
           {showMoreMenu && (
-            <div className="export-menu-dropdown" ref={menuRef} onClick={(e) => e.stopPropagation()}>
+            <div
+              className="native-dropdown-menu"
+              ref={menuRef}
+              onClick={(e) => e.stopPropagation()}
+            >
               <div
                 className="dropdown-item"
                 onClick={() => {
@@ -90,9 +102,9 @@ const EditorTitleBar = ({
                   setShowMoreMenu(false)
                 }}
               >
-                <Save size={11} className="menu-icon" />
                 <span className="menu-label">Save File</span>
                 <span className="shortcut-label">Ctrl+S</span>
+                <Save size={12} className="menu-icon-right" />
               </div>
               <div className="dropdown-divider" />
               <div
@@ -102,16 +114,28 @@ const EditorTitleBar = ({
                   setShowMoreMenu(false)
                 }}
               >
-                <Copy size={11} className="menu-icon" />
                 <span className="menu-label">Copy Raw Markdown</span>
+                <Copy size={12} className="menu-icon-right" />
               </div>
-              <div className="dropdown-item" onClick={onExportHTML}>
-                <FileCode size={11} className="menu-icon" />
+              <div
+                className="dropdown-item"
+                onClick={() => {
+                  onExportHTML()
+                  setShowMoreMenu(false)
+                }}
+              >
                 <span className="menu-label">Copy HTML Code</span>
+                <FileCode size={12} className="menu-icon-right" />
               </div>
-              <div className="dropdown-item" onClick={onExportPDF}>
-                <Printer size={11} className="menu-icon" />
+              <div
+                className="dropdown-item"
+                onClick={() => {
+                  onExportPDF()
+                  setShowMoreMenu(false)
+                }}
+              >
                 <span className="menu-label">Export to PDF</span>
+                <Printer size={12} className="menu-icon-right" />
               </div>
               <div className="dropdown-divider" />
               <div
@@ -121,9 +145,9 @@ const EditorTitleBar = ({
                   setShowMoreMenu(false)
                 }}
               >
-                <Sidebar size={11} className="menu-icon" />
                 <span className="menu-label">Toggle Inspector</span>
                 <span className="shortcut-label">Ctrl+I</span>
+                <Sidebar size={12} className="menu-icon-right" />
               </div>
             </div>
           )}

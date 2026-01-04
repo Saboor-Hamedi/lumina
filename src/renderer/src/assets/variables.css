@@ -29,12 +29,13 @@
   --bg-editor: #000000;
   --bg-active: #1a1a1a;
   --bg-active-line: rgba(255, 255, 255, 0.03);
-  --bg-selection: rgba(123, 97, 255, 0.3);
+  --bg-selection: rgba(64, 186, 250, 0.3);
   
   --text-main: #f0f0f0;
   --text-muted: #a0a0a0;
   --text-faint: #444444;
-  --text-accent: #7b61ff;
+  --text-accent: #40bafa;
+  --text-accent-hover: #30a9e9;
   
   --border-dim: #1d1d1d;
   --border-card: #222222;
@@ -48,12 +49,13 @@
   --bg-editor: #1e1e1e;
   --bg-active: rgba(255, 255, 255, 0.05);
   --bg-active-line: rgba(157, 124, 255, 0.07);
-  --bg-selection: rgba(75, 135, 255, 0.3);
+  --bg-selection: rgba(64, 186, 250, 0.3);
 
   --text-main: #dddddd;
   --text-muted: #aaaaaa;
   --text-faint: #666666;
-  --text-accent: #9d7cff;
+  --text-accent: #40bafa;
+  --text-accent-hover: #30a9e9;
 
   --border-dim: rgba(255, 255, 255, 0.1);
   --border-card: rgba(255, 255, 255, 0.05);

@@ -15,7 +15,7 @@ const themes = [
       text: '#1a1a1a',
       muted: '#666666',
       faint: '#999999',
-      accent: '#7b61ff'
+      accent: '#40bafa'
     }
   },
   {
@@ -27,7 +27,7 @@ const themes = [
       text: '#dfdfdf',
       muted: '#aaaaaa',
       faint: '#666666',
-      accent: '#9d7cff'
+      accent: '#40bafa'
     }
   },
   {
@@ -39,7 +39,7 @@ const themes = [
       text: '#f0f0f0',
       muted: '#a0a0a0',
       faint: '#444444',
-      accent: '#7b61ff'
+      accent: '#40bafa'
     }
   },
   {
@@ -51,7 +51,7 @@ const themes = [
       text: '#0f172a',
       muted: '#475569',
       faint: '#94a3b8',
-      accent: '#0284c7'
+      accent: '#40bafa'
     }
   }
 ]

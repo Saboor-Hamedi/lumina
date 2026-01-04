@@ -25,6 +25,17 @@ const api = {
   toggleMaximize: () => electronAPI.ipcRenderer.invoke('window:toggle-maximize'),
   closeWindow: () => electronAPI.ipcRenderer.invoke('window:close'),
   setTranslucency: (enabled) => electronAPI.ipcRenderer.invoke('window:set-translucency', enabled),
+  // Auto-Updater
+  checkForUpdates: () => electronAPI.ipcRenderer.invoke('update:check'),
+  downloadUpdate: () => electronAPI.ipcRenderer.invoke('update:download'),
+  quitAndInstall: () => electronAPI.ipcRenderer.invoke('update:install'),
+  onUpdateStatus: (cb) => {
+    const listener = (_, status) => cb(status)
+    electronAPI.ipcRenderer.on('update:status', listener)
+    return () => electronAPI.ipcRenderer.removeListener('update:status', listener)
+  },
+
+  // Export
   exportPDF: (payload) => electronAPI.ipcRenderer.invoke('window:export-pdf', payload),
   exportHTML: (payload) => electronAPI.ipcRenderer.invoke('window:export-html', payload)
 }

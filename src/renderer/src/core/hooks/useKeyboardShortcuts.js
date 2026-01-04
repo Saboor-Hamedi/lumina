@@ -59,22 +59,64 @@ export const useKeyboardShortcuts = (shortcuts) => {
       const isCmd = e.ctrlKey || e.metaKey
       const key = e.key.toLowerCase()
 
-      // Save: Ctrl+S
-      if (isCmd && key === 's' && shortcutsRef.current.onSave) {
+      // Save: Ctrl+S (Strictly no Shift)
+      if (isCmd && !e.shiftKey && key === 's' && shortcutsRef.current.onSave) {
         e.preventDefault()
         shortcutsRef.current.onSave()
       }
 
-      // Toggle Palette: Ctrl+P only
-      if (isCmd && key === 'p' && shortcutsRef.current.onTogglePalette) {
+      // Toggle Palette: Ctrl+P
+      if (isCmd && !e.shiftKey && key === 'p' && shortcutsRef.current.onTogglePalette) {
         e.preventDefault()
         shortcutsRef.current.onTogglePalette()
       }
 
-      // Toggle Inspector: Ctrl+I (Strictly no Shift)
+      // Toggle Settings: Ctrl+,
+      if (isCmd && key === ',' && shortcutsRef.current.onToggleSettings) {
+        e.preventDefault()
+        shortcutsRef.current.onToggleSettings()
+      }
+
+      // New Snippet: Ctrl+N
+      if (isCmd && !e.shiftKey && key === 'n' && shortcutsRef.current.onNew) {
+        e.preventDefault()
+        shortcutsRef.current.onNew()
+      }
+
+      // Delete Snippet: Ctrl+Shift+D
+      if (isCmd && e.shiftKey && key === 'd' && shortcutsRef.current.onDelete) {
+        e.preventDefault()
+        shortcutsRef.current.onDelete()
+      }
+
+      // Toggle Inspector: Ctrl+I
       if (isCmd && !e.shiftKey && key === 'i' && shortcutsRef.current.onToggleInspector) {
         e.preventDefault()
         shortcutsRef.current.onToggleInspector()
+      }
+
+      // Graph Nexus: Ctrl+G
+      if (isCmd && !e.shiftKey && key === 'g' && shortcutsRef.current.onToggleGraph) {
+        e.preventDefault()
+        shortcutsRef.current.onToggleGraph()
+      }
+
+      // Close Tab: Ctrl+W
+      if (isCmd && !e.shiftKey && key === 'w') {
+        if (shortcutsRef.current.onCloseTab) {
+          e.preventDefault()
+          e.stopPropagation()
+          shortcutsRef.current.onCloseTab()
+        }
+      }
+
+      // Close Window: Ctrl+Shift+W
+      if (isCmd && e.shiftKey && key === 'w') {
+        if (shortcutsRef.current.onCloseWindow) {
+          e.preventDefault()
+          e.stopPropagation()
+          shortcutsRef.current.onCloseWindow()
+        }
       }
 
       // Toggle Preview: Ctrl+\ or Ctrl+Shift+V

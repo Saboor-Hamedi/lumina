@@ -225,8 +225,8 @@
 }
 
 @keyframes kinetic-breathe {
-  0%, 100% { opacity: 1; filter: drop-shadow(0 0 5px rgba(123, 97, 255, 0.3)); }
-  50% { opacity: 0.6; filter: drop-shadow(0 0 20px rgba(123, 97, 255, 0.6)); }
+  0%, 100% { opacity: 1; filter: drop-shadow(0 0 5px rgba(64, 186, 250, 0.3)); }
+  50% { opacity: 0.6; filter: drop-shadow(0 0 20px rgba(64, 186, 250, 0.6)); }
 }
 
 /* Glass-Capsule Highlighting */
@@ -259,16 +259,16 @@
   background: var(--bg-active);
   color: var(--text-accent);
   font-weight: 500;
-  border-color: rgba(123, 97, 255, 0.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: none; /* Removed heavy shadow */
 }
 
 .tree-item.active::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 6px;
-  bottom: 6px;
+  top: 8px;
+  bottom: 8px;
   width: 3px;
   background: var(--text-accent);
   border-radius: 0 2px 2px 0;
@@ -310,4 +310,68 @@
 .item-icon.hash {
   color: var(--text-accent);
   opacity: 0.5;
+}
+
+/* RIGHT META CONTAINER */
+.item-meta-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pin-icon {
+  opacity: 0.4;
+  color: var(--text-faint);
+  transition: opacity 0.2s;
+}
+
+.tree-item:hover .pin-icon {
+  opacity: 0.8;
+}
+
+/* INLINE RENAMING */
+.inline-rename-input {
+  background: var(--bg-editor);
+  border: 1px solid var(--text-accent);
+  border-radius: 4px;
+  color: var(--text-main);
+  font-size: 13px;
+  padding: 0 4px;
+  width: 100%;
+  outline: none;
+  font-family: inherit;
+  box-shadow: 0 0 0 3px rgba(var(--text-accent-rgb, 64, 186, 250), 0.1);
+}
+
+/* HOVER QUICK ACTIONS */
+.hover-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 4px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.action-btn:hover {
+  background: var(--bg-active);
+  color: var(--text-accent);
+}
+
+.action-btn.active {
+  color: var(--text-accent);
 }

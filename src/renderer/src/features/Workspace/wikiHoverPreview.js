@@ -2,137 +2,119 @@ import { hoverTooltip } from '@codemirror/view'
 import { marked } from 'marked'
 
 /**
- * WikiLink Hover Preview - Enhanced Version
- * Shows full snippet content in a scrollable, well-formatted tooltip
- * Last updated: 2026-01-04
+ * WikiLink Hover Preview - Enhanced Robust Version
+ * Renders full markdown and handles nested links/WikiLinks
  */
-export const wikiHoverPreview = (getSnippets, onCreate) =>
-  hoverTooltip(
-    (view, pos, side) => {
-      // 1. Get line
-      const line = view.state.doc.lineAt(pos)
-      const text = line.text
-      const from = line.from
+export const wikiHoverPreview = (getSnippets, onNavigate, onCreate) =>
+  hoverTooltip((view, pos, side) => {
+    const line = view.state.doc.lineAt(pos)
+    const text = line.text
+    const from = line.from
 
-      // 2. Regex scan for link under cursor
-      const wikiRegex = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g
-      let match
-      while ((match = wikiRegex.exec(text)) !== null) {
-        const start = from + match.index
-        const end = start + match[0].length
+    const wikiRegex = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g
+    let match
+    while ((match = wikiRegex.exec(text)) !== null) {
+      const start = from + match.index
+      const end = start + match[0].length
 
-        // Check overlap
-        if (pos >= start && pos <= end) {
-          const targetTitle = match[1]
-          const isReadOnly = view.state.readOnly // Capture before create function
+      if (pos >= start && pos <= end) {
+        const targetTitle = match[1]
 
-          return {
-            pos: start + 2, // Anchor to the text, not the brackets (fixes hidden bracket issues)
-            end: end - 2,
-            above: true,
-            create(editorView) {
-              try {
-                const snippets = typeof getSnippets === 'function' ? getSnippets() : []
-                const snippet = snippets.find(
-                  (s) => s.title.toLowerCase() === targetTitle.toLowerCase()
-                )
+        return {
+          pos: start,
+          end,
+          above: false,
+          create(view) {
+            const snippets = typeof getSnippets === 'function' ? getSnippets() : []
+            const snippet = snippets.find(
+              (s) => s.title.toLowerCase() === targetTitle.toLowerCase()
+            )
 
-                const dom = document.createElement('div')
-                dom.className = 'cm-wiki-hover'
+            const dom = document.createElement('div')
+            dom.className = 'cm-wiki-hover'
 
-                if (snippet) {
-                  // Header with title
-                  const header = document.createElement('div')
-                  header.className = 'wiki-hover-header'
+            if (snippet) {
+              // Header
+              const header = document.createElement('div')
+              header.className = 'wiki-hover-header'
 
-                  const title = document.createElement('div')
-                  title.className = 'wiki-hover-title'
-                  title.textContent = snippet.title
+              const title = document.createElement('div')
+              title.className = 'wiki-hover-title'
+              title.textContent = snippet.title
 
-                  // Metadata
-                  const raw = snippet.code || ''
-                  const wordCount = raw.trim() ? raw.trim().split(/\s+/).length : 0
-                  const charCount = raw.length
+              const meta = document.createElement('div')
+              meta.className = 'wiki-hover-meta'
+              const len = (snippet.code || '').length
+              meta.textContent = `${snippet.language || 'md'} · ${len} chars`
 
-                  const meta = document.createElement('div')
-                  meta.className = 'wiki-hover-meta'
-                  meta.textContent = `${wordCount} words · ${charCount} chars`
+              header.appendChild(title)
+              header.appendChild(meta)
+              dom.appendChild(header)
 
-                  header.appendChild(title)
-                  header.appendChild(meta)
+              // Render Content
+              const contentWrap = document.createElement('div')
+              contentWrap.className = 'wiki-hover-content-wrap'
 
-                  // Content area
-                  const contentWrap = document.createElement('div')
-                  contentWrap.className = 'wiki-hover-content-wrap'
+              const content = document.createElement('div')
+              content.className = 'wiki-hover-content markdown-rendered-preview'
 
-                  const content = document.createElement('div')
-                  content.className = 'wiki-hover-content markdown-rendered-preview'
+              // Process WikiLinks and @[links] inside the preview content
+              let html = marked.parse(snippet.code || '')
+              // Turn [[Link]] into clickable spans
+              html = html.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, p1, p2) => {
+                return `<span class="preview-wikilink" data-target="${p1}">${p2 || p1}</span>`
+              })
+              // Turn @[Path] into clickable spans
+              html = html.replace(/@\[([^\]]+)\]/g, (match, p1) => {
+                const target = p1.includes('/') ? p1.split('/').pop().replace(/\.md$/, '') : p1
+                return `<span class="preview-wikilink" data-target="${target}">${p1}</span>`
+              })
 
-                  if (raw.trim()) {
-                    content.innerHTML = marked.parse(raw)
-                  } else {
-                    content.textContent = '(Empty note)'
-                    content.style.opacity = '0.4'
-                    content.style.fontStyle = 'italic'
+              content.innerHTML = html
+              contentWrap.appendChild(content)
+              dom.appendChild(contentWrap)
+
+              // Interaction Handler
+              dom.addEventListener('click', (e) => {
+                const wikiLink = e.target.closest('.preview-wikilink')
+                if (wikiLink) {
+                  const target = wikiLink.getAttribute('data-target')
+                  const targetSnippet = snippets.find(
+                    (s) => s.title.toLowerCase() === target.toLowerCase()
+                  )
+                  if (targetSnippet && onNavigate) {
+                    onNavigate(targetSnippet)
                   }
-
-                  contentWrap.appendChild(content)
-
-                  // Footer
-                  const footer = document.createElement('div')
-                  footer.className = 'wiki-hover-footer'
-
-                  const hint = document.createElement('span')
-                  hint.textContent = isReadOnly ? 'Click to open' : 'Ctrl+Click to open'
-                  hint.style.opacity = '0.6'
-
-                  footer.appendChild(hint)
-
-                  dom.appendChild(header)
-                  dom.appendChild(contentWrap)
-                  dom.appendChild(footer)
-                } else {
-                  // Not found state - MAKE IT INTERACTIVE
-                  dom.classList.add('not-found')
-                  dom.style.cursor = 'pointer'
-
-                  const notFoundIcon = document.createElement('div')
-                  notFoundIcon.className = 'wiki-hover-not-found-icon'
-                  notFoundIcon.textContent = '➕'
-
-                  const notFoundText = document.createElement('div')
-                  notFoundText.className = 'wiki-hover-not-found-text'
-                  notFoundText.textContent = `Create note: "${targetTitle}"`
-
-                  const notFoundHint = document.createElement('div')
-                  notFoundHint.className = 'wiki-hover-not-found-hint'
-                  notFoundHint.textContent = 'Click to instantly create this note'
-
-                  dom.appendChild(notFoundIcon)
-                  dom.appendChild(notFoundText)
-                  dom.appendChild(notFoundHint)
-
-                  dom.onclick = () => {
-                    if (typeof onCreate === 'function') onCreate(targetTitle)
-                  }
+                  return
                 }
-                return { dom }
-              } catch (err) {
-                console.error('WikiHover Error:', err)
-                const errDom = document.createElement('div')
-                errDom.className = 'cm-wiki-hover error'
-                errDom.textContent = 'Error loading preview'
-                return { dom: errDom }
+
+                // If clicking footer or empty space, maybe navigate to the main snippet
+                if (e.target.closest('.wiki-hover-footer') || e.target === dom) {
+                  if (onNavigate) onNavigate(snippet)
+                }
+              })
+
+              // Footer
+              const footer = document.createElement('div')
+              footer.className = 'wiki-hover-footer'
+              footer.textContent = 'Click to open note'
+              dom.appendChild(footer)
+            } else {
+              dom.classList.add('not-found')
+              dom.style.padding = '12px'
+              dom.innerHTML = `<div style="font-weight:700;margin-bottom:4px;">Note not found</div>
+                                 <div style="font-size:11px;opacity:0.6;margin-bottom:8px;">"${targetTitle}" does not exist yet.</div>
+                                 <button class="create-note-btn">Create Note</button>`
+
+              const btn = dom.querySelector('.create-note-btn')
+              if (btn) {
+                btn.onclick = () => onCreate && onCreate(targetTitle)
               }
             }
+            return { dom }
           }
         }
       }
-      return null
-    },
-    {
-      // Hover configuration
-      hoverTime: 300, // Show after 300ms hover
-      hideOnChange: true // Hide when document changes
     }
-  )
+    return null
+  })

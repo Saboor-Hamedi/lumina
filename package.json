@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Lumina - A premium, vault-based snippet sanctuary.",
   "main": "./out/main/index.js",
-  "author": "example.com",
+  "author": "Saboor Hamedi",
   "homepage": "https://electron-vite.org",
   "scripts": {
     "format": "prettier --write .",
@@ -17,7 +17,9 @@
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "npm run build && electron-builder --mac",
     "build:linux": "npm run build && electron-builder --linux",
-    "make:icons": "npx electron-icon-maker --input renderer/public/icon.png --output build"
+    "dist:publish": "npm run build && dotenv -- electron-builder --win --publish always",
+    "make:icons": "npx electron-icon-maker --input resources/icon.png --output build",
+    "analyze": "electron-vite build --mode analyze"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.0",
@@ -36,7 +38,9 @@
     "better-sqlite3": "^12.5.0",
     "chokidar": "^5.0.0",
     "codemirror": "^6.0.2",
+    "d3-force": "^3.0.0",
     "dexie": "^4.2.1",
+    "electron-updater": "^6.6.2",
     "flexsearch": "^0.8.212",
     "github-markdown-css": "^5.8.1",
     "gray-matter": "^4.0.3",
@@ -59,6 +63,7 @@
     "@electron/rebuild": "^4.0.1",
     "@vitejs/plugin-react": "^5.0.3",
     "autoprefixer": "^10.4.22",
+    "dotenv-cli": "^11.0.0",
     "electron": "^39.2.4",
     "electron-builder": "^26.0.12",
     "electron-vite": "^4.0.1",
@@ -70,10 +75,18 @@
     "prettier": "^3.6.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "rollup-plugin-visualizer": "^6.0.5",
     "tailwindcss": "^3.4.17",
     "vite": "^7.1.6"
   },
   "win": {
-    "icon": "build/icon.ico"
+    "icon": "build/icon.ico",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Saboor-Hamedi",
+        "repo": "lumina"
+      }
+    ]
   }
 }

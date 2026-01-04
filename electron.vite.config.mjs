@@ -1,9 +1,10 @@
-/* Force Restart Timestamp: 1 */
+/* Force Restart Timestamp: 2 */
 import { resolve } from 'path'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import react from '@vitejs/plugin-react'
+import { visualizer } from 'rollup-plugin-visualizer'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   main: {
     plugins: [externalizeDepsPlugin()],
     build: {
@@ -21,7 +22,13 @@ export default defineConfig({
         '@renderer': resolve('src/renderer/src')
       }
     },
-    plugins: [react()],
+    plugins: [
+      react(),
+      mode === 'analyze' && visualizer({
+        filename: 'stats-renderer.html',
+        open: true
+      })
+    ],
     css: {
       postcss: './postcss.config.js'
     },
@@ -29,4 +36,4 @@ export default defineConfig({
       include: ['react-window']
     }
   }
-})
+}))

@@ -44,7 +44,7 @@ export const useTheme = () => {
       if (colors.accent) root.style.setProperty('--text-accent', colors.accent)
 
       // Auto-calculate derivatives if not provided to maintain contrast
-      root.style.setProperty('--bg-active', 'rgba(123, 97, 255, 0.12)')
+      root.style.setProperty('--bg-active', 'rgba(64, 186, 250, 0.12)')
     }
   }
 

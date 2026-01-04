@@ -6,6 +6,7 @@ import {
 import EditorTitleBar from './components/EditorTitleBar'
 import EditorFooter from './components/EditorFooter'
 import EditorMetadata from './components/EditorMetadata'
+import TabBar from './components/TabBar'
 import PreviewModal from '../Overlays/PreviewModal'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { richMarkdown } from './richMarkdown'
@@ -51,7 +52,7 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
   const titleRef = useRef(null)
 
   const { settings } = useSettingsStore()
-  const { snippets, setSelectedSnippet, updateSnippetSelection } = useVaultStore()
+  const { snippets, setSelectedSnippet, updateSnippetSelection, setDirty } = useVaultStore()
   const snippetsRef = useRef(snippets)
   const [title, setTitle] = useState(snippet?.title || '')
 
@@ -98,6 +99,7 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
         imageHoverPreview,
         wikiHoverPreview(
           () => snippetsRef.current,
+          (s) => setSelectedSnippet(s),
           async (targetTitle) => {
             const newSnippet = {
               id: crypto.randomUUID(),
@@ -123,6 +125,9 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
           ? [EditorView.editable.of(false), EditorState.readOnly.of(true)]
           : []),
         keymap.of([
+          { key: 'Mod-g', run: () => true }, // Intercept to allow Nexus to take over
+          { key: 'Mod-f', run: () => true }, // Block default search
+          { key: 'Mod-h', run: () => true }, // Block default replace
           ...closeBracketsKeymap,
           ...defaultKeymap,
           ...searchKeymap,
@@ -252,18 +257,18 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
     setIsDirty(false)
   }, [snippet?.id])
 
-  // Auto-save functionality
   useEffect(() => {
+    setDirty(snippet.id, isDirty)
     if (!isDirty) return
 
     const autoSaveTimer = setTimeout(() => {
       handleSave()
-    }, 2000) // Auto-save after 2 seconds of inactivity
+    }, 2000)
 
     return () => {
       clearTimeout(autoSaveTimer)
     }
-  }, [isDirty, title])
+  }, [isDirty, title, snippet.id])
 
   const handleSave = () => {
     const code = viewRef.current?.state.doc.toString() || ''
@@ -273,6 +278,7 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
 
     onSave({ ...snippetRef.current, code, title, selection, timestamp: Date.now() })
     setIsDirty(false)
+    setDirty(snippet.id, false)
   }
 
   const handleExport = async (format) => {
@@ -339,18 +345,19 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
     <div
       className={`markdown-editor seamless-editor mode-${viewMode} cursor-${settings.cursorStyle}`}
     >
-      <div className="editor-titlebar">
-        <EditorTitleBar
-          title={title}
-          snippet={snippet}
-          setSelectedSnippet={setSelectedSnippet}
-          isDirty={isDirty}
-          onSave={handleSave}
-          onToggleInspector={onToggleInspector}
-          onExportHTML={() => handleExport('html')}
-          onExportPDF={() => handleExport('pdf')}
-        />
-      </div>
+      <TabBar />
+      <EditorTitleBar
+        title={title}
+        snippet={snippet}
+        setSelectedSnippet={setSelectedSnippet}
+        isDirty={isDirty}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        onSave={handleSave}
+        onToggleInspector={onToggleInspector}
+        onExportHTML={() => handleExport('html')}
+        onExportPDF={() => handleExport('pdf')}
+      />
 
       <div className="editor-scroller">
         <div className="editor-canvas-wrap">

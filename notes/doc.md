@@ -7,9 +7,12 @@
 **Core Philosophy:**
 
 - **Vault-First Architecture**: All notes are stored as plain markdown files with YAML frontmatter
+- **Multi-Tab Workspace**: High-performance session management allowing multiple notes to be open simultaneously
+- **Intelligent Dashboard**: A dynamic launchpad summarizing recent work and pinned ideas on app startup
 - **Zero-Jump Performance**: Instant startup via IndexedDB caching, virtualized rendering for 10,000+ notes
 - **Live Preview Excellence**: "What You See Is What You Mean" editing with intelligent syntax hiding
-- **Robust State Management**: Atomic stores with Zustand, optimistic updates, and error recovery
+- **Robust State Management**: Atomic stores with Zustand, optimistic updates, and multi-tab sync
+- **Dynamic Workspaces**: Resizable sidebars and flexible layouts for custom productivity flows
 
 ---
 
@@ -218,6 +221,8 @@ b:\electron\typing\
 - Snippet CRUD operations
 - Search/filter state
 - Loading states
+- **Multi-Tab State**: Manages `openTabs` (ordered list of snippet IDs) and `activeTabId`.
+- **Dirty Engine**: Tracks unsaved changes across the entire workspace via `dirtySnippetIds`.
 - IndexedDB cache synchronization
 
 **Key Methods:**
@@ -580,9 +585,83 @@ window.api = {
 
 ---
 
-## Advanced Features
+---
 
-### Auto-Save System
+## Interactive Systems
+
+### 12. Global Keyboard Lifecycle
+
+**Hook**: `useKeyboardShortcuts.js`
+
+**Architecture**: Stack-based modal hierarchy.
+
+**Strict Modifier Logic**:
+Lumina implements strict modifier checking to prevent "shortcut bleed." For example, `Ctrl + P` will **only** trigger the Command Palette if `Shift` is NOT pressed. This ensures system consistency and avoids accidental triggers when using modified combinations.
+
+**Core Shortcuts**:
+
+- `Ctrl/Cmd + S` - Strict Save (no Shift)
+- `Ctrl/Cmd + P` - Strict Command Palette (no Shift)
+- `Ctrl/Cmd + G` - **Graph Nexus** (Visual Navigation)
+- `Ctrl/Cmd + I` - Toggle Developer Inspector
+- `Ctrl/Cmd + \` - Toggle Live Preview / Source Mode
+- `Escape` - Global dismiss (LIFO order: closes topmost overlay first)
+
+**Search Suppression**:
+To ensure `Ctrl + G` is reserved exclusively for the Nexus and `Ctrl + P` for the Command Palette, Lumina explicitly intercepts and sinks CodeMirror's native search, find-next, and replace keybindings (`Mod-G`, `Mod-F`, `Mod-H`) within the editor.
+
+---
+
+### 13. Editor Title Bar (Control Center)
+
+**Location**: `src/renderer/src/features/Workspace/components/EditorTitleBar.jsx`
+
+**Native Design Philosophy**:
+The editor's title bar uses a custom "More Options" dropdown designed to mirror native operating system behavior.
+
+**Key Refinements**:
+
+- **Right-Aligned Layout**: Icons are positioned on the right of labels to prioritize the action name, following modern UI standards.
+- **Glassmorphism**: High-intensity `backdrop-filter: blur(20px)` and translucency for premium depth.
+- **Micro-Animations**: Uses `cubic-bezier` entrance scaling for a snappy, integrated feel.
+- **Active Trigger States**: The trigger button maintains an active background while open to provide spatial feedback.
+
+---
+
+### 14. Graph Nexus (Spatial Navigation)
+
+**Location**: `src/renderer/src/features/Overlays/GraphNexus.jsx`
+
+**Trigger**: `Ctrl + G` (Global Overlay)
+
+**Purpose**: A contextual, non-destructive knowledge navigator that floats over the editor.
+
+**Architectural Modes**:
+
+1. **Universe**: High-level map of the entire vault for cluster identification.
+2. **Neighborhood**: Automatically filters the graph to show only the active note and its 1st-degree connections.
+3. **The Orb**: A volumetric "Focus Mode" inside a glowing lens. Uses **D3 Radial Force** to center active thoughts.
+
+**Insight Tooltips**:
+Hovering over any node triggers a **Nexus Insight Card**—a translucent overlay providing:
+
+- Word count & language metadata.
+- A 160-char content preview.
+- Associated tags.
+- Relationship highlighting (dimming unrelated nodes on hover).
+
+**Chronological Gravity**:
+The physics engine calculates the "Age" of a note based on its last-modified timestamp.
+
+- **Living Core**: Newer notes gravitate toward the dense center.
+- **Legacy Rim**: Older notes drift to the periphery.
+
+**Theme Awareness**:
+The Nexus is fully integrated with Lumina's theme engine. Backgrounds, text tokens, and 'The Orb' lens colors dynamically calculate their values based on the active theme's CSS variables, ensuring a seamless aesthetic transition between Dark, Nord, and Polaris modes.
+
+---
+
+## Technical Features
 
 **Location**: `MarkdownEditor.jsx`
 
@@ -640,7 +719,54 @@ window.api = {
 
 ---
 
-### Custom Title Bar
+---
+
+### 10. Multi-Tab Workspace
+
+**Location**: `src/renderer/src/features/Workspace/components/TabBar.jsx`
+
+**Purpose**: High-density management of multiple active thoughts, allowing users to switch contexts instantly.
+
+**Key Features:**
+
+- **Visual Consistency**: Maps file-type icons (JS, Python, MD) to the tab header.
+- **Dirty State Logic**: The close button becomes a pulsing indicator dot when changes are unsaved.
+- **Optimized Truncation**: Elegant title management with ellipsis to prevent layout overflow.
+- **Chrome-Inspired Design**: Accent-top indicator and elevated card look for the active tab.
+
+---
+
+### 11. Intelligent Dashboard
+
+**Location**: `src/renderer/src/features/Workspace/components/Dashboard.jsx`
+
+**Purpose**: A dynamic, non-empty starting point that surfaces the most relevant work upon entry.
+
+**Sections:**
+
+- **Continuity Feed**: Surfaces the 4 most recently modified notes.
+- **Pinned Gravity**: Highlights notes explicitly marked as 'Pinned' for high-priority access.
+- **Action Tiles**: Direct triggers for 'New Note' and 'Command Palette'.
+- **Branding**: Displays vault-wide statistics (total note count).
+
+---
+
+### 12. Dynamic Workspace Resizing
+
+**Location**: `src/renderer/src/features/Layout/AppShell.jsx`
+
+**Purpose**: Professional-grade spatial customization.
+
+**Logic:**
+
+- **Drag Listener**: Global mouse listeners handle width calculation during active resizing.
+- **Compensated Math**: Automatically subtracts the Ribbon width (60px) to ensure accurate sizing from the screen edge.
+- **Safety Boundaries**: Strictly enforces 180px - 500px width to protect UI density.
+- **Visual Feedback**: Col-resize cursors and accent-colored resizer bars during interaction.
+
+---
+
+### 13. Custom Title Bar
 
 **Location**: `src/renderer/src/features/Layout/TitleBar.jsx`
 
@@ -682,7 +808,7 @@ showToast('❌ Failed to delete', 'error')
 
 ---
 
-## Advanced Features
+## Visualization & Search
 
 ### Knowledge Graph Visualization
 

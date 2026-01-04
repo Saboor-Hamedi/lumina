@@ -82,6 +82,7 @@ class VaultManager {
             tags: data.tags || '',
             timestamp: data.timestamp || stats.mtimeMs,
             selection: data.selection || null,
+            isPinned: data.isPinned || data.pinned || false,
             type: 'snippet',
             is_draft: 0,
             fileName: fileName // Store actual filename for robust renaming
@@ -141,6 +142,7 @@ class VaultManager {
       language: snippet.language || 'markdown',
       tags: snippet.tags || '',
       selection: snippet.selection || null,
+      isPinned: !!snippet.isPinned,
       timestamp: Date.now()
     })
 

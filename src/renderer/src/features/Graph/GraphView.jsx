@@ -7,35 +7,35 @@ import { buildGraphData, buildSemanticLinks } from '../../core/utils/graphBuilde
 import { useTheme } from '../../core/hooks/useTheme'
 
 const GraphView = ({ onNodeClick }) => {
-  const { snippets } = useVaultStore()
+  const { snippets, selectedSnippet } = useVaultStore()
   const { embeddingsCache } = useAIStore()
   const { theme } = useTheme()
   const graphRef = useRef()
   const containerRef = useRef()
-  
+
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 })
 
   // Rebuild graph + semantic links
   const data = useMemo(() => {
     const rawData = buildGraphData(snippets)
     const semantic = buildSemanticLinks(rawData.nodes, rawData.links, snippets, embeddingsCache)
-    
+
     return {
-        nodes: rawData.nodes,
-        links: [...rawData.links, ...semantic]
+      nodes: rawData.nodes,
+      links: [...rawData.links, ...semantic]
     }
   }, [snippets, embeddingsCache])
 
   // Responsive Sizing
   useEffect(() => {
     if (!containerRef.current) return
-    
+
     const observeTarget = containerRef.current
     const resizeObserver = new ResizeObserver((entries) => {
       const { width, height } = entries[0].contentRect
       setDimensions({ width, height })
     })
-    
+
     resizeObserver.observe(observeTarget)
     return () => resizeObserver.disconnect()
   }, [])
@@ -52,7 +52,7 @@ const GraphView = ({ onNodeClick }) => {
       setHoverNode(node)
       const neighbors = new Set()
       const links = new Set()
-      
+
       // Find neighbors
       data.links.forEach((link) => {
         if (link.source.id === node.id || link.target.id === node.id) {
@@ -73,89 +73,90 @@ const GraphView = ({ onNodeClick }) => {
 
   /* --- VISUAL CONFIG --- */
   const nodeColor = (node) => {
+    if (selectedSnippet && node.snippetId === selectedSnippet.id) return '#ffaa00' // Gold for active
     if (highlightNodes.size > 0 && !highlightNodes.has(node.id)) return 'rgba(100,100,100, 0.1)' // Dim others
     if (node.group === 'ghost') return '#374151' // Gray 700
-    if (node.group === 'tag') return '#14b8a6'   // Teal 500
-    return '#7b61ff' // Accent (Lumina)
+    if (node.group === 'tag') return '#14b8a6' // Teal 500
+    return '#40bafa' // Accent (Lumina)
   }
 
   const linkColor = (link) => {
-     if (highlightLinks.size > 0 && !highlightLinks.has(link)) return 'rgba(150,150,150,0.05)'
-     
-     if (link.type === 'semantic') return 'rgba(123, 97, 255, 0.2)' // Subtle Purple
-     return 'rgba(150, 150, 150, 0.2)'
+    if (highlightLinks.size > 0 && !highlightLinks.has(link)) return 'rgba(150,150,150,0.05)'
+
+    if (link.type === 'semantic') return 'rgba(64, 186, 250, 0.2)' // Subtle Purple
+    return 'rgba(150, 150, 150, 0.2)'
   }
-  
-  const linkDash = (link) => link.type === 'semantic' ? [4, 2] : null
+
+  const linkDash = (link) => (link.type === 'semantic' ? [4, 2] : null)
 
   /* --- CANVAS PAINTING (Premium "Google Maps" Logic) --- */
-  const paintNode = React.useCallback((node, ctx, globalScale) => {
-    const isHover = node === hoverNode
-    const isNeighbor = highlightNodes.has(node.id)
-    const label = (node.label || node.id).replace(/[*"']/g, '')
-    
-    // NODE VISUALS
-    const r = node.val ? Math.max(2, Math.sqrt(node.val) * 3) : 2
-    
-    // Glow effect for hubs/hover
-    if (isHover || node.val > 5) {
+  const paintNode = React.useCallback(
+    (node, ctx, globalScale) => {
+      const isHover = node === hoverNode
+      const isNeighbor = highlightNodes.has(node.id)
+      const label = (node.label || node.id).replace(/[*"']/g, '')
+
+      // NODE VISUALS
+      const r = node.val ? Math.max(2, Math.sqrt(node.val) * 3) : 2
+
+      // Glow effect for hubs/hover
+      if (isHover || node.val > 5) {
         ctx.shadowColor = nodeColor(node)
         ctx.shadowBlur = isHover ? 15 : 5
-    } else {
+      } else {
         ctx.shadowBlur = 0
-    }
-    
-    ctx.beginPath()
-    ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false)
-    ctx.fillStyle = nodeColor(node)
-    ctx.fill()
-    ctx.shadowBlur = 0 // Reset
-    
-    // TEXT LOGIC: World-Space Sizing (Obsidian-like)
-    // We use a fixed 'world' size so text scales naturally.
-    const baseFontSize = 3.5 // Much smaller, tight label style
-    ctx.font = `${baseFontSize}px Inter, sans-serif`
-    
-    // Visibility Thresholds
-    // 1. Hover: Always show (Critical)
-    // 2. Neighbor: DO NOT force show (Reduces clutter) - let zoom level decide
-    // 3. Hubs (val > 3): Show if scale > 0.4
-    // 4. Small nodes: Show if scale > 1.5
-    let shouldShow = false
-    if (isHover) shouldShow = true
-    // Removed isNeighbor check to reduce visual noise
-    else if (node.val > 4 && globalScale > 0.4) shouldShow = true
-    else if (globalScale > 1.5) shouldShow = true
-    
-    // Low priority label rendering for neighbors (optional: only if very zoomed in?)
-    // if (isNeighbor && globalScale > 1.0) shouldShow = true
-    
-    if (shouldShow) {
-       ctx.textAlign = 'center'
-       ctx.textBaseline = 'top' // Below circle
-       
-       // High-contrast stroke
-       ctx.lineWidth = 0.5 // Thinner stroke for smaller text
-       ctx.strokeStyle = 'rgba(0,0,0,0.8)'
-       ctx.strokeText(label, node.x, node.y + r + 1)
-       
-       // Bright text
-       ctx.fillStyle = 'rgba(255, 255, 255, 0.95)'
-       ctx.fillText(label, node.x, node.y + r + 1)
-    }
-  }, [hoverNode, highlightNodes])
+      }
+
+      ctx.beginPath()
+      ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false)
+      ctx.fillStyle = nodeColor(node)
+      ctx.fill()
+      ctx.shadowBlur = 0 // Reset
+
+      // TEXT LOGIC: Compensatory Scaling
+      // We scale the font size inversely with zoom to prevent it from becoming 'huge'
+      const baseFontSize = 14
+      const fontSize = baseFontSize / globalScale
+      ctx.font = `${fontSize}px Inter, sans-serif`
+
+      // Visibility Thresholds
+      // 1. Hover: Always show (Critical)
+      // 2. Active Node: Always show (Critical)
+      // 3. Hubs (val > 3): Show if scale > 0.4
+      // 4. Small nodes: Show if scale > 1.5
+      let shouldShow = false
+      const isActive = selectedSnippet && node.snippetId === selectedSnippet.id
+
+      if (isHover || isActive) shouldShow = true
+      else if (node.val > 4 && globalScale > 0.3) shouldShow = true
+      else if (globalScale > 0.8) shouldShow = true
+
+      // Low priority label rendering for neighbors (optional: only if very zoomed in?)
+      // if (isNeighbor && globalScale > 1.0) shouldShow = true
+
+      if (shouldShow) {
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'top' // Below circle
+
+        // Fill
+        ctx.fillStyle = isActive ? '#ffaa00' : 'rgba(255, 255, 255, 0.95)'
+        ctx.fillText(label, node.x, node.y + r + 1)
+      }
+    },
+    [hoverNode, highlightNodes, selectedSnippet]
+  )
 
   /* --- INTERACTION HANDLERS --- */
   const handleNodeClick = (node) => {
     if (node.snippetId) {
-        // Real note: Navigate
-        const snippet = snippets.find(s => s.id === node.snippetId)
-        if (snippet && onNodeClick) {
-            onNodeClick(snippet)
-        }
+      // Real note: Navigate
+      const snippet = snippets.find((s) => s.id === node.snippetId)
+      if (snippet && onNodeClick) {
+        onNodeClick(snippet)
+      }
     } else {
-        // Ghost note or Tag
-        // Future: Filter graph by this tag?
+      // Ghost note or Tag
+      // Future: Filter graph by this tag?
     }
   }
 
@@ -166,18 +167,18 @@ const GraphView = ({ onNodeClick }) => {
   }
 
   return (
-    <div 
-        ref={containerRef} 
-        style={{ 
-            width: '100%', 
-            height: '100%', 
-            background: 'var(--bg-app)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            overflow: 'hidden',
-            cursor: hoverNode ? 'pointer' : 'default'
-        }}
+    <div
+      ref={containerRef}
+      style={{
+        width: '100%',
+        height: '100%',
+        background: 'var(--bg-app)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+        cursor: hoverNode ? 'pointer' : 'default'
+      }}
     >
       <ForceGraph2D
         ref={graphRef}
@@ -188,46 +189,54 @@ const GraphView = ({ onNodeClick }) => {
         linkColor={linkColor}
         linkLineDash={linkDash}
         backgroundColor="rgba(0,0,0,0)"
-        
         // Interaction
         onNodeClick={handleNodeClick}
         onNodeHover={handleNodeHover}
-        nodeCanvasObject={paintNode} 
-        
+        nodeCanvasObject={paintNode}
         // Physics Optimization
         cooldownTicks={100}
-        d3AlphaDecay={0.04} 
+        d3AlphaDecay={0.04}
         d3VelocityDecay={0.2}
         onEngineStop={() => {
-            if (isFirstLoad.current) {
+          if (isFirstLoad.current) {
+            if (selectedSnippet) {
+              const node = data.nodes.find((n) => n.snippetId === selectedSnippet.id)
+              if (node) {
+                // Focus active node
+                graphRef.current.centerAt(node.x, node.y, 400)
+                graphRef.current.zoom(2.5, 400)
+              } else {
                 graphRef.current.zoomToFit(400, 50)
-                isFirstLoad.current = false
+              }
+            } else {
+              graphRef.current.zoomToFit(400, 50)
             }
+            isFirstLoad.current = false
+          }
         }}
-        
         // Disable particles unless hovering to save FPS during zoom
         linkDirectionalParticles={highlightLinks.size > 0 ? 3 : 0}
         linkDirectionalParticleWidth={3} // Thicker particles on hover
         linkDirectionalParticleSpeed={0.003} // Slower, mesmerizing flow
       />
-      
-      <button 
+
+      <button
         onClick={handleRecenter}
         style={{
-            position: 'absolute',
-            bottom: '15px',
-            right: '15px',
-            background: 'var(--bg-panel)',
-            border: '1px solid var(--border-subtle)',
-            padding: '6px',
-            borderRadius: '6px',
-            color: 'var(--text-muted)',
-            cursor: 'pointer',
-            boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
-            zIndex: 10,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
+          position: 'absolute',
+          bottom: '15px',
+          right: '15px',
+          background: 'var(--bg-panel)',
+          border: '1px solid var(--border-subtle)',
+          padding: '6px',
+          borderRadius: '6px',
+          color: 'var(--text-muted)',
+          cursor: 'pointer',
+          boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+          zIndex: 10,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
         }}
         title="Recenter Graph"
       >

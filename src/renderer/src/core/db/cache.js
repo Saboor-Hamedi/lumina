@@ -26,6 +26,7 @@ export const cacheSnippets = async (snippets) => {
       tags: s.tags || '',
       timestamp: s.timestamp || Date.now(),
       selection: s.selection || null,
+      isPinned: s.isPinned || false,
       type: s.type || 'snippet',
       is_draft: s.is_draft || 0
     }))

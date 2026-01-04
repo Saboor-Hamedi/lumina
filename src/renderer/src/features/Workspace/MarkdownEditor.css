@@ -5,13 +5,149 @@
   line-height: var(--line-height-editor, 1.6) !important;
 }
 
-/* Base Styles */
 .seamless-editor {
   display: flex;
   flex-direction: column;
   height: 100%;
   background: var(--bg-app); /* Matches the main app background perfectly */
   overflow: hidden;
+}
+
+/* --- WORKSPACE TABBAR --- */
+.workspace-tabbar {
+  height: 36px;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border-dim);
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none; /* Hide scrollbar */
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.workspace-tabbar::-webkit-scrollbar {
+  display: none;
+}
+
+.tabs-container {
+  display: flex;
+  height: 100%;
+}
+
+.workspace-tab {
+  min-width: 140px;
+  max-width: 220px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  gap: 8px;
+  border-right: 1px solid var(--border-dim);
+  background: var(--bg-sidebar);
+  color: var(--text-faint);
+  font-size: 12px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.workspace-tab:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
+}
+
+.workspace-tab.active {
+  background: var(--bg-app);
+  color: var(--text-main);
+  font-weight: 600;
+  border-right-color: var(--border-dim);
+}
+
+.workspace-tab.active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--text-accent);
+  box-shadow: 0 1px 10px rgba(var(--text-accent-rgb), 0.3);
+}
+
+.tab-context {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.tab-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.01em;
+}
+
+.tab-icon {
+  opacity: 0.5;
+  color: var(--text-accent);
+  transition: opacity 0.2s;
+}
+
+.workspace-tab.active .tab-icon {
+  opacity: 1;
+}
+
+.tab-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 6px;
+}
+
+.tab-close-btn {
+  background: transparent;
+  border: none;
+  color: inherit;
+  opacity: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+  padding: 2px;
+}
+
+.workspace-tab:hover .tab-close-btn {
+  opacity: 0.6;
+}
+
+.tab-close-btn:hover {
+  opacity: 1 !important;
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+.tab-dirty {
+  width: 6px !important;
+  height: 6px !important;
+  background: #eab308;
+  border-radius: 50%;
+  animation: statusPulse 2s infinite ease-in-out;
+}
+
+/* Tab indicator removed from bottom, moved to ::after at top */
+.tab-active-indicator {
+  display: none;
 }
 
 .editor-titlebar {
@@ -224,7 +360,10 @@
   transform: translateY(-1px);
 }
 
-.icon-btn:active {
+.icon-btn:active,
+.icon-btn.active {
+  background: var(--bg-active);
+  color: var(--text-main);
   transform: translateY(0);
 }
 
@@ -259,55 +398,79 @@
   cursor: default;
 }
 
-/* --- Export Dropdown --- */
-.export-menu-dropdown {
+/* --- NATIVE-LOOKING DROPDOWN --- */
+.menu-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.native-dropdown-menu {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 8px);
   right: 0;
-  margin-top: 8px;
+  min-width: 240px;
   background: var(--bg-panel);
-  box-shadow: none;
-  min-width: 220px; /* Standard robust width */
-  z-index: 9999;
-  animation: fadeIn 0.1s ease-out;
-  overflow: visible;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 6px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  z-index: 10000;
   backdrop-filter: blur(20px);
-  padding: 4px; /* Tight container padding */
+  animation: nativeMenuAppear 0.15s cubic-bezier(0, 0, 0.2, 1);
+  transform-origin: top right;
+  overflow: hidden;
+}
+
+@keyframes nativeMenuAppear {
+  from { opacity: 0; transform: scale(0.95) translateY(-5px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .dropdown-item {
   display: flex;
   align-items: center;
-  gap: 8px; /* Tighter gap */
-  padding: 4px 8px; /* Compact "Obsidian" padding */
-  font-size: 11px; /* Tiny font as requested */
+  gap: 12px;
+  padding: 8px 12px;
+  font-size: 13px; /* Slightly larger for native look */
   color: var(--text-main);
   cursor: pointer;
-  transition: all 0.1s;
-  border-radius: 4px;
-  margin-bottom: 0;
+  border-radius: 6px;
+  transition: background 0.15s, transform 0.1s;
+  user-select: none;
 }
 
 .dropdown-item:hover {
-  background: var(--bg-active); /* Clear hover state */
-  color: var(--text-main);
+  background: var(--bg-active);
 }
 
-.menu-icon {
-  opacity: 0.8;
-  color: var(--text-muted);
+.dropdown-item:active {
+  transform: scale(0.98);
 }
 
 .menu-label {
-  flex: 1; /* Pushes shortcut to right */
-  font-weight: 400; /* No bold */
-  transform: translateY(0.5px); /* Optical alignment */
+  flex: 1;
+  font-weight: 500;
 }
 
 .shortcut-label {
   font-size: 11px;
   color: var(--text-faint);
-  padding: 4px;
+  opacity: 0.6;
+  margin-right: 4px;
+}
+
+.menu-icon-right {
+  opacity: 0.7;
+  color: var(--text-accent);
+  flex-shrink: 0;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 5px 6px;
+  opacity: 0.5;
 }
 
 .mode-reading .cm-content,
@@ -347,7 +510,6 @@
   background: var(--bg-panel);
   border: 1px solid var(--border-dim);
   border-radius: 6px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
   padding: 2px;
   z-index: 2000; /* Ensure it is above everything */
   overflow: hidden;
@@ -600,9 +762,7 @@
   opacity: 1;
 }
 
-.mode-source .cm-heading {
-  /* Heading sizes are now globally managed and identical across all modes */
-}
+
 
 /* 2. LIVE MODE: Premium typography (Default) */
 /* Inherits base styles */
@@ -988,10 +1148,32 @@
 
 .markdown-rendered-preview code {
   background: var(--bg-active);
-  padding: 2px 4px;
-  border-radius: 4px;
-  font-family: 'JetBrains Mono', monospace;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
   font-size: 0.9em;
+}
+
+.preview-wikilink {
+  color: var(--text-accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  font-weight: 500;
+  border-radius: 4px;
+  padding: 0 2px;
+  transition: all 0.2s;
+}
+
+.preview-wikilink:hover {
+  background: rgba(var(--text-accent-rgb), 0.1);
+  color: var(--text-accent-hover);
+  text-decoration: underline;
+}
+
+.markdown-rendered-preview a {
+  color: var(--text-accent);
+  text-decoration: underline;
 }
 
 .markdown-rendered-preview blockquote {

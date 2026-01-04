@@ -1,15 +1,35 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
-import { Search, FileText, Zap, Sparkles } from 'lucide-react'
+import {
+  Search,
+  FileText,
+  Zap,
+  Sparkles,
+  FileCode,
+  FileJson,
+  Hash,
+  ImageIcon,
+  Plus,
+  Network
+} from 'lucide-react'
 import { FixedSizeList as List } from '../../components/utils/VirtualList'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useAIStore } from '../../core/store/useAIStore'
+import { useVaultStore } from '../../core/store/useVaultStore'
 import './CommandPalette.css'
 
 /**
  * Virtualized Command Palette (Obsidian Standard #5)
  * Feature: Fuzzy Match + Semantic AI Search
  */
-const CommandPalette = ({ isOpen, onClose, items, onSelect }) => {
+const CommandPalette = ({
+  isOpen,
+  onClose,
+  items,
+  onSelect,
+  onNew,
+  onToggleSettings,
+  onToggleGraph
+}) => {
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [aiResults, setAiResults] = useState([])
@@ -17,6 +37,7 @@ const CommandPalette = ({ isOpen, onClose, items, onSelect }) => {
   const listRef = useRef(null)
 
   const { searchNotes, isModelReady, modelLoadingProgress, aiError } = useAIStore()
+  const { dirtySnippetIds } = useVaultStore()
 
   useKeyboardShortcuts({
     onEscape: isOpen ? onClose : null
@@ -48,10 +69,29 @@ const CommandPalette = ({ isOpen, onClose, items, onSelect }) => {
   }, [query])
 
   const filtered = useMemo(() => {
-    if (!query) return items.slice(0, 50)
-
     const lowerQuery = query.toLowerCase().trim()
-    if (!lowerQuery) return items.slice(0, 50)
+
+    // 0. System Actions (Show if query starts with > or matches)
+    const isActionQuery = lowerQuery.startsWith('>')
+    const actionQuery = isActionQuery ? lowerQuery.slice(1).trim() : lowerQuery
+
+    const systemActions = [
+      {
+        id: 'action-settings',
+        title: 'Settings: Open Configuration',
+        matchType: 'action',
+        action: 'settings'
+      },
+      { id: 'action-new', title: 'Note: Create New Snippet', matchType: 'action', action: 'new' },
+      {
+        id: 'action-graph',
+        title: 'Graph: Open Knowledge Nexus',
+        matchType: 'action',
+        action: 'graph'
+      }
+    ].filter((a) => !actionQuery || a.title.toLowerCase().includes(actionQuery))
+
+    if (!lowerQuery && !isActionQuery) return [...systemActions, ...items.slice(0, 50)]
 
     // 1. Text Matches
     const textMatches = items
@@ -60,7 +100,7 @@ const CommandPalette = ({ isOpen, onClose, items, onSelect }) => {
         if (item.title.toLowerCase().includes(lowerQuery)) {
           return { ...item, matchType: 'title', score: 10 }
         }
-        // Content Match (Check code AND content just in case)
+        // Content Match
         const code = item.code || item.content || ''
         const codeIndex = code.toLowerCase().indexOf(lowerQuery)
 
@@ -76,9 +116,8 @@ const CommandPalette = ({ isOpen, onClose, items, onSelect }) => {
       .filter(Boolean)
       .sort((a, b) => b.score - a.score)
 
-    // 2. Semantic Matches (exclude existing text matches)
+    // 2. Semantic Matches
     const existingIds = new Set(textMatches.map((i) => i.id))
-
     const semanticMatches = aiResults
       .filter((r) => !existingIds.has(r.id))
       .map((r) => {
@@ -87,14 +126,23 @@ const CommandPalette = ({ isOpen, onClose, items, onSelect }) => {
         return {
           ...item,
           matchType: 'semantic',
-          score: r.score * 4, // Scale 0-1 score to be comparable
+          score: r.score * 4,
           matchSnippet: 'Semantic Match'
         }
       })
       .filter(Boolean)
 
-    return [...textMatches, ...semanticMatches].slice(0, 50)
+    const results = [...textMatches, ...semanticMatches]
+
+    if (isActionQuery) return systemActions
+    return [...systemActions, ...results].slice(0, 50)
   }, [items, query, aiResults])
+
+  useEffect(() => {
+    if (selectedIndex >= filtered.length && filtered.length > 0) {
+      setSelectedIndex(filtered.length - 1)
+    }
+  }, [filtered.length, selectedIndex])
 
   useEffect(() => {
     if (listRef.current) {
@@ -110,8 +158,15 @@ const CommandPalette = ({ isOpen, onClose, items, onSelect }) => {
       e.preventDefault()
       setSelectedIndex((prev) => (prev - 1 + filtered.length) % filtered.length)
     } else if (e.key === 'Enter') {
-      if (filtered[selectedIndex]) {
-        onSelect(filtered[selectedIndex])
+      const item = filtered[selectedIndex]
+      if (item) {
+        if (item.matchType === 'action') {
+          if (item.action === 'settings') onToggleSettings?.()
+          else if (item.action === 'new') onNew?.()
+          else if (item.action === 'graph') onToggleGraph?.()
+        } else {
+          onSelect(item)
+        }
         onClose()
       }
     }
@@ -141,26 +196,60 @@ const CommandPalette = ({ isOpen, onClose, items, onSelect }) => {
     const item = filtered[index]
     const isActive = index === selectedIndex
     const isSemantic = item.matchType === 'semantic'
+    const isAction = item.matchType === 'action'
 
     return (
       <div
         style={style}
-        className={`palette-item ${isActive ? 'active' : ''}`}
+        className={`palette-item ${isActive ? 'active' : ''} ${isAction ? 'is-action' : ''}`}
         onClick={() => {
-          onSelect(item)
+          if (isAction) {
+            if (item.action === 'settings') onToggleSettings?.()
+            else if (item.action === 'new') onNew?.()
+            else if (item.action === 'graph') onToggleGraph?.()
+          } else {
+            onSelect(item)
+          }
           onClose()
         }}
-        onMouseEnter={() => setSelectedIndex(index)}
+        onMouseMove={() => {
+          if (selectedIndex !== index) setSelectedIndex(index)
+        }}
       >
         {isSemantic ? (
-          <Sparkles size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
+          <Sparkles size={18} className="item-icon semantic" />
+        ) : isAction ? (
+          (() => {
+            if (item.action === 'settings')
+              return <Zap size={18} className="item-icon action-icon" />
+            if (item.action === 'new') return <Plus size={18} className="item-icon action-icon" />
+            if (item.action === 'graph')
+              return <Network size={18} className="item-icon action-icon" />
+            return <Zap size={18} className="item-icon action-icon" />
+          })()
         ) : (
-          <FileText size={18} className="item-icon" />
+          (() => {
+            const lang = (item.language || 'markdown').toLowerCase()
+            const title = (item.title || '').toLowerCase()
+            if (
+              ['javascript', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'python', 'py'].includes(lang)
+            )
+              return <FileCode size={18} className="item-icon" />
+            if (lang === 'json') return <FileJson size={18} className="item-icon" />
+            if (lang === 'markdown' || lang === 'md' || title.endsWith('.md'))
+              return <Hash size={18} className="item-icon" />
+            if (['png', 'jpg', 'jpeg', 'gif', 'svg'].some((ext) => title.endsWith('.' + ext)))
+              return <ImageIcon size={18} className="item-icon" />
+            return <FileText size={18} className="item-icon" />
+          })()
         )}
 
         <div className="item-info">
           <div className="item-title">
             <HighlightText text={item.title || 'Untitled'} highlight={query} />
+            {dirtySnippetIds.includes(item.id) && (
+              <div className="dirty-indicator" style={{ marginLeft: '8px' }} />
+            )}
           </div>
           {item.matchSnippet && (
             <div className={`item-secondary ${isSemantic ? 'semantic-badge' : ''}`}>

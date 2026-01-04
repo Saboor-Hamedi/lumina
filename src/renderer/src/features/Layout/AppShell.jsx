@@ -5,12 +5,17 @@ import FileExplorer from '../Navigation/FileExplorer'
 import MarkdownEditor from '../Workspace/MarkdownEditor'
 import SettingsModal from '../Overlays/SettingsModal'
 import CommandPalette from '../Overlays/CommandPalette'
+import GraphNexus from '../Overlays/GraphNexus'
 import GraphView from '../Graph/GraphView'
+import Dashboard from '../Workspace/components/Dashboard'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useAIStore } from '../../core/store/useAIStore'
+import { useUpdateStore } from '../../core/store/useUpdateStore'
+import ConfirmModal from '../Overlays/ConfirmModal'
 import './AppShell.css'
+import '../Overlays/ConfirmModal.css'
 
 const AppShell = () => {
   const { snippets, selectedSnippet, setSelectedSnippet, saveSnippet, isLoading, loadVault } =
@@ -19,42 +24,84 @@ const AppShell = () => {
   const [activeTab, setActiveTab] = useState('files')
   const [showSettings, setShowSettings] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
+  const [showGraph, setShowGraph] = useState(false)
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true)
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false)
+  const [sidebarWidth, setSidebarWidth] = useState(260)
+  const [isResizing, setIsResizing] = useState(false)
+  const [isRestoring, setIsRestoring] = useState(true)
+
+  // Deletion State
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [snippetToDelete, setSnippetToDelete] = useState(null)
+
+  // Sidebar Resizing Logic
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isResizing) return
+      let newWidth = e.clientX - 60 // Compensate for Ribbon
+      if (newWidth < 180) newWidth = 180
+      if (newWidth > 500) newWidth = 500
+      setSidebarWidth(newWidth)
+    }
+
+    const handleMouseUp = () => setIsResizing(false)
+
+    if (isResizing) {
+      window.addEventListener('mousemove', handleMouseMove)
+      window.addEventListener('mouseup', handleMouseUp)
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isResizing])
 
   // Initialize vault & settings on mount
   // Initialize vault & settings on mount
   useEffect(() => {
-    loadVault().then(() => {
-      // Restore last open note
+    const initApp = async () => {
+      await useSettingsStore.getState().init()
+      await loadVault()
       const { settings } = useSettingsStore.getState()
-      if (settings.lastSnippetId) {
-        // We need to wait for snippets to load... loadVault loads them.
-        // We can access fresh snippets via useVaultStore.getState().snippets
+      if (settings.openTabs && Array.isArray(settings.openTabs)) {
+        useVaultStore.getState().restoreSession(settings.openTabs, settings.lastSnippetId)
+      } else if (settings.lastSnippetId) {
         const allSnippets = useVaultStore.getState().snippets
         const last = allSnippets.find((s) => s.id === settings.lastSnippetId)
-        if (last) {
-          setSelectedSnippet(last)
-        }
+        if (last) setSelectedSnippet(last)
       }
-    })
-    useSettingsStore.getState().init()
+      setIsRestoring(false)
+    }
+
+    initApp()
+
+    // Start listening for updates
+    const unsub = useUpdateStore.getState().init()
+    return () => unsub && unsub()
   }, [])
 
   // ... imports
 
-  // Persist Last Snippet
+  // Persist Last Snippet & Tabs
   useEffect(() => {
     if (selectedSnippet) {
       useSettingsStore.getState().updateSetting('lastSnippetId', selectedSnippet.id)
     }
   }, [selectedSnippet?.id])
 
+  const openTabs = useVaultStore((state) => state.openTabs)
+
+  useEffect(() => {
+    if (openTabs.length > 0) {
+      useSettingsStore.getState().updateSetting('openTabs', openTabs)
+    }
+  }, [openTabs])
+
   // Trigger AI Indexing when snippets change (Background)
   useEffect(() => {
     if (snippets.length > 0) {
-      // Debounce slightly or just run?
-      // Let's run it. The store mostly skips existing ones.
       useAIStore.getState().indexVault(snippets)
     }
   }, [snippets])
@@ -72,11 +119,36 @@ const AppShell = () => {
         setShowPalette(false)
         return true
       }
+      if (showGraph) {
+        setShowGraph(false)
+        return true
+      }
+      if (showSettings) {
+        setShowSettings(false)
+        return true
+      }
+      if (showDeleteConfirm) {
+        setShowDeleteConfirm(false)
+        return true
+      }
       return false
     },
-    onTogglePalette: () => {
-      setShowPalette(true)
-    }
+    onTogglePalette: () => setShowPalette(true),
+    onToggleSettings: () => setShowSettings(true),
+    onToggleGraph: () => setShowGraph(true),
+    onNew: () => handleNew(),
+    onDelete: () => {
+      if (selectedSnippet) {
+        setSnippetToDelete(selectedSnippet)
+        setShowDeleteConfirm(true)
+      }
+    },
+    onCloseTab: () => {
+      if (selectedSnippet) {
+        useVaultStore.getState().closeTab(selectedSnippet.id)
+      }
+    },
+    onCloseWindow: () => window.api.closeWindow()
   })
 
   const handleNew = async () => {
@@ -91,11 +163,22 @@ const AppShell = () => {
     await saveSnippet(newSnippet)
     setSelectedSnippet(newSnippet)
     setActiveTab('files')
+    setShowPalette(false)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (snippetToDelete) {
+      await useVaultStore.getState().deleteSnippet(snippetToDelete.id, true)
+      setSnippetToDelete(null)
+    }
   }
 
   return (
     <div
-      className={`app-shell ${isLeftSidebarOpen ? 'left-open' : 'left-closed'} ${isRightSidebarOpen ? 'right-open' : 'right-closed'}`}
+      className={`app-shell ${isLeftSidebarOpen ? 'left-open' : 'left-closed'} ${isRightSidebarOpen ? 'right-open' : 'right-closed'} ${isResizing ? 'is-resizing' : ''}`}
+      style={{
+        gridTemplateColumns: `var(--ribbon-width) ${isLeftSidebarOpen ? sidebarWidth + 'px' : '0px'} 1fr ${isRightSidebarOpen ? 'var(--sidebar-width)' : '0px'}`
+      }}
     >
       <header className="shell-header">
         <TitleBar />
@@ -108,8 +191,9 @@ const AppShell = () => {
         />
       </nav>
       <aside className="shell-sidebar-left">
-        <FileExplorer />
+        <FileExplorer onNavigate={() => setActiveTab('files')} />
       </aside>
+      <div className="sidebar-resizer" onMouseDown={() => setIsResizing(true)} />
       <main className="shell-main">
         {activeTab === 'graph' ? (
           <GraphView
@@ -124,16 +208,10 @@ const AppShell = () => {
             onSave={saveSnippet}
             onToggleInspector={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
           />
+        ) : isRestoring ? (
+          <div className="shell-main-placeholder" />
         ) : (
-          <div className="welcome-placeholder">
-            <div className="welcome-hero">
-              <h1 className="hero-title">Lumina</h1>
-              <p className="hero-subtitle">Your personal knowledge vault.</p>
-              <button className="btn btn-primary big-new-btn" onClick={handleNew}>
-                Create New Note
-              </button>
-            </div>
-          </div>
+          <Dashboard onNew={handleNew} />
         )}
       </main>
       <aside className="shell-sidebar-right">
@@ -216,7 +294,31 @@ const AppShell = () => {
         isOpen={showPalette}
         onClose={() => setShowPalette(false)}
         items={snippets}
-        onSelect={setSelectedSnippet}
+        onSelect={(snippet) => {
+          setSelectedSnippet(snippet)
+          setActiveTab('files')
+        }}
+        onNew={handleNew}
+        onToggleSettings={() => setShowSettings(true)}
+        onToggleGraph={() => setShowGraph(true)}
+      />
+      {showGraph && (
+        <GraphNexus
+          isOpen={true}
+          onClose={() => setShowGraph(false)}
+          onNavigate={(snippet) => {
+            setSelectedSnippet(snippet)
+            setActiveTab('files')
+            setShowGraph(false)
+          }}
+        />
+      )}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Note?"
+        message={`Are you sure you want to delete "${snippetToDelete?.title || 'this note'}"? This cannot be undone.`}
       />
     </div>
   )
