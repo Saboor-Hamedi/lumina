@@ -87,7 +87,7 @@
   width: 100%;
   max-width: 720px;
   max-width: 720px;
-  padding: 8vh 40px 12vh 40px; /* Increased bottom padding for sticky footer */
+  padding: 40px 40px; /* Standard balanced padding */
   display: flex;
   flex-direction: column;
   flex: 1; 
@@ -133,9 +133,7 @@
   line-height: 1.8;
   color: var(--text-main) !important;
   /* Allow CodeMirror to manage padding-bottom for scrollPastEnd */
-  padding-top: 0;
-  padding-left: 0;
-  padding-right: 0;
+  padding: 4px 0;
   min-height: 70vh; /* Ensures clicking empty space at the bottom still focuses the editor */
 }
 
@@ -659,7 +657,7 @@
   z-index: 1000;
   backdrop-filter: blur(10px);
   box-shadow: none;
-  margin-top: auto;
+  /* margin-top: auto; Handled by flex parent */
   font-size: 11px; /* Base font size for footer */
 }
 

@@ -29,11 +29,14 @@
 
 - `React 19.1.1` - UI framework
 - `CodeMirror 6` - Advanced text editor
-- `Zustand 5.0.9` - State management
+- `Zustand 5.0.9` - State management (3 stores: Vault, Settings, AI)
 - `Dexie 4.2.1` - IndexedDB wrapper for caching
 - `marked 17.0.1` - Markdown parsing for preview
 - `highlight.js 11.11.1` - Syntax highlighting
 - `lucide-react 0.555.0` - Icon system
+- `@xenova/transformers 2.17.2` - Local AI embeddings (semantic search)
+- `react-force-graph-2d 1.29.0` - Knowledge graph visualization
+- `flexsearch 0.8.212` - Full-text search engine
 
 #### Build Tools
 
@@ -676,6 +679,370 @@ showToast('❌ Failed to delete', 'error')
 - Multiple toasts stack vertically
 - Smooth slide-in animation
 - Icon support (✓, ❌, ℹ️)
+
+---
+
+## Advanced Features
+
+### Knowledge Graph Visualization
+
+**Location**: `src/renderer/src/features/Graph/GraphView.jsx`
+
+**Purpose**: Interactive force-directed graph showing relationships between notes.
+
+**Features:**
+
+- **WikiLink Connections**: Automatic links between notes based on `[[WikiLinks]]`
+- **Tag-Based Grouping**: Visual clusters for notes sharing tags
+- **Ghost Nodes**: Placeholder nodes for linked but non-existent notes
+- **Semantic Links**: AI-powered similarity connections (dashed lines)
+- **Interactive Highlighting**: Hover to see neighbors and connections
+- **Zoom & Pan Controls**: Responsive canvas with smooth navigation
+- **Click-to-Navigate**: Click any node to open that note
+
+**Implementation:**
+
+```javascript
+// Uses react-force-graph-2d with custom rendering
+const data = useMemo(() => {
+  const rawData = buildGraphData(snippets)
+  const semantic = buildSemanticLinks(nodes, links, snippets, embeddingsCache)
+  return { nodes: rawData.nodes, links: [...rawData.links, ...semantic] }
+}, [snippets, embeddingsCache])
+```
+
+**Visual Customization:**
+
+- **Node Colors**: Purple (notes), Teal (tags), Gray (ghost nodes)
+- **Node Size**: Proportional to connection count (centrality)
+- **Link Styles**: Solid (WikiLinks), Dashed (semantic similarity)
+- **Label Visibility**: Zoom-dependent, always visible on hover
+- **Glow Effects**: Hub nodes and hovered nodes have shadow glow
+
+**Access**: Click the Network icon in the Activity Bar (left sidebar)
+
+---
+
+### AI-Powered Semantic Search
+
+**Location**: `src/renderer/src/core/store/useAIStore.js`
+
+**Purpose**: Enable meaning-based search beyond keyword matching using local AI models.
+
+**Architecture:**
+
+```text
+Main Thread (React)
+    ↓
+useAIStore (Zustand)
+    ↓
+ai.worker.js (Web Worker)
+    ↓
+@xenova/transformers (Local Model)
+```
+
+**Key Features:**
+
+1. **Local Processing**: All AI runs on-device, no cloud dependency
+2. **Privacy-First**: Your notes never leave your machine
+3. **Automatic Indexing**: Vault is indexed on load and when notes change
+4. **Cosine Similarity**: Mathematical comparison of meaning vectors
+5. **Semantic Graph Links**: Automatically connects similar notes in graph view
+
+**API Methods:**
+
+```javascript
+const { generateEmbedding, searchNotes, indexVault, embeddingsCache } = useAIStore()
+
+// Generate embedding for text
+const vector = await generateEmbedding("machine learning algorithms")
+
+// Search vault semantically
+const results = await searchNotes("AI techniques", 0.5) // threshold
+// Returns: [{ id: 'note-123', score: 0.87 }, ...]
+
+// Index entire vault
+await indexVault(snippets)
+```
+
+**Model Loading:**
+
+- Progress tracked via `modelLoadingProgress` (0-100%)
+- `isModelReady` boolean indicates when ready
+- Model downloads once, cached in browser
+
+**Performance:**
+
+- Embeddings cached in `embeddingsCache` object
+- Only new/changed notes are re-indexed
+- Worker prevents UI blocking during computation
+
+---
+
+### Drag & Drop Image Support
+
+**Location**: `src/renderer/src/features/Workspace/MarkdownEditor.jsx`
+
+**Purpose**: Seamless image insertion via drag and drop.
+
+**Workflow:**
+
+1. User drags image file into editor
+2. Image is saved to `vault/assets/` folder
+3. Filename is slugified with timestamp to prevent collisions
+4. Markdown `![alt](assets/image.png)` inserted at drop position
+5. Image renders via custom `asset://` protocol
+
+**Implementation:**
+
+```javascript
+EditorView.domEventHandlers({
+  drop: async (event, view) => {
+    const file = event.dataTransfer.files[0]
+    if (file.type.startsWith('image/')) {
+      const buffer = await file.arrayBuffer()
+      const relativePath = await window.api.saveImage(buffer, file.name)
+      const insertText = `![${file.name}](${relativePath})`
+      view.dispatch({ changes: { from: pos, insert: insertText } })
+    }
+  }
+})
+```
+
+**Asset Protocol:**
+
+- Custom `asset://` protocol registered in main process
+- Scoped to vault directory for security
+- Handles URL encoding for spaces and special characters
+- Proper MIME type detection for all image formats
+
+**Supported Formats:**
+
+- PNG, JPG, JPEG, GIF, SVG, WebP
+- Any format supported by browser `<img>` tag
+
+**Image Preview:**
+
+- Hover over image markdown to see preview tooltip
+- `imageHoverPreview.js` extension handles preview rendering
+- Shows actual image with max dimensions for tooltip
+
+---
+
+### PDF & HTML Export
+
+**Location**: `src/main/index.js` (IPC handlers) + `MarkdownEditor.jsx` (UI)
+
+**Purpose**: Professional export of notes for sharing and archival.
+
+**Export Formats:**
+
+#### HTML Export
+
+- Standalone HTML file with embedded CSS
+- Professional typography (Inter font family)
+- Syntax-highlighted code blocks
+- Responsive images
+- Styled tables and blockquotes
+- Preserves all markdown formatting
+
+**Template:**
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Note Title</title>
+  <style>
+    body { font-family: 'Inter', sans-serif; padding: 40px; max-width: 800px; }
+    pre { background: #f4f4f4; padding: 15px; border-radius: 8px; }
+    /* ... professional styling ... */
+  </style>
+</head>
+<body>
+  <h1>Note Title</h1>
+  <!-- Rendered markdown content -->
+</body>
+</html>
+```
+
+#### PDF Export
+
+- Uses Electron's `printToPDF` API
+- A4 page size with standard margins
+- Background colors and images preserved
+- Clean, print-optimized layout
+- Hidden window for rendering (no UI flash)
+
+**Implementation:**
+
+```javascript
+const printWin = new BrowserWindow({ show: false, width: 800, height: 1100 })
+const dataUrl = `data:text/html;charset=utf-8,${encodeURIComponent(html)}`
+await printWin.loadURL(dataUrl)
+const pdfData = await printWin.webContents.printToPDF({
+  printBackground: true,
+  pageSize: 'A4',
+  margins: { top: 1, bottom: 1, left: 1, right: 1 }
+})
+await fs.writeFile(filePath, pdfData)
+```
+
+**Access**: Click the "..." menu in editor title bar → Export → HTML/PDF
+
+---
+
+### Editor Modes
+
+**Location**: `src/renderer/src/features/Workspace/richMarkdown.js`
+
+**Purpose**: Three distinct editing experiences for different tasks.
+
+**Modes:**
+
+#### 1. Source Mode
+
+- **Purpose**: Raw markdown editing and debugging
+- **Features**:
+  - All syntax visible (headers, bold, links, etc.)
+  - Line numbers enabled
+  - Traditional code editor feel
+  - Useful for troubleshooting formatting
+
+#### 2. Live Mode (Default)
+
+- **Purpose**: "What You See Is What You Mean" editing
+- **Features**:
+  - Syntax hidden by default
+  - Moving cursor to a line reveals syntax
+  - Interactive elements (checkboxes, code blocks)
+  - Best of both worlds: clean view + full control
+
+**Behavior:**
+
+```javascript
+const shouldRevealSyntax = (from) => {
+  if (viewMode === 'reading') return false
+  const cursor = view.state.selection.main.head
+  const line = view.state.doc.lineAt(from)
+  return cursor >= line.from && cursor <= line.to
+}
+```
+
+#### 3. Reading Mode
+
+- **Purpose**: Distraction-free reading and reviewing
+- **Features**:
+  - All syntax always hidden
+  - Read-only (no editing)
+  - Pure content focus
+  - Cursor movement doesn't reveal syntax
+
+**Toggle**: Footer bar has mode selector: `Source | Live | Reading`
+
+**Keyboard Shortcut**: `Ctrl/Cmd + Shift + M` to cycle modes
+
+---
+
+### Caret Position Persistence
+
+**Location**: `MarkdownEditor.jsx` + `useVaultStore.js`
+
+**Purpose**: Remember exact cursor position for each note.
+
+**Workflow:**
+
+1. **Tracking**: `EditorView.updateListener` detects selection changes
+2. **Debouncing**: 1-second delay before persisting (avoid excessive writes)
+3. **Storage**: Saved to IndexedDB cache via `updateSnippetSelection()`
+4. **Restoration**: On note open, cursor position is restored with viewport safety
+
+**Implementation:**
+
+```javascript
+// Track selection changes
+EditorView.updateListener.of((update) => {
+  if (update.selectionSet) {
+    const sel = update.state.selection.main
+    updateSnippetSelection(snippet.id, { anchor: sel.anchor, head: sel.head })
+  }
+})
+
+// Restore on mount
+if (snippet?.selection) {
+  const { anchor, head } = snippet.selection
+  const docLen = view.state.doc.length
+  const safeAnchor = Math.min(anchor, docLen)
+  const safeHead = Math.min(head, docLen)
+  view.dispatch({
+    selection: { anchor: safeAnchor, head: safeHead },
+    scrollIntoView: true
+  })
+}
+```
+
+**Edge Cases Handled:**
+
+- Document length changes (deleted content)
+- Invalid positions (beyond document end)
+- Rapid note switching
+- New notes (focuses title input instead)
+
+---
+
+### Custom Protocol Handler
+
+**Location**: `src/main/index.js`
+
+**Purpose**: Secure local file access for images and assets.
+
+**Why Custom Protocol?**
+
+- `file://` URLs expose full system paths (security risk)
+- Cross-origin restrictions block local files
+- Need vault-scoped sandboxing
+
+**Implementation:**
+
+```javascript
+protocol.registerSchemesAsPrivileged([{
+  scheme: 'asset',
+  privileges: {
+    standard: true,
+    secure: true,
+    supportFetchAPI: true,
+    bypassCSP: true,
+    corsEnabled: true
+  }
+}])
+
+protocol.handle('asset', (request) => {
+  const url = request.url.replace('asset://', '')
+  const relativePath = decodeURIComponent(url)
+  const finalPath = join(VaultManager.vaultPath, relativePath)
+  return net.fetch('file:///' + finalPath)
+})
+```
+
+**Usage in Markdown:**
+
+```markdown
+![My Image](assets/screenshot.png)
+```
+
+Renders as:
+
+```html
+<img src="asset://assets/screenshot.png" />
+```
+
+**Security:**
+
+- Scoped to vault directory only
+- Cannot access files outside vault
+- URL decoding prevents path traversal attacks
+- Proper MIME type handling
 
 ---
 

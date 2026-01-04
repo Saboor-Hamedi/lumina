@@ -1,9 +1,46 @@
-import React, { useState } from 'react'
-import { Hash, Calendar } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Hash, Calendar, Sparkles } from 'lucide-react'
+import { useAIStore } from '../../../core/store/useAIStore'
 
 const EditorMetadata = ({ snippet, onSave, snippets }) => {
   const [tagInput, setTagInput] = useState('')
   const [showTagSuggestions, setShowTagSuggestions] = useState(false)
+  const [aiSuggestions, setAiSuggestions] = useState([])
+  const { searchNotes } = useAIStore()
+
+  // Generate Smart Suggestions when focusing input
+  const generateSuggestions = async () => {
+    // 1. Get content context
+    const text = (snippet.title + ' ' + (snippet.code || '')).slice(0, 1000)
+    if (text.length < 10) return
+
+    // 2. Find similar notes
+    const results = await searchNotes(text, 0.4)
+
+    // 3. Aggregate tags from neighbors
+    const tagCounts = {}
+    const currentTags = new Set((snippet.tags || '').split(',').map((t) => t.trim()))
+
+    results.forEach((res) => {
+      if (res.id === snippet.id) return // Skip self
+      const neighbor = snippets.find((s) => s.id === res.id)
+      if (neighbor && neighbor.tags) {
+        neighbor.tags.split(',').forEach((t) => {
+          const tag = t.trim()
+          if (!tag || currentTags.has(tag)) return
+          tagCounts[tag] = (tagCounts[tag] || 0) + res.score // Weight by similarity
+        })
+      }
+    })
+
+    // 4. Sort by relevance
+    const topTags = Object.entries(tagCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3) // Top 3
+      .map((e) => e[0])
+
+    setAiSuggestions(topTags)
+  }
 
   const handleAddTag = (tagToAdd) => {
     const cleanTag = tagToAdd.trim()
@@ -69,7 +106,10 @@ const EditorMetadata = ({ snippet, onSave, snippets }) => {
               setTagInput(e.target.value)
               setShowTagSuggestions(true)
             }}
-            onFocus={() => setShowTagSuggestions(true)}
+            onFocus={() => {
+              setShowTagSuggestions(true)
+              generateSuggestions()
+            }}
             onBlur={() => setTimeout(() => setShowTagSuggestions(false), 200)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
@@ -78,13 +118,48 @@ const EditorMetadata = ({ snippet, onSave, snippets }) => {
               }
             }}
           />
-          {showTagSuggestions && tagInput.trim() && suggestions.length > 0 && (
+          {showTagSuggestions && (
             <div className="tag-suggestions">
+              {/* AI Suggestions Section */}
+              {aiSuggestions.length > 0 && !tagInput && (
+                <div className="suggestion-group">
+                  <div
+                    className="suggestion-header"
+                    style={{
+                      fontSize: '10px',
+                      padding: '4px 8px',
+                      color: 'var(--text-accent)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <Sparkles size={10} /> Suggested
+                  </div>
+                  {aiSuggestions.map((tag, i) => (
+                    <div
+                      key={`ai-${i}`}
+                      className="suggestion-item"
+                      onMouseDown={(e) => {
+                        e.preventDefault() // Prevent blur
+                        handleAddTag(tag)
+                        setTagInput('')
+                        setShowTagSuggestions(false)
+                      }}
+                    >
+                      {tag}
+                    </div>
+                  ))}
+                  <div className="dropdown-divider" style={{ margin: '4px 0' }} />
+                </div>
+              )}
+
               {suggestions.map((suggestion, i) => (
                 <div
                   key={i}
                   className="suggestion-item"
-                  onClick={() => {
+                  onMouseDown={(e) => {
+                    e.preventDefault() // Prevent blur
                     handleAddTag(suggestion)
                     setTagInput('')
                     setShowTagSuggestions(false)

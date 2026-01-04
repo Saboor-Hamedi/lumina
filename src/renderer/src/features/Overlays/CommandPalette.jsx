@@ -1,18 +1,22 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
-import { Search, FileText, Zap } from 'lucide-react'
+import { Search, FileText, Zap, Sparkles } from 'lucide-react'
 import { FixedSizeList as List } from '../../components/utils/VirtualList'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
+import { useAIStore } from '../../core/store/useAIStore'
 import './CommandPalette.css'
 
 /**
  * Virtualized Command Palette (Obsidian Standard #5)
- * Feature: Fuzzy Match Highlighting (FB/Google Standard)
+ * Feature: Fuzzy Match + Semantic AI Search
  */
 const CommandPalette = ({ isOpen, onClose, items, onSelect }) => {
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
+  const [aiResults, setAiResults] = useState([])
   const inputRef = useRef(null)
   const listRef = useRef(null)
+
+  const { searchNotes, isModelReady, modelLoadingProgress, aiError } = useAIStore()
 
   useKeyboardShortcuts({
     onEscape: isOpen ? onClose : null
@@ -22,25 +26,45 @@ const CommandPalette = ({ isOpen, onClose, items, onSelect }) => {
     if (isOpen) {
       setQuery('')
       setSelectedIndex(0)
+      setAiResults([])
       setTimeout(() => inputRef.current?.focus(), 50)
     }
   }, [isOpen])
 
-  const filtered = useMemo(() => {
-    if (!query) return items.slice(0, 50) // Show recent/all if empty
+  // AI Search Debounce
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      // Allow shorter queries for AI if the user paused?
+      // Keep > 2 for perf, but lower threshold
+      if (query.trim().length > 2) {
+        // Lower threshold to 0.45 to catch "food" -> "pasta"
+        const results = await searchNotes(query, 0.45)
+        setAiResults(results)
+      } else {
+        setAiResults([])
+      }
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [query])
 
-    const lowerQuery = query.toLowerCase()
-    return items
+  const filtered = useMemo(() => {
+    if (!query) return items.slice(0, 50)
+
+    const lowerQuery = query.toLowerCase().trim()
+    if (!lowerQuery) return items.slice(0, 50)
+
+    // 1. Text Matches
+    const textMatches = items
       .map((item) => {
-        // 1. Title Match (High Priority)
+        // Title Match
         if (item.title.toLowerCase().includes(lowerQuery)) {
           return { ...item, matchType: 'title', score: 10 }
         }
-        // 2. Content Match (Lower Priority)
-        const code = item.code || ''
+        // Content Match (Check code AND content just in case)
+        const code = item.code || item.content || ''
         const codeIndex = code.toLowerCase().indexOf(lowerQuery)
+
         if (codeIndex !== -1) {
-          // Extract text snippet around match
           const start = Math.max(0, codeIndex - 20)
           const end = Math.min(code.length, codeIndex + lowerQuery.length + 40)
           const snippet =
@@ -51,8 +75,26 @@ const CommandPalette = ({ isOpen, onClose, items, onSelect }) => {
       })
       .filter(Boolean)
       .sort((a, b) => b.score - a.score)
-      .slice(0, 50)
-  }, [items, query])
+
+    // 2. Semantic Matches (exclude existing text matches)
+    const existingIds = new Set(textMatches.map((i) => i.id))
+
+    const semanticMatches = aiResults
+      .filter((r) => !existingIds.has(r.id))
+      .map((r) => {
+        const item = items.find((i) => i.id === r.id)
+        if (!item) return null
+        return {
+          ...item,
+          matchType: 'semantic',
+          score: r.score * 4, // Scale 0-1 score to be comparable
+          matchSnippet: 'Semantic Match'
+        }
+      })
+      .filter(Boolean)
+
+    return [...textMatches, ...semanticMatches].slice(0, 50)
+  }, [items, query, aiResults])
 
   useEffect(() => {
     if (listRef.current) {
@@ -75,9 +117,9 @@ const CommandPalette = ({ isOpen, onClose, items, onSelect }) => {
     }
   }
 
-  // Highlight matching characters (Premium Polish)
+  // Highlight matching characters
   const HighlightText = ({ text, highlight }) => {
-    if (!highlight.trim()) return <span>{text}</span>
+    if (!highlight.trim() || text === 'Semantic Match') return <span>{text}</span>
     const regex = new RegExp(`(${highlight})`, 'gi')
     const parts = text.split(regex)
     return (
@@ -98,6 +140,7 @@ const CommandPalette = ({ isOpen, onClose, items, onSelect }) => {
   const Row = ({ index, style }) => {
     const item = filtered[index]
     const isActive = index === selectedIndex
+    const isSemantic = item.matchType === 'semantic'
 
     return (
       <div
@@ -109,14 +152,23 @@ const CommandPalette = ({ isOpen, onClose, items, onSelect }) => {
         }}
         onMouseEnter={() => setSelectedIndex(index)}
       >
-        <FileText size={18} className="item-icon" />
+        {isSemantic ? (
+          <Sparkles size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
+        ) : (
+          <FileText size={18} className="item-icon" />
+        )}
+
         <div className="item-info">
           <div className="item-title">
             <HighlightText text={item.title || 'Untitled'} highlight={query} />
           </div>
           {item.matchSnippet && (
-            <div className="item-secondary">
-              <HighlightText text={item.matchSnippet} highlight={query} />
+            <div className={`item-secondary ${isSemantic ? 'semantic-badge' : ''}`}>
+              {isSemantic ? (
+                '✨ AI Match'
+              ) : (
+                <HighlightText text={item.matchSnippet} highlight={query} />
+              )}
             </div>
           )}
         </div>
@@ -143,7 +195,19 @@ const CommandPalette = ({ isOpen, onClose, items, onSelect }) => {
             }}
             onKeyDown={handleKeyDown}
           />
-          <div className="palette-hint">ESC to close</div>
+          <div className="palette-hint">
+            {aiError ? (
+              <span style={{ color: 'var(--text-error)' }}>⚠️ AI Error: {aiError}</span>
+            ) : (!isModelReady || modelLoadingProgress < 100) && query.length > 2 ? (
+              <span className="loading-status" style={{ color: 'var(--text-accent)' }}>
+                {modelLoadingProgress > 0
+                  ? `AI Loading ${Math.round(modelLoadingProgress)}%...`
+                  : 'AI Initializing...'}
+              </span>
+            ) : (
+              'ESC to close'
+            )}
+          </div>
         </div>
 
         <div
