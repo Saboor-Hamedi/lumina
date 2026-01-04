@@ -1,0 +1,36 @@
+{
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "editor.cursorBlinking": "smooth",
+  "editor.cursorSmoothCaretAnimation": "on",
+  "editor.cursorWidth": 3,
+  "editor.fontLigatures": true,
+  "editor.fontWeight": "500",
+  "workbench.colorCustomizations": {
+    "editorCursor.foreground": "#FFD700",
+    "editorGroupHeader.tabsBackground": "#181d27",
+    "editorGroupHeader.noTabsBackground": "#181d27",
+    "editorGroupHeader.tabsBorder": "#181d27",
+    "editorGroupHeader.noTabsBorder": "#181d27",
+    "editorGroup.dropBackground": "#181d27",
+    "editorGroup.dropBorder": "#181d27",
+    "editor.background": "#181d27",
+    "sideBar.background": "#181d27",
+    "panel.background": "#181d27",
+    "tab.activeBackground": "#181d27",
+    "tab.inactiveBackground": "#181d27",
+    "terminal.background": "#181d27",
+    "quickInput.background": "#181d27"
+  },
+  "editor.find.autoFindInSelection": "never",
+  "editor.fontFamily": "'JetBrains Mono'",
+  "editor.fontSize": 14,
+  "editor.formatOnPaste": true
+}

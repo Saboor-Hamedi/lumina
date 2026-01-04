@@ -1,0 +1,819 @@
+/* UNIFIED EDITOR FONT: Consistent across all modes (Requested by User) */
+.cm-content {
+  font-family: var(--font-editor, 'Inter', system-ui, sans-serif) !important;
+  font-size: var(--font-size-editor, 16px) !important;
+  line-height: var(--line-height-editor, 1.6) !important;
+}
+
+/* Base Styles */
+.seamless-editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-app); /* Matches the main app background perfectly */
+  overflow: hidden;
+}
+
+.editor-titlebar {
+  min-height: 40px; /* Use min-height to allow wrapping */
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: transparent;
+  border-bottom: 1px solid var(--border-card);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.editor-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-faint);
+  font-weight: 500;
+  flex: 1;
+  min-width: 0; /* Critical for truncation */
+}
+
+.breadcrumb-icon {
+  color: var(--text-accent);
+  opacity: 0.6;
+}
+
+.breadcrumb-sep {
+  opacity: 0.3;
+}
+
+.breadcrumb-active {
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.editor-scroller {
+  flex: 1;
+  overflow-y: auto;
+  background: transparent;
+  display: flex;
+  justify-content: center;
+}
+
+.editor-canvas-wrap {
+  width: 100%;
+  max-width: 720px;
+  padding: 8vh 40px 10vh 40px;
+  display: flex;
+  flex-direction: column;
+  flex: 1; /* Allow it to grow and fill scroller */
+}
+
+.editor-large-title {
+  font-size: 42px;
+  font-weight: 800;
+  border: none;
+  background: transparent;
+  color: var(--text-main);
+  padding: 0;
+  margin-bottom: 24px;
+  letter-spacing: -0.04em;
+  width: 100%;
+  font-family: inherit;
+  outline: none;
+}
+
+.editor-large-title::placeholder {
+  color: var(--text-faint);
+  opacity: 0.2;
+}
+
+/* 
+ * CodeMirror Host 
+ */
+.cm-host-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.cm-editor {
+  flex: 1; /* Key for full height focus area */
+  background: transparent !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.cm-content {
+  line-height: 1.8;
+  color: var(--text-main) !important;
+  padding: 0 !important;
+}
+
+/* Hide CM Active Selection borders if any */
+.cm-activeLine {
+  background-color: var(--bg-active) !important;
+}
+
+.status-pill {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  color: var(--text-faint);
+  opacity: 0.5;
+}
+
+.status-pill.dirty {
+  color: var(--text-accent);
+  opacity: 1;
+}
+
+.editor-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0.8;
+  transition: opacity 0.3s;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.seamless-editor:hover .editor-controls {
+  opacity: 1;
+}
+
+.mode-toggle {
+  display: flex;
+  background: var(--bg-active);
+  padding: 2px;
+  border-radius: 6px;
+  border: 1px solid var(--border-card);
+}
+
+.mode-btn {
+  background: transparent;
+  border: none;
+  padding: 3px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-faint);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  outline: none;
+}
+
+.mode-btn:hover {
+  color: var(--text-muted);
+  background: rgba(255,255,255,0.03);
+}
+
+.mode-btn.active {
+  background: var(--bg-panel);
+  color: var(--text-accent);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.icon-btn:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+  transform: translateY(-1px);
+}
+
+.icon-btn:active {
+  transform: translateY(0);
+}
+
+/* --- Cursor & Mouse Polish --- */
+.cursor-smooth .cm-cursor {
+  border-left: 2px solid var(--text-accent) !important;
+  transition: transform 0.1s cubic-bezier(0, 0, 0.2, 1), opacity 0.2s;
+}
+
+.cursor-sharp .cm-cursor {
+  border-left: 2.5px solid var(--text-accent) !important;
+  opacity: 1 !important;
+}
+
+.cursor-block .cm-cursor {
+  border-left: none !important;
+  background-color: var(--text-accent) !important;
+  width: 0.6em !important;
+  opacity: 0.7 !important;
+}
+
+/* Subtle blink for block cursor */
+.cursor-block .cm-focused .cm-cursor {
+  animation: cm-blink-block 1.2s steps(1) infinite;
+}
+
+@keyframes cm-blink-block {
+  50% { opacity: 0; }
+}
+
+.mode-reading {
+  cursor: default;
+}
+
+.mode-reading .cm-content,
+.mode-live .cm-content,
+.mode-source .cm-content {
+  cursor: text;
+}
+
+[data-translucency='true'] body,
+[data-translucency='true'] #root,
+[data-translucency='true'] .app-shell {
+  background: transparent !important;
+}
+
+[data-translucency='true'] .shell-sidebar-left,
+[data-translucency='true'] .shell-sidebar-right,
+[data-translucency='true'] .shell-ribbon {
+  background: rgba(var(--bg-app-rgb, 15, 15, 15), 0.5) !important;
+  backdrop-filter: blur(10px);
+}
+
+/* Inline Metadata Bar */
+.editor-metadata-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 40px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 20px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.meta-tag-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-surface);
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.meta-tag-input:focus-within {
+  border-color: var(--text-accent);
+  background: var(--bg-app);
+}
+
+.meta-tag-input input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: inherit;
+  width: 150px;
+}
+
+.meta-info-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.8;
+}
+
+.meta-icon {
+  color: var(--text-accent);
+  opacity: 0.7;
+}
+
+.editor-metadata-bar kbd {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+}
+
+/* --- PREMIUM OBSIDIAN AESTHETICS --- */
+
+/* Active Line Highlight (Indicator only, no full-width block to avoid selection confusion) */
+.cm-activeLine {
+  background-color: transparent !important;
+  border-left: 3px solid var(--text-accent);
+  transition: border-left 0.2s ease;
+}
+
+[data-theme='dark'] .cm-activeLine,
+[data-theme='obsidian-robust'] .cm-activeLine {
+  border-left-color: var(--text-accent);
+}
+
+/* Better Selection (Localized, not full-width) */
+.cm-selectionBackground,
+.cm-content ::selection,
+.cm-editor ::selection,
+.editor-large-title ::selection {
+  background-color: var(--bg-selection) !important;
+}
+
+.cm-selectionMatch {
+  background-color: rgba(123, 97, 255, 0.15) !important;
+  border-bottom: 2px solid var(--text-accent);
+}
+
+/* Heading Improvements */
+.cm-heading {
+  font-family: var(--font-editor);
+  font-weight: 700;
+  color: var(--text-main);
+  padding-top: 1.2em;
+  padding-bottom: 0.4em;
+  letter-spacing: -0.01em;
+}
+
+.cm-heading-1 { 
+    font-size: 2.6em; 
+    border-bottom: 1px solid var(--border-dim); 
+    padding-bottom: 0.3em;
+    color: var(--text-accent);
+}
+.cm-heading-2 { font-size: 2.0em; color: var(--text-main); opacity: 0.95; }
+.cm-heading-3 { font-size: 1.5em; opacity: 0.9; }
+.cm-heading-4 { font-size: 1.25em; opacity: 0.85; }
+
+/* WikiLink Styling */
+.cm-link-bracket {
+  color: var(--text-faint);
+  opacity: 0.5;
+  font-weight: 400;
+}
+
+.cm-wiki-link {
+  color: var(--text-accent);
+  text-decoration: none;
+  font-weight: 500;
+  border-bottom: 1px dashed rgba(123, 97, 255, 0.3);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cm-wiki-link:hover {
+  background: rgba(123, 97, 255, 0.1);
+  border-bottom-style: solid;
+}
+
+/* Image Previews */
+.cm-image-container {
+  display: block;
+  margin: 1.5em 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-dim);
+  background: var(--bg-panel);
+  max-width: fit-content;
+}
+
+.cm-image-container img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  transition: transform 0.3s ease;
+}
+
+.cm-image-container:hover img {
+  transform: scale(1.01);
+}
+
+/* Code Blocks (Premium Glassmorphism) */
+.cm-codeblock {
+  background: var(--bg-panel) !important;
+  border-radius: 6px;
+  margin: 1em 0;
+  border: 1px solid var(--border-card, rgba(0,0,0,0.05));
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.95em;
+}
+
+/* Hidden elements in Reading Mode */
+.mode-reading .cm-hidden-mark {
+  display: none !important;
+}
+
+.mode-live .cm-hidden-mark {
+  opacity: 0.3;
+  transition: opacity 0.2s;
+}
+
+.cm-activeLine .cm-hidden-mark {
+  opacity: 1 !important;
+  color: var(--text-accent);
+}
+
+/* Smooth Scrolling & Transitions */
+.cm-scroller {
+  scroll-behavior: smooth;
+}
+
+/* Scrollbar Styling */
+.cm-scroller::-webkit-scrollbar {
+  width: 6px;
+}
+
+.cm-scroller::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+[data-theme='dark'] .cm-scroller::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+}
+.cm-inline-code {
+  background: var(--bg-active);
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9em;
+  padding: 0.2em 0.4em;
+}
+
+.cm-strong {
+  font-weight: 800;
+  color: var(--text-accent);
+}
+
+.cm-em {
+  font-style: italic;
+  font-family: inherit;
+  color: var(--text-main);
+  opacity: 0.85;
+}
+
+.cm-list-bullet, .cm-list-mark {
+  color: var(--text-accent);
+  font-weight: bold;
+}
+
+.cm-hr {
+  border: 0;
+  border-top: 1px solid var(--border-dim);
+  margin: 1.5em 0;
+  height: 0;
+  display: block;
+}
+
+/* Code Block "Block" Look */
+/* Code Block "Card" Look */
+/* Code Block "Card" Look */
+/* Code Block "Card" Look */
+:root {
+  --bg-code-surface: rgba(255, 255, 255, 0.04); /* Subtle transparent gray */
+  --border-code: rgba(255, 255, 255, 0.08);
+}
+
+.cm-codeblock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-code-surface);
+  border: 1px solid var(--border-code);
+  border-bottom: 1px solid rgba(255,255,255,0.02);
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  padding: 4px 12px; 
+  margin-top: 1.2em;
+  user-select: none;
+}
+
+.cm-codeblock-body {
+  background-color: var(--bg-code-surface) !important;
+  border-left: 1px solid var(--border-code);
+  border-right: 1px solid var(--border-code);
+  margin: 0 !important; 
+}
+
+/* Ensure padding inside the box - targeting the line element */
+.cm-codeblock-body.cm-line { 
+    padding-left: 12px !important; 
+    padding-right: 12px !important;
+}
+
+.cm-codeblock-footer {
+  height: 16px; /* Thick footer */
+  background: var(--bg-code-surface);
+  border: 1px solid var(--border-code);
+  border-top: none;
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+  margin-bottom: 1.5em; 
+}
+
+.cm-lang-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-faint);
+  font-family: var(--font-editor);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cm-copy-btn {
+  background: transparent;
+  border: 1px solid var(--border-code);
+  color: var(--text-faint);
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cm-copy-btn:hover {
+  background: rgba(255,255,255,0.1);
+  color: var(--text-main);
+  border-color: var(--text-muted);
+}
+
+.cm-url {
+  color: var(--text-accent);
+  text-decoration: underline;
+  opacity: 0.8;
+}
+
+.cm-hidden-mark {
+  display: none !important;
+}
+
+.cm-wikilink {
+  color: var(--text-accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+  position: relative;
+  z-index: 5; /* Ensure above text but below tooltips */
+  pointer-events: auto;
+}
+
+.cm-wikilink:hover {
+  border-bottom-color: var(--text-accent);
+  opacity: 1;
+  background: rgba(var(--text-accent-rgb), 0.15); 
+  text-decoration: none;
+}
+
+/* --- Wiki Hover Tooltip --- */
+.cm-wiki-hover {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-card);
+  border-radius: 8px;
+  max-width: 300px; /* Slimmer */
+  min-width: 220px;
+  width: max-content;
+  backdrop-filter: blur(24px);
+  pointer-events: auto; /* ENABLED SCROLLING */
+  display: flex;
+  flex-direction: column;
+  max-height: 280px; /* More compact */
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  user-select: text;
+  animation: tooltipFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes tooltipFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* CodeMirror Tooltip Container Override */
+.cm-tooltip {
+  z-index: 99999 !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+/* Header Section */
+.wiki-hover-header {
+  padding: 12px 12px 8px 12px;
+  border-bottom: 1px solid var(--border-dim);
+  flex-shrink: 0;
+}
+
+.wiki-hover-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+
+.wiki-hover-meta {
+  font-size: 10px;
+  color: var(--text-faint);
+  font-weight: 500;
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Content Section (Scrollable) */
+.wiki-hover-content-wrap {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 40px;
+  max-height: 240px; /* Adjusted to fit overall max-height */
+  padding: 12px;
+  background: rgba(0,0,0,0.02);
+}
+
+/* Custom scrollbar for hover content */
+.wiki-hover-content-wrap::-webkit-scrollbar {
+  width: 6px;
+}
+
+.wiki-hover-content-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.wiki-hover-content-wrap::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-radius: 3px;
+}
+
+.wiki-hover-content-wrap::-webkit-scrollbar-thumb:hover {
+  background: var(--text-faint);
+}
+
+.wiki-hover-content {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  white-space: normal; /* Changed from pre-wrap since we're using HTML */
+  word-wrap: break-word;
+  font-family: var(--font-editor);
+}
+
+.markdown-rendered-preview {
+  color: var(--text-muted);
+}
+
+.markdown-rendered-preview p {
+  margin-bottom: 0.8em;
+}
+
+.markdown-rendered-preview p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-rendered-preview h1, 
+.markdown-rendered-preview h2, 
+.markdown-rendered-preview h3 {
+  color: var(--text-main);
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  font-size: 1.1em;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.markdown-rendered-preview h1:first-child {
+  margin-top: 0;
+}
+
+.markdown-rendered-preview ul, 
+.markdown-rendered-preview ol {
+  padding-left: 20px;
+  margin-bottom: 0.8em;
+}
+
+.markdown-rendered-preview code {
+  background: var(--bg-active);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9em;
+}
+
+.markdown-rendered-preview blockquote {
+  border-left: 3px solid var(--border-dim);
+  padding-left: 12px;
+  color: var(--text-faint);
+  font-style: italic;
+  margin: 12px 0;
+}
+
+/* Footer Section */
+.wiki-hover-footer {
+  padding: 8px 12px;
+  border-top: 1px solid var(--border-dim);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: var(--text-faint);
+  flex-shrink: 0;
+}
+
+.wiki-hover-timestamp {
+  font-weight: 600;
+  opacity: 0.5;
+}
+
+/* Not Found State */
+.cm-wiki-hover.not-found {
+  padding: 16px;
+  text-align: center;
+  max-width: 280px;
+}
+
+.wiki-hover-not-found-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+  opacity: 0.5;
+}
+
+.wiki-hover-not-found-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+
+.wiki-hover-not-found-hint {
+  font-size: 10px;
+  color: var(--text-faint);
+  opacity: 0.7;
+  font-style: italic;
+}
+
+/* Error State */
+.cm-wiki-hover.error {
+  padding: 12px;
+  color: var(--text-warning);
+  font-size: 11px;
+  text-align: center;
+}
+
+/* Ghost Completion & Autocomplete Tooltip */
+.cm-tooltip-autocomplete {
+  background: var(--bg-panel) !important;
+  border: 1px solid var(--border-dim) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4) !important;
+  backdrop-filter: blur(8px);
+  padding: 4px !important;
+  animation: palette-slide-down 0.2s cubic-bezier(0, 0, 0.2, 1);
+  overflow: hidden !important;
+}
+
+.cm-tooltip-autocomplete ul {
+  max-height: 280px !important;
+}
+
+.cm-tooltip-autocomplete ul li {
+  padding: 6px 12px !important;
+  border-radius: 6px !important;
+  font-size: 13px !important;
+  color: var(--text-muted) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  transition: all 0.1s ease;
+}
+
+.cm-tooltip-autocomplete ul li[aria-selected] {
+  background: var(--bg-active) !important;
+  color: var(--text-accent) !important;
+}
+
+.cm-completionLabel {
+  font-weight: 500 !important;
+}
+
+.cm-completionDetail {
+  font-size: 10px !important;
+  opacity: 0.5 !important;
+  font-style: italic !important;
+  margin-left: auto !important;
+}

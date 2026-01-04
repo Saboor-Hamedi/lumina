@@ -1,0 +1,58 @@
+.activity-bar {
+  width: var(--ribbon-width);
+  height: 100%;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border-dim);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 12px 0 32px 0; /* Standardized robust bottom padding */
+  flex-shrink: 0;
+}
+
+.bar-top, .bar-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.bar-item {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: color 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.bar-item:hover {
+  color: var(--text-main);
+}
+
+.bar-item.active {
+  color: var(--text-main);
+}
+
+/* Premium Vertical Indicator */
+.bar-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  background: var(--text-accent);
+  border-radius: 0 4px 4px 0;
+  box-shadow: 0 0 10px var(--text-accent);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bar-item:active {
+  transform: scale(0.92);
+}

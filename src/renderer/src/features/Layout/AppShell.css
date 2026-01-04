@@ -1,0 +1,229 @@
+.app-shell {
+  display: grid;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  
+  /* Modular Three-Pane Grid Layout */
+  grid-template-areas: 
+    "header header header header"
+    "ribbon sidebar main inspector";
+  
+  grid-template-rows: var(--header-height) 1fr;
+  grid-template-columns: var(--ribbon-width) var(--sidebar-width) 1fr var(--sidebar-width);
+  
+  transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app-shell > * {
+  min-height: 0;
+  min-width: 0;
+}
+
+.app-shell.left-closed {
+  grid-template-columns: var(--ribbon-width) 0px 1fr var(--sidebar-width);
+}
+
+.app-shell.right-closed {
+  grid-template-columns: var(--ribbon-width) var(--sidebar-width) 1fr 0px;
+}
+
+.shell-header {
+  grid-area: header;
+  z-index: var(--z-header);
+}
+
+.shell-ribbon {
+  grid-area: ribbon;
+  z-index: var(--z-sidebar);
+}
+
+.shell-sidebar-left {
+  grid-area: sidebar;
+  overflow: hidden;
+  border-right: 1px solid var(--border-dim);
+  background: var(--bg-sidebar);
+  z-index: var(--z-sidebar);
+}
+
+.shell-main {
+  grid-area: main;
+  background: var(--bg-app);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.shell-sidebar-right {
+  grid-area: inspector;
+  background: var(--bg-sidebar);
+  border-left: 1px solid var(--border-dim);
+  overflow: hidden;
+}
+
+/* Inspector Styles */
+.inspector-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.panel-header {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-card);
+  background: var(--bg-sidebar);
+}
+
+.panel-content {
+  padding: 20px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.skeleton-inspector {
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-empty {
+  color: var(--text-faint);
+  font-style: italic;
+  font-size: 12px;
+}
+
+.meta-section {
+  margin-bottom: 24px;
+}
+
+.meta-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+}
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.meta-row span:first-child {
+  color: var(--text-muted);
+}
+
+.meta-value {
+  color: var(--text-main);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+}
+
+.meta-value.badge {
+  background: var(--bg-active);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--text-accent);
+}
+
+.meta-separator {
+  height: 1px;
+  background: var(--border-card);
+  margin: 20px 0;
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.stat-box {
+  background: var(--bg-panel);
+  padding: 10px 4px;
+  border-radius: 6px;
+  text-align: center;
+  border: 1px solid var(--border-card);
+}
+
+.stat-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 2px;
+}
+
+.stat-label {
+  font-size: 9px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+}
+
+/* Welcome Hero Refinement */
+.welcome-placeholder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-app);
+}
+
+.welcome-hero {
+  text-align: center;
+  max-width: 500px;
+  animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.hero-title {
+  font-size: 84px;
+  font-weight: 900;
+  margin-bottom: 0px;
+  background: linear-gradient(135deg, var(--text-accent) 0%, #a855f7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.06em;
+  filter: drop-shadow(0 10px 30px rgba(123, 97, 255, 0.2));
+}
+
+.hero-subtitle {
+  font-size: 16px;
+  color: var(--text-muted);
+  font-weight: 500;
+  max-width: 280px;
+  line-height: 1.6;
+}
+
+.big-new-btn {
+  margin-top: 32px;
+  height: 40px;
+  padding: 0 32px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(123, 97, 255, 0.3);
+  background: var(--text-accent);
+  color: white;
+  border: none;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.big-new-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 50px rgba(123, 97, 255, 0.4);
+  filter: brightness(1.1);
+}

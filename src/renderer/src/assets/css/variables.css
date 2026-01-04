@@ -1,0 +1,29 @@
+/* ===== CSS VARIABLES & THEMES ===== */
+:root,
+.midnight-syntax {
+  --color-bg-primary: #0f1117;
+  --color-bg-secondary: #1a1d29;
+  --color-bg-tertiary: #252a3a;
+  --color-bg-card: #1e2233;
+  --color-text-primary: #e2e8f0;
+  --color-text-secondary: #94a3b8;
+  --color-text-tertiary: #64748b;
+  --color-accent-primary: #181d27;
+  --color-accent-secondary: #181d27;
+  --color-border: #2d3748;
+  --color-success: #10b981;
+  --color-error: #ef4444;
+  --color-shadow: rgba(0, 0, 0, 0.3);
+}
+
+.solar-dawn {
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f8fafc;
+  --color-bg-tertiary: #f1f5f9;
+  --color-bg-card: #ffffff;
+  --color-text-primary: #1e293b;
+  --color-text-secondary: #475569;
+  --color-text-tertiary: #64748b;
+  --color-border: #e2e8f0;
+  --color-shadow: rgba(0, 0, 0, 0.1);
+}

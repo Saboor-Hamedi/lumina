@@ -1,0 +1,66 @@
+.title-bar {
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border-dim);
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+.title-left {
+  display: flex;
+  align-items: center;
+  padding-left: 12px;
+}
+
+.app-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-accent);
+}
+
+.app-name {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+}
+
+.title-right {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  -webkit-app-region: no-drag;
+}
+
+.window-controls {
+  display: flex;
+  height: 100%;
+}
+
+.control-btn {
+  width: 44px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.control-btn:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+.control-btn.close:hover {
+  background: #e81123;
+  color: white;
+}

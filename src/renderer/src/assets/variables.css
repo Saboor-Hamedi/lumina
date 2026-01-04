@@ -1,0 +1,60 @@
+/* ===== PREMIUM DESIGN TOKENS ===== */
+:root {
+  /* Dimensions */
+  --header-height: 32px;
+  --sidebar-width: 250px;
+  --ribbon-width: 48px;
+
+  /* Z-Index */
+  --z-base: 0;
+  --z-sidebar: 100;
+  --z-header: 200;
+  --z-overlay: 1000;
+  --z-modal: 2000;
+  --z-toast: 3000;
+
+  /* Aesthetics */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --shadow-premium: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme='obsidian-robust'] {
+  --bg-app: #000000;
+  --bg-sidebar: #111111;
+  --bg-panel: #0a0a0a;
+  --bg-editor: #000000;
+  --bg-active: #1a1a1a;
+  --bg-active-line: rgba(255, 255, 255, 0.03);
+  --bg-selection: rgba(123, 97, 255, 0.3);
+  
+  --text-main: #f0f0f0;
+  --text-muted: #a0a0a0;
+  --text-faint: #444444;
+  --text-accent: #7b61ff;
+  
+  --border-dim: #1d1d1d;
+  --border-card: #222222;
+  --scroll-thumb: #222222;
+}
+
+[data-theme='dark'] {
+  --bg-app: #1e1e1e;
+  --bg-sidebar: #191919;
+  --bg-panel: #111111;
+  --bg-editor: #1e1e1e;
+  --bg-active: rgba(255, 255, 255, 0.05);
+  --bg-active-line: rgba(157, 124, 255, 0.07);
+  --bg-selection: rgba(75, 135, 255, 0.3);
+
+  --text-main: #dddddd;
+  --text-muted: #aaaaaa;
+  --text-faint: #666666;
+  --text-accent: #9d7cff;
+
+  --border-dim: rgba(255, 255, 255, 0.1);
+  --border-card: rgba(255, 255, 255, 0.05);
+}
