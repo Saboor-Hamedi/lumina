@@ -251,6 +251,21 @@ These suggestions draw inspiration from industry leaders (Google, Facebook) and 
 
 ---
 
+## 🔮 21. Retrieval-Augmented Generation (RAG) (User Request) - **PLANNED**
+
+**Idea:** Transform the AI assistant from a "single-note aware" helper into a "full-vault expert."
+
+**Why:** A "Second Brain" needs to connect dots across thousands of files. When a user asks "How does authentication work?", the AI should not just look at the open file but retrieve relevant context from `auth.js`, `login.md`, and `server.js` automatically.
+
+**Implementation Plan:**
+
+- **Vector Database**: Utilize the existing local embeddings (via `useAIStore`) to create a searchable vector index of the entire vault.
+- **Context Retrieval**: When a query is sent:
+  1. Generate embedding for the question.
+  2. Retrieve top-k semantically similar chunks from the *entire* vault.
+  3. Inject these snippets into the LLM system prompt as context.
+- **Privacy-First**: Keep all RAG operations local or ensuring only relevant snippets are sent to API endpoints (like DeepSeek) with user consent.
+
 ## Summary
 
 **All 20 engineering standards have been successfully implemented!** 🎉

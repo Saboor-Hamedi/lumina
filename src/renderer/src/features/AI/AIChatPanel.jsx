@@ -2,9 +2,13 @@ import React, { useState, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Virtuoso } from 'react-virtuoso'
+import { Copy, ThumbsUp, ThumbsDown, Check } from 'lucide-react'
 import { useAIStore } from '../../core/store/useAIStore'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import '../Layout/AppShell.css'
+
+const LuminaAvatar = React.memo(() => <div className="lumina-avatar">L</div>)
+const UserAvatar = React.memo(() => <div className="user-avatar">Me</div>)
 
 const CodeBlock = React.memo(({ inline, className, children, ...props }) => {
   const match = /language-(\w+)/.exec(className || '')
@@ -53,24 +57,73 @@ const MessageContent = React.memo(({ content }) => (
   </ReactMarkdown>
 ))
 
+const ChatActions = ({ msg, index, onCopy, onRate }) => {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopyClick = () => {
+    onCopy(msg.content)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="chat-response-actions">
+      <button
+        onClick={handleCopyClick}
+        title={copied ? 'Copied!' : 'Copy Response'}
+        style={copied ? { color: '#4ade80' } : {}}
+      >
+        {copied ? <Check size={12} /> : <Copy size={12} />}
+      </button>
+      <div className="action-divider" />
+      <button
+        className={msg.rating === 'up' ? 'active' : ''}
+        onClick={() => onRate(index, 'up')}
+        title="Helpful"
+      >
+        <ThumbsUp size={12} />
+      </button>
+      <button
+        className={msg.rating === 'down' ? 'active' : ''}
+        onClick={() => onRate(index, 'down')}
+        title="Not Helpful"
+      >
+        <ThumbsDown size={12} />
+      </button>
+    </div>
+  )
+}
+
 const AIChatPanel = () => {
-  const { chatMessages, isChatLoading, chatError, sendChatMessage, clearChat } = useAIStore()
+  const { chatMessages, isChatLoading, chatError, sendChatMessage, clearChat, updateMessage } =
+    useAIStore()
   const { selectedSnippet } = useVaultStore()
+
+  const handleCopy = (text) => {
+    navigator.clipboard.writeText(text)
+    // Could show a small toast, but button feedback is often enough
+  }
+
+  const handleRating = (index, type) => {
+    const current = chatMessages[index].rating
+    // Toggle off if same, otherwise set new
+    const newRating = current === type ? null : type
+    updateMessage(index, { rating: newRating })
+  }
 
   return (
     <div className="chat-interface">
       {chatMessages.length > 0 && (
-        <button
-          className="chat-clear-btn"
-          onClick={clearChat}
-          title="Clear Conversation"
-        >
+        <button className="chat-clear-btn" onClick={clearChat} title="Clear Conversation">
           Clear History
         </button>
       )}
-      
+
       {/* Virtualized List Container */}
-      <div className="chat-messages" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div
+        className="chat-messages"
+        style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+      >
         {chatMessages.length === 0 ? (
           <div className="chat-empty">
             <div className="chat-empty-icon">✨</div>
@@ -79,7 +132,9 @@ const AIChatPanel = () => {
               <button
                 className="chat-suggestion-btn"
                 onClick={() =>
-                  sendChatMessage(`Explain the code in "${selectedSnippet.title}"`, [selectedSnippet])
+                  sendChatMessage(`Explain the code in "${selectedSnippet.title}"`, [
+                    selectedSnippet
+                  ])
                 }
               >
                 Explain "{selectedSnippet.title}"
@@ -92,11 +147,42 @@ const AIChatPanel = () => {
             data={chatMessages}
             followOutput="smooth"
             itemContent={(index, msg) => (
-              <div 
-                className={`chat-bubble ${msg.role}`}
-                style={{ marginBottom: '12px' }} // Add margin here since flex gap is gone
+              <div
+                className={`chat-row ${msg.role}`}
+                style={{
+                  marginBottom: '20px',
+                  display: 'flex',
+                  gap: '10px',
+                  justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                  paddingLeft: msg.role === 'assistant' ? '4px' : '0',
+                  paddingRight: msg.role === 'user' ? '4px' : '0'
+                }}
               >
-                <MessageContent content={msg.content} />
+                {msg.role === 'assistant' && <LuminaAvatar />}
+
+                <div
+                  className="chat-content-stack"
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                    maxWidth: 'calc(100% - 40px)'
+                  }}
+                >
+                  <div className={`chat-bubble ${msg.role}`}>
+                    <MessageContent content={msg.content} />
+                  </div>
+                  {msg.role === 'assistant' && (
+                    <ChatActions
+                      msg={msg}
+                      index={index}
+                      onCopy={handleCopy}
+                      onRate={handleRating}
+                    />
+                  )}
+                </div>
+
+                {msg.role === 'user' && <UserAvatar />}
               </div>
             )}
             components={{
@@ -104,7 +190,9 @@ const AIChatPanel = () => {
                 <div style={{ paddingBottom: '20px' }}>
                   {isChatLoading && (
                     <div className="chat-bubble assistant typing">
-                      <span>.</span><span>.</span><span>.</span>
+                      <span>.</span>
+                      <span>.</span>
+                      <span>.</span>
                     </div>
                   )}
                   {chatError && <div className="chat-error">{chatError}</div>}

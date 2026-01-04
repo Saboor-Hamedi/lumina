@@ -50,6 +50,8 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
   const viewRef = useRef(null)
   const workerRef = useRef(null)
   const titleRef = useRef(null)
+  const previewTimeoutRef = useRef(null)
+  const selectionTimeoutRef = useRef(null)
 
   const { settings } = useSettingsStore()
   const { snippets, setSelectedSnippet, updateSnippetSelection, setDirty } = useVaultStore()
@@ -78,7 +80,11 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
       if (e.data.html !== undefined) setPreviewContent(e.data.html)
     }
     workerRef.current.postMessage({ code: snippet?.code || '', id: snippet.id })
-    return () => workerRef.current?.terminate()
+    return () => {
+      workerRef.current?.terminate()
+      if (previewTimeoutRef.current) clearTimeout(previewTimeoutRef.current)
+      if (selectionTimeoutRef.current) clearTimeout(selectionTimeoutRef.current)
+    }
   }, [])
 
   useEffect(() => {
@@ -208,11 +214,19 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             setIsDirty(true)
-            workerRef.current?.postMessage({ code: update.state.doc.toString(), id: snippet.id })
+            // Debounce Preview Generation
+            if (previewTimeoutRef.current) clearTimeout(previewTimeoutRef.current)
+            previewTimeoutRef.current = setTimeout(() => {
+              workerRef.current?.postMessage({ code: update.state.doc.toString(), id: snippet.id })
+            }, 300)
           }
           if (update.selectionSet) {
-            const sel = update.state.selection.main
-            updateSnippetSelection(snippet.id, { anchor: sel.anchor, head: sel.head })
+            // Debounce Selection Sync
+            if (selectionTimeoutRef.current) clearTimeout(selectionTimeoutRef.current)
+            selectionTimeoutRef.current = setTimeout(() => {
+              const sel = update.state.selection.main
+              updateSnippetSelection(snippet.id, { anchor: sel.anchor, head: sel.head })
+            }, 500)
           }
         })
       ]

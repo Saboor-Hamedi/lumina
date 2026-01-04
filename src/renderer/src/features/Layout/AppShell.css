@@ -424,6 +424,41 @@
   border-color: var(--text-muted);
 }
 
+/* Lumina Avatar */
+.lumina-avatar {
+  width: 24px;
+  height: 24px;
+  background: var(--text-accent);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  user-select: none;
+}
+
+.user-avatar {
+  width: 24px;
+  height: 24px;
+  background: var(--bg-modifier-active);
+  color: var(--text-normal);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 11px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  user-select: none;
+}
+
 .chat-messages {
   flex: 1;
   padding: 20px;
@@ -656,4 +691,48 @@ button.chat-copy-btn:hover {
   border: none;
   padding: 12px;
   font-size: 12px;
+}
+
+/* Chat Response Actions (Like/Dislike/Copy) */
+.chat-response-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 4px;
+  margin-left: 2px;
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+
+.chat-bubble-container:hover .chat-response-actions {
+  opacity: 1;
+}
+
+.chat-response-actions button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  color: var(--text-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.chat-response-actions button:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+.chat-response-actions button.active {
+  color: var(--text-accent);
+}
+
+.action-divider {
+  width: 1px;
+  height: 12px;
+  background: var(--border-dim);
+  margin: 0 4px;
 }

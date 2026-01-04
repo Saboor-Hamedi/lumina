@@ -121,6 +121,15 @@ export const useAIStore = create((set, get) => {
     isChatLoading: false,
     chatError: null,
 
+    updateMessage: (index, updates) =>
+      set((state) => {
+        const newMessages = [...state.chatMessages]
+        if (newMessages[index]) {
+          newMessages[index] = { ...newMessages[index], ...updates }
+        }
+        return { chatMessages: newMessages }
+      }),
+
     clearChat: () => set({ chatMessages: [], chatError: null }),
 
     sendChatMessage: async (message, contextSnippets = []) => {
