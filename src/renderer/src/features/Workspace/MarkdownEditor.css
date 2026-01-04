@@ -3,6 +3,54 @@
   font-family: var(--font-editor, 'Inter', system-ui, sans-serif) !important;
   font-size: var(--font-size-editor, 16px) !important;
   line-height: var(--line-height-editor, 1.6) !important;
+  padding: 0 10px !important; /* Internal editor breathing room */
+}
+
+/* Standard line padding for text readability */
+.cm-line {
+  padding: 0 4px !important;
+}
+
+/* Standard active line highlight: Ultra-subtle accent color */
+.cm-activeLine {
+  background-color: rgba(var(--text-accent-rgb, 64, 186, 250), 0.04) !important;
+}
+
+/* 
+  ULTRA-STABLE CODE BLOCK GEOMETRY (Engineering Std #11)
+*/
+.cm-line[class*="cm-codeblock-"] {
+  padding: 0 20px !important; /* Unified deeper code content padding */
+  margin: 0 !important;
+  line-height: var(--line-height-editor, 1.6) !important;
+  background: rgba(var(--bg-active-rgb), 0.15) !important; /* Match active line tone */
+  border-left: 2px solid rgba(var(--text-accent-rgb, 64, 186, 250), 0.4) !important;
+  border-right: 2px solid rgba(var(--text-accent-rgb, 64, 186, 250), 0.4) !important;
+  background-clip: padding-box !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.95em;
+}
+
+/* The FIRST line (with the header) must have ZERO padding to let the header fill the frame */
+.cm-line.cm-codeblock-begin {
+  padding: 0 !important;
+}
+
+/* Force transparent active line for all parts of code blocks */
+.cm-line[class*="cm-codeblock-"].cm-activeLine {
+  background-color: rgba(127, 127, 127, 0.08) !important; /* Match but slightly lighter */
+  outline: none !important;
+}
+I always get this 
+/* Global Selection Style for CM6: High visibility for "Robust" feel */
+.cm-selectionBackground, 
+.cm-content ::selection {
+  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.3) !important;
+}
+
+/* Force specific selection style for code blocks */
+.cm-line[class*="cm-codeblock-"] ::selection {
+  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.4) !important;
 }
 
 .seamless-editor {
@@ -886,11 +934,14 @@
   background: rgba(255, 255, 255, 0.1);
 }
 .cm-inline-code {
-  background: var(--bg-active);
+  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.15);
+  color: var(--text-accent);
+  border: 1px solid rgba(var(--text-accent-rgb, 64, 186, 250), 0.1);
   border-radius: 4px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'JetBrains Mono', 'Cascadia Code', monospace;
   font-size: 0.9em;
-  padding: 0.2em 0.4em;
+  padding: 0.05em 0.3em;
+  margin: 0 1px;
 }
 
 .cm-strong {
@@ -1289,52 +1340,108 @@
 
 /* Horizontal Rule Compact Styling */
 .cm-hr {
-  margin: 0.5em 0 !important; /* Compact spacing */
-  height: 2px !important;
-  background-color: var(--border-dim) !important; /* Use background for HR line */
+  margin: 0.1em 0 !important; /* Ultra-Compact spacing like Obsidian */
+  height: 1.5px !important;
+  background-color: var(--border-subtle) !important;
   border: none !important;
   padding: 0 !important;
+  opacity: 0.5;
 }
 
 /* Code Block Compact Styling */
 .cm-codeblock-header {
-  background: rgba(127, 127, 127, 0.05);
-  border-top-left-radius: 6px;
-  border-top-right-radius: 6px;
-  padding: 4px 12px;
-  margin-top: 0.5em !important; /* Tight margin */
-  font-size: 0.85em;
-  color: var(--text-faint);
-  display: flex;
+  background: var(--bg-sidebar) !important;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 14px !important;
+  margin: 0 !important;
+  display: flex !important;
   justify-content: space-between;
   align-items: center;
   user-select: none;
+  height: 38px !important;
+  box-sizing: border-box;
+  width: 100% !important;
+  border-left: 2px solid rgba(var(--text-accent-rgb, 64, 186, 250), 0.4);
+  border-right: 2px solid rgba(var(--text-accent-rgb, 64, 186, 250), 0.4);
+  border-top: 1px solid var(--border-subtle);
+  position: relative;
+  z-index: 10;
+  pointer-events: none; /* Let selection pass through background */
 }
 
-.cm-codeblock-body {
-  background: rgba(127, 127, 127, 0.05); /* Continuous background */
-  padding-left: 12px !important; /* Indent code text */
+.cm-lang-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-accent);
+  opacity: 0.7;
+  pointer-events: none; /* Keep selection flow clean */
 }
 
-.cm-codeblock-footer {
-  background: rgba(127, 127, 127, 0.05);
-  border-bottom-left-radius: 6px;
-  border-bottom-right-radius: 6px;
-  margin-bottom: 0.5em !important;
-  height: 6px; /* Minimal visual footer */
+.cm-codeblock-begin {
+  background: rgba(var(--bg-active-rgb), 0.1) !important;
+  margin: 0 !important;
+  padding: 0 !important; 
+  box-sizing: border-box;
+}
+
+.cm-line[class*="cm-codeblock-"] {
+  border-left: 2px solid rgba(var(--text-accent-rgb, 64, 186, 250), 0.4) !important;
+  border-right: 2px solid rgba(var(--text-accent-rgb, 64, 186, 250), 0.4) !important;
+  background: rgba(var(--bg-active-rgb), 0.1) !important;
+}
+
+.cm-codeblock-body,
+.cm-codeblock-end {
+  background: transparent !important;
+  margin: 0 !important;
+  border-left: none !important;
+  border-right: none !important;
+}
+
+/* Force selection color to match code block theme */
+.cm-selectionBackground {
+  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.25) !important;
+}
+
+.cm-line[class*="cm-codeblock-"] ::selection {
+  background: rgba(var(--text-accent-rgb), 0.3) !important;
+}
+
+[class*="cm-codeblock-"].cm-activeLine {
+  background-color: rgba(var(--text-accent-rgb), 0.1) !important; /* Active line inside code block */
+}
+
+.cm-line.cm-codeblock-begin {
+  border-radius: 0 !important; /* Header has the rounding now */
+  /* This line contains the starting ``` backticks */
+  border-top: none; 
+}
+
+.cm-codeblock-end {
+  border-bottom-left-radius: 8px !important;
+  border-bottom-right-radius: 8px !important;
+  border-bottom: 2px solid rgba(var(--text-accent-rgb, 64, 186, 250), 0.4) !important;
+  padding-bottom: 8px !important;
+  margin-bottom: 1em !important;
 }
 
 /* Copy Button Styling */
 .cm-copy-btn {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border-subtle);
   border-radius: 4px;
   color: var(--text-faint);
-  font-size: 0.8em;
+  font-size: 10px;
+  font-weight: 600;
   cursor: pointer;
-  opacity: 0;
-  padding: 2px 6px;
+  opacity: 0.5;
+  padding: 1px 6px;
   transition: all 0.2s;
+  pointer-events: auto; /* Re-enable for the button specifically */
 }
 
 .cm-codeblock-header:hover .cm-copy-btn {
@@ -1343,5 +1450,6 @@
 
 .cm-copy-btn:hover {
   background: var(--bg-active);
-  color: var(--text-main);
+  color: var(--text-accent);
+  border-color: var(--text-accent);
 }

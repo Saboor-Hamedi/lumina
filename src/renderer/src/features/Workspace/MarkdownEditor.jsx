@@ -9,7 +9,7 @@ import EditorMetadata from './components/EditorMetadata'
 import TabBar from './components/TabBar'
 import PreviewModal from '../Overlays/PreviewModal'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
-import { richMarkdown } from './richMarkdown'
+import { richMarkdown, editorMode } from './richMarkdown'
 import { wikiLinkCompletion } from './wikiLinkCompletion'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useVaultStore } from '../../core/store/useVaultStore'
@@ -17,9 +17,10 @@ import './MarkdownEditor.css'
 
 // CodeMirror 6 Imports
 import { EditorView } from 'codemirror'
-import { EditorState } from '@codemirror/state'
+import { EditorState, Compartment } from '@codemirror/state'
 import { markdown } from '@codemirror/lang-markdown'
 import { languages } from '@codemirror/language-data'
+import { StateEffect } from '@codemirror/state'
 
 // Essential CM6 Extensions
 import {
@@ -55,6 +56,11 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
   const prevIdRef = useRef(snippet?.id)
   const previewTimeoutRef = useRef(null)
   const selectionTimeoutRef = useRef(null)
+  const initTimeoutRef = useRef(null)
+  const isViewAliveRef = useRef(false)
+  const modeCompartment = useRef(new Compartment())
+  const settingsCompartment = useRef(new Compartment())
+  const ignoreUpdateRef = useRef(false)
 
   const { settings } = useSettingsStore()
   const { snippets, setSelectedSnippet, updateSnippetSelection, setDirty } = useVaultStore()
@@ -87,15 +93,27 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
       workerRef.current?.terminate()
       if (previewTimeoutRef.current) clearTimeout(previewTimeoutRef.current)
       if (selectionTimeoutRef.current) clearTimeout(selectionTimeoutRef.current)
+      if (initTimeoutRef.current) clearTimeout(initTimeoutRef.current)
     }
   }, [])
 
   useEffect(() => {
     if (!editorRef.current) return
 
+    const getModeExtensions = () => {
+      const exts = [editorMode.of(viewMode)]
+      if (viewMode === 'source') exts.push(lineNumbers())
+      if (viewMode === 'reading') {
+        exts.push(EditorView.editable.of(false))
+        exts.push(EditorState.readOnly.of(true))
+      }
+      return exts
+    }
+
     const startState = EditorState.create({
       doc: snippet?.code || '',
       extensions: [
+        modeCompartment.current.of(getModeExtensions()),
         highlightActiveLine(),
         dropCursor(),
         history(),
@@ -129,21 +147,15 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
         markdown({ codeLanguages: languages }),
         seamlessTheme,
         EditorView.lineWrapping,
-        ...(viewMode === 'source' ? [lineNumbers()] : []),
-        ...(viewMode === 'reading'
-          ? [EditorView.editable.of(false), EditorState.readOnly.of(true)]
-          : []),
         keymap.of([
-          { key: 'Mod-g', run: () => true }, // Intercept to allow Nexus to take over
-          { key: 'Mod-f', run: () => true }, // Block default search
-          { key: 'Mod-h', run: () => true }, // Block default replace
+          { key: 'Mod-g', run: () => true },
           ...closeBracketsKeymap,
           ...defaultKeymap,
           ...searchKeymap,
           ...historyKeymap,
           ...completionKeymap
         ]),
-        EditorView.domEventHandlers({
+        (EditorView.domEventHandlers({
           mousedown: (event, view) => {
             const target = event.target.closest('.cm-wikilink')
             if (target) {
@@ -176,7 +188,7 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
                 }
               }
             }
-            return false // Allow default selection behavior
+            return false
           },
           drop: async (event, view) => {
             const files = event.dataTransfer.files
@@ -184,29 +196,18 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
               const file = files[0]
               if (file.type.startsWith('image/')) {
                 event.preventDefault()
-
-                // Get drop position
                 const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
                 if (pos === null) return
-
                 try {
-                  if (!window.api.saveImage) {
-                    alert('Please restart the app to enable Drag & Drop features.')
-                    return
-                  }
                   const buffer = await file.arrayBuffer()
-                  // Call exposed API
                   const relativePath = await window.api.saveImage(buffer, file.name)
-
-                  // Insert Markdown: ![alt](path)
                   const insertText = `![${file.name}](${relativePath})`
-
                   view.dispatch({
                     changes: { from: pos, insert: insertText },
                     selection: { anchor: pos + insertText.length }
                   })
                 } catch (err) {
-                  console.error('Image drop failed:', err)
+                  console.error(err)
                 }
                 return true
               }
@@ -215,70 +216,95 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
           }
         }),
         EditorView.updateListener.of((update) => {
+          if (ignoreUpdateRef.current) return
           if (update.docChanged) {
             setIsDirty(true)
-            // Debounce Preview Generation
             if (previewTimeoutRef.current) clearTimeout(previewTimeoutRef.current)
             previewTimeoutRef.current = setTimeout(() => {
-              workerRef.current?.postMessage({ code: update.state.doc.toString(), id: snippet.id })
+              workerRef.current?.postMessage({
+                code: update.state.doc.toString(),
+                id: snippet.id
+              })
             }, 300)
           }
           if (update.selectionSet) {
-            // Debounce Selection Sync
             if (selectionTimeoutRef.current) clearTimeout(selectionTimeoutRef.current)
             selectionTimeoutRef.current = setTimeout(() => {
+              if (!isViewAliveRef.current) return
               const sel = update.state.selection.main
               updateSnippetSelection(snippet.id, { anchor: sel.anchor, head: sel.head })
             }, 500)
           }
-        })
+        }))
       ]
     })
 
     const view = new EditorView({ state: startState, parent: editorRef.current })
     viewRef.current = view
+    isViewAliveRef.current = true
 
-    setTimeout(() => {
-      if (view.destroyed) return // Guard against rapid unmounting
-
+    initTimeoutRef.current = setTimeout(() => {
+      if (view.destroyed || !isViewAliveRef.current) return
       if (snippet?.title === 'New Note' && titleRef.current) {
         titleRef.current.focus()
         titleRef.current.select()
       } else {
         view.focus()
-        // Restore caret position (FB Standard #11 Persistence)
         const targetSelection = snippetRef.current?.selection || snippet?.selection
         if (targetSelection) {
           try {
             const { anchor, head } = targetSelection
             const docLen = view.state.doc.length
-            const safeAnchor = Math.min(anchor, docLen)
-            const safeHead = Math.min(head, docLen)
             view.dispatch({
-              selection: { anchor: safeAnchor, head: safeHead },
-              // Only scroll into view if it's a NEW note. If switching modes, we handle scroll manually.
+              selection: { anchor: Math.min(anchor, docLen), head: Math.min(head, docLen) },
               scrollIntoView: snippet.id !== prevIdRef.current
             })
           } catch (e) {
-            console.warn('Failed to restore selection:', e)
+            console.warn(e)
           }
         }
-
-        // Mode Persistence: Restore Scroll Position if staying on same note
         if (snippet.id === prevIdRef.current && scrollPosRef.current > 0) {
           if (scrollerRef.current) scrollerRef.current.scrollTop = scrollPosRef.current
         } else {
-          // New Note: Update ID reference
           prevIdRef.current = snippet.id
         }
       }
-    }, 50) // Faster restoration
+    }, 50)
 
     return () => {
+      isViewAliveRef.current = false
+      if (initTimeoutRef.current) clearTimeout(initTimeoutRef.current)
       if (scrollerRef.current) scrollPosRef.current = scrollerRef.current.scrollTop
       view.destroy()
     }
-  }, [snippet.id, viewMode])
+  }, [snippet.id]) // ONLY recreate view when snippet ID changes
+
+  // RECONFIGURE view on mode change (No more destroy/create flicker)
+  useEffect(() => {
+    if (!viewRef.current || viewRef.current.destroyed) return
+
+    // Use Microtask to trigger reconfiguration outside the current update/render cycle
+    Promise.resolve().then(() => {
+      if (!viewRef.current || viewRef.current.destroyed) return
+
+      ignoreUpdateRef.current = true
+      const exts = [editorMode.of(viewMode)]
+      if (viewMode === 'source') exts.push(lineNumbers())
+      if (viewMode === 'reading') {
+        exts.push(EditorView.editable.of(false))
+        exts.push(EditorState.readOnly.of(true))
+      }
+
+      viewRef.current.dispatch({
+        effects: modeCompartment.current.reconfigure(exts)
+      })
+
+      // Briefly keep ignoring to allow React state to settle
+      setTimeout(() => {
+        ignoreUpdateRef.current = false
+      }, 100)
+    })
+  }, [viewMode])
 
   useEffect(() => {
     setTitle(snippet?.title || '')
