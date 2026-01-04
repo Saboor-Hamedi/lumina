@@ -5,6 +5,8 @@ import { cacheSnippets, getCachedSnippets } from '../db/cache'
  * Atomic State Store (FB Standard #2)
  * Enhanced with IndexedDB Caching for instant startup (#10).
  */
+let selectionTimeout = null
+
 export const useVaultStore = create((set, get) => ({
   snippets: [],
   selectedSnippet: null,
@@ -19,7 +21,7 @@ export const useVaultStore = create((set, get) => ({
   loadVault: async () => {
     console.log('[VaultStore] 🚀 Initializing Vault Load...')
     set({ isLoading: true })
-    
+
     // 1. Instant Load from Cache (Zero-Jump)
     try {
       const cached = await getCachedSnippets()
@@ -36,13 +38,10 @@ export const useVaultStore = create((set, get) => ({
     try {
       // 2. Background Sync from File System
       if (window.api?.getSnippets) {
-        console.log('[VaultStore] 📡 Syncing from File System...')
         const freshData = await window.api.getSnippets()
-        
+
         if (freshData) {
-          console.log(`[VaultStore] ✓ Sync complete. Found ${freshData.length} snippets on disk.`)
           set({ snippets: freshData })
-          
           // 3. Update Cache for next visit
           await cacheSnippets(freshData)
         } else {
@@ -60,17 +59,17 @@ export const useVaultStore = create((set, get) => ({
     try {
       if (window.api?.saveSnippet) {
         await window.api.saveSnippet(snippet)
-        
+
         const current = get().snippets
-        const exists = current.find(s => s.id === snippet.id)
+        const exists = current.find((s) => s.id === snippet.id)
         const next = exists
-          ? current.map(s => s.id === snippet.id ? snippet : s)
+          ? current.map((s) => (s.id === snippet.id ? snippet : s))
           : [snippet, ...current]
-        
+
         console.log(`[VaultStore] ✓ Save complete. ID: ${snippet.id}. Existed: ${!!exists}`)
         set({ snippets: next })
         await cacheSnippets(next)
-        
+
         if (get().selectedSnippet?.id === snippet.id) {
           set({ selectedSnippet: snippet })
         }
@@ -87,10 +86,10 @@ export const useVaultStore = create((set, get) => ({
         if (!confirmed) return
 
         await window.api.deleteSnippet(id)
-        const next = get().snippets.filter(s => s.id !== id)
+        const next = get().snippets.filter((s) => s.id !== id)
         set({ snippets: next })
         await cacheSnippets(next)
-        
+
         if (get().selectedSnippet?.id === id) {
           set({ selectedSnippet: next.length ? next[0] : null })
         }
@@ -101,18 +100,20 @@ export const useVaultStore = create((set, get) => ({
   },
 
   updateSnippetSelection: (id, selection) => {
-    set(state => ({
-      snippets: state.snippets.map(s => s.id === id ? { ...s, selection } : s),
-      selectedSnippet: state.selectedSnippet?.id === id 
-        ? { ...state.selectedSnippet, selection } 
-        : state.selectedSnippet
+    set((state) => ({
+      snippets: state.snippets.map((s) => (s.id === id ? { ...s, selection } : s)),
+      selectedSnippet:
+        state.selectedSnippet?.id === id
+          ? { ...state.selectedSnippet, selection }
+          : state.selectedSnippet
     }))
 
     // FB Standard #11: Robust Persistence (Sync selection to cache debounced)
-    const store = get()
-    if (this._selectionTimeout) clearTimeout(this._selectionTimeout)
-    this._selectionTimeout = setTimeout(() => {
-      cacheSnippets(get().snippets).catch(err => console.warn('[VaultStore] Selection cache failed:', err))
+    if (selectionTimeout) clearTimeout(selectionTimeout)
+    selectionTimeout = setTimeout(() => {
+      cacheSnippets(get().snippets).catch((err) =>
+        console.warn('[VaultStore] Selection cache failed:', err)
+      )
     }, 1000)
   }
 }))

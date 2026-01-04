@@ -37,6 +37,8 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
   const { snippets, setSelectedSnippet, updateSnippetSelection } = useVaultStore()
   const snippetsRef = useRef(snippets)
   const [title, setTitle] = useState(snippet?.title || '')
+  const [tagInput, setTagInput] = useState('')
+  const [showTagSuggestions, setShowTagSuggestions] = useState(false)
 
   useEffect(() => {
     snippetsRef.current = snippets
@@ -79,18 +81,21 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
         bracketMatching(),
         closeBrackets(),
         ...richMarkdown,
-        wikiHoverPreview(() => snippetsRef.current, async (targetTitle) => {
-          const newSnippet = {
-            id: crypto.randomUUID(),
-            title: targetTitle,
-            code: '',
-            language: 'markdown',
-            timestamp: Date.now(),
-            isPinned: false
+        wikiHoverPreview(
+          () => snippetsRef.current,
+          async (targetTitle) => {
+            const newSnippet = {
+              id: crypto.randomUUID(),
+              title: targetTitle,
+              code: '',
+              language: 'markdown',
+              timestamp: Date.now(),
+              isPinned: false
+            }
+            await onSave(newSnippet)
+            setSelectedSnippet(newSnippet)
           }
-          await onSave(newSnippet)
-          setSelectedSnippet(newSnippet)
-        }),
+        ),
         autocompletion({ override: [wikiLinkCompletion(() => snippetsRef.current)] }),
         rectangularSelection(),
         crosshairCursor(),
@@ -99,9 +104,15 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
         seamlessTheme,
         EditorView.lineWrapping,
         ...(viewMode === 'source' ? [lineNumbers()] : []),
-        ...(viewMode === 'reading' ? [EditorView.editable.of(false), EditorState.readOnly.of(true)] : []),
+        ...(viewMode === 'reading'
+          ? [EditorView.editable.of(false), EditorState.readOnly.of(true)]
+          : []),
         keymap.of([
-          ...closeBracketsKeymap, ...defaultKeymap, ...searchKeymap, ...historyKeymap, ...completionKeymap,
+          ...closeBracketsKeymap,
+          ...defaultKeymap,
+          ...searchKeymap,
+          ...historyKeymap,
+          ...completionKeymap
         ]),
         EditorView.domEventHandlers({
           mousedown: (event, view) => {
@@ -109,15 +120,15 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
             if (target) {
               const isReadOnly = view.state.readOnly
               const isModifierDown = event.ctrlKey || event.metaKey
-              
+
               if (isReadOnly || isModifierDown) {
                 event.preventDefault()
                 event.stopPropagation()
-                
+
                 const pos = view.posAtDOM(event.target)
                 const line = view.state.doc.lineAt(pos)
                 const lineText = line.text
-                
+
                 const regex = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g
                 let match
                 while ((match = regex.exec(lineText)) !== null) {
@@ -125,7 +136,9 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
                   const end = start + match[0].length
                   if (pos >= start && pos <= end) {
                     const targetTitle = match[1].trim()
-                    const targetSnippet = snippetsRef.current.find(s => s.title.toLowerCase() === targetTitle.toLowerCase())
+                    const targetSnippet = snippetsRef.current.find(
+                      (s) => s.title.toLowerCase() === targetTitle.toLowerCase()
+                    )
                     if (targetSnippet) {
                       setSelectedSnippet(targetSnippet)
                     }
@@ -155,7 +168,7 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
 
     setTimeout(() => {
       if (view.destroyed) return // Guard against rapid unmounting
-      
+
       if (snippet?.title === 'New Note' && titleRef.current) {
         titleRef.current.focus()
         titleRef.current.select()
@@ -192,11 +205,11 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
   // Auto-save functionality
   useEffect(() => {
     if (!isDirty) return
-    
+
     const autoSaveTimer = setTimeout(() => {
       handleSave()
     }, 2000) // Auto-save after 2 seconds of inactivity
-    
+
     return () => {
       clearTimeout(autoSaveTimer)
     }
@@ -207,14 +220,14 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
     // Merge latest selection from view into save payload
     const sel = viewRef.current?.state.selection.main
     const selection = sel ? { anchor: sel.anchor, head: sel.head } : snippetRef.current?.selection
-    
+
     onSave({ ...snippetRef.current, code, title, selection, timestamp: Date.now() })
     setIsDirty(false)
   }
 
   useKeyboardShortcuts({
     onSave: handleSave,
-    onTogglePreview: () => setIsPreviewOpen(prev => !prev),
+    onTogglePreview: () => setIsPreviewOpen((prev) => !prev),
     onEscape: () => {
       if (isPreviewOpen) {
         setIsPreviewOpen(false)
@@ -225,41 +238,60 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
   })
 
   return (
-    <div className={`markdown-editor seamless-editor mode-${viewMode} cursor-${settings.cursorStyle}`}>
+    <div
+      className={`markdown-editor seamless-editor mode-${viewMode} cursor-${settings.cursorStyle}`}
+    >
       <div className="editor-titlebar">
         {/* Breadcrumb Polish (Standard #9) */}
         <div className="editor-breadcrumb">
-          {(() => {
-            const lang = (snippet?.language || 'markdown').toLowerCase()
-            if (['javascript', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'python', 'py'].includes(lang)) return <FileCode size={12} className="breadcrumb-icon" />
-            if (lang === 'json') return <FileJson size={12} className="breadcrumb-icon" />
-            if (lang === 'markdown' || lang === 'md') return <Hash size={12} className="breadcrumb-icon" />
-            return <FileType size={12} className="breadcrumb-icon" />
-          })()}
-          <span>Notes</span>
+          <div className="breadcrumb-item clickable" onClick={() => setSelectedSnippet(null)}>
+            <FileType size={12} className="breadcrumb-icon" />
+            <span>Vault</span>
+          </div>
           <ChevronRight size={12} className="breadcrumb-sep" />
-          <span className="breadcrumb-active">{title || 'Untitled'}</span>
+          <div className="breadcrumb-item">
+            {(() => {
+              const lang = (snippet?.language || 'markdown').toLowerCase()
+              if (
+                ['javascript', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'python', 'py'].includes(
+                  lang
+                )
+              )
+                return <FileCode size={12} className="breadcrumb-icon" />
+              if (lang === 'json') return <FileJson size={12} className="breadcrumb-icon" />
+              if (lang === 'markdown' || lang === 'md')
+                return <Hash size={12} className="breadcrumb-icon" />
+              return <FileType size={12} className="breadcrumb-icon" />
+            })()}
+            <span className="breadcrumb-active">{title || 'Untitled'}</span>
+          </div>
         </div>
-        
+
         <div className="editor-controls">
           <div className="mode-toggle">
-            <button 
+            <button
               className={`mode-btn ${viewMode === 'source' ? 'active' : ''}`}
               onClick={() => setViewMode('source')}
               title="Source Mode"
-            >Src</button>
-            <button 
+            >
+              Src
+            </button>
+            <button
               className={`mode-btn ${viewMode === 'live' ? 'active' : ''}`}
               onClick={() => setViewMode('live')}
               title="Live Mode"
-            >Live</button>
-            <button 
+            >
+              Live
+            </button>
+            <button
               className={`mode-btn ${viewMode === 'reading' ? 'active' : ''}`}
               onClick={() => setViewMode('reading')}
               title="Reading Mode"
-            >Read</button>
+            >
+              Read
+            </button>
           </div>
-          
+
           <div className="editor-status-icons">
             <div className={`status-pill ${isDirty ? 'dirty' : 'saved'}`}>
               {isDirty ? 'Unsaved' : 'Saved'}
@@ -276,12 +308,15 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
 
       <div className="editor-scroller">
         <div className="editor-canvas-wrap">
-          <input 
-            type="text" 
+          <input
+            type="text"
             ref={titleRef}
             className="editor-large-title"
             value={title}
-            onChange={(e) => { setTitle(e.target.value); setIsDirty(true); }}
+            onChange={(e) => {
+              setTitle(e.target.value)
+              setIsDirty(true)
+            }}
             onDoubleClick={(e) => e.target.select()}
             placeholder="Untitled"
             spellCheck="false"
@@ -289,19 +324,95 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
           <div className="cm-host-container" ref={editorRef} />
         </div>
       </div>
-      
+
       {settings.inlineMetadata && (
         <div className="editor-metadata-bar">
-          <div className="meta-tag-input">
-             <Hash size={12} className="meta-icon" />
-             <input 
-               type="text" 
-               placeholder="Add tags..." 
-               value={snippet.tags || ''}
-               onChange={(e) => {
-                 onSave({ ...snippet, tags: e.target.value })
-               }}
-             />
+          <div className="meta-tag-container">
+            <Hash size={12} className="meta-icon" />
+            <div className="tag-pills">
+              {(snippet.tags || '')
+                .split(',')
+                .filter((t) => t.trim())
+                .map((tag, i) => (
+                  <span key={i} className="tag-pill">
+                    {tag.trim()}
+                    <button
+                      className="tag-remove"
+                      onClick={() => {
+                        const tags = (snippet.tags || '')
+                          .split(',')
+                          .filter((_, idx) => idx !== i)
+                          .join(',')
+                        onSave({ ...snippet, tags })
+                      }}
+                    >
+                      &times;
+                    </button>
+                  </span>
+                ))}
+            </div>
+            <div className="tag-input-wrap">
+              <input
+                type="text"
+                placeholder="Add tag..."
+                value={tagInput}
+                onChange={(e) => {
+                  setTagInput(e.target.value)
+                  setShowTagSuggestions(true)
+                }}
+                onFocus={() => setShowTagSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowTagSuggestions(false), 200)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && tagInput.trim()) {
+                    const currentTags = (snippet.tags || '')
+                      .split(',')
+                      .map((t) => t.trim())
+                      .filter(Boolean)
+                    if (!currentTags.includes(tagInput.trim())) {
+                      const tags = [...currentTags, tagInput.trim()].join(',')
+                      onSave({ ...snippet, tags })
+                    }
+                    setTagInput('')
+                  }
+                }}
+              />
+              {showTagSuggestions && tagInput.trim() && (
+                <div className="tag-suggestions">
+                  {Array.from(
+                    new Set(
+                      snippets.flatMap((s) =>
+                        (s.tags || '')
+                          .split(',')
+                          .map((t) => t.trim())
+                          .filter(Boolean)
+                      )
+                    )
+                  )
+                    .filter((t) => t.toLowerCase().includes(tagInput.toLowerCase()))
+                    .slice(0, 5)
+                    .map((suggestion, i) => (
+                      <div
+                        key={i}
+                        className="suggestion-item"
+                        onClick={() => {
+                          const currentTags = (snippet.tags || '')
+                            .split(',')
+                            .map((t) => t.trim())
+                            .filter(Boolean)
+                          if (!currentTags.includes(suggestion)) {
+                            const tags = [...currentTags, suggestion].join(',')
+                            onSave({ ...snippet, tags })
+                          }
+                          setTagInput('')
+                          setShowTagSuggestions(false)
+                        }}
+                      >
+                        {suggestion}
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
           </div>
           <div className="meta-info-pill">
             <Calendar size={12} className="meta-icon" />
@@ -309,9 +420,9 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
           </div>
         </div>
       )}
-      <PreviewModal 
-        isOpen={isPreviewOpen} 
-        onClose={() => setIsPreviewOpen(false)} 
+      <PreviewModal
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
         content={previewContent}
       />
     </div>
