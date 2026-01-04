@@ -17,7 +17,8 @@ export const useSettingsStore = create((set, get) => ({
       all: false
     },
     translucency: false,
-    inlineMetadata: true
+    inlineMetadata: true,
+    graphTheme: 'default'
   },
 
   isLoading: true,

@@ -1,57 +1,31 @@
-.preview-overlay {
+.preview-overlay-glass {
   position: fixed;
   inset: 0;
-  background: var(--bg-overlay);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: var(--z-overlay);
-  animation: fadeIn 0.2s ease-out;
+  z-index: 2000;
+  animation: fadeIn 0.4s ease-out;
 }
 
-.preview-container {
-  width: 95vw;
-  height: 90vh;
-  max-width: 1000px;
-  background: var(--bg-primary);
-  border-radius: 8px;
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
-  position: relative;
+.premium-preview-card {
+  max-width: 1200px;
+  background: var(--bg-app);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-main, 5px);
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid var(--border-primary);
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: slideUpScale 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.preview-close {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  border: none;
-  background: var(--bg-mod-hover);
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  z-index: 100;
-}
-
-.preview-close:hover {
-  background: #e81123;
-  color: white;
-}
-
-.preview-body {
-  flex: 1;
-  overflow-y: auto;
-  scroll-behavior: smooth;
-  background: var(--bg-primary);
+@keyframes slideUpScale {
+  from { transform: translateY(40px) scale(0.98); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
 }
 
 @keyframes fadeIn {
@@ -59,7 +33,114 @@
   to { opacity: 1; }
 }
 
-@keyframes slideUp {
-  from { transform: translateY(30px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+/* Re-styled Breadcrumb for Premium Feel */
+.preview-breadcrumb {
+  background: var(--bg-active);
+  padding: 4px 12px 4px 4px;
+  border-radius: var(--radius-main, 5px);
+  border: 1px solid var(--border-dim);
+  gap: 10px;
+}
+
+.preview-indicator-tag {
+  font-size: 9px;
+  font-weight: 800;
+  color: white;
+  background: var(--text-accent);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm, 3px);
+  letter-spacing: 0.05em;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.preview-filename-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.preview-header-left, .preview-header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.preview-header-right {
+  justify-content: flex-end;
+}
+
+.preview-header-center {
+  display: flex;
+  justify-content: center;
+  flex: 1;
+}
+
+.preview-stats-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(var(--bg-active), 0.5);
+  padding: 4px 14px;
+  border-radius: var(--radius-main, 5px);
+  border: 1px solid var(--border-dim);
+}
+
+.preview-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.preview-stat-sep {
+  width: 1px;
+  height: 10px;
+  background: var(--border-dim);
+}
+
+.preview-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 12px;
+  border-right: 1px solid var(--border-dim);
+}
+
+.preview-action-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--radius-main, 5px);
+  transition: all 0.2s;
+}
+
+.preview-action-btn:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+.preview-body {
+  flex: 1;
+  background: var(--bg-app);
+}
+
+/* Custom Scrollbar */
+.seamless-scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+.seamless-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.seamless-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 10px;
+  border: 3px solid var(--bg-app);
+}
+.seamless-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--text-faint);
 }

@@ -155,7 +155,7 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
           ...historyKeymap,
           ...completionKeymap
         ]),
-        (EditorView.domEventHandlers({
+        EditorView.domEventHandlers({
           mousedown: (event, view) => {
             const target = event.target.closest('.cm-wikilink')
             if (target) {
@@ -235,7 +235,7 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
               updateSnippetSelection(snippet.id, { anchor: sel.anchor, head: sel.head })
             }, 500)
           }
-        }))
+        })
       ]
     })
 
@@ -440,6 +440,13 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
         isOpen={isPreviewOpen}
         onClose={() => setIsPreviewOpen(false)}
         content={previewContent}
+        title={title}
+        onNavigate={(title) => {
+          const target = snippetsRef.current.find(
+            (s) => s.title.toLowerCase() === title.toLowerCase()
+          )
+          if (target) setSelectedSnippet(target)
+        }}
       />
     </div>
   )

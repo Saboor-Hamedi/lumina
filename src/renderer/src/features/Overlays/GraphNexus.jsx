@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
-import { X, Network, Globe, Focus, Atom } from 'lucide-react'
+import { X, Network, Globe, Focus, Atom, Layers } from 'lucide-react'
 import ForceGraph2D from 'react-force-graph-2d'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useAIStore } from '../../core/store/useAIStore'
+import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { buildGraphData, buildSemanticLinks } from '../../core/utils/graphBuilder'
 import { forceRadial, forceManyBody } from 'd3-force'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
@@ -10,7 +11,9 @@ import './GraphNexus.css'
 
 const GraphNexus = ({ isOpen, onClose, onNavigate }) => {
   const { snippets, selectedSnippet, dirtySnippetIds } = useVaultStore()
+  const { settings, updateSetting } = useSettingsStore()
   const { embeddingsCache } = useAIStore()
+  const graphTheme = settings.graphTheme || 'default'
   const [activeMode, setActiveMode] = useState('universe') // 'universe' | 'neighborhood' | 'orb'
   const [hoverNode, setHoverNode] = useState(null)
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 })
@@ -53,22 +56,22 @@ const GraphNexus = ({ isOpen, onClose, onNavigate }) => {
     // Calculate Age Gravity
     const now = Date.now()
     const maxAge = 30 * 24 * 60 * 60 * 1000 // 30 days is "old"
-    
-    nodes.forEach(n => {
-        if (n.snippetId) {
-            const s = snippets.find(sn => sn.id === n.snippetId)
-            const age = now - (s?.timestamp || now)
-            // Normalized age: 0 (new) to 1 (old)
-            n.ageFactor = Math.min(1, age / maxAge)
-        } else {
-            n.ageFactor = 0.5 // Standard for ghost/tags
-        }
+
+    nodes.forEach((n) => {
+      if (n.snippetId) {
+        const s = snippets.find((sn) => sn.id === n.snippetId)
+        const age = now - (s?.timestamp || now)
+        // Normalized age: 0 (new) to 1 (old)
+        n.ageFactor = Math.min(1, age / maxAge)
+      } else {
+        n.ageFactor = 0.5 // Standard for ghost/tags
+      }
     })
 
     if (activeMode === 'neighborhood' && selectedSnippet) {
       // Filter logic...
       const neighbors = new Set()
-      links.forEach(l => {
+      links.forEach((l) => {
         const sId = l.source.id || l.source
         const tId = l.target.id || l.target
         if (sId === selectedSnippet.title) neighbors.add(tId)
@@ -76,8 +79,10 @@ const GraphNexus = ({ isOpen, onClose, onNavigate }) => {
       })
       neighbors.add(selectedSnippet.title)
 
-      nodes = nodes.filter(n => neighbors.has(n.id))
-      links = links.filter(l => neighbors.has(l.source.id || l.source) && neighbors.has(l.target.id || l.target))
+      nodes = nodes.filter((n) => neighbors.has(n.id))
+      links = links.filter(
+        (l) => neighbors.has(l.source.id || l.source) && neighbors.has(l.target.id || l.target)
+      )
     }
 
     return { nodes, links }
@@ -88,13 +93,13 @@ const GraphNexus = ({ isOpen, onClose, onNavigate }) => {
     if (graphRef.current) {
       setTimeout(() => {
         if (activeMode === 'universe') {
-            graphRef.current.zoomToFit(400, 50)
+          graphRef.current.zoomToFit(400, 50)
         } else if (selectedSnippet) {
-            const node = graphData.nodes.find(n => n.snippetId === selectedSnippet.id)
-            if (node) {
-                graphRef.current.centerAt(node.x, node.y, 400)
-                graphRef.current.zoom(activeMode === 'orb' ? 3 : 2, 400)
-            }
+          const node = graphData.nodes.find((n) => n.snippetId === selectedSnippet.id)
+          if (node) {
+            graphRef.current.centerAt(node.x, node.y, 400)
+            graphRef.current.zoom(activeMode === 'orb' ? 3 : 2, 400)
+          }
         }
       }, 100)
     }
@@ -104,15 +109,15 @@ const GraphNexus = ({ isOpen, onClose, onNavigate }) => {
   useEffect(() => {
     if (!graphRef.current) return
     const fg = graphRef.current
-    
+
     if (activeMode === 'orb' || activeMode === 'neighborhood') {
       fg.d3Force('center', null)
-      fg.d3Force('radial', forceRadial(d => (d.ageFactor || 0.5) * 150, 0, 0).strength(0.8))
+      fg.d3Force('radial', forceRadial((d) => (d.ageFactor || 0.5) * 150, 0, 0).strength(0.8))
       fg.d3Force('charge', forceManyBody().strength(-150))
     } else {
       // Universe Mode: Chronological Rings
       fg.d3Force('center', null)
-      fg.d3Force('radial', forceRadial(d => (d.ageFactor || 0.5) * 450, 0, 0).strength(0.4))
+      fg.d3Force('radial', forceRadial((d) => (d.ageFactor || 0.5) * 450, 0, 0).strength(0.4))
       fg.d3Force('charge', forceManyBody().strength(-80))
     }
   }, [activeMode])
@@ -138,14 +143,15 @@ const GraphNexus = ({ isOpen, onClose, onNavigate }) => {
         ctx.shadowColor = isActive ? '#ffaa00' : 'rgba(64, 186, 250, 0.5)'
         ctx.shadowBlur = isHovered ? 20 : 15
       }
-      
+
       // Relationship Dimming Logic
       if (hoverNode && hoverNode !== node) {
-          const isNeighbor = graphData.links.some(l => 
+        const isNeighbor = graphData.links.some(
+          (l) =>
             (l.source.id === hoverNode.id && l.target.id === node.id) ||
             (l.source.id === node.id && l.target.id === hoverNode.id)
-          )
-          if (!isNeighbor) ctx.globalAlpha = 0.15
+        )
+        if (!isNeighbor) ctx.globalAlpha = 0.15
       }
 
       ctx.beginPath()
@@ -168,7 +174,7 @@ const GraphNexus = ({ isOpen, onClose, onNavigate }) => {
       if (shouldShow) {
         ctx.textAlign = 'center'
         ctx.textBaseline = 'top'
-        
+
         // Fill
         ctx.fillStyle = isActive ? '#ffaa00' : isHovered ? '#fff' : 'rgba(255, 255, 255, 0.9)'
         ctx.fillText(label, node.x, node.y + r + 2)
@@ -177,31 +183,43 @@ const GraphNexus = ({ isOpen, onClose, onNavigate }) => {
     [selectedSnippet, hoverNode, graphData.links]
   )
 
+  const graphThemes = ['default', 'space', 'nebula', 'frost', 'neural']
+
+  const rotateTheme = () => {
+    const currentIndex = graphThemes.indexOf(graphTheme)
+    const nextIndex = (currentIndex + 1) % graphThemes.length
+    updateSetting('graphTheme', graphThemes[nextIndex])
+  }
+
   return (
     <div className="nexus-overlay" onClick={onClose}>
-      <div className="nexus-container" onClick={e => e.stopPropagation()}>
-        <header className="nexus-header">
-          <div className="nexus-brand">
+      <div
+        className="modal-container nexus-container"
+        onClick={(e) => e.stopPropagation()}
+        data-graph-theme={graphTheme}
+      >
+        <header className="pane-header">
+          <div className="modal-title-stack">
             <Network size={18} className="nexus-icon" />
             <span>Graph Nexus</span>
           </div>
 
           <div className="nexus-tabs">
-            <button 
+            <button
               className={`nexus-tab ${activeMode === 'universe' ? 'active' : ''}`}
               onClick={() => setActiveMode('universe')}
             >
               <Globe size={14} />
               Universe
             </button>
-            <button 
+            <button
               className={`nexus-tab ${activeMode === 'neighborhood' ? 'active' : ''}`}
               onClick={() => setActiveMode('neighborhood')}
             >
               <Focus size={14} />
               Neighborhood
             </button>
-            <button 
+            <button
               className={`nexus-tab ${activeMode === 'orb' ? 'active' : ''}`}
               onClick={() => setActiveMode('orb')}
             >
@@ -210,9 +228,14 @@ const GraphNexus = ({ isOpen, onClose, onNavigate }) => {
             </button>
           </div>
 
-          <button className="nexus-close" onClick={onClose}>
-            <X size={20} />
-          </button>
+          <div className="nexus-header-actions">
+            <button className="modal-close" onClick={rotateTheme} title="Switch Background">
+              <Layers size={18} />
+            </button>
+            <button className="modal-close" onClick={onClose} title="Close">
+              <X size={18} />
+            </button>
+          </div>
         </header>
 
         <div className="nexus-body">
@@ -223,7 +246,7 @@ const GraphNexus = ({ isOpen, onClose, onNavigate }) => {
             graphData={graphData}
             nodeCanvasObject={paintNode}
             onNodeHover={(node, prev) => {
-                setHoverNode(node)
+              setHoverNode(node)
             }}
             nodePointerAreaPaint={(node, color, ctx) => {
               const r = node.val ? Math.max(3, Math.sqrt(node.val) * 4) : 3
@@ -233,15 +256,20 @@ const GraphNexus = ({ isOpen, onClose, onNavigate }) => {
               ctx.fill()
             }}
             linkColor={(link) => {
-                if (!hoverNode) return 'rgba(255, 255, 255, 0.15)'
-                const isConnected = link.source.id === hoverNode.id || link.target.id === hoverNode.id
-                return isConnected ? 'rgba(64, 186, 250, 0.6)' : 'rgba(255, 255, 255, 0.05)'
+              const isSelected = graphTheme === 'space' || graphTheme === 'nebula'
+              if (!hoverNode) return isSelected ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+              const isConnected = link.source.id === hoverNode.id || link.target.id === hoverNode.id
+              return isConnected
+                ? 'rgba(64, 186, 250, 0.6)'
+                : isSelected
+                  ? 'rgba(255, 255, 255, 0.03)'
+                  : 'rgba(0, 0, 0, 0.03)'
             }}
             linkDirectionalParticles={activeMode === 'orb' ? 4 : 2}
             linkDirectionalParticleSpeed={0.005}
             onNodeClick={(node) => {
               if (node.snippetId) {
-                const s = snippets.find(sn => sn.id === node.snippetId)
+                const s = snippets.find((sn) => sn.id === node.snippetId)
                 if (s) onNavigate(s)
               }
             }}
@@ -249,33 +277,42 @@ const GraphNexus = ({ isOpen, onClose, onNavigate }) => {
             d3AlphaDecay={activeMode === 'orb' ? 0.01 : 0.05}
             cooldownTicks={100}
           />
-          
+
           {activeMode === 'orb' && <div className="orb-lens" />}
 
           {/* INSIGHT TOOLTIP */}
           {hoverNode && hoverNode.snippetId && (
             <div className="nexus-insight-card">
               {(() => {
-                const s = snippets.find(sn => sn.id === hoverNode.snippetId)
+                const s = snippets.find((sn) => sn.id === hoverNode.snippetId)
                 if (!s) return null
                 return (
                   <>
                     <div className="card-header">
                       <div className="card-title">
                         {s.title}
-                        {dirtySnippetIds.includes(s.id) && <div className="dirty-indicator" style={{ marginLeft: '8px', display: 'inline-block' }} />}
+                        {dirtySnippetIds.includes(s.id) && (
+                          <div
+                            className="dirty-indicator"
+                            style={{ marginLeft: '8px', display: 'inline-block' }}
+                          />
+                        )}
                       </div>
                       <div className="card-meta">
                         {s.language} • {s.code?.trim().split(/\s+/).length || 0} words
                       </div>
                     </div>
                     <div className="card-summary">
-                      {s.code ? s.code.slice(0, 160) + (s.code.length > 160 ? '...' : '') : 'Empty note'}
+                      {s.code
+                        ? s.code.slice(0, 160) + (s.code.length > 160 ? '...' : '')
+                        : 'Empty note'}
                     </div>
                     {s.tags && (
                       <div className="card-tags">
-                        {s.tags.split(',').map(tag => (
-                          <span key={tag} className="card-tag">#{tag.trim()}</span>
+                        {s.tags.split(',').map((tag) => (
+                          <span key={tag} className="card-tag">
+                            #{tag.trim()}
+                          </span>
                         ))}
                       </div>
                     )}
@@ -290,7 +327,9 @@ const GraphNexus = ({ isOpen, onClose, onNavigate }) => {
         </div>
 
         <footer className="nexus-footer">
-          <div className="nexus-hint">ESC to close • Click node to teleport</div>
+          <div className="nexus-hint">
+            ESC to close • Click node to teleport • {graphTheme.toUpperCase()} ENVIRONMENT
+          </div>
           {selectedSnippet && (
             <div className="nexus-focus-info">
               Focusing: <strong>{selectedSnippet.title}</strong>

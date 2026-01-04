@@ -19,55 +19,35 @@
 .nexus-container {
   width: 95vw;
   height: 92vh;
-  background: color-mix(in srgb, var(--bg-panel), transparent 10%);
-  backdrop-filter: blur(40px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
+  background: var(--bg-app);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-main, 5px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 
-    0 0 0 1px rgba(0, 0, 0, 0.2),
-    0 24px 48px -12px rgba(0, 0, 0, 0.6),
-    0 0 30px rgba(var(--text-accent-rgb, 64, 186, 250), 0.05);
-  animation: nexusScaleUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-modal);
 }
 
-@keyframes nexusScaleUp {
-  from { transform: scale(0.96) translateY(10px); opacity: 0; }
-  to { transform: scale(1) translateY(0); opacity: 1; }
+.nexus-container .pane-header {
+  position: relative; /* Support centered absolute tabs */
+  padding: 0 16px;
 }
 
-.nexus-header {
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  background: rgba(255, 255, 255, 0.02);
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.nexus-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-main);
-  letter-spacing: 0.02em;
-}
-
-.nexus-icon {
-  color: var(--text-accent);
-}
-/* tab for the modal*/
 .nexus-tabs {
   display: flex;
   background: rgba(0, 0, 0, 0.2);
-  padding: 3px;
-  border-radius: 6px;
+  padding: 2px;
+  border-radius: var(--radius-main, 5px);
   gap: 2px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.nexus-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .nexus-tab {
@@ -80,7 +60,7 @@
   color: var(--text-faint);
   font-size: 11px;
   font-weight: 600;
-  border-radius: 5px;
+  border-radius: var(--radius-sm, 3px);
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -95,61 +75,69 @@
   color: white;
 }
 
-.nexus-close {
-  background: transparent;
-  border: none;
-  color: var(--text-faint);
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 50%;
-  transition: all 0.2s;
-}
-
-.nexus-close:hover {
-  background: var(--bg-active);
-  color: var(--text-main);
-}
-
 .nexus-body {
   flex: 1;
   position: relative;
   overflow: hidden;
+  /* Standard Neutral Background */
   background: radial-gradient(circle at center, rgba(var(--text-accent-rgb), 0.05) 0%, transparent 70%);
 }
 
+/* --- THEMED GRAPH BACKGROUNDS (Isolated) --- */
+
+/* 1. Deep Space */
+.nexus-container[data-graph-theme='space'] .nexus-body {
+  background-color: #020617;
+  background-image: 
+    radial-gradient(1.5px 1.5px at 20px 30px, rgba(255,255,255,0.4), rgba(0,0,0,0)),
+    radial-gradient(1.5px 1.5px at 40px 70px, rgba(255,255,255,0.2), rgba(0,0,0,0)),
+    radial-gradient(1.5px 1.5px at 50px 160px, rgba(255,255,255,0.3), rgba(0,0,0,0)),
+    radial-gradient(circle at center, #1e293b 0%, #020617 100%);
+}
+
+/* 2. Nebula (Cosmic) */
+.nexus-container[data-graph-theme='nebula'] .nexus-body {
+  background: 
+    radial-gradient(circle at 20% 30%, rgba(147, 51, 234, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+    black;
+}
+
+/* 3. Frost (Glass/Light) */
+.nexus-container[data-graph-theme='frost'] .nexus-body {
+  background: 
+    linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+.nexus-container[data-graph-theme='frost'] .nexus-body::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%2394a3b8' fill-opacity='0.05' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='1'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* 4. Neural (Grid) */
+.nexus-container[data-graph-theme='neural'] .nexus-body {
+  background-color: var(--bg-app);
+  background-image: 
+    linear-gradient(rgba(var(--text-accent-rgb), 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--text-accent-rgb), 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
 .nexus-footer {
-  height: 40px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
-  font-size: 11px;
+  padding: 0 16px;
+  font-size: 10px;
   color: var(--text-faint);
   border-top: 1px solid var(--border-subtle);
-  background: rgba(0, 0, 0, 0.1);
+  background: var(--bg-sidebar);
 }
 
 .nexus-focus-info strong {
   color: var(--text-main);
-}
-
-/* ORB MODE STYLES */
-.orb-mode {
-  background: radial-gradient(circle at center, #000 0%, #111 100%) !important;
-}
-
-.orb-lens {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 500px;
-  height: 500px;
-  border-radius: 50%;
-  border: 1px solid rgba(var(--text-accent-rgb, 64, 186, 250), 0.2);
-  box-shadow: inset 0 0 50px rgba(var(--text-accent-rgb, 64, 186, 250), 0.1), 0 0 50px rgba(var(--text-accent-rgb, 64, 186, 250), 0.1);
-  pointer-events: none;
-  background: radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.8) 100%);
 }
 
 /* INSIGHT TOOLTIP CARD */
@@ -162,10 +150,10 @@
   background: color-mix(in srgb, var(--bg-panel), transparent 15%);
   backdrop-filter: blur(20px);
   border: 1px solid var(--border-subtle);
-  border-radius: 12px;
+  border-radius: var(--radius-main, 5px);
   padding: 16px;
   z-index: 1000;
-  pointer-events: none; /* Don't block graph clicks */
+  pointer-events: none;
   animation: cardSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -174,41 +162,11 @@
   to { opacity: 1; transform: translateX(0) scale(1); }
 }
 
-.card-header {
-  margin-bottom: 12px;
-}
-
 .card-title {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--text-main);
   margin-bottom: 4px;
-}
-
-.card-meta {
-  font-size: 11px;
-  color: var(--text-faint);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.card-summary {
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--text-muted);
-  margin-bottom: 16px;
-  display: -webkit-box;
-  line-clamp: 4;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.card-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 12px;
 }
 
 .card-tag {
@@ -217,17 +175,5 @@
   background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.1);
   color: var(--text-accent);
   padding: 2px 8px;
-  border-radius: 4px;
-}
-
-.card-footer {
-  font-size: 10px;
-  color: var(--text-faint);
-  border-top: 1px solid var(--border-subtle);
-  padding-top: 10px;
-}
-
-/* Transitions */
-.nexus-body canvas {
-  transition: opacity 0.3s;
+  border-radius: var(--radius-sm, 3px);
 }

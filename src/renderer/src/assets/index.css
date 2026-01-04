@@ -22,6 +22,15 @@
   --z-modal: 2000;
   --z-toast: 3000;
 
+  /* Geometry */
+  --radius-main: 5px;
+  --radius-sm: 3px;
+  --radius-lg: 8px;
+
+  /* Elevation */
+  --shadow-modal: 0 12px 32px rgba(0, 0, 0, 0.25), 0 4px 8px rgba(0, 0, 0, 0.15);
+  --shadow-popup: 0 8px 24px rgba(0, 0, 0, 0.2);
+
   /* Theme Tokens */
   --bg-app: #ffffff;
   --bg-app-rgb: 255, 255, 255;
@@ -128,13 +137,14 @@
 .modal-container {
   background: var(--bg-app);
   border: 1px solid var(--border-dim);
-  border-radius: 8px;
+  border-radius: var(--radius-main, 5px);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   animation: modalScaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   max-height: 90vh;
   margin: auto; /* Force center */
+  box-shadow: var(--shadow-modal);
 }
 
 @keyframes modalScaleIn {
@@ -218,15 +228,50 @@ body {
   color: var(--text-muted);
 }
 
-/* Common Header */
+/* Obsidian-Style Modal Header */
 .pane-header {
-  height: 48px;
-  padding: 0 16px;
+  height: 40px;
+  padding: 0 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--border-dim);
   background: var(--bg-sidebar);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.modal-title-stack {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  opacity: 0.9;
+}
+
+.modal-close {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-main, 5px);
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modal-close:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+.modal-close:active {
+  transform: translateY(1px);
 }
 
 /* Focus - Clean & Minimal (User Preference) */

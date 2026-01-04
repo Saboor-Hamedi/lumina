@@ -3,7 +3,7 @@
   font-family: var(--font-editor, 'Inter', system-ui, sans-serif) !important;
   font-size: var(--font-size-editor, 16px) !important;
   line-height: var(--line-height-editor, 1.6) !important;
-  padding: 0 10px !important; /* Internal editor breathing room */
+  padding: 0 10px 0 40px !important; /* Make room for absolute syntax marks on the left */
 }
 
 /* Standard line padding for text readability */
@@ -38,10 +38,9 @@
 
 /* Force transparent active line for all parts of code blocks */
 .cm-line[class*="cm-codeblock-"].cm-activeLine {
-  background-color: rgba(127, 127, 127, 0.08) !important; /* Match but slightly lighter */
+  background-color: rgba(127, 127, 127, 0.08) !important;
   outline: none !important;
 }
-I always get this 
 /* Global Selection Style for CM6: High visibility for "Robust" feel */
 .cm-selectionBackground, 
 .cm-content ::selection {
@@ -894,19 +893,24 @@ I always get this
   font-size: 0.95em;
 }
 
-/* Hidden elements in Reading Mode */
-.mode-reading .cm-hidden-mark {
-  display: none !important;
-}
-
+/* 
+ * Zero-Shift Syntax Hiding (Ironclad Engine)
+ * We park syntax marks in the left gutter (40px)
+ */
 .mode-live .cm-hidden-mark {
-  opacity: 0.3;
-  transition: opacity 0.2s;
+  opacity: 0 !important;
+  position: absolute;
+  left: -32px; /* Pull into the 40px left padding area */
+  width: 30px;
+  text-align: right;
+  display: inline-block !important;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
 }
 
 .cm-activeLine .cm-hidden-mark {
-  opacity: 1 !important;
-  color: var(--text-accent);
+  opacity: 0.4 !important; /* Ghosting reveal */
+  pointer-events: auto;
 }
 
 /* Smooth Scrolling & Transitions */
@@ -1048,7 +1052,7 @@ I always get this
   opacity: 0.8;
 }
 
-.cm-hidden-mark {
+.mode-reading .cm-hidden-mark {
   display: none !important;
 }
 
@@ -1332,11 +1336,7 @@ I always get this
   margin-left: auto !important;
 }
 
-/* Hidden Mark Styling (Critical for Live Preview) */
-.cm-hidden-mark {
-  display: none !important;
-  /* font-size: 0; */
-}
+/* Hidden Mark Styling: Handled by scoped mode-live/reading rules in earlier sections */
 
 /* Horizontal Rule Compact Styling */
 .cm-hr {

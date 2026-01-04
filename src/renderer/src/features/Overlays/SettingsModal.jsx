@@ -56,7 +56,7 @@ const SettingsModal = ({ onClose }) => {
             <Settings size={16} />
             <span>Settings</span>
           </div>
-          <button className="icon-btn" onClick={onClose}>
+          <button className="modal-close" onClick={onClose} title="Close">
             <X size={18} />
           </button>
         </header>
