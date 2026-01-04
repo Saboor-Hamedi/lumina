@@ -72,7 +72,7 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
       doc: snippet?.code || '',
       extensions: [
         highlightActiveLine(),
-        drawSelection(),
+        highlightActiveLine(),
         dropCursor(),
         history(),
         EditorState.allowMultipleSelections.of(true),

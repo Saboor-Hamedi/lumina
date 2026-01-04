@@ -41,6 +41,10 @@ export const useSettingsStore = create((set, get) => ({
           root.style.setProperty('--font-size-editor', `${allSettings.fontSize}px`)
           root.style.setProperty('--cursor-style', allSettings.cursorStyle)
           root.setAttribute('data-translucency', allSettings.translucency ? 'true' : 'false')
+          // Apply window effect via IPC
+          if (window.api && window.api.setTranslucency) {
+            window.api.setTranslucency(allSettings.translucency)
+          }
         }
       }
     } catch (err) {
@@ -59,6 +63,9 @@ export const useSettingsStore = create((set, get) => ({
                 root.style.setProperty('--font-size-editor', `${allSettings.fontSize}px`)
                 root.style.setProperty('--cursor-style', allSettings.cursorStyle)
                 root.setAttribute('data-translucency', allSettings.translucency ? 'true' : 'false')
+                if (window.api && window.api.setTranslucency) {
+                  window.api.setTranslucency(allSettings.translucency)
+                }
               } else {
                  console.warn('Backend settings unavailable, using defaults.')
                  // Defaults are already set in initialState
@@ -81,7 +88,12 @@ export const useSettingsStore = create((set, get) => ({
     if (key === 'fontFamily') root.style.setProperty('--font-editor', value)
     if (key === 'fontSize') root.style.setProperty('--font-size-editor', `${value}px`)
     if (key === 'cursorStyle') root.style.setProperty('--cursor-style', value)
-    if (key === 'translucency') root.setAttribute('data-translucency', value ? 'true' : 'false')
+    if (key === 'translucency') {
+      root.setAttribute('data-translucency', value ? 'true' : 'false')
+      if (window.api && window.api.setTranslucency) {
+        window.api.setTranslucency(value)
+      }
+    }
 
     // Persist to settings.json
     try {

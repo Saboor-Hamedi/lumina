@@ -80,6 +80,7 @@
   background: transparent;
   display: flex;
   justify-content: center;
+  cursor: text; /* Ensures clicks anywhere in the scroller focus the editor */
 }
 
 .editor-canvas-wrap {
@@ -88,7 +89,8 @@
   padding: 8vh 40px 10vh 40px;
   display: flex;
   flex-direction: column;
-  flex: 1; /* Allow it to grow and fill scroller */
+  flex: 1; 
+  cursor: text;
 }
 
 .editor-large-title {
@@ -130,6 +132,7 @@
   line-height: 1.8;
   color: var(--text-main) !important;
   padding: 0 !important;
+  min-height: 70vh; /* Ensures clicking empty space at the bottom still focuses the editor */
 }
 
 /* Hide CM Active Selection borders if any */
@@ -409,12 +412,22 @@
   border-left-color: var(--text-accent);
 }
 
-/* Better Selection (Localized, not full-width) */
-.cm-selectionBackground,
-.cm-content ::selection,
-.cm-editor ::selection,
-.editor-large-title ::selection {
+/* Unified Selection: Native Browser Engine */
+/* We enable the browser's native selection to guarantee standard double/triple-click behavior */
+::selection {
   background-color: var(--bg-selection) !important;
+  color: inherit !important;
+}
+
+/* We hide the synthetic CM layer to prevent conflict and "background bleed" */
+.cm-selectionBackground,
+.cm-selectionLayer .cm-selectionBackground {
+  display: none !important;
+}
+
+/* Ensure character-exact selection mechanics */
+.cm-line, .cm-content {
+  user-select: text !important;
 }
 
 .cm-selectionMatch {
@@ -427,20 +440,20 @@
   font-family: var(--font-editor);
   font-weight: 700;
   color: var(--text-main);
-  padding-top: 1.2em;
-  padding-bottom: 0.4em;
+  padding-top: 0.8em; /* Reduced from 1.2em */
+  padding-bottom: 0.2rem;
   letter-spacing: -0.01em;
 }
 
 .cm-heading-1 { 
-    font-size: 2.6em; 
+    font-size: 2.2em; /* Reduced from 2.6em */
     border-bottom: 1px solid var(--border-dim); 
     padding-bottom: 0.3em;
     color: var(--text-accent);
 }
-.cm-heading-2 { font-size: 2.0em; color: var(--text-main); opacity: 0.95; }
-.cm-heading-3 { font-size: 1.5em; opacity: 0.9; }
-.cm-heading-4 { font-size: 1.25em; opacity: 0.85; }
+.cm-heading-2 { font-size: 1.8em; color: var(--text-main); opacity: 0.95; }
+.cm-heading-3 { font-size: 1.4em; opacity: 0.9; }
+.cm-heading-4 { font-size: 1.2em; opacity: 0.85; }
 
 /* WikiLink Styling */
 .cm-link-bracket {
@@ -484,6 +497,38 @@
 .cm-image-container:hover img {
   transform: scale(1.01);
 }
+
+/* --- MODE-SPECIFIC POLISH --- */
+
+/* 1. SOURCE MODE: Raw, monospaced, professional code feel */
+/* 1. SOURCE MODE: Unified Geometry */
+.mode-source .cm-content {
+  /* Perfectly matched to other modes */
+  opacity: 1;
+}
+
+.mode-source .cm-heading {
+  /* Heading sizes are now globally managed and identical across all modes */
+}
+
+/* 2. LIVE MODE: Premium typography (Default) */
+/* Inherits base styles */
+
+/* 3. READING MODE: Pure focus, clean and centered */
+.mode-reading .editor-canvas-wrap {
+  max-width: 800px;
+}
+
+.mode-reading .cm-content {
+  line-height: 2 !important; /* Increased for readability */
+  cursor: default !important;
+}
+
+.mode-reading .cm-activeLine {
+  border-left-color: transparent !important;
+}
+
+/* Selection layers removed above to fix dual-color issue */
 
 /* Code Blocks (Premium Glassmorphism) */
 .cm-codeblock {
@@ -556,9 +601,10 @@
 .cm-hr {
   border: 0;
   border-top: 1px solid var(--border-dim);
-  margin: 1.5em 0;
+  margin: 1.2em 0; /* Reduced from 1.5em */
   height: 0;
   display: block;
+  opacity: 0.6;
 }
 
 /* Code Block "Block" Look */

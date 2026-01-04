@@ -135,76 +135,84 @@ const livePreviewPlugin = ViewPlugin.fromClass(class {
             const level = parseInt(name.slice(-1)) || 1
             const line = view.state.doc.lineAt(nFrom)
             add(line.from, line.from, headingDeco(level))
-            
+
             // Highlight the Header Mark (#) when not active
             if (!shouldRevealSyntax(nFrom)) {
-                const mark = node.node.firstChild
-                if (mark && mark.name === 'HeaderMark') {
-                    add(mark.from, mark.to, hideDeco)
-                }
+              const mark = node.node.firstChild
+              if (mark && mark.name === 'HeaderMark') {
+                add(mark.from, mark.to, hideDeco)
+              }
             }
           }
-          
+
           // Blockquotes
           if (name === 'Blockquote') {
-             const startLine = view.state.doc.lineAt(nFrom).number
-             const endLine = view.state.doc.lineAt(nTo).number
-             for (let i = startLine; i <= endLine; i++) {
-                const l = view.state.doc.line(i)
-                add(l.from, l.from, quoteDeco)
-                
-                // Hide the > mark if not active
-                if (!shouldRevealSyntax(l.from)) {
-                    // This is slightly tricky with line decorations, usually we decorate the mark separately
-                }
-             }
+            const startLine = view.state.doc.lineAt(nFrom).number
+            const endLine = view.state.doc.lineAt(nTo).number
+            for (let i = startLine; i <= endLine; i++) {
+              const l = view.state.doc.line(i)
+              add(l.from, l.from, quoteDeco)
+
+              // Hide the > mark if not active
+              if (!shouldRevealSyntax(l.from)) {
+                // This is slightly tricky with line decorations, usually we decorate the mark separately
+              }
+            }
           }
 
-          // Horizontal Rule
-          if (name === 'HorizontalRule') add(nFrom, nTo, hrDeco)
-          
+          // Horizontal Rule (FB Standard #11: Reveal on active)
+          if (name === 'HorizontalRule') {
+            if (!shouldRevealSyntax(nFrom)) {
+              add(nFrom, nTo, hrDeco)
+            }
+          }
+
           // Fenced Code Blocks
-          if (name === 'FencedCode') { 
-             const startLine = view.state.doc.lineAt(nFrom).number
-             const endLine = view.state.doc.lineAt(nTo).number
-             const startL = view.state.doc.line(startLine)
-             
-             // Extract Info
-             const fenceText = startL.text.trim()
-             const lang = fenceText.replace(/`/g, '').trim() || 'text'
-             
-             let codeContent = ""
-             const bodyStartLine = startLine + 1
-             const bodyEndLine = endLine - 1
-             
-             if (bodyStartLine <= bodyEndLine) {
-                 const startPos = view.state.doc.line(bodyStartLine).from
-                 const endPos = view.state.doc.line(bodyEndLine).to
-                 codeContent = view.state.doc.sliceString(startPos, endPos)
-             }
+          if (name === 'FencedCode') {
+            const startLine = view.state.doc.lineAt(nFrom).number
+            const endLine = view.state.doc.lineAt(nTo).number
+            const startL = view.state.doc.line(startLine)
 
-             // Render Header
-             if (!shouldRevealSyntax(startL.from)) {
-                 add(startL.from, startL.to, Decoration.replace({ widget: new CodeBlockHeaderWidget(lang, codeContent) }))
-             } else {
-                 add(startL.from, startL.from, codeBlockBodyDeco)
-             }
+            // Extract Info
+            const fenceText = startL.text.trim()
+            const lang = fenceText.replace(/`/g, '').trim() || 'text'
 
-             // Render Body
-             for (let i = startLine + 1; i < endLine; i++) {
-                const l = view.state.doc.line(i)
-                add(l.from, l.from, codeBlockBodyDeco)
-             }
-             
-             // Render Footer
-             const endL = view.state.doc.line(endLine)
-             if (!shouldRevealSyntax(endL.from)) {
-                  add(endL.from, endL.to, Decoration.replace({ widget: new CodeBlockFooterWidget() }))
-             } else {
-                 add(endL.from, endL.from, codeBlockEndDeco)
-             }
+            let codeContent = ''
+            const bodyStartLine = startLine + 1
+            const bodyEndLine = endLine - 1
+
+            if (bodyStartLine <= bodyEndLine) {
+              const startPos = view.state.doc.line(bodyStartLine).from
+              const endPos = view.state.doc.line(bodyEndLine).to
+              codeContent = view.state.doc.sliceString(startPos, endPos)
+            }
+
+            // Render Header
+            if (!shouldRevealSyntax(startL.from)) {
+              add(
+                startL.from,
+                startL.to,
+                Decoration.replace({ widget: new CodeBlockHeaderWidget(lang, codeContent) })
+              )
+            } else {
+              add(startL.from, startL.from, codeBlockBodyDeco)
+            }
+
+            // Render Body
+            for (let i = startLine + 1; i < endLine; i++) {
+              const l = view.state.doc.line(i)
+              add(l.from, l.from, codeBlockBodyDeco)
+            }
+
+            // Render Footer
+            const endL = view.state.doc.line(endLine)
+            if (!shouldRevealSyntax(endL.from)) {
+              add(endL.from, endL.to, Decoration.replace({ widget: new CodeBlockFooterWidget() }))
+            } else {
+              add(endL.from, endL.from, codeBlockEndDeco)
+            }
           }
-          
+
           // --- Hiding Logic ---
 
           // Standard Marks (Bold, Italic, etc)
@@ -216,9 +224,9 @@ const livePreviewPlugin = ViewPlugin.fromClass(class {
 
           // URLs inside Links (e.g. [foo](http://bar))
           if (name === 'URL' && inLink) {
-             if (!shouldRevealSyntax(nFrom)) {
-               add(nFrom, nTo, hideDeco)
-             }
+            if (!shouldRevealSyntax(nFrom)) {
+              add(nFrom, nTo, hideDeco)
+            }
           }
 
           // --- Inline Styling ---
