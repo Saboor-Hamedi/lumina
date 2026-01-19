@@ -1,9 +1,21 @@
 import { Files, Search, Settings, Network, ArrowUpCircle, RefreshCw } from 'lucide-react'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
+import { useVaultStore } from '../../core/store/useVaultStore'
+import { GRAPH_TAB_ID } from '../../core/store/useVaultStore'
 import './ActivityBar.css'
 
-const ActivityBar = ({ activeTab, onTabChange, onSettingsClick }) => {
+/**
+ * ActivityBar Component
+ * Sidebar navigation with file explorer, search, graph view, and settings.
+ * 
+ * Graph view opens as a tab when clicked (not just switching view).
+ * This allows users to switch between graph and notes seamlessly via tabs.
+ * 
+ * Explorer icon toggles the left sidebar (like VSCode).
+ */
+const ActivityBar = ({ activeTab, onTabChange, onSettingsClick, onToggleSidebar, isLeftSidebarOpen }) => {
   const { status, progress, download, install } = useUpdateStore()
+  const { openGraphTab, activeTabId } = useVaultStore()
 
   const handleUpdateClick = () => {
     if (status === 'available') download()
@@ -14,9 +26,18 @@ const ActivityBar = ({ activeTab, onTabChange, onSettingsClick }) => {
     <div className="activity-bar">
       <div className="bar-top">
         <button
-          className={`bar-item ${activeTab === 'files' ? 'active' : ''}`}
-          onClick={() => onTabChange('files')}
-          title="Explorer"
+          className={`bar-item ${(isLeftSidebarOpen && activeTab === 'files') || activeTabId === GRAPH_TAB_ID ? 'active' : ''}`}
+          onClick={() => {
+            // Toggle sidebar (VSCode-like behavior)
+            if (onToggleSidebar) {
+              onToggleSidebar()
+            }
+            // Also switch to files view if not already
+            if (activeTab !== 'files') {
+              onTabChange('files')
+            }
+          }}
+          title="Explorer (Toggle sidebar)"
         >
           <Files size={24} strokeWidth={1.5} />
         </button>
@@ -28,9 +49,14 @@ const ActivityBar = ({ activeTab, onTabChange, onSettingsClick }) => {
           <Search size={24} strokeWidth={1.5} />
         </button>
         <button
-          className={`bar-item ${activeTab === 'graph' ? 'active' : ''}`}
-          onClick={() => onTabChange('graph')}
-          title="Graph View"
+          className={`bar-item ${activeTabId === GRAPH_TAB_ID ? 'active' : ''}`}
+          onClick={() => {
+            // Open graph as a tab instead of just switching view
+            openGraphTab()
+            // Also activate explorer tab when graph is opened
+            onTabChange('files')
+          }}
+          title="Graph View (Opens as tab)"
         >
           <Network size={24} strokeWidth={1.5} />
         </button>

@@ -38,7 +38,18 @@ const api = {
 
   // Export
   exportPDF: (payload) => electronAPI.ipcRenderer.invoke('window:export-pdf', payload),
-  exportHTML: (payload) => electronAPI.ipcRenderer.invoke('window:export-html', payload)
+  exportHTML: (payload) => electronAPI.ipcRenderer.invoke('window:export-html', payload),
+  exportMarkdown: (payload) => electronAPI.ipcRenderer.invoke('window:export-markdown', payload),
+
+  // Vault Indexing
+  indexVault: (vaultPath, options) => electronAPI.ipcRenderer.invoke('vault:index', vaultPath, options),
+  rebuildIndex: (vaultPath) => electronAPI.ipcRenderer.invoke('vault:rebuild-index', vaultPath),
+  getIndexStats: () => electronAPI.ipcRenderer.invoke('vault:index-stats'),
+
+  // Vault Search
+  searchVault: (query, options) => electronAPI.ipcRenderer.invoke('vault:search', query, options),
+  getSearchStats: () => electronAPI.ipcRenderer.invoke('vault:search-stats'),
+  findSimilar: (chunkId, limit) => electronAPI.ipcRenderer.invoke('vault:find-similar', chunkId, limit)
 }
 
 // Expose APIs

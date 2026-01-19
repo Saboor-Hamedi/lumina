@@ -28,6 +28,81 @@
   box-shadow: var(--shadow-modal);
 }
 
+/* Embedded mode (for tabs) - Just the graph visualization */
+.nexus-embedded-graph {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-app);
+}
+
+/* Ensure ForceGraph2D canvas is transparent to show theme background */
+.nexus-embedded-graph canvas {
+  background: transparent !important;
+  position: relative;
+  z-index: 1;
+}
+
+/* Apply theme backgrounds to embedded graph (tab view) */
+.nexus-embedded-graph[data-graph-theme='default'] {
+  background: var(--bg-app);
+  background-image: radial-gradient(circle at center, rgba(var(--text-accent-rgb), 0.05) 0%, transparent 70%);
+}
+
+.nexus-embedded-graph[data-graph-theme='space'] {
+  background-color: #020617 !important;
+  background-image: 
+    radial-gradient(1.5px 1.5px at 20px 30px, rgba(255,255,255,0.4), rgba(0,0,0,0)),
+    radial-gradient(1.5px 1.5px at 40px 70px, rgba(255,255,255,0.2), rgba(0,0,0,0)),
+    radial-gradient(1.5px 1.5px at 50px 160px, rgba(255,255,255,0.3), rgba(0,0,0,0)),
+    radial-gradient(circle at center, #1e293b 0%, #020617 100%) !important;
+}
+
+.nexus-embedded-graph[data-graph-theme='nebula'] {
+  background: 
+    radial-gradient(circle at 20% 30%, rgba(147, 51, 234, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+    black !important;
+}
+
+.nexus-embedded-graph[data-graph-theme='frost'] {
+  background: 
+    linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
+}
+
+.nexus-embedded-graph[data-graph-theme='neural'] {
+  background-color: var(--bg-app) !important;
+  background-image: 
+    linear-gradient(rgba(var(--text-accent-rgb), 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--text-accent-rgb), 0.05) 1px, transparent 1px) !important;
+  background-size: 40px 40px;
+}
+
+/* Mode-specific styling for embedded graph */
+.nexus-embedded-graph[data-graph-mode='universe'] {
+  /* Universe: Wide spread, chronological rings */
+}
+
+.nexus-embedded-graph[data-graph-mode='neighborhood'] {
+  /* Neighborhood: Focused, tighter clustering */
+  filter: brightness(1.05);
+}
+
+.nexus-embedded-graph[data-graph-mode='orb'] {
+  /* The Orb: Intense focus, radial layout */
+  filter: contrast(1.1) saturate(1.15);
+}
+
+.nexus-embedded-graph[data-graph-mode='orb']::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(var(--text-accent-rgb), 0.08) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
 .nexus-container .pane-header {
   position: relative; /* Support centered absolute tabs */
   padding: 0 16px;
@@ -122,6 +197,24 @@
     linear-gradient(rgba(var(--text-accent-rgb), 0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(var(--text-accent-rgb), 0.05) 1px, transparent 1px);
   background-size: 40px 40px;
+}
+
+/* Mode-specific styling for modal container */
+.nexus-container[data-graph-mode='neighborhood'] .nexus-body {
+  filter: brightness(1.05);
+}
+
+.nexus-container[data-graph-mode='orb'] .nexus-body {
+  filter: contrast(1.1) saturate(1.15);
+}
+
+.nexus-container[data-graph-mode='orb'] .nexus-body::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(var(--text-accent-rgb), 0.08) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .nexus-footer {

@@ -7,10 +7,11 @@ import MarkdownEditor from '../Workspace/MarkdownEditor'
 import SettingsModal from '../Overlays/SettingsModal'
 import CommandPalette from '../Overlays/CommandPalette'
 import GraphNexus from '../Overlays/GraphNexus'
-import GraphView from '../Graph/GraphView'
 import Dashboard from '../Workspace/components/Dashboard'
+import TabBar from '../Workspace/components/TabBar'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useVaultStore } from '../../core/store/useVaultStore'
+import { GRAPH_TAB_ID } from '../../core/store/useVaultStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useAIStore } from '../../core/store/useAIStore'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
@@ -21,7 +22,7 @@ import '../Overlays/ConfirmModal.css'
 import AIChatPanel from '../AI/AIChatPanel'
 
 const AppShell = () => {
-  const { snippets, selectedSnippet, setSelectedSnippet, saveSnippet, isLoading, loadVault } =
+  const { snippets, selectedSnippet, setSelectedSnippet, saveSnippet, isLoading, loadVault, activeTabId, openTabs } =
     useVaultStore()
 
   const [activeTab, setActiveTab] = useState('files')
@@ -107,7 +108,9 @@ const AppShell = () => {
       await loadVault()
       const { settings } = useSettingsStore.getState()
       if (settings.openTabs && Array.isArray(settings.openTabs)) {
-        useVaultStore.getState().restoreSession(settings.openTabs, settings.lastSnippetId)
+        useVaultStore
+          .getState()
+          .restoreSession(settings.openTabs, settings.lastSnippetId, settings.pinnedTabIds || [])
       } else if (settings.lastSnippetId) {
         const allSnippets = useVaultStore.getState().snippets
         const last = allSnippets.find((s) => s.id === settings.lastSnippetId)
@@ -138,25 +141,34 @@ const AppShell = () => {
 
   // Persist Last Snippet & Tabs
   useEffect(() => {
+    if (isRestoring) return
     if (selectedSnippet) {
       useSettingsStore.getState().updateSetting('lastSnippetId', selectedSnippet.id)
     }
-  }, [selectedSnippet?.id])
+  }, [selectedSnippet?.id, isRestoring])
 
-  const openTabs = useVaultStore((state) => state.openTabs)
+  // Persist open tabs to settings (openTabs already destructured from useVaultStore above)
+  useEffect(() => {
+    if (isRestoring) return
+    useSettingsStore.getState().updateSetting('openTabs', openTabs)
+  }, [openTabs, isRestoring])
+
+  const pinnedTabIds = useVaultStore((state) => state.pinnedTabIds)
 
   useEffect(() => {
-    if (openTabs.length > 0) {
-      useSettingsStore.getState().updateSetting('openTabs', openTabs)
-    }
-  }, [openTabs])
+    if (isRestoring) return
+    useSettingsStore.getState().updateSetting('pinnedTabIds', pinnedTabIds)
+  }, [pinnedTabIds, isRestoring])
 
   // Trigger AI Indexing when snippets change (Background)
-  useEffect(() => {
-    if (snippets.length > 0) {
-      useAIStore.getState().indexVault(snippets)
-    }
-  }, [snippets])
+  // Note: Vault indexing is handled automatically by main process on vault selection/save
+  // This effect is disabled to prevent passing invalid vaultPath
+  // useEffect(() => {
+  //   if (snippets.length > 0) {
+  //     // Vault indexing is handled by main process automatically
+  //     // Don't call indexVault here as it requires a valid vaultPath string
+  //   }
+  // }, [snippets])
 
   // Close Inspector when switching to Graph
   useEffect(() => {
@@ -243,6 +255,8 @@ const AppShell = () => {
           activeTab={activeTab}
           onTabChange={setActiveTab}
           onSettingsClick={() => setShowSettings(true)}
+          onToggleSidebar={() => setIsLeftSidebarOpen((prev) => !prev)}
+          isLeftSidebarOpen={isLeftSidebarOpen}
         />
       </nav>
       <aside className="shell-sidebar-left">
@@ -256,9 +270,25 @@ const AppShell = () => {
         />
       )}
       <main className="shell-main">
-        {activeTab === 'graph' ? (
-          <GraphView
-            onNodeClick={(snippet) => {
+        {/* Show TabBar when there are open tabs and we're in files view or graph tab is active */}
+        {openTabs.length > 0 && (activeTab === 'files' || activeTabId === GRAPH_TAB_ID) && <TabBar />}
+
+        {/* Render Graph Nexus if graph tab is active (embedded mode) */}
+        {activeTabId === GRAPH_TAB_ID ? (
+          <GraphNexus
+            embedded={true}
+            isOpen={true}
+            onNavigate={(snippet) => {
+              setSelectedSnippet(snippet)
+              setActiveTab('files')
+            }}
+          />
+        ) : activeTab === 'graph' ? (
+          // Fallback: if activity bar shows graph but no tab, show graph (backward compatibility)
+          <GraphNexus
+            embedded={true}
+            isOpen={true}
+            onNavigate={(snippet) => {
               setSelectedSnippet(snippet)
               setActiveTab('files')
             }}
@@ -395,7 +425,8 @@ const AppShell = () => {
         onToggleSettings={() => setShowSettings(true)}
         onToggleGraph={() => setShowGraph(true)}
       />
-      {showGraph && (
+      {/* GraphNexus Modal - Only show when graph tab is NOT active (to prevent duplicate) */}
+      {showGraph && activeTabId !== GRAPH_TAB_ID && (
         <GraphNexus
           isOpen={true}
           onClose={() => setShowGraph(false)}

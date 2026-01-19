@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Save,
   Sidebar,
@@ -9,8 +10,13 @@ import {
   FileType,
   MoreVertical,
   Copy,
-  Printer
+  Printer,
+  Zap,
+  FileText
 } from 'lucide-react'
+import { useToast } from '../../../core/hooks/useToast'
+import ToastNotification from '../../../core/utils/ToastNotification'
+import '../../../assets/toast.css'
 
 const EditorTitleBar = ({
   title,
@@ -22,11 +28,15 @@ const EditorTitleBar = ({
   onSave,
   onToggleInspector,
   onExportHTML,
-  onExportPDF
+  onExportPDF,
+  onExportMarkdown,
+  onInlineAI
 }) => {
   const [showMoreMenu, setShowMoreMenu] = useState(false)
   const menuRef = useRef(null)
   const buttonRef = useRef(null)
+  const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 })
+  const { toast, showToast } = useToast()
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -44,6 +54,17 @@ const EditorTitleBar = ({
     document.addEventListener('mousedown', handleClickOutside, true)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside, true)
+    }
+  }, [showMoreMenu])
+
+  // Calculate menu position when it opens
+  useEffect(() => {
+    if (showMoreMenu && buttonRef.current) {
+      const buttonRect = buttonRef.current.getBoundingClientRect()
+      setMenuPosition({
+        top: buttonRect.bottom + 8,
+        right: window.innerWidth - buttonRect.right
+      })
     }
   }, [showMoreMenu])
 
@@ -89,12 +110,18 @@ const EditorTitleBar = ({
             <MoreVertical size={18} />
           </button>
 
-          {showMoreMenu && (
-            <div
-              className="native-dropdown-menu"
-              ref={menuRef}
-              onClick={(e) => e.stopPropagation()}
-            >
+          {showMoreMenu &&
+            createPortal(
+              <div
+                className="native-dropdown-menu"
+                ref={menuRef}
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  position: 'fixed',
+                  top: `${menuPosition.top}px`,
+                  right: `${menuPosition.right}px`
+                }}
+              >
               <div
                 className="dropdown-item"
                 onClick={() => {
@@ -109,8 +136,16 @@ const EditorTitleBar = ({
               <div className="dropdown-divider" />
               <div
                 className="dropdown-item"
-                onClick={() => {
-                  navigator.clipboard.writeText(snippet.code)
+                onClick={async () => {
+                  try {
+                    if (snippet?.code) {
+                      await navigator.clipboard.writeText(snippet.code)
+                      showToast('Markdown copied to clipboard', 'success')
+                    }
+                  } catch (error) {
+                    console.error('Failed to copy markdown:', error)
+                    showToast('Failed to copy markdown', 'error')
+                  }
                   setShowMoreMenu(false)
                 }}
               >
@@ -119,8 +154,16 @@ const EditorTitleBar = ({
               </div>
               <div
                 className="dropdown-item"
-                onClick={() => {
-                  onExportHTML()
+                onClick={async () => {
+                  try {
+                    if (onExportHTML && typeof onExportHTML === 'function') {
+                      await onExportHTML()
+                      showToast('HTML copied to clipboard', 'success')
+                    }
+                  } catch (error) {
+                    console.error('Failed to export HTML:', error)
+                    showToast('Failed to export HTML', 'error')
+                  }
                   setShowMoreMenu(false)
                 }}
               >
@@ -129,15 +172,71 @@ const EditorTitleBar = ({
               </div>
               <div
                 className="dropdown-item"
-                onClick={() => {
-                  onExportPDF()
+                onClick={async () => {
+                  try {
+                    if (onExportPDF && typeof onExportPDF === 'function') {
+                      const result = await onExportPDF()
+                      if (result?.success) {
+                        showToast('PDF exported successfully', 'success')
+                      } else if (result?.canceled) {
+                        // User canceled, no notification needed
+                      } else {
+                        showToast('Failed to export PDF', 'error')
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Failed to export PDF:', error)
+                    showToast('Failed to export PDF', 'error')
+                  }
                   setShowMoreMenu(false)
                 }}
               >
                 <span className="menu-label">Export to PDF</span>
                 <Printer size={12} className="menu-icon-right" />
               </div>
+              <div
+                className="dropdown-item"
+                onClick={async () => {
+                  try {
+                    if (onExportMarkdown && typeof onExportMarkdown === 'function') {
+                      const result = await onExportMarkdown()
+                      if (result?.success) {
+                        showToast('Markdown file exported successfully', 'success')
+                      } else if (result?.canceled) {
+                        // User canceled, no notification needed
+                      } else {
+                        showToast('Failed to export markdown', 'error')
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Failed to export markdown:', error)
+                    showToast('Failed to export markdown', 'error')
+                  }
+                  setShowMoreMenu(false)
+                }}
+              >
+                <span className="menu-label">Export as Markdown</span>
+                <FileText size={12} className="menu-icon-right" />
+              </div>
               <div className="dropdown-divider" />
+              <div
+                className="dropdown-item"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setShowMoreMenu(false)
+                  // Use setTimeout to ensure menu closes before opening modal
+                  setTimeout(() => {
+                    if (onInlineAI) {
+                      onInlineAI()
+                    }
+                  }, 0)
+                }}
+              >
+                <span className="menu-label">Inline AI</span>
+                <span className="shortcut-label">Ctrl+K</span>
+                <Zap size={12} className="menu-icon-right" />
+              </div>
               <div
                 className="dropdown-item"
                 onClick={() => {
@@ -149,10 +248,12 @@ const EditorTitleBar = ({
                 <span className="shortcut-label">Ctrl+I</span>
                 <Sidebar size={12} className="menu-icon-right" />
               </div>
-            </div>
-          )}
+              </div>,
+              document.body
+            )}
         </div>
       </div>
+      <ToastNotification toast={toast} />
     </div>
   )
 }

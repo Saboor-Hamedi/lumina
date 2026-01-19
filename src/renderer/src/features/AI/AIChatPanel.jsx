@@ -1,11 +1,12 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Virtuoso } from 'react-virtuoso'
-import { Copy, ThumbsUp, ThumbsDown, Check } from 'lucide-react'
+import { Copy, ThumbsUp, ThumbsDown, Check, Send } from 'lucide-react'
 import { useAIStore } from '../../core/store/useAIStore'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import '../Layout/AppShell.css'
+import './AIChatPanel.css'
 
 const LuminaAvatar = React.memo(() => <div className="lumina-avatar">L</div>)
 const UserAvatar = React.memo(() => <div className="user-avatar">Me</div>)
@@ -98,18 +99,70 @@ const AIChatPanel = () => {
   const { chatMessages, isChatLoading, chatError, sendChatMessage, clearChat, updateMessage } =
     useAIStore()
   const { selectedSnippet } = useVaultStore()
+  const [inputValue, setInputValue] = useState('')
+  const textareaRef = useRef(null)
+
+  // Auto-resize textarea
+  const adjustTextareaHeight = useCallback(() => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+    
+    // Reset height to auto to get accurate scrollHeight
+    textarea.style.height = 'auto'
+    const scrollHeight = textarea.scrollHeight
+    const maxHeight = 200
+    textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`
+  }, [])
+
+  // Initialize textarea on mount
+  useEffect(() => {
+    if (textareaRef.current) {
+      // Ensure proper width on mount
+      textareaRef.current.style.width = '100%'
+      textareaRef.current.style.minWidth = '0'
+      adjustTextareaHeight()
+    }
+  }, [adjustTextareaHeight])
+
+  useEffect(() => {
+    adjustTextareaHeight()
+  }, [inputValue, adjustTextareaHeight])
+
+  // Focus textarea when not loading
+  useEffect(() => {
+    if (!isChatLoading && textareaRef.current) {
+      textareaRef.current.focus()
+    }
+  }, [isChatLoading])
 
   const handleCopy = (text) => {
     navigator.clipboard.writeText(text)
-    // Could show a small toast, but button feedback is often enough
   }
 
   const handleRating = (index, type) => {
     const current = chatMessages[index].rating
-    // Toggle off if same, otherwise set new
     const newRating = current === type ? null : type
     updateMessage(index, { rating: newRating })
   }
+
+  const handleSend = useCallback(() => {
+    const text = inputValue.trim()
+    if (!text || isChatLoading) return
+
+    const context = selectedSnippet ? [selectedSnippet] : []
+    sendChatMessage(text, context)
+    setInputValue('')
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+    }
+  }, [inputValue, isChatLoading, selectedSnippet, sendChatMessage])
+
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
+    }
+  }, [handleSend])
 
   return (
     <div className="chat-interface">
@@ -204,22 +257,29 @@ const AIChatPanel = () => {
       </div>
 
       <div className="chat-input-area">
-        <textarea
-          placeholder="Type a message... (Tip: I see active note)"
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault()
-              const text = e.target.value.trim()
-              if (!text) return
-
-              // Auto-include active note as context if open
-              const context = selectedSnippet ? [selectedSnippet] : []
-              sendChatMessage(text, context)
-              e.target.value = ''
-            }
-          }}
-        />
-        <div className="chat-input-hint">Enter to send</div>
+        <div className="chat-input-wrapper">
+          <textarea
+            ref={textareaRef}
+            className="chat-input-textarea"
+            placeholder="Type a message... (Tip: I see active note)"
+            value={inputValue}
+            onChange={(e) => {
+              setInputValue(e.target.value)
+              adjustTextareaHeight()
+            }}
+            onKeyDown={handleKeyDown}
+            disabled={isChatLoading}
+            rows={1}
+          />
+          <button
+            className="chat-send-button"
+            onClick={handleSend}
+            disabled={!inputValue.trim() || isChatLoading}
+            title="Send message (Enter)"
+          >
+            <Send size={16} />
+          </button>
+        </div>
       </div>
     </div>
   )

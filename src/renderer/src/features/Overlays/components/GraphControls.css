@@ -1,0 +1,221 @@
+/* Graph Controls - Shared styles for theme and mode selectors */
+
+/* Theme Button */
+.graph-theme-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-panel);
+  color: var(--text-muted);
+  border-radius: var(--radius-sm, 3px);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.graph-theme-btn:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+  border-color: var(--border-main);
+}
+
+.graph-theme-btn:active {
+  transform: scale(0.98);
+}
+
+/* Button Sizes */
+.graph-btn-small {
+  padding: 4px 8px;
+  font-size: 10px;
+  gap: 4px;
+}
+
+.graph-btn-medium {
+  padding: 6px 12px;
+  font-size: 11px;
+  gap: 6px;
+}
+
+.graph-btn-large {
+  padding: 8px 16px;
+  font-size: 12px;
+  gap: 8px;
+}
+
+.graph-btn-label {
+  user-select: none;
+}
+
+/* Mode Tabs */
+.graph-mode-tabs {
+  display: flex;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 2px;
+  border-radius: var(--radius-main, 5px);
+  gap: 2px;
+}
+
+.graph-tabs-small {
+  padding: 1px;
+  gap: 1px;
+}
+
+.graph-tabs-medium {
+  padding: 2px;
+  gap: 2px;
+}
+
+.graph-tabs-large {
+  padding: 3px;
+  gap: 3px;
+}
+
+.graph-mode-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: var(--radius-sm, 3px);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.graph-mode-tab:hover {
+  color: var(--text-muted);
+  background: var(--bg-active);
+}
+
+.graph-mode-tab.active {
+  background: var(--text-accent);
+  color: white;
+}
+
+.graph-tabs-small .graph-mode-tab {
+  padding: 3px 8px;
+  font-size: 10px;
+  gap: 4px;
+}
+
+.graph-tabs-large .graph-mode-tab {
+  padding: 6px 16px;
+  font-size: 12px;
+  gap: 8px;
+}
+
+.graph-tab-label {
+  user-select: none;
+}
+
+/* Dropdown Select */
+.graph-control-select {
+  position: relative;
+}
+
+.graph-select-small,
+.graph-select-medium,
+.graph-select-large {
+  padding: 4px 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-panel);
+  color: var(--text-main);
+  border-radius: var(--radius-sm, 3px);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  outline: none;
+}
+
+.graph-select-small {
+  padding: 3px 6px;
+  font-size: 10px;
+}
+
+.graph-select-large {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.graph-select-small:hover,
+.graph-select-medium:hover,
+.graph-select-large:hover {
+  background: var(--bg-active);
+  border-color: var(--border-main);
+}
+
+.graph-select-small:focus,
+.graph-select-medium:focus,
+.graph-select-large:focus {
+  border-color: var(--text-accent);
+  box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb), 0.2);
+}
+
+/* Embedded Graph Controls Container */
+.graph-embedded-controls {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.graph-embedded-controls > * {
+  pointer-events: all;
+}
+
+.graph-embedded-controls-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* Remove background from parent, apply to children */
+  background: transparent;
+  backdrop-filter: none;
+  padding: 0;
+}
+
+.graph-embedded-controls-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* Remove background from parent, apply to children */
+  background: transparent;
+  backdrop-filter: none;
+  padding: 0;
+}
+
+/* Apply background to actual control components */
+.graph-embedded-controls-left > *,
+.graph-embedded-controls-right > * {
+  background: color-mix(in srgb, var(--bg-panel) 90%, transparent);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .graph-embedded-controls {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  
+  .graph-embedded-controls-left,
+  .graph-embedded-controls-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

@@ -1,0 +1,121 @@
+/* ChatGPT-style Chat Input - Theme-aware */
+.chat-input-area {
+  position: relative;
+  padding: 12px;
+  border-top: 1px solid var(--border-dim);
+  background: var(--bg-sidebar);
+  flex-shrink: 0;
+}
+
+.chat-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+  padding: 8px 12px;
+  transition: all 0.2s;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.chat-input-wrapper:focus-within {
+  border-color: var(--text-accent);
+  box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb, 64, 186, 250), 0.1);
+}
+
+.chat-input-textarea {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-main);
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.5;
+  resize: none;
+  overflow-y: auto;
+  max-height: 200px;
+  min-height: 24px;
+  padding: 4px 0;
+  width: 100%;
+  min-width: 0; /* Allow flex item to shrink below content size */
+  box-sizing: border-box;
+}
+
+.chat-input-textarea::placeholder {
+  color: var(--text-faint);
+}
+
+.chat-input-textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.chat-send-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: var(--text-accent);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.chat-send-button:hover:not(:disabled) {
+  background: var(--text-accent-hover);
+  transform: scale(1.05);
+}
+
+.chat-send-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.chat-send-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--bg-active);
+}
+
+.chat-send-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.chat-input-hint {
+  display: none;
+}
+
+/* Remove old textarea styles */
+.chat-input-area > textarea {
+  display: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .chat-input-wrapper {
+    padding: 6px 10px;
+  }
+  
+  .chat-send-button {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+  }
+  
+  .chat-input-textarea {
+    font-size: 13px;
+  }
+}

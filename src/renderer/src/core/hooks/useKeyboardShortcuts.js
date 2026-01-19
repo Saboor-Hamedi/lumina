@@ -136,6 +136,18 @@ export const useKeyboardShortcuts = (shortcuts) => {
           shortcutsRef.current.onToggleSidebar()
         }
       }
+
+      // Inline AI: Ctrl+K
+      if (isCmd && !e.shiftKey && key === 'k') {
+        if (shortcutsRef.current.onInlineAI) {
+          e.preventDefault()
+          e.stopPropagation()
+          const handled = shortcutsRef.current.onInlineAI()
+          if (handled) {
+            e.stopPropagation()
+          }
+        }
+      }
     }
 
     window.addEventListener('keydown', handleOtherKeys)

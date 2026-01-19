@@ -42,41 +42,74 @@ The application would fail to hot-reload with a `[plugin:vite:react-babel]` erro
 
 ---
 
-## [IRONCLAD-003] Block Decoration RangeError
+## [IRONCLAD-003] Viewport Decoration RangeError
 
 ### **Ironclad-003: Description**
 
-An `Uncaught RangeError: Block decorations may not be specified via plugins` occurred when trying to render the Code Block Header.
+An `Uncaught RangeError: Block decorations may not be specified via plugins` occurred when trying to render high-performance viewport decorations.
 
 ### **Ironclad-003: Root Cause**
 
-CodeMirror 6 `ViewPlugin` cannot safely emit `block: true` decorations. This is a framework limitation designed to prevent infinite layout loops during the view-update cycle.
+**Layout Conflict**: CodeMirror 6 prohibits **Block Decorations** (layout-shifting widgets like Code Block Headers) from being emitted inside a `ViewPlugin`. This is because `ViewPlugins` run during the layout/scroll phase, and changing the height of a line at that moment could cause infinite layout recalculation loops.
 
-### **Ironclad-003: The Solution**
+### **Ironclad-003: The Solution (Hybrid Decoration Architecture)**
 
-* **Architecture Shift**: Moved the entire Rich Markdown decoration engine from a `ViewPlugin` to a `StateField`.
-* **State-Driven UI**: `StateFields` are computed as part of the document state itself, allowing the safe use of `block` widgets and ensuring decorations are "Ironclad" and stable across editor reconfigurations.
+We implemented a two-tier decoration system to satisfy CM6's layout engine:
+
+1. **The Layout Tier (`StateField`)**: Code block headers (which change line height) are moved to a `StateField`. These are computed *before* the view update, making them "Layout Safe."
+2. **The Performance Tier (`ViewPlugin`)**: All inline styles (Wikilinks, Bold, Hiding syntax) are moved to a `ViewPlugin` that only targets the **Visible Viewport**.
+3. **Coordinate Clamping**: Added safety checks to ensure `from` and `to` coordinates never exceed the document bounds during rapid note switching.
 
 ---
 
-## [IRONCLAD-004] Mode-Switch "Flicker" (The Destruction Cycle)
+## [IRONCLAD-004] Note-Switch "Heaviness" (The Mount/Unmount Lag)
 
 ### **Ironclad-004: Description**
 
-When switching between Source, Live, and Reading modes, the editor would briefly flicker, reset the scroll position, or "jump" visually. This made it feel like the application was reloading every time a mode changed.
+Switching between notes felt "sluggish" or "heavy," often accompanied by a flash of unstyled content or a sudden scroll jump. It lacked the instantaneous feel of Obsidian.
 
 ### **Ironclad-004: Root Cause**
 
-**The Re-mount Antipattern**: Originally, the `EditorView` was being destroyed and re-initialized whenever the `viewMode` state changed. This forced the browser to tear down the DOM and build it again, losing all transient state (scroll, cursor, focus).
+**Lifecycle Exhaustion**: The `MarkdownEditor` component was being completely unmounted and remounted on every note switch. This forced a full tear-down of the CodeMirror instance, re-loading of all extensions, and a complete DOM rebuild—an expensive operation that blocked the main thread.
 
-### **Ironclad-004: The Solution (Seamless Gifting Engine)**
+### **Ironclad-004: The Solution (Instant State-Swap Logic)**
 
-We moved to a **Component-Level Reconfiguration** strategy:
+1. **Persistent Mounting**: The Editor component now stays mounted in the `AppShell`.
+2. **Atomic State Swapping**: Instead of recreating the editor, we use `view.setState()`. This swaps the document and selection instantly within the *same* instance.
+3. **Internal Scroll Mapping**: Created a `scrollPosMap` (Ref-based) that caches the vertical offset for every file ID, restoring it synchronously before the browser paints the new note.
+4. **Layout Stabilization**: Assigned `min-height` defaults and a matching `bg-app` to the TabBar to create a seamless visual canvas that never collapses.
 
-1. **Compartments**: Wrapped all mode-dependent extensions (like line numbers or read-only states) in a CodeMirror `Compartment`. This provides a "hot-swap" slot in the editor's configuration.
-2. **Microtask Dispatch**: Instead of re-mounting the component, we use a React `useEffect` that dispatches a `reconfigure` effect to the EXISTING editor instance. This happens in a microtask (`Promise.resolve()`) to ensure the update occurs outside the React render loop.
-3. **State Preservation**: Because the `EditorView` is never destroyed, the internal state, scroll position, and focus are preserved perfectly. The extensions simply "hot-reload" in place.
+---
 
-### **Ironclad-004: Result**
+## [IRONCLAD-005] The "Ghost Unpin" Persistence Bug
 
-Mode transitions are now **Zero-Latency**. The editor feels like a single, fluid canvas that simply changes its "skin" without ever interrupting the user's flow.
+### **Ironclad-005: Description**
+
+Pinned tabs would work during a session but would disappear (unpin) whenever the application was reloaded.
+
+### **Ironclad-005: Root Cause**
+
+**Restoration Race Condition**: Upon startup, the `AppStore` would initialize with an empty `pinnedTabIds` array. A `useEffect` in the UI would see this empty array and immediately "persist" it to `settings.json`, effectively overwriting the user's saved pins before the `restoreSession` function had a chance to load the real data.
+
+### **Ironclad-005: The Solution (The Restoration Gate)**
+
+* **State Locking**: Introduced an `isRestoring` boolean in the global state.
+* **Persistence Guard**: All `updateSetting` calls for tabs and pins are now wrapped in a guard: `if (isRestoring) return`.
+* **Sequential Boot**: The persistence engine only "wakes up" and begins watching for changes *after* the initial settings and vault data have been successfully restored and verified.
+
+---
+
+## [IRONCLAD-006] Flex-Scroll "Invisible Bottom" Bug
+
+### **Ironclad-006: Description**
+
+After moving the TabBar to the AppShell, the editor became unscrollable, or the bottom content was cut off.
+
+### **Ironclad-006: Root Cause**
+
+**Height Calculation Failure**: Using `height: 100%` on a flex child (the Editor) inside a container that already has a TabBar caused the editor to exceed the viewport height by exactly 36px. The scrollbars were technically there, but they were pushed off-screen.
+
+### **Ironclad-006: The Solution**
+
+* **Flex-Basis Correction**: Switched from `height: 100%` to `flex: 1` combined with `min-height: 0`. This allows the browser to correctly calculate the editor's height as "Remaining Viewport Space."
+* **Centering Logic**: Removed `justify-content: center` from the scroll container, as it interferes with scroll-anchoring. Replaced it with `margin: 0 auto` on the inner canvas for a more robust "centered writing" experience.

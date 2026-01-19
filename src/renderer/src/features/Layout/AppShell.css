@@ -606,37 +606,7 @@
   border-radius: 6px;
 }
 
-.chat-input-area {
-  padding: 16px;
-  border-top: 1px solid var(--border-dim);
-  background: var(--bg-sidebar);
-}
-
-.chat-input-area textarea {
-  width: 100%;
-  border: 1px solid var(--border-card);
-  background: var(--bg-app);
-  color: var(--text-main);
-  padding: 10px;
-  border-radius: 8px;
-  resize: none;
-  height: 80px;
-  font-family: inherit;
-  font-size: 13px;
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-.chat-input-area textarea:focus {
-  border-color: var(--text-accent);
-}
-
-.chat-input-hint {
-  font-size: 10px;
-  color: var(--text-faint);
-  text-align: right;
-  margin-top: 4px;
-}
+/* Chat input styles moved to AIChatPanel.css for better organization and ChatGPT-style UI */
 
 /* Code Blocks in Chat */
 .chat-code-block {

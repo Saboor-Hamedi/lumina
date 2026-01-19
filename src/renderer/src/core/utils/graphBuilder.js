@@ -87,6 +87,13 @@ export const buildGraphData = (snippets) => {
 }
 
 export const buildSemanticLinks = (nodes, links, snippets, embeddingsCache) => {
+    // Safety check: ensure embeddingsCache exists and is an object
+    // Also check if it has any entries (empty object means no embeddings available)
+    if (!embeddingsCache || typeof embeddingsCache !== 'object' || Object.keys(embeddingsCache).length === 0) {
+        // Silently return empty array - this is expected when embeddings are handled by main process
+        return []
+    }
+    
     // We modify the existing links array in-place or return new ones.
     const semanticLinks = []
     const THRESHOLD = 0.65 // Similarity required
@@ -98,6 +105,11 @@ export const buildSemanticLinks = (nodes, links, snippets, embeddingsCache) => {
         for (let j = i + 1; j < realNodes.length; j++) {
             const nodeA = realNodes[i]
             const nodeB = realNodes[j]
+            
+            // Safety check: ensure snippetId exists before accessing embeddingsCache
+            if (!nodeA.snippetId || !nodeB.snippetId) continue
+            
+            // Safety check: ensure embeddingsCache has the required keys
             const vecA = embeddingsCache[nodeA.snippetId]
             const vecB = embeddingsCache[nodeB.snippetId]
             

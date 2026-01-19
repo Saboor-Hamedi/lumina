@@ -1,9 +1,9 @@
-/* UNIFIED EDITOR FONT: Consistent across all modes (Requested by User) */
 .cm-content {
   font-family: var(--font-editor, 'Inter', system-ui, sans-serif) !important;
   font-size: var(--font-size-editor, 16px) !important;
   line-height: var(--line-height-editor, 1.6) !important;
-  padding: 0 10px 0 40px !important; /* Make room for absolute syntax marks on the left */
+  padding: 0 10px 0 40px !important; /* Stable Writing Gutter */
+  color: var(--text-main);
 }
 
 /* Standard line padding for text readability */
@@ -11,24 +11,29 @@
   padding: 0 4px !important;
 }
 
-/* Standard active line highlight: Ultra-subtle accent color */
-.cm-activeLine {
-  background-color: rgba(var(--text-accent-rgb, 64, 186, 250), 0.04) !important;
+/* Perfect Blockquote */
+.cm-blockquote {
+  border-left: 4px solid var(--text-accent) !important;
+  background: rgba(var(--text-accent-rgb), 0.05) !important;
+  padding: 0.2rem 2em !important;
+  margin: 0.5em 0 !important;
+  font-style: italic;
+  font-size: 1.1em;
+  color: var(--text-muted);
 }
 
 /* 
-  ULTRA-STABLE CODE BLOCK GEOMETRY (Engineering Std #11)
+  ULTRA-STABLE CODE BLOCK GEOMETRY (Matched to PreviewModal.jsx)
 */
 .cm-line[class*="cm-codeblock-"] {
-  padding: 0 20px !important; /* Unified deeper code content padding */
+  padding: 0 2em !important; 
   margin: 0 !important;
-  line-height: var(--line-height-editor, 1.6) !important;
-  background: rgba(var(--bg-active-rgb), 0.15) !important; /* Match active line tone */
-  border-left: 2px solid rgba(var(--text-accent-rgb, 64, 186, 250), 0.4) !important;
-  border-right: 2px solid rgba(var(--text-accent-rgb, 64, 186, 250), 0.4) !important;
-  background-clip: padding-box !important;
-  font-family: var(--font-mono) !important;
-  font-size: 0.95em;
+  line-height: 1.6 !important;
+  background: rgba(var(--text-accent-rgb), 0.03) !important;
+  border-left: 1px solid var(--border-subtle) !important;
+  border-right: 1px solid var(--border-subtle) !important;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
+  font-size: 0.9em;
 }
 
 /* The FIRST line (with the header) must have ZERO padding to let the header fill the frame */
@@ -52,18 +57,70 @@
   background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.4) !important;
 }
 
-.seamless-editor {
+.markdown-editor {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  background: var(--bg-app); /* Matches the main app background perfectly */
-  overflow: hidden;
+  flex: 1; 
+  min-height: 0;
+  overflow: hidden; 
+  background: var(--bg-app);
+}
+
+/* --- LIVE MODE SEMANTICS --- */
+.cm-strong { font-weight: 700; color: var(--text-main); }
+.cm-em { font-style: italic; color: var(--text-muted); }
+.cm-inline-code { 
+  font-family: var(--font-mono); 
+  background: rgba(var(--text-accent-rgb), 0.1); 
+  color: var(--text-accent); 
+  padding: 2px 4px; 
+  border-radius: 4px; 
+  font-size: 0.9em;
+}
+
+/* --- TABLE FIDELITY: Matched to PreviewModal.jsx --- */
+.cm-table-row, .cm-table-header {
+  font-size: 0.95em !important;
+  border-bottom: 1px solid var(--border-dim);
+  line-height: 1.5 !important;
+}
+
+.cm-table-header {
+  background: rgba(var(--text-accent-rgb), 0.05) !important;
+  font-weight: 700;
+  border-bottom: 2px solid var(--border-dim) !important;
+  color: var(--text-main);
+}
+
+.cm-table-cell {
+  color: var(--text-main);
+  padding: 12px 4px !important; /* Matched to preview padding */
+}
+
+/* Hide pipes for graphical feel */
+.cm-table-pipe-hidden {
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+}
+
+.cm-table-pipe {
+  color: var(--text-accent);
+  opacity: 0.4;
+  font-weight: 400;
+}
+
+.cm-task-marker {
+  color: var(--text-accent);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  margin-right: 4px;
 }
 
 /* --- WORKSPACE TABBAR --- */
 .workspace-tabbar {
   height: 36px;
-  background: var(--bg-sidebar);
+  background: var(--bg-app);
   border-bottom: 1px solid var(--border-dim);
   display: flex;
   align-items: center;
@@ -115,6 +172,12 @@
   border-right-color: var(--border-dim);
 }
 
+.workspace-tab.dragging {
+  opacity: 0.4;
+  background: var(--bg-active);
+  cursor: grabbing;
+}
+
 .workspace-tab.active::after {
   content: '';
   position: absolute;
@@ -126,12 +189,30 @@
   box-shadow: 0 1px 10px rgba(var(--text-accent-rgb), 0.3);
 }
 
+.cm-hidden-mark {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+
 .tab-context {
   display: flex;
   align-items: center;
   gap: 10px;
   flex: 1;
   min-width: 0;
+}
+
+.workspace-tab.pinned {
+  min-width: 40px;
+  max-width: 160px;
+  background: rgba(var(--text-accent-rgb), 0.05);
+}
+
+.pinned-icon {
+  color: var(--text-accent);
+  opacity: 1 !important;
 }
 
 .tab-title {
@@ -185,11 +266,18 @@
 }
 
 .tab-dirty {
-  width: 6px !important;
-  height: 6px !important;
+  width: 8px !important;
+  height: 8px !important;
   background: #eab308;
   border-radius: 50%;
   animation: statusPulse 2s infinite ease-in-out;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.tab-dirty:hover {
+  background: #f59e0b;
+  transform: scale(1.2);
 }
 
 /* Tab indicator removed from bottom, moved to ::after at top */
@@ -260,21 +348,27 @@
 .editor-scroller {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   background: transparent;
-  display: flex;
-  justify-content: center;
-  cursor: text; /* Ensures clicks anywhere in the scroller focus the editor */
+  cursor: text;
 }
 
 .editor-canvas-wrap {
   width: 100%;
-  max-width: 720px;
-  max-width: 720px;
-  padding: 40px 40px; /* Standard balanced padding */
+  max-width: 760px;
+  margin: 0 auto; /* Horizonatal Center */
+  padding: 40px 60px;
   display: flex;
   flex-direction: column;
   flex: 1; 
   cursor: text;
+  animation: noteFadeIn 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity, transform;
+}
+
+@keyframes noteFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .editor-large-title {
@@ -303,6 +397,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 80vh; /* Prevent layout collapse during view recreation */
 }
 
 .cm-editor {
@@ -453,16 +548,14 @@
 }
 
 .native-dropdown-menu {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
+  position: fixed; /* Changed from absolute - now portaled to body */
   min-width: 240px;
   background: var(--bg-panel);
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   padding: 6px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-  z-index: 10000;
+  z-index: 100000; /* Higher than CodeMirror tooltips (99999) */
   backdrop-filter: blur(20px);
   animation: nativeMenuAppear 0.15s cubic-bezier(0, 0, 0.2, 1);
   transform-origin: top right;
@@ -544,12 +637,14 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 0 0 16px 0; /* Remove horizontal padding to align with title text */
+  padding: 0 0 16px 0;
   margin-bottom: 24px;
-  border-bottom: 1px solid var(--border-subtle); /* Keep subtle separator */
+  border-bottom: 1px solid var(--border-subtle);
   font-size: 0.85rem;
   color: var(--text-muted);
   width: 100%;
+  min-height: 48px; /* Stable height to prevent jumping */
+  box-sizing: border-box;
 }
 
 /* --- Image Hover Preview --- */
@@ -714,48 +809,45 @@
   border-left-color: var(--text-accent);
 }
 
-/* Unified Selection: Native Browser Engine */
-/* We enable the browser's native selection to guarantee standard double/triple-click behavior */
-::selection {
-  background-color: var(--bg-selection) !important;
-  color: inherit !important;
-}
-
-/* We hide the synthetic CM layer to prevent conflict and "background bleed" */
-.cm-selectionBackground,
-.cm-selectionLayer .cm-selectionBackground {
-  display: none !important;
-}
-
-/* Ensure character-exact selection mechanics */
-.cm-line, .cm-content {
-  user-select: text !important;
+/* Unified Selection: CodeMirror Robust Selection */
+.cm-selectionBackground, 
+.cm-content ::selection {
+  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.3) !important;
 }
 
 .cm-selectionMatch {
-  background-color: rgba(123, 97, 255, 0.15) !important;
+  background-color: rgba(var(--text-accent-rgb), 0.15) !important;
   border-bottom: 2px solid var(--text-accent);
 }
 
-/* Heading Improvements */
+/* Heading Improvements (Editor Optimized) */
 .cm-heading {
   font-family: var(--font-editor);
   font-weight: 700;
   color: var(--text-main);
-  padding-top: 0.4em; /* Drastically Reduced from 1.2em -> 0.8em -> 0.4em */
+  padding-top: 0.4em; 
   padding-bottom: 0.1rem;
   letter-spacing: -0.01em;
 }
 
 .cm-heading-1 { 
-    font-size: 2.2em; /* Reduced from 2.6em */
+    font-size: 2.2em !important;
     border-bottom: 1px solid var(--border-dim); 
-    padding-bottom: 0.3em;
+    padding-bottom: 0.3em !important;
     color: var(--text-accent);
 }
-.cm-heading-2 { font-size: 1.8em; color: var(--text-main); opacity: 0.95; }
-.cm-heading-3 { font-size: 1.4em; opacity: 0.9; }
-.cm-heading-4 { font-size: 1.2em; opacity: 0.85; }
+.cm-heading-2 { font-size: 1.8em !important; color: var(--text-main); opacity: 0.95; }
+.cm-heading-3 { font-size: 1.4em !important; opacity: 0.9; }
+.cm-heading-4 { font-size: 1.2em !important; opacity: 0.85; }
+
+/* Perfect Horizontal Rule */
+.cm-hr {
+  border: none !important;
+  height: 1px !important;
+  background: var(--border-dim) !important;
+  margin: 2rem 0 !important;
+  display: block;
+}
 
 /* WikiLink Styling */
 .cm-link-bracket {
@@ -764,17 +856,18 @@
   font-weight: 400;
 }
 
-.cm-wiki-link {
+/* WikiLink Styling (Matched to PreviewModal.jsx) */
+.cm-wikilink {
   color: var(--text-accent);
   text-decoration: none;
-  font-weight: 500;
-  border-bottom: 1px dashed rgba(123, 97, 255, 0.3);
+  font-weight: 600;
+  border-bottom: 1px dashed rgba(var(--text-accent-rgb), 0.3);
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.cm-wiki-link:hover {
-  background: rgba(123, 97, 255, 0.1);
+.cm-wikilink:hover {
+  background: rgba(var(--text-accent-rgb), 0.05);
   border-bottom-style: solid;
 }
 
@@ -1339,95 +1432,28 @@
 /* Hidden Mark Styling: Handled by scoped mode-live/reading rules in earlier sections */
 
 /* Horizontal Rule Compact Styling */
-.cm-hr {
-  margin: 0.1em 0 !important; /* Ultra-Compact spacing like Obsidian */
-  height: 1.5px !important;
-  background-color: var(--border-subtle) !important;
-  border: none !important;
-  padding: 0 !important;
-  opacity: 0.5;
-}
-
-/* Code Block Compact Styling */
 .cm-codeblock-header {
-  background: var(--bg-sidebar) !important;
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
-  border-bottom: 1px solid var(--border-subtle);
-  padding: 0 14px !important;
-  margin: 0 !important;
+  background: rgba(var(--text-accent-rgb), 0.05) !important;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  border: 1px solid var(--border-dim);
+  border-bottom: none;
+  padding: 0 16px !important;
   display: flex !important;
   justify-content: space-between;
   align-items: center;
-  user-select: none;
-  height: 38px !important;
-  box-sizing: border-box;
-  width: 100% !important;
-  border-left: 2px solid rgba(var(--text-accent-rgb, 64, 186, 250), 0.4);
-  border-right: 2px solid rgba(var(--text-accent-rgb, 64, 186, 250), 0.4);
-  border-top: 1px solid var(--border-subtle);
-  position: relative;
-  z-index: 10;
-  pointer-events: none; /* Let selection pass through background */
-}
-
-.cm-lang-label {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-accent);
-  opacity: 0.7;
-  pointer-events: none; /* Keep selection flow clean */
-}
-
-.cm-codeblock-begin {
-  background: rgba(var(--bg-active-rgb), 0.1) !important;
-  margin: 0 !important;
-  padding: 0 !important; 
+  height: 40px !important;
   box-sizing: border-box;
 }
 
-.cm-line[class*="cm-codeblock-"] {
-  border-left: 2px solid rgba(var(--text-accent-rgb, 64, 186, 250), 0.4) !important;
-  border-right: 2px solid rgba(var(--text-accent-rgb, 64, 186, 250), 0.4) !important;
-  background: rgba(var(--bg-active-rgb), 0.1) !important;
-}
-
-.cm-codeblock-body,
 .cm-codeblock-end {
-  background: transparent !important;
-  margin: 0 !important;
-  border-left: none !important;
-  border-right: none !important;
-}
-
-/* Force selection color to match code block theme */
-.cm-selectionBackground {
-  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.25) !important;
-}
-
-.cm-line[class*="cm-codeblock-"] ::selection {
-  background: rgba(var(--text-accent-rgb), 0.3) !important;
-}
-
-[class*="cm-codeblock-"].cm-activeLine {
-  background-color: rgba(var(--text-accent-rgb), 0.1) !important; /* Active line inside code block */
-}
-
-.cm-line.cm-codeblock-begin {
-  border-radius: 0 !important; /* Header has the rounding now */
-  /* This line contains the starting ``` backticks */
-  border-top: none; 
-}
-
-.cm-codeblock-end {
-  border-bottom-left-radius: 8px !important;
-  border-bottom-right-radius: 8px !important;
-  border-bottom: 2px solid rgba(var(--text-accent-rgb, 64, 186, 250), 0.4) !important;
+  border-bottom-left-radius: 12px !important;
+  border-bottom-right-radius: 12px !important;
+  border-bottom: 1px solid var(--border-dim) !important;
   padding-bottom: 8px !important;
-  margin-bottom: 1em !important;
+  margin-bottom: 2em !important;
 }
+
 
 /* Copy Button Styling */
 .cm-copy-btn {
