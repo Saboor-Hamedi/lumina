@@ -119,7 +119,7 @@
 
 /* --- WORKSPACE TABBAR --- */
 .workspace-tabbar {
-  height: 36px;
+  height: 32px; /* Match sidebar section-header height */
   background: var(--bg-app);
   border-bottom: 1px solid var(--border-dim);
   display: flex;
@@ -152,7 +152,7 @@
   border-right: 1px solid var(--border-dim);
   background: var(--bg-sidebar);
   color: var(--text-faint);
-  font-size: 12px;
+  font-size: 11px; /* Match sidebar font size */
   cursor: pointer;
   position: relative;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);

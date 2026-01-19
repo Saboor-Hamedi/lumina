@@ -25,6 +25,18 @@
   flex-shrink: 0;
 }
 
+.pane-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  height: 32px; /* Match tabbar height */
+  min-height: 32px;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border-dim);
+  flex-shrink: 0;
+}
+
 .explorer-toolbar {
   padding: 12px 16px;
   margin-bottom: 4px;

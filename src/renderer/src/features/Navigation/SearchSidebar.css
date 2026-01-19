@@ -11,11 +11,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
-  height: 36px;
-  min-height: 36px;
-  background: var(--bg-panel);
-  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 12px;
+  height: 32px; /* Match tabbar height */
+  min-height: 32px;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border-dim);
 }
 
 .search-sidebar .pane-title {
