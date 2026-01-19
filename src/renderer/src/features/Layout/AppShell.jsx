@@ -213,7 +213,35 @@ const AppShell = () => {
         useVaultStore.getState().closeTab(selectedSnippet.id)
       }
     },
-    onCloseWindow: () => window.api.closeWindow()
+    onCloseWindow: () => window.api.closeWindow(),
+    onNextTab: () => {
+      if (openTabs.length === 0) return
+      const currentIdx = activeTabId ? openTabs.indexOf(activeTabId) : -1
+      const nextIdx = currentIdx === -1 ? 0 : (currentIdx + 1) % openTabs.length
+      const nextId = openTabs[nextIdx]
+      if (nextId === GRAPH_TAB_ID) {
+        useVaultStore.getState().openGraphTab()
+      } else {
+        const nextSnippet = snippets.find(s => s.id === nextId)
+        if (nextSnippet) setSelectedSnippet(nextSnippet)
+      }
+    },
+    onPreviousTab: () => {
+      if (openTabs.length === 0) return
+      const currentIdx = activeTabId ? openTabs.indexOf(activeTabId) : -1
+      const prevIdx = currentIdx === -1 
+        ? openTabs.length - 1 
+        : currentIdx === 0 
+          ? openTabs.length - 1 
+          : currentIdx - 1
+      const prevId = openTabs[prevIdx]
+      if (prevId === GRAPH_TAB_ID) {
+        useVaultStore.getState().openGraphTab()
+      } else {
+        const prevSnippet = snippets.find(s => s.id === prevId)
+        if (prevSnippet) setSelectedSnippet(prevSnippet)
+      }
+    }
   })
 
   const handleNew = async () => {

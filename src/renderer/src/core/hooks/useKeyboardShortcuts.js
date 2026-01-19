@@ -58,6 +58,20 @@ export const useKeyboardShortcuts = (shortcuts) => {
     const handleOtherKeys = (e) => {
       const isCmd = e.ctrlKey || e.metaKey
       const key = e.key.toLowerCase()
+      
+      // Tab Navigation: Ctrl+Tab (next) / Ctrl+Shift+Tab (previous) - Check first before other shortcuts
+      if (isCmd && e.key === 'Tab') {
+        if (shortcutsRef.current.onNextTab || shortcutsRef.current.onPreviousTab) {
+          e.preventDefault()
+          e.stopPropagation()
+          if (e.shiftKey && shortcutsRef.current.onPreviousTab) {
+            shortcutsRef.current.onPreviousTab()
+          } else if (!e.shiftKey && shortcutsRef.current.onNextTab) {
+            shortcutsRef.current.onNextTab()
+          }
+          return
+        }
+      }
 
       // Save: Ctrl+S (Strictly no Shift)
       if (isCmd && !e.shiftKey && key === 's' && shortcutsRef.current.onSave) {
@@ -150,7 +164,7 @@ export const useKeyboardShortcuts = (shortcuts) => {
       }
     }
 
-    window.addEventListener('keydown', handleOtherKeys)
-    return () => window.removeEventListener('keydown', handleOtherKeys)
+    window.addEventListener('keydown', handleOtherKeys, { capture: true })
+    return () => window.removeEventListener('keydown', handleOtherKeys, { capture: true })
   }, [])
 }

@@ -57,6 +57,10 @@ const TabItem = memo(
         draggable={!isPinned}
         onDragStart={(e) => onDragStart(e, id)}
         onDragOver={(e) => onDragOver(e, id)}
+        onDragEnter={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+        }}
         onDragEnd={onDragEnd}
         title={getTitle()}
       >
@@ -118,6 +122,7 @@ const TabBar = () => {
   const [draggedId, setDraggedId] = useState(null)
   const [contextMenu, setContextMenu] = useState(null)
   const [prompt, setPrompt] = useState(null)
+  const lastReorderRef = useRef({ draggedId: null, targetId: null })
 
   // O(1) Snippet Lookup Map for Performance
   const snippetMap = useMemo(() => {
@@ -183,6 +188,7 @@ const TabBar = () => {
   // --- Drag & Drop ---
   const onDragStart = useCallback((e, id) => {
     setDraggedId(id)
+    lastReorderRef.current = { draggedId: id, targetId: null }
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.dropEffect = 'move'
   }, [])
@@ -190,17 +196,58 @@ const TabBar = () => {
   const onDragOver = useCallback(
     (e, targetId) => {
       e.preventDefault()
+      e.stopPropagation()
+      
       if (draggedId === null || draggedId === targetId) return
+      
+      // Prevent reordering if we're already at this target (prevents rapid reordering)
+      if (lastReorderRef.current.draggedId === draggedId && 
+          lastReorderRef.current.targetId === targetId) {
+        return
+      }
 
       const draggedIdx = openTabs.indexOf(draggedId)
       const targetIdx = openTabs.indexOf(targetId)
 
       if (draggedIdx === -1 || targetIdx === -1) return
+      
+      // Calculate the new position based on mouse position within the target tab
+      const rect = e.currentTarget.getBoundingClientRect()
+      const mouseX = e.clientX - rect.left
+      const tabWidth = rect.width
+      const isLeftHalf = mouseX < tabWidth / 2
+      
+      // Determine insertion position
+      let insertIdx = targetIdx
+      if (draggedIdx < targetIdx) {
+        // Dragging right: insert after target if in right half, before if in left half
+        insertIdx = isLeftHalf ? targetIdx : targetIdx + 1
+      } else {
+        // Dragging left: insert before target if in left half, after if in right half
+        insertIdx = isLeftHalf ? targetIdx : targetIdx + 1
+      }
+      
+      // Clamp to valid range
+      insertIdx = Math.max(0, Math.min(insertIdx, openTabs.length))
+      
+      // Only reorder if position actually changes
+      if (insertIdx === draggedIdx || (insertIdx === draggedIdx + 1 && draggedIdx < targetIdx)) {
+        return
+      }
 
       const nextTabs = [...openTabs]
       nextTabs.splice(draggedIdx, 1)
-      nextTabs.splice(targetIdx, 0, draggedId)
-
+      
+      // Adjust insert index if we removed an item before the target
+      if (draggedIdx < insertIdx) {
+        insertIdx--
+      }
+      
+      nextTabs.splice(insertIdx, 0, draggedId)
+      
+      // Update last reorder to prevent rapid reordering
+      lastReorderRef.current = { draggedId, targetId }
+      
       reorderTabs(nextTabs)
     },
     [draggedId, openTabs, reorderTabs]
@@ -208,6 +255,7 @@ const TabBar = () => {
 
   const onDragEnd = useCallback(() => {
     setDraggedId(null)
+    lastReorderRef.current = { draggedId: null, targetId: null }
   }, [])
 
   const handleContextMenu = useCallback((e, id) => {
