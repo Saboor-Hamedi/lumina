@@ -6,3 +6,5 @@ out
 *.log*
 
 .env
+
+notes/
