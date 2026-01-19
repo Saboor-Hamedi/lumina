@@ -15,7 +15,7 @@ import './ActivityBar.css'
  */
 const ActivityBar = ({ activeTab, onTabChange, onSettingsClick, onToggleSidebar, isLeftSidebarOpen }) => {
   const { status, progress, download, install } = useUpdateStore()
-  const { openGraphTab, activeTabId } = useVaultStore()
+  const { openGraphTab, activeTabId, closeTab } = useVaultStore()
 
   const handleUpdateClick = () => {
     if (status === 'available') download()
@@ -26,35 +26,58 @@ const ActivityBar = ({ activeTab, onTabChange, onSettingsClick, onToggleSidebar,
     <div className="activity-bar">
       <div className="bar-top">
         <button
-          className={`bar-item ${(isLeftSidebarOpen && activeTab === 'files') || activeTabId === GRAPH_TAB_ID ? 'active' : ''}`}
-          onClick={() => {
+          className={`bar-item ${activeTab === 'files' && activeTabId !== GRAPH_TAB_ID ? 'active' : ''}`}
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            // If graph tab is active, close it first
+            if (activeTabId === GRAPH_TAB_ID) {
+              closeTab(GRAPH_TAB_ID)
+            }
             // Toggle sidebar (VSCode-like behavior)
             if (onToggleSidebar) {
               onToggleSidebar()
             }
-            // Also switch to files view if not already
-            if (activeTab !== 'files') {
-              onTabChange('files')
-            }
+            // Switch to files view
+            onTabChange('files')
           }}
           title="Explorer (Toggle sidebar)"
         >
           <Files size={24} strokeWidth={1.5} />
         </button>
         <button
-          className={`bar-item ${activeTab === 'search' ? 'active' : ''}`}
-          onClick={() => onTabChange('search')}
-          title="Search"
+          className={`bar-item ${activeTab === 'search' && activeTabId !== GRAPH_TAB_ID ? 'active' : ''}`}
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            // If graph tab is active, close it first
+            if (activeTabId === GRAPH_TAB_ID) {
+              closeTab(GRAPH_TAB_ID)
+            }
+            // Toggle sidebar if clicking search when already on search (VSCode-like behavior)
+            if (activeTab === 'search' && onToggleSidebar) {
+              onToggleSidebar()
+            } else {
+              // Switch to search view and ensure sidebar is open
+              onTabChange('search')
+              if (!isLeftSidebarOpen && onToggleSidebar) {
+                onToggleSidebar()
+              }
+            }
+          }}
+          title="Search (Toggle sidebar)"
         >
           <Search size={24} strokeWidth={1.5} />
         </button>
         <button
           className={`bar-item ${activeTabId === GRAPH_TAB_ID ? 'active' : ''}`}
-          onClick={() => {
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            // If already active, do nothing (prevent double-click issues)
+            if (activeTabId === GRAPH_TAB_ID) return
             // Open graph as a tab instead of just switching view
             openGraphTab()
-            // Also activate explorer tab when graph is opened
-            onTabChange('files')
           }}
           title="Graph View (Opens as tab)"
         >

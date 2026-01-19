@@ -89,25 +89,26 @@
 }
 
 .graph-mode-tab:hover {
-  color: var(--text-muted);
+  color: var(--text-main);
   background: var(--bg-active);
 }
 
 .graph-mode-tab.active {
-  background: var(--text-accent);
-  color: white;
+  color: var(--text-accent);
+  background: transparent;
+  font-weight: 700;
 }
 
 .graph-tabs-small .graph-mode-tab {
-  padding: 3px 8px;
+  padding: 4px 10px;
   font-size: 10px;
   gap: 4px;
 }
 
 .graph-tabs-large .graph-mode-tab {
-  padding: 6px 16px;
+  padding: 6px 14px;
   font-size: 12px;
-  gap: 8px;
+  gap: 6px;
 }
 
 .graph-tab-label {
@@ -158,18 +159,28 @@
   box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb), 0.2);
 }
 
-/* Embedded Graph Controls Container */
+/* Beautiful toolbar for embedded controls - fully transparent, no background, at very top */
 .graph-embedded-controls {
   position: absolute;
-  top: 12px;
+  top: 0;
   left: 12px;
   right: 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  z-index: 100;
+  z-index: 1000;
   pointer-events: none;
+  /* Fully transparent toolbar, no background */
+  background: transparent;
+  backdrop-filter: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 6px 12px;
+  height: 32px;
+  min-height: 32px;
+  margin: 0;
 }
 
 .graph-embedded-controls > * {
@@ -180,7 +191,6 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  /* Remove background from parent, apply to children */
   background: transparent;
   backdrop-filter: none;
   padding: 0;
@@ -190,19 +200,18 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  /* Remove background from parent, apply to children */
   background: transparent;
   backdrop-filter: none;
   padding: 0;
 }
 
-/* Apply background to actual control components */
+/* Remove individual backgrounds, use toolbar background */
 .graph-embedded-controls-left > *,
 .graph-embedded-controls-right > * {
-  background: color-mix(in srgb, var(--bg-panel) 90%, transparent);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--border-subtle);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: transparent;
+  backdrop-filter: none;
+  border: none;
+  box-shadow: none;
 }
 
 /* Responsive adjustments */

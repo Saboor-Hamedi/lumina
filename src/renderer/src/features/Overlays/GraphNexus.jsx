@@ -369,7 +369,7 @@ const GraphNexus = ({ isOpen = true, onClose, onNavigate, embedded = false }) =>
           />
           {onClose && (
             <button className="modal-close" onClick={onClose} title="Close">
-              <X size={18} />
+              <X size={24} />
             </button>
           )}
         </div>

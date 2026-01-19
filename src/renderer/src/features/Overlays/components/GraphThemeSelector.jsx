@@ -54,7 +54,7 @@ const GraphThemeSelector = ({ variant = 'button', size = 'medium' }) => {
     )
   }
   
-  // Default: button variant
+  // Default: button variant - icon only, no label
   return (
     <button
       className={`graph-control-btn graph-theme-btn graph-btn-${size}`}
@@ -62,7 +62,6 @@ const GraphThemeSelector = ({ variant = 'button', size = 'medium' }) => {
       title={`Switch Theme (Current: ${getThemeLabel(graphTheme)})`}
     >
       <Layers size={size === 'small' ? 14 : size === 'large' ? 20 : 18} />
-      {size !== 'small' && <span className="graph-btn-label">{getThemeLabel(graphTheme)}</span>}
     </button>
   )
 }

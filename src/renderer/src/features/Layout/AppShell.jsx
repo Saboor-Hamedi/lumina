@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import TitleBar from './TitleBar'
 import ActivityBar from '../Navigation/ActivityBar'
 import FileExplorer from '../Navigation/FileExplorer'
+import SearchSidebar from '../Navigation/SearchSidebar'
 import MarkdownEditor from '../Workspace/MarkdownEditor'
 import SettingsModal from '../Overlays/SettingsModal'
 import CommandPalette from '../Overlays/CommandPalette'
@@ -13,7 +14,6 @@ import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { GRAPH_TAB_ID } from '../../core/store/useVaultStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
-import { useAIStore } from '../../core/store/useAIStore'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
 import ConfirmModal from '../Overlays/ConfirmModal'
 import UpdateToast from '../Overlays/UpdateToast'
@@ -260,7 +260,11 @@ const AppShell = () => {
         />
       </nav>
       <aside className="shell-sidebar-left">
-        <FileExplorer onNavigate={() => setActiveTab('files')} />
+        {activeTab === 'search' ? (
+          <SearchSidebar onNavigate={() => setActiveTab('files')} />
+        ) : (
+          <FileExplorer onNavigate={() => setActiveTab('files')} />
+        )}
       </aside>
       {isLeftSidebarOpen && (
         <div
@@ -270,8 +274,8 @@ const AppShell = () => {
         />
       )}
       <main className="shell-main">
-        {/* Show TabBar when there are open tabs and we're in files view or graph tab is active */}
-        {openTabs.length > 0 && (activeTab === 'files' || activeTabId === GRAPH_TAB_ID) && <TabBar />}
+        {/* Show TabBar when there are open tabs and we're in files/search view or graph tab is active */}
+        {openTabs.length > 0 && (activeTab === 'files' || activeTab === 'search' || activeTabId === GRAPH_TAB_ID) && <TabBar />}
 
         {/* Render Graph Nexus if graph tab is active (embedded mode) */}
         {activeTabId === GRAPH_TAB_ID ? (
@@ -279,6 +283,9 @@ const AppShell = () => {
             embedded={true}
             isOpen={true}
             onNavigate={(snippet) => {
+              // Close graph tab and switch to the selected snippet
+              const { closeTab } = useVaultStore.getState()
+              closeTab(GRAPH_TAB_ID)
               setSelectedSnippet(snippet)
               setActiveTab('files')
             }}
@@ -370,7 +377,7 @@ const AppShell = () => {
                         title={useSettingsStore.getState().settings.vaultPath || 'Default'}
                       >
                         {(useSettingsStore.getState().settings.vaultPath || 'Default Vault')
-                          .split(/[\\\/]/)
+                          .split(/[/\\]/)
                           .pop()}
                       </span>
                     </div>

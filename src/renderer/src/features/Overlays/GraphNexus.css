@@ -105,15 +105,23 @@
 
 .nexus-container .pane-header {
   position: relative; /* Support centered absolute tabs */
-  padding: 0 16px;
+  padding: 0 0 0 12px; /* No padding on right, close button handles it */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 32px;
+  min-height: 32px;
+  background: color-mix(in srgb, var(--bg-panel) 95%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .nexus-tabs {
   display: flex;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 2px;
+  background: transparent;
+  padding: 0;
   border-radius: var(--radius-main, 5px);
-  gap: 2px;
+  gap: 4px;
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
@@ -122,7 +130,40 @@
 .nexus-header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0;
+  height: 100%;
+}
+
+/* Close button - full height matching header, larger icon, no right padding */
+.nexus-container .modal-close {
+  height: 100%;
+  min-height: 32px;
+  padding: 0 12px 0 8px; /* Right padding only, no left gap */
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 0;
+  transition: all 0.2s;
+}
+
+.nexus-container .modal-close:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+.nexus-container .modal-close svg {
+  width: 24px;
+  height: 24px;
+}
+
+.nexus-container .modal-close svg {
+  width: 24px;
+  height: 24px;
 }
 
 .nexus-tab {
