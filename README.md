@@ -1,119 +1,284 @@
-# dev-snippet
+# Lumina
 
-dev-snippet is a compact Electron + React app for creating, editing and managing small code or text snippets. It ships a lightweight editor with autosave, markdown preview, keyboard shortcuts, and an approachable packaging setup so you can build native installers for Windows / macOS / Linux.
+> A premium, vault-based knowledge management application built with Electron, React, and CodeMirror 6.
 
-This README explains how the project is organized, how to run and build it, how icons and packaging work, useful keyboard shortcuts, and quick troubleshooting tips.
+![Lumina](https://img.shields.io/badge/version-1.0.2-blue)
+![Tests](https://img.shields.io/badge/tests-93%20passed-success)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-**Friendly note:** this README is written to be published on a website. If you'd like shorter or localized versions, tell me which sections to trim or translate.
+Lumina provides a sophisticated markdown editing experience with live preview, WikiLinks, advanced theming, AI-powered semantic search, and file-system-based storage. Perfect for developers, writers, and knowledge workers who value privacy and performance.
 
-**Table of contents**
-- **Getting started** (dev & build)
-- **Icons & Packaging**
-- **Development workflow & tooling**
-- **How the app works (architecture)**
-- **Keyboard shortcuts & focus behavior**
-- **Where to make common changes**
-- **Troubleshooting**
-- **Contributing**
+## ✨ Features
 
----
+### 🎯 Core Features
 
-**Getting started**
+- **Vault-First Architecture** - All notes stored as plain markdown files with YAML frontmatter
+- **Multi-Tab Workspace** - High-performance session management with multiple notes open simultaneously
+- **Live Preview** - "What You See Is What You Mean" editing with intelligent syntax hiding
+- **WikiLinks** - Create connections between notes with `[[Link]]` syntax
+- **Knowledge Graph** - Visualize your note connections with an interactive graph view
+- **AI-Powered Search** - Semantic search using local AI models (privacy-first)
+- **Multi-Vault Support** - Switch between different vault directories
+- **Zero-Jump Performance** - Instant startup via IndexedDB caching
 
-Prerequisites
-- Node.js 18+ (LTS recommended)
-- npm (or your package manager of choice)
-- On macOS: Xcode command line tools (for packaging)
+### 🎨 User Experience
 
-Install dependencies:
+- **Advanced Theming** - Multiple themes with custom color palettes
+- **Resizable Sidebars** - Flexible layouts for custom productivity flows
+- **Keyboard-First** - Comprehensive keyboard shortcuts for power users
+- **Command Palette** - Quick access to all features (`Ctrl/Cmd + P`)
+- **Drag & Drop** - Seamless image insertion
+- **Tab Management** - Pin tabs, close others, organize your workspace
+
+### 🔍 Search & Discovery
+
+- **Full-Text Search** - Fast keyword-based search
+- **Semantic Search** - Find notes by meaning, not just keywords
+- **Tag System** - Organize with visual tag pills and autocomplete
+- **File Explorer** - Navigate your vault with a familiar tree view
+
+### 📝 Editor Features
+
+- **CodeMirror 6** - Advanced text editor with syntax highlighting
+- **Markdown Support** - Full markdown syntax with extensions
+- **Code Blocks** - Syntax highlighting for 100+ languages
+- **Auto-save** - Never lose your work
+- **Caret Position Persistence** - Remembers where you left off
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- **Node.js** 18+ (LTS recommended)
+- **npm** (or your package manager of choice)
+- **Git**
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/your-username/lumina.git
+   cd lumina
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Run in development mode**
+   ```bash
+   npm run dev
+   ```
+
+### Building
+
+Build for your platform:
 
 ```bash
-npm install
-```
-
-Run in development (live reload via electron-vite):
-
-```bash
-npm run dev
-```
-
-Build packaged artifacts
-- Windows:
-
-```bash
+# Windows
 npm run build:win
-```
 
-- macOS (run on macOS):
-
-```bash
+# macOS
 npm run build:mac
-```
 
-- Linux:
-
-```bash
+# Linux
 npm run build:linux
 ```
 
-Build notes: the build scripts run the Vite build for the renderer and then run `electron-builder` to produce platform installers. See `package.json` scripts.
+## 📖 Usage
 
----
+### Creating Your First Note
 
-**Icons & Packaging**
+1. Press `Ctrl/Cmd + N` to create a new note
+2. Start typing - your note auto-saves
+3. Use markdown syntax for formatting
 
-- During development the window attempts to use a platform-appropriate icon (`resources/icon.ico` on Windows and `renderer/public/icon.png` on other platforms). However, OS-level icons (Start menu, pinned shortcuts, installer exe, .app bundle) are embedded at packaging time.
-- `electron-builder` is configured to use resources from the `build/` folder (see `electron-builder.yml`). Place `build/icon.ico` and `build/icon.icns` there prior to packaging.
+### Linking Notes
 
-Quick helper: if you have a high-resolution source PNG (recommended 1024×1024), generate icons with the included npm script:
+Create connections between notes using WikiLinks:
 
-```bash
-# requires internet for `npx` or install electron-icon-maker globally
-npm run make:icons
+```markdown
+This note references [[Another Note]] and [[Yet Another Note|Display Text]].
 ```
 
-This runs `npx electron-icon-maker --input renderer/public/icon.png --output build` and produces `build/icon.ico` and `build/icon.icns` (when possible). After packaging, the produced installers will show your custom icon instead of Electron's default.
+### Using the Graph View
 
-If you want the dev BrowserWindow to display the custom Windows icon immediately, copy `build/icon.ico` to `resources/icon.ico` and restart `npm run dev`.
+1. Click the graph icon in the activity bar
+2. Explore your note connections visually
+3. Click nodes to navigate to notes
 
----
+### Keyboard Shortcuts
 
-**Development workflow & tooling**
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl/Cmd + N` | New note |
+| `Ctrl/Cmd + P` | Command palette |
+| `Ctrl/Cmd + S` | Save |
+| `Ctrl/Cmd + Delete` | Delete note |
+| `Ctrl/Cmd + K` | Quick actions |
+| `Escape` | Close modals |
 
-- Linting & formatting: Prettier and ESLint are recommended in your editor.
-- Native modules: `better-sqlite3` is used in the main process. After `npm install`, we run `electron-rebuild` in `postinstall` (see `package.json`). If you encounter native build issues, run:
+See the full list in Settings → Keyboard Shortcuts.
+
+## 🛠️ Development
+
+### Project Structure
+
+```
+lumina/
+├── src/
+│   ├── main/           # Electron main process
+│   │   ├── index.js    # Main entry point
+│   │   ├── VaultManager.js
+│   │   ├── VaultSearch.js
+│   │   └── VaultIndexer.js
+│   ├── preload/        # Preload scripts
+│   └── renderer/       # React application
+│       └── src/
+│           ├── components/  # UI components
+│           ├── core/        # Core logic (stores, hooks, utils)
+│           └── features/    # Feature modules
+├── scripts/            # Build scripts
+└── build/             # Build artifacts
+```
+
+### Available Scripts
 
 ```bash
+# Development
+npm run dev              # Start development server
+npm start               # Preview production build
+
+# Building
+npm run build           # Build for current platform
+npm run build:win       # Build for Windows
+npm run build:mac       # Build for macOS
+npm run build:linux     # Build for Linux
+
+# Testing
+npm test                # Run tests in watch mode
+npm run test:run        # Run tests once
+npm run test:coverage   # Generate coverage report
+npm run test:ui         # Run tests with UI
+
+# Performance
+npm run workbench       # Run performance workbench
+
+# Code Quality
+npm run lint            # Run ESLint
+npm run format          # Format with Prettier
+```
+
+### Technology Stack
+
+**Main Process:**
+- Electron 39.2.4
+- better-sqlite3 (legacy migration)
+- chokidar (file watching)
+- gray-matter (YAML frontmatter)
+
+**Renderer Process:**
+- React 19.1.1
+- CodeMirror 6
+- Zustand (state management)
+- Dexie (IndexedDB)
+- @xenova/transformers (AI embeddings)
+- react-force-graph-2d (graph visualization)
+
+**Build Tools:**
+- Vite 7.1.6
+- electron-vite
+- Vitest (testing)
+- Tailwind CSS
+
+## 🧪 Testing
+
+The project includes comprehensive test coverage:
+
+```bash
+# Run all tests
+npm test
+
+# Run with coverage
+npm run test:coverage
+
+# Run specific test file
+npm test -- src/renderer/src/components/atoms/Button.test.jsx
+```
+
+**Current Coverage:**
+- 93 tests across 8 test files
+- Components, hooks, stores, utilities, and main process modules
+
+See [ROADMAP.md](./ROADMAP.md) for testing improvements planned.
+
+## 📚 Documentation
+
+- **[ROADMAP.md](./ROADMAP.md)** - Project roadmap and future plans
+- **[notes/doc.md](./notes/doc.md)** - Technical documentation
+- **[notes/suggestions.md](./notes/suggestions.md)** - Feature suggestions and implementations
+
+## 🤝 Contributing
+
+Contributions are welcome! Here's how you can help:
+
+1. **Fork the repository**
+2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
+3. **Make your changes**
+4. **Add tests** for new features
+5. **Run tests** (`npm test`)
+6. **Commit your changes** (`git commit -m 'Add amazing feature'`)
+7. **Push to the branch** (`git push origin feature/amazing-feature`)
+8. **Open a Pull Request**
+
+### Development Guidelines
+
+- Follow the existing code style
+- Write tests for new features
+- Update documentation as needed
+- Keep commits atomic and well-described
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**App won't start:**
+```bash
+# Rebuild native modules
 npm run rebuild
 ```
 
+**Tests failing:**
+```bash
+# Clear cache and reinstall
+rm -rf node_modules package-lock.json
+npm install
+```
+
+**Build errors:**
+```bash
+# Clean build directory
+rm -rf out dist
+npm run build
+```
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE.md](./LICENSE.md) file for details.
+
+## 🙏 Acknowledgments
+
+- Built with [Electron](https://www.electronjs.org/)
+- UI powered by [React](https://react.dev/)
+- Editor by [CodeMirror](https://codemirror.net/)
+- Icons from [Lucide](https://lucide.dev/)
+
+## 📞 Support
+
+- **Issues:** [GitHub Issues](https://github.com/your-username/lumina/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/your-username/lumina/discussions)
+
 ---
 
-**How the app works (architecture)**
-
-- Main process: `src/main/index.js` — creates BrowserWindow, registers IPC handlers for file dialogs and database access, and initializes a small SQLite DB (`snippets.db`) stored in the user's appData (`app.getPath('userData')`). The window icon is chosen per-platform in `createWindow()`.
-- Preload: `src/preload/index.js` — exposes a small safe API to the renderer for IPC operations (open file, read/write, DB RPC).
-- Renderer: `src/renderer/src` — React app built with Vite. Key folders:
-	- `components/` — UI components (Workbench, SnippetEditor, SnippetLibrary, StatusBar, SettingsPanel, modal dialogs, etc.)
-	- `hook/` — custom hooks (`useSnippetData`, `useToast`, `useKeyboardShortcuts`, etc.)
-	- `utils/` — small utilities such as `ToastNotification`
-
-Data flow summary:
-- `SnippetLibrary` is the top-level view manager: it holds active view state (`snippets`, `editor`, `settings`, `welcome`) and orchestrates opening the editor, creating drafts, and showing modals.
-- `SnippetEditor` renders the editor and live preview. It contains an autosave timer, a `textareaRef` and focuses the editor reliably when a snippet is opened or created.
-- Database access (CRUD for snippets and settings) is performed in the main process via better-sqlite3 and exposed to the renderer by IPC handlers.
-
----
-
-**Keyboard shortcuts & focus behavior**
-
-The app provides global keyboard shortcuts that are intentionally conservative (they avoid interfering when typing in inputs):
-
-- Escape — close modals (rename/delete/command palette) or cancel editor
-- Ctrl/Cmd + N — Create a new snippet (opens editor in create mode). The editor `textarea` is focused by `SnippetEditor`'s `textareaRef` effects.
-- Ctrl/Cmd + R — Open Rename modal for the selected snippet
-- Ctrl/Cmd + Delete — Open Delete confirmation for selected snippet
-- Ctrl/Cmd + S — Save (opens save/name prompt when needed)
-- Ctrl/Cmd + P — Toggle Command Palette
-- Ctrl/Cmd + Shift + W — Go to Welcome page
-- Ctrl/Cmd + Shift + C — Copy selected snippet's code to clipboard
+**Made with ❤️ for knowledge workers who value privacy and performance.**
