@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { FileText, FileCode, Hash, Star, Trash2, Edit2, Pin, ExternalLink, FileJson, ImageIcon } from 'lucide-react'
+import { Star, Trash2, Edit2, Pin, ExternalLink } from 'lucide-react'
 import { useVaultStore } from '../../../core/store/useVaultStore'
 import ContextMenu from '../../Overlays/ContextMenu'
+import { getSnippetIcon } from '../../../core/utils/fileIconMapper'
 
 /**
  * SidebarItem Component
@@ -47,15 +48,7 @@ const SidebarItem = ({ snippet, isActive, onClick, style }) => {
   }
 
   const getIcon = () => {
-    const lang = (snippet.language || 'markdown').toLowerCase()
-    const title = (snippet.title || '').toLowerCase()
-    
-    if (['javascript', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'python', 'py'].includes(lang))
-      return <FileCode size={14} className="item-icon" />
-    if (lang === 'json') return <FileJson size={14} className="item-icon" />
-    if (lang === 'markdown' || lang === 'md' || title.endsWith('.md')) return <Hash size={14} className="item-icon" />
-    if (['png', 'jpg', 'jpeg', 'gif', 'svg'].some(ext => title.endsWith('.' + ext))) return <ImageIcon size={14} className="item-icon" />
-    return <FileText size={14} className="item-icon" />
+    return getSnippetIcon(snippet)
   }
 
   const menuOptions = [
