@@ -1,0 +1,228 @@
+.theme-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.theme-modal-container {
+  background: var(--bg-app);
+  border: 1px solid var(--border-dim);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-width: 900px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.theme-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-dim);
+  background: var(--bg-panel);
+}
+
+.theme-modal-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.theme-modal-icon {
+  color: var(--text-accent);
+  flex-shrink: 0;
+}
+
+.theme-modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+
+.theme-modal-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.modal-close:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+.theme-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 16px;
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.theme-modal-card {
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  border-radius: 8px;
+  border: 2px solid var(--border-dim);
+  background: var(--bg-card);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  position: relative;
+}
+
+.theme-modal-card:hover {
+  border-color: var(--border-main);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.theme-modal-card.active {
+  border-color: var(--text-accent);
+  box-shadow: 0 0 0 3px rgba(var(--text-accent-rgb, 64, 186, 250), 0.1),
+              0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.theme-modal-card.hovered {
+  border-color: var(--text-accent);
+}
+
+.theme-modal-preview {
+  width: 100%;
+  height: 100px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px 6px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-preview-sidebar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 30%;
+  border-right: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.theme-preview-editor {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 70%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-preview-accent {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  opacity: 0.8;
+}
+
+.theme-preview-text {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.6;
+}
+
+.theme-modal-info {
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.theme-modal-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  flex: 1;
+}
+
+.theme-modal-check {
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.theme-modal-description {
+  padding: 0 12px 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scrollbar styling */
+.theme-modal-grid::-webkit-scrollbar {
+  width: 8px;
+}
+
+.theme-modal-grid::-webkit-scrollbar-track {
+  background: var(--bg-panel);
+}
+
+.theme-modal-grid::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-radius: 4px;
+}
+
+.theme-modal-grid::-webkit-scrollbar-thumb:hover {
+  background: var(--border-main);
+}

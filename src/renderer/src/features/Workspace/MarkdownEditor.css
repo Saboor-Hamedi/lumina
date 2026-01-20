@@ -2,20 +2,20 @@
   font-family: var(--font-editor, 'Inter', system-ui, sans-serif) !important;
   font-size: var(--font-size-editor, 16px) !important;
   line-height: var(--line-height-editor, 1.6) !important;
-  padding: 0 10px 0 40px !important; /* Stable Writing Gutter */
+  padding: 0 10px 0 0 !important; /* Remove left padding to align with title */
   color: var(--text-main);
 }
 
 /* Standard line padding for text readability */
 .cm-line {
-  padding: 0 4px !important;
+  padding: 0 4px 0 0 !important; /* Remove left padding to align with title */
 }
 
 /* Perfect Blockquote */
 .cm-blockquote {
   border-left: 4px solid var(--text-accent) !important;
   background: rgba(var(--text-accent-rgb), 0.05) !important;
-  padding: 0.2rem 2em !important;
+  padding: 0.2rem 2em 0.2rem 1em !important; /* Add left padding for blockquote indent */
   margin: 0.5em 0 !important;
   font-style: italic;
   font-size: 1.1em;
@@ -26,7 +26,7 @@
   ULTRA-STABLE CODE BLOCK GEOMETRY (Matched to PreviewModal.jsx)
 */
 .cm-line[class*="cm-codeblock-"] {
-  padding: 0 2em !important; 
+  padding: 0 2em 0 1em !important; /* Add left padding for code blocks */
   margin: 0 !important;
   line-height: 1.6 !important;
   background: rgba(var(--text-accent-rgb), 0.03) !important;
@@ -223,13 +223,24 @@
 }
 
 .tab-icon {
-  opacity: 0.5;
-  color: var(--text-accent);
+  opacity: 0.7;
+  flex-shrink: 0;
   transition: opacity 0.2s;
+  /* Allow inline styles from fileIconMapper to override */
 }
 
 .workspace-tab.active .tab-icon {
   opacity: 1;
+}
+
+.workspace-tab:hover .tab-icon {
+  opacity: 1;
+}
+
+/* Pinned icon styling */
+.tab-icon.pinned-icon {
+  color: var(--text-accent);
+  opacity: 0.8;
 }
 
 .tab-actions {
@@ -509,30 +520,65 @@
   transform: translateY(0);
 }
 
-/* --- Cursor & Mouse Polish --- */
-.cursor-smooth .cm-cursor {
-  border-left: 2px solid var(--text-accent) !important;
-  transition: transform 0.1s cubic-bezier(0, 0, 0.2, 1), opacity 0.2s;
+/* --- Cursor & Caret Styling --- */
+/* 
+ * Theme-aware caret system with customizable width and color
+ * Uses CSS variables: --caret-width, --caret-color
+ * Falls back to theme accent color if no custom color is set
+ * Styles are applied via CodeMirror theme AND CSS for maximum compatibility
+ */
+
+/* Base cursor styling - applies to all cursor styles */
+/* High specificity to override CodeMirror defaults and ensure updates */
+.cm-editor .cm-cursor,
+.markdown-editor .cm-cursor,
+.cm-cursor,
+.cm-editor.cm-focused .cm-cursor,
+.cm-editor .cm-cursor-primary {
+  border-left: var(--caret-width, 2px) solid var(--caret-color, var(--text-accent)) !important;
+  margin-left: calc(-1 * var(--caret-width, 2px) / 2) !important;
+  transition: border-color 0.15s ease, border-width 0.15s ease, background-color 0.15s ease !important;
+  pointer-events: none;
+  will-change: border-color, border-width, background-color;
+  /* Force immediate update - use direct property assignments */
+  border-left-color: var(--caret-color, var(--text-accent)) !important;
+  border-left-width: var(--caret-width, 2px) !important;
+  border-left-style: solid !important;
 }
 
-.cursor-sharp .cm-cursor {
-  border-left: 2.5px solid var(--text-accent) !important;
+/* Smooth cursor style (default) - smooth transitions */
+.cursor-smooth .cm-cursor,
+.cursor-bar .cm-cursor {
+  transition: transform 0.1s cubic-bezier(0, 0, 0.2, 1), 
+              opacity 0.2s,
+              border-color 0.15s ease,
+              border-width 0.15s ease !important;
+}
+
+/* Sharp cursor style - no opacity transition */
+.cursor-sharp .cm-cursor,
+.cursor-line .cm-cursor {
   opacity: 1 !important;
+  transition: border-color 0.15s ease, border-width 0.15s ease !important;
 }
 
+/* Block cursor style - uses background instead of border */
 .cursor-block .cm-cursor {
   border-left: none !important;
-  background-color: var(--text-accent) !important;
+  background-color: var(--caret-color, var(--text-accent)) !important;
   width: 0.6em !important;
   opacity: 0.7 !important;
+  margin-left: 0 !important;
+  transition: background-color 0.15s ease, opacity 0.2s ease !important;
 }
 
-/* Subtle blink for block cursor */
+/* Subtle blink animation for block cursor */
 .cursor-block .cm-focused .cm-cursor {
   animation: cm-blink-block 1.2s steps(1) infinite;
 }
 
 @keyframes cm-blink-block {
+  0%, 100% { opacity: 0.7; }
   50% { opacity: 0; }
 }
 
@@ -640,10 +686,11 @@
   padding: 0 0 16px 0;
   margin-bottom: 24px;
   border-bottom: 1px solid var(--border-subtle);
-  font-size: 0.85rem;
+  font-size: calc(var(--font-size-editor, 14px) * 0.85); /* Match editor font size proportionally */
+  line-height: calc(var(--font-size-editor, 14px) * 1.8); /* Match editor line height */
   color: var(--text-muted);
   width: 100%;
-  min-height: 48px; /* Stable height to prevent jumping */
+  min-height: auto; /* Let content determine height */
   box-sizing: border-box;
 }
 
@@ -756,7 +803,7 @@
   padding: 4px;
   min-width: 150px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-  z-index: 100;
+  z-index: 10000; /* High z-index to appear above tabbar and other elements */
   backdrop-filter: blur(10px);
 }
 

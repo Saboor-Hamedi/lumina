@@ -1,8 +1,9 @@
 import React, { useRef, useState, useCallback, useMemo, memo } from 'react'
-import { X, Hash, FileCode, FileText, Pin, MoreHorizontal, ArrowRight, Trash2, Network } from 'lucide-react'
+import { X, Pin, MoreHorizontal, ArrowRight, Trash2, Network } from 'lucide-react'
 import { useVaultStore, GRAPH_TAB_ID } from '../../../core/store/useVaultStore'
 import ContextMenu from '../../Overlays/ContextMenu'
 import PromptModal from '../../Overlays/PromptModal'
+import { getSnippetIcon } from '../../../core/utils/fileIconMapper.jsx'
 
 /**
  * TabItem Component (Memoized for Performance)
@@ -25,17 +26,21 @@ const TabItem = memo(
   }) => {
     /**
      * Get icon for the tab based on type and state
+     * Uses fileIconMapper for consistent icon display across app
      * @returns {JSX.Element} Icon component
      */
     const getIcon = () => {
       // Special handling for Graph tab
       if (id === GRAPH_TAB_ID) return <Network size={12} className="tab-icon" />
       if (isPinned) return <Pin size={12} className="tab-icon pinned-icon" />
-      const lang = (snippet?.language || 'markdown').toLowerCase()
-      if (['javascript', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'python', 'py'].includes(lang))
-        return <FileCode size={12} className="tab-icon" />
-      if (lang === 'markdown' || lang === 'md') return <Hash size={12} className="tab-icon" />
-      return <FileText size={12} className="tab-icon" />
+      
+      // Use fileIconMapper for snippet tabs (same as sidebar)
+      if (snippet) {
+        return getSnippetIcon(snippet, 12, 'tab-icon')
+      }
+      
+      // Fallback (shouldn't happen)
+      return null
     }
 
     /**

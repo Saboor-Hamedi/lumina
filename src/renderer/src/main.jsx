@@ -13,6 +13,15 @@ const bootTheme = () => {
   try {
     const themeId = localStorage.getItem('theme-id') || 'dark'
     document.documentElement.setAttribute('data-theme', themeId)
+    // Apply basic theme colors immediately to prevent flash
+    const root = document.documentElement
+    if (themeId === 'dark') {
+      root.style.setProperty('--bg-app', '#1e1e1e')
+      root.style.setProperty('--text-main', '#dfdfdf')
+    } else if (themeId === 'light') {
+      root.style.setProperty('--bg-app', '#ffffff')
+      root.style.setProperty('--text-main', '#1a1a1a')
+    }
   } catch (e) {
     document.documentElement.setAttribute('data-theme', 'dark')
   }

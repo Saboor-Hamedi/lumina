@@ -6,6 +6,7 @@ import FileExplorer from '../Navigation/FileExplorer'
 import SearchSidebar from '../Navigation/SearchSidebar'
 import MarkdownEditor from '../Workspace/MarkdownEditor'
 import SettingsModal from '../Overlays/SettingsModal'
+import ThemeModal from '../Overlays/ThemeModal'
 import CommandPalette from '../Overlays/CommandPalette'
 import GraphNexus from '../Overlays/GraphNexus'
 import Dashboard from '../Workspace/components/Dashboard'
@@ -27,6 +28,7 @@ const AppShell = () => {
 
   const [activeTab, setActiveTab] = useState('files')
   const [showSettings, setShowSettings] = useState(false)
+  const [showThemeModal, setShowThemeModal] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
   const [showGraph, setShowGraph] = useState(false)
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true)
@@ -283,6 +285,7 @@ const AppShell = () => {
           activeTab={activeTab}
           onTabChange={setActiveTab}
           onSettingsClick={() => setShowSettings(true)}
+          onThemeClick={() => setShowThemeModal(true)}
           onToggleSidebar={() => setIsLeftSidebarOpen((prev) => !prev)}
           isLeftSidebarOpen={isLeftSidebarOpen}
         />
@@ -447,7 +450,16 @@ const AppShell = () => {
           </div>
         </div>
       </aside>
-      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      {showSettings && (
+        <SettingsModal
+          onClose={() => setShowSettings(false)}
+          onOpenTheme={() => {
+            setShowSettings(false)
+            setShowThemeModal(true)
+          }}
+        />
+      )}
+      {showThemeModal && <ThemeModal isOpen={showThemeModal} onClose={() => setShowThemeModal(false)} />}
       <CommandPalette
         isOpen={showPalette}
         onClose={() => setShowPalette(false)}

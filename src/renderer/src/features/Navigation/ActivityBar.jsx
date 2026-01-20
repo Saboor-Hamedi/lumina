@@ -1,4 +1,4 @@
-import { Files, Search, Settings, Network, ArrowUpCircle, RefreshCw } from 'lucide-react'
+import { Files, Search, Settings, Network, ArrowUpCircle, RefreshCw, Palette } from 'lucide-react'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { GRAPH_TAB_ID } from '../../core/store/useVaultStore'
@@ -7,13 +7,13 @@ import './ActivityBar.css'
 /**
  * ActivityBar Component
  * Sidebar navigation with file explorer, search, graph view, and settings.
- * 
+ *
  * Graph view opens as a tab when clicked (not just switching view).
  * This allows users to switch between graph and notes seamlessly via tabs.
- * 
+ *
  * Explorer icon toggles the left sidebar (like VSCode).
  */
-const ActivityBar = ({ activeTab, onTabChange, onSettingsClick, onToggleSidebar, isLeftSidebarOpen }) => {
+const ActivityBar = ({ activeTab, onTabChange, onSettingsClick, onThemeClick = () => {}, onToggleSidebar, isLeftSidebarOpen }) => {
   const { status, progress, download, install } = useUpdateStore()
   const { openGraphTab, activeTabId, closeTab } = useVaultStore()
 
@@ -131,6 +131,14 @@ const ActivityBar = ({ activeTab, onTabChange, onSettingsClick, onToggleSidebar,
             )}
           </button>
         )}
+        <button
+          className="bar-item"
+          title="Themes"
+          onClick={onThemeClick}
+          style={{ color: 'var(--icon-primary, var(--text-accent))' }}
+        >
+          <Palette size={22} strokeWidth={1.5} />
+        </button>
         <button className="bar-item" title="Settings" onClick={onSettingsClick}>
           <Settings size={22} strokeWidth={1.5} />
         </button>

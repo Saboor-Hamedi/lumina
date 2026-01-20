@@ -28,7 +28,21 @@ import {
   Box,
   Heart,
   Users,
-  ShoppingBag
+  ShoppingBag,
+  Brain,
+  Network,
+  BarChart3,
+  Github,
+  Twitter,
+  Facebook,
+  Instagram,
+  Linkedin,
+  Youtube,
+  MessageCircle,
+  Send,
+  Share2,
+  Sparkles,
+  Layers
 } from 'lucide-react'
 
 /**
@@ -241,6 +255,21 @@ const getFileIcon = (title, language) => {
     { pattern: /shopping/, icon: ShoppingBag },
     { pattern: /family/, icon: Users },
     { pattern: /friend/, icon: Users },
+    { pattern: /^ai$|artificial.?intelligence|machine.?learning|^ml$|deep.?learning/, icon: Brain },
+    { pattern: /^gnn$|graph.?neural|neural.?network|neural/, icon: Network },
+    { pattern: /^pandas$|data.?science|datascience/, icon: BarChart3 },
+    { pattern: /^xia$/, icon: Heart },
+    { pattern: /^github$|^gh$/, icon: Github },
+    { pattern: /^twitter$|^x$/, icon: Twitter },
+    { pattern: /^facebook$|^fb$/, icon: Facebook },
+    { pattern: /^instagram$|^ig$/, icon: Instagram },
+    { pattern: /^linkedin$|linked.?in/, icon: Linkedin },
+    { pattern: /^youtube$|^yt$/, icon: Youtube },
+    { pattern: /social.?media|^social$/, icon: Share2 },
+    { pattern: /^lumina$/, icon: Sparkles },
+    { pattern: /^snippet/, icon: Layers },
+    { pattern: /^dev$|^development$/, icon: Code },
+    { pattern: /^html$|^htm$/, icon: FileCode },
     { pattern: /^license/, icon: FileText },
     { pattern: /^changelog/, icon: FileText },
     { pattern: /package/, icon: Package },
@@ -412,6 +441,74 @@ const getFileIcon = (title, language) => {
 }
 
 /**
+ * Get icon color based on icon type
+ */
+const getIconColor = (iconType, title) => {
+  const titleLower = (title || '').toLowerCase()
+
+  // Love/Personal icons
+  if (['saboor', 'note', 'node', 'xia'].some(name => titleLower.includes(name))) {
+    return 'var(--icon-love, var(--text-accent))'
+  }
+
+  // AI & ML icons
+  if (['ai', 'artificial intelligence', 'machine learning', 'ml', 'deep learning', 'neural'].some(name => titleLower.includes(name))) {
+    return 'var(--icon-primary, var(--text-accent))'
+  }
+
+  // GNN & Graph Neural Networks
+  if (['gnn', 'graph neural', 'neural network'].some(name => titleLower.includes(name))) {
+    return 'var(--icon-secondary, #10b981)'
+  }
+
+  // Data Science & Pandas
+  if (['pandas', 'data science', 'datascience'].some(name => titleLower.includes(name))) {
+    return 'var(--icon-tertiary, #f59e0b)'
+  }
+
+  // Social Media icons
+  if (['github', 'gh'].some(name => titleLower.includes(name))) {
+    return 'var(--icon-primary, var(--text-accent))'
+  }
+  if (['twitter', 'x'].some(name => titleLower.includes(name))) {
+    return 'var(--icon-primary, #1da1f2)'
+  }
+  if (['facebook', 'fb'].some(name => titleLower.includes(name))) {
+    return 'var(--icon-primary, #1877f2)'
+  }
+  if (['instagram', 'ig'].some(name => titleLower.includes(name))) {
+    return 'var(--icon-love, #e4405f)'
+  }
+  if (['linkedin', 'linked-in'].some(name => titleLower.includes(name))) {
+    return 'var(--icon-primary, #0077b5)'
+  }
+  if (['youtube', 'yt'].some(name => titleLower.includes(name))) {
+    return 'var(--icon-danger, #ff0000)'
+  }
+  if (['social', 'social media'].some(name => titleLower.includes(name))) {
+    return 'var(--icon-primary, var(--text-accent))'
+  }
+
+  // Settings/Config icons
+  if (['settings', 'config', 'setting'].some(name => titleLower.includes(name))) {
+    return 'var(--icon-primary, var(--text-accent))'
+  }
+
+  // Code/Development icons
+  if (['src', 'lib', 'components', 'utils', 'code'].some(name => titleLower.includes(name))) {
+    return 'var(--icon-secondary, #10b981)'
+  }
+
+  // Documentation icons
+  if (['readme', 'docs', 'literature', 'thesis', 'journal'].some(name => titleLower.includes(name))) {
+    return 'var(--icon-tertiary, #f59e0b)'
+  }
+
+  // Default accent color
+  return 'var(--icon-primary, var(--text-accent))'
+}
+
+/**
  * Get icon component for a snippet
  * @param {Object} snippet - The snippet object with title and language
  * @param {number} size - Icon size (default: 14)
@@ -420,7 +517,8 @@ const getFileIcon = (title, language) => {
  */
 export const getSnippetIcon = (snippet, size = 14, className = 'item-icon') => {
   const Icon = getFileIcon(snippet.title, snippet.language)
-  return <Icon size={size} className={className} />
+  const iconColor = getIconColor(Icon, snippet.title)
+  return <Icon size={size} className={className} style={{ color: iconColor }} />
 }
 
 export default getFileIcon

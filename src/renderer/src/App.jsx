@@ -1,14 +1,15 @@
 import React, { useEffect } from 'react'
 import AppShell from './features/Layout/AppShell'
 import { useTheme } from './core/hooks/useTheme'
+import { applyTheme } from './core/themes/themeDefinitions'
 
 function App() {
-  const { theme, setTheme } = useTheme()
+  const { theme } = useTheme()
 
   useEffect(() => {
-    // robust initialization
+    // Apply theme on mount to ensure all CSS variables are set
     const savedTheme = localStorage.getItem('theme-id') || 'dark'
-    document.documentElement.setAttribute('data-theme', savedTheme)
+    applyTheme(savedTheme)
   }, [])
 
   return (

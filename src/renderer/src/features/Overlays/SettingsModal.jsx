@@ -1,27 +1,43 @@
 import React, { useState } from 'react'
 import { X, Settings } from 'lucide-react'
-import ThemeSettings from './ThemeSettings'
+import ThemeModal from './ThemeModal'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useToast } from '../../core/hooks/useToast'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
+import { useFontSettings } from '../../core/hooks/useFontSettings'
 import './SettingsModal.css'
 
-const SettingsModal = ({ onClose }) => {
+/**
+ * SettingsModal Component
+ *
+ * Comprehensive settings interface with tabbed navigation for:
+ * - General settings (vault, auto-save, etc.)
+ * - Appearance (theme, fonts, caret customization)
+ * - Keyboard shortcuts
+ * - AI model configuration
+ *
+ * Features caret width and color customization with real-time preview
+ * and validation (width: 1-10px, color: hex format).
+ *
+ * @param {Object} props - Component props
+ * @param {Function} props.onClose - Callback to close the modal
+ * @returns {JSX.Element} Settings modal component
+ */
+const SettingsModal = ({ onClose, onOpenTheme }) => {
   const [activeTab, setActiveTab] = useState('general')
-  const [isThemeOpen, setIsThemeOpen] = useState(false)
   const { showToast } = useToast()
   const { settings, updateSetting } = useSettingsStore()
+  const { caretWidth, caretColor, caretStyle, updateCaretWidth, updateCaretColor, updateCaretStyle } = useFontSettings()
 
   useKeyboardShortcuts({
-    onEscape: () => {
-      if (isThemeOpen) {
-        setIsThemeOpen(false)
-        return true
-      }
-      onClose()
-      return true
-    }
+    onEscape: onClose
   })
+
+  const handleOpenTheme = () => {
+    if (onOpenTheme) {
+      onOpenTheme()
+    }
+  }
 
   const handleSwitchVault = async () => {
     try {
@@ -180,7 +196,7 @@ const SettingsModal = ({ onClose }) => {
                       <div className="row-label">Base Theme</div>
                       <div className="row-hint">Choose between light, dark, and rugged tones.</div>
                     </div>
-                    <button className="btn" onClick={() => setIsThemeOpen(true)}>
+                    <button className="btn" onClick={handleOpenTheme}>
                       Theme Gallery
                     </button>
                   </div>
@@ -218,18 +234,87 @@ const SettingsModal = ({ onClose }) => {
                   </div>
                   <div className="settings-row">
                     <div className="row-info">
-                      <div className="row-label">Cursor Style</div>
-                      <div className="row-hint">Customize the caret appearance.</div>
+                      <div className="row-label">Caret Style</div>
+                      <div className="row-hint">Customize the caret appearance (smooth, block, or sharp).</div>
                     </div>
                     <select
-                      value={settings.cursorStyle}
-                      onChange={(e) => updateSetting('cursorStyle', e.target.value)}
+                      value={caretStyle || 'smooth'}
+                      onChange={(e) => updateCaretStyle(e.target.value)}
                       className="settings-select"
                     >
                       <option value="smooth">Smooth Line</option>
                       <option value="block">Block</option>
-                      <option value="line">Sharp Line</option>
+                      <option value="sharp">Sharp Line</option>
                     </select>
+                  </div>
+                  {/* Caret Width Control */}
+                  <div className="settings-row">
+                    <div className="row-info">
+                      <div className="row-label">Caret Width</div>
+                      <div className="row-hint">Adjust the caret width (1px - 10px).</div>
+                    </div>
+                    <div className="range-wrap">
+                      <input
+                        type="range"
+                        min="1"
+                        max="10"
+                        step="1"
+                        value={parseInt(caretWidth, 10) || 2}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value, 10)
+                          // Validate range before updating
+                          if (!isNaN(value) && value >= 1 && value <= 10) {
+                            updateCaretWidth(value)
+                          }
+                        }}
+                        aria-label="Caret width slider"
+                      />
+                      <span>{parseInt(caretWidth, 10) || 2}px</span>
+                    </div>
+                  </div>
+                  {/* Caret Color Control */}
+                  <div className="settings-row">
+                    <div className="row-info">
+                      <div className="row-label">Caret Color</div>
+                      <div className="row-hint">Enter hex color (with or without #, e.g., "000000" or "#ffffff"). Leave empty for theme accent.</div>
+                    </div>
+                    <div className="caret-color-controls">
+                      <div className="caret-color-input-wrapper">
+                        <span className="caret-color-hash">#</span>
+                        <input
+                          type="text"
+                          value={caretColor ? caretColor.replace(/^#/, '') : ''}
+                          onChange={(e) => {
+                            let value = e.target.value.trim()
+                            // Remove # if user types it
+                            value = value.replace(/^#/, '')
+                            // Only allow hex characters (0-9, A-F, a-f)
+                            value = value.replace(/[^0-9A-Fa-f]/g, '')
+                            // Limit to 6 characters
+                            if (value.length > 6) value = value.slice(0, 6)
+                            
+                            // Update if valid hex (empty or 3 or 6 chars)
+                            if (value === '' || /^[0-9A-Fa-f]{3}$|^[0-9A-Fa-f]{6}$/.test(value)) {
+                              const finalColor = value === '' ? '' : `#${value}`
+                              updateCaretColor(finalColor)
+                            }
+                          }}
+                          placeholder="ffffff"
+                          className="caret-color-input"
+                          title="Enter hex color (e.g., 000000 or ffffff)"
+                          aria-label="Caret color input"
+                          maxLength={6}
+                        />
+                      </div>
+                      <button
+                        onClick={() => updateCaretColor('')}
+                        className="caret-color-reset"
+                        title="Reset to theme accent color"
+                        aria-label="Reset caret color to theme default"
+                      >
+                        Reset
+                      </button>
+                    </div>
                   </div>
                   <div className="settings-row">
                     <div className="row-info">
@@ -347,7 +432,6 @@ const SettingsModal = ({ onClose }) => {
         </div>
       </div>
 
-      {isThemeOpen && <ThemeSettings isOpen={isThemeOpen} onClose={() => setIsThemeOpen(false)} />}
     </div>
   )
 }

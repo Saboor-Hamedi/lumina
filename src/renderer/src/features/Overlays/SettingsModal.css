@@ -186,6 +186,84 @@
   border: 1px solid var(--border-dim);
 }
 
+/* --- Caret Color Controls --- */
+/**
+ * Container for caret color customization controls
+ * Provides color picker and reset button in a horizontal layout
+ */
+.caret-color-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/**
+ * Text input for hex color with # prefix
+ * Allows entering colors with or without # symbol
+ */
+.caret-color-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 120px;
+}
+
+.caret-color-hash {
+  position: absolute;
+  left: 10px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.caret-color-input {
+  width: 100%;
+  padding: 6px 8px 6px 20px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-card);
+  border-radius: 6px;
+  color: var(--text-main);
+  font-size: 12px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  transition: border-color 0.2s;
+  text-transform: uppercase;
+}
+
+.caret-color-input:focus {
+  outline: none;
+  border-color: var(--text-accent);
+}
+
+.caret-color-input::placeholder {
+  color: var(--text-faint);
+  text-transform: none;
+}
+
+/**
+ * Reset button to restore caret color to theme accent
+ * Provides clear visual feedback on hover
+ */
+.caret-color-reset {
+  padding: 6px 12px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-card);
+  border-radius: 6px;
+  color: var(--text-main);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.caret-color-reset:hover {
+  background: var(--bg-active);
+  border-color: var(--text-accent);
+  color: var(--text-accent);
+}
+
 /* --- Switch Toggle (Premium iOS Knob Style) --- */
 .switch {
   position: relative;

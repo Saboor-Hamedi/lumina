@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Star, Trash2, Edit2, Pin, ExternalLink } from 'lucide-react'
 import { useVaultStore } from '../../../core/store/useVaultStore'
 import ContextMenu from '../../Overlays/ContextMenu'
-import { getSnippetIcon } from '../../../core/utils/fileIconMapper'
+import { getSnippetIcon } from '../../../core/utils/fileIconMapper.jsx'
 
 /**
  * SidebarItem Component
