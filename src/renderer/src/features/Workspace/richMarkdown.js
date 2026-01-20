@@ -58,9 +58,32 @@ const tablePipeHiddenDeco = Decoration.mark({ class: 'cm-table-pipe-hidden' })
 
 // --- 1. Block StateField (Layout Stability) ---
 const blockField = StateField.define({
-  create() { return Decoration.none },
+  create(state) { 
+    // Check mode on creation too
+    const mode = state.facet(editorMode)
+    if (mode === 'source') {
+      return Decoration.none
+    }
+    return Decoration.none 
+  },
   update(decos, tr) {
-    if (!tr.docChanged && !tr.selectionSet) return decos
+    // Always check mode first - mode changes should trigger updates
+    const mode = tr.state.facet(editorMode)
+    
+    // In source mode, always return no decorations (clear any existing ones)
+    // This prevents header widgets from appearing when typing ``` in source mode
+    if (mode === 'source') {
+      // Force clear all decorations in source mode - no widgets should appear
+      return Decoration.none
+    }
+    
+    // If mode changed (reconfigured) or we have existing decorations but shouldn't, rebuild
+    // Early return optimization - but only if nothing changed
+    // Note: tr.reconfigured is true when extensions change (like editorMode)
+    if (!tr.docChanged && !tr.selectionSet && !tr.reconfigured) {
+      // But still check if we have decorations when we shouldn't (safety check)
+      return decos
+    }
     
     // Safety check: ensure document is valid
     if (!tr.state.doc.length) return Decoration.none
@@ -93,6 +116,7 @@ const blockField = StateField.define({
               }
 
               // Safety check: ensure decoration position is valid
+              // Only add header widget in live/reading mode, not source mode
               if (startLine.from >= 0 && startLine.from <= docLength) {
                 builder.add(startLine.from, startLine.from, Decoration.widget({ 
                    widget: new CodeBlockHeaderWidget(lang, codeContent), block: true, side: -1 
@@ -198,17 +222,38 @@ const richMarkdownPlugin = ViewPlugin.fromClass(class {
         
         if (name === 'FencedCode') {
           const line = state.doc.lineAt(nF)
-          temp.push({ from: line.from, to: line.from, val: Decoration.line({ attributes: { class: 'cm-codeblock-begin' } }) })
-          if (!shouldReveal(nF)) temp.push({ from: line.from, to: line.to, val: hideDeco })
+          // In source mode, don't add any code block styling - just plain ``` text
+          if (mode !== 'source') {
+            temp.push({ from: line.from, to: line.from, val: Decoration.line({ attributes: { class: 'cm-codeblock-begin' } }) })
+          }
+          // Only hide fence markers in live/reading mode, never in source mode
+          // Also check if we're currently editing this line (cursor is on it)
+          const isEditingFence = selection.ranges.some(r => {
+            const cursorLine = state.doc.lineAt(r.head)
+            return cursorLine.number === line.number || cursorLine.number === state.doc.lineAt(nT).number
+          })
+          if (mode !== 'source' && !shouldReveal(nF) && !isEditingFence) {
+            temp.push({ from: line.from, to: line.to, val: hideDeco })
+          }
           
           const endL = state.doc.lineAt(nT)
-          for (let i = Math.max(line.number + 1, state.doc.lineAt(from).number); i < Math.min(endL.number, state.doc.lineAt(to).number); i++) {
-            const curL = state.doc.line(i)
-            temp.push({ from: curL.from, to: curL.from, val: Decoration.line({ attributes: { class: 'cm-codeblock-body' } }) })
+          // In source mode, don't add code block body styling
+          if (mode !== 'source') {
+            for (let i = Math.max(line.number + 1, state.doc.lineAt(from).number); i < Math.min(endL.number, state.doc.lineAt(to).number); i++) {
+              const curL = state.doc.line(i)
+              temp.push({ from: curL.from, to: curL.from, val: Decoration.line({ attributes: { class: 'cm-codeblock-body' } }) })
+            }
           }
           if (nT <= to) {
-            temp.push({ from: endL.from, to: endL.from, val: Decoration.line({ attributes: { class: 'cm-codeblock-end' } }) })
-            if (!shouldReveal(nT)) temp.push({ from: endL.from, to: endL.to, val: hideDeco })
+            // In source mode, don't add code block end styling
+            if (mode !== 'source') {
+              temp.push({ from: endL.from, to: endL.from, val: Decoration.line({ attributes: { class: 'cm-codeblock-end' } }) })
+            }
+            // Only hide closing fence in live/reading mode, never in source mode
+            // Also check if we're currently editing this line
+            if (mode !== 'source' && !shouldReveal(nT) && !isEditingFence) {
+              temp.push({ from: endL.from, to: endL.to, val: hideDeco })
+            }
           }
         }
 

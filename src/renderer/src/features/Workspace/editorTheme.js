@@ -29,18 +29,16 @@ export const seamlessTheme = EditorView.theme({
     opacity: '1 !important'
   },
   // Dynamic cursor styling - uses CSS variables for real-time updates
-  // Note: These styles are overridden by the injected style element for maximum control
+  // Note: These styles are minimal - the injected style element and direct DOM manipulation handle the actual styling
+  // This prevents CodeMirror from setting default 1px black cursor
   '.cm-cursor': {
-    borderLeft: 'var(--caret-width, 2px) solid var(--caret-color, var(--text-accent))',
-    marginLeft: 'calc(-1 * var(--caret-width, 2px) / 2)',
-    transition: 'border-color 0.15s ease, border-width 0.15s ease'
+    // Don't set border here - let CSS and injected styles handle it
+    // This prevents CodeMirror from applying default 1px black border
+    transition: 'border-color 0.15s ease, border-width 0.15s ease, background-color 0.15s ease'
   },
   // Block cursor style override
   '.cursor-block .cm-cursor': {
-    borderLeft: 'none',
-    backgroundColor: 'var(--caret-color, var(--text-accent))',
-    width: '0.6em',
-    opacity: '0.7',
-    marginLeft: '0'
+    // Don't set styles here - let injected styles handle it
+    transition: 'background-color 0.15s ease, opacity 0.2s ease'
   }
 })

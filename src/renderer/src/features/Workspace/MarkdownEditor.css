@@ -530,20 +530,24 @@
 
 /* Base cursor styling - applies to all cursor styles */
 /* High specificity to override CodeMirror defaults and ensure updates */
+/* CRITICAL: These styles must override CodeMirror's default 1px black cursor */
 .cm-editor .cm-cursor,
 .markdown-editor .cm-cursor,
 .cm-cursor,
 .cm-editor.cm-focused .cm-cursor,
-.cm-editor .cm-cursor-primary {
-  border-left: var(--caret-width, 2px) solid var(--caret-color, var(--text-accent)) !important;
+.cm-editor .cm-cursor-primary,
+.markdown-editor .cm-editor .cm-cursor,
+.markdown-editor .cm-editor.cm-focused .cm-cursor {
+  /* Use individual properties for maximum specificity */
+  border-left-width: var(--caret-width, 2px) !important;
+  border-left-color: var(--caret-color, var(--text-accent)) !important;
+  border-left-style: solid !important;
   margin-left: calc(-1 * var(--caret-width, 2px) / 2) !important;
   transition: border-color 0.15s ease, border-width 0.15s ease, background-color 0.15s ease !important;
   pointer-events: none;
   will-change: border-color, border-width, background-color;
-  /* Force immediate update - use direct property assignments */
-  border-left-color: var(--caret-color, var(--text-accent)) !important;
-  border-left-width: var(--caret-width, 2px) !important;
-  border-left-style: solid !important;
+  /* Ensure no default black color */
+  color: transparent !important;
 }
 
 /* Smooth cursor style (default) - smooth transitions */

@@ -92,13 +92,28 @@ const applyCaretStyles = (width, color) => {
   // Force immediate style application by accessing computed style
   void root.offsetHeight
 
+  // Verify the values were actually set
+  const verifyWidth = getComputedStyle(root).getPropertyValue('--caret-width').trim()
+  const verifyColor = getComputedStyle(root).getPropertyValue('--caret-color').trim()
+
   // Debug: Log the applied values
   console.log('[useFontSettings] Applied caret styles:', {
     width,
     finalColor,
-    computedWidth: getComputedStyle(root).getPropertyValue('--caret-width'),
-    computedColor: getComputedStyle(root).getPropertyValue('--caret-color')
+    computedWidth: verifyWidth,
+    computedColor: verifyColor,
+    widthMatch: verifyWidth === width || verifyWidth === width.replace('px', '') + 'px',
+    colorMatch: verifyColor === finalColor || verifyColor.toLowerCase() === finalColor.toLowerCase(),
+    inlineWidth: root.style.getPropertyValue('--caret-width'),
+    inlineColor: root.style.getPropertyValue('--caret-color')
   })
+
+  // If CSS variables weren't set correctly, try again
+  if (!verifyWidth || verifyWidth === '' || (!verifyWidth.includes('px') && !width.includes('px'))) {
+    console.warn('[useFontSettings] CSS variable not set correctly, retrying...')
+    root.style.setProperty('--caret-width', width)
+    void root.offsetHeight
+  }
 }
 
 /**
