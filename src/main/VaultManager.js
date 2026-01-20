@@ -45,11 +45,11 @@ class VaultManager {
       return null
     }
 
-    console.log('[VaultManager] 🔍 Scanning vault:', this.vaultPath)
+    console.info('[VaultManager] 🔍 Scanning vault:', this.vaultPath)
     try {
       const files = await fs.readdir(this.vaultPath)
       const mdFiles = files.filter((f) => f.endsWith('.md'))
-      console.log(`[VaultManager] Found ${mdFiles.length} markdown files`)
+      console.info(`[VaultManager] Found ${mdFiles.length} markdown files`)
 
       const newSnippets = []
       for (const fileName of mdFiles) {
@@ -93,7 +93,7 @@ class VaultManager {
       }
 
       this.snippets = new Map(newSnippets.map((s) => [s.id, s]))
-      console.log(`[VaultManager] ✓ Scan complete. Loaded ${newSnippets.length} snippets.`)
+      console.info(`[VaultManager] ✓ Scan complete. Loaded ${newSnippets.length} snippets.`)
       return newSnippets
     } catch (err) {
       console.error('[VaultManager] ✗ Error scanning vault:', err)
@@ -102,7 +102,7 @@ class VaultManager {
   }
 
   async saveSnippet(snippet) {
-    console.log('[VaultManager] Saving snippet:', snippet.title, 'ID:', snippet.id)
+    console.info('[VaultManager] Saving snippet:', snippet.title, 'ID:', snippet.id)
 
     // 1. Handle Renaming (Delete OLD file if it exists and differs from new one)
     const oldSnippet = this.snippets.get(snippet.id)
@@ -113,7 +113,7 @@ class VaultManager {
       const oldPath = path.join(this.vaultPath, oldSnippet.fileName)
       try {
         await fs.unlink(oldPath)
-        console.log('[VaultManager] ✓ Deleted old file after rename:', oldSnippet.fileName)
+        console.info('[VaultManager] ✓ Deleted old file after rename:', oldSnippet.fileName)
       } catch (err) {
         console.warn(
           '[VaultManager] Warning: Could not delete old file:',
@@ -157,7 +157,7 @@ class VaultManager {
       }
       this.snippets.set(snippet.id, updatedSnippet)
 
-      console.log('[VaultManager] ✓ File saved:', newFileName)
+      console.info('[VaultManager] ✓ File saved:', newFileName)
       return true
     } catch (err) {
       console.error('[VaultManager] ✗ Save failed:', err)
@@ -181,7 +181,7 @@ class VaultManager {
     const targetPath = path.join(assetsPath, safeName)
     try {
       await fs.writeFile(targetPath, Buffer.from(buffer))
-      console.log('[VaultManager] ✓ Image saved:', safeName)
+      console.info('[VaultManager] ✓ Image saved:', safeName)
       // Return the relative path for Markdown, e.g. "assets/image.png"
       return `assets/${safeName}`
     } catch (err) {
@@ -199,7 +199,7 @@ class VaultManager {
     try {
       await fs.unlink(targetPath)
       this.snippets.delete(id)
-      console.log('[VaultManager] ✓ Deleted file:', targetPath)
+      console.info('[VaultManager] ✓ Deleted file:', targetPath)
       return true
     } catch (err) {
       console.warn('[VaultManager] ✗ Delete failed for file:', targetPath, err.message)

@@ -41,7 +41,7 @@ class PerformanceWorkbench {
   }
 
   log(message, color = 'reset') {
-    console.log(`${colors[color]}${message}${colors.reset}`)
+    console.info(`${colors[color]}${message}${colors.reset}`)
   }
 
   formatTime(ms) {

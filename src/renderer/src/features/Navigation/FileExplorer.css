@@ -113,7 +113,7 @@
 .tree-item {
   height: 30px;
   padding: 0 10px;
-  margin: 1px 8px; /* Floating look */
+  /* margin: 1px 8px; */
   border-radius: 6px;
   display: flex;
   align-items: center;
@@ -187,7 +187,7 @@
 /* --- PREMIUM DOCK FOOTER --- */
 .pane-footer {
   height: 32px; /* Matching editor footer */
-  flex-shrink: 0; 
+  flex-shrink: 0;
   border-top: 1px solid var(--border-dim);
   display: flex;
   align-items: center;
@@ -245,7 +245,7 @@
 .tree-item {
   height: 30px;
   padding: 0 12px;
-  margin: 2px 8px; /* Floating look */
+  /* margin: 2px 8px; */
   border-radius: 8px; /* Rounded capsule */
   display: flex;
   align-items: center;
@@ -264,7 +264,6 @@
 .tree-item:hover {
   background: rgba(255,255,255,0.06);
   color: var(--text-main);
-  transform: translateX(2px);
 }
 
 .tree-item.active {

@@ -58,7 +58,7 @@ class VaultIndexer {
         'Xenova/all-MiniLM-L6-v2',
         { progress_callback: null }
       )
-      console.log('[VaultIndexer] ✓ Embedder initialized')
+      console.info('[VaultIndexer] ✓ Embedder initialized')
     } catch (err) {
       console.error('[VaultIndexer] Failed to load embedder:', err)
       console.error('[VaultIndexer] Error details:', err.message, err.stack)
@@ -80,14 +80,14 @@ class VaultIndexer {
       const stateExists = await this.fileExists(this.statePath)
 
       if (!indexExists || !embeddingsExists) {
-        console.log('[VaultIndexer] Index missing, will rebuild on next index')
+        console.info('[VaultIndexer] Index missing, will rebuild on next index')
         return { valid: false, reason: 'missing' }
       }
 
       // Check version compatibility
       const state = await this.loadState()
       if (state?.version !== this.version) {
-        console.log('[VaultIndexer] Version mismatch, will rebuild')
+        console.info('[VaultIndexer] Version mismatch, will rebuild')
         return { valid: false, reason: 'version_mismatch' }
       }
 
@@ -468,7 +468,7 @@ class VaultIndexer {
    */
   async indexVault(vaultPath, options = {}) {
     if (this.isIndexing) {
-      console.log('[VaultIndexer] Indexing already in progress, queuing...')
+      console.info('[VaultIndexer] Indexing already in progress, queuing...')
       return { queued: true }
     }
 
@@ -494,7 +494,7 @@ class VaultIndexer {
       const files = await this.scanVaultFiles(vaultPath)
       this.stats.totalFiles = files.length
 
-      console.log(`[VaultIndexer] Starting index of ${files.length} files...`)
+      console.info(`[VaultIndexer] Starting index of ${files.length} files...`)
 
       // Index files (with rate limiting for API/CPU)
       const batchSize = 5
@@ -531,7 +531,7 @@ class VaultIndexer {
       state.stats = this.stats
       await fs.writeFile(this.statePath, JSON.stringify(state, null, 2), 'utf-8')
 
-      console.log(`[VaultIndexer] ✓ Index complete: ${this.stats.indexedFiles} files, ${this.stats.totalChunks} chunks`)
+      console.info(`[VaultIndexer] ✓ Index complete: ${this.stats.indexedFiles} files, ${this.stats.totalChunks} chunks`)
 
       return {
         success: true,
@@ -596,7 +596,7 @@ class VaultIndexer {
    * Rebuild index from scratch
    */
   async rebuildIndex(vaultPath) {
-    console.log('[VaultIndexer] Rebuilding index from scratch...')
+    console.info('[VaultIndexer] Rebuilding index from scratch...')
     
     // Backup old index
     try {

@@ -296,14 +296,13 @@ const AppShell = () => {
         ) : (
           <FileExplorer onNavigate={() => setActiveTab('files')} />
         )}
+        {isLeftSidebarOpen && (
+          <div
+            className="sidebar-resizer left"
+            onMouseDown={() => setResizingSide('left')}
+          />
+        )}
       </aside>
-      {isLeftSidebarOpen && (
-        <div
-          className="sidebar-resizer left"
-          onMouseDown={() => setResizingSide('left')}
-          style={{ left: `calc(60px + ${leftWidth}px)` }}
-        />
-      )}
       <main className="shell-main">
         {/* Show TabBar when there are open tabs and we're in files/search view or graph tab is active */}
         {openTabs.length > 0 && (activeTab === 'files' || activeTab === 'search' || activeTabId === GRAPH_TAB_ID) && <TabBar />}
@@ -343,14 +342,13 @@ const AppShell = () => {
           <Dashboard onNew={handleNew} />
         )}
       </main>
-      {isRightSidebarOpen && (
-        <div
-          className="sidebar-resizer right"
-          onMouseDown={() => setResizingSide('right')}
-          style={{ right: `${rightWidth}px` }}
-        />
-      )}
       <aside className="shell-sidebar-right">
+        {isRightSidebarOpen && (
+          <div
+            className="sidebar-resizer right"
+            onMouseDown={() => setResizingSide('right')}
+          />
+        )}
         <div className="inspector-panel">
           <div className="panel-header-tabs">
             <button

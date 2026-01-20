@@ -63,7 +63,7 @@ class SettingsManager {
         return
       }
       
-      console.log('[SettingsManager] settings.json changed externally, reloading...')
+      console.info('[SettingsManager] settings.json changed externally, reloading...')
       try {
         const data = await fs.readFile(this.settingsPath, 'utf8')
         this.cache = { ...this.defaultSettings, ...JSON.parse(data) }

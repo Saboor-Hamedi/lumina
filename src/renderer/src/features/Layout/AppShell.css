@@ -17,27 +17,31 @@
 }
 
 .app-shell.is-resizing {
-  cursor: col-resize !important;
+  cursor: row-resize !important;
   transition: none !important;
   user-select: none;
 }
 
 .sidebar-resizer {
   position: absolute;
-  top: var(--header-height);
+  top: 0;
   bottom: 0;
   width: 6px;
-  cursor: col-resize;
+  cursor: row-resize;
   background: transparent;
   transition: background 0.2s;
   z-index: 1000;
   margin: 0;
-  transform: translateX(-50%); /* Center on the edge */
 }
 
-/* Specific offsets for centering are handled by left/right in JSX + transform */
+.sidebar-resizer.left {
+  right: -3px; /* Center on the right edge of sidebar */
+  transform: translateX(0);
+}
+
 .sidebar-resizer.right {
-  transform: translateX(50%);
+  left: -3px; /* Center on the left edge of sidebar */
+  transform: translateX(0);
 }
 
 .sidebar-resizer:hover, .app-shell.is-resizing .sidebar-resizer {
@@ -74,6 +78,7 @@
   border-right: 1px solid var(--border-dim);
   background: var(--bg-sidebar);
   z-index: var(--z-sidebar);
+  position: relative;
 }
 
 .shell-main {
@@ -94,6 +99,7 @@
   background: var(--bg-sidebar);
   border-left: 1px solid var(--border-dim);
   overflow: hidden;
+  position: relative;
 }
 
 /* Inspector Styles */

@@ -33,7 +33,7 @@ async function migrateFromSQLite() {
     }
 
     await fs.rename(dbPath, dbPath + '.bak')
-    console.log('Migration complete.')
+    console.info('Migration complete.')
   } catch (err) {}
 }
 
@@ -551,7 +551,7 @@ app.whenReady().then(async () => {
     // Index new vault in background
     VaultIndexer.indexVault(newPath, { force: false })
       .then(() => {
-        console.log('[Main] New vault indexing complete, reloading search index...')
+        console.info('[Main] New vault indexing complete, reloading search index...')
         return VaultSearch.reload()
       })
       .catch(err => {
@@ -663,7 +663,7 @@ app.whenReady().then(async () => {
     if (savedVaultPath && typeof savedVaultPath === 'string') {
       VaultIndexer.indexVault(savedVaultPath, { force: false })
         .then(() => {
-          console.log('[Main] Background indexing complete, reloading search index...')
+          console.info('[Main] Background indexing complete, reloading search index...')
           return VaultSearch.reload()
         })
         .catch(err => {

@@ -43,7 +43,7 @@ class VaultSearch {
         'Xenova/all-MiniLM-L6-v2',
         { progress_callback: null }
       )
-      console.log('[VaultSearch] ✓ Embedder initialized')
+      console.info('[VaultSearch] ✓ Embedder initialized')
     } catch (err) {
       console.error('[VaultSearch] Failed to load embedder:', err)
       console.error('[VaultSearch] Error details:', err.message, err.stack)
@@ -83,7 +83,7 @@ class VaultSearch {
       }
 
       this.isLoaded = true
-      console.log(`[VaultSearch] ✓ Loaded ${this.index.length} chunks into memory`)
+      console.info(`[VaultSearch] ✓ Loaded ${this.index.length} chunks into memory`)
     } catch (err) {
       console.error('[VaultSearch] Failed to load index:', err)
       this.index = []
