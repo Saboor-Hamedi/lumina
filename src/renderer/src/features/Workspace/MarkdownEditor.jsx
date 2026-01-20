@@ -99,15 +99,26 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
           editorMode.of(viewMode),
           viewMode === 'source' ? lineNumbers() : [],
           viewMode === 'reading'
-            ? [EditorView.editable.of(false), EditorState.readOnly.of(true)]
+            ? [
+                EditorState.readOnly.of(true), // Additional read-only protection
+                EditorView.editable.of(false), // Make editor non-editable (like Obsidian reading mode)
+                // Transaction filter to block ALL document changes in reading mode
+                // This ensures no typing, deleting, or any edits are possible
+                EditorState.transactionFilter.of((tr) => {
+                  // Block ALL document changes - reading mode is pure preview
+                  if (tr.docChanged) {
+                    return [] // Return empty transaction array to block the change
+                  }
+                  return tr // Allow selection-only transactions
+                })
+              ]
             : [],
           highlightActiveLine(),
           dropCursor(),
-          history(),
-          indentOnInput(),
+          // Only enable editing features when not in reading mode
+          ...(viewMode === 'reading' ? [] : [history(), indentOnInput(), closeBrackets()]),
           luminaSyntax,
           bracketMatching(),
-          closeBrackets(),
           ...richMarkdown,
           imageHoverPreview,
           wikiHoverPreview(
@@ -125,7 +136,10 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
               setSelectedSnippet(s)
             }
           ),
-          autocompletion({ override: [wikiLinkCompletion(() => snippetsRef.current)] }),
+          // Only enable autocompletion when not in reading mode
+          ...(viewMode === 'reading'
+            ? []
+            : [autocompletion({ override: [wikiLinkCompletion(() => snippetsRef.current)] })]),
           highlightSelectionMatches(),
           markdown({ codeLanguages: languages }),
           seamlessTheme,
@@ -142,6 +156,7 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
              *      - Ctrl+G: GraphNexus modal (global shortcut)
              *      - Ctrl+F: Can be used for other features if needed
              * 3. Standard keymaps - Brackets, default, history, completion
+             * 4. In reading mode, filter out editing keymaps
              */
             // Custom: Ctrl+K for Inline AI (must be first to override default)
             {
@@ -156,10 +171,16 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
             ...searchKeymap.filter(
               (binding) => binding.key !== 'Mod-f' && binding.key !== 'Mod-g'
             ),
-            ...closeBracketsKeymap,
-            ...defaultKeymap,
-            ...historyKeymap,
-            ...completionKeymap
+            // In reading mode, don't include editing keymaps (closeBrackets, default, history, completion)
+            // Only include search keymap for find/replace functionality
+            ...(viewMode === 'reading'
+              ? [] // No editing keymaps in reading mode
+              : [
+                  ...closeBracketsKeymap,
+                  ...defaultKeymap,
+                  ...historyKeymap,
+                  ...completionKeymap
+                ])
           ]),
           EditorView.updateListener.of((update) => {
             if (ignoreUpdateRef.current) return

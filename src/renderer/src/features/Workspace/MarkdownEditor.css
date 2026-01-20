@@ -962,8 +962,8 @@
 
 /* 3. READING MODE: Pure focus, clean and centered */
 .mode-reading .editor-canvas-wrap {
-  /* Match Live Mode Width for Zero Shift */
-  max-width: 720px; 
+  /* Match Live Mode Width for Zero Shift - must be exactly the same */
+  max-width: 760px; /* Changed from 720px to match live mode */
 }
 
 .mode-reading .cm-content {
@@ -971,6 +971,24 @@
   line-height: var(--line-height-editor, 1.6) !important;
   cursor: text !important; /* Allow text selection */
   pointer-events: auto !important; /* Critical for hover tooltips */
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+}
+
+/* Ensure text selection works in reading mode even when editor is non-editable */
+.mode-reading .cm-editor {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+}
+
+.mode-reading .cm-scroller {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
   user-select: text !important;
 }
 
