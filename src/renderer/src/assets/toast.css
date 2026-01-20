@@ -1,29 +1,154 @@
-/* Robust Toast Notifications */
+/* Modern Toast Notifications */
 .toast {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  padding: 12px 16px;
-  background: var(--bg-panel, var(--bg-app));
-  border: 1px solid var(--border-subtle, var(--border-dim));
+  position: absolute;
+  bottom: 120px; /* Position well above status bar */
+  right: 24px;
+  top: auto;
+  padding: 16px 20px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
   color: var(--text-main);
-  border-radius: 8px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  z-index: var(--z-toast, 3000);
+  border-radius: 12px;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: toastSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: var(--z-toast, 10000);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 14px;
+  font-weight: 500;
+  width: 320px;
+  pointer-events: auto;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Specific positioning for toast in markdown editor */
+.markdown-editor .toast {
+  bottom: 120px;
+  right: 24px;
+}
+
+/* When toast is in AppShell (fixed positioning) */
+.app-shell .toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  top: auto;
+}
+
+.toast-content {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 13px;
-  font-weight: 500;
-  min-width: 200px;
+  width: 100%;
 }
 
-.toast.toast-success { border-left: 4px solid #22c55e; }
-.toast.toast-error { border-left: 4px solid #ef4444; }
-.toast.toast-info { border-left: 4px solid var(--text-accent); }
+.toast-icon {
+  flex-shrink: 0;
+  opacity: 1;
+}
 
-@keyframes slideInRight {
-  from { transform: translateX(20px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+.toast-message {
+  flex: 1;
+  line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+/* Toast Types */
+.toast-success {
+  border-left: 4px solid #22c55e;
+  background: var(--bg-panel);
+}
+
+.toast-success .toast-icon {
+  color: #22c55e;
+}
+
+.toast-error {
+  border-left: 4px solid #ef4444;
+  background: var(--bg-panel);
+}
+
+.toast-error .toast-icon {
+  color: #ef4444;
+}
+
+.toast-info {
+  border-left: 4px solid var(--text-accent);
+  background: var(--bg-panel);
+}
+
+.toast-info .toast-icon {
+  color: var(--text-accent);
+}
+
+/* Exit Animation */
+.toast-exit {
+  animation: toastSlideOut 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Animations */
+@keyframes toastSlideIn {
+  from {
+    transform: translate(calc(100% + 24px), -10px);
+    opacity: 0;
+    scale: 0.95;
+  }
+  to {
+    transform: translate(0, 0);
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@keyframes toastSlideOut {
+  from {
+    transform: translate(0, 0);
+    opacity: 1;
+    scale: 1;
+  }
+  to {
+    transform: translate(calc(100% + 24px), -10px);
+    opacity: 0;
+    scale: 0.95;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .toast {
+    bottom: 16px;
+    right: 16px;
+    left: 16px;
+    width: auto;
+    max-width: calc(100% - 32px);
+  }
+
+  @keyframes toastSlideIn {
+    from {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes toastSlideOut {
+    from {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+  }
 }

@@ -63,22 +63,31 @@ const FileExplorer = React.memo(({ onNavigate }) => {
   }
 
   const handleRefresh = async () => {
-    setIsRefreshing(true)
-    await loadVault()
-    setTimeout(() => setIsRefreshing(false), 800)
+    try {
+      setIsRefreshing(true)
+      await loadVault()
+      setTimeout(() => setIsRefreshing(false), 800)
+    } catch (error) {
+      console.error('Failed to refresh vault:', error)
+      setIsRefreshing(false)
+    }
   }
 
   const handleNew = async () => {
-    const newSnippet = {
-      id: crypto.randomUUID(),
-      title: 'New Notes',
-      code: '',
-      language: 'markdown',
-      timestamp: Date.now(),
-      isPinned: false
+    try {
+      const newSnippet = {
+        id: crypto.randomUUID(),
+        title: 'New Notes',
+        code: '',
+        language: 'markdown',
+        timestamp: Date.now(),
+        isPinned: false
+      }
+      await saveSnippet(newSnippet)
+      handleSelect(newSnippet, 'all')
+    } catch (error) {
+      console.error('Failed to create new note:', error)
     }
-    await saveSnippet(newSnippet)
-    handleSelect(newSnippet, 'all')
   }
 
   // Filtered and Sorted Data

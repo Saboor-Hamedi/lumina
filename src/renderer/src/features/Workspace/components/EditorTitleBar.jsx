@@ -12,7 +12,8 @@ import {
   Copy,
   Printer,
   Zap,
-  FileText
+  FileText,
+  Loader2
 } from 'lucide-react'
 import { useToast } from '../../../core/hooks/useToast'
 import ToastNotification from '../../../core/utils/ToastNotification'
@@ -23,6 +24,7 @@ const EditorTitleBar = ({
   snippet,
   setSelectedSnippet,
   isDirty,
+  isSaving = false,
   viewMode,
   setViewMode,
   onSave,
@@ -94,8 +96,22 @@ const EditorTitleBar = ({
       </div>
 
       <div className="editor-controls">
-        <button className="icon-btn" onClick={onSave} title="Save (Ctrl+S)">
-          <Save size={16} />
+        <button 
+          className="icon-btn" 
+          onClick={onSave} 
+          title={isSaving ? 'Saving...' : isDirty ? 'Save (Ctrl+S)' : 'No changes to save'}
+          disabled={!isDirty || isSaving}
+          style={{ 
+            opacity: isDirty && !isSaving ? 1 : 0.5, 
+            cursor: isDirty && !isSaving ? 'pointer' : 'not-allowed',
+            position: 'relative'
+          }}
+        >
+          {isSaving ? (
+            <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+          ) : (
+            <Save size={16} />
+          )}
         </button>
         <div className="menu-container">
           <button

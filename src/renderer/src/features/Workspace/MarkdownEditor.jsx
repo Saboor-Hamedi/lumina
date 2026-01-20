@@ -13,6 +13,9 @@ import { wikiLinkCompletion } from './wikiLinkCompletion'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useFontSettings } from '../../core/hooks/useFontSettings'
+import { useToast } from '../../core/hooks/useToast'
+import ToastNotification from '../../core/utils/ToastNotification'
+import '../../assets/toast.css'
 import './MarkdownEditor.css'
 
 // CodeMirror 6 Imports
@@ -48,6 +51,9 @@ const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
   const scrollerRef = useRef(null)
   const themeCompartment = useRef(new Compartment())
   const lineNumberCompartment = useRef(new Compartment())
+  const { toast, showToast } = useToast()
+  const [isSaving, setIsSaving] = useState(false)
+  const isMountedRef = useRef(true)
 
   // Persistence Refs
   const snippetsRef = useRef([])
@@ -285,23 +291,25 @@ const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
     }
 
     // Immediate Scroll & Focus Restore
-    const savedScroll = scrollPosMap.current.get(snippet.id) || 0
-    if (scrollerRef.current) scrollerRef.current.scrollTop = savedScroll
+    if (snippet?.id) {
+      const savedScroll = scrollPosMap.current.get(snippet.id) || 0
+      if (scrollerRef.current) scrollerRef.current.scrollTop = savedScroll
+    }
 
-    if (snippet.title === 'New Note') {
+    if (snippet?.title === 'New Note') {
       titleRef.current?.focus()
       titleRef.current?.select()
-    } else {
+    } else if (viewRef.current) {
       viewRef.current.focus()
     }
 
     // Refresh Preview (always update for reading mode)
-    if (workerRef.current) {
+    if (workerRef.current && snippet?.id) {
       workerRef.current.postMessage({ code: snippet?.code || '', id: snippet.id })
     }
     setTitle(snippet?.title || '')
     setIsDirty(false)
-  }, [snippet.id, createTargetState, viewMode]) // Add viewMode to dependencies to rebuild on mode change
+  }, [snippet?.id, createTargetState, viewMode]) // Add viewMode to dependencies to rebuild on mode change
 
   // Highlight code blocks in reading/overlay previews when previewContent changes
   useEffect(() => {
@@ -442,74 +450,161 @@ const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
   // Font variables are managed by `useFontSettings` for a single source of truth.
   // Removing redundant settings-based CSS updates to avoid overriding the hook.
 
-  // --- Save Logic ---
+  // Cleanup on unmount
   useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
+  // --- Save Logic ---
+  const handleSave = useCallback(async () => {
+    if (!isMountedRef.current || !viewRef.current || !snippetRef.current || !snippet?.id) {
+      return
+    }
+
+    // Prevent saving if already saving (race condition protection)
+    if (isSaving) {
+      return
+    }
+
+    try {
+      setIsSaving(true)
+      const code = viewRef.current.state.doc.toString()
+      const sel = viewRef.current.state.selection.main
+
+      // Validate snippet data before saving
+      const snippetToSave = {
+        ...snippetRef.current,
+        code: code || '',
+        title: title || 'Untitled',
+        selection: { anchor: sel.anchor, head: sel.head },
+        timestamp: Date.now()
+      }
+
+      // Ensure snippet has required fields
+      if (!snippetToSave.id) {
+        throw new Error('Snippet ID is missing')
+      }
+
+      await onSave(snippetToSave)
+
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        setIsDirty(false)
+        setDirty(snippet.id, false)
+        showToast('Note saved', 'success')
+      }
+    } catch (error) {
+      console.error('Failed to save note:', error)
+      const errorMessage = error?.message || 'Unknown error occurred'
+      if (isMountedRef.current) {
+        showToast(`Failed to save note: ${errorMessage}`, 'error')
+      }
+      // Don't clear dirty state on error - user should retry
+    } finally {
+      if (isMountedRef.current) {
+        setIsSaving(false)
+      }
+    }
+  }, [title, snippet?.id, onSave, setDirty, showToast, isSaving])
+
+  // Auto-save effect
+  useEffect(() => {
+    if (!snippet?.id) return
     setDirty(snippet.id, isDirty)
     if (!isDirty) return
-    const timer = setTimeout(() => handleSave(), 2000)
-    return () => clearTimeout(timer)
-  }, [isDirty, title, snippet.id])
 
-  const handleSave = useCallback(() => {
-    if (!viewRef.current) return
-    const code = viewRef.current.state.doc.toString()
-    const sel = viewRef.current.state.selection.main
-    onSave({
-      ...snippetRef.current,
-      code,
-      title,
-      selection: { anchor: sel.anchor, head: sel.head },
-      timestamp: Date.now()
-    })
-    setIsDirty(false)
-    setDirty(snippet.id, false)
-  }, [title, snippet.id, onSave, setDirty])
+    // Prevent race conditions: only save if component is still mounted and snippet hasn't changed
+    const timer = setTimeout(() => {
+      // Check if component is still mounted, viewRef exists, and snippet matches
+      if (isMountedRef.current && viewRef.current && snippetRef.current?.id === snippet.id) {
+        handleSave()
+      }
+    }, 2000)
+    return () => clearTimeout(timer)
+  }, [isDirty, title, snippet?.id, handleSave])
 
   // Handle inline AI insertion
   const handleInlineAIInsert = useCallback((text) => {
-    if (!viewRef.current) return
+    if (!viewRef.current || !text) return
 
-    const view = viewRef.current
-    const selection = view.state.selection.main
-    const transaction = view.state.update({
-      changes: {
-        from: selection.from,
-        to: selection.to,
-        insert: text
-      },
-      selection: { anchor: selection.from + text.length }
-    })
+    try {
+      const view = viewRef.current
+      const selection = view.state.selection.main
 
-    view.dispatch(transaction)
-    setIsDirty(true)
+      // Validate selection bounds
+      const docLength = view.state.doc.length
+      const from = Math.max(0, Math.min(selection.from, docLength))
+      const to = Math.max(from, Math.min(selection.to, docLength))
+
+      const transaction = view.state.update({
+        changes: {
+          from,
+          to,
+          insert: String(text)
+        },
+        selection: { anchor: Math.min(from + String(text).length, docLength + String(text).length) }
+      })
+
+      view.dispatch(transaction)
+      setIsDirty(true)
+    } catch (error) {
+      console.error('Failed to insert AI text:', error)
+    }
   }, [])
 
   // Export functions
   const handleExportHTML = useCallback(async () => {
-    if (!snippet || !viewRef.current) return
+    if (!snippet || !viewRef.current) {
+      showToast('No content to export', 'error')
+      return
+    }
+
+    if (!window.api?.exportHTML) {
+      showToast('Export feature unavailable. Please restart the application.', 'error')
+      return
+    }
 
     try {
       const code = viewRef.current.state.doc.toString()
+      if (!code.trim()) {
+        showToast('Cannot export empty note', 'error')
+        return
+      }
       const html = await window.api.exportHTML({
         title: title || snippet.title || 'Untitled',
         content: code,
         language: snippet.language || 'markdown'
       })
       if (html) {
-        // Copy to clipboard
         await navigator.clipboard.writeText(html)
-        // Could show a toast notification here
+        showToast('HTML copied to clipboard', 'success')
       }
     } catch (error) {
       console.error('Failed to export HTML:', error)
+      showToast('Failed to export HTML. Please try again.', 'error')
     }
-  }, [snippet, title])
+  }, [snippet, title, showToast])
 
   const handleExportPDF = useCallback(async () => {
-    if (!snippet || !viewRef.current) return
+    if (!snippet || !viewRef.current) {
+      showToast('No content to export', 'error')
+      return
+    }
+
+    if (!window.api?.exportPDF) {
+      showToast('Export feature unavailable. Please restart the application.', 'error')
+      return
+    }
 
     try {
       const code = viewRef.current.state.doc.toString()
+      if (!code.trim()) {
+        showToast('Cannot export empty note', 'error')
+        return
+      }
       const result = await window.api.exportPDF({
         title: title || snippet.title || 'Untitled',
         content: code,
@@ -518,20 +613,30 @@ const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
       return result
     } catch (error) {
       console.error('Failed to export PDF:', error)
+      const errorMessage = error?.message || 'Unknown error occurred'
+      showToast(`Failed to export PDF: ${errorMessage}`, 'error')
       throw error
     }
-  }, [snippet, title])
+  }, [snippet, title, showToast])
 
   const handleExportMarkdown = useCallback(async () => {
-    if (!snippet || !viewRef.current) return
+    if (!snippet || !viewRef.current) {
+      showToast('No content to export', 'error')
+      return
+    }
 
     try {
       // Check if API is available
       if (!window.api || typeof window.api.exportMarkdown !== 'function') {
+        showToast('Export feature unavailable. Please restart the application.', 'error')
         throw new Error('Export Markdown API is not available. Please restart the application.')
       }
 
       const code = viewRef.current.state.doc.toString()
+      if (!code.trim()) {
+        showToast('Cannot export empty note', 'error')
+        return
+      }
       const result = await window.api.exportMarkdown({
         title: title || snippet.title || 'Untitled',
         content: code,
@@ -540,9 +645,11 @@ const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
       return result
     } catch (error) {
       console.error('Failed to export markdown:', error)
+      const errorMessage = error?.message || 'Unknown error occurred'
+      showToast(`Failed to export: ${errorMessage}`, 'error')
       throw error
     }
-  }, [snippet, title])
+  }, [snippet, title, showToast])
 
   useKeyboardShortcuts({
     onSave: handleSave,
@@ -603,6 +710,7 @@ const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
         snippet={snippet}
         setSelectedSnippet={setSelectedSnippet}
         isDirty={isDirty}
+        isSaving={isSaving}
         viewMode={viewMode}
         setViewMode={setViewMode}
         onSave={handleSave}
@@ -682,6 +790,7 @@ const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
         setViewMode={setViewMode}
         onTogglePreview={() => setIsPreviewOpen((p) => !p)}
       />
+      <ToastNotification toast={toast} />
 
       <PreviewModal
         isOpen={isPreviewOpen}

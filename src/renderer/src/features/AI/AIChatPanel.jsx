@@ -160,11 +160,19 @@ const AIChatPanel = React.memo(() => {
     const text = inputValue.trim()
     if (!text || isChatLoading) return
 
-    const context = selectedSnippet ? [selectedSnippet] : []
-    sendChatMessage(text, context)
-    setInputValue('')
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'
+    try {
+      const context = selectedSnippet ? [selectedSnippet] : []
+      sendChatMessage(text, context)
+      setInputValue('')
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto'
+      }
+    } catch (error) {
+      console.error('Failed to send chat message:', error)
+      // Error is handled by useAIStore, but we should reset input state
+      if (textareaRef.current) {
+        textareaRef.current.focus()
+      }
     }
   }, [inputValue, isChatLoading, selectedSnippet, sendChatMessage])
 
@@ -259,7 +267,30 @@ const AIChatPanel = React.memo(() => {
                       <span>.</span>
                     </div>
                   )}
-                  {chatError && <div className="chat-error">{chatError}</div>}
+                  {chatError && (
+                    <div className="chat-error">
+                      <strong>Error:</strong> {chatError}
+                      {chatError.includes('API Key') && (
+                        <button
+                          onClick={() => {
+                            // Could trigger settings modal to open AI tab
+                            window.dispatchEvent(new CustomEvent('open-settings-ai'))
+                          }}
+                          style={{
+                            marginTop: '8px',
+                            padding: '4px 8px',
+                            fontSize: '12px',
+                            background: 'var(--bg-active)',
+                            border: '1px solid var(--border-dim)',
+                            borderRadius: '4px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Open Settings
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               )
             }}

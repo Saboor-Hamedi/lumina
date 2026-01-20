@@ -32,7 +32,7 @@ export const useVaultStore = create((set, get) => ({
       const validPinned = pinnedIds.filter(
         (id) => id === GRAPH_TAB_ID || state.snippets.some((s) => s.id === id)
       )
-      
+
       // Handle active tab: can be a snippet or GRAPH_TAB_ID
       const activeSnippet =
         activeId === GRAPH_TAB_ID
@@ -99,7 +99,7 @@ export const useVaultStore = create((set, get) => ({
       const pinnedSet = new Set(state.pinnedTabIds)
       const pTabs = newTabs.filter(tid => pinnedSet.has(tid))
       const rTabs = newTabs.filter(tid => !pinnedSet.has(tid))
-      
+
       return { openTabs: [...pTabs, ...rTabs] }
     })
   },
@@ -147,13 +147,13 @@ export const useVaultStore = create((set, get) => ({
       const nextPinned = isPinned
         ? state.pinnedTabIds.filter(pid => pid !== id)
         : [...state.pinnedTabIds, id]
-      
+
       // Move pinned tabs to the front of openTabs
       const pinnedSet = new Set(nextPinned)
       const pTabs = state.openTabs.filter(tid => pinnedSet.has(tid))
       const rTabs = state.openTabs.filter(tid => !pinnedSet.has(tid))
-      
-      return { 
+
+      return {
         pinnedTabIds: nextPinned,
         openTabs: [...pTabs, ...rTabs] // Re-order openTabs based on pinned status
       }
@@ -162,10 +162,10 @@ export const useVaultStore = create((set, get) => ({
 
   /**
    * Open Graph View as a Tab
-   * 
+   *
    * Creates a special graph tab that appears in the tab bar alongside regular note tabs.
    * This allows users to switch between graph view and notes seamlessly.
-   * 
+   *
    * The graph tab uses GRAPH_TAB_ID as its identifier and is handled specially
    * throughout the application (not a snippet, but appears in tabs).
    */
@@ -186,9 +186,17 @@ export const useVaultStore = create((set, get) => ({
   setSearchQuery: (query) => set({ searchQuery: query }),
   setDirty: (id, isDirty) =>
     set((state) => {
+      const hasId = state.dirtySnippetIds.includes(id)
+
+      // No-op if state is already in the desired shape
+      if ((isDirty && hasId) || (!isDirty && !hasId)) {
+        return state
+      }
+
       const next = isDirty
-        ? [...new Set([...state.dirtySnippetIds, id])]
+        ? [...state.dirtySnippetIds, id]
         : state.dirtySnippetIds.filter((dId) => dId !== id)
+
       return { dirtySnippetIds: next }
     }),
 
@@ -227,48 +235,95 @@ export const useVaultStore = create((set, get) => ({
   },
 
   saveSnippet: async (snippet) => {
+    if (!snippet) {
+      console.error('[VaultStore] Cannot save: snippet is null or undefined')
+      throw new Error('Snippet is required')
+    }
+
+    if (!snippet.id) {
+      console.error('[VaultStore] Cannot save: snippet ID is missing')
+      throw new Error('Snippet ID is required')
+    }
+
     try {
-      if (window.api?.saveSnippet) {
-        await window.api.saveSnippet(snippet)
+      if (!window.api?.saveSnippet) {
+        throw new Error('Save API is not available. Please restart the application.')
+      }
 
-        const current = get().snippets
-        const exists = current.find((s) => s.id === snippet.id)
-        const next = exists
-          ? current.map((s) => (s.id === snippet.id ? snippet : s))
-          : [snippet, ...current]
+      await window.api.saveSnippet(snippet)
 
-        // Save complete (silent)
-        set({ snippets: next })
+      const current = get().snippets
+      const exists = current.find((s) => s.id === snippet.id)
+      const next = exists
+        ? current.map((s) => (s.id === snippet.id ? snippet : s))
+        : [snippet, ...current]
+
+      // Save complete (silent)
+      set({ snippets: next })
+
+      try {
         await cacheSnippets(next)
+      } catch (cacheError) {
+        // Cache failure shouldn't block save, but log it
+        console.warn('[VaultStore] Cache update failed:', cacheError)
+      }
 
-        if (get().selectedSnippet?.id === snippet.id) {
-          set({ selectedSnippet: snippet })
-        }
+      if (get().selectedSnippet?.id === snippet.id) {
+        set({ selectedSnippet: snippet })
       }
     } catch (err) {
-      console.error('Save failed:', err)
+      console.error('[VaultStore] Save failed:', err)
+      throw err // Re-throw so callers can handle the error
     }
   },
 
   deleteSnippet: async (id, skipConfirm = false) => {
+    if (!id) {
+      console.error('[VaultStore] Cannot delete: ID is missing')
+      throw new Error('Snippet ID is required')
+    }
+
     try {
-      if (window.api?.deleteSnippet) {
-        if (!skipConfirm) {
-          const confirmed = await window.api.confirmDelete('Permenantly delete this note?')
-          if (!confirmed) return
-        }
+      if (!window.api?.deleteSnippet) {
+        throw new Error('Delete API is not available. Please restart the application.')
+      }
+
+      if (!skipConfirm) {
+        const confirmed = await window.api.confirmDelete('Permenantly delete this note?')
+        if (!confirmed) return
+      }
 
         await window.api.deleteSnippet(id)
-        const next = get().snippets.filter((s) => s.id !== id)
-        set({ snippets: next })
-        await cacheSnippets(next)
+      const next = get().snippets.filter((s) => s.id !== id)
+      set({ snippets: next })
 
-        if (get().selectedSnippet?.id === id) {
-          set({ selectedSnippet: next.length ? next[0] : null })
-        }
+      try {
+        await cacheSnippets(next)
+      } catch (cacheError) {
+        // Cache failure shouldn't block delete, but log it
+        console.warn('[VaultStore] Cache update failed after delete:', cacheError)
       }
+
+      // Update selected snippet if it was deleted
+      if (get().selectedSnippet?.id === id) {
+        set({ selectedSnippet: next.length ? next[0] : null })
+      }
+
+      // Close tab if it was open
+      set((state) => {
+        const nextTabs = state.openTabs.filter((tid) => tid !== id)
+        let nextActiveId = state.activeTabId
+        if (state.activeTabId === id) {
+          nextActiveId = nextTabs.length > 0 ? nextTabs[nextTabs.length - 1] : null
+        }
+        return {
+          openTabs: nextTabs,
+          activeTabId: nextActiveId
+        }
+      })
     } catch (err) {
-      console.error('Delete failed:', err)
+      console.error('[VaultStore] Delete failed:', err)
+      throw err // Re-throw so callers can handle the error
     }
   },
 

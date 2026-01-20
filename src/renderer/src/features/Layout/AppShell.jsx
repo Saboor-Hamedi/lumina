@@ -16,9 +16,12 @@ import { useVaultStore } from '../../core/store/useVaultStore'
 import { GRAPH_TAB_ID } from '../../core/store/useVaultStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
+import { useToast } from '../../core/hooks/useToast'
+import ToastNotification from '../../core/utils/ToastNotification'
 import ConfirmModal from '../Overlays/ConfirmModal'
 import UpdateToast from '../Overlays/UpdateToast'
 import ErrorBoundary from '../../components/ErrorBoundary'
+import '../../assets/toast.css'
 import './AppShell.css'
 import '../Overlays/ConfirmModal.css'
 import AIChatPanel from '../AI/AIChatPanel'
@@ -26,6 +29,7 @@ import AIChatPanel from '../AI/AIChatPanel'
 const AppShell = () => {
   const { snippets, selectedSnippet, setSelectedSnippet, saveSnippet, isLoading, loadVault, activeTabId, openTabs } =
     useVaultStore()
+  const { toast, showToast } = useToast()
 
   const [activeTab, setActiveTab] = useState('files')
   const [showSettings, setShowSettings] = useState(false)
@@ -217,7 +221,13 @@ const AppShell = () => {
         useVaultStore.getState().closeTab(selectedSnippet.id)
       }
     },
-    onCloseWindow: () => window.api.closeWindow(),
+    onCloseWindow: () => {
+      if (window.api?.closeWindow) {
+        window.api.closeWindow()
+      } else {
+        console.warn('Close window API not available')
+      }
+    },
     onNextTab: () => {
       if (openTabs.length === 0) return
       const currentIdx = activeTabId ? openTabs.indexOf(activeTabId) : -1
@@ -249,18 +259,24 @@ const AppShell = () => {
   })
 
   const handleNew = async () => {
-    const newSnippet = {
-      id: crypto.randomUUID(),
-      title: 'New Note',
-      code: '',
-      language: 'markdown',
-      tags: '',
-      timestamp: Date.now()
+    try {
+      const newSnippet = {
+        id: crypto.randomUUID(),
+        title: 'New Note',
+        code: '',
+        language: 'markdown',
+        tags: '',
+        timestamp: Date.now()
+      }
+      await saveSnippet(newSnippet)
+      setSelectedSnippet(newSnippet)
+      setActiveTab('files')
+      setShowPalette(false)
+      showToast('New note created', 'success')
+    } catch (error) {
+      console.error('Failed to create new note:', error)
+      showToast('Failed to create note. Please try again.', 'error')
     }
-    await saveSnippet(newSnippet)
-    setSelectedSnippet(newSnippet)
-    setActiveTab('files')
-    setShowPalette(false)
   }
 
   const handleConfirmDelete = async () => {
@@ -504,6 +520,7 @@ const AppShell = () => {
         message={`Are you sure you want to delete "${snippetToDelete?.title || 'this note'}"? This cannot be undone.`}
       />
       <UpdateToast />
+      <ToastNotification toast={toast} />
     </div>
   )
 }

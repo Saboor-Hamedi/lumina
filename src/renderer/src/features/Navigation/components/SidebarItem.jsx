@@ -25,11 +25,25 @@ const SidebarItem = ({ snippet, isActive, onClick, style }) => {
 
   const handleRename = async () => {
     if (!renameValue.trim() || renameValue === snippet.title) {
-        setIsRenaming(false)
-        return
+      setIsRenaming(false)
+      return
     }
-    await saveSnippet({ ...snippet, title: renameValue })
-    setIsRenaming(false)
+    
+    if (!snippet?.id) {
+      console.error('Cannot rename: snippet ID is missing')
+      setIsRenaming(false)
+      return
+    }
+    
+    try {
+      await saveSnippet({ ...snippet, title: renameValue.trim() })
+      setIsRenaming(false)
+    } catch (error) {
+      console.error('Failed to rename note:', error)
+      // Restore original title on error
+      setRenameValue(snippet.title)
+      setIsRenaming(false)
+    }
   }
 
   const handleContextMenu = (e) => {
@@ -42,9 +56,19 @@ const SidebarItem = ({ snippet, isActive, onClick, style }) => {
     saveSnippet({ ...snippet, isPinned: !snippet.isPinned })
   }
 
-  const handleDelete = (e) => {
+  const handleDelete = async (e) => {
     e?.stopPropagation()
-    deleteSnippet(snippet.id)
+    
+    if (!snippet?.id) {
+      console.error('Cannot delete: snippet ID is missing')
+      return
+    }
+    
+    try {
+      await deleteSnippet(snippet.id, true)
+    } catch (error) {
+      console.error('Failed to delete note:', error)
+    }
   }
 
   const getIcon = () => {

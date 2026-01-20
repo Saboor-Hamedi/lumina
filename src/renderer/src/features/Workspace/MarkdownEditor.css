@@ -22,7 +22,7 @@
   color: var(--text-muted);
 }
 
-/* 
+/*
   ULTRA-STABLE CODE BLOCK GEOMETRY (Matched to PreviewModal.jsx)
 */
 .cm-line[class*="cm-codeblock-"] {
@@ -47,7 +47,7 @@
   outline: none !important;
 }
 /* Global Selection Style for CM6: High visibility for "Robust" feel */
-.cm-selectionBackground, 
+.cm-selectionBackground,
 .cm-content ::selection {
   background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.3) !important;
   /* Ensure selection doesn't cause layout shift */
@@ -65,21 +65,22 @@
 .markdown-editor {
   display: flex;
   flex-direction: column;
-  flex: 1; 
+  flex: 1;
   min-height: 0;
-  overflow: hidden; 
+  overflow: hidden;
   background: var(--bg-app);
+  position: relative; /* Allow toast to be positioned absolutely within editor */
 }
 
 /* --- LIVE MODE SEMANTICS --- */
 .cm-strong { font-weight: 700; color: var(--text-main); }
 .cm-em { font-style: italic; color: var(--text-muted); }
-.cm-inline-code { 
-  font-family: var(--font-mono); 
-  background: rgba(var(--text-accent-rgb), 0.1); 
-  color: var(--text-accent); 
-  padding: 2px 4px; 
-  border-radius: 4px; 
+.cm-inline-code {
+  font-family: var(--font-mono);
+  background: rgba(var(--text-accent-rgb), 0.1);
+  color: var(--text-accent);
+  padding: 2px 4px;
+  border-radius: 4px;
   font-size: 0.9em;
 }
 
@@ -390,7 +391,7 @@
   padding: 40px 60px;
   display: flex;
   flex-direction: column;
-  flex: 1; 
+  flex: 1;
   cursor: text;
   animation: noteFadeIn 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: opacity, transform;
@@ -420,8 +421,8 @@
   opacity: 0.2;
 }
 
-/* 
- * CodeMirror Host 
+/*
+ * CodeMirror Host
  */
 .cm-host-container {
   flex: 1;
@@ -540,7 +541,7 @@
 }
 
 /* --- Cursor & Caret Styling --- */
-/* 
+/*
  * Theme-aware caret system with customizable width and color
  * Uses CSS variables: --caret-width, --caret-color
  * Falls back to theme accent color if no custom color is set
@@ -574,7 +575,7 @@
 /* Smooth cursor style (default) - smooth transitions */
 .cursor-smooth .cm-cursor,
 .cursor-bar .cm-cursor {
-  transition: transform 0.1s cubic-bezier(0, 0, 0.2, 1), 
+  transition: transform 0.1s cubic-bezier(0, 0, 0.2, 1),
               opacity 0.2s,
               border-color 0.15s ease,
               border-width 0.15s ease !important;
@@ -920,7 +921,7 @@
 }
 
 /* Unified Selection: CodeMirror Robust Selection */
-.cm-selectionBackground, 
+.cm-selectionBackground,
 .cm-content ::selection {
   background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.3) !important;
   /* Ensure selection doesn't cause layout shift - no padding/margin/border */
@@ -955,7 +956,7 @@
   font-family: var(--font-editor);
   font-weight: 700;
   color: var(--text-main);
-  padding-top: 0.4em; 
+  padding-top: 0.4em;
   padding-bottom: 0.1rem;
   padding-left: 0 !important; /* Match paragraph alignment - no left padding */
   padding-right: 0 !important; /* Match paragraph alignment */
@@ -970,9 +971,9 @@
   contain: layout style;
 }
 
-.cm-heading-1 { 
+.cm-heading-1 {
     font-size: 2.2em !important;
-    border-bottom: 1px solid var(--border-dim); 
+    border-bottom: 1px solid var(--border-dim);
     padding-bottom: 0.3em !important;
     color: var(--text-accent);
 }
@@ -1425,7 +1426,7 @@
   display: none !important; /* Hide table pipes in preview */
 }
 
-/* 
+/*
  * Zero-Shift Syntax Hiding (Ironclad Engine)
  * Hide all markdown syntax in preview mode - clean rendered view
  * Completely remove from layout flow to prevent any hover shifts
@@ -1660,7 +1661,7 @@
   border-bottom: 1px solid rgba(255,255,255,0.02);
   border-top-left-radius: 6px;
   border-top-right-radius: 6px;
-  padding: 4px 12px; 
+  padding: 4px 12px;
   margin-top: 1.2em;
   user-select: none;
 }
@@ -1669,12 +1670,12 @@
   background-color: var(--bg-code-surface) !important;
   border-left: 1px solid var(--border-code);
   border-right: 1px solid var(--border-code);
-  margin: 0 !important; 
+  margin: 0 !important;
 }
 
 /* Ensure padding inside the box - targeting the line element */
-.cm-codeblock-body.cm-line { 
-    padding-left: 12px !important; 
+.cm-codeblock-body.cm-line {
+    padding-left: 12px !important;
     padding-right: 12px !important;
 }
 
@@ -1685,7 +1686,7 @@
   border-top: none;
   border-bottom-left-radius: 6px;
   border-bottom-right-radius: 6px;
-  margin-bottom: 1.5em; 
+  margin-bottom: 1.5em;
 }
 
 .cm-lang-label {
@@ -1739,7 +1740,7 @@
 .cm-wikilink:hover {
   border-bottom-color: var(--text-accent);
   opacity: 1;
-  background: rgba(var(--text-accent-rgb), 0.15); 
+  background: rgba(var(--text-accent-rgb), 0.15);
   text-decoration: none;
 }
 
@@ -1850,8 +1851,8 @@
   margin-bottom: 0;
 }
 
-.markdown-rendered-preview h1, 
-.markdown-rendered-preview h2, 
+.markdown-rendered-preview h1,
+.markdown-rendered-preview h2,
 .markdown-rendered-preview h3 {
   color: var(--text-main);
   margin-top: 1em;
@@ -1865,7 +1866,7 @@
   margin-top: 0;
 }
 
-.markdown-rendered-preview ul, 
+.markdown-rendered-preview ul,
 .markdown-rendered-preview ol {
   padding-left: 20px;
   margin-bottom: 0.8em;
@@ -2080,4 +2081,14 @@
 .in-editor-preview-header { padding: 12px 16px; border-bottom: 1px solid var(--border-dim); display:flex; justify-content:space-between; align-items:center; }
 .in-editor-preview-body { padding: 12px 0; flex: 1; }
 .in-editor-preview-card .modal-close { background: transparent; border: none; font-size: 14px; cursor: pointer; padding: 6px 8px; }
+
+/* Spinner animation for loading states */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
 

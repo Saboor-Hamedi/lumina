@@ -431,16 +431,36 @@ const SettingsModal = ({ onClose, onOpenTheme }) => {
                 <section>
                   <h3>Navigation</h3>
                   <div className="settings-row">
-                    <div className="row-info">Graph View</div>
-                    <div className="shortcut-badge">Ctrl + G</div>
+                    <div className="row-info">Toggle Left Sidebar</div>
+                    <div className="shortcut-badge">Ctrl + B</div>
                   </div>
                   <div className="settings-row">
                     <div className="row-info">Toggle Inspector</div>
                     <div className="shortcut-badge">Ctrl + I</div>
                   </div>
                   <div className="settings-row">
+                    <div className="row-info">Graph View</div>
+                    <div className="shortcut-badge">Ctrl + G</div>
+                  </div>
+                  <div className="settings-row">
                     <div className="row-info">Toggle Preview</div>
                     <div className="shortcut-badge">Ctrl + \</div>
+                  </div>
+                  <div className="settings-row">
+                    <div className="row-info">Next Tab</div>
+                    <div className="shortcut-badge">Ctrl + Tab</div>
+                  </div>
+                  <div className="settings-row">
+                    <div className="row-info">Previous Tab</div>
+                    <div className="shortcut-badge">Ctrl + Shift + Tab</div>
+                  </div>
+                </section>
+
+                <section>
+                  <h3>Editor</h3>
+                  <div className="settings-row">
+                    <div className="row-info">Inline AI</div>
+                    <div className="shortcut-badge">Ctrl + K</div>
                   </div>
                 </section>
               </div>
