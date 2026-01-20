@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { MoreVertical, Save } from 'lucide-react'
+import hljs from 'highlight.js'
 import EditorTitleBar from './components/EditorTitleBar'
 import EditorFooter from './components/EditorFooter'
 import EditorMetadata from './components/EditorMetadata'
@@ -62,6 +63,7 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
   const [isDirty, setIsDirty] = useState(false)
   const [viewMode, setViewMode] = useState('source') // 'source' = editor (show syntax), 'live' = preview (hide syntax)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [isOverlayOpen, setIsOverlayOpen] = useState(false)
   const [previewContent, setPreviewContent] = useState('')
   const [isInlineAIOpen, setIsInlineAIOpen] = useState(false)
 
@@ -253,6 +255,21 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
     setTitle(snippet?.title || '')
     setIsDirty(false)
   }, [snippet.id, createTargetState, viewMode]) // Add viewMode to dependencies to rebuild on mode change
+
+  // Highlight code blocks in reading/overlay previews when previewContent changes
+  useEffect(() => {
+    try {
+      // In-document reading preview
+      const inDocCodes = document.querySelectorAll('.reading-preview-container pre code, .reading-preview-content pre code, .in-editor-preview-card pre code')
+      if (inDocCodes && inDocCodes.length) {
+        inDocCodes.forEach((el) => {
+          try { hljs.highlightElement(el) } catch (e) { /* ignore */ }
+        })
+      }
+    } catch (err) {
+      // ignore
+    }
+  }, [previewContent, isOverlayOpen])
 
   // Apply caret styles directly to cursor elements - CodeMirror uses inline styles that override CSS
   useEffect(() => {
@@ -543,8 +560,36 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
     }
   })
 
-  // Ensure viewMode is either 'source' or 'live'
-  const safeViewMode = viewMode === 'source' ? 'source' : 'live'
+  // Overlay interaction handling (wiki links, copy buttons)
+  useEffect(() => {
+    if (!isOverlayOpen) return
+
+    const overlay = document.querySelector('.in-editor-preview-overlay')
+    if (!overlay) return
+
+    const handleClick = (e) => {
+      const wikiLink = e.target.closest('.preview-wikilink')
+      if (wikiLink) {
+        const titleAttr = wikiLink.getAttribute('data-title') || wikiLink.getAttribute('data-target')
+        if (titleAttr) {
+          const target = titleAttr
+          const found = (snippetsRef.current || []).find(
+            (s) => s.title && s.title.toLowerCase() === target.toLowerCase()
+          )
+          if (found) {
+            setSelectedSnippet(found)
+            setIsOverlayOpen(false)
+          }
+        }
+      }
+    }
+
+    overlay.addEventListener('click', handleClick)
+    return () => overlay.removeEventListener('click', handleClick)
+  }, [isOverlayOpen, previewContent])
+
+  // Use the actual `viewMode` value for the container class so 'reading' doesn't map to 'live'
+  const safeViewMode = viewMode
 
   return (
     <div className={`markdown-editor mode-${safeViewMode} cursor-${caretStyle || 'smooth'}`}>
@@ -564,7 +609,7 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
       />
 
       <div className="editor-scroller" ref={scrollerRef}>
-        <div className="editor-canvas-wrap">
+          <div className="editor-canvas-wrap" style={{ position: 'relative' }}>
           <input
             type="text"
             ref={titleRef}
@@ -595,9 +640,45 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
             // Editor mode: Show CodeMirror
             <div className="cm-host-container" ref={hostRef} />
           )}
+
+          {isOverlayOpen && (
+            <div className="in-editor-preview-overlay" onClick={(e) => e.stopPropagation()}>
+              <div className="in-editor-preview-card" role="dialog" aria-modal="true">
+                <header className="pane-header in-editor-preview-header">
+                  <div className="preview-header-left">
+                    <div className="modal-title-stack preview-breadcrumb">
+                      <span className="preview-indicator-tag">MARKDOWN</span>
+                      <span className="preview-filename-text">{title || 'Untitled'}</span>
+                    </div>
+                  </div>
+                  <div className="preview-header-right">
+                    <button className="modal-close" onClick={() => setIsOverlayOpen(false)} title="Close Preview">✕</button>
+                  </div>
+                </header>
+
+                <div className="in-editor-preview-body seamless-scrollbar" style={{ overflow: 'auto' }}>
+                  <div className="preview-inner-canvas">
+                    <style>{/* reuse modal preview styles inline for parity */ `
+                      .preview-inner-canvas { padding: 2rem 6% 4rem 6%; max-width: 900px; margin: 0 auto; }
+                      pre { background: rgba(var(--text-accent-rgb), 0.03); padding: 1.5em; border-radius: 12px; border: 1px solid var(--border-subtle); overflow-x: auto; margin: 2em 0; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 0.9em; line-height: 1.6; }
+                      code { font-family: 'JetBrains Mono', 'Fira Code', monospace; background: rgba(var(--text-accent-rgb), 0.1); padding: 0.2em 0.5em; border-radius: 6px; font-size: 0.9em; color: var(--text-accent); }
+                      .code-block-header { display:flex; justify-content:space-between; align-items:center; padding:0 12px; font-size:12px; font-weight:600; color:var(--text-secondary); }
+                      .copy-code-btn { background: transparent; border: none; cursor: pointer; color: var(--text-secondary); }
+                    `}</style>
+                    <article dangerouslySetInnerHTML={{ __html: previewContent || '' }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-      <EditorFooter isDirty={isDirty} viewMode={viewMode} setViewMode={setViewMode} />
+      <EditorFooter
+        isDirty={isDirty}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        onTogglePreview={() => setIsPreviewOpen((p) => !p)}
+      />
       <PreviewModal
         isOpen={isPreviewOpen}
         onClose={() => setIsPreviewOpen(false)}

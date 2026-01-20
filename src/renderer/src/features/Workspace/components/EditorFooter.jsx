@@ -1,10 +1,9 @@
 import React from 'react'
 
-const EditorFooter = ({ isDirty, viewMode, setViewMode }) => {
-  // Toggle between editor (source) and preview (live)
-  const toggleMode = () => {
-    setViewMode(viewMode === 'live' ? 'source' : 'live')
-  }
+const EditorFooter = ({ isDirty, viewMode, setViewMode, onTogglePreview }) => {
+  // Switch between explicit modes to avoid accidental toggles
+  const activateSource = () => setViewMode('source')
+  const activateReading = () => setViewMode('reading')
 
   return (
     <div className="editor-footer-bar">
@@ -17,17 +16,24 @@ const EditorFooter = ({ isDirty, viewMode, setViewMode }) => {
       <div className="mode-toggle">
         <button
           className={`mode-btn ${viewMode === 'source' ? 'active' : ''}`}
-          onClick={toggleMode}
-          title={viewMode === 'live' ? 'Switch to Editor (Show Syntax)' : 'Editor Mode - All syntax visible'}
+          onClick={activateSource}
+          title={'Editor Mode - All syntax visible'}
         >
           Editor
         </button>
         <button
-          className={`mode-btn ${viewMode === 'live' ? 'active' : ''}`}
-          onClick={toggleMode}
-          title={viewMode === 'source' ? 'Switch to Preview (Hide Syntax)' : 'Preview Mode - Syntax hidden'}
+          className={`mode-btn ${viewMode === 'reading' ? 'active' : ''}`}
+          onClick={activateReading}
+          title={'Preview Mode - Rendered view'}
         >
           Preview
+        </button>
+        <button
+          className="mode-btn preview-open-btn"
+          onClick={() => onTogglePreview && onTogglePreview()}
+          title={'Open Preview Overlay'}
+        >
+          Open Preview
         </button>
       </div>
     </div>

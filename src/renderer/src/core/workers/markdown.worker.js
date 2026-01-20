@@ -24,7 +24,26 @@ const wikiLinkExtension = {
   }
 }
 
-marked.use({ extensions: [wikiLinkExtension] })
+// Helper to escape HTML inside code blocks
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+// Custom renderer to ensure code blocks include language classes and are escaped
+const customRenderer = {
+  code(code, infostring, escaped) {
+    const lang = (infostring || '').trim().split(/\s+/)[0] || ''
+    const classAttr = lang ? ` class="language-${lang}"` : ''
+    return `<pre><code${classAttr}>${escapeHtml(code)}</code></pre>`
+  }
+}
+
+marked.use({ extensions: [wikiLinkExtension], renderer: customRenderer })
 
 /**
  * Worker-Thread Markdown Parser
@@ -35,7 +54,20 @@ self.onmessage = async (e) => {
 
   try {
     // Heavy lifting happens here
-    const html = await marked.parse(code || '')
+    let source = code || ''
+
+    // If the markdown still contains fenced code blocks, convert them to
+    // safe HTML first so they render even if the parser misses them for
+    // any reason. This also preserves language classes for styling.
+    const fenceRegex = /```(\w+)?\n([\s\S]*?)```/g
+    if (fenceRegex.test(source)) {
+      source = source.replace(fenceRegex, (m, lang, inner) => {
+        const l = (lang || 'text').trim()
+        return `<pre><code class="language-${l}">${escapeHtml(inner)}</code></pre>`
+      })
+    }
+
+    const html = await marked.parse(source || '')
     self.postMessage({ html, id })
   } catch (err) {
     console.error('Markdown Worker Error:', err)

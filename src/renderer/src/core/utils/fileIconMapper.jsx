@@ -43,8 +43,10 @@ import {
   Share2,
   Sparkles,
   Layers,
-  LayoutTemplate
+  LayoutTemplate,
+  LayoutDashboard
 } from 'lucide-react'
+import { GitBranch, Cloud, Activity, Cpu, Archive, Monitor } from 'lucide-react'
 
 /**
  * File Icon Mapper
@@ -110,6 +112,14 @@ const getFileIcon = (title, language) => {
     'changelog.md': FileText,
     'contributing.md': Book,
     'contributing': Book,
+    // Common entry points and important files
+    'index.js': FileCode,
+    'index.jsx': FileCode,
+    'app.js': FileCode,
+    'app.jsx': FileCode,
+    'server.js': Server,
+    'main.py': FileCode,
+    'requirements.txt': FileText,
 
     // Security
     '.htaccess': Shield,
@@ -125,6 +135,8 @@ const getFileIcon = (title, language) => {
     '.cache': Folder,
 
     // Source directories
+    'dashboard': LayoutDashboard,
+    'dashboards': LayoutDashboard,
     'src': FolderCode,
     'source': FolderCode,
     'src.md': FolderCode,
@@ -262,6 +274,15 @@ const getFileIcon = (title, language) => {
     { pattern: /^ai$|artificial.?intelligence|machine.?learning|^ml$|deep.?learning/, icon: Brain },
     { pattern: /^gnn$|graph.?neural|neural.?network|neural/, icon: Network },
     { pattern: /^pandas$|data.?science|datascience/, icon: BarChart3 },
+    { pattern: /^react$|react/i, icon: FileCode },
+    { pattern: /vue|svelte|angular|next|nuxt|gatsby|ember|meteor/, icon: FileCode },
+    { pattern: /express|nestjs|koa|fastify/, icon: Terminal },
+    { pattern: /spring|springboot|hibernate|java/, icon: FileCode },
+    { pattern: /flask|django|rails|ruby|php/, icon: FileCode },
+    { pattern: /git|commit|branch|pr|pull/, icon: GitBranch },
+    { pattern: /cloud|aws|azure|gcp|s3|lambda/, icon: Cloud },
+    { pattern: /ci|workflow|action|pipeline/, icon: Activity },
+    { pattern: /perf|benchmark|cpu|profil/, icon: Cpu },
     { pattern: /^xia$/, icon: Heart },
     { pattern: /^github$|^gh$/, icon: Github },
     { pattern: /^twitter$|^x$/, icon: Twitter },
@@ -277,6 +298,7 @@ const getFileIcon = (title, language) => {
     { pattern: /^license/, icon: FileText },
     { pattern: /^changelog/, icon: FileText },
     { pattern: /package/, icon: Package },
+    { pattern: /release|dist|bundle/, icon: Archive },
     { pattern: /docker/, icon: Terminal },
     { pattern: /^\.git/, icon: File },
     { pattern: /^\.docker/, icon: Terminal },
@@ -369,6 +391,14 @@ const getFileIcon = (title, language) => {
     'markdown': Hash,
     'mdx': Hash,
 
+    // modern JS module types
+    'mjs': FileCode,
+    'cjs': FileCode,
+    // build tool / script files
+    'gradle': FileCode,
+    'makefile': Terminal,
+    'Dockerfile': Terminal,
+
     // Images
     'png': ImageIcon,
     'jpg': ImageIcon,
@@ -433,15 +463,34 @@ const getFileIcon = (title, language) => {
     'css': FileCode,
     'json': FileJson,
     'markdown': Hash,
-    'md': Hash
+    'md': Hash,
+    // Additional language identifiers
+    'react': FileCode,
+    'vue': FileCode,
+    'svelte': FileCode,
+    'angular': FileCode,
+    'java': FileCode,
+    'c': FileCode,
+    'cpp': FileCode,
+    'c++': FileCode,
+    'csharp': FileCode,
+    'c#': FileCode,
+    'go': FileCode,
+    'golang': FileCode,
+    'rust': FileCode,
+    'rs': FileCode,
+    'ruby': FileCode,
+    'php': FileCode,
+    'swift': FileCode,
+    'kotlin': FileCode
   }
 
   if (languageMap[lang]) {
     return languageMap[lang]
   }
 
-  // Default fallback
-  return FileText
+  // Default fallback: ensure anything the user types has a relevant code/file icon
+  return FileCode
 }
 
 /**
