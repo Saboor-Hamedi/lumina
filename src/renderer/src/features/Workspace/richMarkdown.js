@@ -248,6 +248,8 @@ const richMarkdownPlugin = ViewPlugin.fromClass(class {
         if (name.startsWith('ATXHeading')) {
           const l = parseInt(name.slice(-1)) || 1
           temp.push({ from: state.doc.lineAt(nF).from, to: state.doc.lineAt(nF).from, val: headingDecos[l] })
+          // Always hide HeaderMark in headings to keep text aligned with paragraphs
+          // The # mark will be shown in gutter when line is active (via CSS)
         }
         if (name === 'Blockquote') {
           for (let i = state.doc.lineAt(Math.max(from, nF)).number; i <= state.doc.lineAt(Math.min(to, nT)).number; i++) {
@@ -293,7 +295,25 @@ const richMarkdownPlugin = ViewPlugin.fromClass(class {
           }
         }
 
-        if (HIDDEN_MARKS.has(name) && !shouldReveal(nF)) temp.push({ from: nF, to: nT, val: hideDeco })
+        // Always hide HeaderMark in headings to maintain alignment with paragraphs
+        // This ensures # never pushes heading text to the right, matching Obsidian behavior
+        // The # will be shown in gutter when line is active (via CSS)
+        if (name === 'HeaderMark') {
+          // Check if this HeaderMark is part of a heading line
+          const line = state.doc.lineAt(nF)
+          const lineText = line.text
+          // Check if this line is a heading (starts with #)
+          if (lineText.trim().startsWith('#')) {
+            // Always hide HeaderMark in headings (all modes) to keep text aligned
+            // CSS will show it in gutter when appropriate
+            temp.push({ from: nF, to: nT, val: hideDeco })
+          } else if (!shouldReveal(nF)) {
+            // For non-heading HeaderMarks, hide conditionally
+            temp.push({ from: nF, to: nT, val: hideDeco })
+          }
+        } else if (HIDDEN_MARKS.has(name) && !shouldReveal(nF)) {
+          temp.push({ from: nF, to: nT, val: hideDeco })
+        }
         if (name === 'URL' && inLink && !inImg && !shouldReveal(nF)) temp.push({ from: nF, to: nT, val: hideDeco })
         if (name === 'ListMark') temp.push({ from: nF, to: nT, val: listMarkDeco })
         if (name === 'StrongEmphasis') {

@@ -50,6 +50,11 @@
 .cm-selectionBackground, 
 .cm-content ::selection {
   background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.3) !important;
+  /* Ensure selection doesn't cause layout shift */
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  outline: none !important;
 }
 
 /* Force specific selection style for code blocks */
@@ -857,6 +862,29 @@
   transition: border-left 0.2s ease;
 }
 
+/* Ensure active line border extends to full height for headings */
+.cm-heading.cm-activeLine {
+  /* Remove default border-left and use pseudo-element for full-height border */
+  border-left: none !important;
+  padding-left: 0 !important; /* No left padding to ensure border alignment */
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* Use pseudo-element to ensure border extends to full height including padding */
+.cm-heading.cm-activeLine::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--text-accent);
+  z-index: 1;
+  /* This ensures the border extends from very top (including padding-top) to very bottom (including padding-bottom) */
+  /* The border matches the full visual height of the heading line */
+}
+
 [data-theme='dark'] .cm-activeLine,
 [data-theme='obsidian-robust'] .cm-activeLine {
   border-left-color: var(--text-accent);
@@ -866,11 +894,31 @@
 .cm-selectionBackground, 
 .cm-content ::selection {
   background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.3) !important;
+  /* Ensure selection doesn't cause layout shift - no padding/margin/border */
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+}
+
+/* Ensure selection background elements don't cause layout shift */
+/* CodeMirror already positions .cm-selectionBackground absolutely, just ensure no padding/margin */
+.cm-selectionBackground {
+  /* CodeMirror handles positioning - just ensure no layout-affecting properties */
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  box-sizing: border-box !important;
 }
 
 .cm-selectionMatch {
   background-color: rgba(var(--text-accent-rgb), 0.15) !important;
   border-bottom: 2px solid var(--text-accent);
+  /* Ensure selection match doesn't cause layout shift */
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
 }
 
 /* Heading Improvements (Editor Optimized) */
@@ -880,7 +928,17 @@
   color: var(--text-main);
   padding-top: 0.4em; 
   padding-bottom: 0.1rem;
+  padding-left: 0 !important; /* Match paragraph alignment - no left padding */
+  padding-right: 0 !important; /* Match paragraph alignment */
+  margin-left: 0 !important; /* Ensure no left margin */
+  margin-right: 0 !important; /* Ensure no right margin */
+  margin-bottom: 0 !important; /* Ensure no bottom margin that could affect selection */
   letter-spacing: -0.01em;
+  /* Ensure heading line has proper boundaries for selection */
+  display: block;
+  box-sizing: border-box;
+  /* Ensure padding doesn't extend selection area - selection should be based on text content */
+  contain: layout style;
 }
 
 .cm-heading-1 { 
@@ -975,6 +1033,29 @@
   -webkit-user-select: text !important;
   -moz-user-select: text !important;
   -ms-user-select: text !important;
+}
+
+/* Prevent layout shift when selecting text in reading mode */
+.mode-reading .cm-line {
+  /* Ensure lines don't shift when selected */
+  position: relative;
+  /* Prevent any layout changes on selection */
+  will-change: auto;
+  /* Ensure consistent positioning */
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+}
+
+/* Ensure selection in reading mode doesn't cause layout shift */
+.mode-reading .cm-selectionBackground {
+  /* CodeMirror positions this absolutely, but ensure it doesn't affect layout */
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  box-sizing: border-box !important;
+  /* Ensure it's behind text, not affecting flow */
+  z-index: 0;
+  pointer-events: none !important;
 }
 
 /* Ensure text selection works in reading mode even when editor is non-editable */
@@ -1076,6 +1157,103 @@
   opacity: 0.4 !important; /* Ghosting reveal */
   pointer-events: auto;
 }
+
+/* Fix heading alignment - ensure # mark doesn't push text to the right */
+/* The # mark is always hidden and positioned absolutely to never affect text flow */
+.cm-heading .cm-hidden-mark {
+  pointer-events: none !important;
+  /* Completely remove from flow with zero width so it doesn't affect text alignment */
+  position: absolute !important;
+  left: -35px !important; /* Move to gutter area (avoid going over border) */
+  width: 0 !important; /* Zero width when hidden - CRITICAL for alignment */
+  margin: 0 !important;
+  padding: 0 !important;
+  display: inline-block !important;
+  overflow: hidden !important;
+  /* This ensures heading text starts at same position as paragraphs */
+}
+
+/* Ensure heading text itself starts at the same position as paragraphs */
+/* The # mark takes up space in the document, so we need to compensate with negative text-indent */
+.cm-heading.cm-line {
+  padding-left: 0 !important; /* Match paragraph padding */
+  margin-left: 0 !important; /* No left margin */
+  margin-bottom: 0 !important; /* No bottom margin to prevent selection bleed */
+  position: relative; /* For absolute positioning of # mark */
+  /* Ensure proper line boundaries for selection - prevent selection from bleeding to next line */
+  display: block !important;
+  box-sizing: border-box;
+  /* Ensure selection is contained within the line boundaries */
+  /* The padding-top/bottom on .cm-heading should not extend selection area */
+  isolation: isolate; /* Create new stacking context to contain selection */
+  /* Ensure line height doesn't cause overlap with next line */
+  min-height: auto;
+  height: auto;
+  /* Prevent selection from extending beyond the line content */
+  overflow: visible;
+}
+
+/* Ensure heading padding doesn't extend the selectable/clickable area */
+.cm-heading.cm-line::after {
+  content: '';
+  display: block;
+  height: 0;
+  /* This creates a boundary to prevent selection from bleeding to next line */
+  pointer-events: none;
+}
+
+/* Compensate for # mark width - pull heading text left to align with paragraphs */
+/* Use minimal compensation - just enough to align with paragraphs */
+.cm-heading-1.cm-line {
+  text-indent: -0.5ch !important; /* Minimal compensation */
+}
+.cm-heading-2.cm-line {
+  text-indent: -0.6ch !important; /* Minimal compensation */
+}
+.cm-heading-3.cm-line {
+  text-indent: -0.7ch !important; /* Minimal compensation */
+}
+.cm-heading-4.cm-line {
+  text-indent: -0.8ch !important; /* Minimal compensation */
+}
+.cm-heading-5.cm-line {
+  text-indent: -0.9ch !important; /* Minimal compensation */
+}
+.cm-heading-6.cm-line {
+  text-indent: -1ch !important; /* Minimal compensation */
+}
+
+/* In source mode, also position # absolutely to maintain alignment */
+.mode-source .cm-heading .cm-line {
+  position: relative;
+}
+
+.mode-source .cm-heading .cm-line::before {
+  content: '';
+  display: inline-block;
+  width: 0;
+  /* This creates a zero-width space to maintain alignment */
+}
+
+/* When heading line is active, show # mark in gutter but still don't affect text flow */
+.cm-heading.cm-activeLine .cm-hidden-mark {
+  opacity: 0.4 !important; /* Ghosting reveal */
+  width: 35px !important; /* Show full width in gutter when revealed */
+  left: -35px !important; /* Keep it in gutter, not over border */
+  text-align: right !important;
+  pointer-events: auto; /* Allow interaction when revealed */
+}
+
+/* In source mode, also show # in gutter when line is active (since it's always hidden now) */
+.mode-source .cm-heading.cm-activeLine .cm-hidden-mark {
+  opacity: 0.6 !important; /* Slightly more visible in source mode */
+  width: 35px !important;
+  left: -40px !important; /* Keep it in gutter */
+  text-align: right !important;
+}
+
+/* Ensure heading lines are fully clickable for proper cursor placement */
+/* Note: text-indent, padding-left, margin-left are set above to ensure alignment */
 
 /* Smooth Scrolling & Transitions */
 .cm-scroller {
