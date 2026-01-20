@@ -22,8 +22,9 @@ import './FileExplorer.css'
 /**
  * Robust Virtualized File Explorer (Google/FB Standard #1)
  * Upgraded to PKM Hub with Sections and Kinetic Icons.
+ * Memoized for performance - only re-renders when props change.
  */
-const FileExplorer = ({ onNavigate }) => {
+const FileExplorer = React.memo(({ onNavigate }) => {
   const { settings, updateSetting } = useSettingsStore()
   const collapsedSections = settings.sidebarCollapsedSections || {
     pinned: false,
@@ -244,6 +245,8 @@ const FileExplorer = ({ onNavigate }) => {
       </footer>
     </div>
   )
-}
+})
+
+FileExplorer.displayName = 'FileExplorer'
 
 export default FileExplorer

@@ -38,8 +38,9 @@ import { imageHoverPreview } from './imageHoverPreview'
 /**
  * Obsidian-Grade Markdown Editor
  * Optimized for instant note switching and layout stability.
+ * Memoized for performance - expensive CodeMirror operations.
  */
-const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
+const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
   const hostRef = useRef(null)
   const viewRef = useRef(null)
   const workerRef = useRef(null)
@@ -696,6 +697,25 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
       )}
     </div>
   )
-}
+}, (prevProps, nextProps) => {
+  // Custom comparison: only re-render if snippet ID or key props change
+  // This prevents unnecessary re-renders when other parts of the app update
+  const prevSnippet = prevProps.snippet
+  const nextSnippet = nextProps.snippet
+  
+  // If snippets are the same reference, skip re-render
+  if (prevSnippet === nextSnippet) return true
+  
+  // Compare key properties
+  return (
+    prevSnippet?.id === nextSnippet?.id &&
+    prevSnippet?.code === nextSnippet?.code &&
+    prevSnippet?.title === nextSnippet?.title &&
+    prevProps.onSave === nextProps.onSave &&
+    prevProps.onToggleInspector === nextProps.onToggleInspector
+  )
+})
+
+MarkdownEditor.displayName = 'MarkdownEditor'
 
 export default MarkdownEditor

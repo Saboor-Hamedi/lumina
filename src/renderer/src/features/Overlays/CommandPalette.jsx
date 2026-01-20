@@ -20,8 +20,9 @@ import './CommandPalette.css'
 /**
  * Virtualized Command Palette (Obsidian Standard #5)
  * Feature: Fuzzy Match + Semantic AI Search
+ * Memoized for performance - expensive search/filter operations.
  */
-const CommandPalette = ({
+const CommandPalette = React.memo(({
   isOpen,
   onClose,
   items,
@@ -336,6 +337,8 @@ const CommandPalette = ({
       </div>
     </div>
   )
-}
+})
+
+CommandPalette.displayName = 'CommandPalette'
 
 export default CommandPalette

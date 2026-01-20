@@ -7,8 +7,9 @@ import './SearchSidebar.css'
  * SearchSidebar Component
  * VSCode-style global search and replace functionality.
  * Allows searching across all notes in the vault with replace capabilities.
+ * Memoized for performance - expensive search operations.
  */
-const SearchSidebar = ({ onNavigate }) => {
+const SearchSidebar = React.memo(({ onNavigate }) => {
   const { snippets, setSelectedSnippet } = useVaultStore()
   
   const [searchQuery, setSearchQuery] = useState('')
@@ -399,6 +400,8 @@ const SearchSidebar = ({ onNavigate }) => {
       </div>
     </div>
   )
-}
+})
+
+SearchSidebar.displayName = 'SearchSidebar'
 
 export default SearchSidebar

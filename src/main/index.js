@@ -134,18 +134,8 @@ async function createWindow() {
   }
 }
 
-// Global Exception Handling (Main Process)
-process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error)
-  dialog.showErrorBox(
-    'Critical Error',
-    `A critical error occurred:\n${error.message}\nThe app may need to restart.`
-  )
-})
-
-process.on('unhandledRejection', (reason) => {
-  console.error('Unhandled Rejection:', reason)
-})
+// Global Exception Handling (Main Process) - Enhanced for production resilience
+// Note: Enhanced handlers with recovery mechanisms are at the bottom of the file
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -328,6 +318,20 @@ app.whenReady().then(async () => {
       await fs.appendFile(logFile, line, 'utf8')
     } catch (err) {
       console.error('Failed to write renderer log:', err)
+    }
+  })
+
+  // Error Boundary logging
+  ipcMain.handle('error:log', async (_, errorData) => {
+    try {
+      const logDir = app.getPath('userData')
+      const logFile = join(logDir, 'error-boundary.log')
+      const timestamp = new Date(errorData.timestamp || Date.now()).toISOString()
+      const line = `[${timestamp}] ErrorBoundary Error:\nMessage: ${errorData.message || 'Unknown'}\nStack: ${errorData.stack || 'N/A'}\nComponent Stack: ${errorData.componentStack || 'N/A'}\n\n`
+      await fs.appendFile(logFile, line, 'utf8')
+      console.error('[ErrorBoundary]', errorData)
+    } catch (err) {
+      console.error('Failed to write error log:', err)
     }
   })
 
@@ -683,4 +687,122 @@ app.whenReady().then(async () => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
+})
+
+/**
+ * Enhanced Global Error Handlers
+ * 
+ * These handlers ensure the app never fully crashes in production.
+ * Errors are logged and recovery is attempted instead of crashing.
+ * 
+ * Production behavior:
+ * - Logs errors to file for debugging
+ * - Notifies renderer process
+ * - Attempts graceful recovery
+ * 
+ * Development behavior:
+ * - Shows error dialogs for immediate feedback
+ * - More verbose logging
+ */
+process.on('uncaughtException', (error) => {
+  const errorId = `main-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  console.error(`[Main] Uncaught Exception [${errorId}]:`, error)
+  
+  // Log to file for debugging (non-blocking)
+  const logDir = app.getPath('userData')
+  const logFile = join(logDir, 'crash.log')
+  const timestamp = new Date().toISOString()
+  const logEntry = `[${timestamp}] [${errorId}] Uncaught Exception: ${error.message}\nStack: ${error.stack}\n\n`
+  
+  fs.appendFile(logFile, logEntry, 'utf8').catch((logError) => {
+    console.error('[Main] Failed to write error log:', logError)
+  })
+  
+  // In production, try to recover instead of showing error dialog
+  if (process.env.NODE_ENV === 'production') {
+    // Notify renderer and attempt recovery
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      try {
+        mainWindow.webContents.send('app:error', {
+          type: 'uncaughtException',
+          message: error.message,
+          errorId
+        })
+      } catch (e) {
+        console.error('[Main] Failed to notify renderer:', e)
+      }
+    }
+  } else {
+    // In development, show error dialog for debugging
+    try {
+      dialog.showErrorBox(
+        'Critical Error',
+        `A critical error occurred:\n${error.message}\n\nError ID: ${errorId}\nThe app will attempt to continue.`
+      )
+    } catch (e) {
+      console.error('[Main] Failed to show error dialog:', e)
+    }
+  }
+})
+
+process.on('unhandledRejection', (reason, promise) => {
+  const errorId = `rejection-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  console.error(`[Main] Unhandled Rejection [${errorId}]:`, reason)
+  
+  const logDir = app.getPath('userData')
+  const logFile = join(logDir, 'crash.log')
+  const timestamp = new Date().toISOString()
+  const errorMessage = reason instanceof Error ? reason.message : String(reason)
+  const errorStack = reason instanceof Error ? reason.stack : 'N/A'
+  const logEntry = `[${timestamp}] [${errorId}] Unhandled Rejection: ${errorMessage}\nStack: ${errorStack}\n\n`
+  
+  fs.appendFile(logFile, logEntry, 'utf8').catch((logError) => {
+    console.error('[Main] Failed to write rejection log:', logError)
+  })
+  
+  // Don't crash - log and continue
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    try {
+      mainWindow.webContents.send('app:error', {
+        type: 'unhandledRejection',
+        message: errorMessage,
+        errorId
+      })
+    } catch (e) {
+      console.error('[Main] Failed to notify renderer of rejection:', e)
+    }
+  }
+})
+
+/**
+ * Handle renderer process crashes gracefully
+ * Attempts to reload the renderer process automatically
+ */
+app.on('render-process-gone', (event, webContents, details) => {
+  const errorId = `renderer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  console.error(`[Main] Renderer process gone [${errorId}]:`, details)
+  
+  const logDir = app.getPath('userData')
+  const logFile = join(logDir, 'crash.log')
+  const timestamp = new Date().toISOString()
+  const logEntry = `[${timestamp}] [${errorId}] Renderer Process Gone\nReason: ${details.reason}\nExit Code: ${details.exitCode}\n\n`
+  
+  fs.appendFile(logFile, logEntry, 'utf8').catch((logError) => {
+    console.error('[Main] Failed to write renderer crash log:', logError)
+  })
+  
+  // Try to reload the window if it's not destroyed
+  // Use a delay to ensure the process has fully terminated
+  if (webContents && !webContents.isDestroyed()) {
+    setTimeout(() => {
+      try {
+        if (webContents && !webContents.isDestroyed()) {
+          console.info('[Main] Attempting to reload renderer process...')
+          webContents.reload()
+        }
+      } catch (e) {
+        console.error('[Main] Failed to reload renderer:', e)
+      }
+    }, 1000)
+  }
 })

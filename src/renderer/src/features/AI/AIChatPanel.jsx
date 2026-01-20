@@ -95,7 +95,11 @@ const ChatActions = ({ msg, index, onCopy, onRate }) => {
   )
 }
 
-const AIChatPanel = () => {
+/**
+ * AIChatPanel Component
+ * Memoized for performance - expensive AI operations and message rendering.
+ */
+const AIChatPanel = React.memo(() => {
   const { chatMessages, isChatLoading, chatError, sendChatMessage, clearChat, updateMessage } =
     useAIStore()
   const { selectedSnippet } = useVaultStore()
@@ -283,6 +287,8 @@ const AIChatPanel = () => {
       </div>
     </div>
   )
-}
+})
+
+AIChatPanel.displayName = 'AIChatPanel'
 
 export default AIChatPanel

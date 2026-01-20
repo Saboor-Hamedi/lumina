@@ -19,8 +19,10 @@ import './components/GraphControls.css'
  * Can be used as:
  * - Modal overlay (default): Shows with backdrop and close button
  * - Tab view: Set `embedded={true}` to use without overlay in tab
+ * 
+ * Memoized for performance - expensive graph calculations.
  */
-const GraphNexus = ({ isOpen = true, onClose, onNavigate, embedded = false }) => {
+const GraphNexus = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false }) => {
   const { snippets, selectedSnippet, dirtySnippetIds } = useVaultStore()
   const { settings } = useSettingsStore()
   const { embeddingsCache } = useAIStore()
@@ -482,6 +484,8 @@ const GraphNexus = ({ isOpen = true, onClose, onNavigate, embedded = false }) =>
       {container}
     </div>
   )
-}
+})
+
+GraphNexus.displayName = 'GraphNexus'
 
 export default GraphNexus

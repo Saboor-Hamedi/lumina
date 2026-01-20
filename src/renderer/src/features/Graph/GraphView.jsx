@@ -6,7 +6,11 @@ import { useAIStore } from '../../core/store/useAIStore'
 import { buildGraphData, buildSemanticLinks } from '../../core/utils/graphBuilder'
 import { useTheme } from '../../core/hooks/useTheme'
 
-const GraphView = ({ onNodeClick }) => {
+/**
+ * GraphView Component
+ * Memoized for performance - expensive graph calculations and rendering.
+ */
+const GraphView = React.memo(({ onNodeClick }) => {
   const { snippets, selectedSnippet } = useVaultStore()
   const { embeddingsCache } = useAIStore()
   const { theme } = useTheme()
@@ -244,6 +248,8 @@ const GraphView = ({ onNodeClick }) => {
       </button>
     </div>
   )
-}
+})
+
+GraphView.displayName = 'GraphView'
 
 export default GraphView

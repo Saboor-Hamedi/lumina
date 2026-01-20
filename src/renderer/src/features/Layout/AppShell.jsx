@@ -18,6 +18,7 @@ import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
 import ConfirmModal from '../Overlays/ConfirmModal'
 import UpdateToast from '../Overlays/UpdateToast'
+import ErrorBoundary from '../../components/ErrorBoundary'
 import './AppShell.css'
 import '../Overlays/ConfirmModal.css'
 import AIChatPanel from '../AI/AIChatPanel'
@@ -203,6 +204,7 @@ const AppShell = () => {
     onToggleSettings: () => setShowSettings(true),
     onToggleGraph: () => setShowGraph(true),
     onToggleSidebar: () => setIsLeftSidebarOpen((prev) => !prev),
+    onToggleInspector: () => setIsRightSidebarOpen((prev) => !prev),
     onNew: () => handleNew(),
     onDelete: () => {
       if (selectedSnippet) {
@@ -291,11 +293,13 @@ const AppShell = () => {
         />
       </nav>
       <aside className="shell-sidebar-left">
-        {activeTab === 'search' ? (
-          <SearchSidebar onNavigate={() => setActiveTab('files')} />
-        ) : (
-          <FileExplorer onNavigate={() => setActiveTab('files')} />
-        )}
+        <ErrorBoundary>
+          {activeTab === 'search' ? (
+            <SearchSidebar onNavigate={() => setActiveTab('files')} />
+          ) : (
+            <FileExplorer onNavigate={() => setActiveTab('files')} />
+          )}
+        </ErrorBoundary>
         {isLeftSidebarOpen && (
           <div
             className="sidebar-resizer left"
@@ -309,37 +313,45 @@ const AppShell = () => {
 
         {/* Render Graph Nexus if graph tab is active (embedded mode) */}
         {activeTabId === GRAPH_TAB_ID ? (
-          <GraphNexus
-            embedded={true}
-            isOpen={true}
-            onNavigate={(snippet) => {
-              // Close graph tab and switch to the selected snippet
-              const { closeTab } = useVaultStore.getState()
-              closeTab(GRAPH_TAB_ID)
-              setSelectedSnippet(snippet)
-              setActiveTab('files')
-            }}
-          />
+          <ErrorBoundary>
+            <GraphNexus
+              embedded={true}
+              isOpen={true}
+              onNavigate={(snippet) => {
+                // Close graph tab and switch to the selected snippet
+                const { closeTab } = useVaultStore.getState()
+                closeTab(GRAPH_TAB_ID)
+                setSelectedSnippet(snippet)
+                setActiveTab('files')
+              }}
+            />
+          </ErrorBoundary>
         ) : activeTab === 'graph' ? (
           // Fallback: if activity bar shows graph but no tab, show graph (backward compatibility)
-          <GraphNexus
-            embedded={true}
-            isOpen={true}
-            onNavigate={(snippet) => {
-              setSelectedSnippet(snippet)
-              setActiveTab('files')
-            }}
-          />
+          <ErrorBoundary>
+            <GraphNexus
+              embedded={true}
+              isOpen={true}
+              onNavigate={(snippet) => {
+                setSelectedSnippet(snippet)
+                setActiveTab('files')
+              }}
+            />
+          </ErrorBoundary>
         ) : selectedSnippet ? (
-          <MarkdownEditor
-            snippet={selectedSnippet}
-            onSave={saveSnippet}
-            onToggleInspector={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
-          />
+          <ErrorBoundary>
+            <MarkdownEditor
+              snippet={selectedSnippet}
+              onSave={saveSnippet}
+              onToggleInspector={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
+            />
+          </ErrorBoundary>
         ) : isRestoring ? (
           <div className="shell-main-placeholder" />
         ) : (
-          <Dashboard onNew={handleNew} />
+          <ErrorBoundary>
+            <Dashboard onNew={handleNew} />
+          </ErrorBoundary>
         )}
       </main>
       <aside className="shell-sidebar-right">
@@ -372,10 +384,11 @@ const AppShell = () => {
           </div>
 
           <div className="panel-content">
-            {rightPanelMode === 'metadata' ? (
-              isLoading ? (
-                <div className="skeleton-inspector">
-                  <div
+            <ErrorBoundary>
+              {rightPanelMode === 'metadata' ? (
+                isLoading ? (
+                  <div className="skeleton-inspector">
+                    <div
                     className="skeleton skeleton-text"
                     style={{ width: '40%', marginBottom: '12px' }}
                   />
@@ -445,6 +458,7 @@ const AppShell = () => {
             ) : (
               <AIChatPanel />
             )}
+            </ErrorBoundary>
           </div>
         </div>
       </aside>

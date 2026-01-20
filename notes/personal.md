@@ -337,6 +337,47 @@ it('handles click events', async () => {
 7. **Clean up after tests** - Use `beforeEach` and `afterEach`
 8. **Maintain high coverage** - Aim for >80% coverage
 
+## Bundle Analysis
+
+### Run Bundle Analysis
+
+```bash
+# Run bundle size analysis script
+npm run analyze:bundle
+
+# Run visual bundle analyzer (builds and opens in browser)
+npm run analyze
+```
+
+### Bundle Analysis Results
+
+**Dependencies:**
+- Total: 63 packages
+- Production: 36 packages
+- Development: 27 packages
+
+**Large Dependencies Detected:**
+- CodeMirror packages (editor functionality)
+- @xenova/transformers (AI/ML models)
+- react-force-graph-2d (graph visualization)
+- react-markdown (markdown rendering)
+- highlight.js (syntax highlighting)
+- pdf-lib (PDF generation)
+- better-sqlite3 (database)
+- electron and related toolkits
+
+**Optimization Recommendations:**
+1. **Code Splitting**: Use dynamic imports for heavy components (GraphNexus, AIChatPanel, MarkdownEditor)
+2. **Tree Shaking**: Ensure unused code is eliminated - check for unused imports
+3. **Lazy Loading**: Load AI models on-demand (@xenova/transformers can be loaded when needed)
+4. **Bundle Analysis**: Run `npm run analyze` to open visual bundle analyzer in browser
+
+**Performance Tips:**
+- ✅ React.memo() for expensive components (implemented)
+- Use useMemo/useCallback for expensive computations
+- Virtualize long lists (already using react-virtuoso)
+- Lazy load routes and heavy features
+
 ## Resources
 
 - [Vitest Documentation](https://vitest.dev/)

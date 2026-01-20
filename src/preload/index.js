@@ -54,7 +54,10 @@ const api = {
   // Vault Search
   searchVault: (query, options) => electronAPI.ipcRenderer.invoke('vault:search', query, options),
   getSearchStats: () => electronAPI.ipcRenderer.invoke('vault:search-stats'),
-  findSimilar: (chunkId, limit) => electronAPI.ipcRenderer.invoke('vault:find-similar', chunkId, limit)
+  findSimilar: (chunkId, limit) => electronAPI.ipcRenderer.invoke('vault:find-similar', chunkId, limit),
+
+  // Error Logging
+  logError: (errorData) => electronAPI.ipcRenderer.invoke('error:log', errorData)
 }
 
 // Expose APIs

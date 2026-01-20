@@ -1,0 +1,131 @@
+.error-boundary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 40px 20px;
+  background: var(--bg-app, #1e1e1e);
+  color: var(--text-main, #dfdfdf);
+}
+
+.error-boundary-content {
+  max-width: 500px;
+  text-align: center;
+  padding: 32px;
+  background: var(--bg-panel, #252a3a);
+  border: 1px solid var(--border-dim, #2d3748);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.error-boundary-icon {
+  color: var(--color-error, #ef4444);
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.error-boundary-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-main, #dfdfdf);
+}
+
+.error-boundary-message {
+  font-size: 14px;
+  color: var(--text-secondary, #94a3b8);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.error-boundary-details {
+  margin: 20px 0;
+  text-align: left;
+  font-size: 12px;
+}
+
+.error-boundary-details summary {
+  cursor: pointer;
+  color: var(--text-secondary, #94a3b8);
+  margin-bottom: 8px;
+  user-select: none;
+}
+
+.error-boundary-details summary:hover {
+  color: var(--text-main, #dfdfdf);
+}
+
+.error-boundary-stack {
+  background: var(--bg-app, #1e1e1e);
+  border: 1px solid var(--border-dim, #2d3748);
+  border-radius: 6px;
+  padding: 12px;
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 11px;
+  color: var(--text-muted, #64748b);
+  overflow-x: auto;
+  max-height: 300px;
+  overflow-y: auto;
+  text-align: left;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.error-boundary-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.error-boundary-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 6px;
+  border: 1px solid var(--border-dim, #2d3748);
+  background: var(--bg-secondary, #1a1d29);
+  color: var(--text-main, #dfdfdf);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.error-boundary-button:hover {
+  background: var(--bg-active, #2d3748);
+  border-color: var(--text-accent, #40bafa);
+}
+
+.error-boundary-button.primary {
+  background: var(--text-accent, #40bafa);
+  color: white;
+  border-color: var(--text-accent, #40bafa);
+}
+
+.error-boundary-button.primary:hover {
+  background: var(--text-accent-hover, #2563eb);
+  opacity: 0.9;
+}
+
+.error-boundary-warning {
+  margin-top: 20px;
+  padding: 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  color: var(--color-error, #ef4444);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.error-boundary-id {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-dim, #2d3748);
+  color: var(--text-muted, #64748b);
+  font-size: 11px;
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+}
