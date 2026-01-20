@@ -131,6 +131,42 @@ const PreviewModal = ({ isOpen, onClose, content, onNavigate, title: snippetTitl
             }
           })
         }
+        // Wrap @mentions in the rendered html (but skip inside code/pre/a)
+        try {
+          const article = shadowRoot.querySelector && shadowRoot.querySelector('article')
+          if (article) {
+            const walker = document.createTreeWalker(article, NodeFilter.SHOW_TEXT, null, false)
+            const textNodes = []
+            let node
+            while ((node = walker.nextNode())) {
+              // skip if inside code or pre or a
+              const parentTag = node.parentElement && node.parentElement.tagName
+              if (parentTag && ['CODE', 'PRE', 'A', 'SCRIPT', 'STYLE'].includes(parentTag)) continue
+              if (/@[A-Za-z0-9_\-]+/.test(node.nodeValue)) textNodes.push(node)
+            }
+            textNodes.forEach((textNode) => {
+              const frag = document.createDocumentFragment()
+              let lastIndex = 0
+              const re = /@([A-Za-z0-9_\-]+)/g
+              let m
+              const str = textNode.nodeValue
+              while ((m = re.exec(str)) !== null) {
+                const before = str.slice(lastIndex, m.index)
+                if (before) frag.appendChild(document.createTextNode(before))
+                const mention = document.createElement('span')
+                mention.className = 'mention'
+                mention.textContent = m[0]
+                frag.appendChild(mention)
+                lastIndex = m.index + m[0].length
+              }
+              const rest = str.slice(lastIndex)
+              if (rest) frag.appendChild(document.createTextNode(rest))
+              textNode.parentNode.replaceChild(frag, textNode)
+            })
+          }
+        } catch (err) {
+          /* ignore mention wrap errors */
+        }
       } catch (err) {
         // ignore
       }
@@ -333,6 +369,8 @@ const previewStyles = `
       border-radius: 6px;
     }
     .copy-code-btn:hover { background: rgba(255,255,255,0.02); color: var(--text-main); }
+    .copy-code-btn.copied { color: #22c55e; font-weight: 700; }
+    .mention { color: var(--text-accent); background: rgba(var(--text-accent-rgb), 0.06); padding: 0 4px; border-radius: 4px; }
     code { 
       font-family: 'JetBrains Mono', 'Fira Code', monospace;
       background: rgba(var(--text-accent-rgb), 0.1); 
@@ -347,6 +385,36 @@ const previewStyles = `
       color: inherit;
       font-size: inherit;
     }
+
+    /* Minimal highlight.js theme (self-contained) */
+    .hljs {
+      display: block;
+      overflow-x: auto;
+      padding: 0.2em 0.4em;
+      background: transparent;
+      color: var(--text-main);
+    }
+    .hljs-comment,
+    .hljs-quote { color: #6a737d; font-style: italic }
+    .hljs-keyword,
+    .hljs-selector-tag,
+    .hljs-subst { color: #d73a49; font-weight: 600 }
+    .hljs-number,
+    .hljs-literal,
+    .hljs-variable,
+    .hljs-template-variable,
+    .hljs-tag .hljs-attr { color: #005cc5 }
+    .hljs-string,
+    .hljs-doctag { color: #032f62 }
+    .hljs-title,
+    .hljs-section,
+    .hljs-selector-id { color: #6f42c1 }
+    .hljs-subst { font-weight: 400 }
+    .hljs-built_in,
+    .hljs-builtin-name { color: #e36209 }
+    .hljs-meta { color: #b31d28 }
+    .hljs-emphasis { font-style: italic }
+    .hljs-strong { font-weight: 700 }
 
     /* Make code selection subtle to avoid harsh block selection visuals */
     pre ::selection, pre code ::selection, code ::selection {
