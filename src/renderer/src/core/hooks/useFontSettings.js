@@ -523,10 +523,22 @@ export const useFontSettings = () => {
   const updateCaretWidth = useCallback(
     (width) => {
       const normalized = clampCaretWidth(width)
+      console.log('[useFontSettings] updateCaretWidth called:', { width, normalized, currentCaretColor: caretColor })
+
       // Update state immediately for UI feedback
       setCaretWidth(normalized)
+
       // Apply styles immediately with current color (empty string = use theme)
       applyCaretStyles(normalized, caretColor || '')
+
+      // Verify CSS variables were set
+      const root = document.documentElement
+      const verifyWidth = getComputedStyle(root).getPropertyValue('--caret-width').trim()
+      console.log('[useFontSettings] CSS variable verification:', {
+        set: normalized,
+        actual: verifyWidth,
+        match: verifyWidth === normalized || verifyWidth === normalized.replace('px', '') + 'px'
+      })
 
       // Persist to storage (non-blocking) - store as number (not "3px", just 3)
       let widthNumber = width
@@ -544,7 +556,10 @@ export const useFontSettings = () => {
 
       // Force CodeMirror to update by dispatching a custom event
       // This ensures the cursor element picks up the new CSS variables
-      window.dispatchEvent(new CustomEvent('caret-style-update'))
+      // Use a small delay to ensure CSS variables are set first
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('caret-style-update'))
+      }, 10)
     },
     [caretColor, persistTheme]
   )

@@ -249,40 +249,87 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
 
   // Listen for caret style updates and force CodeMirror to refresh cursor
   useEffect(() => {
-    if (!viewRef.current) return
+    if (!viewRef.current) {
+      // Even if viewRef isn't ready, create the style element so it's available
+      let styleElement = document.getElementById('codemirror-cursor-override')
+      if (!styleElement) {
+        styleElement = document.createElement('style')
+        styleElement.id = 'codemirror-cursor-override'
+        document.head.appendChild(styleElement)
+      }
+      return
+    }
 
     // Create a style element as a fallback to ensure styles are applied
+    // Place it at the end of head for maximum priority
     let styleElement = document.getElementById('codemirror-cursor-override')
     if (!styleElement) {
       styleElement = document.createElement('style')
       styleElement.id = 'codemirror-cursor-override'
+      // Append to end of head to ensure it has highest priority
       document.head.appendChild(styleElement)
+    }
+    
+    // Ensure container has correct class immediately
+    const container = viewRef.current.dom?.closest('.markdown-editor') || 
+                     document.querySelector('.markdown-editor')
+    if (container) {
+      const root = document.documentElement
+      const currentCaretStyle = getComputedStyle(root).getPropertyValue('--caret-style').trim() || caretStyle || 'smooth'
+      const expectedClass = `cursor-${currentCaretStyle}`
+      container.classList.remove('cursor-block', 'cursor-smooth', 'cursor-sharp', 'cursor-bar', 'cursor-line')
+      container.classList.add(expectedClass)
+      console.log('[MarkdownEditor] Set container class to:', expectedClass)
     }
 
     const updateStyleElement = () => {
-      // Get current CSS variable values from root
+      // Use state values directly, with fallback to CSS variables
       const root = document.documentElement
-      let currentCaretWidth = getComputedStyle(root).getPropertyValue('--caret-width').trim()
+      
+      // Get caret width - prefer state, then CSS variable, then default
+      let currentCaretWidth = caretWidth
       if (!currentCaretWidth || currentCaretWidth === '') {
-        // Fallback: try to get from inline style
+        currentCaretWidth = getComputedStyle(root).getPropertyValue('--caret-width').trim()
+      }
+      if (!currentCaretWidth || currentCaretWidth === '') {
         currentCaretWidth = root.style.getPropertyValue('--caret-width').trim() || '2px'
       }
       if (!currentCaretWidth.endsWith('px')) {
         currentCaretWidth = currentCaretWidth + 'px'
       }
       
-      let currentCaretColor = getComputedStyle(root).getPropertyValue('--caret-color').trim()
+      // Get caret color - prefer state, then CSS variable, then default
+      let currentCaretColor = caretColor
+      if (!currentCaretColor || currentCaretColor === '') {
+        currentCaretColor = getComputedStyle(root).getPropertyValue('--caret-color').trim()
+      }
       if (!currentCaretColor || currentCaretColor === '') {
         currentCaretColor = getComputedStyle(root).getPropertyValue('--text-accent').trim() || '#40bafa'
       }
       
-      const currentCaretStyle = getComputedStyle(root).getPropertyValue('--caret-style').trim() || 'smooth'
+      // Get caret style - prefer state, then CSS variable, then default
+      let currentCaretStyle = caretStyle || getComputedStyle(root).getPropertyValue('--caret-style').trim() || 'smooth'
       
-      // Update the style element - this will apply to any cursor that gets created
+      // Update the style element with maximum specificity to override everything
+      // Use universal selectors that will work regardless of container classes
+      // IMPORTANT: Use the most specific selectors possible to override CodeMirror's inline styles
       const isBlock = currentCaretStyle === 'block'
       if (isBlock) {
         styleElement.textContent = `
-          .cm-cursor, .cm-cursor-primary, .cm-editor .cm-cursor, .markdown-editor .cm-cursor {
+          /* Block cursor - highest specificity with all possible combinations */
+          .markdown-editor.cursor-block .cm-editor.cm-focused .cm-cursor,
+          .markdown-editor.cursor-block .cm-editor .cm-cursor-primary,
+          .markdown-editor.cursor-block .cm-cursor,
+          .cursor-block .cm-editor.cm-focused .cm-cursor,
+          .cursor-block .cm-editor .cm-cursor-primary,
+          .cursor-block .cm-cursor,
+          .cm-editor.cursor-block .cm-cursor,
+          .cm-editor.cursor-block .cm-cursor-primary,
+          /* Fallback for any cursor */
+          .markdown-editor .cm-editor .cm-cursor,
+          .markdown-editor .cm-cursor,
+          .cm-editor .cm-cursor,
+          .cm-cursor {
             border-left: none !important;
             background-color: ${currentCaretColor} !important;
             width: 0.6em !important;
@@ -291,8 +338,47 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
           }
         `
       } else {
+        const isSharp = currentCaretStyle === 'sharp'
         styleElement.textContent = `
-          .cm-cursor, .cm-cursor-primary, .cm-editor .cm-cursor, .markdown-editor .cm-cursor {
+          /* Line cursor styles - highest specificity with all possible combinations */
+          ${isSharp ? `
+          .markdown-editor.cursor-sharp .cm-editor.cm-focused .cm-cursor,
+          .markdown-editor.cursor-sharp .cm-editor .cm-cursor-primary,
+          .markdown-editor.cursor-sharp .cm-cursor,
+          .cursor-sharp .cm-editor.cm-focused .cm-cursor,
+          .cursor-sharp .cm-editor .cm-cursor-primary,
+          .cursor-sharp .cm-cursor,
+          .cm-editor.cursor-sharp .cm-cursor,
+          .cm-editor.cursor-sharp .cm-cursor-primary {
+            border-left-width: ${currentCaretWidth} !important;
+            border-left-color: ${currentCaretColor} !important;
+            border-left-style: solid !important;
+            margin-left: calc(-1 * ${currentCaretWidth} / 2) !important;
+            opacity: 1 !important;
+          }
+          ` : `
+          .markdown-editor.cursor-smooth .cm-editor.cm-focused .cm-cursor,
+          .markdown-editor.cursor-smooth .cm-editor .cm-cursor-primary,
+          .markdown-editor.cursor-smooth .cm-cursor,
+          .cursor-smooth .cm-editor.cm-focused .cm-cursor,
+          .cursor-smooth .cm-editor .cm-cursor-primary,
+          .cursor-smooth .cm-cursor,
+          .cm-editor.cursor-smooth .cm-cursor,
+          .cm-editor.cursor-smooth .cm-cursor-primary {
+            border-left-width: ${currentCaretWidth} !important;
+            border-left-color: ${currentCaretColor} !important;
+            border-left-style: solid !important;
+            margin-left: calc(-1 * ${currentCaretWidth} / 2) !important;
+          }
+          `}
+          /* Fallback for any cursor - must come last to override everything */
+          .markdown-editor .cm-editor.cm-focused .cm-cursor,
+          .markdown-editor .cm-editor .cm-cursor-primary,
+          .markdown-editor .cm-cursor,
+          .cm-editor.cm-focused .cm-cursor,
+          .cm-editor .cm-cursor-primary,
+          .cm-editor .cm-cursor,
+          .cm-cursor {
             border-left-width: ${currentCaretWidth} !important;
             border-left-color: ${currentCaretColor} !important;
             border-left-style: solid !important;
@@ -304,7 +390,12 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
       console.log('[MarkdownEditor] Updated style element:', { 
         currentCaretWidth, 
         currentCaretColor, 
-        currentCaretStyle
+        currentCaretStyle,
+        caretWidthFromState: caretWidth,
+        caretColorFromState: caretColor,
+        caretStyleFromState: caretStyle,
+        styleElementExists: !!styleElement,
+        styleElementInHead: document.head.contains(styleElement)
       })
     }
 
@@ -354,26 +445,31 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
       })
       
       // Apply to all cursor elements directly (in addition to style element)
+      // Use setProperty with important flag and also set style attribute directly
       cursors.forEach((cursor, index) => {
         const isBlock = currentCaretStyle === 'block'
         
+        // Remove all existing inline styles first
+        cursor.style.removeProperty('border-left')
+        cursor.style.removeProperty('border-left-width')
+        cursor.style.removeProperty('border-left-color')
+        cursor.style.removeProperty('border-left-style')
+        cursor.style.removeProperty('background-color')
+        cursor.style.removeProperty('width')
+        cursor.style.removeProperty('opacity')
+        cursor.style.removeProperty('margin-left')
+        
         if (isBlock) {
           // Block cursor uses background-color instead of border
-          cursor.style.setProperty('border-left', 'none', 'important')
-          cursor.style.setProperty('background-color', currentCaretColor, 'important')
-          cursor.style.setProperty('width', '0.6em', 'important')
-          cursor.style.setProperty('opacity', '0.7', 'important')
-          cursor.style.setProperty('margin-left', '0', 'important')
+          cursor.style.cssText += `border-left: none !important; background-color: ${currentCaretColor} !important; width: 0.6em !important; opacity: 0.7 !important; margin-left: 0 !important;`
         } else {
-          // Line cursor uses border-left
-          cursor.style.setProperty('border-left-width', currentCaretWidth, 'important')
-          cursor.style.setProperty('border-left-color', currentCaretColor, 'important')
-          cursor.style.setProperty('border-left-style', 'solid', 'important')
-          cursor.style.setProperty('margin-left', `calc(-1 * ${currentCaretWidth} / 2)`, 'important')
+          // Line cursor uses border-left - use cssText for maximum override
+          cursor.style.cssText += `border-left-width: ${currentCaretWidth} !important; border-left-color: ${currentCaretColor} !important; border-left-style: solid !important; margin-left: calc(-1 * ${currentCaretWidth} / 2) !important;`
         }
         
-        // Force a reflow
+        // Force a reflow and repaint
         void cursor.offsetHeight
+        void cursor.getBoundingClientRect()
       })
       
       // Force CodeMirror to recalculate layout
@@ -469,9 +565,27 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
     }
     
     // Set up interval to periodically update style element (ensures it's always current)
+    // Also check if container class matches current style
     const intervalId = setInterval(() => {
       updateStyleElement()
-    }, 1000)
+      // Ensure container has correct class
+      const container = viewRef.current?.dom?.closest('.markdown-editor') || 
+                       document.querySelector('.markdown-editor')
+      if (container) {
+        const root = document.documentElement
+        const currentCaretStyle = getComputedStyle(root).getPropertyValue('--caret-style').trim() || caretStyle || 'smooth'
+        const expectedClass = `cursor-${currentCaretStyle}`
+        // Remove all cursor-* classes and add the correct one
+        if (!container.classList.contains(expectedClass)) {
+          container.classList.remove('cursor-block', 'cursor-smooth', 'cursor-sharp', 'cursor-bar', 'cursor-line')
+          container.classList.add(expectedClass)
+          console.log('[MarkdownEditor] Updated container class to:', expectedClass)
+        }
+      }
+    }, 500)
+    
+    // Also update immediately when caretStyle changes (separate from the interval)
+    updateStyleElement()
     
     return () => {
       observer.disconnect()

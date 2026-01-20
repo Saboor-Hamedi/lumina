@@ -29,6 +29,7 @@ export const seamlessTheme = EditorView.theme({
     opacity: '1 !important'
   },
   // Dynamic cursor styling - uses CSS variables for real-time updates
+  // Note: These styles are overridden by the injected style element for maximum control
   '.cm-cursor': {
     borderLeft: 'var(--caret-width, 2px) solid var(--caret-color, var(--text-accent))',
     marginLeft: 'calc(-1 * var(--caret-width, 2px) / 2)',

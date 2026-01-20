@@ -795,13 +795,15 @@
 
 .tag-suggestions {
   position: absolute;
-  bottom: calc(100% + 8px);
+  top: calc(100% + 8px);
   left: 0;
   background: var(--bg-panel);
   border: 1px solid var(--border-card);
   border-radius: 8px;
   padding: 4px;
   min-width: 150px;
+  max-height: 200px;
+  overflow-y: auto;
   box-shadow: 0 8px 24px rgba(0,0,0,0.3);
   z-index: 10000; /* High z-index to appear above tabbar and other elements */
   backdrop-filter: blur(10px);

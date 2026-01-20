@@ -22,10 +22,10 @@
 }
 
 .inline-ai-modal {
-  background: var(--bg-panel);
-  border: 1px solid var(--border-dim);
+  background: var(--bg-panel, var(--bg-app));
+  border: 1px solid var(--border-dim, var(--border-card));
   border-radius: 4px;
-  box-shadow: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   width: auto;
   min-width: 300px;
   max-width: 450px;
@@ -38,6 +38,7 @@
   visibility: visible;
   opacity: 1;
   z-index: calc(var(--z-modal, 2000) + 1);
+  color: var(--text-main);
 }
 
 @keyframes slideUp {
@@ -62,7 +63,7 @@
   gap: 6px;
   font-weight: 600;
   font-size: 13px;
-  color: var(--text-primary, #fff);
+  color: var(--text-main);
 }
 
 .inline-ai-icon {
@@ -72,7 +73,7 @@
 .inline-ai-close {
   background: none;
   border: none;
-  color: var(--text-secondary, #999);
+  color: var(--text-muted, var(--text-faint));
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
@@ -83,8 +84,8 @@
 }
 
 .inline-ai-close:hover {
-  background: var(--bg-hover, #2a2a2a);
-  color: var(--text-primary, #fff);
+  background: var(--bg-active);
+  color: var(--text-main);
 }
 
 /* Compact form - just input + button */
@@ -137,8 +138,8 @@
   display: inline-block;
   padding: 2px 4px;
   margin: 0 2px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-dim);
+  background: var(--bg-panel, var(--bg-active));
+  border: 1px solid var(--border-dim, var(--border-card));
   border-radius: 3px;
   font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
   font-size: 9px;
@@ -164,7 +165,8 @@
 
 .inline-ai-input-compact:focus {
   border-color: var(--text-accent);
-  box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb, 64, 186, 250), 0.1);
+  box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb, 64, 186, 250), 0.15);
+  outline: none;
 }
 
 .inline-ai-input-compact:disabled {
@@ -183,7 +185,7 @@
   border: none;
   border-radius: 3px;
   background: var(--text-accent);
-  color: #fff;
+  color: #fff; /* White text on accent background is always readable */
   cursor: pointer;
   transition: all 0.2s;
   flex-shrink: 0;
@@ -191,7 +193,7 @@
 }
 
 .inline-ai-send-btn:hover:not(:disabled) {
-  background: #3a8eef;
+  background: var(--text-accent-hover, var(--text-accent));
   transform: scale(1.05);
 }
 
@@ -342,7 +344,7 @@
 .inline-ai-btn-insert {
   background: var(--text-accent);
   border-color: var(--text-accent);
-  color: #fff;
+  color: #fff; /* White text on accent background is always readable */
 }
 
 .inline-ai-btn-insert:hover:not(:disabled) {
@@ -362,9 +364,9 @@
 
 .inline-ai-error-compact {
   padding: 8px;
-  background: rgba(239, 68, 68, 0.1);
-  border-top: 1px solid rgba(239, 68, 68, 0.3);
-  color: #ef4444;
+  background: rgba(var(--icon-danger-rgb, 239, 68, 68), 0.1);
+  border-top: 1px solid rgba(var(--icon-danger-rgb, 239, 68, 68), 0.3);
+  color: var(--icon-danger, #ef4444);
   font-size: 11px;
 }
 
@@ -401,40 +403,5 @@
   display: none;
 }
 
-/* Dark mode adjustments */
-@media (prefers-color-scheme: dark) {
-  .inline-ai-modal {
-    background: #1e1e1e;
-    border-color: #333;
-  }
-}
-
-/* Light mode support */
-@media (prefers-color-scheme: light) {
-  .inline-ai-modal {
-    background: #ffffff;
-    border-color: #e0e0e0;
-  }
-  
-  .inline-ai-input {
-    background: #f5f5f5;
-    border-color: #e0e0e0;
-    color: #1e1e1e;
-  }
-  
-  .inline-ai-response {
-    background: #f5f5f5;
-    border-color: #e0e0e0;
-    color: #1e1e1e;
-  }
-  
-  .inline-ai-title {
-    color: #1e1e1e;
-  }
-  
-  .inline-ai-btn {
-    background: #f5f5f5;
-    border-color: #e0e0e0;
-    color: #1e1e1e;
-  }
-}
+/* Theme variables are applied via data-theme attribute on document root */
+/* All colors use CSS variables that automatically update with theme changes */

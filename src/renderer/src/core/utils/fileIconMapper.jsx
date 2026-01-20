@@ -42,7 +42,8 @@ import {
   Send,
   Share2,
   Sparkles,
-  Layers
+  Layers,
+  LayoutTemplate
 } from 'lucide-react'
 
 /**
@@ -143,7 +144,10 @@ const getFileIcon = (title, language) => {
     'routes': Globe,
     'pages': File,
     'views': File,
-    'templates': File,
+    'templates': LayoutTemplate,
+    'template': LayoutTemplate,
+    'templates.md': LayoutTemplate,
+    'template.md': LayoutTemplate,
     'assets': ImageIcon,
     'public': Globe,
     'static': Globe,
@@ -285,7 +289,7 @@ const getFileIcon = (title, language) => {
     { pattern: /route/, icon: Globe },
     { pattern: /page/, icon: File },
     { pattern: /view/, icon: File },
-    { pattern: /template/, icon: File },
+    { pattern: /template/, icon: LayoutTemplate },
     { pattern: /asset/, icon: ImageIcon },
     { pattern: /style/, icon: FileCode },
     { pattern: /theme/, icon: Zap },
