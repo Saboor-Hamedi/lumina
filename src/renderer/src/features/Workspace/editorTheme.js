@@ -29,16 +29,33 @@ export const seamlessTheme = EditorView.theme({
     opacity: '1 !important'
   },
   // Dynamic cursor styling - uses CSS variables for real-time updates
-  // Note: These styles are minimal - the injected style element and direct DOM manipulation handle the actual styling
-  // This prevents CodeMirror from setting default 1px black cursor
+  // The CSS file provides the actual styling with !important overrides
+  // This theme sets up the structure and basic properties
   '.cm-cursor': {
-    // Don't set border here - let CSS and injected styles handle it
-    // This prevents CodeMirror from applying default 1px black border
-    transition: 'border-color 0.15s ease, border-width 0.15s ease, background-color 0.15s ease'
+    // Use CSS variables - the CSS file will override with !important if needed
+    borderLeftWidth: 'var(--caret-width, 2px)',
+    borderLeftColor: 'var(--caret-color)',
+    borderLeftStyle: 'solid',
+    marginLeft: 'calc(-1 * var(--caret-width, 2px) / 2)',
+    transition: 'border-color 0.15s ease, border-width 0.15s ease, background-color 0.15s ease',
+    pointerEvents: 'none'
   },
-  // Block cursor style override
+  // Block cursor style - uses background instead of border
   '.cursor-block .cm-cursor': {
-    // Don't set styles here - let injected styles handle it
+    borderLeft: 'none',
+    backgroundColor: 'var(--caret-color)',
+    width: '0.6em',
+    opacity: '0.7',
+    marginLeft: '0',
     transition: 'background-color 0.15s ease, opacity 0.2s ease'
+  },
+  // Smooth cursor style (default) - additional transitions
+  '.cursor-smooth .cm-cursor, .cursor-bar .cm-cursor': {
+    transition: 'transform 0.1s cubic-bezier(0, 0, 0.2, 1), opacity 0.2s, border-color 0.15s ease, border-width 0.15s ease'
+  },
+  // Sharp cursor style - no opacity transition
+  '.cursor-sharp .cm-cursor, .cursor-line .cm-cursor': {
+    opacity: '1',
+    transition: 'border-color 0.15s ease, border-width 0.15s ease'
   }
 })

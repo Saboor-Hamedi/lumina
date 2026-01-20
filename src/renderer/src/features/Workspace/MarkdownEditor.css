@@ -195,10 +195,24 @@
 }
 
 .cm-hidden-mark {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-  z-index: -1;
+  color: transparent !important;
+  font-size: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  user-select: none !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  height: 0 !important;
+  display: inline-block !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  left: -9999px !important;
+  visibility: hidden !important;
+  text-indent: -9999px !important;
+  transition: none !important; /* Prevent transitions that cause layout shifts */
+  animation: none !important; /* Prevent animations */
+  transform: none !important; /* Prevent transforms */
 }
 
 .tab-context {
@@ -669,7 +683,19 @@
 }
 
 .mode-reading .cm-content,
-.mode-live .cm-content,
+.mode-live .cm-content {
+  cursor: default; /* Preview mode - not editable */
+}
+
+.mode-live .cm-cursor {
+  display: none !important; /* Hide cursor in preview mode */
+}
+
+.mode-live .cm-activeLine {
+  background-color: transparent !important; /* No active line highlight in preview */
+  border-left: none !important;
+}
+
 .mode-source .cm-content {
   cursor: text;
 }
@@ -1018,10 +1044,187 @@
 /* 2. LIVE MODE: Premium typography (Default) */
 /* Inherits base styles */
 
-/* 3. READING MODE: Pure focus, clean and centered */
+/* 3. READING MODE: Pure focus, clean and centered - HTML Preview */
 .mode-reading .editor-canvas-wrap {
   /* Match Live Mode Width for Zero Shift - must be exactly the same */
   max-width: 760px; /* Changed from 720px to match live mode */
+}
+
+/* Hide CodeMirror in reading mode, show preview */
+.mode-reading .cm-host-container {
+  display: none !important;
+}
+
+.mode-reading .reading-preview-container {
+  display: block !important;
+}
+
+.mode-live .reading-preview-container {
+  display: none !important;
+}
+
+/* Reading Preview Container - Rendered HTML */
+.reading-preview-container {
+  padding: 2rem 0 4rem 0;
+  max-width: 100%;
+  margin: 0 auto;
+  min-height: 200px;
+  display: none; /* Hidden by default, shown in reading mode */
+}
+
+.reading-preview-loading {
+  padding: 4rem 2rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.reading-preview-content {
+  font-family: var(--preview-font-family, var(--font-editor, 'Inter', -apple-system, sans-serif));
+  font-size: var(--preview-font-size, 1.05rem);
+  line-height: 1.8;
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+  animation: contentFadeIn 0.3s ease-out;
+}
+
+@keyframes contentFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.reading-preview-content h1 {
+  font-size: 2.5em;
+  font-weight: 800;
+  margin-bottom: 0.8em;
+  margin-top: 0;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+
+.reading-preview-content h2 {
+  font-size: 1.8em;
+  font-weight: 700;
+  margin-top: 2.5em;
+  margin-bottom: 1em;
+  color: var(--text-main);
+  opacity: 0.95;
+  line-height: 1.3;
+}
+
+.reading-preview-content h3 {
+  font-size: 1.4em;
+  font-weight: 600;
+  margin-top: 2em;
+  margin-bottom: 0.8em;
+  color: var(--text-main);
+  opacity: 0.9;
+}
+
+.reading-preview-content p {
+  margin-bottom: 1.6em;
+  font-size: 1.05rem;
+  opacity: 0.9;
+  line-height: 1.8;
+}
+
+.reading-preview-content pre {
+  background: rgba(var(--text-accent-rgb), 0.03);
+  padding: 1.5em;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  overflow-x: auto;
+  margin: 2em 0;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.9em;
+  line-height: 1.6;
+}
+
+.reading-preview-content code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  background: rgba(var(--text-accent-rgb), 0.1);
+  padding: 0.2em 0.5em;
+  border-radius: 6px;
+  font-size: 0.9em;
+  color: var(--text-accent);
+}
+
+.reading-preview-content pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+}
+
+.reading-preview-content blockquote {
+  border-left: 4px solid var(--text-accent);
+  background: rgba(var(--text-accent-rgb), 0.05);
+  padding: 1.5em 2em;
+  margin: 2em 0;
+  border-radius: 0 8px 8px 0;
+  font-style: italic;
+  font-size: 1.1em;
+  color: var(--text-muted);
+}
+
+.reading-preview-content ul,
+.reading-preview-content ol {
+  margin-bottom: 2em;
+  padding-left: 1.5em;
+}
+
+.reading-preview-content li {
+  margin-bottom: 0.8em;
+  line-height: 1.8;
+}
+
+.reading-preview-content hr {
+  border: none;
+  height: 1px;
+  background: var(--border-dim);
+  margin: 4rem 0;
+}
+
+.reading-preview-content img {
+  max-width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  margin: 2em 0;
+}
+
+.reading-preview-content .preview-wikilink {
+  color: var(--text-accent);
+  text-decoration: none;
+  cursor: pointer;
+  font-weight: 600;
+  border-bottom: 1px dashed rgba(var(--text-accent-rgb), 0.3);
+  transition: all 0.2s;
+}
+
+.reading-preview-content .preview-wikilink:hover {
+  border-bottom-style: solid;
+  background: rgba(var(--text-accent-rgb), 0.05);
+}
+
+.reading-preview-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2em 0;
+  font-size: 0.95em;
+}
+
+.reading-preview-content th {
+  text-align: left;
+  padding: 12px;
+  background: rgba(var(--text-accent-rgb), 0.05);
+  border-bottom: 2px solid var(--border-dim);
+  font-weight: 600;
+}
+
+.reading-preview-content td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-dim);
 }
 
 .mode-reading .cm-content {
@@ -1138,25 +1341,136 @@
   font-size: 0.95em;
 }
 
-/* 
- * Zero-Shift Syntax Hiding (Ironclad Engine)
- * We park syntax marks in the left gutter (40px)
- */
-.mode-live .cm-hidden-mark {
-  opacity: 0 !important;
-  position: absolute;
-  left: -32px; /* Pull into the 40px left padding area */
-  width: 30px;
-  text-align: right;
-  display: inline-block !important;
-  pointer-events: none;
-  transition: opacity 0.15s ease;
+/* Enhanced Code Blocks in Preview Mode */
+.mode-live .cm-codeblock,
+.mode-live .cm-line[class*="cm-codeblock-"],
+.mode-live .cm-line.cm-codeblock-begin,
+.mode-live .cm-line.cm-codeblock-end {
+  background: rgba(var(--text-accent-rgb), 0.03) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 8px !important;
+  padding: 1em !important;
+  margin: 1.5em 0 !important;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace !important;
+  font-size: 0.9em !important;
+  line-height: 1.6 !important;
+  overflow-x: auto !important;
+  display: block !important;
 }
 
-.cm-activeLine .cm-hidden-mark {
-  opacity: 0.4 !important; /* Ghosting reveal */
-  pointer-events: auto;
+/* Hide code block fence markers in preview mode */
+.mode-live .cm-line.cm-codeblock-begin .cm-codeblock-fence,
+.mode-live .cm-line.cm-codeblock-end .cm-codeblock-fence {
+  display: none !important;
 }
+
+.mode-live .cm-codeblock-header {
+  background: rgba(var(--text-accent-rgb), 0.05) !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
+  padding: 8px 16px !important;
+  border-radius: 8px 8px 0 0 !important;
+  margin: 0 !important;
+}
+
+.mode-live .cm-codeblock-body {
+  padding: 1em !important;
+  background: rgba(var(--text-accent-rgb), 0.02) !important;
+}
+
+.mode-live .cm-codeblock-footer {
+  border-radius: 0 0 8px 8px !important;
+  background: rgba(var(--text-accent-rgb), 0.05) !important;
+}
+
+/* Enhanced Tables in Preview Mode */
+.mode-live .cm-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  margin: 2em 0 !important;
+  font-size: 0.95em !important;
+  display: table !important;
+  table-layout: auto !important;
+}
+
+.mode-live .cm-table-header {
+  background: rgba(var(--text-accent-rgb), 0.05) !important;
+  font-weight: 700 !important;
+  border-bottom: 2px solid var(--border-dim) !important;
+  color: var(--text-main) !important;
+  display: table-header-group !important;
+}
+
+.mode-live .cm-table-row {
+  border-bottom: 1px solid var(--border-dim) !important;
+  display: table-row !important;
+}
+
+.mode-live .cm-table-row:nth-child(even) {
+  background: rgba(var(--text-accent-rgb), 0.02) !important;
+}
+
+.mode-live .cm-table-cell {
+  padding: 12px 16px !important;
+  text-align: left !important;
+  color: var(--text-main) !important;
+  display: table-cell !important;
+  border: 1px solid var(--border-dim) !important;
+  vertical-align: top !important;
+}
+
+.mode-live .cm-table-pipe {
+  display: none !important; /* Hide table pipes in preview */
+}
+
+/* 
+ * Zero-Shift Syntax Hiding (Ironclad Engine)
+ * Hide all markdown syntax in preview mode - clean rendered view
+ * Completely remove from layout flow to prevent any hover shifts
+ */
+.mode-live .cm-hidden-mark {
+  color: transparent !important;
+  font-size: 0 !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  display: none !important; /* Completely remove from layout flow to prevent hover shifts */
+  pointer-events: none !important;
+  user-select: none !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+  visibility: hidden !important;
+  text-indent: -9999px !important;
+  transition: none !important; /* Prevent transitions that cause layout shifts */
+  animation: none !important; /* Prevent animations */
+  transform: none !important; /* Prevent transforms */
+}
+
+/* Ensure hidden marks never cause layout shifts on hover - completely remove from flow */
+.mode-live .cm-line:hover .cm-hidden-mark,
+.mode-live .cm-content:hover .cm-hidden-mark,
+.mode-live .cm-strong:hover .cm-hidden-mark,
+.mode-live .cm-em:hover .cm-hidden-mark,
+.mode-live .cm-heading:hover .cm-hidden-mark,
+.mode-live .cm-inline-code:hover .cm-hidden-mark {
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+  position: absolute !important;
+  left: -9999px !important;
+  visibility: hidden !important;
+}
+
+/* In preview mode, symbols are always hidden - no reveal on active line */
 
 /* Fix heading alignment - ensure # mark doesn't push text to the right */
 /* The # mark is always hidden and positioned absolutely to never affect text flow */
@@ -1164,13 +1478,22 @@
   pointer-events: none !important;
   /* Completely remove from flow with zero width so it doesn't affect text alignment */
   position: absolute !important;
-  left: -35px !important; /* Move to gutter area (avoid going over border) */
+  left: -9999px !important; /* Move completely off-screen to prevent any layout shifts */
   width: 0 !important; /* Zero width when hidden - CRITICAL for alignment */
+  min-width: 0 !important;
+  max-width: 0 !important;
+  height: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
   display: inline-block !important;
   overflow: hidden !important;
+  visibility: hidden !important;
   /* This ensures heading text starts at same position as paragraphs */
+}
+
+/* In preview mode, ensure headings never cause shifts on hover */
+.mode-live .cm-heading .cm-hidden-mark {
+  display: none !important; /* Completely remove from DOM flow */
 }
 
 /* Ensure heading text itself starts at the same position as paragraphs */

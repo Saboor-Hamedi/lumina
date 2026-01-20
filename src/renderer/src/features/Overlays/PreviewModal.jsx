@@ -121,15 +121,18 @@ const PreviewModal = ({ isOpen, onClose, content, onNavigate, title: snippetTitl
 const previewStyles = `
   :host {
     display: block;
-    font-family: var(--font-editor, 'Inter', -apple-system, sans-serif);
+    font-family: var(--preview-font-family, var(--font-editor, 'Inter', -apple-system, sans-serif));
+    font-size: var(--preview-font-size, 1.05rem);
     line-height: 1.8;
     color: var(--text-main);
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
   .preview-inner-canvas {
     padding: 4rem 10% 8rem 10%;
     max-width: 900px;
     margin: 0 auto;
+    background: var(--bg-app);
   }
   article {
     animation: contentFadeIn 0.5s ease-out;
@@ -142,8 +145,10 @@ const previewStyles = `
     font-size: 3em; 
     font-weight: 800; 
     margin-bottom: 0.8em; 
+    margin-top: 0;
     letter-spacing: -0.02em;
     color: var(--text-main);
+    line-height: 1.2;
   }
   h2 { 
     font-size: 1.8em; 
@@ -151,27 +156,45 @@ const previewStyles = `
     margin-top: 2.5em; 
     margin-bottom: 1em;
     color: var(--text-main);
-    opacity: 0.9;
+    opacity: 0.95;
+    line-height: 1.3;
   }
   h3 {
     font-size: 1.4em;
     font-weight: 600;
     margin-top: 2em;
     margin-bottom: 0.8em;
+    color: var(--text-main);
+    opacity: 0.9;
   }
-  p { margin-bottom: 1.6em; font-size: 1.05rem; opacity: 0.9; }
+  h4, h5, h6 {
+    font-size: 1.2em;
+    font-weight: 600;
+    margin-top: 1.5em;
+    margin-bottom: 0.6em;
+    color: var(--text-main);
+    opacity: 0.85;
+  }
+  p { 
+    margin-bottom: 1.6em; 
+    font-size: 1.05rem; 
+    opacity: 0.9; 
+    line-height: 1.8;
+  }
   
   pre { 
     background: rgba(var(--text-accent-rgb), 0.03);
-    padding: 2em; 
+    padding: 1.5em; 
     border-radius: 12px; 
     border: 1px solid var(--border-subtle); 
     overflow-x: auto; 
     margin: 2em 0;
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.9em;
+    line-height: 1.6;
   }
   code { 
-    font-family: inherit; 
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
     background: rgba(var(--text-accent-rgb), 0.1); 
     padding: 0.2em 0.5em; 
     border-radius: 6px; 
@@ -182,6 +205,7 @@ const previewStyles = `
     background: transparent;
     padding: 0;
     color: inherit;
+    font-size: inherit;
   }
 
   blockquote {
@@ -195,8 +219,14 @@ const previewStyles = `
     color: var(--text-muted);
   }
 
-  ul, ol { margin-bottom: 2em; padding-left: 1.5em; }
-  li { margin-bottom: 0.8em; }
+  ul, ol { 
+    margin-bottom: 2em; 
+    padding-left: 1.5em; 
+  }
+  li { 
+    margin-bottom: 0.8em; 
+    line-height: 1.8;
+  }
 
   hr {
     border: none;
@@ -207,9 +237,21 @@ const previewStyles = `
 
   img {
     max-width: 100%;
+    height: auto;
     border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     margin: 2em 0;
+  }
+
+  a:not(.preview-wikilink) {
+    color: var(--text-accent);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(var(--text-accent-rgb), 0.3);
+    transition: all 0.2s;
+  }
+  a:not(.preview-wikilink):hover {
+    border-bottom-color: var(--text-accent);
+    background: rgba(var(--text-accent-rgb), 0.05);
   }
 
   .preview-wikilink {
@@ -236,10 +278,29 @@ const previewStyles = `
     padding: 12px;
     background: rgba(var(--text-accent-rgb), 0.05);
     border-bottom: 2px solid var(--border-dim);
+    font-weight: 600;
   }
   td {
     padding: 12px;
     border-bottom: 1px solid var(--border-dim);
+  }
+  tr:hover {
+    background: rgba(var(--text-accent-rgb), 0.02);
+  }
+
+  strong {
+    font-weight: 700;
+    color: var(--text-main);
+  }
+
+  em {
+    font-style: italic;
+    color: var(--text-muted);
+  }
+
+  del {
+    text-decoration: line-through;
+    opacity: 0.7;
   }
 `
 

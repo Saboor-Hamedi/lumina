@@ -403,6 +403,67 @@ export const useFontSettings = () => {
         console.warn('Failed to load theme settings:', err)
       }
     })()
+
+    // Listen for external changes to settings.json
+    let settingsChangedUnsubscribe = null
+    if (window.api?.onSettingsChanged) {
+      settingsChangedUnsubscribe = window.api.onSettingsChanged(async (settings) => {
+        console.log('[useFontSettings] settings.json changed externally, reloading cursor settings...')
+
+        // Reload cursor settings from the new settings
+        try {
+          const cursorSettings = settings?.cursor
+          if (cursorSettings && typeof cursorSettings === 'object') {
+            // Process caretWidth
+            let caretWidth = cursorSettings.caretWidth
+            if (caretWidth !== undefined && caretWidth !== null) {
+              if (typeof caretWidth === 'string' && caretWidth.includes('px')) {
+                caretWidth = parseInt(caretWidth.replace('px', ''), 10)
+              } else if (typeof caretWidth === 'string') {
+                caretWidth = parseInt(caretWidth, 10)
+              }
+              if (isNaN(caretWidth) || caretWidth < 1) {
+                caretWidth = parseInt(DEFAULTS.CARET_WIDTH.replace('px', ''), 10)
+              }
+            }
+
+            const normalizedWidth = clampCaretWidth(caretWidth || DEFAULTS.CARET_WIDTH)
+            const savedCaretStyle = cursorSettings.caretStyle || DEFAULTS.CARET_STYLE
+            const savedCaretColor = cursorSettings.caretColor || ''
+
+            // Apply immediately
+            const root = document.documentElement
+            root.style.setProperty('--caret-style', savedCaretStyle)
+            root.style.setProperty('--caret-width', normalizedWidth)
+
+            let finalCaretColor = savedCaretColor
+            if (!finalCaretColor || finalCaretColor.trim() === '') {
+              const currentTheme = getTheme(settings?.theme || DEFAULTS.THEME)
+              finalCaretColor = currentTheme.colors['--caret-color'] || currentTheme.colors['--text-accent'] || '#40bafa'
+            }
+            root.style.setProperty('--caret-color', finalCaretColor)
+
+            // Update state
+            setCaretStyle(savedCaretStyle)
+            setCaretWidth(normalizedWidth)
+            setCaretColor(savedCaretColor || '')
+
+            // Dispatch event to update CodeMirror
+            requestAnimationFrame(() => {
+              window.dispatchEvent(new CustomEvent('caret-style-update'))
+            })
+          }
+        } catch (err) {
+          console.error('[useFontSettings] Failed to reload cursor settings:', err)
+        }
+      })
+    }
+
+    return () => {
+      if (settingsChangedUnsubscribe) {
+        settingsChangedUnsubscribe()
+      }
+    }
   }, [])
 
   /**

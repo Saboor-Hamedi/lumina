@@ -84,6 +84,15 @@ async function createWindow() {
     setTimeout(() => {
       new AppUpdater(mainWindow)
     }, 5000)
+    
+    // Set up settings file watcher notification
+    SettingsManager.notifyRenderer = (settings) => {
+      BrowserWindow.getAllWindows().forEach(win => {
+        if (win && !win.isDestroyed()) {
+          win.webContents.send('settings:changed', settings)
+        }
+      })
+    }
   })
 
   // Robust Crash Handling (Renderer)

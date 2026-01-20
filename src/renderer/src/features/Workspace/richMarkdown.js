@@ -1,369 +1,453 @@
 import { syntaxTree } from '@codemirror/language'
 import { RangeSetBuilder, StateField, Facet } from '@codemirror/state'
-import { Decoration, EditorView, ViewPlugin } from '@codemirror/view'
-import { HrWidget, CodeBlockHeaderWidget, CodeBlockFooterWidget } from './markdownWidgets'
+import { Decoration, EditorView } from '@codemirror/view'
+import { CodeBlockHeaderWidget, CodeBlockFooterWidget } from './markdownWidgets'
 
 /**
- * Modes for the Lumina Editor
+ * Editor mode facet for Lumina Markdown Editor
+ * Supports: 'source' (show all syntax), 'live' (hide syntax, live preview)
  */
 export const editorMode = Facet.define({
   combine: (values) => values[0] || 'live'
 })
 
-// --- Constants ---
-const HIDDEN_MARKS = new Set([
-  'HeaderMark',
-  'QuoteMark',
-  'EmphasisMark',
-  'StrongEmphasisMark',
-  'CodeMark',
-  'LinkMark',
-  'StrikethroughMark',
-  'ProcessingInstruction'
-])
-
-// --- Decoration Factories (Cached for Performance) ---
-const headingDecos = [
-  null,
-  Decoration.line({ attributes: { class: 'cm-heading cm-heading-1' } }),
-  Decoration.line({ attributes: { class: 'cm-heading cm-heading-2' } }),
-  Decoration.line({ attributes: { class: 'cm-heading cm-heading-3' } }),
-  Decoration.line({ attributes: { class: 'cm-heading cm-heading-4' } }),
-  Decoration.line({ attributes: { class: 'cm-heading cm-heading-5' } }),
-  Decoration.line({ attributes: { class: 'cm-heading cm-heading-6' } })
-]
-const quoteDeco = Decoration.line({ attributes: { class: 'cm-blockquote' } })
-const hrDeco = Decoration.replace({ widget: new HrWidget() })
-const wikilinkDeco = Decoration.mark({ class: 'cm-wikilink' })
-const hideDeco = Decoration.mark({ class: 'cm-hidden-mark' })
-const listMarkDeco = Decoration.mark({ class: 'cm-list-mark' })
-const strongDeco = Decoration.mark({ class: 'cm-strong' })
-const emphasisDeco = Decoration.mark({ class: 'cm-em' })
-const inlineCodeDeco = Decoration.mark({ class: 'cm-inline-code' })
-const taskMarkerDeco = Decoration.mark({ class: 'cm-task-marker' })
-
-// --- Table Decos ---
-const tableRowDeco = Decoration.line({ attributes: { class: 'cm-table-row' } })
-const tableHeaderDeco = Decoration.line({ attributes: { class: 'cm-table-header' } })
-const tableCellDeco = Decoration.mark({ class: 'cm-table-cell' })
-const tablePipeDeco = Decoration.mark({ class: 'cm-table-pipe' })
-const tablePipeHiddenDeco = Decoration.mark({ class: 'cm-table-pipe-hidden' })
-
 /**
- * STRATEGY:
- * CodeMirror 6 does not allow BLOCK decorations (layout widgets) from ViewPlugins.
- * 1. StateField (blockField): Handles layout-level widgets (Code Headers).
- * 2. ViewPlugin (richMarkdownPlugin): Handles high-performance inline/mark/line styling.
+ * Code Block Widget StateField
+ *
+ * Handles layout-level widgets (code block headers/footers) that require
+ * block-level decorations. Inline decorations are handled by CodeMirror's
+ * default markdown language support for better performance and robustness.
+ *
+ * Optimized for smooth typing performance:
+ * - Only rebuilds when code block structure changes (not on every keystroke)
+ * - Uses efficient syntax tree checks instead of string operations
+ * - Skips rebuilds when typing inside code blocks
  */
-
-// --- 1. Block StateField (Layout Stability) ---
 const blockField = StateField.define({
-  create(state) {
-    // Check mode on creation too
-    const mode = state.facet(editorMode)
-    if (mode === 'source') {
-      return Decoration.none
-    }
+  create() {
     return Decoration.none
   },
   update(decos, tr) {
-    // Always check mode first - mode changes should trigger updates
     const mode = tr.state.facet(editorMode)
+    const prevMode = tr.startState.facet(editorMode)
 
-    // In source mode, always return no decorations (clear any existing ones)
-    // This prevents header widgets from appearing when typing ``` in source mode
+    // Source mode: no decorations (show all syntax)
     if (mode === 'source') {
-      // Force clear all decorations in source mode - no widgets should appear
       return Decoration.none
     }
 
-    // Always rebuild on mode changes (reconfigured) to ensure widgets appear correctly
-    // Also rebuild on document changes, selection changes, or viewport changes
-    const prevMode = tr.startState.facet(editorMode)
+    // Always rebuild on mode changes or reconfiguration
     const modeChanged = mode !== prevMode
+    if (modeChanged || tr.reconfigured) {
+      // Force rebuild - mode changed or extensions reconfigured
+    } else if (tr.docChanged) {
+      // FAST PATH: If we have decorations and it's a simple text edit, skip expensive checks
+      // This makes typing smooth by avoiding syntax tree operations on every keystroke
+      if (decos.size > 0) {
+        // Quick check: only rebuild if we're near a fence line
+        try {
+          const cursorPos = tr.state.selection.main.head
+          const cursorLine = tr.state.doc.lineAt(cursorPos)
+          const lineText = cursorLine.text.trim()
 
-    // Always rebuild when:
-    // 1. Document changes (to catch code blocks after edits like hitting enter)
-    // 2. Mode changes (to show/hide headers when switching modes)
-    // 3. Reconfiguration (extensions changed)
-    // 4. Selection changes (might affect visibility)
-    // 5. Viewport changes in reading mode (to ensure headers appear when scrolling)
-    // Also rebuild if we have no decorations but the document might have code blocks
-    // This ensures headers/footers appear correctly in all modes
-    const isReadingMode = mode === 'reading'
-    const wasReadingMode = prevMode === 'reading'
-    const viewportChanged = tr.viewportChanged
+          // If cursor is NOT on a fence line, and we have decorations, likely no structure change
+          if (!lineText.startsWith('```')) {
+            // Quick check: see if any changed lines are fence lines
+            let nearFenceLine = false
+            tr.changes.iterChanges((fromA, toA, fromB) => {
+              try {
+                // Only check the changed lines - much faster
+                const changedLineA = tr.startState.doc.lineAt(
+                  Math.min(fromA, tr.startState.doc.length - 1)
+                )
+                const changedLineB = tr.state.doc.lineAt(Math.min(fromB, tr.state.doc.length - 1))
+                if (
+                  changedLineA.text.trim().startsWith('```') ||
+                  changedLineB.text.trim().startsWith('```')
+                ) {
+                  nearFenceLine = true
+                  return true // Stop iteration
+                }
+              } catch {
+                // If we can't check, assume we might be near a fence
+                nearFenceLine = true
+                return true
+              }
+            })
 
-    // In reading mode, headers should ALWAYS be visible (not dependent on selection)
-    // Rebuild when entering reading mode, on viewport changes, or if no decorations exist
-    const shouldRebuild =
-      tr.docChanged ||
-      tr.selectionSet ||
-      tr.reconfigured ||
-      modeChanged ||
-      (isReadingMode && !wasReadingMode) || // Just entered reading mode - force rebuild
-      (isReadingMode && viewportChanged) || // Viewport changed in reading mode
-      (isReadingMode && decos.size === 0 && tr.state.doc.toString().includes('```')) || // Reading mode but no decorations
-      (!isReadingMode &&
-        decos.size === 0 &&
-        tr.state.doc.length > 0 &&
-        tr.state.doc.toString().includes('```')) // Other modes
-
-    if (!shouldRebuild) {
+            // If not near a fence line, keep existing decorations (smooth typing!)
+            if (!nearFenceLine) {
+              return decos
+            }
+          }
+        } catch {
+          // If quick check fails, continue to full rebuild
+        }
+      }
+    } else if (tr.selectionSet) {
+      // Selection changed - only rebuild if we have no decorations
+      if (decos.size > 0) {
+        return decos
+      }
+    } else {
+      // No document or selection changes - keep existing decorations
       return decos
     }
 
-    // Safety check: ensure document is valid
-    if (!tr.state.doc.length) return Decoration.none
+    // Check for code blocks efficiently using syntax tree (not string conversion)
+    let hasCodeBlocks = false
+    try {
+      const tree = syntaxTree(tr.state)
+      tree.iterate({
+        enter: (node) => {
+          if (node.name === 'FencedCode') {
+            hasCodeBlocks = true
+            return false // Stop iteration once we find one
+          }
+        }
+      })
+    } catch {
+      // If tree iteration fails, assume no code blocks
+    }
 
+    // Empty document or no code blocks: no decorations
+    if (!tr.state.doc.length || (!hasCodeBlocks && decos.size === 0)) {
+      return Decoration.none
+    }
+
+    // Live mode: rebuild on viewport changes
+    if (mode === 'live' && tr.viewportChanged) {
+      // Viewport changed in live mode - rebuild decorations
+    }
+
+    // Build decorations for code blocks
     const builder = new RangeSetBuilder()
     const docLength = tr.state.doc.length
 
     try {
-      syntaxTree(tr.state).iterate({
+      const tree = syntaxTree(tr.state)
+      tree.iterate({
         enter: (node) => {
-          if (node.name === 'FencedCode') {
-            // Safety check: ensure node positions are valid
-            if (node.from < 0 || node.to > docLength || node.from >= node.to) return
+          if (node.name !== 'FencedCode') {
+            return
+          }
 
-            try {
-              const startLine = tr.state.doc.lineAt(node.from)
-              const fenceText = startLine.text.trim()
-              const lang = fenceText.replace(/`/g, '').trim() || 'text'
+          // Validate node positions
+          if (node.from < 0 || node.to > docLength || node.from >= node.to) {
+            return
+          }
 
-              let codeContent = ''
-              const nodeTo = node.to
-              const endLineNum = tr.state.doc.lineAt(nodeTo).number
-              if (startLine.number + 1 < endLineNum) {
-                const startPos = tr.state.doc.line(startLine.number + 1).from
-                const endPos = tr.state.doc.line(endLineNum - 1).to
-                // Safety check: ensure slice positions are valid
-                if (startPos >= 0 && endPos <= docLength && startPos < endPos) {
-                  codeContent = tr.state.doc.sliceString(startPos, endPos)
+          try {
+            const startLine = tr.state.doc.lineAt(node.from)
+            const endLine = tr.state.doc.lineAt(node.to)
+            const fenceText = startLine.text.trim()
+            const lang = fenceText.replace(/`/g, '').trim() || 'text'
+
+            // Extract code content (between fences) - only if needed
+            // For performance, we can skip content extraction if not needed by widget
+            let codeContent = ''
+            if (startLine.number + 1 < endLine.number) {
+              const contentStart = tr.state.doc.line(startLine.number + 1).from
+              const contentEnd = tr.state.doc.line(endLine.number - 1).to
+
+              if (contentStart >= 0 && contentEnd <= docLength && contentStart < contentEnd) {
+                // Only extract if content is reasonably sized (performance optimization)
+                const contentLength = contentEnd - contentStart
+                if (contentLength < 10000) {
+                  // Only extract for smaller blocks to avoid performance issues
+                  codeContent = tr.state.doc.sliceString(contentStart, contentEnd)
                 }
               }
+            }
 
-              // Safety check: ensure decoration position is valid
-              // Only add header widget in live/reading mode, not source mode
-              if (startLine.from >= 0 && startLine.from <= docLength) {
-                builder.add(startLine.from, startLine.from, Decoration.widget({
-                   widget: new CodeBlockHeaderWidget(lang, codeContent), block: true, side: -1
-                }))
-              }
+            // Add header widget (before opening fence)
+            if (startLine.from >= 0 && startLine.from <= docLength) {
+              builder.add(
+                startLine.from,
+                startLine.from,
+                Decoration.widget({
+                  widget: new CodeBlockHeaderWidget(lang, codeContent),
+                  block: true,
+                  side: -1
+                })
+              )
+            }
 
-              // Add footer widget at the end of the code block for visual consistency
-              const endLine = tr.state.doc.lineAt(nodeTo)
-              if (endLine.from >= 0 && endLine.from <= docLength) {
-                builder.add(endLine.to, endLine.to, Decoration.widget({
-                   widget: new CodeBlockFooterWidget(), block: true, side: 1
-                }))
-              }
-            } catch (err) {
-              // Silently skip invalid nodes to prevent crashes
+            // Add footer widget (after closing fence)
+            if (endLine.from >= 0 && endLine.from <= docLength) {
+              builder.add(
+                endLine.to,
+                endLine.to,
+                Decoration.widget({
+                  widget: new CodeBlockFooterWidget(),
+                  block: true,
+                  side: 1
+                })
+              )
+            }
+          } catch (err) {
+            // Silently skip invalid nodes - don't spam console during typing
+            if (process.env.NODE_ENV === 'development') {
               console.warn('[richMarkdown] Error processing code block:', err)
             }
           }
         }
       })
     } catch (err) {
-      // If syntax tree iteration fails, return empty decorations
-      console.warn('[richMarkdown] Error iterating syntax tree:', err)
-      return Decoration.none
+      // If syntax tree iteration fails, return existing decorations or none
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[richMarkdown] Error iterating syntax tree:', err)
+      }
+      return decos.size > 0 ? decos : Decoration.none
     }
 
     return builder.finish()
   },
-  provide: f => EditorView.decorations.from(f)
+  provide: (field) => EditorView.decorations.from(field)
 })
 
-// --- 2. Inline ViewPlugin (Viewport Optimized) ---
-const richMarkdownPlugin = ViewPlugin.fromClass(class {
-  constructor(view) { this.decorations = this.buildDecorations(view) }
-  update(update) {
-    if (update.docChanged || update.selectionSet || update.viewportChanged) {
-      this.decorations = this.buildDecorations(update.view)
+/**
+ * Inline Syntax Hiding StateField
+ * Hides markdown syntax marks (**, ##, [], etc.) in live mode using regex
+ */
+const inlineSyntaxField = StateField.define({
+  create() {
+    return Decoration.none
+  },
+  update(decos, tr) {
+    const mode = tr.state.facet(editorMode)
+
+    // Source mode: show all syntax
+    if (mode === 'source') {
+      return Decoration.none
     }
-  }
-  buildDecorations(view) {
+
+    // Live mode: hide ALL syntax marks (preview mode - no editing)
+    // Always rebuild in live mode to ensure decorations are applied immediately
+    const prevMode = tr.startState.facet(editorMode)
+    const modeChanged = mode !== prevMode
+
+    // If mode changed to source, clear decorations immediately
+    if (modeChanged && mode === 'source') {
+      return Decoration.none
+    }
+
+    // In live mode, always rebuild to ensure symbols are hidden immediately
+    // Don't skip rebuild even if decos exist - we need fresh decorations on mode change
+    if (mode === 'live' && (modeChanged || tr.reconfigured || tr.docChanged)) {
+      // Force rebuild - continue to decoration building
+    } else if (mode !== 'live') {
+      return Decoration.none
+    } else if (decos.size > 0 && !modeChanged && !tr.reconfigured && !tr.docChanged) {
+      // Only skip rebuild if we're in live mode, have decorations, and nothing changed
+      return decos
+    }
+
     const builder = new RangeSetBuilder()
-    const { state, viewport } = view
-    const mode = state.facet(editorMode)
-    const selection = state.selection
+    const doc = tr.state.doc
 
-    const shouldReveal = (at) => {
-      if (mode === 'source') return true
-      if (state.readOnly) return false
-      const line = state.doc.lineAt(at)
-      for (const range of selection.ranges) {
-        if (range.head >= line.from && range.head <= line.to) return true
-      }
-      return false
+    // Handle empty document
+    if (!doc.length) {
+      return Decoration.none
     }
 
-    const from = viewport.from, to = viewport.to
-    const temp = []
-
-    // Inline Regex (WikiLinks & Images)
-    const viewportText = state.doc.sliceString(from, to)
-    const wikiRegex = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g
-    let match
-    while ((match = wikiRegex.exec(viewportText)) !== null) {
-      const start = from + match.index, end = start + match[0].length
-      if (shouldReveal(start)) {
-        temp.push({ from: start, to: start + 2, val: Decoration.mark({ class: 'cm-link-bracket op-50' }) })
-        temp.push({ from: start + 2, to: end - 2, val: wikilinkDeco })
-        temp.push({ from: end - 2, to: end, val: Decoration.mark({ class: 'cm-link-bracket op-50' }) })
-      } else {
-        const pipeIndex = match[0].indexOf('|')
-        if (pipeIndex !== -1) {
-          temp.push({ from: start, to: start + pipeIndex + 1, val: hideDeco })
-          temp.push({ from: start + pipeIndex + 1, to: end - 2, val: wikilinkDeco })
-          temp.push({ from: end - 2, to: end, val: hideDeco })
-        } else {
-          temp.push({ from: start, to: start + 2, val: hideDeco })
-          temp.push({ from: start + 2, to: end - 2, val: wikilinkDeco })
-          temp.push({ from: end - 2, to: end, val: hideDeco })
+    // Get syntax tree to exclude code blocks and tables from inline syntax hiding
+    let codeBlockRanges = []
+    let tableRanges = []
+    try {
+      const tree = syntaxTree(tr.state)
+      tree.iterate({
+        enter: (node) => {
+          if (node.name === 'FencedCode') {
+            codeBlockRanges.push({ from: node.from, to: node.to })
+          } else if (node.name === 'Table' || node.name === 'TableRow' || node.name === 'TableHeader') {
+            tableRanges.push({ from: node.from, to: node.to })
+          }
         }
-      }
+      })
+    } catch (err) {
+      // If tree iteration fails, continue without exclusions
     }
 
-    const imgRegex = /!\[(.*?)\]\((.*?)\)/g
-    let imgM
-    while ((imgM = imgRegex.exec(viewportText)) !== null) {
-      const start = from + imgM.index, end = start + imgM[0].length
-      if (!shouldReveal(start) && imgM[1].length > 0) {
-        temp.push({ from: start, to: end, val: hideDeco })
-      }
+    // Helper to check if position is inside a code block or table
+    const isInCodeBlockOrTable = (pos) => {
+      return codeBlockRanges.some(range => pos >= range.from && pos <= range.to) ||
+             tableRanges.some(range => pos >= range.from && pos <= range.to)
     }
 
-    // Syntax Tree Pass
-    let inLink = false, inImg = false
-    syntaxTree(state).iterate({
-      from, to,
-      enter: (node) => {
-        const { name, from: nF, to: nT } = node
-        if (name === 'Link') inLink = true
-        if (name === 'Image') { inLink = true; inImg = true }
+    // Patterns to match markdown syntax
+    // Note: Order matters - more specific patterns should come first
+    const patterns = [
+      // Code block fences: ``` at start of line (must be first to exclude from other patterns)
+      { regex: /^```[\w]*$/gm, name: 'codeblock-fence' },
+      // Headings: #, ##, ###, etc. at start of line
+      { regex: /^(#{1,6})\s/gm, name: 'heading' },
+      // Bold: **text** (must not be part of ***)
+      { regex: /\*\*([^*\n]+?)\*\*(?!\*)/g, name: 'bold' },
+      // Bold: __text__ (must not be part of ___)
+      { regex: /__(?![_\s])([^_\n]+?)(?<![_\s])__/g, name: 'bold' },
+      // Strikethrough: ~~text~~ (check before italic to avoid conflicts)
+      { regex: /~~([^~\n]+?)~~/g, name: 'strikethrough' },
+      // Italic: *text* (but not ** or ***)
+      { regex: /(?<!\*)\*(?!\*)([^*\n]+?)(?<!\*)\*(?!\*)/g, name: 'italic' },
+      // Italic: _text_ (but not __ or ___)
+      { regex: /(?<!_)_(?!_)([^_\n]+?)(?<!_)_(?!_)/g, name: 'italic' },
+      // Inline code: `code` (but not ``` code blocks)
+      { regex: /(?<!`)`(?!`)([^`\n]+?)(?<!`)`(?!`)/g, name: 'code' },
+      // Links: [text](url) - hide brackets
+      { regex: /\[([^\]]+)\]\([^)]+\)/g, name: 'link' }
+    ]
 
-        if (name.startsWith('ATXHeading')) {
-          const l = parseInt(name.slice(-1)) || 1
-          temp.push({ from: state.doc.lineAt(nF).from, to: state.doc.lineAt(nF).from, val: headingDecos[l] })
-          // Always hide HeaderMark in headings to keep text aligned with paragraphs
-          // The # mark will be shown in gutter when line is active (via CSS)
-        }
-        if (name === 'Blockquote') {
-          for (let i = state.doc.lineAt(Math.max(from, nF)).number; i <= state.doc.lineAt(Math.min(to, nT)).number; i++) {
-            const l = state.doc.line(i); temp.push({ from: l.from, to: l.from, val: quoteDeco })
-          }
-        }
-        if (name === 'HorizontalRule' && !shouldReveal(nF)) temp.push({ from: nF, to: nT, val: hrDeco })
+    try {
+      const text = doc.toString()
+      const decorations = [] // Collect all decorations first
 
-        if (name === 'FencedCode') {
-          const line = state.doc.lineAt(nF)
-          // In source mode, don't add any code block styling - just plain ``` text
-          if (mode !== 'source') {
-            temp.push({ from: line.from, to: line.from, val: Decoration.line({ attributes: { class: 'cm-codeblock-begin' } }) })
-          }
-          // Only hide fence markers in live/reading mode, never in source mode
-          // Also check if we're currently editing this line (cursor is on it)
-          const isEditingFence = selection.ranges.some(r => {
-            const cursorLine = state.doc.lineAt(r.head)
-            return cursorLine.number === line.number || cursorLine.number === state.doc.lineAt(nT).number
-          })
-          if (mode !== 'source' && !shouldReveal(nF) && !isEditingFence) {
-            temp.push({ from: line.from, to: line.to, val: hideDeco })
+      patterns.forEach(({ regex, name }) => {
+        // Create a new regex instance to avoid state issues with global flag
+        const patternRegex = new RegExp(regex.source, regex.flags)
+        let match
+
+        while ((match = patternRegex.exec(text)) !== null) {
+          const matchStart = match.index
+          const matchEnd = matchStart + match[0].length
+
+          // Skip if inside code block or table (they have their own styling)
+          if (isInCodeBlockOrTable(matchStart) || isInCodeBlockOrTable(matchEnd)) {
+            continue
           }
 
-          const endL = state.doc.lineAt(nT)
-          // In source mode, don't add code block body styling
-          if (mode !== 'source') {
-            for (let i = Math.max(line.number + 1, state.doc.lineAt(from).number); i < Math.min(endL.number, state.doc.lineAt(to).number); i++) {
-              const curL = state.doc.line(i)
-              temp.push({ from: curL.from, to: curL.from, val: Decoration.line({ attributes: { class: 'cm-codeblock-body' } }) })
+          // In preview mode, hide ALL symbols regardless of cursor position
+          if (name === 'codeblock-fence') {
+            // Hide the entire ``` fence line
+            decorations.push({
+              from: matchStart,
+              to: matchEnd,
+              decoration: Decoration.mark({ class: 'cm-hidden-mark' })
+            })
+          } else if (name === 'heading') {
+            // Hide the # marks
+            const hashCount = match[1].length
+            decorations.push({
+              from: matchStart,
+              to: matchStart + hashCount,
+              decoration: Decoration.mark({ class: 'cm-hidden-mark' })
+            })
+          } else if (name === 'bold') {
+            // Hide ** or __
+            if (match[0].startsWith('**')) {
+              decorations.push({
+                from: matchStart,
+                to: matchStart + 2,
+                decoration: Decoration.mark({ class: 'cm-hidden-mark' })
+              })
+              decorations.push({
+                from: matchEnd - 2,
+                to: matchEnd,
+                decoration: Decoration.mark({ class: 'cm-hidden-mark' })
+              })
+            } else if (match[0].startsWith('__')) {
+              decorations.push({
+                from: matchStart,
+                to: matchStart + 2,
+                decoration: Decoration.mark({ class: 'cm-hidden-mark' })
+              })
+              decorations.push({
+                from: matchEnd - 2,
+                to: matchEnd,
+                decoration: Decoration.mark({ class: 'cm-hidden-mark' })
+              })
+            }
+          } else if (name === 'italic') {
+            // Hide * or _
+            if (match[0].startsWith('*')) {
+              decorations.push({
+                from: matchStart,
+                to: matchStart + 1,
+                decoration: Decoration.mark({ class: 'cm-hidden-mark' })
+              })
+              decorations.push({
+                from: matchEnd - 1,
+                to: matchEnd,
+                decoration: Decoration.mark({ class: 'cm-hidden-mark' })
+              })
+            } else if (match[0].startsWith('_')) {
+              decorations.push({
+                from: matchStart,
+                to: matchStart + 1,
+                decoration: Decoration.mark({ class: 'cm-hidden-mark' })
+              })
+              decorations.push({
+                from: matchEnd - 1,
+                to: matchEnd,
+                decoration: Decoration.mark({ class: 'cm-hidden-mark' })
+              })
+            }
+          } else if (name === 'code') {
+            // Hide backticks
+            decorations.push({
+              from: matchStart,
+              to: matchStart + 1,
+              decoration: Decoration.mark({ class: 'cm-hidden-mark' })
+            })
+            decorations.push({
+              from: matchEnd - 1,
+              to: matchEnd,
+              decoration: Decoration.mark({ class: 'cm-hidden-mark' })
+            })
+          } else if (name === 'strikethrough') {
+            // Hide ~~
+            decorations.push({
+              from: matchStart,
+              to: matchStart + 2,
+              decoration: Decoration.mark({ class: 'cm-hidden-mark' })
+            })
+            decorations.push({
+              from: matchEnd - 2,
+              to: matchEnd,
+              decoration: Decoration.mark({ class: 'cm-hidden-mark' })
+            })
+          } else if (name === 'link') {
+            // Hide [ and ]
+            decorations.push({
+              from: matchStart,
+              to: matchStart + 1,
+              decoration: Decoration.mark({ class: 'cm-hidden-mark' })
+            })
+            const closingBracket = match[0].indexOf(']')
+            if (closingBracket > 0) {
+              decorations.push({
+                from: matchStart + closingBracket,
+                to: matchStart + closingBracket + 1,
+                decoration: Decoration.mark({ class: 'cm-hidden-mark' })
+              })
             }
           }
-          if (nT <= to) {
-            // In source mode, don't add code block end styling
-            if (mode !== 'source') {
-              temp.push({ from: endL.from, to: endL.from, val: Decoration.line({ attributes: { class: 'cm-codeblock-end' } }) })
-            }
-            // Only hide closing fence in live/reading mode, never in source mode
-            // Also check if we're currently editing this line
-            if (mode !== 'source' && !shouldReveal(nT) && !isEditingFence) {
-              temp.push({ from: endL.from, to: endL.to, val: hideDeco })
-            }
-          }
         }
+      })
 
-        // Always hide HeaderMark in headings to maintain alignment with paragraphs
-        // This ensures # never pushes heading text to the right, matching Obsidian behavior
-        // The # will be shown in gutter when line is active (via CSS)
-        if (name === 'HeaderMark') {
-          // Check if this HeaderMark is part of a heading line
-          const line = state.doc.lineAt(nF)
-          const lineText = line.text
-          // Check if this line is a heading (starts with #)
-          if (lineText.trim().startsWith('#')) {
-            // Always hide HeaderMark in headings (all modes) to keep text aligned
-            // CSS will show it in gutter when appropriate
-            temp.push({ from: nF, to: nT, val: hideDeco })
-          } else if (!shouldReveal(nF)) {
-            // For non-heading HeaderMarks, hide conditionally
-            temp.push({ from: nF, to: nT, val: hideDeco })
-          }
-        } else if (HIDDEN_MARKS.has(name) && !shouldReveal(nF)) {
-          temp.push({ from: nF, to: nT, val: hideDeco })
-        }
-        if (name === 'URL' && inLink && !inImg && !shouldReveal(nF)) temp.push({ from: nF, to: nT, val: hideDeco })
-        if (name === 'ListMark') temp.push({ from: nF, to: nT, val: listMarkDeco })
-        if (name === 'StrongEmphasis') {
-           temp.push({ from: nF, to: nT, val: strongDeco })
-        }
-        if (name === 'Emphasis') {
-           temp.push({ from: nF, to: nT, val: emphasisDeco })
-        }
-        if (name === 'InlineCode') {
-           temp.push({ from: nF, to: nT, val: inlineCodeDeco })
-        }
-        if (name === 'TaskMarker') {
-           temp.push({ from: nF, to: nT, val: taskMarkerDeco })
-        }
+      // Sort decorations by 'from' position before adding to builder
+      decorations.sort((a, b) => a.from - b.from)
 
-        // --- Table Handling ---
-        if (name === 'Table') {
-           // Standard table row decoration logic
-        }
-        if (name === 'TableHeader') {
-           const line = state.doc.lineAt(nF)
-           temp.push({ from: line.from, to: line.from, val: tableHeaderDeco })
-        }
-        if (name === 'TableRow') {
-           const line = state.doc.lineAt(nF)
-           temp.push({ from: line.from, to: line.from, val: tableRowDeco })
-        }
-        if (name === 'TableCell') {
-           temp.push({ from: nF, to: nT, val: tableCellDeco })
-        }
-        if (name === 'TableDelimiter') {
-           if (!shouldReveal(nF)) {
-             temp.push({ from: nF, to: nT, val: tablePipeHiddenDeco })
-           } else {
-             temp.push({ from: nF, to: nT, val: tablePipeDeco })
-           }
-        }
-      },
-      leave: (node) => {
-        if (node.name === 'Link') inLink = false
-        if (node.name === 'Image') { inLink = false; inImg = false }
+      // Add all decorations in sorted order
+      decorations.forEach(({ from, to, decoration }) => {
+        builder.add(from, to, decoration)
+      })
+    } catch (err) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[richMarkdown] Error hiding inline syntax:', err)
       }
-    })
-
-    temp.sort((a, b) => a.from - b.from || a.to - b.to)
-    for (const { from, to, val } of temp) {
-      if (from <= to && from >= 0 && to <= state.doc.length) builder.add(from, to, val)
+      return decos.size > 0 ? decos : Decoration.none
     }
+
     return builder.finish()
-  }
-}, { decorations: v => v.decorations })
+  },
+  provide: (field) => EditorView.decorations.from(field)
+})
 
-export const richMarkdown = [blockField, richMarkdownPlugin]
+/**
+ * Rich Markdown Extensions
+ *
+ * Exports block-level decorations (code block widgets) and
+ * inline syntax hiding (bold, italic, headings, etc.)
+ */
+export const richMarkdown = [blockField, inlineSyntaxField]

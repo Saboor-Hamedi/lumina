@@ -60,7 +60,7 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
 
   const [title, setTitle] = useState(snippet?.title || '')
   const [isDirty, setIsDirty] = useState(false)
-  const [viewMode, setViewMode] = useState('live')
+  const [viewMode, setViewMode] = useState('source') // 'source' = editor (show syntax), 'live' = preview (hide syntax)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [previewContent, setPreviewContent] = useState('')
   const [isInlineAIOpen, setIsInlineAIOpen] = useState(false)
@@ -85,7 +85,13 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
       { type: 'module' }
     )
     workerRef.current.onmessage = (e) => {
-      if (e.data.html !== undefined) setPreviewContent(e.data.html)
+      if (e.data.html !== undefined) {
+        console.log('[MarkdownEditor] Preview content received, length:', e.data.html.length)
+        setPreviewContent(e.data.html)
+      }
+    }
+    workerRef.current.onerror = (err) => {
+      console.error('[MarkdownEditor] Worker error:', err)
     }
     return () => workerRef.current?.terminate()
   }, [])
@@ -97,29 +103,18 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
         doc: content || '',
         extensions: [
           editorMode.of(viewMode),
+          // Make editor read-only in preview mode (live mode)
+          viewMode === 'live' ? EditorState.readOnly.of(true) : [],
           viewMode === 'source' ? lineNumbers() : [],
-          viewMode === 'reading'
-            ? [
-                EditorState.readOnly.of(true), // Additional read-only protection
-                EditorView.editable.of(false), // Make editor non-editable (like Obsidian reading mode)
-                // Transaction filter to block ALL document changes in reading mode
-                // This ensures no typing, deleting, or any edits are possible
-                EditorState.transactionFilter.of((tr) => {
-                  // Block ALL document changes - reading mode is pure preview
-                  if (tr.docChanged) {
-                    return [] // Return empty transaction array to block the change
-                  }
-                  return tr // Allow selection-only transactions
-                })
-              ]
-            : [],
           highlightActiveLine(),
           dropCursor(),
-          // Only enable editing features when not in reading mode
-          ...(viewMode === 'reading' ? [] : [history(), indentOnInput(), closeBrackets()]),
+          history(),
+          indentOnInput(),
+          closeBrackets(),
           luminaSyntax,
           bracketMatching(),
-          ...richMarkdown,
+          // richMarkdown only in live mode (hides syntax), not in source mode
+          ...(viewMode === 'live' ? richMarkdown : []),
           imageHoverPreview,
           wikiHoverPreview(
             () => snippetsRef.current,
@@ -136,10 +131,7 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
               setSelectedSnippet(s)
             }
           ),
-          // Only enable autocompletion when not in reading mode
-          ...(viewMode === 'reading'
-            ? []
-            : [autocompletion({ override: [wikiLinkCompletion(() => snippetsRef.current)] })]),
+          autocompletion({ override: [wikiLinkCompletion(() => snippetsRef.current)] }),
           highlightSelectionMatches(),
           markdown({ codeLanguages: languages }),
           seamlessTheme,
@@ -171,23 +163,19 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
             ...searchKeymap.filter(
               (binding) => binding.key !== 'Mod-f' && binding.key !== 'Mod-g'
             ),
-            // In reading mode, don't include editing keymaps (closeBrackets, default, history, completion)
-            // Only include search keymap for find/replace functionality
-            ...(viewMode === 'reading'
-              ? [] // No editing keymaps in reading mode
-              : [
-                  ...closeBracketsKeymap,
-                  ...defaultKeymap,
-                  ...historyKeymap,
-                  ...completionKeymap
-                ])
+            ...closeBracketsKeymap,
+            ...defaultKeymap,
+            ...historyKeymap,
+            ...completionKeymap
           ]),
           EditorView.updateListener.of((update) => {
             if (ignoreUpdateRef.current) return
             if (update.docChanged) {
               setIsDirty(true)
+              const code = update.state.doc.toString()
+              // Always update preview content for reading mode
               workerRef.current?.postMessage({
-                code: update.state.doc.toString(),
+                code,
                 id: snippetRef.current?.id
               })
             }
@@ -202,6 +190,8 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
     },
     [viewMode, onSave, setSelectedSnippet, updateSnippetSelection]
   )
+
+  // No need for preview content update - live preview uses richMarkdown decorations
 
   // --- Core Lifecycle: Instant Note Switching ---
   useEffect(() => {
@@ -222,32 +212,26 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
       isViewAliveRef.current = true
     } else {
       // Instant State Swap (Obsidian Style)
-      // Safety check: ensure view is still valid before state swap
-      if (!viewRef.current || !isViewAliveRef.current) {
-        // View was destroyed, recreate it
+      // Always recreate state when viewMode changes to ensure decorations rebuild
+      ignoreUpdateRef.current = true
+      try {
+        const state = createTargetState(snippet?.code, targetSelection)
+        // Safety check: ensure state is valid before setting
+        if (state && state.doc) {
+          viewRef.current.setState(state)
+        }
+      } catch (err) {
+        console.error('[MarkdownEditor] Error setting state:', err)
+        // Fallback: recreate view if state swap fails
+        if (viewRef.current) {
+          viewRef.current.destroy()
+        }
         const state = createTargetState(snippet?.code, targetSelection)
         const view = new EditorView({ state, parent: hostRef.current })
         viewRef.current = view
         isViewAliveRef.current = true
-      } else {
-        ignoreUpdateRef.current = true
-        try {
-          const state = createTargetState(snippet?.code, targetSelection)
-          // Safety check: ensure state is valid before setting
-          if (state && state.doc) {
-            viewRef.current.setState(state)
-          }
-        } catch (err) {
-          console.error('[MarkdownEditor] Error setting state:', err)
-          // Fallback: recreate view if state swap fails
-          viewRef.current.destroy()
-          const state = createTargetState(snippet?.code, targetSelection)
-          const view = new EditorView({ state, parent: hostRef.current })
-          viewRef.current = view
-          isViewAliveRef.current = true
-        } finally {
-          ignoreUpdateRef.current = false
-        }
+      } finally {
+        ignoreUpdateRef.current = false
       }
     }
 
@@ -262,218 +246,53 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
       viewRef.current.focus()
     }
 
-    // Refresh Preview
-    workerRef.current?.postMessage({ code: snippet?.code || '', id: snippet.id })
+    // Refresh Preview (always update for reading mode)
+    if (workerRef.current) {
+      workerRef.current.postMessage({ code: snippet?.code || '', id: snippet.id })
+    }
     setTitle(snippet?.title || '')
     setIsDirty(false)
-  }, [snippet.id, createTargetState])
+  }, [snippet.id, createTargetState, viewMode]) // Add viewMode to dependencies to rebuild on mode change
 
-  // Listen for caret style updates and force CodeMirror to refresh cursor
+  // Apply caret styles directly to cursor elements - CodeMirror uses inline styles that override CSS
   useEffect(() => {
-    if (!viewRef.current) {
-      // Even if viewRef isn't ready, create the style element so it's available
-      let styleElement = document.getElementById('codemirror-cursor-override')
-      if (!styleElement) {
-        styleElement = document.createElement('style')
-        styleElement.id = 'codemirror-cursor-override'
-        document.head.appendChild(styleElement)
-      }
-      return
-    }
-
-    // Create a style element as a fallback to ensure styles are applied
-    // Place it at the end of head for maximum priority
-    let styleElement = document.getElementById('codemirror-cursor-override')
-    if (!styleElement) {
-      styleElement = document.createElement('style')
-      styleElement.id = 'codemirror-cursor-override'
-      // Append to end of head to ensure it has highest priority
-      document.head.appendChild(styleElement)
-    }
-
-    // Ensure container has correct class immediately
-    const container = viewRef.current.dom?.closest('.markdown-editor') ||
+    // Ensure container has correct class for cursor style (even if viewRef isn't ready)
+    const container = viewRef.current?.dom?.closest('.markdown-editor') ||
                      document.querySelector('.markdown-editor')
     if (container) {
-      const root = document.documentElement
-      const currentCaretStyle = getComputedStyle(root).getPropertyValue('--caret-style').trim() || caretStyle || 'smooth'
+      const currentCaretStyle = caretStyle || 'smooth'
       const expectedClass = `cursor-${currentCaretStyle}`
       container.classList.remove('cursor-block', 'cursor-smooth', 'cursor-sharp', 'cursor-bar', 'cursor-line')
       container.classList.add(expectedClass)
-      console.log('[MarkdownEditor] Set container class to:', expectedClass)
     }
 
-    const updateStyleElement = () => {
-      // Use state values directly, with fallback to CSS variables
-      const root = document.documentElement
-
-      // Get caret width - prefer state, then CSS variable, then default
-      let currentCaretWidth = caretWidth
-      if (!currentCaretWidth || currentCaretWidth === '') {
-        currentCaretWidth = getComputedStyle(root).getPropertyValue('--caret-width').trim()
-      }
-      if (!currentCaretWidth || currentCaretWidth === '') {
-        currentCaretWidth = root.style.getPropertyValue('--caret-width').trim() || '2px'
-      }
-      if (!currentCaretWidth.endsWith('px')) {
-        currentCaretWidth = currentCaretWidth + 'px'
-      }
-
-      // Get caret color - prefer state, then CSS variable, then default
-      let currentCaretColor = caretColor
-      if (!currentCaretColor || currentCaretColor === '') {
-        currentCaretColor = getComputedStyle(root).getPropertyValue('--caret-color').trim()
-      }
-      if (!currentCaretColor || currentCaretColor === '') {
-        currentCaretColor = getComputedStyle(root).getPropertyValue('--text-accent').trim() || '#40bafa'
-      }
-
-      // Get caret style - prefer state, then CSS variable, then default
-      let currentCaretStyle = caretStyle || getComputedStyle(root).getPropertyValue('--caret-style').trim() || 'smooth'
-
-      // Update the style element with maximum specificity to override everything
-      // Use universal selectors that will work regardless of container classes
-      // IMPORTANT: Use the most specific selectors possible to override CodeMirror's inline styles
-      const isBlock = currentCaretStyle === 'block'
-      if (isBlock) {
-        styleElement.textContent = `
-          /* Block cursor - highest specificity with all possible combinations */
-          .markdown-editor.cursor-block .cm-editor.cm-focused .cm-cursor,
-          .markdown-editor.cursor-block .cm-editor .cm-cursor-primary,
-          .markdown-editor.cursor-block .cm-cursor,
-          .cursor-block .cm-editor.cm-focused .cm-cursor,
-          .cursor-block .cm-editor .cm-cursor-primary,
-          .cursor-block .cm-cursor,
-          .cm-editor.cursor-block .cm-cursor,
-          .cm-editor.cursor-block .cm-cursor-primary,
-          /* Fallback for any cursor */
-          .markdown-editor .cm-editor .cm-cursor,
-          .markdown-editor .cm-cursor,
-          .cm-editor .cm-cursor,
-          .cm-cursor {
-            border-left: none !important;
-            background-color: ${currentCaretColor} !important;
-            width: 0.6em !important;
-            opacity: 0.7 !important;
-            margin-left: 0 !important;
-          }
-        `
-      } else {
-        const isSharp = currentCaretStyle === 'sharp'
-        styleElement.textContent = `
-          /* Line cursor styles - highest specificity with all possible combinations */
-          ${isSharp ? `
-          .markdown-editor.cursor-sharp .cm-editor.cm-focused .cm-cursor,
-          .markdown-editor.cursor-sharp .cm-editor .cm-cursor-primary,
-          .markdown-editor.cursor-sharp .cm-cursor,
-          .cursor-sharp .cm-editor.cm-focused .cm-cursor,
-          .cursor-sharp .cm-editor .cm-cursor-primary,
-          .cursor-sharp .cm-cursor,
-          .cm-editor.cursor-sharp .cm-cursor,
-          .cm-editor.cursor-sharp .cm-cursor-primary {
-            border-left-width: ${currentCaretWidth} !important;
-            border-left-color: ${currentCaretColor} !important;
-            border-left-style: solid !important;
-            margin-left: calc(-1 * ${currentCaretWidth} / 2) !important;
-            opacity: 1 !important;
-          }
-          ` : `
-          .markdown-editor.cursor-smooth .cm-editor.cm-focused .cm-cursor,
-          .markdown-editor.cursor-smooth .cm-editor .cm-cursor-primary,
-          .markdown-editor.cursor-smooth .cm-cursor,
-          .cursor-smooth .cm-editor.cm-focused .cm-cursor,
-          .cursor-smooth .cm-editor .cm-cursor-primary,
-          .cursor-smooth .cm-cursor,
-          .cm-editor.cursor-smooth .cm-cursor,
-          .cm-editor.cursor-smooth .cm-cursor-primary {
-            border-left-width: ${currentCaretWidth} !important;
-            border-left-color: ${currentCaretColor} !important;
-            border-left-style: solid !important;
-            margin-left: calc(-1 * ${currentCaretWidth} / 2) !important;
-          }
-          `}
-          /* Fallback for any cursor - must come last to override everything */
-          .markdown-editor .cm-editor.cm-focused .cm-cursor,
-          .markdown-editor .cm-editor .cm-cursor-primary,
-          .markdown-editor .cm-cursor,
-          .cm-editor.cm-focused .cm-cursor,
-          .cm-editor .cm-cursor-primary,
-          .cm-editor .cm-cursor,
-          .cm-cursor {
-            border-left-width: ${currentCaretWidth} !important;
-            border-left-color: ${currentCaretColor} !important;
-            border-left-style: solid !important;
-            margin-left: calc(-1 * ${currentCaretWidth} / 2) !important;
-          }
-        `
-      }
-
-      // Only log when values actually change (for debugging)
-      // Remove this log in production to avoid console spam
-      // console.log('[MarkdownEditor] Updated style element:', {
-      //   currentCaretWidth,
-      //   currentCaretColor,
-      //   currentCaretStyle,
-      //   caretWidthFromState: caretWidth,
-      //   caretColorFromState: caretColor,
-      //   caretStyleFromState: caretStyle,
-      //   styleElementExists: !!styleElement,
-      //   styleElementInHead: document.head.contains(styleElement)
-      // })
-    }
+    // Don't apply caret styles if viewRef isn't ready
+    if (!viewRef.current) return
 
     const applyCaretStyles = () => {
-      // Always update the style element first - this ensures styles apply even if cursor doesn't exist yet
-      updateStyleElement()
+      if (!viewRef.current) return
 
-      if (!viewRef.current) {
-        console.log('[MarkdownEditor] No viewRef, style element updated but no direct cursor access')
-        return true // Return true because style element was updated
-      }
+      const root = document.documentElement
+      const currentCaretWidth = caretWidth || getComputedStyle(root).getPropertyValue('--caret-width').trim() || '2px'
+      const currentCaretColor = caretColor || getComputedStyle(root).getPropertyValue('--caret-color').trim() ||
+                                getComputedStyle(root).getPropertyValue('--text-accent').trim() || '#40bafa'
+      const currentCaretStyle = caretStyle || 'smooth'
 
-      // Try multiple selectors - CodeMirror might use different class names
-      // Also check the entire editor DOM, not just contentDOM
+      // Find all cursor elements - search more broadly
       const editorDOM = viewRef.current.dom
       const cursors = [
-        ...viewRef.current.contentDOM.querySelectorAll('.cm-cursor, .cm-cursor-primary'),
-        ...editorDOM.querySelectorAll('.cm-cursor, .cm-cursor-primary')
+        ...(viewRef.current.contentDOM?.querySelectorAll('.cm-cursor, .cm-cursor-primary') || []),
+        ...(editorDOM?.querySelectorAll('.cm-cursor, .cm-cursor-primary') || []),
+        ...(document.querySelectorAll('.markdown-editor .cm-cursor, .markdown-editor .cm-cursor-primary') || [])
       ]
 
-      if (cursors.length === 0) {
-        // Style element is updated - styles will apply when cursor appears
-        // Don't log this - it's normal when editor isn't focused
-        return true // Return true because style element was updated
-      }
+      if (cursors.length === 0) return
 
-      // Get current CSS variable values from root
-      const root = document.documentElement
-      let currentCaretWidth = getComputedStyle(root).getPropertyValue('--caret-width').trim()
-      if (!currentCaretWidth || currentCaretWidth === '') {
-        currentCaretWidth = root.style.getPropertyValue('--caret-width').trim() || '2px'
-      }
-      if (!currentCaretWidth.endsWith('px')) {
-        currentCaretWidth = currentCaretWidth + 'px'
-      }
-
-      let currentCaretColor = getComputedStyle(root).getPropertyValue('--caret-color').trim()
-      if (!currentCaretColor || currentCaretColor === '') {
-        currentCaretColor = getComputedStyle(root).getPropertyValue('--text-accent').trim() || '#40bafa'
-      }
-
-      const currentCaretStyle = getComputedStyle(root).getPropertyValue('--caret-style').trim() || 'smooth'
-
-      console.log('[MarkdownEditor] Applying caret styles to', cursors.length, 'cursor(s):', {
-        currentCaretWidth,
-        currentCaretColor,
-        currentCaretStyle
-      })
-
-      // Apply to all cursor elements directly (in addition to style element)
-      // Use setProperty with important flag and also set style attribute directly
-      cursors.forEach((cursor, index) => {
+      cursors.forEach((cursor) => {
         const isBlock = currentCaretStyle === 'block'
 
-        // Remove all existing inline styles first
+        // Use removeProperty to clear, then setProperty with important flag
+        cursor.style.removeProperty('border')
         cursor.style.removeProperty('border-left')
         cursor.style.removeProperty('border-left-width')
         cursor.style.removeProperty('border-left-color')
@@ -484,80 +303,37 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
         cursor.style.removeProperty('margin-left')
 
         if (isBlock) {
-          // Block cursor uses background-color instead of border
-          cursor.style.cssText += `border-left: none !important; background-color: ${currentCaretColor} !important; width: 0.6em !important; opacity: 0.7 !important; margin-left: 0 !important;`
+          cursor.style.setProperty('border-left', 'none', 'important')
+          cursor.style.setProperty('background-color', currentCaretColor, 'important')
+          cursor.style.setProperty('width', '0.6em', 'important')
+          cursor.style.setProperty('opacity', '0.7', 'important')
+          cursor.style.setProperty('margin-left', '0', 'important')
         } else {
-          // Line cursor uses border-left - use cssText for maximum override
-          cursor.style.cssText += `border-left-width: ${currentCaretWidth} !important; border-left-color: ${currentCaretColor} !important; border-left-style: solid !important; margin-left: calc(-1 * ${currentCaretWidth} / 2) !important;`
+          // Ensure width has 'px' suffix
+          const width = currentCaretWidth.endsWith('px') ? currentCaretWidth : `${currentCaretWidth}px`
+          cursor.style.setProperty('border-left-width', width, 'important')
+          cursor.style.setProperty('border-left-color', currentCaretColor, 'important')
+          cursor.style.setProperty('border-left-style', 'solid', 'important')
+          cursor.style.setProperty('margin-left', `calc(-1 * ${width} / 2)`, 'important')
+          cursor.style.setProperty('background-color', 'transparent', 'important')
         }
 
-        // Force a reflow and repaint
+        // Force a reflow to ensure styles are applied
         void cursor.offsetHeight
-        void cursor.getBoundingClientRect()
       })
-
-      // Force CodeMirror to recalculate layout
-      if (viewRef.current) {
-        viewRef.current.requestMeasure()
-        void viewRef.current.contentDOM.offsetHeight
-      }
-
-      return true
     }
 
-    // Retry function with exponential backoff
-    const applyWithRetry = (maxRetries = 20, delay = 100) => {
-      let retries = 0
-      const tryApply = () => {
-        const applied = applyCaretStyles()
-        if (applied) {
-          console.log(`[MarkdownEditor] Successfully applied caret styles after ${retries} retries`)
-          return
-        }
-        if (retries >= maxRetries) {
-          console.warn(`[MarkdownEditor] Failed to apply caret styles after ${maxRetries} retries`)
-          return
-        }
-        retries++
-        setTimeout(tryApply, delay * Math.min(retries, 5))
-      }
-      tryApply()
-    }
+    // Apply immediately
+    applyCaretStyles()
 
-    const handleCaretUpdate = () => {
-      console.log('[MarkdownEditor] Caret style update event received')
-      // Small delay to ensure CSS variables are set
-      setTimeout(() => {
-        applyWithRetry()
-      }, 50)
-    }
-
-    // Use MutationObserver to watch for cursor creation/changes
-    const observer = new MutationObserver((mutations) => {
-      let shouldApply = false
-      mutations.forEach((mutation) => {
-        mutation.addedNodes.forEach((node) => {
-          if (node.nodeType === 1) { // Element node
-            if (node.classList?.contains('cm-cursor') ||
-                node.classList?.contains('cm-cursor-primary') ||
-                node.querySelector?.('.cm-cursor')) {
-              shouldApply = true
-            }
-          }
-        })
-        // Also check for attribute changes (cursor might be updated in place)
-        if (mutation.type === 'attributes' &&
-            (mutation.target.classList?.contains('cm-cursor') ||
-             mutation.target.classList?.contains('cm-cursor-primary'))) {
-          shouldApply = true
-        }
+    // Use MutationObserver to catch cursor creation/updates
+    const observer = new MutationObserver(() => {
+      // Use requestAnimationFrame to ensure we run after CodeMirror's updates
+      requestAnimationFrame(() => {
+        applyCaretStyles()
       })
-      if (shouldApply) {
-        setTimeout(() => applyCaretStyles(), 10)
-      }
     })
 
-    // Observe the content DOM for cursor creation
     if (viewRef.current?.contentDOM) {
       observer.observe(viewRef.current.contentDOM, {
         childList: true,
@@ -567,73 +343,79 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
       })
     }
 
-    // Apply immediately with retries
-    applyWithRetry()
+    // Also watch document root for CSS variable changes
+    const rootObserver = new MutationObserver((mutations) => {
+      let shouldUpdate = false
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' &&
+            (mutation.attributeName === 'style' || mutation.attributeName === 'data-theme')) {
+          // Check if caret-related CSS variables changed
+          const root = document.documentElement
+          const caretWidth = getComputedStyle(root).getPropertyValue('--caret-width')
+          const caretColor = getComputedStyle(root).getPropertyValue('--caret-color')
+          const caretStyle = getComputedStyle(root).getPropertyValue('--caret-style')
+          if (caretWidth || caretColor || caretStyle) {
+            shouldUpdate = true
+          }
+        }
+      })
+      if (shouldUpdate) {
+        requestAnimationFrame(() => {
+          applyCaretStyles()
+        })
+      }
+    })
 
-    // Listen for custom update events
-    window.addEventListener('caret-style-update', handleCaretUpdate)
+    rootObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['style']
+    })
 
-    // Listen for focus events on the editor to apply styles when cursor appears
+    // Aggressive approach: Continuously apply styles to override CodeMirror
+    // This ensures styles are always applied even if CodeMirror updates them
+    // Use requestAnimationFrame for smooth updates
+    let rafId = null
+    const applyStylesLoop = () => {
+      if (viewRef.current) {
+        applyCaretStyles()
+      }
+      rafId = requestAnimationFrame(applyStylesLoop)
+    }
+    rafId = requestAnimationFrame(applyStylesLoop)
+
+    // Also listen for focus events and selection changes
     const handleFocus = () => {
-      console.log('[MarkdownEditor] Editor focused, applying caret styles')
-      setTimeout(() => applyCaretStyles(), 50)
+      requestAnimationFrame(() => {
+        applyCaretStyles()
+      })
     }
 
-    const handleBlur = () => {
-      console.log('[MarkdownEditor] Editor blurred')
+    const handleSelectionChange = () => {
+      requestAnimationFrame(() => {
+        applyCaretStyles()
+      })
     }
 
     if (viewRef.current?.dom) {
       viewRef.current.dom.addEventListener('focus', handleFocus, true)
-      viewRef.current.dom.addEventListener('blur', handleBlur, true)
+      viewRef.current.dom.addEventListener('selectionchange', handleSelectionChange, true)
     }
 
-    // Set up interval to periodically check if style element needs updating
-    // Only update when values actually change to avoid unnecessary work
-    let lastCaretWidth = null
-    let lastCaretColor = null
-    let lastCaretStyle = null
-
-    const intervalId = setInterval(() => {
-      // Check if values have changed before updating
-      const root = document.documentElement
-      const currentWidth = caretWidth || getComputedStyle(root).getPropertyValue('--caret-width').trim() || '2px'
-      const currentColor = caretColor || getComputedStyle(root).getPropertyValue('--caret-color').trim() || '#40bafa'
-      const currentStyle = caretStyle || getComputedStyle(root).getPropertyValue('--caret-style').trim() || 'smooth'
-
-      // Only update if values actually changed
-      if (currentWidth !== lastCaretWidth || currentColor !== lastCaretColor || currentStyle !== lastCaretStyle) {
-        lastCaretWidth = currentWidth
-        lastCaretColor = currentColor
-        lastCaretStyle = currentStyle
-        updateStyleElement()
-      }
-
-      // Ensure container has correct class
-      const container = viewRef.current?.dom?.closest('.markdown-editor') ||
-                       document.querySelector('.markdown-editor')
-      if (container) {
-        const expectedClass = `cursor-${currentStyle}`
-        // Only update class if it changed
-        if (!container.classList.contains(expectedClass)) {
-          container.classList.remove('cursor-block', 'cursor-smooth', 'cursor-sharp', 'cursor-bar', 'cursor-line')
-          container.classList.add(expectedClass)
-        }
-      }
-    }, 1000) // Reduced frequency to 1 second since we're checking for changes
-
-    // Also update immediately when caretStyle changes (separate from the interval)
-    updateStyleElement()
+    // Listen for custom update events
+    const handleCaretUpdate = () => {
+      setTimeout(applyCaretStyles, 10)
+    }
+    window.addEventListener('caret-style-update', handleCaretUpdate)
 
     return () => {
       observer.disconnect()
+      rootObserver.disconnect()
+      if (rafId) cancelAnimationFrame(rafId)
       window.removeEventListener('caret-style-update', handleCaretUpdate)
-      clearInterval(intervalId)
       if (viewRef.current?.dom) {
         viewRef.current.dom.removeEventListener('focus', handleFocus, true)
-        viewRef.current.dom.removeEventListener('blur', handleBlur, true)
+        viewRef.current.dom.removeEventListener('selectionchange', handleSelectionChange, true)
       }
-      // Don't remove style element - it might be needed by other instances
     }
   }, [caretStyle, caretWidth, caretColor, snippet.id])
 
@@ -761,8 +543,11 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
     }
   })
 
+  // Ensure viewMode is either 'source' or 'live'
+  const safeViewMode = viewMode === 'source' ? 'source' : 'live'
+
   return (
-    <div className={`markdown-editor mode-${viewMode} cursor-${caretStyle || 'smooth'}`}>
+    <div className={`markdown-editor mode-${safeViewMode} cursor-${caretStyle || 'smooth'}`}>
       <EditorTitleBar
         title={title}
         snippet={snippet}
@@ -797,7 +582,19 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
           {settings.inlineMetadata && (
             <EditorMetadata snippet={snippet} onSave={onSave} snippets={snippets} />
           )}
-          <div className="cm-host-container" ref={hostRef} />
+
+          {viewMode === 'reading' ? (
+            // Reading mode: Show rendered HTML preview
+            <div className="reading-preview-container">
+              <div
+                className="reading-preview-content"
+                dangerouslySetInnerHTML={{ __html: previewContent || '' }}
+              />
+            </div>
+          ) : (
+            // Editor mode: Show CodeMirror
+            <div className="cm-host-container" ref={hostRef} />
+          )}
         </div>
       </div>
       <EditorFooter isDirty={isDirty} viewMode={viewMode} setViewMode={setViewMode} />

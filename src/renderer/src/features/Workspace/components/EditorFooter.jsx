@@ -1,6 +1,11 @@
 import React from 'react'
 
 const EditorFooter = ({ isDirty, viewMode, setViewMode }) => {
+  // Toggle between editor (source) and preview (live)
+  const toggleMode = () => {
+    setViewMode(viewMode === 'live' ? 'source' : 'live')
+  }
+
   return (
     <div className="editor-footer-bar">
       <div className="editor-status-icons">
@@ -12,24 +17,17 @@ const EditorFooter = ({ isDirty, viewMode, setViewMode }) => {
       <div className="mode-toggle">
         <button
           className={`mode-btn ${viewMode === 'source' ? 'active' : ''}`}
-          onClick={() => setViewMode('source')}
-          title="Source Mode"
+          onClick={toggleMode}
+          title={viewMode === 'live' ? 'Switch to Editor (Show Syntax)' : 'Editor Mode - All syntax visible'}
         >
-          Src
+          Editor
         </button>
         <button
           className={`mode-btn ${viewMode === 'live' ? 'active' : ''}`}
-          onClick={() => setViewMode('live')}
-          title="Live Mode"
+          onClick={toggleMode}
+          title={viewMode === 'source' ? 'Switch to Preview (Hide Syntax)' : 'Preview Mode - Syntax hidden'}
         >
-          Live
-        </button>
-        <button
-          className={`mode-btn ${viewMode === 'reading' ? 'active' : ''}`}
-          onClick={() => setViewMode('reading')}
-          title="Reading Mode"
-        >
-          Read
+          Preview
         </button>
       </div>
     </div>

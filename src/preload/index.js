@@ -16,6 +16,11 @@ const api = {
   saveSetting: (key, value) => electronAPI.ipcRenderer.invoke('db:saveSetting', key, value),
   getTheme: () => electronAPI.ipcRenderer.invoke('db:getTheme'),
   saveTheme: (theme) => electronAPI.ipcRenderer.invoke('db:saveTheme', theme),
+  onSettingsChanged: (callback) => {
+    const listener = (_, settings) => callback(settings)
+    electronAPI.ipcRenderer.on('settings:changed', listener)
+    return () => electronAPI.ipcRenderer.removeListener('settings:changed', listener)
+  },
 
   // Dialogs
   confirmDelete: (msg) => electronAPI.ipcRenderer.invoke('confirm-delete', msg),
