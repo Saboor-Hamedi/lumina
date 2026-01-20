@@ -209,8 +209,11 @@ const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
             ...searchKeymap.filter(
               (binding) => binding.key !== 'Mod-f' && binding.key !== 'Mod-g'
             ),
+            // Filter out Mod-i from defaultKeymap to allow Ctrl+I for Inspector toggle
+            ...defaultKeymap.filter(
+              (binding) => binding.key !== 'Mod-i'
+            ),
             ...closeBracketsKeymap,
-            ...defaultKeymap,
             ...historyKeymap,
             ...completionKeymap
           ]),
@@ -543,7 +546,7 @@ const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
 
   useKeyboardShortcuts({
     onSave: handleSave,
-    onToggleInspector,
+    // onToggleInspector removed - handled globally in AppShell
     onTogglePreview: () => setIsPreviewOpen((p) => !p),
     onEscape: () => {
       if (isInlineAIOpen) {
@@ -679,7 +682,7 @@ const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
         setViewMode={setViewMode}
         onTogglePreview={() => setIsPreviewOpen((p) => !p)}
       />
-      
+
       <PreviewModal
         isOpen={isPreviewOpen}
         onClose={() => setIsPreviewOpen(false)}
@@ -702,10 +705,10 @@ const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
   // This prevents unnecessary re-renders when other parts of the app update
   const prevSnippet = prevProps.snippet
   const nextSnippet = nextProps.snippet
-  
+
   // If snippets are the same reference, skip re-render
   if (prevSnippet === nextSnippet) return true
-  
+
   // Compare key properties
   return (
     prevSnippet?.id === nextSnippet?.id &&

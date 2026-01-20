@@ -111,11 +111,15 @@ const AIChatPanel = React.memo(() => {
     const textarea = textareaRef.current
     if (!textarea) return
     
+    // Set initial min-height to prevent oversized textarea on first load
+    const minHeight = 24 // Single line height
+    const maxHeight = 200
+    
     // Reset height to auto to get accurate scrollHeight
     textarea.style.height = 'auto'
     const scrollHeight = textarea.scrollHeight
-    const maxHeight = 200
-    textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`
+    const newHeight = Math.max(minHeight, Math.min(scrollHeight, maxHeight))
+    textarea.style.height = `${newHeight}px`
   }, [])
 
   // Initialize textarea on mount
@@ -124,6 +128,9 @@ const AIChatPanel = React.memo(() => {
       // Ensure proper width on mount
       textareaRef.current.style.width = '100%'
       textareaRef.current.style.minWidth = '0'
+      // Set initial height to prevent oversized textarea
+      textareaRef.current.style.height = '24px'
+      // Then adjust if needed
       adjustTextareaHeight()
     }
   }, [adjustTextareaHeight])

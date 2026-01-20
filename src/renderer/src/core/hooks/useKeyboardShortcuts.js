@@ -106,6 +106,7 @@ export const useKeyboardShortcuts = (shortcuts) => {
       // Toggle Inspector: Ctrl+I
       if (isCmd && !e.shiftKey && key === 'i' && shortcutsRef.current.onToggleInspector) {
         e.preventDefault()
+        e.stopPropagation()
         shortcutsRef.current.onToggleInspector()
       }
 
