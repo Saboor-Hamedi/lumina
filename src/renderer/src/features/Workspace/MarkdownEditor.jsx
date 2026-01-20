@@ -44,6 +44,8 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
   const workerRef = useRef(null)
   const titleRef = useRef(null)
   const scrollerRef = useRef(null)
+  const themeCompartment = useRef(new Compartment())
+  const lineNumberCompartment = useRef(new Compartment())
 
   // Persistence Refs
   const snippetsRef = useRef([])
@@ -58,6 +60,43 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
   const { settings } = useSettingsStore()
   const { snippets, setSelectedSnippet, updateSnippetSelection, setDirty } = useVaultStore()
   const { caretStyle, caretWidth, caretColor } = useFontSettings()
+
+  // Create a CodeMirror theme for the caret using EditorView.theme so it is applied by the editor
+  const caretTheme = useMemo(() => {
+    const widthRaw = caretWidth || getComputedStyle(document.documentElement).getPropertyValue('--caret-width').trim() || '2px'
+    const width = typeof widthRaw === 'number' ? `${widthRaw}px` : widthRaw.toString()
+    const color = caretColor || getComputedStyle(document.documentElement).getPropertyValue('--caret-color').trim() || 'var(--text-accent)'
+    const style = caretStyle || 'smooth'
+    const useBorder = (settings?.cursor && typeof settings.cursor.useBorderLeft !== 'undefined') ? settings.cursor.useBorderLeft : true
+
+    if (style === 'block') {
+      return EditorView.theme({
+        '.cm-cursor': {
+          backgroundColor: color,
+          width: '0.6em'
+        }
+      })
+    }
+
+    // If using border-left approach, set border styles; otherwise use background-color sizing
+    if (useBorder) {
+      return EditorView.theme({
+        '.cm-cursor': {
+          borderLeftWidth: width,
+          borderLeftColor: color,
+          borderLeftStyle: 'solid'
+        }
+      })
+    }
+
+    return EditorView.theme({
+      '.cm-cursor': {
+        backgroundColor: color,
+        width: width,
+        marginLeft: `calc(-1 * ${width} / 2)`
+      }
+    })
+  }, [caretStyle, caretWidth, caretColor, (settings?.cursor && settings.cursor.useBorderLeft)])
 
   const [title, setTitle] = useState(snippet?.title || '')
   const [isDirty, setIsDirty] = useState(false)
@@ -107,7 +146,8 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
           editorMode.of(viewMode),
           // Make editor read-only in preview mode (live mode)
           viewMode === 'live' ? EditorState.readOnly.of(true) : [],
-          viewMode === 'source' ? lineNumbers() : [],
+          // Use a compartment for line numbers so we can reconfigure live
+          lineNumberCompartment.current.of(viewMode === 'source' && settings.showLineNumbers ? lineNumbers() : []),
           highlightActiveLine(),
           dropCursor(),
           history(),
@@ -136,7 +176,8 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
           autocompletion({ override: [wikiLinkCompletion(() => snippetsRef.current)] }),
           highlightSelectionMatches(),
           markdown({ codeLanguages: languages }),
-          seamlessTheme,
+          // Theme compartment encapsulates caret and editor theme extensions
+          themeCompartment.current.of([caretTheme, seamlessTheme]),
           EditorView.lineWrapping,
           keymap.of([
             /**
@@ -307,6 +348,7 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
 
       cursors.forEach((cursor) => {
         const isBlock = currentCaretStyle === 'block'
+        const useBorder = (settings?.cursor && typeof settings.cursor.useBorderLeft !== 'undefined') ? settings.cursor.useBorderLeft : true
 
         // Use removeProperty to clear, then setProperty with important flag
         cursor.style.removeProperty('border')
@@ -328,11 +370,19 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
         } else {
           // Ensure width has 'px' suffix
           const width = currentCaretWidth.endsWith('px') ? currentCaretWidth : `${currentCaretWidth}px`
-          cursor.style.setProperty('border-left-width', width, 'important')
-          cursor.style.setProperty('border-left-color', currentCaretColor, 'important')
-          cursor.style.setProperty('border-left-style', 'solid', 'important')
-          cursor.style.setProperty('margin-left', `calc(-1 * ${width} / 2)`, 'important')
-          cursor.style.setProperty('background-color', 'transparent', 'important')
+          if (useBorder) {
+            cursor.style.setProperty('border-left-width', width, 'important')
+            cursor.style.setProperty('border-left-color', currentCaretColor, 'important')
+            cursor.style.setProperty('border-left-style', 'solid', 'important')
+            cursor.style.setProperty('margin-left', `calc(-1 * ${width} / 2)`, 'important')
+            cursor.style.setProperty('background-color', 'transparent', 'important')
+          } else {
+            // Use filled caret approach
+            cursor.style.setProperty('border-left', 'none', 'important')
+            cursor.style.setProperty('background-color', currentCaretColor, 'important')
+            cursor.style.setProperty('width', width, 'important')
+            cursor.style.setProperty('margin-left', `calc(-1 * ${width} / 2)`, 'important')
+          }
         }
 
         // Force a reflow to ensure styles are applied
@@ -435,6 +485,46 @@ const MarkdownEditor = ({ snippet, onSave, onToggleInspector }) => {
       }
     }
   }, [caretStyle, caretWidth, caretColor, snippet.id])
+
+  // Reconfigure the theme compartment when caret/theme changes so running view updates
+  useEffect(() => {
+    if (!viewRef.current) return
+    try {
+      viewRef.current.dispatch({
+        effects: themeCompartment.current.reconfigure([caretTheme, seamlessTheme])
+      })
+    } catch (err) {
+      // If reconfigure fails, recreate the state as a fallback
+      try {
+        const sel = viewRef.current.state.selection.main
+        const state = createTargetState(viewRef.current.state.doc.toString(), sel)
+        viewRef.current.setState(state)
+      } catch (e) {
+        console.error('[MarkdownEditor] Failed to reconfigure theme:', e)
+      }
+    }
+  }, [caretTheme, seamlessTheme, createTargetState])
+
+  // Reconfigure line numbers compartment when setting or viewMode changes
+  useEffect(() => {
+    if (!viewRef.current) return
+    const ext = viewMode === 'source' && settings?.showLineNumbers ? lineNumbers() : []
+    try {
+      viewRef.current.dispatch({ effects: lineNumberCompartment.current.reconfigure(ext) })
+    } catch (err) {
+      // fallback to state recreate
+      try {
+        const sel = viewRef.current.state.selection.main
+        const state = createTargetState(viewRef.current.state.doc.toString(), sel)
+        viewRef.current.setState(state)
+      } catch (e) {
+        console.error('[MarkdownEditor] Failed to reconfigure line numbers:', e)
+      }
+    }
+  }, [settings?.showLineNumbers, viewMode, createTargetState])
+
+  // Font variables are managed by `useFontSettings` for a single source of truth.
+  // Removing redundant settings-based CSS updates to avoid overriding the hook.
 
   // --- Save Logic ---
   useEffect(() => {

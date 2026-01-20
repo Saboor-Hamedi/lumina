@@ -318,6 +318,23 @@ const SettingsModal = ({ onClose, onOpenTheme }) => {
                   </div>
                   <div className="settings-row">
                     <div className="row-info">
+                      <div className="row-label">Use Border-left Caret</div>
+                      <div className="row-hint">Toggle using CSS `border-left` for the caret instead of a filled bar.</div>
+                    </div>
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={(settings.cursor && settings.cursor.useBorderLeft) ?? true}
+                        onChange={(e) => {
+                          const next = { ...(settings.cursor || {}), useBorderLeft: e.target.checked }
+                          updateSetting('cursor', next)
+                        }}
+                      />
+                      <span className="slider round"></span>
+                    </label>
+                  </div>
+                  <div className="settings-row">
+                    <div className="row-info">
                       <div className="row-label">Full Translucency</div>
                       <div className="row-hint">
                         Enable Acrylic backdrop blur (Windows 11). Requires restart for best

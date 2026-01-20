@@ -182,13 +182,13 @@ export const useFontSettings = () => {
           console.warn('Failed to load theme colors from localStorage:', e)
         }
 
-        // Load cursor settings from settings.json (new location: cursor object)
-        // This takes precedence over localStorage for cursor-specific settings
+        // Load settings from backend. Prefer cursor object, but also accept promoted top-level keys
         try {
-          const cursorSettings = await window.api?.getSetting?.('cursor')
-          console.log('[useFontSettings] Raw cursor settings from API:', cursorSettings)
+          const allSettings = await window.api?.getSetting?.()
+          const cursorSettings = (allSettings && allSettings.cursor) || (await window.api?.getSetting?.('cursor')) || {}
+          console.log('[useFontSettings] Raw cursor settings from API:', cursorSettings, 'allSettings:', allSettings)
 
-          if (cursorSettings && typeof cursorSettings === 'object' && Object.keys(cursorSettings).length > 0) {
+          if ((cursorSettings && typeof cursorSettings === 'object' && Object.keys(cursorSettings).length > 0) || (allSettings && typeof allSettings === 'object')) {
             // cursor object exists: { caretWidth, caretStyle, caretColor, ... }
             // Handle caretWidth: convert "3px" to number 3, or keep number as-is
             let caretWidth = cursorSettings.caretWidth
@@ -204,14 +204,15 @@ export const useFontSettings = () => {
               }
             }
 
+            // Build cursorColors by preferring explicit cursor object, then promoted top-level keys, then localStorage/defaults
             const cursorColors = {
               caretWidth: caretWidth !== undefined ? caretWidth : colors.caretWidth,
-              caretStyle: cursorSettings.caretStyle || colors.caretStyle || DEFAULTS.CARET_STYLE,
-              caretColor: cursorSettings.caretColor !== undefined ? cursorSettings.caretColor : colors.caretColor,
-              editorFontFamily: cursorSettings.editorFontFamily || colors.editorFontFamily,
-              editorFontSize: cursorSettings.editorFontSize || colors.editorFontSize,
-              previewFontFamily: cursorSettings.previewFontFamily || colors.previewFontFamily,
-              previewFontSize: cursorSettings.previewFontSize || colors.previewFontSize
+              caretStyle: (cursorSettings && cursorSettings.caretStyle) || colors.caretStyle || DEFAULTS.CARET_STYLE,
+              caretColor: (cursorSettings && typeof cursorSettings.caretColor !== 'undefined') ? cursorSettings.caretColor : colors.caretColor,
+              editorFontFamily: (cursorSettings && cursorSettings.editorFontFamily) || (allSettings && allSettings.fontFamily) || colors.editorFontFamily,
+              editorFontSize: (cursorSettings && cursorSettings.editorFontSize) || (allSettings && allSettings.fontSize) || colors.editorFontSize,
+              previewFontFamily: (cursorSettings && cursorSettings.previewFontFamily) || (allSettings && allSettings.previewFontFamily) || colors.previewFontFamily,
+              previewFontSize: (cursorSettings && cursorSettings.previewFontSize) || (allSettings && allSettings.previewFontSize) || colors.previewFontSize
             }
             // Cursor settings from settings.json take precedence
             colors = { ...colors, ...cursorColors }
@@ -408,51 +409,65 @@ export const useFontSettings = () => {
     let settingsChangedUnsubscribe = null
     if (window.api?.onSettingsChanged) {
       settingsChangedUnsubscribe = window.api.onSettingsChanged(async (settings) => {
-        console.log('[useFontSettings] settings.json changed externally, reloading cursor settings...')
-
-        // Reload cursor settings from the new settings
+        console.log('[useFontSettings] settings.json changed externally, reloading cursor/preview settings...', settings)
         try {
-          const cursorSettings = settings?.cursor
-          if (cursorSettings && typeof cursorSettings === 'object') {
-            // Process caretWidth
-            let caretWidth = cursorSettings.caretWidth
-            if (caretWidth !== undefined && caretWidth !== null) {
-              if (typeof caretWidth === 'string' && caretWidth.includes('px')) {
-                caretWidth = parseInt(caretWidth.replace('px', ''), 10)
-              } else if (typeof caretWidth === 'string') {
-                caretWidth = parseInt(caretWidth, 10)
-              }
-              if (isNaN(caretWidth) || caretWidth < 1) {
-                caretWidth = parseInt(DEFAULTS.CARET_WIDTH.replace('px', ''), 10)
-              }
-            }
+          const cursorSettings = settings?.cursor || {}
 
-            const normalizedWidth = clampCaretWidth(caretWidth || DEFAULTS.CARET_WIDTH)
-            const savedCaretStyle = cursorSettings.caretStyle || DEFAULTS.CARET_STYLE
-            const savedCaretColor = cursorSettings.caretColor || ''
-
-            // Apply immediately
-            const root = document.documentElement
-            root.style.setProperty('--caret-style', savedCaretStyle)
-            root.style.setProperty('--caret-width', normalizedWidth)
-
-            let finalCaretColor = savedCaretColor
-            if (!finalCaretColor || finalCaretColor.trim() === '') {
-              const currentTheme = getTheme(settings?.theme || DEFAULTS.THEME)
-              finalCaretColor = currentTheme.colors['--caret-color'] || currentTheme.colors['--text-accent'] || '#40bafa'
-            }
-            root.style.setProperty('--caret-color', finalCaretColor)
-
-            // Update state
-            setCaretStyle(savedCaretStyle)
-            setCaretWidth(normalizedWidth)
-            setCaretColor(savedCaretColor || '')
-
-            // Dispatch event to update CodeMirror
-            requestAnimationFrame(() => {
-              window.dispatchEvent(new CustomEvent('caret-style-update'))
-            })
+          // Prefer cursor object but accept promoted top-level keys
+          const incoming = {
+            caretWidth: cursorSettings.caretWidth ?? settings?.caretWidth,
+            caretStyle: cursorSettings.caretStyle ?? settings?.cursorStyle ?? settings?.cursor?.caretStyle,
+            caretColor: (typeof cursorSettings.caretColor !== 'undefined') ? cursorSettings.caretColor : settings?.caretColor,
+            editorFontFamily: cursorSettings.editorFontFamily ?? settings?.fontFamily,
+            editorFontSize: cursorSettings.editorFontSize ?? settings?.fontSize,
+            previewFontFamily: cursorSettings.previewFontFamily ?? settings?.previewFontFamily,
+            previewFontSize: cursorSettings.previewFontSize ?? settings?.previewFontSize
           }
+
+          // Process caretWidth
+          let caretWidth = incoming.caretWidth
+          if (caretWidth !== undefined && caretWidth !== null) {
+            if (typeof caretWidth === 'string' && caretWidth.includes('px')) {
+              caretWidth = parseInt(caretWidth.replace('px', ''), 10)
+            } else if (typeof caretWidth === 'string') {
+              caretWidth = parseInt(caretWidth, 10)
+            }
+            if (isNaN(caretWidth) || caretWidth < 1) {
+              caretWidth = parseInt(DEFAULTS.CARET_WIDTH.replace('px', ''), 10)
+            }
+          }
+
+          const normalizedWidth = clampCaretWidth(caretWidth || DEFAULTS.CARET_WIDTH)
+          const savedCaretStyle = incoming.caretStyle || DEFAULTS.CARET_STYLE
+          const savedCaretColor = incoming.caretColor || ''
+
+          // Apply caret immediately
+          const root = document.documentElement
+          root.style.setProperty('--caret-style', savedCaretStyle)
+          root.style.setProperty('--caret-width', normalizedWidth)
+
+          let finalCaretColor = savedCaretColor
+          if (!finalCaretColor || finalCaretColor.trim() === '') {
+            const currentTheme = getTheme(settings?.theme || DEFAULTS.THEME)
+            finalCaretColor = currentTheme.colors['--caret-color'] || currentTheme.colors['--text-accent'] || '#40bafa'
+          }
+          root.style.setProperty('--caret-color', finalCaretColor)
+
+          // Apply font/preview sizes if provided
+          if (incoming.editorFontFamily) root.style.setProperty('--editor-font-family', incoming.editorFontFamily)
+          if (incoming.editorFontSize) root.style.setProperty('--editor-font-size', `${incoming.editorFontSize / 16}rem`)
+          if (incoming.previewFontFamily) root.style.setProperty('--preview-font-family', incoming.previewFontFamily)
+          if (incoming.previewFontSize) root.style.setProperty('--preview-font-size', `${incoming.previewFontSize / 16}rem`)
+
+          // Update state
+          setCaretStyle(savedCaretStyle)
+          setCaretWidth(normalizedWidth)
+          setCaretColor(savedCaretColor || '')
+
+          // Dispatch event to update CodeMirror
+          requestAnimationFrame(() => {
+            window.dispatchEvent(new CustomEvent('caret-style-update'))
+          })
         } catch (err) {
           console.error('[useFontSettings] Failed to reload cursor settings:', err)
         }
