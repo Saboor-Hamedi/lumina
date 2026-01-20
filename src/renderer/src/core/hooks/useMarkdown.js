@@ -252,8 +252,7 @@ class MarkdownFormatter {
       case 'raw':
         return markdownText
       case 'pdf':
-        // This would typically involve a PDF generation library
-        console.log('PDF export would be implemented here')
+        // This would typically involve a PDF generation library (not implemented)
         return this.toHTML(markdownText)
       default:
         return markdownText

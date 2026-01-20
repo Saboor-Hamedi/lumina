@@ -193,17 +193,14 @@ export const useVaultStore = create((set, get) => ({
     }),
 
   loadVault: async () => {
-    console.log('[VaultStore] 🚀 Initializing Vault Load...')
+    // Initializing Vault Load (silent)
     set({ isLoading: true })
 
     // 1. Instant Load from Cache (Zero-Jump)
     try {
       const cached = await getCachedSnippets()
       if (cached && cached.length > 0) {
-        console.log(`[VaultStore] ✓ Loaded ${cached.length} snippets from IndexedDB cache`)
         set({ snippets: cached, isLoading: false })
-      } else {
-        console.log('[VaultStore] Cache is empty, waiting for file system...')
       }
     } catch (err) {
       console.warn('[VaultStore] Cache read error:', err)
@@ -240,7 +237,7 @@ export const useVaultStore = create((set, get) => ({
           ? current.map((s) => (s.id === snippet.id ? snippet : s))
           : [snippet, ...current]
 
-        console.log(`[VaultStore] ✓ Save complete. ID: ${snippet.id}. Existed: ${!!exists}`)
+        // Save complete (silent)
         set({ snippets: next })
         await cacheSnippets(next)
 

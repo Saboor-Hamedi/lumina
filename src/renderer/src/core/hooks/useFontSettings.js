@@ -97,16 +97,7 @@ const applyCaretStyles = (width, color) => {
   const verifyColor = getComputedStyle(root).getPropertyValue('--caret-color').trim()
 
   // Debug: Log the applied values
-  console.log('[useFontSettings] Applied caret styles:', {
-    width,
-    finalColor,
-    computedWidth: verifyWidth,
-    computedColor: verifyColor,
-    widthMatch: verifyWidth === width || verifyWidth === width.replace('px', '') + 'px',
-    colorMatch: verifyColor === finalColor || verifyColor.toLowerCase() === finalColor.toLowerCase(),
-    inlineWidth: root.style.getPropertyValue('--caret-width'),
-    inlineColor: root.style.getPropertyValue('--caret-color')
-  })
+  // Applied caret styles (no runtime logging)
 
   // If CSS variables weren't set correctly, try again
   if (!verifyWidth || verifyWidth === '' || (!verifyWidth.includes('px') && !width.includes('px'))) {
@@ -186,7 +177,7 @@ export const useFontSettings = () => {
         try {
           const allSettings = await window.api?.getSetting?.()
           const cursorSettings = (allSettings && allSettings.cursor) || (await window.api?.getSetting?.('cursor')) || {}
-          console.log('[useFontSettings] Raw cursor settings from API:', cursorSettings, 'allSettings:', allSettings)
+          // Raw cursor settings loaded from API (silent)
 
           if ((cursorSettings && typeof cursorSettings === 'object' && Object.keys(cursorSettings).length > 0) || (allSettings && typeof allSettings === 'object')) {
             // cursor object exists: { caretWidth, caretStyle, caretColor, ... }
@@ -216,13 +207,13 @@ export const useFontSettings = () => {
             }
             // Cursor settings from settings.json take precedence
             colors = { ...colors, ...cursorColors }
-            console.log('[useFontSettings] Loaded and merged cursor settings from settings.json:', cursorColors)
+            // Loaded and merged cursor settings from settings.json (silent)
           } else {
-            console.log('[useFontSettings] No cursor object found in settings.json, using localStorage/defaults')
+            // No cursor object found in settings.json; using localStorage/defaults
           }
         } catch (e) {
           console.warn('[useFontSettings] Failed to load cursor from settings.json:', e)
-          console.log('[useFontSettings] Falling back to localStorage/defaults')
+          // Falling back to localStorage/defaults
         }
 
         // Also try to load from theme.colors (for backward compatibility)
@@ -239,7 +230,7 @@ export const useFontSettings = () => {
                 // Only use if cursor settings weren't found
                 if (!colors.caretWidth && !colors.caretStyle && !colors.caretColor) {
                   colors = { ...dbColors, ...colors }
-                  console.log('[useFontSettings] Loaded from legacy theme.colors:', dbColors)
+                  // loaded legacy theme colors (silently applied)
                 }
               } catch (parseErr) {
                 console.warn('[useFontSettings] Failed to parse theme colors:', parseErr)
@@ -254,12 +245,7 @@ export const useFontSettings = () => {
           console.warn('[useFontSettings] Failed to load theme from settings.json:', e)
         }
 
-        console.log('[useFontSettings] Final loaded colors after all sources:', colors)
-        console.log('[useFontSettings] Caret settings found:', {
-          caretWidth: colors.caretWidth,
-          caretStyle: colors.caretStyle,
-          caretColor: colors.caretColor
-        })
+        // final colors loaded (applied silently)
 
         // Fallback to document attribute
         if (!themeName || themeName === DEFAULTS.THEME) {
@@ -310,18 +296,10 @@ export const useFontSettings = () => {
         }
         const normalizedWidth = clampCaretWidth(savedCaretWidth)
 
-        console.log('[useFontSettings] Caret width processing:', {
-          original: colors.caretWidth,
-          processed: savedCaretWidth,
-          normalized: normalizedWidth
-        })
+        // Caret width processing (silent)
         const savedCaretColor = colors.caretColor || ''
 
-        console.log('[useFontSettings] Applying caret settings:', {
-          style: savedCaretStyle,
-          width: normalizedWidth,
-          color: savedCaretColor || 'theme default'
-        })
+        // Applying caret settings (silent)
 
         // Apply caret styles immediately on load (synchronous for instant display)
         root.style.setProperty('--caret-style', savedCaretStyle)
@@ -336,11 +314,7 @@ export const useFontSettings = () => {
         }
         root.style.setProperty('--caret-color', finalCaretColor)
 
-        console.log('[useFontSettings] Applied CSS variables:', {
-          '--caret-style': getComputedStyle(root).getPropertyValue('--caret-style'),
-          '--caret-width': getComputedStyle(root).getPropertyValue('--caret-width'),
-          '--caret-color': getComputedStyle(root).getPropertyValue('--caret-color')
-        })
+        // CSS variables applied (silent)
 
         // Force immediate application
         void root.offsetHeight
@@ -390,7 +364,7 @@ export const useFontSettings = () => {
               previewFontFamily: pf,
               previewFontSize: isNaN(ps) ? DEFAULTS.FONT_SIZE : ps
             })
-            console.log('[useFontSettings] Saved cursor settings to settings.json on initial load')
+            // Saved cursor settings to settings.json on initial load (silent)
           }
         } catch (e) {
           console.warn('[useFontSettings] Failed to sync cursor settings to settings.json:', e)
@@ -409,7 +383,7 @@ export const useFontSettings = () => {
     let settingsChangedUnsubscribe = null
     if (window.api?.onSettingsChanged) {
       settingsChangedUnsubscribe = window.api.onSettingsChanged(async (settings) => {
-        console.log('[useFontSettings] settings.json changed externally, reloading cursor/preview settings...', settings)
+        // settings.json changed externally, reloading cursor/preview settings (silent)
         try {
           const cursorSettings = settings?.cursor || {}
 
@@ -532,7 +506,7 @@ export const useFontSettings = () => {
 
         setBaseColors(merged)
 
-        console.log('[useFontSettings] Saved cursor settings to settings.json:', cursorSettings)
+        // Saved cursor settings to settings.json (silent)
       } catch (err) {
         console.warn('[useFontSettings] Failed to save cursor settings:', err)
       }
@@ -614,7 +588,7 @@ export const useFontSettings = () => {
   const updateCaretWidth = useCallback(
     (width) => {
       const normalized = clampCaretWidth(width)
-      console.log('[useFontSettings] updateCaretWidth called:', { width, normalized, currentCaretColor: caretColor })
+      // updateCaretWidth called (silent)
 
       // Update state immediately for UI feedback
       setCaretWidth(normalized)
@@ -625,11 +599,7 @@ export const useFontSettings = () => {
       // Verify CSS variables were set
       const root = document.documentElement
       const verifyWidth = getComputedStyle(root).getPropertyValue('--caret-width').trim()
-      console.log('[useFontSettings] CSS variable verification:', {
-        set: normalized,
-        actual: verifyWidth,
-        match: verifyWidth === normalized || verifyWidth === normalized.replace('px', '') + 'px'
-      })
+      // CSS variable verification (silent)
 
       // Persist to storage (non-blocking) - store as number (not "3px", just 3)
       let widthNumber = width

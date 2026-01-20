@@ -62,6 +62,51 @@ if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
     contextBridge.exposeInMainWorld('api', api)
+    // Forward uncaught errors/unhandled rejections to main process and open DevTools on first error
+    try {
+      let devtoolsOpened = false
+      window.addEventListener('error', (evt) => {
+        try {
+          const payload = {
+            type: 'error',
+            message: evt.message,
+            filename: evt.filename,
+            lineno: evt.lineno,
+            colno: evt.colno,
+            error: (evt.error && evt.error.stack) ? evt.error.stack : undefined,
+            time: Date.now()
+          }
+          electronAPI.ipcRenderer.send('renderer:log', payload)
+          if (!devtoolsOpened) {
+            devtoolsOpened = true
+            electronAPI.ipcRenderer.invoke('window:open-devtools')
+          }
+        } catch (e) {
+          // ignore
+        }
+      })
+
+      window.addEventListener('unhandledrejection', (evt) => {
+        try {
+          const reason = evt.reason
+          const payload = {
+            type: 'unhandledrejection',
+            message: reason && reason.message ? reason.message : String(reason),
+            error: reason && reason.stack ? reason.stack : undefined,
+            time: Date.now()
+          }
+          electronAPI.ipcRenderer.send('renderer:log', payload)
+          if (!devtoolsOpened) {
+            devtoolsOpened = true
+            electronAPI.ipcRenderer.invoke('window:open-devtools')
+          }
+        } catch (e) {
+          // ignore
+        }
+      })
+    } catch (e) {
+      // ignore
+    }
   } catch (error) {
     console.error('Preload Bridge Error:', error)
   }

@@ -562,6 +562,8 @@
   border-left-color: var(--caret-color, var(--text-accent)) !important;
   border-left-style: solid !important;
   margin-left: calc(-1 * var(--caret-width, 2px) / 2) !important;
+  background-color: transparent !important;
+  width: auto !important;
   transition: border-color 0.15s ease, border-width 0.15s ease, background-color 0.15s ease !important;
   pointer-events: none;
   will-change: border-color, border-width, background-color;
@@ -717,15 +719,15 @@
 .editor-metadata-bar {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 0 0 16px 0;
-  margin-bottom: 24px;
+  gap: 8px; /* tighter spacing for compact header */
+  padding: 0 0 8px 0; /* reduced bottom padding */
+  margin-bottom: 12px;
   border-bottom: 1px solid var(--border-subtle);
-  font-size: calc(var(--font-size-editor, 14px) * 0.85); /* Match editor font size proportionally */
-  line-height: calc(var(--font-size-editor, 14px) * 1.8); /* Match editor line height */
+  font-size: calc(var(--font-size-editor, 14px) * 0.85);
+  line-height: 1.2; /* more compact */
   color: var(--text-muted);
   width: 100%;
-  min-height: auto; /* Let content determine height */
+  min-height: 0;
   box-sizing: border-box;
 }
 
@@ -771,9 +773,9 @@
   gap: 4px;
   background: var(--bg-active);
   color: var(--text-accent);
-  padding: 3px 8px; /* Slightly more padding for rectangular look */
-  border-radius: 5px; /* Requested 5px */
-  font-size: 11px;
+  padding: 2px 6px; /* smaller padding for compact meta tags */
+  border-radius: 4px;
+  font-size: 10px;
   font-weight: 500;
   border: 1px solid rgba(var(--text-accent-rgb), 0.15);
   transition: all 0.2s;
@@ -788,7 +790,7 @@
   background: transparent;
   border: none;
   color: currentColor;
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1;
   cursor: pointer;
   padding: 0;
@@ -798,8 +800,8 @@
   opacity: 0.6;
   transition: all 0.2s;
   margin-left: 2px;
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
 }
 
@@ -824,7 +826,8 @@
   outline: none;
   color: var(--text-main);
   font-family: inherit;
-  font-size: 12px;
+  font-size: 11px;
+  padding: 4px 6px; /* small padding to prevent huge hit area */
   width: 100%;
 }
 
@@ -2067,7 +2070,7 @@
   width: min(1100px, 96%);
   height: min(84vh, 86%);
   background: var(--bg-app);
-  border-radius: 12px;
+  border-radius: 0; /* flat to match main app header */
   box-shadow: none;
   border: 1px solid rgba(255,255,255,0.04);
   display: flex;

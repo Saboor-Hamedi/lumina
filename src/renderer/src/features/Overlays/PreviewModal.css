@@ -15,7 +15,7 @@
   max-width: 1200px;
   background: var(--bg-app);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-main, 5px);
+  border-radius: 0; /* Make flat like main app header */
   box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6);
   display: flex;
   flex-direction: column;
@@ -36,8 +36,8 @@
 /* Re-styled Breadcrumb for Premium Feel */
 .preview-breadcrumb {
   background: var(--bg-active);
-  padding: 4px 12px 4px 4px;
-  border-radius: var(--radius-main, 5px);
+  padding: 6px 12px 6px 8px; /* slightly tighter vertical padding */
+  border-radius: 0; /* flat */
   border: 1px solid var(--border-dim);
   gap: 10px;
 }
@@ -48,13 +48,13 @@
   color: white;
   background: var(--text-accent);
   padding: 2px 6px;
-  border-radius: var(--radius-sm, 3px);
+  border-radius: 2px; /* less rounded to match main header */
   letter-spacing: 0.05em;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: none; /* remove shadow for flat look */
 }
 
 .preview-filename-text {
-  font-size: 13px;
+  font-size: 12px; /* slightly smaller to match main header sizing */
   font-weight: 600;
   color: var(--text-main);
 }

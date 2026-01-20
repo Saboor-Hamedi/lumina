@@ -9,7 +9,7 @@ export const useUpdateStore = create((set, get) => ({
   init: () => {
     if (window.api?.onUpdateStatus) {
       return window.api.onUpdateStatus(({ status, data }) => {
-        console.log(`[UpdateStore] 📥 Received: ${status}`, data)
+        // update status received (silent)
         switch (status) {
           case 'checking':
             set({ status: 'checking', error: null })

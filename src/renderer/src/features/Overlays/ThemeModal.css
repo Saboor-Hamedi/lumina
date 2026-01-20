@@ -16,8 +16,8 @@
 .theme-modal-container {
   background: var(--bg-app);
   border: 1px solid var(--border-dim);
-  border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border-radius: 0;
+  box-shadow: none;
   width: 90%;
   max-width: 900px;
   max-height: 85vh;
@@ -27,13 +27,18 @@
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.theme-modal-header {
+.theme-modal-container > .pane-header {
+  /* Match main app header: flat, same background and border */
+  background: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border);
+  /* use global header height so modals match the main header */
+  padding: 0 12px;
+  height: var(--header-height);
+
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--border-dim);
-  background: var(--bg-panel);
 }
 
 .theme-modal-title-group {
@@ -48,11 +53,59 @@
 }
 
 .theme-modal-title {
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--text-main);
-  line-height: 1.2;
+  line-height: 1.1;
+  /* subtle inner-like shadow to give slight depth */
+  text-shadow: 0 1px 0 rgba(255,255,255,0.02), 0 -1px 2px rgba(0,0,0,0.06);
 }
+
+/* Knob that indicates draggable/header area */
+.modal-header-knob {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 6px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(0,0,0,0.06), rgba(0,0,0,0.02));
+  box-shadow: 0 1px 0 rgba(255,255,255,0.03) inset;
+}
+
+/* Layout helpers for new ModalHeader */
+.modal-header-with-knob { 
+  padding-top: 0;
+}
+.modal-left { display: flex; align-items: center; gap: 12px; }
+.modal-right { display: flex; align-items: stretch; gap: 8px; position: absolute; right: 0; top: 0; height: var(--header-height); }
+
+/* Close button exactly header height, no extra internal padding */
+.theme-modal-container .modal-close.modal-close-top {
+  width: var(--header-height);
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: background 0.08s ease, transform 0.08s ease;
+}
+.theme-modal-container .modal-close.modal-close-top:hover {
+  background: var(--color-danger, #ef4444);
+  color: white;
+  transform: none;
+}
+
+/* small knob under the title to 'pop' the title */
+
+
+/* Ensure header/body separation is clear */
+.theme-modal-container > .pane-header { border-bottom: 1px solid var(--color-border); }
 
 .theme-modal-subtitle {
   font-size: 12px;
@@ -60,22 +113,24 @@
   margin-top: 2px;
 }
 
-.modal-close {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 6px;
+.theme-modal-container .modal-close {
+  /* make close icon match header icon sizing/shape */
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-tertiary);
+  color: var(--text-faint);
+  cursor: pointer;
   transition: all 0.2s;
 }
 
-.modal-close:hover {
-  background: var(--bg-active);
-  color: var(--text-main);
+.theme-modal-container .modal-close:hover {
+  background: var(--color-accent-primary);
+  color: white;
 }
 
 .theme-modal-grid {

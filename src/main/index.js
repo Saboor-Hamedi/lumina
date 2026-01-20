@@ -184,6 +184,13 @@ app.whenReady().then(async () => {
   ipcMain.handle('app:getVersion', () => app.getVersion())
 
   ipcMain.handle('window:minimize', () => mainWindow?.minimize())
+  ipcMain.handle('window:open-devtools', () => {
+    try {
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.openDevTools({ mode: 'detach' })
+    } catch (e) {
+      console.error('Failed to open DevTools:', e)
+    }
+  })
   ipcMain.handle('window:toggle-maximize', () => {
     if (mainWindow?.isMaximized()) mainWindow.unmaximize()
     else mainWindow?.maximize()
@@ -309,6 +316,18 @@ app.whenReady().then(async () => {
     } catch (error) {
       console.error('[Main] Export HTML failed:', error)
       throw error
+    }
+  })
+
+  // Receive renderer logs and append to a file in userData
+  ipcMain.on('renderer:log', async (_, payload) => {
+    try {
+      const logDir = app.getPath('userData')
+      const logFile = join(logDir, 'renderer.log')
+      const line = `[${new Date(payload.time || Date.now()).toISOString()}] ${payload.type || 'log'}: ${payload.message || ''}\n${payload.error || ''}\n\n`
+      await fs.appendFile(logFile, line, 'utf8')
+    } catch (err) {
+      console.error('Failed to write renderer log:', err)
     }
   })
 

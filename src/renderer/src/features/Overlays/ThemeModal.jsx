@@ -3,6 +3,7 @@ import { useTheme } from '../../core/hooks/useTheme'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { X, Check, Palette } from 'lucide-react'
 import './ThemeModal.css'
+import ModalHeader from './ModalHeader'
 
 /**
  * ThemeModal Component
@@ -27,15 +28,7 @@ const ThemeModal = ({ isOpen, onClose }) => {
   return (
     <div className="modal-overlay theme-modal-overlay" onClick={onClose}>
       <div className="modal-container theme-modal-container" onClick={(e) => e.stopPropagation()}>
-        <header className="pane-header">
-          <div className="modal-title-stack">
-            <Palette size={16} />
-            <span>Choose Theme</span>
-          </div>
-          <button className="modal-close" onClick={onClose} title="Close (Esc)">
-            <X size={18} />
-          </button>
-        </header>
+        <ModalHeader title="Choose Theme" icon={<Palette size={16} />} onClose={onClose} />
 
         <div className="theme-modal-grid">
           {allThemes.map((t) => {
