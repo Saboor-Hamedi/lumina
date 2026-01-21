@@ -1,6 +1,7 @@
 .find-widget {
+  /* Absolute overlay inside .markdown-editor, just under the title bar */
   position: absolute;
-  top: 8px;
+  top: 56px; /* editor-titlebar min-height (40) + padding (8+8) */
   right: 16px;
   z-index: 1000;
   background: var(--bg-panel);

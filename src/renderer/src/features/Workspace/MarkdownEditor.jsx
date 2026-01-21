@@ -134,29 +134,43 @@ const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
       // Ctrl+F / Cmd+F opens local editor find or focuses if already open
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && key === 'f') {
         e.preventDefault()
-        if (isFindWidgetOpen) {
-          // If already open, just focus the search input
-          window.dispatchEvent(new CustomEvent('find-widget-focus-search'))
-        } else {
-          // Get selected text from editor to pre-fill
-          let selectedText = ''
-          if (viewRef.current) {
-            const selection = viewRef.current.state.selection.main
-            if (selection.from !== selection.to) {
-              selectedText = viewRef.current.state.doc.sliceString(selection.from, selection.to)
-            }
-          }
-          setFindWidgetReplaceMode(false)
-          setIsFindWidgetOpen(true)
-          // Dispatch selected text to widget
-          if (selectedText) {
-            setTimeout(() => {
-              window.dispatchEvent(new CustomEvent('find-widget-set-query', {
-                detail: { query: selectedText }
-              }))
-            }, 0)
+        // Get the currently selected text, preferring the editor selection
+        let selectedText = ''
+
+        // 1) Prefer CodeMirror's logical selection (works even if widget isn't open yet)
+        if (viewRef.current) {
+          const selection = viewRef.current.state.selection.main
+          if (selection.from !== selection.to) {
+            selectedText = viewRef.current.state.doc.sliceString(selection.from, selection.to)
           }
         }
+
+        // 2) Fallback to DOM selection (e.g. reading/preview mode or outside editor)
+        if (!selectedText) {
+          const domSelection = window.getSelection ? window.getSelection() : null
+          if (domSelection && domSelection.toString().trim()) {
+            selectedText = domSelection.toString()
+          }
+        }
+
+        // Ensure widget is open
+        if (!isFindWidgetOpen) {
+          setFindWidgetReplaceMode(false)
+          setIsFindWidgetOpen(true)
+        }
+
+        // If we have a selection, push it into the widget; otherwise just focus
+        setTimeout(() => {
+          if (selectedText) {
+            window.dispatchEvent(
+              new CustomEvent('find-widget-set-query', {
+                detail: { query: selectedText }
+              })
+            )
+          } else {
+            window.dispatchEvent(new CustomEvent('find-widget-focus-search'))
+          }
+        }, 0)
         return
       }
 
@@ -925,19 +939,20 @@ const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
         onInlineAI={() => setIsInlineAIOpen(true)}
       />
 
+      {/* Local Find Widget - appears above editor content, below titlebar */}
+      {isFindWidgetOpen && viewRef.current && (
+        <FindWidget
+          editorView={viewRef.current}
+          initialReplaceMode={findWidgetReplaceMode}
+          onClose={() => {
+            setIsFindWidgetOpen(false)
+            setFindWidgetReplaceMode(false)
+          }}
+        />
+      )}
+
       <div className="editor-scroller" ref={scrollerRef} style={{ position: 'relative' }}>
-        {/* Local Find Widget - appears above editor content */}
-        {isFindWidgetOpen && viewRef.current && (
-          <FindWidget
-            editorView={viewRef.current}
-            initialReplaceMode={findWidgetReplaceMode}
-            onClose={() => {
-              setIsFindWidgetOpen(false)
-              setFindWidgetReplaceMode(false)
-            }}
-          />
-        )}
-          <div className="editor-canvas-wrap" style={{ position: 'relative' }}>
+        <div className="editor-canvas-wrap" style={{ position: 'relative' }}>
           <input
             type="text"
             ref={titleRef}
