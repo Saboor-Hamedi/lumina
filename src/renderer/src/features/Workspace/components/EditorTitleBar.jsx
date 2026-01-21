@@ -16,8 +16,7 @@ import {
   Loader2
 } from 'lucide-react'
 import { useToast } from '../../../core/hooks/useToast'
-import ToastNotification from '../../../core/utils/ToastNotification'
-import '../../../assets/toast.css'
+import ToastNotification from '../../../core/notification'
 
 const EditorTitleBar = ({
   title,
@@ -38,7 +37,7 @@ const EditorTitleBar = ({
   const menuRef = useRef(null)
   const buttonRef = useRef(null)
   const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 })
-  const { toast, showToast } = useToast()
+  const { toast, showToast, clearToast } = useToast()
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -281,7 +280,7 @@ const EditorTitleBar = ({
             )}
         </div>
       </div>
-      <ToastNotification toast={toast} />
+      <ToastNotification toast={toast} onClose={clearToast} />
     </div>
   )
 }

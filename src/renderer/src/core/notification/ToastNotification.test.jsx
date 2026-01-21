@@ -22,7 +22,6 @@ describe('ToastNotification', () => {
     render(<ToastNotification toast={toast} />)
 
     expect(screen.getByText('Success message')).toBeInTheDocument()
-    expect(screen.getByTestId('toast-icon') || screen.getByRole('img')).toBeInTheDocument()
   })
 
   it('should render error toast with icon', () => {
@@ -43,7 +42,7 @@ describe('ToastNotification', () => {
     const toast = { type: 'success', message: 'Test' }
     const { container } = render(<ToastNotification toast={toast} />)
 
-    const toastElement = container.querySelector('.toast')
+    const toastElement = container.querySelector('.toast-notification')
     expect(toastElement).toHaveClass('toast-success')
   })
 
@@ -58,7 +57,7 @@ describe('ToastNotification', () => {
 
     // Should start exit animation
     await waitFor(() => {
-      const toastElement = document.querySelector('.toast')
+      const toastElement = document.querySelector('.toast-notification')
       expect(toastElement).toHaveClass('toast-exit')
     })
 

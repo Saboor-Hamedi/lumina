@@ -1,26 +1,26 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
 import { Download, RefreshCw, X, AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
 import './UpdateToast.css'
 
 const UpdateToast = () => {
-  const { status, updateInfo, progress, error, download, install, check } = useUpdateStore()
-  
-  // Auto-hide error/toast after delay?
-  // For 'downloading' and 'ready', keep open.
-  
-  if (status === 'idle') return null
-
-  // Optional: Don't show "checking" or "not-available" to keep it non-intrusive?
-  // User asked for "sign there is a new update or not", so maybe show "checking" -> "up to date" then hide.
-  
-  const isSilent = status === 'checking' || status === 'not-available'
-  // But user complained "shows no sign", so maybe they WANT to see "Checking..." then "Up to date".
-  // Let's show everything for now, can refine later.
+  const { status, updateInfo, progress, download, install } = useUpdateStore()
 
   const handleDownload = () => download()
   const handleInstall = () => install()
   const handleClose = () => useUpdateStore.setState({ status: 'idle' })
+
+  // Auto-close "checking" state after 10 seconds if it gets stuck
+  useEffect(() => {
+    if (status === 'checking') {
+      const timer = setTimeout(() => {
+        useUpdateStore.setState({ status: 'idle' })
+      }, 10000) // 10 seconds timeout
+      return () => clearTimeout(timer)
+    }
+  }, [status])
+
+  if (status === 'idle') return null
 
   return (
     <div className={`update-toast status-${status}`}>
@@ -29,6 +29,7 @@ const UpdateToast = () => {
           <>
             <Loader2 className="toast-icon spin" size={16} />
             <span>Checking for updates...</span>
+            <button className="toast-close" onClick={handleClose}><X size={14} /></button>
           </>
         )}
 
@@ -58,8 +59,8 @@ const UpdateToast = () => {
              <div className="toast-text">
               <div className="toast-title">Downloading...</div>
               <div className="toast-progress-bar">
-                <div 
-                  className="toast-progress-fill" 
+                <div
+                  className="toast-progress-fill"
                   style={{ width: `${progress?.percent || 0}%` }}
                 />
               </div>

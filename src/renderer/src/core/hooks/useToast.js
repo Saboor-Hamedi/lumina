@@ -17,6 +17,13 @@ export const useToast = () => {
     setTimeout(() => setToast(null), 3000)
   }
 
-  // Return the toast object and the function
-  return { toast, showToast }
+  /**
+   * Clears the current toast notification.
+   */
+  const clearToast = () => {
+    setToast(null)
+  }
+
+  // Return the toast object and the functions
+  return { toast, showToast, clearToast }
 }

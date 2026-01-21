@@ -11,6 +11,12 @@ import './AIChatModal.css'
  * Draggable, resizable, and maximizable modal overlay for AI Chat.
  * Provides a floating chat window experience within the main window.
  * Similar to ThemeModal but with drag, resize, and maximize capabilities.
+ *
+ * @param {Object} props - Component props
+ * @param {boolean} props.isOpen - Whether the modal is currently open
+ * @param {Function} props.onClose - Callback function when modal is closed
+ * @param {Function} [props.onUnfloat] - Callback function to restore modal to sidebar
+ * @returns {JSX.Element|null} The modal component or null if not open
  */
 const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
   const modalRef = useRef(null)
@@ -57,18 +63,25 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
     }
   })
 
-  // Save modal state to localStorage
+  /**
+   * Persist modal position and size to localStorage when changed.
+   * Only saves when modal is open and not maximized.
+   */
   useEffect(() => {
     if (isOpen && !isMaximized) {
       try {
         localStorage.setItem('aiChatModalState', JSON.stringify(modalState))
       } catch (e) {
-        // Ignore storage errors
+        // Ignore storage errors (e.g., quota exceeded)
+        console.warn('[AIChatModal] Failed to save modal state:', e)
       }
     }
   }, [modalState, isOpen, isMaximized])
 
-  // Drag functionality
+  /**
+   * Handles the start of a drag operation on the modal header.
+   * @param {MouseEvent} e - Mouse event
+   */
   const handleDragStart = useCallback((e) => {
     if (isMaximized) return
     e.preventDefault()
@@ -82,6 +95,11 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
     }
   }, [modalState, isMaximized])
 
+  /**
+   * Handles dragging the modal while mouse is moving.
+   * Constrains the modal to stay within the viewport bounds.
+   * @param {MouseEvent} e - Mouse event
+   */
   const handleDrag = useCallback((e) => {
     if (!isDragging || isMaximized) return
 
@@ -104,6 +122,9 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
     }))
   }, [isDragging, isMaximized, modalState.width, modalState.height])
 
+  /**
+   * Handles the end of a drag operation.
+   */
   const handleDragEnd = useCallback(() => {
     setIsDragging(false)
   }, [])
@@ -125,6 +146,11 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
     }
   }, [modalState, isMaximized])
 
+  /**
+   * Handles resizing the modal while mouse is moving.
+   * Respects minimum and maximum size constraints.
+   * @param {MouseEvent} e - Mouse event
+   */
   const handleResize = useCallback((e) => {
     if (!isResizing || isMaximized || !resizeDirection) return
 
@@ -154,7 +180,6 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
       newHeight = Math.max(minHeight, Math.min(maxHeight, resizeStartPos.current.height + deltaY))
     }
     if (resizeDirection.includes('top')) {
-      const heightDelta = resizeStartPos.current.height - Math.max(minHeight, resizeStartPos.current.height - deltaY)
       newHeight = Math.max(minHeight, Math.min(maxHeight, resizeStartPos.current.height - deltaY))
       newTop = Math.max(0, resizeStartPos.current.top + (resizeStartPos.current.height - newHeight))
     }
@@ -173,7 +198,9 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
     setResizeDirection(null)
   }, [])
 
-  // Maximize/Restore functionality
+  /**
+   * Toggles the modal between maximized and windowed states.
+   */
   const handleToggleMaximize = useCallback(() => {
     setIsMaximized(prev => !prev)
   }, [])
@@ -233,7 +260,11 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
                   className="modal-clear-btn"
                   onClick={(e) => {
                     e.stopPropagation()
-                    clearChat()
+                    try {
+                      clearChat()
+                    } catch (error) {
+                      console.error('[AIChatModal] Failed to clear chat:', error)
+                    }
                   }}
                   title="Clear History"
                   aria-label="Clear History"

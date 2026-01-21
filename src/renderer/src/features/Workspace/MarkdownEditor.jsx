@@ -4,6 +4,7 @@ import hljs from 'highlight.js'
 import EditorTitleBar from './components/EditorTitleBar'
 import EditorFooter from './components/EditorFooter'
 import EditorMetadata from './components/EditorMetadata'
+import FindWidget from './components/FindWidget'
 import PreviewModal from '../Overlays/PreviewModal'
 import InlineAIModal from '../Overlays/InlineAIModal'
 import ModalHeader from '../Overlays/ModalHeader'
@@ -14,19 +15,18 @@ import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useFontSettings } from '../../core/hooks/useFontSettings'
 import { useToast } from '../../core/hooks/useToast'
-import ToastNotification from '../../core/utils/ToastNotification'
-import '../../assets/toast.css'
+import ToastNotification from '../../core/notification'
 import './MarkdownEditor.css'
 
 // CodeMirror 6 Imports
 import { EditorView } from 'codemirror'
-import { EditorState, Compartment } from '@codemirror/state'
+import { EditorState, Compartment, StateField } from '@codemirror/state'
 import { markdown } from '@codemirror/lang-markdown'
 import { languages } from '@codemirror/language-data'
-import { keymap, highlightActiveLine, dropCursor, lineNumbers } from '@codemirror/view'
+import { keymap, highlightActiveLine, dropCursor, lineNumbers, Decoration } from '@codemirror/view'
 import { history, historyKeymap, defaultKeymap } from '@codemirror/commands'
 import { indentOnInput, bracketMatching } from '@codemirror/language'
-import { searchKeymap, highlightSelectionMatches } from '@codemirror/search'
+import { highlightSelectionMatches } from '@codemirror/search'
 import {
   autocompletion,
   completionKeymap,
@@ -51,7 +51,7 @@ const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
   const scrollerRef = useRef(null)
   const themeCompartment = useRef(new Compartment())
   const lineNumberCompartment = useRef(new Compartment())
-  const { toast, showToast } = useToast()
+  const { toast, showToast, clearToast } = useToast()
   const [isSaving, setIsSaving] = useState(false)
   const isMountedRef = useRef(true)
 
@@ -64,6 +64,9 @@ const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
 
   // Inline AI ref for CodeMirror keymap
   const setIsInlineAIOpenRef = useRef(null)
+
+  // Search highlighting compartment
+  const searchHighlightCompartment = useRef(new Compartment())
 
   const { settings } = useSettingsStore()
   const { snippets, setSelectedSnippet, updateSnippetSelection, setDirty } = useVaultStore()
@@ -115,11 +118,74 @@ const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
   const [isOverlayOpen, setIsOverlayOpen] = useState(false)
   const [previewContent, setPreviewContent] = useState('')
   const [isInlineAIOpen, setIsInlineAIOpen] = useState(false)
+  const [isFindWidgetOpen, setIsFindWidgetOpen] = useState(false)
+  const [findWidgetReplaceMode, setFindWidgetReplaceMode] = useState(false)
 
   // Sync ref with state setter for CodeMirror keymap
   useEffect(() => {
     setIsInlineAIOpenRef.current = setIsInlineAIOpen
   }, [])
+
+  // Global Ctrl+F / Cmd+F to open local find, Ctrl+H to toggle replace, Esc to close
+  useEffect(() => {
+    const handleFindShortcut = (e) => {
+      const key = e.key && e.key.toLowerCase()
+
+      // Ctrl+F / Cmd+F opens local editor find or focuses if already open
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && key === 'f') {
+        e.preventDefault()
+        if (isFindWidgetOpen) {
+          // If already open, just focus the search input
+          window.dispatchEvent(new CustomEvent('find-widget-focus-search'))
+        } else {
+          // Get selected text from editor to pre-fill
+          let selectedText = ''
+          if (viewRef.current) {
+            const selection = viewRef.current.state.selection.main
+            if (selection.from !== selection.to) {
+              selectedText = viewRef.current.state.doc.sliceString(selection.from, selection.to)
+            }
+          }
+          setFindWidgetReplaceMode(false)
+          setIsFindWidgetOpen(true)
+          // Dispatch selected text to widget
+          if (selectedText) {
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent('find-widget-set-query', {
+                detail: { query: selectedText }
+              }))
+            }, 0)
+          }
+        }
+        return
+      }
+
+      // Ctrl+H / Cmd+H toggles replace mode
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && key === 'h') {
+        e.preventDefault()
+        if (isFindWidgetOpen) {
+          // Toggle replace dropdown in the existing widget
+          window.dispatchEvent(new CustomEvent('find-widget-toggle-replace'))
+        } else {
+          // Open with replace mode
+          setFindWidgetReplaceMode(true)
+          setIsFindWidgetOpen(true)
+        }
+        return
+      }
+
+      // Esc closes find widget if open
+      if (key === 'escape' && isFindWidgetOpen) {
+        e.preventDefault()
+        setIsFindWidgetOpen(false)
+        setFindWidgetReplaceMode(false)
+        window.dispatchEvent(new CustomEvent('search-clear'))
+      }
+    }
+
+    window.addEventListener('keydown', handleFindShortcut)
+    return () => window.removeEventListener('keydown', handleFindShortcut)
+  }, [isFindWidgetOpen])
 
   // Sync Global Snippets for Wikilinks
   useEffect(() => {
@@ -184,6 +250,7 @@ const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
           ),
           autocompletion({ override: [wikiLinkCompletion(() => snippetsRef.current)] }),
           highlightSelectionMatches(),
+          searchHighlightCompartment.current.of([]),
           markdown({ codeLanguages: languages }),
           // Theme compartment encapsulates caret and editor theme extensions
           themeCompartment.current.of([caretTheme, seamlessTheme]),
@@ -210,11 +277,14 @@ const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
                 return true
               }
             },
-            // Filter out Mod-f and Mod-g from searchKeymap to prevent CodeMirror find/replace
-            // These are disabled to allow Ctrl+G for GraphNexus and prevent conflicts
-            ...searchKeymap.filter(
-              (binding) => binding.key !== 'Mod-f' && binding.key !== 'Mod-g'
-            ),
+            // Custom: Ctrl+F for local find widget (editor-only search)
+            {
+              key: 'Mod-f',
+              run: () => {
+                setIsFindWidgetOpen(true)
+                return true
+              }
+            },
             // Filter out Mod-i from defaultKeymap to allow Ctrl+I for Inspector toggle
             ...defaultKeymap.filter(
               (binding) => binding.key !== 'Mod-i'
@@ -324,6 +394,139 @@ const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
       // ignore highlighting errors
     }
   }, [previewContent])
+
+  // Search highlighting and navigation
+  useEffect(() => {
+    if (!viewRef.current) return
+
+    const createSearchHighlightField = (decorations) => {
+      return StateField.define({
+        create() {
+          return decorations
+        },
+        update(decorations, tr) {
+          return decorations.map(tr.changes)
+        },
+        provide: f => EditorView.decorations.from(f)
+      })
+    }
+
+    const handleSearchUpdate = (e) => {
+      const { searchQuery, pattern } = e.detail
+      if (!viewRef.current || !searchQuery || !pattern) {
+        // Clear highlights
+        try {
+          viewRef.current.dispatch({
+            effects: searchHighlightCompartment.current.reconfigure([])
+          })
+        } catch (err) {
+          console.error('[MarkdownEditor] Search clear error:', err)
+        }
+        return
+      }
+
+      try {
+        const content = viewRef.current.state.doc.toString()
+        const regex = new RegExp(pattern.source, pattern.flags)
+        const matches = [...content.matchAll(regex)]
+
+        const decorations = []
+        matches.forEach((match) => {
+          const from = match.index
+          const to = from + match[0].length
+          if (from >= 0 && to <= content.length && from < to) {
+            decorations.push(Decoration.mark({ class: 'cm-search-highlight' }).range(from, to))
+          }
+        })
+
+        const decoSet = decorations.length > 0 ? Decoration.set(decorations) : Decoration.none
+
+        // Update the compartment with the new field
+        viewRef.current.dispatch({
+          effects: searchHighlightCompartment.current.reconfigure([
+            createSearchHighlightField(decoSet)
+          ])
+        })
+      } catch (err) {
+        console.error('[MarkdownEditor] Search highlight error:', err)
+        // Clear on error
+        try {
+          viewRef.current.dispatch({
+            effects: searchHighlightCompartment.current.reconfigure([])
+          })
+        } catch (clearErr) {
+          // Ignore clear errors
+        }
+      }
+    }
+
+    const handleSearchClear = () => {
+      if (!viewRef.current) return
+      try {
+        viewRef.current.dispatch({
+          effects: searchHighlightCompartment.current.reconfigure([])
+        })
+      } catch (err) {
+        console.error('[MarkdownEditor] Search clear error:', err)
+      }
+    }
+
+    const handleSearchNavigate = (e) => {
+      const { snippetId, start, end } = e.detail
+      if (!viewRef.current || snippet?.id !== snippetId) return
+
+      try {
+        const view = viewRef.current
+        const docLength = view.state.doc.length
+        const from = Math.max(0, Math.min(start, docLength))
+        const to = Math.max(from, Math.min(end, docLength))
+
+        view.dispatch({
+          selection: { anchor: from, head: to },
+          effects: EditorView.scrollIntoView(from, { y: 'center' })
+        })
+        view.focus()
+      } catch (err) {
+        console.error('[MarkdownEditor] Search navigate error:', err)
+      }
+    }
+
+    window.addEventListener('search-update', handleSearchUpdate)
+    window.addEventListener('search-clear', handleSearchClear)
+    window.addEventListener('search-navigate', handleSearchNavigate)
+
+    return () => {
+      window.removeEventListener('search-update', handleSearchUpdate)
+      window.removeEventListener('search-clear', handleSearchClear)
+      window.removeEventListener('search-navigate', handleSearchNavigate)
+    }
+  }, [snippet?.id])
+
+  // Keep editor content in sync when a note is changed externally (e.g. global Search & Replace)
+  useEffect(() => {
+    const handleExternalUpdate = (e) => {
+      const { snippetId, code } = e.detail || {}
+      if (!viewRef.current || !snippet?.id || snippetId !== snippet.id) return
+
+      try {
+        const view = viewRef.current
+        const doc = view.state.doc
+        const docLength = doc.length
+
+        ignoreUpdateRef.current = true
+        view.dispatch({
+          changes: { from: 0, to: docLength, insert: code || '' }
+        })
+      } catch (err) {
+        console.error('[MarkdownEditor] External snippet update error:', err)
+      } finally {
+        ignoreUpdateRef.current = false
+      }
+    }
+
+    window.addEventListener('snippet-external-update', handleExternalUpdate)
+    return () => window.removeEventListener('snippet-external-update', handleExternalUpdate)
+  }, [snippet?.id])
 
   // Caret styling: apply computed CSS variables or inline fallbacks to CodeMirror cursor elements
   useEffect(() => {
@@ -705,6 +908,7 @@ const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
 
   return (
     <div className={`markdown-editor mode-${safeViewMode} cursor-${caretStyle || 'smooth'}`}>
+      <ToastNotification toast={toast} onClose={clearToast} />
       <EditorTitleBar
         title={title}
         snippet={snippet}
@@ -721,7 +925,18 @@ const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
         onInlineAI={() => setIsInlineAIOpen(true)}
       />
 
-      <div className="editor-scroller" ref={scrollerRef}>
+      <div className="editor-scroller" ref={scrollerRef} style={{ position: 'relative' }}>
+        {/* Local Find Widget - appears above editor content */}
+        {isFindWidgetOpen && viewRef.current && (
+          <FindWidget
+            editorView={viewRef.current}
+            initialReplaceMode={findWidgetReplaceMode}
+            onClose={() => {
+              setIsFindWidgetOpen(false)
+              setFindWidgetReplaceMode(false)
+            }}
+          />
+        )}
           <div className="editor-canvas-wrap" style={{ position: 'relative' }}>
           <input
             type="text"
@@ -753,7 +968,6 @@ const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
             // Editor mode: Show CodeMirror
             <div className="cm-host-container" ref={hostRef} />
           )}
-
           {isOverlayOpen && (
             <div className="in-editor-preview-overlay" onClick={(e) => e.stopPropagation()}>
               <div className="in-editor-preview-card" role="dialog" aria-modal="true">
@@ -779,6 +993,7 @@ const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
                     <article dangerouslySetInnerHTML={{ __html: previewContent || '' }} />
                   </div>
                 </div>
+
               </div>
             </div>
           )}
@@ -790,7 +1005,6 @@ const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
         setViewMode={setViewMode}
         onTogglePreview={() => setIsPreviewOpen((p) => !p)}
       />
-      <ToastNotification toast={toast} />
 
       <PreviewModal
         isOpen={isPreviewOpen}

@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { X, Clock, FileText, Copy } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
+import ModalHeader from './ModalHeader'
 import './PreviewModal.css'
 import hljs from 'highlight.js'
 
@@ -195,39 +196,33 @@ const PreviewModal = ({ isOpen, onClose, content, onNavigate, title: snippetTitl
         style={{ width: '92vw', height: '88vh' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="pane-header">
-          <div className="preview-header-left">
-            <div className="modal-title-stack preview-breadcrumb">
+        <ModalHeader
+          left={
+            <div className="modal-title-stack" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span className="preview-indicator-tag">MARKDOWN</span>
               <span className="preview-filename-text">{snippetTitle || 'Untitled'}</span>
             </div>
-          </div>
-
-          <div className="preview-header-center">
-            <div className="preview-stats-bar">
-              <div className="preview-stat-item">
-                <FileText size={12} />
-                <span>{stats.words} words</span>
+          }
+          right={
+            <>
+              <div className="preview-stats-bar">
+                <div className="preview-stat-item">
+                  <FileText size={12} />
+                  <span>{stats.words} words</span>
+                </div>
+                <div className="preview-stat-sep" />
+                <div className="preview-stat-item">
+                  <Clock size={12} />
+                  <span>{stats.time} min read</span>
+                </div>
               </div>
-              <div className="preview-stat-sep" />
-              <div className="preview-stat-item">
-                <Clock size={12} />
-                <span>{stats.time} min read</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="preview-header-right">
-            <div className="preview-actions-group">
               <button className="preview-action-btn" onClick={handleCopyHTML} title="Copy HTML">
                 <Copy size={16} />
               </button>
-            </div>
-            <button className="modal-close" onClick={onClose} title="Close">
-              <X size={18} />
-            </button>
-          </div>
-        </header>
+            </>
+          }
+          onClose={onClose}
+        />
 
         <div
           className="preview-body seamless-scrollbar"

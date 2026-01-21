@@ -1,0 +1,237 @@
+.find-widget {
+  position: absolute;
+  top: 8px;
+  right: 16px;
+  z-index: 1000;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border-subtle);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  animation: slideDownFind 0.2s ease-out;
+  border-radius: 4px;
+  width: 420px; /* Fixed, Monaco-style width */
+  max-width: 100%;
+}
+
+@keyframes slideDownFind {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.find-widget-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 3px 8px;
+  font-size: 11px;
+  flex-wrap: nowrap;
+}
+
+.find-inputs-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.find-replace-row {
+  animation: slideDownReplace 0.15s ease-out;
+}
+
+@keyframes slideDownReplace {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.find-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--bg-app);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  padding: 3px 3px 3px 6px;
+  transition: border-color 0.15s;
+  gap: 3px;
+  width: 100%;
+  min-width: 0;
+  height: 24px; /* Smaller, consistent height for find and replace */
+}
+
+.find-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.find-input-group:focus-within {
+  border-color: var(--text-accent);
+}
+
+.find-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.find-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-main);
+  font-size: 13px;
+  outline: none;
+  padding: 2px 0;
+  min-width: 0;
+}
+
+.find-input::placeholder {
+  color: var(--text-faint);
+}
+
+.find-input-actions {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.find-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.15s;
+  position: relative;
+}
+
+.find-action-btn:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+.find-action-btn.active {
+  background: var(--text-accent);
+  color: white;
+}
+
+.find-action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.find-action-btn:disabled:hover {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.replace-action-btn {
+  color: var(--text-accent);
+}
+
+.replace-action-btn:hover:not(:disabled) {
+  background: var(--text-accent);
+  color: white;
+}
+
+.replace-all-action-btn {
+  position: relative;
+  padding-right: 20px;
+}
+
+.replace-all-badge {
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.find-match-count {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  color: var(--text-faint);
+  font-weight: 500;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.find-navigation {
+  display: flex;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.find-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-app);
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.15s;
+}
+
+.find-nav-btn:hover:not(:disabled) {
+  background: var(--bg-active);
+  border-color: var(--border-main);
+  color: var(--text-main);
+}
+
+.find-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.find-toggle-btn,
+.find-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.find-toggle-btn:hover,
+.find-close-btn:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+}

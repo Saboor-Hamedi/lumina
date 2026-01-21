@@ -1,4 +1,3 @@
-// This is a comment to indicate I will read the file before writing.
 import React, { useState, useEffect } from 'react'
 import TitleBar from './TitleBar'
 import ActivityBar from '../Navigation/ActivityBar'
@@ -17,11 +16,10 @@ import { GRAPH_TAB_ID } from '../../core/store/useVaultStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
 import { useToast } from '../../core/hooks/useToast'
-import ToastNotification from '../../core/utils/ToastNotification'
+import ToastNotification from '../../core/notification'
 import ConfirmModal from '../Overlays/ConfirmModal'
 import UpdateToast from '../Overlays/UpdateToast'
 import ErrorBoundary from '../../components/ErrorBoundary'
-import '../../assets/toast.css'
 import './AppShell.css'
 import '../Overlays/ConfirmModal.css'
 import AIChatPanel from '../AI/AIChatPanel'
@@ -30,6 +28,14 @@ import AIChatModal from '../Overlays/AIChatModal'
 import { useAIStore } from '../../core/store/useAIStore'
 import { X, Maximize2, Trash2 } from 'lucide-react'
 
+/**
+ * AppShell Component
+ * Main application shell that manages the overall layout, sidebars, modals, and state.
+ * Handles three-pane layout (left sidebar, main content, right sidebar), keyboard shortcuts,
+ * sidebar resizing, and modal management.
+ *
+ * @returns {JSX.Element} The main application shell component
+ */
 const AppShell = () => {
   const {
     snippets,
@@ -41,10 +47,14 @@ const AppShell = () => {
     activeTabId,
     openTabs
   } = useVaultStore()
-  const { toast, showToast } = useToast()
+  const { toast, showToast, clearToast } = useToast()
   const { chatMessages, clearChat } = useAIStore()
 
-  const [activeTab, setActiveTab] = useState('files')
+  // Restore activeTab from settings, default to 'files'
+  const [activeTab, setActiveTab] = useState(() => {
+    const settings = useSettingsStore.getState().settings
+    return settings?.activeTab || 'files'
+  })
   const [showSettings, setShowSettings] = useState(false)
   const [showThemeModal, setShowThemeModal] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
@@ -53,15 +63,24 @@ const AppShell = () => {
   const [showAIChatModal, setShowAIChatModal] = useState(false)
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true)
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false)
-  const [savedRightSidebarState, setSavedRightSidebarState] = useState(null) // Store sidebar state when modal opens
+  /**
+   * Stores the right sidebar state (open/closed and width) when AI chat modal is opened.
+   * Used to restore the sidebar to its previous state when the modal is closed.
+   * @type {Object|null} { isOpen: boolean, width: number } | null
+   */
+  const [savedRightSidebarState, setSavedRightSidebarState] = useState(null)
   const [leftWidth, setLeftWidth] = useState(260)
   const [rightWidth, setRightWidth] = useState(300)
   const [resizingSide, setResizingSide] = useState(null) // 'left', 'right', or null
   const [isRestoring, setIsRestoring] = useState(true)
-  const [rightPanelMode, setRightPanelMode] = useState('chat')
 
-  // Width Refs for Persistence
+  /**
+   * Ref to store current sidebar widths for persistence.
+   * Updated separately from state to avoid unnecessary re-renders.
+   */
   const widthRef = React.useRef({ left: 260, right: 300 })
+
+  // Update width refs when widths change
   useEffect(() => {
     widthRef.current.left = leftWidth
   }, [leftWidth])
@@ -69,12 +88,17 @@ const AppShell = () => {
     widthRef.current.right = rightWidth
   }, [rightWidth])
 
-  // Persist Sidebar Toggles
+  /**
+   * Persist left sidebar open/closed state to settings.
+   */
   useEffect(() => {
     if (isRestoring) return
     useSettingsStore.getState().updateSetting('isLeftSidebarOpen', isLeftSidebarOpen)
   }, [isLeftSidebarOpen, isRestoring])
 
+  /**
+   * Persist right sidebar open/closed state to settings.
+   */
   useEffect(() => {
     if (isRestoring) return
     useSettingsStore.getState().updateSetting('isRightSidebarOpen', isRightSidebarOpen)
@@ -125,7 +149,15 @@ const AppShell = () => {
 
   // Initialize vault & settings on mount
   // Initialize vault & settings on mount
+  /**
+   * Initialize application on mount.
+   * Restores saved settings, vault state, tabs, and sidebar configurations.
+   */
   useEffect(() => {
+    /**
+     * Initializes the application state from persisted settings.
+     * @returns {Promise<void>}
+     */
     const initApp = async () => {
       await useSettingsStore.getState().init()
       await loadVault()
@@ -140,10 +172,7 @@ const AppShell = () => {
         if (last) setSelectedSnippet(last)
       }
       // Default to chat mode (metadata moved to modal)
-      if (settings.rightPanelMode && settings.rightPanelMode !== 'metadata') {
-        setRightPanelMode(settings.rightPanelMode)
-      } else {
-        setRightPanelMode('chat')
+      if (!settings.rightPanelMode || settings.rightPanelMode === 'metadata') {
         useSettingsStore.getState().updateSetting('rightPanelMode', 'chat')
       }
       // Restore Widths & Toggles
@@ -153,6 +182,11 @@ const AppShell = () => {
         setIsLeftSidebarOpen(settings.isLeftSidebarOpen)
       if (typeof settings.isRightSidebarOpen === 'boolean')
         setIsRightSidebarOpen(settings.isRightSidebarOpen)
+
+      // Restore activeTab
+      if (settings.activeTab && ['files', 'search', 'graph'].includes(settings.activeTab)) {
+        setActiveTab(settings.activeTab)
+      }
 
       setIsRestoring(false)
     }
@@ -190,12 +224,49 @@ const AppShell = () => {
     useSettingsStore.getState().updateSetting('openTabs', openTabs)
   }, [openTabs, isRestoring])
 
+  // Persist activeTab to settings
+  useEffect(() => {
+    if (isRestoring) return
+    useSettingsStore.getState().updateSetting('activeTab', activeTab)
+  }, [activeTab, isRestoring])
+
   const pinnedTabIds = useVaultStore((state) => state.pinnedTabIds)
 
   useEffect(() => {
     if (isRestoring) return
     useSettingsStore.getState().updateSetting('pinnedTabIds', pinnedTabIds)
   }, [pinnedTabIds, isRestoring])
+
+  // Ctrl+Shift+F - open global search sidebar and focus input
+  useEffect(() => {
+    const handleGlobalSearchShortcut = (e) => {
+      const key = e.key && e.key.toLowerCase()
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && key === 'f') {
+        e.preventDefault()
+        setActiveTab('search')
+        setIsLeftSidebarOpen(true)
+        // Focus search input after sidebar opens
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('global-search-focus'))
+        }, 100)
+      }
+    }
+    window.addEventListener('keydown', handleGlobalSearchShortcut)
+    return () => window.removeEventListener('keydown', handleGlobalSearchShortcut)
+  }, [])
+
+  // Ctrl+Shift+B - toggle left sidebar visibility
+  useEffect(() => {
+    const handleSidebarToggleShortcut = (e) => {
+      const key = e.key && e.key.toLowerCase()
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && key === 'b') {
+        e.preventDefault()
+        setIsLeftSidebarOpen((prev) => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleSidebarToggleShortcut)
+    return () => window.removeEventListener('keydown', handleSidebarToggleShortcut)
+  }, [])
 
   // Trigger AI Indexing when snippets change (Background)
   // Note: Vault indexing is handled automatically by main process on vault selection/save
@@ -288,6 +359,10 @@ const AppShell = () => {
     }
   })
 
+  /**
+   * Creates a new note snippet and selects it.
+   * @returns {Promise<void>}
+   */
   const handleNew = async () => {
     try {
       const newSnippet = {
@@ -304,15 +379,24 @@ const AppShell = () => {
       setShowPalette(false)
       showToast('New note created', 'success')
     } catch (error) {
-      console.error('Failed to create new note:', error)
+      console.error('[AppShell] Failed to create new note:', error)
       showToast('Failed to create note. Please try again.', 'error')
     }
   }
 
+  /**
+   * Confirms and executes the deletion of a snippet.
+   * @returns {Promise<void>}
+   */
   const handleConfirmDelete = async () => {
     if (snippetToDelete) {
-      await useVaultStore.getState().deleteSnippet(snippetToDelete.id, true)
-      setSnippetToDelete(null)
+      try {
+        await useVaultStore.getState().deleteSnippet(snippetToDelete.id, true)
+        setSnippetToDelete(null)
+      } catch (error) {
+        console.error('[AppShell] Failed to delete snippet:', error)
+        showToast('Failed to delete note. Please try again.', 'error')
+      }
     }
   }
 
@@ -341,7 +425,7 @@ const AppShell = () => {
       <aside className="shell-sidebar-left">
         <ErrorBoundary>
           {activeTab === 'search' ? (
-            <SearchSidebar onNavigate={() => setActiveTab('files')} />
+            <SearchSidebar onNavigate={() => {}} />
           ) : (
             <FileExplorer onNavigate={() => setActiveTab('files')} />
           )}
@@ -442,7 +526,11 @@ const AppShell = () => {
                   className="tab-clear-btn"
                   onClick={(e) => {
                     e.stopPropagation()
-                    clearChat()
+                    try {
+                      clearChat()
+                    } catch (error) {
+                      console.error('[AppShell] Failed to clear chat:', error)
+                    }
                   }}
                   title="Clear History"
                   aria-label="Clear History"
@@ -455,14 +543,18 @@ const AppShell = () => {
                   className="tab-float-btn-right"
                   onClick={(e) => {
                     e.stopPropagation()
-                    // Save current sidebar state and close it
-                    setSavedRightSidebarState({
-                      isOpen: isRightSidebarOpen,
-                      width: rightWidth
-                    })
-                    setIsRightSidebarOpen(false)
-                    useSettingsStore.getState().updateSetting('isRightSidebarOpen', false)
-                    setShowAIChatModal(true)
+                    try {
+                      // Save current sidebar state and close it before opening modal
+                      setSavedRightSidebarState({
+                        isOpen: isRightSidebarOpen,
+                        width: rightWidth
+                      })
+                      setIsRightSidebarOpen(false)
+                      useSettingsStore.getState().updateSetting('isRightSidebarOpen', false)
+                      setShowAIChatModal(true)
+                    } catch (error) {
+                      console.error('[AppShell] Failed to float AI chat:', error)
+                    }
                   }}
                   title="Float (Open as modal)"
                   aria-label="Float"
@@ -500,34 +592,38 @@ const AppShell = () => {
       <AIChatModal
         isOpen={showAIChatModal}
         onClose={() => {
-          setShowAIChatModal(false)
-          // Restore sidebar state if it was open before
-          if (savedRightSidebarState?.isOpen) {
-            setIsRightSidebarOpen(true)
-            if (savedRightSidebarState.width) {
-              setRightWidth(savedRightSidebarState.width)
+          try {
+            setShowAIChatModal(false)
+            // Restore sidebar state if it was open before
+            if (savedRightSidebarState?.isOpen) {
+              setIsRightSidebarOpen(true)
+              if (savedRightSidebarState.width) {
+                setRightWidth(savedRightSidebarState.width)
+                useSettingsStore.getState().updateSetting('rightWidth', savedRightSidebarState.width)
+              }
+              useSettingsStore.getState().updateSetting('isRightSidebarOpen', true)
             }
-            useSettingsStore.getState().updateSetting('isRightSidebarOpen', true)
-            if (savedRightSidebarState.width) {
-              useSettingsStore.getState().updateSetting('rightWidth', savedRightSidebarState.width)
-            }
+            setSavedRightSidebarState(null)
+          } catch (error) {
+            console.error('[AppShell] Failed to close AI chat modal:', error)
           }
-          setSavedRightSidebarState(null)
         }}
         onUnfloat={() => {
-          setShowAIChatModal(false)
-          // Restore sidebar state if it was open before
-          if (savedRightSidebarState?.isOpen) {
-            setIsRightSidebarOpen(true)
-            if (savedRightSidebarState.width) {
-              setRightWidth(savedRightSidebarState.width)
+          try {
+            setShowAIChatModal(false)
+            // Restore sidebar state if it was open before
+            if (savedRightSidebarState?.isOpen) {
+              setIsRightSidebarOpen(true)
+              if (savedRightSidebarState.width) {
+                setRightWidth(savedRightSidebarState.width)
+                useSettingsStore.getState().updateSetting('rightWidth', savedRightSidebarState.width)
+              }
+              useSettingsStore.getState().updateSetting('isRightSidebarOpen', true)
             }
-            useSettingsStore.getState().updateSetting('isRightSidebarOpen', true)
-            if (savedRightSidebarState.width) {
-              useSettingsStore.getState().updateSetting('rightWidth', savedRightSidebarState.width)
-            }
+            setSavedRightSidebarState(null)
+          } catch (error) {
+            console.error('[AppShell] Failed to unfloat AI chat:', error)
           }
-          setSavedRightSidebarState(null)
         }}
       />
       <CommandPalette
@@ -562,7 +658,7 @@ const AppShell = () => {
         message={`Are you sure you want to delete "${snippetToDelete?.title || 'this note'}"? This cannot be undone.`}
       />
       <UpdateToast />
-      <ToastNotification toast={toast} />
+      <ToastNotification toast={toast} onClose={clearToast} />
     </div>
   )
 }

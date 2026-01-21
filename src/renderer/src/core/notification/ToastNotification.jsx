@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { CheckCircle2, XCircle, Info, X } from 'lucide-react'
+import './ToastNotification.css'
 
-const ToastNotification = ({ toast }) => {
+const ToastNotification = ({ toast, onClose }) => {
   const [isVisible, setIsVisible] = useState(false)
   const [isExiting, setIsExiting] = useState(false)
 
@@ -16,24 +17,31 @@ const ToastNotification = ({ toast }) => {
     }
   }, [toast])
 
+  const handleClose = () => {
+    if (onClose) {
+      onClose()
+    }
+  }
+
   if (!toast || !isVisible) return null
 
   const getIcon = () => {
     switch (toast.type) {
       case 'success':
-        return <CheckCircle2 size={18} className="toast-icon" />
+        return <CheckCircle2 size={16} className="toast-icon" />
       case 'error':
-        return <XCircle size={18} className="toast-icon" />
+        return <XCircle size={16} className="toast-icon" />
       default:
-        return <Info size={18} className="toast-icon" />
+        return <Info size={16} className="toast-icon" />
     }
   }
 
   return (
-    <div className={`toast toast-${toast.type} ${isExiting ? 'toast-exit' : ''}`}>
+    <div className={`toast-notification toast-${toast.type} ${isExiting ? 'toast-exit' : ''}`}>
       <div className="toast-content">
         {getIcon()}
         <span className="toast-message">{toast.message}</span>
+        <button className="toast-close" onClick={handleClose}><X size={14} /></button>
       </div>
     </div>
   )

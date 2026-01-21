@@ -33,57 +33,32 @@
   to { opacity: 1; }
 }
 
-/* Re-styled Breadcrumb for Premium Feel */
-.preview-breadcrumb {
-  background: var(--bg-active);
-  padding: 6px 12px 6px 8px; /* slightly tighter vertical padding */
-  border-radius: 0; /* flat */
-  border: 1px solid var(--border-dim);
-  gap: 10px;
-}
-
+/* Re-styled Breadcrumb for Premium Feel - No background */
 .preview-indicator-tag {
   font-size: 9px;
   font-weight: 800;
-  color: white;
-  background: var(--text-accent);
-  padding: 2px 6px;
-  border-radius: 2px; /* less rounded to match main header */
+  color: var(--text-accent);
+  background: transparent; /* Remove background */
+  padding: 0;
+  border-radius: 0;
   letter-spacing: 0.05em;
-  box-shadow: none; /* remove shadow for flat look */
+  box-shadow: none;
 }
 
 .preview-filename-text {
-  font-size: 12px; /* slightly smaller to match main header sizing */
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-main);
-}
-
-.preview-header-left, .preview-header-right {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex: 1;
-}
-
-.preview-header-right {
-  justify-content: flex-end;
-}
-
-.preview-header-center {
-  display: flex;
-  justify-content: center;
-  flex: 1;
 }
 
 .preview-stats-bar {
   display: flex;
   align-items: center;
   gap: 16px;
-  background: rgba(var(--bg-active), 0.5);
-  padding: 4px 14px;
-  border-radius: var(--radius-main, 5px);
-  border: 1px solid var(--border-dim);
+  background: transparent; /* Remove background */
+  padding: 0;
+  border-radius: 0;
+  border: none;
 }
 
 .preview-stat-item {
@@ -101,27 +76,76 @@
   background: var(--border-dim);
 }
 
-.preview-actions-group {
+.preview-action-btn {
+  width: var(--header-height, 32px);
+  height: var(--header-height, 32px);
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding-right: 12px;
-  border-right: 1px solid var(--border-dim);
-}
-
-.preview-action-btn {
+  justify-content: center;
   background: transparent;
   border: none;
   color: var(--text-faint);
   cursor: pointer;
-  padding: 6px;
-  border-radius: var(--radius-main, 5px);
-  transition: all 0.2s;
+  padding: 0;
+  border-radius: 0;
+  transition: background 0.08s ease;
 }
 
 .preview-action-btn:hover {
   background: var(--bg-active);
   color: var(--text-main);
+}
+
+/* Ensure preview modal header matches AI modal header */
+.preview-container .pane-header.modal-header-with-knob {
+  position: relative; /* Required for absolute positioning of modal-right */
+  height: var(--header-height, 32px);
+  padding: 0 12px;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border-dim);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Ensure modal-right is positioned correctly within preview header */
+.preview-container .modal-right {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: var(--header-height, 32px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Ensure modal-left is positioned correctly */
+.preview-container .pane-header.modal-header-with-knob .modal-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Style close button for preview modal */
+.preview-container .modal-close.modal-close-top {
+  width: var(--header-height, 32px);
+  height: var(--header-height, 32px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: background 0.08s ease;
+}
+
+.preview-container .modal-close.modal-close-top:hover {
+  background: var(--color-danger, #ef4444);
+  color: white;
 }
 
 .preview-body {

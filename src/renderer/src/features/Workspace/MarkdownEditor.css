@@ -46,11 +46,21 @@
   background-color: rgba(127, 127, 127, 0.08) !important;
   outline: none !important;
 }
+/* Search Highlight Style */
+.cm-search-highlight {
+  background-color: var(--text-accent) !important;
+  color: white !important;
+  padding: 2px 0 !important;
+  border-radius: 2px !important;
+  font-weight: 600 !important;
+}
+
 /* Global Selection Style for CM6: High visibility for "Robust" feel */
 .cm-selectionBackground,
 .cm-content ::selection {
   background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.3) !important;
-  /* Ensure selection doesn't cause layout shift */
+  /* Use box-shadow for 1px left border - doesn't cause layout shift */
+  box-shadow: inset 1px 0 0 0 var(--text-accent) !important;
   padding: 0 !important;
   margin: 0 !important;
   border: none !important;
@@ -63,6 +73,7 @@
 }
 
 .markdown-editor {
+  position: relative;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -868,6 +879,14 @@
   align-items: center;
   gap: 6px;
   opacity: 0.8;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--bg-app);
+  border: 1px solid var(--border-subtle);
+  font-size: 10px; /* Match tag pill size */
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
 }
 
 .meta-icon {
@@ -889,8 +908,22 @@
 /* Active Line Highlight (Indicator only, no full-width block to avoid selection confusion) */
 .cm-activeLine {
   background-color: transparent !important;
-  border-left: 3px solid var(--text-accent);
-  transition: border-left 0.2s ease;
+  border: none !important;
+  position: relative !important;
+  padding: 0 !important; /* No padding to prevent layout shift */
+  transition: none !important;
+}
+
+/* Use pseudo-element for 1px border with 1px margin from content - prevents layout shift */
+.cm-activeLine::before {
+  content: '';
+  position: absolute;
+  left: 1px; /* 1px margin from content */
+  top: 0;
+  bottom: 0;
+  width: 1px; /* 1px border */
+  background: var(--text-accent);
+  z-index: 1;
 }
 
 /* Ensure active line border extends to full height for headings */
@@ -906,10 +939,10 @@
 .cm-heading.cm-activeLine::before {
   content: '';
   position: absolute;
-  left: 0;
+  left: 1px; /* 1px margin from content */
   top: 0;
   bottom: 0;
-  width: 3px;
+  width: 1px; /* 1px border */
   background: var(--text-accent);
   z-index: 1;
   /* This ensures the border extends from very top (including padding-top) to very bottom (including padding-bottom) */
@@ -918,14 +951,16 @@
 
 [data-theme='dark'] .cm-activeLine,
 [data-theme='obsidian-robust'] .cm-activeLine {
-  border-left-color: var(--text-accent);
+  /* Box-shadow color is already set via var(--text-accent) */
+  box-shadow: inset 1px 0 0 0 var(--text-accent) !important;
 }
 
 /* Unified Selection: CodeMirror Robust Selection */
 .cm-selectionBackground,
 .cm-content ::selection {
   background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.3) !important;
-  /* Ensure selection doesn't cause layout shift - no padding/margin/border */
+  /* Use box-shadow for 1px left border - doesn't cause layout shift */
+  box-shadow: inset 1px 0 0 0 var(--text-accent) !important;
   padding: 0 !important;
   margin: 0 !important;
   border: none !important;
@@ -934,11 +969,16 @@
 }
 
 /* Ensure selection background elements don't cause layout shift */
-/* CodeMirror already positions .cm-selectionBackground absolutely, just ensure no padding/margin */
+/* CodeMirror already positions .cm-selectionBackground absolutely */
 .cm-selectionBackground {
-  /* CodeMirror handles positioning - just ensure no layout-affecting properties */
-  padding: 0 !important;
+  /* Use box-shadow for 1px left border - doesn't cause layout shift */
+  box-shadow: inset 1px 0 0 0 var(--text-accent) !important;
+  /* Adjust left position to create 1px margin from content */
+  left: 1px !important;
+  /* Adjust width to compensate for the left offset */
+  width: calc(100% - 1px) !important;
   margin: 0 !important;
+  padding: 0 !important;
   border: none !important;
   box-sizing: border-box !important;
 }
