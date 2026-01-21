@@ -5,11 +5,10 @@ import {
   ChevronRight,
   Plus,
   Search,
-  FileCode,
-  Hash,
   RefreshCw,
   Star,
-  Clock,
+  History,
+  FolderOpen,
   Database
 } from 'lucide-react'
 import SidebarItem from './components/SidebarItem'
@@ -147,7 +146,7 @@ const FileExplorer = React.memo(({ onNavigate }) => {
           <div className="tree-section">
             <div className="section-header" onClick={() => toggleSection('pinned')}>
               {collapsedSections.pinned ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
-              <Star size={12} className="section-icon" />
+              <Star size={14} className="section-icon" />
               <span>PINNED</span>
             </div>
             {!collapsedSections.pinned && (
@@ -170,7 +169,7 @@ const FileExplorer = React.memo(({ onNavigate }) => {
           <div className="tree-section">
             <div className="section-header" onClick={() => toggleSection('recent')}>
               {collapsedSections.recent ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
-              <Clock size={12} className="section-icon" />
+              <History size={14} className="section-icon" />
               <span>RECENT</span>
             </div>
             {!collapsedSections.recent && (
@@ -200,22 +199,22 @@ const FileExplorer = React.memo(({ onNavigate }) => {
         >
           <div className="section-header" onClick={() => toggleSection('all')}>
             {collapsedSections.all ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
-            <FileText size={12} className="section-icon" />
+            <FolderOpen size={14} className="section-icon" />
             <span>ALL NOTES</span>
             <span className="count-badge">{filtered.length}</span>
           </div>
 
           {!collapsedSections.all && (
-            <div style={{ flex: 1, minHeight: 0 }}>
+            <div className="section-items" style={{ flex: 1, minHeight: 0 }}>
               {isLoading ? (
-                <div className="section-items">
+                <>
                   {[1, 2, 3, 4].map((i) => (
                     <div key={i} className="tree-item skeleton-item">
                       <div className="skeleton skeleton-icon" />
                       <div className="skeleton skeleton-text" />
                     </div>
                   ))}
-                </div>
+                </>
               ) : filtered.length > 0 ? (
                 <AutoSizer>
                   {({ height, width }) => (

@@ -85,7 +85,7 @@
 
 .section-header {
   height: 32px;
-  padding: 0 16px;
+  padding: 0 12px 0 20px; /* Space for tree line */
   display: flex;
   align-items: center;
   gap: 8px;
@@ -95,6 +95,19 @@
   cursor: pointer;
   letter-spacing: 0.02em;
   transition: color 0.1s;
+  position: relative;
+  margin-bottom: 4px;
+}
+
+.section-header::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  width: 8px;
+  height: 1px;
+  background: var(--border-dim);
+  opacity: 0.6;
 }
 
 .section-header:hover {
@@ -112,8 +125,7 @@
 
 .tree-item {
   height: 30px;
-  padding: 0 10px;
-  /* margin: 1px 8px; */
+  padding: 0 8px 0 0; /* Right padding only, left handled by tree structure */
   border-radius: 6px;
   display: flex;
   align-items: center;
@@ -125,6 +137,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   transition: all 0.1s ease-out;
+  position: relative;
 }
 
 .tree-item:hover {
@@ -152,8 +165,10 @@
 }
 
 .section-icon {
-  opacity: 0.6;
+  opacity: 0.7;
   margin-right: 2px;
+  color: var(--text-muted);
+  transition: all 0.2s;
 }
 
 .section-header:hover .section-icon {
@@ -165,6 +180,71 @@
   display: flex;
   flex-direction: column;
   padding-bottom: 8px;
+  padding-left: 20px; /* Indent for tree structure */
+  position: relative;
+}
+
+/* Vertical line connecting section to items */
+.section-static-items::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border-dim);
+  opacity: 0.4;
+}
+
+.section-static-items .tree-item {
+  position: relative;
+  padding-left: 20px; /* Space for tree connector */
+}
+
+/* Horizontal connector line for each item */
+.section-static-items .tree-item::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  width: 12px;
+  height: 1px;
+  background: var(--border-dim);
+  opacity: 0.4;
+}
+
+/* Vertical line from connector to item */
+.section-static-items .tree-item::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 0;
+  bottom: 50%;
+  width: 1px;
+  background: var(--border-dim);
+  opacity: 0.4;
+}
+
+.section-static-items .tree-item:first-child::after {
+  top: 50%;
+}
+
+.section-static-items .tree-item:last-child::after {
+  bottom: auto;
+  top: 0;
+  height: 50%;
+}
+
+.section-static-items .tree-item:hover::before,
+.section-static-items .tree-item:hover::after {
+  opacity: 0.6;
+  background: var(--text-accent);
+}
+
+.section-static-items .tree-item.active::before,
+.section-static-items .tree-item.active::after {
+  opacity: 0.8;
+  background: var(--text-accent);
 }
 
 .tree-empty {
@@ -244,8 +324,7 @@
 /* Glass-Capsule Highlighting */
 .tree-item {
   height: 30px;
-  padding: 0 12px;
-  /* margin: 2px 8px; */
+  padding: 0 8px 0 0; /* Right padding only, left handled by tree structure */
   border-radius: 8px; /* Rounded capsule */
   display: flex;
   align-items: center;
@@ -302,12 +381,148 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  position: relative;
 }
+
 
 .section-items {
   flex: 1;
-  overflow-y: auto;
   min-height: 0;
+  padding-left: 20px; /* Indent for tree structure */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Vertical line connecting section to items */
+.section-items::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border-dim);
+  opacity: 0.4;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.section-items .tree-item {
+  position: relative;
+  padding-left: 20px; /* Space for tree connector */
+  z-index: 1;
+}
+
+/* Virtual list container should also have tree styling */
+.section-items .virtual-list {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+/* Horizontal connector line for each item */
+.section-items .tree-item::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  width: 12px;
+  height: 1px;
+  background: var(--border-dim);
+  opacity: 0.4;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Vertical line from connector to item */
+.section-items .tree-item::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 0;
+  bottom: 50%;
+  width: 1px;
+  background: var(--border-dim);
+  opacity: 0.4;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.section-items .tree-item:first-child::after {
+  top: 50%;
+}
+
+.section-items .tree-item:last-child::after {
+  bottom: auto;
+  top: 0;
+  height: 50%;
+}
+
+.section-items .tree-item:hover::before,
+.section-items .tree-item:hover::after {
+  opacity: 0.6;
+  background: var(--text-accent);
+}
+
+.section-items .tree-item.active::before,
+.section-items .tree-item.active::after {
+  opacity: 0.8;
+  background: var(--text-accent);
+}
+
+/* Ensure virtual list items also get tree styling */
+.section-items .virtual-list .tree-item {
+  position: relative;
+  padding-left: 20px;
+}
+
+.section-items .virtual-list .tree-item::before,
+.section-items .virtual-list .tree-item::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  pointer-events: none;
+}
+
+.section-items .virtual-list .tree-item::before {
+  top: 50%;
+  width: 12px;
+  height: 1px;
+  background: var(--border-dim);
+  opacity: 0.4;
+  z-index: 1;
+}
+
+.section-items .virtual-list .tree-item::after {
+  top: 0;
+  bottom: 50%;
+  width: 1px;
+  background: var(--border-dim);
+  opacity: 0.4;
+  z-index: 0;
+}
+
+.section-items .virtual-list .tree-item:first-child::after {
+  top: 50%;
+}
+
+.section-items .virtual-list .tree-item:last-child::after {
+  bottom: auto;
+  top: 0;
+  height: 50%;
+}
+
+.section-items .virtual-list .tree-item:hover::before,
+.section-items .virtual-list .tree-item:hover::after {
+  opacity: 0.6;
+  background: var(--text-accent);
+}
+
+.section-items .virtual-list .tree-item.active::before,
+.section-items .virtual-list .tree-item.active::after {
+  opacity: 0.8;
+  background: var(--text-accent);
 }
 
 .skeleton-item {

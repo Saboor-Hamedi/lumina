@@ -164,8 +164,16 @@ const AIChatPanel = React.memo(() => {
       const context = selectedSnippet ? [selectedSnippet] : []
       sendChatMessage(text, context)
       setInputValue('')
+      // Reset textarea height after clearing input
       if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto'
+        textareaRef.current.style.height = '24px'
+        // Ensure it's visible and focused
+        setTimeout(() => {
+          if (textareaRef.current) {
+            adjustTextareaHeight()
+            textareaRef.current.focus()
+          }
+        }, 0)
       }
     } catch (error) {
       console.error('Failed to send chat message:', error)
@@ -174,7 +182,7 @@ const AIChatPanel = React.memo(() => {
         textareaRef.current.focus()
       }
     }
-  }, [inputValue, isChatLoading, selectedSnippet, sendChatMessage])
+  }, [inputValue, isChatLoading, selectedSnippet, sendChatMessage, adjustTextareaHeight])
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
