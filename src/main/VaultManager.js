@@ -4,8 +4,11 @@ import matter from 'gray-matter'
 import chokidar from 'chokidar'
 import slugify from 'slugify'
 
-// Clean title for display everywhere (tabs, sidebar, metadata) and filename
-// Removes problematic symbols and makes the name clean and filesystem-safe
+// Clean title for display everywhere (tabs, sidebar, metadata) and filename.
+// This is the single place where we normalize note titles before:
+// - Storing them in frontmatter
+// - Using them to derive on-disk filenames
+// The goal is to keep titles human-friendly while still being valid on all filesystems.
 function sanitizeTitleForFilename(title) {
   if (!title || typeof title !== 'string') return 'untitled'
 
@@ -118,8 +121,22 @@ class VaultManager {
     }
   }
 
+  /**
+   * Persist a snippet to disk and update in‑memory state.
+   *
+   * Storage layout:
+   * - All notes are stored as Markdown files directly under `this.vaultPath`
+   *   e.g. `<vaultPath>/My Note.md`
+   * - The actual filename is derived from the (cleaned) title and stored on the
+   *   snippet as `fileName` for robust renaming and deletion.
+   * - Attachments (images, etc.) are saved under `<vaultPath>/assets/`.
+   */
   async saveSnippet(snippet) {
     console.info('[VaultManager] Saving snippet:', snippet.title, 'ID:', snippet.id)
+
+    if (!this.vaultPath) {
+      throw new Error('[VaultManager] Cannot save snippet: vaultPath is not initialized')
+    }
 
     // 1. Clean the title for display everywhere (tabs, sidebar, metadata) and filename
     // Example: "config::no" -> "config no"
@@ -157,6 +174,8 @@ class VaultManager {
       newFileName = newFileName.replace(/\.md$/i, '') + `-${snippet.id.slice(0, 5)}.md`
     }
 
+    // 3. Compute the final on-disk path for this note inside the current vault.
+    //    Example: "My Note.md" -> "C:/Users/.../Lumina Vault/My Note.md"
     const finalPath = path.join(this.vaultPath, newFileName)
 
     // 4. Prepare Content (use cleaned title everywhere)
@@ -171,6 +190,9 @@ class VaultManager {
     })
 
     try {
+      // Ensure the parent directory still exists (it may have been deleted externally)
+      await fs.mkdir(path.dirname(finalPath), { recursive: true })
+
       await fs.writeFile(finalPath, fileContent)
 
       // 5. Update Internal State Immediately (with cleaned title)
@@ -182,7 +204,7 @@ class VaultManager {
       }
       this.snippets.set(snippet.id, updatedSnippet)
 
-      console.info('[VaultManager] ✓ File saved:', newFileName)
+      console.info('[VaultManager] ✓ File saved at:', finalPath)
       // Return the updated snippet with cleaned title so renderer can update UI
       return updatedSnippet
     } catch (err) {
