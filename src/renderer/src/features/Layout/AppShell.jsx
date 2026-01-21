@@ -26,12 +26,23 @@ import './AppShell.css'
 import '../Overlays/ConfirmModal.css'
 import AIChatPanel from '../AI/AIChatPanel'
 import DetailsModal from '../Overlays/DetailsModal'
-import { X, MessageSquare } from 'lucide-react'
+import AIChatModal from '../Overlays/AIChatModal'
+import { useAIStore } from '../../core/store/useAIStore'
+import { X, Maximize2, Trash2 } from 'lucide-react'
 
 const AppShell = () => {
-  const { snippets, selectedSnippet, setSelectedSnippet, saveSnippet, isLoading, loadVault, activeTabId, openTabs } =
-    useVaultStore()
+  const {
+    snippets,
+    selectedSnippet,
+    setSelectedSnippet,
+    saveSnippet,
+    isLoading,
+    loadVault,
+    activeTabId,
+    openTabs
+  } = useVaultStore()
   const { toast, showToast } = useToast()
+  const { chatMessages, clearChat } = useAIStore()
 
   const [activeTab, setActiveTab] = useState('files')
   const [showSettings, setShowSettings] = useState(false)
@@ -39,8 +50,10 @@ const AppShell = () => {
   const [showPalette, setShowPalette] = useState(false)
   const [showGraph, setShowGraph] = useState(false)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
+  const [showAIChatModal, setShowAIChatModal] = useState(false)
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true)
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false)
+  const [savedRightSidebarState, setSavedRightSidebarState] = useState(null) // Store sidebar state when modal opens
   const [leftWidth, setLeftWidth] = useState(260)
   const [rightWidth, setRightWidth] = useState(300)
   const [resizingSide, setResizingSide] = useState(null) // 'left', 'right', or null
@@ -242,7 +255,7 @@ const AppShell = () => {
       if (window.api?.closeWindow) {
         window.api.closeWindow()
       } else {
-        console.warn('Close window API not available')
+        console.error('[AppShell] Close window API not available')
       }
     },
     onNextTab: () => {
@@ -260,10 +273,10 @@ const AppShell = () => {
     onPreviousTab: () => {
       if (openTabs.length === 0) return
       const currentIdx = activeTabId ? openTabs.indexOf(activeTabId) : -1
-      const prevIdx = currentIdx === -1 
-        ? openTabs.length - 1 
-        : currentIdx === 0 
-          ? openTabs.length - 1 
+      const prevIdx = currentIdx === -1
+        ? openTabs.length - 1
+        : currentIdx === 0
+          ? openTabs.length - 1
           : currentIdx - 1
       const prevId = openTabs[prevIdx]
       if (prevId === GRAPH_TAB_ID) {
@@ -394,37 +407,79 @@ const AppShell = () => {
             onMouseDown={() => setResizingSide('right')}
           />
         )}
-        <div className="inspector-panel">
-          {/* Tab-style header - matches workspace tabs */}
-          <div className="panel-header-tabs workspace-tabbar">
-            <div className="workspace-tab active">
-              <div className="tab-context">
-                <MessageSquare size={12} className="tab-icon" />
-                <span className="tab-title">AI Chat</span>
+        {isRightSidebarOpen && (
+          <div className="inspector-panel">
+            {/* Tab-style header - matches workspace tabs */}
+            <div className="panel-header-tabs workspace-tabbar" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <div className="workspace-tab active">
+                <div className="tab-context">
+                  <span className="tab-title">AI Chat</span>
+                </div>
+                <div className="tab-actions" style={{ display: 'flex', gap: '4px' }}>
+                  <button
+                    className="tab-close-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setIsRightSidebarOpen(false)
+                      useSettingsStore.getState().updateSetting('isRightSidebarOpen', false)
+                    }}
+                    title="Close sidebar"
+                    aria-label="Close sidebar"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
               </div>
-              <div className="tab-actions">
+              {/* Right side buttons - Clear History and Float */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0',
+                marginLeft: 'auto',
+                height: '32px' /* Match panel header height */
+              }}>
                 <button
-                  className="tab-close-btn"
+                  className="tab-clear-btn"
                   onClick={(e) => {
                     e.stopPropagation()
+                    clearChat()
+                  }}
+                  title="Clear History"
+                  aria-label="Clear History"
+                  disabled={chatMessages.length === 0}
+                  style={{ opacity: chatMessages.length === 0 ? 0.3 : 0.6 }}
+                >
+                  <Trash2 size={12} />
+                </button>
+                <button
+                  className="tab-float-btn-right"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    // Save current sidebar state and close it
+                    setSavedRightSidebarState({
+                      isOpen: isRightSidebarOpen,
+                      width: rightWidth
+                    })
                     setIsRightSidebarOpen(false)
                     useSettingsStore.getState().updateSetting('isRightSidebarOpen', false)
+                    setShowAIChatModal(true)
                   }}
-                  title="Close sidebar"
+                  title="Float (Open as modal)"
+                  aria-label="Float"
                 >
-                  <X size={12} />
+                  <Maximize2 size={12} />
                 </button>
               </div>
             </div>
-          </div>
 
-          {/* Panel content - only AI Chat */}
-          <div className="panel-content">
-            <ErrorBoundary>
-              <AIChatPanel />
-            </ErrorBoundary>
+            {/* Panel content - only AI Chat */}
+            <div className="panel-content">
+              <ErrorBoundary>
+                <AIChatPanel />
+              </ErrorBoundary>
+            </div>
           </div>
-        </div>
+        )}
       </aside>
       {showSettings && (
         <SettingsModal
@@ -441,6 +496,39 @@ const AppShell = () => {
         onClose={() => setShowDetailsModal(false)}
         snippet={selectedSnippet}
         isLoading={isLoading}
+      />
+      <AIChatModal
+        isOpen={showAIChatModal}
+        onClose={() => {
+          setShowAIChatModal(false)
+          // Restore sidebar state if it was open before
+          if (savedRightSidebarState?.isOpen) {
+            setIsRightSidebarOpen(true)
+            if (savedRightSidebarState.width) {
+              setRightWidth(savedRightSidebarState.width)
+            }
+            useSettingsStore.getState().updateSetting('isRightSidebarOpen', true)
+            if (savedRightSidebarState.width) {
+              useSettingsStore.getState().updateSetting('rightWidth', savedRightSidebarState.width)
+            }
+          }
+          setSavedRightSidebarState(null)
+        }}
+        onUnfloat={() => {
+          setShowAIChatModal(false)
+          // Restore sidebar state if it was open before
+          if (savedRightSidebarState?.isOpen) {
+            setIsRightSidebarOpen(true)
+            if (savedRightSidebarState.width) {
+              setRightWidth(savedRightSidebarState.width)
+            }
+            useSettingsStore.getState().updateSetting('isRightSidebarOpen', true)
+            if (savedRightSidebarState.width) {
+              useSettingsStore.getState().updateSetting('rightWidth', savedRightSidebarState.width)
+            }
+          }
+          setSavedRightSidebarState(null)
+        }}
       />
       <CommandPalette
         isOpen={showPalette}

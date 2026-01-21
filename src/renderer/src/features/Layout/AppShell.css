@@ -230,6 +230,79 @@
   color: var(--text-main);
 }
 
+/* Float/Modal button styling */
+.panel-header-tabs .tab-float-btn {
+  background: transparent;
+  border: none;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+  padding: 2px;
+  width: 18px;
+  height: 18px;
+}
+
+.panel-header-tabs .tab-float-btn:hover {
+  opacity: 1 !important;
+  background: var(--bg-active);
+  color: var(--text-accent);
+}
+
+/* Float button on the very right side of tabbar */
+.panel-header-tabs .tab-float-btn-right {
+  background: transparent;
+  border: none;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  transition: all 0.2s;
+  padding: 0;
+  width: 32px;
+  height: 32px; /* Match panel header height */
+}
+
+.panel-header-tabs .tab-float-btn-right:hover {
+  opacity: 1 !important;
+  background: var(--bg-active);
+  color: var(--text-accent);
+}
+
+/* Clear History button in sidebar tab */
+.panel-header-tabs .tab-clear-btn {
+  background: transparent;
+  border: none;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  transition: all 0.2s;
+  padding: 0;
+  width: 32px;
+  height: 32px; /* Match panel header height */
+}
+
+.panel-header-tabs .tab-clear-btn:hover:not(:disabled) {
+  opacity: 1 !important;
+  background: var(--bg-active);
+  color: var(--text-accent);
+}
+
+.panel-header-tabs .tab-clear-btn:disabled {
+  cursor: not-allowed;
+}
+
 /* Legacy panel-tab styles (kept for backward compatibility if needed) */
 .panel-tab {
   flex: 1;

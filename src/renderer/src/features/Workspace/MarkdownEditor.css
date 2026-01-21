@@ -482,22 +482,23 @@
 
 .mode-toggle {
   display: flex;
-  background: var(--bg-active);
-  padding: 2px;
-  border-radius: 6px;
-  border: 1px solid var(--border-card);
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  border: none;
+  gap: 8px;
 }
 
 .mode-btn {
   background: transparent;
   border: none;
-  padding: 2px 8px; /* Tighter padding */
+  padding: 2px 8px;
   font-size: 10px;
   font-weight: 600;
   color: var(--text-faint);
-  border-radius: 4px;
+  border-radius: 0;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   outline: none;
@@ -505,13 +506,13 @@
 
 .mode-btn:hover {
   color: var(--text-muted);
-  background: rgba(255,255,255,0.03);
+  background: transparent;
 }
 
 .mode-btn.active {
-  background: var(--bg-panel);
+  background: transparent;
   color: var(--text-accent);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  box-shadow: none;
 }
 
 .icon-btn {

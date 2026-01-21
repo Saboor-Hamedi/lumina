@@ -1,0 +1,308 @@
+/**
+ * AIChatModal Styles
+ * Draggable, resizable, and maximizable modal overlay for AI Chat.
+ * Similar to ThemeModal but with additional window management features.
+ */
+
+.ai-chat-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease-out;
+  pointer-events: all;
+}
+
+.ai-chat-modal-container {
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border-dim);
+  border-radius: 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  min-width: 300px;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.ai-chat-modal-container.dragging {
+  cursor: move;
+  user-select: none;
+}
+
+.ai-chat-modal-container.resizing {
+  user-select: none;
+}
+
+.ai-chat-modal-container.maximized {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Header styling - matches ThemeModal */
+.ai-chat-modal-container > .pane-header {
+  background: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border);
+  padding: 0 12px;
+  height: var(--header-height);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  cursor: move;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Draggable handle - covers left portion of header (title area) */
+.ai-chat-modal-drag-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: calc(var(--header-height) * 2 + 16px); /* Leave space for maximize and close buttons */
+  height: var(--header-height);
+  z-index: 1;
+  cursor: move;
+}
+
+/* Modal header layout helpers */
+.ai-chat-modal-container .modal-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 2;
+}
+
+.ai-chat-modal-container .modal-right {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: var(--header-height);
+  z-index: 2;
+}
+
+/* Clear History button */
+.modal-clear-btn {
+  width: var(--header-height);
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: background 0.08s ease, color 0.08s ease;
+  flex-shrink: 0;
+}
+
+.modal-clear-btn:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+/* Maximize button */
+.modal-maximize-btn {
+  width: var(--header-height);
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: background 0.08s ease, color 0.08s ease;
+  flex-shrink: 0;
+}
+
+.modal-maximize-btn:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+/* Unfloat button */
+.modal-unfloat-btn {
+  width: var(--header-height);
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: background 0.08s ease, color 0.08s ease;
+  flex-shrink: 0;
+}
+
+.modal-unfloat-btn:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+/* Close button styling */
+.ai-chat-modal-container .modal-close.modal-close-top {
+  width: var(--header-height);
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: background 0.08s ease, color 0.08s ease;
+}
+
+.ai-chat-modal-container .modal-close.modal-close-top:hover {
+  background: var(--color-danger, #ef4444);
+  color: white;
+}
+
+/* Title and icon styling */
+.ai-chat-modal-container .theme-modal-icon {
+  color: var(--text-accent);
+  flex-shrink: 0;
+}
+
+.ai-chat-modal-container .theme-modal-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  line-height: 1.1;
+}
+
+/* Modal body - contains the AI chat panel */
+.ai-chat-modal-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Ensure AIChatPanel fills the modal */
+.ai-chat-modal-body > * {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Resize handles */
+.resize-handle {
+  position: absolute;
+  background: transparent;
+  z-index: 10;
+}
+
+.resize-handle-right {
+  top: 0;
+  right: 0;
+  width: 4px;
+  height: 100%;
+  cursor: ew-resize;
+}
+
+.resize-handle-bottom {
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  cursor: ns-resize;
+}
+
+.resize-handle-bottom-right {
+  bottom: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  cursor: nwse-resize;
+}
+
+.resize-handle-left {
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  cursor: ew-resize;
+}
+
+.resize-handle-top {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  cursor: ns-resize;
+}
+
+.resize-handle-top-left {
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  cursor: nwse-resize;
+}
+
+.resize-handle-top-right {
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  cursor: nesw-resize;
+}
+
+.resize-handle-bottom-left {
+  bottom: 0;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  cursor: nesw-resize;
+}
+
+/* Hover effect for resize handles */
+.resize-handle:hover {
+  background: var(--text-accent);
+  opacity: 0.3;
+}
+
+.ai-chat-modal-container.resizing .resize-handle {
+  background: var(--text-accent);
+  opacity: 0.5;
+}

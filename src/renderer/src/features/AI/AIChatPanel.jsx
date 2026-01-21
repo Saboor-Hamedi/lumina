@@ -235,12 +235,6 @@ const AIChatPanel = React.memo(() => {
 
   return (
     <div className="chat-interface">
-      {chatMessages.length > 0 && (
-        <button className="chat-clear-btn" onClick={clearChat} title="Clear Conversation">
-          Clear History
-        </button>
-      )}
-
       {/* Virtualized List Container */}
       <div
         className="chat-messages"

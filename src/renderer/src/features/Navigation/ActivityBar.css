@@ -33,6 +33,7 @@
 
 .bar-item:hover {
   color: var(--text-main);
+  background: transparent;
 }
 
 .bar-item.active {

@@ -191,6 +191,7 @@ app.whenReady().then(async () => {
     if (process.platform === 'win32') mainWindow.setBackgroundMaterial(enabled ? 'acrylic' : 'none')
   })
 
+
   // Export handlers
   ipcMain.handle('window:export-html', async (_, payload) => {
     try {
@@ -686,7 +687,9 @@ app.whenReady().then(async () => {
 })
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit()
+  if (process.platform !== 'darwin') {
+    app.quit()
+  }
 })
 
 /**
