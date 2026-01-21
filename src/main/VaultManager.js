@@ -4,6 +4,23 @@ import matter from 'gray-matter'
 import chokidar from 'chokidar'
 import slugify from 'slugify'
 
+// Clean title for display everywhere (tabs, sidebar, metadata) and filename
+// Removes problematic symbols and makes the name clean and filesystem-safe
+function sanitizeTitleForFilename(title) {
+  if (!title || typeof title !== 'string') return 'untitled'
+
+  // Remove or neutralize characters that are unsafe or ugly
+  // Characters removed: < > : " / \ | ? * @ # $ % ^ & + = [ ] { } ; , ` ~
+  let cleaned = String(title)
+    // Strip common problematic symbols (Windows + “noisy” chars)
+    .replace(/[<>:"/\\|?*@#$%^&+=\[\]{};,`~]/g, ' ')
+    // Collapse multiple spaces into a single space
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  return cleaned || 'untitled'
+}
+
 class VaultManager {
   constructor() {
     this.vaultPath = null
@@ -104,10 +121,17 @@ class VaultManager {
   async saveSnippet(snippet) {
     console.info('[VaultManager] Saving snippet:', snippet.title, 'ID:', snippet.id)
 
-    // 1. Handle Renaming (Delete OLD file if it exists and differs from new one)
+    // 1. Clean the title for display everywhere (tabs, sidebar, metadata) and filename
+    // Example: "config::no" -> "config no"
+    const cleanedTitle = sanitizeTitleForFilename(snippet.title)
+    console.info('[VaultManager] Original title:', snippet.title, '-> Cleaned:', cleanedTitle)
+
+    // 2. Handle Renaming (Delete OLD file if it exists and differs from new one)
     const oldSnippet = this.snippets.get(snippet.id)
-    const safeTitle = snippet.title.replace(/[<>:"/\\|?*]/g, '').trim() || 'untitled'
-    let newFileName = safeTitle.endsWith('.md') ? safeTitle : `${safeTitle}.md`
+
+    // Use cleaned title for filename
+    const finalTitle = cleanedTitle || 'untitled'
+    let newFileName = finalTitle.endsWith('.md') ? finalTitle : `${finalTitle}.md`
 
     if (oldSnippet && oldSnippet.fileName && oldSnippet.fileName !== newFileName) {
       const oldPath = path.join(this.vaultPath, oldSnippet.fileName)
@@ -135,10 +159,10 @@ class VaultManager {
 
     const finalPath = path.join(this.vaultPath, newFileName)
 
-    // 4. Prepare Content
+    // 4. Prepare Content (use cleaned title everywhere)
     const fileContent = matter.stringify(snippet.code || '', {
       id: snippet.id,
-      title: snippet.title,
+      title: cleanedTitle, // Use cleaned title in frontmatter
       language: snippet.language || 'markdown',
       tags: snippet.tags || '',
       selection: snippet.selection || null,
@@ -149,16 +173,18 @@ class VaultManager {
     try {
       await fs.writeFile(finalPath, fileContent)
 
-      // 5. Update Internal State Immediately
+      // 5. Update Internal State Immediately (with cleaned title)
       const updatedSnippet = {
         ...snippet,
+        title: cleanedTitle, // Store cleaned title so it shows clean in UI
         timestamp: Date.now(),
         fileName: newFileName // Update recorded filename
       }
       this.snippets.set(snippet.id, updatedSnippet)
 
       console.info('[VaultManager] ✓ File saved:', newFileName)
-      return true
+      // Return the updated snippet with cleaned title so renderer can update UI
+      return updatedSnippet
     } catch (err) {
       console.error('[VaultManager] ✗ Save failed:', err)
       throw err

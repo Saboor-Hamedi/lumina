@@ -12,7 +12,7 @@ import { getSnippetIcon } from '../../../core/utils/fileIconMapper.jsx'
 const SidebarItem = ({ snippet, isActive, onClick, style }) => {
   const { dirtySnippetIds, deleteSnippet, saveSnippet } = useVaultStore()
   const isDirty = dirtySnippetIds.includes(snippet.id)
-  
+
   const [isRenaming, setIsRenaming] = useState(false)
   const [renameValue, setRenameValue] = useState(snippet.title)
   const [contextMenu, setContextMenu] = useState(null)
@@ -28,15 +28,20 @@ const SidebarItem = ({ snippet, isActive, onClick, style }) => {
       setIsRenaming(false)
       return
     }
-    
+
     if (!snippet?.id) {
       console.error('Cannot rename: snippet ID is missing')
       setIsRenaming(false)
       return
     }
-    
+
     try {
-      await saveSnippet({ ...snippet, title: renameValue.trim() })
+      // Save and get back the cleaned snippet
+      const updatedSnippet = await saveSnippet({ ...snippet, title: renameValue.trim() })
+      // Update renameValue with the cleaned title from backend
+      if (updatedSnippet?.title) {
+        setRenameValue(updatedSnippet.title)
+      }
       setIsRenaming(false)
     } catch (error) {
       console.error('Failed to rename note:', error)
@@ -58,12 +63,12 @@ const SidebarItem = ({ snippet, isActive, onClick, style }) => {
 
   const handleDelete = async (e) => {
     e?.stopPropagation()
-    
+
     if (!snippet?.id) {
       console.error('Cannot delete: snippet ID is missing')
       return
     }
-    
+
     try {
       await deleteSnippet(snippet.id, true)
     } catch (error) {
@@ -95,7 +100,7 @@ const SidebarItem = ({ snippet, isActive, onClick, style }) => {
       title={isRenaming ? '' : `${snippet.title}${isDirty ? ' (Unsaved changes)' : ''}`}
     >
       {getIcon()}
-      
+
       {isRenaming ? (
         <input
           ref={renameInputRef}
@@ -115,12 +120,12 @@ const SidebarItem = ({ snippet, isActive, onClick, style }) => {
       ) : (
         <span className="item-title">{snippet.title || 'Untitled'}</span>
       )}
-      
+
       <div className="item-meta-right">
         {isHovered && !isRenaming && (
            <div className="hover-actions">
-              <button 
-                className={`action-btn ${snippet.isPinned ? 'active' : ''}`} 
+              <button
+                className={`action-btn ${snippet.isPinned ? 'active' : ''}`}
                 onClick={handleTogglePin}
                 title={snippet.isPinned ? 'Unpin' : 'Pin'}
               >

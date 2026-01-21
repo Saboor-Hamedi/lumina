@@ -65,7 +65,10 @@ async function createWindow() {
       nodeIntegration: false,
       webSecurity: true,
       sandbox: false,
-      devTools: !app.isPackaged // Explicitly disable access via API if packaged
+      devTools: !app.isPackaged, // Explicitly disable access via API if packaged
+      // Set cache path explicitly to avoid permission errors
+      cache: true,
+      partition: 'persist:main'
     }
   })
 
@@ -84,7 +87,7 @@ async function createWindow() {
     setTimeout(() => {
       new AppUpdater(mainWindow)
     }, 5000)
-    
+
     // Set up settings file watcher notification
     SettingsManager.notifyRenderer = (settings) => {
       BrowserWindow.getAllWindows().forEach(win => {
@@ -150,9 +153,36 @@ protocol.registerSchemesAsPrivileged([
   }
 ])
 
+// Suppress harmless Electron/Chromium cache and quota errors (must be before app.whenReady)
+if (!app.isPackaged) {
+  // Set cache path to avoid permission issues
+  const cachePath = join(app.getPath('userData'), 'cache')
+  app.commandLine.appendSwitch('disk-cache-dir', cachePath)
+  app.commandLine.appendSwitch('disk-cache-size', '52428800') // 50MB
+}
+
 app.whenReady().then(async () => {
   if (process.platform === 'win32') {
     app.setAppUserModelId('io.lumina.app')
+  }
+
+  // Suppress console errors for harmless cache/quota warnings (dev only)
+  if (!app.isPackaged) {
+    const originalConsoleError = console.error
+    console.error = (...args) => {
+      const message = args.join(' ')
+      // Filter out harmless cache/quota errors
+      if (
+        message.includes('disk_cache') ||
+        message.includes('quota_database') ||
+        message.includes('Unable to move the cache') ||
+        message.includes('Unable to create cache') ||
+        message.includes('Could not open the quota database')
+      ) {
+        return // Suppress these errors
+      }
+      originalConsoleError.apply(console, args)
+    }
   }
 
   protocol.handle('asset', (request) => {
@@ -531,15 +561,16 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('vault:getSnippets', () => VaultManager.getSnippets())
   ipcMain.handle('vault:saveSnippet', async (_, snippet) => {
-    const result = await VaultManager.saveSnippet(snippet)
+    const updatedSnippet = await VaultManager.saveSnippet(snippet)
     // Auto-index updated file in background
-    if (VaultManager.vaultPath && snippet.fileName) {
-      const filePath = path.join(VaultManager.vaultPath, snippet.fileName)
+    if (VaultManager.vaultPath && updatedSnippet?.fileName) {
+      const filePath = path.join(VaultManager.vaultPath, updatedSnippet.fileName)
       VaultIndexer.indexFile(filePath, true).catch(err => {
         console.error('[Main] Auto-index failed:', err)
       })
     }
-    return result
+    // Return the updated snippet with cleaned title
+    return updatedSnippet
   })
   ipcMain.handle('vault:saveImage', (_, { buffer, name }) => VaultManager.saveImage(buffer, name))
   ipcMain.handle('vault:deleteSnippet', (_, id) => VaultManager.deleteSnippet(id))
@@ -694,15 +725,15 @@ app.on('window-all-closed', () => {
 
 /**
  * Enhanced Global Error Handlers
- * 
+ *
  * These handlers ensure the app never fully crashes in production.
  * Errors are logged and recovery is attempted instead of crashing.
- * 
+ *
  * Production behavior:
  * - Logs errors to file for debugging
  * - Notifies renderer process
  * - Attempts graceful recovery
- * 
+ *
  * Development behavior:
  * - Shows error dialogs for immediate feedback
  * - More verbose logging
@@ -710,17 +741,17 @@ app.on('window-all-closed', () => {
 process.on('uncaughtException', (error) => {
   const errorId = `main-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
   console.error(`[Main] Uncaught Exception [${errorId}]:`, error)
-  
+
   // Log to file for debugging (non-blocking)
   const logDir = app.getPath('userData')
   const logFile = join(logDir, 'crash.log')
   const timestamp = new Date().toISOString()
   const logEntry = `[${timestamp}] [${errorId}] Uncaught Exception: ${error.message}\nStack: ${error.stack}\n\n`
-  
+
   fs.appendFile(logFile, logEntry, 'utf8').catch((logError) => {
     console.error('[Main] Failed to write error log:', logError)
   })
-  
+
   // In production, try to recover instead of showing error dialog
   if (process.env.NODE_ENV === 'production') {
     // Notify renderer and attempt recovery
@@ -751,18 +782,18 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (reason, promise) => {
   const errorId = `rejection-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
   console.error(`[Main] Unhandled Rejection [${errorId}]:`, reason)
-  
+
   const logDir = app.getPath('userData')
   const logFile = join(logDir, 'crash.log')
   const timestamp = new Date().toISOString()
   const errorMessage = reason instanceof Error ? reason.message : String(reason)
   const errorStack = reason instanceof Error ? reason.stack : 'N/A'
   const logEntry = `[${timestamp}] [${errorId}] Unhandled Rejection: ${errorMessage}\nStack: ${errorStack}\n\n`
-  
+
   fs.appendFile(logFile, logEntry, 'utf8').catch((logError) => {
     console.error('[Main] Failed to write rejection log:', logError)
   })
-  
+
   // Don't crash - log and continue
   if (mainWindow && !mainWindow.isDestroyed()) {
     try {
@@ -784,16 +815,16 @@ process.on('unhandledRejection', (reason, promise) => {
 app.on('render-process-gone', (event, webContents, details) => {
   const errorId = `renderer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
   console.error(`[Main] Renderer process gone [${errorId}]:`, details)
-  
+
   const logDir = app.getPath('userData')
   const logFile = join(logDir, 'crash.log')
   const timestamp = new Date().toISOString()
   const logEntry = `[${timestamp}] [${errorId}] Renderer Process Gone\nReason: ${details.reason}\nExit Code: ${details.exitCode}\n\n`
-  
+
   fs.appendFile(logFile, logEntry, 'utf8').catch((logError) => {
     console.error('[Main] Failed to write renderer crash log:', logError)
   })
-  
+
   // Try to reload the window if it's not destroyed
   // Use a delay to ensure the process has fully terminated
   if (webContents && !webContents.isDestroyed()) {

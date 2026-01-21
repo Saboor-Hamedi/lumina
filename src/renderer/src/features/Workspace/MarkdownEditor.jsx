@@ -393,7 +393,7 @@ const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
     }
     setTitle(snippet?.title || '')
     setIsDirty(false)
-  }, [snippet?.id, createTargetState, viewMode]) // Add viewMode to dependencies to rebuild on mode change
+  }, [snippet?.id, snippet?.title, createTargetState, viewMode]) // Update when title changes too
 
   // Highlight code blocks in reading/overlay previews when previewContent changes
   useEffect(() => {
@@ -705,10 +705,15 @@ const MarkdownEditor = React.memo(({ snippet, onSave, onToggleInspector }) => {
         throw new Error('Snippet ID is missing')
       }
 
-      await onSave(snippetToSave)
+      // Save and get back the updated snippet with cleaned title
+      const updatedSnippet = await onSave(snippetToSave)
 
       // Only update state if component is still mounted
       if (isMountedRef.current) {
+        // Update local title state with cleaned title from backend
+        if (updatedSnippet?.title && updatedSnippet.title !== title) {
+          setTitle(updatedSnippet.title)
+        }
         setIsDirty(false)
         setDirty(snippet.id, false)
         showToast('Note saved', 'success')

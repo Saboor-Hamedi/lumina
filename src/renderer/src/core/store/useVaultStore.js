@@ -250,13 +250,16 @@ export const useVaultStore = create((set, get) => ({
         throw new Error('Save API is not available. Please restart the application.')
       }
 
-      await window.api.saveSnippet(snippet)
+      // Save and get back the updated snippet with cleaned title
+      const updatedSnippet = await window.api.saveSnippet(snippet)
 
       const current = get().snippets
       const exists = current.find((s) => s.id === snippet.id)
+      // Use the updated snippet (with cleaned title) from the backend
+      const snippetToUse = updatedSnippet || snippet
       const next = exists
-        ? current.map((s) => (s.id === snippet.id ? snippet : s))
-        : [snippet, ...current]
+        ? current.map((s) => (s.id === snippet.id ? snippetToUse : s))
+        : [snippetToUse, ...current]
 
       // Save complete (silent)
       set({ snippets: next })
@@ -269,8 +272,11 @@ export const useVaultStore = create((set, get) => ({
       }
 
       if (get().selectedSnippet?.id === snippet.id) {
-        set({ selectedSnippet: snippet })
+        set({ selectedSnippet: snippetToUse })
       }
+
+      // Return the updated snippet so callers can use the cleaned title
+      return snippetToUse
     } catch (err) {
       console.error('[VaultStore] Save failed:', err)
       throw err // Re-throw so callers can handle the error
@@ -304,21 +310,50 @@ export const useVaultStore = create((set, get) => ({
         console.warn('[VaultStore] Cache update failed after delete:', cacheError)
       }
 
-      // Update selected snippet if it was deleted
-      if (get().selectedSnippet?.id === id) {
-        set({ selectedSnippet: next.length ? next[0] : null })
-      }
-
-      // Close tab if it was open
+      // Close tab if it was open and update selected snippet
       set((state) => {
         const nextTabs = state.openTabs.filter((tid) => tid !== id)
+        const wasOnlyTab = state.openTabs.length === 1
+        const isActiveTab = state.activeTabId === id
+        
         let nextActiveId = state.activeTabId
-        if (state.activeTabId === id) {
-          nextActiveId = nextTabs.length > 0 ? nextTabs[nextTabs.length - 1] : null
+        let nextSelectedSnippet = state.selectedSnippet
+        
+        // If the deleted snippet was selected or was the active tab
+        if (state.selectedSnippet?.id === id || isActiveTab) {
+          if (wasOnlyTab) {
+            // This was the only tab open: show welcome page, don't auto-open another
+            nextActiveId = null
+            nextSelectedSnippet = null
+          } else if (nextTabs.length > 0) {
+            // Multiple tabs: jump to the next tab
+            if (isActiveTab) {
+              // Find next tab (use same index, or last if we were at the end)
+              const currentIdx = state.openTabs.indexOf(id)
+              const nextIdx = currentIdx < nextTabs.length ? currentIdx : nextTabs.length - 1
+              nextActiveId = nextTabs[nextIdx]
+            } else {
+              // Was selected but not active tab, jump to first open tab
+              nextActiveId = nextTabs[0]
+            }
+            
+            // Find the snippet for the next tab (if not graph tab)
+            if (nextActiveId !== GRAPH_TAB_ID) {
+              nextSelectedSnippet = next.find((s) => s.id === nextActiveId) || null
+            } else {
+              nextSelectedSnippet = null
+            }
+          } else {
+            // No more tabs open: show welcome page, don't auto-open
+            nextActiveId = null
+            nextSelectedSnippet = null
+          }
         }
+        
         return {
           openTabs: nextTabs,
-          activeTabId: nextActiveId
+          activeTabId: nextActiveId,
+          selectedSnippet: nextSelectedSnippet
         }
       })
     } catch (err) {
