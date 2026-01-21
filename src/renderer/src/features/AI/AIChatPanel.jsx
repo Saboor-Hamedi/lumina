@@ -105,6 +105,7 @@ const AIChatPanel = React.memo(() => {
   const { selectedSnippet } = useVaultStore()
   const [inputValue, setInputValue] = useState('')
   const textareaRef = useRef(null)
+  const virtuosoRef = useRef(null)
 
   // Auto-resize textarea
   const adjustTextareaHeight = useCallback(() => {
@@ -115,6 +116,16 @@ const AIChatPanel = React.memo(() => {
     const minHeight = 24 // Single line height
     const maxHeight = 200
     
+    // If empty, set to min height immediately and hide overflow
+    if (!textarea.value.trim()) {
+      textarea.style.height = `${minHeight}px`
+      textarea.style.overflowY = 'hidden'
+      return
+    }
+    
+    // Enable overflow for scrolling when content exists
+    textarea.style.overflowY = 'auto'
+    
     // Reset height to auto to get accurate scrollHeight
     textarea.style.height = 'auto'
     const scrollHeight = textarea.scrollHeight
@@ -122,18 +133,20 @@ const AIChatPanel = React.memo(() => {
     textarea.style.height = `${newHeight}px`
   }, [])
 
-  // Initialize textarea on mount
+  // Initialize textarea on mount - ensure it starts at 24px
   useEffect(() => {
-    if (textareaRef.current) {
+    const textarea = textareaRef.current
+    if (textarea) {
       // Ensure proper width on mount
-      textareaRef.current.style.width = '100%'
-      textareaRef.current.style.minWidth = '0'
-      // Set initial height to prevent oversized textarea
-      textareaRef.current.style.height = '24px'
-      // Then adjust if needed
-      adjustTextareaHeight()
+      textarea.style.width = '100%'
+      textarea.style.minWidth = '0'
+      // Force initial height to 24px - override any browser calculation
+      textarea.style.height = '24px'
+      textarea.style.overflowY = 'hidden'
+      // Force a reflow to ensure the height is applied
+      void textarea.offsetHeight
     }
-  }, [adjustTextareaHeight])
+  }, [])
 
   useEffect(() => {
     adjustTextareaHeight()
@@ -145,6 +158,35 @@ const AIChatPanel = React.memo(() => {
       textareaRef.current.focus()
     }
   }, [isChatLoading])
+
+  // Auto-scroll to bottom when messages change or loading state changes
+  // Using requestAnimationFrame for smoother, frame-synced scrolling
+  useEffect(() => {
+    if (!virtuosoRef.current || chatMessages.length === 0) return
+
+    let rafId1, rafId2
+
+    // Use double RAF to ensure DOM is fully updated before scrolling
+    rafId1 = requestAnimationFrame(() => {
+      rafId2 = requestAnimationFrame(() => {
+        if (virtuosoRef.current) {
+          // Scroll to the last message or slightly beyond for loading indicator
+          const targetIndex = chatMessages.length - 1
+          virtuosoRef.current.scrollToIndex({
+            index: targetIndex,
+            behavior: 'smooth',
+            align: 'end',
+            offset: isChatLoading ? 20 : 0 // Extra offset when loading to show typing indicator
+          })
+        }
+      })
+    })
+
+    return () => {
+      if (rafId1) cancelAnimationFrame(rafId1)
+      if (rafId2) cancelAnimationFrame(rafId2)
+    }
+  }, [chatMessages.length, isChatLoading])
 
   const handleCopy = (text) => {
     navigator.clipboard.writeText(text)
@@ -223,19 +265,22 @@ const AIChatPanel = React.memo(() => {
           </div>
         ) : (
           <Virtuoso
+            ref={virtuosoRef}
             style={{ height: '100%' }}
             data={chatMessages}
             followOutput="smooth"
+            initialTopMostItemIndex={chatMessages.length > 0 ? chatMessages.length - 1 : 0}
             itemContent={(index, msg) => (
               <div
                 className={`chat-row ${msg.role}`}
                 style={{
-                  marginBottom: '20px',
+                  marginBottom: '12px',
                   display: 'flex',
-                  gap: '10px',
+                  gap: '8px',
                   justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                  paddingLeft: msg.role === 'assistant' ? '4px' : '0',
-                  paddingRight: msg.role === 'user' ? '4px' : '0'
+                  paddingLeft: msg.role === 'assistant' ? '0' : '0',
+                  paddingRight: msg.role === 'user' ? '0' : '0',
+                  alignItems: 'flex-start'
                 }}
               >
                 {msg.role === 'assistant' && <LuminaAvatar />}
@@ -246,7 +291,9 @@ const AIChatPanel = React.memo(() => {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                    maxWidth: 'calc(100% - 40px)'
+                    maxWidth: 'calc(100% - 32px)',
+                    flex: 1,
+                    minWidth: 0
                   }}
                 >
                   <div className={`chat-bubble ${msg.role}`}>
@@ -267,12 +314,12 @@ const AIChatPanel = React.memo(() => {
             )}
             components={{
               Footer: () => (
-                <div style={{ paddingBottom: '20px' }}>
+                <div style={{ paddingBottom: '12px' }}>
                   {isChatLoading && (
                     <div className="chat-bubble assistant typing">
-                      <span>.</span>
-                      <span>.</span>
-                      <span>.</span>
+                      <span></span>
+                      <span></span>
+                      <span></span>
                     </div>
                   )}
                   {chatError && (

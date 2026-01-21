@@ -130,3 +130,13 @@
     transform: rotate(360deg);
   }
 }
+
+/* Smooth scrolling for Virtuoso container */
+.chat-messages > div[data-virtuoso-scroller] {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  /* Optimize scroll performance */
+  will-change: scroll-position;
+  transform: translateZ(0); /* Force GPU acceleration */
+  backface-visibility: hidden;
+}

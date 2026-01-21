@@ -25,6 +25,8 @@ import '../../assets/toast.css'
 import './AppShell.css'
 import '../Overlays/ConfirmModal.css'
 import AIChatPanel from '../AI/AIChatPanel'
+import DetailsModal from '../Overlays/DetailsModal'
+import { X, MessageSquare } from 'lucide-react'
 
 const AppShell = () => {
   const { snippets, selectedSnippet, setSelectedSnippet, saveSnippet, isLoading, loadVault, activeTabId, openTabs } =
@@ -36,13 +38,14 @@ const AppShell = () => {
   const [showThemeModal, setShowThemeModal] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
   const [showGraph, setShowGraph] = useState(false)
+  const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true)
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false)
   const [leftWidth, setLeftWidth] = useState(260)
   const [rightWidth, setRightWidth] = useState(300)
   const [resizingSide, setResizingSide] = useState(null) // 'left', 'right', or null
   const [isRestoring, setIsRestoring] = useState(true)
-  const [rightPanelMode, setRightPanelMode] = useState('metadata')
+  const [rightPanelMode, setRightPanelMode] = useState('chat')
 
   // Width Refs for Persistence
   const widthRef = React.useRef({ left: 260, right: 300 })
@@ -123,8 +126,12 @@ const AppShell = () => {
         const last = allSnippets.find((s) => s.id === settings.lastSnippetId)
         if (last) setSelectedSnippet(last)
       }
-      if (settings.rightPanelMode) {
+      // Default to chat mode (metadata moved to modal)
+      if (settings.rightPanelMode && settings.rightPanelMode !== 'metadata') {
         setRightPanelMode(settings.rightPanelMode)
+      } else {
+        setRightPanelMode('chat')
+        useSettingsStore.getState().updateSetting('rightPanelMode', 'chat')
       }
       // Restore Widths & Toggles
       if (settings.leftWidth) setLeftWidth(settings.leftWidth)
@@ -141,7 +148,17 @@ const AppShell = () => {
 
     // Start listening for updates
     const unsub = useUpdateStore.getState().init()
-    return () => unsub && unsub()
+
+    // Listen for details modal open event from EditorTitleBar
+    const handleOpenDetailsModal = () => {
+      setShowDetailsModal(true)
+    }
+    window.addEventListener('open-details-modal', handleOpenDetailsModal)
+
+    return () => {
+      unsub && unsub()
+      window.removeEventListener('open-details-modal', handleOpenDetailsModal)
+    }
   }, [])
 
   // ... imports
@@ -378,102 +395,33 @@ const AppShell = () => {
           />
         )}
         <div className="inspector-panel">
-          <div className="panel-header-tabs">
-            <button
-              className={`panel-tab ${rightPanelMode === 'metadata' ? 'active' : ''}`}
-              onClick={() => {
-                setRightPanelMode('metadata')
-                useSettingsStore.getState().updateSetting('rightPanelMode', 'metadata')
-              }}
-            >
-              Metadata
-            </button>
-            <button
-              className={`panel-tab ${rightPanelMode === 'chat' ? 'active' : ''}`}
-              onClick={() => {
-                setRightPanelMode('chat')
-                useSettingsStore.getState().updateSetting('rightPanelMode', 'chat')
-              }}
-            >
-              AI Chat
-            </button>
+          {/* Tab-style header - matches workspace tabs */}
+          <div className="panel-header-tabs workspace-tabbar">
+            <div className="workspace-tab active">
+              <div className="tab-context">
+                <MessageSquare size={12} className="tab-icon" />
+                <span className="tab-title">AI Chat</span>
+              </div>
+              <div className="tab-actions">
+                <button
+                  className="tab-close-btn"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsRightSidebarOpen(false)
+                    useSettingsStore.getState().updateSetting('isRightSidebarOpen', false)
+                  }}
+                  title="Close sidebar"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            </div>
           </div>
 
+          {/* Panel content - only AI Chat */}
           <div className="panel-content">
             <ErrorBoundary>
-              {rightPanelMode === 'metadata' ? (
-                isLoading ? (
-                  <div className="skeleton-inspector">
-                    <div
-                    className="skeleton skeleton-text"
-                    style={{ width: '40%', marginBottom: '12px' }}
-                  />
-                  <div
-                    className="skeleton skeleton-text"
-                    style={{ width: '80%', marginBottom: '12px' }}
-                  />
-                  <div className="skeleton skeleton-text" style={{ width: '60%' }} />
-                </div>
-              ) : selectedSnippet ? (
-                <div className="meta-info">
-                  <div className="meta-section">
-                    <div className="meta-label">Properties</div>
-                    <div className="meta-row">
-                      <span>Modified</span>
-                      <span className="meta-value">
-                        {new Date(selectedSnippet.timestamp).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="meta-row">
-                      <span>Type</span>
-                      <span className="meta-value badge">{selectedSnippet.language}</span>
-                    </div>
-                    <div className="meta-row">
-                      <span>Location</span>
-                      <span
-                        className="meta-value path-hint"
-                        title={useSettingsStore.getState().settings.vaultPath || 'Default'}
-                      >
-                        {(useSettingsStore.getState().settings.vaultPath || 'Default Vault')
-                          .split(/[/\\]/)
-                          .pop()}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="meta-separator" />
-
-                  <div className="meta-section">
-                    <div className="meta-label">Statistics</div>
-                    <div className="meta-grid">
-                      <div className="stat-box">
-                        <div className="stat-value">{selectedSnippet.code?.length || 0}</div>
-                        <div className="stat-label">Chars</div>
-                      </div>
-                      <div className="stat-box">
-                        <div className="stat-value">
-                          {selectedSnippet.code?.trim()
-                            ? selectedSnippet.code.trim().split(/\s+/).length
-                            : 0}
-                        </div>
-                        <div className="stat-label">Words</div>
-                      </div>
-                      <div className="stat-box">
-                        <div className="stat-value">
-                          {Math.ceil((selectedSnippet.code?.trim().split(/\s+/).length || 0) / 200)}
-                          m
-                        </div>
-                        <div className="stat-label">Read</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="panel-empty">No file selected</div>
-              )
-            ) : (
               <AIChatPanel />
-            )}
             </ErrorBoundary>
           </div>
         </div>
@@ -488,6 +436,12 @@ const AppShell = () => {
         />
       )}
       {showThemeModal && <ThemeModal isOpen={showThemeModal} onClose={() => setShowThemeModal(false)} />}
+      <DetailsModal
+        isOpen={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
+        snippet={selectedSnippet}
+        isLoading={isLoading}
+      />
       <CommandPalette
         isOpen={showPalette}
         onClose={() => setShowPalette(false)}

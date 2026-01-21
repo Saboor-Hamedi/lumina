@@ -18,6 +18,19 @@ npm run test:ui
 
 # Run tests with coverage report
 npm run test:coverage
+
+
+# Run all tests (watch mode)
+npm test
+
+# Run all tests once
+npm run test:run
+
+# Run with coverage
+npm run test:coverage
+
+# Coverage with custom flags
+npm test -- --coverage --run
 ```
 
 ### Run Specific Tests
@@ -300,7 +313,7 @@ import userEvent from '@testing-library/user-event'
 it('handles click events', async () => {
   const user = userEvent.setup()
   render(<Button onClick={handleClick}>Click</Button>)
-  
+
   await user.click(screen.getByText('Click'))
   expect(handleClick).toHaveBeenCalled()
 })

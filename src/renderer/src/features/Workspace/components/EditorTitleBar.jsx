@@ -264,6 +264,18 @@ const EditorTitleBar = ({
                 <span className="shortcut-label">Ctrl+I</span>
                 <Sidebar size={12} className="menu-icon-right" />
               </div>
+              <div className="dropdown-divider" />
+              <div
+                className="dropdown-item"
+                onClick={() => {
+                  // Trigger details modal via custom event
+                  window.dispatchEvent(new CustomEvent('open-details-modal'))
+                  setShowMoreMenu(false)
+                }}
+              >
+                <span className="menu-label">Show Details</span>
+                <FileText size={12} className="menu-icon-right" />
+              </div>
               </div>,
               document.body
             )}

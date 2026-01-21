@@ -109,14 +109,128 @@
   height: 100%;
 }
 
-/* Inspector Tabs */
+/* Inspector Tabs - Match TabBar Styling */
 .panel-header-tabs {
-  height: 40px;
+  height: 32px; /* Match workspace-tabbar height */
   display: flex;
-  background: var(--bg-sidebar);
-  border-bottom: 1px solid var(--border-card);
+  background: var(--bg-app); /* Match tabbar background */
+  border-bottom: 1px solid var(--border-dim); /* Match tabbar border */
+  flex-shrink: 0;
 }
 
+/* When using workspace-tabbar class, apply tab styling */
+.panel-header-tabs.workspace-tabbar {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Tab styling - matches workspace tabs */
+.panel-header-tabs .workspace-tab {
+  min-width: 140px;
+  max-width: 220px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  gap: 8px;
+  border-right: 1px solid var(--border-dim);
+  background: var(--bg-sidebar);
+  color: var(--text-faint);
+  font-size: 11px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.panel-header-tabs .workspace-tab:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
+}
+
+.panel-header-tabs .workspace-tab.active {
+  background: var(--bg-app);
+  color: var(--text-main);
+  font-weight: 600;
+  border-right-color: var(--border-dim);
+}
+
+.panel-header-tabs .workspace-tab.active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--text-accent);
+  box-shadow: 0 1px 10px rgba(var(--text-accent-rgb), 0.3);
+}
+
+.panel-header-tabs .tab-context {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.panel-header-tabs .tab-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.01em;
+}
+
+.panel-header-tabs .tab-icon {
+  opacity: 0.7;
+  flex-shrink: 0;
+  transition: opacity 0.2s;
+}
+
+.panel-header-tabs .workspace-tab.active .tab-icon {
+  opacity: 1;
+}
+
+.panel-header-tabs .workspace-tab:hover .tab-icon {
+  opacity: 1;
+}
+
+.panel-header-tabs .tab-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 6px;
+}
+
+.panel-header-tabs .tab-close-btn {
+  background: transparent;
+  border: none;
+  color: inherit;
+  opacity: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+  padding: 2px;
+}
+
+.panel-header-tabs .workspace-tab:hover .tab-close-btn {
+  opacity: 0.6;
+}
+
+.panel-header-tabs .tab-close-btn:hover {
+  opacity: 1 !important;
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+/* Legacy panel-tab styles (kept for backward compatibility if needed) */
 .panel-tab {
   flex: 1;
   border: none;
@@ -128,15 +242,20 @@
   cursor: pointer;
   border-bottom: 2px solid transparent;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .panel-tab:hover {
   color: var(--text-main);
+  background: var(--bg-active);
 }
 
 .panel-tab.active {
   color: var(--text-accent);
   border-bottom-color: var(--text-accent);
+  background: var(--bg-active);
 }
 
 .panel-content {
@@ -432,8 +551,8 @@
 
 /* Lumina Avatar */
 .lumina-avatar {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   background: var(--text-accent);
   color: #fff;
   border-radius: 50%;
@@ -441,16 +560,16 @@
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 13px;
-  margin-top: 2px;
+  font-size: 11px;
+  margin-top: 0;
   flex-shrink: 0;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   user-select: none;
 }
 
 .user-avatar {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   background: var(--bg-modifier-active);
   color: var(--text-normal);
   border-radius: 50%;
@@ -458,20 +577,44 @@
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  font-size: 11px;
-  margin-top: 2px;
+  font-size: 10px;
+  margin-top: 0;
   flex-shrink: 0;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
   user-select: none;
+}
+
+/* Smaller avatars on compact view */
+@media (max-height: 600px) {
+  .lumina-avatar,
+  .user-avatar {
+    width: 18px;
+    height: 18px;
+    font-size: 9px;
+  }
 }
 
 .chat-messages {
   flex: 1;
-  padding: 20px;
+  padding: 12px 16px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
+  /* Smooth scrolling optimizations */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
+  /* Reduce scroll jank */
+  contain: layout style paint;
+}
+
+/* Reduce padding on smaller heights */
+@media (max-height: 600px) {
+  .chat-messages {
+    padding: 8px 12px;
+    gap: 10px;
+  }
 }
 
 .chat-empty {
@@ -510,11 +653,20 @@
 }
 
 .chat-bubble {
-  padding: 10px 14px;
-  border-radius: 12px;
+  padding: 8px 12px;
+  border-radius: 10px;
   max-width: 90%;
   font-size: 13px;
   line-height: 1.5;
+}
+
+/* Compact bubbles on smaller heights */
+@media (max-height: 600px) {
+  .chat-bubble {
+    padding: 6px 10px;
+    font-size: 12px;
+    line-height: 1.4;
+  }
 }
 
 /* Markdown Styles inside Bubbles */
@@ -581,26 +733,75 @@
   color: var(--text-main);
 }
 
+/* Chat row styling for better alignment */
+.chat-row {
+  display: flex;
+  align-items: flex-start;
+}
+
+.chat-row.assistant {
+  justify-content: flex-start;
+}
+
+.chat-row.user {
+  justify-content: flex-end;
+}
+
+/* Ensure content stack uses available space efficiently */
+.chat-content-stack {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .chat-bubble.typing {
   display: flex;
-  gap: 4px;
-  padding: 12px 16px;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 18px;
+  min-height: 44px;
+}
+
+.chat-bubble.typing::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--text-accent);
+  border-radius: 50%;
+  animation: typing-pulse 1.4s infinite ease-in-out;
 }
 
 .chat-bubble.typing span {
-  width: 4px;
-  height: 4px;
-  background: var(--text-muted);
+  width: 6px;
+  height: 6px;
+  background: var(--text-accent);
   border-radius: 50%;
-  animation: typing 1.4s infinite ease-in-out both;
+  opacity: 0.6;
+  animation: typing-pulse 1.4s infinite ease-in-out both;
 }
 
-.chat-bubble.typing span:nth-child(1) { animation-delay: -0.32s; }
-.chat-bubble.typing span:nth-child(2) { animation-delay: -0.16s; }
+.chat-bubble.typing span:nth-child(1) { 
+  animation-delay: -0.32s; 
+  opacity: 0.4;
+}
+.chat-bubble.typing span:nth-child(2) { 
+  animation-delay: -0.16s; 
+  opacity: 0.5;
+}
+.chat-bubble.typing span:nth-child(3) {
+  opacity: 0.6;
+}
 
-@keyframes typing {
-  0%, 80%, 100% { transform: scale(0); }
-  40% { transform: scale(1); }
+@keyframes typing-pulse {
+  0%, 100% { 
+    transform: scale(0.8);
+    opacity: 0.4;
+  }
+  50% { 
+    transform: scale(1.2);
+    opacity: 1;
+  }
 }
 
 .chat-error {

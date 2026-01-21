@@ -20,7 +20,15 @@ global.window.api = {
   closeWindow: vi.fn(),
   getSetting: vi.fn(),
   saveSetting: vi.fn(),
-  setTranslucency: vi.fn()
+  setTranslucency: vi.fn(),
+  searchVault: vi.fn(),
+  indexVault: vi.fn(),
+  getIndexStats: vi.fn(),
+  sendChatMessage: vi.fn(),
+  checkForUpdates: vi.fn(),
+  downloadUpdate: vi.fn(),
+  installUpdate: vi.fn(),
+  logError: vi.fn()
 }
 
 // Mock localStorage
@@ -45,3 +53,25 @@ global.localStorage = localStorageMock
 global.indexedDB = {
   open: vi.fn()
 }
+
+// Mock crypto for UUID generation
+global.crypto = {
+  randomUUID: vi.fn(() => 'mock-uuid-' + Math.random().toString(36).substr(2, 9))
+}
+
+// Mock Worker for AI store tests
+global.Worker = class MockWorker {
+  constructor(url, options) {
+    this.url = url
+    this.options = options
+    this.postMessage = vi.fn()
+    this.onmessage = null
+    this.terminate = vi.fn()
+  }
+}
+
+// Mock document.addEventListener/removeEventListener for keyboard shortcuts
+const originalAddEventListener = document.addEventListener
+const originalRemoveEventListener = document.removeEventListener
+document.addEventListener = vi.fn(originalAddEventListener)
+document.removeEventListener = vi.fn(originalRemoveEventListener)
