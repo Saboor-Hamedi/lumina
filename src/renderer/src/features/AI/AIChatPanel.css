@@ -94,6 +94,16 @@
   height: 16px;
 }
 
+.chat-cancel-button {
+  background: var(--danger) !important;
+  color: white !important;
+  margin-right: 8px;
+}
+
+.chat-cancel-button:hover:not(:disabled) {
+  background: var(--danger-hover) !important;
+}
+
 .chat-input-hint {
   display: none;
 }
@@ -108,14 +118,14 @@
   .chat-input-wrapper {
     padding: 6px 10px;
   }
-  
+
   .chat-send-button {
     width: 28px;
     height: 28px;
     min-width: 28px;
     min-height: 28px;
   }
-  
+
   .chat-input-textarea {
     font-size: 13px;
   }

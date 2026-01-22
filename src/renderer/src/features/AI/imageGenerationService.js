@@ -266,15 +266,16 @@ export function isImageGenerationRequest(text) {
   }
 
   // Check for natural language image generation requests
+  // More specific patterns to avoid false positives
   const imagePhrases = [
-    'draw ',
-    'generate image',
-    'create image',
-    'make image',
-    'show image',
-    'image of',
-    'picture of',
-    'photo of'
+    'draw me ',
+    'generate an image',
+    'create an image',
+    'make an image',
+    'show me an image',
+    'generate a picture',
+    'create a picture',
+    'make a picture'
   ]
 
   // Check if message starts with an image phrase
@@ -287,19 +288,21 @@ export function isImageGenerationRequest(text) {
     return true
   }
 
-  // Check for questions about image generation (e.g., "can you generate image?")
+  // Check for direct image generation requests (e.g., "can you generate an image of...")
   if (
-    /^(can you|could you|please|will you)\s+(generate|create|make|draw|show)\s+(an?\s+)?image/i.test(
+    /^(can you|could you|please|will you)\s+(generate|create|make|draw|show)\s+(an?\s+)?(image|picture)/i.test(
       trimmed
-    )
+    ) &&
+    /\s+(of|a)\s+/i.test(trimmed)
   ) {
     return true
   }
 
-  // Check if message contains image generation intent
+  // Check if message contains image generation intent (but not questions)
   if (
     /generate.*image|create.*image|make.*image|draw.*image/i.test(trimmed) &&
-    trimmed.length < 100
+    trimmed.length < 100 &&
+    !/^(how|what|can|could|do|does|will|would|why|when|where|who)/i.test(trimmed)
   ) {
     return true
   }

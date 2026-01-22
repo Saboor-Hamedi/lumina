@@ -44,9 +44,15 @@ export const useAIStore = create((set, get) => {
     // This is kept for backward compatibility with graph semantic links
     embeddingsCache: {},
 
+    // Chat state
+    chatError: null,
+    isChatLoading: false,
+    chatController: null,
+
     // Image generation state
     isImageGenerating: false,
     imageGenerationError: null,
+    imageGenerationController: null,
 
     generateEmbedding: (text) => {
       return new Promise((resolve, reject) => {
@@ -139,7 +145,11 @@ export const useAIStore = create((set, get) => {
           if (Array.isArray(parsed) && parsed.length > 0) {
             // Validate message structure
             const validMessages = parsed.filter(
-              (msg) => msg && typeof msg === 'object' && msg.role && (typeof msg.content === 'string' || msg.imageUrl)
+              (msg) =>
+                msg &&
+                typeof msg === 'object' &&
+                msg.role &&
+                (typeof msg.content === 'string' || msg.imageUrl)
             )
 
             if (validMessages.length > 0) {
@@ -242,11 +252,10 @@ export const useAIStore = create((set, get) => {
 
       set({ isImageGenerating: true, imageGenerationError: null })
 
-      let controller = null
+      let controller = new AbortController()
+      set({ imageGenerationController: controller })
 
       try {
-        controller = new AbortController()
-
         const result = await generateImageWithRetry(imagePrompt, huggingFaceKey, controller)
 
         // Add image message to chat
@@ -263,7 +272,8 @@ export const useAIStore = create((set, get) => {
           return {
             chatMessages: newMessages,
             isImageGenerating: false,
-            imageGenerationError: null
+            imageGenerationError: null,
+            imageGenerationController: null
           }
         })
 
@@ -278,21 +288,66 @@ export const useAIStore = create((set, get) => {
         let errorMessage = error.message || 'Failed to generate image. Please try again.'
 
         // Check if it's a network/CORS issue
-        if (error.message && (
-          error.message.includes('Failed to fetch') ||
-          error.message.includes('NetworkError') ||
-          error.message.includes('CORS') ||
-          error.message.includes('network')
-        )) {
+        if (
+          error.message &&
+          (error.message.includes('Failed to fetch') ||
+            error.message.includes('NetworkError') ||
+            error.message.includes('CORS') ||
+            error.message.includes('network'))
+        ) {
           errorMessage = `Network error: ${error.message}\n\nPossible solutions:\n1. Check your internet connection\n2. The Hugging Face API may be temporarily unavailable\n3. Try using your API key in Settings > AI Models > Image Generation\n4. Firewall/proxy may be blocking the request`
         }
 
         set({
           isImageGenerating: false,
-          imageGenerationError: errorMessage
+          imageGenerationError: errorMessage,
+          imageGenerationController: null
         })
 
         throw error
+      }
+    },
+
+    /**
+     * Cancel the current chat response
+     */
+    cancelChat: () => {
+      const controller = get().chatController
+      if (controller && !controller.signal.aborted) {
+        controller.abort()
+        set({
+          isChatLoading: false,
+          chatController: null
+        })
+      }
+    },
+
+    /**
+     * Cancel the current image generation process
+     */
+    cancelImageGeneration: () => {
+      const controller = get().imageGenerationController
+      if (controller && !controller.signal.aborted) {
+        controller.abort()
+        set({
+          isImageGenerating: false,
+          imageGenerationController: null
+        })
+      }
+    },
+
+    /**
+     * Cancel the current image generation process
+     */
+    cancelImageGeneration: () => {
+      const controller = get().imageGenerationController
+      if (controller && !controller.signal.aborted) {
+        controller.abort()
+        set({
+          isImageGenerating: false,
+          imageGenerationError: 'Image generation cancelled by user',
+          imageGenerationController: null
+        })
       }
     },
 
@@ -333,8 +388,9 @@ export const useAIStore = create((set, get) => {
 
       // 2. Validate Key - check for truthy string value (not null, undefined, or empty string)
       const envKey = import.meta.env.VITE_DEEPSEEK_KEY
-      const visibleKey = (deepSeekKey && typeof deepSeekKey === 'string' && deepSeekKey.trim())
-        || (envKey && typeof envKey === 'string' && envKey.trim())
+      const visibleKey =
+        (deepSeekKey && typeof deepSeekKey === 'string' && deepSeekKey.trim()) ||
+        (envKey && typeof envKey === 'string' && envKey.trim())
 
       if (!visibleKey) {
         // Debug logging to help diagnose the issue
@@ -485,15 +541,18 @@ ${vaultAccessNote}`
         // Add explicit context snippets if provided (with enhanced metadata)
         if (contextSnippets.length > 0) {
           systemPrompt += '\n\n**Active Context from Currently Open Notes:**\n'
-          contextSnippets.forEach(snip => {
+          contextSnippets.forEach((snip) => {
             const tags = snip.tags ? ` [Tags: ${snip.tags}]` : ''
-            const date = snip.timestamp ? ` [Modified: ${new Date(snip.timestamp).toLocaleDateString()}]` : ''
+            const date = snip.timestamp
+              ? ` [Modified: ${new Date(snip.timestamp).toLocaleDateString()}]`
+              : ''
             const lang = snip.language ? ` [Language: ${snip.language}]` : ''
             systemPrompt += `--- [${snip.title}]${tags}${date}${lang} ---\n${snip.code.slice(0, 2000)}\n\n`
           })
         }
 
         controller = new AbortController()
+        set({ chatController: controller })
         timeoutId = setTimeout(() => {
           if (controller) {
             controller.abort()
@@ -515,10 +574,7 @@ ${vaultAccessNote}`
           },
           body: JSON.stringify({
             model: String(deepSeekModel || 'deepseek-chat'),
-            messages: [
-              { role: 'system', content: systemPrompt },
-              ...newHistory
-            ],
+            messages: [{ role: 'system', content: systemPrompt }, ...newHistory],
             stream: true // Enable streaming
           }),
           signal: controller?.signal
@@ -533,8 +589,10 @@ ${vaultAccessNote}`
         if (!response.ok) {
           // Remove placeholder message on error
           set((state) => ({
-            chatMessages: state.chatMessages.slice(0, -1),
-            isChatLoading: false
+            chatMessages: messages.slice(0, -1),
+            isChatLoading: false,
+            chatError: getErrorMessage(error),
+            chatController: null
           }))
 
           if (response.status === 401) {
@@ -646,7 +704,7 @@ ${vaultAccessNote}`
           console.warn('[AIStore] Failed to save chat history:', saveErr)
         }
 
-        set({ isChatLoading: false })
+        set({ isChatLoading: false, chatController: null })
       } catch (error) {
         console.error('[AIStore] DeepSeek Chat Error:', error)
 
@@ -698,7 +756,8 @@ ${vaultAccessNote}`
 
           return {
             isChatLoading: false,
-            chatError: getErrorMessage(error)
+            chatError: getErrorMessage(error),
+            chatController: null
           }
         })
       }

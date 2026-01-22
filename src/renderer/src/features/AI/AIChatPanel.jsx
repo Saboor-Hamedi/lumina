@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Virtuoso } from 'react-virtuoso'
-import { Copy, ThumbsUp, ThumbsDown, Check, Send } from 'lucide-react'
+import { Copy, ThumbsUp, ThumbsDown, Check, Send, Square } from 'lucide-react'
 import { useAIStore } from '../../core/store/useAIStore'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import '../Layout/AppShell.css'
@@ -198,119 +198,49 @@ const ChatActions = ({ msg, index, onCopy, onRate }) => {
  * Memoized for performance - expensive AI operations and message rendering.
  */
 const AIChatPanel = React.memo(() => {
-  const { 
-    chatMessages, 
-    isChatLoading, 
-    chatError, 
-    sendChatMessage, 
-    clearChat, 
-    updateMessage, 
+  const {
+    chatMessages,
+    isChatLoading,
+    chatError,
+    sendChatMessage,
+    clearChat,
+    updateMessage,
     loadChatHistory,
     generateImage,
     isImageGenerating,
-    imageGenerationError
+    imageGenerationError,
+    cancelChat,
+    cancelImageGeneration
   } = useAIStore()
   const { selectedSnippet, snippets, openTabs } = useVaultStore()
   const [inputValue, setInputValue] = useState('')
   const textareaRef = useRef(null)
   const virtuosoRef = useRef(null)
-  const [shouldFollowOutput, setShouldFollowOutput] = useState(true)
-  const rangeChangedTimeoutRef = useRef(null)
-  const hasInitialScrolledRef = useRef(false)
-  
-  // Ensure followOutput is enabled during streaming for smooth scrolling
-  useEffect(() => {
-    if (isChatLoading) {
-      setShouldFollowOutput(true)
-    }
-  }, [isChatLoading])
-  
-  // Track the last message count to detect new messages during streaming
-  const lastMessageCountRef = useRef(0)
-  
-  // When new messages are added during streaming, ensure they're visible
-  useEffect(() => {
-    if (isChatLoading && chatMessages.length > lastMessageCountRef.current && virtuosoRef.current && shouldFollowOutput) {
-      lastMessageCountRef.current = chatMessages.length
-      
-      // Wait for content to render before scrolling - use multiple attempts
-      let attemptCount = 0
-      const maxAttempts = 3
-      
-      const scrollToNewMessage = () => {
-        if (virtuosoRef.current && attemptCount < maxAttempts) {
-          try {
-            const lastIndex = chatMessages.length - 1
-            // Use scrollToIndex with align: 'end' to ensure content is visible
-            virtuosoRef.current.scrollToIndex({
-              index: lastIndex,
-              behavior: 'auto',
-              align: 'end'
-            })
-            attemptCount++
-            // Try again after a brief delay to ensure content is fully rendered
-            if (attemptCount < maxAttempts) {
-              setTimeout(scrollToNewMessage, 100)
-            }
-          } catch (err) {
-            // Ignore scroll errors during streaming
-            attemptCount++
-            if (attemptCount < maxAttempts) {
-              setTimeout(scrollToNewMessage, 100)
-            }
-          }
-        }
-      }
-      
-      // Start scrolling after a brief delay
-      const timeoutId = setTimeout(scrollToNewMessage, 50)
-      return () => clearTimeout(timeoutId)
-    } else if (!isChatLoading) {
-      // Reset counter when not loading
-      lastMessageCountRef.current = chatMessages.length
-    }
-  }, [chatMessages.length, isChatLoading, shouldFollowOutput])
-
-  // Reset initial scroll flag when messages are cleared
-  useEffect(() => {
-    if (chatMessages.length === 0) {
-      hasInitialScrolledRef.current = false
-    }
-  }, [chatMessages.length])
 
   // Load chat history on mount
   useEffect(() => {
     loadChatHistory()
   }, [loadChatHistory])
 
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (rangeChangedTimeoutRef.current) {
-        clearTimeout(rangeChangedTimeoutRef.current)
-      }
-    }
-  }, [])
-
   // Auto-resize textarea
   const adjustTextareaHeight = useCallback(() => {
     const textarea = textareaRef.current
     if (!textarea) return
-    
+
     // Set initial min-height to prevent oversized textarea on first load
     const minHeight = 24 // Single line height
     const maxHeight = 200
-    
+
     // If empty, set to min height immediately and hide overflow
     if (!textarea.value.trim()) {
       textarea.style.height = `${minHeight}px`
       textarea.style.overflowY = 'hidden'
       return
     }
-    
+
     // Enable overflow for scrolling when content exists
     textarea.style.overflowY = 'auto'
-    
+
     // Reset height to auto to get accurate scrollHeight
     textarea.style.height = 'auto'
     const scrollHeight = textarea.scrollHeight
@@ -344,110 +274,27 @@ const AIChatPanel = React.memo(() => {
     }
   }, [isChatLoading])
 
-  // Track scroll position to determine if user has scrolled up
-  // Improved to prevent jumping/bouncing during scroll
-  const handleRangeChanged = useCallback((range) => {
-    if (!range || chatMessages.length === 0) return
-    
-    // If AI is actively streaming, don't track scroll - just keep followOutput enabled
-    // This prevents shaking/jumping during streaming
-    if (isChatLoading) {
-      // Don't update state during streaming to prevent conflicts
-      return
-    }
-    
-    // Clear any pending timeout
-    if (rangeChangedTimeoutRef.current) {
-      clearTimeout(rangeChangedTimeoutRef.current)
-    }
-    
-    // Use longer debounce and more stable logic to prevent jumping
-    rangeChangedTimeoutRef.current = setTimeout(() => {
-      // Check if user is near the bottom (within last 5 items for better tolerance)
-      const threshold = Math.max(1, chatMessages.length - 5)
-      const isNearBottom = range.endIndex >= threshold
-      
-      // Only update if there's a meaningful change AND we're not in the middle of a scroll
-      // Use a more stable check to prevent rapid toggling
-      setShouldFollowOutput((prev) => {
-        // Only change if the difference is significant to prevent micro-adjustments
-        if (isNearBottom && !prev) {
-          return true
-        }
-        if (!isNearBottom && prev && range.endIndex < chatMessages.length - 10) {
-          // Only disable followOutput if user has scrolled significantly up
-          return false
-        }
-        // Otherwise, keep current state to prevent jumping
-        return prev
-      })
-    }, 400) // Increased debounce to 400ms to prevent rapid state changes
-  }, [chatMessages.length, isChatLoading])
-
-  // Scroll to bottom on initial load when chat history is loaded
-  useEffect(() => {
-    if (chatMessages.length > 0 && !hasInitialScrolledRef.current) {
-      // Wait for Virtuoso to be fully mounted and rendered
-      let retryCount = 0
-      const maxRetries = 15
-      
-      const scrollToBottom = () => {
-        if (virtuosoRef.current) {
-          try {
-            const lastIndex = chatMessages.length - 1
-            virtuosoRef.current.scrollToIndex({
-              index: lastIndex,
-              behavior: 'auto',
-              align: 'end'
-            })
-            // Double-check by scrolling again after a brief moment
-            setTimeout(() => {
-              if (virtuosoRef.current && !hasInitialScrolledRef.current) {
-                try {
-                  virtuosoRef.current.scrollToIndex({
-                    index: lastIndex,
-                    behavior: 'auto',
-                    align: 'end'
-                  })
-                } catch (e) {
-                  // Ignore second attempt errors
-                }
-              }
-            }, 100)
-            hasInitialScrolledRef.current = true
-            // Ensure followOutput is enabled after initial scroll
-            setShouldFollowOutput(true)
-          } catch (err) {
-            // If scroll fails, try again (up to max retries)
-            retryCount++
-            if (retryCount < maxRetries) {
-              setTimeout(scrollToBottom, 100)
-            } else {
-              console.warn('[AIChatPanel] Failed to scroll to bottom after retries')
-              hasInitialScrolledRef.current = true // Mark as attempted to prevent infinite retries
-            }
-          }
-        } else {
-          // Virtuoso not ready yet, try again (up to max retries)
-          retryCount++
-          if (retryCount < maxRetries) {
-            setTimeout(scrollToBottom, 50)
-          } else {
-            console.warn('[AIChatPanel] Virtuoso ref not available after retries')
-            hasInitialScrolledRef.current = true // Mark as attempted
-          }
-        }
-      }
-      
-      // Start scrolling after a brief delay to ensure DOM is ready
-      // Use requestAnimationFrame for better timing
-      requestAnimationFrame(() => {
-        setTimeout(scrollToBottom, 100)
+  // Simple scroll to bottom function
+  const scrollToBottom = useCallback(() => {
+    if (virtuosoRef.current && chatMessages.length > 0) {
+      virtuosoRef.current.scrollToIndex({
+        index: chatMessages.length - 1,
+        behavior: 'smooth',
+        align: 'end'
       })
     }
   }, [chatMessages.length])
 
+  // Auto-scroll to bottom for new messages
+  useEffect(() => {
+    if (chatMessages.length > 0) {
+      const timeoutId = setTimeout(() => {
+        scrollToBottom()
+      }, 100)
 
+      return () => clearTimeout(timeoutId)
+    }
+  }, [chatMessages.length, scrollToBottom])
 
   const handleCopy = (text) => {
     navigator.clipboard.writeText(text)
@@ -466,24 +313,23 @@ const AIChatPanel = React.memo(() => {
     try {
       // Check if this is an image generation request
       const { isImageGenerationRequest } = await import('./imageGenerationService.js')
-      
+
       if (isImageGenerationRequest(text)) {
         // Handle image generation
-        setShouldFollowOutput(true)
-        
+
         // Add user message showing the request using the store
-        const userMsg = { role: 'user', content: `Generate image: ${text}` }
+        const userMsg = { role: 'user', content: text }
         const currentMessages = chatMessages || []
         useAIStore.setState({ chatMessages: [...currentMessages, userMsg] })
-        
+
         setInputValue('')
         if (textareaRef.current) {
           textareaRef.current.style.height = '24px'
         }
-        
+
         // Generate image (this will add the assistant message with the image)
         await generateImage(text)
-        
+
         // Scroll to bottom after image generation
         setTimeout(() => {
           if (virtuosoRef.current) {
@@ -498,35 +344,34 @@ const AIChatPanel = React.memo(() => {
             }
           }
         }, 100)
-        
+
         return
       }
 
       // Regular chat message
       // Reset scroll tracking when user sends a message - they want to see the response
-      // Force enable followOutput immediately for smooth streaming
-      setShouldFollowOutput(true)
+      // Send chat message
 
       // Include all open tabs as context (not just selected snippet)
       // This gives AI awareness of all notes the user is working with
       const contextSnippets = []
-      
+
       // Add selected snippet first (highest priority)
       if (selectedSnippet) {
         contextSnippets.push(selectedSnippet)
       }
-      
+
       // Add other open tabs (excluding already added selected snippet)
-      openTabs.forEach(tabId => {
-        const snippet = snippets.find(s => s.id === tabId)
+      openTabs.forEach((tabId) => {
+        const snippet = snippets.find((s) => s.id === tabId)
         if (snippet && snippet.id !== selectedSnippet?.id) {
           contextSnippets.push(snippet)
         }
       })
-      
+
       // Limit to 5 most recent/important snippets to avoid token overflow
       const limitedContext = contextSnippets.slice(0, 5)
-      
+
       sendChatMessage(text, limitedContext)
       setInputValue('')
       // Reset textarea height after clearing input
@@ -547,14 +392,28 @@ const AIChatPanel = React.memo(() => {
         textareaRef.current.focus()
       }
     }
-  }, [inputValue, isChatLoading, isImageGenerating, selectedSnippet, snippets, openTabs, sendChatMessage, generateImage, adjustTextareaHeight, chatMessages.length])
+  }, [
+    inputValue,
+    isChatLoading,
+    isImageGenerating,
+    selectedSnippet,
+    snippets,
+    openTabs,
+    sendChatMessage,
+    generateImage,
+    adjustTextareaHeight,
+    chatMessages.length
+  ])
 
-  const handleKeyDown = useCallback((e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
-  }, [handleSend])
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault()
+        handleSend()
+      }
+    },
+    [handleSend]
+  )
 
   return (
     <div className="chat-interface">
@@ -585,79 +444,77 @@ const AIChatPanel = React.memo(() => {
             ref={virtuosoRef}
             style={{ height: '100%' }}
             data={chatMessages}
-            followOutput={shouldFollowOutput ? 'auto' : false}
-            rangeChanged={handleRangeChanged}
-            initialTopMostItemIndex={chatMessages.length > 0 ? Math.max(0, chatMessages.length - 1) : 0}
-            atBottomStateChange={(atBottom) => {
-              // If we're at bottom and haven't scrolled yet, mark as scrolled
-              if (atBottom && chatMessages.length > 0 && !hasInitialScrolledRef.current) {
-                hasInitialScrolledRef.current = true
-              }
-            }}
+            initialTopMostItemIndex={chatMessages.length - 1}
             firstItemIndex={0}
-            increaseViewportBy={{ top: 1000, bottom: 1000 }}
-            overscan={800}
+            increaseViewportBy={{ top: 50, bottom: 50 }}
+            overscan={50}
             itemContent={(index, msg) => {
               // Ensure stable rendering - prevent content from disappearing
               // Use key for stable React reconciliation
               return (
-              <div
-                key={`msg-${index}-${msg.role}-${msg.timestamp || index}`}
-                className={`chat-row ${msg.role}`}
-                style={{
-                  marginBottom: '12px',
-                  display: 'flex',
-                  flexDirection: 'row',
-                  gap: '8px',
-                  justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                  alignItems: 'flex-start',
-                  width: '100%',
-                  minHeight: '40px',
-                  willChange: 'auto'
-                }}
-              >
-                {msg.role === 'assistant' && <LuminaAvatar />}
-
                 <div
-                  className="chat-content-stack"
+                  key={`msg-${index}-${msg.role}-${msg.timestamp || index}`}
+                  className={`chat-row ${msg.role}`}
                   style={{
+                    marginBottom: '12px',
                     display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                    maxWidth: msg.role === 'user' ? '70%' : '75%',
-                    minWidth: 0,
-                    flexShrink: 1,
-                    width: 'auto'
+                    flexDirection: 'row',
+                    gap: '8px',
+                    justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                    alignItems: 'flex-start',
+                    width: '100%',
+                    minHeight: '40px',
+                    willChange: 'auto'
                   }}
                 >
-                  <div className={`chat-bubble ${msg.role}`} style={{ maxWidth: '100%', width: '100%' }}>
-                    {msg.role === 'assistant' && !msg.content && !msg.imageUrl && isChatLoading ? (
-                      <div className="typing-inline">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                      </div>
-                    ) : (
-                      <MessageContent 
-                        content={msg.content} 
-                        imageUrl={msg.imageUrl}
-                        imagePrompt={msg.imagePrompt}
+                  {msg.role === 'assistant' && <LuminaAvatar />}
+
+                  <div
+                    className="chat-content-stack"
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                      maxWidth: msg.role === 'user' ? '70%' : '75%',
+                      minWidth: 0,
+                      flexShrink: 1,
+                      width: 'auto'
+                    }}
+                  >
+                    <div
+                      className={`chat-bubble ${msg.role}`}
+                      style={{ maxWidth: '100%', width: '100%' }}
+                    >
+                      {msg.role === 'assistant' &&
+                      !msg.content &&
+                      !msg.imageUrl &&
+                      isChatLoading ? (
+                        <div className="typing-inline">
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                        </div>
+                      ) : (
+                        <MessageContent
+                          content={msg.content}
+                          imageUrl={msg.imageUrl}
+                          imagePrompt={msg.imagePrompt}
+                          onCopy={handleCopy}
+                        />
+                      )}
+                    </div>
+                    {msg.role === 'assistant' && (
+                      <ChatActions
+                        msg={msg}
+                        index={index}
                         onCopy={handleCopy}
+                        onRate={handleRating}
                       />
                     )}
                   </div>
-                  {msg.role === 'assistant' && (
-                    <ChatActions
-                      msg={msg}
-                      index={index}
-                      onCopy={handleCopy}
-                      onRate={handleRating}
-                    />
-                  )}
-                </div>
 
-                {msg.role === 'user' && <UserAvatar />}
-              </div>
+                  {msg.role === 'user' && <UserAvatar />}
+                </div>
               )
             }}
             components={{
@@ -667,11 +524,19 @@ const AIChatPanel = React.memo(() => {
                 const lastMessage = chatMessages[chatMessages.length - 1]
                 const hasAssistantMessage = lastMessage && lastMessage.role === 'assistant'
                 const showTyping = isChatLoading && !hasAssistantMessage
-                
+
                 return (
                   <div style={{ paddingBottom: '12px' }}>
                     {showTyping && (
-                      <div className="chat-row assistant" style={{ marginBottom: '12px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                      <div
+                        className="chat-row assistant"
+                        style={{
+                          marginBottom: '12px',
+                          display: 'flex',
+                          gap: '8px',
+                          alignItems: 'flex-start'
+                        }}
+                      >
                         <LuminaAvatar />
                         <div className="chat-bubble assistant">
                           <div className="typing-inline">
@@ -740,15 +605,46 @@ const AIChatPanel = React.memo(() => {
           />
           <button
             className="chat-send-button"
-            onClick={handleSend}
-            disabled={!inputValue.trim() || isChatLoading || isImageGenerating}
-            title={isImageGenerating ? "Generating image..." : "Send message (Enter)"}
+            onClick={
+              isChatLoading || isImageGenerating
+                ? isChatLoading
+                  ? cancelChat
+                  : cancelImageGeneration
+                : handleSend
+            }
+            disabled={!inputValue.trim() && !(isChatLoading || isImageGenerating)}
+            title={isChatLoading || isImageGenerating ? 'Stop generation' : 'Send message (Enter)'}
           >
-            {isImageGenerating ? (
-              <div className="chat-loading-spinner" style={{ width: '16px', height: '16px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
-            ) : (
-              <Send size={16} />
-            )}
+            <div style={{ position: 'relative', width: '16px', height: '16px' }}>
+              {isChatLoading || isImageGenerating ? (
+                <>
+                  <div
+                    className="chat-loading-spinner"
+                    style={{
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid currentColor',
+                      borderTopColor: 'transparent',
+                      borderRadius: '50%',
+                      animation: 'spin 0.6s linear infinite'
+                    }}
+                  />
+                  <Square
+                    size={8}
+                    style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      color: 'currentColor',
+                      opacity: 0.8
+                    }}
+                  />
+                </>
+              ) : (
+                <Send size={16} />
+              )}
+            </div>
           </button>
         </div>
       </div>
