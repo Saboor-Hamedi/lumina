@@ -336,7 +336,7 @@
 
 .editor-titlebar {
   min-height: 40px; /* Use min-height to allow wrapping */
-  height: auto;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1595,7 +1595,9 @@
   background: rgba(var(--text-accent-rgb), 0.15);
   text-decoration: none;
 }
-
+.cm-cursor {
+  border-left: 10px solid white !important;
+}
 /* --- Wiki Hover Tooltip --- */
 .cm-wiki-hover {
   background: var(--bg-panel);

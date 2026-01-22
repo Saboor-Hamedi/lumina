@@ -2,7 +2,12 @@ import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Virtuoso } from 'react-virtuoso'
-import { Copy, ThumbsUp, ThumbsDown, Check, Send, Square } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import { 
+  Copy, ThumbsUp, ThumbsDown, Check, Send, 
+  Square, Download, Maximize2, X as CloseIcon,
+  Plus, Trash2, History, MessageSquare, ChevronLeft, ChevronRight
+} from 'lucide-react'
 import { useAIStore } from '../../core/store/useAIStore'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import '../Layout/AppShell.css'
@@ -52,6 +57,17 @@ const GeneratedImage = React.memo(({ imageUrl, prompt, onCopy }) => {
   const [hasError, setHasError] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
 
+  useEffect(() => {
+    if (isExpanded) {
+      const handleEsc = (e) => {
+        if (e.key === 'Escape') setIsExpanded(false)
+      }
+      window.addEventListener('keydown', handleEsc)
+      return () => window.removeEventListener('keydown', handleEsc)
+    }
+    return undefined
+  }, [isExpanded])
+
   const handleImageLoad = () => {
     setIsLoading(false)
   }
@@ -66,6 +82,30 @@ const GeneratedImage = React.memo(({ imageUrl, prompt, onCopy }) => {
       // Copy image URL to clipboard
       navigator.clipboard.writeText(imageUrl)
       if (onCopy) onCopy('Image URL copied to clipboard!')
+    }
+  }
+
+  const handleDownloadImage = async () => {
+    if (!imageUrl) return
+    try {
+      const a = document.createElement('a')
+      a.style.display = 'none'
+      a.href = imageUrl
+      
+      const basePrompt = prompt || 'generated-image'
+      const filename = basePrompt.slice(0, 30).replace(/[^a-z0-9]/gi, '_').toLowerCase()
+      a.download = `lumina_${filename}.png`
+      
+      document.body.appendChild(a)
+      a.click()
+      
+      setTimeout(() => {
+        if (a.parentNode) document.body.removeChild(a)
+      }, 100)
+      
+      if (onCopy) onCopy('Download started...')
+    } catch (err) {
+      console.error('Failed to download image:', err)
     }
   }
 
@@ -98,8 +138,7 @@ const GeneratedImage = React.memo(({ imageUrl, prompt, onCopy }) => {
           onError={handleImageError}
           className="chat-generated-image"
           style={{ display: isLoading ? 'none' : 'block' }}
-          onClick={() => setIsExpanded(!isExpanded)}
-          title="Click to expand/collapse"
+          title="Generated AI image"
         />
         {prompt && (
           <div className="chat-image-prompt">
@@ -108,21 +147,56 @@ const GeneratedImage = React.memo(({ imageUrl, prompt, onCopy }) => {
         )}
         <div className="chat-image-actions">
           <button
+            onClick={handleDownloadImage}
+            className="chat-image-action-btn"
+            title="Download image"
+          >
+            <Download size={10} />
+          </button>
+          <button
             onClick={handleCopyImage}
             className="chat-image-action-btn"
             title="Copy image URL"
           >
-            <Copy size={12} />
+            <Copy size={10} />
           </button>
           <button
-            onClick={() => setIsExpanded(!isExpanded)}
+            onClick={() => setIsExpanded(true)}
             className="chat-image-action-btn"
-            title={isExpanded ? 'Collapse' : 'Expand'}
+            title="View full screen"
           >
-            {isExpanded ? '−' : '+'}
+            <Maximize2 size={12} />
           </button>
         </div>
       </div>
+
+      {/* Full screen modal for image - using Portal to escape sidebar container constraints */}
+      {isExpanded && createPortal(
+        <div 
+          className="chat-image-modal-overlay" 
+          onClick={() => setIsExpanded(false)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setIsExpanded(false)
+          }}
+          tabIndex={-1}
+          ref={(el) => el && el.focus()}
+          style={{ cursor: 'zoom-out' }}
+        >
+          <div className="chat-image-modal-view">
+            <button className="chat-image-modal-close-inner" onClick={() => setIsExpanded(false)}>
+              <CloseIcon size={14} />
+            </button>
+            <img 
+              src={imageUrl} 
+              alt={prompt} 
+              className="chat-image-modal-img" 
+              onClick={e => e.stopPropagation()}
+              style={{ cursor: 'default' }}
+            />
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   )
 })
@@ -205,22 +279,45 @@ const AIChatPanel = React.memo(() => {
     sendChatMessage,
     clearChat,
     updateMessage,
-    loadChatHistory,
     generateImage,
     isImageGenerating,
     imageGenerationError,
     cancelChat,
-    cancelImageGeneration
+    cancelImageGeneration,
+    loadSessions,
+    sessions,
+    activeSessionId,
+    createNewSession,
+    switchSession,
+    deleteSession
   } = useAIStore()
   const { selectedSnippet, snippets, openTabs } = useVaultStore()
   const [inputValue, setInputValue] = useState('')
+  const [atBottom, setAtBottom] = useState(true)
   const textareaRef = useRef(null)
   const virtuosoRef = useRef(null)
 
-  // Load chat history on mount
+  // Load chat history on mount and ENSURE it scrolls to bottom
   useEffect(() => {
-    loadChatHistory()
-  }, [loadChatHistory])
+    loadSessions()
+  }, [loadSessions])
+
+  // Sync scroll when active session changes
+  useEffect(() => {
+    if (activeSessionId) {
+      setTimeout(() => {
+        if (virtuosoRef.current) {
+          virtuosoRef.current.scrollToIndex({
+            index: chatMessages.length > 0 ? chatMessages.length - 1 : 0,
+            align: 'end',
+            behavior: 'auto'
+          })
+        }
+      }, 100)
+    }
+  }, [activeSessionId, chatMessages.length])
+
+  const [showSessions, setShowSessions] = useState(false)
 
   // Auto-resize textarea
   const adjustTextareaHeight = useCallback(() => {
@@ -274,27 +371,7 @@ const AIChatPanel = React.memo(() => {
     }
   }, [isChatLoading])
 
-  // Simple scroll to bottom function
-  const scrollToBottom = useCallback(() => {
-    if (virtuosoRef.current && chatMessages.length > 0) {
-      virtuosoRef.current.scrollToIndex({
-        index: chatMessages.length - 1,
-        behavior: 'smooth',
-        align: 'end'
-      })
-    }
-  }, [chatMessages.length])
 
-  // Auto-scroll to bottom for new messages
-  useEffect(() => {
-    if (chatMessages.length > 0) {
-      const timeoutId = setTimeout(() => {
-        scrollToBottom()
-      }, 100)
-
-      return () => clearTimeout(timeoutId)
-    }
-  }, [chatMessages.length, scrollToBottom])
 
   const handleCopy = (text) => {
     navigator.clipboard.writeText(text)
@@ -350,6 +427,8 @@ const AIChatPanel = React.memo(() => {
 
       // Regular chat message
       // Reset scroll tracking when user sends a message - they want to see the response
+      setAtBottom(true)
+      
       // Send chat message
 
       // Include all open tabs as context (not just selected snippet)
@@ -416,12 +495,59 @@ const AIChatPanel = React.memo(() => {
   )
 
   return (
-    <div className="chat-interface">
-      {/* Virtualized List Container */}
-      <div
-        className="chat-messages"
-        style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
-      >
+    <div className="chat-container">
+       {/* Sessions Sidebar */}
+       <div className={`chat-sessions-sidebar ${showSessions ? 'open' : ''}`}>
+        <div className="sessions-header">
+          <History size={14} />
+          <span>History</span>
+          <button className="new-chat-btn" onClick={createNewSession} title="New Chat">
+            <Plus size={14} />
+          </button>
+        </div>
+        <div className="sessions-list">
+          {sessions.map((s) => (
+            <div 
+              key={s.id} 
+              className={`session-item ${activeSessionId === s.id ? 'active' : ''}`}
+              onClick={() => switchSession(s.id)}
+            >
+              <MessageSquare size={14} />
+              <span className="session-title">{s.title || 'New Chat'}</span>
+              <button 
+                className="delete-session-btn" 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  deleteSession(s.id)
+                }}
+              >
+                <Trash2 size={12} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="chat-main">
+        <header className="chat-header">
+          <div className="chat-header-left">
+            <button 
+              className="toggle-sessions-btn" 
+              onClick={() => setShowSessions(!showSessions)}
+              title="Toggle History"
+            >
+              {showSessions ? <ChevronLeft size={16} /> : <History size={16} />}
+            </button>
+            <h3>DeepSeek AI</h3>
+          </div>
+          <div className="chat-header-actions">
+            <button className="icon-btn" onClick={clearChat} title="Clear conversation history">
+              <Trash2 size={16} />
+            </button>
+          </div>
+        </header>
+
+        <div className="chat-messages">
         {chatMessages.length === 0 ? (
           <div className="chat-empty">
             <div className="chat-empty-icon">✨</div>
@@ -442,12 +568,23 @@ const AIChatPanel = React.memo(() => {
         ) : (
           <Virtuoso
             ref={virtuosoRef}
-            style={{ height: '100%' }}
+            style={{ height: '100%', outline: 'none' }}
             data={chatMessages}
-            initialTopMostItemIndex={chatMessages.length - 1}
+            followOutput={(isAtBottom) => (isAtBottom ? 'auto' : false)}
+            initialTopMostItemIndex={chatMessages.length > 0 ? chatMessages.length - 1 : 0}
+            atBottomStateChange={setAtBottom}
             firstItemIndex={0}
-            increaseViewportBy={{ top: 50, bottom: 50 }}
-            overscan={50}
+            increaseViewportBy={{ top: 200, bottom: 200 }}
+            overscan={200}
+            totalListHeightChanged={(height) => {
+              if (atBottom) {
+                virtuosoRef.current?.scrollToIndex({
+                  index: chatMessages.length - 1,
+                  align: 'end',
+                  behavior: 'auto'
+                })
+              }
+            }}
             itemContent={(index, msg) => {
               // Ensure stable rendering - prevent content from disappearing
               // Use key for stable React reconciliation
@@ -649,7 +786,8 @@ const AIChatPanel = React.memo(() => {
         </div>
       </div>
     </div>
-  )
+  </div>
+)
 })
 
 AIChatPanel.displayName = 'AIChatPanel'

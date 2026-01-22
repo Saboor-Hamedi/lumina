@@ -19,6 +19,14 @@ class SettingsManager {
       vaultPath: null, // Persist custom vault location
       translucency: false,
       inlineMetadata: true,
+      sidebar: {
+        width: 260,
+        isLeftOpen: true
+      },
+      rightSidebar: {
+        width: 300,
+        isRightOpen: false
+      },
       // AI Settings
       deepSeekKey: null,
       deepSeekModel: 'deepseek-chat',
@@ -112,24 +120,56 @@ class SettingsManager {
   async set(key, value) {
     if (!this.cache) await this.init()
     this.cache[key] = value
-    await this.save()
-    return true
+    return this.queueSave()
+  }
+
+  async setMultiple(settings) {
+    if (!this.cache) await this.init()
+    this.cache = { ...this.cache, ...settings }
+    return this.queueSave()
+  }
+
+  /**
+   * Queues a save operation to prevent concurrent file writes.
+   * If a save is already in progress, the next save will start after it finishes.
+   * Only one pending save is kept to avoid redundant writes.
+   */
+  async queueSave() {
+    if (this.isWriting) {
+      if (this.pendingSave) return this.pendingSave
+      this.pendingSave = (async () => {
+        while (this.isWriting) {
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        await this.save()
+        this.pendingSave = null
+      })()
+      return this.pendingSave
+    }
+    return this.save()
   }
 
   async save() {
     try {
       this.isWriting = true
       // Merge with defaults to ensure all default keys are present, but preserve user values
-      // This prevents losing keys that aren't in defaultSettings
       const settingsToSave = { ...this.defaultSettings, ...this.cache }
-      await fs.writeFile(this.settingsPath, JSON.stringify(settingsToSave, null, 2))
+      
+      // Use atomic write: write to temp file then rename
+      const tempPath = this.settingsPath + '.tmp'
+      const data = JSON.stringify(settingsToSave, null, 2)
+      
+      await fs.writeFile(tempPath, data, 'utf8')
+      await fs.rename(tempPath, this.settingsPath)
+      
       // Update cache to match what we saved
       this.cache = settingsToSave
-      // Small delay to ensure file system has written
-      await new Promise(resolve => setTimeout(resolve, 50))
+      
+      // Slight delay to allow OS/Chokidar to settle
+      await new Promise(resolve => setTimeout(resolve, 30))
       this.isWriting = false
     } catch (err) {
-      console.error('Failed to save settings:', err)
+      console.error('[SettingsManager] Failed to save settings:', err)
       this.isWriting = false
     }
   }

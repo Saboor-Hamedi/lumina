@@ -204,6 +204,7 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('db:getSetting', (_, key) => SettingsManager.get(key))
   ipcMain.handle('db:saveSetting', (_, key, value) => SettingsManager.set(key, value))
+  ipcMain.handle('db:saveSettings', (_, settings) => SettingsManager.setMultiple(settings))
   ipcMain.handle('db:getTheme', () => SettingsManager.get('theme'))
   ipcMain.handle('db:saveTheme', (_, theme) => SettingsManager.set('theme', theme))
   ipcMain.handle('app:getVersion', () => app.getVersion())

@@ -29,9 +29,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 12px;
-  height: 32px; /* Match tabbar height */
-  min-height: 32px;
+  padding: 0 16px;
+  height: 40px; /* Match editor-titlebar height */
+  min-height: 40px;
   background: var(--bg-sidebar);
   border-bottom: 1px solid var(--border-dim);
   flex-shrink: 0;

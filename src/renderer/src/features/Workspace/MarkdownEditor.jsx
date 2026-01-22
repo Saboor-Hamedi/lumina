@@ -71,17 +71,7 @@ const MarkdownEditor = React.memo(
 
     const { settings } = useSettingsStore()
     const { snippets, setSelectedSnippet, updateSnippetSelection, setDirty } = useVaultStore()
-    const { caretStyle, caretWidth, caretColor } = useFontSettings()
-
-    // Force set CSS variables on root element - this ensures they're applied
-    useEffect(() => {
-      const root = document.documentElement
-      const finalWidth = typeof caretWidth === 'number' ? `${caretWidth}px` : caretWidth || '4px'
-
-      // Set CSS variables with !important via inline style
-      root.style.setProperty('--caret-width', finalWidth)
-      root.style.setProperty('--caret-color', caretColor || '#81c548')
-    }, [caretWidth, caretColor])
+    const { caretStyle, caretWidth, caretColor, useBorderLeft } = useFontSettings()
 
     // Create a CodeMirror theme for the caret using EditorView.theme so it is applied by the editor
     const caretTheme = useMemo(() => {
@@ -89,16 +79,13 @@ const MarkdownEditor = React.memo(
         caretWidth ||
         getComputedStyle(document.documentElement).getPropertyValue('--caret-width').trim() ||
         '2px'
-      const width = typeof widthRaw === 'number' ? `${widthRaw}px` : widthRaw.toString()
+      const width = String(widthRaw).includes('px') ? widthRaw : `${widthRaw}px`
       const color =
         caretColor ||
         getComputedStyle(document.documentElement).getPropertyValue('--caret-color').trim() ||
         'var(--text-accent)'
       const style = caretStyle || 'smooth'
-      const useBorder =
-        settings?.cursor && typeof settings.cursor.useBorderLeft !== 'undefined'
-          ? settings.cursor.useBorderLeft
-          : true
+      const useBorder = useBorderLeft
 
       let themeCSS
       if (style === 'block') {
@@ -127,7 +114,7 @@ const MarkdownEditor = React.memo(
       }
 
       return EditorView.theme(themeCSS)
-    }, [caretStyle, caretWidth, caretColor, settings?.cursor && settings.cursor.useBorderLeft])
+    }, [caretStyle, caretWidth, caretColor, useBorderLeft])
 
     const [title, setTitle] = useState(snippet?.title || '')
     const [isDirty, setIsDirty] = useState(false)
@@ -277,7 +264,27 @@ const MarkdownEditor = React.memo(
             autocompletion({ override: [wikiLinkCompletion(() => snippetsRef.current)] }),
             highlightSelectionMatches(),
             searchHighlightCompartment.current.of([]),
-            markdown({ codeLanguages: languages }),
+            markdown({ 
+              codeLanguages: languages,
+              // Enhanced language detection for snippets that are technically .md but represent other files
+              // e.g., main.js.md should highlight as JavaScript
+              defaultCodeLanguage: (() => {
+                const title = snippetRef.current?.title || ''
+                if (title.toLowerCase().endsWith('.md')) {
+                  const innerName = title.slice(0, -3)
+                  const innerExt = innerName.split('.').pop()
+                  if (innerExt) {
+                    const found = languages.find(l => 
+                      l.name.toLowerCase() === innerExt.toLowerCase() || 
+                      l.alias.includes(innerExt.toLowerCase()) ||
+                      l.extensions.includes(innerExt.toLowerCase())
+                    )
+                    if (found) return found
+                  }
+                }
+                return null
+              })()
+            }),
             // Theme compartment encapsulates caret and editor theme extensions
             themeCompartment.current.of([caretTheme, seamlessTheme]),
             EditorView.lineWrapping,
@@ -581,10 +588,7 @@ const MarkdownEditor = React.memo(
           'var(--text-accent)'
         const style =
           getComputedStyle(root).getPropertyValue('--caret-style').trim() || caretStyle || 'smooth'
-        const useBorder =
-          settings?.cursor && typeof settings.cursor.useBorderLeft !== 'undefined'
-            ? settings.cursor.useBorderLeft
-            : true
+        const useBorder = useBorderLeft
         return { width: w, color: c, style, useBorder }
       }
 
@@ -615,11 +619,11 @@ const MarkdownEditor = React.memo(
             if (style === 'block' || !useBorder) {
               cursor.style.setProperty('border-left', 'none', 'important')
               cursor.style.setProperty('background-color', color, 'important')
-              cursor.style.setProperty('width', style === 'block' ? '0.6em' : width, 'important')
+              cursor.style.setProperty('width', style === 'block' ? '0.6em' : (String(width).includes('px') ? width : `${width}px`), 'important')
               cursor.style.setProperty('margin-left', '0', 'important')
               cursor.style.setProperty('opacity', '0.7', 'important')
             } else {
-              const w = width.endsWith('px') ? width : `${width}`
+              const w = String(width).includes('px') ? width : `${width}px`
               cursor.style.setProperty('border-left-width', w, 'important')
               cursor.style.setProperty('border-left-color', color, 'important')
               cursor.style.setProperty('border-left-style', 'solid', 'important')
@@ -670,7 +674,7 @@ const MarkdownEditor = React.memo(
           viewRef.current.dom.removeEventListener('selectionchange', applyCaretStyles, true)
         }
       }
-    }, [caretStyle, caretWidth, caretColor, settings?.cursor?.useBorderLeft, snippet.id])
+    }, [caretStyle, caretWidth, caretColor, useBorderLeft, snippet.id])
 
     // Reconfigure the theme compartment when caret/theme changes so running view updates
     useEffect(() => {

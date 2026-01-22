@@ -267,7 +267,7 @@
   transition: all 0.2s;
   padding: 0;
   width: 32px;
-  height: 32px; /* Match panel header height */
+  height: 40px; /* Match panel header height */
 }
 
 .panel-header-tabs .tab-float-btn-right:hover {
@@ -290,7 +290,7 @@
   transition: all 0.2s;
   padding: 0;
   width: 32px;
-  height: 32px; /* Match panel header height */
+  height: 40px; /* Match panel header height */
 }
 
 .panel-header-tabs .tab-clear-btn:hover:not(:disabled) {

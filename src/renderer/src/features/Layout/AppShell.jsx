@@ -50,6 +50,7 @@ const AppShell = () => {
   } = useVaultStore()
   const { toast, showToast, clearToast } = useToast()
   const { chatMessages, clearChat } = useAIStore()
+  const settings = useSettingsStore((state) => state.settings)
   const [settingsInitialTab, setSettingsInitialTab] = useState('general')
 
   // Restore activeTab from settings, default to 'files'
@@ -91,19 +92,31 @@ const AppShell = () => {
   }, [rightWidth])
 
   /**
-   * Persist left sidebar open/closed state to settings.
+   * Persist left sidebar open/closed state to sidebar settings.
    */
   useEffect(() => {
     if (isRestoring) return
-    useSettingsStore.getState().updateSetting('isLeftSidebarOpen', isLeftSidebarOpen)
+    const currentSidebar = settings.sidebar || {}
+    useSettingsStore.getState().updateSettings({
+      sidebar: {
+        ...currentSidebar,
+        isLeftOpen: isLeftSidebarOpen
+      }
+    })
   }, [isLeftSidebarOpen, isRestoring])
 
   /**
-   * Persist right sidebar open/closed state to settings.
+   * Persist right sidebar open/closed state to rightSidebar settings.
    */
   useEffect(() => {
     if (isRestoring) return
-    useSettingsStore.getState().updateSetting('isRightSidebarOpen', isRightSidebarOpen)
+    const currentRSidebar = settings.rightSidebar || {}
+    useSettingsStore.getState().updateSettings({
+      rightSidebar: {
+        ...currentRSidebar,
+        isRightOpen: isRightSidebarOpen
+      }
+    })
   }, [isRightSidebarOpen, isRestoring])
 
   // Deletion State
@@ -132,8 +145,23 @@ const AppShell = () => {
     const handleMouseUp = () => {
       // Persist new widths
       if (resizingSide) {
-        useSettingsStore.getState().updateSetting('leftWidth', widthRef.current.left)
-        useSettingsStore.getState().updateSetting('rightWidth', widthRef.current.right)
+        if (resizingSide === 'left') {
+          const currentSidebar = settings.sidebar || {}
+          useSettingsStore.getState().updateSettings({
+            sidebar: {
+              ...currentSidebar,
+              width: widthRef.current.left
+            }
+          })
+        } else {
+          const currentRSidebar = settings.rightSidebar || {}
+          useSettingsStore.getState().updateSettings({
+            rightSidebar: {
+              ...currentRSidebar,
+              width: widthRef.current.right
+            }
+          })
+        }
       }
       setResizingSide(null)
     }
@@ -177,13 +205,26 @@ const AppShell = () => {
       if (!settings.rightPanelMode || settings.rightPanelMode === 'metadata') {
         useSettingsStore.getState().updateSetting('rightPanelMode', 'chat')
       }
-      // Restore Widths & Toggles
-      if (settings.leftWidth) setLeftWidth(settings.leftWidth)
-      if (settings.rightWidth) setRightWidth(settings.rightWidth)
-      if (typeof settings.isLeftSidebarOpen === 'boolean')
-        setIsLeftSidebarOpen(settings.isLeftSidebarOpen)
-      if (typeof settings.isRightSidebarOpen === 'boolean')
-        setIsRightSidebarOpen(settings.isRightSidebarOpen)
+      // Restore Widths & Toggles from split 'sidebar' and 'rightSidebar' objects
+      // Order of precedence: new split objects > legacy migration objects > top-level keys
+      
+      // LEFT SIDEBAR
+      const legacySidebar = settings.sidebar || {}
+      if (typeof legacySidebar.isLeftOpen === 'boolean') setIsLeftSidebarOpen(legacySidebar.isLeftOpen)
+      else if (typeof settings.isLeftSidebarOpen === 'boolean') setIsLeftSidebarOpen(settings.isLeftSidebarOpen)
+      
+      if (legacySidebar.width) setLeftWidth(legacySidebar.width)
+      else if (legacySidebar.leftWidth) setLeftWidth(legacySidebar.leftWidth)
+      else if (settings.leftWidth) setLeftWidth(settings.leftWidth)
+
+      // RIGHT SIDEBAR
+      const legacyRSidebar = settings.rightSidebar || {}
+      if (typeof legacyRSidebar.isRightOpen === 'boolean') setIsRightSidebarOpen(legacyRSidebar.isRightOpen)
+      else if (typeof settings.isRightSidebarOpen === 'boolean') setIsRightSidebarOpen(settings.isRightSidebarOpen)
+      
+      if (legacyRSidebar.width) setRightWidth(legacyRSidebar.width)
+      else if (legacyRSidebar.rightWidth) setRightWidth(legacyRSidebar.rightWidth)
+      else if (settings.rightWidth) setRightWidth(settings.rightWidth)
 
       // Restore activeTab
       if (settings.activeTab && ['files', 'search', 'graph'].includes(settings.activeTab)) {
@@ -210,7 +251,20 @@ const AppShell = () => {
     }
   }, [])
 
-  // ... imports
+  // Reactive Sidebar Toggles - Sync local state with store changes
+  useEffect(() => {
+    const sidebar = settings.sidebar || {}
+    const rSidebar = settings.rightSidebar || {}
+    
+    // Left
+    if (typeof sidebar.isLeftOpen === 'boolean' && sidebar.isLeftOpen !== isLeftSidebarOpen) {
+      setIsLeftSidebarOpen(sidebar.isLeftOpen)
+    }
+    // Right
+    if (typeof rSidebar.isRightOpen === 'boolean' && rSidebar.isRightOpen !== isRightSidebarOpen) {
+      setIsRightSidebarOpen(rSidebar.isRightOpen)
+    }
+  }, [settings.sidebar, settings.rightSidebar])
 
   // Persist Last Snippet & Tabs
   useEffect(() => {
@@ -507,7 +561,6 @@ const AppShell = () => {
                     onClick={(e) => {
                       e.stopPropagation()
                       setIsRightSidebarOpen(false)
-                      useSettingsStore.getState().updateSetting('isRightSidebarOpen', false)
                     }}
                     title="Close sidebar"
                     aria-label="Close sidebar"
@@ -535,7 +588,6 @@ const AppShell = () => {
                         width: rightWidth
                       })
                       setIsRightSidebarOpen(false)
-                      useSettingsStore.getState().updateSetting('isRightSidebarOpen', false)
                       setShowAIChatModal(true)
                     } catch (error) {
                       console.error('[AppShell] Failed to float AI chat:', error)
@@ -646,12 +698,20 @@ const AppShell = () => {
           try {
             setShowAIChatModal(false)
             if (savedRightSidebarState?.isOpen) {
-              setIsRightSidebarOpen(true)
               if (savedRightSidebarState.width) {
                 setRightWidth(savedRightSidebarState.width)
-                useSettingsStore.getState().updateSetting('rightWidth', savedRightSidebarState.width)
               }
-              useSettingsStore.getState().updateSetting('isRightSidebarOpen', true)
+              setIsRightSidebarOpen(true)
+              
+              // Persist both at once in the restructured rightSidebar object
+              const currentRSidebar = settings.rightSidebar || {}
+              useSettingsStore.getState().updateSettings({
+                rightSidebar: {
+                  ...currentRSidebar,
+                  width: savedRightSidebarState.width || rightWidth,
+                  isRightOpen: true
+                }
+              })
             }
             setSavedRightSidebarState(null)
           } catch (error) {

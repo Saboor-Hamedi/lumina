@@ -127,80 +127,147 @@ export const useAIStore = create((set, get) => {
     },
 
     // --- DeepSeek Chat Integration ---
+    // --- Multi-Session Chat Support ---
+    sessions: [],
+    activeSessionId: null,
     chatMessages: [],
     isChatLoading: false,
     chatError: null,
 
-    // Load conversation history from localStorage on init
-    loadChatHistory: () => {
+    // Initial load of sessions
+    loadSessions: () => {
       try {
-        if (typeof localStorage === 'undefined') {
-          console.warn('[AIStore] localStorage not available')
-          return
-        }
-
-        const saved = localStorage.getItem('lumina-chat-history')
+        const saved = localStorage.getItem('lumina-chat-sessions')
         if (saved) {
           const parsed = JSON.parse(saved)
           if (Array.isArray(parsed) && parsed.length > 0) {
-            // Validate message structure
-            const validMessages = parsed.filter(
-              (msg) =>
-                msg &&
-                typeof msg === 'object' &&
-                msg.role &&
-                (typeof msg.content === 'string' || msg.imageUrl)
-            )
-
-            if (validMessages.length > 0) {
-              set({ chatMessages: validMessages })
+            set({ sessions: parsed })
+            // Default to last active or first session
+            const lastActive = localStorage.getItem('lumina-active-session-id')
+            if (lastActive && parsed.some(s => s.id === lastActive)) {
+              get().switchSession(lastActive)
+            } else {
+              get().switchSession(parsed[0].id)
             }
+            return
           }
         }
-      } catch (e) {
-        console.warn('[AIStore] Failed to load chat history:', e)
-        // Clear corrupted data
-        try {
-          localStorage.removeItem('lumina-chat-history')
-        } catch {
-          // Ignore cleanup errors
+        
+        // Fallback or Initial: Create first session
+        const firstSession = {
+          id: crypto.randomUUID(),
+          title: 'New Chat',
+          messages: [],
+          timestamp: Date.now()
         }
+        set({ sessions: [firstSession], activeSessionId: firstSession.id, chatMessages: [] })
+        get().saveSessions()
+      } catch (e) {
+        console.warn('[AIStore] Failed to load sessions:', e)
       }
     },
 
-    // Save conversation history to localStorage
-    saveChatHistory: () => {
+    saveSessions: () => {
       try {
-        if (typeof localStorage === 'undefined') {
-          return
-        }
-
-        const messages = get().chatMessages
-        if (Array.isArray(messages) && messages.length > 0) {
-          // Limit history size to prevent localStorage quota issues (keep last 100 messages)
-          const messagesToSave = messages.slice(-100)
-          localStorage.setItem('lumina-chat-history', JSON.stringify(messagesToSave))
-        } else {
-          localStorage.removeItem('lumina-chat-history')
+        const { sessions, activeSessionId } = get()
+        localStorage.setItem('lumina-chat-sessions', JSON.stringify(sessions))
+        if (activeSessionId) {
+          localStorage.setItem('lumina-active-session-id', activeSessionId)
         }
       } catch (e) {
-        // Handle quota exceeded or other storage errors
-        if (e.name === 'QuotaExceededError') {
-          console.warn('[AIStore] Chat history too large, clearing old messages')
-          try {
-            const messages = get().chatMessages
-            // Keep only last 50 messages
-            const reduced = messages.slice(-50)
-            localStorage.setItem('lumina-chat-history', JSON.stringify(reduced))
-            set({ chatMessages: reduced })
-          } catch {
-            // If still fails, clear history
-            localStorage.removeItem('lumina-chat-history')
-          }
-        } else {
-          console.warn('[AIStore] Failed to save chat history:', e)
-        }
+        console.warn('[AIStore] Failed to save sessions:', e)
       }
+    },
+
+    createNewSession: () => {
+      const newSession = {
+        id: crypto.randomUUID(),
+        title: 'New Chat',
+        messages: [],
+        timestamp: Date.now()
+      }
+      set((state) => ({
+        sessions: [newSession, ...state.sessions],
+        activeSessionId: newSession.id,
+        chatMessages: []
+      }))
+      get().saveSessions()
+    },
+
+    switchSession: (sessionId) => {
+      const { sessions } = get()
+      const session = sessions.find((s) => s.id === sessionId)
+      if (session) {
+        set({
+          activeSessionId: sessionId,
+          chatMessages: session.messages || [],
+          chatError: null
+        })
+        localStorage.setItem('lumina-active-session-id', sessionId)
+      }
+    },
+
+    deleteSession: (sessionId) => {
+      set((state) => {
+        const newSessions = state.sessions.filter((s) => s.id !== sessionId)
+        let nextActiveId = state.activeSessionId
+
+        if (state.activeSessionId === sessionId) {
+          nextActiveId = newSessions.length > 0 ? newSessions[0].id : null
+        }
+
+        // If no sessions left, create a fresh one
+        if (newSessions.length === 0) {
+          const fresh = {
+            id: crypto.randomUUID(),
+            title: 'New Chat',
+            messages: [],
+            timestamp: Date.now()
+          }
+          return {
+            sessions: [fresh],
+            activeSessionId: fresh.id,
+            chatMessages: []
+          }
+        }
+
+        const nextMessages = nextActiveId 
+          ? newSessions.find(s => s.id === nextActiveId)?.messages || []
+          : []
+
+        return {
+          sessions: newSessions,
+          activeSessionId: nextActiveId,
+          chatMessages: nextMessages
+        }
+      })
+      get().saveSessions()
+    },
+
+    // Update active session messages
+    saveChatHistory: () => {
+      set((state) => {
+        const { sessions, activeSessionId, chatMessages } = state
+        if (!activeSessionId) return state
+
+        const newSessions = sessions.map((s) => {
+          if (s.id === activeSessionId) {
+            // Generate title from first message if it's still "New Chat"
+            let title = s.title
+            if (title === 'New Chat' && chatMessages.length > 0) {
+              const firstUserMsg = chatMessages.find(m => m.role === 'user')
+              if (firstUserMsg) {
+                title = firstUserMsg.content.slice(0, 30).trim() + (firstUserMsg.content.length > 30 ? '...' : '')
+              }
+            }
+            return { ...s, messages: chatMessages, title, timestamp: Date.now() }
+          }
+          return s
+        })
+
+        return { sessions: newSessions }
+      })
+      get().saveSessions()
     },
 
     updateMessage: (index, updates) => {
@@ -209,15 +276,21 @@ export const useAIStore = create((set, get) => {
         if (newMessages[index]) {
           newMessages[index] = { ...newMessages[index], ...updates }
         }
-        // Auto-save after update
-        setTimeout(() => get().saveChatHistory(), 100)
         return { chatMessages: newMessages }
       })
+      get().saveChatHistory()
     },
 
     clearChat: () => {
-      set({ chatMessages: [], chatError: null, imageGenerationError: null })
-      localStorage.removeItem('lumina-chat-history')
+      const { activeSessionId } = get()
+      if (activeSessionId) {
+        set((state) => ({
+          chatMessages: [],
+          chatError: null,
+          imageGenerationError: null
+        }))
+        get().saveChatHistory()
+      }
     },
 
     /**

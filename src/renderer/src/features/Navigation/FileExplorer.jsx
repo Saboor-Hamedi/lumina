@@ -9,7 +9,7 @@ import {
   Star,
   History,
   FolderOpen,
-  Database
+  HardDrive
 } from 'lucide-react'
 import SidebarItem from './components/SidebarItem'
 import { FixedSizeList as List } from '../../components/utils/VirtualList'
@@ -240,17 +240,6 @@ const FileExplorer = React.memo(({ onNavigate }) => {
         </div>
       </div>
 
-      <footer className="pane-footer">
-        <div className="footer-stat">
-          <Database size={10} style={{ opacity: 0.5 }} />
-          <span>VAULT:</span>
-          <strong>Lumina</strong>
-        </div>
-        <div className="footer-stat">
-          <FileText size={10} style={{ opacity: 0.5 }} />
-          {snippets.length} Notes
-        </div>
-      </footer>
     </div>
   )
 })
