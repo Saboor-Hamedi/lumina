@@ -100,12 +100,89 @@ const ChatActions = ({ msg, index, onCopy, onRate }) => {
  * Memoized for performance - expensive AI operations and message rendering.
  */
 const AIChatPanel = React.memo(() => {
-  const { chatMessages, isChatLoading, chatError, sendChatMessage, clearChat, updateMessage } =
+  const { chatMessages, isChatLoading, chatError, sendChatMessage, clearChat, updateMessage, loadChatHistory } =
     useAIStore()
-  const { selectedSnippet } = useVaultStore()
+  const { selectedSnippet, snippets, openTabs } = useVaultStore()
   const [inputValue, setInputValue] = useState('')
   const textareaRef = useRef(null)
   const virtuosoRef = useRef(null)
+  const [shouldFollowOutput, setShouldFollowOutput] = useState(true)
+  const rangeChangedTimeoutRef = useRef(null)
+  const hasInitialScrolledRef = useRef(false)
+  
+  // Ensure followOutput is enabled during streaming for smooth scrolling
+  useEffect(() => {
+    if (isChatLoading) {
+      setShouldFollowOutput(true)
+    }
+  }, [isChatLoading])
+  
+  // Track the last message count to detect new messages during streaming
+  const lastMessageCountRef = useRef(0)
+  
+  // When new messages are added during streaming, ensure they're visible
+  useEffect(() => {
+    if (isChatLoading && chatMessages.length > lastMessageCountRef.current && virtuosoRef.current && shouldFollowOutput) {
+      lastMessageCountRef.current = chatMessages.length
+      
+      // Wait for content to render before scrolling - use multiple attempts
+      let attemptCount = 0
+      const maxAttempts = 3
+      
+      const scrollToNewMessage = () => {
+        if (virtuosoRef.current && attemptCount < maxAttempts) {
+          try {
+            const lastIndex = chatMessages.length - 1
+            // Use scrollToIndex with align: 'end' to ensure content is visible
+            virtuosoRef.current.scrollToIndex({
+              index: lastIndex,
+              behavior: 'auto',
+              align: 'end'
+            })
+            attemptCount++
+            // Try again after a brief delay to ensure content is fully rendered
+            if (attemptCount < maxAttempts) {
+              setTimeout(scrollToNewMessage, 100)
+            }
+          } catch (err) {
+            // Ignore scroll errors during streaming
+            attemptCount++
+            if (attemptCount < maxAttempts) {
+              setTimeout(scrollToNewMessage, 100)
+            }
+          }
+        }
+      }
+      
+      // Start scrolling after a brief delay
+      const timeoutId = setTimeout(scrollToNewMessage, 50)
+      return () => clearTimeout(timeoutId)
+    } else if (!isChatLoading) {
+      // Reset counter when not loading
+      lastMessageCountRef.current = chatMessages.length
+    }
+  }, [chatMessages.length, isChatLoading, shouldFollowOutput])
+
+  // Reset initial scroll flag when messages are cleared
+  useEffect(() => {
+    if (chatMessages.length === 0) {
+      hasInitialScrolledRef.current = false
+    }
+  }, [chatMessages.length])
+
+  // Load chat history on mount
+  useEffect(() => {
+    loadChatHistory()
+  }, [loadChatHistory])
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (rangeChangedTimeoutRef.current) {
+        clearTimeout(rangeChangedTimeoutRef.current)
+      }
+    }
+  }, [])
 
   // Auto-resize textarea
   const adjustTextareaHeight = useCallback(() => {
@@ -159,34 +236,103 @@ const AIChatPanel = React.memo(() => {
     }
   }, [isChatLoading])
 
-  // Auto-scroll to bottom when messages change or loading state changes
-  // Using requestAnimationFrame for smoother, frame-synced scrolling
-  useEffect(() => {
-    if (!virtuosoRef.current || chatMessages.length === 0) return
-
-    let rafId1, rafId2
-
-    // Use double RAF to ensure DOM is fully updated before scrolling
-    rafId1 = requestAnimationFrame(() => {
-      rafId2 = requestAnimationFrame(() => {
-        if (virtuosoRef.current) {
-          // Scroll to the last message or slightly beyond for loading indicator
-          const targetIndex = chatMessages.length - 1
-          virtuosoRef.current.scrollToIndex({
-            index: targetIndex,
-            behavior: 'smooth',
-            align: 'end',
-            offset: isChatLoading ? 20 : 0 // Extra offset when loading to show typing indicator
-          })
-        }
-      })
-    })
-
-    return () => {
-      if (rafId1) cancelAnimationFrame(rafId1)
-      if (rafId2) cancelAnimationFrame(rafId2)
+  // Track scroll position to determine if user has scrolled up
+  // During AI streaming, always follow output for smooth scrolling
+  // Only debounce when user is manually scrolling (not during streaming)
+  const handleRangeChanged = useCallback((range) => {
+    if (!range || chatMessages.length === 0) return
+    
+    // If AI is actively streaming, always enable followOutput for smooth scrolling
+    if (isChatLoading) {
+      setShouldFollowOutput(true)
+      return
     }
+    
+    // Clear any pending timeout
+    if (rangeChangedTimeoutRef.current) {
+      clearTimeout(rangeChangedTimeoutRef.current)
+    }
+    
+    // Debounce only when user is manually scrolling (not during streaming)
+    rangeChangedTimeoutRef.current = setTimeout(() => {
+      // Check if user is near the bottom (within last 3 items for better tolerance)
+      const threshold = Math.max(1, chatMessages.length - 3)
+      const isNearBottom = range.endIndex >= threshold
+      
+      // Only update if there's a meaningful change
+      setShouldFollowOutput((prev) => {
+        if (isNearBottom !== prev) {
+          return isNearBottom
+        }
+        return prev
+      })
+    }, 100) // Reduced debounce for more responsive feel
   }, [chatMessages.length, isChatLoading])
+
+  // Scroll to bottom on initial load when chat history is loaded
+  useEffect(() => {
+    if (chatMessages.length > 0 && !hasInitialScrolledRef.current) {
+      // Wait for Virtuoso to be fully mounted and rendered
+      let retryCount = 0
+      const maxRetries = 15
+      
+      const scrollToBottom = () => {
+        if (virtuosoRef.current) {
+          try {
+            const lastIndex = chatMessages.length - 1
+            virtuosoRef.current.scrollToIndex({
+              index: lastIndex,
+              behavior: 'auto',
+              align: 'end'
+            })
+            // Double-check by scrolling again after a brief moment
+            setTimeout(() => {
+              if (virtuosoRef.current && !hasInitialScrolledRef.current) {
+                try {
+                  virtuosoRef.current.scrollToIndex({
+                    index: lastIndex,
+                    behavior: 'auto',
+                    align: 'end'
+                  })
+                } catch (e) {
+                  // Ignore second attempt errors
+                }
+              }
+            }, 100)
+            hasInitialScrolledRef.current = true
+            // Ensure followOutput is enabled after initial scroll
+            setShouldFollowOutput(true)
+          } catch (err) {
+            // If scroll fails, try again (up to max retries)
+            retryCount++
+            if (retryCount < maxRetries) {
+              setTimeout(scrollToBottom, 100)
+            } else {
+              console.warn('[AIChatPanel] Failed to scroll to bottom after retries')
+              hasInitialScrolledRef.current = true // Mark as attempted to prevent infinite retries
+            }
+          }
+        } else {
+          // Virtuoso not ready yet, try again (up to max retries)
+          retryCount++
+          if (retryCount < maxRetries) {
+            setTimeout(scrollToBottom, 50)
+          } else {
+            console.warn('[AIChatPanel] Virtuoso ref not available after retries')
+            hasInitialScrolledRef.current = true // Mark as attempted
+          }
+        }
+      }
+      
+      // Start scrolling after a brief delay to ensure DOM is ready
+      // Use requestAnimationFrame for better timing
+      requestAnimationFrame(() => {
+        setTimeout(scrollToBottom, 100)
+      })
+    }
+  }, [chatMessages.length])
+
+
 
   const handleCopy = (text) => {
     navigator.clipboard.writeText(text)
@@ -203,8 +349,31 @@ const AIChatPanel = React.memo(() => {
     if (!text || isChatLoading) return
 
     try {
-      const context = selectedSnippet ? [selectedSnippet] : []
-      sendChatMessage(text, context)
+      // Reset scroll tracking when user sends a message - they want to see the response
+      // Force enable followOutput immediately for smooth streaming
+      setShouldFollowOutput(true)
+
+      // Include all open tabs as context (not just selected snippet)
+      // This gives AI awareness of all notes the user is working with
+      const contextSnippets = []
+      
+      // Add selected snippet first (highest priority)
+      if (selectedSnippet) {
+        contextSnippets.push(selectedSnippet)
+      }
+      
+      // Add other open tabs (excluding already added selected snippet)
+      openTabs.forEach(tabId => {
+        const snippet = snippets.find(s => s.id === tabId)
+        if (snippet && snippet.id !== selectedSnippet?.id) {
+          contextSnippets.push(snippet)
+        }
+      })
+      
+      // Limit to 5 most recent/important snippets to avoid token overflow
+      const limitedContext = contextSnippets.slice(0, 5)
+      
+      sendChatMessage(text, limitedContext)
       setInputValue('')
       // Reset textarea height after clearing input
       if (textareaRef.current) {
@@ -224,7 +393,7 @@ const AIChatPanel = React.memo(() => {
         textareaRef.current.focus()
       }
     }
-  }, [inputValue, isChatLoading, selectedSnippet, sendChatMessage, adjustTextareaHeight])
+  }, [inputValue, isChatLoading, selectedSnippet, snippets, openTabs, sendChatMessage, adjustTextareaHeight])
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -262,8 +431,23 @@ const AIChatPanel = React.memo(() => {
             ref={virtuosoRef}
             style={{ height: '100%' }}
             data={chatMessages}
-            followOutput="smooth"
-            initialTopMostItemIndex={chatMessages.length > 0 ? chatMessages.length - 1 : 0}
+            followOutput={shouldFollowOutput ? 'auto' : false}
+            rangeChanged={handleRangeChanged}
+            initialTopMostItemIndex={chatMessages.length > 0 ? Math.max(0, chatMessages.length - 1) : 0}
+            atBottomStateChange={(atBottom) => {
+              // If we're at bottom and haven't scrolled yet, mark as scrolled
+              if (atBottom && chatMessages.length > 0 && !hasInitialScrolledRef.current) {
+                hasInitialScrolledRef.current = true
+              }
+            }}
+            firstItemIndex={0}
+            increaseViewportBy={{ top: 400, bottom: 400 }}
+            overscan={400}
+            defaultItemHeight={100}
+            scrollSeekConfiguration={{
+              enter: (velocity) => Math.abs(velocity) > 200,
+              exit: (velocity) => Math.abs(velocity) < 30
+            }}
             itemContent={(index, msg) => (
               <div
                 className={`chat-row ${msg.role}`}
@@ -291,7 +475,15 @@ const AIChatPanel = React.memo(() => {
                   }}
                 >
                   <div className={`chat-bubble ${msg.role}`}>
-                    <MessageContent content={msg.content} />
+                    {msg.role === 'assistant' && !msg.content && isChatLoading ? (
+                      <div className="typing-inline">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                      </div>
+                    ) : (
+                      <MessageContent content={msg.content} />
+                    )}
                   </div>
                   {msg.role === 'assistant' && (
                     <ChatActions
@@ -305,43 +497,57 @@ const AIChatPanel = React.memo(() => {
 
                 {msg.role === 'user' && <UserAvatar />}
               </div>
-            )}
-            components={{
-              Footer: () => (
-                <div style={{ paddingBottom: '12px' }}>
-                  {isChatLoading && (
-                    <div className="chat-bubble assistant typing">
-                      <span></span>
-                      <span></span>
-                      <span></span>
-                    </div>
-                  )}
-                  {chatError && (
-                    <div className="chat-error">
-                      <strong>Error:</strong> {chatError}
-                      {chatError.includes('API Key') && (
-                        <button
-                          onClick={() => {
-                            // Could trigger settings modal to open AI tab
-                            window.dispatchEvent(new CustomEvent('open-settings-ai'))
-                          }}
-                          style={{
-                            marginTop: '8px',
-                            padding: '4px 8px',
-                            fontSize: '12px',
-                            background: 'var(--bg-active)',
-                            border: '1px solid var(--border-dim)',
-                            borderRadius: '4px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Open Settings
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
               )
+            }}
+            components={{
+              Footer: () => {
+                // Only show typing indicator in footer if loading AND no assistant message exists yet
+                // (Once assistant message exists, typing shows inline in that message)
+                const lastMessage = chatMessages[chatMessages.length - 1]
+                const hasAssistantMessage = lastMessage && lastMessage.role === 'assistant'
+                const showTyping = isChatLoading && !hasAssistantMessage
+                
+                return (
+                  <div style={{ paddingBottom: '12px' }}>
+                    {showTyping && (
+                      <div className="chat-row assistant" style={{ marginBottom: '12px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                        <LuminaAvatar />
+                        <div className="chat-bubble assistant">
+                          <div className="typing-inline">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {chatError && (
+                      <div className="chat-error">
+                        <strong>Error:</strong> {chatError}
+                        {chatError.includes('API Key') && (
+                          <button
+                            onClick={() => {
+                              // Could trigger settings modal to open AI tab
+                              window.dispatchEvent(new CustomEvent('open-settings-ai'))
+                            }}
+                            style={{
+                              marginTop: '8px',
+                              padding: '4px 8px',
+                              fontSize: '12px',
+                              background: 'var(--bg-active)',
+                              border: '1px solid var(--border-dim)',
+                              borderRadius: '4px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Open Settings
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              }
             }}
           />
         )}
@@ -352,7 +558,7 @@ const AIChatPanel = React.memo(() => {
           <textarea
             ref={textareaRef}
             className="chat-input-textarea"
-            placeholder="Type a message... (Tip: I see active note)"
+            placeholder="Type a message... (I see all your open notes and vault)"
             value={inputValue}
             onChange={(e) => {
               setInputValue(e.target.value)

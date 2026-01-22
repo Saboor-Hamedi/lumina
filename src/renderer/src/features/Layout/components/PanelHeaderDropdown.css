@@ -1,0 +1,114 @@
+/* Panel Header Dropdown Button */
+.panel-header-dropdown-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  opacity: 0.6;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  transition: all 0.2s;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.panel-header-dropdown-btn:hover:not(:disabled) {
+  opacity: 1 !important;
+  background: var(--bg-active);
+  color: var(--text-accent);
+}
+
+.panel-header-dropdown-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.3;
+}
+
+/* Dropdown Menu */
+.panel-header-dropdown-menu {
+  position: fixed;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.1);
+  min-width: 200px;
+  padding: 4px;
+  z-index: 10000;
+  animation: dropdownFadeIn 0.15s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--border-dim);
+  margin: 4px 0;
+}
+
+.dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.dropdown-item:hover:not(:disabled) {
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+.dropdown-item:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.dropdown-item.danger {
+  color: var(--icon-danger, #ef4444);
+}
+
+.dropdown-item.danger:hover:not(:disabled) {
+  background: rgba(var(--icon-danger-rgb, 239, 68, 68), 0.1);
+  color: var(--icon-danger, #ef4444);
+}
+
+.dropdown-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.dropdown-item-label {
+  flex: 1;
+  white-space: nowrap;
+}
+
+.dropdown-item-shortcut {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
+}

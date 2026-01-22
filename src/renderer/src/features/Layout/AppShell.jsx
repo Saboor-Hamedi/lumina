@@ -26,7 +26,8 @@ import AIChatPanel from '../AI/AIChatPanel'
 import DetailsModal from '../Overlays/DetailsModal'
 import AIChatModal from '../Overlays/AIChatModal'
 import { useAIStore } from '../../core/store/useAIStore'
-import { X, Maximize2, Trash2 } from 'lucide-react'
+import { X, Maximize2 } from 'lucide-react'
+import PanelHeaderDropdown from './components/PanelHeaderDropdown'
 
 /**
  * AppShell Component
@@ -49,6 +50,7 @@ const AppShell = () => {
   } = useVaultStore()
   const { toast, showToast, clearToast } = useToast()
   const { chatMessages, clearChat } = useAIStore()
+  const [settingsInitialTab, setSettingsInitialTab] = useState('general')
 
   // Restore activeTab from settings, default to 'files'
   const [activeTab, setActiveTab] = useState(() => {
@@ -514,7 +516,7 @@ const AppShell = () => {
                   </button>
                 </div>
               </div>
-              {/* Right side buttons - Clear History and Float */}
+              {/* Right side buttons - Float and Dropdown */}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -522,23 +524,6 @@ const AppShell = () => {
                 marginLeft: 'auto',
                 height: '32px' /* Match panel header height */
               }}>
-                <button
-                  className="tab-clear-btn"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    try {
-                      clearChat()
-                    } catch (error) {
-                      console.error('[AppShell] Failed to clear chat:', error)
-                    }
-                  }}
-                  title="Clear History"
-                  aria-label="Clear History"
-                  disabled={chatMessages.length === 0}
-                  style={{ opacity: chatMessages.length === 0 ? 0.3 : 0.6 }}
-                >
-                  <Trash2 size={12} />
-                </button>
                 <button
                   className="tab-float-btn-right"
                   onClick={(e) => {
@@ -561,6 +546,62 @@ const AppShell = () => {
                 >
                   <Maximize2 size={12} />
                 </button>
+                <PanelHeaderDropdown
+                  onOpenSettings={() => {
+                    setSettingsInitialTab('ai')
+                    setShowSettings(true)
+                  }}
+                  onClearChat={() => {
+                    try {
+                      clearChat()
+                      showToast('Chat history cleared')
+                    } catch (error) {
+                      console.error('[AppShell] Failed to clear chat:', error)
+                      showToast('Failed to clear chat history')
+                    }
+                  }}
+                  onExportChat={() => {
+                    try {
+                      const chatData = {
+                        messages: chatMessages,
+                        exportedAt: new Date().toISOString(),
+                        version: '1.0'
+                      }
+                      const blob = new Blob([JSON.stringify(chatData, null, 2)], { type: 'application/json' })
+                      const url = URL.createObjectURL(blob)
+                      const a = document.createElement('a')
+                      a.href = url
+                      a.download = `lumina-chat-${new Date().toISOString().split('T')[0]}.json`
+                      document.body.appendChild(a)
+                      a.click()
+                      document.body.removeChild(a)
+                      URL.revokeObjectURL(url)
+                      showToast('Chat exported successfully')
+                    } catch (error) {
+                      console.error('[AppShell] Failed to export chat:', error)
+                      showToast('Failed to export chat')
+                    }
+                  }}
+                  onViewStats={() => {
+                    const stats = {
+                      totalMessages: chatMessages.length,
+                      userMessages: chatMessages.filter(m => m.role === 'user').length,
+                      assistantMessages: chatMessages.filter(m => m.role === 'assistant').length,
+                      totalCharacters: chatMessages.reduce((sum, m) => sum + (m.content?.length || 0), 0),
+                      averageMessageLength: chatMessages.length > 0 
+                        ? Math.round(chatMessages.reduce((sum, m) => sum + (m.content?.length || 0), 0) / chatMessages.length)
+                        : 0
+                    }
+                    const statsText = `Chat Statistics:\n\n` +
+                      `Total Messages: ${stats.totalMessages}\n` +
+                      `User Messages: ${stats.userMessages}\n` +
+                      `Assistant Messages: ${stats.assistantMessages}\n` +
+                      `Total Characters: ${stats.totalCharacters.toLocaleString()}\n` +
+                      `Avg Message Length: ${stats.averageMessageLength} chars`
+                    showToast(statsText, 5000)
+                  }}
+                  chatMessagesCount={chatMessages.length}
+                />
               </div>
             </div>
 
@@ -575,11 +616,15 @@ const AppShell = () => {
       </aside>
       {showSettings && (
         <SettingsModal
-          onClose={() => setShowSettings(false)}
+          onClose={() => {
+            setShowSettings(false)
+            setSettingsInitialTab('general') // Reset to default
+          }}
           onOpenTheme={() => {
             setShowSettings(false)
             setShowThemeModal(true)
           }}
+          initialTab={settingsInitialTab}
         />
       )}
       {showThemeModal && <ThemeModal isOpen={showThemeModal} onClose={() => setShowThemeModal(false)} />}

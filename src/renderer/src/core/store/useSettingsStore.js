@@ -18,7 +18,10 @@ export const useSettingsStore = create((set, get) => ({
     },
     translucency: false,
     inlineMetadata: true,
-    graphTheme: 'default'
+    graphTheme: 'default',
+    // AI Settings - preserve these during hot reload
+    deepSeekKey: null,
+    deepSeekModel: 'deepseek-chat'
   },
 
   isLoading: true,
@@ -126,7 +129,10 @@ export const useSettingsStore = create((set, get) => ({
           if (window.api && window.api.getSetting) {
             const allSettings = await window.api.getSetting().catch(() => null) // Catch IPC error
             if (allSettings) {
-              set({ settings: allSettings })
+              // Merge with current defaults to preserve any new default keys while keeping user values
+              const currentDefaults = get().settings
+              const mergedSettings = { ...currentDefaults, ...allSettings }
+              set({ settings: mergedSettings })
               // Retry branch migration for cursor font fields
               try {
                 const migrated = { ...allSettings }

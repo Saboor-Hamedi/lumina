@@ -828,6 +828,7 @@
   flex-direction: column;
 }
 
+/* Legacy typing indicator - kept for compatibility */
 .chat-bubble.typing {
   display: flex;
   align-items: center;
@@ -866,6 +867,36 @@
   opacity: 0.6;
 }
 
+/* New inline typing indicator - more subtle and elegant */
+.typing-inline {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 0;
+  min-height: 24px;
+}
+
+.typing-inline span {
+  width: 4px;
+  height: 4px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  opacity: 0.4;
+  animation: typing-pulse-subtle 1.2s infinite ease-in-out both;
+}
+
+.typing-inline span:nth-child(1) { 
+  animation-delay: -0.24s; 
+  opacity: 0.3;
+}
+.typing-inline span:nth-child(2) { 
+  animation-delay: -0.12s; 
+  opacity: 0.35;
+}
+.typing-inline span:nth-child(3) {
+  opacity: 0.4;
+}
+
 @keyframes typing-pulse {
   0%, 100% { 
     transform: scale(0.8);
@@ -874,6 +905,17 @@
   50% { 
     transform: scale(1.2);
     opacity: 1;
+  }
+}
+
+@keyframes typing-pulse-subtle {
+  0%, 100% { 
+    transform: scale(0.9);
+    opacity: 0.3;
+  }
+  50% { 
+    transform: scale(1.1);
+    opacity: 0.6;
   }
 }
 

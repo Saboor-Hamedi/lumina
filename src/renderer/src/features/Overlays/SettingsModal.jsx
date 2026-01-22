@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { X, Settings } from 'lucide-react'
 import ThemeModal from './ThemeModal'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
@@ -23,11 +23,18 @@ import './SettingsModal.css'
  * @param {Function} props.onClose - Callback to close the modal
  * @returns {JSX.Element} Settings modal component
  */
-const SettingsModal = ({ onClose, onOpenTheme }) => {
-  const [activeTab, setActiveTab] = useState('general')
+const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
+  const [activeTab, setActiveTab] = useState(initialTab)
   const { showToast } = useToast()
   const { settings, updateSetting } = useSettingsStore()
   const { caretWidth, caretColor, caretStyle, updateCaretWidth, updateCaretColor, updateCaretStyle } = useFontSettings()
+
+  // Update activeTab when initialTab prop changes
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab)
+    }
+  }, [initialTab])
 
   useKeyboardShortcuts({
     onEscape: onClose
@@ -144,7 +151,18 @@ const SettingsModal = ({ onClose, onOpenTheme }) => {
                       className="settings-select"
                       style={{ width: '240px' }}
                       value={settings.deepSeekKey || ''}
-                      onChange={(e) => updateSetting('deepSeekKey', e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value.trim()
+                        // Only save if non-empty, otherwise save null to clear it
+                        updateSetting('deepSeekKey', value || null)
+                      }}
+                      onBlur={(e) => {
+                        // Ensure trimmed value on blur
+                        const value = e.target.value.trim()
+                        if (value !== (settings.deepSeekKey || '')) {
+                          updateSetting('deepSeekKey', value || null)
+                        }
+                      }}
                       placeholder="sk-..."
                     />
                   </div>

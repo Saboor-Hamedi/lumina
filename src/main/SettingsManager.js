@@ -18,7 +18,10 @@ class SettingsManager {
       lastSnippetId: null, // Persist last open note
       vaultPath: null, // Persist custom vault location
       translucency: false,
-      inlineMetadata: true
+      inlineMetadata: true,
+      // AI Settings
+      deepSeekKey: null,
+      deepSeekModel: 'deepseek-chat'
     }
     this.cache = null
     this.watcher = null
@@ -66,7 +69,9 @@ class SettingsManager {
       console.info('[SettingsManager] settings.json changed externally, reloading...')
       try {
         const data = await fs.readFile(this.settingsPath, 'utf8')
-        this.cache = { ...this.defaultSettings, ...JSON.parse(data) }
+        const loadedSettings = JSON.parse(data)
+        // Merge: defaults first, then loaded settings (preserves all keys from file)
+        this.cache = { ...this.defaultSettings, ...loadedSettings }
         
         // Notify renderer via callback (set by main process)
         if (this.notifyRenderer) {
@@ -113,7 +118,12 @@ class SettingsManager {
   async save() {
     try {
       this.isWriting = true
-      await fs.writeFile(this.settingsPath, JSON.stringify(this.cache, null, 2))
+      // Merge with defaults to ensure all default keys are present, but preserve user values
+      // This prevents losing keys that aren't in defaultSettings
+      const settingsToSave = { ...this.defaultSettings, ...this.cache }
+      await fs.writeFile(this.settingsPath, JSON.stringify(settingsToSave, null, 2))
+      // Update cache to match what we saved
+      this.cache = settingsToSave
       // Small delay to ensure file system has written
       await new Promise(resolve => setTimeout(resolve, 50))
       this.isWriting = false
