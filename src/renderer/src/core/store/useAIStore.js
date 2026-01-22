@@ -44,6 +44,10 @@ export const useAIStore = create((set, get) => {
     // This is kept for backward compatibility with graph semantic links
     embeddingsCache: {},
 
+    // Image generation state
+    isImageGenerating: false,
+    imageGenerationError: null,
+
     generateEmbedding: (text) => {
       return new Promise((resolve, reject) => {
         const id = crypto.randomUUID()
@@ -135,11 +139,7 @@ export const useAIStore = create((set, get) => {
           if (Array.isArray(parsed) && parsed.length > 0) {
             // Validate message structure
             const validMessages = parsed.filter(
-              (msg) =>
-                msg &&
-                typeof msg === 'object' &&
-                msg.role &&
-                typeof msg.content === 'string'
+              (msg) => msg && typeof msg === 'object' && msg.role && (typeof msg.content === 'string' || msg.imageUrl)
             )
 
             if (validMessages.length > 0) {
@@ -206,8 +206,94 @@ export const useAIStore = create((set, get) => {
     },
 
     clearChat: () => {
-      set({ chatMessages: [], chatError: null })
+      set({ chatMessages: [], chatError: null, imageGenerationError: null })
       localStorage.removeItem('lumina-chat-history')
+    },
+
+    /**
+     * Generate an image from a text prompt
+     * @param {string} prompt - The image description
+     * @returns {Promise<{imageUrl: string, prompt: string}>}
+     */
+    generateImage: async (prompt) => {
+      // Dynamic import to avoid loading if not used
+      const { generateImageWithRetry, extractImagePrompt } = await import(
+        '../../features/AI/imageGenerationService.js'
+      )
+
+      // Extract prompt if it's a command
+      const imagePrompt = extractImagePrompt(prompt)
+
+      if (!imagePrompt) {
+        set({ imageGenerationError: 'Please provide an image description.' })
+        throw new Error('Image prompt cannot be empty.')
+      }
+
+      // Load settings to get Hugging Face API key
+      let huggingFaceKey = null
+      try {
+        const settingsModule = await import('../../core/store/useSettingsStore')
+        const settings = settingsModule.useSettingsStore.getState()
+        const settingsObj = settings?.settings || settings || {}
+        huggingFaceKey = settingsObj.huggingFaceKey || null
+      } catch (err) {
+        console.warn('[AIStore] Failed to load settings for image generation:', err)
+      }
+
+      set({ isImageGenerating: true, imageGenerationError: null })
+
+      let controller = null
+
+      try {
+        controller = new AbortController()
+
+        const result = await generateImageWithRetry(imagePrompt, huggingFaceKey, controller)
+
+        // Add image message to chat
+        const imageMessage = {
+          role: 'assistant',
+          content: '',
+          imageUrl: result.imageUrl,
+          imagePrompt: result.prompt,
+          timestamp: result.timestamp
+        }
+
+        set((state) => {
+          const newMessages = [...(state.chatMessages || []), imageMessage]
+          return {
+            chatMessages: newMessages,
+            isImageGenerating: false,
+            imageGenerationError: null
+          }
+        })
+
+        // Auto-save chat history
+        setTimeout(() => get().saveChatHistory(), 100)
+
+        return result
+      } catch (error) {
+        console.error('[AIStore] Image generation error:', error)
+
+        // Provide more helpful error messages
+        let errorMessage = error.message || 'Failed to generate image. Please try again.'
+
+        // Check if it's a network/CORS issue
+        if (error.message && (
+          error.message.includes('Failed to fetch') ||
+          error.message.includes('NetworkError') ||
+          error.message.includes('CORS') ||
+          error.message.includes('network')
+        )) {
+          errorMessage = `Network error: ${error.message}\n\nPossible solutions:\n1. Check your internet connection\n2. The Hugging Face API may be temporarily unavailable\n3. Try using your API key in Settings > AI Models > Image Generation\n4. Firewall/proxy may be blocking the request`
+        }
+
+        set({
+          isImageGenerating: false,
+          imageGenerationError: errorMessage
+        })
+
+        throw error
+      }
     },
 
     sendChatMessage: async (message, contextSnippets = []) => {

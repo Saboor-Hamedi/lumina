@@ -57,7 +57,10 @@ const api = {
   findSimilar: (chunkId, limit) => electronAPI.ipcRenderer.invoke('vault:find-similar', chunkId, limit),
 
   // Error Logging
-  logError: (errorData) => electronAPI.ipcRenderer.invoke('error:log', errorData)
+  logError: (errorData) => electronAPI.ipcRenderer.invoke('error:log', errorData),
+
+  // Image Generation (bypasses CSP by using main process)
+  generateImage: (endpoint, headers, body) => electronAPI.ipcRenderer.invoke('ai:generateImage', { endpoint, headers, body })
 }
 
 // Expose APIs

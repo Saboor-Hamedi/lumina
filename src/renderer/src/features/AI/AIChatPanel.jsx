@@ -46,17 +46,115 @@ const CodeBlock = React.memo(({ inline, className, children, ...props }) => {
   )
 })
 
-const MessageContent = React.memo(({ content }) => (
-  <ReactMarkdown
-    remarkPlugins={[remarkGfm]}
-    components={{
-      pre: ({ children }) => <>{children}</>,
-      code: CodeBlock
-    }}
-  >
-    {content}
-  </ReactMarkdown>
-))
+// Image component for displaying generated images
+const GeneratedImage = React.memo(({ imageUrl, prompt, onCopy }) => {
+  const [isLoading, setIsLoading] = useState(true)
+  const [hasError, setHasError] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
+
+  const handleImageLoad = () => {
+    setIsLoading(false)
+  }
+
+  const handleImageError = () => {
+    setIsLoading(false)
+    setHasError(true)
+  }
+
+  const handleCopyImage = () => {
+    if (imageUrl) {
+      // Copy image URL to clipboard
+      navigator.clipboard.writeText(imageUrl)
+      if (onCopy) onCopy('Image URL copied to clipboard!')
+    }
+  }
+
+  if (hasError) {
+    return (
+      <div className="chat-image-error">
+        <p>Failed to load image</p>
+        {prompt && <p className="chat-image-prompt">Prompt: {prompt}</p>}
+      </div>
+    )
+  }
+
+  return (
+    <div className="chat-generated-image-container">
+      {isLoading && (
+        <div className="chat-image-loading">
+          <div className="typing-inline">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <p>Generating image...</p>
+        </div>
+      )}
+      <div className={`chat-image-wrapper ${isExpanded ? 'expanded' : ''}`}>
+        <img
+          src={imageUrl}
+          alt={prompt || 'Generated image'}
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+          className="chat-generated-image"
+          style={{ display: isLoading ? 'none' : 'block' }}
+          onClick={() => setIsExpanded(!isExpanded)}
+          title="Click to expand/collapse"
+        />
+        {prompt && (
+          <div className="chat-image-prompt">
+            <strong>Prompt:</strong> {prompt}
+          </div>
+        )}
+        <div className="chat-image-actions">
+          <button
+            onClick={handleCopyImage}
+            className="chat-image-action-btn"
+            title="Copy image URL"
+          >
+            <Copy size={12} />
+          </button>
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="chat-image-action-btn"
+            title={isExpanded ? 'Collapse' : 'Expand'}
+          >
+            {isExpanded ? '−' : '+'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+})
+
+GeneratedImage.displayName = 'GeneratedImage'
+
+const MessageContent = React.memo(({ content, imageUrl, imagePrompt, onCopy }) => {
+  // If message has an image, render it
+  if (imageUrl) {
+    return <GeneratedImage imageUrl={imageUrl} prompt={imagePrompt} onCopy={onCopy} />
+  }
+
+  // Otherwise render markdown content
+  return (
+    <div style={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          pre: ({ children }) => <>{children}</>,
+          code: CodeBlock,
+          table: ({ children }) => (
+            <div className="table-wrapper">
+              <table>{children}</table>
+            </div>
+          )
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
+  )
+})
 
 const ChatActions = ({ msg, index, onCopy, onRate }) => {
   const [copied, setCopied] = useState(false)
@@ -100,8 +198,18 @@ const ChatActions = ({ msg, index, onCopy, onRate }) => {
  * Memoized for performance - expensive AI operations and message rendering.
  */
 const AIChatPanel = React.memo(() => {
-  const { chatMessages, isChatLoading, chatError, sendChatMessage, clearChat, updateMessage, loadChatHistory } =
-    useAIStore()
+  const { 
+    chatMessages, 
+    isChatLoading, 
+    chatError, 
+    sendChatMessage, 
+    clearChat, 
+    updateMessage, 
+    loadChatHistory,
+    generateImage,
+    isImageGenerating,
+    imageGenerationError
+  } = useAIStore()
   const { selectedSnippet, snippets, openTabs } = useVaultStore()
   const [inputValue, setInputValue] = useState('')
   const textareaRef = useRef(null)
@@ -237,14 +345,14 @@ const AIChatPanel = React.memo(() => {
   }, [isChatLoading])
 
   // Track scroll position to determine if user has scrolled up
-  // During AI streaming, always follow output for smooth scrolling
-  // Only debounce when user is manually scrolling (not during streaming)
+  // Improved to prevent jumping/bouncing during scroll
   const handleRangeChanged = useCallback((range) => {
     if (!range || chatMessages.length === 0) return
     
-    // If AI is actively streaming, always enable followOutput for smooth scrolling
+    // If AI is actively streaming, don't track scroll - just keep followOutput enabled
+    // This prevents shaking/jumping during streaming
     if (isChatLoading) {
-      setShouldFollowOutput(true)
+      // Don't update state during streaming to prevent conflicts
       return
     }
     
@@ -253,20 +361,27 @@ const AIChatPanel = React.memo(() => {
       clearTimeout(rangeChangedTimeoutRef.current)
     }
     
-    // Debounce only when user is manually scrolling (not during streaming)
+    // Use longer debounce and more stable logic to prevent jumping
     rangeChangedTimeoutRef.current = setTimeout(() => {
-      // Check if user is near the bottom (within last 3 items for better tolerance)
-      const threshold = Math.max(1, chatMessages.length - 3)
+      // Check if user is near the bottom (within last 5 items for better tolerance)
+      const threshold = Math.max(1, chatMessages.length - 5)
       const isNearBottom = range.endIndex >= threshold
       
-      // Only update if there's a meaningful change
+      // Only update if there's a meaningful change AND we're not in the middle of a scroll
+      // Use a more stable check to prevent rapid toggling
       setShouldFollowOutput((prev) => {
-        if (isNearBottom !== prev) {
-          return isNearBottom
+        // Only change if the difference is significant to prevent micro-adjustments
+        if (isNearBottom && !prev) {
+          return true
         }
+        if (!isNearBottom && prev && range.endIndex < chatMessages.length - 10) {
+          // Only disable followOutput if user has scrolled significantly up
+          return false
+        }
+        // Otherwise, keep current state to prevent jumping
         return prev
       })
-    }, 100) // Reduced debounce for more responsive feel
+    }, 400) // Increased debounce to 400ms to prevent rapid state changes
   }, [chatMessages.length, isChatLoading])
 
   // Scroll to bottom on initial load when chat history is loaded
@@ -344,11 +459,50 @@ const AIChatPanel = React.memo(() => {
     updateMessage(index, { rating: newRating })
   }
 
-  const handleSend = useCallback(() => {
+  const handleSend = useCallback(async () => {
     const text = inputValue.trim()
-    if (!text || isChatLoading) return
+    if (!text || isChatLoading || isImageGenerating) return
 
     try {
+      // Check if this is an image generation request
+      const { isImageGenerationRequest } = await import('./imageGenerationService.js')
+      
+      if (isImageGenerationRequest(text)) {
+        // Handle image generation
+        setShouldFollowOutput(true)
+        
+        // Add user message showing the request using the store
+        const userMsg = { role: 'user', content: `Generate image: ${text}` }
+        const currentMessages = chatMessages || []
+        useAIStore.setState({ chatMessages: [...currentMessages, userMsg] })
+        
+        setInputValue('')
+        if (textareaRef.current) {
+          textareaRef.current.style.height = '24px'
+        }
+        
+        // Generate image (this will add the assistant message with the image)
+        await generateImage(text)
+        
+        // Scroll to bottom after image generation
+        setTimeout(() => {
+          if (virtuosoRef.current) {
+            try {
+              virtuosoRef.current.scrollToIndex({
+                index: chatMessages.length,
+                behavior: 'auto',
+                align: 'end'
+              })
+            } catch (err) {
+              // Ignore scroll errors
+            }
+          }
+        }, 100)
+        
+        return
+      }
+
+      // Regular chat message
       // Reset scroll tracking when user sends a message - they want to see the response
       // Force enable followOutput immediately for smooth streaming
       setShouldFollowOutput(true)
@@ -387,13 +541,13 @@ const AIChatPanel = React.memo(() => {
         }, 0)
       }
     } catch (error) {
-      console.error('Failed to send chat message:', error)
+      console.error('Failed to send message:', error)
       // Error is handled by useAIStore, but we should reset input state
       if (textareaRef.current) {
         textareaRef.current.focus()
       }
     }
-  }, [inputValue, isChatLoading, selectedSnippet, snippets, openTabs, sendChatMessage, adjustTextareaHeight])
+  }, [inputValue, isChatLoading, isImageGenerating, selectedSnippet, snippets, openTabs, sendChatMessage, generateImage, adjustTextareaHeight, chatMessages.length])
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -441,24 +595,25 @@ const AIChatPanel = React.memo(() => {
               }
             }}
             firstItemIndex={0}
-            increaseViewportBy={{ top: 400, bottom: 400 }}
-            overscan={400}
-            defaultItemHeight={100}
-            scrollSeekConfiguration={{
-              enter: (velocity) => Math.abs(velocity) > 200,
-              exit: (velocity) => Math.abs(velocity) < 30
-            }}
-            itemContent={(index, msg) => (
+            increaseViewportBy={{ top: 1000, bottom: 1000 }}
+            overscan={800}
+            itemContent={(index, msg) => {
+              // Ensure stable rendering - prevent content from disappearing
+              // Use key for stable React reconciliation
+              return (
               <div
+                key={`msg-${index}-${msg.role}-${msg.timestamp || index}`}
                 className={`chat-row ${msg.role}`}
                 style={{
                   marginBottom: '12px',
                   display: 'flex',
+                  flexDirection: 'row',
                   gap: '8px',
                   justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                  paddingLeft: msg.role === 'assistant' ? '0' : '0',
-                  paddingRight: msg.role === 'user' ? '0' : '0',
-                  alignItems: 'flex-start'
+                  alignItems: 'flex-start',
+                  width: '100%',
+                  minHeight: '40px',
+                  willChange: 'auto'
                 }}
               >
                 {msg.role === 'assistant' && <LuminaAvatar />}
@@ -469,20 +624,26 @@ const AIChatPanel = React.memo(() => {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                    maxWidth: 'calc(100% - 32px)',
-                    flex: 1,
-                    minWidth: 0
+                    maxWidth: msg.role === 'user' ? '70%' : '75%',
+                    minWidth: 0,
+                    flexShrink: 1,
+                    width: 'auto'
                   }}
                 >
-                  <div className={`chat-bubble ${msg.role}`}>
-                    {msg.role === 'assistant' && !msg.content && isChatLoading ? (
+                  <div className={`chat-bubble ${msg.role}`} style={{ maxWidth: '100%', width: '100%' }}>
+                    {msg.role === 'assistant' && !msg.content && !msg.imageUrl && isChatLoading ? (
                       <div className="typing-inline">
                         <span></span>
                         <span></span>
                         <span></span>
                       </div>
                     ) : (
-                      <MessageContent content={msg.content} />
+                      <MessageContent 
+                        content={msg.content} 
+                        imageUrl={msg.imageUrl}
+                        imagePrompt={msg.imagePrompt}
+                        onCopy={handleCopy}
+                      />
                     )}
                   </div>
                   {msg.role === 'assistant' && (
@@ -545,6 +706,11 @@ const AIChatPanel = React.memo(() => {
                         )}
                       </div>
                     )}
+                    {imageGenerationError && (
+                      <div className="chat-error">
+                        <strong>Image Generation Error:</strong> {imageGenerationError}
+                      </div>
+                    )}
                   </div>
                 )
               }
@@ -558,23 +724,31 @@ const AIChatPanel = React.memo(() => {
           <textarea
             ref={textareaRef}
             className="chat-input-textarea"
-            placeholder="Type a message... (I see all your open notes and vault)"
             value={inputValue}
             onChange={(e) => {
               setInputValue(e.target.value)
               adjustTextareaHeight()
             }}
             onKeyDown={handleKeyDown}
-            disabled={isChatLoading}
+            disabled={isChatLoading || isImageGenerating}
             rows={1}
+            placeholder={
+              isImageGenerating
+                ? 'Generating image...'
+                : 'Type a message or "draw [description]" to generate images...'
+            }
           />
           <button
             className="chat-send-button"
             onClick={handleSend}
-            disabled={!inputValue.trim() || isChatLoading}
-            title="Send message (Enter)"
+            disabled={!inputValue.trim() || isChatLoading || isImageGenerating}
+            title={isImageGenerating ? "Generating image..." : "Send message (Enter)"}
           >
-            <Send size={16} />
+            {isImageGenerating ? (
+              <div className="chat-loading-spinner" style={{ width: '16px', height: '16px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+            ) : (
+              <Send size={16} />
+            )}
           </button>
         </div>
       </div>

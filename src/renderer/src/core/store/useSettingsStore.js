@@ -21,7 +21,8 @@ export const useSettingsStore = create((set, get) => ({
     graphTheme: 'default',
     // AI Settings - preserve these during hot reload
     deepSeekKey: null,
-    deepSeekModel: 'deepseek-chat'
+    deepSeekModel: 'deepseek-chat',
+    huggingFaceKey: null
   },
 
   isLoading: true,

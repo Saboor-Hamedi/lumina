@@ -63,19 +63,24 @@ async function createWindow() {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      webSecurity: true,
+      webSecurity: app.isPackaged, // Disable webSecurity in dev mode to allow API calls
       sandbox: false,
       devTools: !app.isPackaged, // Explicitly disable access via API if packaged
       // Set cache path explicitly to avoid permission errors
       cache: true,
-      partition: 'persist:main'
+      partition: 'persist:main',
+      // Allow external API calls
+      allowRunningInsecureContent: false
     }
   })
 
   // Disable DevTools Shortcuts in Production
   if (app.isPackaged) {
     mainWindow.webContents.on('before-input-event', (event, input) => {
-      if ((input.control && input.shift && input.key.toLowerCase() === 'i') || input.key === 'F12') {
+      if (
+        (input.control && input.shift && input.key.toLowerCase() === 'i') ||
+        input.key === 'F12'
+      ) {
         event.preventDefault()
       }
     })
@@ -90,7 +95,7 @@ async function createWindow() {
 
     // Set up settings file watcher notification
     SettingsManager.notifyRenderer = (settings) => {
-      BrowserWindow.getAllWindows().forEach(win => {
+      BrowserWindow.getAllWindows().forEach((win) => {
         if (win && !win.isDestroyed()) {
           win.webContents.send('settings:changed', settings)
         }
@@ -206,7 +211,8 @@ app.whenReady().then(async () => {
   ipcMain.handle('window:minimize', () => mainWindow?.minimize())
   ipcMain.handle('window:open-devtools', () => {
     try {
-      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.openDevTools({ mode: 'detach' })
+      if (mainWindow && !mainWindow.isDestroyed())
+        mainWindow.webContents.openDevTools({ mode: 'detach' })
     } catch (e) {
       console.error('Failed to open DevTools:', e)
     }
@@ -220,7 +226,6 @@ app.whenReady().then(async () => {
     if (!mainWindow) return
     if (process.platform === 'win32') mainWindow.setBackgroundMaterial(enabled ? 'acrylic' : 'none')
   })
-
 
   // Export handlers
   ipcMain.handle('window:export-html', async (_, payload) => {
@@ -375,9 +380,7 @@ app.whenReady().then(async () => {
       const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
         title: 'Save PDF',
         defaultPath: `${title || 'Untitled'}.pdf`,
-        filters: [
-          { name: 'PDF Files', extensions: ['pdf'] }
-        ]
+        filters: [{ name: 'PDF Files', extensions: ['pdf'] }]
       })
 
       if (canceled || !filePath) {
@@ -502,7 +505,7 @@ app.whenReady().then(async () => {
       await printWin.loadURL(dataUrl)
 
       // Wait for content to load (reduced timeout for faster response)
-      await new Promise(resolve => {
+      await new Promise((resolve) => {
         printWin.webContents.once('did-finish-load', resolve)
         // Reduced timeout from 2000ms to 1000ms
         setTimeout(resolve, 1000)
@@ -565,7 +568,7 @@ app.whenReady().then(async () => {
     // Auto-index updated file in background
     if (VaultManager.vaultPath && updatedSnippet?.fileName) {
       const filePath = path.join(VaultManager.vaultPath, updatedSnippet.fileName)
-      VaultIndexer.indexFile(filePath, true).catch(err => {
+      VaultIndexer.indexFile(filePath, true).catch((err) => {
         console.error('[Main] Auto-index failed:', err)
       })
     }
@@ -590,7 +593,7 @@ app.whenReady().then(async () => {
         console.info('[Main] New vault indexing complete, reloading search index...')
         return VaultSearch.reload()
       })
-      .catch(err => {
+      .catch((err) => {
         console.error('[Main] Vault indexing failed:', err)
       })
     return newPath
@@ -702,7 +705,7 @@ app.whenReady().then(async () => {
           console.info('[Main] Background indexing complete, reloading search index...')
           return VaultSearch.reload()
         })
-        .catch(err => {
+        .catch((err) => {
           console.error('[Main] Background indexing failed:', err)
         })
     }

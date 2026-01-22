@@ -728,9 +728,16 @@
 .chat-bubble {
   padding: 8px 12px;
   border-radius: 10px;
-  max-width: 90%;
+  max-width: 100%;
   font-size: 13px;
   line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  /* Ensure content doesn't overflow */
+  box-sizing: border-box;
+  /* Allow tables to scroll horizontally */
+  overflow-x: visible;
+  overflow-y: visible;
 }
 
 /* Compact bubbles on smaller heights */
@@ -772,6 +779,144 @@
   font-family: 'JetBrains Mono', monospace;
   font-size: 12px;
   margin: 8px 0;
+  /* Ensure horizontal scroll works */
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Table responsiveness in chat bubbles */
+.chat-bubble .table-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  margin: 8px 0;
+  -webkit-overflow-scrolling: touch;
+  /* Add scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-dim) transparent;
+  /* Ensure it doesn't break layout */
+  box-sizing: border-box;
+}
+
+.chat-bubble .table-wrapper::-webkit-scrollbar {
+  height: 8px;
+}
+
+.chat-bubble .table-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-bubble .table-wrapper::-webkit-scrollbar-thumb {
+  background: var(--border-dim);
+  border-radius: 4px;
+}
+
+.chat-bubble .table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+.chat-bubble .table-wrapper table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin: 0;
+  /* Use auto layout for natural column sizing */
+  table-layout: auto;
+  /* Ensure table respects container width */
+  min-width: 100%;
+  /* Proper table display for column alignment */
+  display: table;
+}
+
+.chat-bubble .table-wrapper table thead {
+  display: table-header-group;
+}
+
+.chat-bubble .table-wrapper table tbody {
+  display: table-row-group;
+}
+
+.chat-bubble .table-wrapper table tr {
+  display: table-row;
+}
+
+.chat-bubble .table-wrapper table th,
+.chat-bubble .table-wrapper table td {
+  padding: 6px 8px;
+  border: 1px solid var(--border-dim);
+  text-align: left;
+  vertical-align: top;
+  /* Allow text to wrap for better responsiveness */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  /* Ensure columns align properly */
+  box-sizing: border-box;
+  /* Ensure proper table cell display for column alignment */
+  display: table-cell;
+}
+
+.chat-bubble .table-wrapper table th {
+  background: var(--bg-active);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+/* Responsive table - allow horizontal scroll when needed */
+@media (max-width: 768px) {
+  .chat-bubble .table-wrapper {
+    min-width: 600px; /* Minimum width to trigger scroll on small screens */
+  }
+  
+  .chat-bubble .table-wrapper table {
+    table-layout: auto;
+    min-width: 600px;
+  }
+  
+  .chat-bubble .table-wrapper table th,
+  .chat-bubble .table-wrapper table td {
+    white-space: nowrap;
+    min-width: 100px;
+  }
+}
+
+/* Fallback for tables not wrapped */
+.chat-bubble > table {
+  width: 100%;
+  max-width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 12px;
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.chat-bubble > table thead,
+.chat-bubble > table tbody,
+.chat-bubble > table tr {
+  display: table;
+  width: 100%;
+  table-layout: auto;
+}
+
+.chat-bubble > table th,
+.chat-bubble > table td {
+  padding: 6px 8px;
+  border: 1px solid var(--border-dim);
+  text-align: left;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: nowrap;
+  min-width: 80px;
+}
+
+.chat-bubble > table th {
+  background: var(--bg-active);
+  font-weight: 600;
 }
 
 /* Specific tweaks for dark user bubble */

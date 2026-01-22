@@ -183,6 +183,38 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                     </select>
                   </div>
                 </section>
+
+                <section style={{ marginTop: '32px' }}>
+                  <h3>Image Generation (Hugging Face)</h3>
+                  <div className="settings-row">
+                    <div className="row-info">
+                      <div className="row-label">API Key</div>
+                      <div className="row-hint">
+                        Enter your Hugging Face API key (starts with hf_...). Optional but recommended for better reliability.
+                      </div>
+                    </div>
+                    <input
+                      type="password"
+                      className="settings-select"
+                      style={{ width: '240px' }}
+                      value={settings.huggingFaceKey || ''}
+                      onChange={(e) => {
+                        const value = e.target.value.trim()
+                        // Only save if non-empty, otherwise save null to clear it
+                        updateSetting('huggingFaceKey', value || null)
+                      }}
+                      onBlur={(e) => {
+                        // Ensure trimmed value on blur
+                        const value = e.target.value.trim()
+                        if (value !== (settings.huggingFaceKey || '')) {
+                          updateSetting('huggingFaceKey', value || null)
+                        }
+                      }}
+                      placeholder="hf_..."
+                    />
+                  </div>
+                </section>
+
                 <section>
                   <h3>Local Intelligence (Offline)</h3>
                   <div className="settings-row">

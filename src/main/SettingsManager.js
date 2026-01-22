@@ -21,7 +21,8 @@ class SettingsManager {
       inlineMetadata: true,
       // AI Settings
       deepSeekKey: null,
-      deepSeekModel: 'deepseek-chat'
+      deepSeekModel: 'deepseek-chat',
+      huggingFaceKey: null
     }
     this.cache = null
     this.watcher = null

@@ -248,7 +248,10 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
       >
         <ModalHeader
           left={
-            <div className="modal-title-stack" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div
+              className="modal-title-stack"
+              style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+            >
               <MessageSquare size={16} className="theme-modal-icon" />
               <span className="theme-modal-title">AI Chat</span>
             </div>
