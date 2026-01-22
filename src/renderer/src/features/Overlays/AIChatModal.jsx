@@ -232,7 +232,7 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
 
   return (
     <div className="modal-overlay ai-chat-modal-overlay" onClick={onClose}>
-      <div 
+      <div
         ref={modalRef}
         className={`modal-container ai-chat-modal-container ${isMaximized ? 'maximized' : ''} ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''}`}
         onClick={(e) => e.stopPropagation()}
@@ -281,7 +281,7 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
                 title={isMaximized ? 'Restore' : 'Maximize'}
                 aria-label={isMaximized ? 'Restore' : 'Maximize'}
               >
-                {isMaximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                <Minimize2 size={16} />
               </button>
               {onUnfloat && (
                 <button

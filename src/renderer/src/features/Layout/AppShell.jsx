@@ -592,26 +592,14 @@ const AppShell = () => {
       <AIChatModal
         isOpen={showAIChatModal}
         onClose={() => {
-          try {
-            setShowAIChatModal(false)
-            // Restore sidebar state if it was open before
-            if (savedRightSidebarState?.isOpen) {
-              setIsRightSidebarOpen(true)
-              if (savedRightSidebarState.width) {
-                setRightWidth(savedRightSidebarState.width)
-                useSettingsStore.getState().updateSetting('rightWidth', savedRightSidebarState.width)
-              }
-              useSettingsStore.getState().updateSetting('isRightSidebarOpen', true)
-            }
-            setSavedRightSidebarState(null)
-          } catch (error) {
-            console.error('[AppShell] Failed to close AI chat modal:', error)
-          }
+          // Just close the modal, don't restore sidebar
+          setShowAIChatModal(false)
+          setSavedRightSidebarState(null)
         }}
         onUnfloat={() => {
+          // Close modal AND restore sidebar to its previous state
           try {
             setShowAIChatModal(false)
-            // Restore sidebar state if it was open before
             if (savedRightSidebarState?.isOpen) {
               setIsRightSidebarOpen(true)
               if (savedRightSidebarState.width) {

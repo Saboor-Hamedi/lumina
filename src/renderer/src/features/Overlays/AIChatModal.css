@@ -128,11 +128,19 @@
   cursor: pointer;
   transition: background 0.08s ease, color 0.08s ease;
   flex-shrink: 0;
+  transform: none;
+  position: relative;
 }
 
 .modal-clear-btn:hover {
   background: var(--bg-active);
   color: var(--text-main);
+  transform: none;
+}
+
+.modal-clear-btn:active {
+  transform: none;
+  top: 0;
 }
 
 /* Maximize button */
@@ -149,11 +157,19 @@
   cursor: pointer;
   transition: background 0.08s ease, color 0.08s ease;
   flex-shrink: 0;
+  transform: none;
+  position: relative;
 }
 
 .modal-maximize-btn:hover {
   background: var(--bg-active);
   color: var(--text-main);
+  transform: none;
+}
+
+.modal-maximize-btn:active {
+  transform: none;
+  top: 0;
 }
 
 /* Unfloat button */
@@ -170,11 +186,19 @@
   cursor: pointer;
   transition: background 0.08s ease, color 0.08s ease;
   flex-shrink: 0;
+  transform: none;
+  position: relative;
 }
 
 .modal-unfloat-btn:hover {
   background: var(--bg-active);
   color: var(--text-main);
+  transform: none;
+}
+
+.modal-unfloat-btn:active {
+  transform: none;
+  top: 0;
 }
 
 /* Close button styling */
@@ -190,11 +214,19 @@
   color: var(--text-faint);
   cursor: pointer;
   transition: background 0.08s ease, color 0.08s ease;
+  transform: none;
+  position: relative;
 }
 
 .ai-chat-modal-container .modal-close.modal-close-top:hover {
   background: var(--color-danger, #ef4444);
   color: white;
+  transform: none;
+}
+
+.ai-chat-modal-container .modal-close.modal-close-top:active {
+  transform: none;
+  top: 0;
 }
 
 /* Title and icon styling */
