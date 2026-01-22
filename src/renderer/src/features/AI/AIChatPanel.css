@@ -45,6 +45,8 @@
   width: 100%;
   min-width: 0; /* Allow flex item to shrink below content size */
   box-sizing: border-box;
+  /* Caret styling - use theme variables */
+  caret-color: var(--caret-color, var(--text-accent));
 }
 
 .chat-input-textarea::placeholder {

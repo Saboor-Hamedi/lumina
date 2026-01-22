@@ -1,40 +1,23 @@
+/**
+ * Rich Markdown Extensions (deprecated - live mode removed)
+ * Previously supported live preview with hidden syntax
+ */
 import { syntaxTree } from '@codemirror/language'
 import { RangeSetBuilder, StateField, Facet } from '@codemirror/state'
 import { Decoration, EditorView } from '@codemirror/view'
 import { CodeBlockHeaderWidget, CodeBlockFooterWidget } from './markdownWidgets'
 
 /**
- * Editor mode facet for Lumina Markdown Editor
- * Supports: 'source' (show all syntax), 'live' (hide syntax, live preview)
- */
-export const editorMode = Facet.define({
-  combine: (values) => values[0] || 'live'
-})
-
-/**
- * Code Block Widget StateField
- *
- * Handles layout-level widgets (code block headers/footers) that require
- * block-level decorations. Inline decorations are handled by CodeMirror's
- * default markdown language support for better performance and robustness.
- *
- * Optimized for smooth typing performance:
- * - Only rebuilds when code block structure changes (not on every keystroke)
- * - Uses efficient syntax tree checks instead of string operations
- * - Skips rebuilds when typing inside code blocks
+ * Code Block Widget StateField (deprecated)
+ * Previously handled live preview code block widgets
  */
 const blockField = StateField.define({
   create() {
     return Decoration.none
   },
   update(decos, tr) {
-    const mode = tr.state.facet(editorMode)
-    const prevMode = tr.startState.facet(editorMode)
-
-    // Source mode: no decorations (show all syntax)
-    if (mode === 'source') {
-      return Decoration.none
-    }
+    // Live mode removed: no decorations
+    return Decoration.none
 
     // Always rebuild on mode changes or reconfiguration
     const modeChanged = mode !== prevMode
@@ -207,41 +190,16 @@ const blockField = StateField.define({
 })
 
 /**
- * Inline Syntax Hiding StateField
- * Hides markdown syntax marks (**, ##, [], etc.) in live mode using regex
+ * Inline Syntax Hiding StateField (deprecated)
+ * Previously hid markdown syntax in live mode
  */
 const inlineSyntaxField = StateField.define({
   create() {
     return Decoration.none
   },
   update(decos, tr) {
-    const mode = tr.state.facet(editorMode)
-
-    // Source mode: show all syntax
-    if (mode === 'source') {
-      return Decoration.none
-    }
-
-    // Live mode: hide ALL syntax marks (preview mode - no editing)
-    // Always rebuild in live mode to ensure decorations are applied immediately
-    const prevMode = tr.startState.facet(editorMode)
-    const modeChanged = mode !== prevMode
-
-    // If mode changed to source, clear decorations immediately
-    if (modeChanged && mode === 'source') {
-      return Decoration.none
-    }
-
-    // In live mode, always rebuild to ensure symbols are hidden immediately
-    // Don't skip rebuild even if decos exist - we need fresh decorations on mode change
-    if (mode === 'live' && (modeChanged || tr.reconfigured || tr.docChanged)) {
-      // Force rebuild - continue to decoration building
-    } else if (mode !== 'live') {
-      return Decoration.none
-    } else if (decos.size > 0 && !modeChanged && !tr.reconfigured && !tr.docChanged) {
-      // Only skip rebuild if we're in live mode, have decorations, and nothing changed
-      return decos
-    }
+    // Live mode removed: no decorations
+    return Decoration.none
 
     const builder = new RangeSetBuilder()
     const doc = tr.state.doc
@@ -260,7 +218,11 @@ const inlineSyntaxField = StateField.define({
         enter: (node) => {
           if (node.name === 'FencedCode') {
             codeBlockRanges.push({ from: node.from, to: node.to })
-          } else if (node.name === 'Table' || node.name === 'TableRow' || node.name === 'TableHeader') {
+          } else if (
+            node.name === 'Table' ||
+            node.name === 'TableRow' ||
+            node.name === 'TableHeader'
+          ) {
             tableRanges.push({ from: node.from, to: node.to })
           }
         }
@@ -271,8 +233,10 @@ const inlineSyntaxField = StateField.define({
 
     // Helper to check if position is inside a code block or table
     const isInCodeBlockOrTable = (pos) => {
-      return codeBlockRanges.some(range => pos >= range.from && pos <= range.to) ||
-             tableRanges.some(range => pos >= range.from && pos <= range.to)
+      return (
+        codeBlockRanges.some((range) => pos >= range.from && pos <= range.to) ||
+        tableRanges.some((range) => pos >= range.from && pos <= range.to)
+      )
     }
 
     // Patterns to match markdown syntax
@@ -445,9 +409,7 @@ const inlineSyntaxField = StateField.define({
 })
 
 /**
- * Rich Markdown Extensions
- *
- * Exports block-level decorations (code block widgets) and
- * inline syntax hiding (bold, italic, headings, etc.)
+ * Rich Markdown Extensions (deprecated)
+ * Previously exported decorations for live preview mode
  */
 export const richMarkdown = [blockField, inlineSyntaxField]

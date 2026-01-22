@@ -25,7 +25,7 @@
 /*
   ULTRA-STABLE CODE BLOCK GEOMETRY (Matched to PreviewModal.jsx)
 */
-.cm-line[class*="cm-codeblock-"] {
+.cm-line[class*='cm-codeblock-'] {
   padding: 0 2em 0 1em !important; /* Add left padding for code blocks */
   margin: 0 !important;
   line-height: 1.6 !important;
@@ -42,7 +42,7 @@
 }
 
 /* Force transparent active line for all parts of code blocks */
-.cm-line[class*="cm-codeblock-"].cm-activeLine {
+.cm-line[class*='cm-codeblock-'].cm-activeLine {
   background-color: rgba(127, 127, 127, 0.08) !important;
   outline: none !important;
 }
@@ -68,7 +68,7 @@
 }
 
 /* Force specific selection style for code blocks */
-.cm-line[class*="cm-codeblock-"] ::selection {
+.cm-line[class*='cm-codeblock-'] ::selection {
   background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.4) !important;
 }
 
@@ -84,8 +84,14 @@
 }
 
 /* --- LIVE MODE SEMANTICS --- */
-.cm-strong { font-weight: 700; color: var(--text-main); }
-.cm-em { font-style: italic; color: var(--text-muted); }
+.cm-strong {
+  font-weight: 700;
+  color: var(--text-main);
+}
+.cm-em {
+  font-style: italic;
+  color: var(--text-muted);
+}
 .cm-inline-code {
   font-family: var(--font-mono);
   background: rgba(var(--text-accent-rgb), 0.1);
@@ -96,7 +102,8 @@
 }
 
 /* --- TABLE FIDELITY: Matched to PreviewModal.jsx --- */
-.cm-table-row, .cm-table-header {
+.cm-table-row,
+.cm-table-header {
   font-size: 0.95em !important;
   border-bottom: 1px solid var(--border-dim);
   line-height: 1.5 !important;
@@ -390,16 +397,15 @@
 .editor-scroller {
   flex: 1;
   overflow-y: auto;
-  overflow-x: hidden;
   background: transparent;
-  cursor: text;
+  height: 100%;
 }
 
 .editor-canvas-wrap {
   width: 100%;
   max-width: 760px;
   margin: 0 auto; /* Horizonatal Center */
-  padding: 40px 60px;
+  padding: 10px 60px 40px 60px; /* Reduced from 20px */
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -409,8 +415,14 @@
 }
 
 @keyframes noteFadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .editor-large-title {
@@ -420,7 +432,7 @@
   background: transparent;
   color: var(--text-main);
   padding: 0;
-  margin-bottom: 24px;
+  margin-bottom: 5px;
   letter-spacing: -0.04em;
   width: 100%;
   font-family: inherit;
@@ -552,78 +564,6 @@
   transform: translateY(0);
 }
 
-/* --- Cursor & Caret Styling --- */
-/*
- * Theme-aware caret system with customizable width and color
- * Uses CSS variables: --caret-width, --caret-color
- * Falls back to theme accent color if no custom color is set
- * Styles are applied via CodeMirror theme AND CSS for maximum compatibility
- */
-
-/* Base cursor styling - applies to all cursor styles */
-/* High specificity to override CodeMirror defaults and ensure updates */
-/* CRITICAL: These styles must override CodeMirror's default 1px black cursor */
-.cm-editor .cm-cursor,
-.markdown-editor .cm-cursor,
-.cm-cursor,
-.cm-editor.cm-focused .cm-cursor,
-.cm-editor .cm-cursor-primary,
-.markdown-editor .cm-editor .cm-cursor,
-.markdown-editor .cm-editor.cm-focused .cm-cursor {
-  /* Use individual properties for maximum specificity */
-  border-left-width: var(--caret-width, 2px) !important;
-  border-left-color: var(--caret-color, var(--text-accent)) !important;
-  border-left-style: solid !important;
-  margin-left: calc(-1 * var(--caret-width, 2px) / 2) !important;
-  background-color: transparent !important;
-  width: auto !important;
-  transition: border-color 0.15s ease, border-width 0.15s ease, background-color 0.15s ease !important;
-  pointer-events: none;
-  will-change: border-color, border-width, background-color;
-  /* Ensure no default black color */
-  color: transparent !important;
-}
-
-/* Smooth cursor style (default) - smooth transitions */
-.cursor-smooth .cm-cursor,
-.cursor-bar .cm-cursor {
-  transition: transform 0.1s cubic-bezier(0, 0, 0.2, 1),
-              opacity 0.2s,
-              border-color 0.15s ease,
-              border-width 0.15s ease !important;
-}
-
-/* Sharp cursor style - no opacity transition */
-.cursor-sharp .cm-cursor,
-.cursor-line .cm-cursor {
-  opacity: 1 !important;
-  transition: border-color 0.15s ease, border-width 0.15s ease !important;
-}
-
-/* Block cursor style - uses background instead of border */
-.cursor-block .cm-cursor {
-  border-left: none !important;
-  background-color: var(--caret-color, var(--text-accent)) !important;
-  width: 0.6em !important;
-  opacity: 0.7 !important;
-  margin-left: 0 !important;
-  transition: background-color 0.15s ease, opacity 0.2s ease !important;
-}
-
-/* Subtle blink animation for block cursor */
-.cursor-block .cm-focused .cm-cursor {
-  animation: cm-blink-block 1.2s steps(1) infinite;
-}
-
-@keyframes cm-blink-block {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 0; }
-}
-
-.mode-reading {
-  cursor: default;
-}
-
 /* --- NATIVE-LOOKING DROPDOWN --- */
 .menu-container {
   position: relative;
@@ -638,7 +578,7 @@
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   padding: 6px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   z-index: 100000; /* Higher than CodeMirror tooltips (99999) */
   backdrop-filter: blur(20px);
   animation: nativeMenuAppear 0.15s cubic-bezier(0, 0, 0.2, 1);
@@ -647,8 +587,14 @@
 }
 
 @keyframes nativeMenuAppear {
-  from { opacity: 0; transform: scale(0.95) translateY(-5px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .dropdown-item {
@@ -660,7 +606,9 @@
   color: var(--text-main);
   cursor: pointer;
   border-radius: 6px;
-  transition: background 0.15s, transform 0.1s;
+  transition:
+    background 0.15s,
+    transform 0.1s;
   user-select: none;
 }
 
@@ -697,18 +645,8 @@
   opacity: 0.5;
 }
 
-.mode-reading .cm-content,
-.mode-live .cm-content {
+.mode-reading .cm-content {
   cursor: default; /* Preview mode - not editable */
-}
-
-.mode-live .cm-cursor {
-  display: none !important; /* Hide cursor in preview mode */
-}
-
-.mode-live .cm-activeLine {
-  background-color: transparent !important; /* No active line highlight in preview */
-  border-left: none !important;
 }
 
 .mode-source .cm-content {
@@ -731,17 +669,29 @@
 /* Inline Metadata Bar - Moved under Title */
 .editor-metadata-bar {
   display: flex;
-  align-items: center;
-  gap: 8px; /* tighter spacing for compact header */
-  padding: 0 0 8px 0; /* reduced bottom padding */
-  margin-bottom: 12px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 12px 60px 8px 60px; /* Reduced padding */
+  margin: 0 auto;
   border-bottom: 1px solid var(--border-subtle);
   font-size: calc(var(--font-size-editor, 14px) * 0.85);
-  line-height: 1.2; /* more compact */
+  line-height: 1.1;
   color: var(--text-muted);
-  width: 100%;
+  max-width: 760px;
   min-height: 0;
   box-sizing: border-box;
+  background: var(--bg-app);
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
 }
 
 /* --- Image Hover Preview --- */
@@ -759,10 +709,10 @@
 }
 
 .image-hover-preview img {
-    max-height: 280px; /* Smaller max height */
-    max-width: 100%;
-    border-radius: 4px;
-    display: block;
+  max-height: 280px; /* Smaller max height */
+  max-width: 100%;
+  border-radius: 4px;
+  display: block;
 }
 
 .meta-tag-container {
@@ -783,12 +733,12 @@
 .tag-pill {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   background: var(--bg-active);
   color: var(--text-accent);
-  padding: 2px 6px; /* smaller padding for compact meta tags */
-  border-radius: 4px;
-  font-size: 10px;
+  padding: 1px 4px; /* very small padding */
+  border-radius: 3px;
+  font-size: 9px;
   font-weight: 500;
   border: 1px solid rgba(var(--text-accent-rgb), 0.15);
   transition: all 0.2s;
@@ -803,7 +753,7 @@
   background: transparent;
   border: none;
   color: currentColor;
-  font-size: 12px;
+  font-size: 10px;
   line-height: 1;
   cursor: pointer;
   padding: 0;
@@ -812,15 +762,15 @@
   justify-content: center;
   opacity: 0.6;
   transition: all 0.2s;
-  margin-left: 2px;
-  width: 12px;
-  height: 12px;
+  margin-left: 1px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
 }
 
 .tag-remove:hover {
   opacity: 1;
-  background: rgba(0,0,0,0.1);
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .tag-remove:hover {
@@ -855,7 +805,7 @@
   min-width: 150px;
   max-height: 200px;
   overflow-y: auto;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   z-index: 10000; /* High z-index to appear above tabbar and other elements */
   backdrop-filter: blur(10px);
 }
@@ -877,15 +827,14 @@
 .meta-info-pill {
   display: flex;
   align-items: center;
-  gap: 6px;
-  opacity: 0.8;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: var(--bg-app);
-  border: 1px solid var(--border-subtle);
-  font-size: 10px; /* Match tag pill size */
+  gap: 4px;
+  opacity: 0.6;
+  padding: 2px 0;
+  background: transparent;
+  border: none;
+  font-size: 10px;
   font-weight: 500;
-  color: var(--text-muted);
+  color: var(--text-faint);
   white-space: nowrap;
 }
 
@@ -1013,14 +962,24 @@
 }
 
 .cm-heading-1 {
-    font-size: 2.2em !important;
-    border-bottom: 1px solid var(--border-dim);
-    padding-bottom: 0.3em !important;
-    color: var(--text-accent);
+  font-size: 2.2em !important;
+  border-bottom: 1px solid var(--border-dim);
+  padding-bottom: 0.3em !important;
+  color: var(--text-accent);
 }
-.cm-heading-2 { font-size: 1.8em !important; color: var(--text-main); opacity: 0.95; }
-.cm-heading-3 { font-size: 1.4em !important; opacity: 0.9; }
-.cm-heading-4 { font-size: 1.2em !important; opacity: 0.85; }
+.cm-heading-2 {
+  font-size: 1.8em !important;
+  color: var(--text-main);
+  opacity: 0.95;
+}
+.cm-heading-3 {
+  font-size: 1.4em !important;
+  opacity: 0.9;
+}
+.cm-heading-4 {
+  font-size: 1.2em !important;
+  opacity: 0.85;
+}
 
 /* Perfect Horizontal Rule */
 .cm-hr {
@@ -1084,8 +1043,6 @@
   opacity: 1;
 }
 
-
-
 /* 2. LIVE MODE: Premium typography (Default) */
 /* Inherits base styles */
 
@@ -1104,10 +1061,6 @@
   display: block !important;
 }
 
-.mode-live .reading-preview-container {
-  display: none !important;
-}
-
 /* Reading Preview Container - Rendered HTML */
 .reading-preview-container {
   padding: 2rem 0 4rem 0;
@@ -1115,6 +1068,10 @@
   margin: 0 auto;
   min-height: 200px;
   display: none; /* Hidden by default, shown in reading mode */
+}
+
+/* Editor container */
+.cm-host-container {
 }
 
 .reading-preview-loading {
@@ -1134,8 +1091,14 @@
 }
 
 @keyframes contentFadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .reading-preview-content h1 {
@@ -1245,6 +1208,7 @@
   font-weight: 600;
   border-bottom: 1px dashed rgba(var(--text-accent-rgb), 0.3);
   transition: all 0.2s;
+  font-style: normal;
 }
 
 .reading-preview-content .preview-wikilink:hover {
@@ -1381,164 +1345,9 @@
   background: var(--bg-panel) !important;
   border-radius: 6px;
   margin: 1em 0;
-  border: 1px solid var(--border-card, rgba(0,0,0,0.05));
+  border: 1px solid var(--border-card, rgba(0, 0, 0, 0.05));
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 0.95em;
-}
-
-/* Enhanced Code Blocks in Preview Mode */
-.mode-live .cm-codeblock,
-.mode-live .cm-line[class*="cm-codeblock-"],
-.mode-live .cm-line.cm-codeblock-begin,
-.mode-live .cm-line.cm-codeblock-end {
-  background: rgba(var(--text-accent-rgb), 0.03) !important;
-  border: 1px solid var(--border-subtle) !important;
-  border-radius: 8px !important;
-  padding: 1em !important;
-  margin: 1.5em 0 !important;
-  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace !important;
-  font-size: 0.9em !important;
-  line-height: 1.6 !important;
-  overflow-x: auto !important;
-  display: block !important;
-}
-
-/* Hide code block fence markers in preview mode */
-.mode-live .cm-line.cm-codeblock-begin .cm-codeblock-fence,
-.mode-live .cm-line.cm-codeblock-end .cm-codeblock-fence {
-  display: none !important;
-}
-
-.mode-live .cm-codeblock-header {
-  background: rgba(var(--text-accent-rgb), 0.05) !important;
-  border-bottom: 1px solid var(--border-subtle) !important;
-  padding: 8px 16px !important;
-  border-radius: 8px 8px 0 0 !important;
-  margin: 0 !important;
-}
-
-.mode-live .cm-codeblock-body {
-  padding: 1em !important;
-  background: rgba(var(--text-accent-rgb), 0.02) !important;
-}
-
-.mode-live .cm-codeblock-footer {
-  border-radius: 0 0 8px 8px !important;
-  background: rgba(var(--text-accent-rgb), 0.05) !important;
-}
-
-/* Enhanced Tables in Preview Mode */
-.mode-live .cm-table {
-  width: 100% !important;
-  border-collapse: collapse !important;
-  margin: 2em 0 !important;
-  font-size: 0.95em !important;
-  display: table !important;
-  table-layout: auto !important;
-}
-
-.mode-live .cm-table-header {
-  background: rgba(var(--text-accent-rgb), 0.05) !important;
-  font-weight: 700 !important;
-  border-bottom: 2px solid var(--border-dim) !important;
-  color: var(--text-main) !important;
-  display: table-header-group !important;
-}
-
-.mode-live .cm-table-row {
-  border-bottom: 1px solid var(--border-dim) !important;
-  display: table-row !important;
-}
-
-.mode-live .cm-table-row:nth-child(even) {
-  background: rgba(var(--text-accent-rgb), 0.02) !important;
-}
-
-.mode-live .cm-table-cell {
-  padding: 12px 16px !important;
-  text-align: left !important;
-  color: var(--text-main) !important;
-  display: table-cell !important;
-  border: 1px solid var(--border-dim) !important;
-  vertical-align: top !important;
-}
-
-.mode-live .cm-table-pipe {
-  display: none !important; /* Hide table pipes in preview */
-}
-
-/*
- * Zero-Shift Syntax Hiding (Ironclad Engine)
- * Hide all markdown syntax in preview mode - clean rendered view
- * Completely remove from layout flow to prevent any hover shifts
- */
-.mode-live .cm-hidden-mark {
-  color: transparent !important;
-  font-size: 0 !important;
-  opacity: 0 !important;
-  width: 0 !important;
-  min-width: 0 !important;
-  max-width: 0 !important;
-  height: 0 !important;
-  min-height: 0 !important;
-  max-height: 0 !important;
-  display: none !important; /* Completely remove from layout flow to prevent hover shifts */
-  pointer-events: none !important;
-  user-select: none !important;
-  overflow: hidden !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  line-height: 0 !important;
-  position: absolute !important;
-  left: -9999px !important;
-  visibility: hidden !important;
-  text-indent: -9999px !important;
-  transition: none !important; /* Prevent transitions that cause layout shifts */
-  animation: none !important; /* Prevent animations */
-  transform: none !important; /* Prevent transforms */
-}
-
-/* Ensure hidden marks never cause layout shifts on hover - completely remove from flow */
-.mode-live .cm-line:hover .cm-hidden-mark,
-.mode-live .cm-content:hover .cm-hidden-mark,
-.mode-live .cm-strong:hover .cm-hidden-mark,
-.mode-live .cm-em:hover .cm-hidden-mark,
-.mode-live .cm-heading:hover .cm-hidden-mark,
-.mode-live .cm-inline-code:hover .cm-hidden-mark {
-  width: 0 !important;
-  min-width: 0 !important;
-  max-width: 0 !important;
-  height: 0 !important;
-  display: none !important;
-  position: absolute !important;
-  left: -9999px !important;
-  visibility: hidden !important;
-}
-
-/* In preview mode, symbols are always hidden - no reveal on active line */
-
-/* Fix heading alignment - ensure # mark doesn't push text to the right */
-/* The # mark is always hidden and positioned absolutely to never affect text flow */
-.cm-heading .cm-hidden-mark {
-  pointer-events: none !important;
-  /* Completely remove from flow with zero width so it doesn't affect text alignment */
-  position: absolute !important;
-  left: -9999px !important; /* Move completely off-screen to prevent any layout shifts */
-  width: 0 !important; /* Zero width when hidden - CRITICAL for alignment */
-  min-width: 0 !important;
-  max-width: 0 !important;
-  height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  display: inline-block !important;
-  overflow: hidden !important;
-  visibility: hidden !important;
-  /* This ensures heading text starts at same position as paragraphs */
-}
-
-/* In preview mode, ensure headings never cause shifts on hover */
-.mode-live .cm-heading .cm-hidden-mark {
-  display: none !important; /* Completely remove from DOM flow */
 }
 
 /* Ensure heading text itself starts at the same position as paragraphs */
@@ -1632,6 +1441,7 @@
 /* Ensure editor grows to fit content so outer scroller works */
 .cm-editor {
   height: auto !important;
+  /* min-height: 100vh !important; */
 }
 
 /* Scrollbar Styling */
@@ -1670,7 +1480,8 @@
   opacity: 0.85;
 }
 
-.cm-list-bullet, .cm-list-mark {
+.cm-list-bullet,
+.cm-list-mark {
   color: var(--text-accent);
   font-weight: bold;
 }
@@ -1699,7 +1510,7 @@
   justify-content: space-between;
   background: var(--bg-code-surface);
   border: 1px solid var(--border-code);
-  border-bottom: 1px solid rgba(255,255,255,0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
   border-top-left-radius: 6px;
   border-top-right-radius: 6px;
   padding: 4px 12px;
@@ -1716,8 +1527,8 @@
 
 /* Ensure padding inside the box - targeting the line element */
 .cm-codeblock-body.cm-line {
-    padding-left: 12px !important;
-    padding-right: 12px !important;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
 }
 
 .cm-codeblock-footer {
@@ -1751,7 +1562,7 @@
 }
 
 .cm-copy-btn:hover {
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.1);
   color: var(--text-main);
   border-color: var(--text-muted);
 }
@@ -1805,8 +1616,14 @@
 }
 
 @keyframes tooltipFadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* CodeMirror Tooltip Container Override */
@@ -1850,7 +1667,7 @@
   min-height: 40px;
   max-height: 240px; /* Adjusted to fit overall max-height */
   padding: 12px;
-  background: rgba(0,0,0,0.02);
+  background: rgba(0, 0, 0, 0.02);
 }
 
 /* Custom scrollbar for hover content */
@@ -1930,6 +1747,7 @@
   border-radius: 4px;
   padding: 0 2px;
   transition: all 0.2s;
+  font-style: normal;
 }
 
 .preview-wikilink:hover {
@@ -2046,7 +1864,7 @@
   margin-left: auto !important;
 }
 
-/* Hidden Mark Styling: Handled by scoped mode-live/reading rules in earlier sections */
+/* Hidden Mark Styling: Handled by scoped reading rules in earlier sections */
 
 /* Horizontal Rule Compact Styling */
 .cm-codeblock-header {
@@ -2070,7 +1888,6 @@
   padding-bottom: 8px !important;
   margin-bottom: 2em !important;
 }
-
 
 /* Copy Button Styling */
 .cm-copy-btn {
@@ -2114,14 +1931,29 @@
   background: var(--bg-app);
   border-radius: 0; /* flat to match main app header */
   box-shadow: none;
-  border: 1px solid rgba(255,255,255,0.04);
+  border: 1px solid rgba(255, 255, 255, 0.04);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
-.in-editor-preview-header { padding: 12px 16px; border-bottom: 1px solid var(--border-dim); display:flex; justify-content:space-between; align-items:center; }
-.in-editor-preview-body { padding: 12px 0; flex: 1; }
-.in-editor-preview-card .modal-close { background: transparent; border: none; font-size: 14px; cursor: pointer; padding: 6px 8px; }
+.in-editor-preview-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-dim);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.in-editor-preview-body {
+  padding: 12px 0;
+  flex: 1;
+}
+.in-editor-preview-card .modal-close {
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 6px 8px;
+}
 
 /* Spinner animation for loading states */
 @keyframes spin {
@@ -2132,4 +1964,3 @@
     transform: rotate(360deg);
   }
 }
-

@@ -80,7 +80,7 @@ const PreviewModal = ({ isOpen, onClose, content, onNavigate, title: snippetTitl
     shadowRoot.addEventListener('click', handleClick)
     return () => shadowRoot.removeEventListener('click', handleClick)
   }, [shadowRoot, onNavigate, onClose])
-  
+
   // Highlight code blocks inside the shadow root when content changes
   useEffect(() => {
     if (!shadowRoot) return
@@ -128,7 +128,11 @@ const PreviewModal = ({ isOpen, onClose, content, onNavigate, title: snippetTitl
 
             // Highlight after DOM insertion
             if (code) {
-              try { hljs.highlightElement(code) } catch (e) { /* ignore */ }
+              try {
+                hljs.highlightElement(code)
+              } catch (e) {
+                /* ignore */
+              }
             }
           })
         }
@@ -198,7 +202,10 @@ const PreviewModal = ({ isOpen, onClose, content, onNavigate, title: snippetTitl
       >
         <ModalHeader
           left={
-            <div className="modal-title-stack" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div
+              className="modal-title-stack"
+              style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+            >
               <span className="preview-indicator-tag">MARKDOWN</span>
               <span className="preview-filename-text">{snippetTitle || 'Untitled'}</span>
             </div>
@@ -243,7 +250,6 @@ const PreviewModal = ({ isOpen, onClose, content, onNavigate, title: snippetTitl
   )
 
   return createPortal(modal, document.body)
-
 }
 
 const previewStyles = `
@@ -469,6 +475,7 @@ const previewStyles = `
       font-weight: 600;
       border-bottom: 1px dashed rgba(var(--text-accent-rgb), 0.3);
       transition: all 0.2s;
+      font-style: normal;
     }
     .preview-wikilink:hover {
       border-bottom-style: solid;
@@ -512,4 +519,4 @@ const previewStyles = `
     }
   `
 
-  export default PreviewModal
+export default PreviewModal

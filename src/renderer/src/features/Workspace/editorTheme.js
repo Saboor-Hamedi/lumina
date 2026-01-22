@@ -7,9 +7,19 @@ import { EditorView } from 'codemirror'
  */
 export const seamlessTheme = EditorView.theme({
   '&': {
+    height: '100%'
+  },
+  fontSize: 'var(--font-size-editor, 16px)',
+  backgroundColor: 'transparent !important',
+  '.cm-scroller': {
     height: '100%',
-    fontSize: 'var(--font-size-editor, 16px)',
-    backgroundColor: 'transparent !important'
+    overflow: 'auto'
+  },
+  '.cm-scroller::-webkit-scrollbar': {
+    display: 'none'
+  },
+  '.cm-scroller': {
+    scrollbarWidth: 'none'
   },
   '.cm-content': {
     // Font family is handled by mode-specific classes in CSS, but this sets a default base
@@ -51,7 +61,8 @@ export const seamlessTheme = EditorView.theme({
   },
   // Smooth cursor style (default) - additional transitions
   '.cursor-smooth .cm-cursor, .cursor-bar .cm-cursor': {
-    transition: 'transform 0.1s cubic-bezier(0, 0, 0.2, 1), opacity 0.2s, border-color 0.15s ease, border-width 0.15s ease'
+    transition:
+      'transform 0.1s cubic-bezier(0, 0, 0.2, 1), opacity 0.2s, border-color 0.15s ease, border-width 0.15s ease'
   },
   // Sharp cursor style - no opacity transition
   '.cursor-sharp .cm-cursor, .cursor-line .cm-cursor': {
