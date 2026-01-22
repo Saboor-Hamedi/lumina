@@ -44,7 +44,12 @@ import {
   Sparkles,
   Layers,
   LayoutTemplate,
-  LayoutDashboard
+  LayoutDashboard,
+  ClipboardList,
+  Target,
+  ListTodo,
+  FileSearch,
+  Notebook
 } from 'lucide-react'
 import { GitBranch, Cloud, Activity, Cpu, Archive, Monitor } from 'lucide-react'
 
@@ -234,7 +239,21 @@ const getFileIcon = (title, language) => {
     'dependencies': Package,
     'modules': Box,
     'plugins': Zap,
-    'extensions': Zap
+    'extensions': Zap,
+
+    // Summaries & Outcomes
+    'summary': ClipboardList,
+    'summaries': ClipboardList,
+    'abstract': ClipboardList,
+    'goals': Target,
+    'goal': Target,
+    'objectives': Target,
+    'tasks': ListTodo,
+    'todo': ListTodo,
+    'blueprint': Notebook,
+    'plan': Notebook,
+    'research': FileSearch,
+    'study': FileSearch
   }
 
   // Check exact matches first (full filename)
@@ -271,7 +290,9 @@ const getFileIcon = (title, language) => {
     { pattern: /shopping/, icon: ShoppingBag },
     { pattern: /family/, icon: Users },
     { pattern: /friend/, icon: Users },
-    { pattern: /^ai$|artificial.?intelligence|machine.?learning|^ml$|deep.?learning/, icon: Brain },
+    { pattern: /^ai$|artificial.?intelligence|machine.?learning|^ml$|deep.?learning|xai/, icon: Brain },
+    { pattern: /learning|study|education|course/, icon: FileSearch },
+    { pattern: /dashboard|overview|console/, icon: LayoutDashboard },
     { pattern: /^gnn$|graph.?neural|neural.?network|neural/, icon: Network },
     { pattern: /^pandas$|data.?science|datascience/, icon: BarChart3 },
     { pattern: /^react$|react/i, icon: FileCode },
@@ -321,7 +342,12 @@ const getFileIcon = (title, language) => {
     { pattern: /script/, icon: Terminal },
     { pattern: /tool/, icon: Wrench },
     { pattern: /plugin/, icon: Zap },
-    { pattern: /extension/, icon: Zap }
+    { pattern: /extension/, icon: Zap },
+    { pattern: /summary|summarize|abstract/, icon: ClipboardList },
+    { pattern: /goal|objective|aim/, icon: Target },
+    { pattern: /task|todo|to-do|action-item/, icon: ListTodo },
+    { pattern: /blueprint|plan|strategy/, icon: Notebook },
+    { pattern: /research|study|exploration/, icon: FileSearch }
   ]
 
   // Check patterns on full filename first
@@ -505,8 +531,18 @@ const getIconColor = (iconType, title) => {
   }
 
   // AI & ML icons
-  if (['ai', 'artificial intelligence', 'machine learning', 'ml', 'deep learning', 'neural'].some(name => titleLower.includes(name))) {
+  if (['ai', 'artificial intelligence', 'machine learning', 'ml', 'deep learning', 'neural', 'xai'].some(name => titleLower.includes(name))) {
     return 'var(--icon-primary, var(--text-accent))'
+  }
+
+  // Learning & Education icons
+  if (['learning', 'study', 'education', 'course'].some(name => titleLower.includes(name))) {
+    return 'var(--icon-tertiary, #8b5cf6)' // Violet
+  }
+
+  // Dashboard icons
+  if (['dashboard', 'overview', 'console'].some(name => titleLower.includes(name))) {
+    return 'var(--icon-primary, #06b6d4)' // Cyan
   }
 
   // GNN & Graph Neural Networks
@@ -555,6 +591,14 @@ const getIconColor = (iconType, title) => {
   // Documentation icons
   if (['readme', 'docs', 'literature', 'thesis', 'journal'].some(name => titleLower.includes(name))) {
     return 'var(--icon-tertiary, #f59e0b)'
+  }
+
+  // Summary/Goal/Task icons
+  if (['summary', 'summarize', 'abstract', 'research', 'study'].some(name => titleLower.includes(name))) {
+    return 'var(--icon-primary, #6366f1)' // Indigo
+  }
+  if (['goal', 'objective', 'task', 'todo', 'blueprint', 'plan'].some(name => titleLower.includes(name))) {
+    return 'var(--icon-secondary, #10b981)' // Emerald
   }
 
   // Default accent color
