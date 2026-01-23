@@ -574,6 +574,9 @@ ${vaultAccessNote}`
 
         // --- Execute Stream ---
         let fullContent = ''
+        let lastUpdateTime = Date.now()
+        const UPDATE_INTERVAL = 100 // Update UI every 100ms instead of every token
+        
         try {
           const stream = provider.chatStream(finalMessages, {
             model: activeModel,
@@ -584,15 +587,30 @@ ${vaultAccessNote}`
           for await (const chunk of stream) {
             if (chunk) {
               fullContent += chunk
-              set((state) => {
-                const msgs = [...state.chatMessages]
-                if (msgs.length > 0) {
-                  msgs[msgs.length - 1].content = fullContent
-                }
-                return { chatMessages: msgs }
-              })
+              
+              // Only update state every 100ms to prevent blocking
+              const now = Date.now()
+              if (now - lastUpdateTime >= UPDATE_INTERVAL) {
+                lastUpdateTime = now
+                set((state) => {
+                  const msgs = [...state.chatMessages]
+                  if (msgs.length > 0) {
+                    msgs[msgs.length - 1].content = fullContent
+                  }
+                  return { chatMessages: msgs }
+                })
+              }
             }
           }
+          
+          // Final update to ensure we have the complete message
+          set((state) => {
+            const msgs = [...state.chatMessages]
+            if (msgs.length > 0) {
+              msgs[msgs.length - 1].content = fullContent
+            }
+            return { chatMessages: msgs }
+          })
         } finally {
           if (timeoutId) clearTimeout(timeoutId)
         }

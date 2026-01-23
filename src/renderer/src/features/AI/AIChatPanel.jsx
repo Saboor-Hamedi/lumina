@@ -207,12 +207,46 @@ const GeneratedImage = React.memo(({ imageUrl, prompt, onCopy }) => {
 GeneratedImage.displayName = 'GeneratedImage'
 
 const MessageContent = React.memo(({ content, imageUrl, imagePrompt, onCopy }) => {
+  const [debouncedContent, setDebouncedContent] = useState(content)
+  const [isStreaming, setIsStreaming] = useState(false)
+
+  // Debounce markdown rendering to prevent blocking during streaming
+  useEffect(() => {
+    setIsStreaming(true)
+    
+    const timer = setTimeout(() => {
+      // Use requestIdleCallback to render during browser idle time
+      if (typeof requestIdleCallback !== 'undefined') {
+        requestIdleCallback(() => {
+          setDebouncedContent(content)
+          setIsStreaming(false)
+        }, { timeout: 300 })
+      } else {
+        // Fallback for browsers without requestIdleCallback
+        setDebouncedContent(content)
+        setIsStreaming(false)
+      }
+    }, 200) // Increased to 200ms for better performance
+
+    return () => clearTimeout(timer)
+  }, [content])
+
   // If message has an image, render it
   if (imageUrl) {
     return <GeneratedImage imageUrl={imageUrl} prompt={imagePrompt} onCopy={onCopy} />
   }
 
-  // Otherwise render markdown content
+  // Show raw text during streaming, rendered markdown when idle
+  // This keeps the UI responsive while still showing live updates
+  if (isStreaming && content !== debouncedContent) {
+    return (
+      <div style={{ width: '100%', maxWidth: '100%', overflow: 'hidden', whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>
+        {content}
+      </div>
+    )
+  }
+
+  // Otherwise render markdown content (debounced)
   return (
     <div style={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
       <ReactMarkdown
@@ -227,10 +261,14 @@ const MessageContent = React.memo(({ content, imageUrl, imagePrompt, onCopy }) =
           )
         }}
       >
-        {content}
+        {debouncedContent}
       </ReactMarkdown>
     </div>
   )
+}, (prevProps, nextProps) => {
+  // Custom comparison: only re-render if content actually changed
+  return prevProps.content === nextProps.content && 
+         prevProps.imageUrl === nextProps.imageUrl
 })
 
 const ChatActions = ({ msg, index, onCopy, onRate }) => {
