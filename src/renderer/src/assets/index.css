@@ -1,3 +1,4 @@
+@import './mirror-mode.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -32,12 +33,12 @@
   --shadow-popup: 0 8px 24px rgba(0, 0, 0, 0.2);
 
   /* Theme Tokens */
-  --bg-app: #ffffff;
   --bg-app-rgb: 255, 255, 255;
-  --bg-sidebar: #f6f6f6;
+  --bg-app: rgb(var(--bg-app-rgb));
   --bg-sidebar-rgb: 246, 246, 246;
+  --bg-sidebar: rgb(var(--bg-sidebar-rgb));
   --bg-panel: #f2f2f2;
-  --bg-editor: #ffffff;
+  --bg-editor: var(--bg-app);
   --bg-active: rgba(0, 0, 0, 0.05);
   --bg-overlay: rgba(0, 0, 0, 0.5); /* Base overlay */
   
@@ -56,12 +57,12 @@
 }
 
 [data-theme='dark'] {
-  --bg-app: #1e1e1e;
   --bg-app-rgb: 30, 30, 30;
-  --bg-sidebar: #191919;
+  --bg-app: rgb(var(--bg-app-rgb));
   --bg-sidebar-rgb: 25, 25, 25;
+  --bg-sidebar: rgb(var(--bg-sidebar-rgb));
   --bg-panel: #111111;
-  --bg-editor: #1e1e1e;
+  --bg-editor: var(--bg-app);
   --bg-active: rgba(255, 255, 255, 0.05);
   --bg-overlay: rgba(0, 0, 0, 0.7);
 
@@ -78,12 +79,12 @@
 }
 
 [data-theme='obsidian-robust'] {
-  --bg-app: #000000;
   --bg-app-rgb: 0, 0, 0;
-  --bg-sidebar: #111111;
+  --bg-app: rgb(var(--bg-app-rgb));
   --bg-sidebar-rgb: 17, 17, 17;
+  --bg-sidebar: rgb(var(--bg-sidebar-rgb));
   --bg-panel: #0a0a0a;
-  --bg-editor: #000000;
+  --bg-editor: var(--bg-app);
   --bg-active: #1a1a1a;
   --bg-overlay: rgba(0, 0, 0, 0.85);
 
@@ -100,10 +101,12 @@
 }
 
 [data-theme='polaris'] {
-  --bg-app: #ffffff;
-  --bg-sidebar: #f8fafc;
+  --bg-app-rgb: 255, 255, 255;
+  --bg-app: rgb(var(--bg-app-rgb));
+  --bg-sidebar-rgb: 248, 250, 252;
+  --bg-sidebar: rgb(var(--bg-sidebar-rgb));
   --bg-panel: #f1f5f9;
-  --bg-editor: #ffffff;
+  --bg-editor: var(--bg-app);
   --bg-active: #e0f2fe;
   --bg-overlay: rgba(15, 23, 42, 0.4);
 

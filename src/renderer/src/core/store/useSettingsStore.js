@@ -17,6 +17,7 @@ export const useSettingsStore = create((set, get) => ({
       all: false
     },
     translucency: false,
+    mirrorMode: true, // New premium feature default
     inlineMetadata: true,
     graphTheme: 'default',
     // AI Settings - preserve these during hot reload
@@ -39,13 +40,18 @@ export const useSettingsStore = create((set, get) => ({
         // Actually, SettingsManager.get() returns all if key is null/undefined.
         const allSettings = await window.api.getSetting()
         if (allSettings) {
-          set({ settings: allSettings, isLoading: false })
+          // Merge with defaults to ensure new keys (like mirrorMode) are present
+          const mergedSettings = { ...get().settings, ...allSettings }
+          set({ settings: mergedSettings, isLoading: false })
+          
           // Apply side effects
           const root = document.documentElement
-          root.setAttribute('data-theme', allSettings.theme)
-          root.style.setProperty('--font-editor', allSettings.fontFamily)
-          root.style.setProperty('--font-size-editor', `${allSettings.fontSize}px`)
-          root.setAttribute('data-translucency', allSettings.translucency ? 'true' : 'false')
+          root.setAttribute('data-theme', mergedSettings.theme)
+          root.style.setProperty('--font-editor', mergedSettings.fontFamily)
+          root.style.setProperty('--font-size-editor', `${mergedSettings.fontSize}px`)
+          root.setAttribute('data-translucency', mergedSettings.translucency ? 'true' : 'false')
+          root.setAttribute('data-mirror-mode', mergedSettings.mirrorMode ? 'true' : 'false')
+          document.body.setAttribute('data-mirror-mode', mergedSettings.mirrorMode ? 'true' : 'false')
           // Apply window effect via IPC
           if (window.api && window.api.setTranslucency) {
             window.api.setTranslucency(allSettings.translucency)
@@ -63,6 +69,8 @@ export const useSettingsStore = create((set, get) => ({
                   root.style.setProperty('--font-size-editor', `${newSettings.fontSize}px`)
                   root.style.setProperty('--cursor-style', newSettings.cursorStyle)
                   root.setAttribute('data-translucency', newSettings.translucency ? 'true' : 'false')
+                  root.setAttribute('data-mirror-mode', newSettings.mirrorMode ? 'true' : 'false')
+                  document.body.setAttribute('data-mirror-mode', newSettings.mirrorMode ? 'true' : 'false')
                   if (window.api && window.api.setTranslucency) {
                     window.api.setTranslucency(newSettings.translucency)
                   }
@@ -90,12 +98,14 @@ export const useSettingsStore = create((set, get) => ({
               set({ settings: mergedSettings })
               // Apply side effects
               const root = document.documentElement
-              root.setAttribute('data-theme', allSettings.theme)
-              root.style.setProperty('--font-editor', allSettings.fontFamily)
-              root.style.setProperty('--font-size-editor', `${allSettings.fontSize}px`)
-              root.setAttribute('data-translucency', allSettings.translucency ? 'true' : 'false')
+              root.setAttribute('data-theme', mergedSettings.theme)
+              root.style.setProperty('--font-editor', mergedSettings.fontFamily)
+              root.style.setProperty('--font-size-editor', `${mergedSettings.fontSize}px`)
+              root.setAttribute('data-translucency', mergedSettings.translucency ? 'true' : 'false')
+              root.setAttribute('data-mirror-mode', mergedSettings.mirrorMode ? 'true' : 'false')
+              document.body.setAttribute('data-mirror-mode', mergedSettings.mirrorMode ? 'true' : 'false')
               if (window.api && window.api.setTranslucency) {
-                window.api.setTranslucency(allSettings.translucency)
+                window.api.setTranslucency(mergedSettings.translucency)
               }
               // Subscribe to IPC settings changes if available
               if (window.api && typeof window.api.onSettingsChanged === 'function') {
@@ -145,6 +155,10 @@ export const useSettingsStore = create((set, get) => ({
       if (window.api && window.api.setTranslucency) {
         window.api.setTranslucency(value)
       }
+    }
+    if (key === 'mirrorMode') {
+      root.setAttribute('data-mirror-mode', value ? 'true' : 'false')
+      document.body.setAttribute('data-mirror-mode', value ? 'true' : 'false')
     }
 
     // Persist to settings.json

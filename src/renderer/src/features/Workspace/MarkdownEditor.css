@@ -145,7 +145,8 @@
 .workspace-tabbar {
   height: 32px; /* Match sidebar section-header height */
   background: var(--bg-app);
-  border-bottom: 1px solid var(--border-dim);
+  border-bottom: none;
+
   display: flex;
   align-items: center;
   overflow-x: auto;
@@ -174,6 +175,7 @@
   padding: 0 12px;
   gap: 8px;
   border-right: 1px solid var(--border-dim);
+  border-bottom: none !important;
   background: var(--bg-sidebar);
   color: var(--text-faint);
   font-size: 11px; /* Match sidebar font size */
@@ -1070,9 +1072,7 @@
   display: none; /* Hidden by default, shown in reading mode */
 }
 
-/* Editor container */
-.cm-host-container {
-}
+
 
 .reading-preview-loading {
   padding: 4rem 2rem;

@@ -1,4 +1,4 @@
-import { Files, Search, Settings, Network, ArrowUpCircle, RefreshCw, Palette } from 'lucide-react'
+import { Files, Search, Settings, Network, ArrowUpCircle, RefreshCw, Palette, Calendar } from 'lucide-react'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { GRAPH_TAB_ID } from '../../core/store/useVaultStore'
@@ -15,7 +15,28 @@ import './ActivityBar.css'
  */
 const ActivityBar = ({ activeTab, onTabChange, onSettingsClick, onThemeClick = () => {}, onToggleSidebar, isLeftSidebarOpen }) => {
   const { status, progress, download, install } = useUpdateStore()
-  const { openGraphTab, activeTabId, closeTab } = useVaultStore()
+  const { openGraphTab, activeTabId, closeTab, snippets, saveSnippet, setSelectedSnippet } = useVaultStore()
+
+  const handleDailyNote = async () => {
+    const today = new Date().toISOString().split('T')[0]
+    const title = today
+    const existing = snippets.find(s => s.title === title || s.title === `${today}.md`)
+
+    if (existing) {
+      setSelectedSnippet(existing)
+    } else {
+      const newNote = {
+        id: crypto.randomUUID(),
+        title: title,
+        code: `# ${today}\n\n`,
+        language: 'markdown',
+        timestamp: Date.now()
+      }
+      await saveSnippet(newNote)
+      setSelectedSnippet(newNote)
+    }
+    onTabChange('files')
+  }
 
   const handleUpdateClick = () => {
     if (status === 'available') download()
@@ -82,6 +103,13 @@ const ActivityBar = ({ activeTab, onTabChange, onSettingsClick, onThemeClick = (
           title="Graph View (Opens as tab)"
         >
           <Network size={24} strokeWidth={1.5} />
+        </button>
+        <button
+          className="bar-item"
+          onClick={handleDailyNote}
+          title="Today's Note"
+        >
+          <Calendar size={24} strokeWidth={1.5} />
         </button>
       </div>
 

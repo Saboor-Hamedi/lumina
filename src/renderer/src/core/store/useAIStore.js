@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { db } from '../db/cache'
 
 export const useAIStore = create((set, get) => {
   // Initialize worker
@@ -135,22 +136,36 @@ export const useAIStore = create((set, get) => {
     chatError: null,
 
     // Initial load of sessions
-    loadSessions: () => {
+    loadSessions: async () => {
       try {
-        const saved = localStorage.getItem('lumina-chat-sessions')
-        if (saved) {
-          const parsed = JSON.parse(saved)
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            set({ sessions: parsed })
-            // Default to last active or first session
-            const lastActive = localStorage.getItem('lumina-active-session-id')
-            if (lastActive && parsed.some(s => s.id === lastActive)) {
-              get().switchSession(lastActive)
-            } else {
-              get().switchSession(parsed[0].id)
+        // 1. Try IndexedDB first (High Capacity)
+        let savedSessions = await db.chatSessions.orderBy('timestamp').reverse().toArray()
+        
+        // 2. Fallback to localStorage for migration or if DB is empty
+        if (savedSessions.length === 0) {
+          const legacy = localStorage.getItem('lumina-chat-sessions')
+          if (legacy) {
+            const parsed = JSON.parse(legacy)
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              savedSessions = parsed
+              // Migrate to IndexedDB
+              await db.chatSessions.bulkAdd(parsed)
+              localStorage.removeItem('lumina-chat-sessions')
             }
-            return
           }
+        }
+
+        if (savedSessions.length > 0) {
+          set({ sessions: savedSessions })
+          
+          // Default to last active or first session
+          const lastActive = localStorage.getItem('lumina-active-session-id')
+          if (lastActive && savedSessions.some(s => s.id === lastActive)) {
+            get().switchSession(lastActive)
+          } else {
+            get().switchSession(savedSessions[0].id)
+          }
+          return
         }
         
         // Fallback or Initial: Create first session
@@ -161,25 +176,18 @@ export const useAIStore = create((set, get) => {
           timestamp: Date.now()
         }
         set({ sessions: [firstSession], activeSessionId: firstSession.id, chatMessages: [] })
-        get().saveSessions()
+        await db.chatSessions.add(firstSession)
       } catch (e) {
         console.warn('[AIStore] Failed to load sessions:', e)
       }
     },
 
-    saveSessions: () => {
-      try {
-        const { sessions, activeSessionId } = get()
-        localStorage.setItem('lumina-chat-sessions', JSON.stringify(sessions))
-        if (activeSessionId) {
-          localStorage.setItem('lumina-active-session-id', activeSessionId)
-        }
-      } catch (e) {
-        console.warn('[AIStore] Failed to save sessions:', e)
-      }
+    saveSessions: async () => {
+      // With IndexedDB, we mainly update individual sessions, 
+      // but let's sync the list if needed.
     },
 
-    createNewSession: () => {
+    createNewSession: async () => {
       const newSession = {
         id: crypto.randomUUID(),
         title: 'New Chat',
@@ -191,7 +199,8 @@ export const useAIStore = create((set, get) => {
         activeSessionId: newSession.id,
         chatMessages: []
       }))
-      get().saveSessions()
+      await db.chatSessions.add(newSession)
+      localStorage.setItem('lumina-active-session-id', newSession.id)
     },
 
     switchSession: (sessionId) => {
@@ -207,28 +216,13 @@ export const useAIStore = create((set, get) => {
       }
     },
 
-    deleteSession: (sessionId) => {
+    deleteSession: async (sessionId) => {
       set((state) => {
         const newSessions = state.sessions.filter((s) => s.id !== sessionId)
         let nextActiveId = state.activeSessionId
 
         if (state.activeSessionId === sessionId) {
           nextActiveId = newSessions.length > 0 ? newSessions[0].id : null
-        }
-
-        // If no sessions left, create a fresh one
-        if (newSessions.length === 0) {
-          const fresh = {
-            id: crypto.randomUUID(),
-            title: 'New Chat',
-            messages: [],
-            timestamp: Date.now()
-          }
-          return {
-            sessions: [fresh],
-            activeSessionId: fresh.id,
-            chatMessages: []
-          }
         }
 
         const nextMessages = nextActiveId 
@@ -241,36 +235,47 @@ export const useAIStore = create((set, get) => {
           chatMessages: nextMessages
         }
       })
-      get().saveSessions()
+      
+      await db.chatSessions.delete(sessionId)
+
+      const { activeSessionId } = get()
+      if (activeSessionId) {
+        localStorage.setItem('lumina-active-session-id', activeSessionId)
+      } else {
+        // If no sessions left, create a fresh one
+        get().createNewSession()
+      }
     },
 
     // Update active session messages
-    saveChatHistory: () => {
-      set((state) => {
-        const { sessions, activeSessionId, chatMessages } = state
-        if (!activeSessionId) return state
+    saveChatHistory: async () => {
+      const { sessions, activeSessionId, chatMessages } = get()
+      if (!activeSessionId) return
 
-        const newSessions = sessions.map((s) => {
-          if (s.id === activeSessionId) {
-            // Generate title from first message if it's still "New Chat"
-            let title = s.title
-            if (title === 'New Chat' && chatMessages.length > 0) {
-              const firstUserMsg = chatMessages.find(m => m.role === 'user')
-              if (firstUserMsg) {
-                title = firstUserMsg.content.slice(0, 30).trim() + (firstUserMsg.content.length > 30 ? '...' : '')
-              }
+      let updatedSession = null
+      const newSessions = sessions.map((s) => {
+        if (s.id === activeSessionId) {
+          // Generate title from first message if it's still "New Chat"
+          let title = s.title
+          if (title === 'New Chat' && chatMessages.length > 0) {
+            const firstUserMsg = chatMessages.find(m => m.role === 'user')
+            if (firstUserMsg) {
+              title = firstUserMsg.content.slice(0, 30).trim() + (firstUserMsg.content.length > 30 ? '...' : '')
             }
-            return { ...s, messages: chatMessages, title, timestamp: Date.now() }
           }
-          return s
-        })
-
-        return { sessions: newSessions }
+          updatedSession = { ...s, messages: chatMessages, title, timestamp: Date.now() }
+          return updatedSession
+        }
+        return s
       })
-      get().saveSessions()
+
+      set({ sessions: newSessions })
+      if (updatedSession) {
+        await db.chatSessions.put(updatedSession)
+      }
     },
 
-    updateMessage: (index, updates) => {
+    updateMessage: async (index, updates) => {
       set((state) => {
         const newMessages = [...state.chatMessages]
         if (newMessages[index]) {
@@ -278,10 +283,10 @@ export const useAIStore = create((set, get) => {
         }
         return { chatMessages: newMessages }
       })
-      get().saveChatHistory()
+      await get().saveChatHistory()
     },
 
-    clearChat: () => {
+    clearChat: async () => {
       const { activeSessionId } = get()
       if (activeSessionId) {
         set((state) => ({
@@ -289,7 +294,7 @@ export const useAIStore = create((set, get) => {
           chatError: null,
           imageGenerationError: null
         }))
-        get().saveChatHistory()
+        await get().saveChatHistory()
       }
     },
 

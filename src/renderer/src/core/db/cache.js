@@ -6,9 +6,10 @@ import Dexie from 'dexie'
  */
 export const db = new Dexie('LuminaVault')
 
-db.version(1).stores({
-  snippets: 'id, title, timestamp', // Primary key: id
-  settings: 'key'
+db.version(2).stores({
+  snippets: 'id, title, timestamp',
+  settings: 'key',
+  chatSessions: 'id, title, timestamp' // High-capacity AI storage
 })
 
 export const cacheSnippets = async (snippets) => {

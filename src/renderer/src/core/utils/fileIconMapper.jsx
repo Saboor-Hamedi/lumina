@@ -49,7 +49,28 @@ import {
   Target,
   ListTodo,
   FileSearch,
-  Notebook
+  Notebook,
+  User,
+  GraduationCap,
+  Flag,
+  School,
+  Globe2,
+  Library,
+  Clock,
+  Calendar,
+  FileSignature,
+  Milestone,
+  Car,
+  Plane,
+  Waves,
+  Phone,
+  Bell,
+  CloudRain,
+  CloudSnow,
+  CloudLightning,
+  Sun,
+  Wind,
+  Thermometer
 } from 'lucide-react'
 import { GitBranch, Cloud, Activity, Cpu, Archive, Monitor } from 'lucide-react'
 
@@ -58,6 +79,119 @@ import { GitBranch, Cloud, Activity, Cpu, Archive, Monitor } from 'lucide-react'
  * Maps file names, patterns, and extensions to appropriate Lucide React icons
  * Used for displaying contextual icons in the sidebar file explorer
  */
+
+// --- Country Flag Emoji Support (High Performance) ---
+const COUNTRY_FLAGS = {
+  'afghanistan': '🇦🇫',
+  'america': '🇺🇸',
+  'usa': '🇺🇸',
+  'united states': '🇺🇸',
+  'uk': '🇬🇧',
+  'united kingdom': '🇬🇧',
+  'germany': '🇩🇪',
+  'france': '🇫🇷',
+  'canada': '🇨🇦',
+  'china': '🇨🇳',
+  'japan': '🇯🇵',
+  'india': '🇮🇳',
+  'brazil': '🇧🇷',
+  'italy': '🇮🇹',
+  'spain': '🇪🇸',
+  'russia': '🇷🇺',
+  'australia': '🇦🇺',
+  'mexico': '🇲🇽',
+  'pakistan': '🇵🇰',
+  'iran': '🇮🇷',
+  'turkey': '🇹🇷',
+  'egypt': '🇪🇬',
+  'south africa': '🇿🇦',
+  'nigeria': '🇳🇬',
+  'indonesia': '🇮🇩',
+  'malaysia': '🇲🇾',
+  'singapore': '🇸🇬',
+  'korea': '🇰🇷',
+  'sweden': '🇸🇪',
+  'norway': '🇳🇴',
+  'denmark': '🇩🇰',
+  'switzerland': '🇨🇭',
+  'netherlands': '🇳🇱'
+}
+
+// --- Animal Emoji Support ---
+const ANIMAL_EMOJIS = {
+  'cat': '🐱',
+  'dog': '🐶',
+  'bird': '🐦',
+  'horse': '🐴',
+  'fish': '🐟',
+  'lion': '🦁',
+  'tiger': '🐯',
+  'elephant': '🐘',
+  'bear': '🐻',
+  'wolf': '🐺',
+  'fox': '🦊',
+  'rabbit': '🐰',
+  'mouse': '🐭',
+  'owl': '🦉',
+  'eagle': '🦅',
+  'shark': '🦈',
+  'whale': '🐳',
+  'dolphin': '🐬',
+  'bee': '🐝',
+  'ant': '🐜',
+  'spider': '🕷️',
+  'butterfly': '🦋',
+  'monkey': '🐵',
+  'snake': '🐍',
+  'dragon': '🐉',
+  'turtle': '🐢',
+  'frog': '🐸',
+  'penguin': '🐧',
+  'panda': '🐼',
+  'octopus': '🐙',
+  'monkey': '🐒',
+  'gorilla': '🦍',
+  'chicken': '🐔'
+}
+
+// --- Transport & Nature Emojis ---
+const EXTRA_EMOJIS = {
+  'ocean': '🌊',
+  'waves': '🌊',
+  'mountain': '⛰️',
+  'sun': '☀️',
+  'moon': '🌙',
+  'star': '⭐️',
+  'car': '🚗',
+  'cars': '🚗',
+  'plane': '✈️',
+  'airplane': '✈️',
+  'aeroplane': '✈️',
+  'phone': '📱',
+  'call': '📞',
+  'ring': '🔔',
+  'rain': '🌧️',
+  'snow': '❄️',
+  'storm': '⚡️'
+}
+
+const EmojiIcon = (emoji) => ({ size, className, style }) => (
+  <span 
+    className={className} 
+    style={{ 
+      ...style, 
+      fontSize: size, 
+      display: 'inline-flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      lineHeight: 1,
+      width: size,
+      height: size
+    }}
+  >
+    {emoji}
+  </span>
+)
 
 const getFileIcon = (title, language) => {
   const titleLower = (title || '').toLowerCase().trim()
@@ -253,8 +387,46 @@ const getFileIcon = (title, language) => {
     'blueprint': Notebook,
     'plan': Notebook,
     'research': FileSearch,
-    'study': FileSearch
+    'study': FileSearch,
+    'personal': User,
+    'personal.md': User,
+    'university': GraduationCap,
+    'university.md': GraduationCap,
+    'college': GraduationCap,
+    'school': School,
+    'library': Library,
+    'flag': Flag,
+    'country': Globe2,
+    'when': Clock,
+    'when.md': Clock,
+    
+    // Proposal & Purpose
+    'proposal': FileSignature,
+    'proposals': FileSignature,
+    'purpose': Milestone,
+    'purposes': Milestone,
+
+    // Transport & Weather
+    'car': Car,
+    'cars': Car,
+    'plane': Plane,
+    'airplane': Plane,
+    'aeroplane': Plane,
+    'ocean': Waves,
+    'phone': Phone,
+    'call': Phone,
+    'ring': Bell,
+    'rain': CloudRain,
+    'snow': CloudSnow,
+    'storm': CloudLightning,
+    'weather': Sun
   }
+
+  // Check emoji exact matches first
+  const emojiKey = titleLower
+  if (COUNTRY_FLAGS[emojiKey]) return EmojiIcon(COUNTRY_FLAGS[emojiKey])
+  if (ANIMAL_EMOJIS[emojiKey]) return EmojiIcon(ANIMAL_EMOJIS[emojiKey])
+  if (EXTRA_EMOJIS[emojiKey]) return EmojiIcon(EXTRA_EMOJIS[emojiKey])
 
   // Check exact matches first (full filename)
   if (exactMatches[titleLower]) {
@@ -263,9 +435,14 @@ const getFileIcon = (title, language) => {
   }
 
   // Check base name (without .md extension) for exact matches
-  if (baseName !== titleLower && exactMatches[baseName]) {
-    const Icon = exactMatches[baseName]
-    return Icon
+  if (baseName !== titleLower) {
+    if (COUNTRY_FLAGS[baseName]) return EmojiIcon(COUNTRY_FLAGS[baseName])
+    if (ANIMAL_EMOJIS[baseName]) return EmojiIcon(ANIMAL_EMOJIS[baseName])
+    if (EXTRA_EMOJIS[baseName]) return EmojiIcon(EXTRA_EMOJIS[baseName])
+    if (exactMatches[baseName]) {
+      const Icon = exactMatches[baseName]
+      return Icon
+    }
   }
 
   // Pattern matches (contains)
@@ -347,7 +524,30 @@ const getFileIcon = (title, language) => {
     { pattern: /goal|objective|aim/, icon: Target },
     { pattern: /task|todo|to-do|action-item/, icon: ListTodo },
     { pattern: /blueprint|plan|strategy/, icon: Notebook },
-    { pattern: /research|study|exploration/, icon: FileSearch }
+    { pattern: /research|study|exploration/, icon: FileSearch },
+    { pattern: /personal/, icon: User },
+    { pattern: /university|college|academic/, icon: GraduationCap },
+    { pattern: /school|education/, icon: School },
+    { pattern: /library|archive/, icon: Library },
+    { pattern: /flag/, icon: Flag },
+    { pattern: /country|nation|continent|world|global/, icon: Globe2 },
+    { pattern: /quick/, icon: Zap },
+    { pattern: /when|time|schedule|clock/, icon: Clock },
+    { pattern: /^\d{4}-\d{2}-\d{2}$/, icon: Calendar },
+
+    // Proposal & Purpose Patterns
+    { pattern: /proposal/, icon: FileSignature },
+    { pattern: /purpose/, icon: Milestone },
+
+    // Transport & Nature Patterns
+    { pattern: /car|vehicle|driving/, icon: Car },
+    { pattern: /plane|flight|airport|fly/, icon: Plane },
+    { pattern: /ocean|sea|waves|water/, icon: Waves },
+    { pattern: /phone|call|mobile|ring/, icon: Phone },
+    { pattern: /rain|drizzle|shower/, icon: CloudRain },
+    { pattern: /snow|ice|cold|frost/, icon: CloudSnow },
+    { pattern: /storm|thunder|lightning/, icon: CloudLightning },
+    { pattern: /weather|forecast|climate|temperature|sun/, icon: Sun }
   ]
 
   // Check patterns on full filename first
@@ -526,7 +726,7 @@ const getIconColor = (iconType, title) => {
   const titleLower = (title || '').toLowerCase()
 
   // Love/Personal icons
-  if (['saboor', 'note', 'node', 'xia'].some(name => titleLower.includes(name))) {
+  if (['saboor', 'note', 'node', 'xia', 'personal'].some(name => titleLower.includes(name))) {
     return 'var(--icon-love, var(--text-accent))'
   }
 
@@ -593,12 +793,31 @@ const getIconColor = (iconType, title) => {
     return 'var(--icon-tertiary, #f59e0b)'
   }
 
-  // Summary/Goal/Task icons
-  if (['summary', 'summarize', 'abstract', 'research', 'study'].some(name => titleLower.includes(name))) {
-    return 'var(--icon-primary, #6366f1)' // Indigo
+  // Quick & When icons
+  if (titleLower.includes('quick')) {
+    return 'var(--text-accent)' // Gold/Yellow
   }
-  if (['goal', 'objective', 'task', 'todo', 'blueprint', 'plan'].some(name => titleLower.includes(name))) {
-    return 'var(--icon-secondary, #10b981)' // Emerald
+  if (['when', 'time', 'schedule', 'clock'].some(name => titleLower.includes(name)) || /^\d{4}-\d{2}-\d{2}$/.test(titleLower)) {
+    return 'var(--icon-primary, #60a5fa)' // Blue
+  }
+
+  // Weather & Nature Colors
+  if (['sun', 'weather', 'forecast'].some(name => titleLower.includes(name))) {
+    return '#f59e0b' // Amber
+  }
+  if (['rain', 'ocean', 'sea', 'waves', 'water'].some(name => titleLower.includes(name))) {
+    return '#3b82f6' // Blue
+  }
+  if (['snow', 'ice', 'frost'].some(name => titleLower.includes(name))) {
+    return '#93c5fd' // Light Blue
+  }
+  if (['storm', 'thunder', 'lightning'].some(name => titleLower.includes(name))) {
+    return '#eab308' // Yellow
+  }
+
+  // Animal Colors (Earthy/Natural)
+  if (['animal', 'cat', 'dog', 'horse', 'bear', 'lion', 'tiger'].some(name => titleLower.includes(name))) {
+    return '#b45309' // Brownish
   }
 
   // Default accent color

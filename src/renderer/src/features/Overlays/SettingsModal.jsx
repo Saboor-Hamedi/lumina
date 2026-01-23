@@ -385,6 +385,22 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                   </div>
                   <div className="settings-row">
                     <div className="row-info">
+                      <div className="row-label">Mirror Mode</div>
+                      <div className="row-hint">
+                        Enable Glassmorphism / Reflections for sidebars and panels. Premium aesthetic.
+                      </div>
+                    </div>
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={settings.mirrorMode}
+                        onChange={(e) => updateSetting('mirrorMode', e.target.checked)}
+                      />
+                      <span className="slider round"></span>
+                    </label>
+                  </div>
+                  <div className="settings-row">
+                    <div className="row-info">
                       <div className="row-label">Full Translucency</div>
                       <div className="row-hint">
                         Enable Acrylic backdrop blur (Windows 11). Requires restart for best
