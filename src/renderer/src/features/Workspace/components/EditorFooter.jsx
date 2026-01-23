@@ -1,4 +1,5 @@
 import React from 'react'
+import { Eye } from 'lucide-react'
 
 const EditorFooter = ({ isDirty, onTogglePreview }) => {
   return (
@@ -15,7 +16,7 @@ const EditorFooter = ({ isDirty, onTogglePreview }) => {
           onClick={() => onTogglePreview && onTogglePreview()}
           title={'Open Preview Overlay'}
         >
-          Preview
+          <Eye size={16} />
         </button>
       </div>
     </div>
