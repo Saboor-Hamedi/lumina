@@ -149,7 +149,6 @@ const ANIMAL_EMOJIS = {
   'penguin': '🐧',
   'panda': '🐼',
   'octopus': '🐙',
-  'monkey': '🐒',
   'gorilla': '🦍',
   'chicken': '🐔'
 }
