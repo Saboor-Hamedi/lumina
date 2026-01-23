@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { useAIStore } from '../../core/store/useAIStore'
 import { useVaultStore } from '../../core/store/useVaultStore'
+import { getSnippetIcon } from '../../core/utils/fileIconMapper'
 import '../Layout/AppShell.css'
 import './AIChatPanel.css'
 
@@ -294,7 +295,69 @@ const AIChatPanel = React.memo(() => {
   const { selectedSnippet, snippets, openTabs } = useVaultStore()
   const [inputValue, setInputValue] = useState('')
   const [atBottom, setAtBottom] = useState(true)
+  
+  // Mention search state
+  const [mentionState, setMentionState] = useState({
+    active: false,
+    query: '',
+    cursorPos: 0,
+    results: [],
+    index: 0
+  })
+
+  // Filter snippets for mentions - OPTIMIZED
+  const mentionResults = useMemo(() => {
+    if (!mentionState.active) return []
+    const query = mentionState.query.toLowerCase()
+    
+    // Performance: If query is empty, prefer Open Tabs + Recent
+    if (!query) {
+      const openSnippetObjs = openTabs
+        .map(id => snippets.find(s => s.id === id))
+        .filter(Boolean)
+      
+      // If we have few open tabs, fill with some random/top snippets
+      if (openSnippetObjs.length < 5) {
+        const others = snippets
+          .filter(s => !openTabs.includes(s.id))
+          .slice(0, 5 - openSnippetObjs.length)
+        return [...openSnippetObjs, ...others]
+      }
+      return openSnippetObjs.slice(0, 8)
+    }
+
+    // Standard search
+    return snippets
+      .filter(s => s.title.toLowerCase().includes(query))
+      .slice(0, 8)
+  }, [mentionState.active, mentionState.query, snippets, openTabs])
+
   const textareaRef = useRef(null)
+  const backdropRef = useRef(null)
+
+  // Sync scroll for highlighter
+  const handleScroll = () => {
+    if (textareaRef.current && backdropRef.current) {
+      backdropRef.current.scrollTop = textareaRef.current.scrollTop
+    }
+  }
+
+  // Generate highlighted HTML
+  const getHighlightedText = () => {
+    if (!inputValue) return ''
+    // Split by @mentions to wrap them
+    // Note: We need to preserve whitespace EXACTLY for alignment
+    // Use a regex that captures the @mention parts
+    const parts = inputValue.split(/(@[^ \n\t]+)/g)
+    
+    return parts.map((part, i) => {
+      if (part.startsWith('@')) {
+        // Verify it looks like a valid mention pattern
+        return <span key={i} className="highlight-mention">{part}</span>
+      }
+      return <span key={i}>{part}</span>
+    })
+  }
   const virtuosoRef = useRef(null)
 
   // Load chat history on mount and ENSURE it scrolls to bottom
@@ -486,13 +549,77 @@ const AIChatPanel = React.memo(() => {
 
   const handleKeyDown = useCallback(
     (e) => {
+      // Handle mention navigation
+      if (mentionState.active && mentionResults.length > 0) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault()
+          setMentionState(s => ({ ...s, index: (s.index + 1) % mentionResults.length }))
+          return
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault()
+          setMentionState(s => ({ ...s, index: (s.index - 1 + mentionResults.length) % mentionResults.length }))
+          return
+        }
+        if (e.key === 'Enter' || e.key === 'Tab') {
+          e.preventDefault()
+          insertMention(mentionResults[mentionState.index])
+          return
+        }
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          setMentionState(s => ({ ...s, active: false }))
+          return
+        }
+      }
+
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault()
         handleSend()
       }
     },
-    [handleSend]
+    [handleSend, mentionState.active, mentionResults, mentionState.index]
   )
+
+  const insertMention = (snippet) => {
+    const before = inputValue.slice(0, mentionState.cursorPos - mentionState.query.length - 1)
+    const after = inputValue.slice(mentionState.cursorPos)
+    const newValue = `${before}@${snippet.title.replace(/\s+/g, '')} ${after}`
+    setInputValue(newValue)
+    setMentionState({ active: false, query: '', cursorPos: 0, results: [], index: 0 })
+    
+    // Focus back and adjust height
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus()
+        adjustTextareaHeight()
+      }
+    }, 0)
+  }
+
+  const handleInputChange = (e) => {
+    const value = e.target.value
+    const pos = e.target.selectionStart
+    setInputValue(value)
+
+    // Check for @ mention
+    const textBeforeCursor = value.slice(0, pos)
+    const mentionMatch = textBeforeCursor.match(/@([^ \n\t]*)$/)
+
+    if (mentionMatch) {
+      setMentionState({
+        active: true,
+        query: mentionMatch[1],
+        cursorPos: pos,
+        results: [],
+        index: 0
+      })
+    } else {
+      setMentionState(s => s.active ? { ...s, active: false } : s)
+    }
+    
+    adjustTextareaHeight()
+  }
 
   return (
     <div className="chat-container">
@@ -722,24 +849,48 @@ const AIChatPanel = React.memo(() => {
       </div>
 
       <div className="chat-input-area">
+        {mentionState.active && mentionResults.length > 0 && (
+          <div className="chat-mention-list">
+            {mentionResults.map((s, i) => (
+              <div 
+                key={s.id} 
+                className={`mention-item ${mentionState.index === i ? 'active' : ''}`}
+                onClick={() => insertMention(s)}
+              >
+                {getSnippetIcon(s, 14)}
+                <span>{s.title}</span>
+              </div>
+            ))}
+          </div>
+        )}
         <div className="chat-input-wrapper">
-          <textarea
-            ref={textareaRef}
-            className="chat-input-textarea"
-            value={inputValue}
-            onChange={(e) => {
-              setInputValue(e.target.value)
-              adjustTextareaHeight()
-            }}
-            onKeyDown={handleKeyDown}
-            disabled={isChatLoading || isImageGenerating}
-            rows={1}
-            placeholder={
-              isImageGenerating
-                ? 'Generating image...'
-                : 'Type a message or "draw [description]" to generate images...'
-            }
-          />
+          <div className="chat-textarea-container">
+            <div 
+              ref={backdropRef}
+              className="chat-input-backdrop" 
+              aria-hidden="true"
+            >
+              {getHighlightedText()}
+              <span style={{ visibility: 'hidden' }}>.</span>
+            </div>
+            <textarea
+              ref={textareaRef}
+              className="chat-input-textarea"
+              value={inputValue}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              onScroll={handleScroll}
+              disabled={isChatLoading || isImageGenerating}
+              autoComplete="off"
+              spellCheck="false"
+              rows={1}
+              placeholder={
+                isImageGenerating
+                  ? 'Generating image...'
+                  : 'Type a message or "draw [description]" to generate images...'
+              }
+            />
+          </div>
           <button
             className="chat-send-button"
             onClick={
