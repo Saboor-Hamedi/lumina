@@ -23,7 +23,14 @@ export const useSettingsStore = create((set, get) => ({
     // AI Settings - preserve these during hot reload
     deepSeekKey: null,
     deepSeekModel: 'deepseek-chat',
-    huggingFaceKey: null
+    huggingFaceKey: null,
+    
+    // New Multi-Provider Support
+    activeProvider: 'deepseek', // 'deepseek', 'openai', 'anthropic', 'ollama'
+    activeModel: null, // If null, provider uses its default
+    openaiKey: null,
+    anthropicKey: null,
+    ollamaUrl: 'http://localhost:11434/api/chat'
   },
 
   isLoading: true,
@@ -40,11 +47,15 @@ export const useSettingsStore = create((set, get) => ({
         // Actually, SettingsManager.get() returns all if key is null/undefined.
         const allSettings = await window.api.getSetting()
         if (allSettings) {
-          // Merge with defaults to ensure new keys (like mirrorMode) are present
-          const mergedSettings = { ...get().settings, ...allSettings }
+          // Merge with defaults to ensure new keys are present
+          const currentSettings = get().settings
+          // Deep merge or spread is fine for flat settings. Spread prioritizes 'allSettings' (persisted).
+          // But we want to ensure keys present in 'currentSettings' (defaults) but missing in 'allSettings' are kept.
+          const mergedSettings = { ...currentSettings, ...allSettings }
+          
           set({ settings: mergedSettings, isLoading: false })
           
-          // Apply side effects
+          // Apply side effects using merged settings
           const root = document.documentElement
           root.setAttribute('data-theme', mergedSettings.theme)
           root.style.setProperty('--font-editor', mergedSettings.fontFamily)
@@ -54,7 +65,7 @@ export const useSettingsStore = create((set, get) => ({
           document.body.setAttribute('data-mirror-mode', mergedSettings.mirrorMode ? 'true' : 'false')
           // Apply window effect via IPC
           if (window.api && window.api.setTranslucency) {
-            window.api.setTranslucency(allSettings.translucency)
+            window.api.setTranslucency(mergedSettings.translucency)
           }
           // Subscribe to external changes via IPC (main process watcher)
           if (window.api && typeof window.api.onSettingsChanged === 'function') {
@@ -62,17 +73,21 @@ export const useSettingsStore = create((set, get) => ({
             if (!get().settingsWatcherUnsubscribe) {
               const unsub = window.api.onSettingsChanged((newSettings) => {
                 try {
-                  set({ settings: newSettings })
+                  // When external update comes, merge it too
+                  const active = get().settings
+                  const updatedParams = { ...active, ...newSettings }
+                  set({ settings: updatedParams })
+                  
                   const root = document.documentElement
-                  root.setAttribute('data-theme', newSettings.theme)
-                  root.style.setProperty('--font-editor', newSettings.fontFamily)
-                  root.style.setProperty('--font-size-editor', `${newSettings.fontSize}px`)
-                  root.style.setProperty('--cursor-style', newSettings.cursorStyle)
-                  root.setAttribute('data-translucency', newSettings.translucency ? 'true' : 'false')
-                  root.setAttribute('data-mirror-mode', newSettings.mirrorMode ? 'true' : 'false')
-                  document.body.setAttribute('data-mirror-mode', newSettings.mirrorMode ? 'true' : 'false')
+                  root.setAttribute('data-theme', updatedParams.theme)
+                  root.style.setProperty('--font-editor', updatedParams.fontFamily)
+                  root.style.setProperty('--font-size-editor', `${updatedParams.fontSize}px`)
+                  root.style.setProperty('--cursor-style', updatedParams.cursorStyle)
+                  root.setAttribute('data-translucency', updatedParams.translucency ? 'true' : 'false')
+                  root.setAttribute('data-mirror-mode', updatedParams.mirrorMode ? 'true' : 'false')
+                  document.body.setAttribute('data-mirror-mode', updatedParams.mirrorMode ? 'true' : 'false')
                   if (window.api && window.api.setTranslucency) {
-                    window.api.setTranslucency(newSettings.translucency)
+                    window.api.setTranslucency(updatedParams.translucency)
                   }
                 } catch (err) {
                   console.error('[useSettingsStore] Error applying external settings:', err)

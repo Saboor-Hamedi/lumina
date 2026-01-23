@@ -11,6 +11,11 @@ files:
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
 asarUnpack:
   - resources/**
+extraResources:
+  - from: resources
+    to: .
+    filter:
+      - "**/*"
 win:
   icon: build/icon.ico
   executableName: Lumina

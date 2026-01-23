@@ -6,11 +6,13 @@ import { createPortal } from 'react-dom'
 import { 
   Copy, ThumbsUp, ThumbsDown, Check, Send, 
   Square, Download, Maximize2, X as CloseIcon,
-  Plus, Trash2, History, MessageSquare, ChevronLeft, ChevronRight
+  Plus, Trash2, History, MessageSquare, ChevronLeft, ChevronRight,
+  Sparkles
 } from 'lucide-react'
 import { useAIStore } from '../../core/store/useAIStore'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { getSnippetIcon } from '../../core/utils/fileIconMapper'
+import { Composer } from './Composer'
 import '../Layout/AppShell.css'
 import './AIChatPanel.css'
 
@@ -547,39 +549,46 @@ const AIChatPanel = React.memo(() => {
     chatMessages.length
   ])
 
-  const handleKeyDown = useCallback(
-    (e) => {
-      // Handle mention navigation
-      if (mentionState.active && mentionResults.length > 0) {
-        if (e.key === 'ArrowDown') {
-          e.preventDefault()
-          setMentionState(s => ({ ...s, index: (s.index + 1) % mentionResults.length }))
-          return
-        }
-        if (e.key === 'ArrowUp') {
-          e.preventDefault()
-          setMentionState(s => ({ ...s, index: (s.index - 1 + mentionResults.length) % mentionResults.length }))
-          return
-        }
-        if (e.key === 'Enter' || e.key === 'Tab') {
-          e.preventDefault()
-          insertMention(mentionResults[mentionState.index])
-          return
-        }
-        if (e.key === 'Escape') {
-          e.preventDefault()
-          setMentionState(s => ({ ...s, active: false }))
-          return
-        }
-      }
+  // Handle input logic is now in Composer
+  // We keep essential callbacks here
+  // Handle input logic is now in Composer
+  // We keep essential callbacks here
+  const handleSendMessage = useCallback(async (text, mode = 'Standard') => {
+    // 0. Base validation
+    if ((!text || !text.trim()) && !text.startsWith('/image') && !text.startsWith('/img')) return
 
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault()
-        handleSend()
+    // 1. Check for Image Generation Command IMMEDIATELY (before mode injection)
+    // Supports "/image <prompt>" or "/img <prompt>"
+    if (text.startsWith('/image ') || text.startsWith('/img ')) {
+      const prompt = text.replace(/^\/(image|img)\s+/, '')
+      try {
+        await generateImage(prompt)
+      } catch (err) {
+        // Error handled in store
       }
-    },
-    [handleSend, mentionState.active, mentionResults, mentionState.index]
-  )
+      return // Stop processing text chat
+    }
+
+    // 2. Apply Mode Instructions (Text Chat Only)
+    let finalMessage = text
+    let systemInstruction = ''
+    
+    if (mode === 'Fast') systemInstruction = '[System: Be extremely concise and direct.]\n'
+    if (mode === 'Thinking') systemInstruction = '[System: Think step-by-step. Show your reasoning.]\n'
+    if (mode === 'Creative') systemInstruction = '[System: Be creative, use metaphors and vibrant language.]\n'
+    if (mode === 'Coder') systemInstruction = '[System: You are a Senior Engineer. Output robust, production-ready code.]\n'
+
+    // Prepend instructions if needed
+    if (mode !== 'Standard') {
+       finalMessage = systemInstruction + finalMessage
+    }
+
+    try {
+      await sendChatMessage(finalMessage, [])
+    } catch (err) {
+      console.error('Failed to send:', err)
+    }
+  }, [sendChatMessage, generateImage])
 
   const insertMention = (snippet) => {
     const before = inputValue.slice(0, mentionState.cursorPos - mentionState.query.length - 1)
@@ -750,13 +759,20 @@ const AIChatPanel = React.memo(() => {
                       style={{ maxWidth: '100%', width: '100%' }}
                     >
                       {msg.role === 'assistant' &&
-                      !msg.content &&
-                      !msg.imageUrl &&
-                      isChatLoading ? (
+                      (!msg.content && !msg.imageUrl) &&
+                      (isChatLoading || msg.isGenerating) ? (
                         <div className="typing-inline">
-                          <span></span>
-                          <span></span>
-                          <span></span>
+                          {msg.isGenerating ? (
+                             <span style={{ fontSize: '12px', color: 'var(--text-faint)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                               <Sparkles size={12} className="spin" /> Generating Image...
+                             </span>
+                          ) : (
+                            <>
+                              <span></span>
+                              <span></span>
+                              <span></span>
+                            </>
+                          )}
                         </div>
                       ) : (
                         <MessageContent
@@ -848,93 +864,15 @@ const AIChatPanel = React.memo(() => {
         )}
       </div>
 
-      <div className="chat-input-area">
-        {mentionState.active && mentionResults.length > 0 && (
-          <div className="chat-mention-list">
-            {mentionResults.map((s, i) => (
-              <div 
-                key={s.id} 
-                className={`mention-item ${mentionState.index === i ? 'active' : ''}`}
-                onClick={() => insertMention(s)}
-              >
-                {getSnippetIcon(s, 14)}
-                <span>{s.title}</span>
-              </div>
-            ))}
-          </div>
-        )}
-        <div className="chat-input-wrapper">
-          <div className="chat-textarea-container">
-            <div 
-              ref={backdropRef}
-              className="chat-input-backdrop" 
-              aria-hidden="true"
-            >
-              {getHighlightedText()}
-              <span style={{ visibility: 'hidden' }}>.</span>
-            </div>
-            <textarea
-              ref={textareaRef}
-              className="chat-input-textarea"
-              value={inputValue}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              onScroll={handleScroll}
-              disabled={isChatLoading || isImageGenerating}
-              autoComplete="off"
-              spellCheck="false"
-              rows={1}
-              placeholder={
-                isImageGenerating
-                  ? 'Generating image...'
-                  : 'Type a message or "draw [description]" to generate images...'
-              }
-            />
-          </div>
-          <button
-            className="chat-send-button"
-            onClick={
-              isChatLoading || isImageGenerating
-                ? isChatLoading
-                  ? cancelChat
-                  : cancelImageGeneration
-                : handleSend
-            }
-            disabled={!inputValue.trim() && !(isChatLoading || isImageGenerating)}
-            title={isChatLoading || isImageGenerating ? 'Stop generation' : 'Send message (Enter)'}
-          >
-            <div style={{ position: 'relative', width: '16px', height: '16px' }}>
-              {isChatLoading || isImageGenerating ? (
-                <>
-                  <div
-                    className="chat-loading-spinner"
-                    style={{
-                      width: '16px',
-                      height: '16px',
-                      border: '2px solid currentColor',
-                      borderTopColor: 'transparent',
-                      borderRadius: '50%',
-                      animation: 'spin 0.6s linear infinite'
-                    }}
-                  />
-                  <Square
-                    size={8}
-                    style={{
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      color: 'currentColor',
-                      opacity: 0.8
-                    }}
-                  />
-                </>
-              ) : (
-                <Send size={16} />
-              )}
-            </div>
-          </button>
-        </div>
+      <div className="chat-input-area" style={{ padding: 0, background: 'transparent', border: 'none' }}>
+         <Composer 
+            onSend={handleSendMessage} 
+            isLoading={isChatLoading || isImageGenerating}
+            onCancel={() => {
+              if (isChatLoading) cancelChat()
+              if (isImageGenerating) cancelImageGeneration()
+            }}
+         />
       </div>
     </div>
   </div>

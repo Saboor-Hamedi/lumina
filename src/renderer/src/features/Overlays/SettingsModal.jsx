@@ -138,51 +138,131 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
             {activeTab === 'ai' && (
               <div className="settings-pane">
                 <section>
-                  <h3>DeepSeek Integration</h3>
+                  <h3>Active Intelligence Provider</h3>
                   <div className="settings-row">
                     <div className="row-info">
-                      <div className="row-label">API Key</div>
+                      <div className="row-label">Primary AI Brain</div>
                       <div className="row-hint">
-                        Enter your DeepSeek API key (starts with sk-...).
-                      </div>
-                    </div>
-                    <input
-                      type="password"
-                      className="settings-select"
-                      style={{ width: '240px' }}
-                      value={settings.deepSeekKey || ''}
-                      onChange={(e) => {
-                        const value = e.target.value.trim()
-                        // Only save if non-empty, otherwise save null to clear it
-                        updateSetting('deepSeekKey', value || null)
-                      }}
-                      onBlur={(e) => {
-                        // Ensure trimmed value on blur
-                        const value = e.target.value.trim()
-                        if (value !== (settings.deepSeekKey || '')) {
-                          updateSetting('deepSeekKey', value || null)
-                        }
-                      }}
-                      placeholder="sk-..."
-                    />
-                  </div>
-                  <div className="settings-row">
-                    <div className="row-info">
-                      <div className="row-label">Model</div>
-                      <div className="row-hint">
-                        Select the model to use for chat and generation.
+                        Choose which model powers chat and smart features.
                       </div>
                     </div>
                     <select
-                      value={settings.deepSeekModel || 'deepseek-chat'}
-                      onChange={(e) => updateSetting('deepSeekModel', e.target.value)}
+                      value={settings.activeProvider || 'deepseek'}
+                      onChange={(e) => updateSetting('activeProvider', e.target.value)}
                       className="settings-select"
                     >
-                      <option value="deepseek-chat">DeepSeek Chat (V3)</option>
-                      <option value="deepseek-coder">DeepSeek Coder</option>
+                      <option value="deepseek">DeepSeek (Default)</option>
+                      <option value="openai">OpenAI (GPT-4o)</option>
+                      <option value="anthropic">Anthropic (Claude 3.5)</option>
+                      <option value="ollama">Ollama (Local / Offline)</option>
                     </select>
                   </div>
                 </section>
+
+                {/* DeepSeek Configuration */}
+                {(settings.activeProvider === 'deepseek' || !settings.activeProvider) && (
+                  <section style={{ marginTop: '24px', animation: 'fadeIn 0.3s' }}>
+                    <h3>DeepSeek Configuration</h3>
+                    <div className="settings-row">
+                      <div className="row-info">
+                        <div className="row-label">API Key</div>
+                        <div className="row-hint">
+                          Enter your DeepSeek API key (starts with sk-...).
+                        </div>
+                      </div>
+                      <input
+                        type="password"
+                        className="settings-select"
+                        style={{ width: '240px' }}
+                        value={settings.deepSeekKey || ''}
+                        onChange={(e) => updateSetting('deepSeekKey', e.target.value.trim() || null)}
+                        placeholder="sk-..."
+                      />
+                    </div>
+                    <div className="settings-row">
+                      <div className="row-info">
+                        <div className="row-label">Model</div>
+                      </div>
+                      <select
+                        value={settings.deepSeekModel || 'deepseek-chat'}
+                        onChange={(e) => updateSetting('deepSeekModel', e.target.value)}
+                        className="settings-select"
+                      >
+                        <option value="deepseek-chat">DeepSeek Chat (V3)</option>
+                        <option value="deepseek-reasoner">DeepSeek Reasoner (R1)</option>
+                      </select>
+                    </div>
+                  </section>
+                )}
+
+                {/* OpenAI Configuration */}
+                {settings.activeProvider === 'openai' && (
+                  <section style={{ marginTop: '24px', animation: 'fadeIn 0.3s' }}>
+                    <h3>OpenAI Configuration</h3>
+                    <div className="settings-row">
+                      <div className="row-info">
+                        <div className="row-label">API Key</div>
+                        <div className="row-hint">
+                          Requires GPT-4o access (starts with sk-...).
+                        </div>
+                      </div>
+                      <input
+                        type="password"
+                        className="settings-select"
+                        style={{ width: '240px' }}
+                        value={settings.openaiKey || ''}
+                        onChange={(e) => updateSetting('openaiKey', e.target.value.trim() || null)}
+                        placeholder="sk-..."
+                      />
+                    </div>
+                  </section>
+                )}
+
+                {/* Anthropic Configuration */}
+                {settings.activeProvider === 'anthropic' && (
+                  <section style={{ marginTop: '24px', animation: 'fadeIn 0.3s' }}>
+                    <h3>Anthropic Configuration</h3>
+                    <div className="settings-row">
+                      <div className="row-info">
+                        <div className="row-label">API Key</div>
+                        <div className="row-hint">
+                          Claude 3.5 Sonnet key (starts with sk-ant-...).
+                        </div>
+                      </div>
+                      <input
+                        type="password"
+                        className="settings-select"
+                        style={{ width: '240px' }}
+                        value={settings.anthropicKey || ''}
+                        onChange={(e) => updateSetting('anthropicKey', e.target.value.trim() || null)}
+                        placeholder="sk-ant-..."
+                      />
+                    </div>
+                  </section>
+                )}
+
+                {/* Ollama Configuration */}
+                {settings.activeProvider === 'ollama' && (
+                  <section style={{ marginTop: '24px', animation: 'fadeIn 0.3s' }}>
+                    <h3>Ollama Local AI</h3>
+                    <div className="settings-row">
+                      <div className="row-info">
+                        <div className="row-label">Server URL</div>
+                        <div className="row-hint">
+                          Default is http://localhost:11434/api/chat
+                        </div>
+                      </div>
+                      <input
+                        type="text"
+                        className="settings-select"
+                        style={{ width: '240px' }}
+                        value={settings.ollamaUrl || 'http://localhost:11434/api/chat'}
+                        onChange={(e) => updateSetting('ollamaUrl', e.target.value.trim())}
+                        placeholder="http://localhost:11434..."
+                      />
+                    </div>
+                  </section>
+                )}
 
                 <section style={{ marginTop: '32px' }}>
                   <h3>Image Generation (Hugging Face)</h3>
@@ -190,7 +270,7 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                     <div className="row-info">
                       <div className="row-label">API Key</div>
                       <div className="row-hint">
-                        Enter your Hugging Face API key (starts with hf_...). Optional but recommended for better reliability.
+                        Required for image generation commands.
                       </div>
                     </div>
                     <input
@@ -198,30 +278,19 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                       className="settings-select"
                       style={{ width: '240px' }}
                       value={settings.huggingFaceKey || ''}
-                      onChange={(e) => {
-                        const value = e.target.value.trim()
-                        // Only save if non-empty, otherwise save null to clear it
-                        updateSetting('huggingFaceKey', value || null)
-                      }}
-                      onBlur={(e) => {
-                        // Ensure trimmed value on blur
-                        const value = e.target.value.trim()
-                        if (value !== (settings.huggingFaceKey || '')) {
-                          updateSetting('huggingFaceKey', value || null)
-                        }
-                      }}
+                      onChange={(e) => updateSetting('huggingFaceKey', e.target.value.trim() || null)}
                       placeholder="hf_..."
                     />
                   </div>
                 </section>
 
                 <section>
-                  <h3>Local Intelligence (Offline)</h3>
+                  <h3>Local Features</h3>
                   <div className="settings-row">
                     <div className="row-info">
-                      <div className="row-label">Context Indexing</div>
+                      <div className="row-label">Semantic Indexing</div>
                       <div className="row-hint">
-                        Automatically index notes for semantic search (RAG).
+                        Enable RAG context for current provider.
                       </div>
                     </div>
                     <label className="switch">

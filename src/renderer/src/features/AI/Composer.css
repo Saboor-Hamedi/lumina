@@ -1,0 +1,162 @@
+/* 
+ * Composer.css
+ * Premium "Cockpit" Style Input Area for Lumina AI
+ */
+
+.composer-container {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border-dim);
+  padding: 12px;
+  gap: 8px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+[data-mirror-mode='true'] .composer-container {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 1. Control Bar (Top) */
+.composer-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.model-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--bg-active);
+  padding: 4px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+}
+
+.model-selector:hover {
+  background: var(--bg-selection);
+  color: var(--text-accent);
+  border-color: var(--text-accent);
+}
+
+.composer-modes {
+  display: flex;
+  gap: 4px;
+}
+
+.mode-toggle {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: all 0.15s;
+  background: transparent;
+  border: none;
+}
+
+.mode-toggle:hover {
+  color: var(--text-main);
+  background: var(--bg-active);
+}
+
+.mode-toggle.active {
+  color: var(--text-accent);
+  background: rgba(var(--text-accent-rgb), 0.15);
+}
+
+/* 2. Input Area (Center) */
+.composer-input-wrapper {
+  position: relative;
+  background: var(--bg-app);
+  border: 1px solid var(--border-dim);
+  border-radius: 8px;
+  padding: 8px;
+  transition: border-color 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+
+.composer-input-wrapper:focus-within {
+  border-color: var(--text-accent);
+  box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb), 0.1);
+}
+
+[data-mirror-mode='true'] .composer-input-wrapper {
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.composer-textarea {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-main);
+  font-family: var(--font-editor, 'Inter');
+  font-size: 13px;
+  line-height: 1.5;
+  resize: none;
+  min-height: 48px;
+  max-height: 200px;
+  outline: none;
+  padding: 0;
+}
+
+.composer-textarea::placeholder {
+  color: var(--text-faint);
+  opacity: 0.7;
+}
+
+/* 3. Footer Actions (Bottom) */
+.composer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.token-count {
+  font-size: 10px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.send-btn {
+  background: var(--text-accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.send-btn:hover {
+  background: var(--text-accent-hover);
+  transform: translateY(-1px);
+}
+
+.send-btn:disabled {
+  background: var(--text-muted);
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}

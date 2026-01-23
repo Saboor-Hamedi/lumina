@@ -245,9 +245,17 @@ const AppShell = () => {
     }
     window.addEventListener('open-details-modal', handleOpenDetailsModal)
 
+    // Listen for AI settings shortcut from Composer
+    const handleOpenAISettings = () => {
+      setSettingsInitialTab('ai')
+      setShowSettings(true)
+    }
+    window.addEventListener('open-ai-settings', handleOpenAISettings)
+
     return () => {
       unsub && unsub()
       window.removeEventListener('open-details-modal', handleOpenDetailsModal)
+      window.removeEventListener('open-ai-settings', handleOpenAISettings)
     }
   }, [])
 

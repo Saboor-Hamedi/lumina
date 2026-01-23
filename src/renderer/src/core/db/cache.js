@@ -4,12 +4,33 @@ import Dexie from 'dexie'
  * Lumina Metadata Cache (IndexedDB Standard #10)
  * High-performance browser database for instant catalog indexing.
  */
-export const db = new Dexie('LuminaVault')
+// Renamed to v2 to bypass stuck schema locks on original DB
+export const db = new Dexie('LuminaVault_v2')
 
+// Self-healing: Delete DB if version error occurs on open
+db.on('versionchange', function(event) {
+  event.target.close(); // Close db to allow other tab to upgrade
+});
+
+
+// Version 1: Initial schema
+db.version(1).stores({
+  snippets: 'id, title, timestamp',
+  settings: 'key'
+})
+
+// Version 2: Added chatSessions (schema upgrade)
 db.version(2).stores({
   snippets: 'id, title, timestamp',
   settings: 'key',
-  chatSessions: 'id, title, timestamp' // High-capacity AI storage
+  chatSessions: 'id, title, timestamp'
+})
+
+// Version 3: Ensure consistency
+db.version(3).stores({
+  snippets: 'id, title, timestamp',
+  settings: 'key',
+  chatSessions: 'id, title, timestamp'
 })
 
 export const cacheSnippets = async (snippets) => {
@@ -34,10 +55,11 @@ export const cacheSnippets = async (snippets) => {
 
     await db.snippets.bulkPut(cacheData)
   } catch (err) {
-    console.error('Cache failed:', err)
-    // Log individual failures for debugging
-    if (err.failures) {
-      console.error('Failed items:', err.failures)
+    console.error('Cache failed:', err.message || err)
+    if (err.name === 'DexieError' || err.name === 'VersionError') {
+       console.warn('Database v2 corruption detected. Resetting...')
+       await Dexie.delete('LuminaVault_v2')
+       window.location.reload()
     }
   }
 }

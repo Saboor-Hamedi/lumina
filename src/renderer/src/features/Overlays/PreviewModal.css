@@ -15,12 +15,15 @@
   max-width: 1200px;
   background: var(--bg-app);
   border: 1px solid var(--border-subtle);
-  border-radius: 0; /* Make flat like main app header */
+  border-radius: 0;
   box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   animation: slideUpScale 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  
+  /* Override global header height for this modal - all icons will match this */
+  --header-height: 32px;
 }
 
 @keyframes slideUpScale {
@@ -59,15 +62,18 @@
   padding: 0;
   border-radius: 0;
   border: none;
+  height: 100%;
 }
 
 .preview-stat-item {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-muted);
   font-weight: 500;
+  height: 100%;
+  
 }
 
 .preview-stat-sep {
@@ -77,8 +83,8 @@
 }
 
 .preview-action-btn {
-  width: var(--header-height, 32px);
-  height: var(--header-height, 32px);
+  width: var(--header-height, 28px);
+  height: var(--header-height, 28px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -90,6 +96,8 @@
   border-radius: 0;
   transition: background 0.08s ease;
 }
+  
+
 
 .preview-action-btn:hover {
   background: var(--bg-active);
@@ -98,8 +106,10 @@
 
 /* Ensure preview modal header matches AI modal header */
 .preview-container .pane-header.modal-header-with-knob {
-  position: relative; /* Required for absolute positioning of modal-right */
+  position: relative;
   height: var(--header-height, 32px);
+  min-height: var(--header-height, 32px);  /* ← Add this to prevent expansion */
+  max-height: var(--header-height, 32px);  /* ← Add this to lock the height */
   padding: 0 12px;
   background: var(--bg-sidebar);
   border-bottom: 1px solid var(--border-dim);
@@ -113,7 +123,7 @@
   position: absolute;
   right: 0;
   top: 0;
-  height: var(--header-height, 32px);
+  /* height: var(--header-height, 32px); */
   display: flex;
   align-items: center;
   gap: 8px;
@@ -126,12 +136,13 @@
   gap: 12px;
   position: relative;
   z-index: 2;
+
 }
 
 /* Style close button for preview modal */
 .preview-container .modal-close.modal-close-top {
-  width: var(--header-height, 32px);
-  height: var(--header-height, 32px);
+  width: var(--header-height, 28px);
+  height: var(--header-height, 28px);
   display: flex;
   align-items: center;
   justify-content: center;

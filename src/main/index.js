@@ -38,9 +38,25 @@ async function migrateFromSQLite() {
 }
 
 async function createWindow() {
-  const iconPath = app.isPackaged
-    ? join(process.resourcesPath, 'icon.ico')
-    : join(app.getAppPath(), 'resources', 'icon.ico')
+  let iconPath
+  if (app.isPackaged) {
+    iconPath = join(process.resourcesPath, 'icon.ico')
+  } else {
+    // In dev, icon is in project root/resources
+    iconPath = join(__dirname, '../../resources/icon.ico')
+  }
+  
+  console.log('[Main] Resolving Icon Path:', iconPath)
+
+  // Create native image helps with taskbar icon consistency
+  const { nativeImage } = electron
+  const appIcon = nativeImage.createFromPath(iconPath)
+  
+  if (appIcon.isEmpty()) {
+    console.error(`[Main] Icon is empty! Failed to load from: ${iconPath}`)
+  } else {
+    console.log('[Main] Icon loaded successfully')
+  }
 
   const translucency = await SettingsManager.get('translucency')
 
@@ -49,7 +65,7 @@ async function createWindow() {
     height: 700,
     minWidth: 800,
     minHeight: 600,
-    icon: iconPath,
+    icon: appIcon, // Use nativeImage
     show: false,
     frame: false,
     transparent: translucency,
@@ -63,16 +79,23 @@ async function createWindow() {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      webSecurity: app.isPackaged, // Disable webSecurity in dev mode to allow API calls
+      webSecurity: app.isPackaged,
       sandbox: false,
-      devTools: !app.isPackaged, // Explicitly disable access via API if packaged
-      // Set cache path explicitly to avoid permission errors
+      devTools: !app.isPackaged,
       cache: true,
       partition: 'persist:main',
-      // Allow external API calls
       allowRunningInsecureContent: false
     }
   })
+
+  // Clear HTTP cache to fix "No file for..." errors
+  try {
+    const ses = mainWindow.webContents.session
+    await ses.clearCache()
+    console.log('[Main] Cache cleared successfully')
+  } catch (err) {
+    console.error('[Main] Failed to clear cache:', err)
+  }
 
   // Disable DevTools Shortcuts in Production
   if (app.isPackaged) {
@@ -88,12 +111,10 @@ async function createWindow() {
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
-    // Start update check after a short delay
     setTimeout(() => {
       new AppUpdater(mainWindow)
     }, 5000)
 
-    // Set up settings file watcher notification
     SettingsManager.notifyRenderer = (settings) => {
       BrowserWindow.getAllWindows().forEach((win) => {
         if (win && !win.isDestroyed()) {
@@ -136,7 +157,6 @@ async function createWindow() {
   const isDev = !app.isPackaged
   if (isDev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
-    // mainWindow.webContents.openDevTools()
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }

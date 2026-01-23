@@ -5,6 +5,11 @@ export const useAIStore = create((set, get) => {
   // Initialize worker
   const worker = new Worker(new URL('../ai/ai.worker.js', import.meta.url), { type: 'module' })
 
+  // Trigger initial session load
+  setTimeout(() => {
+    get().loadSessions()
+  }, 0)
+
   worker.onmessage = (e) => {
     const { type, status, id, result, progress } = e.data
 
@@ -324,6 +329,19 @@ export const useAIStore = create((set, get) => {
       }
 
       set({ isImageGenerating: true, imageGenerationError: null })
+      
+      // OPTIMISTIC UI: Add placeholder message immediately
+      const placeholderMsg = {
+        role: 'assistant',
+        content: '', // Empty text
+        imageUrl: null, 
+        isGenerating: true, // Flag for UI to show spinner
+        timestamp: Date.now()
+      }
+      
+      set((state) => ({
+        chatMessages: [...(state.chatMessages || []), placeholderMsg]
+      }))
 
       let controller = new AbortController()
       set({ imageGenerationController: controller })
@@ -340,7 +358,14 @@ export const useAIStore = create((set, get) => {
         }
 
         set((state) => {
-          const newMessages = [...(state.chatMessages || []), imageMessage]
+          // Replace the last message (placeholder) with actual result
+          const newMessages = [...(state.chatMessages || [])]
+          if (newMessages.length > 0 && newMessages[newMessages.length - 1].isGenerating) {
+             newMessages[newMessages.length - 1] = imageMessage
+          } else {
+             newMessages.push(imageMessage)
+          }
+          
           return {
             chatMessages: newMessages,
             isImageGenerating: false,
@@ -506,75 +531,70 @@ ${vaultAccessNote}`
           })
         }
 
+        // --- New Provider Architecture ---
+        let providerType = 'deepseek' // Default
+        let activeModel = deepSeekModel || 'deepseek-chat'
+        let apiKey = visibleKey
+
+        // Determine provider based on user selection in settings (future)
+        // For now, if deepSeekKey is set, use deepseek.
+        // Once we add the UI selector, we will read settings.activeProvider
+        if (settingsObj.activeProvider) {
+          providerType = settingsObj.activeProvider
+          activeModel = settingsObj.activeModel || null
+          
+          if (providerType === 'openai') apiKey = settingsObj.openaiKey
+          else if (providerType === 'anthropic') apiKey = settingsObj.anthropicKey
+          else if (providerType === 'ollama') apiKey = 'unused' // Ollama usually no key
+        }
+
+        // Initialize Provider
+        const { AIProviderFactory } = await import('../../features/AI/providers/index.js')
+        const providerConfig = { 
+          apiKey, 
+          baseUrl: settingsObj.ollamaUrl // Only relevant for Ollama checking
+        }
+        
+        const provider = AIProviderFactory.createProvider(providerType, providerConfig)
+
+        // Abort Controller
         controller = new AbortController()
         set({ chatController: controller })
         timeoutId = setTimeout(() => controller?.abort(), 60000)
 
+        // Optimistic UI Update
         const assistantMsg = { role: 'assistant', content: '' }
         set((state) => ({
           chatMessages: [...state.chatMessages, assistantMsg],
           isChatLoading: true
         }))
 
-        const response = await fetch('https://api.deepseek.com/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${visibleKey}`
-          },
-          body: JSON.stringify({
-            model: String(deepSeekModel || 'deepseek-chat'),
-            messages: [{ role: 'system', content: systemPrompt }, ...newHistory],
-            stream: true
-          }),
-          signal: controller?.signal
-        })
+        // Prepare Messages (System + History)
+        const finalMessages = [{ role: 'system', content: systemPrompt }, ...newHistory]
 
-        if (timeoutId) clearTimeout(timeoutId)
-
-        if (!response.ok) {
-          throw new Error(`API Error: ${response.status}`)
-        }
-
-        if (!response.body) throw new Error('Response body null')
-
-        const reader = response.body.getReader()
-        const decoder = new TextDecoder()
+        // --- Execute Stream ---
         let fullContent = ''
-        let hasContent = false
-
         try {
-          while (true) {
-            const { done, value } = await reader.read()
-            if (done) break
+          const stream = provider.chatStream(finalMessages, {
+            model: activeModel,
+            temperature: 0.7,
+            signal: controller.signal
+          })
 
-            const chunk = decoder.decode(value, { stream: true })
-            const lines = chunk.split('\n')
-
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                const data = line.slice(6).trim()
-                if (data === '[DONE]') continue
-                try {
-                  const parsed = JSON.parse(data)
-                  const delta = parsed?.choices?.[0]?.delta?.content
-                  if (delta) {
-                    fullContent += delta
-                    hasContent = true
-                    set((state) => {
-                      const msgs = [...state.chatMessages]
-                      if (msgs.length > 0) {
-                        msgs[msgs.length - 1].content = fullContent
-                      }
-                      return { chatMessages: msgs }
-                    })
-                  }
-                } catch (e) {}
-              }
+          for await (const chunk of stream) {
+            if (chunk) {
+              fullContent += chunk
+              set((state) => {
+                const msgs = [...state.chatMessages]
+                if (msgs.length > 0) {
+                  msgs[msgs.length - 1].content = fullContent
+                }
+                return { chatMessages: msgs }
+              })
             }
           }
         } finally {
-          reader.releaseLock()
+          if (timeoutId) clearTimeout(timeoutId)
         }
 
         get().saveChatHistory()

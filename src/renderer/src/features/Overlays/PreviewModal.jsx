@@ -5,6 +5,7 @@ import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import ModalHeader from './ModalHeader'
 import './PreviewModal.css'
 import hljs from 'highlight.js'
+import mermaid from 'mermaid'
 
 const PreviewModal = ({ isOpen, onClose, content, onNavigate, title: snippetTitle }) => {
   const [shadowRoot, setShadowRoot] = useState(null)
@@ -81,6 +82,55 @@ const PreviewModal = ({ isOpen, onClose, content, onNavigate, title: snippetTitl
     return () => shadowRoot.removeEventListener('click', handleClick)
   }, [shadowRoot, onNavigate, onClose])
 
+  // Mermaid diagram rendering
+  useEffect(() => {
+    if (!shadowRoot) return
+
+    // Initialize mermaid once
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'dark',
+      securityLevel: 'loose'
+    })
+
+    // Run in next tick to ensure content is rendered
+    requestAnimationFrame(() => {
+      try {
+        // Find code blocks with language-mermaid class
+        const codeElements = shadowRoot.querySelectorAll('code.language-mermaid')
+        
+        codeElements.forEach((codeEl, index) => {
+          // Skip if already processed
+          if (codeEl.closest('.mermaid-diagram')) return
+
+          const graphDefinition = codeEl.textContent?.trim()
+          if (!graphDefinition) return
+
+          const id = `mermaid-${Date.now()}-${index}`
+          const preEl = codeEl.closest('pre')
+
+          mermaid.render(id, graphDefinition)
+            .then(({ svg }) => {
+              const container = document.createElement('div')
+              container.className = 'mermaid-diagram'
+              container.innerHTML = svg
+              
+              // Replace the pre element with the rendered diagram
+              if (preEl) {
+                preEl.replaceWith(container)
+              }
+            })
+            .catch((err) => {
+              console.warn('Mermaid render error:', err)
+              // Keep the code block if rendering fails
+            })
+        })
+      } catch (err) {
+        console.warn('Mermaid processing error:', err)
+      }
+    })
+  }, [shadowRoot, content])
+
   // Highlight code blocks inside the shadow root when content changes
   useEffect(() => {
     if (!shadowRoot) return
@@ -94,6 +144,11 @@ const PreviewModal = ({ isOpen, onClose, content, onNavigate, title: snippetTitl
             if (pre.closest('.code-block-wrapper')) return
 
             const code = pre.querySelector('code')
+
+            // Skip Mermaid blocks - they'll be rendered by Mermaid, not highlighted
+            if (code && code.classList.contains('language-mermaid')) {
+              return
+            }
 
             // Create wrapper and header
             const wrapper = document.createElement('div')
@@ -206,7 +261,7 @@ const PreviewModal = ({ isOpen, onClose, content, onNavigate, title: snippetTitl
               className="modal-title-stack"
               style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
             >
-              <span className="preview-indicator-tag">MARKDOWN</span>
+              {/* <span className="preview-indicator-tag">MARKDOWN</span> */}
               <span className="preview-filename-text">{snippetTitle || 'Untitled'}</span>
             </div>
           }
@@ -214,12 +269,12 @@ const PreviewModal = ({ isOpen, onClose, content, onNavigate, title: snippetTitl
             <>
               <div className="preview-stats-bar">
                 <div className="preview-stat-item">
-                  <FileText size={12} />
+                  <FileText size={14} />
                   <span>{stats.words} words</span>
                 </div>
                 <div className="preview-stat-sep" />
                 <div className="preview-stat-item">
-                  <Clock size={12} />
+                  <Clock size={14} />
                   <span>{stats.time} min read</span>
                 </div>
               </div>
@@ -516,6 +571,22 @@ const previewStyles = `
     del {
       text-decoration: line-through;
       opacity: 0.7;
+    }
+
+    /* Mermaid diagram styles */
+    .mermaid-diagram {
+      margin: 2em 0;
+      padding: 2em;
+      background: rgba(var(--text-accent-rgb), 0.03);
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .mermaid-diagram svg {
+      max-width: 100%;
+      height: auto;
     }
   `
 

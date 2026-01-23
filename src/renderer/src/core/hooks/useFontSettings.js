@@ -175,8 +175,9 @@ export const useFontSettings = () => {
         }
 
         // Load settings from backend. Prefer cursor object, but also accept promoted top-level keys
+        let allSettings = null
         try {
-          const allSettings = await window.api?.getSetting?.()
+          allSettings = await window.api?.getSetting?.()
           const cursorSettings = (allSettings && allSettings.cursor) || (await window.api?.getSetting?.('cursor')) || {}
           // Raw cursor settings loaded from API (silent)
 

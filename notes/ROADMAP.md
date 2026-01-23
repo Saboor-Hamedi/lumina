@@ -10,6 +10,10 @@
 - AI-powered semantic search
 - Knowledge graph visualization
 - Markdown editor with live preview
+- **Premium User Interface**: "Mirror Mode" Glassmorphism Engine
+- **AI Scalability**: Migrated Chat Storage to IndexedDB (Dexie.js)
+- **Daily Notes System**: One-click journal creation with auto-dates
+- **Enhanced Visual Navigation**: Dynamic file icons & Country flags
 
 ---
 
@@ -41,7 +45,28 @@
 
 ---
 
-### 2. **Improve Test Coverage**
+### 2. **Multi-Model Intelligence Engine (New Architecture)**
+
+#### A. Universal AI Gateway (Backend Logic)
+- [ ] **Provider Registry**: Create valid interfaces for OpenAI, Anthropic (Claude), DeepSeek, and Local (Ollama).
+- [ ] **Secure Vault**: Encrypted storage for API Keys (BYOK - Bring Your Own Key).
+- [ ] **Unified Adapter**: Middleware to normalize requests/responses across different APIs.
+
+#### B. The "Cockpit" Composer (UI Redesign)
+- [ ] **Model Selector**: Dropdown to switch intelligence on the fly (e.g., GPT-4o vs Claude 3.5).
+- [ ] **Robust Mode System**:
+    - [ ] 🚀 **Fast Mode**: Low latency, concise answers (GPT-3.5/DeepSeek-Lite).
+    - [ ] 🧠 **Thinking Mode**: Chain-of-thought reasoning (GPT-4o/DeepSeek-R1).
+    - [ ] 🎨 **Creative Mode**: Higher temperature for brainstorming.
+    - [ ] 💻 **Coder Mode**: System prompts optimized for strict code generation.
+- [ ] **Context-Aware Input**: Floating control bar inside the chat input area.
+- [ ] **Slash Commands**: Quick access to presets via `/`.
+
+**Priority:** High | **Effort:** High
+
+---
+
+### 3. **Improve Test Coverage**
 
 Current: 93 tests across 8 files
 
