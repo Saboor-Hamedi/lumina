@@ -514,6 +514,21 @@
   gap: 12px;
 }
 
+.sessions-header {
+  padding: 0 12px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+  border-bottom: 1px solid var(--border-dim);
+  flex-shrink: 0;
+}
+
 .section-head {
   display: flex;
   align-items: center;
@@ -679,16 +694,14 @@
 
 .chat-messages {
   flex: 1;
-  padding: 12px 16px;
+  padding: 8px 10px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  /* Smooth scrolling optimizations */
+  gap: 6px;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
   will-change: scroll-position;
-  /* Reduce scroll jank */
   contain: layout style paint;
 }
 
@@ -712,7 +725,7 @@
 }
 
 .chat-empty-icon {
-  font-size: 32px;
+  font-size: 24px;
 }
 
 .chat-suggestion-btn {
@@ -736,16 +749,14 @@
 }
 
 .chat-bubble {
-  padding: 8px 12px;
-  border-radius: 10px;
+  padding: 6px 10px;
+  border-radius: 8px;
   max-width: 100%;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.5;
   word-wrap: break-word;
   overflow-wrap: break-word;
-  /* Ensure content doesn't overflow */
   box-sizing: border-box;
-  /* Allow tables to scroll horizontally */
   overflow-x: visible;
   overflow-y: visible;
 }

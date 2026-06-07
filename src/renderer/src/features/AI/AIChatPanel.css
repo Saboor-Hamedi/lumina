@@ -1,7 +1,7 @@
 /* ChatGPT-style Chat Input - Theme-aware */
 .chat-input-area {
   position: relative;
-  padding: 12px;
+  padding: 8px;
   border-top: 1px solid var(--border-dim);
   background: var(--bg-sidebar);
   flex-shrink: 0;
@@ -137,12 +137,49 @@
 
 /* Spinner animation */
 @keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Thinking / Generating indicator */
+.thinking-indicator {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  width: fit-content;
+}
+
+.thinking-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-faint);
+  font-style: italic;
+  letter-spacing: 0.02em;
+}
+
+.thinking-text .spin {
+  animation: spin 1.4s linear infinite;
+  color: var(--text-accent);
+}
+
+.thinking-dot-pulse {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-accent);
+  animation: pulse-dot 1.2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50%       { opacity: 1;   transform: scale(1.2); }
 }
 
 /* Optimize Virtuoso container - removed scroll-behavior: smooth which breaks Virtuoso */

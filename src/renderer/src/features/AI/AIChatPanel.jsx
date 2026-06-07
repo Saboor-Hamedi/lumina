@@ -809,14 +809,14 @@ const AIChatPanel = React.memo(() => {
                     key={msg.id || `msg-${index}`}
                     className={`chat-row ${msg.role}`}
                     style={{
-                      marginBottom: '12px',
+                      marginBottom: '6px',
                       display: 'flex',
                       flexDirection: 'row',
-                      gap: '8px',
+                      gap: '6px',
                       justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
                       alignItems: 'flex-start',
                       width: '100%',
-                      minHeight: '40px',
+                      minHeight: '28px',
                       willChange: 'auto'
                     }}
                   >
@@ -841,17 +841,11 @@ const AIChatPanel = React.memo(() => {
                         {msg.role === 'assistant' &&
                           (!msg.content?.trim() && !msg.imageUrl) &&
                           (index === visibleMessages.length - 1 && isChatLoading || msg.isGenerating) ? (
-                          <div className="typing-inline">
+                          <div className="thinking-indicator">
                             {msg.isGenerating ? (
-                              <span style={{ fontSize: '12px', color: 'var(--text-faint)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <Sparkles size={12} className="spin" /> Generating Image...
-                              </span>
+                              <span className="thinking-text"><Sparkles size={11} className="spin" /> Generating image...</span>
                             ) : (
-                              <>
-                                <span></span>
-                                <span></span>
-                                <span></span>
-                              </>
+                              <span className="thinking-text"><span className="thinking-dot-pulse" />Thinking...</span>
                             )}
                           </div>
                         ) : (
@@ -886,24 +880,20 @@ const AIChatPanel = React.memo(() => {
                   const showTyping = isChatLoading && !hasAssistantMessage
 
                   return (
-                    <div style={{ paddingBottom: '12px' }}>
+                    <div style={{ paddingBottom: '8px' }}>
                       {showTyping && (
                         <div
                           className="chat-row assistant"
                           style={{
-                            marginBottom: '12px',
+                            marginBottom: '6px',
                             display: 'flex',
-                            gap: '8px',
+                            gap: '6px',
                             alignItems: 'flex-start'
                           }}
                         >
                           <LuminaAvatar />
-                          <div className="chat-bubble assistant">
-                            <div className="typing-inline">
-                              <span></span>
-                              <span></span>
-                              <span></span>
-                            </div>
+                          <div className="thinking-indicator">
+                            <span className="thinking-text"><span className="thinking-dot-pulse" />Thinking...</span>
                           </div>
                         </div>
                       )}
