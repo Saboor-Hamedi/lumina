@@ -165,7 +165,6 @@
   right: 0;
   height: 2px;
   background: var(--text-accent);
-  box-shadow: 0 1px 10px rgba(var(--text-accent-rgb), 0.3);
 }
 
 .panel-header-tabs .tab-context {

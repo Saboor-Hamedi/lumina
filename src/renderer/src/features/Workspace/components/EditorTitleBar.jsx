@@ -71,47 +71,10 @@ const EditorTitleBar = ({
 
   return (
     <div className="editor-titlebar">
-      <div className="editor-breadcrumb">
-        <div className="breadcrumb-item clickable" onClick={() => setSelectedSnippet(null)}>
-          <FileType size={12} className="breadcrumb-icon" />
-          <span>Vault</span>
-        </div>
-        <ChevronRight size={12} className="breadcrumb-sep" />
-        <div className="breadcrumb-item">
-          {(() => {
-            const lang = (snippet?.language || 'markdown').toLowerCase()
-            if (
-              ['javascript', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'python', 'py'].includes(lang)
-            )
-              return <FileCode size={12} className="breadcrumb-icon" />
-            if (lang === 'json') return <FileJson size={12} className="breadcrumb-icon" />
-            if (lang === 'markdown' || lang === 'md')
-              return <Hash size={12} className="breadcrumb-icon" />
-            return <FileType size={12} className="breadcrumb-icon" />
-          })()}
-          <span className="breadcrumb-active">{title || 'Untitled'}</span>
-          {isDirty && <div className="dirty-indicator" style={{ marginLeft: '8px' }} />}
-        </div>
-      </div>
+
 
       <div className="editor-controls">
-        <button 
-          className="icon-btn" 
-          onClick={onSave} 
-          title={isSaving ? 'Saving...' : isDirty ? 'Save (Ctrl+S)' : 'No changes to save'}
-          disabled={!isDirty || isSaving}
-          style={{ 
-            opacity: isDirty && !isSaving ? 1 : 0.5, 
-            cursor: isDirty && !isSaving ? 'pointer' : 'not-allowed',
-            position: 'relative'
-          }}
-        >
-          {isSaving ? (
-            <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-          ) : (
-            <Save size={16} />
-          )}
-        </button>
+
         <div className="menu-container">
           <button
             className={`icon-btn menu-trigger ${showMoreMenu ? 'active' : ''}`}

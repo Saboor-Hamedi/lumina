@@ -13,7 +13,7 @@ export const buildGraphData = (snippets) => {
     // Use Title as ID for visual simplicity (or ID if we want robustness, but links use titles)
     // We'll use Title as the unique key because WikiLinks use Titles.
     // To handle case-insensitivity, we might normalize, but for display we want original.
-    const id = snippet.title
+    const id = snippet.title || 'Untitled'
     if (!nodeMap.has(id)) {
       nodeMap.set(id, { id, group: 'note', val: 1, snippetId: snippet.id })
       nodes.push(nodeMap.get(id))
@@ -21,11 +21,10 @@ export const buildGraphData = (snippets) => {
   })
 
   // 2. Parse Links
-  const wikiRegex = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g
-
   snippets.forEach((snippet) => {
-    const sourceId = snippet.title
+    const sourceId = snippet.title || 'Untitled'
     const code = snippet.code || ''
+    const wikiRegex = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g
     
     let match
     while ((match = wikiRegex.exec(code)) !== null) {
@@ -33,7 +32,7 @@ export const buildGraphData = (snippets) => {
       
       // If target doesn't exist as a node yet (Ghost Node), create it
       // but mark it as 'ghost' (not a real file yet)
-      let targetNode = nodes.find(n => n.id.toLowerCase() === targetTitle.toLowerCase())
+      let targetNode = nodes.find(n => n.id && n.id.toLowerCase() === targetTitle.toLowerCase())
       
       if (!targetNode) {
         // Create a ghost node

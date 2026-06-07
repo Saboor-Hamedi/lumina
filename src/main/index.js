@@ -715,7 +715,15 @@ app.whenReady().then(async () => {
     await VaultIndexer.init(userDataPath)
     await VaultSearch.init(userDataPath)
 
-    const savedVaultPath = await SettingsManager.get('vaultPath')
+    let savedVaultPath = await SettingsManager.get('vaultPath')
+    const oldDefaultPath = join(app.getPath('documents'), 'Lumina Vault')
+    const newDefaultPath = join(app.getPath('documents'), 'lumina')
+    
+    if (savedVaultPath === oldDefaultPath) {
+      savedVaultPath = newDefaultPath
+      await SettingsManager.set('vaultPath', newDefaultPath)
+    }
+
     await VaultManager.init(savedVaultPath, app.getPath('documents'))
     await migrateFromSQLite()
 

@@ -56,7 +56,7 @@ export const cacheSnippets = async (snippets) => {
     await db.snippets.bulkPut(cacheData)
   } catch (err) {
     console.error('Cache failed:', err.message || err)
-    if (err.name === 'DexieError' || err.name === 'VersionError') {
+    if (err.name === 'DexieError' || err.name === 'VersionError' || err.name === 'UnknownError') {
        console.warn('Database v2 corruption detected. Resetting...')
        await Dexie.delete('LuminaVault_v2')
        window.location.reload()

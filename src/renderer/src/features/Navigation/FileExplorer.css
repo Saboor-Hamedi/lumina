@@ -346,11 +346,11 @@
 }
 
 .tree-item.active {
-  background: var(--bg-active);
+  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.15);
   color: var(--text-accent);
   font-weight: 500;
-  border-color: rgba(0, 0, 0, 0.1);
-  box-shadow: none; /* Removed heavy shadow */
+  border-color: rgba(var(--text-accent-rgb, 64, 186, 250), 0.2);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .tree-item.active::before {

@@ -96,10 +96,6 @@ const FileExplorer = React.memo(({ onNavigate }) => {
   }, [snippets, searchQuery])
 
   const pinnedItems = useMemo(() => filtered.filter((s) => s.isPinned), [filtered])
-  const recentItems = useMemo(
-    () => [...filtered].sort((a, b) => b.timestamp - a.timestamp).slice(0, 5),
-    [filtered]
-  )
 
   const Row = ({ index, style }) => {
     const snippet = filtered[index]
@@ -157,29 +153,6 @@ const FileExplorer = React.memo(({ onNavigate }) => {
                     snippet={item}
                     isActive={selectedSnippet?.id === item.id && activeSection === 'pinned'}
                     onClick={() => handleSelect(item, 'pinned')}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* RECENT SECTION */}
-        {recentItems.length > 0 && !searchQuery && (
-          <div className="tree-section">
-            <div className="section-header" onClick={() => toggleSection('recent')}>
-              {collapsedSections.recent ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
-              <History size={14} className="section-icon" />
-              <span>RECENT</span>
-            </div>
-            {!collapsedSections.recent && (
-              <div className="section-static-items">
-                {recentItems.map((item) => (
-                  <SidebarItem
-                    key={item.id}
-                    snippet={item}
-                    isActive={selectedSnippet?.id === item.id && activeSection === 'recent'}
-                    onClick={() => handleSelect(item, 'recent')}
                   />
                 ))}
               </div>

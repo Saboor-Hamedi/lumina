@@ -144,7 +144,12 @@ export const useAIStore = create((set, get) => {
     loadSessions: async () => {
       try {
         // 1. Try IndexedDB first (High Capacity)
-        let savedSessions = await db.chatSessions.orderBy('timestamp').reverse().toArray()
+        let savedSessions = []
+        try {
+          savedSessions = await db.chatSessions.orderBy('timestamp').reverse().toArray()
+        } catch (dbErr) {
+          console.warn('[AIStore] IndexedDB failed to read chat sessions, falling back to empty:', dbErr)
+        }
         
         // 2. Fallback to localStorage for migration or if DB is empty
         if (savedSessions.length === 0) {
@@ -181,7 +186,11 @@ export const useAIStore = create((set, get) => {
           timestamp: Date.now()
         }
         set({ sessions: [firstSession], activeSessionId: firstSession.id, chatMessages: [] })
-        await db.chatSessions.add(firstSession)
+        try {
+          await db.chatSessions.add(firstSession)
+        } catch (e) {
+          console.warn('[AIStore] Failed to save initial session to db:', e)
+        }
       } catch (e) {
         console.warn('[AIStore] Failed to load sessions:', e)
       }
@@ -204,7 +213,11 @@ export const useAIStore = create((set, get) => {
         activeSessionId: newSession.id,
         chatMessages: []
       }))
-      await db.chatSessions.add(newSession)
+      try {
+        await db.chatSessions.add(newSession)
+      } catch (e) {
+        console.warn('[AIStore] Failed to save new session to db:', e)
+      }
       localStorage.setItem('lumina-active-session-id', newSession.id)
     },
 
@@ -240,8 +253,11 @@ export const useAIStore = create((set, get) => {
           chatMessages: nextMessages
         }
       })
-      
-      await db.chatSessions.delete(sessionId)
+      try {
+        await db.chatSessions.delete(sessionId)
+      } catch (e) {
+        console.warn('[AIStore] Failed to delete session from db:', e)
+      }
 
       const { activeSessionId } = get()
       if (activeSessionId) {
@@ -276,7 +292,11 @@ export const useAIStore = create((set, get) => {
 
       set({ sessions: newSessions })
       if (updatedSession) {
-        await db.chatSessions.put(updatedSession)
+        try {
+          await db.chatSessions.put(updatedSession)
+        } catch (e) {
+          console.warn('[AIStore] Failed to save chat history to db:', e)
+        }
       }
     },
 

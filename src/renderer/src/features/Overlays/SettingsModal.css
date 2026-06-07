@@ -7,7 +7,7 @@
   display: flex;
   flex-direction: column;
   background: var(--bg-panel);
-  border-radius: 12px;
+  border-radius: 0;
   box-shadow: 
     0 0 0 1px var(--border-dim), 
     0 24px 48px rgba(0,0,0,0.4), 
@@ -329,4 +329,54 @@ input:checked + .slider:before {
   border: 1px solid var(--border-dim);
   min-width: 60px;
   text-align: center;
+}
+
+/* Match preview modal header styling */
+.premium-preview-card .pane-header.modal-header-with-knob {
+  position: relative;
+  height: var(--header-height, 32px);
+  min-height: var(--header-height, 32px);
+  max-height: var(--header-height, 32px);
+  padding: 0 12px;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border-dim);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.premium-preview-card .modal-right {
+  position: absolute;
+  right: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.premium-preview-card .pane-header.modal-header-with-knob .modal-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 2;
+}
+
+.premium-preview-card .modal-close.modal-close-top {
+  width: var(--header-height, 28px);
+  height: var(--header-height, 28px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.premium-preview-card .modal-close.modal-close-top:hover {
+  background: #ff4444;
+  color: white;
 }

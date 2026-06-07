@@ -281,3 +281,9 @@
 .theme-modal-grid::-webkit-scrollbar-thumb:hover {
   background: var(--border-main);
 }
+
+/* Match premium modal close icon hover */
+.premium-preview-card .modal-close.modal-close-top:hover {
+  background: #ff4444;
+  color: white;
+}

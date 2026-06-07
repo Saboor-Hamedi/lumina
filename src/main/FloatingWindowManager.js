@@ -30,16 +30,16 @@ class FloatingWindowManager {
     const iconPath = app.isPackaged
       ? join(process.resourcesPath, 'icon.ico')
       : join(app.getAppPath(), 'resources', 'icon.ico')
-    
+
     // Get saved floating window position/size
     const savedState = await SettingsManager.get('aiChatFloatingState') || {}
-    
+
     // Calculate position - center on screen if no position provided
     let windowX = options.x
     let windowY = options.y
     if (windowX === undefined) windowX = savedState.x
     if (windowY === undefined) windowY = savedState.y
-    
+
     // If still no position, center on primary display
     if (windowX === undefined || windowY === undefined) {
       const primaryDisplay = screen.getPrimaryDisplay()
@@ -49,7 +49,7 @@ class FloatingWindowManager {
       windowX = windowX !== undefined ? windowX : Math.floor((screenWidth - windowWidth) / 2)
       windowY = windowY !== undefined ? windowY : Math.floor((screenHeight - windowHeight) / 2)
     }
-    
+
     const floatingWindow = new BrowserWindow({
       width: options.width || savedState.width || 400,
       height: options.height || savedState.height || 600,
@@ -90,7 +90,7 @@ class FloatingWindowManager {
     floatingWindow.on('closed', () => {
       this.floatingWindows.delete('aiChat')
       this.windowStates.delete('aiChat')
-      
+
       // Notify main window that sidebar should be shown again
       if (mainWindowRef && !mainWindowRef.isDestroyed()) {
         mainWindowRef.webContents.send('sidebar:float-changed', { type: 'aiChat', floating: false })
@@ -169,7 +169,7 @@ class FloatingWindowManager {
       }
     }, 500)
 
-    
+
     return floatingWindow
   }
 

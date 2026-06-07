@@ -23,27 +23,36 @@
 }
 
 /*
-  ULTRA-STABLE CODE BLOCK GEOMETRY (Matched to PreviewModal.jsx)
+  ULTRA-STABLE CODE BLOCK GEOMETRY
 */
 .cm-line[class*='cm-codeblock-'] {
-  padding: 0 2em 0 1em !important; /* Add left padding for code blocks */
+  padding: 4px 1em !important; /* Add internal padding */
   margin: 0 !important;
-  line-height: 1.6 !important;
-  background: rgba(var(--text-accent-rgb), 0.03) !important;
-  border-left: 1px solid var(--border-subtle) !important;
-  border-right: 1px solid var(--border-subtle) !important;
+  line-height: 1.4 !important; /* Reduced line-height */
+  background: var(--bg-panel) !important; 
+  background-clip: padding-box !important; /* Crucial: stops bg under border */
+  border-left: 1em solid transparent !important; /* Simulated left margin */
+  border-right: 1em solid transparent !important; /* Simulated right margin */
   font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
   font-size: 0.9em;
 }
 
 /* The FIRST line (with the header) must have ZERO padding to let the header fill the frame */
 .cm-line.cm-codeblock-begin {
-  padding: 0 !important;
+  padding: 8px 1em 4px 1em !important;
+  border-top-left-radius: 24px !important;
+  border-top-right-radius: 24px !important;
+}
+
+.cm-line.cm-codeblock-end {
+  padding: 4px 1em 8px 1em !important;
+  border-bottom-left-radius: 24px !important;
+  border-bottom-right-radius: 24px !important;
 }
 
 /* Force transparent active line for all parts of code blocks */
 .cm-line[class*='cm-codeblock-'].cm-activeLine {
-  background-color: rgba(127, 127, 127, 0.08) !important;
+  background-color: var(--bg-panel) !important;
   outline: none !important;
 }
 /* Search Highlight Style */
@@ -56,15 +65,9 @@
 }
 
 /* Global Selection Style for CM6: High visibility for "Robust" feel */
-.cm-selectionBackground,
+.cm-selectionLayer .cm-selectionBackground,
 .cm-content ::selection {
-  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.3) !important;
-  /* Use box-shadow for 1px left border - doesn't cause layout shift */
-  box-shadow: inset 1px 0 0 0 var(--text-accent) !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  border: none !important;
-  outline: none !important;
+  background-color: rgba(var(--text-accent-rgb, 64, 186, 250), 0.3) !important;
 }
 
 /* Force specific selection style for code blocks */
@@ -80,7 +83,16 @@
   min-height: 0;
   overflow: hidden;
   background: var(--bg-app);
-  position: relative; /* Allow toast to be positioned absolutely within editor */
+  --atomic-editor-selection-bg: rgba(64, 186, 250, 0.3) !important;
+  
+  /* Enforce Atomic Editor Theme Colors */
+  --atomic-editor-accent: var(--text-accent);
+  --atomic-editor-link: var(--text-accent);
+  --atomic-editor-link-hover: var(--text-accent-hover);
+  --atomic-editor-fg: var(--text-main);
+  --atomic-editor-fg-muted: var(--text-muted);
+  --atomic-editor-border: var(--border-dim);
+  --atomic-editor-bg-surface: var(--bg-panel);
 }
 
 /* --- LIVE MODE SEMANTICS --- */
@@ -139,6 +151,21 @@
   font-family: var(--font-mono);
   font-weight: 700;
   margin-right: 4px;
+}
+
+/* Override strikethrough for completed tasks from atomic-editor */
+.cm-atomic-task-checked {
+  text-decoration: none !important;
+  opacity: 1 !important;
+  color: var(--text-main) !important;
+}
+
+/* Generic fallback if class is different */
+.cm-line:has(> input[type="checkbox"]:checked),
+.cm-line:has(> input[type="checkbox"]:checked) * {
+  text-decoration: none !important;
+  opacity: 1 !important;
+  color: inherit !important;
 }
 
 /* --- WORKSPACE TABBAR --- */
@@ -205,14 +232,7 @@
 }
 
 .workspace-tab.active::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--text-accent);
-  box-shadow: 0 1px 10px rgba(var(--text-accent-rgb), 0.3);
+  display: none;
 }
 
 .cm-hidden-mark {
@@ -232,8 +252,37 @@
   visibility: visible !important;
   text-indent: 0 !important;
   transition: none !important;
-  animation: none !important;
   transform: none !important;
+}
+
+/* Wiki Links Styling */
+.cm-atomic-wiki-link {
+  color: var(--text-accent) !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  position: relative;
+}
+
+.cm-atomic-wiki-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.cm-atomic-wiki-link:hover::after {
+  content: "Click to follow link";
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: var(--bg-panel);
+  color: var(--text-faint);
+  font-size: 10px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 1000;
 }
 
 .tab-context {
@@ -344,7 +393,7 @@
   justify-content: space-between;
   padding: 8px 16px;
   background: transparent;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: none;
   flex-wrap: wrap;
   gap: 12px;
 }
@@ -407,7 +456,7 @@
   width: 100%;
   max-width: 760px;
   margin: 0 auto; /* Horizonatal Center */
-  padding: 10px 60px 40px 60px; /* Reduced from 20px */
+  padding: 0 60px 40px 60px; /* Removed top padding */
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -674,9 +723,9 @@
   flex-direction: column;
   align-items: stretch;
   gap: 8px;
-  padding: 12px 60px 8px 60px; /* Reduced padding */
-  margin: 0 auto;
-  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 0 16px 0; /* Align perfectly with editor content */
+  margin: 0;
+  border-bottom: none;
   font-size: calc(var(--font-size-editor, 14px) * 0.85);
   line-height: 1.1;
   color: var(--text-muted);
@@ -866,16 +915,6 @@
 }
 
 /* Use pseudo-element for 1px border with 1px margin from content - prevents layout shift */
-.cm-activeLine::before {
-  content: '';
-  position: absolute;
-  left: 1px; /* 1px margin from content */
-  top: 0;
-  bottom: 0;
-  width: 1px; /* 1px border */
-  background: var(--text-accent);
-  z-index: 1;
-}
 
 /* Ensure active line border extends to full height for headings */
 .cm-heading.cm-activeLine {
@@ -1595,9 +1634,9 @@
   background: rgba(var(--text-accent-rgb), 0.15);
   text-decoration: none;
 }
-.cm-cursor {
+/* .cm-cursor {
   border-left: 10px solid white !important;
-}
+} */
 /* --- Wiki Hover Tooltip --- */
 .cm-wiki-hover {
   background: var(--bg-panel);

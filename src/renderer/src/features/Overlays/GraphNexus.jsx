@@ -268,14 +268,16 @@ const GraphNexus = React.memo(({ isOpen = true, onClose, onNavigate, embedded = 
             ctx.fill()
           }}
           linkColor={(link) => {
-            const isSelected = graphTheme === 'space' || graphTheme === 'nebula'
-            if (!hoverNode) return isSelected ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+            const isSelectedTheme = graphTheme === 'space' || graphTheme === 'nebula'
+            // Use a neutral gray that works on both dark and light backgrounds instead of black
+            const defaultLineColor = isSelectedTheme ? 'rgba(255, 255, 255, 0.15)' : 'rgba(150, 150, 150, 0.25)'
+            const dimmedLineColor = isSelectedTheme ? 'rgba(255, 255, 255, 0.03)' : 'rgba(150, 150, 150, 0.05)'
+            
+            if (!hoverNode) return defaultLineColor
             const isConnected = link.source.id === hoverNode.id || link.target.id === hoverNode.id
             return isConnected
-              ? 'rgba(64, 186, 250, 0.6)'
-              : isSelected
-                ? 'rgba(255, 255, 255, 0.03)'
-                : 'rgba(0, 0, 0, 0.03)'
+              ? 'rgba(64, 186, 250, 0.8)' // Accent Blue
+              : dimmedLineColor
           }}
           linkDirectionalParticles={activeMode === 'orb' ? 4 : 2}
           linkDirectionalParticleSpeed={0.005}
@@ -395,14 +397,15 @@ const GraphNexus = React.memo(({ isOpen = true, onClose, onNavigate, embedded = 
             ctx.fill()
           }}
           linkColor={(link) => {
-            const isSelected = graphTheme === 'space' || graphTheme === 'nebula'
-            if (!hoverNode) return isSelected ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+            const isSelectedTheme = graphTheme === 'space' || graphTheme === 'nebula'
+            const defaultLineColor = isSelectedTheme ? 'rgba(255, 255, 255, 0.15)' : 'rgba(150, 150, 150, 0.25)'
+            const dimmedLineColor = isSelectedTheme ? 'rgba(255, 255, 255, 0.03)' : 'rgba(150, 150, 150, 0.05)'
+            
+            if (!hoverNode) return defaultLineColor
             const isConnected = link.source.id === hoverNode.id || link.target.id === hoverNode.id
             return isConnected
-              ? 'rgba(64, 186, 250, 0.6)'
-              : isSelected
-                ? 'rgba(255, 255, 255, 0.03)'
-                : 'rgba(0, 0, 0, 0.03)'
+              ? 'rgba(64, 186, 250, 0.8)'
+              : dimmedLineColor
           }}
           linkDirectionalParticles={activeMode === 'orb' ? 4 : 2}
           linkDirectionalParticleSpeed={0.005}

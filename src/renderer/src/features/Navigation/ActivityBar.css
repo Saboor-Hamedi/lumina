@@ -2,7 +2,7 @@
   width: var(--ribbon-width);
   height: 100%;
   background: var(--bg-sidebar);
-  border-right: 1px solid var(--border-dim);
+  border-right: none;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -18,8 +18,8 @@
 }
 
 .bar-item {
-  width: 48px;
-  height: 48px;
+  width: var(--ribbon-width);
+  height: var(--ribbon-width);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -50,7 +50,6 @@
   width: 2px;
   background: var(--text-accent);
   border-radius: 0 4px 4px 0;
-  box-shadow: 0 0 10px var(--text-accent);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 

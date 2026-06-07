@@ -1,9 +1,6 @@
 import { create } from 'zustand'
-import { cacheSnippets, getCachedSnippets } from '../db/cache'
-
 /**
  * Atomic State Store (FB Standard #2)
- * Enhanced with IndexedDB Caching for instant startup (#10).
  */
 
 // Special tab ID for Graph View (not a snippet)
@@ -204,27 +201,15 @@ export const useVaultStore = create((set, get) => ({
     // Initializing Vault Load (silent)
     set({ isLoading: true })
 
-    // 1. Instant Load from Cache (Zero-Jump)
     try {
-      const cached = await getCachedSnippets()
-      if (cached && cached.length > 0) {
-        set({ snippets: cached, isLoading: false })
-      }
-    } catch (err) {
-      console.warn('[VaultStore] Cache read error:', err)
-    }
-
-    try {
-      // 2. Background Sync from File System
+      // Background Sync from File System (SQLite via IPC)
       if (window.api?.getSnippets) {
         const freshData = await window.api.getSnippets()
 
         if (freshData) {
           set({ snippets: freshData })
-          // 3. Update Cache for next visit
-          await cacheSnippets(freshData)
         } else {
-          console.warn('[VaultStore] ✗ Received invalid data from sync, keeping cache state.')
+          console.warn('[VaultStore] ✗ Received invalid data from sync.')
         }
       }
     } catch (err) {
@@ -264,13 +249,6 @@ export const useVaultStore = create((set, get) => ({
       // Save complete (silent)
       set({ snippets: next })
 
-      try {
-        await cacheSnippets(next)
-      } catch (cacheError) {
-        // Cache failure shouldn't block save, but log it
-        console.warn('[VaultStore] Cache update failed:', cacheError)
-      }
-
       if (get().selectedSnippet?.id === snippet.id) {
         set({ selectedSnippet: snippetToUse })
       }
@@ -302,13 +280,6 @@ export const useVaultStore = create((set, get) => ({
         await window.api.deleteSnippet(id)
       const next = get().snippets.filter((s) => s.id !== id)
       set({ snippets: next })
-
-      try {
-        await cacheSnippets(next)
-      } catch (cacheError) {
-        // Cache failure shouldn't block delete, but log it
-        console.warn('[VaultStore] Cache update failed after delete:', cacheError)
-      }
 
       // Close tab if it was open and update selected snippet
       set((state) => {
@@ -371,12 +342,6 @@ export const useVaultStore = create((set, get) => ({
           : state.selectedSnippet
     }))
 
-    // FB Standard #11: Robust Persistence (Sync selection to cache debounced)
-    if (selectionTimeout) clearTimeout(selectionTimeout)
-    selectionTimeout = setTimeout(() => {
-      cacheSnippets(get().snippets).catch((err) =>
-        console.warn('[VaultStore] Selection cache failed:', err)
-      )
-    }, 1000)
+    // Removed IndexedDB sync debounce since we rely entirely on SQLite now
   }
 }))

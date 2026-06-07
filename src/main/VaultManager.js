@@ -32,14 +32,14 @@ class VaultManager {
   }
 
   async init(userPath, defaultDocPath) {
-    this.vaultPath = userPath || path.join(defaultDocPath, 'Lumina Vault')
+    this.vaultPath = userPath || path.join(defaultDocPath, 'lumina')
     await fs.mkdir(this.vaultPath, { recursive: true })
 
     // Ensure assets directory exists
     const assetsPath = path.join(this.vaultPath, 'assets')
     try {
       await fs.mkdir(assetsPath, { recursive: true })
-    } catch (e) {}
+    } catch (e) { }
 
     // Initial scan
     await this.scanVault()
@@ -219,7 +219,7 @@ class VaultManager {
     const assetsPath = path.join(this.vaultPath, 'assets')
     try {
       await fs.mkdir(assetsPath, { recursive: true })
-    } catch (e) {}
+    } catch (e) { }
 
     const ext = path.extname(originalName) || '.png'
     const name = path.basename(originalName, ext)

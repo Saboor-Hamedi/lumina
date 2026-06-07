@@ -29,6 +29,7 @@
     "test:watch": "vitest --watch"
   },
   "dependencies": {
+    "@atomic-editor/editor": "^0.4.3",
     "@codemirror/autocomplete": "^6.20.0",
     "@codemirror/commands": "^6.10.1",
     "@codemirror/lang-markdown": "^6.5.0",

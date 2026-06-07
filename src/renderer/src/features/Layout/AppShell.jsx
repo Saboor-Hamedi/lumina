@@ -53,11 +53,8 @@ const AppShell = () => {
   const settings = useSettingsStore((state) => state.settings)
   const [settingsInitialTab, setSettingsInitialTab] = useState('general')
 
-  // Restore activeTab from settings, default to 'files'
-  const [activeTab, setActiveTab] = useState(() => {
-    const settings = useSettingsStore.getState().settings
-    return settings?.activeTab || 'files'
-  })
+  // Always default to 'files' instead of restoring from settings
+  const [activeTab, setActiveTab] = useState('files')
   const [showSettings, setShowSettings] = useState(false)
   const [showThemeModal, setShowThemeModal] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
@@ -226,10 +223,7 @@ const AppShell = () => {
       else if (legacyRSidebar.rightWidth) setRightWidth(legacyRSidebar.rightWidth)
       else if (settings.rightWidth) setRightWidth(settings.rightWidth)
 
-      // Restore activeTab
-      if (settings.activeTab && ['files', 'search', 'graph'].includes(settings.activeTab)) {
-        setActiveTab(settings.activeTab)
-      }
+      // Removed restoring activeTab
 
       setIsRestoring(false)
     }
@@ -288,11 +282,7 @@ const AppShell = () => {
     useSettingsStore.getState().updateSetting('openTabs', openTabs)
   }, [openTabs, isRestoring])
 
-  // Persist activeTab to settings
-  useEffect(() => {
-    if (isRestoring) return
-    useSettingsStore.getState().updateSetting('activeTab', activeTab)
-  }, [activeTab, isRestoring])
+  // Removed activeTab persistence
 
   const pinnedTabIds = useVaultStore((state) => state.pinnedTabIds)
 

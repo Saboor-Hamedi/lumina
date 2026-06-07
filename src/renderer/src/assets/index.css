@@ -10,6 +10,11 @@
  */
 
 :root {
+  /* Typography */
+  --font-editor: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+
   /* Dimensions & Layout */
   --header-height: 32px;
   --ribbon-width: 48px;
@@ -176,6 +181,10 @@ body {
   font-family: 'Inter', system-ui, sans-serif;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--bg-selection);
 }
 
 /* Shared Components */

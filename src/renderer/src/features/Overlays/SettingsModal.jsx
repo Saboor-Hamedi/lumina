@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { X, Settings } from 'lucide-react'
 import ThemeModal from './ThemeModal'
+import ModalHeader from './ModalHeader'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useToast } from '../../core/hooks/useToast'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
@@ -73,16 +74,16 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container settings-container" onClick={(e) => e.stopPropagation()}>
-        <header className="pane-header">
-          <div className="modal-title-stack">
-            <Settings size={16} />
-            <span>Settings</span>
-          </div>
-          <button className="modal-close" onClick={onClose} title="Close">
-            <X size={18} />
-          </button>
-        </header>
+      <div className="modal-container settings-container premium-preview-card" onClick={(e) => e.stopPropagation()}>
+        <ModalHeader
+          left={
+            <div className="modal-title-stack" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Settings size={16} />
+              <span>Settings</span>
+            </div>
+          }
+          onClose={onClose}
+        />
 
         <div className="settings-layout">
           <aside className="settings-sidebar">
