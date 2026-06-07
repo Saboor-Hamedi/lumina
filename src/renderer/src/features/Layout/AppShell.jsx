@@ -26,7 +26,8 @@ import AIChatPanel from '../AI/AIChatPanel'
 import DetailsModal from '../Overlays/DetailsModal'
 import AIChatModal from '../Overlays/AIChatModal'
 import { useAIStore } from '../../core/store/useAIStore'
-import { X, Maximize2 } from 'lucide-react'
+import { X, Maximize2, Trash2, History } from 'lucide-react'
+
 import PanelHeaderDropdown from './components/PanelHeaderDropdown'
 
 /**
@@ -204,12 +205,12 @@ const AppShell = () => {
       }
       // Restore Widths & Toggles from split 'sidebar' and 'rightSidebar' objects
       // Order of precedence: new split objects > legacy migration objects > top-level keys
-      
+
       // LEFT SIDEBAR
       const legacySidebar = settings.sidebar || {}
       if (typeof legacySidebar.isLeftOpen === 'boolean') setIsLeftSidebarOpen(legacySidebar.isLeftOpen)
       else if (typeof settings.isLeftSidebarOpen === 'boolean') setIsLeftSidebarOpen(settings.isLeftSidebarOpen)
-      
+
       if (legacySidebar.width) setLeftWidth(legacySidebar.width)
       else if (legacySidebar.leftWidth) setLeftWidth(legacySidebar.leftWidth)
       else if (settings.leftWidth) setLeftWidth(settings.leftWidth)
@@ -218,7 +219,7 @@ const AppShell = () => {
       const legacyRSidebar = settings.rightSidebar || {}
       if (typeof legacyRSidebar.isRightOpen === 'boolean') setIsRightSidebarOpen(legacyRSidebar.isRightOpen)
       else if (typeof settings.isRightSidebarOpen === 'boolean') setIsRightSidebarOpen(settings.isRightSidebarOpen)
-      
+
       if (legacyRSidebar.width) setRightWidth(legacyRSidebar.width)
       else if (legacyRSidebar.rightWidth) setRightWidth(legacyRSidebar.rightWidth)
       else if (settings.rightWidth) setRightWidth(settings.rightWidth)
@@ -257,7 +258,7 @@ const AppShell = () => {
   useEffect(() => {
     const sidebar = settings.sidebar || {}
     const rSidebar = settings.rightSidebar || {}
-    
+
     // Left
     if (typeof sidebar.isLeftOpen === 'boolean' && sidebar.isLeftOpen !== isLeftSidebarOpen) {
       setIsLeftSidebarOpen(sidebar.isLeftOpen)
@@ -479,7 +480,7 @@ const AppShell = () => {
       <aside className="shell-sidebar-left">
         <ErrorBoundary>
           {activeTab === 'search' ? (
-            <SearchSidebar onNavigate={() => {}} />
+            <SearchSidebar onNavigate={() => { }} />
           ) : (
             <FileExplorer onNavigate={() => setActiveTab('files')} />
           )}
@@ -550,8 +551,27 @@ const AppShell = () => {
             {/* Tab-style header - matches workspace tabs */}
             <div className="panel-header-tabs workspace-tabbar" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <div className="workspace-tab active">
-                <div className="tab-context">
+                <div className="tab-context" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span className="tab-title">AI Chat</span>
+                  <button
+                    className="tab-close-btn"
+                    style={{ opacity: 0.6 }}
+                    onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('ai-toggle-history')) }}
+                    title="Toggle chat history"
+                  >
+                    <History size={11} />
+                  </button>
+                  <button
+                    className="tab-close-btn"
+                    style={{ opacity: 0.6 }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      try { clearChat(); showToast('Chat cleared') } catch { }
+                    }}
+                    title="Clear chat"
+                  >
+                    <Trash2 size={11} />
+                  </button>
                 </div>
                 <div className="tab-actions" style={{ display: 'flex', gap: '4px' }}>
                   <button
@@ -638,7 +658,7 @@ const AppShell = () => {
                       userMessages: chatMessages.filter(m => m.role === 'user').length,
                       assistantMessages: chatMessages.filter(m => m.role === 'assistant').length,
                       totalCharacters: chatMessages.reduce((sum, m) => sum + (m.content?.length || 0), 0),
-                      averageMessageLength: chatMessages.length > 0 
+                      averageMessageLength: chatMessages.length > 0
                         ? Math.round(chatMessages.reduce((sum, m) => sum + (m.content?.length || 0), 0) / chatMessages.length)
                         : 0
                     }
@@ -700,7 +720,7 @@ const AppShell = () => {
                 setRightWidth(savedRightSidebarState.width)
               }
               setIsRightSidebarOpen(true)
-              
+
               // Persist both at once in the restructured rightSidebar object
               const currentRSidebar = settings.rightSidebar || {}
               useSettingsStore.getState().updateSettings({

@@ -448,6 +448,13 @@ const AIChatPanel = React.memo(() => {
 
   const [showSessions, setShowSessions] = useState(false)
 
+  // Listen for external history toggle (from tab bar button in AppShell)
+  useEffect(() => {
+    const handler = () => setShowSessions(prev => !prev)
+    window.addEventListener('ai-toggle-history', handler)
+    return () => window.removeEventListener('ai-toggle-history', handler)
+  }, [])
+
   // Auto-resize textarea
   const adjustTextareaHeight = useCallback(() => {
     const textarea = textareaRef.current
@@ -744,23 +751,6 @@ const AIChatPanel = React.memo(() => {
       </div>
 
       <div className="chat-main">
-        <header className="chat-header">
-          <div className="chat-header-left">
-            <button
-              className="toggle-sessions-btn"
-              onClick={() => setShowSessions(!showSessions)}
-              title="Toggle History"
-            >
-              {showSessions ? <ChevronLeft size={16} /> : <History size={16} />}
-            </button>
-            <h3>DeepSeek AI</h3>
-          </div>
-          <div className="chat-header-actions">
-            <button className="icon-btn" onClick={clearChat} title="Clear conversation history">
-              <Trash2 size={16} />
-            </button>
-          </div>
-        </header>
 
         <div className="chat-messages">
           {visibleMessages.length === 0 ? (

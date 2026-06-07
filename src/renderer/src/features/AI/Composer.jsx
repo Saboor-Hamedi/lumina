@@ -1,10 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { 
-  Send, Zap, Brain, Palette, Code, Sparkles, 
-  ChevronDown, Paperclip, Image as ImageIcon
+import {
+  Send, Zap, Brain, Palette, Code, Square,
+  ChevronDown
 } from 'lucide-react'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
-import { useAIStore } from '../../core/store/useAIStore'
 import './Composer.css'
 import { SlashCommandMenu } from './SlashCommandMenu'
 
@@ -14,26 +13,23 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
   const [showSlashMenu, setShowSlashMenu] = useState(false)
   const [slashFilter, setSlashFilter] = useState('')
   const textareaRef = useRef(null)
-  
+
   const { settings } = useSettingsStore()
-  const { generateImage } = useAIStore()
 
   // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 180)}px`
     }
   }, [input])
 
   const handleOnChange = (e) => {
     const newVal = e.target.value
     setInput(newVal)
-    
-    // Slash Command Detection
     if (newVal.startsWith('/')) {
       setShowSlashMenu(true)
-      setSlashFilter(newVal.slice(1)) // Remove '/'
+      setSlashFilter(newVal.slice(1))
     } else {
       setShowSlashMenu(false)
     }
@@ -41,31 +37,14 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
 
   const handleCommandSelect = (cmd) => {
     cmd.action(setMode, setInput)
-    // Clear input command text if it was a mode switch
-    if (cmd.id !== 'image') {
-       setInput('')
-    }
+    if (cmd.id !== 'image') setInput('')
     setShowSlashMenu(false)
   }
 
   const handleKeyDown = (e) => {
-    // Let SlashMenu handle its own keys if open
     if (showSlashMenu) {
-      if (['ArrowUp', 'ArrowDown', 'Enter', 'Tab', 'Escape'].includes(e.key)) {
-        // Prevent default only if we want to block textarea behavior, 
-        // but SlashMenu event listener is global window, so we might duplicate events.
-        // Actually SlashMenu usage of window listener is risky if multiple composers exist.
-        // Better to handle keys here if possible, but for now let's rely on the menu's listener 
-        // OR pass the event down.
-        // Since SlashMenu uses window listener, we don't need to do much here, 
-        // EXCEPT prevent 'Enter' from sending the message.
-        if (e.key === 'Enter') {
-          e.preventDefault() 
-          return
-        }
-      }
+      if (e.key === 'Enter') { e.preventDefault(); return }
     }
-
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSend()
@@ -74,118 +53,107 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
 
   const handleSend = () => {
     if (!input.trim() || isLoading) return
-    
-    let finalPrompt = input
-    
-    // Image Generation Check
-    if (input.startsWith('/image') || input.startsWith('/img')) {
-       // Handled by parent or store, but we pass it through
-    }
-    
-    onSend(finalPrompt, mode)
+    onSend(input, mode)
     setInput('')
     setMode('Standard')
   }
 
-  const getProviderIcon = () => {
+  const getProviderLabel = () => {
     switch (settings.activeProvider) {
-      case 'openai': return '🤖 GPT-4o'
+      case 'openai':    return '🤖 GPT-4o'
       case 'anthropic': return '🧠 Claude'
-      case 'ollama': return '🦙 Ollama'
-      default: return '🐋 DeepSeek'
+      case 'ollama':    return '🦙 Ollama'
+      default:          return '🐋 DeepSeek'
     }
   }
-  
-  const toggleProvider = () => {
-    window.dispatchEvent(new CustomEvent('open-ai-settings'))
-  }
+
+  const toggleProvider = () => window.dispatchEvent(new CustomEvent('open-ai-settings'))
+
+  const modes = [
+    { id: 'Fast',     icon: <Zap size={13} />,    title: 'Fast mode' },
+    { id: 'Thinking', icon: <Brain size={13} />,  title: 'Thinking mode' },
+    { id: 'Creative', icon: <Palette size={13} />, title: 'Creative mode' },
+    { id: 'Coder',    icon: <Code size={13} />,   title: 'Coder mode' },
+  ]
 
   return (
     <div className="composer-container">
-      <SlashCommandMenu 
-        isOpen={showSlashMenu} 
+      <SlashCommandMenu
+        isOpen={showSlashMenu}
         filterText={slashFilter}
         onSelect={handleCommandSelect}
         onClose={() => setShowSlashMenu(false)}
       />
 
-      {/* 1. Control Bar */}
-      <div className="composer-controls">
-        <div 
-          className="model-selector" 
-          onClick={toggleProvider}
-          title="Click to change AI Brain"
-        >
-          <span>{getProviderIcon()}</span>
-          <ChevronDown size={10} />
-        </div>
+      {/* Unified Card */}
+      <div className="composer-card">
 
-        <div className="composer-modes">
-          <button 
-            className={`mode-toggle ${mode === 'Fast' ? 'active' : ''}`}
-            onClick={() => setMode(mode === 'Fast' ? 'Standard' : 'Fast')}
-            title="Fast Mode (Concise)"
-          >
-            <Zap size={14} />
-          </button>
-          <button 
-            className={`mode-toggle ${mode === 'Thinking' ? 'active' : ''}`}
-            onClick={() => setMode(mode === 'Thinking' ? 'Standard' : 'Thinking')}
-            title="Thinking Mode (CoT)"
-          >
-            <Brain size={14} />
-          </button>
-          <button 
-            className={`mode-toggle ${mode === 'Creative' ? 'active' : ''}`}
-            onClick={() => setMode(mode === 'Creative' ? 'Standard' : 'Creative')}
-            title="Creative Mode"
-          >
-            <Palette size={14} />
-          </button>
-          <button 
-            className={`mode-toggle ${mode === 'Coder' ? 'active' : ''}`}
-            onClick={() => setMode(mode === 'Coder' ? 'Standard' : 'Coder')}
-            title="Coder Mode"
-          >
-            <Code size={14} />
-          </button>
-        </div>
-      </div>
-
-      {/* 2. Input Area */}
-      <div className="composer-input-wrapper">
+        {/* Textarea */}
         <textarea
           ref={textareaRef}
           className="composer-textarea"
           value={input}
           onChange={handleOnChange}
           onKeyDown={handleKeyDown}
-          placeholder={`Message ${getProviderIcon()} (Type '/' for commands)...`}
+          placeholder={`Ask ${getProviderLabel()}… (/ for commands)`}
           rows={1}
           disabled={isLoading}
         />
-      </div>
 
-      {/* 3. Footer */}
-      <div className="composer-footer">
-        <div className="token-count">
-           {input.length > 0 && `${input.length} chars`} {mode !== 'Standard' && `• ${mode} Mode`}
+        {/* Inner Footer — model, modes, char count, send */}
+        <div className="composer-inner-footer">
+
+          {/* Left: model pill + mode toggles */}
+          <div className="composer-left">
+            <button
+              className="model-pill"
+              onClick={toggleProvider}
+              title="Change AI model"
+            >
+              {getProviderLabel()}
+              <ChevronDown size={10} />
+            </button>
+
+            <div className="composer-modes">
+              {modes.map(m => (
+                <button
+                  key={m.id}
+                  className={`mode-btn ${mode === m.id ? 'active' : ''}`}
+                  onClick={() => setMode(mode === m.id ? 'Standard' : m.id)}
+                  title={m.title}
+                >
+                  {m.icon}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Right: char count + send/stop */}
+          <div className="composer-right">
+            {input.length > 0 && (
+              <span className="char-count">{input.length}</span>
+            )}
+            {mode !== 'Standard' && (
+              <span className="mode-badge">{mode}</span>
+            )}
+
+            {isLoading ? (
+              <button className="send-btn stop" onClick={onCancel} title="Stop generation">
+                <Square size={12} />
+                <span>Stop</span>
+              </button>
+            ) : (
+              <button
+                className="send-btn"
+                onClick={handleSend}
+                disabled={!input.trim()}
+                title="Send (Enter)"
+              >
+                <Send size={12} />
+              </button>
+            )}
+          </div>
         </div>
-        
-        {isLoading ? (
-          <button className="send-btn" onClick={onCancel} style={{ background: '#ef4444' }}>
-            <span style={{ fontSize: '12px' }}>⏹ Stop</span>
-          </button>
-        ) : (
-          <button 
-            className="send-btn" 
-            onClick={handleSend}
-            disabled={!input.trim()}
-          >
-            <span>Send</span>
-            <Send size={12} />
-          </button>
-        )}
       </div>
     </div>
   )
