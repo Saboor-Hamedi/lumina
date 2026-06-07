@@ -33,11 +33,19 @@ const MarkdownEditor = React.memo(
 
     const [title, setTitle] = useState(snippet?.title || '')
     const [isDirty, setIsDirty] = useState(false)
+    const [editorKey, setEditorKey] = useState(0)
 
     useEffect(() => {
       snippetRef.current = snippet
       setTitle(snippet?.title || '')
       setIsDirty(false)
+
+      if (editorHandleRef.current) {
+        const currentCode = editorHandleRef.current.getMarkdown()
+        if (snippet?.code && currentCode !== snippet.code) {
+          setEditorKey(k => k + 1)
+        }
+      }
     }, [snippet])
 
     // Cleanup on unmount
@@ -271,6 +279,7 @@ const MarkdownEditor = React.memo(
               />
             )}
              <AtomicCodeMirrorEditor
+                key={`${snippet?.id}-${editorKey}`}
                 documentId={snippet?.id}
                 markdownSource={snippet?.code || ''}
                 onMarkdownChange={handleMarkdownChange}

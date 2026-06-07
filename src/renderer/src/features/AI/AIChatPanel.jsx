@@ -20,51 +20,59 @@ const LuminaAvatar = React.memo(() => <div className="lumina-avatar">L</div>)
 const UserAvatar = React.memo(() => <div className="user-avatar">Me</div>)
 
 const CodeBlock = React.memo(({ inline, className, children, ...props }) => {
-  const match = /language-(\w+)/.exec(className || '')
+  const match = /language-([a-zA-Z0-9-]+)/.exec(className || '')
   const [copied, setCopied] = useState(false)
 
   if (!inline && match) {
+    const lang = match[1]
+    const isDelete = lang.startsWith('lumina-delete')
+
     return (
       <div className="chat-code-block">
         <div className="chat-code-header">
-          <span className="chat-code-lang">{match[1]}</span>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              className="chat-copy-btn"
-              onClick={() => {
-                const code = String(children).replace(/\n$/, '')
-                const vaultStore = useVaultStore.getState()
-                const selected = vaultStore.selectedSnippet
-                if (selected) {
-                  const updatedSnippet = { ...selected, code, timestamp: Date.now() }
-                  vaultStore.saveSnippet(updatedSnippet)
-                  vaultStore.setSelectedSnippet(updatedSnippet)
-                }
-              }}
-              title="Apply this code to your currently open file"
-            >
-              Apply
-            </button>
-            <button
-              className="chat-copy-btn"
-              onClick={() => {
-                navigator.clipboard.writeText(String(children).replace(/\n$/, ''))
-                setCopied(true)
-                setTimeout(() => setCopied(false), 2000)
-              }}
-            >
-              {copied ? 'Copied!' : 'Copy'}
-            </button>
-          </div>
+          <span className="chat-code-lang">{lang}</span>
+          {!isDelete && (
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                className="chat-copy-btn"
+                onClick={() => {
+                  const code = String(children).replace(/\n$/, '')
+                  const vaultStore = useVaultStore.getState()
+                  const selected = vaultStore.selectedSnippet
+                  if (selected) {
+                    const updatedSnippet = { ...selected, code, timestamp: Date.now() }
+                    vaultStore.saveSnippet(updatedSnippet)
+                    vaultStore.setSelectedSnippet(updatedSnippet)
+                  }
+                }}
+                title="Apply this code to your currently open file"
+              >
+                Apply
+              </button>
+              <button
+                className="chat-copy-btn"
+                onClick={() => {
+                  navigator.clipboard.writeText(String(children).replace(/\n$/, ''))
+                  setCopied(true)
+                  setTimeout(() => setCopied(false), 2000)
+                }}
+              >
+                {copied ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+          )}
         </div>
-        <pre>
-          <code className={className} {...props}>
-            {children}
-          </code>
-        </pre>
+        {!isDelete && (
+          <pre>
+            <code className={className} {...props}>
+              {children}
+            </code>
+          </pre>
+        )}
       </div>
     )
   }
+
   return (
     <code className={className} {...props}>
       {children}
@@ -517,7 +525,7 @@ const AIChatPanel = React.memo(() => {
 
         // Add user message showing the request using the store
         const userMsg = { role: 'user', content: text }
-        const currentMessages = chatMessages || []
+        const currentMessages = (chatMessages || []).filter(msg => msg.content.trim() !== '')
         useAIStore.setState({ chatMessages: [...currentMessages, userMsg] })
 
         setInputValue('')
@@ -686,6 +694,21 @@ const AIChatPanel = React.memo(() => {
     adjustTextareaHeight()
   }
 
+  const visibleMessages = useMemo(() => {
+    return chatMessages.filter((msg, index) => {
+      const isEmptyAssistant = msg.role === 'assistant' && !msg.content?.trim() && !msg.imageUrl;
+      const isLastMessage = index === chatMessages.length - 1;
+
+      if (isEmptyAssistant) {
+        // If it's not the last message, it's a leftover error message. Always hide it.
+        if (!isLastMessage) return false;
+        // If it IS the last message, only show it if it's currently generating
+        if (!isChatLoading && !msg.isGenerating) return false;
+      }
+      return true;
+    });
+  }, [chatMessages, isChatLoading]);
+
   return (
     <div className="chat-container">
       {/* Sessions Sidebar */}
@@ -740,7 +763,7 @@ const AIChatPanel = React.memo(() => {
         </header>
 
         <div className="chat-messages">
-          {chatMessages.length === 0 ? (
+          {visibleMessages.length === 0 ? (
             <div className="chat-empty">
               <div className="chat-empty-icon">✨</div>
               <p>Ask me anything...</p>
@@ -761,9 +784,9 @@ const AIChatPanel = React.memo(() => {
             <Virtuoso
               ref={virtuosoRef}
               style={{ height: '100%', outline: 'none' }}
-              data={chatMessages}
+              data={visibleMessages}
               followOutput={(isAtBottom) => (isAtBottom ? 'auto' : false)}
-              initialTopMostItemIndex={chatMessages.length > 0 ? chatMessages.length - 1 : 0}
+              initialTopMostItemIndex={visibleMessages.length > 0 ? visibleMessages.length - 1 : 0}
               atBottomStateChange={setAtBottom}
               firstItemIndex={0}
               increaseViewportBy={{ top: 200, bottom: 200 }}
@@ -771,7 +794,7 @@ const AIChatPanel = React.memo(() => {
               totalListHeightChanged={(height) => {
                 if (atBottom) {
                   virtuosoRef.current?.scrollToIndex({
-                    index: chatMessages.length - 1,
+                    index: visibleMessages.length - 1,
                     align: 'end',
                     behavior: 'auto'
                   })
@@ -779,7 +802,7 @@ const AIChatPanel = React.memo(() => {
               }}
               itemContent={(index, msg) => {
                 // Ensure stable rendering - prevent content from disappearing
-                // Use key for stable React reconciliation
+
                 return (
                   <div
                     // key={`msg-${index}-${msg.role}-${msg.timestamp || index}`}
@@ -816,8 +839,8 @@ const AIChatPanel = React.memo(() => {
                         style={{ maxWidth: '100%', width: '100%' }}
                       >
                         {msg.role === 'assistant' &&
-                          (!msg.content && !msg.imageUrl) &&
-                          (isChatLoading || msg.isGenerating) ? (
+                          (!msg.content?.trim() && !msg.imageUrl) &&
+                          (index === visibleMessages.length - 1 && isChatLoading || msg.isGenerating) ? (
                           <div className="typing-inline">
                             {msg.isGenerating ? (
                               <span style={{ fontSize: '12px', color: 'var(--text-faint)', display: 'flex', alignItems: 'center', gap: '6px' }}>

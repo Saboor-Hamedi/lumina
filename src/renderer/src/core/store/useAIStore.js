@@ -493,10 +493,10 @@ export const useAIStore = create((set, get) => {
         const topic = writeMatch[1].trim();
 
         const userMsg = { id: crypto.randomUUID(), role: 'user', content: cleanMessage, timestamp: Date.now() }
-        const loadingMsg = { 
-          id: crypto.randomUUID(), 
-          role: 'assistant', 
-          content: `Generating local file about: **${topic}**... This may take a moment if downloading the model for the first time.`, 
+        const loadingMsg = {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: `Generating local file about: **${topic}**... This may take a moment if downloading the model for the first time.`,
           isGenerating: true,
           timestamp: Date.now()
         }
@@ -585,19 +585,19 @@ export const useAIStore = create((set, get) => {
       }
 
       // Normal Chat Flow
-      const userMsg = { 
+      const userMsg = {
         id: crypto.randomUUID(),
-        role: 'user', 
+        role: 'user',
         content: message.trim(),
-        timestamp: Date.now() 
+        timestamp: Date.now()
       }
-      
+
       const currentMessages = get().chatMessages || []
       const newHistory = [...currentMessages, userMsg]
-      
-      const assistantMsg = { 
+
+      const assistantMsg = {
         id: crypto.randomUUID(),
-        role: 'assistant', 
+        role: 'assistant',
         content: '',
         timestamp: Date.now()
       }
@@ -658,6 +658,7 @@ To delete an existing file, output this exact code block:
 \`\`\`
 
 Do NOT use these blocks for generic code examples. ONLY use them when you intend to modify the user's actual files on disk. Always output the full content of the file.
+Do NOT ask the user for confirmation before executing these blocks. Just execute them immediately when requested.
 
 **CONTEXT**:
 ${vaultAccessNote}`
@@ -761,6 +762,15 @@ ${vaultAccessNote}`
             if (msgs.length > 0) {
               msgs[msgs.length - 1].content = fullContent
             }
+
+            // Clean up empty assistant message if no content was generated
+            if (msgs.length > 0) {
+              const lastMsg = msgs[msgs.length - 1]
+              if (lastMsg.role === 'assistant' && !lastMsg.content && !lastMsg.imageUrl) {
+                msgs.pop()
+              }
+            }
+
             return { chatMessages: msgs }
           })
 
@@ -769,7 +779,9 @@ ${vaultAccessNote}`
             const vaultModule = await import('../../core/store/useVaultStore')
             const vaultStore = vaultModule.useVaultStore.getState();
             const allSnippets = vaultStore.snippets;
-            let appliedChanges = false;
+            let appliedCreations = 0;
+            let appliedUpdates = 0;
+            let appliedDeletions = 0;
 
             // 1. Process lumina-create
             const createMatches = [...fullContent.matchAll(/```lumina-create\s+(.+?)\n([\s\S]*?)```/g)];
@@ -786,7 +798,7 @@ ${vaultAccessNote}`
                 timestamp: Date.now()
               };
               await vaultStore.saveSnippet(newSnippet);
-              appliedChanges = true;
+              appliedCreations++;
             }
 
             // 2. Process lumina-update
@@ -795,8 +807,12 @@ ${vaultAccessNote}`
               const title = match[1].trim();
               const newCode = match[2].trim();
 
-              // Find snippet by title
-              const targetSnippet = allSnippets.find(s => s.title.toLowerCase() === title.toLowerCase());
+              // Find snippet by title (be tolerant of .md extensions)
+              const cleanTitle = title.toLowerCase().replace(/\.md$/, '');
+              const targetSnippet = allSnippets.find(s => {
+                const sTitle = s.title.toLowerCase().replace(/\.md$/, '');
+                return sTitle === cleanTitle;
+              });
 
               if (targetSnippet) {
                 const updatedSnippet = { ...targetSnippet, code: newCode, timestamp: Date.now() };
@@ -806,27 +822,54 @@ ${vaultAccessNote}`
                 if (vaultStore.selectedSnippet?.id === targetSnippet.id) {
                   vaultStore.setSelectedSnippet(updatedSnippet);
                 }
-                appliedChanges = true;
+                appliedUpdates++;
               }
             }
 
             // 3. Process lumina-delete
-            const deleteMatches = [...fullContent.matchAll(/```lumina-delete\s+(.+?)```/g)];
+            const deleteMatches = [...fullContent.matchAll(/```lumina-delete\s+([^\n]+?)\s*```/g)];
             for (const match of deleteMatches) {
               const title = match[1].trim();
-              
-              // Find snippet by title
-              const targetSnippet = allSnippets.find(s => s.title.toLowerCase() === title.toLowerCase());
-              
+
+              // Find snippet by title (be tolerant of .md extensions)
+              const cleanTitle = title.toLowerCase().replace(/\.md$/, '');
+              const targetSnippet = allSnippets.find(s => {
+                const sTitle = s.title.toLowerCase().replace(/\.md$/, '');
+                return sTitle === cleanTitle;
+              });
+
               if (targetSnippet) {
-                await vaultStore.deleteSnippet(targetSnippet.id);
-                appliedChanges = true;
+                try {
+                  await vaultStore.deleteSnippet(targetSnippet.id, true);
+                  appliedDeletions++;
+                } catch (e) {
+                  const current = get().chatMessages;
+                  current[current.length - 1].content += `\n\n*(❌ Failed to delete "${title}": ${e.message})*`;
+                  set({ chatMessages: [...current] });
+                }
+              } else {
+                const current = get().chatMessages;
+                current[current.length - 1].content += `\n\n*(⚠️ File not found for deletion: "${title}")*`;
+                set({ chatMessages: [...current] });
               }
             }
 
-            if (appliedChanges) {
+            if (appliedCreations > 0 || appliedUpdates > 0 || appliedDeletions > 0) {
+              const parts = [];
+              if (appliedCreations > 0) parts.push(`${appliedCreations} created`);
+              if (appliedUpdates > 0) parts.push(`${appliedUpdates} updated`);
+              if (appliedDeletions > 0) parts.push(`Deleted`);
+
               const current = get().chatMessages;
-              current[current.length - 1].content += '\n\n*(✨ I have automatically executed these file changes in your vault!)*';
+              const joined = parts.join(', ');
+
+              // If it's strictly a single deletion and they requested exactly 'Deleted successfully'
+              if (appliedDeletions > 0 && appliedCreations === 0 && appliedUpdates === 0) {
+                current[current.length - 1].content += `\n\n*(Deleted successfully)*`;
+              } else {
+                current[current.length - 1].content += `\n\n*(${joined} successfully)*`;
+              }
+
               set({ chatMessages: [...current] });
             }
           } catch (err) {
@@ -840,7 +883,18 @@ ${vaultAccessNote}`
         set({ isChatLoading: false, chatController: null })
       } catch (error) {
         console.error('[AIStore] Chat Error:', error)
-        set({ isChatLoading: false, chatError: error.message, chatController: null })
+
+        // Clean up empty assistant message if it failed immediately
+        set((state) => {
+          const msgs = [...state.chatMessages]
+          if (msgs.length > 0) {
+            const lastMsg = msgs[msgs.length - 1]
+            if (lastMsg.role === 'assistant' && !lastMsg.content && !lastMsg.imageUrl) {
+              msgs.pop()
+            }
+          }
+          return { chatMessages: msgs, isChatLoading: false, chatError: error.message, chatController: null }
+        })
       }
     }
   }
