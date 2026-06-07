@@ -3,8 +3,8 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Virtuoso } from 'react-virtuoso'
 import { createPortal } from 'react-dom'
-import { 
-  Copy, ThumbsUp, ThumbsDown, Check, Send, 
+import {
+  Copy, ThumbsUp, ThumbsDown, Check, Send,
   Square, Download, Maximize2, X as CloseIcon,
   Plus, Trash2, History, MessageSquare, ChevronLeft, ChevronRight,
   Sparkles
@@ -28,16 +28,34 @@ const CodeBlock = React.memo(({ inline, className, children, ...props }) => {
       <div className="chat-code-block">
         <div className="chat-code-header">
           <span className="chat-code-lang">{match[1]}</span>
-          <button
-            className="chat-copy-btn"
-            onClick={() => {
-              navigator.clipboard.writeText(String(children).replace(/\n$/, ''))
-              setCopied(true)
-              setTimeout(() => setCopied(false), 2000)
-            }}
-          >
-            {copied ? 'Copied!' : 'Copy'}
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              className="chat-copy-btn"
+              onClick={() => {
+                const code = String(children).replace(/\n$/, '')
+                const vaultStore = useVaultStore.getState()
+                const selected = vaultStore.selectedSnippet
+                if (selected) {
+                  const updatedSnippet = { ...selected, code, timestamp: Date.now() }
+                  vaultStore.saveSnippet(updatedSnippet)
+                  vaultStore.setSelectedSnippet(updatedSnippet)
+                }
+              }}
+              title="Apply this code to your currently open file"
+            >
+              Apply
+            </button>
+            <button
+              className="chat-copy-btn"
+              onClick={() => {
+                navigator.clipboard.writeText(String(children).replace(/\n$/, ''))
+                setCopied(true)
+                setTimeout(() => setCopied(false), 2000)
+              }}
+            >
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
         </div>
         <pre>
           <code className={className} {...props}>
@@ -94,18 +112,18 @@ const GeneratedImage = React.memo(({ imageUrl, prompt, onCopy }) => {
       const a = document.createElement('a')
       a.style.display = 'none'
       a.href = imageUrl
-      
+
       const basePrompt = prompt || 'generated-image'
       const filename = basePrompt.slice(0, 30).replace(/[^a-z0-9]/gi, '_').toLowerCase()
       a.download = `lumina_${filename}.png`
-      
+
       document.body.appendChild(a)
       a.click()
-      
+
       setTimeout(() => {
         if (a.parentNode) document.body.removeChild(a)
       }, 100)
-      
+
       if (onCopy) onCopy('Download started...')
     } catch (err) {
       console.error('Failed to download image:', err)
@@ -175,8 +193,8 @@ const GeneratedImage = React.memo(({ imageUrl, prompt, onCopy }) => {
 
       {/* Full screen modal for image - using Portal to escape sidebar container constraints */}
       {isExpanded && createPortal(
-        <div 
-          className="chat-image-modal-overlay" 
+        <div
+          className="chat-image-modal-overlay"
           onClick={() => setIsExpanded(false)}
           onKeyDown={(e) => {
             if (e.key === 'Escape') setIsExpanded(false)
@@ -189,10 +207,10 @@ const GeneratedImage = React.memo(({ imageUrl, prompt, onCopy }) => {
             <button className="chat-image-modal-close-inner" onClick={() => setIsExpanded(false)}>
               <CloseIcon size={14} />
             </button>
-            <img 
-              src={imageUrl} 
-              alt={prompt} 
-              className="chat-image-modal-img" 
+            <img
+              src={imageUrl}
+              alt={prompt}
+              className="chat-image-modal-img"
               onClick={e => e.stopPropagation()}
               style={{ cursor: 'default' }}
             />
@@ -213,7 +231,7 @@ const MessageContent = React.memo(({ content, imageUrl, imagePrompt, onCopy }) =
   // Debounce markdown rendering to prevent blocking during streaming
   useEffect(() => {
     setIsStreaming(true)
-    
+
     const timer = setTimeout(() => {
       // Use requestIdleCallback to render during browser idle time
       if (typeof requestIdleCallback !== 'undefined') {
@@ -267,8 +285,8 @@ const MessageContent = React.memo(({ content, imageUrl, imagePrompt, onCopy }) =
   )
 }, (prevProps, nextProps) => {
   // Custom comparison: only re-render if content actually changed
-  return prevProps.content === nextProps.content && 
-         prevProps.imageUrl === nextProps.imageUrl
+  return prevProps.content === nextProps.content &&
+    prevProps.imageUrl === nextProps.imageUrl
 })
 
 const ChatActions = ({ msg, index, onCopy, onRate }) => {
@@ -335,7 +353,7 @@ const AIChatPanel = React.memo(() => {
   const { selectedSnippet, snippets, openTabs } = useVaultStore()
   const [inputValue, setInputValue] = useState('')
   const [atBottom, setAtBottom] = useState(true)
-  
+
   // Mention search state
   const [mentionState, setMentionState] = useState({
     active: false,
@@ -349,13 +367,13 @@ const AIChatPanel = React.memo(() => {
   const mentionResults = useMemo(() => {
     if (!mentionState.active) return []
     const query = mentionState.query.toLowerCase()
-    
+
     // Performance: If query is empty, prefer Open Tabs + Recent
     if (!query) {
       const openSnippetObjs = openTabs
         .map(id => snippets.find(s => s.id === id))
         .filter(Boolean)
-      
+
       // If we have few open tabs, fill with some random/top snippets
       if (openSnippetObjs.length < 5) {
         const others = snippets
@@ -389,7 +407,7 @@ const AIChatPanel = React.memo(() => {
     // Note: We need to preserve whitespace EXACTLY for alignment
     // Use a regex that captures the @mention parts
     const parts = inputValue.split(/(@[^ \n\t]+)/g)
-    
+
     return parts.map((part, i) => {
       if (part.startsWith('@')) {
         // Verify it looks like a valid mention pattern
@@ -531,7 +549,7 @@ const AIChatPanel = React.memo(() => {
       // Regular chat message
       // Reset scroll tracking when user sends a message - they want to see the response
       setAtBottom(true)
-      
+
       // Send chat message
 
       // Include all open tabs as context (not just selected snippet)
@@ -610,7 +628,7 @@ const AIChatPanel = React.memo(() => {
     // 2. Apply Mode Instructions (Text Chat Only)
     let finalMessage = text
     let systemInstruction = ''
-    
+
     if (mode === 'Fast') systemInstruction = '[System: Be extremely concise and direct.]\n'
     if (mode === 'Thinking') systemInstruction = '[System: Think step-by-step. Show your reasoning.]\n'
     if (mode === 'Creative') systemInstruction = '[System: Be creative, use metaphors and vibrant language.]\n'
@@ -618,7 +636,7 @@ const AIChatPanel = React.memo(() => {
 
     // Prepend instructions if needed
     if (mode !== 'Standard') {
-       finalMessage = systemInstruction + finalMessage
+      finalMessage = systemInstruction + finalMessage
     }
 
     try {
@@ -634,7 +652,7 @@ const AIChatPanel = React.memo(() => {
     const newValue = `${before}@${snippet.title.replace(/\s+/g, '')} ${after}`
     setInputValue(newValue)
     setMentionState({ active: false, query: '', cursorPos: 0, results: [], index: 0 })
-    
+
     // Focus back and adjust height
     setTimeout(() => {
       if (textareaRef.current) {
@@ -664,14 +682,14 @@ const AIChatPanel = React.memo(() => {
     } else {
       setMentionState(s => s.active ? { ...s, active: false } : s)
     }
-    
+
     adjustTextareaHeight()
   }
 
   return (
     <div className="chat-container">
-       {/* Sessions Sidebar */}
-       <div className={`chat-sessions-sidebar ${showSessions ? 'open' : ''}`}>
+      {/* Sessions Sidebar */}
+      <div className={`chat-sessions-sidebar ${showSessions ? 'open' : ''}`}>
         <div className="sessions-header">
           <History size={14} />
           <span>History</span>
@@ -681,15 +699,15 @@ const AIChatPanel = React.memo(() => {
         </div>
         <div className="sessions-list">
           {sessions.map((s) => (
-            <div 
-              key={s.id} 
+            <div
+              key={s.id}
               className={`session-item ${activeSessionId === s.id ? 'active' : ''}`}
               onClick={() => switchSession(s.id)}
             >
               <MessageSquare size={14} />
               <span className="session-title">{s.title || 'New Chat'}</span>
-              <button 
-                className="delete-session-btn" 
+              <button
+                className="delete-session-btn"
                 onClick={(e) => {
                   e.stopPropagation()
                   deleteSession(s.id)
@@ -705,8 +723,8 @@ const AIChatPanel = React.memo(() => {
       <div className="chat-main">
         <header className="chat-header">
           <div className="chat-header-left">
-            <button 
-              className="toggle-sessions-btn" 
+            <button
+              className="toggle-sessions-btn"
               onClick={() => setShowSessions(!showSessions)}
               title="Toggle History"
             >
@@ -722,199 +740,200 @@ const AIChatPanel = React.memo(() => {
         </header>
 
         <div className="chat-messages">
-        {chatMessages.length === 0 ? (
-          <div className="chat-empty">
-            <div className="chat-empty-icon">✨</div>
-            <p>Ask me anything...</p>
-            {selectedSnippet && (
-              <button
-                className="chat-suggestion-btn"
-                onClick={() =>
-                  sendChatMessage(`Explain the code in "${selectedSnippet.title}"`, [
-                    selectedSnippet
-                  ])
-                }
-              >
-                Explain "{selectedSnippet.title}"
-              </button>
-            )}
-          </div>
-        ) : (
-          <Virtuoso
-            ref={virtuosoRef}
-            style={{ height: '100%', outline: 'none' }}
-            data={chatMessages}
-            followOutput={(isAtBottom) => (isAtBottom ? 'auto' : false)}
-            initialTopMostItemIndex={chatMessages.length > 0 ? chatMessages.length - 1 : 0}
-            atBottomStateChange={setAtBottom}
-            firstItemIndex={0}
-            increaseViewportBy={{ top: 200, bottom: 200 }}
-            overscan={200}
-            totalListHeightChanged={(height) => {
-              if (atBottom) {
-                virtuosoRef.current?.scrollToIndex({
-                  index: chatMessages.length - 1,
-                  align: 'end',
-                  behavior: 'auto'
-                })
-              }
-            }}
-            itemContent={(index, msg) => {
-              // Ensure stable rendering - prevent content from disappearing
-              // Use key for stable React reconciliation
-              return (
-                <div
-                  key={`msg-${index}-${msg.role}-${msg.timestamp || index}`}
-                  className={`chat-row ${msg.role}`}
-                  style={{
-                    marginBottom: '12px',
-                    display: 'flex',
-                    flexDirection: 'row',
-                    gap: '8px',
-                    justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                    alignItems: 'flex-start',
-                    width: '100%',
-                    minHeight: '40px',
-                    willChange: 'auto'
-                  }}
+          {chatMessages.length === 0 ? (
+            <div className="chat-empty">
+              <div className="chat-empty-icon">✨</div>
+              <p>Ask me anything...</p>
+              {selectedSnippet && (
+                <button
+                  className="chat-suggestion-btn"
+                  onClick={() =>
+                    sendChatMessage(`Explain the code in "${selectedSnippet.title}"`, [
+                      selectedSnippet
+                    ])
+                  }
                 >
-                  {msg.role === 'assistant' && <LuminaAvatar />}
-
+                  Explain "{selectedSnippet.title}"
+                </button>
+              )}
+            </div>
+          ) : (
+            <Virtuoso
+              ref={virtuosoRef}
+              style={{ height: '100%', outline: 'none' }}
+              data={chatMessages}
+              followOutput={(isAtBottom) => (isAtBottom ? 'auto' : false)}
+              initialTopMostItemIndex={chatMessages.length > 0 ? chatMessages.length - 1 : 0}
+              atBottomStateChange={setAtBottom}
+              firstItemIndex={0}
+              increaseViewportBy={{ top: 200, bottom: 200 }}
+              overscan={200}
+              totalListHeightChanged={(height) => {
+                if (atBottom) {
+                  virtuosoRef.current?.scrollToIndex({
+                    index: chatMessages.length - 1,
+                    align: 'end',
+                    behavior: 'auto'
+                  })
+                }
+              }}
+              itemContent={(index, msg) => {
+                // Ensure stable rendering - prevent content from disappearing
+                // Use key for stable React reconciliation
+                return (
                   <div
-                    className="chat-content-stack"
+                    // key={`msg-${index}-${msg.role}-${msg.timestamp || index}`}
+                    key={msg.id || `msg-${index}`}
+                    className={`chat-row ${msg.role}`}
                     style={{
+                      marginBottom: '12px',
                       display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                      maxWidth: msg.role === 'user' ? '70%' : '75%',
-                      minWidth: 0,
-                      flexShrink: 1,
-                      width: 'auto'
+                      flexDirection: 'row',
+                      gap: '8px',
+                      justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                      alignItems: 'flex-start',
+                      width: '100%',
+                      minHeight: '40px',
+                      willChange: 'auto'
                     }}
                   >
+                    {msg.role === 'assistant' && <LuminaAvatar />}
+
                     <div
-                      className={`chat-bubble ${msg.role}`}
-                      style={{ maxWidth: '100%', width: '100%' }}
+                      className="chat-content-stack"
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                        maxWidth: msg.role === 'user' ? '80%' : '95%',
+                        minWidth: 0,
+                        flexShrink: 1,
+                        width: 'auto'
+                      }}
                     >
-                      {msg.role === 'assistant' &&
-                      (!msg.content && !msg.imageUrl) &&
-                      (isChatLoading || msg.isGenerating) ? (
-                        <div className="typing-inline">
-                          {msg.isGenerating ? (
-                             <span style={{ fontSize: '12px', color: 'var(--text-faint)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                               <Sparkles size={12} className="spin" /> Generating Image...
-                             </span>
-                          ) : (
-                            <>
-                              <span></span>
-                              <span></span>
-                              <span></span>
-                            </>
-                          )}
-                        </div>
-                      ) : (
-                        <MessageContent
-                          content={msg.content}
-                          imageUrl={msg.imageUrl}
-                          imagePrompt={msg.imagePrompt}
+                      <div
+                        className={`chat-bubble ${msg.role}`}
+                        style={{ maxWidth: '100%', width: '100%' }}
+                      >
+                        {msg.role === 'assistant' &&
+                          (!msg.content && !msg.imageUrl) &&
+                          (isChatLoading || msg.isGenerating) ? (
+                          <div className="typing-inline">
+                            {msg.isGenerating ? (
+                              <span style={{ fontSize: '12px', color: 'var(--text-faint)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <Sparkles size={12} className="spin" /> Generating Image...
+                              </span>
+                            ) : (
+                              <>
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          <MessageContent
+                            content={msg.content}
+                            imageUrl={msg.imageUrl}
+                            imagePrompt={msg.imagePrompt}
+                            onCopy={handleCopy}
+                          />
+                        )}
+                      </div>
+                      {msg.role === 'assistant' && (
+                        <ChatActions
+                          msg={msg}
+                          index={index}
                           onCopy={handleCopy}
+                          onRate={handleRating}
                         />
                       )}
                     </div>
-                    {msg.role === 'assistant' && (
-                      <ChatActions
-                        msg={msg}
-                        index={index}
-                        onCopy={handleCopy}
-                        onRate={handleRating}
-                      />
-                    )}
-                  </div>
 
-                  {msg.role === 'user' && <UserAvatar />}
-                </div>
-              )
-            }}
-            components={{
-              Footer: () => {
-                // Only show typing indicator in footer if loading AND no assistant message exists yet
-                // (Once assistant message exists, typing shows inline in that message)
-                const lastMessage = chatMessages[chatMessages.length - 1]
-                const hasAssistantMessage = lastMessage && lastMessage.role === 'assistant'
-                const showTyping = isChatLoading && !hasAssistantMessage
-
-                return (
-                  <div style={{ paddingBottom: '12px' }}>
-                    {showTyping && (
-                      <div
-                        className="chat-row assistant"
-                        style={{
-                          marginBottom: '12px',
-                          display: 'flex',
-                          gap: '8px',
-                          alignItems: 'flex-start'
-                        }}
-                      >
-                        <LuminaAvatar />
-                        <div className="chat-bubble assistant">
-                          <div className="typing-inline">
-                            <span></span>
-                            <span></span>
-                            <span></span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    {chatError && (
-                      <div className="chat-error">
-                        <strong>Error:</strong> {chatError}
-                        {chatError.includes('API Key') && (
-                          <button
-                            onClick={() => {
-                              // Could trigger settings modal to open AI tab
-                              window.dispatchEvent(new CustomEvent('open-settings-ai'))
-                            }}
-                            style={{
-                              marginTop: '8px',
-                              padding: '4px 8px',
-                              fontSize: '12px',
-                              background: 'var(--bg-active)',
-                              border: '1px solid var(--border-dim)',
-                              borderRadius: '4px',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            Open Settings
-                          </button>
-                        )}
-                      </div>
-                    )}
-                    {imageGenerationError && (
-                      <div className="chat-error">
-                        <strong>Image Generation Error:</strong> {imageGenerationError}
-                      </div>
-                    )}
+                    {msg.role === 'user' && <UserAvatar />}
                   </div>
                 )
-              }
-            }}
-          />
-        )}
-      </div>
+              }}
+              components={{
+                Footer: () => {
+                  // Only show typing indicator in footer if loading AND no assistant message exists yet
+                  // (Once assistant message exists, typing shows inline in that message)
+                  const lastMessage = chatMessages[chatMessages.length - 1]
+                  const hasAssistantMessage = lastMessage && lastMessage.role === 'assistant'
+                  const showTyping = isChatLoading && !hasAssistantMessage
 
-      <div className="chat-input-area" style={{ padding: 0, background: 'transparent', border: 'none' }}>
-         <Composer 
-            onSend={handleSendMessage} 
+                  return (
+                    <div style={{ paddingBottom: '12px' }}>
+                      {showTyping && (
+                        <div
+                          className="chat-row assistant"
+                          style={{
+                            marginBottom: '12px',
+                            display: 'flex',
+                            gap: '8px',
+                            alignItems: 'flex-start'
+                          }}
+                        >
+                          <LuminaAvatar />
+                          <div className="chat-bubble assistant">
+                            <div className="typing-inline">
+                              <span></span>
+                              <span></span>
+                              <span></span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {chatError && (
+                        <div className="chat-error">
+                          <strong>Error:</strong> {chatError}
+                          {chatError.includes('API Key') && (
+                            <button
+                              onClick={() => {
+                                // Could trigger settings modal to open AI tab
+                                window.dispatchEvent(new CustomEvent('open-settings-ai'))
+                              }}
+                              style={{
+                                marginTop: '8px',
+                                padding: '4px 8px',
+                                fontSize: '12px',
+                                background: 'var(--bg-active)',
+                                border: '1px solid var(--border-dim)',
+                                borderRadius: '4px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Open Settings
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      {imageGenerationError && (
+                        <div className="chat-error">
+                          <strong>Image Generation Error:</strong> {imageGenerationError}
+                        </div>
+                      )}
+                    </div>
+                  )
+                }
+              }}
+            />
+          )}
+        </div>
+
+        <div className="chat-input-area" style={{ padding: 0, background: 'transparent', border: 'none' }}>
+          <Composer
+            onSend={handleSendMessage}
             isLoading={isChatLoading || isImageGenerating}
             onCancel={() => {
               if (isChatLoading) cancelChat()
               if (isImageGenerating) cancelImageGeneration()
             }}
-         />
+          />
+        </div>
       </div>
     </div>
-  </div>
-)
+  )
 })
 
 AIChatPanel.displayName = 'AIChatPanel'

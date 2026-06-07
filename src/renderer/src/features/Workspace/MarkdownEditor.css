@@ -65,14 +65,15 @@
 }
 
 /* Global Selection Style for CM6: High visibility for "Robust" feel */
-.cm-selectionLayer .cm-selectionBackground,
-.cm-content ::selection {
-  background-color: rgba(var(--text-accent-rgb, 64, 186, 250), 0.3) !important;
+.markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground,
+.markdown-editor .cm-content ::selection {
+  background-color: rgba(64, 186, 250, 0.35) !important;
 }
 
 /* Force specific selection style for code blocks */
-.cm-line[class*='cm-codeblock-'] ::selection {
-  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.4) !important;
+.markdown-editor .cm-line[class*='cm-codeblock-'] ::selection,
+.markdown-editor .cm-line[class*='cm-codeblock-'] .cm-selectionBackground {
+  background-color: rgba(64, 186, 250, 0.45) !important;
 }
 
 .markdown-editor {
@@ -83,7 +84,7 @@
   min-height: 0;
   overflow: hidden;
   background: var(--bg-app);
-  --atomic-editor-selection-bg: rgba(64, 186, 250, 0.3) !important;
+  --atomic-editor-selection-bg: rgba(64, 186, 250, 0.35) !important;
   
   /* Enforce Atomic Editor Theme Colors */
   --atomic-editor-accent: var(--text-accent);

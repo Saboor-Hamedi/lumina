@@ -10,6 +10,7 @@ export const useAIStore = create((set, get) => {
     get().loadSessions()
   }, 0)
 
+
   worker.onmessage = (e) => {
     const { type, status, id, result, progress } = e.data
 
@@ -17,8 +18,40 @@ export const useAIStore = create((set, get) => {
     if (type === 'progress') {
       if (status === 'progress') {
         set({ modelLoadingProgress: progress })
+
+        // Update the loading message in chat with live percentage!
+        const currentMessages = get().chatMessages;
+        if (currentMessages && currentMessages.length > 0) {
+          const lastMsg = currentMessages[currentMessages.length - 1];
+          if (lastMsg.isGenerating && progress) {
+            const newMessages = [...currentMessages];
+            const pct = Math.round(progress);
+            // Only update if it's a significant jump to avoid React re-rendering 1000 times a second
+            if (pct % 5 === 0) {
+              newMessages[newMessages.length - 1] = {
+                ...lastMsg,
+                content: `Downloading offline AI model... **${pct}%**`
+              };
+              set({ chatMessages: newMessages });
+            }
+          }
+        }
       } else if (status === 'ready') {
         set({ isModelReady: true, modelLoadingProgress: 100 })
+
+        // Switch to 'Generating...' once ready
+        const currentMessages = get().chatMessages;
+        if (currentMessages && currentMessages.length > 0) {
+          const lastMsg = currentMessages[currentMessages.length - 1];
+          if (lastMsg.isGenerating) {
+            const newMessages = [...currentMessages];
+            newMessages[newMessages.length - 1] = {
+              ...lastMsg,
+              content: `Model loaded! Generating your file offline...`
+            };
+            set({ chatMessages: newMessages });
+          }
+        }
       }
       return
     }
@@ -69,6 +102,18 @@ export const useAIStore = create((set, get) => {
         set({ pendingTasks: newMap })
 
         worker.postMessage({ id, type: 'embed', payload: text })
+      })
+    },
+
+    generateLocalText: (prompt) => {
+      return new Promise((resolve, reject) => {
+        const id = crypto.randomUUID()
+        const { pendingTasks } = get()
+        const newMap = new Map(pendingTasks)
+        newMap.set(id, { resolve, reject })
+        set({ pendingTasks: newMap })
+
+        worker.postMessage({ id, type: 'generate', payload: prompt })
       })
     },
 
@@ -150,7 +195,7 @@ export const useAIStore = create((set, get) => {
         } catch (dbErr) {
           console.warn('[AIStore] IndexedDB failed to read chat sessions, falling back to empty:', dbErr)
         }
-        
+
         // 2. Fallback to localStorage for migration or if DB is empty
         if (savedSessions.length === 0) {
           const legacy = localStorage.getItem('lumina-chat-sessions')
@@ -167,7 +212,7 @@ export const useAIStore = create((set, get) => {
 
         if (savedSessions.length > 0) {
           set({ sessions: savedSessions })
-          
+
           // Default to last active or first session
           const lastActive = localStorage.getItem('lumina-active-session-id')
           if (lastActive && savedSessions.some(s => s.id === lastActive)) {
@@ -177,7 +222,7 @@ export const useAIStore = create((set, get) => {
           }
           return
         }
-        
+
         // Fallback or Initial: Create first session
         const firstSession = {
           id: crypto.randomUUID(),
@@ -243,7 +288,7 @@ export const useAIStore = create((set, get) => {
           nextActiveId = newSessions.length > 0 ? newSessions[0].id : null
         }
 
-        const nextMessages = nextActiveId 
+        const nextMessages = nextActiveId
           ? newSessions.find(s => s.id === nextActiveId)?.messages || []
           : []
 
@@ -349,16 +394,17 @@ export const useAIStore = create((set, get) => {
       }
 
       set({ isImageGenerating: true, imageGenerationError: null })
-      
+
       // OPTIMISTIC UI: Add placeholder message immediately
       const placeholderMsg = {
+        id: crypto.randomUUID(),
         role: 'assistant',
-        content: '', // Empty text
-        imageUrl: null, 
+        content: `Generating image: "${prompt}"...`,
+        imageUrl: null,
         isGenerating: true, // Flag for UI to show spinner
         timestamp: Date.now()
       }
-      
+
       set((state) => ({
         chatMessages: [...(state.chatMessages || []), placeholderMsg]
       }))
@@ -370,6 +416,7 @@ export const useAIStore = create((set, get) => {
         const result = await generateImageWithRetry(imagePrompt, huggingFaceKey, controller)
 
         const imageMessage = {
+          id: crypto.randomUUID(),
           role: 'assistant',
           content: '',
           imageUrl: result.imageUrl,
@@ -381,11 +428,11 @@ export const useAIStore = create((set, get) => {
           // Replace the last message (placeholder) with actual result
           const newMessages = [...(state.chatMessages || [])]
           if (newMessages.length > 0 && newMessages[newMessages.length - 1].isGenerating) {
-             newMessages[newMessages.length - 1] = imageMessage
+            newMessages[newMessages.length - 1] = imageMessage
           } else {
-             newMessages.push(imageMessage)
+            newMessages.push(imageMessage)
           }
-          
+
           return {
             chatMessages: newMessages,
             isImageGenerating: false,
@@ -437,6 +484,59 @@ export const useAIStore = create((set, get) => {
         return
       }
 
+      // LOCAL AI FILE GENERATOR INTERCEPT
+      // Remove any system prompt prefix injected by the UI modes
+      const cleanMessage = message.replace(/^\[System:.*?\]\n?/i, '').trim();
+      const writeMatch = cleanMessage.match(/^write (?:a )?file about (.+)/i);
+
+      if (writeMatch) {
+        const topic = writeMatch[1].trim();
+
+        const userMsg = { id: crypto.randomUUID(), role: 'user', content: cleanMessage, timestamp: Date.now() }
+        const loadingMsg = { 
+          id: crypto.randomUUID(), 
+          role: 'assistant', 
+          content: `Generating local file about: **${topic}**... This may take a moment if downloading the model for the first time.`, 
+          isGenerating: true,
+          timestamp: Date.now()
+        }
+
+        const currentMessages = get().chatMessages || []
+        set({ chatMessages: [...currentMessages, userMsg, loadingMsg], isChatLoading: true, chatError: null })
+
+        try {
+          const prompt = `Write a detailed markdown document about ${topic}. Include headings, bullet points, and code examples if relevant.`;
+          const generatedContent = await get().generateLocalText(prompt);
+
+          // Save to vault
+          const vaultModule = await import('../../core/store/useVaultStore')
+          const vaultStore = vaultModule.useVaultStore.getState();
+          const newSnippet = {
+            id: crypto.randomUUID(),
+            title: topic,
+            code: generatedContent || `# ${topic}\n\n(No content generated)`,
+            language: 'markdown',
+            tags: '',
+            timestamp: Date.now()
+          };
+          await vaultStore.saveSnippet(newSnippet);
+          vaultStore.setSelectedSnippet(newSnippet);
+
+          // Update chat
+          const successMsg = { id: crypto.randomUUID(), role: 'assistant', content: `I have generated and created the file: **${topic}**. It is now open in your editor!`, timestamp: Date.now() }
+          const current = get().chatMessages;
+          current[current.length - 1] = successMsg;
+          set({ chatMessages: [...current], isChatLoading: false })
+          await get().saveChatHistory()
+        } catch (err) {
+          console.error('[AIStore] Local generation failed:', err)
+          const current = get().chatMessages;
+          current[current.length - 1] = { id: crypto.randomUUID(), role: 'assistant', content: `Failed to generate file: ${err.message}`, timestamp: Date.now() }
+          set({ chatMessages: [...current], isChatLoading: false })
+        }
+        return;
+      }
+
       if (!Array.isArray(contextSnippets)) {
         contextSnippets = []
       }
@@ -465,13 +565,13 @@ export const useAIStore = create((set, get) => {
       const mentionRegex = /@([^ \n\t]+)/g
       const mentions = [...message.matchAll(mentionRegex)].map(m => m[1])
       const mentionedSnippets = []
-      
+
       if (mentions.length > 0) {
         try {
           const vaultModule = await import('../../core/store/useVaultStore')
           const vaultSnippets = vaultModule.useVaultStore.getState().snippets
           mentions.forEach(mentionTitle => {
-            const found = vaultSnippets.find(s => 
+            const found = vaultSnippets.find(s =>
               s.title.toLowerCase() === mentionTitle.toLowerCase() ||
               s.title.toLowerCase().includes(mentionTitle.toLowerCase())
             )
@@ -484,10 +584,24 @@ export const useAIStore = create((set, get) => {
         }
       }
 
-      const userMsg = { role: 'user', content: message.trim() }
+      // Normal Chat Flow
+      const userMsg = { 
+        id: crypto.randomUUID(),
+        role: 'user', 
+        content: message.trim(),
+        timestamp: Date.now() 
+      }
+      
       const currentMessages = get().chatMessages || []
       const newHistory = [...currentMessages, userMsg]
-      set({ chatMessages: newHistory, isChatLoading: true, chatError: null })
+      
+      const assistantMsg = { 
+        id: crypto.randomUUID(),
+        role: 'assistant', 
+        content: '',
+        timestamp: Date.now()
+      }
+      set({ chatMessages: [...newHistory, assistantMsg], isChatLoading: true, chatError: null })
 
       let controller = null
       let timeoutId = null
@@ -527,6 +641,24 @@ export const useAIStore = create((set, get) => {
 - Avoid repetitive disclaimers like "I have access to your vault." Just act on the knowledge provided.
 - Cite file names when quoting specific context.
 
+**FILE EDITING AND CREATION**:
+You have the autonomous ability to create new files, update existing files, or delete files in the user's vault, especially when organizing information from Vault Knowledge.
+To create a new file, output this exact code block:
+\`\`\`lumina-create File Title Here
+# File content...
+\`\`\`
+
+To update an existing file (including the currently open one), output this exact code block:
+\`\`\`lumina-update Existing File Title
+# Full updated file content...
+\`\`\`
+
+To delete an existing file, output this exact code block:
+\`\`\`lumina-delete Existing File Title
+\`\`\`
+
+Do NOT use these blocks for generic code examples. ONLY use them when you intend to modify the user's actual files on disk. Always output the full content of the file.
+
 **CONTEXT**:
 ${vaultAccessNote}`
 
@@ -562,7 +694,7 @@ ${vaultAccessNote}`
         if (settingsObj.activeProvider) {
           providerType = settingsObj.activeProvider
           activeModel = settingsObj.activeModel || null
-          
+
           if (providerType === 'openai') apiKey = settingsObj.openaiKey
           else if (providerType === 'anthropic') apiKey = settingsObj.anthropicKey
           else if (providerType === 'ollama') apiKey = 'unused' // Ollama usually no key
@@ -570,11 +702,11 @@ ${vaultAccessNote}`
 
         // Initialize Provider
         const { AIProviderFactory } = await import('../../features/AI/providers/index.js')
-        const providerConfig = { 
-          apiKey, 
+        const providerConfig = {
+          apiKey,
           baseUrl: settingsObj.ollamaUrl // Only relevant for Ollama checking
         }
-        
+
         const provider = AIProviderFactory.createProvider(providerType, providerConfig)
 
         // Abort Controller
@@ -596,7 +728,7 @@ ${vaultAccessNote}`
         let fullContent = ''
         let lastUpdateTime = Date.now()
         const UPDATE_INTERVAL = 100 // Update UI every 100ms instead of every token
-        
+
         try {
           const stream = provider.chatStream(finalMessages, {
             model: activeModel,
@@ -607,7 +739,7 @@ ${vaultAccessNote}`
           for await (const chunk of stream) {
             if (chunk) {
               fullContent += chunk
-              
+
               // Only update state every 100ms to prevent blocking
               const now = Date.now()
               if (now - lastUpdateTime >= UPDATE_INTERVAL) {
@@ -622,7 +754,7 @@ ${vaultAccessNote}`
               }
             }
           }
-          
+
           // Final update to ensure we have the complete message
           set((state) => {
             const msgs = [...state.chatMessages]
@@ -631,6 +763,75 @@ ${vaultAccessNote}`
             }
             return { chatMessages: msgs }
           })
+
+          // AUTO-APPLY LUMINA CREATE/UPDATE BLOCKS
+          try {
+            const vaultModule = await import('../../core/store/useVaultStore')
+            const vaultStore = vaultModule.useVaultStore.getState();
+            const allSnippets = vaultStore.snippets;
+            let appliedChanges = false;
+
+            // 1. Process lumina-create
+            const createMatches = [...fullContent.matchAll(/```lumina-create\s+(.+?)\n([\s\S]*?)```/g)];
+            for (const match of createMatches) {
+              const title = match[1].trim();
+              const newCode = match[2].trim();
+
+              const newSnippet = {
+                id: crypto.randomUUID(),
+                title: title,
+                code: newCode,
+                language: 'markdown',
+                tags: '',
+                timestamp: Date.now()
+              };
+              await vaultStore.saveSnippet(newSnippet);
+              appliedChanges = true;
+            }
+
+            // 2. Process lumina-update
+            const updateMatches = [...fullContent.matchAll(/```lumina-update\s+(.+?)\n([\s\S]*?)```/g)];
+            for (const match of updateMatches) {
+              const title = match[1].trim();
+              const newCode = match[2].trim();
+
+              // Find snippet by title
+              const targetSnippet = allSnippets.find(s => s.title.toLowerCase() === title.toLowerCase());
+
+              if (targetSnippet) {
+                const updatedSnippet = { ...targetSnippet, code: newCode, timestamp: Date.now() };
+                await vaultStore.saveSnippet(updatedSnippet);
+
+                // If it's the currently active snippet, update it
+                if (vaultStore.selectedSnippet?.id === targetSnippet.id) {
+                  vaultStore.setSelectedSnippet(updatedSnippet);
+                }
+                appliedChanges = true;
+              }
+            }
+
+            // 3. Process lumina-delete
+            const deleteMatches = [...fullContent.matchAll(/```lumina-delete\s+(.+?)```/g)];
+            for (const match of deleteMatches) {
+              const title = match[1].trim();
+              
+              // Find snippet by title
+              const targetSnippet = allSnippets.find(s => s.title.toLowerCase() === title.toLowerCase());
+              
+              if (targetSnippet) {
+                await vaultStore.deleteSnippet(targetSnippet.id);
+                appliedChanges = true;
+              }
+            }
+
+            if (appliedChanges) {
+              const current = get().chatMessages;
+              current[current.length - 1].content += '\n\n*(✨ I have automatically executed these file changes in your vault!)*';
+              set({ chatMessages: [...current] });
+            }
+          } catch (err) {
+            console.error('[AIStore] Failed to auto-apply file operations:', err);
+          }
         } finally {
           if (timeoutId) clearTimeout(timeoutId)
         }

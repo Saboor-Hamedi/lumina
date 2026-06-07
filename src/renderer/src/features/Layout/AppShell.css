@@ -944,9 +944,9 @@
 
 .chat-bubble.assistant {
   align-self: flex-start;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-dim);
-  border-bottom-left-radius: 2px;
+  background: transparent;
+  border: none;
+  padding: 4px 0;
   color: var(--text-main);
 }
 

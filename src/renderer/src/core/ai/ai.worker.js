@@ -18,9 +18,18 @@ class TextEmbedder {
   }
 }
 
-// Minimal Summarizer (DistilBART is ~300MB, might be too heavy? Let's try or stick to embeddings first)
-// For "Chat" we usually need generation, which is heavy. 
-// We will focus on Embeddings for Search/Graph first as promised (20MB).
+class TextGenerator {
+  static task = 'text2text-generation';
+  static model = 'Xenova/flan-t5-small';
+  static instance = null;
+
+  static async getInstance(progress_callback = null) {
+    if (this.instance === null) {
+      this.instance = pipeline(this.task, this.model, { progress_callback });
+    }
+    return this.instance;
+  }
+}
 
 self.addEventListener('message', async (event) => {
   const { id, type, payload } = event.data;
@@ -38,6 +47,19 @@ self.addEventListener('message', async (event) => {
       const embedding = output.data; // Float32Array
       
       self.postMessage({ id, type, status: 'complete', result: Array.from(embedding) });
+    } else if (type === 'generate') {
+      const generator = await TextGenerator.getInstance((data) => {
+        // Send loading progress back for UI
+        self.postMessage({ type: 'progress', status: data.status, progress: data.progress, file: data.file });
+      });
+
+      const output = await generator(payload, {
+        max_new_tokens: 512,
+        temperature: 0.7,
+        repetition_penalty: 1.2
+      });
+
+      self.postMessage({ id, type, status: 'complete', result: output[0].generated_text });
     }
   } catch (error) {
     self.postMessage({ id, type, status: 'error', error: error.message });
