@@ -244,6 +244,8 @@ const MarkdownEditor = React.memo(
         // Code block copy click
         const codeLine = e.target.closest('.cm-line.cb-code-header');
         if (codeLine) {
+          const rect = codeLine.getBoundingClientRect();
+          if (e.clientX < rect.right - 80) return;
           const id = codeLine.getAttribute('data-cb-id');
           const code = id != null ? codeMap.get(Number(id)) : null;
           if (code != null) {

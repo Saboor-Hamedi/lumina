@@ -158,7 +158,7 @@
 
 .markdown-body table th {
   font-weight: 600 !important;
-  background: var(--bg-secondary) !important;
+  background: var(--bg-active) !important;
 }
 
 .markdown-body table tr {

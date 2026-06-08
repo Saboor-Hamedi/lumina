@@ -195,38 +195,38 @@ export const THEMES = {
   github: {
     id: 'github',
     name: 'GitHub',
-    description: 'Light theme inspired by GitHub',
+    description: 'Dark theme inspired by GitHub',
     colors: {
-      '--bg-app': '#ffffff',
-      '--bg-sidebar': '#f6f8fa',
-      '--bg-activitybar': '#f0f2f5',
-      '--bg-panel': '#eef1f5',
-      '--bg-editor': '#ffffff',
-      '--bg-active': 'rgba(3, 102, 214, 0.08)',
-      '--bg-card': '#e6eaef',
+      '--bg-app': '#0d1117',
+      '--bg-sidebar': '#161b22',
+      '--bg-activitybar': '#0d1117',
+      '--bg-panel': '#161b22',
+      '--bg-editor': '#0d1117',
+      '--bg-active': 'rgba(56, 139, 253, 0.15)',
+      '--bg-card': '#21262d',
 
-      '--text-main': '#1f2328',
-      '--text-muted': '#656d76',
-      '--text-faint': '#8c959f',
-      '--text-accent': '#0969da',
-      '--text-accent-rgb': '9, 105, 218',
+      '--text-main': '#e6edf3',
+      '--text-muted': '#8b949e',
+      '--text-faint': '#6e7681',
+      '--text-accent': '#58a6ff',
+      '--text-accent-rgb': '88, 166, 255',
 
-      '--border-dim': '#d0d7de',
-      '--border-subtle': '#c8d1da',
-      '--border-main': '#b0b8c4',
-      '--border-card': '#d0d7de',
+      '--border-dim': '#30363d',
+      '--border-subtle': '#21262d',
+      '--border-main': '#30363d',
+      '--border-card': '#21262d',
 
-      '--scroll-thumb': '#c0c6cd',
-      '--scroll-track': '#f6f8fa',
+      '--scroll-thumb': '#30363d',
+      '--scroll-track': '#0d1117',
 
-      '--icon-primary': '#0969da',
-      '--icon-secondary': '#1a7f37',
-      '--icon-tertiary': '#bf8700',
-      '--icon-danger': '#cf222e',
-      '--icon-love': '#bf3989',
+      '--icon-primary': '#58a6ff',
+      '--icon-secondary': '#3fb950',
+      '--icon-tertiary': '#d29922',
+      '--icon-danger': '#f85149',
+      '--icon-love': '#db61a2',
 
       '--caret-width': '2px',
-      '--caret-color': '#0969da'
+      '--caret-color': '#58a6ff'
     }
   },
 

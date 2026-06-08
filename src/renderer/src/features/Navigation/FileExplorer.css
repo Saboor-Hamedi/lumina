@@ -21,7 +21,7 @@
 .pane-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   flex-shrink: 0;
 }
 
@@ -29,42 +29,24 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
+  padding: 0 12px;
   height: 40px;
   min-height: 40px;
   background: var(--bg-sidebar);
   border-bottom: 1px solid var(--border-dim);
   flex-shrink: 0;
-  position: relative;
-}
-
-.pane-header::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 16px;
-  right: 16px;
-  height: 1px;
-  background: var(--text-accent);
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.pane-header:hover::after {
-  opacity: 0.3;
 }
 
 .explorer-toolbar {
-  padding: 12px 16px;
-  margin-bottom: 4px;
+  padding: 8px 8px 4px 8px;
 }
 
 .explorer-search {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(0,0,0,0.15); /* Deep inset */
-  padding: 6px 10px;
+  gap: 6px;
+  background: var(--bg-panel);
+  padding: 5px 8px;
   border-radius: 6px;
   border: 1px solid transparent;
   color: var(--text-faint);
@@ -72,14 +54,13 @@
 }
 
 .explorer-search:hover {
-  background: rgba(0,0,0,0.2);
   border-color: var(--border-dim);
 }
 
 .explorer-search:focus-within {
   background: var(--bg-app);
   border-color: var(--text-accent);
-  box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb), 0.1);
+  box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb), 0.12);
   color: var(--text-main);
 }
 
@@ -90,6 +71,7 @@
   color: inherit;
   width: 100%;
   font-family: inherit;
+  outline: none;
 }
 
 .explorer-tree {
@@ -100,92 +82,49 @@
   padding: 0 4px;
 }
 
+.tree-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  position: relative;
+}
+
 .section-header {
-  height: 32px;
-  padding: 0 12px 0 20px; /* Space for tree line */
+  height: 28px;
+  padding: 0 8px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 11px;
+  gap: 6px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--text-faint);
   cursor: pointer;
-  letter-spacing: 0.02em;
-  transition: color 0.1s;
-  position: relative;
-  margin-bottom: 4px;
-}
-
-.section-header::before {
-  content: '';
-  position: absolute;
-  left: 8px;
-  top: 50%;
-  width: 8px;
-  height: 1px;
-  background: var(--border-dim);
-  opacity: 0.6;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-radius: 4px;
+  transition: all 0.15s;
+  margin: 2px 0;
 }
 
 .section-header:hover {
-  color: var(--text-main);
+  color: var(--text-muted);
+  background: var(--bg-active);
 }
 
 .count-badge {
   margin-left: auto;
   font-size: 9px;
-  background: rgba(255,255,255,0.05);
-  padding: 2px 6px;
-  border-radius: 10px;
-  color: var(--text-muted);
-}
-
-.tree-item {
-  height: 30px;
-  padding: 0 8px 0 0; /* Right padding only, left handled by tree structure */
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  color: var(--text-muted);
-  cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition: all 0.1s ease-out;
-  position: relative;
-}
-
-.tree-item:hover {
-  background: rgba(255,255,255,0.04);
-  color: var(--text-main);
-}
-
-.tree-item.active {
   background: var(--bg-active);
-  color: var(--text-accent);
-  font-weight: 500;
-}
-
-.item-icon {
-  color: var(--text-faint);
-  flex-shrink: 0;
-  opacity: 0.7;
-  transition: opacity 0.2s;
-}
-
-.tree-item:hover .item-icon,
-.tree-item.active .item-icon {
-  opacity: 1;
-  color: inherit;
+  padding: 1px 6px;
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
 .section-icon {
-  opacity: 0.7;
-  margin-right: 2px;
+  opacity: 0.6;
   color: var(--text-muted);
-  transition: all 0.2s;
+  transition: all 0.15s;
 }
 
 .section-header:hover .section-icon {
@@ -196,94 +135,112 @@
 .section-static-items {
   display: flex;
   flex-direction: column;
-  padding-bottom: 8px;
-  padding-left: 20px; /* Indent for tree structure */
+  padding: 0 0 4px 0;
+}
+
+.section-items {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.section-items .virtual-list {
+  flex: 1;
+  min-height: 0;
   position: relative;
 }
 
-/* Vertical line connecting section to items */
-.section-static-items::before {
+.tree-item {
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.tree-item:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+.tree-item.active {
+  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.12);
+  color: var(--text-accent);
+  font-weight: 500;
+}
+
+.tree-item.active::before {
   content: '';
   position: absolute;
-  left: 8px;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: var(--border-dim);
-  opacity: 0.4;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  background: var(--text-accent);
+  border-radius: 0 2px 2px 0;
+}
+
+.item-icon {
+  color: var(--text-faint);
+  flex-shrink: 0;
+  opacity: 0.7;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+}
+
+.tree-item:hover .item-icon,
+.tree-item.active .item-icon {
+  opacity: 1;
+  color: inherit;
+}
+
+.tree-item.active .item-icon {
+  color: var(--text-accent);
+  opacity: 1;
+}
+
+.item-icon.hash {
+  color: var(--text-accent);
+  opacity: 0.5;
+}
+
+.section-items .tree-item {
+  padding-left: 24px;
 }
 
 .section-static-items .tree-item {
-  position: relative;
-  padding-left: 20px; /* Space for tree connector */
-}
-
-/* Horizontal connector line for each item */
-.section-static-items .tree-item::before {
-  content: '';
-  position: absolute;
-  left: 8px;
-  top: 50%;
-  width: 12px;
-  height: 1px;
-  background: var(--border-dim);
-  opacity: 0.4;
-}
-
-/* Vertical line from connector to item */
-.section-static-items .tree-item::after {
-  content: '';
-  position: absolute;
-  left: 8px;
-  top: 0;
-  bottom: 50%;
-  width: 1px;
-  background: var(--border-dim);
-  opacity: 0.4;
-}
-
-.section-static-items .tree-item:first-child::after {
-  top: 50%;
-}
-
-.section-static-items .tree-item:last-child::after {
-  bottom: auto;
-  top: 0;
-  height: 50%;
-}
-
-.section-static-items .tree-item:hover::before,
-.section-static-items .tree-item:hover::after {
-  opacity: 0.6;
-  background: var(--text-accent);
-}
-
-.section-static-items .tree-item.active::before,
-.section-static-items .tree-item.active::after {
-  opacity: 0.8;
-  background: var(--text-accent);
+  padding-left: 24px;
 }
 
 .tree-empty {
-  padding: 40px 20px;
+  padding: 32px 16px;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   color: var(--text-faint);
   font-size: 13px;
 }
 
 .empty-icon {
-  font-size: 32px;
-  opacity: 0.3;
-  margin-bottom: 4px;
+  font-size: 28px;
+  opacity: 0.25;
 }
 
-/* --- PREMIUM DOCK FOOTER --- */
 .pane-footer {
-  height: 32px; /* Matching editor footer */
+  height: 32px;
   flex-shrink: 0;
   border-top: 1px solid var(--border-dim);
   display: flex;
@@ -295,7 +252,6 @@
   font-size: 11px;
 }
 
-/* Status Pill Atom */
 .footer-stat {
   display: flex;
   align-items: center;
@@ -305,16 +261,13 @@
   font-weight: 600;
   padding: 4px 10px;
   border-radius: 4px;
-  cursor: pointer;
+  cursor: default;
   transition: all 0.2s;
-  background: rgba(0,0,0,0.02);
-  border: 1px solid transparent;
 }
 
 .footer-stat:hover {
   background: var(--bg-active);
   color: var(--text-main);
-  border-color: var(--border-card);
 }
 
 .footer-stat strong {
@@ -338,243 +291,32 @@
   50% { opacity: 0.6; filter: drop-shadow(0 0 20px rgba(64, 186, 250, 0.6)); }
 }
 
-/* Glass-Capsule Highlighting */
-.tree-item {
-  height: 30px;
-  padding: 0 8px 0 0; /* Right padding only, left handled by tree structure */
-  border-radius: 8px; /* Rounded capsule */
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  color: var(--text-muted);
-  cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid transparent;
-  position: relative;
-}
-
-.tree-item:hover {
-  background: rgba(255,255,255,0.06);
-  color: var(--text-main);
-}
-
-.tree-item.active {
-  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.15);
-  color: var(--text-accent);
-  font-weight: 500;
-  border-color: rgba(var(--text-accent-rgb, 64, 186, 250), 0.2);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.tree-item.active::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 3px;
-  background: var(--text-accent);
-  border-radius: 0 2px 2px 0;
-}
-
-.item-icon {
-  color: var(--text-faint);
-  flex-shrink: 0;
-  opacity: 0.8;
-  transition: all 0.2s;
-}
-
-.tree-item.active .item-icon {
-  color: var(--text-accent);
-  opacity: 1;
-  transform: scale(1.1);
-}
-
-.tree-section {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  position: relative;
-}
-
-
-.section-items {
-  flex: 1;
-  min-height: 0;
-  padding-left: 20px; /* Indent for tree structure */
-  position: relative;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Vertical line connecting section to items */
-.section-items::before {
-  content: '';
-  position: absolute;
-  left: 8px;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: var(--border-dim);
-  opacity: 0.4;
-  z-index: 0;
-  pointer-events: none;
-}
-
-.section-items .tree-item {
-  position: relative;
-  padding-left: 20px; /* Space for tree connector */
-  z-index: 1;
-}
-
-/* Virtual list container should also have tree styling */
-.section-items .virtual-list {
-  flex: 1;
-  min-height: 0;
-  position: relative;
-}
-
-/* Horizontal connector line for each item */
-.section-items .tree-item::before {
-  content: '';
-  position: absolute;
-  left: 8px;
-  top: 50%;
-  width: 12px;
-  height: 1px;
-  background: var(--border-dim);
-  opacity: 0.4;
-  z-index: 1;
-  pointer-events: none;
-}
-
-/* Vertical line from connector to item */
-.section-items .tree-item::after {
-  content: '';
-  position: absolute;
-  left: 8px;
-  top: 0;
-  bottom: 50%;
-  width: 1px;
-  background: var(--border-dim);
-  opacity: 0.4;
-  z-index: 0;
-  pointer-events: none;
-}
-
-.section-items .tree-item:first-child::after {
-  top: 50%;
-}
-
-.section-items .tree-item:last-child::after {
-  bottom: auto;
-  top: 0;
-  height: 50%;
-}
-
-.section-items .tree-item:hover::before,
-.section-items .tree-item:hover::after {
-  opacity: 0.6;
-  background: var(--text-accent);
-}
-
-.section-items .tree-item.active::before,
-.section-items .tree-item.active::after {
-  opacity: 0.8;
-  background: var(--text-accent);
-}
-
-/* Ensure virtual list items also get tree styling */
-.section-items .virtual-list .tree-item {
-  position: relative;
-  padding-left: 20px;
-}
-
-.section-items .virtual-list .tree-item::before,
-.section-items .virtual-list .tree-item::after {
-  content: '';
-  position: absolute;
-  left: 8px;
-  pointer-events: none;
-}
-
-.section-items .virtual-list .tree-item::before {
-  top: 50%;
-  width: 12px;
-  height: 1px;
-  background: var(--border-dim);
-  opacity: 0.4;
-  z-index: 1;
-}
-
-.section-items .virtual-list .tree-item::after {
-  top: 0;
-  bottom: 50%;
-  width: 1px;
-  background: var(--border-dim);
-  opacity: 0.4;
-  z-index: 0;
-}
-
-.section-items .virtual-list .tree-item:first-child::after {
-  top: 50%;
-}
-
-.section-items .virtual-list .tree-item:last-child::after {
-  bottom: auto;
-  top: 0;
-  height: 50%;
-}
-
-.section-items .virtual-list .tree-item:hover::before,
-.section-items .virtual-list .tree-item:hover::after {
-  opacity: 0.6;
-  background: var(--text-accent);
-}
-
-.section-items .virtual-list .tree-item.active::before,
-.section-items .virtual-list .tree-item.active::after {
-  opacity: 0.8;
-  background: var(--text-accent);
-}
-
 .skeleton-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 0 24px;
+  padding: 0 16px;
   height: 28px;
 }
 
-.item-icon.hash {
-  color: var(--text-accent);
-  opacity: 0.5;
-}
-
-/* RIGHT META CONTAINER */
 .item-meta-right {
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
 }
 
 .pin-icon {
-  opacity: 0.4;
+  opacity: 0.35;
   color: var(--text-faint);
-  transition: opacity 0.2s;
+  transition: opacity 0.15s;
 }
 
 .tree-item:hover .pin-icon {
-  opacity: 0.8;
+  opacity: 0.7;
 }
 
-/* INLINE RENAMING */
 .inline-rename-input {
   background: var(--bg-editor);
   border: 1px solid var(--text-accent);
@@ -588,13 +330,11 @@
   box-shadow: 0 0 0 3px rgba(var(--text-accent-rgb, 64, 186, 250), 0.1);
 }
 
-/* HOVER QUICK ACTIONS */
 .hover-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-right: 4px;
-  animation: fadeIn 0.2s ease-out;
+  gap: 4px;
+  animation: fadeIn 0.15s ease-out;
 }
 
 .action-btn {
@@ -604,7 +344,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4px;
+  padding: 3px;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.1s;
@@ -617,4 +357,9 @@
 
 .action-btn.active {
   color: var(--text-accent);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
