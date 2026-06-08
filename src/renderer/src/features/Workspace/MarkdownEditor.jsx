@@ -11,8 +11,8 @@ import './MarkdownEditor.css'
 
 // Atomic Editor Imports
 import { AtomicCodeMirrorEditor, wikiLinks } from '@atomic-editor/editor'
-import { markdown } from '@codemirror/lang-markdown'
 import { languages } from '@codemirror/language-data'
+import { codeBlockDecorations } from './codeBlockHeader'
 import '@atomic-editor/editor/styles.css'
 
 const MarkdownEditor = React.memo(
@@ -171,7 +171,7 @@ const MarkdownEditor = React.memo(
     })
 
     const editorExtensions = React.useMemo(() => [
-      markdown({ codeLanguages: languages }),
+      codeBlockDecorations,
       wikiLinks({
         openOnClick: true,
         onOpen: async (target) => {
@@ -209,15 +209,12 @@ const MarkdownEditor = React.memo(
       if (!wrapper) return;
 
       const handleMouseDown = async (e) => {
+        // Wiki link click
         const linkEl = e.target.closest('.cm-atomic-wiki-link');
         if (linkEl) {
-          // Absolute lockdown: Stop CM from seeing this.
           e.preventDefault();
           e.stopPropagation();
-          
-          // Use getAttribute to bypass React's synthetic DOM properties
           const target = linkEl.getAttribute('data-wiki-link-target');
-          
           if (target) {
             try {
               const { snippets, saveSnippet, setSelectedSnippet } = useVaultStore.getState();
@@ -225,7 +222,6 @@ const MarkdownEditor = React.memo(
               let targetSnippet = snippets.find(
                 s => s.title && (s.title.toLowerCase() === targetLower || s.title.toLowerCase() === `${targetLower}.md`)
               );
-              
               if (!targetSnippet) {
                  targetSnippet = {
                     id: crypto.randomUUID(),
@@ -241,6 +237,19 @@ const MarkdownEditor = React.memo(
             } catch (err) {
               showToast(`Failed to open wikilink: ${err.message}`, 'error');
             }
+          }
+          return;
+        }
+
+        // Code block copy click
+        const langLine = e.target.closest('.cm-line[data-cb-lang]');
+        if (langLine) {
+          const code = langLine.getAttribute('data-cb-code');
+          if (code) {
+            e.preventDefault();
+            e.stopPropagation();
+            await navigator.clipboard.writeText(code);
+            showToast('Code copied to clipboard', 'success');
           }
         }
       };
@@ -284,6 +293,7 @@ const MarkdownEditor = React.memo(
                 markdownSource={snippet?.code || ''}
                 onMarkdownChange={handleMarkdownChange}
                 editorHandleRef={editorHandleRef}
+                codeLanguages={languages}
                 extensions={editorExtensions}
                 onLinkClick={(url) => {
                   if (window.api?.openExternal) {

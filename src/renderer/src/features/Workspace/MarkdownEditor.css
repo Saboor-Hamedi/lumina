@@ -11,50 +11,45 @@
   padding: 0 4px 0 0 !important; /* Remove left padding to align with title */
 }
 
-/* Perfect Blockquote */
-.cm-blockquote {
-  border-left: 4px solid var(--text-accent) !important;
-  background: rgba(var(--text-accent-rgb), 0.05) !important;
-  padding: 0.2rem 2em 0.2rem 1em !important; /* Add left padding for blockquote indent */
-  margin: 0.5em 0 !important;
-  font-style: italic;
-  font-size: 1.1em;
-  color: var(--text-muted);
-}
+
 
 /*
-  ULTRA-STABLE CODE BLOCK GEOMETRY
+  CODE BLOCK GEOMETRY — ChatGPT-style dark card
 */
-.cm-line[class*='cm-codeblock-'] {
-  padding: 4px 1em !important; /* Add internal padding */
+.cm-line.cm-atomic-fenced-code {
+  padding: 2px 1em !important;
   margin: 0 !important;
-  line-height: 1.4 !important; /* Reduced line-height */
-  background: var(--bg-panel) !important; 
-  background-clip: padding-box !important; /* Crucial: stops bg under border */
-  border-left: 1em solid transparent !important; /* Simulated left margin */
-  border-right: 1em solid transparent !important; /* Simulated right margin */
+  line-height: 1.6 !important;
+  background: #1e1e1e !important;
   font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
-  font-size: 0.9em;
+  font-size: 0.88em;
+  color: #d4d4d4;
 }
 
-/* The FIRST line (with the header) must have ZERO padding to let the header fill the frame */
-.cm-line.cm-codeblock-begin {
-  padding: 8px 1em 4px 1em !important;
-  border-top-left-radius: 24px !important;
-  border-top-right-radius: 24px !important;
+.cm-line.cm-atomic-fenced-code.cm-activeLine {
+  background-color: #2a2a2a !important;
 }
 
-.cm-line.cm-codeblock-end {
-  padding: 4px 1em 8px 1em !important;
-  border-bottom-left-radius: 24px !important;
-  border-bottom-right-radius: 24px !important;
+/* Code Block Language Label */
+.cm-line[data-cb-lang] {
+  position: relative;
+  padding-top: 28px !important;
 }
 
-/* Force transparent active line for all parts of code blocks */
-.cm-line[class*='cm-codeblock-'].cm-activeLine {
-  background-color: var(--bg-panel) !important;
-  outline: none !important;
+.cm-line[data-cb-lang]::before {
+  content: attr(data-cb-lang);
+  position: absolute;
+  top: 0;
+  left: 1.5em;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  letter-spacing: 0.02em;
+  line-height: 28px;
+  user-select: none;
 }
+
 /* Search Highlight Style */
 .cm-search-highlight {
   background-color: var(--text-accent) !important;
@@ -70,10 +65,10 @@
   background-color: rgba(64, 186, 250, 0.35) !important;
 }
 
-/* Force specific selection style for code blocks */
-.markdown-editor .cm-line[class*='cm-codeblock-'] ::selection,
-.markdown-editor .cm-line[class*='cm-codeblock-'] .cm-selectionBackground {
-  background-color: rgba(64, 186, 250, 0.45) !important;
+/* Selection style for code blocks */
+.markdown-editor .cm-line.cm-atomic-fenced-code ::selection,
+.markdown-editor .cm-line.cm-atomic-fenced-code .cm-selectionBackground {
+  background-color: rgba(86, 156, 214, 0.45) !important;
 }
 
 .markdown-editor {
@@ -96,78 +91,7 @@
   --atomic-editor-bg-surface: var(--bg-panel);
 }
 
-/* --- LIVE MODE SEMANTICS --- */
-.cm-strong {
-  font-weight: 700;
-  color: var(--text-main);
-}
-.cm-em {
-  font-style: italic;
-  color: var(--text-muted);
-}
-.cm-inline-code {
-  font-family: var(--font-mono);
-  background: rgba(var(--text-accent-rgb), 0.1);
-  color: var(--text-accent);
-  padding: 2px 4px;
-  border-radius: 4px;
-  font-size: 0.9em;
-}
 
-/* --- TABLE FIDELITY: Matched to PreviewModal.jsx --- */
-.cm-table-row,
-.cm-table-header {
-  font-size: 0.95em !important;
-  border-bottom: 1px solid var(--border-dim);
-  line-height: 1.5 !important;
-}
-
-.cm-table-header {
-  background: rgba(var(--text-accent-rgb), 0.05) !important;
-  font-weight: 700;
-  border-bottom: 2px solid var(--border-dim) !important;
-  color: var(--text-main);
-}
-
-.cm-table-cell {
-  color: var(--text-main);
-  padding: 12px 4px !important; /* Matched to preview padding */
-}
-
-/* Hide pipes for graphical feel */
-.cm-table-pipe-hidden {
-  opacity: 0;
-  pointer-events: none;
-  width: 0;
-}
-
-.cm-table-pipe {
-  color: var(--text-accent);
-  opacity: 0.4;
-  font-weight: 400;
-}
-
-.cm-task-marker {
-  color: var(--text-accent);
-  font-family: var(--font-mono);
-  font-weight: 700;
-  margin-right: 4px;
-}
-
-/* Override strikethrough for completed tasks from atomic-editor */
-.cm-atomic-task-checked {
-  text-decoration: none !important;
-  opacity: 1 !important;
-  color: var(--text-main) !important;
-}
-
-/* Generic fallback if class is different */
-.cm-line:has(> input[type="checkbox"]:checked),
-.cm-line:has(> input[type="checkbox"]:checked) * {
-  text-decoration: none !important;
-  opacity: 1 !important;
-  color: inherit !important;
-}
 
 /* --- WORKSPACE TABBAR --- */
 .workspace-tabbar {
@@ -1380,111 +1304,12 @@
 
 /* Selection layers removed above to fix dual-color issue */
 
-/* Code Blocks (Premium Glassmorphism) */
-.cm-codeblock {
-  background: var(--bg-panel) !important;
-  border-radius: 6px;
-  margin: 1em 0;
-  border: 1px solid var(--border-card, rgba(0, 0, 0, 0.05));
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  font-size: 0.95em;
-}
-
-/* Ensure heading text itself starts at the same position as paragraphs */
-/* The # mark takes up space in the document, so we need to compensate with negative text-indent */
-.cm-heading.cm-line {
-  padding-left: 0 !important; /* Match paragraph padding */
-  margin-left: 0 !important; /* No left margin */
-  margin-bottom: 0 !important; /* No bottom margin to prevent selection bleed */
-  position: relative; /* For absolute positioning of # mark */
-  /* Ensure proper line boundaries for selection - prevent selection from bleeding to next line */
-  display: block !important;
-  box-sizing: border-box;
-  /* Ensure selection is contained within the line boundaries */
-  /* The padding-top/bottom on .cm-heading should not extend selection area */
-  isolation: isolate; /* Create new stacking context to contain selection */
-  /* Ensure line height doesn't cause overlap with next line */
-  min-height: auto;
-  height: auto;
-  /* Prevent selection from extending beyond the line content */
-  overflow: visible;
-}
-
-/* Ensure heading padding doesn't extend the selectable/clickable area */
-.cm-heading.cm-line::after {
-  content: '';
-  display: block;
-  height: 0;
-  /* This creates a boundary to prevent selection from bleeding to next line */
-  pointer-events: none;
-}
-
-/* Compensate for # mark width - pull heading text left to align with paragraphs */
-/* Use minimal compensation - just enough to align with paragraphs */
-.cm-heading-1.cm-line {
-  text-indent: -0.5ch !important; /* Minimal compensation */
-}
-.cm-heading-2.cm-line {
-  text-indent: -0.6ch !important; /* Minimal compensation */
-}
-.cm-heading-3.cm-line {
-  text-indent: -0.7ch !important; /* Minimal compensation */
-}
-.cm-heading-4.cm-line {
-  text-indent: -0.8ch !important; /* Minimal compensation */
-}
-.cm-heading-5.cm-line {
-  text-indent: -0.9ch !important; /* Minimal compensation */
-}
-.cm-heading-6.cm-line {
-  text-indent: -1ch !important; /* Minimal compensation */
-}
-
-/* In source mode, also position # absolutely to maintain alignment */
-.mode-source .cm-heading .cm-line {
-  position: relative;
-}
-
-.mode-source .cm-heading .cm-line::before {
-  content: '';
-  display: inline-block;
-  width: 0;
-  /* This creates a zero-width space to maintain alignment */
-}
-
-/* When heading line is active, show # mark in gutter but still don't affect text flow */
-.cm-heading.cm-activeLine .cm-hidden-mark {
-  opacity: 0.4 !important; /* Ghosting reveal */
-  width: 35px !important; /* Show full width in gutter when revealed */
-  left: -35px !important; /* Keep it in gutter, not over border */
-  text-align: right !important;
-  pointer-events: auto; /* Allow interaction when revealed */
-}
-
-/* In source mode, also show # in gutter when line is active (since it's always hidden now) */
-.mode-source .cm-heading.cm-activeLine .cm-hidden-mark {
-  opacity: 0.6 !important; /* Slightly more visible in source mode */
-  width: 35px !important;
-  left: -40px !important; /* Keep it in gutter */
-  text-align: right !important;
-}
-
-/* Ensure heading lines are fully clickable for proper cursor placement */
-/* Note: text-indent, padding-left, margin-left are set above to ensure alignment */
-
-/* Smooth Scrolling & Transitions */
+/* Smooth Scrolling - outer scroller provides scroll, CM6 internal scroll disabled */
 .cm-scroller {
-  scrollbar-width: none; /* Hide standard */
-  overflow: visible !important; /* Disable internal scroll */
+  scrollbar-width: none;
+  overflow: visible !important;
 }
 
-/* Ensure editor grows to fit content so outer scroller works */
-.cm-editor {
-  height: auto !important;
-  /* min-height: 100vh !important; */
-}
-
-/* Scrollbar Styling */
 .cm-scroller::-webkit-scrollbar {
   width: 6px;
 }
@@ -1497,147 +1322,11 @@
 [data-theme='dark'] .cm-scroller::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1);
 }
-.cm-inline-code {
-  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.15);
-  color: var(--text-accent);
-  border: 1px solid rgba(var(--text-accent-rgb, 64, 186, 250), 0.1);
-  border-radius: 4px;
-  font-family: 'JetBrains Mono', 'Cascadia Code', monospace;
-  font-size: 0.9em;
-  padding: 0.05em 0.3em;
-  margin: 0 1px;
+
+.cm-editor {
+  height: auto !important;
 }
 
-.cm-strong {
-  font-weight: 800;
-  color: var(--text-accent);
-}
-
-.cm-em {
-  font-style: italic;
-  font-family: inherit;
-  color: var(--text-main);
-  opacity: 0.85;
-}
-
-.cm-list-bullet,
-.cm-list-mark {
-  color: var(--text-accent);
-  font-weight: bold;
-}
-
-.cm-hr {
-  border: 0;
-  border-top: 1px solid var(--border-dim);
-  margin: 1.2em 0; /* Reduced from 1.5em */
-  height: 0;
-  display: block;
-  opacity: 0.6;
-}
-
-/* Code Block "Block" Look */
-/* Code Block "Card" Look */
-/* Code Block "Card" Look */
-/* Code Block "Card" Look */
-:root {
-  --bg-code-surface: rgba(255, 255, 255, 0.04); /* Subtle transparent gray */
-  --border-code: rgba(255, 255, 255, 0.08);
-}
-
-.cm-codeblock-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: var(--bg-code-surface);
-  border: 1px solid var(--border-code);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
-  border-top-left-radius: 6px;
-  border-top-right-radius: 6px;
-  padding: 4px 12px;
-  margin-top: 1.2em;
-  user-select: none;
-}
-
-.cm-codeblock-body {
-  background-color: var(--bg-code-surface) !important;
-  border-left: 1px solid var(--border-code);
-  border-right: 1px solid var(--border-code);
-  margin: 0 !important;
-}
-
-/* Ensure padding inside the box - targeting the line element */
-.cm-codeblock-body.cm-line {
-  padding-left: 12px !important;
-  padding-right: 12px !important;
-}
-
-.cm-codeblock-footer {
-  height: 16px; /* Thick footer */
-  background: var(--bg-code-surface);
-  border: 1px solid var(--border-code);
-  border-top: none;
-  border-bottom-left-radius: 6px;
-  border-bottom-right-radius: 6px;
-  margin-bottom: 1.5em;
-}
-
-.cm-lang-label {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-faint);
-  font-family: var(--font-editor);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.cm-copy-btn {
-  background: transparent;
-  border: 1px solid var(--border-code);
-  color: var(--text-faint);
-  font-size: 9px;
-  padding: 2px 6px;
-  border-radius: 3px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.cm-copy-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-main);
-  border-color: var(--text-muted);
-}
-
-.cm-url {
-  color: var(--text-accent);
-  text-decoration: underline;
-  opacity: 0.8;
-}
-
-.mode-reading .cm-hidden-mark {
-  display: none !important;
-}
-
-.cm-wikilink {
-  color: var(--text-accent);
-  text-decoration: none;
-  border-bottom: 1px solid transparent;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-weight: 500;
-  position: relative;
-  z-index: 5; /* Ensure above text but below tooltips */
-  pointer-events: auto;
-}
-
-.cm-wikilink:hover {
-  border-bottom-color: var(--text-accent);
-  opacity: 1;
-  background: rgba(var(--text-accent-rgb), 0.15);
-  text-decoration: none;
-}
-/* .cm-cursor {
-  border-left: 10px solid white !important;
-} */
 /* --- Wiki Hover Tooltip --- */
 .cm-wiki-hover {
   background: var(--bg-panel);
@@ -1907,54 +1596,6 @@
 }
 
 /* Hidden Mark Styling: Handled by scoped reading rules in earlier sections */
-
-/* Horizontal Rule Compact Styling */
-.cm-codeblock-header {
-  background: rgba(var(--text-accent-rgb), 0.05) !important;
-  border-top-left-radius: 12px;
-  border-top-right-radius: 12px;
-  border: 1px solid var(--border-dim);
-  border-bottom: none;
-  padding: 0 16px !important;
-  display: flex !important;
-  justify-content: space-between;
-  align-items: center;
-  height: 40px !important;
-  box-sizing: border-box;
-}
-
-.cm-codeblock-end {
-  border-bottom-left-radius: 12px !important;
-  border-bottom-right-radius: 12px !important;
-  border-bottom: 1px solid var(--border-dim) !important;
-  padding-bottom: 8px !important;
-  margin-bottom: 2em !important;
-}
-
-/* Copy Button Styling */
-.cm-copy-btn {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-subtle);
-  border-radius: 4px;
-  color: var(--text-faint);
-  font-size: 10px;
-  font-weight: 600;
-  cursor: pointer;
-  opacity: 0.5;
-  padding: 1px 6px;
-  transition: all 0.2s;
-  pointer-events: auto; /* Re-enable for the button specifically */
-}
-
-.cm-codeblock-header:hover .cm-copy-btn {
-  opacity: 1;
-}
-
-.cm-copy-btn:hover {
-  background: var(--bg-active);
-  color: var(--text-accent);
-  border-color: var(--text-accent);
-}
 
 /* In-editor preview overlay */
 .in-editor-preview-overlay {
