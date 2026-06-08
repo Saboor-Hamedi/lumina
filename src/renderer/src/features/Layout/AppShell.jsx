@@ -70,16 +70,12 @@ const AppShell = () => {
    * @type {Object|null} { isOpen: boolean, width: number } | null
    */
   const [savedRightSidebarState, setSavedRightSidebarState] = useState(null)
-  const [leftWidth, setLeftWidth] = useState(260)
-  const [rightWidth, setRightWidth] = useState(300)
-  const [resizingSide, setResizingSide] = useState(null) // 'left', 'right', or null
+  const [leftWidth, setLeftWidth] = useState(250)
+  const [rightWidth, setRightWidth] = useState(200)
+  const [resizingSide, setResizingSide] = useState(null)
   const [isRestoring, setIsRestoring] = useState(true)
 
-  /**
-   * Ref to store current sidebar widths for persistence.
-   * Updated separately from state to avoid unnecessary re-renders.
-   */
-  const widthRef = React.useRef({ left: 260, right: 300 })
+  const widthRef = React.useRef({ left: 250, right: 200 })
 
   // Update width refs when widths change
   useEffect(() => {
@@ -134,8 +130,8 @@ const AppShell = () => {
       } else {
         // Right Resizer
         let newWidth = window.innerWidth - e.clientX
-        if (newWidth < 250) newWidth = 250
-        if (newWidth > 600) newWidth = 600
+        if (newWidth < 180) newWidth = 180
+        if (newWidth > 500) newWidth = 500
         setRightWidth(newWidth)
       }
     }

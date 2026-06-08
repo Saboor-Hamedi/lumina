@@ -30,11 +30,28 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 16px;
-  height: 40px; /* Match editor-titlebar height */
+  height: 40px;
   min-height: 40px;
   background: var(--bg-sidebar);
   border-bottom: 1px solid var(--border-dim);
   flex-shrink: 0;
+  position: relative;
+}
+
+.pane-header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 16px;
+  right: 16px;
+  height: 1px;
+  background: var(--text-accent);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.pane-header:hover::after {
+  opacity: 0.3;
 }
 
 .explorer-toolbar {

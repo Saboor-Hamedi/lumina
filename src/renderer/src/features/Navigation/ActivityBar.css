@@ -2,12 +2,13 @@
   width: var(--ribbon-width);
   height: 100%;
   background: var(--bg-activitybar);
-  border-right: none;
+  border-right: 1px solid var(--border-dim);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 12px 0 20px 0; /* Standardized robust bottom padding */
+  padding: 12px 0 20px 0;
   flex-shrink: 0;
+  position: relative;
 }
 
 .bar-top, .bar-bottom {
@@ -29,11 +30,16 @@
   cursor: pointer;
   transition: color 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
+  border-radius: 6px;
 }
 
 .bar-item:hover {
   color: var(--text-main);
-  background: transparent;
+  background: var(--bg-active);
+}
+
+.bar-item:active {
+  transform: scale(0.92);
 }
 
 .bar-item.active {
@@ -45,16 +51,12 @@
   content: '';
   position: absolute;
   left: 0;
-  top: 10px;
-  bottom: 10px;
+  top: 8px;
+  bottom: 8px;
   width: 2px;
   background: var(--text-accent);
   border-radius: 0 4px 4px 0;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.bar-item:active {
-  transform: scale(0.92);
 }
 
 .update-btn {

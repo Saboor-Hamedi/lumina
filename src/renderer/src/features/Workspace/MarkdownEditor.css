@@ -416,9 +416,9 @@
 
 .editor-canvas-wrap {
   width: 100%;
-  max-width: 800px;
-  margin: 0 auto; /* Horizonatal Center */
-  padding: 0 60px 40px 60px; /* Removed top padding */
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 60px 40px 60px;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -1051,8 +1051,7 @@
 
 /* 3. READING MODE: Pure focus, clean and centered - HTML Preview */
 .mode-reading .editor-canvas-wrap {
-  /* Match Live Mode Width for Zero Shift - must be exactly the same */
-  max-width: 800px;
+  max-width: 1100px;
 }
 
 /* Hide CodeMirror in reading mode, show preview */
