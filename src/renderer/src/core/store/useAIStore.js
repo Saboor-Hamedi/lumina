@@ -656,20 +656,26 @@ export const useAIStore = create((set, get) => {
 - Produce **comprehensive, detailed content**. A file about "SQL queries" should include real examples, syntax, edge cases, and practical usage — not just "Basic Query Patterns" with one sentence.
 
 **FILE EDITING AND CREATION**:
-You have tools to create, update, and delete files in the vault. Use them directly when you need to modify files. **Before creating a file, check Vault Knowledge / Active Tabs / Explicitly Mentioned sections above to see if it already exists** — never create a duplicate. If a file already exists and the user wants changes, use updateFile, not createFile.
+You have tools to create, update, and delete files in the vault. Use them directly. **Before creating a file, check the EXISTING FILES list** — never create a duplicate. If it exists, use updateFile instead.
 
-When creating multiple files, call the tools sequentially. Each call saves one file. Think about how files relate and use [[wikilinks]] to connect them.
+- **updateFile supports two modes**:
+  - **Full replacement**: Pass 'content' with the complete new file content.
+  - **Targeted edit (preferred)**: Pass 'search' (exact text to find) and 'replace' (what to replace it with). Use replace: "" to delete text. The tool finds the text and modifies it for you.
 
 **RULES**:
-- **NEVER re-create a file that already exists**. Check the context above first. If unsure, update the existing one.
-- Always output the **full** content of the file — never "...rest of file remains the same".
+- **NEVER re-create a file that already exists**. Check EXISTING FILES above. If it exists, use updateFile, never createFile.
+- **For targeted edits**: just call updateFile with 'search' and 'replace'. No need to read the file first. The search text must match EXACTLY — copy it character-for-character from what the user provides.
+- **CRITICAL: execute immediately**. Call the tool and give a brief summary. Do not describe what you plan to do — just do it.
+- Produce **deep, substantive content** for new files: code examples, explanations, edge cases, best practices. Not one-line summaries.
+- For multi-file requests: plan all files first, then generate them all. Use [[wikilinks]] between related files.
+- **Wikilink accuracy**: Target file names must match EXACTLY — same spelling, same case.
 - Do NOT ask for confirmation. Execute immediately.
 - **Read the user's entire request before generating.** If they ask for specific sections, wikilinks, or formatting, include ALL of it.
 - Produce **deep, substantive content**: code examples, explanations, edge cases, best practices. Not one-line summaries.
 - For multi-file requests: plan all files first, then generate them all at once. Add [[wikilinks]] between related files so they form a connected knowledge graph.
 - **Wikilink accuracy**: When using [[wikilinks]], make sure the target file name matches EXACTLY — same spelling, same case. [[PostgreSQL]] links to a file titled PostgreSQL, not "Postgresql" or "Postgres". Double-check spelling.
 - **No hacky shortcuts**: Do not use [[WrongName|wrong]] — the display text and target must match the actual file title. If the file is "Containers", write [[Containers]], not [[Container]] or [[Containers|Container]].
-- **Structure tool responses like a person**: After using tools, write a brief conversational summary in first person. Say what you did, name the files, and note how they connect. Do NOT repeat the file contents in the summary — just a short "I created 5 files about NLP: Tokenization covers..., Embeddings handles..., etc." Your tool calls will be hidden from the chat, so only your summary text will be visible to the user.
+- **ALWAYS end with a brief confirmation**: After your tool calls, write a short response like "Done." or "Updated Embeddings — removed that line." Never leave the response empty. Your tool calls are hidden, so your text is all the user sees.
 
 **CONTEXT**:
 ${vaultAccessNote}`
@@ -769,12 +775,12 @@ ${vaultAccessNote}`
 
             const sdkTools = {
               createFile: aiSdk.tool({
-                description: 'Create one or more markdown files in the user\'s vault. For multiple files, call this tool multiple times.',
+                description: 'Create a new markdown file in the vault.',
                 inputSchema: aiSdk.jsonSchema({
                   type: 'object',
                   properties: {
-                    title: { type: 'string', description: 'The file title (use a single word)' },
-                    content: { type: 'string', description: 'The full markdown content of the file — comprehensive, with code examples and wikilinks to related files using [[FileTitle]]' },
+                    title: { type: 'string', description: 'The file title (single word, no extension)' },
+                    content: { type: 'string', description: 'Full markdown content' },
                   },
                   required: ['title', 'content'],
                 }),
@@ -794,38 +800,48 @@ ${vaultAccessNote}`
                 },
               }),
               updateFile: aiSdk.tool({
-                description: 'Update an existing file in the user\'s vault by title.',
+                description: 'Edit an existing file. Provide EITHER full content (replaces entire file) OR search+replace (targeted edit). For targeted edits, set search to the exact text to find and replace to the new text.',
                 inputSchema: aiSdk.jsonSchema({
                   type: 'object',
                   properties: {
-                    title: { type: 'string', description: 'Exact title of the file to update' },
-                    content: { type: 'string', description: 'The full updated markdown content' },
+                    title: { type: 'string', description: 'Exact title of the file to update (without .md)' },
+                    content: { type: 'string', description: 'Full replacement content. Use this to rewrite the whole file.' },
+                    search: { type: 'string', description: 'Exact text to find for a targeted replacement. Use this together with replace for surgical edits.' },
+                    replace: { type: 'string', description: 'Text to replace the search match with. Use empty string to delete the matched text.' },
                   },
-                  required: ['title', 'content'],
+                  required: ['title'],
                 }),
-                execute: async ({ title, content }) => {
+                execute: async ({ title, content, search, replace }) => {
                   const { useVaultStore } = await import('../../core/store/useVaultStore')
                   const vs = useVaultStore.getState()
                   const target = vs.snippets.find(s =>
                     s.title.toLowerCase() === title.toLowerCase().replace(/\.md$/, '')
                   )
-                  if (target) {
-                    const updated = { ...target, code: content, timestamp: Date.now() }
-                    await vs.saveSnippet(updated)
-                    if (vs.selectedSnippet?.id === target.id) {
-                      vs.setSelectedSnippet(updated)
-                    }
-                    return { success: true, title }
+                  if (!target) return { success: false, error: 'File not found' }
+
+                  let newCode
+                  if (search !== undefined) {
+                    const idx = target.code.indexOf(search)
+                    if (idx === -1) return { success: false, error: `Text "${search}" not found in file` }
+                    newCode = target.code.slice(0, idx) + (replace ?? '') + target.code.slice(idx + search.length)
+                  } else if (content !== undefined) {
+                    newCode = content
+                  } else {
+                    return { success: false, error: 'Provide either content (full replace) or search+replace (targeted edit)' }
                   }
-                  return { success: false, error: 'File not found' }
+
+                  const updated = { ...target, code: newCode, timestamp: Date.now() }
+                  await vs.saveSnippet(updated)
+                  if (vs.selectedSnippet?.id === target.id) vs.setSelectedSnippet(updated)
+                  return { success: true, title }
                 },
               }),
               deleteFile: aiSdk.tool({
-                description: 'Delete a file from the user\'s vault by title.',
+                description: 'Delete a file from the vault by title.',
                 inputSchema: aiSdk.jsonSchema({
                   type: 'object',
                   properties: {
-                    title: { type: 'string', description: 'Exact title of the file to delete' },
+                    title: { type: 'string', description: 'Exact title of the file to delete (without .md)' },
                   },
                   required: ['title'],
                 }),
@@ -903,6 +919,11 @@ ${vaultAccessNote}`
                 }
               }
             }
+          }
+
+          // Fallback: if AI used tools but left no text, show a brief confirmation
+          if (!fullContent && providerType === 'deepseek') {
+            fullContent = 'Done.'
           }
 
           // Final update to ensure we have the complete message
