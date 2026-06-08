@@ -16,6 +16,8 @@ export const useSettingsStore = create((set, get) => ({
       recent: false,
       all: false
     },
+    sortBy: 'name',
+    sortDirection: 'asc',
     translucency: false,
     mirrorMode: true, // New premium feature default
     inlineMetadata: true,

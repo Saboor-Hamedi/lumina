@@ -25,16 +25,55 @@
   flex-shrink: 0;
 }
 
+.sort-btn {
+  width: auto !important;
+  gap: 3px;
+  padding: 0 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--text-faint);
+}
+
+.sort-btn:hover {
+  color: var(--text-muted);
+}
+
+.sort-label {
+  white-space: nowrap;
+}
+
 .pane-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 12px;
+  padding: 0 8px;
   height: 32px;
   min-height: 32px;
   background: var(--bg-sidebar);
   border-bottom: 1px solid var(--border-dim);
   flex-shrink: 0;
+}
+
+.pane-actions-left {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.pane-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.pane-header .icon-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
 }
 
 .explorer-toolbar {

@@ -9,7 +9,8 @@ import {
   Star,
   History,
   FolderOpen,
-  HardDrive
+  HardDrive,
+  ArrowUpDown
 } from 'lucide-react'
 import SidebarItem from './components/SidebarItem'
 import { FixedSizeList as List } from '../../components/utils/VirtualList'
@@ -25,6 +26,8 @@ import './FileExplorer.css'
  */
 const FileExplorer = React.memo(({ onNavigate }) => {
   const { settings, updateSetting } = useSettingsStore()
+  const sortBy = settings.sortBy || 'name'
+  const sortDirection = settings.sortDirection || 'asc'
   const collapsedSections = settings.sidebarCollapsedSections || {
     pinned: false,
     recent: false,
@@ -53,6 +56,20 @@ const FileExplorer = React.memo(({ onNavigate }) => {
   }
 
   const [isRefreshing, setIsRefreshing] = useState(false)
+
+  const cycles = [
+    { sortBy: 'name', sortDirection: 'asc' },
+    { sortBy: 'name', sortDirection: 'desc' },
+    { sortBy: 'modified', sortDirection: 'desc' },
+    { sortBy: 'modified', sortDirection: 'asc' },
+  ]
+
+  const handleSortToggle = () => {
+    const currentIndex = cycles.findIndex(c => c.sortBy === sortBy && c.sortDirection === sortDirection)
+    const next = cycles[(currentIndex + 1) % cycles.length]
+    updateSetting('sortBy', next.sortBy)
+    updateSetting('sortDirection', next.sortDirection)
+  }
 
   const toggleSection = (section) => {
     updateSetting('sidebarCollapsedSections', {
@@ -95,10 +112,24 @@ const FileExplorer = React.memo(({ onNavigate }) => {
     return snippets.filter((s) => (s.title || '').toLowerCase().includes(query))
   }, [snippets, searchQuery])
 
-  const pinnedItems = useMemo(() => filtered.filter((s) => s.isPinned), [filtered])
+  const sorted = useMemo(() => {
+    const items = [...filtered]
+    items.sort((a, b) => {
+      let cmp = 0
+      if (sortBy === 'name') {
+        cmp = (a.title || '').localeCompare(b.title || '')
+      } else if (sortBy === 'modified') {
+        cmp = (a.timestamp || 0) - (b.timestamp || 0)
+      }
+      return sortDirection === 'asc' ? cmp : -cmp
+    })
+    return items
+  }, [filtered, sortBy, sortDirection])
+
+  const pinnedItems = useMemo(() => sorted.filter((s) => s.isPinned), [sorted])
 
   const Row = ({ index, style }) => {
-    const snippet = filtered[index]
+    const snippet = sorted[index]
     if (!snippet) return null
     return (
       <SidebarItem
@@ -113,8 +144,13 @@ const FileExplorer = React.memo(({ onNavigate }) => {
   return (
     <div className="sidebar-pane">
       <header className="pane-header">
-        <div className="pane-title">EXPLORER</div>
-        <div className="pane-actions">
+        <div className="pane-actions pane-actions-left">
+          <button className="icon-btn sort-btn" onClick={handleSortToggle} title={`Sort: ${sortBy === 'name' ? 'Name' : 'Modified'} ${sortDirection === 'asc' ? '↑' : '↓'}`}>
+            <ArrowUpDown size={13} />
+            <span className="sort-label">{sortBy === 'name' ? 'Name' : 'Modified'} {sortDirection === 'asc' ? '↑' : '↓'}</span>
+          </button>
+        </div>
+        <div className="pane-actions pane-actions-right">
           <button className="icon-btn" onClick={handleRefresh} title="Refresh Vault (Sync Disk)">
             <RefreshCw size={14} className={isRefreshing ? 'rotating' : ''} />
           </button>
@@ -174,7 +210,7 @@ const FileExplorer = React.memo(({ onNavigate }) => {
             {collapsedSections.all ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
             <FolderOpen size={14} className="section-icon" />
             <span>ALL NOTES</span>
-            <span className="count-badge">{filtered.length}</span>
+            <span className="count-badge">{sorted.length}</span>
           </div>
 
           {!collapsedSections.all && (
@@ -188,12 +224,12 @@ const FileExplorer = React.memo(({ onNavigate }) => {
                     </div>
                   ))}
                 </>
-              ) : filtered.length > 0 ? (
+              ) : sorted.length > 0 ? (
                 <AutoSizer>
                   {({ height, width }) => (
                     <List
                       height={height}
-                      itemCount={filtered.length}
+                      itemCount={sorted.length}
                       itemSize={34}
                       width={width}
                       className="virtual-list"
