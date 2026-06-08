@@ -130,7 +130,7 @@ const AppShell = () => {
         // Right Resizer
         let newWidth = window.innerWidth - e.clientX
         if (newWidth < 180) newWidth = 180
-        if (newWidth > 500) newWidth = 500
+        if (newWidth > 300) newWidth = 300
         setRightWidth(newWidth)
       }
     }
