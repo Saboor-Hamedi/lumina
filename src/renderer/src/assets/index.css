@@ -42,6 +42,7 @@
   --bg-app: rgb(var(--bg-app-rgb));
   --bg-sidebar-rgb: 246, 246, 246;
   --bg-sidebar: rgb(var(--bg-sidebar-rgb));
+  --bg-activitybar: #ececec;
   --bg-panel: #f2f2f2;
   --bg-editor: var(--bg-app);
   --bg-active: rgba(0, 0, 0, 0.05);
@@ -66,6 +67,7 @@
   --bg-app: rgb(var(--bg-app-rgb));
   --bg-sidebar-rgb: 25, 25, 25;
   --bg-sidebar: rgb(var(--bg-sidebar-rgb));
+  --bg-activitybar: #191919;
   --bg-panel: #111111;
   --bg-editor: var(--bg-app);
   --bg-active: rgba(255, 255, 255, 0.05);
@@ -88,6 +90,7 @@
   --bg-app: rgb(var(--bg-app-rgb));
   --bg-sidebar-rgb: 17, 17, 17;
   --bg-sidebar: rgb(var(--bg-sidebar-rgb));
+  --bg-activitybar: #101010;
   --bg-panel: #0a0a0a;
   --bg-editor: var(--bg-app);
   --bg-active: #1a1a1a;
@@ -110,6 +113,7 @@
   --bg-app: rgb(var(--bg-app-rgb));
   --bg-sidebar-rgb: 248, 250, 252;
   --bg-sidebar: rgb(var(--bg-sidebar-rgb));
+  --bg-activitybar: #eef1f5;
   --bg-panel: #f1f5f9;
   --bg-editor: var(--bg-app);
   --bg-active: #e0f2fe;

@@ -12,7 +12,7 @@ import './MarkdownEditor.css'
 // Atomic Editor Imports
 import { AtomicCodeMirrorEditor, wikiLinks } from '@atomic-editor/editor'
 import { languages } from '@codemirror/language-data'
-import { codeBlockDecorations } from './codeBlockHeader'
+import { codeBlockDecorations, codeMap } from './codeBlockHeader'
 import '@atomic-editor/editor/styles.css'
 
 const MarkdownEditor = React.memo(
@@ -242,14 +242,17 @@ const MarkdownEditor = React.memo(
         }
 
         // Code block copy click
-        const langLine = e.target.closest('.cm-line[data-cb-lang]');
-        if (langLine) {
-          const code = langLine.getAttribute('data-cb-code');
-          if (code) {
+        const codeLine = e.target.closest('.cm-line.cb-code-header');
+        if (codeLine) {
+          const id = codeLine.getAttribute('data-cb-id');
+          const code = id != null ? codeMap.get(Number(id)) : null;
+          if (code != null) {
             e.preventDefault();
             e.stopPropagation();
             await navigator.clipboard.writeText(code);
-            showToast('Code copied to clipboard', 'success');
+            showToast('Code copied', 'success');
+            codeLine.classList.add('cb-copied');
+            setTimeout(() => codeLine.classList.remove('cb-copied'), 600);
           }
         }
       };

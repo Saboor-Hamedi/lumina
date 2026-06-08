@@ -1,7 +1,7 @@
 .activity-bar {
   width: var(--ribbon-width);
   height: 100%;
-  background: var(--bg-sidebar);
+  background: var(--bg-activitybar);
   border-right: none;
   display: flex;
   flex-direction: column;

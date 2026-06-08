@@ -2,12 +2,9 @@ import { syntaxTree } from '@codemirror/language'
 import { RangeSetBuilder, StateField } from '@codemirror/state'
 import { Decoration, EditorView } from '@codemirror/view'
 
-function extractLanguage(state, from, to) {
-  const raw = state.sliceDoc(from, to)
-  const firstLine = raw.split('\n')[0] || ''
-  const match = firstLine.match(/^(`{3,}|~{3,})\s*(\S+)?/)
-  return (match && match[2]) || ''
-}
+export const codeMap = new Map()
+
+let nextId = 0
 
 function extractCode(state, from, to) {
   const raw = state.sliceDoc(from, to)
@@ -24,7 +21,16 @@ function extractCode(state, from, to) {
   return codeLines.join('\n')
 }
 
+function extractLanguage(state, from, to) {
+  const raw = state.sliceDoc(from, to)
+  const firstLine = raw.split('\n')[0] || ''
+  const match = firstLine.match(/^(`{3,}|~{3,})\s*(\S+)?/)
+  return (match && match[2]) || ''
+}
+
 function buildDecorations(state) {
+  codeMap.clear()
+  nextId = 0
   const builder = new RangeSetBuilder()
   const tree = syntaxTree(state)
   let cursor = tree.cursor()
@@ -36,24 +42,20 @@ function buildDecorations(state) {
       const to = cursor.to
       const lang = extractLanguage(state, from, to)
       const code = extractCode(state, from, to)
+      const id = nextId++
 
-      // Mark the first line with language info for CSS ::before label
+      codeMap.set(id, code)
+
       builder.add(
         from,
         from,
         Decoration.line({
+          class: 'cb-code-header',
           attributes: {
-            'data-cb-lang': lang || 'code',
-            'data-cb-code': code,
+            'data-cb-lang': lang,
+            'data-cb-id': String(id),
           },
         })
-      )
-
-      // Mark lines for click-to-copy — just for event delegation target
-      builder.add(
-        from,
-        to,
-        Decoration.mark({ class: 'cb-code-block' })
       )
     }
   } while (cursor.nextSibling())
