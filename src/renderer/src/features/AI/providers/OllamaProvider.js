@@ -23,7 +23,10 @@ export class OllamaProvider extends BaseProvider {
       body: JSON.stringify({
         model: options.model || this.defaultModel,
         messages: messages,
-        stream: true
+        stream: true,
+        options: {
+          num_predict: options.max_tokens || 4096
+        }
       }),
       signal: options.signal
     })

@@ -24,6 +24,7 @@ export class DeepSeekProvider extends BaseProvider {
         model: options.model || this.defaultModel,
         messages: messages,
         temperature: options.temperature || 0.7,
+        max_tokens: options.max_tokens || 4096,
         stream: true
       }),
       signal: options.signal

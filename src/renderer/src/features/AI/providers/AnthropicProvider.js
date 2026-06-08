@@ -36,7 +36,7 @@ export class AnthropicProvider extends BaseProvider {
         model: options.model || this.defaultModel,
         messages: cleanMessages,
         system: system,
-        max_tokens: 4096,
+        max_tokens: options.max_tokens || 4096,
         stream: true
       }),
       signal: options.signal

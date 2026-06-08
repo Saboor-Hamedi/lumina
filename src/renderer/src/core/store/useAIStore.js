@@ -734,6 +734,7 @@ ${vaultAccessNote}`
           const stream = provider.chatStream(finalMessages, {
             model: activeModel,
             temperature: 0.7,
+            max_tokens: 4000,
             signal: controller.signal
           })
 
