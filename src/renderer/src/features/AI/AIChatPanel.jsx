@@ -640,22 +640,8 @@ const AIChatPanel = React.memo(() => {
       return // Stop processing text chat
     }
 
-    // 2. Apply Mode Instructions (Text Chat Only)
-    let finalMessage = text
-    let systemInstruction = ''
-
-    if (mode === 'Fast') systemInstruction = '[System: Be extremely concise and direct.]\n'
-    if (mode === 'Thinking') systemInstruction = '[System: Think step-by-step. Show your reasoning.]\n'
-    if (mode === 'Creative') systemInstruction = '[System: Be creative, use metaphors and vibrant language.]\n'
-    if (mode === 'Coder') systemInstruction = '[System: You are a Senior Engineer. Output robust, production-ready code.]\n'
-
-    // Prepend instructions if needed
-    if (mode !== 'Standard') {
-      finalMessage = systemInstruction + finalMessage
-    }
-
     try {
-      await sendChatMessage(finalMessage, [])
+      await sendChatMessage(text, [], mode)
     } catch (err) {
       console.error('Failed to send:', err)
     }

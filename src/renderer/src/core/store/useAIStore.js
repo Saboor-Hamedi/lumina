@@ -1,6 +1,19 @@
 import { create } from 'zustand'
 import { db } from '../db/cache'
 
+let aiSdk
+let createDeepseekProvider
+async function ensureAISdk() {
+  if (!aiSdk) {
+    const [ai, ds] = await Promise.all([
+      import('ai'),
+      import('@ai-sdk/deepseek'),
+    ])
+    aiSdk = ai
+    createDeepseekProvider = ds.createDeepSeek
+  }
+}
+
 export const useAIStore = create((set, get) => {
   // Initialize worker
   const worker = new Worker(new URL('../ai/ai.worker.js', import.meta.url), { type: 'module' })
@@ -478,15 +491,14 @@ export const useAIStore = create((set, get) => {
       }
     },
 
-    sendChatMessage: async (message, contextSnippets = []) => {
+    sendChatMessage: async (message, contextSnippets = [], mode = 'Standard') => {
       if (!message || typeof message !== 'string' || !message.trim()) {
         set({ chatError: 'Message cannot be empty.' })
         return
       }
 
       // LOCAL AI FILE GENERATOR INTERCEPT
-      // Remove any system prompt prefix injected by the UI modes
-      const cleanMessage = message.replace(/^\[System:.*?\]\n?/i, '').trim();
+      const cleanMessage = message.trim();
       const writeMatch = cleanMessage.match(/^write (?:a )?file about (.+)/i);
 
       if (writeMatch) {
@@ -640,25 +652,24 @@ export const useAIStore = create((set, get) => {
 - Be direct and high-signal. Use elegant Markdown.
 - Avoid repetitive disclaimers like "I have access to your vault." Just act on the knowledge provided.
 - Cite file names when quoting specific context.
+- **Follow EVERY instruction the user gives**. If they ask for wikilinks, headers, formatting, or structure — do it without skipping.
+- Produce **comprehensive, detailed content**. A file about "SQL queries" should include real examples, syntax, edge cases, and practical usage — not just "Basic Query Patterns" with one sentence.
 
 **FILE EDITING AND CREATION**:
-You have the autonomous ability to create new files, update existing files, or delete files in the user's vault, especially when organizing information from Vault Knowledge.
-To create a new file, output this exact code block:
-\`\`\`lumina-create File Title Here
-# File content...
-\`\`\`
+You have tools to create, update, and delete files in the vault. Use them directly when you need to modify files. **Before creating a file, check Vault Knowledge / Active Tabs / Explicitly Mentioned sections above to see if it already exists** — never create a duplicate. If a file already exists and the user wants changes, use updateFile, not createFile.
 
-To update an existing file (including the currently open one), output this exact code block:
-\`\`\`lumina-update Existing File Title
-# Full updated file content...
-\`\`\`
+When creating multiple files, call the tools sequentially. Each call saves one file. Think about how files relate and use [[wikilinks]] to connect them.
 
-To delete an existing file, output this exact code block:
-\`\`\`lumina-delete Existing File Title
-\`\`\`
-
-Do NOT use these blocks for generic code examples. ONLY use them when you intend to modify the user's actual files on disk. Always output the full content of the file.
-Do NOT ask the user for confirmation before executing these blocks. Just execute them immediately when requested.
+**RULES**:
+- **NEVER re-create a file that already exists**. Check the context above first. If unsure, update the existing one.
+- Always output the **full** content of the file — never "...rest of file remains the same".
+- Do NOT ask for confirmation. Execute immediately.
+- **Read the user's entire request before generating.** If they ask for specific sections, wikilinks, or formatting, include ALL of it.
+- Produce **deep, substantive content**: code examples, explanations, edge cases, best practices. Not one-line summaries.
+- For multi-file requests: plan all files first, then generate them all at once. Add [[wikilinks]] between related files so they form a connected knowledge graph.
+- **Wikilink accuracy**: When using [[wikilinks]], make sure the target file name matches EXACTLY — same spelling, same case. [[PostgreSQL]] links to a file titled PostgreSQL, not "Postgresql" or "Postgres". Double-check spelling.
+- **No hacky shortcuts**: Do not use [[WrongName|wrong]] — the display text and target must match the actual file title. If the file is "Containers", write [[Containers]], not [[Container]] or [[Containers|Container]].
+- **Structure tool responses like a person**: After using tools, write a brief conversational summary in first person. Say what you did, name the files, and note how they connect. Do NOT repeat the file contents in the summary — just a short "I created 5 files about NLP: Tokenization covers..., Embeddings handles..., etc." Your tool calls will be hidden from the chat, so only your summary text will be visible to the user.
 
 **CONTEXT**:
 ${vaultAccessNote}`
@@ -684,21 +695,42 @@ ${vaultAccessNote}`
           })
         }
 
+        // --- Existing files list ---
+        try {
+          const { useVaultStore } = await import('../../core/store/useVaultStore')
+          const allSnippets = useVaultStore.getState().snippets || []
+          if (allSnippets.length > 0) {
+            const titles = allSnippets.map(s => s.title).join(', ')
+            systemPrompt += `\n\n**EXISTING FILES**: ${titles}\nNever create a file whose title is already in this list. Use updateFile to modify it instead.`
+          }
+        } catch (_) {}
+
+        // --- Mode Configuration ---
+        const modeConfigs = {
+          Fast:     { temperature: 0.3, max_tokens: 1000, systemAddon: 'Be extremely concise and direct.' },
+          Thinking: { temperature: 0.7, max_tokens: 4000, systemAddon: 'Think step-by-step and show your reasoning before giving the final answer.' },
+          Creative: { temperature: 0.9, max_tokens: 4000, systemAddon: 'Be creative, use vivid language and metaphors.' },
+          Coder:    { temperature: 0.2, max_tokens: 4000, systemAddon: 'You are a Senior Engineer. Output robust, production-ready code with proper error handling.' },
+          Standard: { temperature: 0.7, max_tokens: 4000, systemAddon: '' }
+        }
+        const modeCfg = modeConfigs[mode] || modeConfigs.Standard
+
+        if (modeCfg.systemAddon) {
+          systemPrompt += `\n\n**MODE**: ${modeCfg.systemAddon}`
+        }
+
         // --- New Provider Architecture ---
         let providerType = 'deepseek' // Default
         let activeModel = deepSeekModel || 'deepseek-chat'
         let apiKey = visibleKey
 
-        // Determine provider based on user selection in settings (future)
-        // For now, if deepSeekKey is set, use deepseek.
-        // Once we add the UI selector, we will read settings.activeProvider
         if (settingsObj.activeProvider) {
           providerType = settingsObj.activeProvider
           activeModel = settingsObj.activeModel || null
 
           if (providerType === 'openai') apiKey = settingsObj.openaiKey
           else if (providerType === 'anthropic') apiKey = settingsObj.anthropicKey
-          else if (providerType === 'ollama') apiKey = 'unused' // Ollama usually no key
+          else if (providerType === 'ollama') apiKey = 'unused'
         }
 
         // Initialize Provider
@@ -728,31 +760,147 @@ ${vaultAccessNote}`
         // --- Execute Stream ---
         let fullContent = ''
         let lastUpdateTime = Date.now()
-        const UPDATE_INTERVAL = 100 // Update UI every 100ms instead of every token
+        const UPDATE_INTERVAL = 100
 
         try {
-          const stream = provider.chatStream(finalMessages, {
-            model: activeModel,
-            temperature: 0.7,
-            max_tokens: 4000,
-            signal: controller.signal
-          })
+          // Use AI SDK tool calling for providers that support it
+          if (providerType === 'deepseek') {
+            await ensureAISdk()
 
-          for await (const chunk of stream) {
-            if (chunk) {
-              fullContent += chunk
-
-              // Only update state every 100ms to prevent blocking
-              const now = Date.now()
-              if (now - lastUpdateTime >= UPDATE_INTERVAL) {
-                lastUpdateTime = now
-                set((state) => {
-                  const msgs = [...state.chatMessages]
-                  if (msgs.length > 0) {
-                    msgs[msgs.length - 1].content = fullContent
+            const sdkTools = {
+              createFile: aiSdk.tool({
+                description: 'Create one or more markdown files in the user\'s vault. For multiple files, call this tool multiple times.',
+                inputSchema: aiSdk.jsonSchema({
+                  type: 'object',
+                  properties: {
+                    title: { type: 'string', description: 'The file title (use a single word)' },
+                    content: { type: 'string', description: 'The full markdown content of the file — comprehensive, with code examples and wikilinks to related files using [[FileTitle]]' },
+                  },
+                  required: ['title', 'content'],
+                }),
+                execute: async ({ title, content }) => {
+                  const { useVaultStore } = await import('../../core/store/useVaultStore')
+                  const vs = useVaultStore.getState()
+                  const snippet = {
+                    id: crypto.randomUUID(),
+                    title,
+                    code: content,
+                    language: 'markdown',
+                    tags: '',
+                    timestamp: Date.now()
                   }
-                  return { chatMessages: msgs }
-                })
+                  await vs.saveSnippet(snippet)
+                  return { success: true, title }
+                },
+              }),
+              updateFile: aiSdk.tool({
+                description: 'Update an existing file in the user\'s vault by title.',
+                inputSchema: aiSdk.jsonSchema({
+                  type: 'object',
+                  properties: {
+                    title: { type: 'string', description: 'Exact title of the file to update' },
+                    content: { type: 'string', description: 'The full updated markdown content' },
+                  },
+                  required: ['title', 'content'],
+                }),
+                execute: async ({ title, content }) => {
+                  const { useVaultStore } = await import('../../core/store/useVaultStore')
+                  const vs = useVaultStore.getState()
+                  const target = vs.snippets.find(s =>
+                    s.title.toLowerCase() === title.toLowerCase().replace(/\.md$/, '')
+                  )
+                  if (target) {
+                    const updated = { ...target, code: content, timestamp: Date.now() }
+                    await vs.saveSnippet(updated)
+                    if (vs.selectedSnippet?.id === target.id) {
+                      vs.setSelectedSnippet(updated)
+                    }
+                    return { success: true, title }
+                  }
+                  return { success: false, error: 'File not found' }
+                },
+              }),
+              deleteFile: aiSdk.tool({
+                description: 'Delete a file from the user\'s vault by title.',
+                inputSchema: aiSdk.jsonSchema({
+                  type: 'object',
+                  properties: {
+                    title: { type: 'string', description: 'Exact title of the file to delete' },
+                  },
+                  required: ['title'],
+                }),
+                execute: async ({ title }) => {
+                  const { useVaultStore } = await import('../../core/store/useVaultStore')
+                  const vs = useVaultStore.getState()
+                  const target = vs.snippets.find(s =>
+                    s.title.toLowerCase() === title.toLowerCase().replace(/\.md$/, '')
+                  )
+                  if (target) {
+                    await vs.deleteSnippet(target.id, true)
+                    return { success: true, title }
+                  }
+                  return { success: false, error: 'File not found' }
+                },
+              }),
+            }
+
+            // Show a brief "working" message while the AI thinks
+            set((state) => {
+              const msgs = [...state.chatMessages]
+              if (msgs.length > 0) {
+                msgs[msgs.length - 1].content = 'Thinking...'
+              }
+              return { chatMessages: msgs }
+            })
+
+            const result = aiSdk.streamText({
+              model: createDeepseekProvider({ apiKey: visibleKey })(activeModel || 'deepseek-chat'),
+              messages: finalMessages,
+              temperature: modeCfg.temperature,
+              maxTokens: modeCfg.max_tokens,
+              abortSignal: controller.signal,
+              tools: sdkTools,
+              maxSteps: 15,
+            })
+
+            for await (const chunk of result.textStream) {
+              if (chunk) {
+                fullContent += chunk
+                const now = Date.now()
+                if (now - lastUpdateTime >= UPDATE_INTERVAL) {
+                  lastUpdateTime = now
+                  set((state) => {
+                    const msgs = [...state.chatMessages]
+                    if (msgs.length > 0) msgs[msgs.length - 1].content = fullContent
+                    return { chatMessages: msgs }
+                  })
+                }
+              }
+            }
+          } else {
+            // Fallback: existing provider-based streaming (for non-tool providers)
+            const stream = provider.chatStream(finalMessages, {
+              model: activeModel,
+              temperature: modeCfg.temperature,
+              max_tokens: modeCfg.max_tokens,
+              signal: controller.signal
+            })
+
+            for await (const chunk of stream) {
+              if (chunk) {
+                fullContent += chunk
+
+                const now = Date.now()
+                if (now - lastUpdateTime >= UPDATE_INTERVAL) {
+                  lastUpdateTime = now
+                  set((state) => {
+                    const msgs = [...state.chatMessages]
+                    if (msgs.length > 0) {
+                      msgs[msgs.length - 1].content = fullContent
+                    }
+                    return { chatMessages: msgs }
+                  })
+                }
               }
             }
           }
@@ -775,8 +923,9 @@ ${vaultAccessNote}`
             return { chatMessages: msgs }
           })
 
-          // AUTO-APPLY LUMINA CREATE/UPDATE BLOCKS
-          try {
+          // AUTO-APPLY LUMINA CREATE/UPDATE BLOCKS (legacy path for non-tool providers)
+          if (providerType !== 'deepseek') {
+            try {
             const vaultModule = await import('../../core/store/useVaultStore')
             const vaultStore = vaultModule.useVaultStore.getState();
             const allSnippets = vaultStore.snippets;
@@ -784,16 +933,60 @@ ${vaultAccessNote}`
             let appliedUpdates = 0;
             let appliedDeletions = 0;
 
-            // 1. Process lumina-create
-            const createMatches = [...fullContent.matchAll(/```lumina-create\s+(.+?)\n([\s\S]*?)```/g)];
-            for (const match of createMatches) {
-              const title = match[1].trim();
-              const newCode = match[2].trim();
+            // Helper: parse lumina blocks with code-fence-aware nesting
+            const parseLuminaBlocks = (text, prefix) => {
+              const blocks = [];
+              const searchStart = '```' + prefix + ' ';
+              let i = 0;
+              while (i < text.length) {
+                const blockStart = text.indexOf(searchStart, i);
+                if (blockStart === -1) break;
 
+                const titleAfter = blockStart + searchStart.length;
+                const titleEnd = text.indexOf('\n', titleAfter);
+                if (titleEnd === -1) break;
+                const title = text.slice(titleAfter, titleEnd).trim();
+
+                let depth = 1;
+                let fenceDepth = 0;
+                let pos = titleEnd + 1;
+
+                while (pos < text.length && depth > 0) {
+                  const bt = text.indexOf('```', pos);
+                  if (bt === -1) break;
+
+                  const afterBt = text.slice(bt + 3);
+                  const trimmed = afterBt.trimStart();
+
+                  if (trimmed.startsWith('lumina-create ') ||
+                      trimmed.startsWith('lumina-update ') ||
+                      trimmed.startsWith('lumina-delete ')) {
+                    depth++;
+                  } else if (afterBt.length > 0 && !/^\s/.test(afterBt[0])) {
+                    fenceDepth++;
+                  } else if (fenceDepth > 0) {
+                    fenceDepth--;
+                  } else {
+                    depth--;
+                  }
+
+                  pos = bt + 3;
+                }
+
+                const content = text.slice(titleEnd + 1, pos - 3).replace(/\n$/, '');
+                blocks.push({ title, content });
+                i = pos;
+              }
+              return blocks;
+            };
+
+            // 1. Process lumina-create
+            const createMatches = parseLuminaBlocks(fullContent, 'lumina-create');
+            for (const { title, content } of createMatches) {
               const newSnippet = {
                 id: crypto.randomUUID(),
                 title: title,
-                code: newCode,
+                code: content,
                 language: 'markdown',
                 tags: '',
                 timestamp: Date.now()
@@ -803,11 +996,8 @@ ${vaultAccessNote}`
             }
 
             // 2. Process lumina-update
-            const updateMatches = [...fullContent.matchAll(/```lumina-update\s+(.+?)\n([\s\S]*?)```/g)];
-            for (const match of updateMatches) {
-              const title = match[1].trim();
-              const newCode = match[2].trim();
-
+            const updateMatches = parseLuminaBlocks(fullContent, 'lumina-update');
+            for (const { title, content } of updateMatches) {
               // Find snippet by title (be tolerant of .md extensions)
               const cleanTitle = title.toLowerCase().replace(/\.md$/, '');
               const targetSnippet = allSnippets.find(s => {
@@ -816,7 +1006,7 @@ ${vaultAccessNote}`
               });
 
               if (targetSnippet) {
-                const updatedSnippet = { ...targetSnippet, code: newCode, timestamp: Date.now() };
+                const updatedSnippet = { ...targetSnippet, code: content, timestamp: Date.now() };
                 await vaultStore.saveSnippet(updatedSnippet);
 
                 // If it's the currently active snippet, update it
@@ -856,25 +1046,37 @@ ${vaultAccessNote}`
             }
 
             if (appliedCreations > 0 || appliedUpdates > 0 || appliedDeletions > 0) {
-              const parts = [];
-              if (appliedCreations > 0) parts.push(`${appliedCreations} created`);
-              if (appliedUpdates > 0) parts.push(`${appliedUpdates} updated`);
-              if (appliedDeletions > 0) parts.push(`Deleted`);
-
               const current = get().chatMessages;
-              const joined = parts.join(', ');
+              const prevContent = current[current.length - 1].content;
 
-              // If it's strictly a single deletion and they requested exactly 'Deleted successfully'
-              if (appliedDeletions > 0 && appliedCreations === 0 && appliedUpdates === 0) {
-                current[current.length - 1].content += `\n\n*(Deleted successfully)*`;
-              } else {
-                current[current.length - 1].content += `\n\n*(${joined} successfully)*`;
-              }
+              // Strip all tool blocks from chat display, keep only surrounding text
+              const cleaned = (() => {
+                const prefixes = ['```lumina-create ', '```lumina-update '];
+                let text = prevContent;
+                for (const prefix of prefixes) {
+                  const escaped = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                  // Use greedy match to grab the closest ``` after content start
+                  text = text.replace(new RegExp(escaped + '[^\\n]*\\n[\\s\\S]*?\\n```', 'g'), '');
+                }
+                text = text.replace(/```lumina-delete\s+[^\n]+```\n?/g, '');
+                text = text.replace(/\n{4,}/g, '\n\n\n').trim();
+                // If stripping gutted everything, keep a clean summary
+                if (!text || text.length < 20) {
+                  const parts = [];
+                  if (appliedCreations > 0) parts.push(`${appliedCreations} file(s) about your request`);
+                  if (appliedUpdates > 0) parts.push(`${appliedUpdates} file(s) updated`);
+                  if (appliedDeletions > 0) parts.push(`Deleted`);
+                  return `I've ${parts.join(' and ')}. You can find them in your vault!`;
+                }
+                return text;
+              })();
 
+              current[current.length - 1].content = cleaned;
               set({ chatMessages: [...current] });
             }
           } catch (err) {
             console.error('[AIStore] Failed to auto-apply file operations:', err);
+          }
           }
         } finally {
           if (timeoutId) clearTimeout(timeoutId)
