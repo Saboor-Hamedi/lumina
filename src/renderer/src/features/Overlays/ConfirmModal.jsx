@@ -1,4 +1,5 @@
 import React from 'react'
+import { createPortal } from 'react-dom'
 import { AlertCircle, X } from 'lucide-react'
 import './ConfirmModal.css'
 
@@ -14,7 +15,7 @@ const ConfirmModal = ({
 }) => {
   if (!isOpen) return null
 
-  return (
+  return createPortal(
     <div className="modal-overlay confirm-overlay" onClick={onClose}>
       <div className="modal-container confirm-modal" onClick={e => e.stopPropagation()}>
         <div className="confirm-header">
@@ -44,7 +45,8 @@ const ConfirmModal = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

@@ -830,9 +830,9 @@ const getIconColor = (iconType, title) => {
  * @param {string} className - CSS class name (default: 'item-icon')
  * @returns {React.Component} Icon component
  */
-export const getSnippetIcon = (snippet, size = 14, className = 'item-icon') => {
+export const getSnippetIcon = (snippet, size = 14, className = 'item-icon', colorOverride) => {
   const Icon = getFileIcon(snippet.title, snippet.language)
-  const iconColor = getIconColor(Icon, snippet.title)
+  const iconColor = colorOverride || getIconColor(Icon, snippet.title)
   return <Icon size={size} className={className} style={{ color: iconColor }} />
 }
 

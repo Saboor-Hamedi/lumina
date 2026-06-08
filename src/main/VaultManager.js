@@ -103,6 +103,7 @@ class VaultManager {
             timestamp: data.timestamp || stats.mtimeMs,
             selection: data.selection || null,
             isPinned: data.isPinned || data.pinned || false,
+            color: null,
             type: 'snippet',
             is_draft: 0,
             fileName: fileName // Store actual filename for robust renaming
@@ -178,15 +179,19 @@ class VaultManager {
     //    Example: "My Note.md" -> "C:/Users/.../Lumina Vault/My Note.md"
     const finalPath = path.join(this.vaultPath, newFileName)
 
+    // Only bump timestamp when content actually changes (not for color/pin/tag edits)
+    const contentChanged = !oldSnippet || oldSnippet.code !== snippet.code
+    const newTimestamp = contentChanged ? Date.now() : (oldSnippet?.timestamp || snippet.timestamp || Date.now())
+
     // 4. Prepare Content (use cleaned title everywhere)
     const fileContent = matter.stringify(snippet.code || '', {
       id: snippet.id,
-      title: cleanedTitle, // Use cleaned title in frontmatter
+      title: cleanedTitle,
       language: snippet.language || 'markdown',
       tags: snippet.tags || '',
       selection: snippet.selection || null,
       isPinned: !!snippet.isPinned,
-      timestamp: Date.now()
+      timestamp: newTimestamp
     })
 
     try {
@@ -199,7 +204,7 @@ class VaultManager {
       const updatedSnippet = {
         ...snippet,
         title: cleanedTitle, // Store cleaned title so it shows clean in UI
-        timestamp: Date.now(),
+        timestamp: newTimestamp,
         fileName: newFileName // Update recorded filename
       }
       this.snippets.set(snippet.id, updatedSnippet)

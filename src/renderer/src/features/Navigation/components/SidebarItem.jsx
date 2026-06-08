@@ -1,14 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Star, Trash2, Edit2, Pin, ExternalLink } from 'lucide-react'
+import { Star, Trash2, Edit2, Pin, ExternalLink, Palette } from 'lucide-react'
 import { useVaultStore } from '../../../core/store/useVaultStore'
 import ContextMenu from '../../Overlays/ContextMenu'
+import ConfirmModal from '../../Overlays/ConfirmModal'
+import ColorModal from '../../Overlays/ColorModal'
 import { getSnippetIcon } from '../../../core/utils/fileIconMapper.jsx'
 
-/**
- * SidebarItem Component
- * Encapsulates the visual and logical state of a snippet entry in navigation lists.
- * Supports: Dirty indicators, custom icons, active states, and pinned status.
- */
 const SidebarItem = ({ snippet, isActive, onClick, style }) => {
   const { dirtySnippetIds, deleteSnippet, saveSnippet } = useVaultStore()
   const isDirty = dirtySnippetIds.includes(snippet.id)
@@ -16,6 +13,8 @@ const SidebarItem = ({ snippet, isActive, onClick, style }) => {
   const [isRenaming, setIsRenaming] = useState(false)
   const [renameValue, setRenameValue] = useState(snippet.title)
   const [contextMenu, setContextMenu] = useState(null)
+  const [showColorPicker, setShowColorPicker] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
   const renameInputRef = useRef(null)
 
@@ -36,16 +35,13 @@ const SidebarItem = ({ snippet, isActive, onClick, style }) => {
     }
 
     try {
-      // Save and get back the cleaned snippet
       const updatedSnippet = await saveSnippet({ ...snippet, title: renameValue.trim() })
-      // Update renameValue with the cleaned title from backend
       if (updatedSnippet?.title) {
         setRenameValue(updatedSnippet.title)
       }
       setIsRenaming(false)
     } catch (error) {
       console.error('Failed to rename note:', error)
-      // Restore original title on error
       setRenameValue(snippet.title)
       setIsRenaming(false)
     }
@@ -61,14 +57,8 @@ const SidebarItem = ({ snippet, isActive, onClick, style }) => {
     saveSnippet({ ...snippet, isPinned: !snippet.isPinned })
   }
 
-  const handleDelete = async (e) => {
-    e?.stopPropagation()
-
-    if (!snippet?.id) {
-      console.error('Cannot delete: snippet ID is missing')
-      return
-    }
-
+  const handleDeleteConfirm = async () => {
+    if (!snippet?.id) return
     try {
       await deleteSnippet(snippet.id, true)
     } catch (error) {
@@ -76,16 +66,20 @@ const SidebarItem = ({ snippet, isActive, onClick, style }) => {
     }
   }
 
+  const noteColor = snippet.color
+  const displayColor = noteColor ? `#${noteColor}` : null
+
   const getIcon = () => {
-    return getSnippetIcon(snippet)
+    return getSnippetIcon(snippet, 14, 'item-icon', displayColor)
   }
 
   const menuOptions = [
     { label: snippet.isPinned ? 'Unpin Note' : 'Pin to Top', icon: <Pin size={14} />, onClick: handleTogglePin },
     { label: 'Rename', icon: <Edit2 size={14} />, onClick: () => setIsRenaming(true) },
+    { label: 'Color', icon: <Palette size={14} />, onClick: () => setShowColorPicker(true) },
     { label: 'Show in Explorer', icon: <ExternalLink size={14} />, onClick: () => window.api?.openVaultFolder?.() },
     { type: 'divider' },
-    { label: 'Delete', icon: <Trash2 size={14} />, danger: true, onClick: handleDelete }
+    { label: 'Delete', icon: <Trash2 size={14} />, danger: true, onClick: () => setShowDeleteConfirm(true) }
   ]
 
   return (
@@ -99,7 +93,8 @@ const SidebarItem = ({ snippet, isActive, onClick, style }) => {
       style={style}
       title={isRenaming ? '' : `${snippet.title}${isDirty ? ' (Unsaved changes)' : ''}`}
     >
-      {getIcon()}
+      <span className="item-icon-wrap" style={displayColor ? { color: displayColor } : undefined}>{getIcon()}</span>
+      {displayColor && <span className="item-color-accent" style={{ background: displayColor }} />}
 
       {isRenaming ? (
         <input
@@ -118,7 +113,7 @@ const SidebarItem = ({ snippet, isActive, onClick, style }) => {
           onClick={(e) => e.stopPropagation()}
         />
       ) : (
-        <span className="item-title">{snippet.title || 'Untitled'}</span>
+        <span className="item-title" style={displayColor ? { color: displayColor } : undefined}>{snippet.title || 'Untitled'}</span>
       )}
 
       <div className="item-meta-right">
@@ -144,6 +139,21 @@ const SidebarItem = ({ snippet, isActive, onClick, style }) => {
           onClose={() => setContextMenu(null)}
         />
       )}
+
+      <ColorModal
+        isOpen={showColorPicker}
+        onClose={() => setShowColorPicker(false)}
+        currentColor={snippet.color}
+        onSelect={(colorId) => saveSnippet({ ...snippet, color: colorId })}
+      />
+
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Note?"
+        message={`Are you sure you want to delete "${snippet.title}"? This cannot be undone.`}
+      />
     </div>
   )
 }

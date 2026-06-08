@@ -207,7 +207,18 @@ export const useVaultStore = create((set, get) => ({
         const freshData = await window.api.getSnippets()
 
         if (freshData) {
-          set({ snippets: freshData })
+          // Merge note colors from settings.json as fallback
+          try {
+            const noteColors = await window.api.getSetting('noteColors') || {}
+            const merged = freshData.map(s => ({
+              ...s,
+              color: s.color || noteColors[s.id] || null
+            }))
+            set({ snippets: merged })
+          } catch {
+            // settings.json unavailable, use fresh data as-is
+            set({ snippets: freshData })
+          }
         } else {
           console.warn('[VaultStore] ✗ Received invalid data from sync.')
         }
@@ -235,10 +246,26 @@ export const useVaultStore = create((set, get) => ({
         throw new Error('Save API is not available. Please restart the application.')
       }
 
+      // Sync note color to settings.json when it changes
+      const current = get().snippets
+      const existing = current.find((s) => s.id === snippet.id)
+      if (existing?.color !== snippet.color) {
+        try {
+          const noteColors = await window.api.getSetting('noteColors') || {}
+          if (snippet.color) {
+            noteColors[snippet.id] = snippet.color
+          } else {
+            delete noteColors[snippet.id]
+          }
+          await window.api.saveSetting('noteColors', noteColors)
+        } catch (err) {
+          console.error('[VaultStore] Failed to sync note color to settings:', err)
+        }
+      }
+
       // Save and get back the updated snippet with cleaned title
       const updatedSnippet = await window.api.saveSnippet(snippet)
 
-      const current = get().snippets
       const exists = current.find((s) => s.id === snippet.id)
       // Use the updated snippet (with cleaned title) from the backend
       const snippetToUse = updatedSnippet || snippet
