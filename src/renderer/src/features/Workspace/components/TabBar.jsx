@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback, useMemo, memo } from 'react'
+import React, { useRef, useState, useCallback, useMemo, memo, useEffect } from 'react'
 import { X, Pin, MoreHorizontal, ArrowRight, Trash2 } from 'lucide-react'
 import { useVaultStore } from '../../../core/store/useVaultStore'
 import ContextMenu from '../../Overlays/ContextMenu'
@@ -24,6 +24,9 @@ const TabItem = memo(
     onDragOver,
     onDragEnd
   }) => {
+    const noteColor = snippet?.color
+    const displayColor = noteColor ? `#${noteColor}` : null
+
     /**
      * Get icon for the tab based on type and state
      * Uses fileIconMapper for consistent icon display across app
@@ -33,7 +36,7 @@ const TabItem = memo(
       if (isPinned) return <Pin size={12} className="tab-icon pinned-icon" />
       
       if (snippet) {
-        return getSnippetIcon(snippet, 12, 'tab-icon')
+        return getSnippetIcon(snippet, 12, 'tab-icon', displayColor)
       }
       
       return null
@@ -64,6 +67,7 @@ const TabItem = memo(
         title={getTitle()}
       >
         <div className="tab-context">
+          {displayColor && <span className="tab-color-dot" style={{ background: displayColor }} />}
           {getIcon()}
           <span className="tab-title">{getTitle()}</span>
         </div>
@@ -120,6 +124,16 @@ const TabBar = () => {
   const [contextMenu, setContextMenu] = useState(null)
   const [prompt, setPrompt] = useState(null)
   const lastReorderRef = useRef({ draggedId: null, targetId: null })
+  const tabbarRef = useRef(null)
+
+  // Auto-scroll to active tab when it changes
+  useEffect(() => {
+    if (!tabbarRef.current || !activeTabId) return
+    const activeTab = tabbarRef.current.querySelector('.workspace-tab.active')
+    if (activeTab) {
+      activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
+    }
+  }, [activeTabId])
 
   // O(1) Snippet Lookup Map for Performance
   const snippetMap = useMemo(() => {
@@ -248,7 +262,7 @@ const TabBar = () => {
   if (openTabs.length === 0) return null
 
   return (
-    <div className="workspace-tabbar">
+    <div className="workspace-tabbar" ref={tabbarRef}>
       <div className="tabs-container">
         {openTabs.map((id) => {
           const snippet = snippetMap.get(id)

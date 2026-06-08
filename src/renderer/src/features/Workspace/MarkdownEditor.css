@@ -294,6 +294,13 @@
   opacity: 0.8;
 }
 
+.tab-color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
 .tab-actions {
   display: flex;
   align-items: center;
