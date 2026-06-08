@@ -1,19 +1,20 @@
 /* Toast Notification Styles */
 .toast-notification {
   position: fixed;
-  bottom: 60px; /* Position above status bar (32px height + margin) */
-  right: 20px;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   background: var(--bg-panel);
   border: 1px solid var(--border-subtle);
-  border-radius: 6px;
-  padding: 8px 12px; /* Match UpdateToast padding */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  z-index: 10001; /* Above everything including status bars */
+  border-radius: 8px;
+  padding: 12px 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  z-index: 10001;
   min-width: 200px;
-  max-width: 320px; /* Match UpdateToast max-width */
-  width: auto; /* Don't force full width */
-  animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  backdrop-filter: blur(10px);
+  max-width: 360px;
+  width: auto;
+  animation: toastFadeIn 0.25s ease;
+  backdrop-filter: blur(12px);
 }
 
 .toast-content {
@@ -89,24 +90,22 @@
 
 /* Exit Animation */
 .toast-exit {
-  animation: toastSlideOut 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: toastFadeOut 0.2s ease forwards;
 }
 
-@keyframes toastSlideIn {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+@keyframes toastFadeIn {
+  from { transform: translateX(-50%) translateY(10px); opacity: 0; }
+  to { transform: translateX(-50%) translateY(0); opacity: 1; }
 }
 
-@keyframes toastSlideOut {
-  from { transform: translateY(0); opacity: 1; }
-  to { transform: translateY(20px); opacity: 0; }
+@keyframes toastFadeOut {
+  from { transform: translateX(-50%) translateY(0); opacity: 1; }
+  to { transform: translateX(-50%) translateY(10px); opacity: 0; }
 }
 
-/* Responsive: prevent full width on small screens */
+/* Responsive */
 @media (max-width: 768px) {
   .toast-notification {
-    max-width: calc(100vw - 40px); /* Leave 20px margin on each side */
-    right: 20px;
-    left: auto;
+    max-width: calc(100vw - 40px);
   }
 }

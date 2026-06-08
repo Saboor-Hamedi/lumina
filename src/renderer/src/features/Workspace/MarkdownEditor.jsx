@@ -13,6 +13,7 @@ import './MarkdownEditor.css'
 import { AtomicCodeMirrorEditor, wikiLinks } from '@atomic-editor/editor'
 import { languages } from '@codemirror/language-data'
 import { codeBlockDecorations, codeMap } from './codeBlockHeader'
+import { EditorView, placeholder } from '@codemirror/view'
 import '@atomic-editor/editor/styles.css'
 
 const MarkdownEditor = React.memo(
@@ -166,12 +167,33 @@ const MarkdownEditor = React.memo(
       }
     }, [snippet, title, showToast])
 
+    // Scroll parent .editor-scroller when cursor moves (Enter at bottom, etc.)
+    const scrollParentOnChange = useCallback(EditorView.updateListener.of((update) => {
+      if (update.selectionSet || update.docChanged) {
+        const view = update.view;
+        const dom = view.dom;
+        const scroller = dom.closest('.editor-scroller');
+        if (!scroller) return;
+        const cursorCoords = view.coordsAtPos(view.state.selection.main.head);
+        if (!cursorCoords) return;
+        const rect = scroller.getBoundingClientRect();
+        const margin = 24;
+        if (cursorCoords.bottom > rect.bottom - margin) {
+          scroller.scrollTop += cursorCoords.bottom - rect.bottom + margin;
+        } else if (cursorCoords.top < rect.top + margin) {
+          scroller.scrollTop -= rect.top + margin - cursorCoords.top;
+        }
+      }
+    }), []);
+
     useKeyboardShortcuts({
       onSave: handleSave
     })
 
     const editorExtensions = React.useMemo(() => [
       codeBlockDecorations,
+      scrollParentOnChange,
+      placeholder('Start writing...'),
       wikiLinks({
         openOnClick: true,
         onOpen: async (target) => {
@@ -201,7 +223,7 @@ const MarkdownEditor = React.memo(
           }
         }
       })
-    ], [showToast]);
+    ], [showToast, scrollParentOnChange]);
 
     // Forceful Native Event Listener to Override CodeMirror
     useEffect(() => {
@@ -266,21 +288,21 @@ const MarkdownEditor = React.memo(
     return (
       <div className={`markdown-editor mode-source cursor-${caretStyle || 'smooth'}`} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <ToastNotification toast={toast} onClose={clearToast} />
-        <EditorTitleBar
-          title={title}
-          snippet={snippet}
-          setSelectedSnippet={setSelectedSnippet}
-          isDirty={isDirty}
-          isSaving={isSaving}
-          onSave={handleSave}
-          onToggleInspector={onToggleInspector}
-          onExportHTML={handleExportHTML}
-          onExportPDF={handleExportPDF}
-          onExportMarkdown={handleExportMarkdown}
-        />
 
-        <div className="editor-scroller" style={{ position: 'relative', flex: 1, overflowY: 'auto' }}>
-          <div className="editor-canvas-wrap" ref={editorWrapperRef} style={{ height: '100%' }}>
+        <div className="editor-scroller">
+          <EditorTitleBar
+            title={title}
+            snippet={snippet}
+            setSelectedSnippet={setSelectedSnippet}
+            isDirty={isDirty}
+            isSaving={isSaving}
+            onSave={handleSave}
+            onToggleInspector={onToggleInspector}
+            onExportHTML={handleExportHTML}
+            onExportPDF={handleExportPDF}
+            onExportMarkdown={handleExportMarkdown}
+          />
+          <div className="editor-canvas-wrap" ref={editorWrapperRef}>
             {settings.inlineMetadata && (
               <EditorMetadata
                 titleRef={titleRef}
