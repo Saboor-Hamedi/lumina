@@ -783,7 +783,7 @@ const AIChatPanel = React.memo(() => {
                   <div
                     // key={`msg-${index}-${msg.role}-${msg.timestamp || index}`}
                     key={msg.id || `msg-${index}`}
-                    className={`chat-row ${msg.role}`}
+                      className={`chat-row ${msg.role}`}
                     style={{
                       marginBottom: '6px',
                       display: 'flex',
@@ -800,15 +800,15 @@ const AIChatPanel = React.memo(() => {
 
                     <div
                       className="chat-content-stack"
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                        maxWidth: msg.role === 'user' ? '80%' : '95%',
-                        minWidth: 0,
-                        flexShrink: 1,
-                        width: 'auto'
-                      }}
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                          maxWidth: msg.role === 'user' ? '70%' : '95%',
+                          minWidth: 0,
+                          flexShrink: 1,
+                          width: 'auto'
+                        }}
                     >
                       <div
                         className={`chat-bubble ${msg.role}`}
@@ -842,9 +842,9 @@ const AIChatPanel = React.memo(() => {
                         />
                       )}
                     </div>
-
                     {msg.role === 'user' && <UserAvatar />}
                   </div>
+
                 )
               }}
               components={{

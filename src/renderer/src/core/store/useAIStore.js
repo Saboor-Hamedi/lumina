@@ -675,7 +675,7 @@ You have tools to create, update, and delete files in the vault. Use them direct
 - For multi-file requests: plan all files first, then generate them all at once. Add [[wikilinks]] between related files so they form a connected knowledge graph.
 - **Wikilink accuracy**: When using [[wikilinks]], make sure the target file name matches EXACTLY — same spelling, same case. [[PostgreSQL]] links to a file titled PostgreSQL, not "Postgresql" or "Postgres". Double-check spelling.
 - **No hacky shortcuts**: Do not use [[WrongName|wrong]] — the display text and target must match the actual file title. If the file is "Containers", write [[Containers]], not [[Container]] or [[Containers|Container]].
-- **ALWAYS end with a brief confirmation**: After your tool calls, write a short response like "Done." or "Updated Embeddings — removed that line." Never leave the response empty. Your tool calls are hidden, so your text is all the user sees.
+- **ALWAYS end with a conversational summary**: After your tool calls, write 1-2 sentences recapping what you did and a follow-up question to continue the conversation. Example: "I've created NLP with a full pipeline overview and Embeddings with vector explanations. What specific NLP task are you looking to implement?" Never leave the response empty. Your tool calls are hidden, so your text is all the user sees.
 
 **CONTEXT**:
 ${vaultAccessNote}`
@@ -893,6 +893,15 @@ ${vaultAccessNote}`
                 }
               }
             }
+
+            // Fallback: if tools were used but AI left empty text, show confirmation
+            try {
+              const steps = await result.steps
+              const hasToolCalls = steps?.some(s => s.toolCalls?.length > 0)
+              if (hasToolCalls && !fullContent?.trim()) {
+                fullContent = 'Done.'
+              }
+            } catch (_) {}
           } else {
             // Fallback: existing provider-based streaming (for non-tool providers)
             const stream = provider.chatStream(finalMessages, {
@@ -919,11 +928,6 @@ ${vaultAccessNote}`
                 }
               }
             }
-          }
-
-          // Fallback: if AI used tools but left no text, show a brief confirmation
-          if (!fullContent && providerType === 'deepseek') {
-            fullContent = 'Done.'
           }
 
           // Final update to ensure we have the complete message
