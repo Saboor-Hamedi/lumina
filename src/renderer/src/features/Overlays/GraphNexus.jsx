@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
-import { X, Network } from 'lucide-react'
+import { X, Maximize2, Minimize2 } from 'lucide-react'
 import ForceGraph2D from 'react-force-graph-2d'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useAIStore } from '../../core/store/useAIStore'
@@ -27,15 +27,20 @@ const GraphNexus = React.memo(({ isOpen = true, onClose, onNavigate, embedded = 
   const { settings } = useSettingsStore()
   const { embeddingsCache } = useAIStore()
   const graphTheme = settings.graphTheme || 'default'
-  const [activeMode, setActiveMode] = useState('universe') // 'universe' | 'neighborhood' | 'orb'
+  const [activeMode, setActiveMode] = useState('universe')
   const [hoverNode, setHoverNode] = useState(null)
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 })
+  const [isMaximized, setIsMaximized] = useState(false)
   const graphRef = useRef()
   const containerRef = useRef()
   const [dimensions, setDimensions] = useState({
     width: embedded ? 800 : window.innerWidth * 0.95,
     height: embedded ? 600 : window.innerHeight * 0.92
   })
+
+  const handleToggleMaximize = useCallback(() => {
+    setIsMaximized(prev => !prev)
+  }, [])
 
   // Localized Escape Handler (only for modal mode)
   useKeyboardShortcuts({
@@ -68,17 +73,17 @@ const GraphNexus = React.memo(({ isOpen = true, onClose, onNavigate, embedded = 
       }
       return () => resizeObserver.disconnect()
     } else {
-      // For modal mode, use window dimensions
       const handleResize = () => {
         setDimensions({
-          width: window.innerWidth * 0.95,
-          height: window.innerHeight * 0.92
+          width: isMaximized ? window.innerWidth : window.innerWidth * 0.95,
+          height: isMaximized ? window.innerHeight : window.innerHeight * 0.92
         })
       }
+      handleResize()
       window.addEventListener('resize', handleResize)
       return () => window.removeEventListener('resize', handleResize)
     }
-  }, [embedded])
+  }, [embedded, isMaximized])
 
   // Graph Data Construction
   const graphData = useMemo(() => {
@@ -137,7 +142,7 @@ const GraphNexus = React.memo(({ isOpen = true, onClose, onNavigate, embedded = 
         }
       }, 100)
     }
-  }, [activeMode, graphData.nodes.length])
+  }, [activeMode, graphData.nodes.length, isMaximized])
 
   // D3 Forces Polish
   useEffect(() => {
@@ -346,34 +351,26 @@ const GraphNexus = React.memo(({ isOpen = true, onClose, onNavigate, embedded = 
   const container = (
     <div
       ref={containerRef}
-      className="nexus-container modal-container"
+      className={`nexus-container modal-container${isMaximized ? ' maximized' : ''}`}
       onClick={(e) => e.stopPropagation()}
       data-graph-theme={graphTheme}
       data-graph-mode={activeMode}
     >
-      <header className="pane-header">
-        <div className="modal-title-stack">
-          <Network size={18} className="nexus-icon" />
-          <span>Graph Nexus</span>
-        </div>
-
-        <div className="nexus-tabs">
-          <GraphModeSelector
-            activeMode={activeMode}
-            onModeChange={setActiveMode}
-            variant="tabs"
-            size="medium"
-          />
-        </div>
-
+      <header className="nexus-header">
+        <GraphModeSelector
+          activeMode={activeMode}
+          onModeChange={setActiveMode}
+          variant="tabs"
+          size="medium"
+        />
         <div className="nexus-header-actions">
-          <GraphThemeSelector
-            variant="button"
-            size="medium"
-          />
+          <GraphThemeSelector variant="button" size="large" />
+          <button className="nexus-maximize-btn" onClick={handleToggleMaximize} title={isMaximized ? 'Restore' : 'Maximize'}>
+            {isMaximized ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+          </button>
           {onClose && (
-            <button className="modal-close" onClick={onClose} title="Close">
-              <X size={24} />
+            <button className="nexus-close-btn" onClick={onClose} title="Close">
+              <X size={20} />
             </button>
           )}
         </div>
@@ -469,14 +466,7 @@ const GraphNexus = React.memo(({ isOpen = true, onClose, onNavigate, embedded = 
       </div>
 
       <footer className="nexus-footer">
-        <div className="nexus-hint">
-          ESC to close • Click node to teleport • {graphTheme.toUpperCase()} ENVIRONMENT
-        </div>
-        {selectedSnippet && (
-          <div className="nexus-focus-info">
-            Focusing: <strong>{selectedSnippet.title}</strong>
-          </div>
-        )}
+        <span className="nexus-footer-title">Graph Nexus</span>
       </footer>
     </div>
   )

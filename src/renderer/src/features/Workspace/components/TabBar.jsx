@@ -1,6 +1,6 @@
 import React, { useRef, useState, useCallback, useMemo, memo } from 'react'
-import { X, Pin, MoreHorizontal, ArrowRight, Trash2, Network } from 'lucide-react'
-import { useVaultStore, GRAPH_TAB_ID } from '../../../core/store/useVaultStore'
+import { X, Pin, MoreHorizontal, ArrowRight, Trash2 } from 'lucide-react'
+import { useVaultStore } from '../../../core/store/useVaultStore'
 import ContextMenu from '../../Overlays/ContextMenu'
 import PromptModal from '../../Overlays/PromptModal'
 import { getSnippetIcon } from '../../../core/utils/fileIconMapper.jsx'
@@ -30,16 +30,12 @@ const TabItem = memo(
      * @returns {JSX.Element} Icon component
      */
     const getIcon = () => {
-      // Special handling for Graph tab
-      if (id === GRAPH_TAB_ID) return <Network size={12} className="tab-icon" />
       if (isPinned) return <Pin size={12} className="tab-icon pinned-icon" />
       
-      // Use fileIconMapper for snippet tabs (same as sidebar)
       if (snippet) {
         return getSnippetIcon(snippet, 12, 'tab-icon')
       }
       
-      // Fallback (shouldn't happen)
       return null
     }
 
@@ -48,8 +44,6 @@ const TabItem = memo(
      * @returns {string} Tab title
      */
     const getTitle = () => {
-      // Special handling for Graph tab
-      if (id === GRAPH_TAB_ID) return 'Graph View'
       return snippet?.title || 'Untitled'
     }
 
@@ -103,9 +97,7 @@ TabItem.displayName = 'TabItem'
  * High-performance, premium workspace tab management.
  * Features: Native feel, DND reordering, context menus, and dirty-safety.
  * 
- * Supports both regular snippet tabs and special tabs (like Graph View).
- * Special tabs are identified by special IDs (e.g., GRAPH_TAB_ID) and
- * are handled differently from snippet tabs (no dirty state, different icons).
+ * Supports regular snippet tabs with dirty-safety, pinned tabs, and DND reordering.
  */
 const TabBar = () => {
   const {
@@ -138,12 +130,6 @@ const TabBar = () => {
 
   const handleTabClick = useCallback(
     (id) => {
-      // Handle Graph tab specially
-      if (id === GRAPH_TAB_ID) {
-        useVaultStore.getState().openGraphTab()
-        return
-      }
-      // Handle regular snippet tabs
       const snippet = snippetMap.get(id)
       if (snippet) setSelectedSnippet(snippet)
     },
@@ -153,17 +139,8 @@ const TabBar = () => {
   const handleCloseTrigger = useCallback(
     (e, id) => {
       e.stopPropagation()
-      // Graph tab and pinned tabs cannot be closed with dirty check
-      if (id === GRAPH_TAB_ID || pinnedTabIds.includes(id)) {
-        if (id !== GRAPH_TAB_ID && pinnedTabIds.includes(id)) return
-        // Graph tab can be closed directly
-        if (id === GRAPH_TAB_ID) {
-          closeTab(id)
-          return
-        }
-      }
+      if (pinnedTabIds.includes(id)) return
 
-      // Regular tabs: check for dirty state
       if (dirtySnippetIds.includes(id)) {
         const snippet = snippetMap.get(id)
         setPrompt({ id, title: snippet?.title || 'Untitled' })
@@ -274,28 +251,6 @@ const TabBar = () => {
     <div className="workspace-tabbar">
       <div className="tabs-container">
         {openTabs.map((id) => {
-          // Handle Graph tab (special tab, not a snippet)
-          if (id === GRAPH_TAB_ID) {
-            return (
-              <TabItem
-                key={id}
-                id={id}
-                snippet={null}
-                isActive={activeTabId === id}
-                isDirty={false}
-                isPinned={false}
-                isDragging={draggedId === id}
-                onOpen={handleTabClick}
-                onClose={handleCloseTrigger}
-                onContextMenu={handleContextMenu}
-                onDragStart={onDragStart}
-                onDragOver={onDragOver}
-                onDragEnd={onDragEnd}
-              />
-            )
-          }
-          
-          // Handle regular snippet tabs
           const snippet = snippetMap.get(id)
           if (!snippet) return null
 

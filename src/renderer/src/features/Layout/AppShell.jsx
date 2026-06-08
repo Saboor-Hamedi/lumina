@@ -12,7 +12,6 @@ import Dashboard from '../Workspace/components/Dashboard'
 import TabBar from '../Workspace/components/TabBar'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useVaultStore } from '../../core/store/useVaultStore'
-import { GRAPH_TAB_ID } from '../../core/store/useVaultStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
 import { useToast } from '../../core/hooks/useToast'
@@ -385,12 +384,8 @@ const AppShell = () => {
       const currentIdx = activeTabId ? openTabs.indexOf(activeTabId) : -1
       const nextIdx = currentIdx === -1 ? 0 : (currentIdx + 1) % openTabs.length
       const nextId = openTabs[nextIdx]
-      if (nextId === GRAPH_TAB_ID) {
-        useVaultStore.getState().openGraphTab()
-      } else {
-        const nextSnippet = snippets.find(s => s.id === nextId)
-        if (nextSnippet) setSelectedSnippet(nextSnippet)
-      }
+      const nextSnippet = snippets.find(s => s.id === nextId)
+      if (nextSnippet) setSelectedSnippet(nextSnippet)
     },
     onPreviousTab: () => {
       if (openTabs.length === 0) return
@@ -401,12 +396,8 @@ const AppShell = () => {
           ? openTabs.length - 1
           : currentIdx - 1
       const prevId = openTabs[prevIdx]
-      if (prevId === GRAPH_TAB_ID) {
-        useVaultStore.getState().openGraphTab()
-      } else {
-        const prevSnippet = snippets.find(s => s.id === prevId)
-        if (prevSnippet) setSelectedSnippet(prevSnippet)
-      }
+      const prevSnippet = snippets.find(s => s.id === prevId)
+      if (prevSnippet) setSelectedSnippet(prevSnippet)
     }
   })
 
@@ -470,6 +461,7 @@ const AppShell = () => {
           onSettingsClick={() => setShowSettings(true)}
           onThemeClick={() => setShowThemeModal(true)}
           onToggleSidebar={() => setIsLeftSidebarOpen((prev) => !prev)}
+          onToggleGraph={() => setShowGraph(true)}
           isLeftSidebarOpen={isLeftSidebarOpen}
         />
       </nav>
@@ -489,37 +481,10 @@ const AppShell = () => {
         )}
       </aside>
       <main className="shell-main">
-        {/* Show TabBar when there are open tabs and we're in files/search view or graph tab is active */}
-        {openTabs.length > 0 && (activeTab === 'files' || activeTab === 'search' || activeTabId === GRAPH_TAB_ID) && <TabBar />}
+        {/* Show TabBar when there are open tabs */}
+        {openTabs.length > 0 && (activeTab === 'files' || activeTab === 'search') && <TabBar />}
 
-        {/* Render Graph Nexus if graph tab is active (embedded mode) */}
-        {activeTabId === GRAPH_TAB_ID ? (
-          <ErrorBoundary>
-            <GraphNexus
-              embedded={true}
-              isOpen={true}
-              onNavigate={(snippet) => {
-                // Close graph tab and switch to the selected snippet
-                const { closeTab } = useVaultStore.getState()
-                closeTab(GRAPH_TAB_ID)
-                setSelectedSnippet(snippet)
-                setActiveTab('files')
-              }}
-            />
-          </ErrorBoundary>
-        ) : activeTab === 'graph' ? (
-          // Fallback: if activity bar shows graph but no tab, show graph (backward compatibility)
-          <ErrorBoundary>
-            <GraphNexus
-              embedded={true}
-              isOpen={true}
-              onNavigate={(snippet) => {
-                setSelectedSnippet(snippet)
-                setActiveTab('files')
-              }}
-            />
-          </ErrorBoundary>
-        ) : selectedSnippet ? (
+        {selectedSnippet ? (
           <ErrorBoundary>
             <MarkdownEditor
               snippet={selectedSnippet}
@@ -745,8 +710,8 @@ const AppShell = () => {
         onToggleSettings={() => setShowSettings(true)}
         onToggleGraph={() => setShowGraph(true)}
       />
-      {/* GraphNexus Modal - Only show when graph tab is NOT active (to prevent duplicate) */}
-      {showGraph && activeTabId !== GRAPH_TAB_ID && (
+      {/* GraphNexus Modal */}
+      {showGraph && (
         <GraphNexus
           isOpen={true}
           onClose={() => setShowGraph(false)}

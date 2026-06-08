@@ -1,7 +1,6 @@
 import { Files, Search, Settings, Network, ArrowUpCircle, RefreshCw, Palette, Calendar } from 'lucide-react'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
 import { useVaultStore } from '../../core/store/useVaultStore'
-import { GRAPH_TAB_ID } from '../../core/store/useVaultStore'
 import './ActivityBar.css'
 
 /**
@@ -13,9 +12,9 @@ import './ActivityBar.css'
  *
  * Explorer icon toggles the left sidebar (like VSCode).
  */
-const ActivityBar = ({ activeTab, onTabChange, onSettingsClick, onThemeClick = () => {}, onToggleSidebar, isLeftSidebarOpen }) => {
+const ActivityBar = ({ activeTab, onTabChange, onSettingsClick, onThemeClick = () => {}, onToggleSidebar, isLeftSidebarOpen, onToggleGraph }) => {
   const { status, progress, download, install } = useUpdateStore()
-  const { openGraphTab, activeTabId, closeTab, snippets, saveSnippet, setSelectedSnippet } = useVaultStore()
+  const { snippets, saveSnippet, setSelectedSnippet } = useVaultStore()
 
   const handleDailyNote = async () => {
     const today = new Date().toISOString().split('T')[0]
@@ -47,19 +46,13 @@ const ActivityBar = ({ activeTab, onTabChange, onSettingsClick, onThemeClick = (
     <div className="activity-bar">
       <div className="bar-top">
         <button
-          className={`bar-item ${activeTab === 'files' && activeTabId !== GRAPH_TAB_ID ? 'active' : ''}`}
+          className={`bar-item ${activeTab === 'files' ? 'active' : ''}`}
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
-            // If graph tab is active, close it first
-            if (activeTabId === GRAPH_TAB_ID) {
-              closeTab(GRAPH_TAB_ID)
-            }
-            // Toggle sidebar (VSCode-like behavior)
             if (onToggleSidebar) {
               onToggleSidebar()
             }
-            // Switch to files view
             onTabChange('files')
           }}
           title="Explorer (Toggle sidebar)"
@@ -67,19 +60,13 @@ const ActivityBar = ({ activeTab, onTabChange, onSettingsClick, onThemeClick = (
           <Files size={24} strokeWidth={1.5} />
         </button>
         <button
-          className={`bar-item ${activeTab === 'search' && activeTabId !== GRAPH_TAB_ID ? 'active' : ''}`}
+          className={`bar-item ${activeTab === 'search' ? 'active' : ''}`}
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
-            // If graph tab is active, close it first
-            if (activeTabId === GRAPH_TAB_ID) {
-              closeTab(GRAPH_TAB_ID)
-            }
-            // Toggle sidebar if clicking search when already on search (VSCode-like behavior)
             if (activeTab === 'search' && onToggleSidebar) {
               onToggleSidebar()
             } else {
-              // Switch to search view and ensure sidebar is open
               onTabChange('search')
               if (!isLeftSidebarOpen && onToggleSidebar) {
                 onToggleSidebar()
@@ -91,16 +78,13 @@ const ActivityBar = ({ activeTab, onTabChange, onSettingsClick, onThemeClick = (
           <Search size={24} strokeWidth={1.5} />
         </button>
         <button
-          className={`bar-item ${activeTabId === GRAPH_TAB_ID ? 'active' : ''}`}
+          className="bar-item"
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
-            // If already active, do nothing (prevent double-click issues)
-            if (activeTabId === GRAPH_TAB_ID) return
-            // Open graph as a tab instead of just switching view
-            openGraphTab()
+            onToggleGraph?.()
           }}
-          title="Graph View (Opens as tab)"
+          title="Graph View"
         >
           <Network size={24} strokeWidth={1.5} />
         </button>

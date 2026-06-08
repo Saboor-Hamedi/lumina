@@ -52,7 +52,7 @@
 /* Mode Tabs */
 .graph-mode-tabs {
   display: flex;
-  background: rgba(0, 0, 0, 0.2);
+  background: transparent;
   padding: 2px;
   border-radius: var(--radius-main, 5px);
   gap: 2px;
