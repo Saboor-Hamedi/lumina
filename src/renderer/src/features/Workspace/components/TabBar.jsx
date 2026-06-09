@@ -82,7 +82,7 @@ const TabItem = memo(
           ) : (
             !isPinned && (
               <button className="tab-close-btn" onClick={(e) => onClose(e, id)} title="Close tab">
-                <X size={12} />
+                <X size={14} />
               </button>
             )
           )}

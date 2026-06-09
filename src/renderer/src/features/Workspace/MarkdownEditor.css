@@ -162,7 +162,7 @@
 /* --- WORKSPACE TABBAR --- */
 .workspace-tabbar {
   height: 32px;
-  background: var(--bg-sidebar);
+  background: var(--bg-editor);
   display: flex;
   align-items: center;
   overflow-x: auto;
@@ -179,6 +179,7 @@
 .tabs-container {
   display: flex;
   height: 100%;
+  align-items: stretch;
 }
 
 .workspace-tab {
@@ -188,18 +189,18 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 10px;
-  gap: 6px;
-  border-right: none;
-  border-bottom: 1px solid var(--border-dim);
+  padding: 0 4px 0 14px;
+  gap: 8px;
   background: transparent;
   color: var(--text-muted);
   font-size: 12px;
   cursor: pointer;
   position: relative;
-  transition: background 0.15s;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
   flex-shrink: 0;
   user-select: none;
+  margin: 4px 0;
+  border-radius: 4px;
 }
 
 .workspace-tab:hover {
@@ -208,42 +209,21 @@
 }
 
 .workspace-tab.active {
-  background: var(--bg-app);
+  background: var(--bg-panel);
   color: var(--text-main);
   font-weight: 500;
-  border-bottom-color: var(--bg-app);
-}
-
-.workspace-tab.active::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: var(--text-accent);
-}
-
-.workspace-tab:hover {
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--text-muted);
-}
-
-.workspace-tab.active {
-  background: var(--bg-app);
-  color: var(--text-main);
-  font-weight: 600;
-  border-right-color: var(--border-dim);
-}
-
-.workspace-tab.dragging {
-  opacity: 0.4;
-  background: var(--bg-active);
-  cursor: grabbing;
+  box-shadow: inset 0 0 0 1px var(--border-dim);
 }
 
 .workspace-tab.active::after {
-  display: none;
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 30%;
+  right: 30%;
+  height: 2px;
+  background: var(--text-accent);
+  border-radius: 2px;
 }
 
 .cm-hidden-mark {
@@ -354,31 +334,27 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
-  margin-left: 6px;
+  width: 24px;
+  height: 24px;
+  margin-left: 8px;
 }
 
 .tab-close-btn {
   background: transparent;
   border: none;
   color: inherit;
-  opacity: 0;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 4px;
-  transition: all 0.2s;
+  transition: background 0.15s, color 0.15s;
   padding: 2px;
-}
-
-.workspace-tab:hover .tab-close-btn {
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
 .tab-close-btn:hover {
-  opacity: 1 !important;
+  opacity: 1;
   background: var(--bg-active);
   color: var(--text-main);
 }
@@ -398,9 +374,10 @@
   transform: scale(1.2);
 }
 
-/* Tab indicator removed from bottom, moved to ::after at top */
-.tab-active-indicator {
-  display: none;
+.workspace-tab.dragging {
+  opacity: 0.4;
+  background: var(--bg-active);
+  cursor: grabbing;
 }
 
 .editor-titlebar {

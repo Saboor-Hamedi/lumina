@@ -26,9 +26,9 @@
   justify-content: center;
   background: transparent;
   border: none;
-  color: var(--text-faint);
+  color: var(--icon-secondary, var(--text-faint));
   cursor: pointer;
-  transition: color 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   border-radius: 6px;
 }
@@ -36,6 +36,7 @@
 .bar-item:hover {
   color: var(--text-main);
   background: var(--bg-active);
+  filter: brightness(1.2);
 }
 
 .bar-item:active {
@@ -43,7 +44,12 @@
 }
 
 .bar-item.active {
-  color: var(--text-main);
+  color: var(--text-accent);
+  filter: brightness(1.1);
+}
+
+.bar-item.active svg {
+  filter: drop-shadow(0 0 6px rgba(var(--text-accent-rgb), 0.3));
 }
 
 /* Premium Vertical Indicator */
@@ -51,11 +57,12 @@
   content: '';
   position: absolute;
   left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 2px;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
   background: var(--text-accent);
   border-radius: 0 4px 4px 0;
+  box-shadow: 0 0 8px rgba(var(--text-accent-rgb), 0.4);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 

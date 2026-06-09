@@ -451,9 +451,6 @@ const AppShell = () => {
         gridTemplateColumns: `var(--ribbon-width) ${isLeftSidebarOpen ? leftWidth + 'px' : '0px'} 1fr ${isRightSidebarOpen ? rightWidth + 'px' : '0px'}`
       }}
     >
-      <header className="shell-header">
-        <TitleBar />
-      </header>
       <nav className="shell-ribbon">
         <ActivityBar
           activeTab={activeTab}
@@ -481,6 +478,8 @@ const AppShell = () => {
         )}
       </aside>
       <main className="shell-main">
+        <TitleBar />
+
         {/* Show TabBar when there are open tabs */}
         {openTabs.length > 0 && (activeTab === 'files' || activeTab === 'search') && <TabBar />}
 

@@ -6,10 +6,9 @@
 
   /* Modular Three-Pane Grid Layout */
   grid-template-areas:
-    "header header header header"
     "ribbon sidebar main inspector";
 
-  grid-template-rows: var(--header-height) 1fr;
+  grid-template-rows: 1fr;
   grid-template-columns: var(--ribbon-width) var(--sidebar-width) 1fr var(--sidebar-width);
 
   transition: grid-template-columns 0.2s cubic-bezier(0.2, 0, 0, 1);
@@ -63,11 +62,6 @@
 
 .app-shell.right-closed {
   grid-template-columns: var(--ribbon-width) var(--sidebar-width) 1fr 0px;
-}
-
-.shell-header {
-  grid-area: header;
-  z-index: var(--z-header);
 }
 
 .shell-ribbon {

@@ -1,63 +1,66 @@
 .title-bar {
-  height: var(--header-height);
+  height: 28px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  background: var(--bg-panel);
-  border-bottom: 1px solid var(--border-dim);
+  padding-left: 12px;
+  background: var(--bg-app);
   -webkit-app-region: drag;
   user-select: none;
-  position: relative;
-}
-
-.title-bar::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--text-accent), transparent);
-  opacity: 0.2;
-  pointer-events: none;
+  flex-shrink: 0;
 }
 
 .title-left {
   display: flex;
   align-items: center;
-  padding-left: 12px;
-}
-
-.app-logo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text-accent);
+  flex: 0 0 auto;
 }
 
 .app-name {
-  font-size: 11px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-accent);
+  white-space: nowrap;
+}
+
+.title-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 0 16px;
+}
+
+.doc-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.9;
+}
+
+.doc-title.dim {
   color: var(--text-faint);
+  font-weight: 400;
 }
 
 .title-right {
   display: flex;
   align-items: center;
-  height: 100%;
+  flex: 0 0 auto;
   -webkit-app-region: no-drag;
 }
 
 .window-controls {
   display: flex;
-  height: 100%;
+  align-items: center;
 }
 
 .control-btn {
-  width: 44px;
-  height: 100%;
+  width: 40px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -65,7 +68,7 @@
   border: none;
   color: var(--text-faint);
   cursor: pointer;
-  transition: background 0.1s;
+  transition: background 0.1s, color 0.1s;
 }
 
 .control-btn:hover {
@@ -74,14 +77,15 @@
 }
 
 .control-btn:active {
-  transform: scale(0.92);
-}
-
-.control-btn.close:active {
-  transform: scale(0.92);
+  background: var(--bg-active);
 }
 
 .control-btn.close:hover {
   background: #e81123;
+  color: white;
+}
+
+.control-btn.close:active {
+  background: #bf0f1d;
   color: white;
 }

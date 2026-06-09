@@ -1,5 +1,6 @@
 import React from 'react'
-import { Square, X, Minus, Zap } from 'lucide-react'
+import { Square, X, Minus } from 'lucide-react'
+import { useVaultStore } from '../../core/store/useVaultStore'
 import './TitleBar.css'
 
 const TitleBar = () => {
@@ -8,6 +9,7 @@ const TitleBar = () => {
   const handleClose = () => window.api?.closeWindow()
 
   const [version, setVersion] = React.useState('')
+  const selectedSnippet = useVaultStore((s) => s.selectedSnippet)
 
   React.useEffect(() => {
     if (window.api?.getVersion) {
@@ -18,32 +20,27 @@ const TitleBar = () => {
   return (
     <div className="title-bar">
       <div className="title-left">
-        <div className="app-logo">
-          <Zap size={14} fill="currentColor" />
-          <span className="app-name">Lumina</span>
-          {version && (
-            <span
-              className="app-version"
-              style={{ fontSize: '10px', opacity: 0.5, marginLeft: '6px', fontWeight: 500 }}
-            >
-              v{version}
-            </span>
-          )}
-        </div>
+        <span className="app-name">Lumina</span>
       </div>
 
-      <div className="title-center">{/* Obsidian-like document title could go here */}</div>
+      <div className="title-center">
+        {selectedSnippet ? (
+          <span className="doc-title">{selectedSnippet.title}</span>
+        ) : version ? (
+          <span className="doc-title dim">v{version}</span>
+        ) : null}
+      </div>
 
       <div className="title-right">
         <div className="window-controls">
           <button onClick={handleMinimize} className="control-btn" title="Minimize">
-            <Minus size={14} />
+            <Minus size={12} />
           </button>
           <button onClick={handleToggleMaximize} className="control-btn" title="Maximize">
-            <Square size={12} />
+            <Square size={11} />
           </button>
           <button onClick={handleClose} className="control-btn close" title="Close">
-            <X size={14} />
+            <X size={12} />
           </button>
         </div>
       </div>
