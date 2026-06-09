@@ -10,20 +10,6 @@
   overflow: hidden; /* No scrolling - single page */
 }
 
-.welcome-background-art {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background:
-    radial-gradient(circle at 20% 50%, rgba(var(--text-accent-rgb, 64, 186, 250), 0.06) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(var(--text-accent-rgb, 64, 186, 250), 0.04) 0%, transparent 50%),
-    radial-gradient(circle at 40% 80%, rgba(var(--text-accent-rgb, 64, 186, 250), 0.02) 0%, transparent 50%);
-  pointer-events: none;
-  opacity: 0.5;
-}
-
 .welcome-inner {
   max-width: 1400px;
   width: 100%;
@@ -181,19 +167,17 @@
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background: var(--bg-panel);
-  color: var(--text-main);
-  border: none; /* No border */
+  color: var(--text-muted);
+  border: none;
   border-radius: 8px;
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease;
 }
 
 .welcome-empty-action:hover {
-  background: var(--bg-active);
-  transform: translateY(-1px);
+  color: var(--text-main);
 }
 
 /* Cards Grid - Compact 2-column layout */

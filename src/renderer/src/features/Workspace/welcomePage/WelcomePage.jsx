@@ -1,41 +1,24 @@
 import React from 'react'
+import './WelcomePage.css'
 
 const WelcomePage = ({ onNew }) => {
+  const handlePalette = () => window.dispatchEvent(new CustomEvent('toggle-palette'))
+  const handleClose = () => window.api?.closeWindow?.()
+
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      height: '100%',
-      width: '100%',
-      color: 'var(--text-faint)',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      fontSize: '18px',
-      gap: '20px',
-      userSelect: 'none'
-    }}>
-      <div
-        style={{ cursor: 'pointer' }}
-        onClick={onNew}
-      >
-        Create new note (Ctrl + N)
-      </div>
-      <div
-        style={{ cursor: 'pointer' }}
-        onClick={() => window.dispatchEvent(new CustomEvent('toggle-palette'))}
-      >
-        Go to file (Ctrl + P)
-      </div>
-      <div
-        style={{ cursor: 'pointer' }}
-        onClick={() => {
-          if (window.api?.closeWindow) {
-            window.api.closeWindow()
-          }
-        }}
-      >
-        Close
+    <div className="welcome-page">
+      <div className="welcome-inner">
+        <div className="welcome-main-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
+          <div className="welcome-empty-action" onClick={onNew}>
+            Create new note (Ctrl + N)
+          </div>
+          <div className="welcome-empty-action" onClick={handlePalette}>
+            Go to file (Ctrl + P)
+          </div>
+          <div className="welcome-empty-action" onClick={handleClose}>
+            Close
+          </div>
+        </div>
       </div>
     </div>
   )
