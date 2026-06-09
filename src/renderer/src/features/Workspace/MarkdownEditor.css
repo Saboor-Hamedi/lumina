@@ -132,15 +132,13 @@
 
 /* --- WORKSPACE TABBAR --- */
 .workspace-tabbar {
-  height: 32px; /* Match sidebar section-header height */
-  background: var(--bg-app);
-  border-bottom: none;
-
+  height: 32px;
+  background: var(--bg-sidebar);
   display: flex;
   align-items: center;
   overflow-x: auto;
   overflow-y: hidden;
-  scrollbar-width: none; /* Hide scrollbar */
+  scrollbar-width: none;
   user-select: none;
   flex-shrink: 0;
 }
@@ -155,24 +153,46 @@
 }
 
 .workspace-tab {
-  min-width: 140px;
-  max-width: 220px;
+  min-width: 80px;
+  max-width: 180px;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 12px;
-  gap: 8px;
-  border-right: 1px solid var(--border-dim);
-  border-bottom: none !important;
-  background: var(--bg-sidebar);
-  color: var(--text-faint);
-  font-size: 11px; /* Match sidebar font size */
+  padding: 0 10px;
+  gap: 6px;
+  border-right: none;
+  border-bottom: 1px solid var(--border-dim);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
   cursor: pointer;
   position: relative;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background 0.15s;
   flex-shrink: 0;
   user-select: none;
+}
+
+.workspace-tab:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+.workspace-tab.active {
+  background: var(--bg-app);
+  color: var(--text-main);
+  font-weight: 500;
+  border-bottom-color: var(--bg-app);
+}
+
+.workspace-tab.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--text-accent);
 }
 
 .workspace-tab:hover {
@@ -250,7 +270,7 @@
 .tab-context {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   flex: 1;
   min-width: 0;
 }

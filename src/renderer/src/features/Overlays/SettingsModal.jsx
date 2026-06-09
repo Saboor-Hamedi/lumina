@@ -174,7 +174,6 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                       <input
                         type="password"
                         className="settings-select"
-                        style={{ width: '240px' }}
                         value={settings.deepSeekKey || ''}
                         onChange={(e) => updateSetting('deepSeekKey', e.target.value.trim() || null)}
                         placeholder="sk-..."
@@ -210,7 +209,6 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                       <input
                         type="password"
                         className="settings-select"
-                        style={{ width: '240px' }}
                         value={settings.openaiKey || ''}
                         onChange={(e) => updateSetting('openaiKey', e.target.value.trim() || null)}
                         placeholder="sk-..."
@@ -233,7 +231,6 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                       <input
                         type="password"
                         className="settings-select"
-                        style={{ width: '240px' }}
                         value={settings.anthropicKey || ''}
                         onChange={(e) => updateSetting('anthropicKey', e.target.value.trim() || null)}
                         placeholder="sk-ant-..."
@@ -256,7 +253,6 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                       <input
                         type="text"
                         className="settings-select"
-                        style={{ width: '240px' }}
                         value={settings.ollamaUrl || 'http://localhost:11434/api/chat'}
                         onChange={(e) => updateSetting('ollamaUrl', e.target.value.trim())}
                         placeholder="http://localhost:11434..."
@@ -277,7 +273,6 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                     <input
                       type="password"
                       className="settings-select"
-                      style={{ width: '240px' }}
                       value={settings.huggingFaceKey || ''}
                       onChange={(e) => updateSetting('huggingFaceKey', e.target.value.trim() || null)}
                       placeholder="hf_..."

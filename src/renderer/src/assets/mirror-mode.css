@@ -76,7 +76,11 @@ html[data-mirror-mode='true'] {
 /* 6. Interaction Refinement */
 [data-mirror-mode='true'] .workspace-tab.active {
   background: rgba(255, 255, 255, 0.15) !important;
-  border-bottom: none !important;
+}
+
+[data-mirror-mode='true'] .workspace-tab.active::before {
+  background: var(--text-accent);
+  opacity: 0.8;
 }
 
 [data-mirror-mode='true'] .tree-item:hover {

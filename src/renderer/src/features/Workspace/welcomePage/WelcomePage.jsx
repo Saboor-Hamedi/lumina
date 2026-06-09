@@ -11,8 +11,8 @@ const WelcomePage = ({ onNew }) => {
       width: '100%',
       color: 'var(--text-faint)',
       fontFamily: 'system-ui, -apple-system, sans-serif',
-      fontSize: '14px',
-      gap: '16px',
+      fontSize: '18px',
+      gap: '20px',
       userSelect: 'none'
     }}>
       <div
@@ -25,7 +25,7 @@ const WelcomePage = ({ onNew }) => {
         style={{ cursor: 'pointer' }}
         onClick={() => window.dispatchEvent(new CustomEvent('toggle-palette'))}
       >
-        Go to file (Ctrl + O)
+        Go to file (Ctrl + P)
       </div>
       <div
         style={{ cursor: 'pointer' }}
