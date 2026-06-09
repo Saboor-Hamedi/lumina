@@ -17,21 +17,18 @@ const TabItem = memo(
     isDirty,
     isPinned,
     isDragging,
+    dropSide,
     onOpen,
     onClose,
     onContextMenu,
     onDragStart,
     onDragOver,
-    onDragEnd
+    onDragEnd,
+    onDragLeave
   }) => {
     const noteColor = snippet?.color
     const displayColor = noteColor ? `#${noteColor}` : null
 
-    /**
-     * Get icon for the tab based on type and state
-     * Uses fileIconMapper for consistent icon display across app
-     * @returns {JSX.Element} Icon component
-     */
     const getIcon = () => {
       if (isPinned) return <Pin size={12} className="tab-icon pinned-icon" />
       
@@ -42,17 +39,15 @@ const TabItem = memo(
       return null
     }
 
-    /**
-     * Get title for the tab
-     * @returns {string} Tab title
-     */
     const getTitle = () => {
       return snippet?.title || 'Untitled'
     }
 
+    const dropClass = dropSide ? `drop-${dropSide}` : ''
+
     return (
       <div
-        className={`workspace-tab ${isActive ? 'active' : ''} ${isDirty ? 'is-dirty' : ''} ${isDragging ? 'dragging' : ''} ${isPinned ? 'pinned' : ''}`}
+        className={`workspace-tab ${isActive ? 'active' : ''} ${isDirty ? 'is-dirty' : ''} ${isDragging ? 'dragging' : ''} ${isPinned ? 'pinned' : ''} ${dropClass}`}
         onClick={() => onOpen(id)}
         onAuxClick={(e) => e.button === 1 && onClose(e, id)}
         onContextMenu={(e) => onContextMenu(e, id)}
@@ -62,6 +57,11 @@ const TabItem = memo(
         onDragEnter={(e) => {
           e.preventDefault()
           e.stopPropagation()
+        }}
+        onDragLeave={(e) => {
+          if (e.currentTarget === e.target || !e.currentTarget.contains(e.relatedTarget)) {
+            onDragLeave()
+          }
         }}
         onDragEnd={onDragEnd}
         title={getTitle()}
@@ -123,6 +123,7 @@ const TabBar = () => {
   const [draggedId, setDraggedId] = useState(null)
   const [contextMenu, setContextMenu] = useState(null)
   const [prompt, setPrompt] = useState(null)
+  const [dropTarget, setDropTarget] = useState({ id: null, side: null })
   const lastReorderRef = useRef({ draggedId: null, targetId: null })
   const tabbarRef = useRef(null)
 
@@ -184,9 +185,14 @@ const TabBar = () => {
   // --- Drag & Drop ---
   const onDragStart = useCallback((e, id) => {
     setDraggedId(id)
+    setDropTarget({ id: null, side: null })
     lastReorderRef.current = { draggedId: id, targetId: null }
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.dropEffect = 'move'
+  }, [])
+
+  const onDragLeave = useCallback(() => {
+    setDropTarget({ id: null, side: null })
   }, [])
 
   const onDragOver = useCallback(
@@ -194,7 +200,14 @@ const TabBar = () => {
       e.preventDefault()
       e.stopPropagation()
       
-      if (draggedId === null || draggedId === targetId) return
+      if (draggedId === null) return
+      
+      const rect = e.currentTarget.getBoundingClientRect()
+      const mouseX = e.clientX - rect.left
+      const isLeftHalf = mouseX < rect.width / 2
+      setDropTarget({ id: targetId !== draggedId ? targetId : null, side: isLeftHalf ? 'left' : 'right' })
+
+      if (draggedId === targetId) return
       
       // Prevent reordering if we're already at this target (prevents rapid reordering)
       if (lastReorderRef.current.draggedId === draggedId && 
@@ -208,10 +221,7 @@ const TabBar = () => {
       if (draggedIdx === -1 || targetIdx === -1) return
       
       // Calculate the new position based on mouse position within the target tab
-      const rect = e.currentTarget.getBoundingClientRect()
-      const mouseX = e.clientX - rect.left
       const tabWidth = rect.width
-      const isLeftHalf = mouseX < tabWidth / 2
       
       // Determine insertion position
       let insertIdx = targetIdx
@@ -251,6 +261,7 @@ const TabBar = () => {
 
   const onDragEnd = useCallback(() => {
     setDraggedId(null)
+    setDropTarget({ id: null, side: null })
     lastReorderRef.current = { draggedId: null, targetId: null }
   }, [])
 
@@ -277,12 +288,14 @@ const TabBar = () => {
               isDirty={dirtySnippetIds.includes(id)}
               isPinned={pinnedTabIds.includes(id)}
               isDragging={draggedId === id}
+              dropSide={dropTarget.id === id ? dropTarget.side : null}
               onOpen={handleTabClick}
               onClose={handleCloseTrigger}
               onContextMenu={handleContextMenu}
               onDragStart={onDragStart}
               onDragOver={onDragOver}
               onDragEnd={onDragEnd}
+              onDragLeave={onDragLeave}
             />
           )
         })}

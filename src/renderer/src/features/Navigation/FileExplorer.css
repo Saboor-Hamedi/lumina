@@ -48,8 +48,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 8px;
-  height: 32px;
-  min-height: 32px;
+  height: 28px;
+  min-height: 28px;
   background: var(--bg-sidebar);
   border-bottom: 1px solid var(--border-dim);
   flex-shrink: 0;
@@ -418,4 +418,23 @@
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+.drag-overlay-item {
+  width: 220px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  border-radius: 6px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  cursor: grabbing;
+  pointer-events: none;
+}
+
+.drag-overlay-item .tree-item {
+  border-radius: 6px;
+  background: var(--bg-panel);
+}
+
+.drag-overlay-item .hover-actions {
+  display: none !important;
 }

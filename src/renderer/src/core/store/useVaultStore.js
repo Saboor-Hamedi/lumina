@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { useSettingsStore } from './useSettingsStore'
 /**
  * Atomic State Store (FB Standard #2)
  */
@@ -368,7 +369,9 @@ export const useVaultStore = create((set, get) => ({
           ? { ...state.selectedSnippet, selection }
           : state.selectedSnippet
     }))
+  },
 
-    // Removed IndexedDB sync debounce since we rely entirely on SQLite now
+  reorderSnippets: (orderedIds) => {
+    useSettingsStore.getState().updateSetting('noteOrder', orderedIds)
   }
 }))

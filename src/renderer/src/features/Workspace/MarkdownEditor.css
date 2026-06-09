@@ -380,6 +380,25 @@
   cursor: grabbing;
 }
 
+.workspace-tab.drop-left::before,
+.workspace-tab.drop-right::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  background: var(--text-accent);
+  border-radius: 1px;
+  pointer-events: none;
+  z-index: 2;
+}
+.workspace-tab.drop-left::before {
+  left: -1px;
+}
+.workspace-tab.drop-right::before {
+  right: -1px;
+}
+
 .editor-titlebar {
   position: sticky;
   top: 0;

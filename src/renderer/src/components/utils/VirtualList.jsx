@@ -1,33 +1,32 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react'
 
-/**
- * Native Virtual List (Engineering Standard: Zero Dependency)
- * A lightweight, pixel-perfect virtualization engine built specifically for Lumina.
- * Eliminates all bundler/ESM compatibility issues.
- */
-export const FixedSizeList = ({
+export const FixedSizeList = forwardRef(({
   height,
   itemCount,
   itemSize,
   width,
   children: RowComponent,
-  className
-}) => {
+  className,
+  onScroll
+}, ref) => {
   const containerRef = useRef(null)
   const [scrollTop, setScrollTop] = useState(0)
 
-  // 1. Handle Scrolling
-  const onScroll = (e) => {
-    setScrollTop(e.currentTarget.scrollTop)
+  useImperativeHandle(ref, () => ({
+    get container() { return containerRef.current },
+    get scrollTop() { return scrollTop }
+  }))
+
+  const handleScroll = (e) => {
+    const st = e.currentTarget.scrollTop
+    setScrollTop(st)
+    if (onScroll) onScroll({ scrollOffset: st })
   }
 
-  // 2. Calculate Range
   const totalHeight = itemCount * itemSize
   const startIndex = Math.max(0, Math.floor(scrollTop / itemSize))
-  // Render buffer of 5 items
   const endIndex = Math.min(itemCount, Math.ceil((scrollTop + height) / itemSize) + 5)
 
-  // 3. Generate Visible Items
   const items = []
   for (let i = startIndex; i < endIndex; i++) {
     items.push(
@@ -49,16 +48,16 @@ export const FixedSizeList = ({
     <div
       className={className}
       ref={containerRef}
-      onScroll={onScroll}
+      onScroll={handleScroll}
       style={{
         width,
         height,
         overflow: 'auto',
         position: 'relative',
-        willChange: 'transform' // Performance optimization
+        willChange: 'transform'
       }}
     >
       <div style={{ height: totalHeight, width: '100%', position: 'relative' }}>{items}</div>
     </div>
   )
-}
+})

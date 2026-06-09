@@ -18,6 +18,7 @@ export const useSettingsStore = create((set, get) => ({
     },
     sortBy: 'name',
     sortDirection: 'asc',
+    noteOrder: null, // Array of snippet IDs for custom drag sort order
     translucency: false,
     mirrorMode: true, // New premium feature default
     inlineMetadata: true,
