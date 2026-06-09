@@ -125,6 +125,36 @@
   --atomic-editor-fg-muted: var(--text-muted);
   --atomic-editor-border: var(--border-dim);
   --atomic-editor-bg-surface: var(--bg-panel);
+  --atomic-editor-accent-bright: var(--caret-color, var(--text-accent));
+}
+
+/* Override cursor color and width from app caret settings */
+.markdown-editor .cm-cursor,
+.markdown-editor .cm-dropCursor {
+  border-left-color: var(--caret-color, var(--text-accent)) !important;
+  border-left-width: var(--caret-width, 2px) !important;
+}
+
+/* Block cursor */
+.markdown-editor.cursor-block .cm-cursor {
+  border-left-color: transparent !important;
+  background: var(--caret-color, var(--text-accent));
+  width: 0.6em;
+  opacity: 0.6;
+}
+
+/* Sharp cursor — thin line, width still respects --caret-width */
+.markdown-editor.cursor-sharp .cm-cursor {
+  background: transparent;
+  width: auto;
+  opacity: 1;
+}
+
+/* Smooth cursor — default, width still respects --caret-width */
+.markdown-editor.cursor-smooth .cm-cursor {
+  background: transparent;
+  width: auto;
+  opacity: 1;
 }
 
 
