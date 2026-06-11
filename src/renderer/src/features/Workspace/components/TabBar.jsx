@@ -1,69 +1,63 @@
 import React, { useRef, useState, useCallback, useMemo, memo, useEffect } from 'react'
 import { X, Pin, MoreHorizontal, ArrowRight, Trash2 } from 'lucide-react'
+import { DndContext, closestCenter } from '@dnd-kit/core'
+import { SortableContext, useSortable, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import { useVaultStore } from '../../../core/store/useVaultStore'
 import ContextMenu from '../../Overlays/ContextMenu'
 import PromptModal from '../../Overlays/PromptModal'
 import { getSnippetIcon } from '../../../core/utils/fileIconMapper.jsx'
 
 /**
- * TabItem Component (Memoized for Performance)
- * Prevents unnecessary re-renders when other tabs change.
+ * SortableTabItem — draggable tab using @dnd-kit/sortable
  */
-const TabItem = memo(
+const SortableTabItem = memo(
   ({
     id,
     snippet,
     isActive,
     isDirty,
     isPinned,
-    isDragging,
-    dropSide,
     onOpen,
     onClose,
-    onContextMenu,
-    onDragStart,
-    onDragOver,
-    onDragEnd,
-    onDragLeave
+    onContextMenu
   }) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      isDragging
+    } = useSortable({
+      id,
+      data: { snippet },
+      disabled: isPinned,
+    })
+
     const noteColor = snippet?.color
     const displayColor = noteColor ? `#${noteColor}` : null
 
     const getIcon = () => {
       if (isPinned) return <Pin size={12} className="tab-icon pinned-icon" />
-      
-      if (snippet) {
-        return getSnippetIcon(snippet, 12, 'tab-icon', displayColor)
-      }
-      
+      if (snippet) return getSnippetIcon(snippet, 12, 'tab-icon', displayColor)
       return null
     }
 
-    const getTitle = () => {
-      return snippet?.title || 'Untitled'
-    }
-
-    const dropClass = dropSide ? `drop-${dropSide}` : ''
+    const getTitle = () => snippet?.title || 'Untitled'
 
     return (
       <div
-        className={`workspace-tab ${isActive ? 'active' : ''} ${isDirty ? 'is-dirty' : ''} ${isDragging ? 'dragging' : ''} ${isPinned ? 'pinned' : ''} ${dropClass}`}
+        ref={setNodeRef}
+        className={`workspace-tab ${isActive ? 'active' : ''} ${isDirty ? 'is-dirty' : ''} ${isDragging ? 'dragging' : ''} ${isPinned ? 'pinned' : ''}`}
+        style={{
+          transform: transform?.x ? `translate3d(${transform.x}px, 0, 0)` : undefined,
+          transition: isDragging ? 'none' : 'transform 200ms ease, opacity 200ms ease',
+          opacity: isDragging ? 0.4 : 1,
+        }}
+        {...attributes}
+        {...listeners}
         onClick={() => onOpen(id)}
         onAuxClick={(e) => e.button === 1 && onClose(e, id)}
         onContextMenu={(e) => onContextMenu(e, id)}
-        draggable={!isPinned}
-        onDragStart={(e) => onDragStart(e, id)}
-        onDragOver={(e) => onDragOver(e, id)}
-        onDragEnter={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-        }}
-        onDragLeave={(e) => {
-          if (e.currentTarget === e.target || !e.currentTarget.contains(e.relatedTarget)) {
-            onDragLeave()
-          }
-        }}
-        onDragEnd={onDragEnd}
         title={getTitle()}
       >
         <div className="tab-context">
@@ -87,14 +81,12 @@ const TabItem = memo(
             )
           )}
         </div>
-
-        {isActive && <div className="tab-active-indicator" />}
       </div>
     )
   }
 )
 
-TabItem.displayName = 'TabItem'
+SortableTabItem.displayName = 'SortableTabItem'
 
 /**
  * TabBar Component
@@ -120,11 +112,8 @@ const TabBar = () => {
     pinnedTabIds
   } = useVaultStore()
 
-  const [draggedId, setDraggedId] = useState(null)
   const [contextMenu, setContextMenu] = useState(null)
   const [prompt, setPrompt] = useState(null)
-  const [dropTarget, setDropTarget] = useState({ id: null, side: null })
-  const lastReorderRef = useRef({ draggedId: null, targetId: null })
   const tabbarRef = useRef(null)
 
   // Auto-scroll to active tab when it changes
@@ -182,123 +171,54 @@ const TabBar = () => {
     setPrompt(null)
   }
 
-  // --- Drag & Drop ---
-  const onDragStart = useCallback((e, id) => {
-    setDraggedId(id)
-    setDropTarget({ id: null, side: null })
-    lastReorderRef.current = { draggedId: id, targetId: null }
-    e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.dropEffect = 'move'
-  }, [])
-
-  const onDragLeave = useCallback(() => {
-    setDropTarget({ id: null, side: null })
-  }, [])
-
-  const onDragOver = useCallback(
-    (e, targetId) => {
-      e.preventDefault()
-      e.stopPropagation()
-      
-      if (draggedId === null) return
-      
-      const rect = e.currentTarget.getBoundingClientRect()
-      const mouseX = e.clientX - rect.left
-      const isLeftHalf = mouseX < rect.width / 2
-      setDropTarget({ id: targetId !== draggedId ? targetId : null, side: isLeftHalf ? 'left' : 'right' })
-
-      if (draggedId === targetId) return
-      
-      // Prevent reordering if we're already at this target (prevents rapid reordering)
-      if (lastReorderRef.current.draggedId === draggedId && 
-          lastReorderRef.current.targetId === targetId) {
-        return
-      }
-
-      const draggedIdx = openTabs.indexOf(draggedId)
-      const targetIdx = openTabs.indexOf(targetId)
-
-      if (draggedIdx === -1 || targetIdx === -1) return
-      
-      // Calculate the new position based on mouse position within the target tab
-      const tabWidth = rect.width
-      
-      // Determine insertion position
-      let insertIdx = targetIdx
-      if (draggedIdx < targetIdx) {
-        // Dragging right: insert after target if in right half, before if in left half
-        insertIdx = isLeftHalf ? targetIdx : targetIdx + 1
-      } else {
-        // Dragging left: insert before target if in left half, after if in right half
-        insertIdx = isLeftHalf ? targetIdx : targetIdx + 1
-      }
-      
-      // Clamp to valid range
-      insertIdx = Math.max(0, Math.min(insertIdx, openTabs.length))
-      
-      // Only reorder if position actually changes
-      if (insertIdx === draggedIdx || (insertIdx === draggedIdx + 1 && draggedIdx < targetIdx)) {
-        return
-      }
-
-      const nextTabs = [...openTabs]
-      nextTabs.splice(draggedIdx, 1)
-      
-      // Adjust insert index if we removed an item before the target
-      if (draggedIdx < insertIdx) {
-        insertIdx--
-      }
-      
-      nextTabs.splice(insertIdx, 0, draggedId)
-      
-      // Update last reorder to prevent rapid reordering
-      lastReorderRef.current = { draggedId, targetId }
-      
-      reorderTabs(nextTabs)
-    },
-    [draggedId, openTabs, reorderTabs]
-  )
-
-  const onDragEnd = useCallback(() => {
-    setDraggedId(null)
-    setDropTarget({ id: null, side: null })
-    lastReorderRef.current = { draggedId: null, targetId: null }
-  }, [])
-
   const handleContextMenu = useCallback((e, id) => {
     e.preventDefault()
     setContextMenu({ x: e.clientX, y: e.clientY, id })
   }, [])
 
+  // --- Sortable Drag Handler ---
+  const handleDragEnd = useCallback((event) => {
+    const { active, over } = event
+    if (!active || !over || active.id === over.id) return
+
+    const oldIndex = openTabs.indexOf(active.id)
+    const newIndex = openTabs.indexOf(over.id)
+    if (oldIndex === -1 || newIndex === -1) return
+
+    const reordered = arrayMove(openTabs, oldIndex, newIndex)
+    reorderTabs(reordered)
+  }, [openTabs, reorderTabs])
+
   if (openTabs.length === 0) return null
 
   return (
-    <div className="workspace-tabbar" ref={tabbarRef}>
-      <div className="tabs-container">
-        {openTabs.map((id) => {
-          const snippet = snippetMap.get(id)
-          if (!snippet) return null
+    <DndContext
+      onDragEnd={handleDragEnd}
+      collisionDetection={closestCenter}
+    >
+      <div className="workspace-tabbar" ref={tabbarRef}>
+        <SortableContext items={openTabs} strategy={horizontalListSortingStrategy}>
+          <div className="tabs-container">
+            {openTabs.map((id) => {
+              const snippet = snippetMap.get(id)
+              if (!snippet) return null
 
-          return (
-            <TabItem
-              key={id}
-              id={id}
-              snippet={snippet}
-              isActive={activeTabId === id}
-              isDirty={dirtySnippetIds.includes(id)}
-              isPinned={pinnedTabIds.includes(id)}
-              isDragging={draggedId === id}
-              dropSide={dropTarget.id === id ? dropTarget.side : null}
-              onOpen={handleTabClick}
-              onClose={handleCloseTrigger}
-              onContextMenu={handleContextMenu}
-              onDragStart={onDragStart}
-              onDragOver={onDragOver}
-              onDragEnd={onDragEnd}
-              onDragLeave={onDragLeave}
-            />
-          )
-        })}
+              return (
+                <SortableTabItem
+                  key={id}
+                  id={id}
+                  snippet={snippet}
+                  isActive={activeTabId === id}
+                  isDirty={dirtySnippetIds.includes(id)}
+                  isPinned={pinnedTabIds.includes(id)}
+                  onOpen={handleTabClick}
+                  onClose={handleCloseTrigger}
+                  onContextMenu={handleContextMenu}
+                />
+              )
+            })}
+          </div>
+        </SortableContext>
       </div>
 
       {contextMenu && (
@@ -350,7 +270,7 @@ const TabBar = () => {
         onConfirm={handleConfirmSave}
         onDiscard={handleDiscard}
       />
-    </div>
+    </DndContext>
   )
 }
 
