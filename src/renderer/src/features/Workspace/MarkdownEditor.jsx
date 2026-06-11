@@ -196,6 +196,17 @@ const MarkdownEditor = React.memo(
       placeholder('Start writing...'),
       wikiLinks({
         openOnClick: true,
+        resolve: async (target) => {
+          const { snippets } = useVaultStore.getState();
+          const targetLower = target.toLowerCase();
+          const exists = snippets.some(
+            s => s.title && (s.title.toLowerCase() === targetLower || s.title.toLowerCase() === `${targetLower}.md`)
+          );
+          return {
+            label: target,
+            status: exists ? 'resolved' : 'missing'
+          };
+        },
         onOpen: async (target) => {
           showToast(`Opening wikilink: ${target}`, 'info');
           try {

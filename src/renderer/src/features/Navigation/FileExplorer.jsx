@@ -9,7 +9,7 @@ import {
   FolderOpen,
   ArrowUpDown
 } from 'lucide-react'
-import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core'
+import { DndContext, DragOverlay, closestCenter, useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import SidebarItem from './components/SidebarItem'
 import { FixedSizeList as List } from '../../components/utils/VirtualList'
@@ -77,6 +77,14 @@ const FileExplorer = React.memo(({ onNavigate }) => {
     saveSnippet,
     reorderSnippets
   } = useVaultStore()
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    })
+  )
 
   const [activeSection, setActiveSection] = useState('all')
   const [activeDragId, setActiveDragId] = useState(null)
@@ -265,6 +273,7 @@ const FileExplorer = React.memo(({ onNavigate }) => {
 
   return (
     <DndContext
+      sensors={sensors}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       collisionDetection={closestCenter}
