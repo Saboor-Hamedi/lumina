@@ -207,24 +207,25 @@ const MarkdownEditor = React.memo(
 
       const { snippets } = useVaultStore.getState();
       
-      // Handle auto-closed brackets by overwriting them if they exist
-      const docLength = context.state.doc.length;
-      const after2 = context.state.sliceDoc(context.pos, Math.min(context.pos + 2, docLength));
-      const after1 = context.state.sliceDoc(context.pos, Math.min(context.pos + 1, docLength));
-      let toPos = context.pos;
-      if (after2 === ']]') {
-        toPos = context.pos + 2;
-      } else if (after1 === ']') {
-        toPos = context.pos + 1;
-      }
-      
       let opts = snippets
         .filter(s => s.title)
         .map(s => ({
           label: s.title,
           type: 'text',
-          apply: s.title + ']]',
-          info: 'Link to note'
+          info: 'Link to note',
+          apply: (view, completion, from, to) => {
+            const docLength = view.state.doc.length;
+            const after2 = view.state.sliceDoc(to, Math.min(to + 2, docLength));
+            const after1 = view.state.sliceDoc(to, Math.min(to + 1, docLength));
+            let replaceTo = to;
+            if (after2 === ']]') replaceTo = to + 2;
+            else if (after1 === ']') replaceTo = to + 1;
+            
+            view.dispatch({
+              changes: { from, to: replaceTo, insert: s.title + ']]' },
+              selection: { anchor: from + s.title.length + 2 }
+            });
+          }
         }));
         
       if (opts.length === 0) {
@@ -233,7 +234,7 @@ const MarkdownEditor = React.memo(
       
       return {
         from: match.from + 2,
-        to: toPos,
+        validFor: /^[^\]]*$/,
         options: opts
       };
     }, []);
