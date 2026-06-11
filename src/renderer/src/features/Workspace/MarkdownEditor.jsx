@@ -12,6 +12,8 @@ import './MarkdownEditor.css'
 // Atomic Editor Imports
 import { AtomicCodeMirrorEditor, wikiLinks } from '@atomic-editor/editor'
 import { languages } from '@codemirror/language-data'
+import { autocompletion, startCompletion } from '@codemirror/autocomplete'
+import { EditorState } from '@codemirror/state'
 import { codeBlockDecorations, codeMap } from './codeBlockHeader'
 import { EditorView, placeholder } from '@codemirror/view'
 import '@atomic-editor/editor/styles.css'
@@ -34,7 +36,7 @@ const MarkdownEditor = React.memo(
 
     const [title, setTitle] = useState(snippet?.title || '')
     const [isDirty, setIsDirty] = useState(false)
-    const [editorKey, setEditorKey] = useState(0)
+    const [editorKey, setEditorKey] = useState(Date.now())
 
     useEffect(() => {
       snippetRef.current = snippet
@@ -167,21 +169,28 @@ const MarkdownEditor = React.memo(
       }
     }, [snippet, title, showToast])
 
-    // Scroll parent .editor-scroller when cursor moves (Enter at bottom, etc.)
-    const scrollParentOnChange = useCallback(EditorView.updateListener.of((update) => {
-      if (update.selectionSet || update.docChanged) {
+    // CodeMirror natively handles cursor scrolling
+    
+    // Trigger autocomplete when inside wikilinks
+    const autocompleteTriggerListener = useCallback(EditorView.updateListener.of((update) => {
+      if (update.docChanged) {
         const view = update.view;
-        const dom = view.dom;
-        const scroller = dom.closest('.editor-scroller');
-        if (!scroller) return;
-        const cursorCoords = view.coordsAtPos(view.state.selection.main.head);
-        if (!cursorCoords) return;
-        const rect = scroller.getBoundingClientRect();
-        const margin = 24;
-        if (cursorCoords.bottom > rect.bottom - margin) {
-          scroller.scrollTop += cursorCoords.bottom - rect.bottom + margin;
-        } else if (cursorCoords.top < rect.top + margin) {
-          scroller.scrollTop -= rect.top + margin - cursorCoords.top;
+        const head = view.state.selection.main.head;
+        const line = view.state.doc.lineAt(head);
+        const col = head - line.from;
+        const textBefore = line.text.slice(0, col);
+        
+        const lastOpen = textBefore.lastIndexOf('[[');
+        if (lastOpen !== -1) {
+          const lastClose = textBefore.lastIndexOf(']]');
+          if (lastOpen > lastClose) {
+            // Cursor is inside [[ ]]
+            setTimeout(() => {
+              if (!view.isDestroyed) {
+                startCompletion(view);
+              }
+            }, 10);
+          }
         }
       }
     }), []);
@@ -190,9 +199,49 @@ const MarkdownEditor = React.memo(
       onSave: handleSave
     })
 
+    const wikiLinkCompletionSource = useCallback((context) => {
+      const match = context.matchBefore(/\[\[([^\]]*)/);
+      console.log('wikiLinkCompletionSource called, match:', match);
+      if (!match) return null;
+      if (match.from === match.to && !context.explicit) return null;
+
+      const { snippets } = useVaultStore.getState();
+      
+      // Handle auto-closed brackets by overwriting them if they exist
+      const docLength = context.state.doc.length;
+      const after2 = context.state.sliceDoc(context.pos, Math.min(context.pos + 2, docLength));
+      const after1 = context.state.sliceDoc(context.pos, Math.min(context.pos + 1, docLength));
+      let toPos = context.pos;
+      if (after2 === ']]') {
+        toPos = context.pos + 2;
+      } else if (after1 === ']') {
+        toPos = context.pos + 1;
+      }
+      
+      let opts = snippets
+        .filter(s => s.title)
+        .map(s => ({
+          label: s.title,
+          type: 'text',
+          apply: s.title + ']]',
+          info: 'Link to note'
+        }));
+        
+      if (opts.length === 0) {
+        opts = [{ label: 'No notes found', apply: ']]' }];
+      }
+      
+      return {
+        from: match.from + 2,
+        to: toPos,
+        options: opts
+      };
+    }, []);
+
     const editorExtensions = React.useMemo(() => [
+      autocompleteTriggerListener,
+      autocompletion({ override: [wikiLinkCompletionSource], maxRenderedOptions: 8 }),
       codeBlockDecorations,
-      scrollParentOnChange,
       placeholder('Start writing...'),
       wikiLinks({
         openOnClick: true,
@@ -215,18 +264,18 @@ const MarkdownEditor = React.memo(
             let targetSnippet = snippets.find(
               s => s.title && (s.title.toLowerCase() === targetLower || s.title.toLowerCase() === `${targetLower}.md`)
             );
-            
+
             if (!targetSnippet) {
-               showToast(`Creating new note: ${target}`, 'info');
-               targetSnippet = {
-                  id: crypto.randomUUID(),
-                  title: target,
-                  code: `# ${target}\n\n`,
-                  language: 'markdown',
-                  tags: '',
-                  timestamp: Date.now()
-               };
-               await saveSnippet(targetSnippet);
+              showToast(`Creating new note: ${target}`, 'info');
+              targetSnippet = {
+                id: crypto.randomUUID(),
+                title: target,
+                code: `# ${target}\n\n`,
+                language: 'markdown',
+                tags: '',
+                timestamp: Date.now()
+              };
+              await saveSnippet(targetSnippet);
             }
             setSelectedSnippet(targetSnippet);
           } catch (e) {
@@ -234,7 +283,7 @@ const MarkdownEditor = React.memo(
           }
         }
       })
-    ], [showToast, scrollParentOnChange]);
+    ], [showToast, autocompleteTriggerListener, wikiLinkCompletionSource]);
 
     // Forceful Native Event Listener to Override CodeMirror
     useEffect(() => {
@@ -256,15 +305,15 @@ const MarkdownEditor = React.memo(
                 s => s.title && (s.title.toLowerCase() === targetLower || s.title.toLowerCase() === `${targetLower}.md`)
               );
               if (!targetSnippet) {
-                 targetSnippet = {
-                    id: crypto.randomUUID(),
-                    title: target,
-                    code: `# ${target}\n\n`,
-                    language: 'markdown',
-                    tags: '',
-                    timestamp: Date.now()
-                 };
-                 await saveSnippet(targetSnippet);
+                targetSnippet = {
+                  id: crypto.randomUUID(),
+                  title: target,
+                  code: `# ${target}\n\n`,
+                  language: 'markdown',
+                  tags: '',
+                  timestamp: Date.now()
+                };
+                await saveSnippet(targetSnippet);
               }
               setSelectedSnippet(targetSnippet);
             } catch (err) {
@@ -325,22 +374,22 @@ const MarkdownEditor = React.memo(
                 setIsDirty={setIsDirty}
               />
             )}
-             <AtomicCodeMirrorEditor
-                key={`${snippet?.id}-${editorKey}`}
-                documentId={snippet?.id}
-                markdownSource={snippet?.code || ''}
-                onMarkdownChange={handleMarkdownChange}
-                editorHandleRef={editorHandleRef}
-                codeLanguages={languages}
-                extensions={editorExtensions}
-                onLinkClick={(url) => {
-                  if (window.api?.openExternal) {
-                    window.api.openExternal(url);
-                  } else {
-                    window.open(url, '_blank', 'noopener,noreferrer');
-                  }
-                }}
-             />
+            <AtomicCodeMirrorEditor
+              key={`${snippet?.id}-${editorKey}`}
+              documentId={snippet?.id}
+              markdownSource={snippet?.code || ''}
+              onMarkdownChange={handleMarkdownChange}
+              editorHandleRef={editorHandleRef}
+              codeLanguages={languages}
+              extensions={editorExtensions}
+              onLinkClick={(url) => {
+                if (window.api?.openExternal) {
+                  window.api.openExternal(url);
+                } else {
+                  window.open(url, '_blank', 'noopener,noreferrer');
+                }
+              }}
+            />
           </div>
         </div>
       </div>

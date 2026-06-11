@@ -8,7 +8,8 @@
 
 /* Standard line padding for text readability */
 .cm-line {
-  padding: 0 4px 0 0 !important; /* Remove left padding to align with title */
+  padding: 0 4px 0 0 !important;
+  /* Remove left padding to align with title */
 }
 
 
@@ -116,7 +117,7 @@
   overflow: hidden;
   background: var(--bg-app);
   --atomic-editor-selection-bg: rgba(64, 186, 250, 0.35) !important;
-  
+
   /* Enforce Atomic Editor Theme Colors */
   --atomic-editor-accent: var(--text-accent);
   --atomic-editor-link: var(--text-accent);
@@ -260,7 +261,7 @@
   font-size: 10px;
   padding: 4px 8px;
   border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   white-space: nowrap;
   pointer-events: none;
   z-index: 1000;
@@ -382,9 +383,11 @@
   pointer-events: none;
   z-index: 2;
 }
+
 .workspace-tab.drop-left::before {
   left: -1px;
 }
+
 .workspace-tab.drop-right::before {
   right: -1px;
 }
@@ -414,7 +417,8 @@
   color: var(--text-faint);
   font-weight: 500;
   flex: 1;
-  min-width: 0; /* Critical for truncation */
+  min-width: 0;
+  /* Critical for truncation */
 }
 
 .breadcrumb-item {
@@ -478,6 +482,7 @@
     opacity: 0;
     transform: translateY(4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -511,11 +516,13 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 80vh; /* Prevent layout collapse during view recreation */
+  min-height: 80vh;
+  /* Prevent layout collapse during view recreation */
 }
 
 .cm-editor {
-  flex: 1; /* Key for full height focus area */
+  flex: 1;
+  /* Key for full height focus area */
   background: transparent !important;
   display: flex;
   flex-direction: column;
@@ -526,7 +533,8 @@
   color: var(--text-main) !important;
   /* Allow CodeMirror to manage padding-bottom for scrollPastEnd */
   padding: 4px 0;
-  min-height: 70vh; /* Ensures clicking empty space at the bottom still focuses the editor */
+  min-height: 70vh;
+  /* Ensures clicking empty space at the bottom still focuses the editor */
 }
 
 .cm-placeholder {
@@ -637,14 +645,16 @@
 }
 
 .native-dropdown-menu {
-  position: fixed; /* Changed from absolute - now portaled to body */
+  position: fixed;
+  /* Changed from absolute - now portaled to body */
   min-width: 240px;
   background: var(--bg-panel);
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   padding: 6px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  z-index: 100000; /* Higher than CodeMirror tooltips (99999) */
+  z-index: 100000;
+  /* Higher than CodeMirror tooltips (99999) */
   backdrop-filter: blur(20px);
   animation: nativeMenuAppear 0.15s cubic-bezier(0, 0, 0.2, 1);
   transform-origin: top right;
@@ -656,6 +666,7 @@
     opacity: 0;
     transform: scale(0.95) translateY(-5px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -667,7 +678,8 @@
   align-items: center;
   gap: 12px;
   padding: 8px 12px;
-  font-size: 13px; /* Slightly larger for native look */
+  font-size: 13px;
+  /* Slightly larger for native look */
   color: var(--text-main);
   cursor: pointer;
   border-radius: 6px;
@@ -711,7 +723,8 @@
 }
 
 .mode-reading .cm-content {
-  cursor: default; /* Preview mode - not editable */
+  cursor: default;
+  /* Preview mode - not editable */
 }
 
 .mode-source .cm-content {
@@ -737,7 +750,8 @@
   flex-direction: column;
   align-items: stretch;
   gap: 8px;
-  padding: 0 0 16px 0; /* Align perfectly with editor content */
+  padding: 0 0 16px 0;
+  /* Align perfectly with editor content */
   margin: 0;
   border-bottom: none;
   font-size: calc(var(--font-size-editor, 14px) * 0.85);
@@ -764,16 +778,21 @@
   border: 1px solid var(--border-dim);
   border-radius: 6px;
   padding: 2px;
-  z-index: 2000; /* Ensure it is above everything */
+  z-index: 2000;
+  /* Ensure it is above everything */
   overflow: hidden;
-  animation: fadeIn 0.1s ease-out; /* Snappier fade in */
+  animation: fadeIn 0.1s ease-out;
+  /* Snappier fade in */
   max-width: fit-content;
-  pointer-events: none; /* Ensure it doesn't block mouse */
-  transition: opacity 0.1s ease-out; /* Smooth fade */
+  pointer-events: none;
+  /* Ensure it doesn't block mouse */
+  transition: opacity 0.1s ease-out;
+  /* Smooth fade */
 }
 
 .image-hover-preview img {
-  max-height: 280px; /* Smaller max height */
+  max-height: 280px;
+  /* Smaller max height */
   max-width: 100%;
   border-radius: 4px;
   display: block;
@@ -800,7 +819,8 @@
   gap: 3px;
   background: var(--bg-active);
   color: var(--text-accent);
-  padding: 1px 4px; /* very small padding */
+  padding: 1px 4px;
+  /* very small padding */
   border-radius: 3px;
   font-size: 9px;
   font-weight: 500;
@@ -854,7 +874,8 @@
   color: var(--text-main);
   font-family: inherit;
   font-size: 11px;
-  padding: 4px 6px; /* small padding to prevent huge hit area */
+  padding: 4px 6px;
+  /* small padding to prevent huge hit area */
   width: 100%;
 }
 
@@ -870,7 +891,8 @@
   max-height: 200px;
   overflow-y: auto;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-  z-index: 10000; /* High z-index to appear above tabbar and other elements */
+  z-index: 10000;
+  /* High z-index to appear above tabbar and other elements */
   backdrop-filter: blur(10px);
 }
 
@@ -905,7 +927,8 @@
 .meta-icon {
   color: var(--text-accent);
   opacity: 0.8;
-  margin-right: 4px; /* Give the icon some breathing room */
+  margin-right: 4px;
+  /* Give the icon some breathing room */
 }
 
 .editor-metadata-bar kbd {
@@ -923,7 +946,8 @@
   background-color: transparent !important;
   border: none !important;
   position: relative !important;
-  padding: 0 !important; /* No padding to prevent layout shift */
+  padding: 0 !important;
+  /* No padding to prevent layout shift */
   transition: none !important;
 }
 
@@ -933,7 +957,8 @@
 .cm-heading.cm-activeLine {
   /* Remove default border-left and use pseudo-element for full-height border */
   border-left: none !important;
-  padding-left: 0 !important; /* No left padding to ensure border alignment */
+  padding-left: 0 !important;
+  /* No left padding to ensure border alignment */
   box-sizing: border-box;
   position: relative;
 }
@@ -942,10 +967,12 @@
 .cm-heading.cm-activeLine::before {
   content: '';
   position: absolute;
-  left: 1px; /* 1px margin from content */
+  left: 1px;
+  /* 1px margin from content */
   top: 0;
   bottom: 0;
-  width: 1px; /* 1px border */
+  width: 1px;
+  /* 1px border */
   background: var(--text-accent);
   z-index: 1;
   /* This ensures the border extends from very top (including padding-top) to very bottom (including padding-bottom) */
@@ -1002,11 +1029,16 @@
   color: var(--text-main);
   padding-top: 0.4em;
   padding-bottom: 0.1rem;
-  padding-left: 0 !important; /* Match paragraph alignment - no left padding */
-  padding-right: 0 !important; /* Match paragraph alignment */
-  margin-left: 0 !important; /* Ensure no left margin */
-  margin-right: 0 !important; /* Ensure no right margin */
-  margin-bottom: 0 !important; /* Ensure no bottom margin that could affect selection */
+  padding-left: 0 !important;
+  /* Match paragraph alignment - no left padding */
+  padding-right: 0 !important;
+  /* Match paragraph alignment */
+  margin-left: 0 !important;
+  /* Ensure no left margin */
+  margin-right: 0 !important;
+  /* Ensure no right margin */
+  margin-bottom: 0 !important;
+  /* Ensure no bottom margin that could affect selection */
   letter-spacing: -0.01em;
   /* Ensure heading line has proper boundaries for selection */
   display: block;
@@ -1021,15 +1053,18 @@
   padding-bottom: 0.3em !important;
   color: var(--text-accent);
 }
+
 .cm-heading-2 {
   font-size: 1.8em !important;
   color: var(--text-main);
   opacity: 0.95;
 }
+
 .cm-heading-3 {
   font-size: 1.4em !important;
   opacity: 0.9;
 }
+
 .cm-heading-4 {
   font-size: 1.2em !important;
   opacity: 0.85;
@@ -1120,7 +1155,8 @@
   max-width: 100%;
   margin: 0 auto;
   min-height: 200px;
-  display: none; /* Hidden by default, shown in reading mode */
+  display: none;
+  /* Hidden by default, shown in reading mode */
 }
 
 
@@ -1146,6 +1182,7 @@
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1290,8 +1327,10 @@
 .mode-reading .cm-content {
   /* Match Live Mode Line Height */
   line-height: var(--line-height-editor, 1.6) !important;
-  cursor: text !important; /* Allow text selection */
-  pointer-events: auto !important; /* Critical for hover tooltips */
+  cursor: text !important;
+  /* Allow text selection */
+  pointer-events: auto !important;
+  /* Critical for hover tooltips */
   user-select: text !important;
   -webkit-user-select: text !important;
   -moz-user-select: text !important;
@@ -1352,12 +1391,15 @@
   background: rgba(var(--text-accent-rgb), 0.1);
   border-radius: 4px;
   padding: 0 4px;
-  cursor: zoom-in; /* clearly indicates interactivity */
-  display: inline-block; /* better hover targeting */
+  cursor: zoom-in;
+  /* clearly indicates interactivity */
+  display: inline-block;
+  /* better hover targeting */
 }
 
 .cm-image-alt-text::before {
-  content: '🖼️ '; /* Simple icon indicator */
+  content: '🖼️ ';
+  /* Simple icon indicator */
   font-size: 0.8em;
   opacity: 0.7;
 }
@@ -1367,15 +1409,19 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px; /* Horizontal padding only */
-  height: 32px; /* Fixed slim height */
-  background: var(--bg-panel); /* Theme-aware background */
+  padding: 0 16px;
+  /* Horizontal padding only */
+  height: 32px;
+  /* Fixed slim height */
+  background: var(--bg-panel);
+  /* Theme-aware background */
   border-top: 1px solid var(--border-subtle);
   z-index: 1000;
   backdrop-filter: blur(10px);
   box-shadow: none;
   /* margin-top: auto; Handled by flex parent */
-  font-size: 11px; /* Base font size for footer */
+  font-size: 11px;
+  /* Base font size for footer */
 }
 
 .seamless-editor {
@@ -1383,6 +1429,7 @@
   display: flex;
   flex-direction: column;
 }
+
 /* Editor scroller handles all overflow */
 .editor-scroller {
   flex: 1;
@@ -1420,14 +1467,17 @@
   background: var(--bg-panel);
   border: 1px solid var(--border-card);
   border-radius: 8px;
-  max-width: 300px; /* Slimmer */
+  max-width: 300px;
+  /* Slimmer */
   min-width: 220px;
   width: max-content;
   backdrop-filter: blur(24px);
-  pointer-events: auto; /* ENABLED SCROLLING */
+  pointer-events: auto;
+  /* ENABLED SCROLLING */
   display: flex;
   flex-direction: column;
-  max-height: 280px; /* More compact */
+  max-height: 280px;
+  /* More compact */
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
   overflow: hidden;
   user-select: text;
@@ -1439,6 +1489,7 @@
     opacity: 0;
     transform: translateY(4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1484,7 +1535,8 @@
   overflow-y: auto;
   overflow-x: hidden;
   min-height: 40px;
-  max-height: 240px; /* Adjusted to fit overall max-height */
+  max-height: 240px;
+  /* Adjusted to fit overall max-height */
   padding: 12px;
   background: rgba(0, 0, 0, 0.02);
 }
@@ -1511,7 +1563,8 @@
   font-size: 12px;
   color: var(--text-muted);
   line-height: 1.6;
-  white-space: normal; /* Changed from pre-wrap since we're using HTML */
+  white-space: normal;
+  /* Changed from pre-wrap since we're using HTML */
   word-wrap: break-word;
   font-family: var(--font-editor);
 }
@@ -1696,17 +1749,20 @@
   justify-content: center;
   padding-top: 36px;
 }
+
 .in-editor-preview-card {
   width: min(1100px, 96%);
   height: min(84vh, 86%);
   background: var(--bg-app);
-  border-radius: 0; /* flat to match main app header */
+  border-radius: 0;
+  /* flat to match main app header */
   box-shadow: none;
   border: 1px solid rgba(255, 255, 255, 0.04);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
+
 .in-editor-preview-header {
   padding: 12px 16px;
   border-bottom: 1px solid var(--border-dim);
@@ -1714,10 +1770,12 @@
   justify-content: space-between;
   align-items: center;
 }
+
 .in-editor-preview-body {
   padding: 12px 0;
   flex: 1;
 }
+
 .in-editor-preview-card .modal-close {
   background: transparent;
   border: none;
@@ -1731,6 +1789,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
