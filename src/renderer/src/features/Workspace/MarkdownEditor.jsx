@@ -111,7 +111,7 @@ const MarkdownEditor = React.memo(
         if (isMountedRef.current && snippetRef.current?.id === snippet.id) {
           handleSave()
         }
-      }, 2000)
+      }, 8000)
       return () => clearTimeout(timer)
     }, [isDirty, title, snippet?.id, handleSave])
 

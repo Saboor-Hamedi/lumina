@@ -1,6 +1,6 @@
 import React, { useRef, useState, useCallback, useMemo, memo, useEffect } from 'react'
 import { X, Pin, MoreHorizontal, ArrowRight, Trash2 } from 'lucide-react'
-import { DndContext, closestCenter } from '@dnd-kit/core'
+import { DndContext, closestCenter, useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
 import { SortableContext, useSortable, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import { useVaultStore } from '../../../core/store/useVaultStore'
 import ContextMenu from '../../Overlays/ContextMenu'
@@ -116,6 +116,14 @@ const TabBar = () => {
   const [prompt, setPrompt] = useState(null)
   const tabbarRef = useRef(null)
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    })
+  )
+
   // Auto-scroll to active tab when it changes
   useEffect(() => {
     if (!tabbarRef.current || !activeTabId) return
@@ -193,6 +201,7 @@ const TabBar = () => {
 
   return (
     <DndContext
+      sensors={sensors}
       onDragEnd={handleDragEnd}
       collisionDetection={closestCenter}
     >
