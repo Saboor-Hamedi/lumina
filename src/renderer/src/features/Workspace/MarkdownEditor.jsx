@@ -133,7 +133,14 @@ const MarkdownEditor = React.memo(
       if (editorHandleRef.current) {
         const currentCode = editorHandleRef.current.getMarkdown()
         if (snippet?.code && currentCode !== snippet.code) {
-          setEditorKey(k => k + 1)
+          if (realViewRef.current) {
+            const view = realViewRef.current
+            view.dispatch({
+              changes: { from: 0, to: view.state.doc.length, insert: snippet.code }
+            })
+          } else {
+            setEditorKey(k => k + 1)
+          }
         }
       }
     }, [snippet])
@@ -290,7 +297,6 @@ const MarkdownEditor = React.memo(
 
     const wikiLinkCompletionSource = useCallback((context) => {
       const match = context.matchBefore(/\[\[([^\]]*)/);
-      console.log('wikiLinkCompletionSource called, match:', match);
       if (!match) return null;
       if (match.from === match.to && !context.explicit) return null;
 
@@ -532,6 +538,18 @@ const MarkdownEditor = React.memo(
               }}
             />
           </div>
+        </div>
+
+        {/* Floating Status Texts (Bottom Left & Right) */}
+        <div className="floating-status left">
+          <span className="mode-toggle active">source</span>
+          <span className="separator">/</span>
+          <span className="mode-toggle">preview</span>
+        </div>
+        <div className="floating-status right">
+          <span>{snippet?.code ? snippet.code.trim().split(/\s+/).length : 0} words</span>
+          <span className="separator">•</span>
+          <span>MCP</span>
         </div>
       </div>
     )

@@ -1,26 +1,43 @@
 .activity-bar {
-  width: var(--ribbon-width);
-  height: 100%;
-  background: var(--bg-activitybar);
-  border-right: 1px solid var(--border-dim);
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 12px 0 20px 0;
-  flex-shrink: 0;
-  position: relative;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  
+  background: rgba(30, 30, 30, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 6px 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 .bar-top, .bar-bottom {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+}
+
+/* Add a visual separator between top (navigation) and bottom (settings) tools */
+.bar-top::after {
+  content: '';
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0 4px;
 }
 
 .bar-item {
-  width: var(--ribbon-width);
-  height: var(--ribbon-width);
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -30,12 +47,12 @@
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
-  border-radius: 6px;
+  border-radius: 12px;
 }
 
 .bar-item:hover {
   color: var(--text-main);
-  background: var(--bg-active);
+  background: rgba(255, 255, 255, 0.1);
   filter: brightness(1.2);
 }
 
@@ -52,16 +69,17 @@
   filter: drop-shadow(0 0 6px rgba(var(--text-accent-rgb), 0.3));
 }
 
-/* Premium Vertical Indicator */
+/* Premium Horizontal Indicator for Dock */
 .bar-item.active::before {
   content: '';
   position: absolute;
-  left: 0;
-  top: 6px;
-  bottom: 6px;
-  width: 3px;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 4px;
+  width: 4px;
+  border-radius: 50%;
   background: var(--text-accent);
-  border-radius: 0 4px 4px 0;
   box-shadow: 0 0 8px rgba(var(--text-accent-rgb), 0.4);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -77,9 +95,9 @@
 .update-progress-mini {
   position: absolute;
   right: 6px;
-  bottom: 10px;
-  width: 4px;
-  height: 20px;
+  bottom: 6px;
+  width: 24px;
+  height: 4px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 2px;
   overflow: hidden;
@@ -89,9 +107,9 @@
   position: absolute;
   bottom: 0;
   left: 0;
-  width: 100%;
+  height: 100%;
   background: var(--text-accent);
-  transition: height 0.3s ease;
+  transition: width 0.3s ease;
 }
 
 .spin-slow {

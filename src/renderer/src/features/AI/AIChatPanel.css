@@ -1,8 +1,8 @@
 /* ChatGPT-style Chat Input - Theme-aware */
 .chat-input-area {
   position: relative;
-  padding: 8px;
-  border-top: 1px solid var(--border-dim);
+  padding: 12px;
+  border-top: none;
   background: var(--bg-sidebar);
   flex-shrink: 0;
 }
@@ -435,7 +435,7 @@
   width: 100%;
   transform: translateX(-100%);
   background: var(--bg-sidebar);
-  border-right: 1px solid var(--border-dim);
+  border-right: none;
   display: flex;
   flex-direction: column;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -458,7 +458,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-faint);
-  border-bottom: 1px solid var(--border-dim);
+  border-bottom: none;
   flex-shrink: 0;
 }
 
@@ -555,7 +555,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid var(--border-dim);
+  border-bottom: none;
   background: var(--bg-sidebar);
   flex-shrink: 0;
 }

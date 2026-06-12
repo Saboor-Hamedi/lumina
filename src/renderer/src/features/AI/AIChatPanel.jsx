@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { Virtuoso } from 'react-virtuoso'
 import { createPortal } from 'react-dom'
 import {
   Copy, ThumbsUp, ThumbsDown, Check, Send,
@@ -322,7 +321,6 @@ const AIChatPanel = React.memo(() => {
   } = useAIStore()
   const { selectedSnippet, snippets, openTabs } = useVaultStore()
   const [inputValue, setInputValue] = useState('')
-  const [atBottom, setAtBottom] = useState(true)
 
   // Mention search state
   const [mentionState, setMentionState] = useState({
@@ -362,6 +360,14 @@ const AIChatPanel = React.memo(() => {
 
   const textareaRef = useRef(null)
   const backdropRef = useRef(null)
+  const listRef = useRef(null)
+
+  // Auto-scroll to bottom when messages change or during streaming
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.scrollTop = listRef.current.scrollHeight
+    }
+  }, [chatMessages, isChatLoading])
 
   // Sync scroll for highlighter
   const handleScroll = () => {
@@ -386,27 +392,11 @@ const AIChatPanel = React.memo(() => {
       return <span key={i}>{part}</span>
     })
   }
-  const virtuosoRef = useRef(null)
 
-  // Load chat history on mount and ENSURE it scrolls to bottom
+  // Load chat history on mount
   useEffect(() => {
     loadSessions()
   }, [loadSessions])
-
-  // Sync scroll when active session changes
-  useEffect(() => {
-    if (activeSessionId) {
-      setTimeout(() => {
-        if (virtuosoRef.current) {
-          virtuosoRef.current.scrollToIndex({
-            index: chatMessages.length > 0 ? chatMessages.length - 1 : 0,
-            align: 'end',
-            behavior: 'auto'
-          })
-        }
-      }, 100)
-    }
-  }, [activeSessionId, chatMessages.length])
 
   const [showSessions, setShowSessions] = useState(false)
 
@@ -507,16 +497,8 @@ const AIChatPanel = React.memo(() => {
 
         // Scroll to bottom after image generation
         setTimeout(() => {
-          if (virtuosoRef.current) {
-            try {
-              virtuosoRef.current.scrollToIndex({
-                index: chatMessages.length,
-                behavior: 'auto',
-                align: 'end'
-              })
-            } catch (err) {
-              // Ignore scroll errors
-            }
+          if (listRef.current) {
+            listRef.current.scrollTop = listRef.current.scrollHeight
           }
         }, 100)
 
@@ -524,9 +506,6 @@ const AIChatPanel = React.memo(() => {
       }
 
       // Regular chat message
-      // Reset scroll tracking when user sends a message - they want to see the response
-      setAtBottom(true)
-
       // Send chat message
 
       // Include all open tabs as context (not just selected snippet)
@@ -725,106 +704,82 @@ const AIChatPanel = React.memo(() => {
               )}
             </div>
           ) : (
-            <Virtuoso
-              ref={virtuosoRef}
-              style={{ height: '100%', outline: 'none' }}
-              data={visibleMessages}
-              followOutput={(isAtBottom) => (isAtBottom ? 'auto' : false)}
-              initialTopMostItemIndex={visibleMessages.length > 0 ? visibleMessages.length - 1 : 0}
-              atBottomStateChange={setAtBottom}
-              firstItemIndex={0}
-              increaseViewportBy={{ top: 200, bottom: 200 }}
-              overscan={200}
-              totalListHeightChanged={(height) => {
-                if (atBottom) {
-                  virtuosoRef.current?.scrollToIndex({
-                    index: visibleMessages.length - 1,
-                    align: 'end',
-                    behavior: 'auto'
-                  })
-                }
-              }}
-              itemContent={(index, msg) => {
-                // Ensure stable rendering - prevent content from disappearing
+            <div
+              className="chat-msg-list"
+              ref={listRef}
+            >
+              {visibleMessages.map((msg, index) => (
+                <div
+                  key={msg.id || `msg-${index}`}
+                  className={`chat-row ${msg.role}`}
+                  style={{
+                    marginBottom: '6px',
+                    display: 'flex',
+                    flexDirection: 'row',
+                    gap: '6px',
+                    justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                    alignItems: 'flex-start',
+                    width: '100%',
+                    minHeight: '28px',
+                    willChange: 'auto'
+                  }}
+                >
+                  {msg.role === 'assistant' && <LuminaAvatar />}
 
-                return (
                   <div
-                    // key={`msg-${index}-${msg.role}-${msg.timestamp || index}`}
-                    key={msg.id || `msg-${index}`}
-                      className={`chat-row ${msg.role}`}
+                    className="chat-content-stack"
                     style={{
-                      marginBottom: '6px',
                       display: 'flex',
-                      flexDirection: 'row',
-                      gap: '6px',
-                      justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                      alignItems: 'flex-start',
-                      width: '100%',
-                      minHeight: '28px',
-                      willChange: 'auto'
+                      flexDirection: 'column',
+                      alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                      maxWidth: msg.role === 'user' ? '70%' : '95%',
+                      minWidth: 0,
+                      flexShrink: 1,
+                      width: 'auto'
                     }}
                   >
-                    {msg.role === 'assistant' && <LuminaAvatar />}
-
                     <div
-                      className="chat-content-stack"
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                          maxWidth: msg.role === 'user' ? '70%' : '95%',
-                          minWidth: 0,
-                          flexShrink: 1,
-                          width: 'auto'
-                        }}
+                      className={`chat-bubble ${msg.role}`}
+                      style={{ maxWidth: '100%', width: '100%' }}
                     >
-                      <div
-                        className={`chat-bubble ${msg.role}`}
-                        style={{ maxWidth: '100%', width: '100%' }}
-                      >
-                        {msg.role === 'assistant' &&
-                          (!msg.content?.trim() && !msg.imageUrl) &&
-                          (index === visibleMessages.length - 1 && isChatLoading || msg.isGenerating) ? (
-                          <div className="thinking-indicator">
-                            {msg.isGenerating ? (
-                              <span className="thinking-text"><Sparkles size={11} className="spin" /> Generating image...</span>
-                            ) : (
-                              <span className="thinking-text"><span className="thinking-dot-pulse" />Thinking...</span>
-                            )}
-                          </div>
-                        ) : (
-                          <MessageContent
-                            content={msg.content}
-                            imageUrl={msg.imageUrl}
-                            imagePrompt={msg.imagePrompt}
-                            onCopy={handleCopy}
-                          />
-                        )}
-                      </div>
-                      {msg.role === 'assistant' && (
-                        <ChatActions
-                          msg={msg}
-                          index={index}
+                      {msg.role === 'assistant' &&
+                        (!msg.content?.trim() && !msg.imageUrl) &&
+                        (index === visibleMessages.length - 1 && isChatLoading || msg.isGenerating) ? (
+                        <div className="thinking-indicator">
+                          {msg.isGenerating ? (
+                            <span className="thinking-text"><Sparkles size={11} className="spin" /> Generating image...</span>
+                          ) : (
+                            <span className="thinking-text"><span className="thinking-dot-pulse" />Thinking...</span>
+                          )}
+                        </div>
+                      ) : (
+                        <MessageContent
+                          content={msg.content}
+                          imageUrl={msg.imageUrl}
+                          imagePrompt={msg.imagePrompt}
                           onCopy={handleCopy}
-                          onRate={handleRating}
                         />
                       )}
                     </div>
-                    {msg.role === 'user' && <UserAvatar />}
+                    {msg.role === 'assistant' && (
+                      <ChatActions
+                        msg={msg}
+                        index={index}
+                        onCopy={handleCopy}
+                        onRate={handleRating}
+                      />
+                    )}
                   </div>
-
-                )
-              }}
-              components={{
-                Footer: () => {
-                  // Only show typing indicator in footer if loading AND no assistant message exists yet
-                  // (Once assistant message exists, typing shows inline in that message)
+                  {msg.role === 'user' && <UserAvatar />}
+                </div>
+              ))}
+              <div className="chat-footer-area">
+                {(() => {
                   const lastMessage = chatMessages[chatMessages.length - 1]
                   const hasAssistantMessage = lastMessage && lastMessage.role === 'assistant'
                   const showTyping = isChatLoading && !hasAssistantMessage
-
                   return (
-                    <div style={{ paddingBottom: '8px' }}>
+                    <>
                       {showTyping && (
                         <div
                           className="chat-row assistant"
@@ -846,10 +801,7 @@ const AIChatPanel = React.memo(() => {
                           <strong>Error:</strong> {chatError}
                           {chatError.includes('API Key') && (
                             <button
-                              onClick={() => {
-                                // Could trigger settings modal to open AI tab
-                                window.dispatchEvent(new CustomEvent('open-settings-ai'))
-                              }}
+                              onClick={() => window.dispatchEvent(new CustomEvent('open-settings-ai'))}
                               style={{
                                 marginTop: '8px',
                                 padding: '4px 8px',
@@ -870,11 +822,11 @@ const AIChatPanel = React.memo(() => {
                           <strong>Image Generation Error:</strong> {imageGenerationError}
                         </div>
                       )}
-                    </div>
+                    </>
                   )
-                }
-              }}
-            />
+                })()}
+              </div>
+            </div>
           )}
         </div>
 

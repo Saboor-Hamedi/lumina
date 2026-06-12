@@ -1,19 +1,11 @@
 .app-shell {
-  display: grid;
+  display: flex;
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-
-  /* Modular Three-Pane Grid Layout */
-  grid-template-areas:
-    "titlebar titlebar titlebar titlebar"
-    "ribbon sidebar main inspector";
-
-  grid-template-rows: 28px 1fr;
-  grid-template-columns: var(--ribbon-width) var(--sidebar-width) 1fr var(--sidebar-width);
-
-  transition: grid-template-columns 0.2s cubic-bezier(0.2, 0, 0, 1);
-  will-change: grid-template-columns;
+  background: var(--bg-app);
+  position: relative;
+  border-radius: 10px; 
 }
 
 .app-shell.is-resizing {
@@ -24,10 +16,10 @@
 
 .sidebar-resizer {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 6px;
-  cursor: row-resize;
+  /* top: 80px;
+  bottom: 80px;
+  width: 6px; */
+  cursor: ew-resize;
   background: transparent;
   transition: background 0.2s;
   z-index: 1000;
@@ -57,36 +49,31 @@
   min-width: 0;
 }
 
-.app-shell.left-closed {
-  grid-template-columns: var(--ribbon-width) 0px 1fr var(--sidebar-width);
-}
-
-.app-shell.right-closed {
-  grid-template-columns: var(--ribbon-width) var(--sidebar-width) 1fr 0px;
-}
-
-.shell-titlebar {
-  grid-area: titlebar;
-  z-index: calc(var(--z-sidebar) + 10);
-  background: var(--bg-app);
-}
-
-.shell-ribbon {
-  grid-area: ribbon;
-  z-index: var(--z-sidebar);
-}
-
+/* Left Sidebar */
 .shell-sidebar-left {
-  grid-area: sidebar;
-  overflow: hidden;
-  border-right: 1px solid var(--border-dim);
-  background: var(--bg-sidebar);
-  z-index: var(--z-sidebar);
   position: relative;
+  width: 0;
+  background: rgba(25, 25, 25, 0.6) !important;
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  z-index: 1000;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: width 0.3s cubic-bezier(0.2, 0, 0, 1), opacity 0.3s;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.app-shell.left-open .shell-sidebar-left {
+  width: var(--left-sidebar-width, 280px);
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .shell-main {
-  grid-area: main;
+  flex: 1;
   background: var(--bg-app);
   min-width: 0;
   display: flex;
@@ -99,11 +86,25 @@
 }
 
 .shell-sidebar-right {
-  grid-area: inspector;
-  background: var(--bg-sidebar);
-  border-left: 1px solid var(--border-dim);
-  overflow: hidden;
   position: relative;
+  width: 0;
+  background: rgba(25, 25, 25, 0.6) !important;
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  z-index: 1000;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: width 0.3s cubic-bezier(0.2, 0, 0, 1), opacity 0.3s;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.app-shell.right-open .shell-sidebar-right {
+  width: var(--right-sidebar-width, 320px);
+  opacity: 1;
+  pointer-events: auto;
 }
 
 /* Inspector Styles */
@@ -660,8 +661,9 @@
   justify-content: center;
   font-weight: 700;
   font-size: 11px;
-  margin-top: 6px;
   flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 4px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   user-select: none;
 }
@@ -677,8 +679,9 @@
   justify-content: center;
   font-weight: 600;
   font-size: 10px;
-  margin-top: 6px;
   flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 4px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   user-select: none;
 }
@@ -698,14 +701,24 @@
 .chat-messages {
   flex: 1;
   padding: 8px 10px;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
   will-change: scroll-position;
   contain: layout style paint;
+  overflow: hidden;
+}
+
+.chat-msg-list {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
+}
+
+.chat-footer-area {
+  flex-shrink: 0;
 }
 
 /* Reduce padding on smaller heights */

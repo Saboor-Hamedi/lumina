@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import TitleBar from './TitleBar'
 import ActivityBar from '../Navigation/ActivityBar'
 import FileExplorer from '../Navigation/FileExplorer'
 import SearchSidebar from '../Navigation/SearchSidebar'
@@ -213,22 +212,22 @@ const AppShell = () => {
       // Order of precedence: new split objects > legacy migration objects > top-level keys
 
       // LEFT SIDEBAR
-      const legacySidebar = settings.sidebar || {}
+      const legacySidebar = actualSettings.sidebar || {}
       if (typeof legacySidebar.isLeftOpen === 'boolean') setIsLeftSidebarOpen(legacySidebar.isLeftOpen)
-      else if (typeof settings.isLeftSidebarOpen === 'boolean') setIsLeftSidebarOpen(settings.isLeftSidebarOpen)
+      else if (typeof actualSettings.isLeftSidebarOpen === 'boolean') setIsLeftSidebarOpen(actualSettings.isLeftSidebarOpen)
 
       if (legacySidebar.width) setLeftWidth(legacySidebar.width)
       else if (legacySidebar.leftWidth) setLeftWidth(legacySidebar.leftWidth)
-      else if (settings.leftWidth) setLeftWidth(settings.leftWidth)
+      else if (actualSettings.leftWidth) setLeftWidth(actualSettings.leftWidth)
 
       // RIGHT SIDEBAR
-      const legacyRSidebar = settings.rightSidebar || {}
+      const legacyRSidebar = actualSettings.rightSidebar || {}
       if (typeof legacyRSidebar.isRightOpen === 'boolean') setIsRightSidebarOpen(legacyRSidebar.isRightOpen)
-      else if (typeof settings.isRightSidebarOpen === 'boolean') setIsRightSidebarOpen(settings.isRightSidebarOpen)
+      else if (typeof actualSettings.isRightSidebarOpen === 'boolean') setIsRightSidebarOpen(actualSettings.isRightSidebarOpen)
 
       if (legacyRSidebar.width) setRightWidth(legacyRSidebar.width)
       else if (legacyRSidebar.rightWidth) setRightWidth(legacyRSidebar.rightWidth)
-      else if (settings.rightWidth) setRightWidth(settings.rightWidth)
+      else if (actualSettings.rightWidth) setRightWidth(actualSettings.rightWidth)
 
       // Removed restoring activeTab
 
@@ -442,23 +441,19 @@ const AppShell = () => {
       style={{
         opacity: isRestoring ? 0 : 1,
         transition: 'opacity 0.2s ease-in-out',
-        gridTemplateColumns: `var(--ribbon-width) ${isLeftSidebarOpen ? leftWidth + 'px' : '0px'} 1fr ${isRightSidebarOpen ? rightWidth + 'px' : '0px'}`
+        '--left-sidebar-width': `${leftWidth}px`,
+        '--right-sidebar-width': `${rightWidth}px`
       }}
     >
-      <header className="shell-titlebar">
-        <TitleBar />
-      </header>
-      <nav className="shell-ribbon">
-        <ActivityBar
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          onSettingsClick={() => setShowSettings(true)}
-          onThemeClick={() => setShowThemeModal(true)}
-          onToggleSidebar={() => setIsLeftSidebarOpen((prev) => !prev)}
-          onToggleGraph={() => setShowGraph(true)}
-          isLeftSidebarOpen={isLeftSidebarOpen}
-        />
-      </nav>
+      <ActivityBar
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onSettingsClick={() => setShowSettings(true)}
+        onThemeClick={() => setShowThemeModal(true)}
+        onToggleSidebar={() => setIsLeftSidebarOpen((prev) => !prev)}
+        onToggleGraph={() => setShowGraph(true)}
+        isLeftSidebarOpen={isLeftSidebarOpen}
+      />
       <aside className="shell-sidebar-left">
         <ErrorBoundary>
           {activeTab === 'search' ? (

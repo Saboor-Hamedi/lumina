@@ -607,6 +607,24 @@ export const useAIStore = create((set, get) => {
         }
       }
 
+      // 1. Auto-detect file mentions by name (not just @mentions)
+      const requestedFiles = []
+      try {
+        const vaultModule = await import('../../core/store/useVaultStore')
+        const vaultSnippets = vaultModule.useVaultStore.getState().snippets
+        const queryLower = message.toLowerCase()
+        vaultSnippets.forEach(s => {
+          if (s.title && queryLower.includes(s.title.toLowerCase().replace(/\.md$/, '').trim())) {
+            if (!requestedFiles.some(f => f.id === s.id)) {
+              requestedFiles.push(s)
+            }
+          }
+        })
+        if (requestedFiles.length > 5) requestedFiles.length = 5
+      } catch (err) {
+        console.warn('[AIStore] File mention detection failed:', err)
+      }
+
       // Normal Chat Flow
       const userMsg = {
         id: crypto.randomUUID(),
@@ -657,36 +675,32 @@ export const useAIStore = create((set, get) => {
           console.warn('[AIStore] Vault search failed:', searchErr)
         }
 
-        let systemPrompt = `You are Lumina, the intelligent core of this Markdown editor. You are technical, precise, and highly integrated.
+        let systemPrompt = `You are Lumina, the intelligent and friendly AI assistant built directly into this Markdown editor. You are a highly capable technical partner.
 
-**STYLE**:
-- Be direct and high-signal. Use elegant Markdown.
-- Avoid repetitive disclaimers like "I have access to your vault." Just act on the knowledge provided.
-- Cite file names when quoting specific context.
+**STYLE & TONE**:
+- Be warm, conversational, and highly engaging. You are pairing with the user, so act like a brilliant but friendly co-pilot.
+- Provide high-signal, detailed responses.
+- Cite file names clearly when quoting specific context.
 - **Follow EVERY instruction the user gives**. If they ask for wikilinks, headers, formatting, or structure — do it without skipping.
 - Produce **comprehensive, detailed content**. A file about "SQL queries" should include real examples, syntax, edge cases, and practical usage — not just "Basic Query Patterns" with one sentence.
+- When the user asks about a file, read its content from "Files Mentioned" below and immediately provide a substantive description. Never just acknowledge the file — answer directly with detail.
 
-**FILE EDITING AND CREATION**:
-You have tools to create, update, and delete files in the vault. Use them directly. **Before creating a file, check the EXISTING FILES list** — never create a duplicate. If it exists, use updateFile instead.
+**TOOLS AVAILABLE** (use these for file operations):
+- 'readFile' — read a vault file by title
+- 'createFile' — create a new vault file (provide title + content)
+- 'updateFile' — edit a vault file (by title+content or title+search+replace)
+- 'deleteFile' — delete a vault file by title
 
-- **updateFile supports two modes**:
-  - **Full replacement**: Pass 'content' with the complete new file content.
-  - **Targeted edit (preferred)**: Pass 'search' (exact text to find) and 'replace' (what to replace it with). Use replace: "" to delete text. The tool finds the text and modifies it for you.
-
-**RULES**:
-- **NEVER re-create a file that already exists**. Check EXISTING FILES above. If it exists, use updateFile, never createFile.
-- **For targeted edits**: just call updateFile with 'search' and 'replace'. No need to read the file first. The search text must match EXACTLY — copy it character-for-character from what the user provides.
-- **CRITICAL: execute immediately**. Call the tool and give a brief summary. Do not describe what you plan to do — just do it.
-- Produce **deep, substantive content** for new files: code examples, explanations, edge cases, best practices. Not one-line summaries.
-- For multi-file requests: plan all files first, then generate them all. Use [[wikilinks]] between related files.
-- **Wikilink accuracy**: Target file names must match EXACTLY — same spelling, same case.
-- Do NOT ask for confirmation. Execute immediately.
-- **Read the user's entire request before generating.** If they ask for specific sections, wikilinks, or formatting, include ALL of it.
-- Produce **deep, substantive content**: code examples, explanations, edge cases, best practices. Not one-line summaries.
-- For multi-file requests: plan all files first, then generate them all at once. Add [[wikilinks]] between related files so they form a connected knowledge graph.
-- **Wikilink accuracy**: When using [[wikilinks]], make sure the target file name matches EXACTLY — same spelling, same case. [[PostgreSQL]] links to a file titled PostgreSQL, not "Postgresql" or "Postgres". Double-check spelling.
-- **No hacky shortcuts**: Do not use [[WrongName|wrong]] — the display text and target must match the actual file title. If the file is "Containers", write [[Containers]], not [[Container]] or [[Containers|Container]].
-- **ALWAYS end with a conversational summary**: After your tool calls, write 1-2 sentences recapping what you did and a follow-up question to continue the conversation. Example: "I've created NLP with a full pipeline overview and Embeddings with vector explanations. What specific NLP task are you looking to implement?" Never leave the response empty. Your tool calls are hidden, so your text is all the user sees.
+**HOW TO USE THEM**:
+- Call them directly when needed. They actually execute.
+- **For "read" or "tell me about"** → call readFile, then describe the content.
+- **For "clear" or "empty"** → call updateFile with content='' (empty string).
+- **For "update" or "edit"** → call readFile first, then updateFile.
+- **For "delete" or "remove"** → call deleteFile directly (no read needed).
+- **For "create" or "new"** → call createFile.
+- Check EXISTING FILES before creating — never duplicate.
+- For targeted edits: use search+replace. If that fails, retry with full content.
+- When done, write a friendly summary of what you changed.
 
 **CONTEXT**:
 ${vaultAccessNote}`
@@ -710,6 +724,15 @@ ${vaultAccessNote}`
           mentionedSnippets.forEach((snip) => {
             systemPrompt += `[Target Note: ${snip.title}]\n${snip.code.slice(0, 3000)}\n\n`
           })
+        }
+
+        // --- Auto-detected file mentions ---
+        if (requestedFiles.length > 0) {
+          systemPrompt += '\n\n**Vault Files Referenced (content below):**\n'
+          requestedFiles.forEach((f, i) => {
+            systemPrompt += `--- ${f.title} ---\n${f.code}\n`
+          })
+          systemPrompt += '\nThe user is referencing the file(s) above. You MUST take action — call readFile, updateFile, or deleteFile as appropriate. Do NOT just say you will — do it now.\n'
         }
 
         // --- Existing files list ---
@@ -762,14 +785,7 @@ ${vaultAccessNote}`
         // Abort Controller
         controller = new AbortController()
         set({ chatController: controller })
-        timeoutId = setTimeout(() => controller?.abort(), 60000)
-
-        // Optimistic UI Update
-        const assistantMsg = { role: 'assistant', content: '' }
-        set((state) => ({
-          chatMessages: [...state.chatMessages, assistantMsg],
-          isChatLoading: true
-        }))
+        timeoutId = setTimeout(() => controller?.abort(), 180000)
 
         // Prepare Messages (System + History)
         const finalMessages = [{ role: 'system', content: systemPrompt }, ...newHistory]
@@ -808,6 +824,25 @@ ${vaultAccessNote}`
                   }
                   await vs.saveSnippet(snippet)
                   return { success: true, title }
+                },
+              }),
+              readFile: aiSdk.tool({
+                description: 'Read the contents of a file from the vault.',
+                inputSchema: aiSdk.jsonSchema({
+                  type: 'object',
+                  properties: {
+                    title: { type: 'string', description: 'Exact title of the file to read (without .md)' },
+                  },
+                  required: ['title'],
+                }),
+                execute: async ({ title }) => {
+                  const { useVaultStore } = await import('../../core/store/useVaultStore')
+                  const vs = useVaultStore.getState()
+                  const target = vs.snippets.find(s =>
+                    s.title.toLowerCase() === title.toLowerCase().replace(/\.md$/, '')
+                  )
+                  if (!target) return { success: false, error: 'File not found' }
+                  return { success: true, title: target.title, content: target.code }
                 },
               }),
               updateFile: aiSdk.tool({
@@ -890,18 +925,31 @@ ${vaultAccessNote}`
               maxSteps: 15,
             })
 
-            for await (const chunk of result.textStream) {
-              if (chunk) {
-                fullContent += chunk
-                const now = Date.now()
-                if (now - lastUpdateTime >= UPDATE_INTERVAL) {
-                  lastUpdateTime = now
-                  set((state) => {
-                    const msgs = [...state.chatMessages]
-                    if (msgs.length > 0) msgs[msgs.length - 1].content = fullContent
-                    return { chatMessages: msgs }
-                  })
+            for await (const chunk of result.fullStream) {
+              if (chunk.type === 'text-delta') {
+                fullContent += (chunk.textDelta || chunk.text || '')
+              } else if (chunk.type === 'tool-result') {
+                const res = chunk.result
+                if (res && res.success === false) {
+                  console.warn(`[AIStore] Tool ${chunk.toolName} failed:`, res.error)
+                  fullContent += `\n\n*(⚠️ ${chunk.toolName}: ${res.error})*`
                 }
+              } else if (chunk.type === 'tool-error') {
+                const errMsg = chunk.error?.message || chunk.error || 'Unknown tool error'
+                console.warn(`[AIStore] Tool ${chunk.toolName} errored:`, errMsg)
+                fullContent += `\n\n*(⚠️ Tool error: ${errMsg})*`
+              } else if (chunk.type === 'error') {
+                console.error('Stream error:', chunk.error)
+              }
+
+              const now = Date.now()
+              if (now - lastUpdateTime >= UPDATE_INTERVAL) {
+                lastUpdateTime = now
+                set((state) => {
+                  const msgs = [...state.chatMessages]
+                  if (msgs.length > 0) msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: fullContent }
+                  return { chatMessages: msgs }
+                })
               }
             }
 
@@ -910,10 +958,11 @@ ${vaultAccessNote}`
               const steps = await result.steps
               const hasToolCalls = steps?.some(s => s.toolCalls?.length > 0)
               if (hasToolCalls && !fullContent?.trim()) {
-                fullContent = 'Done.'
+                const toolNames = steps.flatMap(s => s.toolCalls?.map(tc => tc.toolName) || [])
+                const unique = [...new Set(toolNames)]
+                fullContent = `Done. Called: ${unique.join(', ')}`
               }
             } catch (_) {}
-          } else {
             // Fallback: existing provider-based streaming (for non-tool providers)
             const stream = provider.chatStream(finalMessages, {
               model: activeModel,
@@ -932,7 +981,7 @@ ${vaultAccessNote}`
                   set((state) => {
                     const msgs = [...state.chatMessages]
                     if (msgs.length > 0) {
-                      msgs[msgs.length - 1].content = fullContent
+                      msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: fullContent }
                     }
                     return { chatMessages: msgs }
                   })
@@ -945,7 +994,7 @@ ${vaultAccessNote}`
           set((state) => {
             const msgs = [...state.chatMessages]
             if (msgs.length > 0) {
-              msgs[msgs.length - 1].content = fullContent
+              msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: fullContent }
             }
 
             // Clean up empty assistant message if no content was generated

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback, useMemo, memo, useEffect } from 'react'
-import { X, Pin, MoreHorizontal, ArrowRight, Trash2 } from 'lucide-react'
+import { X, Pin, MoreHorizontal, ArrowRight, Trash2, Minus, Square } from 'lucide-react'
 import { DndContext, closestCenter, useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
 import { SortableContext, useSortable, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import { useVaultStore } from '../../../core/store/useVaultStore'
@@ -228,6 +228,19 @@ const TabBar = () => {
             })}
           </div>
         </SortableContext>
+        
+        {/* Floating Window Controls */}
+        <div className="window-controls-float">
+          <button onClick={() => window.api?.minimize()} className="control-btn" title="Minimize">
+            <Minus size={12} />
+          </button>
+          <button onClick={() => window.api?.toggleMaximize()} className="control-btn" title="Maximize">
+            <Square size={11} />
+          </button>
+          <button onClick={() => window.api?.closeWindow()} className="control-btn close" title="Close">
+            <X size={12} />
+          </button>
+        </div>
       </div>
 
       {contextMenu && (

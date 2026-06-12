@@ -4,6 +4,10 @@
   line-height: var(--line-height-editor, 1.6) !important;
   padding: 0 0 0 0 !important;
   color: var(--text-main);
+  max-width: none !important;
+  width: 100% !important;
+  
+  
 }
 
 /* Standard line padding for text readability */
@@ -116,7 +120,7 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  background: var(--bg-app);
+  background: rgb(var(--bg-app-rgb)) !important;
   --atomic-editor-selection-bg: rgba(64, 186, 250, 0.35) !important;
 
   /* Enforce Atomic Editor Theme Colors */
@@ -172,6 +176,8 @@
   scrollbar-width: none;
   user-select: none;
   flex-shrink: 0;
+  -webkit-app-region: drag; /* Allow frameless window dragging from tab bar */
+  padding-right: 120px; /* Prevent tabs from overlapping window controls */
 }
 
 .workspace-tabbar::-webkit-scrollbar {
@@ -204,6 +210,7 @@
   margin: 0;
   border-radius: 4px;
   outline: none;
+  -webkit-app-region: no-drag; /* Ensure tabs themselves are clickable */
 }
 
 .workspace-tab:hover {
@@ -446,6 +453,46 @@
   opacity: 0.6;
 }
 
+.floating-status .separator {
+  opacity: 0.5;
+}
+
+/* Floating Window Controls in TabBar */
+.window-controls-float {
+  display: flex;
+  align-items: center;
+  position: fixed;
+  right: 0;
+  top: 0;
+  height: 32px;
+  background: transparent;
+  -webkit-app-region: no-drag;
+  z-index: 9999;
+}
+
+.window-controls-float .control-btn {
+  width: 40px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+
+.window-controls-float .control-btn:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+.window-controls-float .control-btn.close:hover {
+  background: #e81123;
+  color: white;
+}
+
 .breadcrumb-sep {
   opacity: 0.3;
 }
@@ -467,9 +514,9 @@
 
 .editor-canvas-wrap {
   width: 100%;
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0 60px 40px 60px;
+  max-width: none; 
+  margin: 0;
+  padding: 0 40px 40px 40px;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -478,24 +525,49 @@
   will-change: opacity, transform;
 }
 
-.atomic-cm-editor {
+
+
+
+.markdown-editor .atomic-cm-editor {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
   min-width: 0;
-  width: 100%;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
 }
 
-.atomic-cm-editor .cm-editor {
+.markdown-editor .atomic-cm-editor .cm-editor {
   flex: 1;
-  height: 100%;
-  min-height: 0;
-  min-width: 0;
-  width: 100%;
+  /* Key for full height focus area */
+  background: transparent !important;
+  display: flex;
+  flex-direction: column;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
 }
 
+.markdown-editor .atomic-cm-editor .cm-scroller {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100% !important;
+  max-width: none !important;
+  align-items: stretch !important;
+}
 
+.markdown-editor .atomic-cm-editor .cm-content {
+  flex: 1;
+  min-width: 100% !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  margin-inline: 0 !important;
+  padding-inline: 0 !important;
+}
 
 @keyframes noteFadeIn {
   from {
@@ -552,7 +624,7 @@
   /* Allow CodeMirror to manage padding-bottom for scrollPastEnd */
   padding: 4px 0;
   min-height: 70vh;
-  /* Ensures clicking empty space at the bottom still focuses the editor */
+  width: 100% !important;
 }
 
 .cm-placeholder {
@@ -747,12 +819,6 @@
 
 .mode-source .cm-content {
   cursor: text;
-}
-
-[data-translucency='true'] body,
-[data-translucency='true'] #root,
-[data-translucency='true'] .app-shell {
-  background: transparent !important;
 }
 
 [data-translucency='true'] .shell-sidebar-left,
