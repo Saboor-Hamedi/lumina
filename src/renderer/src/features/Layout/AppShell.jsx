@@ -275,28 +275,7 @@ const AppShell = () => {
     }
   }, [settings.sidebar, settings.rightSidebar])
 
-  // Persist Last Snippet & Tabs
-  useEffect(() => {
-    if (isRestoring) return
-    if (selectedSnippet) {
-      useSettingsStore.getState().updateSetting('lastSnippetId', selectedSnippet.id)
-    }
-  }, [selectedSnippet?.id, isRestoring])
-
-  // Persist open tabs to settings (openTabs already destructured from useVaultStore above)
-  useEffect(() => {
-    if (isRestoring) return
-    useSettingsStore.getState().updateSetting('openTabs', openTabs)
-  }, [openTabs, isRestoring])
-
-  // Removed activeTab persistence
-
   const pinnedTabIds = useVaultStore((state) => state.pinnedTabIds)
-
-  useEffect(() => {
-    if (isRestoring) return
-    useSettingsStore.getState().updateSetting('pinnedTabIds', pinnedTabIds)
-  }, [pinnedTabIds, isRestoring])
 
   // Ctrl+Shift+F - open global search sidebar and focus input
   useEffect(() => {

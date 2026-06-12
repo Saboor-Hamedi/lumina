@@ -38,6 +38,7 @@ class SettingsManager {
     this.notifyRenderer = null // Set by main process
     this.isWriting = false // Flag to prevent reloading when we write
     this.lastWrittenData = null // Stores the exact string we just wrote to avoid echoing our own changes
+    this.ignoreWatchEventsUntil = 0 // Timestamp to ignore watcher events after writing
   }
 
   async init(userDataPath) {
@@ -71,8 +72,8 @@ class SettingsManager {
     })
 
     this.watcher.on('change', async () => {
-      // Skip if we're the ones writing (avoid infinite loop)
-      if (this.isWriting) {
+      // Skip if we're the ones writing (avoid infinite loop) or recently wrote
+      if (this.isWriting || Date.now() < this.ignoreWatchEventsUntil) {
         return
       }
       
@@ -174,6 +175,9 @@ class SettingsManager {
       
       // Update cache to match what we saved
       this.cache = settingsToSave
+      
+      // Ignore watch events for 2 seconds after we save to avoid reverting state
+      this.ignoreWatchEventsUntil = Date.now() + 2000
       
       // Slight delay to allow OS/Chokidar to settle
       await new Promise(resolve => setTimeout(resolve, 30))

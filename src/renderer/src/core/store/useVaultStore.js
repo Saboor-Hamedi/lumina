@@ -374,3 +374,18 @@ export const useVaultStore = create((set, get) => ({
     useSettingsStore.getState().updateSetting('noteOrder', orderedIds)
   }
 }))
+
+// Subscribe to state changes to persist tabs directly, bypassing React lifecycles
+let lastVaultState = useVaultStore.getState()
+useVaultStore.subscribe((state) => {
+  if (state.openTabs !== lastVaultState.openTabs) {
+    window.api?.saveSetting('openTabs', state.openTabs)
+  }
+  if (state.pinnedTabIds !== lastVaultState.pinnedTabIds) {
+    window.api?.saveSetting('pinnedTabIds', state.pinnedTabIds)
+  }
+  if (state.activeTabId !== lastVaultState.activeTabId) {
+    window.api?.saveSetting('lastSnippetId', state.activeTabId)
+  }
+  lastVaultState = state
+})
