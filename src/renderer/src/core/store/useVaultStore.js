@@ -23,20 +23,19 @@ export const useVaultStore = create((set, get) => ({
 
   restoreSession: (tabs, activeId, pinnedIds = []) => {
     set((state) => {
-      // Filter tabs: keep valid snippet IDs and GRAPH_TAB_ID
-      const validTabs = tabs.filter(
-        (id) => id === GRAPH_TAB_ID || state.snippets.some((s) => s.id === id)
-      )
-      const validPinned = pinnedIds.filter(
-        (id) => id === GRAPH_TAB_ID || state.snippets.some((s) => s.id === id)
-      )
+      // Trust the saved tabs; TabBar handles missing snippets gracefully.
+      const validTabs = tabs
+      const validPinned = pinnedIds
 
       // Handle active tab: can be a snippet or GRAPH_TAB_ID
+      const validActiveId = activeId && validTabs.includes(activeId) ? activeId : null
+
       const activeSnippet =
-        activeId === GRAPH_TAB_ID
+        validActiveId === GRAPH_TAB_ID
           ? null
-          : state.snippets.find((s) => s.id === activeId) ||
-            (validTabs.length && validTabs[0] !== GRAPH_TAB_ID
+          : validActiveId
+            ? state.snippets.find((s) => s.id === validActiveId)
+            : (validTabs.length && validTabs[0] !== GRAPH_TAB_ID
               ? state.snippets.find((s) => s.id === validTabs[0])
               : null)
 
@@ -305,7 +304,7 @@ export const useVaultStore = create((set, get) => ({
         if (!confirmed) return
       }
 
-        await window.api.deleteSnippet(id)
+      await window.api.deleteSnippet(id)
       const next = get().snippets.filter((s) => s.id !== id)
       set({ snippets: next })
 

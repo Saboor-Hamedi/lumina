@@ -15,6 +15,13 @@
   flex: 0 0 auto;
 }
 
+.app-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-accent);
+}
+
 .app-name {
   font-size: 12px;
   font-weight: 700;

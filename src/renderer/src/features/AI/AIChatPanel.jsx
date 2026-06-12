@@ -671,8 +671,11 @@ const AIChatPanel = React.memo(() => {
         <div className="sessions-header">
           <History size={14} />
           <span>History</span>
-          <button className="new-chat-btn" onClick={createNewSession} title="New Chat">
+          <button className="new-chat-btn" onClick={() => { createNewSession(); setShowSessions(false); }} title="New Chat">
             <Plus size={14} />
+          </button>
+          <button className="new-chat-btn" onClick={() => setShowSessions(false)} title="Close History" style={{ marginLeft: 4 }}>
+            <CloseIcon size={14} />
           </button>
         </div>
         <div className="sessions-list">
@@ -680,7 +683,7 @@ const AIChatPanel = React.memo(() => {
             <div
               key={s.id}
               className={`session-item ${activeSessionId === s.id ? 'active' : ''}`}
-              onClick={() => switchSession(s.id)}
+              onClick={() => { switchSession(s.id); setShowSessions(false); }}
             >
               <MessageSquare size={14} />
               <span className="session-title">{s.title || 'New Chat'}</span>
@@ -704,7 +707,10 @@ const AIChatPanel = React.memo(() => {
           {visibleMessages.length === 0 ? (
             <div className="chat-empty">
               <div className="chat-empty-icon">✨</div>
-              <p>Ask me anything...</p>
+              <h2 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-main)', margin: '8px 0 4px 0' }}>How can I help you today?</h2>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: '240px', lineHeight: '1.4', margin: '0 0 16px 0' }}>
+                I can help you write code, explain complex concepts, or manage your workspace.
+              </p>
               {selectedSnippet && (
                 <button
                   className="chat-suggestion-btn"
@@ -889,4 +895,4 @@ const AIChatPanel = React.memo(() => {
 
 AIChatPanel.displayName = 'AIChatPanel'
 
-export default AIChatPanel
+export default React.memo(AIChatPanel)

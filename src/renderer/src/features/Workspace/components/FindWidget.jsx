@@ -263,6 +263,16 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
         } else {
           handleFindNext()
         }
+      } else if (e.key === 'h' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault()
+        e.stopPropagation()
+        setIsReplaceMode(prev => !prev)
+      } else if (e.key === 'f' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault()
+        e.stopPropagation()
+        setIsReplaceMode(false)
+        searchInputRef.current?.focus()
+        searchInputRef.current?.select()
       }
     },
     [handleFindNext, handleFindPrevious, onClose]
@@ -270,16 +280,35 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
 
   const handleReplaceKeyDown = useCallback(
     (e) => {
-      if (e.key === 'Enter') {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        setSearchQuery('')
+        window.dispatchEvent(new CustomEvent('search-clear'))
+        onClose()
+      } else if (e.key === 'Enter') {
         e.preventDefault()
         if (e.ctrlKey || e.metaKey) {
           handleReplaceAll()
         } else {
           handleReplaceNext()
         }
+      } else if (e.key === 'h' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault()
+        e.stopPropagation()
+        setIsReplaceMode(prev => !prev)
+        setTimeout(() => {
+          searchInputRef.current?.focus()
+          searchInputRef.current?.select()
+        }, 0)
+      } else if (e.key === 'f' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault()
+        e.stopPropagation()
+        setIsReplaceMode(false)
+        searchInputRef.current?.focus()
+        searchInputRef.current?.select()
       }
     },
-    [handleReplaceNext, handleReplaceAll]
+    [handleReplaceNext, handleReplaceAll, onClose]
   )
 
   return (

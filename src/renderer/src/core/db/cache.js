@@ -27,18 +27,28 @@ export const openDb = async () => {
     try {
       await db.open()
     } catch (err) {
-      console.warn('[DB] Open failed, resetting database:', err.message || err)
-      try {
-        await Dexie.delete('LuminaVault_v2')
-      } catch (_) {}
-      try {
-        dbOpenPromise = null
-        await db.open()
-      } catch (retryErr) {
-        console.error('[DB] Cannot recreate database:', retryErr)
-        dbOpenPromise = null
-        throw retryErr
+      console.warn('[DB] Open failed:', err.message || err)
+      
+      // Only attempt to delete and recreate if it's a structural error (like VersionError)
+      // Do NOT delete on temporary locks (UnknownError) to avoid wiping user chat sessions.
+      if (err.name === 'VersionError') {
+        console.warn('[DB] Structural error detected, resetting database...')
+        try {
+          await Dexie.delete('LuminaVault_v2')
+        } catch (_) {}
+        try {
+          dbOpenPromise = null
+          await db.open()
+          return
+        } catch (retryErr) {
+          console.error('[DB] Cannot recreate database:', retryErr)
+          dbOpenPromise = null
+          throw retryErr
+        }
       }
+      
+      dbOpenPromise = null
+      throw err
     }
   })()
   return dbOpenPromise

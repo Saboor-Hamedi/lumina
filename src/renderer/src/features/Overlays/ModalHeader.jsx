@@ -2,9 +2,9 @@ import React from 'react'
 import { X } from 'lucide-react'
 import './ThemeModal.css'
 
-const ModalHeader = ({ title = null, subtitle = null, icon = null, left = null, right = null, onClose = () => {} }) => {
+const ModalHeader = ({ title = null, subtitle = null, icon = null, left = null, right = null, onClose = () => {}, onMouseDown = null, style = {} }) => {
   return (
-    <header className="pane-header modal-header-with-knob">
+    <header className="pane-header modal-header-with-knob" onMouseDown={onMouseDown} style={style}>
       <div className="modal-header-knob" aria-hidden="true" />
 
       <div className="modal-left">

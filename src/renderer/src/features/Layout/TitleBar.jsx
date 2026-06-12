@@ -1,6 +1,7 @@
 import React from 'react'
 import { Square, X, Minus } from 'lucide-react'
 import { useVaultStore } from '../../core/store/useVaultStore'
+import logoUrl from '../../assets/logo.png'
 import './TitleBar.css'
 
 const TitleBar = () => {
@@ -20,7 +21,10 @@ const TitleBar = () => {
   return (
     <div className="title-bar">
       <div className="title-left">
-        <span className="app-name">Lumina</span>
+        <div className="app-logo">
+          <img src={logoUrl} alt="Lumina Logo" style={{ width: 14, height: 14, objectFit: 'contain' }} />
+          <span className="app-name">Lumina</span>
+        </div>
       </div>
 
       <div className="title-center">

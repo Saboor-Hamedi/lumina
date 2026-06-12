@@ -13,13 +13,29 @@ import './MarkdownEditor.css'
 import { AtomicCodeMirrorEditor, wikiLinks } from '@atomic-editor/editor'
 import { languages } from '@codemirror/language-data'
 import { autocompletion, startCompletion } from '@codemirror/autocomplete'
-import { EditorState } from '@codemirror/state'
+import { EditorState, Prec, StateField, StateEffect } from '@codemirror/state'
 import { codeBlockDecorations, codeMap } from './codeBlockHeader'
-import { EditorView, placeholder } from '@codemirror/view'
+import { EditorView, placeholder, keymap, ViewPlugin, Decoration } from '@codemirror/view'
 import '@atomic-editor/editor/styles.css'
+import FindWidget from './components/FindWidget'
+
+const updateSearchHighlights = StateEffect.define()
+
+const searchHighlightField = StateField.define({
+  create() { return Decoration.none },
+  update(decos, tr) {
+    for (const e of tr.effects) {
+      if (e.is(updateSearchHighlights)) {
+        return e.value
+      }
+    }
+    return decos.map(tr.changes)
+  },
+  provide: f => EditorView.decorations.from(f)
+})
 
 const MarkdownEditor = React.memo(
-  ({ snippet, onSave, onToggleInspector }) => {
+  ({ snippet, onSave, onToggleInspector, isActive = true }) => {
     const { toast, showToast, clearToast } = useToast()
     const [isSaving, setIsSaving] = useState(false)
     const isMountedRef = useRef(true)
@@ -37,6 +53,77 @@ const MarkdownEditor = React.memo(
     const [title, setTitle] = useState(snippet?.title || '')
     const [isDirty, setIsDirty] = useState(false)
     const [editorKey, setEditorKey] = useState(Date.now())
+    const [showFindWidget, setShowFindWidget] = useState(false)
+    const [replaceModeActive, setReplaceModeActive] = useState(false)
+
+    const isActiveRef = useRef(isActive)
+    useEffect(() => { isActiveRef.current = isActive }, [isActive])
+    const showFindWidgetRef = useRef(showFindWidget)
+    useEffect(() => { showFindWidgetRef.current = showFindWidget }, [showFindWidget])
+
+    const realViewRef = useRef(null)
+    const captureViewPlugin = React.useMemo(() => ViewPlugin.fromClass(class {
+      constructor(view) { realViewRef.current = view }
+      destroy() { if (realViewRef.current === this.view) realViewRef.current = null }
+    }), [])
+
+    useEffect(() => {
+      if (!isActive) return
+      
+      const handleGlobalKeyDown = (e) => {
+        if (e.key === 'f' && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault()
+          setReplaceModeActive(false)
+          setShowFindWidget(true)
+        } else if (e.key === 'h' && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault()
+          setReplaceModeActive(true)
+          setShowFindWidget(true)
+        }
+      }
+      
+      window.addEventListener('keydown', handleGlobalKeyDown)
+      return () => window.removeEventListener('keydown', handleGlobalKeyDown)
+    }, [isActive])
+
+    useEffect(() => {
+      const handleSearchUpdate = (e) => {
+        if (!isActiveRef.current || !realViewRef.current) return;
+        const view = realViewRef.current;
+        const { pattern } = e.detail || {};
+        
+        if (!pattern || !e.detail.searchQuery) {
+          view.dispatch({ effects: updateSearchHighlights.of(Decoration.none) });
+          return;
+        }
+
+        const text = view.state.doc.toString();
+        const decorations = [];
+        const mark = Decoration.mark({ class: 'cm-searchMatch' });
+        
+        try {
+          const regex = new RegExp(pattern);
+          for (const match of text.matchAll(regex)) {
+            decorations.push(mark.range(match.index, match.index + match[0].length));
+          }
+          view.dispatch({ effects: updateSearchHighlights.of(Decoration.set(decorations, true)) });
+        } catch (err) {
+          view.dispatch({ effects: updateSearchHighlights.of(Decoration.none) });
+        }
+      };
+
+      const handleSearchClear = () => {
+        if (!isActiveRef.current || !realViewRef.current) return;
+        realViewRef.current.dispatch({ effects: updateSearchHighlights.of(Decoration.none) });
+      };
+
+      window.addEventListener('search-update', handleSearchUpdate);
+      window.addEventListener('search-clear', handleSearchClear);
+      return () => {
+        window.removeEventListener('search-update', handleSearchUpdate);
+        window.removeEventListener('search-clear', handleSearchClear);
+      };
+    }, []);
 
     useEffect(() => {
       snippetRef.current = snippet
@@ -196,7 +283,9 @@ const MarkdownEditor = React.memo(
     }), []);
 
     useKeyboardShortcuts({
-      onSave: handleSave
+      onSave: () => {
+        if (isActive) handleSave();
+      }
     })
 
     const wikiLinkCompletionSource = useCallback((context) => {
@@ -240,8 +329,50 @@ const MarkdownEditor = React.memo(
     }, []);
 
     const editorExtensions = React.useMemo(() => [
+      Prec.highest(
+        keymap.of([
+          {
+            key: 'Mod-f',
+            run: () => {
+              if (isActiveRef.current) {
+                setReplaceModeActive(false)
+                setShowFindWidget(true)
+                return true
+              }
+              return false
+            }
+          },
+          {
+            key: 'Mod-h',
+            run: () => {
+              if (isActiveRef.current) {
+                setReplaceModeActive(true)
+                setShowFindWidget(true)
+                return true
+              }
+              return false
+            }
+          },
+          { key: 'F3', run: () => isActiveRef.current && showFindWidgetRef.current },
+          { key: 'Mod-g', run: () => isActiveRef.current && showFindWidgetRef.current },
+          { key: 'Mod-Shift-f', run: () => isActiveRef.current && showFindWidgetRef.current },
+          { key: 'Mod-Alt-f', run: () => isActiveRef.current && showFindWidgetRef.current },
+          {
+            key: 'Escape',
+            run: () => {
+              if (isActiveRef.current && showFindWidgetRef.current) {
+                setShowFindWidget(false)
+                return true
+              }
+              return false
+            }
+          }
+        ])
+      ),
       autocompleteTriggerListener,
       autocompletion({ override: [wikiLinkCompletionSource], maxRenderedOptions: 8 }),
+      captureViewPlugin,
+      searchHighlightField,
       codeBlockDecorations,
       placeholder('Start writing...'),
       wikiLinks({
@@ -375,6 +506,15 @@ const MarkdownEditor = React.memo(
                 setIsDirty={setIsDirty}
               />
             )}
+            
+            {showFindWidget && realViewRef.current && (
+              <FindWidget
+                editorView={realViewRef.current}
+                onClose={() => setShowFindWidget(false)}
+                initialReplaceMode={replaceModeActive}
+              />
+            )}
+
             <AtomicCodeMirrorEditor
               key={`${snippet?.id}-${editorKey}`}
               documentId={snippet?.id}
@@ -399,13 +539,14 @@ const MarkdownEditor = React.memo(
   (prevProps, nextProps) => {
     const prevSnippet = prevProps.snippet
     const nextSnippet = nextProps.snippet
-    if (prevSnippet === nextSnippet) return true
+    if (prevSnippet === nextSnippet && prevProps.isActive === nextProps.isActive) return true
     return (
       prevSnippet?.id === nextSnippet?.id &&
       prevSnippet?.code === nextSnippet?.code &&
       prevSnippet?.title === nextSnippet?.title &&
       prevProps.onSave === nextProps.onSave &&
-      prevProps.onToggleInspector === nextProps.onToggleInspector
+      prevProps.onToggleInspector === nextProps.onToggleInspector &&
+      prevProps.isActive === nextProps.isActive
     )
   }
 )

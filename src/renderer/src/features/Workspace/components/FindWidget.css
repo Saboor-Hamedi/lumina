@@ -1,14 +1,14 @@
 .find-widget {
-  /* Absolute overlay inside .markdown-editor, just under the title bar */
+  /* Absolute overlay inside .markdown-editor */
   position: absolute;
-  top: 56px; /* editor-titlebar min-height (40) + padding (8+8) */
-  right: 16px;
+  top: 8px; 
+  right: 8px;
   z-index: 1000;
-  background: var(--bg-panel);
-  border-bottom: 1px solid var(--border-subtle);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: var(--bg-panel, #252526);
+  border: 1px solid var(--border-subtle, #454545);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   animation: slideDownFind 0.2s ease-out;
-  border-radius: 4px;
+  border-radius: 6px;
   width: 420px; /* Fixed, Monaco-style width */
   max-width: 100%;
 }
@@ -27,9 +27,9 @@
 .find-widget-content {
   display: flex;
   align-items: flex-start;
-  gap: 6px;
-  padding: 3px 8px;
-  font-size: 11px;
+  gap: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
   flex-wrap: nowrap;
 }
 
@@ -62,13 +62,13 @@
   align-items: center;
   background: var(--bg-app);
   border: 1px solid var(--border-subtle);
-  border-radius: 3px;
-  padding: 3px 3px 3px 6px;
+  border-radius: 4px;
+  padding: 4px 6px;
   transition: border-color 0.15s;
-  gap: 3px;
+  gap: 4px;
   width: 100%;
   min-width: 0;
-  height: 24px; /* Smaller, consistent height for find and replace */
+  height: 28px; /* VSCode style height */
 }
 
 .find-controls {
@@ -113,8 +113,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   padding: 0;
   border: none;
   background: transparent;
@@ -192,8 +192,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   border: 1px solid var(--border-subtle);
   background: var(--bg-app);
@@ -219,8 +219,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   padding: 0;
   border: none;
   background: transparent;

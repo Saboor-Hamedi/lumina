@@ -14,7 +14,20 @@ export const FixedSizeList = forwardRef(({
 
   useImperativeHandle(ref, () => ({
     get container() { return containerRef.current },
-    get scrollTop() { return scrollTop }
+    get scrollTop() { return scrollTop },
+    scrollToItem: (index, align = 'auto') => {
+      if (!containerRef.current) return
+      const top = index * itemSize
+      const bottom = top + itemSize
+      const containerTop = containerRef.current.scrollTop
+      const containerBottom = containerTop + height
+
+      if (align === 'start' || (align === 'auto' && top < containerTop)) {
+        containerRef.current.scrollTop = top
+      } else if (align === 'end' || (align === 'auto' && bottom > containerBottom)) {
+        containerRef.current.scrollTop = bottom - height
+      }
+    }
   }))
 
   const handleScroll = (e) => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import TitleBar from './TitleBar'
 import ActivityBar from '../Navigation/ActivityBar'
 import FileExplorer from '../Navigation/FileExplorer'
@@ -184,18 +184,29 @@ const AppShell = () => {
     const initApp = async () => {
       await useSettingsStore.getState().init()
       await loadVault()
-      const { settings } = useSettingsStore.getState()
-      if (settings.openTabs && Array.isArray(settings.openTabs)) {
+      
+      // Directly fetch from backend to avoid any race conditions with store initialization
+      let actualSettings = useSettingsStore.getState().settings
+      try {
+        const backendSettings = await window.api.getSetting()
+        if (backendSettings) {
+          actualSettings = { ...actualSettings, ...backendSettings }
+        }
+      } catch (err) {
+        console.error('Failed to fetch backend settings during init:', err)
+      }
+
+      if (actualSettings.openTabs && Array.isArray(actualSettings.openTabs)) {
         useVaultStore
           .getState()
-          .restoreSession(settings.openTabs, settings.lastSnippetId, settings.pinnedTabIds || [])
-      } else if (settings.lastSnippetId) {
+          .restoreSession(actualSettings.openTabs, actualSettings.lastSnippetId, actualSettings.pinnedTabIds || [])
+      } else if (actualSettings.lastSnippetId) {
         const allSnippets = useVaultStore.getState().snippets
-        const last = allSnippets.find((s) => s.id === settings.lastSnippetId)
+        const last = allSnippets.find((s) => s.id === actualSettings.lastSnippetId)
         if (last) setSelectedSnippet(last)
       }
       // Default to chat mode (metadata moved to modal)
-      if (!settings.rightPanelMode || settings.rightPanelMode === 'metadata') {
+      if (!actualSettings.rightPanelMode || actualSettings.rightPanelMode === 'metadata') {
         useSettingsStore.getState().updateSetting('rightPanelMode', 'chat')
       }
       // Restore Widths & Toggles from split 'sidebar' and 'rightSidebar' objects
@@ -335,6 +346,10 @@ const AppShell = () => {
     }
   }, [activeTab])
 
+  const handleToggleInspector = useCallback(() => {
+    setIsRightSidebarOpen((prev) => !prev)
+  }, [])
+
   useKeyboardShortcuts({
     onEscape: () => {
       if (showPalette) {
@@ -359,7 +374,7 @@ const AppShell = () => {
     onToggleSettings: () => setShowSettings(true),
     onToggleGraph: () => setShowGraph(true),
     onToggleSidebar: () => setIsLeftSidebarOpen((prev) => !prev),
-    onToggleInspector: () => setIsRightSidebarOpen((prev) => !prev),
+    onToggleInspector: handleToggleInspector,
     onNew: () => handleNew(),
     onDelete: () => {
       if (selectedSnippet) {
@@ -484,14 +499,41 @@ const AppShell = () => {
         {/* Show TabBar when there are open tabs */}
         {openTabs.length > 0 && (activeTab === 'files' || activeTab === 'search') && <TabBar />}
 
-        {selectedSnippet ? (
-          <ErrorBoundary>
-            <MarkdownEditor
-              snippet={selectedSnippet}
-              onSave={saveSnippet}
-              onToggleInspector={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
-            />
-          </ErrorBoundary>
+        {openTabs.length > 0 ? (
+          <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {openTabs.map(tabId => {
+              const snippet = snippets.find(s => s.id === tabId)
+              if (!snippet) return null
+              const effectiveSelectedId = selectedSnippet?.id || activeTabId || openTabs[0]
+              const isSelected = effectiveSelectedId === tabId
+
+              return (
+                <div 
+                  key={tabId} 
+                  style={{ 
+                    position: 'absolute',
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    opacity: isSelected ? 1 : 0,
+                    pointerEvents: isSelected ? 'auto' : 'none',
+                    visibility: isSelected ? 'visible' : 'hidden',
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    overflow: 'hidden',
+                    zIndex: isSelected ? 10 : 1
+                  }}
+                >
+                  <ErrorBoundary>
+                    <MarkdownEditor
+                      snippet={snippet}
+                      onSave={saveSnippet}
+                      onToggleInspector={handleToggleInspector}
+                      isActive={isSelected}
+                    />
+                  </ErrorBoundary>
+                </div>
+              )
+            })}
+          </div>
         ) : isRestoring ? (
           <div className="shell-main-placeholder" />
         ) : (

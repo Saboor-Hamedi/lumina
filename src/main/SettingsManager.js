@@ -37,6 +37,7 @@ class SettingsManager {
     this.onChangeCallbacks = []
     this.notifyRenderer = null // Set by main process
     this.isWriting = false // Flag to prevent reloading when we write
+    this.lastWrittenData = null // Stores the exact string we just wrote to avoid echoing our own changes
   }
 
   async init(userDataPath) {
@@ -75,9 +76,15 @@ class SettingsManager {
         return
       }
       
-      console.info('[SettingsManager] settings.json changed externally, reloading...')
       try {
         const data = await fs.readFile(this.settingsPath, 'utf8')
+        
+        // Ignore the change if it matches exactly what we just wrote
+        if (data === this.lastWrittenData) {
+          return
+        }
+        
+        console.info('[SettingsManager] settings.json changed externally, reloading...')
         const loadedSettings = JSON.parse(data)
         // Merge: defaults first, then loaded settings (preserves all keys from file)
         this.cache = { ...this.defaultSettings, ...loadedSettings }
@@ -158,6 +165,9 @@ class SettingsManager {
       // Use atomic write: write to temp file then rename
       const tempPath = this.settingsPath + '.tmp'
       const data = JSON.stringify(settingsToSave, null, 2)
+      
+      // Store the exact string we are about to write so the watcher can ignore it
+      this.lastWrittenData = data
       
       await fs.writeFile(tempPath, data, 'utf8')
       await fs.rename(tempPath, this.settingsPath)

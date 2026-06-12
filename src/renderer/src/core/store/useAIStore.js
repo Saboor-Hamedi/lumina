@@ -278,7 +278,9 @@ export const useAIStore = create((set, get) => {
         await openDb()
         await db.chatSessions.add(newSession)
       } catch (e) {
-        console.warn('[AIStore] Failed to save new session to db:', e)
+        console.warn('[AIStore] Failed to save new session to db, falling back to localStorage:', e)
+        const currentSessions = get().sessions
+        localStorage.setItem('lumina-chat-sessions', JSON.stringify(currentSessions))
       }
       localStorage.setItem('lumina-active-session-id', newSession.id)
     },
@@ -319,7 +321,9 @@ export const useAIStore = create((set, get) => {
         await openDb()
         await db.chatSessions.delete(sessionId)
       } catch (e) {
-        console.warn('[AIStore] Failed to delete session from db:', e)
+        console.warn('[AIStore] Failed to delete session from db, falling back to localStorage:', e)
+        const currentSessions = get().sessions
+        localStorage.setItem('lumina-chat-sessions', JSON.stringify(currentSessions))
       }
 
       const { activeSessionId } = get()
@@ -359,7 +363,8 @@ export const useAIStore = create((set, get) => {
           await openDb()
           await db.chatSessions.put(updatedSession)
         } catch (e) {
-          console.warn('[AIStore] Failed to save chat history to db:', e)
+          console.warn('[AIStore] Failed to save chat history to db, falling back to localStorage:', e)
+          localStorage.setItem('lumina-chat-sessions', JSON.stringify(newSessions))
         }
       }
     },

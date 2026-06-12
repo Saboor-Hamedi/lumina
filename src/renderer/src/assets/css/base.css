@@ -6,8 +6,8 @@
 }
 
 body {
-  background: linear-gradient(135deg, var(--color-bg-primary) 0%, #151925 100%);
-  color: var(--color-text-primary);
+  background: var(--bg-app);
+  color: var(--text-primary);
   font-family:
     'Inter',
     'SF Pro Display',

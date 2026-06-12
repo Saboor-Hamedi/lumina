@@ -428,21 +428,23 @@
 }
 
 .chat-sessions-sidebar {
-  width: 0;
-  height: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  transform: translateX(-100%);
   background: var(--bg-sidebar);
-  border-right: 0 solid var(--border-dim);
+  border-right: 1px solid var(--border-dim);
   display: flex;
   flex-direction: column;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
-  z-index: 50;
-  flex-shrink: 0;
+  z-index: 100;
 }
 
 .chat-sessions-sidebar.open {
-  width: 220px;
-  border-right: 1px solid var(--border-dim);
+  transform: translateX(0);
 }
 
 .sessions-header {
