@@ -22,6 +22,7 @@
   margin: 0 !important;
   line-height: 1.6 !important;
   background: #1e1e1e !important;
+  box-shadow: none !important;
   font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
   font-size: 0.88em;
   color: #d4d4d4;
@@ -1354,4 +1355,26 @@
 .cm-atomic-wiki-link,
 .cm-atomic-wiki-link-unresolved {
   padding-right: 0 !important;
+}
+
+/* --- OVERRIDES FOR MARKDOWN ELEMENTS --- */
+
+/* Blockquote: Remove left border, add subtle background, remove indentation */
+.markdown-editor .cm-line.cm-atomic-blockquote {
+  border-left: none !important;
+  background: rgba(150, 150, 150, 0.05) !important;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+  margin-left: 0 !important;
+  border-radius: 4px;
+  font-style: italic !important;
+  font-size: 0.95em !important;
+}
+
+/* Bullet points & numbers: Add more gap between the marker and the text */
+.markdown-editor .cm-atomic-list-marker {
+  margin-right: 12px !important;
+  width: auto !important;
+  min-width: 1.2em !important;
+  text-align: right;
 }
