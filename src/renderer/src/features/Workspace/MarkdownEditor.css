@@ -772,31 +772,6 @@
   width: 100%;
 }
 
-/* --- Image Hover Preview --- */
-.image-hover-preview {
-  background: var(--bg-panel);
-  border: 1px solid var(--border-dim);
-  border-radius: 6px;
-  padding: 2px;
-  z-index: 2000;
-  /* Ensure it is above everything */
-  overflow: hidden;
-  animation: fadeIn 0.1s ease-out;
-  /* Snappier fade in */
-  max-width: fit-content;
-  pointer-events: none;
-  /* Ensure it doesn't block mouse */
-  transition: opacity 0.1s ease-out;
-  /* Smooth fade */
-}
-
-.image-hover-preview img {
-  max-height: 280px;
-  /* Smaller max height */
-  max-width: 100%;
-  border-radius: 4px;
-  display: block;
-}
 
 .meta-tag-container {
   display: flex;
@@ -1022,84 +997,6 @@
   box-sizing: border-box !important;
 }
 
-/* Heading Improvements (Editor Optimized) */
-.cm-heading {
-  font-family: var(--font-editor);
-  font-weight: 700;
-  color: var(--text-main);
-  padding-top: 0.4em;
-  padding-bottom: 0.1rem;
-  padding-left: 0 !important;
-  /* Match paragraph alignment - no left padding */
-  padding-right: 0 !important;
-  /* Match paragraph alignment */
-  margin-left: 0 !important;
-  /* Ensure no left margin */
-  margin-right: 0 !important;
-  /* Ensure no right margin */
-  margin-bottom: 0 !important;
-  /* Ensure no bottom margin that could affect selection */
-  letter-spacing: -0.01em;
-  /* Ensure heading line has proper boundaries for selection */
-  display: block;
-  box-sizing: border-box;
-  /* Ensure padding doesn't extend selection area - selection should be based on text content */
-  contain: layout style;
-}
-
-.cm-heading-1 {
-  font-size: 2.2em !important;
-  border-bottom: 1px solid var(--border-dim);
-  padding-bottom: 0.3em !important;
-  color: var(--text-accent);
-}
-
-.cm-heading-2 {
-  font-size: 1.8em !important;
-  color: var(--text-main);
-  opacity: 0.95;
-}
-
-.cm-heading-3 {
-  font-size: 1.4em !important;
-  opacity: 0.9;
-}
-
-.cm-heading-4 {
-  font-size: 1.2em !important;
-  opacity: 0.85;
-}
-
-/* Perfect Horizontal Rule */
-.cm-hr {
-  border: none !important;
-  height: 1px !important;
-  background: var(--border-dim) !important;
-  margin: 2rem 0 !important;
-  display: block;
-}
-
-/* WikiLink Styling */
-.cm-link-bracket {
-  color: var(--text-faint);
-  opacity: 0.5;
-  font-weight: 400;
-}
-
-/* WikiLink Styling (Matched to PreviewModal.jsx) */
-.cm-wikilink {
-  color: var(--text-accent);
-  text-decoration: none;
-  font-weight: 600;
-  border-bottom: 1px dashed rgba(var(--text-accent-rgb), 0.3);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.cm-wikilink:hover {
-  background: rgba(var(--text-accent-rgb), 0.05);
-  border-bottom-style: solid;
-}
 
 /* Image Previews */
 .cm-image-container {
@@ -1123,261 +1020,6 @@
   transform: scale(1.01);
 }
 
-/* --- MODE-SPECIFIC POLISH --- */
-
-/* 1. SOURCE MODE: Raw, monospaced, professional code feel */
-/* 1. SOURCE MODE: Unified Geometry */
-.mode-source .cm-content {
-  /* Perfectly matched to other modes */
-  opacity: 1;
-}
-
-/* 2. LIVE MODE: Premium typography (Default) */
-/* Inherits base styles */
-
-/* 3. READING MODE: Pure focus, clean and centered - HTML Preview */
-.mode-reading .editor-canvas-wrap {
-  max-width: 1100px;
-}
-
-/* Hide CodeMirror in reading mode, show preview */
-.mode-reading .cm-host-container {
-  display: none !important;
-}
-
-.mode-reading .reading-preview-container {
-  display: block !important;
-}
-
-/* Reading Preview Container - Rendered HTML */
-.reading-preview-container {
-  padding: 2rem 0 4rem 0;
-  max-width: 100%;
-  margin: 0 auto;
-  min-height: 200px;
-  display: none;
-  /* Hidden by default, shown in reading mode */
-}
-
-
-
-.reading-preview-loading {
-  padding: 4rem 2rem;
-  text-align: center;
-  color: var(--text-muted);
-  font-style: italic;
-}
-
-.reading-preview-content {
-  font-family: var(--preview-font-family, var(--font-editor, 'Inter', -apple-system, sans-serif));
-  font-size: var(--preview-font-size, 1.05rem);
-  line-height: 1.8;
-  color: var(--text-main);
-  -webkit-font-smoothing: antialiased;
-  animation: contentFadeIn 0.3s ease-out;
-}
-
-@keyframes contentFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.reading-preview-content h1 {
-  font-size: 2.5em;
-  font-weight: 800;
-  margin-bottom: 0.8em;
-  margin-top: 0;
-  letter-spacing: -0.02em;
-  color: var(--text-main);
-  line-height: 1.2;
-}
-
-.reading-preview-content h2 {
-  font-size: 1.8em;
-  font-weight: 700;
-  margin-top: 2.5em;
-  margin-bottom: 1em;
-  color: var(--text-main);
-  opacity: 0.95;
-  line-height: 1.3;
-}
-
-.reading-preview-content h3 {
-  font-size: 1.4em;
-  font-weight: 600;
-  margin-top: 2em;
-  margin-bottom: 0.8em;
-  color: var(--text-main);
-  opacity: 0.9;
-}
-
-.reading-preview-content p {
-  margin-bottom: 1.6em;
-  font-size: 1.05rem;
-  opacity: 0.9;
-  line-height: 1.8;
-}
-
-.reading-preview-content pre {
-  background: rgba(var(--text-accent-rgb), 0.03);
-  padding: 1.5em;
-  border-radius: 12px;
-  border: 1px solid var(--border-subtle);
-  overflow-x: auto;
-  margin: 2em 0;
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  font-size: 0.9em;
-  line-height: 1.6;
-}
-
-.reading-preview-content code {
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  background: rgba(var(--text-accent-rgb), 0.1);
-  padding: 0.2em 0.5em;
-  border-radius: 6px;
-  font-size: 0.9em;
-  color: var(--text-accent);
-}
-
-.reading-preview-content pre code {
-  background: transparent;
-  padding: 0;
-  color: inherit;
-  font-size: inherit;
-}
-
-.reading-preview-content blockquote {
-  border-left: 4px solid var(--text-accent);
-  background: rgba(var(--text-accent-rgb), 0.05);
-  padding: 1.5em 2em;
-  margin: 2em 0;
-  border-radius: 0 8px 8px 0;
-  font-style: italic;
-  font-size: 1.1em;
-  color: var(--text-muted);
-}
-
-.reading-preview-content ul,
-.reading-preview-content ol {
-  margin-bottom: 2em;
-  padding-left: 1.5em;
-}
-
-.reading-preview-content li {
-  margin-bottom: 0.8em;
-  line-height: 1.8;
-}
-
-.reading-preview-content hr {
-  border: none;
-  height: 1px;
-  background: var(--border-dim);
-  margin: 4rem 0;
-}
-
-.reading-preview-content img {
-  max-width: 100%;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  margin: 2em 0;
-}
-
-.reading-preview-content .preview-wikilink {
-  color: var(--text-accent);
-  text-decoration: none;
-  cursor: pointer;
-  font-weight: 600;
-  border-bottom: 1px dashed rgba(var(--text-accent-rgb), 0.3);
-  transition: all 0.2s;
-  font-style: normal;
-}
-
-.reading-preview-content .preview-wikilink:hover {
-  border-bottom-style: solid;
-  background: rgba(var(--text-accent-rgb), 0.05);
-}
-
-.reading-preview-content table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 2em 0;
-  font-size: 0.95em;
-}
-
-.reading-preview-content th {
-  text-align: left;
-  padding: 12px;
-  background: rgba(var(--text-accent-rgb), 0.05);
-  border-bottom: 2px solid var(--border-dim);
-  font-weight: 600;
-}
-
-.reading-preview-content td {
-  padding: 12px;
-  border-bottom: 1px solid var(--border-dim);
-}
-
-.mode-reading .cm-content {
-  /* Match Live Mode Line Height */
-  line-height: var(--line-height-editor, 1.6) !important;
-  cursor: text !important;
-  /* Allow text selection */
-  pointer-events: auto !important;
-  /* Critical for hover tooltips */
-  user-select: text !important;
-  -webkit-user-select: text !important;
-  -moz-user-select: text !important;
-  -ms-user-select: text !important;
-}
-
-/* Prevent layout shift when selecting text in reading mode */
-.mode-reading .cm-line {
-  /* Ensure lines don't shift when selected */
-  position: relative;
-  /* Prevent any layout changes on selection */
-  will-change: auto;
-  /* Ensure consistent positioning */
-  padding-left: 0 !important;
-  margin-left: 0 !important;
-}
-
-/* Ensure selection in reading mode doesn't cause layout shift */
-.mode-reading .cm-selectionBackground {
-  /* CodeMirror positions this absolutely, but ensure it doesn't affect layout */
-  padding: 0 !important;
-  margin: 0 !important;
-  border: none !important;
-  box-sizing: border-box !important;
-  /* Ensure it's behind text, not affecting flow */
-  z-index: 0;
-  pointer-events: none !important;
-}
-
-/* Ensure text selection works in reading mode even when editor is non-editable */
-.mode-reading .cm-editor {
-  -webkit-user-select: text !important;
-  -moz-user-select: text !important;
-  -ms-user-select: text !important;
-  user-select: text !important;
-}
-
-.mode-reading .cm-scroller {
-  -webkit-user-select: text !important;
-  -moz-user-select: text !important;
-  -ms-user-select: text !important;
-  user-select: text !important;
-}
-
-.mode-reading .cm-activeLine {
-  border-left-color: transparent !important;
-}
 
 /* GLOBAL TOOLTIP FIX */
 .cm-tooltip {
@@ -1569,77 +1211,7 @@
   font-family: var(--font-editor);
 }
 
-.markdown-rendered-preview {
-  color: var(--text-muted);
-}
 
-.markdown-rendered-preview p {
-  margin-bottom: 0.8em;
-}
-
-.markdown-rendered-preview p:last-child {
-  margin-bottom: 0;
-}
-
-.markdown-rendered-preview h1,
-.markdown-rendered-preview h2,
-.markdown-rendered-preview h3 {
-  color: var(--text-main);
-  margin-top: 1em;
-  margin-bottom: 0.5em;
-  font-size: 1.1em;
-  font-weight: 700;
-  line-height: 1.3;
-}
-
-.markdown-rendered-preview h1:first-child {
-  margin-top: 0;
-}
-
-.markdown-rendered-preview ul,
-.markdown-rendered-preview ol {
-  padding-left: 20px;
-  margin-bottom: 0.8em;
-}
-
-.markdown-rendered-preview code {
-  background: var(--bg-active);
-  padding: 1px 4px;
-  border-radius: 3px;
-  font-family: var(--font-mono);
-  font-size: 0.9em;
-}
-
-.preview-wikilink {
-  color: var(--text-accent);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 2px;
-  cursor: pointer;
-  font-weight: 500;
-  border-radius: 4px;
-  padding: 0 2px;
-  transition: all 0.2s;
-  font-style: normal;
-}
-
-.preview-wikilink:hover {
-  background: rgba(var(--text-accent-rgb), 0.1);
-  color: var(--text-accent-hover);
-  text-decoration: underline;
-}
-
-.markdown-rendered-preview a {
-  color: var(--text-accent);
-  text-decoration: underline;
-}
-
-.markdown-rendered-preview blockquote {
-  border-left: 3px solid var(--border-dim);
-  padding-left: 12px;
-  color: var(--text-faint);
-  font-style: italic;
-  margin: 12px 0;
-}
 
 /* Footer Section */
 .wiki-hover-footer {
@@ -1736,53 +1308,7 @@
   margin-left: auto !important;
 }
 
-/* Hidden Mark Styling: Handled by scoped reading rules in earlier sections */
 
-/* In-editor preview overlay */
-.in-editor-preview-overlay {
-  position: absolute;
-  inset: 0 0 0 0;
-  background: transparent;
-  z-index: 40;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 36px;
-}
-
-.in-editor-preview-card {
-  width: min(1100px, 96%);
-  height: min(84vh, 86%);
-  background: var(--bg-app);
-  border-radius: 0;
-  /* flat to match main app header */
-  box-shadow: none;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.in-editor-preview-header {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border-dim);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.in-editor-preview-body {
-  padding: 12px 0;
-  flex: 1;
-}
-
-.in-editor-preview-card .modal-close {
-  background: transparent;
-  border: none;
-  font-size: 14px;
-  cursor: pointer;
-  padding: 6px 8px;
-}
 
 /* Spinner animation for loading states */
 @keyframes spin {
@@ -1793,4 +1319,22 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Hide CodeMirror Autocomplete Icons */
+.cm-tooltip-autocomplete ul li .cm-completionIcon {
+  display: none !important;
+}
+
+/* Hide Atomic Editor wiki link icon (the ⍈ icon) */
+.cm-atomic-wiki-link::after,
+.cm-atomic-wiki-link svg,
+.cm-atomic-wiki-link-unresolved::after,
+.cm-atomic-wiki-link-unresolved svg {
+  display: none !important;
+}
+
+.cm-atomic-wiki-link,
+.cm-atomic-wiki-link-unresolved {
+  padding-right: 0 !important;
 }
