@@ -393,16 +393,16 @@
 
 /* Removed old folder-tree-item background cover */
 
-.folder-tree-item.folder-over {
-  background: var(--accent-primary);
-  color: white;
+.folder-tree-main.folder-over {
+  background: var(--accent-primary) !important;
+  color: white !important;
 }
 
-.folder-tree-item.folder-over .folder-chevron,
-.folder-tree-item.folder-over .folder-icon-color {
-  color: white;
-  fill: white;
-  fill-opacity: 1;
+.folder-tree-main.folder-over .folder-chevron,
+.folder-tree-main.folder-over .folder-icon-color {
+  color: white !important;
+  fill: white !important;
+  fill-opacity: 1 !important;
 }
 
 .start-section .tree-item:hover {

@@ -76,7 +76,7 @@ const DroppableFolderItem = React.memo(({
   return (
     <div 
       ref={setDroppableRef}
-      className={`folder-tree-item ${isOver ? 'folder-over' : ''}`}
+      className="folder-tree-item"
       style={{ 
         position: 'relative',
         paddingLeft: `${item.depth * 16}px`,
@@ -88,7 +88,7 @@ const DroppableFolderItem = React.memo(({
       ))}
       <div 
         ref={setDraggableRef}
-        className="folder-tree-main" 
+        className={`folder-tree-main ${isOver ? 'folder-over' : ''}`} 
         style={{ cursor: 'pointer', userSelect: 'none' }}
         {...attributes}
         {...listeners}
@@ -158,7 +158,7 @@ const OverlayWrapper = ({ children }) => {
   const { active } = useDndContext()
   const width = active?.rect?.current?.initial?.width
   return (
-    <div style={{ width: width ? `${width}px` : 'auto', boxSizing: 'border-box' }}>
+    <div style={{ width: width ? `${width}px` : 'auto', boxSizing: 'border-box', pointerEvents: 'none' }}>
       {children}
     </div>
   )
@@ -179,7 +179,8 @@ const DroppableRootZone = React.memo(() => {
         borderRadius: '8px',
         textAlign: 'center',
         color: isOver ? 'var(--accent-primary)' : 'var(--text-muted)',
-        background: isOver ? 'var(--bg-hover)' : 'transparent',
+        background: isOver ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+        boxShadow: isOver ? '0 0 16px rgba(59, 130, 246, 0.3)' : 'none',
         transition: 'all 0.2s',
         fontSize: '13px',
         fontWeight: 500
@@ -888,7 +889,7 @@ const ExplorerModal = ({ isOpen, onClose }) => {
                   }}>
                     {activeListDragItem?.type === 'folder' ? (
                       <OverlayWrapper>
-                        <div className="folder-tree-main" style={{ opacity: 0.8, background: 'var(--bg-panel)', borderRadius: '4px', paddingRight: '8px' }}>
+                        <div className="folder-tree-main" style={{ width: 'max-content', opacity: 0.8, background: 'var(--bg-panel)', borderRadius: '4px', paddingRight: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
                           <ChevronRight size={14} className="folder-chevron" />
                           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: folderColors[activeListDragItem.item.id] || undefined, padding: '2px 6px', borderRadius: '4px', marginLeft: '-6px' }}>
                             <Folder size={14} />
@@ -898,8 +899,8 @@ const ExplorerModal = ({ isOpen, onClose }) => {
                       </OverlayWrapper>
                     ) : activeListDragItem?.type === 'file' ? (
                       <OverlayWrapper>
-                        <div className="start-section" style={{ margin: 0 }}>
-                          <div style={{ opacity: 0.8, boxShadow: '0 4px 12px rgba(0,0,0,0.15)', borderRadius: '4px', background: 'var(--bg-panel)' }}>
+                        <div className="start-section" style={{ margin: 0, width: 'max-content' }}>
+                          <div style={{ opacity: 0.8, boxShadow: '0 4px 12px rgba(0,0,0,0.2)', borderRadius: '4px', background: 'var(--bg-panel)' }}>
                              <SidebarItem
                                snippet={activeListDragItem.snippet}
                                variant="list"
