@@ -624,10 +624,24 @@ app.whenReady().then(async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({ properties: ['openDirectory'] })
     if (canceled) return null
     const newPath = filePaths[0]
+    
+    // Save to global config
+    const userDataPath = app.getPath('userData')
+    await fs.writeFile(join(userDataPath, 'app_config.json'), JSON.stringify({ lastVaultOpened: newPath }, null, 2))
+    
+    await SettingsManager.init(newPath)
     await VaultManager.init(newPath)
     await SettingsManager.set('vaultPath', newPath)
+    
     // Index new vault in background
-    VaultIndexer.indexVault(newPath, { force: false })
+    VaultIndexer.indexVault(newPath, { 
+      force: false,
+      onProgress: (stats) => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('index:progress', stats)
+        }
+      }
+    })
       .then(() => {
         console.info('[Main] New vault indexing complete, reloading search index...')
         return VaultSearch.reload()
@@ -649,7 +663,15 @@ app.whenReady().then(async () => {
         throw new Error('Vault path must be a string. Please select a vault folder first.')
       }
 
-      const result = await VaultIndexer.indexVault(targetPath, options)
+      const result = await VaultIndexer.indexVault(targetPath, {
+        ...options,
+        onProgress: (stats) => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('index:progress', stats)
+          }
+          if (options.onProgress) options.onProgress(stats)
+        }
+      })
       // Reload search index after indexing completes
       await VaultSearch.reload()
       return result
@@ -661,7 +683,14 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('vault:rebuild-index', async (_, vaultPath) => {
     try {
-      const result = await VaultIndexer.rebuildIndex(vaultPath || VaultManager.vaultPath)
+      const targetPath = vaultPath || VaultManager.vaultPath
+      const result = await VaultIndexer.rebuildIndex(targetPath, {
+        onProgress: (stats) => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('index:progress', stats)
+          }
+        }
+      })
       // Reload search index after rebuild
       await VaultSearch.reload()
       return result
@@ -727,27 +756,49 @@ app.whenReady().then(async () => {
 
   try {
     const userDataPath = app.getPath('userData')
-    await SettingsManager.init(userDataPath)
+    const appConfigPath = join(userDataPath, 'app_config.json')
+    
+    let savedVaultPath = null
+    try {
+      const configData = await fs.readFile(appConfigPath, 'utf8')
+      savedVaultPath = JSON.parse(configData).lastVaultOpened
+    } catch (e) {
+      // Fallback migration: read from old settings.json
+      try {
+        const oldSettings = await fs.readFile(join(userDataPath, 'settings.json'), 'utf8')
+        savedVaultPath = JSON.parse(oldSettings).vaultPath
+      } catch (err) {}
+    }
+
+    const oldDefaultPath = join(app.getPath('documents'), 'Lumina Vault')
+    const newDefaultPath = join(app.getPath('documents'), 'lumina')
+
+    if (!savedVaultPath || savedVaultPath === oldDefaultPath) {
+      savedVaultPath = newDefaultPath
+      await fs.writeFile(appConfigPath, JSON.stringify({ lastVaultOpened: savedVaultPath }, null, 2))
+    }
+
+    // Initialize SettingsManager inside the vault
+    await SettingsManager.init(savedVaultPath)
+    await SettingsManager.set('vaultPath', savedVaultPath)
 
     // Initialize vault indexer and search
     await VaultIndexer.init(userDataPath)
     await VaultSearch.init(userDataPath)
-
-    let savedVaultPath = await SettingsManager.get('vaultPath')
-    const oldDefaultPath = join(app.getPath('documents'), 'Lumina Vault')
-    const newDefaultPath = join(app.getPath('documents'), 'lumina')
-    
-    if (savedVaultPath === oldDefaultPath) {
-      savedVaultPath = newDefaultPath
-      await SettingsManager.set('vaultPath', newDefaultPath)
-    }
 
     await VaultManager.init(savedVaultPath, app.getPath('documents'))
     await migrateFromSQLite()
 
     // Auto-index vault in background (non-blocking)
     if (savedVaultPath && typeof savedVaultPath === 'string') {
-      VaultIndexer.indexVault(savedVaultPath, { force: false })
+      VaultIndexer.indexVault(savedVaultPath, { 
+        force: false,
+        onProgress: (stats) => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('index:progress', stats)
+          }
+        }
+      })
         .then(() => {
           console.info('[Main] Background indexing complete, reloading search index...')
           return VaultSearch.reload()

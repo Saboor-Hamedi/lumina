@@ -1,0 +1,128 @@
+.indexing-status-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  width: 200px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  pointer-events: none; /* Don't intercept clicks */
+}
+
+.indexing-status-container.complete {
+  border-color: var(--success-color, #10b981);
+  background-color: rgba(16, 185, 129, 0.05);
+  animation: completePulse 0.5s ease-out forwards, slideDownFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards 2.7s;
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDownFade {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes completePulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.indexing-status-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.indexing-status-container.complete .indexing-status-icon {
+  color: var(--success-color, #10b981);
+  background-color: transparent;
+}
+
+.indexing-icon-spin {
+  animation: spin 3s linear infinite;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.indexing-status-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.indexing-status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.indexing-status-title {
+  letter-spacing: 0.3px;
+}
+
+.indexing-status-percent {
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.indexing-status-bar-bg {
+  width: 100%;
+  height: 4px;
+  background-color: var(--bg-tertiary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.indexing-status-bar-fill {
+  height: 100%;
+  background-color: var(--accent-color);
+  transition: width 0.3s ease-out;
+  border-radius: 2px;
+}
+
+.indexing-status-container.complete .indexing-status-bar-fill {
+  background-color: var(--success-color, #10b981);
+}
+
+.indexing-status-details {
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  margin-top: 1px;
+}

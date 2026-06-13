@@ -2,6 +2,32 @@ import fs from 'fs/promises'
 import path from 'path'
 import { createHash } from 'crypto'
 
+class Mutex {
+  constructor() {
+    this.queue = []
+    this.locked = false
+  }
+  async lock() {
+    return new Promise(resolve => {
+      if (this.locked) {
+        this.queue.push(resolve)
+      } else {
+        this.locked = true
+        resolve()
+      }
+    })
+  }
+  unlock() {
+    if (this.queue.length > 0) {
+      const next = this.queue.shift()
+      next()
+    } else {
+      this.locked = false
+    }
+  }
+}
+
+
 /**
  * Robust Vault Indexer
  * 
@@ -24,6 +50,7 @@ class VaultIndexer {
     this.embedder = null
     this.isIndexing = false
     this.indexQueue = new Set()
+    this.writeLock = new Mutex()
     this.stats = {
       totalFiles: 0,
       indexedFiles: 0,
@@ -45,9 +72,18 @@ class VaultIndexer {
     this.statePath = path.join(indexDir, 'vault_state.json')
     this.chunksPath = path.join(indexDir, 'chunks.json')
 
-    // Initialize embedder (reuse existing model)
+    // Validate existing index
+    await this.validateIndex()
+  }
+
+  /**
+   * Lazy load the embedder to prevent blocking startup
+   */
+  async _getEmbedder() {
+    if (this.embedder) return this.embedder
+
     try {
-      // Set transformers environment for Node.js
+      console.info('[VaultIndexer] Lazy-loading embedder model...')
       const { pipeline, env } = await import('@xenova/transformers')
       env.allowLocalModels = false
       env.useBrowserCache = false
@@ -58,15 +94,12 @@ class VaultIndexer {
         'Xenova/all-MiniLM-L6-v2',
         { progress_callback: null }
       )
-      console.info('[VaultIndexer] ✓ Embedder initialized')
+      console.info('[VaultIndexer] ✓ Embedder initialized lazily')
+      return this.embedder
     } catch (err) {
-      console.error('[VaultIndexer] Failed to load embedder:', err)
-      console.error('[VaultIndexer] Error details:', err.message, err.stack)
+      console.error('[VaultIndexer] Failed to load embedder lazily:', err)
       throw new Error(`Failed to initialize embedding model: ${err.message}`)
     }
-
-    // Validate existing index
-    await this.validateIndex()
   }
 
   /**
@@ -152,7 +185,7 @@ class VaultIndexer {
         }
       } else {
         // Fallback: split by size if no clear boundaries
-        const maxChunkSize = 1000
+        const maxChunkSize = 400
         for (let i = 0; i < content.length; i += maxChunkSize) {
           chunks.push({
             text: content.slice(i, i + maxChunkSize),
@@ -203,7 +236,7 @@ class VaultIndexer {
       }
     } else {
       // Generic: split by size
-      const maxChunkSize = 1000
+      const maxChunkSize = 400
       for (let i = 0; i < content.length; i += maxChunkSize) {
         chunks.push({
           text: content.slice(i, i + maxChunkSize),
@@ -223,12 +256,10 @@ class VaultIndexer {
    * Generate embedding for text
    */
   async generateEmbedding(text) {
-    if (!this.embedder) {
-      throw new Error('Embedder not initialized')
-    }
+    const embedder = await this._getEmbedder()
 
     try {
-      const output = await this.embedder(text, { pooling: 'mean', normalize: true })
+      const output = await embedder(text, { pooling: 'mean', normalize: true })
       return Array.from(output.data) // Convert Float32Array to regular array
     } catch (err) {
       console.error('[VaultIndexer] Embedding generation failed:', err)
@@ -280,7 +311,14 @@ class VaultIndexer {
 
       for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i]
-        const embedding = await this.generateEmbedding(chunk.text)
+        
+        // Safety: hard-truncate massively long text blocks to prevent tokenization freezing
+        const safeText = chunk.text.length > 500 ? chunk.text.slice(0, 500) : chunk.text
+        const embedding = await this.generateEmbedding(safeText)
+        
+        // Yield event loop to prevent freezing the main thread during heavy ML inference
+        // 20ms gives the UI a full frame (60fps) to process clicks/scrolls
+        await new Promise(resolve => setTimeout(resolve, 20))
         
         // Ensure embedding is correct size (384 dims)
         if (embedding.length !== 384) {
@@ -338,50 +376,55 @@ class VaultIndexer {
    * Rebuilds embeddings file to maintain correct offsets
    */
   async appendToIndex(chunkRecords, embeddingsBuffer) {
-    // Load existing index to remove old chunks from same file
-    const existingIndex = await this.loadIndex()
-    const filePath = chunkRecords[0]?.filePath
-    const filteredIndex = existingIndex.filter(chunk => chunk.filePath !== filePath)
+    await this.writeLock.lock()
+    try {
+      // Load existing index to remove old chunks from same file
+      const existingIndex = await this.loadIndex()
+      const filePath = chunkRecords[0]?.filePath
+      const filteredIndex = existingIndex.filter(chunk => chunk.filePath !== filePath)
 
-    // Rebuild embeddings file: extract existing embeddings, then append new ones
-    const existingEmbeddingsParts = []
-    if (await this.fileExists(this.embeddingsPath)) {
-      const fullBuffer = await fs.readFile(this.embeddingsPath)
-      
-      // Extract embeddings for chunks that we're keeping
-      for (const chunk of filteredIndex) {
-        const offset = chunk.embeddingOffset || 0
-        const length = (chunk.embeddingLength || 384) * 4
-        if (offset + length <= fullBuffer.length) {
-          existingEmbeddingsParts.push(fullBuffer.slice(offset, offset + length))
+      // Rebuild embeddings file: extract existing embeddings, then append new ones
+      const existingEmbeddingsParts = []
+      if (await this.fileExists(this.embeddingsPath)) {
+        const fullBuffer = await fs.readFile(this.embeddingsPath)
+        
+        // Extract embeddings for chunks that we're keeping
+        for (const chunk of filteredIndex) {
+          const offset = chunk.embeddingOffset || 0
+          const length = (chunk.embeddingLength || 384) * 4
+          if (offset + length <= fullBuffer.length) {
+            existingEmbeddingsParts.push(fullBuffer.slice(offset, offset + length))
+          }
         }
       }
+
+      // Calculate new offsets for existing chunks (they stay at start)
+      let currentOffset = 0
+      filteredIndex.forEach(chunk => {
+        chunk.embeddingOffset = currentOffset
+        chunk.embeddingLength = 384
+        currentOffset += 384 * 4
+      })
+
+      // Calculate offsets for new chunks (append after existing)
+      chunkRecords.forEach(chunk => {
+        chunk.embeddingOffset = currentOffset
+        chunk.embeddingLength = 384
+        currentOffset += 384 * 4
+      })
+
+      // Write updated index
+      const indexLines = filteredIndex.map(chunk => JSON.stringify(chunk))
+      chunkRecords.forEach(chunk => indexLines.push(JSON.stringify(chunk)))
+      await fs.writeFile(this.indexPath, indexLines.join('\n') + '\n', 'utf-8')
+
+      // Rebuild embeddings file with correct order
+      const allEmbeddingsParts = [...existingEmbeddingsParts, embeddingsBuffer]
+      const newEmbeddings = Buffer.concat(allEmbeddingsParts)
+      await fs.writeFile(this.embeddingsPath, newEmbeddings)
+    } finally {
+      this.writeLock.unlock()
     }
-
-    // Calculate new offsets for existing chunks (they stay at start)
-    let currentOffset = 0
-    filteredIndex.forEach(chunk => {
-      chunk.embeddingOffset = currentOffset
-      chunk.embeddingLength = 384
-      currentOffset += 384 * 4
-    })
-
-    // Calculate offsets for new chunks (append after existing)
-    chunkRecords.forEach(chunk => {
-      chunk.embeddingOffset = currentOffset
-      chunk.embeddingLength = 384
-      currentOffset += 384 * 4
-    })
-
-    // Write updated index
-    const indexLines = filteredIndex.map(chunk => JSON.stringify(chunk))
-    chunkRecords.forEach(chunk => indexLines.push(JSON.stringify(chunk)))
-    await fs.writeFile(this.indexPath, indexLines.join('\n') + '\n', 'utf-8')
-
-    // Rebuild embeddings file with correct order
-    const allEmbeddingsParts = [...existingEmbeddingsParts, embeddingsBuffer]
-    const newEmbeddings = Buffer.concat(allEmbeddingsParts)
-    await fs.writeFile(this.embeddingsPath, newEmbeddings)
   }
 
   /**
@@ -454,13 +497,18 @@ class VaultIndexer {
    * Update file state
    */
   async updateFileState(filePath, fileState) {
-    const state = await this.loadState()
-    state.files = state.files || {}
-    state.files[filePath] = { ...state.files[filePath], ...fileState }
-    state.version = this.version
-    state.lastIndexTime = Date.now()
-    
-    await fs.writeFile(this.statePath, JSON.stringify(state, null, 2), 'utf-8')
+    await this.writeLock.lock()
+    try {
+      const state = await this.loadState()
+      state.files = state.files || {}
+      state.files[filePath] = { ...state.files[filePath], ...fileState }
+      state.version = this.version
+      state.lastIndexTime = Date.now()
+      
+      await fs.writeFile(this.statePath, JSON.stringify(state, null, 2), 'utf-8')
+    } finally {
+      this.writeLock.unlock()
+    }
   }
 
   /**
@@ -496,8 +544,8 @@ class VaultIndexer {
 
       console.info(`[VaultIndexer] Starting index of ${files.length} files...`)
 
-      // Index files (with rate limiting for API/CPU)
-      const batchSize = 5
+      // Index files (with rate limiting for CPU/Memory)
+      const batchSize = 1 // Process one file at a time to prevent blocking the main thread
       for (let i = 0; i < files.length; i += batchSize) {
         const batch = files.slice(i, i + batchSize)
         
@@ -515,6 +563,10 @@ class VaultIndexer {
             }
           })
         )
+
+        // Yield to event loop between files to ensure the app remains fully responsive
+        // A full 50ms break lets Electron flush IPC and garbage collect
+        await new Promise(resolve => setTimeout(resolve, 50))
 
         if (onProgress) {
           onProgress({
@@ -595,28 +647,33 @@ class VaultIndexer {
   /**
    * Rebuild index from scratch
    */
-  async rebuildIndex(vaultPath) {
+  async rebuildIndex(vaultPath, options = {}) {
     console.info('[VaultIndexer] Rebuilding index from scratch...')
     
-    // Backup old index
+    await this.writeLock.lock()
     try {
-      if (await this.fileExists(this.indexPath)) {
-        await fs.copyFile(this.indexPath, this.indexPath + '.bak')
+      // Backup old index
+      try {
+        if (await this.fileExists(this.indexPath)) {
+          await fs.copyFile(this.indexPath, this.indexPath + '.bak')
+        }
+        if (await this.fileExists(this.embeddingsPath)) {
+          await fs.copyFile(this.embeddingsPath, this.embeddingsPath + '.bak')
+        }
+      } catch (err) {
+        console.warn('[VaultIndexer] Backup failed:', err)
       }
-      if (await this.fileExists(this.embeddingsPath)) {
-        await fs.copyFile(this.embeddingsPath, this.embeddingsPath + '.bak')
-      }
-    } catch (err) {
-      console.warn('[VaultIndexer] Backup failed:', err)
+
+      // Clear index
+      await fs.writeFile(this.indexPath, '', 'utf-8')
+      await fs.writeFile(this.embeddingsPath, Buffer.alloc(0))
+      await fs.writeFile(this.statePath, JSON.stringify({ version: this.version, files: {} }, null, 2))
+    } finally {
+      this.writeLock.unlock()
     }
 
-    // Clear index
-    await fs.writeFile(this.indexPath, '', 'utf-8')
-    await fs.writeFile(this.embeddingsPath, Buffer.alloc(0))
-    await fs.writeFile(this.statePath, JSON.stringify({ version: this.version, files: {} }, null, 2))
-
     // Re-index
-    return await this.indexVault(vaultPath, { force: true })
+    return await this.indexVault(vaultPath, { force: true, ...options })
   }
 
   /**

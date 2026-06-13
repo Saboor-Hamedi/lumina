@@ -26,6 +26,7 @@ import { useAIStore } from '../../core/store/useAIStore'
 import { X, Maximize2, Trash2, History } from 'lucide-react'
 
 import PanelHeaderDropdown from './components/PanelHeaderDropdown'
+import IndexingStatus from '../../components/IndexingStatus'
 
 /**
  * AppShell Component
@@ -760,6 +761,7 @@ const AppShell = () => {
       />
       <UpdateToast />
       <ToastNotification toast={toast} onClose={clearToast} />
+      <IndexingStatus />
     </div>
   )
 }

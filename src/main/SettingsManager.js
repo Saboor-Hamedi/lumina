@@ -43,8 +43,15 @@ class SettingsManager {
     this.ignoreWatchEventsUntil = 0 // Timestamp to ignore watcher events after writing
   }
 
-  async init(userDataPath) {
-    if (!this.settingsPath) this.settingsPath = path.join(userDataPath, 'settings.json')
+  async init(vaultPath) {
+    const luminaDir = path.join(vaultPath, '.lumina')
+    this.settingsPath = path.join(luminaDir, 'settings.json')
+    
+    // Ensure .lumina directory exists
+    try {
+      await fs.mkdir(luminaDir, { recursive: true })
+    } catch (err) {}
+
     try {
       await fs.access(this.settingsPath)
       const data = await fs.readFile(this.settingsPath, 'utf8')

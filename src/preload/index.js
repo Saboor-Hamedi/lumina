@@ -56,6 +56,11 @@ const api = {
   indexVault: (vaultPath, options) => electronAPI.ipcRenderer.invoke('vault:index', vaultPath, options),
   rebuildIndex: (vaultPath) => electronAPI.ipcRenderer.invoke('vault:rebuild-index', vaultPath),
   getIndexStats: () => electronAPI.ipcRenderer.invoke('vault:index-stats'),
+  onIndexProgress: (cb) => {
+    const listener = (_, stats) => cb(stats)
+    electronAPI.ipcRenderer.on('index:progress', listener)
+    return () => electronAPI.ipcRenderer.removeListener('index:progress', listener)
+  },
 
   // Vault Search
   searchVault: (query, options) => electronAPI.ipcRenderer.invoke('vault:search', query, options),
