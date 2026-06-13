@@ -654,7 +654,7 @@
 }
 
 .editor-large-title {
-  font-size: 18px !important;
+  font-size: 25px !important;
   font-weight: 800;
   border: none;
   background: transparent;
@@ -666,7 +666,7 @@
   width: 100%;
   font-family: inherit;
   outline: none;
-  text-align: left;
+  text-align: center;
 }
 
 .editor-large-title::placeholder {

@@ -23,6 +23,7 @@ import DetailsModal from '../Overlays/DetailsModal'
 import AIChatModal from '../Overlays/AIChatModal'
 import ExplorerModal from '../Overlays/ExplorerModal'
 import { useAIStore } from '../../core/store/useAIStore'
+import { useTypingSound } from '../../core/hooks/useTypingSound'
 import { X, Maximize2, Trash2, History } from 'lucide-react'
 
 import PanelHeaderDropdown from './components/PanelHeaderDropdown'
@@ -50,6 +51,9 @@ const AppShell = () => {
   const { toast, showToast, clearToast } = useToast()
   const { chatMessages, clearChat } = useAIStore()
   const settings = useSettingsStore((state) => state.settings)
+  
+  // Initialize typing sound hook globally
+  useTypingSound()
   const [settingsInitialTab, setSettingsInitialTab] = useState('general')
 
   // Always default to 'files' instead of restoring from settings

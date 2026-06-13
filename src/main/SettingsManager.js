@@ -172,15 +172,13 @@ class SettingsManager {
       // Merge with defaults to ensure all default keys are present, but preserve user values
       const settingsToSave = { ...this.defaultSettings, ...this.cache }
 
-      // Use atomic write: write to temp file then rename
-      const tempPath = this.settingsPath + '.tmp'
+      // Use direct write to prevent EBUSY locks from chokidar on Windows
       const data = JSON.stringify(settingsToSave, null, 2)
 
       // Store the exact string we are about to write so the watcher can ignore it
       this.lastWrittenData = data
 
-      await fs.writeFile(tempPath, data, 'utf8')
-      await fs.rename(tempPath, this.settingsPath)
+      await fs.writeFile(this.settingsPath, data, 'utf8')
 
       // Update cache to match what we saved
       this.cache = settingsToSave

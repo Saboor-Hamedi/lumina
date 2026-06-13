@@ -115,6 +115,12 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
               AI Models
             </button>
             <button
+              className={`nav-item ${activeTab === 'type' ? 'active' : ''}`}
+              onClick={() => setActiveTab('type')}
+            >
+              Type
+            </button>
+            <button
               className={`nav-item ${activeTab === 'graph' ? 'active' : ''}`}
               onClick={() => setActiveTab('graph')}
             >
@@ -141,6 +147,48 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                       </button>
                     </div>
                   </div>
+                </section>
+              </div>
+            )}
+
+            {activeTab === 'type' && (
+              <div className="settings-pane">
+                <section>
+                  <h3>Typing Experience</h3>
+                  <div className="settings-row">
+                    <div className="row-info">
+                      <div className="row-label">Mechanical Keyboard Sound</div>
+                      <div className="row-hint">Play an ASMR-style mechanical click when typing.</div>
+                    </div>
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={settings.typeSound || false}
+                        onChange={(e) => updateSetting('typeSound', e.target.checked)}
+                      />
+                      <span className="slider round"></span>
+                    </label>
+                  </div>
+                  
+                  {settings.typeSound && (
+                    <div className="settings-row" style={{ animation: 'fadeIn 0.2s ease-out' }}>
+                      <div className="row-info">
+                        <div className="row-label">Typing Volume</div>
+                        <div className="row-hint">Adjust how loud the mechanical clicks are.</div>
+                      </div>
+                      <div className="range-wrap">
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          step="1"
+                          value={settings.typeSoundVolume ?? 50}
+                          onChange={(e) => updateSetting('typeSoundVolume', parseInt(e.target.value, 10))}
+                        />
+                        <span>{settings.typeSoundVolume ?? 50}%</span>
+                      </div>
+                    </div>
+                  )}
                 </section>
               </div>
             )}
@@ -499,11 +547,8 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                             // Limit to 6 characters
                             if (value.length > 6) value = value.slice(0, 6)
                             
-                            // Update if valid hex (empty or 3 or 6 chars)
-                            if (value === '' || /^[0-9A-Fa-f]{3}$|^[0-9A-Fa-f]{6}$/.test(value)) {
-                              const finalColor = value === '' ? '' : `#${value}`
-                              updateCaretColor(finalColor)
-                            }
+                            // Always pass what the user types to updateCaretColor
+                            updateCaretColor(value)
                           }}
                           placeholder="ffffff"
                           className="caret-color-input"

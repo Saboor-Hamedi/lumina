@@ -705,29 +705,24 @@ export const useFontSettings = () => {
    */
   const updateCaretColor = useCallback(
     (color) => {
-      // Normalize color: ensure it has # if provided, or empty string
-      let normalizedColor = color
-      if (normalizedColor && normalizedColor.trim() !== '') {
-        // Remove any existing # and add it back
-        normalizedColor = normalizedColor.replace(/^#/, '')
-        // Validate hex (3 or 6 chars)
-        if (/^[0-9A-Fa-f]{3}$|^[0-9A-Fa-f]{6}$/.test(normalizedColor)) {
-          normalizedColor = `#${normalizedColor}`
-        } else {
-          // Invalid, use empty to fall back to theme
-          normalizedColor = ''
-        }
-      } else {
-        normalizedColor = ''
+      let rawColor = color ? color.trim().replace(/^#/, '') : ''
+      let validColorForCss = ''
+
+      // Determine if it's a valid 3 or 6 char hex
+      if (/^[0-9A-Fa-f]{3}$|^[0-9A-Fa-f]{6}$/.test(rawColor)) {
+        validColorForCss = `#${rawColor}`
       }
 
-      setCaretColor(normalizedColor)
-      // Apply styles immediately with current width
-      applyCaretStyles(caretWidth, normalizedColor)
-      // Persist to storage (non-blocking)
-      persistTheme({ caretColor: normalizedColor })
+      // Store what the user actually typed so the input box doesn't fight them
+      setCaretColor(rawColor)
+      
+      // Apply styles using the valid CSS color (or empty string to fallback to theme)
+      applyCaretStyles(caretWidth, validColorForCss)
+      
+      // Persist the raw color
+      persistTheme({ caretColor: rawColor })
 
-      // Force CodeMirror to update by dispatching a custom event
+      // Force CodeMirror to update
       window.dispatchEvent(new CustomEvent('caret-style-update'))
     },
     [caretWidth, persistTheme]
