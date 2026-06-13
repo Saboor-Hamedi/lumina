@@ -98,11 +98,20 @@
 /* Body */
 .start-menu-body {
   flex: 1;
-  overflow-y: auto;
+  overflow-y: hidden; /* Let Virtuoso handle scroll */
   padding: 16px 32px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-height: 0;
+}
+
+/* Sections */
+.start-section {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0; /* Crucial for nested flex scrolling */
 }
 
 /* Custom Scrollbar for Body */

@@ -44,6 +44,33 @@ const GraphView = React.memo(({ onNodeClick }) => {
     return () => resizeObserver.disconnect()
   }, [])
 
+  // Apply Custom Physics
+  useEffect(() => {
+    if (graphRef.current) {
+      // Strong repulsion to spread nodes out
+      graphRef.current.d3Force('charge').strength(-500).distanceMax(1000)
+      graphRef.current.d3Force('link').distance(90)
+      
+      // Custom force: pull hubs (main nodes) to center, let orphans float around the edges
+      graphRef.current.d3Force('hubCenter', (alpha) => {
+        data.nodes.forEach(node => {
+          if (node.val > 3) {
+            // Pull hubs strongly to exact center
+            node.vx -= node.x * 0.05 * alpha
+            node.vy -= node.y * 0.05 * alpha
+          } else {
+            // Push small/orphan nodes slightly outwards so they form a ring
+            node.vx += node.x * 0.005 * alpha
+            node.vy += node.y * 0.005 * alpha
+          }
+        })
+      })
+
+      graphRef.current.d3Force('center').strength(0.01)
+      graphRef.current.d3ReheatSimulation()
+    }
+  }, [data])
+
   /* --- STATE & INTERACTION --- */
   const [highlightNodes, setHighlightNodes] = useState(new Set())
   const [highlightLinks, setHighlightLinks] = useState(new Set())
@@ -100,13 +127,13 @@ const GraphView = React.memo(({ onNodeClick }) => {
       const isNeighbor = highlightNodes.has(node.id)
       const label = (node.label || node.id).replace(/[*"']/g, '')
 
-      // NODE VISUALS
-      const r = node.val ? Math.max(2, Math.sqrt(node.val) * 3) : 2
+      // NODE VISUALS: Obsidian style (cleaner, smaller max size)
+      const r = node.val ? Math.min(8, Math.max(2, Math.sqrt(node.val) * 1.5)) : 2
 
       // Glow effect for hubs/hover
-      if (isHover || node.val > 5) {
+      if (isHover || isActive) {
         ctx.shadowColor = nodeColor(node)
-        ctx.shadowBlur = isHover ? 15 : 5
+        ctx.shadowBlur = isHover ? 15 : 8
       } else {
         ctx.shadowBlur = 0
       }
@@ -117,23 +144,21 @@ const GraphView = React.memo(({ onNodeClick }) => {
       ctx.fill()
       ctx.shadowBlur = 0 // Reset
 
-      // TEXT LOGIC: Compensatory Scaling
-      // We scale the font size inversely with zoom to prevent it from becoming 'huge'
-      const baseFontSize = 14
-      const fontSize = baseFontSize / globalScale
+      // TEXT LOGIC: Obsidian style (native scaling)
+      // By using a fixed font size on a scaled canvas, the text naturally shrinks as you zoom out.
+      const fontSize = 6 // Even smaller text
       ctx.font = `${fontSize}px Inter, sans-serif`
 
       // Visibility Thresholds
-      // 1. Hover: Always show (Critical)
-      // 2. Active Node: Always show (Critical)
-      // 3. Hubs (val > 3): Show if scale > 0.4
-      // 4. Small nodes: Show if scale > 1.5
+      // 1. Hover/Active: Always show
+      // 2. Zoomed in: Show all
+      // 3. Zoomed out: Hide almost everything to prevent clutter
       let shouldShow = false
       const isActive = selectedSnippet && node.snippetId === selectedSnippet.id
 
       if (isHover || isActive) shouldShow = true
-      else if (node.val > 4 && globalScale > 0.3) shouldShow = true
-      else if (globalScale > 0.8) shouldShow = true
+      else if (globalScale > 1.2) shouldShow = true
+      else if (node.val > 4 && globalScale > 0.6) shouldShow = true
 
       // Low priority label rendering for neighbors (optional: only if very zoomed in?)
       // if (isNeighbor && globalScale > 1.0) shouldShow = true
@@ -144,7 +169,7 @@ const GraphView = React.memo(({ onNodeClick }) => {
 
         // Fill
         ctx.fillStyle = isActive ? '#ffaa00' : 'rgba(255, 255, 255, 0.95)'
-        ctx.fillText(label, node.x, node.y + r + 1)
+        ctx.fillText(label.replace(/[*_"#~`\[\]()]/g, '').trim(), node.x, node.y + r + 1)
       }
     },
     [hoverNode, highlightNodes, selectedSnippet]
@@ -173,6 +198,7 @@ const GraphView = React.memo(({ onNodeClick }) => {
   return (
     <div
       ref={containerRef}
+      onWheel={(e) => e.stopPropagation()} // Prevent bubbling up to modal to stop accidental scroll/pan
       style={{
         width: '100%',
         height: '100%',
@@ -181,6 +207,7 @@ const GraphView = React.memo(({ onNodeClick }) => {
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
+        overscrollBehavior: 'none', // Prevent trackpad bounce and scroll chaining
         cursor: hoverNode ? 'pointer' : 'default'
       }}
     >
@@ -196,6 +223,7 @@ const GraphView = React.memo(({ onNodeClick }) => {
         // Interaction
         onNodeClick={handleNodeClick}
         onNodeHover={handleNodeHover}
+        nodeLabel={(node) => (node.label || node.id).replace(/[*_"#~`\[\]()]/g, '').trim()}
         nodeCanvasObject={paintNode}
         // Physics Optimization
         cooldownTicks={100}

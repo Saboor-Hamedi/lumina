@@ -6,6 +6,7 @@ import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, TouchS
 import { SortableContext, useSortable, horizontalListSortingStrategy, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { createPortal } from 'react-dom'
+import { Virtuoso } from 'react-virtuoso'
 import SidebarItem from '../Navigation/components/SidebarItem'
 import { useResizable } from './useResizable'
 import './ExplorerModal.css'
@@ -118,9 +119,6 @@ const ExplorerModal = ({ isOpen, onClose }) => {
     useSettingsStore.getState().updateSettings(newSettings)
   }
 
-  // Pagination limit for recommended notes
-  const [limit, setLimit] = useState(10)
-
   // Configure sensors for drag and drop to not interfere with buttons
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -140,7 +138,6 @@ const ExplorerModal = ({ isOpen, onClose }) => {
   useEffect(() => {
     if (isOpen) {
       setQuery('')
-      setLimit(10) // Reset pagination
       setIsPositionReady(true)
 
       setTimeout(() => {
@@ -349,15 +346,14 @@ const ExplorerModal = ({ isOpen, onClose }) => {
               <div className="empty-state">No favorite notes</div>
             ) : (
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSortDragEnd}>
-                <SortableContext items={pinnedSnippets.map(s => s.id)} strategy={horizontalListSortingStrategy}>
-                  <div className="start-grid">
+                <SortableContext items={pinnedSnippets.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                  <div className="recommended-list" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                     {pinnedSnippets.map(snippet => (
-                      <SortableGridItem
+                      <SortableListItem
                         key={snippet.id}
                         snippet={snippet}
-                        getIconForLanguage={getIconForLanguage}
-                        onSelect={handleSelect}
-                        onUnpin={() => handleTogglePin(snippet)}
+                        onClick={() => handleSelect(snippet)}
+                        isActive={false}
                       />
                     ))}
                   </div>
@@ -385,24 +381,20 @@ const ExplorerModal = ({ isOpen, onClose }) => {
               <div className="empty-state">No notes found</div>
             ) : (
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleListDragEnd}>
-                <SortableContext items={allSnippets.slice(0, limit).map(s => s.id)} strategy={verticalListSortingStrategy}>
-                  <div className="recommended-list">
-                    {allSnippets.slice(0, limit).map(snippet => (
-                      <SortableListItem
-                        key={snippet.id}
-                        snippet={snippet}
-                        onClick={() => handleSelect(snippet)}
-                        isActive={false}
-                      />
-                    ))}
-                    {allSnippets.length > limit && (
-                      <button 
-                        className="load-more-btn" 
-                        onClick={() => setLimit(prev => prev + 10)}
-                      >
-                        Load More Notes
-                      </button>
-                    )}
+                <SortableContext items={allSnippets.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                  <div className="recommended-list" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <Virtuoso
+                      style={{ flex: 1, height: '100%' }}
+                      data={allSnippets}
+                      itemContent={(index, snippet) => (
+                        <SortableListItem
+                          key={snippet.id}
+                          snippet={snippet}
+                          onClick={() => handleSelect(snippet)}
+                          isActive={false}
+                        />
+                      )}
+                    />
                   </div>
                 </SortableContext>
               </DndContext>

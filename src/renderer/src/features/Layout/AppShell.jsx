@@ -294,6 +294,19 @@ const AppShell = () => {
     return () => window.removeEventListener('keydown', handleGlobalSearchShortcut)
   }, [])
 
+  // Ctrl+B - toggle Explorer Modal
+  useEffect(() => {
+    const handleExplorerShortcut = (e) => {
+      const key = e.key && e.key.toLowerCase()
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && key === 'b') {
+        e.preventDefault()
+        setShowExplorerModal((prev) => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleExplorerShortcut)
+    return () => window.removeEventListener('keydown', handleExplorerShortcut)
+  }, [])
+
   // Ctrl+Shift+B - toggle left sidebar visibility
   useEffect(() => {
     const handleSidebarToggleShortcut = (e) => {

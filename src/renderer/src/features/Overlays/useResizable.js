@@ -8,6 +8,7 @@ export const useResizable = (modalRef, initialWidth = 350, initialHeight = 500) 
     height: settings.explorerModalHeight || initialHeight
   })
 
+  const latestSize = useRef(size)
   const startSize = useRef({ width: 0, height: 0 })
   const startPos = useRef({ x: 0, y: 0 })
 
@@ -38,7 +39,8 @@ export const useResizable = (modalRef, initialWidth = 350, initialHeight = 500) 
         newWidth = Math.max(300, Math.min(600, startSize.current.width - deltaX * 2)) // *2 keeps it centered
       }
 
-      setSize({ width: newWidth, height: newHeight })
+      latestSize.current = { width: newWidth, height: newHeight }
+      setSize(latestSize.current)
     }
 
     const handleMouseUp = () => {
@@ -51,8 +53,8 @@ export const useResizable = (modalRef, initialWidth = 350, initialHeight = 500) 
 
       // Persist to store without triggering infinite loop
       useSettingsStore.getState().updateSettings({
-        explorerModalWidth: parseInt(modalRef.current.style.width),
-        explorerModalHeight: parseInt(modalRef.current.style.height)
+        explorerModalWidth: latestSize.current.width,
+        explorerModalHeight: latestSize.current.height
       })
     }
 

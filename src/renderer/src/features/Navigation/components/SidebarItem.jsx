@@ -121,7 +121,7 @@ const SidebarItem = ({ snippet, isActive, onClick, style, variant = 'list', dndP
         onMouseLeave={() => setIsHovered(false)}
         onDoubleClick={() => setIsRenaming(true)}
         style={style}
-        title={isRenaming ? '' : `${snippet.title}${isDirty ? ' (Unsaved changes)' : ''}`}
+        title={isRenaming ? '' : `${snippet.title.replace(/[*_"#~`\[\]()]/g, '').trim()}${isDirty ? ' (Unsaved changes)' : ''}`}
         {...(dndProps?.attributes || {})}
         {...(dndProps?.listeners || {})}
       >
@@ -165,7 +165,7 @@ const SidebarItem = ({ snippet, isActive, onClick, style, variant = 'list', dndP
       onMouseLeave={() => setIsHovered(false)}
       onDoubleClick={() => setIsRenaming(true)}
       style={style}
-      title={isRenaming ? '' : `${snippet.title}${isDirty ? ' (Unsaved changes)' : ''}`}
+      title={isRenaming ? '' : `${snippet.title.replace(/[*_"#~`\[\]()]/g, '').trim()}${isDirty ? ' (Unsaved changes)' : ''}`}
       {...(dndProps?.attributes || {})}
       {...(dndProps?.listeners || {})}
     >
