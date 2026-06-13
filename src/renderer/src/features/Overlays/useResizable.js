@@ -29,13 +29,13 @@ export const useResizable = (modalRef, initialWidth = 350, initialHeight = 500) 
       let newHeight = startSize.current.height
 
       if (direction.includes('top')) {
-        newHeight = Math.max(400, Math.min(800, startSize.current.height + deltaY))
+        newHeight = Math.max(300, Math.min(600, startSize.current.height + deltaY))
       }
       if (direction.includes('right')) {
-        newWidth = Math.max(300, Math.min(800, startSize.current.width + deltaX * 2)) // *2 keeps it centered
+        newWidth = Math.max(300, Math.min(600, startSize.current.width + deltaX * 2)) // *2 keeps it centered
       }
       if (direction.includes('left')) {
-        newWidth = Math.max(300, Math.min(800, startSize.current.width - deltaX * 2)) // *2 keeps it centered
+        newWidth = Math.max(300, Math.min(600, startSize.current.width - deltaX * 2)) // *2 keeps it centered
       }
 
       setSize({ width: newWidth, height: newHeight })

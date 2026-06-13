@@ -61,7 +61,7 @@
 
 /* Search Bar */
 .start-menu-search {
-  margin: 32px 32px 16px 32px;
+  margin: 16px 32px 16px 32px;
   position: relative;
   display: flex;
   align-items: center;
@@ -317,23 +317,65 @@
 }
 
 .load-more-btn {
-  margin-top: 8px;
+  margin: 12px auto; /* Center it and add modest margin */
+  display: block; /* So auto margin works */
   background: transparent;
-  border: 1px solid var(--border-dim);
-  color: var(--text-muted);
-  padding: 8px;
+  border: none; /* Remove huge boxy border */
+  color: var(--accent); /* Make it look like a sleek link */
+  padding: 4px 12px;
   border-radius: 4px;
   cursor: pointer;
   text-align: center;
   transition: all 0.2s;
-  font-size: 0.85em;
+  font-size: 13px;
+  width: max-content;
 }
 
 .load-more-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.08);
   color: var(--text-main);
 }
 
+/* Tabs */
+.explorer-tabs {
+  display: flex;
+  margin: 0 32px 16px 32px;
+  border-bottom: 1px solid var(--border-dim);
+  gap: 16px;
+}
+
+.explorer-tab {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 8px 0;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s;
+}
+
+.explorer-tab:hover {
+  color: var(--text-main);
+}
+
+.explorer-tab.active {
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.explorer-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px 2px 0 0;
+}
+
+/* Scrollable Body */
 /* Animations */
 @keyframes startMenuSlideUp {
   from { opacity: 0; transform: translateY(40px) scale(0.95); }

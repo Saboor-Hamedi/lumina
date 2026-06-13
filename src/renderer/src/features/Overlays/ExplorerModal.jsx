@@ -79,6 +79,7 @@ const SortableGridItem = ({ snippet, getIconForLanguage, onSelect, onUnpin }) =>
  */
 const ExplorerModal = ({ isOpen, onClose }) => {
   const [query, setQuery] = useState('')
+  const [activeTab, setActiveTab] = useState('all')
   const searchInputRef = useRef(null)
   const modalRef = useRef(null)
   const rafRef = useRef(null)
@@ -283,7 +284,7 @@ const ExplorerModal = ({ isOpen, onClose }) => {
   return createPortal(
     <div 
       className="explorer-modal-overlay" 
-      onClick={(e) => {
+      onMouseDown={(e) => {
         if (e.target === e.currentTarget) {
           onClose()
         }
@@ -318,10 +319,27 @@ const ExplorerModal = ({ isOpen, onClose }) => {
           />
         </div>
 
+        {/* Tabs */}
+        <div className="explorer-tabs">
+          <button 
+            className={`explorer-tab ${activeTab === 'all' ? 'active' : ''}`}
+            onClick={() => setActiveTab('all')}
+          >
+            All Notes
+          </button>
+          <button 
+            className={`explorer-tab ${activeTab === 'favorites' ? 'active' : ''}`}
+            onClick={() => setActiveTab('favorites')}
+          >
+            Favorites
+          </button>
+        </div>
+
         {/* Scrollable Body */}
         <div className="start-menu-body">
           
           {/* Pinned Section */}
+          {activeTab === 'favorites' && (
           <div className="start-section">
             <div className="start-section-header">
               <h3>Favorites</h3>
@@ -347,8 +365,10 @@ const ExplorerModal = ({ isOpen, onClose }) => {
               </DndContext>
             )}
           </div>
+          )}
 
           {/* Recommended / All Section */}
+          {activeTab === 'all' && (
           <div className="start-section">
             <div className="start-section-header">
               <h3>Recommended</h3>
@@ -388,6 +408,7 @@ const ExplorerModal = ({ isOpen, onClose }) => {
               </DndContext>
             )}
           </div>
+          )}
 
         </div>
 
