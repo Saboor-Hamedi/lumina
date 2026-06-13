@@ -1,13 +1,12 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
-import { X, Maximize2, Minimize2 } from 'lucide-react'
+import { X, Square, Copy, Network, RefreshCw, Layers } from 'lucide-react'
 import ForceGraph2D from 'react-force-graph-2d'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useAIStore } from '../../core/store/useAIStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { buildGraphData, buildSemanticLinks } from '../../core/utils/graphBuilder'
-import { forceRadial, forceManyBody, forceCollide } from 'd3-force'
+import { forceRadial, forceManyBody, forceCollide, forceCenter, forceX, forceY } from 'd3-force'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
-import GraphThemeSelector from './components/GraphThemeSelector'
 import './GraphNexus.css'
 import './components/GraphControls.css'
 
@@ -29,6 +28,7 @@ const GraphNexus = React.memo(({ isOpen = true, onClose, onNavigate, embedded = 
   const [hoverNode, setHoverNode] = useState(null)
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 })
   const [isMaximized, setIsMaximized] = useState(false)
+  const [isSpinning, setIsSpinning] = useState(false)
   const graphRef = useRef()
   const containerRef = useRef()
   const [dimensions, setDimensions] = useState({
@@ -90,13 +90,29 @@ const GraphNexus = React.memo(({ isOpen = true, onClose, onNavigate, embedded = 
     let nodes = rawData.nodes
     let links = [...rawData.links, ...semantic]
 
-    // Calculate Age Gravity
+    // Calculate Age Gravity and Tags
     const now = Date.now()
     const maxAge = 30 * 24 * 60 * 60 * 1000 // 30 days is "old"
 
+    // Count links per node for sizing and halo logic
+    const linkCounts = {}
+    links.forEach(l => {
+      const src = typeof l.source === 'object' ? l.source.id : l.source
+      const tgt = typeof l.target === 'object' ? l.target.id : l.target
+      linkCounts[src] = (linkCounts[src] || 0) + 1
+      linkCounts[tgt] = (linkCounts[tgt] || 0) + 1
+    })
+
     nodes.forEach((n) => {
+      n.linkCount = linkCounts[n.id] || 0
+      n.val = n.linkCount + 1 // Exponential scaling base
+
       if (n.snippetId) {
         const s = snippets.find((sn) => sn.id === n.snippetId)
+        if (s && s.tags) {
+          n.primaryTag = s.tags.split(',')[0].trim().toLowerCase()
+        }
+        
         const age = now - (s?.timestamp || now)
         // Normalized age: 0 (new) to 1 (old)
         n.ageFactor = Math.min(1, age / maxAge)
@@ -125,32 +141,80 @@ const GraphNexus = React.memo(({ isOpen = true, onClose, onNavigate, embedded = 
     }
   }, [graphData.nodes.length, isMaximized])
 
-  // D3 Forces Polish
+  // Physics Engine Setup
+  useEffect(() => {
+    if (!graphRef.current) return
+    const fg = graphRef.current
+    
+    const sizeMult = settings.graphNodeSize || 1.5
+
+    // Soft organic center force to prevent drifting off-screen
+    fg.d3Force('center', forceCenter(0, 0))
+    
+    // Remove strict constraints for organic shaping
+    fg.d3Force('x', null)
+    fg.d3Force('y', null)
+    fg.d3Force('radial', null)
+    
+    // High repulsion to separate distinct clusters clearly
+    fg.d3Force('charge', forceManyBody().strength(-350))
+    
+    // Strict collisions that dynamically scale with the user's Node Size setting
+    fg.d3Force('collide', forceCollide().radius(d => {
+      const baseR = d.val ? Math.max(2, Math.sqrt(d.val) * 2.5) : 2
+      return (baseR * sizeMult) + 12 // Beautiful, wide 12px airy gap between all nodes
+    }).strength(1))
+    
+    // Longer, gentler links to let the semantic clusters stretch out naturally
+    if (fg.d3Force('link')) fg.d3Force('link').distance(70).strength(0.4)
+    
+    // Reheat to apply new physical sizes
+    fg.d3ReheatSimulation()
+  }, [settings.graphNodeSize])
+
+  // Auto-Spin Logic
   useEffect(() => {
     if (!graphRef.current) return
     const fg = graphRef.current
 
-    // Universe Mode: Chronological Rings
-    fg.d3Force('center', null)
-    // Widen the universe rings significantly to spread out 200+ nodes
-    fg.d3Force('radial', forceRadial((d) => (d.ageFactor || 0.5) * 800, 0, 0).strength(0.5))
-    // Huge repulsion to keep them untangled
-    fg.d3Force('charge', forceManyBody().strength(-600))
-    // Hard collision based on their radius to guarantee no overlap
-    fg.d3Force('collide', forceCollide().radius(d => (d.val ? Math.max(4, Math.sqrt(d.val) * 5) : 4)).strength(1))
-    // Increase link distance so connected nodes don't pull into a tiny ball
-    if (fg.d3Force('link')) fg.d3Force('link').distance(150)
-  }, [])
+    if (isSpinning) {
+      const forceSpin = () => {
+        let nodes;
+        function force(alpha) {
+          if (!nodes) return;
+          for (let i = 0, n = nodes.length; i < n; ++i) {
+            const node = nodes[i];
+            const dx = node.x || 0;
+            const dy = node.y || 0;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > 0) {
+              // Apply tangential velocity for rotation
+              node.vx += (-dy / dist) * 1.5 * alpha;
+              node.vy += (dx / dist) * 1.5 * alpha;
+            }
+          }
+        }
+        force.initialize = function(_) { nodes = _; };
+        return force;
+      }
+
+      fg.d3Force('spin', forceSpin())
+      fg.d3ReheatSimulation()
+    } else {
+      fg.d3Force('spin', null)
+      fg.d3ReheatSimulation()
+    }
+  }, [isSpinning])
 
   // Precompute line colors to save 60,000+ calculations per second
   const defaultLineColor = useMemo(() => {
     const isSelectedTheme = graphTheme === 'space' || graphTheme === 'nebula'
-    return isSelectedTheme ? 'rgba(255, 255, 255, 0.15)' : 'rgba(150, 150, 150, 0.25)'
+    return isSelectedTheme ? 'rgba(255, 255, 255, 0.04)' : 'rgba(150, 150, 150, 0.08)' // Extremely faint so it's not muddy
   }, [graphTheme])
 
   const dimmedLineColor = useMemo(() => {
     const isSelectedTheme = graphTheme === 'space' || graphTheme === 'nebula'
-    return isSelectedTheme ? 'rgba(255, 255, 255, 0.03)' : 'rgba(150, 150, 150, 0.05)'
+    return isSelectedTheme ? 'rgba(255, 255, 255, 0.01)' : 'rgba(150, 150, 150, 0.02)'
   }, [graphTheme])
 
   if (!isOpen && !embedded) return null
@@ -168,12 +232,25 @@ const GraphNexus = React.memo(({ isOpen = true, onClose, onNavigate, embedded = 
     return neighbors
   }, [hoverNode, graphData.links])
 
+  // Deterministic color generation based on primary tag
+  const stringToColor = (str) => {
+    let hash = 0
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash)
+    }
+    const h = Math.abs(hash) % 360
+    return `hsl(${h}, 70%, 55%)`
+  }
+
   const nodeColor = (node) => {
-    const accent = settings.graphNodeColor || '#40bafa'
-    if (selectedSnippet && node.snippetId === selectedSnippet.id) return '#ffaa00'
-    if (node.group === 'ghost') return `${accent}66`
+    if (selectedSnippet && node.snippetId === selectedSnippet.id) return '#ffffff'
+    if (node.group === 'ghost') return 'rgba(150,150,150,0.3)'
     if (node.group === 'tag') return '#14b8a6'
-    return accent
+    
+    // Dynamic color by category/tag
+    if (node.primaryTag) return stringToColor(node.primaryTag)
+    
+    return settings.graphNodeColor || '#40bafa'
   }
 
   const paintNode = useCallback(
@@ -297,7 +374,7 @@ const GraphNexus = React.memo(({ isOpen = true, onClose, onNavigate, embedded = 
             }
           }}
           backgroundColor="transparent"
-          d3AlphaDecay={0.1}
+          d3AlphaDecay={isSpinning ? 0 : 0.05}
           cooldownTicks={50}
         />
       </div>
@@ -312,15 +389,36 @@ const GraphNexus = React.memo(({ isOpen = true, onClose, onNavigate, embedded = 
       onClick={(e) => e.stopPropagation()}
       data-graph-theme={graphTheme}
     >
-      <header className="nexus-header">
-        <div className="nexus-header-actions" style={{ marginLeft: 'auto' }}>
-          <GraphThemeSelector variant="button" size="large" />
-          <button className="nexus-maximize-btn" onClick={handleToggleMaximize} title={isMaximized ? 'Restore' : 'Maximize'}>
-            {isMaximized ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+      <header className="nexus-header" style={{ WebkitAppRegion: 'drag' }}>
+        <div className="nexus-title-stack">
+          <Network size={16} strokeWidth={2} color="var(--text-accent)" />
+          Graph Nexus
+        </div>
+        <div className="nexus-header-actions" style={{ WebkitAppRegion: 'no-drag' }}>
+          <button 
+            className="win-btn" 
+            onClick={() => {
+              const themes = ['default', 'space', 'nebula', 'frost', 'neural']
+              const next = themes[(themes.indexOf(graphTheme) + 1) % themes.length]
+              useSettingsStore.getState().updateSetting('graphTheme', next)
+            }} 
+            title="Cycle Space Theme"
+          >
+            <Layers size={14} />
+          </button>
+          <button 
+            className={`win-btn ${isSpinning ? 'active' : ''}`} 
+            onClick={() => setIsSpinning(!isSpinning)} 
+            title={isSpinning ? 'Stop Rotation' : 'Auto Rotate'}
+          >
+            <RefreshCw size={14} className={isSpinning ? 'spin-icon' : ''} />
+          </button>
+          <button className="win-btn" onClick={handleToggleMaximize} title={isMaximized ? 'Restore' : 'Maximize'}>
+            {isMaximized ? <Copy size={12} strokeWidth={2} /> : <Square size={12} strokeWidth={2} />}
           </button>
           {onClose && (
-            <button className="nexus-close-btn" onClick={onClose} title="Close">
-              <X size={20} />
+            <button className="win-btn close-btn" onClick={onClose} title="Close">
+              <X size={16} strokeWidth={1.5} />
             </button>
           )}
         </div>
@@ -361,14 +459,11 @@ const GraphNexus = React.memo(({ isOpen = true, onClose, onNavigate, embedded = 
             }
           }}
           backgroundColor="transparent"
-          d3AlphaDecay={0.1}
-          cooldownTicks={50}
+          d3AlphaDecay={isSpinning ? 0 : 0.05}
+          d3VelocityDecay={0.3}
+          cooldownTicks={100}
         />
       </div>
-
-      <footer className="nexus-footer">
-        <span className="nexus-footer-title">Graph Nexus</span>
-      </footer>
     </div>
   )
 

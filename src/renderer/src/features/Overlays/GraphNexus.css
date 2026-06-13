@@ -19,13 +19,15 @@
 .nexus-container {
   width: 95vw;
   height: 92vh;
-  background: var(--bg-app);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-main, 5px);
+  background: rgba(10, 10, 12, 0.7) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: var(--shadow-modal);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
 }
 
 /* Embedded mode (for tabs) - Just the graph visualization */
@@ -95,15 +97,49 @@
   justify-content: space-between;
   height: 36px;
   min-height: 36px;
-  padding: 0 0 0 12px;
+  padding: 0 0 0 12px; /* Flush right for native buttons */
   background: transparent;
   border-bottom: 1px solid var(--border-subtle);
+}
+
+.nexus-title-stack {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
 }
 
 .nexus-header-actions {
   display: flex;
   align-items: center;
+  gap: 0;
   height: 100%;
+}
+
+.win-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  border-radius: 0;
+}
+
+.win-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-main);
+}
+
+.win-btn.close-btn:hover {
+  background: #e81123;
+  color: #fff;
 }
 
 .nexus-close-btn,

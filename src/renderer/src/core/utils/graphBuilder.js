@@ -99,7 +99,7 @@ export const buildSemanticLinks = (nodes, links, snippets, embeddingsCache) => {
     
     // We modify the existing links array in-place or return new ones.
     const semanticLinks = []
-    const THRESHOLD = 0.65 // Similarity required
+    const THRESHOLD = 0.82 // Increased significantly to clean up the hairball
     
     // We only compare existing Real Nodes (snippets)
     const realNodes = nodes.filter(n => n.group === 'note')
