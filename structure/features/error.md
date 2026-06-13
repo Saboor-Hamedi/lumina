@@ -1,1 +1,10 @@
-<div class="tabbar-outer-wrapper" style="display: flex; width: 100%; position: relative;"><div class="workspace-tabbar" style="flex: 1 1 0%; min-height: 38px; background: transparent;"></div><div class="window-controls-float"><div class="control-btn" title="Drag to move window" style="app-region: drag; cursor: grab; opacity: 0.6;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-grip-horizontal" aria-hidden="true"><circle cx="12" cy="9" r="1"></circle><circle cx="19" cy="9" r="1"></circle><circle cx="5" cy="9" r="1"></circle><circle cx="12" cy="15" r="1"></circle><circle cx="19" cy="15" r="1"></circle><circle cx="5" cy="15" r="1"></circle></svg></div><button class="control-btn" title="Minimize"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-minus" aria-hidden="true"><path d="M5 12h14"></path></svg></button><button class="control-btn" title="Maximize"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect></svg></button><button class="control-btn close" title="Close"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div></div>
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, pleaseupdate: `npm i baseline-browser-mapping@latest -D`
+✓ 0 modules transformed.
+✗ Build failed in 938ms
+ ERROR  [vite:define] Transform failed with 1 error:
+B:/electron/lumina/src/main/index.js:159:2: ERROR: Expected ")" but found "}"
+file: B:/electron/lumina/src/main/index.js
+
+
+
+The error came when you added the saving state feature

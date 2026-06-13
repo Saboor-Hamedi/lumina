@@ -59,12 +59,15 @@ async function createWindow() {
   }
 
   const translucency = await SettingsManager.get('translucency')
+  const windowBounds = await SettingsManager.get('windowBounds') || { width: 900, height: 700 }
 
   mainWindow = new BrowserWindow({
-    width: 900,
-    height: 800,
-    minWidth: 800,
-    minHeight: 600,
+    width: windowBounds.width,
+    height: windowBounds.height,
+    x: windowBounds.x,
+    y: windowBounds.y,
+    minWidth: 400,
+    minHeight: 500,
     icon: appIcon, // Use nativeImage
     show: false,
     frame: false,
@@ -152,6 +155,14 @@ async function createWindow() {
       }
     } catch {}
     return { action: 'deny' }
+  })
+
+  // Save window bounds on close
+  mainWindow.on('close', () => {
+    if (mainWindow && !mainWindow.isMaximized() && !mainWindow.isMinimized()) {
+      const bounds = mainWindow.getBounds()
+      SettingsManager.set('windowBounds', bounds).catch(console.error)
+    }
   })
 
   const isDev = !app.isPackaged

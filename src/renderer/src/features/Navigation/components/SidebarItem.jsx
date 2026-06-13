@@ -6,7 +6,7 @@ import ConfirmModal from '../../Overlays/ConfirmModal'
 import ColorModal from '../../Overlays/ColorModal'
 import { getSnippetIcon } from '../../../core/utils/fileIconMapper.jsx'
 
-const SidebarItem = ({ snippet, isActive, onClick, style }) => {
+const SidebarItem = ({ snippet, isActive, onClick, style, variant = 'list', dndProps }) => {
   const { dirtySnippetIds, deleteSnippet, saveSnippet } = useVaultStore()
   const isDirty = dirtySnippetIds.includes(snippet.id)
 
@@ -74,7 +74,7 @@ const SidebarItem = ({ snippet, isActive, onClick, style }) => {
   }
 
   const menuOptions = [
-    { label: snippet.isPinned ? 'Unpin Note' : 'Pin to Top', icon: <Pin size={14} />, onClick: handleTogglePin },
+    { label: snippet.isPinned ? 'Remove from Favorites' : 'Add to Favorites', icon: <Star size={14} />, onClick: handleTogglePin },
     { label: 'Rename', icon: <Edit2 size={14} />, onClick: () => setIsRenaming(true) },
     { label: 'Color', icon: <Palette size={14} />, onClick: () => setShowColorPicker(true) },
     { label: 'Show in Explorer', icon: <ExternalLink size={14} />, onClick: () => window.api?.openVaultFolder?.() },
@@ -82,8 +82,82 @@ const SidebarItem = ({ snippet, isActive, onClick, style }) => {
     { label: 'Delete', icon: <Trash2 size={14} />, danger: true, onClick: () => setShowDeleteConfirm(true) }
   ]
 
+
+  const modals = (
+    <>
+      {contextMenu && (
+        <ContextMenu
+          {...contextMenu}
+          options={menuOptions}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
+
+      <ColorModal
+        isOpen={showColorPicker}
+        onClose={() => setShowColorPicker(false)}
+        currentColor={snippet.color}
+        onSelect={(colorId) => saveSnippet({ ...snippet, color: colorId })}
+      />
+
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Note?"
+        message={`Are you sure you want to delete "${snippet.title}"? This cannot be undone.`}
+      />
+    </>
+  )
+
+  if (variant === 'grid') {
+    return (
+      <div
+        ref={dndProps?.setNodeRef}
+        className="start-grid-item"
+        onClick={isRenaming ? null : onClick}
+        onContextMenu={handleContextMenu}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onDoubleClick={() => setIsRenaming(true)}
+        style={style}
+        title={isRenaming ? '' : `${snippet.title}${isDirty ? ' (Unsaved changes)' : ''}`}
+        {...(dndProps?.attributes || {})}
+        {...(dndProps?.listeners || {})}
+      >
+        <div className="icon-container" style={displayColor ? { color: displayColor } : undefined}>
+          {getIcon()}
+        </div>
+        
+        {isRenaming ? (
+          <input
+            ref={renameInputRef}
+            className="inline-rename-input grid-rename"
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onBlur={handleRename}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleRename()
+              if (e.key === 'Escape') {
+                  setIsRenaming(false)
+                  setRenameValue(snippet.title)
+              }
+            }}
+            onClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <span className="item-label" style={displayColor ? { color: displayColor } : undefined}>{snippet.title || 'Untitled'}</span>
+        )}
+
+        {modals}
+      </div>
+    )
+  }
+
   return (
     <div
+      ref={dndProps?.setNodeRef}
       className={`tree-item ${isActive ? 'active' : ''} ${isDirty ? 'is-dirty' : ''}`}
       onClick={isRenaming ? null : onClick}
       onContextMenu={handleContextMenu}
@@ -92,6 +166,8 @@ const SidebarItem = ({ snippet, isActive, onClick, style }) => {
       onDoubleClick={() => setIsRenaming(true)}
       style={style}
       title={isRenaming ? '' : `${snippet.title}${isDirty ? ' (Unsaved changes)' : ''}`}
+      {...(dndProps?.attributes || {})}
+      {...(dndProps?.listeners || {})}
     >
       <span className="item-icon-wrap" style={displayColor ? { color: displayColor } : undefined}>{getIcon()}</span>
       {displayColor && <span className="item-color-accent" style={{ background: displayColor }} />}
@@ -122,7 +198,7 @@ const SidebarItem = ({ snippet, isActive, onClick, style }) => {
               <button
                 className={`action-btn ${snippet.isPinned ? 'active' : ''}`}
                 onClick={handleTogglePin}
-                title={snippet.isPinned ? 'Unpin' : 'Pin'}
+                title={snippet.isPinned ? 'Remove from Favorites' : 'Add to Favorites'}
               >
                 <Star size={12} fill={snippet.isPinned ? 'currentColor' : 'none'} />
               </button>
@@ -132,28 +208,7 @@ const SidebarItem = ({ snippet, isActive, onClick, style }) => {
         {snippet.isPinned && !isHovered && <Star size={10} fill="currentColor" className="pin-icon" />}
       </div>
 
-      {contextMenu && (
-        <ContextMenu
-          {...contextMenu}
-          options={menuOptions}
-          onClose={() => setContextMenu(null)}
-        />
-      )}
-
-      <ColorModal
-        isOpen={showColorPicker}
-        onClose={() => setShowColorPicker(false)}
-        currentColor={snippet.color}
-        onSelect={(colorId) => saveSnippet({ ...snippet, color: colorId })}
-      />
-
-      <ConfirmModal
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={handleDeleteConfirm}
-        title="Delete Note?"
-        message={`Are you sure you want to delete "${snippet.title}"? This cannot be undone.`}
-      />
+      {modals}
     </div>
   )
 }

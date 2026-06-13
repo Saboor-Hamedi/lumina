@@ -23,6 +23,7 @@ import '../Overlays/ConfirmModal.css'
 import AIChatPanel from '../AI/AIChatPanel'
 import DetailsModal from '../Overlays/DetailsModal'
 import AIChatModal from '../Overlays/AIChatModal'
+import ExplorerModal from '../Overlays/ExplorerModal'
 import { useAIStore } from '../../core/store/useAIStore'
 import { X, Maximize2, Trash2, History } from 'lucide-react'
 
@@ -60,6 +61,7 @@ const AppShell = () => {
   const [showGraph, setShowGraph] = useState(false)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [showAIChatModal, setShowAIChatModal] = useState(false)
+  const [showExplorerModal, setShowExplorerModal] = useState(false)
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true)
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false)
   /**
@@ -503,6 +505,7 @@ const AppShell = () => {
                       onSave={saveSnippet}
                       onToggleInspector={handleToggleInspector}
                       isActive={isSelected}
+                      onToggleExplorerModal={() => setShowExplorerModal(prev => !prev)}
                     />
                   </ErrorBoundary>
                 </div>
@@ -677,6 +680,7 @@ const AppShell = () => {
         />
       )}
       {showThemeModal && <ThemeModal isOpen={showThemeModal} onClose={() => setShowThemeModal(false)} />}
+      <ExplorerModal isOpen={showExplorerModal} onClose={() => setShowExplorerModal(false)} />
       <DetailsModal
         isOpen={showDetailsModal}
         onClose={() => setShowDetailsModal(false)}

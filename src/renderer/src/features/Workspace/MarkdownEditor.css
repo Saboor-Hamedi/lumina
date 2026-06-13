@@ -472,6 +472,35 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  flex: 1; /* allow sides to take equal space */
+}
+
+.status-bar-right {
+  justify-content: flex-end;
+}
+
+.status-bar-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+.start-menu-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+
+.start-menu-button:hover {
+  background: var(--bg-hover);
+  color: var(--text-accent);
 }
 
 .status-bar .mode-toggle {

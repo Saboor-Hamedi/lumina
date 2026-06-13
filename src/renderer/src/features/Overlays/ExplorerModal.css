@@ -1,0 +1,271 @@
+.explorer-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 28px; /* Stop exactly above the StatusBar */
+  background: transparent;
+  z-index: 9999;
+}
+
+/* Base Start Menu Container */
+.start-menu-container {
+  position: absolute;
+  left: 50%;
+  margin-left: -175px;
+  bottom: 12px; /* Slightly lower to completely eliminate any visual gap */
+  width: 350px;
+  height: 70vh;
+  min-height: 450px;
+  max-height: 650px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  border-radius: 8px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform-origin: bottom center;
+  animation: startMenuSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  /* Optional: acrylic effect if supported by theme */
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  background-color: rgba(32, 32, 32, 0.7); /* translucent dark */
+}
+
+/* Search Bar */
+.start-menu-search {
+  margin: 32px 32px 16px 32px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.start-menu-search .search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--text-muted);
+}
+
+.start-menu-search input {
+  width: 100%;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 0 16px 0 40px;
+  color: var(--text-main);
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.start-menu-search input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--text-accent);
+}
+
+.start-menu-search input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Body */
+.start-menu-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Custom Scrollbar for Body */
+.start-menu-body::-webkit-scrollbar {
+  width: 6px;
+}
+.start-menu-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.start-menu-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+.start-menu-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Sections */
+.start-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.start-section-header h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0;
+  padding-left: 8px;
+}
+
+.sort-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.sort-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-main);
+}
+
+/* Pinned Grid */
+.start-grid {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  padding-bottom: 8px; /* Room for scrollbar */
+}
+
+/* Custom scrollbar for pinned grid */
+.start-grid::-webkit-scrollbar {
+  height: 4px;
+}
+.start-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+.start-grid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.start-grid-item {
+  flex: 0 0 auto;
+  width: 60px; /* Give them a fixed width so they don't squish */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+}
+
+.start-grid-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.pin-action-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  color: var(--text-muted);
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s;
+}
+
+.start-grid-item:hover .pin-action-btn,
+.recommended-item:hover .pin-action-btn {
+  opacity: 1;
+}
+
+.pin-action-btn:hover {
+  color: var(--text-main);
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.start-grid-item .icon-container {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent; /* or a subtle tint */
+}
+
+.icon-blue { color: #60A5FA; }
+.icon-purple { color: #A78BFA; }
+.icon-gray { color: #9CA3AF; }
+
+.start-grid-item .item-label {
+  font-size: 11px;
+  color: var(--text-main);
+  text-align: center;
+  width: 100%;
+  max-width: 50px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Recommended List / Tree Items */
+.recommended-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.start-section .tree-item {
+  padding: 6px 12px;
+  border-radius: 4px;
+}
+
+.start-section .tree-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.load-more-btn {
+  margin-top: 8px;
+  background: transparent;
+  border: 1px solid var(--border-dim);
+  color: var(--text-muted);
+  padding: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+  font-size: 0.85em;
+}
+
+.load-more-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+}
+
+/* Animations */
+@keyframes startMenuSlideUp {
+  from { opacity: 0; transform: translateY(40px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Helpers */
+.mt-4 { margin-top: 16px; }
+.empty-state {
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 32px;
+  text-align: center;
+}

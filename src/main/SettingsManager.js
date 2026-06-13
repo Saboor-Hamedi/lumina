@@ -30,7 +30,9 @@ class SettingsManager {
       // AI Settings
       deepSeekKey: null,
       deepSeekModel: 'deepseek-chat',
-      huggingFaceKey: null
+      huggingFaceKey: null,
+      // Window bounds
+      windowBounds: { width: 900, height: 700, x: null, y: null }
     }
     this.cache = null
     this.watcher = null

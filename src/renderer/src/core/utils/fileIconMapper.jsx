@@ -612,9 +612,9 @@ const getFileIcon = (title, language) => {
     'csv': FileJson,
 
     // Markdown
-    'md': Hash,
-    'markdown': Hash,
-    'mdx': Hash,
+    'md': FileText,
+    'markdown': FileText,
+    'mdx': FileText,
 
     // modern JS module types
     'mjs': FileCode,
@@ -687,8 +687,8 @@ const getFileIcon = (title, language) => {
     'html': FileCode,
     'css': FileCode,
     'json': FileJson,
-    'markdown': Hash,
-    'md': Hash,
+    'markdown': FileText,
+    'md': FileText,
     // Additional language identifiers
     'react': FileCode,
     'vue': FileCode,
