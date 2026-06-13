@@ -550,8 +550,8 @@
 
 .editor-canvas-wrap {
   width: 100%;
-  max-width: none; 
-  margin: 0;
+  max-width: 850px; 
+  margin: 0 auto;
   padding: 0 40px 40px 40px;
   display: flex;
   flex-direction: column;
@@ -617,12 +617,13 @@
 }
 
 .editor-large-title {
-  font-size: 18px;
+  font-size: 18px !important;
   font-weight: 800;
   border: none;
   background: transparent;
   color: var(--text-main);
-  padding: 0;
+  padding: 4px 0;
+  line-height: 1.4;
   margin-bottom: 5px;
   letter-spacing: -0.04em;
   width: 100%;

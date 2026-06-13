@@ -28,7 +28,10 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
   const [activeTab, setActiveTab] = useState(initialTab)
   const { showToast } = useToast()
   const { settings, updateSetting } = useSettingsStore()
-  const { caretWidth, caretColor, caretStyle, updateCaretWidth, updateCaretColor, updateCaretStyle } = useFontSettings()
+  const { 
+    caretWidth, caretColor, caretStyle, updateCaretWidth, updateCaretColor, updateCaretStyle,
+    editorFontFamily, editorFontSize, updateEditorFontFamily, updateEditorFontSize
+  } = useFontSettings()
 
   // Update activeTab when initialTab prop changes
   useEffect(() => {
@@ -321,8 +324,11 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                       <div className="row-hint">The font used in the editor area.</div>
                     </div>
                     <select
-                      value={settings.fontFamily}
-                      onChange={(e) => updateSetting('fontFamily', e.target.value)}
+                      value={editorFontFamily || settings.fontFamily || 'Inter'}
+                      onChange={(e) => {
+                        updateSetting('fontFamily', e.target.value)
+                        updateEditorFontFamily(e.target.value)
+                      }}
                       className="settings-select"
                     >
                       <option value="Inter">Inter (Default)</option>
@@ -339,12 +345,16 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                       <input
                         type="range"
                         min="12"
-                        max="24"
+                        max="18"
                         step="1"
-                        value={settings.fontSize}
-                        onChange={(e) => updateSetting('fontSize', parseInt(e.target.value))}
+                        value={parseInt(editorFontSize) || settings.fontSize || 14}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value)
+                          updateSetting('fontSize', val)
+                          updateEditorFontSize(val)
+                        }}
                       />
-                      <span>{settings.fontSize}px</span>
+                      <span>{parseInt(editorFontSize) || settings.fontSize || 14}px</span>
                     </div>
                   </div>
                   <div className="settings-row">

@@ -61,8 +61,8 @@ async function createWindow() {
   const translucency = await SettingsManager.get('translucency')
 
   mainWindow = new BrowserWindow({
-    width: 1000,
-    height: 700,
+    width: 900,
+    height: 800,
     minWidth: 800,
     minHeight: 600,
     icon: appIcon, // Use nativeImage
