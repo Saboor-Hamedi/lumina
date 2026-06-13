@@ -1,69 +1,63 @@
+/* Indexing Status Styles - Matched to ToastNotification */
 .indexing-status-container {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  top: 40px;
+  right: 20px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--text-accent);
   border-radius: 8px;
-  padding: 12px;
-  width: 200px;
+  padding: 12px 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  z-index: 10001;
+  width: 240px;
   display: flex;
-  align-items: center;
-  gap: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 9999;
-  animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  pointer-events: none; /* Don't intercept clicks */
+  flex-direction: column;
+  gap: 8px;
+  animation: indexingFadeIn 0.25s ease;
+  backdrop-filter: blur(12px);
+  pointer-events: none; /* Non-intrusive */
 }
 
 .indexing-status-container.complete {
-  border-color: var(--success-color, #10b981);
-  background-color: rgba(16, 185, 129, 0.05);
-  animation: completePulse 0.5s ease-out forwards, slideDownFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards 2.7s;
+  border-left-color: #22c55e;
+  animation: completePulse 0.5s ease-out forwards, indexingFadeOut 0.3s ease forwards 2.7s;
 }
 
-@keyframes slideUpFade {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@keyframes indexingFadeIn {
+  from { transform: translateY(-10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
-@keyframes slideDownFade {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(10px);
-  }
+@keyframes indexingFadeOut {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(-10px); opacity: 0; }
 }
 
 @keyframes completePulse {
   0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+  50% { transform: scale(1.02); }
   100% { transform: scale(1); }
 }
 
+.indexing-status-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .indexing-status-icon {
+  flex-shrink: 0;
+  color: var(--text-accent);
+  width: 16px;
+  height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  background-color: var(--bg-tertiary);
-  color: var(--text-secondary);
 }
 
 .indexing-status-container.complete .indexing-status-icon {
-  color: var(--success-color, #10b981);
-  background-color: transparent;
+  color: #22c55e;
 }
 
 .indexing-icon-spin {
@@ -71,58 +65,53 @@
 }
 
 @keyframes spin {
-  100% {
-    transform: rotate(360deg);
-  }
+  100% { transform: rotate(360deg); }
 }
 
-.indexing-status-content {
+.indexing-status-title-container {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.indexing-status-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-primary);
 }
 
 .indexing-status-title {
-  letter-spacing: 0.3px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-main);
 }
 
 .indexing-status-percent {
-  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-faint);
   font-variant-numeric: tabular-nums;
 }
 
+/* Slim progress bar */
 .indexing-status-bar-bg {
   width: 100%;
-  height: 4px;
-  background-color: var(--bg-tertiary);
+  height: 3px;
+  background-color: var(--bg-active);
   border-radius: 2px;
   overflow: hidden;
+  margin-top: 2px;
 }
 
 .indexing-status-bar-fill {
   height: 100%;
-  background-color: var(--accent-color);
+  background-color: var(--text-accent);
   transition: width 0.3s ease-out;
   border-radius: 2px;
 }
 
 .indexing-status-container.complete .indexing-status-bar-fill {
-  background-color: var(--success-color, #10b981);
+  background-color: #22c55e;
 }
 
 .indexing-status-details {
   font-size: 10px;
-  color: var(--text-secondary);
+  color: var(--text-faint);
   font-variant-numeric: tabular-nums;
-  margin-top: 1px;
+  margin-top: 2px;
 }

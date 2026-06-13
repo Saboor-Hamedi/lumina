@@ -789,23 +789,26 @@ app.whenReady().then(async () => {
     await VaultManager.init(savedVaultPath, app.getPath('documents'))
     await migrateFromSQLite()
 
-    // Auto-index vault in background (non-blocking)
+    // Auto-index vault in background (non-blocking, delayed to prevent boot stutter)
     if (savedVaultPath && typeof savedVaultPath === 'string') {
-      VaultIndexer.indexVault(savedVaultPath, { 
-        force: false,
-        onProgress: (stats) => {
-          if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('index:progress', stats)
+      setTimeout(() => {
+        console.info('[Main] Starting delayed background indexing...')
+        VaultIndexer.indexVault(savedVaultPath, { 
+          force: false,
+          onProgress: (stats) => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('index:progress', stats)
+            }
           }
-        }
-      })
-        .then(() => {
-          console.info('[Main] Background indexing complete, reloading search index...')
-          return VaultSearch.reload()
         })
-        .catch((err) => {
-          console.error('[Main] Background indexing failed:', err)
-        })
+          .then(() => {
+            console.info('[Main] Background indexing complete, reloading search index...')
+            return VaultSearch.reload()
+          })
+          .catch((err) => {
+            console.error('[Main] Background indexing failed:', err)
+          })
+      }, 3000)
     }
   } catch (err) {
     console.error('[Main] Initialization error:', err)

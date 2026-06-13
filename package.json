@@ -109,7 +109,7 @@
     "vitest": "^4.0.17"
   },
   "win": {
-    "icon": "build/icon.ico",
+    "icon": "resources/icon.ico",
     "publish": [
       {
         "provider": "github",

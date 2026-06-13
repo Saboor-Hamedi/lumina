@@ -11,18 +11,25 @@ const IndexingStatus = () => {
     if (!window.api?.onIndexProgress) return
 
     const unsubscribe = window.api.onIndexProgress((newStats) => {
+      // If the indexer instantly finishes and indexed 0 files, do not show the UI.
+      if (newStats.progress >= 100 && newStats.indexed === 0) {
+        setIsVisible(false)
+        setStats(null)
+        return
+      }
+
       setStats(newStats)
       setIsVisible(true)
       setIsComplete(false)
 
-      // If finished
+      // Check for completion
       if (newStats.progress >= 100 || newStats.indexed >= newStats.total) {
         setIsComplete(true)
         
-        // Hide after 3 seconds
+        // Hide automatically after 3 seconds
         setTimeout(() => {
           setIsVisible(false)
-          // Reset after fade out
+          // Clean up state after the fade-out animation
           setTimeout(() => {
             setStats(null)
             setIsComplete(false)
@@ -38,21 +45,21 @@ const IndexingStatus = () => {
 
   if (!isVisible || !stats) return null
 
-  // Ensure progress doesn't exceed 100 visually
+  // Ensure progress remains visually bounded between 0 and 100
   const safeProgress = Math.min(100, Math.max(0, stats.progress || 0))
 
   return (
     <div className={`indexing-status-container ${isComplete ? 'complete' : ''}`}>
-      <div className="indexing-status-icon">
-        {isComplete ? (
-          <CheckCircle2 size={14} className="indexing-icon-complete" />
-        ) : (
-          <Database size={14} className="indexing-icon-spin" />
-        )}
-      </div>
-      
-      <div className="indexing-status-content">
-        <div className="indexing-status-header">
+      <div className="indexing-status-header">
+        <div className="indexing-status-icon">
+          {isComplete ? (
+            <CheckCircle2 size={16} />
+          ) : (
+            <Database size={16} className="indexing-icon-spin" />
+          )}
+        </div>
+        
+        <div className="indexing-status-title-container">
           <span className="indexing-status-title">
             {isComplete ? 'Vault Indexed' : 'Indexing Vault'}
           </span>
@@ -60,20 +67,20 @@ const IndexingStatus = () => {
             {Math.round(safeProgress)}%
           </span>
         </div>
-        
-        <div className="indexing-status-bar-bg">
-          <div 
-            className="indexing-status-bar-fill" 
-            style={{ width: `${safeProgress}%` }}
-          />
-        </div>
-        
-        <div className="indexing-status-details">
-          {stats.indexed} of {stats.total} files
-        </div>
+      </div>
+      
+      <div className="indexing-status-bar-bg">
+        <div 
+          className="indexing-status-bar-fill" 
+          style={{ width: `${safeProgress}%` }}
+        />
+      </div>
+      
+      <div className="indexing-status-details">
+        Processed {stats.indexed} of {stats.total} files
       </div>
     </div>
   )
 }
 
-export default IndexingStatus
+export default React.memo(IndexingStatus)

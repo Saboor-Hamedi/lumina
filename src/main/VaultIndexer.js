@@ -268,23 +268,52 @@ class VaultIndexer {
   }
 
   /**
+   * Fast check if file needs indexing without reading contents
+   */
+  async needsIndexing(filePath, force = false, state = null) {
+    if (force) return true
+    
+    try {
+      const stats = await fs.stat(filePath)
+      if (!state?.files?.[filePath]) return true
+
+      const fileState = state.files[filePath]
+      if (fileState.mtime === stats.mtimeMs && fileState.size === stats.size && fileState.indexed) {
+        return false
+      }
+      return true
+    } catch (err) {
+      return true
+    }
+  }
+
+  /**
    * Index a single file
    */
   async indexFile(filePath, force = false) {
     try {
       const stats = await fs.stat(filePath)
-      const checksum = await this.computeChecksum(filePath)
       const state = await this.loadState()
 
-      // Check if file needs re-indexing
+      // Quick fast-path check without reading file content or hashing
       if (!force && state?.files?.[filePath]) {
         const fileState = state.files[filePath]
         if (
+          fileState.size === stats.size &&
           fileState.mtime === stats.mtimeMs &&
-          fileState.checksum === checksum &&
           fileState.indexed
         ) {
           return { indexed: false, reason: 'unchanged' }
+        }
+      }
+
+      // If file size/mtime changed (or it's new), compute checksum to be absolutely sure
+      const checksum = await this.computeChecksum(filePath)
+      
+      if (!force && state?.files?.[filePath]) {
+        const fileState = state.files[filePath]
+        if (fileState.checksum === checksum && fileState.indexed) {
+          return { indexed: false, reason: 'unchanged_checksum' }
         }
       }
 
@@ -541,14 +570,41 @@ class VaultIndexer {
       // Get all text files
       const files = await this.scanVaultFiles(vaultPath)
       this.stats.totalFiles = files.length
+      const state = await this.loadState()
+      const filesToProcess = (await Promise.all(
+        files.map(async (filePath) => {
+          return (await this.needsIndexing(filePath, force, state)) ? filePath : null
+        })
+      )).filter(Boolean)
 
-      console.info(`[VaultIndexer] Starting index of ${files.length} files...`)
+      if (filesToProcess.length === 0) {
+        console.info('[VaultIndexer] ✓ Index up to date (0 files modified)')
+        return {
+          indexedFiles: 0,
+          totalChunks: this.stats.totalChunks,
+          errors: 0
+        }
+      }
+
+      console.info(`[VaultIndexer] Found ${filesToProcess.length} files that need indexing`)
+
+      // Broadcast initial progress immediately so UI pops up before ONNX model blocks thread
+      if (onProgress) {
+        onProgress({
+          progress: 0,
+          indexed: 0,
+          total: filesToProcess.length,
+          chunks: this.stats.totalChunks
+        })
+      }
 
       // Index files (with rate limiting for CPU/Memory)
       const batchSize = 1 // Process one file at a time to prevent blocking the main thread
-      for (let i = 0; i < files.length; i += batchSize) {
-        const batch = files.slice(i, i + batchSize)
+      for (let i = 0; i < filesToProcess.length; i += batchSize) {
+        const batch = filesToProcess.slice(i, i + batchSize)
         
+        let didWork = false
+
         await Promise.all(
           batch.map(async (filePath) => {
             try {
@@ -556,6 +612,7 @@ class VaultIndexer {
               if (result.indexed) {
                 this.stats.indexedFiles++
                 this.stats.totalChunks += result.chunkCount
+                didWork = true
               }
             } catch (err) {
               this.stats.errors++
@@ -564,24 +621,36 @@ class VaultIndexer {
           })
         )
 
-        // Yield to event loop between files to ensure the app remains fully responsive
-        // A full 50ms break lets Electron flush IPC and garbage collect
-        await new Promise(resolve => setTimeout(resolve, 50))
+        // Only yield the heavy 50ms break if we ACTUALLY did ML inference.
+        // If we just skipped a file, proceed instantly.
+        if (didWork) {
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
 
         if (onProgress) {
           onProgress({
-            progress: ((i + batch.length) / files.length) * 100,
+            progress: ((i + batch.length) / filesToProcess.length) * 100,
             indexed: this.stats.indexedFiles,
-            total: files.length,
+            total: filesToProcess.length,
             chunks: this.stats.totalChunks
           })
         }
       }
 
       // Save stats
-      const state = await this.loadState()
-      state.stats = this.stats
-      await fs.writeFile(this.statePath, JSON.stringify(state, null, 2), 'utf-8')
+      const stateUpdate = await this.loadState()
+      stateUpdate.stats = this.stats
+      await fs.writeFile(this.statePath, JSON.stringify(stateUpdate, null, 2), 'utf-8')
+
+      // Final progress broadcast to ensure UI closes
+      if (onProgress) {
+        onProgress({
+          progress: 100,
+          indexed: this.stats.indexedFiles,
+          total: filesToProcess.length,
+          chunks: this.stats.totalChunks
+        })
+      }
 
       console.info(`[VaultIndexer] ✓ Index complete: ${this.stats.indexedFiles} files, ${this.stats.totalChunks} chunks`)
 
@@ -618,12 +687,12 @@ class VaultIndexer {
       try {
         const entries = await fs.readdir(dir, { withFileTypes: true })
         
-        for (const entry of entries) {
+        await Promise.all(entries.map(async (entry) => {
           const fullPath = path.join(dir, entry.name)
           
           // Skip hidden files and common ignore patterns
           if (entry.name.startsWith('.') || entry.name === 'node_modules' || entry.name === '.git') {
-            continue
+            return
           }
 
           if (entry.isDirectory()) {
@@ -634,7 +703,7 @@ class VaultIndexer {
               files.push(fullPath)
             }
           }
-        }
+        }))
       } catch (err) {
         console.warn(`[VaultIndexer] Error scanning ${dir}:`, err)
       }
