@@ -345,7 +345,7 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                       <input
                         type="range"
                         min="12"
-                        max="18"
+                        max="28"
                         step="1"
                         value={parseInt(editorFontSize) || settings.fontSize || 14}
                         onChange={(e) => {

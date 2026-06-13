@@ -1,18 +1,13 @@
-import { Files, Search, Settings, Network, ArrowUpCircle, RefreshCw, Palette, Calendar } from 'lucide-react'
+import React from 'react'
+import { Network, Calendar, Palette, Settings, ArrowUpCircle, RefreshCw } from 'lucide-react'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import './ActivityBar.css'
 
 /**
- * ActivityBar Component
- * Sidebar navigation with file explorer, search, graph view, and settings.
- *
- * Graph view opens as a tab when clicked (not just switching view).
- * This allows users to switch between graph and notes seamlessly via tabs.
- *
- * Explorer icon toggles the left sidebar (like VSCode).
+ * Floating ActivityBar Component
  */
-const ActivityBar = ({ activeTab, onTabChange, onSettingsClick, onThemeClick = () => {}, onToggleSidebar, isLeftSidebarOpen, onToggleGraph }) => {
+const ActivityBar = ({ onSettingsClick, onThemeClick, onToggleGraph }) => {
   const { status, progress, download, install } = useUpdateStore()
   const { snippets, saveSnippet, setSelectedSnippet } = useVaultStore()
 
@@ -34,7 +29,6 @@ const ActivityBar = ({ activeTab, onTabChange, onSettingsClick, onThemeClick = (
       await saveSnippet(newNote)
       setSelectedSnippet(newNote)
     }
-    onTabChange('files')
   }
 
   const handleUpdateClick = () => {
@@ -43,40 +37,8 @@ const ActivityBar = ({ activeTab, onTabChange, onSettingsClick, onThemeClick = (
   }
 
   return (
-    <div className="activity-bar">
+    <div className="activity-bar floating">
       <div className="bar-top">
-        <button
-          className={`bar-item ${activeTab === 'files' ? 'active' : ''}`}
-          onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            if (onToggleSidebar) {
-              onToggleSidebar()
-            }
-            onTabChange('files')
-          }}
-          title="Explorer (Toggle sidebar)"
-        >
-          <Files size={24} strokeWidth={1.5} />
-        </button>
-        <button
-          className={`bar-item ${activeTab === 'search' ? 'active' : ''}`}
-          onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            if (activeTab === 'search' && onToggleSidebar) {
-              onToggleSidebar()
-            } else {
-              onTabChange('search')
-              if (!isLeftSidebarOpen && onToggleSidebar) {
-                onToggleSidebar()
-              }
-            }
-          }}
-          title="Search (Toggle sidebar)"
-        >
-          <Search size={24} strokeWidth={1.5} />
-        </button>
         <button
           className="bar-item"
           onClick={(e) => {
@@ -86,14 +48,14 @@ const ActivityBar = ({ activeTab, onTabChange, onSettingsClick, onThemeClick = (
           }}
           title="Graph View"
         >
-          <Network size={24} strokeWidth={1.5} />
+          <Network size={20} strokeWidth={1.5} />
         </button>
         <button
           className="bar-item"
           onClick={handleDailyNote}
           title="Today's Note"
         >
-          <Calendar size={24} strokeWidth={1.5} />
+          <Calendar size={20} strokeWidth={1.5} />
         </button>
       </div>
 
@@ -121,17 +83,17 @@ const ActivityBar = ({ activeTab, onTabChange, onSettingsClick, onThemeClick = (
           >
             {status === 'ready' || status === 'checking' ? (
               <RefreshCw
-                size={22}
+                size={20}
                 className={`spin-slow ${status === 'checking' ? 'checking-spin' : ''}`}
                 style={{ opacity: status === 'checking' ? 0.5 : 1 }}
               />
             ) : status === 'error' ? (
               <div style={{ color: '#ef4444' }}>
-                <ArrowUpCircle size={22} />
+                <ArrowUpCircle size={20} />
               </div>
             ) : (
               <ArrowUpCircle
-                size={22}
+                size={20}
                 color="var(--text-accent)"
                 style={{ opacity: status === 'idle' ? 0.3 : 1 }}
               />
@@ -143,16 +105,21 @@ const ActivityBar = ({ activeTab, onTabChange, onSettingsClick, onThemeClick = (
             )}
           </button>
         )}
+        
         <button
           className="bar-item"
-          title="Themes"
           onClick={onThemeClick}
-          style={{ color: 'var(--icon-primary, var(--text-accent))' }}
+          title="Theme"
         >
-          <Palette size={22} strokeWidth={1.5} />
+          <Palette size={20} strokeWidth={1.5} />
         </button>
-        <button className="bar-item" title="Settings" onClick={onSettingsClick}>
-          <Settings size={22} strokeWidth={1.5} />
+
+        <button
+          className="bar-item"
+          onClick={onSettingsClick}
+          title="Settings"
+        >
+          <Settings size={20} strokeWidth={1.5} />
         </button>
       </div>
     </div>

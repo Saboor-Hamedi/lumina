@@ -20,13 +20,15 @@ const StatusBar = ({ wordCount, onToggleMode, mode, onToggleExplorerModal }) => 
         </span>
       </div>
       
-      <div className="status-bar-center">
+      <div className="status-bar-center" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
         <div 
           className="start-menu-button" 
           onClick={onToggleExplorerModal}
-          title="Open Explorer (Start Menu)"
+          title="Open Start Menu"
+          style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', padding: '0 8px', height: '24px', borderRadius: '4px', color: 'var(--text-muted)' }}
         >
           <LayoutGrid size={14} />
+          <span>Start</span>
         </div>
       </div>
 

@@ -36,7 +36,7 @@ const searchHighlightField = StateField.define({
 })
 
 const MarkdownEditor = React.memo(
-  ({ snippet, onSave, onToggleInspector, isActive = true, onToggleExplorerModal }) => {
+  ({ snippet, onSave, onToggleInspector, isActive = true, onToggleExplorerModal, onSettingsClick, onThemeClick, onGraphClick, onDailyNoteClick }) => {
     const { toast, showToast, clearToast } = useToast()
     const [isSaving, setIsSaving] = useState(false)
     const isMountedRef = useRef(true)
@@ -555,6 +555,10 @@ const MarkdownEditor = React.memo(
         <StatusBar 
           wordCount={snippet?.code ? snippet.code.trim().split(/\s+/).filter(Boolean).length : 0} 
           onToggleExplorerModal={onToggleExplorerModal}
+          onSettingsClick={onSettingsClick}
+          onThemeClick={onThemeClick}
+          onGraphClick={onGraphClick}
+          onDailyNoteClick={onDailyNoteClick}
         />
       </div>
     )

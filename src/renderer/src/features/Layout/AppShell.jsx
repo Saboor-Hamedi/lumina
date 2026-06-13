@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import ActivityBar from '../Navigation/ActivityBar'
-import FileExplorer from '../Navigation/FileExplorer'
-import SearchSidebar from '../Navigation/SearchSidebar'
 import MarkdownEditor from '../Workspace/MarkdownEditor'
 import SettingsModal from '../Overlays/SettingsModal'
+import ActivityBar from '../Navigation/ActivityBar'
 import ThemeModal from '../Overlays/ThemeModal'
 import CommandPalette from '../Overlays/CommandPalette'
 import GraphNexus from '../Overlays/GraphNexus'
@@ -448,31 +446,7 @@ const AppShell = () => {
       }}
     >
 
-      <aside className="shell-sidebar-left">
-        <ErrorBoundary>
-          {activeTab === 'search' ? (
-            <SearchSidebar onNavigate={() => { }} />
-          ) : (
-            <FileExplorer onNavigate={() => setActiveTab('files')} />
-          )}
-        </ErrorBoundary>
-        {isLeftSidebarOpen && (
-          <div
-            className="sidebar-resizer left"
-            onMouseDown={() => setResizingSide('left')}
-          />
-        )}
-      </aside>
       <main className="shell-main">
-        <ActivityBar
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          onSettingsClick={() => setShowSettings(true)}
-          onThemeClick={() => setShowThemeModal(true)}
-          onToggleSidebar={() => setIsLeftSidebarOpen((prev) => !prev)}
-          onToggleGraph={() => setShowGraph(true)}
-          isLeftSidebarOpen={isLeftSidebarOpen}
-        />
         {/* Show TabBar even if no tabs are open so WindowControls remain visible */}
         {(activeTab === 'files' || activeTab === 'search') && <TabBar />}
 
@@ -506,6 +480,10 @@ const AppShell = () => {
                       onToggleInspector={handleToggleInspector}
                       isActive={isSelected}
                       onToggleExplorerModal={() => setShowExplorerModal(prev => !prev)}
+                      onSettingsClick={() => setShowSettings(true)}
+                      onThemeClick={() => setShowThemeModal(true)}
+                      onGraphClick={() => setShowGraph(true)}
+                      onDailyNoteClick={handleNew}
                     />
                   </ErrorBoundary>
                 </div>
@@ -516,10 +494,25 @@ const AppShell = () => {
           <div className="shell-main-placeholder" />
         ) : (
           <ErrorBoundary>
-            <Dashboard onNew={handleNew} />
+            <Dashboard 
+              onNew={handleNew} 
+              onToggleExplorerModal={() => setShowExplorerModal(prev => !prev)}
+              onSettingsClick={() => setShowSettings(true)}
+              onThemeClick={() => setShowThemeModal(true)}
+              onGraphClick={() => setShowGraph(true)}
+              onDailyNoteClick={handleNew}
+            />
           </ErrorBoundary>
         )}
       </main>
+
+      {/* Floating ActivityBar */}
+      <ActivityBar 
+        onSettingsClick={() => setShowSettings(true)}
+        onThemeClick={() => setShowThemeModal(true)}
+        onToggleGraph={() => setShowGraph(true)}
+      />
+
       <aside className="shell-sidebar-right">
         {isRightSidebarOpen && (
           <div
