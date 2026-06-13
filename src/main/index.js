@@ -38,25 +38,10 @@ async function migrateFromSQLite() {
 }
 
 async function createWindow() {
-  let iconPath
-  if (app.isPackaged) {
-    iconPath = join(process.resourcesPath, 'icon.ico')
-  } else {
-    // In dev, icon is in project root/resources
-    iconPath = join(__dirname, '../../resources/icon.ico')
-  }
-  
-  console.log('[Main] Resolving Icon Path:', iconPath)
-
-  // Create native image helps with taskbar icon consistency
-  const { nativeImage } = electron
-  const appIcon = nativeImage.createFromPath(iconPath)
-  
-  if (appIcon.isEmpty()) {
-    console.error(`[Main] Icon is empty! Failed to load from: ${iconPath}`)
-  } else {
-    console.log('[Main] Icon loaded successfully')
-  }
+  const iconPath = app.isPackaged 
+    ? join(process.resourcesPath, 'icon.ico') 
+    : join(app.getAppPath(), 'resources', 'icon.ico')
+  const appIcon = electron.nativeImage.createFromPath(iconPath)
 
   const translucency = await SettingsManager.get('translucency')
   const windowBounds = await SettingsManager.get('windowBounds') || { width: 900, height: 700 }
@@ -68,7 +53,7 @@ async function createWindow() {
     y: windowBounds.y,
     minWidth: 400,
     minHeight: 500,
-    icon: appIcon, // Use nativeImage
+    icon: appIcon,
     show: false,
     frame: false,
     transparent: translucency,

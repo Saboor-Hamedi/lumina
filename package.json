@@ -1,6 +1,6 @@
 {
   "name": "lumina",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Lumina - A premium, vault-based snippet sanctuary.",
   "main": "./out/main/index.js",
   "author": "Saboor Hamedi",
@@ -18,7 +18,7 @@
     "build:mac": "npm run build && electron-builder --mac",
     "build:linux": "npm run build && electron-builder --linux",
     "dist:publish": "npm run build && dotenv -- electron-builder --win --publish always",
-    "make:icons": "npx electron-icon-maker --input resources/icon.png --output build",
+    "make:icons": "npx electron-icon-maker --input resources/icon.png --output build && copy build\\icons\\win\\icon.ico resources\\icon.ico /Y",
     "analyze": "electron-vite build --mode analyze",
     "analyze:bundle": "node scripts/analyze-bundle.js",
     "workbench": "node scripts/workbench.js",
@@ -109,7 +109,7 @@
     "vitest": "^4.0.17"
   },
   "win": {
-    "icon": "resources/icon.ico",
+    "icon": "build/icons/win/icon.ico",
     "publish": [
       {
         "provider": "github",
