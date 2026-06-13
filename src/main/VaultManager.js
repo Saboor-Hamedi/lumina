@@ -46,6 +46,10 @@ class VaultManager {
     await this.scanVault()
 
     // Watch for changes
+    this.setupWatcher()
+  }
+
+  setupWatcher() {
     if (this.watcher) this.watcher.close()
     this.watcher = chokidar.watch(this.vaultPath, {
       ignored: /(^|[\/\\])\../,
@@ -297,6 +301,12 @@ class VaultManager {
 
   async renameFolder(oldPath, newPath) {
     if (!this.vaultPath) throw new Error('No vault open')
+    
+    // Temporarily close watcher to release Windows directory locks
+    if (this.watcher) {
+      await this.watcher.close()
+    }
+
     try {
       const fullOldPath = path.join(this.vaultPath, oldPath)
       const fullNewPath = path.join(this.vaultPath, newPath)
@@ -314,15 +324,23 @@ class VaultManager {
         }
       }
       
+      this.setupWatcher()
       return true
     } catch (err) {
       console.error('[VaultManager] Rename folder failed:', err)
+      this.setupWatcher()
       throw err
     }
   }
 
   async deleteFolder(folderPath) {
     if (!this.vaultPath) throw new Error('No vault open')
+    
+    // Temporarily close watcher to release Windows directory locks
+    if (this.watcher) {
+      await this.watcher.close()
+    }
+
     try {
       const fullPath = path.join(this.vaultPath, folderPath)
       await fs.rm(fullPath, { recursive: true, force: true })
@@ -335,9 +353,11 @@ class VaultManager {
           this.snippets.delete(id)
         }
       }
+      this.setupWatcher()
       return true
     } catch (err) {
       console.error('[VaultManager] Delete folder failed:', err)
+      this.setupWatcher()
       throw err
     }
   }

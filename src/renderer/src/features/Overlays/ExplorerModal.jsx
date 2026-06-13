@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { Search, FileText, FileCode, Pin, PinOff, ArrowUpDown, RefreshCw, FolderPlus, Palette, Edit2, Trash2 } from 'lucide-react'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
-import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, TouchSensor, useDraggable, DragOverlay, defaultDropAnimationSideEffects, useDndContext } from '@dnd-kit/core'
+import { DndContext, closestCenter, pointerWithin, useSensor, useSensors, PointerSensor, TouchSensor, useDraggable, DragOverlay, defaultDropAnimationSideEffects, useDndContext } from '@dnd-kit/core'
 import { SortableContext, useSortable, horizontalListSortingStrategy, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { createPortal } from 'react-dom'
@@ -179,8 +179,8 @@ const DroppableRootZone = React.memo(() => {
         borderRadius: '8px',
         textAlign: 'center',
         color: isOver ? 'var(--accent-primary)' : 'var(--text-muted)',
-        background: isOver ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
-        boxShadow: isOver ? '0 0 16px rgba(59, 130, 246, 0.3)' : 'none',
+        background: isOver ? 'rgba(59, 130, 246, 0.05)' : 'transparent',
+        boxShadow: isOver ? '0 0 8px rgba(59, 130, 246, 0.15)' : 'none',
         transition: 'all 0.2s',
         fontSize: '13px',
         fontWeight: 500
@@ -541,6 +541,7 @@ const ExplorerModal = ({ isOpen, onClose }) => {
           const newPath = targetFolderId ? `${targetFolderId}/${folderName}` : folderName
           try {
             await window.api.renameFolder(sourceFolderId, newPath)
+            setExpandedFolders(prev => new Set(prev).add(targetFolderId))
             await loadVault()
           } catch (e) {
             console.error('Failed to move folder:', e)
@@ -559,6 +560,7 @@ const ExplorerModal = ({ isOpen, onClose }) => {
         if (activeSnippet && activeSnippet.folderId !== targetFolderId) {
           try {
             await saveSnippet({ ...activeSnippet, folderId: targetFolderId })
+            setExpandedFolders(prev => new Set(prev).add(targetFolderId))
           } catch (e) {
             console.error('Failed to move snippet to folder:', e)
           }
@@ -735,7 +737,7 @@ const ExplorerModal = ({ isOpen, onClose }) => {
             {pinnedSnippets.length === 0 ? (
               <div className="empty-state">No favorite notes</div>
             ) : (
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSortDragEnd}>
+              <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={handleSortDragEnd}>
                 <SortableContext items={pinnedSnippets.map(s => s.id)} strategy={verticalListSortingStrategy}>
                   <div className="recommended-list" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                     {pinnedSnippets.map(snippet => (
@@ -812,7 +814,7 @@ const ExplorerModal = ({ isOpen, onClose }) => {
             ) : (
               <DndContext 
                 sensors={sensors} 
-                collisionDetection={closestCenter} 
+                collisionDetection={pointerWithin} 
                 onDragStart={handleListDragStart}
                 onDragEnd={handleListDragEnd}
               >
