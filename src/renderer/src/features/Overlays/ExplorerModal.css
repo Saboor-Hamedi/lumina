@@ -291,6 +291,69 @@
   color: var(--text-main);
 }
 
+.start-section .tree-item .folder-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Nested creation buttons (appear on hover) */
+.folder-tree-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.folder-tree-actions {
+  display: flex;
+  opacity: 0;
+  gap: 4px;
+  transition: opacity 0.2s ease;
+}
+
+.folder-tree-item:hover .folder-tree-actions {
+  opacity: 1;
+}
+
+.folder-action-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.folder-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+/* Inline Input */
+.creating-input {
+  background: var(--bg-hover) !important;
+}
+
+.inline-create-input {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  width: 100%;
+  outline: none;
+}
+
+.inline-create-input::placeholder {
+  color: var(--text-muted);
+}
+
 .start-section .tree-item .item-meta-right {
   display: flex;
   align-items: center;
@@ -319,6 +382,22 @@
 .start-section .tree-item .action-btn:hover {
   background: rgba(255, 255, 255, 0.1);
   color: var(--text-main);
+}
+
+.start-section .folder-tree-item:hover {
+  background: var(--bg-hover);
+}
+
+.folder-tree-item.folder-over {
+  background: var(--accent-primary);
+  color: white;
+}
+
+.folder-tree-item.folder-over .folder-chevron,
+.folder-tree-item.folder-over .folder-icon-color {
+  color: white;
+  fill: white;
+  fill-opacity: 1;
 }
 
 .start-section .tree-item:hover {

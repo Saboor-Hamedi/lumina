@@ -608,8 +608,15 @@ app.whenReady().then(async () => {
     return updatedSnippet
   })
   ipcMain.handle('vault:saveImage', (_, { buffer, name }) => VaultManager.saveImage(buffer, name))
-  ipcMain.handle('vault:deleteSnippet', (_, id) => VaultManager.deleteSnippet(id))
-  ipcMain.handle('vault:open-folder', () => {
+  ipcMain.handle('vault:deleteSnippet', async (_, id) => await VaultManager.deleteSnippet(id))
+  
+  // Folder IPC
+  ipcMain.handle('vault:createFolder', async (_, path) => await VaultManager.createFolder(path))
+  ipcMain.handle('vault:renameFolder', async (_, oldPath, newPath) => await VaultManager.renameFolder(oldPath, newPath))
+  ipcMain.handle('vault:deleteFolder', async (_, path) => await VaultManager.deleteFolder(path))
+
+  // System
+  ipcMain.handle('dialog:showOpenDialog', async (_, options) => {
     if (VaultManager.vaultPath) shell.openPath(VaultManager.vaultPath)
   })
 

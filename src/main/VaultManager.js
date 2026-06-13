@@ -29,6 +29,7 @@ class VaultManager {
     this.vaultPath = null
     this.watcher = null
     this.snippets = new Map()
+    this.folders = new Set()
   }
 
   async init(userPath, defaultDocPath) {
@@ -67,9 +68,26 @@ class VaultManager {
 
     // Silent scan
     try {
-      const files = await fs.readdir(this.vaultPath)
-      const mdFiles = files.filter((f) => f.endsWith('.md'))
-      // Silent count
+      const mdFiles = []
+      const foundFolders = new Set()
+      
+      const walk = async (dir, relativePath = '') => {
+        const entries = await fs.readdir(dir, { withFileTypes: true })
+        for (const entry of entries) {
+          if (entry.name === '.git' || entry.name === 'assets' || entry.name.startsWith('.')) continue
+          const fullPath = path.join(dir, entry.name)
+          // Always use forward slashes for cross-platform robustness
+          const relPath = relativePath ? `${relativePath}/${entry.name}` : entry.name
+          if (entry.isDirectory()) {
+            foundFolders.add(relPath)
+            await walk(fullPath, relPath)
+          } else if (entry.isFile() && entry.name.endsWith('.md')) {
+            mdFiles.push({ fileName: entry.name, folderId: relativePath })
+          }
+        }
+      }
+      
+      await walk(this.vaultPath)
 
       const newSnippets = []
       
@@ -78,9 +96,10 @@ class VaultManager {
       for (let i = 0; i < mdFiles.length; i += BATCH_SIZE) {
         const batch = mdFiles.slice(i, i + BATCH_SIZE)
         
-        const batchResults = await Promise.all(batch.map(async (fileName) => {
+        const batchResults = await Promise.all(batch.map(async (fileObj) => {
           try {
-            const filePath = path.join(this.vaultPath, fileName)
+            const { fileName, folderId } = fileObj
+            const filePath = path.join(this.vaultPath, folderId, fileName)
             const stats = await fs.stat(filePath)
             const rawContent = await fs.readFile(filePath, 'utf-8')
 
@@ -111,7 +130,8 @@ class VaultManager {
               color: null,
               type: 'snippet',
               is_draft: 0,
-              fileName: fileName
+              fileName: fileName,
+              folderId: folderId || ''
             }
           } catch (fileErr) {
             console.error(`[VaultManager] ✗ Failed to read file ${fileName}:`, fileErr)
@@ -124,11 +144,12 @@ class VaultManager {
       }
 
       this.snippets = new Map(newSnippets.map((s) => [s.id, s]))
+      this.folders = foundFolders
       // Scan complete
-      return newSnippets
+      return { snippets: newSnippets, folders: Array.from(foundFolders) }
     } catch (err) {
       console.error('[VaultManager] ✗ Error scanning vault:', err)
-      return null // Return null to indicate FAILURE (vs empty array)
+      return { snippets: [], folders: [] } // Return empty structure on failure
     }
   }
 
@@ -160,25 +181,29 @@ class VaultManager {
     // Use cleaned title for filename
     const finalTitle = cleanedTitle || 'untitled'
     let newFileName = finalTitle.endsWith('.md') ? finalTitle : `${finalTitle}.md`
+    const relativeFolder = snippet.folderId || ''
 
-    if (oldSnippet && oldSnippet.fileName && oldSnippet.fileName !== newFileName) {
-      const oldPath = path.join(this.vaultPath, oldSnippet.fileName)
-      try {
-        await fs.unlink(oldPath)
-        console.info('[VaultManager] ✓ Deleted old file after rename:', oldSnippet.fileName)
-      } catch (err) {
-        console.warn(
-          '[VaultManager] Warning: Could not delete old file:',
-          oldSnippet.fileName,
-          err.message
-        )
+    if (oldSnippet && oldSnippet.fileName) {
+      const oldRelativeFolder = oldSnippet.folderId || ''
+      if (oldSnippet.fileName !== newFileName || oldRelativeFolder !== relativeFolder) {
+        const oldPath = path.join(this.vaultPath, oldRelativeFolder, oldSnippet.fileName)
+        try {
+          await fs.unlink(oldPath)
+          console.info('[VaultManager] ✓ Deleted old file after rename/move:', oldSnippet.fileName)
+        } catch (err) {
+          console.warn(
+            '[VaultManager] Warning: Could not delete old file:',
+            oldSnippet.fileName,
+            err.message
+          )
+        }
       }
     }
 
-    // 2. Prevent collisions with OTHER snippets (that aren't this one)
+    // 2. Prevent collisions with OTHER snippets in the same folder
     const collision = Array.from(this.snippets.values()).find((s) => {
       if (s.id === snippet.id) return false
-      return s.fileName === newFileName
+      return s.fileName === newFileName && (s.folderId || '') === relativeFolder
     })
 
     if (collision) {
@@ -186,8 +211,7 @@ class VaultManager {
     }
 
     // 3. Compute the final on-disk path for this note inside the current vault.
-    //    Example: "My Note.md" -> "C:/Users/.../Lumina Vault/My Note.md"
-    const finalPath = path.join(this.vaultPath, newFileName)
+    const finalPath = path.join(this.vaultPath, relativeFolder, newFileName)
 
     // Only bump timestamp when content actually changes (not for color/pin/tag edits)
     const contentChanged = !oldSnippet || oldSnippet.code !== snippet.code
@@ -206,16 +230,27 @@ class VaultManager {
 
     try {
       // Ensure the parent directory still exists (it may have been deleted externally)
-      await fs.mkdir(path.dirname(finalPath), { recursive: true })
+      const targetDir = path.dirname(finalPath)
+      await fs.mkdir(targetDir, { recursive: true })
+      
+      // If we created a new nested folder natively during save, make sure we track it
+      if (relativeFolder) {
+        let current = ''
+        relativeFolder.split('/').forEach(part => {
+          current = current ? `${current}/${part}` : part
+          this.folders.add(current)
+        })
+      }
 
       await fs.writeFile(finalPath, fileContent)
 
-      // 5. Update Internal State Immediately (with cleaned title)
+      // 5. Update Internal State Immediately (with cleaned title and folderId)
       const updatedSnippet = {
         ...snippet,
         title: cleanedTitle, // Store cleaned title so it shows clean in UI
         timestamp: newTimestamp,
-        fileName: newFileName // Update recorded filename
+        fileName: newFileName, // Update recorded filename
+        folderId: relativeFolder
       }
       this.snippets.set(snippet.id, updatedSnippet)
 
@@ -224,6 +259,85 @@ class VaultManager {
       return updatedSnippet
     } catch (err) {
       console.error('[VaultManager] ✗ Save failed:', err)
+      throw err
+    }
+  }
+
+  async deleteSnippet(id) {
+    if (!this.vaultPath) throw new Error('No vault open')
+    const snippet = this.snippets.get(id)
+    if (!snippet) throw new Error(`Snippet not found: ${id}`)
+
+    const filePath = path.join(this.vaultPath, snippet.folderId, snippet.fileName)
+
+    try {
+      await fs.unlink(filePath)
+      this.snippets.delete(id)
+      console.info('[VaultManager] ✓ File deleted:', filePath)
+      return true
+    } catch (err) {
+      console.error('[VaultManager] Delete failed:', err)
+      throw err
+    }
+  }
+
+  // Native Folder Ops
+  async createFolder(folderPath) {
+    if (!this.vaultPath) throw new Error('No vault open')
+    try {
+      const fullPath = path.join(this.vaultPath, folderPath)
+      await fs.mkdir(fullPath, { recursive: true })
+      this.folders.add(folderPath)
+      return true
+    } catch (err) {
+      console.error('[VaultManager] Create folder failed:', err)
+      throw err
+    }
+  }
+
+  async renameFolder(oldPath, newPath) {
+    if (!this.vaultPath) throw new Error('No vault open')
+    try {
+      const fullOldPath = path.join(this.vaultPath, oldPath)
+      const fullNewPath = path.join(this.vaultPath, newPath)
+      await fs.rename(fullOldPath, fullNewPath)
+      
+      // Update in-memory state
+      this.folders.delete(oldPath)
+      this.folders.add(newPath)
+      
+      // Find all snippets that were inside oldPath and update their folderId
+      for (const [id, snippet] of this.snippets.entries()) {
+        if (snippet.folderId === oldPath || snippet.folderId.startsWith(`${oldPath}/`)) {
+          snippet.folderId = snippet.folderId.replace(oldPath, newPath)
+          this.snippets.set(id, snippet)
+        }
+      }
+      
+      return true
+    } catch (err) {
+      console.error('[VaultManager] Rename folder failed:', err)
+      throw err
+    }
+  }
+
+  async deleteFolder(folderPath) {
+    if (!this.vaultPath) throw new Error('No vault open')
+    try {
+      const fullPath = path.join(this.vaultPath, folderPath)
+      await fs.rm(fullPath, { recursive: true, force: true })
+      
+      this.folders.delete(folderPath)
+      
+      // Delete snippets inside this folder from memory
+      for (const [id, snippet] of this.snippets.entries()) {
+        if (snippet.folderId === folderPath || snippet.folderId.startsWith(`${folderPath}/`)) {
+          this.snippets.delete(id)
+        }
+      }
+      return true
+    } catch (err) {
+      console.error('[VaultManager] Delete folder failed:', err)
       throw err
     }
   }
@@ -276,7 +390,10 @@ class VaultManager {
 
   getSnippets() {
     const list = Array.from(this.snippets.values())
-    return list.filter((s) => s && s.id).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+    return {
+      snippets: list.filter((s) => s && s.id).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)),
+      folders: Array.from(this.folders)
+    }
   }
 }
 

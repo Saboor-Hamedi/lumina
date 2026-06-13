@@ -11,6 +11,8 @@ let selectionTimeout = null
 
 export const useVaultStore = create((set, get) => ({
   snippets: [],
+  folders: [],
+  folderColors: {},
   selectedSnippet: null,
   isLoading: true,
   searchQuery: '',
@@ -205,19 +207,20 @@ export const useVaultStore = create((set, get) => ({
       // Background Sync from File System (SQLite via IPC)
       if (window.api?.getSnippets) {
         const freshData = await window.api.getSnippets()
-
-        if (freshData) {
+        
+        if (freshData && freshData.snippets) {
           // Merge note colors from settings.json as fallback
           try {
             const noteColors = await window.api.getSetting('noteColors') || {}
-            const merged = freshData.map(s => ({
+            const folderColors = await window.api.getSetting('folderColors') || {}
+            const merged = freshData.snippets.map(s => ({
               ...s,
               color: s.color || noteColors[s.id] || null
             }))
-            set({ snippets: merged })
+            set({ snippets: merged, folders: freshData.folders || [], folderColors })
           } catch {
             // settings.json unavailable, use fresh data as-is
-            set({ snippets: freshData })
+            set({ snippets: freshData.snippets, folders: freshData.folders || [], folderColors: {} })
           }
         } else {
           console.warn('[VaultStore] ✗ Received invalid data from sync.')
@@ -249,39 +252,36 @@ export const useVaultStore = create((set, get) => ({
       // Sync note color to settings.json when it changes
       const current = get().snippets
       const existing = current.find((s) => s.id === snippet.id)
-      if (existing?.color !== snippet.color) {
-        try {
-          const noteColors = await window.api.getSetting('noteColors') || {}
-          if (snippet.color) {
-            noteColors[snippet.id] = snippet.color
-          } else {
-            delete noteColors[snippet.id]
-          }
-          await window.api.saveSetting('noteColors', noteColors)
-        } catch (err) {
-          console.error('[VaultStore] Failed to sync note color to settings:', err)
-        }
-      }
-
-      // Save and get back the updated snippet with cleaned title
+      
+      // Call IPC save
       const updatedSnippet = await window.api.saveSnippet(snippet)
-
-      const exists = current.find((s) => s.id === snippet.id)
-      // Use the updated snippet (with cleaned title) from the backend
-      const snippetToUse = updatedSnippet || snippet
-      const next = exists
-        ? current.map((s) => (s.id === snippet.id ? snippetToUse : s))
-        : [snippetToUse, ...current]
-
-      // Save complete (silent)
-      set({ snippets: next })
-
+      
+      if (snippet.color && (!existing || existing.color !== snippet.color)) {
+        const currentColors = await window.api.getSetting('noteColors') || {}
+        await window.api.saveSetting('noteColors', { ...currentColors, [snippet.id]: snippet.color })
+      }
+      
+      // Update local state by merging the saved snippet
+      set((state) => {
+        const nextSnippets = state.snippets.map((s) =>
+          s.id === snippet.id ? { ...updatedSnippet, color: snippet.color } : s
+        )
+        const isNew = !state.snippets.some((s) => s.id === snippet.id)
+        if (isNew) {
+          nextSnippets.push({ ...updatedSnippet, color: snippet.color })
+        }
+        return {
+          snippets: nextSnippets,
+          dirtySnippetIds: state.dirtySnippetIds.filter((dId) => dId !== snippet.id)
+        }
+      })
+      
       if (get().selectedSnippet?.id === snippet.id) {
-        set({ selectedSnippet: snippetToUse })
+        set({ selectedSnippet: updatedSnippet })
       }
 
       // Return the updated snippet so callers can use the cleaned title
-      return snippetToUse
+      return updatedSnippet
     } catch (err) {
       console.error('[VaultStore] Save failed:', err)
       throw err // Re-throw so callers can handle the error
@@ -355,8 +355,24 @@ export const useVaultStore = create((set, get) => ({
         }
       })
     } catch (err) {
-      console.error('[VaultStore] Delete failed:', err)
+      console.error('[VaultStore] ✗ Delete failed:', err)
       throw err // Re-throw so callers can handle the error
+    }
+  },
+
+  setFolderColor: async (folderId, color) => {
+    try {
+      const currentColors = await window.api.getSetting('folderColors') || {}
+      const newColors = { ...currentColors }
+      if (color) {
+        newColors[folderId] = color
+      } else {
+        delete newColors[folderId]
+      }
+      await window.api.saveSetting('folderColors', newColors)
+      set({ folderColors: newColors })
+    } catch (err) {
+      console.error('[VaultStore] Failed to save folder color', err)
     }
   },
 

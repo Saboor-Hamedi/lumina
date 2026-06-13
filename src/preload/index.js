@@ -10,6 +10,11 @@ const api = {
   deleteSnippet: (id) => electronAPI.ipcRenderer.invoke('vault:deleteSnippet', id),
   openVaultFolder: () => electronAPI.ipcRenderer.invoke('vault:open-folder'),
   selectVault: () => electronAPI.ipcRenderer.invoke('vault:select-folder'),
+  
+  // Folder Ops
+  createFolder: (path) => electronAPI.ipcRenderer.invoke('vault:createFolder', path),
+  renameFolder: (oldPath, newPath) => electronAPI.ipcRenderer.invoke('vault:renameFolder', oldPath, newPath),
+  deleteFolder: (path) => electronAPI.ipcRenderer.invoke('vault:deleteFolder', path),
 
   // Settings & Theme
   getSetting: (key) => electronAPI.ipcRenderer.invoke('db:getSetting', key),
