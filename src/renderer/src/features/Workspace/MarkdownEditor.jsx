@@ -18,6 +18,7 @@ import { codeBlockDecorations, codeMap } from './codeBlockHeader'
 import { EditorView, placeholder, keymap, ViewPlugin, Decoration } from '@codemirror/view'
 import '@atomic-editor/editor/styles.css'
 import FindWidget from './components/FindWidget'
+import StatusBar from './components/StatusBar'
 
 const updateSearchHighlights = StateEffect.define()
 
@@ -63,7 +64,15 @@ const MarkdownEditor = React.memo(
 
     const realViewRef = useRef(null)
     const captureViewPlugin = React.useMemo(() => ViewPlugin.fromClass(class {
-      constructor(view) { realViewRef.current = view }
+      constructor(view) { 
+        realViewRef.current = view 
+        // Force clear any trailing whitespace/newlines from initialization
+        setTimeout(() => {
+          if (view && !view.isDestroyed && snippetRef.current?.code === '') {
+            view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: '' } })
+          }
+        }, 10)
+      }
       destroy() { if (realViewRef.current === this.view) realViewRef.current = null }
     }), [])
 
@@ -132,13 +141,16 @@ const MarkdownEditor = React.memo(
 
       if (editorHandleRef.current) {
         const currentCode = editorHandleRef.current.getMarkdown()
-        if (snippet?.code && currentCode !== snippet.code) {
-          if (realViewRef.current) {
-            const view = realViewRef.current
+        if (realViewRef.current) {
+          const view = realViewRef.current
+          const needsClear = snippet?.code === '' && view.state.doc.length > 0
+          if ((typeof snippet?.code === 'string' && currentCode !== snippet.code) || needsClear) {
             view.dispatch({
-              changes: { from: 0, to: view.state.doc.length, insert: snippet.code }
+              changes: { from: 0, to: view.state.doc.length, insert: snippet.code || '' }
             })
-          } else {
+          }
+        } else {
+          if (typeof snippet?.code === 'string' && currentCode !== snippet.code) {
             setEditorKey(k => k + 1)
           }
         }
@@ -540,17 +552,9 @@ const MarkdownEditor = React.memo(
           </div>
         </div>
 
-        {/* Floating Status Texts (Bottom Left & Right) */}
-        <div className="floating-status left">
-          <span className="mode-toggle active">source</span>
-          <span className="separator">/</span>
-          <span className="mode-toggle">preview</span>
-        </div>
-        <div className="floating-status right">
-          <span>{snippet?.code ? snippet.code.trim().split(/\s+/).length : 0} words</span>
-          <span className="separator">•</span>
-          <span>MCP</span>
-        </div>
+        <StatusBar 
+          wordCount={snippet?.code ? snippet.code.trim().split(/\s+/).filter(Boolean).length : 0} 
+        />
       </div>
     )
   },

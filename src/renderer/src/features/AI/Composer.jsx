@@ -19,8 +19,15 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
   // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 180)}px`
+      if (!input.trim()) {
+        textareaRef.current.style.height = '38px'
+        textareaRef.current.style.overflowY = 'hidden'
+      } else {
+        textareaRef.current.style.height = 'auto'
+        const nextHeight = Math.min(textareaRef.current.scrollHeight, 140)
+        textareaRef.current.style.height = `${nextHeight}px`
+        textareaRef.current.style.overflowY = textareaRef.current.scrollHeight > 140 ? 'auto' : 'hidden'
+      }
     }
   }, [input])
 
@@ -95,7 +102,7 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
           value={input}
           onChange={handleOnChange}
           onKeyDown={handleKeyDown}
-          placeholder={`Ask ${getProviderLabel()}… (/ for commands)`}
+          placeholder="Ask AI..."
           rows={1}
           disabled={isLoading}
         />

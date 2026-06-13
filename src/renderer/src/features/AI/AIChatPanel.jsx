@@ -15,8 +15,6 @@ import { Composer } from './Composer'
 import '../Layout/AppShell.css'
 import './AIChatPanel.css'
 
-const LuminaAvatar = React.memo(() => <div className="lumina-avatar">L</div>)
-const UserAvatar = React.memo(() => <div className="user-avatar">Me</div>)
 
 const CodeBlock = React.memo(({ inline, className, children, ...props }) => {
   const match = /language-([a-zA-Z0-9-]+)/.exec(className || '')
@@ -724,7 +722,6 @@ const AIChatPanel = React.memo(() => {
                     willChange: 'auto'
                   }}
                 >
-                  {msg.role === 'assistant' && <LuminaAvatar />}
 
                   <div
                     className="chat-content-stack"
@@ -735,7 +732,8 @@ const AIChatPanel = React.memo(() => {
                       maxWidth: msg.role === 'user' ? '70%' : '95%',
                       minWidth: 0,
                       flexShrink: 1,
-                      width: 'auto'
+                      width: 'auto',
+                      marginRight: msg.role === 'user' ? '5px' : '0'
                     }}
                   >
                     <div
@@ -770,7 +768,6 @@ const AIChatPanel = React.memo(() => {
                       />
                     )}
                   </div>
-                  {msg.role === 'user' && <UserAvatar />}
                 </div>
               ))}
               <div className="chat-footer-area">
@@ -790,7 +787,6 @@ const AIChatPanel = React.memo(() => {
                             alignItems: 'flex-start'
                           }}
                         >
-                          <LuminaAvatar />
                           <div className="thinking-indicator">
                             <span className="thinking-text"><span className="thinking-dot-pulse" />Thinking...</span>
                           </div>

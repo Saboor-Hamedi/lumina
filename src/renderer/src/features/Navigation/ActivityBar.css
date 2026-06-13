@@ -1,6 +1,6 @@
 .activity-bar {
   position: absolute;
-  bottom: 24px;
+  bottom: 40px; /* Moved up to avoid overlapping with StatusBar */
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
@@ -14,7 +14,7 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
+  border-radius: 10px;
   padding: 6px 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
@@ -36,8 +36,8 @@
 }
 
 .bar-item {
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -47,7 +47,12 @@
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
-  border-radius: 12px;
+  border-radius: 8px;
+}
+
+.bar-item svg {
+  width: 18px !important;
+  height: 18px !important;
 }
 
 .bar-item:hover {
@@ -69,20 +74,7 @@
   filter: drop-shadow(0 0 6px rgba(var(--text-accent-rgb), 0.3));
 }
 
-/* Premium Horizontal Indicator for Dock */
-.bar-item.active::before {
-  content: '';
-  position: absolute;
-  bottom: -6px;
-  left: 50%;
-  transform: translateX(-50%);
-  height: 4px;
-  width: 4px;
-  border-radius: 50%;
-  background: var(--text-accent);
-  box-shadow: 0 0 8px rgba(var(--text-accent-rgb), 0.4);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
+
 
 .update-btn {
   position: relative;

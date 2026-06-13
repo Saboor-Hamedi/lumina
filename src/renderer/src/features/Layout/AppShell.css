@@ -765,10 +765,10 @@
 }
 
 .chat-bubble {
-  padding: 6px 10px;
+  padding: 4px 8px;
   border-radius: 8px;
   max-width: 100%;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.5;
   word-wrap: break-word;
   overflow-wrap: break-word;
@@ -780,8 +780,8 @@
 /* Compact bubbles on smaller heights */
 @media (max-height: 600px) {
   .chat-bubble {
-    padding: 6px 10px;
-    font-size: 12px;
+    padding: 4px 8px;
+    font-size: 11px;
     line-height: 1.4;
   }
 }
@@ -1227,4 +1227,48 @@ button.chat-copy-btn:hover {
   height: 12px;
   background: var(--border-dim);
   margin: 0 4px;
+}
+
+/* Responsive adjustments for smaller windows */
+@media (max-width: 1050px) {
+  /* Scale down sidebar widths */
+  .app-shell.left-open .shell-sidebar-left {
+    width: min(var(--left-sidebar-width, 280px), 230px) !important;
+  }
+  .app-shell.right-open .shell-sidebar-right {
+    width: min(var(--right-sidebar-width, 320px), 260px) !important;
+  }
+
+  /* Scale down fonts and sizing in UI elements */
+  .shell-sidebar-left, 
+  .shell-sidebar-right,
+  .activity-bar,
+  .lumina-dashboard {
+    font-size: 0.9em !important;
+  }
+  
+  .chat-bubble {
+    font-size: 12px !important;
+  }
+  
+  .sidebar-section-title {
+    font-size: 10px !important;
+  }
+}
+
+@media (max-width: 850px) {
+  /* Further scale down for very small windows */
+  .app-shell.left-open .shell-sidebar-left {
+    width: min(var(--left-sidebar-width, 280px), 200px) !important;
+  }
+  .app-shell.right-open .shell-sidebar-right {
+    width: min(var(--right-sidebar-width, 320px), 240px) !important;
+  }
+
+  .shell-sidebar-left, 
+  .shell-sidebar-right,
+  .activity-bar,
+  .lumina-dashboard {
+    font-size: 0.85em !important;
+  }
 }

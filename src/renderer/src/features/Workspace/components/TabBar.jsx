@@ -1,10 +1,11 @@
 import React, { useRef, useState, useCallback, useMemo, memo, useEffect } from 'react'
-import { X, Pin, MoreHorizontal, ArrowRight, Trash2, Minus, Square } from 'lucide-react'
+import { X, Pin, MoreHorizontal, ArrowRight, Trash2 } from 'lucide-react'
 import { DndContext, closestCenter, useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
 import { SortableContext, useSortable, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import { useVaultStore } from '../../../core/store/useVaultStore'
 import ContextMenu from '../../Overlays/ContextMenu'
 import PromptModal from '../../Overlays/PromptModal'
+import WindowControls from './WindowControls'
 import { getSnippetIcon } from '../../../core/utils/fileIconMapper.jsx'
 
 /**
@@ -197,7 +198,9 @@ const TabBar = () => {
     reorderTabs(reordered)
   }, [openTabs, reorderTabs])
 
-  if (openTabs.length === 0) return null
+  if (openTabs.length === 0) {
+    return <WindowControls />
+  }
 
   return (
     <DndContext
@@ -205,42 +208,34 @@ const TabBar = () => {
       onDragEnd={handleDragEnd}
       collisionDetection={closestCenter}
     >
-      <div className="workspace-tabbar" ref={tabbarRef}>
-        <SortableContext items={openTabs} strategy={horizontalListSortingStrategy}>
-          <div className="tabs-container">
-            {openTabs.map((id) => {
-              const snippet = snippetMap.get(id)
-              if (!snippet) return null
+      <div className="tabbar-outer-wrapper" style={{ display: 'flex', width: '100%', position: 'relative' }}>
+        <div className="workspace-tabbar" ref={tabbarRef} style={{ flex: 1 }}>
+          <SortableContext items={openTabs} strategy={horizontalListSortingStrategy}>
+            <div className="tabs-container" style={{ paddingRight: '160px' }}>
+              {openTabs.map((id) => {
+                const snippet = snippetMap.get(id)
+                if (!snippet) return null
 
-              return (
-                <SortableTabItem
-                  key={id}
-                  id={id}
-                  snippet={snippet}
-                  isActive={activeTabId === id}
-                  isDirty={dirtySnippetIds.includes(id)}
-                  isPinned={pinnedTabIds.includes(id)}
-                  onOpen={handleTabClick}
-                  onClose={handleCloseTrigger}
-                  onContextMenu={handleContextMenu}
-                />
-              )
-            })}
-          </div>
-        </SortableContext>
+                return (
+                  <SortableTabItem
+                    key={id}
+                    id={id}
+                    snippet={snippet}
+                    isActive={activeTabId === id}
+                    isDirty={dirtySnippetIds.includes(id)}
+                    isPinned={pinnedTabIds.includes(id)}
+                    onOpen={handleTabClick}
+                    onClose={handleCloseTrigger}
+                    onContextMenu={handleContextMenu}
+                  />
+                )
+              })}
+            </div>
+          </SortableContext>
+        </div>
         
         {/* Floating Window Controls */}
-        <div className="window-controls-float">
-          <button onClick={() => window.api?.minimize()} className="control-btn" title="Minimize">
-            <Minus size={12} />
-          </button>
-          <button onClick={() => window.api?.toggleMaximize()} className="control-btn" title="Maximize">
-            <Square size={11} />
-          </button>
-          <button onClick={() => window.api?.closeWindow()} className="control-btn close" title="Close">
-            <X size={12} />
-          </button>
-        </div>
+        <WindowControls />
       </div>
 
       {contextMenu && (

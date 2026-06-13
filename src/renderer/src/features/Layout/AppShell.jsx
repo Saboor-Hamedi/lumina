@@ -445,15 +445,7 @@ const AppShell = () => {
         '--right-sidebar-width': `${rightWidth}px`
       }}
     >
-      <ActivityBar
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        onSettingsClick={() => setShowSettings(true)}
-        onThemeClick={() => setShowThemeModal(true)}
-        onToggleSidebar={() => setIsLeftSidebarOpen((prev) => !prev)}
-        onToggleGraph={() => setShowGraph(true)}
-        isLeftSidebarOpen={isLeftSidebarOpen}
-      />
+
       <aside className="shell-sidebar-left">
         <ErrorBoundary>
           {activeTab === 'search' ? (
@@ -470,8 +462,17 @@ const AppShell = () => {
         )}
       </aside>
       <main className="shell-main">
-        {/* Show TabBar when there are open tabs */}
-        {openTabs.length > 0 && (activeTab === 'files' || activeTab === 'search') && <TabBar />}
+        <ActivityBar
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          onSettingsClick={() => setShowSettings(true)}
+          onThemeClick={() => setShowThemeModal(true)}
+          onToggleSidebar={() => setIsLeftSidebarOpen((prev) => !prev)}
+          onToggleGraph={() => setShowGraph(true)}
+          isLeftSidebarOpen={isLeftSidebarOpen}
+        />
+        {/* Show TabBar even if no tabs are open so WindowControls remain visible */}
+        {(activeTab === 'files' || activeTab === 'search') && <TabBar />}
 
         {openTabs.length > 0 ? (
           <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -570,7 +571,8 @@ const AppShell = () => {
                 alignItems: 'center',
                 gap: '0',
                 marginLeft: 'auto',
-                height: '32px' /* Match panel header height */
+                height: '32px', /* Match panel header height */
+                WebkitAppRegion: 'no-drag'
               }}>
                 <button
                   className="tab-float-btn-right"

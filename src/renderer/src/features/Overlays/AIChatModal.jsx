@@ -150,6 +150,23 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
     }
   }, [])
 
+  // Sync modal state to DOM when not dragging/resizing
+  useEffect(() => {
+    if (modalRef.current && !isDragging && !isResizing) {
+      if (isMaximized) {
+        modalRef.current.style.top = '0px'
+        modalRef.current.style.left = '0px'
+        modalRef.current.style.width = '100%'
+        modalRef.current.style.height = '100%'
+      } else {
+        modalRef.current.style.top = `${modalState.top}px`
+        modalRef.current.style.left = `${modalState.left}px`
+        modalRef.current.style.width = `${modalState.width}px`
+        modalRef.current.style.height = `${modalState.height}px`
+      }
+    }
+  }, [modalState, isMaximized, isDragging, isResizing])
+
   // Resize functionality
   const handleResizeStart = useCallback((e, direction) => {
     if (isMaximized) return
@@ -276,10 +293,6 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
         onClick={(e) => e.stopPropagation()}
         style={{
           position: 'fixed',
-          top: isMaximized ? 0 : `${modalState.top}px`,
-          left: isMaximized ? 0 : `${modalState.left}px`,
-          width: isMaximized ? '100%' : `${modalState.width}px`,
-          height: isMaximized ? '100%' : `${modalState.height}px`,
           maxWidth: isMaximized ? '100%' : '90vw',
           maxHeight: isMaximized ? '100%' : '90vh'
         }}

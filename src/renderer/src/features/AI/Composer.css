@@ -44,13 +44,14 @@
   color: var(--text-main);
   font-family: var(--font-editor, 'Inter'), sans-serif;
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.4;
   resize: none;
-  min-height: 44px;
-  max-height: 180px;
+  min-height: 38px;
+  max-height: 140px;
   outline: none;
-  padding: 10px 12px 6px;
+  padding: 10px 12px;
   box-sizing: border-box;
+  overflow-y: hidden;
 }
 
 .composer-textarea::placeholder {

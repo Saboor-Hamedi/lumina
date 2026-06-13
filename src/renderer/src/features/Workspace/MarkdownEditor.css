@@ -25,15 +25,15 @@
   padding: 2px 1em !important;
   margin: 0 !important;
   line-height: 1.6 !important;
-  background: #1e1e1e !important;
+  background: var(--bg-panel, #1e1e1e) !important;
   box-shadow: none !important;
   font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
   font-size: 0.88em;
-  color: #d4d4d4;
+  color: var(--text-main, #d4d4d4);
 }
 
 .cm-line.cm-atomic-fenced-code.cm-activeLine {
-  background-color: #2a2a2a !important;
+  background-color: var(--bg-active, #2a2a2a) !important;
 }
 
 /* Copy button on first line of code blocks */
@@ -120,7 +120,7 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  background: rgb(var(--bg-app-rgb)) !important;
+  background: var(--bg-editor, var(--bg-app)) !important;
   --atomic-editor-selection-bg: rgba(64, 186, 250, 0.35) !important;
 
   /* Enforce Atomic Editor Theme Colors */
@@ -177,7 +177,6 @@
   user-select: none;
   flex-shrink: 0;
   -webkit-app-region: drag; /* Allow frameless window dragging from tab bar */
-  padding-right: 120px; /* Prevent tabs from overlapping window controls */
 }
 
 .workspace-tabbar::-webkit-scrollbar {
@@ -453,7 +452,42 @@
   opacity: 0.6;
 }
 
-.floating-status .separator {
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 28px;
+  padding: 0 16px;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border-dim);
+  font-size: 0.8em;
+  color: var(--text-faint);
+  z-index: 100;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.status-bar-left,
+.status-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-bar .mode-toggle {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.status-bar .mode-toggle:hover {
+  color: var(--text-main);
+}
+
+.status-bar .mode-toggle.active {
+  color: var(--text-accent);
+}
+
+.status-bar .separator {
   opacity: 0.5;
 }
 
@@ -461,13 +495,15 @@
 .window-controls-float {
   display: flex;
   align-items: center;
-  position: fixed;
+  position: absolute;
   right: 0;
   top: 0;
   height: 32px;
-  background: transparent;
+  background: var(--bg-app);
   -webkit-app-region: no-drag;
   z-index: 9999;
+  border-bottom-left-radius: 6px;
+  box-shadow: -4px 0 8px rgba(0, 0, 0, 0.2);
 }
 
 .window-controls-float .control-btn {
@@ -557,6 +593,7 @@
   width: 100% !important;
   max-width: none !important;
   align-items: stretch !important;
+  background: transparent !important;
 }
 
 .markdown-editor .atomic-cm-editor .cm-content {
@@ -580,7 +617,7 @@
 }
 
 .editor-large-title {
-  font-size: 1.875rem;
+  font-size: 18px;
   font-weight: 800;
   border: none;
   background: transparent;
@@ -622,9 +659,11 @@
   line-height: 1.8;
   color: var(--text-main) !important;
   /* Allow CodeMirror to manage padding-bottom for scrollPastEnd */
-  padding: 4px 0;
+  padding: 4px 40px;
   min-height: 70vh;
   width: 100% !important;
+  max-width: 800px !important;
+  margin: 0 auto !important;
 }
 
 .cm-placeholder {
@@ -824,7 +863,7 @@
 [data-translucency='true'] .shell-sidebar-left,
 [data-translucency='true'] .shell-sidebar-right,
 [data-translucency='true'] .shell-ribbon {
-  background: rgba(var(--bg-app-rgb, 15, 15, 15), 0.5) !important;
+  background: var(--bg-overlay, rgba(15, 15, 15, 0.5)) !important;
   backdrop-filter: blur(10px);
 }
 
@@ -1443,4 +1482,17 @@
   width: auto !important;
   min-width: 1.2em !important;
   text-align: right;
+}
+
+/* Responsive adjustments for editor text */
+@media (max-width: 1050px) {
+  .cm-content {
+    font-size: calc(var(--font-size-editor, 16px) * 0.9) !important;
+  }
+}
+
+@media (max-width: 850px) {
+  .cm-content {
+    font-size: calc(var(--font-size-editor, 16px) * 0.8) !important;
+  }
 }
