@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { Search, FileText, FileCode, Pin, PinOff, ArrowUpDown, RefreshCw, FolderPlus, Palette, Edit2, Trash2 } from 'lucide-react'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
-import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, TouchSensor, useDraggable, DragOverlay, defaultDropAnimationSideEffects } from '@dnd-kit/core'
+import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, TouchSensor, useDraggable, DragOverlay, defaultDropAnimationSideEffects, useDndContext } from '@dnd-kit/core'
 import { SortableContext, useSortable, horizontalListSortingStrategy, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { createPortal } from 'react-dom'
@@ -58,7 +58,7 @@ const DroppableFolderItem = React.memo(({
   isExpanded, 
   onToggle, 
   onContextMenu,
-  backgroundColor,
+  folderColor,
   isRenaming,
   renameValue,
   setRenameValue,
@@ -71,29 +71,33 @@ const DroppableFolderItem = React.memo(({
     data: { type: 'folder', item }
   })
 
-  const setNodeRef = useCallback((node) => {
-    setDroppableRef(node)
-    setDraggableRef(node)
-  }, [setDroppableRef, setDraggableRef])
+  // Removed combined setNodeRef
   
   return (
     <div 
-      ref={setNodeRef}
+      ref={setDroppableRef}
       className={`folder-tree-item ${isOver ? 'folder-over' : ''}`}
       style={{ 
-        paddingLeft: `${item.depth * 16 + 12}px`,
-        cursor: 'pointer',
+        position: 'relative',
+        paddingLeft: `${item.depth * 16}px`,
         opacity: isDragging ? 0.5 : 1
       }}
-      {...attributes}
-      {...listeners}
-      onClick={(e) => { if (!isRenaming) onToggle(item.id, e) }}
-      onContextMenu={(e) => { e.preventDefault(); onContextMenu(item.id, e) }}
     >
-      <div className="folder-tree-main" style={{ cursor: 'pointer', userSelect: 'none' }}>
+      {Array.from({ length: item.depth }).map((_, i) => (
+        <div key={`line-${i}`} style={{ position: 'absolute', left: `${i * 16 + 12 + 6}px`, top: 0, bottom: 0, width: '1px', backgroundColor: 'var(--border-dim)' }} />
+      ))}
+      <div 
+        ref={setDraggableRef}
+        className="folder-tree-main" 
+        style={{ cursor: 'pointer', userSelect: 'none' }}
+        {...attributes}
+        {...listeners}
+        onClick={(e) => { if (!isRenaming) onToggle(item.id, e) }}
+        onContextMenu={(e) => { e.preventDefault(); onContextMenu(item.id, e) }}
+      >
         {isExpanded ? <ChevronDown size={14} className="folder-chevron" /> : <ChevronRight size={14} className="folder-chevron" />}
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', backgroundColor: backgroundColor || undefined, padding: '2px 6px', borderRadius: '4px', marginLeft: '-6px' }}>
-          <Folder size={14} className="folder-icon-color" />
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: folderColor || undefined, padding: '2px 6px', borderRadius: '4px', marginLeft: '-6px' }}>
+          <Folder size={14} />
           {isRenaming ? (
             <input
               autoFocus
@@ -146,6 +150,45 @@ const SortableGridItem = ({ snippet, getIconForLanguage, onSelect, onUnpin }) =>
     />
   )
 }
+
+/**
+ * Wrapper to fix overlay width stretching
+ */
+const OverlayWrapper = ({ children }) => {
+  const { active } = useDndContext()
+  const width = active?.rect?.current?.initial?.width
+  return (
+    <div style={{ width: width ? `${width}px` : 'auto', boxSizing: 'border-box' }}>
+      {children}
+    </div>
+  )
+}
+
+/**
+ * Droppable Root Zone
+ */
+const DroppableRootZone = React.memo(() => {
+  const { isOver, setNodeRef } = useDroppable({ id: 'root-drop-zone' })
+  return (
+    <div 
+      ref={setNodeRef}
+      style={{
+        padding: '12px',
+        margin: '4px 8px',
+        border: `2px dashed ${isOver ? 'var(--accent-primary)' : 'var(--border-dim)'}`,
+        borderRadius: '8px',
+        textAlign: 'center',
+        color: isOver ? 'var(--accent-primary)' : 'var(--text-muted)',
+        background: isOver ? 'var(--bg-hover)' : 'transparent',
+        transition: 'all 0.2s',
+        fontSize: '13px',
+        fontWeight: 500
+      }}
+    >
+      Drop here to move to Root
+    </div>
+  )
+})
 
 /**
  * Centered Explorer Modal (Start Menu Replica)
@@ -360,6 +403,11 @@ const ExplorerModal = ({ isOpen, onClose }) => {
     // Flatten it
     const flat = []
     
+    // Inject drop to root zone if dragging
+    if (activeListDragItem) {
+      flat.push({ type: 'root-drop', id: 'root-drop-zone', depth: 0 })
+    }
+    
     // Inject root level creation input at the very top!
     if (creating && !creating.parentId) {
       flat.push({ type: 'input', kind: creating.type, parentId: '', depth: 0 })
@@ -390,7 +438,7 @@ const ExplorerModal = ({ isOpen, onClose }) => {
 
     traverse(root, 0)
     return flat
-  }, [allSnippets, folders, activeTab, query, expandedFolders, creating])
+  }, [allSnippets, folders, activeTab, query, expandedFolders, creating, activeListDragItem])
 
   const toggleFolder = (folderId, e) => {
     e.stopPropagation()
@@ -448,7 +496,8 @@ const ExplorerModal = ({ isOpen, onClose }) => {
     } else {
       const activeSnippet = allSnippets.find(s => s.id === active.id)
       if (activeSnippet) {
-        setActiveListDragItem({ type: 'file', id: active.id, snippet: activeSnippet })
+        const flatItem = flatTree.find(f => f.type === 'file' && f.snippet.id === active.id)
+        setActiveListDragItem({ type: 'file', id: active.id, snippet: activeSnippet, depth: flatItem ? flatItem.depth : 0 })
       }
     }
   }
@@ -457,6 +506,27 @@ const ExplorerModal = ({ isOpen, onClose }) => {
     setActiveListDragItem(null)
     const { active, over } = event
     if (!over || active.id === over.id) return
+
+    if (over.id === 'root-drop-zone') {
+      if (String(active.id).startsWith('drag-folder-')) {
+        const sourceFolderId = String(active.id).replace('drag-folder-', '')
+        const folderName = sourceFolderId.split('/').pop()
+        if (sourceFolderId !== folderName) {
+          try {
+            await window.api.renameFolder(sourceFolderId, folderName)
+            await loadVault()
+          } catch(e) {}
+        }
+      } else {
+        const activeSnippet = allSnippets.find(s => s.id === active.id)
+        if (activeSnippet && activeSnippet.folderId !== '') {
+          try {
+            await saveSnippet({ ...activeSnippet, folderId: '' })
+          } catch(e) {}
+        }
+      }
+      return
+    }
 
     if (String(active.id).startsWith('drag-folder-')) {
       const sourceFolderId = String(active.id).replace('drag-folder-', '')
@@ -754,7 +824,10 @@ const ExplorerModal = ({ isOpen, onClose }) => {
                       itemContent={(index, item) => {
                         if (item.type === 'input') {
                           return (
-                            <div className="folder-tree-item creating-input" style={{ paddingLeft: `${item.depth * 16 + 12}px` }}>
+                            <div className="folder-tree-item creating-input" style={{ position: 'relative', paddingLeft: `${item.depth * 16}px` }}>
+                              {Array.from({ length: item.depth }).map((_, i) => (
+                                <div key={`line-${i}`} style={{ position: 'absolute', left: `${i * 16 + 12 + 6}px`, top: 0, bottom: 0, width: '1px', backgroundColor: 'var(--border-dim)' }} />
+                              ))}
                               {item.kind === 'folder' ? <Folder size={14} className="folder-icon-color" /> : <FileText size={14} className="icon-blue" />}
                               <input
                                 autoFocus
@@ -770,13 +843,15 @@ const ExplorerModal = ({ isOpen, onClose }) => {
                               />
                             </div>
                           )
+                        } else if (item.type === 'root-drop') {
+                          return <DroppableRootZone />
                         } else if (item.type === 'folder') {
                           const isExpanded = expandedFolders.has(item.id)
                           return (
                             <DroppableFolderItem 
                               item={item} 
                               isExpanded={isExpanded} 
-                              backgroundColor={folderColors[item.id]}
+                              folderColor={folderColors[item.id]}
                               isRenaming={renamingFolder === item.id}
                               renameValue={renamingValue}
                               setRenameValue={setRenamingValue}
@@ -790,7 +865,10 @@ const ExplorerModal = ({ isOpen, onClose }) => {
                           )
                         } else {
                           return (
-                            <div style={{ paddingLeft: `${item.depth * 16}px` }}>
+                            <div style={{ position: 'relative', paddingLeft: `${item.depth * 16}px` }}>
+                              {Array.from({ length: item.depth }).map((_, i) => (
+                                <div key={`line-${i}`} style={{ position: 'absolute', left: `${i * 16 + 12 + 6}px`, top: 0, bottom: 0, width: '1px', backgroundColor: 'var(--border-dim)', zIndex: 0 }} />
+                              ))}
                               <SortableListItem
                                 key={item.snippet.id}
                                 snippet={item.snippet}
@@ -804,31 +882,36 @@ const ExplorerModal = ({ isOpen, onClose }) => {
                     />
                   </div>
                 </SortableContext>
-                <DragOverlay dropAnimation={{
-                  sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.4' } } }),
-                }}>
-                  {activeListDragItem ? (
-                    activeListDragItem.type === 'folder' ? (
-                      <div className="folder-tree-item" style={{ paddingLeft: `${activeListDragItem.item.depth * 16 + 12}px` }}>
-                        <div className="folder-tree-main" style={{ opacity: 0.8 }}>
+                {createPortal(
+                  <DragOverlay zIndex={9999} dropAnimation={{
+                    sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.4' } } }),
+                  }}>
+                    {activeListDragItem?.type === 'folder' ? (
+                      <OverlayWrapper>
+                        <div className="folder-tree-main" style={{ opacity: 0.8, background: 'var(--bg-panel)', borderRadius: '4px', paddingRight: '8px' }}>
                           <ChevronRight size={14} className="folder-chevron" />
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', backgroundColor: folderColors[activeListDragItem.item.id] || undefined, padding: '2px 6px', borderRadius: '4px', marginLeft: '-6px' }}>
-                            <Folder size={14} className="folder-icon-color" />
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: folderColors[activeListDragItem.item.id] || undefined, padding: '2px 6px', borderRadius: '4px', marginLeft: '-6px' }}>
+                            <Folder size={14} />
                             <span className="folder-name">{activeListDragItem.item.name}</span>
                           </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div style={{ opacity: 0.8, boxShadow: '0 4px 12px rgba(0,0,0,0.15)', borderRadius: '4px' }}>
-                         <SidebarItem
-                           snippet={activeListDragItem.snippet}
-                           variant="list"
-                           isActive={false}
-                         />
-                      </div>
-                    )
-                  ) : null}
-                </DragOverlay>
+                      </OverlayWrapper>
+                    ) : activeListDragItem?.type === 'file' ? (
+                      <OverlayWrapper>
+                        <div className="start-section" style={{ margin: 0 }}>
+                          <div style={{ opacity: 0.8, boxShadow: '0 4px 12px rgba(0,0,0,0.15)', borderRadius: '4px', background: 'var(--bg-panel)' }}>
+                             <SidebarItem
+                               snippet={activeListDragItem.snippet}
+                               variant="list"
+                               isActive={false}
+                             />
+                          </div>
+                        </div>
+                      </OverlayWrapper>
+                    ) : null}
+                  </DragOverlay>,
+                  document.body
+                )}
               </DndContext>
             )}
           </div>

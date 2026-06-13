@@ -599,7 +599,7 @@ app.whenReady().then(async () => {
     const updatedSnippet = await VaultManager.saveSnippet(snippet)
     // Auto-index updated file in background
     if (VaultManager.vaultPath && updatedSnippet?.fileName) {
-      const filePath = path.join(VaultManager.vaultPath, updatedSnippet.fileName)
+      const filePath = path.join(VaultManager.vaultPath, updatedSnippet.folderId || '', updatedSnippet.fileName)
       VaultIndexer.indexFile(filePath, true).catch((err) => {
         console.error('[Main] Auto-index failed:', err)
       })

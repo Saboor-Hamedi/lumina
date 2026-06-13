@@ -305,6 +305,13 @@
   gap: 8px;
   flex: 1;
   overflow: hidden;
+  padding: 6px 12px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.folder-tree-main:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .folder-tree-actions {
@@ -384,9 +391,7 @@
   color: var(--text-main);
 }
 
-.start-section .folder-tree-item:hover {
-  background: var(--bg-hover);
-}
+/* Removed old folder-tree-item background cover */
 
 .folder-tree-item.folder-over {
   background: var(--accent-primary);
