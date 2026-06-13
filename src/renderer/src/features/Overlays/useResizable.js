@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 
 export const useResizable = (modalRef, initialWidth = 350, initialHeight = 500) => {
@@ -11,10 +11,24 @@ export const useResizable = (modalRef, initialWidth = 350, initialHeight = 500) 
   const latestSize = useRef(size)
   const startSize = useRef({ width: 0, height: 0 })
   const startPos = useRef({ x: 0, y: 0 })
+  const isResizing = useRef(false)
+
+  // Sync with settings loaded from backend async
+  useEffect(() => {
+    if (!isResizing.current && (settings.explorerModalWidth || settings.explorerModalHeight)) {
+      const newSize = {
+        width: settings.explorerModalWidth || size.width,
+        height: settings.explorerModalHeight || size.height
+      }
+      setSize(newSize)
+      latestSize.current = newSize
+    }
+  }, [settings.explorerModalWidth, settings.explorerModalHeight])
 
   const handleResizeStart = useCallback((e, direction) => {
     e.preventDefault()
     e.stopPropagation()
+    isResizing.current = true
     startPos.current = { x: e.clientX, y: e.clientY }
     startSize.current = { width: size.width, height: size.height }
 
@@ -52,10 +66,9 @@ export const useResizable = (modalRef, initialWidth = 350, initialHeight = 500) 
       }
 
       // Persist to store without triggering infinite loop
-      useSettingsStore.getState().updateSettings({
-        explorerModalWidth: latestSize.current.width,
-        explorerModalHeight: latestSize.current.height
-      })
+      useSettingsStore.getState().updateSetting('explorerModalWidth', latestSize.current.width)
+      useSettingsStore.getState().updateSetting('explorerModalHeight', latestSize.current.height)
+      isResizing.current = false
     }
 
     document.addEventListener('mousemove', handleMouseMove)

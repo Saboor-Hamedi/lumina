@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react'
-import { Search, FileText, FileCode, Pin, PinOff, ArrowUpDown } from 'lucide-react'
+import { Search, FileText, FileCode, Pin, PinOff, ArrowUpDown, RefreshCw } from 'lucide-react'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, TouchSensor } from '@dnd-kit/core'
@@ -87,7 +87,7 @@ const ExplorerModal = ({ isOpen, onClose }) => {
 
   const [isPositionReady, setIsPositionReady] = useState(false)
 
-  const { snippets, setSelectedSnippet, saveSnippet } = useVaultStore()
+  const { snippets, setSelectedSnippet, saveSnippet, loadVault, isLoading } = useVaultStore()
   
   const { settings, updateSetting } = useSettingsStore()
   const sortBy = settings.sortBy || 'name'
@@ -367,14 +367,25 @@ const ExplorerModal = ({ isOpen, onClose }) => {
           {activeTab === 'all' && (
           <div className="start-section">
             <div className="start-section-header">
-              <h3>Recommended</h3>
-              <button 
-                className="sort-toggle-btn"
-                onClick={handleSortToggle}
-                title={`Sort by ${sortBy} (${sortDirection})`}
-              >
-                <ArrowUpDown size={14} />
-              </button>
+              <h3>{allSnippets.length} {allSnippets.length === 1 ? 'Note' : 'Notes'}</h3>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button 
+                  className="sort-toggle-btn"
+                  onClick={(e) => { e.stopPropagation(); loadVault() }}
+                  title="Refresh Vault"
+                  disabled={isLoading}
+                  style={{ opacity: isLoading ? 0.5 : 1 }}
+                >
+                  <RefreshCw size={14} className={isLoading ? 'spin-animation' : ''} />
+                </button>
+                <button 
+                  className="sort-toggle-btn"
+                  onClick={handleSortToggle}
+                  title={`Sort by ${sortBy} (${sortDirection})`}
+                >
+                  <ArrowUpDown size={14} />
+                </button>
+              </div>
             </div>
             
             {allSnippets.length === 0 ? (

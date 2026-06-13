@@ -23,6 +23,9 @@ export const useSettingsStore = create((set, get) => ({
     mirrorMode: true, // New premium feature default
     inlineMetadata: true,
     graphTheme: 'default',
+    graphNodeSize: 1.5,
+    graphShowTexts: true,
+    graphNodeColor: '#40bafa',
     // AI Settings - preserve these during hot reload
     deepSeekKey: null,
     deepSeekModel: 'deepseek-chat',
@@ -130,11 +133,12 @@ export const useSettingsStore = create((set, get) => ({
                 if (!get().settingsWatcherUnsubscribe) {
                   const unsub = window.api.onSettingsChanged((newSettings) => {
                     try {
-                      set({ settings: newSettings })
+                      set((state) => ({ settings: { ...state.settings, ...newSettings } }))
                       const root = document.documentElement
-                      root.setAttribute('data-theme', newSettings.theme)
-                      root.style.setProperty('--font-editor', newSettings.fontFamily)
-                      root.style.setProperty('--font-size-editor', `${newSettings.fontSize}px`)
+                      const merged = { ...get().settings, ...newSettings }
+                      root.setAttribute('data-theme', merged.theme)
+                      root.style.setProperty('--font-editor', merged.fontFamily)
+                      root.style.setProperty('--font-size-editor', `${merged.fontSize}px`)
                       root.style.setProperty('--cursor-style', newSettings.cursorStyle)
                       root.setAttribute('data-translucency', newSettings.translucency ? 'true' : 'false')
                       if (window.api && window.api.setTranslucency) {

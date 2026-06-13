@@ -114,6 +114,12 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
             >
               AI Models
             </button>
+            <button
+              className={`nav-item ${activeTab === 'graph' ? 'active' : ''}`}
+              onClick={() => setActiveTab('graph')}
+            >
+              Graph
+            </button>
           </aside>
 
           <main className="settings-body">
@@ -133,6 +139,81 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                       <button className="btn btn-primary" onClick={handleSwitchVault}>
                         Change Location
                       </button>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            )}
+
+            {activeTab === 'graph' && (
+              <div className="settings-pane">
+                <section>
+                  <h3>Graph Visualization</h3>
+
+                  <div className="settings-row">
+                    <div className="row-info">
+                      <div className="row-label">Node Size</div>
+                      <div className="row-hint">Adjust the size multiplier for all graph nodes.</div>
+                    </div>
+                    <div className="range-wrap">
+                      <input 
+                        type="range" 
+                        min="0.5" 
+                        max="3.0" 
+                        step="0.1" 
+                        defaultValue={settings.graphNodeSize || 1.5} 
+                        onMouseUp={(e) => {
+                           updateSetting('graphNodeSize', parseFloat(e.target.value))
+                        }}
+                        onTouchEnd={(e) => {
+                           updateSetting('graphNodeSize', parseFloat(e.target.value))
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="settings-row">
+                    <div className="row-info">
+                      <div className="row-label">Show Node Texts</div>
+                      <div className="row-hint">Display titles on graph nodes.</div>
+                    </div>
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={settings.graphShowTexts !== false && settings.graphShowTexts !== 'false'}
+                        onChange={(e) => updateSetting('graphShowTexts', e.target.checked)}
+                      />
+                      <span className="slider round"></span>
+                    </label>
+                  </div>
+
+                  <div className="settings-row">
+                    <div className="row-info">
+                      <div className="row-label">Graph Accent Color</div>
+                      <div className="row-hint">Choose the primary color for nodes.</div>
+                    </div>
+                    <div className="color-picker-row" style={{ display: 'flex', gap: '12px' }}>
+                      {['#40bafa', '#14b8a6', '#f59e0b', '#ec4899', '#8b5cf6'].map(color => {
+                        const isSelected = (settings.graphNodeColor || '#40bafa').toLowerCase() === color.toLowerCase()
+                        return (
+                          <div 
+                            key={color}
+                            onClick={() => updateSetting('graphNodeColor', color.toLowerCase())}
+                            style={{
+                              width: '28px',
+                              height: '28px',
+                              borderRadius: '50%',
+                              background: color,
+                              cursor: 'pointer',
+                              border: isSelected ? '3px solid #ffffff' : '3px solid transparent',
+                              boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                              transition: 'all 0.2s ease',
+                              opacity: isSelected ? 1 : 0.6,
+                              transform: isSelected ? 'scale(1.1)' : 'scale(1)'
+                            }}
+                          />
+                        )
+                      })}
                     </div>
                   </div>
                 </section>

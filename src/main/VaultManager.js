@@ -65,56 +65,66 @@ class VaultManager {
       return null
     }
 
-    console.info('[VaultManager] 🔍 Scanning vault:', this.vaultPath)
+    // Silent scan
     try {
       const files = await fs.readdir(this.vaultPath)
       const mdFiles = files.filter((f) => f.endsWith('.md'))
-      console.info(`[VaultManager] Found ${mdFiles.length} markdown files`)
+      // Silent count
 
       const newSnippets = []
-      for (const fileName of mdFiles) {
-        try {
-          const filePath = path.join(this.vaultPath, fileName)
-          const stats = await fs.stat(filePath)
-          const rawContent = await fs.readFile(filePath, 'utf-8')
-
-          if (!rawContent.trim()) {
-            console.warn(`[VaultManager] Skipping empty file: ${fileName}`)
-            continue
-          }
-
-          let data = {}
-          let content = rawContent
-
+      
+      // Process in batches to avoid EMFILE (too many open files) and improve performance
+      const BATCH_SIZE = 10
+      for (let i = 0; i < mdFiles.length; i += BATCH_SIZE) {
+        const batch = mdFiles.slice(i, i + BATCH_SIZE)
+        
+        const batchResults = await Promise.all(batch.map(async (fileName) => {
           try {
-            const parsed = matter(rawContent)
-            data = parsed.data || {}
-            content = parsed.content || rawContent
-          } catch (matterErr) {
-            console.warn(`[VaultManager] matter could not parse ${fileName}, using raw content.`)
-          }
+            const filePath = path.join(this.vaultPath, fileName)
+            const stats = await fs.stat(filePath)
+            const rawContent = await fs.readFile(filePath, 'utf-8')
 
-          newSnippets.push({
-            id: data.id || fileName.replace('.md', ''),
-            title: data.title || fileName.replace('.md', ''),
-            code: content || '',
-            language: data.language || 'markdown',
-            tags: data.tags || '',
-            timestamp: data.timestamp || stats.mtimeMs,
-            selection: data.selection || null,
-            isPinned: data.isPinned || data.pinned || false,
-            color: null,
-            type: 'snippet',
-            is_draft: 0,
-            fileName: fileName // Store actual filename for robust renaming
-          })
-        } catch (fileErr) {
-          console.error(`[VaultManager] ✗ Failed to read file ${fileName}:`, fileErr)
-        }
+            if (!rawContent.trim()) {
+              return null
+            }
+
+            let data = {}
+            let content = rawContent
+
+            try {
+              const parsed = matter(rawContent)
+              data = parsed.data || {}
+              content = parsed.content || rawContent
+            } catch (matterErr) {
+              // fallback
+            }
+
+            return {
+              id: data.id || fileName.replace('.md', ''),
+              title: data.title || fileName.replace('.md', ''),
+              code: content || '',
+              language: data.language || 'markdown',
+              tags: data.tags || '',
+              timestamp: data.timestamp || stats.mtimeMs,
+              selection: data.selection || null,
+              isPinned: data.isPinned || data.pinned || false,
+              color: null,
+              type: 'snippet',
+              is_draft: 0,
+              fileName: fileName
+            }
+          } catch (fileErr) {
+            console.error(`[VaultManager] ✗ Failed to read file ${fileName}:`, fileErr)
+            return null
+          }
+        }))
+        
+        // Filter out nulls and add to newSnippets
+        newSnippets.push(...batchResults.filter(Boolean))
       }
 
       this.snippets = new Map(newSnippets.map((s) => [s.id, s]))
-      console.info(`[VaultManager] ✓ Scan complete. Loaded ${newSnippets.length} snippets.`)
+      // Scan complete
       return newSnippets
     } catch (err) {
       console.error('[VaultManager] ✗ Error scanning vault:', err)
