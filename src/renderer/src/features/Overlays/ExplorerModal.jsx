@@ -3,11 +3,45 @@ import { Search, FileText, FileCode, Pin, PinOff, ArrowUpDown } from 'lucide-rea
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, TouchSensor } from '@dnd-kit/core'
-import { SortableContext, useSortable, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
+import { SortableContext, useSortable, horizontalListSortingStrategy, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { createPortal } from 'react-dom'
 import SidebarItem from '../Navigation/components/SidebarItem'
+import { useResizable } from './useResizable'
 import './ExplorerModal.css'
+
+/**
+ * Draggable List Item for Recommended Snippets
+ */
+const SortableListItem = ({ snippet, isActive, onClick }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: snippet.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 99 : 1,
+    position: 'relative'
+  }
+
+  return (
+    <SidebarItem
+      snippet={snippet}
+      variant="list"
+      onClick={onClick}
+      isActive={isActive}
+      dndProps={{ attributes, listeners, setNodeRef }}
+      style={style}
+    />
+  )
+}
 
 /**
  * Draggable Grid Item for Pinned Snippets
@@ -142,8 +176,8 @@ const ExplorerModal = ({ isOpen, onClose }) => {
     // Filter out pinned snippets from the main list first
     const unpinned = filtered.filter(s => !s.isPinned)
 
-    // Compute pinned notes
-    const dbPinned = filtered.filter(s => s.isPinned)
+    // Compute pinned notes - DO NOT FILTER BY SEARCH
+    const dbPinned = snippets.filter(s => s.isPinned)
     const pinnedOrderMap = new Map((settings.startMenuPinnedOrder || []).map((id, i) => [id, i]))
     dbPinned.sort((a, b) => {
       const ai = pinnedOrderMap.get(a.id)
@@ -182,6 +216,8 @@ const ExplorerModal = ({ isOpen, onClose }) => {
     return { pinnedSnippets: pinned, allSnippets: all }
   }, [snippets, query, sortBy, sortDirection, noteOrder, settings.startMenuPinnedOrder])
 
+  const { size, handleResizeStart } = useResizable(modalRef)
+
   if (!isOpen || !isPositionReady) return null
 
   const handleSelect = (snippet) => {
@@ -200,12 +236,30 @@ const ExplorerModal = ({ isOpen, onClose }) => {
   const handleSortDragEnd = (event) => {
     const { active, over } = event
     if (active.id !== over?.id && over) {
-      const currentPinnedIds = pinnedSnippets.map(s => s.id)
-      const oldIndex = currentPinnedIds.indexOf(active.id)
-      const newIndex = currentPinnedIds.indexOf(over.id)
+      // Use ALL pinned snippets, not just currently visible ones, so we don't lose the order
+      // of pinned snippets that were hidden by search.
+      const allPinnedIds = snippets.filter(s => s.isPinned).map(s => s.id)
+      const oldIndex = allPinnedIds.indexOf(active.id)
+      const newIndex = allPinnedIds.indexOf(over.id)
       if (oldIndex !== -1 && newIndex !== -1) {
-        const newOrder = arrayMove(currentPinnedIds, oldIndex, newIndex)
+        const newOrder = arrayMove(allPinnedIds, oldIndex, newIndex)
         useSettingsStore.getState().updateSettings({ startMenuPinnedOrder: newOrder })
+      }
+    }
+  }
+
+  const handleListDragEnd = (event) => {
+    const { active, over } = event
+    if (active.id !== over?.id && over) {
+      const currentListIds = allSnippets.map(s => s.id)
+      const oldIndex = currentListIds.indexOf(active.id)
+      const newIndex = currentListIds.indexOf(over.id)
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const newOrder = arrayMove(currentListIds, oldIndex, newIndex)
+        useSettingsStore.getState().updateSettings({ 
+          noteOrder: newOrder,
+          sortBy: 'custom' // Auto switch to custom sort
+        })
       }
     }
   }
@@ -237,8 +291,20 @@ const ExplorerModal = ({ isOpen, onClose }) => {
     >
       <div 
         ref={modalRef}
-        className="start-menu-container" 
+        className="start-menu-container"
+        style={{
+          width: size.width,
+          height: size.height,
+          marginLeft: -(size.width / 2) // keep centered natively
+        }}
       >
+        
+        {/* Resize Handles */}
+        <div className="resizer resizer-top" onMouseDown={(e) => handleResizeStart(e, ['top'])} />
+        <div className="resizer resizer-left" onMouseDown={(e) => handleResizeStart(e, ['left'])} />
+        <div className="resizer resizer-right" onMouseDown={(e) => handleResizeStart(e, ['right'])} />
+        <div className="resizer resizer-top-left" onMouseDown={(e) => handleResizeStart(e, ['top', 'left'])} />
+        <div className="resizer resizer-top-right" onMouseDown={(e) => handleResizeStart(e, ['top', 'right'])} />
         
         {/* Search Bar */}
         <div className="start-menu-search">
@@ -298,24 +364,28 @@ const ExplorerModal = ({ isOpen, onClose }) => {
             {allSnippets.length === 0 ? (
               <div className="empty-state">No notes found</div>
             ) : (
-              <div className="recommended-list">
-                {allSnippets.slice(0, limit).map(snippet => (
-                  <SidebarItem
-                    key={snippet.id}
-                    snippet={snippet}
-                    onClick={() => handleSelect(snippet)}
-                    isActive={false}
-                  />
-                ))}
-                {allSnippets.length > limit && (
-                  <button 
-                    className="load-more-btn" 
-                    onClick={() => setLimit(prev => prev + 10)}
-                  >
-                    Load More Notes
-                  </button>
-                )}
-              </div>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleListDragEnd}>
+                <SortableContext items={allSnippets.slice(0, limit).map(s => s.id)} strategy={verticalListSortingStrategy}>
+                  <div className="recommended-list">
+                    {allSnippets.slice(0, limit).map(snippet => (
+                      <SortableListItem
+                        key={snippet.id}
+                        snippet={snippet}
+                        onClick={() => handleSelect(snippet)}
+                        isActive={false}
+                      />
+                    ))}
+                    {allSnippets.length > limit && (
+                      <button 
+                        className="load-more-btn" 
+                        onClick={() => setLimit(prev => prev + 10)}
+                      >
+                        Load More Notes
+                      </button>
+                    )}
+                  </div>
+                </SortableContext>
+              </DndContext>
             )}
           </div>
 

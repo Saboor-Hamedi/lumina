@@ -1,5 +1,5 @@
 import React from 'react'
-import { Network, Calendar, Palette, Settings, ArrowUpCircle, RefreshCw } from 'lucide-react'
+import { Network, Calendar, Palette, Settings, ArrowUpCircle, RefreshCw, Files } from 'lucide-react'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import './ActivityBar.css'
@@ -7,7 +7,7 @@ import './ActivityBar.css'
 /**
  * Floating ActivityBar Component
  */
-const ActivityBar = ({ onSettingsClick, onThemeClick, onToggleGraph }) => {
+const ActivityBar = ({ onSettingsClick, onThemeClick, onToggleGraph, onToggleExplorerModal }) => {
   const { status, progress, download, install } = useUpdateStore()
   const { snippets, saveSnippet, setSelectedSnippet } = useVaultStore()
 
@@ -39,6 +39,17 @@ const ActivityBar = ({ onSettingsClick, onThemeClick, onToggleGraph }) => {
   return (
     <div className="activity-bar floating">
       <div className="bar-top">
+        <button
+          className="bar-item"
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            onToggleExplorerModal?.()
+          }}
+          title="Explorer"
+        >
+          <Files size={20} strokeWidth={1.5} />
+        </button>
         <button
           className="bar-item"
           onClick={(e) => {

@@ -23,7 +23,11 @@ export const buildGraphData = (snippets) => {
   // 2. Parse Links
   snippets.forEach((snippet) => {
     const sourceId = snippet.title || 'Untitled'
-    const code = snippet.code || ''
+    let code = snippet.code || ''
+    
+    // Remove code blocks and inline code so bash syntax like [[ $dir ]] isn't parsed as a wikilink
+    code = code.replace(/```[\s\S]*?```/g, '')
+    code = code.replace(/`[^`]+`/g, '')
     const wikiRegex = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g
     
     let match

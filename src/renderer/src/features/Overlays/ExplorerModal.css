@@ -16,8 +16,7 @@
   bottom: 12px; /* Slightly lower to completely eliminate any visual gap */
   width: 350px;
   height: 70vh;
-  min-height: 450px;
-  max-height: 650px;
+  min-height: 350px;
   background: var(--bg-panel);
   border: 1px solid var(--border-dim);
   border-radius: 8px;
@@ -31,6 +30,33 @@
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
   background-color: rgba(32, 32, 32, 0.7); /* translucent dark */
+  background-color: rgba(32, 32, 32, 0.7); /* translucent dark */
+}
+
+/* Resize Handles */
+.resizer {
+  position: absolute;
+  z-index: 100;
+}
+.resizer-top {
+  top: -2px; left: 10px; right: 10px; height: 6px;
+  cursor: ns-resize;
+}
+.resizer-left {
+  top: 10px; bottom: 10px; left: -2px; width: 6px;
+  cursor: ew-resize;
+}
+.resizer-right {
+  top: 10px; bottom: 10px; right: -2px; width: 6px;
+  cursor: ew-resize;
+}
+.resizer-top-left {
+  top: -2px; left: -2px; width: 12px; height: 12px;
+  cursor: nwse-resize;
+}
+.resizer-top-right {
+  top: -2px; right: -2px; width: 12px; height: 12px;
+  cursor: nesw-resize;
 }
 
 /* Search Bar */
@@ -231,6 +257,59 @@
 .start-section .tree-item {
   padding: 6px 12px;
   border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+}
+
+.start-section .tree-item .item-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.start-section .tree-item .item-title {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  color: var(--text-main);
+}
+
+.start-section .tree-item .item-meta-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.start-section .tree-item .hover-actions {
+  display: flex;
+  align-items: center;
+}
+
+.start-section .tree-item .action-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.start-section .tree-item .action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-main);
 }
 
 .start-section .tree-item:hover {

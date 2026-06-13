@@ -511,6 +511,7 @@ const AppShell = () => {
         onSettingsClick={() => setShowSettings(true)}
         onThemeClick={() => setShowThemeModal(true)}
         onToggleGraph={() => setShowGraph(true)}
+        onToggleExplorerModal={() => setShowExplorerModal(prev => !prev)}
       />
 
       <aside className="shell-sidebar-right">
