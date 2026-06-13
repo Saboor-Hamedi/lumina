@@ -148,13 +148,20 @@ const GraphNexus = React.memo(({ isOpen = true, onClose, onNavigate, embedded = 
     
     const sizeMult = settings.graphNodeSize || 1.5
 
-    // Soft organic center force to prevent drifting off-screen
+    // Soft organic center force
     fg.d3Force('center', forceCenter(0, 0))
     
-    // Remove strict constraints for organic shaping
-    fg.d3Force('x', null)
-    fg.d3Force('y', null)
-    fg.d3Force('radial', null)
+    // Galactic Core Gravity: Gently pull all nodes into a central mass
+    fg.d3Force('x', forceX(0).strength(0.04))
+    fg.d3Force('y', forceY(0).strength(0.04))
+    
+    // Galaxy Disc Structure: Forces nodes into a circular galaxy shape
+    fg.d3Force('radial', forceRadial((d) => {
+      if (d.linkCount === 0) return 400; // Bring unlinked stars much closer
+      // Hubs (many links) get pulled to the dense black hole center (radius 0)
+      // Normal notes (few links) orbit in the galactic disc (radius ~200)
+      return Math.max(0, 250 - (d.linkCount * 40));
+    }, 0, 0).strength(0.7))
     
     // High repulsion to separate distinct clusters clearly
     fg.d3Force('charge', forceManyBody().strength(-350))
@@ -162,11 +169,11 @@ const GraphNexus = React.memo(({ isOpen = true, onClose, onNavigate, embedded = 
     // Strict collisions that dynamically scale with the user's Node Size setting
     fg.d3Force('collide', forceCollide().radius(d => {
       const baseR = d.val ? Math.max(2, Math.sqrt(d.val) * 2.5) : 2
-      return (baseR * sizeMult) + 12 // Beautiful, wide 12px airy gap between all nodes
+      return (baseR * sizeMult) + 6 // 6px physical gap
     }).strength(1))
     
-    // Longer, gentler links to let the semantic clusters stretch out naturally
-    if (fg.d3Force('link')) fg.d3Force('link').distance(70).strength(0.4)
+    // Elastic links to hold the constellations together inside the disc
+    if (fg.d3Force('link')) fg.d3Force('link').distance(50).strength(0.5)
     
     // Reheat to apply new physical sizes
     fg.d3ReheatSimulation()
@@ -460,7 +467,7 @@ const GraphNexus = React.memo(({ isOpen = true, onClose, onNavigate, embedded = 
           }}
           backgroundColor="transparent"
           d3AlphaDecay={isSpinning ? 0 : 0.05}
-          d3VelocityDecay={0.3}
+          d3VelocityDecay={0.6} // High viscosity (honey-like) to prevent the whole graph from violently shaking on drag
           cooldownTicks={100}
         />
       </div>
