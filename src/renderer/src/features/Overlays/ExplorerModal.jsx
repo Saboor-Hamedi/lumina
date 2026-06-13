@@ -71,7 +71,19 @@ const DroppableFolderItem = React.memo(({
     data: { type: 'folder', item }
   })
 
-  // Removed combined setNodeRef
+  // Spring-loaded folder expansion
+  useEffect(() => {
+    let timer = null
+    if (isOver && !isExpanded && !isRenaming) {
+      timer = setTimeout(() => {
+        onToggle(item.id, null)
+      }, 600) // 600ms hover to expand
+    }
+    return () => {
+      if (timer) clearTimeout(timer)
+    }
+  }, [isOver, isExpanded, isRenaming, item.id, onToggle])
+
   
   return (
     <div 
@@ -441,8 +453,8 @@ const ExplorerModal = ({ isOpen, onClose }) => {
     return flat
   }, [allSnippets, folders, activeTab, query, expandedFolders, creating, activeListDragItem])
 
-  const toggleFolder = (folderId, e) => {
-    e.stopPropagation()
+  const toggleFolder = useCallback((folderId, e) => {
+    if (e) e.stopPropagation()
     setExpandedFolders(prev => {
       const next = new Set(prev)
       if (next.has(folderId)) next.delete(folderId)
@@ -450,7 +462,7 @@ const ExplorerModal = ({ isOpen, onClose }) => {
       updateSetting('expandedFolders', Array.from(next))
       return next
     })
-  }
+  }, [updateSetting])
 
   const collapseAllFolders = (e) => {
     e.stopPropagation()
