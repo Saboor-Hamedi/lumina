@@ -6,7 +6,57 @@ import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useToast } from '../../core/hooks/useToast'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useFontSettings } from '../../core/hooks/useFontSettings'
+import { useRef } from 'react'
 import './SettingsModal.css'
+
+const ColorPickerInput = ({ initialColor, defaultColor, onColorChange, title, ariaLabel }) => {
+  const [localColor, setLocalColor] = useState(() => {
+    return initialColor ? (initialColor.startsWith('#') ? initialColor : `#${initialColor}`) : defaultColor
+  })
+  const throttleRef = useRef(null)
+
+  useEffect(() => {
+    setLocalColor(initialColor ? (initialColor.startsWith('#') ? initialColor : `#${initialColor}`) : defaultColor)
+  }, [initialColor, defaultColor])
+
+  const handleChange = (e) => {
+    const val = e.target.value
+    setLocalColor(val)
+    
+    // Throttle the actual DOM/CSS variable update to ~30fps to avoid heavy layout thrashing
+    if (!throttleRef.current) {
+      throttleRef.current = setTimeout(() => {
+        onColorChange(val)
+        throttleRef.current = null
+      }, 32)
+    }
+  }
+
+  return (
+    <div className="color-picker-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <input
+        type="color"
+        value={localColor}
+        onChange={handleChange}
+        className="color-picker-input"
+        title={title}
+        aria-label={ariaLabel}
+        style={{
+          width: '40px',
+          height: '40px',
+          padding: '0',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer',
+          background: 'transparent'
+        }}
+      />
+      <span style={{ fontFamily: 'monospace', fontSize: '14px', color: 'var(--text-main)' }}>
+        {localColor === defaultColor && !initialColor ? 'Default' : localColor.toUpperCase()}
+      </span>
+    </div>
+  )
+}
 
 /**
  * SettingsModal Component
@@ -30,7 +80,8 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
   const { settings, updateSetting } = useSettingsStore()
   const { 
     caretWidth, caretColor, caretStyle, updateCaretWidth, updateCaretColor, updateCaretStyle,
-    editorFontFamily, editorFontSize, updateEditorFontFamily, updateEditorFontSize
+    editorFontFamily, editorFontSize, updateEditorFontFamily, updateEditorFontSize,
+    themeAccentColor, updateThemeAccentColor
   } = useFontSettings()
 
   // Update activeTab when initialTab prop changes
@@ -533,35 +584,42 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                       <div className="row-hint">Enter hex color (with or without #, e.g., "000000" or "#ffffff"). Leave empty for theme accent.</div>
                     </div>
                     <div className="caret-color-controls">
-                      <div className="caret-color-input-wrapper">
-                        <span className="caret-color-hash">#</span>
-                        <input
-                          type="text"
-                          value={caretColor ? caretColor.replace(/^#/, '') : ''}
-                          onChange={(e) => {
-                            let value = e.target.value.trim()
-                            // Remove # if user types it
-                            value = value.replace(/^#/, '')
-                            // Only allow hex characters (0-9, A-F, a-f)
-                            value = value.replace(/[^0-9A-Fa-f]/g, '')
-                            // Limit to 6 characters
-                            if (value.length > 6) value = value.slice(0, 6)
-                            
-                            // Always pass what the user types to updateCaretColor
-                            updateCaretColor(value)
-                          }}
-                          placeholder="ffffff"
-                          className="caret-color-input"
-                          title="Enter hex color (e.g., 000000 or ffffff)"
-                          aria-label="Caret color input"
-                          maxLength={6}
-                        />
-                      </div>
+                      <ColorPickerInput
+                        initialColor={caretColor}
+                        defaultColor="#ffffff"
+                        onColorChange={updateCaretColor}
+                        title="Choose Caret Color"
+                        ariaLabel="Caret color picker"
+                      />
                       <button
                         onClick={() => updateCaretColor('')}
                         className="caret-color-reset"
                         title="Reset to theme accent color"
                         aria-label="Reset caret color to theme default"
+                      >
+                        Reset
+                      </button>
+                    </div>
+                  </div>
+                  {/* Theme Accent Color Control */}
+                  <div className="settings-row">
+                    <div className="row-info">
+                      <div className="row-label">Theme Accent Color</div>
+                      <div className="row-hint">Pick the app's accent color. Leave default for theme accent.</div>
+                    </div>
+                    <div className="caret-color-controls">
+                      <ColorPickerInput
+                        initialColor={themeAccentColor}
+                        defaultColor="#40bafa"
+                        onColorChange={updateThemeAccentColor}
+                        title="Choose Theme Accent Color"
+                        ariaLabel="Theme accent color picker"
+                      />
+                      <button
+                        onClick={() => updateThemeAccentColor('')}
+                        className="caret-color-reset"
+                        title="Reset to default theme color"
+                        aria-label="Reset theme accent color to theme default"
                       >
                         Reset
                       </button>

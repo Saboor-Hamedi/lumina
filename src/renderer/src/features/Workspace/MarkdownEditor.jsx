@@ -63,18 +63,44 @@ const MarkdownEditor = React.memo(
     useEffect(() => { showFindWidgetRef.current = showFindWidget }, [showFindWidget])
 
     const realViewRef = useRef(null)
-    const captureViewPlugin = React.useMemo(() => ViewPlugin.fromClass(class {
-      constructor(view) { 
-        realViewRef.current = view 
-        // Force clear any trailing whitespace/newlines from initialization
-        setTimeout(() => {
-          if (view && !view.isDestroyed && snippetRef.current?.code === '') {
-            view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: '' } })
+    const captureViewPlugin = React.useMemo(() => {
+      let saveTimeout;
+      return ViewPlugin.fromClass(class {
+        constructor(view) { 
+          realViewRef.current = view 
+          // Force clear any trailing whitespace/newlines from initialization or restore selection
+          setTimeout(() => {
+            if (view && !view.isDestroyed && snippetRef.current?.code === '') {
+              view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: '' } })
+            } else if (view && !view.isDestroyed && snippetRef.current?.id) {
+              const savedSelection = localStorage.getItem(`cursor-${snippetRef.current.id}`);
+              if (savedSelection) {
+                try {
+                  const { anchor, head } = JSON.parse(savedSelection);
+                  if (anchor <= view.state.doc.length && head <= view.state.doc.length) {
+                    view.dispatch({ selection: { anchor, head }, scrollIntoView: true });
+                    view.focus();
+                  }
+                } catch(e){}
+              }
+            }
+          }, 10)
+        }
+        update(update) {
+          if (update.selectionSet && snippetRef.current?.id) {
+            const { anchor, head } = update.state.selection.main;
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+              localStorage.setItem(`cursor-${snippetRef.current.id}`, JSON.stringify({ anchor, head }));
+            }, 500);
           }
-        }, 10)
-      }
-      destroy() { if (realViewRef.current === this.view) realViewRef.current = null }
-    }), [])
+        }
+        destroy() { 
+          if (realViewRef.current === this.view) realViewRef.current = null;
+          clearTimeout(saveTimeout);
+        }
+      })
+    }, [])
 
     useEffect(() => {
       if (!isActive) return
@@ -126,11 +152,20 @@ const MarkdownEditor = React.memo(
         realViewRef.current.dispatch({ effects: updateSearchHighlights.of(Decoration.none) });
       };
 
+      const handleFocusEditorStart = () => {
+        if (!isActiveRef.current || !realViewRef.current) return;
+        const view = realViewRef.current;
+        view.focus();
+        view.dispatch({ selection: { anchor: 0, head: 0 } });
+      };
+
       window.addEventListener('search-update', handleSearchUpdate);
       window.addEventListener('search-clear', handleSearchClear);
+      window.addEventListener('focus-editor-start', handleFocusEditorStart);
       return () => {
         window.removeEventListener('search-update', handleSearchUpdate);
         window.removeEventListener('search-clear', handleSearchClear);
+        window.removeEventListener('focus-editor-start', handleFocusEditorStart);
       };
     }, []);
 

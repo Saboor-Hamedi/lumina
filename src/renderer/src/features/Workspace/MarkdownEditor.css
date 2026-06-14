@@ -658,7 +658,7 @@
   font-weight: 800;
   border: none;
   background: transparent;
-  color: var(--text-main);
+  color: var(--text-accent);
   padding: 4px 0;
   line-height: 1.4;
   margin-bottom: 5px;

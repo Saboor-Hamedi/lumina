@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { getTheme } from '../themes/themeDefinitions'
 
 /**
@@ -130,20 +130,9 @@ const applyCaretStyles = (width, color) => {
  * @returns {Function} returns.updateCaretStyle - Update caret style
  * @returns {Function} returns.updateCaretColor - Update caret color
  *
- * @example
- * const {
- *   caretWidth,
- *   caretColor,
- *   updateCaretWidth,
- *   updateCaretColor
- * } = useFontSettings()
- *
- * // Update caret width
- * updateCaretWidth(3) // Sets to "3px"
- *
- * // Update caret color
  * updateCaretColor("#ff0000") // Sets to red
  * updateCaretColor("") // Resets to theme accent
+ * updateThemeAccentColor("#ff0000") // Sets theme accent to red
  */
 export const useFontSettings = () => {
   const [editorFontFamily, setEditorFontFamily] = useState(DEFAULTS.FONT_FAMILY)
@@ -155,7 +144,10 @@ export const useFontSettings = () => {
   const [caretStyle, setCaretStyle] = useState(DEFAULTS.CARET_STYLE)
   const [caretWidth, setCaretWidth] = useState(DEFAULTS.CARET_WIDTH)
   const [caretColor, setCaretColor] = useState('')
+  const [themeAccentColor, setThemeAccentColor] = useState('')
   const [useBorderLeft, setUseBorderLeft] = useState(true)
+
+  const persistDebounceRef = useRef(null)
 
   // Load settings on mount
   useEffect(() => {
@@ -208,7 +200,8 @@ export const useFontSettings = () => {
               editorFontFamily: (cursorSettings && cursorSettings.editorFontFamily) || (allSettings && allSettings.fontFamily) || colors.editorFontFamily,
               editorFontSize: (cursorSettings && cursorSettings.editorFontSize) || (allSettings && allSettings.fontSize) || colors.editorFontSize,
               previewFontFamily: (cursorSettings && cursorSettings.previewFontFamily) || (allSettings && allSettings.previewFontFamily) || colors.previewFontFamily,
-              previewFontSize: (cursorSettings && cursorSettings.previewFontSize) || (allSettings && allSettings.previewFontSize) || colors.previewFontSize
+              previewFontSize: (cursorSettings && cursorSettings.previewFontSize) || (allSettings && allSettings.previewFontSize) || colors.previewFontSize,
+              themeAccentColor: (cursorSettings && typeof cursorSettings.themeAccentColor !== 'undefined') ? cursorSettings.themeAccentColor : (allSettings?.themeAccentColor ?? colors.themeAccentColor)
             }
             // Cursor settings from settings.json take precedence
             colors = { ...colors, ...cursorColors }
@@ -301,6 +294,7 @@ export const useFontSettings = () => {
 
         // Caret width processing (silent)
         const savedCaretColor = colors.caretColor || ''
+        const savedThemeAccentColor = colors.themeAccentColor || ''
 
         // Applying caret settings (silent)
 
@@ -334,6 +328,12 @@ export const useFontSettings = () => {
         const themeDefaultColor = getTheme(themeName).colors['--caret-color'] || getTheme(themeName).colors['--text-accent']
         const stateCaretColor = (savedCaretColor && savedCaretColor.trim() !== '' && savedCaretColor !== themeDefaultColor) ? savedCaretColor : ''
         setCaretColor(stateCaretColor)
+        
+        const stateThemeAccentColor = (savedThemeAccentColor && savedThemeAccentColor.trim() !== '') ? savedThemeAccentColor : ''
+        setThemeAccentColor(stateThemeAccentColor)
+        if (stateThemeAccentColor) {
+           root.style.setProperty('--text-accent', stateThemeAccentColor)
+        }
 
         // Always ensure caret styles are persisted to localStorage
         // This ensures they're available on next load and fixes the issue
@@ -343,10 +343,10 @@ export const useFontSettings = () => {
           editorFontSize: isNaN(es) ? DEFAULTS.FONT_SIZE : es,
           previewFontFamily: pf,
           previewFontSize: isNaN(ps) ? DEFAULTS.FONT_SIZE : ps,
-          // Store caretWidth as number in localStorage (will be converted to number when saving to cursor)
           caretWidth: typeof normalizedWidth === 'string' ? parseInt(normalizedWidth.replace('px', ''), 10) : normalizedWidth,
           caretStyle: savedCaretStyle,
           caretColor: stateCaretColor,
+          themeAccentColor: stateThemeAccentColor,
           useBorderLeft: colors.useBorderLeft !== undefined ? colors.useBorderLeft : true
         }
         localStorage.setItem('theme-colors', JSON.stringify(updatedColors))
@@ -363,6 +363,7 @@ export const useFontSettings = () => {
               caretWidth: widthNumber,
               caretStyle: savedCaretStyle,
               caretColor: stateCaretColor,
+              themeAccentColor: stateThemeAccentColor,
               editorFontFamily: ef,
               editorFontSize: isNaN(es) ? DEFAULTS.FONT_SIZE : es,
               previewFontFamily: pf,
@@ -396,6 +397,7 @@ export const useFontSettings = () => {
             caretWidth: cursorSettings.caretWidth ?? settings?.caretWidth ?? settings?.width ?? settings?.['caret width'],
             caretStyle: cursorSettings.caretStyle ?? settings?.cursorStyle ?? settings?.caretStyle,
             caretColor: (typeof cursorSettings.caretColor !== 'undefined') ? cursorSettings.caretColor : (settings?.caretColor ?? settings?.color),
+            themeAccentColor: (typeof cursorSettings.themeAccentColor !== 'undefined') ? cursorSettings.themeAccentColor : settings?.themeAccentColor,
             useBorderLeft: (typeof cursorSettings.useBorderLeft !== 'undefined') ? (cursorSettings.useBorderLeft !== false && cursorSettings.useBorderLeft !== 'none' && cursorSettings.useBorderLeft !== 'hidden') : 
               (typeof settings?.useBorderLeft !== 'undefined' ? (settings.useBorderLeft !== false && settings.useBorderLeft !== 'none' && settings.useBorderLeft !== 'hidden') : 
               (typeof settings?.borderLeft !== 'undefined' ? (settings.borderLeft !== false && settings.borderLeft !== 'none' && settings.borderLeft !== 'hidden') : true)),
@@ -421,6 +423,7 @@ export const useFontSettings = () => {
           const normalizedWidth = clampCaretWidth(caretWidth || DEFAULTS.CARET_WIDTH)
           const savedCaretStyle = incoming.caretStyle || DEFAULTS.CARET_STYLE
           const savedCaretColor = incoming.caretColor || ''
+          const savedThemeAccentColor = incoming.themeAccentColor || ''
 
           // Apply caret immediately
           const root = document.documentElement
@@ -431,8 +434,21 @@ export const useFontSettings = () => {
           if (!finalCaretColor || finalCaretColor.trim() === '') {
             const currentTheme = getTheme(settings?.theme || DEFAULTS.THEME)
             finalCaretColor = currentTheme.colors['--caret-color'] || currentTheme.colors['--text-accent'] || '#40bafa'
+          } else if (!finalCaretColor.startsWith('#')) {
+            finalCaretColor = `#${finalCaretColor}`
           }
           root.style.setProperty('--caret-color', finalCaretColor)
+          
+          let finalThemeAccentColor = savedThemeAccentColor
+          if (finalThemeAccentColor && !finalThemeAccentColor.startsWith('#')) {
+             finalThemeAccentColor = `#${finalThemeAccentColor}`
+          }
+          if (finalThemeAccentColor) {
+             root.style.setProperty('--text-accent', finalThemeAccentColor)
+          } else {
+             const currentTheme = getTheme(settings?.theme || DEFAULTS.THEME)
+             root.style.setProperty('--text-accent', currentTheme.colors['--text-accent'] || '#40bafa')
+          }
 
           // Apply font/preview sizes if provided
           if (incoming.editorFontFamily) root.style.setProperty('--editor-font-family', incoming.editorFontFamily)
@@ -444,6 +460,7 @@ export const useFontSettings = () => {
           setCaretStyle(savedCaretStyle)
           setCaretWidth(normalizedWidth)
           setCaretColor(savedCaretColor || '')
+          setThemeAccentColor(savedThemeAccentColor || '')
           setUseBorderLeft(incoming.useBorderLeft)
 
           // Dispatch event to update CodeMirror
@@ -496,8 +513,23 @@ export const useFontSettings = () => {
       const themeName = root.getAttribute('data-theme') || DEFAULTS.THEME
       const currentTheme = getTheme(themeName)
       finalCaretColor = currentTheme.colors['--caret-color'] || currentTheme.colors['--text-accent'] || '#40bafa'
+    } else if (!finalCaretColor.startsWith('#')) {
+      finalCaretColor = `#${finalCaretColor}`
     }
     root.style.setProperty('--caret-color', finalCaretColor)
+    
+    // Theme Accent Color
+    let finalThemeAccentColor = themeAccentColor
+    if (finalThemeAccentColor && !finalThemeAccentColor.startsWith('#')) {
+      finalThemeAccentColor = `#${finalThemeAccentColor}`
+    }
+    if (finalThemeAccentColor && finalThemeAccentColor.trim() !== '') {
+      root.style.setProperty('--text-accent', finalThemeAccentColor)
+    } else {
+      const themeName = root.getAttribute('data-theme') || DEFAULTS.THEME
+      const currentTheme = getTheme(themeName)
+      root.style.setProperty('--text-accent', currentTheme.colors['--text-accent'] || '#40bafa')
+    }
     
     // Force a repaint for stability
     void root.offsetHeight
@@ -511,50 +543,60 @@ export const useFontSettings = () => {
     previewFontSize, 
     caretStyle, 
     caretWidth, 
-    caretColor
+    caretColor,
+    themeAccentColor
   ])
 
   // Persist cursor settings to settings.json (cursor object) and localStorage
   const persistTheme = useCallback(
-    async (next) => {
+    (next) => {
       try {
         const merged = { ...baseColors, ...next }
-
-        // Save to cursor object in settings.json (new location)
-        // Store caretWidth as number (not "3px")
-        let caretWidthValue = merged.caretWidth
-        if (typeof caretWidthValue === 'string' && caretWidthValue.includes('px')) {
-          caretWidthValue = parseInt(caretWidthValue.replace('px', ''), 10)
-        } else if (typeof caretWidthValue === 'string') {
-          caretWidthValue = parseInt(caretWidthValue, 10)
-        }
-        // Ensure it's a valid number
-        if (isNaN(caretWidthValue) || caretWidthValue < 1) {
-          caretWidthValue = parseInt(DEFAULTS.CARET_WIDTH.replace('px', ''), 10)
-        }
-
-        const cursorSettings = {
-          caretWidth: caretWidthValue, // Store as number (e.g., 3 not "3px")
-          caretStyle: merged.caretStyle,
-          caretColor: merged.caretColor,
-          useBorderLeft: merged.useBorderLeft !== undefined ? merged.useBorderLeft : true,
-          editorFontFamily: merged.editorFontFamily,
-          editorFontSize: merged.editorFontSize,
-          previewFontFamily: merged.previewFontFamily,
-          previewFontSize: merged.previewFontSize
-        }
-
-        // Save cursor object to settings.json
-        await window.api?.saveSetting?.('cursor', cursorSettings)
-
-        // Also save to localStorage for quick access
-        localStorage.setItem('theme-colors', JSON.stringify(merged))
-
+        
+        // Update local React state instantly for snappy UX
         setBaseColors(merged)
 
-        // Saved cursor settings to settings.json (silent)
+        // Debounce expensive IO
+        if (persistDebounceRef.current) {
+          clearTimeout(persistDebounceRef.current)
+        }
+
+        persistDebounceRef.current = setTimeout(async () => {
+          try {
+            let caretWidthValue = merged.caretWidth
+            if (typeof caretWidthValue === 'string' && caretWidthValue.includes('px')) {
+              caretWidthValue = parseInt(caretWidthValue.replace('px', ''), 10)
+            } else if (typeof caretWidthValue === 'string') {
+              caretWidthValue = parseInt(caretWidthValue, 10)
+            }
+            if (isNaN(caretWidthValue) || caretWidthValue < 1) {
+              caretWidthValue = parseInt(DEFAULTS.CARET_WIDTH.replace('px', ''), 10)
+            }
+
+            const cursorSettings = {
+              caretWidth: caretWidthValue,
+              caretStyle: merged.caretStyle,
+              caretColor: merged.caretColor,
+              themeAccentColor: merged.themeAccentColor,
+              useBorderLeft: merged.useBorderLeft !== undefined ? merged.useBorderLeft : true,
+              editorFontFamily: merged.editorFontFamily,
+              editorFontSize: merged.editorFontSize,
+              previewFontFamily: merged.previewFontFamily,
+              previewFontSize: merged.previewFontSize
+            }
+
+            // Save to settings.json
+            await window.api?.saveSetting?.('cursor', cursorSettings)
+
+            // Save to localStorage
+            localStorage.setItem('theme-colors', JSON.stringify(merged))
+          } catch (err) {
+            console.warn('[useFontSettings] Failed to save cursor settings asynchronously:', err)
+          }
+        }, 300)
+
       } catch (err) {
-        console.warn('[useFontSettings] Failed to save cursor settings:', err)
+        console.warn('[useFontSettings] Failed to merge cursor settings:', err)
       }
     },
     [baseColors]
@@ -705,27 +747,49 @@ export const useFontSettings = () => {
    */
   const updateCaretColor = useCallback(
     (color) => {
-      let rawColor = color ? color.trim().replace(/^#/, '') : ''
-      let validColorForCss = ''
-
-      // Determine if it's a valid 3 or 6 char hex
-      if (/^[0-9A-Fa-f]{3}$|^[0-9A-Fa-f]{6}$/.test(rawColor)) {
-        validColorForCss = `#${rawColor}`
+      let rawColor = color ? color.trim() : ''
+      
+      const root = document.documentElement
+      if (rawColor) {
+        root.style.setProperty('--caret-color', rawColor)
+      } else {
+        const themeName = root.getAttribute('data-theme') || DEFAULTS.THEME
+        const currentTheme = getTheme(themeName)
+        root.style.setProperty('--caret-color', currentTheme.colors['--caret-color'] || currentTheme.colors['--text-accent'] || '#40bafa')
       }
-
-      // Store what the user actually typed so the input box doesn't fight them
-      setCaretColor(rawColor)
       
-      // Apply styles using the valid CSS color (or empty string to fallback to theme)
-      applyCaretStyles(caretWidth, validColorForCss)
-      
-      // Persist the raw color
-      persistTheme({ caretColor: rawColor })
-
-      // Force CodeMirror to update
-      window.dispatchEvent(new CustomEvent('caret-style-update'))
+      // Debounce React state and disk IO to prevent lag
+      if (persistDebounceRef.current) clearTimeout(persistDebounceRef.current)
+      persistDebounceRef.current = setTimeout(() => {
+        setCaretColor(rawColor)
+        persistTheme({ caretColor: rawColor })
+        window.dispatchEvent(new CustomEvent('caret-style-update'))
+      }, 300)
     },
-    [caretWidth, persistTheme]
+    [persistTheme]
+  )
+
+  const updateThemeAccentColor = useCallback(
+    (color) => {
+      let rawColor = color ? color.trim() : ''
+
+      const root = document.documentElement
+      if (rawColor) {
+        root.style.setProperty('--text-accent', rawColor)
+      } else {
+        const themeName = root.getAttribute('data-theme') || DEFAULTS.THEME
+        const currentTheme = getTheme(themeName)
+        root.style.setProperty('--text-accent', currentTheme.colors['--text-accent'] || '#40bafa')
+      }
+      
+      // Debounce React state and disk IO to prevent lag
+      if (persistDebounceRef.current) clearTimeout(persistDebounceRef.current)
+      persistDebounceRef.current = setTimeout(() => {
+        setThemeAccentColor(rawColor)
+        persistTheme({ themeAccentColor: rawColor })
+      }, 300)
+    },
+    [persistTheme]
   )
 
   /**
@@ -741,6 +805,7 @@ export const useFontSettings = () => {
     caretStyle,
     caretWidth,
     caretColor,
+    themeAccentColor,
     useBorderLeft,
     // Update functions
     updateEditorFontFamily,
@@ -749,7 +814,8 @@ export const useFontSettings = () => {
     updatePreviewFontSize,
     updateCaretWidth,
     updateCaretStyle,
-    updateCaretColor
+    updateCaretColor,
+    updateThemeAccentColor
   }
 }
 

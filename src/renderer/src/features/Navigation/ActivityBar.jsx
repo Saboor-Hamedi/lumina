@@ -105,7 +105,6 @@ const ActivityBar = ({ onSettingsClick, onThemeClick, onToggleGraph, onToggleExp
             ) : (
               <ArrowUpCircle
                 size={20}
-                color="var(--text-accent)"
                 style={{ opacity: status === 'idle' ? 0.3 : 1 }}
               />
             )}

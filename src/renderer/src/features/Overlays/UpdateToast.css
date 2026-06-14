@@ -6,13 +6,15 @@
   transform: none;
   background: var(--bg-panel);
   border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--text-accent);
   border-radius: 8px;
-  padding: 8px 12px;
+  padding: 12px 16px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
   z-index: 10000;
-  min-width: 200px;
-  max-width: 360px;
-  width: auto;
+  width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   animation: slideInToast 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   backdrop-filter: blur(12px);
 }
@@ -40,6 +42,7 @@
   font-weight: 500;
   color: var(--text-main);
   line-height: 1.4;
+  flex: 1;
 }
 
 .toast-icon {
