@@ -27,6 +27,7 @@ export const useTheme = () => {
     }
     
     setCurrentTheme(themeId)
+    localStorage.setItem('theme-id', themeId)
     // applyThemeUtil handles caret color from theme definition
     applyThemeUtil(themeId)
   }

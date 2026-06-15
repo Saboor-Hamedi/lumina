@@ -16,10 +16,10 @@
 .theme-modal-container {
   background: var(--bg-app);
   border: 1px solid var(--border-dim);
-  border-radius: 0;
-  box-shadow: none;
+  border-radius: 8px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
   width: 90%;
-  max-width: 900px;
+  max-width: 1000px;
   max-height: 85vh;
   display: flex;
   flex-direction: column;
@@ -28,115 +28,55 @@
 }
 
 .theme-modal-container > .pane-header {
-  /* Match main app header: flat, same background and border */
   background: var(--color-bg-secondary);
   border-bottom: 1px solid var(--color-border);
-  /* use global header height so modals match the main header */
   padding: 0 12px;
   height: var(--header-height);
-
   position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.theme-modal-title-group {
+.theme-modal-toolbar {
+  padding: 16px 24px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 12px;
+  background: var(--bg-app);
+  border-bottom: 1px solid var(--border-dim);
 }
 
-.theme-modal-icon {
-  color: var(--text-accent);
-  flex-shrink: 0;
-}
-
-.theme-modal-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-main);
-  line-height: 1.1;
-  /* subtle inner-like shadow to give slight depth */
-  text-shadow: 0 1px 0 rgba(255,255,255,0.02), 0 -1px 2px rgba(0,0,0,0.06);
-}
-
-/* Knob that indicates draggable/header area */
-.modal-header-knob {
-  position: absolute;
-  top: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 40px;
-  height: 6px;
-  border-radius: 4px;
-  background: linear-gradient(90deg, rgba(0,0,0,0.06), rgba(0,0,0,0.02));
-  box-shadow: 0 1px 0 rgba(255,255,255,0.03) inset;
-}
-
-/* Layout helpers for new ModalHeader */
-.modal-header-with-knob { 
-  padding-top: 0;
-}
-.modal-left { display: flex; align-items: center; gap: 12px; }
-.modal-right { display: flex; align-items: stretch; gap: 8px; position: absolute; right: 0; top: 0; height: var(--header-height); }
-
-/* Close button exactly header height, no extra internal padding */
-.theme-modal-container .modal-close.modal-close-top {
-  width: var(--header-height);
-  height: var(--header-height);
+.theme-search-wrapper {
   display: flex;
   align-items: center;
-  justify-content: center;
-  border-radius: 0;
-  border: none;
-  background: transparent;
-  color: var(--text-faint);
-  cursor: pointer;
-  transition: background 0.08s ease, transform 0.08s ease;
-}
-.theme-modal-container .modal-close.modal-close-top:hover {
-  background: var(--color-danger, #ef4444);
-  color: white;
-  transform: none;
 }
 
-/* small knob under the title to 'pop' the title */
+.theme-search-input {
+  width: 300px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  border-radius: 4px;
+  color: var(--text-main);
+  padding: 8px 12px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
 
+.theme-search-input:focus {
+  border-color: var(--text-accent);
+}
 
-/* Ensure header/body separation is clear */
-.theme-modal-container > .pane-header { border-bottom: 1px solid var(--color-border); }
-
-.theme-modal-subtitle {
+.theme-modal-stats {
   font-size: 12px;
   color: var(--text-muted);
-  margin-top: 2px;
-}
-
-.theme-modal-container .modal-close {
-  /* make close icon match header icon sizing/shape */
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
-  background: var(--color-bg-tertiary);
-  color: var(--text-faint);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.theme-modal-container .modal-close:hover {
-  background: var(--color-accent-primary);
-  color: white;
 }
 
 .theme-modal-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 24px;
   padding: 24px;
   overflow-y: auto;
   flex: 1;
@@ -146,39 +86,87 @@
   display: flex;
   flex-direction: column;
   cursor: pointer;
-  border-radius: 8px;
-  border: 2px solid var(--border-dim);
-  background: var(--bg-card);
+  border-radius: 6px;
+  background: transparent;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  overflow: hidden;
   position: relative;
 }
 
-.theme-modal-card:hover {
-  border-color: var(--border-main);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+.theme-modal-card:hover .theme-modal-preview {
+  opacity: 0.9;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.theme-modal-card.active {
-  border-color: var(--text-accent);
-  box-shadow: 0 0 0 3px rgba(var(--text-accent-rgb, 64, 186, 250), 0.1),
-              0 4px 16px rgba(0, 0, 0, 0.2);
+.theme-modal-card.active .theme-modal-name {
+  color: var(--text-accent);
 }
 
-.theme-modal-card.hovered {
-  border-color: var(--text-accent);
+.theme-card-header {
+  padding-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.theme-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.theme-modal-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.theme-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.theme-check-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-success, #10b981);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+}
+
+.theme-badge.installed {
+  background: rgba(var(--text-accent-rgb, 100,100,100), 0.1);
+  color: var(--text-accent);
+  border: 1px solid rgba(var(--text-accent-rgb, 100,100,100), 0.2);
+}
+
+.theme-modal-author {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.theme-modal-preview-wrapper {
+  flex: 1;
+  display: flex;
 }
 
 .theme-modal-preview {
   width: 100%;
-  height: 100px;
+  height: 160px;
   position: relative;
   overflow: hidden;
-  border-radius: 6px 6px 0 0;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid var(--border-dim);
+  transition: all 0.2s;
 }
 
 .theme-preview-sidebar {
@@ -229,32 +217,7 @@
   border-radius: 4px;
 }
 
-.theme-modal-info {
-  padding: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
 
-.theme-modal-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-main);
-  flex: 1;
-}
-
-.theme-modal-check {
-  flex-shrink: 0;
-  opacity: 0.9;
-}
-
-.theme-modal-description {
-  padding: 0 12px 12px;
-  font-size: 11px;
-  color: var(--text-muted);
-  line-height: 1.4;
-}
 
 @keyframes fadeIn {
   from {
