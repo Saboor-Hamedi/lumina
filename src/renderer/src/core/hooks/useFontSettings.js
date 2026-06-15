@@ -316,6 +316,15 @@ export const useFontSettings = () => {
         // Force immediate application
         void root.offsetHeight
 
+        // Apply font settings to root
+        root.style.setProperty('--font-editor', ef)
+        root.style.setProperty('--font-size-editor', `${isNaN(es) ? DEFAULTS.FONT_SIZE : es}px`)
+        root.style.setProperty('--editor-font-family', ef)
+        root.style.setProperty('--editor-font-size', `${(isNaN(es) ? DEFAULTS.FONT_SIZE : es) / 16}rem`)
+        root.style.setProperty('--preview-font-family', pf)
+        root.style.setProperty('--preview-font-size', `${(isNaN(ps) ? DEFAULTS.FONT_SIZE : ps) / 16}rem`)
+        root.style.setProperty('--preview-font-size-px', `${isNaN(ps) ? DEFAULTS.FONT_SIZE : ps}px`)
+
         // Apply current line background if present
         if (colors.currentLineBg) {
           root.style.setProperty('--current-line-bg', colors.currentLineBg)

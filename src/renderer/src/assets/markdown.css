@@ -15,7 +15,7 @@
 .markdown-body {
   background-color: transparent !important;
   color: var(--text-main) !important;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+  font-family: var(--editor-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif) !important;
   /* font-size: 16px !important; */
   line-height: 1.7 !important;
   letter-spacing: 0;
@@ -88,18 +88,19 @@
   list-style-type: decimal !important;
 }
 
-/* Blockquotes - Subtle, elegant design */
+/* Blockquotes - Premium styling */
 .markdown-body blockquote {
-  color: var(--text-secondary) !important;
-  border-left: 3px solid rgba(0, 0, 0, 0.15) !important;
-  background: transparent !important;
-  padding: 2px 16px !important;
+  color: var(--text-muted) !important;
+  border-left: 4px solid var(--text-accent) !important;
+  background: var(--bg-active) !important;
+  padding: 12px 20px !important;
   margin: 20px 0 !important;
-  font-style: italic;
+  border-radius: 0 8px 8px 0;
+  font-style: normal;
 }
 
 .markdown-body blockquote p {
-  margin: 12px 0 !important;
+  margin: 0 !important;
 }
 
 /* Inline code - Clean, minimal */
@@ -150,10 +151,9 @@
 .markdown-body table th,
 .markdown-body table td {
   padding: 12px 16px !important;
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid var(--border-subtle) !important;
   text-align: left;
   color: var(--text-main) !important;
- 
 }
 
 .markdown-body table th {
@@ -167,27 +167,27 @@
 }
 
 .markdown-body table tr:nth-child(2n) {
-  background-color: rgba(0, 0, 0, 0.02) !important;
+  background-color: var(--bg-card) !important;
 }
 
 /* Horizontal rule - Minimal */
 .markdown-body hr {
-  height: 1px;
-  background-color: rgba(0, 0, 0, 0.1) !important;
+  height: 2px;
+  background-color: var(--border-subtle) !important;
   border: none !important;
   margin: 32px 0 !important;
 }
 
 /* Links - Clean underline */
 .markdown-body a {
-  color: #0366d6 !important;
+  color: var(--text-accent) !important;
   text-decoration: none !important;
-  border-bottom: 1px solid rgba(3, 102, 214, 0.2) !important;
+  border-bottom: 1px solid transparent !important;
   transition: all 0.2s ease;
 }
 
 .markdown-body a:hover {
-  border-bottom-color: #0366d6 !important;
+  border-bottom-color: var(--text-accent) !important;
 }
 
 /* Images - Responsive */
@@ -198,13 +198,43 @@
   margin: 16px 0;
 }
 
-/* Task lists */
+/* Task lists - Custom Checkboxes */
 .markdown-body .task-list-item {
   list-style-type: none !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 !important;
 }
 
 .markdown-body .task-list-item-checkbox {
-  margin: 0 8px 0 -24px !important;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border-main);
+  border-radius: 4px;
+  margin: 0 !important;
+  position: relative;
+  cursor: pointer;
+  background: var(--bg-app);
+  transition: all 0.2s ease;
+}
+
+.markdown-body .task-list-item-checkbox:checked {
+  background-color: var(--text-accent);
+  border-color: var(--text-accent);
+}
+
+.markdown-body .task-list-item-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid var(--bg-app);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }
 
 /* ===== CODE BLOCK HEADER ===== */

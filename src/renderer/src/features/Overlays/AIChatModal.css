@@ -69,19 +69,7 @@
 }
 
 /* Header styling - matches ThemeModal */
-.ai-chat-modal-container > .pane-header {
-  background: var(--color-bg-secondary);
-  border-bottom: 1px solid var(--color-border);
-  padding: 0 12px;
-  height: var(--header-height);
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-shrink: 0;
-  cursor: move;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
+/* Header styling - removed to use global index.css */
 
 /* Draggable handle - covers left portion of header (title area) */
 .ai-chat-modal-drag-handle {
@@ -94,25 +82,7 @@
   cursor: move;
 }
 
-/* Modal header layout helpers */
-.ai-chat-modal-container .modal-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  position: relative;
-  z-index: 2;
-}
 
-.ai-chat-modal-container .modal-right {
-  display: flex;
-  align-items: stretch;
-  gap: 8px;
-  position: absolute;
-  right: 0;
-  top: 0;
-  height: var(--header-height);
-  z-index: 2;
-}
 
 /* Clear History button */
 .modal-clear-btn {
@@ -201,46 +171,9 @@
   top: 0;
 }
 
-/* Close button styling */
-.ai-chat-modal-container .modal-close.modal-close-top {
-  width: var(--header-height);
-  height: var(--header-height);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0;
-  border: none;
-  background: transparent;
-  color: var(--text-faint);
-  cursor: pointer;
-  transition: background 0.08s ease, color 0.08s ease;
-  transform: none;
-  position: relative;
-}
 
-.ai-chat-modal-container .modal-close.modal-close-top:hover {
-  background: var(--color-danger, #ef4444);
-  color: white;
-  transform: none;
-}
 
-.ai-chat-modal-container .modal-close.modal-close-top:active {
-  transform: none;
-  top: 0;
-}
 
-/* Title and icon styling */
-.ai-chat-modal-container .theme-modal-icon {
-  color: var(--text-accent);
-  flex-shrink: 0;
-}
-
-.ai-chat-modal-container .theme-modal-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-main);
-  line-height: 1.1;
-}
 
 /* Modal body - contains the AI chat panel */
 .ai-chat-modal-body {

@@ -104,60 +104,7 @@
   color: var(--text-main);
 }
 
-/* Ensure preview modal header matches AI modal header */
-.preview-container .pane-header.modal-header-with-knob {
-  position: relative;
-  height: var(--header-height, 32px);
-  min-height: var(--header-height, 32px);  /* ← Add this to prevent expansion */
-  max-height: var(--header-height, 32px);  /* ← Add this to lock the height */
-  padding: 0 12px;
-  background: var(--bg-sidebar);
-  border-bottom: 1px solid var(--border-dim);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
 
-/* Ensure modal-right is positioned correctly within preview header */
-.preview-container .modal-right {
-  position: absolute;
-  right: 0;
-  top: 0;
-  /* height: var(--header-height, 32px); */
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Ensure modal-left is positioned correctly */
-.preview-container .pane-header.modal-header-with-knob .modal-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  position: relative;
-  z-index: 2;
-
-}
-
-/* Style close button for preview modal */
-.preview-container .modal-close.modal-close-top {
-  width: var(--header-height, 28px);
-  height: var(--header-height, 28px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0;
-  border: none;
-  background: transparent;
-  color: var(--text-faint);
-  cursor: pointer;
-  transition: background 0.08s ease;
-}
-
-.preview-container .modal-close.modal-close-top:hover {
-  background: var(--color-danger, #ef4444);
-  color: white;
-}
 
 .preview-body {
   flex: 1;

@@ -27,16 +27,7 @@
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.theme-modal-container > .pane-header {
-  background: var(--color-bg-secondary);
-  border-bottom: 1px solid var(--color-border);
-  padding: 0 12px;
-  height: var(--header-height);
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
+
 
 .theme-modal-toolbar {
   padding: 16px 24px;

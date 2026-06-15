@@ -245,51 +245,7 @@ body {
   color: var(--text-muted);
 }
 
-/* Obsidian-Style Modal Header */
-.pane-header {
-  height: 40px;
-  padding: 0 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--border-dim);
-  background: var(--bg-sidebar);
-  flex-shrink: 0;
-  user-select: none;
-}
 
-.modal-title-stack {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-main);
-  opacity: 0.9;
-}
-
-.modal-close {
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-main, 5px);
-  border: none;
-  background: transparent;
-  color: var(--text-faint);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.modal-close:hover {
-  background: var(--bg-active);
-  color: var(--text-main);
-}
-
-.modal-close:active {
-  transform: translateY(1px);
-}
 
 /* Focus - Clean & Minimal (User Preference) */
 :focus { outline: none !important; }

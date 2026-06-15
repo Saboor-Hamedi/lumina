@@ -1,6 +1,6 @@
 import React from 'react'
 import { X } from 'lucide-react'
-import './ThemeModal.css'
+import './ModalHeader.css'
 
 const ModalHeader = ({ title = null, subtitle = null, icon = null, left = null, right = null, onClose = () => {}, onMouseDown = null, style = {} }) => {
   return (
@@ -13,7 +13,6 @@ const ModalHeader = ({ title = null, subtitle = null, icon = null, left = null, 
         ) : (
           (icon || title || subtitle) ? (
             <div className="modal-title-stack">
-              {icon ? <span className="theme-modal-icon">{icon}</span> : null}
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 {title ? (
                   <>

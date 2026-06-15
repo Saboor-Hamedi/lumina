@@ -7,6 +7,7 @@ import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { buildGraphData, buildSemanticLinks } from '../../core/utils/graphBuilder'
 import { forceRadial, forceManyBody, forceCollide, forceCenter, forceX, forceY } from 'd3-force'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
+import ModalHeader from './ModalHeader'
 import './GraphNexus.css'
 import './components/GraphControls.css'
 
@@ -410,40 +411,35 @@ const GraphNexus = React.memo(({ isOpen = true, onClose, onNavigate, embedded = 
       onClick={(e) => e.stopPropagation()}
       data-graph-theme={graphTheme}
     >
-      <header className="nexus-header" style={{ WebkitAppRegion: 'drag' }}>
-        <div className="nexus-title-stack">
-          <Network size={16} strokeWidth={2} color="var(--text-accent)" />
-          Graph Nexus
-        </div>
-        <div className="nexus-header-actions" style={{ WebkitAppRegion: 'no-drag' }}>
-          <button 
-            className="win-btn" 
-            onClick={() => {
-              const themes = ['default', 'space', 'nebula', 'frost', 'neural']
-              const next = themes[(themes.indexOf(graphTheme) + 1) % themes.length]
-              useSettingsStore.getState().updateSetting('graphTheme', next)
-            }} 
-            title="Cycle Space Theme"
-          >
-            <Layers size={14} />
-          </button>
-          <button 
-            className={`win-btn ${isSpinning ? 'active' : ''}`} 
-            onClick={() => setIsSpinning(!isSpinning)} 
-            title={isSpinning ? 'Stop Rotation' : 'Auto Rotate'}
-          >
-            <RefreshCw size={14} className={isSpinning ? 'spin-icon' : ''} />
-          </button>
-          <button className="win-btn" onClick={handleToggleMaximize} title={isMaximized ? 'Restore' : 'Maximize'}>
-            {isMaximized ? <Copy size={12} strokeWidth={2} /> : <Square size={12} strokeWidth={2} />}
-          </button>
-          {onClose && (
-            <button className="win-btn close-btn" onClick={onClose} title="Close">
-              <X size={16} strokeWidth={1.5} />
+      <ModalHeader
+        title="Graph Nexus"
+        onClose={onClose}
+        right={
+          <>
+            <button 
+              className="win-btn" 
+              onClick={() => {
+                const themes = ['default', 'space', 'nebula', 'frost', 'neural']
+                const next = themes[(themes.indexOf(graphTheme) + 1) % themes.length]
+                useSettingsStore.getState().updateSetting('graphTheme', next)
+              }} 
+              title="Cycle Space Theme"
+            >
+              <Layers size={14} />
             </button>
-          )}
-        </div>
-      </header>
+            <button 
+              className={`win-btn ${isSpinning ? 'active' : ''}`} 
+              onClick={() => setIsSpinning(!isSpinning)} 
+              title={isSpinning ? 'Stop Rotation' : 'Auto Rotate'}
+            >
+              <RefreshCw size={14} className={isSpinning ? 'spin-icon' : ''} />
+            </button>
+            <button className="win-btn" onClick={handleToggleMaximize} title={isMaximized ? 'Restore' : 'Maximize'}>
+              {isMaximized ? <Copy size={12} strokeWidth={2} /> : <Square size={12} strokeWidth={2} />}
+            </button>
+          </>
+        }
+      />
 
       <div className="nexus-body">
         <ForceGraph2D

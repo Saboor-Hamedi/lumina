@@ -1,0 +1,61 @@
+/* Global Modal Header Styles for all Overlays */
+.pane-header {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; /* Title on the left */
+  border-bottom: 1px solid var(--border-dim);
+  background: var(--bg-sidebar);
+  flex-shrink: 0;
+  user-select: none;
+  position: relative;
+}
+
+.modal-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-left: 10px;
+}
+
+.modal-right {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+}
+
+.modal-title-stack {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px; /* 12px by default */
+  font-weight: 600;
+  color: var(--text-main);
+  opacity: 0.9;
+}
+
+.modal-close {
+  width: 46px; /* Native Windows window control width */
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.modal-close:hover {
+  background: #e81123; /* Windows close red */
+  color: white;
+}
+
+.modal-close:active {
+  background: #f1707a; /* Windows close active red */
+}

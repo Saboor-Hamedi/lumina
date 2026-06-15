@@ -129,14 +129,10 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-container settings-container premium-preview-card" onClick={(e) => e.stopPropagation()}>
-        <ModalHeader
-          left={
-            <div className="modal-title-stack" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Settings size={16} />
-              <span>Settings</span>
-            </div>
-          }
-          onClose={onClose}
+        <ModalHeader 
+          title="Settings" 
+          icon={<Settings size={16} />} 
+          onClose={onClose} 
         />
 
         <div className="settings-layout">
@@ -169,7 +165,7 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
               className={`nav-item ${activeTab === 'type' ? 'active' : ''}`}
               onClick={() => setActiveTab('type')}
             >
-              Type
+              Typography
             </button>
             <button
               className={`nav-item ${activeTab === 'graph' ? 'active' : ''}`}
@@ -205,7 +201,133 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
             {activeTab === 'type' && (
               <div className="settings-pane">
                 <section>
-                  <h3>Typing Experience</h3>
+                  <h3>Font & Editor</h3>
+                  <div className="settings-row">
+                    <div className="row-info">
+                      <div className="row-label">Font Family</div>
+                      <div className="row-hint">The font used in the editor area.</div>
+                    </div>
+                    <select
+                      value={editorFontFamily || settings.fontFamily || 'Inter'}
+                      onChange={(e) => {
+                        updateSetting('fontFamily', e.target.value)
+                        updateEditorFontFamily(e.target.value)
+                      }}
+                      className="settings-select"
+                    >
+                      <option value="Inter">Inter (Default)</option>
+                      <option value="Roboto">Roboto</option>
+                      <option value="JetBrains Mono">JetBrains Mono</option>
+                      <option value="Fira Code">Fira Code</option>
+                    </select>
+                  </div>
+                  <div className="settings-row">
+                    <div className="row-info">
+                      <div className="row-label">Font Size</div>
+                      <div className="row-hint">Adjust the text size for readability.</div>
+                    </div>
+                    <div className="range-wrap">
+                      <input
+                        type="range"
+                        min="12"
+                        max="28"
+                        step="1"
+                        value={parseInt(editorFontSize) || settings.fontSize || 14}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value)
+                          updateSetting('fontSize', val)
+                          updateEditorFontSize(val)
+                        }}
+                      />
+                      <span>{parseInt(editorFontSize) || settings.fontSize || 14}px</span>
+                    </div>
+                  </div>
+                </section>
+
+                <section style={{ marginTop: '32px' }}>
+                  <h3>Caret / Cursor</h3>
+                  <div className="settings-row">
+                    <div className="row-info">
+                      <div className="row-label">Caret Style</div>
+                      <div className="row-hint">Customize the caret appearance (smooth, block, or sharp).</div>
+                    </div>
+                    <select
+                      value={caretStyle || 'smooth'}
+                      onChange={(e) => updateCaretStyle(e.target.value)}
+                      className="settings-select"
+                    >
+                      <option value="smooth">Smooth Line</option>
+                      <option value="block">Block</option>
+                      <option value="sharp">Sharp Line</option>
+                    </select>
+                  </div>
+                  <div className="settings-row">
+                    <div className="row-info">
+                      <div className="row-label">Caret Width</div>
+                      <div className="row-hint">Adjust the caret width (1px - 10px).</div>
+                    </div>
+                    <div className="range-wrap">
+                      <input
+                        type="range"
+                        min="1"
+                        max="10"
+                        step="1"
+                        value={parseInt(caretWidth, 10) || 2}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value, 10)
+                          if (!isNaN(value) && value >= 1 && value <= 10) {
+                            updateCaretWidth(value)
+                          }
+                        }}
+                        aria-label="Caret width slider"
+                      />
+                      <span>{parseInt(caretWidth, 10) || 2}px</span>
+                    </div>
+                  </div>
+                  <div className="settings-row">
+                    <div className="row-info">
+                      <div className="row-label">Caret Color</div>
+                      <div className="row-hint">Enter hex color. Leave empty for theme accent.</div>
+                    </div>
+                    <div className="caret-color-controls">
+                      <ColorPickerInput
+                        initialColor={caretColor}
+                        defaultColor="#ffffff"
+                        onColorChange={updateCaretColor}
+                        title="Choose Caret Color"
+                        ariaLabel="Caret color picker"
+                      />
+                      <button
+                        onClick={() => updateCaretColor('')}
+                        className="caret-color-reset"
+                        title="Reset to theme accent color"
+                        aria-label="Reset caret color to theme default"
+                      >
+                        Reset
+                      </button>
+                    </div>
+                  </div>
+                  <div className="settings-row">
+                    <div className="row-info">
+                      <div className="row-label">Use Border-left Caret</div>
+                      <div className="row-hint">Toggle using CSS `border-left` for the caret instead of a filled bar.</div>
+                    </div>
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={(settings.cursor && settings.cursor.useBorderLeft) ?? true}
+                        onChange={(e) => {
+                          const next = { ...(settings.cursor || {}), useBorderLeft: e.target.checked }
+                          updateSetting('cursor', next)
+                        }}
+                      />
+                      <span className="slider round"></span>
+                    </label>
+                  </div>
+                </section>
+
+                <section style={{ marginTop: '32px' }}>
+                  <h3>Typing Feedback</h3>
                   <div className="settings-row">
                     <div className="row-info">
                       <div className="row-label">Mechanical Keyboard Sound</div>
@@ -498,109 +620,6 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                       Theme Gallery
                     </button>
                   </div>
-                  <div className="settings-row">
-                    <div className="row-info">
-                      <div className="row-label">Font Family</div>
-                      <div className="row-hint">The font used in the editor area.</div>
-                    </div>
-                    <select
-                      value={editorFontFamily || settings.fontFamily || 'Inter'}
-                      onChange={(e) => {
-                        updateSetting('fontFamily', e.target.value)
-                        updateEditorFontFamily(e.target.value)
-                      }}
-                      className="settings-select"
-                    >
-                      <option value="Inter">Inter (Default)</option>
-                      <option value="Roboto">Roboto</option>
-                      <option value="JetBrains Mono">JetBrains Mono</option>
-                    </select>
-                  </div>
-                  <div className="settings-row">
-                    <div className="row-info">
-                      <div className="row-label">Font Size</div>
-                      <div className="row-hint">Adjust the text size for readability.</div>
-                    </div>
-                    <div className="range-wrap">
-                      <input
-                        type="range"
-                        min="12"
-                        max="28"
-                        step="1"
-                        value={parseInt(editorFontSize) || settings.fontSize || 14}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value)
-                          updateSetting('fontSize', val)
-                          updateEditorFontSize(val)
-                        }}
-                      />
-                      <span>{parseInt(editorFontSize) || settings.fontSize || 14}px</span>
-                    </div>
-                  </div>
-                  <div className="settings-row">
-                    <div className="row-info">
-                      <div className="row-label">Caret Style</div>
-                      <div className="row-hint">Customize the caret appearance (smooth, block, or sharp).</div>
-                    </div>
-                    <select
-                      value={caretStyle || 'smooth'}
-                      onChange={(e) => updateCaretStyle(e.target.value)}
-                      className="settings-select"
-                    >
-                      <option value="smooth">Smooth Line</option>
-                      <option value="block">Block</option>
-                      <option value="sharp">Sharp Line</option>
-                    </select>
-                  </div>
-                  {/* Caret Width Control */}
-                  <div className="settings-row">
-                    <div className="row-info">
-                      <div className="row-label">Caret Width</div>
-                      <div className="row-hint">Adjust the caret width (1px - 10px).</div>
-                    </div>
-                    <div className="range-wrap">
-                      <input
-                        type="range"
-                        min="1"
-                        max="10"
-                        step="1"
-                        value={parseInt(caretWidth, 10) || 2}
-                        onChange={(e) => {
-                          const value = parseInt(e.target.value, 10)
-                          // Validate range before updating
-                          if (!isNaN(value) && value >= 1 && value <= 10) {
-                            updateCaretWidth(value)
-                          }
-                        }}
-                        aria-label="Caret width slider"
-                      />
-                      <span>{parseInt(caretWidth, 10) || 2}px</span>
-                    </div>
-                  </div>
-                  {/* Caret Color Control */}
-                  <div className="settings-row">
-                    <div className="row-info">
-                      <div className="row-label">Caret Color</div>
-                      <div className="row-hint">Enter hex color (with or without #, e.g., "000000" or "#ffffff"). Leave empty for theme accent.</div>
-                    </div>
-                    <div className="caret-color-controls">
-                      <ColorPickerInput
-                        initialColor={caretColor}
-                        defaultColor="#ffffff"
-                        onColorChange={updateCaretColor}
-                        title="Choose Caret Color"
-                        ariaLabel="Caret color picker"
-                      />
-                      <button
-                        onClick={() => updateCaretColor('')}
-                        className="caret-color-reset"
-                        title="Reset to theme accent color"
-                        aria-label="Reset caret color to theme default"
-                      >
-                        Reset
-                      </button>
-                    </div>
-                  </div>
                   {/* Theme Accent Color Control */}
                   <div className="settings-row">
                     <div className="row-info">
@@ -624,23 +643,6 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                         Reset
                       </button>
                     </div>
-                  </div>
-                  <div className="settings-row">
-                    <div className="row-info">
-                      <div className="row-label">Use Border-left Caret</div>
-                      <div className="row-hint">Toggle using CSS `border-left` for the caret instead of a filled bar.</div>
-                    </div>
-                    <label className="switch">
-                      <input
-                        type="checkbox"
-                        checked={(settings.cursor && settings.cursor.useBorderLeft) ?? true}
-                        onChange={(e) => {
-                          const next = { ...(settings.cursor || {}), useBorderLeft: e.target.checked }
-                          updateSetting('cursor', next)
-                        }}
-                      />
-                      <span className="slider round"></span>
-                    </label>
                   </div>
                   <div className="settings-row">
                     <div className="row-info">
