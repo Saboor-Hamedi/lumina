@@ -263,13 +263,36 @@ export const useVaultStore = create((set, get) => ({
       
       // Update local state by merging the saved snippet
       set((state) => {
-        const nextSnippets = state.snippets.map((s) =>
+        let nextSnippets = state.snippets.map((s) =>
           s.id === snippet.id ? { ...updatedSnippet, color: snippet.color } : s
         )
         const isNew = !state.snippets.some((s) => s.id === snippet.id)
         if (isNew) {
           nextSnippets.push({ ...updatedSnippet, color: snippet.color })
         }
+
+        // Auto-update Wikilinks across the vault if the title changed!
+        if (existing && existing.title && existing.title !== updatedSnippet.title) {
+          const oldTitle = existing.title
+          const newTitle = updatedSnippet.title
+          const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+          const linkRegex = new RegExp('\\[\\[' + escapeRegExp(oldTitle) + '([\\|#\\]])', 'gi')
+
+          const updates = []
+          nextSnippets = nextSnippets.map(s => {
+            if (s.id !== snippet.id && s.code && linkRegex.test(s.code)) {
+              const newCode = s.code.replace(linkRegex, '[[' + newTitle + '$1')
+              const updatedLinkSnippet = { ...s, code: newCode }
+              updates.push(updatedLinkSnippet)
+              return updatedLinkSnippet
+            }
+            return s
+          })
+
+          // Save all updated files to disk asynchronously in the background
+          updates.forEach(u => window.api.saveSnippet(u).catch(console.error))
+        }
+
         return {
           snippets: nextSnippets,
           dirtySnippetIds: state.dirtySnippetIds.filter((dId) => dId !== snippet.id)

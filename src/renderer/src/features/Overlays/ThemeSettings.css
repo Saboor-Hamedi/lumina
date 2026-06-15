@@ -33,15 +33,55 @@
   height: 80px;
   position: relative;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  overflow: hidden;
 }
 
-.preview-accent {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+.preview-sidebar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 25%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 4px;
+}
+
+.preview-sidebar-item {
+  height: 4px;
+  border-radius: 2px;
+  width: 100%;
+  opacity: 0.7;
+}
+
+.preview-editor {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 75%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px;
+}
+
+.preview-code-line {
+  height: 3px;
+  border-radius: 2px;
+  opacity: 0.8;
+}
+
+.preview-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font-size: 8px;
+  font-weight: 700;
+  padding: 2px 4px;
+  border-radius: 3px;
 }
 
 .theme-info {

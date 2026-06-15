@@ -515,9 +515,12 @@ class VaultIndexer {
       }
 
       const content = await fs.readFile(this.statePath, 'utf-8')
+      if (!content || content.trim() === '') {
+        return { version: this.version, files: {} }
+      }
       return JSON.parse(content)
     } catch (err) {
-      console.warn('[VaultIndexer] Failed to load state, using defaults:', err)
+      console.warn('[VaultIndexer] State file corrupted or unreadable. Automatically rebuilding index state.')
       return { version: this.version, files: {} }
     }
   }

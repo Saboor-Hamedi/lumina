@@ -16,6 +16,9 @@ import { autocompletion, startCompletion } from '@codemirror/autocomplete'
 import { EditorState, Prec, StateField, StateEffect } from '@codemirror/state'
 import { codeBlockDecorations, codeMap } from './codeBlockHeader'
 import { EditorView, placeholder, keymap, ViewPlugin, Decoration } from '@codemirror/view'
+import { imageDropExtension } from './imageDropExtension'
+import { imageWidgetExtension } from './imageWidgetExtension'
+import { htmlWidgetExtension } from './htmlWidgetExtension'
 import '@atomic-editor/editor/styles.css'
 import FindWidget from './components/FindWidget'
 import StatusBar from './components/StatusBar'
@@ -192,15 +195,31 @@ const MarkdownEditor = React.memo(
       }
     }, [snippet])
 
-    // Cleanup on unmount
+    const latestCodeRef = useRef(snippet?.code || '')
+
+    // Cleanup on unmount (Tab switch / close)
     useEffect(() => {
       isMountedRef.current = true
       return () => {
         isMountedRef.current = false
+        // Perform synchronous auto-save on unmount if we have unsaved changes
+        const currentSettings = useSettingsStore.getState().settings
+        const dirtyIds = useVaultStore.getState().dirtySnippetIds || []
+        
+        if (currentSettings.autoSave && snippetRef.current && dirtyIds.includes(snippetRef.current.id)) {
+          const codeToSave = latestCodeRef.current
+          const snippetToSave = {
+            ...snippetRef.current,
+            code: codeToSave || '',
+            timestamp: Date.now()
+          }
+          useVaultStore.getState().saveSnippet(snippetToSave).catch(err => console.error('[Unmount AutoSave] Failed:', err))
+        }
       }
     }, [])
 
     const handleMarkdownChange = useCallback((md) => {
+      latestCodeRef.current = md
       setIsDirty(true)
       setDirty(snippet?.id, true)
     }, [snippet?.id, setDirty])
@@ -381,6 +400,7 @@ const MarkdownEditor = React.memo(
       };
     }, []);
 
+    const dropExtension = React.useMemo(() => imageDropExtension(showToast), [showToast])
     const editorExtensions = React.useMemo(() => [
       Prec.highest(
         keymap.of([
@@ -469,6 +489,8 @@ const MarkdownEditor = React.memo(
         }
       })
     ], [showToast, autocompleteTriggerListener, wikiLinkCompletionSource]);
+
+    const finalExtensions = React.useMemo(() => [...editorExtensions, dropExtension, imageWidgetExtension, htmlWidgetExtension], [editorExtensions, dropExtension])
 
     // Forceful Native Event Listener to Override CodeMirror
     useEffect(() => {
@@ -575,7 +597,7 @@ const MarkdownEditor = React.memo(
               onMarkdownChange={handleMarkdownChange}
               editorHandleRef={editorHandleRef}
               codeLanguages={languages}
-              extensions={editorExtensions}
+              extensions={finalExtensions}
               onLinkClick={(url) => {
                 if (window.api?.openExternal) {
                   window.api.openExternal(url);

@@ -36,8 +36,8 @@ class VaultManager {
     this.vaultPath = userPath || path.join(defaultDocPath, 'lumina')
     await fs.mkdir(this.vaultPath, { recursive: true })
 
-    // Ensure assets directory exists
-    const assetsPath = path.join(this.vaultPath, 'assets')
+    // Ensure .lumina/assets directory exists
+    const assetsPath = path.join(this.vaultPath, '.lumina', 'assets')
     try {
       await fs.mkdir(assetsPath, { recursive: true })
     } catch (e) { }
@@ -365,24 +365,35 @@ class VaultManager {
   async saveImage(buffer, originalName) {
     if (!this.vaultPath) throw new Error('No vault open')
 
-    const assetsPath = path.join(this.vaultPath, 'assets')
+    const assetsPath = path.join(this.vaultPath, '.lumina', 'assets')
     try {
       await fs.mkdir(assetsPath, { recursive: true })
     } catch (e) { }
 
     const ext = path.extname(originalName) || '.png'
-    const name = path.basename(originalName, ext)
+    const baseName = path.basename(originalName, ext)
     const timestamp = Date.now()
-    const safeName = `${slugify(name)}-${timestamp}${ext}`
-
+    const safeName = `${slugify(baseName, { lower: true, strict: true })}-${timestamp}${ext}`
     const targetPath = path.join(assetsPath, safeName)
+
     try {
       await fs.writeFile(targetPath, Buffer.from(buffer))
       console.info('[VaultManager] ✓ Image saved:', safeName)
-      // Return the relative path for Markdown, e.g. "assets/image.png"
-      return `assets/${safeName}`
+      // Return the pure relative path for clean Markdown, e.g. ".lumina/assets/image.png"
+      return `.lumina/assets/${safeName}`
     } catch (err) {
       console.error('[VaultManager] ✗ Failed to save image:', err)
+      throw err
+    }
+  }
+
+  async readAsset(relativePath) {
+    try {
+      const finalPath = path.join(this.vaultPath, relativePath)
+      const data = await fs.readFile(finalPath)
+      return data
+    } catch (err) {
+      console.error('[VaultManager] ✗ Failed to read asset:', relativePath, err)
       throw err
     }
   }
@@ -413,6 +424,30 @@ class VaultManager {
     return {
       snippets: list.filter((s) => s && s.id).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)),
       folders: Array.from(this.folders)
+    }
+  }
+
+  async cleanOrphanedAssets() {
+    if (!this.vaultPath) return
+    const assetsPath = path.join(this.vaultPath, '.lumina', 'assets')
+    try {
+      const entries = await fs.readdir(assetsPath, { withFileTypes: true })
+      const allMarkdownContent = Array.from(this.snippets.values())
+        .map(s => s.code || '')
+        .join('\n')
+
+      for (const entry of entries) {
+        if (entry.isFile()) {
+          // If the exact filename isn't anywhere in the combined text, it's safe to delete
+          if (!allMarkdownContent.includes(entry.name)) {
+            const filePath = path.join(assetsPath, entry.name)
+            await fs.unlink(filePath)
+            console.info('[VaultManager] ✓ Deleted orphaned asset:', entry.name)
+          }
+        }
+      }
+    } catch (e) {
+      // Ignore if assets folder doesn't exist
     }
   }
 }

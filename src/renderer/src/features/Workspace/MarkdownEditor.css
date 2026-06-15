@@ -271,16 +271,30 @@
   position: absolute;
   top: 100%;
   left: 0;
-  background: var(--bg-panel);
-  color: var(--text-faint);
-  font-size: 10px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
   padding: 4px 8px;
   border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  font-size: 12px;
+  color: var(--text-muted);
   white-space: nowrap;
-  pointer-events: none;
   z-index: 1000;
+  pointer-events: none;
+  opacity: 0.9;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
+
+/* HTML Link Text Styling */
+.cm-html-link-text {
+  color: var(--atomic-editor-link, var(--text-accent, #3b82f6));
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.cm-html-link-text:hover {
+  text-decoration: underline;
+}
+
 
 .tab-context {
   display: flex;
@@ -1522,4 +1536,11 @@
   text-align: right;
 }
 
-/* Removed responsive font-size adjustments that were shrinking the text too much */
+.cm-inline-line {
+  display: inline !important;
+}
+
+.cm-center-container {
+  text-align: center;
+}
+

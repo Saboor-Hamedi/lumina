@@ -84,49 +84,63 @@ const GraphNexus = React.memo(({ isOpen = true, onClose, onNavigate, embedded = 
   }, [embedded, isMaximized])
 
   // Graph Data Construction
-  const graphData = useMemo(() => {
-    const rawData = buildGraphData(snippets)
-    const semantic = buildSemanticLinks(rawData.nodes, rawData.links, snippets, embeddingsCache)
-    let nodes = rawData.nodes
-    let links = [...rawData.links, ...semantic]
+  const [graphData, setGraphData] = useState({ nodes: [], links: [] })
+  const [isBuildingGraph, setIsBuildingGraph] = useState(true)
 
-    // Calculate Age Gravity and Tags
-    const now = Date.now()
-    const maxAge = 30 * 24 * 60 * 60 * 1000 // 30 days is "old"
+  useEffect(() => {
+    setIsBuildingGraph(true)
+    
+    // Defer the heavy calculation so the modal can instantly animate in
+    const timer = setTimeout(() => {
+      const rawData = buildGraphData(snippets)
+      const semantic = buildSemanticLinks(rawData.nodes, rawData.links, snippets, embeddingsCache)
+      let nodes = rawData.nodes
+      let links = [...rawData.links, ...semantic]
 
-    // Count links per node for sizing and halo logic
-    const linkCounts = {}
-    links.forEach(l => {
-      const src = typeof l.source === 'object' ? l.source.id : l.source
-      const tgt = typeof l.target === 'object' ? l.target.id : l.target
-      linkCounts[src] = (linkCounts[src] || 0) + 1
-      linkCounts[tgt] = (linkCounts[tgt] || 0) + 1
-    })
+      // Calculate Age Gravity and Tags
+      const now = Date.now()
+      const maxAge = 30 * 24 * 60 * 60 * 1000 // 30 days is "old"
 
-    nodes.forEach((n) => {
-      n.linkCount = linkCounts[n.id] || 0
-      n.val = n.linkCount + 1 // Exponential scaling base
+      // Count links per node for sizing and halo logic
+      const linkCounts = {}
+      links.forEach(l => {
+        const src = typeof l.source === 'object' ? l.source.id : l.source
+        const tgt = typeof l.target === 'object' ? l.target.id : l.target
+        linkCounts[src] = (linkCounts[src] || 0) + 1
+        linkCounts[tgt] = (linkCounts[tgt] || 0) + 1
+      })
 
-      if (n.snippetId) {
-        const s = snippets.find((sn) => sn.id === n.snippetId)
-        if (s && s.tags) {
-          n.primaryTag = s.tags.split(',')[0].trim().toLowerCase()
+      nodes.forEach((n) => {
+        n.linkCount = linkCounts[n.id] || 0
+        n.val = n.linkCount + 1 // Exponential scaling base
+
+        if (n.snippetId) {
+          const s = snippets.find(sn => sn.id === n.snippetId)
+          if (s && s.tags) {
+            const rawTags = Array.isArray(s.tags) ? s.tags : (typeof s.tags === 'string' ? s.tags.split(',') : [])
+            if (rawTags.length > 0) {
+              n.primaryTag = String(rawTags[0]).trim().toLowerCase()
+            }
+          }
+          
+          const age = now - (s?.timestamp || now)
+          // Normalized age: 0 (new) to 1 (old)
+          n.ageFactor = Math.min(1, age / maxAge)
+        } else {
+          n.ageFactor = 0.5 // Standard for ghost/tags
         }
-        
-        const age = now - (s?.timestamp || now)
-        // Normalized age: 0 (new) to 1 (old)
-        n.ageFactor = Math.min(1, age / maxAge)
-      } else {
-        n.ageFactor = 0.5 // Standard for ghost/tags
-      }
-    })
+      })
 
-    return { nodes, links }
+      setGraphData({ nodes, links })
+      setIsBuildingGraph(false)
+    }, 250) // Wait 250ms to allow the modal CSS open animation to finish perfectly smoothly
+
+    return () => clearTimeout(timer)
   }, [snippets, selectedSnippet, embeddingsCache])
 
-  // Center on mount
+  // Center on mount and data load
   useEffect(() => {
-    if (graphRef.current) {
+    if (graphRef.current && !isBuildingGraph && graphData.nodes.length > 0) {
       setTimeout(() => {
         if (selectedSnippet) {
           const node = graphData.nodes.find((n) => n.snippetId === selectedSnippet.id)
@@ -135,11 +149,11 @@ const GraphNexus = React.memo(({ isOpen = true, onClose, onNavigate, embedded = 
             graphRef.current.zoom(1.5, 400)
           }
         } else {
-          graphRef.current.zoomToFit(400, 150)
+          graphRef.current.zoomToFit(400)
         }
-      }, 100)
+      }, 100) // Small delay to ensure WebGL engine is ready
     }
-  }, [graphData.nodes.length, isMaximized])
+  }, [selectedSnippet, isBuildingGraph, graphData.nodes.length])
 
   // Physics Engine Setup
   useEffect(() => {

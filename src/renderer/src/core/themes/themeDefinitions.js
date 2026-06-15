@@ -17,27 +17,22 @@ export const THEMES = {
       '--bg-editor': '#000000',
       '--bg-active': 'rgba(64, 186, 250, 0.12)',
       '--bg-card': '#161616',
-
       '--text-main': '#e0e0e0',
       '--text-muted': '#a0a0a0',
       '--text-faint': '#5a5a5a',
       '--text-accent': '#40bafa',
       '--text-accent-rgb': '64, 186, 250',
-
       '--border-dim': '#1a1a1a',
       '--border-subtle': '#222222',
       '--border-main': '#333333',
       '--border-card': '#202020',
-
       '--scroll-thumb': '#333333',
       '--scroll-track': '#0a0a0a',
-
       '--icon-primary': '#40bafa',
       '--icon-secondary': '#10b981',
       '--icon-tertiary': '#f59e0b',
       '--icon-danger': '#ef4444',
       '--icon-love': '#ec4899',
-
       '--caret-width': '2px',
       '--caret-color': '#40bafa'
     }
@@ -45,77 +40,265 @@ export const THEMES = {
 
   light: {
     id: 'light',
-    name: 'Light',
-    description: 'Clean light theme with blue accents',
+    name: 'Minimal Light',
+    description: 'Clean, Apple-inspired light theme',
     colors: {
-      '--bg-app': '#fafafa',
-      '--bg-sidebar': '#f0f0f0',
-      '--bg-activitybar': '#ececec',
-      '--bg-panel': '#e4e4e4',
-      '--bg-editor': '#fafafa',
-      '--bg-active': 'rgba(64, 186, 250, 0.08)',
-      '--bg-card': '#e0e0e0',
-
-      '--text-main': '#1a1a1a',
-      '--text-muted': '#666666',
-      '--text-faint': '#999999',
-      '--text-accent': '#1a8cd8',
-      '--text-accent-rgb': '26, 140, 216',
-
-      '--border-dim': '#e0e0e0',
-      '--border-subtle': '#d4d4d4',
-      '--border-main': '#c0c0c0',
-      '--border-card': '#d0d0d0',
-
-      '--scroll-thumb': '#c0c0c0',
-      '--scroll-track': '#f5f5f5',
-
-      '--icon-primary': '#1a8cd8',
+      '--bg-app': '#ffffff',
+      '--bg-sidebar': '#f9fafb',
+      '--bg-activitybar': '#f3f4f6',
+      '--bg-panel': '#f3f4f6',
+      '--bg-editor': '#ffffff',
+      '--bg-active': 'rgba(14, 165, 233, 0.1)',
+      '--bg-card': '#ffffff',
+      '--text-main': '#111827',
+      '--text-muted': '#6b7280',
+      '--text-faint': '#9ca3af',
+      '--text-accent': '#0ea5e9',
+      '--text-accent-rgb': '14, 165, 233',
+      '--border-dim': '#f3f4f6',
+      '--border-subtle': '#e5e7eb',
+      '--border-main': '#d1d5db',
+      '--border-card': '#e5e7eb',
+      '--scroll-thumb': '#d1d5db',
+      '--scroll-track': '#f9fafb',
+      '--icon-primary': '#0ea5e9',
       '--icon-secondary': '#10b981',
       '--icon-tertiary': '#f59e0b',
       '--icon-danger': '#ef4444',
       '--icon-love': '#ec4899',
-
       '--caret-width': '2px',
-      '--caret-color': '#1a8cd8'
+      '--caret-color': '#0ea5e9'
     }
   },
 
   obsidian: {
     id: 'obsidian',
     name: 'Obsidian',
-    description: 'Deep black theme inspired by Obsidian',
+    description: 'Deep true black with royal purple accents',
     colors: {
       '--bg-app': '#000000',
-      '--bg-sidebar': '#080808',
+      '--bg-sidebar': '#0a0a0a',
       '--bg-activitybar': '#050505',
-      '--bg-panel': '#0f0f0f',
+      '--bg-panel': '#0c0c0c',
       '--bg-editor': '#000000',
-      '--bg-active': 'rgba(64, 186, 250, 0.2)',
-      '--bg-card': '#151515',
-
-      '--text-main': '#f0f0f0',
-      '--text-muted': '#b0b0b0',
-      '--text-faint': '#555555',
-      '--text-accent': '#40bafa',
-      '--text-accent-rgb': '64, 186, 250',
-
-      '--border-dim': '#181818',
-      '--border-subtle': '#222222',
-      '--border-main': '#2a2a2a',
-      '--border-card': '#1c1c1c',
-
-      '--scroll-thumb': '#2a2a2a',
-      '--scroll-track': '#080808',
-
-      '--icon-primary': '#40bafa',
-      '--icon-secondary': '#10b981',
-      '--icon-tertiary': '#f59e0b',
-      '--icon-danger': '#ef4444',
-      '--icon-love': '#ec4899',
-
+      '--bg-active': 'rgba(139, 92, 246, 0.15)',
+      '--bg-card': '#121212',
+      '--text-main': '#e2e8f0',
+      '--text-muted': '#94a3b8',
+      '--text-faint': '#475569',
+      '--text-accent': '#a78bfa',
+      '--text-accent-rgb': '167, 139, 250',
+      '--border-dim': '#1e1e1e',
+      '--border-subtle': '#27272a',
+      '--border-main': '#3f3f46',
+      '--border-card': '#27272a',
+      '--scroll-thumb': '#27272a',
+      '--scroll-track': '#000000',
+      '--icon-primary': '#a78bfa',
+      '--icon-secondary': '#34d399',
+      '--icon-tertiary': '#fbbf24',
+      '--icon-danger': '#f87171',
+      '--icon-love': '#f472b6',
       '--caret-width': '2px',
-      '--caret-color': '#40bafa'
+      '--caret-color': '#a78bfa'
+    }
+  },
+
+  tokyoNight: {
+    id: 'tokyoNight',
+    name: 'Tokyo Night',
+    description: 'A dark and soothing theme celebrating the lights of Tokyo',
+    colors: {
+      '--bg-app': '#1a1b26',
+      '--bg-sidebar': '#16161e',
+      '--bg-activitybar': '#15161e',
+      '--bg-panel': '#1f2335',
+      '--bg-editor': '#1a1b26',
+      '--bg-active': 'rgba(122, 162, 247, 0.15)',
+      '--bg-card': '#24283b',
+      '--text-main': '#c0caf5',
+      '--text-muted': '#565f89',
+      '--text-faint': '#414868',
+      '--text-accent': '#7aa2f7',
+      '--text-accent-rgb': '122, 162, 247',
+      '--border-dim': '#272a40',
+      '--border-subtle': '#292e42',
+      '--border-main': '#3b4261',
+      '--border-card': '#292e42',
+      '--scroll-thumb': '#3b4261',
+      '--scroll-track': '#16161e',
+      '--icon-primary': '#7aa2f7',
+      '--icon-secondary': '#9ece6a',
+      '--icon-tertiary': '#e0af68',
+      '--icon-danger': '#f7768e',
+      '--icon-love': '#bb9af7',
+      '--caret-width': '2px',
+      '--caret-color': '#7aa2f7'
+    }
+  },
+
+  synthwave: {
+    id: 'synthwave',
+    name: 'Synthwave',
+    description: 'Outrun retro-futuristic neon theme',
+    colors: {
+      '--bg-app': '#262335',
+      '--bg-sidebar': '#1f1d2b',
+      '--bg-activitybar': '#181622',
+      '--bg-panel': '#2b2640',
+      '--bg-editor': '#262335',
+      '--bg-active': 'rgba(255, 126, 219, 0.15)',
+      '--bg-card': '#362f4f',
+      '--text-main': '#fcfcfa',
+      '--text-muted': '#848bbd',
+      '--text-faint': '#495495',
+      '--text-accent': '#ff7edb',
+      '--text-accent-rgb': '255, 126, 219',
+      '--border-dim': '#322d4a',
+      '--border-subtle': '#3f395c',
+      '--border-main': '#614d85',
+      '--border-card': '#3f395c',
+      '--scroll-thumb': '#614d85',
+      '--scroll-track': '#1f1d2b',
+      '--icon-primary': '#ff7edb',
+      '--icon-secondary': '#72f1b8',
+      '--icon-tertiary': '#fede5d',
+      '--icon-danger': '#fe4450',
+      '--icon-love': '#f97e72',
+      '--caret-width': '2px',
+      '--caret-color': '#ff7edb'
+    }
+  },
+
+  rosePine: {
+    id: 'rosePine',
+    name: 'Rosé Pine',
+    description: 'All natural pine, faux fur and a bit of soho vibes',
+    colors: {
+      '--bg-app': '#191724',
+      '--bg-sidebar': '#1f1d2e',
+      '--bg-activitybar': '#161420',
+      '--bg-panel': '#26233a',
+      '--bg-editor': '#191724',
+      '--bg-active': 'rgba(235, 188, 186, 0.15)',
+      '--bg-card': '#26233a',
+      '--text-main': '#e0def4',
+      '--text-muted': '#908caa',
+      '--text-faint': '#6e6a86',
+      '--text-accent': '#ebbcba',
+      '--text-accent-rgb': '235, 188, 186',
+      '--border-dim': '#2a273f',
+      '--border-subtle': '#312f44',
+      '--border-main': '#44415a',
+      '--border-card': '#312f44',
+      '--scroll-thumb': '#44415a',
+      '--scroll-track': '#1f1d2e',
+      '--icon-primary': '#ebbcba',
+      '--icon-secondary': '#31748f',
+      '--icon-tertiary': '#f6c177',
+      '--icon-danger': '#eb6f92',
+      '--icon-love': '#c4a7e7',
+      '--caret-width': '2px',
+      '--caret-color': '#ebbcba'
+    }
+  },
+
+  catppuccin: {
+    id: 'catppuccin',
+    name: 'Catppuccin Mocha',
+    description: 'Soothing pastel theme for the high-spirited',
+    colors: {
+      '--bg-app': '#1e1e2e',
+      '--bg-sidebar': '#181825',
+      '--bg-activitybar': '#11111b',
+      '--bg-panel': '#313244',
+      '--bg-editor': '#1e1e2e',
+      '--bg-active': 'rgba(137, 180, 250, 0.15)',
+      '--bg-card': '#313244',
+      '--text-main': '#cdd6f4',
+      '--text-muted': '#a6adc8',
+      '--text-faint': '#585b70',
+      '--text-accent': '#89b4fa',
+      '--text-accent-rgb': '137, 180, 250',
+      '--border-dim': '#313244',
+      '--border-subtle': '#45475a',
+      '--border-main': '#585b70',
+      '--border-card': '#45475a',
+      '--scroll-thumb': '#585b70',
+      '--scroll-track': '#181825',
+      '--icon-primary': '#89b4fa',
+      '--icon-secondary': '#a6e3a1',
+      '--icon-tertiary': '#f9e2af',
+      '--icon-danger': '#f38ba8',
+      '--icon-love': '#f5c2e7',
+      '--caret-width': '2px',
+      '--caret-color': '#89b4fa'
+    }
+  },
+
+  dracula: {
+    id: 'dracula',
+    name: 'Dracula',
+    description: 'A dark theme for bloodsuckers and night owls',
+    colors: {
+      '--bg-app': '#282a36',
+      '--bg-sidebar': '#21222c',
+      '--bg-activitybar': '#1e1f29',
+      '--bg-panel': '#343746',
+      '--bg-editor': '#282a36',
+      '--bg-active': 'rgba(189, 147, 249, 0.2)',
+      '--bg-card': '#44475a',
+      '--text-main': '#f8f8f2',
+      '--text-muted': '#6272a4',
+      '--text-faint': '#4d5b80',
+      '--text-accent': '#bd93f9',
+      '--text-accent-rgb': '189, 147, 249',
+      '--border-dim': '#3c3e4e',
+      '--border-subtle': '#44475a',
+      '--border-main': '#6272a4',
+      '--border-card': '#44475a',
+      '--scroll-thumb': '#6272a4',
+      '--scroll-track': '#21222c',
+      '--icon-primary': '#bd93f9',
+      '--icon-secondary': '#50fa7b',
+      '--icon-tertiary': '#f1fa8c',
+      '--icon-danger': '#ff5555',
+      '--icon-love': '#ff79c6',
+      '--caret-width': '2px',
+      '--caret-color': '#bd93f9'
+    }
+  },
+
+  gruvbox: {
+    id: 'gruvbox',
+    name: 'Gruvbox',
+    description: 'Retro groove color scheme',
+    colors: {
+      '--bg-app': '#282828',
+      '--bg-sidebar': '#1d2021',
+      '--bg-activitybar': '#1b1b1b',
+      '--bg-panel': '#32302f',
+      '--bg-editor': '#282828',
+      '--bg-active': 'rgba(215, 153, 33, 0.2)',
+      '--bg-card': '#3c3836',
+      '--text-main': '#ebdbb2',
+      '--text-muted': '#a89984',
+      '--text-faint': '#7c6f64',
+      '--text-accent': '#d79921',
+      '--text-accent-rgb': '215, 153, 33',
+      '--border-dim': '#3c3836',
+      '--border-subtle': '#504945',
+      '--border-main': '#665c54',
+      '--border-card': '#504945',
+      '--scroll-thumb': '#665c54',
+      '--scroll-track': '#1d2021',
+      '--icon-primary': '#d79921',
+      '--icon-secondary': '#98971a',
+      '--icon-tertiary': '#fabd2f',
+      '--icon-danger': '#cc241d',
+      '--icon-love': '#b16286',
+      '--caret-width': '2px',
+      '--caret-color': '#d79921'
     }
   },
 
@@ -125,257 +308,100 @@ export const THEMES = {
     description: 'Arctic, north-bluish color palette',
     colors: {
       '--bg-app': '#2e3440',
-      '--bg-sidebar': '#353e4e',
-      '--bg-activitybar': '#303848',
-      '--bg-panel': '#3b4455',
+      '--bg-sidebar': '#242933',
+      '--bg-activitybar': '#1d222a',
+      '--bg-panel': '#3b4252',
       '--bg-editor': '#2e3440',
       '--bg-active': 'rgba(136, 192, 208, 0.2)',
-      '--bg-card': '#434d60',
-
+      '--bg-card': '#434c5e',
       '--text-main': '#eceff4',
       '--text-muted': '#d8dee9',
-      '--text-faint': '#7a88a8',
+      '--text-faint': '#4c566a',
       '--text-accent': '#88c0d0',
       '--text-accent-rgb': '136, 192, 208',
-
-      '--border-dim': '#434c5e',
-      '--border-subtle': '#4c566a',
-      '--border-main': '#5e81ac',
-      '--border-card': '#4c566a',
-
-      '--scroll-thumb': '#5e81ac',
-      '--scroll-track': '#353e4e',
-
+      '--border-dim': '#3b4252',
+      '--border-subtle': '#434c5e',
+      '--border-main': '#4c566a',
+      '--border-card': '#434c5e',
+      '--scroll-thumb': '#4c566a',
+      '--scroll-track': '#242933',
       '--icon-primary': '#88c0d0',
       '--icon-secondary': '#a3be8c',
       '--icon-tertiary': '#ebcb8b',
       '--icon-danger': '#bf616a',
-      '--icon-love': '#b48ead'
-    }
-  },
-
-  dracula: {
-    id: 'dracula',
-    name: 'Dracula',
-    description: 'Dark theme with vibrant purple accents',
-    colors: {
-      '--bg-app': '#1a1b26',
-      '--bg-sidebar': '#202132',
-      '--bg-activitybar': '#1c1d2e',
-      '--bg-panel': '#26273c',
-      '--bg-editor': '#1a1b26',
-      '--bg-active': 'rgba(189, 147, 249, 0.22)',
-      '--bg-card': '#2d2f44',
-
-      '--text-main': '#f8f8f2',
-      '--text-muted': '#d0d0d0',
-      '--text-faint': '#7a8ab8',
-      '--text-accent': '#bd93f9',
-      '--text-accent-rgb': '189, 147, 249',
-
-      '--border-dim': '#3e4058',
-      '--border-subtle': '#4e5168',
-      '--border-main': '#6272a4',
-      '--border-card': '#404358',
-
-      '--scroll-thumb': '#6272a4',
-      '--scroll-track': '#202132',
-
-      '--icon-primary': '#bd93f9',
-      '--icon-secondary': '#50fa7b',
-      '--icon-tertiary': '#ffb86c',
-      '--icon-danger': '#ff5555',
-      '--icon-love': '#ff79c6',
-
+      '--icon-love': '#b48ead',
       '--caret-width': '2px',
-      '--caret-color': '#bd93f9'
+      '--caret-color': '#88c0d0'
     }
   },
 
-  github: {
-    id: 'github',
-    name: 'GitHub',
-    description: 'Dark theme inspired by GitHub',
+  githubDark: {
+    id: 'githubDark',
+    name: 'GitHub Dark',
+    description: 'GitHub\'s signature dark aesthetic',
     colors: {
       '--bg-app': '#0d1117',
-      '--bg-sidebar': '#161b22',
-      '--bg-activitybar': '#0d1117',
+      '--bg-sidebar': '#010409',
+      '--bg-activitybar': '#010409',
       '--bg-panel': '#161b22',
       '--bg-editor': '#0d1117',
-      '--bg-active': 'rgba(56, 139, 253, 0.2)',
-      '--bg-card': '#21262d',
-
+      '--bg-active': 'rgba(47, 129, 247, 0.15)',
+      '--bg-card': '#161b22',
       '--text-main': '#e6edf3',
-      '--text-muted': '#8b949e',
-      '--text-faint': '#848d97',
-      '--text-accent': '#58a6ff',
-      '--text-accent-rgb': '88, 166, 255',
-
-      '--border-dim': '#30363d',
-      '--border-subtle': '#21262d',
-      '--border-main': '#30363d',
-      '--border-card': '#21262d',
-
+      '--text-muted': '#848d97',
+      '--text-faint': '#30363d',
+      '--text-accent': '#2f81f7',
+      '--text-accent-rgb': '47, 129, 247',
+      '--border-dim': '#21262d',
+      '--border-subtle': '#30363d',
+      '--border-main': '#484f58',
+      '--border-card': '#30363d',
       '--scroll-thumb': '#30363d',
-      '--scroll-track': '#0d1117',
-
-      '--icon-primary': '#58a6ff',
+      '--scroll-track': '#010409',
+      '--icon-primary': '#2f81f7',
       '--icon-secondary': '#3fb950',
       '--icon-tertiary': '#d29922',
       '--icon-danger': '#f85149',
-      '--icon-love': '#db61a2',
-
+      '--icon-love': '#bf3989',
       '--caret-width': '2px',
-      '--caret-color': '#58a6ff'
+      '--caret-color': '#2f81f7'
     }
   },
 
   monokai: {
     id: 'monokai',
-    name: 'Monokai',
-    description: 'Vibrant dark theme with colorful accents',
+    name: 'Monokai Pro',
+    description: 'Beautiful color-balanced dark theme',
     colors: {
-      '--bg-app': '#1a1b17',
-      '--bg-sidebar': '#1e1f1b',
-      '--bg-activitybar': '#161713',
-      '--bg-panel': '#24251f',
-      '--bg-editor': '#1a1b17',
-      '--bg-active': 'rgba(249, 38, 114, 0.2)',
-      '--bg-card': '#2b2c25',
-
-      '--text-main': '#f8f8f2',
-      '--text-muted': '#d0d0c0',
-      '--text-faint': '#8a8a74',
-      '--text-accent': '#f92672',
-      '--text-accent-rgb': '249, 38, 114',
-
-      '--border-dim': '#3e3d32',
-      '--border-subtle': '#4a4940',
-      '--border-main': '#5a5948',
-      '--border-card': '#3a3b30',
-
-      '--scroll-thumb': '#5a5948',
-      '--scroll-track': '#1e1f1b',
-
-      '--icon-primary': '#f92672',
-      '--icon-secondary': '#a6e22e',
-      '--icon-tertiary': '#e6db74',
-      '--icon-danger': '#fd971f',
-      '--icon-love': '#ae81ff'
-    }
-  },
-
-  solarized: {
-    id: 'solarized',
-    name: 'Solarized Dark',
-    description: 'Precision colors for machines and people',
-    colors: {
-      '--bg-app': '#00212b',
-      '--bg-sidebar': '#052c38',
-      '--bg-activitybar': '#03242e',
-      '--bg-panel': '#073642',
-      '--bg-editor': '#00212b',
-      '--bg-active': 'rgba(38, 139, 210, 0.2)',
-      '--bg-card': '#0a4050',
-
-      '--text-main': '#a0b0b0',
-      '--text-muted': '#95a5a5',
-      '--text-faint': '#6a7e85',
-      '--text-accent': '#268bd2',
-      '--text-accent-rgb': '38, 139, 210',
-
-      '--border-dim': '#0d4a5a',
-      '--border-subtle': '#155a6a',
-      '--border-main': '#185b6b',
-      '--border-card': '#0b3e4c',
-
-      '--scroll-thumb': '#586e75',
-      '--scroll-track': '#052c38',
-
-      '--icon-primary': '#268bd2',
-      '--icon-secondary': '#859900',
-      '--icon-tertiary': '#b58900',
-      '--icon-danger': '#dc322f',
-      '--icon-love': '#d33682',
-
+      '--bg-app': '#222222',
+      '--bg-sidebar': '#191919',
+      '--bg-activitybar': '#141414',
+      '--bg-panel': '#2d2d2d',
+      '--bg-editor': '#222222',
+      '--bg-active': 'rgba(252, 152, 103, 0.15)',
+      '--bg-card': '#2d2d2d',
+      '--text-main': '#fcfcfa',
+      '--text-muted': '#939293',
+      '--text-faint': '#5b595c',
+      '--text-accent': '#fc9867',
+      '--text-accent-rgb': '252, 152, 103',
+      '--border-dim': '#363537',
+      '--border-subtle': '#403e41',
+      '--border-main': '#5b595c',
+      '--border-card': '#403e41',
+      '--scroll-thumb': '#5b595c',
+      '--scroll-track': '#191919',
+      '--icon-primary': '#fc9867',
+      '--icon-secondary': '#a9dc76',
+      '--icon-tertiary': '#ffd866',
+      '--icon-danger': '#ff6188',
+      '--icon-love': '#ab9df2',
       '--caret-width': '2px',
-      '--caret-color': '#268bd2'
-    }
-  },
-
-  oneDark: {
-    id: 'oneDark',
-    name: 'One Dark',
-    description: 'Atom One Dark theme',
-    colors: {
-      '--bg-app': '#282c34',
-      '--bg-sidebar': '#2f343f',
-      '--bg-activitybar': '#2b303a',
-      '--bg-panel': '#353b45',
-      '--bg-editor': '#282c34',
-      '--bg-active': 'rgba(97, 175, 239, 0.2)',
-      '--bg-card': '#3d4352',
-
-      '--text-main': '#b8bfca',
-      '--text-muted': '#939aab',
-      '--text-faint': '#6e7585',
-      '--text-accent': '#61afef',
-      '--text-accent-rgb': '97, 175, 239',
-
-      '--border-dim': '#3a404e',
-      '--border-subtle': '#424857',
-      '--border-main': '#4b5263',
-      '--border-card': '#3d4352',
-
-      '--scroll-thumb': '#4b5263',
-      '--scroll-track': '#2f343f',
-
-      '--icon-primary': '#61afef',
-      '--icon-secondary': '#98c379',
-      '--icon-tertiary': '#e5c07b',
-      '--icon-danger': '#e06c75',
-      '--icon-love': '#c678dd'
-    }
-  },
-
-  catppuccin: {
-    id: 'catppuccin',
-    name: 'Catppuccin',
-    description: 'Soothing pastel theme',
-    colors: {
-      '--bg-app': '#1e1e2e',
-      '--bg-sidebar': '#252540',
-      '--bg-activitybar': '#21213b',
-      '--bg-panel': '#2b2b4a',
-      '--bg-editor': '#1e1e2e',
-      '--bg-active': 'rgba(137, 180, 250, 0.2)',
-      '--bg-card': '#353562',
-
-      '--text-main': '#cdd6f4',
-      '--text-muted': '#b5bcd8',
-      '--text-faint': '#7c80a0',
-      '--text-accent': '#89b4fa',
-      '--text-accent-rgb': '137, 180, 250',
-
-      '--border-dim': '#383862',
-      '--border-subtle': '#45475a',
-      '--border-main': '#585b70',
-      '--border-card': '#3a3a66',
-
-      '--scroll-thumb': '#585b70',
-      '--scroll-track': '#252540',
-
-      '--icon-primary': '#89b4fa',
-      '--icon-secondary': '#a6e3a1',
-      '--icon-tertiary': '#f9e2af',
-      '--icon-danger': '#f38ba8',
-      '--icon-love': '#f5c2e7',
-
-      '--caret-width': '2px',
-      '--caret-color': '#89b4fa'
+      '--caret-color': '#fc9867'
     }
   }
 }
+
 
 /**
  * Get theme by ID

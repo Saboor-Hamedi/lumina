@@ -90,6 +90,7 @@
     "@vitest/coverage-v8": "^4.0.17",
     "@vitest/ui": "^4.0.17",
     "autoprefixer": "^10.4.22",
+    "baseline-browser-mapping": "^2.10.37",
     "dotenv-cli": "^11.0.0",
     "electron": "^39.2.4",
     "electron-builder": "^26.4.0",

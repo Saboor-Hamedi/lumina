@@ -9,6 +9,7 @@ import AppUpdater from './AppUpdater'
 import VaultIndexer from './VaultIndexer'
 import VaultSearch from './VaultSearch'
 import Database from 'better-sqlite3'
+import iconAsset from '../../resources/icon.ico?asset'
 
 // Force rebuild timestamp: 5
 
@@ -38,9 +39,7 @@ async function migrateFromSQLite() {
 }
 
 async function createWindow() {
-  const iconPath = app.isPackaged 
-    ? join(process.resourcesPath, 'icon.ico') 
-    : join(app.getAppPath(), 'resources', 'icon.ico')
+  const iconPath = iconAsset
   const appIcon = electron.nativeImage.createFromPath(iconPath)
 
   const translucency = await SettingsManager.get('translucency')
@@ -184,7 +183,7 @@ if (!app.isPackaged) {
 
 app.whenReady().then(async () => {
   if (process.platform === 'win32') {
-    app.setAppUserModelId('io.lumina.app')
+    app.setAppUserModelId('io.lumina.app.v2')
   }
 
   // Suppress console errors for harmless cache/quota warnings (dev only)
@@ -206,14 +205,40 @@ app.whenReady().then(async () => {
     }
   }
 
-  protocol.handle('asset', (request) => {
-    const url = request.url.replace('asset://', '')
-    const relativePath = decodeURIComponent(url)
-    if (!VaultManager.vaultPath) return new Response('Vault not open', { status: 404 })
+  protocol.handle('asset', async (request) => {
     try {
+      const parsedUrl = new URL(request.url)
+      let relativePath = ''
+
+      if (parsedUrl.hostname === 'local') {
+        // Standard robust URL format: asset://local/.lumina/assets/image.png
+        relativePath = decodeURIComponent(parsedUrl.pathname.slice(1))
+      } else {
+        // Fallback for old markdown format just in case
+        let fallbackUrl = request.url.replace('asset://', '').replace('asset:///', '')
+        if (fallbackUrl.startsWith('/')) fallbackUrl = fallbackUrl.slice(1)
+        relativePath = decodeURIComponent(fallbackUrl)
+      }
+
+      if (!VaultManager.vaultPath || !relativePath) return new Response('Vault not open', { status: 404 })
+
       const finalPath = join(VaultManager.vaultPath, relativePath)
-      return net.fetch('file:///' + finalPath)
+      
+      // Read file directly from disk to avoid Windows URI parsing bugs with net.fetch
+      const data = await fs.readFile(finalPath)
+      
+      const ext = path.extname(finalPath).toLowerCase()
+      let mimeType = 'image/png'
+      if (ext === '.jpg' || ext === '.jpeg') mimeType = 'image/jpeg'
+      else if (ext === '.gif') mimeType = 'image/gif'
+      else if (ext === '.webp') mimeType = 'image/webp'
+      else if (ext === '.svg') mimeType = 'image/svg+xml'
+
+      return new Response(data, {
+        headers: { 'Content-Type': mimeType }
+      })
     } catch (error) {
+      console.error('[Protocol] Asset fetch error:', error)
       return new Response('Not Found', { status: 404 })
     }
   })
@@ -223,6 +248,10 @@ app.whenReady().then(async () => {
   ipcMain.handle('db:saveSettings', (_, settings) => SettingsManager.setMultiple(settings))
   ipcMain.handle('db:getTheme', () => SettingsManager.get('theme'))
   ipcMain.handle('db:saveTheme', (_, theme) => SettingsManager.set('theme', theme))
+
+  ipcMain.handle('vault:readAsset', async (_, relativePath) => {
+    return VaultManager.readAsset(relativePath)
+  })
   ipcMain.handle('app:getVersion', () => app.getVersion())
 
   ipcMain.handle('window:minimize', () => mainWindow?.minimize())
@@ -594,6 +623,7 @@ app.whenReady().then(async () => {
   })
   ipcMain.handle('vault:saveImage', (_, { buffer, name }) => VaultManager.saveImage(buffer, name))
   ipcMain.handle('vault:deleteSnippet', async (_, id) => await VaultManager.deleteSnippet(id))
+  ipcMain.handle('vault:cleanOrphans', async () => await VaultManager.cleanOrphanedAssets())
   
   // Folder IPC
   ipcMain.handle('vault:createFolder', async (_, path) => await VaultManager.createFolder(path))

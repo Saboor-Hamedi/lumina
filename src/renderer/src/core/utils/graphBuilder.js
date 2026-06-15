@@ -58,7 +58,8 @@ export const buildGraphData = (snippets) => {
 
     // 2.5 Parse Tags
     if (snippet.tags) {
-        const tags = snippet.tags.split(',').map(t => t.trim()).filter(Boolean)
+        const rawTags = Array.isArray(snippet.tags) ? snippet.tags : (typeof snippet.tags === 'string' ? snippet.tags.split(',') : [])
+        const tags = rawTags.map(t => String(t).trim()).filter(Boolean)
         tags.forEach(tag => {
             const tagId = `#${tag}` // Prefix with hash to avoid collision with titles
             

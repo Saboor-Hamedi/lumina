@@ -186,8 +186,18 @@
   left: 0;
   top: 0;
   bottom: 0;
-  width: 30%;
-  border-right: 1px solid rgba(0, 0, 0, 0.1);
+  width: 25%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 6px;
+}
+
+.theme-preview-sidebar-item {
+  height: 6px;
+  border-radius: 3px;
+  width: 100%;
+  opacity: 0.7;
 }
 
 .theme-preview-editor {
@@ -195,26 +205,28 @@
   right: 0;
   top: 0;
   bottom: 0;
-  width: 70%;
+  width: 75%;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
+  gap: 8px;
+  padding: 16px;
 }
 
-.theme-preview-accent {
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
+.theme-preview-code-line {
+  height: 4px;
+  border-radius: 2px;
   opacity: 0.8;
 }
 
-.theme-preview-text {
+.theme-preview-badge {
   position: absolute;
-  bottom: 8px;
+  top: 8px;
   right: 8px;
   font-size: 10px;
   font-weight: 700;
-  opacity: 0.6;
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 
 .theme-modal-info {
