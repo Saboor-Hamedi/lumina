@@ -575,6 +575,23 @@
   color: var(--text-main);
 }
 
+.window-controls-float .control-btn.drag-btn {
+  -webkit-app-region: drag;
+  opacity: 0.6;
+  cursor: grab !important; 
+}
+
+.window-controls-float .control-btn.drag-btn:hover {
+  opacity: 1;
+  background: var(--bg-active);
+  color: var(--text-main);
+  cursor: grab !important;
+}
+
+.window-controls-float .control-btn.drag-btn:active {
+  cursor: grabbing !important;
+}
+
 .window-controls-float .control-btn.close:hover {
   background: #e81123;
   color: white;

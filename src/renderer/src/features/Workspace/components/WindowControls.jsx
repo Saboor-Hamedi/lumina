@@ -5,9 +5,8 @@ const WindowControls = () => {
   return (
     <div className="window-controls-float">
       <div 
-        className="control-btn" 
+        className="control-btn drag-btn" 
         title="Drag to move window" 
-        style={{ WebkitAppRegion: 'drag', cursor: 'grab', opacity: 0.6 }}
       >
         <GripHorizontal size={14} />
       </div>
