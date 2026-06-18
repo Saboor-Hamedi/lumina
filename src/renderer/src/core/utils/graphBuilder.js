@@ -56,26 +56,41 @@ export const buildGraphData = (snippets) => {
       })
     }
 
-    // 2.5 Parse Tags
+    // 2.5 Parse Metadata Tags (from snippet.tags)
     if (snippet.tags) {
         const rawTags = Array.isArray(snippet.tags) ? snippet.tags : (typeof snippet.tags === 'string' ? snippet.tags.split(',') : [])
         const tags = rawTags.map(t => String(t).trim()).filter(Boolean)
         tags.forEach(tag => {
-            const tagId = `#${tag}` // Prefix with hash to avoid collision with titles
-            
-            // Create Tag Node if not exists
+            const tagId = tag.startsWith('#') ? tag : `#${tag}` // Prefix with hash
             if (!nodeMap.has(tagId)) {
-                nodeMap.set(tagId, { id: tagId, group: 'tag', val: 1, label: tag })
+                nodeMap.set(tagId, { id: tagId, group: 'tag', val: 1, label: tagId })
                 nodes.push(nodeMap.get(tagId))
             }
-            
-            // Link Note -> Tag
-            links.push({
-                source: sourceId,
-                target: tagId,
-                value: 0.5 // Weaker pull for tags
-            })
+            links.push({ source: sourceId, target: tagId, value: 0.5 })
         })
+    }
+
+    // 2.6 Parse Inline Tags (#tag) and Mentions (@mention)
+    const tagRegex = /(?:^|\s)(#[\w-]+)/g
+    const mentionRegex = /(?:^|\s)(@[\w-]+)/g
+
+    let inlineMatch
+    while ((inlineMatch = tagRegex.exec(code)) !== null) {
+      const tagId = inlineMatch[1]
+      if (!nodeMap.has(tagId)) {
+        nodeMap.set(tagId, { id: tagId, group: 'tag', val: 1, label: tagId })
+        nodes.push(nodeMap.get(tagId))
+      }
+      links.push({ source: sourceId, target: tagId, value: 0.5 })
+    }
+
+    while ((inlineMatch = mentionRegex.exec(code)) !== null) {
+      const mentionId = inlineMatch[1]
+      if (!nodeMap.has(mentionId)) {
+        nodeMap.set(mentionId, { id: mentionId, group: 'mention', val: 1, label: mentionId })
+        nodes.push(nodeMap.get(mentionId))
+      }
+      links.push({ source: sourceId, target: mentionId, value: 0.5 })
     }
   })
 

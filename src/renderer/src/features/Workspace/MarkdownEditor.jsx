@@ -19,6 +19,7 @@ import { EditorView, placeholder, keymap, ViewPlugin, Decoration } from '@codemi
 import { imageDropExtension } from './imageDropExtension'
 import { imageWidgetExtension } from './imageWidgetExtension'
 import { htmlWidgetExtension } from './htmlWidgetExtension'
+import { tagMentionExtension } from './tagMentionExtension'
 import '@atomic-editor/editor/styles.css'
 import FindWidget from './components/FindWidget'
 import StatusBar from './components/StatusBar'
@@ -447,6 +448,7 @@ const MarkdownEditor = React.memo(
       captureViewPlugin,
       searchHighlightField,
       codeBlockDecorations,
+      tagMentionExtension,
       placeholder('Start writing...'),
       wikiLinks({
         openOnClick: true,

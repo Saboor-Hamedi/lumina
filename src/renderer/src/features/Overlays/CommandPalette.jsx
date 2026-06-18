@@ -9,9 +9,12 @@ import {
   Hash,
   ImageIcon,
   Plus,
-  Network
+  Network,
+  AtSign
 } from 'lucide-react'
 import { FixedSizeList as List } from '../../components/utils/VirtualList'
+import { useTag } from '../../core/hooks/useTag'
+import { useMention } from '../../core/hooks/useMention'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useAIStore } from '../../core/store/useAIStore'
 import { useVaultStore } from '../../core/store/useVaultStore'
@@ -39,6 +42,8 @@ const CommandPalette = React.memo(({
 
   const { searchNotes, isModelReady, modelLoadingProgress, aiError } = useAIStore()
   const { dirtySnippetIds } = useVaultStore()
+  const { tags } = useTag()
+  const { mentions } = useMention()
 
   useKeyboardShortcuts({
     onEscape: null
@@ -147,10 +152,35 @@ const CommandPalette = React.memo(({
       .filter(Boolean)
 
     const results = [...textMatches, ...semanticMatches]
+    
+    // 3. Tags and Mentions matches
+    const tagMatches = tags
+      .filter((t) => t.toLowerCase().includes(lowerQuery))
+      .map((t) => ({
+        id: `tag-${t}`,
+        title: `Tag: ${t}`,
+        matchType: 'tag',
+        action: 'filter',
+        value: t,
+        score: lowerQuery.startsWith('#') ? 100 : 8
+      }))
+
+    const mentionMatches = mentions
+      .filter((m) => m.toLowerCase().includes(lowerQuery))
+      .map((m) => ({
+        id: `mention-${m}`,
+        title: `Mention: ${m}`,
+        matchType: 'mention',
+        action: 'filter',
+        value: m,
+        score: lowerQuery.startsWith('@') ? 100 : 8
+      }))
+
+    const finalResults = [...results, ...tagMatches, ...mentionMatches].sort((a, b) => b.score - a.score)
 
     if (isActionQuery) return systemActions
-    return [...systemActions, ...results].slice(0, 50)
-  }, [items, query, aiResults])
+    return [...systemActions, ...finalResults].slice(0, 50)
+  }, [items, query, aiResults, tags, mentions])
 
   useEffect(() => {
     if (selectedIndex >= filtered.length && filtered.length > 0) {
@@ -174,6 +204,11 @@ const CommandPalette = React.memo(({
     } else if (e.key === 'Enter') {
       const item = filtered[selectedIndex]
       if (item) {
+        if (item.action === 'filter') {
+          setQuery(item.value + ' ')
+          inputRef.current?.focus()
+          return
+        }
         if (item.matchType === 'action') {
           if (item.action === 'settings') onToggleSettings?.()
           else if (item.action === 'new') onNew?.()
@@ -219,6 +254,11 @@ const CommandPalette = React.memo(({
         style={style}
         className={`palette-item ${isActive ? 'active' : ''} ${isAction ? 'is-action' : ''}`}
         onClick={() => {
+          if (item.action === 'filter') {
+            setQuery(item.value + ' ')
+            inputRef.current?.focus()
+            return
+          }
           if (isAction) {
             if (item.action === 'settings') onToggleSettings?.()
             else if (item.action === 'new') onNew?.()
@@ -243,6 +283,10 @@ const CommandPalette = React.memo(({
               return <Network size={18} className="item-icon action-icon" />
             return <Zap size={18} className="item-icon action-icon" />
           })()
+        ) : item.matchType === 'tag' ? (
+          <Hash size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
+        ) : item.matchType === 'mention' ? (
+          <AtSign size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
         ) : (
           (() => {
             const lang = (item.language || 'markdown').toLowerCase()

@@ -267,12 +267,13 @@ const GraphNexus = React.memo(({ isOpen = true, onClose, onNavigate, embedded = 
   const nodeColor = (node) => {
     if (selectedSnippet && node.snippetId === selectedSnippet.id) return '#ffffff'
     if (node.group === 'ghost') return 'rgba(150,150,150,0.3)'
-    if (node.group === 'tag') return '#14b8a6'
+    if (node.group === 'tag') return '#14b8a6' // Teal for Tags
+    if (node.group === 'mention') return '#ff79c6' // Pink/Accent for Mentions
     
     // Dynamic color by category/tag
     if (node.primaryTag) return stringToColor(node.primaryTag)
     
-    return settings.graphNodeColor || '#40bafa'
+    return settings.graphNodeColor || '#40bafa' // Default blue for Notes
   }
 
   const paintNode = useCallback(
