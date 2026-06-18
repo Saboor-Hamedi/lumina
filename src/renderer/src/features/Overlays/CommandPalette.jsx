@@ -10,7 +10,8 @@ import {
   ImageIcon,
   Plus,
   Network,
-  AtSign
+  AtSign,
+  Folder
 } from 'lucide-react'
 import { FixedSizeList as List } from '../../components/utils/VirtualList'
 import { useTag } from '../../core/hooks/useTag'
@@ -41,7 +42,7 @@ const CommandPalette = React.memo(({
   const listRef = useRef(null)
 
   const { searchNotes, isModelReady, modelLoadingProgress, aiError } = useAIStore()
-  const { dirtySnippetIds } = useVaultStore()
+  const { dirtySnippetIds, folders } = useVaultStore()
   const { tags } = useTag()
   const { mentions } = useMention()
 
@@ -176,11 +177,23 @@ const CommandPalette = React.memo(({
         score: lowerQuery.startsWith('@') ? 100 : 8
       }))
 
-    const finalResults = [...results, ...tagMatches, ...mentionMatches].sort((a, b) => b.score - a.score)
+    const folderMatches = folders
+      .filter((f) => {
+        const folderName = f.split('/').pop()
+        return folderName.toLowerCase().includes(lowerQuery)
+      })
+      .map((f) => ({
+        id: `folder-${f}`,
+        title: `Folder: ${f}`,
+        matchType: 'folder',
+        score: 7
+      }))
+
+    const finalResults = [...results, ...tagMatches, ...mentionMatches, ...folderMatches].sort((a, b) => b.score - a.score)
 
     if (isActionQuery) return systemActions
     return [...systemActions, ...finalResults].slice(0, 50)
-  }, [items, query, aiResults, tags, mentions])
+  }, [items, query, aiResults, tags, mentions, folders])
 
   useEffect(() => {
     if (selectedIndex >= filtered.length && filtered.length > 0) {
@@ -213,6 +226,8 @@ const CommandPalette = React.memo(({
           if (item.action === 'settings') onToggleSettings?.()
           else if (item.action === 'new') onNew?.()
           else if (item.action === 'graph') onToggleGraph?.()
+        } else if (item.matchType === 'folder') {
+          // Just close, no action
         } else {
           onSelect(item)
         }
@@ -263,6 +278,8 @@ const CommandPalette = React.memo(({
             if (item.action === 'settings') onToggleSettings?.()
             else if (item.action === 'new') onNew?.()
             else if (item.action === 'graph') onToggleGraph?.()
+          } else if (item.matchType === 'folder') {
+            // Just close, no action
           } else {
             onSelect(item)
           }
@@ -283,6 +300,8 @@ const CommandPalette = React.memo(({
               return <Network size={18} className="item-icon action-icon" />
             return <Zap size={18} className="item-icon action-icon" />
           })()
+        ) : item.matchType === 'folder' ? (
+          <Folder size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
         ) : item.matchType === 'tag' ? (
           <Hash size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
         ) : item.matchType === 'mention' ? (

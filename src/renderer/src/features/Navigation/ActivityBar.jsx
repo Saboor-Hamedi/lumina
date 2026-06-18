@@ -37,10 +37,10 @@ const ActivityBar = ({ onSettingsClick, onThemeClick, onToggleGraph, onToggleExp
   }
 
   return (
-    <div className="activity-bar floating">
+    <div className="activity-bar sidebar">
       <div className="bar-top">
         <button
-          className="bar-item"
+          className="sidebar-item"
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
@@ -51,7 +51,7 @@ const ActivityBar = ({ onSettingsClick, onThemeClick, onToggleGraph, onToggleExp
           <Files size={20} strokeWidth={1.5} />
         </button>
         <button
-          className="bar-item"
+          className="sidebar-item"
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
@@ -62,7 +62,7 @@ const ActivityBar = ({ onSettingsClick, onThemeClick, onToggleGraph, onToggleExp
           <Network size={20} strokeWidth={1.5} />
         </button>
         <button
-          className="bar-item"
+          className="sidebar-item"
           onClick={handleDailyNote}
           title="Today's Note"
         >
@@ -78,7 +78,7 @@ const ActivityBar = ({ onSettingsClick, onThemeClick, onToggleGraph, onToggleExp
           status === 'idle' ||
           status === 'checking') && (
           <button
-            className={`bar-item update-btn ${status === 'downloading' ? 'loading' : ''} ${status === 'ready' ? 'ready' : ''} ${status === 'error' ? 'error' : ''}`}
+            className={`sidebar-item update-btn ${status === 'downloading' ? 'loading' : ''} ${status === 'ready' ? 'ready' : ''} ${status === 'error' ? 'error' : ''}`}
             title={
               status === 'downloading'
                 ? `Downloading... ${Math.round(progress?.percent || 0)}%`
@@ -117,7 +117,7 @@ const ActivityBar = ({ onSettingsClick, onThemeClick, onToggleGraph, onToggleExp
         )}
         
         <button
-          className="bar-item"
+          className="sidebar-item"
           onClick={onThemeClick}
           title="Theme"
         >
@@ -125,7 +125,7 @@ const ActivityBar = ({ onSettingsClick, onThemeClick, onToggleGraph, onToggleExp
         </button>
 
         <button
-          className="bar-item"
+          className="sidebar-item"
           onClick={onSettingsClick}
           title="Settings"
         >
