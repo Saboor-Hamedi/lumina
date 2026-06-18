@@ -120,6 +120,10 @@ const CommandPalette = React.memo(({
         if (item.title.toLowerCase().includes(lowerQuery)) {
           return { ...item, matchType: 'title', score: 10 }
         }
+        // Folder Match
+        if (item.folderId && item.folderId.toLowerCase().includes(lowerQuery)) {
+          return { ...item, matchType: 'folder-match', score: 6 }
+        }
         // Content Match
         const code = item.code || item.content || ''
         const codeIndex = code.toLowerCase().indexOf(lowerQuery)
@@ -325,6 +329,7 @@ const CommandPalette = React.memo(({
 
         <div className="item-info">
           <div className="item-title">
+            {item.folderId && <span className="folder-prefix">{item.folderId}/</span>}
             <HighlightText text={item.title || 'Untitled'} highlight={query} />
             {dirtySnippetIds.includes(item.id) && (
               <div className="dirty-indicator" style={{ marginLeft: '8px' }} />
