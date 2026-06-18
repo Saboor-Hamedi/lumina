@@ -53,7 +53,24 @@ class VaultSearch {
     // Load index into memory
     await this.loadIndex()
   }
-
+  async _getEmbedder() {
+    if (this.embedder) return this.embedder
+     try {
+    console.info('[VaultSearch] Lazy-loading embedder model...')
+    const { pipeline, env } = await import('@xenova/transformers')
+    env.allowLocalModels = false
+    env.useBrowserCache = false
+    env.useCustomCache = false
+    this.embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
+      progress_callback: null
+    })
+    console.info('[VaultSearch] ✓ Embedder initialized')
+    return this.embedder
+  } catch (err) {
+    console.error('[VaultSearch] Failed to load embedder:', err)
+    throw new Error(`Failed to initialize embedding model: ${err.message}`)
+  }
+  }
   /**
    * Load index and embeddings into memory
    */
