@@ -47,6 +47,9 @@ class VaultIndexer {
     this.chunksPath = null
     this.version = '1.0.0'
     this.embedder = null
+    this._worker = null
+    this._workerRequestId = 0
+    this._workerPending = new Map()
     this.isIndexing = false
     this.indexQueue = new Set()
     this.writeLock = new Mutex()
@@ -76,26 +79,52 @@ class VaultIndexer {
   }
 
   /**
-   * Lazy load the embedder to prevent blocking startup
+   * Ensure worker thread is alive for embedding computation
    */
-  async _getEmbedder() {
-    if (this.embedder) return this.embedder
+  async _ensureWorker() {
+    if (this._worker) return this._worker
 
+    const { Worker } = await import('worker_threads')
+
+    this._worker = new Worker(new URL('./indexer-worker.js', import.meta.url))
+
+    this._worker.on('message', (msg) => {
+      if (msg.type === 'warmup-done') {
+        // Worker model pre-warmed, nothing else to do
+      } else if (msg.type === 'embeddings' && msg.batchId !== undefined) {
+        const resolve = this._workerPending.get(msg.batchId)
+        if (resolve) {
+          this._workerPending.delete(msg.batchId)
+          resolve(msg.results)
+        }
+      } else if (msg.type === 'error' && msg.batchId !== undefined) {
+        const reject = this._workerPending.get(msg.batchId)
+        if (reject) {
+          this._workerPending.delete(msg.batchId)
+          reject(new Error(msg.error))
+        }
+      }
+    })
+
+    this._worker.on('error', (err) => {
+      console.error('[VaultIndexer] Worker error:', err)
+      this._worker = null
+    })
+
+    this._worker.on('exit', (code) => {
+      console.info(`[VaultIndexer] Worker exited with code ${code}`)
+      this._worker = null
+    })
+
+    return this._worker
+  }
+
+  async warmWorker() {
     try {
-      console.info('[VaultIndexer] Lazy-loading embedder model...')
-      const { pipeline, env } = await import('@xenova/transformers')
-      env.allowLocalModels = false
-      env.useBrowserCache = false
-      env.useCustomCache = false
-
-      this.embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
-        progress_callback: null
-      })
-      console.info('[VaultIndexer] ✓ Embedder initialized lazily')
-      return this.embedder
+      const worker = await this._ensureWorker()
+      worker.postMessage({ type: 'warmup' })
     } catch (err) {
-      console.error('[VaultIndexer] Failed to load embedder lazily:', err)
-      throw new Error(`Failed to initialize embedding model: ${err.message}`)
+      console.warn('[VaultIndexer] Worker pre-warm failed:', err)
     }
   }
 
@@ -109,7 +138,7 @@ class VaultIndexer {
       const embeddingsExists = await this.fileExists(this.embeddingsPath)
       const stateExists = await this.fileExists(this.statePath)
 
-      if (!indexExists || !embeddingsExists) {
+      if (!indexExists || !embeddingsExists || !stateExists) {
         console.info('[VaultIndexer] Index missing, will rebuild on next index')
         return { valid: false, reason: 'missing' }
       }
@@ -121,22 +150,16 @@ class VaultIndexer {
         return { valid: false, reason: 'version_mismatch' }
       }
 
-      // Fix: Don't validate embeddings size strictly
-      // Just check if embeddings file exists and has content
       const stats = await fs.stat(this.embeddingsPath)
       if (stats.size === 0) {
         console.warn('[VaultIndexer] Embeddings file is empty, will rebuild')
         return { valid: false, reason: 'empty_embeddings' }
       }
 
-      // Verify embeddings file size matches expected
-      const indexData = await this.loadIndex()
-      const expectedSize = indexData.length * 384 * 4 // 384 dims * 4 bytes per float
-      const actualSize = (await fs.stat(this.embeddingsPath)).size
-
-      if (Math.abs(expectedSize - actualSize) > 1000) {
-        console.warn('[VaultIndexer] Embeddings size mismatch, will rebuild')
-        return { valid: false, reason: 'size_mismatch' }
+      const indexStats = await fs.stat(this.indexPath)
+      if (indexStats.size === 0) {
+        console.warn('[VaultIndexer] Index file is empty, will rebuild')
+        return { valid: false, reason: 'empty_index' }
       }
 
       return { valid: true }
@@ -259,18 +282,19 @@ class VaultIndexer {
   }
 
   /**
-   * Generate embedding for text
+   * Generate embedding via worker thread
    */
   async generateEmbedding(text) {
-    const embedder = await this._getEmbedder()
+    const worker = await this._ensureWorker()
+    const id = this._workerRequestId++
 
-    try {
-      const output = await embedder(text, { pooling: 'mean', normalize: true })
-      return Array.from(output.data) // Convert Float32Array to regular array
-    } catch (err) {
-      console.error('[VaultIndexer] Embedding generation failed:', err)
-      throw err
-    }
+    return new Promise((resolve, reject) => {
+      this._workerPending.set(id, (results) => {
+        if (results && results.length > 0) resolve(results[0])
+        else reject(new Error('No embedding returned'))
+      })
+      worker.postMessage({ type: 'embed-batch', texts: [text], batchId: id })
+    })
   }
 
   /**
@@ -350,14 +374,7 @@ class VaultIndexer {
 
       for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i]
-
-        // Safety: hard-truncate massively long text blocks to prevent tokenization freezing
-        const safeText = chunk.text.length > 500 ? chunk.text.slice(0, 500) : chunk.text
-        const embedding = await this.generateEmbedding(safeText)
-
-        // Yield event loop to prevent freezing the main thread during heavy ML inference
-        // 20ms gives the UI a full frame (60fps) to process clicks/scrolls
-        await new Promise((resolve) => setTimeout(resolve, 20))
+        const embedding = await this.generateEmbedding(chunk.text)
 
         // Ensure embedding is correct size (384 dims)
         if (embedding.length !== 384) {
@@ -394,6 +411,7 @@ class VaultIndexer {
       // Update state
       await this.updateFileState(filePath, {
         mtime: stats.mtimeMs,
+        size: stats.size,
         checksum,
         indexed: true,
         chunkCount: chunks.length,
@@ -610,24 +628,68 @@ class VaultIndexer {
     try {
       const { force = false, onProgress = null } = options
 
+      if (onProgress) {
+        onProgress({
+          progress: 0,
+          indexed: 0,
+          total: 0,
+          chunks: 0,
+          stage: 'starting'
+        })
+        await new Promise((resolve) => setTimeout(resolve, 0))
+      }
+
       // Get all text files
-      const files = await this.scanVaultFiles(vaultPath)
+      const files = await this.scanVaultFiles(vaultPath, onProgress)
       this.stats.totalFiles = files.length
+      if (onProgress) {
+        onProgress({
+          progress: 0,
+          indexed: 0,
+          total: files.length,
+          found: files.length,
+          stage: 'scanned'
+        })
+      }
       const state = await this.loadState()
       console.log('[VaultIndexer] State files count:', Object.keys(state.files || {}).length)
 
-      const filesToProcess = (
-        await Promise.all(
-          files.map(async (filePath) => {
-            const needs = await this.needsIndexing(filePath, force, state)
-            if (needs) console.log('[VaultIndexer] Needs indexing:', filePath)
-            return needs ? filePath : null
+      const filesToProcess = []
+      for (let i = 0; i < files.length; i++) {
+        const filePath = files[i]
+        const needs = await this.needsIndexing(filePath, force, state)
+        if (needs) {
+          console.log('[VaultIndexer] Needs indexing:', filePath)
+          filesToProcess.push(filePath)
+        }
+
+        if (onProgress && i % 10 === 0) {
+          onProgress({
+            progress: 0,
+            indexed: 0,
+            total: files.length,
+            checked: i + 1,
+            stage: 'checking'
           })
-        )
-      ).filter(Boolean)
+        }
+
+        if (i % 20 === 0) {
+          await new Promise((resolve) => setTimeout(resolve, 0))
+        }
+      }
       console.log('[VaultIndexer] Files to process:', filesToProcess.length)
 
       if (filesToProcess.length === 0) {
+        if (onProgress) {
+          onProgress({
+            progress: 100,
+            indexed: 0,
+            total: files.length,
+            chunks: this.stats.totalChunks,
+            stage: 'up-to-date'
+          })
+        }
+
         console.info('[VaultIndexer] ✓ Index up to date (0 files modified)')
         return {
           indexedFiles: 0,
@@ -648,12 +710,10 @@ class VaultIndexer {
         })
       }
 
-      // Index files (with rate limiting for CPU/Memory)
-      const batchSize = 1 // Process one file at a time to prevent blocking the main thread
+      // Index files (one at a time)
+      const batchSize = 1
       for (let i = 0; i < filesToProcess.length; i += batchSize) {
         const batch = filesToProcess.slice(i, i + batchSize)
-
-        let didWork = false
 
         await Promise.all(
           batch.map(async (filePath) => {
@@ -662,7 +722,6 @@ class VaultIndexer {
               if (result.indexed) {
                 this.stats.indexedFiles++
                 this.stats.totalChunks += result.chunkCount
-                didWork = true
               }
             } catch (err) {
               this.stats.errors++
@@ -670,12 +729,6 @@ class VaultIndexer {
             }
           })
         )
-
-        // Only yield the heavy 50ms break if we ACTUALLY did ML inference.
-        // If we just skipped a file, proceed instantly.
-        if (didWork) {
-          await new Promise((resolve) => setTimeout(resolve, 50))
-        }
 
         if (onProgress) {
           onProgress({
@@ -736,7 +789,7 @@ class VaultIndexer {
   /**
    * Scan vault for indexable files
    */
-  async scanVaultFiles(vaultPath) {
+  async scanVaultFiles(vaultPath, onProgress = null) {
     // Validate input
     if (!vaultPath || typeof vaultPath !== 'string') {
       console.error('[VaultIndexer] scanVaultFiles: Invalid path:', vaultPath)
@@ -759,6 +812,7 @@ class VaultIndexer {
       '.html',
       '.css'
     ]
+    let entryCount = 0
 
     async function scanDir(dir) {
       if (typeof dir !== 'string') {
@@ -768,29 +822,54 @@ class VaultIndexer {
       try {
         const entries = await fs.readdir(dir, { withFileTypes: true })
 
-        await Promise.all(
-          entries.map(async (entry) => {
-            const fullPath = path.join(dir, entry.name)
+        for (const entry of entries) {
+          entryCount += 1
+          const fullPath = path.join(dir, entry.name)
 
-            // Skip hidden files and common ignore patterns
-            if (
-              entry.name.startsWith('.') ||
-              entry.name === 'node_modules' ||
-              entry.name === '.git'
-            ) {
-              return
+          if (
+            entry.name.startsWith('.') ||
+            entry.name === 'node_modules' ||
+            entry.name === '.git'
+          ) {
+            if (onProgress && entryCount % 5 === 0) {
+              onProgress({
+                progress: 0,
+                indexed: 0,
+                total: 0,
+                found: files.length,
+                checked: entryCount,
+                stage: 'scanning'
+              })
             }
+            if (onProgress) {
+              await new Promise((resolve) => setImmediate(resolve))
+            }
+            continue
+          }
 
-            if (entry.isDirectory()) {
-              await scanDir(fullPath)
-            } else if (entry.isFile()) {
-              const ext = path.extname(entry.name).toLowerCase()
-              if (supportedExts.includes(ext)) {
-                files.push(fullPath)
+          if (entry.isDirectory()) {
+            await scanDir(fullPath)
+          } else if (entry.isFile()) {
+            const ext = path.extname(entry.name).toLowerCase()
+            if (supportedExts.includes(ext)) {
+              files.push(fullPath)
+              if (onProgress) {
+                onProgress({
+                  progress: 0,
+                  indexed: 0,
+                  total: 0,
+                  found: files.length,
+                  checked: entryCount,
+                  stage: 'scanning'
+                })
               }
             }
-          })
-        )
+          }
+
+          if (onProgress) {
+            await new Promise((resolve) => setImmediate(resolve))
+          }
+        }
       } catch (err) {
         console.warn(`[VaultIndexer] Error scanning ${dir}:`, err)
       }

@@ -31,45 +31,30 @@ class VaultSearch {
     this.indexPath = path.join(indexDir, 'vault_index.jsonl')
     this.embeddingsPath = path.join(indexDir, 'embeddings.bin')
 
-    // Initialize embedder
-    try {
-      const { pipeline, env } = await import('@xenova/transformers')
-      env.allowLocalModels = false
-      env.useBrowserCache = false
-      env.useCustomCache = false
-
-      this.embedder = await pipeline(
-        'feature-extraction',
-        'Xenova/all-MiniLM-L6-v2',
-        { progress_callback: null }
-      )
-      console.info('[VaultSearch] ✓ Embedder initialized')
-    } catch (err) {
-      console.error('[VaultSearch] Failed to load embedder:', err)
-      console.error('[VaultSearch] Error details:', err.message, err.stack)
-      throw new Error(`Failed to initialize embedding model: ${err.message}`)
-    }
+    console.info('[VaultSearch] ✓ Initialized (embedder deferred)')
 
     // Load index into memory
     await this.loadIndex()
   }
+
   async _getEmbedder() {
     if (this.embedder) return this.embedder
-     try {
-    console.info('[VaultSearch] Lazy-loading embedder model...')
-    const { pipeline, env } = await import('@xenova/transformers')
-    env.allowLocalModels = false
-    env.useBrowserCache = false
-    env.useCustomCache = false
-    this.embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
-      progress_callback: null
-    })
-    console.info('[VaultSearch] ✓ Embedder initialized')
-    return this.embedder
-  } catch (err) {
-    console.error('[VaultSearch] Failed to load embedder:', err)
-    throw new Error(`Failed to initialize embedding model: ${err.message}`)
-  }
+
+    try {
+      console.info('[VaultSearch] Lazy-loading embedder model...')
+      const { pipeline, env } = await import('@xenova/transformers')
+      env.allowLocalModels = false
+      env.useBrowserCache = false
+      env.useCustomCache = false
+      this.embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
+        progress_callback: null
+      })
+      console.info('[VaultSearch] ✓ Embedder initialized')
+      return this.embedder
+    } catch (err) {
+      console.error('[VaultSearch] Failed to load embedder:', err)
+      throw new Error(`Failed to initialize embedding model: ${err.message}`)
+    }
   }
   /**
    * Load index and embeddings into memory
@@ -122,16 +107,14 @@ class VaultSearch {
    * Generate embedding for query
    */
   async generateQueryEmbedding(query) {
-    if (!this.embedder) {
-      throw new Error('Embedder not initialized. Please wait for initialization to complete.')
-    }
+    const embedder = await this._getEmbedder()
 
     if (!query || typeof query !== 'string' || query.trim().length === 0) {
       throw new Error('Query must be a non-empty string')
     }
 
     try {
-      const output = await this.embedder(query, { pooling: 'mean', normalize: true })
+      const output = await embedder(query, { pooling: 'mean', normalize: true })
       const embedding = Array.from(output.data)
 
       // Validate embedding size

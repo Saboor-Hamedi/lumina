@@ -165,7 +165,7 @@
 
 /* Inline Code Pill Style */
 .cm-atomic-inline-code {
-  background: var(--bg-hover, rgba(255, 255, 255, 0.1)) !important;
+  background: var(--bg-hover, rgba(120, 108, 108, 0.1)) !important;
   color: var(--text-accent, #ff79c6) !important;
   border-radius: 4px;
   padding: 2px 4px;
@@ -174,15 +174,19 @@
 /* Inline Tag and Mention Styles */
 .cm-inline-tag,
 .cm-inline-mention {
+  position: relative !important; /* Add this */
   color: var(--text-accent, #ff79c6) !important;
-  cursor: pointer;
+  cursor: pointer !important;
+  font-weight: 500 !important;
+  padding: 1px 4px !important;
+  border-radius: 4px !important;
+  transition: all 0.2s ease !important;
 }
 
 .cm-tag-prefix,
 .cm-mention-prefix {
   color: var(--text-accent, #ff79c6) !important;
   font-size: 0.85em;
-  opacity: 0.6;
   font-weight: 300;
   margin-right: 1px;
 }

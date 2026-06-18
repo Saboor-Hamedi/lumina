@@ -1,9 +1,39 @@
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react'
-import { Search, FileText, FileCode, Pin, PinOff, ArrowUpDown, RefreshCw, FolderPlus, Palette, Edit2, Trash2 } from 'lucide-react'
+import {
+  Search,
+  FileText,
+  FileCode,
+  Pin,
+  PinOff,
+  ArrowUpDown,
+  RefreshCw,
+  FolderPlus,
+  Palette,
+  Edit2,
+  Trash2
+} from 'lucide-react'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
-import { DndContext, closestCenter, pointerWithin, useSensor, useSensors, PointerSensor, TouchSensor, useDraggable, DragOverlay, defaultDropAnimationSideEffects, useDndContext } from '@dnd-kit/core'
-import { SortableContext, useSortable, horizontalListSortingStrategy, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
+import {
+  DndContext,
+  closestCenter,
+  pointerWithin,
+  useSensor,
+  useSensors,
+  PointerSensor,
+  TouchSensor,
+  useDraggable,
+  DragOverlay,
+  defaultDropAnimationSideEffects,
+  useDndContext
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  useSortable,
+  horizontalListSortingStrategy,
+  verticalListSortingStrategy,
+  arrayMove
+} from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { createPortal } from 'react-dom'
 import { Virtuoso } from 'react-virtuoso'
@@ -12,20 +42,16 @@ import { useResizable } from './useResizable'
 import { ChevronRight, ChevronDown, Folder, ChevronsUp } from 'lucide-react'
 import ContextMenu from './ContextMenu'
 import ConfirmModal from './ConfirmModal'
+import AppVersion from '../../components/AppVersion'
 import './ExplorerModal.css'
 
 /**
  * Draggable List Item for Recommended Snippets
  */
 const SortableListItem = ({ snippet, isActive, onClick }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id: snippet.id })
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: snippet.id
+  })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -53,97 +79,127 @@ const SortableListItem = ({ snippet, isActive, onClick }) => {
 import { useDroppable } from '@dnd-kit/core'
 import { FilePlus } from 'lucide-react'
 
-const DroppableFolderItem = React.memo(({ 
-  item, 
-  isExpanded, 
-  onToggle, 
-  onContextMenu,
-  folderColor,
-  isRenaming,
-  renameValue,
-  setRenameValue,
-  submitRename,
-  cancelRename
-}) => {
-  const { isOver, setNodeRef: setDroppableRef } = useDroppable({ id: `folder-${item.id}` })
-  const { attributes, listeners, setNodeRef: setDraggableRef, isDragging } = useDraggable({
-    id: `drag-folder-${item.id}`,
-    data: { type: 'folder', item }
-  })
+const DroppableFolderItem = React.memo(
+  ({
+    item,
+    isExpanded,
+    onToggle,
+    onContextMenu,
+    folderColor,
+    isRenaming,
+    renameValue,
+    setRenameValue,
+    submitRename,
+    cancelRename
+  }) => {
+    const { isOver, setNodeRef: setDroppableRef } = useDroppable({ id: `folder-${item.id}` })
+    const {
+      attributes,
+      listeners,
+      setNodeRef: setDraggableRef,
+      isDragging
+    } = useDraggable({
+      id: `drag-folder-${item.id}`,
+      data: { type: 'folder', item }
+    })
 
-  // Spring-loaded folder expansion
-  useEffect(() => {
-    let timer = null
-    if (isOver && !isExpanded && !isRenaming) {
-      timer = setTimeout(() => {
-        onToggle(item.id, null)
-      }, 600) // 600ms hover to expand
-    }
-    return () => {
-      if (timer) clearTimeout(timer)
-    }
-  }, [isOver, isExpanded, isRenaming, item.id, onToggle])
+    // Spring-loaded folder expansion
+    useEffect(() => {
+      let timer = null
+      if (isOver && !isExpanded && !isRenaming) {
+        timer = setTimeout(() => {
+          onToggle(item.id, null)
+        }, 600) // 600ms hover to expand
+      }
+      return () => {
+        if (timer) clearTimeout(timer)
+      }
+    }, [isOver, isExpanded, isRenaming, item.id, onToggle])
 
-  
-  return (
-    <div 
-      ref={setDroppableRef}
-      className="folder-tree-item"
-      style={{ 
-        position: 'relative',
-        paddingLeft: `${item.depth * 16}px`,
-        opacity: isDragging ? 0.5 : 1
-      }}
-    >
-      {Array.from({ length: item.depth }).map((_, i) => (
-        <div key={`line-${i}`} style={{ position: 'absolute', left: `${i * 16 + 12 + 6}px`, top: 0, bottom: 0, width: '1px', backgroundColor: 'var(--border-dim)' }} />
-      ))}
-      <div 
-        ref={setDraggableRef}
-        className={`folder-tree-main ${isOver ? 'folder-over' : ''}`} 
-        style={{ cursor: 'pointer', userSelect: 'none' }}
-        {...attributes}
-        {...listeners}
-        onClick={(e) => { if (!isRenaming) onToggle(item.id, e) }}
-        onContextMenu={(e) => { e.preventDefault(); onContextMenu(item.id, e) }}
+    return (
+      <div
+        ref={setDroppableRef}
+        className="folder-tree-item"
+        style={{
+          position: 'relative',
+          paddingLeft: `${item.depth * 16}px`,
+          opacity: isDragging ? 0.5 : 1
+        }}
       >
-        {isExpanded ? <ChevronDown size={14} className="folder-chevron" /> : <ChevronRight size={14} className="folder-chevron" />}
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: folderColor || undefined, padding: '2px 6px', borderRadius: '4px', marginLeft: '-6px' }}>
-          <Folder size={14} />
-          {isRenaming ? (
-            <input
-              autoFocus
-              className="inline-create-input"
-              value={renameValue}
-              onChange={e => setRenameValue(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter') submitRename()
-                if (e.key === 'Escape') cancelRename()
-              }}
-              onBlur={submitRename}
-              onClick={e => e.stopPropagation()}
-            />
+        {Array.from({ length: item.depth }).map((_, i) => (
+          <div
+            key={`line-${i}`}
+            style={{
+              position: 'absolute',
+              left: `${i * 16 + 12 + 6}px`,
+              top: 0,
+              bottom: 0,
+              width: '1px',
+              backgroundColor: 'var(--border-dim)'
+            }}
+          />
+        ))}
+        <div
+          ref={setDraggableRef}
+          className={`folder-tree-main ${isOver ? 'folder-over' : ''}`}
+          style={{ cursor: 'pointer', userSelect: 'none' }}
+          {...attributes}
+          {...listeners}
+          onClick={(e) => {
+            if (!isRenaming) onToggle(item.id, e)
+          }}
+          onContextMenu={(e) => {
+            e.preventDefault()
+            onContextMenu(item.id, e)
+          }}
+        >
+          {isExpanded ? (
+            <ChevronDown size={14} className="folder-chevron" />
           ) : (
-            <span className="folder-name">{item.name}</span>
+            <ChevronRight size={14} className="folder-chevron" />
           )}
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              color: folderColor || undefined,
+              padding: '2px 6px',
+              borderRadius: '4px',
+              marginLeft: '-6px'
+            }}
+          >
+            <Folder size={14} />
+            {isRenaming ? (
+              <input
+                autoFocus
+                className="inline-create-input"
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') submitRename()
+                  if (e.key === 'Escape') cancelRename()
+                }}
+                onBlur={submitRename}
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <span className="folder-name">{item.name}</span>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  )
-})
+    )
+  }
+)
 
 /**
  * Draggable Grid Item for Pinned Snippets
  */
 const SortableGridItem = ({ snippet, getIconForLanguage, onSelect, onUnpin }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id: snippet.id })
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: snippet.id
+  })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -170,7 +226,13 @@ const OverlayWrapper = ({ children }) => {
   const { active } = useDndContext()
   const width = active?.rect?.current?.initial?.width
   return (
-    <div style={{ width: width ? `${width}px` : 'auto', boxSizing: 'border-box', pointerEvents: 'none' }}>
+    <div
+      style={{
+        width: width ? `${width}px` : 'auto',
+        boxSizing: 'border-box',
+        pointerEvents: 'none'
+      }}
+    >
       {children}
     </div>
   )
@@ -181,8 +243,25 @@ const OverlayWrapper = ({ children }) => {
  */
 const DroppableRootZone = React.memo(() => {
   const { isOver, setNodeRef } = useDroppable({ id: 'root-drop-zone' })
+
+  const debounceTimerRef = useRef(null)
+
+  // Handle search with debounce
+  const handleSearchChange = (e) => {
+    const value = e.target.value
+
+    // Clear previous timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+
+    // Set new timer - wait 300ms before updating
+    debounceTimerRef.current = setTimeout(() => {
+      setQuery(value)
+    }, 300)
+  }
   return (
-    <div 
+    <div
       ref={setNodeRef}
       style={{
         padding: '12px',
@@ -208,15 +287,20 @@ const DroppableRootZone = React.memo(() => {
  */
 const ExplorerModal = ({ isOpen, onClose }) => {
   const [query, setQuery] = useState('')
+  const [displayQuery, setDisplayQuery] = useState('')
+  const debounceTimerRef = useRef(null)
+
   const [activeTab, setActiveTab] = useState('all')
   const { settings, updateSetting } = useSettingsStore()
-  
-  const [expandedFolders, setExpandedFolders] = useState(() => new Set(settings.expandedFolders || []))
-  
+
+  const [expandedFolders, setExpandedFolders] = useState(
+    () => new Set(settings.expandedFolders || [])
+  )
+
   // inline creation state
   const [creating, setCreating] = useState(null) // { type: 'file' | 'folder', parentId: string }
   const [creatingValue, setCreatingValue] = useState('')
-  
+
   // rename state
   const [renamingFolder, setRenamingFolder] = useState(null) // folderId
   const [renamingValue, setRenamingValue] = useState('')
@@ -227,7 +311,7 @@ const ExplorerModal = ({ isOpen, onClose }) => {
   // context menu & confirm
   const [folderContext, setFolderContext] = useState(null) // { x, y, folderId }
   const [deleteConfirmFolder, setDeleteConfirmFolder] = useState(null)
-  
+
   const searchInputRef = useRef(null)
   const modalRef = useRef(null)
   const rafRef = useRef(null)
@@ -235,15 +319,15 @@ const ExplorerModal = ({ isOpen, onClose }) => {
 
   const [isPositionReady, setIsPositionReady] = useState(false)
 
-  const snippets = useVaultStore(state => state.snippets)
-  const folders = useVaultStore(state => state.folders)
-  const folderColors = useVaultStore(state => state.folderColors)
-  const setFolderColor = useVaultStore(state => state.setFolderColor)
-  const setSelectedSnippet = useVaultStore(state => state.setSelectedSnippet)
-  const saveSnippet = useVaultStore(state => state.saveSnippet)
-  const loadVault = useVaultStore(state => state.loadVault)
-  const isLoading = useVaultStore(state => state.isLoading)
-  
+  const snippets = useVaultStore((state) => state.snippets)
+  const folders = useVaultStore((state) => state.folders)
+  const folderColors = useVaultStore((state) => state.folderColors)
+  const setFolderColor = useVaultStore((state) => state.setFolderColor)
+  const setSelectedSnippet = useVaultStore((state) => state.setSelectedSnippet)
+  const saveSnippet = useVaultStore((state) => state.saveSnippet)
+  const loadVault = useVaultStore((state) => state.loadVault)
+  const isLoading = useVaultStore((state) => state.isLoading)
+
   const sortBy = settings.sortBy || 'name'
   const sortDirection = settings.sortDirection || 'asc'
   const noteOrder = settings.noteOrder || null
@@ -253,23 +337,25 @@ const ExplorerModal = ({ isOpen, onClose }) => {
     { sortBy: 'name', sortDirection: 'desc' },
     { sortBy: 'modified', sortDirection: 'desc' },
     { sortBy: 'modified', sortDirection: 'asc' },
-    { sortBy: 'custom', sortDirection: 'asc' },
+    { sortBy: 'custom', sortDirection: 'asc' }
   ]
 
   const handleSortToggle = (e) => {
     e.stopPropagation()
-    const currentIndex = cycles.findIndex(c => c.sortBy === sortBy && c.sortDirection === sortDirection)
+    const currentIndex = cycles.findIndex(
+      (c) => c.sortBy === sortBy && c.sortDirection === sortDirection
+    )
     const next = cycles[(currentIndex + 1) % cycles.length]
-    
+
     const newSettings = {
       sortBy: next.sortBy,
       sortDirection: next.sortDirection
     }
-    
+
     if (next.sortBy !== 'custom') {
       newSettings.noteOrder = null
     }
-    
+
     useSettingsStore.getState().updateSettings(newSettings)
   }
 
@@ -277,14 +363,14 @@ const ExplorerModal = ({ isOpen, onClose }) => {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5,
-      },
+        distance: 5
+      }
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
         delay: 250,
-        tolerance: 5,
-      },
+        tolerance: 5
+      }
     })
   )
 
@@ -315,21 +401,20 @@ const ExplorerModal = ({ isOpen, onClose }) => {
     return () => window.removeEventListener('keydown', handler, { capture: true })
   }, [isOpen, onClose])
 
-  const { pinnedSnippets, allSnippets } = useMemo(() => {
-    let filtered = snippets
-    if (query.trim()) {
-      const q = query.toLowerCase()
-      filtered = snippets.filter(s => 
-        (s.title || '').toLowerCase().includes(q) || 
-        (s.code || '').toLowerCase().includes(q)
-      )
-    }
-    
-    // Filter out pinned snippets from the main list first
-    const unpinned = filtered.filter(s => !s.isPinned)
+  // search
+  // 1. Filtered snippets (fast - runs on every keystroke)
+  const filteredSnippets = useMemo(() => {
+    if (!query.trim()) return snippets
 
-    // Compute pinned notes - DO NOT FILTER BY SEARCH
-    const dbPinned = snippets.filter(s => s.isPinned)
+    const q = query.toLowerCase()
+    return snippets.filter(
+      (s) => (s.title || '').toLowerCase().includes(q) || (s.code || '').toLowerCase().includes(q)
+    )
+  }, [snippets, query])
+
+  // 2. Pinned snippets (doesn't depend on search)
+  const pinnedSnippets = useMemo(() => {
+    const dbPinned = snippets.filter((s) => s.isPinned)
     const pinnedOrderMap = new Map((settings.startMenuPinnedOrder || []).map((id, i) => [id, i]))
     dbPinned.sort((a, b) => {
       const ai = pinnedOrderMap.get(a.id)
@@ -339,10 +424,14 @@ const ExplorerModal = ({ isOpen, onClose }) => {
       if (bi !== undefined) return 1
       return 0
     })
-    const pinned = dbPinned
+    return dbPinned
+  }, [snippets, settings.startMenuPinnedOrder])
 
-    // Apply sorting logic identical to FileExplorer
+  // 3. All snippets (with sorting, uses filtered results)
+  const allSnippets = useMemo(() => {
+    const unpinned = filteredSnippets.filter((s) => !s.isPinned)
     let all = [...unpinned]
+
     if (sortBy === 'custom' && noteOrder && noteOrder.length > 0) {
       const orderMap = new Map(noteOrder.map((id, i) => [id, i]))
       all.sort((a, b) => {
@@ -364,27 +453,27 @@ const ExplorerModal = ({ isOpen, onClose }) => {
         return sortDirection === 'asc' ? cmp : -cmp
       })
     }
+    return all
+  }, [filteredSnippets, sortBy, sortDirection, noteOrder])
 
-    return { pinnedSnippets: pinned, allSnippets: all }
-  }, [snippets, query, sortBy, sortDirection, noteOrder, settings.startMenuPinnedOrder])
-
-  // Compute Flattened Folder Tree
+  // 4. Flat tree (only builds tree when NOT searching)
   const flatTree = useMemo(() => {
     if (activeTab !== 'all') return []
+
+    // When searching: NO TREE, just flat list
     if (query.trim()) {
-      // If searching, just show flat results to easily find things
-      return allSnippets.map(s => ({ type: 'file', snippet: s, depth: 0 }))
+      return allSnippets.map((s) => ({ type: 'file', snippet: s, depth: 0 }))
     }
 
-    // Build hierarchical tree
+    // Build hierarchical tree (only when not searching)
     const root = { children: {}, files: [] }
-    
+
     // 1. Build Folders
-    folders.forEach(folderPath => {
+    folders.forEach((folderPath) => {
       const parts = folderPath.split('/')
       let current = root
       let currentPath = ''
-      parts.forEach(part => {
+      parts.forEach((part) => {
         currentPath = currentPath ? `${currentPath}/${part}` : part
         if (!current.children[part]) {
           current.children[part] = { id: currentPath, name: part, children: {}, files: [] }
@@ -394,7 +483,7 @@ const ExplorerModal = ({ isOpen, onClose }) => {
     })
 
     // 2. Build Snippets
-    allSnippets.forEach(snippet => {
+    allSnippets.forEach((snippet) => {
       const folderId = snippet.folderId || ''
       if (!folderId) {
         root.files.push(snippet)
@@ -402,7 +491,7 @@ const ExplorerModal = ({ isOpen, onClose }) => {
         const parts = folderId.split('/')
         let current = root
         let currentPath = ''
-        parts.forEach(part => {
+        parts.forEach((part) => {
           currentPath = currentPath ? `${currentPath}/${part}` : part
           if (!current.children[part]) {
             current.children[part] = { id: currentPath, name: part, children: {}, files: [] }
@@ -413,15 +502,15 @@ const ExplorerModal = ({ isOpen, onClose }) => {
       }
     })
 
-    // Flatten it
+    // Flatten the tree (your existing flattening logic)
     const flat = []
-    
+
     // Inject drop to root zone if dragging
     if (activeListDragItem) {
       flat.push({ type: 'root-drop', id: 'root-drop-zone', depth: 0 })
     }
-    
-    // Inject root level creation input at the very top!
+
+    // Inject root level creation input
     if (creating && !creating.parentId) {
       flat.push({ type: 'input', kind: creating.type, parentId: '', depth: 0 })
     }
@@ -429,13 +518,13 @@ const ExplorerModal = ({ isOpen, onClose }) => {
     const traverse = (node, depth, parentId = '') => {
       // Sort folders alphabetically
       const folderNames = Object.keys(node.children).sort((a, b) => a.localeCompare(b))
-      
-      folderNames.forEach(name => {
+
+      folderNames.forEach((name) => {
         const folder = node.children[name]
         flat.push({ type: 'folder', id: folder.id, name: folder.name, depth })
-        
+
         if (expandedFolders.has(folder.id)) {
-          // Inject nested creation input at the very top of this folder!
+          // Inject nested creation input
           if (creating && creating.parentId === folder.id) {
             flat.push({ type: 'input', kind: creating.type, parentId: folder.id, depth: depth + 1 })
           }
@@ -444,7 +533,7 @@ const ExplorerModal = ({ isOpen, onClose }) => {
       })
 
       // Files in this level
-      node.files.forEach(file => {
+      node.files.forEach((file) => {
         flat.push({ type: 'file', snippet: file, depth })
       })
     }
@@ -453,16 +542,22 @@ const ExplorerModal = ({ isOpen, onClose }) => {
     return flat
   }, [allSnippets, folders, activeTab, query, expandedFolders, creating, activeListDragItem])
 
-  const toggleFolder = useCallback((folderId, e) => {
-    if (e) e.stopPropagation()
-    setExpandedFolders(prev => {
-      const next = new Set(prev)
-      if (next.has(folderId)) next.delete(folderId)
-      else next.add(folderId)
-      updateSetting('expandedFolders', Array.from(next))
-      return next
-    })
-  }, [updateSetting])
+  // end search
+  // Compute Flattened Folder Tree
+
+  const toggleFolder = useCallback(
+    (folderId, e) => {
+      if (e) e.stopPropagation()
+      setExpandedFolders((prev) => {
+        const next = new Set(prev)
+        if (next.has(folderId)) next.delete(folderId)
+        else next.add(folderId)
+        updateSetting('expandedFolders', Array.from(next))
+        return next
+      })
+    },
+    [updateSetting]
+  )
 
   const collapseAllFolders = (e) => {
     e.stopPropagation()
@@ -492,7 +587,7 @@ const ExplorerModal = ({ isOpen, onClose }) => {
     if (active.id !== over?.id && over) {
       // Use ALL pinned snippets, not just currently visible ones, so we don't lose the order
       // of pinned snippets that were hidden by search.
-      const allPinnedIds = snippets.filter(s => s.isPinned).map(s => s.id)
+      const allPinnedIds = snippets.filter((s) => s.isPinned).map((s) => s.id)
       const oldIndex = allPinnedIds.indexOf(active.id)
       const newIndex = allPinnedIds.indexOf(over.id)
       if (oldIndex !== -1 && newIndex !== -1) {
@@ -507,10 +602,15 @@ const ExplorerModal = ({ isOpen, onClose }) => {
     if (String(active.id).startsWith('drag-folder-')) {
       setActiveListDragItem({ type: 'folder', id: active.id, item: active.data?.current?.item })
     } else {
-      const activeSnippet = allSnippets.find(s => s.id === active.id)
+      const activeSnippet = allSnippets.find((s) => s.id === active.id)
       if (activeSnippet) {
-        const flatItem = flatTree.find(f => f.type === 'file' && f.snippet.id === active.id)
-        setActiveListDragItem({ type: 'file', id: active.id, snippet: activeSnippet, depth: flatItem ? flatItem.depth : 0 })
+        const flatItem = flatTree.find((f) => f.type === 'file' && f.snippet.id === active.id)
+        setActiveListDragItem({
+          type: 'file',
+          id: active.id,
+          snippet: activeSnippet,
+          depth: flatItem ? flatItem.depth : 0
+        })
       }
     }
   }
@@ -528,14 +628,14 @@ const ExplorerModal = ({ isOpen, onClose }) => {
           try {
             await window.api.renameFolder(sourceFolderId, folderName)
             await loadVault()
-          } catch(e) {}
+          } catch (e) {}
         }
       } else {
-        const activeSnippet = allSnippets.find(s => s.id === active.id)
+        const activeSnippet = allSnippets.find((s) => s.id === active.id)
         if (activeSnippet && activeSnippet.folderId !== '') {
           try {
             await saveSnippet({ ...activeSnippet, folderId: '' })
-          } catch(e) {}
+          } catch (e) {}
         }
       }
       return
@@ -543,17 +643,17 @@ const ExplorerModal = ({ isOpen, onClose }) => {
 
     if (String(active.id).startsWith('drag-folder-')) {
       const sourceFolderId = String(active.id).replace('drag-folder-', '')
-      
+
       if (String(over.id).startsWith('folder-')) {
         const targetFolderId = String(over.id).replace('folder-', '')
-        
+
         // Prevent moving a folder into itself or its own subfolders
         if (sourceFolderId !== targetFolderId && !targetFolderId.startsWith(sourceFolderId + '/')) {
           const folderName = sourceFolderId.split('/').pop()
           const newPath = targetFolderId ? `${targetFolderId}/${folderName}` : folderName
           try {
             await window.api.renameFolder(sourceFolderId, newPath)
-            setExpandedFolders(prev => new Set(prev).add(targetFolderId))
+            setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
             await loadVault()
           } catch (e) {
             console.error('Failed to move folder:', e)
@@ -564,15 +664,14 @@ const ExplorerModal = ({ isOpen, onClose }) => {
     }
 
     if (active.id !== over?.id && over) {
-      
       // Check if dropped into a folder
       if (String(over.id).startsWith('folder-')) {
         const targetFolderId = String(over.id).replace('folder-', '')
-        const activeSnippet = allSnippets.find(s => s.id === active.id)
+        const activeSnippet = allSnippets.find((s) => s.id === active.id)
         if (activeSnippet && activeSnippet.folderId !== targetFolderId) {
           try {
             await saveSnippet({ ...activeSnippet, folderId: targetFolderId })
-            setExpandedFolders(prev => new Set(prev).add(targetFolderId))
+            setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
           } catch (e) {
             console.error('Failed to move snippet to folder:', e)
           }
@@ -581,12 +680,12 @@ const ExplorerModal = ({ isOpen, onClose }) => {
       }
 
       // Normal reordering
-      const currentListIds = allSnippets.map(s => s.id)
+      const currentListIds = allSnippets.map((s) => s.id)
       const oldIndex = currentListIds.indexOf(active.id)
       const newIndex = currentListIds.indexOf(over.id)
       if (oldIndex !== -1 && newIndex !== -1) {
         const newOrder = arrayMove(currentListIds, oldIndex, newIndex)
-        useSettingsStore.getState().updateSettings({ 
+        useSettingsStore.getState().updateSettings({
           noteOrder: newOrder,
           sortBy: 'custom' // Auto switch to custom sort
         })
@@ -594,8 +693,8 @@ const ExplorerModal = ({ isOpen, onClose }) => {
     }
   }
 
-    const getIconForLanguage = (language) => {
-    switch(language) {
+  const getIconForLanguage = (language) => {
+    switch (language) {
       case 'javascript':
       case 'typescript':
       case 'python':
@@ -624,12 +723,16 @@ const ExplorerModal = ({ isOpen, onClose }) => {
 
     try {
       if (creating.type === 'folder') {
-        const folderPath = creating.parentId ? `${creating.parentId}/${sanitizedName}` : sanitizedName
+        const folderPath = creating.parentId
+          ? `${creating.parentId}/${sanitizedName}`
+          : sanitizedName
         await window.api.createFolder(folderPath)
-        setExpandedFolders(prev => new Set(prev).add(folderPath))
+        setExpandedFolders((prev) => new Set(prev).add(folderPath))
         await loadVault()
       } else {
-        const newId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15)
+        const newId = crypto.randomUUID
+          ? crypto.randomUUID()
+          : Math.random().toString(36).substring(2, 15)
         const folderId = creating.parentId || ''
         const newSnippet = {
           id: newId,
@@ -641,7 +744,7 @@ const ExplorerModal = ({ isOpen, onClose }) => {
           timestamp: Date.now()
         }
         await saveSnippet(newSnippet)
-        if (folderId) setExpandedFolders(prev => new Set(prev).add(folderId))
+        if (folderId) setExpandedFolders((prev) => new Set(prev).add(folderId))
         handleSelect(newSnippet)
       }
 
@@ -671,7 +774,7 @@ const ExplorerModal = ({ isOpen, onClose }) => {
       const parts = renamingFolder.split('/')
       parts[parts.length - 1] = sanitizedName
       const newPath = parts.join('/')
-      
+
       if (newPath !== renamingFolder) {
         await window.api.renameFolder(renamingFolder, newPath)
         await loadVault()
@@ -682,16 +785,32 @@ const ExplorerModal = ({ isOpen, onClose }) => {
     setRenamingFolder(null)
   }
 
+  // search
+  const handleSearchChange = (e) => {
+    const value = e.target.value
+    setDisplayQuery(value) // Update input immediately
+
+    // Clear previous timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+
+    // Set new timer - wait 300ms before updating query
+    debounceTimerRef.current = setTimeout(() => {
+      setQuery(value)
+    }, 300)
+  }
+
   return createPortal(
-    <div 
-      className="explorer-modal-overlay" 
+    <div
+      className="explorer-modal-overlay"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) {
           onClose()
         }
       }}
     >
-      <div 
+      <div
         ref={modalRef}
         className="start-menu-container"
         style={{
@@ -700,37 +819,61 @@ const ExplorerModal = ({ isOpen, onClose }) => {
           marginLeft: -(size.width / 2) // keep centered natively
         }}
       >
-        
         {/* Resize Handles */}
         <div className="resizer resizer-top" onMouseDown={(e) => handleResizeStart(e, ['top'])} />
         <div className="resizer resizer-left" onMouseDown={(e) => handleResizeStart(e, ['left'])} />
-        <div className="resizer resizer-right" onMouseDown={(e) => handleResizeStart(e, ['right'])} />
-        <div className="resizer resizer-top-left" onMouseDown={(e) => handleResizeStart(e, ['top', 'left'])} />
-        <div className="resizer resizer-top-right" onMouseDown={(e) => handleResizeStart(e, ['top', 'right'])} />
-        
+        <div
+          className="resizer resizer-right"
+          onMouseDown={(e) => handleResizeStart(e, ['right'])}
+        />
+        <div
+          className="resizer resizer-top-left"
+          onMouseDown={(e) => handleResizeStart(e, ['top', 'left'])}
+        />
+        <div
+          className="resizer resizer-top-right"
+          onMouseDown={(e) => handleResizeStart(e, ['top', 'right'])}
+        />
+
         {/* Search Bar */}
-        <div className="start-menu-search">
+
+        {/* Search Bar */}
+        <div className="start-menu-search relative">
           <Search size={16} className="search-icon" />
-          <input 
+          <input
             ref={searchInputRef}
-            type="text" 
+            type="text"
             placeholder="Search for notes"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
+            value={displayQuery}
+            onChange={(e) => {
+              const v = e.target.value
+              setDisplayQuery(v)
+              setQuery(v)
+            }}
+            className="pr-14"
           />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+            <AppVersion />
+          </div>
         </div>
 
         {/* Tabs */}
         <div className="explorer-tabs">
-          <button 
+          <button
             className={`explorer-tab ${activeTab === 'all' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('all'); setCreating(null); }}
+            onClick={() => {
+              setActiveTab('all')
+              setCreating(null)
+            }}
           >
             All Notes
           </button>
-          <button 
+          <button
             className={`explorer-tab ${activeTab === 'favorites' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('favorites'); setCreating(null); }}
+            onClick={() => {
+              setActiveTab('favorites')
+              setCreating(null)
+            }}
           >
             Favorites
           </button>
@@ -738,202 +881,291 @@ const ExplorerModal = ({ isOpen, onClose }) => {
 
         {/* Scrollable Body */}
         <div className="start-menu-body">
-          
           {/* Pinned Section */}
           {activeTab === 'favorites' && (
-          <div className="start-section">
-            <div className="start-section-header">
-              <h3>Favorites</h3>
+            <div className="start-section">
+              <div className="start-section-header">
+                <h3>Favorites</h3>
+              </div>
+
+              {pinnedSnippets.length === 0 ? (
+                <div className="empty-state">No favorite notes</div>
+              ) : (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={pointerWithin}
+                  onDragEnd={handleSortDragEnd}
+                >
+                  <SortableContext
+                    items={pinnedSnippets.map((s) => s.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div
+                      className="recommended-list"
+                      style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+                    >
+                      {pinnedSnippets.map((snippet) => (
+                        <SortableListItem
+                          key={snippet.id}
+                          snippet={snippet}
+                          onClick={() => handleSelect(snippet)}
+                          isActive={false}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              )}
             </div>
-            
-            {pinnedSnippets.length === 0 ? (
-              <div className="empty-state">No favorite notes</div>
-            ) : (
-              <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={handleSortDragEnd}>
-                <SortableContext items={pinnedSnippets.map(s => s.id)} strategy={verticalListSortingStrategy}>
-                  <div className="recommended-list" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    {pinnedSnippets.map(snippet => (
-                      <SortableListItem
-                        key={snippet.id}
-                        snippet={snippet}
-                        onClick={() => handleSelect(snippet)}
-                        isActive={false}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
-            )}
-          </div>
           )}
 
           {/* Recommended / All Section */}
           {activeTab === 'all' && (
-          <div className="start-section">
-            <div className="start-section-header">
-              <h3>{allSnippets.length} {allSnippets.length === 1 ? 'Note' : 'Notes'}</h3>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button 
-                  className="sort-toggle-btn"
-                  onClick={collapseAllFolders}
-                  title="Collapse All Folders"
-                >
-                  <ChevronsUp size={14} />
-                </button>
-                <button 
-                  className="sort-toggle-btn"
-                  onClick={(e) => { 
-                    e.stopPropagation()
-                    setCreating({ type: 'file', parentId: '' })
-                    setCreatingValue('')
-                  }}
-                  title="Create New Note in Root"
-                >
-                  <FilePlus size={14} />
-                </button>
-                <button 
-                  className="sort-toggle-btn"
-                  onClick={(e) => { 
-                    e.stopPropagation()
-                    setCreating({ type: 'folder', parentId: '' })
-                    setCreatingValue('')
-                  }}
-                  title="Create New Folder in Root"
-                >
-                  <FolderPlus size={14} />
-                </button>
-                <button 
-                  className="sort-toggle-btn"
-                  onClick={(e) => { e.stopPropagation(); loadVault() }}
-                  title="Refresh Vault"
-                  disabled={isLoading}
-                  style={{ opacity: isLoading ? 0.5 : 1 }}
-                >
-                  <RefreshCw size={14} className={isLoading ? 'spin-animation' : ''} />
-                </button>
-                <button 
-                  className="sort-toggle-btn"
-                  onClick={handleSortToggle}
-                  title={`Sort by ${sortBy} (${sortDirection})`}
-                >
-                  <ArrowUpDown size={14} />
-                </button>
+            <div className="start-section">
+              <div className="start-section-header">
+                <h3>
+                  {allSnippets.length} {allSnippets.length === 1 ? 'Note' : 'Notes'}
+                </h3>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    className="sort-toggle-btn"
+                    onClick={collapseAllFolders}
+                    title="Collapse All Folders"
+                  >
+                    <ChevronsUp size={14} />
+                  </button>
+                  <button
+                    className="sort-toggle-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setCreating({ type: 'file', parentId: '' })
+                      setCreatingValue('')
+                    }}
+                    title="Create New Note in Root"
+                  >
+                    <FilePlus size={14} />
+                  </button>
+                  <button
+                    className="sort-toggle-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setCreating({ type: 'folder', parentId: '' })
+                      setCreatingValue('')
+                    }}
+                    title="Create New Folder in Root"
+                  >
+                    <FolderPlus size={14} />
+                  </button>
+                  <button
+                    className="sort-toggle-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      loadVault()
+                    }}
+                    title="Refresh Vault"
+                    disabled={isLoading}
+                    style={{ opacity: isLoading ? 0.5 : 1 }}
+                  >
+                    <RefreshCw size={14} className={isLoading ? 'spin-animation' : ''} />
+                  </button>
+                  <button
+                    className="sort-toggle-btn"
+                    onClick={handleSortToggle}
+                    title={`Sort by ${sortBy} (${sortDirection})`}
+                  >
+                    <ArrowUpDown size={14} />
+                  </button>
+                </div>
               </div>
-            </div>
-            
-            {flatTree.length === 0 ? (
-              <div className="empty-state">No notes or folders found</div>
-            ) : (
-              <DndContext 
-                sensors={sensors} 
-                collisionDetection={pointerWithin} 
-                onDragStart={handleListDragStart}
-                onDragEnd={handleListDragEnd}
-              >
-                <SortableContext items={allSnippets.map(s => s.id)} strategy={verticalListSortingStrategy}>
-                  <div className="recommended-list" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Virtuoso
-                      ref={virtuosoRef}
-                      style={{ flex: 1, height: '100%' }}
-                      data={flatTree}
-                      itemContent={(index, item) => {
-                        if (item.type === 'input') {
-                          return (
-                            <div className="folder-tree-item creating-input" style={{ position: 'relative', paddingLeft: `${item.depth * 16}px` }}>
-                              {Array.from({ length: item.depth }).map((_, i) => (
-                                <div key={`line-${i}`} style={{ position: 'absolute', left: `${i * 16 + 12 + 6}px`, top: 0, bottom: 0, width: '1px', backgroundColor: 'var(--border-dim)' }} />
-                              ))}
-                              {item.kind === 'folder' ? <Folder size={14} className="folder-icon-color" /> : <FileText size={14} className="icon-blue" />}
-                              <input
-                                autoFocus
-                                value={creatingValue}
-                                onChange={e => setCreatingValue(e.target.value)}
-                                onKeyDown={e => {
-                                  if (e.key === 'Enter') submitCreation()
-                                  if (e.key === 'Escape') setCreating(null)
+
+              {flatTree.length === 0 ? (
+                <div className="empty-state">No notes or folders found</div>
+              ) : (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={pointerWithin}
+                  onDragStart={handleListDragStart}
+                  onDragEnd={handleListDragEnd}
+                >
+                  <SortableContext
+                    items={allSnippets.map((s) => s.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div
+                      className="recommended-list"
+                      style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+                    >
+                      <Virtuoso
+                        ref={virtuosoRef}
+                        style={{ flex: 1, height: '100%' }}
+                        data={flatTree}
+                        itemContent={(index, item) => {
+                          if (item.type === 'input') {
+                            return (
+                              <div
+                                className="folder-tree-item creating-input"
+                                style={{
+                                  position: 'relative',
+                                  paddingLeft: `${item.depth * 16}px`
                                 }}
-                                onBlur={() => submitCreation()}
-                                placeholder={`New ${item.kind}...`}
-                                className="inline-create-input"
+                              >
+                                {Array.from({ length: item.depth }).map((_, i) => (
+                                  <div
+                                    key={`line-${i}`}
+                                    style={{
+                                      position: 'absolute',
+                                      left: `${i * 16 + 12 + 6}px`,
+                                      top: 0,
+                                      bottom: 0,
+                                      width: '1px',
+                                      backgroundColor: 'var(--border-dim)'
+                                    }}
+                                  />
+                                ))}
+                                {item.kind === 'folder' ? (
+                                  <Folder size={14} className="folder-icon-color" />
+                                ) : (
+                                  <FileText size={14} className="icon-blue" />
+                                )}
+                                <input
+                                  autoFocus
+                                  value={creatingValue}
+                                  onChange={(e) => setCreatingValue(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') submitCreation()
+                                    if (e.key === 'Escape') setCreating(null)
+                                  }}
+                                  onBlur={() => submitCreation()}
+                                  placeholder={`New ${item.kind}...`}
+                                  className="inline-create-input"
+                                />
+                              </div>
+                            )
+                          } else if (item.type === 'root-drop') {
+                            return <DroppableRootZone />
+                          } else if (item.type === 'folder') {
+                            const isExpanded = expandedFolders.has(item.id)
+                            return (
+                              <DroppableFolderItem
+                                item={item}
+                                isExpanded={isExpanded}
+                                folderColor={folderColors[item.id]}
+                                isRenaming={renamingFolder === item.id}
+                                renameValue={renamingValue}
+                                setRenameValue={setRenamingValue}
+                                submitRename={submitRename}
+                                cancelRename={() => setRenamingFolder(null)}
+                                onToggle={toggleFolder}
+                                onContextMenu={(id, e) => {
+                                  setFolderContext({ x: e.clientX, y: e.clientY, folderId: id })
+                                }}
                               />
-                            </div>
-                          )
-                        } else if (item.type === 'root-drop') {
-                          return <DroppableRootZone />
-                        } else if (item.type === 'folder') {
-                          const isExpanded = expandedFolders.has(item.id)
-                          return (
-                            <DroppableFolderItem 
-                              item={item} 
-                              isExpanded={isExpanded} 
-                              folderColor={folderColors[item.id]}
-                              isRenaming={renamingFolder === item.id}
-                              renameValue={renamingValue}
-                              setRenameValue={setRenamingValue}
-                              submitRename={submitRename}
-                              cancelRename={() => setRenamingFolder(null)}
-                              onToggle={toggleFolder} 
-                              onContextMenu={(id, e) => {
-                                setFolderContext({ x: e.clientX, y: e.clientY, folderId: id })
+                            )
+                          } else {
+                            return (
+                              <div
+                                style={{
+                                  position: 'relative',
+                                  paddingLeft: `${item.depth * 16}px`
+                                }}
+                              >
+                                {Array.from({ length: item.depth }).map((_, i) => (
+                                  <div
+                                    key={`line-${i}`}
+                                    style={{
+                                      position: 'absolute',
+                                      left: `${i * 16 + 12 + 6}px`,
+                                      top: 0,
+                                      bottom: 0,
+                                      width: '1px',
+                                      backgroundColor: 'var(--border-dim)',
+                                      zIndex: 0
+                                    }}
+                                  />
+                                ))}
+                                <SortableListItem
+                                  key={item.snippet.id}
+                                  snippet={item.snippet}
+                                  onClick={() => handleSelect(item.snippet)}
+                                  isActive={false}
+                                />
+                              </div>
+                            )
+                          }
+                        }}
+                      />
+                    </div>
+                  </SortableContext>
+                  {createPortal(
+                    <DragOverlay
+                      zIndex={9999}
+                      dropAnimation={{
+                        sideEffects: defaultDropAnimationSideEffects({
+                          styles: { active: { opacity: '0.4' } }
+                        })
+                      }}
+                    >
+                      {activeListDragItem?.type === 'folder' ? (
+                        <OverlayWrapper>
+                          <div
+                            className="folder-tree-main"
+                            style={{
+                              width: 'max-content',
+                              opacity: 0.8,
+                              background: 'var(--bg-panel)',
+                              borderRadius: '4px',
+                              paddingRight: '8px',
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                            }}
+                          >
+                            <ChevronRight size={14} className="folder-chevron" />
+                            <div
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                color: folderColors[activeListDragItem.item.id] || undefined,
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                marginLeft: '-6px'
                               }}
-                            />
-                          )
-                        } else {
-                          return (
-                            <div style={{ position: 'relative', paddingLeft: `${item.depth * 16}px` }}>
-                              {Array.from({ length: item.depth }).map((_, i) => (
-                                <div key={`line-${i}`} style={{ position: 'absolute', left: `${i * 16 + 12 + 6}px`, top: 0, bottom: 0, width: '1px', backgroundColor: 'var(--border-dim)', zIndex: 0 }} />
-                              ))}
-                              <SortableListItem
-                                key={item.snippet.id}
-                                snippet={item.snippet}
-                                onClick={() => handleSelect(item.snippet)}
+                            >
+                              <Folder size={14} />
+                              <span className="folder-name">{activeListDragItem.item.name}</span>
+                            </div>
+                          </div>
+                        </OverlayWrapper>
+                      ) : activeListDragItem?.type === 'file' ? (
+                        <OverlayWrapper>
+                          <div
+                            className="start-section"
+                            style={{ margin: 0, width: 'max-content' }}
+                          >
+                            <div
+                              style={{
+                                opacity: 0.8,
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                                borderRadius: '4px',
+                                background: 'var(--bg-panel)'
+                              }}
+                            >
+                              <SidebarItem
+                                snippet={activeListDragItem.snippet}
+                                variant="list"
                                 isActive={false}
                               />
                             </div>
-                          )
-                        }
-                      }}
-                    />
-                  </div>
-                </SortableContext>
-                {createPortal(
-                  <DragOverlay zIndex={9999} dropAnimation={{
-                    sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.4' } } }),
-                  }}>
-                    {activeListDragItem?.type === 'folder' ? (
-                      <OverlayWrapper>
-                        <div className="folder-tree-main" style={{ width: 'max-content', opacity: 0.8, background: 'var(--bg-panel)', borderRadius: '4px', paddingRight: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
-                          <ChevronRight size={14} className="folder-chevron" />
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: folderColors[activeListDragItem.item.id] || undefined, padding: '2px 6px', borderRadius: '4px', marginLeft: '-6px' }}>
-                            <Folder size={14} />
-                            <span className="folder-name">{activeListDragItem.item.name}</span>
                           </div>
-                        </div>
-                      </OverlayWrapper>
-                    ) : activeListDragItem?.type === 'file' ? (
-                      <OverlayWrapper>
-                        <div className="start-section" style={{ margin: 0, width: 'max-content' }}>
-                          <div style={{ opacity: 0.8, boxShadow: '0 4px 12px rgba(0,0,0,0.2)', borderRadius: '4px', background: 'var(--bg-panel)' }}>
-                             <SidebarItem
-                               snippet={activeListDragItem.snippet}
-                               variant="list"
-                               isActive={false}
-                             />
-                          </div>
-                        </div>
-                      </OverlayWrapper>
-                    ) : null}
-                  </DragOverlay>,
-                  document.body
-                )}
-              </DndContext>
-            )}
-          </div>
+                        </OverlayWrapper>
+                      ) : null}
+                    </DragOverlay>,
+                    document.body
+                  )}
+                </DndContext>
+              )}
+            </div>
           )}
-
         </div>
-
       </div>
 
       {folderContext && (
@@ -946,7 +1178,7 @@ const ExplorerModal = ({ isOpen, onClose }) => {
               label: 'Create Subfolder',
               icon: <FolderPlus size={14} />,
               onClick: () => {
-                setExpandedFolders(prev => new Set(prev).add(folderContext.folderId))
+                setExpandedFolders((prev) => new Set(prev).add(folderContext.folderId))
                 setCreating({ type: 'folder', parentId: folderContext.folderId })
                 setCreatingValue('')
               }
@@ -965,32 +1197,86 @@ const ExplorerModal = ({ isOpen, onClose }) => {
             },
             {
               label: 'Default Color',
-              icon: <div style={{ width: 14, height: 14, borderRadius: 2, border: '1px solid var(--border-color)' }} />,
+              icon: (
+                <div
+                  style={{
+                    width: 14,
+                    height: 14,
+                    borderRadius: 2,
+                    border: '1px solid var(--border-color)'
+                  }}
+                />
+              ),
               onClick: () => setFolderColor(folderContext.folderId, null)
             },
             {
               label: 'Blue',
-              icon: <div style={{ width: 14, height: 14, borderRadius: 2, background: 'rgba(59, 130, 246, 0.2)' }} />,
+              icon: (
+                <div
+                  style={{
+                    width: 14,
+                    height: 14,
+                    borderRadius: 2,
+                    background: 'rgba(59, 130, 246, 0.2)'
+                  }}
+                />
+              ),
               onClick: () => setFolderColor(folderContext.folderId, 'rgba(59, 130, 246, 0.2)')
             },
             {
               label: 'Purple',
-              icon: <div style={{ width: 14, height: 14, borderRadius: 2, background: 'rgba(168, 85, 247, 0.2)' }} />,
+              icon: (
+                <div
+                  style={{
+                    width: 14,
+                    height: 14,
+                    borderRadius: 2,
+                    background: 'rgba(168, 85, 247, 0.2)'
+                  }}
+                />
+              ),
               onClick: () => setFolderColor(folderContext.folderId, 'rgba(168, 85, 247, 0.2)')
             },
             {
               label: 'Red',
-              icon: <div style={{ width: 14, height: 14, borderRadius: 2, background: 'rgba(239, 68, 68, 0.2)' }} />,
+              icon: (
+                <div
+                  style={{
+                    width: 14,
+                    height: 14,
+                    borderRadius: 2,
+                    background: 'rgba(239, 68, 68, 0.2)'
+                  }}
+                />
+              ),
               onClick: () => setFolderColor(folderContext.folderId, 'rgba(239, 68, 68, 0.2)')
             },
             {
               label: 'Green',
-              icon: <div style={{ width: 14, height: 14, borderRadius: 2, background: 'rgba(34, 197, 94, 0.2)' }} />,
+              icon: (
+                <div
+                  style={{
+                    width: 14,
+                    height: 14,
+                    borderRadius: 2,
+                    background: 'rgba(34, 197, 94, 0.2)'
+                  }}
+                />
+              ),
               onClick: () => setFolderColor(folderContext.folderId, 'rgba(34, 197, 94, 0.2)')
             },
             {
               label: 'Orange',
-              icon: <div style={{ width: 14, height: 14, borderRadius: 2, background: 'rgba(249, 115, 22, 0.2)' }} />,
+              icon: (
+                <div
+                  style={{
+                    width: 14,
+                    height: 14,
+                    borderRadius: 2,
+                    background: 'rgba(249, 115, 22, 0.2)'
+                  }}
+                />
+              ),
               onClick: () => setFolderColor(folderContext.folderId, 'rgba(249, 115, 22, 0.2)')
             },
             {

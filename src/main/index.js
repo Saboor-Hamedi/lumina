@@ -14,6 +14,7 @@ import iconAsset from '../../resources/icon.ico?asset'
 // Force rebuild timestamp: 5
 
 let mainWindow
+let hasIndexed = false
 
 async function migrateFromSQLite() {
   const dbPath = join(app.getPath('userData'), 'snippets.db')
@@ -727,6 +728,21 @@ app.whenReady().then(async () => {
   // Vault Search IPC Handlers
   ipcMain.handle('vault:search', async (_, query, options = {}) => {
     try {
+      // Trigger indexing lazily on first search
+      if (!hasIndexed && VaultManager.vaultPath) {
+        hasIndexed = true
+        VaultIndexer.indexVault(VaultManager.vaultPath, {
+          force: false,
+          onProgress: (stats) => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('index:progress', stats)
+            }
+          }
+        })
+          .then(() => VaultSearch.reload())
+          .catch((err) => console.error('[Main] Lazy indexing failed:', err))
+      }
+
       return await VaultSearch.search(query, options)
     } catch (err) {
       console.error('[Main] Search failed:', err)
@@ -804,32 +820,42 @@ app.whenReady().then(async () => {
     await VaultManager.init(savedVaultPath, app.getPath('documents'))
     await migrateFromSQLite()
 
-    // Auto-index vault in background (non-blocking, delayed to prevent boot stutter)
-    if (savedVaultPath && typeof savedVaultPath === 'string') {
-      setTimeout(() => {
-        console.info('[Main] Starting delayed background indexing...')
-        VaultIndexer.indexVault(savedVaultPath, { 
-          force: false,
-          onProgress: (stats) => {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.webContents.send('index:progress', stats)
+    // Defer indexing until the renderer is initialized so progress events are received reliably.
+    const startupVaultPath = savedVaultPath
+
+    await createWindow()
+
+    mainWindow.webContents.once('did-finish-load', () => {
+      VaultIndexer.warmWorker().catch((err) =>
+        console.error('[Main] Worker pre-warm failed:', err)
+      )
+
+      if (startupVaultPath && typeof startupVaultPath === 'string') {
+        hasIndexed = true
+
+        setTimeout(() => {
+          console.info('[Main] Starting background indexing after renderer ready...')
+          VaultIndexer.indexVault(startupVaultPath, {
+            force: false,
+            onProgress: (stats) => {
+              if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.webContents.send('index:progress', stats)
+              }
             }
-          }
-        })
-          .then(() => {
-            console.info('[Main] Background indexing complete, reloading search index...')
-            return VaultSearch.reload()
           })
-          .catch((err) => {
-            console.error('[Main] Background indexing failed:', err)
-          })
-      }, 3000)
-    }
+            .then(() => {
+              console.info('[Main] Background indexing complete, reloading search index...')
+              return VaultSearch.reload()
+            })
+            .catch((err) => {
+              console.error('[Main] Background indexing failed:', err)
+            })
+        }, 250)
+      }
+    })
   } catch (err) {
     console.error('[Main] Initialization error:', err)
   }
-
-  createWindow()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
