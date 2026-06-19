@@ -364,6 +364,10 @@ const MarkdownEditor = React.memo(
     })
 
     const wikiLinkCompletionSource = useCallback((context) => {
+      if (document.activeElement?.classList.contains('cm-atomic-table-cell-source')) {
+        return null;
+      }
+
       const match = context.matchBefore(/\[\[([^\]]*)/);
       if (!match) return null;
       if (match.from === match.to && !context.explicit) return null;

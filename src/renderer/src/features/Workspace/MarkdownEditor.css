@@ -128,6 +128,16 @@
   border: 1px solid var(--border-dim) !important;
 }
 
+/* Hide CodeMirror native cursor when a table cell has focus to avoid double cursors outside the table */
+.cm-editor.cm-table-focused .cm-cursorLayer,
+.markdown-editor:has(.cm-atomic-table:focus-within) .cm-cursorLayer,
+.cm-editor:has(.cm-atomic-table:focus-within) .cm-cursorLayer,
+.markdown-editor:has(.cm-atomic-table-cell-source:focus) .cm-cursorLayer {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
 /* Inline Code Pill Style - your existing code */
 .cm-atomic-inline-code {
   background: var(--bg-hover, rgba(255, 255, 255, 0.1)) !important;

@@ -1,9 +1,12 @@
 import { ensureSyntaxTree, syntaxTree } from '@codemirror/language'
-import { EditorSelection, Facet, Prec, StateField, Transaction } from '@codemirror/state'
+import { Compartment, EditorSelection, Facet, Prec, StateEffect, StateField, Transaction } from '@codemirror/state'
 import { Decoration, EditorView, WidgetType, keymap } from '@codemirror/view'
 import { undo, redo } from '@codemirror/commands'
 import { treeGrowthEffect, treeProgressPlugin } from './tree-progress'
 import { useVaultStore } from '../../core/store/useVaultStore'
+
+// Removed global tooltip repositioner
+
 function collectCells(state, rowNode) {
   // Split the row's raw line on unescaped `|` rather than collecting
   // lezer `TableCell` nodes. lezer emits NO `TableCell` for an empty
@@ -637,30 +640,30 @@ function restoreFocusAfterHistory(view, cell, source, action) {
       }
       updateDOM(dom, view) {
         const theadTr = dom.querySelector('thead tr')
-        if (theadTr) {
-          const ths = Array.from(theadTr.querySelectorAll('th'))
-          for (let i = 0; i < this.model.header.length; i++) {
-            if (ths[i] && ths[i].dataset.raw !== this.model.header[i]) {
-              ths[i].dataset.raw = this.model.header[i]
-              const source = ths[i].querySelector('.cm-atomic-table-cell-source')
-              if (source) renderCellSourceDecorated(source)
-            }
+        if (!theadTr) return false
+        const ths = Array.from(theadTr.querySelectorAll('th'))
+        if (ths.length !== this.model.header.length) return false
+        for (let i = 0; i < this.model.header.length; i++) {
+          const source = ths[i].querySelector('.cm-atomic-table-cell-source')
+          if (source && source.textContent !== this.model.header[i]) {
+            const isFocused = document.activeElement === source
+            source.textContent = this.model.header[i]
+            if (isFocused) placeCaretAtEnd(source)
           }
         }
+
         const tbody = dom.querySelector('tbody')
-        if (tbody) {
-          const trs = Array.from(tbody.querySelectorAll('tr'))
-          for (let r = 0; r < this.model.rows.length; r++) {
-            if (trs[r]) {
-              const tds = Array.from(trs[r].querySelectorAll('td'))
-              for (let c = 0; c < this.model.rows[r].length; c++) {
-                const newText = this.model.rows[r][c] || ''
-                if (tds[c] && tds[c].dataset.raw !== newText) {
-                  tds[c].dataset.raw = newText
-                  const source = tds[c].querySelector('.cm-atomic-table-cell-source')
-                  if (source) renderCellSourceDecorated(source)
-                }
-              }
+        if (!tbody) return false
+        const trs = Array.from(tbody.querySelectorAll('tr'))
+        if (trs.length !== this.model.rows.length) return false
+        for (let r = 0; r < trs.length; r++) {
+          const tds = Array.from(trs[r].querySelectorAll('td'))
+          for (let c = 0; c < tds.length; c++) {
+            const source = tds[c].querySelector('.cm-atomic-table-cell-source')
+            if (source && source.textContent !== this.model.rows[r][c]) {
+              const isFocused = document.activeElement === source
+              source.textContent = this.model.rows[r][c]
+              if (isFocused) placeCaretAtEnd(source)
             }
           }
         }
@@ -696,15 +699,14 @@ function restoreFocusAfterHistory(view, cell, source, action) {
       // decorated form (so marks the user just typed — e.g. a new `**` pair
       // — decorate immediately), restore the caret across that rebuild, and
       // push the change into the document.
+      let currentCellText = cell.dataset.raw
       const commit = () => {
-        // textContent (not innerText) so `display: none` delimiters inside
-        // mark wraps are still captured — otherwise a cell containing
-        // `**bold**` would serialize to just `bold` on every keystroke.
-        const raw = (source.textContent ?? '').replace(/\r?\n/g, ' ')
-        if (raw === cell.dataset.raw) return
-        cell.dataset.raw = raw
+        const newText = source.textContent || ''
         const offset = getCaretCharOffset(source)
-        renderCellSourceDecorated(source)
+        if (currentCellText !== newText) {
+          currentCellText = newText
+          cell.dataset.raw = newText
+        }
         if (offset != null) setCaretCharOffset(source, offset)
         updateActiveMarkForSource(source)
         refreshCellPreview(cell)
@@ -726,38 +728,40 @@ function restoreFocusAfterHistory(view, cell, source, action) {
         autocompleteIndex = 0
       }
 
+      const fuzzyMatch = (str, query) => {
+        let i = 0, j = 0
+        const lowerStr = str.toLowerCase()
+        while (i < lowerStr.length && j < query.length) {
+          if (lowerStr[i] === query[j]) j++
+          i++
+        }
+        return j === query.length
+      }
+
       const renderAutocomplete = () => {
         if (!activeDropdown) return
 
-        // Build DOM once if empty
         if (activeDropdown.children.length === 0) {
-          const style = document.createElement('style')
-          style.textContent = `
-                .table-autocomplete-li { padding: 4px 12px; cursor: pointer; display: flex; align-items: center; color: var(--text-main); font-size: 13px; }
-                .table-autocomplete-li:hover { background: var(--bg-active) !important; color: var(--text-accent) !important; }
-                .table-autocomplete-li.active { background: var(--bg-active) !important; color: var(--text-accent) !important; }
-            `
-          activeDropdown.appendChild(style)
-
           const ul = document.createElement('ul')
+          ul.setAttribute('role', 'listbox')
           ul.style.listStyle = 'none'
           ul.style.margin = '0'
           ul.style.padding = '0'
 
           autocompleteMatches.forEach((m, idx) => {
             const li = document.createElement('li')
-            li.className = 'table-autocomplete-li'
+            li.setAttribute('role', 'option')
 
-            const icon = document.createElement('div')
-            icon.className = 'cm-completionIcon'
-            icon.style.marginRight = '8px'
-
-            const label = document.createElement('span')
+            const label = document.createElement('div')
             label.className = 'cm-completionLabel'
             label.textContent = m.title
 
-            li.appendChild(icon)
+            const detail = document.createElement('div')
+            detail.className = 'cm-completionDetail'
+            detail.textContent = 'Link to note'
+
             li.appendChild(label)
+            li.appendChild(detail)
 
             li.addEventListener('mousedown', (e) => {
               e.preventDefault()
@@ -770,19 +774,16 @@ function restoreFocusAfterHistory(view, cell, source, action) {
           activeDropdown.appendChild(ul)
         }
 
-        // Update active class
         const lis = activeDropdown.querySelectorAll('li')
         lis.forEach((li, idx) => {
           if (idx === autocompleteIndex) {
-            li.classList.add('active')
+            li.setAttribute('aria-selected', 'true')
+            // Robust scroll into view!
+            li.scrollIntoView({ block: 'nearest' })
           } else {
-            li.classList.remove('active')
+            li.removeAttribute('aria-selected')
           }
         })
-
-        const rect = source.getBoundingClientRect()
-        activeDropdown.style.top = rect.bottom + 4 + 'px'
-        activeDropdown.style.left = rect.left + 'px'
       }
 
       const applyAutocomplete = (title) => {
@@ -820,9 +821,11 @@ function restoreFocusAfterHistory(view, cell, source, action) {
         currentQuery = match[1]
         const query = currentQuery.toLowerCase()
         const snippets = useVaultStore.getState().snippets || []
+        
         autocompleteMatches = snippets
-          .filter((s) => (s.title || '').toLowerCase().includes(query))
-          .slice(0, 10)
+          .filter(s => s.title && fuzzyMatch(s.title, query))
+          .sort((a, b) => a.title.localeCompare(b.title))
+          .slice(0, 8)
 
         if (autocompleteMatches.length === 0) {
           closeAutocomplete()
@@ -832,15 +835,15 @@ function restoreFocusAfterHistory(view, cell, source, action) {
         if (!activeDropdown) {
           activeDropdown = document.createElement('div')
           activeDropdown.className = 'cm-tooltip cm-tooltip-autocomplete'
-          activeDropdown.style.position = 'fixed'
-          activeDropdown.style.zIndex = '9999'
-          activeDropdown.style.maxHeight = '200px'
+          activeDropdown.style.position = 'absolute'
+          activeDropdown.style.top = '100%'
+          activeDropdown.style.left = '0'
+          activeDropdown.style.zIndex = '99999'
           activeDropdown.style.overflowY = 'auto'
-          activeDropdown.style.background = 'var(--bg-panel)'
-          activeDropdown.style.border = '1px solid var(--border-dim)'
-          activeDropdown.style.borderRadius = '6px'
-          activeDropdown.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)'
-          document.body.appendChild(activeDropdown)
+          activeDropdown.style.minWidth = '250px'
+          
+          cell.style.position = 'relative'
+          cell.appendChild(activeDropdown)
           autocompleteIndex = 0
         } else if (autocompleteIndex >= autocompleteMatches.length) {
           autocompleteIndex = Math.max(0, autocompleteMatches.length - 1)
@@ -890,23 +893,35 @@ function restoreFocusAfterHistory(view, cell, source, action) {
       // update is idempotent — redundant calls cost nothing.
       // Focus updates the active CodeMirror selection so history is anchored to the table
       source.addEventListener('focus', () => {
+        view.dom.classList.add('cm-table-focused')
         updateActiveMarkForSource(source)
         const wrap = cell.closest('.cm-atomic-table')
         if (wrap) {
           const range = findCurrentTableRange(view, wrap)
           if (range) {
-            // Sync CM selection silently
+            // Sync CM selection to anchor table state
             view.dispatch({ selection: { anchor: range.from } })
           }
         }
       })
       source.addEventListener('mouseup', () => updateActiveMarkForSource(source))
       source.addEventListener('keyup', () => updateActiveMarkForSource(source))
-      // Blur: collapse every active wrap so the reader-resting state
-      // hides all delimiters.
-      source.addEventListener('blur', () => {
+      
+      source.addEventListener('blur', (e) => {
+        requestAnimationFrame(() => {
+          if (!view.dom.contains(document.activeElement) || !document.activeElement.closest('.cm-atomic-table')) {
+            view.dom.classList.remove('cm-table-focused')
+          }
+        })
         clearActiveMarksInSource(source)
         closeAutocomplete()
+        const wrap = cell.closest('.cm-atomic-table')
+        if (wrap) {
+          const range = findCurrentTableRange(view, wrap)
+          if (range) {
+            view.dispatch({ selection: { anchor: range.from } })
+          }
+        }
       })
       source.addEventListener('keydown', (event) => {
         if (
@@ -949,6 +964,155 @@ function restoreFocusAfterHistory(view, cell, source, action) {
           const colCount = thead ? thead.querySelectorAll('th').length : 1
           moveCellFocus(view, cell, event.shiftKey ? -colCount : colCount)
           return
+        }
+
+        if (event.key === 'Backspace') {
+          const offset = getCaretCharOffset(source)
+          if (offset === 0) {
+            event.preventDefault()
+            event.stopPropagation()
+            
+            const wrap = cell.closest('.cm-atomic-table')
+            if (wrap) {
+              const text = source.textContent || ''
+              const col = cellColIndex(cell)
+              const rowIdx = cellRowIndex(cell)
+              const isHeader = cell.tagName === 'TH'
+              const m = readModelFromDom(wrap)
+              
+              if (text === '') {
+                // Check if entire column is empty
+                let colEmpty = m.header.length > 1
+                if (colEmpty) {
+                  if (m.header[col].trim() !== '') colEmpty = false
+                  for (const r of m.rows) {
+                    if (r[col] && r[col].trim() !== '') colEmpty = false
+                  }
+                }
+                
+                if (colEmpty) {
+                  // Save position BEFORE we modify the DOM
+                  const { from } = findCurrentTableRange(view, wrap) || {from: 0}
+                  // Delete column
+                  m.header.splice(col, 1)
+                  for (const r of m.rows) r.splice(col, 1)
+                  dispatchModel(view, wrap, m)
+                  
+                  requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                      const tables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
+                      const target = tables.find(t => { try { return view.posAtDOM(t) === from } catch { return false } })
+                      if (target) {
+                        const targetRow = target.querySelectorAll('tr')[isHeader ? 0 : rowIdx + 1]
+                        if (targetRow) {
+                          const newCells = targetRow.querySelectorAll('.cm-atomic-table-cell-source')
+                          const focusCol = Math.max(0, col - 1)
+                          if (newCells[focusCol]) {
+                            newCells[focusCol].focus()
+                            placeCaretAtEnd(newCells[focusCol])
+                          }
+                        }
+                      }
+                    })
+                  })
+                  return
+                }
+                
+                // Check if entire row is empty
+                let rowEmpty = !isHeader && m.rows.length > 0
+                if (rowEmpty) {
+                  for (const c of m.rows[rowIdx]) {
+                    if (c && c.trim() !== '') rowEmpty = false
+                  }
+                }
+                
+                if (rowEmpty) {
+                  // Save position BEFORE we modify the DOM
+                  const { from } = findCurrentTableRange(view, wrap) || {from: 0}
+                  // Delete row
+                  m.rows.splice(rowIdx, 1)
+                  dispatchModel(view, wrap, m)
+                  
+                  requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                      const tables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
+                      const target = tables.find(t => { try { return view.posAtDOM(t) === from } catch { return false } })
+                      if (target) {
+                        const rows = target.querySelectorAll('tr')
+                        const focusTr = rows[Math.max(0, rowIdx)] 
+                        if (focusTr) {
+                          const newCells = focusTr.querySelectorAll('.cm-atomic-table-cell-source')
+                          if (newCells[col]) {
+                            newCells[col].focus()
+                            placeCaretAtEnd(newCells[col])
+                          }
+                        }
+                      }
+                    })
+                  })
+                  return
+                }
+              }
+              
+              // If not deleted, move focus to previous cell
+              moveCellFocus(view, cell, -1)
+              return
+            }
+          }
+        }
+
+        if (event.key === '|') {
+          event.preventDefault()
+          event.stopPropagation()
+          const text = source.textContent || ''
+          const offset = getCaretCharOffset(source) || 0
+          
+          const leftText = text.substring(0, offset).trim()
+          const rightText = text.substring(offset).trim()
+          
+          const wrap = cell.closest('.cm-atomic-table')
+          const col = cellColIndex(cell)
+          if (wrap && col >= 0) {
+            const m = readModelFromDom(wrap)
+            if (cell.tagName === 'TH') {
+              m.header[col] = leftText
+              m.header.splice(col + 1, 0, rightText)
+              for (const r of m.rows) r.splice(col + 1, 0, '')
+            } else {
+              const row = cellRowIndex(cell)
+              m.rows[row][col] = leftText
+              m.header.splice(col + 1, 0, '')
+              for (let r = 0; r < m.rows.length; r++) {
+                if (r === row) {
+                  m.rows[r].splice(col + 1, 0, rightText)
+                } else {
+                  m.rows[r].splice(col + 1, 0, '')
+                }
+              }
+            }
+            // Save position BEFORE we modify the DOM
+            const { from } = findCurrentTableRange(view, wrap) || {from: 0}
+            dispatchModel(view, wrap, m)
+            
+            const isHeader = cell.tagName === 'TH'
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                const tables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
+                const target = tables.find(t => {
+                  try { return view.posAtDOM(t) === from } catch { return false }
+                })
+                if (target) {
+                  const rows = target.querySelectorAll('tr')
+                  const targetRow = rows[isHeader ? 0 : cellRowIndex(cell) + 1]
+                  if (targetRow) {
+                    const newCells = targetRow.querySelectorAll('.cm-atomic-table-cell-source')
+                    if (newCells[col + 1]) newCells[col + 1].focus()
+                  }
+                }
+              })
+            })
+            return
+          }
         }
 
         // Forward Undo/Redo commands to CodeMirror view
@@ -1218,6 +1382,7 @@ function restoreFocusAfterHistory(view, cell, source, action) {
           to: range.from + endOld,
           insert: next.substring(start, endNext)
         },
+        selection: { anchor: range.from + start + (next.substring(start, endNext).length) },
         // Tag as typing so CM6's history coalesces consecutive cell edits
         // gracefully. Because we are now dispatching fine-grained diffs,
         // CM6 will naturally break history groups on word boundaries/spaces
