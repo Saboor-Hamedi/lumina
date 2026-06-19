@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Database, CheckCircle2 } from 'lucide-react'
+import { Loader2, CheckCircle2 } from 'lucide-react'
 import './IndexingStatus.css'
 
 const IndexingStatus = () => {
@@ -52,15 +52,15 @@ const IndexingStatus = () => {
       <div className="indexing-status-header">
         <div className="indexing-status-icon">
           {isComplete ? (
-            <CheckCircle2 size={16} />
+            <CheckCircle2 size={14} />
           ) : (
-            <Database size={16} className="indexing-icon-spin" />
+            <Loader2 size={14} className="indexing-icon-spin" />
           )}
         </div>
         
         <div className="indexing-status-title-container">
           <span className="indexing-status-title">
-            {isComplete ? 'Vault Indexed' : 'Indexing Vault'}
+            {isComplete ? 'Indexed' : 'Indexing'}
           </span>
           <span className="indexing-status-percent">
             {Math.round(safeProgress)}%

@@ -6,14 +6,14 @@
   background: var(--bg-panel);
   border: 1px solid var(--border-subtle);
   border-left: 3px solid var(--text-accent);
-  border-radius: 8px;
-  padding: 12px 16px;
+  border-radius: 6px;
+  padding: 6px 12px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
   z-index: 10001;
   width: 240px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
   animation: indexingFadeIn 0.25s ease;
   backdrop-filter: blur(12px);
   pointer-events: none; /* Non-intrusive */
@@ -76,13 +76,13 @@
 }
 
 .indexing-status-title {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--text-main);
 }
 
 .indexing-status-percent {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
   color: var(--text-faint);
   font-variant-numeric: tabular-nums;
@@ -110,7 +110,7 @@
 }
 
 .indexing-status-details {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--text-faint);
   font-variant-numeric: tabular-nums;
   margin-top: 2px;

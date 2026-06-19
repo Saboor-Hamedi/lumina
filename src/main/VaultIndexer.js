@@ -324,10 +324,10 @@ class VaultIndexer {
   /**
    * Index a single file
    */
-  async indexFile(filePath, force = false) {
+  async indexFile(filePath, force = false, state = null) {
     try {
       const stats = await fs.stat(filePath)
-      const state = await this.loadState()
+      state = state || await this.loadState()
 
       // Quick fast-path check without reading file content or hashing
       if (!force && state?.files?.[filePath]) {
@@ -347,14 +347,28 @@ class VaultIndexer {
       if (!force && state?.files?.[filePath]) {
         const fileState = state.files[filePath]
         if (fileState.checksum === checksum && fileState.indexed) {
-          return { indexed: false, reason: 'unchanged_checksum' }
+          return { 
+            indexed: false, 
+            reason: 'unchanged_checksum',
+            stateUpdate: {
+              ...fileState,
+              mtime: stats.mtimeMs,
+              size: stats.size,
+              lastIndexed: Date.now()
+            }
+          }
         }
       }
 
       // Read and chunk file
       const content = await fs.readFile(filePath, 'utf-8')
       if (!content.trim()) {
-        return { indexed: false, reason: 'empty' }
+        return { 
+          indexed: true, 
+          chunkCount: 0, 
+          reason: 'empty',
+          stateUpdate: { mtime: stats.mtimeMs, size: stats.size, checksum, indexed: true, chunkCount: 0, lastIndexed: Date.now() }
+        }
       }
 
       const metadata = {
@@ -365,7 +379,12 @@ class VaultIndexer {
 
       const chunks = this.chunkContent(filePath, content, metadata)
       if (chunks.length === 0) {
-        return { indexed: false, reason: 'no_chunks' }
+        return { 
+          indexed: true, 
+          chunkCount: 0, 
+          reason: 'no_chunks',
+          stateUpdate: { mtime: stats.mtimeMs, size: stats.size, checksum, indexed: true, chunkCount: 0, lastIndexed: Date.now() }
+        }
       }
 
       // Generate embeddings for all chunks
@@ -405,23 +424,20 @@ class VaultIndexer {
         })
       }
 
-      // Append to index and embeddings file
-      await this.appendToIndex(chunkRecords, embeddingsBuffer)
-
-      // Update state
-      await this.updateFileState(filePath, {
-        mtime: stats.mtimeMs,
-        size: stats.size,
-        checksum,
-        indexed: true,
-        chunkCount: chunks.length,
-        lastIndexed: Date.now()
-      })
-
       return {
         indexed: true,
         chunkCount: chunks.length,
-        filePath
+        filePath,
+        chunkRecords,
+        embeddingsBuffer,
+        stateUpdate: {
+          mtime: stats.mtimeMs,
+          size: stats.size,
+          checksum,
+          indexed: true,
+          chunkCount: chunks.length,
+          lastIndexed: Date.now()
+        }
       }
     } catch (err) {
       console.error(`[VaultIndexer] Failed to index ${filePath}:`, err)
@@ -434,13 +450,13 @@ class VaultIndexer {
    * Append chunks to index (with deduplication)
    * Rebuilds embeddings file to maintain correct offsets
    */
-  async appendToIndex(chunkRecords, embeddingsBuffer) {
+  async appendToIndex(chunkRecords, embeddingsBuffer, updatedFiles) {
     await this.writeLock.lock()
     try {
-      // Load existing index to remove old chunks from same file
+      const updatedFilesSet = new Set(updatedFiles || [])
+      // Load existing index to remove old chunks from updated files
       const existingIndex = await this.loadIndex()
-      const filePath = chunkRecords[0]?.filePath
-      const filteredIndex = existingIndex.filter((chunk) => chunk.filePath !== filePath)
+      const filteredIndex = existingIndex.filter((chunk) => !updatedFilesSet.has(chunk.filePath))
 
       // Rebuild embeddings file: extract existing embeddings, then append new ones
       const existingEmbeddingsParts = []
@@ -655,26 +671,36 @@ class VaultIndexer {
       console.log('[VaultIndexer] State files count:', Object.keys(state.files || {}).length)
 
       const filesToProcess = []
-      for (let i = 0; i < files.length; i++) {
-        const filePath = files[i]
-        const needs = await this.needsIndexing(filePath, force, state)
-        if (needs) {
-          console.log('[VaultIndexer] Needs indexing:', filePath)
-          filesToProcess.push(filePath)
-        }
+      const batchSize = 100
+      let lastYieldTime = Date.now()
+      let checkedCount = 0
 
-        if (onProgress && i % 10 === 0) {
+      for (let i = 0; i < files.length; i += batchSize) {
+        const batch = files.slice(i, i + batchSize)
+        const results = await Promise.all(
+          batch.map(async (filePath) => {
+            const needs = await this.needsIndexing(filePath, force, state)
+            return { filePath, needs }
+          })
+        )
+
+        for (const res of results) {
+          if (res.needs) {
+            filesToProcess.push(res.filePath)
+          }
+        }
+        checkedCount += batch.length
+
+        if (onProgress && Date.now() - lastYieldTime > 16) {
           onProgress({
             progress: 0,
             indexed: 0,
             total: files.length,
-            checked: i + 1,
+            checked: checkedCount,
             stage: 'checking'
           })
-        }
-
-        if (i % 20 === 0) {
-          await new Promise((resolve) => setTimeout(resolve, 0))
+          await new Promise((resolve) => setImmediate(resolve))
+          lastYieldTime = Date.now()
         }
       }
       console.log('[VaultIndexer] Files to process:', filesToProcess.length)
@@ -710,29 +736,39 @@ class VaultIndexer {
         })
       }
 
-      // Index files (one at a time)
-      const batchSize = 1
-      for (let i = 0; i < filesToProcess.length; i += batchSize) {
-        const batch = filesToProcess.slice(i, i + batchSize)
+      // Index files and collect results
+      const allChunkRecords = []
+      const allEmbeddingsBuffers = []
+      const updatedFilesSet = new Set()
+      const accumulatedFileStates = {}
 
-        await Promise.all(
-          batch.map(async (filePath) => {
-            try {
-              const result = await this.indexFile(filePath, force)
-              if (result.indexed) {
-                this.stats.indexedFiles++
-                this.stats.totalChunks += result.chunkCount
-              }
-            } catch (err) {
-              this.stats.errors++
-              console.error(`[VaultIndexer] Error indexing ${filePath}:`, err)
+      for (let i = 0; i < filesToProcess.length; i++) {
+        const filePath = filesToProcess[i]
+        try {
+          const result = await this.indexFile(filePath, force, state)
+          
+          if (result.stateUpdate) {
+            accumulatedFileStates[filePath] = result.stateUpdate
+          }
+
+          if (result.indexed) {
+            this.stats.indexedFiles++
+            this.stats.totalChunks += result.chunkCount
+            updatedFilesSet.add(filePath)
+
+            if (result.chunkRecords && result.chunkRecords.length > 0) {
+              allChunkRecords.push(...result.chunkRecords)
+              allEmbeddingsBuffers.push(result.embeddingsBuffer)
             }
-          })
-        )
+          }
+        } catch (err) {
+          this.stats.errors++
+          console.error(`[VaultIndexer] Error indexing ${filePath}:`, err)
+        }
 
         if (onProgress) {
           onProgress({
-            progress: ((i + batch.length) / filesToProcess.length) * 100,
+            progress: ((i + 1) / filesToProcess.length) * 100,
             indexed: this.stats.indexedFiles,
             total: filesToProcess.length,
             chunks: this.stats.totalChunks
@@ -740,10 +776,18 @@ class VaultIndexer {
         }
       }
 
-      // Save stats
-      const stateUpdate = await this.loadState()
-      stateUpdate.stats = this.stats
-      await fs.writeFile(this.statePath, JSON.stringify(stateUpdate, null, 2), 'utf-8')
+      // Batch write index and embeddings
+      if (updatedFilesSet.size > 0) {
+        const combinedEmbeddings = Buffer.concat(allEmbeddingsBuffers)
+        await this.appendToIndex(allChunkRecords, combinedEmbeddings, Array.from(updatedFilesSet))
+      }
+
+      // Batch write state
+      const finalState = await this.loadState()
+      finalState.files = { ...finalState.files, ...accumulatedFileStates }
+      finalState.stats = this.stats
+      finalState.lastIndexTime = Date.now()
+      await fs.writeFile(this.statePath, JSON.stringify(finalState, null, 2), 'utf-8')
 
       // Final progress broadcast to ensure UI closes
       if (onProgress) {
@@ -814,6 +858,8 @@ class VaultIndexer {
     ]
     let entryCount = 0
 
+    let lastYieldTime = Date.now()
+
     async function scanDir(dir) {
       if (typeof dir !== 'string') {
         console.warn('[VaultIndexer] scanDir: Invalid directory path:', dir)
@@ -831,19 +877,6 @@ class VaultIndexer {
             entry.name === 'node_modules' ||
             entry.name === '.git'
           ) {
-            if (onProgress && entryCount % 5 === 0) {
-              onProgress({
-                progress: 0,
-                indexed: 0,
-                total: 0,
-                found: files.length,
-                checked: entryCount,
-                stage: 'scanning'
-              })
-            }
-            if (onProgress) {
-              await new Promise((resolve) => setImmediate(resolve))
-            }
             continue
           }
 
@@ -853,21 +886,21 @@ class VaultIndexer {
             const ext = path.extname(entry.name).toLowerCase()
             if (supportedExts.includes(ext)) {
               files.push(fullPath)
-              if (onProgress) {
-                onProgress({
-                  progress: 0,
-                  indexed: 0,
-                  total: 0,
-                  found: files.length,
-                  checked: entryCount,
-                  stage: 'scanning'
-                })
-              }
             }
           }
 
-          if (onProgress) {
+          // UI Progress and Yielding - max 60fps (16ms)
+          if (onProgress && Date.now() - lastYieldTime > 16) {
+            onProgress({
+              progress: 0,
+              indexed: 0,
+              total: 0,
+              found: files.length,
+              checked: entryCount,
+              stage: 'scanning'
+            })
             await new Promise((resolve) => setImmediate(resolve))
+            lastYieldTime = Date.now()
           }
         }
       } catch (err) {
