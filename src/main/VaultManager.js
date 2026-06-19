@@ -53,13 +53,25 @@ class VaultManager {
     if (this.watcher) this.watcher.close()
     this.watcher = chokidar.watch(this.vaultPath, {
       ignored: /(^|[\/\\])\../,
-      persistent: true
+      persistent: true,
+      ignoreInitial: true
     })
 
+    let scanTimeout = null;
     this.watcher.on('all', async (event, filePath) => {
-      if (filePath.endsWith('.md')) {
-        await this.scanVault()
-        // Here we could emit events to the renderer via a callback/win.webContents
+      if (filePath.endsWith('.md') || event === 'unlinkDir' || event === 'addDir') {
+        if (scanTimeout) clearTimeout(scanTimeout);
+        scanTimeout = setTimeout(async () => {
+          await this.scanVault()
+          // Notify renderer that snippets changed
+          const electron = require('electron')
+          const wins = electron.BrowserWindow.getAllWindows()
+          wins.forEach(win => {
+            if (!win.isDestroyed()) {
+              win.webContents.send('vault:updated')
+            }
+          })
+        }, 1000);
       }
     })
   }
@@ -145,6 +157,11 @@ class VaultManager {
         
         // Filter out nulls and add to newSnippets
         newSnippets.push(...batchResults.filter(Boolean))
+        
+        // Yield to the OS message pump every 100 files to keep the window perfectly draggable during startup
+        if (i % 100 === 0) {
+          await new Promise((resolve) => setTimeout(resolve, 5))
+        }
       }
 
       this.snippets = new Map(newSnippets.map((s) => [s.id, s]))

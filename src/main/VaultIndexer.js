@@ -699,9 +699,12 @@ class VaultIndexer {
             checked: checkedCount,
             stage: 'checking'
           })
-          await new Promise((resolve) => setImmediate(resolve))
           lastYieldTime = Date.now()
         }
+        
+        // CRITICAL: Yield to OS message pump after EVERY batch of 100 files
+        // to prevent window drag/resize from freezing on massive vaults.
+        await new Promise((resolve) => setTimeout(resolve, 2))
       }
       console.log('[VaultIndexer] Files to process:', filesToProcess.length)
 
@@ -899,8 +902,13 @@ class VaultIndexer {
               checked: entryCount,
               stage: 'scanning'
             })
-            await new Promise((resolve) => setImmediate(resolve))
             lastYieldTime = Date.now()
+          }
+          
+          // CRITICAL: Yield to OS message pump after EVERY 50 files
+          // to prevent window drag/resize from freezing on massive vaults.
+          if (entryCount % 50 === 0) {
+            await new Promise((resolve) => setTimeout(resolve, 2))
           }
         }
       } catch (err) {

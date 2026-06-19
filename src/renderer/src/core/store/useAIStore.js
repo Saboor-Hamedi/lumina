@@ -15,77 +15,82 @@ async function ensureAISdk() {
 }
 
 export const useAIStore = create((set, get) => {
-  // Initialize worker
-  const worker = new Worker(new URL('../ai/ai.worker.js', import.meta.url), { type: 'module' })
+  let worker = null;
+
+  const getWorker = () => {
+    if (!worker) {
+      worker = new Worker(new URL('../ai/ai.worker.js', import.meta.url), { type: 'module' })
+      
+      worker.onmessage = (e) => {
+        const { type, status, id, result, progress } = e.data
+
+        // Handle Progress
+        if (type === 'progress') {
+          if (status === 'progress') {
+            set({ modelLoadingProgress: progress })
+
+            // Update the loading message in chat with live percentage!
+            const currentMessages = get().chatMessages;
+            if (currentMessages && currentMessages.length > 0) {
+              const lastMsg = currentMessages[currentMessages.length - 1];
+              if (lastMsg.isGenerating && progress) {
+                const newMessages = [...currentMessages];
+                const pct = Math.round(progress);
+                // Only update if it's a significant jump to avoid React re-rendering 1000 times a second
+                if (pct % 5 === 0) {
+                  newMessages[newMessages.length - 1] = {
+                    ...lastMsg,
+                    content: `Downloading offline AI model... **${pct}%**`
+                  };
+                  set({ chatMessages: newMessages });
+                }
+              }
+            }
+          } else if (status === 'ready') {
+            set({ isModelReady: true, modelLoadingProgress: 100 })
+
+            // Switch to 'Generating...' once ready
+            const currentMessages = get().chatMessages;
+            if (currentMessages && currentMessages.length > 0) {
+              const lastMsg = currentMessages[currentMessages.length - 1];
+              if (lastMsg.isGenerating) {
+                const newMessages = [...currentMessages];
+                newMessages[newMessages.length - 1] = {
+                  ...lastMsg,
+                  content: `Model loaded! Generating your file offline...`
+                };
+                set({ chatMessages: newMessages });
+              }
+            }
+          }
+          return
+        }
+
+        // Handle Task Completion
+        const pending = get().pendingTasks.get(id)
+        if (pending) {
+          if (status === 'complete') {
+            pending.resolve(result)
+          } else {
+            pending.reject(e.data.error)
+          }
+          const newMap = new Map(get().pendingTasks)
+          newMap.delete(id)
+          set({ pendingTasks: newMap })
+        } else if (status === 'error') {
+          // Global error
+          console.error('AI Worker Error:', e.data.error)
+          set({ aiError: e.data.error })
+        }
+      }
+    }
+    return worker;
+  }
 
   // Trigger initial session load
   setTimeout(() => {
     get().loadSessions()
   }, 0)
-
-
-  worker.onmessage = (e) => {
-    const { type, status, id, result, progress } = e.data
-
-    // Handle Progress
-    if (type === 'progress') {
-      if (status === 'progress') {
-        set({ modelLoadingProgress: progress })
-
-        // Update the loading message in chat with live percentage!
-        const currentMessages = get().chatMessages;
-        if (currentMessages && currentMessages.length > 0) {
-          const lastMsg = currentMessages[currentMessages.length - 1];
-          if (lastMsg.isGenerating && progress) {
-            const newMessages = [...currentMessages];
-            const pct = Math.round(progress);
-            // Only update if it's a significant jump to avoid React re-rendering 1000 times a second
-            if (pct % 5 === 0) {
-              newMessages[newMessages.length - 1] = {
-                ...lastMsg,
-                content: `Downloading offline AI model... **${pct}%**`
-              };
-              set({ chatMessages: newMessages });
-            }
-          }
-        }
-      } else if (status === 'ready') {
-        set({ isModelReady: true, modelLoadingProgress: 100 })
-
-        // Switch to 'Generating...' once ready
-        const currentMessages = get().chatMessages;
-        if (currentMessages && currentMessages.length > 0) {
-          const lastMsg = currentMessages[currentMessages.length - 1];
-          if (lastMsg.isGenerating) {
-            const newMessages = [...currentMessages];
-            newMessages[newMessages.length - 1] = {
-              ...lastMsg,
-              content: `Model loaded! Generating your file offline...`
-            };
-            set({ chatMessages: newMessages });
-          }
-        }
-      }
-      return
-    }
-
-    // Handle Task Completion
-    const pending = get().pendingTasks.get(id)
-    if (pending) {
-      if (status === 'complete') {
-        pending.resolve(result)
-      } else {
-        pending.reject(e.data.error)
-      }
-      const newMap = new Map(get().pendingTasks)
-      newMap.delete(id)
-      set({ pendingTasks: newMap })
-    } else if (status === 'error') {
-      // Global error
-      console.error('AI Worker Error:', e.data.error)
-      set({ aiError: e.data.error })
-    }
-  }
 
   return {
     aiError: null,
@@ -114,7 +119,7 @@ export const useAIStore = create((set, get) => {
         newMap.set(id, { resolve, reject })
         set({ pendingTasks: newMap })
 
-        worker.postMessage({ id, type: 'embed', payload: text })
+        getWorker().postMessage({ id, type: 'embed', payload: text })
       })
     },
 
@@ -126,7 +131,7 @@ export const useAIStore = create((set, get) => {
         newMap.set(id, { resolve, reject })
         set({ pendingTasks: newMap })
 
-        worker.postMessage({ id, type: 'generate', payload: prompt })
+        getWorker().postMessage({ id, type: 'generate', payload: prompt })
       })
     },
 
