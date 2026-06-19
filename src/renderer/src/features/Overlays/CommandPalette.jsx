@@ -183,15 +183,23 @@ const CommandPalette = React.memo(({
 
     const folderMatches = folders
       .filter((f) => {
-        const folderName = f.split('/').pop()
-        return folderName.toLowerCase().includes(lowerQuery)
+        const folderName = f.split('/').pop() || f
+        return folderName.toLowerCase().includes(lowerQuery) || f.toLowerCase().includes(lowerQuery)
       })
-      .map((f) => ({
-        id: `folder-${f}`,
-        title: `Folder: ${f}`,
-        matchType: 'folder',
-        score: 7
-      }))
+      .map((f) => {
+        const parts = f.split('/')
+        const folderName = parts.pop() || f
+        const parentPath = parts.join('/')
+        return {
+          id: `folder-${f}`,
+          title: folderName,
+          folderPath: parentPath,
+          matchType: 'folder',
+          action: 'filter',
+          value: f,
+          score: 7
+        }
+      })
 
     const finalResults = [...results, ...tagMatches, ...mentionMatches, ...folderMatches].sort((a, b) => b.score - a.score)
 
@@ -305,7 +313,7 @@ const CommandPalette = React.memo(({
             return <Zap size={18} className="item-icon action-icon" />
           })()
         ) : item.matchType === 'folder' ? (
-          <Folder size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
+          <Folder size={18} className="item-icon" style={{ color: 'var(--text-accent)', fill: 'var(--text-accent)', fillOpacity: 0.2 }} />
         ) : item.matchType === 'tag' ? (
           <Hash size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
         ) : item.matchType === 'mention' ? (
@@ -329,16 +337,18 @@ const CommandPalette = React.memo(({
 
         <div className="item-info">
           <div className="item-title">
-            {item.folderId && <span className="folder-prefix">{item.folderId}/</span>}
+            {item.folderId && item.matchType !== 'folder' && <span className="folder-prefix">{item.folderId}/</span>}
             <HighlightText text={item.title || 'Untitled'} highlight={query} />
-            {dirtySnippetIds.includes(item.id) && (
+            {item.id && dirtySnippetIds.includes(item.id) && (
               <div className="dirty-indicator" style={{ marginLeft: '8px' }} />
             )}
           </div>
-          {item.matchSnippet && (
+          {(item.matchSnippet || item.folderPath) && (
             <div className={`item-secondary ${isSemantic ? 'semantic-badge' : ''}`}>
               {isSemantic ? (
                 '✨ AI Match'
+              ) : item.folderPath ? (
+                <span style={{ opacity: 0.6 }}>in {item.folderPath}</span>
               ) : (
                 <HighlightText text={item.matchSnippet} highlight={query} />
               )}
@@ -385,12 +395,12 @@ const CommandPalette = React.memo(({
 
         <div
           className="palette-results"
-          style={{ height: filtered.length > 0 ? Math.min(filtered.length * 48, 440) : 100 }}
+          style={{ height: filtered.length > 0 ? Math.min(filtered.length * 48, 320) : 100 }}
         >
           {filtered.length > 0 ? (
             <List
               ref={listRef}
-              height={Math.min(filtered.length * 48, 440)}
+              height={Math.min(filtered.length * 48, 320)}
               itemCount={filtered.length}
               itemSize={48}
               width="100%"

@@ -6,7 +6,7 @@ import ConfirmModal from '../../Overlays/ConfirmModal'
 import ColorModal from '../../Overlays/ColorModal'
 import { getSnippetIcon } from '../../../core/utils/fileIconMapper.jsx'
 
-const SidebarItem = ({ snippet, isActive, onClick, style, variant = 'list', dndProps }) => {
+const SidebarItem = ({ snippet, isActive, onClick, style, variant = 'list', dndProps, searchQuery }) => {
   const { dirtySnippetIds, deleteSnippet, saveSnippet } = useVaultStore()
   const isDirty = dirtySnippetIds.includes(snippet.id)
 
@@ -72,6 +72,20 @@ const SidebarItem = ({ snippet, isActive, onClick, style, variant = 'list', dndP
   const getIcon = () => {
     return getSnippetIcon(snippet, 14, 'item-icon', displayColor)
   }
+
+  const highlightText = (text, query) => {
+    if (!query || !text) return text;
+    const q = query.toLowerCase();
+    const idx = text.toLowerCase().indexOf(q);
+    if (idx === -1) return text;
+    return (
+      <>
+        {text.substring(0, idx)}
+        <span className="cm-search-highlight">{text.substring(idx, idx + query.length)}</span>
+        {text.substring(idx + query.length)}
+      </>
+    );
+  };
 
   const menuOptions = [
     { label: snippet.isPinned ? 'Remove from Favorites' : 'Add to Favorites', icon: <Star size={14} />, onClick: handleTogglePin },
@@ -147,7 +161,7 @@ const SidebarItem = ({ snippet, isActive, onClick, style, variant = 'list', dndP
             onPointerDown={(e) => e.stopPropagation()}
           />
         ) : (
-          <span className="item-label" style={displayColor ? { color: displayColor } : undefined}>{snippet.title || 'Untitled'}</span>
+          <span className="item-label" style={displayColor ? { color: displayColor } : undefined}>{highlightText(snippet.title || 'Untitled', searchQuery)}</span>
         )}
 
         {modals}
@@ -164,7 +178,10 @@ const SidebarItem = ({ snippet, isActive, onClick, style, variant = 'list', dndP
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onDoubleClick={() => setIsRenaming(true)}
-      style={style}
+      style={{
+        ...style,
+        backgroundColor: isActive ? 'var(--bg-active)' : undefined
+      }}
       title={isRenaming ? '' : `${snippet.title.replace(/[*_"#~`\[\]()]/g, '').trim()}${isDirty ? ' (Unsaved changes)' : ''}`}
       {...(dndProps?.attributes || {})}
       {...(dndProps?.listeners || {})}
@@ -189,7 +206,7 @@ const SidebarItem = ({ snippet, isActive, onClick, style, variant = 'list', dndP
           onClick={(e) => e.stopPropagation()}
         />
       ) : (
-        <span className="item-title" style={displayColor ? { color: displayColor } : undefined}>{snippet.title || 'Untitled'}</span>
+        <span className="item-title" style={displayColor ? { color: displayColor } : undefined}>{highlightText(snippet.title || 'Untitled', searchQuery)}</span>
       )}
 
       <div className="item-meta-right">

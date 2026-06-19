@@ -48,7 +48,7 @@ import './ExplorerModal.css'
 /**
  * Draggable List Item for Recommended Snippets
  */
-const SortableListItem = ({ snippet, isActive, onClick }) => {
+const SortableListItem = React.memo(({ snippet, isActive, onClick, searchQuery }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: snippet.id
   })
@@ -61,17 +61,22 @@ const SortableListItem = ({ snippet, isActive, onClick }) => {
     position: 'relative'
   }
 
+  const handleClick = React.useCallback(() => {
+    if (onClick) onClick(snippet)
+  }, [onClick, snippet])
+
   return (
     <SidebarItem
       snippet={snippet}
       variant="list"
-      onClick={onClick}
+      onClick={handleClick}
       isActive={isActive}
+      searchQuery={searchQuery}
       dndProps={{ attributes, listeners, setNodeRef }}
       style={style}
     />
   )
-}
+})
 
 /**
  * Droppable Folder Item
@@ -90,9 +95,25 @@ const DroppableFolderItem = React.memo(
     renameValue,
     setRenameValue,
     submitRename,
-    cancelRename
+    cancelRename,
+    isActive,
+    searchQuery
   }) => {
     const { isOver, setNodeRef: setDroppableRef } = useDroppable({ id: `folder-${item.id}` })
+
+    const highlightText = (text, query) => {
+      if (!query || !text) return text;
+      const q = query.toLowerCase();
+      const idx = text.toLowerCase().indexOf(q);
+      if (idx === -1) return text;
+      return (
+        <>
+          {text.substring(0, idx)}
+          <span className="cm-search-highlight">{text.substring(idx, idx + query.length)}</span>
+          {text.substring(idx + query.length)}
+        </>
+      );
+    };
     const {
       attributes,
       listeners,
@@ -122,7 +143,7 @@ const DroppableFolderItem = React.memo(
         className="folder-tree-item"
         style={{
           position: 'relative',
-          paddingLeft: `${item.depth * 16}px`,
+          paddingLeft: item.depth > 0 ? `${item.depth * 16 + 8}px` : '0px',
           opacity: isDragging ? 0.5 : 1
         }}
       >
@@ -131,7 +152,7 @@ const DroppableFolderItem = React.memo(
             key={`line-${i}`}
             style={{
               position: 'absolute',
-              left: `${i * 16 + 12 + 6}px`,
+              left: `${i * 16 + 12}px`,
               top: 0,
               bottom: 0,
               width: '1px',
@@ -141,8 +162,8 @@ const DroppableFolderItem = React.memo(
         ))}
         <div
           ref={setDraggableRef}
-          className={`folder-tree-main ${isOver ? 'folder-over' : ''}`}
-          style={{ cursor: 'pointer', userSelect: 'none' }}
+          className={`folder-tree-main ${isOver ? 'folder-over' : ''} ${isActive ? 'active' : ''}`}
+          style={{ cursor: 'pointer', userSelect: 'none', backgroundColor: isActive ? 'var(--bg-active)' : undefined }}
           {...attributes}
           {...listeners}
           onClick={(e) => {
@@ -184,7 +205,7 @@ const DroppableFolderItem = React.memo(
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (
-              <span className="folder-name">{item.name}</span>
+              <span className="folder-name">{highlightText(item.name, searchQuery)}</span>
             )}
           </div>
         </div>
@@ -288,6 +309,7 @@ const DroppableRootZone = React.memo(() => {
 const ExplorerModal = ({ isOpen, onClose }) => {
   const [query, setQuery] = useState('')
   const [displayQuery, setDisplayQuery] = useState('')
+  const [selectedIndex, setSelectedIndex] = useState(-1)
   const debounceTimerRef = useRef(null)
 
   const [activeTab, setActiveTab] = useState('all')
@@ -296,6 +318,7 @@ const ExplorerModal = ({ isOpen, onClose }) => {
   const [expandedFolders, setExpandedFolders] = useState(
     () => new Set(settings.expandedFolders || [])
   )
+  const [collapsedDuringSearch, setCollapsedDuringSearch] = useState(() => new Set())
 
   // inline creation state
   const [creating, setCreating] = useState(null) // { type: 'file' | 'folder', parentId: string }
@@ -456,30 +479,29 @@ const ExplorerModal = ({ isOpen, onClose }) => {
     return all
   }, [filteredSnippets, sortBy, sortDirection, noteOrder])
 
-  // 4. Flat tree (only builds tree when NOT searching)
+  // 4. Flat tree
   const flatTree = useMemo(() => {
     if (activeTab !== 'all') return []
 
-    // When searching: NO TREE, just flat list
-    if (query.trim()) {
-      return allSnippets.map((s) => ({ type: 'file', snippet: s, depth: 0 }))
-    }
+    const q = query.trim().toLowerCase()
 
-    // Build hierarchical tree (only when not searching)
+    // Build hierarchical tree
     const root = { children: {}, files: [] }
 
     // 1. Build Folders
     folders.forEach((folderPath) => {
-      const parts = folderPath.split('/')
-      let current = root
-      let currentPath = ''
-      parts.forEach((part) => {
-        currentPath = currentPath ? `${currentPath}/${part}` : part
-        if (!current.children[part]) {
-          current.children[part] = { id: currentPath, name: part, children: {}, files: [] }
-        }
-        current = current.children[part]
-      })
+      if (!q || folderPath.toLowerCase().includes(q)) {
+        const parts = folderPath.split('/')
+        let current = root
+        let currentPath = ''
+        parts.forEach((part) => {
+          currentPath = currentPath ? `${currentPath}/${part}` : part
+          if (!current.children[part]) {
+            current.children[part] = { id: currentPath, name: part, children: {}, files: [] }
+          }
+          current = current.children[part]
+        })
+      }
     })
 
     // 2. Build Snippets
@@ -523,7 +545,11 @@ const ExplorerModal = ({ isOpen, onClose }) => {
         const folder = node.children[name]
         flat.push({ type: 'folder', id: folder.id, name: folder.name, depth })
 
-        if (expandedFolders.has(folder.id)) {
+        const isExpanded = q 
+          ? !collapsedDuringSearch.has(folder.id)
+          : expandedFolders.has(folder.id);
+
+        if (isExpanded) {
           // Inject nested creation input
           if (creating && creating.parentId === folder.id) {
             flat.push({ type: 'input', kind: creating.type, parentId: folder.id, depth: depth + 1 })
@@ -540,7 +566,7 @@ const ExplorerModal = ({ isOpen, onClose }) => {
 
     traverse(root, 0)
     return flat
-  }, [allSnippets, folders, activeTab, query, expandedFolders, creating, activeListDragItem])
+  }, [allSnippets, folders, activeTab, query, expandedFolders, creating, activeListDragItem, collapsedDuringSearch])
 
   // end search
   // Compute Flattened Folder Tree
@@ -548,15 +574,24 @@ const ExplorerModal = ({ isOpen, onClose }) => {
   const toggleFolder = useCallback(
     (folderId, e) => {
       if (e) e.stopPropagation()
-      setExpandedFolders((prev) => {
-        const next = new Set(prev)
-        if (next.has(folderId)) next.delete(folderId)
-        else next.add(folderId)
-        updateSetting('expandedFolders', Array.from(next))
-        return next
-      })
+      if (query.trim()) {
+        setCollapsedDuringSearch((prev) => {
+          const next = new Set(prev)
+          if (next.has(folderId)) next.delete(folderId)
+          else next.add(folderId)
+          return next
+        })
+      } else {
+        setExpandedFolders((prev) => {
+          const next = new Set(prev)
+          if (next.has(folderId)) next.delete(folderId)
+          else next.add(folderId)
+          updateSetting('expandedFolders', Array.from(next))
+          return next
+        })
+      }
     },
-    [updateSetting]
+    [updateSetting, query]
   )
 
   const collapseAllFolders = (e) => {
@@ -565,14 +600,19 @@ const ExplorerModal = ({ isOpen, onClose }) => {
     updateSetting('expandedFolders', [])
   }
 
+  const cancelRename = useCallback(() => setRenamingFolder(null), [])
+  const handleFolderContextMenu = useCallback((id, e) => {
+    setFolderContext({ x: e.clientX, y: e.clientY, folderId: id })
+  }, [])
+
   const { size, handleResizeStart } = useResizable(modalRef)
 
-  if (!isOpen || !isPositionReady) return null
-
-  const handleSelect = (snippet) => {
+  const handleSelect = useCallback((snippet) => {
     setSelectedSnippet(snippet)
     onClose()
-  }
+  }, [setSelectedSnippet, onClose])
+
+  if (!isOpen || !isPositionReady) return null
 
   const handleTogglePin = async (snippet) => {
     try {
@@ -848,7 +888,39 @@ const ExplorerModal = ({ isOpen, onClose }) => {
             onChange={(e) => {
               const v = e.target.value
               setDisplayQuery(v)
-              setQuery(v)
+              if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
+              debounceTimerRef.current = setTimeout(() => {
+                setQuery(v)
+                setSelectedIndex(v.trim() ? 0 : -1)
+                setCollapsedDuringSearch(new Set())
+              }, 300)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setSelectedIndex(prev => {
+                  const next = prev < 0 ? 0 : Math.min(prev + 1, flatTree.length - 1);
+                  virtuosoRef.current?.scrollToIndex({ index: next, align: 'center' });
+                  return next;
+                });
+              } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setSelectedIndex(prev => {
+                  const next = Math.max(prev - 1, 0);
+                  virtuosoRef.current?.scrollToIndex({ index: next, align: 'center' });
+                  return next;
+                });
+              } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (selectedIndex >= 0 && selectedIndex < flatTree.length) {
+                  const item = flatTree[selectedIndex];
+                  if (item?.type === 'file') {
+                    handleSelect(item.snippet);
+                  } else if (item?.type === 'folder') {
+                    toggleFolder(item.id);
+                  }
+                }
+              }
             }}
             className="pr-14"
           />
@@ -1044,21 +1116,24 @@ const ExplorerModal = ({ isOpen, onClose }) => {
                           } else if (item.type === 'root-drop') {
                             return <DroppableRootZone />
                           } else if (item.type === 'folder') {
-                            const isExpanded = expandedFolders.has(item.id)
+                            const isExpanded = query.trim() 
+                              ? !collapsedDuringSearch.has(item.id) 
+                              : expandedFolders.has(item.id)
+                            const isActive = index === selectedIndex
                             return (
                               <DroppableFolderItem
                                 item={item}
                                 isExpanded={isExpanded}
+                                isActive={isActive}
+                                searchQuery={query}
                                 folderColor={folderColors[item.id]}
                                 isRenaming={renamingFolder === item.id}
                                 renameValue={renamingValue}
                                 setRenameValue={setRenamingValue}
                                 submitRename={submitRename}
-                                cancelRename={() => setRenamingFolder(null)}
+                                cancelRename={cancelRename}
                                 onToggle={toggleFolder}
-                                onContextMenu={(id, e) => {
-                                  setFolderContext({ x: e.clientX, y: e.clientY, folderId: id })
-                                }}
+                                onContextMenu={handleFolderContextMenu}
                               />
                             )
                           } else {
@@ -1066,7 +1141,7 @@ const ExplorerModal = ({ isOpen, onClose }) => {
                               <div
                                 style={{
                                   position: 'relative',
-                                  paddingLeft: `${item.depth * 16}px`
+                                  paddingLeft: item.depth > 0 ? `${item.depth * 16 + 8}px` : '0px'
                                 }}
                               >
                                 {Array.from({ length: item.depth }).map((_, i) => (
@@ -1074,7 +1149,7 @@ const ExplorerModal = ({ isOpen, onClose }) => {
                                     key={`line-${i}`}
                                     style={{
                                       position: 'absolute',
-                                      left: `${i * 16 + 12 + 6}px`,
+                                      left: `${i * 16 + 12}px`,
                                       top: 0,
                                       bottom: 0,
                                       width: '1px',
@@ -1086,8 +1161,9 @@ const ExplorerModal = ({ isOpen, onClose }) => {
                                 <SortableListItem
                                   key={item.snippet.id}
                                   snippet={item.snippet}
-                                  onClick={() => handleSelect(item.snippet)}
-                                  isActive={false}
+                                  onClick={handleSelect}
+                                  isActive={index === selectedIndex}
+                                  searchQuery={query}
                                 />
                               </div>
                             )

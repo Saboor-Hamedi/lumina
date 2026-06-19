@@ -19,6 +19,18 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
+.activity-bar::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 20%;
+  right: 20%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--text-accent) 20%, var(--text-accent) 80%, transparent);
+  opacity: 1;
+  pointer-events: none;
+}
+
 .bar-top, .bar-bottom {
   display: flex;
   flex-direction: row;

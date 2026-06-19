@@ -292,15 +292,16 @@ body {
  */
 .context-menu {
   position: fixed;
-  min-width: 200px;
+  min-width: 180px;
   background: var(--bg-panel);
-  background: color-mix(in srgb, var(--bg-panel), transparent 10%);
-  backdrop-filter: blur(25px);
-  border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  padding: 6px;
+  background: color-mix(in srgb, var(--bg-panel), transparent 5%);
+  backdrop-filter: blur(30px);
+  border: 1px solid var(--border-dim);
+  border-radius: 8px;
+  padding: 4px;
   z-index: 10000;
   animation: menuAppear 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 @keyframes menuAppear {
@@ -312,19 +313,18 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
   color: var(--text-muted);
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  margin: 2px 0;
+  transition: background 0.1s ease, color 0.1s ease;
+  margin: 1px 0;
 }
 
 .menu-item:hover {
   background: var(--bg-active);
   color: var(--text-main);
-  transform: translateX(4px);
 }
 
 .menu-label {
