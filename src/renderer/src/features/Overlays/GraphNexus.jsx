@@ -166,29 +166,30 @@ const GraphNexus = React.memo(({ isOpen = true, onClose, onNavigate, embedded = 
     // Soft organic center force
     fg.d3Force('center', forceCenter(0, 0))
     
-    // Galactic Core Gravity: Gently pull all nodes into a central mass
-    fg.d3Force('x', forceX(0).strength(0.04))
-    fg.d3Force('y', forceY(0).strength(0.04))
+    // Galactic Core Gravity: Gently pull all nodes into a central mass, weakened to allow more spread
+    fg.d3Force('x', forceX(0).strength(0.005))
+    fg.d3Force('y', forceY(0).strength(0.005))
     
-    // Galaxy Disc Structure: Forces nodes into a circular galaxy shape
+    // Galaxy Disc Structure: Forces nodes into a circular galaxy shape, widened and weakened
+    // To make it look "hollow" (like a ring/donut), we ensure no node is allowed at radius 0
     fg.d3Force('radial', forceRadial((d) => {
-      if (d.linkCount === 0) return 400; // Bring unlinked stars much closer
-      // Hubs (many links) get pulled to the dense black hole center (radius 0)
-      // Normal notes (few links) orbit in the galactic disc (radius ~200)
-      return Math.max(0, 250 - (d.linkCount * 40));
-    }, 0, 0).strength(0.7))
+      if (d.linkCount === 0) return 1500; // Bring unlinked stars much further out
+      // Hubs (many links) get pulled to the event horizon (radius 400), leaving a giant hollow center
+      // Normal notes (few links) orbit further out
+      return Math.max(400, 900 - (d.linkCount * 40));
+    }, 0, 0).strength(0.4))
     
     // High repulsion to separate distinct clusters clearly
-    fg.d3Force('charge', forceManyBody().strength(-350))
+    fg.d3Force('charge', forceManyBody().strength(-2000))
     
     // Strict collisions that dynamically scale with the user's Node Size setting
     fg.d3Force('collide', forceCollide().radius(d => {
       const baseR = d.val ? Math.max(2, Math.sqrt(d.val) * 2.5) : 2
-      return (baseR * sizeMult) + 6 // 6px physical gap
-    }).strength(1))
+      return (baseR * sizeMult) + 40 // Increased physical gap to space them out heavily
+    }).strength(0.8)) // Slightly softer collisions
     
     // Elastic links to hold the constellations together inside the disc
-    if (fg.d3Force('link')) fg.d3Force('link').distance(50).strength(0.5)
+    if (fg.d3Force('link')) fg.d3Force('link').distance(180).strength(0.2)
     
     // Reheat to apply new physical sizes
     fg.d3ReheatSimulation()
@@ -397,8 +398,9 @@ const GraphNexus = React.memo(({ isOpen = true, onClose, onNavigate, embedded = 
             }
           }}
           backgroundColor="transparent"
-          d3AlphaDecay={isSpinning ? 0 : 0.05}
-          cooldownTicks={50}
+          d3AlphaDecay={isSpinning ? 0 : 0.02}
+          d3VelocityDecay={0.8} // Higher viscosity makes dragging feel heavier and smoother
+          cooldownTicks={100}
         />
       </div>
     )
@@ -477,9 +479,9 @@ const GraphNexus = React.memo(({ isOpen = true, onClose, onNavigate, embedded = 
             }
           }}
           backgroundColor="transparent"
-          d3AlphaDecay={isSpinning ? 0 : 0.05}
-          d3VelocityDecay={0.6} // High viscosity (honey-like) to prevent the whole graph from violently shaking on drag
-          cooldownTicks={100}
+          d3AlphaDecay={isSpinning ? 0 : 0.02}
+          d3VelocityDecay={0.8} // Higher viscosity to prevent the whole graph from violently shaking on drag
+          cooldownTicks={150}
         />
       </div>
     </div>
