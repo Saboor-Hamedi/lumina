@@ -1,7 +1,9 @@
 import { ensureSyntaxTree, syntaxTree } from '@codemirror/language';
 import { EditorSelection, Facet, Prec, StateField, Transaction, } from '@codemirror/state';
 import { Decoration, EditorView, WidgetType, keymap, } from '@codemirror/view';
+import { undo, redo } from '@codemirror/commands';
 import { treeGrowthEffect, treeProgressPlugin } from './tree-progress';
+import { useVaultStore } from '../../core/store/useVaultStore';
 function collectCells(state, rowNode) {
     // Split the row's raw line on unescaped `|` rather than collecting
     // lezer `TableCell` nodes. lezer emits NO `TableCell` for an empty
@@ -623,6 +625,139 @@ function makeCell(tag, text, view) {
         refreshCellPreview(cell);
         dispatchModelFromDom(view, cell);
     };
+
+    // Autocomplete logic
+    let activeDropdown = null;
+    let autocompleteMatches = [];
+    let autocompleteIndex = 0;
+    let currentQuery = '';
+
+    const closeAutocomplete = () => {
+        if (activeDropdown) {
+            activeDropdown.remove();
+            activeDropdown = null;
+        }
+        autocompleteMatches = [];
+        autocompleteIndex = 0;
+    };
+
+    const renderAutocomplete = () => {
+        if (!activeDropdown) return;
+        
+        // Build DOM once if empty
+        if (activeDropdown.children.length === 0) {
+            const style = document.createElement('style');
+            style.textContent = `
+                .table-autocomplete-li { padding: 4px 12px; cursor: pointer; display: flex; align-items: center; color: var(--text-main); font-size: 13px; }
+                .table-autocomplete-li:hover { background: var(--bg-active) !important; color: var(--text-accent) !important; }
+                .table-autocomplete-li.active { background: var(--bg-active) !important; color: var(--text-accent) !important; }
+            `;
+            activeDropdown.appendChild(style);
+
+            const ul = document.createElement('ul');
+            ul.style.listStyle = 'none';
+            ul.style.margin = '0';
+            ul.style.padding = '0';
+
+            autocompleteMatches.forEach((m, idx) => {
+                const li = document.createElement('li');
+                li.className = 'table-autocomplete-li';
+
+                const icon = document.createElement('div');
+                icon.className = 'cm-completionIcon';
+                icon.style.marginRight = '8px';
+                
+                const label = document.createElement('span');
+                label.className = 'cm-completionLabel';
+                label.textContent = m.title;
+
+                li.appendChild(icon);
+                li.appendChild(label);
+
+                li.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    applyAutocomplete(m.title);
+                });
+
+                ul.appendChild(li);
+            });
+            activeDropdown.appendChild(ul);
+        }
+
+        // Update active class
+        const lis = activeDropdown.querySelectorAll('li');
+        lis.forEach((li, idx) => {
+            if (idx === autocompleteIndex) {
+                li.classList.add('active');
+            } else {
+                li.classList.remove('active');
+            }
+        });
+
+        const rect = source.getBoundingClientRect();
+        activeDropdown.style.top = (rect.bottom + 4) + 'px';
+        activeDropdown.style.left = rect.left + 'px';
+    };
+
+    const applyAutocomplete = (title) => {
+        const fullText = source.textContent;
+        const offset = getCaretCharOffset(source);
+        if (offset === null) return;
+        
+        const newText = fullText.substring(0, offset - currentQuery.length) + title + ']]' + fullText.substring(offset);
+        source.textContent = newText;
+        setCaretCharOffset(source, offset - currentQuery.length + title.length + 2);
+        commit();
+        closeAutocomplete();
+    };
+
+    const handleAutocomplete = () => {
+        const text = source.textContent || '';
+        const offset = getCaretCharOffset(source);
+        if (offset === null) {
+            closeAutocomplete();
+            return;
+        }
+
+        const beforeCaret = text.substring(0, offset);
+        const match = /\[\[([^\]]*)$/.exec(beforeCaret);
+
+        if (!match) {
+            closeAutocomplete();
+            return;
+        }
+
+        currentQuery = match[1];
+        const query = currentQuery.toLowerCase();
+        const snippets = useVaultStore.getState().snippets || [];
+        autocompleteMatches = snippets.filter(s => (s.title || '').toLowerCase().includes(query)).slice(0, 10);
+
+        if (autocompleteMatches.length === 0) {
+            closeAutocomplete();
+            return;
+        }
+
+        if (!activeDropdown) {
+            activeDropdown = document.createElement('div');
+            activeDropdown.className = 'cm-tooltip cm-tooltip-autocomplete';
+            activeDropdown.style.position = 'fixed';
+            activeDropdown.style.zIndex = '9999';
+            activeDropdown.style.maxHeight = '200px';
+            activeDropdown.style.overflowY = 'auto';
+            activeDropdown.style.background = 'var(--bg-panel)';
+            activeDropdown.style.border = '1px solid var(--border-dim)';
+            activeDropdown.style.borderRadius = '6px';
+            activeDropdown.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+            document.body.appendChild(activeDropdown);
+            autocompleteIndex = 0;
+        } else if (autocompleteIndex >= autocompleteMatches.length) {
+            autocompleteIndex = Math.max(0, autocompleteMatches.length - 1);
+        }
+
+        renderAutocomplete();
+    };
+
     // IME / dead-key composition. `commit` rebuilds the contenteditable
     // DOM, and doing that mid-composition cancels the composition session
     // — dropping CJK input, accented characters, and dictation. Suppress
@@ -639,6 +774,7 @@ function makeCell(tag, text, view) {
         if (composing || event.isComposing)
             return;
         commit();
+        handleAutocomplete();
     });
     // Paste: drop clipboard content in as a single line of plain text.
     // Without this, pasted rich HTML, newlines, or pipes land in the cell
@@ -665,13 +801,44 @@ function makeCell(tag, text, view) {
     // three ways the caret can land in a new mark without firing an
     // input event (click-to-place, arrow-key nav, tab-into-cell). The
     // update is idempotent — redundant calls cost nothing.
-    source.addEventListener('focus', () => updateActiveMarkForSource(source));
+    // Focus updates the active CodeMirror selection so history is anchored to the table
+    source.addEventListener('focus', () => {
+        updateActiveMarkForSource(source);
+        const wrap = cell.closest('.cm-atomic-table');
+        if (wrap) {
+            const range = findCurrentTableRange(view, wrap);
+            if (range) {
+                // Sync CM selection silently
+                view.dispatch({ selection: { anchor: range.from } });
+            }
+        }
+    });
     source.addEventListener('mouseup', () => updateActiveMarkForSource(source));
     source.addEventListener('keyup', () => updateActiveMarkForSource(source));
     // Blur: collapse every active wrap so the reader-resting state
     // hides all delimiters.
-    source.addEventListener('blur', () => clearActiveMarksInSource(source));
+    source.addEventListener('blur', () => {
+        clearActiveMarksInSource(source);
+        closeAutocomplete();
+    });
     source.addEventListener('keydown', (event) => {
+        if (activeDropdown && (event.key === 'Escape' || event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Enter')) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (event.key === 'Escape') {
+                closeAutocomplete();
+            } else if (event.key === 'ArrowDown') {
+                autocompleteIndex = (autocompleteIndex + 1) % autocompleteMatches.length;
+                renderAutocomplete();
+            } else if (event.key === 'ArrowUp') {
+                autocompleteIndex = (autocompleteIndex - 1 + autocompleteMatches.length) % autocompleteMatches.length;
+                renderAutocomplete();
+            } else if (event.key === 'Enter') {
+                applyAutocomplete(autocompleteMatches[autocompleteIndex].title);
+            }
+            return;
+        }
+
         // Enter mirrors Tab — advance to the next cell (appending a row past
         // the last one) instead of inserting a line break a single-line cell
         // can't represent. Shift reverses direction for both.
@@ -679,6 +846,41 @@ function makeCell(tag, text, view) {
             event.preventDefault();
             event.stopPropagation();
             moveCellFocus(view, cell, event.shiftKey ? -1 : 1);
+            return;
+        }
+
+        // Forward Undo/Redo commands to CodeMirror view
+        const isMac = /Mac/.test(navigator.platform);
+        if ((isMac ? event.metaKey : event.ctrlKey) && event.key.toLowerCase() === 'z') {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Sync CodeMirror selection to the table so undo doesn't jump to the top
+            const wrap = cell.closest('.cm-atomic-table');
+            if (wrap) {
+                const range = findCurrentTableRange(view, wrap);
+                if (range) {
+                    view.dispatch({ selection: { anchor: range.from } });
+                }
+            }
+
+            if (event.shiftKey) {
+                redo(view);
+            } else {
+                undo(view);
+            }
+        }
+        if (!isMac && event.ctrlKey && event.key.toLowerCase() === 'y') {
+            event.preventDefault();
+            event.stopPropagation();
+            const wrap = cell.closest('.cm-atomic-table');
+            if (wrap) {
+                const range = findCurrentTableRange(view, wrap);
+                if (range) {
+                    view.dispatch({ selection: { anchor: range.from } });
+                }
+            }
+            redo(view);
         }
     });
     cell.addEventListener('contextmenu', (event) => {
@@ -1144,5 +1346,5 @@ export function tables(config = {}) {
         Prec.high(keymap.of([{ key: 'Backspace', run: backspaceAtTableBoundary }])),
     ];
 }
-//# sourceMappingURL=table-widget.js.map
+
 

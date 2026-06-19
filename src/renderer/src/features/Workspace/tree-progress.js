@@ -140,4 +140,3 @@ export const treeProgressPlugin = ViewPlugin.fromClass(class {
             this._schedule();
     }
 });
-//# sourceMappingURL=tree-progress.js.map
