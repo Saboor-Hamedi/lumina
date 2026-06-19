@@ -448,9 +448,16 @@ const ExplorerModal = ({ isOpen, onClose }) => {
     const fuseMatchedIds = new Set(fuseResults.map((r) => r.item.id))
     const results = fuseResults.map((r) => r.item)
 
-    // 2. Fast string indexOf for content
+    // 2. Fast string indexOf for content and folderId
     snippets.forEach((snippet) => {
       if (fuseMatchedIds.has(snippet.id)) return
+      
+      const folderId = snippet.folderId || ''
+      if (folderId && folderId.toLowerCase().indexOf(q) !== -1) {
+        results.push(snippet)
+        return
+      }
+
       const code = snippet.code || snippet.content || ''
       if (code && code.toLowerCase().indexOf(q) !== -1) {
         results.push(snippet)
@@ -592,6 +599,28 @@ const ExplorerModal = ({ isOpen, onClose }) => {
     traverse(root, 0)
     return flat
   }, [allSnippets, folders, activeTab, query, expandedFolders, creating, activeListDragItem, collapsedDuringSearch])
+
+  // Intelligent selection: default to the best matching note instead of a folder
+  useEffect(() => {
+    if (query.trim() && flatTree.length > 0) {
+      const q = query.toLowerCase().trim()
+      // 1. Try to find an exact matching note
+      let bestIndex = flatTree.findIndex(
+        (item) => item.type === 'file' && (item.snippet.title || '').toLowerCase() === q
+      )
+      // 2. Otherwise find the first note
+      if (bestIndex === -1) {
+        bestIndex = flatTree.findIndex((item) => item.type === 'file')
+      }
+      // 3. Fallback to folder
+      if (bestIndex === -1) bestIndex = 0
+      
+      setSelectedIndex(bestIndex)
+    } else if (!query.trim()) {
+      setSelectedIndex(-1)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query])
 
   // end search
   // Compute Flattened Folder Tree
@@ -917,7 +946,6 @@ const ExplorerModal = ({ isOpen, onClose }) => {
               if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
               debounceTimerRef.current = setTimeout(() => {
                 setQuery(v)
-                setSelectedIndex(v.trim() ? 0 : -1)
                 setCollapsedDuringSearch(new Set())
               }, 300)
             }}
