@@ -19,6 +19,7 @@ import { EditorView, placeholder, keymap, ViewPlugin, Decoration } from '@codemi
 import { imageDropExtension } from './imageDropExtension'
 import { imageWidgetExtension } from './imageWidgetExtension'
 import { htmlWidgetExtension } from './htmlWidgetExtension'
+import { setupWikilinkHover } from './hoverWikilink'
 import { tagMentionExtension } from './tagMentionExtension'
 import { tables } from './tableWidgetExtension'
 import '@atomic-editor/editor/styles.css'
@@ -504,6 +505,8 @@ const MarkdownEditor = React.memo(
       const wrapper = editorWrapperRef.current;
       if (!wrapper) return;
 
+      const cleanupHover = setupWikilinkHover(wrapper, useVaultStore.getState)
+
       const handleMouseDown = async (e) => {
         // Wiki link click
         const linkEl = e.target.closest('.cm-atomic-wiki-link');
@@ -556,7 +559,10 @@ const MarkdownEditor = React.memo(
       };
 
       wrapper.addEventListener('mousedown', handleMouseDown, { capture: true });
-      return () => wrapper.removeEventListener('mousedown', handleMouseDown, { capture: true });
+      return () => {
+        wrapper.removeEventListener('mousedown', handleMouseDown, { capture: true });
+        cleanupHover();
+      };
     }, [showToast]);
 
     return (

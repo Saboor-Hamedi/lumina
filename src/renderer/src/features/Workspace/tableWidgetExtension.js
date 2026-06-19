@@ -4,6 +4,7 @@ import { Decoration, EditorView, WidgetType, keymap } from '@codemirror/view'
 import { undo, redo } from '@codemirror/commands'
 import { treeGrowthEffect, treeProgressPlugin } from './tree-progress'
 import { useVaultStore } from '../../core/store/useVaultStore'
+import { TableAutocomplete } from './wikilinkAutocompletion'
 
 // Removed global tooltip repositioner
 
@@ -335,7 +336,7 @@ function renderCellSourceDecorated(source) {
 // element's textContent so we can survive the full-DOM re-render that
 // follows every keystroke (new marks need to decorate immediately;
 // the whole tree rebuilds from scratch).
-function getCaretCharOffset(container) {
+export function getCaretCharOffset(container) {
   const selection = container.ownerDocument?.defaultView?.getSelection()
   if (!selection || selection.rangeCount === 0) return null
   const range = selection.getRangeAt(0)
@@ -345,7 +346,7 @@ function getCaretCharOffset(container) {
   pre.setEnd(range.startContainer, range.startOffset)
   return pre.toString().length
 }
-function setCaretCharOffset(container, offset) {
+export function setCaretCharOffset(container, offset) {
   const doc = container.ownerDocument
   const win = doc?.defaultView || doc?.parentWindow
   if (!win) return
@@ -647,7 +648,8 @@ function restoreFocusAfterHistory(view, cell, source, action) {
           const source = ths[i].querySelector('.cm-atomic-table-cell-source')
           if (source && source.textContent !== this.model.header[i]) {
             const isFocused = document.activeElement === source
-            source.textContent = this.model.header[i]
+            source.parentElement.dataset.raw = this.model.header[i]
+            renderCellSourceDecorated(source)
             if (isFocused) placeCaretAtEnd(source)
           }
         }
@@ -662,7 +664,8 @@ function restoreFocusAfterHistory(view, cell, source, action) {
             const source = tds[c].querySelector('.cm-atomic-table-cell-source')
             if (source && source.textContent !== this.model.rows[r][c]) {
               const isFocused = document.activeElement === source
-              source.textContent = this.model.rows[r][c]
+              source.parentElement.dataset.raw = this.model.rows[r][c]
+              renderCellSourceDecorated(source)
               if (isFocused) placeCaretAtEnd(source)
             }
           }
@@ -707,150 +710,14 @@ function restoreFocusAfterHistory(view, cell, source, action) {
           currentCellText = newText
           cell.dataset.raw = newText
         }
+        renderCellSourceDecorated(source)
         if (offset != null) setCaretCharOffset(source, offset)
         updateActiveMarkForSource(source)
         refreshCellPreview(cell)
         dispatchModelFromDom(view, cell)
       }
 
-      // Autocomplete logic
-      let activeDropdown = null
-      let autocompleteMatches = []
-      let autocompleteIndex = 0
-      let currentQuery = ''
-
-      const closeAutocomplete = () => {
-        if (activeDropdown) {
-          activeDropdown.remove()
-          activeDropdown = null
-        }
-        autocompleteMatches = []
-        autocompleteIndex = 0
-      }
-
-      const fuzzyMatch = (str, query) => {
-        let i = 0, j = 0
-        const lowerStr = str.toLowerCase()
-        while (i < lowerStr.length && j < query.length) {
-          if (lowerStr[i] === query[j]) j++
-          i++
-        }
-        return j === query.length
-      }
-
-      const renderAutocomplete = () => {
-        if (!activeDropdown) return
-
-        if (activeDropdown.children.length === 0) {
-          const ul = document.createElement('ul')
-          ul.setAttribute('role', 'listbox')
-          ul.style.listStyle = 'none'
-          ul.style.margin = '0'
-          ul.style.padding = '0'
-
-          autocompleteMatches.forEach((m, idx) => {
-            const li = document.createElement('li')
-            li.setAttribute('role', 'option')
-
-            const label = document.createElement('div')
-            label.className = 'cm-completionLabel'
-            label.textContent = m.title
-
-            const detail = document.createElement('div')
-            detail.className = 'cm-completionDetail'
-            detail.textContent = 'Link to note'
-
-            li.appendChild(label)
-            li.appendChild(detail)
-
-            li.addEventListener('mousedown', (e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              applyAutocomplete(m.title)
-            })
-
-            ul.appendChild(li)
-          })
-          activeDropdown.appendChild(ul)
-        }
-
-        const lis = activeDropdown.querySelectorAll('li')
-        lis.forEach((li, idx) => {
-          if (idx === autocompleteIndex) {
-            li.setAttribute('aria-selected', 'true')
-            // Robust scroll into view!
-            li.scrollIntoView({ block: 'nearest' })
-          } else {
-            li.removeAttribute('aria-selected')
-          }
-        })
-      }
-
-      const applyAutocomplete = (title) => {
-        const fullText = source.textContent
-        const offset = getCaretCharOffset(source)
-        if (offset === null) return
-
-        const newText =
-          fullText.substring(0, offset - currentQuery.length) +
-          title +
-          ']]' +
-          fullText.substring(offset)
-        source.textContent = newText
-        setCaretCharOffset(source, offset - currentQuery.length + title.length + 2)
-        commit()
-        closeAutocomplete()
-      }
-
-      const handleAutocomplete = () => {
-        const text = source.textContent || ''
-        const offset = getCaretCharOffset(source)
-        if (offset === null) {
-          closeAutocomplete()
-          return
-        }
-
-        const beforeCaret = text.substring(0, offset)
-        const match = /\[\[([^\]]*)$/.exec(beforeCaret)
-
-        if (!match) {
-          closeAutocomplete()
-          return
-        }
-
-        currentQuery = match[1]
-        const query = currentQuery.toLowerCase()
-        const snippets = useVaultStore.getState().snippets || []
-        
-        autocompleteMatches = snippets
-          .filter(s => s.title && fuzzyMatch(s.title, query))
-          .sort((a, b) => a.title.localeCompare(b.title))
-          .slice(0, 8)
-
-        if (autocompleteMatches.length === 0) {
-          closeAutocomplete()
-          return
-        }
-
-        if (!activeDropdown) {
-          activeDropdown = document.createElement('div')
-          activeDropdown.className = 'cm-tooltip cm-tooltip-autocomplete'
-          activeDropdown.style.position = 'absolute'
-          activeDropdown.style.top = '100%'
-          activeDropdown.style.left = '0'
-          activeDropdown.style.zIndex = '99999'
-          activeDropdown.style.overflowY = 'auto'
-          activeDropdown.style.minWidth = '250px'
-          
-          cell.style.position = 'relative'
-          cell.appendChild(activeDropdown)
-          autocompleteIndex = 0
-        } else if (autocompleteIndex >= autocompleteMatches.length) {
-          autocompleteIndex = Math.max(0, autocompleteMatches.length - 1)
-        }
-
-        renderAutocomplete()
-      }
+      const autocomplete = new TableAutocomplete(source, cell, commit, getCaretCharOffset, setCaretCharOffset)
 
       // IME / dead-key composition. `commit` rebuilds the contenteditable
       // DOM, and doing that mid-composition cancels the composition session
@@ -867,7 +734,7 @@ function restoreFocusAfterHistory(view, cell, source, action) {
       source.addEventListener('input', (event) => {
         if (composing || event.isComposing) return
         commit()
-        handleAutocomplete()
+        autocomplete.handleInput()
       })
       // Paste: drop clipboard content in as a single line of plain text.
       // Without this, pasted rich HTML, newlines, or pipes land in the cell
@@ -914,7 +781,7 @@ function restoreFocusAfterHistory(view, cell, source, action) {
           }
         })
         clearActiveMarksInSource(source)
-        closeAutocomplete()
+        autocomplete.close()
         const wrap = cell.closest('.cm-atomic-table')
         if (wrap) {
           const range = findCurrentTableRange(view, wrap)
@@ -924,27 +791,9 @@ function restoreFocusAfterHistory(view, cell, source, action) {
         }
       })
       source.addEventListener('keydown', (event) => {
-        if (
-          activeDropdown &&
-          (event.key === 'Escape' ||
-            event.key === 'ArrowDown' ||
-            event.key === 'ArrowUp' ||
-            event.key === 'Enter')
-        ) {
+        if (autocomplete.handleKeyDown(event)) {
           event.preventDefault()
           event.stopPropagation()
-          if (event.key === 'Escape') {
-            closeAutocomplete()
-          } else if (event.key === 'ArrowDown') {
-            autocompleteIndex = (autocompleteIndex + 1) % autocompleteMatches.length
-            renderAutocomplete()
-          } else if (event.key === 'ArrowUp') {
-            autocompleteIndex =
-              (autocompleteIndex - 1 + autocompleteMatches.length) % autocompleteMatches.length
-            renderAutocomplete()
-          } else if (event.key === 'Enter') {
-            applyAutocomplete(autocompleteMatches[autocompleteIndex].title)
-          }
           return
         }
 
