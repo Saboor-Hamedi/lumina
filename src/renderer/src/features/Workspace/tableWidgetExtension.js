@@ -601,6 +601,14 @@ function restoreFocusAfterHistory(view, cell, source, action) {
       eq(other) {
         if (other.model.header.length !== this.model.header.length) return false
         if (other.model.rows.length !== this.model.rows.length) return false
+        for (let i = 0; i < this.model.header.length; i++) {
+          if (other.model.header[i] !== this.model.header[i]) return false
+        }
+        for (let r = 0; r < this.model.rows.length; r++) {
+          for (let c = 0; c < this.model.rows[r].length; c++) {
+            if (other.model.rows[r][c] !== this.model.rows[r][c]) return false
+          }
+        }
         return true
       }
       toDOM(view) {
@@ -626,6 +634,37 @@ function restoreFocusAfterHistory(view, cell, source, action) {
         }
         table.appendChild(tbody)
         return wrap
+      }
+      updateDOM(dom, view) {
+        const theadTr = dom.querySelector('thead tr')
+        if (theadTr) {
+          const ths = Array.from(theadTr.querySelectorAll('th'))
+          for (let i = 0; i < this.model.header.length; i++) {
+            if (ths[i] && ths[i].dataset.raw !== this.model.header[i]) {
+              ths[i].dataset.raw = this.model.header[i]
+              const source = ths[i].querySelector('.cm-atomic-table-cell-source')
+              if (source) renderCellSourceDecorated(source)
+            }
+          }
+        }
+        const tbody = dom.querySelector('tbody')
+        if (tbody) {
+          const trs = Array.from(tbody.querySelectorAll('tr'))
+          for (let r = 0; r < this.model.rows.length; r++) {
+            if (trs[r]) {
+              const tds = Array.from(trs[r].querySelectorAll('td'))
+              for (let c = 0; c < this.model.rows[r].length; c++) {
+                const newText = this.model.rows[r][c] || ''
+                if (tds[c] && tds[c].dataset.raw !== newText) {
+                  tds[c].dataset.raw = newText
+                  const source = tds[c].querySelector('.cm-atomic-table-cell-source')
+                  if (source) renderCellSourceDecorated(source)
+                }
+              }
+            }
+          }
+        }
+        return true
       }
       // All cell interactions are handled by the listeners we attach in
       // `makeCell`; tell CM6 to stay out of events within the widget so
@@ -897,10 +936,18 @@ function restoreFocusAfterHistory(view, cell, source, action) {
         // Enter mirrors Tab — advance to the next cell (appending a row past
         // the last one) instead of inserting a line break a single-line cell
         // can't represent. Shift reverses direction for both.
-        if (event.key === 'Tab' || event.key === 'Enter') {
+        if (event.key === 'Tab') {
           event.preventDefault()
           event.stopPropagation()
           moveCellFocus(view, cell, event.shiftKey ? -1 : 1)
+          return
+        }
+        if (event.key === 'Enter') {
+          event.preventDefault()
+          event.stopPropagation()
+          const thead = cell.closest('table')?.querySelector('thead tr')
+          const colCount = thead ? thead.querySelectorAll('th').length : 1
+          moveCellFocus(view, cell, event.shiftKey ? -colCount : colCount)
           return
         }
 
@@ -1195,9 +1242,11 @@ function restoreFocusAfterHistory(view, cell, source, action) {
       }
       if (next >= cells.length) {
         // Tab past the last cell — append a new empty row and focus its
-        // first cell. We dispatch through the same path as a cell edit,
-        // then grab the new first cell after the DOM reconciles.
-        appendRow(view, wrap)
+        // corresponding cell. We dispatch through the same path as a cell edit,
+        // then grab the new cell after the DOM reconciles.
+        const thead = wrap.querySelector('thead tr')
+        const colCount = thead ? thead.querySelectorAll('th').length : 1
+        appendRow(view, wrap, idx % colCount)
         return
       }
       const source = getCellSource(cells[next])
@@ -1205,7 +1254,7 @@ function restoreFocusAfterHistory(view, cell, source, action) {
       source.focus()
       placeCaretAtEnd(source)
     }
-    function appendRow(view, wrap) {
+    function appendRow(view, wrap, focusColIndex = 0) {
       const range = findCurrentTableRange(view, wrap)
       if (!range) return
       const model = readModelFromDom(wrap)
@@ -1239,12 +1288,11 @@ function restoreFocusAfterHistory(view, cell, source, action) {
           }
           if (!target) return
           const rows = target.querySelectorAll('tbody tr')
-          const newRow = rows[rows.length - 1]
-          const firstCell = newRow?.querySelector('td')
-          const firstSource = firstCell ? getCellSource(firstCell) : null
-          if (!firstSource) return
-          firstSource.focus()
-          placeCaretAtEnd(firstSource)
+          if (!rows.length) return
+          const lastRow = rows[rows.length - 1]
+          const newCells = lastRow.querySelectorAll('.cm-atomic-table-cell-source')
+          const cellToFocus = newCells[focusColIndex] || newCells[0]
+          if (cellToFocus) cellToFocus.focus()
         })
       })
     }
