@@ -72,6 +72,7 @@ import {
   Wind,
   Thermometer
 } from 'lucide-react'
+import * as LucideIcons from 'lucide-react'
 import { GitBranch, Cloud, Activity, Cpu, Archive, Monitor } from 'lucide-react'
 
 /**
@@ -831,7 +832,12 @@ const getIconColor = (iconType, title) => {
  * @returns {React.Component} Icon component
  */
 export const getSnippetIcon = (snippet, size = 14, className = 'item-icon', colorOverride) => {
-  const Icon = getFileIcon(snippet.title, snippet.language)
+  let Icon = getFileIcon(snippet.title, snippet.language)
+  
+  if (snippet.customIcon && LucideIcons[snippet.customIcon]) {
+    Icon = LucideIcons[snippet.customIcon]
+  }
+
   const iconColor = colorOverride || getIconColor(Icon, snippet.title)
   return <Icon size={size} className={className} style={{ color: iconColor }} />
 }

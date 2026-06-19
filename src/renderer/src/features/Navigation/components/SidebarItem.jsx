@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Star, Trash2, Edit2, Pin, ExternalLink, Palette } from 'lucide-react'
+import { Star, Trash2, Edit2, Pin, ExternalLink, Palette, Image } from 'lucide-react'
 import { useVaultStore } from '../../../core/store/useVaultStore'
 import ContextMenu from '../../Overlays/ContextMenu'
 import ConfirmModal from '../../Overlays/ConfirmModal'
 import ColorModal from '../../Overlays/ColorModal'
+import IconModal from '../../Overlays/IconModal'
 import { getSnippetIcon } from '../../../core/utils/fileIconMapper.jsx'
 
 const SidebarItem = ({ snippet, isActive, onClick, style, variant = 'list', dndProps, searchQuery }) => {
@@ -14,6 +15,7 @@ const SidebarItem = ({ snippet, isActive, onClick, style, variant = 'list', dndP
   const [renameValue, setRenameValue] = useState(snippet.title)
   const [contextMenu, setContextMenu] = useState(null)
   const [showColorPicker, setShowColorPicker] = useState(false)
+  const [showIconPicker, setShowIconPicker] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
   const renameInputRef = useRef(null)
@@ -91,6 +93,7 @@ const SidebarItem = ({ snippet, isActive, onClick, style, variant = 'list', dndP
     { label: snippet.isPinned ? 'Remove from Favorites' : 'Add to Favorites', icon: <Star size={14} />, onClick: handleTogglePin },
     { label: 'Rename', icon: <Edit2 size={14} />, onClick: () => setIsRenaming(true) },
     { label: 'Color', icon: <Palette size={14} />, onClick: () => setShowColorPicker(true) },
+    { label: 'Change Icon', icon: <Image size={14} />, onClick: () => setShowIconPicker(true) },
     { label: 'Show in Explorer', icon: <ExternalLink size={14} />, onClick: () => window.api?.openVaultFolder?.() },
     { type: 'divider' },
     { label: 'Delete', icon: <Trash2 size={14} />, danger: true, onClick: () => setShowDeleteConfirm(true) }
@@ -112,6 +115,13 @@ const SidebarItem = ({ snippet, isActive, onClick, style, variant = 'list', dndP
         onClose={() => setShowColorPicker(false)}
         currentColor={snippet.color}
         onSelect={(colorId) => saveSnippet({ ...snippet, color: colorId })}
+      />
+
+      <IconModal
+        isOpen={showIconPicker}
+        onClose={() => setShowIconPicker(false)}
+        currentIcon={snippet.customIcon}
+        onSelect={(iconName) => saveSnippet({ ...snippet, customIcon: iconName })}
       />
 
       <ConfirmModal

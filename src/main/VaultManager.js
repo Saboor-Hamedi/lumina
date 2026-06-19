@@ -143,6 +143,7 @@ class VaultManager {
               timestamp: data.timestamp || stats.mtimeMs,
               selection: data.selection || null,
               isPinned: data.isPinned || data.pinned || false,
+              customIcon: data.customIcon || null,
               color: null,
               type: 'snippet',
               is_draft: 0,
@@ -246,6 +247,7 @@ class VaultManager {
       tags: snippet.tags || '',
       selection: snippet.selection || null,
       isPinned: !!snippet.isPinned,
+      customIcon: snippet.customIcon || null,
       timestamp: newTimestamp
     })
 
