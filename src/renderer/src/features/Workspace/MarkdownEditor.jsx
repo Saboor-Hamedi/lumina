@@ -12,6 +12,7 @@ import './MarkdownEditor.css'
 // Atomic Editor Imports
 import { AtomicCodeMirrorEditor, wikiLinks } from '@atomic-editor/editor'
 import { languages } from '@codemirror/language-data'
+import { syntaxTree } from '@codemirror/language'
 import { autocompletion, startCompletion } from '@codemirror/autocomplete'
 import { EditorState, Prec, StateField, StateEffect } from '@codemirror/state'
 import { codeBlockDecorations, codeMap } from './codeBlockHeader'
@@ -22,6 +23,7 @@ import { htmlWidgetExtension } from './htmlWidgetExtension'
 import { setupWikilinkHover } from './hoverWikilink'
 import { tagMentionExtension } from './tagMentionExtension'
 import { tables } from './tableWidgetExtension'
+import { mermaidWidgetExtension } from './mermaidWidgetExtension'
 import '@atomic-editor/editor/styles.css'
 import FindWidget from './components/FindWidget'
 import StatusBar from './components/StatusBar'
@@ -412,6 +414,40 @@ const MarkdownEditor = React.memo(
       Prec.highest(
         keymap.of([
           {
+            key: 'Mod-Enter',
+            run: (view) => {
+              if (isActiveRef.current) {
+                const { state } = view
+                const selection = state.selection.main
+                const tree = syntaxTree(state)
+                let node = tree.resolveInner(selection.head, 1)
+                
+                // Find the nearest block node that we want to escape
+                while (node && !['Document', 'FencedCode', 'Table', 'Blockquote', 'HTMLBlock'].includes(node.name)) {
+                  node = node.parent
+                }
+                
+                if (node && node.name !== 'Document') {
+                  // If we are inside a code block/table, jump out and insert a newline!
+                  view.dispatch({
+                    changes: { from: node.to, insert: '\n' },
+                    selection: { anchor: node.to + 1 }
+                  })
+                  return true
+                }
+                
+                // Fallback: Just insert a newline at the end of the current line
+                const line = state.doc.lineAt(selection.head)
+                view.dispatch({
+                  changes: { from: line.to, insert: '\n' },
+                  selection: { anchor: line.to + 1 }
+                })
+                return true
+              }
+              return false
+            }
+          },
+          {
             key: 'Mod-f',
             run: () => {
               if (isActiveRef.current) {
@@ -454,6 +490,7 @@ const MarkdownEditor = React.memo(
       captureViewPlugin,
       searchHighlightField,
       codeBlockDecorations,
+      mermaidWidgetExtension,
       tagMentionExtension,
       placeholder('Start writing...'),
       wikiLinks({
