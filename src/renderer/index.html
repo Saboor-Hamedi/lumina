@@ -14,6 +14,20 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; connect-src 'self' https://api.deepseek.com https://router.huggingface.co https://api-inference.huggingface.co; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; worker-src 'self' blob: https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; img-src 'self' data: asset: https:; font-src 'self' data: https://fonts.gstatic.com;"
     />
+    <script>
+      // Prevent Flash of Unstyled Content (FOUC) for Theme Accent Color
+      try {
+        const stored = localStorage.getItem('theme-colors')
+        if (stored) {
+          const colors = JSON.parse(stored)
+          if (colors.themeAccentColor) {
+            let accent = colors.themeAccentColor
+            if (!accent.startsWith('#')) accent = '#' + accent
+            document.documentElement.style.setProperty('--text-accent', accent)
+          }
+        }
+      } catch (e) {}
+    </script>
   </head>
 
   <body>

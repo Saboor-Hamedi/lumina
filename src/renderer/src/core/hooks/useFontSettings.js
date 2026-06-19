@@ -135,17 +135,31 @@ const applyCaretStyles = (width, color) => {
  * updateThemeAccentColor("#ff0000") // Sets theme accent to red
  */
 export const useFontSettings = () => {
-  const [editorFontFamily, setEditorFontFamily] = useState(DEFAULTS.FONT_FAMILY)
-  const [editorFontSize, setEditorFontSize] = useState(DEFAULTS.FONT_SIZE)
-  const [previewFontFamily, setPreviewFontFamily] = useState(DEFAULTS.FONT_FAMILY)
-  const [previewFontSize, setPreviewFontSize] = useState(DEFAULTS.FONT_SIZE)
+  // Helper to synchronously read from localStorage on mount to prevent FOUC
+  const getInitial = (key, defaultVal) => {
+    try {
+      const saved = localStorage.getItem('theme-colors')
+      if (saved) {
+        const val = JSON.parse(saved)[key]
+        if (val !== undefined && val !== null && val !== '') return val
+      }
+    } catch(e) {}
+    return defaultVal
+  }
+
+  const [editorFontFamily, setEditorFontFamily] = useState(() => getInitial('editorFontFamily', DEFAULTS.FONT_FAMILY))
+  const [editorFontSize, setEditorFontSize] = useState(() => getInitial('editorFontSize', DEFAULTS.FONT_SIZE))
+  const [previewFontFamily, setPreviewFontFamily] = useState(() => getInitial('previewFontFamily', DEFAULTS.FONT_FAMILY))
+  const [previewFontSize, setPreviewFontSize] = useState(() => getInitial('previewFontSize', DEFAULTS.FONT_SIZE))
   const [baseThemeName, setBaseThemeName] = useState(DEFAULTS.THEME)
-  const [baseColors, setBaseColors] = useState({})
-  const [caretStyle, setCaretStyle] = useState(DEFAULTS.CARET_STYLE)
-  const [caretWidth, setCaretWidth] = useState(DEFAULTS.CARET_WIDTH)
-  const [caretColor, setCaretColor] = useState('')
-  const [themeAccentColor, setThemeAccentColor] = useState('')
-  const [useBorderLeft, setUseBorderLeft] = useState(true)
+  const [baseColors, setBaseColors] = useState(() => {
+    try { const s = localStorage.getItem('theme-colors'); return s ? JSON.parse(s) : {} } catch { return {} }
+  })
+  const [caretStyle, setCaretStyle] = useState(() => getInitial('caretStyle', DEFAULTS.CARET_STYLE))
+  const [caretWidth, setCaretWidth] = useState(() => getInitial('caretWidth', DEFAULTS.CARET_WIDTH))
+  const [caretColor, setCaretColor] = useState(() => getInitial('caretColor', ''))
+  const [themeAccentColor, setThemeAccentColor] = useState(() => getInitial('themeAccentColor', ''))
+  const [useBorderLeft, setUseBorderLeft] = useState(() => getInitial('useBorderLeft', true))
 
   const persistDebounceRef = useRef(null)
 
