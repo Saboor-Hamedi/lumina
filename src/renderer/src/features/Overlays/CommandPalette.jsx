@@ -13,6 +13,7 @@ import {
   AtSign,
   Folder
 } from 'lucide-react'
+import Fuse from 'fuse.js'
 import { FixedSizeList as List } from '../../components/utils/VirtualList'
 import { useTag } from '../../core/hooks/useTag'
 import { useMention } from '../../core/hooks/useMention'
@@ -88,6 +89,19 @@ const CommandPalette = React.memo(({
     return () => clearTimeout(timer)
   }, [query])
 
+  const fuseIndex = useMemo(() => {
+    return new Fuse(items, {
+      keys: [
+        { name: 'title', weight: 3 },
+        { name: 'folderId', weight: 2 }
+      ],
+      threshold: 0.4,
+      includeMatches: true,
+      includeScore: true,
+      ignoreLocation: true
+    })
+  }, [items])
+
   const filtered = useMemo(() => {
     const lowerQuery = query.toLowerCase().trim()
 
@@ -113,32 +127,40 @@ const CommandPalette = React.memo(({
 
     if (!lowerQuery && !isActionQuery) return [...systemActions, ...items.slice(0, 50)]
 
-    // 1. Text Matches
-    const textMatches = items
-      .map((item) => {
-        // Title Match
-        if (item.title.toLowerCase().includes(lowerQuery)) {
-          return { ...item, matchType: 'title', score: 10 }
-        }
-        // Folder Match
-        if (item.folderId && item.folderId.toLowerCase().includes(lowerQuery)) {
-          return { ...item, matchType: 'folder-match', score: 6 }
-        }
-        // Content Match
-        const code = item.code || item.content || ''
-        const codeIndex = code.toLowerCase().indexOf(lowerQuery)
+    // 1. Text Matches (Title & Folder via Fuse, Content via indexOf)
+    const fuseResults = fuseIndex.search(actionQuery)
+    const fuseMatchedIds = new Set(fuseResults.map((r) => r.item.id))
 
-        if (codeIndex !== -1) {
-          const start = Math.max(0, codeIndex - 20)
-          const end = Math.min(code.length, codeIndex + lowerQuery.length + 40)
-          const snippet =
-            (start > 0 ? '...' : '') + code.slice(start, end) + (end < code.length ? '...' : '')
-          return { ...item, matchType: 'content', matchSnippet: snippet, score: 5 }
-        }
-        return null
-      })
-      .filter(Boolean)
-      .sort((a, b) => b.score - a.score)
+    const textMatches = fuseResults.map((result) => {
+      const item = result.item
+      let matchType = 'title'
+      let matchSnippet = ''
+      let score = 10 - (result.score || 0) * 10
+
+      const bestMatch = result.matches?.[0]
+      if (bestMatch && bestMatch.key === 'folderId') {
+        matchType = 'folder-match'
+      }
+      return { ...item, matchType, matchSnippet, score }
+    })
+
+    // Content Matches (Fast string indexOf for items that didn't match via Fuse)
+    items.forEach((item) => {
+      if (fuseMatchedIds.has(item.id)) return
+      const code = item.code || item.content || ''
+      if (!code) return
+
+      const codeIndex = code.toLowerCase().indexOf(actionQuery)
+      if (codeIndex !== -1) {
+        const start = Math.max(0, codeIndex - 20)
+        const end = Math.min(code.length, codeIndex + actionQuery.length + 40)
+        const matchSnippet =
+          (start > 0 ? '...' : '') + code.slice(start, end) + (end < code.length ? '...' : '')
+        textMatches.push({ ...item, matchType: 'content', matchSnippet, score: 5 })
+      }
+    })
+
+    textMatches.sort((a, b) => b.score - a.score)
 
     // 2. Semantic Matches
     const existingIds = new Set(textMatches.map((i) => i.id))

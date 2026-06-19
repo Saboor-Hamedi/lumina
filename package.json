@@ -60,6 +60,7 @@
     "dexie": "^4.2.1",
     "electron-updater": "^6.6.2",
     "flexsearch": "^0.8.212",
+    "fuse.js": "^7.4.2",
     "github-markdown-css": "^5.8.1",
     "gray-matter": "^4.0.3",
     "highlight.js": "^11.11.1",

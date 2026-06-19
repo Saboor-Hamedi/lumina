@@ -42,7 +42,9 @@ import { useResizable } from './useResizable'
 import { ChevronRight, ChevronDown, Folder, ChevronsUp } from 'lucide-react'
 import ContextMenu from './ContextMenu'
 import ConfirmModal from './ConfirmModal'
+import { FixedSizeList as List } from '../../components/utils/VirtualList'
 import AppVersion from '../../components/AppVersion'
+import Fuse from 'fuse.js'
 import './ExplorerModal.css'
 
 /**
@@ -425,15 +427,38 @@ const ExplorerModal = ({ isOpen, onClose }) => {
   }, [isOpen, onClose])
 
   // search
+  // 0. Fuse Index
+  const fuseIndex = useMemo(() => {
+    return new Fuse(snippets, {
+      keys: [
+        { name: 'title', weight: 3 }
+      ],
+      threshold: 0.4,
+      ignoreLocation: true
+    })
+  }, [snippets])
+
   // 1. Filtered snippets (fast - runs on every keystroke)
   const filteredSnippets = useMemo(() => {
-    if (!query.trim()) return snippets
+    const q = query.trim().toLowerCase()
+    if (!q) return snippets
 
-    const q = query.toLowerCase()
-    return snippets.filter(
-      (s) => (s.title || '').toLowerCase().includes(q)
-    )
-  }, [snippets, query])
+    // 1. Fuse matches for title
+    const fuseResults = fuseIndex.search(q)
+    const fuseMatchedIds = new Set(fuseResults.map((r) => r.item.id))
+    const results = fuseResults.map((r) => r.item)
+
+    // 2. Fast string indexOf for content
+    snippets.forEach((snippet) => {
+      if (fuseMatchedIds.has(snippet.id)) return
+      const code = snippet.code || snippet.content || ''
+      if (code && code.toLowerCase().indexOf(q) !== -1) {
+        results.push(snippet)
+      }
+    })
+
+    return results
+  }, [query, fuseIndex, snippets])
 
   // 2. Pinned snippets (doesn't depend on search)
   const pinnedSnippets = useMemo(() => {
