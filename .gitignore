@@ -6,5 +6,6 @@ out
 *.log*
 
 .env
+.antigravityignore
 
 # notes/

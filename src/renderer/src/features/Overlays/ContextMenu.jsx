@@ -8,8 +8,8 @@ import { createPortal } from 'react-dom'
 const ContextMenu = ({ x, y, options, onClose }) => {
   useEffect(() => {
     const handleGlobalClick = () => onClose()
-    window.addEventListener('click', handleGlobalClick)
-    return () => window.removeEventListener('click', handleGlobalClick)
+    window.addEventListener('mousedown', handleGlobalClick)
+    return () => window.removeEventListener('mousedown', handleGlobalClick)
   }, [onClose])
 
   // Simple boundary check to keep menu on screen
@@ -20,6 +20,7 @@ const ContextMenu = ({ x, y, options, onClose }) => {
     <div 
       className="context-menu" 
       style={{ left: menuX, top: menuY }}
+      onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
     >
       {options.map((opt, i) => {

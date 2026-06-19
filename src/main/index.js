@@ -253,7 +253,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('vault:readAsset', async (_, relativePath) => {
     return VaultManager.readAsset(relativePath)
   })
-  ipcMain.handle('app:getVersion', () => app.getVersion())
+  ipcMain.handle('app:getVersion', () => app.getVersion())  // show the version 
 
   ipcMain.handle('window:minimize', () => mainWindow?.minimize())
   ipcMain.handle('window:open-devtools', () => {

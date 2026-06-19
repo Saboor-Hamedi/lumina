@@ -431,7 +431,7 @@ const ExplorerModal = ({ isOpen, onClose }) => {
 
     const q = query.toLowerCase()
     return snippets.filter(
-      (s) => (s.title || '').toLowerCase().includes(q) || (s.code || '').toLowerCase().includes(q)
+      (s) => (s.title || '').toLowerCase().includes(q)
     )
   }, [snippets, query])
 
@@ -853,6 +853,7 @@ const ExplorerModal = ({ isOpen, onClose }) => {
       <div
         ref={modalRef}
         className="start-menu-container"
+        onClick={() => setFolderContext(null)}
         style={{
           width: size.width,
           height: size.height,

@@ -20,6 +20,7 @@ import { imageDropExtension } from './imageDropExtension'
 import { imageWidgetExtension } from './imageWidgetExtension'
 import { htmlWidgetExtension } from './htmlWidgetExtension'
 import { tagMentionExtension } from './tagMentionExtension'
+import { tables } from './tableWidgetExtension'
 import '@atomic-editor/editor/styles.css'
 import FindWidget from './components/FindWidget'
 import StatusBar from './components/StatusBar'
@@ -492,7 +493,7 @@ const MarkdownEditor = React.memo(
       })
     ], [showToast, autocompleteTriggerListener, wikiLinkCompletionSource]);
 
-    const finalExtensions = React.useMemo(() => [...editorExtensions, dropExtension, imageWidgetExtension, htmlWidgetExtension], [editorExtensions, dropExtension])
+    const finalExtensions = React.useMemo(() => [...editorExtensions, dropExtension, imageWidgetExtension, htmlWidgetExtension, Prec.highest(tables())], [editorExtensions, dropExtension])
 
     // Forceful Native Event Listener to Override CodeMirror
     useEffect(() => {

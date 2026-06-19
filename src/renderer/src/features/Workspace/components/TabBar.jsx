@@ -1,10 +1,11 @@
 import React, { useRef, useState, useCallback, useMemo, memo, useEffect } from 'react'
-import { X, Pin, MoreHorizontal, ArrowRight, Trash2 } from 'lucide-react'
+import { X, Pin, MoreHorizontal, ArrowRight, Trash2, Image } from 'lucide-react'
 import { DndContext, closestCenter, useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
 import { SortableContext, useSortable, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import { useVaultStore } from '../../../core/store/useVaultStore'
 import ContextMenu from '../../Overlays/ContextMenu'
 import PromptModal from '../../Overlays/PromptModal'
+import IconModal from '../../Overlays/IconModal'
 import WindowControls from './WindowControls'
 import { getSnippetIcon } from '../../../core/utils/fileIconMapper.jsx'
 
@@ -115,6 +116,7 @@ const TabBar = () => {
 
   const [contextMenu, setContextMenu] = useState(null)
   const [prompt, setPrompt] = useState(null)
+  const [iconPickerId, setIconPickerId] = useState(null)
   const tabbarRef = useRef(null)
 
   const sensors = useSensors(
@@ -249,6 +251,11 @@ const TabBar = () => {
               icon: <Pin size={14} />,
               onClick: () => togglePinTab(contextMenu.id)
             },
+            {
+              label: 'Change Icon',
+              icon: <Image size={14} />,
+              onClick: () => setIconPickerId(contextMenu.id)
+            },
             { type: 'divider' },
             {
               label: 'Close',
@@ -286,6 +293,16 @@ const TabBar = () => {
         onClose={() => setPrompt(null)}
         onConfirm={handleConfirmSave}
         onDiscard={handleDiscard}
+      />
+      
+      <IconModal
+        isOpen={!!iconPickerId}
+        onClose={() => setIconPickerId(null)}
+        currentIcon={snippetMap.get(iconPickerId)?.customIcon}
+        onSelect={(iconName) => {
+          const s = snippetMap.get(iconPickerId)
+          if (s) saveSnippet({ ...s, customIcon: iconName })
+        }}
       />
     </DndContext>
   )
