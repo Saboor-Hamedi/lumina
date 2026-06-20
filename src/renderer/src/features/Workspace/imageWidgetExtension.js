@@ -1,5 +1,7 @@
 import { WidgetType, EditorView, Decoration, MatchDecorator, ViewPlugin } from '@codemirror/view'
 
+const urlCache = new Map();
+
 class ImageWidget extends WidgetType {
   constructor(altText, url, pos, view) {
     super()
@@ -40,13 +42,13 @@ class ImageWidget extends WidgetType {
     wrap.style.position = 'relative'
 
     if (this.align === 'center') {
-      wrap.style.display = 'flex'
-      wrap.style.justifyContent = 'center'
+      wrap.style.display = 'block'
+      wrap.style.textAlign = 'center'
       wrap.style.margin = '10px 0'
       wrap.style.width = '100%'
     } else if (this.align === 'right') {
-      wrap.style.display = 'flex'
-      wrap.style.justifyContent = 'flex-end'
+      wrap.style.display = 'block'
+      wrap.style.textAlign = 'right'
       wrap.style.margin = '10px 0'
       wrap.style.width = '100%'
     } else {
@@ -58,20 +60,58 @@ class ImageWidget extends WidgetType {
     const img = document.createElement('img')
     img.alt = this.actualAlt
     img.style.maxWidth = '100%'
+    img.style.minHeight = '20px' // Ensure it has at least some initial height
     img.style.borderRadius = '4px'
     img.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)'
+    
+    // Force CodeMirror to recalculate line heights once the image asynchronously loads
+    img.onload = () => {
+      if (this.view && this.view.requestMeasure) {
+        this.view.requestMeasure()
+      }
+    }
+
+    img.onerror = () => {
+      console.error('[ImageWidget] Failed to load image at URL:', img.src);
+      wrap.innerHTML = `<div style="color: #ff6b6b; padding: 10px; border: 1px dashed #ff6b6b; border-radius: 4px; background: rgba(255,0,0,0.1);">
+        ❌ Image Failed to Render: ${this.actualAlt}
+      </div>`
+      if (this.view && this.view.requestMeasure) this.view.requestMeasure()
+    }
 
     // Completely bypass Chromium URL parser/CSP bugs using IPC binary transfer
     if (this.url && !this.url.startsWith('http') && !this.url.startsWith('data:')) {
-      if (window.api && window.api.readAsset) {
+      if (urlCache.has(this.url)) {
+        img.src = urlCache.get(this.url);
+      } else if (window.api && window.api.readAsset) {
         window.api
-          .readAsset(this.url)
+          .readAsset(decodeURIComponent(this.url))
           .then((buffer) => {
-            const blob = new Blob([buffer])
-            img.src = URL.createObjectURL(blob)
+            let data;
+            if (buffer && buffer.type === 'Buffer' && Array.isArray(buffer.data)) {
+              data = new Uint8Array(buffer.data);
+            } else {
+              data = new Uint8Array(buffer);
+            }
+            
+            const ext = this.url.split('.').pop().toLowerCase()
+            let mimeType = 'image/png'
+            if (ext === 'jpg' || ext === 'jpeg') mimeType = 'image/jpeg'
+            else if (ext === 'gif') mimeType = 'image/gif'
+            else if (ext === 'svg') mimeType = 'image/svg+xml'
+            else if (ext === 'webp') mimeType = 'image/webp'
+            
+            const blob = new Blob([data], { type: mimeType })
+            const objectUrl = URL.createObjectURL(blob)
+            urlCache.set(this.url, objectUrl)
+            img.src = objectUrl
           })
           .catch((err) => {
             console.error('[ImageWidget] IPC Fetch error:', err)
+            wrap.innerHTML = `<div style="color: #ff6b6b; padding: 10px; border: 1px dashed #ff6b6b; border-radius: 4px; background: rgba(255,0,0,0.1);">
+              ❌ Failed to read local file: ${this.url}
+            </div>`
+            if (this.view && this.view.requestMeasure) this.view.requestMeasure()
           })
       } else {
         img.src = `asset://local/${this.url}`

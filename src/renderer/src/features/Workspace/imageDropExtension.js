@@ -25,7 +25,8 @@ export const imageDropExtension = (onToast) =>
         imageFiles.forEach(async (file) => {
           try {
             const arrayBuffer = await file.arrayBuffer()
-            const relativePath = await window.api.saveImage(arrayBuffer, file.name)
+            const uint8Array = new Uint8Array(arrayBuffer)
+            const relativePath = await window.api.saveImage(uint8Array, file.name)
 
             if (relativePath) {
               // Insert markdown at drop position

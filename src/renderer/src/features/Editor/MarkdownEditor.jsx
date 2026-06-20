@@ -25,6 +25,7 @@ import { setupWikilinkHover } from '../Workspace/hoverWikilink'
 import { tagMentionExtension } from '../Workspace/tagMentionExtension'
 import { tables } from '../Workspace/tableWidgetExtension'
 import { mermaidWidgetExtension } from '../Workspace/mermaidWidgetExtension'
+import { calloutExtension } from '../Workspace/calloutWidgetExtension'
 import '@atomic-editor/editor/styles.css'
 import FindWidget from '../Workspace/components/FindWidget'
 import StatusBar from '../Workspace/components/StatusBar'
@@ -657,6 +658,7 @@ const MarkdownEditor = React.memo(
         dropExtension,
         imageWidgetExtension,
         htmlWidgetExtension,
+        calloutExtension,
         Prec.highest(tables({ onLinkClick: handleTableLinkClick }))
       ],
       [editorExtensions, dropExtension, handleTableLinkClick]
