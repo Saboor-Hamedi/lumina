@@ -40,7 +40,7 @@ class VaultManager {
     const assetsPath = path.join(this.vaultPath, '.lumina', 'assets')
     try {
       await fs.mkdir(assetsPath, { recursive: true })
-    } catch (e) { }
+    } catch (e) {}
 
     // Initial scan
     await this.scanVault()
@@ -57,21 +57,21 @@ class VaultManager {
       ignoreInitial: true
     })
 
-    let scanTimeout = null;
+    let scanTimeout = null
     this.watcher.on('all', async (event, filePath) => {
       if (filePath.endsWith('.md') || event === 'unlinkDir' || event === 'addDir') {
-        if (scanTimeout) clearTimeout(scanTimeout);
+        if (scanTimeout) clearTimeout(scanTimeout)
         scanTimeout = setTimeout(async () => {
           await this.scanVault()
           // Notify renderer that snippets changed
           const electron = require('electron')
           const wins = electron.BrowserWindow.getAllWindows()
-          wins.forEach(win => {
+          wins.forEach((win) => {
             if (!win.isDestroyed()) {
               win.webContents.send('vault:updated')
             }
           })
-        }, 1000);
+        }, 1000)
       }
     })
   }
@@ -86,11 +86,20 @@ class VaultManager {
     try {
       const mdFiles = []
       const foundFolders = new Set()
-      
+
       const walk = async (dir, relativePath = '') => {
         const entries = await fs.readdir(dir, { withFileTypes: true })
         for (const entry of entries) {
-          if (entry.name === '.git' || entry.name === 'assets' || entry.name.startsWith('.')) continue
+          if (
+            entry.name === '.git' ||
+            entry.name === 'assets' ||
+            entry.name.startsWith('.') ||
+            entry.name === 'node_modules' ||
+            entry.name === 'dist' ||
+            entry.name === 'build' ||
+            entry.name === 'log'
+          )
+            continue
           const fullPath = path.join(dir, entry.name)
           // Always use forward slashes for cross-platform robustness
           const relPath = relativePath ? `${relativePath}/${entry.name}` : entry.name
@@ -102,63 +111,65 @@ class VaultManager {
           }
         }
       }
-      
+
       await walk(this.vaultPath)
 
       const newSnippets = []
-      
+
       // Process in batches to avoid EMFILE (too many open files) and improve performance
       const BATCH_SIZE = 10
       for (let i = 0; i < mdFiles.length; i += BATCH_SIZE) {
         const batch = mdFiles.slice(i, i + BATCH_SIZE)
-        
-        const batchResults = await Promise.all(batch.map(async (fileObj) => {
-          try {
-            const { fileName, folderId } = fileObj
-            const filePath = path.join(this.vaultPath, folderId, fileName)
-            const stats = await fs.stat(filePath)
-            const rawContent = await fs.readFile(filePath, 'utf-8')
 
-            if (!rawContent.trim()) {
+        const batchResults = await Promise.all(
+          batch.map(async (fileObj) => {
+            try {
+              const { fileName, folderId } = fileObj
+              const filePath = path.join(this.vaultPath, folderId, fileName)
+              const stats = await fs.stat(filePath)
+              const rawContent = await fs.readFile(filePath, 'utf-8')
+
+              if (!rawContent.trim()) {
+                return null
+              }
+
+              let data = {}
+              let content = rawContent
+
+              try {
+                const parsed = matter(rawContent)
+                data = parsed.data || {}
+                content = parsed.content || rawContent
+              } catch (matterErr) {
+                // fallback
+              }
+
+              return {
+                id: data.id || fileName.replace('.md', ''),
+                title: data.title || fileName.replace('.md', ''),
+                code: content || '',
+                language: data.language || 'markdown',
+                tags: data.tags || '',
+                timestamp: data.timestamp || stats.mtimeMs,
+                selection: data.selection || null,
+                isPinned: data.isPinned || data.pinned || false,
+                customIcon: data.customIcon || null,
+                color: null,
+                type: 'snippet',
+                is_draft: 0,
+                fileName: fileName,
+                folderId: folderId || ''
+              }
+            } catch (fileErr) {
+              console.error(`[VaultManager] ✗ Failed to read file ${fileName}:`, fileErr)
               return null
             }
+          })
+        )
 
-            let data = {}
-            let content = rawContent
-
-            try {
-              const parsed = matter(rawContent)
-              data = parsed.data || {}
-              content = parsed.content || rawContent
-            } catch (matterErr) {
-              // fallback
-            }
-
-            return {
-              id: data.id || fileName.replace('.md', ''),
-              title: data.title || fileName.replace('.md', ''),
-              code: content || '',
-              language: data.language || 'markdown',
-              tags: data.tags || '',
-              timestamp: data.timestamp || stats.mtimeMs,
-              selection: data.selection || null,
-              isPinned: data.isPinned || data.pinned || false,
-              customIcon: data.customIcon || null,
-              color: null,
-              type: 'snippet',
-              is_draft: 0,
-              fileName: fileName,
-              folderId: folderId || ''
-            }
-          } catch (fileErr) {
-            console.error(`[VaultManager] ✗ Failed to read file ${fileName}:`, fileErr)
-            return null
-          }
-        }))
-        
         // Filter out nulls and add to newSnippets
         newSnippets.push(...batchResults.filter(Boolean))
-        
+
         // Yield to the OS message pump every 100 files to keep the window perfectly draggable during startup
         if (i % 100 === 0) {
           await new Promise((resolve) => setTimeout(resolve, 5))
@@ -237,7 +248,9 @@ class VaultManager {
 
     // Only bump timestamp when content actually changes (not for color/pin/tag edits)
     const contentChanged = !oldSnippet || oldSnippet.code !== snippet.code
-    const newTimestamp = contentChanged ? Date.now() : (oldSnippet?.timestamp || snippet.timestamp || Date.now())
+    const newTimestamp = contentChanged
+      ? Date.now()
+      : oldSnippet?.timestamp || snippet.timestamp || Date.now()
 
     // 4. Prepare Content (use cleaned title everywhere)
     const fileContent = matter.stringify(snippet.code || '', {
@@ -255,11 +268,11 @@ class VaultManager {
       // Ensure the parent directory still exists (it may have been deleted externally)
       const targetDir = path.dirname(finalPath)
       await fs.mkdir(targetDir, { recursive: true })
-      
+
       // If we created a new nested folder natively during save, make sure we track it
       if (relativeFolder) {
         let current = ''
-        relativeFolder.split('/').forEach(part => {
+        relativeFolder.split('/').forEach((part) => {
           current = current ? `${current}/${part}` : part
           this.folders.add(current)
         })
@@ -320,7 +333,7 @@ class VaultManager {
 
   async renameFolder(oldPath, newPath) {
     if (!this.vaultPath) throw new Error('No vault open')
-    
+
     // Temporarily close watcher to release Windows directory locks
     if (this.watcher) {
       await this.watcher.close()
@@ -330,11 +343,11 @@ class VaultManager {
       const fullOldPath = path.join(this.vaultPath, oldPath)
       const fullNewPath = path.join(this.vaultPath, newPath)
       await fs.rename(fullOldPath, fullNewPath)
-      
+
       // Update in-memory state
       this.folders.delete(oldPath)
       this.folders.add(newPath)
-      
+
       // Find all snippets that were inside oldPath and update their folderId
       for (const [id, snippet] of this.snippets.entries()) {
         if (snippet.folderId === oldPath || snippet.folderId.startsWith(`${oldPath}/`)) {
@@ -342,7 +355,7 @@ class VaultManager {
           this.snippets.set(id, snippet)
         }
       }
-      
+
       this.setupWatcher()
       return true
     } catch (err) {
@@ -354,7 +367,7 @@ class VaultManager {
 
   async deleteFolder(folderPath) {
     if (!this.vaultPath) throw new Error('No vault open')
-    
+
     // Temporarily close watcher to release Windows directory locks
     if (this.watcher) {
       await this.watcher.close()
@@ -363,9 +376,9 @@ class VaultManager {
     try {
       const fullPath = path.join(this.vaultPath, folderPath)
       await fs.rm(fullPath, { recursive: true, force: true })
-      
+
       this.folders.delete(folderPath)
-      
+
       // Delete snippets inside this folder from memory
       for (const [id, snippet] of this.snippets.entries()) {
         if (snippet.folderId === folderPath || snippet.folderId.startsWith(`${folderPath}/`)) {
@@ -387,7 +400,7 @@ class VaultManager {
     const assetsPath = path.join(this.vaultPath, '.lumina', 'assets')
     try {
       await fs.mkdir(assetsPath, { recursive: true })
-    } catch (e) { }
+    } catch (e) {}
 
     const ext = path.extname(originalName) || '.png'
     const baseName = path.basename(originalName, ext)
@@ -441,7 +454,9 @@ class VaultManager {
   getSnippets() {
     const list = Array.from(this.snippets.values())
     return {
-      snippets: list.filter((s) => s && s.id).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)),
+      snippets: list
+        .filter((s) => s && s.id)
+        .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)),
       folders: Array.from(this.folders)
     }
   }
@@ -452,7 +467,7 @@ class VaultManager {
     try {
       const entries = await fs.readdir(assetsPath, { withFileTypes: true })
       const allMarkdownContent = Array.from(this.snippets.values())
-        .map(s => s.code || '')
+        .map((s) => s.code || '')
         .join('\n')
 
       for (const entry of entries) {

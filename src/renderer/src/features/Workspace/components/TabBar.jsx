@@ -1,38 +1,29 @@
 import React, { useRef, useState, useCallback, useMemo, memo, useEffect } from 'react'
 import { X, Pin, MoreHorizontal, ArrowRight, Trash2, Image } from 'lucide-react'
 import { DndContext, closestCenter, useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
-import { SortableContext, useSortable, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
+import {
+  SortableContext,
+  useSortable,
+  horizontalListSortingStrategy,
+  arrayMove
+} from '@dnd-kit/sortable'
 import { useVaultStore } from '../../../core/store/useVaultStore'
 import ContextMenu from '../../Overlays/ContextMenu'
 import PromptModal from '../../Overlays/PromptModal'
-import IconModal from '../../Overlays/IconModal'
+import IconModal from '../../Icons/IconModal'
+import ColorModal from '../../Overlays/ColorModal'
+import { getSnippetIcon } from '../../Icons/iconMapper'
 import WindowControls from './WindowControls'
-import { getSnippetIcon } from '../../../core/utils/fileIconMapper.jsx'
 
 /**
  * SortableTabItem — draggable tab using @dnd-kit/sortable
  */
 const SortableTabItem = memo(
-  ({
-    id,
-    snippet,
-    isActive,
-    isDirty,
-    isPinned,
-    onOpen,
-    onClose,
-    onContextMenu
-  }) => {
-    const {
-      attributes,
-      listeners,
-      setNodeRef,
-      transform,
-      isDragging
-    } = useSortable({
+  ({ id, snippet, isActive, isDirty, isPinned, onOpen, onClose, onContextMenu }) => {
+    const { attributes, listeners, setNodeRef, transform, isDragging } = useSortable({
       id,
       data: { snippet },
-      disabled: isPinned,
+      disabled: isPinned
     })
 
     const noteColor = snippet?.color
@@ -53,7 +44,7 @@ const SortableTabItem = memo(
         style={{
           transform: transform?.x ? `translate3d(${transform.x}px, 0, 0)` : undefined,
           transition: isDragging ? 'none' : 'transform 200ms ease, opacity 200ms ease',
-          opacity: isDragging ? 0.4 : 1,
+          opacity: isDragging ? 0.4 : 1
         }}
         {...attributes}
         {...listeners}
@@ -94,7 +85,7 @@ SortableTabItem.displayName = 'SortableTabItem'
  * TabBar Component
  * High-performance, premium workspace tab management.
  * Features: Native feel, DND reordering, context menus, and dirty-safety.
- * 
+ *
  * Supports regular snippet tabs with dirty-safety, pinned tabs, and DND reordering.
  */
 const TabBar = () => {
@@ -122,8 +113,8 @@ const TabBar = () => {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5,
-      },
+        distance: 5
+      }
     })
   )
 
@@ -188,29 +179,31 @@ const TabBar = () => {
   }, [])
 
   // --- Sortable Drag Handler ---
-  const handleDragEnd = useCallback((event) => {
-    const { active, over } = event
-    if (!active || !over || active.id === over.id) return
+  const handleDragEnd = useCallback(
+    (event) => {
+      const { active, over } = event
+      if (!active || !over || active.id === over.id) return
 
-    const oldIndex = openTabs.indexOf(active.id)
-    const newIndex = openTabs.indexOf(over.id)
-    if (oldIndex === -1 || newIndex === -1) return
+      const oldIndex = openTabs.indexOf(active.id)
+      const newIndex = openTabs.indexOf(over.id)
+      if (oldIndex === -1 || newIndex === -1) return
 
-    const reordered = arrayMove(openTabs, oldIndex, newIndex)
-    reorderTabs(reordered)
-  }, [openTabs, reorderTabs])
+      const reordered = arrayMove(openTabs, oldIndex, newIndex)
+      reorderTabs(reordered)
+    },
+    [openTabs, reorderTabs]
+  )
 
   if (openTabs.length === 0) {
     return <WindowControls />
   }
 
   return (
-    <DndContext
-      sensors={sensors}
-      onDragEnd={handleDragEnd}
-      collisionDetection={closestCenter}
-    >
-      <div className="tabbar-outer-wrapper" style={{ display: 'flex', width: '100%', position: 'relative' }}>
+    <DndContext sensors={sensors} onDragEnd={handleDragEnd} collisionDetection={closestCenter}>
+      <div
+        className="tabbar-outer-wrapper"
+        style={{ display: 'flex', width: '100%', position: 'relative' }}
+      >
         <div className="workspace-tabbar" ref={tabbarRef} style={{ flex: 1 }}>
           <SortableContext items={openTabs} strategy={horizontalListSortingStrategy}>
             <div className="tabs-container" style={{ paddingRight: '160px' }}>
@@ -235,7 +228,7 @@ const TabBar = () => {
             </div>
           </SortableContext>
         </div>
-        
+
         {/* Floating Window Controls */}
         <WindowControls />
       </div>
@@ -294,7 +287,7 @@ const TabBar = () => {
         onConfirm={handleConfirmSave}
         onDiscard={handleDiscard}
       />
-      
+
       <IconModal
         isOpen={!!iconPickerId}
         onClose={() => setIconPickerId(null)}

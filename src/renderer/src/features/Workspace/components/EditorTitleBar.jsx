@@ -71,10 +71,7 @@ const EditorTitleBar = ({
 
   return (
     <div className="editor-titlebar">
-
-
       <div className="editor-controls">
-
         <div className="menu-container">
           <button
             className={`icon-btn menu-trigger ${showMoreMenu ? 'active' : ''}`}
@@ -100,144 +97,144 @@ const EditorTitleBar = ({
                   right: `${menuPosition.right}px`
                 }}
               >
-              <div
-                className="dropdown-item"
-                onClick={() => {
-                  onSave()
-                  setShowMoreMenu(false)
-                }}
-              >
-                <span className="menu-label">Save File</span>
-                <span className="shortcut-label">Ctrl+S</span>
-                <Save size={12} className="menu-icon-right" />
-              </div>
-              <div className="dropdown-divider" />
-              <div
-                className="dropdown-item"
-                onClick={async () => {
-                  try {
-                    if (snippet?.code) {
-                      await navigator.clipboard.writeText(snippet.code)
-                      showToast('Markdown copied to clipboard', 'success')
-                    }
-                  } catch (error) {
-                    console.error('Failed to copy markdown:', error)
-                    showToast('Failed to copy markdown', 'error')
-                  }
-                  setShowMoreMenu(false)
-                }}
-              >
-                <span className="menu-label">Copy Raw Markdown</span>
-                <Copy size={12} className="menu-icon-right" />
-              </div>
-              <div
-                className="dropdown-item"
-                onClick={async () => {
-                  try {
-                    if (onExportHTML && typeof onExportHTML === 'function') {
-                      await onExportHTML()
-                      showToast('HTML copied to clipboard', 'success')
-                    }
-                  } catch (error) {
-                    console.error('Failed to export HTML:', error)
-                    showToast('Failed to export HTML', 'error')
-                  }
-                  setShowMoreMenu(false)
-                }}
-              >
-                <span className="menu-label">Copy HTML Code</span>
-                <FileCode size={12} className="menu-icon-right" />
-              </div>
-              <div
-                className="dropdown-item"
-                onClick={async () => {
-                  try {
-                    if (onExportPDF && typeof onExportPDF === 'function') {
-                      const result = await onExportPDF()
-                      if (result?.success) {
-                        showToast('PDF exported successfully', 'success')
-                      } else if (result?.canceled) {
-                        // User canceled, no notification needed
-                      } else {
-                        showToast('Failed to export PDF', 'error')
+                <div
+                  className="dropdown-item"
+                  onClick={() => {
+                    onSave()
+                    setShowMoreMenu(false)
+                  }}
+                >
+                  <span className="menu-label">Save File</span>
+                  <span className="shortcut-label">Ctrl+S</span>
+                  <Save size={12} className="menu-icon-right" />
+                </div>
+                <div className="dropdown-divider" />
+                <div
+                  className="dropdown-item"
+                  onClick={async () => {
+                    try {
+                      if (snippet?.code) {
+                        await navigator.clipboard.writeText(snippet.code)
+                        showToast('Markdown copied to clipboard', 'success')
                       }
+                    } catch (error) {
+                      console.error('Failed to copy markdown:', error)
+                      showToast('Failed to copy markdown', 'error')
                     }
-                  } catch (error) {
-                    console.error('Failed to export PDF:', error)
-                    showToast('Failed to export PDF', 'error')
-                  }
-                  setShowMoreMenu(false)
-                }}
-              >
-                <span className="menu-label">Export to PDF</span>
-                <Printer size={12} className="menu-icon-right" />
-              </div>
-              <div
-                className="dropdown-item"
-                onClick={async () => {
-                  try {
-                    if (onExportMarkdown && typeof onExportMarkdown === 'function') {
-                      const result = await onExportMarkdown()
-                      if (result?.success) {
-                        showToast('Markdown file exported successfully', 'success')
-                      } else if (result?.canceled) {
-                        // User canceled, no notification needed
-                      } else {
-                        showToast('Failed to export markdown', 'error')
+                    setShowMoreMenu(false)
+                  }}
+                >
+                  <span className="menu-label">Copy Raw Markdown</span>
+                  <Copy size={12} className="menu-icon-right" />
+                </div>
+                <div
+                  className="dropdown-item"
+                  onClick={async () => {
+                    try {
+                      if (onExportHTML && typeof onExportHTML === 'function') {
+                        await onExportHTML()
+                        showToast('HTML copied to clipboard', 'success')
                       }
+                    } catch (error) {
+                      console.error('Failed to export HTML:', error)
+                      showToast('Failed to export HTML', 'error')
                     }
-                  } catch (error) {
-                    console.error('Failed to export markdown:', error)
-                    showToast('Failed to export markdown', 'error')
-                  }
-                  setShowMoreMenu(false)
-                }}
-              >
-                <span className="menu-label">Export as Markdown</span>
-                <FileText size={12} className="menu-icon-right" />
-              </div>
-              <div className="dropdown-divider" />
-              <div
-                className="dropdown-item"
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  setShowMoreMenu(false)
-                  // Use setTimeout to ensure menu closes before opening modal
-                  setTimeout(() => {
-                    if (onInlineAI) {
-                      onInlineAI()
+                    setShowMoreMenu(false)
+                  }}
+                >
+                  <span className="menu-label">Copy HTML Code</span>
+                  <FileCode size={12} className="menu-icon-right" />
+                </div>
+                <div
+                  className="dropdown-item"
+                  onClick={async () => {
+                    try {
+                      if (onExportPDF && typeof onExportPDF === 'function') {
+                        const result = await onExportPDF()
+                        if (result?.success) {
+                          showToast('PDF exported successfully', 'success')
+                        } else if (result?.canceled) {
+                          // User canceled, no notification needed
+                        } else {
+                          showToast('Failed to export PDF', 'error')
+                        }
+                      }
+                    } catch (error) {
+                      console.error('Failed to export PDF:', error)
+                      showToast('Failed to export PDF', 'error')
                     }
-                  }, 0)
-                }}
-              >
-                <span className="menu-label">Inline AI</span>
-                <span className="shortcut-label">Ctrl+K</span>
-                <Zap size={12} className="menu-icon-right" />
-              </div>
-              <div
-                className="dropdown-item"
-                onClick={() => {
-                  onToggleInspector()
-                  setShowMoreMenu(false)
-                }}
-              >
-                <span className="menu-label">Toggle Inspector</span>
-                <span className="shortcut-label">Ctrl+I</span>
-                <Sidebar size={12} className="menu-icon-right" />
-              </div>
-              <div className="dropdown-divider" />
-              <div
-                className="dropdown-item"
-                onClick={() => {
-                  // Trigger details modal via custom event
-                  window.dispatchEvent(new CustomEvent('open-details-modal'))
-                  setShowMoreMenu(false)
-                }}
-              >
-                <span className="menu-label">Show Details</span>
-                <FileText size={12} className="menu-icon-right" />
-              </div>
+                    setShowMoreMenu(false)
+                  }}
+                >
+                  <span className="menu-label">Export to PDF</span>
+                  <Printer size={12} className="menu-icon-right" />
+                </div>
+                <div
+                  className="dropdown-item"
+                  onClick={async () => {
+                    try {
+                      if (onExportMarkdown && typeof onExportMarkdown === 'function') {
+                        const result = await onExportMarkdown()
+                        if (result?.success) {
+                          showToast('Markdown file exported successfully', 'success')
+                        } else if (result?.canceled) {
+                          // User canceled, no notification needed
+                        } else {
+                          showToast('Failed to export markdown', 'error')
+                        }
+                      }
+                    } catch (error) {
+                      console.error('Failed to export markdown:', error)
+                      showToast('Failed to export markdown', 'error')
+                    }
+                    setShowMoreMenu(false)
+                  }}
+                >
+                  <span className="menu-label">Export as Markdown</span>
+                  <FileText size={12} className="menu-icon-right" />
+                </div>
+                <div className="dropdown-divider" />
+                <div
+                  className="dropdown-item"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setShowMoreMenu(false)
+                    // Use setTimeout to ensure menu closes before opening modal
+                    setTimeout(() => {
+                      if (onInlineAI) {
+                        onInlineAI()
+                      }
+                    }, 0)
+                  }}
+                >
+                  <span className="menu-label">Inline AI</span>
+                  <span className="shortcut-label">Ctrl+K</span>
+                  <Zap size={12} className="menu-icon-right" />
+                </div>
+                <div
+                  className="dropdown-item"
+                  onClick={() => {
+                    onToggleInspector()
+                    setShowMoreMenu(false)
+                  }}
+                >
+                  <span className="menu-label">Toggle Inspector</span>
+                  <span className="shortcut-label">Ctrl+I</span>
+                  <Sidebar size={12} className="menu-icon-right" />
+                </div>
+                <div className="dropdown-divider" />
+                <div
+                  className="dropdown-item"
+                  onClick={() => {
+                    // Trigger details modal via custom event
+                    window.dispatchEvent(new CustomEvent('open-details-modal'))
+                    setShowMoreMenu(false)
+                  }}
+                >
+                  <span className="menu-label">Show Details</span>
+                  <FileText size={12} className="menu-icon-right" />
+                </div>
               </div>,
               document.body
             )}

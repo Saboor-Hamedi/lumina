@@ -44,7 +44,7 @@ async function createWindow() {
   const appIcon = electron.nativeImage.createFromPath(iconPath)
 
   const translucency = await SettingsManager.get('translucency')
-  const windowBounds = await SettingsManager.get('windowBounds') || { width: 900, height: 700 }
+  const windowBounds = (await SettingsManager.get('windowBounds')) || { width: 900, height: 700 }
 
   mainWindow = new BrowserWindow({
     width: windowBounds.width,
@@ -221,13 +221,14 @@ app.whenReady().then(async () => {
         relativePath = decodeURIComponent(fallbackUrl)
       }
 
-      if (!VaultManager.vaultPath || !relativePath) return new Response('Vault not open', { status: 404 })
+      if (!VaultManager.vaultPath || !relativePath)
+        return new Response('Vault not open', { status: 404 })
 
       const finalPath = join(VaultManager.vaultPath, relativePath)
-      
+
       // Read file directly from disk to avoid Windows URI parsing bugs with net.fetch
       const data = await fs.readFile(finalPath)
-      
+
       const ext = path.extname(finalPath).toLowerCase()
       let mimeType = 'image/png'
       if (ext === '.jpg' || ext === '.jpeg') mimeType = 'image/jpeg'
@@ -253,7 +254,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('vault:readAsset', async (_, relativePath) => {
     return VaultManager.readAsset(relativePath)
   })
-  ipcMain.handle('app:getVersion', () => app.getVersion())  // show the version 
+  ipcMain.handle('app:getVersion', () => app.getVersion()) // show the version
 
   ipcMain.handle('window:minimize', () => mainWindow?.minimize())
   ipcMain.handle('window:open-devtools', () => {
@@ -614,7 +615,11 @@ app.whenReady().then(async () => {
     const updatedSnippet = await VaultManager.saveSnippet(snippet)
     // Auto-index updated file in background
     if (VaultManager.vaultPath && updatedSnippet?.fileName) {
-      const filePath = path.join(VaultManager.vaultPath, updatedSnippet.folderId || '', updatedSnippet.fileName)
+      const filePath = path.join(
+        VaultManager.vaultPath,
+        updatedSnippet.folderId || '',
+        updatedSnippet.fileName
+      )
       VaultIndexer.indexFile(filePath, true).catch((err) => {
         console.error('[Main] Auto-index failed:', err)
       })
@@ -625,10 +630,13 @@ app.whenReady().then(async () => {
   ipcMain.handle('vault:saveImage', (_, { buffer, name }) => VaultManager.saveImage(buffer, name))
   ipcMain.handle('vault:deleteSnippet', async (_, id) => await VaultManager.deleteSnippet(id))
   ipcMain.handle('vault:cleanOrphans', async () => await VaultManager.cleanOrphanedAssets())
-  
+
   // Folder IPC
   ipcMain.handle('vault:createFolder', async (_, path) => await VaultManager.createFolder(path))
-  ipcMain.handle('vault:renameFolder', async (_, oldPath, newPath) => await VaultManager.renameFolder(oldPath, newPath))
+  ipcMain.handle(
+    'vault:renameFolder',
+    async (_, oldPath, newPath) => await VaultManager.renameFolder(oldPath, newPath)
+  )
   ipcMain.handle('vault:deleteFolder', async (_, path) => await VaultManager.deleteFolder(path))
 
   // System
@@ -640,17 +648,20 @@ app.whenReady().then(async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({ properties: ['openDirectory'] })
     if (canceled) return null
     const newPath = filePaths[0]
-    
+
     // Save to global config
     const userDataPath = app.getPath('userData')
-    await fs.writeFile(join(userDataPath, 'app_config.json'), JSON.stringify({ lastVaultOpened: newPath }, null, 2))
-    
+    await fs.writeFile(
+      join(userDataPath, 'app_config.json'),
+      JSON.stringify({ lastVaultOpened: newPath }, null, 2)
+    )
+
     await SettingsManager.init(newPath)
     await VaultManager.init(newPath)
     await SettingsManager.set('vaultPath', newPath)
-    
+
     // Index new vault in background
-    VaultIndexer.indexVault(newPath, { 
+    VaultIndexer.indexVault(newPath, {
       force: false,
       onProgress: (stats) => {
         if (mainWindow && !mainWindow.isDestroyed()) {
@@ -788,7 +799,7 @@ app.whenReady().then(async () => {
   try {
     const userDataPath = app.getPath('userData')
     const appConfigPath = join(userDataPath, 'app_config.json')
-    
+
     let savedVaultPath = null
     try {
       const configData = await fs.readFile(appConfigPath, 'utf8')
@@ -806,7 +817,10 @@ app.whenReady().then(async () => {
 
     if (!savedVaultPath || savedVaultPath === oldDefaultPath) {
       savedVaultPath = newDefaultPath
-      await fs.writeFile(appConfigPath, JSON.stringify({ lastVaultOpened: savedVaultPath }, null, 2))
+      await fs.writeFile(
+        appConfigPath,
+        JSON.stringify({ lastVaultOpened: savedVaultPath }, null, 2)
+      )
     }
 
     // Initialize SettingsManager inside the vault
@@ -826,9 +840,7 @@ app.whenReady().then(async () => {
     await createWindow()
 
     mainWindow.webContents.once('did-finish-load', () => {
-      VaultIndexer.warmWorker().catch((err) =>
-        console.error('[Main] Worker pre-warm failed:', err)
-      )
+      VaultIndexer.warmWorker().catch((err) => console.error('[Main] Worker pre-warm failed:', err))
 
       if (startupVaultPath && typeof startupVaultPath === 'string') {
         hasIndexed = true

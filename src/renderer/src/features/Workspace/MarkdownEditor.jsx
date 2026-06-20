@@ -31,7 +31,9 @@ import StatusBar from './components/StatusBar'
 const updateSearchHighlights = StateEffect.define()
 
 const searchHighlightField = StateField.define({
-  create() { return Decoration.none },
+  create() {
+    return Decoration.none
+  },
   update(decos, tr) {
     for (const e of tr.effects) {
       if (e.is(updateSearchHighlights)) {
@@ -40,11 +42,21 @@ const searchHighlightField = StateField.define({
     }
     return decos.map(tr.changes)
   },
-  provide: f => EditorView.decorations.from(f)
+  provide: (f) => EditorView.decorations.from(f)
 })
 
 const MarkdownEditor = React.memo(
-  ({ snippet, onSave, onToggleInspector, isActive = true, onToggleExplorerModal, onSettingsClick, onThemeClick, onGraphClick, onDailyNoteClick }) => {
+  ({
+    snippet,
+    onSave,
+    onToggleInspector,
+    isActive = true,
+    onToggleExplorerModal,
+    onSettingsClick,
+    onThemeClick,
+    onGraphClick,
+    onDailyNoteClick
+  }) => {
     const { toast, showToast, clearToast } = useToast()
     const [isSaving, setIsSaving] = useState(false)
     const isMountedRef = useRef(true)
@@ -66,53 +78,62 @@ const MarkdownEditor = React.memo(
     const [replaceModeActive, setReplaceModeActive] = useState(false)
 
     const isActiveRef = useRef(isActive)
-    useEffect(() => { isActiveRef.current = isActive }, [isActive])
+    useEffect(() => {
+      isActiveRef.current = isActive
+    }, [isActive])
     const showFindWidgetRef = useRef(showFindWidget)
-    useEffect(() => { showFindWidgetRef.current = showFindWidget }, [showFindWidget])
+    useEffect(() => {
+      showFindWidgetRef.current = showFindWidget
+    }, [showFindWidget])
 
     const realViewRef = useRef(null)
     const captureViewPlugin = React.useMemo(() => {
-      let saveTimeout;
-      return ViewPlugin.fromClass(class {
-        constructor(view) { 
-          realViewRef.current = view 
-          // Force clear any trailing whitespace/newlines from initialization or restore selection
-          setTimeout(() => {
-            if (view && !view.isDestroyed && snippetRef.current?.code === '') {
-              view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: '' } })
-            } else if (view && !view.isDestroyed && snippetRef.current?.id) {
-              const savedSelection = localStorage.getItem(`cursor-${snippetRef.current.id}`);
-              if (savedSelection) {
-                try {
-                  const { anchor, head } = JSON.parse(savedSelection);
-                  if (anchor <= view.state.doc.length && head <= view.state.doc.length) {
-                    view.dispatch({ selection: { anchor, head }, scrollIntoView: true });
-                    view.focus();
-                  }
-                } catch(e){}
+      let saveTimeout
+      return ViewPlugin.fromClass(
+        class {
+          constructor(view) {
+            realViewRef.current = view
+            // Force clear any trailing whitespace/newlines from initialization or restore selection
+            setTimeout(() => {
+              if (view && !view.isDestroyed && snippetRef.current?.code === '') {
+                view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: '' } })
+              } else if (view && !view.isDestroyed && snippetRef.current?.id) {
+                const savedSelection = localStorage.getItem(`cursor-${snippetRef.current.id}`)
+                if (savedSelection) {
+                  try {
+                    const { anchor, head } = JSON.parse(savedSelection)
+                    if (anchor <= view.state.doc.length && head <= view.state.doc.length) {
+                      view.dispatch({ selection: { anchor, head }, scrollIntoView: true })
+                      view.focus()
+                    }
+                  } catch (e) {}
+                }
               }
+            }, 10)
+          }
+          update(update) {
+            if (update.selectionSet && snippetRef.current?.id) {
+              const { anchor, head } = update.state.selection.main
+              clearTimeout(saveTimeout)
+              saveTimeout = setTimeout(() => {
+                localStorage.setItem(
+                  `cursor-${snippetRef.current.id}`,
+                  JSON.stringify({ anchor, head })
+                )
+              }, 500)
             }
-          }, 10)
-        }
-        update(update) {
-          if (update.selectionSet && snippetRef.current?.id) {
-            const { anchor, head } = update.state.selection.main;
-            clearTimeout(saveTimeout);
-            saveTimeout = setTimeout(() => {
-              localStorage.setItem(`cursor-${snippetRef.current.id}`, JSON.stringify({ anchor, head }));
-            }, 500);
+          }
+          destroy() {
+            if (realViewRef.current === this.view) realViewRef.current = null
+            clearTimeout(saveTimeout)
           }
         }
-        destroy() { 
-          if (realViewRef.current === this.view) realViewRef.current = null;
-          clearTimeout(saveTimeout);
-        }
-      })
+      )
     }, [])
 
     useEffect(() => {
       if (!isActive) return
-      
+
       const handleGlobalKeyDown = (e) => {
         if (e.key === 'f' && (e.ctrlKey || e.metaKey)) {
           e.preventDefault()
@@ -124,77 +145,85 @@ const MarkdownEditor = React.memo(
           setShowFindWidget(true)
         }
       }
-      
+
       window.addEventListener('keydown', handleGlobalKeyDown)
       return () => window.removeEventListener('keydown', handleGlobalKeyDown)
     }, [isActive])
 
     useEffect(() => {
       const handleSearchUpdate = (e) => {
-        if (!isActiveRef.current || !realViewRef.current) return;
-        const view = realViewRef.current;
-        const { pattern } = e.detail || {};
-        
+        if (!isActiveRef.current || !realViewRef.current) return
+        const view = realViewRef.current
+        const { pattern } = e.detail || {}
+
         if (!pattern || !e.detail.searchQuery) {
-          view.dispatch({ effects: updateSearchHighlights.of(Decoration.none) });
-          return;
+          view.dispatch({ effects: updateSearchHighlights.of(Decoration.none) })
+          return
         }
 
-        const text = view.state.doc.toString();
-        const decorations = [];
-        const mark = Decoration.mark({ class: 'cm-searchMatch' });
-        
+        const text = view.state.doc.toString()
+        const decorations = []
+        const mark = Decoration.mark({ class: 'cm-searchMatch' })
+
         try {
-          const regex = new RegExp(pattern);
+          const regex = new RegExp(pattern)
           for (const match of text.matchAll(regex)) {
-            decorations.push(mark.range(match.index, match.index + match[0].length));
+            decorations.push(mark.range(match.index, match.index + match[0].length))
           }
-          view.dispatch({ effects: updateSearchHighlights.of(Decoration.set(decorations, true)) });
+          view.dispatch({ effects: updateSearchHighlights.of(Decoration.set(decorations, true)) })
         } catch (err) {
-          view.dispatch({ effects: updateSearchHighlights.of(Decoration.none) });
+          view.dispatch({ effects: updateSearchHighlights.of(Decoration.none) })
         }
-      };
+      }
 
       const handleSearchClear = () => {
-        if (!isActiveRef.current || !realViewRef.current) return;
-        realViewRef.current.dispatch({ effects: updateSearchHighlights.of(Decoration.none) });
-      };
+        if (!isActiveRef.current || !realViewRef.current) return
+        realViewRef.current.dispatch({ effects: updateSearchHighlights.of(Decoration.none) })
+      }
 
       const handleFocusEditorStart = () => {
-        if (!isActiveRef.current || !realViewRef.current) return;
-        const view = realViewRef.current;
-        view.focus();
-        view.dispatch({ selection: { anchor: 0, head: 0 } });
-      };
+        if (!isActiveRef.current || !realViewRef.current) return
+        const view = realViewRef.current
+        view.focus()
+        view.dispatch({ selection: { anchor: 0, head: 0 } })
+      }
 
-      window.addEventListener('search-update', handleSearchUpdate);
-      window.addEventListener('search-clear', handleSearchClear);
-      window.addEventListener('focus-editor-start', handleFocusEditorStart);
+      window.addEventListener('search-update', handleSearchUpdate)
+      window.addEventListener('search-clear', handleSearchClear)
+      window.addEventListener('focus-editor-start', handleFocusEditorStart)
       return () => {
-        window.removeEventListener('search-update', handleSearchUpdate);
-        window.removeEventListener('search-clear', handleSearchClear);
-        window.removeEventListener('focus-editor-start', handleFocusEditorStart);
-      };
-    }, []);
+        window.removeEventListener('search-update', handleSearchUpdate)
+        window.removeEventListener('search-clear', handleSearchClear)
+        window.removeEventListener('focus-editor-start', handleFocusEditorStart)
+      }
+    }, [])
+
+    const lastSavedCodeRef = useRef(snippet?.code)
 
     useEffect(() => {
       snippetRef.current = snippet
       setTitle(snippet?.title || '')
-      setIsDirty(false)
 
       if (editorHandleRef.current) {
         const currentCode = editorHandleRef.current.getMarkdown()
-        if (realViewRef.current) {
-          const view = realViewRef.current
-          const needsClear = snippet?.code === '' && view.state.doc.length > 0
-          if ((typeof snippet?.code === 'string' && currentCode !== snippet.code) || needsClear) {
-            view.dispatch({
-              changes: { from: 0, to: view.state.doc.length, insert: snippet.code || '' }
-            })
-          }
-        } else {
-          if (typeof snippet?.code === 'string' && currentCode !== snippet.code) {
-            setEditorKey(k => k + 1)
+        const codeChangedFromOutside = snippet?.code !== lastSavedCodeRef.current
+
+        if (codeChangedFromOutside) {
+          setIsDirty(false) // Reset dirty state only if code changed from outside
+          lastSavedCodeRef.current = snippet?.code
+
+          if (realViewRef.current) {
+            const view = realViewRef.current
+            const needsClear = snippet?.code === '' && view.state.doc.length > 0
+            if ((typeof snippet?.code === 'string' && currentCode !== snippet.code) || needsClear) {
+              view.dispatch({
+                changes: { from: 0, to: view.state.doc.length, insert: snippet.code || '' }
+              })
+            }
+          } else {
+            if (typeof snippet?.code === 'string' && currentCode !== snippet.code) {
+              setEditorKey((k) => k + 1)
+            }
           }
         }
       }
@@ -210,28 +239,43 @@ const MarkdownEditor = React.memo(
         // Perform synchronous auto-save on unmount if we have unsaved changes
         const currentSettings = useSettingsStore.getState().settings
         const dirtyIds = useVaultStore.getState().dirtySnippetIds || []
-        
-        if (currentSettings.autoSave && snippetRef.current && dirtyIds.includes(snippetRef.current.id)) {
+
+        if (
+          currentSettings.autoSave &&
+          snippetRef.current &&
+          dirtyIds.includes(snippetRef.current.id)
+        ) {
           const codeToSave = latestCodeRef.current
           const snippetToSave = {
             ...snippetRef.current,
             code: codeToSave || '',
             timestamp: Date.now()
           }
-          useVaultStore.getState().saveSnippet(snippetToSave).catch(err => console.error('[Unmount AutoSave] Failed:', err))
+          useVaultStore
+            .getState()
+            .saveSnippet(snippetToSave)
+            .catch((err) => console.error('[Unmount AutoSave] Failed:', err))
         }
       }
     }, [])
 
-    const handleMarkdownChange = useCallback((md) => {
-      latestCodeRef.current = md
-      setIsDirty(true)
-      setDirty(snippet?.id, true)
-    }, [snippet?.id, setDirty])
+    const handleMarkdownChange = useCallback(
+      (md) => {
+        latestCodeRef.current = md
+        setIsDirty(true)
+        setDirty(snippet?.id, true)
+      },
+      [snippet?.id, setDirty]
+    )
 
     // --- Save Logic ---
     const handleSave = useCallback(async () => {
-      if (!isMountedRef.current || !snippetRef.current || !snippet?.id || !editorHandleRef.current) {
+      if (
+        !isMountedRef.current ||
+        !snippetRef.current ||
+        !snippet?.id ||
+        !editorHandleRef.current
+      ) {
         return
       }
 
@@ -256,6 +300,7 @@ const MarkdownEditor = React.memo(
           }
           setIsDirty(false)
           setDirty(snippet.id, false)
+          lastSavedCodeRef.current = code
           showToast('Note saved', 'success')
         }
       } catch (error) {
@@ -335,229 +380,258 @@ const MarkdownEditor = React.memo(
     }, [snippet, title, showToast])
 
     // CodeMirror natively handles cursor scrolling
-    
+
     // Trigger autocomplete when inside wikilinks
-    const autocompleteTriggerListener = useCallback(EditorView.updateListener.of((update) => {
-      if (update.docChanged) {
-        const view = update.view;
-        const head = view.state.selection.main.head;
-        const line = view.state.doc.lineAt(head);
-        const col = head - line.from;
-        const textBefore = line.text.slice(0, col);
-        
-        const lastOpen = textBefore.lastIndexOf('[[');
-        if (lastOpen !== -1) {
-          const lastClose = textBefore.lastIndexOf(']]');
-          if (lastOpen > lastClose) {
-            // Cursor is inside [[ ]]
-            setTimeout(() => {
-              if (!view.isDestroyed) {
-                startCompletion(view);
-              }
-            }, 10);
+    const autocompleteTriggerListener = useCallback(
+      EditorView.updateListener.of((update) => {
+        if (update.docChanged) {
+          const view = update.view
+          const head = view.state.selection.main.head
+          const line = view.state.doc.lineAt(head)
+          const col = head - line.from
+          const textBefore = line.text.slice(0, col)
+
+          const lastOpen = textBefore.lastIndexOf('[[')
+          if (lastOpen !== -1) {
+            const lastClose = textBefore.lastIndexOf(']]')
+            if (lastOpen > lastClose) {
+              // Cursor is inside [[ ]]
+              setTimeout(() => {
+                if (!view.isDestroyed) {
+                  startCompletion(view)
+                }
+              }, 10)
+            }
           }
         }
-      }
-    }), []);
+      }),
+      []
+    )
 
     useKeyboardShortcuts({
       onSave: () => {
-        if (isActive) handleSave();
+        if (isActive) handleSave()
       }
     })
 
     const wikiLinkCompletionSource = useCallback((context) => {
       if (document.activeElement?.classList.contains('cm-atomic-table-cell-source')) {
-        return null;
+        return null
       }
 
-      const match = context.matchBefore(/\[\[([^\]]*)/);
-      if (!match) return null;
-      if (match.from === match.to && !context.explicit) return null;
+      const match = context.matchBefore(/\[\[([^\]]*)/)
+      if (!match) return null
+      if (match.from === match.to && !context.explicit) return null
 
-      const { snippets } = useVaultStore.getState();
-      
+      const { snippets } = useVaultStore.getState()
+
       let opts = snippets
-        .filter(s => s.title)
-        .map(s => ({
+        .filter((s) => s.title)
+        .map((s) => ({
           label: s.title,
           type: 'text',
           info: 'Link to note',
           apply: (view, completion, from, to) => {
-            const docLength = view.state.doc.length;
-            const after2 = view.state.sliceDoc(to, Math.min(to + 2, docLength));
-            const after1 = view.state.sliceDoc(to, Math.min(to + 1, docLength));
-            let replaceTo = to;
-            if (after2 === ']]') replaceTo = to + 2;
-            else if (after1 === ']') replaceTo = to + 1;
-            
+            const docLength = view.state.doc.length
+            const after2 = view.state.sliceDoc(to, Math.min(to + 2, docLength))
+            const after1 = view.state.sliceDoc(to, Math.min(to + 1, docLength))
+            let replaceTo = to
+            if (after2 === ']]') replaceTo = to + 2
+            else if (after1 === ']') replaceTo = to + 1
+
             view.dispatch({
               changes: { from, to: replaceTo, insert: s.title + ']]' },
               selection: { anchor: from + s.title.length + 2 }
-            });
+            })
           }
-        }));
-        
+        }))
+
       if (opts.length === 0) {
-        opts = [{ label: 'No notes found', apply: ']]' }];
+        opts = [{ label: 'No notes found', apply: ']]' }]
       }
-      
+
       return {
         from: match.from + 2,
         validFor: /^[^\]]*$/,
         options: opts
-      };
-    }, []);
+      }
+    }, [])
 
     const dropExtension = React.useMemo(() => imageDropExtension(showToast), [showToast])
-    const editorExtensions = React.useMemo(() => [
-      Prec.highest(
-        keymap.of([
-          {
-            key: 'Mod-Enter',
-            run: (view) => {
-              if (isActiveRef.current) {
-                const { state } = view
-                const selection = state.selection.main
-                const tree = syntaxTree(state)
-                let node = tree.resolveInner(selection.head, 1)
-                
-                // Find the nearest block node that we want to escape
-                while (node && !['Document', 'FencedCode', 'Table', 'Blockquote', 'HTMLBlock'].includes(node.name)) {
-                  node = node.parent
-                }
-                
-                if (node && node.name !== 'Document') {
-                  // If we are inside a code block/table, jump out and insert a newline!
+    const editorExtensions = React.useMemo(
+      () => [
+        Prec.highest(
+          keymap.of([
+            {
+              key: 'Mod-Enter',
+              run: (view) => {
+                if (isActiveRef.current) {
+                  const { state } = view
+                  const selection = state.selection.main
+                  const tree = syntaxTree(state)
+                  let node = tree.resolveInner(selection.head, 1)
+
+                  // Find the nearest block node that we want to escape
+                  while (
+                    node &&
+                    !['Document', 'FencedCode', 'Table', 'Blockquote', 'HTMLBlock'].includes(
+                      node.name
+                    )
+                  ) {
+                    node = node.parent
+                  }
+
+                  if (node && node.name !== 'Document') {
+                    // If we are inside a code block/table, jump out and insert a newline!
+                    view.dispatch({
+                      changes: { from: node.to, insert: '\n' },
+                      selection: { anchor: node.to + 1 }
+                    })
+                    return true
+                  }
+
+                  // Fallback: Just insert a newline at the end of the current line
+                  const line = state.doc.lineAt(selection.head)
                   view.dispatch({
-                    changes: { from: node.to, insert: '\n' },
-                    selection: { anchor: node.to + 1 }
+                    changes: { from: line.to, insert: '\n' },
+                    selection: { anchor: line.to + 1 }
                   })
                   return true
                 }
-                
-                // Fallback: Just insert a newline at the end of the current line
-                const line = state.doc.lineAt(selection.head)
-                view.dispatch({
-                  changes: { from: line.to, insert: '\n' },
-                  selection: { anchor: line.to + 1 }
-                })
-                return true
+                return false
               }
-              return false
+            },
+            {
+              key: 'Mod-f',
+              run: () => {
+                if (isActiveRef.current) {
+                  setReplaceModeActive(false)
+                  setShowFindWidget(true)
+                  return true
+                }
+                return false
+              }
+            },
+            {
+              key: 'Mod-h',
+              run: () => {
+                if (isActiveRef.current) {
+                  setReplaceModeActive(true)
+                  setShowFindWidget(true)
+                  return true
+                }
+                return false
+              }
+            },
+            { key: 'F3', run: () => isActiveRef.current && showFindWidgetRef.current },
+            { key: 'Mod-g', run: () => isActiveRef.current && showFindWidgetRef.current },
+            { key: 'Mod-Shift-f', run: () => isActiveRef.current && showFindWidgetRef.current },
+            { key: 'Mod-Alt-f', run: () => isActiveRef.current && showFindWidgetRef.current },
+            {
+              key: 'Escape',
+              run: () => {
+                if (isActiveRef.current && showFindWidgetRef.current) {
+                  setShowFindWidget(false)
+                  return true
+                }
+                return false
+              }
+            }
+          ])
+        ),
+        autocompleteTriggerListener,
+        autocompletion({ override: [wikiLinkCompletionSource], maxRenderedOptions: 8 }),
+        captureViewPlugin,
+        searchHighlightField,
+        codeBlockDecorations,
+        mermaidWidgetExtension,
+        tagMentionExtension,
+        placeholder('Start writing...'),
+        wikiLinks({
+          openOnClick: true,
+          resolve: async (target) => {
+            const { snippets } = useVaultStore.getState()
+            const targetLower = target.toLowerCase()
+            const exists = snippets.some(
+              (s) =>
+                s.title &&
+                (s.title.toLowerCase() === targetLower ||
+                  s.title.toLowerCase() === `${targetLower}.md`)
+            )
+            return {
+              label: target,
+              status: exists ? 'resolved' : 'missing'
             }
           },
-          {
-            key: 'Mod-f',
-            run: () => {
-              if (isActiveRef.current) {
-                setReplaceModeActive(false)
-                setShowFindWidget(true)
-                return true
+          onOpen: async (target) => {
+            showToast(`Opening wikilink: ${target}`, 'info')
+            try {
+              const { snippets, saveSnippet, setSelectedSnippet } = useVaultStore.getState()
+              const targetLower = target.toLowerCase()
+              let targetSnippet = snippets.find(
+                (s) =>
+                  s.title &&
+                  (s.title.toLowerCase() === targetLower ||
+                    s.title.toLowerCase() === `${targetLower}.md`)
+              )
+
+              if (!targetSnippet) {
+                showToast(`Creating new note: ${target}`, 'info')
+                targetSnippet = {
+                  id: crypto.randomUUID(),
+                  title: target,
+                  code: `# ${target}\n\n`,
+                  language: 'markdown',
+                  tags: '',
+                  timestamp: Date.now()
+                }
+                await saveSnippet(targetSnippet)
               }
-              return false
-            }
-          },
-          {
-            key: 'Mod-h',
-            run: () => {
-              if (isActiveRef.current) {
-                setReplaceModeActive(true)
-                setShowFindWidget(true)
-                return true
-              }
-              return false
-            }
-          },
-          { key: 'F3', run: () => isActiveRef.current && showFindWidgetRef.current },
-          { key: 'Mod-g', run: () => isActiveRef.current && showFindWidgetRef.current },
-          { key: 'Mod-Shift-f', run: () => isActiveRef.current && showFindWidgetRef.current },
-          { key: 'Mod-Alt-f', run: () => isActiveRef.current && showFindWidgetRef.current },
-          {
-            key: 'Escape',
-            run: () => {
-              if (isActiveRef.current && showFindWidgetRef.current) {
-                setShowFindWidget(false)
-                return true
-              }
-              return false
+              setSelectedSnippet(targetSnippet)
+            } catch (e) {
+              showToast(`Error: ${e.message}`, 'error')
             }
           }
-        ])
-      ),
-      autocompleteTriggerListener,
-      autocompletion({ override: [wikiLinkCompletionSource], maxRenderedOptions: 8 }),
-      captureViewPlugin,
-      searchHighlightField,
-      codeBlockDecorations,
-      mermaidWidgetExtension,
-      tagMentionExtension,
-      placeholder('Start writing...'),
-      wikiLinks({
-        openOnClick: true,
-        resolve: async (target) => {
-          const { snippets } = useVaultStore.getState();
-          const targetLower = target.toLowerCase();
-          const exists = snippets.some(
-            s => s.title && (s.title.toLowerCase() === targetLower || s.title.toLowerCase() === `${targetLower}.md`)
-          );
-          return {
-            label: target,
-            status: exists ? 'resolved' : 'missing'
-          };
-        },
-        onOpen: async (target) => {
-          showToast(`Opening wikilink: ${target}`, 'info');
-          try {
-            const { snippets, saveSnippet, setSelectedSnippet } = useVaultStore.getState();
-            const targetLower = target.toLowerCase();
-            let targetSnippet = snippets.find(
-              s => s.title && (s.title.toLowerCase() === targetLower || s.title.toLowerCase() === `${targetLower}.md`)
-            );
+        })
+      ],
+      [showToast, autocompleteTriggerListener, wikiLinkCompletionSource]
+    )
 
-            if (!targetSnippet) {
-              showToast(`Creating new note: ${target}`, 'info');
-              targetSnippet = {
-                id: crypto.randomUUID(),
-                title: target,
-                code: `# ${target}\n\n`,
-                language: 'markdown',
-                tags: '',
-                timestamp: Date.now()
-              };
-              await saveSnippet(targetSnippet);
-            }
-            setSelectedSnippet(targetSnippet);
-          } catch (e) {
-            showToast(`Error: ${e.message}`, 'error');
-          }
-        }
-      })
-    ], [showToast, autocompleteTriggerListener, wikiLinkCompletionSource]);
-
-    const finalExtensions = React.useMemo(() => [...editorExtensions, dropExtension, imageWidgetExtension, htmlWidgetExtension, Prec.highest(tables())], [editorExtensions, dropExtension])
+    const finalExtensions = React.useMemo(
+      () => [
+        ...editorExtensions,
+        dropExtension,
+        imageWidgetExtension,
+        htmlWidgetExtension,
+        Prec.highest(tables())
+      ],
+      [editorExtensions, dropExtension]
+    )
 
     // Forceful Native Event Listener to Override CodeMirror
     useEffect(() => {
-      const wrapper = editorWrapperRef.current;
-      if (!wrapper) return;
+      const wrapper = editorWrapperRef.current
+      if (!wrapper) return
 
       const cleanupHover = setupWikilinkHover(wrapper, useVaultStore.getState)
 
       const handleMouseDown = async (e) => {
         // Wiki link click
-        const linkEl = e.target.closest('.cm-atomic-wiki-link');
+        const linkEl = e.target.closest('.cm-atomic-wiki-link')
         if (linkEl) {
-          e.preventDefault();
-          e.stopPropagation();
-          const target = linkEl.getAttribute('data-wiki-link-target');
+          e.preventDefault()
+          e.stopPropagation()
+          const target = linkEl.getAttribute('data-wiki-link-target')
           if (target) {
             try {
-              const { snippets, saveSnippet, setSelectedSnippet } = useVaultStore.getState();
-              const targetLower = target.toLowerCase();
+              const { snippets, saveSnippet, setSelectedSnippet } = useVaultStore.getState()
+              const targetLower = target.toLowerCase()
               let targetSnippet = snippets.find(
-                s => s.title && (s.title.toLowerCase() === targetLower || s.title.toLowerCase() === `${targetLower}.md`)
-              );
+                (s) =>
+                  s.title &&
+                  (s.title.toLowerCase() === targetLower ||
+                    s.title.toLowerCase() === `${targetLower}.md`)
+              )
               if (!targetSnippet) {
                 targetSnippet = {
                   id: crypto.randomUUID(),
@@ -566,44 +640,47 @@ const MarkdownEditor = React.memo(
                   language: 'markdown',
                   tags: '',
                   timestamp: Date.now()
-                };
-                await saveSnippet(targetSnippet);
+                }
+                await saveSnippet(targetSnippet)
               }
-              setSelectedSnippet(targetSnippet);
+              setSelectedSnippet(targetSnippet)
             } catch (err) {
-              showToast(`Failed to open wikilink: ${err.message}`, 'error');
+              showToast(`Failed to open wikilink: ${err.message}`, 'error')
             }
           }
-          return;
+          return
         }
 
         // Code block copy click
-        const codeLine = e.target.closest('.cm-line.cb-code-header');
+        const codeLine = e.target.closest('.cm-line.cb-code-header')
         if (codeLine) {
-          const rect = codeLine.getBoundingClientRect();
-          if (e.clientX < rect.right - 80) return;
-          const id = codeLine.getAttribute('data-cb-id');
-          const code = id != null ? codeMap.get(Number(id)) : null;
+          const rect = codeLine.getBoundingClientRect()
+          if (e.clientX < rect.right - 80) return
+          const id = codeLine.getAttribute('data-cb-id')
+          const code = id != null ? codeMap.get(Number(id)) : null
           if (code != null) {
-            e.preventDefault();
-            e.stopPropagation();
-            await navigator.clipboard.writeText(code);
-            showToast('Code copied', 'success');
-            codeLine.classList.add('cb-copied');
-            setTimeout(() => codeLine.classList.remove('cb-copied'), 600);
+            e.preventDefault()
+            e.stopPropagation()
+            await navigator.clipboard.writeText(code)
+            showToast('Code copied', 'success')
+            codeLine.classList.add('cb-copied')
+            setTimeout(() => codeLine.classList.remove('cb-copied'), 600)
           }
         }
-      };
+      }
 
-      wrapper.addEventListener('mousedown', handleMouseDown, { capture: true });
+      wrapper.addEventListener('mousedown', handleMouseDown, { capture: true })
       return () => {
-        wrapper.removeEventListener('mousedown', handleMouseDown, { capture: true });
-        cleanupHover();
-      };
-    }, [showToast]);
+        wrapper.removeEventListener('mousedown', handleMouseDown, { capture: true })
+        cleanupHover()
+      }
+    }, [showToast])
 
     return (
-      <div className={`markdown-editor mode-source cursor-${caretStyle || 'smooth'}`} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div
+        className={`markdown-editor mode-source cursor-${caretStyle || 'smooth'}`}
+        style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+      >
         <ToastNotification toast={toast} onClose={clearToast} />
 
         <div className="editor-scroller">
@@ -631,7 +708,7 @@ const MarkdownEditor = React.memo(
                 setIsDirty={setIsDirty}
               />
             )}
-            
+
             {showFindWidget && realViewRef.current && (
               <FindWidget
                 editorView={realViewRef.current}
@@ -650,17 +727,17 @@ const MarkdownEditor = React.memo(
               extensions={finalExtensions}
               onLinkClick={(url) => {
                 if (window.api?.openExternal) {
-                  window.api.openExternal(url);
+                  window.api.openExternal(url)
                 } else {
-                  window.open(url, '_blank', 'noopener,noreferrer');
+                  window.open(url, '_blank', 'noopener,noreferrer')
                 }
               }}
             />
           </div>
         </div>
 
-        <StatusBar 
-          wordCount={snippet?.code ? snippet.code.trim().split(/\s+/).filter(Boolean).length : 0} 
+        <StatusBar
+          wordCount={snippet?.code ? snippet.code.trim().split(/\s+/).filter(Boolean).length : 0}
           onToggleExplorerModal={onToggleExplorerModal}
           onSettingsClick={onSettingsClick}
           onThemeClick={onThemeClick}

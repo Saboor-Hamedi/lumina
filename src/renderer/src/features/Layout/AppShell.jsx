@@ -4,7 +4,7 @@ import SettingsModal from '../Overlays/SettingsModal'
 import ActivityBar from '../Navigation/ActivityBar'
 import ThemeModal from '../Overlays/ThemeModal'
 import CommandPalette from '../Overlays/CommandPalette'
-import GraphNexus from '../Overlays/GraphNexus'
+import Graph from '../Graph/Graph'
 import Dashboard from '../Workspace/components/Dashboard'
 import TabBar from '../Workspace/components/TabBar'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
@@ -21,7 +21,7 @@ import '../Overlays/ConfirmModal.css'
 import AIChatPanel from '../AI/AIChatPanel'
 import DetailsModal from '../Overlays/DetailsModal'
 import AIChatModal from '../Overlays/AIChatModal'
-import ExplorerModal from '../Overlays/ExplorerModal'
+import FileExplorer from '../Explorer/FileExplorer'
 import { useAIStore } from '../../core/store/useAIStore'
 import { useTypingSound } from '../../core/hooks/useTypingSound'
 import { X, Maximize2, Trash2, History } from 'lucide-react'
@@ -51,7 +51,7 @@ const AppShell = () => {
   const { toast, showToast, clearToast } = useToast()
   const { chatMessages, clearChat } = useAIStore()
   const settings = useSettingsStore((state) => state.settings)
-  
+
   // Initialize typing sound hook globally
   useTypingSound()
   const [settingsInitialTab, setSettingsInitialTab] = useState('general')
@@ -188,7 +188,7 @@ const AppShell = () => {
     const initApp = async () => {
       await useSettingsStore.getState().init()
       await loadVault()
-      
+
       // Directly fetch from backend to avoid any race conditions with store initialization
       let actualSettings = useSettingsStore.getState().settings
       try {
@@ -203,7 +203,11 @@ const AppShell = () => {
       if (actualSettings.openTabs && Array.isArray(actualSettings.openTabs)) {
         useVaultStore
           .getState()
-          .restoreSession(actualSettings.openTabs, actualSettings.lastSnippetId, actualSettings.pinnedTabIds || [])
+          .restoreSession(
+            actualSettings.openTabs,
+            actualSettings.lastSnippetId,
+            actualSettings.pinnedTabIds || []
+          )
       } else if (actualSettings.lastSnippetId) {
         const allSnippets = useVaultStore.getState().snippets
         const last = allSnippets.find((s) => s.id === actualSettings.lastSnippetId)
@@ -218,8 +222,10 @@ const AppShell = () => {
 
       // LEFT SIDEBAR
       const legacySidebar = actualSettings.sidebar || {}
-      if (typeof legacySidebar.isLeftOpen === 'boolean') setIsLeftSidebarOpen(legacySidebar.isLeftOpen)
-      else if (typeof actualSettings.isLeftSidebarOpen === 'boolean') setIsLeftSidebarOpen(actualSettings.isLeftSidebarOpen)
+      if (typeof legacySidebar.isLeftOpen === 'boolean')
+        setIsLeftSidebarOpen(legacySidebar.isLeftOpen)
+      else if (typeof actualSettings.isLeftSidebarOpen === 'boolean')
+        setIsLeftSidebarOpen(actualSettings.isLeftSidebarOpen)
 
       if (legacySidebar.width) setLeftWidth(legacySidebar.width)
       else if (legacySidebar.leftWidth) setLeftWidth(legacySidebar.leftWidth)
@@ -227,8 +233,10 @@ const AppShell = () => {
 
       // RIGHT SIDEBAR
       const legacyRSidebar = actualSettings.rightSidebar || {}
-      if (typeof legacyRSidebar.isRightOpen === 'boolean') setIsRightSidebarOpen(legacyRSidebar.isRightOpen)
-      else if (typeof actualSettings.isRightSidebarOpen === 'boolean') setIsRightSidebarOpen(actualSettings.isRightSidebarOpen)
+      if (typeof legacyRSidebar.isRightOpen === 'boolean')
+        setIsRightSidebarOpen(legacyRSidebar.isRightOpen)
+      else if (typeof actualSettings.isRightSidebarOpen === 'boolean')
+        setIsRightSidebarOpen(actualSettings.isRightSidebarOpen)
 
       if (legacyRSidebar.width) setRightWidth(legacyRSidebar.width)
       else if (legacyRSidebar.rightWidth) setRightWidth(legacyRSidebar.rightWidth)
@@ -395,19 +403,20 @@ const AppShell = () => {
       const currentIdx = activeTabId ? openTabs.indexOf(activeTabId) : -1
       const nextIdx = currentIdx === -1 ? 0 : (currentIdx + 1) % openTabs.length
       const nextId = openTabs[nextIdx]
-      const nextSnippet = snippets.find(s => s.id === nextId)
+      const nextSnippet = snippets.find((s) => s.id === nextId)
       if (nextSnippet) setSelectedSnippet(nextSnippet)
     },
     onPreviousTab: () => {
       if (openTabs.length === 0) return
       const currentIdx = activeTabId ? openTabs.indexOf(activeTabId) : -1
-      const prevIdx = currentIdx === -1
-        ? openTabs.length - 1
-        : currentIdx === 0
+      const prevIdx =
+        currentIdx === -1
           ? openTabs.length - 1
-          : currentIdx - 1
+          : currentIdx === 0
+            ? openTabs.length - 1
+            : currentIdx - 1
       const prevId = openTabs[prevIdx]
-      const prevSnippet = snippets.find(s => s.id === prevId)
+      const prevSnippet = snippets.find((s) => s.id === prevId)
       if (prevSnippet) setSelectedSnippet(prevSnippet)
     }
   })
@@ -463,29 +472,39 @@ const AppShell = () => {
         '--right-sidebar-width': `${rightWidth}px`
       }}
     >
-
       <main className="shell-main">
         {/* Show TabBar even if no tabs are open so WindowControls remain visible */}
         {(activeTab === 'files' || activeTab === 'search') && <TabBar />}
 
         {openTabs.length > 0 ? (
-          <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            {openTabs.map(tabId => {
-              const snippet = snippets.find(s => s.id === tabId)
+          <div
+            style={{
+              position: 'relative',
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}
+          >
+            {openTabs.map((tabId) => {
+              const snippet = snippets.find((s) => s.id === tabId)
               if (!snippet) return null
               const effectiveSelectedId = selectedSnippet?.id || activeTabId || openTabs[0]
               const isSelected = effectiveSelectedId === tabId
 
               return (
-                <div 
-                  key={tabId} 
-                  style={{ 
+                <div
+                  key={tabId}
+                  style={{
                     position: 'absolute',
-                    top: 0, left: 0, right: 0, bottom: 0,
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
                     opacity: isSelected ? 1 : 0,
                     pointerEvents: isSelected ? 'auto' : 'none',
                     visibility: isSelected ? 'visible' : 'hidden',
-                    display: 'flex', 
+                    display: 'flex',
                     flexDirection: 'column',
                     overflow: 'hidden',
                     zIndex: isSelected ? 10 : 1
@@ -497,7 +516,7 @@ const AppShell = () => {
                       onSave={saveSnippet}
                       onToggleInspector={handleToggleInspector}
                       isActive={isSelected}
-                      onToggleExplorerModal={() => setShowExplorerModal(prev => !prev)}
+                      onToggleExplorerModal={() => setShowExplorerModal((prev) => !prev)}
                       onSettingsClick={() => setShowSettings(true)}
                       onThemeClick={() => setShowThemeModal(true)}
                       onGraphClick={() => setShowGraph(true)}
@@ -512,9 +531,9 @@ const AppShell = () => {
           <div className="shell-main-placeholder" />
         ) : (
           <ErrorBoundary>
-            <Dashboard 
-              onNew={handleNew} 
-              onToggleExplorerModal={() => setShowExplorerModal(prev => !prev)}
+            <Dashboard
+              onNew={handleNew}
+              onToggleExplorerModal={() => setShowExplorerModal((prev) => !prev)}
               onSettingsClick={() => setShowSettings(true)}
               onThemeClick={() => setShowThemeModal(true)}
               onGraphClick={() => setShowGraph(true)}
@@ -525,31 +544,37 @@ const AppShell = () => {
       </main>
 
       {/* Floating ActivityBar */}
-      <ActivityBar 
+      <ActivityBar
         onSettingsClick={() => setShowSettings(true)}
         onThemeClick={() => setShowThemeModal(true)}
         onToggleGraph={() => setShowGraph(true)}
-        onToggleExplorerModal={() => setShowExplorerModal(prev => !prev)}
+        onToggleExplorerModal={() => setShowExplorerModal((prev) => !prev)}
       />
 
       <aside className="shell-sidebar-right">
         {isRightSidebarOpen && (
-          <div
-            className="sidebar-resizer right"
-            onMouseDown={() => setResizingSide('right')}
-          />
+          <div className="sidebar-resizer right" onMouseDown={() => setResizingSide('right')} />
         )}
         {isRightSidebarOpen && (
           <div className="inspector-panel">
             {/* Tab-style header - matches workspace tabs */}
-            <div className="panel-header-tabs workspace-tabbar" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <div
+              className="panel-header-tabs workspace-tabbar"
+              style={{ position: 'relative', display: 'flex', alignItems: 'center' }}
+            >
               <div className="workspace-tab active">
-                <div className="tab-context" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div
+                  className="tab-context"
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
                   <span className="tab-title">AI Chat</span>
                   <button
                     className="tab-close-btn"
                     style={{ opacity: 0.6 }}
-                    onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('ai-toggle-history')) }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      window.dispatchEvent(new CustomEvent('ai-toggle-history'))
+                    }}
                     title="Toggle chat history"
                   >
                     <History size={11} />
@@ -559,7 +584,10 @@ const AppShell = () => {
                     style={{ opacity: 0.6 }}
                     onClick={(e) => {
                       e.stopPropagation()
-                      try { clearChat(); showToast('Chat cleared') } catch { }
+                      try {
+                        clearChat()
+                        showToast('Chat cleared')
+                      } catch {}
                     }}
                     title="Clear chat"
                   >
@@ -581,14 +609,16 @@ const AppShell = () => {
                 </div>
               </div>
               {/* Right side buttons - Float and Dropdown */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0',
-                marginLeft: 'auto',
-                height: '32px', /* Match panel header height */
-                WebkitAppRegion: 'no-drag'
-              }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0',
+                  marginLeft: 'auto',
+                  height: '32px' /* Match panel header height */,
+                  WebkitAppRegion: 'no-drag'
+                }}
+              >
                 <button
                   className="tab-float-btn-right"
                   onClick={(e) => {
@@ -631,7 +661,9 @@ const AppShell = () => {
                         exportedAt: new Date().toISOString(),
                         version: '1.0'
                       }
-                      const blob = new Blob([JSON.stringify(chatData, null, 2)], { type: 'application/json' })
+                      const blob = new Blob([JSON.stringify(chatData, null, 2)], {
+                        type: 'application/json'
+                      })
                       const url = URL.createObjectURL(blob)
                       const a = document.createElement('a')
                       a.href = url
@@ -649,14 +681,22 @@ const AppShell = () => {
                   onViewStats={() => {
                     const stats = {
                       totalMessages: chatMessages.length,
-                      userMessages: chatMessages.filter(m => m.role === 'user').length,
-                      assistantMessages: chatMessages.filter(m => m.role === 'assistant').length,
-                      totalCharacters: chatMessages.reduce((sum, m) => sum + (m.content?.length || 0), 0),
-                      averageMessageLength: chatMessages.length > 0
-                        ? Math.round(chatMessages.reduce((sum, m) => sum + (m.content?.length || 0), 0) / chatMessages.length)
-                        : 0
+                      userMessages: chatMessages.filter((m) => m.role === 'user').length,
+                      assistantMessages: chatMessages.filter((m) => m.role === 'assistant').length,
+                      totalCharacters: chatMessages.reduce(
+                        (sum, m) => sum + (m.content?.length || 0),
+                        0
+                      ),
+                      averageMessageLength:
+                        chatMessages.length > 0
+                          ? Math.round(
+                              chatMessages.reduce((sum, m) => sum + (m.content?.length || 0), 0) /
+                                chatMessages.length
+                            )
+                          : 0
                     }
-                    const statsText = `Chat Statistics:\n\n` +
+                    const statsText =
+                      `Chat Statistics:\n\n` +
                       `Total Messages: ${stats.totalMessages}\n` +
                       `User Messages: ${stats.userMessages}\n` +
                       `Assistant Messages: ${stats.assistantMessages}\n` +
@@ -691,8 +731,10 @@ const AppShell = () => {
           initialTab={settingsInitialTab}
         />
       )}
-      {showThemeModal && <ThemeModal isOpen={showThemeModal} onClose={() => setShowThemeModal(false)} />}
-      <ExplorerModal isOpen={showExplorerModal} onClose={() => setShowExplorerModal(false)} />
+      {showThemeModal && (
+        <ThemeModal isOpen={showThemeModal} onClose={() => setShowThemeModal(false)} />
+      )}
+      <FileExplorer isOpen={showExplorerModal} onClose={() => setShowExplorerModal(false)} />
       <DetailsModal
         isOpen={showDetailsModal}
         onClose={() => setShowDetailsModal(false)}
@@ -744,10 +786,10 @@ const AppShell = () => {
         onToggleSettings={() => setShowSettings(true)}
         onToggleGraph={() => setShowGraph(true)}
       />
-      {/* GraphNexus Modal */}
+      {/* Graph Modal */}
       {showGraph && (
-        <GraphNexus
-          isOpen={true}
+        <Graph
+          isOpen={showGraph}
           onClose={() => setShowGraph(false)}
           onNavigate={(snippet) => {
             setSelectedSnippet(snippet)

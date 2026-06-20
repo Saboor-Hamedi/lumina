@@ -7,12 +7,12 @@ import './PanelHeaderDropdown.css'
  * PanelHeaderDropdown Component
  * Dropdown menu for panel header actions
  */
-const PanelHeaderDropdown = ({ 
-  onOpenSettings, 
-  onClearChat, 
+const PanelHeaderDropdown = ({
+  onOpenSettings,
+  onClearChat,
   onExportChat,
   onViewStats,
-  chatMessagesCount = 0 
+  chatMessagesCount = 0
 }) => {
   const [isOpen, setIsOpen] = useState(false)
   const buttonRef = useRef(null)
@@ -93,7 +93,7 @@ const PanelHeaderDropdown = ({
   // Calculate menu position
   const getMenuPosition = () => {
     if (!buttonRef.current) return { top: 0, right: 0 }
-    
+
     const rect = buttonRef.current.getBoundingClientRect()
     return {
       top: rect.bottom + 4,
@@ -116,36 +116,35 @@ const PanelHeaderDropdown = ({
         <MoreVertical size={14} />
       </button>
 
-      {isOpen && createPortal(
-        <div
-          ref={menuRef}
-          className="panel-header-dropdown-menu"
-          style={menuPosition}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {menuItems.map((item, index) => {
-            if (item.type === 'divider') {
-              return <div key={index} className="dropdown-divider" />
-            }
+      {isOpen &&
+        createPortal(
+          <div
+            ref={menuRef}
+            className="panel-header-dropdown-menu"
+            style={menuPosition}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {menuItems.map((item, index) => {
+              if (item.type === 'divider') {
+                return <div key={index} className="dropdown-divider" />
+              }
 
-            return (
-              <button
-                key={index}
-                className={`dropdown-item ${item.danger ? 'danger' : ''}`}
-                onClick={() => handleMenuItemClick(item.onClick)}
-                disabled={item.disabled}
-              >
-                <span className="dropdown-item-icon">{item.icon}</span>
-                <span className="dropdown-item-label">{item.label}</span>
-                {item.shortcut && (
-                  <span className="dropdown-item-shortcut">{item.shortcut}</span>
-                )}
-              </button>
-            )
-          })}
-        </div>,
-        document.body
-      )}
+              return (
+                <button
+                  key={index}
+                  className={`dropdown-item ${item.danger ? 'danger' : ''}`}
+                  onClick={() => handleMenuItemClick(item.onClick)}
+                  disabled={item.disabled}
+                >
+                  <span className="dropdown-item-icon">{item.icon}</span>
+                  <span className="dropdown-item-label">{item.label}</span>
+                  {item.shortcut && <span className="dropdown-item-shortcut">{item.shortcut}</span>}
+                </button>
+              )
+            })}
+          </div>,
+          document.body
+        )}
     </>
   )
 }

@@ -25,55 +25,58 @@ export const useResizable = (modalRef, initialWidth = 350, initialHeight = 500) 
     }
   }, [settings.explorerModalWidth, settings.explorerModalHeight])
 
-  const handleResizeStart = useCallback((e, direction) => {
-    e.preventDefault()
-    e.stopPropagation()
-    isResizing.current = true
-    startPos.current = { x: e.clientX, y: e.clientY }
-    startSize.current = { width: size.width, height: size.height }
+  const handleResizeStart = useCallback(
+    (e, direction) => {
+      e.preventDefault()
+      e.stopPropagation()
+      isResizing.current = true
+      startPos.current = { x: e.clientX, y: e.clientY }
+      startSize.current = { width: size.width, height: size.height }
 
-    if (modalRef.current) {
-      modalRef.current.style.transition = 'none'
-    }
-
-    const handleMouseMove = (moveEvent) => {
-      const deltaX = moveEvent.clientX - startPos.current.x
-      const deltaY = startPos.current.y - moveEvent.clientY // positive when dragging UP
-
-      let newWidth = startSize.current.width
-      let newHeight = startSize.current.height
-
-      if (direction.includes('top')) {
-        newHeight = Math.max(300, Math.min(600, startSize.current.height + deltaY))
-      }
-      if (direction.includes('right')) {
-        newWidth = Math.max(300, Math.min(600, startSize.current.width + deltaX * 2)) // *2 keeps it centered
-      }
-      if (direction.includes('left')) {
-        newWidth = Math.max(300, Math.min(600, startSize.current.width - deltaX * 2)) // *2 keeps it centered
-      }
-
-      latestSize.current = { width: newWidth, height: newHeight }
-      setSize(latestSize.current)
-    }
-
-    const handleMouseUp = () => {
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
-      
       if (modalRef.current) {
-        modalRef.current.style.transition = ''
+        modalRef.current.style.transition = 'none'
       }
 
-      // Persist to store without triggering infinite loop
-      useSettingsStore.getState().updateSetting('explorerModalWidth', latestSize.current.width)
-      useSettingsStore.getState().updateSetting('explorerModalHeight', latestSize.current.height)
-      isResizing.current = false
-    }
+      const handleMouseMove = (moveEvent) => {
+        const deltaX = moveEvent.clientX - startPos.current.x
+        const deltaY = startPos.current.y - moveEvent.clientY // positive when dragging UP
 
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
-  }, [size, modalRef])
+        let newWidth = startSize.current.width
+        let newHeight = startSize.current.height
+
+        if (direction.includes('top')) {
+          newHeight = Math.max(300, Math.min(600, startSize.current.height + deltaY))
+        }
+        if (direction.includes('right')) {
+          newWidth = Math.max(300, Math.min(600, startSize.current.width + deltaX * 2)) // *2 keeps it centered
+        }
+        if (direction.includes('left')) {
+          newWidth = Math.max(300, Math.min(600, startSize.current.width - deltaX * 2)) // *2 keeps it centered
+        }
+
+        latestSize.current = { width: newWidth, height: newHeight }
+        setSize(latestSize.current)
+      }
+
+      const handleMouseUp = () => {
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+
+        if (modalRef.current) {
+          modalRef.current.style.transition = ''
+        }
+
+        // Persist to store without triggering infinite loop
+        useSettingsStore.getState().updateSetting('explorerModalWidth', latestSize.current.width)
+        useSettingsStore.getState().updateSetting('explorerModalHeight', latestSize.current.height)
+        isResizing.current = false
+      }
+
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+    },
+    [size, modalRef]
+  )
 
   return { size, handleResizeStart }
 }

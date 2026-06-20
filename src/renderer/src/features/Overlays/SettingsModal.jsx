@@ -11,18 +11,28 @@ import './SettingsModal.css'
 
 const ColorPickerInput = ({ initialColor, defaultColor, onColorChange, title, ariaLabel }) => {
   const [localColor, setLocalColor] = useState(() => {
-    return initialColor ? (initialColor.startsWith('#') ? initialColor : `#${initialColor}`) : defaultColor
+    return initialColor
+      ? initialColor.startsWith('#')
+        ? initialColor
+        : `#${initialColor}`
+      : defaultColor
   })
   const throttleRef = useRef(null)
 
   useEffect(() => {
-    setLocalColor(initialColor ? (initialColor.startsWith('#') ? initialColor : `#${initialColor}`) : defaultColor)
+    setLocalColor(
+      initialColor
+        ? initialColor.startsWith('#')
+          ? initialColor
+          : `#${initialColor}`
+        : defaultColor
+    )
   }, [initialColor, defaultColor])
 
   const handleChange = (e) => {
     const val = e.target.value
     setLocalColor(val)
-    
+
     // Throttle the actual DOM/CSS variable update to ~30fps to avoid heavy layout thrashing
     if (!throttleRef.current) {
       throttleRef.current = setTimeout(() => {
@@ -33,7 +43,10 @@ const ColorPickerInput = ({ initialColor, defaultColor, onColorChange, title, ar
   }
 
   return (
-    <div className="color-picker-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+    <div
+      className="color-picker-wrapper"
+      style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+    >
       <input
         type="color"
         value={localColor}
@@ -78,10 +91,19 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
   const [activeTab, setActiveTab] = useState(initialTab)
   const { showToast } = useToast()
   const { settings, updateSetting } = useSettingsStore()
-  const { 
-    caretWidth, caretColor, caretStyle, updateCaretWidth, updateCaretColor, updateCaretStyle,
-    editorFontFamily, editorFontSize, updateEditorFontFamily, updateEditorFontSize,
-    themeAccentColor, updateThemeAccentColor
+  const {
+    caretWidth,
+    caretColor,
+    caretStyle,
+    updateCaretWidth,
+    updateCaretColor,
+    updateCaretStyle,
+    editorFontFamily,
+    editorFontSize,
+    updateEditorFontFamily,
+    updateEditorFontSize,
+    themeAccentColor,
+    updateThemeAccentColor
   } = useFontSettings()
 
   // Update activeTab when initialTab prop changes
@@ -128,12 +150,11 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container settings-container premium-preview-card" onClick={(e) => e.stopPropagation()}>
-        <ModalHeader 
-          title="Settings" 
-          icon={<Settings size={16} />} 
-          onClose={onClose} 
-        />
+      <div
+        className="modal-container settings-container premium-preview-card"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <ModalHeader title="Settings" icon={<Settings size={16} />} onClose={onClose} />
 
         <div className="settings-layout">
           <aside className="settings-sidebar">
@@ -249,7 +270,9 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                   <div className="settings-row">
                     <div className="row-info">
                       <div className="row-label">Caret Style</div>
-                      <div className="row-hint">Customize the caret appearance (smooth, block, or sharp).</div>
+                      <div className="row-hint">
+                        Customize the caret appearance (smooth, block, or sharp).
+                      </div>
                     </div>
                     <select
                       value={caretStyle || 'smooth'}
@@ -310,14 +333,19 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                   <div className="settings-row">
                     <div className="row-info">
                       <div className="row-label">Use Border-left Caret</div>
-                      <div className="row-hint">Toggle using CSS `border-left` for the caret instead of a filled bar.</div>
+                      <div className="row-hint">
+                        Toggle using CSS `border-left` for the caret instead of a filled bar.
+                      </div>
                     </div>
                     <label className="switch">
                       <input
                         type="checkbox"
                         checked={(settings.cursor && settings.cursor.useBorderLeft) ?? true}
                         onChange={(e) => {
-                          const next = { ...(settings.cursor || {}), useBorderLeft: e.target.checked }
+                          const next = {
+                            ...(settings.cursor || {}),
+                            useBorderLeft: e.target.checked
+                          }
                           updateSetting('cursor', next)
                         }}
                       />
@@ -331,7 +359,9 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                   <div className="settings-row">
                     <div className="row-info">
                       <div className="row-label">Mechanical Keyboard Sound</div>
-                      <div className="row-hint">Play an ASMR-style mechanical click when typing.</div>
+                      <div className="row-hint">
+                        Play an ASMR-style mechanical click when typing.
+                      </div>
                     </div>
                     <label className="switch">
                       <input
@@ -342,7 +372,7 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                       <span className="slider round"></span>
                     </label>
                   </div>
-                  
+
                   {settings.typeSound && (
                     <div className="settings-row" style={{ animation: 'fadeIn 0.2s ease-out' }}>
                       <div className="row-info">
@@ -356,7 +386,9 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                           max="100"
                           step="1"
                           value={settings.typeSoundVolume ?? 50}
-                          onChange={(e) => updateSetting('typeSoundVolume', parseInt(e.target.value, 10))}
+                          onChange={(e) =>
+                            updateSetting('typeSoundVolume', parseInt(e.target.value, 10))
+                          }
                         />
                         <span>{settings.typeSoundVolume ?? 50}%</span>
                       </div>
@@ -374,20 +406,22 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                   <div className="settings-row">
                     <div className="row-info">
                       <div className="row-label">Node Size</div>
-                      <div className="row-hint">Adjust the size multiplier for all graph nodes.</div>
+                      <div className="row-hint">
+                        Adjust the size multiplier for all graph nodes.
+                      </div>
                     </div>
                     <div className="range-wrap">
-                      <input 
-                        type="range" 
-                        min="0.5" 
-                        max="3.0" 
-                        step="0.1" 
-                        defaultValue={settings.graphNodeSize || 1.5} 
+                      <input
+                        type="range"
+                        min="0.5"
+                        max="3.0"
+                        step="0.1"
+                        defaultValue={settings.graphNodeSize || 1.5}
                         onMouseUp={(e) => {
-                           updateSetting('graphNodeSize', parseFloat(e.target.value))
+                          updateSetting('graphNodeSize', parseFloat(e.target.value))
                         }}
                         onTouchEnd={(e) => {
-                           updateSetting('graphNodeSize', parseFloat(e.target.value))
+                          updateSetting('graphNodeSize', parseFloat(e.target.value))
                         }}
                       />
                     </div>
@@ -401,7 +435,9 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                     <label className="switch">
                       <input
                         type="checkbox"
-                        checked={settings.graphShowTexts !== false && settings.graphShowTexts !== 'false'}
+                        checked={
+                          settings.graphShowTexts !== false && settings.graphShowTexts !== 'false'
+                        }
                         onChange={(e) => updateSetting('graphShowTexts', e.target.checked)}
                       />
                       <span className="slider round"></span>
@@ -414,10 +450,12 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                       <div className="row-hint">Choose the primary color for nodes.</div>
                     </div>
                     <div className="color-picker-row" style={{ display: 'flex', gap: '12px' }}>
-                      {['#40bafa', '#14b8a6', '#f59e0b', '#ec4899', '#8b5cf6'].map(color => {
-                        const isSelected = (settings.graphNodeColor || '#40bafa').toLowerCase() === color.toLowerCase()
+                      {['#40bafa', '#14b8a6', '#f59e0b', '#ec4899', '#8b5cf6'].map((color) => {
+                        const isSelected =
+                          (settings.graphNodeColor || '#40bafa').toLowerCase() ===
+                          color.toLowerCase()
                         return (
-                          <div 
+                          <div
                             key={color}
                             onClick={() => updateSetting('graphNodeColor', color.toLowerCase())}
                             style={{
@@ -480,7 +518,9 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                         type="password"
                         className="settings-select"
                         value={settings.deepSeekKey || ''}
-                        onChange={(e) => updateSetting('deepSeekKey', e.target.value.trim() || null)}
+                        onChange={(e) =>
+                          updateSetting('deepSeekKey', e.target.value.trim() || null)
+                        }
                         placeholder="sk-..."
                       />
                     </div>
@@ -507,9 +547,7 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                     <div className="settings-row">
                       <div className="row-info">
                         <div className="row-label">API Key</div>
-                        <div className="row-hint">
-                          Requires GPT-4o access (starts with sk-...).
-                        </div>
+                        <div className="row-hint">Requires GPT-4o access (starts with sk-...).</div>
                       </div>
                       <input
                         type="password"
@@ -537,7 +575,9 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                         type="password"
                         className="settings-select"
                         value={settings.anthropicKey || ''}
-                        onChange={(e) => updateSetting('anthropicKey', e.target.value.trim() || null)}
+                        onChange={(e) =>
+                          updateSetting('anthropicKey', e.target.value.trim() || null)
+                        }
                         placeholder="sk-ant-..."
                       />
                     </div>
@@ -551,9 +591,7 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                     <div className="settings-row">
                       <div className="row-info">
                         <div className="row-label">Server URL</div>
-                        <div className="row-hint">
-                          Default is http://localhost:11434/api/chat
-                        </div>
+                        <div className="row-hint">Default is http://localhost:11434/api/chat</div>
                       </div>
                       <input
                         type="text"
@@ -571,15 +609,15 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                   <div className="settings-row">
                     <div className="row-info">
                       <div className="row-label">API Key</div>
-                      <div className="row-hint">
-                        Required for image generation commands.
-                      </div>
+                      <div className="row-hint">Required for image generation commands.</div>
                     </div>
                     <input
                       type="password"
                       className="settings-select"
                       value={settings.huggingFaceKey || ''}
-                      onChange={(e) => updateSetting('huggingFaceKey', e.target.value.trim() || null)}
+                      onChange={(e) =>
+                        updateSetting('huggingFaceKey', e.target.value.trim() || null)
+                      }
                       placeholder="hf_..."
                     />
                   </div>
@@ -590,9 +628,7 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                   <div className="settings-row">
                     <div className="row-info">
                       <div className="row-label">Semantic Indexing</div>
-                      <div className="row-hint">
-                        Enable RAG context for current provider.
-                      </div>
+                      <div className="row-hint">Enable RAG context for current provider.</div>
                     </div>
                     <label className="switch">
                       <input
@@ -624,7 +660,9 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                   <div className="settings-row">
                     <div className="row-info">
                       <div className="row-label">Theme Accent Color</div>
-                      <div className="row-hint">Pick the app's accent color. Leave default for theme accent.</div>
+                      <div className="row-hint">
+                        Pick the app's accent color. Leave default for theme accent.
+                      </div>
                     </div>
                     <div className="caret-color-controls">
                       <ColorPickerInput
@@ -648,7 +686,8 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                     <div className="row-info">
                       <div className="row-label">Mirror Mode</div>
                       <div className="row-hint">
-                        Enable Glassmorphism / Reflections for sidebars and panels. Premium aesthetic.
+                        Enable Glassmorphism / Reflections for sidebars and panels. Premium
+                        aesthetic.
                       </div>
                     </div>
                     <label className="switch">
@@ -795,7 +834,6 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
           </main>
         </div>
       </div>
-
     </div>
   )
 }

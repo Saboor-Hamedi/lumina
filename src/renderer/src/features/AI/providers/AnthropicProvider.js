@@ -16,7 +16,7 @@ export class AnthropicProvider extends BaseProvider {
 
     // Extract system message if present
     let system = ''
-    const cleanMessages = messages.filter(m => {
+    const cleanMessages = messages.filter((m) => {
       if (m.role === 'system') {
         system = m.content
         return false

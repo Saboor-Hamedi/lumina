@@ -8,19 +8,18 @@ import './PromptModal.css'
  * Standardized premium confirmation dialog.
  * Uses 5px global radius and unified modal system.
  */
-const PromptModal = ({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
-  onDiscard, 
-  title, 
-  message, 
-  confirmLabel = 'Save changes', 
+const PromptModal = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  onDiscard,
+  title,
+  message,
+  confirmLabel = 'Save changes',
   discardLabel = 'Discard',
   cancelLabel = 'Cancel',
-  type = 'warning' 
+  type = 'warning'
 }) => {
-  
   useKeyboardShortcuts({
     onEscape: () => {
       if (isOpen) {
@@ -35,7 +34,7 @@ const PromptModal = ({
 
   return (
     <div className="modal-overlay prompt-overlay" onClick={onClose}>
-      <div className="modal-container prompt-container" onClick={e => e.stopPropagation()}>
+      <div className="modal-container prompt-container" onClick={(e) => e.stopPropagation()}>
         <header className="pane-header">
           <div className="modal-title-stack">
             <AlertTriangle size={16} className={`prompt-icon-${type}`} />
@@ -52,7 +51,9 @@ const PromptModal = ({
 
         <footer className="prompt-footer">
           <div className="prompt-actions-secondary">
-             <button className="btn" onClick={onClose}>{cancelLabel}</button>
+            <button className="btn" onClick={onClose}>
+              {cancelLabel}
+            </button>
           </div>
           <div className="prompt-actions-primary">
             {onDiscard && (

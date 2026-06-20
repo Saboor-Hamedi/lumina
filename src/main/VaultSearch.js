@@ -74,8 +74,8 @@ class VaultSearch {
       this.index = content
         .trim()
         .split('\n')
-        .filter(line => line.trim())
-        .map(line => JSON.parse(line))
+        .filter((line) => line.trim())
+        .map((line) => JSON.parse(line))
 
       // Load embeddings buffer
       if (await this.fileExists(this.embeddingsPath)) {
@@ -139,11 +139,13 @@ class VaultSearch {
 
     const offset = chunk.embeddingOffset || 0
     const dims = chunk.embeddingLength || 384
-    const requiredSize = offset + (dims * 4)
+    const requiredSize = offset + dims * 4
 
     // Validate buffer size
     if (requiredSize > this.embeddingsBuffer.length) {
-      console.warn(`[VaultSearch] Chunk embedding out of bounds: offset=${offset}, required=${requiredSize}, buffer=${this.embeddingsBuffer.length}`)
+      console.warn(
+        `[VaultSearch] Chunk embedding out of bounds: offset=${offset}, required=${requiredSize}, buffer=${this.embeddingsBuffer.length}`
+      )
       return null
     }
 
@@ -179,12 +181,7 @@ class VaultSearch {
    * Search with filters and ranking
    */
   async search(query, options = {}) {
-    const {
-      threshold = 0.3,
-      limit = 20,
-      filters = {},
-      rerank = true
-    } = options
+    const { threshold = 0.3, limit = 20, filters = {}, rerank = true } = options
 
     if (!this.isLoaded || !this.index || this.index.length === 0) {
       return []
@@ -204,21 +201,20 @@ class VaultSearch {
       let candidates = this.index
 
       if (filters.filePath) {
-        const pattern = filters.filePath instanceof RegExp
-          ? filters.filePath
-          : new RegExp(filters.filePath, 'i')
-        candidates = candidates.filter(chunk => pattern.test(chunk.filePath))
+        const pattern =
+          filters.filePath instanceof RegExp ? filters.filePath : new RegExp(filters.filePath, 'i')
+        candidates = candidates.filter((chunk) => pattern.test(chunk.filePath))
       }
 
       if (filters.fileType) {
         const ext = filters.fileType.startsWith('.') ? filters.fileType : `.${filters.fileType}`
-        candidates = candidates.filter(chunk =>
-          path.extname(chunk.filePath).toLowerCase() === ext.toLowerCase()
+        candidates = candidates.filter(
+          (chunk) => path.extname(chunk.filePath).toLowerCase() === ext.toLowerCase()
         )
       }
 
       if (filters.type) {
-        candidates = candidates.filter(chunk => chunk.type === filters.type)
+        candidates = candidates.filter((chunk) => chunk.type === filters.type)
       }
 
       // Compute similarities
@@ -244,14 +240,14 @@ class VaultSearch {
       // Re-ranking: boost recent files, boost exact matches in text
       if (rerank && results.length > 0) {
         const queryLower = query.toLowerCase()
-        const queryWords = queryLower.split(/\s+/).filter(w => w.length > 2)
+        const queryWords = queryLower.split(/\s+/).filter((w) => w.length > 2)
 
-        results.forEach(result => {
+        results.forEach((result) => {
           let boost = 1.0
 
           // Boost if query words appear in text
           const textLower = result.text.toLowerCase()
-          const wordMatches = queryWords.filter(word => textLower.includes(word)).length
+          const wordMatches = queryWords.filter((word) => textLower.includes(word)).length
           boost += wordMatches * 0.1
 
           // Boost recent files (if metadata has mtime)
@@ -265,7 +261,7 @@ class VaultSearch {
           // Boost if file name matches
           if (result.metadata?.fileName) {
             const fileNameLower = result.metadata.fileName.toLowerCase()
-            if (queryWords.some(word => fileNameLower.includes(word))) {
+            if (queryWords.some((word) => fileNameLower.includes(word))) {
               boost += 0.15
             }
           }
@@ -299,7 +295,7 @@ class VaultSearch {
    */
   getChunksByFile(filePath) {
     if (!this.isLoaded || !this.index) return []
-    return this.index.filter(chunk => chunk.filePath === filePath)
+    return this.index.filter((chunk) => chunk.filePath === filePath)
   }
 
   /**
@@ -308,7 +304,7 @@ class VaultSearch {
   async findSimilar(chunkId, limit = 10) {
     if (!this.isLoaded || !this.index) return []
 
-    const chunk = this.index.find(c => c.id === chunkId)
+    const chunk = this.index.find((c) => c.id === chunkId)
     if (!chunk) return []
 
     const chunkEmbedding = this.getChunkEmbedding(chunk)
@@ -331,9 +327,7 @@ class VaultSearch {
       }
     }
 
-    return results
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit)
+    return results.sort((a, b) => b.score - a.score).slice(0, limit)
   }
 
   /**
@@ -344,9 +338,9 @@ class VaultSearch {
       return { totalChunks: 0, loaded: false }
     }
 
-    const fileCount = new Set(this.index.map(c => c.filePath)).size
+    const fileCount = new Set(this.index.map((c) => c.filePath)).size
     const typeCounts = {}
-    this.index.forEach(chunk => {
+    this.index.forEach((chunk) => {
       typeCounts[chunk.type] = (typeCounts[chunk.type] || 0) + 1
     })
 

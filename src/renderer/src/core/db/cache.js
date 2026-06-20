@@ -28,7 +28,7 @@ export const openDb = async () => {
       await db.open()
     } catch (err) {
       console.warn('[DB] Open failed:', err.message || err)
-      
+
       // Only attempt to delete and recreate if it's a structural error (like VersionError)
       // Do NOT delete on temporary locks (UnknownError) to avoid wiping user chat sessions.
       if (err.name === 'VersionError') {
@@ -46,7 +46,7 @@ export const openDb = async () => {
           throw retryErr
         }
       }
-      
+
       dbOpenPromise = null
       throw err
     }

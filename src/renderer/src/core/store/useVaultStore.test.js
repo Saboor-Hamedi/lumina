@@ -183,7 +183,7 @@ describe('useVaultStore', () => {
       useVaultStore.getState().openGraphTab()
       useVaultStore.getState().openGraphTab()
 
-      expect(useVaultStore.getState().openTabs.filter(id => id === GRAPH_TAB_ID).length).toBe(1)
+      expect(useVaultStore.getState().openTabs.filter((id) => id === GRAPH_TAB_ID).length).toBe(1)
     })
   })
 

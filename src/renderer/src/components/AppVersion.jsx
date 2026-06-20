@@ -1,12 +1,10 @@
-import { memo, useEffect, useState } from "react"
+import { memo, useEffect, useState } from 'react'
 
 function AppVersion() {
   const [version, setVersion] = useState('')
 
   useEffect(() => {
-    window.api.getVersion()
-      .then(setVersion)
-      .catch(console.error)
+    window.api.getVersion().then(setVersion).catch(console.error)
   }, [])
 
   if (!version) return null

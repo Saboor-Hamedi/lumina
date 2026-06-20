@@ -1,0 +1,483 @@
+.nexus-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+  animation: nexusFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes nexusFadeIn {
+  from { opacity: 0; backdrop-filter: blur(0px); }
+  to { opacity: 1; backdrop-filter: blur(8px); }
+}
+
+/* Nexus Container */
+.nexus-container {
+  width: 95vw;
+  height: 92vh;
+  background: rgba(10, 10, 12, 0.7) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+}
+
+/* Embedded mode (for tabs) - Just the graph visualization */
+.nexus-embedded-graph {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-app);
+}
+
+/* Ensure ForceGraph2D canvas is transparent to show theme background */
+.nexus-embedded-graph canvas {
+  background: transparent !important;
+  position: relative;
+  z-index: 1;
+}
+
+/* Apply theme backgrounds to embedded graph (tab view) */
+.nexus-embedded-graph[data-graph-theme='default'] {
+  background: var(--bg-app);
+}
+
+.nexus-embedded-graph[data-graph-theme='space'] {
+  background: #020617 !important;
+}
+
+.nexus-embedded-graph[data-graph-theme='nebula'] {
+  background: #0a0a0a !important;
+}
+
+.nexus-embedded-graph[data-graph-theme='frost'] {
+  background: #f8fafc !important;
+}
+
+.nexus-embedded-graph[data-graph-theme='neural'] {
+  background: var(--bg-app) !important;
+}
+
+/* Mode-specific styling for embedded graph */
+.nexus-embedded-graph[data-graph-mode='universe'] {
+  /* Universe: Wide spread, chronological rings */
+}
+
+.nexus-embedded-graph[data-graph-mode='neighborhood'] {
+  /* Neighborhood: Focused, tighter clustering */
+  filter: brightness(1.05);
+}
+
+.nexus-embedded-graph[data-graph-mode='orb'] {
+  /* The Orb: Intense focus, radial layout */
+  filter: contrast(1.1) saturate(1.15);
+}
+
+.nexus-embedded-graph[data-graph-mode='orb']::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(var(--text-accent-rgb), 0.08) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.win-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  border-radius: 0;
+}
+
+.win-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-main);
+}
+
+.win-btn.close-btn:hover {
+  background: #e81123;
+  color: #fff;
+}
+
+.nexus-close-btn,
+.nexus-maximize-btn {
+  height: 100%;
+  min-width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 0 10px;
+}
+
+.nexus-close-btn:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+.nexus-maximize-btn:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+.nexus-container.maximized {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: 100vw;
+  max-height: 100vh;
+  min-width: 100vw;
+  min-height: 100vh;
+  border-radius: 0;
+  border: none;
+}
+
+.nexus-body {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  /* Standard Neutral Background */
+  background: radial-gradient(circle at center, rgba(var(--text-accent-rgb), 0.05) 0%, transparent 70%);
+}
+
+/* --- THEMED GRAPH BACKGROUNDS --- */
+
+.nexus-container[data-graph-theme='space'] .nexus-body {
+  background: #020617;
+}
+
+.nexus-container[data-graph-theme='nebula'] .nexus-body {
+  background: #0a0a0a;
+}
+
+.nexus-container[data-graph-theme='frost'] .nexus-body {
+  background: #f8fafc;
+}
+
+.nexus-container[data-graph-theme='neural'] .nexus-body {
+  background: var(--bg-app);
+}
+
+/* Mode-specific styling for modal container */
+.nexus-container[data-graph-mode='neighborhood'] .nexus-body {
+  filter: brightness(1.05);
+}
+
+.nexus-container[data-graph-mode='orb'] .nexus-body {
+  filter: contrast(1.1) saturate(1.15);
+}
+
+.nexus-container[data-graph-mode='orb'] .nexus-body::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(var(--text-accent-rgb), 0.08) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.nexus-footer {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  border-top: 1px solid var(--border-subtle);
+  background: transparent;
+}
+
+.nexus-footer-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-faint);
+  letter-spacing: 0.3px;
+}
+
+/* INSIGHT TOOLTIP CARD */
+.nexus-insight-card {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  width: 320px;
+  background: var(--bg-panel);
+  background: color-mix(in srgb, var(--bg-panel), transparent 15%);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-main, 5px);
+  padding: 16px;
+  z-index: 1000;
+  pointer-events: none;
+  animation: cardSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes cardSlideIn {
+  from { opacity: 0; transform: translateX(-20px) scale(0.95); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+.card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+
+.card-tag {
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.1);
+  color: var(--text-accent);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm, 3px);
+}
+
+/* Graph theme start */
+/* Graph Controls - Shared styles for theme and mode selectors */
+
+/* Theme Button */
+.graph-theme-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-panel);
+  color: var(--text-muted);
+  border-radius: var(--radius-sm, 3px);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.graph-theme-btn:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+  border-color: var(--border-main);
+}
+
+.graph-theme-btn:active {
+  transform: scale(0.98);
+}
+
+/* Button Sizes */
+.graph-btn-small {
+  padding: 4px 8px;
+  font-size: 10px;
+  gap: 4px;
+}
+
+.graph-btn-medium {
+  padding: 6px 12px;
+  font-size: 11px;
+  gap: 6px;
+}
+
+.graph-btn-large {
+  padding: 8px 16px;
+  font-size: 12px;
+  gap: 8px;
+}
+
+.graph-btn-label {
+  user-select: none;
+}
+
+/* Mode Tabs */
+.graph-mode-tabs {
+  display: flex;
+  background: transparent;
+  padding: 2px;
+  border-radius: var(--radius-main, 5px);
+  gap: 2px;
+}
+
+.graph-tabs-small {
+  padding: 1px;
+  gap: 1px;
+}
+
+.graph-tabs-medium {
+  padding: 2px;
+  gap: 2px;
+}
+
+.graph-tabs-large {
+  padding: 3px;
+  gap: 3px;
+}
+
+.graph-mode-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: var(--radius-sm, 3px);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.graph-mode-tab:hover {
+  color: var(--text-main);
+  background: var(--bg-active);
+}
+
+.graph-mode-tab.active {
+  color: var(--text-accent);
+  background: transparent;
+  font-weight: 700;
+}
+
+.graph-tabs-small .graph-mode-tab {
+  padding: 4px 10px;
+  font-size: 10px;
+  gap: 4px;
+}
+
+.graph-tabs-large .graph-mode-tab {
+  padding: 6px 14px;
+  font-size: 12px;
+  gap: 6px;
+}
+
+.graph-tab-label {
+  user-select: none;
+}
+
+/* Dropdown Select */
+.graph-control-select {
+  position: relative;
+}
+
+.graph-select-small,
+.graph-select-medium,
+.graph-select-large {
+  padding: 4px 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-panel);
+  color: var(--text-main);
+  border-radius: var(--radius-sm, 3px);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  outline: none;
+}
+
+.graph-select-small {
+  padding: 3px 6px;
+  font-size: 10px;
+}
+
+.graph-select-large {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.graph-select-small:hover,
+.graph-select-medium:hover,
+.graph-select-large:hover {
+  background: var(--bg-active);
+  border-color: var(--border-main);
+}
+
+.graph-select-small:focus,
+.graph-select-medium:focus,
+.graph-select-large:focus {
+  border-color: var(--text-accent);
+  box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb), 0.2);
+}
+
+/* Beautiful toolbar for embedded controls - fully transparent, no background, at very top */
+.graph-embedded-controls {
+  position: absolute;
+  top: 0;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  z-index: 1000;
+  pointer-events: none;
+  /* Fully transparent toolbar, no background */
+  background: transparent;
+  backdrop-filter: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 6px 12px;
+  height: 32px;
+  min-height: 32px;
+  margin: 0;
+}
+
+.graph-embedded-controls > * {
+  pointer-events: all;
+}
+
+.graph-embedded-controls-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  backdrop-filter: none;
+  padding: 0;
+}
+
+.graph-embedded-controls-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  backdrop-filter: none;
+  padding: 0;
+}
+
+/* Remove individual backgrounds, use toolbar background */
+.graph-embedded-controls-left > *,
+.graph-embedded-controls-right > * {
+  background: transparent;
+  backdrop-filter: none;
+  border: none;
+  box-shadow: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .graph-embedded-controls {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  
+  .graph-embedded-controls-left,
+  .graph-embedded-controls-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+/* Graph theme end */

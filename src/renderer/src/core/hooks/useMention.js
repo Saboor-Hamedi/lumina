@@ -13,7 +13,7 @@ export const useMention = () => {
       let code = snippet.code || ''
       code = code.replace(/```[\s\S]*?```/g, '')
       code = code.replace(/`[^`]+`/g, '')
-      
+
       let match
       while ((match = mentionRegex.exec(code)) !== null) {
         mentionSet.add(match[1])

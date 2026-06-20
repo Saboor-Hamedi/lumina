@@ -3,7 +3,7 @@ import { Decoration, WidgetType, EditorView } from '@codemirror/view'
 import { StateField } from '@codemirror/state'
 import mermaid from 'mermaid'
 
-let mermaidIdCounter = 0;
+let mermaidIdCounter = 0
 
 class MermaidWidget extends WidgetType {
   constructor(code) {
@@ -21,7 +21,7 @@ class MermaidWidget extends WidgetType {
     wrap.style.position = 'relative'
     wrap.style.cursor = 'pointer' // Indicate it's clickable
     wrap.title = 'Click anywhere to edit diagram code'
-    
+
     // Clicking anywhere on the widget enters edit mode
     wrap.addEventListener('click', (e) => {
       e.preventDefault()
@@ -36,13 +36,13 @@ class MermaidWidget extends WidgetType {
         view.focus()
       }
     })
-    
+
     // Edit Button (kept for visual affordance)
     const editBtn = document.createElement('div')
     editBtn.className = 'mermaid-edit-btn'
     editBtn.innerHTML = `&lt;/&gt;`
     editBtn.title = 'Edit Code'
-    
+
     editBtn.addEventListener('click', (e) => {
       e.preventDefault()
       e.stopPropagation()
@@ -56,13 +56,13 @@ class MermaidWidget extends WidgetType {
         view.focus()
       }
     })
-    
+
     const scrollWrap = document.createElement('div')
     scrollWrap.className = 'mermaid-scroll-wrap'
-    
+
     const contentDiv = document.createElement('div')
     contentDiv.className = 'mermaid-content'
-    
+
     // Add a pulsing skeleton loading state with a spinner
     contentDiv.innerHTML = `
       <div class="mermaid-loading">
@@ -85,9 +85,9 @@ class MermaidWidget extends WidgetType {
 
     // We generate a unique ID for mermaid to use
     const id = `mermaid-${mermaidIdCounter++}`
-    
+
     const computed = getComputedStyle(document.documentElement)
-    
+
     // Try to grab the resolved hex for mermaid dynamically
     let accent = computed.getPropertyValue('--text-accent').trim()
     if (!accent) accent = '#40bafa'
@@ -108,7 +108,7 @@ class MermaidWidget extends WidgetType {
           useMaxWidth: false,
           themeVariables: {
             fontFamily: fontEditor,
-            
+
             // Flowcharts & General
             primaryColor: bgPanel,
             primaryBorderColor: accent,
@@ -116,7 +116,7 @@ class MermaidWidget extends WidgetType {
             lineColor: textFaint,
             textColor: textMain,
             mainBkg: bgPrimary,
-            
+
             nodeBkg: bgPanel,
             nodeBorder: accent,
             nodeTextColor: accent,
@@ -161,21 +161,21 @@ class MermaidWidget extends WidgetType {
         })
         const { svg } = await mermaid.render(id, this.code)
         contentDiv.innerHTML = svg
-        
+
         // Force the SVG to render at its exact, mathematically calculated native pixel scale.
         // This stops small diagrams from stretching to 100% and giant diagrams from shrinking to 100%.
         const svgEl = contentDiv.querySelector('svg')
         if (svgEl) {
           svgEl.removeAttribute('width')
           svgEl.style.maxWidth = 'none'
-          
+
           const viewBox = svgEl.getAttribute('viewBox')
           if (viewBox) {
             const parts = viewBox.split(' ')
             if (parts.length === 4) {
               const nativeWidth = parseFloat(parts[2])
               // Scale down slightly (75%) to make it less overwhelming while preserving scroll
-              svgEl.style.width = (nativeWidth * 0.75) + 'px'
+              svgEl.style.width = nativeWidth * 0.75 + 'px'
             }
           }
         }
@@ -192,30 +192,30 @@ function buildMermaidDecorations(state) {
   const widgets = []
   const tree = syntaxTree(state)
   const selection = state.selection.main
-  
+
   tree.iterate({
     enter(node) {
       if (node.name === 'FencedCode') {
         const text = state.sliceDoc(node.from, node.to)
         if (text.startsWith('```mermaid')) {
-          // If the selection overlaps the block at all, or touches its edges, do NOT render the widget. 
+          // If the selection overlaps the block at all, or touches its edges, do NOT render the widget.
           // This prevents the diagram from instantly closing on you if you drag-select slightly outside the bounds,
           // and it elegantly opens the diagram as your arrow keys approach the boundaries.
-          const overlaps = selection.from <= node.to + 1 && selection.to >= node.from - 1;
+          const overlaps = selection.from <= node.to + 1 && selection.to >= node.from - 1
           if (overlaps) {
-             return
+            return
           }
-          
+
           const lines = text.split('\n')
           const codeLines = lines.slice(1, -1)
           const code = codeLines.join('\n').trim()
 
           if (code) {
-             const deco = Decoration.replace({
-               widget: new MermaidWidget(code),
-               block: true
-             })
-             widgets.push(deco.range(node.from, node.to))
+            const deco = Decoration.replace({
+              widget: new MermaidWidget(code),
+              block: true
+            })
+            widgets.push(deco.range(node.from, node.to))
           }
         }
       }
@@ -235,5 +235,5 @@ export const mermaidWidgetExtension = StateField.define({
     }
     return value
   },
-  provide: f => EditorView.decorations.from(f)
+  provide: (f) => EditorView.decorations.from(f)
 })

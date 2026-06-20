@@ -8,7 +8,16 @@ const WelcomePage = ({ onNew }) => {
   return (
     <div className="welcome-page">
       <div className="welcome-inner">
-        <div className="welcome-main-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
+        <div
+          className="welcome-main-content"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '20px'
+          }}
+        >
           <div className="welcome-empty-action" onClick={onNew}>
             Create new note (Ctrl + N)
           </div>

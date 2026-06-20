@@ -8,16 +8,16 @@ import { ipcMain, app } from 'electron'
 class AppUpdater {
   constructor(mainWindow) {
     this.mainWindow = mainWindow
-    
+
     autoUpdater.autoDownload = false
     autoUpdater.autoInstallOnAppQuit = true
-    
+
     this.setupListeners()
 
     // Auto-check on initialization (if packaged)
     if (app.isPackaged) {
       setTimeout(() => {
-        autoUpdater.checkForUpdates().catch(err => console.error('Auto-check error:', err))
+        autoUpdater.checkForUpdates().catch((err) => console.error('Auto-check error:', err))
       }, 1000)
     }
   }
@@ -50,7 +50,7 @@ class AppUpdater {
     // Bridge IPC commands - Remove existing handlers first to avoid "Attempted to register a second handler" error
     ipcMain.removeHandler('update:check')
     ipcMain.handle('update:check', () => {
-      autoUpdater.checkForUpdates().catch(err => {
+      autoUpdater.checkForUpdates().catch((err) => {
         console.error('Check for updates failed:', err)
         this.sendStatusToWindow('error', 'Check failed')
       })

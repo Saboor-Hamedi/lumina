@@ -27,288 +27,233 @@ import './CommandPalette.css'
  * Feature: Fuzzy Match + Semantic AI Search
  * Memoized for performance - expensive search/filter operations.
  */
-const CommandPalette = React.memo(({
-  isOpen,
-  onClose,
-  items,
-  onSelect,
-  onNew,
-  onToggleSettings,
-  onToggleGraph
-}) => {
-  const [query, setQuery] = useState('')
-  const [selectedIndex, setSelectedIndex] = useState(0)
-  const [aiResults, setAiResults] = useState([])
-  const inputRef = useRef(null)
-  const listRef = useRef(null)
+const CommandPalette = React.memo(
+  ({ isOpen, onClose, items, onSelect, onNew, onToggleSettings, onToggleGraph }) => {
+    const [query, setQuery] = useState('')
+    const [selectedIndex, setSelectedIndex] = useState(0)
+    const [aiResults, setAiResults] = useState([])
+    const inputRef = useRef(null)
+    const listRef = useRef(null)
 
-  const { searchNotes, isModelReady, modelLoadingProgress, aiError } = useAIStore()
-  const { dirtySnippetIds, folders } = useVaultStore()
-  const { tags } = useTag()
-  const { mentions } = useMention()
+    const { searchNotes, isModelReady, modelLoadingProgress, aiError } = useAIStore()
+    const { dirtySnippetIds, folders } = useVaultStore()
+    const { tags } = useTag()
+    const { mentions } = useMention()
 
-  useKeyboardShortcuts({
-    onEscape: null
-  })
+    useKeyboardShortcuts({
+      onEscape: null
+    })
 
-  useEffect(() => {
-    if (!isOpen) return
-    const handler = (e) => {
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        e.stopPropagation()
-        onClose()
+    useEffect(() => {
+      if (!isOpen) return
+      const handler = (e) => {
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          e.stopPropagation()
+          onClose()
+        }
       }
-    }
-    window.addEventListener('keydown', handler, { capture: true })
-    return () => window.removeEventListener('keydown', handler, { capture: true })
-  }, [isOpen, onClose])
+      window.addEventListener('keydown', handler, { capture: true })
+      return () => window.removeEventListener('keydown', handler, { capture: true })
+    }, [isOpen, onClose])
 
-  useEffect(() => {
-    if (isOpen) {
-      setQuery('')
-      setSelectedIndex(0)
-      setAiResults([])
-      setTimeout(() => inputRef.current?.focus(), 50)
-    }
-  }, [isOpen])
-
-  // AI Search Debounce
-  useEffect(() => {
-    const timer = setTimeout(async () => {
-      // Allow shorter queries for AI if the user paused?
-      // Keep > 2 for perf, but lower threshold
-      if (query.trim().length > 2) {
-        // Lower threshold to 0.45 to catch "food" -> "pasta"
-        const results = await searchNotes(query, 0.45)
-        setAiResults(results)
-      } else {
+    useEffect(() => {
+      if (isOpen) {
+        setQuery('')
+        setSelectedIndex(0)
         setAiResults([])
+        setTimeout(() => inputRef.current?.focus(), 50)
       }
-    }, 400)
-    return () => clearTimeout(timer)
-  }, [query])
+    }, [isOpen])
 
-  const fuseIndex = useMemo(() => {
-    return new Fuse(items, {
-      keys: [
-        { name: 'title', weight: 3 },
-        { name: 'folderId', weight: 2 }
-      ],
-      threshold: 0.4,
-      includeMatches: true,
-      includeScore: true,
-      ignoreLocation: true
-    })
-  }, [items])
-
-  const filtered = useMemo(() => {
-    const lowerQuery = query.toLowerCase().trim()
-
-    // 0. System Actions (Show if query starts with > or matches)
-    const isActionQuery = lowerQuery.startsWith('>')
-    const actionQuery = isActionQuery ? lowerQuery.slice(1).trim() : lowerQuery
-
-    const systemActions = [
-      {
-        id: 'action-settings',
-        title: 'Settings: Open Configuration',
-        matchType: 'action',
-        action: 'settings'
-      },
-      { id: 'action-new', title: 'Note: Create New Snippet', matchType: 'action', action: 'new' },
-      {
-        id: 'action-graph',
-        title: 'Graph: Open Knowledge Nexus',
-        matchType: 'action',
-        action: 'graph'
-      }
-    ].filter((a) => !actionQuery || a.title.toLowerCase().includes(actionQuery))
-
-    if (!lowerQuery && !isActionQuery) return [...systemActions, ...items.slice(0, 50)]
-
-    // 1. Text Matches (Title & Folder via Fuse, Content via indexOf)
-    const fuseResults = fuseIndex.search(actionQuery)
-    const fuseMatchedIds = new Set(fuseResults.map((r) => r.item.id))
-
-    const textMatches = fuseResults.map((result) => {
-      const item = result.item
-      let matchType = 'title'
-      let matchSnippet = ''
-      let score = 10 - (result.score || 0) * 10
-
-      const bestMatch = result.matches?.[0]
-      if (bestMatch && bestMatch.key === 'folderId') {
-        matchType = 'folder-match'
-      }
-      return { ...item, matchType, matchSnippet, score }
-    })
-
-    // Content Matches (Fast string indexOf for items that didn't match via Fuse)
-    items.forEach((item) => {
-      if (fuseMatchedIds.has(item.id)) return
-      const code = item.code || item.content || ''
-      if (!code) return
-
-      const codeIndex = code.toLowerCase().indexOf(actionQuery)
-      if (codeIndex !== -1) {
-        const start = Math.max(0, codeIndex - 20)
-        const end = Math.min(code.length, codeIndex + actionQuery.length + 40)
-        const matchSnippet =
-          (start > 0 ? '...' : '') + code.slice(start, end) + (end < code.length ? '...' : '')
-        textMatches.push({ ...item, matchType: 'content', matchSnippet, score: 5 })
-      }
-    })
-
-    textMatches.sort((a, b) => b.score - a.score)
-
-    // 2. Semantic Matches
-    const existingIds = new Set(textMatches.map((i) => i.id))
-    const semanticMatches = aiResults
-      .filter((r) => !existingIds.has(r.id))
-      .map((r) => {
-        const item = items.find((i) => i.id === r.id)
-        if (!item) return null
-        return {
-          ...item,
-          matchType: 'semantic',
-          score: r.score * 4,
-          matchSnippet: 'Semantic Match'
-        }
-      })
-      .filter(Boolean)
-
-    const results = [...textMatches, ...semanticMatches]
-    
-    // 3. Tags and Mentions matches
-    const tagMatches = tags
-      .filter((t) => t.toLowerCase().includes(lowerQuery))
-      .map((t) => ({
-        id: `tag-${t}`,
-        title: `Tag: ${t}`,
-        matchType: 'tag',
-        action: 'filter',
-        value: t,
-        score: lowerQuery.startsWith('#') ? 100 : 8
-      }))
-
-    const mentionMatches = mentions
-      .filter((m) => m.toLowerCase().includes(lowerQuery))
-      .map((m) => ({
-        id: `mention-${m}`,
-        title: `Mention: ${m}`,
-        matchType: 'mention',
-        action: 'filter',
-        value: m,
-        score: lowerQuery.startsWith('@') ? 100 : 8
-      }))
-
-    const folderMatches = folders
-      .filter((f) => {
-        const folderName = f.split('/').pop() || f
-        return folderName.toLowerCase().includes(lowerQuery) || f.toLowerCase().includes(lowerQuery)
-      })
-      .map((f) => {
-        const parts = f.split('/')
-        const folderName = parts.pop() || f
-        const parentPath = parts.join('/')
-        return {
-          id: `folder-${f}`,
-          title: folderName,
-          folderPath: parentPath,
-          matchType: 'folder',
-          action: 'filter',
-          value: f,
-          score: 7
-        }
-      })
-
-    const finalResults = [...results, ...tagMatches, ...mentionMatches, ...folderMatches].sort((a, b) => b.score - a.score)
-
-    if (isActionQuery) return systemActions
-    return [...systemActions, ...finalResults].slice(0, 50)
-  }, [items, query, aiResults, tags, mentions, folders])
-
-  useEffect(() => {
-    if (selectedIndex >= filtered.length && filtered.length > 0) {
-      setSelectedIndex(filtered.length - 1)
-    }
-  }, [filtered.length, selectedIndex])
-
-  useEffect(() => {
-    if (listRef.current) {
-      listRef.current.scrollToItem(selectedIndex, 'auto')
-    }
-  }, [selectedIndex])
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      setSelectedIndex((prev) => (prev + 1) % filtered.length)
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      setSelectedIndex((prev) => (prev - 1 + filtered.length) % filtered.length)
-    } else if (e.key === 'Enter') {
-      const item = filtered[selectedIndex]
-      if (item) {
-        if (item.action === 'filter') {
-          setQuery(item.value + ' ')
-          inputRef.current?.focus()
-          return
-        }
-        if (item.matchType === 'action') {
-          if (item.action === 'settings') onToggleSettings?.()
-          else if (item.action === 'new') onNew?.()
-          else if (item.action === 'graph') onToggleGraph?.()
-        } else if (item.matchType === 'folder') {
-          // Just close, no action
+    // AI Search Debounce
+    useEffect(() => {
+      const timer = setTimeout(async () => {
+        // Allow shorter queries for AI if the user paused?
+        // Keep > 2 for perf, but lower threshold
+        if (query.trim().length > 2) {
+          // Lower threshold to 0.45 to catch "food" -> "pasta"
+          const results = await searchNotes(query, 0.45)
+          setAiResults(results)
         } else {
-          onSelect(item)
+          setAiResults([])
         }
-        onClose()
-      }
-    } else if (e.key === 'Escape') {
-      onClose()
-    }
-  }
+      }, 400)
+      return () => clearTimeout(timer)
+    }, [query])
 
-  // Highlight matching characters
-  const HighlightText = ({ text, highlight }) => {
-    if (!highlight.trim() || text === 'Semantic Match') return <span>{text}</span>
-    const regex = new RegExp(`(${highlight})`, 'gi')
-    const parts = text.split(regex)
-    return (
-      <span>
-        {parts.map((part, i) =>
-          regex.test(part) ? (
-            <mark key={i} className="palette-match">
-              {part}
-            </mark>
-          ) : (
-            <span key={i}>{part}</span>
+    const fuseIndex = useMemo(() => {
+      return new Fuse(items, {
+        keys: [
+          { name: 'title', weight: 3 },
+          { name: 'folderId', weight: 2 }
+        ],
+        threshold: 0.4,
+        includeMatches: true,
+        includeScore: true,
+        ignoreLocation: true
+      })
+    }, [items])
+
+    const filtered = useMemo(() => {
+      const lowerQuery = query.toLowerCase().trim()
+
+      // 0. System Actions (Show if query starts with > or matches)
+      const isActionQuery = lowerQuery.startsWith('>')
+      const actionQuery = isActionQuery ? lowerQuery.slice(1).trim() : lowerQuery
+
+      const systemActions = [
+        {
+          id: 'action-settings',
+          title: 'Settings: Open Configuration',
+          matchType: 'action',
+          action: 'settings'
+        },
+        { id: 'action-new', title: 'Note: Create New Snippet', matchType: 'action', action: 'new' },
+        {
+          id: 'action-graph',
+          title: 'Graph: Open Knowledge Nexus',
+          matchType: 'action',
+          action: 'graph'
+        }
+      ].filter((a) => !actionQuery || a.title.toLowerCase().includes(actionQuery))
+
+      if (!lowerQuery && !isActionQuery) return [...systemActions, ...items.slice(0, 50)]
+
+      // 1. Text Matches (Title & Folder via Fuse, Content via indexOf)
+      const fuseResults = fuseIndex.search(actionQuery)
+      const fuseMatchedIds = new Set(fuseResults.map((r) => r.item.id))
+
+      const textMatches = fuseResults.map((result) => {
+        const item = result.item
+        let matchType = 'title'
+        let matchSnippet = ''
+        let score = 10 - (result.score || 0) * 10
+
+        const bestMatch = result.matches?.[0]
+        if (bestMatch && bestMatch.key === 'folderId') {
+          matchType = 'folder-match'
+        }
+        return { ...item, matchType, matchSnippet, score }
+      })
+
+      // Content Matches (Fast string indexOf for items that didn't match via Fuse)
+      items.forEach((item) => {
+        if (fuseMatchedIds.has(item.id)) return
+        const code = item.code || item.content || ''
+        if (!code) return
+
+        const codeIndex = code.toLowerCase().indexOf(actionQuery)
+        if (codeIndex !== -1) {
+          const start = Math.max(0, codeIndex - 20)
+          const end = Math.min(code.length, codeIndex + actionQuery.length + 40)
+          const matchSnippet =
+            (start > 0 ? '...' : '') + code.slice(start, end) + (end < code.length ? '...' : '')
+          textMatches.push({ ...item, matchType: 'content', matchSnippet, score: 5 })
+        }
+      })
+
+      textMatches.sort((a, b) => b.score - a.score)
+
+      // 2. Semantic Matches
+      const existingIds = new Set(textMatches.map((i) => i.id))
+      const semanticMatches = aiResults
+        .filter((r) => !existingIds.has(r.id))
+        .map((r) => {
+          const item = items.find((i) => i.id === r.id)
+          if (!item) return null
+          return {
+            ...item,
+            matchType: 'semantic',
+            score: r.score * 4,
+            matchSnippet: 'Semantic Match'
+          }
+        })
+        .filter(Boolean)
+
+      const results = [...textMatches, ...semanticMatches]
+
+      // 3. Tags and Mentions matches
+      const tagMatches = tags
+        .filter((t) => t.toLowerCase().includes(lowerQuery))
+        .map((t) => ({
+          id: `tag-${t}`,
+          title: `Tag: ${t}`,
+          matchType: 'tag',
+          action: 'filter',
+          value: t,
+          score: lowerQuery.startsWith('#') ? 100 : 8
+        }))
+
+      const mentionMatches = mentions
+        .filter((m) => m.toLowerCase().includes(lowerQuery))
+        .map((m) => ({
+          id: `mention-${m}`,
+          title: `Mention: ${m}`,
+          matchType: 'mention',
+          action: 'filter',
+          value: m,
+          score: lowerQuery.startsWith('@') ? 100 : 8
+        }))
+
+      const folderMatches = folders
+        .filter((f) => {
+          const folderName = f.split('/').pop() || f
+          return (
+            folderName.toLowerCase().includes(lowerQuery) || f.toLowerCase().includes(lowerQuery)
           )
-        )}
-      </span>
-    )
-  }
+        })
+        .map((f) => {
+          const parts = f.split('/')
+          const folderName = parts.pop() || f
+          const parentPath = parts.join('/')
+          return {
+            id: `folder-${f}`,
+            title: folderName,
+            folderPath: parentPath,
+            matchType: 'folder',
+            action: 'filter',
+            value: f,
+            score: 7
+          }
+        })
 
-  const Row = ({ index, style }) => {
-    const item = filtered[index]
-    const isActive = index === selectedIndex
-    const isSemantic = item.matchType === 'semantic'
-    const isAction = item.matchType === 'action'
+      const finalResults = [...results, ...tagMatches, ...mentionMatches, ...folderMatches].sort(
+        (a, b) => b.score - a.score
+      )
 
-    return (
-      <div
-        style={style}
-        className={`palette-item ${isActive ? 'active' : ''} ${isAction ? 'is-action' : ''}`}
-        onClick={() => {
+      if (isActionQuery) return systemActions
+      return [...systemActions, ...finalResults].slice(0, 50)
+    }, [items, query, aiResults, tags, mentions, folders])
+
+    useEffect(() => {
+      if (selectedIndex >= filtered.length && filtered.length > 0) {
+        setSelectedIndex(filtered.length - 1)
+      }
+    }, [filtered.length, selectedIndex])
+
+    useEffect(() => {
+      if (listRef.current) {
+        listRef.current.scrollToItem(selectedIndex, 'auto')
+      }
+    }, [selectedIndex])
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setSelectedIndex((prev) => (prev + 1) % filtered.length)
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setSelectedIndex((prev) => (prev - 1 + filtered.length) % filtered.length)
+      } else if (e.key === 'Enter') {
+        const item = filtered[selectedIndex]
+        if (item) {
           if (item.action === 'filter') {
             setQuery(item.value + ' ')
             inputRef.current?.focus()
             return
           }
-          if (isAction) {
+          if (item.matchType === 'action') {
             if (item.action === 'settings') onToggleSettings?.()
             else if (item.action === 'new') onNew?.()
             else if (item.action === 'graph') onToggleGraph?.()
@@ -318,141 +263,202 @@ const CommandPalette = React.memo(({
             onSelect(item)
           }
           onClose()
-        }}
-        onMouseMove={() => {
-          if (selectedIndex !== index) setSelectedIndex(index)
-        }}
-      >
-        {isSemantic ? (
-          <Sparkles size={18} className="item-icon semantic" />
-        ) : isAction ? (
-          (() => {
-            if (item.action === 'settings')
-              return <Zap size={18} className="item-icon action-icon" />
-            if (item.action === 'new') return <Plus size={18} className="item-icon action-icon" />
-            if (item.action === 'graph')
-              return <Network size={18} className="item-icon action-icon" />
-            return <Zap size={18} className="item-icon action-icon" />
-          })()
-        ) : item.matchType === 'folder' ? (
-          <Folder size={18} className="item-icon" style={{ color: 'var(--text-accent)', fill: 'var(--text-accent)', fillOpacity: 0.2 }} />
-        ) : item.matchType === 'tag' ? (
-          <Hash size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
-        ) : item.matchType === 'mention' ? (
-          <AtSign size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
-        ) : (
-          (() => {
-            const lang = (item.language || 'markdown').toLowerCase()
-            const title = (item.title || '').toLowerCase()
-            if (
-              ['javascript', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'python', 'py'].includes(lang)
-            )
-              return <FileCode size={18} className="item-icon" />
-            if (lang === 'json') return <FileJson size={18} className="item-icon" />
-            if (lang === 'markdown' || lang === 'md' || title.endsWith('.md'))
-              return <Hash size={18} className="item-icon" />
-            if (['png', 'jpg', 'jpeg', 'gif', 'svg'].some((ext) => title.endsWith('.' + ext)))
-              return <ImageIcon size={18} className="item-icon" />
-            return <FileText size={18} className="item-icon" />
-          })()
-        )}
+        }
+      } else if (e.key === 'Escape') {
+        onClose()
+      }
+    }
 
-        <div className="item-info">
-          <div className="item-title">
-            {item.folderId && item.matchType !== 'folder' && <span className="folder-prefix">{item.folderId}/</span>}
-            <HighlightText text={item.title || 'Untitled'} highlight={query} />
-            {item.id && dirtySnippetIds.includes(item.id) && (
-              <div className="dirty-indicator" style={{ marginLeft: '8px' }} />
-            )}
-          </div>
-          {(item.matchSnippet || item.folderPath) && (
-            <div className={`item-secondary ${isSemantic ? 'semantic-badge' : ''}`}>
-              {isSemantic ? (
-                '✨ AI Match'
-              ) : item.folderPath ? (
-                <span style={{ opacity: 0.6 }}>in {item.folderPath}</span>
-              ) : (
-                <HighlightText text={item.matchSnippet} highlight={query} />
+    // Highlight matching characters
+    const HighlightText = ({ text, highlight }) => {
+      if (!highlight.trim() || text === 'Semantic Match') return <span>{text}</span>
+      const regex = new RegExp(`(${highlight})`, 'gi')
+      const parts = text.split(regex)
+      return (
+        <span>
+          {parts.map((part, i) =>
+            regex.test(part) ? (
+              <mark key={i} className="palette-match">
+                {part}
+              </mark>
+            ) : (
+              <span key={i}>{part}</span>
+            )
+          )}
+        </span>
+      )
+    }
+
+    const Row = ({ index, style }) => {
+      const item = filtered[index]
+      const isActive = index === selectedIndex
+      const isSemantic = item.matchType === 'semantic'
+      const isAction = item.matchType === 'action'
+
+      return (
+        <div
+          style={style}
+          className={`palette-item ${isActive ? 'active' : ''} ${isAction ? 'is-action' : ''}`}
+          onClick={() => {
+            if (item.action === 'filter') {
+              setQuery(item.value + ' ')
+              inputRef.current?.focus()
+              return
+            }
+            if (isAction) {
+              if (item.action === 'settings') onToggleSettings?.()
+              else if (item.action === 'new') onNew?.()
+              else if (item.action === 'graph') onToggleGraph?.()
+            } else if (item.matchType === 'folder') {
+              // Just close, no action
+            } else {
+              onSelect(item)
+            }
+            onClose()
+          }}
+          onMouseMove={() => {
+            if (selectedIndex !== index) setSelectedIndex(index)
+          }}
+        >
+          {isSemantic ? (
+            <Sparkles size={18} className="item-icon semantic" />
+          ) : isAction ? (
+            (() => {
+              if (item.action === 'settings')
+                return <Zap size={18} className="item-icon action-icon" />
+              if (item.action === 'new') return <Plus size={18} className="item-icon action-icon" />
+              if (item.action === 'graph')
+                return <Network size={18} className="item-icon action-icon" />
+              return <Zap size={18} className="item-icon action-icon" />
+            })()
+          ) : item.matchType === 'folder' ? (
+            <Folder
+              size={18}
+              className="item-icon"
+              style={{ color: 'var(--text-accent)', fill: 'var(--text-accent)', fillOpacity: 0.2 }}
+            />
+          ) : item.matchType === 'tag' ? (
+            <Hash size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
+          ) : item.matchType === 'mention' ? (
+            <AtSign size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
+          ) : (
+            (() => {
+              const lang = (item.language || 'markdown').toLowerCase()
+              const title = (item.title || '').toLowerCase()
+              if (
+                ['javascript', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'python', 'py'].includes(
+                  lang
+                )
+              )
+                return <FileCode size={18} className="item-icon" />
+              if (lang === 'json') return <FileJson size={18} className="item-icon" />
+              if (lang === 'markdown' || lang === 'md' || title.endsWith('.md'))
+                return <Hash size={18} className="item-icon" />
+              if (['png', 'jpg', 'jpeg', 'gif', 'svg'].some((ext) => title.endsWith('.' + ext)))
+                return <ImageIcon size={18} className="item-icon" />
+              return <FileText size={18} className="item-icon" />
+            })()
+          )}
+
+          <div className="item-info">
+            <div className="item-title">
+              {item.folderId && item.matchType !== 'folder' && (
+                <span className="folder-prefix">{item.folderId}/</span>
+              )}
+              <HighlightText text={item.title || 'Untitled'} highlight={query} />
+              {item.id && dirtySnippetIds.includes(item.id) && (
+                <div className="dirty-indicator" style={{ marginLeft: '8px' }} />
               )}
             </div>
-          )}
+            {(item.matchSnippet || item.folderPath) && (
+              <div className={`item-secondary ${isSemantic ? 'semantic-badge' : ''}`}>
+                {isSemantic ? (
+                  '✨ AI Match'
+                ) : item.folderPath ? (
+                  <span style={{ opacity: 0.6 }}>in {item.folderPath}</span>
+                ) : (
+                  <HighlightText text={item.matchSnippet} highlight={query} />
+                )}
+              </div>
+            )}
+          </div>
+          {isActive && <Zap size={14} className="item-zap" />}
         </div>
-        {isActive && <Zap size={14} className="item-zap" />}
+      )
+    }
+
+    if (!isOpen) return null
+
+    return (
+      <div className="command-palette-overlay" onClick={onClose}>
+        <div className="command-palette-container" onClick={(e) => e.stopPropagation()}>
+          <div className="palette-input-wrap">
+            <Search size={18} className="palette-search-icon" />
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder="Search notes..."
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value)
+                setSelectedIndex(0)
+              }}
+              onKeyDown={handleKeyDown}
+            />
+            <div className="palette-hint">
+              {aiError ? (
+                <span style={{ color: 'var(--text-error)' }}>⚠️ AI Error: {aiError}</span>
+              ) : (!isModelReady || modelLoadingProgress < 100) && query.length > 2 ? (
+                <span className="loading-status" style={{ color: 'var(--text-accent)' }}>
+                  {modelLoadingProgress > 0
+                    ? `AI Loading ${Math.round(modelLoadingProgress)}%...`
+                    : 'AI Initializing...'}
+                </span>
+              ) : (
+                'ESC to close'
+              )}
+            </div>
+          </div>
+
+          <div
+            className="palette-results"
+            style={{ height: filtered.length > 0 ? Math.min(filtered.length * 48, 320) : 100 }}
+          >
+            {filtered.length > 0 ? (
+              <List
+                ref={listRef}
+                height={Math.min(filtered.length * 48, 320)}
+                itemCount={filtered.length}
+                itemSize={48}
+                width="100%"
+              >
+                {Row}
+              </List>
+            ) : (
+              <div className="palette-empty">No matching notes found</div>
+            )}
+          </div>
+
+          <div className="palette-footer">
+            <div className="footer-tip">
+              <span>
+                <kbd>↑</kbd> <kbd>↓</kbd> to navigate
+              </span>
+              <span>
+                <kbd>↵</kbd> to open
+              </span>
+            </div>
+            <div className="footer-tip">
+              <span>
+                <kbd>ESC</kbd> to dismiss
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
-
-  if (!isOpen) return null
-
-  return (
-    <div className="command-palette-overlay" onClick={onClose}>
-      <div className="command-palette-container" onClick={(e) => e.stopPropagation()}>
-        <div className="palette-input-wrap">
-          <Search size={18} className="palette-search-icon" />
-          <input
-            ref={inputRef}
-            type="text"
-            placeholder="Search notes..."
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value)
-              setSelectedIndex(0)
-            }}
-            onKeyDown={handleKeyDown}
-          />
-          <div className="palette-hint">
-            {aiError ? (
-              <span style={{ color: 'var(--text-error)' }}>⚠️ AI Error: {aiError}</span>
-            ) : (!isModelReady || modelLoadingProgress < 100) && query.length > 2 ? (
-              <span className="loading-status" style={{ color: 'var(--text-accent)' }}>
-                {modelLoadingProgress > 0
-                  ? `AI Loading ${Math.round(modelLoadingProgress)}%...`
-                  : 'AI Initializing...'}
-              </span>
-            ) : (
-              'ESC to close'
-            )}
-          </div>
-        </div>
-
-        <div
-          className="palette-results"
-          style={{ height: filtered.length > 0 ? Math.min(filtered.length * 48, 320) : 100 }}
-        >
-          {filtered.length > 0 ? (
-            <List
-              ref={listRef}
-              height={Math.min(filtered.length * 48, 320)}
-              itemCount={filtered.length}
-              itemSize={48}
-              width="100%"
-            >
-              {Row}
-            </List>
-          ) : (
-            <div className="palette-empty">No matching notes found</div>
-          )}
-        </div>
-
-        <div className="palette-footer">
-          <div className="footer-tip">
-            <span>
-              <kbd>↑</kbd> <kbd>↓</kbd> to navigate
-            </span>
-            <span>
-              <kbd>↵</kbd> to open
-            </span>
-          </div>
-          <div className="footer-tip">
-            <span>
-              <kbd>ESC</kbd> to dismiss
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-})
+)
 
 CommandPalette.displayName = 'CommandPalette'
 

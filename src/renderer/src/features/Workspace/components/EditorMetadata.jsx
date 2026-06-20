@@ -34,19 +34,21 @@ const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef }) => {
         spellCheck="false"
       />
       {error && (
-        <div style={{
-          position: 'absolute',
-          top: '100%',
-          marginTop: '-4px', // Moved up significantly
-          left: '50%',
-          transform: 'translateX(-50%)',
-          color: '#ef4444',
-          fontSize: '8px',
-          fontWeight: '500',
-          pointerEvents: 'none',
-          animation: 'fadeIn 0.2s ease-out',
-          whiteSpace: 'nowrap'
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: '100%',
+            marginTop: '-4px', // Moved up significantly
+            left: '50%',
+            transform: 'translateX(-50%)',
+            color: '#ef4444',
+            fontSize: '8px',
+            fontWeight: '500',
+            pointerEvents: 'none',
+            animation: 'fadeIn 0.2s ease-out',
+            whiteSpace: 'nowrap'
+          }}
+        >
           Title cannot be empty
         </div>
       )}
@@ -54,4 +56,4 @@ const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef }) => {
   )
 }
 
-export default EditorMetadata;
+export default EditorMetadata

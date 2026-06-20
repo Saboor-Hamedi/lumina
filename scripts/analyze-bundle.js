@@ -2,13 +2,13 @@
 
 /**
  * Bundle Size Analysis Script
- * 
+ *
  * Analyzes the production build to identify large dependencies and optimization opportunities.
  * Provides actionable recommendations for reducing bundle size and improving performance.
- * 
+ *
  * Usage:
  *   npm run analyze:bundle
- * 
+ *
  * @module analyze-bundle
  */
 
@@ -54,7 +54,7 @@ function analyzePackageJson() {
   try {
     const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'))
     const dependencies = { ...packageJson.dependencies, ...packageJson.devDependencies }
-    
+
     return {
       dependencies,
       totalDeps: Object.keys(dependencies).length,
@@ -70,7 +70,7 @@ function analyzePackageJson() {
 function analyzeBuildOutput() {
   const distPath = join(projectRoot, 'dist')
   const outPath = join(projectRoot, 'out')
-  
+
   const results = {
     dist: null,
     out: null
@@ -87,7 +87,7 @@ function analyzeBuildOutput() {
     const mainPath = join(outPath, 'main')
     const preloadPath = join(outPath, 'preload')
     const rendererPath = join(outPath, 'renderer')
-    
+
     results.out = {
       main: existsSync(mainPath),
       preload: existsSync(preloadPath),
@@ -116,16 +116,22 @@ function getLargeDependencies() {
   ]
 
   return packageJson.dependencies
-    ? Object.keys(packageJson.dependencies).filter(dep => 
-        largeDeps.some(large => dep.includes(large))
+    ? Object.keys(packageJson.dependencies).filter((dep) =>
+        largeDeps.some((large) => dep.includes(large))
       )
     : []
 }
 
 function generateReport() {
-  console.log(`${colors.bright}${colors.cyan}╔══════════════════════════════════════════════════════════╗${colors.reset}`)
-  console.log(`${colors.bright}${colors.cyan}║        Bundle Size Analysis Report                      ║${colors.reset}`)
-  console.log(`${colors.bright}${colors.cyan}╚══════════════════════════════════════════════════════════╝${colors.reset}\n`)
+  console.log(
+    `${colors.bright}${colors.cyan}╔══════════════════════════════════════════════════════════╗${colors.reset}`
+  )
+  console.log(
+    `${colors.bright}${colors.cyan}║        Bundle Size Analysis Report                      ║${colors.reset}`
+  )
+  console.log(
+    `${colors.bright}${colors.cyan}╚══════════════════════════════════════════════════════════╝${colors.reset}\n`
+  )
 
   // Package.json analysis
   const packageInfo = analyzePackageJson()
@@ -140,7 +146,7 @@ function generateReport() {
   const largeDeps = getLargeDependencies()
   if (largeDeps.length > 0) {
     console.log(`${colors.bright}${colors.yellow}⚠ Large Dependencies Detected:${colors.reset}`)
-    largeDeps.forEach(dep => {
+    largeDeps.forEach((dep) => {
       console.log(`  • ${colors.yellow}${dep}${colors.reset}`)
     })
     console.log('')
@@ -150,17 +156,27 @@ function generateReport() {
   const buildInfo = analyzeBuildOutput()
   console.log(`${colors.bright}Build Output:${colors.reset}`)
   if (buildInfo.dist?.statsFile) {
-    console.log(`  ${colors.green}✓${colors.reset} Vite stats available: ${buildInfo.dist.statsFile}`)
-    console.log(`    ${colors.blue}→${colors.reset} Open in browser to view detailed bundle analysis`)
+    console.log(
+      `  ${colors.green}✓${colors.reset} Vite stats available: ${buildInfo.dist.statsFile}`
+    )
+    console.log(
+      `    ${colors.blue}→${colors.reset} Open in browser to view detailed bundle analysis`
+    )
   } else {
-    console.log(`  ${colors.yellow}⚠${colors.reset} No build stats found. Run: ${colors.cyan}npm run build${colors.reset}`)
+    console.log(
+      `  ${colors.yellow}⚠${colors.reset} No build stats found. Run: ${colors.cyan}npm run build${colors.reset}`
+    )
   }
 
   if (buildInfo.out) {
     const { main, preload, renderer } = buildInfo.out
     console.log(`  ${main ? colors.green + '✓' : colors.red + '✗'}${colors.reset} Main process`)
-    console.log(`  ${preload ? colors.green + '✓' : colors.red + '✗'}${colors.reset} Preload scripts`)
-    console.log(`  ${renderer ? colors.green + '✓' : colors.red + '✗'}${colors.reset} Renderer process`)
+    console.log(
+      `  ${preload ? colors.green + '✓' : colors.red + '✗'}${colors.reset} Preload scripts`
+    )
+    console.log(
+      `  ${renderer ? colors.green + '✓' : colors.red + '✗'}${colors.reset} Renderer process`
+    )
   } else {
     console.log(`  ${colors.yellow}⚠${colors.reset} No build output found`)
   }
@@ -169,13 +185,17 @@ function generateReport() {
 
   // Recommendations
   console.log(`${colors.bright}${colors.magenta}Optimization Recommendations:${colors.reset}`)
-  console.log(`  1. ${colors.cyan}Code Splitting:${colors.reset} Use dynamic imports for heavy components`)
+  console.log(
+    `  1. ${colors.cyan}Code Splitting:${colors.reset} Use dynamic imports for heavy components`
+  )
   console.log(`     • GraphNexus, AIChatPanel, MarkdownEditor`)
   console.log(`  2. ${colors.cyan}Tree Shaking:${colors.reset} Ensure unused code is eliminated`)
   console.log(`     • Check for unused imports in components`)
   console.log(`  3. ${colors.cyan}Lazy Loading:${colors.reset} Load AI models on-demand`)
   console.log(`     • @xenova/transformers can be loaded when needed`)
-  console.log(`  4. ${colors.cyan}Bundle Analysis:${colors.reset} Run ${colors.cyan}npm run analyze${colors.reset}`)
+  console.log(
+    `  4. ${colors.cyan}Bundle Analysis:${colors.reset} Run ${colors.cyan}npm run analyze${colors.reset}`
+  )
   console.log(`     • Opens visual bundle analyzer in browser`)
   console.log('')
 

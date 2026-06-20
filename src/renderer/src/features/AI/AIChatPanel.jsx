@@ -3,18 +3,29 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { createPortal } from 'react-dom'
 import {
-  Copy, ThumbsUp, ThumbsDown, Check, Send,
-  Square, Download, Maximize2, X as CloseIcon,
-  Plus, Trash2, History, MessageSquare, ChevronLeft, ChevronRight,
+  Copy,
+  ThumbsUp,
+  ThumbsDown,
+  Check,
+  Send,
+  Square,
+  Download,
+  Maximize2,
+  X as CloseIcon,
+  Plus,
+  Trash2,
+  History,
+  MessageSquare,
+  ChevronLeft,
+  ChevronRight,
   Sparkles
 } from 'lucide-react'
 import { useAIStore } from '../../core/store/useAIStore'
 import { useVaultStore } from '../../core/store/useVaultStore'
-import { getSnippetIcon } from '../../core/utils/fileIconMapper'
+import { getSnippetIcon } from '../Icons/iconMapper'
 import { Composer } from './Composer'
 import '../Layout/AppShell.css'
 import './AIChatPanel.css'
-
 
 const CodeBlock = React.memo(({ inline, className, children, ...props }) => {
   const match = /language-([a-zA-Z0-9-]+)/.exec(className || '')
@@ -119,7 +130,10 @@ const GeneratedImage = React.memo(({ imageUrl, prompt, onCopy }) => {
       a.href = imageUrl
 
       const basePrompt = prompt || 'generated-image'
-      const filename = basePrompt.slice(0, 30).replace(/[^a-z0-9]/gi, '_').toLowerCase()
+      const filename = basePrompt
+        .slice(0, 30)
+        .replace(/[^a-z0-9]/gi, '_')
+        .toLowerCase()
       a.download = `lumina_${filename}.png`
 
       document.body.appendChild(a)
@@ -197,64 +211,67 @@ const GeneratedImage = React.memo(({ imageUrl, prompt, onCopy }) => {
       </div>
 
       {/* Full screen modal for image - using Portal to escape sidebar container constraints */}
-      {isExpanded && createPortal(
-        <div
-          className="chat-image-modal-overlay"
-          onClick={() => setIsExpanded(false)}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') setIsExpanded(false)
-          }}
-          tabIndex={-1}
-          ref={(el) => el && el.focus()}
-          style={{ cursor: 'zoom-out' }}
-        >
-          <div className="chat-image-modal-view">
-            <button className="chat-image-modal-close-inner" onClick={() => setIsExpanded(false)}>
-              <CloseIcon size={14} />
-            </button>
-            <img
-              src={imageUrl}
-              alt={prompt}
-              className="chat-image-modal-img"
-              onClick={e => e.stopPropagation()}
-              style={{ cursor: 'default' }}
-            />
-          </div>
-        </div>,
-        document.body
-      )}
+      {isExpanded &&
+        createPortal(
+          <div
+            className="chat-image-modal-overlay"
+            onClick={() => setIsExpanded(false)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') setIsExpanded(false)
+            }}
+            tabIndex={-1}
+            ref={(el) => el && el.focus()}
+            style={{ cursor: 'zoom-out' }}
+          >
+            <div className="chat-image-modal-view">
+              <button className="chat-image-modal-close-inner" onClick={() => setIsExpanded(false)}>
+                <CloseIcon size={14} />
+              </button>
+              <img
+                src={imageUrl}
+                alt={prompt}
+                className="chat-image-modal-img"
+                onClick={(e) => e.stopPropagation()}
+                style={{ cursor: 'default' }}
+              />
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   )
 })
 
 GeneratedImage.displayName = 'GeneratedImage'
 
-const MessageContent = React.memo(({ content, imageUrl, imagePrompt, onCopy }) => {
-  // If message has an image, render it
-  if (imageUrl) {
-    return <GeneratedImage imageUrl={imageUrl} prompt={imagePrompt} onCopy={onCopy} />
-  }
+const MessageContent = React.memo(
+  ({ content, imageUrl, imagePrompt, onCopy }) => {
+    // If message has an image, render it
+    if (imageUrl) {
+      return <GeneratedImage imageUrl={imageUrl} prompt={imagePrompt} onCopy={onCopy} />
+    }
 
-  return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
-      components={{
-        pre: ({ children }) => <>{children}</>,
-        code: CodeBlock,
-        table: ({ children }) => (
-          <div className="table-wrapper">
-            <table>{children}</table>
-          </div>
-        )
-      }}
-    >
-      {content}
-    </ReactMarkdown>
-  )
-}, (prevProps, nextProps) => {
-  return prevProps.content === nextProps.content &&
-    prevProps.imageUrl === nextProps.imageUrl
-})
+    return (
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          pre: ({ children }) => <>{children}</>,
+          code: CodeBlock,
+          table: ({ children }) => (
+            <div className="table-wrapper">
+              <table>{children}</table>
+            </div>
+          )
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    )
+  },
+  (prevProps, nextProps) => {
+    return prevProps.content === nextProps.content && prevProps.imageUrl === nextProps.imageUrl
+  }
+)
 
 const ChatActions = ({ msg, index, onCopy, onRate }) => {
   const [copied, setCopied] = useState(false)
@@ -337,13 +354,13 @@ const AIChatPanel = React.memo(() => {
     // Performance: If query is empty, prefer Open Tabs + Recent
     if (!query) {
       const openSnippetObjs = openTabs
-        .map(id => snippets.find(s => s.id === id))
+        .map((id) => snippets.find((s) => s.id === id))
         .filter(Boolean)
 
       // If we have few open tabs, fill with some random/top snippets
       if (openSnippetObjs.length < 5) {
         const others = snippets
-          .filter(s => !openTabs.includes(s.id))
+          .filter((s) => !openTabs.includes(s.id))
           .slice(0, 5 - openSnippetObjs.length)
         return [...openSnippetObjs, ...others]
       }
@@ -351,9 +368,7 @@ const AIChatPanel = React.memo(() => {
     }
 
     // Standard search
-    return snippets
-      .filter(s => s.title.toLowerCase().includes(query))
-      .slice(0, 8)
+    return snippets.filter((s) => s.title.toLowerCase().includes(query)).slice(0, 8)
   }, [mentionState.active, mentionState.query, snippets, openTabs])
 
   const textareaRef = useRef(null)
@@ -385,7 +400,11 @@ const AIChatPanel = React.memo(() => {
     return parts.map((part, i) => {
       if (part.startsWith('@')) {
         // Verify it looks like a valid mention pattern
-        return <span key={i} className="highlight-mention">{part}</span>
+        return (
+          <span key={i} className="highlight-mention">
+            {part}
+          </span>
+        )
       }
       return <span key={i}>{part}</span>
     })
@@ -400,7 +419,7 @@ const AIChatPanel = React.memo(() => {
 
   // Listen for external history toggle (from tab bar button in AppShell)
   useEffect(() => {
-    const handler = () => setShowSessions(prev => !prev)
+    const handler = () => setShowSessions((prev) => !prev)
     window.addEventListener('ai-toggle-history', handler)
     return () => window.removeEventListener('ai-toggle-history', handler)
   }, [])
@@ -457,8 +476,6 @@ const AIChatPanel = React.memo(() => {
     }
   }, [isChatLoading])
 
-
-
   const handleCopy = (text) => {
     navigator.clipboard.writeText(text)
   }
@@ -482,7 +499,7 @@ const AIChatPanel = React.memo(() => {
 
         // Add user message showing the request using the store
         const userMsg = { role: 'user', content: text }
-        const currentMessages = (chatMessages || []).filter(msg => msg.content.trim() !== '')
+        const currentMessages = (chatMessages || []).filter((msg) => msg.content.trim() !== '')
         useAIStore.setState({ chatMessages: [...currentMessages, userMsg] })
 
         setInputValue('')
@@ -563,28 +580,31 @@ const AIChatPanel = React.memo(() => {
   // We keep essential callbacks here
   // Handle input logic is now in Composer
   // We keep essential callbacks here
-  const handleSendMessage = useCallback(async (text, mode = 'Standard') => {
-    // 0. Base validation
-    if ((!text || !text.trim()) && !text.startsWith('/image') && !text.startsWith('/img')) return
+  const handleSendMessage = useCallback(
+    async (text, mode = 'Standard') => {
+      // 0. Base validation
+      if ((!text || !text.trim()) && !text.startsWith('/image') && !text.startsWith('/img')) return
 
-    // 1. Check for Image Generation Command IMMEDIATELY (before mode injection)
-    // Supports "/image <prompt>" or "/img <prompt>"
-    if (text.startsWith('/image ') || text.startsWith('/img ')) {
-      const prompt = text.replace(/^\/(image|img)\s+/, '')
-      try {
-        await generateImage(prompt)
-      } catch (err) {
-        // Error handled in store
+      // 1. Check for Image Generation Command IMMEDIATELY (before mode injection)
+      // Supports "/image <prompt>" or "/img <prompt>"
+      if (text.startsWith('/image ') || text.startsWith('/img ')) {
+        const prompt = text.replace(/^\/(image|img)\s+/, '')
+        try {
+          await generateImage(prompt)
+        } catch (err) {
+          // Error handled in store
+        }
+        return // Stop processing text chat
       }
-      return // Stop processing text chat
-    }
 
-    try {
-      await sendChatMessage(text, [], mode)
-    } catch (err) {
-      console.error('Failed to send:', err)
-    }
-  }, [sendChatMessage, generateImage])
+      try {
+        await sendChatMessage(text, [], mode)
+      } catch (err) {
+        console.error('Failed to send:', err)
+      }
+    },
+    [sendChatMessage, generateImage]
+  )
 
   const insertMention = (snippet) => {
     const before = inputValue.slice(0, mentionState.cursorPos - mentionState.query.length - 1)
@@ -620,7 +640,7 @@ const AIChatPanel = React.memo(() => {
         index: 0
       })
     } else {
-      setMentionState(s => s.active ? { ...s, active: false } : s)
+      setMentionState((s) => (s.active ? { ...s, active: false } : s))
     }
 
     adjustTextareaHeight()
@@ -628,18 +648,18 @@ const AIChatPanel = React.memo(() => {
 
   const visibleMessages = useMemo(() => {
     return chatMessages.filter((msg, index) => {
-      const isEmptyAssistant = msg.role === 'assistant' && !msg.content?.trim() && !msg.imageUrl;
-      const isLastMessage = index === chatMessages.length - 1;
+      const isEmptyAssistant = msg.role === 'assistant' && !msg.content?.trim() && !msg.imageUrl
+      const isLastMessage = index === chatMessages.length - 1
 
       if (isEmptyAssistant) {
         // If it's not the last message, it's a leftover error message. Always hide it.
-        if (!isLastMessage) return false;
+        if (!isLastMessage) return false
         // If it IS the last message, only show it if it's currently generating
-        if (!isChatLoading && !msg.isGenerating) return false;
+        if (!isChatLoading && !msg.isGenerating) return false
       }
-      return true;
-    });
-  }, [chatMessages, isChatLoading]);
+      return true
+    })
+  }, [chatMessages, isChatLoading])
 
   return (
     <div className="chat-container">
@@ -648,10 +668,22 @@ const AIChatPanel = React.memo(() => {
         <div className="sessions-header">
           <History size={14} />
           <span>History</span>
-          <button className="new-chat-btn" onClick={() => { createNewSession(); setShowSessions(false); }} title="New Chat">
+          <button
+            className="new-chat-btn"
+            onClick={() => {
+              createNewSession()
+              setShowSessions(false)
+            }}
+            title="New Chat"
+          >
             <Plus size={14} />
           </button>
-          <button className="new-chat-btn" onClick={() => setShowSessions(false)} title="Close History" style={{ marginLeft: 4 }}>
+          <button
+            className="new-chat-btn"
+            onClick={() => setShowSessions(false)}
+            title="Close History"
+            style={{ marginLeft: 4 }}
+          >
             <CloseIcon size={14} />
           </button>
         </div>
@@ -660,7 +692,10 @@ const AIChatPanel = React.memo(() => {
             <div
               key={s.id}
               className={`session-item ${activeSessionId === s.id ? 'active' : ''}`}
-              onClick={() => { switchSession(s.id); setShowSessions(false); }}
+              onClick={() => {
+                switchSession(s.id)
+                setShowSessions(false)
+              }}
             >
               <MessageSquare size={14} />
               <span className="session-title">{s.title || 'New Chat'}</span>
@@ -679,13 +714,29 @@ const AIChatPanel = React.memo(() => {
       </div>
 
       <div className="chat-main">
-
         <div className="chat-messages">
           {visibleMessages.length === 0 ? (
             <div className="chat-empty">
               <div className="chat-empty-icon">✨</div>
-              <h2 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-main)', margin: '8px 0 4px 0' }}>How can I help you today?</h2>
-              <p style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: '240px', lineHeight: '1.4', margin: '0 0 16px 0' }}>
+              <h2
+                style={{
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  color: 'var(--text-main)',
+                  margin: '8px 0 4px 0'
+                }}
+              >
+                How can I help you today?
+              </h2>
+              <p
+                style={{
+                  fontSize: '13px',
+                  color: 'var(--text-muted)',
+                  maxWidth: '240px',
+                  lineHeight: '1.4',
+                  margin: '0 0 16px 0'
+                }}
+              >
                 I can help you write code, explain complex concepts, or manage your workspace.
               </p>
               {selectedSnippet && (
@@ -702,10 +753,7 @@ const AIChatPanel = React.memo(() => {
               )}
             </div>
           ) : (
-            <div
-              className="chat-msg-list"
-              ref={listRef}
-            >
+            <div className="chat-msg-list" ref={listRef}>
               {visibleMessages.map((msg, index) => (
                 <div
                   key={msg.id || `msg-${index}`}
@@ -722,7 +770,6 @@ const AIChatPanel = React.memo(() => {
                     willChange: 'auto'
                   }}
                 >
-
                   <div
                     className="chat-content-stack"
                     style={{
@@ -741,13 +788,20 @@ const AIChatPanel = React.memo(() => {
                       style={{ maxWidth: '100%', width: '100%' }}
                     >
                       {msg.role === 'assistant' &&
-                        (!msg.content?.trim() && !msg.imageUrl) &&
-                        (index === visibleMessages.length - 1 && isChatLoading || msg.isGenerating) ? (
+                      !msg.content?.trim() &&
+                      !msg.imageUrl &&
+                      ((index === visibleMessages.length - 1 && isChatLoading) ||
+                        msg.isGenerating) ? (
                         <div className="thinking-indicator">
                           {msg.isGenerating ? (
-                            <span className="thinking-text"><Sparkles size={11} className="spin" /> Generating image...</span>
+                            <span className="thinking-text">
+                              <Sparkles size={11} className="spin" /> Generating image...
+                            </span>
                           ) : (
-                            <span className="thinking-text"><span className="thinking-dot-pulse" />Thinking...</span>
+                            <span className="thinking-text">
+                              <span className="thinking-dot-pulse" />
+                              Thinking...
+                            </span>
                           )}
                         </div>
                       ) : (
@@ -788,7 +842,10 @@ const AIChatPanel = React.memo(() => {
                           }}
                         >
                           <div className="thinking-indicator">
-                            <span className="thinking-text"><span className="thinking-dot-pulse" />Thinking...</span>
+                            <span className="thinking-text">
+                              <span className="thinking-dot-pulse" />
+                              Thinking...
+                            </span>
                           </div>
                         </div>
                       )}
@@ -797,7 +854,9 @@ const AIChatPanel = React.memo(() => {
                           <strong>Error:</strong> {chatError}
                           {chatError.includes('API Key') && (
                             <button
-                              onClick={() => window.dispatchEvent(new CustomEvent('open-settings-ai'))}
+                              onClick={() =>
+                                window.dispatchEvent(new CustomEvent('open-settings-ai'))
+                              }
                               style={{
                                 marginTop: '8px',
                                 padding: '4px 8px',
@@ -826,7 +885,10 @@ const AIChatPanel = React.memo(() => {
           )}
         </div>
 
-        <div className="chat-input-area" style={{ padding: 0, background: 'transparent', border: 'none' }}>
+        <div
+          className="chat-input-area"
+          style={{ padding: 0, background: 'transparent', border: 'none' }}
+        >
           <Composer
             onSend={handleSendMessage}
             isLoading={isChatLoading || isImageGenerating}

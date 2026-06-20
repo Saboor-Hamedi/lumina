@@ -26,26 +26,78 @@ const UpdateToast = () => {
     <div className={`update-toast status-${status}`}>
       <div className="toast-content">
         {status === 'checking' && (
-          <div className="toast-header" style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%' }}>
-            <div className="toast-icon-container" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div
+            className="toast-header"
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%' }}
+          >
+            <div
+              className="toast-icon-container"
+              style={{
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
               <Loader2 className="toast-icon spin" size={16} />
             </div>
-            <div className="toast-title-container" style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span className="toast-message" style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-main)' }}>Checking for updates...</span>
+            <div
+              className="toast-title-container"
+              style={{
+                flex: 1,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}
+            >
+              <span
+                className="toast-message"
+                style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-main)' }}
+              >
+                Checking for updates...
+              </span>
             </div>
-            <button className="toast-close" onClick={handleClose}><X size={14} /></button>
+            <button className="toast-close" onClick={handleClose}>
+              <X size={14} />
+            </button>
           </div>
         )}
 
         {status === 'not-available' && (
-          <div className="toast-header" style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%' }}>
-            <div className="toast-icon-container" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div
+            className="toast-header"
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%' }}
+          >
+            <div
+              className="toast-icon-container"
+              style={{
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
               <CheckCircle className="toast-icon" size={16} />
             </div>
-            <div className="toast-title-container" style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span className="toast-message" style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-main)' }}>You are up to date.</span>
+            <div
+              className="toast-title-container"
+              style={{
+                flex: 1,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}
+            >
+              <span
+                className="toast-message"
+                style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-main)' }}
+              >
+                You are up to date.
+              </span>
             </div>
-            <button className="toast-close" onClick={handleClose}><X size={14} /></button>
+            <button className="toast-close" onClick={handleClose}>
+              <X size={14} />
+            </button>
           </div>
         )}
 
@@ -56,15 +108,19 @@ const UpdateToast = () => {
               <div className="toast-title">Update Available</div>
               <div className="toast-desc">v{updateInfo?.version}</div>
             </div>
-            <button className="toast-action" onClick={handleDownload}>Download</button>
-            <button className="toast-close" onClick={handleClose}><X size={14} /></button>
+            <button className="toast-action" onClick={handleDownload}>
+              Download
+            </button>
+            <button className="toast-close" onClick={handleClose}>
+              <X size={14} />
+            </button>
           </>
         )}
 
         {status === 'downloading' && (
           <>
             <Loader2 className="toast-icon spin" size={16} />
-             <div className="toast-text">
+            <div className="toast-text">
               <div className="toast-title">Downloading...</div>
               <div className="toast-progress-bar">
                 <div
@@ -83,8 +139,12 @@ const UpdateToast = () => {
               <div className="toast-title">Update Ready</div>
               <div className="toast-desc">Restart to apply</div>
             </div>
-            <button className="toast-action" onClick={handleInstall}>Restart</button>
-            <button className="toast-close" onClick={handleClose}><X size={14} /></button>
+            <button className="toast-action" onClick={handleInstall}>
+              Restart
+            </button>
+            <button className="toast-close" onClick={handleClose}>
+              <X size={14} />
+            </button>
           </>
         )}
 
@@ -95,7 +155,9 @@ const UpdateToast = () => {
               <div className="toast-title">Update Failed</div>
               <div className="toast-desc">Check logs</div>
             </div>
-            <button className="toast-close" onClick={handleClose}><X size={14} /></button>
+            <button className="toast-close" onClick={handleClose}>
+              <X size={14} />
+            </button>
           </>
         )}
       </div>

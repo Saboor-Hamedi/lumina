@@ -7,7 +7,7 @@ describe('useTheme', () => {
     // Reset localStorage
     localStorage.clear()
     vi.clearAllMocks()
-    
+
     // Reset document
     document.documentElement.removeAttribute('data-theme')
     document.documentElement.style.cssText = ''
@@ -26,7 +26,7 @@ describe('useTheme', () => {
 
   it('applies theme to document and localStorage', () => {
     const { result } = renderHook(() => useTheme())
-    
+
     act(() => {
       result.current.setTheme('light')
     })
@@ -38,11 +38,11 @@ describe('useTheme', () => {
 
   it('clears existing CSS variables when applying theme', () => {
     const { result } = renderHook(() => useTheme())
-    
+
     // Set some CSS variables first
     document.documentElement.style.setProperty('--bg-app', 'red')
     document.documentElement.style.setProperty('--text-main', 'blue')
-    
+
     act(() => {
       result.current.setTheme('dark')
     })
@@ -54,7 +54,7 @@ describe('useTheme', () => {
 
   it('applies custom colors when provided', () => {
     const { result } = renderHook(() => useTheme())
-    
+
     const colors = {
       primary: '#ff0000',
       secondary: '#00ff00',
@@ -73,7 +73,7 @@ describe('useTheme', () => {
 
   it('sets data-theme attribute', () => {
     const { result } = renderHook(() => useTheme())
-    
+
     act(() => {
       result.current.setTheme('light')
     })

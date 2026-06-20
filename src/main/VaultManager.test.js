@@ -38,10 +38,13 @@ describe('VaultManager', () => {
   describe('init', () => {
     it('creates vault directory if it does not exist', async () => {
       const newVaultPath = path.join(os.tmpdir(), `lumina-new-${Date.now()}`)
-      
+
       await VaultManager.init(newVaultPath, os.tmpdir())
 
-      const exists = await fs.access(newVaultPath).then(() => true).catch(() => false)
+      const exists = await fs
+        .access(newVaultPath)
+        .then(() => true)
+        .catch(() => false)
       expect(exists).toBe(true)
 
       // Cleanup
@@ -50,7 +53,10 @@ describe('VaultManager', () => {
 
     it('creates assets directory', async () => {
       const assetsPath = path.join(testVaultPath, 'assets')
-      const exists = await fs.access(assetsPath).then(() => true).catch(() => false)
+      const exists = await fs
+        .access(assetsPath)
+        .then(() => true)
+        .catch(() => false)
       expect(exists).toBe(true)
     })
   })
@@ -118,7 +124,10 @@ describe('VaultManager', () => {
       await VaultManager.saveSnippet(snippet)
 
       const filePath = path.join(testVaultPath, 'Save Test.md')
-      const exists = await fs.access(filePath).then(() => true).catch(() => false)
+      const exists = await fs
+        .access(filePath)
+        .then(() => true)
+        .catch(() => false)
       expect(exists).toBe(true)
 
       const content = await fs.readFile(filePath, 'utf-8')
@@ -148,12 +157,18 @@ describe('VaultManager', () => {
 
       // Old file should not exist
       const oldPath = path.join(testVaultPath, 'Old Title.md')
-      const oldExists = await fs.access(oldPath).then(() => true).catch(() => false)
+      const oldExists = await fs
+        .access(oldPath)
+        .then(() => true)
+        .catch(() => false)
       expect(oldExists).toBe(false)
 
       // New file should exist
       const newPath = path.join(testVaultPath, 'New Title.md')
-      const newExists = await fs.access(newPath).then(() => true).catch(() => false)
+      const newExists = await fs
+        .access(newPath)
+        .then(() => true)
+        .catch(() => false)
       expect(newExists).toBe(true)
     })
 
@@ -178,12 +193,12 @@ describe('VaultManager', () => {
 
       // Check that both files exist (second should have ID suffix)
       const files = await fs.readdir(testVaultPath)
-      const mdFiles = files.filter(f => f.endsWith('.md'))
+      const mdFiles = files.filter((f) => f.endsWith('.md'))
       expect(mdFiles.length).toBe(2)
-      
+
       // One should be "Same Title.md", the other should have a suffix
-      const hasOriginal = mdFiles.some(f => f === 'Same Title.md')
-      const hasSuffixed = mdFiles.some(f => f.startsWith('Same Title-') && f !== 'Same Title.md')
+      const hasOriginal = mdFiles.some((f) => f === 'Same Title.md')
+      const hasSuffixed = mdFiles.some((f) => f.startsWith('Same Title-') && f !== 'Same Title.md')
       expect(hasOriginal || hasSuffixed).toBe(true)
     })
 
@@ -199,7 +214,7 @@ describe('VaultManager', () => {
       await VaultManager.saveSnippet(snippet)
 
       const files = await fs.readdir(testVaultPath)
-      const mdFiles = files.filter(f => f.endsWith('.md'))
+      const mdFiles = files.filter((f) => f.endsWith('.md'))
       expect(mdFiles.length).toBeGreaterThan(0)
       expect(mdFiles[0]).not.toMatch(/[<>:"/\\|?*]/)
     })
@@ -221,7 +236,10 @@ describe('VaultManager', () => {
 
       expect(result).toBe(true)
       const filePath = path.join(testVaultPath, 'Delete Test.md')
-      const exists = await fs.access(filePath).then(() => true).catch(() => false)
+      const exists = await fs
+        .access(filePath)
+        .then(() => true)
+        .catch(() => false)
       expect(exists).toBe(false)
     })
 
@@ -275,7 +293,7 @@ describe('VaultManager', () => {
 
       const snippets = VaultManager.getSnippets()
 
-      expect(snippets.every(s => s && s.id)).toBe(true)
+      expect(snippets.every((s) => s && s.id)).toBe(true)
     })
   })
 })

@@ -53,8 +53,8 @@ function buildDecorations(state) {
           class: 'cb-code-header',
           attributes: {
             'data-cb-lang': lang,
-            'data-cb-id': String(id),
-          },
+            'data-cb-id': String(id)
+          }
         })
       )
     }
@@ -64,10 +64,12 @@ function buildDecorations(state) {
 }
 
 export const codeBlockDecorations = StateField.define({
-  create(state) { return buildDecorations(state) },
+  create(state) {
+    return buildDecorations(state)
+  },
   update(decorations, tr) {
     if (tr.docChanged) return buildDecorations(tr.state)
     return decorations
   },
-  provide: f => EditorView.decorations.from(f),
+  provide: (f) => EditorView.decorations.from(f)
 })

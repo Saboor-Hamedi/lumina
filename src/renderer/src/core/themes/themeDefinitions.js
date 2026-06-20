@@ -338,7 +338,7 @@ export const THEMES = {
   githubDark: {
     id: 'githubDark',
     name: 'GitHub Dark',
-    description: 'GitHub\'s signature dark aesthetic',
+    description: "GitHub's signature dark aesthetic",
     colors: {
       '--bg-app': '#0d1117',
       '--bg-sidebar': '#010409',
@@ -567,7 +567,6 @@ export const THEMES = {
   }
 }
 
-
 /**
  * Get theme by ID
  */
@@ -586,7 +585,7 @@ export const getThemeIds = () => {
  * Apply theme to document
  * Applies all theme colors including caret styling
  * Caret color matches theme accent unless user has set a custom color
- * 
+ *
  * @param {string} themeId - Theme identifier
  */
 export const applyTheme = (themeId) => {

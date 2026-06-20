@@ -19,17 +19,17 @@ function initAudio() {
     const length = Math.floor(sampleRate * 0.06) // 60ms click
     clickBuffer = audioCtx.createBuffer(1, length, sampleRate)
     const data = clickBuffer.getChannelData(0)
-    
+
     for (let i = 0; i < length; i++) {
       const t = i / sampleRate
-      
+
       // Fast attack (2ms), exponential decay
-      const envelope = t < 0.002 ? (t / 0.002) : Math.exp(-(t - 0.002) * 60)
-      
+      const envelope = t < 0.002 ? t / 0.002 : Math.exp(-(t - 0.002) * 60)
+
       // High-frequency noise for the plastic impact + a tiny resonance sweep
       const noise = (Math.random() * 2 - 1) * 0.6
       const resonance = Math.sin(2 * Math.PI * (800 - 4000 * t) * t) * 0.4
-      
+
       data[i] = (noise + resonance) * envelope
     }
   }
@@ -70,16 +70,14 @@ export function useTypingSound() {
       // Play only for actual typing (printable chars + some control keys)
       const isTypingKey = e.key.length === 1 || ['Backspace', 'Enter', ' ', 'Tab'].includes(e.key)
       if (!isTypingKey) return
-      
+
       // Don't play if Ctrl/Alt/Meta is held (keyboard shortcuts)
       if (e.ctrlKey || e.altKey || e.metaKey) return
 
       // Don't play if focus is not inside an editor
       const activeEl = document.activeElement
-      const isEditor = activeEl && (
-        activeEl.closest('.cm-editor') ||
-        activeEl.closest('.ProseMirror')
-      )
+      const isEditor =
+        activeEl && (activeEl.closest('.cm-editor') || activeEl.closest('.ProseMirror'))
 
       if (isEditor) {
         playSound()

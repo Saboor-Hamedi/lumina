@@ -23,9 +23,7 @@ const IndexingStatus = () => {
     if (!stats) return
 
     const isComplete =
-      stats.progress >= 100 ||
-      stats.stage === 'up-to-date' ||
-      stats.stage === 'completed'
+      stats.progress >= 100 || stats.stage === 'up-to-date' || stats.stage === 'completed'
 
     if (!isComplete) return
 
@@ -40,9 +38,7 @@ const IndexingStatus = () => {
   if (!isVisible || !stats) return null
 
   const isComplete =
-    stats.progress >= 100 ||
-    stats.stage === 'up-to-date' ||
-    stats.stage === 'completed'
+    stats.progress >= 100 || stats.stage === 'up-to-date' || stats.stage === 'completed'
 
   // Ensure progress remains visually bounded between 0 and 100
   const safeProgress = Math.min(100, Math.max(0, stats.progress || 0))
@@ -57,30 +53,23 @@ const IndexingStatus = () => {
             <Loader2 size={14} className="indexing-icon-spin" />
           )}
         </div>
-        
+
         <div className="indexing-status-title-container">
-          <span className="indexing-status-title">
-            {isComplete ? 'Indexed' : 'Indexing'}
-          </span>
-          <span className="indexing-status-percent">
-            {Math.round(safeProgress)}%
-          </span>
+          <span className="indexing-status-title">{isComplete ? 'Indexed' : 'Indexing'}</span>
+          <span className="indexing-status-percent">{Math.round(safeProgress)}%</span>
         </div>
       </div>
-      
+
       <div className="indexing-status-bar-bg">
-        <div 
-          className="indexing-status-bar-fill" 
-          style={{ width: `${safeProgress}%` }}
-        />
+        <div className="indexing-status-bar-fill" style={{ width: `${safeProgress}%` }} />
       </div>
-      
+
       <div className="indexing-status-details">
         {stats.stage === 'scanning' || stats.stage === 'checking'
           ? `Scanning ${stats.found || stats.total || 0} files...`
           : stats.stage === 'up-to-date' || stats.stage === 'completed' || stats.progress >= 100
-          ? 'Index is complete'
-          : `Processed ${stats.indexed || 0} of ${stats.total || 0} files`}
+            ? 'Index is complete'
+            : `Processed ${stats.indexed || 0} of ${stats.total || 0} files`}
       </div>
     </div>
   )

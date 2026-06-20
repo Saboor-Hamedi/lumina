@@ -2,7 +2,7 @@
 
 /**
  * Lumina Performance Workbench
- * 
+ *
  * Measures performance metrics across the entire codebase:
  * - Main process initialization
  * - Renderer initialization
@@ -89,7 +89,7 @@ class PerformanceWorkbench {
     const status = error ? '✗' : '✓'
     const statusColor = error ? 'red' : 'green'
     this.log(`  ${status} ${name}: ${this.formatTime(duration)}`, statusColor)
-    
+
     if (error) {
       this.log(`    Error: ${error.message}`, 'red')
     } else if (memDelta.heapUsed > 0) {
@@ -101,7 +101,7 @@ class PerformanceWorkbench {
 
   async analyzeCodebase() {
     this.log('\n📊 Analyzing Codebase Structure...', 'cyan')
-    
+
     const stats = {
       totalFiles: 0,
       totalLines: 0,
@@ -120,17 +120,19 @@ class PerformanceWorkbench {
 
     async function walkDir(dir, baseDir = dir) {
       const entries = await fs.readdir(dir, { withFileTypes: true })
-      
+
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name)
         const relPath = path.relative(baseDir, fullPath)
-        
+
         // Skip node_modules, build, out, .git
-        if (entry.name.startsWith('.') || 
-            entry.name === 'node_modules' || 
-            entry.name === 'build' || 
-            entry.name === 'out' ||
-            entry.name === 'dist') {
+        if (
+          entry.name.startsWith('.') ||
+          entry.name === 'node_modules' ||
+          entry.name === 'build' ||
+          entry.name === 'out' ||
+          entry.name === 'dist'
+        ) {
           continue
         }
 
@@ -141,10 +143,10 @@ class PerformanceWorkbench {
           const type = ext || 'no-ext'
           stats.totalFiles++
           stats.byType[type] = (stats.byType[type] || 0) + 1
-          
+
           const dirName = path.dirname(relPath)
           stats.byDirectory[dirName] = (stats.byDirectory[dirName] || 0) + 1
-          
+
           const lines = await countLines(fullPath)
           stats.totalLines += lines
         }
@@ -152,20 +154,20 @@ class PerformanceWorkbench {
     }
 
     await walkDir(path.join(projectRoot, 'src'))
-    
+
     this.results.codebase = stats
     this.log(`  ✓ Total files: ${stats.totalFiles}`, 'green')
     this.log(`  ✓ Total lines: ${stats.totalLines.toLocaleString()}`, 'green')
-    
+
     return stats
   }
 
   async measureFileOperations() {
     this.log('\n📁 Measuring File Operations...', 'cyan')
-    
+
     const testDir = path.join(projectRoot, '.workbench-test')
     const testFile = path.join(testDir, 'test.md')
-    
+
     try {
       // Create test directory
       await this.measure('Create directory', async () => {
@@ -207,7 +209,7 @@ class PerformanceWorkbench {
 
   async measureJSONOperations() {
     this.log('\n📄 Measuring JSON Operations...', 'cyan')
-    
+
     const testData = {
       snippets: Array.from({ length: 1000 }, (_, i) => ({
         id: `snippet-${i}`,
@@ -224,20 +226,20 @@ class PerformanceWorkbench {
     })
 
     const jsonString = JSON.stringify(testData)
-    
+
     await this.measure('JSON.parse (1000 items)', async () => {
       return JSON.parse(jsonString)
     })
 
     await this.measure('JSON.parse + filter', async () => {
       const parsed = JSON.parse(jsonString)
-      return parsed.snippets.filter(s => s.language === 'markdown')
+      return parsed.snippets.filter((s) => s.language === 'markdown')
     })
   }
 
   async measureSearchOperations() {
     this.log('\n🔍 Measuring Search Operations...', 'cyan')
-    
+
     // Simulate search index
     const index = Array.from({ length: 5000 }, (_, i) => ({
       id: `chunk-${i}`,
@@ -251,14 +253,12 @@ class PerformanceWorkbench {
     // Simple text search
     await this.measure('Text search (5000 items)', async () => {
       const query = 'topic 5'
-      return index.filter(item => 
-        item.text.toLowerCase().includes(query.toLowerCase())
-      )
+      return index.filter((item) => item.text.toLowerCase().includes(query.toLowerCase()))
     })
 
     // Filter by type
     await this.measure('Filter by type (5000 items)', async () => {
-      return index.filter(item => item.type === 'snippet')
+      return index.filter((item) => item.type === 'snippet')
     })
 
     // Sort by ID
@@ -268,13 +268,13 @@ class PerformanceWorkbench {
 
     // Map operation
     await this.measure('Map operation (5000 items)', async () => {
-      return index.map(item => ({ id: item.id, filePath: item.filePath }))
+      return index.map((item) => ({ id: item.id, filePath: item.filePath }))
     })
   }
 
   async measureStoreOperations() {
     this.log('\n💾 Measuring Store Operations...', 'cyan')
-    
+
     // Simulate Zustand-like store operations
     const store = {
       snippets: [],
@@ -295,15 +295,15 @@ class PerformanceWorkbench {
     })
 
     await this.measure('Store: Find snippet by ID', async () => {
-      return store.snippets.find(s => s.id === 'snippet-500')
+      return store.snippets.find((s) => s.id === 'snippet-500')
     })
 
     await this.measure('Store: Filter snippets', async () => {
-      return store.snippets.filter(s => s.timestamp > Date.now() - 86400000)
+      return store.snippets.filter((s) => s.timestamp > Date.now() - 86400000)
     })
 
     await this.measure('Store: Update snippet', async () => {
-      store.snippets = store.snippets.map(s => 
+      store.snippets = store.snippets.map((s) =>
         s.id === 'snippet-500' ? { ...s, title: 'Updated' } : s
       )
     })
@@ -315,7 +315,7 @@ class PerformanceWorkbench {
 
   async measureComponentOperations() {
     this.log('\n⚛️  Measuring Component Operations...', 'cyan')
-    
+
     // Simulate React component operations
     const components = Array.from({ length: 100 }, (_, i) => ({
       id: `component-${i}`,
@@ -324,11 +324,11 @@ class PerformanceWorkbench {
     }))
 
     await this.measure('Component: Map render (100 items)', async () => {
-      return components.map(c => ({ ...c, rendered: true }))
+      return components.map((c) => ({ ...c, rendered: true }))
     })
 
     await this.measure('Component: Filter active (100 items)', async () => {
-      return components.filter(c => c.state.active)
+      return components.filter((c) => c.state.active)
     })
 
     await this.measure('Component: Reduce count (100 items)', async () => {
@@ -338,7 +338,7 @@ class PerformanceWorkbench {
 
   async measureMarkdownOperations() {
     this.log('\n📝 Measuring Markdown Operations...', 'cyan')
-    
+
     const markdownContent = `# Title
 
 This is a **bold** statement and this is *italic*.
@@ -382,34 +382,25 @@ const code = "example";
 
     // Group results by category
     const categories = {
-      'File Operations': Object.keys(this.results).filter(k => 
-        k.includes('file') || k.includes('directory') || k.includes('Write') || k.includes('Read')
+      'File Operations': Object.keys(this.results).filter(
+        (k) =>
+          k.includes('file') || k.includes('directory') || k.includes('Write') || k.includes('Read')
       ),
-      'JSON Operations': Object.keys(this.results).filter(k => 
-        k.includes('JSON')
+      'JSON Operations': Object.keys(this.results).filter((k) => k.includes('JSON')),
+      'Search Operations': Object.keys(this.results).filter(
+        (k) => k.includes('search') || k.includes('Filter') || k.includes('Sort')
       ),
-      'Search Operations': Object.keys(this.results).filter(k => 
-        k.includes('search') || k.includes('Filter') || k.includes('Sort')
-      ),
-      'Store Operations': Object.keys(this.results).filter(k => 
-        k.includes('Store')
-      ),
-      'Component Operations': Object.keys(this.results).filter(k => 
-        k.includes('Component')
-      ),
-      'Markdown Operations': Object.keys(this.results).filter(k => 
-        k.includes('Markdown')
-      )
+      'Store Operations': Object.keys(this.results).filter((k) => k.includes('Store')),
+      'Component Operations': Object.keys(this.results).filter((k) => k.includes('Component')),
+      'Markdown Operations': Object.keys(this.results).filter((k) => k.includes('Markdown'))
     }
 
     // Summary
-    const totalTests = Object.keys(this.results).filter(k => k !== 'codebase').length
-    const passedTests = Object.values(this.results)
-      .filter(r => r.success !== false)
-      .length - 1 // Exclude codebase
+    const totalTests = Object.keys(this.results).filter((k) => k !== 'codebase').length
+    const passedTests = Object.values(this.results).filter((r) => r.success !== false).length - 1 // Exclude codebase
     const failedTests = totalTests - passedTests
     const totalTime = Object.values(this.results)
-      .filter(r => r.duration)
+      .filter((r) => r.duration)
       .reduce((sum, r) => sum + r.duration, 0)
 
     this.log(`\n📈 Summary:`, 'cyan')
@@ -425,7 +416,7 @@ const code = "example";
       this.log(`\n📁 Codebase:`, 'cyan')
       this.log(`  Files: ${this.results.codebase.totalFiles}`, 'bright')
       this.log(`  Lines: ${this.results.codebase.totalLines.toLocaleString()}`, 'bright')
-      
+
       const topTypes = Object.entries(this.results.codebase.byType)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5)
@@ -438,16 +429,16 @@ const code = "example";
     // Performance by category
     for (const [category, tests] of Object.entries(categories)) {
       if (tests.length === 0) continue
-      
+
       this.log(`\n${category}:`, 'cyan')
       const categoryTime = tests.reduce((sum, test) => {
         return sum + (this.results[test]?.duration || 0)
       }, 0)
-      
-      tests.forEach(test => {
+
+      tests.forEach((test) => {
         const result = this.results[test]
         if (!result) return
-        
+
         const status = result.success !== false ? '✓' : '✗'
         const color = result.success !== false ? 'green' : 'red'
         this.log(`  ${status} ${test}: ${this.formatTime(result.duration)}`, color)
@@ -481,7 +472,7 @@ const code = "example";
 
       const totalTime = performance.now() - this.startTime
       this.log(`\n✅ Workbench completed in ${this.formatTime(totalTime)}`, 'green')
-      
+
       await this.generateReport()
     } catch (err) {
       this.log(`\n❌ Workbench failed: ${err.message}`, 'red')
@@ -493,7 +484,7 @@ const code = "example";
 
 // Run workbench
 const workbench = new PerformanceWorkbench()
-workbench.run().catch(err => {
+workbench.run().catch((err) => {
   console.error('Fatal error:', err)
   process.exit(1)
 })

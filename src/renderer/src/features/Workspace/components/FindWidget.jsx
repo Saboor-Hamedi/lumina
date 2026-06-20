@@ -218,7 +218,16 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
         setMatchCount({ current: 0, total: 0 })
       }
     }, 0)
-  }, [editorView, searchQuery, replaceQuery, matches, currentIndex, matchCase, matchWholeWord, useRegex])
+  }, [
+    editorView,
+    searchQuery,
+    replaceQuery,
+    matches,
+    currentIndex,
+    matchCase,
+    matchWholeWord,
+    useRegex
+  ])
 
   const handleReplaceAll = useCallback(() => {
     if (!editorView || !searchQuery || matches.length === 0) return
@@ -266,7 +275,7 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
       } else if (e.key === 'h' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault()
         e.stopPropagation()
-        setIsReplaceMode(prev => !prev)
+        setIsReplaceMode((prev) => !prev)
       } else if (e.key === 'f' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault()
         e.stopPropagation()
@@ -295,7 +304,7 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
       } else if (e.key === 'h' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault()
         e.stopPropagation()
-        setIsReplaceMode(prev => !prev)
+        setIsReplaceMode((prev) => !prev)
         setTimeout(() => {
           searchInputRef.current?.focus()
           searchInputRef.current?.select()
@@ -437,11 +446,7 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
           >
             <Replace size={12} />
           </button>
-          <button
-            className="find-close-btn"
-            onClick={onClose}
-            title="Close (Esc)"
-          >
+          <button className="find-close-btn" onClick={onClose} title="Close (Esc)">
             <X size={12} />
           </button>
         </div>

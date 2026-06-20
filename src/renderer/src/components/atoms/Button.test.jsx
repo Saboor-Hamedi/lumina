@@ -37,13 +37,17 @@ describe('Button Component', () => {
     const handleClick = vi.fn()
     const user = userEvent.setup()
     render(<Button onClick={handleClick}>Click me</Button>)
-    
+
     await user.click(screen.getByText('Click me'))
     expect(handleClick).toHaveBeenCalledTimes(1)
   })
 
   it('passes through other props', () => {
-    render(<Button data-testid="test-button" disabled>Test</Button>)
+    render(
+      <Button data-testid="test-button" disabled>
+        Test
+      </Button>
+    )
     const button = screen.getByTestId('test-button')
     expect(button).toBeDisabled()
   })

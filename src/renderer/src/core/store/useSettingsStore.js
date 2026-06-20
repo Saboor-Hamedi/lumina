@@ -30,7 +30,7 @@ export const useSettingsStore = create((set, get) => ({
     deepSeekKey: null,
     deepSeekModel: 'deepseek-chat',
     huggingFaceKey: null,
-    
+
     // New Multi-Provider Support
     activeProvider: 'deepseek', // 'deepseek', 'openai', 'anthropic', 'ollama'
     activeModel: null, // If null, provider uses its default
@@ -58,9 +58,9 @@ export const useSettingsStore = create((set, get) => ({
           // Deep merge or spread is fine for flat settings. Spread prioritizes 'allSettings' (persisted).
           // But we want to ensure keys present in 'currentSettings' (defaults) but missing in 'allSettings' are kept.
           const mergedSettings = { ...currentSettings, ...allSettings }
-          
+
           set({ settings: mergedSettings, isLoading: false })
-          
+
           // Apply side effects using merged settings
           const root = document.documentElement
           root.setAttribute('data-theme', mergedSettings.theme)
@@ -68,7 +68,10 @@ export const useSettingsStore = create((set, get) => ({
           root.style.setProperty('--font-size-editor', `${mergedSettings.fontSize}px`)
           root.setAttribute('data-translucency', mergedSettings.translucency ? 'true' : 'false')
           root.setAttribute('data-mirror-mode', mergedSettings.mirrorMode ? 'true' : 'false')
-          document.body.setAttribute('data-mirror-mode', mergedSettings.mirrorMode ? 'true' : 'false')
+          document.body.setAttribute(
+            'data-mirror-mode',
+            mergedSettings.mirrorMode ? 'true' : 'false'
+          )
           // Apply window effect via IPC
           if (window.api && window.api.setTranslucency) {
             window.api.setTranslucency(mergedSettings.translucency)
@@ -83,15 +86,21 @@ export const useSettingsStore = create((set, get) => ({
                   const active = get().settings
                   const updatedParams = { ...active, ...newSettings }
                   set({ settings: updatedParams })
-                  
+
                   const root = document.documentElement
                   root.setAttribute('data-theme', updatedParams.theme)
                   root.style.setProperty('--font-editor', updatedParams.fontFamily)
                   root.style.setProperty('--font-size-editor', `${updatedParams.fontSize}px`)
                   root.style.setProperty('--cursor-style', updatedParams.cursorStyle)
-                  root.setAttribute('data-translucency', updatedParams.translucency ? 'true' : 'false')
+                  root.setAttribute(
+                    'data-translucency',
+                    updatedParams.translucency ? 'true' : 'false'
+                  )
                   root.setAttribute('data-mirror-mode', updatedParams.mirrorMode ? 'true' : 'false')
-                  document.body.setAttribute('data-mirror-mode', updatedParams.mirrorMode ? 'true' : 'false')
+                  document.body.setAttribute(
+                    'data-mirror-mode',
+                    updatedParams.mirrorMode ? 'true' : 'false'
+                  )
                   if (window.api && window.api.setTranslucency) {
                     window.api.setTranslucency(updatedParams.translucency)
                   }
@@ -124,7 +133,10 @@ export const useSettingsStore = create((set, get) => ({
               root.style.setProperty('--font-size-editor', `${mergedSettings.fontSize}px`)
               root.setAttribute('data-translucency', mergedSettings.translucency ? 'true' : 'false')
               root.setAttribute('data-mirror-mode', mergedSettings.mirrorMode ? 'true' : 'false')
-              document.body.setAttribute('data-mirror-mode', mergedSettings.mirrorMode ? 'true' : 'false')
+              document.body.setAttribute(
+                'data-mirror-mode',
+                mergedSettings.mirrorMode ? 'true' : 'false'
+              )
               if (window.api && window.api.setTranslucency) {
                 window.api.setTranslucency(mergedSettings.translucency)
               }
@@ -140,12 +152,18 @@ export const useSettingsStore = create((set, get) => ({
                       root.style.setProperty('--font-editor', merged.fontFamily)
                       root.style.setProperty('--font-size-editor', `${merged.fontSize}px`)
                       root.style.setProperty('--cursor-style', newSettings.cursorStyle)
-                      root.setAttribute('data-translucency', newSettings.translucency ? 'true' : 'false')
+                      root.setAttribute(
+                        'data-translucency',
+                        newSettings.translucency ? 'true' : 'false'
+                      )
                       if (window.api && window.api.setTranslucency) {
                         window.api.setTranslucency(newSettings.translucency)
                       }
                     } catch (err) {
-                      console.error('[useSettingsStore] Error applying external settings (retry):', err)
+                      console.error(
+                        '[useSettingsStore] Error applying external settings (retry):',
+                        err
+                      )
                     }
                   })
                   set({ settingsWatcherUnsubscribe: unsub })

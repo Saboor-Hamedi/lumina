@@ -1,8 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import {
-  Send, Zap, Brain, Palette, Code, Square,
-  ChevronDown
-} from 'lucide-react'
+import { Send, Zap, Brain, Palette, Code, Square, ChevronDown } from 'lucide-react'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import './Composer.css'
 import { SlashCommandMenu } from './SlashCommandMenu'
@@ -26,7 +23,8 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
         textareaRef.current.style.height = 'auto'
         const nextHeight = Math.min(textareaRef.current.scrollHeight, 140)
         textareaRef.current.style.height = `${nextHeight}px`
-        textareaRef.current.style.overflowY = textareaRef.current.scrollHeight > 140 ? 'auto' : 'hidden'
+        textareaRef.current.style.overflowY =
+          textareaRef.current.scrollHeight > 140 ? 'auto' : 'hidden'
       }
     }
   }, [input])
@@ -50,7 +48,10 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
 
   const handleKeyDown = (e) => {
     if (showSlashMenu) {
-      if (e.key === 'Enter') { e.preventDefault(); return }
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        return
+      }
     }
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -67,20 +68,24 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
 
   const getProviderLabel = () => {
     switch (settings.activeProvider) {
-      case 'openai':    return '🤖 GPT-4o'
-      case 'anthropic': return '🧠 Claude'
-      case 'ollama':    return '🦙 Ollama'
-      default:          return '🐋 DeepSeek'
+      case 'openai':
+        return '🤖 GPT-4o'
+      case 'anthropic':
+        return '🧠 Claude'
+      case 'ollama':
+        return '🦙 Ollama'
+      default:
+        return '🐋 DeepSeek'
     }
   }
 
   const toggleProvider = () => window.dispatchEvent(new CustomEvent('open-ai-settings'))
 
   const modes = [
-    { id: 'Fast',     icon: <Zap size={13} />,    title: 'Fast mode' },
-    { id: 'Thinking', icon: <Brain size={13} />,  title: 'Thinking mode' },
+    { id: 'Fast', icon: <Zap size={13} />, title: 'Fast mode' },
+    { id: 'Thinking', icon: <Brain size={13} />, title: 'Thinking mode' },
     { id: 'Creative', icon: <Palette size={13} />, title: 'Creative mode' },
-    { id: 'Coder',    icon: <Code size={13} />,   title: 'Coder mode' },
+    { id: 'Coder', icon: <Code size={13} />, title: 'Coder mode' }
   ]
 
   return (
@@ -94,7 +99,6 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
 
       {/* Unified Card */}
       <div className="composer-card">
-
         {/* Textarea */}
         <textarea
           ref={textareaRef}
@@ -109,20 +113,15 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
 
         {/* Inner Footer — model, modes, char count, send */}
         <div className="composer-inner-footer">
-
           {/* Left: model pill + mode toggles */}
           <div className="composer-left">
-            <button
-              className="model-pill"
-              onClick={toggleProvider}
-              title="Change AI model"
-            >
+            <button className="model-pill" onClick={toggleProvider} title="Change AI model">
               {getProviderLabel()}
               <ChevronDown size={10} />
             </button>
 
             <div className="composer-modes">
-              {modes.map(m => (
+              {modes.map((m) => (
                 <button
                   key={m.id}
                   className={`mode-btn ${mode === m.id ? 'active' : ''}`}
@@ -137,12 +136,8 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
 
           {/* Right: char count + send/stop */}
           <div className="composer-right">
-            {input.length > 0 && (
-              <span className="char-count">{input.length}</span>
-            )}
-            {mode !== 'Standard' && (
-              <span className="mode-badge">{mode}</span>
-            )}
+            {input.length > 0 && <span className="char-count">{input.length}</span>}
+            {mode !== 'Standard' && <span className="mode-badge">{mode}</span>}
 
             {isLoading ? (
               <button className="send-btn stop" onClick={onCancel} title="Stop generation">

@@ -21,7 +21,10 @@ const ColorModal = ({ isOpen, onClose, currentColor, onSelect }) => {
               <div
                 key={c.hex || 'none'}
                 className={`color-swatch-wrap ${isActive ? 'active' : ''}`}
-                onClick={() => { onSelect(c.hex); onClose() }}
+                onClick={() => {
+                  onSelect(c.hex)
+                  onClose()
+                }}
                 title={c.label}
               >
                 <div

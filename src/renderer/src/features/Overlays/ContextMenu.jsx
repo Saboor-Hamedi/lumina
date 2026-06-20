@@ -17,18 +17,18 @@ const ContextMenu = ({ x, y, options, onClose }) => {
   const menuY = Math.min(y, window.innerHeight - (options.length * 40 + 20))
 
   return createPortal(
-    <div 
-      className="context-menu" 
+    <div
+      className="context-menu"
       style={{ left: menuX, top: menuY }}
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
     >
       {options.map((opt, i) => {
         if (opt.type === 'divider') return <div key={i} className="menu-divider" />
-        
+
         return (
-          <div 
-            key={i} 
+          <div
+            key={i}
             className={`menu-item ${opt.danger ? 'danger' : ''}`}
             onClick={() => {
               opt.onClick()
@@ -37,9 +37,7 @@ const ContextMenu = ({ x, y, options, onClose }) => {
           >
             <span className="menu-label">{opt.label}</span>
             {opt.shortcut && <span className="menu-shortcut">{opt.shortcut}</span>}
-            <div className="menu-icon-right">
-              {opt.icon}
-            </div>
+            <div className="menu-icon-right">{opt.icon}</div>
           </div>
         )
       })}

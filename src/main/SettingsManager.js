@@ -46,7 +46,7 @@ class SettingsManager {
   async init(vaultPath) {
     const luminaDir = path.join(vaultPath, '.lumina')
     this.settingsPath = path.join(luminaDir, 'settings.json')
-    
+
     // Ensure .lumina directory exists
     try {
       await fs.mkdir(luminaDir, { recursive: true })
@@ -105,7 +105,7 @@ class SettingsManager {
         }
 
         // Call registered callbacks
-        this.onChangeCallbacks.forEach(cb => {
+        this.onChangeCallbacks.forEach((cb) => {
           try {
             cb(this.cache)
           } catch (err) {
@@ -125,7 +125,7 @@ class SettingsManager {
   onChange(callback) {
     this.onChangeCallbacks.push(callback)
     return () => {
-      this.onChangeCallbacks = this.onChangeCallbacks.filter(cb => cb !== callback)
+      this.onChangeCallbacks = this.onChangeCallbacks.filter((cb) => cb !== callback)
     }
   }
 
@@ -156,7 +156,7 @@ class SettingsManager {
       if (this.pendingSave) return this.pendingSave
       this.pendingSave = (async () => {
         while (this.isWriting) {
-          await new Promise(resolve => setTimeout(resolve, 50))
+          await new Promise((resolve) => setTimeout(resolve, 50))
         }
         await this.save()
         this.pendingSave = null
@@ -187,7 +187,7 @@ class SettingsManager {
       this.ignoreWatchEventsUntil = Date.now() + 2000
 
       // Slight delay to allow OS/Chokidar to settle
-      await new Promise(resolve => setTimeout(resolve, 30))
+      await new Promise((resolve) => setTimeout(resolve, 30))
       this.isWriting = false
     } catch (err) {
       console.error('[SettingsManager] Failed to save settings:', err)

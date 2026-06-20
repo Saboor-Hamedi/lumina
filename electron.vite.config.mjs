@@ -28,10 +28,11 @@ export default defineConfig(({ mode }) => ({
     },
     plugins: [
       react(),
-      mode === 'analyze' && visualizer({
-        filename: 'stats-renderer.html',
-        open: true
-      })
+      mode === 'analyze' &&
+        visualizer({
+          filename: 'stats-renderer.html',
+          open: true
+        })
     ],
     css: {
       postcss: './postcss.config.js'

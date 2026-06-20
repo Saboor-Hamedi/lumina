@@ -58,7 +58,7 @@ export const useKeyboardShortcuts = (shortcuts) => {
     const handleOtherKeys = (e) => {
       const isCmd = e.ctrlKey || e.metaKey
       const key = e.key.toLowerCase()
-      
+
       // Tab Navigation: Ctrl+Tab (next) / Ctrl+Shift+Tab (previous) - Check first before other shortcuts
       if (isCmd && e.key === 'Tab') {
         if (shortcutsRef.current.onNextTab || shortcutsRef.current.onPreviousTab) {

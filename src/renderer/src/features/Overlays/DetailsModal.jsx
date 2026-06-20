@@ -9,7 +9,7 @@ import './DetailsModal.css'
  * DetailsModal Component
  * Displays file metadata and statistics in a modal overlay.
  * Replaces the metadata tab in the right sidebar for better space utilization.
- * 
+ *
  * @param {Object} props - Component props
  * @param {boolean} props.isOpen - Whether the modal is open
  * @param {Function} props.onClose - Callback to close the modal
@@ -36,14 +36,14 @@ const DetailsModal = ({ isOpen, onClose, snippet, isLoading = false }) => {
 
   return (
     <div className="modal-overlay details-modal-overlay" onClick={onClose}>
-      <div
-        className="modal-container details-modal-container"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="modal-container details-modal-container" onClick={(e) => e.stopPropagation()}>
         {/* Modal Header - Show only note name with icon, aligned with flex */}
         <ModalHeader
           left={
-            <div className="modal-title-stack" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div
+              className="modal-title-stack"
+              style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+            >
               <FileText size={16} className="theme-modal-icon" />
               <span className="theme-modal-title">{snippet?.title || 'Untitled'}</span>
             </div>
@@ -84,10 +84,7 @@ const DetailsModal = ({ isOpen, onClose, snippet, isLoading = false }) => {
                 </div>
                 <div className="meta-row">
                   <span>Location</span>
-                  <span
-                    className="meta-value path-hint"
-                    title={vaultPath}
-                  >
+                  <span className="meta-value path-hint" title={vaultPath}>
                     {vaultPath.split(/[/\\]/).pop()}
                   </span>
                 </div>
@@ -106,9 +103,7 @@ const DetailsModal = ({ isOpen, onClose, snippet, isLoading = false }) => {
                   </div>
                   <div className="stat-box">
                     <div className="stat-value">
-                      {snippet.code?.trim()
-                        ? snippet.code.trim().split(/\s+/).length
-                        : 0}
+                      {snippet.code?.trim() ? snippet.code.trim().split(/\s+/).length : 0}
                     </div>
                     <div className="stat-label">Words</div>
                   </div>

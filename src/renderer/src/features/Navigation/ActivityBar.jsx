@@ -14,7 +14,7 @@ const ActivityBar = ({ onSettingsClick, onThemeClick, onToggleGraph, onToggleExp
   const handleDailyNote = async () => {
     const today = new Date().toISOString().split('T')[0]
     const title = today
-    const existing = snippets.find(s => s.title === title || s.title === `${today}.md`)
+    const existing = snippets.find((s) => s.title === title || s.title === `${today}.md`)
 
     if (existing) {
       setSelectedSnippet(existing)
@@ -61,11 +61,7 @@ const ActivityBar = ({ onSettingsClick, onThemeClick, onToggleGraph, onToggleExp
         >
           <Network size={20} strokeWidth={1.5} />
         </button>
-        <button
-          className="sidebar-item"
-          onClick={handleDailyNote}
-          title="Today's Note"
-        >
+        <button className="sidebar-item" onClick={handleDailyNote} title="Today's Note">
           <Calendar size={20} strokeWidth={1.5} />
         </button>
       </div>
@@ -103,10 +99,7 @@ const ActivityBar = ({ onSettingsClick, onThemeClick, onToggleGraph, onToggleExp
                 <ArrowUpCircle size={20} />
               </div>
             ) : (
-              <ArrowUpCircle
-                size={20}
-                style={{ opacity: status === 'idle' ? 0.3 : 1 }}
-              />
+              <ArrowUpCircle size={20} style={{ opacity: status === 'idle' ? 0.3 : 1 }} />
             )}
             {status === 'downloading' && (
               <div className="update-progress-mini">
@@ -115,20 +108,12 @@ const ActivityBar = ({ onSettingsClick, onThemeClick, onToggleGraph, onToggleExp
             )}
           </button>
         )}
-        
-        <button
-          className="sidebar-item"
-          onClick={onThemeClick}
-          title="Theme"
-        >
+
+        <button className="sidebar-item" onClick={onThemeClick} title="Theme">
           <Palette size={20} strokeWidth={1.5} />
         </button>
 
-        <button
-          className="sidebar-item"
-          onClick={onSettingsClick}
-          title="Settings"
-        >
+        <button className="sidebar-item" onClick={onSettingsClick} title="Settings">
           <Settings size={20} strokeWidth={1.5} />
         </button>
       </div>

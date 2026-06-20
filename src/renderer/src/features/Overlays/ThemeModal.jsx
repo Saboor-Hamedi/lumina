@@ -25,9 +25,10 @@ const ThemeModal = ({ isOpen, onClose }) => {
 
   const filteredThemes = useMemo(() => {
     const query = searchQuery.toLowerCase()
-    return allThemes.filter(t => 
-      t.name.toLowerCase().includes(query) || 
-      (t.description && t.description.toLowerCase().includes(query))
+    return allThemes.filter(
+      (t) =>
+        t.name.toLowerCase().includes(query) ||
+        (t.description && t.description.toLowerCase().includes(query))
     )
   }, [allThemes, searchQuery])
 
@@ -38,24 +39,22 @@ const ThemeModal = ({ isOpen, onClose }) => {
 
         <div className="theme-modal-toolbar">
           <div className="theme-search-wrapper">
-            <input 
-              type="text" 
-              className="theme-search-input" 
-              placeholder="Filter themes..." 
+            <input
+              type="text"
+              className="theme-search-input"
+              placeholder="Filter themes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               autoFocus
             />
           </div>
-          <div className="theme-modal-stats">
-            Showing {filteredThemes.length} themes
-          </div>
+          <div className="theme-modal-stats">Showing {filteredThemes.length} themes</div>
         </div>
 
         <div className="theme-modal-grid">
           {filteredThemes.map((t) => {
             const isActive = theme === t.id
-            
+
             return (
               <div
                 key={t.id}
@@ -73,35 +72,60 @@ const ThemeModal = ({ isOpen, onClose }) => {
                       <span className="theme-badge installed">INSTALLED</span>
                     )}
                   </div>
-                  <div className="theme-modal-author">
-                    By Lumina
-                  </div>
+                  <div className="theme-modal-author">By Lumina</div>
                 </div>
-                
+
                 <div className="theme-modal-preview-wrapper">
                   <div className="theme-modal-preview" style={{ background: t.colors['--bg-app'] }}>
-                    <div 
-                      className="theme-preview-sidebar" 
-                      style={{ background: t.colors['--bg-sidebar'], borderRight: `1px solid ${t.colors['--border-dim']}` }}
+                    <div
+                      className="theme-preview-sidebar"
+                      style={{
+                        background: t.colors['--bg-sidebar'],
+                        borderRight: `1px solid ${t.colors['--border-dim']}`
+                      }}
                     >
-                      <div className="theme-preview-sidebar-item" style={{ background: t.colors['--bg-active'] }} />
-                      <div className="theme-preview-sidebar-item" style={{ background: t.colors['--border-subtle'] }} />
-                      <div className="theme-preview-sidebar-item" style={{ background: t.colors['--border-subtle'] }} />
+                      <div
+                        className="theme-preview-sidebar-item"
+                        style={{ background: t.colors['--bg-active'] }}
+                      />
+                      <div
+                        className="theme-preview-sidebar-item"
+                        style={{ background: t.colors['--border-subtle'] }}
+                      />
+                      <div
+                        className="theme-preview-sidebar-item"
+                        style={{ background: t.colors['--border-subtle'] }}
+                      />
                     </div>
-                    <div 
-                      className="theme-preview-editor" 
+                    <div
+                      className="theme-preview-editor"
                       style={{ background: t.colors['--bg-editor'] }}
                     >
-                      <div className="theme-preview-code-line" style={{ background: t.colors['--text-accent'], width: '60%' }} />
-                      <div className="theme-preview-code-line" style={{ background: t.colors['--text-main'], width: '80%' }} />
-                      <div className="theme-preview-code-line" style={{ background: t.colors['--text-muted'], width: '40%' }} />
-                      <div className="theme-preview-code-line" style={{ background: t.colors['--text-main'], width: '70%' }} />
-                      <div className="theme-preview-code-line" style={{ background: t.colors['--icon-secondary'], width: '50%' }} />
+                      <div
+                        className="theme-preview-code-line"
+                        style={{ background: t.colors['--text-accent'], width: '60%' }}
+                      />
+                      <div
+                        className="theme-preview-code-line"
+                        style={{ background: t.colors['--text-main'], width: '80%' }}
+                      />
+                      <div
+                        className="theme-preview-code-line"
+                        style={{ background: t.colors['--text-muted'], width: '40%' }}
+                      />
+                      <div
+                        className="theme-preview-code-line"
+                        style={{ background: t.colors['--text-main'], width: '70%' }}
+                      />
+                      <div
+                        className="theme-preview-code-line"
+                        style={{ background: t.colors['--icon-secondary'], width: '50%' }}
+                      />
                     </div>
-                    <div 
-                      className="theme-preview-badge" 
-                      style={{ 
-                        background: t.colors['--bg-active'], 
+                    <div
+                      className="theme-preview-badge"
+                      style={{
+                        background: t.colors['--bg-active'],
                         color: t.colors['--text-accent'],
                         border: `1px solid ${t.colors['--text-accent']}40`
                       }}

@@ -32,23 +32,23 @@ export class BaseProvider {
    */
   async *parseSSE(response) {
     if (!response.body) throw new Error('Response body null')
-    
+
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
-    
+
     try {
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
-        
+
         const chunk = decoder.decode(value, { stream: true })
         const lines = chunk.split('\n')
-        
+
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             const data = line.slice(6).trim()
             if (data === '[DONE]') return
-            
+
             try {
               const parsed = JSON.parse(data)
               yield parsed

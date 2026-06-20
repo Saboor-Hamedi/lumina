@@ -5,9 +5,11 @@ import os from 'os'
 import VaultSearch from './VaultSearch.js'
 
 // Mock @xenova/transformers
-const mockEmbedder = vi.fn(() => Promise.resolve({
-  data: new Float32Array(384).fill(0.5)
-}))
+const mockEmbedder = vi.fn(() =>
+  Promise.resolve({
+    data: new Float32Array(384).fill(0.5)
+  })
+)
 
 vi.mock('@xenova/transformers', () => ({
   pipeline: vi.fn(() => Promise.resolve(mockEmbedder)),
@@ -50,10 +52,24 @@ describe('VaultSearch', () => {
   describe('loadIndex', () => {
     it('loads index from file', async () => {
       const indexData = [
-        { id: '1', filePath: 'test.md', text: 'Test content', type: 'snippet', embeddingOffset: 0, embeddingLength: 384 },
-        { id: '2', filePath: 'test2.md', text: 'Another test', type: 'note', embeddingOffset: 1536, embeddingLength: 384 }
+        {
+          id: '1',
+          filePath: 'test.md',
+          text: 'Test content',
+          type: 'snippet',
+          embeddingOffset: 0,
+          embeddingLength: 384
+        },
+        {
+          id: '2',
+          filePath: 'test2.md',
+          text: 'Another test',
+          type: 'note',
+          embeddingOffset: 1536,
+          embeddingLength: 384
+        }
       ]
-      await fs.writeFile(indexPath, indexData.map(item => JSON.stringify(item)).join('\n'))
+      await fs.writeFile(indexPath, indexData.map((item) => JSON.stringify(item)).join('\n'))
 
       await VaultSearch.init(testDataPath)
       await VaultSearch.loadIndex()
@@ -71,7 +87,9 @@ describe('VaultSearch', () => {
     })
 
     it('loads embeddings buffer if exists', async () => {
-      const indexData = [{ id: '1', filePath: 'test.md', text: 'Test', embeddingOffset: 0, embeddingLength: 384 }]
+      const indexData = [
+        { id: '1', filePath: 'test.md', text: 'Test', embeddingOffset: 0, embeddingLength: 384 }
+      ]
       await fs.writeFile(indexPath, JSON.stringify(indexData[0]))
 
       // Create embeddings buffer (384 floats = 1536 bytes)
@@ -88,7 +106,9 @@ describe('VaultSearch', () => {
 
   describe('getChunkEmbedding', () => {
     it('extracts embedding from buffer', async () => {
-      const indexData = [{ id: '1', filePath: 'test.md', text: 'Test', embeddingOffset: 0, embeddingLength: 384 }]
+      const indexData = [
+        { id: '1', filePath: 'test.md', text: 'Test', embeddingOffset: 0, embeddingLength: 384 }
+      ]
       await fs.writeFile(indexPath, JSON.stringify(indexData[0]))
 
       // Create embeddings buffer
@@ -119,7 +139,9 @@ describe('VaultSearch', () => {
     })
 
     it('returns null if offset out of bounds', async () => {
-      const indexData = [{ id: '1', filePath: 'test.md', text: 'Test', embeddingOffset: 10000, embeddingLength: 384 }]
+      const indexData = [
+        { id: '1', filePath: 'test.md', text: 'Test', embeddingOffset: 10000, embeddingLength: 384 }
+      ]
       await fs.writeFile(indexPath, JSON.stringify(indexData[0]))
 
       const buffer = Buffer.alloc(1000) // Smaller than required
@@ -195,7 +217,7 @@ describe('VaultSearch', () => {
           metadata: { fileName: 'test2.md', mtime: Date.now() - 172800000 }
         }
       ]
-      await fs.writeFile(indexPath, indexData.map(item => JSON.stringify(item)).join('\n'))
+      await fs.writeFile(indexPath, indexData.map((item) => JSON.stringify(item)).join('\n'))
 
       // Create embeddings buffer with similar vectors
       const buffer = Buffer.alloc(3072) // 2 * 384 * 4
@@ -221,7 +243,7 @@ describe('VaultSearch', () => {
         filters: { filePath: 'test.md' }
       })
 
-      expect(results.every(r => r.filePath === 'test.md')).toBe(true)
+      expect(results.every((r) => r.filePath === 'test.md')).toBe(true)
     })
 
     it('filters by fileType', async () => {
@@ -237,7 +259,7 @@ describe('VaultSearch', () => {
         filters: { type: 'snippet' }
       })
 
-      expect(results.every(r => r.type === 'snippet')).toBe(true)
+      expect(results.every((r) => r.type === 'snippet')).toBe(true)
     })
 
     it('applies threshold', async () => {
@@ -246,7 +268,7 @@ describe('VaultSearch', () => {
       })
 
       // Results should all have score >= 0.9
-      expect(results.every(r => r.score >= 0.9)).toBe(true)
+      expect(results.every((r) => r.score >= 0.9)).toBe(true)
     })
 
     it('respects limit', async () => {
@@ -283,7 +305,7 @@ describe('VaultSearch', () => {
         { id: '2', filePath: 'test2.md', text: 'Test', type: 'note' },
         { id: '3', filePath: 'test.md', text: 'Test', type: 'snippet' }
       ]
-      await fs.writeFile(indexPath, indexData.map(item => JSON.stringify(item)).join('\n'))
+      await fs.writeFile(indexPath, indexData.map((item) => JSON.stringify(item)).join('\n'))
 
       await VaultSearch.init(testDataPath)
       await VaultSearch.loadIndex()

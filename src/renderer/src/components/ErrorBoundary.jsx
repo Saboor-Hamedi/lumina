@@ -3,10 +3,10 @@ import { AlertTriangle, RefreshCw } from 'lucide-react'
 
 /**
  * React Error Boundary Component
- * 
+ *
  * Catches component errors and prevents full app crashes.
  * Shows user-friendly fallback UI with recovery options.
- * 
+ *
  * @class ErrorBoundary
  * @extends {React.Component}
  * @property {React.ReactNode} children - Child components to render
@@ -28,8 +28,8 @@ class ErrorBoundary extends React.Component {
 
   static getDerivedStateFromError(error) {
     // Update state so the next render will show the fallback UI
-    return { 
-      hasError: true, 
+    return {
+      hasError: true,
       error,
       errorId: `error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     }
@@ -43,19 +43,21 @@ class ErrorBoundary extends React.Component {
       componentStack: errorInfo?.componentStack,
       errorId: this.state.errorId
     })
-    
+
     // Log to main process if available (non-blocking)
     if (window.api?.logError) {
       try {
-        window.api.logError({
-          message: error?.message || 'Unknown error',
-          stack: error?.stack || 'No stack trace',
-          componentStack: errorInfo?.componentStack || 'No component stack',
-          timestamp: Date.now(),
-          errorId: this.state.errorId
-        }).catch(() => {
-          // Silently fail if logging fails
-        })
+        window.api
+          .logError({
+            message: error?.message || 'Unknown error',
+            stack: error?.stack || 'No stack trace',
+            componentStack: errorInfo?.componentStack || 'No component stack',
+            timestamp: Date.now(),
+            errorId: this.state.errorId
+          })
+          .catch(() => {
+            // Silently fail if logging fails
+          })
       } catch (e) {
         // Fallback if logging API is unavailable
         console.warn('[ErrorBoundary] Failed to log error to main process:', e)
@@ -89,7 +91,7 @@ class ErrorBoundary extends React.Component {
       errorInfo: null,
       errorId: null
     })
-    
+
     // Force a small delay to ensure state is cleared before re-render
     this.resetTimeoutRef = setTimeout(() => {
       // Try to reload the component by forcing a re-render
@@ -138,7 +140,7 @@ class ErrorBoundary extends React.Component {
             <p className="error-boundary-message">
               {this.state.error?.message || 'An unexpected error occurred'}
             </p>
-            
+
             {process.env.NODE_ENV === 'development' && this.state.errorInfo && (
               <details className="error-boundary-details">
                 <summary>Error Details (Development Only)</summary>
@@ -151,17 +153,11 @@ class ErrorBoundary extends React.Component {
             )}
 
             <div className="error-boundary-actions">
-              <button
-                className="error-boundary-button primary"
-                onClick={this.handleReset}
-              >
+              <button className="error-boundary-button primary" onClick={this.handleReset}>
                 <RefreshCw size={16} />
                 <span>Try Again</span>
               </button>
-              <button
-                className="error-boundary-button secondary"
-                onClick={this.handleReload}
-              >
+              <button className="error-boundary-button secondary" onClick={this.handleReload}>
                 <RefreshCw size={16} />
                 <span>Reload App</span>
               </button>
@@ -170,8 +166,8 @@ class ErrorBoundary extends React.Component {
             {this.state.errorCount > 3 && (
               <div className="error-boundary-warning">
                 <p>
-                  Multiple errors detected ({this.state.errorCount}). 
-                  Consider reloading the application.
+                  Multiple errors detected ({this.state.errorCount}). Consider reloading the
+                  application.
                 </p>
               </div>
             )}

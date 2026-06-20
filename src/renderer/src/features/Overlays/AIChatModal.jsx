@@ -82,19 +82,22 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
    * Handles the start of a drag operation on the modal header.
    * @param {MouseEvent} e - Mouse event
    */
-  const handleDragStart = useCallback((e) => {
-    if (isMaximized) return
-    if (e.target.closest('button')) return // Don't drag if clicking a button
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(true)
-    dragStartPos.current = {
-      x: e.clientX,
-      y: e.clientY,
-      top: modalState.top,
-      left: modalState.left
-    }
-  }, [modalState, isMaximized])
+  const handleDragStart = useCallback(
+    (e) => {
+      if (isMaximized) return
+      if (e.target.closest('button')) return // Don't drag if clicking a button
+      e.preventDefault()
+      e.stopPropagation()
+      setIsDragging(true)
+      dragStartPos.current = {
+        x: e.clientX,
+        y: e.clientY,
+        top: modalState.top,
+        left: modalState.left
+      }
+    },
+    [modalState, isMaximized]
+  )
 
   const rafRef = useRef(null)
 
@@ -103,37 +106,40 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
    * Constrains the modal to stay within the viewport bounds.
    * @param {MouseEvent} e - Mouse event
    */
-  const handleDrag = useCallback((e) => {
-    if (!isDragging || isMaximized) return
+  const handleDrag = useCallback(
+    (e) => {
+      if (!isDragging || isMaximized) return
 
-    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
 
-    rafRef.current = requestAnimationFrame(() => {
-      const deltaX = e.clientX - dragStartPos.current.x
-      const deltaY = e.clientY - dragStartPos.current.y
+      rafRef.current = requestAnimationFrame(() => {
+        const deltaX = e.clientX - dragStartPos.current.x
+        const deltaY = e.clientY - dragStartPos.current.y
 
-      const newLeft = dragStartPos.current.left + deltaX
-      const newTop = dragStartPos.current.top + deltaY
+        const newLeft = dragStartPos.current.left + deltaX
+        const newTop = dragStartPos.current.top + deltaY
 
-      const viewportWidth = window.innerWidth
-      const viewportHeight = window.innerHeight
-      const modalWidth = isMaximized ? viewportWidth : modalState.width
-      const modalHeight = isMaximized ? viewportHeight : modalState.height
+        const viewportWidth = window.innerWidth
+        const viewportHeight = window.innerHeight
+        const modalWidth = isMaximized ? viewportWidth : modalState.width
+        const modalHeight = isMaximized ? viewportHeight : modalState.height
 
-      const finalLeft = Math.max(0, Math.min(newLeft, viewportWidth - modalWidth))
-      const finalTop = Math.max(0, Math.min(newTop, viewportHeight - modalHeight))
+        const finalLeft = Math.max(0, Math.min(newLeft, viewportWidth - modalWidth))
+        const finalTop = Math.max(0, Math.min(newTop, viewportHeight - modalHeight))
 
-      // Direct DOM mutation for smooth dragging
-      if (modalRef.current) {
-        modalRef.current.style.left = `${finalLeft}px`
-        modalRef.current.style.top = `${finalTop}px`
-      }
-      
-      // Store latest position for drag end
-      dragStartPos.current.latestLeft = finalLeft
-      dragStartPos.current.latestTop = finalTop
-    })
-  }, [isDragging, isMaximized, modalState.width, modalState.height])
+        // Direct DOM mutation for smooth dragging
+        if (modalRef.current) {
+          modalRef.current.style.left = `${finalLeft}px`
+          modalRef.current.style.top = `${finalTop}px`
+        }
+
+        // Store latest position for drag end
+        dragStartPos.current.latestLeft = finalLeft
+        dragStartPos.current.latestTop = finalTop
+      })
+    },
+    [isDragging, isMaximized, modalState.width, modalState.height]
+  )
 
   /**
    * Handles the end of a drag operation.
@@ -142,7 +148,7 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
     setIsDragging(false)
     if (rafRef.current) cancelAnimationFrame(rafRef.current)
     if (dragStartPos.current.latestLeft !== undefined) {
-      setModalState(prev => ({
+      setModalState((prev) => ({
         ...prev,
         left: dragStartPos.current.latestLeft,
         top: dragStartPos.current.latestTop
@@ -168,85 +174,104 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
   }, [modalState, isMaximized, isDragging, isResizing])
 
   // Resize functionality
-  const handleResizeStart = useCallback((e, direction) => {
-    if (isMaximized) return
-    e.preventDefault()
-    e.stopPropagation()
-    setIsResizing(true)
-    setResizeDirection(direction)
-    resizeStartPos.current = {
-      x: e.clientX,
-      y: e.clientY,
-      width: modalState.width,
-      height: modalState.height,
-      left: modalState.left,
-      top: modalState.top
-    }
-  }, [modalState, isMaximized])
+  const handleResizeStart = useCallback(
+    (e, direction) => {
+      if (isMaximized) return
+      e.preventDefault()
+      e.stopPropagation()
+      setIsResizing(true)
+      setResizeDirection(direction)
+      resizeStartPos.current = {
+        x: e.clientX,
+        y: e.clientY,
+        width: modalState.width,
+        height: modalState.height,
+        left: modalState.left,
+        top: modalState.top
+      }
+    },
+    [modalState, isMaximized]
+  )
 
   /**
    * Handles resizing the modal while mouse is moving.
    * Respects minimum and maximum size constraints.
    * @param {MouseEvent} e - Mouse event
    */
-  const handleResize = useCallback((e) => {
-    if (!isResizing || isMaximized || !resizeDirection) return
+  const handleResize = useCallback(
+    (e) => {
+      if (!isResizing || isMaximized || !resizeDirection) return
 
-    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
 
-    rafRef.current = requestAnimationFrame(() => {
-      const deltaX = e.clientX - resizeStartPos.current.x
-      const deltaY = e.clientY - resizeStartPos.current.y
+      rafRef.current = requestAnimationFrame(() => {
+        const deltaX = e.clientX - resizeStartPos.current.x
+        const deltaY = e.clientY - resizeStartPos.current.y
 
-      const minWidth = 300
-      const minHeight = 400
-      const maxWidth = window.innerWidth
-      const maxHeight = window.innerHeight
+        const minWidth = 300
+        const minHeight = 400
+        const maxWidth = window.innerWidth
+        const maxHeight = window.innerHeight
 
-      let newWidth = resizeStartPos.current.width
-      let newHeight = resizeStartPos.current.height
-      let newLeft = resizeStartPos.current.left
-      let newTop = resizeStartPos.current.top
+        let newWidth = resizeStartPos.current.width
+        let newHeight = resizeStartPos.current.height
+        let newLeft = resizeStartPos.current.left
+        let newTop = resizeStartPos.current.top
 
-      // Handle resize based on direction
-      if (resizeDirection.includes('right')) {
-        newWidth = Math.max(minWidth, Math.min(maxWidth, resizeStartPos.current.width + deltaX))
-      }
-      if (resizeDirection.includes('left')) {
-        const widthDelta = resizeStartPos.current.width - Math.max(minWidth, resizeStartPos.current.width - deltaX)
-        newWidth = Math.max(minWidth, Math.min(maxWidth, resizeStartPos.current.width - deltaX))
-        newLeft = Math.max(0, resizeStartPos.current.left + (resizeStartPos.current.width - newWidth))
-      }
-      if (resizeDirection.includes('bottom')) {
-        newHeight = Math.max(minHeight, Math.min(maxHeight, resizeStartPos.current.height + deltaY))
-      }
-      if (resizeDirection.includes('top')) {
-        newHeight = Math.max(minHeight, Math.min(maxHeight, resizeStartPos.current.height - deltaY))
-        newTop = Math.max(0, resizeStartPos.current.top + (resizeStartPos.current.height - newHeight))
-      }
+        // Handle resize based on direction
+        if (resizeDirection.includes('right')) {
+          newWidth = Math.max(minWidth, Math.min(maxWidth, resizeStartPos.current.width + deltaX))
+        }
+        if (resizeDirection.includes('left')) {
+          const widthDelta =
+            resizeStartPos.current.width - Math.max(minWidth, resizeStartPos.current.width - deltaX)
+          newWidth = Math.max(minWidth, Math.min(maxWidth, resizeStartPos.current.width - deltaX))
+          newLeft = Math.max(
+            0,
+            resizeStartPos.current.left + (resizeStartPos.current.width - newWidth)
+          )
+        }
+        if (resizeDirection.includes('bottom')) {
+          newHeight = Math.max(
+            minHeight,
+            Math.min(maxHeight, resizeStartPos.current.height + deltaY)
+          )
+        }
+        if (resizeDirection.includes('top')) {
+          newHeight = Math.max(
+            minHeight,
+            Math.min(maxHeight, resizeStartPos.current.height - deltaY)
+          )
+          newTop = Math.max(
+            0,
+            resizeStartPos.current.top + (resizeStartPos.current.height - newHeight)
+          )
+        }
 
-      if (modalRef.current) {
-        modalRef.current.style.width = `${newWidth}px`
-        modalRef.current.style.height = `${newHeight}px`
-        modalRef.current.style.left = `${newLeft}px`
-        modalRef.current.style.top = `${newTop}px`
-      }
+        if (modalRef.current) {
+          modalRef.current.style.width = `${newWidth}px`
+          modalRef.current.style.height = `${newHeight}px`
+          modalRef.current.style.left = `${newLeft}px`
+          modalRef.current.style.top = `${newTop}px`
+        }
 
-      resizeStartPos.current.latestState = {
-        width: newWidth,
-        height: newHeight,
-        left: newLeft,
-        top: newTop
-      }
-    })
-  }, [isResizing, isMaximized, resizeDirection])
+        resizeStartPos.current.latestState = {
+          width: newWidth,
+          height: newHeight,
+          left: newLeft,
+          top: newTop
+        }
+      })
+    },
+    [isResizing, isMaximized, resizeDirection]
+  )
 
   const handleResizeEnd = useCallback(() => {
     setIsResizing(false)
     setResizeDirection(null)
     if (rafRef.current) cancelAnimationFrame(rafRef.current)
     if (resizeStartPos.current.latestState) {
-      setModalState(prev => ({
+      setModalState((prev) => ({
         ...prev,
         ...resizeStartPos.current.latestState
       }))
@@ -257,7 +282,7 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
    * Toggles the modal between maximized and windowed states.
    */
   const handleToggleMaximize = useCallback(() => {
-    setIsMaximized(prev => !prev)
+    setIsMaximized((prev) => !prev)
   }, [])
 
   // Mouse event handlers
@@ -353,14 +378,38 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
         {/* Resize handles */}
         {!isMaximized && (
           <>
-            <div className="resize-handle resize-handle-right" onMouseDown={(e) => handleResizeStart(e, 'right')} />
-            <div className="resize-handle resize-handle-bottom" onMouseDown={(e) => handleResizeStart(e, 'bottom')} />
-            <div className="resize-handle resize-handle-bottom-right" onMouseDown={(e) => handleResizeStart(e, 'bottom-right')} />
-            <div className="resize-handle resize-handle-left" onMouseDown={(e) => handleResizeStart(e, 'left')} />
-            <div className="resize-handle resize-handle-top" onMouseDown={(e) => handleResizeStart(e, 'top')} />
-            <div className="resize-handle resize-handle-top-left" onMouseDown={(e) => handleResizeStart(e, 'top-left')} />
-            <div className="resize-handle resize-handle-top-right" onMouseDown={(e) => handleResizeStart(e, 'top-right')} />
-            <div className="resize-handle resize-handle-bottom-left" onMouseDown={(e) => handleResizeStart(e, 'bottom-left')} />
+            <div
+              className="resize-handle resize-handle-right"
+              onMouseDown={(e) => handleResizeStart(e, 'right')}
+            />
+            <div
+              className="resize-handle resize-handle-bottom"
+              onMouseDown={(e) => handleResizeStart(e, 'bottom')}
+            />
+            <div
+              className="resize-handle resize-handle-bottom-right"
+              onMouseDown={(e) => handleResizeStart(e, 'bottom-right')}
+            />
+            <div
+              className="resize-handle resize-handle-left"
+              onMouseDown={(e) => handleResizeStart(e, 'left')}
+            />
+            <div
+              className="resize-handle resize-handle-top"
+              onMouseDown={(e) => handleResizeStart(e, 'top')}
+            />
+            <div
+              className="resize-handle resize-handle-top-left"
+              onMouseDown={(e) => handleResizeStart(e, 'top-left')}
+            />
+            <div
+              className="resize-handle resize-handle-top-right"
+              onMouseDown={(e) => handleResizeStart(e, 'top-right')}
+            />
+            <div
+              className="resize-handle resize-handle-bottom-left"
+              onMouseDown={(e) => handleResizeStart(e, 'bottom-left')}
+            />
           </>
         )}
 

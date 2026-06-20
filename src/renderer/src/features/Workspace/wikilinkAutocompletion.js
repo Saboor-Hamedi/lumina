@@ -1,7 +1,8 @@
 import { useVaultStore } from '../../core/store/useVaultStore'
 
 const fuzzyMatch = (str, query) => {
-  let i = 0, j = 0
+  let i = 0,
+    j = 0
   const lowerStr = str.toLowerCase()
   while (i < lowerStr.length && j < query.length) {
     if (lowerStr[i] === query[j]) j++
@@ -130,9 +131,9 @@ export class TableAutocomplete {
     this.currentQuery = match[1]
     const query = this.currentQuery.toLowerCase()
     const snippets = useVaultStore.getState().snippets || []
-    
+
     this.autocompleteMatches = snippets
-      .filter(s => s.title && fuzzyMatch(s.title, query))
+      .filter((s) => s.title && fuzzyMatch(s.title, query))
       .sort((a, b) => a.title.localeCompare(b.title))
       .slice(0, 8)
 
@@ -152,7 +153,7 @@ export class TableAutocomplete {
       this.activeDropdown.style.overflowX = 'hidden'
       this.activeDropdown.style.minWidth = '250px'
       this.activeDropdown.style.maxWidth = '400px'
-      
+
       this.cell.style.position = 'relative'
       this.cell.appendChild(this.activeDropdown)
       this.autocompleteIndex = 0
@@ -174,7 +175,9 @@ export class TableAutocomplete {
       this.render()
       return true
     } else if (event.key === 'ArrowUp') {
-      this.autocompleteIndex = (this.autocompleteIndex - 1 + this.autocompleteMatches.length) % this.autocompleteMatches.length
+      this.autocompleteIndex =
+        (this.autocompleteIndex - 1 + this.autocompleteMatches.length) %
+        this.autocompleteMatches.length
       this.render()
       return true
     } else if (event.key === 'Enter') {

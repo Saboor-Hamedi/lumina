@@ -24,7 +24,7 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
     // Content Wrap (the whole card is now one seamless box)
     const contentWrap = document.createElement('div')
     contentWrap.className = 'wiki-hover-content-wrap'
-    
+
     // Obsidian-style large title
     const titleEl = document.createElement('h1')
     titleEl.className = 'wiki-hover-title-h1'
@@ -35,14 +35,17 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
     if (contentSnippet) {
       const contentEl = document.createElement('div')
       contentEl.className = 'wiki-hover-content'
-      
+
       // Inject pseudo-wikilink spans for styling before parsing markdown
-      let parsedSnippet = contentSnippet.replace(/\[\[(.*?)\]\]/g, '<span class="cm-atomic-wiki-link">$1</span>')
+      let parsedSnippet = contentSnippet.replace(
+        /\[\[(.*?)\]\]/g,
+        '<span class="cm-atomic-wiki-link">$1</span>'
+      )
       contentEl.innerHTML = marked.parse(parsedSnippet)
 
       contentWrap.appendChild(contentEl)
       hoverCard.appendChild(contentWrap)
-      
+
       // Add Expand Icon (only if note is found)
       const expandIcon = document.createElement('div')
       expandIcon.className = 'wiki-hover-expand-icon'
@@ -53,35 +56,35 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
       expandIcon.style.cursor = 'pointer'
       expandIcon.style.color = 'var(--text-faint)'
       expandIcon.style.transition = 'color 0.2s'
-      
-      expandIcon.onmouseover = () => expandIcon.style.color = 'var(--text-main)'
-      expandIcon.onmouseout = () => expandIcon.style.color = 'var(--text-faint)'
+
+      expandIcon.onmouseover = () => (expandIcon.style.color = 'var(--text-main)')
+      expandIcon.onmouseout = () => (expandIcon.style.color = 'var(--text-faint)')
 
       // Store note ID or object on the card for the click handler
       hoverCard.dataset.noteId = noteId
-      
+
       expandIcon.addEventListener('click', (evt) => {
         evt.preventDefault()
         evt.stopPropagation()
         if (noteId) {
           const { snippets, setSelectedSnippet } = getVaultStore()
-          const targetNote = snippets.find(s => s.id === noteId)
+          const targetNote = snippets.find((s) => s.id === noteId)
           if (targetNote && setSelectedSnippet) {
             setSelectedSnippet(targetNote)
             removeCard()
           }
         }
       })
-      
+
       hoverCard.appendChild(expandIcon)
     } else {
       const notFoundWrap = document.createElement('div')
       notFoundWrap.className = 'cm-wiki-hover not-found'
-      
+
       const icon = document.createElement('div')
       icon.className = 'wiki-hover-not-found-icon'
       icon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`
-      
+
       const text = document.createElement('div')
       text.className = 'wiki-hover-not-found-text'
       text.textContent = 'Note not found'
@@ -129,9 +132,11 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
     hoverTimeout = setTimeout(() => {
       const { snippets } = getVaultStore()
       const targetLower = target.toLowerCase()
-      
+
       let note = snippets.find(
-        s => s.title && (s.title.toLowerCase() === targetLower || s.title.toLowerCase() === `${targetLower}.md`)
+        (s) =>
+          s.title &&
+          (s.title.toLowerCase() === targetLower || s.title.toLowerCase() === `${targetLower}.md`)
       )
 
       if (note) {
@@ -146,7 +151,10 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
 
   const handleDocumentClick = (e) => {
     if (hoverCard && !hoverCard.contains(e.target)) {
-      if (!e.target.closest('.cm-atomic-wiki-link') && !e.target.closest('.cm-atomic-wikilink-wrap')) {
+      if (
+        !e.target.closest('.cm-atomic-wiki-link') &&
+        !e.target.closest('.cm-atomic-wikilink-wrap')
+      ) {
         removeCard()
       }
     }

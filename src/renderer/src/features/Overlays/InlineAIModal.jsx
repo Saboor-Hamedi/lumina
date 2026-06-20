@@ -70,7 +70,10 @@ const InlineAIModal = ({ isOpen, onClose, onInsert, cursorPosition, editorView }
             })
           } else {
             // Fallback to top center if coords not available
-            const headerHeight = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-height')) || 32
+            const headerHeight =
+              parseInt(
+                getComputedStyle(document.documentElement).getPropertyValue('--header-height')
+              ) || 32
             setModalPosition({
               top: headerHeight + 10,
               left: '50%'
@@ -79,7 +82,10 @@ const InlineAIModal = ({ isOpen, onClose, onInsert, cursorPosition, editorView }
         } catch (err) {
           console.warn('[InlineAI] Could not get cursor coordinates:', err)
           // Fallback to top center
-          const headerHeight = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-height')) || 32
+          const headerHeight =
+            parseInt(
+              getComputedStyle(document.documentElement).getPropertyValue('--header-height')
+            ) || 32
           setModalPosition({
             top: headerHeight + 10,
             left: '50%'
@@ -156,38 +162,44 @@ const InlineAIModal = ({ isOpen, onClose, onInsert, cursorPosition, editorView }
   }, [handleStop, onClose])
 
   // Drag functionality
-  const handleDragStart = useCallback((e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(true)
-    dragStartPos.current = {
-      x: e.clientX,
-      y: e.clientY,
-      top: typeof modalPosition.top === 'number' ? modalPosition.top : 0,
-      left: typeof modalPosition.left === 'number' ? modalPosition.left : 0
-    }
-  }, [modalPosition])
+  const handleDragStart = useCallback(
+    (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setIsDragging(true)
+      dragStartPos.current = {
+        x: e.clientX,
+        y: e.clientY,
+        top: typeof modalPosition.top === 'number' ? modalPosition.top : 0,
+        left: typeof modalPosition.left === 'number' ? modalPosition.left : 0
+      }
+    },
+    [modalPosition]
+  )
 
-  const handleDrag = useCallback((e) => {
-    if (!isDragging) return
+  const handleDrag = useCallback(
+    (e) => {
+      if (!isDragging) return
 
-    const deltaX = e.clientX - dragStartPos.current.x
-    const deltaY = e.clientY - dragStartPos.current.y
+      const deltaX = e.clientX - dragStartPos.current.x
+      const deltaY = e.clientY - dragStartPos.current.y
 
-    const newLeft = dragStartPos.current.left + deltaX
-    const newTop = dragStartPos.current.top + deltaY
+      const newLeft = dragStartPos.current.left + deltaX
+      const newTop = dragStartPos.current.top + deltaY
 
-    // Keep modal within viewport
-    const viewportWidth = window.innerWidth
-    const viewportHeight = window.innerHeight
-    const modalWidth = 450
-    const modalHeight = 200
+      // Keep modal within viewport
+      const viewportWidth = window.innerWidth
+      const viewportHeight = window.innerHeight
+      const modalWidth = 450
+      const modalHeight = 200
 
-    setModalPosition({
-      top: Math.max(10, Math.min(newTop, viewportHeight - modalHeight - 10)),
-      left: Math.max(10, Math.min(newLeft, viewportWidth - modalWidth - 10))
-    })
-  }, [isDragging])
+      setModalPosition({
+        top: Math.max(10, Math.min(newTop, viewportHeight - modalHeight - 10)),
+        left: Math.max(10, Math.min(newLeft, viewportWidth - modalWidth - 10))
+      })
+    },
+    [isDragging]
+  )
 
   const handleDragEnd = useCallback(() => {
     setIsDragging(false)
@@ -231,179 +243,186 @@ const InlineAIModal = ({ isOpen, onClose, onInsert, cursorPosition, editorView }
     }
   }, [isOpen, editorView, getSelectedText])
 
-  const handleSubmit = useCallback(async (e) => {
-    if (e) {
-      e.preventDefault()
-      e.stopPropagation()
-      e.nativeEvent?.stopImmediatePropagation()
-    }
+  const handleSubmit = useCallback(
+    async (e) => {
+      if (e) {
+        e.preventDefault()
+        e.stopPropagation()
+        e.nativeEvent?.stopImmediatePropagation()
+      }
 
-    // Robust validation
-    if (!query || !query.trim() || isGenerating) return
+      // Robust validation
+      if (!query || !query.trim() || isGenerating) return
 
-    setIsGenerating(true)
-    setResponse('')
-    setCopied(false)
+      setIsGenerating(true)
+      setResponse('')
+      setCopied(false)
 
-    // Create abort controller for this request
-    const controller = new AbortController()
-    setAbortController(controller)
+      // Create abort controller for this request
+      const controller = new AbortController()
+      setAbortController(controller)
 
-    try {
-      // Get selected text as context (use stored ref) - with error handling
-      let contextSnippets = []
       try {
-        const selected = selectedTextRef.current || getSelectedText()
+        // Get selected text as context (use stored ref) - with error handling
+        let contextSnippets = []
+        try {
+          const selected = selectedTextRef.current || getSelectedText()
 
-        if (selected && selected.text && typeof selected.text === 'string') {
-          contextSnippets = [{
-            title: 'Selected Text',
-            code: selected.text.slice(0, 2000) // Limit context size
-          }]
-        } else if (editorView && editorView.state && editorView.state.doc) {
-          // Fallback: use surrounding context around cursor
-          try {
-            const selection = editorView.state.selection.main
-            const docLength = editorView.state.doc.length
-            const before = editorView.state.doc.sliceString(
-              Math.max(0, selection.from - 300),
-              selection.from
-            )
-            const after = editorView.state.doc.sliceString(
-              selection.to,
-              Math.min(docLength, selection.to + 300)
-            )
-            if (before.trim() || after.trim()) {
-              contextSnippets = [{
-                title: 'Editor Context',
-                code: (before + after).trim().slice(0, 2000)
-              }]
+          if (selected && selected.text && typeof selected.text === 'string') {
+            contextSnippets = [
+              {
+                title: 'Selected Text',
+                code: selected.text.slice(0, 2000) // Limit context size
+              }
+            ]
+          } else if (editorView && editorView.state && editorView.state.doc) {
+            // Fallback: use surrounding context around cursor
+            try {
+              const selection = editorView.state.selection.main
+              const docLength = editorView.state.doc.length
+              const before = editorView.state.doc.sliceString(
+                Math.max(0, selection.from - 300),
+                selection.from
+              )
+              const after = editorView.state.doc.sliceString(
+                selection.to,
+                Math.min(docLength, selection.to + 300)
+              )
+              if (before.trim() || after.trim()) {
+                contextSnippets = [
+                  {
+                    title: 'Editor Context',
+                    code: (before + after).trim().slice(0, 2000)
+                  }
+                ]
+              }
+            } catch (contextErr) {
+              console.warn('[InlineAI] Could not get editor context:', contextErr)
             }
-          } catch (contextErr) {
-            console.warn('[InlineAI] Could not get editor context:', contextErr)
           }
+        } catch (contextError) {
+          console.warn('[InlineAI] Context extraction failed:', contextError)
+          // Continue without context
         }
-      } catch (contextError) {
-        console.warn('[InlineAI] Context extraction failed:', contextError)
-        // Continue without context
-      }
 
-      // Get settings with error handling
-      let settings = null
-      let visibleKey = null
-      let model = 'deepseek-chat'
+        // Get settings with error handling
+        let settings = null
+        let visibleKey = null
+        let model = 'deepseek-chat'
 
-      try {
-        const settingsModule = await import('../../core/store/useSettingsStore')
-        settings = settingsModule.useSettingsStore.getState()
-        const { deepSeekKey, deepSeekModel } = settings?.settings || {}
-        visibleKey = deepSeekKey || import.meta.env.VITE_DEEPSEEK_KEY
-        model = deepSeekModel || 'deepseek-chat'
-      } catch (settingsErr) {
-        console.error('[InlineAI] Settings load failed:', settingsErr)
-        visibleKey = import.meta.env.VITE_DEEPSEEK_KEY
-      }
+        try {
+          const settingsModule = await import('../../core/store/useSettingsStore')
+          settings = settingsModule.useSettingsStore.getState()
+          const { deepSeekKey, deepSeekModel } = settings?.settings || {}
+          visibleKey = deepSeekKey || import.meta.env.VITE_DEEPSEEK_KEY
+          model = deepSeekModel || 'deepseek-chat'
+        } catch (settingsErr) {
+          console.error('[InlineAI] Settings load failed:', settingsErr)
+          visibleKey = import.meta.env.VITE_DEEPSEEK_KEY
+        }
 
-      if (!visibleKey || typeof visibleKey !== 'string') {
-        setResponse('**Error:** Missing API Key. Please configure it in Settings.')
+        if (!visibleKey || typeof visibleKey !== 'string') {
+          setResponse('**Error:** Missing API Key. Please configure it in Settings.')
+          setIsGenerating(false)
+          setAbortController(null)
+          return
+        }
+
+        // Build system prompt with context
+        let systemPrompt = `You are Lumina AI, an intelligent assistant. Be concise and helpful. Use Markdown formatting for better readability.`
+
+        if (contextSnippets.length > 0) {
+          systemPrompt += '\n\n**Context from Editor:**\n'
+          contextSnippets.forEach((ctx) => {
+            if (ctx && ctx.code) {
+              systemPrompt += `${ctx.code}\n\n`
+            }
+          })
+        }
+
+        // Call API with timeout and robust error handling
+        const timeoutId = setTimeout(() => controller.abort(), 60000) // 60s timeout
+
+        let response
+        try {
+          response = await fetch('https://api.deepseek.com/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${visibleKey}`
+            },
+            body: JSON.stringify({
+              model: model,
+              messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: query.trim() }
+              ],
+              stream: false
+            }),
+            signal: controller.signal
+          })
+        } catch (fetchErr) {
+          clearTimeout(timeoutId)
+          if (fetchErr.name === 'AbortError') {
+            throw new Error('Request timed out. Please try again.')
+          }
+          if (fetchErr.name === 'TypeError' && fetchErr.message.includes('fetch')) {
+            throw new Error('Network error. Please check your internet connection.')
+          }
+          throw fetchErr
+        }
+
+        clearTimeout(timeoutId)
+
+        if (!response.ok) {
+          let errorMessage = `API Error: ${response.status}`
+          try {
+            const errData = await response.json()
+            errorMessage = errData.error?.message || errorMessage
+
+            if (response.status === 401) {
+              errorMessage = 'Invalid API Key. Please check your settings.'
+            } else if (response.status === 429) {
+              errorMessage = 'Rate limit exceeded. Please try again later.'
+            } else if (response.status >= 500) {
+              errorMessage = 'Server error. Please try again later.'
+            }
+          } catch (parseErr) {
+            console.warn('[InlineAI] Could not parse error response:', parseErr)
+          }
+          throw new Error(errorMessage)
+        }
+
+        const data = await response.json()
+
+        // Validate response structure
+        if (!data || !data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+          throw new Error('Invalid response format from API.')
+        }
+
+        const content = data.choices[0]?.message?.content
+        if (!content || typeof content !== 'string') {
+          throw new Error('Empty or invalid response from API.')
+        }
+
+        setResponse(content)
+      } catch (err) {
+        console.error('[InlineAI] Error:', err)
+        if (err.name === 'AbortError') {
+          setResponse('')
+          return
+        }
+
+        // User-friendly error messages
+        const errorMsg = err.message || 'Failed to generate response. Please try again.'
+        setResponse(`**Error:** ${errorMsg}`)
+      } finally {
         setIsGenerating(false)
         setAbortController(null)
-        return
       }
-
-      // Build system prompt with context
-      let systemPrompt = `You are Lumina AI, an intelligent assistant. Be concise and helpful. Use Markdown formatting for better readability.`
-
-      if (contextSnippets.length > 0) {
-        systemPrompt += '\n\n**Context from Editor:**\n'
-        contextSnippets.forEach(ctx => {
-          if (ctx && ctx.code) {
-            systemPrompt += `${ctx.code}\n\n`
-          }
-        })
-      }
-
-      // Call API with timeout and robust error handling
-      const timeoutId = setTimeout(() => controller.abort(), 60000) // 60s timeout
-
-      let response
-      try {
-        response = await fetch('https://api.deepseek.com/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${visibleKey}`
-          },
-          body: JSON.stringify({
-            model: model,
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: query.trim() }
-            ],
-            stream: false
-          }),
-          signal: controller.signal
-        })
-      } catch (fetchErr) {
-        clearTimeout(timeoutId)
-        if (fetchErr.name === 'AbortError') {
-          throw new Error('Request timed out. Please try again.')
-        }
-        if (fetchErr.name === 'TypeError' && fetchErr.message.includes('fetch')) {
-          throw new Error('Network error. Please check your internet connection.')
-        }
-        throw fetchErr
-      }
-
-      clearTimeout(timeoutId)
-
-      if (!response.ok) {
-        let errorMessage = `API Error: ${response.status}`
-        try {
-          const errData = await response.json()
-          errorMessage = errData.error?.message || errorMessage
-
-          if (response.status === 401) {
-            errorMessage = 'Invalid API Key. Please check your settings.'
-          } else if (response.status === 429) {
-            errorMessage = 'Rate limit exceeded. Please try again later.'
-          } else if (response.status >= 500) {
-            errorMessage = 'Server error. Please try again later.'
-          }
-        } catch (parseErr) {
-          console.warn('[InlineAI] Could not parse error response:', parseErr)
-        }
-        throw new Error(errorMessage)
-      }
-
-      const data = await response.json()
-
-      // Validate response structure
-      if (!data || !data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
-        throw new Error('Invalid response format from API.')
-      }
-
-      const content = data.choices[0]?.message?.content
-      if (!content || typeof content !== 'string') {
-        throw new Error('Empty or invalid response from API.')
-      }
-
-      setResponse(content)
-    } catch (err) {
-      console.error('[InlineAI] Error:', err)
-      if (err.name === 'AbortError') {
-        setResponse('')
-        return
-      }
-
-      // User-friendly error messages
-      const errorMsg = err.message || 'Failed to generate response. Please try again.'
-      setResponse(`**Error:** ${errorMsg}`)
-    } finally {
-      setIsGenerating(false)
-      setAbortController(null)
-    }
-  }, [query, isGenerating, editorView, getSelectedText])
+    },
+    [query, isGenerating, editorView, getSelectedText]
+  )
 
   if (!isOpen) return null
 
@@ -416,8 +435,12 @@ const InlineAIModal = ({ isOpen, onClose, onInsert, cursorPosition, editorView }
         style={{
           position: 'absolute',
           top: typeof modalPosition.top === 'number' ? `${modalPosition.top}px` : modalPosition.top,
-          left: typeof modalPosition.left === 'number' ? `${modalPosition.left}px` : modalPosition.left,
-          transform: typeof modalPosition.left === 'string' && modalPosition.left === '50%' ? 'translateX(-50%)' : 'none'
+          left:
+            typeof modalPosition.left === 'number' ? `${modalPosition.left}px` : modalPosition.left,
+          transform:
+            typeof modalPosition.left === 'string' && modalPosition.left === '50%'
+              ? 'translateX(-50%)'
+              : 'none'
         }}
       >
         {/* Compact Input with Send Button */}
@@ -464,17 +487,15 @@ const InlineAIModal = ({ isOpen, onClose, onInsert, cursorPosition, editorView }
             }}
             title="Send (Enter)"
           >
-            {isGenerating ? (
-              <Loader2 size={14} className="spinning" />
-            ) : (
-              <Check size={14} />
-            )}
+            {isGenerating ? <Loader2 size={14} className="spinning" /> : <Check size={14} />}
           </button>
         </form>
 
         {/* Escape hint */}
         <div className="inline-ai-escape-hint">
-          <span>Press <kbd>Esc</kbd> to close</span>
+          <span>
+            Press <kbd>Esc</kbd> to close
+          </span>
         </div>
 
         {/* Response - Only show when we have response */}
@@ -482,9 +503,7 @@ const InlineAIModal = ({ isOpen, onClose, onInsert, cursorPosition, editorView }
           <>
             <div ref={responseRef} className="inline-ai-response-compact">
               <div className="inline-ai-response-content">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {response}
-                </ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{response}</ReactMarkdown>
               </div>
             </div>
 

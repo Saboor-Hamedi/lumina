@@ -12,10 +12,11 @@ const api = {
   cleanOrphans: () => electronAPI.ipcRenderer.invoke('vault:cleanOrphans'),
   openVaultFolder: () => electronAPI.ipcRenderer.invoke('vault:open-folder'),
   selectVault: () => electronAPI.ipcRenderer.invoke('vault:select-folder'),
-  
+
   // Folder Ops
   createFolder: (path) => electronAPI.ipcRenderer.invoke('vault:createFolder', path),
-  renameFolder: (oldPath, newPath) => electronAPI.ipcRenderer.invoke('vault:renameFolder', oldPath, newPath),
+  renameFolder: (oldPath, newPath) =>
+    electronAPI.ipcRenderer.invoke('vault:renameFolder', oldPath, newPath),
   deleteFolder: (path) => electronAPI.ipcRenderer.invoke('vault:deleteFolder', path),
 
   // Settings & Theme
@@ -55,7 +56,8 @@ const api = {
   exportMarkdown: (payload) => electronAPI.ipcRenderer.invoke('window:export-markdown', payload),
 
   // Vault Indexing
-  indexVault: (vaultPath, options) => electronAPI.ipcRenderer.invoke('vault:index', vaultPath, options),
+  indexVault: (vaultPath, options) =>
+    electronAPI.ipcRenderer.invoke('vault:index', vaultPath, options),
   rebuildIndex: (vaultPath) => electronAPI.ipcRenderer.invoke('vault:rebuild-index', vaultPath),
   getIndexStats: () => electronAPI.ipcRenderer.invoke('vault:index-stats'),
   onIndexProgress: (cb) => {
@@ -67,13 +69,15 @@ const api = {
   // Vault Search
   searchVault: (query, options) => electronAPI.ipcRenderer.invoke('vault:search', query, options),
   getSearchStats: () => electronAPI.ipcRenderer.invoke('vault:search-stats'),
-  findSimilar: (chunkId, limit) => electronAPI.ipcRenderer.invoke('vault:find-similar', chunkId, limit),
+  findSimilar: (chunkId, limit) =>
+    electronAPI.ipcRenderer.invoke('vault:find-similar', chunkId, limit),
 
   // Error Logging
   logError: (errorData) => electronAPI.ipcRenderer.invoke('error:log', errorData),
 
   // Image Generation (bypasses CSP by using main process)
-  generateImage: (endpoint, headers, body) => electronAPI.ipcRenderer.invoke('ai:generateImage', { endpoint, headers, body })
+  generateImage: (endpoint, headers, body) =>
+    electronAPI.ipcRenderer.invoke('ai:generateImage', { endpoint, headers, body })
 }
 
 // Expose APIs
@@ -92,7 +96,7 @@ if (process.contextIsolated) {
             filename: evt.filename,
             lineno: evt.lineno,
             colno: evt.colno,
-            error: (evt.error && evt.error.stack) ? evt.error.stack : undefined,
+            error: evt.error && evt.error.stack ? evt.error.stack : undefined,
             time: Date.now()
           }
           electronAPI.ipcRenderer.send('renderer:log', payload)

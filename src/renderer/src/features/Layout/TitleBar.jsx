@@ -22,7 +22,11 @@ const TitleBar = () => {
     <div className="title-bar">
       <div className="title-left">
         <div className="app-logo">
-          <img src={logoUrl} alt="Lumina Logo" style={{ width: 14, height: 14, objectFit: 'contain' }} />
+          <img
+            src={logoUrl}
+            alt="Lumina Logo"
+            style={{ width: 14, height: 14, objectFit: 'contain' }}
+          />
           <span className="app-name">Lumina</span>
         </div>
       </div>

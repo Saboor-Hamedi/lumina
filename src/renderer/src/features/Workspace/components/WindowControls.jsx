@@ -4,10 +4,7 @@ import { X, Minus, Square, GripHorizontal } from 'lucide-react'
 const WindowControls = () => {
   return (
     <div className="window-controls-float">
-      <div 
-        className="control-btn drag-btn" 
-        title="Drag to move window" 
-      >
+      <div className="control-btn drag-btn" title="Drag to move window">
         <GripHorizontal size={14} />
       </div>
       <button onClick={() => window.api?.minimize()} className="control-btn" title="Minimize">

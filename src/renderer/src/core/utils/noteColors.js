@@ -8,5 +8,5 @@ export const NOTE_COLORS = [
   { label: 'Blue', hex: '3b82f6' },
   { label: 'Indigo', hex: '6366f1' },
   { label: 'Purple', hex: 'a855f7' },
-  { label: 'Pink', hex: 'ec4899' },
+  { label: 'Pink', hex: 'ec4899' }
 ]

@@ -327,7 +327,7 @@ class VaultIndexer {
   async indexFile(filePath, force = false, state = null) {
     try {
       const stats = await fs.stat(filePath)
-      state = state || await this.loadState()
+      state = state || (await this.loadState())
 
       // Quick fast-path check without reading file content or hashing
       if (!force && state?.files?.[filePath]) {
@@ -347,8 +347,8 @@ class VaultIndexer {
       if (!force && state?.files?.[filePath]) {
         const fileState = state.files[filePath]
         if (fileState.checksum === checksum && fileState.indexed) {
-          return { 
-            indexed: false, 
+          return {
+            indexed: false,
             reason: 'unchanged_checksum',
             stateUpdate: {
               ...fileState,
@@ -363,11 +363,18 @@ class VaultIndexer {
       // Read and chunk file
       const content = await fs.readFile(filePath, 'utf-8')
       if (!content.trim()) {
-        return { 
-          indexed: true, 
-          chunkCount: 0, 
+        return {
+          indexed: true,
+          chunkCount: 0,
           reason: 'empty',
-          stateUpdate: { mtime: stats.mtimeMs, size: stats.size, checksum, indexed: true, chunkCount: 0, lastIndexed: Date.now() }
+          stateUpdate: {
+            mtime: stats.mtimeMs,
+            size: stats.size,
+            checksum,
+            indexed: true,
+            chunkCount: 0,
+            lastIndexed: Date.now()
+          }
         }
       }
 
@@ -379,11 +386,18 @@ class VaultIndexer {
 
       const chunks = this.chunkContent(filePath, content, metadata)
       if (chunks.length === 0) {
-        return { 
-          indexed: true, 
-          chunkCount: 0, 
+        return {
+          indexed: true,
+          chunkCount: 0,
           reason: 'no_chunks',
-          stateUpdate: { mtime: stats.mtimeMs, size: stats.size, checksum, indexed: true, chunkCount: 0, lastIndexed: Date.now() }
+          stateUpdate: {
+            mtime: stats.mtimeMs,
+            size: stats.size,
+            checksum,
+            indexed: true,
+            chunkCount: 0,
+            lastIndexed: Date.now()
+          }
         }
       }
 
@@ -622,8 +636,8 @@ class VaultIndexer {
     const validation = await this.validateIndex()
     const shouldRebuild = !validation.valid
     if (shouldRebuild) {
-        console.info('[VaultIndexer] Rebuild required, clearing index...')
-        await this.clearIndex()
+      console.info('[VaultIndexer] Rebuild required, clearing index...')
+      await this.clearIndex()
     }
 
     // Validate vaultPath
@@ -701,7 +715,7 @@ class VaultIndexer {
           })
           lastYieldTime = Date.now()
         }
-        
+
         // CRITICAL: Yield to OS message pump after EVERY batch of 100 files
         // to prevent window drag/resize from freezing on massive vaults.
         await new Promise((resolve) => setTimeout(resolve, 2))
@@ -749,7 +763,7 @@ class VaultIndexer {
         const filePath = filesToProcess[i]
         try {
           const result = await this.indexFile(filePath, force, state)
-          
+
           if (result.stateUpdate) {
             accumulatedFileStates[filePath] = result.stateUpdate
           }
@@ -819,19 +833,26 @@ class VaultIndexer {
   }
 
   async clearIndex() {
-  await this.writeLock.lock()
-  try {
-    await fs.writeFile(this.indexPath, '', 'utf-8')
-    await fs.writeFile(this.embeddingsPath, Buffer.alloc(0))
-    await fs.writeFile(this.statePath, JSON.stringify({ 
-      version: this.version, 
-      files: {} 
-    }, null, 2))
-    console.info('[VaultIndexer] ✓ Index cleared')
-  } finally {
-    this.writeLock.unlock()
+    await this.writeLock.lock()
+    try {
+      await fs.writeFile(this.indexPath, '', 'utf-8')
+      await fs.writeFile(this.embeddingsPath, Buffer.alloc(0))
+      await fs.writeFile(
+        this.statePath,
+        JSON.stringify(
+          {
+            version: this.version,
+            files: {}
+          },
+          null,
+          2
+        )
+      )
+      console.info('[VaultIndexer] ✓ Index cleared')
+    } finally {
+      this.writeLock.unlock()
+    }
   }
-}
 
   /**
    * Scan vault for indexable files
@@ -878,7 +899,10 @@ class VaultIndexer {
           if (
             entry.name.startsWith('.') ||
             entry.name === 'node_modules' ||
-            entry.name === '.git'
+            entry.name === '.git' ||
+            entry.name === 'dist' ||
+            entry.name === 'build' ||
+            entry.name === 'log'
           ) {
             continue
           }
@@ -904,7 +928,7 @@ class VaultIndexer {
             })
             lastYieldTime = Date.now()
           }
-          
+
           // CRITICAL: Yield to OS message pump after EVERY 50 files
           // to prevent window drag/resize from freezing on massive vaults.
           if (entryCount % 50 === 0) {

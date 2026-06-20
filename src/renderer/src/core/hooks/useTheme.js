@@ -25,15 +25,15 @@ export const useTheme = () => {
       console.warn(`Theme "${themeId}" not found, using "dark"`)
       themeId = 'dark'
     }
-    
+
     setCurrentTheme(themeId)
     localStorage.setItem('theme-id', themeId)
     // applyThemeUtil handles caret color from theme definition
     applyThemeUtil(themeId)
   }
 
-  return { 
-    theme: currentTheme, 
+  return {
+    theme: currentTheme,
     setTheme,
     themeData: getTheme(currentTheme),
     allThemes: Object.values(THEMES)

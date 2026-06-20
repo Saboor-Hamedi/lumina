@@ -32,7 +32,7 @@ class FloatingWindowManager {
       : join(app.getAppPath(), 'resources', 'icon.ico')
 
     // Get saved floating window position/size
-    const savedState = await SettingsManager.get('aiChatFloatingState') || {}
+    const savedState = (await SettingsManager.get('aiChatFloatingState')) || {}
 
     // Calculate position - center on screen if no position provided
     let windowX = options.x
@@ -139,16 +139,20 @@ class FloatingWindowManager {
         await floatingWindow.loadFile(indexPath)
         // Inject query param after DOM is ready
         floatingWindow.webContents.once('did-finish-load', () => {
-          floatingWindow.webContents.executeJavaScript(`
+          floatingWindow.webContents
+            .executeJavaScript(
+              `
             if (!window.location.search.includes('floating=aiChat')) {
               const url = new URL(window.location.href)
               url.searchParams.set('floating', 'aiChat')
               window.history.replaceState({}, '', url.toString())
               window.dispatchEvent(new CustomEvent('floating-mode-changed', { detail: { floating: 'aiChat' } }))
             }
-          `).catch((err) => {
-            console.error('[FloatingWindowManager] Error injecting query param:', err)
-          })
+          `
+            )
+            .catch((err) => {
+              console.error('[FloatingWindowManager] Error injecting query param:', err)
+            })
         })
       }
 
@@ -168,7 +172,6 @@ class FloatingWindowManager {
         showWindow()
       }
     }, 500)
-
 
     return floatingWindow
   }

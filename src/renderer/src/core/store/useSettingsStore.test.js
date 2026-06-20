@@ -29,7 +29,7 @@ describe('useSettingsStore', () => {
 
     // Reset mocks
     vi.clearAllMocks()
-    
+
     // Reset document
     document.documentElement.removeAttribute('data-theme')
     document.documentElement.removeAttribute('data-translucency')
@@ -98,9 +98,7 @@ describe('useSettingsStore', () => {
       global.window.api.saveSetting.mockRejectedValue(new Error('IPC error'))
 
       // Should not throw
-      await expect(
-        useSettingsStore.getState().updateSetting('fontSize', 20)
-      ).resolves.not.toThrow()
+      await expect(useSettingsStore.getState().updateSetting('fontSize', 20)).resolves.not.toThrow()
 
       // Optimistic update should still be applied
       expect(useSettingsStore.getState().settings.fontSize).toBe(20)

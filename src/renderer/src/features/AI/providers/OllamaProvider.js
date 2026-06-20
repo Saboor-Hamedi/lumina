@@ -11,10 +11,10 @@ export class OllamaProvider extends BaseProvider {
 
   async *chatStream(messages, options = {}) {
     // Ollama doesn't strictly require a key, but we ensure URL is set
-    
+
     // Some Ollama setups might not support streaming via fetch reader standardly in older versions,
     // but newer ones send NDJSON.
-    
+
     const response = await fetch(this.baseUrl, {
       method: 'POST',
       headers: {
@@ -45,9 +45,9 @@ export class OllamaProvider extends BaseProvider {
       const chunk = decoder.decode(value, { stream: true })
       // Ollama sends multiple JSON objects in one chunk sometimes
       // format: { "model": "...", "created_at": "...", "message": { "role": "assistant", "content": "..." }, "done": false }
-      
-      const lines = chunk.split('\n').filter(l => l.trim() !== '')
-      
+
+      const lines = chunk.split('\n').filter((l) => l.trim() !== '')
+
       for (const line of lines) {
         try {
           const parsed = JSON.parse(line)
@@ -56,7 +56,7 @@ export class OllamaProvider extends BaseProvider {
           }
           if (parsed.done) return
         } catch (e) {
-           console.warn('Ollama parse error:', e)
+          console.warn('Ollama parse error:', e)
         }
       }
     }

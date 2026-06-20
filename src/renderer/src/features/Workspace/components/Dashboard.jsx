@@ -6,13 +6,20 @@ import StatusBar from './StatusBar'
  * Dashboard Component
  * Now delegates entirely to the focused WelcomePage when no note is active.
  */
-const Dashboard = ({ onNew, onToggleExplorerModal, onSettingsClick, onThemeClick, onGraphClick, onDailyNoteClick }) => {
+const Dashboard = ({
+  onNew,
+  onToggleExplorerModal,
+  onSettingsClick,
+  onThemeClick,
+  onGraphClick,
+  onDailyNoteClick
+}) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ flex: 1, overflow: 'hidden' }}>
         <WelcomePage onNew={onNew} />
       </div>
-      <StatusBar 
+      <StatusBar
         wordCount={0}
         onToggleExplorerModal={onToggleExplorerModal}
         onSettingsClick={onSettingsClick}

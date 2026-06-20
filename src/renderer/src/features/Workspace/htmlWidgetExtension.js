@@ -29,10 +29,11 @@ function buildDecorations(state) {
   const isBadgeLine = (text) => {
     if (text.trim() === '') return false
     // Match ![alt](url), <a href="...">...</a>, [text](url), and characters like . , | -
-    const stripped = text.replace(/!\[[^\]]*\]\([^)]+\)/g, '')
-                         .replace(/<a\s[^>]*>[\s\S]*?<\/a>/gi, '')
-                         .replace(/\[[^\]]+\]\([^)]+\)/g, '')
-                         .replace(/[\s\.\,\|\-]/g, '')
+    const stripped = text
+      .replace(/!\[[^\]]*\]\([^)]+\)/g, '')
+      .replace(/<a\s[^>]*>[\s\S]*?<\/a>/gi, '')
+      .replace(/\[[^\]]+\]\([^)]+\)/g, '')
+      .replace(/[\s\.\,\|\-]/g, '')
     return stripped === ''
   }
 
@@ -40,13 +41,17 @@ function buildDecorations(state) {
     const line = state.doc.line(i)
     const text = line.text
 
-    if (/<(div|p)[^>]*(?:align=["']center["']|class=["'][^"']*center[^"']*["'])[^>]*>/i.test(text)) {
+    if (
+      /<(div|p)[^>]*(?:align=["']center["']|class=["'][^"']*center[^"']*["'])[^>]*>/i.test(text)
+    ) {
       inCenterDiv = true
     }
 
     if (inCenterDiv) {
       // Center the block
-      lineDecos.push(Decoration.line({ attributes: { style: 'text-align: center;' } }).range(line.from))
+      lineDecos.push(
+        Decoration.line({ attributes: { style: 'text-align: center;' } }).range(line.from)
+      )
 
       // If this line and the next line are badge lines, dynamically merge them!
       if (i < state.doc.lines && isBadgeLine(text)) {
@@ -55,7 +60,7 @@ function buildDecorations(state) {
           // Merge them by replacing the newline
           const matchFrom = line.to
           const matchTo = line.to + 1
-          
+
           let intersects = false
           for (const range of selection.ranges) {
             if (range.from <= matchTo + 2 && range.to >= matchFrom - 2) {
@@ -63,11 +68,13 @@ function buildDecorations(state) {
               break
             }
           }
-          
+
           if (!intersects) {
-            widgets.push(Decoration.replace({
-              widget: new SpaceWidget()
-            }).range(matchFrom, matchTo))
+            widgets.push(
+              Decoration.replace({
+                widget: new SpaceWidget()
+              }).range(matchFrom, matchTo)
+            )
           }
         }
       }
@@ -94,9 +101,11 @@ function buildDecorations(state) {
     }
 
     if (!intersects) {
-      widgets.push(Decoration.replace({
-        widget: new HiddenHtmlWidget()
-      }).range(matchFrom, matchTo))
+      widgets.push(
+        Decoration.replace({
+          widget: new HiddenHtmlWidget()
+        }).range(matchFrom, matchTo)
+      )
     }
   }
 
@@ -107,16 +116,20 @@ function buildDecorations(state) {
     if (openTagMatch) {
       const innerTextFrom = match.index + openTagMatch[0].length
       const innerTextTo = innerTextFrom + match[1].length
-      
+
       if (innerTextTo > innerTextFrom) {
-        widgets.push(Decoration.mark({
-          class: 'cm-html-link-text'
-        }).range(innerTextFrom, innerTextTo))
+        widgets.push(
+          Decoration.mark({
+            class: 'cm-html-link-text'
+          }).range(innerTextFrom, innerTextTo)
+        )
       }
     }
   }
 
-  const allDecos = [...lineDecos, ...widgets].sort((a, b) => a.from - b.from || (a.value.startSide - b.value.startSide))
+  const allDecos = [...lineDecos, ...widgets].sort(
+    (a, b) => a.from - b.from || a.value.startSide - b.value.startSide
+  )
   return Decoration.set(allDecos, true)
 }
 
@@ -130,5 +143,5 @@ export const htmlWidgetExtension = StateField.define({
     }
     return value
   },
-  provide: f => EditorView.decorations.from(f)
+  provide: (f) => EditorView.decorations.from(f)
 })

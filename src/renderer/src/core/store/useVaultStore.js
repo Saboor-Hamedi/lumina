@@ -37,9 +37,9 @@ export const useVaultStore = create((set, get) => ({
           ? null
           : validActiveId
             ? state.snippets.find((s) => s.id === validActiveId)
-            : (validTabs.length && validTabs[0] !== GRAPH_TAB_ID
+            : validTabs.length && validTabs[0] !== GRAPH_TAB_ID
               ? state.snippets.find((s) => s.id === validTabs[0])
-              : null)
+              : null
 
       return {
         openTabs: validTabs,
@@ -96,8 +96,8 @@ export const useVaultStore = create((set, get) => ({
     set((state) => {
       // High-performance boundary enforcement: ensure pinned tabs stay at the start
       const pinnedSet = new Set(state.pinnedTabIds)
-      const pTabs = newTabs.filter(tid => pinnedSet.has(tid))
-      const rTabs = newTabs.filter(tid => !pinnedSet.has(tid))
+      const pTabs = newTabs.filter((tid) => pinnedSet.has(tid))
+      const rTabs = newTabs.filter((tid) => !pinnedSet.has(tid))
 
       return { openTabs: [...pTabs, ...rTabs] }
     })
@@ -134,9 +134,12 @@ export const useVaultStore = create((set, get) => ({
 
   closeAllTabs: () => {
     set((state) => ({
-      openTabs: state.openTabs.filter(id => state.pinnedTabIds.includes(id)),
+      openTabs: state.openTabs.filter((id) => state.pinnedTabIds.includes(id)),
       activeTabId: state.pinnedTabIds.length > 0 ? state.pinnedTabIds[0] : null,
-      selectedSnippet: state.pinnedTabIds.length > 0 ? state.snippets.find(s => s.id === state.pinnedTabIds[0]) : null
+      selectedSnippet:
+        state.pinnedTabIds.length > 0
+          ? state.snippets.find((s) => s.id === state.pinnedTabIds[0])
+          : null
     }))
   },
 
@@ -144,13 +147,13 @@ export const useVaultStore = create((set, get) => ({
     set((state) => {
       const isPinned = state.pinnedTabIds.includes(id)
       const nextPinned = isPinned
-        ? state.pinnedTabIds.filter(pid => pid !== id)
+        ? state.pinnedTabIds.filter((pid) => pid !== id)
         : [...state.pinnedTabIds, id]
 
       // Move pinned tabs to the front of openTabs
       const pinnedSet = new Set(nextPinned)
-      const pTabs = state.openTabs.filter(tid => pinnedSet.has(tid))
-      const rTabs = state.openTabs.filter(tid => !pinnedSet.has(tid))
+      const pTabs = state.openTabs.filter((tid) => pinnedSet.has(tid))
+      const rTabs = state.openTabs.filter((tid) => !pinnedSet.has(tid))
 
       return {
         pinnedTabIds: nextPinned,
@@ -207,20 +210,24 @@ export const useVaultStore = create((set, get) => ({
       // Background Sync from File System (SQLite via IPC)
       if (window.api?.getSnippets) {
         const freshData = await window.api.getSnippets()
-        
+
         if (freshData && freshData.snippets) {
           // Merge note colors from settings.json as fallback
           try {
-            const noteColors = await window.api.getSetting('noteColors') || {}
-            const folderColors = await window.api.getSetting('folderColors') || {}
-            const merged = freshData.snippets.map(s => ({
+            const noteColors = (await window.api.getSetting('noteColors')) || {}
+            const folderColors = (await window.api.getSetting('folderColors')) || {}
+            const merged = freshData.snippets.map((s) => ({
               ...s,
               color: s.color || noteColors[s.id] || null
             }))
             set({ snippets: merged, folders: freshData.folders || [], folderColors })
           } catch {
             // settings.json unavailable, use fresh data as-is
-            set({ snippets: freshData.snippets, folders: freshData.folders || [], folderColors: {} })
+            set({
+              snippets: freshData.snippets,
+              folders: freshData.folders || [],
+              folderColors: {}
+            })
           }
         } else {
           console.warn('[VaultStore] ✗ Received invalid data from sync.')
@@ -252,15 +259,18 @@ export const useVaultStore = create((set, get) => ({
       // Sync note color to settings.json when it changes
       const current = get().snippets
       const existing = current.find((s) => s.id === snippet.id)
-      
+
       // Call IPC save
       const updatedSnippet = await window.api.saveSnippet(snippet)
-      
+
       if (snippet.color && (!existing || existing.color !== snippet.color)) {
-        const currentColors = await window.api.getSetting('noteColors') || {}
-        await window.api.saveSetting('noteColors', { ...currentColors, [snippet.id]: snippet.color })
+        const currentColors = (await window.api.getSetting('noteColors')) || {}
+        await window.api.saveSetting('noteColors', {
+          ...currentColors,
+          [snippet.id]: snippet.color
+        })
       }
-      
+
       // Update local state by merging the saved snippet
       set((state) => {
         let nextSnippets = state.snippets.map((s) =>
@@ -279,7 +289,7 @@ export const useVaultStore = create((set, get) => ({
           const linkRegex = new RegExp('\\[\\[' + escapeRegExp(oldTitle) + '([\\|#\\]])', 'gi')
 
           const updates = []
-          nextSnippets = nextSnippets.map(s => {
+          nextSnippets = nextSnippets.map((s) => {
             if (s.id !== snippet.id && s.code && linkRegex.test(s.code)) {
               const newCode = s.code.replace(linkRegex, '[[' + newTitle + '$1')
               const updatedLinkSnippet = { ...s, code: newCode }
@@ -290,7 +300,7 @@ export const useVaultStore = create((set, get) => ({
           })
 
           // Save all updated files to disk asynchronously in the background
-          updates.forEach(u => window.api.saveSnippet(u).catch(console.error))
+          updates.forEach((u) => window.api.saveSnippet(u).catch(console.error))
         }
 
         return {
@@ -298,7 +308,7 @@ export const useVaultStore = create((set, get) => ({
           dirtySnippetIds: state.dirtySnippetIds.filter((dId) => dId !== snippet.id)
         }
       })
-      
+
       if (get().selectedSnippet?.id === snippet.id) {
         set({ selectedSnippet: updatedSnippet })
       }
@@ -385,7 +395,7 @@ export const useVaultStore = create((set, get) => ({
 
   setFolderColor: async (folderId, color) => {
     try {
-      const currentColors = await window.api.getSetting('folderColors') || {}
+      const currentColors = (await window.api.getSetting('folderColors')) || {}
       const newColors = { ...currentColors }
       if (color) {
         newColors[folderId] = color

@@ -2,7 +2,16 @@ import React from 'react'
 import { X } from 'lucide-react'
 import './ModalHeader.css'
 
-const ModalHeader = ({ title = null, subtitle = null, icon = null, left = null, right = null, onClose = () => {}, onMouseDown = null, style = {} }) => {
+const ModalHeader = ({
+  title = null,
+  subtitle = null,
+  icon = null,
+  left = null,
+  right = null,
+  onClose = () => {},
+  onMouseDown = null,
+  style = {}
+}) => {
   return (
     <header className="pane-header modal-header-with-knob" onMouseDown={onMouseDown} style={style}>
       <div className="modal-header-knob" aria-hidden="true" />
@@ -10,21 +19,19 @@ const ModalHeader = ({ title = null, subtitle = null, icon = null, left = null, 
       <div className="modal-left">
         {left ? (
           left
-        ) : (
-          (icon || title || subtitle) ? (
-            <div className="modal-title-stack">
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                {title ? (
-                  <>
-                    <div className="theme-modal-title">{title}</div>
-                    <div className="modal-title-knob" aria-hidden="true" />
-                  </>
-                ) : null}
-                {subtitle ? <div className="theme-modal-subtitle">{subtitle}</div> : null}
-              </div>
+        ) : icon || title || subtitle ? (
+          <div className="modal-title-stack">
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {title ? (
+                <>
+                  <div className="theme-modal-title">{title}</div>
+                  <div className="modal-title-knob" aria-hidden="true" />
+                </>
+              ) : null}
+              {subtitle ? <div className="theme-modal-subtitle">{subtitle}</div> : null}
             </div>
-          ) : null
-        )}
+          </div>
+        ) : null}
       </div>
 
       <div className="modal-right">

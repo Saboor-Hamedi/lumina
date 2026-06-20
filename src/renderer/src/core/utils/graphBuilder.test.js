@@ -39,7 +39,7 @@ describe('graphBuilder', () => {
 
       const { nodes, links } = buildGraphData(snippets)
 
-      const ghostNode = nodes.find(n => n.id === 'NonExistent')
+      const ghostNode = nodes.find((n) => n.id === 'NonExistent')
       expect(ghostNode).toBeDefined()
       expect(ghostNode.group).toBe('ghost')
       // Ghost nodes start with val 0.5, but get increased by link mass calculation
@@ -60,18 +60,16 @@ describe('graphBuilder', () => {
     })
 
     it('creates tag nodes from tags', () => {
-      const snippets = [
-        { id: '1', title: 'Note 1', code: '', tags: 'tag1, tag2' }
-      ]
+      const snippets = [{ id: '1', title: 'Note 1', code: '', tags: 'tag1, tag2' }]
 
       const { nodes, links } = buildGraphData(snippets)
 
-      const tagNodes = nodes.filter(n => n.group === 'tag')
+      const tagNodes = nodes.filter((n) => n.group === 'tag')
       expect(tagNodes).toHaveLength(2)
       expect(tagNodes[0].id).toBe('#tag1')
       expect(tagNodes[1].id).toBe('#tag2')
 
-      const tagLinks = links.filter(l => l.target.startsWith('#'))
+      const tagLinks = links.filter((l) => l.target.startsWith('#'))
       expect(tagLinks).toHaveLength(2)
       expect(tagLinks[0].value).toBe(0.5)
     })
@@ -84,8 +82,8 @@ describe('graphBuilder', () => {
 
       const { nodes } = buildGraphData(snippets)
 
-      const note1 = nodes.find(n => n.id === 'Note 1')
-      const note2 = nodes.find(n => n.id === 'Note 2')
+      const note1 = nodes.find((n) => n.id === 'Note 1')
+      const note2 = nodes.find((n) => n.id === 'Note 2')
 
       // Each node has base val of 1, plus 0.5 for each link
       expect(note1.val).toBeGreaterThan(1)
@@ -102,7 +100,7 @@ describe('graphBuilder', () => {
       const { links } = buildGraphData(snippets)
 
       expect(links).toHaveLength(2)
-      expect(links.filter(l => l.source === 'Note 1')).toHaveLength(2)
+      expect(links.filter((l) => l.source === 'Note 1')).toHaveLength(2)
     })
 
     it('handles empty snippets array', () => {
@@ -146,20 +144,24 @@ describe('graphBuilder', () => {
       ]
 
       // Create similar embeddings (normalized vectors)
-      const embedding1 = Array(384).fill(0.5).map(() => Math.random() * 0.1 + 0.5)
-      const embedding2 = Array(384).fill(0.5).map(() => Math.random() * 0.1 + 0.5)
-      
+      const embedding1 = Array(384)
+        .fill(0.5)
+        .map(() => Math.random() * 0.1 + 0.5)
+      const embedding2 = Array(384)
+        .fill(0.5)
+        .map(() => Math.random() * 0.1 + 0.5)
+
       // Normalize to make them similar
       const normalize = (vec) => {
         const mag = Math.sqrt(vec.reduce((sum, v) => sum + v * v, 0))
-        return vec.map(v => v / mag)
+        return vec.map((v) => v / mag)
       }
       const norm1 = normalize(embedding1)
       const norm2 = normalize(embedding2)
 
       const embeddingsCache = {
-        '1': norm1,
-        '2': norm2
+        1: norm1,
+        2: norm2
       }
 
       const semanticLinks = buildSemanticLinks(nodes, links, snippets, embeddingsCache)
@@ -180,16 +182,17 @@ describe('graphBuilder', () => {
       ]
 
       const embeddingsCache = {
-        '1': Array(384).fill(0.5),
-        '2': Array(384).fill(0.5)
+        1: Array(384).fill(0.5),
+        2: Array(384).fill(0.5)
       }
 
       const semanticLinks = buildSemanticLinks(nodes, links, snippets, embeddingsCache)
 
       // Should not add semantic link if explicit link exists
       const hasLink = semanticLinks.some(
-        l => (l.source === 'Note 1' && l.target === 'Note 2') ||
-             (l.source === 'Note 2' && l.target === 'Note 1')
+        (l) =>
+          (l.source === 'Note 1' && l.target === 'Note 2') ||
+          (l.source === 'Note 2' && l.target === 'Note 1')
       )
       expect(hasLink).toBe(false)
     })
@@ -203,15 +206,18 @@ describe('graphBuilder', () => {
       const links = []
       const snippets = [{ id: '1', title: 'Note 1', code: '' }]
 
-      const embeddingsCache = { '1': Array(384).fill(0.5) }
+      const embeddingsCache = { 1: Array(384).fill(0.5) }
 
       const semanticLinks = buildSemanticLinks(nodes, links, snippets, embeddingsCache)
 
       // Should not process tag or ghost nodes
-      expect(semanticLinks.every(l => 
-        nodes.find(n => n.id === l.source)?.group === 'note' &&
-        nodes.find(n => n.id === l.target)?.group === 'note'
-      )).toBe(true)
+      expect(
+        semanticLinks.every(
+          (l) =>
+            nodes.find((n) => n.id === l.source)?.group === 'note' &&
+            nodes.find((n) => n.id === l.target)?.group === 'note'
+        )
+      ).toBe(true)
     })
   })
 })

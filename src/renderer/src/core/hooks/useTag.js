@@ -11,11 +11,13 @@ export const useTag = () => {
     snippets.forEach((snippet) => {
       // 1. Add frontmatter tags
       if (snippet.tags) {
-        const rawTags = Array.isArray(snippet.tags) 
-          ? snippet.tags 
-          : (typeof snippet.tags === 'string' ? snippet.tags.split(',') : [])
-        
-        rawTags.forEach(t => {
+        const rawTags = Array.isArray(snippet.tags)
+          ? snippet.tags
+          : typeof snippet.tags === 'string'
+            ? snippet.tags.split(',')
+            : []
+
+        rawTags.forEach((t) => {
           const trimmed = String(t).trim()
           if (trimmed) {
             tagSet.add(trimmed.startsWith('#') ? trimmed : `#${trimmed}`)
@@ -27,7 +29,7 @@ export const useTag = () => {
       let code = snippet.code || ''
       code = code.replace(/```[\s\S]*?```/g, '')
       code = code.replace(/`[^`]+`/g, '')
-      
+
       let match
       while ((match = tagRegex.exec(code)) !== null) {
         tagSet.add(match[1])
