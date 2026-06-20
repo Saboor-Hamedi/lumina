@@ -842,6 +842,9 @@ const MarkdownEditor = React.memo(
       prevSnippet?.id === nextSnippet?.id &&
       prevSnippet?.code === nextSnippet?.code &&
       prevSnippet?.title === nextSnippet?.title &&
+      prevSnippet?.customIcon === nextSnippet?.customIcon &&
+      prevSnippet?.color === nextSnippet?.color &&
+      prevSnippet?.isPinned === nextSnippet?.isPinned &&
       prevProps.onSave === nextProps.onSave &&
       prevProps.onToggleInspector === nextProps.onToggleInspector &&
       prevProps.isActive === nextProps.isActive
