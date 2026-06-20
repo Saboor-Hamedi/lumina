@@ -24,6 +24,7 @@ class MermaidWidget extends WidgetType {
 
     // Clicking anywhere on the widget enters edit mode
     wrap.addEventListener('click', (e) => {
+      if (view.state.readOnly) return
       e.preventDefault()
       e.stopPropagation()
       const pos = view.posAtDOM(wrap)
@@ -42,8 +43,12 @@ class MermaidWidget extends WidgetType {
     editBtn.className = 'mermaid-edit-btn'
     editBtn.innerHTML = `&lt;/&gt;`
     editBtn.title = 'Edit Code'
+    if (view.state.readOnly) {
+      editBtn.style.display = 'none'
+    }
 
     editBtn.addEventListener('click', (e) => {
+      if (view.state.readOnly) return
       e.preventDefault()
       e.stopPropagation()
       const pos = view.posAtDOM(wrap)

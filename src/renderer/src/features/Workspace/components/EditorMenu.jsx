@@ -18,7 +18,7 @@ import {
 import { useToast } from '../../../core/hooks/useToast'
 import ToastNotification from '../../../core/notification'
 
-const EditorTitleBar = ({
+const EditorMenu = ({
   title,
   snippet,
   setSelectedSnippet,
@@ -31,7 +31,8 @@ const EditorTitleBar = ({
   onExportHTML,
   onExportPDF,
   onExportMarkdown,
-  onInlineAI
+  onInlineAI,
+  onPreview
 }) => {
   const [showMoreMenu, setShowMoreMenu] = useState(false)
   const menuRef = useRef(null)
@@ -107,6 +108,18 @@ const EditorTitleBar = ({
                   <span className="menu-label">Save File</span>
                   <span className="shortcut-label">Ctrl+S</span>
                   <Save size={12} className="menu-icon-right" />
+                </div>
+                <div className="dropdown-divider" />
+                <div
+                  className="dropdown-item"
+                  onClick={() => {
+                    if (onPreview) onPreview()
+                    setShowMoreMenu(false)
+                  }}
+                >
+                  <span className="menu-label">Preview Note</span>
+                  <span className="shortcut-label">Ctrl+P</span>
+                  <FileText size={12} className="menu-icon-right" />
                 </div>
                 <div className="dropdown-divider" />
                 <div
@@ -245,4 +258,4 @@ const EditorTitleBar = ({
   )
 }
 
-export default EditorTitleBar
+export default EditorMenu

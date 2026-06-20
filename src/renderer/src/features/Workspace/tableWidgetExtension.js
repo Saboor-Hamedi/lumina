@@ -275,7 +275,7 @@ function renderCellToken(tok) {
     wrap.dataset.url = tok.url
     wrap.appendChild(makeCellMark('[['))
     const inner = document.createElement('span')
-    inner.className = 'cm-atomic-link cm-atomic-wikilink'
+    inner.className = 'cm-atomic-link cm-atomic-wiki-link' // Use wiki-link to match CSS
     inner.appendChild(renderTokensTo(tok.textChildren))
     wrap.appendChild(inner)
     wrap.appendChild(makeCellMark(']]'))
@@ -693,7 +693,7 @@ function makeCell(tag, text, view) {
   // stays in a dedicated editable box above it.
   const source = document.createElement('div')
   source.className = 'cm-atomic-table-cell-source'
-  source.contentEditable = 'true'
+  source.contentEditable = view.state.readOnly ? 'false' : 'true'
   source.spellcheck = true
   // Decorated DOM on mount. Delimiters (`.cm-atomic-mark`) are
   // `display: none` by default — the caret can't navigate into them,

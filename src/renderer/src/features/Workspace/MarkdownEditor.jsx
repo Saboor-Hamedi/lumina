@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import EditorTitleBar from './components/EditorTitleBar'
+import EditorMenu from './components/EditorMenu'
 import EditorMetadata from './components/EditorMetadata'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
@@ -28,6 +28,7 @@ import { mermaidWidgetExtension } from './mermaidWidgetExtension'
 import '@atomic-editor/editor/styles.css'
 import FindWidget from './components/FindWidget'
 import StatusBar from './components/StatusBar'
+import PreviewModal from '../Overlays/PreviewModal/PreviewModal'
 
 const updateSearchHighlights = StateEffect.define()
 
@@ -60,6 +61,7 @@ const MarkdownEditor = React.memo(
   }) => {
     const { toast, showToast, clearToast } = useToast()
     const [isSaving, setIsSaving] = useState(false)
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false)
     const isMountedRef = useRef(true)
 
     // Persistence Refs
@@ -144,6 +146,9 @@ const MarkdownEditor = React.memo(
           e.preventDefault()
           setReplaceModeActive(true)
           setShowFindWidget(true)
+        } else if (e.key === '\\' && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault()
+          setIsPreviewOpen(prev => !prev)
         }
       }
 
@@ -611,15 +616,50 @@ const MarkdownEditor = React.memo(
       [showToast, autocompleteTriggerListener, wikiLinkCompletionSource]
     )
 
+    const handleTableLinkClick = useCallback(async (url) => {
+      if (url.match(/^(https?|mailto|file):\/\//i)) {
+        window.open(url, '_blank')
+        return
+      }
+      
+      showToast(`Opening wikilink: ${url}`, 'info')
+      try {
+        const { snippets, saveSnippet, setSelectedSnippet } = useVaultStore.getState()
+        const targetLower = url.toLowerCase()
+        let targetSnippet = snippets.find(
+          (s) =>
+            s.title &&
+            (s.title.toLowerCase() === targetLower ||
+              s.title.toLowerCase() === `${targetLower}.md`)
+        )
+
+        if (!targetSnippet) {
+          showToast(`Creating new note: ${url}`, 'info')
+          targetSnippet = {
+            id: crypto.randomUUID(),
+            title: url,
+            code: `# ${url}\n\n`,
+            language: 'markdown',
+            tags: '',
+            timestamp: Date.now()
+          }
+          await saveSnippet(targetSnippet)
+        }
+        setSelectedSnippet(targetSnippet)
+      } catch (e) {
+        showToast(`Error: ${e.message}`, 'error')
+      }
+    }, [showToast])
+
     const finalExtensions = React.useMemo(
       () => [
         ...editorExtensions,
         dropExtension,
         imageWidgetExtension,
         htmlWidgetExtension,
-        Prec.highest(tables())
+        Prec.highest(tables({ onLinkClick: handleTableLinkClick }))
       ],
-      [editorExtensions, dropExtension]
+      [editorExtensions, dropExtension, handleTableLinkClick]
     )
 
     // Forceful Native Event Listener to Override CodeMirror
@@ -698,7 +738,7 @@ const MarkdownEditor = React.memo(
         <ToastNotification toast={toast} onClose={clearToast} />
 
         <div className="editor-scroller">
-          <EditorTitleBar
+          <EditorMenu
             title={title}
             snippet={snippet}
             setSelectedSnippet={setSelectedSnippet}
@@ -709,6 +749,14 @@ const MarkdownEditor = React.memo(
             onExportHTML={handleExportHTML}
             onExportPDF={handleExportPDF}
             onExportMarkdown={handleExportMarkdown}
+            onPreview={() => setIsPreviewOpen(true)}
+          />
+          <PreviewModal 
+            isOpen={isPreviewOpen} 
+            onClose={() => setIsPreviewOpen(false)} 
+            title={title} 
+            content={snippet?.code} 
+            timestamp={snippet?.timestamp} 
           />
           <div className="editor-canvas-wrap" ref={editorWrapperRef}>
             {settings.inlineMetadata && (
