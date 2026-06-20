@@ -1,0 +1,50 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*' # Automatically trigger when a version tag like v1.0.0 is pushed
+  workflow_dispatch: # Allow clicking a button on GitHub to run this manually
+
+permissions:
+  contents: write # Needed so the action can upload files to your GitHub Release page
+
+jobs:
+  build-and-publish:
+    strategy:
+      matrix:
+        # We tell GitHub to boot up 3 separate cloud computers: Windows, Mac, and Linux
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build & Publish (Windows)
+        if: matrix.os == 'windows-latest'
+        run: npm run publish:win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Publish (macOS)
+        if: matrix.os == 'macos-latest'
+        run: npm run publish:mac
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Publish (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: npm run publish:linux
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
