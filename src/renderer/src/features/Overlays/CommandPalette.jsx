@@ -320,9 +320,7 @@ const CommandPalette = React.memo(
             if (selectedIndex !== index) setSelectedIndex(index)
           }}
         >
-          {isSemantic ? (
-            <Sparkles size={18} className="item-icon semantic" />
-          ) : isAction ? (
+          {isAction ? (
             (() => {
               if (item.action === 'settings')
                 return <Zap size={18} className="item-icon action-icon" />
@@ -335,7 +333,7 @@ const CommandPalette = React.memo(
             <Folder
               size={18}
               className="item-icon"
-              style={{ color: 'var(--text-accent)', fill: 'var(--text-accent)', fillOpacity: 0.2 }}
+              style={{ color: 'var(--text-accent)' }}
             />
           ) : item.matchType === 'tag' ? (
             <Hash size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
@@ -382,7 +380,6 @@ const CommandPalette = React.memo(
               </div>
             )}
           </div>
-          {isActive && <Zap size={14} className="item-zap" />}
         </div>
       )
     }
@@ -408,12 +405,6 @@ const CommandPalette = React.memo(
             <div className="palette-hint">
               {aiError ? (
                 <span style={{ color: 'var(--text-error)' }}>⚠️ AI Error: {aiError}</span>
-              ) : (!isModelReady || modelLoadingProgress < 100) && query.length > 2 ? (
-                <span className="loading-status" style={{ color: 'var(--text-accent)' }}>
-                  {modelLoadingProgress > 0
-                    ? `AI Loading ${Math.round(modelLoadingProgress)}%...`
-                    : 'AI Initializing...'}
-                </span>
               ) : (
                 'ESC to close'
               )}

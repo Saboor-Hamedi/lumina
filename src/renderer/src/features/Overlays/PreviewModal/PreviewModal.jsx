@@ -12,7 +12,7 @@ import { tables } from '../../Workspace/tableWidgetExtension'
 import { mermaidWidgetExtension } from '../../Workspace/mermaidWidgetExtension'
 import { codeBlockDecorations } from '../../Workspace/codeBlockHeader'
 import '@atomic-editor/editor/styles.css'
-import '../../Workspace/MarkdownEditor.css'
+import '../../Editor/MarkdownEditor.css'
 import '../../Theme/ThemeModal.css'
 
 const PreviewModal = ({ isOpen, onClose, title, content }) => {

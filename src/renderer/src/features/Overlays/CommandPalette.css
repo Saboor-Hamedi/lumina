@@ -143,10 +143,9 @@
 }
 
 .folder-prefix {
-  color: var(--text-faint);
+  color: var(--text-accent);
   font-size: 12px;
   font-weight: 500;
-  opacity: 0.6;
 }
 
 .item-secondary {

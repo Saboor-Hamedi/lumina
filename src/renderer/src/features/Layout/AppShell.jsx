@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import MarkdownEditor from '../Workspace/MarkdownEditor'
+import MarkdownEditor from '../Editor/MarkdownEditor'
 import SettingsModal from '../Settings/SettingsModal'
 import ActivityBar from '../Navigation/ActivityBar'
 import ThemeModal from '../Theme/ThemeModal'
