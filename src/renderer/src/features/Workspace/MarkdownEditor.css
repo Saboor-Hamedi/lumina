@@ -10,6 +10,36 @@
   
 }
 
+/* Ensure all headings in the editor use the theme's accent color */
+.markdown-editor .cm-heading,
+.markdown-editor .tok-heading,
+.lumina-heading-text,
+.markdown-editor h1,
+.markdown-editor h2,
+.markdown-editor h3,
+.markdown-editor h4,
+.markdown-editor h5,
+.markdown-editor h6 {
+  color: var(--text-accent) !important;
+}
+
+/* Add a thin, fading accent line under Markdown headings in the editor */
+.markdown-editor .lumina-heading-text {
+  position: relative;
+}
+
+.markdown-editor .lumina-heading-text::after {
+  content: '';
+  position: absolute;
+  bottom: -4px; /* A bit of spacing below the text */
+  left: 0;
+  height: 1px;
+  width: 50%; /* exactly 50% of the title text width */
+  background: linear-gradient(to right, var(--text-accent), transparent);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 /* Standard line padding for text readability */
 .cm-line {
   padding: 0 4px 0 0 !important;

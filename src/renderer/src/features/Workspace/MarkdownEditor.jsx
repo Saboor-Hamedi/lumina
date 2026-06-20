@@ -12,7 +12,8 @@ import './MarkdownEditor.css'
 // Atomic Editor Imports
 import { AtomicCodeMirrorEditor, wikiLinks } from '@atomic-editor/editor'
 import { languages } from '@codemirror/language-data'
-import { syntaxTree } from '@codemirror/language'
+import { syntaxTree, HighlightStyle, syntaxHighlighting } from '@codemirror/language'
+import { tags as t } from '@lezer/highlight'
 import { autocompletion, startCompletion } from '@codemirror/autocomplete'
 import { EditorState, Prec, StateField, StateEffect } from '@codemirror/state'
 import { codeBlockDecorations, codeMap } from './codeBlockHeader'
@@ -458,8 +459,21 @@ const MarkdownEditor = React.memo(
     }, [])
 
     const dropExtension = React.useMemo(() => imageDropExtension(showToast), [showToast])
+
+    const customHighlight = React.useMemo(() => {
+      return syntaxHighlighting(
+        HighlightStyle.define([
+          { 
+            tag: [t.heading, t.heading1, t.heading2, t.heading3, t.heading4, t.heading5, t.heading6], 
+            class: 'lumina-heading-text'
+          }
+        ])
+      )
+    }, [])
+
     const editorExtensions = React.useMemo(
       () => [
+        customHighlight,
         Prec.highest(
           keymap.of([
             {

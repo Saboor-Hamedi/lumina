@@ -33,7 +33,7 @@
 .markdown-body h4,
 .markdown-body h5,
 .markdown-body h6 {
-  color: var(--text-main) !important;
+  color: var(--text-accent) !important;
   border: none !important;
   margin-top: 0 !important;
   margin-bottom: 8px !important;
