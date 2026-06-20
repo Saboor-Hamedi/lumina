@@ -91,106 +91,104 @@ class MermaidWidget extends WidgetType {
     // We generate a unique ID for mermaid to use
     const id = `mermaid-${mermaidIdCounter++}`
 
-    const computed = getComputedStyle(document.documentElement)
-
-    // Try to grab the resolved hex for mermaid dynamically
-    let accent = computed.getPropertyValue('--text-accent').trim()
-    if (!accent) accent = '#40bafa'
-    if (!accent.startsWith('#')) accent = '#' + accent
-
-    let textFaint = computed.getPropertyValue('--text-faint').trim() || '#888888'
-    let textMain = computed.getPropertyValue('--text-main').trim() || '#e0e0e0'
-    let bgPrimary = computed.getPropertyValue('--bg-primary').trim() || '#121212'
-    let bgPanel = computed.getPropertyValue('--bg-panel').trim() || '#1e1e1e'
-    let fontEditor = computed.getPropertyValue('--font-editor').trim() || 'monospace'
-
-    // Asynchronously render the mermaid graph
-    setTimeout(async () => {
-      try {
-        mermaid.initialize({
-          startOnLoad: false,
-          theme: 'base',
-          useMaxWidth: false,
-          themeVariables: {
-            fontFamily: fontEditor,
-
-            // Flowcharts & General
-            primaryColor: bgPanel,
-            primaryBorderColor: accent,
-            primaryTextColor: accent,
-            lineColor: textFaint,
-            textColor: textMain,
-            mainBkg: bgPrimary,
-
-            nodeBkg: bgPanel,
-            nodeBorder: accent,
-            nodeTextColor: accent,
-            clusterBkg: 'transparent',
-            clusterBorder: accent,
-            edgeLabelBackground: bgPanel,
-
-            // Sequence Diagrams
-            actorBkg: bgPanel,
-            actorBorder: accent,
-            actorTextColor: accent,
-            actorLineColor: textFaint,
-            signalColor: textFaint,
-            signalTextColor: textMain,
-            noteBkg: accent,
-            noteTextColor: bgPrimary,
-            noteBorderColor: accent,
-            labelBoxBkg: bgPanel,
-            labelBoxBorderColor: accent,
-            labelTextColor: textMain,
-            loopTextColor: textMain,
-            activationBkgColor: accent,
-            activationBorderColor: accent,
-            sequenceNumberColor: bgPrimary
-          },
-          themeCSS: `
-            .node rect, .node circle, .node ellipse, .node polygon, .node path {
-              fill: ${bgPanel} !important;
-              stroke: ${accent} !important;
-              stroke-width: 1px !important;
-            }
-            .node .label, .node .label text {
-              color: ${accent} !important;
-              fill: ${accent} !important;
-            }
-            .cluster rect {
-              fill: transparent !important;
-              stroke: ${accent} !important;
-              stroke-width: 1px !important;
-            }
-          `
-        })
-        const { svg } = await mermaid.render(id, this.code)
-        contentDiv.innerHTML = svg
-
-        // Force the SVG to render at its exact, mathematically calculated native pixel scale.
-        // This stops small diagrams from stretching to 100% and giant diagrams from shrinking to 100%.
-        const svgEl = contentDiv.querySelector('svg')
-        if (svgEl) {
-          svgEl.removeAttribute('width')
-          svgEl.style.maxWidth = 'none'
-
-          const viewBox = svgEl.getAttribute('viewBox')
-          if (viewBox) {
-            const parts = viewBox.split(' ')
-            if (parts.length === 4) {
-              const nativeWidth = parseFloat(parts[2])
-              // Scale down slightly (75%) to make it less overwhelming while preserving scroll
-              svgEl.style.width = nativeWidth * 0.75 + 'px'
-            }
-          }
-        }
-      } catch (err) {
-        contentDiv.innerHTML = `<div class="mermaid-error"><strong>Mermaid Syntax Error</strong>\n${err.message}</div>`
-      }
-    }, 0)
-
+    renderMermaidToElement(contentDiv, this.code, id)
     return wrap
   }
+}
+
+export function renderMermaidToElement(container, code, uniqueId) {
+  const computed = getComputedStyle(document.documentElement)
+
+  let accent = computed.getPropertyValue('--text-accent').trim()
+  if (!accent) accent = '#40bafa'
+  if (!accent.startsWith('#')) accent = '#' + accent
+
+  let textFaint = computed.getPropertyValue('--text-faint').trim() || '#888888'
+  let textMain = computed.getPropertyValue('--text-main').trim() || '#e0e0e0'
+  let bgPrimary = computed.getPropertyValue('--bg-primary').trim() || '#121212'
+  let bgPanel = computed.getPropertyValue('--bg-panel').trim() || '#1e1e1e'
+  let fontEditor = computed.getPropertyValue('--font-editor').trim() || 'monospace'
+
+  setTimeout(async () => {
+    try {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: 'base',
+        useMaxWidth: false,
+        themeVariables: {
+          fontFamily: fontEditor,
+
+          // Flowcharts & General
+          primaryColor: bgPanel,
+          primaryBorderColor: accent,
+          primaryTextColor: accent,
+          lineColor: textFaint,
+          textColor: textMain,
+          mainBkg: bgPrimary,
+
+          nodeBkg: bgPanel,
+          nodeBorder: accent,
+          nodeTextColor: accent,
+          clusterBkg: 'transparent',
+          clusterBorder: accent,
+          edgeLabelBackground: bgPanel,
+
+          // Sequence Diagrams
+          actorBkg: bgPanel,
+          actorBorder: accent,
+          actorTextColor: accent,
+          actorLineColor: textFaint,
+          signalColor: textFaint,
+          signalTextColor: textMain,
+          noteBkg: accent,
+          noteTextColor: bgPrimary,
+          noteBorderColor: accent,
+          labelBoxBkg: bgPanel,
+          labelBoxBorderColor: accent,
+          labelTextColor: textMain,
+          loopTextColor: textMain,
+          activationBkgColor: accent,
+          activationBorderColor: accent,
+          sequenceNumberColor: bgPrimary
+        },
+        themeCSS: `
+          .node rect, .node circle, .node ellipse, .node polygon, .node path {
+            fill: ${bgPanel} !important;
+            stroke: ${accent} !important;
+            stroke-width: 1px !important;
+          }
+          .node .label, .node .label text {
+            color: ${accent} !important;
+            fill: ${accent} !important;
+          }
+          .cluster rect {
+            fill: transparent !important;
+            stroke: ${accent} !important;
+            stroke-width: 1px !important;
+          }
+        `
+      })
+      const { svg } = await mermaid.render(uniqueId, code)
+      container.innerHTML = svg
+
+      const svgEl = container.querySelector('svg')
+      if (svgEl) {
+        svgEl.removeAttribute('width')
+        svgEl.style.maxWidth = 'none'
+
+        const viewBox = svgEl.getAttribute('viewBox')
+        if (viewBox) {
+          const parts = viewBox.split(' ')
+          if (parts.length === 4) {
+            const nativeWidth = parseFloat(parts[2])
+            svgEl.style.width = nativeWidth * 0.75 + 'px'
+          }
+        }
+      }
+    } catch (err) {
+      container.innerHTML = `<div class="mermaid-error"><strong>Mermaid Syntax Error</strong>\n${err.message}</div>`
+    }
+  }, 0)
 }
 
 function buildMermaidDecorations(state) {

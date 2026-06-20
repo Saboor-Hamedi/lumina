@@ -1,4 +1,7 @@
 import { marked } from 'marked'
+import { renderMermaidToElement } from './mermaidWidgetExtension'
+import hljs from 'highlight.js'
+import 'highlight.js/styles/atom-one-dark.css'
 
 export function setupWikilinkHover(wrapper, getVaultStore) {
   let hoverCard = null
@@ -45,6 +48,107 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
 
       contentWrap.appendChild(contentEl)
       hoverCard.appendChild(contentWrap)
+
+      // Render mermaid blocks inside the hover card
+      const mermaidBlocks = contentEl.querySelectorAll('code.language-mermaid')
+      if (mermaidBlocks.length > 0) {
+        mermaidBlocks.forEach((block, idx) => {
+          const code = block.textContent
+          const id = `hover-mermaid-${Date.now()}-${idx}`
+          const pre = block.parentElement
+          
+          const wrapper = document.createElement('div')
+          wrapper.className = 'cm-mermaid-widget'
+          wrapper.style.pointerEvents = 'none' // keep it non-interactive in hover
+          wrapper.style.margin = '10px 0'
+          
+          const scrollWrap = document.createElement('div')
+          scrollWrap.className = 'mermaid-scroll-wrap'
+          
+          const contentDiv = document.createElement('div')
+          contentDiv.className = 'mermaid-content'
+          
+          // Same loading skeleton
+          contentDiv.innerHTML = `
+            <div class="mermaid-loading">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="2" x2="12" y2="6"></line>
+                <line x1="12" y1="18" x2="12" y2="22"></line>
+                <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+                <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                <line x1="2" y1="12" x2="6" y2="12"></line>
+                <line x1="18" y1="12" x2="22" y2="12"></line>
+                <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+                <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+              </svg>
+              Rendering Graph...
+            </div>
+          `
+          
+          scrollWrap.appendChild(contentDiv)
+          wrapper.appendChild(scrollWrap)
+          
+          pre.replaceWith(wrapper)
+          
+          renderMermaidToElement(contentDiv, code, id)
+        })
+      }
+
+      // Render non-mermaid code blocks
+      const allCodeBlocks = contentEl.querySelectorAll('pre > code')
+      allCodeBlocks.forEach((codeEl) => {
+        if (codeEl.classList.contains('language-mermaid')) return
+
+        const pre = codeEl.parentElement
+        
+        let lang = 'text'
+        codeEl.classList.forEach((cls) => {
+          if (cls.startsWith('language-')) {
+            lang = cls.replace('language-', '')
+          }
+        })
+
+        // Apply editor styles
+        pre.className = 'cm-line cm-atomic-fenced-code cb-code-header'
+        pre.setAttribute('data-cb-lang', lang)
+        
+        // Layout tweaks for the block
+        pre.style.display = 'block'
+        pre.style.whiteSpace = 'pre-wrap'
+        pre.style.wordBreak = 'break-word'
+        pre.style.borderRadius = '8px'
+        pre.style.overflow = 'hidden'
+        pre.style.marginTop = '12px'
+        pre.style.marginBottom = '12px'
+        pre.style.cursor = 'default'
+        
+        // Inner padding for the code (since cb-code-header removes left/right padding on the pre)
+        codeEl.style.display = 'block'
+        codeEl.style.padding = '0 1em 1em 1em'
+        codeEl.style.background = 'transparent'
+        codeEl.style.color = 'inherit'
+        codeEl.style.fontFamily = 'inherit'
+
+        // Apply syntax highlighting
+        try {
+          hljs.highlightElement(codeEl)
+        } catch (err) {
+          console.warn('Failed to highlight code block in hover card', err)
+        }
+
+        // Implement the copy button click
+        pre.addEventListener('click', (e) => {
+          // The CSS copy button is absolutely positioned in the top right.
+          // Rough hit area check: top 30px, right 60px
+          if (e.offsetY < 30 && e.offsetX > pre.offsetWidth - 60) {
+            e.preventDefault()
+            e.stopPropagation()
+            navigator.clipboard.writeText(codeEl.textContent)
+            pre.classList.add('cb-copied')
+            setTimeout(() => pre.classList.remove('cb-copied'), 2000)
+          }
+        })
+      })
 
       // Add Expand Icon (only if note is found)
       const expandIcon = document.createElement('div')

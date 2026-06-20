@@ -21,6 +21,7 @@ import { EditorView, placeholder, keymap, ViewPlugin, Decoration } from '@codemi
 import { imageDropExtension } from '../Workspace/imageDropExtension'
 import { imageWidgetExtension } from '../Workspace/imageWidgetExtension'
 import { htmlWidgetExtension } from '../Workspace/htmlWidgetExtension'
+import { insertNewlineContinueMarkup } from '@codemirror/lang-markdown'
 import { setupWikilinkHover } from '../Workspace/hoverWikilink'
 import { tagMentionExtension } from '../Workspace/tagMentionExtension'
 import { tables } from '../Workspace/tableWidgetExtension'
@@ -517,6 +518,28 @@ const MarkdownEditor = React.memo(
                     selection: { anchor: line.to + 1 }
                   })
                   return true
+                }
+                return false
+              }
+            },
+            {
+              key: 'Enter',
+              run: (view) => {
+                if (isActiveRef.current) {
+                  const didRun = insertNewlineContinueMarkup(view)
+                  if (didRun) {
+                    const state = view.state
+                    const pos = state.selection.main.head
+                    const line = state.doc.lineAt(pos)
+                    // If the new line only contains list markup (like "2." or "-") and lacks a trailing space
+                    if (/^(\s*[-*+]|\s*\d+\.)\s*$/.test(line.text) && !line.text.endsWith(' ') && pos === line.to) {
+                      view.dispatch({
+                        changes: { from: line.to, insert: ' ' },
+                        selection: { anchor: line.to + 1 }
+                      })
+                    }
+                    return true
+                  }
                 }
                 return false
               }

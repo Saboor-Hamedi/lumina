@@ -279,11 +279,6 @@ function renderCellToken(tok) {
     inner.appendChild(renderTokensTo(tok.textChildren))
     wrap.appendChild(inner)
     wrap.appendChild(makeCellMark(']]'))
-    const icon = document.createElement('span')
-    icon.className = 'cm-atomic-link-icon'
-    icon.contentEditable = 'false'
-    icon.setAttribute('aria-hidden', 'true')
-    wrap.appendChild(icon)
     return wrap
   }
   // Link. Shape mirrors the outer-editor markup: `.cm-atomic-link` on
@@ -312,7 +307,6 @@ function renderCellToken(tok) {
   // and out of the cell's serialized text.
   const icon = document.createElement('span')
   icon.className = 'cm-atomic-link-icon'
-  icon.contentEditable = 'false'
   icon.setAttribute('aria-hidden', 'true')
   wrap.appendChild(icon)
   return wrap

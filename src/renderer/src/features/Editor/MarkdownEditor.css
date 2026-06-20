@@ -153,7 +153,7 @@
   position: relative !important;
 }
 
-.cm-atomic-table-cell-source :not(.active) > .cm-cell-mark {
+.cm-atomic-table-cell-source :not(.active) > .cm-atomic-mark {
   display: none !important;
 }
 
@@ -849,7 +849,7 @@
   border: none;
   background: transparent;
   color: var(--text-muted);
-  padding: 4px 16px;
+  /* padding: 4px 16px; */
   line-height: 1;
   margin-top: 10px;
   width: 100%;
@@ -1792,10 +1792,12 @@
 
 /* Bullet points & numbers: Add more gap between the marker and the text */
 .markdown-editor .cm-atomic-list-marker {
-  margin-right: 12px !important;
+  padding-right: 12px !important;
   width: auto !important;
   min-width: 1.2em !important;
   text-align: right;
+  display: inline-block;
+  /* box-sizing: content-box !important; */
 }
 
 .cm-inline-line {
@@ -1816,38 +1818,30 @@
   /* border-radius: 12px; */
   border: 1px solid var(--border-card);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease, border-color 0.2s ease;
   min-height: 80px;
-    pointer-events: none !important; 
-
 }
 
 .cm-mermaid-widget .mermaid-scroll-wrap {
   width: 100%;
   overflow-x: auto;
   border-radius: 12px; /* In case the scrollbar forces a corner */
-    pointer-events: none !important; 
-
 }
 
 .cm-mermaid-widget .mermaid-content {
   display: inline-block;
   min-width: min-content;
-  pointer-events: none !important;
 }
 
 .cm-mermaid-widget svg {
   max-width: none !important;
   height: auto;
-  pointer-events: none !important;
 }
 
 .cm-mermaid-widget:hover {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.04);
   border-color: var(--text-accent);
   transform: translateY(-2px);
-  pointer-events: none !important;
-
 }
 
 .cm-mermaid-widget .mermaid-loading {
@@ -1859,7 +1853,6 @@
   font-weight: 500;
   letter-spacing: 0.02em;
   animation: mermaid-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  pointer-events: none !important;
 }
 
 .cm-mermaid-widget .mermaid-loading svg {
@@ -1867,7 +1860,6 @@
   height: 18px;
   animation: mermaid-spin 1.5s linear infinite;
   color: var(--text-accent);
-  pointer-events: none !important;
 }
 
 @keyframes mermaid-pulse {
