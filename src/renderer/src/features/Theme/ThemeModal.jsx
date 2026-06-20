@@ -3,7 +3,7 @@ import { useTheme } from '../../core/hooks/useTheme'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { X, Check, Palette } from 'lucide-react'
 import './ThemeModal.css'
-import ModalHeader from './ModalHeader'
+import ModalHeader from '../Overlays/ModalHeader'
 
 /**
  * ThemeModal Component

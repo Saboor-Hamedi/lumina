@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { X, Settings } from 'lucide-react'
-import ThemeModal from './ThemeModal'
+import ThemeModal from '../Theme/ThemeModal'
 import ModalHeader from './ModalHeader'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useToast } from '../../core/hooks/useToast'
