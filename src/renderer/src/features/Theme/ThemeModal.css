@@ -20,6 +20,7 @@
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
   width: 90%;
   max-width: 1000px;
+  height: 700px;
   max-height: 85vh;
   display: flex;
   flex-direction: column;
