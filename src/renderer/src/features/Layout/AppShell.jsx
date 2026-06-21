@@ -22,9 +22,10 @@ import AIChatPanel from '../AI/AIChatPanel'
 import DetailsModal from '../Overlays/DetailsModal'
 import AIChatModal from '../Overlays/AIChatModal'
 import FileExplorer from '../Explorer/FileExplorer'
+import SnippetDetails from '../Inspector/SnippetDetails'
 import { useAIStore } from '../../core/store/useAIStore'
 import { useTypingSound } from '../../core/hooks/useTypingSound'
-import { X, Maximize2, Trash2, History } from 'lucide-react'
+import { X, Maximize2, Trash2, History, Bot, Info } from 'lucide-react'
 
 import PanelHeaderDropdown from './components/PanelHeaderDropdown'
 import IndexingStatus from '../../components/IndexingStatus'
@@ -67,6 +68,7 @@ const AppShell = () => {
   const [showExplorerModal, setShowExplorerModal] = useState(false)
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true)
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false)
+  const [rightSidebarTab, setRightSidebarTab] = useState('ai') // 'ai' or 'details'
   /**
    * Stores the right sidebar state (open/closed and width) when AI chat modal is opened.
    * Used to restore the sidebar to its previous state when the modal is closed.
@@ -253,8 +255,10 @@ const AppShell = () => {
     const unsub = useUpdateStore.getState().init()
 
     // Listen for details modal open event from EditorTitleBar
+    // Listen for details modal open event from EditorTitleBar
     const handleOpenDetailsModal = () => {
-      setShowDetailsModal(true)
+      setRightSidebarTab('details')
+      setIsRightSidebarOpen(true)
     }
     window.addEventListener('open-details-modal', handleOpenDetailsModal)
 
@@ -562,50 +566,59 @@ const AppShell = () => {
               className="panel-header-tabs workspace-tabbar"
               style={{ position: 'relative', display: 'flex', alignItems: 'center' }}
             >
-              <div className="workspace-tab active">
+              <div 
+                className={`workspace-tab ${rightSidebarTab === 'ai' ? 'active' : ''}`}
+                onClick={() => setRightSidebarTab('ai')}
+                style={{ cursor: 'pointer', borderRight: '1px solid var(--border-subtle)', paddingRight: rightSidebarTab === 'ai' ? '12px' : '16px' }}
+              >
                 <div
                   className="tab-context"
                   style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
-                  <span className="tab-title">AI Chat</span>
-                  <button
-                    className="tab-close-btn"
-                    style={{ opacity: 0.6 }}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      window.dispatchEvent(new CustomEvent('ai-toggle-history'))
-                    }}
-                    title="Toggle chat history"
-                  >
-                    <History size={11} />
-                  </button>
-                  <button
-                    className="tab-close-btn"
-                    style={{ opacity: 0.6 }}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      try {
-                        clearChat()
-                        showToast('Chat cleared')
-                      } catch {}
-                    }}
-                    title="Clear chat"
-                  >
-                    <Trash2 size={11} />
-                  </button>
+                  <Bot size={13} style={{ opacity: rightSidebarTab === 'ai' ? 1 : 0.6 }} />
+                  <span className="tab-title" style={{ opacity: rightSidebarTab === 'ai' ? 1 : 0.6 }}>AI Chat</span>
+                  {rightSidebarTab === 'ai' && (
+                    <>
+                      <button
+                        className="tab-close-btn"
+                        style={{ opacity: 0.6 }}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          window.dispatchEvent(new CustomEvent('ai-toggle-history'))
+                        }}
+                        title="Toggle chat history"
+                      >
+                        <History size={11} />
+                      </button>
+                      <button
+                        className="tab-close-btn"
+                        style={{ opacity: 0.6 }}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          try {
+                            clearChat()
+                            showToast('Chat cleared')
+                          } catch {}
+                        }}
+                        title="Clear chat"
+                      >
+                        <Trash2 size={11} />
+                      </button>
+                    </>
+                  )}
                 </div>
-                <div className="tab-actions" style={{ display: 'flex', gap: '4px' }}>
-                  <button
-                    className="tab-close-btn"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setIsRightSidebarOpen(false)
-                    }}
-                    title="Close sidebar"
-                    aria-label="Close sidebar"
-                  >
-                    <X size={12} />
-                  </button>
+              </div>
+              <div 
+                className={`workspace-tab ${rightSidebarTab === 'details' ? 'active' : ''}`}
+                onClick={() => setRightSidebarTab('details')}
+                style={{ cursor: 'pointer', paddingRight: '16px' }}
+              >
+                <div
+                  className="tab-context"
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <Info size={13} style={{ opacity: rightSidebarTab === 'details' ? 1 : 0.6 }} />
+                  <span className="tab-title" style={{ opacity: rightSidebarTab === 'details' ? 1 : 0.6 }}>Details</span>
                 </div>
               </div>
               {/* Right side buttons - Float and Dropdown */}
@@ -709,10 +722,14 @@ const AppShell = () => {
               </div>
             </div>
 
-            {/* Panel content - only AI Chat */}
+            {/* Panel content */}
             <div className="panel-content">
               <ErrorBoundary>
-                <AIChatPanel />
+                {rightSidebarTab === 'ai' ? (
+                  <AIChatPanel />
+                ) : (
+                  <SnippetDetails snippet={selectedSnippet} isLoading={isLoading} />
+                )}
               </ErrorBoundary>
             </div>
           </div>
@@ -735,12 +752,6 @@ const AppShell = () => {
         <ThemeModal isOpen={showThemeModal} onClose={() => setShowThemeModal(false)} />
       )}
       <FileExplorer isOpen={showExplorerModal} onClose={() => setShowExplorerModal(false)} />
-      <DetailsModal
-        isOpen={showDetailsModal}
-        onClose={() => setShowDetailsModal(false)}
-        snippet={selectedSnippet}
-        isLoading={isLoading}
-      />
       <AIChatModal
         isOpen={showAIChatModal}
         onClose={() => {

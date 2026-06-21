@@ -60,6 +60,20 @@ const EditorMenu = ({
     }
   }, [showMoreMenu])
 
+  // Close on Escape
+  useEffect(() => {
+    if (!showMoreMenu) return
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        setShowMoreMenu(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown, { capture: true })
+    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true })
+  }, [showMoreMenu])
+
   // Calculate menu position when it opens
   useEffect(() => {
     if (showMoreMenu && buttonRef.current) {

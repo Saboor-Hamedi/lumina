@@ -1009,7 +1009,7 @@
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   padding: 6px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 5px rgba(0, 0, 0, 0.3);
   z-index: 100000;
   /* Higher than CodeMirror tooltips (99999) */
   backdrop-filter: blur(20px);
