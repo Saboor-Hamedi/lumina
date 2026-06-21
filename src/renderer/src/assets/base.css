@@ -47,6 +47,7 @@ body {
   color: var(--color-text);
   background: var(--color-background);
   line-height: 1.6;
+  overflow: hidden;
   font-family:
     Inter,
     -apple-system,

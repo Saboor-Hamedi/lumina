@@ -198,13 +198,49 @@ const MarkdownEditor = React.memo(
         view.dispatch({ selection: { anchor: 0, head: 0 } })
       }
 
+      const handleScrollToLine = (e) => {
+        if (!isActiveRef.current || !realViewRef.current) return
+        const view = realViewRef.current
+        const lineNum = e.detail?.line
+        if (typeof lineNum !== 'number') return
+        try {
+          const doc = view.state.doc
+          const targetLineNum = Math.max(1, Math.min(lineNum, doc.lines))
+          const targetLine = doc.line(targetLineNum)
+          
+          view.dispatch({
+            selection: { anchor: targetLine.from }
+          })
+          
+          // Since .cm-scroller is overflow: visible in CSS, CodeMirror's scrollIntoView doesn't work.
+          // We must manually scroll the outer .editor-scroller wrapper.
+          const lineBlock = view.lineBlockAt(targetLine.from)
+          const scroller = view.dom.closest('.editor-scroller')
+          
+          if (scroller) {
+            const scrollY = lineBlock.top - (scroller.clientHeight / 2) + (lineBlock.height / 2)
+            scroller.scrollTo({ top: Math.max(0, scrollY), behavior: 'smooth' })
+          }
+          
+          setTimeout(() => {
+            if (realViewRef.current && realViewRef.current.contentDOM) {
+              realViewRef.current.contentDOM.focus({ preventScroll: true })
+            }
+          }, 50)
+        } catch (err) {
+          console.error('[Editor] Scroll error:', err)
+        }
+      }
+
       window.addEventListener('search-update', handleSearchUpdate)
       window.addEventListener('search-clear', handleSearchClear)
       window.addEventListener('focus-editor-start', handleFocusEditorStart)
+      window.addEventListener('editor-scroll-to-line', handleScrollToLine)
       return () => {
         window.removeEventListener('search-update', handleSearchUpdate)
         window.removeEventListener('search-clear', handleSearchClear)
         window.removeEventListener('focus-editor-start', handleFocusEditorStart)
+        window.removeEventListener('editor-scroll-to-line', handleScrollToLine)
       }
     }, [])
 
