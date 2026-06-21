@@ -135,18 +135,32 @@ const CommandPalette = React.memo(
         return { ...item, matchType, matchSnippet, score }
       })
 
-      // Content Matches (Fast string indexOf for items that didn't match via Fuse)
+      // Fast, lightweight content search (stripped of Markdown)
+      const stripMarkdown = (text) => {
+        return text
+          .replace(/[#*_\-~`>]/g, '') // remove symbols
+          .replace(/\[(.*?)\]\(.*?\)/g, '$1') // remove links but keep text
+          .replace(/\n+/g, ' ') // replace newlines with space
+          .trim()
+      }
+
       items.forEach((item) => {
         if (fuseMatchedIds.has(item.id)) return
         const code = item.code || item.content || ''
         if (!code) return
 
-        const codeIndex = code.toLowerCase().indexOf(actionQuery)
-        if (codeIndex !== -1) {
-          const start = Math.max(0, codeIndex - 20)
-          const end = Math.min(code.length, codeIndex + actionQuery.length + 40)
-          const matchSnippet =
-            (start > 0 ? '...' : '') + code.slice(start, end) + (end < code.length ? '...' : '')
+        const lowerCode = code.toLowerCase()
+        const rawIndex = lowerCode.indexOf(actionQuery)
+        
+        if (rawIndex !== -1) {
+          // Found a match! Only strip markdown from a tiny window around the match
+          const start = Math.max(0, rawIndex - 30)
+          const end = Math.min(code.length, rawIndex + actionQuery.length + 60)
+          const rawSnippetChunk = code.slice(start, end)
+          
+          const cleanSnippetChunk = stripMarkdown(rawSnippetChunk)
+          const matchSnippet = (start > 0 ? '...' : '') + cleanSnippetChunk + (end < code.length ? '...' : '')
+          
           textMatches.push({ ...item, matchType: 'content', matchSnippet, score: 5 })
         }
       })
