@@ -1282,3 +1282,33 @@ button.chat-copy-btn:hover {
     font-size: 0.85em !important;
   }
 }
+
+/* AI Floating Action Button */
+.ai-fab-btn {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  background: var(--bg-accent);
+  color: var(--text-accent);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2), inset 0 1px 1px rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1000;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, background 0.2s;
+}
+
+.ai-fab-btn:hover {
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  background: var(--bg-accent-hover);
+}
+
+.ai-fab-btn:active {
+  transform: scale(0.95);
+}

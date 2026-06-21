@@ -18,14 +18,13 @@ import UpdateToast from '../Overlays/UpdateToast'
 import ErrorBoundary from '../../components/ErrorBoundary'
 import './AppShell.css'
 import '../Overlays/ConfirmModal.css'
-import AIChatPanel from '../AI/AIChatPanel'
 
 import AIChatModal from '../Overlays/AIChatModal'
 import FileExplorer from '../Explorer/FileExplorer'
 import SnippetDetails from '../Inspector/SnippetDetails'
 import { useAIStore } from '../../core/store/useAIStore'
 import { useTypingSound } from '../../core/hooks/useTypingSound'
-import { X, Maximize2, Trash2, History, Bot, Info } from 'lucide-react'
+import { X, Maximize2, Trash2, History, Bot, Info, MessageSquare } from 'lucide-react'
 
 import PanelHeaderDropdown from './components/PanelHeaderDropdown'
 import TabbedSidebar from './components/TabbedSidebar'
@@ -480,18 +479,24 @@ const AppShell = () => {
     >
       <main className="shell-main">
         {/* Show TabBar even if no tabs are open so WindowControls remain visible */}
-        {(activeTab === 'files' || activeTab === 'search') && <TabBar />}
+        {(activeTab === 'files' || activeTab === 'search') && (
+          <TabBar 
+            isSidebarOpen={isRightSidebarOpen}
+            onToggleSidebar={() => setIsRightSidebarOpen((prev) => !prev)}
+          />
+        )}
 
         {openTabs.length > 0 ? (
-          <div
-            style={{
-              position: 'relative',
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden'
-            }}
-          >
+          <div className="workspace-container" style={{ display: 'flex', flexDirection: 'row', flex: 1, overflow: 'hidden' }}>
+            <div
+              style={{
+                position: 'relative',
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden'
+              }}
+            >
             {openTabs.map((tabId) => {
               const snippet = snippets.find((s) => s.id === tabId)
               if (!snippet) return null
@@ -533,6 +538,28 @@ const AppShell = () => {
               )
             })}
           </div>
+          
+          <aside className="shell-sidebar-right">
+            {isRightSidebarOpen && (
+              <div className="sidebar-resizer right" onMouseDown={() => setResizingSide('right')} />
+            )}
+            {isRightSidebarOpen && (
+              <TabbedSidebar
+                rightSidebarTab={rightSidebarTab}
+                setRightSidebarTab={setRightSidebarTab}
+                setSettingsInitialTab={setSettingsInitialTab}
+                setShowSettings={setShowSettings}
+                setSavedRightSidebarState={setSavedRightSidebarState}
+                isRightSidebarOpen={isRightSidebarOpen}
+                rightWidth={rightWidth}
+                setIsRightSidebarOpen={setIsRightSidebarOpen}
+                setShowAIChatModal={setShowAIChatModal}
+                selectedSnippet={selectedSnippet}
+                isLoading={isLoading}
+              />
+            )}
+          </aside>
+        </div>
         ) : isRestoring ? (
           <div className="shell-main-placeholder" />
         ) : (
@@ -557,26 +584,15 @@ const AppShell = () => {
         onToggleExplorerModal={() => setShowExplorerModal((prev) => !prev)}
       />
 
-      <aside className="shell-sidebar-right">
-        {isRightSidebarOpen && (
-          <div className="sidebar-resizer right" onMouseDown={() => setResizingSide('right')} />
-        )}
-        {isRightSidebarOpen && (
-          <TabbedSidebar
-            rightSidebarTab={rightSidebarTab}
-            setRightSidebarTab={setRightSidebarTab}
-            setSettingsInitialTab={setSettingsInitialTab}
-            setShowSettings={setShowSettings}
-            setSavedRightSidebarState={setSavedRightSidebarState}
-            isRightSidebarOpen={isRightSidebarOpen}
-            rightWidth={rightWidth}
-            setIsRightSidebarOpen={setIsRightSidebarOpen}
-            setShowAIChatModal={setShowAIChatModal}
-            selectedSnippet={selectedSnippet}
-            isLoading={isLoading}
-          />
-        )}
-      </aside>
+      {/* AI Floating Action Button */}
+      <button 
+        className="ai-fab-btn"
+        onClick={() => setShowAIChatModal(true)}
+        title="Open AI Chat"
+      >
+        <MessageSquare size={20} />
+      </button>
+
       {showSettings && (
         <SettingsModal
           onClose={() => {

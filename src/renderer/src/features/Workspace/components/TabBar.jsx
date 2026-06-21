@@ -89,7 +89,7 @@ SortableTabItem.displayName = 'SortableTabItem'
  *
  * Supports regular snippet tabs with dirty-safety, pinned tabs, and DND reordering.
  */
-const TabBar = () => {
+const TabBar = ({ isSidebarOpen, onToggleSidebar }) => {
   const {
     openTabs,
     activeTabId,
@@ -196,7 +196,7 @@ const TabBar = () => {
   )
 
   if (openTabs.length === 0) {
-    return <WindowControls />
+    return <WindowControls isSidebarOpen={isSidebarOpen} onToggleSidebar={onToggleSidebar} />
   }
 
   return (
@@ -231,7 +231,7 @@ const TabBar = () => {
         </div>
 
         {/* Floating Window Controls */}
-        <WindowControls />
+        <WindowControls isSidebarOpen={isSidebarOpen} onToggleSidebar={onToggleSidebar} />
       </div>
 
       {contextMenu && (

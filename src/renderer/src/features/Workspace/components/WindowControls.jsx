@@ -1,8 +1,8 @@
 import React from 'react'
-import { X, Minus, Square, GripHorizontal } from 'lucide-react'
+import { X, Minus, Square, GripHorizontal, PanelRightOpen, PanelRightClose } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
 
-const WindowControls = () => {
+const WindowControls = ({ isSidebarOpen, onToggleSidebar }) => {
   return (
     <div className="window-controls-float">
       <ToolTip text="Drag to move window" position="bottom">
@@ -10,6 +10,13 @@ const WindowControls = () => {
           <GripHorizontal size={14} />
         </div>
       </ToolTip>
+      {onToggleSidebar && (
+        <ToolTip text={isSidebarOpen ? "Close Sidebar" : "Open Sidebar"} position="bottom">
+          <button onClick={onToggleSidebar} className="control-btn">
+            {isSidebarOpen ? <PanelRightClose size={14} /> : <PanelRightOpen size={14} />}
+          </button>
+        </ToolTip>
+      )}
       <ToolTip text="Minimize" position="bottom">
         <button onClick={() => window.api?.minimize()} className="control-btn">
           <Minus size={12} />

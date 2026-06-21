@@ -1,29 +1,16 @@
-12:33:02 PM [vite] (client) Pre-transform error: Failed to resolve import "../../../../core/hooks/useKeyboardShortcuts" from "src/renderer/src/features/Workspace/components/FindWidget.jsx". Does the file exist?
-  Plugin: vite:import-analysis
-  File: B:/electron/lumina/src/renderer/src/features/Workspace/components/FindWidget.jsx:3:37
-  3  |  import React, { useState, useEffect, useRef, useCallback } from "react";
-  4  |  import { Search, Replace, ReplaceAll, X, ChevronUp, ChevronDown, Type, AlignLeft, Regex, ChevronRight } from "lucide-...
-  5  |  import { useKeyboardShortcuts } from "../../../../core/hooks/useKeyboardShortcuts";
-     |                                        ^
-  6  |  import "./FindWidget.css";
-  7  |  const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
-12:33:02 PM [vite] Internal server error: Failed to resolve import "../../../../core/hooks/useKeyboardShortcuts" from "src/renderer/src/features/Workspace/components/FindWidget.jsx". Does the file exist?
-  Plugin: vite:import-analysis
-  File: B:/electron/lumina/src/renderer/src/features/Workspace/components/FindWidget.jsx:3:37
-  3  |  import React, { useState, useEffect, useRef, useCallback } from "react";
-  4  |  import { Search, Replace, ReplaceAll, X, ChevronUp, ChevronDown, Type, AlignLeft, Regex, ChevronRight } from "lucide-...
-  5  |  import { useKeyboardShortcuts } from "../../../../core/hooks/useKeyboardShortcuts";
-     |                                        ^
-  6  |  import "./FindWidget.css";
-  7  |  const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
-      at TransformPluginContext._formatLog (file:///B:/electron/lumina/node_modules/vite/dist/node/chunks/config.js:29618:43)
-      at TransformPluginContext.error (file:///B:/electron/lumina/node_modules/vite/dist/node/chunks/config.js:29615:14)
-      at normalizeUrl (file:///B:/electron/lumina/node_modules/vite/dist/node/chunks/config.js:27738:18)
-      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-      at async file:///B:/electron/lumina/node_modules/vite/dist/node/chunks/config.js:27796:32
-      at async Promise.all (index 3)
-      at async TransformPluginContext.transform (file:///B:/electron/lumina/node_modules/vite/dist/node/chunks/config.js:27764:4)
-      at async EnvironmentPluginContainer.transform (file:///B:/electron/lumina/node_modules/vite/dist/node/chunks/config.js:29416:14)
-      at async loadAndTransform (file:///B:/electron/lumina/node_modules/vite/dist/node/chunks/config.js:23287:26)
-      at async viteTransformMiddleware (file:///B:/electron/lumina/node_modules/vite/dist/node/chunks/config.js:25159:20)
-[Main] Starting background indexing after renderer ready...
+The whole idea was we remove the aichatpanel and merge everything to the [AIChatModal.css](file;file:///b:/electron/lumina/src/renderer/src/features/Overlays/AIChatModal.css) but  you have bring it back
+and [AIChatModal.jsx](file;file:///b:/electron/lumina/src/renderer/src/features/Overlays/AIChatModal.jsx) is ugly now, we 
+we want to remove the [AIChatPanel.jsx](file;file:///b:/electron/lumina/src/renderer/src/features/AI/AIChatPanel.jsx) merger everything to the aichatmodal improve the modal move the history into the modal
+
+[plugin:vite:react-babel] B:\electron\lumina\src\renderer\src\features\Overlays\AIChatModal.jsx: Missing semicolon. (518:52)
+  521 | import { createPortal } from 'react-dom'
+B:/electron/lumina/src/renderer/src/features/Overlays/AIChatModal.jsx:518:52
+533 |    Trash2,
+534 |    History,
+535 |    MessageSquare,
+    |              ^
+536 |    ChevronLeft,
+537 |    ChevronRight,
+
+
+no dont checkout the head because we haven't push 

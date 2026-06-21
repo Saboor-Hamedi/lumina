@@ -13,8 +13,7 @@ const ModalHeader = ({
   style = {}
 }) => {
   return (
-    <header className="pane-header modal-header-with-knob" onMouseDown={onMouseDown} style={style}>
-      <div className="modal-header-knob" aria-hidden="true" />
+    <header className="pane-header" onMouseDown={onMouseDown} style={style}>
 
       <div className="modal-left">
         {left ? (
@@ -25,7 +24,6 @@ const ModalHeader = ({
               {title ? (
                 <>
                   <div className="theme-modal-title">{title}</div>
-                  <div className="modal-title-knob" aria-hidden="true" />
                 </>
               ) : null}
               {subtitle ? <div className="theme-modal-subtitle">{subtitle}</div> : null}
