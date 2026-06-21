@@ -17,12 +17,33 @@ const ContextMenu = ({ x, y, options, onClose }) => {
   const menuY = Math.min(y, window.innerHeight - (options.length * 40 + 20))
 
   return createPortal(
-    <div
-      className="context-menu"
-      style={{ left: menuX, top: menuY }}
-      onMouseDown={(e) => e.stopPropagation()}
-      onClick={(e) => e.stopPropagation()}
-    >
+    <>
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 9998
+        }}
+        onMouseDown={(e) => {
+          e.stopPropagation()
+          onClose()
+        }}
+        onContextMenu={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          onClose()
+        }}
+      />
+      <div
+        className="context-menu"
+        style={{ left: menuX, top: menuY, zIndex: 9999 }}
+        onMouseDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+        onContextMenu={(e) => e.stopPropagation()}
+      >
       {options.map((opt, i) => {
         if (opt.type === 'divider') return <div key={i} className="menu-divider" />
 
@@ -41,7 +62,8 @@ const ContextMenu = ({ x, y, options, onClose }) => {
           </div>
         )
       })}
-    </div>,
+      </div>
+    </>,
     document.body
   )
 }

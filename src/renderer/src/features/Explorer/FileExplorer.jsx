@@ -40,8 +40,8 @@ import { Virtuoso } from 'react-virtuoso'
 import SidebarItem from '../Navigation/components/SidebarItem'
 import { useResizable } from '../Overlays/useResizable'
 import { ChevronRight, ChevronDown, Folder, ChevronsUp } from 'lucide-react'
-import ContextMenu from '../Overlays/ContextMenu'
 import ConfirmModal from '../Overlays/ConfirmModal'
+import ToolTip from '../../components/atoms/ToolTip'
 import { FixedSizeList as List } from '../../components/utils/VirtualList'
 import AppVersion from '../../components/AppVersion'
 import Fuse from 'fuse.js'
@@ -173,11 +173,13 @@ const DroppableFolderItem = React.memo(
           {...attributes}
           {...listeners}
           onClick={(e) => {
-            if (!isRenaming) onToggle(item.id, e)
+            if (e.button !== 0) return;
+            if (!isRenaming) onToggle(item.id, e);
           }}
           onContextMenu={(e) => {
-            e.preventDefault()
-            onContextMenu(item.id, e)
+            e.preventDefault();
+            e.stopPropagation();
+            onContextMenu(item.id, e);
           }}
         >
           {isExpanded ? (
@@ -845,7 +847,7 @@ const FileExplorer = ({ isOpen, onClose }) => {
         const newSnippet = {
           id: newId,
           title: sanitizedName,
-          code: `# ${sanitizedName}\n\nStart typing...`,
+          code: '',
           language: 'markdown',
           tags: '',
           folderId: folderId,
@@ -921,7 +923,10 @@ const FileExplorer = ({ isOpen, onClose }) => {
       <div
         ref={modalRef}
         className="start-menu-container"
-        onClick={() => setFolderContext(null)}
+        onClick={() => {
+          setFolderContext(null)
+          setSelectedIndex(-1)
+        }}
         style={{
           width: size.width,
           height: size.height,
@@ -1067,54 +1072,81 @@ const FileExplorer = ({ isOpen, onClose }) => {
                   {allSnippets.length} {allSnippets.length === 1 ? 'Note' : 'Notes'}
                 </h3>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button
-                    className="sort-toggle-btn"
-                    onClick={collapseAllFolders}
-                    title="Collapse All Folders"
-                  >
-                    <ChevronsUp size={14} />
-                  </button>
-                  <button
-                    className="sort-toggle-btn"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setCreating({ type: 'file', parentId: '' })
-                      setCreatingValue('')
-                    }}
-                    title="Create New Note in Root"
-                  >
-                    <FilePlus size={14} />
-                  </button>
-                  <button
-                    className="sort-toggle-btn"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setCreating({ type: 'folder', parentId: '' })
-                      setCreatingValue('')
-                    }}
-                    title="Create New Folder in Root"
-                  >
-                    <FolderPlus size={14} />
-                  </button>
-                  <button
-                    className="sort-toggle-btn"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      loadVault()
-                    }}
-                    title="Refresh Vault"
-                    disabled={isLoading}
-                    style={{ opacity: isLoading ? 0.5 : 1 }}
-                  >
-                    <RefreshCw size={14} className={isLoading ? 'spin-animation' : ''} />
-                  </button>
-                  <button
-                    className="sort-toggle-btn"
-                    onClick={handleSortToggle}
-                    title={`Sort by ${sortBy} (${sortDirection})`}
-                  >
-                    <ArrowUpDown size={14} />
-                  </button>
+                  <ToolTip text="Collapse All Folders">
+                    <button
+                      className="sort-toggle-btn"
+                      onClick={collapseAllFolders}
+                    >
+                      <ChevronsUp size={14} />
+                    </button>
+                  </ToolTip>
+                  <ToolTip text="Create New Note">
+                    <button
+                      className="sort-toggle-btn"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        let targetFolderId = ''
+                        if (selectedIndex >= 0 && selectedIndex < flatTree.length) {
+                          const item = flatTree[selectedIndex]
+                          if (item?.type === 'folder') {
+                            targetFolderId = item.id
+                            setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
+                          } else if (item?.type === 'file') {
+                            targetFolderId = item.snippet.folderId || ''
+                            if (targetFolderId) setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
+                          }
+                        }
+                        setCreating({ type: 'file', parentId: targetFolderId })
+                        setCreatingValue('')
+                      }}
+                    >
+                      <FilePlus size={14} />
+                    </button>
+                  </ToolTip>
+                  <ToolTip text="Create New Folder">
+                    <button
+                      className="sort-toggle-btn"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        let targetFolderId = ''
+                        if (selectedIndex >= 0 && selectedIndex < flatTree.length) {
+                          const item = flatTree[selectedIndex]
+                          if (item?.type === 'folder') {
+                            targetFolderId = item.id
+                            setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
+                          } else if (item?.type === 'file') {
+                            targetFolderId = item.snippet.folderId || ''
+                            if (targetFolderId) setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
+                          }
+                        }
+                        setCreating({ type: 'folder', parentId: targetFolderId })
+                        setCreatingValue('')
+                      }}
+                    >
+                      <FolderPlus size={14} />
+                    </button>
+                  </ToolTip>
+                  <ToolTip text="Refresh Vault">
+                    <button
+                      className="sort-toggle-btn"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        loadVault()
+                      }}
+                      disabled={isLoading}
+                      style={{ opacity: isLoading ? 0.5 : 1 }}
+                    >
+                      <RefreshCw size={14} className={isLoading ? 'spin-animation' : ''} />
+                    </button>
+                  </ToolTip>
+                  <ToolTip text={`Sort by ${sortBy} (${sortDirection})`}>
+                    <button
+                      className="sort-toggle-btn"
+                      onClick={handleSortToggle}
+                    >
+                      <ArrowUpDown size={14} />
+                    </button>
+                  </ToolTip>
                 </div>
               </div>
 
@@ -1143,10 +1175,10 @@ const FileExplorer = ({ isOpen, onClose }) => {
                           if (item.type === 'input') {
                             return (
                               <div
-                                className="folder-tree-item creating-input"
+                                className="folder-tree-item"
                                 style={{
                                   position: 'relative',
-                                  paddingLeft: `${item.depth * 16}px`
+                                  paddingLeft: item.depth > 0 ? `${item.depth * 16 + 8}px` : '0px'
                                 }}
                               >
                                 {Array.from({ length: item.depth }).map((_, i) => (
@@ -1154,7 +1186,7 @@ const FileExplorer = ({ isOpen, onClose }) => {
                                     key={`line-${i}`}
                                     style={{
                                       position: 'absolute',
-                                      left: `${i * 16 + 12 + 6}px`,
+                                      left: `${i * 16 + 12}px`,
                                       top: 0,
                                       bottom: 0,
                                       width: '1px',
@@ -1162,23 +1194,35 @@ const FileExplorer = ({ isOpen, onClose }) => {
                                     }}
                                   />
                                 ))}
-                                {item.kind === 'folder' ? (
-                                  <Folder size={14} className="folder-icon-color" />
-                                ) : (
-                                  <FileText size={14} className="icon-blue" />
-                                )}
-                                <input
-                                  autoFocus
-                                  value={creatingValue}
-                                  onChange={(e) => setCreatingValue(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') submitCreation()
-                                    if (e.key === 'Escape') setCreating(null)
+                                <div
+                                  className="folder-tree-main creating-input"
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '6px 12px',
+                                    borderRadius: '5px',
+                                    background: 'var(--bg-active)'
                                   }}
-                                  onBlur={() => submitCreation()}
-                                  placeholder={`New ${item.kind}...`}
-                                  className="inline-create-input"
-                                />
+                                >
+                                  {item.kind === 'folder' ? (
+                                    <Folder size={14} className="folder-icon-color" />
+                                  ) : (
+                                    <FileText size={14} className="icon-blue" />
+                                  )}
+                                  <input
+                                    autoFocus
+                                    value={creatingValue}
+                                    onChange={(e) => setCreatingValue(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') submitCreation()
+                                      if (e.key === 'Escape') setCreating(null)
+                                    }}
+                                    onBlur={() => submitCreation()}
+                                    placeholder={`New ${item.kind}...`}
+                                    className="inline-create-input"
+                                  />
+                                </div>
                               </div>
                             )
                           } else if (item.type === 'root-drop') {
@@ -1200,8 +1244,14 @@ const FileExplorer = ({ isOpen, onClose }) => {
                                 setRenameValue={setRenamingValue}
                                 submitRename={submitRename}
                                 cancelRename={cancelRename}
-                                onToggle={toggleFolder}
-                                onContextMenu={handleFolderContextMenu}
+                                onToggle={(id, e) => {
+                                  setSelectedIndex(index)
+                                  toggleFolder(id, e)
+                                }}
+                                onContextMenu={(id, e) => {
+                                  setSelectedIndex(index)
+                                  handleFolderContextMenu(id, e)
+                                }}
                               />
                             )
                           } else {
@@ -1324,6 +1374,15 @@ const FileExplorer = ({ isOpen, onClose }) => {
               onClick: () => {
                 setExpandedFolders((prev) => new Set(prev).add(folderContext.folderId))
                 setCreating({ type: 'folder', parentId: folderContext.folderId })
+                setCreatingValue('')
+              }
+            },
+            {
+              label: 'Create Note',
+              icon: <FilePlus size={14} />,
+              onClick: () => {
+                setExpandedFolders((prev) => new Set(prev).add(folderContext.folderId))
+                setCreating({ type: 'file', parentId: folderContext.folderId })
                 setCreatingValue('')
               }
             },

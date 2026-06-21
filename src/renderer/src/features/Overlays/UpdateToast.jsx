@@ -11,11 +11,18 @@ const UpdateToast = () => {
   const handleClose = () => useUpdateStore.setState({ status: 'idle' })
 
   // Auto-close "checking" state after 10 seconds if it gets stuck
+  // Auto-close "not-available" state after 3 seconds
   useEffect(() => {
     if (status === 'checking') {
       const timer = setTimeout(() => {
         useUpdateStore.setState({ status: 'idle' })
       }, 10000) // 10 seconds timeout
+      return () => clearTimeout(timer)
+    }
+    if (status === 'not-available') {
+      const timer = setTimeout(() => {
+        useUpdateStore.setState({ status: 'idle' })
+      }, 3000) // 3 seconds timeout
       return () => clearTimeout(timer)
     }
   }, [status])

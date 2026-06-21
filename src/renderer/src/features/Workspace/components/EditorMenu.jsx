@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { useToast } from '../../../core/hooks/useToast'
 import ToastNotification from '../../../core/notification'
+import ToolTip from '../../../components/atoms/ToolTip'
 
 const EditorMenu = ({
   title,
@@ -74,17 +75,18 @@ const EditorMenu = ({
     <div className="editor-titlebar">
       <div className="editor-controls">
         <div className="menu-container">
-          <button
-            className={`icon-btn menu-trigger ${showMoreMenu ? 'active' : ''}`}
-            ref={buttonRef}
-            onClick={(e) => {
-              e.stopPropagation()
-              setShowMoreMenu(!showMoreMenu)
-            }}
-            title="More Options (Ctrl+I)"
-          >
-            <MoreVertical size={18} />
-          </button>
+          <ToolTip text="More Options (Ctrl+I)" position="bottom-right">
+            <button
+              className={`icon-btn menu-trigger ${showMoreMenu ? 'active' : ''}`}
+              ref={buttonRef}
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowMoreMenu(!showMoreMenu)
+              }}
+            >
+              <MoreVertical size={18} />
+            </button>
+          </ToolTip>
 
           {showMoreMenu &&
             createPortal(

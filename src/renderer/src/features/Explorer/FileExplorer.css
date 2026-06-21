@@ -347,17 +347,30 @@
   background: var(--bg-hover) !important;
 }
 
-.inline-create-input {
-  background: transparent;
-  border: none;
+.inline-create-input,
+.inline-rename-input {
+  background: var(--bg-panel);
+  border: 1px solid var(--accent, var(--accent-primary, #3b82f6));
   color: var(--text-primary);
   font-size: 13px;
   font-family: inherit;
   width: 100%;
+  min-width: 120px;
   outline: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+  height: 24px;
+  box-sizing: border-box;
 }
 
-.inline-create-input::placeholder {
+.inline-create-input:focus,
+.inline-rename-input:focus {
+  border-color: var(--accent, var(--accent-primary, #3b82f6));
+  box-shadow: 0 0 0 1px var(--accent, var(--accent-primary, #3b82f6));
+}
+
+.inline-create-input::placeholder,
+.inline-rename-input::placeholder {
   color: var(--text-muted);
 }
 

@@ -14,6 +14,7 @@ import IconModal from '../../Icons/IconModal'
 import ColorModal from '../../Overlays/ColorModal'
 import { getSnippetIcon } from '../../Icons/iconMapper'
 import WindowControls from './WindowControls'
+import ToolTip from '../../../components/atoms/ToolTip'
 
 /**
  * SortableTabItem — draggable tab using @dnd-kit/sortable
@@ -38,9 +39,10 @@ const SortableTabItem = memo(
     const getTitle = () => snippet?.title || 'Untitled'
 
     return (
-      <div
-        ref={setNodeRef}
-        className={`workspace-tab ${isActive ? 'active' : ''} ${isDirty ? 'is-dirty' : ''} ${isDragging ? 'dragging' : ''} ${isPinned ? 'pinned' : ''}`}
+      <ToolTip text={getTitle()} position="bottom" delay={400}>
+        <div
+          ref={setNodeRef}
+          className={`workspace-tab ${isActive ? 'active' : ''} ${isDirty ? 'is-dirty' : ''} ${isDragging ? 'dragging' : ''} ${isPinned ? 'pinned' : ''}`}
         style={{
           transform: transform?.x ? `translate3d(${transform.x}px, 0, 0)` : undefined,
           transition: isDragging ? 'none' : 'transform 200ms ease, opacity 200ms ease',
@@ -51,7 +53,6 @@ const SortableTabItem = memo(
         onClick={() => onOpen(id)}
         onAuxClick={(e) => e.button === 1 && onClose(e, id)}
         onContextMenu={(e) => onContextMenu(e, id)}
-        title={getTitle()}
       >
         <div className="tab-context">
           {displayColor && <span className="tab-color-dot" style={{ background: displayColor }} />}
@@ -64,17 +65,17 @@ const SortableTabItem = memo(
             <div
               className="dirty-indicator tab-dirty"
               onClick={(e) => onClose(e, id)}
-              title="Unsaved changes - click to close"
             />
           ) : (
             !isPinned && (
-              <button className="tab-close-btn" onClick={(e) => onClose(e, id)} title="Close tab">
+              <button className="tab-close-btn" onClick={(e) => onClose(e, id)}>
                 <X size={14} />
               </button>
             )
           )}
         </div>
       </div>
+      </ToolTip>
     )
   }
 )

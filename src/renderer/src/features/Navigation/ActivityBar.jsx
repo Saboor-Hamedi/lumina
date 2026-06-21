@@ -2,6 +2,7 @@ import React from 'react'
 import { Network, Calendar, Palette, Settings, ArrowUpCircle, RefreshCw, Files } from 'lucide-react'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
 import { useVaultStore } from '../../core/store/useVaultStore'
+import ToolTip from '../../components/atoms/ToolTip'
 import './ActivityBar.css'
 
 /**
@@ -39,31 +40,35 @@ const ActivityBar = ({ onSettingsClick, onThemeClick, onToggleGraph, onToggleExp
   return (
     <div className="activity-bar sidebar">
       <div className="bar-top">
-        <button
-          className="sidebar-item"
-          onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            onToggleExplorerModal?.()
-          }}
-          title="Explorer"
-        >
-          <Files size={20} strokeWidth={1.5} />
-        </button>
-        <button
-          className="sidebar-item"
-          onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            onToggleGraph?.()
-          }}
-          title="Graph View"
-        >
-          <Network size={20} strokeWidth={1.5} />
-        </button>
-        <button className="sidebar-item" onClick={handleDailyNote} title="Today's Note">
-          <Calendar size={20} strokeWidth={1.5} />
-        </button>
+        <ToolTip text="Explorer (Ctrl+B)">
+          <button
+            className="sidebar-item"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              onToggleExplorerModal?.()
+            }}
+          >
+            <Files size={20} strokeWidth={1.5} />
+          </button>
+        </ToolTip>
+        <ToolTip text="Graph View (Ctrl+G)">
+          <button
+            className="sidebar-item"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              onToggleGraph?.()
+            }}
+          >
+            <Network size={20} strokeWidth={1.5} />
+          </button>
+        </ToolTip>
+        <ToolTip text="Today's Note">
+          <button className="sidebar-item" onClick={handleDailyNote}>
+            <Calendar size={20} strokeWidth={1.5} />
+          </button>
+        </ToolTip>
       </div>
 
       <div className="bar-bottom">
@@ -71,19 +76,18 @@ const ActivityBar = ({ onSettingsClick, onThemeClick, onToggleGraph, onToggleExp
           status === 'downloading' ||
           status === 'ready' ||
           status === 'error' ||
-          status === 'idle' ||
           status === 'checking') && (
-          <button
-            className={`sidebar-item update-btn ${status === 'downloading' ? 'loading' : ''} ${status === 'ready' ? 'ready' : ''} ${status === 'error' ? 'error' : ''}`}
-            title={
+          <ToolTip text={
               status === 'downloading'
                 ? `Downloading... ${Math.round(progress?.percent || 0)}%`
                 : status === 'error'
                   ? 'Update failed'
                   : 'Update Lumina'
-            }
+            }>
+          <button
+            className={`sidebar-item update-btn ${status === 'downloading' ? 'loading' : ''} ${status === 'ready' ? 'ready' : ''} ${status === 'error' ? 'error' : ''}`}
             onClick={
-              status === 'error' || status === 'idle'
+              status === 'error'
                 ? () => useUpdateStore.getState().check()
                 : handleUpdateClick
             }
@@ -99,7 +103,7 @@ const ActivityBar = ({ onSettingsClick, onThemeClick, onToggleGraph, onToggleExp
                 <ArrowUpCircle size={20} />
               </div>
             ) : (
-              <ArrowUpCircle size={20} style={{ opacity: status === 'idle' ? 0.3 : 1 }} />
+              <ArrowUpCircle size={20} />
             )}
             {status === 'downloading' && (
               <div className="update-progress-mini">
@@ -107,15 +111,20 @@ const ActivityBar = ({ onSettingsClick, onThemeClick, onToggleGraph, onToggleExp
               </div>
             )}
           </button>
+          </ToolTip>
         )}
 
-        <button className="sidebar-item" onClick={onThemeClick} title="Theme">
-          <Palette size={20} strokeWidth={1.5} />
-        </button>
+        <ToolTip text="Theme">
+          <button className="sidebar-item" onClick={onThemeClick}>
+            <Palette size={20} strokeWidth={1.5} />
+          </button>
+        </ToolTip>
 
-        <button className="sidebar-item" onClick={onSettingsClick} title="Settings">
-          <Settings size={20} strokeWidth={1.5} />
-        </button>
+        <ToolTip text="Settings (Ctrl+,)">
+          <button className="sidebar-item" onClick={onSettingsClick}>
+            <Settings size={20} strokeWidth={1.5} />
+          </button>
+        </ToolTip>
       </div>
     </div>
   )

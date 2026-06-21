@@ -8,12 +8,14 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
   let hoverTimeout = null
   let currentTarget = null
 
-  const removeCard = () => {
+  const removeCard = (resetTarget = true) => {
     if (hoverCard) {
       hoverCard.remove()
       hoverCard = null
     }
-    currentTarget = null
+    if (resetTarget) {
+      currentTarget = null
+    }
   }
 
   const createCard = (x, y, title, contentSnippet, timestamp, noteId) => {
@@ -264,12 +266,23 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
     }
   }
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape' && hoverCard) {
+      e.preventDefault()
+      e.stopPropagation()
+      clearTimeout(hoverTimeout)
+      removeCard(false) // Keep currentTarget so it doesn't instantly reopen if mouse is still on it
+    }
+  }
+
   wrapper.addEventListener('mouseover', handleMouseOver)
   document.addEventListener('mousedown', handleDocumentClick)
+  window.addEventListener('keydown', handleKeyDown, true)
 
   return () => {
     wrapper.removeEventListener('mouseover', handleMouseOver)
     document.removeEventListener('mousedown', handleDocumentClick)
+    window.removeEventListener('keydown', handleKeyDown, true)
     removeCard()
     clearTimeout(hoverTimeout)
   }

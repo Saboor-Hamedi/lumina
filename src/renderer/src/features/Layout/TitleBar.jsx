@@ -2,6 +2,7 @@ import React from 'react'
 import { Square, X, Minus } from 'lucide-react'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import logoUrl from '../../assets/logo.png'
+import ToolTip from '../../components/atoms/ToolTip'
 import './TitleBar.css'
 
 const TitleBar = () => {
@@ -41,15 +42,21 @@ const TitleBar = () => {
 
       <div className="title-right">
         <div className="window-controls">
-          <button onClick={handleMinimize} className="control-btn" title="Minimize">
-            <Minus size={12} />
-          </button>
-          <button onClick={handleToggleMaximize} className="control-btn" title="Maximize">
-            <Square size={11} />
-          </button>
-          <button onClick={handleClose} className="control-btn close" title="Close">
-            <X size={12} />
-          </button>
+          <ToolTip text="Minimize" position="bottom">
+            <button onClick={handleMinimize} className="control-btn">
+              <Minus size={12} />
+            </button>
+          </ToolTip>
+          <ToolTip text="Maximize" position="bottom">
+            <button onClick={handleToggleMaximize} className="control-btn">
+              <Square size={11} />
+            </button>
+          </ToolTip>
+          <ToolTip text="Close" position="bottom">
+            <button onClick={handleClose} className="control-btn close">
+              <X size={12} />
+            </button>
+          </ToolTip>
         </div>
       </div>
     </div>

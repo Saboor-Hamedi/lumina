@@ -155,8 +155,15 @@ const SidebarItem = ({
       <div
         ref={dndProps?.setNodeRef}
         className="start-grid-item"
-        onClick={isRenaming ? null : onClick}
-        onContextMenu={handleContextMenu}
+        onClick={(e) => {
+          if (e.button !== 0) return; // Ensure only left clicks trigger selection
+          if (!isRenaming && onClick) onClick(e);
+        }}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          handleContextMenu(e);
+        }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onDoubleClick={() => setIsRenaming(true)}
@@ -205,8 +212,15 @@ const SidebarItem = ({
     <div
       ref={dndProps?.setNodeRef}
       className={`tree-item ${isActive ? 'active' : ''} ${isDirty ? 'is-dirty' : ''}`}
-      onClick={isRenaming ? null : onClick}
-      onContextMenu={handleContextMenu}
+      onClick={(e) => {
+        if (e.button !== 0) return;
+        if (!isRenaming && onClick) onClick(e);
+      }}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        handleContextMenu(e);
+      }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onDoubleClick={() => setIsRenaming(true)}
