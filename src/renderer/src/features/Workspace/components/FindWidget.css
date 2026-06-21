@@ -1,7 +1,7 @@
 .find-widget {
   /* Absolute overlay inside .markdown-editor */
   position: absolute;
-  top: 8px; 
+  top: 8px;
   right: 8px;
   z-index: 1000;
   background: var(--bg-panel, #252526);
@@ -9,8 +9,10 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   animation: slideDownFind 0.2s ease-out;
   border-radius: 6px;
-  width: 420px; /* Fixed, Monaco-style width */
+  width: 420px;
   max-width: 100%;
+  min-width: 280px;
+  padding: 8px 3px;
 }
 
 @keyframes slideDownFind {
@@ -28,20 +30,41 @@
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  padding: 6px 10px;
   font-size: 13px;
   flex-wrap: nowrap;
 }
 
-.find-inputs-container {
+.find-inputs-col {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   flex: 1;
   min-width: 0;
 }
 
-.find-replace-row {
+.find-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--bg-app, #1e1e1e);
+  border: 1px solid var(--border-subtle, #3c3c3c);
+  border-radius: 2px;
+  padding: 3px 6px;
+  transition: border-color 0.15s;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+  height: 26px;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+}
+
+.find-input-group:focus-within {
+    border-color: var(--border-subtle, #3c3c3c);
+
+}
+
+.replace-input-group {
   animation: slideDownReplace 0.15s ease-out;
 }
 
@@ -56,56 +79,37 @@
   }
 }
 
-.find-input-group {
-  position: relative;
-  display: flex;
-  align-items: center;
-  background: var(--bg-app);
-  border: 1px solid var(--border-subtle);
-  border-radius: 4px;
-  padding: 4px 6px;
-  transition: border-color 0.15s;
-  gap: 4px;
-  width: 100%;
-  min-width: 0;
-  height: 28px; /* VSCode style height */
-}
-
-.find-controls {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-.find-input-group:focus-within {
-  border-color: var(--text-accent);
-}
-
 .find-icon {
-  color: var(--text-muted);
+  color: var(--text-muted, #858585);
   flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  opacity: 0.8;
 }
 
 .find-input {
   flex: 1;
   border: none;
   background: transparent;
-  color: var(--text-main);
+  color: var(--text-main, #cccccc);
   font-size: 13px;
   outline: none;
-  padding: 2px 0;
-  min-width: 0;
+  padding: 0;
+  min-width: 30px;
+  height: 20px;
+  line-height: 20px;
+  font-family: inherit;
 }
 
 .find-input::placeholder {
-  color: var(--text-faint);
+  color: var(--text-faint, #6a6a6a);
+  font-size: 12px;
 }
 
 .find-input-actions {
   display: flex;
   align-items: center;
-  gap: 1px;
+  gap: 2px;
   flex-shrink: 0;
 }
 
@@ -113,26 +117,31 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   padding: 0;
   border: none;
   background: transparent;
-  color: var(--text-muted);
+  color: var(--text-muted, #858585);
   cursor: pointer;
   border-radius: 2px;
   transition: all 0.15s;
   position: relative;
+  flex-shrink: 0;
 }
 
 .find-action-btn:hover {
-  background: var(--bg-active);
-  color: var(--text-main);
+  background: var(--bg-hover, #3a3a3a);
+  color: var(--text-main, #cccccc);
 }
 
 .find-action-btn.active {
-  background: var(--text-accent);
+  background: var(--text-accent, #007acc);
   color: white;
+}
+
+.find-action-btn.active:hover {
+  background: var(--text-accent-hover, #005a9e);
 }
 
 .find-action-btn:disabled {
@@ -140,46 +149,40 @@
   cursor: not-allowed;
 }
 
-.find-action-btn:disabled:hover {
-  background: transparent;
-  color: var(--text-muted);
+.find-controls-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+  padding-top: 1px;
+  min-width: 130px;
 }
 
-.replace-action-btn {
-  color: var(--text-accent);
-}
-
-.replace-action-btn:hover:not(:disabled) {
-  background: var(--text-accent);
-  color: white;
-}
-
-.replace-all-action-btn {
-  position: relative;
-  padding-right: 20px;
-}
-
-.replace-all-badge {
-  position: absolute;
-  right: 2px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 8px;
-  font-weight: 700;
-  line-height: 1;
-  opacity: 0.8;
+.find-search-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  flex-shrink: 0;
 }
 
 .find-match-count {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 11px;
-  color: var(--text-faint);
-  font-weight: 500;
+  font-size: 10px;
+  color: var(--text-faint, #6a6a6a);
+  font-weight: 400;
   pointer-events: none;
   white-space: nowrap;
+  width: 70px;
+  min-width: 70px;
+  max-width: 70px;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;
+  padding-right: 2px;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  margin-left: -10px;
 }
 
 .find-navigation {
@@ -192,47 +195,187 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   padding: 0;
-  border: 1px solid var(--border-subtle);
-  background: var(--bg-app);
-  color: var(--text-muted);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted, #858585);
   cursor: pointer;
   border-radius: 2px;
-  transition: all 0.15s;
-}
-
-.find-nav-btn:hover:not(:disabled) {
-  background: var(--bg-active);
-  border-color: var(--border-main);
-  color: var(--text-main);
-}
-
-.find-nav-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.find-toggle-btn,
-.find-close-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  border-radius: 3px;
   transition: all 0.15s;
   flex-shrink: 0;
 }
 
-.find-toggle-btn:hover,
+.find-nav-btn:hover:not(:disabled) {
+  background: var(--bg-hover, #3a3a3a);
+  border-color: var(--border-subtle, #454545);
+  color: var(--text-main, #cccccc);
+}
+
+.find-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.find-nav-btn:disabled:hover {
+  background: transparent;
+  border-color: transparent;
+}
+
+.find-toggle-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  margin-left: 5px;
+  flex-shrink: 0;
+}
+
+.find-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #858585);
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  margin-left: -4px;
+}
+
+.find-toggle-btn:hover {
+  background: var(--bg-hover, #3a3a3a);
+  color: var(--text-main, #cccccc);
+}
+
+.find-toggle-icon {
+  transition: transform 0.15s ease;
+  width: 14px;
+  height: 14px;
+}
+
+.find-toggle-btn.expanded .find-toggle-icon {
+  transform: rotate(90deg);
+}
+
+.find-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #858585);
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
 .find-close-btn:hover {
-  background: var(--bg-active);
-  color: var(--text-main);
+  background: var(--bg-hover, #3a3a3a);
+  color: var(--text-main, #cccccc);
+}
+
+.find-replace-controls {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 26px;
+  animation: slideDownReplace 0.15s ease-out;
+  justify-content: flex-end;
+  padding-right: 1px;
+  flex-shrink: 0;
+}
+
+.replace-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 8px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  color: var(--text-accent, #007acc);
+  cursor: pointer;
+  border-radius: 2px;
+  font-size: 11px;
+  font-weight: 500;
+  transition: all 0.15s;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+}
+
+.replace-action-btn:hover:not(:disabled) {
+  background: var(--text-accent, #007acc);
+  color: white;
+}
+
+.replace-action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.replace-action-btn:disabled:hover {
+  background: transparent;
+  color: var(--text-accent, #007acc);
+}
+
+.replace-all-action-btn {
+  position: relative;
+  padding-right: 20px;
+}
+
+.replace-all-badge {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 7px;
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0.9;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Icons inside buttons */
+.find-action-btn svg,
+.find-nav-btn svg,
+.find-toggle-btn svg,
+.find-close-btn svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.replace-action-btn svg {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+}
+
+/* Match "No results" text - always show */
+.find-match-count:empty::before {
+  content: "No results";
+  color: var(--text-faint, #6a6a6a);
+}
+
+/* Hide empty state properly */
+.find-match-count:empty {
+  display: block;
+}
+
+/* Fix for when there are results */
+.find-match-count:not(:empty)::before {
+  display: none;
 }

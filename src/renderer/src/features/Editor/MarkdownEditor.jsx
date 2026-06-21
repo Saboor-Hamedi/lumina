@@ -174,7 +174,9 @@ const MarkdownEditor = React.memo(
         const mark = Decoration.mark({ class: 'cm-searchMatch' })
 
         try {
-          const regex = new RegExp(pattern)
+          // e.detail.pattern is already a RegExp with 'g' or 'gi' flags from FindWidget.
+          // If we pass it to new RegExp() without flags, it loses the 'g' flag and matchAll throws.
+          const regex = pattern instanceof RegExp ? pattern : new RegExp(pattern, 'g')
           for (const match of text.matchAll(regex)) {
             decorations.push(mark.range(match.index, match.index + match[0].length))
           }
@@ -549,7 +551,11 @@ const MarkdownEditor = React.memo(
               run: () => {
                 if (isActiveRef.current) {
                   setReplaceModeActive(false)
-                  setShowFindWidget(true)
+                  if (showFindWidgetRef.current) {
+                    window.dispatchEvent(new CustomEvent('find-widget-focus-search'))
+                  } else {
+                    setShowFindWidget(true)
+                  }
                   return true
                 }
                 return false
@@ -560,7 +566,11 @@ const MarkdownEditor = React.memo(
               run: () => {
                 if (isActiveRef.current) {
                   setReplaceModeActive(true)
-                  setShowFindWidget(true)
+                  if (showFindWidgetRef.current) {
+                    window.dispatchEvent(new CustomEvent('find-widget-toggle-replace'))
+                  } else {
+                    setShowFindWidget(true)
+                  }
                   return true
                 }
                 return false
@@ -575,6 +585,7 @@ const MarkdownEditor = React.memo(
               run: () => {
                 if (isActiveRef.current && showFindWidgetRef.current) {
                   setShowFindWidget(false)
+                  window.dispatchEvent(new CustomEvent('search-clear'))
                   return true
                 }
                 return false
@@ -758,8 +769,15 @@ const MarkdownEditor = React.memo(
     return (
       <div
         className={`markdown-editor mode-source cursor-${caretStyle || 'smooth'}`}
-        style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+        style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}
       >
+        {showFindWidget && realViewRef.current && (
+          <FindWidget
+            editorView={realViewRef.current}
+            onClose={() => setShowFindWidget(false)}
+            initialReplaceMode={replaceModeActive}
+          />
+        )}
         <ToastNotification toast={toast} onClose={clearToast} />
 
         <div className="editor-scroller">
@@ -793,14 +811,6 @@ const MarkdownEditor = React.memo(
                 title={title}
                 setTitle={setTitle}
                 setIsDirty={setIsDirty}
-              />
-            )}
-
-            {showFindWidget && realViewRef.current && (
-              <FindWidget
-                editorView={realViewRef.current}
-                onClose={() => setShowFindWidget(false)}
-                initialReplaceMode={replaceModeActive}
               />
             )}
 

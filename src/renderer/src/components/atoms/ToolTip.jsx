@@ -69,7 +69,7 @@ const ToolTip = ({ text, children, position = 'top', delay = 300 }) => {
   const clonedChild = cloneElement(children, {
     ref: (node) => {
       childRef.current = node
-      const { ref } = children
+      const ref = children.props.ref
       if (typeof ref === 'function') ref(node)
       else if (ref) ref.current = node
     },

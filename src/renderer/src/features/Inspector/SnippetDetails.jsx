@@ -13,7 +13,8 @@ import {
   FileCode,
   Layout,
   AtSign,
-  Fingerprint
+  Fingerprint,
+  Users
 } from 'lucide-react'
 import './SnippetDetails.css'
 
@@ -73,15 +74,23 @@ const SnippetDetails = ({ snippet, isLoading = false }) => {
     })
   }
 
-  // 2. Inline markdown tags (ignores "# Heading" because [\w-] doesn't match space)
+  // 2. Inline markdown tags and mentions
   let codeWithoutBlocks = (snippet.code || '').replace(/```[\s\S]*?```/g, '').replace(/`[^`]+`/g, '')
   const tagRegex = /(?:^|\s)(#[\w-]+)/g
+  const mentionRegex = /(?:^|\s)(@[\w-]+)/g
   let match
+  
   while ((match = tagRegex.exec(codeWithoutBlocks)) !== null) {
     tagSet.add(match[1])
   }
   
+  const mentionSet = new Set()
+  while ((match = mentionRegex.exec(codeWithoutBlocks)) !== null) {
+    mentionSet.add(match[1])
+  }
+  
   const tagCount = tagSet.size
+  const mentionCount = mentionSet.size
 
   return (
     <div className="details-modal-body" style={{ height: '100%', overflowY: 'auto' }}>
@@ -126,6 +135,12 @@ const SnippetDetails = ({ snippet, isLoading = false }) => {
             name="tags" 
             value={tagCount} 
             iconColor="#10b981" 
+          />
+          <PropertyRow 
+            icon={Users} 
+            name="mentions" 
+            value={mentionCount} 
+            iconColor="#8b5cf6" 
           />
           <PropertyRow 
             icon={Pin} 

@@ -19,7 +19,7 @@ import ErrorBoundary from '../../components/ErrorBoundary'
 import './AppShell.css'
 import '../Overlays/ConfirmModal.css'
 import AIChatPanel from '../AI/AIChatPanel'
-import DetailsModal from '../Overlays/DetailsModal'
+
 import AIChatModal from '../Overlays/AIChatModal'
 import FileExplorer from '../Explorer/FileExplorer'
 import SnippetDetails from '../Inspector/SnippetDetails'

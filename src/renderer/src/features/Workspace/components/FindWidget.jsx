@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { Search, Replace, X, ChevronUp, ChevronDown, Type, AlignLeft, Regex } from 'lucide-react'
+import { Search, Replace, X, ChevronUp, ChevronDown, Type, AlignLeft, Regex, ChevronRight } from 'lucide-react'
 import './FindWidget.css'
 
 const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
@@ -156,7 +156,6 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
         selection: { anchor: from, head: to },
         scrollIntoView: true
       })
-      view.focus()
 
       setCurrentIndex(clamped)
       setMatchCount({ current: clamped + 1, total: matches.length })
@@ -257,6 +256,7 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
         e.preventDefault()
         setSearchQuery('')
         window.dispatchEvent(new CustomEvent('search-clear'))
+        if (editorView) editorView.focus()
         onClose()
       } else if (e.key === 'Enter') {
         e.preventDefault()
@@ -323,8 +323,19 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
   return (
     <div className="find-widget">
       <div className="find-widget-content">
+        {/* Toggle Replace */}
+        <div className="find-toggle-container">
+          <button
+            className={`find-toggle-btn ${isReplaceMode ? 'expanded' : ''}`}
+            onClick={() => setIsReplaceMode(!isReplaceMode)}
+            title={isReplaceMode ? 'Hide Replace' : 'Show Replace (Ctrl+H)'}
+          >
+            <ChevronRight size={14} className="find-toggle-icon" />
+          </button>
+        </div>
+
         {/* Left column: search + replace inputs (same width) */}
-        <div className="find-inputs-container">
+        <div className="find-inputs-col">
           {/* Search Input */}
           <div className="find-input-group">
             <Search size={12} className="find-icon" />
@@ -372,83 +383,79 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
                 </button>
               )}
             </div>
-            {searchQuery && (
-              <div className="find-match-count">
-                {matchCount.total > 0
-                  ? `${matchCount.current} of ${matchCount.total}`
-                  : 'No results'}
-              </div>
-            )}
           </div>
 
           {/* Replace Input - Dropdown (same width as search) */}
           {isReplaceMode && (
-            <div className="find-replace-row">
-              <div className="find-input-group">
-                <Replace size={12} className="find-icon" />
-                <input
-                  ref={replaceInputRef}
-                  type="text"
-                  className="find-input"
-                  placeholder="Replace"
-                  value={replaceQuery}
-                  onChange={(e) => setReplaceQuery(e.target.value)}
-                  onKeyDown={handleReplaceKeyDown}
-                />
-                <div className="find-input-actions">
-                  <button
-                    className="find-action-btn replace-action-btn"
-                    onClick={handleReplaceNext}
-                    disabled={!searchQuery.trim()}
-                    title="Replace (Enter)"
-                  >
-                    <Replace size={11} />
-                  </button>
-                  <button
-                    className="find-action-btn replace-action-btn replace-all-action-btn"
-                    onClick={handleReplaceAll}
-                    disabled={!searchQuery.trim()}
-                    title="Replace All (Ctrl+Enter)"
-                  >
-                    <Replace size={11} />
-                    <span className="replace-all-badge">All</span>
-                  </button>
-                </div>
-              </div>
+            <div className="find-input-group replace-input-group">
+              <Replace size={12} className="find-icon" />
+              <input
+                ref={replaceInputRef}
+                type="text"
+                className="find-input"
+                placeholder="Replace"
+                value={replaceQuery}
+                onChange={(e) => setReplaceQuery(e.target.value)}
+                onKeyDown={handleReplaceKeyDown}
+              />
             </div>
           )}
         </div>
 
-        {/* Right column: navigation + toggle + close (fixed) */}
-        <div className="find-controls">
-          <div className="find-navigation">
-            <button
-              className="find-nav-btn"
-              onClick={handleFindPrevious}
-              disabled={!searchQuery.trim() || !matches.length}
-              title="Previous (Shift+Enter)"
-            >
-              <ChevronUp size={12} />
-            </button>
-            <button
-              className="find-nav-btn"
-              onClick={handleFindNext}
-              disabled={!searchQuery.trim() || !matches.length}
-              title="Next (Enter)"
-            >
-              <ChevronDown size={12} />
+        {/* Right column: navigation + replace actions + close */}
+        <div className="find-controls-col">
+          <div className="find-search-controls">
+            <div className="find-match-count">
+              {searchQuery
+                ? matchCount.total > 0
+                  ? `${matchCount.current} of ${matchCount.total}`
+                  : 'No results'
+                : ''}
+            </div>
+            <div className="find-navigation">
+              <button
+                className="find-nav-btn"
+                onClick={handleFindPrevious}
+                disabled={!searchQuery.trim() || !matches.length}
+                title="Previous (Shift+Enter)"
+              >
+                <ChevronUp size={12} />
+              </button>
+              <button
+                className="find-nav-btn"
+                onClick={handleFindNext}
+                disabled={!searchQuery.trim() || !matches.length}
+                title="Next (Enter)"
+              >
+                <ChevronDown size={12} />
+              </button>
+            </div>
+            <button className="find-close-btn" onClick={onClose} title="Close (Esc)">
+              <X size={12} />
             </button>
           </div>
-          <button
-            className="find-toggle-btn"
-            onClick={() => setIsReplaceMode(!isReplaceMode)}
-            title={isReplaceMode ? 'Hide Replace' : 'Show Replace (Ctrl+H)'}
-          >
-            <Replace size={12} />
-          </button>
-          <button className="find-close-btn" onClick={onClose} title="Close (Esc)">
-            <X size={12} />
-          </button>
+
+          {isReplaceMode && (
+            <div className="find-replace-controls">
+              <button
+                className="find-action-btn replace-action-btn"
+                onClick={handleReplaceNext}
+                disabled={!searchQuery.trim()}
+                title="Replace (Enter)"
+              >
+                <Replace size={11} />
+              </button>
+              <button
+                className="find-action-btn replace-action-btn replace-all-action-btn"
+                onClick={handleReplaceAll}
+                disabled={!searchQuery.trim()}
+                title="Replace All (Ctrl+Enter)"
+              >
+                <Replace size={11} />
+                <span className="replace-all-badge">All</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

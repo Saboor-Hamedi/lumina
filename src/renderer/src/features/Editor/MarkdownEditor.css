@@ -245,7 +245,7 @@
   color: var(--text-accent, #ff79c6) !important;
   font-size: 0.85em;
   font-weight: 300;
-  margin-right: 1px;
+  margin-right: 0;
 }
 
 .cm-inline-tag:hover,
@@ -772,6 +772,7 @@
   display: flex;
   flex-direction: column;
   background: transparent;
+  scroll-behavior: smooth;
 }
 
 .editor-canvas-wrap {
