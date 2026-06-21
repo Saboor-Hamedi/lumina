@@ -14,27 +14,30 @@ import { codeBlockDecorations } from '../../Workspace/codeBlockHeader'
 import '@atomic-editor/editor/styles.css'
 import '../../Editor/MarkdownEditor.css'
 import '../../Theme/ThemeModal.css'
+import { useKeyboardShortcuts } from '../../../core/hooks/useKeyboardShortcuts'
 
 const PreviewModal = ({ isOpen, onClose, title, content }) => {
   const [shouldRenderEditor, setShouldRenderEditor] = useState(false)
 
+  useKeyboardShortcuts({
+    onEscape: isOpen ? () => {
+      onClose()
+      return true
+    } : undefined
+  })
+
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onClose()
-    }
     if (isOpen) {
-      window.addEventListener('keydown', handleKeyDown)
       // Small delay to allow the modal's CSS opening animation to run smoothly
       // before blocking the main thread with CodeMirror instantiation
       const timer = setTimeout(() => setShouldRenderEditor(true), 50)
       return () => {
-        window.removeEventListener('keydown', handleKeyDown)
         clearTimeout(timer)
       }
     } else {
       setShouldRenderEditor(false)
     }
-  }, [isOpen, onClose])
+  }, [isOpen])
 
   const handleLinkClick = useMemo(() => async (url) => {
     if (url.match(/^(https?|mailto|file):\/\//i)) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useDeferredValue } from 'react'
 import {
   Search,
   FileText,
@@ -30,6 +30,7 @@ import './CommandPalette.css'
 const CommandPalette = React.memo(
   ({ isOpen, onClose, items, onSelect, onNew, onToggleSettings, onToggleGraph }) => {
     const [query, setQuery] = useState('')
+    const deferredQuery = useDeferredValue(query)
     const [selectedIndex, setSelectedIndex] = useState(0)
     const [aiResults, setAiResults] = useState([])
     const inputRef = useRef(null)
@@ -69,18 +70,15 @@ const CommandPalette = React.memo(
     // AI Search Debounce
     useEffect(() => {
       const timer = setTimeout(async () => {
-        // Allow shorter queries for AI if the user paused?
-        // Keep > 2 for perf, but lower threshold
-        if (query.trim().length > 2) {
-          // Lower threshold to 0.45 to catch "food" -> "pasta"
-          const results = await searchNotes(query, 0.45)
+        if (deferredQuery.trim().length > 2) {
+          const results = await searchNotes(deferredQuery, 0.45)
           setAiResults(results)
         } else {
           setAiResults([])
         }
       }, 400)
       return () => clearTimeout(timer)
-    }, [query])
+    }, [deferredQuery])
 
     const fuseIndex = useMemo(() => {
       return new Fuse(items, {
@@ -96,7 +94,7 @@ const CommandPalette = React.memo(
     }, [items])
 
     const filtered = useMemo(() => {
-      const lowerQuery = query.toLowerCase().trim()
+      const lowerQuery = deferredQuery.toLowerCase().trim()
 
       // 0. System Actions (Show if query starts with > or matches)
       const isActionQuery = lowerQuery.startsWith('>')
@@ -224,7 +222,7 @@ const CommandPalette = React.memo(
 
       if (isActionQuery) return systemActions
       return [...systemActions, ...finalResults].slice(0, 50)
-    }, [items, query, aiResults, tags, mentions, folders])
+    }, [deferredQuery, items, tags, mentions, folders, fuseIndex, aiResults])
 
     useEffect(() => {
       if (selectedIndex >= filtered.length && filtered.length > 0) {

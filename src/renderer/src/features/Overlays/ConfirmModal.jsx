@@ -38,7 +38,7 @@ const ConfirmModal = ({
         </div>
 
         <div className="confirm-body">
-      <AlertCircle size={24} className={danger ? 'text-danger' : 'text-accent'} />
+        <AlertCircle size={24} className={danger ? 'text-danger' : 'text-accent'} />
 
           <h2 className="confirm-title">{title}</h2>
           <p className="confirm-message">{message}</p>

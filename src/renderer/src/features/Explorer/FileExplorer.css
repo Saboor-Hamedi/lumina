@@ -29,8 +29,7 @@
   /* Optional: acrylic effect if supported by theme */
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
-  background-color: rgba(32, 32, 32, 0.7); /* translucent dark */
-  background-color: rgba(32, 32, 32, 0.7); /* translucent dark */
+  background-color: var(--bg-panel);
 }
 
 /* Resize Handles */
@@ -76,8 +75,8 @@
 .start-menu-search input {
   width: 100%;
   height: 40px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-app);
+  border: 1px solid var(--border-dim);
   border-radius: 20px;
   padding: 0 16px 0 40px;
   color: var(--text-main);
@@ -87,7 +86,7 @@
 
 .start-menu-search input:focus {
   outline: none;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-active);
   border-color: var(--text-accent);
 }
 
@@ -122,11 +121,11 @@
   background: transparent;
 }
 .start-menu-body::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--scroll-thumb);
   border-radius: 4px;
 }
 .start-menu-body::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--text-muted);
 }
 
 /* Sections */
@@ -159,7 +158,7 @@
 }
 
 .sort-toggle-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--bg-active);
   color: var(--text-main);
 }
 
@@ -182,7 +181,7 @@
   background: transparent;
 }
 .start-grid::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--scroll-thumb);
   border-radius: 4px;
 }
 
@@ -201,15 +200,15 @@
 }
 
 .start-grid-item:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-active);
 }
 
 .pin-action-btn {
   position: absolute;
   top: 4px;
   right: 4px;
-  background: rgba(0, 0, 0, 0.5);
-  border: none;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
   color: var(--text-muted);
   width: 20px;
   height: 20px;
@@ -229,7 +228,7 @@
 
 .pin-action-btn:hover {
   color: var(--text-main);
-  background: rgba(0, 0, 0, 0.8);
+  background: var(--bg-active);
 }
 
 .start-grid-item .icon-container {
@@ -311,7 +310,7 @@
 }
 
 .folder-tree-main:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-active);
 }
 
 .folder-tree-actions {
@@ -338,7 +337,7 @@
 }
 
 .folder-action-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--bg-active);
   color: var(--text-primary);
 }
 
@@ -349,8 +348,8 @@
 
 .inline-create-input,
 .inline-rename-input {
-  background: var(--bg-surface, rgba(0, 0, 0, 0.2));
-  border: 1px solid var(--accent, var(--accent-primary, #3b82f6));
+  background: var(--bg-app);
+  border: 1px solid var(--text-accent);
   color: var(--text-main);
   font-size: 13px;
   font-family: inherit;
@@ -366,8 +365,8 @@
 
 .inline-create-input:focus,
 .inline-rename-input:focus {
-  border-color: var(--accent, var(--accent-primary, #3b82f6));
-  box-shadow: inset 0 0 0 1px var(--accent, var(--accent-primary, #3b82f6)), 0 0 8px rgba(59, 130, 246, 0.2);
+  border-color: var(--text-accent);
+  box-shadow: inset 0 0 0 1px var(--text-accent), 0 0 8px rgba(64, 186, 250, 0.2);
 }
 
 .inline-create-input::placeholder,
@@ -401,14 +400,14 @@
 }
 
 .start-section .tree-item .action-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--bg-active);
   color: var(--text-main);
 }
 
 /* Removed old folder-tree-item background cover */
 
 .folder-tree-main.folder-over {
-  background: var(--accent-primary) !important;
+  background: var(--text-accent) !important;
   color: white !important;
 }
 
@@ -420,7 +419,7 @@
 }
 
 .start-section .tree-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-active);
 }
 
 .load-more-btn {
@@ -439,7 +438,7 @@
 }
 
 .load-more-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-active);
   color: var(--text-main);
 }
 
