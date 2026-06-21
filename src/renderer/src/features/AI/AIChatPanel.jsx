@@ -837,7 +837,7 @@ const AIChatPanel = React.memo(() => {
                           style={{
                             marginBottom: '6px',
                             display: 'flex',
-                            gap: '6px',
+                            gap: '3px',
                             alignItems: 'flex-start'
                           }}
                         >

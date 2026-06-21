@@ -88,10 +88,9 @@ export async function generateImage(prompt, apiKey = null, controller = null) {
       headers['Authorization'] = `Bearer ${apiKey.trim()}`
     }
 
-    // Use Hugging Face Router API directly (HfInference uses deprecated endpoint)
-    const routerUrl =
-      'https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell'
-    console.log('[ImageGen] Using HF Router API with model: black-forest-labs/FLUX.1-schnell')
+    // Use Hugging Face Serverless Inference API
+    const routerUrl = 'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell'
+    console.log('[ImageGen] Using HF API with model: black-forest-labs/FLUX.1-schnell')
 
     let imageBlob
     try {

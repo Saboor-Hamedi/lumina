@@ -3,11 +3,11 @@
   position: absolute;
   bottom: 100%; /* Shows above the input */
   left: 10px;
-  width: 280px;
-  background: var(--bg-panel);
+  width: 200px;
+  background: var(--bg-app); /* Solid opaque background */
   border: 1px solid var(--border-dim);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   z-index: 1000;
   overflow: hidden;
   display: flex;
@@ -18,18 +18,17 @@
 }
 
 [data-mirror-mode='true'] .slash-menu-container {
-  background: rgba(30, 30, 30, 0.85);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgb(30, 30, 30); /* Fully opaque */
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .slash-menu-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
+  gap: 8px;
+  padding: 4px 8px;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: 4px;
   transition: background 0.1s;
   color: var(--text-main);
 }
@@ -45,8 +44,8 @@
 }
 
 .slash-icon {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -67,12 +66,12 @@
 }
 
 .slash-label {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
 }
 
 .slash-desc {
-  font-size: 11px;
+  font-size: 10px;
   opacity: 0.7;
   white-space: nowrap;
   overflow: hidden;

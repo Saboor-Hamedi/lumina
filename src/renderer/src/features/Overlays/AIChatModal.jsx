@@ -933,10 +933,7 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
           )}
         </div>
 
-        <div
-          className="chat-input-area"
-          style={{ padding: 0, background: 'transparent', border: 'none' }}
-        >
+        <div className="chat-input-area">
           <Composer
             onSend={handleSendMessage}
             isLoading={isChatLoading || isImageGenerating}

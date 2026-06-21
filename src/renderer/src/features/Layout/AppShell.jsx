@@ -582,16 +582,9 @@ const AppShell = () => {
         onThemeClick={() => setShowThemeModal(true)}
         onToggleGraph={() => setShowGraph(true)}
         onToggleExplorerModal={() => setShowExplorerModal((prev) => !prev)}
+        onToggleAIChat={() => setShowAIChatModal(true)}
       />
 
-      {/* AI Floating Action Button */}
-      <button 
-        className="ai-fab-btn"
-        onClick={() => setShowAIChatModal(true)}
-        title="Open AI Chat"
-      >
-        <MessageSquare size={20} />
-      </button>
 
       {showSettings && (
         <SettingsModal
