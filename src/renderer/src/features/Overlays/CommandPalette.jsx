@@ -27,6 +27,124 @@ import './CommandPalette.css'
  * Feature: Fuzzy Match + Semantic AI Search
  * Memoized for performance - expensive search/filter operations.
  */
+const HighlightText = React.memo(({ text, highlight }) => {
+  if (!highlight.trim() || text === 'Semantic Match') return <span>{text}</span>
+  const regex = new RegExp(`(${highlight})`, 'gi')
+  const parts = text.split(regex)
+  return (
+    <span>
+      {parts.map((part, i) =>
+        regex.test(part) ? (
+          <mark key={i} className="palette-match">
+            {part}
+          </mark>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </span>
+  )
+})
+
+const CommandPaletteRow = React.memo(({ index, style, data }) => {
+  const {
+    filtered,
+    selectedIndex,
+    setSelectedIndex,
+    query,
+    setQuery,
+    inputRef,
+    onSelect,
+    onNew,
+    onToggleSettings,
+    onToggleGraph,
+    onClose,
+    dirtySnippetIds
+  } = data
+
+  const item = filtered[index]
+  const isActive = index === selectedIndex
+  const isSemantic = item.matchType === 'semantic'
+  const isAction = item.matchType === 'action'
+
+  return (
+    <div
+      style={style}
+      className={`palette-item ${isActive ? 'active' : ''} ${isAction ? 'is-action' : ''}`}
+      onClick={() => {
+        if (item.action === 'filter') {
+          setQuery(item.value + ' ')
+          inputRef.current?.focus()
+          return
+        }
+        if (isAction) {
+          if (item.action === 'settings') onToggleSettings?.()
+          else if (item.action === 'new') onNew?.()
+          else if (item.action === 'graph') onToggleGraph?.()
+        } else if (item.matchType === 'folder') {
+          // Just close, no action
+        } else {
+          onSelect(item)
+        }
+        onClose()
+      }}
+      onMouseMove={() => {
+        if (selectedIndex !== index) setSelectedIndex(index)
+      }}
+    >
+      {isAction ? (
+        (() => {
+          if (item.action === 'settings') return <Zap size={18} className="item-icon action-icon" />
+          if (item.action === 'new') return <Plus size={18} className="item-icon action-icon" />
+          if (item.action === 'graph') return <Network size={18} className="item-icon action-icon" />
+          return <Zap size={18} className="item-icon action-icon" />
+        })()
+      ) : item.matchType === 'folder' ? (
+        <Folder size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
+      ) : item.matchType === 'tag' ? (
+        <Hash size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
+      ) : item.matchType === 'mention' ? (
+        <AtSign size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
+      ) : (
+        (() => {
+          const lang = (item.language || 'markdown').toLowerCase()
+          const title = (item.title || '').toLowerCase()
+          if (['javascript', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'python', 'py'].includes(lang))
+            return <FileCode size={18} className="item-icon" />
+          if (lang === 'json') return <FileJson size={18} className="item-icon" />
+          if (lang === 'markdown' || lang === 'md' || title.endsWith('.md'))
+            return <Hash size={18} className="item-icon" />
+          if (['png', 'jpg', 'jpeg', 'gif', 'svg'].some((ext) => title.endsWith('.' + ext)))
+            return <ImageIcon size={18} className="item-icon" />
+          return <FileText size={18} className="item-icon" />
+        })()
+      )}
+
+      <div className="item-info">
+        <div className="item-title">
+          {item.folderId && item.matchType !== 'folder' && (
+            <span className="folder-prefix">{item.folderId}/</span>
+          )}
+          <HighlightText text={item.title || 'Untitled'} highlight={query} />
+          {item.id && dirtySnippetIds.includes(item.id) && (
+            <div className="dirty-indicator" style={{ marginLeft: '8px' }} />
+          )}
+        </div>
+        {(item.matchSnippet || item.folderPath) && (
+          <div className={`item-secondary ${isSemantic ? 'semantic-badge' : ''}`}>
+            {isSemantic ? (
+              '✨ AI Match'
+            ) : item.folderPath ? (
+              <span style={{ opacity: 0.6 }}>in {item.folderPath}</span>
+            ) : (
+              <HighlightText text={item.matchSnippet} highlight={query} />
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+})
 const CommandPalette = React.memo(
   ({ isOpen, onClose, items, onSelect, onNew, onToggleSettings, onToggleGraph }) => {
     const [query, setQuery] = useState('')
@@ -281,120 +399,30 @@ const CommandPalette = React.memo(
       }
     }
 
-    // Highlight matching characters
-    const HighlightText = ({ text, highlight }) => {
-      if (!highlight.trim() || text === 'Semantic Match') return <span>{text}</span>
-      const regex = new RegExp(`(${highlight})`, 'gi')
-      const parts = text.split(regex)
-      return (
-        <span>
-          {parts.map((part, i) =>
-            regex.test(part) ? (
-              <mark key={i} className="palette-match">
-                {part}
-              </mark>
-            ) : (
-              <span key={i}>{part}</span>
-            )
-          )}
-        </span>
-      )
-    }
-
-    const Row = ({ index, style }) => {
-      const item = filtered[index]
-      const isActive = index === selectedIndex
-      const isSemantic = item.matchType === 'semantic'
-      const isAction = item.matchType === 'action'
-
-      return (
-        <div
-          style={style}
-          className={`palette-item ${isActive ? 'active' : ''} ${isAction ? 'is-action' : ''}`}
-          onClick={() => {
-            if (item.action === 'filter') {
-              setQuery(item.value + ' ')
-              inputRef.current?.focus()
-              return
-            }
-            if (isAction) {
-              if (item.action === 'settings') onToggleSettings?.()
-              else if (item.action === 'new') onNew?.()
-              else if (item.action === 'graph') onToggleGraph?.()
-            } else if (item.matchType === 'folder') {
-              // Just close, no action
-            } else {
-              onSelect(item)
-            }
-            onClose()
-          }}
-          onMouseMove={() => {
-            if (selectedIndex !== index) setSelectedIndex(index)
-          }}
-        >
-          {isAction ? (
-            (() => {
-              if (item.action === 'settings')
-                return <Zap size={18} className="item-icon action-icon" />
-              if (item.action === 'new') return <Plus size={18} className="item-icon action-icon" />
-              if (item.action === 'graph')
-                return <Network size={18} className="item-icon action-icon" />
-              return <Zap size={18} className="item-icon action-icon" />
-            })()
-          ) : item.matchType === 'folder' ? (
-            <Folder
-              size={18}
-              className="item-icon"
-              style={{ color: 'var(--text-accent)' }}
-            />
-          ) : item.matchType === 'tag' ? (
-            <Hash size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
-          ) : item.matchType === 'mention' ? (
-            <AtSign size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
-          ) : (
-            (() => {
-              const lang = (item.language || 'markdown').toLowerCase()
-              const title = (item.title || '').toLowerCase()
-              if (
-                ['javascript', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'python', 'py'].includes(
-                  lang
-                )
-              )
-                return <FileCode size={18} className="item-icon" />
-              if (lang === 'json') return <FileJson size={18} className="item-icon" />
-              if (lang === 'markdown' || lang === 'md' || title.endsWith('.md'))
-                return <Hash size={18} className="item-icon" />
-              if (['png', 'jpg', 'jpeg', 'gif', 'svg'].some((ext) => title.endsWith('.' + ext)))
-                return <ImageIcon size={18} className="item-icon" />
-              return <FileText size={18} className="item-icon" />
-            })()
-          )}
-
-          <div className="item-info">
-            <div className="item-title">
-              {item.folderId && item.matchType !== 'folder' && (
-                <span className="folder-prefix">{item.folderId}/</span>
-              )}
-              <HighlightText text={item.title || 'Untitled'} highlight={query} />
-              {item.id && dirtySnippetIds.includes(item.id) && (
-                <div className="dirty-indicator" style={{ marginLeft: '8px' }} />
-              )}
-            </div>
-            {(item.matchSnippet || item.folderPath) && (
-              <div className={`item-secondary ${isSemantic ? 'semantic-badge' : ''}`}>
-                {isSemantic ? (
-                  '✨ AI Match'
-                ) : item.folderPath ? (
-                  <span style={{ opacity: 0.6 }}>in {item.folderPath}</span>
-                ) : (
-                  <HighlightText text={item.matchSnippet} highlight={query} />
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )
-    }
+    const itemData = useMemo(() => ({
+      filtered,
+      selectedIndex,
+      setSelectedIndex,
+      query,
+      setQuery,
+      inputRef,
+      onSelect,
+      onNew,
+      onToggleSettings,
+      onToggleGraph,
+      onClose,
+      dirtySnippetIds
+    }), [
+      filtered,
+      selectedIndex,
+      query,
+      dirtySnippetIds,
+      onSelect,
+      onNew,
+      onToggleSettings,
+      onToggleGraph,
+      onClose
+    ])
 
     if (!isOpen) return null
 
@@ -430,12 +458,13 @@ const CommandPalette = React.memo(
             {filtered.length > 0 ? (
               <List
                 ref={listRef}
+                itemData={itemData}
                 height={Math.min(filtered.length * 48, 320)}
                 itemCount={filtered.length}
                 itemSize={48}
                 width="100%"
               >
-                {Row}
+                {CommandPaletteRow}
               </List>
             ) : (
               <div className="palette-empty">No matching notes found</div>
