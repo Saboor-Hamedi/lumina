@@ -430,26 +430,7 @@ class VaultManager {
     }
   }
 
-  async deleteSnippet(id) {
-    const snippet = this.snippets.get(id)
-    if (!snippet) return false
 
-    const targetPath = path.join(this.vaultPath, snippet.fileName || `${snippet.title}.md`)
-
-    try {
-      await fs.unlink(targetPath)
-      this.snippets.delete(id)
-      console.info('[VaultManager] ✓ Deleted file:', targetPath)
-      return true
-    } catch (err) {
-      console.warn('[VaultManager] ✗ Delete failed for file:', targetPath, err.message)
-    }
-
-    console.warn('[VaultManager] ✗ Could not find file to delete for ID:', id)
-    // Even if file is gone, clean up internal state
-    this.snippets.delete(id)
-    return true
-  }
 
   getSnippets() {
     const list = Array.from(this.snippets.values())

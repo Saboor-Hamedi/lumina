@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { AlertCircle, X } from 'lucide-react'
 import './ConfirmModal.css'
@@ -13,6 +13,19 @@ const ConfirmModal = ({
   cancelText = 'Cancel',
   danger = true
 }) => {
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        onClose()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown, { capture: true })
+    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true })
+  }, [isOpen, onClose])
+
   if (!isOpen) return null
 
   return createPortal(

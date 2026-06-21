@@ -41,6 +41,7 @@ import SidebarItem from '../Navigation/components/SidebarItem'
 import { useResizable } from '../Overlays/useResizable'
 import { ChevronRight, ChevronDown, Folder, ChevronsUp } from 'lucide-react'
 import ConfirmModal from '../Overlays/ConfirmModal'
+import ContextMenu from '../Overlays/ContextMenu'
 import ToolTip from '../../components/atoms/ToolTip'
 import { FixedSizeList as List } from '../../components/utils/VirtualList'
 import AppVersion from '../../components/AppVersion'
@@ -1200,9 +1201,9 @@ const FileExplorer = ({ isOpen, onClose }) => {
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '8px',
-                                    padding: '6px 12px',
-                                    borderRadius: '5px',
-                                    background: 'var(--bg-active)'
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    background: 'transparent'
                                   }}
                                 >
                                   {item.kind === 'folder' ? (
