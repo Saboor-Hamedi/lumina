@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { Search, Replace, X, ChevronUp, ChevronDown, Type, AlignLeft, Regex, ChevronRight } from 'lucide-react'
+import { Search, Replace, ReplaceAll, X, ChevronUp, ChevronDown, Type, AlignLeft, Regex, ChevronRight } from 'lucide-react'
+import { useKeyboardShortcuts } from '../../../core/hooks/useKeyboardShortcuts'
 import './FindWidget.css'
 
 const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
@@ -252,13 +253,7 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
 
   const handleKeyDown = useCallback(
     (e) => {
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        setSearchQuery('')
-        window.dispatchEvent(new CustomEvent('search-clear'))
-        if (editorView) editorView.focus()
-        onClose()
-      } else if (e.key === 'Enter') {
+      if (e.key === 'Enter') {
         e.preventDefault()
         if (e.shiftKey) {
           handleFindPrevious()
@@ -284,17 +279,12 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
         searchInputRef.current?.select()
       }
     },
-    [handleFindNext, handleFindPrevious, onClose]
+    [handleFindNext, handleFindPrevious, onClose, editorView]
   )
 
   const handleReplaceKeyDown = useCallback(
     (e) => {
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        setSearchQuery('')
-        window.dispatchEvent(new CustomEvent('search-clear'))
-        onClose()
-      } else if (e.key === 'Enter') {
+      if (e.key === 'Enter') {
         e.preventDefault()
         if (e.ctrlKey || e.metaKey) {
           handleReplaceAll()
@@ -317,8 +307,18 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
         searchInputRef.current?.select()
       }
     },
-    [handleReplaceNext, handleReplaceAll, onClose]
+    [handleReplaceNext, handleReplaceAll, onClose, editorView]
   )
+
+  useKeyboardShortcuts({
+    onEscape: () => {
+      setSearchQuery('')
+      window.dispatchEvent(new CustomEvent('search-clear'))
+      if (editorView) editorView.focus()
+      onClose()
+      return true
+    }
+  })
 
   return (
     <div className="find-widget">
@@ -451,8 +451,7 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
                 disabled={!searchQuery.trim()}
                 title="Replace All (Ctrl+Enter)"
               >
-                <Replace size={11} />
-                <span className="replace-all-badge">All</span>
+                <ReplaceAll size={11} />
               </button>
             </div>
           )}

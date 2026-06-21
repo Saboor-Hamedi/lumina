@@ -32,13 +32,14 @@ const ConfirmModal = ({
     <div className="modal-overlay confirm-overlay" onClick={onClose}>
       <div className="modal-container confirm-modal" onClick={(e) => e.stopPropagation()}>
         <div className="confirm-header">
-          <AlertCircle size={24} className={danger ? 'text-danger' : 'text-accent'} />
-          <button className="confirm-close" onClick={onClose}>
+          {/* <button className="confirm-close" onClick={onClose}>
             <X size={18} />
-          </button>
+          </button> */}
         </div>
 
         <div className="confirm-body">
+      <AlertCircle size={24} className={danger ? 'text-danger' : 'text-accent'} />
+
           <h2 className="confirm-title">{title}</h2>
           <p className="confirm-message">{message}</p>
         </div>

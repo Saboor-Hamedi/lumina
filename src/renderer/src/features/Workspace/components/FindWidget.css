@@ -9,10 +9,10 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   animation: slideDownFind 0.2s ease-out;
   border-radius: 6px;
-  width: 420px;
+  width: 380px;
   max-width: 100%;
   min-width: 280px;
-  padding: 8px 3px;
+  padding: 6px 3px;
 }
 
 @keyframes slideDownFind {
@@ -30,7 +30,7 @@
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  font-size: 13px;
+  font-size: 12px;
   flex-wrap: nowrap;
 }
 
@@ -54,7 +54,7 @@
   gap: 4px;
   width: 100%;
   min-width: 0;
-  height: 26px;
+  height: 24px;
   box-sizing: border-box;
   flex: 0 0 auto;
 }
@@ -92,7 +92,7 @@
   border: none;
   background: transparent;
   color: var(--text-main, #cccccc);
-  font-size: 13px;
+  font-size: 12px;
   outline: none;
   padding: 0;
   min-width: 30px;
@@ -117,8 +117,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   padding: 0;
   border: none;
   background: transparent;

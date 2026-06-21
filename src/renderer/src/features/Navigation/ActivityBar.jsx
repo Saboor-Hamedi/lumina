@@ -114,7 +114,7 @@ const ActivityBar = ({ onSettingsClick, onThemeClick, onToggleGraph, onToggleExp
           </ToolTip>
         )}
 
-        <ToolTip text="Theme">
+        <ToolTip text="Theme (Ctrl+T)">
           <button className="sidebar-item" onClick={onThemeClick}>
             <Palette size={20} strokeWidth={1.5} />
           </button>

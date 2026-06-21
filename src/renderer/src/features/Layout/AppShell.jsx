@@ -380,6 +380,7 @@ const AppShell = () => {
     },
     onTogglePalette: () => setShowPalette(true),
     onToggleSettings: () => setShowSettings(true),
+    onToggleTheme: () => setShowThemeModal(true),
     onToggleGraph: () => setShowGraph(true),
     onToggleSidebar: () => setIsLeftSidebarOpen((prev) => !prev),
     onToggleInspector: handleToggleInspector,

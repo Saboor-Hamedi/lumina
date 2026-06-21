@@ -97,6 +97,12 @@ export const useKeyboardShortcuts = (shortcuts) => {
         shortcutsRef.current.onNew()
       }
 
+      // Toggle Theme: Ctrl+T
+      if (isCmd && !e.shiftKey && key === 't' && shortcutsRef.current.onToggleTheme) {
+        e.preventDefault()
+        shortcutsRef.current.onToggleTheme()
+      }
+
       // Delete Snippet: Ctrl+Shift+D
       if (isCmd && e.shiftKey && key === 'd' && shortcutsRef.current.onDelete) {
         e.preventDefault()
