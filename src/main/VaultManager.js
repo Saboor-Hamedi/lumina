@@ -3,6 +3,7 @@ import path from 'path'
 import matter from 'gray-matter'
 import chokidar from 'chokidar'
 import slugify from 'slugify'
+import crypto from 'crypto'
 
 // Clean title for display everywhere (tabs, sidebar, metadata) and filename.
 // This is the single place where we normalize note titles before:
@@ -114,6 +115,7 @@ class VaultManager {
 
       await walk(this.vaultPath)
 
+      const seenIds = new Set()
       const newSnippets = []
 
       // Process in batches to avoid EMFILE (too many open files) and improve performance
@@ -144,8 +146,31 @@ class VaultManager {
                 // fallback
               }
 
+              let finalId = data.id
+              let needsHealing = false
+
+              // Auto-healing logic: missing or duplicate ID
+              if (!finalId || seenIds.has(finalId)) {
+                finalId = crypto.randomUUID()
+                needsHealing = true
+              }
+              seenIds.add(finalId)
+
+              // If healed, rewrite the file immediately with the new ID
+              if (needsHealing) {
+                const newData = { ...data, id: finalId }
+                try {
+                  const newRawContent = matter.stringify(content, newData)
+                  await fs.writeFile(filePath, newRawContent, 'utf-8')
+                  console.info(`[VaultManager] Auto-healed missing/duplicate ID for ${fileName}`)
+                } catch (writeErr) {
+                  console.error(`[VaultManager] Failed to heal ID for ${fileName}:`, writeErr)
+                }
+                data = newData
+              }
+
               return {
-                id: data.id || fileName.replace('.md', ''),
+                id: finalId,
                 title: data.title || fileName.replace('.md', ''),
                 code: content || '',
                 language: data.language || 'markdown',
