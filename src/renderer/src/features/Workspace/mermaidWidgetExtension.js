@@ -2,6 +2,7 @@ import { syntaxTree } from '@codemirror/language'
 import { Decoration, WidgetType, EditorView } from '@codemirror/view'
 import { StateField } from '@codemirror/state'
 import mermaid from 'mermaid'
+import { copyMermaidAsImage } from './copyMermaidAsImage'
 
 let mermaidIdCounter = 0
 
@@ -38,9 +39,19 @@ class MermaidWidget extends WidgetType {
       }
     })
 
+    // Action Buttons Container
+    const actionsWrap = document.createElement('div')
+    actionsWrap.style.position = 'absolute'
+    actionsWrap.style.top = '8px'
+    actionsWrap.style.right = '8px'
+    actionsWrap.style.display = 'flex'
+    actionsWrap.style.gap = '8px'
+    actionsWrap.style.zIndex = '10'
+
     // Edit Button (kept for visual affordance)
     const editBtn = document.createElement('div')
     editBtn.className = 'mermaid-edit-btn'
+    editBtn.style.position = 'static' // Override absolute from CSS
     editBtn.innerHTML = `&lt;/&gt;`
     editBtn.title = 'Edit Code'
     if (view.state.readOnly) {
@@ -61,6 +72,52 @@ class MermaidWidget extends WidgetType {
         view.focus()
       }
     })
+
+    // Copy Image Button
+    const copyBtn = document.createElement('div')
+    copyBtn.className = 'mermaid-edit-btn' // Reuse styling
+    copyBtn.style.position = 'static' // Override absolute
+    copyBtn.style.display = 'flex'
+    copyBtn.style.alignItems = 'center'
+    copyBtn.style.justifyContent = 'center'
+    // SVG icon for copy image
+    copyBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`
+    copyBtn.title = 'Copy as Image'
+
+    copyBtn.addEventListener('click', async (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      const svgEl = wrap.querySelector('svg')
+      if (svgEl) {
+        try {
+          copyBtn.style.opacity = '0.5'
+          await copyMermaidAsImage(svgEl)
+          const oldHtml = copyBtn.innerHTML
+          const oldColor = copyBtn.style.color
+          const oldBorder = copyBtn.style.borderColor
+          
+          copyBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><polyline points="20 6 9 17 4 12"></polyline></svg>`
+          copyBtn.style.color = '#4ade80'
+          copyBtn.style.borderColor = '#4ade80'
+          copyBtn.style.opacity = '1'
+          
+          setTimeout(() => {
+            copyBtn.innerHTML = oldHtml
+            copyBtn.style.color = oldColor
+            copyBtn.style.borderColor = oldBorder
+          }, 1500)
+        } catch (err) {
+          console.error('Failed to copy mermaid image', err)
+          copyBtn.style.opacity = '1'
+          window.dispatchEvent(new CustomEvent('show-toast', { 
+            detail: { message: `Failed to copy diagram: ${err.message || 'Tainted canvas'}`, type: 'error' } 
+          }))
+        }
+      }
+    })
+
+    actionsWrap.appendChild(copyBtn)
+    actionsWrap.appendChild(editBtn)
 
     const scrollWrap = document.createElement('div')
     scrollWrap.className = 'mermaid-scroll-wrap'
@@ -86,7 +143,7 @@ class MermaidWidget extends WidgetType {
     `
     scrollWrap.appendChild(contentDiv)
     wrap.appendChild(scrollWrap)
-    wrap.appendChild(editBtn)
+    wrap.appendChild(actionsWrap)
 
     // We generate a unique ID for mermaid to use
     const id = `mermaid-${mermaidIdCounter++}`
@@ -115,6 +172,12 @@ export function renderMermaidToElement(container, code, uniqueId) {
         startOnLoad: false,
         theme: 'base',
         useMaxWidth: false,
+        // Prevent <foreignObject> usage which taints canvas export
+        htmlLabels: false,
+        flowchart: { htmlLabels: false },
+        sequence: { htmlLabels: false },
+        state: { htmlLabels: false },
+        class: { htmlLabels: false },
         themeVariables: {
           fontFamily: fontEditor,
 

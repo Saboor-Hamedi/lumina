@@ -232,17 +232,27 @@ const MarkdownEditor = React.memo(
         }
       }
 
+      const handleGlobalToast = (e) => {
+        if (!isActiveRef.current) return
+        const { message, type } = e.detail || {}
+        if (message) {
+          showToast(message, type || 'info')
+        }
+      }
+
       window.addEventListener('search-update', handleSearchUpdate)
       window.addEventListener('search-clear', handleSearchClear)
       window.addEventListener('focus-editor-start', handleFocusEditorStart)
       window.addEventListener('editor-scroll-to-line', handleScrollToLine)
+      window.addEventListener('show-toast', handleGlobalToast)
       return () => {
         window.removeEventListener('search-update', handleSearchUpdate)
         window.removeEventListener('search-clear', handleSearchClear)
         window.removeEventListener('focus-editor-start', handleFocusEditorStart)
         window.removeEventListener('editor-scroll-to-line', handleScrollToLine)
+        window.removeEventListener('show-toast', handleGlobalToast)
       }
-    }, [])
+    }, [showToast])
 
     const lastSavedCodeRef = useRef(snippet?.code)
 
