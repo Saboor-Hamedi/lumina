@@ -8,8 +8,15 @@ import { createPortal } from 'react-dom'
 const ContextMenu = ({ x, y, options, onClose }) => {
   useEffect(() => {
     const handleGlobalClick = () => onClose()
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose()
+    }
     window.addEventListener('mousedown', handleGlobalClick)
-    return () => window.removeEventListener('mousedown', handleGlobalClick)
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('mousedown', handleGlobalClick)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
   }, [onClose])
 
   // Simple boundary check to keep menu on screen

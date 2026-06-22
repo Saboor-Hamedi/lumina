@@ -146,7 +146,7 @@ const DroppableFolderItem = React.memo(
         className="folder-tree-item"
         style={{
           position: 'relative',
-          paddingLeft: item.depth > 0 ? `${item.depth * 16 + 8}px` : '0px',
+          paddingLeft: `${item.depth * 16 + 8}px`,
           opacity: isDragging ? 0.5 : 1
         }}
       >
@@ -1082,6 +1082,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
         {/* Scrollable Body */}
         <div 
           className="start-menu-body"
+          tabIndex={-1}
           onContextMenu={(e) => {
             // If they clicked on empty space, not on a row
             if (e.target.closest('.virtuoso-row') || e.target.closest('.tree-item')) return
@@ -1183,6 +1184,9 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                         ref={virtuosoRef}
                         style={{ flex: 1, height: '100%' }}
                         data={flatTree}
+                        components={{
+                          Footer: () => <div style={{ height: '24px' }} /> /* In-flow List Footer for empty space clicks */
+                        }}
                         itemContent={(index, item) => {
                           if (item.type === 'input') {
                             return (
@@ -1190,7 +1194,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                                 className="folder-tree-item"
                                 style={{
                                   position: 'relative',
-                                  paddingLeft: item.depth > 0 ? `${item.depth * 16 + 8}px` : '0px'
+                                  paddingLeft: `${item.depth * 16 + 8}px`
                                 }}
                               >
                                 {Array.from({ length: item.depth }).map((_, i) => (
@@ -1271,7 +1275,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                               <div
                                 style={{
                                   position: 'relative',
-                                  paddingLeft: item.depth > 0 ? `${item.depth * 16 + 8}px` : '0px'
+                                  paddingLeft: `${item.depth * 16 + 8}px`
                                 }}
                               >
                                 {Array.from({ length: item.depth }).map((_, i) => (
@@ -1384,7 +1388,9 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
               label: 'Create Subfolder',
               icon: <FolderPlus size={14} />,
               onClick: () => {
-                setExpandedFolders((prev) => new Set(prev).add(folderContext.folderId))
+                if (folderContext.folderId) {
+                  setExpandedFolders((prev) => new Set(prev).add(folderContext.folderId))
+                }
                 setCreating({ type: 'folder', parentId: folderContext.folderId })
                 setCreatingValue('')
               }
@@ -1393,7 +1399,9 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
               label: 'Create Note',
               icon: <FilePlus size={14} />,
               onClick: () => {
-                setExpandedFolders((prev) => new Set(prev).add(folderContext.folderId))
+                if (folderContext.folderId) {
+                  setExpandedFolders((prev) => new Set(prev).add(folderContext.folderId))
+                }
                 setCreating({ type: 'file', parentId: folderContext.folderId })
                 setCreatingValue('')
               }
@@ -1402,6 +1410,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
               label: 'Rename',
               icon: <Edit2 size={14} />,
               onClick: () => {
+                if (!folderContext.folderId) return
                 const parts = folderContext.folderId.split('/')
                 setRenamingValue(parts[parts.length - 1])
                 setRenamingFolder(folderContext.folderId)
@@ -1422,7 +1431,10 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                   }}
                 />
               ),
-              onClick: () => setFolderColor(folderContext.folderId, null)
+              onClick: () => {
+                if (!folderContext.folderId) return
+                setFolderColor(folderContext.folderId, null)
+              }
             },
             {
               label: 'Blue',
@@ -1436,7 +1448,10 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                   }}
                 />
               ),
-              onClick: () => setFolderColor(folderContext.folderId, 'rgba(59, 130, 246, 0.2)')
+              onClick: () => {
+                if (!folderContext.folderId) return
+                setFolderColor(folderContext.folderId, 'rgba(59, 130, 246, 0.2)')
+              }
             },
             {
               label: 'Purple',
@@ -1450,7 +1465,10 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                   }}
                 />
               ),
-              onClick: () => setFolderColor(folderContext.folderId, 'rgba(168, 85, 247, 0.2)')
+              onClick: () => {
+                if (!folderContext.folderId) return
+                setFolderColor(folderContext.folderId, 'rgba(168, 85, 247, 0.2)')
+              }
             },
             {
               label: 'Red',
@@ -1464,7 +1482,10 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                   }}
                 />
               ),
-              onClick: () => setFolderColor(folderContext.folderId, 'rgba(239, 68, 68, 0.2)')
+              onClick: () => {
+                if (!folderContext.folderId) return
+                setFolderColor(folderContext.folderId, 'rgba(239, 68, 68, 0.2)')
+              }
             },
             {
               label: 'Green',
@@ -1478,7 +1499,10 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                   }}
                 />
               ),
-              onClick: () => setFolderColor(folderContext.folderId, 'rgba(34, 197, 94, 0.2)')
+              onClick: () => {
+                if (!folderContext.folderId) return
+                setFolderColor(folderContext.folderId, 'rgba(34, 197, 94, 0.2)')
+              }
             },
             {
               label: 'Orange',
@@ -1492,7 +1516,10 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                   }}
                 />
               ),
-              onClick: () => setFolderColor(folderContext.folderId, 'rgba(249, 115, 22, 0.2)')
+              onClick: () => {
+                if (!folderContext.folderId) return
+                setFolderColor(folderContext.folderId, 'rgba(249, 115, 22, 0.2)')
+              }
             },
             {
               type: 'divider'
@@ -1502,6 +1529,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
               icon: <Trash2 size={14} />,
               danger: true,
               onClick: () => {
+                if (!folderContext.folderId) return
                 setDeleteConfirmFolder(folderContext.folderId)
               }
             }

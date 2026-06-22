@@ -105,9 +105,14 @@
   min-height: 0;
 }
 
+.start-menu-body:focus-within {
+  outline: 1px solid var(--border-dim); /* Subtle border like vscode */
+  outline-offset: -1px;
+}
+
 /* Embedded overrides to fix scroll gap and bottom gap */
 .explorer-embedded-container .start-menu-body {
-  padding: 8px 4px 64px 12px;
+  padding: 8px 4px 0px 12px;
 }
 
 .explorer-embedded-container .start-menu-search {
@@ -361,7 +366,7 @@
   border: 1px solid transparent;
   border-radius: 0;
   color: var(--text-main);
-  font-size: 13px;
+  font-size: 12.5px;
   height: 24px;
   box-sizing: border-box;
   transition: all 0.15s ease;
@@ -486,11 +491,14 @@
   animation: spin 1s linear infinite;
 }
 
+
+/* Folder font size from here */
 .folder-name, .item-title {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   flex: 1;
+  font-size: 12.5px;
 }
 
 /* Tabs */
