@@ -75,10 +75,11 @@
 }
 
 .sidebar-footer-section {
-  padding: 12px;
+  padding: 8px 12px;
   border-top: 1px solid var(--border-dim);
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .sidebar-footer-actions {

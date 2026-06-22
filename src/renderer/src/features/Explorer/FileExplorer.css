@@ -445,34 +445,6 @@
   width: max-content;
 }
 
-.load-more-btn:hover {
-  background: var(--bg-active);
-  color: var(--text-main);
-}
-
-/* Tabs */
-.explorer-tabs {
-  display: flex;
-  margin: 0 32px 16px 32px;
-  border-bottom: 1px solid var(--border-dim);
-  gap: 16px;
-}
-
-.explorer-tab {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  font-size: 14px;
-  padding: 8px 0;
-  cursor: pointer;
-  position: relative;
-  transition: color 0.2s;
-}
-
-.explorer-tab:hover {
-  color: var(--text-main);
-}
-
 .explorer-tab.active {
   color: var(--text-main);
   font-weight: 500;
@@ -520,3 +492,29 @@
   text-overflow: ellipsis;
   flex: 1;
 }
+
+/* Tabs */
+.explorer-tabs {
+  display: flex;
+  justify-content: center;
+  margin: 0 16px 16px 16px;
+  border-bottom: 1px solid var(--border-dim);
+  gap: 24px;
+}
+
+.explorer-tab {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 0;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s;
+}
+
+.explorer-tab:hover {
+  color: var(--text-main);
+}
+

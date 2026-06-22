@@ -13,6 +13,12 @@ const SidebarFooter = memo(({ onThemeClick, onSettingsClick }) => {
 
   return (
     <div className="sidebar-footer-section">
+      <ToolTip text="Settings (Ctrl+,)">
+        <button className="sidebar-icon-btn" onClick={onSettingsClick}>
+          <Settings size={14} />
+        </button>
+      </ToolTip>
+
       <div className="sidebar-footer-actions">
         {(status === 'available' || status === 'downloading' || status === 'ready' || status === 'error' || status === 'checking') && (
           <ToolTip text={status === 'downloading' ? `Downloading... ${Math.round(progress?.percent || 0)}%` : 'Update Lumina'}>
@@ -32,12 +38,6 @@ const SidebarFooter = memo(({ onThemeClick, onSettingsClick }) => {
         <ToolTip text="Theme (Ctrl+T)">
           <button className="sidebar-icon-btn" onClick={onThemeClick}>
             <Palette size={14} />
-          </button>
-        </ToolTip>
-
-        <ToolTip text="Settings (Ctrl+,)">
-          <button className="sidebar-icon-btn" onClick={onSettingsClick}>
-            <Settings size={14} />
           </button>
         </ToolTip>
       </div>

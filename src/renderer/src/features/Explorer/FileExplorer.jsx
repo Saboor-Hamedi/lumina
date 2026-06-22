@@ -572,11 +572,6 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
       flat.push({ type: 'root-drop', id: 'root-drop-zone', depth: 0 })
     }
 
-    // Inject root level creation input
-    if (creating && !creating.parentId) {
-      flat.push({ type: 'input', kind: creating.type, parentId: '', depth: 0 })
-    }
-
     const traverse = (node, depth, parentId = '') => {
       // Sort folders alphabetically
       const folderNames = Object.keys(node.children).sort((a, b) => a.localeCompare(b))
@@ -605,6 +600,12 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     }
 
     traverse(root, 0)
+
+    // Inject root level creation input at the bottom
+    if (creating && !creating.parentId) {
+      flat.push({ type: 'input', kind: creating.type, parentId: '', depth: 0 })
+    }
+
     return flat
   }, [
     allSnippets,
@@ -616,6 +617,19 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     activeListDragItem,
     collapsedDuringSearch
   ])
+
+  useEffect(() => {
+    if (creating) {
+      // Find index of input
+      const idx = flatTree.findIndex(item => item.type === 'input')
+      if (idx !== -1 && virtuosoRef.current) {
+        // Small timeout to allow virtuoso to measure items
+        setTimeout(() => {
+          virtuosoRef.current?.scrollToIndex({ index: idx, align: 'center' })
+        }, 50)
+      }
+    }
+  }, [creating, flatTree])
 
   useEffect(() => {
     const handleTriggerNewNote = () => {
@@ -1193,22 +1207,22 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                                   />
                                 ))}
                                 <div
-                                  className="folder-tree-main creating-input"
-                                  style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    padding: '2px 6px',
-                                    borderRadius: '4px',
-                                    background: 'transparent'
-                                  }}
-                                >
-                                  {item.kind === 'folder' ? (
-                                    <Folder size={14} className="folder-icon-color" />
-                                  ) : (
-                                    <FileText size={14} className="icon-blue" />
-                                  )}
-                                  <input
+                                    className="folder-tree-main creating-input"
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '8px',
+                                      padding: '2px 6px',
+                                      borderRadius: '4px',
+                                      background: 'transparent'
+                                    }}
+                                  >
+                                    {item.kind === 'folder' ? (
+                                      <Folder size={14} className="folder-icon-color" />
+                                    ) : (
+                                      <FileText size={14} className="icon-blue" />
+                                    )}
+                                    <input
                                     autoFocus
                                     value={creatingValue}
                                     onChange={(e) => setCreatingValue(e.target.value)}
