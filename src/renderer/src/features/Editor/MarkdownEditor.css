@@ -702,17 +702,17 @@
 
 /* Floating Window Controls in TabBar */
 .window-controls-float {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 32px;
   display: flex;
   align-items: center;
-  position: absolute;
-  right: 0;
-  top: 0;
-  height: 32px;
   background: var(--bg-app);
-  -webkit-app-region: no-drag;
-  z-index: 9999;
+  z-index: 100;
+  padding: 0 8px;
   border-bottom-left-radius: 6px;
-  box-shadow: -4px 0 8px rgba(0, 0, 0, 0.2);
+  -webkit-app-region: no-drag;
 }
 
 .window-controls-float .control-btn {

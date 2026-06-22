@@ -174,13 +174,13 @@ const DroppableFolderItem = React.memo(
           {...attributes}
           {...listeners}
           onClick={(e) => {
-            if (e.button !== 0) return;
-            if (!isRenaming) onToggle(item.id, e);
+            if (e.button !== 0) return
+            if (!isRenaming) onToggle(item.id, e)
           }}
           onContextMenu={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onContextMenu(item.id, e);
+            e.preventDefault()
+            e.stopPropagation()
+            onContextMenu(item.id, e)
           }}
         >
           {isExpanded ? (
@@ -315,7 +315,7 @@ const DroppableRootZone = React.memo(() => {
 /**
  * Centered Explorer Modal (Start Menu Replica)
  */
-const FileExplorer = ({ isOpen, onClose }) => {
+const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   const [query, setQuery] = useState('')
   const [displayQuery, setDisplayQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(-1)
@@ -343,6 +343,9 @@ const FileExplorer = ({ isOpen, onClose }) => {
   // context menu & confirm
   const [folderContext, setFolderContext] = useState(null) // { x, y, folderId }
   const [deleteConfirmFolder, setDeleteConfirmFolder] = useState(null)
+  
+  // Track last clicked/selected folder for "New Note" sidebar button
+  const [lastClickedFolder, setLastClickedFolder] = useState(null)
 
   const searchInputRef = useRef(null)
   const modalRef = useRef(null)
@@ -614,6 +617,27 @@ const FileExplorer = ({ isOpen, onClose }) => {
     collapsedDuringSearch
   ])
 
+  useEffect(() => {
+    const handleTriggerNewNote = () => {
+      let targetFolderId = lastClickedFolder
+      if (!targetFolderId) {
+        const selectedSnippetId = useVaultStore.getState().selectedSnippetId
+        const snippets = useVaultStore.getState().snippets
+        const activeSnippet = snippets.find(s => s.id === selectedSnippetId)
+        targetFolderId = activeSnippet?.folderId || ''
+      }
+      
+      if (targetFolderId) {
+        setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
+      }
+      setCreating({ type: 'file', parentId: targetFolderId })
+      setCreatingValue('')
+    }
+
+    window.addEventListener('trigger-new-note', handleTriggerNewNote)
+    return () => window.removeEventListener('trigger-new-note', handleTriggerNewNote)
+  }, [lastClickedFolder, setExpandedFolders, setCreating, setCreatingValue])
+
   // Intelligent selection: default to the best matching note instead of a folder
   useEffect(() => {
     if (query.trim() && flatTree.length > 0) {
@@ -642,6 +666,7 @@ const FileExplorer = ({ isOpen, onClose }) => {
   const toggleFolder = useCallback(
     (folderId, e) => {
       if (e) e.stopPropagation()
+      setLastClickedFolder(folderId)
       if (query.trim()) {
         setCollapsedDuringSearch((prev) => {
           const next = new Set(prev)
@@ -678,12 +703,13 @@ const FileExplorer = ({ isOpen, onClose }) => {
   const handleSelect = useCallback(
     (snippet) => {
       setSelectedSnippet(snippet)
+      setLastClickedFolder(snippet.folderId || '')
       onClose()
     },
     [setSelectedSnippet, onClose]
   )
 
-  if (!isOpen || !isPositionReady) return null
+  if (!isEmbedded && (!isOpen || !isPositionReady)) return null
 
   const handleTogglePin = async (snippet) => {
     try {
@@ -912,43 +938,57 @@ const FileExplorer = ({ isOpen, onClose }) => {
     }, 300)
   }
 
-  return createPortal(
-    <div
-      className="explorer-modal-overlay"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose()
-        }
-      }}
-    >
+  if (!isOpen && !isEmbedded) return null
+
+  const content = (
+    <>
       <div
         ref={modalRef}
-        className="start-menu-container"
+        className={isEmbedded ? 'explorer-embedded-container' : 'start-menu-container'}
         onClick={() => {
           setFolderContext(null)
           setSelectedIndex(-1)
         }}
-        style={{
-          width: size.width,
-          height: size.height,
-          marginLeft: -(size.width / 2) // keep centered natively
-        }}
+        style={
+          !isEmbedded
+            ? {
+                width: size.width,
+                height: size.height,
+                marginLeft: -(size.width / 2) // keep centered natively
+              }
+            : {
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column'
+              }
+        }
       >
         {/* Resize Handles */}
-        <div className="resizer resizer-top" onMouseDown={(e) => handleResizeStart(e, ['top'])} />
-        <div className="resizer resizer-left" onMouseDown={(e) => handleResizeStart(e, ['left'])} />
-        <div
-          className="resizer resizer-right"
-          onMouseDown={(e) => handleResizeStart(e, ['right'])}
-        />
-        <div
-          className="resizer resizer-top-left"
-          onMouseDown={(e) => handleResizeStart(e, ['top', 'left'])}
-        />
-        <div
-          className="resizer resizer-top-right"
-          onMouseDown={(e) => handleResizeStart(e, ['top', 'right'])}
-        />
+        {!isEmbedded && (
+          <>
+            <div
+              className="resizer resizer-top"
+              onMouseDown={(e) => handleResizeStart(e, ['top'])}
+            />
+            <div
+              className="resizer resizer-left"
+              onMouseDown={(e) => handleResizeStart(e, ['left'])}
+            />
+            <div
+              className="resizer resizer-right"
+              onMouseDown={(e) => handleResizeStart(e, ['right'])}
+            />
+            <div
+              className="resizer resizer-top-left"
+              onMouseDown={(e) => handleResizeStart(e, ['top', 'left'])}
+            />
+            <div
+              className="resizer resizer-top-right"
+              onMouseDown={(e) => handleResizeStart(e, ['top', 'right'])}
+            />
+          </>
+        )}
 
         {/* Search Bar */}
 
@@ -1026,7 +1066,16 @@ const FileExplorer = ({ isOpen, onClose }) => {
         </div>
 
         {/* Scrollable Body */}
-        <div className="start-menu-body">
+        <div 
+          className="start-menu-body"
+          onContextMenu={(e) => {
+            // If they clicked on empty space, not on a row
+            if (e.target.closest('.virtuoso-row') || e.target.closest('.tree-item')) return
+            e.preventDefault()
+            e.stopPropagation()
+            setFolderContext({ folderId: '', x: e.clientX, y: e.clientY })
+          }}
+        >
           {/* Pinned Section */}
           {activeTab === 'favorites' && (
             <div className="start-section">
@@ -1048,7 +1097,7 @@ const FileExplorer = ({ isOpen, onClose }) => {
                   >
                     <div
                       className="recommended-list"
-                      style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+                      style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto', minHeight: 0 }}
                     >
                       {pinnedSnippets.map((snippet) => (
                         <SortableListItem
@@ -1074,57 +1123,8 @@ const FileExplorer = ({ isOpen, onClose }) => {
                 </h3>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <ToolTip text="Collapse All Folders">
-                    <button
-                      className="sort-toggle-btn"
-                      onClick={collapseAllFolders}
-                    >
+                    <button className="sort-toggle-btn" onClick={collapseAllFolders}>
                       <ChevronsUp size={14} />
-                    </button>
-                  </ToolTip>
-                  <ToolTip text="Create New Note">
-                    <button
-                      className="sort-toggle-btn"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        let targetFolderId = ''
-                        if (selectedIndex >= 0 && selectedIndex < flatTree.length) {
-                          const item = flatTree[selectedIndex]
-                          if (item?.type === 'folder') {
-                            targetFolderId = item.id
-                            setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
-                          } else if (item?.type === 'file') {
-                            targetFolderId = item.snippet.folderId || ''
-                            if (targetFolderId) setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
-                          }
-                        }
-                        setCreating({ type: 'file', parentId: targetFolderId })
-                        setCreatingValue('')
-                      }}
-                    >
-                      <FilePlus size={14} />
-                    </button>
-                  </ToolTip>
-                  <ToolTip text="Create New Folder">
-                    <button
-                      className="sort-toggle-btn"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        let targetFolderId = ''
-                        if (selectedIndex >= 0 && selectedIndex < flatTree.length) {
-                          const item = flatTree[selectedIndex]
-                          if (item?.type === 'folder') {
-                            targetFolderId = item.id
-                            setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
-                          } else if (item?.type === 'file') {
-                            targetFolderId = item.snippet.folderId || ''
-                            if (targetFolderId) setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
-                          }
-                        }
-                        setCreating({ type: 'folder', parentId: targetFolderId })
-                        setCreatingValue('')
-                      }}
-                    >
-                      <FolderPlus size={14} />
                     </button>
                   </ToolTip>
                   <ToolTip text="Refresh Vault">
@@ -1141,10 +1141,7 @@ const FileExplorer = ({ isOpen, onClose }) => {
                     </button>
                   </ToolTip>
                   <ToolTip text={`Sort by ${sortBy} (${sortDirection})`}>
-                    <button
-                      className="sort-toggle-btn"
-                      onClick={handleSortToggle}
-                    >
+                    <button className="sort-toggle-btn" onClick={handleSortToggle}>
                       <ArrowUpDown size={14} />
                     </button>
                   </ToolTip>
@@ -1513,6 +1510,21 @@ const FileExplorer = ({ isOpen, onClose }) => {
         message={`Are you sure you want to delete '${deleteConfirmFolder}' and all its contents? This action cannot be undone.`}
         confirmText="Delete Folder"
       />
+    </>
+  )
+
+  if (isEmbedded) return content
+
+  return createPortal(
+    <div
+      className="explorer-modal-overlay"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose()
+        }
+      }}
+    >
+      {content}
     </div>,
     document.body
   )

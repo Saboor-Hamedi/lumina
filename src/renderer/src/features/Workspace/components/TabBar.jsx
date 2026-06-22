@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback, useMemo, memo, useEffect } from 'react'
-import { X, Pin, MoreHorizontal, ArrowRight, Trash2, Image } from 'lucide-react'
+import { X, Pin, MoreHorizontal, ArrowRight, Trash2, Image, PanelLeftOpen, PanelLeftClose } from 'lucide-react'
 import { DndContext, closestCenter, useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -89,7 +89,7 @@ SortableTabItem.displayName = 'SortableTabItem'
  *
  * Supports regular snippet tabs with dirty-safety, pinned tabs, and DND reordering.
  */
-const TabBar = ({ isSidebarOpen, onToggleSidebar }) => {
+const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLeftSidebar }) => {
   const {
     openTabs,
     activeTabId,
@@ -207,7 +207,7 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar }) => {
       >
         <div className="workspace-tabbar" ref={tabbarRef} style={{ flex: 1 }}>
           <SortableContext items={openTabs} strategy={horizontalListSortingStrategy}>
-            <div className="tabs-container" style={{ paddingRight: '160px' }}>
+            <div className="tabs-container" style={{ paddingLeft: onToggleLeftSidebar ? '44px' : '0', paddingRight: '160px' }}>
               {openTabs.map((id) => {
                 const snippet = snippetMap.get(id)
                 if (!snippet) return null
@@ -229,6 +229,49 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar }) => {
             </div>
           </SortableContext>
         </div>
+
+        {/* Floating Left Sidebar Toggle */}
+        {onToggleLeftSidebar && (
+          <div 
+            className="window-controls-float-left" 
+            style={{ 
+              position: 'absolute', 
+              left: 0, 
+              top: 0, 
+              height: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              zIndex: 100,
+              background: 'var(--bg-app)',
+              padding: '0 8px',
+              borderBottomRightRadius: '6px',
+              WebkitAppRegion: 'no-drag'
+            }}
+          >
+            <ToolTip text={isLeftSidebarOpen ? "Close Left Sidebar" : "Open Left Sidebar"} position="bottom">
+              <button 
+                onClick={onToggleLeftSidebar} 
+                className="control-btn"
+                style={{ 
+                  background: 'transparent', 
+                  border: 'none', 
+                  color: 'var(--text-muted)', 
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '6px'
+                }}
+                onMouseOver={(e) => { e.currentTarget.style.color = 'var(--text-main)'; e.currentTarget.style.background = 'var(--bg-active)'; }}
+                onMouseOut={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'; }}
+              >
+                {isLeftSidebarOpen ? <PanelLeftClose size={16} strokeWidth={1.5} /> : <PanelLeftOpen size={16} strokeWidth={1.5} />}
+              </button>
+            </ToolTip>
+          </div>
+        )}
 
         {/* Floating Window Controls */}
         <WindowControls isSidebarOpen={isSidebarOpen} onToggleSidebar={onToggleSidebar} />

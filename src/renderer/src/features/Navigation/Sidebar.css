@@ -1,0 +1,90 @@
+.unified-sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: transparent;
+  color: var(--text-main);
+  box-sizing: border-box;
+  user-select: none;
+}
+
+.sidebar-header-section {
+  height: 40px;
+  min-height: 40px;
+  padding: 0 12px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-dim);
+  box-sizing: border-box;
+}
+
+.new-note-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-dim);
+  background: var(--bg-app);
+  color: var(--text-main);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.new-note-btn:hover {
+  background: var(--bg-active);
+  border-color: var(--text-accent);
+}
+
+.sidebar-top-actions {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.sidebar-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sidebar-icon-btn:hover {
+  color: var(--text-main);
+  background: var(--bg-active);
+}
+
+.sidebar-scrollable-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.sidebar-footer-section {
+  padding: 12px;
+  border-top: 1px solid var(--border-dim);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.sidebar-footer-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.update-btn.loading { opacity: 0.7; }
+.update-btn.error { color: #ef4444; }

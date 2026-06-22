@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import MarkdownEditor from '../Editor/MarkdownEditor'
 import SettingsModal from '../Settings/SettingsModal'
-import ActivityBar from '../Navigation/ActivityBar'
+import Sidebar from '../Navigation/Sidebar'
 import ThemeModal from '../Theme/ThemeModal'
 import CommandPalette from '../Overlays/CommandPalette'
 import Graph from '../Graph/Graph'
@@ -20,7 +20,6 @@ import './AppShell.css'
 import '../Overlays/ConfirmModal.css'
 
 import AIChatModal from '../Overlays/AIChatModal'
-import FileExplorer from '../Explorer/FileExplorer'
 import SnippetDetails from '../Inspector/SnippetDetails'
 import { useAIStore } from '../../core/store/useAIStore'
 import { useTypingSound } from '../../core/hooks/useTypingSound'
@@ -477,12 +476,25 @@ const AppShell = () => {
         '--right-sidebar-width': `${rightWidth}px`
       }}
     >
+      <aside className="shell-sidebar-left">
+        {isLeftSidebarOpen && (
+          <div className="sidebar-resizer left" onMouseDown={() => setResizingSide('left')} />
+        )}
+        <Sidebar
+          onSettingsClick={() => setShowSettings(true)}
+          onThemeClick={() => setShowThemeModal(true)}
+          onToggleGraph={() => setShowGraph(true)}
+          onToggleAIChat={() => setShowAIChatModal(true)}
+        />
+      </aside>
       <main className="shell-main">
         {/* Show TabBar even if no tabs are open so WindowControls remain visible */}
         {(activeTab === 'files' || activeTab === 'search') && (
           <TabBar 
             isSidebarOpen={isRightSidebarOpen}
             onToggleSidebar={() => setIsRightSidebarOpen((prev) => !prev)}
+            isLeftSidebarOpen={isLeftSidebarOpen}
+            onToggleLeftSidebar={() => setIsLeftSidebarOpen((prev) => !prev)}
           />
         )}
 
@@ -576,15 +588,6 @@ const AppShell = () => {
         )}
       </main>
 
-      {/* Floating ActivityBar */}
-      <ActivityBar
-        onSettingsClick={() => setShowSettings(true)}
-        onThemeClick={() => setShowThemeModal(true)}
-        onToggleGraph={() => setShowGraph(true)}
-        onToggleExplorerModal={() => setShowExplorerModal((prev) => !prev)}
-        onToggleAIChat={() => setShowAIChatModal(true)}
-      />
-
 
       {showSettings && (
         <SettingsModal
@@ -602,7 +605,6 @@ const AppShell = () => {
       {showThemeModal && (
         <ThemeModal isOpen={showThemeModal} onClose={() => setShowThemeModal(false)} />
       )}
-      <FileExplorer isOpen={showExplorerModal} onClose={() => setShowExplorerModal(false)} />
       <AIChatModal
         isOpen={showAIChatModal}
         onClose={() => {
