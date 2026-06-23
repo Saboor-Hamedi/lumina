@@ -1,284 +1,232 @@
-# Lumina
+# lumina
 
-> A premium, vault-based knowledge management application built with Electron, React, and CodeMirror 6.
+> a premium, vault-based knowledge management desktop app built with electron 39, react 19, and codemirror 6.
 
-![Lumina](https://img.shields.io/badge/version-1.0.2-blue)
-![Tests](https://img.shields.io/badge/tests-93%20passed-success)
-![License](https://img.shields.io/badge/license-MIT-green)
+![banner](./banner.png)
 
-Lumina provides a sophisticated markdown editing experience with live preview, WikiLinks, advanced theming, AI-powered semantic search, and file-system-based storage. Perfect for developers, writers, and knowledge workers who value privacy and performance.
+![version](https://img.shields.io/badge/version-1.0.2-blue)
+![tests](https://img.shields.io/badge/tests-93%20passed-success)
+![license](https://img.shields.io/badge/license-MIT-green)
 
-## ✨ Features
+lumina is a note-taking app where your data is just plain markdown files on disk. features a multi-tab workspace, knowledge graph, ai semantic search (local + cloud), 18 themes, and a rich codemirror 6 editor with wikilinks, mermaid diagrams, callouts, and live preview.
 
-### 🎯 Core Features
+---
 
-- **Vault-First Architecture** - All notes stored as plain markdown files with YAML frontmatter
-- **Multi-Tab Workspace** - High-performance session management with multiple notes open simultaneously
-- **Live Preview** - "What You See Is What You Mean" editing with intelligent syntax hiding
-- **WikiLinks** - Create connections between notes with `[[Link]]` syntax
-- **Knowledge Graph** - Visualize your note connections with an interactive graph view
-- **AI-Powered Search** - Semantic search using local AI models (privacy-first)
-- **Multi-Vault Support** - Switch between different vault directories
-- **Zero-Jump Performance** - Instant startup via IndexedDB caching
+## features
 
-### 🎨 User Experience
+### core
 
-- **Advanced Theming** - Multiple themes with custom color palettes
-- **Resizable Sidebars** - Flexible layouts for custom productivity flows
-- **Keyboard-First** - Comprehensive keyboard shortcuts for power users
-- **Command Palette** - Quick access to all features (`Ctrl/Cmd + P`)
-- **Drag & Drop** - Seamless image insertion
-- **Tab Management** - Pin tabs, close others, organize your workspace
+- **vault-first** — all notes are plain `.md` files with yaml frontmatter. you own your data.
+- **multi-tab workspace** — open many notes at once with pinned tabs, drag reorder, dirty indicators
+- **live preview** — wysiwym editing with intelligent syntax hiding
+- **wikilinks** — `[[link]]` and `[[link|display]]` with auto-update on rename
+- **knowledge graph** — interactive force-directed graph visualisation of note connections
+- **ai semantic search** — local embeddings via onnx (privacy-first) or cloud providers
+- **daily notes** — one-click journal creation with auto-date
+- **multi-vault** — switch between vault directories
 
-### 🔍 Search & Discovery
+### editor
 
-- **Full-Text Search** - Fast keyword-based search
-- **Semantic Search** - Find notes by meaning, not just keywords
-- **Tag System** - Organize with visual tag pills and autocomplete
-- **File Explorer** - Navigate your vault with a familiar tree view
+- **codemirror 6** — advanced text editor with 100+ language syntax highlighting
+- **mermaid diagrams** — render ```` ```mermaid ```` blocks inline
+- **callouts** — `> [!note]`, `> [!warning]`, `> [!tip]` etc.
+- **wikilinks** — autocomplete, preview, bidirectional linking
+- **image paste** — drag-and-drop images, auto-saved to `.lumina/assets/`
+- **auto-save** — debounced write to disk on every change
+- **caret persistence** — remembers cursor position per file
 
-### 📝 Editor Features
+### ai
 
-- **CodeMirror 6** - Advanced text editor with syntax highlighting
-- **Markdown Support** - Full markdown syntax with extensions
-- **Code Blocks** - Syntax highlighting for 100+ languages
-- **Auto-save** - Never lose your work
-- **Caret Position Persistence** - Remembers where you left off
+- **multi-model** — deepseek (v3 / r1), openai (gpt-4o), anthropic (claude), ollama (local)
+- **chat panel + modal** — sidebar chat or floating modal overlay
+- **composer with slash commands** — `/fast`, `/think`, `/creative`, `/code`, `/image`, `/clear`
+- **rag context** — optional semantic search over your vault as context for every query
+- **image generation** — huggingface inference api
+- **local embeddings** — `all-minilm-l6-v2` via @xenova/transformers in a web worker
 
-## 🚀 Getting Started
+### ui
 
-### Prerequisites
+- **18 themes** — dark, light, high-contrast, nature-inspired palettes
+- **glassmorphism** — mirror mode with backdrop blur and translucency
+- **resizable sidebars** — left explorer + right panels, fully configurable
+- **command palette** — `ctrl/cmd+p` for instant feature access
+- **keyboard-first** — comprehensive shortcuts (customisable)
+- **tab management** — pin, reorder, close to right, close others
 
-- **Node.js** 18+ (LTS recommended)
-- **npm** (or your package manager of choice)
-- **Git**
+### search
 
-### Installation
+- **full-text** — fast keyword search via flexsearch
+- **semantic** — vector similarity search over your entire vault
+- **tags** — visual tag pills with autocomplete
+- **file explorer** — familiar tree view with folder colours
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-username/lumina.git
-   cd lumina
-   ```
+---
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+## getting started
 
-3. **Run in development mode**
-   ```bash
-   npm run dev
-   ```
+### prerequisites
 
-### Building
+- node.js 18+ (lts)
+- npm
+- git
 
-Build for your platform:
+### install
 
 ```bash
-# Windows
-npm run build:win
-
-# macOS
-npm run build:mac
-
-# Linux
-npm run build:linux
+git clone https://github.com/your-username/lumina.git
+cd lumina
+npm install
 ```
 
-## 📖 Usage
+### dev
 
-### Creating Your First Note
+```bash
+npm run dev
+```
 
-1. Press `Ctrl/Cmd + N` to create a new note
-2. Start typing - your note auto-saves
-3. Use markdown syntax for formatting
+### build
 
-### Linking Notes
+```bash
+npm run build:win    # windows
+npm run build:mac    # macOS
+npm run build:linux  # linux
+```
 
-Create connections between notes using WikiLinks:
+---
+
+## usage
+
+### create a note
+
+`ctrl/cmd + n` → start typing → auto-saves.
+
+### link notes
 
 ```markdown
-This note references [[Another Note]] and [[Yet Another Note|Display Text]].
+this references [[another note]] and [[yet another note|display text]].
 ```
 
-### Using the Graph View
+renaming a note auto-updates all `[[links]]` across the vault.
 
-1. Click the graph icon in the activity bar
-2. Explore your note connections visually
-3. Click nodes to navigate to notes
+### use the ai
 
-### Keyboard Shortcuts
+- `ctrl/cmd + k` — open inline ai
+- click the ai icon in the right sidebar — full chat panel
+- type `/` in the composer — slash commands
 
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl/Cmd + N` | New note |
-| `Ctrl/Cmd + P` | Command palette |
-| `Ctrl/Cmd + S` | Save |
-| `Ctrl/Cmd + Delete` | Delete note |
-| `Ctrl/Cmd + K` | Quick actions |
-| `Escape` | Close modals |
+### graph view
 
-See the full list in Settings → Keyboard Shortcuts.
+click the graph icon in the activity bar. nodes are notes, edges are wikilinks. drag to explore, click to navigate.
 
-## 🛠️ Development
+---
 
-### Project Structure
+## development
+
+### project structure
 
 ```
 lumina/
 ├── src/
-│   ├── main/           # Electron main process
-│   │   ├── index.js    # Main entry point
-│   │   ├── VaultManager.js
-│   │   ├── VaultSearch.js
-│   │   └── VaultIndexer.js
-│   ├── preload/        # Preload scripts
-│   └── renderer/       # React application
+│   ├── main/                    # electron main process
+│   │   ├── index.js             # main entry point
+│   │   ├── vaultmanager.js      # file i/o, chokidar watcher
+│   │   ├── vaultindexer.js      # onnx semantic indexing
+│   │   ├── vaultsearch.js       # cosine similarity search
+│   │   └── settingsmanager.js   # settings persistence
+│   ├── preload/                 # preload bridge (ipc)
+│   │   └── index.js
+│   └── renderer/                # react application
 │       └── src/
-│           ├── components/  # UI components
-│           ├── core/        # Core logic (stores, hooks, utils)
-│           └── features/    # Feature modules
-├── scripts/            # Build scripts
-└── build/             # Build artifacts
+│           ├── core/
+│           │   └── store/       # zustand stores
+│           │       ├── usevaultstore.js
+│           │       ├── usesettingsstore.js
+│           │       └── useaistore.js
+│           ├── features/
+│           │   ├── ai/          # chat panel, composer, providers, worker
+│           │   ├── workspace/   # codemirror editor + extensions
+│           │   ├── explorer/    # file tree
+│           │   ├── graph/       # knowledge graph
+│           │   ├── settings/    # settings modal
+│           │   └── overlays/    # modals, command palette
+│           └── components/      # shared ui components
+├── brain/                       # project documentation
+│   ├── introduction.md
+│   ├── features/                # feature deep-dives
+│   └── vault/                   # vault system docs
+└── scripts/
 ```
 
-### Available Scripts
+### scripts
 
 ```bash
-# Development
-npm run dev              # Start development server
-npm start               # Preview production build
-
-# Building
-npm run build           # Build for current platform
-npm run build:win       # Build for Windows
-npm run build:mac       # Build for macOS
-npm run build:linux     # Build for Linux
-
-# Testing
-npm test                # Run tests in watch mode
-npm run test:run        # Run tests once
-npm run test:coverage   # Generate coverage report
-npm run test:ui         # Run tests with UI
-
-# Performance
-npm run workbench       # Run performance workbench
-
-# Code Quality
-npm run lint            # Run ESLint
-npm run format          # Format with Prettier
+npm run dev              # dev server with hmr
+npm run build            # build current platform
+npm test                 # tests (watch)
+npm run test:run         # tests once
+npm run test:coverage    # coverage report
+npm run lint             # eslint
+npm run format           # prettier
 ```
 
-### Technology Stack
+### tech stack
 
-**Main Process:**
-- Electron 39.2.4
-- better-sqlite3 (legacy migration)
-- chokidar (file watching)
-- gray-matter (YAML frontmatter)
+**main process:**
+electron 39.2.4 · chokidar 5 · gray-matter 4 · better-sqlite3 (legacy)
 
-**Renderer Process:**
-- React 19.1.1
-- CodeMirror 6
-- Zustand (state management)
-- Dexie (IndexedDB)
-- @xenova/transformers (AI embeddings)
-- react-force-graph-2d (graph visualization)
+**renderer:**
+react 19.1.1 · codemirror 6 · zustand 5 · dexie 4 · marked 17 · highlight.js 11 · lucide-react · @xenova/transformers 2 · react-force-graph-2d · flexsearch
 
-**Build Tools:**
-- Vite 7.1.6
-- electron-vite
-- Vitest (testing)
-- Tailwind CSS
-
-## 🧪 Testing
-
-The project includes comprehensive test coverage:
-
-```bash
-# Run all tests
-npm test
-
-# Run with coverage
-npm run test:coverage
-
-# Run specific test file
-npm test -- src/renderer/src/components/atoms/Button.test.jsx
-```
-
-**Current Coverage:**
-- 93 tests across 8 test files
-- Components, hooks, stores, utilities, and main process modules
-
-See [ROADMAP.md](./ROADMAP.md) for testing improvements planned.
-
-## 📚 Documentation
-
-- **[ROADMAP.md](./ROADMAP.md)** - Project roadmap and future plans
-- **[notes/doc.md](./notes/doc.md)** - Technical documentation
-- **[notes/suggestions.md](./notes/suggestions.md)** - Feature suggestions and implementations
-
-## 🤝 Contributing
-
-Contributions are welcome! Here's how you can help:
-
-1. **Fork the repository**
-2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
-3. **Make your changes**
-4. **Add tests** for new features
-5. **Run tests** (`npm test`)
-6. **Commit your changes** (`git commit -m 'Add amazing feature'`)
-7. **Push to the branch** (`git push origin feature/amazing-feature`)
-8. **Open a Pull Request**
-
-### Development Guidelines
-
-- Follow the existing code style
-- Write tests for new features
-- Update documentation as needed
-- Keep commits atomic and well-described
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**App won't start:**
-```bash
-# Rebuild native modules
-npm run rebuild
-```
-
-**Tests failing:**
-```bash
-# Clear cache and reinstall
-rm -rf node_modules package-lock.json
-npm install
-```
-
-**Build errors:**
-```bash
-# Clean build directory
-rm -rf out dist
-npm run build
-```
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE.md](./LICENSE.md) file for details.
-
-## 🙏 Acknowledgments
-
-- Built with [Electron](https://www.electronjs.org/)
-- UI powered by [React](https://react.dev/)
-- Editor by [CodeMirror](https://codemirror.net/)
-- Icons from [Lucide](https://lucide.dev/)
-
-## 📞 Support
-
-- **Issues:** [GitHub Issues](https://github.com/your-username/lumina/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/your-username/lumina/discussions)
+**build:**
+vite 7 · electron-vite · vitest · tailwindcss 3 · electron-builder 26
 
 ---
 
-**Made with ❤️ for knowledge workers who value privacy and performance.**
+## testing
+
+93 tests across 8 files covering components, stores, hooks, utils, and main process modules.
+
+```bash
+npm test                    # watch mode
+npm run test:run            # single run
+npm run test:coverage       # with coverage
+npm test -- --grep "button" # specific pattern
+```
+
+---
+
+## documentation
+
+the `brain/` directory contains comprehensive project docs for agents and developers:
+
+| path | covers |
+|------|--------|
+| `brain/introduction.md` | entry point, table of contents |
+| `brain/features/` | architecture, ai system, testing, roadmap, dev notes |
+| `brain/vault/` | vault manager, indexer, search, store, data flows |
+
+---
+
+## contributing
+
+1. fork the repo
+2. `git checkout -b feature/amazing-feature`
+3. make changes
+4. `npm test`
+5. commit (`git commit -m 'add amazing feature'`)
+6. push → open a pr
+
+---
+
+## license
+
+mit — see [license.md](./license.md)
+
+---
+
+## acknowledgments
+
+- [electron](https://www.electronjs.org/)
+- [react](https://react.dev/)
+- [codemirror](https://codemirror.net/)
+- [lucide](https://lucide.dev/)

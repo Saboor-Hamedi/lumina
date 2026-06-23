@@ -135,48 +135,9 @@ b:\electron\typing\
 
 ## Core Systems
 
-### 1. Vault Management (File-Based Storage)
+### 1. Vault System (File-Based Storage)
 
-**Location**: `src/main/VaultManager.js`
-
-**Purpose**: Manages the vault directory where all notes are stored as `.md` files with YAML frontmatter.
-
-**Key Features:**
-
-- **Default Location**: `Documents/Lumina Vault/`
-- **File Format**: Markdown with gray-matter frontmatter
-
-  ```markdown
-  ---
-  id: abc-123
-  title: My Note
-  language: markdown
-  tags: example, demo
-  timestamp: 1704326400000
-  ---
-
-  # Note Content
-  This is the actual markdown content.
-  ```
-
-- **File Watching**: Uses `chokidar` to detect external changes
-- **Collision Handling**: Appends ID suffix if title conflicts exist
-- **Migration**: Automatically migrates from legacy SQLite database
-
-**API Methods:**
-
-- `init(userPath, defaultDocPath)` - Initialize vault, start watcher
-- `scanVault()` - Read all `.md` files, parse frontmatter
-- `saveSnippet(snippet)` - Write snippet to file with safe filename
-- `deleteSnippet(id)` - Remove file from vault
-- `getSnippets()` - Return all cached snippets
-
-**Robustness:**
-
-- Slugifies titles to prevent invalid filenames
-- Handles duplicate titles by appending ID
-- Gracefully handles missing/corrupt files
-- Preserves file extension in title if present
+**See dedicated docs:** `brain/vault/01-overview.md` for full architecture, data flow, IPC channels, and deep-dives into `VaultManager.js`, `VaultIndexer.js`, `VaultSearch.js`, and `useVaultStore.js`.
 
 ---
 
