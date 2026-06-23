@@ -2,6 +2,7 @@ import React from 'react'
 import { Network, RefreshCw, Layers, Check } from 'lucide-react'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import './GraphSidebar.css'
+import '../../assets/toggle-theme.css'
 
 const GraphSidebar = ({ searchQuery, setSearchQuery, isSpinning, setIsSpinning, graphTheme, onHeaderMouseDown, isMaximized }) => {
   return (
@@ -26,16 +27,6 @@ const GraphSidebar = ({ searchQuery, setSearchQuery, isSpinning, setIsSpinning, 
           />
         </div>
 
-        <div className="nexus-sidebar-section">
-          <div className="nexus-section-title">Controls</div>
-          <button
-            className={`nexus-action-btn ${isSpinning ? 'active' : ''}`}
-            onClick={() => setIsSpinning(!isSpinning)}
-          >
-            <RefreshCw size={14} className={isSpinning ? 'spin-icon' : ''} />
-            <span>{isSpinning ? 'Stop Rotation' : 'Auto Rotate'}</span>
-          </button>
-        </div>
 
         <div className="nexus-sidebar-section">
           <div className="nexus-section-title">Themes</div>
@@ -75,6 +66,36 @@ const GraphSidebar = ({ searchQuery, setSearchQuery, isSpinning, setIsSpinning, 
             ))}
           </div>
         </div>
+      </div>
+
+      <div 
+        className="nexus-sidebar-footer" 
+        style={{
+          padding: '12px 16px',
+          borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-start'
+        }}
+      >
+        <button
+          className={`theme-toggle ${isSpinning ? 'active' : ''}`}
+          title={isSpinning ? 'Stop Rotation' : 'Auto Rotate'}
+          onClick={() => setIsSpinning(!isSpinning)}
+          style={{
+            width: '28px',
+            height: '28px',
+            borderRadius: '6px',
+            background: isSpinning ? 'rgba(64, 186, 250, 0.1)' : 'transparent',
+            borderColor: isSpinning ? 'rgba(64, 186, 250, 0.4)' : 'rgba(255,255,255,0.1)',
+            padding: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <RefreshCw size={14} className={isSpinning ? 'spin-icon' : ''} color={isSpinning ? 'rgb(64, 186, 250)' : 'var(--text-muted)'} />
+        </button>
       </div>
     </div>
   )

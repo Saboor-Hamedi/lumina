@@ -31,7 +31,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   const [searchQuery, setSearchQuery] = useState('')
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 })
   const [isMaximized, setIsMaximized] = useState(false)
-  const [isSpinning, setIsSpinning] = useState(false)
+  const [isSpinning, setIsSpinning] = useState(true)
   const graphRef = useRef()
   const containerRef = useRef()
   const [dimensions, setDimensions] = useState({
