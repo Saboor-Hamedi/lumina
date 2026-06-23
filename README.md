@@ -1,14 +1,14 @@
 # lumina
 
-> a premium, vault-based knowledge management desktop app built with electron 39, react 19, and codemirror 6.
-
 ![banner](./banner.png)
 
-![version](https://img.shields.io/badge/version-1.0.2-blue)
-![tests](https://img.shields.io/badge/tests-93%20passed-success)
-![license](https://img.shields.io/badge/license-MIT-green)
+<p align="center">
+  <img src="https://img.shields.io/badge/version-1.0.2-blue" alt="version">
+  <img src="https://img.shields.io/badge/tests-93%20passed-success" alt="tests">
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="license">
+</p>
 
-lumina is a note-taking app where your data is just plain markdown files on disk. features a multi-tab workspace, knowledge graph, ai semantic search (local + cloud), 18 themes, and a rich codemirror 6 editor with wikilinks, mermaid diagrams, callouts, and live preview.
+lumina is a note-taking desktop app where everything is plain markdown on disk. features a multi-tab workspace, knowledge graph, ai semantic search (local + cloud), 18 themes, and a codemirror 6 editor with wikilinks, mermaid diagrams, callouts, and live preview.
 
 ---
 
@@ -73,7 +73,7 @@ lumina is a note-taking app where your data is just plain markdown files on disk
 ### install
 
 ```bash
-git clone https://github.com/your-username/lumina.git
+git clone https://github.com/Saboor-Hamedi/lumina.git
 cd lumina
 npm install
 ```
@@ -202,8 +202,12 @@ the `brain/` directory contains comprehensive project docs for agents and develo
 | path | covers |
 |------|--------|
 | `brain/introduction.md` | entry point, table of contents |
-| `brain/features/` | architecture, ai system, testing, roadmap, dev notes |
-| `brain/vault/` | vault manager, indexer, search, store, data flows |
+| `brain/features/01-architecture.md` | full system architecture (main, preload, renderer, cm6, ipc, themes, export) |
+| `brain/features/02-ai.md` | ai system (store, providers, worker, chat, composer, image gen) |
+| `brain/vault/01-overview.md` | vault system (manager, indexer, search, store, data flows) |
+| `brain/features/03-testing.md` | testing guide (commands, coverage, mock patterns, ci/cd) |
+| `brain/features/04-roadmap.md` | project roadmap and planned features |
+| `brain/features/05-devnotes.md` | active dev notes and architecture decisions |
 
 ---
 
