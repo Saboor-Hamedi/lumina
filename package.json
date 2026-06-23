@@ -1,6 +1,6 @@
 {
   "name": "lumina",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "description": "Lumina - A premium, vault-based snippet sanctuary.",
   "main": "./out/main/index.js",
   "author": "Saboor Hamedi",

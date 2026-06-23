@@ -60,7 +60,6 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
           
           const wrapper = document.createElement('div')
           wrapper.className = 'cm-mermaid-widget'
-          wrapper.style.pointerEvents = 'none' // keep it non-interactive in hover
           wrapper.style.margin = '10px 0'
           
           const scrollWrap = document.createElement('div')
