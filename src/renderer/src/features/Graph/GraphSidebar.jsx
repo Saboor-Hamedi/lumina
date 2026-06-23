@@ -1,10 +1,18 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Network, RefreshCw, Layers, Check } from 'lucide-react'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import './GraphSidebar.css'
 import '../../assets/toggle-theme.css'
 
 const GraphSidebar = ({ searchQuery, setSearchQuery, isSpinning, setIsSpinning, graphTheme, onHeaderMouseDown, isMaximized }) => {
+  const { settings, updateSetting } = useSettingsStore()
+  
+  // Local state for the slider to prevent heavy renders on every drag tick
+  const [localNodeSize, setLocalNodeSize] = useState(settings.graphNodeSize || 1.5)
+  useEffect(() => {
+    setLocalNodeSize(settings.graphNodeSize || 1.5)
+  }, [settings.graphNodeSize])
+
   return (
     <div className="nexus-sidebar">
       <div 
@@ -41,7 +49,7 @@ const GraphSidebar = ({ searchQuery, setSearchQuery, isSpinning, setIsSpinning, 
               <button 
                 key={theme.id}
                 title={theme.id.charAt(0).toUpperCase() + theme.id.slice(1)}
-                onClick={() => useSettingsStore.getState().updateSetting('graphTheme', theme.id)}
+                onClick={() => updateSetting('graphTheme', theme.id)}
                 style={{
                   width: '26px',
                   height: '26px',
@@ -65,6 +73,53 @@ const GraphSidebar = ({ searchQuery, setSearchQuery, isSpinning, setIsSpinning, 
             ))}
           </div>
         </div>
+
+        <div className="nexus-sidebar-section" style={{ marginTop: '12px' }}>
+          <div className="nexus-section-title">Filters</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '4px 2px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-main)' }}>
+              <span>Show Tags</span>
+              <label className="switch">
+                <input 
+                  type="checkbox" 
+                  checked={!settings.graphHideTags}
+                  onChange={(e) => updateSetting('graphHideTags', !e.target.checked)}
+                />
+                <span className="slider round"></span>
+              </label>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-main)' }}>
+              <span>Show Unresolved Links</span>
+              <label className="switch">
+                <input 
+                  type="checkbox" 
+                  checked={!settings.graphHideGhosts}
+                  onChange={(e) => updateSetting('graphHideGhosts', !e.target.checked)}
+                />
+                <span className="slider round"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div className="nexus-sidebar-section" style={{ marginTop: '12px' }}>
+          <div className="nexus-section-title">Display</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '4px 2px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)' }}>
+              <span>Node Size</span>
+              <span>{localNodeSize}x</span>
+            </div>
+            <input 
+              type="range" 
+              min="0.5" max="3" step="0.1" 
+              value={localNodeSize}
+              onChange={(e) => setLocalNodeSize(parseFloat(e.target.value))}
+              onMouseUp={() => updateSetting('graphNodeSize', localNodeSize)}
+              onTouchEnd={() => updateSetting('graphNodeSize', localNodeSize)}
+              style={{ accentColor: 'var(--text-accent)', height: '4px', cursor: 'pointer' }}
+            />
+          </div>
+        </div>
       </div>
 
       <div 
@@ -85,8 +140,8 @@ const GraphSidebar = ({ searchQuery, setSearchQuery, isSpinning, setIsSpinning, 
             width: '24px',
             height: '24px',
             borderRadius: '4px',
-            background: isSpinning ? 'var(--bg-active)' : 'transparent',
-            border: `1px solid ${isSpinning ? 'var(--text-accent)' : 'var(--border-dim)'}`,
+            background: 'transparent',
+            border: 'none',
             padding: 0,
             display: 'flex',
             alignItems: 'center',

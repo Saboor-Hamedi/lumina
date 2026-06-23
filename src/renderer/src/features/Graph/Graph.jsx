@@ -30,7 +30,9 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   const [hoverNode, setHoverNode] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 })
-  const [isMaximized, setIsMaximized] = useState(false)
+  const [isMaximized, setIsMaximized] = useState(() => {
+    return localStorage.getItem('graph-modal-maximized') === 'true'
+  })
   const [isSpinning, setIsSpinning] = useState(true)
   const graphRef = useRef()
   const containerRef = useRef()
@@ -40,10 +42,16 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   })
 
   const handleToggleMaximize = useCallback(() => {
-    setIsMaximized((prev) => !prev)
+    setIsMaximized((prev) => {
+      const next = !prev
+      localStorage.setItem('graph-modal-maximized', String(next))
+      return next
+    })
   }, [])
 
-  const modalPos = useRef({ x: 0, y: 0 })
+  const modalPos = useRef(
+    JSON.parse(localStorage.getItem('graph-modal-pos') || '{"x":0,"y":0}')
+  )
   const isDraggingModal = useRef(false)
   const dragStart = useRef({ x: 0, y: 0 })
 
@@ -71,6 +79,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       if (rafId.current) cancelAnimationFrame(rafId.current)
       if (containerRef.current && !isMaximized) {
         containerRef.current.style.transition = 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+        localStorage.setItem('graph-modal-pos', JSON.stringify(modalPos.current))
       }
     }
 
@@ -142,8 +151,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     }
   }, [embedded, isMaximized])
 
-  // Graph Data Construction
-  const [graphData, setGraphData] = useState({ nodes: [], links: [] })
+  const [rawGraphData, setRawGraphData] = useState({ nodes: [], links: [] })
   const [isBuildingGraph, setIsBuildingGraph] = useState(true)
 
   useEffect(() => {
@@ -198,12 +206,32 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
         }
       })
 
-      setGraphData({ nodes, links })
+      setRawGraphData({ nodes, links })
       setIsBuildingGraph(false)
     }, 250) // Wait 250ms to allow the modal CSS open animation to finish perfectly smoothly
 
     return () => clearTimeout(timer)
   }, [snippets, selectedSnippet, embeddingsCache])
+
+  const graphData = useMemo(() => {
+    let { nodes, links } = rawGraphData
+    if (settings.graphHideTags) {
+      nodes = nodes.filter((n) => n.group !== 'tag')
+    }
+    if (settings.graphHideGhosts) {
+      nodes = nodes.filter((n) => n.group !== 'ghost')
+    }
+    
+    // Filter links to only keep those whose nodes still exist
+    const validNodeIds = new Set(nodes.map((n) => n.id))
+    links = links.filter((l) => {
+      const src = typeof l.source === 'object' ? l.source.id : l.source
+      const tgt = typeof l.target === 'object' ? l.target.id : l.target
+      return validNodeIds.has(src) && validNodeIds.has(tgt)
+    })
+    
+    return { nodes, links }
+  }, [rawGraphData, settings.graphHideTags, settings.graphHideGhosts])
 
   // Center on mount and data load
   useEffect(() => {
