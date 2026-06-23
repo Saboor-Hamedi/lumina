@@ -47,6 +47,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   const isDraggingModal = useRef(false)
   const dragStart = useRef({ x: 0, y: 0 })
 
+  const rafId = useRef(null)
+
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (!isDraggingModal.current || isMaximized) return
@@ -55,27 +57,33 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       const newY = e.clientY - dragStart.current.y
       modalPos.current = { x: newX, y: newY }
       
-      if (containerRef.current) {
-        containerRef.current.style.transform = `translate(${newX}px, ${newY}px)`
-      }
+      if (rafId.current) cancelAnimationFrame(rafId.current)
+      
+      rafId.current = requestAnimationFrame(() => {
+        if (containerRef.current) {
+          containerRef.current.style.transform = `translate3d(${newX}px, ${newY}px, 0)`
+        }
+      })
     }
     
     const handleMouseUp = () => {
       isDraggingModal.current = false
+      if (rafId.current) cancelAnimationFrame(rafId.current)
       if (containerRef.current && !isMaximized) {
-        containerRef.current.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+        containerRef.current.style.transition = 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
       }
     }
 
-    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mousemove', handleMouseMove, { passive: true })
     window.addEventListener('mouseup', handleMouseUp)
     return () => {
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
+      if (rafId.current) cancelAnimationFrame(rafId.current)
     }
   }, [isMaximized])
 
-  const handleModalHeaderMouseDown = (e) => {
+  const handleModalHeaderMouseDown = useCallback((e) => {
     if (isMaximized) return
     isDraggingModal.current = true
     
@@ -87,7 +95,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       x: e.clientX - modalPos.current.x,
       y: e.clientY - modalPos.current.y
     }
-  }
+  }, [isMaximized])
 
   // Localized Escape Handler (only for modal mode)
   useKeyboardShortcuts({
@@ -162,6 +170,10 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       })
 
       nodes.forEach((n) => {
+        // Break exact center symmetry so radial force works instantly
+        if (n.x === undefined) n.x = (Math.random() - 0.5) * 200
+        if (n.y === undefined) n.y = (Math.random() - 0.5) * 200
+
         n.linkCount = linkCounts[n.id] || 0
         n.val = n.linkCount + 1 // Exponential scaling base
 
@@ -204,7 +216,9 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             graphRef.current.zoom(1.5, 400)
           }
         } else {
-          graphRef.current.zoomToFit(400)
+          // Set a comfortable fixed initial zoom and explicitly center
+          graphRef.current.centerAt(0, 0, 800)
+          graphRef.current.zoom(1.0, 800)
         }
       }, 100) // Small delay to ensure WebGL engine is ready
     }
@@ -227,14 +241,14 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       'radial',
       forceRadial(
         (d) => {
-          if (d.linkCount === 0) return 1500 // Bring unlinked stars much further out
-          // Hubs (many links) get pulled to the event horizon (radius 400), leaving a giant hollow center
+          if (d.linkCount === 0) return 600 // Bring unlinked stars much further out
+          // Hubs (many links) get pulled to the event horizon (radius 150), leaving a hollow center
           // Normal notes (few links) orbit further out
-          return Math.max(400, 900 - d.linkCount * 40)
+          return Math.max(150, 400 - d.linkCount * 20)
         },
         0,
         0
-      ).strength(0.02) // Extremely soft pull so nodes drift
+      ).strength(0.04) // Extremely soft pull so nodes drift
     )
 
     // Gentle repulsion to separate clusters (Obsidian uses very low values like -200 to -400)
@@ -499,8 +513,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       data-graph-theme={graphTheme}
       style={{ 
         flexDirection: 'row',
-        transform: isMaximized ? 'none' : `translate(${modalPos.current.x}px, ${modalPos.current.y}px)`,
-        transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)' // Will be overridden via ref during drag
+        transform: isMaximized ? 'none' : `translate3d(${modalPos.current.x}px, ${modalPos.current.y}px, 0)`,
+        transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)' 
       }}
     >
       <GraphSidebar 

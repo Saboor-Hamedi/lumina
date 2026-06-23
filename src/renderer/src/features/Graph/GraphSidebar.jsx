@@ -29,7 +29,6 @@ const GraphSidebar = ({ searchQuery, setSearchQuery, isSpinning, setIsSpinning, 
 
 
         <div className="nexus-sidebar-section">
-          <div className="nexus-section-title">Themes</div>
           <div style={{ display: 'flex', gap: '8px', marginTop: '4px', justifyContent: 'center' }}>
             {[
               { id: 'default', color: '#1a1a20' },
@@ -71,8 +70,8 @@ const GraphSidebar = ({ searchQuery, setSearchQuery, isSpinning, setIsSpinning, 
       <div 
         className="nexus-sidebar-footer" 
         style={{
-          padding: '12px 16px',
-          borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+          padding: '8px 16px',
+          borderTop: '1px solid var(--border-dim)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'flex-start'
@@ -83,18 +82,18 @@ const GraphSidebar = ({ searchQuery, setSearchQuery, isSpinning, setIsSpinning, 
           title={isSpinning ? 'Stop Rotation' : 'Auto Rotate'}
           onClick={() => setIsSpinning(!isSpinning)}
           style={{
-            width: '28px',
-            height: '28px',
-            borderRadius: '6px',
-            background: isSpinning ? 'rgba(64, 186, 250, 0.1)' : 'transparent',
-            borderColor: isSpinning ? 'rgba(64, 186, 250, 0.4)' : 'rgba(255,255,255,0.1)',
+            width: '24px',
+            height: '24px',
+            borderRadius: '4px',
+            background: isSpinning ? 'var(--bg-active)' : 'transparent',
+            border: `1px solid ${isSpinning ? 'var(--text-accent)' : 'var(--border-dim)'}`,
             padding: 0,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center'
           }}
         >
-          <RefreshCw size={14} className={isSpinning ? 'spin-icon' : ''} color={isSpinning ? 'rgb(64, 186, 250)' : 'var(--text-muted)'} />
+          <RefreshCw size={12} className={isSpinning ? 'spin-icon' : ''} color={isSpinning ? 'var(--text-accent)' : 'var(--text-muted)'} />
         </button>
       </div>
     </div>
