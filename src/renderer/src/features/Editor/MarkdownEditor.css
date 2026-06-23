@@ -731,6 +731,7 @@
 .window-controls-float .control-btn.drag-btn {
   -webkit-app-region: drag;
   opacity: 0.6;
+  width: 28px; /* Slightly narrower than other buttons */
   cursor: grab !important; 
 }
 
@@ -739,6 +740,7 @@
   background: var(--bg-active);
   color: var(--text-main);
   cursor: grab !important;
+
 }
 
 .window-controls-float .control-btn.drag-btn:active {
