@@ -6,12 +6,6 @@ import '../../assets/toggle-theme.css'
 
 const GraphSidebar = ({ searchQuery, setSearchQuery, isSpinning, setIsSpinning, graphTheme, onHeaderMouseDown, isMaximized }) => {
   const { settings, updateSetting } = useSettingsStore()
-  
-  // Local state for the slider to prevent heavy renders on every drag tick
-  const [localNodeSize, setLocalNodeSize] = useState(settings.graphNodeSize || 1.5)
-  useEffect(() => {
-    setLocalNodeSize(settings.graphNodeSize || 1.5)
-  }, [settings.graphNodeSize])
 
   return (
     <div className="nexus-sidebar">
@@ -99,25 +93,71 @@ const GraphSidebar = ({ searchQuery, setSearchQuery, isSpinning, setIsSpinning, 
                 <span className="slider round"></span>
               </label>
             </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-main)' }}>
+              <span>Show Orphans</span>
+              <label className="switch">
+                <input 
+                  type="checkbox" 
+                  checked={!settings.graphHideOrphans}
+                  onChange={(e) => updateSetting('graphHideOrphans', !e.target.checked)}
+                />
+                <span className="slider round"></span>
+              </label>
+            </div>
           </div>
         </div>
 
         <div className="nexus-sidebar-section" style={{ marginTop: '12px' }}>
           <div className="nexus-section-title">Display</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '4px 2px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)' }}>
-              <span>Node Size</span>
-              <span>{localNodeSize}x</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '12px 2px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>
+                <span>Node Size</span>
+              </div>
+              <input 
+                type="range" 
+                className="graph-slider"
+                min="0.5" max="3.0" step="0.1" 
+                value={settings.graphNodeSize || 1.5}
+                onChange={(e) => updateSetting('graphNodeSize', parseFloat(e.target.value))}
+              />
             </div>
-            <input 
-              type="range" 
-              min="0.5" max="3" step="0.1" 
-              value={localNodeSize}
-              onChange={(e) => setLocalNodeSize(parseFloat(e.target.value))}
-              onMouseUp={() => updateSetting('graphNodeSize', localNodeSize)}
-              onTouchEnd={() => updateSetting('graphNodeSize', localNodeSize)}
-              style={{ accentColor: 'var(--text-accent)', height: '4px', cursor: 'pointer' }}
-            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>
+                <span>Center Force</span>
+              </div>
+              <input 
+                type="range" 
+                className="graph-slider"
+                min="0.0" max="1.0" step="0.01" 
+                value={settings.graphCenterForce ?? 0.05}
+                onChange={(e) => updateSetting('graphCenterForce', parseFloat(e.target.value))}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>
+                <span>Repel Force</span>
+              </div>
+              <input 
+                type="range" 
+                className="graph-slider"
+                min="0.0" max="1.0" step="0.01" 
+                value={settings.graphRepelForce ?? 0.3}
+                onChange={(e) => updateSetting('graphRepelForce', parseFloat(e.target.value))}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>
+                <span>Link Force</span>
+              </div>
+              <input 
+                type="range" 
+                className="graph-slider"
+                min="0.0" max="1.0" step="0.01" 
+                value={settings.graphLinkForce ?? 0.05}
+                onChange={(e) => updateSetting('graphLinkForce', parseFloat(e.target.value))}
+              />
+            </div>
           </div>
         </div>
       </div>

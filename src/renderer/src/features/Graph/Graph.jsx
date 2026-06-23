@@ -24,9 +24,14 @@ import './Graph.css'
  */
 const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false }) => {
   const { snippets, selectedSnippet, dirtySnippetIds } = useVaultStore()
-  const { settings } = useSettingsStore()
   const { embeddingsCache } = useAIStore()
-  const graphTheme = settings.graphTheme || 'default'
+  
+  // Granular subscriptions so physics sliders do not cause React re-renders!
+  const graphTheme = useSettingsStore(s => s.settings.graphTheme || 'default')
+  const graphHideTags = useSettingsStore(s => s.settings.graphHideTags)
+  const graphHideGhosts = useSettingsStore(s => s.settings.graphHideGhosts)
+  const graphHideOrphans = useSettingsStore(s => s.settings.graphHideOrphans)
+
   const [hoverNode, setHoverNode] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 })
@@ -215,10 +220,10 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
 
   const graphData = useMemo(() => {
     let { nodes, links } = rawGraphData
-    if (settings.graphHideTags) {
+    if (graphHideTags) {
       nodes = nodes.filter((n) => n.group !== 'tag')
     }
-    if (settings.graphHideGhosts) {
+    if (graphHideGhosts) {
       nodes = nodes.filter((n) => n.group !== 'ghost')
     }
     
@@ -230,8 +235,19 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       return validNodeIds.has(src) && validNodeIds.has(tgt)
     })
     
+    if (graphHideOrphans) {
+      const nodesWithLinks = new Set()
+      links.forEach(l => {
+        const src = typeof l.source === 'object' ? l.source.id : l.source
+        const tgt = typeof l.target === 'object' ? l.target.id : l.target
+        nodesWithLinks.add(src)
+        nodesWithLinks.add(tgt)
+      })
+      nodes = nodes.filter(n => nodesWithLinks.has(n.id))
+    }
+    
     return { nodes, links }
-  }, [rawGraphData, settings.graphHideTags, settings.graphHideGhosts])
+  }, [rawGraphData, graphHideTags, graphHideGhosts, graphHideOrphans])
 
   // Center on mount and data load
   useEffect(() => {
@@ -246,59 +262,96 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
         } else {
           // Set a comfortable fixed initial zoom and explicitly center
           graphRef.current.centerAt(0, 0, 800)
-          graphRef.current.zoom(1.0, 800)
+          graphRef.current.zoom(0.6, 800)
         }
       }, 100) // Small delay to ensure WebGL engine is ready
     }
-  }, [selectedSnippet, isBuildingGraph, graphData.nodes.length])
+  }, [selectedSnippet, isBuildingGraph])
 
   // Physics Engine Setup
   useEffect(() => {
+    // Unsubscribe listener for Live Physics without React Re-renders
+    const unsubscribe = useSettingsStore.subscribe(
+      (state, prevState) => {
+        const { settings } = state
+        const prev = prevState.settings
+        
+        // Only update if one of the physics settings actually changed
+        if (
+          settings.graphNodeSize !== prev.graphNodeSize ||
+          settings.graphCenterForce !== prev.graphCenterForce ||
+          settings.graphRepelForce !== prev.graphRepelForce ||
+          settings.graphLinkForce !== prev.graphLinkForce ||
+          settings.graphShowTexts !== prev.graphShowTexts ||
+          settings.graphNodeColor !== prev.graphNodeColor
+        ) {
+          if (!graphRef.current) return
+          const fg = graphRef.current
+
+          const sizeMult = settings.graphNodeSize || 1.5
+          const centerForce = settings.graphCenterForce ?? 0.05
+          const repelForce = settings.graphRepelForce ?? 0.3
+          const linkForce = settings.graphLinkForce ?? 0.05
+
+          // Update force parameters instantly
+          fg.d3Force('custom_x').strength(centerForce)
+          fg.d3Force('custom_y').strength(centerForce)
+          fg.d3Force('custom_charge').strength(-3000 * repelForce) // Massively scale repel for difference!
+          
+          fg.d3Force('custom_collide')
+            .radius((d) => {
+              const baseR = d.val ? Math.max(2, Math.sqrt(d.val) * 2.5) : 2
+              return baseR * sizeMult + 40 // Physical gap
+            })
+
+          if (fg.d3Force('link')) fg.d3Force('link').strength(linkForce)
+
+          fg.d3ReheatSimulation()
+        }
+      }
+    )
+
+    // Initial Setup
     if (!graphRef.current) return
     const fg = graphRef.current
+    const initialSettings = useSettingsStore.getState().settings
 
-    const sizeMult = settings.graphNodeSize || 1.5
+    const sizeMult = initialSettings.graphNodeSize || 1.5
+    const centerForce = initialSettings.graphCenterForce ?? 0.05
+    const repelForce = initialSettings.graphRepelForce ?? 0.3
+    const linkForce = initialSettings.graphLinkForce ?? 0.05
 
-    // Galactic Core Gravity: Weakened to barely pull at all
-    fg.d3Force('x', forceX(0).strength(0.001))
-    fg.d3Force('y', forceY(0).strength(0.001))
+    // Initialize core forces only if they don't exist
+    if (!fg.d3Force('custom_x')) fg.d3Force('custom_x', forceX(0))
+    if (!fg.d3Force('custom_y')) fg.d3Force('custom_y', forceY(0))
+    if (!fg.d3Force('custom_charge')) fg.d3Force('custom_charge', forceManyBody())
+    if (!fg.d3Force('custom_collide')) fg.d3Force('custom_collide', forceCollide())
 
-    // Galaxy Disc Structure: Forces nodes into a circular galaxy shape, widened and weakened
-    // To make it look "hollow" (like a ring/donut), we ensure no node is allowed at radius 0
-    fg.d3Force(
-      'radial',
-      forceRadial(
-        (d) => {
-          if (d.linkCount === 0) return 600 // Bring unlinked stars much further out
-          // Hubs (many links) get pulled to the event horizon (radius 150), leaving a hollow center
-          // Normal notes (few links) orbit further out
-          return Math.max(150, 400 - d.linkCount * 20)
-        },
-        0,
-        0
-      ).strength(0.04) // Extremely soft pull so nodes drift
-    )
+    // Disable default forces to prevent conflicts
+    fg.d3Force('x', null)
+    fg.d3Force('y', null)
+    fg.d3Force('charge', null)
+    fg.d3Force('radial', null)
 
-    // Gentle repulsion to separate clusters (Obsidian uses very low values like -200 to -400)
-    fg.d3Force('charge', forceManyBody().strength(-300))
-
-    // Very soft collisions so they slide past each other gently
-    fg.d3Force(
-      'collide',
-      forceCollide()
-        .radius((d) => {
-          const baseR = d.val ? Math.max(2, Math.sqrt(d.val) * 2.5) : 2
-          return baseR * sizeMult + 40 // Increased physical gap to space them out heavily
-        })
-        .strength(0.1)
-    )
+    // Apply initial forces
+    fg.d3Force('custom_x').strength(centerForce)
+    fg.d3Force('custom_y').strength(centerForce)
+    fg.d3Force('custom_charge').strength(-3000 * repelForce)
+    
+    fg.d3Force('custom_collide')
+      .radius((d) => {
+        const baseR = d.val ? Math.max(2, Math.sqrt(d.val) * 2.5) : 2
+        return baseR * sizeMult + 40
+      })
+      .strength(0.1)
 
     // Extremely elastic links like a spiderweb
-    if (fg.d3Force('link')) fg.d3Force('link').distance(150).strength(0.05)
+    if (fg.d3Force('link')) fg.d3Force('link').distance(150).strength(linkForce)
 
-    // Reheat to apply new physical sizes
     fg.d3ReheatSimulation()
-  }, [settings.graphNodeSize])
+
+    return () => unsubscribe()
+  }, [])
 
   // Auto-Spin Logic
   useEffect(() => {
@@ -381,7 +434,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     // Dynamic color by category/tag
     if (node.primaryTag) return stringToColor(node.primaryTag)
 
-    return settings.graphNodeColor || '#40bafa' // Default blue for Notes
+    return useSettingsStore.getState().settings.graphNodeColor || '#40bafa' // Default blue for Notes
   }
 
   const paintNode = useCallback(
@@ -389,7 +442,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       const isActive = selectedSnippet && node.snippetId === selectedSnippet.id
       const isHovered = hoverNode === node
       const label = (node.id || '').replace(/[*"']/g, '')
-      const sizeMult = settings.graphNodeSize || 1.5
+      const sizeMult = useSettingsStore.getState().settings.graphNodeSize || 1.5
       const r = (node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2) * sizeMult
 
       const q = searchQuery.trim().toLowerCase()
@@ -423,7 +476,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       ctx.font = `${fontSize}px Inter, sans-serif`
 
       let shouldShow = false
-      const showTextsSetting = settings.graphShowTexts !== false && settings.graphShowTexts !== 'false'
+      const liveSettings = useSettingsStore.getState().settings
+      const showTextsSetting = liveSettings.graphShowTexts !== false && liveSettings.graphShowTexts !== 'false'
 
       if (showTextsSetting) {
         if (isActive || isHovered) shouldShow = true
@@ -448,19 +502,9 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       selectedSnippet,
       hoverNode,
       hoverNeighbors,
-      searchQuery,
-      settings.graphNodeSize,
-      settings.graphShowTexts,
-      settings.graphNodeColor
+      searchQuery
     ]
   )
-
-  // Reheat physics slightly when settings change to force redraw
-  useEffect(() => {
-    if (graphRef.current) {
-      graphRef.current.d3ReheatSimulation()
-    }
-  }, [settings.graphNodeSize, settings.graphShowTexts, settings.graphNodeColor])
 
   // Render as embedded (tab) or modal
   // When embedded, show only the graph visualization with controls overlay
@@ -497,7 +541,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             setHoverNode(node)
           }}
           nodePointerAreaPaint={(node, color, ctx) => {
-            const sizeMult = settings.graphNodeSize || 1.5
+            const sizeMult = useSettingsStore.getState().settings.graphNodeSize || 1.5
             const r = (node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2) * sizeMult
             ctx.fillStyle = color
             ctx.beginPath()
@@ -526,7 +570,6 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
           backgroundColor="transparent"
           d3AlphaDecay={isSpinning ? 0 : 0.02}
           d3VelocityDecay={0.3} // Lower viscosity for smoother dragging
-          cooldownTicks={100}
         />
       </div>
     )
@@ -580,14 +623,14 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
           <ForceGraph2D
             ref={graphRef}
             width={dimensions.width - 260}
-            height={dimensions.height - 60}
+            height={dimensions.height - 32}
             graphData={graphData}
           nodeCanvasObject={paintNode}
           onNodeHover={(node, prev) => {
             setHoverNode(node)
           }}
           nodePointerAreaPaint={(node, color, ctx) => {
-            const sizeMult = settings.graphNodeSize || 1.5
+            const sizeMult = useSettingsStore.getState().settings.graphNodeSize || 1.5
             const r = (node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2) * sizeMult
             ctx.fillStyle = color
             ctx.beginPath()

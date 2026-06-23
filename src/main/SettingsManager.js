@@ -31,6 +31,15 @@ class SettingsManager {
       deepSeekKey: null,
       deepSeekModel: 'deepseek-chat',
       huggingFaceKey: null,
+      // Graph Settings
+      graphTheme: 'default',
+      graphNodeSize: 1.5,
+      graphHideTags: false,
+      graphHideGhosts: false,
+      graphHideOrphans: false,
+      graphCenterForce: 0.05,
+      graphRepelForce: 0.3,
+      graphLinkForce: 0.05,
       // Window bounds
       windowBounds: { width: 900, height: 700, x: null, y: null }
     }

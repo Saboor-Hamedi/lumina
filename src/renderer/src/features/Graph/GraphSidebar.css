@@ -114,3 +114,34 @@
     transform: rotate(360deg);
   }
 }
+
+/* Graph Sliders */
+.graph-slider {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  margin: 6px 0;
+}
+
+.graph-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.graph-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text-accent, #40bafa);
+  margin-top: -5px;
+  border: none;
+}
+
+.graph-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
