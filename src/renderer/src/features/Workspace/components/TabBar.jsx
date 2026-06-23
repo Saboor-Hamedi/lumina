@@ -138,7 +138,8 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
         
         // If the tab is partially or fully out of view to the left or right, scroll it
         if (tabRect.left < containerRect.left || tabRect.right > containerRect.right) {
-          activeTabElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+          const scrollLeftTarget = tabbarRef.current.scrollLeft + (tabRect.left - containerRect.left) - (containerRect.width / 2) + (tabRect.width / 2)
+          tabbarRef.current.scrollTo({ left: scrollLeftTarget, behavior: 'smooth' })
         }
       }
     })
@@ -228,13 +229,13 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
     <DndContext sensors={sensors} onDragEnd={handleDragEnd} collisionDetection={closestCenter} modifiers={[restrictToHorizontalAxis]}>
       <div
         className="tabbar-outer-wrapper"
-        style={{ display: 'flex', width: '100%', position: 'relative', flexShrink: 0 }}
+        style={{ display: 'flex', width: '100%', position: 'relative', flexShrink: 0, minWidth: 0 }}
       >
         <div
           className="workspace-tabbar"
           ref={tabbarRef}
           onWheel={handleWheel}
-          style={{ flex: 1, paddingLeft: onToggleLeftSidebar ? '44px' : '0' }}
+          style={{ flex: 1, paddingLeft: onToggleLeftSidebar ? '44px' : '0', minWidth: 0 }}
         >
           <SortableContext items={openTabs} strategy={horizontalListSortingStrategy}>
             <div className="tabs-container" style={{ display: 'flex', height: '100%', alignItems: 'stretch' }}>

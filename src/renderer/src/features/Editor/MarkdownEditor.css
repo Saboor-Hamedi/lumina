@@ -705,8 +705,9 @@
   align-items: center;
   background: var(--bg-editor); /* Match tabbar background for seamless look */
   z-index: 100;
-  padding-left: 8px;
   -webkit-app-region: no-drag;
+  padding-left: 8px;
+  flex-shrink: 0;
 }
 
 .window-controls-float .control-btn {
