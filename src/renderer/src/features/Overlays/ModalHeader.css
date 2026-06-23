@@ -38,7 +38,7 @@
 }
 
 .modal-close {
-  width: 46px; /* Native Windows window control width */
+  width: 32px;
   height: 100%;
   display: flex;
   align-items: center;

@@ -15,7 +15,7 @@ const GraphThemeSelector = ({ variant = 'button', size = 'medium' }) => {
   const { settings, updateSetting } = useSettingsStore()
   const graphTheme = settings.graphTheme || 'default'
 
-  const graphThemes = ['default', 'space', 'nebula', 'frost', 'neural']
+  const graphThemes = ['default', 'space', 'nebula', 'ocean', 'sunset', 'neural']
 
   const rotateTheme = () => {
     const currentIndex = graphThemes.indexOf(graphTheme)
@@ -28,7 +28,8 @@ const GraphThemeSelector = ({ variant = 'button', size = 'medium' }) => {
       default: 'Default',
       space: 'Space',
       nebula: 'Nebula',
-      frost: 'Frost',
+      ocean: 'Ocean',
+      sunset: 'Sunset',
       neural: 'Neural'
     }
     return labels[theme] || theme

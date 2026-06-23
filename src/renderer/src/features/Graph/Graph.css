@@ -23,7 +23,7 @@
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  border-radius: 5px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -56,15 +56,19 @@
 }
 
 .nexus-embedded-graph[data-graph-theme='nebula'] {
-  background: #0a0a0a !important;
+  background: linear-gradient(135deg, #1f0b3b, #451b6e) !important;
 }
 
-.nexus-embedded-graph[data-graph-theme='frost'] {
-  background: #f8fafc !important;
+.nexus-embedded-graph[data-graph-theme='ocean'] {
+  background: linear-gradient(135deg, #02111d, #073a5a) !important;
+}
+
+.nexus-embedded-graph[data-graph-theme='sunset'] {
+  background: linear-gradient(135deg, #2a0826, #6b1432) !important;
 }
 
 .nexus-embedded-graph[data-graph-theme='neural'] {
-  background: var(--bg-app) !important;
+  background: linear-gradient(135deg, #0a192f, #112240) !important;
 }
 
 /* Mode-specific styling for embedded graph */
@@ -95,7 +99,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 46px;
+  width: 32px;
   height: 100%;
   background: transparent;
   border: none;
@@ -166,15 +170,19 @@
 }
 
 .nexus-container[data-graph-theme='nebula'] .nexus-body {
-  background: #0a0a0a;
+  background: linear-gradient(135deg, #1f0b3b, #451b6e);
 }
 
-.nexus-container[data-graph-theme='frost'] .nexus-body {
-  background: #f8fafc;
+.nexus-container[data-graph-theme='ocean'] .nexus-body {
+  background: linear-gradient(135deg, #02111d, #073a5a);
+}
+
+.nexus-container[data-graph-theme='sunset'] .nexus-body {
+  background: linear-gradient(135deg, #2a0826, #6b1432);
 }
 
 .nexus-container[data-graph-theme='neural'] .nexus-body {
-  background: var(--bg-app);
+  background: linear-gradient(135deg, #0a192f, #112240);
 }
 
 /* Mode-specific styling for modal container */

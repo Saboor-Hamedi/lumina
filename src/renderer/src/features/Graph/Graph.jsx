@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
-import { X, Square, Copy, Network, RefreshCw, Layers } from 'lucide-react'
+import { X, Square, Copy, Network, RefreshCw, Layers, Search } from 'lucide-react'
 import ForceGraph2D from 'react-force-graph-2d'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useAIStore } from '../../core/store/useAIStore'
@@ -9,6 +9,7 @@ import { forceRadial, forceManyBody, forceCollide, forceCenter, forceX, forceY }
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import ModalHeader from '../Overlays/ModalHeader'
 import GraphThemeSelector from './GraphThemeSelector'
+import GraphSidebar from './GraphSidebar'
 import './Graph.css'
 
 /**
@@ -27,6 +28,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   const { embeddingsCache } = useAIStore()
   const graphTheme = settings.graphTheme || 'default'
   const [hoverNode, setHoverNode] = useState(null)
+  const [searchQuery, setSearchQuery] = useState('')
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 })
   const [isMaximized, setIsMaximized] = useState(false)
   const [isSpinning, setIsSpinning] = useState(false)
@@ -40,6 +42,52 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   const handleToggleMaximize = useCallback(() => {
     setIsMaximized((prev) => !prev)
   }, [])
+
+  const modalPos = useRef({ x: 0, y: 0 })
+  const isDraggingModal = useRef(false)
+  const dragStart = useRef({ x: 0, y: 0 })
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isDraggingModal.current || isMaximized) return
+      
+      const newX = e.clientX - dragStart.current.x
+      const newY = e.clientY - dragStart.current.y
+      modalPos.current = { x: newX, y: newY }
+      
+      if (containerRef.current) {
+        containerRef.current.style.transform = `translate(${newX}px, ${newY}px)`
+      }
+    }
+    
+    const handleMouseUp = () => {
+      isDraggingModal.current = false
+      if (containerRef.current && !isMaximized) {
+        containerRef.current.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+      }
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isMaximized])
+
+  const handleModalHeaderMouseDown = (e) => {
+    if (isMaximized) return
+    isDraggingModal.current = true
+    
+    if (containerRef.current) {
+      containerRef.current.style.transition = 'none'
+    }
+
+    dragStart.current = {
+      x: e.clientX - modalPos.current.x,
+      y: e.clientY - modalPos.current.y
+    }
+  }
 
   // Localized Escape Handler (only for modal mode)
   useKeyboardShortcuts({
@@ -302,17 +350,23 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       const sizeMult = settings.graphNodeSize || 1.5
       const r = (node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2) * sizeMult
 
+      const q = searchQuery.trim().toLowerCase()
+      const isSearchMatch = q !== '' && label.toLowerCase().includes(q)
+      const isSearchDimmed = q !== '' && !isSearchMatch
+
       // High-Performance Node Circle Glow (Replaces expensive shadowBlur)
-      if (isActive || isHovered) {
+      if (isActive || isHovered || isSearchMatch) {
         ctx.beginPath()
         ctx.arc(node.x, node.y, r + 4, 0, 2 * Math.PI, false)
-        ctx.fillStyle = isActive ? 'rgba(255, 170, 0, 0.3)' : 'rgba(64, 186, 250, 0.3)'
+        ctx.fillStyle = isSearchMatch ? 'rgba(255, 255, 255, 0.4)' : isActive ? 'rgba(255, 170, 0, 0.3)' : 'rgba(64, 186, 250, 0.3)'
         ctx.fill()
       }
 
-      // Draw Neighbor Lines (Dim non-neighbors)
-      if (hoverNode && hoverNode !== node) {
-        if (!hoverNeighbors.has(node.id)) ctx.globalAlpha = 0.15
+      // Dimming logic
+      if (isSearchDimmed && !isHovered && !isActive) {
+        ctx.globalAlpha = 0.05
+      } else if (hoverNode && hoverNode !== node && !hoverNeighbors.has(node.id)) {
+        ctx.globalAlpha = 0.15
       }
 
       ctx.beginPath()
@@ -327,8 +381,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       ctx.font = `${fontSize}px Inter, sans-serif`
 
       let shouldShow = false
-      const showTextsSetting =
-        settings.graphShowTexts !== false && settings.graphShowTexts !== 'false'
+      const showTextsSetting = settings.graphShowTexts !== false && settings.graphShowTexts !== 'false'
 
       if (showTextsSetting) {
         if (isActive || isHovered) shouldShow = true
@@ -341,14 +394,19 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
         ctx.textBaseline = 'top'
 
         // Fill
-        ctx.fillStyle = isActive ? '#ffaa00' : isHovered ? '#fff' : 'rgba(255, 255, 255, 0.9)'
+        if (isSearchDimmed && !isHovered) {
+          ctx.globalAlpha = 0.1
+        }
+        ctx.fillStyle = isSearchMatch ? '#ffffff' : isActive ? '#ffaa00' : isHovered ? '#fff' : 'rgba(255, 255, 255, 0.9)'
         ctx.fillText(label, node.x, node.y + r + 2)
+        ctx.globalAlpha = 1.0
       }
     },
     [
       selectedSnippet,
       hoverNode,
       hoverNeighbors,
+      searchQuery,
       settings.graphNodeSize,
       settings.graphShowTexts,
       settings.graphNodeColor
@@ -439,30 +497,29 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       className={`nexus-container modal-container${isMaximized ? ' maximized' : ''}`}
       onClick={(e) => e.stopPropagation()}
       data-graph-theme={graphTheme}
+      style={{ 
+        flexDirection: 'row',
+        transform: isMaximized ? 'none' : `translate(${modalPos.current.x}px, ${modalPos.current.y}px)`,
+        transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)' // Will be overridden via ref during drag
+      }}
     >
-      <ModalHeader
-        title="Graph Nexus"
-        onClose={onClose}
-        right={
-          <>
-            <button
-              className="win-btn"
-              onClick={() => {
-                const themes = ['default', 'space', 'nebula', 'frost', 'neural']
-                const next = themes[(themes.indexOf(graphTheme) + 1) % themes.length]
-                useSettingsStore.getState().updateSetting('graphTheme', next)
-              }}
-              title="Cycle Space Theme"
-            >
-              <Layers size={14} />
-            </button>
-            <button
-              className={`win-btn ${isSpinning ? 'active' : ''}`}
-              onClick={() => setIsSpinning(!isSpinning)}
-              title={isSpinning ? 'Stop Rotation' : 'Auto Rotate'}
-            >
-              <RefreshCw size={14} className={isSpinning ? 'spin-icon' : ''} />
-            </button>
+      <GraphSidebar 
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        isSpinning={isSpinning}
+        setIsSpinning={setIsSpinning}
+        graphTheme={graphTheme}
+        onHeaderMouseDown={handleModalHeaderMouseDown}
+        isMaximized={isMaximized}
+      />
+
+      <div className="nexus-main">
+        <ModalHeader
+          title=""
+          onClose={onClose}
+          onMouseDown={handleModalHeaderMouseDown}
+          style={{ cursor: isMaximized ? 'default' : 'grab' }}
+          right={
             <button
               className="win-btn"
               onClick={handleToggleMaximize}
@@ -474,16 +531,15 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 <Square size={12} strokeWidth={2} />
               )}
             </button>
-          </>
-        }
-      />
+          }
+        />
 
-      <div className="nexus-body">
-        <ForceGraph2D
-          ref={graphRef}
-          width={dimensions.width}
-          height={dimensions.height - 60}
-          graphData={graphData}
+        <div className="nexus-body">
+          <ForceGraph2D
+            ref={graphRef}
+            width={dimensions.width - 260}
+            height={dimensions.height - 60}
+            graphData={graphData}
           nodeCanvasObject={paintNode}
           onNodeHover={(node, prev) => {
             setHoverNode(node)
@@ -521,6 +577,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
           d3VelocityDecay={0.3} // Lower viscosity for smoother, more fluid dragging
           cooldownTicks={150}
         />
+      </div>
       </div>
     </div>
   )
