@@ -10,6 +10,7 @@ import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import ModalHeader from '../Overlays/ModalHeader'
 import GraphThemeSelector from './GraphThemeSelector'
 import GraphSidebar from './GraphSidebar'
+import GraphMiniMap from './GraphMiniMap'
 import './Graph.css'
 
 /**
@@ -38,7 +39,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   const [isMaximized, setIsMaximized] = useState(() => {
     return localStorage.getItem('graph-modal-maximized') === 'true'
   })
-  const [isSpinning, setIsSpinning] = useState(true)
+  
+  const isSpinning = useSettingsStore(s => s.settings.graphAnimate ?? true)
   const graphRef = useRef()
   const containerRef = useRef()
   const [dimensions, setDimensions] = useState({
@@ -260,9 +262,11 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             graphRef.current.zoom(1.5, 400)
           }
         } else {
-          // Set a comfortable fixed initial zoom and explicitly center
-          graphRef.current.centerAt(0, 0, 800)
-          graphRef.current.zoom(0.6, 800)
+          // Allow the graph to explode naturally from the center without hacking the initial zoom
+          // After 2.5 seconds (when the explosion starts to settle), smoothly zoom out to perfectly frame the final graph
+          setTimeout(() => {
+            if (graphRef.current) graphRef.current.zoomToFit(2500, 100)
+          }, 2500)
         }
       }, 100) // Small delay to ensure WebGL engine is ready
     }
@@ -296,7 +300,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
           // Update force parameters instantly
           fg.d3Force('custom_x').strength(centerForce)
           fg.d3Force('custom_y').strength(centerForce)
-          fg.d3Force('custom_charge').strength(-3000 * repelForce) // Massively scale repel for difference!
+          fg.d3Force('custom_charge').strength(-500 * repelForce) // Reduced from -3000 so orphans don't shoot to infinity
           
           fg.d3Force('custom_collide')
             .radius((d) => {
@@ -336,7 +340,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     // Apply initial forces
     fg.d3Force('custom_x').strength(centerForce)
     fg.d3Force('custom_y').strength(centerForce)
-    fg.d3Force('custom_charge').strength(-3000 * repelForce)
+    fg.d3Force('custom_charge').strength(-500 * repelForce)
     
     fg.d3Force('custom_collide')
       .radius((d) => {
@@ -571,6 +575,12 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
           d3AlphaDecay={isSpinning ? 0 : 0.02}
           d3VelocityDecay={0.3} // Lower viscosity for smoother dragging
         />
+        <GraphMiniMap 
+          graphRef={graphRef} 
+          graphData={graphData} 
+          mainWidth={dimensions.width} 
+          mainHeight={dimensions.height} 
+        />
       </div>
     )
   }
@@ -592,7 +602,6 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         isSpinning={isSpinning}
-        setIsSpinning={setIsSpinning}
         graphTheme={graphTheme}
         onHeaderMouseDown={handleModalHeaderMouseDown}
         isMaximized={isMaximized}
@@ -660,7 +669,12 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
           backgroundColor="transparent"
           d3AlphaDecay={isSpinning ? 0 : 0.02}
           d3VelocityDecay={0.3} // Lower viscosity for smoother, more fluid dragging
-          cooldownTicks={150}
+        />
+        <GraphMiniMap 
+          graphRef={graphRef} 
+          graphData={graphData} 
+          mainWidth={dimensions.width - 260} 
+          mainHeight={dimensions.height - 32} 
         />
       </div>
       </div>

@@ -3,7 +3,9 @@ import { Decoration, WidgetType, EditorView } from '@codemirror/view'
 import { StateField } from '@codemirror/state'
 import mermaid from 'mermaid'
 import { copyMermaidAsImage } from './copyMermaidAsImage'
-
+import React from 'react'
+import { createRoot } from 'react-dom/client'
+import ToolTip from '../../components/atoms/ToolTip'
 let mermaidIdCounter = 0
 
 class MermaidWidget extends WidgetType {
@@ -39,85 +41,82 @@ class MermaidWidget extends WidgetType {
       }
     })
 
-    // Action Buttons Container
+    // Action Buttons Container (Rendered via React to support ToolTip)
     const actionsWrap = document.createElement('div')
     actionsWrap.style.position = 'absolute'
     actionsWrap.style.top = '8px'
     actionsWrap.style.right = '8px'
-    actionsWrap.style.display = 'flex'
-    actionsWrap.style.gap = '8px'
     actionsWrap.style.zIndex = '10'
+    wrap.appendChild(actionsWrap)
 
-    // Edit Button (kept for visual affordance)
-    const editBtn = document.createElement('div')
-    editBtn.className = 'mermaid-edit-btn'
-    editBtn.style.position = 'static' // Override absolute from CSS
-    editBtn.innerHTML = `&lt;/&gt;`
-    editBtn.title = 'Edit Code'
-    if (view.state.readOnly) {
-      editBtn.style.display = 'none'
-    }
+    const root = createRoot(actionsWrap)
+    wrap._reactRoot = root
 
-    editBtn.addEventListener('click', (e) => {
-      if (view.state.readOnly) return
-      e.preventDefault()
-      e.stopPropagation()
-      const pos = view.posAtDOM(wrap)
-      if (pos !== null) {
-        // Move cursor just inside the fenced block to trigger the edit mode
-        view.dispatch({
-          selection: { anchor: pos + 1 },
-          scrollIntoView: true
-        })
-        view.focus()
-      }
-    })
+    const ActionsOverlay = () => {
+      const [copied, ReactSetCopied] = React.useState(false)
 
-    // Copy Image Button
-    const copyBtn = document.createElement('div')
-    copyBtn.className = 'mermaid-edit-btn' // Reuse styling
-    copyBtn.style.position = 'static' // Override absolute
-    copyBtn.style.display = 'flex'
-    copyBtn.style.alignItems = 'center'
-    copyBtn.style.justifyContent = 'center'
-    // SVG icon for copy image
-    copyBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`
-    copyBtn.title = 'Copy as Image'
-
-    copyBtn.addEventListener('click', async (e) => {
-      e.preventDefault()
-      e.stopPropagation()
-      const svgEl = wrap.querySelector('svg')
-      if (svgEl) {
-        try {
-          copyBtn.style.opacity = '0.5'
-          await copyMermaidAsImage(svgEl)
-          const oldHtml = copyBtn.innerHTML
-          const oldColor = copyBtn.style.color
-          const oldBorder = copyBtn.style.borderColor
-          
-          copyBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><polyline points="20 6 9 17 4 12"></polyline></svg>`
-          copyBtn.style.color = '#4ade80'
-          copyBtn.style.borderColor = '#4ade80'
-          copyBtn.style.opacity = '1'
-          
-          setTimeout(() => {
-            copyBtn.innerHTML = oldHtml
-            copyBtn.style.color = oldColor
-            copyBtn.style.borderColor = oldBorder
-          }, 1500)
-        } catch (err) {
-          console.error('Failed to copy mermaid image', err)
-          copyBtn.style.opacity = '1'
-          window.dispatchEvent(new CustomEvent('show-toast', { 
-            detail: { message: `Failed to copy diagram: ${err.message || 'Tainted canvas'}`, type: 'error' } 
-          }))
+      const handleEdit = (e) => {
+        if (view.state.readOnly) return
+        e.preventDefault()
+        e.stopPropagation()
+        const pos = view.posAtDOM(wrap)
+        if (pos !== null) {
+          view.dispatch({ selection: { anchor: pos + 1 }, scrollIntoView: true })
+          view.focus()
         }
       }
-    })
 
-    actionsWrap.appendChild(copyBtn)
-    actionsWrap.appendChild(editBtn)
+      const handleCopy = async (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        const svgEl = wrap.querySelector('svg')
+        if (svgEl) {
+          try {
+            await copyMermaidAsImage(svgEl)
+            ReactSetCopied(true)
+            setTimeout(() => ReactSetCopied(false), 1500)
+          } catch (err) {
+            console.error('Failed to copy mermaid image', err)
+            window.dispatchEvent(new CustomEvent('show-toast', { 
+              detail: { message: `Failed to copy diagram: ${err.message || 'Tainted canvas'}`, type: 'error' } 
+            }))
+          }
+        }
+      }
+
+      const copyIcon = React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: 14, height: 14, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", style: { display: 'block' } },
+        React.createElement('rect', { x: 3, y: 3, width: 18, height: 18, rx: 2, ry: 2 }),
+        React.createElement('circle', { cx: 8.5, cy: 8.5, r: 1.5 }),
+        React.createElement('polyline', { points: "21 15 16 10 5 21" })
+      )
+
+      const checkIcon = React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: 14, height: 14, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", style: { display: 'block' } },
+        React.createElement('polyline', { points: "20 6 9 17 4 12" })
+      )
+
+      const editBtn = React.createElement(ToolTip, { text: 'Edit Code', position: 'top' },
+        React.createElement('div', { className: 'mermaid-edit-btn', style: { position: 'static' }, onClick: handleEdit }, '</>')
+      )
+
+      const copyBtn = React.createElement(ToolTip, { text: 'Copy as Image', position: 'top' },
+        React.createElement('div', { 
+          className: 'mermaid-edit-btn', 
+          style: { 
+            position: 'static', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: copied ? '#4ade80' : undefined,
+            borderColor: copied ? '#4ade80' : undefined
+          }, 
+          onClick: handleCopy 
+        }, copied ? checkIcon : copyIcon)
+      )
+
+      return React.createElement('div', { style: { display: 'flex', gap: '8px' } }, 
+        view.state.readOnly ? null : editBtn,
+        copyBtn
+      )
+    }
+
+    root.render(React.createElement(ActionsOverlay))
 
     const scrollWrap = document.createElement('div')
     scrollWrap.className = 'mermaid-scroll-wrap'
@@ -150,6 +149,13 @@ class MermaidWidget extends WidgetType {
 
     renderMermaidToElement(contentDiv, this.code, id)
     return wrap
+  }
+
+  destroy(dom) {
+    if (dom._reactRoot) {
+      dom._reactRoot.unmount()
+      dom._reactRoot = null
+    }
   }
 }
 

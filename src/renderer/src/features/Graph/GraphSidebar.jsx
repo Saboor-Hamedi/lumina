@@ -4,7 +4,7 @@ import { useSettingsStore } from '../../core/store/useSettingsStore'
 import './GraphSidebar.css'
 import '../../assets/toggle-theme.css'
 
-const GraphSidebar = ({ searchQuery, setSearchQuery, isSpinning, setIsSpinning, graphTheme, onHeaderMouseDown, isMaximized }) => {
+const GraphSidebar = ({ searchQuery, setSearchQuery, graphTheme, onHeaderMouseDown, isMaximized }) => {
   const { settings, updateSetting } = useSettingsStore()
 
   return (
@@ -173,9 +173,9 @@ const GraphSidebar = ({ searchQuery, setSearchQuery, isSpinning, setIsSpinning, 
         }}
       >
         <button
-          className={`theme-toggle ${isSpinning ? 'active' : ''}`}
-          title={isSpinning ? 'Stop Rotation' : 'Auto Rotate'}
-          onClick={() => setIsSpinning(!isSpinning)}
+          className={`theme-toggle ${settings.graphAnimate !== false ? 'active' : ''}`}
+          title={settings.graphAnimate !== false ? 'Stop Rotation' : 'Auto Rotate'}
+          onClick={() => updateSetting('graphAnimate', settings.graphAnimate === false ? true : false)}
           style={{
             width: '24px',
             height: '24px',
@@ -188,7 +188,7 @@ const GraphSidebar = ({ searchQuery, setSearchQuery, isSpinning, setIsSpinning, 
             justifyContent: 'center'
           }}
         >
-          <RefreshCw size={12} className={isSpinning ? 'spin-icon' : ''} color={isSpinning ? 'var(--text-accent)' : 'var(--text-muted)'} />
+          <RefreshCw size={12} className={settings.graphAnimate !== false ? 'spin-icon' : ''} color={settings.graphAnimate !== false ? 'var(--text-accent)' : 'var(--text-muted)'} />
         </button>
       </div>
     </div>
