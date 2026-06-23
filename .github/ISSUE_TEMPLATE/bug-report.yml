@@ -1,0 +1,75 @@
+name: bug report
+description: report a bug to help us improve
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        thanks for taking the time to fill out this bug report.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: describe the bug
+      description: a clear and concise description of what the bug is.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: steps to reproduce
+      description: how can we reproduce this?
+      placeholder: |
+        1. go to '...'
+        2. click on '...'
+        3. scroll down to '...'
+        4. see error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: expected behavior
+      description: what did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: actual behavior
+      description: what actually happened?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: area
+      description: which part of the app is affected?
+      options:
+        - editor / codemirror
+        - ai / chat
+        - vault / file management
+        - knowledge graph
+        - ui / theming
+        - performance
+        - other
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: os
+      description: what os are you on?
+      placeholder: e.g. windows 11, macOS 14, ubuntu 24.04
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: relevant log output
+      description: paste any relevant console output or error messages (auto-coded into a code block).
+      render: shell
