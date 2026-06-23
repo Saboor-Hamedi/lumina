@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useDeferredValue } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Search,
   FileText,
@@ -426,7 +427,7 @@ const CommandPalette = React.memo(
 
     if (!isOpen) return null
 
-    return (
+    return createPortal(
       <div className="command-palette-overlay" onClick={onClose}>
         <div className="command-palette-container" onClick={(e) => e.stopPropagation()}>
           <div className="palette-input-wrap">
@@ -487,7 +488,8 @@ const CommandPalette = React.memo(
             </div>
           </div>
         </div>
-      </div>
+      </div>,
+      document.body
     )
   }
 )

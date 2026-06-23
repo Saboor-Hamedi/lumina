@@ -702,16 +702,12 @@
 
 /* Floating Window Controls in TabBar */
 .window-controls-float {
-  position: absolute;
-  top: 0;
-  right: 0;
   height: 32px;
   display: flex;
   align-items: center;
-  background: var(--bg-app);
+  background: var(--bg-editor); /* Match tabbar background for seamless look */
   z-index: 100;
   padding: 0 8px;
-  border-bottom-left-radius: 6px;
   -webkit-app-region: no-drag;
 }
 
@@ -1512,6 +1508,7 @@
   max-width: 500px;
   min-width: 320px;
   width: max-content;
+  z-index: var(--z-overlay, 1000);
   backdrop-filter: blur(24px);
   pointer-events: auto;
   /* ENABLED SCROLLING */
@@ -1817,7 +1814,7 @@
   /* margin: 16px 0; */
   background-color: var(--bg-panel);
   /* border-radius: 12px; */
-  border: 1px solid var(--border-card);
+  border: 1px solid transparent;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.08);
   transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease, border-color 0.2s ease;
   min-height: 80px;

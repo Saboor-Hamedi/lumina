@@ -881,6 +881,8 @@ const MarkdownEditor = React.memo(
 
         <StatusBar
           wordCount={snippet?.code ? snippet.code.trim().split(/\s+/).filter(Boolean).length : 0}
+          extension={snippet?.title && snippet.title.includes('.') ? snippet.title.split('.').pop() : 'md'}
+          onToggleInspector={onToggleInspector}
           onToggleExplorerModal={onToggleExplorerModal}
           onSettingsClick={onSettingsClick}
           onThemeClick={onThemeClick}

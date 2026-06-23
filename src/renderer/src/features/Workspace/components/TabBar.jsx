@@ -122,10 +122,33 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
   // Auto-scroll to active tab when it changes
   useEffect(() => {
     if (!tabbarRef.current || !activeTabId) return
-    const activeTab = tabbarRef.current.querySelector('.workspace-tab.active')
-    if (activeTab) {
-      activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
-    }
+    
+    // Use requestAnimationFrame to ensure DOM is updated and painted
+    requestAnimationFrame(() => {
+      if (!tabbarRef.current) return
+      const activeTab = tabbarRef.current.querySelector('.workspace-tab.active')
+      if (activeTab) {
+        const container = tabbarRef.current
+        const tabRect = activeTab.getBoundingClientRect()
+        const containerRect = container.getBoundingClientRect()
+        
+        // WindowControls is ~160px wide on the right
+        const rightOffset = 160
+        // Left toggle is ~44px wide on the left
+        const leftOffset = 44
+        
+        // Check if tab is hidden on the right
+        if (tabRect.right > containerRect.right - rightOffset) {
+          const scrollAmount = tabRect.right - (containerRect.right - rightOffset) + 20 // 20px extra padding
+          container.scrollBy({ left: scrollAmount, behavior: 'smooth' })
+        } 
+        // Check if tab is hidden on the left
+        else if (tabRect.left < containerRect.left + leftOffset) {
+          const scrollAmount = (containerRect.left + leftOffset) - tabRect.left + 20 // 20px extra padding
+          container.scrollBy({ left: -scrollAmount, behavior: 'smooth' })
+        }
+      }
+    })
   }, [activeTabId])
 
   // O(1) Snippet Lookup Map for Performance
@@ -207,7 +230,7 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
       >
         <div className="workspace-tabbar" ref={tabbarRef} style={{ flex: 1 }}>
           <SortableContext items={openTabs} strategy={horizontalListSortingStrategy}>
-            <div className="tabs-container" style={{ paddingLeft: onToggleLeftSidebar ? '44px' : '0', paddingRight: '160px' }}>
+            <div className="tabs-container" style={{ paddingLeft: onToggleLeftSidebar ? '44px' : '0' }}>
               {openTabs.map((id) => {
                 const snippet = snippetMap.get(id)
                 if (!snippet) return null

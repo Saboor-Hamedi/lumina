@@ -36,7 +36,7 @@
 }
 
 .outline-item:hover {
-  background: var(--bg-hover);
+  background: var(--bg-active);
   color: var(--text-primary);
 }
 

@@ -24,7 +24,6 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
     hoverCard = document.createElement('div')
     hoverCard.className = 'cm-wiki-hover'
     hoverCard.style.position = 'absolute'
-    hoverCard.style.zIndex = '999999'
 
     // Content Wrap (the whole card is now one seamless box)
     const contentWrap = document.createElement('div')

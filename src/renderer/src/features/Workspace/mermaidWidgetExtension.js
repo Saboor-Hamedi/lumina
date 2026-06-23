@@ -193,7 +193,7 @@ export function renderMermaidToElement(container, code, uniqueId) {
           nodeBorder: accent,
           nodeTextColor: accent,
           clusterBkg: 'transparent',
-          clusterBorder: accent,
+          clusterBorder: 'transparent',
           edgeLabelBackground: bgPanel,
 
           // Sequence Diagrams
@@ -226,8 +226,8 @@ export function renderMermaidToElement(container, code, uniqueId) {
           }
           .cluster rect {
             fill: transparent !important;
-            stroke: ${accent} !important;
-            stroke-width: 1px !important;
+            stroke: transparent !important;
+            stroke-width: 0px !important;
           }
         `
       })
