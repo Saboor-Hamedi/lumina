@@ -1,21 +1,18 @@
-# Security Policy
+# security policy
 
-## Supported Versions
+## supported versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+only the latest release receives security updates.
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+| version | supported |
+|---------|-----------|
+| 1.0.x   | yes |
+| < 1.0   | no |
 
-## Reporting a Vulnerability
+## reporting a vulnerability
 
-Use this section to tell people how to report a vulnerability.
+report vulnerabilities by opening a [security advisory](https://github.com/Saboor-Hamedi/lumina/security/advisories/new) or emailing directly.
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+do not open public issues for security vulnerabilities.
+
+you can expect an initial response within 72 hours. if the vulnerability is accepted, a fix will be released as a patch version. if declined, a rationale will be provided.
