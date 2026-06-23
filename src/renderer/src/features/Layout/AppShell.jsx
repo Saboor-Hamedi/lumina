@@ -543,7 +543,6 @@ const AppShell = () => {
                       onSettingsClick={() => setShowSettings(true)}
                       onThemeClick={() => setShowThemeModal(true)}
                       onGraphClick={() => setShowGraph(true)}
-                      onDailyNoteClick={handleNew}
                     />
                   </ErrorBoundary>
                 </div>
@@ -582,7 +581,6 @@ const AppShell = () => {
               onSettingsClick={() => setShowSettings(true)}
               onThemeClick={() => setShowThemeModal(true)}
               onGraphClick={() => setShowGraph(true)}
-              onDailyNoteClick={handleNew}
             />
           </ErrorBoundary>
         )}

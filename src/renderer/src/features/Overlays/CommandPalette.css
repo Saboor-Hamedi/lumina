@@ -6,7 +6,7 @@
   align-items: flex-start;
   justify-content: center;
   padding-top: 15vh;
-  z-index: var(--z-modal);
+  z-index: 9999;
   animation: fadeIn 0.1s ease-out;
   backdrop-filter: blur(4px);
 }
