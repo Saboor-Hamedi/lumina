@@ -110,64 +110,74 @@ export const buildGraphData = (snippets) => {
 }
 
 export const buildSemanticLinks = (nodes, links, snippets, embeddingsCache) => {
-  // Safety check: ensure embeddingsCache exists and is an object
-  // Also check if it has any entries (empty object means no embeddings available)
   if (
     !embeddingsCache ||
     typeof embeddingsCache !== 'object' ||
     Object.keys(embeddingsCache).length === 0
   ) {
-    // Silently return empty array - this is expected when embeddings are handled by main process
     return []
   }
 
-  // We modify the existing links array in-place or return new ones.
   const semanticLinks = []
-  const THRESHOLD = 0.82 // Increased significantly to clean up the hairball
+  const THRESHOLD = 0.82
 
-  // We only compare existing Real Nodes (snippets)
   const realNodes = nodes.filter((n) => n.group === 'note')
 
+  // 1. Pre-normalize embeddings into highly optimized Float32Arrays
+  // This completely eliminates square roots, divisions, and array allocations in the O(N^2) loop
+  const normalizedCache = new Map()
   for (let i = 0; i < realNodes.length; i++) {
+    const snipId = realNodes[i].snippetId
+    if (snipId && embeddingsCache[snipId]) {
+      const vec = embeddingsCache[snipId]
+      let magSq = 0
+      for (let k = 0; k < vec.length; k++) magSq += vec[k] * vec[k]
+      const mag = Math.sqrt(magSq)
+      
+      const normVec = new Float32Array(vec.length)
+      if (mag > 0) {
+        for (let k = 0; k < vec.length; k++) normVec[k] = vec[k] / mag
+      }
+      normalizedCache.set(realNodes[i].id, normVec)
+    }
+  }
+
+  // 2. Pre-index existing links into a Set for O(1) lookups
+  // This eliminates the deadly links.some() array traversal inside the O(N^2) inner loop
+  const linkSet = new Set()
+  for (let i = 0; i < links.length; i++) {
+    const l = links[i]
+    linkSet.add(`${l.source}|${l.target}`)
+    linkSet.add(`${l.target}|${l.source}`)
+  }
+
+  // 3. Ultra-fast inner loop
+  for (let i = 0; i < realNodes.length; i++) {
+    const nodeA = realNodes[i]
+    const vecA = normalizedCache.get(nodeA.id)
+    if (!vecA) continue
+
+    const vecLength = vecA.length
+
     for (let j = i + 1; j < realNodes.length; j++) {
-      const nodeA = realNodes[i]
       const nodeB = realNodes[j]
+      const vecB = normalizedCache.get(nodeB.id)
+      if (!vecB) continue
 
-      // Safety check: ensure snippetId exists before accessing embeddingsCache
-      if (!nodeA.snippetId || !nodeB.snippetId) continue
+      // Bare-metal dot product using Float32Arrays (V8 compiles this down to extremely fast machine code)
+      let score = 0
+      for (let k = 0; k < vecLength; k++) {
+        score += vecA[k] * vecB[k]
+      }
 
-      // Safety check: ensure embeddingsCache has the required keys
-      const vecA = embeddingsCache[nodeA.snippetId]
-      const vecB = embeddingsCache[nodeB.snippetId]
-
-      if (vecA && vecB) {
-        // Compute Cosine Sim inline for speed
-        let dot = 0,
-          magA = 0,
-          magB = 0
-        for (let k = 0; k < vecA.length; k++) {
-          dot += vecA[k] * vecB[k]
-          magA += vecA[k] * vecA[k]
-          magB += vecB[k] * vecB[k]
-        }
-        const score = dot / (Math.sqrt(magA) * Math.sqrt(magB))
-
-        if (score > THRESHOLD) {
-          // Check if explicit link already exists
-          const exists = links.some(
-            (l) =>
-              (l.source === nodeA.id && l.target === nodeB.id) ||
-              (l.source === nodeB.id && l.target === nodeA.id)
-          )
-
-          if (!exists) {
-            semanticLinks.push({
-              source: nodeA.id,
-              target: nodeB.id,
-              value: 0.2, // Weak pull
-              type: 'semantic' // Flag for dashed line
-            })
-          }
+      if (score > THRESHOLD) {
+        if (!linkSet.has(`${nodeA.id}|${nodeB.id}`)) {
+          semanticLinks.push({
+            source: nodeA.id,
+            target: nodeB.id,
+            value: 0.2,
+            type: 'semantic'
+          })
         }
       }
     }

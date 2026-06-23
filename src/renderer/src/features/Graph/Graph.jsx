@@ -169,12 +169,9 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
 
     const sizeMult = settings.graphNodeSize || 1.5
 
-    // Soft organic center force
-    fg.d3Force('center', forceCenter(0, 0))
-
-    // Galactic Core Gravity: Gently pull all nodes into a central mass, weakened to allow more spread
-    fg.d3Force('x', forceX(0).strength(0.005))
-    fg.d3Force('y', forceY(0).strength(0.005))
+    // Galactic Core Gravity: Weakened to barely pull at all
+    fg.d3Force('x', forceX(0).strength(0.001))
+    fg.d3Force('y', forceY(0).strength(0.001))
 
     // Galaxy Disc Structure: Forces nodes into a circular galaxy shape, widened and weakened
     // To make it look "hollow" (like a ring/donut), we ensure no node is allowed at radius 0
@@ -189,13 +186,13 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
         },
         0,
         0
-      ).strength(0.4)
+      ).strength(0.02) // Extremely soft pull so nodes drift
     )
 
-    // High repulsion to separate distinct clusters clearly
-    fg.d3Force('charge', forceManyBody().strength(-2000))
+    // Gentle repulsion to separate clusters (Obsidian uses very low values like -200 to -400)
+    fg.d3Force('charge', forceManyBody().strength(-300))
 
-    // Strict collisions that dynamically scale with the user's Node Size setting
+    // Very soft collisions so they slide past each other gently
     fg.d3Force(
       'collide',
       forceCollide()
@@ -203,11 +200,11 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
           const baseR = d.val ? Math.max(2, Math.sqrt(d.val) * 2.5) : 2
           return baseR * sizeMult + 40 // Increased physical gap to space them out heavily
         })
-        .strength(0.8)
-    ) // Slightly softer collisions
+        .strength(0.1)
+    )
 
-    // Elastic links to hold the constellations together inside the disc
-    if (fg.d3Force('link')) fg.d3Force('link').distance(180).strength(0.2)
+    // Extremely elastic links like a spiderweb
+    if (fg.d3Force('link')) fg.d3Force('link').distance(150).strength(0.05)
 
     // Reheat to apply new physical sizes
     fg.d3ReheatSimulation()
@@ -422,9 +419,13 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               if (s) onNavigate(s)
             }
           }}
+          onNodeDragEnd={(node) => {
+            node.fx = null
+            node.fy = null
+          }}
           backgroundColor="transparent"
           d3AlphaDecay={isSpinning ? 0 : 0.02}
-          d3VelocityDecay={0.8} // Higher viscosity makes dragging feel heavier and smoother
+          d3VelocityDecay={0.3} // Lower viscosity for smoother dragging
           cooldownTicks={100}
         />
       </div>
@@ -511,9 +512,13 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               if (s) onNavigate(s)
             }
           }}
+          onNodeDragEnd={(node) => {
+            node.fx = null
+            node.fy = null
+          }}
           backgroundColor="transparent"
           d3AlphaDecay={isSpinning ? 0 : 0.02}
-          d3VelocityDecay={0.8} // Higher viscosity to prevent the whole graph from violently shaking on drag
+          d3VelocityDecay={0.3} // Lower viscosity for smoother, more fluid dragging
           cooldownTicks={150}
         />
       </div>
