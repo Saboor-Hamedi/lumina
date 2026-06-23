@@ -34,6 +34,8 @@
   font-size: 12px;
   font-weight: 500;
   transition: all 0.2s;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .new-note-btn:hover {

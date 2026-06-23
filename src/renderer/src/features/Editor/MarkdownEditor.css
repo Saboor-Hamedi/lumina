@@ -281,7 +281,7 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow-x: auto; overflow-y: hidden;
   background: var(--bg-editor, var(--bg-app)) !important;
   --atomic-editor-selection-bg: rgba(64, 186, 250, 0.35) !important;
 
@@ -333,9 +333,7 @@
   background: var(--bg-editor);
   display: flex;
   align-items: stretch;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
+  overflow-x: auto; overflow-y: hidden;
   user-select: none;
   flex-shrink: 0;
   -webkit-app-region: drag; /* Allow frameless window dragging from tab bar */
@@ -382,7 +380,7 @@
 .workspace-tab.active {
   background: var(--bg-panel);
   color: var(--text-main);
-  font-weight: 500;
+  
   box-shadow: inset 0 0 0 1px var(--border-dim);
 }
 
@@ -412,7 +410,7 @@
   color: var(--text-accent) !important;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-weight: 500;
+  
   position: relative;
   display: inline !important;
 }
@@ -602,7 +600,7 @@
   gap: 8px;
   font-size: 11px;
   color: var(--text-faint);
-  font-weight: 500;
+  
   flex: 1;
   min-width: 0;
   /* Critical for truncation */
@@ -707,7 +705,7 @@
   align-items: center;
   background: var(--bg-editor); /* Match tabbar background for seamless look */
   z-index: 100;
-  padding: 0 8px;
+  padding-left: 8px;
   -webkit-app-region: no-drag;
 }
 
@@ -758,7 +756,7 @@
 .breadcrumb-active {
   color: var(--text-muted);
   white-space: nowrap;
-  overflow: hidden;
+  overflow-x: auto; overflow-y: hidden;
   text-overflow: ellipsis;
   flex: 1;
 }
@@ -1012,7 +1010,7 @@
   backdrop-filter: blur(20px);
   animation: nativeMenuAppear 0.15s cubic-bezier(0, 0, 0.2, 1);
   transform-origin: top right;
-  overflow: hidden;
+  overflow-x: auto; overflow-y: hidden;
 }
 
 @keyframes nativeMenuAppear {
@@ -1053,7 +1051,7 @@
 
 .menu-label {
   flex: 1;
-  font-weight: 500;
+  
 }
 
 .shortcut-label {
@@ -1146,7 +1144,7 @@
   /* very small padding */
   border-radius: 3px;
   font-size: 9px;
-  font-weight: 500;
+  
   border: 1px solid rgba(var(--text-accent-rgb), 0.15);
   transition: all 0.2s;
 }
@@ -1242,7 +1240,7 @@
   background: transparent;
   border: none;
   font-size: 10px;
-  font-weight: 500;
+  
   color: var(--text-faint);
   white-space: nowrap;
 }
@@ -1399,7 +1397,7 @@
   display: block;
   margin: 1.5em 0;
   border-radius: 8px;
-  overflow: hidden;
+  overflow-x: auto; overflow-y: hidden;
   border: 1px solid var(--border-dim);
   background: var(--bg-panel);
   max-width: fit-content;
@@ -1425,7 +1423,7 @@
 /* Image Alt Text in Live Preview */
 .cm-image-alt-text {
   color: var(--text-accent);
-  font-weight: 500;
+  
   background: rgba(var(--text-accent-rgb), 0.1);
   border-radius: 4px;
   padding: 0 4px;
@@ -1518,7 +1516,7 @@
   /* More compact */
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 8px 32px rgba(0, 0, 0, 0.16);
   padding: 8px;
-  overflow: hidden;
+  overflow-x: auto; overflow-y: hidden;
   user-select: text;
   animation: tooltipFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -1564,7 +1562,7 @@
 .wiki-hover-meta {
   font-size: 10px;
   color: var(--text-faint);
-  font-weight: 500;
+  
   opacity: 0.7;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -1848,7 +1846,7 @@
   gap: 12px;
   color: var(--text-faint);
   font-size: 14px;
-  font-weight: 500;
+  
   letter-spacing: 0.02em;
   animation: mermaid-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
@@ -1938,3 +1936,18 @@
 .lumina-callout-title {
   text-transform: capitalize;
 }
+
+.virtuoso-scroller-no-scrollbar::-webkit-scrollbar { display: none; }
+
+
+
+
+
+
+
+
+
+
+
+
+

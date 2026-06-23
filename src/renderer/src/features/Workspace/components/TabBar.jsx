@@ -7,6 +7,8 @@ import {
   horizontalListSortingStrategy,
   arrayMove
 } from '@dnd-kit/sortable'
+import { restrictToHorizontalAxis } from '@dnd-kit/modifiers'
+import { Virtuoso } from 'react-virtuoso'
 import { useVaultStore } from '../../../core/store/useVaultStore'
 import ContextMenu from '../../Overlays/ContextMenu'
 import PromptModal from '../../Overlays/PromptModal'
@@ -21,7 +23,7 @@ import ToolTip from '../../../components/atoms/ToolTip'
  */
 const SortableTabItem = memo(
   ({ id, snippet, isActive, isDirty, isPinned, onOpen, onClose, onContextMenu }) => {
-    const { attributes, listeners, setNodeRef, transform, isDragging } = useSortable({
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
       id,
       data: { snippet },
       disabled: isPinned
@@ -44,8 +46,8 @@ const SortableTabItem = memo(
           ref={setNodeRef}
           className={`workspace-tab ${isActive ? 'active' : ''} ${isDirty ? 'is-dirty' : ''} ${isDragging ? 'dragging' : ''} ${isPinned ? 'pinned' : ''}`}
         style={{
-          transform: transform?.x ? `translate3d(${transform.x}px, 0, 0)` : undefined,
-          transition: isDragging ? 'none' : 'transform 200ms ease, opacity 200ms ease',
+          transform: transform ? `translate3d(${transform.x}px, 0, 0)` : undefined,
+          transition: transition || undefined,
           opacity: isDragging ? 0.4 : 1
         }}
         {...attributes}
@@ -110,6 +112,7 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
   const [prompt, setPrompt] = useState(null)
   const [iconPickerId, setIconPickerId] = useState(null)
   const tabbarRef = useRef(null)
+  const virtuosoRef = useRef(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -126,30 +129,20 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
     // Use requestAnimationFrame to ensure DOM is updated and painted
     requestAnimationFrame(() => {
       if (!tabbarRef.current) return
-      const activeTab = tabbarRef.current.querySelector('.workspace-tab.active')
-      if (activeTab) {
-        const container = tabbarRef.current
-        const tabRect = activeTab.getBoundingClientRect()
-        const containerRect = container.getBoundingClientRect()
+      
+      const activeTabElement = tabbarRef.current.querySelector('.workspace-tab.active')
+      if (activeTabElement) {
+        // Scroll the tabbar so the active tab is visible
+        const containerRect = tabbarRef.current.getBoundingClientRect()
+        const tabRect = activeTabElement.getBoundingClientRect()
         
-        // WindowControls is ~160px wide on the right
-        const rightOffset = 160
-        // Left toggle is ~44px wide on the left
-        const leftOffset = 44
-        
-        // Check if tab is hidden on the right
-        if (tabRect.right > containerRect.right - rightOffset) {
-          const scrollAmount = tabRect.right - (containerRect.right - rightOffset) + 20 // 20px extra padding
-          container.scrollBy({ left: scrollAmount, behavior: 'smooth' })
-        } 
-        // Check if tab is hidden on the left
-        else if (tabRect.left < containerRect.left + leftOffset) {
-          const scrollAmount = (containerRect.left + leftOffset) - tabRect.left + 20 // 20px extra padding
-          container.scrollBy({ left: -scrollAmount, behavior: 'smooth' })
+        // If the tab is partially or fully out of view to the left or right, scroll it
+        if (tabRect.left < containerRect.left || tabRect.right > containerRect.right) {
+          activeTabElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
         }
       }
     })
-  }, [activeTabId])
+  }, [activeTabId, openTabs])
 
   // O(1) Snippet Lookup Map for Performance
   const snippetMap = useMemo(() => {
@@ -218,23 +211,36 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
     [openTabs, reorderTabs]
   )
 
+  // Handle mouse wheel scrolling for the tab bar
+  const handleWheel = useCallback((e) => {
+    if (!tabbarRef.current) return
+    // Only intercept vertical scrolls (deltaY) and convert to horizontal scroll
+    if (e.deltaY !== 0 && e.deltaX === 0) {
+      tabbarRef.current.scrollLeft += e.deltaY
+    }
+  }, [])
+
   if (openTabs.length === 0) {
     return <WindowControls isSidebarOpen={isSidebarOpen} onToggleSidebar={onToggleSidebar} />
   }
 
   return (
-    <DndContext sensors={sensors} onDragEnd={handleDragEnd} collisionDetection={closestCenter}>
+    <DndContext sensors={sensors} onDragEnd={handleDragEnd} collisionDetection={closestCenter} modifiers={[restrictToHorizontalAxis]}>
       <div
         className="tabbar-outer-wrapper"
-        style={{ display: 'flex', width: '100%', position: 'relative' }}
+        style={{ display: 'flex', width: '100%', position: 'relative', flexShrink: 0 }}
       >
-        <div className="workspace-tabbar" ref={tabbarRef} style={{ flex: 1 }}>
+        <div
+          className="workspace-tabbar"
+          ref={tabbarRef}
+          onWheel={handleWheel}
+          style={{ flex: 1, paddingLeft: onToggleLeftSidebar ? '44px' : '0' }}
+        >
           <SortableContext items={openTabs} strategy={horizontalListSortingStrategy}>
-            <div className="tabs-container" style={{ paddingLeft: onToggleLeftSidebar ? '44px' : '0' }}>
+            <div className="tabs-container" style={{ display: 'flex', height: '100%', alignItems: 'stretch' }}>
               {openTabs.map((id) => {
                 const snippet = snippetMap.get(id)
                 if (!snippet) return null
-
                 return (
                   <SortableTabItem
                     key={id}

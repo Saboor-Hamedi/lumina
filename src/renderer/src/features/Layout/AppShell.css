@@ -5,7 +5,7 @@
   overflow: hidden;
   background: var(--bg-app);
   position: relative;
-  border-radius: 10px; 
+  border-radius: 2px; 
 }
 
 .app-shell.is-resizing {

@@ -351,6 +351,11 @@ body {
   margin: 6px;
 }
 
+.menu-item.danger {
+  color: #ef4444;
+}
+
 .menu-item.danger:hover {
-  background: #ef4444;
+  background: var(--bg-active);
+  color: #ef4444;
 }

@@ -13,7 +13,18 @@ const SidebarHeader = memo(({ onToggleGraph, onToggleAIChat }) => {
   const handleDailyNote = async () => {
     const today = new Date().toISOString().split('T')[0]
     const title = today
-    const existing = snippets.find((s) => s.title === title || s.title === `${today}.md`)
+
+    if (window.api?.createFolder) {
+      try {
+        await window.api.createFolder('DailyNotes')
+      } catch (e) {
+        // Ignore if already exists
+      }
+    }
+
+    const existing = snippets.find(
+      (s) => (s.title === title || s.title === `${today}.md`) && s.folderId === 'DailyNotes'
+    )
 
     if (existing) {
       setSelectedSnippet(existing)
@@ -23,6 +34,7 @@ const SidebarHeader = memo(({ onToggleGraph, onToggleAIChat }) => {
         title: title,
         code: `# ${today}\n\n`,
         language: 'markdown',
+        folderId: 'DailyNotes',
         timestamp: Date.now()
       }
       await saveSnippet(newNote)
