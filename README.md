@@ -213,6 +213,8 @@ the `brain/` directory contains comprehensive project docs for agents and develo
 
 ## contributing
 
+questions and ideas? start a [discussion](https://github.com/Saboor-Hamedi/lumina/discussions).
+
 1. fork the repo
 2. `git checkout -b feature/amazing-feature`
 3. make changes
