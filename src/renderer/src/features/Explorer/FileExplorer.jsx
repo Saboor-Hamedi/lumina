@@ -39,7 +39,7 @@ import { createPortal } from 'react-dom'
 import { Virtuoso } from 'react-virtuoso'
 import SidebarItem from '../Navigation/components/SidebarItem'
 import { useResizable } from '../Overlays/useResizable'
-import { ChevronRight, ChevronDown, Folder, ChevronsUp } from 'lucide-react'
+import { ChevronRight, ChevronDown, Folder, FolderOpen, ChevronsUp } from 'lucide-react'
 import ConfirmModal from '../Overlays/ConfirmModal'
 import ContextMenu from '../Overlays/ContextMenu'
 import ToolTip from '../../components/atoms/ToolTip'
@@ -199,7 +199,11 @@ const DroppableFolderItem = React.memo(
               marginLeft: '-6px'
             }}
           >
-            <Folder size={14} />
+            {isExpanded ? (
+              <FolderOpen size={14} fill={folderColor || "#e8a825"} color={folderColor || "#e8a825"} />
+            ) : (
+              <Folder size={14} fill={folderColor || "#e8a825"} color={folderColor || "#e8a825"} />
+            )}
             {isRenaming ? (
               <input
                 autoFocus
@@ -1222,7 +1226,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                                     }}
                                   >
                                     {item.kind === 'folder' ? (
-                                      <Folder size={14} className="folder-icon-color" />
+                                      <Folder size={14} fill="#e8a825" color="#e8a825" className="folder-icon-color" />
                                     ) : (
                                       <FileText size={14} className="icon-blue" />
                                     )}
@@ -1340,7 +1344,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                                 marginLeft: '-6px'
                               }}
                             >
-                              <Folder size={14} />
+                              <Folder size={14} fill={folderColors[activeListDragItem.item.id] || "#e8a825"} color={folderColors[activeListDragItem.item.id] || "#e8a825"} />
                               <span className="folder-name">{activeListDragItem.item.name}</span>
                             </div>
                           </div>
