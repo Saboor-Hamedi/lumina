@@ -149,6 +149,21 @@ class VaultManager {
               let finalId = data.id
               let needsHealing = false
 
+              // Handle external renames: if filename diverges from sanitized title, use filename as the new title
+              let displayTitle = data.title || fileName.replace(/\.md$/i, '')
+              if (data.title) {
+                const expectedCleanName = sanitizeTitleForFilename(data.title)
+                const actualCleanName = fileName.replace(/\.md$/i, '')
+                
+                // If it doesn't match the expected name AND it doesn't match expected name + ID suffix
+                if (actualCleanName !== expectedCleanName && 
+                    !actualCleanName.startsWith(`${expectedCleanName}-`)) {
+                  displayTitle = actualCleanName
+                  data.title = displayTitle
+                  needsHealing = true // Trigger a rewrite to sync the frontmatter
+                }
+              }
+
               // Auto-healing logic: missing or duplicate ID
               if (!finalId || seenIds.has(finalId)) {
                 finalId = crypto.randomUUID()
@@ -241,17 +256,21 @@ class VaultManager {
     let newFileName = finalTitle.endsWith('.md') ? finalTitle : `${finalTitle}.md`
     const relativeFolder = snippet.folderId || ''
 
-    if (oldSnippet && oldSnippet.fileName) {
-      const oldRelativeFolder = oldSnippet.folderId || ''
-      if (oldSnippet.fileName !== newFileName || oldRelativeFolder !== relativeFolder) {
-        const oldPath = path.join(this.vaultPath, oldRelativeFolder, oldSnippet.fileName)
+    // Fallback to the snippet object from the frontend if it's missing in our cache.
+    // This happens if scanVault() runs concurrently and overwrites the cache before this save.
+    const oldFileName = oldSnippet ? oldSnippet.fileName : snippet.fileName
+    const oldRelativeFolder = oldSnippet ? (oldSnippet.folderId || '') : (snippet.folderId || '')
+
+    if (oldFileName) {
+      if (oldFileName !== newFileName || oldRelativeFolder !== relativeFolder) {
+        const oldPath = path.join(this.vaultPath, oldRelativeFolder, oldFileName)
         try {
           await fs.unlink(oldPath)
-          console.info('[VaultManager] ✓ Deleted old file after rename/move:', oldSnippet.fileName)
+          console.info('[VaultManager] ✓ Deleted old file after rename/move:', oldFileName)
         } catch (err) {
           console.warn(
             '[VaultManager] Warning: Could not delete old file:',
-            oldSnippet.fileName,
+            oldFileName,
             err.message
           )
         }
