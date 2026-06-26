@@ -4,11 +4,11 @@ import { useSettingsStore } from '../../core/store/useSettingsStore'
 import './GraphSidebar.css'
 import '../../assets/toggle-theme.css'
 
-const GraphSidebar = ({ searchQuery, setSearchQuery, graphTheme, onHeaderMouseDown, isMaximized }) => {
+const GraphSidebar = ({ isOpen = true, searchQuery, setSearchQuery, graphTheme, onHeaderMouseDown, isMaximized }) => {
   const { settings, updateSetting } = useSettingsStore()
 
   return (
-    <div className="nexus-sidebar">
+    <div className={`nexus-sidebar ${isOpen ? '' : 'closed'}`}>
       <div 
         className="nexus-sidebar-header" 
         onMouseDown={onHeaderMouseDown}

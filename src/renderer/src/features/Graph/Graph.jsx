@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
-import { X, Square, Copy, Network, RefreshCw, Layers, Search } from 'lucide-react'
+import { X, Square, Copy, Network, RefreshCw, Layers, Search, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import ForceGraph2D from 'react-force-graph-2d'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useAIStore } from '../../core/store/useAIStore'
@@ -32,13 +32,12 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   const graphHideTags = useSettingsStore(s => s.settings.graphHideTags)
   const graphHideGhosts = useSettingsStore(s => s.settings.graphHideGhosts)
   const graphHideOrphans = useSettingsStore(s => s.settings.graphHideOrphans)
+  const graphSidebarOpen = useSettingsStore(s => s.settings.graphSidebarOpen ?? true)
 
   const [hoverNode, setHoverNode] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 })
-  const [isMaximized, setIsMaximized] = useState(() => {
-    return localStorage.getItem('graph-modal-maximized') === 'true'
-  })
+  const isMaximized = useSettingsStore(s => s.settings.graphModalMaximized ?? false)
   
   const isSpinning = useSettingsStore(s => s.settings.graphAnimate ?? true)
   const graphRef = useRef()
@@ -49,11 +48,13 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   })
 
   const handleToggleMaximize = useCallback(() => {
-    setIsMaximized((prev) => {
-      const next = !prev
-      localStorage.setItem('graph-modal-maximized', String(next))
-      return next
-    })
+    const { settings, updateSettings } = useSettingsStore.getState()
+    updateSettings({ graphModalMaximized: !(settings.graphModalMaximized ?? false) })
+  }, [])
+
+  const handleToggleSidebar = useCallback(() => {
+    const { settings, updateSettings } = useSettingsStore.getState()
+    updateSettings({ graphSidebarOpen: !(settings.graphSidebarOpen ?? true) })
   }, [])
 
   const modalPos = useRef(
@@ -593,45 +594,56 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       onClick={(e) => e.stopPropagation()}
       data-graph-theme={graphTheme}
       style={{ 
-        flexDirection: 'row',
+        flexDirection: 'column',
         transform: isMaximized ? 'none' : `translate3d(${modalPos.current.x}px, ${modalPos.current.y}px, 0)`,
         transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)' 
       }}
     >
-      <GraphSidebar 
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        isSpinning={isSpinning}
-        graphTheme={graphTheme}
-        onHeaderMouseDown={handleModalHeaderMouseDown}
-        isMaximized={isMaximized}
+      <ModalHeader
+        title=""
+        onClose={onClose}
+        onMouseDown={handleModalHeaderMouseDown}
+        style={{ cursor: isMaximized ? 'default' : 'grab' }}
+        left={
+          <button
+            className="win-btn"
+            onClick={handleToggleSidebar}
+            title={graphSidebarOpen ? 'Close Sidebar' : 'Open Sidebar'}
+            style={{ marginLeft: '-10px' }}
+          >
+            {graphSidebarOpen ? <PanelLeftClose size={12} strokeWidth={2} /> : <PanelLeftOpen size={12} strokeWidth={2} />}
+          </button>
+        }
+        right={
+          <button
+            className="win-btn"
+            onClick={handleToggleMaximize}
+            title={isMaximized ? 'Restore' : 'Maximize'}
+          >
+            {isMaximized ? (
+              <Copy size={12} strokeWidth={2} />
+            ) : (
+              <Square size={12} strokeWidth={2} />
+            )}
+          </button>
+        }
       />
 
-      <div className="nexus-main">
-        <ModalHeader
-          title=""
-          onClose={onClose}
-          onMouseDown={handleModalHeaderMouseDown}
-          style={{ cursor: isMaximized ? 'default' : 'grab' }}
-          right={
-            <button
-              className="win-btn"
-              onClick={handleToggleMaximize}
-              title={isMaximized ? 'Restore' : 'Maximize'}
-            >
-              {isMaximized ? (
-                <Copy size={12} strokeWidth={2} />
-              ) : (
-                <Square size={12} strokeWidth={2} />
-              )}
-            </button>
-          }
+      <div className="nexus-main" style={{ position: 'relative', flex: 1, overflow: 'hidden' }}>
+        <GraphSidebar 
+          isOpen={graphSidebarOpen}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          isSpinning={isSpinning}
+          graphTheme={graphTheme}
+          onHeaderMouseDown={handleModalHeaderMouseDown}
+          isMaximized={isMaximized}
         />
 
         <div className="nexus-body">
           <ForceGraph2D
             ref={graphRef}
-            width={dimensions.width - 260}
+            width={dimensions.width}
             height={dimensions.height - 32}
             graphData={graphData}
           nodeCanvasObject={paintNode}
@@ -673,7 +685,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
         <GraphMiniMap 
           graphRef={graphRef} 
           graphData={graphData} 
-          mainWidth={dimensions.width - 260} 
+          mainWidth={dimensions.width} 
           mainHeight={dimensions.height - 32} 
         />
       </div>
