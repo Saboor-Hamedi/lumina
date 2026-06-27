@@ -9,13 +9,14 @@
 }
 
 .error-boundary-content {
-  max-width: 500px;
+  max-width: 440px;
+  width: 100%;
   text-align: center;
-  padding: 32px;
+  padding: 24px;
   background: var(--bg-panel, #252a3a);
   border: 1px solid var(--border-dim, #2d3748);
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
 }
 
 .error-boundary-icon {
@@ -26,14 +27,14 @@
 }
 
 .error-boundary-title {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 600;
   margin-bottom: 8px;
   color: var(--text-main, #dfdfdf);
 }
 
 .error-boundary-message {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-secondary, #94a3b8);
   margin-bottom: 24px;
   line-height: 1.5;
@@ -65,7 +66,7 @@
   font-size: 11px;
   color: var(--text-muted, #64748b);
   overflow-x: auto;
-  max-height: 300px;
+  max-height: 150px;
   overflow-y: auto;
   text-align: left;
   white-space: pre-wrap;
@@ -74,40 +75,40 @@
 
 .error-boundary-actions {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   justify-content: center;
-  margin-top: 24px;
+  margin-top: 20px;
 }
 
 .error-boundary-button {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
+  gap: 6px;
+  padding: 6px 12px;
   border-radius: 6px;
-  border: 1px solid var(--border-dim, #2d3748);
-  background: var(--bg-secondary, #1a1d29);
-  color: var(--text-main, #dfdfdf);
-  font-size: 13px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .error-boundary-button:hover {
-  background: var(--bg-active, #2d3748);
-  border-color: var(--text-accent, #40bafa);
+  background: var(--bg-active, rgba(255, 255, 255, 0.05));
+  color: var(--text-main, #dfdfdf);
 }
 
 .error-boundary-button.primary {
-  background: var(--text-accent, #40bafa);
-  color: white;
-  border-color: var(--text-accent, #40bafa);
+  border-color: var(--border-dim, #2d3748);
+  background: var(--bg-secondary, #1a1d29);
+  color: var(--text-main, #dfdfdf);
 }
 
 .error-boundary-button.primary:hover {
-  background: var(--text-accent-hover, #2563eb);
-  opacity: 0.9;
+  border-color: var(--text-accent, #40bafa);
+  background: var(--bg-active, #2d3748);
 }
 
 .error-boundary-warning {

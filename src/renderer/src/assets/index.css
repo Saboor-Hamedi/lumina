@@ -186,6 +186,7 @@ body {
   font-family: 'Inter', system-ui, sans-serif;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
+  user-select: none;
 }
 
 ::selection {

@@ -37,8 +37,8 @@ function initAudio() {
 }
 
 export function useTypingSound() {
-  const { settings } = useSettingsStore()
-  const enabled = settings.typeSound === true
+  const enabled = useSettingsStore((state) => state.settings?.typeSound === true)
+  const volume = useSettingsStore((state) => state.settings?.typeSoundVolume ?? 50)
 
   const playSound = useCallback(() => {
     if (!enabled) return
@@ -51,8 +51,7 @@ export function useTypingSound() {
       source.buffer = clickBuffer
 
       const gain = ctx.createGain()
-      const userVolume = (settings.typeSoundVolume ?? 50) / 100
-      gain.gain.value = userVolume * 0.4 // Master output level modifier
+      gain.gain.value = (volume / 100) * 0.4 // Master output level modifier
 
       source.connect(gain)
       gain.connect(ctx.destination)
@@ -61,24 +60,26 @@ export function useTypingSound() {
     } catch (e) {
       console.warn('Audio playback error:', e)
     }
-  }, [enabled, settings.typeSoundVolume])
+  }, [enabled, volume])
 
   useEffect(() => {
     if (!enabled) return
 
     const handleKeyDown = (e) => {
       // Play only for actual typing (printable chars + some control keys)
-      const isTypingKey = e.key.length === 1 || ['Backspace', 'Enter', ' ', 'Tab'].includes(e.key)
-      if (!isTypingKey) return
+      if (e.key.length !== 1 && !['Backspace', 'Enter', ' ', 'Tab'].includes(e.key)) return
 
       // Don't play if Ctrl/Alt/Meta is held (keyboard shortcuts)
       if (e.ctrlKey || e.altKey || e.metaKey) return
 
-      // Don't play if focus is not inside an editor
-      const activeEl = document.activeElement
-      const isEditor =
-        activeEl && (activeEl.closest('.cm-editor') || activeEl.closest('.ProseMirror'))
-
+      // Fast check: Is focus inside the CodeMirror or ProseMirror editor?
+      const target = e.target
+      if (!target) return
+      
+      const isEditor = target.classList?.contains('cm-content') || 
+                       target.classList?.contains('ProseMirror') ||
+                       (target.closest && (target.closest('.cm-editor') || target.closest('.ProseMirror')))
+      
       if (isEditor) {
         playSound()
       }

@@ -66,13 +66,12 @@ const ThemeModal = ({ isOpen, onClose }) => {
                     <span className="theme-modal-name">{t.name}</span>
                     {isActive ? (
                       <span className="theme-check-badge">
-                        <Check size={12} strokeWidth={3} />
+                        <Check size={10} strokeWidth={3} />
                       </span>
                     ) : (
                       <span className="theme-badge installed">INSTALLED</span>
                     )}
                   </div>
-                  <div className="theme-modal-author">By Lumina</div>
                 </div>
 
                 <div className="theme-modal-preview-wrapper">
@@ -121,16 +120,6 @@ const ThemeModal = ({ isOpen, onClose }) => {
                         className="theme-preview-code-line"
                         style={{ background: t.colors['--icon-secondary'], width: '50%' }}
                       />
-                    </div>
-                    <div
-                      className="theme-preview-badge"
-                      style={{
-                        background: t.colors['--bg-active'],
-                        color: t.colors['--text-accent'],
-                        border: `1px solid ${t.colors['--text-accent']}40`
-                      }}
-                    >
-                      {t.id}
                     </div>
                   </div>
                 </div>

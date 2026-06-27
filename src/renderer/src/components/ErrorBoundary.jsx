@@ -131,10 +131,10 @@ class ErrorBoundary extends React.Component {
 
       // Default fallback UI
       return (
-        <div className="error-boundary">
+        <div className="error-boundary" style={{ userSelect: 'text', WebkitUserSelect: 'text' }}>
           <div className="error-boundary-content">
             <div className="error-boundary-icon">
-              <AlertTriangle size={48} />
+              <AlertTriangle size={32} />
             </div>
             <h2 className="error-boundary-title">Something went wrong</h2>
             <p className="error-boundary-message">

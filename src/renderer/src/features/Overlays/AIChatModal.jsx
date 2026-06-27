@@ -355,15 +355,35 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
     }
   })
 
-  useKeyboardShortcuts({
-    onEscape: () => {
-      if (isOpen) {
-        onClose()
-        return true
+  const previousFocusRef = useRef(null)
+
+  useEffect(() => {
+    if (isOpen) {
+      previousFocusRef.current = document.activeElement
+      setTimeout(() => {
+        if (modalRef.current) {
+          modalRef.current.querySelector('textarea')?.focus()
+        }
+      }, 50)
+    } else {
+      if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
+        setTimeout(() => previousFocusRef.current?.focus(), 10)
       }
-      return false
     }
-  })
+  }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        onClose()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown, { capture: true })
+    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true })
+  }, [isOpen, onClose])
 
   useEffect(() => {
     if (isOpen && !isMaximized) {

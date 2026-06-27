@@ -67,9 +67,9 @@
 
 .theme-modal-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 24px;
-  padding: 24px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding: 20px 24px;
   overflow-y: auto;
   flex: 1;
 }
@@ -94,10 +94,9 @@
 }
 
 .theme-card-header {
-  padding-bottom: 12px;
+  padding-bottom: 8px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
 }
 
 .theme-title-row {
@@ -107,25 +106,20 @@
 }
 
 .theme-modal-name {
-  font-size: 15px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--text-main);
-}
-
-.theme-badge {
-  font-size: 10px;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 4px;
-  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .theme-check-badge {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: var(--color-success, #10b981);
   color: #ffffff;
@@ -133,13 +127,18 @@
 }
 
 .theme-badge.installed {
+  font-size: 9px;
+  padding: 0 4px;
+  height: 14px;
+  line-height: 14px;
+  border-radius: 3px;
   background: rgba(var(--text-accent-rgb, 100,100,100), 0.1);
   color: var(--text-accent);
   border: 1px solid rgba(var(--text-accent-rgb, 100,100,100), 0.2);
 }
 
 .theme-modal-author {
-  font-size: 13px;
+  font-size: 10px;
   color: var(--text-muted);
 }
 
@@ -150,7 +149,7 @@
 
 .theme-modal-preview {
   width: 100%;
-  height: 160px;
+  height: 90px;
   position: relative;
   overflow: hidden;
   border-radius: 6px;
@@ -197,16 +196,6 @@
   height: 4px;
   border-radius: 2px;
   opacity: 0.8;
-}
-
-.theme-preview-badge {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 4px;
 }
 
 

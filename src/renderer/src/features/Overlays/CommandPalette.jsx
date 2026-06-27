@@ -27,6 +27,7 @@ import { useMention } from '../../core/hooks/useMention'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useAIStore } from '../../core/store/useAIStore'
 import { useVaultStore } from '../../core/store/useVaultStore'
+import { useSettingsStore } from '../../core/store/useSettingsStore'
 import './CommandPalette.css'
 
 /**
@@ -67,7 +68,9 @@ const CommandPaletteRow = React.memo(({ index, style, data }) => {
     onToggleGraph,
     onToggleChat,
     onClose,
-    dirtySnippetIds
+    dirtySnippetIds,
+    settings,
+    updateSetting
   } = data
 
   const item = filtered[index]
@@ -90,6 +93,13 @@ const CommandPaletteRow = React.memo(({ index, style, data }) => {
           else if (item.action === 'new') onNew?.()
           else if (item.action === 'graph') onToggleGraph?.()
           else if (item.action === 'chat') onToggleChat?.()
+          else if (item.action === 'reload-window') window.location.reload()
+          else if (item.action === 'toggle-type-sound') {
+            updateSetting('typeSound', !settings.typeSound)
+            // don't close palette on toggle so they see it change, or close?
+            // Actually, keep it simple and just close or not. Let's just not close it so they can see the toggle change!
+            return
+          }
         } else if (item.matchType === 'folder') {
           // Just close, no action
         } else {
@@ -177,9 +187,11 @@ const CommandPalette = React.memo(
     const [aiResults, setAiResults] = useState([])
     const inputRef = useRef(null)
     const listRef = useRef(null)
+    const previousFocusRef = useRef(null)
 
     const { searchNotes, isModelReady, modelLoadingProgress, aiError } = useAIStore()
     const { dirtySnippetIds, folders } = useVaultStore()
+    const { settings, updateSetting } = useSettingsStore()
     const { tags } = useTag()
     const { mentions } = useMention()
 
@@ -202,10 +214,15 @@ const CommandPalette = React.memo(
 
     useEffect(() => {
       if (isOpen) {
+        previousFocusRef.current = document.activeElement
         setQuery(initialQuery)
         setSelectedIndex(0)
         setAiResults([])
         setTimeout(() => inputRef.current?.focus(), 50)
+      } else {
+        if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
+          setTimeout(() => previousFocusRef.current?.focus(), 10)
+        }
       }
     }, [isOpen, initialQuery])
 
@@ -248,7 +265,9 @@ const CommandPalette = React.memo(
         { id: 'action-settings-shortcuts', title: 'Settings: Shortcuts', matchType: 'action', action: 'settings', tab: 'shortcuts' },
         { id: 'action-settings-ai', title: 'Settings: AI & Language Models', matchType: 'action', action: 'settings', tab: 'ai' },
         { id: 'action-settings-type', title: 'Settings: Typography', matchType: 'action', action: 'settings', tab: 'type' },
-        { id: 'action-settings-graph', title: 'Settings: Graph Node Settings', matchType: 'action', action: 'settings', tab: 'graph' },
+        { id: 'action-settings-graph', title: 'Settings: Graph Node Settings', matchType: 'action',  action: 'settings', tab: 'graph' },
+        { id: 'action-toggle-type-sound', title: `Toggle Mechanical Keyboard Sound (${settings?.typeSound ? 'On' : 'Off'})`, matchType: 'action', action: 'toggle-type-sound' },
+        { id: 'action-reload-window', title: 'Developer: Reload Window', matchType: 'action', action: 'reload-window', shortcut: 'Ctrl + R' },
         { id: 'action-chat', title: 'Chat: Open AI Chat', matchType: 'action', action: 'chat', shortcut: 'Ctrl + Shift + I' },
         { id: 'action-new', title: 'Note: Create New Snippet', matchType: 'action', action: 'new', shortcut: 'Ctrl + N' },
         { id: 'action-graph', title: 'Graph: Open Knowledge Nexus', matchType: 'action', action: 'graph', shortcut: 'Ctrl + G' }
@@ -379,7 +398,7 @@ const CommandPalette = React.memo(
       )
 
       return finalResults.slice(0, 50)
-    }, [deferredQuery, items, tags, mentions, folders, fuseIndex, aiResults])
+    }, [deferredQuery, items, tags, mentions, folders, fuseIndex, aiResults, settings?.typeSound])
 
     useEffect(() => {
       if (selectedIndex >= filtered.length && filtered.length > 0) {
@@ -413,6 +432,11 @@ const CommandPalette = React.memo(
             else if (item.action === 'new') onNew?.()
             else if (item.action === 'graph') onToggleGraph?.()
             else if (item.action === 'chat') onToggleChat?.()
+            else if (item.action === 'reload-window') window.location.reload()
+            else if (item.action === 'toggle-type-sound') {
+              updateSetting('typeSound', !settings.typeSound)
+              return
+            }
           } else if (item.matchType === 'folder') {
             // Just close, no action
           } else {
@@ -438,7 +462,9 @@ const CommandPalette = React.memo(
       onToggleGraph,
       onToggleChat,
       onClose,
-      dirtySnippetIds
+      dirtySnippetIds,
+      settings,
+      updateSetting
     }), [
       filtered,
       selectedIndex,
@@ -449,7 +475,9 @@ const CommandPalette = React.memo(
       onToggleSettings,
       onToggleGraph,
       onToggleChat,
-      onClose
+      onClose,
+      settings,
+      updateSetting
     ])
 
     if (!isOpen) return null

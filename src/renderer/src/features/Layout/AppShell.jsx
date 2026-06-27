@@ -66,6 +66,7 @@ const AppShell = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [showAIChatModal, setShowAIChatModal] = useState(false)
   const [showExplorerModal, setShowExplorerModal] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true)
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false)
   const [rightSidebarTab, setRightSidebarTab] = useState('ai') // 'ai' or 'details'
@@ -337,11 +338,11 @@ const AppShell = () => {
     return () => window.removeEventListener('keydown', handleSidebarToggleShortcut)
   }, [])
 
-  // Ctrl+Shift+I - toggle AI Chat Modal
+  // Ctrl+Shift+\ - toggle AI Chat Modal
   useEffect(() => {
     const handleAIChatShortcut = (e) => {
       const key = e.key && e.key.toLowerCase()
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && key === 'i') {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && key === '\\') {
         e.preventDefault()
         setShowAIChatModal((prev) => !prev)
       }
@@ -391,7 +392,7 @@ const AppShell = () => {
       if (activeTab === 'search') return // No-op if on search tab
       if (selectedSnippet) {
         setIsSaving(true)
-        await saveSnippet(selectedSnippet.id, selectedSnippet.code, selectedSnippet)
+        await saveSnippet(selectedSnippet)
         setTimeout(() => setIsSaving(false), 800) // fake delay for UI feedback
       }
     },

@@ -4,7 +4,9 @@ function AppVersion() {
   const [version, setVersion] = useState('')
 
   useEffect(() => {
-    window.api.getVersion().then(setVersion).catch(console.error)
+    if (window.api?.getVersion) {
+      window.api.getVersion().then(setVersion).catch(console.error)
+    }
   }, [])
 
   if (!version) return null

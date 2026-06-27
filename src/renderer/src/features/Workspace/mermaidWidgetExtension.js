@@ -153,7 +153,8 @@ class MermaidWidget extends WidgetType {
 
   destroy(dom) {
     if (dom._reactRoot) {
-      dom._reactRoot.unmount()
+      const root = dom._reactRoot
+      setTimeout(() => root.unmount(), 0)
       dom._reactRoot = null
     }
   }

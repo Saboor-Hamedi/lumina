@@ -94,11 +94,11 @@
 
 /* Hide raw markdown backticks and language text when not actively editing the header */
 .cm-line.cb-code-header:not(.cm-activeLine) {
-  color: transparent !important;
+  color: var(--bg-panel) !important;
 }
 
 .cm-line.cb-code-header:not(.cm-activeLine) * {
-  color: transparent !important;
+  color: var(--bg-panel) !important;
 }
 
 /* Wrapper body for code blocks in editor */
@@ -128,15 +128,14 @@
   margin-bottom: 12px !important;
 }
 
-/* Hide the closing backticks when not actively editing them */
+/* Hide closing backticks of fenced code block unless active */
 .cm-line.cm-atomic-fenced-code:has(+ :not(.cm-atomic-fenced-code)):not(.cm-activeLine),
 .cm-line.cm-atomic-fenced-code:last-child:not(.cm-activeLine) {
-  color: transparent !important;
+  color: var(--bg-panel) !important;
 }
-
 .cm-line.cm-atomic-fenced-code:has(+ :not(.cm-atomic-fenced-code)):not(.cm-activeLine) *,
 .cm-line.cm-atomic-fenced-code:last-child:not(.cm-activeLine) * {
-  color: transparent !important;
+  color: var(--bg-panel) !important;
 }
 
 /* Adjust the first line of actual code so it looks spaced out from header */
@@ -240,7 +239,7 @@
   top: 50%;
   transform: translateY(-50%);
   padding: 4px 10px;
-  font-size: 10px;
+  font-size: 10px !important;
   font-weight: 500;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   color: var(--text-muted, rgba(255, 255, 255, 0.4));
@@ -899,7 +898,8 @@
   max-width: none !important;
   margin: 0 !important;
   margin-inline: 0 !important;
-  padding-inline: 0 !important;
+  padding: 0 0 100px 0 !important;
+  user-select: text !important;
 }
 
 
@@ -1433,28 +1433,6 @@
 .cm-selectionBackground,
 .cm-content ::selection {
   background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.3) !important;
-  /* Use box-shadow for 1px left border - doesn't cause layout shift */
-  box-shadow: inset 1px 0 0 0 var(--text-accent) !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  border: none !important;
-  outline: none !important;
-  box-sizing: border-box !important;
-}
-
-/* Ensure selection background elements don't cause layout shift */
-/* CodeMirror already positions .cm-selectionBackground absolutely */
-.cm-selectionBackground {
-  /* Use box-shadow for 1px left border - doesn't cause layout shift */
-  box-shadow: inset 1px 0 0 0 var(--text-accent) !important;
-  /* Adjust left position to create 1px margin from content */
-  left: 1px !important;
-  /* Adjust width to compensate for the left offset */
-  width: calc(100% - 1px) !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: none !important;
-  box-sizing: border-box !important;
 }
 
 .cm-selectionMatch {
