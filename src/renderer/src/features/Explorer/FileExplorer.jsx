@@ -5,6 +5,7 @@ import {
   FileCode,
   Files,
   Star,
+  StarOff,
   Pin,
   PinOff,
   ArrowUpDown,
@@ -102,9 +103,12 @@ const DroppableFolderItem = React.memo(
     submitRename,
     cancelRename,
     isActive,
-    searchQuery
+    searchQuery,
+    isPinned,
+    onTogglePin
   }) => {
     const { isOver, setNodeRef: setDroppableRef } = useDroppable({ id: `folder-${item.id}` })
+    const [isHovered, setIsHovered] = React.useState(false)
 
     const highlightText = (text, query) => {
       if (!query || !text) return text
@@ -148,7 +152,7 @@ const DroppableFolderItem = React.memo(
         className="folder-tree-item"
         style={{
           position: 'relative',
-          paddingLeft: `${item.depth * 16 + 8}px`,
+          paddingLeft: `${item.depth * 12}px`,
           opacity: isDragging ? 0.5 : 1
         }}
       >
@@ -157,7 +161,7 @@ const DroppableFolderItem = React.memo(
             key={`line-${i}`}
             style={{
               position: 'absolute',
-              left: `${i * 16 + 12}px`,
+              left: `${i * 12 + 4}px`,
               top: 0,
               bottom: 0,
               width: '1px',
@@ -170,9 +174,10 @@ const DroppableFolderItem = React.memo(
           className={`folder-tree-main ${isOver ? 'folder-over' : ''} ${isActive ? 'active' : ''}`}
           style={{
             cursor: 'pointer',
-            userSelect: 'none',
-            backgroundColor: isActive ? 'var(--bg-active)' : undefined
+            userSelect: 'none'
           }}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
           {...attributes}
           {...listeners}
           onClick={(e) => {
@@ -197,7 +202,6 @@ const DroppableFolderItem = React.memo(
               gap: '8px',
               color: folderColor || undefined,
               padding: '2px 6px',
-              borderRadius: '4px',
               marginLeft: '-6px'
             }}
           >
@@ -221,6 +225,24 @@ const DroppableFolderItem = React.memo(
               />
             ) : (
               <span className="folder-name">{highlightText(item.name, searchQuery)}</span>
+            )}
+          </div>
+          <div className="item-meta-right">
+            {(isHovered || isPinned) && !isRenaming && (
+              <div className="hover-actions">
+                <ToolTip text={isPinned ? 'Remove from Favorites' : 'Add to Favorites'}>
+                  <button
+                    className="action-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (onTogglePin) onTogglePin(item.id)
+                    }}
+                    style={{ color: isPinned ? '#fbbf24' : undefined }}
+                  >
+                    <Star size={12} fill={isPinned ? 'currentColor' : 'none'} />
+                  </button>
+                </ToolTip>
+              </div>
             )}
           </div>
         </div>
@@ -328,7 +350,8 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   const debounceTimerRef = useRef(null)
 
   const [activeTab, setActiveTab] = useState('all')
-  const { settings, updateSetting } = useSettingsStore()
+  const { settings, updateSetting, togglePinnedFolder } = useSettingsStore()
+  const pinnedFolders = settings.pinnedFolders || []
 
   const [expandedFolders, setExpandedFolders] = useState(
     () => new Set(settings.expandedFolders || [])
@@ -481,11 +504,21 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     return results
   }, [query, fuseIndex, snippets])
 
-  // 2. Pinned snippets (doesn't depend on search)
-  const pinnedSnippets = useMemo(() => {
-    const dbPinned = snippets.filter((s) => s.isPinned)
+  // 2. Pinned items (snippets + folders)
+  const pinnedItems = useMemo(() => {
+    const dbPinned = snippets.filter((s) => s.isPinned).map(s => ({ ...s, itemType: 'snippet' }))
+    const folderPinned = (settings.pinnedFolders || []).map(folderId => {
+      return {
+        id: folderId,
+        title: folderId.split('/').pop(),
+        itemType: 'folder',
+        isPinned: true
+      }
+    })
+    
+    const combined = [...dbPinned, ...folderPinned]
     const pinnedOrderMap = new Map((settings.startMenuPinnedOrder || []).map((id, i) => [id, i]))
-    dbPinned.sort((a, b) => {
+    combined.sort((a, b) => {
       const ai = pinnedOrderMap.get(a.id)
       const bi = pinnedOrderMap.get(b.id)
       if (ai !== undefined && bi !== undefined) return ai - bi
@@ -493,13 +526,11 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
       if (bi !== undefined) return 1
       return 0
     })
-    return dbPinned
-  }, [snippets, settings.startMenuPinnedOrder])
+    return combined
+  }, [snippets, settings.startMenuPinnedOrder, settings.pinnedFolders])
 
-  // 3. All snippets (with sorting, uses filtered results)
   const allSnippets = useMemo(() => {
-    const unpinned = filteredSnippets.filter((s) => !s.isPinned)
-    let all = [...unpinned]
+    let all = [...filteredSnippets]
 
     if (sortBy === 'custom' && noteOrder && noteOrder.length > 0) {
       const orderMap = new Map(noteOrder.map((id, i) => [id, i]))
@@ -1014,7 +1045,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
 
         {/* Search Bar */}
         <div className="start-menu-search relative">
-          <Search size={16} className="search-icon" />
+          <Search size={14} className="search-icon" />
           <input
             ref={searchInputRef}
             type="text"
@@ -1063,56 +1094,28 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
           </div>
         </div>
 
-        {/* Icon Tabs */}
-        <div className="explorer-icon-tabs" style={{ display: 'flex', gap: '8px', padding: '0 12px', marginBottom: '8px', borderBottom: '1px solid var(--border-dim)', paddingBottom: '8px' }}>
-          <ToolTip text="All Notes">
-            <button
-              className={`icon-tab-btn ${activeTab === 'all' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveTab('all')
-                setCreating(null)
-              }}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: activeTab === 'all' ? 'var(--text-accent)' : 'var(--text-muted)',
-                cursor: 'pointer',
-                padding: '4px',
-                borderRadius: '4px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s',
-                backgroundColor: activeTab === 'all' ? 'var(--bg-active)' : 'transparent'
-              }}
-            >
-              <Files size={16} />
-            </button>
-          </ToolTip>
-          <ToolTip text="Favorites">
-            <button
-              className={`icon-tab-btn ${activeTab === 'favorites' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveTab('favorites')
-                setCreating(null)
-              }}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: activeTab === 'favorites' ? 'var(--text-accent)' : 'var(--text-muted)',
-                cursor: 'pointer',
-                padding: '4px',
-                borderRadius: '4px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s',
-                backgroundColor: activeTab === 'favorites' ? 'var(--bg-active)' : 'transparent'
-              }}
-            >
-              <Star size={16} />
-            </button>
-          </ToolTip>
+        {/* Segmented Tabs */}
+        <div className="explorer-segmented-tabs">
+          <button
+            className={`segmented-tab ${activeTab === 'all' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('all')
+              setCreating(null)
+            }}
+          >
+            <Files size={12} />
+            <span>All Notes</span>
+          </button>
+          <button
+            className={`segmented-tab ${activeTab === 'favorites' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('favorites')
+              setCreating(null)
+            }}
+          >
+            <Star size={12} />
+            <span>Favorites</span>
+          </button>
         </div>
 
         {/* Scrollable Body */}
@@ -1120,7 +1123,6 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
           className="start-menu-body"
           tabIndex={-1}
           onContextMenu={(e) => {
-            // If they clicked on empty space, not on a row
             if (e.target.closest('.virtuoso-row') || e.target.closest('.tree-item')) return
             e.preventDefault()
             e.stopPropagation()
@@ -1130,12 +1132,8 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
           {/* Favorites Section */}
           {activeTab === 'favorites' && (
             <div className="start-section" style={{ flex: 1, minHeight: 0, paddingBottom: '16px' }}>
-              <div className="start-section-header">
-                <h3>Favorites</h3>
-              </div>
-
-              {pinnedSnippets.length === 0 ? (
-                <div className="empty-state">No favorite notes</div>
+              {pinnedItems.length === 0 ? (
+                <div className="empty-state">No favorite notes or folders</div>
               ) : (
                 <DndContext
                   sensors={sensors}
@@ -1143,20 +1141,28 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                   onDragEnd={handleSortDragEnd}
                 >
                   <SortableContext
-                    items={pinnedSnippets.map((s) => s.id)}
+                    items={pinnedItems.map((s) => s.id)}
                     strategy={verticalListSortingStrategy}
                   >
                     <div
                       className="recommended-list"
                       style={{ display: 'flex', flexDirection: 'column', flex: 1, overflowY: 'auto' }}
                     >
-                      {pinnedSnippets.map((snippet) => (
-                        <SortableListItem
-                          key={snippet.id}
-                          snippet={snippet}
-                          onClick={() => handleSelect(snippet)}
-                          isActive={false}
-                        />
+                      {pinnedItems.map((item) => (
+                        <div key={item.id} className="favorite-item-wrapper" style={{ position: 'relative' }}>
+                          <SortableListItem
+                            snippet={item}
+                            onClick={() => {
+                              if (item.itemType === 'folder') {
+                                setExpandedFolders(prev => new Set(prev).add(item.id))
+                                setActiveTab('all')
+                              } else {
+                                handleSelect(item)
+                              }
+                            }}
+                            isActive={false}
+                          />
+                        </div>
                       ))}
                     </div>
                   </SortableContext>
@@ -1296,6 +1302,8 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                                 setRenameValue={setRenamingValue}
                                 submitRename={submitRename}
                                 cancelRename={cancelRename}
+                                isPinned={pinnedFolders.includes(item.id)}
+                                onTogglePin={togglePinnedFolder}
                                 onToggle={(id, e) => {
                                   setSelectedIndex(index)
                                   toggleFolder(id, e)
@@ -1311,7 +1319,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                               <div
                                 style={{
                                   position: 'relative',
-                                  paddingLeft: `${item.depth * 16 + 8}px`
+                                  paddingLeft: `${item.depth * 12}px`
                                 }}
                               >
                                 {Array.from({ length: item.depth }).map((_, i) => (
@@ -1319,7 +1327,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                                     key={`line-${i}`}
                                     style={{
                                       position: 'absolute',
-                                      left: `${i * 16 + 12}px`,
+                                      left: `${i * 12 + 4}px`,
                                       top: 0,
                                       bottom: 0,
                                       width: '1px',
@@ -1450,6 +1458,14 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                 const parts = folderContext.folderId.split('/')
                 setRenamingValue(parts[parts.length - 1])
                 setRenamingFolder(folderContext.folderId)
+              }
+            },
+            {
+              label: pinnedFolders.includes(folderContext.folderId) ? 'Unpin from Favorites' : 'Pin to Favorites',
+              icon: pinnedFolders.includes(folderContext.folderId) ? <StarOff size={14} /> : <Star size={14} />,
+              onClick: () => {
+                if (!folderContext.folderId) return
+                togglePinnedFolder(folderContext.folderId)
               }
             },
             {

@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Star, Trash2, Edit2, Pin, ExternalLink, Palette, Image } from 'lucide-react'
+import { Star, Trash2, Edit2, Pin, ExternalLink, Palette, Image, Folder } from 'lucide-react'
 import { useVaultStore } from '../../../core/store/useVaultStore'
+import { useSettingsStore } from '../../../core/store/useSettingsStore'
 import ContextMenu from '../../Overlays/ContextMenu'
 import ConfirmModal from '../../Overlays/ConfirmModal'
 import ColorModal from '../../Overlays/ColorModal'
 import IconModal from '../../Icons/IconModal'
+import ToolTip from '../../../components/atoms/ToolTip'
 import { getSnippetIcon } from '../../Icons/iconMapper'
 
 const SidebarItem = ({
@@ -17,6 +19,7 @@ const SidebarItem = ({
   searchQuery
 }) => {
   const { dirtySnippetIds, deleteSnippet, saveSnippet } = useVaultStore()
+  const { togglePinnedFolder } = useSettingsStore()
   const isDirty = dirtySnippetIds.includes(snippet.id)
 
   const [isRenaming, setIsRenaming] = useState(false)
@@ -29,46 +32,42 @@ const SidebarItem = ({
   const renameInputRef = useRef(null)
 
   useEffect(() => {
-    if (isRenaming) renameInputRef.current?.focus()
+    if (isRenaming && renameInputRef.current) {
+      renameInputRef.current.select()
+    }
   }, [isRenaming])
 
   const handleRename = async () => {
-    if (!renameValue.trim() || renameValue === snippet.title) {
-      setIsRenaming(false)
-      return
+    if (renameValue.trim() && renameValue !== snippet.title) {
+      await saveSnippet({ ...snippet, title: renameValue })
     }
-
-    if (!snippet?.id) {
-      console.error('Cannot rename: snippet ID is missing')
-      setIsRenaming(false)
-      return
-    }
-
-    try {
-      const updatedSnippet = await saveSnippet({ ...snippet, title: renameValue.trim() })
-      if (updatedSnippet?.title) {
-        setRenameValue(updatedSnippet.title)
-      }
-      setIsRenaming(false)
-    } catch (error) {
-      console.error('Failed to rename note:', error)
-      setRenameValue(snippet.title)
-      setIsRenaming(false)
-    }
+    setIsRenaming(false)
   }
 
   const handleContextMenu = (e) => {
     e.preventDefault()
+    e.stopPropagation()
+    if (snippet.itemType === 'folder') return // no context menu on favorite folders in the list for now
     setContextMenu({ x: e.clientX, y: e.clientY })
   }
 
-  const handleTogglePin = (e) => {
-    e?.stopPropagation()
-    saveSnippet({ ...snippet, isPinned: !snippet.isPinned })
+  const handleTogglePin = async (e) => {
+    if (e) e.stopPropagation()
+    if (!snippet?.id) return
+    if (snippet.itemType === 'folder') {
+      togglePinnedFolder(snippet.id)
+      return
+    }
+    try {
+      await saveSnippet({ ...snippet, isPinned: !snippet.isPinned })
+      setContextMenu(null)
+    } catch (error) {
+      console.error('Failed to toggle pin:', error)
+    }
   }
 
   const handleDeleteConfirm = async () => {
-    if (!snippet?.id) return
+    if (!snippet?.id || snippet.itemType === 'folder') return
     try {
       await deleteSnippet(snippet.id, true)
     } catch (error) {
@@ -80,6 +79,13 @@ const SidebarItem = ({
   const displayColor = noteColor ? `#${noteColor}` : null
 
   const getIcon = () => {
+    if (snippet.itemType === 'folder') {
+      return (
+        <div className="item-icon">
+          <Folder size={14} fill={displayColor || "#e8a825"} color={displayColor || "#e8a825"} />
+        </div>
+      )
+    }
     return getSnippetIcon(snippet, 14, 'item-icon', displayColor)
   }
 
@@ -264,21 +270,20 @@ const SidebarItem = ({
       )}
 
       <div className="item-meta-right">
-        {isHovered && !isRenaming && (
+        {(isHovered || snippet.isPinned) && !isRenaming && (
           <div className="hover-actions">
-            <button
-              className={`action-btn ${snippet.isPinned ? 'active' : ''}`}
-              onClick={handleTogglePin}
-              title={snippet.isPinned ? 'Remove from Favorites' : 'Add to Favorites'}
-            >
-              <Star size={12} fill={snippet.isPinned ? 'currentColor' : 'none'} />
-            </button>
+            <ToolTip text={snippet.isPinned ? 'Remove from Favorites' : 'Add to Favorites'}>
+              <button
+                className="action-btn"
+                onClick={handleTogglePin}
+                style={{ color: snippet.isPinned ? '#fbbf24' : undefined }}
+              >
+                <Star size={12} fill={snippet.isPinned ? 'currentColor' : 'none'} />
+              </button>
+            </ToolTip>
           </div>
         )}
         {isDirty && <div className="dirty-indicator" />}
-        {snippet.isPinned && !isHovered && (
-          <Star size={10} fill="currentColor" className="pin-icon" />
-        )}
       </div>
 
       {modals}

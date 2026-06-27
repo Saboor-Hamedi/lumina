@@ -36,7 +36,10 @@ export const useSettingsStore = create((set, get) => ({
     activeModel: null, // If null, provider uses its default
     openaiKey: null,
     anthropicKey: null,
-    ollamaUrl: 'http://localhost:11434/api/chat'
+    ollamaUrl: 'http://localhost:11434/api/chat',
+    
+    // Favorites
+    pinnedFolders: []
   },
 
   isLoading: true,
@@ -207,6 +210,25 @@ export const useSettingsStore = create((set, get) => ({
     } catch (err) {
       console.error(`Failed to save setting ${key}:`, err)
       // Revert on failure? For now, keep optimistic.
+    }
+  },
+
+  togglePinnedFolder: async (folderId) => {
+    const current = get().settings.pinnedFolders || []
+    const newPinned = current.includes(folderId)
+      ? current.filter(id => id !== folderId)
+      : [...current, folderId]
+      
+    set((state) => ({
+      settings: { ...state.settings, pinnedFolders: newPinned }
+    }))
+    
+    try {
+      if (window.api && window.api.saveSetting) {
+        await window.api.saveSetting('pinnedFolders', newPinned)
+      }
+    } catch (err) {
+      console.error(`Failed to save pinnedFolders:`, err)
     }
   },
 
