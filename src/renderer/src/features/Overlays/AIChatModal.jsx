@@ -12,6 +12,9 @@ import ModalHeader from './ModalHeader'
 import '../Layout/AppShell.css'
 import './AIChatModal.css'
 
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
+
 const CodeBlock = React.memo(({ inline, className, children, ...props }) => {
   const match = /language-([a-zA-Z0-9-]+)/.exec(className || '')
   const [copied, setCopied] = useState(false)
@@ -19,48 +22,62 @@ const CodeBlock = React.memo(({ inline, className, children, ...props }) => {
   if (!inline && match) {
     const lang = match[1]
     const isDelete = lang.startsWith('lumina-delete')
+    const codeString = String(children).replace(/\n$/, '')
 
     return (
       <div className="chat-code-block">
-        <div className="chat-code-header">
-          <span className="chat-code-lang">{lang}</span>
-          {!isDelete && (
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                className="chat-copy-btn"
-                onClick={() => {
-                  const code = String(children).replace(/\n$/, '')
-                  const vaultStore = useVaultStore.getState()
-                  const selected = vaultStore.selectedSnippet
-                  if (selected) {
-                    const updatedSnippet = { ...selected, code, timestamp: Date.now() }
-                    vaultStore.saveSnippet(updatedSnippet)
-                    vaultStore.setSelectedSnippet(updatedSnippet)
-                  }
-                }}
-                title="Apply this code to your currently open file"
-              >
-                Apply
-              </button>
-              <button
-                className="chat-copy-btn"
-                onClick={() => {
-                  navigator.clipboard.writeText(String(children).replace(/\n$/, ''))
+        <div className="chat-code-header" style={{ justifyContent: 'flex-end' }}>
+          <span 
+            className="chat-code-lang" 
+            style={{ 
+              textTransform: 'uppercase', 
+              cursor: 'pointer',
+              padding: '2px 6px',
+              borderRadius: '4px',
+              transition: 'background 0.2s'
+            }}
+            onClick={async () => {
+              if (!isDelete) {
+                try {
+                  await navigator.clipboard.writeText(codeString)
                   setCopied(true)
-                  setTimeout(() => setCopied(false), 2000)
-                }}
-              >
-                {copied ? 'Copied!' : 'Copy'}
-              </button>
-            </div>
-          )}
+                  setTimeout(() => setCopied(false), 3000)
+                } catch (err) {
+                  console.error('Failed to copy: ', err)
+                }
+              }
+            }}
+            onMouseEnter={(e) => {
+              if (!isDelete) e.target.style.background = 'rgba(255, 255, 255, 0.1)'
+            }}
+            onMouseLeave={(e) => {
+              if (!isDelete) e.target.style.background = 'transparent'
+            }}
+          >
+            {copied ? (
+              <span style={{ color: '#4caf50', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold' }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                COPIED
+              </span>
+            ) : lang}
+          </span>
         </div>
         {!isDelete && (
-          <pre>
-            <code className={className} {...props}>
-              {children}
-            </code>
-          </pre>
+          <SyntaxHighlighter
+            style={vscDarkPlus}
+            language={lang}
+            PreTag="div"
+            customStyle={{
+              margin: 0,
+              background: 'transparent',
+              padding: '12px',
+              fontSize: '13px',
+              lineHeight: '1.5'
+            }}
+            {...props}
+          >
+            {codeString}
+          </SyntaxHighlighter>
         )}
       </div>
     )

@@ -81,6 +81,7 @@ const MarkdownEditor = React.memo(
     const [editorKey, setEditorKey] = useState(Date.now())
     const [showFindWidget, setShowFindWidget] = useState(false)
     const [replaceModeActive, setReplaceModeActive] = useState(false)
+    const [copiedBlockId, setCopiedBlockId] = useState(null)
 
     const isActiveRef = useRef(isActive)
     useEffect(() => {
@@ -791,16 +792,24 @@ const MarkdownEditor = React.memo(
         const codeLine = e.target.closest('.cm-line.cb-code-header')
         if (codeLine) {
           const rect = codeLine.getBoundingClientRect()
+          // Only copy if clicked on the right side (the language pill)
           if (e.clientX < rect.right - 80) return
           const id = codeLine.getAttribute('data-cb-id')
           const code = id != null ? codeMap.get(Number(id)) : null
           if (code != null) {
             e.preventDefault()
             e.stopPropagation()
-            await navigator.clipboard.writeText(code)
-            showToast('Code copied', 'success')
-            codeLine.classList.add('cb-copied')
-            setTimeout(() => codeLine.classList.remove('cb-copied'), 600)
+            try {
+              await navigator.clipboard.writeText(code)
+              codeLine.classList.add('cb-copied')
+              setCopiedBlockId(id)
+              setTimeout(() => {
+                if (codeLine) codeLine.classList.remove('cb-copied')
+                setCopiedBlockId(null)
+              }, 3000)
+            } catch (err) {
+              console.error('Failed to copy: ', err)
+            }
           }
         }
       }
@@ -825,6 +834,17 @@ const MarkdownEditor = React.memo(
           />
         )}
         <ToastNotification toast={toast} onClose={clearToast} />
+        {copiedBlockId != null && (
+          <style>{`
+            .cm-line.cb-code-header[data-cb-id="${copiedBlockId}"]::before {
+              content: '✓ COPIED' !important;
+              color: #4caf50 !important;
+              background: transparent !important;
+              border-color: transparent !important;
+              font-weight: bold !important;
+            }
+          `}</style>
+        )}
 
         <div className="editor-scroller">
           <EditorMenu
