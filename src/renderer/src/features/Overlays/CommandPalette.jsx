@@ -70,7 +70,8 @@ const CommandPaletteRow = React.memo(({ index, style, data }) => {
     onClose,
     dirtySnippetIds,
     settings,
-    updateSetting
+    updateSetting,
+    onRename
   } = data
 
   const item = filtered[index]
@@ -93,6 +94,7 @@ const CommandPaletteRow = React.memo(({ index, style, data }) => {
           else if (item.action === 'new') onNew?.()
           else if (item.action === 'graph') onToggleGraph?.()
           else if (item.action === 'chat') onToggleChat?.()
+          else if (item.action === 'rename') onRename?.()
           else if (item.action === 'reload-window') window.location.reload()
           else if (item.action === 'toggle-type-sound') {
             updateSetting('typeSound', !settings.typeSound)
@@ -180,7 +182,7 @@ const CommandPaletteRow = React.memo(({ index, style, data }) => {
   )
 })
 const CommandPalette = React.memo(
-  ({ isOpen, onClose, items, onSelect, onNew, onToggleSettings, onToggleGraph, onToggleChat, initialQuery = '' }) => {
+  ({ isOpen, onClose, items, onSelect, onNew, onToggleSettings, onToggleGraph, onToggleChat, onRename, initialQuery = '' }) => {
     const [query, setQuery] = useState('')
     const deferredQuery = useDeferredValue(query)
     const [selectedIndex, setSelectedIndex] = useState(0)
@@ -270,6 +272,7 @@ const CommandPalette = React.memo(
         { id: 'action-reload-window', title: 'Developer: Reload Window', matchType: 'action', action: 'reload-window', shortcut: 'Ctrl + R' },
         { id: 'action-chat', title: 'Chat: Open AI Chat', matchType: 'action', action: 'chat', shortcut: 'Ctrl + Shift + \\' },
         { id: 'action-new', title: 'Note: Create New Snippet', matchType: 'action', action: 'new', shortcut: 'Ctrl + N' },
+        { id: 'action-rename', title: 'Note: Rename Snippet', matchType: 'action', action: 'rename', shortcut: 'Ctrl + R' },
         { id: 'action-graph', title: 'Graph: Open Knowledge Nexus', matchType: 'action', action: 'graph', shortcut: 'Ctrl + G' }
       ].filter((a) => !actionQuery || a.title.toLowerCase().includes(actionQuery))
 
@@ -461,6 +464,7 @@ const CommandPalette = React.memo(
       onToggleSettings,
       onToggleGraph,
       onToggleChat,
+      onRename,
       onClose,
       dirtySnippetIds,
       settings,
@@ -470,13 +474,14 @@ const CommandPalette = React.memo(
       selectedIndex,
       query,
       dirtySnippetIds,
+      settings,
       onSelect,
       onNew,
       onToggleSettings,
       onToggleGraph,
       onToggleChat,
+      onRename,
       onClose,
-      settings,
       updateSetting
     ])
 

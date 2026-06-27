@@ -1,0 +1,59 @@
+.rename-overlay {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  z-index: 10001;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: calc(15vh - 70px);
+}
+
+.rename-modal {
+  background: var(--bg-app);
+  border-radius: 8px;
+  padding: 12px 24px;
+  width: 420px;
+  border: none;
+  box-shadow: 
+    0 20px 50px rgba(0, 0, 0, 0.5), 
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+  animation: modal-fade-in 0.15s ease-out;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Fading accent line on the inner bottom border, matching workspace tabs */
+.rename-modal::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  background: radial-gradient(ellipse at center, var(--text-accent) 0%, transparent 70%);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.rename-form {
+  display: flex;
+  margin: 0;
+}
+
+.rename-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  font-family: var(--font-editor, 'Inter'), sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  outline: none;
+  padding: 8px 0;
+  text-align: center;
+}
+
+.rename-input::placeholder {
+  color: var(--text-faint);
+  font-weight: 400;
+}

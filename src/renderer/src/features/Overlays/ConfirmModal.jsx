@@ -30,7 +30,7 @@ const ConfirmModal = ({
 
   return createPortal(
     <div className="modal-overlay confirm-overlay" onClick={onClose}>
-      <div className="modal-container confirm-modal" onClick={(e) => e.stopPropagation()}>
+      <div className={`modal-container confirm-modal ${danger ? 'border-danger' : 'border-accent'}`} onClick={(e) => e.stopPropagation()}>
         <div className="confirm-header">
           {/* <button className="confirm-close" onClick={onClose}>
             <X size={18} />

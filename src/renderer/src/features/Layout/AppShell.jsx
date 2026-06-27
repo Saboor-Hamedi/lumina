@@ -14,10 +14,13 @@ import { useUpdateStore } from '../../core/store/useUpdateStore'
 import { useToast } from '../../core/hooks/useToast'
 import ToastNotification from '../../core/notification'
 import ConfirmModal from '../Overlays/ConfirmModal'
+import RenameModal from '../Overlays/RenameModal'
+import { handleRenameSnippet } from '../../core/hooks/handleRenameSnippet'
 import UpdateToast from '../Overlays/UpdateToast'
 import ErrorBoundary from '../../components/ErrorBoundary'
 import './AppShell.css'
 import '../Overlays/ConfirmModal.css'
+import '../Overlays/RenameModal.css'
 
 import AIChatModal from '../Overlays/AIChatModal'
 import SnippetDetails from '../Inspector/SnippetDetails'
@@ -70,6 +73,7 @@ const AppShell = () => {
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true)
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false)
   const [rightSidebarTab, setRightSidebarTab] = useState('ai') // 'ai' or 'details'
+  const [renameModal, setRenameModal] = useState({ isOpen: false, item: null, newName: '' })
   /**
    * Stores the right sidebar state (open/closed and width) when AI chat modal is opened.
    * Used to restore the sidebar to its previous state when the modal is closed.
@@ -350,6 +354,24 @@ const AppShell = () => {
     window.addEventListener('keydown', handleAIChatShortcut)
     return () => window.removeEventListener('keydown', handleAIChatShortcut)
   }, [])
+
+  // Ctrl+R - rename selected snippet
+  useEffect(() => {
+    const handleRenameShortcut = (e) => {
+      const key = e.key && e.key.toLowerCase()
+      // Make sure we only catch standard Ctrl+R without shift/alt to allow other shortcuts
+      if ((e.ctrlKey || e.metaKey) && key === 'r' && !e.shiftKey && !e.altKey) {
+        e.preventDefault() // prevent browser reload
+        if (selectedSnippet) {
+          setRenameModal({ isOpen: true, item: selectedSnippet, newName: selectedSnippet.title })
+        } else {
+          showToast('No snippet selected to rename', 'info')
+        }
+      }
+    }
+    window.addEventListener('keydown', handleRenameShortcut)
+    return () => window.removeEventListener('keydown', handleRenameShortcut)
+  }, [selectedSnippet, showToast])
 
   // Close sidebar automatically only when crossing the 700px threshold downwards
   useEffect(() => {
@@ -702,6 +724,11 @@ const AppShell = () => {
         }}
         onToggleGraph={() => setShowGraph(true)}
         onToggleChat={() => setShowAIChatModal(true)}
+        onRename={() => {
+          if (selectedSnippet) {
+            setRenameModal({ isOpen: true, item: selectedSnippet, newName: selectedSnippet.title })
+          }
+        }}
       />
       {/* Graph Modal */}
       {showGraph && (
@@ -721,6 +748,21 @@ const AppShell = () => {
         onConfirm={handleConfirmDelete}
         title="Delete Note?"
         message={`Are you sure you want to delete "${snippetToDelete?.title || 'this note'}"? This cannot be undone.`}
+      />
+      <RenameModal
+        isOpen={renameModal.isOpen}
+        initialName={renameModal.newName}
+        onClose={() => setRenameModal({ isOpen: false, item: null, newName: '' })}
+        onRename={(newName) => {
+          handleRenameSnippet({
+            renameModal: { ...renameModal, newName },
+            saveSnippet,
+            setSelectedSnippet,
+            setRenameModal,
+            setIsCreatingSnippet: () => {},
+            showToast
+          })
+        }}
       />
       <UpdateToast />
       <ToastNotification toast={toast} onClose={clearToast} />

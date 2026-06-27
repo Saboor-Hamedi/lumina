@@ -6,13 +6,32 @@
 
 .confirm-modal {
   width: 100%;
-  max-width: 360px;
-  /* padding: 10px; */
+  max-width: 420px;
   background: var(--bg-panel);
-  border: 1px solid var(--border-dim);
-  border-bottom-left-radius: 10px;
-  border-bottom-right-radius: 10px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.confirm-modal::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.confirm-modal.border-danger::after {
+  background: radial-gradient(ellipse at center, #ef4444 0%, transparent 70%);
+}
+
+.confirm-modal.border-accent::after {
+  background: radial-gradient(ellipse at center, var(--text-accent) 0%, transparent 70%);
 }
 
 .confirm-header {

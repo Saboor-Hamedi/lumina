@@ -783,6 +783,10 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                     <div className="shortcut-badge">Ctrl + N</div>
                   </div>
                   <div className="settings-row">
+                    <div className="row-info">Rename Note</div>
+                    <div className="shortcut-badge">Ctrl + R</div>
+                  </div>
+                  <div className="settings-row">
                     <div className="row-info">Save</div>
                     <div className="shortcut-badge">Ctrl + S</div>
                   </div>
