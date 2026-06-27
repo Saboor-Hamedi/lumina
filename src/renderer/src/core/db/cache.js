@@ -30,9 +30,9 @@ export const openDb = async () => {
       console.warn('[DB] Open failed:', err.message || err)
 
       // Only attempt to delete and recreate if it's a structural error (like VersionError)
-      // Do NOT delete on temporary locks (UnknownError) to avoid wiping user chat sessions.
-      if (err.name === 'VersionError') {
-        console.warn('[DB] Structural error detected, resetting database...')
+      // We also delete on UnknownError to fix corrupted IndexedDB states.
+      if (err.name === 'VersionError' || err.name === 'UnknownError') {
+        console.warn('[DB] Structural or unknown error detected, resetting database...')
         try {
           await Dexie.delete('LuminaVault_v2')
         } catch (_) {}

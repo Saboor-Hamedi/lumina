@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Send, Zap, Brain, Palette, Code, Square, ChevronDown } from 'lucide-react'
+import { Send, Zap, Brain, Palette, Code, Square, ChevronDown, Loader2 } from 'lucide-react'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import './Composer.css'
 import { SlashCommandMenu } from './SlashCommandMenu'
@@ -139,21 +139,18 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
             {input.length > 0 && <span className="char-count">{input.length}</span>}
             {mode !== 'Standard' && <span className="mode-badge">{mode}</span>}
 
-            {isLoading ? (
-              <button className="send-btn stop" onClick={onCancel} title="Stop generation">
-                <Square size={12} />
-                <span>Stop</span>
-              </button>
-            ) : (
-              <button
-                className="send-btn"
-                onClick={handleSend}
-                disabled={!input.trim()}
-                title="Send (Enter)"
-              >
-                <Send size={12} />
-              </button>
-            )}
+            <button
+              className={`send-btn ${isLoading ? 'stop' : ''}`}
+              onClick={isLoading ? onCancel : handleSend}
+              disabled={!isLoading && !input.trim()}
+              title={isLoading ? 'Stop generation' : 'Send (Enter)'}
+            >
+              {isLoading ? (
+                <Loader2 size={13} strokeWidth={2.5} className="spin-icon" />
+              ) : (
+                <Send size={12} strokeWidth={2.5} />
+              )}
+            </button>
           </div>
         </div>
       </div>

@@ -268,7 +268,7 @@ const CommandPalette = React.memo(
         { id: 'action-settings-graph', title: 'Settings: Graph Node Settings', matchType: 'action',  action: 'settings', tab: 'graph' },
         { id: 'action-toggle-type-sound', title: `Toggle Mechanical Keyboard Sound (${settings?.typeSound ? 'On' : 'Off'})`, matchType: 'action', action: 'toggle-type-sound' },
         { id: 'action-reload-window', title: 'Developer: Reload Window', matchType: 'action', action: 'reload-window', shortcut: 'Ctrl + R' },
-        { id: 'action-chat', title: 'Chat: Open AI Chat', matchType: 'action', action: 'chat', shortcut: 'Ctrl + Shift + I' },
+        { id: 'action-chat', title: 'Chat: Open AI Chat', matchType: 'action', action: 'chat', shortcut: 'Ctrl + Shift + \\' },
         { id: 'action-new', title: 'Note: Create New Snippet', matchType: 'action', action: 'new', shortcut: 'Ctrl + N' },
         { id: 'action-graph', title: 'Graph: Open Knowledge Nexus', matchType: 'action', action: 'graph', shortcut: 'Ctrl + G' }
       ].filter((a) => !actionQuery || a.title.toLowerCase().includes(actionQuery))

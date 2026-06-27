@@ -342,7 +342,7 @@ const AppShell = () => {
   useEffect(() => {
     const handleAIChatShortcut = (e) => {
       const key = e.key && e.key.toLowerCase()
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && key === '\\') {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (key === '\\' || key === '|' || e.code === 'Backslash')) {
         e.preventDefault()
         setShowAIChatModal((prev) => !prev)
       }

@@ -1264,7 +1264,11 @@ ${vaultAccessNote}`
         get().saveChatHistory()
         set({ isChatLoading: false, chatController: null })
       } catch (error) {
-        console.error('[AIStore] Chat Error:', error)
+        if (error.name === 'AbortError') {
+          console.log('[AIStore] Chat generation aborted by user.')
+        } else {
+          console.error('[AIStore] Chat Error:', error)
+        }
 
         // Clean up empty assistant message if it failed immediately
         set((state) => {
@@ -1278,7 +1282,7 @@ ${vaultAccessNote}`
           return {
             chatMessages: msgs,
             isChatLoading: false,
-            chatError: error.message,
+            chatError: error.name === 'AbortError' ? null : error.message,
             chatController: null
           }
         })
