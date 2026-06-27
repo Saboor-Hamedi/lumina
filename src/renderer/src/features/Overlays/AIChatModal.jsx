@@ -546,12 +546,19 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
 
   const listRef = useRef(null)
 
-  // Auto-scroll to bottom when messages change or during streaming
+  // Auto-scroll to bottom when messages change, on open, or during streaming
   useEffect(() => {
-    if (listRef.current) {
-      listRef.current.scrollTop = listRef.current.scrollHeight
+    const scrollToBottom = () => {
+      if (listRef.current) {
+        listRef.current.scrollTop = listRef.current.scrollHeight
+      }
     }
-  }, [chatMessages, isChatLoading])
+    
+    scrollToBottom()
+    // Small delay to ensure DOM is fully laid out (e.g. after modal open)
+    const timeoutId = setTimeout(scrollToBottom, 50)
+    return () => clearTimeout(timeoutId)
+  }, [chatMessages, isChatLoading, isOpen])
 
   // Load chat history on mount
   useEffect(() => {
@@ -837,7 +844,7 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
       </div>
 
       <div className="chat-main" onClick={() => { if (showSessions) setShowSessions(false) }}>
-        <div className="chat-messages">
+        <div className="chat-messages" ref={listRef}>
           {visibleMessages.length === 0 ? (
             <div className="chat-empty">
               
@@ -865,7 +872,7 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
               )}
             </div>
           ) : (
-            <div className="chat-msg-list" ref={listRef}>
+            <div className="chat-msg-list">
               {renderedMessages}
               <div className="chat-footer-area">
                 {(() => {
