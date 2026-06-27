@@ -640,8 +640,10 @@ app.whenReady().then(async () => {
   ipcMain.handle('vault:deleteFolder', async (_, path) => await VaultManager.deleteFolder(path))
 
   // System
-  ipcMain.handle('dialog:showOpenDialog', async (_, options) => {
-    if (VaultManager.vaultPath) shell.openPath(VaultManager.vaultPath)
+  ipcMain.handle('vault:open-folder', async () => {
+    if (VaultManager.vaultPath) {
+      await shell.openPath(VaultManager.vaultPath)
+    }
   })
 
   ipcMain.handle('vault:select-folder', async () => {

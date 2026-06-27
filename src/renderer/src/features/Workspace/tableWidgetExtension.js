@@ -74,7 +74,17 @@ function parseTable(state, tableNode) {
 // (`\|` — e.g. round-tripping content the parser handed us) is left
 // alone so serialize is idempotent.
 function escapeCell(text) {
-  return text.replace(/\r?\n/g, ' ').replace(/(?<!\\)\|/g, '\\|')
+  // Escape pipes that are NOT inside inline code blocks
+  // A simple heuristic: split by inline code segments, escape pipes in non-code segments.
+  const parts = text.split(/(`[^`\n]+`)/)
+  for (let i = 0; i < parts.length; i++) {
+    if (i % 2 === 0) {
+      parts[i] = parts[i].replace(/\r?\n/g, ' ').replace(/(?<!\\)\|/g, '\\|')
+    } else {
+      parts[i] = parts[i].replace(/\r?\n/g, ' ') // Keep code blocks intact
+    }
+  }
+  return parts.join('')
 }
 export function serializeTable(model) {
   const columnCount = model.header.length
@@ -157,6 +167,14 @@ function matchCellMarkAt(raw, from) {
   if (m) {
     return {
       token: { type: 'strong', delim: '__', children: parseCellInline(m[1]) },
+      end: from + m[0].length
+    }
+  }
+  // Inline Code
+  m = rest.match(/^`([^`\n]+)`/)
+  if (m) {
+    return {
+      token: { type: 'code', text: m[1] },
       end: from + m[0].length
     }
   }
@@ -245,6 +263,17 @@ function renderCellToken(tok) {
     inner.appendChild(renderTokensTo(tok.children))
     wrap.appendChild(inner)
     wrap.appendChild(makeCellMark(tok.delim))
+    return wrap
+  }
+  if (tok.type === 'code') {
+    const wrap = document.createElement('span')
+    wrap.className = 'cm-atomic-inline-code-wrap'
+    wrap.appendChild(makeCellMark('`'))
+    const inner = document.createElement('span')
+    inner.className = 'cm-atomic-inline-code'
+    inner.textContent = tok.text
+    wrap.appendChild(inner)
+    wrap.appendChild(makeCellMark('`'))
     return wrap
   }
   if (tok.type === 'em') {
@@ -458,7 +487,8 @@ const MARK_WRAP_CLASSES = [
   'cm-atomic-strong-wrap',
   'cm-atomic-em-wrap',
   'cm-atomic-strike-wrap',
-  'cm-atomic-link-wrap'
+  'cm-atomic-link-wrap',
+  'cm-atomic-inline-code-wrap'
 ]
 function isMarkWrap(el) {
   for (const c of MARK_WRAP_CLASSES) if (el.classList.contains(c)) return true
@@ -620,6 +650,24 @@ class TableWidget extends WidgetType {
   toDOM(view) {
     const wrap = document.createElement('div')
     wrap.className = 'cm-atomic-table'
+    
+    wrap.addEventListener('mousedown', (event) => {
+      const source = event.target.closest('.cm-atomic-table-cell-source')
+      if (source) return // Let normal focus happen if they clicked directly in the editable text
+
+      // They clicked on padding, borders, or table margins
+      event.preventDefault() // Prevent CodeMirror from taking focus and drawing a giant cursor
+      
+      const cell = event.target.closest('td, th')
+      if (cell) {
+        const innerSource = cell.querySelector('.cm-atomic-table-cell-source')
+        if (innerSource) {
+          innerSource.focus()
+          placeCaretAtEnd(innerSource)
+        }
+      }
+    })
+
     const table = document.createElement('table')
     wrap.appendChild(table)
     const thead = document.createElement('thead')
@@ -808,6 +856,37 @@ function makeCell(tag, text, view) {
       return
     }
 
+    if (event.key === '`') {
+      const doc = source.ownerDocument
+      const win = doc?.defaultView
+      const sel = win?.getSelection()
+      if (sel && sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0)
+        if (range.collapsed) {
+           const text = source.textContent || ''
+           const offset = getCaretCharOffset(source) || 0
+           if (offset < text.length && text[offset] === '`') {
+             // Skip over closing backtick
+             setCaretCharOffset(source, offset + 1)
+             updateActiveMarkForSource(source)
+             event.preventDefault()
+             event.stopPropagation()
+             return
+           } else {
+             // Auto-pair
+             const newText = text.slice(0, offset) + '``' + text.slice(offset)
+             source.textContent = newText
+             commit()
+             setCaretCharOffset(source, offset + 1)
+             updateActiveMarkForSource(source)
+             event.preventDefault()
+             event.stopPropagation()
+             return
+           }
+        }
+      }
+    }
+
     // Enter mirrors Tab — advance to the next cell (appending a row past
     // the last one) instead of inserting a line break a single-line cell
     // can't represent. Shift reverses direction for both.
@@ -828,6 +907,19 @@ function makeCell(tag, text, view) {
 
     if (event.key === 'Backspace') {
       const offset = getCaretCharOffset(source)
+      const text = source.textContent || ''
+      if (offset > 0 && offset < text.length && text[offset - 1] === '`' && text[offset] === '`') {
+        // Delete both backticks
+        const newText = text.slice(0, offset - 1) + text.slice(offset + 1)
+        source.textContent = newText
+        commit()
+        setCaretCharOffset(source, offset - 1)
+        updateActiveMarkForSource(source)
+        event.preventDefault()
+        event.stopPropagation()
+        return
+      }
+
       if (offset === 0) {
         event.preventDefault()
         event.stopPropagation()
@@ -934,6 +1026,17 @@ function makeCell(tag, text, view) {
     }
 
     if (event.key === '|') {
+      const doc = source.ownerDocument
+      const win = doc?.defaultView
+      const sel = win?.getSelection()
+      if (sel && sel.rangeCount > 0) {
+        const anchor = sel.anchorNode
+        if (anchor && anchor.parentElement && anchor.parentElement.closest('.cm-atomic-inline-code-wrap')) {
+          // Inside inline code, allow typing literal pipe without splitting cell
+          return
+        }
+      }
+
       event.preventDefault()
       event.stopPropagation()
       const text = source.textContent || ''

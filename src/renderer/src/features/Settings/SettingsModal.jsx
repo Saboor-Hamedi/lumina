@@ -201,13 +201,21 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
               <div className="settings-pane">
                 <section>
                   <h3>Vault Configuration</h3>
-                  <div className="settings-row">
-                    <div className="row-info">
-                      <div className="row-label">Vault Path</div>
-                      <div className="row-hint">Your notes are stored as local Markdown files.</div>
+                  <div className="settings-block">
+                    <div className="row-info" style={{ marginBottom: '16px' }}>
+                      <div className="row-label">Vault Location</div>
+                      <div className="row-hint">This is where all your markdown notes, assets, and AI indexes are stored securely on your local device.</div>
                     </div>
-                    <div className="row-actions">
-                      <button className="btn" onClick={handleOpenFolder}>
+                    
+                    <div className="vault-path-display">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="vault-icon">
+                        <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
+                      </svg>
+                      <span className="path-text">{settings.vaultPath || 'No vault selected (using default)'}</span>
+                    </div>
+
+                    <div className="vault-actions">
+                      <button className="btn btn-outline" onClick={handleOpenFolder}>
                         Open in Explorer
                       </button>
                       <button className="btn btn-primary" onClick={handleSwitchVault}>

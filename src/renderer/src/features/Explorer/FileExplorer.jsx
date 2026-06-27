@@ -3,6 +3,8 @@ import {
   Search,
   FileText,
   FileCode,
+  Files,
+  Star,
   Pin,
   PinOff,
   ArrowUpDown,
@@ -1061,26 +1063,56 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="explorer-tabs">
-          <button
-            className={`explorer-tab ${activeTab === 'all' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('all')
-              setCreating(null)
-            }}
-          >
-            All Notes
-          </button>
-          <button
-            className={`explorer-tab ${activeTab === 'favorites' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('favorites')
-              setCreating(null)
-            }}
-          >
-            Favorites
-          </button>
+        {/* Icon Tabs */}
+        <div className="explorer-icon-tabs" style={{ display: 'flex', gap: '8px', padding: '0 12px', marginBottom: '8px', borderBottom: '1px solid var(--border-dim)', paddingBottom: '8px' }}>
+          <ToolTip text="All Notes">
+            <button
+              className={`icon-tab-btn ${activeTab === 'all' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab('all')
+                setCreating(null)
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: activeTab === 'all' ? 'var(--text-accent)' : 'var(--text-muted)',
+                cursor: 'pointer',
+                padding: '4px',
+                borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s',
+                backgroundColor: activeTab === 'all' ? 'var(--bg-active)' : 'transparent'
+              }}
+            >
+              <Files size={16} />
+            </button>
+          </ToolTip>
+          <ToolTip text="Favorites">
+            <button
+              className={`icon-tab-btn ${activeTab === 'favorites' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab('favorites')
+                setCreating(null)
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: activeTab === 'favorites' ? 'var(--text-accent)' : 'var(--text-muted)',
+                cursor: 'pointer',
+                padding: '4px',
+                borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s',
+                backgroundColor: activeTab === 'favorites' ? 'var(--bg-active)' : 'transparent'
+              }}
+            >
+              <Star size={16} />
+            </button>
+          </ToolTip>
         </div>
 
         {/* Scrollable Body */}
@@ -1095,9 +1127,9 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
             setFolderContext({ folderId: '', x: e.clientX, y: e.clientY })
           }}
         >
-          {/* Pinned Section */}
+          {/* Favorites Section */}
           {activeTab === 'favorites' && (
-            <div className="start-section">
+            <div className="start-section" style={{ flex: 1, minHeight: 0, paddingBottom: '16px' }}>
               <div className="start-section-header">
                 <h3>Favorites</h3>
               </div>
@@ -1116,7 +1148,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                   >
                     <div
                       className="recommended-list"
-                      style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto', minHeight: 0 }}
+                      style={{ display: 'flex', flexDirection: 'column', flex: 1, overflowY: 'auto' }}
                     >
                       {pinnedSnippets.map((snippet) => (
                         <SortableListItem
@@ -1133,21 +1165,21 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
             </div>
           )}
 
-          {/* Recommended / All Section */}
+          {/* All Notes Section */}
           {activeTab === 'all' && (
             <div className="start-section">
               <div className="start-section-header">
                 <h3>
                   {allSnippets.length} {allSnippets.length === 1 ? 'Note' : 'Notes'}
                 </h3>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <ToolTip text="Collapse All Folders">
-                    <button className="sort-toggle-btn" onClick={collapseAllFolders}>
-                      <ChevronsUp size={14} />
-                    </button>
-                  </ToolTip>
-                  <ToolTip text="Refresh Vault">
-                    <button
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <ToolTip text="Collapse All Folders">
+                  <button className="sort-toggle-btn" onClick={collapseAllFolders}>
+                    <ChevronsUp size={14} />
+                  </button>
+                </ToolTip>
+                <ToolTip text="Refresh Vault">
+                  <button
                       className="sort-toggle-btn"
                       onClick={(e) => {
                         e.stopPropagation()

@@ -228,6 +228,13 @@
   padding: 2px 4px;
 }
 
+/* Remove highlight when actively editing so it looks like plain markdown */
+.cm-atomic-inline-code-wrap.active .cm-atomic-inline-code {
+  background: transparent !important;
+  color: inherit !important;
+  padding: 0 !important;
+}
+
 /* Inline Tag and Mention Styles */
 .cm-inline-tag,
 .cm-inline-mention {
