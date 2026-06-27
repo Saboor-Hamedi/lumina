@@ -15,17 +15,27 @@ const WelcomePage = ({ onNew }) => {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '20px'
+            gap: '16px'
           }}
         >
-          <div className="welcome-empty-action" onClick={onNew}>
-            Create new note (Ctrl + N)
+          <div className="welcome-empty-action" onClick={onNew} style={{ display: 'flex', justifyContent: 'space-between', width: '220px' }}>
+            <span>Create new note</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-faint)', fontWeight: 500, letterSpacing: '0.5px' }}>Ctrl + N</span>
           </div>
-          <div className="welcome-empty-action" onClick={handlePalette}>
-            Go to file (Ctrl + P)
+          <div className="welcome-empty-action" onClick={handlePalette} style={{ display: 'flex', justifyContent: 'space-between', width: '220px' }}>
+            <span>Go to file</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-faint)', fontWeight: 500, letterSpacing: '0.5px' }}>Ctrl + P</span>
           </div>
-          <div className="welcome-empty-action" onClick={handleClose}>
-            Close
+          <div className="welcome-empty-action" onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }))} style={{ display: 'flex', justifyContent: 'space-between', width: '220px' }}>
+            <span>Toggle Explorer</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-faint)', fontWeight: 500, letterSpacing: '0.5px' }}>Ctrl + B</span>
+          </div>
+          <div className="welcome-empty-action" onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'i', ctrlKey: true, shiftKey: true }))} style={{ display: 'flex', justifyContent: 'space-between', width: '220px' }}>
+            <span>AI Chat</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-faint)', fontWeight: 500, letterSpacing: '0.5px' }}>Ctrl+Shift+I</span>
+          </div>
+          <div className="welcome-empty-action" onClick={handleClose} style={{ display: 'flex', justifyContent: 'center', width: '220px', marginTop: '8px' }}>
+            <span>Close</span>
           </div>
         </div>
       </div>

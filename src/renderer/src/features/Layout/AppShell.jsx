@@ -61,6 +61,7 @@ const AppShell = () => {
   const [showSettings, setShowSettings] = useState(false)
   const [showThemeModal, setShowThemeModal] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
+  const [paletteInitialQuery, setPaletteInitialQuery] = useState('')
   const [showGraph, setShowGraph] = useState(false)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [showAIChatModal, setShowAIChatModal] = useState(false)
@@ -336,6 +337,34 @@ const AppShell = () => {
     return () => window.removeEventListener('keydown', handleSidebarToggleShortcut)
   }, [])
 
+  // Ctrl+Shift+I - toggle AI Chat Modal
+  useEffect(() => {
+    const handleAIChatShortcut = (e) => {
+      const key = e.key && e.key.toLowerCase()
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && key === 'i') {
+        e.preventDefault()
+        setShowAIChatModal((prev) => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleAIChatShortcut)
+    return () => window.removeEventListener('keydown', handleAIChatShortcut)
+  }, [])
+
+  // Close sidebar automatically only when crossing the 700px threshold downwards
+  useEffect(() => {
+    let wasLarge = window.innerWidth > 700
+    const handleResize = () => {
+      const isLarge = window.innerWidth > 700
+      // If we just shrank from large to small, close the sidebar
+      if (wasLarge && !isLarge) {
+        setIsLeftSidebarOpen(false)
+      }
+      wasLarge = isLarge
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
   // Trigger AI Indexing when snippets change (Background)
   // Note: Vault indexing is handled automatically by main process on vault selection/save
   // This effect is disabled to prevent passing invalid vaultPath
@@ -358,7 +387,28 @@ const AppShell = () => {
   }, [])
 
   useKeyboardShortcuts({
+    onSave: async () => {
+      if (activeTab === 'search') return // No-op if on search tab
+      if (selectedSnippet) {
+        setIsSaving(true)
+        await saveSnippet(selectedSnippet.id, selectedSnippet.code, selectedSnippet)
+        setTimeout(() => setIsSaving(false), 800) // fake delay for UI feedback
+      }
+    },
+    onFind: () => window.dispatchEvent(new CustomEvent('find-in-editor')),
+    onTogglePalette: () => {
+      setPaletteInitialQuery('')
+      setShowPalette(true)
+    },
+    onToggleCommandPalette: () => {
+      setPaletteInitialQuery('>')
+      setShowPalette(true)
+    },
     onEscape: () => {
+      if (showAIChatModal) {
+        setShowAIChatModal(false)
+        return true
+      }
       if (showPalette) {
         setShowPalette(false)
         return true
@@ -377,7 +427,6 @@ const AppShell = () => {
       }
       return false
     },
-    onTogglePalette: () => setShowPalette(true),
     onToggleSettings: () => setShowSettings(true),
     onToggleTheme: () => setShowThemeModal(true),
     onToggleGraph: () => setShowGraph(true),
@@ -638,6 +687,7 @@ const AppShell = () => {
       />
       <CommandPalette
         isOpen={showPalette}
+        initialQuery={paletteInitialQuery}
         onClose={() => setShowPalette(false)}
         items={snippets}
         onSelect={(snippet) => {
@@ -645,8 +695,12 @@ const AppShell = () => {
           setActiveTab('files')
         }}
         onNew={handleNew}
-        onToggleSettings={() => setShowSettings(true)}
+        onToggleSettings={(tab) => {
+          setSettingsInitialTab(tab || 'general')
+          setShowSettings(true)
+        }}
         onToggleGraph={() => setShowGraph(true)}
+        onToggleChat={() => setShowAIChatModal(true)}
       />
       {/* Graph Modal */}
       {showGraph && (

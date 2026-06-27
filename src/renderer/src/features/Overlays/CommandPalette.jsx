@@ -12,7 +12,13 @@ import {
   Plus,
   Network,
   AtSign,
-  Folder
+  Folder,
+  Settings,
+  Palette,
+  Keyboard,
+  Type,
+  Bot,
+  MessageSquare
 } from 'lucide-react'
 import Fuse from 'fuse.js'
 import { FixedSizeList as List } from '../../components/utils/VirtualList'
@@ -59,6 +65,7 @@ const CommandPaletteRow = React.memo(({ index, style, data }) => {
     onNew,
     onToggleSettings,
     onToggleGraph,
+    onToggleChat,
     onClose,
     dirtySnippetIds
   } = data
@@ -79,9 +86,10 @@ const CommandPaletteRow = React.memo(({ index, style, data }) => {
           return
         }
         if (isAction) {
-          if (item.action === 'settings') onToggleSettings?.()
+          if (item.action === 'settings') onToggleSettings?.(item.tab)
           else if (item.action === 'new') onNew?.()
           else if (item.action === 'graph') onToggleGraph?.()
+          else if (item.action === 'chat') onToggleChat?.()
         } else if (item.matchType === 'folder') {
           // Just close, no action
         } else {
@@ -95,9 +103,18 @@ const CommandPaletteRow = React.memo(({ index, style, data }) => {
     >
       {isAction ? (
         (() => {
-          if (item.action === 'settings') return <Zap size={18} className="item-icon action-icon" />
+          if (item.action === 'settings') {
+            if (item.tab === 'general') return <Settings size={18} className="item-icon action-icon" />
+            if (item.tab === 'appearance') return <Palette size={18} className="item-icon action-icon" />
+            if (item.tab === 'shortcuts') return <Keyboard size={18} className="item-icon action-icon" />
+            if (item.tab === 'ai') return <Bot size={18} className="item-icon action-icon" />
+            if (item.tab === 'type') return <Type size={18} className="item-icon action-icon" />
+            if (item.tab === 'graph') return <Network size={18} className="item-icon action-icon" />
+            return <Settings size={18} className="item-icon action-icon" />
+          }
           if (item.action === 'new') return <Plus size={18} className="item-icon action-icon" />
           if (item.action === 'graph') return <Network size={18} className="item-icon action-icon" />
+          if (item.action === 'chat') return <MessageSquare size={18} className="item-icon action-icon" />
           return <Zap size={18} className="item-icon action-icon" />
         })()
       ) : item.matchType === 'folder' ? (
@@ -131,10 +148,16 @@ const CommandPaletteRow = React.memo(({ index, style, data }) => {
             <div className="dirty-indicator" style={{ marginLeft: '8px' }} />
           )}
         </div>
-        {(item.matchSnippet || item.folderPath) && (
+        {(item.matchSnippet || item.folderPath || item.shortcut) && (
           <div className={`item-secondary ${isSemantic ? 'semantic-badge' : ''}`}>
             {isSemantic ? (
               '✨ AI Match'
+            ) : item.shortcut ? (
+              <div className="palette-shortcut">
+                {item.shortcut.split('+').map((key, i) => (
+                  <kbd key={i}>{key.trim()}</kbd>
+                ))}
+              </div>
             ) : item.folderPath ? (
               <span style={{ opacity: 0.6 }}>in {item.folderPath}</span>
             ) : (
@@ -147,7 +170,7 @@ const CommandPaletteRow = React.memo(({ index, style, data }) => {
   )
 })
 const CommandPalette = React.memo(
-  ({ isOpen, onClose, items, onSelect, onNew, onToggleSettings, onToggleGraph }) => {
+  ({ isOpen, onClose, items, onSelect, onNew, onToggleSettings, onToggleGraph, onToggleChat, initialQuery = '' }) => {
     const [query, setQuery] = useState('')
     const deferredQuery = useDeferredValue(query)
     const [selectedIndex, setSelectedIndex] = useState(0)
@@ -179,12 +202,12 @@ const CommandPalette = React.memo(
 
     useEffect(() => {
       if (isOpen) {
-        setQuery('')
+        setQuery(initialQuery)
         setSelectedIndex(0)
         setAiResults([])
         setTimeout(() => inputRef.current?.focus(), 50)
       }
-    }, [isOpen])
+    }, [isOpen, initialQuery])
 
     // AI Search Debounce
     useEffect(() => {
@@ -220,22 +243,24 @@ const CommandPalette = React.memo(
       const actionQuery = isActionQuery ? lowerQuery.slice(1).trim() : lowerQuery
 
       const systemActions = [
-        {
-          id: 'action-settings',
-          title: 'Settings: Open Configuration',
-          matchType: 'action',
-          action: 'settings'
-        },
-        { id: 'action-new', title: 'Note: Create New Snippet', matchType: 'action', action: 'new' },
-        {
-          id: 'action-graph',
-          title: 'Graph: Open Knowledge Nexus',
-          matchType: 'action',
-          action: 'graph'
-        }
+        { id: 'action-settings-general', title: 'Settings: General', matchType: 'action', action: 'settings', tab: 'general', shortcut: 'Ctrl + ,' },
+        { id: 'action-settings-appearance', title: 'Settings: Theme', matchType: 'action', action: 'settings', tab: 'appearance' },
+        { id: 'action-settings-shortcuts', title: 'Settings: Shortcuts', matchType: 'action', action: 'settings', tab: 'shortcuts' },
+        { id: 'action-settings-ai', title: 'Settings: AI & Language Models', matchType: 'action', action: 'settings', tab: 'ai' },
+        { id: 'action-settings-type', title: 'Settings: Typography', matchType: 'action', action: 'settings', tab: 'type' },
+        { id: 'action-settings-graph', title: 'Settings: Graph Node Settings', matchType: 'action', action: 'settings', tab: 'graph' },
+        { id: 'action-chat', title: 'Chat: Open AI Chat', matchType: 'action', action: 'chat', shortcut: 'Ctrl + Shift + I' },
+        { id: 'action-new', title: 'Note: Create New Snippet', matchType: 'action', action: 'new', shortcut: 'Ctrl + N' },
+        { id: 'action-graph', title: 'Graph: Open Knowledge Nexus', matchType: 'action', action: 'graph', shortcut: 'Ctrl + G' }
       ].filter((a) => !actionQuery || a.title.toLowerCase().includes(actionQuery))
 
-      if (!lowerQuery && !isActionQuery) return [...systemActions, ...items.slice(0, 50)]
+      // If it's a command query (starts with >), return ONLY system actions (like VS Code)
+      if (isActionQuery) {
+        return systemActions
+      }
+
+      // If it's empty, return recent/all files
+      if (!lowerQuery) return items.slice(0, 50)
 
       // 1. Text Matches (Title & Folder via Fuse, Content via indexOf)
       const fuseResults = fuseIndex.search(actionQuery)
@@ -353,8 +378,7 @@ const CommandPalette = React.memo(
         (a, b) => b.score - a.score
       )
 
-      if (isActionQuery) return systemActions
-      return [...systemActions, ...finalResults].slice(0, 50)
+      return finalResults.slice(0, 50)
     }, [deferredQuery, items, tags, mentions, folders, fuseIndex, aiResults])
 
     useEffect(() => {
@@ -364,7 +388,7 @@ const CommandPalette = React.memo(
     }, [filtered.length, selectedIndex])
 
     useEffect(() => {
-      if (listRef.current) {
+      if (listRef.current && filtered.length > 0) {
         listRef.current.scrollToItem(selectedIndex, 'auto')
       }
     }, [selectedIndex])
@@ -385,9 +409,10 @@ const CommandPalette = React.memo(
             return
           }
           if (item.matchType === 'action') {
-            if (item.action === 'settings') onToggleSettings?.()
+            if (item.action === 'settings') onToggleSettings?.(item.tab)
             else if (item.action === 'new') onNew?.()
             else if (item.action === 'graph') onToggleGraph?.()
+            else if (item.action === 'chat') onToggleChat?.()
           } else if (item.matchType === 'folder') {
             // Just close, no action
           } else {
@@ -411,6 +436,7 @@ const CommandPalette = React.memo(
       onNew,
       onToggleSettings,
       onToggleGraph,
+      onToggleChat,
       onClose,
       dirtySnippetIds
     }), [
@@ -422,6 +448,7 @@ const CommandPalette = React.memo(
       onNew,
       onToggleSettings,
       onToggleGraph,
+      onToggleChat,
       onClose
     ])
 
@@ -435,7 +462,7 @@ const CommandPalette = React.memo(
             <input
               ref={inputRef}
               type="text"
-              placeholder="Search notes..."
+              placeholder={query.startsWith('>') ? "Search commands..." : "Search notes..."}
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value)

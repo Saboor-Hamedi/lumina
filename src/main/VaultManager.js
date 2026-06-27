@@ -177,7 +177,6 @@ class VaultManager {
                 try {
                   const newRawContent = matter.stringify(content, newData)
                   await fs.writeFile(filePath, newRawContent, 'utf-8')
-                  console.info(`[VaultManager] Auto-healed missing/duplicate ID for ${fileName}`)
                 } catch (writeErr) {
                   console.error(`[VaultManager] Failed to heal ID for ${fileName}:`, writeErr)
                 }

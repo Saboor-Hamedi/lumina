@@ -222,7 +222,11 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
   }, [])
 
   if (openTabs.length === 0) {
-    return <WindowControls isSidebarOpen={isSidebarOpen} onToggleSidebar={onToggleSidebar} />
+    return (
+      <div className="tabbar-outer-wrapper" style={{ display: 'flex', width: '100%', position: 'relative', flexShrink: 0, minWidth: 0, justifyContent: 'flex-end' }}>
+        <WindowControls isSidebarOpen={isSidebarOpen} onToggleSidebar={onToggleSidebar} />
+      </div>
+    )
   }
 
   return (

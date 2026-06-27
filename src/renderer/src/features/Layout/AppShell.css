@@ -631,14 +631,6 @@
 
 /* Responsive adjustments for smaller windows */
 @media (max-width: 1050px) {
-  /* Scale down sidebar widths */
-  .app-shell.left-open .shell-sidebar-left {
-    width: min(var(--left-sidebar-width, 280px), 230px) !important;
-  }
-  .app-shell.right-open .shell-sidebar-right {
-    width: min(var(--right-sidebar-width, 320px), 260px) !important;
-  }
-
   /* Scale down fonts and sizing in UI elements */
   .shell-sidebar-left, 
   .shell-sidebar-right,
@@ -657,14 +649,6 @@
 }
 
 @media (max-width: 850px) {
-  /* Further scale down for very small windows */
-  .app-shell.left-open .shell-sidebar-left {
-    width: min(var(--left-sidebar-width, 280px), 200px) !important;
-  }
-  .app-shell.right-open .shell-sidebar-right {
-    width: min(var(--right-sidebar-width, 320px), 240px) !important;
-  }
-
   .shell-sidebar-left, 
   .shell-sidebar-right,
   .activity-bar,

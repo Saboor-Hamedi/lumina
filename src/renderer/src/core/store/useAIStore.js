@@ -265,6 +265,14 @@ export const useAIStore = create((set, get) => {
     },
 
     createNewSession: async () => {
+      const state = get()
+      // Check if there's already an empty session
+      const emptySession = state.sessions.find(s => s.messages.length === 0)
+      if (emptySession) {
+        state.switchSession(emptySession.id)
+        return
+      }
+
       const newSession = {
         id: crypto.randomUUID(),
         title: 'New Chat',

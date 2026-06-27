@@ -84,6 +84,12 @@ export const useKeyboardShortcuts = (shortcuts) => {
         e.preventDefault()
         shortcutsRef.current.onTogglePalette()
       }
+      
+      // Toggle Command Palette: Ctrl+Shift+P
+      if (isCmd && e.shiftKey && key === 'p' && shortcutsRef.current.onToggleCommandPalette) {
+        e.preventDefault()
+        shortcutsRef.current.onToggleCommandPalette()
+      }
 
       // Toggle Settings: Ctrl+,
       if (isCmd && key === ',' && shortcutsRef.current.onToggleSettings) {

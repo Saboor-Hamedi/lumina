@@ -273,9 +273,12 @@ function renderCellToken(tok) {
     const wrap = document.createElement('span')
     wrap.className = 'cm-atomic-link-wrap cm-atomic-wikilink-wrap'
     wrap.dataset.url = tok.url
+    wrap.dataset.wikiLinkTarget = tok.url
     wrap.appendChild(makeCellMark('[['))
     const inner = document.createElement('span')
     inner.className = 'cm-atomic-link cm-atomic-wiki-link' // Use wiki-link to match CSS
+    inner.dataset.url = tok.url
+    inner.dataset.wikiLinkTarget = tok.url
     inner.appendChild(renderTokensTo(tok.textChildren))
     wrap.appendChild(inner)
     wrap.appendChild(makeCellMark(']]'))

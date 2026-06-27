@@ -236,6 +236,13 @@ const MessageContent = React.memo(
       return <GeneratedImage imageUrl={imageUrl} prompt={imagePrompt} onCopy={onCopy} />
     }
 
+    // Pre-process content to handle custom XML tags like <readFile>
+    const processedContent = content?.replace(/<readFile>([\s\S]*?)<\/readFile>/g, (match, inner) => {
+      const titleMatch = inner.match(/title:\s*"([^"]+)"/);
+      const fileName = titleMatch ? titleMatch[1] : 'File';
+      return `\n> 📄 **Reading:** ${fileName}\n`;
+    }) || content;
+
     return (
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
@@ -249,7 +256,7 @@ const MessageContent = React.memo(
           )
         }}
       >
-        {content}
+        {processedContent}
       </ReactMarkdown>
     )
   },
@@ -811,7 +818,6 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
               className={`session-item ${activeSessionId === s.id ? 'active' : ''}`}
               onClick={() => {
                 switchSession(s.id)
-                setShowSessions(false)
               }}
             >
               <MessageSquare size={14} />
@@ -830,7 +836,7 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
         </div>
       </div>
 
-      <div className="chat-main">
+      <div className="chat-main" onClick={() => { if (showSessions) setShowSessions(false) }}>
         <div className="chat-messages">
           {visibleMessages.length === 0 ? (
             <div className="chat-empty">
@@ -845,17 +851,6 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
               >
                 How can I help you today?
               </h2>
-              <p
-                style={{
-                  fontSize: '13px',
-                  color: 'var(--text-muted)',
-                  maxWidth: '240px',
-                  lineHeight: '1.4',
-                  margin: '0 0 16px 0'
-                }}
-              >
-                I can help you write code, explain complex concepts, or manage your workspace.
-              </p>
               {selectedSnippet && (
                 <button
                   className="chat-suggestion-btn"

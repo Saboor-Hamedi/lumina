@@ -650,7 +650,7 @@
   height: 28px;
   padding: 0 16px;
   background: var(--bg-panel);
-  border-top: 1px solid var(--border-dim);
+  /* border-top: 1px solid var(--border-dim); */
   font-size: 0.8em;
   color: var(--text-faint);
   z-index: 100;
