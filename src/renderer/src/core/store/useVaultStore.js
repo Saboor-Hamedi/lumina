@@ -31,20 +31,19 @@ export const useVaultStore = create((set, get) => ({
 
       // Handle active tab: can be a snippet or GRAPH_TAB_ID
       const validActiveId = activeId && validTabs.includes(activeId) ? activeId : null
+      const finalActiveId = validActiveId || (validTabs.length ? validTabs[0] : null)
 
       const activeSnippet =
-        validActiveId === GRAPH_TAB_ID
+        finalActiveId === GRAPH_TAB_ID
           ? null
-          : validActiveId
-            ? state.snippets.find((s) => s.id === validActiveId)
-            : validTabs.length && validTabs[0] !== GRAPH_TAB_ID
-              ? state.snippets.find((s) => s.id === validTabs[0])
-              : null
+          : finalActiveId
+            ? state.snippets.find((s) => s.id === finalActiveId)
+            : null
 
       return {
         openTabs: validTabs,
         pinnedTabIds: validPinned,
-        activeTabId: activeId && validTabs.includes(activeId) ? activeId : null,
+        activeTabId: finalActiveId,
         selectedSnippet: activeSnippet
       }
     })
