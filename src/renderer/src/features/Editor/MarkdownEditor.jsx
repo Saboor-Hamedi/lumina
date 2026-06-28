@@ -8,6 +8,7 @@ import { useFontSettings } from '../../core/hooks/useFontSettings'
 import { useToast } from '../../core/hooks/useToast'
 import ToastNotification from '../../core/notification'
 import './MarkdownEditor.css'
+import './CodeWrapper.css'
 
 // Atomic Editor Imports
 import { AtomicCodeMirrorEditor, wikiLinks } from '@atomic-editor/editor'

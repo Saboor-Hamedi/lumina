@@ -13,6 +13,7 @@ import { mermaidWidgetExtension } from '../../Workspace/mermaidWidgetExtension'
 import { codeBlockDecorations } from '../../Workspace/codeBlockHeader'
 import '@atomic-editor/editor/styles.css'
 import '../../Editor/MarkdownEditor.css'
+import '../../Editor/CodeWrapper.css'
 import '../../Theme/ThemeModal.css'
 import { useKeyboardShortcuts } from '../../../core/hooks/useKeyboardShortcuts'
 

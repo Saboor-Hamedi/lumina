@@ -1,0 +1,124 @@
+/*
+  CODE BLOCK GEOMETRY — ChatGPT-style dark card
+*/
+.cm-line.cm-atomic-fenced-code {
+  padding: 2px 1em !important;
+  margin: 0 !important;
+  line-height: 1.6 !important;
+  background: var(--bg-panel, #1e1e1e) !important;
+  box-shadow: none !important;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
+  font-size: 0.88em;
+  color: var(--text-main, #d4d4d4);
+}
+
+.cm-line.cm-atomic-fenced-code.cm-activeLine {
+  background-color: var(--bg-active, #2a2a2a) !important;
+}
+
+/* Copy button on first line of code blocks */
+.cm-line.cb-code-header {
+  position: relative;
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+  cursor: text;
+  background: rgba(255, 255, 255, 0.03); /* Match AIChatModal header */
+  border-top-left-radius: 6px !important;
+  border-top-right-radius: 6px !important;
+  border: 1px solid var(--border-dim) !important;
+  border-bottom: 1px solid var(--border-dim) !important;
+}
+
+/* Hide raw markdown backticks and language text when not actively editing the header */
+.cm-line.cb-code-header:not(.cm-activeLine) {
+  color: var(--bg-panel) !important;
+}
+
+.cm-line.cb-code-header:not(.cm-activeLine) * {
+  color: var(--bg-panel) !important;
+}
+
+/* Wrapper body for code blocks in editor */
+.cm-line.cm-atomic-fenced-code:not(.cb-code-header) {
+  background: rgba(0, 0, 0, 0.2) !important;
+  border-left: 1px solid var(--border-dim) !important;
+  border-right: 1px solid var(--border-dim) !important;
+  padding: 0 12px !important;
+}
+
+/* Fix for .cm-activeLine removing borders and padding */
+.cm-line.cm-atomic-fenced-code:not(.cb-code-header).cm-activeLine {
+  border-left: 1px solid var(--border-dim) !important;
+  border-right: 1px solid var(--border-dim) !important;
+  padding: 0 12px !important;
+}
+
+/* Ensure the last line gets the bottom border and rounded corners */
+.cm-line.cm-atomic-fenced-code:has(+ :not(.cm-atomic-fenced-code)),
+.cm-line.cm-atomic-fenced-code:last-child,
+.cm-line.cm-atomic-fenced-code:has(+ :not(.cm-atomic-fenced-code)).cm-activeLine,
+.cm-line.cm-atomic-fenced-code:last-child.cm-activeLine {
+  border-bottom: 1px solid var(--border-dim) !important;
+  border-bottom-left-radius: 6px !important;
+  border-bottom-right-radius: 6px !important;
+  padding-bottom: 12px !important;
+}
+
+/* Hide closing backticks of fenced code block unless active */
+.cm-line.cm-atomic-fenced-code:has(+ :not(.cm-atomic-fenced-code)):not(.cm-activeLine),
+.cm-line.cm-atomic-fenced-code:last-child:not(.cm-activeLine) {
+  color: var(--bg-panel) !important;
+}
+.cm-line.cm-atomic-fenced-code:has(+ :not(.cm-atomic-fenced-code)):not(.cm-activeLine) *,
+.cm-line.cm-atomic-fenced-code:last-child:not(.cm-activeLine) * {
+  color: var(--bg-panel) !important;
+}
+
+/* Adjust the first line of actual code so it looks spaced out from header */
+.cm-line.cb-code-header + .cm-line.cm-atomic-fenced-code {
+  padding-top: 12px !important;
+}
+
+/* Language header pill on the right */
+.cm-line.cb-code-header::before {
+  content: attr(data-cb-lang);
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 4px 10px;
+  font-size: 10px !important;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: var(--text-muted, rgba(255, 255, 255, 0.4));
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  user-select: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  line-height: normal; /* Reset line-height from parent */
+}
+
+.cm-line.cb-code-header:hover::before {
+  color: var(--text-main, rgba(255, 255, 255, 0.9));
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Copied flash feedback */
+.cm-line.cb-code-header.cb-copied::before {
+  content: '✓ COPIED';
+  color: #4caf50;
+  background: transparent;
+  border-color: transparent;
+  font-weight: bold;
+}
+
+/* Selection style for code blocks */
+.markdown-editor .cm-line.cm-atomic-fenced-code ::selection,
+.markdown-editor .cm-line.cm-atomic-fenced-code .cm-selectionBackground {
+  background-color: rgba(86, 156, 214, 0.45) !important;
+}
