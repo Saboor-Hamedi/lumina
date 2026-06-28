@@ -108,26 +108,89 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
           }
         })
 
-        // Apply editor styles
-        pre.className = 'cm-line cm-atomic-fenced-code cb-code-header'
-        pre.setAttribute('data-cb-lang', lang)
+        const wrapper = document.createElement('div')
+        wrapper.className = 'hover-code-wrapper'
+        wrapper.style.display = 'block'
+        wrapper.style.marginTop = '12px'
+        wrapper.style.marginBottom = '12px'
+        wrapper.style.borderRadius = '8px'
+        wrapper.style.overflow = 'hidden'
+        wrapper.style.background = 'var(--bg-editor, #1e1e1e)'
+        wrapper.style.border = '1px solid var(--border-dim, rgba(255,255,255,0.05))'
+
+        const header = document.createElement('div')
+        header.style.position = 'relative'
+        header.style.height = '32px'
+        header.style.background = 'rgba(0,0,0,0.2)'
+        header.style.borderBottom = '1px solid var(--border-dim, rgba(255,255,255,0.05))'
+        header.style.display = 'flex'
+        header.style.alignItems = 'center'
+        header.style.justifyContent = 'flex-end'
+        header.style.padding = '0 12px'
         
-        // Layout tweaks for the block
-        pre.style.display = 'block'
+        const langPill = document.createElement('span')
+        langPill.textContent = lang.toUpperCase()
+        langPill.style.fontSize = '10px'
+        langPill.style.fontWeight = '600'
+        langPill.style.color = 'var(--text-muted, rgba(255, 255, 255, 0.4))'
+        langPill.style.background = 'rgba(255, 255, 255, 0.05)'
+        langPill.style.padding = '4px 10px'
+        langPill.style.borderRadius = '4px'
+        langPill.style.letterSpacing = '0.5px'
+        langPill.style.cursor = 'pointer'
+        langPill.style.transition = 'all 0.2s ease'
+        langPill.style.border = '1px solid transparent'
+        langPill.style.userSelect = 'none'
+
+        langPill.onmouseover = () => {
+          langPill.style.color = 'var(--text-main, rgba(255, 255, 255, 0.9))'
+          langPill.style.background = 'rgba(255, 255, 255, 0.1)'
+          langPill.style.borderColor = 'rgba(255, 255, 255, 0.1)'
+        }
+        langPill.onmouseout = () => {
+          langPill.style.color = 'var(--text-muted, rgba(255, 255, 255, 0.4))'
+          langPill.style.background = 'rgba(255, 255, 255, 0.05)'
+          langPill.style.borderColor = 'transparent'
+        }
+        
+        langPill.onclick = (e) => {
+          e.stopPropagation()
+          navigator.clipboard.writeText(codeEl.textContent)
+          
+          langPill.textContent = 'COPIED!'
+          langPill.style.color = '#10b981'
+          langPill.style.borderColor = 'rgba(16, 185, 129, 0.2)'
+          langPill.style.background = 'rgba(16, 185, 129, 0.1)'
+          
+          setTimeout(() => {
+            langPill.textContent = lang.toUpperCase()
+            langPill.style.color = 'var(--text-muted, rgba(255, 255, 255, 0.4))'
+            langPill.style.background = 'rgba(255, 255, 255, 0.05)'
+            langPill.style.borderColor = 'transparent'
+          }, 2000)
+        }
+        header.appendChild(langPill)
+
+        pre.replaceWith(wrapper)
+        wrapper.appendChild(header)
+        wrapper.appendChild(pre)
+
+        // Reset pre styles
+        pre.className = ''
         pre.style.whiteSpace = 'pre-wrap'
         pre.style.wordBreak = 'break-word'
-        pre.style.borderRadius = '8px'
-        pre.style.overflow = 'hidden'
-        pre.style.marginTop = '12px'
-        pre.style.marginBottom = '12px'
         pre.style.cursor = 'default'
+        pre.style.margin = '0'
+        pre.style.padding = '0'
         
-        // Inner padding for the code (since cb-code-header removes left/right padding on the pre)
+        // Inner padding for the code
         codeEl.style.display = 'block'
-        codeEl.style.padding = '0 1em 1em 1em'
+        codeEl.style.padding = '12px'
         codeEl.style.background = 'transparent'
-        codeEl.style.color = 'inherit'
-        codeEl.style.fontFamily = 'inherit'
+        codeEl.style.color = 'var(--text-main, #d4d4d4)'
+        codeEl.style.fontFamily = 'var(--font-mono, monospace)'
+        codeEl.style.fontSize = '13px'
+        codeEl.style.lineHeight = '1.5'
 
         // Apply syntax highlighting
         try {
