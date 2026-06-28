@@ -118,7 +118,6 @@
 }
 
 /* Selection style for code blocks */
-.markdown-editor .cm-line.cm-atomic-fenced-code ::selection,
 .markdown-editor .cm-line.cm-atomic-fenced-code .cm-selectionBackground {
   background-color: rgba(86, 156, 214, 0.45) !important;
 }

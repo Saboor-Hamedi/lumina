@@ -200,8 +200,7 @@
 }
 
 /* Global Selection Style for CM6: High visibility for "Robust" feel */
-.markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground,
-.markdown-editor .cm-content ::selection {
+.markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
   background-color: rgba(64, 186, 250, 0.35) !important;
 }
 
