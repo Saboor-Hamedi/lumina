@@ -106,6 +106,9 @@ export const buildGraphData = (snippets) => {
     if (target) target.val += 0.5
   })
 
+  // Sort nodes by mass so larger nodes render on top of smaller ones
+  nodes.sort((a, b) => a.val - b.val)
+
   return { nodes, links }
 }
 

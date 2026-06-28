@@ -273,6 +273,9 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     }
   }, [selectedSnippet, isBuildingGraph])
 
+  // Ref for debouncing reheat
+  const reheatTimeoutRef = useRef(null)
+
   // Physics Engine Setup
   useEffect(() => {
     // Unsubscribe listener for Live Physics without React Re-renders
@@ -299,19 +302,30 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
           const linkForce = settings.graphLinkForce ?? 0.05
 
           // Update force parameters instantly
-          fg.d3Force('custom_x').strength(centerForce)
-          fg.d3Force('custom_y').strength(centerForce)
+          fg.d3Force('custom_x').strength(0)
+          fg.d3Force('custom_y').strength(0)
+          if (fg.d3Force('custom_radial')) {
+            fg.d3Force('custom_radial')
+              .radius((d) => (d.val <= 1 ? 800 : 0))
+              .strength((d) => (d.val <= 1 ? 0.2 : centerForce))
+          }
           fg.d3Force('custom_charge').strength(-500 * repelForce) // Reduced from -3000 so orphans don't shoot to infinity
           
           fg.d3Force('custom_collide')
             .radius((d) => {
               const baseR = d.val ? Math.max(2, Math.sqrt(d.val) * 2.5) : 2
-              return baseR * sizeMult + 40 // Physical gap
+              return baseR * sizeMult + 15 // Physical gap
             })
+            .strength(0.75)
+            .iterations(1)
 
           if (fg.d3Force('link')) fg.d3Force('link').strength(linkForce)
 
-          fg.d3ReheatSimulation()
+          // Debounce the reheat to prevent violent shaking when dragging sliders
+          if (reheatTimeoutRef.current) clearTimeout(reheatTimeoutRef.current)
+          reheatTimeoutRef.current = setTimeout(() => {
+            if (graphRef.current) graphRef.current.d3ReheatSimulation()
+          }, 300)
         }
       }
     )
@@ -329,6 +343,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     // Initialize core forces only if they don't exist
     if (!fg.d3Force('custom_x')) fg.d3Force('custom_x', forceX(0))
     if (!fg.d3Force('custom_y')) fg.d3Force('custom_y', forceY(0))
+    if (!fg.d3Force('custom_radial')) fg.d3Force('custom_radial', forceRadial(800))
     if (!fg.d3Force('custom_charge')) fg.d3Force('custom_charge', forceManyBody())
     if (!fg.d3Force('custom_collide')) fg.d3Force('custom_collide', forceCollide())
 
@@ -339,16 +354,20 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     fg.d3Force('radial', null)
 
     // Apply initial forces
-    fg.d3Force('custom_x').strength(centerForce)
-    fg.d3Force('custom_y').strength(centerForce)
+    fg.d3Force('custom_x').strength(0)
+    fg.d3Force('custom_y').strength(0)
+    fg.d3Force('custom_radial')
+      .radius((d) => (d.val <= 1 ? 800 : 0))
+      .strength((d) => (d.val <= 1 ? 0.2 : centerForce))
     fg.d3Force('custom_charge').strength(-500 * repelForce)
     
     fg.d3Force('custom_collide')
       .radius((d) => {
         const baseR = d.val ? Math.max(2, Math.sqrt(d.val) * 2.5) : 2
-        return baseR * sizeMult + 40
+        return baseR * sizeMult + 15
       })
-      .strength(0.1)
+      .strength(0.75)
+      .iterations(1)
 
     // Extremely elastic links like a spiderweb
     if (fg.d3Force('link')) fg.d3Force('link').distance(150).strength(linkForce)
@@ -485,9 +504,9 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       const showTextsSetting = liveSettings.graphShowTexts !== false && liveSettings.graphShowTexts !== 'false'
 
       if (showTextsSetting) {
-        if (isActive || isHovered) shouldShow = true
+        if (isHovered) shouldShow = true
         else if (globalScale > 1.8) shouldShow = true
-        else if (node.val > 5 && globalScale > 1.2) shouldShow = true
+        else if ((isActive || node.val > 5) && globalScale > 1.2) shouldShow = true
       }
 
       if (shouldShow) {
