@@ -268,17 +268,39 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
 
     document.body.appendChild(hoverCard)
 
+    const wrapperRect = wrapper.getBoundingClientRect()
+
+    // Ensure the tooltip is responsive on very small windows
+    if (wrapperRect.width < 540) {
+      hoverCard.style.maxWidth = `${Math.max(200, wrapperRect.width - 40)}px`
+      hoverCard.style.minWidth = 'auto'
+      hoverCard.style.whiteSpace = 'normal'
+    }
+
     // Position it
     const rect = hoverCard.getBoundingClientRect()
-    let top = y + 20
-    let left = x
 
-    // Prevent overflow
-    if (left + rect.width > window.innerWidth) {
-      left = window.innerWidth - rect.width - 20
+    let top = y + 20
+    // Center the card horizontally relative to the cursor, rather than opening heavily to the right
+    let left = x - (rect.width / 2)
+
+    // Prevent horizontal overflow on the right
+    if (left + rect.width > wrapperRect.right - 20) {
+      left = wrapperRect.right - rect.width - 20
     }
-    if (top + rect.height > window.innerHeight) {
-      top = y - rect.height - 20
+    // Prevent horizontal overflow on the left (e.g. sidebar)
+    if (left < wrapperRect.left + 20) {
+      left = wrapperRect.left + 20
+    }
+
+    // Prevent vertical overflow on the bottom
+    if (top + rect.height > wrapperRect.bottom - 20) {
+      top = y - rect.height - 20 // Place above cursor
+      
+      // If placing above cursor overflows the top (e.g. tab bar), constrain it to top edge
+      if (top < wrapperRect.top + 20) {
+        top = wrapperRect.top + 20
+      }
     }
 
     hoverCard.style.top = `${top}px`
