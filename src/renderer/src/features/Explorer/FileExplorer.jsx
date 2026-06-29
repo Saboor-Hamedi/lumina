@@ -90,6 +90,8 @@ const SortableListItem = React.memo(({ snippet, isActive, onClick, searchQuery }
 import { useDroppable } from '@dnd-kit/core'
 import { FilePlus } from 'lucide-react'
 
+const VirtuosoFooter = () => <div style={{ height: '24px' }} />
+
 const DroppableFolderItem = React.memo(
   ({
     item,
@@ -388,9 +390,18 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   const folderColors = useVaultStore((state) => state.folderColors)
   const setFolderColor = useVaultStore((state) => state.setFolderColor)
   const setSelectedSnippet = useVaultStore((state) => state.setSelectedSnippet)
+  const selectedSnippetId = useVaultStore((state) => state.selectedSnippet?.id)
   const saveSnippet = useVaultStore((state) => state.saveSnippet)
   const loadVault = useVaultStore((state) => state.loadVault)
   const isLoading = useVaultStore((state) => state.isLoading)
+
+  const clickedInExplorerRef = useRef(0)
+  const lastScrolledSnippetRef = useRef(null)
+  const expandedFoldersRef = useRef(expandedFolders)
+
+  useEffect(() => {
+    expandedFoldersRef.current = expandedFolders
+  }, [expandedFolders])
 
   const sortBy = settings.sortBy || 'name'
   const sortDirection = settings.sortDirection || 'asc'
@@ -668,11 +679,67 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     }
   }, [creating, flatTree])
 
+  // Auto-expand parent folders of active snippet
+  useEffect(() => {
+    if (!selectedSnippetId) return
+    const activeSnippet = snippets.find((s) => s.id === selectedSnippetId)
+    if (!activeSnippet || !activeSnippet.folderId) return
+
+    const foldersToExpand = []
+    const parts = activeSnippet.folderId.split('/')
+    let currentPath = ''
+    
+    for (const part of parts) {
+      currentPath = currentPath ? `${currentPath}/${part}` : part
+      foldersToExpand.push(currentPath)
+    }
+
+    const currentSet = expandedFoldersRef.current
+    const next = new Set(currentSet)
+    let changed = false
+    
+    for (const id of foldersToExpand) {
+      if (!next.has(id)) {
+        next.add(id)
+        changed = true
+      }
+    }
+
+    if (changed) {
+      setExpandedFolders(next)
+      updateSetting('expandedFolders', Array.from(next))
+    }
+  }, [selectedSnippetId, snippets, updateSetting])
+
+  // Auto-scroll to active snippet
+  useEffect(() => {
+    if (!selectedSnippetId || !virtuosoRef.current || flatTree.length === 0) return
+    if (lastScrolledSnippetRef.current === selectedSnippetId) return
+    
+    const idx = flatTree.findIndex(item => item.type === 'file' && item.snippet && item.snippet.id === selectedSnippetId)
+    
+    // Do not auto-scroll if the selection was just made by clicking inside this explorer
+    // BUT we must still set it as visually active!
+    if (Date.now() - clickedInExplorerRef.current < 200) {
+      lastScrolledSnippetRef.current = selectedSnippetId
+      if (idx !== -1) setSelectedIndex(idx)
+      return
+    }
+
+    if (idx !== -1) {
+      lastScrolledSnippetRef.current = selectedSnippetId
+      setTimeout(() => {
+        virtuosoRef.current?.scrollToIndex({ index: idx, align: 'center', behavior: 'smooth' })
+        setSelectedIndex(idx)
+      }, 50)
+    }
+  }, [selectedSnippetId, flatTree])
+
   useEffect(() => {
     const handleTriggerNewNote = () => {
       let targetFolderId = lastClickedFolder
       if (!targetFolderId) {
-        const selectedSnippetId = useVaultStore.getState().selectedSnippetId
+        const selectedSnippetId = useVaultStore.getState().selectedSnippet?.id
         const snippets = useVaultStore.getState().snippets
         const activeSnippet = snippets.find(s => s.id === selectedSnippetId)
         targetFolderId = activeSnippet?.folderId || ''
@@ -726,13 +793,13 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
           return next
         })
       } else {
-        setExpandedFolders((prev) => {
-          const next = new Set(prev)
-          if (next.has(folderId)) next.delete(folderId)
-          else next.add(folderId)
-          updateSetting('expandedFolders', Array.from(next))
-          return next
-        })
+        const currentSet = expandedFoldersRef.current
+        const next = new Set(currentSet)
+        if (next.has(folderId)) next.delete(folderId)
+        else next.add(folderId)
+        
+        setExpandedFolders(next)
+        updateSetting('expandedFolders', Array.from(next))
       }
     },
     [updateSetting, query]
@@ -753,12 +820,132 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
 
   const handleSelect = useCallback(
     (snippet) => {
+      clickedInExplorerRef.current = Date.now()
       setSelectedSnippet(snippet)
       setLastClickedFolder(snippet.folderId || '')
-      onClose()
+      onClose?.()
     },
     [setSelectedSnippet, onClose]
   )
+
+  const renderItemContent = useCallback((index, item, context) => {
+    if (item.type === 'input') {
+      return (
+        <div
+          className="folder-tree-item"
+          style={{
+            position: 'relative',
+            paddingLeft: `${item.depth * 16 + 8}px`
+          }}
+        >
+          {Array.from({ length: item.depth }).map((_, i) => (
+            <div
+              key={`line-${i}`}
+              style={{
+                position: 'absolute',
+                left: `${i * 16 + 12}px`,
+                top: 0,
+                bottom: 0,
+                width: '1px',
+                backgroundColor: 'var(--border-dim)'
+              }}
+            />
+          ))}
+          <div
+              className="folder-tree-main creating-input"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '2px 6px',
+                borderRadius: '4px',
+                background: 'transparent'
+              }}
+            >
+              {item.kind === 'folder' ? (
+                <Folder size={14} fill="#e8a825" color="#e8a825" className="folder-icon-color" />
+              ) : (
+                <FileText size={14} className="icon-blue" />
+              )}
+              <input
+              autoFocus
+              value={context.creatingValue}
+              onChange={(e) => context.setCreatingValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') context.submitCreation()
+                if (e.key === 'Escape') context.setCreating(null)
+              }}
+              onBlur={() => context.submitCreation()}
+              placeholder={`New ${item.kind}...`}
+              className="inline-create-input"
+            />
+          </div>
+        </div>
+      )
+    } else if (item.type === 'root-drop') {
+      return <DroppableRootZone />
+    } else if (item.type === 'folder') {
+      const isExpanded = context.query.trim()
+        ? !context.collapsedDuringSearch.has(item.id)
+        : context.expandedFolders.has(item.id)
+      const isActive = index === context.selectedIndex
+      return (
+        <DroppableFolderItem
+          item={item}
+          isExpanded={isExpanded}
+          isActive={isActive}
+          searchQuery={context.query}
+          folderColor={context.folderColors[item.id]}
+          isRenaming={context.renamingFolder === item.id}
+          renameValue={context.renamingValue}
+          setRenameValue={context.setRenamingValue}
+          submitRename={context.submitRename}
+          cancelRename={context.cancelRename}
+          isPinned={context.pinnedFolders.includes(item.id)}
+          onTogglePin={context.togglePinnedFolder}
+          onToggle={(id, e) => {
+            context.setSelectedIndex(index)
+            context.toggleFolder(id, e)
+          }}
+          onContextMenu={(id, e) => {
+            context.setSelectedIndex(index)
+            context.handleFolderContextMenu(id, e)
+          }}
+        />
+      )
+    } else {
+      return (
+        <div
+          style={{
+            position: 'relative',
+            paddingLeft: `${item.depth * 12}px`
+          }}
+        >
+          {Array.from({ length: item.depth }).map((_, i) => (
+            <div
+              key={`line-${i}`}
+              style={{
+                position: 'absolute',
+                left: `${i * 12 + 4}px`,
+                top: 0,
+                bottom: 0,
+                width: '1px',
+                backgroundColor: 'var(--border-dim)',
+                zIndex: 0
+              }}
+            />
+          ))}
+          <SortableListItem
+            key={item.snippet.id}
+            snippet={item.snippet}
+            onClick={context.handleSelect}
+            isActive={index === context.selectedIndex}
+            searchQuery={context.query}
+          />
+        </div>
+      )
+    }
+  }, [])
 
   if (!isEmbedded && (!isOpen || !isPositionReady)) return null
 
@@ -1226,127 +1413,33 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                         ref={virtuosoRef}
                         style={{ flex: 1, height: '100%' }}
                         data={flatTree}
+                        overscan={400}
+                        context={{
+                          creatingValue,
+                          setCreatingValue,
+                          submitCreation,
+                          setCreating,
+                          query,
+                          collapsedDuringSearch,
+                          expandedFolders,
+                          selectedIndex,
+                          folderColors,
+                          renamingFolder,
+                          renamingValue,
+                          setRenamingValue,
+                          submitRename,
+                          cancelRename,
+                          pinnedFolders,
+                          togglePinnedFolder,
+                          setSelectedIndex,
+                          toggleFolder,
+                          handleFolderContextMenu,
+                          handleSelect
+                        }}
                         components={{
-                          Footer: () => <div style={{ height: '24px' }} /> /* In-flow List Footer for empty space clicks */
+                          Footer: VirtuosoFooter
                         }}
-                        itemContent={(index, item) => {
-                          if (item.type === 'input') {
-                            return (
-                              <div
-                                className="folder-tree-item"
-                                style={{
-                                  position: 'relative',
-                                  paddingLeft: `${item.depth * 16 + 8}px`
-                                }}
-                              >
-                                {Array.from({ length: item.depth }).map((_, i) => (
-                                  <div
-                                    key={`line-${i}`}
-                                    style={{
-                                      position: 'absolute',
-                                      left: `${i * 16 + 12}px`,
-                                      top: 0,
-                                      bottom: 0,
-                                      width: '1px',
-                                      backgroundColor: 'var(--border-dim)'
-                                    }}
-                                  />
-                                ))}
-                                <div
-                                    className="folder-tree-main creating-input"
-                                    style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '8px',
-                                      padding: '2px 6px',
-                                      borderRadius: '4px',
-                                      background: 'transparent'
-                                    }}
-                                  >
-                                    {item.kind === 'folder' ? (
-                                      <Folder size={14} fill="#e8a825" color="#e8a825" className="folder-icon-color" />
-                                    ) : (
-                                      <FileText size={14} className="icon-blue" />
-                                    )}
-                                    <input
-                                    autoFocus
-                                    value={creatingValue}
-                                    onChange={(e) => setCreatingValue(e.target.value)}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') submitCreation()
-                                      if (e.key === 'Escape') setCreating(null)
-                                    }}
-                                    onBlur={() => submitCreation()}
-                                    placeholder={`New ${item.kind}...`}
-                                    className="inline-create-input"
-                                  />
-                                </div>
-                              </div>
-                            )
-                          } else if (item.type === 'root-drop') {
-                            return <DroppableRootZone />
-                          } else if (item.type === 'folder') {
-                            const isExpanded = query.trim()
-                              ? !collapsedDuringSearch.has(item.id)
-                              : expandedFolders.has(item.id)
-                            const isActive = index === selectedIndex
-                            return (
-                              <DroppableFolderItem
-                                item={item}
-                                isExpanded={isExpanded}
-                                isActive={isActive}
-                                searchQuery={query}
-                                folderColor={folderColors[item.id]}
-                                isRenaming={renamingFolder === item.id}
-                                renameValue={renamingValue}
-                                setRenameValue={setRenamingValue}
-                                submitRename={submitRename}
-                                cancelRename={cancelRename}
-                                isPinned={pinnedFolders.includes(item.id)}
-                                onTogglePin={togglePinnedFolder}
-                                onToggle={(id, e) => {
-                                  setSelectedIndex(index)
-                                  toggleFolder(id, e)
-                                }}
-                                onContextMenu={(id, e) => {
-                                  setSelectedIndex(index)
-                                  handleFolderContextMenu(id, e)
-                                }}
-                              />
-                            )
-                          } else {
-                            return (
-                              <div
-                                style={{
-                                  position: 'relative',
-                                  paddingLeft: `${item.depth * 12}px`
-                                }}
-                              >
-                                {Array.from({ length: item.depth }).map((_, i) => (
-                                  <div
-                                    key={`line-${i}`}
-                                    style={{
-                                      position: 'absolute',
-                                      left: `${i * 12 + 4}px`,
-                                      top: 0,
-                                      bottom: 0,
-                                      width: '1px',
-                                      backgroundColor: 'var(--border-dim)',
-                                      zIndex: 0
-                                    }}
-                                  />
-                                ))}
-                                <SortableListItem
-                                  key={item.snippet.id}
-                                  snippet={item.snippet}
-                                  onClick={handleSelect}
-                                  isActive={index === selectedIndex}
-                                  searchQuery={query}
-                                />
-                              </div>
-                            )
-                          }
-                        }}
+                        itemContent={renderItemContent}
                       />
                     </div>
                   </SortableContext>
