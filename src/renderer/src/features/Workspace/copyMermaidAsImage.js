@@ -1,26 +1,20 @@
-export async function getMermaidPngBlob(svgElement) {
+export async function copyMermaidAsImage(svgElement) {
   if (!svgElement) {
     throw new Error('SVG element not provided')
   }
 
   return new Promise((resolve, reject) => {
     try {
-      const rect = svgElement.getBoundingClientRect()
-      const parsedWidth = parseFloat(svgElement.getAttribute('width') || rect.width || 800) || 800
-      const parsedHeight = parseFloat(svgElement.getAttribute('height') || rect.height || 600) || 600
-
-      const clonedSvg = svgElement.cloneNode(true)
-      clonedSvg.setAttribute('width', parsedWidth + 'px')
-      clonedSvg.setAttribute('height', parsedHeight + 'px')
-
       const serializer = new XMLSerializer()
-      let svgString = serializer.serializeToString(clonedSvg)
+      let svgString = serializer.serializeToString(svgElement)
 
-      // Fix invalid HTML entities that Mermaid might produce
-      svgString = svgString.replace(/&nbsp;/g, '&#160;')
-      
-      // Fix unclosed <br> tags which Mermaid occasionally outputs and break XML parsing
-      svgString = svgString.replace(/<br>/g, '<br/>')
+      const rect = svgElement.getBoundingClientRect()
+      const width = svgElement.getAttribute('width') || rect.width || 800
+      const height = svgElement.getAttribute('height') || rect.height || 600
+
+      if (!svgString.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
+        svgString = svgString.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"')
+      }
 
       const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' })
       const DOMURL = window.URL || window.webkitURL || window
@@ -30,8 +24,8 @@ export async function getMermaidPngBlob(svgElement) {
       img.onload = () => {
         try {
           const canvas = document.createElement('canvas')
-          canvas.width = Math.max(10, parsedWidth)
-          canvas.height = Math.max(10, parsedHeight)
+          canvas.width = parseFloat(width)
+          canvas.height = parseFloat(height)
           const ctx = canvas.getContext('2d')
           
           // Recreate the editor's visual background
@@ -48,11 +42,17 @@ export async function getMermaidPngBlob(svgElement) {
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
           DOMURL.revokeObjectURL(url)
 
-          canvas.toBlob((blob) => {
+          canvas.toBlob(async (blob) => {
             if (!blob) {
               return reject(new Error('Canvas to Blob failed'))
             }
-            resolve(blob)
+            try {
+              const item = new ClipboardItem({ 'image/png': blob })
+              await navigator.clipboard.write([item])
+              resolve()
+            } catch (err) {
+              reject(err)
+            }
           }, 'image/png')
         } catch (err) {
           reject(err)

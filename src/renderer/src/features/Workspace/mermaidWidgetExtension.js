@@ -2,7 +2,7 @@ import { syntaxTree } from '@codemirror/language'
 import { Decoration, WidgetType, EditorView } from '@codemirror/view'
 import { StateField } from '@codemirror/state'
 import mermaid from 'mermaid'
-import { getMermaidPngBlob } from './copyMermaidAsImage'
+import { copyMermaidAsImage } from './copyMermaidAsImage'
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import ToolTip from '../../components/atoms/ToolTip'
@@ -73,13 +73,10 @@ class MermaidWidget extends WidgetType {
       const handleCopy = async (e) => {
         e.preventDefault()
         e.stopPropagation()
-        const svgEl = wrap.querySelector('svg')
+        const svgEl = wrap.querySelector('.mermaid-scroll-wrap svg')
         if (svgEl) {
           try {
-            // Pass the Promise directly to ClipboardItem so write() executes in the synchronous click context
-            const blobPromise = getMermaidPngBlob(svgEl)
-            const item = new ClipboardItem({ 'image/png': blobPromise })
-            await navigator.clipboard.write([item])
+            await copyMermaidAsImage(svgEl)
             
             ReactSetCopied(true)
             setTimeout(() => ReactSetCopied(false), 1500)
