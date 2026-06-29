@@ -2,10 +2,12 @@ import { syntaxTree } from '@codemirror/language'
 import { Decoration, WidgetType, EditorView } from '@codemirror/view'
 import { StateField } from '@codemirror/state'
 import mermaid from 'mermaid'
-import { copyMermaidAsImage } from './copyMermaidAsImage'
+import { getMermaidPngBlob } from './copyMermaidAsImage'
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import ToolTip from '../../components/atoms/ToolTip'
+import './mermaidCodeWrapper.css'
+
 let mermaidIdCounter = 0
 
 class MermaidWidget extends WidgetType {
@@ -15,39 +17,41 @@ class MermaidWidget extends WidgetType {
   }
 
   eq(other) {
-    return this.code === other.code
+    return other.code === this.code
   }
 
   toDOM(view) {
     const wrap = document.createElement('div')
     wrap.className = 'cm-mermaid-widget'
-    wrap.style.position = 'relative'
-    wrap.style.cursor = 'pointer' // Indicate it's clickable
-    wrap.title = 'Click anywhere to edit diagram code'
 
     // Clicking anywhere on the widget enters edit mode
     wrap.addEventListener('click', (e) => {
       if (view.state.readOnly) return
-      e.preventDefault()
-      e.stopPropagation()
+      // Ignore clicks on buttons
+      if (e.target.closest('.mermaid-edit-btn')) return
+      
       const pos = view.posAtDOM(wrap)
       if (pos !== null) {
-        // Move cursor safely inside the fenced block (e.g., pos + 3 is past the backticks)
-        view.dispatch({
-          selection: { anchor: pos + 3 },
-          scrollIntoView: true
-        })
+        view.dispatch({ selection: { anchor: pos + 1 }, scrollIntoView: true })
         view.focus()
       }
     })
 
+    // Header Bar (Like CodeWrapper)
+    const header = document.createElement('div')
+    header.className = 'mermaid-widget-header'
+
+    const langLabel = document.createElement('span')
+    langLabel.className = 'mermaid-widget-lang-label'
+    langLabel.textContent = 'MERMAID'
+    header.appendChild(langLabel)
+
     // Action Buttons Container (Rendered via React to support ToolTip)
     const actionsWrap = document.createElement('div')
-    actionsWrap.style.position = 'absolute'
-    actionsWrap.style.top = '8px'
-    actionsWrap.style.right = '8px'
-    actionsWrap.style.zIndex = '10'
-    wrap.appendChild(actionsWrap)
+    actionsWrap.style.display = 'flex'
+    actionsWrap.style.alignItems = 'center'
+    header.appendChild(actionsWrap)
+    wrap.appendChild(header)
 
     const root = createRoot(actionsWrap)
     wrap._reactRoot = root
@@ -72,7 +76,11 @@ class MermaidWidget extends WidgetType {
         const svgEl = wrap.querySelector('svg')
         if (svgEl) {
           try {
-            await copyMermaidAsImage(svgEl)
+            // Pass the Promise directly to ClipboardItem so write() executes in the synchronous click context
+            const blobPromise = getMermaidPngBlob(svgEl)
+            const item = new ClipboardItem({ 'image/png': blobPromise })
+            await navigator.clipboard.write([item])
+            
             ReactSetCopied(true)
             setTimeout(() => ReactSetCopied(false), 1500)
           } catch (err) {
@@ -118,6 +126,9 @@ class MermaidWidget extends WidgetType {
 
     root.render(React.createElement(ActionsOverlay))
 
+    const bodyWrap = document.createElement('div')
+    bodyWrap.className = 'mermaid-widget-body'
+    
     const scrollWrap = document.createElement('div')
     scrollWrap.className = 'mermaid-scroll-wrap'
 
@@ -141,8 +152,8 @@ class MermaidWidget extends WidgetType {
       </div>
     `
     scrollWrap.appendChild(contentDiv)
-    wrap.appendChild(scrollWrap)
-    wrap.appendChild(actionsWrap)
+    bodyWrap.appendChild(scrollWrap)
+    wrap.appendChild(bodyWrap)
 
     // We generate a unique ID for mermaid to use
     const id = `mermaid-${mermaidIdCounter++}`
@@ -190,14 +201,14 @@ export function renderMermaidToElement(container, code, uniqueId) {
 
           // Flowcharts & General
           primaryColor: bgPanel,
-          primaryBorderColor: accent,
+          primaryBorderColor: 'transparent',
           primaryTextColor: accent,
           lineColor: textFaint,
           textColor: textMain,
           mainBkg: bgPrimary,
 
           nodeBkg: bgPanel,
-          nodeBorder: accent,
+          nodeBorder: 'transparent',
           nodeTextColor: accent,
           clusterBkg: 'transparent',
           clusterBorder: 'transparent',
@@ -205,27 +216,27 @@ export function renderMermaidToElement(container, code, uniqueId) {
 
           // Sequence Diagrams
           actorBkg: bgPanel,
-          actorBorder: accent,
+          actorBorder: 'transparent',
           actorTextColor: accent,
           actorLineColor: textFaint,
           signalColor: textFaint,
           signalTextColor: textMain,
           noteBkg: accent,
           noteTextColor: bgPrimary,
-          noteBorderColor: accent,
+          noteBorderColor: 'transparent',
           labelBoxBkg: bgPanel,
-          labelBoxBorderColor: accent,
+          labelBoxBorderColor: 'transparent',
           labelTextColor: textMain,
           loopTextColor: textMain,
           activationBkgColor: accent,
-          activationBorderColor: accent,
+          activationBorderColor: 'transparent',
           sequenceNumberColor: bgPrimary
         },
         themeCSS: `
           .node rect, .node circle, .node ellipse, .node polygon, .node path {
             fill: ${bgPanel} !important;
-            stroke: ${accent} !important;
-            stroke-width: 1px !important;
+            stroke: transparent !important;
+            stroke-width: 0px !important;
           }
           .node .label, .node .label text {
             color: ${accent} !important;

@@ -1,0 +1,39 @@
+/*
+  Mermaid Code Wrapper Geometry
+*/
+
+.cm-mermaid-widget {
+  margin: 4px 0;
+  cursor: text;
+}
+
+.mermaid-widget-header {
+  position: relative;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-dim);
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  user-select: none;
+}
+
+.mermaid-widget-lang-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+
+.mermaid-widget-body {
+  background: rgba(0, 0, 0, 0.2);
+  border-left: 1px solid var(--border-dim);
+  border-right: 1px solid var(--border-dim);
+  border-bottom: 1px solid var(--border-dim);
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+  overflow: hidden;
+}
