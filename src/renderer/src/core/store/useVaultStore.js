@@ -202,8 +202,11 @@ export const useVaultStore = create((set, get) => ({
     }),
 
   loadVault: async () => {
-    // Initializing Vault Load (silent)
-    set({ isLoading: true })
+    // Only show loading skeleton on initial load to prevent UI flicker
+    const isInitialLoad = get().snippets.length === 0
+    if (isInitialLoad) {
+      set({ isLoading: true })
+    }
 
     try {
       // Background Sync from File System (SQLite via IPC)

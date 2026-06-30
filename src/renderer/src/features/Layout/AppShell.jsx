@@ -28,8 +28,7 @@ import { useAIStore } from '../../core/store/useAIStore'
 import { useTypingSound } from '../../core/hooks/useTypingSound'
 import { X, Maximize2, Trash2, History, Bot, Info, MessageSquare } from 'lucide-react'
 
-import PanelHeaderDropdown from './components/PanelHeaderDropdown'
-import TabbedSidebar from './components/TabbedSidebar'
+import TabbedSidebar from '../Inspector/TabbedSidebar'
 import IndexingStatus from '../../components/IndexingStatus'
 
 /**
@@ -67,12 +66,14 @@ const AppShell = () => {
   const [paletteInitialQuery, setPaletteInitialQuery] = useState('')
   const [showGraph, setShowGraph] = useState(false)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
-  const [showAIChatModal, setShowAIChatModal] = useState(false)
+  const [showAIChatModal, setShowAIChatModal] = useState(() => {
+    return useSettingsStore.getState().settings?.aiChatModalState?.isOpen || false
+  })
   const [showExplorerModal, setShowExplorerModal] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true)
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false)
-  const [rightSidebarTab, setRightSidebarTab] = useState('ai') // 'ai' or 'details'
+  const [rightSidebarTab, setRightSidebarTab] = useState('details')
   const [renameModal, setRenameModal] = useState({ isOpen: false, item: null, newName: '' })
   /**
    * Stores the right sidebar state (open/closed and width) when AI chat modal is opened.

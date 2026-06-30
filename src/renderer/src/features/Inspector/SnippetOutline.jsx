@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import './SnippetOutline.css'
+import './SnippetDetails.css'
 
 const SnippetOutline = ({ snippet }) => {
   const headings = useMemo(() => {

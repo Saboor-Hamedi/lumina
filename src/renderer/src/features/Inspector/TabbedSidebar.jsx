@@ -1,8 +1,9 @@
 import React from 'react'
 import { Info, List as ListIcon } from 'lucide-react'
-import SnippetDetails from '../../Inspector/SnippetDetails'
-import SnippetOutline from '../../Inspector/SnippetOutline'
-import ErrorBoundary from '../../../components/ErrorBoundary'
+import SnippetDetails from './SnippetDetails'
+import SnippetOutline from './SnippetOutline'
+import ErrorBoundary from '../../components/ErrorBoundary'
+import './SnippetDetails.css'
 
 const TabbedSidebar = ({
   rightSidebarTab,

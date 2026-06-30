@@ -141,7 +141,11 @@ class VaultManager {
               try {
                 const parsed = matter(rawContent)
                 data = parsed.data || {}
-                content = parsed.content || rawContent
+                content = parsed.content !== undefined ? parsed.content : rawContent
+                // Gray-matter sometimes leaves a trailing newline for empty files
+                if (content.trim() === '') {
+                  content = ''
+                }
               } catch (matterErr) {
                 // fallback
               }

@@ -259,6 +259,7 @@ const MarkdownEditor = React.memo(
     }, [showToast])
 
     const lastSavedCodeRef = useRef(snippet?.code)
+    const lastSaveTimeRef = useRef(0)
 
     useEffect(() => {
       const previousSnippet = snippetRef.current
@@ -270,6 +271,13 @@ const MarkdownEditor = React.memo(
         const codeChangedFromOutside = snippet?.code !== lastSavedCodeRef.current
 
         if (codeChangedFromOutside) {
+          const timeSinceLastSave = Date.now() - lastSaveTimeRef.current
+          // If we saved within the last 3 seconds, this is almost certainly an out-of-order 
+          // echo from the file system watcher (chokidar) reading an old save.
+          if (timeSinceLastSave < 3000) {
+            return
+          }
+
           const isSameFile = previousSnippet?.id === snippet?.id
           const hasLocalEdits = currentCode !== lastSavedCodeRef.current
           const isTrivialExternalChange = (snippet?.code || '').trim() === (lastSavedCodeRef.current || '').trim()
@@ -370,6 +378,11 @@ const MarkdownEditor = React.memo(
           timestamp: Date.now()
         }
 
+        // IMPORTANT: Set this BEFORE await so if the store updates optimistically,
+        // our conflict detector knows we caused this change.
+        lastSavedCodeRef.current = code || ''
+        lastSaveTimeRef.current = Date.now()
+
         const updatedSnippet = await onSave(snippetToSave)
 
         if (isMountedRef.current) {
@@ -378,7 +391,6 @@ const MarkdownEditor = React.memo(
           }
           setIsDirty(false)
           setDirty(snippet.id, false)
-          lastSavedCodeRef.current = code
           showToast('Note saved', 'success')
         }
       } catch (error) {
@@ -596,16 +608,98 @@ const MarkdownEditor = React.memo(
               key: 'Enter',
               run: (view) => {
                 if (isActiveRef.current) {
+                  const state = view.state
+                  const pos = state.selection.main.head
+                  const line = state.doc.lineAt(pos)
+
+                  // Magic feature 1: auto-close unclosed fenced code blocks (like VSCode)
+                  // e.g., ```text<Enter> -> auto inserts closing ``` below
+                  const openingFenceMatch = line.text.match(/^```[a-zA-Z0-9+#-]*\s*$/)
+                  if (openingFenceMatch && pos === line.to) {
+                    let isClosed = false
+                    for (let i = line.number + 1; i <= state.doc.lines; i++) {
+                      if (state.doc.line(i).text.trim().startsWith('```')) {
+                        isClosed = true
+                        break
+                      }
+                    }
+                    if (!isClosed) {
+                      view.dispatch({
+                        changes: { from: line.to, insert: '\n\n```' },
+                        selection: { anchor: line.to + 1 }
+                      })
+                      return true
+                    }
+                  }
+
+                  // Magic feature 2: auto-expand single-line fenced code blocks
+                  // e.g., ```text Person: teacher...``` -> multi-line block
+                  const singleLineCodeMatch = line.text.match(/^```(.*?)```\s*$/)
+                  if (singleLineCodeMatch) {
+                    const inside = singleLineCodeMatch[1]
+                    const relativePos = pos - (line.from + 3) // 3 is length of ```
+                    
+                    let beforeCursor = ''
+                    let afterCursor = ''
+                    
+                    if (relativePos <= 0) {
+                      afterCursor = inside
+                    } else if (relativePos >= inside.length) {
+                      beforeCursor = inside
+                    } else {
+                      beforeCursor = inside.slice(0, relativePos)
+                      afterCursor = inside.slice(relativePos)
+                    }
+                    
+                    let lang = ''
+                    let contentBefore = ''
+                    
+                    // Try to extract language from beforeCursor
+                    const langMatch = beforeCursor.match(/^([a-zA-Z0-9+#-]+)(?:\s+|$)/)
+                    if (langMatch) {
+                      lang = langMatch[1]
+                      contentBefore = beforeCursor.slice(langMatch[0].length)
+                    } else {
+                      contentBefore = beforeCursor
+                    }
+                    
+                    let insertText = `\`\`\`${lang}\n`
+                    let newCursorPos = line.from + insertText.length
+                    
+                    if (contentBefore.trim() || (!contentBefore.trim() && beforeCursor.endsWith(' ') && !langMatch)) {
+                      // If there is actual content, or they just typed a space in content
+                      insertText += `${contentBefore}\n`
+                      newCursorPos = line.from + insertText.length
+                    }
+                    
+                    insertText += `${afterCursor}\n\`\`\``
+                    
+                    if (relativePos >= inside.length) {
+                       insertText += '\n'
+                       newCursorPos = line.from + insertText.length
+                    }
+
+                    view.dispatch({
+                      changes: { 
+                        from: line.from, 
+                        to: line.to, 
+                        insert: insertText
+                      },
+                      selection: { anchor: newCursorPos }
+                    })
+                    return true
+                  }
+
                   const didRun = insertNewlineContinueMarkup(view)
                   if (didRun) {
-                    const state = view.state
-                    const pos = state.selection.main.head
-                    const line = state.doc.lineAt(pos)
+                    const stateAfter = view.state
+                    const posAfter = stateAfter.selection.main.head
+                    const lineAfter = stateAfter.doc.lineAt(posAfter)
                     // If the new line only contains list markup (like "2." or "-") and lacks a trailing space
-                    if (/^(\s*[-*+]|\s*\d+\.)\s*$/.test(line.text) && !line.text.endsWith(' ') && pos === line.to) {
+                    if (/^(\s*[-*+]|\s*\d+\.)\s*$/.test(lineAfter.text) && !lineAfter.text.endsWith(' ') && posAfter === lineAfter.to) {
                       view.dispatch({
-                        changes: { from: line.to, insert: ' ' },
-                        selection: { anchor: line.to + 1 }
+                        changes: { from: lineAfter.to, insert: ' ' },
+                        selection: { anchor: lineAfter.to + 1 }
                       })
                     }
                     return true

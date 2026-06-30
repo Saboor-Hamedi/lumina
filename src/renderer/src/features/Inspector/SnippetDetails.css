@@ -73,3 +73,280 @@
   font-style: italic;
   font-size: 12px;
 }
+
+/* ==========================================================================
+   Snippet Outline Styles
+   ========================================================================== */
+
+.snippet-outline {
+  padding: 16px;
+  overflow-y: auto;
+  height: 100%;
+  padding-bottom: 32px;
+}
+
+.outline-empty {
+  opacity: 0.6;
+  font-size: 13px;
+  text-align: center;
+  margin-top: 20px;
+}
+
+.outline-tree {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  position: relative;
+}
+
+.outline-item {
+  position: relative;
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+}
+
+.outline-item:hover {
+  background: var(--bg-active);
+  color: var(--text-primary);
+}
+
+.outline-item-content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+/* 
+  Draw a vertical guide line spanning the entire tree.
+  We calculate indentation padding dynamically in React.
+*/
+.outline-item-indent-guide {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 1px;
+  background: var(--border-subtle);
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.outline-item:hover .outline-item-indent-guide {
+  opacity: 1;
+  background: var(--text-accent);
+}
+
+.outline-level-indicator {
+  font-size: 10px;
+  opacity: 0.4;
+  margin-right: 6px;
+  font-family: monospace;
+  min-width: 16px;
+}
+.inspector-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Inspector Tabs - Match TabBar Styling */
+.panel-header-tabs {
+  height: 32px;
+  /* Match workspace-tabbar height */
+  display: flex;
+  background: var(--bg-app);
+  /* Match tabbar background */
+  border-bottom: 1px solid var(--border-dim);
+  /* Match tabbar border */
+  flex-shrink: 0;
+}
+
+/* When using workspace-tabbar class, apply tab styling */
+.panel-header-tabs.workspace-tabbar {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Tab styling - matches workspace tabs */
+.panel-header-tabs .workspace-tab {
+  min-width: 80px;
+  max-width: 180px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  gap: 6px;
+  border-right: none;
+  border-bottom: 1px solid var(--border-dim);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.15s;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.panel-header-tabs .workspace-tab:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+.panel-header-tabs .workspace-tab.active {
+  background: var(--bg-app);
+  color: var(--text-main);
+  font-weight: 500;
+  border-bottom-color: var(--bg-app);
+}
+
+
+.panel-header-tabs .tab-context {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.panel-header-tabs .tab-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.01em;
+}
+
+.panel-header-tabs .tab-icon {
+  opacity: 0.7;
+  flex-shrink: 0;
+  transition: opacity 0.2s;
+}
+
+.panel-header-tabs .workspace-tab.active .tab-icon {
+  opacity: 1;
+}
+
+.panel-header-tabs .workspace-tab:hover .tab-icon {
+  opacity: 1;
+}
+
+.panel-header-tabs .tab-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 6px;
+}
+
+.panel-header-tabs .tab-close-btn {
+  background: transparent;
+  border: none;
+  color: inherit;
+  opacity: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+  padding: 2px;
+}
+
+.panel-header-tabs .workspace-tab:hover .tab-close-btn {
+  opacity: 0.6;
+}
+
+.panel-header-tabs .tab-close-btn:hover {
+  opacity: 1 !important;
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+/* Float/Modal button styling */
+.panel-header-tabs .tab-float-btn {
+  background: transparent;
+  border: none;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+  padding: 2px;
+  width: 18px;
+  height: 18px;
+}
+
+.panel-header-tabs .tab-float-btn:hover {
+  opacity: 1 !important;
+  background: var(--bg-active);
+  color: var(--text-accent);
+}
+
+/* Float button on the very right side of tabbar */
+.panel-header-tabs .tab-float-btn-right {
+  background: transparent;
+  border: none;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  transition: all 0.2s;
+  padding: 0;
+  width: 32px;
+  height: 40px;
+  /* Match panel header height */
+}
+
+.panel-header-tabs .tab-float-btn-right:hover {
+  opacity: 1 !important;
+  background: var(--bg-active);
+  color: var(--text-accent);
+}
+
+/* Clear History button in sidebar tab */
+.panel-header-tabs .tab-clear-btn {
+  background: transparent;
+  border: none;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  transition: all 0.2s;
+  padding: 0;
+  width: 32px;
+  height: 40px;
+  /* Match panel header height */
+}
+
+.panel-header-tabs .tab-clear-btn:hover:not(:disabled) {
+  opacity: 1 !important;
+  background: var(--bg-active);
+  color: var(--text-accent);
+}
+
+.panel-header-tabs .tab-clear-btn:disabled {
+  cursor: not-allowed;
+}
+

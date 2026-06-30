@@ -2,10 +2,11 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { createPortal } from 'react-dom'
-import { MessageSquare, Maximize2, Minimize2, Trash2, ArrowDownToLine, History, Copy, ThumbsUp, ThumbsDown, Check, Send, Square, Download, X as CloseIcon, Plus, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
+import { MessageSquare, Maximize, Minimize, Minus, Trash2, ArrowDownToLine, History, Copy, ThumbsUp, ThumbsDown, Check, Send, Square, Download, X as CloseIcon, Plus, ChevronLeft, ChevronRight, Sparkles, PanelLeftClose, PanelRightClose } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useAIStore } from '../../core/store/useAIStore'
 import { useVaultStore } from '../../core/store/useVaultStore'
+import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { getSnippetIcon } from '../Icons/iconMapper'
 import { Composer } from '../AI/Composer'
 import ModalHeader from './ModalHeader'
@@ -330,15 +331,26 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
   const [isMaximized, setIsMaximized] = useState(false)
+  
+  const [isMinimized, setIsMinimized] = useState(() => {
+    try {
+      const saved = useSettingsStore.getState().settings.aiChatModalState || localStorage.getItem('aiChatModalState')
+      const parsed = typeof saved === 'string' ? JSON.parse(saved) : saved
+      return parsed?.isMinimized ?? false
+    } catch (e) {
+      return false
+    }
+  })
+  
   const [resizeDirection, setResizeDirection] = useState(null)
   const dragStartPos = useRef({ x: 0, y: 0, top: 0, left: 0 })
   const resizeStartPos = useRef({ x: 0, y: 0, width: 0, height: 0, left: 0, top: 0 })
 
   const [modalState, setModalState] = useState(() => {
     try {
-      const saved = localStorage.getItem('aiChatModalState')
+      const saved = useSettingsStore.getState().settings.aiChatModalState || localStorage.getItem('aiChatModalState')
       if (saved) {
-        const parsed = JSON.parse(saved)
+        const parsed = typeof saved === 'string' ? JSON.parse(saved) : saved
         return {
           top: parsed.top ?? window.innerHeight * 0.1,
           left: parsed.left ?? window.innerWidth * 0.6,
@@ -354,6 +366,8 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
       height: 600
     }
   })
+  
+  const updateSetting = useSettingsStore(state => state.updateSetting)
 
   const previousFocusRef = useRef(null)
 
@@ -388,14 +402,16 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
   useEffect(() => {
     if (isOpen && !isMaximized) {
       try {
-        localStorage.setItem('aiChatModalState', JSON.stringify(modalState))
+        const stateToSave = { ...modalState, isMinimized }
+        localStorage.setItem('aiChatModalState', JSON.stringify(stateToSave))
+        updateSetting('aiChatModalState', stateToSave)
       } catch (e) {}
     }
-  }, [modalState, isOpen, isMaximized])
+  }, [modalState, isMinimized, isOpen, isMaximized, updateSetting])
 
   const handleDragStart = useCallback(
     (e) => {
-      if (isMaximized) return
+      if (isMaximized || isMinimized) return
       if (e.target.closest('button')) return
       e.preventDefault()
       e.stopPropagation()
@@ -404,10 +420,12 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
         x: e.clientX,
         y: e.clientY,
         top: modalState.top,
-        left: modalState.left
+        left: modalState.left,
+        latestTop: modalState.top,
+        latestLeft: modalState.left
       }
     },
-    [modalState, isMaximized]
+    [modalState, isMaximized, isMinimized]
   )
 
   const rafRef = useRef(null)
@@ -415,32 +433,28 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
   const handleDrag = useCallback(
     (e) => {
       if (!isDragging || isMaximized) return
-      if (rafRef.current) cancelAnimationFrame(rafRef.current)
-      rafRef.current = requestAnimationFrame(() => {
-        const deltaX = e.clientX - dragStartPos.current.x
-        const deltaY = e.clientY - dragStartPos.current.y
-        const newLeft = dragStartPos.current.left + deltaX
-        const newTop = dragStartPos.current.top + deltaY
-        const viewportWidth = window.innerWidth
-        const viewportHeight = window.innerHeight
-        const modalWidth = isMaximized ? viewportWidth : modalState.width
-        const modalHeight = isMaximized ? viewportHeight : modalState.height
-        const finalLeft = Math.max(0, Math.min(newLeft, viewportWidth - modalWidth))
-        const finalTop = Math.max(0, Math.min(newTop, viewportHeight - modalHeight))
-        if (modalRef.current) {
-          modalRef.current.style.left = `${finalLeft}px`
-          modalRef.current.style.top = `${finalTop}px`
-        }
-        dragStartPos.current.latestLeft = finalLeft
-        dragStartPos.current.latestTop = finalTop
-      })
+      const deltaX = e.clientX - dragStartPos.current.x
+      const deltaY = e.clientY - dragStartPos.current.y
+      const newLeft = dragStartPos.current.left + deltaX
+      const newTop = dragStartPos.current.top + deltaY
+      const viewportWidth = window.innerWidth
+      const viewportHeight = window.innerHeight
+      const modalWidth = isMaximized ? viewportWidth : modalState.width
+      const modalHeight = isMaximized ? viewportHeight : modalState.height
+      const finalLeft = Math.max(0, Math.min(newLeft, viewportWidth - modalWidth))
+      const finalTop = Math.max(0, Math.min(newTop, viewportHeight - modalHeight))
+      if (modalRef.current) {
+        modalRef.current.style.left = `${finalLeft}px`
+        modalRef.current.style.top = `${finalTop}px`
+      }
+      dragStartPos.current.latestLeft = finalLeft
+      dragStartPos.current.latestTop = finalTop
     },
     [isDragging, isMaximized, modalState.width, modalState.height]
   )
 
   const handleDragEnd = useCallback(() => {
     setIsDragging(false)
-    if (rafRef.current) cancelAnimationFrame(rafRef.current)
     if (dragStartPos.current.latestLeft !== undefined) {
       setModalState((prev) => ({
         ...prev,
@@ -488,40 +502,37 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
   const handleResize = useCallback(
     (e) => {
       if (!isResizing || isMaximized || !resizeDirection) return
-      if (rafRef.current) cancelAnimationFrame(rafRef.current)
-      rafRef.current = requestAnimationFrame(() => {
-        const deltaX = e.clientX - resizeStartPos.current.x
-        const deltaY = e.clientY - resizeStartPos.current.y
-        const minWidth = 300
-        const minHeight = 400
-        const maxWidth = window.innerWidth
-        const maxHeight = window.innerHeight
-        let newWidth = resizeStartPos.current.width
-        let newHeight = resizeStartPos.current.height
-        let newLeft = resizeStartPos.current.left
-        let newTop = resizeStartPos.current.top
-        if (resizeDirection.includes('right')) {
-          newWidth = Math.max(minWidth, Math.min(maxWidth, resizeStartPos.current.width + deltaX))
-        }
-        if (resizeDirection.includes('left')) {
-          newWidth = Math.max(minWidth, Math.min(maxWidth, resizeStartPos.current.width - deltaX))
-          newLeft = Math.max(0, resizeStartPos.current.left + (resizeStartPos.current.width - newWidth))
-        }
-        if (resizeDirection.includes('bottom')) {
-          newHeight = Math.max(minHeight, Math.min(maxHeight, resizeStartPos.current.height + deltaY))
-        }
-        if (resizeDirection.includes('top')) {
-          newHeight = Math.max(minHeight, Math.min(maxHeight, resizeStartPos.current.height - deltaY))
-          newTop = Math.max(0, resizeStartPos.current.top + (resizeStartPos.current.height - newHeight))
-        }
-        if (modalRef.current) {
-          modalRef.current.style.width = `${newWidth}px`
-          modalRef.current.style.height = `${newHeight}px`
-          modalRef.current.style.left = `${newLeft}px`
-          modalRef.current.style.top = `${newTop}px`
-        }
-        resizeStartPos.current.latestState = { width: newWidth, height: newHeight, left: newLeft, top: newTop }
-      })
+      const deltaX = e.clientX - resizeStartPos.current.x
+      const deltaY = e.clientY - resizeStartPos.current.y
+      const minWidth = 300
+      const minHeight = 400
+      const maxWidth = window.innerWidth
+      const maxHeight = window.innerHeight
+      let newWidth = resizeStartPos.current.width
+      let newHeight = resizeStartPos.current.height
+      let newLeft = resizeStartPos.current.left
+      let newTop = resizeStartPos.current.top
+      if (resizeDirection.includes('right')) {
+        newWidth = Math.max(minWidth, Math.min(maxWidth, resizeStartPos.current.width + deltaX))
+      }
+      if (resizeDirection.includes('left')) {
+        newWidth = Math.max(minWidth, Math.min(maxWidth, resizeStartPos.current.width - deltaX))
+        newLeft = Math.max(0, resizeStartPos.current.left + (resizeStartPos.current.width - newWidth))
+      }
+      if (resizeDirection.includes('bottom')) {
+        newHeight = Math.max(minHeight, Math.min(maxHeight, resizeStartPos.current.height + deltaY))
+      }
+      if (resizeDirection.includes('top')) {
+        newHeight = Math.max(minHeight, Math.min(maxHeight, resizeStartPos.current.height - deltaY))
+        newTop = Math.max(0, resizeStartPos.current.top + (resizeStartPos.current.height - newHeight))
+      }
+      if (modalRef.current) {
+        modalRef.current.style.width = `${newWidth}px`
+        modalRef.current.style.height = `${newHeight}px`
+        modalRef.current.style.left = `${newLeft}px`
+        modalRef.current.style.top = `${newTop}px`
+      }
+      resizeStartPos.current.latestState = { width: newWidth, height: newHeight, left: newLeft, top: newTop }
     },
     [isResizing, isMaximized, resizeDirection]
   )
@@ -529,13 +540,20 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
   const handleResizeEnd = useCallback(() => {
     setIsResizing(false)
     setResizeDirection(null)
-    if (rafRef.current) cancelAnimationFrame(rafRef.current)
     if (resizeStartPos.current.latestState) {
       setModalState((prev) => ({ ...prev, ...resizeStartPos.current.latestState }))
     }
   }, [])
 
-  const handleToggleMaximize = useCallback(() => setIsMaximized((prev) => !prev), [])
+  const handleToggleMaximize = useCallback(() => {
+    setIsMaximized((prev) => !prev)
+    if (isMinimized) setIsMinimized(false)
+  }, [isMinimized])
+
+  const handleToggleMinimize = useCallback(() => {
+    setIsMinimized((prev) => !prev)
+    if (isMaximized) setIsMaximized(false)
+  }, [isMaximized])
 
   useEffect(() => {
     if (isDragging) {
@@ -726,7 +744,6 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
         >
           <div
             className={`chat-bubble ${msg.role}`}
-            style={{ maxWidth: '100%', width: '100%' }}
           >
             {msg.role === 'assistant' &&
             !msg.content?.trim() &&
@@ -772,31 +789,27 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
     <div className="modal-overlay ai-chat-modal-overlay" onClick={onClose}>
       <div
         ref={modalRef}
-        className={`modal-container ai-chat-modal-container ${isMaximized ? 'maximized' : ''} ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''}`}
+        className={`modal-container ai-chat-modal-container ${isMaximized ? 'maximized' : ''} ${isMinimized ? 'minimized' : ''} ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''}`}
         onClick={(e) => e.stopPropagation()}
         style={{
-          position: 'fixed',
-          margin: 0,
-          transform: 'none',
-          maxWidth: isMaximized ? '100%' : '100vw',
-          maxHeight: isMaximized ? '100%' : '100vh',
+          position: 'absolute',
           ...(isMaximized
             ? { top: 0, left: 0, width: '100vw', height: '100vh' }
+            : isMinimized
+            ? { top: 'auto', left: 'auto', bottom: '40px', right: '20px', width: '280px' }
             : {
-                top: modalState.top,
-                left: modalState.left,
-                width: modalState.width,
-                height: modalState.height
+                top: isDragging ? (dragStartPos.current.latestTop ?? modalState.top) : modalState.top,
+                left: isDragging ? (dragStartPos.current.latestLeft ?? modalState.left) : modalState.left,
+                width: isResizing ? undefined : modalState.width,
+                height: isResizing ? undefined : modalState.height
               })
         }}
       >
         <ModalHeader
           onMouseDown={handleDragStart}
           style={{ cursor: 'default' }}
-          title="AI Chat"
-          icon={<MessageSquare size={16} />}
-          right={
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          left={
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '-10px' }}>
               <button
                 className="modal-clear-btn"
                 onClick={(e) => {
@@ -806,7 +819,23 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
                 title="Toggle History"
                 aria-label="Toggle History"
               >
-                <History size={14} />
+                {showSessions ? <PanelLeftClose size={16} /> : <PanelRightClose size={16} />}
+              </button>
+              <div className="theme-modal-title" style={{ fontSize: '13px', fontWeight: 600, opacity: 0.9 }}>Lumina Chat</div>
+            </div>
+          }
+          right={
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                className="modal-minimize-btn"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleToggleMinimize()
+                }}
+                title={isMinimized ? 'Restore' : 'Minimize'}
+                aria-label={isMinimized ? 'Restore' : 'Minimize'}
+              >
+                <Minimize size={14} />
               </button>
               <button
                 className="modal-maximize-btn"
@@ -817,7 +846,7 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
                 title={isMaximized ? 'Restore' : 'Maximize'}
                 aria-label={isMaximized ? 'Restore' : 'Maximize'}
               >
-                {isMaximized ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                {isMaximized ? <Minimize size={14} /> : <Maximize size={14} />}
               </button>
             </div>
           }
@@ -835,6 +864,10 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
             <div className="resize-handle resize-handle-top-right" onMouseDown={(e) => handleResizeStart(e, 'top-right')} />
             <div className="resize-handle resize-handle-bottom-left" onMouseDown={(e) => handleResizeStart(e, 'bottom-left')} />
           </>
+        )}
+        
+        {(isDragging || isResizing) && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 99999, cursor: isDragging ? 'grabbing' : 'auto' }} />
         )}
 
         <div className="ai-chat-modal-body" style={{ height: 'calc(100% - 40px)', flex: 1, display: 'flex', flexDirection: 'column', userSelect: 'text' }}>

@@ -27,6 +27,8 @@ const PreviewModal = ({ isOpen, onClose, title, content }) => {
     } : undefined
   })
 
+  
+
   useEffect(() => {
     if (isOpen) {
       // Small delay to allow the modal's CSS opening animation to run smoothly

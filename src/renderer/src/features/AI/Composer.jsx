@@ -6,12 +6,13 @@ import { SlashCommandMenu } from './SlashCommandMenu'
 
 export const Composer = ({ onSend, isLoading, onCancel }) => {
   const [input, setInput] = useState('')
-  const [mode, setMode] = useState('Standard')
   const [showSlashMenu, setShowSlashMenu] = useState(false)
   const [slashFilter, setSlashFilter] = useState('')
   const textareaRef = useRef(null)
 
-  const { settings } = useSettingsStore()
+  const { settings, updateSettings } = useSettingsStore()
+  const mode = settings.activeAIMode || 'Standard'
+  const setMode = (newMode) => updateSettings({ activeAIMode: newMode })
 
   // Auto-resize textarea
   useEffect(() => {
@@ -63,7 +64,6 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
     if (!input.trim() || isLoading) return
     onSend(input, mode)
     setInput('')
-    setMode('Standard')
   }
 
   const getProviderLabel = () => {
@@ -106,7 +106,7 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
           value={input}
           onChange={handleOnChange}
           onKeyDown={handleKeyDown}
-          placeholder="Ask AI..."
+          placeholder="Ask AI... or type '/' for commands"
           rows={1}
           disabled={isLoading}
         />
@@ -120,18 +120,7 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
               <ChevronDown size={10} />
             </button>
 
-            <div className="composer-modes">
-              {modes.map((m) => (
-                <button
-                  key={m.id}
-                  className={`mode-btn ${mode === m.id ? 'active' : ''}`}
-                  onClick={() => setMode(mode === m.id ? 'Standard' : m.id)}
-                  title={m.title}
-                >
-                  {m.icon}
-                </button>
-              ))}
-            </div>
+
           </div>
 
           {/* Right: char count + send/stop */}

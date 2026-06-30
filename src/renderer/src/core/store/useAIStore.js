@@ -773,6 +773,19 @@ ${vaultAccessNote}`
             '\nThe user is referencing the file(s) above. You MUST take action — call readFile, updateFile, or deleteFile as appropriate. Do NOT just say you will — do it now.\n'
         }
 
+        systemPrompt +=
+          '\n\nCRITICAL RULE FOR TOOLS: When you need to read, create, or edit a file, DO NOT explain what you are going to do before calling the tool. DO NOT output conversational text like "Let me read the file". Call the tool IMMEDIATELY without any prior text.'
+
+        systemPrompt +=
+          '\n\nEXAMPLES OF CORRECT TOOL USAGE:\n' +
+          'User: "Explain the code in Grammars"\n' +
+          'Assistant: [Calls readFile tool directly with NO text output]\n\n' +
+          'User: "Write Hello world in Grammars"\n' +
+          'Assistant: [Calls updateFile tool directly with NO text output]'
+
+        systemPrompt +=
+          '\n\nIMPORTANT: After receiving a tool result, you MUST continue the conversation and provide a final answer or explanation to the user based on the tool result. Never stop without addressing the user\'s original request.'
+
         // --- Existing files list ---
         try {
           const { useVaultStore } = await import('../../core/store/useVaultStore')
@@ -843,8 +856,8 @@ ${vaultAccessNote}`
         set({ chatController: controller })
         timeoutId = setTimeout(() => controller?.abort(), 180000)
 
-        // Prepare Messages (System + History)
-        const finalMessages = [{ role: 'system', content: systemPrompt }, ...newHistory]
+        // Prepare Messages (History only, system passed separately)
+        const finalMessages = newHistory.filter(m => m.role !== 'system')
 
         // --- Execute Stream ---
         let fullContent = ''
@@ -878,67 +891,56 @@ ${vaultAccessNote}`
                     title,
                     code: content,
                     language: 'markdown',
-                    tags: '',
                     timestamp: Date.now()
                   }
                   await vs.saveSnippet(snippet)
-                  return { success: true, title }
+                  return { success: true, id: snippet.id }
                 }
               }),
               readFile: aiSdk.tool({
-                description: 'Read the contents of a file from the vault.',
+                description: 'Read the contents of an existing file.',
                 inputSchema: aiSdk.jsonSchema({
                   type: 'object',
                   properties: {
-                    title: {
-                      type: 'string',
-                      description: 'Exact title of the file to read (without .md)'
-                    }
+                    title: { type: 'string', description: 'The file title' }
                   },
                   required: ['title']
                 }),
                 execute: async ({ title }) => {
                   const { useVaultStore } = await import('../../core/store/useVaultStore')
                   const vs = useVaultStore.getState()
-                  const target = vs.snippets.find(
-                    (s) => s.title.toLowerCase() === title.toLowerCase().replace(/\.md$/, '')
+                  const target = Array.from(vs.snippets.values()).find(
+                    (s) => s.title.toLowerCase() === title.toLowerCase()
                   )
                   if (!target) return { success: false, error: 'File not found' }
-                  return { success: true, title: target.title, content: target.code }
+                  return { 
+                    success: true, 
+                    content: target.code,
+                    instruction_to_ai: "File read successfully. You MUST now respond to the user and explain or summarize this content based on their original request."
+                  }
                 }
               }),
               updateFile: aiSdk.tool({
                 description:
-                  'Edit an existing file. Provide EITHER full content (replaces entire file) OR search+replace (targeted edit). For targeted edits, set search to the exact text to find and replace to the new text.',
+                  'Update an existing file. Use `search` and `replace` for targeted edits, OR provide full `content` to overwrite.',
                 inputSchema: aiSdk.jsonSchema({
                   type: 'object',
                   properties: {
-                    title: {
-                      type: 'string',
-                      description: 'Exact title of the file to update (without .md)'
-                    },
+                    title: { type: 'string', description: 'The file title' },
+                    search: { type: 'string', description: 'Exact text to find and replace' },
+                    replace: { type: 'string', description: 'New text to insert' },
                     content: {
                       type: 'string',
-                      description: 'Full replacement content. Use this to rewrite the whole file.'
-                    },
-                    search: {
-                      type: 'string',
-                      description:
-                        'Exact text to find for a targeted replacement. Use this together with replace for surgical edits.'
-                    },
-                    replace: {
-                      type: 'string',
-                      description:
-                        'Text to replace the search match with. Use empty string to delete the matched text.'
+                      description: 'Full markdown content to overwrite the file'
                     }
                   },
                   required: ['title']
                 }),
-                execute: async ({ title, content, search, replace }) => {
+                execute: async ({ title, search, replace, content }) => {
                   const { useVaultStore } = await import('../../core/store/useVaultStore')
                   const vs = useVaultStore.getState()
-                  const target = vs.snippets.find(
-                    (s) => s.title.toLowerCase() === title.toLowerCase().replace(/\.md$/, '')
+                  const target = Array.from(vs.snippets.values()).find(
+                    (s) => s.title.toLowerCase() === title.toLowerCase()
                   )
                   if (!target) return { success: false, error: 'File not found' }
 
@@ -956,37 +958,35 @@ ${vaultAccessNote}`
                   } else {
                     return {
                       success: false,
-                      error:
-                        'Provide either content (full replace) or search+replace (targeted edit)'
+                      error: 'Must provide either search/replace or full content'
                     }
                   }
 
-                  const updated = { ...target, code: newCode, timestamp: Date.now() }
-                  await vs.saveSnippet(updated)
-                  if (vs.selectedSnippet?.id === target.id) vs.setSelectedSnippet(updated)
-                  return { success: true, title }
+                  await vs.saveSnippet({ ...target, code: newCode })
+                  return { 
+                    success: true, 
+                    title,
+                    instruction_to_ai: "File updated successfully. You MUST now respond to the user and summarize exactly what changes you made."
+                  }
                 }
               }),
               deleteFile: aiSdk.tool({
-                description: 'Delete a file from the vault by title.',
+                description: 'Delete a file from the vault.',
                 inputSchema: aiSdk.jsonSchema({
                   type: 'object',
                   properties: {
-                    title: {
-                      type: 'string',
-                      description: 'Exact title of the file to delete (without .md)'
-                    }
+                    title: { type: 'string', description: 'The file title' }
                   },
                   required: ['title']
                 }),
                 execute: async ({ title }) => {
                   const { useVaultStore } = await import('../../core/store/useVaultStore')
                   const vs = useVaultStore.getState()
-                  const target = vs.snippets.find(
-                    (s) => s.title.toLowerCase() === title.toLowerCase().replace(/\.md$/, '')
+                  const target = Array.from(vs.snippets.values()).find(
+                    (s) => s.title.toLowerCase() === title.toLowerCase()
                   )
                   if (target) {
-                    await vs.deleteSnippet(target.id, true)
+                    await vs.deleteSnippet(target.id)
                     return { success: true, title }
                   }
                   return { success: false, error: 'File not found' }
@@ -1005,6 +1005,7 @@ ${vaultAccessNote}`
 
             const result = aiSdk.streamText({
               model: createDeepseekProvider({ apiKey: visibleKey })(activeModel || 'deepseek-chat'),
+              system: systemPrompt,
               messages: finalMessages,
               temperature: modeCfg.temperature,
               maxTokens: modeCfg.max_tokens,
@@ -1028,6 +1029,7 @@ ${vaultAccessNote}`
                 fullContent += `\n\n*(⚠️ Tool error: ${errMsg})*`
               } else if (chunk.type === 'error') {
                 console.error('Stream error:', chunk.error)
+                fullContent += `\n\n*(❌ Stream error: ${chunk.error?.message || chunk.error})*`
               }
 
               const now = Date.now()
@@ -1045,13 +1047,52 @@ ${vaultAccessNote}`
             // Fallback: if tools were used but AI left empty text, show confirmation
             try {
               const steps = await result.steps
-              const hasToolCalls = steps?.some((s) => s.toolCalls?.length > 0)
-              if (hasToolCalls && !fullContent?.trim()) {
-                const toolNames = steps.flatMap((s) => s.toolCalls?.map((tc) => tc.toolName) || [])
-                const unique = [...new Set(toolNames)]
-                fullContent = `Done. Called: ${unique.join(', ')}`
+              const lastStep = steps?.[steps.length - 1]
+              const stoppedOnToolCall = lastStep?.toolCalls?.length > 0
+              
+              if (stoppedOnToolCall) {
+                // Foolproof manual follow-up if model stubbornly stopped after tool call
+                const toolOutputs = steps.flatMap((s) => s.toolResults?.map((tr) => JSON.stringify(tr.result)) || []).join('\n\n')
+                
+                const followUpMessages = [
+                  ...finalMessages,
+                  { role: 'assistant', content: fullContent },
+                  { role: 'user', content: `Tool execution results:\n${toolOutputs}\n\nPlease respond to my original request using these results. Do not mention the tools, just provide the final answer/explanation.` }
+                ]
+
+                if (fullContent.trim() && !fullContent.endsWith('\n')) {
+                  fullContent += '\n\n'
+                }
+
+                const followUpResult = aiSdk.streamText({
+                  model: createDeepseekProvider({ apiKey: visibleKey })(activeModel || 'deepseek-chat'),
+                  system: systemPrompt,
+                  messages: followUpMessages,
+                  temperature: modeCfg.temperature,
+                  maxTokens: modeCfg.max_tokens,
+                  abortSignal: controller.signal
+                })
+
+                for await (const chunk of followUpResult.fullStream) {
+                  if (chunk.type === 'text-delta') {
+                    fullContent += chunk.textDelta || chunk.text || ''
+                    const now = Date.now()
+                    if (now - lastUpdateTime >= UPDATE_INTERVAL) {
+                      lastUpdateTime = now
+                      set((state) => {
+                        const msgs = [...state.chatMessages]
+                        if (msgs.length > 0)
+                          msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: fullContent }
+                        return { chatMessages: msgs }
+                      })
+                    }
+                  }
+                }
               }
-            } catch (_) {}
+            } catch (err) {
+              console.warn('[AIStore] Follow-up fallback failed:', err)
+            }
+          } else {
             // Fallback: existing provider-based streaming (for non-tool providers)
             const stream = provider.chatStream(finalMessages, {
               model: activeModel,
