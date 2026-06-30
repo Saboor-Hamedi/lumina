@@ -281,6 +281,16 @@ const AppShell = () => {
     }
   }, [])
 
+  // Listen for external vault updates
+  useEffect(() => {
+    if (window.api?.onVaultUpdated) {
+      const cleanup = window.api.onVaultUpdated(() => {
+        loadVault()
+      })
+      return cleanup
+    }
+  }, [loadVault])
+
   // Reactive Sidebar Toggles - Sync local state with store changes
   useEffect(() => {
     const sidebar = settings.sidebar || {}

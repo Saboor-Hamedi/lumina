@@ -19,6 +19,12 @@ const api = {
     electronAPI.ipcRenderer.invoke('vault:renameFolder', oldPath, newPath),
   deleteFolder: (path) => electronAPI.ipcRenderer.invoke('vault:deleteFolder', path),
 
+  onVaultUpdated: (cb) => {
+    const listener = () => cb()
+    electronAPI.ipcRenderer.on('vault:updated', listener)
+    return () => electronAPI.ipcRenderer.removeListener('vault:updated', listener)
+  },
+
   // Settings & Theme
   getSetting: (key) => electronAPI.ipcRenderer.invoke('db:getSetting', key),
   saveSetting: (key, value) => electronAPI.ipcRenderer.invoke('db:saveSetting', key, value),

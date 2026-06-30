@@ -5,16 +5,50 @@ export async function copyMermaidAsImage(svgElement) {
 
   return new Promise((resolve, reject) => {
     try {
-      const serializer = new XMLSerializer()
-      let svgString = serializer.serializeToString(svgElement)
-
       const rect = svgElement.getBoundingClientRect()
       const width = svgElement.getAttribute('width') || rect.width || 800
       const height = svgElement.getAttribute('height') || rect.height || 600
 
+      const clonedSvg = svgElement.cloneNode(true)
+
+      // Guarantee override of Mermaid's theme by applying inline !important styles directly to elements
+      const shapes = clonedSvg.querySelectorAll('.node rect, .node circle, .node ellipse, .node polygon, .node path, .mindmap-node rect, .mindmap-node circle, .mindmap-node ellipse, .mindmap-node polygon, .mindmap-node path, .cluster rect')
+      shapes.forEach(shape => {
+        shape.style.setProperty('fill', 'transparent', 'important')
+        shape.style.setProperty('stroke', '#000000', 'important')
+        shape.style.setProperty('stroke-width', '1px', 'important')
+      })
+
+      const texts = clonedSvg.querySelectorAll('.node .label text, .mindmap-node text, .label text, .edgeLabel text, .cluster-label text, text, tspan, p, span, div')
+      texts.forEach(text => {
+        text.style.setProperty('color', '#000000', 'important')
+        text.style.setProperty('fill', '#000000', 'important')
+        text.style.setProperty('stroke', 'none', 'important')
+      })
+
+      const edges = clonedSvg.querySelectorAll('.edgePath path, .mindmap-edges path, path.link, path.edge, .flowchart-link')
+      edges.forEach(edge => {
+        edge.style.setProperty('stroke', '#000000', 'important')
+        edge.style.setProperty('stroke-width', '1px', 'important')
+        edge.style.setProperty('fill', 'none', 'important')
+      })
+
+      const markers = clonedSvg.querySelectorAll('marker path, marker polygon, marker circle')
+      markers.forEach(marker => {
+        marker.style.setProperty('fill', '#000000', 'important')
+        marker.style.setProperty('stroke', '#000000', 'important')
+      })
+
+      const serializer = new XMLSerializer()
+      let svgString = serializer.serializeToString(clonedSvg)
+
       if (!svgString.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
         svgString = svgString.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"')
       }
+
+      // Fix invalid entities and unclosed tags that Mermaid outputs
+      svgString = svgString.replace(/&nbsp;/g, '&#160;')
+      svgString = svgString.replace(/<br>/g, '<br/>')
 
       const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' })
       const DOMURL = window.URL || window.webkitURL || window
@@ -27,17 +61,6 @@ export async function copyMermaidAsImage(svgElement) {
           canvas.width = parseFloat(width)
           canvas.height = parseFloat(height)
           const ctx = canvas.getContext('2d')
-          
-          // Recreate the editor's visual background
-          const computed = getComputedStyle(document.documentElement)
-          const bgPrimary = computed.getPropertyValue('--bg-primary').trim() || '#121212'
-          
-          ctx.fillStyle = bgPrimary
-          ctx.fillRect(0, 0, canvas.width, canvas.height)
-          
-          // Apply the .mermaid-widget-body overlay
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'
-          ctx.fillRect(0, 0, canvas.width, canvas.height)
           
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
           DOMURL.revokeObjectURL(url)

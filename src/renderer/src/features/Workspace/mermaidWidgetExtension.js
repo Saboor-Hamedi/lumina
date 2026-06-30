@@ -57,7 +57,8 @@ class MermaidWidget extends WidgetType {
     wrap._reactRoot = root
 
     const ActionsOverlay = () => {
-      const [copied, ReactSetCopied] = React.useState(false)
+      const [copiedImage, setCopiedImage] = React.useState(false)
+      const [copiedSyntax, setCopiedSyntax] = React.useState(false)
 
       const handleEdit = (e) => {
         if (view.state.readOnly) return
@@ -70,7 +71,7 @@ class MermaidWidget extends WidgetType {
         }
       }
 
-      const handleCopy = async (e) => {
+      const handleCopyImage = async (e) => {
         e.preventDefault()
         e.stopPropagation()
         const svgEl = wrap.querySelector('.mermaid-scroll-wrap svg')
@@ -78,8 +79,8 @@ class MermaidWidget extends WidgetType {
           try {
             await copyMermaidAsImage(svgEl)
             
-            ReactSetCopied(true)
-            setTimeout(() => ReactSetCopied(false), 1500)
+            setCopiedImage(true)
+            setTimeout(() => setCopiedImage(false), 1500)
           } catch (err) {
             console.error('Failed to copy mermaid image', err)
             window.dispatchEvent(new CustomEvent('show-toast', { 
@@ -89,10 +90,34 @@ class MermaidWidget extends WidgetType {
         }
       }
 
+      const handleCopySyntax = async (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        try {
+          let fullCode = '```mermaid\n' + this.code + '\n```'
+          const pos = view.posAtDOM(wrap)
+          if (pos !== null) {
+            const docSlice = view.state.sliceDoc(pos, Math.min(pos + 10000, view.state.doc.length))
+            const match = docSlice.match(/```mermaid[\s\S]*?```/)
+            if (match) fullCode = match[0]
+          }
+          await navigator.clipboard.writeText(fullCode)
+          setCopiedSyntax(true)
+          setTimeout(() => setCopiedSyntax(false), 1500)
+        } catch (err) {
+          console.error('Failed to copy mermaid syntax', err)
+        }
+      }
+
       const copyIcon = React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: 14, height: 14, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", style: { display: 'block' } },
         React.createElement('rect', { x: 3, y: 3, width: 18, height: 18, rx: 2, ry: 2 }),
         React.createElement('circle', { cx: 8.5, cy: 8.5, r: 1.5 }),
         React.createElement('polyline', { points: "21 15 16 10 5 21" })
+      )
+
+      const textCopyIcon = React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: 14, height: 14, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", style: { display: 'block' } },
+        React.createElement('rect', { x: 9, y: 9, width: 13, height: 13, rx: 2, ry: 2 }),
+        React.createElement('path', { d: "M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" })
       )
 
       const checkIcon = React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: 14, height: 14, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", style: { display: 'block' } },
@@ -103,21 +128,35 @@ class MermaidWidget extends WidgetType {
         React.createElement('div', { className: 'mermaid-edit-btn', style: { position: 'static' }, onClick: handleEdit }, '</>')
       )
 
-      const copyBtn = React.createElement(ToolTip, { text: 'Copy as Image', position: 'top' },
+      const copyImageBtn = React.createElement(ToolTip, { text: 'Copy as Image', position: 'top' },
         React.createElement('div', { 
           className: 'mermaid-edit-btn', 
           style: { 
             position: 'static', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: copied ? '#4ade80' : undefined,
-            borderColor: copied ? '#4ade80' : undefined
+            color: copiedImage ? '#4ade80' : undefined,
+            borderColor: copiedImage ? '#4ade80' : undefined
           }, 
-          onClick: handleCopy 
-        }, copied ? checkIcon : copyIcon)
+          onClick: handleCopyImage 
+        }, copiedImage ? checkIcon : copyIcon)
+      )
+
+      const copySyntaxBtn = React.createElement(ToolTip, { text: 'Copy Syntax', position: 'top' },
+        React.createElement('div', { 
+          className: 'mermaid-edit-btn', 
+          style: { 
+            position: 'static', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: copiedSyntax ? '#4ade80' : undefined,
+            borderColor: copiedSyntax ? '#4ade80' : undefined
+          }, 
+          onClick: handleCopySyntax 
+        }, copiedSyntax ? checkIcon : textCopyIcon)
       )
 
       return React.createElement('div', { style: { display: 'flex', gap: '8px' } }, 
         view.state.readOnly ? null : editBtn,
-        copyBtn
+        copySyntaxBtn,
+        copyImageBtn
+
       )
     }
 
