@@ -723,20 +723,19 @@ export const useAIStore = create((set, get) => {
 - When the user asks about a file, read its content from "Files Mentioned" below and immediately provide a substantive description. Never just acknowledge the file — answer directly with detail.
 
 **TOOLS AVAILABLE** (use these for file operations):
-- 'readFile' — read a vault file by title
+- 'readFile' — read a vault file by title (only use when you do NOT already have the file content)
+- 'appendToFile' — add new content to the END of an existing file
 - 'createFile' — create a new vault file (provide title + content)
-- 'updateFile' — edit a vault file (by title+content or title+search+replace)
+- 'updateFile' — replace specific text in a vault file (use search+replace)
 - 'deleteFile' — delete a vault file by title
 
 **HOW TO USE THEM**:
-- Call them directly when needed. They actually execute.
-- **For "read" or "tell me about"** → call readFile, then describe the content.
-- **For "clear" or "empty"** → call updateFile with content='' (empty string).
-- **For "update" or "edit"** → call readFile first, then updateFile.
-- **For "delete" or "remove"** → call deleteFile directly (no read needed).
+- **For "add", "write more", "append"** → call appendToFile DIRECTLY. Never read first.
+- **For "read" or "explain" or "tell me about"** → call readFile, then describe the content.
+- **For "replace" or "fix" specific text** → call updateFile with search+replace.
+- **For "delete" or "remove"** → call deleteFile directly.
 - **For "create" or "new"** → call createFile.
-- Check EXISTING FILES before creating — never duplicate.
-- For targeted edits: use search+replace. If that fails, retry with full content.
+- NEVER call readFile if the file content is already provided in this prompt.
 - When done, write a friendly summary of what you changed.
 
 **CONTEXT**:
@@ -757,34 +756,39 @@ ${vaultAccessNote}`
         }
 
         if (mentionedSnippets.length > 0) {
-          systemPrompt += '\n\n**Explicitly Mentioned (@):**\n'
+          systemPrompt += '\n\n**Explicitly Mentioned (@) — content already provided, do NOT call readFile:**\n'
           mentionedSnippets.forEach((snip) => {
             systemPrompt += `[Target Note: ${snip.title}]\n${snip.code.slice(0, 3000)}\n\n`
           })
+          systemPrompt += 'The @-mentioned file content is ABOVE. Do NOT call readFile for these files. Use appendToFile or updateFile directly.\n'
         }
 
         // --- Auto-detected file mentions ---
+        const preloadedFiles = [...mentionedSnippets, ...requestedFiles]
         if (requestedFiles.length > 0) {
-          systemPrompt += '\n\n**Vault Files Referenced (content below):**\n'
-          requestedFiles.forEach((f, i) => {
+          systemPrompt += '\n\n**Vault Files Referenced (content already provided below — do NOT call readFile):**\n'
+          requestedFiles.forEach((f) => {
             systemPrompt += `--- ${f.title} ---\n${f.code}\n`
           })
           systemPrompt +=
-            '\nThe user is referencing the file(s) above. You MUST take action — call readFile, updateFile, or deleteFile as appropriate. Do NOT just say you will — do it now.\n'
+            '\nThe file content is ALREADY in this prompt. Do NOT call readFile. Call appendToFile, updateFile, or deleteFile as needed — or answer from the content above.\n'
         }
 
         systemPrompt +=
-          '\n\nCRITICAL RULE FOR TOOLS: When you need to read, create, or edit a file, DO NOT explain what you are going to do before calling the tool. DO NOT output conversational text like "Let me read the file". Call the tool IMMEDIATELY without any prior text.'
-
-        systemPrompt +=
-          '\n\nEXAMPLES OF CORRECT TOOL USAGE:\n' +
-          'User: "Explain the code in Grammars"\n' +
-          'Assistant: [Calls readFile tool directly with NO text output]\n\n' +
-          'User: "Write Hello world in Grammars"\n' +
-          'Assistant: [Calls updateFile tool directly with NO text output]'
-
-        systemPrompt +=
-          '\n\nIMPORTANT: After receiving a tool result, you MUST continue the conversation and provide a final answer or explanation to the user based on the tool result. Never stop without addressing the user\'s original request.'
+          '\n\nCRITICAL RULES FOR FILE TOOLS:\n' +
+          '1. NEVER output ANY text before calling a tool. Call the tool IMMEDIATELY.\n' +
+          '2. If asked to ADD, WRITE, or APPEND content → call appendToFile DIRECTLY. Do NOT read first.\n' +
+          '3. If asked to CLEAR, EMPTY, or WIPE a file → call updateFile with content: "" (empty string) DIRECTLY.\n' +
+          '4. If asked to EXPLAIN or SUMMARIZE a file → call readFile DIRECTLY.\n' +
+          '5. If asked to REPLACE or FIX specific text → call updateFile with search+replace DIRECTLY.\n' +
+          '6. After ANY tool call, you MUST provide a final response to the user. Never stop silently.\n' +
+          '\n' +
+          'EXAMPLES:\n' +
+          'User: "Write hello world in Grammars" → [Call appendToFile immediately]\n' +
+          'User: "Add one more noun" → [Call appendToFile immediately]\n' +
+          'User: "Clear Grammars" → [Call updateFile with title="Grammars" content="" immediately]\n' +
+          'User: "Explain Grammars" → [Call readFile immediately]\n' +
+          'User: "Fix the typo in Grammars" → [Call updateFile with search+replace immediately]'
 
         // --- Existing files list ---
         try {
@@ -859,6 +863,14 @@ ${vaultAccessNote}`
         // Prepare Messages (History only, system passed separately)
         const finalMessages = newHistory.filter(m => m.role !== 'system')
 
+        // Only block readFile when user clearly wants to WRITE and file is already pre-loaded.
+        // For explain/read/summarize requests, always keep readFile available.
+        const hasPreloadedFiles = mentionedSnippets.length > 0 || requestedFiles.length > 0
+        const writeIntentKeywords = /\b(write|add|append|insert|put|include|create new|type|place|set|clear|empty|erase|wipe|delete all|remove all)\b/i
+        const readIntentKeywords = /\b(explain|read|summarize|describe|tell me|what is|what does|show me|analyze|review)\b/i
+        const isWriteIntent = writeIntentKeywords.test(message) && !readIntentKeywords.test(message)
+        const blockReadFile = hasPreloadedFiles && isWriteIntent
+
         // --- Execute Stream ---
         let fullContent = ''
         let lastUpdateTime = Date.now()
@@ -897,8 +909,8 @@ ${vaultAccessNote}`
                   return { success: true, id: snippet.id }
                 }
               }),
-              readFile: aiSdk.tool({
-                description: 'Read the contents of an existing file.',
+              readFile: !blockReadFile ? aiSdk.tool({
+                description: 'Read the contents of an existing file. Only use when file content is not already in the prompt.',
                 inputSchema: aiSdk.jsonSchema({
                   type: 'object',
                   properties: {
@@ -919,7 +931,7 @@ ${vaultAccessNote}`
                     instruction_to_ai: "File read successfully. You MUST now respond to the user and explain or summarize this content based on their original request."
                   }
                 }
-              }),
+              }) : undefined,
               updateFile: aiSdk.tool({
                 description:
                   'Update an existing file. Use `search` and `replace` for targeted edits, OR provide full `content` to overwrite.',
@@ -963,11 +975,37 @@ ${vaultAccessNote}`
                   }
 
                   await vs.saveSnippet({ ...target, code: newCode })
+                  window.dispatchEvent(new CustomEvent('ai-saved-snippet', { detail: { id: target.id } }))
                   return { 
                     success: true, 
                     title,
                     instruction_to_ai: "File updated successfully. You MUST now respond to the user and summarize exactly what changes you made."
                   }
+                }
+              }),
+              appendToFile: aiSdk.tool({
+                description:
+                  'Append new content to the END of an existing file. Use this when asked to ADD, WRITE MORE, or APPEND to a file. Never read the file first — this tool handles that automatically.',
+                inputSchema: aiSdk.jsonSchema({
+                  type: 'object',
+                  properties: {
+                    title: { type: 'string', description: 'The file title' },
+                    content: { type: 'string', description: 'The new content to append at the end of the file' }
+                  },
+                  required: ['title', 'content']
+                }),
+                execute: async ({ title, content }) => {
+                  const { useVaultStore } = await import('../../core/store/useVaultStore')
+                  const vs = useVaultStore.getState()
+                  const target = Array.from(vs.snippets.values()).find(
+                    (s) => s.title.toLowerCase() === title.toLowerCase()
+                  )
+                  if (!target) return { success: false, error: 'File not found' }
+                  const separator = target.code.endsWith('\n') ? '\n' : '\n\n'
+                  const newCode = target.code + separator + content
+                  await vs.saveSnippet({ ...target, code: newCode })
+                  window.dispatchEvent(new CustomEvent('ai-saved-snippet', { detail: { id: target.id } }))
+                  return { success: true, title, instruction_to_ai: 'Content appended successfully. Confirm to the user what you added.' }
                 }
               }),
               deleteFile: aiSdk.tool({
@@ -1010,11 +1048,12 @@ ${vaultAccessNote}`
               temperature: modeCfg.temperature,
               maxTokens: modeCfg.max_tokens,
               abortSignal: controller.signal,
-              tools: sdkTools,
+              tools: Object.fromEntries(Object.entries(sdkTools).filter(([, v]) => v !== undefined)),
               maxSteps: 15
             })
 
             for await (const chunk of result.fullStream) {
+              if (!chunk || typeof chunk.type !== 'string') continue
               if (chunk.type === 'text-delta') {
                 fullContent += chunk.textDelta || chunk.text || ''
               } else if (chunk.type === 'tool-result') {
@@ -1057,7 +1096,7 @@ ${vaultAccessNote}`
                 const followUpMessages = [
                   ...finalMessages,
                   { role: 'assistant', content: fullContent },
-                  { role: 'user', content: `Tool execution results:\n${toolOutputs}\n\nPlease respond to my original request using these results. Do not mention the tools, just provide the final answer/explanation.` }
+                  { role: 'user', content: `Tool execution results:\n${toolOutputs}\n\nBased on these results, please continue fulfilling my original request. If you need to execute another tool (like updateFile) to complete the task, DO IT NOW. Otherwise, provide your final response.` }
                 ]
 
                 if (fullContent.trim() && !fullContent.endsWith('\n')) {
@@ -1068,6 +1107,8 @@ ${vaultAccessNote}`
                   model: createDeepseekProvider({ apiKey: visibleKey })(activeModel || 'deepseek-chat'),
                   system: systemPrompt,
                   messages: followUpMessages,
+                  tools: Object.fromEntries(Object.entries(sdkTools).filter(([, v]) => v !== undefined)),
+                  maxSteps: 15,
                   temperature: modeCfg.temperature,
                   maxTokens: modeCfg.max_tokens,
                   abortSignal: controller.signal
@@ -1076,16 +1117,27 @@ ${vaultAccessNote}`
                 for await (const chunk of followUpResult.fullStream) {
                   if (chunk.type === 'text-delta') {
                     fullContent += chunk.textDelta || chunk.text || ''
-                    const now = Date.now()
-                    if (now - lastUpdateTime >= UPDATE_INTERVAL) {
-                      lastUpdateTime = now
-                      set((state) => {
-                        const msgs = [...state.chatMessages]
-                        if (msgs.length > 0)
-                          msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: fullContent }
-                        return { chatMessages: msgs }
-                      })
+                  } else if (chunk.type === 'tool-result') {
+                    const res = chunk.result
+                    if (res && res.success === false) {
+                      fullContent += `\n\n*(⚠️ ${chunk.toolName}: ${res.error})*`
                     }
+                  } else if (chunk.type === 'tool-error') {
+                    const errMsg = chunk.error?.message || chunk.error || 'Unknown tool error'
+                    fullContent += `\n\n*(⚠️ Tool error: ${errMsg})*`
+                  } else if (chunk.type === 'error') {
+                    fullContent += `\n\n*(❌ Stream error: ${chunk.error?.message || chunk.error})*`
+                  }
+
+                  const now = Date.now()
+                  if (now - lastUpdateTime >= UPDATE_INTERVAL) {
+                    lastUpdateTime = now
+                    set((state) => {
+                      const msgs = [...state.chatMessages]
+                      if (msgs.length > 0)
+                        msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: fullContent }
+                      return { chatMessages: msgs }
+                    })
                   }
                 }
               }

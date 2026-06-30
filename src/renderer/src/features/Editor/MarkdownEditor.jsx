@@ -315,6 +315,18 @@ const MarkdownEditor = React.memo(
       }
     }, [snippet])
 
+    // Suppress chokidar echo when AI saves this snippet
+    useEffect(() => {
+      const handleAISave = (e) => {
+        if (e.detail?.id === snippet?.id) {
+          lastSaveTimeRef.current = Date.now()
+          lastSavedCodeRef.current = snippet?.code
+        }
+      }
+      window.addEventListener('ai-saved-snippet', handleAISave)
+      return () => window.removeEventListener('ai-saved-snippet', handleAISave)
+    }, [snippet?.id, snippet?.code])
+
     const latestCodeRef = useRef(snippet?.code || '')
 
     // Cleanup on unmount (Tab switch / close)

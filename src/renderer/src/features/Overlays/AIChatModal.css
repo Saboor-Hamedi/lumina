@@ -730,8 +730,8 @@
 .chat-bubble {
   font-size: 14px;
   line-height: 1.6;
-  white-space: pre-wrap;
   word-wrap: break-word;
+  overflow-wrap: break-word;
   color: var(--text-main);
   padding: 12px 16px;
   border-radius: 8px;
@@ -740,11 +740,13 @@
 .chat-bubble.user {
   background: transparent;
   padding-right: 0;
+  white-space: pre-wrap;
   border-bottom-right-radius: 2px;
 }
 
 .chat-bubble.assistant {
   background: transparent;
+  white-space: normal;
 }
 
 .chat-bubble p {

@@ -10,10 +10,11 @@ const ModalHeader = ({
   right = null,
   onClose = () => {},
   onMouseDown = null,
+  onDoubleClick = null,
   style = {}
 }) => {
   return (
-    <header className="pane-header" onMouseDown={onMouseDown} style={style}>
+    <header className="pane-header" onMouseDown={onMouseDown} onDoubleClick={onDoubleClick} style={style}>
 
       <div className="modal-left">
         {left ? (

@@ -794,7 +794,7 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
         style={{
           position: 'absolute',
           ...(isMaximized
-            ? { top: 0, left: 0, width: '100vw', height: '100vh' }
+            ? { top: 0, left: 0, width: '100vw', height: 'calc(100vh - 28px)' }
             : isMinimized
             ? { top: 'auto', left: 'auto', bottom: '40px', right: '20px', width: '280px' }
             : {
@@ -807,6 +807,7 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
       >
         <ModalHeader
           onMouseDown={handleDragStart}
+          onDoubleClick={(e) => { e.preventDefault(); e.stopPropagation() }}
           style={{ cursor: 'default' }}
           left={
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '-10px' }}>
