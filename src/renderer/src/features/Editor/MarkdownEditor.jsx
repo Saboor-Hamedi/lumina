@@ -32,6 +32,7 @@ import '@atomic-editor/editor/styles.css'
 import FindWidget from '../Workspace/components/FindWidget'
 import StatusBar from '../Workspace/components/StatusBar'
 import PreviewModal from '../Overlays/PreviewModal/PreviewModal'
+import OverwriteModal from '../Overlays/Modals/OverwriteModal'
 
 const updateSearchHighlights = StateEffect.define()
 
@@ -83,6 +84,7 @@ const MarkdownEditor = React.memo(
     const [showFindWidget, setShowFindWidget] = useState(false)
     const [replaceModeActive, setReplaceModeActive] = useState(false)
     const [copiedBlockId, setCopiedBlockId] = useState(null)
+    const [conflictPrompt, setConflictPrompt] = useState(null)
 
     const isActiveRef = useRef(isActive)
     useEffect(() => {
@@ -259,6 +261,7 @@ const MarkdownEditor = React.memo(
     const lastSavedCodeRef = useRef(snippet?.code)
 
     useEffect(() => {
+      const previousSnippet = snippetRef.current
       snippetRef.current = snippet
       setTitle(snippet?.title || '')
 
@@ -267,20 +270,37 @@ const MarkdownEditor = React.memo(
         const codeChangedFromOutside = snippet?.code !== lastSavedCodeRef.current
 
         if (codeChangedFromOutside) {
-          setIsDirty(false) // Reset dirty state only if code changed from outside
-          lastSavedCodeRef.current = snippet?.code
+          const isSameFile = previousSnippet?.id === snippet?.id
+          const hasLocalEdits = currentCode !== lastSavedCodeRef.current
+          const isTrivialExternalChange = (snippet?.code || '').trim() === (lastSavedCodeRef.current || '').trim()
 
-          if (realViewRef.current) {
-            const view = realViewRef.current
-            const needsClear = snippet?.code === '' && view.state.doc.length > 0
-            if ((typeof snippet?.code === 'string' && currentCode !== snippet.code) || needsClear) {
-              view.dispatch({
-                changes: { from: 0, to: view.state.doc.length, insert: snippet.code || '' }
-              })
-            }
+          if (isSameFile && hasLocalEdits && !isTrivialExternalChange) {
+            // REAL CONFLICT! Show the custom ConfirmModal
+            setConflictPrompt({
+              snippetCode: snippet?.code,
+              snippetTitle: snippet?.title
+            })
+          } else if (isSameFile && hasLocalEdits && isTrivialExternalChange) {
+            // Trivial external change (e.g. backend added a trailing newline to frontmatter)
+            // But user has real local edits. Keep local edits!
+            lastSavedCodeRef.current = snippet?.code
           } else {
-            if (typeof snippet?.code === 'string' && currentCode !== snippet.code) {
-              setEditorKey((k) => k + 1)
+            // No local edits, OR switching tabs. Safe to overwrite immediately.
+            setIsDirty(false)
+            lastSavedCodeRef.current = snippet?.code
+
+            if (realViewRef.current) {
+              const view = realViewRef.current
+              const needsClear = snippet?.code === '' && view.state.doc.length > 0
+              if ((typeof snippet?.code === 'string' && currentCode !== snippet.code) || needsClear) {
+                view.dispatch({
+                  changes: { from: 0, to: view.state.doc.length, insert: snippet.code || '' }
+                })
+              }
+            } else {
+              if (typeof snippet?.code === 'string' && currentCode !== snippet.code) {
+                setEditorKey((k) => k + 1)
+              }
             }
           }
         }
@@ -822,6 +842,28 @@ const MarkdownEditor = React.memo(
       }
     }, [showToast])
 
+    const handleOverwriteClose = useCallback(() => {
+      // Keep local edits
+      if (conflictPrompt) lastSavedCodeRef.current = conflictPrompt.snippetCode
+      setConflictPrompt(null)
+    }, [conflictPrompt])
+
+    const handleOverwriteConfirm = useCallback(() => {
+      // Overwrite with external changes
+      if (!conflictPrompt) return
+      const code = conflictPrompt.snippetCode
+      setIsDirty(false)
+      lastSavedCodeRef.current = code
+      if (realViewRef.current) {
+        const view = realViewRef.current
+        view.dispatch({
+          changes: { from: 0, to: view.state.doc.length, insert: code || '' }
+        })
+      } else {
+        setEditorKey((k) => k + 1)
+      }
+    }, [conflictPrompt])
+
     return (
       <div
         className={`markdown-editor mode-source cursor-${caretStyle || 'smooth'}`}
@@ -861,12 +903,20 @@ const MarkdownEditor = React.memo(
             onExportMarkdown={handleExportMarkdown}
             onPreview={() => setIsPreviewOpen(true)}
           />
-          <PreviewModal 
-            isOpen={isPreviewOpen} 
-            onClose={() => setIsPreviewOpen(false)} 
-            title={title} 
-            content={snippet?.code} 
-            timestamp={snippet?.timestamp} 
+          <PreviewModal
+            isOpen={isPreviewOpen}
+            onClose={() => setIsPreviewOpen(false)}
+            title={title}
+            content={snippetRef.current?.code || ''}
+          />
+          <OverwriteModal
+            isOpen={!!conflictPrompt}
+            onClose={handleOverwriteClose}
+            onConfirm={handleOverwriteConfirm}
+            title="File Modified Externally"
+            message={`The file "${conflictPrompt?.snippetTitle}" was modified externally. Do you want to reload the new version and lose your local edits, or keep your local edits?`}
+            confirmText="Overwrite"
+            cancelText="Keep My Edits"
           />
           <div className="editor-canvas-wrap" ref={editorWrapperRef}>
             {settings.inlineMetadata && (

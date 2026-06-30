@@ -1,0 +1,224 @@
+.confirm-overlay {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  z-index: 10001;
+}
+
+.confirm-modal {
+  width: 300px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-card);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  padding: 14px;
+}
+
+.confirm-modal::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.confirm-modal.border-danger::after {
+  background: radial-gradient(ellipse at center, #ef4444 0%, transparent 70%);
+}
+
+.confirm-modal.border-accent::after {
+  background: radial-gradient(ellipse at center, var(--text-accent) 0%, transparent 70%);
+}
+
+.confirm-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.confirm-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  padding: 4px;
+  transition: all 0.2s;
+}
+
+.confirm-close:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+.text-danger {
+  color: #ef4444;
+}
+
+.text-accent {
+  color: var(--text-accent);
+}
+
+.confirm-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.confirm-message {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin: 0 0 16px 0;
+  user-select: text;
+}
+
+.confirm-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.confirm-footer .btn {
+  font-size: 12px;
+  padding: 6px 12px;
+  min-width: 110px;
+}
+
+.confirm-cancel {
+  background: var(--bg-active);
+  border: 1px solid var(--border-card);
+  color: var(--text-muted);
+}
+
+.confirm-cancel:hover {
+  background: var(--bg-hover);
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: white;
+  border: none;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+  filter: brightness(1.1);
+}
+
+.btn-warning {
+  background: #f5a623;
+  color: white;
+  border: none;
+  transition: all 0.2s;
+}
+
+.confirm-modal .btn-warning:hover {
+  background: #d97706; /* darker orange */
+  filter: none;
+}
+
+.text-warning {
+  color: #f5a623;
+}
+
+.confirm-modal.border-warning::after {
+  background: radial-gradient(ellipse at center, #f5a623 0%, transparent 70%);
+}
+
+.notification-wrapper {
+  position: fixed;
+  bottom: 40px;
+  right: 24px;
+  z-index: 10001;
+  pointer-events: none; /* Let clicks pass through */
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.notification-modal {
+  pointer-events: auto; /* Re-enable clicks on the modal itself */
+  width: 300px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-card);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  animation: slideInBottomRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 14px;
+}
+
+.notification-modal::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  background: radial-gradient(ellipse at center, var(--text-accent) 0%, transparent 70%);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+@keyframes slideInBottomRight {
+  from {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.notification-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.notification-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.notification-message {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin: 0 0 16px 0;
+  user-select: text;
+}
+
+.notification-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.notification-footer .btn {
+  font-size: 12px;
+  padding: 6px 12px;
+  min-width: 110px;
+}
+
+.notification-footer .confirm-cancel {
+  background: var(--bg-active);
+  border: 1px solid var(--border-card);
+}
+
+.notification-footer .confirm-cancel:hover {
+  background: var(--bg-hover);
+}
