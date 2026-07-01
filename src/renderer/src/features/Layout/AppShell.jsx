@@ -22,7 +22,7 @@ import './AppShell.css'
 import '../Overlays/Modals/ConfirmModal.css'
 import '../Overlays/Modals/RenameModal.css'
 
-import AIChatModal from '../Overlays/AIChatModal'
+import LuminaChat from '../AI/LuminaChat'
 import SnippetDetails from '../Inspector/SnippetDetails'
 import { useAIStore } from '../../core/store/useAIStore'
 import { useTypingSound } from '../../core/hooks/useTypingSound'
@@ -51,7 +51,6 @@ const AppShell = () => {
     openTabs
   } = useVaultStore()
   const { toast, showToast, clearToast } = useToast()
-  const { chatMessages, clearChat } = useAIStore()
   const settings = useSettingsStore((state) => state.settings)
 
   // Initialize typing sound hook globally
@@ -686,7 +685,7 @@ const AppShell = () => {
       {showThemeModal && (
         <ThemeModal isOpen={showThemeModal} onClose={() => setShowThemeModal(false)} />
       )}
-      <AIChatModal
+      <LuminaChat
         isOpen={showAIChatModal}
         onClose={() => {
           // Just close the modal, don't restore sidebar

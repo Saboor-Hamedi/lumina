@@ -26,9 +26,6 @@ const StatusBar = ({ wordCount, extension, onToggleInspector }) => {
       </div>
 
       <div className="status-bar-right">
-        <span>{wordCount} words</span>
-        <span className="separator">•</span>
-        <span>MCP</span>
       </div>
     </div>
   )

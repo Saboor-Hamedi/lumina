@@ -314,20 +314,38 @@ const MarkdownEditor = React.memo(
         }
       }
     }, [snippet])
+    const latestCodeRef = useRef(snippet?.code || '')
 
-    // Suppress chokidar echo when AI saves this snippet
+    // Suppress chokidar echo and sync editor when AI saves this snippet
     useEffect(() => {
       const handleAISave = (e) => {
-        if (e.detail?.id === snippet?.id) {
-          lastSaveTimeRef.current = Date.now()
-          lastSavedCodeRef.current = snippet?.code
+        if (e.detail?.id !== snippet?.id) return
+        const newCode = e.detail?.code ?? ''
+
+        // Update refs so chokidar echo is ignored
+        lastSaveTimeRef.current = Date.now()
+        lastSavedCodeRef.current = newCode
+        latestCodeRef.current = newCode
+
+        // Clear dirty state
+        setIsDirty(false)
+        setDirty(snippet?.id, false)
+
+        // Push new content directly into CodeMirror
+        if (realViewRef.current) {
+          const view = realViewRef.current
+          const current = view.state.doc.toString()
+          if (current !== newCode) {
+            view.dispatch({
+              changes: { from: 0, to: view.state.doc.length, insert: newCode }
+            })
+          }
         }
       }
       window.addEventListener('ai-saved-snippet', handleAISave)
       return () => window.removeEventListener('ai-saved-snippet', handleAISave)
-    }, [snippet?.id, snippet?.code])
+    }, [snippet?.id, setDirty])
 
-    const latestCodeRef = useRef(snippet?.code || '')
 
     // Cleanup on unmount (Tab switch / close)
     useEffect(() => {
@@ -362,6 +380,7 @@ const MarkdownEditor = React.memo(
         latestCodeRef.current = md
         setIsDirty(true)
         setDirty(snippet?.id, true)
+        useVaultStore.getState().setDraft(snippet?.id, md)
       },
       [snippet?.id, setDirty]
     )

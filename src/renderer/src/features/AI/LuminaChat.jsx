@@ -8,10 +8,10 @@ import { useAIStore } from '../../core/store/useAIStore'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { getSnippetIcon } from '../Icons/iconMapper'
-import { Composer } from '../AI/Composer'
-import ModalHeader from './ModalHeader'
+import { Composer } from './Composer'
+import ModalHeader from '../Overlays/ModalHeader'
 import '../Layout/AppShell.css'
-import './AIChatModal.css'
+import './LuminaChat.css'
 
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
@@ -91,169 +91,9 @@ const CodeBlock = React.memo(({ inline, className, children, ...props }) => {
   )
 })
 
-// Image component for displaying generated images
-const GeneratedImage = React.memo(({ imageUrl, prompt, onCopy }) => {
-  const [isLoading, setIsLoading] = useState(true)
-  const [hasError, setHasError] = useState(false)
-  const [isExpanded, setIsExpanded] = useState(false)
-
-  useEffect(() => {
-    if (isExpanded) {
-      const handleEsc = (e) => {
-        if (e.key === 'Escape') setIsExpanded(false)
-      }
-      window.addEventListener('keydown', handleEsc)
-      return () => window.removeEventListener('keydown', handleEsc)
-    }
-    return undefined
-  }, [isExpanded])
-
-  const handleImageLoad = () => {
-    setIsLoading(false)
-  }
-
-  const handleImageError = () => {
-    setIsLoading(false)
-    setHasError(true)
-  }
-
-  const handleCopyImage = () => {
-    if (imageUrl) {
-      // Copy image URL to clipboard
-      navigator.clipboard.writeText(imageUrl)
-      if (onCopy) onCopy('Image URL copied to clipboard!')
-    }
-  }
-
-  const handleDownloadImage = async () => {
-    if (!imageUrl) return
-    try {
-      const a = document.createElement('a')
-      a.style.display = 'none'
-      a.href = imageUrl
-
-      const basePrompt = prompt || 'generated-image'
-      const filename = basePrompt
-        .slice(0, 30)
-        .replace(/[^a-z0-9]/gi, '_')
-        .toLowerCase()
-      a.download = `lumina_${filename}.png`
-
-      document.body.appendChild(a)
-      a.click()
-
-      setTimeout(() => {
-        if (a.parentNode) document.body.removeChild(a)
-      }, 100)
-
-      if (onCopy) onCopy('Download started...')
-    } catch (err) {
-      console.error('Failed to download image:', err)
-    }
-  }
-
-  if (hasError) {
-    return (
-      <div className="chat-image-error">
-        <p>Failed to load image</p>
-        {prompt && <p className="chat-image-prompt">Prompt: {prompt}</p>}
-      </div>
-    )
-  }
-
-  return (
-    <div className="chat-generated-image-container">
-      {isLoading && (
-        <div className="chat-image-loading">
-          <div className="typing-inline">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-          <p>Generating image...</p>
-        </div>
-      )}
-      <div className={`chat-image-wrapper ${isExpanded ? 'expanded' : ''}`}>
-        <img
-          src={imageUrl}
-          alt={prompt || 'Generated image'}
-          onLoad={handleImageLoad}
-          onError={handleImageError}
-          className="chat-generated-image"
-          style={{ display: isLoading ? 'none' : 'block' }}
-          title="Generated AI image"
-        />
-        {prompt && (
-          <div className="chat-image-prompt">
-            <strong>Prompt:</strong> {prompt}
-          </div>
-        )}
-        <div className="chat-image-actions">
-          <button
-            onClick={handleDownloadImage}
-            className="chat-image-action-btn"
-            title="Download image"
-          >
-            <Download size={10} />
-          </button>
-          <button
-            onClick={handleCopyImage}
-            className="chat-image-action-btn"
-            title="Copy image URL"
-          >
-            <Copy size={10} />
-          </button>
-          <button
-            onClick={() => setIsExpanded(true)}
-            className="chat-image-action-btn"
-            title="View full screen"
-          >
-            <Maximize2 size={12} />
-          </button>
-        </div>
-      </div>
-
-      {/* Full screen modal for image - using Portal to escape sidebar container constraints */}
-      {isExpanded &&
-        createPortal(
-          <div
-            className="chat-image-modal-overlay"
-            onClick={() => setIsExpanded(false)}
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') setIsExpanded(false)
-            }}
-            tabIndex={-1}
-            ref={(el) => el && el.focus()}
-            style={{ cursor: 'zoom-out' }}
-          >
-            <div className="chat-image-modal-view">
-              <button className="chat-image-modal-close-inner" onClick={() => setIsExpanded(false)}>
-                <CloseIcon size={14} />
-              </button>
-              <img
-                src={imageUrl}
-                alt={prompt}
-                className="chat-image-modal-img"
-                onClick={(e) => e.stopPropagation()}
-                style={{ cursor: 'default' }}
-              />
-            </div>
-          </div>,
-          document.body
-        )}
-    </div>
-  )
-})
-
-GeneratedImage.displayName = 'GeneratedImage'
 
 const MessageContent = React.memo(
-  ({ content, imageUrl, imagePrompt, onCopy }) => {
-    // If message has an image, render it
-    if (imageUrl) {
-      return <GeneratedImage imageUrl={imageUrl} prompt={imagePrompt} onCopy={onCopy} />
-    }
-
+  ({ content }) => {
     // Pre-process content to handle custom XML tags like <readFile>
     const processedContent = content?.replace(/<readFile>([\s\S]*?)<\/readFile>/g, (match, inner) => {
       const titleMatch = inner.match(/title:\s*"([^"]+)"/);
@@ -279,7 +119,7 @@ const MessageContent = React.memo(
     )
   },
   (prevProps, nextProps) => {
-    return prevProps.content === nextProps.content && prevProps.imageUrl === nextProps.imageUrl
+    return prevProps.content === nextProps.content
   }
 )
 
@@ -326,7 +166,11 @@ const ChatActions = ({ msg, index, onCopy, onRate }) => {
  */
 
 
-const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
+const LuminaChat = ({ isOpen, onClose, onUnfloat }) => {
+  useKeyboardShortcuts({
+    onEscape: isOpen ? onClose : null
+  })
+
   const modalRef = useRef(null)
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
@@ -584,12 +428,7 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
     chatError,
     sendChatMessage,
     clearChat,
-    updateMessage,
-    generateImage,
-    isImageGenerating,
-    imageGenerationError,
     cancelChat,
-    cancelImageGeneration,
     loadSessions,
     sessions,
     activeSessionId,
@@ -644,30 +483,7 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
   const handleSendMessage = useCallback(
     async (text, mode = 'Standard') => {
       // 0. Base validation
-      if ((!text || !text.trim()) && !text.startsWith('/image') && !text.startsWith('/img')) return
-
-      // 1. Check for Image Generation Command IMMEDIATELY (before mode injection)
-      // Supports "/image <prompt>" or "/img <prompt>"
-      if (text.startsWith('/image ') || text.startsWith('/img ')) {
-        const prompt = text.replace(/^\/(image|img)\s+/, '')
-        try {
-          await generateImage(prompt)
-          // Add user message showing the request using the store
-          const userMsg = { role: 'user', content: text }
-          const currentMessages = (chatMessages || []).filter((msg) => msg.content.trim() !== '')
-          useAIStore.setState({ chatMessages: [...currentMessages, userMsg] })
-          
-          // Scroll to bottom after image generation
-          setTimeout(() => {
-            if (listRef.current) {
-              listRef.current.scrollTop = listRef.current.scrollHeight
-            }
-          }, 100)
-        } catch (err) {
-          // Error handled in store
-        }
-        return // Stop processing text chat
-      }
+      if (!text || !text.trim()) return
 
       try {
         // Include all open tabs as context (not just selected snippet)
@@ -694,7 +510,7 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
         console.error('Failed to send:', err)
       }
     },
-    [sendChatMessage, generateImage, chatMessages, selectedSnippet, snippets, openTabs]
+    [sendChatMessage, chatMessages, selectedSnippet, snippets, openTabs]
   )
 
   const visibleMessages = useMemo(() => {
@@ -735,7 +551,7 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
             display: 'flex',
             flexDirection: 'column',
             alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
-            maxWidth: msg.role === 'user' ? '70%' : '95%',
+            maxWidth: msg.role === 'user' ? '70%' : '100%',
             minWidth: 0,
             flexShrink: 1,
             width: 'auto',
@@ -993,11 +809,7 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
                           )}
                         </div>
                       )}
-                      {imageGenerationError && (
-                        <div className="chat-error">
-                          <strong>Image Generation Error:</strong> {imageGenerationError}
-                        </div>
-                      )}
+                      
                     </>
                   )
                 })()}
@@ -1009,10 +821,9 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
         <div className="chat-input-area">
           <Composer
             onSend={handleSendMessage}
-            isLoading={isChatLoading || isImageGenerating}
+            isLoading={isChatLoading}
             onCancel={() => {
               if (isChatLoading) cancelChat()
-              if (isImageGenerating) cancelImageGeneration()
             }}
           />
         </div>
@@ -1024,4 +835,4 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
   )
 }
 
-export default React.memo(AIChatModal)
+export default React.memo(LuminaChat)

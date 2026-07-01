@@ -1,6 +1,6 @@
 # lumina
 
-![banner](./banner.png)
+![banner](./banner.png?v=2)
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-1.0.2-blue" alt="version">

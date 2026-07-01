@@ -24,8 +24,10 @@ import './Graph.css'
  * Memoized for performance - expensive graph calculations.
  */
 const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false }) => {
-  const { snippets, selectedSnippet, dirtySnippetIds } = useVaultStore()
-  const { embeddingsCache } = useAIStore()
+  const snippets = useVaultStore((s) => s.snippets)
+  const selectedSnippet = useVaultStore((s) => s.selectedSnippet)
+  const dirtySnippetIds = useVaultStore((s) => s.dirtySnippetIds)
+  const embeddingsCache = useAIStore((s) => s.embeddingsCache)
   
   // Granular subscriptions so physics sliders do not cause React re-renders!
   const graphTheme = useSettingsStore(s => s.settings.graphTheme || 'default')
@@ -185,36 +187,77 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
         linkCounts[tgt] = (linkCounts[tgt] || 0) + 1
       })
 
-      nodes.forEach((n) => {
-        // Break exact center symmetry so radial force works instantly
-        if (n.x === undefined) n.x = (Math.random() - 0.5) * 200
-        if (n.y === undefined) n.y = (Math.random() - 0.5) * 200
+      setRawGraphData((prev) => {
+        const prevNodes = new Map(prev.nodes.map((n) => [n.id, n]))
 
-        n.linkCount = linkCounts[n.id] || 0
-        n.val = n.linkCount + 1 // Exponential scaling base
-
-        if (n.snippetId) {
-          const s = snippets.find((sn) => sn.id === n.snippetId)
-          if (s && s.tags) {
-            const rawTags = Array.isArray(s.tags)
-              ? s.tags
-              : typeof s.tags === 'string'
-                ? s.tags.split(',')
-                : []
-            if (rawTags.length > 0) {
-              n.primaryTag = String(rawTags[0]).trim().toLowerCase()
-            }
+        nodes.forEach((n) => {
+          const oldN = prevNodes.get(n.id)
+          if (oldN && oldN.x !== undefined) {
+            n.x = oldN.x
+            n.y = oldN.y
+            n.vx = oldN.vx
+            n.vy = oldN.vy
+          } else {
+            // Break exact center symmetry so radial force works instantly
+            n.x = (Math.random() - 0.5) * 200
+            n.y = (Math.random() - 0.5) * 200
           }
 
-          const age = now - (s?.timestamp || now)
-          // Normalized age: 0 (new) to 1 (old)
-          n.ageFactor = Math.min(1, age / maxAge)
-        } else {
-          n.ageFactor = 0.5 // Standard for ghost/tags
+          n.linkCount = linkCounts[n.id] || 0
+          n.val = n.linkCount + 1 // Exponential scaling base
+
+          if (n.snippetId) {
+            const s = snippets.find((sn) => sn.id === n.snippetId)
+            if (s && s.tags) {
+              const rawTags = Array.isArray(s.tags)
+                ? s.tags
+                : typeof s.tags === 'string'
+                  ? s.tags.split(',')
+                  : []
+              if (rawTags.length > 0) {
+                n.primaryTag = String(rawTags[0]).trim().toLowerCase()
+              }
+            }
+
+            const age = now - (s?.timestamp || now)
+            // Normalized age: 0 (new) to 1 (old)
+            n.ageFactor = Math.min(1, age / maxAge)
+          } else {
+            n.ageFactor = 0.5 // Standard for ghost/tags
+          }
+        })
+
+        const isSameStructure = 
+          prev.nodes.length === nodes.length && 
+          prev.links.length === links.length &&
+          nodes.every((n) => prevNodes.has(n.id)) &&
+          links.every((l, i) => {
+            const prevL = prev.links[i]
+            const src = typeof l.source === 'object' ? l.source.id : l.source
+            const tgt = typeof l.target === 'object' ? l.target.id : l.target
+            const prevSrc = typeof prevL.source === 'object' ? prevL.source.id : prevL.source
+            const prevTgt = typeof prevL.target === 'object' ? prevL.target.id : prevL.target
+            return src === prevSrc && tgt === prevTgt
+          })
+
+        if (isSameStructure) {
+          // Mutate existing nodes for minor prop changes to avoid triggering a full React re-render
+          // which would cause react-force-graph to reheat the physics simulation and jiggle
+          nodes.forEach((n) => {
+            const oldN = prevNodes.get(n.id)
+            if (oldN) {
+              oldN.ageFactor = n.ageFactor
+              oldN.val = n.val
+              oldN.linkCount = n.linkCount
+              oldN.primaryTag = n.primaryTag
+            }
+          })
+          return prev
         }
+
+        return { nodes, links }
       })
 
-      setRawGraphData({ nodes, links })
       setIsBuildingGraph(false)
     }, 250) // Wait 250ms to allow the modal CSS open animation to finish perfectly smoothly
 
@@ -252,26 +295,37 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     return { nodes, links }
   }, [rawGraphData, graphHideTags, graphHideGhosts, graphHideOrphans])
 
+  const prevSelectedId = useRef(selectedSnippet?.id)
+  const hasInitialRender = useRef(false)
+
   // Center on mount and data load
   useEffect(() => {
     if (graphRef.current && !isBuildingGraph && graphData.nodes.length > 0) {
-      setTimeout(() => {
-        if (selectedSnippet) {
-          const node = graphData.nodes.find((n) => n.snippetId === selectedSnippet.id)
-          if (node) {
-            graphRef.current.centerAt(node.x, node.y, 400)
-            graphRef.current.zoom(1.5, 400)
+      const isFirstRender = !hasInitialRender.current
+      const didSnippetChange = prevSelectedId.current !== selectedSnippet?.id
+
+      if (isFirstRender || didSnippetChange) {
+        hasInitialRender.current = true
+        prevSelectedId.current = selectedSnippet?.id
+
+        setTimeout(() => {
+          if (selectedSnippet) {
+            const node = graphData.nodes.find((n) => n.snippetId === selectedSnippet.id)
+            if (node) {
+              graphRef.current.centerAt(node.x || 0, node.y || 0, 400)
+              graphRef.current.zoom(1.0, 400) // Lowered zoom from 1.5 to 1.0
+            }
+          } else if (isFirstRender) {
+            // Allow the graph to explode naturally from the center without hacking the initial zoom
+            // After 2.5 seconds (when the explosion starts to settle), smoothly zoom out to perfectly frame the final graph
+            setTimeout(() => {
+              if (graphRef.current) graphRef.current.zoomToFit(2500, 100)
+            }, 2500)
           }
-        } else {
-          // Allow the graph to explode naturally from the center without hacking the initial zoom
-          // After 2.5 seconds (when the explosion starts to settle), smoothly zoom out to perfectly frame the final graph
-          setTimeout(() => {
-            if (graphRef.current) graphRef.current.zoomToFit(2500, 100)
-          }, 2500)
-        }
-      }, 100) // Small delay to ensure WebGL engine is ready
+        }, 100) // Small delay to ensure WebGL engine is ready
+      }
     }
-  }, [selectedSnippet, isBuildingGraph])
+  }, [selectedSnippet, isBuildingGraph, graphData.nodes])
 
   // Ref for debouncing reheat
   const reheatTimeoutRef = useRef(null)

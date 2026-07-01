@@ -103,10 +103,6 @@ export const useAIStore = create((set, get) => {
     isChatLoading: false,
     chatController: null,
 
-    // Image generation state
-    isImageGenerating: false,
-    imageGenerationError: null,
-    imageGenerationController: null,
 
     generateEmbedding: (text) => {
       return new Promise((resolve, reject) => {
@@ -400,97 +396,9 @@ export const useAIStore = create((set, get) => {
       if (activeSessionId) {
         set((state) => ({
           chatMessages: [],
-          chatError: null,
-          imageGenerationError: null
+          chatError: null
         }))
         await get().saveChatHistory()
-      }
-    },
-
-    /**
-     * Generate an image from a text prompt
-     */
-    generateImage: async (prompt) => {
-      const { generateImageWithRetry, extractImagePrompt } = await import(
-        '../../features/AI/imageGenerationService.js'
-      )
-
-      const imagePrompt = extractImagePrompt(prompt)
-
-      if (!imagePrompt) {
-        set({ imageGenerationError: 'Please provide an image description.' })
-        throw new Error('Image prompt cannot be empty.')
-      }
-
-      let huggingFaceKey = null
-      try {
-        const settingsModule = await import('../../core/store/useSettingsStore')
-        const settings = settingsModule.useSettingsStore.getState()
-        const settingsObj = settings?.settings || settings || {}
-        huggingFaceKey = settingsObj.huggingFaceKey || null
-      } catch (err) {
-        console.warn('[AIStore] Failed to load settings for image generation:', err)
-      }
-
-      set({ isImageGenerating: true, imageGenerationError: null })
-
-      // OPTIMISTIC UI: Add placeholder message immediately
-      const placeholderMsg = {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: `Generating image: "${prompt}"...`,
-        imageUrl: null,
-        isGenerating: true, // Flag for UI to show spinner
-        timestamp: Date.now()
-      }
-
-      set((state) => ({
-        chatMessages: [...(state.chatMessages || []), placeholderMsg]
-      }))
-
-      let controller = new AbortController()
-      set({ imageGenerationController: controller })
-
-      try {
-        const result = await generateImageWithRetry(imagePrompt, huggingFaceKey, controller)
-
-        const imageMessage = {
-          id: crypto.randomUUID(),
-          role: 'assistant',
-          content: '',
-          imageUrl: result.imageUrl,
-          imagePrompt: result.prompt,
-          timestamp: result.timestamp
-        }
-
-        set((state) => {
-          // Replace the last message (placeholder) with actual result
-          const newMessages = [...(state.chatMessages || [])]
-          if (newMessages.length > 0 && newMessages[newMessages.length - 1].isGenerating) {
-            newMessages[newMessages.length - 1] = imageMessage
-          } else {
-            newMessages.push(imageMessage)
-          }
-
-          return {
-            chatMessages: newMessages,
-            isImageGenerating: false,
-            imageGenerationError: null,
-            imageGenerationController: null
-          }
-        })
-
-        setTimeout(() => get().saveChatHistory(), 100)
-        return result
-      } catch (error) {
-        console.error('[AIStore] Image generation error:', error)
-        let errorMessage = error.message || 'Failed to generate image. Please try again.'
-        set({
-          isImageGenerating: false,
-          imageGenerationError: errorMessage,
-          imageGenerationController: null
-        })
-        throw error
       }
     },
 
@@ -505,17 +413,6 @@ export const useAIStore = create((set, get) => {
       }
     },
 
-    cancelImageGeneration: () => {
-      const controller = get().imageGenerationController
-      if (controller && !controller.signal.aborted) {
-        controller.abort()
-        set({
-          isImageGenerating: false,
-          imageGenerationError: 'Image generation cancelled by user',
-          imageGenerationController: null
-        })
-      }
-    },
 
     sendChatMessage: async (message, contextSnippets = [], mode = 'Standard') => {
       if (!message || typeof message !== 'string' || !message.trim()) {
@@ -725,13 +622,16 @@ export const useAIStore = create((set, get) => {
 **TOOLS AVAILABLE** (use these for file operations):
 - 'readFile' — read a vault file by title (only use when you do NOT already have the file content)
 - 'appendToFile' — add new content to the END of an existing file
-- 'createFile' — create a new vault file (provide title + content)
+- 'createFile' — create a brand new vault file (provide title + content)
 - 'updateFile' — replace specific text in a vault file (use search+replace)
+- 'renameFile' — rename a file (preserves folder and content) — ALWAYS use this instead of delete+create
 - 'deleteFile' — delete a vault file by title
 
 **HOW TO USE THEM**:
 - **For "add", "write more", "append"** → call appendToFile DIRECTLY. Never read first.
+- **For "rename" or "call it"** → call renameFile DIRECTLY. NEVER delete and recreate.
 - **For "read" or "explain" or "tell me about"** → call readFile, then describe the content.
+- **For "clear", "empty", or "wipe"** → call updateFile with content: "".
 - **For "replace" or "fix" specific text** → call updateFile with search+replace.
 - **For "delete" or "remove"** → call deleteFile directly.
 - **For "create" or "new"** → call createFile.
@@ -750,8 +650,11 @@ ${vaultAccessNote}`
 
         if (contextSnippets.length > 0) {
           systemPrompt += '\n\n**Active Tabs Context:**\n'
+          const { useVaultStore } = await import('../../core/store/useVaultStore')
+          const vs = useVaultStore.getState()
           contextSnippets.forEach((snip) => {
-            systemPrompt += `[File: ${snip.title}]\n${snip.code.slice(0, 1500)}\n\n`
+            const currentCode = vs.drafts?.[snip.id] !== undefined ? vs.drafts[snip.id] : (snip.code || '')
+            systemPrompt += `[File: ${snip.title}]\n${currentCode.slice(0, 1500)}\n\n`
           })
         }
 
@@ -776,19 +679,22 @@ ${vaultAccessNote}`
 
         systemPrompt +=
           '\n\nCRITICAL RULES FOR FILE TOOLS:\n' +
-          '1. NEVER output ANY text before calling a tool. Call the tool IMMEDIATELY.\n' +
-          '2. If asked to ADD, WRITE, or APPEND content → call appendToFile DIRECTLY. Do NOT read first.\n' +
-          '3. If asked to CLEAR, EMPTY, or WIPE a file → call updateFile with content: "" (empty string) DIRECTLY.\n' +
-          '4. If asked to EXPLAIN or SUMMARIZE a file → call readFile DIRECTLY.\n' +
-          '5. If asked to REPLACE or FIX specific text → call updateFile with search+replace DIRECTLY.\n' +
-          '6. After ANY tool call, you MUST provide a final response to the user. Never stop silently.\n' +
+          '1. NEVER output ANY text before calling a tool. Call the tool IMMEDIATELY. NO conversational filler like "Let me do that...".\n' +
+          '2. NEVER use the words "append", "appended", or "appending" in your response. Say "added", "wrote", or just "Done!".\n' +
+          '3. Keep your response extremely brief. Do not over-explain. Do not mention past renames or file states unless asked.\n' +
+          '4. If asked to ADD or WRITE content → call appendToFile DIRECTLY. Do NOT read first.\n' +
+          '5. If asked to RENAME a file → call renameFile DIRECTLY. NEVER use delete+create for rename.\n' +
+          '6. If asked to CLEAR or EMPTY a file → call updateFile with content: "" DIRECTLY.\n' +
+          '7. If asked to EXPLAIN a file → call readFile DIRECTLY.\n' +
+          '8. After ANY tool call, provide a short final response to the user. Never stop silently.\n' +
+          '9. CRITICAL: If you need to perform multiple steps (like renaming THEN appending), DO NOT call multiple tools at once. Call the first tool, wait for it to succeed, and only THEN call the next tool.\n' +
           '\n' +
           'EXAMPLES:\n' +
           'User: "Write hello world in Grammars" → [Call appendToFile immediately]\n' +
           'User: "Add one more noun" → [Call appendToFile immediately]\n' +
+          'User: "Rename Grammars to SaboorGrammar" → [Call renameFile immediately]\n' +
           'User: "Clear Grammars" → [Call updateFile with title="Grammars" content="" immediately]\n' +
-          'User: "Explain Grammars" → [Call readFile immediately]\n' +
-          'User: "Fix the typo in Grammars" → [Call updateFile with search+replace immediately]'
+          'User: "Explain Grammars" → [Call readFile immediately]'
 
         // --- Existing files list ---
         try {
@@ -861,7 +767,7 @@ ${vaultAccessNote}`
         timeoutId = setTimeout(() => controller?.abort(), 180000)
 
         // Prepare Messages (History only, system passed separately)
-        const finalMessages = newHistory.filter(m => m.role !== 'system')
+        const finalMessages = newHistory.filter(m => m.role !== 'system').slice(-6)
 
         // Only block readFile when user clearly wants to WRITE and file is already pre-loaded.
         // For explain/read/summarize requests, always keep readFile available.
@@ -891,22 +797,24 @@ ${vaultAccessNote}`
                       type: 'string',
                       description: 'The file title (single word, no extension)'
                     },
-                    content: { type: 'string', description: 'Full markdown content' }
+                    content: { type: 'string', description: 'Full markdown content' },
+                    folder: { type: 'string', description: 'Optional. The existing folder path to create the file in (e.g., "English"). If root, leave undefined.' }
                   },
                   required: ['title', 'content']
                 }),
-                execute: async ({ title, content }) => {
+                execute: async ({ title, content, folder }) => {
                   const { useVaultStore } = await import('../../core/store/useVaultStore')
                   const vs = useVaultStore.getState()
                   const snippet = {
                     id: crypto.randomUUID(),
                     title,
                     code: content,
+                    folderId: folder || '',
                     language: 'markdown',
                     timestamp: Date.now()
                   }
                   await vs.saveSnippet(snippet)
-                  return { success: true, id: snippet.id }
+                  return { success: true, id: snippet.id, title, folderId: snippet.folderId, instruction_to_ai: "File created successfully! Tell the user." }
                 }
               }),
               readFile: !blockReadFile ? aiSdk.tool({
@@ -921,13 +829,16 @@ ${vaultAccessNote}`
                 execute: async ({ title }) => {
                   const { useVaultStore } = await import('../../core/store/useVaultStore')
                   const vs = useVaultStore.getState()
-                  const target = Array.from(vs.snippets.values()).find(
-                    (s) => s.title.toLowerCase() === title.toLowerCase()
-                  )
+                  const snippets = Array.from(vs.snippets.values())
+                  let target = snippets.find((s) => s.title.toLowerCase() === title.toLowerCase())
+                  if (!target) {
+                    target = snippets.find((s) => s.title.toLowerCase().includes(title.toLowerCase()))
+                  }
                   if (!target) return { success: false, error: 'File not found' }
+                  const currentCode = vs.drafts?.[target.id] !== undefined ? vs.drafts[target.id] : (target.code || '')
                   return { 
                     success: true, 
-                    content: target.code,
+                    content: currentCode,
                     instruction_to_ai: "File read successfully. You MUST now respond to the user and explain or summarize this content based on their original request."
                   }
                 }
@@ -951,20 +862,26 @@ ${vaultAccessNote}`
                 execute: async ({ title, search, replace, content }) => {
                   const { useVaultStore } = await import('../../core/store/useVaultStore')
                   const vs = useVaultStore.getState()
-                  const target = Array.from(vs.snippets.values()).find(
-                    (s) => s.title.toLowerCase() === title.toLowerCase()
-                  )
+                  const snippets = Array.from(vs.snippets.values())
+                  let target = snippets.find((s) => s.title.toLowerCase() === title.toLowerCase())
+                  if (!target) {
+                    target = snippets.find((s) => s.title.toLowerCase().includes(title.toLowerCase()))
+                  }
                   if (!target) return { success: false, error: 'File not found' }
 
                   let newCode
+                  const currentCode = vs.drafts?.[target.id] !== undefined ? vs.drafts[target.id] : (target.code || '')
                   if (search !== undefined) {
-                    const idx = target.code.indexOf(search)
-                    if (idx === -1)
+                    const searchLower = search.toLowerCase()
+                    if (search !== '' && !currentCode.toLowerCase().includes(searchLower)) {
                       return { success: false, error: `Text "${search}" not found in file` }
-                    newCode =
-                      target.code.slice(0, idx) +
-                      (replace ?? '') +
-                      target.code.slice(idx + search.length)
+                    }
+                    if (search === '') {
+                      newCode = (replace ?? '') + currentCode
+                    } else {
+                      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+                      newCode = currentCode.replace(new RegExp(escapedSearch, 'gi'), replace ?? '')
+                    }
                   } else if (content !== undefined) {
                     newCode = content
                   } else {
@@ -975,7 +892,7 @@ ${vaultAccessNote}`
                   }
 
                   await vs.saveSnippet({ ...target, code: newCode })
-                  window.dispatchEvent(new CustomEvent('ai-saved-snippet', { detail: { id: target.id } }))
+                  window.dispatchEvent(new CustomEvent('ai-saved-snippet', { detail: { id: target.id, code: newCode } }))
                   return { 
                     success: true, 
                     title,
@@ -997,15 +914,46 @@ ${vaultAccessNote}`
                 execute: async ({ title, content }) => {
                   const { useVaultStore } = await import('../../core/store/useVaultStore')
                   const vs = useVaultStore.getState()
-                  const target = Array.from(vs.snippets.values()).find(
-                    (s) => s.title.toLowerCase() === title.toLowerCase()
-                  )
+                  const snippets = Array.from(vs.snippets.values())
+                  let target = snippets.find((s) => s.title.toLowerCase() === title.toLowerCase())
+                  if (!target) {
+                    target = snippets.find((s) => s.title.toLowerCase().includes(title.toLowerCase()))
+                  }
                   if (!target) return { success: false, error: 'File not found' }
-                  const separator = target.code.endsWith('\n') ? '\n' : '\n\n'
-                  const newCode = target.code + separator + content
+                  const currentCode = vs.drafts?.[target.id] !== undefined ? vs.drafts[target.id] : (target.code || '')
+                  const separator = currentCode && currentCode.endsWith('\n') ? '\n' : (currentCode ? '\n\n' : '')
+                  const newCode = currentCode + separator + content
                   await vs.saveSnippet({ ...target, code: newCode })
-                  window.dispatchEvent(new CustomEvent('ai-saved-snippet', { detail: { id: target.id } }))
-                  return { success: true, title, instruction_to_ai: 'Content appended successfully. Confirm to the user what you added.' }
+                  window.dispatchEvent(new CustomEvent('ai-saved-snippet', { detail: { id: target.id, code: newCode } }))
+                  return { success: true, title: target.title, instruction_to_ai: 'Content added successfully. Tell the user what you did in a friendly way, but DO NOT use the word "appended".' }
+                }
+              }),
+              renameFile: aiSdk.tool({
+                description: 'Rename a file in the vault. Preserves the file folder and all content. Use this instead of delete+create when renaming.',
+                inputSchema: aiSdk.jsonSchema({
+                  type: 'object',
+                  properties: {
+                    oldTitle: { type: 'string', description: 'The current file title to rename' },
+                    newTitle: { type: 'string', description: 'The new title for the file' }
+                  },
+                  required: ['oldTitle', 'newTitle']
+                }),
+                execute: async ({ oldTitle, newTitle }) => {
+                  const { useVaultStore } = await import('../../core/store/useVaultStore')
+                  const vs = useVaultStore.getState()
+                  const snippets = Array.from(vs.snippets.values())
+                  let target = snippets.find((s) => s.title.toLowerCase() === oldTitle.toLowerCase())
+                  if (!target) {
+                    target = snippets.find((s) => s.title.toLowerCase().includes(oldTitle.toLowerCase()))
+                  }
+                  if (!target) return { success: false, error: `File "${oldTitle}" not found` }
+                  const duplicate = Array.from(vs.snippets.values()).find(
+                    (s) => s.id !== target.id && s.title.toLowerCase() === newTitle.toLowerCase()
+                  )
+                  if (duplicate) return { success: false, error: `A file named "${newTitle}" already exists` }
+                  await vs.saveSnippet({ ...target, title: newTitle })
+                  window.dispatchEvent(new CustomEvent('ai-saved-snippet', { detail: { id: target.id, code: target.code } }))
+                  return { success: true, oldTitle, newTitle, instruction_to_ai: `File renamed from "${oldTitle}" to "${newTitle}" successfully. Confirm this to the user.` }
                 }
               }),
               deleteFile: aiSdk.tool({
@@ -1020,11 +968,13 @@ ${vaultAccessNote}`
                 execute: async ({ title }) => {
                   const { useVaultStore } = await import('../../core/store/useVaultStore')
                   const vs = useVaultStore.getState()
-                  const target = Array.from(vs.snippets.values()).find(
-                    (s) => s.title.toLowerCase() === title.toLowerCase()
-                  )
+                  const snippets = Array.from(vs.snippets.values())
+                  let target = snippets.find((s) => s.title.toLowerCase() === title.toLowerCase())
+                  if (!target) {
+                    target = snippets.find((s) => s.title.toLowerCase().includes(title.toLowerCase()))
+                  }
                   if (target) {
-                    await vs.deleteSnippet(target.id)
+                    await vs.deleteSnippet(target.id, true)
                     return { success: true, title }
                   }
                   return { success: false, error: 'File not found' }
@@ -1096,7 +1046,7 @@ ${vaultAccessNote}`
                 const followUpMessages = [
                   ...finalMessages,
                   { role: 'assistant', content: fullContent },
-                  { role: 'user', content: `Tool execution results:\n${toolOutputs}\n\nBased on these results, please continue fulfilling my original request. If you need to execute another tool (like updateFile) to complete the task, DO IT NOW. Otherwise, provide your final response.` }
+                  { role: 'user', content: `Tool execution results:\n${toolOutputs}\n\nPlease summarize these results to the user and confirm the task is complete. Do NOT attempt to call any more tools.` }
                 ]
 
                 if (fullContent.trim() && !fullContent.endsWith('\n')) {

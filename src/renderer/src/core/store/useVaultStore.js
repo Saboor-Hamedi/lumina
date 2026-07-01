@@ -17,6 +17,7 @@ export const useVaultStore = create((set, get) => ({
   isLoading: true,
   searchQuery: '',
   dirtySnippetIds: [],
+  drafts: {}, // Map of id -> unsaved code
   openTabs: [], // List of snippet IDs currently open (can include GRAPH_TAB_ID)
   activeTabId: null, // The ID of the currently focused tab
   pinnedTabIds: [], // List of IDs for pinned tabs
@@ -185,6 +186,10 @@ export const useVaultStore = create((set, get) => ({
 
   setLoading: (isLoading) => set({ isLoading }),
   setSearchQuery: (query) => set({ searchQuery: query }),
+  setDraft: (id, code) =>
+    set((state) => ({
+      drafts: { ...state.drafts, [id]: code }
+    })),
   setDirty: (id, isDirty) =>
     set((state) => {
       const hasId = state.dirtySnippetIds.includes(id)
@@ -283,6 +288,9 @@ export const useVaultStore = create((set, get) => ({
           nextSnippets.push({ ...updatedSnippet, color: snippet.color })
         }
 
+        const nextDrafts = { ...state.drafts }
+        delete nextDrafts[snippet.id]
+
         // Auto-update Wikilinks across the vault if the title changed!
         if (existing && existing.title && existing.title !== updatedSnippet.title) {
           const oldTitle = existing.title
@@ -307,6 +315,7 @@ export const useVaultStore = create((set, get) => ({
 
         return {
           snippets: nextSnippets,
+          drafts: nextDrafts,
           dirtySnippetIds: state.dirtySnippetIds.filter((dId) => dId !== snippet.id)
         }
       })
@@ -383,10 +392,15 @@ export const useVaultStore = create((set, get) => ({
           }
         }
 
+        const nextDrafts = { ...state.drafts }
+        delete nextDrafts[id]
+
         return {
           openTabs: nextTabs,
           activeTabId: nextActiveId,
-          selectedSnippet: nextSelectedSnippet
+          selectedSnippet: nextSelectedSnippet,
+          drafts: nextDrafts,
+          dirtySnippetIds: state.dirtySnippetIds.filter((dId) => dId !== id)
         }
       })
     } catch (err) {

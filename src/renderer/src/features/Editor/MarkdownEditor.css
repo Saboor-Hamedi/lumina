@@ -106,6 +106,8 @@
   /* margin: 1em 0; */
   overflow-x: auto;
   position: relative !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
 }
 
 .cm-atomic-table-cell-source :not(.active) > .cm-atomic-mark {
@@ -113,8 +115,9 @@
 }
 
 .cm-atomic-table table {
-  width: 100% !important;
-  table-layout: fixed !important;
+  width: max-content !important;
+  min-width: 100% !important;
+  table-layout: auto !important;
   border-collapse: collapse !important;
 }
 
@@ -1222,8 +1225,8 @@
 }
 
 .cm-atomic-table {
-  overflow: visible !important;
-  overflow-x: visible !important;
+  overflow-x: auto !important;
+  max-width: 100% !important;
 }
 
 
@@ -1238,8 +1241,9 @@
   transition: none !important;
 }
 .cm-atomic-table table {
-  table-layout: fixed;
-  width: 100%;
+  table-layout: auto;
+  width: max-content;
+  min-width: 100%;
 }
 
 .cm-atomic-table td,
