@@ -1393,13 +1393,18 @@
   /* Ensure footer stays at bottom */
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
-/* Editor scroller handles all overflow */
 .editor-scroller {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+}
+
+.editor-scroller::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Edge */
 }
 
 /* Selection layers removed above to fix dual-color issue */

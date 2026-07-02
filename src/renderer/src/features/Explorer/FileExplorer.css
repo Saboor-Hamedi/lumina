@@ -25,7 +25,7 @@
   flex-direction: column;
   overflow: hidden;
   transform-origin: bottom center;
-  animation: startMenuSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: startMenuSlideUp 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   /* Optional: acrylic effect if supported by theme */
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
@@ -112,7 +112,7 @@
 
 /* Embedded overrides to fix scroll gap and bottom gap */
 .explorer-embedded-container .start-menu-body {
-  padding: 8px 4px 0px 12px;
+  padding: 8px 0 0px 12px;
 }
 
 .explorer-embedded-container .start-menu-search {
@@ -522,8 +522,8 @@
 /* Scrollable Body */
 /* Animations */
 @keyframes startMenuSlideUp {
-  from { opacity: 0; transform: translateY(40px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* Helpers */

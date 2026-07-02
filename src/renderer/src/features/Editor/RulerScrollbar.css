@@ -1,0 +1,73 @@
+.ruler-scrollbar-wrapper {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 300px;
+  background: transparent;
+  z-index: 100;
+  cursor: ns-resize;
+  pointer-events: auto;
+  user-select: none;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.ruler-tape-container {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+}
+
+.ruler-tape {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  transition: transform 0.1s linear;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.ruler-tick {
+  width: 6px;
+  height: 1px;
+  min-height: 1px;
+  background: var(--text-dim, rgba(255,255,255,0.5));
+  opacity: 0.3;
+  margin-bottom: 7px; /* tickSpacing - 1px height */
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+}
+
+.ruler-tick.major {
+  width: 12px;
+  opacity: 0.6;
+}
+
+.ruler-scrollbar-wrapper:hover .ruler-tick {
+  opacity: 0.5;
+}
+.ruler-scrollbar-wrapper:hover .ruler-tick.major {
+  opacity: 0.8;
+}
+
+.ruler-center-mark {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 16px;
+  height: 2px;
+  background: var(--text-accent);
+  transform: translateY(-50%);
+  box-shadow: 0 0 4px var(--text-accent);
+  pointer-events: none;
+  z-index: 2;
+}

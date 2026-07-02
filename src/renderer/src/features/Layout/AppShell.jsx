@@ -627,27 +627,6 @@ const AppShell = () => {
               )
             })}
           </div>
-          
-          <aside className="shell-sidebar-right">
-            {isRightSidebarOpen && (
-              <div className="sidebar-resizer right" onMouseDown={() => setResizingSide('right')} />
-            )}
-            {isRightSidebarOpen && (
-              <TabbedSidebar
-                rightSidebarTab={rightSidebarTab}
-                setRightSidebarTab={setRightSidebarTab}
-                setSettingsInitialTab={setSettingsInitialTab}
-                setShowSettings={setShowSettings}
-                setSavedRightSidebarState={setSavedRightSidebarState}
-                isRightSidebarOpen={isRightSidebarOpen}
-                rightWidth={rightWidth}
-                setIsRightSidebarOpen={setIsRightSidebarOpen}
-                setShowAIChatModal={setShowAIChatModal}
-                selectedSnippet={selectedSnippet}
-                isLoading={isLoading}
-              />
-            )}
-          </aside>
         </div>
         ) : isRestoring ? (
           <div className="shell-main-placeholder" />
@@ -662,6 +641,23 @@ const AppShell = () => {
             />
           </ErrorBoundary>
         )}
+
+        {/* Inspector overlay — positioned absolute over shell-main */}
+        <aside className="shell-sidebar-right">
+          <TabbedSidebar
+            rightSidebarTab={rightSidebarTab}
+            setRightSidebarTab={setRightSidebarTab}
+            setSettingsInitialTab={setSettingsInitialTab}
+            setShowSettings={setShowSettings}
+            setSavedRightSidebarState={setSavedRightSidebarState}
+            isRightSidebarOpen={isRightSidebarOpen}
+            rightWidth={rightWidth}
+            setIsRightSidebarOpen={setIsRightSidebarOpen}
+            setShowAIChatModal={setShowAIChatModal}
+            selectedSnippet={selectedSnippet}
+            isLoading={isLoading}
+          />
+        </aside>
       </main>
 
 

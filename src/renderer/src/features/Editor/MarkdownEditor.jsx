@@ -33,6 +33,7 @@ import FindWidget from '../Workspace/components/FindWidget'
 import StatusBar from '../Workspace/components/StatusBar'
 import PreviewModal from '../Overlays/PreviewModal/PreviewModal'
 import OverwriteModal from '../Overlays/Modals/OverwriteModal'
+import RulerScrollbar from './RulerScrollbar'
 
 const updateSearchHighlights = StateEffect.define()
 
@@ -73,6 +74,7 @@ const MarkdownEditor = React.memo(
     const editorHandleRef = useRef(null)
     const titleRef = useRef(null)
     const editorWrapperRef = useRef(null)
+    const scrollerRef = useRef(null)
 
     const { settings } = useSettingsStore()
     const { snippets, setSelectedSnippet, setDirty } = useVaultStore()
@@ -1023,7 +1025,9 @@ const MarkdownEditor = React.memo(
           `}</style>
         )}
 
-        <div className="editor-scroller">
+        <RulerScrollbar scrollerRef={scrollerRef} />
+
+        <div className="editor-scroller" ref={scrollerRef}>
           <EditorMenu
             title={title}
             snippet={snippet}
