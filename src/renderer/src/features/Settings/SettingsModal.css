@@ -419,3 +419,28 @@ input:checked + .slider:before {
 }
 
 
+
+@keyframes pulse-opacity { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+.pulse-opacity { animation: pulse-opacity 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+.update-action-btn {
+  background: var(--text-accent);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.update-action-btn:hover:not(:disabled) {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+
+.update-action-btn:disabled {
+  cursor: default;
+}

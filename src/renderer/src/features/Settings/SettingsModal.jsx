@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import { X, Settings } from 'lucide-react'
+import { X, Settings, ArrowUpCircle, RefreshCw, CheckCircle, Info } from 'lucide-react'
 import ThemeModal from '../Theme/ThemeModal'
 import ModalHeader from '../Overlays/ModalHeader'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useToast } from '../../core/hooks/useToast'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useFontSettings } from '../../core/hooks/useFontSettings'
+import { useUpdateStore } from '../../core/store/useUpdateStore'
 import { useRef } from 'react'
 import './SettingsModal.css'
 
@@ -91,6 +92,7 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
   const [activeTab, setActiveTab] = useState(initialTab)
   const { showToast } = useToast()
   const { settings, updateSetting } = useSettingsStore()
+  const { status, progress, download, install, check } = useUpdateStore()
   const {
     caretWidth,
     caretColor,
@@ -106,10 +108,15 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
     updateThemeAccentColor
   } = useFontSettings()
 
+  const [appVersion, setAppVersion] = useState('')
+
   // Update activeTab when initialTab prop changes
   useEffect(() => {
     if (initialTab) {
       setActiveTab(initialTab)
+    }
+    if (window.api?.getVersion) {
+      window.api.getVersion().then(setAppVersion).catch(console.error)
     }
   }, [initialTab])
 
@@ -200,8 +207,41 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
             {activeTab === 'general' && (
               <div className="settings-pane">
                 <section>
+                  <h3>App Updates</h3>
+                  <div className="settings-block" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: 'var(--bg-primary)', borderRadius: '6px' }}>
+                    <div className="update-info" style={{ display: 'flex', flexDirection: 'column', gap: '4px', userSelect: 'text' }}>
+                      <div style={{ fontSize: '15px', color: 'var(--text-main)' }}>
+                        Version {appVersion || '...'}
+                      </div>
+                      
+                      {(status === 'available' || status === 'ready' || status === 'downloading') ? (
+                        <div style={{ fontSize: '12px', color: 'var(--text-accent)' }}>
+                          {status === 'downloading' ? `Downloading update... ${Math.round(progress?.percent || 0)}%` : 'New version available!'}
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                          {status === 'not-available' ? 'No update.' : status === 'error' ? 'Update failed. Please try again.' : 'Check to see if there are any updates available.'}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <button 
+                      className={`btn btn-primary update-action-btn ${status === 'checking' || status === 'downloading' ? 'pulse-opacity' : ''}`}
+                      onClick={() => {
+                        if (status === 'available') download()
+                        else if (status === 'ready') install()
+                        else check()
+                      }}
+                      disabled={status === 'downloading' || status === 'checking'}
+                    >
+                      <span>{status === 'ready' ? 'Install & Restart' : 'Check for updates'}</span>
+                    </button>
+                  </div>
+                </section>
+
+                <section>
                   <h3>Vault Configuration</h3>
-                  <div className="settings-block">
+                  <div className="settings-block" style={{ padding: '16px', background: 'var(--bg-primary)', borderRadius: '6px' }}>
                     <div className="row-info" style={{ marginBottom: '16px' }}>
                       <div className="row-label">Vault Location</div>
                       <div className="row-hint">This is where all your markdown notes, assets, and AI indexes are stored securely on your local device.</div>

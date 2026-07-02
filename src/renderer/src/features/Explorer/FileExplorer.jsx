@@ -226,7 +226,9 @@ const DroppableFolderItem = React.memo(
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (
-              <span className="folder-name">{highlightText(item.name, searchQuery)}</span>
+              <ToolTip text={item.name} position="bottom" delay={600}>
+                <span className="folder-name">{highlightText(item.name, searchQuery)}</span>
+              </ToolTip>
             )}
           </div>
           <div className="item-meta-right">

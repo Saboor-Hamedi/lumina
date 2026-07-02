@@ -202,6 +202,13 @@ const MarkdownEditor = React.memo(
         view.dispatch({ selection: { anchor: 0, head: 0 } })
       }
 
+      const handleFocusTitleInput = () => {
+        if (!isActiveRef.current || !titleRef.current) return
+        titleRef.current.focus()
+        titleRef.current.select()
+      }
+
+
       const handleScrollToLine = (e) => {
         if (!isActiveRef.current || !realViewRef.current) return
         const view = realViewRef.current
@@ -247,12 +254,14 @@ const MarkdownEditor = React.memo(
       window.addEventListener('search-update', handleSearchUpdate)
       window.addEventListener('search-clear', handleSearchClear)
       window.addEventListener('focus-editor-start', handleFocusEditorStart)
+      window.addEventListener('focus-title-input', handleFocusTitleInput)
       window.addEventListener('editor-scroll-to-line', handleScrollToLine)
       window.addEventListener('show-toast', handleGlobalToast)
       return () => {
         window.removeEventListener('search-update', handleSearchUpdate)
         window.removeEventListener('search-clear', handleSearchClear)
         window.removeEventListener('focus-editor-start', handleFocusEditorStart)
+        window.removeEventListener('focus-title-input', handleFocusTitleInput)
         window.removeEventListener('editor-scroll-to-line', handleScrollToLine)
         window.removeEventListener('show-toast', handleGlobalToast)
       }

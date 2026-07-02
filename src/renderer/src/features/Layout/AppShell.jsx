@@ -420,14 +420,6 @@ const AppShell = () => {
   }, [])
 
   useKeyboardShortcuts({
-    onSave: async () => {
-      if (activeTab === 'search') return // No-op if on search tab
-      if (selectedSnippet) {
-        setIsSaving(true)
-        await saveSnippet(selectedSnippet)
-        setTimeout(() => setIsSaving(false), 800) // fake delay for UI feedback
-      }
-    },
     onFind: () => window.dispatchEvent(new CustomEvent('find-in-editor')),
     onTogglePalette: () => {
       setPaletteInitialQuery('')
@@ -526,6 +518,9 @@ const AppShell = () => {
       setActiveTab('files')
       setShowPalette(false)
       showToast('New note created', 'success')
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('focus-title-input'))
+      }, 50)
     } catch (error) {
       console.error('[AppShell] Failed to create new note:', error)
       showToast('Failed to create note. Please try again.', 'error')
@@ -592,7 +587,8 @@ const AppShell = () => {
               }}
             >
             {openTabs.map((tabId) => {
-              const snippet = snippets.find((s) => s.id === tabId)
+              let snippet = snippets.find((s) => s.id === tabId)
+              if (!snippet && selectedSnippet?.id === tabId) snippet = selectedSnippet
               if (!snippet) return null
               const effectiveSelectedId = selectedSnippet?.id || activeTabId || openTabs[0]
               const isSelected = effectiveSelectedId === tabId

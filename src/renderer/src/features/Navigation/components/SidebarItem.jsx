@@ -264,9 +264,11 @@ const SidebarItem = ({
           onClick={(e) => e.stopPropagation()}
         />
       ) : (
-        <span className="item-title" style={displayColor ? { color: displayColor } : undefined}>
-          {highlightText(snippet.title || 'Untitled', searchQuery)}
-        </span>
+        <ToolTip text={snippet.title || 'Untitled'} position="bottom" delay={600}>
+          <span className="item-title" style={displayColor ? { color: displayColor } : undefined}>
+            {highlightText(snippet.title || 'Untitled', searchQuery)}
+          </span>
+        </ToolTip>
       )}
 
       <div className="item-meta-right">

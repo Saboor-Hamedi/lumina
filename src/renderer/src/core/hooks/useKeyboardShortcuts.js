@@ -56,6 +56,9 @@ export const useKeyboardShortcuts = (shortcuts) => {
   // Non-Escape Shortcuts (Save, etc.)
   useEffect(() => {
     const handleOtherKeys = (e) => {
+      // Prevent keyboard auto-repeat from triggering actions multiple times rapidly (e.g. creating 10 new notes)
+      if (e.repeat) return
+      
       const isCmd = e.ctrlKey || e.metaKey
       const key = e.key.toLowerCase()
 
