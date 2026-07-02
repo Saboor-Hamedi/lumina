@@ -543,6 +543,11 @@ const AppShell = () => {
     }
   }
 
+  const handleOpenSettings = useCallback(() => setShowSettings(true), [])
+  const handleOpenTheme = useCallback(() => setShowThemeModal(true), [])
+  const handleToggleGraph = useCallback(() => setShowGraph(true), [])
+  const handleToggleAIChat = useCallback(() => setShowAIChatModal(true), [])
+
   return (
     <div
       className={`app-shell ${isLeftSidebarOpen ? 'left-open' : 'left-closed'} ${isRightSidebarOpen ? 'right-open' : 'right-closed'} ${resizingSide ? 'is-resizing' : ''}`}
@@ -558,10 +563,10 @@ const AppShell = () => {
           <div className="sidebar-resizer left" onMouseDown={() => setResizingSide('left')} />
         )}
         <Sidebar
-          onSettingsClick={() => setShowSettings(true)}
-          onThemeClick={() => setShowThemeModal(true)}
-          onToggleGraph={() => setShowGraph(true)}
-          onToggleAIChat={() => setShowAIChatModal(true)}
+          onSettingsClick={handleOpenSettings}
+          onThemeClick={handleOpenTheme}
+          onToggleGraph={handleToggleGraph}
+          onToggleAIChat={handleToggleAIChat}
         />
       </aside>
       <main className="shell-main">

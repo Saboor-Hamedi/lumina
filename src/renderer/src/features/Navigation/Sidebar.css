@@ -2,7 +2,8 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  width: 100%;
+  width: var(--left-sidebar-width, 280px);
+  min-width: var(--left-sidebar-width, 280px);
   background: transparent;
   color: var(--text-main);
   box-sizing: border-box;

@@ -159,17 +159,30 @@ const DroppableFolderItem = React.memo(
         }}
       >
         {Array.from({ length: item.depth }).map((_, i) => (
-          <div
-            key={`line-${i}`}
-            style={{
-              position: 'absolute',
-              left: `${i * 12 + 4}px`,
-              top: 0,
-              bottom: 0,
-              width: '1px',
-              backgroundColor: 'var(--border-dim)'
-            }}
-          />
+          <React.Fragment key={`line-${i}`}>
+            <div
+              style={{
+                position: 'absolute',
+                left: `${i * 12 + 4}px`,
+                top: 0,
+                bottom: 0,
+                width: '1.5px',
+                backgroundColor: 'var(--text-accent)'
+              }}
+            />
+            {i === item.depth - 1 && (
+              <div
+                style={{
+                  position: 'absolute',
+                  left: `${i * 12 + 4}px`,
+                  top: '50%',
+                  width: '12px',
+                  height: '1.5px',
+                  backgroundColor: 'var(--text-accent)'
+                }}
+              />
+            )}
+          </React.Fragment>
         ))}
         <div
           ref={setDraggableRef}
@@ -837,21 +850,34 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
           className="folder-tree-item"
           style={{
             position: 'relative',
-            paddingLeft: `${item.depth * 16 + 8}px`
+            paddingLeft: `${item.depth * 12}px`
           }}
         >
           {Array.from({ length: item.depth }).map((_, i) => (
-            <div
-              key={`line-${i}`}
-              style={{
-                position: 'absolute',
-                left: `${i * 16 + 12}px`,
-                top: 0,
-                bottom: 0,
-                width: '1px',
-                backgroundColor: 'var(--border-dim)'
-              }}
-            />
+            <React.Fragment key={`line-${i}`}>
+              <div
+                style={{
+                  position: 'absolute',
+                  left: `${i * 12 + 4}px`,
+                  top: 0,
+                  bottom: 0,
+                  width: '1.5px',
+                  backgroundColor: 'var(--text-accent)'
+                }}
+              />
+              {i === item.depth - 1 && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: `${i * 12 + 4}px`,
+                    top: '50%',
+                    width: '12px',
+                    height: '1.5px',
+                    backgroundColor: 'var(--text-accent)'
+                  }}
+                />
+              )}
+            </React.Fragment>
           ))}
           <div
               className="folder-tree-main creating-input"
@@ -924,18 +950,32 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
           }}
         >
           {Array.from({ length: item.depth }).map((_, i) => (
-            <div
-              key={`line-${i}`}
-              style={{
-                position: 'absolute',
-                left: `${i * 12 + 4}px`,
-                top: 0,
-                bottom: 0,
-                width: '1px',
-                backgroundColor: 'var(--border-dim)',
-                zIndex: 0
-              }}
-            />
+            <React.Fragment key={`line-${i}`}>
+              <div
+                style={{
+                  position: 'absolute',
+                  left: `${i * 12 + 4}px`,
+                  top: 0,
+                  bottom: 0,
+                  width: '1.5px',
+                  backgroundColor: 'var(--text-accent)',
+                  zIndex: 0
+                }}
+              />
+              {i === item.depth - 1 && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: `${i * 12 + 4}px`,
+                    top: '50%',
+                    width: '12px',
+                    height: '1.5px',
+                    backgroundColor: 'var(--text-accent)',
+                    zIndex: 0
+                  }}
+                />
+              )}
+            </React.Fragment>
           ))}
           <SortableListItem
             key={item.snippet.id}
@@ -1719,4 +1759,4 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   )
 }
 
-export default FileExplorer
+export default React.memo(FileExplorer)
