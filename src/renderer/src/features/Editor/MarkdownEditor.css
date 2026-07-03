@@ -131,6 +131,21 @@
   border: 1px solid var(--border-dim) !important;
 }
 
+.cm-atomic-table th {
+  background: var(--bg-panel) !important;
+  color: var(--text-main) !important;
+  font-weight: 600 !important;
+}
+
+.cm-atomic-table td {
+  background: transparent !important;
+  color: var(--text-main) !important;
+}
+
+.cm-atomic-table tr:nth-child(even) td {
+  background: var(--bg-card, rgba(0, 0, 0, 0.02)) !important;
+}
+
 /* Hide CodeMirror native cursor when a table cell has focus to avoid double cursors outside the table */
 .cm-editor.cm-table-focused .cm-cursorLayer,
 .markdown-editor:has(.cm-atomic-table:focus-within) .cm-cursorLayer,
@@ -1036,7 +1051,7 @@
 [data-translucency='true'] .shell-sidebar-left,
 [data-translucency='true'] .shell-sidebar-right,
 [data-translucency='true'] .shell-ribbon {
-  background: var(--bg-overlay, rgba(15, 15, 15, 0.5)) !important;
+  background: var(--bg-sidebar) !important;
   backdrop-filter: blur(10px);
 }
 

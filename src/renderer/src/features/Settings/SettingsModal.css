@@ -91,7 +91,7 @@
 }
 
 .settings-pane section h3 {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
   color: var(--text-faint);
@@ -115,14 +115,14 @@
 }
 
 .row-label {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-main);
   margin-bottom: 4px;
 }
 
 .row-hint {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-muted);
   line-height: 1.4;
   max-width: 300px;
@@ -335,7 +335,12 @@
  * Provides clear visual feedback on hover
  */
 .caret-color-reset {
-  padding: 6px 10px;
+  padding: 0 12px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
   background: transparent;
   border: 1px solid var(--border-dim);
   border-radius: 4px;
@@ -434,6 +439,8 @@ input:checked + .slider:before {
   align-items: center;
   gap: 8px;
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .update-action-btn:hover:not(:disabled) {
@@ -443,4 +450,38 @@ input:checked + .slider:before {
 
 .update-action-btn:disabled {
   cursor: default;
+}
+
+/* --- Global Typography Enforcement for Settings Modal --- */
+
+/* 1. All Titles and Headings: 12px */
+.settings-container h1,
+.settings-container h2,
+.settings-container h3,
+.settings-container h4,
+.settings-container h5,
+.settings-container h6,
+.settings-container .modal-header h3,
+.settings-container .settings-pane section h3,
+.settings-container .row-label,
+.settings-container .row-title {
+  font-size: 12px !important;
+}
+
+/* 2. All Buttons: 12px */
+.settings-container button,
+.settings-container .btn,
+.settings-container .update-action-btn,
+.settings-container .caret-color-reset,
+.settings-container .nav-item {
+  font-size: 12px !important;
+}
+
+/* 3. All Descriptions, Hints, and Secondary Text: 10px */
+.settings-container .row-hint,
+.settings-container .range-wrap span,
+.settings-container .shortcut-badge,
+.settings-container .description,
+.settings-container p {
+  font-size: 10px !important;
 }

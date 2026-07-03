@@ -2,9 +2,9 @@
   position: fixed;
   z-index: 10000;
   pointer-events: none;
-  background: var(--bg-panel, rgba(20, 20, 20, 0.95));
-  color: var(--text-primary, #ffffff);
-  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.1));
+  background: var(--bg-panel);
+  color: var(--text-main);
+  border: 1px solid var(--border-dim);
   padding: 3px 6px;
   border-radius: 4px;
   font-size: 8px;

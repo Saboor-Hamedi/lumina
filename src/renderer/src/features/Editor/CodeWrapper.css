@@ -31,11 +31,11 @@
 
 /* Hide raw markdown backticks and language text when not actively editing the header */
 .cm-line.cb-code-header:not(.cm-activeLine) {
-  color: var(--bg-panel) !important;
+  color: transparent !important;
 }
 
 .cm-line.cb-code-header:not(.cm-activeLine) * {
-  color: var(--bg-panel) !important;
+  color: transparent !important;
 }
 
 /* Wrapper body for code blocks in editor */
@@ -67,11 +67,11 @@
 /* Hide closing backticks of fenced code block unless active */
 .cm-line.cm-atomic-fenced-code:has(+ :not(.cm-atomic-fenced-code)):not(.cm-activeLine),
 .cm-line.cm-atomic-fenced-code:last-child:not(.cm-activeLine) {
-  color: var(--bg-panel) !important;
+  color: transparent !important;
 }
 .cm-line.cm-atomic-fenced-code:has(+ :not(.cm-atomic-fenced-code)):not(.cm-activeLine) *,
 .cm-line.cm-atomic-fenced-code:last-child:not(.cm-activeLine) * {
-  color: var(--bg-panel) !important;
+  color: transparent !important;
 }
 
 /* Adjust the first line of actual code so it looks spaced out from header */
@@ -120,4 +120,64 @@
 /* Selection style for code blocks */
 .markdown-editor .cm-line.cm-atomic-fenced-code .cm-selectionBackground {
   background-color: rgba(86, 156, 214, 0.45) !important;
+}
+
+/* Light Theme Code Block Geometry and Syntax Highlighting Overrides */
+[data-theme='light'] .cm-line.cm-atomic-fenced-code:not(.cb-code-header) {
+  background: var(--bg-panel, #f3f4f6) !important;
+}
+
+[data-theme='light'] .cm-line.cb-code-header {
+  background: var(--bg-activitybar, #ececec) !important;
+  border-bottom: 1px solid var(--border-subtle, #e5e7eb) !important;
+}
+
+[data-theme='light'] .cm-line.cb-code-header::before {
+  color: var(--text-muted, #6b7280) !important;
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme='light'] .cm-line.cm-atomic-fenced-code span[class*="string"],
+[data-theme='light'] .lumina-syntax-string {
+  color: #059669 !important;
+}
+
+[data-theme='light'] .cm-line.cm-atomic-fenced-code span[class*="keyword"],
+[data-theme='light'] .lumina-syntax-keyword {
+  color: #2563eb !important;
+  font-weight: 600;
+}
+
+[data-theme='light'] .cm-line.cm-atomic-fenced-code span[class*="comment"],
+[data-theme='light'] .lumina-syntax-comment {
+  color: #6b7280 !important;
+  font-style: italic;
+}
+
+[data-theme='light'] .cm-line.cm-atomic-fenced-code span[class*="number"],
+[data-theme='light'] .cm-line.cm-atomic-fenced-code span[class*="bool"],
+[data-theme='light'] .lumina-syntax-number {
+  color: #d97706 !important;
+}
+
+[data-theme='light'] .cm-line.cm-atomic-fenced-code span[class*="variable"],
+[data-theme='light'] .cm-line.cm-atomic-fenced-code span[class*="property"],
+[data-theme='light'] .lumina-syntax-variable {
+  color: #1f2937 !important;
+}
+
+[data-theme='light'] .cm-line.cm-atomic-fenced-code span[class*="function"],
+[data-theme='light'] .lumina-syntax-function {
+  color: #7c3aed !important;
+}
+
+[data-theme='light'] .cm-line.cm-atomic-fenced-code span[class*="type"],
+[data-theme='light'] .lumina-syntax-type {
+  color: #0891b2 !important;
+}
+
+[data-theme='light'] .cm-line.cm-atomic-fenced-code span[class*="operator"],
+[data-theme='light'] .cm-line.cm-atomic-fenced-code span[class*="punctuation"],
+[data-theme='light'] .lumina-syntax-operator {
+  color: #4b5563 !important;
 }

@@ -53,7 +53,7 @@
 .shell-sidebar-left {
   position: relative;
   width: 0;
-  background: rgba(25, 25, 25, 0.6) !important;
+  background: var(--bg-sidebar) !important;
   backdrop-filter: blur(20px) saturate(1.5);
   -webkit-backdrop-filter: blur(20px) saturate(1.5);
   z-index: 1000;
@@ -68,8 +68,8 @@
 
 .app-shell.left-open .shell-sidebar-left {
   width: var(--left-sidebar-width, 280px);
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+  border-right: 1px solid var(--border-dim);
+  box-shadow: none;
   pointer-events: auto;
 }
 
@@ -102,12 +102,12 @@
   right: 0;
   bottom: 0;
   width: var(--right-sidebar-width, 320px);
-  background: rgba(25, 25, 25, 0.72) !important;
+  background: var(--bg-sidebar) !important;
   backdrop-filter: blur(24px) saturate(1.5);
   -webkit-backdrop-filter: blur(24px) saturate(1.5);
   z-index: 1000;
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.35);
+  border-left: 1px solid var(--border-dim);
+  box-shadow: none;
   transform: translateX(100%);
   opacity: 0;
   pointer-events: none;

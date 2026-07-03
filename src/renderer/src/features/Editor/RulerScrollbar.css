@@ -40,8 +40,8 @@
   width: 6px;
   height: 1px;
   min-height: 1px;
-  background: var(--text-dim, rgba(255,255,255,0.5));
-  opacity: 0.3;
+  background: var(--text-main);
+  opacity: 0.35;
   margin-bottom: 7px; /* tickSpacing - 1px height */
   transition: opacity 0.2s;
   flex-shrink: 0;
@@ -49,14 +49,14 @@
 
 .ruler-tick.major {
   width: 12px;
-  opacity: 0.6;
+  opacity: 0.65;
 }
 
 .ruler-scrollbar-wrapper:hover .ruler-tick {
-  opacity: 0.5;
+  opacity: 0.55;
 }
 .ruler-scrollbar-wrapper:hover .ruler-tick.major {
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
 .ruler-center-mark {

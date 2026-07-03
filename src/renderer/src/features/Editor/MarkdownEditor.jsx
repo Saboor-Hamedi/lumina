@@ -77,7 +77,9 @@ const MarkdownEditor = React.memo(
     const scrollerRef = useRef(null)
 
     const { settings } = useSettingsStore()
-    const { snippets, setSelectedSnippet, setDirty } = useVaultStore()
+    const snippets = useVaultStore((state) => state.snippets)
+    const setSelectedSnippet = useVaultStore((state) => state.setSelectedSnippet)
+    const setDirty = useVaultStore((state) => state.setDirty)
     const { caretStyle } = useFontSettings()
 
     const [title, setTitle] = useState(snippet?.title || '')
@@ -597,7 +599,14 @@ const MarkdownEditor = React.memo(
           { 
             tag: [t.heading, t.heading1, t.heading2, t.heading3, t.heading4, t.heading5, t.heading6], 
             class: 'lumina-heading-text'
-          }
+          },
+          { tag: [t.string, t.special(t.string)], class: 'lumina-syntax-string' },
+          { tag: [t.keyword, t.operatorKeyword, t.modifier], class: 'lumina-syntax-keyword' },
+          { tag: [t.comment, t.lineComment, t.blockComment], class: 'lumina-syntax-comment' },
+          { tag: [t.number, t.bool, t.null], class: 'lumina-syntax-number' },
+          { tag: [t.variableName, t.attributeName, t.propertyName], class: 'lumina-syntax-variable' },
+          { tag: [t.typeName, t.className, t.namespace], class: 'lumina-syntax-type' },
+          { tag: [t.operator, t.punctuation], class: 'lumina-syntax-operator' }
         ])
       )
     }, [])

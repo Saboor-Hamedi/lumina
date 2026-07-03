@@ -49,7 +49,9 @@
   --bg-overlay: rgba(0, 0, 0, 0.5); /* Base overlay */
   
   --text-main: #1a1a1a;
+  --text-primary: var(--text-main);
   --text-muted: #666666;
+  --text-dim: var(--text-muted);
   --text-faint: #999999;
   --text-accent: #40bafa;
   --text-accent-hover: #30a9e9;

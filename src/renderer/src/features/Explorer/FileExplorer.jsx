@@ -54,7 +54,7 @@ import './FileExplorer.css'
 /**
  * Draggable List Item for Recommended Snippets
  */
-const SortableListItem = React.memo(({ snippet, isActive, onClick, searchQuery }) => {
+const SortableListItem = React.memo(({ snippet, isActive, onClick, searchQuery, depth }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: snippet.id
   })
@@ -64,7 +64,9 @@ const SortableListItem = React.memo(({ snippet, isActive, onClick, searchQuery }
     transition,
     opacity: isDragging ? 0.5 : 1,
     zIndex: isDragging ? 99 : 1,
-    position: 'relative'
+    position: 'relative',
+    marginLeft: '5px',
+    paddingLeft: '3px'
   }
 
   const handleClick = React.useCallback(() => {
@@ -163,20 +165,23 @@ const DroppableFolderItem = React.memo(
             <div
               style={{
                 position: 'absolute',
-                left: `${i * 12 + 4}px`,
+                left: `${i * 12 + 15}px`,
                 top: 0,
                 bottom: 0,
                 width: '1.5px',
-                backgroundColor: 'var(--text-accent)'
+                backgroundColor: i === item.depth - 1 
+                  ? 'var(--text-accent)' 
+                  : 'rgba(var(--text-accent-rgb, 64, 186, 250), 0.35)',
+                opacity: i === item.depth - 1 ? 0.85 : 1
               }}
             />
             {i === item.depth - 1 && (
               <div
                 style={{
                   position: 'absolute',
-                  left: `${i * 12 + 4}px`,
+                  left: `${i * 12 + 15}px`,
                   top: '50%',
-                  width: '12px',
+                  width: '7px',
                   height: '1.5px',
                   backgroundColor: 'var(--text-accent)'
                 }}
@@ -189,7 +194,9 @@ const DroppableFolderItem = React.memo(
           className={`folder-tree-main ${isOver ? 'folder-over' : ''} ${isActive ? 'active' : ''}`}
           style={{
             cursor: 'pointer',
-            userSelect: 'none'
+            userSelect: 'none',
+            marginLeft: '5px',
+            paddingLeft: '3px'
           }}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
@@ -245,6 +252,30 @@ const DroppableFolderItem = React.memo(
             )}
           </div>
           <div className="item-meta-right">
+            {/* Collapsed folder badge showing recursive item count with subtle accent tint */}
+            {!isExpanded && !isRenaming && item.count !== undefined && item.count > 0 && (
+              <span
+                style={{
+                  fontSize: '8px',
+                  lineHeight: '10px',
+                  color: 'var(--text-accent)',
+                  background: 'rgba(var(--text-accent-rgb, 64, 186, 250), 0.12)',
+                  border: '1px solid rgba(var(--text-accent-rgb, 64, 186, 250), 0.22)',
+                  padding: '0px 4px',
+                  borderRadius: '6px',
+                  marginRight: '4px',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minWidth: '14px',
+                  height: '13px',
+                  opacity: 0.95
+                }}
+              >
+                {item.count}
+              </span>
+            )}
             {(isHovered || isPinned) && !isRenaming && (
               <div className="hover-actions">
                 <ToolTip text={isPinned ? 'Remove from Favorites' : 'Add to Favorites'}>
@@ -635,13 +666,19 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
       flat.push({ type: 'root-drop', id: 'root-drop-zone', depth: 0 })
     }
 
+    // Helper: recursively calculate total notes inside a folder hierarchy for collapsed item badges
+    const getNoteCount = (node) => {
+      return node.files.length + Object.values(node.children).reduce((acc, child) => acc + getNoteCount(child), 0)
+    }
+
     const traverse = (node, depth, parentId = '') => {
       // Sort folders alphabetically
       const folderNames = Object.keys(node.children).sort((a, b) => a.localeCompare(b))
 
       folderNames.forEach((name) => {
         const folder = node.children[name]
-        flat.push({ type: 'folder', id: folder.id, name: folder.name, depth })
+        const count = getNoteCount(folder)
+        flat.push({ type: 'folder', id: folder.id, name: folder.name, depth, count })
 
         const isExpanded = q
           ? !collapsedDuringSearch.has(folder.id)
@@ -836,9 +873,14 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   const handleSelect = useCallback(
     (snippet) => {
       clickedInExplorerRef.current = Date.now()
-      setSelectedSnippet(snippet)
       setLastClickedFolder(snippet.folderId || '')
       onClose?.()
+
+      setTimeout(() => {
+        React.startTransition(() => {
+          setSelectedSnippet(snippet)
+        })
+      }, 15)
     },
     [setSelectedSnippet, onClose]
   )
@@ -858,20 +900,23 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
               <div
                 style={{
                   position: 'absolute',
-                  left: `${i * 12 + 4}px`,
+                  left: `${i * 12 + 15}px`,
                   top: 0,
                   bottom: 0,
                   width: '1.5px',
-                  backgroundColor: 'var(--text-accent)'
+                  backgroundColor: i === item.depth - 1 
+                    ? 'var(--text-accent)' 
+                    : 'rgba(var(--text-accent-rgb, 64, 186, 250), 0.35)',
+                  opacity: i === item.depth - 1 ? 0.85 : 1
                 }}
               />
               {i === item.depth - 1 && (
                 <div
                   style={{
                     position: 'absolute',
-                    left: `${i * 12 + 4}px`,
+                    left: `${i * 12 + 15}px`,
                     top: '50%',
-                    width: '12px',
+                    width: '7px',
                     height: '1.5px',
                     backgroundColor: 'var(--text-accent)'
                   }}
@@ -887,7 +932,9 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                 gap: '8px',
                 padding: '2px 6px',
                 borderRadius: '4px',
-                background: 'transparent'
+                background: 'transparent',
+                marginLeft: '5px',
+                paddingLeft: '1px'
               }}
             >
               {item.kind === 'folder' ? (
@@ -954,11 +1001,14 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
               <div
                 style={{
                   position: 'absolute',
-                  left: `${i * 12 + 4}px`,
+                  left: `${i * 12 + 15}px`,
                   top: 0,
                   bottom: 0,
                   width: '1.5px',
-                  backgroundColor: 'var(--text-accent)',
+                  backgroundColor: i === item.depth - 1 
+                    ? 'var(--text-accent)' 
+                    : 'rgba(var(--text-accent-rgb, 64, 186, 250), 0.35)',
+                  opacity: i === item.depth - 1 ? 0.85 : 1,
                   zIndex: 0
                 }}
               />
@@ -966,9 +1016,9 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                 <div
                   style={{
                     position: 'absolute',
-                    left: `${i * 12 + 4}px`,
+                    left: `${i * 12 + 15}px`,
                     top: '50%',
-                    width: '12px',
+                    width: '7px',
                     height: '1.5px',
                     backgroundColor: 'var(--text-accent)',
                     zIndex: 0
@@ -983,6 +1033,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
             onClick={context.handleSelect}
             isActive={index === context.selectedIndex}
             searchQuery={context.query}
+            depth={item.depth}
           />
         </div>
       )

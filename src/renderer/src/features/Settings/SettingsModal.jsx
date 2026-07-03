@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { X, Settings, ArrowUpCircle, RefreshCw, CheckCircle, Info } from 'lucide-react'
 import ThemeModal from '../Theme/ThemeModal'
 import ModalHeader from '../Overlays/ModalHeader'
+import ColorPickerModal from '../Overlays/ColorPickerModal'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useToast } from '../../core/hooks/useToast'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
@@ -11,64 +12,55 @@ import { useRef } from 'react'
 import './SettingsModal.css'
 
 const ColorPickerInput = ({ initialColor, defaultColor, onColorChange, title, ariaLabel }) => {
-  const [localColor, setLocalColor] = useState(() => {
-    return initialColor
-      ? initialColor.startsWith('#')
-        ? initialColor
-        : `#${initialColor}`
-      : defaultColor
-  })
-  const throttleRef = useRef(null)
-
-  useEffect(() => {
-    setLocalColor(
-      initialColor
-        ? initialColor.startsWith('#')
-          ? initialColor
-          : `#${initialColor}`
-        : defaultColor
-    )
-  }, [initialColor, defaultColor])
-
-  const handleChange = (e) => {
-    const val = e.target.value
-    setLocalColor(val)
-
-    // Throttle the actual DOM/CSS variable update to ~30fps to avoid heavy layout thrashing
-    if (!throttleRef.current) {
-      throttleRef.current = setTimeout(() => {
-        onColorChange(val)
-        throttleRef.current = null
-      }, 32)
-    }
-  }
+  const [isOpen, setIsOpen] = useState(false)
+  const displayColor = initialColor
+    ? initialColor.startsWith('#')
+      ? initialColor
+      : `#${initialColor}`
+    : defaultColor
 
   return (
-    <div
-      className="color-picker-wrapper"
-      style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
-    >
-      <input
-        type="color"
-        value={localColor}
-        onChange={handleChange}
-        className="color-picker-input"
+    <>
+      <div
+        className="caret-color-reset"
+        onClick={(e) => {
+          e.stopPropagation()
+          setIsOpen(true)
+        }}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '40px',
+          height: '28px',
+          padding: '1px',
+          cursor: 'pointer',
+          overflow: 'hidden',
+          boxSizing: 'border-box'
+        }}
         title={title}
         aria-label={ariaLabel}
-        style={{
-          width: '40px',
-          height: '40px',
-          padding: '0',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          background: 'transparent'
-        }}
+      >
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            backgroundColor: displayColor,
+            borderRadius: '3px',
+            boxShadow: 'inset 0 0 0 1px rgba(0, 0, 0, 0.15)'
+          }}
+        />
+      </div>
+
+      <ColorPickerModal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        initialColor={displayColor}
+        defaultColor={defaultColor}
+        onSelect={onColorChange}
+        title={title}
       />
-      <span style={{ fontFamily: 'monospace', fontSize: '14px', color: 'var(--text-main)' }}>
-        {localColor === defaultColor && !initialColor ? 'Default' : localColor.toUpperCase()}
-      </span>
-    </div>
+    </>
   )
 }
 
@@ -210,16 +202,16 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                   <h3>App Updates</h3>
                   <div className="settings-block" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: 'var(--bg-primary)', borderRadius: '6px' }}>
                     <div className="update-info" style={{ display: 'flex', flexDirection: 'column', gap: '4px', userSelect: 'text' }}>
-                      <div style={{ fontSize: '15px', color: 'var(--text-main)' }}>
+                      <div style={{ fontSize: '12px', color: 'var(--text-main)', fontWeight: '600' }}>
                         Version {appVersion || '...'}
                       </div>
                       
                       {(status === 'available' || status === 'ready' || status === 'downloading') ? (
-                        <div style={{ fontSize: '12px', color: 'var(--text-accent)' }}>
+                        <div style={{ fontSize: '10px', color: 'var(--text-accent)' }}>
                           {status === 'downloading' ? `Downloading update... ${Math.round(progress?.percent || 0)}%` : 'New version available!'}
                         </div>
                       ) : (
-                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
                           {status === 'not-available' ? 'No update.' : status === 'error' ? 'Update failed. Please try again.' : 'Check to see if there are any updates available.'}
                         </div>
                       )}
@@ -234,7 +226,7 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                       }}
                       disabled={status === 'downloading' || status === 'checking'}
                     >
-                      <span>{status === 'ready' ? 'Install & Restart' : 'Check for updates'}</span>
+                      <span>{status === 'ready' ? 'Install & Restart' : 'Update'}</span>
                     </button>
                   </div>
                 </section>
