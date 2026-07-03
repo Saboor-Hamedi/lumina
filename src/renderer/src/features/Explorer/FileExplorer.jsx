@@ -13,7 +13,9 @@ import {
   FolderPlus,
   Palette,
   Edit2,
-  Trash2
+  Trash2,
+  Check,
+  X
 } from 'lucide-react'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
@@ -508,6 +510,25 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
       setIsPositionReady(false)
     }
   }, [isOpen])
+
+  useEffect(() => {
+    const handleFocus = () => {
+      setTimeout(() => {
+        if (searchInputRef.current) {
+          searchInputRef.current.focus()
+          searchInputRef.current.select()
+        }
+      }, 50)
+      setTimeout(() => {
+        if (searchInputRef.current) {
+          searchInputRef.current.focus()
+          searchInputRef.current.select()
+        }
+      }, 150)
+    }
+    window.addEventListener('global-search-focus', handleFocus)
+    return () => window.removeEventListener('global-search-focus', handleFocus)
+  }, [])
 
   useEffect(() => {
     if (!isOpen) return
@@ -1658,105 +1679,68 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
               type: 'divider'
             },
             {
-              label: 'Default Color',
-              icon: (
-                <div
-                  style={{
-                    width: 14,
-                    height: 14,
-                    borderRadius: 2,
-                    border: '1px solid var(--border-color)'
-                  }}
-                />
-              ),
-              onClick: () => {
-                if (!folderContext.folderId) return
-                setFolderColor(folderContext.folderId, null)
-              }
-            },
-            {
-              label: 'Blue',
-              icon: (
-                <div
-                  style={{
-                    width: 14,
-                    height: 14,
-                    borderRadius: 2,
-                    background: 'rgba(59, 130, 246, 0.2)'
-                  }}
-                />
-              ),
-              onClick: () => {
-                if (!folderContext.folderId) return
-                setFolderColor(folderContext.folderId, 'rgba(59, 130, 246, 0.2)')
-              }
-            },
-            {
-              label: 'Purple',
-              icon: (
-                <div
-                  style={{
-                    width: 14,
-                    height: 14,
-                    borderRadius: 2,
-                    background: 'rgba(168, 85, 247, 0.2)'
-                  }}
-                />
-              ),
-              onClick: () => {
-                if (!folderContext.folderId) return
-                setFolderColor(folderContext.folderId, 'rgba(168, 85, 247, 0.2)')
-              }
-            },
-            {
-              label: 'Red',
-              icon: (
-                <div
-                  style={{
-                    width: 14,
-                    height: 14,
-                    borderRadius: 2,
-                    background: 'rgba(239, 68, 68, 0.2)'
-                  }}
-                />
-              ),
-              onClick: () => {
-                if (!folderContext.folderId) return
-                setFolderColor(folderContext.folderId, 'rgba(239, 68, 68, 0.2)')
-              }
-            },
-            {
-              label: 'Green',
-              icon: (
-                <div
-                  style={{
-                    width: 14,
-                    height: 14,
-                    borderRadius: 2,
-                    background: 'rgba(34, 197, 94, 0.2)'
-                  }}
-                />
-              ),
-              onClick: () => {
-                if (!folderContext.folderId) return
-                setFolderColor(folderContext.folderId, 'rgba(34, 197, 94, 0.2)')
-              }
-            },
-            {
-              label: 'Orange',
-              icon: (
-                <div
-                  style={{
-                    width: 14,
-                    height: 14,
-                    borderRadius: 2,
-                    background: 'rgba(249, 115, 22, 0.2)'
-                  }}
-                />
-              ),
-              onClick: () => {
-                if (!folderContext.folderId) return
-                setFolderColor(folderContext.folderId, 'rgba(249, 115, 22, 0.2)')
+              type: 'custom',
+              render: (onClose) => {
+                const currentCol = folderContext.folderId ? (folderColors[folderContext.folderId] || null) : null
+                return (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '6px 10px',
+                      gap: '6px'
+                    }}
+                  >
+                    {[
+                      { id: null, bg: 'var(--bg-panel)', border: '1px dashed var(--border-main)', title: 'Default Color (Reset)' },
+                      { id: 'rgba(59, 130, 246, 0.2)', bg: 'rgba(59, 130, 246, 0.5)', title: 'Blue' },
+                      { id: 'rgba(168, 85, 247, 0.2)', bg: 'rgba(168, 85, 247, 0.5)', title: 'Purple' },
+                      { id: 'rgba(239, 68, 68, 0.2)', bg: 'rgba(239, 68, 68, 0.5)', title: 'Red' },
+                      { id: 'rgba(34, 197, 94, 0.2)', bg: 'rgba(34, 197, 94, 0.5)', title: 'Green' },
+                      { id: 'rgba(249, 115, 22, 0.2)', bg: 'rgba(249, 115, 22, 0.5)', title: 'Orange' }
+                    ].map((c, idx) => {
+                      const isSelected = currentCol === c.id
+                      return (
+                        <div
+                          key={idx}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (!folderContext.folderId) return
+                            setFolderColor(folderContext.folderId, c.id)
+                            onClose()
+                          }}
+                          title={c.title}
+                          style={{
+                            width: '20px',
+                            height: '20px',
+                            borderRadius: '4px',
+                            background: c.bg,
+                            border: isSelected ? '2px solid #10b981' : (c.border || '1px solid rgba(255, 255, 255, 0.1)'),
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'transform 0.15s, box-shadow 0.15s',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'scale(1.15)'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'scale(1)'
+                          }}
+                        >
+                          {isSelected ? (
+                            <Check size={12} color="#10b981" strokeWidth={3} />
+                          ) : (
+                            c.id === null && <X size={12} color="var(--text-faint)" />
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
               }
             },
             {

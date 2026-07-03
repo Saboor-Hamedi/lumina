@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { X, Settings, ArrowUpCircle, RefreshCw, CheckCircle, Info } from 'lucide-react'
 import ThemeModal from '../Theme/ThemeModal'
 import ModalHeader from '../Overlays/ModalHeader'
-import ColorPickerModal from '../Overlays/ColorPickerModal'
+import ColorModal from '../Overlays/ColorModal'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useToast } from '../../core/hooks/useToast'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
@@ -11,7 +11,7 @@ import { useUpdateStore } from '../../core/store/useUpdateStore'
 import { useRef } from 'react'
 import './SettingsModal.css'
 
-const ColorPickerInput = ({ initialColor, defaultColor, onColorChange, title, ariaLabel }) => {
+const ColorPickerInput = ({ initialColor, defaultColor, onColorChange, previewProperty, title, ariaLabel }) => {
   const [isOpen, setIsOpen] = useState(false)
   const displayColor = initialColor
     ? initialColor.startsWith('#')
@@ -52,12 +52,13 @@ const ColorPickerInput = ({ initialColor, defaultColor, onColorChange, title, ar
         />
       </div>
 
-      <ColorPickerModal
+      <ColorModal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         initialColor={displayColor}
         defaultColor={defaultColor}
         onSelect={onColorChange}
+        previewProperty={previewProperty}
         title={title}
       />
     </>
@@ -357,6 +358,7 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                         initialColor={caretColor}
                         defaultColor="#ffffff"
                         onColorChange={updateCaretColor}
+                        previewProperty="--caret-color"
                         title="Choose Caret Color"
                         ariaLabel="Caret color picker"
                       />
@@ -709,6 +711,7 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                         initialColor={themeAccentColor}
                         defaultColor="#40bafa"
                         onColorChange={updateThemeAccentColor}
+                        previewProperty="--text-accent"
                         title="Choose Theme Accent Color"
                         ariaLabel="Theme accent color picker"
                       />

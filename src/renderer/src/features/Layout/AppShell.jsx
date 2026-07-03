@@ -308,23 +308,6 @@ const AppShell = () => {
 
   const pinnedTabIds = useVaultStore((state) => state.pinnedTabIds)
 
-  // Ctrl+Shift+F - open global search sidebar and focus input
-  useEffect(() => {
-    const handleGlobalSearchShortcut = (e) => {
-      const key = e.key && e.key.toLowerCase()
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && key === 'f') {
-        e.preventDefault()
-        setActiveTab('search')
-        setIsLeftSidebarOpen(true)
-        // Focus search input after sidebar opens
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('global-search-focus'))
-        }, 100)
-      }
-    }
-    window.addEventListener('keydown', handleGlobalSearchShortcut)
-    return () => window.removeEventListener('keydown', handleGlobalSearchShortcut)
-  }, [])
 
   // Ctrl+B - toggle Explorer Modal
   useEffect(() => {
@@ -420,6 +403,16 @@ const AppShell = () => {
   }, [])
 
   useKeyboardShortcuts({
+    onGlobalSearch: () => {
+      setActiveTab('search')
+      setIsLeftSidebarOpen(true)
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('global-search-focus'))
+      }, 50)
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('global-search-focus'))
+      }, 150)
+    },
     onFind: () => window.dispatchEvent(new CustomEvent('find-in-editor')),
     onTogglePalette: () => {
       setPaletteInitialQuery('')

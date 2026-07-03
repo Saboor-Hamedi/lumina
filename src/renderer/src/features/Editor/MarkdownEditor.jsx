@@ -4,7 +4,6 @@ import EditorMetadata from '../Workspace/components/EditorMetadata'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useVaultStore } from '../../core/store/useVaultStore'
-import { useFontSettings } from '../../core/hooks/useFontSettings'
 import { useToast } from '../../core/hooks/useToast'
 import ToastNotification from '../../core/notification'
 import './MarkdownEditor.css'
@@ -76,11 +75,10 @@ const MarkdownEditor = React.memo(
     const editorWrapperRef = useRef(null)
     const scrollerRef = useRef(null)
 
-    const { settings } = useSettingsStore()
+    const inlineMetadata = useSettingsStore((state) => state.settings?.inlineMetadata)
     const snippets = useVaultStore((state) => state.snippets)
     const setSelectedSnippet = useVaultStore((state) => state.setSelectedSnippet)
     const setDirty = useVaultStore((state) => state.setDirty)
-    const { caretStyle } = useFontSettings()
 
     const [title, setTitle] = useState(snippet?.title || '')
     const [isDirty, setIsDirty] = useState(false)
@@ -1011,7 +1009,7 @@ const MarkdownEditor = React.memo(
 
     return (
       <div
-        className={`markdown-editor mode-source cursor-${caretStyle || 'smooth'}`}
+        className="markdown-editor mode-source"
         style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}
       >
         {showFindWidget && realViewRef.current && (
@@ -1066,7 +1064,7 @@ const MarkdownEditor = React.memo(
             cancelText="Keep My Edits"
           />
           <div className="editor-canvas-wrap" ref={editorWrapperRef}>
-            {settings.inlineMetadata && (
+            {inlineMetadata && (
               <EditorMetadata
                 titleRef={titleRef}
                 snippet={snippet}

@@ -252,25 +252,33 @@
 }
 
 /* Block cursor */
+[data-caret-style="block"] .cm-cursor,
 .markdown-editor.cursor-block .cm-cursor {
   border-left-color: transparent !important;
   background: var(--caret-color, var(--text-accent));
   width: 0.6em;
   opacity: 0.6;
+  border-radius: 1px;
 }
 
 /* Sharp cursor — thin line, width still respects --caret-width */
+[data-caret-style="sharp"] .cm-cursor,
 .markdown-editor.cursor-sharp .cm-cursor {
   background: transparent;
   width: auto;
   opacity: 1;
+  border-radius: 0 !important;
+  transition: none !important;
 }
 
 /* Smooth cursor — default, width still respects --caret-width */
+[data-caret-style="smooth"] .cm-cursor,
 .markdown-editor.cursor-smooth .cm-cursor {
   background: transparent;
   width: auto;
   opacity: 1;
+  border-radius: 4px !important;
+  transition: border-left-color 0.15s ease, border-left-width 0.15s ease !important;
 }
 
 

@@ -53,6 +53,7 @@ const ContextMenu = ({ x, y, options, onClose }) => {
       >
       {options.map((opt, i) => {
         if (opt.type === 'divider') return <div key={i} className="menu-divider" />
+        if (opt.type === 'custom') return <React.Fragment key={i}>{opt.render(onClose)}</React.Fragment>
 
         return (
           <div

@@ -76,6 +76,14 @@ export const useKeyboardShortcuts = (shortcuts) => {
         }
       }
 
+      // Global Search: Ctrl+Shift+F
+      if (isCmd && e.shiftKey && key === 'f' && shortcutsRef.current.onGlobalSearch) {
+        e.preventDefault()
+        e.stopPropagation()
+        shortcutsRef.current.onGlobalSearch()
+        return
+      }
+
       // Save: Ctrl+S (Strictly no Shift)
       if (isCmd && !e.shiftKey && key === 's' && shortcutsRef.current.onSave) {
         e.preventDefault()

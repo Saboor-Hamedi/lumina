@@ -177,6 +177,8 @@ export const useFontSettings = () => {
   const [useBorderLeft, setUseBorderLeft] = useState(() => getInitial('useBorderLeft', true))
 
   const persistDebounceRef = useRef(null)
+  const caretDebounceRef = useRef(null)
+  const accentDebounceRef = useRef(null)
 
   // Load settings on mount
   useEffect(() => {
@@ -388,6 +390,7 @@ export const useFontSettings = () => {
 
         // Apply caret styles immediately on load (synchronous for instant display)
         root.style.setProperty('--caret-style', savedCaretStyle)
+        root.setAttribute('data-caret-style', savedCaretStyle || 'smooth')
         root.style.setProperty('--caret-width', normalizedWidth)
 
         // Use custom color if set, otherwise use theme's default caret color
@@ -570,6 +573,7 @@ export const useFontSettings = () => {
           // Apply caret immediately
           const root = document.documentElement
           root.style.setProperty('--caret-style', savedCaretStyle)
+          root.setAttribute('data-caret-style', savedCaretStyle || 'smooth')
           root.style.setProperty('--caret-width', normalizedWidth)
 
           let finalCaretColor = savedCaretColor
@@ -625,7 +629,25 @@ export const useFontSettings = () => {
       })
     }
 
+    const handleCaretUpdate = (e) => {
+      if (e.detail) {
+        if (e.detail.caretStyle !== undefined) setCaretStyle(e.detail.caretStyle)
+        if (e.detail.caretWidth !== undefined) setCaretWidth(e.detail.caretWidth)
+        if (e.detail.caretColor !== undefined) setCaretColor(e.detail.caretColor)
+      } else {
+        const root = document.documentElement
+        const cs = root.style.getPropertyValue('--caret-style')
+        const cw = root.style.getPropertyValue('--caret-width')
+        const cc = root.style.getPropertyValue('--caret-color')
+        if (cs) setCaretStyle(cs.trim())
+        if (cw) setCaretWidth(cw.trim())
+        if (cc) setCaretColor(cc.trim())
+      }
+    }
+    window.addEventListener('caret-style-update', handleCaretUpdate)
+
     return () => {
+      window.removeEventListener('caret-style-update', handleCaretUpdate)
       if (settingsChangedUnsubscribe) {
         settingsChangedUnsubscribe()
       }
@@ -657,6 +679,7 @@ export const useFontSettings = () => {
 
     // Caret Variables
     root.style.setProperty('--caret-style', caretStyle)
+    root.setAttribute('data-caret-style', caretStyle || 'smooth')
     root.style.setProperty(
       '--caret-width',
       typeof caretWidth === 'number' ? `${caretWidth}px` : caretWidth
@@ -856,14 +879,15 @@ export const useFontSettings = () => {
       if (isNaN(widthNumber) || widthNumber < 1) {
         widthNumber = 2 // default
       }
-      persistTheme({ caretWidth: widthNumber })
+      if (caretDebounceRef.current) clearTimeout(caretDebounceRef.current)
+      caretDebounceRef.current = setTimeout(() => {
+        persistTheme({ caretWidth: widthNumber })
+      }, 50)
 
-      // Force CodeMirror to update by dispatching a custom event
-      // This ensures the cursor element picks up the new CSS variables
-      // Use a small delay to ensure CSS variables are set first
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('caret-style-update'))
-      }, 10)
+      // Force immediate update across all components
+      window.dispatchEvent(
+        new CustomEvent('caret-style-update', { detail: { caretWidth: normalized } })
+      )
     },
     [caretColor, persistTheme]
   )
@@ -883,10 +907,13 @@ export const useFontSettings = () => {
     (style) => {
       setCaretStyle(style)
       document.documentElement.style.setProperty('--caret-style', style)
+      document.documentElement.setAttribute('data-caret-style', style || 'smooth')
       persistTheme({ caretStyle: style })
 
-      // Force CodeMirror to update by dispatching a custom event
-      window.dispatchEvent(new CustomEvent('caret-style-update'))
+      // Force immediate update across all components
+      window.dispatchEvent(
+        new CustomEvent('caret-style-update', { detail: { caretStyle: style } })
+      )
     },
     [persistTheme]
   )
@@ -917,12 +944,15 @@ export const useFontSettings = () => {
       }
 
       // Debounce React state and disk IO to prevent lag
-      if (persistDebounceRef.current) clearTimeout(persistDebounceRef.current)
-      persistDebounceRef.current = setTimeout(() => {
+      if (caretDebounceRef.current) clearTimeout(caretDebounceRef.current)
+      caretDebounceRef.current = setTimeout(() => {
         setCaretColor(rawColor)
         persistTheme({ caretColor: rawColor })
-        window.dispatchEvent(new CustomEvent('caret-style-update'))
-      }, 300)
+      }, 50)
+
+      window.dispatchEvent(
+        new CustomEvent('caret-style-update', { detail: { caretColor: rawColor } })
+      )
     },
     [persistTheme]
   )
@@ -941,11 +971,11 @@ export const useFontSettings = () => {
       }
 
       // Debounce React state and disk IO to prevent lag
-      if (persistDebounceRef.current) clearTimeout(persistDebounceRef.current)
-      persistDebounceRef.current = setTimeout(() => {
+      if (accentDebounceRef.current) clearTimeout(accentDebounceRef.current)
+      accentDebounceRef.current = setTimeout(() => {
         setThemeAccentColor(rawColor)
         persistTheme({ themeAccentColor: rawColor })
-      }, 300)
+      }, 50)
     },
     [persistTheme]
   )

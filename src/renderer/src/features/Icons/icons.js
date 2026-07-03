@@ -401,6 +401,7 @@ export const EMOJI_LIST = [
 export const EMOJI_INDEX = EMOJI_LIST.map((item) => {
   return {
     ...item,
-    searchString: [item.name, ...item.tags].join(' ').toLowerCase()
+    searchString: [item.name, ...item.tags].join(' ').toLowerCase(),
+    isLucide: /^[a-zA-Z]/.test(item.char)
   }
 })

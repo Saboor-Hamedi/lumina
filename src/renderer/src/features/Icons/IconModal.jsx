@@ -4,42 +4,43 @@ import { Search } from 'lucide-react'
 import * as LucideIcons from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import ModalHeader from '../Overlays/ModalHeader'
+import { useDraggableModal } from '../Overlays/useDraggableModal'
 import { EMOJI_INDEX } from './icons'
 import './IconModal.css'
+
+const IconItem = React.memo(({ item, isActive, onSelect, onClose }) => {
+  const IconComponent = item.isLucide ? LucideIcons[item.char] : null
+  return (
+    <div
+      className={`icon-swatch-wrap ${isActive ? 'active' : ''}`}
+      onClick={() => {
+        onSelect(item.char)
+        onClose()
+      }}
+      title={item.name}
+    >
+      <div
+        className="icon-swatch"
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      >
+        {IconComponent ? (
+          <IconComponent size={20} />
+        ) : (
+          <span style={{ fontSize: '20px' }}>{item.char}</span>
+        )}
+      </div>
+    </div>
+  )
+})
 
 const IconModal = ({ isOpen, onClose, currentIcon, onSelect }) => {
   const [search, setSearch] = useState('')
   useKeyboardShortcuts({ onEscape: onClose })
+  const { style: dragStyle, handleDragStart } = useDraggableModal()
 
-  // Dragging state
-  const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 })
-
-  const handleDragStart = useCallback(
-    (e) => {
-      if (e.button !== 0) return // Only left click
-      e.stopPropagation()
-      const startX = e.clientX
-      const startY = e.clientY
-      const startTop = modalPosition.top
-      const startLeft = modalPosition.left
-
-      const handleMouseMove = (moveEvent) => {
-        setModalPosition({
-          left: startLeft + (moveEvent.clientX - startX),
-          top: startTop + (moveEvent.clientY - startY)
-        })
-      }
-
-      const handleMouseUp = () => {
-        window.removeEventListener('mousemove', handleMouseMove)
-        window.removeEventListener('mouseup', handleMouseUp)
-      }
-
-      window.addEventListener('mousemove', handleMouseMove)
-      window.addEventListener('mouseup', handleMouseUp)
-    },
-    [modalPosition]
-  )
+  const stopPropagation = useCallback((e) => {
+    e.stopPropagation()
+  }, [])
 
   const filteredIcons = useMemo(() => {
     const term = search.toLowerCase().trim()
@@ -62,17 +63,21 @@ const IconModal = ({ isOpen, onClose, currentIcon, onSelect }) => {
     >
       <div
         className="icon-modal-container"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          transform: `translate(${modalPosition.left}px, ${modalPosition.top}px)`,
-          position: 'relative'
-        }}
+        onClick={stopPropagation}
+        onMouseDown={stopPropagation}
+        onPointerDown={stopPropagation}
+        onDoubleClick={stopPropagation}
+        onKeyDown={stopPropagation}
+        onKeyUp={stopPropagation}
+        onContextMenu={stopPropagation}
+        style={dragStyle}
       >
         <ModalHeader
           title="Select Icon"
           onClose={onClose}
           onMouseDown={handleDragStart}
-          style={{ cursor: 'move' }}
+          onPointerDown={stopPropagation}
+          style={{ cursor: 'grab' }}
         />
 
         <div className="icon-modal-search">
@@ -107,33 +112,15 @@ const IconModal = ({ isOpen, onClose, currentIcon, onSelect }) => {
             </div>
           </div>
 
-          {filteredIcons.map((item) => {
-            const isActive = currentIcon === item.char
-            const IconComponent = LucideIcons[item.char]
-
-            return (
-              <div
-                key={item.char + item.name}
-                className={`icon-swatch-wrap ${isActive ? 'active' : ''}`}
-                onClick={() => {
-                  onSelect(item.char)
-                  onClose()
-                }}
-                title={item.name}
-              >
-                <div
-                  className="icon-swatch"
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                >
-                  {IconComponent ? (
-                    <IconComponent size={20} />
-                  ) : (
-                    <span style={{ fontSize: '20px' }}>{item.char}</span>
-                  )}
-                </div>
-              </div>
-            )
-          })}
+          {filteredIcons.map((item) => (
+            <IconItem
+              key={item.char + item.name}
+              item={item}
+              isActive={currentIcon === item.char}
+              onSelect={onSelect}
+              onClose={onClose}
+            />
+          ))}
         </div>
       </div>
     </div>,

@@ -13,7 +13,6 @@ import { useVaultStore } from '../../../core/store/useVaultStore'
 import ContextMenu from '../../Overlays/ContextMenu'
 import PromptModal from '../../Overlays/PromptModal'
 import IconModal from '../../Icons/IconModal'
-import ColorModal from '../../Overlays/ColorModal'
 import { getSnippetIcon } from '../../Icons/iconMapper'
 import WindowControls from './WindowControls'
 import ToolTip from '../../../components/atoms/ToolTip'
@@ -29,12 +28,9 @@ const SortableTabItem = memo(
       disabled: isPinned
     })
 
-    const noteColor = snippet?.color
-    const displayColor = noteColor ? `#${noteColor}` : null
-
     const getIcon = () => {
       if (isPinned) return <Pin size={12} className="tab-icon pinned-icon" />
-      if (snippet) return getSnippetIcon(snippet, 12, 'tab-icon', displayColor)
+      if (snippet) return getSnippetIcon(snippet, 12, 'tab-icon')
       return null
     }
 
@@ -57,7 +53,6 @@ const SortableTabItem = memo(
         onContextMenu={(e) => onContextMenu(e, id)}
       >
         <div className="tab-context">
-          {displayColor && <span className="tab-color-dot" style={{ background: displayColor }} />}
           {getIcon()}
           <span className="tab-title">{getTitle()}</span>
         </div>
@@ -272,13 +267,12 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
               position: 'absolute', 
               left: 0, 
               top: 0, 
-              height: '32px',
+              bottom: 0,
+              height: '100%',
               display: 'flex',
               alignItems: 'center',
               zIndex: 100,
               background: 'var(--bg-app)',
-              padding: '0 8px',
-              borderBottomRightRadius: '6px',
               WebkitAppRegion: 'no-drag'
             }}
           >
@@ -289,19 +283,20 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
                 style={{ 
                   background: 'transparent', 
                   border: 'none', 
-                  color: 'var(--text-muted)', 
+                  color: 'var(--text-faint)', 
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '6px'
+                  width: '40px',
+                  height: '100%',
+                  borderRadius: '0',
+                  transition: 'background 0.1s, color 0.1s'
                 }}
                 onMouseOver={(e) => { e.currentTarget.style.color = 'var(--text-main)'; e.currentTarget.style.background = 'var(--bg-active)'; }}
-                onMouseOut={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'; }}
+                onMouseOut={(e) => { e.currentTarget.style.color = 'var(--text-faint)'; e.currentTarget.style.background = 'transparent'; }}
               >
-                {isLeftSidebarOpen ? <PanelLeftClose size={16} strokeWidth={1.5} /> : <PanelLeftOpen size={16} strokeWidth={1.5} />}
+                {isLeftSidebarOpen ? <PanelLeftClose size={14} /> : <PanelLeftOpen size={14} />}
               </button>
             </ToolTip>
           </div>

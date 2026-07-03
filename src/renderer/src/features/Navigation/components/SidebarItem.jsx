@@ -4,7 +4,6 @@ import { useVaultStore } from '../../../core/store/useVaultStore'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
 import ContextMenu from '../../Overlays/ContextMenu'
 import ConfirmModal from '../../Overlays/Modals/ConfirmModal'
-import ColorModal from '../../Overlays/ColorModal'
 import IconModal from '../../Icons/IconModal'
 import ToolTip from '../../../components/atoms/ToolTip'
 import { getSnippetIcon } from '../../Icons/iconMapper'
@@ -25,7 +24,6 @@ const SidebarItem = ({
   const [isRenaming, setIsRenaming] = useState(false)
   const [renameValue, setRenameValue] = useState(snippet.title)
   const [contextMenu, setContextMenu] = useState(null)
-  const [showColorPicker, setShowColorPicker] = useState(false)
   const [showIconPicker, setShowIconPicker] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
@@ -75,18 +73,15 @@ const SidebarItem = ({
     }
   }
 
-  const noteColor = snippet.color
-  const displayColor = noteColor ? `#${noteColor}` : null
-
   const getIcon = () => {
     if (snippet.itemType === 'folder') {
       return (
         <div className="item-icon">
-          <Folder size={14} fill={displayColor || "#e8a825"} color={displayColor || "#e8a825"} />
+          <Folder size={14} fill="var(--text-accent)" color="var(--text-accent)" />
         </div>
       )
     }
-    return getSnippetIcon(snippet, 14, 'item-icon', displayColor)
+    return getSnippetIcon(snippet, 14, 'item-icon')
   }
 
   const highlightText = (text, query) => {
@@ -110,7 +105,6 @@ const SidebarItem = ({
       onClick: handleTogglePin
     },
     { label: 'Rename', icon: <Edit2 size={14} />, onClick: () => setIsRenaming(true) },
-    { label: 'Color', icon: <Palette size={14} />, onClick: () => setShowColorPicker(true) },
     { label: 'Change Icon', icon: <Image size={14} />, onClick: () => setShowIconPicker(true) },
     {
       label: 'Show in Explorer',
@@ -131,13 +125,6 @@ const SidebarItem = ({
       {contextMenu && (
         <ContextMenu {...contextMenu} options={menuOptions} onClose={() => setContextMenu(null)} />
       )}
-
-      <ColorModal
-        isOpen={showColorPicker}
-        onClose={() => setShowColorPicker(false)}
-        currentColor={snippet.color}
-        onSelect={(colorId) => saveSnippet({ ...snippet, color: colorId })}
-      />
 
       <IconModal
         isOpen={showIconPicker}
@@ -242,10 +229,9 @@ const SidebarItem = ({
       {...(dndProps?.attributes || {})}
       {...(dndProps?.listeners || {})}
     >
-      <span className="item-icon-wrap" style={displayColor ? { color: displayColor } : undefined}>
+      <span className="item-icon-wrap">
         {getIcon()}
       </span>
-      {displayColor && <span className="item-color-accent" style={{ background: displayColor }} />}
 
       {isRenaming ? (
         <input
@@ -265,7 +251,7 @@ const SidebarItem = ({
         />
       ) : (
         <ToolTip text={snippet.title || 'Untitled'} position="bottom" delay={600}>
-          <span className="item-title" style={displayColor ? { color: displayColor } : undefined}>
+          <span className="item-title" style={isActive ? { color: 'var(--text-accent)' } : undefined}>
             {highlightText(snippet.title || 'Untitled', searchQuery)}
           </span>
         </ToolTip>

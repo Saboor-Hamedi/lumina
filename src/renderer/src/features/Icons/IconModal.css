@@ -3,8 +3,8 @@
 }
 
 .icon-modal-container {
-  width: 450px;
-  max-width: 90vw;
+  width: 550px;
+  max-width: 95vw;
   background: var(--bg-panel);
   border: 1px solid var(--border-main);
   border-radius: 8px;
@@ -13,7 +13,7 @@
   flex-direction: column;
   overflow: hidden;
   animation: modal-pop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  height: 480px;
+  height: 430px;
 }
 
 .icon-modal-search {
