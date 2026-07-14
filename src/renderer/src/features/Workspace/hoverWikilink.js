@@ -19,7 +19,7 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
   }
 
   const createCard = (x, y, title, contentSnippet, timestamp, noteId) => {
-    removeCard()
+    removeCard(false) // Do NOT reset currentTarget when refreshing the card
 
     hoverCard = document.createElement('div')
     hoverCard.className = 'cm-wiki-hover'
