@@ -495,7 +495,7 @@ const CommandPalette = React.memo(
             <input
               ref={inputRef}
               type="text"
-              placeholder={query.startsWith('>') ? "Search commands..." : "Search notes..."}
+              placeholder={query.startsWith('>') ? "Search commands..." : "Search notes... (Type > for commands)"}
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value)
@@ -507,7 +507,7 @@ const CommandPalette = React.memo(
               {aiError ? (
                 <span style={{ color: 'var(--text-error)' }}>⚠️ AI Error: {aiError}</span>
               ) : (
-                'ESC to close'
+                <kbd>ESC</kbd>
               )}
             </div>
           </div>

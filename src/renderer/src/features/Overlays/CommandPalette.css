@@ -56,6 +56,13 @@
   outline: none;
 }
 
+.palette-input-wrap input::placeholder {
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--text-muted);
+  opacity: 0.75;
+}
+
 .palette-hint {
   font-size: 10px;
   font-weight: 700;

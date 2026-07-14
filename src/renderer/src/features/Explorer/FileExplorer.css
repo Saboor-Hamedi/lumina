@@ -148,16 +148,16 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 8px;
+  padding: 0 12px;
 }
 
 .start-section-header h3 {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 10px;
+  font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin: 0;
-  padding-left: 12px;
 }
 
 /* Segmented Tabs */
@@ -533,6 +533,10 @@
   color: var(--text-muted);
   padding: 32px;
   text-align: center;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 @keyframes spin {

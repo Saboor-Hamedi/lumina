@@ -1,8 +1,9 @@
 /* Indexing Status Styles - Matched to ToastNotification */
 .indexing-status-container {
   position: fixed;
-  top: 40px;
+  bottom: 40px;
   right: 20px;
+  top: auto;
   background: var(--bg-panel);
   border: 1px solid var(--border-subtle);
   border-left: 3px solid var(--text-accent);
@@ -25,13 +26,13 @@
 }
 
 @keyframes indexingFadeIn {
-  from { transform: translateY(-10px); opacity: 0; }
+  from { transform: translateY(10px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
 
 @keyframes indexingFadeOut {
   from { transform: translateY(0); opacity: 1; }
-  to { transform: translateY(-10px); opacity: 0; }
+  to { transform: translateY(10px); opacity: 0; }
 }
 
 @keyframes completePulse {

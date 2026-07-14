@@ -20,15 +20,28 @@ const SnippetOutline = ({ snippet }) => {
   }, [snippet?.code])
 
   if (!snippet) {
-    return <div className="inspector-empty">No note selected for outline.</div>
+    return (
+      <div className="details-modal-body" style={{ height: '100%', overflowY: 'auto' }}>
+        <div className="panel-empty" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)' }}>
+          No file selected
+        </div>
+      </div>
+    )
+  }
+
+  if (headings.length === 0) {
+    return (
+      <div className="details-modal-body" style={{ height: '100%', overflowY: 'auto' }}>
+        <div className="panel-empty" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)' }}>
+          No headings found in this note.
+        </div>
+      </div>
+    )
   }
   
   return (
     <div className="snippet-outline">
-      {headings.length === 0 ? (
-        <div className="outline-empty">No headings found in this note.</div>
-      ) : (
-        <ul className="outline-tree">
+      <ul className="outline-tree">
           {headings.map((h, i) => (
             <li 
               key={i} 
@@ -54,8 +67,7 @@ const SnippetOutline = ({ snippet }) => {
               </div>
             </li>
           ))}
-        </ul>
-      )}
+      </ul>
     </div>
   )
 }

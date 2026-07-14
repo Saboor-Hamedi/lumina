@@ -30,6 +30,7 @@ import { X, Maximize2, Trash2, History, Bot, Info, MessageSquare } from 'lucide-
 
 import TabbedSidebar from '../Inspector/TabbedSidebar'
 import IndexingStatus from '../../components/IndexingStatus'
+import StatusBar from '../Workspace/components/StatusBar'
 
 /**
  * AppShell Component
@@ -234,9 +235,11 @@ const AppShell = () => {
       else if (typeof actualSettings.isLeftSidebarOpen === 'boolean')
         setIsLeftSidebarOpen(actualSettings.isLeftSidebarOpen)
 
-      if (legacySidebar.width) setLeftWidth(legacySidebar.width)
-      else if (legacySidebar.leftWidth) setLeftWidth(legacySidebar.leftWidth)
-      else if (actualSettings.leftWidth) setLeftWidth(actualSettings.leftWidth)
+      const rawLeftWidth = legacySidebar.width || legacySidebar.leftWidth || actualSettings.leftWidth
+      if (rawLeftWidth) {
+        const clampedLeft = Math.min(500, Math.max(150, Number(rawLeftWidth)))
+        setLeftWidth(clampedLeft)
+      }
 
       // RIGHT SIDEBAR
       const legacyRSidebar = actualSettings.rightSidebar || {}
@@ -245,9 +248,11 @@ const AppShell = () => {
       else if (typeof actualSettings.isRightSidebarOpen === 'boolean')
         setIsRightSidebarOpen(actualSettings.isRightSidebarOpen)
 
-      if (legacyRSidebar.width) setRightWidth(legacyRSidebar.width)
-      else if (legacyRSidebar.rightWidth) setRightWidth(legacyRSidebar.rightWidth)
-      else if (actualSettings.rightWidth) setRightWidth(actualSettings.rightWidth)
+      const rawRightWidth = legacyRSidebar.width || legacyRSidebar.rightWidth || actualSettings.rightWidth
+      if (rawRightWidth) {
+        const clampedRight = Math.min(500, Math.max(160, Number(rawRightWidth)))
+        setRightWidth(clampedRight)
+      }
 
       // Removed restoring activeTab
 
@@ -640,7 +645,7 @@ const AppShell = () => {
           </ErrorBoundary>
         )}
 
-        {/* Inspector overlay — positioned absolute over shell-main */}
+        {/* Inspector overlay — floats over shell-main from the right */}
         <aside className="shell-sidebar-right">
           <TabbedSidebar
             rightSidebarTab={rightSidebarTab}
@@ -656,6 +661,15 @@ const AppShell = () => {
             isLoading={isLoading}
           />
         </aside>
+        <StatusBar
+          wordCount={selectedSnippet?.code ? selectedSnippet.code.trim().split(/\s+/).filter(Boolean).length : 0}
+          extension={selectedSnippet?.title && selectedSnippet.title.includes('.') ? selectedSnippet.title.split('.').pop() : (selectedSnippet ? 'md' : '')}
+          onToggleInspector={handleToggleInspector}
+          onToggleExplorerModal={() => setShowExplorerModal((prev) => !prev)}
+          onSettingsClick={() => setShowSettings(true)}
+          onThemeClick={() => setShowThemeModal(true)}
+          onGraphClick={() => setShowGraph(true)}
+        />
       </main>
 
 

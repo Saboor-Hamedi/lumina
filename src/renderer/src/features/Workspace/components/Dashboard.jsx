@@ -1,6 +1,5 @@
 import React from 'react'
 import { WelcomePage } from '../welcomePage'
-import StatusBar from './StatusBar'
 
 /**
  * Dashboard Component
@@ -16,17 +15,7 @@ const Dashboard = ({
 }) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ flex: 1, overflow: 'hidden' }}>
-        <WelcomePage onNew={onNew} />
-      </div>
-      <StatusBar
-        wordCount={0}
-        onToggleExplorerModal={onToggleExplorerModal}
-        onSettingsClick={onSettingsClick}
-        onThemeClick={onThemeClick}
-        onGraphClick={onGraphClick}
-        onDailyNoteClick={onDailyNoteClick}
-      />
+      <WelcomePage onNew={onNew} />
     </div>
   )
 }

@@ -100,7 +100,7 @@
   position: absolute;
   top: 32px;
   right: 0;
-  bottom: 0;
+  bottom: 28px;
   width: var(--right-sidebar-width, 320px);
   background: var(--bg-sidebar) !important;
   backdrop-filter: blur(24px) saturate(1.5);

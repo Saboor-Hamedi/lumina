@@ -735,10 +735,18 @@
 
 .editor-scroller {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   background: transparent;
   scroll-behavior: smooth;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none; /* Firefox */
+}
+
+.editor-scroller::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Edge */
 }
 
 .editor-canvas-wrap {
@@ -1419,16 +1427,7 @@
   position: relative;
 }
 
-.editor-scroller {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  scrollbar-width: none; /* Firefox */
-}
-
-.editor-scroller::-webkit-scrollbar {
-  display: none; /* Chrome/Safari/Edge */
-}
+/* .editor-scroller consolidated above */
 
 /* Selection layers removed above to fix dual-color issue */
 

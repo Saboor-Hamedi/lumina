@@ -29,7 +29,6 @@ import { mermaidWidgetExtension } from '../Workspace/mermaidWidgetExtension'
 import { calloutExtension } from '../Workspace/calloutWidgetExtension'
 import '@atomic-editor/editor/styles.css'
 import FindWidget from '../Workspace/components/FindWidget'
-import StatusBar from '../Workspace/components/StatusBar'
 import PreviewModal from '../Overlays/PreviewModal/PreviewModal'
 import OverwriteModal from '../Overlays/Modals/OverwriteModal'
 import RulerScrollbar from './RulerScrollbar'
@@ -1095,16 +1094,6 @@ const MarkdownEditor = React.memo(
           </div>
         </div>
 
-        <StatusBar
-          wordCount={snippet?.code ? snippet.code.trim().split(/\s+/).filter(Boolean).length : 0}
-          extension={snippet?.title && snippet.title.includes('.') ? snippet.title.split('.').pop() : 'md'}
-          onToggleInspector={onToggleInspector}
-          onToggleExplorerModal={onToggleExplorerModal}
-          onSettingsClick={onSettingsClick}
-          onThemeClick={onThemeClick}
-          onGraphClick={onGraphClick}
-          onDailyNoteClick={onDailyNoteClick}
-        />
       </div>
     )
   },
