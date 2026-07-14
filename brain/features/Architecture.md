@@ -2,7 +2,7 @@
 
 ## Overview
 
-**Lumina** is a premium, vault-based knowledge management application built with Electron, React, and CodeMirror 6. It provides a sophisticated markdown editing experience with live preview, WikiLinks, advanced theming, and file-system-based storage.
+**Lumina** is a premium, vault-based knowledge management application built with Electron, React, and AtomicEditor (powered by CodeMirror 6). It provides a sophisticated markdown editing experience with live WYSIWYG elements, WikiLinks, advanced theming, and file-system-based storage.
 
 **Core Philosophy:**
 
@@ -31,7 +31,7 @@
 #### Renderer Process (React/Browser)
 
 - `React 19.1.1` - UI framework
-- `CodeMirror 6` - Advanced text editor
+- `@atomic-editor/editor` - Advanced WYSIWYG Markdown editor (powered by CodeMirror 6)
 - `Zustand 5.0.9` - State management (3 stores: Vault, Settings, AI)
 - `Dexie 4.2.1` - IndexedDB wrapper for caching
 - `marked 17.0.1` - Markdown parsing for preview
@@ -53,80 +53,48 @@
 ## Project Structure
 
 ```text
-b:\electron\typing\
+b:\electron\lumina\
+├── brain/                      # Documentation and Vault architecture notes
 ├── src/
-│   ├── main/                    # Electron Main Process
-│   │   ├── index.js            # App initialization, IPC handlers
-│   │   ├── VaultManager.js     # File-based vault operations
-│   │   └── SettingsManager.js  # settings.json persistence
+│   ├── main/                   # Electron Main Process (VaultManager, Settings, etc.)
+│   ├── preload/                # Secure IPC Bridge (contextBridge)
+│   ├── renderer/src/           # React Application
+│   │   ├── App.jsx             # Root component
+│   │   ├── main.jsx            # React entry point
+│   │   │
+│   │   ├── assets/             # CSS and static files
+│   │   │
+│   │   ├── components/         # Reusable UI Components (Atoms, Utils)
+│   │   │
+│   │   ├── core/               # Core Infrastructure
+│   │   │   ├── ai/             # AI Provider logic
+│   │   │   ├── context/        # React Context providers
+│   │   │   ├── db/             # IndexedDB caching layer
+│   │   │   ├── hooks/          # Reusable React hooks
+│   │   │   ├── notification/   # Toast notifications
+│   │   │   ├── store/          # Zustand state stores
+│   │   │   ├── themes/         # Theme constants and definitions
+│   │   │   └── utils/          # Helper utilities
+│   │   │
+│   │   └── features/           # Feature Modules
+│   │       ├── AI/             # Chat UI and Providers
+│   │       ├── Docs/           # Documentation Modal
+│   │       ├── Editor/         # Core Editor logic
+│   │       ├── Explorer/       # File Explorer
+│   │       ├── Graph/          # Knowledge Graph
+│   │       ├── Icons/          # Icon Mapping
+│   │       ├── Inspector/      # Inspector Panel
+│   │       ├── Layout/         # AppShell and Layout orchestrators
+│   │       ├── Navigation/     # Sidebar and Activity Bar
+│   │       ├── Overlays/       # Modals (CommandPalette, Preview, etc.)
+│   │       ├── Settings/       # Settings UI
+│   │       ├── Shared/         # Shared Feature UI
+│   │       ├── Theme/          # Theme Modals
+│   │       └── Workspace/      # Workspace, Tabs, AtomicEditor/CodeMirror Extensions
 │   │
-│   ├── preload/                # Secure IPC Bridge
-│   │   └── index.js            # Context-isolated API exposure
-│   │
-│   └── renderer/src/           # React Application
-│       ├── App.jsx             # Root component
-│       ├── main.jsx            # React entry point
-│       │
-│       ├── core/               # Core Infrastructure
-│       │   ├── db/
-│       │   │   └── cache.js    # IndexedDB caching layer
-│       │   ├── hooks/          # Reusable React hooks
-│       │   │   ├── useTheme.js
-│       │   │   ├── useToast.js
-│       │   │   ├── useKeyboardShortcuts.js
-│       │   │   └── useSnippetData.js
-│       │   ├── store/          # Zustand state stores
-│       │   │   ├── useVaultStore.js
-│       │   │   └── useSettingsStore.js
-│       │   └── utils/
-│       │       └── ToastNotification.jsx
-│       │
-│       ├── features/           # Feature Modules
-│       │   ├── Layout/
-│       │   │   ├── AppShell.jsx        # Main layout orchestrator
-│       │   │   └── TitleBar.jsx        # Custom window controls
-│       │   │
-│       │   ├── Navigation/
-│       │   │   ├── ActivityBar.jsx     # Left sidebar tabs
-│       │   │   └── FileExplorer.jsx    # Virtualized file tree
-│       │   │
-│       │   ├── Workspace/
-│       │   │   ├── MarkdownEditor.jsx  # CodeMirror wrapper
-│       │   │   ├── richMarkdown.js     # Live preview plugin
-│       │   │   ├── markdownWidgets.js  # Code block widgets
-│       │   │   ├── wikiHoverPreview.js # WikiLink tooltips
-│       │   │   ├── wikiLinkCompletion.js # [[Link]] autocomplete
-│       │   │   ├── editorTheme.js      # Editor appearance
-│       │   │   └── syntaxTheme.js      # Syntax highlighting
-│       │   │
-│       │   └── Overlays/
-│       │       ├── SettingsModal.jsx
-│       │       ├── ThemeSettings.jsx
-│       │       ├── CommandPalette.jsx
-│       │       └── PreviewModal.jsx
-│       │
-│       ├── components/         # Reusable UI Components
-│       │   ├── atoms/
-│       │   │   └── Button.jsx
-│       │   └── utils/
-│       │       ├── VirtualList.jsx     # DOM recycling
-│       │       └── AutoSizer.jsx       # Dynamic sizing
-│       │
-│       └── assets/             # Styles and static files
-│           ├── index.css
-│           ├── variables.css
-│           ├── markdown.css
-│           └── css/            # Modular CSS
-│
-├── build/                      # Packaging resources
-│   ├── icon.ico
-│   └── icon.icns
-│
-├── notes/                      # Documentation
-│   └── doc.md                  # This file
+│   └── test/                   # Test suite
 │
 ├── package.json
-│
 ├── electron-builder.yml
 └── electron.vite.config.mjs
 ```
@@ -137,7 +105,7 @@ b:\electron\typing\
 
 ### 1. Vault System (File-Based Storage)
 
-**See dedicated docs:** `brain/vault/01-overview.md` for full architecture, data flow, IPC channels, and deep-dives into `VaultManager.js`, `VaultIndexer.js`, `VaultSearch.js`, and `useVaultStore.js`.
+**See dedicated docs:** `brain/vault/Overview.md` for full architecture, data flow, IPC channels, and deep-dives into `VaultManager.js`, `VaultIndexer.js`, `VaultSearch.js`, and `useVaultStore.js`.
 
 ---
 
@@ -250,19 +218,26 @@ db.version(1).stores({
 
 ---
 
-### 5. CodeMirror 6 Integration
+### 5. AtomicEditor Integration (CodeMirror 6)
 
-**Location**: `src/renderer/src/features/Workspace/MarkdownEditor.jsx`
+**Location**: `src/renderer/src/features/Editor/MarkdownEditor.jsx`
 
-**Extensions Stack:**
+Lumina uses `@atomic-editor/editor` which wraps CodeMirror 6 to provide a rich, block-level WYSIWYG experience while retaining the power of a raw text editor.
 
-```javascript
-[
-  markdown(),              // Markdown language support
-  EditorView.lineWrapping, // Soft wrap
-  history(),               // Undo/redo
-  drawSelection(),         // Selection rendering
-  keymap.of([...]),        // Keyboard shortcuts
+**Key Components & Props:**
+
+```jsx
+<AtomicCodeMirrorEditor
+  documentId={snippet?.id}
+  markdownSource={snippet?.code || ''}
+  onMarkdownChange={handleMarkdownChange}
+  editorHandleRef={editorHandleRef}
+  codeLanguages={languages}
+  extensions={finalExtensions} // Custom CM6 extensions
+/>
+```
+
+**Custom Extensions Stack injected into AtomicEditor:**  keymap.of([...]),        // Keyboard shortcuts
   autocompletion({...}),   // Autocomplete
   richMarkdown,            // Live preview plugin
   wikiHoverPreview(...),   // WikiLink tooltips
@@ -453,7 +428,7 @@ Result: [[My Note]]
 
 ### 10. Virtualized File Explorer
 
-**Location**: `src/renderer/src/features/Navigation/FileExplorer.jsx`
+**Location**: `src/renderer/src/features/Explorer/FileExplorer.jsx`
 
 **Purpose**: Render 10,000+ notes without lag using DOM recycling.
 
@@ -773,7 +748,7 @@ showToast('❌ Failed to delete', 'error')
 
 ### Knowledge Graph Visualization
 
-**Location**: `src/renderer/src/features/Graph/GraphView.jsx`
+**Location**: `src/renderer/src/features/Graph/Graph.jsx`
 
 **Purpose**: Interactive force-directed graph showing relationships between notes.
 
@@ -982,7 +957,7 @@ await fs.writeFile(filePath, pdfData)
 
 ### Editor Modes
 
-**Location**: `src/renderer/src/features/Workspace/richMarkdown.js`
+**Location**: `src/renderer/src/features/Workspace/calloutWidgetExtension.js` and `imageDropExtension.js`
 
 **Purpose**: Three distinct editing experiences for different tasks.
 
@@ -1536,7 +1511,7 @@ MIT License - See `LICENSE.md` for details.
 
 - Electron - Desktop framework
 - React - UI library
-- CodeMirror 6 - Text editor
+- `@atomic-editor/editor` - Text editor and WYSIWYG framework
 - Zustand - State management
 - Lucide - Icon system
 

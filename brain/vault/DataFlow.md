@@ -9,7 +9,7 @@ user types in codemirror editor
 editor onchange → store.setdirty(id, true)
     │
     ▼
-autosave timer (or manual ctrl+s) → store.savesnippet(snippet)
+autosave timer → store.savesnippet(snippet)
     │
     ├─ validate snippet (non-null, has id)
     │

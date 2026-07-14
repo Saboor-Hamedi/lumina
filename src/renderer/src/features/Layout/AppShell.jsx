@@ -5,6 +5,7 @@ import Sidebar from '../Navigation/Sidebar'
 import ThemeModal from '../Theme/ThemeModal'
 import CommandPalette from '../Overlays/CommandPalette'
 import Graph from '../Graph/Graph'
+import Documentation from '../Docs/Documentation'
 import Dashboard from '../Workspace/components/Dashboard'
 import TabBar from '../Workspace/components/TabBar'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
@@ -65,6 +66,7 @@ const AppShell = () => {
   const [showPalette, setShowPalette] = useState(false)
   const [paletteInitialQuery, setPaletteInitialQuery] = useState('')
   const [showGraph, setShowGraph] = useState(false)
+  const [showDocsModal, setShowDocsModal] = useState(false)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [showAIChatModal, setShowAIChatModal] = useState(() => {
     return useSettingsStore.getState().settings?.aiChatModalState?.isOpen || false
@@ -565,6 +567,7 @@ const AppShell = () => {
           onThemeClick={handleOpenTheme}
           onToggleGraph={handleToggleGraph}
           onToggleAIChat={handleToggleAIChat}
+          onDocsClick={() => setShowDocsModal(true)}
         />
       </aside>
       <main className="shell-main">
@@ -669,6 +672,7 @@ const AppShell = () => {
           onSettingsClick={() => setShowSettings(true)}
           onThemeClick={() => setShowThemeModal(true)}
           onGraphClick={() => setShowGraph(true)}
+          onDocsClick={() => setShowDocsModal(true)}
         />
       </main>
 
@@ -738,6 +742,7 @@ const AppShell = () => {
         }}
         onToggleGraph={() => setShowGraph(true)}
         onToggleChat={() => setShowAIChatModal(true)}
+        onToggleDocs={() => setShowDocsModal(true)}
         onRename={() => {
           if (selectedSnippet) {
             setRenameModal({ isOpen: true, item: selectedSnippet, newName: selectedSnippet.title })
@@ -754,6 +759,12 @@ const AppShell = () => {
             setActiveTab('files')
             setShowGraph(false)
           }}
+        />
+      )}
+      {showDocsModal && (
+        <Documentation
+          isOpen={showDocsModal}
+          onClose={() => setShowDocsModal(false)}
         />
       )}
       <ConfirmModal

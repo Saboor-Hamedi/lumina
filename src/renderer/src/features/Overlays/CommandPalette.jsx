@@ -18,7 +18,8 @@ import {
   Keyboard,
   Type,
   Bot,
-  MessageSquare
+  MessageSquare,
+  Book
 } from 'lucide-react'
 import Fuse from 'fuse.js'
 import { FixedSizeList as List } from '../../components/utils/VirtualList'
@@ -71,7 +72,8 @@ const CommandPaletteRow = React.memo(({ index, style, data }) => {
     dirtySnippetIds,
     settings,
     updateSetting,
-    onRename
+    onRename,
+    onToggleDocs
   } = data
 
   const item = filtered[index]
@@ -94,6 +96,7 @@ const CommandPaletteRow = React.memo(({ index, style, data }) => {
           else if (item.action === 'new') onNew?.()
           else if (item.action === 'graph') onToggleGraph?.()
           else if (item.action === 'chat') onToggleChat?.()
+          else if (item.action === 'docs') onToggleDocs?.()
           else if (item.action === 'rename') onRename?.()
           else if (item.action === 'reload-window') window.location.reload()
           else if (item.action === 'toggle-type-sound') {
@@ -127,6 +130,7 @@ const CommandPaletteRow = React.memo(({ index, style, data }) => {
           if (item.action === 'new') return <Plus size={18} className="item-icon action-icon" />
           if (item.action === 'graph') return <Network size={18} className="item-icon action-icon" />
           if (item.action === 'chat') return <MessageSquare size={18} className="item-icon action-icon" />
+          if (item.action === 'docs') return <Book size={18} className="item-icon action-icon" />
           return <Zap size={18} className="item-icon action-icon" />
         })()
       ) : item.matchType === 'folder' ? (
@@ -182,7 +186,7 @@ const CommandPaletteRow = React.memo(({ index, style, data }) => {
   )
 })
 const CommandPalette = React.memo(
-  ({ isOpen, onClose, items, onSelect, onNew, onToggleSettings, onToggleGraph, onToggleChat, onRename, initialQuery = '' }) => {
+  ({ isOpen, onClose, items, onSelect, onNew, onToggleSettings, onToggleGraph, onToggleChat, onToggleDocs, onRename, initialQuery = '' }) => {
     const [query, setQuery] = useState('')
     const deferredQuery = useDeferredValue(query)
     const [selectedIndex, setSelectedIndex] = useState(0)
@@ -271,6 +275,7 @@ const CommandPalette = React.memo(
         { id: 'action-toggle-type-sound', title: `Toggle Mechanical Keyboard Sound (${settings?.typeSound ? 'On' : 'Off'})`, matchType: 'action', action: 'toggle-type-sound' },
         { id: 'action-reload-window', title: 'Developer: Reload Window', matchType: 'action', action: 'reload-window', shortcut: 'Ctrl + R' },
         { id: 'action-chat', title: 'Chat: Open AI Chat', matchType: 'action', action: 'chat', shortcut: 'Ctrl + Shift + \\' },
+        { id: 'action-docs', title: 'Docs: Open Documentation', matchType: 'action', action: 'docs' },
         { id: 'action-new', title: 'Note: Create New Snippet', matchType: 'action', action: 'new', shortcut: 'Ctrl + N' },
         { id: 'action-rename', title: 'Note: Rename Snippet', matchType: 'action', action: 'rename', shortcut: 'Ctrl + R' },
         { id: 'action-graph', title: 'Graph: Open Knowledge Nexus', matchType: 'action', action: 'graph', shortcut: 'Ctrl + G' }
@@ -435,6 +440,8 @@ const CommandPalette = React.memo(
             else if (item.action === 'new') onNew?.()
             else if (item.action === 'graph') onToggleGraph?.()
             else if (item.action === 'chat') onToggleChat?.()
+            else if (item.action === 'docs') onToggleDocs?.()
+            else if (item.action === 'rename') onRename?.()
             else if (item.action === 'reload-window') window.location.reload()
             else if (item.action === 'toggle-type-sound') {
               updateSetting('typeSound', !settings.typeSound)
@@ -464,6 +471,7 @@ const CommandPalette = React.memo(
       onToggleSettings,
       onToggleGraph,
       onToggleChat,
+      onToggleDocs,
       onRename,
       onClose,
       dirtySnippetIds,
@@ -480,6 +488,7 @@ const CommandPalette = React.memo(
       onToggleSettings,
       onToggleGraph,
       onToggleChat,
+      onToggleDocs,
       onRename,
       onClose,
       updateSetting

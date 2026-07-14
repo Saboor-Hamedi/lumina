@@ -50,11 +50,11 @@
 
 | doc | source file | lines | role |
 |-----|-------------|-------|------|
-| 02-manager.md | `src/main/VaultManager.js` | 495 | file i/o, watcher, on-disk operations |
-| 03-indexer.md | `src/main/VaultIndexer.js` | 1010 | semantic indexing, chunking, onnx embeddings |
-| 04-search.md | `src/main/VaultSearch.js` | 376 | cosine similarity, full-text search |
-| 05-store.md | `src/renderer/src/core/store/useVaultStore.js` | 440 | zustand store, tab state, dirty tracking |
-| 06-data-flow.md | (cross-cutting) | - | end-to-end flows connecting all pieces |
+| Manager.md | `src/main/VaultManager.js` | 495 | file i/o, watcher, on-disk operations |
+| Indexer.md | `src/main/VaultIndexer.js` | 1010 | semantic indexing, chunking, onnx embeddings |
+| Search.md | `src/main/VaultSearch.js` | 376 | cosine similarity, full-text search |
+| Store.md | `src/renderer/src/core/store/useVaultStore.js` | 440 | zustand store, tab state, dirty tracking |
+| DataFlow.md | (cross-cutting) | - | end-to-end flows connecting all pieces |
 
 ## ipc channels
 

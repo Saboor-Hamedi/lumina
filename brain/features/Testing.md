@@ -380,7 +380,7 @@ npm run analyze
 - electron and related toolkits
 
 **Optimization Recommendations:**
-1. **Code Splitting**: Use dynamic imports for heavy components (GraphNexus, AIChatPanel, MarkdownEditor)
+1. **Code Splitting**: Use dynamic imports for heavy components (GraphNexus, LuminaChat, MarkdownEditor)
 2. **Tree Shaking**: Ensure unused code is eliminated - check for unused imports
 3. **Lazy Loading**: Load AI models on-demand (@xenova/transformers can be loaded when needed)
 4. **Bundle Analysis**: Run `npm run analyze` to open visual bundle analyzer in browser

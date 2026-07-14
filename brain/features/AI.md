@@ -8,14 +8,14 @@ lumina has a multi-provider ai system supporting cloud apis and local models. th
 composer (chat input with slash commands)
     |
     v
-aichatpanel.jsx / aichatmodal.jsx (dual chat uis)
+LuminaChat.jsx (chat ui)
     |
     v
 useaistore.js (state management, streaming, embeddings)
     |
     +--> providers/ (deepseek, openai, anthropic, ollama)
     +--> ai.worker.js (local embeddings via @xenova/transformers)
-    +--> imagegenerationservice.js (huggingface image gen)
+    +--> index.js (factory)
 
 markdowneditor.jsx (inline ai / editor integration)
 ```
@@ -54,9 +54,6 @@ cancelGeneration()                     // aborts active stream
 generateEmbedding(text)               // vectorize text
 searchNotes(query, threshold)         // semantic search entire vault
 indexVault(snippets)                  // batch-index all notes
-
-// image generation
-generateImage(prompt)                 // huggingface inference api
 
 // session management
 saveSession()                         // persist to indexeddb
@@ -197,39 +194,31 @@ worker -> main thread:
 
 ---
 
-## 4. chat uis
+## 4. chat ui
 
-lumina has **two** chat ui implementations that share the same store:
+lumina has a chat ui implementation that uses the same store:
 
-### aichatpanel.jsx
+### LuminaChat.jsx
 
-**path:** `src/renderer/src/features/AI/AIChatPanel.jsx` (908 lines)
-
-used as a sidebar panel (right sidebar). features:
-- chat bubble rendering with react-markdown + remark-gfm
-- code blocks with copy and apply buttons
-- code blocks with `lumina-delete` language are hidden from display
-- message feedback (thumbs up/down)
-- chat history list
-- empty state when no messages
-- dark/theme-aware styling
-
-### aichatmodal.jsx
-
-**path:** `src/renderer/src/features/Overlays/AIChatModal.jsx` (954 lines)
+**path:** `src/renderer/src/features/AI/LuminaChat.jsx`
 
 a full modal overlay for ai chat. features:
 - modal header with close/minimize
 - floating mode (detached window via floatingwindowmanager)
-- same chat bubble rendering as the panel
+- chat bubble rendering with react-markdown + remark-gfm
+- code blocks with copy and apply buttons
+- code blocks with `lumina-delete` language are hidden from display
+- message feedback (thumbs up/down)
 - history panel within the modal
+- empty state when no messages
 - keyboard shortcut support
+- dark/theme-aware styling
 
 ### composer.jsx
 
 **path:** `src/renderer/src/features/AI/Composer.jsx` (162 lines)
 
-the input area shared by both chat uis:
+the input area used by the chat ui:
 - auto-resizing textarea (max 140px height)
 - mode selector dropdown
 - slash command detection (`/` prefix)
@@ -248,22 +237,10 @@ triggered by typing `/` in the composer:
 | thinking mode | think | step-by-step reasoning (cot) |
 | creative | creative | storytelling, higher temperature |
 | coder | code | specialized for programming |
-| generate image | image | pre-fills `/image ` prefix |
 | clear chat | clear | dispatches clear-chat-context event |
 
 ---
 
-## 5. image generation
-
-**path:** `src/renderer/src/features/AI/imageGenerationService.js`
-
-uses huggingface inference api:
-- endpoint: configurable (default huggingface text-to-image models)
-- api key from settings.huggingfacekey
-- generates images via main process ipc (bypasses csp)
-- images can be saved to vault assets
-
-settings for image generation are in settingsmodal → ai models tab → image generation section.
 
 ---
 
@@ -297,7 +274,7 @@ settings for image generation are in settingsmodal → ai models tab → image g
 **path:** `src/renderer/src/features/Workspace/MarkdownEditor.jsx`
 
 the markdown editor includes inline ai features:
-- inline ai modal (`/overlays/inlineaimodal.jsx`) triggered by `ctrl+k`
+- inline ai modal (`/overlays/inlineaimodal.jsx`)
 - ghost text / autocomplete suggestions (future)
 - context-aware: sends current file content as context to ai
 
@@ -328,8 +305,7 @@ when the ai creates/updates/deletes notes, the correct flow is:
 | file | lines | purpose |
 |------|-------|---------|
 | `src/renderer/src/core/store/useAIStore.js` | 1280 | ai state, streaming, embeddings, commands |
-| `src/renderer/src/features/AI/AIChatPanel.jsx` | 908 | chat ui sidebar panel |
-| `src/renderer/src/features/Overlays/AIChatModal.jsx` | 954 | chat ui modal overlay |
+| `src/renderer/src/features/AI/LuminaChat.jsx` | - | chat ui modal overlay |
 | `src/renderer/src/features/AI/Composer.jsx` | 162 | chat input with slash commands |
 | `src/renderer/src/features/AI/SlashCommandMenu.jsx` | 112 | slash command menu |
 | `src/renderer/src/features/AI/providers/BaseProvider.js` | 65 | abstract provider base |
@@ -339,7 +315,6 @@ when the ai creates/updates/deletes notes, the correct flow is:
 | `src/renderer/src/features/AI/providers/OllamaProvider.js` | - | ollama implementation |
 | `src/renderer/src/features/AI/providers/index.js` | 30 | provider factory |
 | `src/renderer/src/core/ai/ai.worker.js` | - | web worker for local embeddings |
-| `src/renderer/src/features/AI/imageGenerationService.js` | - | huggingface image generation |
 | `src/renderer/src/features/Overlays/InlineAIModal.jsx` | - | inline ai in editor |
 | `src/renderer/src/features/Settings/SettingsModal.jsx` | 841 | ai settings in modal |
 

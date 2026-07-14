@@ -2,25 +2,19 @@
 
 ## current state
 
-lumina is a note-taking app built on electron + react with a multi-model ai chat. the app has dual chat uis (panel + modal) which need unification.
+lumina is a note-taking app built on electron + react with a multi-model ai chat.
 
 ---
 
 ## architecture decisions
 
-### dual chat ui problem
+### chat ui
 
-there are two chat uis that share the same store (`useaistore.js`):
+the chat ui uses the store (`useaistore.js`):
 
-| ui | path | pros | cons |
-|----|------|------|------|
-| aichatpanel.jsx | `features/AI/AIChatPanel.jsx` (908 lines) | sidebar, always visible | consumes sidebar real estate |
-| aichatmodal.jsx | `features/Overlays/AIChatModal.jsx` (954 lines) | floating, modal | redundant code, duplication |
-
-**goal:** merge both into `aichatmodal.jsx` and remove `aichatpanel.jsx`. the modal should:
-- support both sidebar-docked and floating modes
-- have integrated history panel
-- use the same composer component
+| ui | path |
+|----|------|
+| LuminaChat.jsx | `features/AI/LuminaChat.jsx` |
 
 ### store patterns
 
@@ -48,14 +42,6 @@ store method -> ipc invoke -> main process vaultmanager -> chokidar detects chan
 ---
 
 ## known issues
-
-### ai chat panel merge
-
-the merge of aichatpanel into aichatmodal is incomplete:
-- aichatmodal.jsx has build errors (missing semicolons in import sections)
-- history panel needs to be integrated into the modal
-- floating mode from aichatmodal needs to work without aichatpanel
-- shortcut to toggle chat should consistently open the modal
 
 ### comment style
 
@@ -101,7 +87,6 @@ when enablelocalai is toggled on:
 ## future work
 
 ### high priority
-- [ ] complete aichatpanel → aichatmodal merge
 - [ ] persist embeddings to disk (indexeddb)
 - [ ] add semantic search result ranking in ui
 

@@ -12,23 +12,23 @@ The app features a multi-tab workspace with drag-reorderable pinned tabs, a know
 
 | # | File | Covers |
 |---|------|--------|
-| 01 | [Architecture](features/01-architecture.md) | Full system architecture: main process, preload bridge, renderer, data flow, vault management, settings, CodeMirror 6 integration, theme system, virtualized rendering, IPC, keyboard shortcuts, export (PDF/HTML/MD), protocol handler, performance, development standards. |
-| 02 | [AI System](features/02-ai.md) | AI system: store, providers (DeepSeek/OpenAI/Anthropic/Ollama), web worker, chat UI, composer, image gen, settings. |
-| 03 | [Testing](features/03-testing.md) | Complete testing guide: commands, test structure, coverage (93 tests), writing tests, mock patterns, bundle analysis, CI/CD, performance workbench, troubleshooting. |
-| 04 | [Roadmap](features/04-roadmap.md) | Project roadmap: completed features, immediate next steps, multi-model AI engine, test coverage goals, performance, security, distribution. |
-| 05 | [Dev Notes](features/05-devnotes.md) | Active development notes about AI chat panel merge, modal improvements, and known issues. |
+| 01 | [Architecture](features/Architecture.md) | Full system architecture: main process, preload bridge, renderer, data flow, vault management, settings, AtomicEditor / CodeMirror 6 integration, theme system, virtualized rendering, IPC, keyboard shortcuts, export (PDF/HTML/MD), protocol handler, performance, development standards. |
+| 02 | [AI System](features/AI.md) | AI system: store, providers (DeepSeek/OpenAI/Anthropic/Ollama), web worker, chat UI, composer, image gen, settings. |
+| 03 | [Testing](features/Testing.md) | Complete testing guide: commands, test structure, coverage (93 tests), writing tests, mock patterns, bundle analysis, CI/CD, performance workbench, troubleshooting. |
+| 04 | [Roadmap](features/Roadmap.md) | Project roadmap: completed features, immediate next steps, multi-model AI engine, test coverage goals, performance, security, distribution. |
+| 05 | [Dev Notes](features/DevNotes.md) | Active development notes about AI chat panel merge, modal improvements, and known issues. |
 | 06 | [Color Modal](features/colormodal.md) | General-purpose color picker: curated palette, hex input, live CSS variable preview, draggable modal, integration with Settings. |
 
 ### Vault System
 
 | # | File | Covers |
 |---|------|--------|
-| 01 | [Overview](vault/01-overview.md) | Vault architecture diagram, process split, IPC channel table, key design decisions. |
-| 02 | [Manager](vault/02-manager.md) | `VaultManager.js` deep-dive: file I/O, chokidar watcher, auto-healing, collision handling, edge cases. |
-| 03 | [Indexer](vault/03-indexer.md) | `VaultIndexer.js` deep-dive: chunking algorithm, ONNX embeddings, incremental indexing, concurrency. |
-| 04 | [Search](vault/04-search.md) | `VaultSearch.js` deep-dive: cosine similarity, re-ranking, query caching, lazy ONNX loader. |
-| 05 | [Store](vault/05-store.md) | `useVaultStore.js` deep-dive: Zustand state, tab management, dirty tracking, wikilink auto-update. |
-| 06 | [Data Flow](vault/06-data-flow.md) | End-to-end walkthroughs: save cycle, delete cycle, app startup, chokidar sync, indexing, image pipeline. |
+| 01 | [Overview](vault/Overview.md) | Vault architecture diagram, process split, IPC channel table, key design decisions. |
+| 02 | [Manager](vault/Manager.md) | `VaultManager.js` deep-dive: file I/O, chokidar watcher, auto-healing, collision handling, edge cases. |
+| 03 | [Indexer](vault/Indexer.md) | `VaultIndexer.js` deep-dive: chunking algorithm, ONNX embeddings, incremental indexing, concurrency. |
+| 04 | [Search](vault/Search.md) | `VaultSearch.js` deep-dive: cosine similarity, re-ranking, query caching, lazy ONNX loader. |
+| 05 | [Store](vault/Store.md) | `useVaultStore.js` deep-dive: Zustand state, tab management, dirty tracking, wikilink auto-update. |
+| 06 | [Data Flow](vault/DataFlow.md) | End-to-end walkthroughs: save cycle, delete cycle, app startup, chokidar sync, indexing, image pipeline. |
 
 ---
 

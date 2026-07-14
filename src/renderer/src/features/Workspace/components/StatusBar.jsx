@@ -1,5 +1,6 @@
 import React from 'react'
-const StatusBar = ({ wordCount, extension, onToggleInspector }) => {
+import ToolTip from '../../../components/atoms/ToolTip'
+const StatusBar = ({ wordCount, extension, onToggleInspector, onDocsClick }) => {
   return (
     <div className="status-bar">
       <div className="status-bar-left">
@@ -9,13 +10,23 @@ const StatusBar = ({ wordCount, extension, onToggleInspector }) => {
           {extension || 'md'}
         </span>
         <span className="separator">/</span>
-        <span
-          className="mode-toggle"
-          onClick={onToggleInspector}
-          title="Toggle Details Modal (Ctrl + \)"
-        >
-          details
-        </span>
+        <ToolTip text="Toggle Details Modal (Ctrl + \)" position="top">
+          <span
+            className="mode-toggle"
+            onClick={onToggleInspector}
+          >
+            details
+          </span>
+        </ToolTip>
+        <span className="separator">/</span>
+        <ToolTip text="Open Documentation" position="top">
+          <span
+            className="mode-toggle"
+            onClick={onDocsClick}
+          >
+            docs
+          </span>
+        </ToolTip>
       </div>
 
       <div

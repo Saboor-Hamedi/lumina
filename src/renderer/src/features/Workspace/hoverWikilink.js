@@ -6,6 +6,7 @@ import 'highlight.js/styles/atom-one-dark.css'
 export function setupWikilinkHover(wrapper, getVaultStore) {
   let hoverCard = null
   let hoverTimeout = null
+  let closeTimeout = null
   let currentTarget = null
 
   const removeCard = (resetTarget = true) => {
@@ -318,6 +319,8 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
     currentTarget = target
 
     clearTimeout(hoverTimeout)
+    clearTimeout(closeTimeout)
+    
     hoverTimeout = setTimeout(() => {
       const { snippets } = getVaultStore()
       const targetLower = target.toLowerCase()
@@ -349,6 +352,27 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
     }
   }
 
+  const handleDocumentMouseMove = (e) => {
+    const isOverLink = e.target.closest('.cm-atomic-wiki-link, .cm-atomic-wikilink-wrap')
+    const isOverCard = hoverCard && hoverCard.contains(e.target)
+
+    if (isOverLink || isOverCard) {
+      clearTimeout(closeTimeout)
+      closeTimeout = null
+    } else {
+      // If not over link or card, schedule a close (allows crossing gaps)
+      if (hoverCard || hoverTimeout) {
+        clearTimeout(hoverTimeout)
+        if (hoverCard && !closeTimeout) {
+          closeTimeout = setTimeout(() => {
+            removeCard(true)
+            closeTimeout = null
+          }, 300)
+        }
+      }
+    }
+  }
+
   const handleKeyDown = (e) => {
     if (e.key === 'Escape' && hoverCard) {
       e.preventDefault()
@@ -360,13 +384,16 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
 
   wrapper.addEventListener('mouseover', handleMouseOver)
   document.addEventListener('mousedown', handleDocumentClick)
+  document.addEventListener('mousemove', handleDocumentMouseMove)
   window.addEventListener('keydown', handleKeyDown, true)
 
   return () => {
     wrapper.removeEventListener('mouseover', handleMouseOver)
     document.removeEventListener('mousedown', handleDocumentClick)
+    document.removeEventListener('mousemove', handleDocumentMouseMove)
     window.removeEventListener('keydown', handleKeyDown, true)
     removeCard()
     clearTimeout(hoverTimeout)
+    clearTimeout(closeTimeout)
   }
 }
