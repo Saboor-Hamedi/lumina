@@ -815,16 +815,27 @@ app.whenReady().then(async () => {
     const appConfigPath = join(userDataPath, 'app_config.json')
 
     let savedVaultPath = null
-    try {
-      const configData = await fs.readFile(appConfigPath, 'utf8')
-      savedVaultPath = JSON.parse(configData).lastVaultOpened
-    } catch (e) {
-      // Fallback migration: read from old settings.json
+
+    // ── E2E test mode ──────────────────────────────────────────────────────────
+    // When launched by Playwright, LUMINA_TEST_VAULT points to a fresh temp dir.
+    // Skip reading app_config.json so the app starts with a clean empty vault
+    // and shows the welcome page, exactly as a brand-new user would see it.
+    if (process.env.LUMINA_TEST_VAULT) {
+      savedVaultPath = process.env.LUMINA_TEST_VAULT
+      console.info('[Main] E2E test mode — using temp vault:', savedVaultPath)
+    } else {
       try {
-        const oldSettings = await fs.readFile(join(userDataPath, 'settings.json'), 'utf8')
-        savedVaultPath = JSON.parse(oldSettings).vaultPath
-      } catch (err) {}
+        const configData = await fs.readFile(appConfigPath, 'utf8')
+        savedVaultPath = JSON.parse(configData).lastVaultOpened
+      } catch (e) {
+        // Fallback migration: read from old settings.json
+        try {
+          const oldSettings = await fs.readFile(join(userDataPath, 'settings.json'), 'utf8')
+          savedVaultPath = JSON.parse(oldSettings).vaultPath
+        } catch (err) {}
+      }
     }
+    // ───────────────────────────────────────────────────────────────────────────
 
     const oldDefaultPath = join(app.getPath('documents'), 'Lumina Vault')
     const newDefaultPath = join(app.getPath('documents'), 'lumina')

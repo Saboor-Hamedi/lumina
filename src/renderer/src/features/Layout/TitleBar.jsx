@@ -20,7 +20,7 @@ const TitleBar = () => {
   }, [])
 
   return (
-    <div className="title-bar">
+    <div className="title-bar" data-testid="title-bar">
       <div className="title-left">
         <div className="app-logo">
           <img
@@ -28,7 +28,7 @@ const TitleBar = () => {
             alt="Lumina Logo"
             style={{ width: 14, height: 14, objectFit: 'contain' }}
           />
-          <span className="app-name">Lumina</span>
+          <span className="app-name" data-testid="app-name">Lumina</span>
         </div>
       </div>
 
@@ -41,7 +41,7 @@ const TitleBar = () => {
       </div>
 
       <div className="title-right">
-        <div className="window-controls">
+        <div className="window-controls" data-testid="window-controls">
           <ToolTip text="Minimize" position="bottom">
             <button onClick={handleMinimize} className="control-btn">
               <Minus size={12} />

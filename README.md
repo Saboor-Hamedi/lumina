@@ -4,7 +4,8 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-1.0.2-blue" alt="version">
-  <img src="https://img.shields.io/badge/tests-93%20passed-success" alt="tests">
+  <img src="https://img.shields.io/badge/unit%20tests-117%20passed-success" alt="unit tests">
+  <img src="https://img.shields.io/badge/e2e%20tests-23%20tests-blue" alt="e2e tests">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="license">
 </p>
 
@@ -138,10 +139,11 @@ lumina/
 │   └── renderer/                # react application
 │       └── src/
 │           ├── core/
-│           │   └── store/       # zustand stores
-│           │       ├── usevaultstore.js
-│           │       ├── usesettingsstore.js
-│           │       └── useaistore.js
+│           │   ├── store/       # zustand stores
+│           │   │   ├── usevaultstore.js
+│           │   │   └── usesettingsstore.js
+│           │   └── AI/
+│           │       └── LuminaChat.js   # ai store (tools, search, history)
 │           ├── features/
 │           │   ├── ai/          # chat panel, composer, providers, worker
 │           │   ├── workspace/   # codemirror editor + extensions
@@ -150,6 +152,14 @@ lumina/
 │           │   ├── settings/    # settings modal
 │           │   └── overlays/    # modals, command palette
 │           └── components/      # shared ui components
+├── test/
+│   ├── main/                    # unit tests — main process
+│   ├── renderer/                # unit tests — react/hooks/stores
+│   └── e2e/                     # end-to-end tests (playwright)
+│       ├── helpers/launch.js    # app launcher + ipc helpers
+│       ├── app.e2e.test.js      # app launch & window tests
+│       ├── vault.e2e.test.js    # vault directory tests
+│       └── note.e2e.test.js     # note create/rename/delete
 ├── brain/                       # project documentation
 │   ├── introduction.md
 │   ├── features/                # feature deep-dives
@@ -160,13 +170,26 @@ lumina/
 ### scripts
 
 ```bash
-npm run dev              # dev server with hmr
-npm run build            # build current platform
-npm test                 # tests (watch)
-npm run test:run         # tests once
-npm run test:coverage    # coverage report
+# development
+npm run dev              # dev server with hot reload
+npm run build            # build for current platform
 npm run lint             # eslint
 npm run format           # prettier
+npm run workbench        # performance + health dashboard
+
+# unit tests (vitest)
+npm test                 # watch mode
+npm run test:run         # single run (ci)
+npm run test:coverage    # with v8 coverage report
+npm run test:watch       # alias for watch mode
+
+# e2e tests (playwright — requires npm run build first)
+npm run e2e              # run all 23 e2e tests
+npm run e2e:list         # list all e2e tests without running
+npm run e2e:debug        # open playwright inspector
+
+# combined
+npm run test:all         # unit tests + e2e back to back
 ```
 
 ### tech stack
@@ -184,14 +207,50 @@ vite 7 · electron-vite · vitest · tailwindcss 3 · electron-builder 26
 
 ## testing
 
-93 tests across 8 files covering components, stores, hooks, utils, and main process modules.
+lumina has two test layers that run independently:
+
+### unit tests — 117 tests across 12 files
+
+covers components, hooks, stores, utils, and main-process modules. uses **vitest** with jsdom. no electron, no disk i/o (mocked).
 
 ```bash
-npm test                    # watch mode
-npm run test:run            # single run
-npm run test:coverage       # with coverage
-npm test -- --grep "button" # specific pattern
+npm test                        # watch mode
+npm run test:run                # single run (ci)
+npm run test:coverage           # with v8 coverage report
 ```
+
+| suite | tests |
+|---|---|
+| VaultSearch | 21 |
+| useVaultStore | 16 |
+| graphBuilder | 13 |
+| useSettingsStore | 11 |
+| LuminaChat | 10 |
+| useUpdateStore | 9 |
+| VaultManager | 7 |
+| Button | 6 |
+| stringUtils | 6 |
+| useTheme | 6 |
+| useToast | 6 |
+| ToastNotification | 6 |
+
+### e2e tests — 23 tests across 3 files
+
+launches the **real electron app** against a fresh temp vault per test. covers the full user flow — app launch, vault operations, and note crud — against the real filesystem. uses **playwright**.
+
+> ⚠️ requires a build first: `npm run build`
+
+```bash
+npm run e2e                     # run all 23 e2e tests
+npm run e2e:list                # list tests without running
+npm run e2e:debug               # open playwright inspector
+```
+
+| suite | what's tested |
+|---|---|
+| app.e2e.test.js | launches · no js errors · title bar · welcome page |
+| vault.e2e.test.js | writable vault · note persistence · multi-note |
+| note.e2e.test.js | create · frontmatter · rename · delete · bulk · timestamp sort |
 
 ---
 
