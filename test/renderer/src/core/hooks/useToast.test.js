@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import useToast from './useToast'
+import { useToast } from '../../../../../src/renderer/src/core/hooks/useToast'
 
 describe('useToast', () => {
   beforeEach(() => {
@@ -51,9 +51,9 @@ describe('useToast', () => {
 
     expect(result.current.toast).not.toBeNull()
 
-    // Fast-forward time
+    // Fast-forward time past the 3s auto-dismiss
     act(() => {
-      vi.advanceTimersByTime(3000)
+      vi.advanceTimersByTime(3001)
     })
 
     expect(result.current.toast).toBeNull()
@@ -85,8 +85,9 @@ describe('useToast', () => {
 
     expect(result.current.toast).not.toBeNull()
 
+    // Use clearToast (exposed API) to properly clear
     act(() => {
-      result.current.showToast(null)
+      result.current.clearToast()
     })
 
     expect(result.current.toast).toBeNull()

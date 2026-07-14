@@ -357,7 +357,7 @@ class VaultManager {
       await fs.unlink(filePath)
       this.snippets.delete(id)
       console.info('[VaultManager] ✓ File deleted:', filePath)
-      return true
+      return filePath
     } catch (err) {
       console.error('[VaultManager] Delete failed:', err)
       throw err

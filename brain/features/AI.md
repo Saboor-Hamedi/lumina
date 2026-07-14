@@ -24,7 +24,7 @@ markdowneditor.jsx (inline ai / editor integration)
 
 ## 1. ai store (useaistore.js)
 
-**path:** `src/renderer/src/core/store/useAIStore.js` (1280 lines)
+**path:** `src/renderer/src/features/AI/tools/LuminaChat.js`
 
 the central state manager for all ai features. built with zustand.
 
@@ -304,7 +304,7 @@ when the ai creates/updates/deletes notes, the correct flow is:
 
 | file | lines | purpose |
 |------|-------|---------|
-| `src/renderer/src/core/store/useAIStore.js` | 1280 | ai state, streaming, embeddings, commands |
+| `src/renderer/src/features/AI/tools/LuminaChat.js` | ~1200 | ai state, streaming, embeddings, commands |
 | `src/renderer/src/features/AI/LuminaChat.jsx` | - | chat ui modal overlay |
 | `src/renderer/src/features/AI/Composer.jsx` | 162 | chat input with slash commands |
 | `src/renderer/src/features/AI/SlashCommandMenu.jsx` | 112 | slash command menu |

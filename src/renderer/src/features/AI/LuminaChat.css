@@ -21,10 +21,10 @@
 .ai-chat-modal-container {
   pointer-events: auto;
   -webkit-app-region: no-drag;
-  background: var(--bg-sidebar);
+  background: var(--bg-app);
   border: 1px solid var(--border-dim);
-  border-radius: 2px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
   min-width: 300px;
   min-height: 400px;
   display: flex;
@@ -113,9 +113,22 @@
 }
 
 .modal-clear-btn:hover {
-  background: var(--bg-active);
-  color: var(--text-main);
-  transform: none;
+  background: var(--hover-bg);
+  color: var(--text-color);
+}
+
+.mentions-scroll-container::-webkit-scrollbar {
+  height: 4px;
+}
+.mentions-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.mentions-scroll-container::-webkit-scrollbar-thumb {
+  background: var(--border-dim);
+  border-radius: 4px;
+}
+.mentions-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }
 
 .modal-clear-btn:active {
@@ -265,7 +278,7 @@
   position: relative;
   padding: 0 16px 16px;
   border-top: none;
-  background: var(--bg-sidebar); /* Span full width with background */
+  background: var(--bg-app); /* Span full width with background */
   flex-shrink: 0;
   width: 100%;
 }

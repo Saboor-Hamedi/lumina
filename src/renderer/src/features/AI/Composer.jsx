@@ -3,11 +3,17 @@ import { Send, Zap, Brain, Palette, Code, Square, ChevronDown, Loader2 } from 'l
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import './Composer.css'
 import { SlashCommandMenu } from './SlashCommandMenu'
-
+import { LuminaMention } from './LuminaMention'
+import { X } from 'lucide-react'
 export const Composer = ({ onSend, isLoading, onCancel }) => {
   const [input, setInput] = useState('')
   const [showSlashMenu, setShowSlashMenu] = useState(false)
   const [slashFilter, setSlashFilter] = useState('')
+  
+  const [showMentionMenu, setShowMentionMenu] = useState(false)
+  const [mentionFilter, setMentionFilter] = useState('')
+  const [attachedMentions, setAttachedMentions] = useState([])
+  
   const textareaRef = useRef(null)
 
   const { settings, updateSettings } = useSettingsStore()
@@ -30,14 +36,35 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
     }
   }, [input])
 
+  const prevIsLoading = useRef(isLoading)
+  useEffect(() => {
+    if (prevIsLoading.current === true && isLoading === false) {
+      setTimeout(() => {
+        textareaRef.current?.focus()
+      }, 10)
+    }
+    prevIsLoading.current = isLoading
+  }, [isLoading])
+
   const handleOnChange = (e) => {
     const newVal = e.target.value
     setInput(newVal)
+
     if (newVal.startsWith('/')) {
       setShowSlashMenu(true)
       setSlashFilter(newVal.slice(1))
+      setShowMentionMenu(false)
+      return
+    }
+
+    const mentionMatch = newVal.match(/(?:^|\s)@([^\s]*)$/)
+    if (mentionMatch) {
+      setShowMentionMenu(true)
+      setMentionFilter(mentionMatch[1])
+      setShowSlashMenu(false)
     } else {
       setShowSlashMenu(false)
+      setShowMentionMenu(false)
     }
   }
 
@@ -47,8 +74,21 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
     setShowSlashMenu(false)
   }
 
+  const handleMentionSelect = (snippet) => {
+    const regex = /(?:^|\s)@([^\s]*)$/
+    const newVal = input.replace(regex, '')
+    setInput(newVal)
+    
+    if (!attachedMentions.find(s => s.id === snippet.id)) {
+      setAttachedMentions([...attachedMentions, snippet])
+    }
+    
+    setShowMentionMenu(false)
+    textareaRef.current?.focus()
+  }
+
   const handleKeyDown = (e) => {
-    if (showSlashMenu) {
+    if (showSlashMenu || showMentionMenu) {
       if (e.key === 'Enter') {
         e.preventDefault()
         return
@@ -61,9 +101,10 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
   }
 
   const handleSend = () => {
-    if (!input.trim() || isLoading) return
-    onSend(input, mode)
+    if ((!input.trim() && attachedMentions.length === 0) || isLoading) return
+    onSend(input, mode, attachedMentions)
     setInput('')
+    setAttachedMentions([])
   }
 
   const getProviderLabel = () => {
@@ -97,8 +138,32 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
         onClose={() => setShowSlashMenu(false)}
       />
 
+      <LuminaMention
+        isOpen={showMentionMenu}
+        filterText={mentionFilter}
+        onSelect={handleMentionSelect}
+        onClose={() => setShowMentionMenu(false)}
+      />
+
       {/* Unified Card */}
       <div className="composer-card">
+        {/* Attached Mentions */}
+        {attachedMentions.length > 0 && (
+          <div className="attached-mentions-container">
+            {attachedMentions.map(mention => (
+              <div key={mention.id} className="mention-pill">
+                <span className="mention-pill-title">@{mention.title}</span>
+                <button 
+                  className="mention-pill-close"
+                  onClick={() => setAttachedMentions(prev => prev.filter(m => m.id !== mention.id))}
+                >
+                  <X size={10} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Textarea */}
         <textarea
           ref={textareaRef}
@@ -131,7 +196,7 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
             <button
               className={`send-btn ${isLoading ? 'stop' : ''}`}
               onClick={isLoading ? onCancel : handleSend}
-              disabled={!isLoading && !input.trim()}
+              disabled={!isLoading && !input.trim() && attachedMentions.length === 0}
               title={isLoading ? 'Stop generation' : 'Send (Enter)'}
             >
               {isLoading ? (

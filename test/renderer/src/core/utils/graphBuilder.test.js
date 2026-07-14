@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildGraphData, buildSemanticLinks } from './graphBuilder'
+import { buildGraphData, buildSemanticLinks } from '../../../../../src/renderer/src/core/utils/graphBuilder'
 
 describe('graphBuilder', () => {
   describe('buildGraphData', () => {

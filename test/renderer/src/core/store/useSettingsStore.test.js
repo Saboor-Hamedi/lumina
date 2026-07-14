@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { useSettingsStore } from './useSettingsStore'
+import { useSettingsStore } from '../../../../../src/renderer/src/core/store/useSettingsStore'
 
 describe('useSettingsStore', () => {
   beforeEach(() => {

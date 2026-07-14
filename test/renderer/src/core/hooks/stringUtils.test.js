@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import toCapitalized from './stringUtils'
+import toCapitalized from '../../../../../src/renderer/src/core/hooks/stringUtils'
 
 describe('stringUtils', () => {
   describe('toCapitalized', () => {

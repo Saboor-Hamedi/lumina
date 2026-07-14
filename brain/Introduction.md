@@ -40,7 +40,7 @@ The app features a multi-tab workspace with drag-reorderable pinned tabs, a know
 - Main process: `src/main/`
 - Preload bridge: `src/preload/`
 - Renderer: `src/renderer/src/`
-- Stores: `src/renderer/src/core/store/` (useVaultStore, useSettingsStore, useAIStore, useUpdateStore)
+- Stores: `src/renderer/src/core/store/` (useVaultStore, useSettingsStore, useUpdateStore) and `src/renderer/src/features/AI/tools/` (LuminaChat)
 - Features: `src/renderer/src/features/` (Layout, Editor, Explorer, Navigation, Graph, AI, Settings, Theme, Overlays, Inspector, Icons, Shared, Workspace)
 - Editor extensions: `src/renderer/src/features/Workspace/` (mermaid, wikilinks, callouts, tables, images, HTML widgets, code block headers, tag mentions, tree progress)
 - AI providers: `src/renderer/src/features/AI/providers/` (DeepSeek, OpenAI, Anthropic, Ollama) — 5 chat modes, 6 slash commands

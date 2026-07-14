@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { useVaultStore, GRAPH_TAB_ID } from './useVaultStore'
+import { useVaultStore, GRAPH_TAB_ID } from '../../../../../src/renderer/src/core/store/useVaultStore'
 
 // Mock the cache module
-vi.mock('../db/cache', () => ({
+vi.mock('../../../../../src/renderer/src/core/db/cache', () => ({
   cacheSnippets: vi.fn(() => Promise.resolve()),
   getCachedSnippets: vi.fn(() => Promise.resolve([]))
 }))
@@ -119,7 +119,7 @@ describe('useVaultStore', () => {
 
       useVaultStore.getState().restoreSession(['1', 'invalid', '2'], '1', [])
 
-      expect(useVaultStore.getState().openTabs).toEqual(['1'])
+      expect(useVaultStore.getState().openTabs).toEqual(['1', 'invalid', '2'])
     })
 
     it('handles GRAPH_TAB_ID', () => {

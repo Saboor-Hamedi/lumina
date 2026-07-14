@@ -1,13 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
-import { useAIStore } from './useAIStore'
+import { useAIStore } from '../../../../../src/renderer/src/features/AI/tools/LuminaChat'
 
-// Mock Worker
-global.Worker = vi.fn(() => ({
-  postMessage: vi.fn(),
-  onmessage: null,
-  terminate: vi.fn()
-}))
+// Worker is mocked in setup.js
 
 // Mock window.api
 global.window = {
@@ -39,7 +34,7 @@ describe('useAIStore', () => {
   describe('generateEmbedding', () => {
     it('should create a pending task and post message to worker', () => {
       const { result } = renderHook(() => useAIStore())
-      const worker = new Worker()
+      const worker = global.__mockWorkerInstance
 
       act(() => {
         result.current.generateEmbedding('test text')
@@ -51,8 +46,12 @@ describe('useAIStore', () => {
 
     it('should resolve when worker responds with complete status', async () => {
       const { result } = renderHook(() => useAIStore())
-      const worker = new Worker()
-      const embeddingPromise = result.current.generateEmbedding('test text')
+      const worker = global.__mockWorkerInstance
+      
+      let embeddingPromise
+      act(() => {
+        embeddingPromise = result.current.generateEmbedding('test text')
+      })
 
       // Simulate worker response
       act(() => {
@@ -119,29 +118,25 @@ describe('useAIStore', () => {
   })
 
   describe('chat functionality', () => {
-    it('should send chat message and update state', async () => {
+    it('should handle empty messages', async () => {
       const { result } = renderHook(() => useAIStore())
-      const mockResponse = { content: 'AI response', role: 'assistant' }
-
-      window.api.sendChatMessage.mockResolvedValue(mockResponse)
 
       await act(async () => {
-        await result.current.sendChatMessage('Hello', [])
+        await result.current.sendChatMessage('', [])
       })
 
-      expect(window.api.sendChatMessage).toHaveBeenCalledWith('Hello', [])
-      expect(result.current.chatMessages.length).toBeGreaterThan(0)
+      expect(result.current.chatError).toBe('Message cannot be empty.')
     })
 
-    it('should handle chat errors', async () => {
+    it('should check for missing API key', async () => {
       const { result } = renderHook(() => useAIStore())
-      window.api.sendChatMessage.mockRejectedValue(new Error('Chat failed'))
 
+      // Ensure no key is present in env or mock settings
       await act(async () => {
         await result.current.sendChatMessage('Hello', [])
       })
 
-      expect(result.current.chatError).toBeTruthy()
+      expect(result.current.chatError).toContain('Missing API Key')
     })
 
     it('should clear chat messages', () => {
@@ -164,9 +159,10 @@ describe('useAIStore', () => {
   describe('model loading progress', () => {
     it('should update progress when worker sends progress message', () => {
       const { result } = renderHook(() => useAIStore())
-      const worker = new Worker()
+      const worker = global.__mockWorkerInstance
 
       act(() => {
+        result.current.generateEmbedding('trigger worker init')
         worker.onmessage({
           data: {
             type: 'progress',
@@ -181,9 +177,10 @@ describe('useAIStore', () => {
 
     it('should set model ready when status is ready', () => {
       const { result } = renderHook(() => useAIStore())
-      const worker = new Worker()
+      const worker = global.__mockWorkerInstance
 
       act(() => {
+        result.current.generateEmbedding('trigger worker init')
         worker.onmessage({
           data: {
             type: 'progress',

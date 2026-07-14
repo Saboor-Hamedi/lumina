@@ -628,7 +628,19 @@ app.whenReady().then(async () => {
     return updatedSnippet
   })
   ipcMain.handle('vault:saveImage', (_, { buffer, name }) => VaultManager.saveImage(buffer, name))
-  ipcMain.handle('vault:deleteSnippet', async (_, id) => await VaultManager.deleteSnippet(id))
+  ipcMain.handle('vault:deleteSnippet', async (_, id) => {
+    try {
+      const deletedPath = await VaultManager.deleteSnippet(id)
+      if (deletedPath && typeof deletedPath === 'string') {
+        VaultIndexer.removeFile(deletedPath).catch((err) => {
+          console.error('[Main] Failed to remove deleted file from index:', err)
+        })
+      }
+      return true
+    } catch (err) {
+      throw err
+    }
+  })
   ipcMain.handle('vault:cleanOrphans', async () => await VaultManager.cleanOrphanedAssets())
 
   // Folder IPC

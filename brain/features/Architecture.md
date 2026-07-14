@@ -787,7 +787,7 @@ const data = useMemo(() => {
 
 ### AI-Powered Semantic Search
 
-**Location**: `src/renderer/src/core/store/useAIStore.js`
+**Location**: `src/renderer/src/features/AI/tools/LuminaChat.js`
 
 **Purpose**: Enable meaning-based search beyond keyword matching using local AI models.
 
@@ -796,7 +796,7 @@ const data = useMemo(() => {
 ```text
 Main Thread (React)
     ↓
-useAIStore (Zustand)
+`LuminaChat` (Zustand)
     ↓
 ai.worker.js (Web Worker)
     ↓
@@ -814,7 +814,7 @@ ai.worker.js (Web Worker)
 **API Methods:**
 
 ```javascript
-const { generateEmbedding, searchNotes, indexVault, embeddingsCache } = useAIStore()
+const { generateEmbedding, searchNotes, indexVault, embeddingsCache } = useAIStore() // Note: useAIStore is exported from LuminaChat.js
 
 // Generate embedding for text
 const vector = await generateEmbedding("machine learning algorithms")

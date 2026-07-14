@@ -4,7 +4,7 @@ import remarkGfm from 'remark-gfm'
 import { createPortal } from 'react-dom'
 import { MessageSquare, Maximize, Minimize, Minus, Trash2, ArrowDownToLine, History, Copy, ThumbsUp, ThumbsDown, Check, Send, Square, Download, X as CloseIcon, Plus, ChevronLeft, ChevronRight, Sparkles, PanelLeftClose, PanelRightClose } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
-import { useAIStore } from '../../core/store/useAIStore'
+import { useAIStore } from './tools/LuminaChat'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { getSnippetIcon } from '../Icons/iconMapper'
@@ -481,31 +481,40 @@ const LuminaChat = ({ isOpen, onClose, onUnfloat }) => {
   }
 
   const handleSendMessage = useCallback(
-    async (text, mode = 'Standard') => {
-      // 0. Base validation
-      if (!text || !text.trim()) return
+    async (text, mode = 'Standard', attachedMentions = []) => {
+      // 0. Base validation (allow empty text if there are mentions)
+      if (!text.trim() && attachedMentions.length === 0) return
 
       try {
-        // Include all open tabs as context (not just selected snippet)
         const contextSnippets = []
+        const addedIds = new Set()
 
-        // Add selected snippet first (highest priority)
-        if (selectedSnippet) {
+        // 1. Add explicitly attached mentions first (highest priority)
+        attachedMentions.forEach((snippet) => {
+          contextSnippets.push(snippet)
+          addedIds.add(snippet.id)
+        })
+
+        // 2. Add selected snippet next
+        if (selectedSnippet && !addedIds.has(selectedSnippet.id)) {
           contextSnippets.push(selectedSnippet)
+          addedIds.add(selectedSnippet.id)
         }
 
-        // Add other open tabs (excluding already added selected snippet)
+        // 3. Add other open tabs
         openTabs.forEach((tabId) => {
           const snippet = snippets.find((s) => s.id === tabId)
-          if (snippet && snippet.id !== selectedSnippet?.id) {
+          if (snippet && !addedIds.has(snippet.id)) {
             contextSnippets.push(snippet)
+            addedIds.add(snippet.id)
           }
         })
 
         // Limit to 5 most recent/important snippets to avoid token overflow
+        // We ensure explicitly attached mentions are ALWAYS included if <= 5
         const limitedContext = contextSnippets.slice(0, 5)
 
-        await sendChatMessage(text, limitedContext, mode)
+        await sendChatMessage(text, limitedContext, mode, attachedMentions)
       } catch (err) {
         console.error('Failed to send:', err)
       }
@@ -561,6 +570,24 @@ const LuminaChat = ({ isOpen, onClose, onUnfloat }) => {
           <div
             className={`chat-bubble ${msg.role}`}
           >
+            {msg.attachedMentions && msg.attachedMentions.length > 0 && (
+              <div style={{ 
+                display: 'flex', 
+                flexDirection: 'row',
+                gap: '4px', 
+                marginBottom: msg.content.trim() ? '8px' : '0',
+                overflowX: 'auto',
+                paddingBottom: '4px',
+                maxWidth: '100%',
+                flexWrap: 'nowrap'
+              }} className="mentions-scroll-container">
+                {msg.attachedMentions.map(m => (
+                  <div key={m.id} className="mention-pill" style={{ padding: '2px 6px', fontSize: '10px', flexShrink: 0 }}>
+                    <span className="mention-pill-title" style={{ maxWidth: '200px' }}>@{m.title}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             {msg.role === 'assistant' &&
             !msg.content?.trim() &&
             !msg.imageUrl &&
@@ -638,7 +665,7 @@ const LuminaChat = ({ isOpen, onClose, onUnfloat }) => {
               >
                 {showSessions ? <PanelLeftClose size={16} /> : <PanelRightClose size={16} />}
               </button>
-              <div className="theme-modal-title" style={{ fontSize: '13px', fontWeight: 600, opacity: 0.9 }}>Lumina Chat</div>
+              <div className="theme-modal-title" style={{ fontSize: '13px', fontWeight: 600, opacity: 0.9 }}>Lumina AI</div>
             </div>
           }
           right={

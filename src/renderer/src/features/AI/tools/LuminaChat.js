@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { db, openDb } from '../db/cache'
+import { db, openDb } from '../../../core/db/cache'
 
 let aiSdk
 let createDeepseekProvider
@@ -16,7 +16,7 @@ export const useAIStore = create((set, get) => {
 
   const getWorker = () => {
     if (!worker) {
-      worker = new Worker(new URL('../ai/ai.worker.js', import.meta.url), { type: 'module' })
+      worker = new Worker(new URL('../../../core/ai/ai.worker.js', import.meta.url), { type: 'module' })
 
       worker.onmessage = (e) => {
         const { type, status, id, result, progress } = e.data
@@ -414,8 +414,8 @@ export const useAIStore = create((set, get) => {
     },
 
 
-    sendChatMessage: async (message, contextSnippets = [], mode = 'Standard') => {
-      if (!message || typeof message !== 'string' || !message.trim()) {
+    sendChatMessage: async (message, contextSnippets = [], mode = 'Standard', attachedMentions = []) => {
+      if ((!message || typeof message !== 'string' || !message.trim()) && (!attachedMentions || attachedMentions.length === 0)) {
         set({ chatError: 'Message cannot be empty.' })
         return
       }
@@ -453,7 +453,7 @@ export const useAIStore = create((set, get) => {
           const generatedContent = await get().generateLocalText(prompt)
 
           // Save to vault
-          const vaultModule = await import('../../core/store/useVaultStore')
+          const vaultModule = await import('../../../core/store/useVaultStore')
           const vaultStore = vaultModule.useVaultStore.getState()
           const newSnippet = {
             id: crypto.randomUUID(),
@@ -497,7 +497,7 @@ export const useAIStore = create((set, get) => {
 
       let settings
       try {
-        const settingsModule = await import('../../core/store/useSettingsStore')
+        const settingsModule = await import('../../../core/store/useSettingsStore')
         settings = settingsModule.useSettingsStore.getState()
       } catch (err) {
         console.error('[AIStore] Failed to load settings:', err)
@@ -520,9 +520,17 @@ export const useAIStore = create((set, get) => {
       const mentions = [...message.matchAll(mentionRegex)].map((m) => m[1])
       const mentionedSnippets = []
 
+      if (attachedMentions && attachedMentions.length > 0) {
+        attachedMentions.forEach((snip) => {
+          if (!mentionedSnippets.some(ms => ms.id === snip.id)) {
+            mentionedSnippets.push(snip)
+          }
+        })
+      }
+
       if (mentions.length > 0) {
         try {
-          const vaultModule = await import('../../core/store/useVaultStore')
+          const vaultModule = await import('../../../core/store/useVaultStore')
           const vaultSnippets = vaultModule.useVaultStore.getState().snippets
           mentions.forEach((mentionTitle) => {
             const found = vaultSnippets.find(
@@ -542,7 +550,7 @@ export const useAIStore = create((set, get) => {
       // 1. Auto-detect file mentions by name (not just @mentions)
       const requestedFiles = []
       try {
-        const vaultModule = await import('../../core/store/useVaultStore')
+        const vaultModule = await import('../../../core/store/useVaultStore')
         const vaultSnippets = vaultModule.useVaultStore.getState().snippets
         const queryLower = message.toLowerCase()
         vaultSnippets.forEach((s) => {
@@ -562,7 +570,8 @@ export const useAIStore = create((set, get) => {
         id: crypto.randomUUID(),
         role: 'user',
         content: message.trim(),
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        attachedMentions: attachedMentions
       }
 
       const currentMessages = get().chatMessages || []
@@ -610,6 +619,7 @@ export const useAIStore = create((set, get) => {
         }
 
         let systemPrompt = `You are Lumina, the intelligent and friendly AI assistant built directly into this Markdown editor. You are a highly capable technical partner.
+You ONLY have access to the files and folders inside this specific Lumina vault. Do NOT claim to see the user's entire Documents folder or full computer filesystem.
 
 **STYLE & TONE**:
 - Be warm, conversational, and highly engaging. You are pairing with the user, so act like a brilliant but friendly co-pilot.
@@ -626,15 +636,22 @@ export const useAIStore = create((set, get) => {
 - 'updateFile' — replace specific text in a vault file (use search+replace)
 - 'renameFile' — rename a file (preserves folder and content) — ALWAYS use this instead of delete+create
 - 'deleteFile' — delete a vault file by title
+- 'createFolder' — create a new folder in the vault (provide path)
+- 'deleteFolder' — delete a folder and ALL its contents from the vault (provide path)
+- 'moveFile' — move a file into a specific folder (provide title and newFolderId)
+- 'openFile' — open a file in the user's editor tab so they can see it
 
 **HOW TO USE THEM**:
 - **For "add", "write more", "append"** → call appendToFile DIRECTLY. Never read first.
 - **For "rename" or "call it"** → call renameFile DIRECTLY. NEVER delete and recreate.
+- **For "move"** → call moveFile DIRECTLY to change the folder of an existing file.
+- **For "create folder"** → call createFolder DIRECTLY.
 - **For "read" or "explain" or "tell me about"** → call readFile, then describe the content.
 - **For "clear", "empty", or "wipe"** → call updateFile with content: "".
 - **For "replace" or "fix" specific text** → call updateFile with search+replace.
-- **For "delete" or "remove"** → call deleteFile directly.
-- **For "create" or "new"** → call createFile.
+- **For "delete" or "remove"** → call deleteFile directly (or deleteFolder for folders).
+- **For "create" or "new"** → call createFile (for files) or createFolder (for folders).
+- **For "open" or "look at"** → call openFile to open the file in the user's editor.
 - NEVER call readFile if the file content is already provided in this prompt.
 - When done, write a friendly summary of what you changed.
 
@@ -650,7 +667,7 @@ ${vaultAccessNote}`
 
         if (contextSnippets.length > 0) {
           systemPrompt += '\n\n**Active Tabs Context:**\n'
-          const { useVaultStore } = await import('../../core/store/useVaultStore')
+          const { useVaultStore } = await import('../../../core/store/useVaultStore')
           const vs = useVaultStore.getState()
           contextSnippets.forEach((snip) => {
             const currentCode = vs.drafts?.[snip.id] !== undefined ? vs.drafts[snip.id] : (snip.code || '')
@@ -690,19 +707,23 @@ ${vaultAccessNote}`
           '9. CRITICAL: If you need to perform multiple steps (like renaming THEN appending), DO NOT call multiple tools at once. Call the first tool, wait for it to succeed, and only THEN call the next tool.\n' +
           '\n' +
           'EXAMPLES:\n' +
-          'User: "Write hello world in Grammars" → [Call appendToFile immediately]\n' +
+          'User: "Write hello world" → [Call appendToFile immediately]\n' +
           'User: "Add one more noun" → [Call appendToFile immediately]\n' +
           'User: "Rename Grammars to SaboorGrammar" → [Call renameFile immediately]\n' +
           'User: "Clear Grammars" → [Call updateFile with title="Grammars" content="" immediately]\n' +
-          'User: "Explain Grammars" → [Call readFile immediately]'
+          'User: "Explain Grammars" → [Call readFile immediately]\n' +
+          'User: "Open Grammars" → [Call openFile immediately]'
 
         // --- Existing files list ---
         try {
-          const { useVaultStore } = await import('../../core/store/useVaultStore')
-          const allSnippets = useVaultStore.getState().snippets || []
-          if (allSnippets.length > 0) {
+          const { useVaultStore } = await import('../../../core/store/useVaultStore')
+          const vs = useVaultStore.getState()
+          const allSnippets = vs.snippets || []
+          const allFolders = vs.folders || []
+          if (allSnippets.length > 0 || allFolders.length > 0) {
             const titles = allSnippets.map((s) => s.title).join(', ')
-            systemPrompt += `\n\n**EXISTING FILES**: ${titles}\nNever create a file whose title is already in this list. Use updateFile to modify it instead.`
+            const folders = allFolders.join(', ')
+            systemPrompt += `\n\n**EXISTING FILES**: ${titles || 'None'}\n**EXISTING FOLDERS**: ${folders || 'None'}\nNever create a file or folder whose name is already in these lists. Use updateFile to modify files instead.`
           }
         } catch (_) {}
 
@@ -753,7 +774,7 @@ ${vaultAccessNote}`
         }
 
         // Initialize Provider
-        const { AIProviderFactory } = await import('../../features/AI/providers/index.js')
+        const { AIProviderFactory } = await import('../providers/index.js')
         const providerConfig = {
           apiKey,
           baseUrl: settingsObj.ollamaUrl // Only relevant for Ollama checking
@@ -787,200 +808,8 @@ ${vaultAccessNote}`
           if (providerType === 'deepseek') {
             await ensureAISdk()
 
-            const sdkTools = {
-              createFile: aiSdk.tool({
-                description: 'Create a new markdown file in the vault.',
-                inputSchema: aiSdk.jsonSchema({
-                  type: 'object',
-                  properties: {
-                    title: {
-                      type: 'string',
-                      description: 'The file title (single word, no extension)'
-                    },
-                    content: { type: 'string', description: 'Full markdown content' },
-                    folder: { type: 'string', description: 'Optional. The existing folder path to create the file in (e.g., "English"). If root, leave undefined.' }
-                  },
-                  required: ['title', 'content']
-                }),
-                execute: async ({ title, content, folder }) => {
-                  const { useVaultStore } = await import('../../core/store/useVaultStore')
-                  const vs = useVaultStore.getState()
-                  const snippet = {
-                    id: crypto.randomUUID(),
-                    title,
-                    code: content,
-                    folderId: folder || '',
-                    language: 'markdown',
-                    timestamp: Date.now()
-                  }
-                  await vs.saveSnippet(snippet)
-                  return { success: true, id: snippet.id, title, folderId: snippet.folderId, instruction_to_ai: "File created successfully! Tell the user." }
-                }
-              }),
-              readFile: !blockReadFile ? aiSdk.tool({
-                description: 'Read the contents of an existing file. Only use when file content is not already in the prompt.',
-                inputSchema: aiSdk.jsonSchema({
-                  type: 'object',
-                  properties: {
-                    title: { type: 'string', description: 'The file title' }
-                  },
-                  required: ['title']
-                }),
-                execute: async ({ title }) => {
-                  const { useVaultStore } = await import('../../core/store/useVaultStore')
-                  const vs = useVaultStore.getState()
-                  const snippets = Array.from(vs.snippets.values())
-                  let target = snippets.find((s) => s.title.toLowerCase() === title.toLowerCase())
-                  if (!target) {
-                    target = snippets.find((s) => s.title.toLowerCase().includes(title.toLowerCase()))
-                  }
-                  if (!target) return { success: false, error: 'File not found' }
-                  const currentCode = vs.drafts?.[target.id] !== undefined ? vs.drafts[target.id] : (target.code || '')
-                  return { 
-                    success: true, 
-                    content: currentCode,
-                    instruction_to_ai: "File read successfully. You MUST now respond to the user and explain or summarize this content based on their original request."
-                  }
-                }
-              }) : undefined,
-              updateFile: aiSdk.tool({
-                description:
-                  'Update an existing file. Use `search` and `replace` for targeted edits, OR provide full `content` to overwrite.',
-                inputSchema: aiSdk.jsonSchema({
-                  type: 'object',
-                  properties: {
-                    title: { type: 'string', description: 'The file title' },
-                    search: { type: 'string', description: 'Exact text to find and replace' },
-                    replace: { type: 'string', description: 'New text to insert' },
-                    content: {
-                      type: 'string',
-                      description: 'Full markdown content to overwrite the file'
-                    }
-                  },
-                  required: ['title']
-                }),
-                execute: async ({ title, search, replace, content }) => {
-                  const { useVaultStore } = await import('../../core/store/useVaultStore')
-                  const vs = useVaultStore.getState()
-                  const snippets = Array.from(vs.snippets.values())
-                  let target = snippets.find((s) => s.title.toLowerCase() === title.toLowerCase())
-                  if (!target) {
-                    target = snippets.find((s) => s.title.toLowerCase().includes(title.toLowerCase()))
-                  }
-                  if (!target) return { success: false, error: 'File not found' }
-
-                  let newCode
-                  const currentCode = vs.drafts?.[target.id] !== undefined ? vs.drafts[target.id] : (target.code || '')
-                  if (search !== undefined) {
-                    const searchLower = search.toLowerCase()
-                    if (search !== '' && !currentCode.toLowerCase().includes(searchLower)) {
-                      return { success: false, error: `Text "${search}" not found in file` }
-                    }
-                    if (search === '') {
-                      newCode = (replace ?? '') + currentCode
-                    } else {
-                      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-                      newCode = currentCode.replace(new RegExp(escapedSearch, 'gi'), replace ?? '')
-                    }
-                  } else if (content !== undefined) {
-                    newCode = content
-                  } else {
-                    return {
-                      success: false,
-                      error: 'Must provide either search/replace or full content'
-                    }
-                  }
-
-                  await vs.saveSnippet({ ...target, code: newCode })
-                  window.dispatchEvent(new CustomEvent('ai-saved-snippet', { detail: { id: target.id, code: newCode } }))
-                  return { 
-                    success: true, 
-                    title,
-                    instruction_to_ai: "File updated successfully. You MUST now respond to the user and summarize exactly what changes you made."
-                  }
-                }
-              }),
-              appendToFile: aiSdk.tool({
-                description:
-                  'Append new content to the END of an existing file. Use this when asked to ADD, WRITE MORE, or APPEND to a file. Never read the file first — this tool handles that automatically.',
-                inputSchema: aiSdk.jsonSchema({
-                  type: 'object',
-                  properties: {
-                    title: { type: 'string', description: 'The file title' },
-                    content: { type: 'string', description: 'The new content to append at the end of the file' }
-                  },
-                  required: ['title', 'content']
-                }),
-                execute: async ({ title, content }) => {
-                  const { useVaultStore } = await import('../../core/store/useVaultStore')
-                  const vs = useVaultStore.getState()
-                  const snippets = Array.from(vs.snippets.values())
-                  let target = snippets.find((s) => s.title.toLowerCase() === title.toLowerCase())
-                  if (!target) {
-                    target = snippets.find((s) => s.title.toLowerCase().includes(title.toLowerCase()))
-                  }
-                  if (!target) return { success: false, error: 'File not found' }
-                  const currentCode = vs.drafts?.[target.id] !== undefined ? vs.drafts[target.id] : (target.code || '')
-                  const separator = currentCode && currentCode.endsWith('\n') ? '\n' : (currentCode ? '\n\n' : '')
-                  const newCode = currentCode + separator + content
-                  await vs.saveSnippet({ ...target, code: newCode })
-                  window.dispatchEvent(new CustomEvent('ai-saved-snippet', { detail: { id: target.id, code: newCode } }))
-                  return { success: true, title: target.title, instruction_to_ai: 'Content added successfully. Tell the user what you did in a friendly way, but DO NOT use the word "appended".' }
-                }
-              }),
-              renameFile: aiSdk.tool({
-                description: 'Rename a file in the vault. Preserves the file folder and all content. Use this instead of delete+create when renaming.',
-                inputSchema: aiSdk.jsonSchema({
-                  type: 'object',
-                  properties: {
-                    oldTitle: { type: 'string', description: 'The current file title to rename' },
-                    newTitle: { type: 'string', description: 'The new title for the file' }
-                  },
-                  required: ['oldTitle', 'newTitle']
-                }),
-                execute: async ({ oldTitle, newTitle }) => {
-                  const { useVaultStore } = await import('../../core/store/useVaultStore')
-                  const vs = useVaultStore.getState()
-                  const snippets = Array.from(vs.snippets.values())
-                  let target = snippets.find((s) => s.title.toLowerCase() === oldTitle.toLowerCase())
-                  if (!target) {
-                    target = snippets.find((s) => s.title.toLowerCase().includes(oldTitle.toLowerCase()))
-                  }
-                  if (!target) return { success: false, error: `File "${oldTitle}" not found` }
-                  const duplicate = Array.from(vs.snippets.values()).find(
-                    (s) => s.id !== target.id && s.title.toLowerCase() === newTitle.toLowerCase()
-                  )
-                  if (duplicate) return { success: false, error: `A file named "${newTitle}" already exists` }
-                  await vs.saveSnippet({ ...target, title: newTitle })
-                  window.dispatchEvent(new CustomEvent('ai-saved-snippet', { detail: { id: target.id, code: target.code } }))
-                  return { success: true, oldTitle, newTitle, instruction_to_ai: `File renamed from "${oldTitle}" to "${newTitle}" successfully. Confirm this to the user.` }
-                }
-              }),
-              deleteFile: aiSdk.tool({
-                description: 'Delete a file from the vault.',
-                inputSchema: aiSdk.jsonSchema({
-                  type: 'object',
-                  properties: {
-                    title: { type: 'string', description: 'The file title' }
-                  },
-                  required: ['title']
-                }),
-                execute: async ({ title }) => {
-                  const { useVaultStore } = await import('../../core/store/useVaultStore')
-                  const vs = useVaultStore.getState()
-                  const snippets = Array.from(vs.snippets.values())
-                  let target = snippets.find((s) => s.title.toLowerCase() === title.toLowerCase())
-                  if (!target) {
-                    target = snippets.find((s) => s.title.toLowerCase().includes(title.toLowerCase()))
-                  }
-                  if (target) {
-                    await vs.deleteSnippet(target.id, true)
-                    return { success: true, title }
-                  }
-                  return { success: false, error: 'File not found' }
-                }
-              })
-            }
+            const { getAITools } = await import('./index.js')
+            const sdkTools = getAITools(blockReadFile)
 
             // Show a brief "working" message while the AI thinks
             set((state) => {
@@ -1143,7 +972,7 @@ ${vaultAccessNote}`
           // AUTO-APPLY LUMINA CREATE/UPDATE BLOCKS (legacy path for non-tool providers)
           if (providerType !== 'deepseek') {
             try {
-              const vaultModule = await import('../../core/store/useVaultStore')
+              const vaultModule = await import('../../../core/store/useVaultStore')
               const vaultStore = vaultModule.useVaultStore.getState()
               const allSnippets = vaultStore.snippets
               let appliedCreations = 0

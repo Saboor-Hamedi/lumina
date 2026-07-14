@@ -3,10 +3,10 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 // Mock CSS import before importing Button
-vi.mock('./Button.css', () => ({}))
-vi.mock('../../assets/button-style.css', () => ({}))
+vi.mock('../../../../../src/renderer/src/components/atoms/Button.css', () => ({}))
+vi.mock('../../../../../src/renderer/src/assets/button-style.css', () => ({}))
 
-import { Button } from './Button'
+import { Button } from '../../../../../src/renderer/src/components/atoms/Button'
 
 describe('Button Component', () => {
   it('renders with children', () => {

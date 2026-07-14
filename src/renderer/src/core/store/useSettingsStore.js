@@ -194,6 +194,8 @@ export const useSettingsStore = create((set, get) => ({
     // Apply specific side effects
     const root = document.documentElement
     if (key === 'theme') root.setAttribute('data-theme', value)
+    if (key === 'fontFamily') root.style.setProperty('--font-editor', value)
+    if (key === 'fontSize') root.style.setProperty('--font-size-editor', `${value}px`)
     if (key === 'translucency') {
       root.setAttribute('data-translucency', value ? 'true' : 'false')
       if (window.api && window.api.setTranslucency) {

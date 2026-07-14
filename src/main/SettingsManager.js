@@ -31,6 +31,12 @@ class SettingsManager {
       deepSeekKey: null,
       deepSeekModel: 'deepseek-chat',
       huggingFaceKey: null,
+      activeProvider: 'deepseek',
+      activeModel: null,
+      activeAIMode: 'Standard',
+      openaiKey: null,
+      anthropicKey: null,
+      ollamaUrl: 'http://localhost:11434/api/chat',
       // Graph Settings
       graphTheme: 'default',
       graphNodeSize: 1.5,

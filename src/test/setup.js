@@ -12,6 +12,7 @@ afterEach(() => {
 
 // Mock window.api for Electron
 global.window = global.window || {}
+global.window.dispatchEvent = vi.fn()
 global.window.api = {
   getSnippets: vi.fn(),
   saveSnippet: vi.fn(),
@@ -55,20 +56,30 @@ global.indexedDB = {
 }
 
 // Mock crypto for UUID generation
-global.crypto = {
-  randomUUID: vi.fn(() => 'mock-uuid-' + Math.random().toString(36).substr(2, 9))
+Object.defineProperty(global, 'crypto', {
+  value: {
+    randomUUID: vi.fn(() => 'mock-uuid-' + Math.random().toString(36).substr(2, 9))
+  }
+})
+
+// Shared Mock Worker instance
+const mockWorkerInstance = {
+  url: '',
+  options: {},
+  postMessage: vi.fn(),
+  onmessage: null,
+  terminate: vi.fn()
 }
 
 // Mock Worker for AI store tests
-global.Worker = class MockWorker {
-  constructor(url, options) {
-    this.url = url
-    this.options = options
-    this.postMessage = vi.fn()
-    this.onmessage = null
-    this.terminate = vi.fn()
-  }
-}
+global.Worker = vi.fn(function (url, options) {
+  mockWorkerInstance.url = url
+  mockWorkerInstance.options = options
+  return mockWorkerInstance
+})
+
+// Also expose it on global so tests can access it easily without new Worker() if they want
+global.__mockWorkerInstance = mockWorkerInstance
 
 // Mock document.addEventListener/removeEventListener for keyboard shortcuts
 const originalAddEventListener = document.addEventListener

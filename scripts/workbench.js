@@ -3,26 +3,31 @@
 /**
  * Lumina Performance Workbench
  *
- * Measures performance metrics across the entire codebase:
- * - Main process initialization
- * - Renderer initialization
- * - Vault operations
- * - Search performance
- * - Component render times
- * - Memory usage
+ * A comprehensive health dashboard covering:
+ * - Codebase structure & metrics
+ * - File I/O performance
+ * - JSON / data operations
+ * - Search simulation
+ * - Store operations
+ * - Component rendering simulation
+ * - Markdown processing
+ * - Test suite stats (run count, coverage hint)
+ * - Bundle size on disk
+ * - Dependency health
  */
 
 import { performance } from 'perf_hooks'
 import fs from 'fs/promises'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { execSync } from 'child_process'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const projectRoot = path.resolve(__dirname, '..')
 
-// ANSI colors for terminal output
-const colors = {
+// ─── ANSI helpers ────────────────────────────────────────────────────────────
+const c = {
   reset: '\x1b[0m',
   bright: '\x1b[1m',
   dim: '\x1b[2m',
@@ -31,460 +36,396 @@ const colors = {
   yellow: '\x1b[33m',
   blue: '\x1b[34m',
   magenta: '\x1b[35m',
-  cyan: '\x1b[36m'
+  cyan: '\x1b[36m',
+  white: '\x1b[37m'
+}
+const col = (color, text) => `${c[color]}${text}${c.reset}`
+const tick = col('green', '✓')
+const cross = col('red', '✗')
+const warn = col('yellow', '⚠')
+
+// ─── Utilities ───────────────────────────────────────────────────────────────
+function formatTime(ms) {
+  if (ms < 1) return `${(ms * 1000).toFixed(1)}μs`
+  if (ms < 1000) return `${ms.toFixed(2)}ms`
+  return `${(ms / 1000).toFixed(2)}s`
 }
 
-class PerformanceWorkbench {
-  constructor() {
-    this.results = {}
-    this.startTime = null
+function formatBytes(bytes) {
+  if (bytes < 0) return col('red', `-${formatBytes(-bytes)}`)
+  if (bytes < 1024) return `${bytes}B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`
+  return `${(bytes / (1024 * 1024)).toFixed(2)}MB`
+}
+
+function bar(value, max, width = 20) {
+  const filled = Math.round((value / max) * width)
+  return col('cyan', '█'.repeat(filled)) + col('dim', '░'.repeat(width - filled))
+}
+
+function header(title) {
+  const line = '─'.repeat(62)
+  console.log(`\n${col('bright', line)}`)
+  console.log(col('bright', `  ${title}`))
+  console.log(col('dim', line))
+}
+
+function row(label, value, note = '') {
+  const pad = ' '.repeat(Math.max(0, 36 - label.length))
+  console.log(`  ${col('white', label)}${pad}${value}${note ? col('dim', '  ' + note) : ''}`)
+}
+
+// ─── Measure helper ──────────────────────────────────────────────────────────
+const results = []
+
+async function measure(label, fn) {
+  const memBefore = process.memoryUsage().heapUsed
+  const t0 = performance.now()
+  let ok = true
+  let errMsg = ''
+  try {
+    await fn()
+  } catch (e) {
+    ok = false
+    errMsg = e.message
   }
+  const duration = performance.now() - t0
+  const memDelta = process.memoryUsage().heapUsed - memBefore
 
-  log(message, color = 'reset') {
-    console.info(`${colors[color]}${message}${colors.reset}`)
-  }
+  results.push({ label, duration, memDelta, ok, errMsg })
 
-  formatTime(ms) {
-    if (ms < 1) return `${(ms * 1000).toFixed(2)}μs`
-    if (ms < 1000) return `${ms.toFixed(2)}ms`
-    return `${(ms / 1000).toFixed(2)}s`
-  }
+  const status = ok ? tick : cross
+  const timeStr = col(duration > 100 ? 'yellow' : 'green', formatTime(duration))
+  const memStr = memDelta > 0 ? col('dim', ` +${formatBytes(memDelta)}`) : ''
+  console.log(`  ${status} ${label.padEnd(38)} ${timeStr}${memStr}`)
+  if (!ok) console.log(`     ${col('red', '↳ ' + errMsg)}`)
+  return ok
+}
 
-  formatBytes(bytes) {
-    if (bytes < 1024) return `${bytes}B`
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)}KB`
-    return `${(bytes / (1024 * 1024)).toFixed(2)}MB`
-  }
+// ─── Section 1: Codebase Analysis ────────────────────────────────────────────
+async function analyzeCodebase() {
+  header('📁  Codebase Analysis')
 
-  async measure(name, fn) {
-    const start = performance.now()
-    const memBefore = process.memoryUsage()
-    let result
-    let error = null
+  const stats = { files: 0, lines: 0, bytes: 0, byExt: {}, testFiles: 0, testLines: 0 }
 
-    try {
-      result = await fn()
-    } catch (err) {
-      error = err
-    }
+  async function walk(dir) {
+    let entries
+    try { entries = await fs.readdir(dir, { withFileTypes: true }) } catch { return }
+    for (const e of entries) {
+      const full = path.join(dir, e.name)
+      if (e.name.startsWith('.') || ['node_modules','build','out','dist','.workbench-test'].includes(e.name)) continue
+      if (e.isDirectory()) { await walk(full); continue }
+      if (!e.isFile()) continue
 
-    const end = performance.now()
-    const memAfter = process.memoryUsage()
-    const duration = end - start
-    const memDelta = {
-      heapUsed: memAfter.heapUsed - memBefore.heapUsed,
-      heapTotal: memAfter.heapTotal - memBefore.heapTotal,
-      external: memAfter.external - memBefore.external,
-      rss: memAfter.rss - memBefore.rss
-    }
+      const ext = path.extname(e.name) || '(none)'
+      const content = await fs.readFile(full, 'utf-8').catch(() => '')
+      const lines = content.split('\n').length
 
-    this.results[name] = {
-      duration,
-      memory: memDelta,
-      memoryAfter: memAfter,
-      error: error?.message,
-      success: !error
-    }
+      stats.files++
+      stats.lines += lines
+      stats.bytes += Buffer.byteLength(content)
+      stats.byExt[ext] = (stats.byExt[ext] || { files: 0, lines: 0 })
+      stats.byExt[ext].files++
+      stats.byExt[ext].lines += lines
 
-    const status = error ? '✗' : '✓'
-    const statusColor = error ? 'red' : 'green'
-    this.log(`  ${status} ${name}: ${this.formatTime(duration)}`, statusColor)
-
-    if (error) {
-      this.log(`    Error: ${error.message}`, 'red')
-    } else if (memDelta.heapUsed > 0) {
-      this.log(`    Memory: +${this.formatBytes(memDelta.heapUsed)}`, 'dim')
-    }
-
-    return result
-  }
-
-  async analyzeCodebase() {
-    this.log('\n📊 Analyzing Codebase Structure...', 'cyan')
-
-    const stats = {
-      totalFiles: 0,
-      totalLines: 0,
-      byType: {},
-      byDirectory: {}
-    }
-
-    async function countLines(filePath) {
-      try {
-        const content = await fs.readFile(filePath, 'utf-8')
-        return content.split('\n').length
-      } catch {
-        return 0
+      if (full.includes(`${path.sep}test${path.sep}`) || e.name.endsWith('.test.js') || e.name.endsWith('.test.jsx')) {
+        stats.testFiles++
+        stats.testLines += lines
       }
     }
-
-    async function walkDir(dir, baseDir = dir) {
-      const entries = await fs.readdir(dir, { withFileTypes: true })
-
-      for (const entry of entries) {
-        const fullPath = path.join(dir, entry.name)
-        const relPath = path.relative(baseDir, fullPath)
-
-        // Skip node_modules, build, out, .git
-        if (
-          entry.name.startsWith('.') ||
-          entry.name === 'node_modules' ||
-          entry.name === 'build' ||
-          entry.name === 'out' ||
-          entry.name === 'dist'
-        ) {
-          continue
-        }
-
-        if (entry.isDirectory()) {
-          await walkDir(fullPath, baseDir)
-        } else if (entry.isFile()) {
-          const ext = path.extname(entry.name)
-          const type = ext || 'no-ext'
-          stats.totalFiles++
-          stats.byType[type] = (stats.byType[type] || 0) + 1
-
-          const dirName = path.dirname(relPath)
-          stats.byDirectory[dirName] = (stats.byDirectory[dirName] || 0) + 1
-
-          const lines = await countLines(fullPath)
-          stats.totalLines += lines
-        }
-      }
-    }
-
-    await walkDir(path.join(projectRoot, 'src'))
-
-    this.results.codebase = stats
-    this.log(`  ✓ Total files: ${stats.totalFiles}`, 'green')
-    this.log(`  ✓ Total lines: ${stats.totalLines.toLocaleString()}`, 'green')
-
-    return stats
   }
 
-  async measureFileOperations() {
-    this.log('\n📁 Measuring File Operations...', 'cyan')
+  await walk(path.join(projectRoot, 'src'))
+  await walk(path.join(projectRoot, 'test'))
+  await walk(path.join(projectRoot, 'scripts'))
 
-    const testDir = path.join(projectRoot, '.workbench-test')
-    const testFile = path.join(testDir, 'test.md')
+  row('Source files', col('bright', stats.files.toString()))
+  row('Total lines of code', col('bright', stats.lines.toLocaleString()))
+  row('Total source size', col('bright', formatBytes(stats.bytes)))
+  row('Test files', col('cyan', stats.testFiles.toString()))
+  row('Test lines', col('cyan', stats.testLines.toLocaleString()))
 
-    try {
-      // Create test directory
-      await this.measure('Create directory', async () => {
-        await fs.mkdir(testDir, { recursive: true })
-      })
+  console.log(`\n  ${col('dim', 'Top file types:')}`)
+  Object.entries(stats.byExt)
+    .sort((a, b) => b[1].files - a[1].files)
+    .slice(0, 6)
+    .forEach(([ext, s]) => {
+      console.log(`    ${col('cyan', ext.padEnd(12))} ${String(s.files).padStart(4)} files   ${String(s.lines.toLocaleString()).padStart(8)} lines`)
+    })
 
-      // Write file
-      await this.measure('Write file (1KB)', async () => {
-        const content = '# Test\n\n' + 'x'.repeat(1000)
-        await fs.writeFile(testFile, content)
-      })
+  return stats
+}
 
-      // Read file
-      await this.measure('Read file', async () => {
-        await fs.readFile(testFile, 'utf-8')
-      })
+// ─── Section 2: Test Suite Stats ─────────────────────────────────────────────
+async function analyzeTests() {
+  header('🧪  Test Suite Stats')
 
-      // Read directory
-      await this.measure('Read directory', async () => {
-        await fs.readdir(testDir)
-      })
+  // Count test files and it() blocks
+  const testDir = path.join(projectRoot, 'test')
+  let totalTests = 0
+  let totalFiles = 0
+  const suites = []
 
-      // Stat file
-      await this.measure('Stat file', async () => {
-        await fs.stat(testFile)
-      })
+  async function walkTests(dir) {
+    let entries
+    try { entries = await fs.readdir(dir, { withFileTypes: true }) } catch { return }
+    for (const e of entries) {
+      const full = path.join(dir, e.name)
+      if (e.isDirectory()) { await walkTests(full); continue }
+      if (!e.name.endsWith('.test.js') && !e.name.endsWith('.test.jsx')) continue
 
-      // Delete file
-      await this.measure('Delete file', async () => {
-        await fs.unlink(testFile)
-      })
-
-      // Cleanup
-      await fs.rmdir(testDir)
-    } catch (err) {
-      this.log(`  ✗ File operations test failed: ${err.message}`, 'red')
+      totalFiles++
+      const content = await fs.readFile(full, 'utf-8').catch(() => '')
+      const itMatches = content.match(/^\s*it\s*\(/gm) || []
+      const count = itMatches.length
+      totalTests += count
+      suites.push({ name: e.name.replace(/\.test\.[jt]sx?$/, ''), file: path.relative(projectRoot, full), count })
     }
   }
 
-  async measureJSONOperations() {
-    this.log('\n📄 Measuring JSON Operations...', 'cyan')
+  await walkTests(testDir)
 
-    const testData = {
-      snippets: Array.from({ length: 1000 }, (_, i) => ({
-        id: `snippet-${i}`,
-        title: `Snippet ${i}`,
-        code: `# Snippet ${i}\n\nContent here...`.repeat(10),
-        language: 'markdown',
-        tags: `tag${i % 10}`,
-        timestamp: Date.now() - i * 1000
-      }))
-    }
+  row('Test suites', col('bright', totalFiles.toString()))
+  row('Total test cases', col('bright', totalTests.toString()))
 
-    await this.measure('JSON.stringify (1000 items)', async () => {
-      return JSON.stringify(testData)
+  console.log(`\n  ${col('dim', 'Suites:')}`)
+  suites.sort((a, b) => b.count - a.count).forEach(s => {
+    const b = bar(s.count, Math.max(...suites.map(x => x.count)))
+    console.log(`    ${col('white', s.name.padEnd(30))} ${b} ${String(s.count).padStart(3)} tests`)
+  })
+
+  // Run vitest in run mode and capture exit code
+  console.log(`\n  ${col('dim', 'Running test suite...')}`)
+  let passed = 0, failed = 0, duration = '?'
+  try {
+    const out = execSync('npx vitest run 2>&1', {
+      cwd: projectRoot,
+      timeout: 120000,
+      encoding: 'utf-8'
     })
-
-    const jsonString = JSON.stringify(testData)
-
-    await this.measure('JSON.parse (1000 items)', async () => {
-      return JSON.parse(jsonString)
-    })
-
-    await this.measure('JSON.parse + filter', async () => {
-      const parsed = JSON.parse(jsonString)
-      return parsed.snippets.filter((s) => s.language === 'markdown')
-    })
+    // Match: 'Tests  5 failed | 112 passed (117)' or 'Tests  117 passed (117)'
+    const passMatch = out.match(/Tests\s+(?:\d+\s+failed\s+\|\s+)?(\d+)\s+passed/)
+    const failMatch = out.match(/(\d+)\s+failed/)
+    const durMatch  = out.match(/Duration\s+([\d.]+s)/)
+    passed   = passMatch ? parseInt(passMatch[1]) : 0
+    failed   = failMatch ? parseInt(failMatch[1]) : 0
+    duration = durMatch  ? durMatch[1]            : '?'
+  } catch (e) {
+    const out = (e.stdout || '') + (e.stderr || '') + (typeof e.output === 'string' ? e.output : '')
+    const passMatch = out.match(/Tests\s+(?:\d+\s+failed\s+\|\s+)?(\d+)\s+passed/)
+    const failMatch = out.match(/(\d+)\s+failed/)
+    const durMatch  = out.match(/Duration\s+([\d.]+s)/)
+    passed   = passMatch ? parseInt(passMatch[1]) : 0
+    failed   = failMatch ? parseInt(failMatch[1]) : 0
+    duration = durMatch  ? durMatch[1]            : '?'
   }
 
-  async measureSearchOperations() {
-    this.log('\n🔍 Measuring Search Operations...', 'cyan')
+  const total = passed + failed
+  console.log()
+  row('Tests passed', col(failed === 0 ? 'green' : 'yellow', `${passed} / ${total}`))
+  if (failed > 0) row('Tests failed', col('red', failed.toString()))
+  row('Suite duration', col('bright', duration))
+}
 
-    // Simulate search index
-    const index = Array.from({ length: 5000 }, (_, i) => ({
-      id: `chunk-${i}`,
-      filePath: `file-${i % 100}.md`,
-      text: `This is chunk ${i} with some content about topic ${i % 20}`,
-      type: i % 2 === 0 ? 'snippet' : 'note',
-      embeddingOffset: i * 384 * 4,
-      embeddingLength: 384
-    }))
+// ─── Section 3: Bundle size ───────────────────────────────────────────────────
+async function analyzeBundleSize() {
+  header('📦  Bundle & Dependency Health')
 
-    // Simple text search
-    await this.measure('Text search (5000 items)', async () => {
-      const query = 'topic 5'
-      return index.filter((item) => item.text.toLowerCase().includes(query.toLowerCase()))
-    })
+  // Check node_modules size (top-level only, approximate)
+  const nmPath = path.join(projectRoot, 'node_modules')
+  let totalDeps = 0
+  try {
+    const entries = await fs.readdir(nmPath, { withFileTypes: true })
+    totalDeps = entries.filter(e => e.isDirectory() && !e.name.startsWith('.')).length
+  } catch {}
+  row('Direct node_modules folders', col('bright', totalDeps.toString()))
 
-    // Filter by type
-    await this.measure('Filter by type (5000 items)', async () => {
-      return index.filter((item) => item.type === 'snippet')
-    })
+  // package.json dep counts
+  const pkgRaw = await fs.readFile(path.join(projectRoot, 'package.json'), 'utf-8').catch(() => '{}')
+  const pkg = JSON.parse(pkgRaw)
+  const depCount = Object.keys(pkg.dependencies || {}).length
+  const devCount = Object.keys(pkg.devDependencies || {}).length
+  row('Production dependencies', col('bright', depCount.toString()))
+  row('Dev dependencies', col('dim', devCount.toString()))
 
-    // Sort by ID
-    await this.measure('Sort array (5000 items)', async () => {
-      return [...index].sort((a, b) => a.id.localeCompare(b.id))
-    })
-
-    // Map operation
-    await this.measure('Map operation (5000 items)', async () => {
-      return index.map((item) => ({ id: item.id, filePath: item.filePath }))
-    })
+  // Check if out/ (built) directory exists
+  const outPath = path.join(projectRoot, 'out')
+  let builtSize = 0
+  let builtExists = false
+  async function sizeOf(dir) {
+    let entries
+    try { entries = await fs.readdir(dir, { withFileTypes: true }) } catch { return }
+    for (const e of entries) {
+      const full = path.join(dir, e.name)
+      if (e.isDirectory()) { await sizeOf(full); continue }
+      const stat = await fs.stat(full).catch(() => null)
+      if (stat) builtSize += stat.size
+    }
   }
+  try {
+    await fs.access(outPath)
+    builtExists = true
+    await sizeOf(outPath)
+  } catch {}
 
-  async measureStoreOperations() {
-    this.log('\n💾 Measuring Store Operations...', 'cyan')
-
-    // Simulate Zustand-like store operations
-    const store = {
-      snippets: [],
-      selectedSnippet: null,
-      isLoading: false
-    }
-
-    // Initialize with data
-    const snippets = Array.from({ length: 1000 }, (_, i) => ({
-      id: `snippet-${i}`,
-      title: `Snippet ${i}`,
-      code: `Content ${i}`,
-      timestamp: Date.now() - i * 1000
-    }))
-
-    await this.measure('Store: Set 1000 snippets', async () => {
-      store.snippets = snippets
-    })
-
-    await this.measure('Store: Find snippet by ID', async () => {
-      return store.snippets.find((s) => s.id === 'snippet-500')
-    })
-
-    await this.measure('Store: Filter snippets', async () => {
-      return store.snippets.filter((s) => s.timestamp > Date.now() - 86400000)
-    })
-
-    await this.measure('Store: Update snippet', async () => {
-      store.snippets = store.snippets.map((s) =>
-        s.id === 'snippet-500' ? { ...s, title: 'Updated' } : s
-      )
-    })
-
-    await this.measure('Store: Sort snippets', async () => {
-      return [...store.snippets].sort((a, b) => b.timestamp - a.timestamp)
-    })
-  }
-
-  async measureComponentOperations() {
-    this.log('\n⚛️  Measuring Component Operations...', 'cyan')
-
-    // Simulate React component operations
-    const components = Array.from({ length: 100 }, (_, i) => ({
-      id: `component-${i}`,
-      props: { title: `Component ${i}`, count: i },
-      state: { active: i % 2 === 0 }
-    }))
-
-    await this.measure('Component: Map render (100 items)', async () => {
-      return components.map((c) => ({ ...c, rendered: true }))
-    })
-
-    await this.measure('Component: Filter active (100 items)', async () => {
-      return components.filter((c) => c.state.active)
-    })
-
-    await this.measure('Component: Reduce count (100 items)', async () => {
-      return components.reduce((sum, c) => sum + c.props.count, 0)
-    })
-  }
-
-  async measureMarkdownOperations() {
-    this.log('\n📝 Measuring Markdown Operations...', 'cyan')
-
-    const markdownContent = `# Title
-
-This is a **bold** statement and this is *italic*.
-
-## Section 1
-
-- Item 1
-- Item 2
-- Item 3
-
-\`\`\`javascript
-const code = "example";
-\`\`\`
-
-[Link](https://example.com)
-`.repeat(100)
-
-    await this.measure('Markdown: Split by lines', async () => {
-      return markdownContent.split('\n')
-    })
-
-    await this.measure('Markdown: Count words', async () => {
-      return markdownContent.trim().split(/\s+/).length
-    })
-
-    await this.measure('Markdown: Extract code blocks', async () => {
-      const matches = markdownContent.match(/```[\s\S]*?```/g)
-      return matches || []
-    })
-
-    await this.measure('Markdown: Extract links', async () => {
-      const matches = markdownContent.match(/\[([^\]]+)\]\(([^)]+)\)/g)
-      return matches || []
-    })
-  }
-
-  async generateReport() {
-    this.log('\n' + '='.repeat(60), 'bright')
-    this.log('📊 PERFORMANCE WORKBENCH REPORT', 'bright')
-    this.log('='.repeat(60), 'bright')
-
-    // Group results by category
-    const categories = {
-      'File Operations': Object.keys(this.results).filter(
-        (k) =>
-          k.includes('file') || k.includes('directory') || k.includes('Write') || k.includes('Read')
-      ),
-      'JSON Operations': Object.keys(this.results).filter((k) => k.includes('JSON')),
-      'Search Operations': Object.keys(this.results).filter(
-        (k) => k.includes('search') || k.includes('Filter') || k.includes('Sort')
-      ),
-      'Store Operations': Object.keys(this.results).filter((k) => k.includes('Store')),
-      'Component Operations': Object.keys(this.results).filter((k) => k.includes('Component')),
-      'Markdown Operations': Object.keys(this.results).filter((k) => k.includes('Markdown'))
-    }
-
-    // Summary
-    const totalTests = Object.keys(this.results).filter((k) => k !== 'codebase').length
-    const passedTests = Object.values(this.results).filter((r) => r.success !== false).length - 1 // Exclude codebase
-    const failedTests = totalTests - passedTests
-    const totalTime = Object.values(this.results)
-      .filter((r) => r.duration)
-      .reduce((sum, r) => sum + r.duration, 0)
-
-    this.log(`\n📈 Summary:`, 'cyan')
-    this.log(`  Total Tests: ${totalTests}`, 'bright')
-    this.log(`  Passed: ${passedTests}`, 'green')
-    if (failedTests > 0) {
-      this.log(`  Failed: ${failedTests}`, 'red')
-    }
-    this.log(`  Total Time: ${this.formatTime(totalTime)}`, 'bright')
-
-    // Codebase stats
-    if (this.results.codebase) {
-      this.log(`\n📁 Codebase:`, 'cyan')
-      this.log(`  Files: ${this.results.codebase.totalFiles}`, 'bright')
-      this.log(`  Lines: ${this.results.codebase.totalLines.toLocaleString()}`, 'bright')
-
-      const topTypes = Object.entries(this.results.codebase.byType)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-      this.log(`  Top file types:`, 'dim')
-      topTypes.forEach(([type, count]) => {
-        this.log(`    ${type}: ${count}`, 'dim')
-      })
-    }
-
-    // Performance by category
-    for (const [category, tests] of Object.entries(categories)) {
-      if (tests.length === 0) continue
-
-      this.log(`\n${category}:`, 'cyan')
-      const categoryTime = tests.reduce((sum, test) => {
-        return sum + (this.results[test]?.duration || 0)
-      }, 0)
-
-      tests.forEach((test) => {
-        const result = this.results[test]
-        if (!result) return
-
-        const status = result.success !== false ? '✓' : '✗'
-        const color = result.success !== false ? 'green' : 'red'
-        this.log(`  ${status} ${test}: ${this.formatTime(result.duration)}`, color)
-      })
-      this.log(`  Total: ${this.formatTime(categoryTime)}`, 'dim')
-    }
-
-    // Memory summary
-    const finalMemory = process.memoryUsage()
-    this.log(`\n💾 Memory Usage:`, 'cyan')
-    this.log(`  Heap Used: ${this.formatBytes(finalMemory.heapUsed)}`, 'bright')
-    this.log(`  Heap Total: ${this.formatBytes(finalMemory.heapTotal)}`, 'dim')
-    this.log(`  RSS: ${this.formatBytes(finalMemory.rss)}`, 'dim')
-    this.log(`  External: ${this.formatBytes(finalMemory.external)}`, 'dim')
-
-    this.log('\n' + '='.repeat(60), 'bright')
-  }
-
-  async run() {
-    this.startTime = performance.now()
-    this.log('\n🚀 Starting Lumina Performance Workbench...\n', 'bright')
-
-    try {
-      await this.analyzeCodebase()
-      await this.measureFileOperations()
-      await this.measureJSONOperations()
-      await this.measureSearchOperations()
-      await this.measureStoreOperations()
-      await this.measureComponentOperations()
-      await this.measureMarkdownOperations()
-
-      const totalTime = performance.now() - this.startTime
-      this.log(`\n✅ Workbench completed in ${this.formatTime(totalTime)}`, 'green')
-
-      await this.generateReport()
-    } catch (err) {
-      this.log(`\n❌ Workbench failed: ${err.message}`, 'red')
-      console.error(err)
-      process.exit(1)
-    }
+  if (builtExists) {
+    row('Built bundle size (out/)', col('bright', formatBytes(builtSize)))
+  } else {
+    row('Built bundle', col('dim', 'not built yet  (run npm run build)'))
   }
 }
 
-// Run workbench
-const workbench = new PerformanceWorkbench()
-workbench.run().catch((err) => {
-  console.error('Fatal error:', err)
+// ─── Section 4: File I/O Performance ─────────────────────────────────────────
+async function measureFileOps() {
+  header('📂  File I/O Performance')
+  const testDir = path.join(projectRoot, '.workbench-test')
+  const testFile = path.join(testDir, 'test.md')
+
+  try {
+    await measure('mkdir (recursive)', () => fs.mkdir(testDir, { recursive: true }))
+    await measure('write file (1 KB)', () => fs.writeFile(testFile, '# Test\n' + 'x'.repeat(1000)))
+    await measure('read file (1 KB)',  () => fs.readFile(testFile, 'utf-8'))
+    await measure('stat file',         () => fs.stat(testFile))
+    await measure('readdir',           () => fs.readdir(testDir))
+    await measure('unlink file',       () => fs.unlink(testFile))
+    await measure('rmdir',             () => fs.rm(testDir, { recursive: true, force: true }))
+  } catch (e) {
+    console.log(`  ${cross} ${col('red', e.message)}`)
+    await fs.rm(testDir, { recursive: true, force: true }).catch(() => {})
+  }
+}
+
+// ─── Section 5: Data / JSON ───────────────────────────────────────────────────
+async function measureDataOps() {
+  header('🗂️   Data & JSON Performance')
+  const items = Array.from({ length: 2000 }, (_, i) => ({
+    id: `snippet-${i}`,
+    title: `Note ${i}`,
+    code: `# Snippet ${i}\n\n${'content '.repeat(50)}`,
+    language: 'markdown',
+    tags: `tag${i % 10}`,
+    timestamp: Date.now() - i * 1000
+  }))
+
+  let json = ''
+  await measure('JSON.stringify (2000 items)', () => { json = JSON.stringify(items) })
+  await measure('JSON.parse (2000 items)',     () => JSON.parse(json))
+  await measure('Array.filter (2000 items)',   () => items.filter(s => s.language === 'markdown'))
+  await measure('Array.sort by timestamp',     () => [...items].sort((a, b) => b.timestamp - a.timestamp))
+  await measure('Map construction (2000)',     () => new Map(items.map(s => [s.id, s])))
+  await measure('Map.get by ID',              () => {
+    const m = new Map(items.map(s => [s.id, s]))
+    return m.get('snippet-1000')
+  })
+}
+
+// ─── Section 6: Search ────────────────────────────────────────────────────────
+async function measureSearchOps() {
+  header('🔍  Search Simulation')
+  const index = Array.from({ length: 5000 }, (_, i) => ({
+    id: `chunk-${i}`,
+    filePath: `file-${i % 100}.md`,
+    text: `This is chunk ${i} about topic ${i % 20} with keyword lumina`,
+    type: i % 2 === 0 ? 'snippet' : 'note'
+  }))
+
+  await measure('Full-text search (5000 chunks)',    () => index.filter(x => x.text.toLowerCase().includes('topic 5')))
+  await measure('Filter by type (5000 chunks)',      () => index.filter(x => x.type === 'snippet'))
+  await measure('Sort by ID (5000 chunks)',          () => [...index].sort((a, b) => a.id.localeCompare(b.id)))
+  await measure('Regex search (5000 chunks)',        () => index.filter(x => /topic [135]/.test(x.text)))
+  await measure('Multi-word AND search (5000)',      () => {
+    const terms = ['lumina', 'chunk']
+    return index.filter(x => terms.every(t => x.text.includes(t)))
+  })
+}
+
+// ─── Section 7: Store simulation ─────────────────────────────────────────────
+async function measureStoreOps() {
+  header('💾  Store (Zustand-like) Simulation')
+  const snippets = Array.from({ length: 1000 }, (_, i) => ({
+    id: `snippet-${i}`,
+    title: `Snippet ${i}`,
+    code: `Content ${i}`,
+    timestamp: Date.now() - i * 1000,
+    isPinned: i < 5
+  }))
+  let store = { snippets: [], selected: null }
+
+  await measure('Set 1000 snippets',        () => { store.snippets = snippets })
+  await measure('Find by ID',               () => store.snippets.find(s => s.id === 'snippet-500'))
+  await measure('Filter pinned',            () => store.snippets.filter(s => s.isPinned))
+  await measure('Immutable update snippet', () => {
+    store.snippets = store.snippets.map(s => s.id === 'snippet-500' ? { ...s, title: 'Updated' } : s)
+  })
+  await measure('Sort by timestamp',        () => [...store.snippets].sort((a, b) => b.timestamp - a.timestamp))
+}
+
+// ─── Section 8: Markdown processing ──────────────────────────────────────────
+async function measureMarkdownOps() {
+  header('📝  Markdown Processing')
+  const md = `# Title\n\n**bold** and *italic*.\n\n## Section\n\n- Item 1\n- Item 2\n\n\`\`\`js\nconst x = 1\n\`\`\`\n\n[Link](https://example.com)\n`.repeat(100)
+
+  await measure('Split by lines',         () => md.split('\n'))
+  await measure('Count words',            () => md.trim().split(/\s+/).length)
+  await measure('Extract code blocks',    () => md.match(/```[\s\S]*?```/g) || [])
+  await measure('Extract links',          () => md.match(/\[([^\]]+)\]\(([^)]+)\)/g) || [])
+  await measure('Extract headings',       () => md.match(/^#{1,6}\s+.+$/gm) || [])
+  await measure('Strip markdown syntax',  () => md.replace(/[*_`#\[\]()]/g, ''))
+}
+
+// ─── Section 9: Summary ──────────────────────────────────────────────────────
+function generateSummary(startTime) {
+  const totalTime = performance.now() - startTime
+  const passed = results.filter(r => r.ok).length
+  const failed = results.filter(r => !r.ok).length
+  const slowest = [...results].sort((a, b) => b.duration - a.duration).slice(0, 5)
+  const fastest = [...results].sort((a, b) => a.duration - b.duration).slice(0, 3)
+
+  header('📊  Workbench Summary')
+
+  const finalMem = process.memoryUsage()
+  row('Total benchmarks run', col('bright', (passed + failed).toString()))
+  row('Passed', col('green', passed.toString()))
+  if (failed > 0) row('Failed', col('red', failed.toString()))
+  row('Total workbench time', col('bright', formatTime(totalTime)))
+  row('Process heap used', col('bright', formatBytes(finalMem.heapUsed)))
+  row('Process RSS', col('dim', formatBytes(finalMem.rss)))
+
+  if (slowest.length) {
+    console.log(`\n  ${col('yellow', 'Slowest operations:')}`)
+    slowest.forEach(r => {
+      console.log(`    ${col('dim', '•')} ${r.label.padEnd(42)} ${col('yellow', formatTime(r.duration))}`)
+    })
+  }
+
+  if (fastest.length) {
+    console.log(`\n  ${col('green', 'Fastest operations:')}`)
+    fastest.forEach(r => {
+      console.log(`    ${col('dim', '•')} ${r.label.padEnd(42)} ${col('green', formatTime(r.duration))}`)
+    })
+  }
+
+  console.log(`\n${'═'.repeat(62)}\n`)
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
+const startTime = performance.now()
+console.log(`\n${col('bright', '╔══════════════════════════════════════════════════════════════╗')}`)
+console.log(`${col('bright', '║')}  ${col('cyan', '⚡  Lumina Performance Workbench')}${' '.repeat(31)}${col('bright', '║')}`)
+console.log(`${col('bright', '╚══════════════════════════════════════════════════════════════╝')}`)
+
+try {
+  await analyzeCodebase()
+  await analyzeTests()       // ← includes running the test suite
+  await analyzeBundleSize()
+  await measureFileOps()
+  await measureDataOps()
+  await measureSearchOps()
+  await measureStoreOps()
+  await measureMarkdownOps()
+  generateSummary(startTime)
+} catch (err) {
+  console.error(`\n${cross} Workbench failed: ${err.message}`)
+  console.error(err)
   process.exit(1)
-})
+}

@@ -625,6 +625,30 @@ class VaultIndexer {
   }
 
   /**
+   * Remove a file from the index and state
+   */
+  async removeFile(filePath) {
+    console.info(`[VaultIndexer] Removing ${filePath} from index`)
+    try {
+      await this.appendToIndex([], Buffer.alloc(0), [filePath])
+      await this.writeLock.lock()
+      try {
+        const state = await this.loadState()
+        if (state?.files?.[filePath]) {
+          delete state.files[filePath]
+          await fs.writeFile(this.statePath, JSON.stringify(state, null, 2), 'utf-8')
+        }
+      } finally {
+        this.writeLock.unlock()
+      }
+      return true
+    } catch (err) {
+      console.error(`[VaultIndexer] Failed to remove file from index:`, err)
+      return false
+    }
+  }
+
+  /**
    * Index entire vault directory
    */
   async indexVault(vaultPath, options = {}) {
@@ -683,6 +707,18 @@ class VaultIndexer {
       }
       const state = await this.loadState()
       console.log('[VaultIndexer] State files count:', Object.keys(state.files || {}).length)
+
+      // Detect and remove deleted files from index
+      const currentFilesSet = new Set(files)
+      const deletedFiles = Object.keys(state.files || {}).filter(f => !currentFilesSet.has(f))
+      
+      if (deletedFiles.length > 0) {
+        console.info(`[VaultIndexer] Found ${deletedFiles.length} deleted files to remove from index`)
+        await this.appendToIndex([], Buffer.alloc(0), deletedFiles)
+        for (const df of deletedFiles) {
+          delete state.files[df]
+        }
+      }
 
       const filesToProcess = []
       const batchSize = 100

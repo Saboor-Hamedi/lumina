@@ -25,7 +25,7 @@ import '../Overlays/Modals/RenameModal.css'
 
 import LuminaChat from '../AI/LuminaChat'
 import SnippetDetails from '../Inspector/SnippetDetails'
-import { useAIStore } from '../../core/store/useAIStore'
+import { useAIStore } from '../AI/tools/LuminaChat'
 import { useTypingSound } from '../../core/hooks/useTypingSound'
 import { X, Maximize2, Trash2, History, Bot, Info, MessageSquare } from 'lucide-react'
 

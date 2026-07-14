@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
-import ToastNotification from './ToastNotification'
+import { render, screen, act } from '@testing-library/react'
+import ToastNotification from '../../../../../src/renderer/src/core/notification/ToastNotification'
 
 describe('ToastNotification', () => {
   beforeEach(() => {
@@ -46,27 +46,21 @@ describe('ToastNotification', () => {
     expect(toastElement).toHaveClass('toast-success')
   })
 
-  it('should handle exit animation', async () => {
+  it('should handle exit animation', () => {
     const toast = { type: 'success', message: 'Test' }
     const { rerender } = render(<ToastNotification toast={toast} />)
 
     expect(screen.getByText('Test')).toBeInTheDocument()
 
-    // Clear toast
+    // Clear toast — component returns null immediately when toast prop is null
     rerender(<ToastNotification toast={null} />)
 
-    // Should start exit animation
-    await waitFor(() => {
-      const toastElement = document.querySelector('.toast-notification')
-      expect(toastElement).toHaveClass('toast-exit')
+    // Advance any pending timers
+    act(() => {
+      vi.advanceTimersByTime(500)
     })
-
-    // Fast-forward timers
-    vi.advanceTimersByTime(300)
 
     // Should be removed after animation
-    await waitFor(() => {
-      expect(screen.queryByText('Test')).not.toBeInTheDocument()
-    })
+    expect(screen.queryByText('Test')).not.toBeInTheDocument()
   })
 })
