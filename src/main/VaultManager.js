@@ -66,7 +66,7 @@ class VaultManager {
           await this.scanVault()
           // Notify renderer that snippets changed
           const electron = require('electron')
-          const wins = electron.BrowserWindow.getAllWindows()
+          const wins = electron.BrowserWindow?.getAllWindows() || []
           wins.forEach((win) => {
             if (!win.isDestroyed()) {
               win.webContents.send('vault:updated')

@@ -1,4 +1,5 @@
 @import './mirror-mode.css';
+@import './horizontal.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

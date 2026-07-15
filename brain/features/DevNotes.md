@@ -88,7 +88,7 @@ when enablelocalai is toggled on:
 
 ### high priority
 - [ ] persist embeddings to disk (indexeddb)
-- [ ] add semantic search result ranking in ui
+- [x] add multi-tier search result ranking & highlighting in ui (`searchRanker.js`)
 
 ### medium priority
 - [ ] add provider connection testing in settings modal

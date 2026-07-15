@@ -51,12 +51,13 @@ import ToolTip from '../../components/atoms/ToolTip'
 import { FixedSizeList as List } from '../../components/utils/VirtualList'
 import AppVersion from '../../components/AppVersion'
 import Fuse from 'fuse.js'
+import { rankSnippets } from '../../core/utils/searchRanker'
 import './FileExplorer.css'
 
 /**
  * Draggable List Item for Recommended Snippets
  */
-const SortableListItem = React.memo(({ snippet, isActive, onClick, searchQuery, depth }) => {
+const SortableListItem = React.memo(({ snippet, isActive, onClick, searchQuery, matchSnippet, depth }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: snippet.id
   })
@@ -82,6 +83,7 @@ const SortableListItem = React.memo(({ snippet, isActive, onClick, searchQuery, 
       onClick={handleClick}
       isActive={isActive}
       searchQuery={searchQuery}
+      matchSnippet={matchSnippet}
       dndProps={{ attributes, listeners, setNodeRef }}
       style={style}
     />
@@ -544,42 +546,22 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   }, [isOpen, onClose])
 
   // search
-  // 0. Fuse Index
+  // 0. Fuse Index (title + folderId, with score info)
   const fuseIndex = useMemo(() => {
     return new Fuse(snippets, {
-      keys: [{ name: 'title', weight: 3 }],
+      keys: [{ name: 'title', weight: 3 }, { name: 'folderId', weight: 1 }],
       threshold: 0.4,
-      ignoreLocation: true
+      ignoreLocation: true,
+      includeScore: true
     })
   }, [snippets])
 
-  // 1. Filtered snippets (fast - runs on every keystroke)
-  const filteredSnippets = useMemo(() => {
+  // 1. Filtered + ranked snippets — uses shared searchRanker utility
+  const { filteredSnippets, isQueryActive, matchMetaMap } = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return snippets
-
-    // 1. Fuse matches for title
-    const fuseResults = fuseIndex.search(q)
-    const fuseMatchedIds = new Set(fuseResults.map((r) => r.item.id))
-    const results = fuseResults.map((r) => r.item)
-
-    // 2. Fast string indexOf for content and folderId
-    snippets.forEach((snippet) => {
-      if (fuseMatchedIds.has(snippet.id)) return
-
-      const folderId = snippet.folderId || ''
-      if (folderId && folderId.toLowerCase().indexOf(q) !== -1) {
-        results.push(snippet)
-        return
-      }
-
-      const code = snippet.code || snippet.content || ''
-      if (code && code.toLowerCase().indexOf(q) !== -1) {
-        results.push(snippet)
-      }
-    })
-
-    return results
+    if (!q) return { filteredSnippets: snippets, isQueryActive: false, matchMetaMap: new Map() }
+    const { results, matchMetaMap } = rankSnippets(snippets, q, fuseIndex)
+    return { filteredSnippets: results, isQueryActive: true, matchMetaMap }
   }, [query, fuseIndex, snippets])
 
   // 2. Pinned items (snippets + folders)
@@ -608,6 +590,10 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   }, [snippets, settings.startMenuPinnedOrder, settings.pinnedFolders])
 
   const allSnippets = useMemo(() => {
+    // When the user has typed a query, keep the ranker's relevance order.
+    // When the search box is empty, honour the user's chosen sort.
+    if (isQueryActive) return [...filteredSnippets]
+
     let all = [...filteredSnippets]
 
     if (sortBy === 'custom' && noteOrder && noteOrder.length > 0) {
@@ -632,7 +618,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
       })
     }
     return all
-  }, [filteredSnippets, sortBy, sortDirection, noteOrder])
+  }, [filteredSnippets, isQueryActive, sortBy, sortDirection, noteOrder])
 
   // 4. Flat tree
   const flatTree = useMemo(() => {
@@ -1054,6 +1040,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
             onClick={context.handleSelect}
             isActive={index === context.selectedIndex}
             searchQuery={context.query}
+            matchSnippet={context.matchMetaMap?.get(item.snippet.id)?.matchSnippet || ''}
             depth={item.depth}
           />
         </div>

@@ -66,6 +66,8 @@ const MarkdownEditor = React.memo(
     const [isSaving, setIsSaving] = useState(false)
     const [isPreviewOpen, setIsPreviewOpen] = useState(false)
     const isMountedRef = useRef(true)
+    const autoSaveTimerRef = useRef(null)
+    const handleSaveRef = useRef(null)
 
     // Persistence Refs
     const snippetRef = useRef(snippet)
@@ -362,6 +364,7 @@ const MarkdownEditor = React.memo(
       isMountedRef.current = true
       return () => {
         isMountedRef.current = false
+        if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
         // Perform synchronous auto-save on unmount if we have unsaved changes
         const currentSettings = useSettingsStore.getState().settings
         const dirtyIds = useVaultStore.getState().dirtySnippetIds || []
@@ -391,6 +394,16 @@ const MarkdownEditor = React.memo(
         setIsDirty(true)
         setDirty(snippet?.id, true)
         useVaultStore.getState().setDraft(snippet?.id, md)
+
+        const settings = useSettingsStore.getState().settings
+        if (settings?.autoSave) {
+          if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
+          autoSaveTimerRef.current = setTimeout(() => {
+            if (isMountedRef.current && snippetRef.current?.id === snippet?.id && handleSaveRef.current) {
+              handleSaveRef.current()
+            }
+          }, 1500)
+        }
       },
       [snippet?.id, setDirty]
     )
@@ -446,17 +459,25 @@ const MarkdownEditor = React.memo(
       }
     }, [title, snippet?.id, onSave, setDirty, showToast, isSaving])
 
+    useEffect(() => {
+      handleSaveRef.current = handleSave
+    }, [handleSave])
+
     // Auto-save effect
     useEffect(() => {
       if (!snippet?.id || !isDirty) return
+      const settings = useSettingsStore.getState().settings
+      if (!settings?.autoSave) return
 
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
       const timer = setTimeout(() => {
-        if (isMountedRef.current && snippetRef.current?.id === snippet.id) {
-          handleSave()
+        if (isMountedRef.current && snippetRef.current?.id === snippet.id && handleSaveRef.current) {
+          handleSaveRef.current()
         }
-      }, 8000)
+      }, 1500)
+      autoSaveTimerRef.current = timer
       return () => clearTimeout(timer)
-    }, [isDirty, title, snippet?.id, handleSave])
+    }, [isDirty, title, snippet?.id])
 
     // Export functions
     const handleExportHTML = useCallback(async () => {

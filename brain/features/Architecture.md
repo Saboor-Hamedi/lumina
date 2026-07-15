@@ -635,24 +635,32 @@ The Nexus is fully integrated with Lumina's theme engine. Backgrounds, text toke
 
 ---
 
-### Command Palette
+### Command Palette & Multi-Tier Search Ranking
 
-**Location**: `src/renderer/src/features/Overlays/CommandPalette.jsx`
+**Locations**:
+- `src/renderer/src/features/CommandPalette/CommandPalette.jsx` (UI Overlay & Keybinding Hub)
+- `src/renderer/src/features/Search/searchRanker.js` (Multi-Tier Ranking & Highlighting Engine)
 
-**Features:**
+**Search Architecture & Ranking Hierarchy:**
+To ensure high precision across thousands of notes, client-side search (`Mod+P` / `Mod+Shift+P`) delegates scoring and match highlighting to `rankAndHighlightSnippets` in `searchRanker.js`. Results are evaluated against a structured 5-tier priority hierarchy before falling back to fuzzy matching:
+1. **Tier 1 — Exact Title Match (`Score: 100`)**: Case-insensitive exact match of the query against the note title.
+2. **Tier 2 — Title Prefix Match (`Score: 80 + coverage bonus`)**: Note title begins with the search terms.
+3. **Tier 3 — Title Substring Match (`Score: 60 + coverage bonus`)**: Search terms appear contiguously within the note title.
+4. **Tier 4 — Tag Match (`Score: 45`)**: Search terms match a metadata tag attached to the note (`#tag`).
+5. **Tier 5 — Content Substring Match (`Score: 30`)**: Search terms appear within the body of the markdown snippet.
+6. **Tier 6 — Fuzzy Fallback (`Score: 1 - 20`)**: Character-by-character fuzzy sequential matching across title or content with gap penalties.
 
-- Fuzzy search across all snippets
-- Keyboard navigation (arrow keys)
-- Quick note switching
-- Triggered by `Ctrl/Cmd + P`
+**Match Highlighting & Snippet Extraction:**
+- `searchRanker.js` returns highlighted HTML spans (`<mark class="search-highlight">...</mark>`) alongside pre-trimmed content snippets centered directly around the matched keywords (`extractMatchedSnippet`).
+- Prevents rendering raw un-trimmed markdown buffers inside search results.
 
-**UI:**
+**Search Suppression & Keybinding Intercept:**
+- Native CodeMirror find (`Mod-F`, `Mod-G`) is explicitly intercepted and sunk within the editor (`MarkdownEditor.jsx`) to prevent duplicate native search popups and reserve search control strictly for the global `CommandPalette` (`Mod+P`) and Nexus (`Mod+G`).
 
-- Modal overlay with search input
-- Virtualized results list
-- Highlight matching text
-- Escape to close
-
+**UI & Typography Design Standards:**
+- **Titles**: `font-size: 12px; font-weight: 600; color: var(--text-main)` for clean scannability.
+- **Content Snippets**: `font-size: 10px; opacity: 0.6; color: var(--text-faint)` to provide subtle, faded context beneath the title without visual clutter.
+- **Separators**: Uses `horizontal.css` (`.horizontal`) across modal boundaries.
 ---
 
 ---

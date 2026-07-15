@@ -22,6 +22,7 @@ import {
   Book
 } from 'lucide-react'
 import Fuse from 'fuse.js'
+import { rankSnippets, getHighlightRegex } from '../../core/utils/searchRanker'
 import { FixedSizeList as List } from '../../components/utils/VirtualList'
 import { useTag } from '../../core/hooks/useTag'
 import { useMention } from '../../core/hooks/useMention'
@@ -37,8 +38,9 @@ import './CommandPalette.css'
  * Memoized for performance - expensive search/filter operations.
  */
 const HighlightText = React.memo(({ text, highlight }) => {
-  if (!highlight.trim() || text === 'Semantic Match') return <span>{text}</span>
-  const regex = new RegExp(`(${highlight})`, 'gi')
+  if (!highlight?.trim() || text === 'Semantic Match' || !text) return <span>{text || ''}</span>
+  const regex = getHighlightRegex(highlight)
+  if (!regex) return <span>{text}</span>
   const parts = text.split(regex)
   return (
     <span>
@@ -155,30 +157,36 @@ const CommandPaletteRow = React.memo(({ index, style, data }) => {
       )}
 
       <div className="item-info">
-        <div className="item-title">
-          {item.folderId && item.matchType !== 'folder' && (
-            <span className="folder-prefix">{item.folderId}/</span>
-          )}
-          <HighlightText text={item.title || 'Untitled'} highlight={query} />
-          {item.id && dirtySnippetIds.includes(item.id) && (
-            <div className="dirty-indicator" style={{ marginLeft: '8px' }} />
+        <div
+          className="item-header-row"
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', minWidth: 0 }}
+        >
+          <div className="item-title">
+            {item.folderId && item.matchType !== 'folder' && (
+              <span className="folder-prefix">{item.folderId}/</span>
+            )}
+            <HighlightText text={item.title || 'Untitled'} highlight={query} />
+            {item.id && dirtySnippetIds.includes(item.id) && (
+              <div className="dirty-indicator" style={{ marginLeft: '8px' }} />
+            )}
+          </div>
+          {(item.shortcut || (item.folderPath && !item.matchSnippet)) && (
+            <div className="item-meta-right" style={{ flexShrink: 0, marginLeft: '8px' }}>
+              {item.shortcut ? (
+                <div className="palette-shortcut">
+                  {item.shortcut.split('+').map((key, i) => (
+                    <kbd key={i}>{key.trim()}</kbd>
+                  ))}
+                </div>
+              ) : (
+                <span style={{ opacity: 0.6, fontSize: '11px' }}>in {item.folderPath}</span>
+              )}
+            </div>
           )}
         </div>
-        {(item.matchSnippet || item.folderPath || item.shortcut) && (
+        {(item.matchSnippet || isSemantic) && (
           <div className={`item-secondary ${isSemantic ? 'semantic-badge' : ''}`}>
-            {isSemantic ? (
-              '✨ AI Match'
-            ) : item.shortcut ? (
-              <div className="palette-shortcut">
-                {item.shortcut.split('+').map((key, i) => (
-                  <kbd key={i}>{key.trim()}</kbd>
-                ))}
-              </div>
-            ) : item.folderPath ? (
-              <span style={{ opacity: 0.6 }}>in {item.folderPath}</span>
-            ) : (
-              <HighlightText text={item.matchSnippet} highlight={query} />
-            )}
+            {isSemantic ? '✨ AI Match' : <HighlightText text={item.matchSnippet} highlight={query} />}
           </div>
         )}
       </div>
@@ -289,54 +297,8 @@ const CommandPalette = React.memo(
       // If it's empty, return recent/all files
       if (!lowerQuery) return items.slice(0, 50)
 
-      // 1. Text Matches (Title & Folder via Fuse, Content via indexOf)
-      const fuseResults = fuseIndex.search(actionQuery)
-      const fuseMatchedIds = new Set(fuseResults.map((r) => r.item.id))
-
-      const textMatches = fuseResults.map((result) => {
-        const item = result.item
-        let matchType = 'title'
-        let matchSnippet = ''
-        let score = 10 - (result.score || 0) * 10
-
-        const bestMatch = result.matches?.[0]
-        if (bestMatch && bestMatch.key === 'folderId') {
-          matchType = 'folder-match'
-        }
-        return { ...item, matchType, matchSnippet, score }
-      })
-
-      // Fast, lightweight content search (stripped of Markdown)
-      const stripMarkdown = (text) => {
-        return text
-          .replace(/[#*_\-~`>]/g, '') // remove symbols
-          .replace(/\[(.*?)\]\(.*?\)/g, '$1') // remove links but keep text
-          .replace(/\n+/g, ' ') // replace newlines with space
-          .trim()
-      }
-
-      items.forEach((item) => {
-        if (fuseMatchedIds.has(item.id)) return
-        const code = item.code || item.content || ''
-        if (!code) return
-
-        const lowerCode = code.toLowerCase()
-        const rawIndex = lowerCode.indexOf(actionQuery)
-        
-        if (rawIndex !== -1) {
-          // Found a match! Only strip markdown from a tiny window around the match
-          const start = Math.max(0, rawIndex - 30)
-          const end = Math.min(code.length, rawIndex + actionQuery.length + 60)
-          const rawSnippetChunk = code.slice(start, end)
-          
-          const cleanSnippetChunk = stripMarkdown(rawSnippetChunk)
-          const matchSnippet = (start > 0 ? '...' : '') + cleanSnippetChunk + (end < code.length ? '...' : '')
-          
-          textMatches.push({ ...item, matchType: 'content', matchSnippet, score: 5 })
-        }
-      })
-
-      textMatches.sort((a, b) => b.score - a.score)
+      // 1. Text Matches (Title & Folder via Fuse, Content via shared rankSnippets)
+      const { results: textMatches } = rankSnippets(items, actionQuery, fuseIndex)
 
       // 2. Semantic Matches
       const existingIds = new Set(textMatches.map((i) => i.id))

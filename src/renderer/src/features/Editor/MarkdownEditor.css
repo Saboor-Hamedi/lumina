@@ -1456,23 +1456,21 @@
 
 /* --- Wiki Hover Tooltip --- */
 .cm-wiki-hover {
-  background: var(--bg-panel);
-  border: 1px solid var(--border-card);
-  border-radius: 8px;
-  max-width: 500px;
+  background: var(--bg-panel, #18181b);
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.15)) !important;
+  border-radius: 10px;
+  width: 540px;
+  max-width: calc(100vw - 48px);
   min-width: 320px;
-  width: max-content;
   z-index: var(--z-overlay, 1000);
   backdrop-filter: blur(24px);
   pointer-events: auto;
-  /* ENABLED SCROLLING */
   display: flex;
   flex-direction: column;
-  max-height: 340px;
-  /* More compact */
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 8px 32px rgba(0, 0, 0, 0.16);
-  padding: 8px;
-  overflow-x: auto; overflow-y: hidden;
+  max-height: 400px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
   user-select: text;
   animation: tooltipFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -1500,9 +1498,14 @@
 
 /* Header Section */
 .wiki-hover-header {
-  padding: 12px 12px 8px 12px;
-  border-bottom: 1px solid var(--border-dim);
+  padding: 10px 14px;
+  border-bottom: none !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   flex-shrink: 0;
+  background: var(--bg-card, rgba(0, 0, 0, 0.18));
 }
 
 .wiki-hover-title-h1 {
@@ -1528,9 +1531,9 @@
 .wiki-hover-content-wrap {
   flex: 1;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: auto;
   min-height: 100px;
-  max-height: 320px;
+  max-height: 340px;
   padding: 12px 20px;
   background: transparent;
 }
@@ -1579,6 +1582,48 @@
 .wiki-hover-content ol {
   padding-left: 20px;
   margin-bottom: 1em;
+}
+
+/* Responsive Tables inside hover card */
+.wiki-hover-content table {
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  margin: 12px 0;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.12));
+}
+
+.wiki-hover-content th,
+.wiki-hover-content td {
+  padding: 8px 10px;
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.12));
+  text-align: left;
+  font-size: 13px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+.wiki-hover-content th {
+  background: var(--bg-card, rgba(255, 255, 255, 0.08));
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.wiki-hover-content tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.wiki-hover-content blockquote {
+  margin: 12px 0;
+  padding: 8px 14px;
+  border-left: 3px solid var(--text-accent);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 0 6px 6px 0;
+  color: var(--text-muted);
 }
 
 

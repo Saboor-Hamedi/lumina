@@ -28,42 +28,22 @@ const ToastNotification = ({ toast, onClose }) => {
   const getIcon = () => {
     switch (toast.type) {
       case 'success':
-        return <CheckCircle2 size={16} className="toast-icon" />
+        return <CheckCircle2 size={15} />
       case 'error':
-        return <XCircle size={16} className="toast-icon" />
+        return <XCircle size={15} />
       default:
-        return <Info size={16} className="toast-icon" />
+        return <Info size={15} />
     }
   }
 
   return (
-    <div className={`toast-notification toast-${toast.type} ${isExiting ? 'toast-exit' : ''}`}>
-      <div className="toast-header" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <div
-          className="toast-icon-container"
-          style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-        >
+    <div className={`toast-notification horizontal toast-${toast.type} ${isExiting ? 'toast-exit' : ''}`}>
+      <div className="toast-content">
+        <div className="toast-icon-wrapper">
           {getIcon()}
         </div>
-
-        <div
-          className="toast-title-container"
-          style={{
-            flex: 1,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}
-        >
-          <span
-            className="toast-message"
-            style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-main)' }}
-          >
-            {toast.message}
-          </span>
-        </div>
-
-        <button className="toast-close" onClick={handleClose}>
+        <span className="toast-message">{toast.message}</span>
+        <button className="toast-close" onClick={handleClose} aria-label="Close notification">
           <X size={14} />
         </button>
       </div>

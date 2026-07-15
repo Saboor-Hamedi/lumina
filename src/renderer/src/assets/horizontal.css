@@ -1,0 +1,37 @@
+/* Reusable Lightweight Horizontal Line & Container Edge Utility (2px Accent, Centered with Narrow Sides like TabBar.jsx) */
+.horizontal,
+.horizontal-line {
+  position: relative;
+}
+
+.horizontal::after,
+.horizontal-line::after,
+.toast-notification::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: radial-gradient(ellipse at center, var(--text-accent) 0%, transparent 70%);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.horizontal.horizontal-top::after,
+.horizontal-line.horizontal-top::after {
+  bottom: auto;
+  top: 0;
+}
+
+/* Standalone horizontal divider element (<hr className="horizontal" /> or <div className="horizontal-divider" />) */
+hr.horizontal,
+div.horizontal-divider {
+  border: none;
+  height: 2px;
+  width: 100%;
+  margin: 6px 0;
+  background: radial-gradient(ellipse at center, var(--text-accent) 0%, transparent 70%);
+  opacity: 0.9;
+  flex-shrink: 0;
+}

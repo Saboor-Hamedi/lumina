@@ -7,6 +7,7 @@ import ConfirmModal from '../../Overlays/Modals/ConfirmModal'
 import IconModal from '../../Icons/IconModal'
 import ToolTip from '../../../components/atoms/ToolTip'
 import { getSnippetIcon } from '../../Icons/iconMapper'
+import { getHighlightRegex } from '../../../core/utils/searchRanker'
 
 const SidebarItem = ({
   snippet,
@@ -15,7 +16,8 @@ const SidebarItem = ({
   style,
   variant = 'list',
   dndProps,
-  searchQuery
+  searchQuery,
+  matchSnippet
 }) => {
   const { dirtySnippetIds, deleteSnippet, saveSnippet } = useVaultStore()
   const { togglePinnedFolder } = useSettingsStore()
@@ -85,15 +87,21 @@ const SidebarItem = ({
   }
 
   const highlightText = (text, query) => {
-    if (!query || !text) return text
-    const q = query.toLowerCase()
-    const idx = text.toLowerCase().indexOf(q)
-    if (idx === -1) return text
+    if (!query?.trim() || !text) return text || ''
+    const regex = getHighlightRegex(query)
+    if (!regex) return text
+    const parts = text.split(regex)
     return (
       <>
-        {text.substring(0, idx)}
-        <span className="cm-search-highlight">{text.substring(idx, idx + query.length)}</span>
-        {text.substring(idx + query.length)}
+        {parts.map((part, i) =>
+          regex.test(part) ? (
+            <span key={i} className="cm-search-highlight">
+              {part}
+            </span>
+          ) : (
+            part
+          )
+        )}
       </>
     )
   }
@@ -250,11 +258,30 @@ const SidebarItem = ({
           onClick={(e) => e.stopPropagation()}
         />
       ) : (
-        <ToolTip text={snippet.title || 'Untitled'} position="bottom" delay={600}>
-          <span className="item-title" style={isActive ? { color: 'var(--text-accent)' } : undefined}>
-            {highlightText(snippet.title || 'Untitled', searchQuery)}
-          </span>
-        </ToolTip>
+        <div className="item-title-col" style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+          <ToolTip text={snippet.title || 'Untitled'} position="bottom" delay={600}>
+            <span className="item-title" style={isActive ? { color: 'var(--text-accent)' } : undefined}>
+              {highlightText(snippet.title || 'Untitled', searchQuery)}
+            </span>
+          </ToolTip>
+          {matchSnippet && searchQuery?.trim() && (
+            <span
+              className="item-search-preview"
+              style={{
+                fontSize: '10px',
+                color: 'var(--text-faint)',
+                opacity: 0.65,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                marginTop: '1px',
+                lineHeight: 1.3
+              }}
+            >
+              {highlightText(matchSnippet, searchQuery)}
+            </span>
+          )}
+        </div>
       )}
 
       <div className="item-meta-right">
