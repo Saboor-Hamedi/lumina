@@ -361,6 +361,7 @@
   overflow: hidden;
   padding: 4px 8px;
   transition: background 0.15s;
+  position: relative;
 }
 
 .folder-tree-main:hover {
@@ -445,13 +446,29 @@
 }
 
 .start-section .tree-item .hover-actions,
-.folder-tree-main .hover-actions {
+.folder-tree-main .hover-actions,
+.tree-item .hover-actions {
   display: flex;
   align-items: center;
 }
 
+.start-section .tree-item .hover-actions:not(.is-pinned),
+.folder-tree-main .hover-actions:not(.is-pinned),
+.tree-item .hover-actions:not(.is-pinned) {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  z-index: 10;
+}
+
 .start-section .tree-item .action-btn,
-.folder-tree-main .action-btn {
+.folder-tree-main .action-btn,
+.tree-item .action-btn {
   background: transparent;
   border: none;
   color: var(--text-muted);
@@ -459,14 +476,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
   border-radius: 4px;
-  transition: all 0.2s;
+  transition: all 0.15s ease;
 }
 
 .start-section .tree-item .action-btn:hover,
-.folder-tree-main .action-btn:hover {
-  background: var(--bg-active);
+.folder-tree-main .action-btn:hover,
+.tree-item .action-btn:hover {
+  background: rgba(128, 128, 128, 0.2);
   color: var(--text-main);
 }
 

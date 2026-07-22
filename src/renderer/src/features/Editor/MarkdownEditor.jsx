@@ -32,6 +32,7 @@ import FindWidget from '../Workspace/components/FindWidget'
 import PreviewModal from '../Overlays/PreviewModal/PreviewModal'
 import OverwriteModal from '../Overlays/Modals/OverwriteModal'
 import RulerScrollbar from './RulerScrollbar'
+import { useZoom } from './useZoom'
 
 const updateSearchHighlights = StateEffect.define()
 
@@ -75,6 +76,12 @@ const MarkdownEditor = React.memo(
     const titleRef = useRef(null)
     const editorWrapperRef = useRef(null)
     const scrollerRef = useRef(null)
+    const zoomContainerRef = useRef(null)
+
+    useZoom({
+      containerRef: zoomContainerRef,
+      isActive
+    })
 
     const inlineMetadata = useSettingsStore((state) => state.settings?.inlineMetadata)
     const snippets = useVaultStore((state) => state.snippets)
@@ -1030,6 +1037,7 @@ const MarkdownEditor = React.memo(
     return (
       <div
         className="markdown-editor mode-source"
+        ref={zoomContainerRef}
         style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}
       >
         {showFindWidget && realViewRef.current && (

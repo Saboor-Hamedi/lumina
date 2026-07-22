@@ -261,25 +261,51 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
 
       hoverCard.dataset.noteId = noteId
     } else {
-      const notFoundWrap = document.createElement('div')
-      notFoundWrap.className = 'cm-wiki-hover horizontal not-found'
+      hoverCard.className = 'cm-wiki-hover rename-modal-style not-found-modal'
 
-      const icon = document.createElement('div')
-      icon.className = 'wiki-hover-not-found-icon'
-      icon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`
+      const contentBox = document.createElement('div')
+      contentBox.className = 'not-found-rename-box'
 
-      const text = document.createElement('div')
-      text.className = 'wiki-hover-not-found-text'
-      text.textContent = 'Note not found'
+      const titleEl = document.createElement('div')
+      titleEl.className = 'not-found-rename-title'
+      titleEl.textContent = title
 
-      const hint = document.createElement('div')
-      hint.className = 'wiki-hover-not-found-hint'
-      hint.textContent = 'Click to create it'
+      const subtitleEl = document.createElement('div')
+      subtitleEl.className = 'not-found-rename-subtitle'
+      subtitleEl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><path d="M12 5v14M5 12h14"/></svg><span>Click to create note</span>`
 
-      notFoundWrap.appendChild(icon)
-      notFoundWrap.appendChild(text)
-      notFoundWrap.appendChild(hint)
-      hoverCard.appendChild(notFoundWrap)
+      contentBox.appendChild(titleEl)
+      contentBox.appendChild(subtitleEl)
+      hoverCard.appendChild(contentBox)
+
+      contentBox.addEventListener('click', async (evt) => {
+        evt.preventDefault()
+        evt.stopPropagation()
+        try {
+          const { snippets, saveSnippet, setSelectedSnippet } = getVaultStore()
+          const targetLower = title.toLowerCase()
+          let targetSnippet = snippets?.find(
+            (s) =>
+              s.title &&
+              (s.title.toLowerCase() === targetLower || s.title.toLowerCase() === `${targetLower}.md`)
+          )
+          if (!targetSnippet) {
+            targetSnippet = {
+              id: crypto.randomUUID(),
+              title: title,
+              code: `# ${title}\n\n`,
+              language: 'markdown',
+              tags: '',
+              timestamp: Date.now()
+            }
+            if (saveSnippet) await saveSnippet(targetSnippet)
+          }
+          if (setSelectedSnippet) setSelectedSnippet(targetSnippet)
+          removeCard()
+        } catch (err) {
+          console.error('Failed to create note from hover card:', err)
+        }
+      })
     }
 
     document.body.appendChild(hoverCard)

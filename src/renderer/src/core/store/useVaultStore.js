@@ -68,6 +68,31 @@ export const useVaultStore = create((set, get) => ({
     })
   },
 
+  setActiveTabId: (id) => {
+    set((state) => {
+      if (id === GRAPH_TAB_ID) {
+        const isAlreadyOpen = state.openTabs.includes(GRAPH_TAB_ID)
+        const nextTabs = isAlreadyOpen ? state.openTabs : [...state.openTabs, GRAPH_TAB_ID]
+        return {
+          activeTabId: GRAPH_TAB_ID,
+          selectedSnippet: null,
+          openTabs: nextTabs
+        }
+      }
+      if (!id) {
+        return { activeTabId: null, selectedSnippet: null }
+      }
+      const snippet = state.snippets.find((s) => s.id === id) || null
+      const isAlreadyOpen = state.openTabs.includes(id)
+      const nextTabs = isAlreadyOpen ? state.openTabs : [...state.openTabs, id]
+      return {
+        activeTabId: id,
+        selectedSnippet: snippet,
+        openTabs: nextTabs
+      }
+    })
+  },
+
   closeTab: (id) =>
     set((state) => {
       const nextTabs = state.openTabs.filter((tid) => tid !== id)

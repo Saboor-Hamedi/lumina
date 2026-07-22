@@ -1,6 +1,6 @@
 {
   "name": "lumina",
-  "version": "1.0.25",
+  "version": "1.0.26",
   "description": "Lumina - A premium, vault-based snippet sanctuary.",
   "main": "./out/main/index.js",
   "author": "Saboor Hamedi",
@@ -32,10 +32,10 @@
     "e2e:list": "playwright test --list",
     "test:e2e": "playwright test",
     "test:all": "npm run test:run && npm run e2e",
-    "publish:win": "npm run build && electron-builder --win --publish always",
-    "publish:mac": "npm run build && electron-builder --mac --publish always",
-    "publish:linux": "npm run build && electron-builder --linux --publish always",
-    "publish:all": "npm run build && electron-builder --win --mac --linux --publish always"
+    "publish:win": "npm run build && dotenv -- electron-builder --win --publish always",
+    "publish:mac": "npm run build && dotenv -- electron-builder --mac --publish always",
+    "publish:linux": "npm run build && dotenv -- electron-builder --linux --publish always",
+    "publish:all": "npm run build && dotenv -- electron-builder --win --mac --linux --publish always"
   },
   "dependencies": {
     "@ai-sdk/deepseek": "^2.0.35",

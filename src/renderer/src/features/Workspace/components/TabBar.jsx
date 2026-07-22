@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback, useMemo, memo, useEffect } from 'react'
-import { X, Pin, MoreHorizontal, ArrowRight, Trash2, Image, PanelLeftOpen, PanelLeftClose } from 'lucide-react'
+import { X, Pin, MoreHorizontal, ArrowRight, Trash2, Image, PanelLeftOpen, PanelLeftClose, Network } from 'lucide-react'
 import { DndContext, closestCenter, useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -9,7 +9,7 @@ import {
 } from '@dnd-kit/sortable'
 import { restrictToHorizontalAxis } from '@dnd-kit/modifiers'
 import { Virtuoso } from 'react-virtuoso'
-import { useVaultStore } from '../../../core/store/useVaultStore'
+import { useVaultStore, GRAPH_TAB_ID } from '../../../core/store/useVaultStore'
 import ContextMenu from '../../Overlays/ContextMenu'
 import PromptModal from '../../Overlays/PromptModal'
 import IconModal from '../../Icons/IconModal'
@@ -30,6 +30,7 @@ const SortableTabItem = memo(
 
     const getIcon = () => {
       if (isPinned) return <Pin size={12} className="tab-icon pinned-icon" />
+      if (id === GRAPH_TAB_ID || snippet?.type === 'graph') return <Network size={12} className="tab-icon" />
       if (snippet) return getSnippetIcon(snippet, 12, 'tab-icon')
       return null
     }
@@ -90,8 +91,10 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
   const {
     openTabs,
     activeTabId,
+    selectedSnippet,
     snippets,
     setSelectedSnippet,
+    setActiveTabId,
     closeTab,
     reorderTabs,
     closeOtherTabs,
@@ -149,10 +152,9 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
 
   const handleTabClick = useCallback(
     (id) => {
-      const snippet = snippetMap.get(id)
-      if (snippet) setSelectedSnippet(snippet)
+      setActiveTabId(id)
     },
-    [snippetMap, setSelectedSnippet]
+    [setActiveTabId]
   )
 
   const handleCloseTrigger = useCallback(
@@ -240,13 +242,14 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
             <div className="tabs-container" style={{ display: 'flex', height: '100%', alignItems: 'stretch' }}>
               {openTabs.map((id) => {
                 const snippet = snippetMap.get(id)
-                if (!snippet) return null
+                if (!snippet && id !== GRAPH_TAB_ID) return null
+                const tabSnippet = snippet || (id === GRAPH_TAB_ID ? { id: GRAPH_TAB_ID, title: 'Knowledge Graph', type: 'graph' } : null)
                 return (
                   <SortableTabItem
                     key={id}
                     id={id}
-                    snippet={snippet}
-                    isActive={activeTabId === id}
+                    snippet={tabSnippet}
+                    isActive={activeTabId === id || selectedSnippet?.id === id}
                     isDirty={dirtySnippetIds.includes(id)}
                     isPinned={pinnedTabIds.includes(id)}
                     onOpen={handleTabClick}

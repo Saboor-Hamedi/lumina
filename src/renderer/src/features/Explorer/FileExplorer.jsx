@@ -17,7 +17,7 @@ import {
   Check,
   X
 } from 'lucide-react'
-import { useVaultStore } from '../../core/store/useVaultStore'
+import { useVaultStore, GRAPH_TAB_ID } from '../../core/store/useVaultStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import {
   DndContext,
@@ -216,26 +216,33 @@ const DroppableFolderItem = React.memo(
             onContextMenu(item.id, e)
           }}
         >
-          {isExpanded ? (
-            <ChevronDown size={14} className="folder-chevron" />
-          ) : (
-            <ChevronRight size={14} className="folder-chevron" />
-          )}
+          <span style={{ display: 'inline-flex', flexShrink: 0 }}>
+            {isExpanded ? (
+              <ChevronDown size={14} className="folder-chevron" />
+            ) : (
+              <ChevronRight size={14} className="folder-chevron" />
+            )}
+          </span>
           <div
             style={{
-              display: 'inline-flex',
+              display: 'flex',
               alignItems: 'center',
               gap: '8px',
               color: folderColor || undefined,
               padding: '2px 6px',
-              marginLeft: '-6px'
+              marginLeft: '-6px',
+              flex: 1,
+              minWidth: 0,
+              overflow: 'hidden'
             }}
           >
-            {isExpanded ? (
-              <FolderOpen size={14} fill={folderColor || "#e8a825"} color={folderColor || "#e8a825"} />
-            ) : (
-              <Folder size={14} fill={folderColor || "#e8a825"} color={folderColor || "#e8a825"} />
-            )}
+            <span style={{ display: 'inline-flex', flexShrink: 0 }}>
+              {isExpanded ? (
+                <FolderOpen size={14} fill={folderColor || "#e8a825"} color={folderColor || "#e8a825"} />
+              ) : (
+                <Folder size={14} fill={folderColor || "#e8a825"} color={folderColor || "#e8a825"} />
+              )}
+            </span>
             {isRenaming ? (
               <input
                 autoFocus
@@ -251,7 +258,9 @@ const DroppableFolderItem = React.memo(
               />
             ) : (
               <ToolTip text={item.name} position="bottom" delay={600}>
-                <span className="folder-name">{highlightText(item.name, searchQuery)}</span>
+                <span className="folder-name" style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+                  {highlightText(item.name, searchQuery)}
+                </span>
               </ToolTip>
             )}
           </div>
@@ -279,22 +288,6 @@ const DroppableFolderItem = React.memo(
               >
                 {item.count}
               </span>
-            )}
-            {(isHovered || isPinned) && !isRenaming && (
-              <div className="hover-actions">
-                <ToolTip text={isPinned ? 'Remove from Favorites' : 'Add to Favorites'}>
-                  <button
-                    className="action-btn"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      if (onTogglePin) onTogglePin(item.id)
-                    }}
-                    style={{ color: isPinned ? '#fbbf24' : undefined }}
-                  >
-                    <Star size={12} fill={isPinned ? 'currentColor' : 'none'} />
-                  </button>
-                </ToolTip>
-              </div>
             )}
           </div>
         </div>
@@ -440,13 +433,14 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   const folderColors = useVaultStore((state) => state.folderColors)
   const setFolderColor = useVaultStore((state) => state.setFolderColor)
   const setSelectedSnippet = useVaultStore((state) => state.setSelectedSnippet)
-  const selectedSnippetId = useVaultStore((state) => state.selectedSnippet?.id)
+  const selectedSnippetId = useVaultStore((state) => state.selectedSnippet?.id || (state.activeTabId && state.activeTabId !== GRAPH_TAB_ID ? state.activeTabId : null))
   const saveSnippet = useVaultStore((state) => state.saveSnippet)
   const loadVault = useVaultStore((state) => state.loadVault)
   const isLoading = useVaultStore((state) => state.isLoading)
 
   const clickedInExplorerRef = useRef(0)
   const lastScrolledSnippetRef = useRef(null)
+  const lastAutoExpandedSnippetRef = useRef(null)
   const expandedFoldersRef = useRef(expandedFolders)
 
   useEffect(() => {
@@ -738,11 +732,17 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     }
   }, [creating, flatTree])
 
-  // Auto-expand parent folders of active snippet
+  // Auto-expand parent folders of active snippet only when switching to a different snippet
   useEffect(() => {
     if (!selectedSnippetId) return
+    if (lastAutoExpandedSnippetRef.current === selectedSnippetId) return
     const activeSnippet = snippets.find((s) => s.id === selectedSnippetId)
-    if (!activeSnippet || !activeSnippet.folderId) return
+    if (!activeSnippet || !activeSnippet.folderId) {
+      lastAutoExpandedSnippetRef.current = selectedSnippetId
+      return
+    }
+
+    lastAutoExpandedSnippetRef.current = selectedSnippetId
 
     const foldersToExpand = []
     const parts = activeSnippet.folderId.split('/')
@@ -1038,7 +1038,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
             key={item.snippet.id}
             snippet={item.snippet}
             onClick={context.handleSelect}
-            isActive={index === context.selectedIndex}
+            isActive={item.snippet.id === context.selectedSnippetId || index === context.selectedIndex}
             searchQuery={context.query}
             matchSnippet={context.matchMetaMap?.get(item.snippet.id)?.matchSnippet || ''}
             depth={item.depth}
@@ -1524,6 +1524,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                           collapsedDuringSearch,
                           expandedFolders,
                           selectedIndex,
+                          selectedSnippetId,
                           folderColors,
                           renamingFolder,
                           renamingValue,

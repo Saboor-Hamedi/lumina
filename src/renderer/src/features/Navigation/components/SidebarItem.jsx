@@ -169,11 +169,6 @@ const SidebarItem = ({
         onMouseLeave={() => setIsHovered(false)}
         onDoubleClick={() => setIsRenaming(true)}
         style={style}
-        title={
-          isRenaming
-            ? ''
-            : `${snippet.title.replace(/[*_"#~`\[\]()]/g, '').trim()}${isDirty ? ' (Unsaved changes)' : ''}`
-        }
         {...(dndProps?.attributes || {})}
         {...(dndProps?.listeners || {})}
       >
@@ -199,9 +194,11 @@ const SidebarItem = ({
             onPointerDown={(e) => e.stopPropagation()}
           />
         ) : (
-          <span className="item-label" style={displayColor ? { color: displayColor } : undefined}>
-            {highlightText(snippet.title || 'Untitled', searchQuery)}
-          </span>
+          <ToolTip text={snippet.title || 'Untitled'} position="bottom" delay={600}>
+            <span className="item-label" style={displayColor ? { color: displayColor } : undefined}>
+              {highlightText(snippet.title || 'Untitled', searchQuery)}
+            </span>
+          </ToolTip>
         )}
 
         {modals}
@@ -229,15 +226,10 @@ const SidebarItem = ({
         ...style,
         backgroundColor: isActive ? 'var(--bg-active)' : undefined
       }}
-      title={
-        isRenaming
-          ? ''
-          : `${snippet.title.replace(/[*_"#~`\[\]()]/g, '').trim()}${isDirty ? ' (Unsaved changes)' : ''}`
-      }
       {...(dndProps?.attributes || {})}
       {...(dndProps?.listeners || {})}
     >
-      <span className="item-icon-wrap">
+      <span className="item-icon-wrap" style={{ flexShrink: 0 }}>
         {getIcon()}
       </span>
 
@@ -260,7 +252,7 @@ const SidebarItem = ({
       ) : (
         <div className="item-title-col" style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
           <ToolTip text={snippet.title || 'Untitled'} position="bottom" delay={600}>
-            <span className="item-title" style={isActive ? { color: 'var(--text-accent)' } : undefined}>
+            <span className="item-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', ...(isActive ? { color: 'var(--text-accent)' } : {}) }}>
               {highlightText(snippet.title || 'Untitled', searchQuery)}
             </span>
           </ToolTip>
@@ -286,7 +278,7 @@ const SidebarItem = ({
 
       <div className="item-meta-right">
         {(isHovered || snippet.isPinned) && !isRenaming && (
-          <div className="hover-actions">
+          <div className={`hover-actions ${snippet.isPinned ? 'is-pinned' : ''}`}>
             <ToolTip text={snippet.isPinned ? 'Remove from Favorites' : 'Add to Favorites'}>
               <button
                 className="action-btn"

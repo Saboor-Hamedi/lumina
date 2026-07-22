@@ -103,11 +103,22 @@
 /* ADD TABLES HERE - after HR, before inline code */
 .cm-atomic-table {
   display: block;
-  /* margin: 1em 0; */
   overflow-x: auto;
   position: relative !important;
   max-width: 100% !important;
   box-sizing: border-box;
+  font-size: var(--font-size-editor, 16px) !important;
+}
+
+.cm-atomic-table table,
+.cm-atomic-table th,
+.cm-atomic-table td,
+.cm-atomic-table-cell-source,
+.cm-atomic-table-cell-source .cm-content,
+.cm-atomic-table-cell-source .cm-line,
+.cm-atomic-table-cell-preview {
+  font-size: var(--font-size-editor, 16px) !important;
+  line-height: 1.5 !important;
 }
 
 .cm-atomic-table-cell-source :not(.active) > .cm-atomic-mark {
@@ -126,8 +137,8 @@
   word-wrap: break-word !important;
   overflow-wrap: break-word !important;
   white-space: normal !important;
-  max-width: 200px !important;
-  padding: 6px 10px !important;
+  max-width: calc(var(--font-size-editor, 16px) * 16) !important;
+  padding: calc(var(--font-size-editor, 16px) * 0.4) calc(var(--font-size-editor, 16px) * 0.65) !important;
   border: 1px solid var(--border-dim) !important;
 }
 
@@ -1275,12 +1286,14 @@
   table-layout: auto;
   width: max-content;
   min-width: 100%;
+  font-size: var(--font-size-editor, 16px) !important;
 }
 
 .cm-atomic-table td,
 .cm-atomic-table th {
   word-wrap: break-word;
   white-space: normal;
+  font-size: var(--font-size-editor, 16px) !important;
 }
 /* Remove table inspector highlight */
 .cm-atomic-table {
@@ -1645,31 +1658,76 @@
   opacity: 0.5;
 }
 
-/* Not Found State */
-.cm-wiki-hover.not-found {
-  padding: 16px;
-  text-align: center;
-  max-width: 280px;
+/* Not Found State Styled Like RenameModal */
+.cm-wiki-hover.rename-modal-style.not-found-modal {
+  background: var(--bg-app, #121212) !important;
+  border-radius: 8px !important;
+  padding: 14px 24px !important;
+  width: auto !important;
+  min-width: 260px !important;
+  max-width: 420px !important;
+  border: none !important;
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.15), 
+    0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+  position: absolute !important;
+  z-index: 10000 !important;
+  pointer-events: auto !important;
+  overflow: hidden !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
 }
 
-.wiki-hover-not-found-icon {
-  font-size: 32px;
-  margin-bottom: 8px;
-  opacity: 0.5;
+.cm-wiki-hover.rename-modal-style.not-found-modal::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  background: radial-gradient(ellipse at center, var(--text-accent) 0%, transparent 70%);
+  opacity: 0.8;
+  pointer-events: none;
 }
 
-.wiki-hover-not-found-text {
-  font-size: 12px;
-  font-weight: 600;
+.not-found-rename-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  transition: opacity 0.15s ease;
+}
+
+.not-found-rename-box:hover {
+  opacity: 0.85;
+}
+
+.not-found-rename-title {
+  width: 100%;
+  background: transparent;
+  border: none;
   color: var(--text-main);
-  margin-bottom: 4px;
+  font-family: var(--font-editor, 'Inter'), sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  outline: none;
+  padding: 4px 0 6px 0;
+  text-align: center;
+  word-break: break-word;
 }
 
-.wiki-hover-not-found-hint {
-  font-size: 10px;
-  color: var(--text-faint);
-  opacity: 0.7;
-  font-style: italic;
+.not-found-rename-subtitle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-accent, #60a5fa);
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 2px;
+  opacity: 0.9;
 }
 
 /* Error State */
