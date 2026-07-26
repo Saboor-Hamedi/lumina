@@ -216,10 +216,10 @@ const Documentation = ({ isOpen, onClose }) => {
         onClick={(e) => e.stopPropagation()}
         style={{ 
           flexDirection: 'column',
-          width: isMaximized ? '100%' : '85%',
-          height: isMaximized ? '100%' : '85%',
-          maxWidth: isMaximized ? 'none' : '1200px',
-          maxHeight: isMaximized ? 'none' : '850px',
+          width: isMaximized ? '100%' : '90%',
+          height: isMaximized ? '100%' : '700px',
+          maxWidth: isMaximized ? 'none' : '1000px',
+          maxHeight: isMaximized ? 'none' : '85vh',
           transform: isMaximized ? 'none' : `translate3d(${modalPos.current.x}px, ${modalPos.current.y}px, 0)`,
           transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
           boxShadow: '0 12px 40px rgba(0, 0, 0, 0.4)',

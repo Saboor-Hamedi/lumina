@@ -1,6 +1,23 @@
-import { syntaxTree } from '@codemirror/language'
+import { HighlightStyle, syntaxHighlighting, syntaxTree } from '@codemirror/language'
 import { RangeSetBuilder, StateField } from '@codemirror/state'
 import { Decoration, EditorView } from '@codemirror/view'
+import { tags as t } from '@lezer/highlight'
+
+export const luminaSyntaxHighlighting = syntaxHighlighting(
+  HighlightStyle.define([
+    { 
+      tag: [t.heading, t.heading1, t.heading2, t.heading3, t.heading4, t.heading5, t.heading6], 
+      class: 'lumina-heading-text'
+    },
+    { tag: [t.string, t.special(t.string)], class: 'lumina-syntax-string' },
+    { tag: [t.keyword, t.operatorKeyword, t.modifier], class: 'lumina-syntax-keyword' },
+    { tag: [t.comment, t.lineComment, t.blockComment], class: 'lumina-syntax-comment' },
+    { tag: [t.number, t.bool, t.null], class: 'lumina-syntax-number' },
+    { tag: [t.variableName, t.attributeName, t.propertyName], class: 'lumina-syntax-variable' },
+    { tag: [t.typeName, t.className, t.namespace], class: 'lumina-syntax-type' },
+    { tag: [t.operator, t.punctuation], class: 'lumina-syntax-operator' }
+  ])
+)
 
 export const codeMap = new Map()
 
@@ -52,7 +69,7 @@ function buildDecorations(state) {
         Decoration.line({
           class: 'cb-code-header',
           attributes: {
-            'data-cb-lang': lang,
+            'data-cb-lang': lang || 'CODE',
             'data-cb-id': String(id)
           }
         })

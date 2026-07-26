@@ -5,20 +5,24 @@ import ModalHeader from '../ModalHeader'
 import { AtomicCodeMirrorEditor, wikiLinks } from '@atomic-editor/editor'
 import { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
+import { languages } from '@codemirror/language-data'
 import { useVaultStore } from '../../../core/store/useVaultStore'
 import { imageWidgetExtension } from '../../Workspace/imageWidgetExtension'
 import { htmlWidgetExtension } from '../../Workspace/htmlWidgetExtension'
 import { tables } from '../../Workspace/tableWidgetExtension'
 import { mermaidWidgetExtension } from '../../Workspace/mermaidWidgetExtension'
-import { codeBlockDecorations } from '../../Workspace/codeBlockHeader'
+import { calloutExtension } from '../../Workspace/calloutWidgetExtension'
+import { codeBlockDecorations, codeMap, luminaSyntaxHighlighting } from '../../Workspace/codeBlockHeader'
 import '@atomic-editor/editor/styles.css'
 import '../../Editor/MarkdownEditor.css'
 import '../../Editor/CodeWrapper.css'
 import '../../Theme/ThemeModal.css'
+import './PreviewModal.css'
 import { useKeyboardShortcuts } from '../../../core/hooks/useKeyboardShortcuts'
 
 const PreviewModal = ({ isOpen, onClose, title, content }) => {
   const [shouldRenderEditor, setShouldRenderEditor] = useState(false)
+  const [copiedBlockId, setCopiedBlockId] = useState(null)
 
   useKeyboardShortcuts({
     onEscape: isOpen ? () => {
@@ -71,7 +75,9 @@ const PreviewModal = ({ isOpen, onClose, title, content }) => {
     imageWidgetExtension,
     htmlWidgetExtension,
     mermaidWidgetExtension,
+    calloutExtension,
     codeBlockDecorations,
+    luminaSyntaxHighlighting,
     tables({ onLinkClick: handleLinkClick }),
     wikiLinks({
       openOnClick: true,
@@ -93,15 +99,12 @@ const PreviewModal = ({ isOpen, onClose, title, content }) => {
   if (!isOpen) return null
 
   const wordCount = content ? content.split(/\s+/).filter(Boolean).length : 0
-  const readingTime = Math.ceil(wordCount / 200) || 1
 
   const headerStats = (
-    <div className="preview-stats-bar" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginRight: '16px' }}>
-      <div className="preview-stat-item" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-dim)' }}>
-        <Clock size={12}/> {readingTime} min read
-      </div>
-      <div className="preview-stat-sep" style={{ width: '1px', height: '12px', background: 'var(--border-subtle)' }} />
-      <div className="preview-stat-item" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-dim)' }}>
+    <div className="preview-stats-bar">
+      <span className="preview-indicator-tag">PREVIEW</span>
+      <div className="preview-stat-sep" />
+      <div className="preview-stat-item">
         <FileText size={12}/> {wordCount} words
       </div>
     </div>
@@ -110,17 +113,77 @@ const PreviewModal = ({ isOpen, onClose, title, content }) => {
   return createPortal(
     <div className="modal-overlay theme-modal-overlay" onClick={onClose}>
       <div 
-        className="modal-container theme-modal-container" 
+        className="modal-container theme-modal-container preview-modal-container" 
         onClick={(e) => e.stopPropagation()}
-        style={{ width: '90vw', height: '85vh', display: 'flex', flexDirection: 'column', maxWidth: '1000px' }}
       >
         <ModalHeader title={`Preview: ${title}`} right={headerStats} icon={<FileText size={16} />} onClose={onClose} />
 
-        <div className="preview-body seamless-scrollbar markdown-editor mode-source" style={{ overflowY: 'auto', flex: 1, padding: '40px 60px', background: 'var(--bg-app)' }}>
-          <div className="editor-canvas-wrap" style={{ height: 'auto', display: 'block' }}>
+        <div className="preview-body preview-modal-body seamless-scrollbar markdown-editor mode-source" style={{ overflowY: 'auto', flex: 1, padding: '24px 32px', background: 'var(--bg-app)' }}>
+          <style>{`
+            .preview-modal-body .editor-canvas-wrap {
+              max-width: 100% !important;
+              width: 100% !important;
+              padding: 0 !important;
+            }
+            .preview-modal-body .cm-content,
+            .preview-modal-body .atomic-cm-editor .cm-content,
+            .preview-modal-body .atomic-cm-editor .cm-scroller {
+              max-width: 100% !important;
+              width: 100% !important;
+              padding-left: 0 !important;
+              padding-right: 0 !important;
+              margin: 0 !important;
+            }
+            .preview-modal-body .cm-line.cb-code-header::before {
+              cursor: pointer !important;
+            }
+            .preview-modal-body .cm-line.cb-code-header.cb-copied::before,
+            .preview-modal-body .cm-line.cb-code-header[data-cb-id="${copiedBlockId}"]::before {
+              content: '✓ COPIED' !important;
+              color: #4caf50 !important;
+              background: transparent !important;
+              border-color: transparent !important;
+              font-weight: bold !important;
+            }
+            @media (max-width: 768px) {
+              .preview-modal-body {
+                padding: 16px 12px !important;
+              }
+            }
+          `}</style>
+          <div 
+            className="editor-canvas-wrap" 
+            style={{ height: 'auto', display: 'block', width: '100%', maxWidth: '100%', padding: 0 }}
+            onMouseDown={async (e) => {
+              const codeLine = e.target.closest('.cm-line.cb-code-header')
+              if (codeLine) {
+                const rect = codeLine.getBoundingClientRect()
+                // Copy when clicked near the language pill on the right
+                if (e.clientX < rect.right - 100 && !e.target.closest('span')) return
+                const id = codeLine.getAttribute('data-cb-id')
+                const code = id != null ? codeMap.get(Number(id)) : null
+                if (code != null) {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  try {
+                    await navigator.clipboard.writeText(code)
+                    codeLine.classList.add('cb-copied')
+                    setCopiedBlockId(id)
+                    setTimeout(() => {
+                      if (codeLine) codeLine.classList.remove('cb-copied')
+                      setCopiedBlockId(null)
+                    }, 3000)
+                  } catch (err) {
+                    console.error('Failed to copy: ', err)
+                  }
+                }
+              }
+            }}
+          >
             {shouldRenderEditor ? (
               <AtomicCodeMirrorEditor
                 markdownSource={content || ''}
+                codeLanguages={languages}
                 extensions={extensions}
                 blurEditorOnMount={true}
               />

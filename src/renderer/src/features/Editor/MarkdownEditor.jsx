@@ -16,7 +16,7 @@ import { syntaxTree, HighlightStyle, syntaxHighlighting } from '@codemirror/lang
 import { tags as t } from '@lezer/highlight'
 import { autocompletion, startCompletion } from '@codemirror/autocomplete'
 import { EditorState, Prec, StateField, StateEffect } from '@codemirror/state'
-import { codeBlockDecorations, codeMap } from '../Workspace/codeBlockHeader'
+import { codeBlockDecorations, codeMap, luminaSyntaxHighlighting } from '../Workspace/codeBlockHeader'
 import { EditorView, placeholder, keymap, ViewPlugin, Decoration } from '@codemirror/view'
 import { imageDropExtension } from '../Workspace/imageDropExtension'
 import { imageWidgetExtension } from '../Workspace/imageWidgetExtension'
@@ -618,27 +618,9 @@ const MarkdownEditor = React.memo(
 
     const dropExtension = React.useMemo(() => imageDropExtension(showToast), [showToast])
 
-    const customHighlight = React.useMemo(() => {
-      return syntaxHighlighting(
-        HighlightStyle.define([
-          { 
-            tag: [t.heading, t.heading1, t.heading2, t.heading3, t.heading4, t.heading5, t.heading6], 
-            class: 'lumina-heading-text'
-          },
-          { tag: [t.string, t.special(t.string)], class: 'lumina-syntax-string' },
-          { tag: [t.keyword, t.operatorKeyword, t.modifier], class: 'lumina-syntax-keyword' },
-          { tag: [t.comment, t.lineComment, t.blockComment], class: 'lumina-syntax-comment' },
-          { tag: [t.number, t.bool, t.null], class: 'lumina-syntax-number' },
-          { tag: [t.variableName, t.attributeName, t.propertyName], class: 'lumina-syntax-variable' },
-          { tag: [t.typeName, t.className, t.namespace], class: 'lumina-syntax-type' },
-          { tag: [t.operator, t.punctuation], class: 'lumina-syntax-operator' }
-        ])
-      )
-    }, [])
-
     const editorExtensions = React.useMemo(
       () => [
-        customHighlight,
+        luminaSyntaxHighlighting,
         Prec.highest(
           keymap.of([
             {

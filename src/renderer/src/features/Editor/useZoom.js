@@ -26,7 +26,7 @@ export const useZoom = ({
   containerRef,
   minSize = 10,
   maxSize = 96,
-  step = 2,
+  step = 1,
   defaultSize = 16,
   isActive = true
 } = {}) => {
@@ -48,8 +48,10 @@ export const useZoom = ({
     isActiveRef.current = isActive
   }, [isActive])
 
+  const saveDebounceRef = useRef(null)
+
   /**
-   * Sets and persists the new font size
+   * Sets live visual font size immediately and debounces store/disk saves for buttery smooth zooming
    */
   const setZoom = useCallback(
     (newSize) => {
@@ -58,15 +60,23 @@ export const useZoom = ({
 
       sizeRef.current = clamped
 
-      // 1. Update and persist in useSettingsStore (settings.json 'fontSize' + CSS var --font-size-editor)
-      if (typeof updateSetting === 'function') {
-        updateSetting('fontSize', clamped)
-      }
+      // 1. Instant 60/120 FPS visual update without store re-renders or disk latency
+      const root = document.documentElement
+      root.style.setProperty('--font-size-editor', `${clamped}px`)
+      root.style.setProperty('--editor-font-size', `${clamped / 16}rem`)
 
-      // 2. Update and persist in useFontSettings (settings.json 'cursor.editorFontSize' + localStorage + CSS var --editor-font-size)
-      if (typeof updateEditorFontSize === 'function') {
-        updateEditorFontSize(clamped)
+      // 2. Debounce store updates & disk saves (settings.json / localStorage) by 350ms to prevent stutter during rapid wheel scrolling
+      if (saveDebounceRef.current) {
+        clearTimeout(saveDebounceRef.current)
       }
+      saveDebounceRef.current = setTimeout(() => {
+        if (typeof updateSetting === 'function') {
+          updateSetting('fontSize', clamped)
+        }
+        if (typeof updateEditorFontSize === 'function') {
+          updateEditorFontSize(clamped)
+        }
+      }, 350)
     },
     [minSize, maxSize, updateSetting, updateEditorFontSize]
   )
@@ -89,13 +99,14 @@ export const useZoom = ({
     setZoom(defaultSize)
   }, [setZoom, defaultSize])
 
-  // Handle Ctrl/Cmd + Mouse Wheel over the editor container
+  // Handle Ctrl/Cmd + Mouse Wheel over the editor container with VS Code-style smooth accumulation
   useEffect(() => {
     const element = containerRef?.current
     if (!element) return
 
+    const PIXELS_PER_STEP = 35 // Smooth accumulator threshold for trackpad gestures & notched scroll wheels
+    let wheelAccumulator = 0
     let lastWheelTime = 0
-    const WHEEL_THROTTLE_MS = 40 // Throttle slightly for smooth trackpad / high-DPI wheel scrolling
 
     const handleWheel = (e) => {
       if (e.ctrlKey || e.metaKey) {
@@ -103,23 +114,29 @@ export const useZoom = ({
         e.stopPropagation()
 
         const now = Date.now()
-        if (now - lastWheelTime < WHEEL_THROTTLE_MS) return
+        // Reset accumulator if scrolling paused for over 300ms
+        if (now - lastWheelTime > 300) {
+          wheelAccumulator = 0
+        }
         lastWheelTime = now
 
-        if (e.deltaY < -2) {
-          zoomIn(step)
-        } else if (e.deltaY > 2) {
-          zoomOut(step)
+        wheelAccumulator += e.deltaY
+
+        if (Math.abs(wheelAccumulator) >= PIXELS_PER_STEP) {
+          const deltaSteps = -Math.trunc(wheelAccumulator / PIXELS_PER_STEP)
+          if (deltaSteps !== 0) {
+            wheelAccumulator += deltaSteps * PIXELS_PER_STEP
+            setZoom(sizeRef.current + deltaSteps * step)
+          }
         }
       }
     }
 
-    // Must be attached with { passive: false } so e.preventDefault() works cleanly
     element.addEventListener('wheel', handleWheel, { passive: false })
     return () => {
       element.removeEventListener('wheel', handleWheel)
     }
-  }, [containerRef, zoomIn, zoomOut, step])
+  }, [containerRef, setZoom, step])
 
   // Handle Keyboard Shortcuts (Ctrl+= / Ctrl++, Ctrl+-, Ctrl+0) when editor is active
   useEffect(() => {
@@ -153,7 +170,6 @@ export const useZoom = ({
       }
     }
 
-    // Use capture phase to intercept before browser or electron window zoom
     window.addEventListener('keydown', handleKeyDown, { capture: true })
     return () => window.removeEventListener('keydown', handleKeyDown, { capture: true })
   }, [zoomIn, zoomOut, resetZoom, step])

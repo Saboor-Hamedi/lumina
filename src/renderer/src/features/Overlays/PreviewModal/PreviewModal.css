@@ -12,7 +12,10 @@
 }
 
 .premium-preview-card {
-  max-width: 1200px;
+  width: 90%;
+  max-width: 1000px;
+  height: 700px;
+  max-height: 85vh;
   background: var(--bg-app);
   border: 1px solid var(--border-subtle);
   border-radius: 0;
@@ -125,4 +128,68 @@
 }
 .seamless-scrollbar::-webkit-scrollbar-thumb:hover {
   background: var(--text-faint);
+}
+
+/* Responsive expansion and zero/minimal padding for medium screens */
+@media (max-width: 900px) {
+  .preview-modal-container {
+    width: 96vw !important;
+    height: 94vh !important;
+    max-width: none !important;
+  }
+
+  .preview-modal-body {
+    padding: 20px 16px !important;
+  }
+
+  .preview-modal-body .editor-canvas-wrap {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .preview-modal-body .cm-content,
+  .preview-modal-body .atomic-cm-editor .cm-content {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+}
+
+/* Responsive expansion and completely remove left/right padding on small screens */
+@media (max-width: 600px) {
+  .preview-modal-container {
+    width: 98vw !important;
+    height: 96vh !important;
+    max-width: none !important;
+  }
+
+  .preview-modal-body {
+    padding: 16px 8px !important;
+  }
+
+  .preview-modal-body .editor-canvas-wrap {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .preview-modal-body .cm-content,
+  .preview-modal-body .atomic-cm-editor .cm-content {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .preview-stats-bar {
+    gap: 8px;
+  }
+
+  .preview-stat-item {
+    font-size: 11px;
+  }
 }
