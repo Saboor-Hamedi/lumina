@@ -9,7 +9,7 @@ import Documentation from '../Docs/Documentation'
 import Dashboard from '../Workspace/components/Dashboard'
 import TabBar from '../Workspace/components/TabBar'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
-import { useVaultStore } from '../../core/store/useVaultStore'
+import { useVaultStore, GRAPH_TAB_ID } from '../../core/store/useVaultStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
 import { useToast } from '../../core/hooks/useToast'
@@ -581,7 +581,7 @@ const AppShell = () => {
           />
         )}
 
-        {openTabs.length > 0 ? (
+        {openTabs.filter(id => id === GRAPH_TAB_ID || snippets.some(s => s.id === id)).length > 0 ? (
           <div className="workspace-container" style={{ display: 'flex', flexDirection: 'row', flex: 1, overflow: 'hidden' }}>
             <div
               style={{
@@ -594,7 +594,6 @@ const AppShell = () => {
             >
             {openTabs.map((tabId) => {
               let snippet = snippets.find((s) => s.id === tabId)
-              if (!snippet && selectedSnippet?.id === tabId) snippet = selectedSnippet
               if (!snippet) return null
               const effectiveSelectedId = selectedSnippet?.id || activeTabId || openTabs[0]
               const isSelected = effectiveSelectedId === tabId
