@@ -680,6 +680,7 @@ export const useFontSettings = () => {
     // Caret Variables
     root.style.setProperty('--caret-style', caretStyle)
     root.setAttribute('data-caret-style', caretStyle || 'smooth')
+    root.setAttribute('data-use-active-line-border', useBorderLeft ? 'true' : 'false')
     root.style.setProperty(
       '--caret-width',
       typeof caretWidth === 'number' ? `${caretWidth}px` : caretWidth
@@ -723,7 +724,8 @@ export const useFontSettings = () => {
     caretStyle,
     caretWidth,
     caretColor,
-    themeAccentColor
+    themeAccentColor,
+    useBorderLeft
   ])
 
   // Persist cursor settings to settings.json (cursor object) and localStorage

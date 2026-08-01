@@ -374,9 +374,9 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                   </div>
                   <div className="settings-row">
                     <div className="row-info">
-                      <div className="row-label">Use Border-left Caret</div>
+                      <div className="row-label">Active Line Left Border</div>
                       <div className="row-hint">
-                        Toggle using CSS `border-left` for the caret instead of a filled bar.
+                        Show a colored left border on the line where the cursor is currently placed.
                       </div>
                     </div>
                     <label className="switch">

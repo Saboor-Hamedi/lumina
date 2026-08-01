@@ -1327,7 +1327,7 @@
 
 
 /* Use pseudo-element to ensure border extends to full height including padding */
-.cm-heading.cm-activeLine::before {
+html[data-use-active-line-border="true"] .cm-heading.cm-activeLine::before {
   content: '';
   position: absolute;
   left: 1px;
@@ -1343,8 +1343,9 @@
 
 /* end */
 
-[data-theme='dark'] .cm-activeLine,
-[data-theme='obsidian-robust'] .cm-activeLine {
+html[data-use-active-line-border="true"][data-theme='dark'] .cm-activeLine,
+html[data-use-active-line-border="true"][data-theme='obsidian-robust'] .cm-activeLine,
+html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {
   /* Box-shadow color is already set via var(--text-accent) */
   box-shadow: inset 1px 0 0 0 var(--text-accent) !important;
 }
