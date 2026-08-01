@@ -63,8 +63,12 @@ const Graph3D = React.forwardRef(({
             if (fg.d3Force('custom_radial')) fg.d3Force('custom_radial', null)
             if (fg.d3Force('custom_charge')) fg.d3Force('custom_charge', null)
             
-            // Apply 3D collision so nodes don't tangle
-            fg.d3Force('custom_collide', forceCollide().radius(12).strength(0.8).iterations(1))
+            // Apply 3D collision so nodes don't tangle, using dynamic radius based on node volume
+            fg.d3Force('custom_collide', forceCollide().radius((n) => {
+              const base = n.val ? Math.max(2, Math.sqrt(n.val) * 2.5) : 2
+              const sizeMult = settings.graphNodeSize || 1.5
+              return (base * sizeMult) + 2
+            }).strength(0.8).iterations(1))
             
             if (fg.d3Force('charge')) fg.d3Force('charge').strength(-500 * repelForce)
             if (fg.d3Force('link')) fg.d3Force('link').strength(linkForce)
@@ -135,7 +139,11 @@ const Graph3D = React.forwardRef(({
       fg.d3Force('custom_x').strength(0)
       fg.d3Force('custom_y').strength(0)
       
-      fg.d3Force('custom_collide', forceCollide().radius(12).strength(0.8).iterations(1))
+      fg.d3Force('custom_collide', forceCollide().radius((n) => {
+        const base = n.val ? Math.max(2, Math.sqrt(n.val) * 2.5) : 2
+        const sizeMult = initialSettings.graphNodeSize || 1.5
+        return (base * sizeMult) + 2
+      }).strength(0.8).iterations(1))
       
       if (fg.d3Force('charge')) {
         fg.d3Force('charge').strength(-500 * repelForce)

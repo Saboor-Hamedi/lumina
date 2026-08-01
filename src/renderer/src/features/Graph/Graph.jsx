@@ -678,8 +678,9 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             nodeColor={(node) => nodeColor(node)}
             nodeVal={(node) => {
               const base = node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2
-              const r = base * (useSettingsStore.getState().settings.graphNodeSize || 1.5) * 2
-              // nodeVal in 3D is volume, so radius = cbrt(val). We cube it to get the proper physical size and hitbox!
+              const targetRadius = base * (useSettingsStore.getState().settings.graphNodeSize || 1.5)
+              // ForceGraph3D sphere radius R = 4 * cbrt(val). We want R = targetRadius.
+              const r = targetRadius / 4
               return r * r * r
             }}
             nodeOpacity={0.9}
@@ -831,7 +832,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               nodeColor={(node) => nodeColor(node)}
               nodeVal={(node) => {
                 const base = node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2
-                const r = base * (useSettingsStore.getState().settings.graphNodeSize || 1.5) * 2
+                const targetRadius = base * (useSettingsStore.getState().settings.graphNodeSize || 1.5)
+                const r = targetRadius / 4
                 return r * r * r
               }}
               nodeOpacity={0.9}
