@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 
 export const useToast = () => {
   // State now stores an object { message, type }
@@ -9,20 +9,20 @@ export const useToast = () => {
    * @param {string} message - The content of the toast.
    * @param {'success' | 'error' | 'info'} [type='info'] - The type of toast.
    */
-  const showToast = (message, type = 'info') => {
+  const showToast = useCallback((message, type = 'info') => {
     // Set the state with the message and type
     setToast({ message, type })
 
     // Clear the toast after 3 seconds
     setTimeout(() => setToast(null), 3000)
-  }
+  }, [])
 
   /**
    * Clears the current toast notification.
    */
-  const clearToast = () => {
+  const clearToast = useCallback(() => {
     setToast(null)
-  }
+  }, [])
 
   // Return the toast object and the functions
   return { toast, showToast, clearToast }

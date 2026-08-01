@@ -32,42 +32,38 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
     hoverCard.style.visibility = 'hidden' // Prevent any 0,0 flash/shake on creation
 
     if (contentSnippet !== null && contentSnippet !== undefined) {
-      // Subtle Header with title and expand icon
+      // Very minimal and compact header for title and expand button
       const header = document.createElement('div')
       header.className = 'wiki-hover-header horizontal'
       header.style.display = 'flex'
       header.style.alignItems = 'center'
       header.style.justifyContent = 'space-between'
-      header.style.gap = '8px'
-      header.style.padding = '10px 14px'
+      header.style.padding = '8px 12px 4px 12px'
       header.style.flexShrink = '0'
 
       const headerTitle = document.createElement('div')
-      headerTitle.className = 'wiki-hover-header-title'
       headerTitle.textContent = title
-      headerTitle.style.fontSize = '13px'
+      headerTitle.style.fontSize = '12px'
       headerTitle.style.fontWeight = '600'
-      headerTitle.style.color = 'var(--text-main)'
+      headerTitle.style.color = 'var(--text-faint)'
       headerTitle.style.overflow = 'hidden'
       headerTitle.style.textOverflow = 'ellipsis'
       headerTitle.style.whiteSpace = 'nowrap'
       headerTitle.style.flex = '1'
-
+      
       header.appendChild(headerTitle)
 
-      // Add Expand Icon in the top header
       if (noteId) {
         const expandIcon = document.createElement('div')
-        expandIcon.className = 'wiki-hover-expand-icon'
-        expandIcon.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>`
+        expandIcon.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>`
         expandIcon.style.display = 'flex'
         expandIcon.style.alignItems = 'center'
         expandIcon.style.justifyContent = 'center'
         expandIcon.style.cursor = 'pointer'
         expandIcon.style.color = 'var(--text-faint)'
         expandIcon.style.transition = 'color 0.2s'
-        expandIcon.style.flexShrink = '0'
-
+        expandIcon.style.marginLeft = '8px'
+        
         expandIcon.onmouseover = () => (expandIcon.style.color = 'var(--text-accent)')
         expandIcon.onmouseout = () => (expandIcon.style.color = 'var(--text-faint)')
 
@@ -90,6 +86,7 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
       // Content Wrap
       const contentWrap = document.createElement('div')
       contentWrap.className = 'wiki-hover-content-wrap'
+      contentWrap.style.padding = '4px 12px 12px 12px'
 
       const contentEl = document.createElement('div')
       contentEl.className = 'wiki-hover-content'
