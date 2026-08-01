@@ -329,18 +329,23 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
     let top = y + 20
     let left = x - (rect.width / 2)
 
-    if (left + rect.width > wrapperRect.right - 20) {
-      left = wrapperRect.right - rect.width - 20
+    const viewportWidth = window.innerWidth
+    const viewportHeight = window.innerHeight
+
+    if (left + rect.width > viewportWidth - 20) {
+      left = viewportWidth - rect.width - 20
     }
-    if (left < wrapperRect.left + 20) {
-      left = wrapperRect.left + 20
+    if (left < 20) {
+      left = 20
     }
 
-    if (top + rect.height > wrapperRect.bottom - 20) {
+    // Smart positioning: if there is no space below, place it above the cursor
+    if (top + rect.height > viewportHeight - 20) {
       top = y - rect.height - 20
       
-      if (top < wrapperRect.top + 20) {
-        top = wrapperRect.top + 20
+      // If it also doesn't fit above, stick to top of screen
+      if (top < 20) {
+        top = 20
       }
     }
 
@@ -351,7 +356,7 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
 
   const handleMouseOver = (e) => {
     const linkEl = e.target.closest('.cm-atomic-wiki-link, .cm-atomic-wikilink-wrap')
-    if (!linkEl) return
+    if (!linkEl || !wrapper.contains(linkEl)) return
 
     const target = linkEl.getAttribute('data-wiki-link-target') || linkEl.getAttribute('data-url')
     if (!target) return
@@ -389,17 +394,18 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
 
   const handleDocumentClick = (e) => {
     if (hoverCard && !hoverCard.contains(e.target)) {
-      if (
-        !e.target.closest('.cm-atomic-wiki-link') &&
-        !e.target.closest('.cm-atomic-wikilink-wrap')
-      ) {
+      const linkEl = e.target.closest('.cm-atomic-wiki-link, .cm-atomic-wikilink-wrap')
+      if (!linkEl || !wrapper.contains(linkEl)) {
         removeCard()
       }
     }
   }
 
   const handleDocumentMouseMove = (e) => {
-    const isOverLink = e.target.closest('.cm-atomic-wiki-link, .cm-atomic-wikilink-wrap')
+    let isOverLink = e.target.closest('.cm-atomic-wiki-link, .cm-atomic-wikilink-wrap')
+    if (isOverLink && !wrapper.contains(isOverLink)) {
+      isOverLink = null // Ignore links from other editor instances
+    }
     const isOverCard = hoverCard && hoverCard.contains(e.target)
 
     if (isOverLink) {
