@@ -15,6 +15,23 @@ import GraphSidebar from './GraphSidebar'
 import GraphMiniMap from './GraphMiniMap'
 import './Graph.css'
 
+const createGlowTexture = () => {
+  const canvas = document.createElement('canvas')
+  canvas.width = 64
+  canvas.height = 64
+  const ctx = canvas.getContext('2d')
+  const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32)
+  gradient.addColorStop(0, 'rgba(255, 255, 255, 1)')
+  gradient.addColorStop(0.6, 'rgba(255, 255, 255, 0.8)')
+  gradient.addColorStop(1, 'rgba(255, 255, 255, 0)')
+  ctx.fillStyle = gradient
+  ctx.beginPath()
+  ctx.arc(32, 32, 32, 0, Math.PI * 2)
+  ctx.fill()
+  return new THREE.CanvasTexture(canvas)
+}
+const sharedGlowTexture = createGlowTexture()
+
 /**
  * Graph Component
  * Beautiful knowledge graph visualization with multiple modes and themes.
@@ -679,20 +696,17 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             nodeThreeObject={(node) => {
               const base = node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2
               const targetRadius = base * (useSettingsStore.getState().settings.graphNodeSize || 1.5)
-              const color = nodeColor(node)
               
-              const geometry = new THREE.SphereGeometry(targetRadius, 32, 32)
-              const material = new THREE.MeshPhysicalMaterial({
-                color: color,
-                metalness: 0.2,
-                roughness: 0.2,
-                clearcoat: 1.0,
-                clearcoatRoughness: 0.1,
-                transmission: 0.1,
-                opacity: 0.9,
-                transparent: true
+              const material = new THREE.SpriteMaterial({
+                map: sharedGlowTexture,
+                color: nodeColor(node),
+                transparent: true,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending
               })
-              return new THREE.Mesh(geometry, material)
+              const sprite = new THREE.Sprite(material)
+              sprite.scale.set(targetRadius * 2.5, targetRadius * 2.5, 1)
+              return sprite
             }}
             linkColor={(link) => {
               if (!hoverNode) return defaultLineColor
@@ -841,20 +855,17 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               nodeThreeObject={(node) => {
                 const base = node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2
                 const targetRadius = base * (useSettingsStore.getState().settings.graphNodeSize || 1.5)
-                const color = nodeColor(node)
                 
-                const geometry = new THREE.SphereGeometry(targetRadius, 32, 32)
-                const material = new THREE.MeshPhysicalMaterial({
-                  color: color,
-                  metalness: 0.2,
-                  roughness: 0.2,
-                  clearcoat: 1.0,
-                  clearcoatRoughness: 0.1,
-                  transmission: 0.1,
-                  opacity: 0.9,
-                  transparent: true
+                const material = new THREE.SpriteMaterial({
+                  map: sharedGlowTexture,
+                  color: nodeColor(node),
+                  transparent: true,
+                  depthWrite: false,
+                  blending: THREE.AdditiveBlending
                 })
-                return new THREE.Mesh(geometry, material)
+                const sprite = new THREE.Sprite(material)
+                sprite.scale.set(targetRadius * 2.5, targetRadius * 2.5, 1)
+                return sprite
               }}
               linkColor={(link) => {
                 if (!hoverNode) return defaultLineColor
