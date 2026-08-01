@@ -906,7 +906,6 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                   : dimmedLineColor
               }}
               linkWidth={0.5}
-              linkDirectionalParticles={0}
               onNodeClick={(node) => {
                 if (node.snippetId) {
                   const s = snippets.find((sn) => sn.id === node.snippetId)
