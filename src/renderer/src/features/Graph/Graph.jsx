@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { X, Square, Copy, Network, RefreshCw, Layers, Search, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import ForceGraph2D from 'react-force-graph-2d'
+import * as THREE from 'three'
 import Graph3D from './Graph3D'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useAIStore } from '../AI/tools/LuminaChat'
@@ -675,16 +676,24 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             width={dimensions.width}
             height={dimensions.height}
             graphData={graphData}
-            nodeColor={(node) => nodeColor(node)}
-            nodeVal={(node) => {
+            nodeThreeObject={(node) => {
               const base = node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2
               const targetRadius = base * (useSettingsStore.getState().settings.graphNodeSize || 1.5)
-              // ForceGraph3D sphere radius R = 4 * cbrt(val). We want R = targetRadius.
-              const r = targetRadius / 4
-              return r * r * r
+              const color = nodeColor(node)
+              
+              const geometry = new THREE.SphereGeometry(targetRadius, 32, 32)
+              const material = new THREE.MeshPhysicalMaterial({
+                color: color,
+                metalness: 0.2,
+                roughness: 0.2,
+                clearcoat: 1.0,
+                clearcoatRoughness: 0.1,
+                transmission: 0.1,
+                opacity: 0.9,
+                transparent: true
+              })
+              return new THREE.Mesh(geometry, material)
             }}
-            nodeOpacity={0.9}
-            nodeResolution={16}
             linkColor={(link) => {
               if (!hoverNode) return defaultLineColor
               const sourceId = link.source.id || link.source
@@ -829,15 +838,24 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               width={dimensions.width}
               height={dimensions.height - 32}
               graphData={graphData}
-              nodeColor={(node) => nodeColor(node)}
-              nodeVal={(node) => {
+              nodeThreeObject={(node) => {
                 const base = node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2
                 const targetRadius = base * (useSettingsStore.getState().settings.graphNodeSize || 1.5)
-                const r = targetRadius / 4
-                return r * r * r
+                const color = nodeColor(node)
+                
+                const geometry = new THREE.SphereGeometry(targetRadius, 32, 32)
+                const material = new THREE.MeshPhysicalMaterial({
+                  color: color,
+                  metalness: 0.2,
+                  roughness: 0.2,
+                  clearcoat: 1.0,
+                  clearcoatRoughness: 0.1,
+                  transmission: 0.1,
+                  opacity: 0.9,
+                  transparent: true
+                })
+                return new THREE.Mesh(geometry, material)
               }}
-              nodeOpacity={0.9}
-              nodeResolution={16}
               linkColor={(link) => {
                 if (!hoverNode) return defaultLineColor
                 const sourceId = link.source.id || link.source

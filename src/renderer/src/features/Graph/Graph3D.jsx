@@ -127,7 +127,12 @@ const Graph3D = React.forwardRef(({
       }
       if (fg.controls) {
         const controls = fg.controls()
-        if (controls) controls.enableDamping = false
+        if (controls) {
+          controls.enableDamping = true
+          controls.dampingFactor = 0.1
+          controls.autoRotate = true
+          controls.autoRotateSpeed = 0.5
+        }
       }
 
       fg.d3Force('x', null)
