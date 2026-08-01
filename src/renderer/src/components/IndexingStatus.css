@@ -1,63 +1,59 @@
 /* Indexing Status Styles - Matched to ToastNotification */
-.indexing-status-container {
+.indexing-toast {
   position: fixed;
-  bottom: 40px;
-  right: 20px;
-  top: auto;
+  bottom: 24px;
+  right: 24px;
   background: var(--bg-panel);
-  border: 1px solid var(--border-subtle);
-  border-left: 3px solid var(--text-accent);
-  border-radius: 6px;
-  padding: 6px 12px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  border: none;
+  overflow: hidden;
+  border-radius: 10px;
+  padding: 10px 12px 10px 10px;
+  box-shadow: 
+    0 12px 28px rgba(0, 0, 0, 0.32),
+    0 2px 8px rgba(0, 0, 0, 0.16);
   z-index: 10001;
-  width: 240px;
+  width: auto;
+  min-width: 220px;
+  max-width: 340px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  animation: indexingFadeIn 0.25s ease;
-  backdrop-filter: blur(12px);
+  animation: toastSlideInBottom 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   pointer-events: none; /* Non-intrusive */
 }
 
-.indexing-status-container.complete {
-  border-left-color: #22c55e;
-  animation: completePulse 0.5s ease-out forwards, indexingFadeOut 0.3s ease forwards 2.7s;
+.indexing-toast.complete {
+  animation: indexingCompleteFade 2s forwards;
 }
 
-@keyframes indexingFadeIn {
-  from { transform: translateY(10px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+@keyframes indexingCompleteFade {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  80% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(12px) scale(0.95); }
 }
 
-@keyframes indexingFadeOut {
-  from { transform: translateY(0); opacity: 1; }
-  to { transform: translateY(10px); opacity: 0; }
-}
-
-@keyframes completePulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-  100% { transform: scale(1); }
-}
-
-.indexing-status-header {
+.indexing-toast-content {
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
 }
 
-.indexing-status-icon {
+.indexing-icon-wrapper {
   flex-shrink: 0;
-  color: var(--text-accent);
-  width: 16px;
-  height: 16px;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: rgba(64, 186, 250, 0.14);
+  color: var(--text-accent);
 }
 
-.indexing-status-container.complete .indexing-status-icon {
+.indexing-toast.complete .indexing-icon-wrapper {
+  background: rgba(34, 197, 94, 0.14);
   color: #22c55e;
 }
 
@@ -69,50 +65,63 @@
   100% { transform: rotate(360deg); }
 }
 
-.indexing-status-title-container {
+.indexing-toast-message {
   flex: 1;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.indexing-status-title {
-  font-size: 11px;
+  line-height: 1.35;
+  font-size: 12.5px;
   font-weight: 500;
   color: var(--text-main);
+  letter-spacing: -0.01em;
+}
+
+.indexing-toast-details {
+  display: block;
+  font-size: 10px;
+  color: var(--text-faint);
+  margin-top: 2px;
+  font-weight: 400;
 }
 
 .indexing-status-percent {
-  font-size: 10px;
-  font-weight: 500;
+  font-size: 11.5px;
+  font-weight: 600;
   color: var(--text-faint);
   font-variant-numeric: tabular-nums;
+  margin-left: 8px;
 }
 
-/* Slim progress bar */
-.indexing-status-bar-bg {
+.indexing-toast-progress-container {
   width: 100%;
-  height: 3px;
-  background-color: var(--bg-active);
+  margin-top: 10px;
+  padding: 0 4px;
+}
+
+.indexing-toast-bar-bg {
+  width: 100%;
+  height: 4px;
+  background-color: var(--bg-active, rgba(255, 255, 255, 0.08));
   border-radius: 2px;
   overflow: hidden;
-  margin-top: 2px;
 }
 
-.indexing-status-bar-fill {
+.indexing-toast-bar-fill {
   height: 100%;
   background-color: var(--text-accent);
   transition: width 0.3s ease-out;
   border-radius: 2px;
 }
 
-.indexing-status-container.complete .indexing-status-bar-fill {
+.indexing-toast.complete .indexing-toast-bar-fill {
   background-color: #22c55e;
 }
 
-.indexing-status-details {
-  font-size: 9px;
-  color: var(--text-faint);
-  font-variant-numeric: tabular-nums;
-  margin-top: 2px;
+@keyframes toastSlideInBottom {
+  from {
+    transform: translateY(12px) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
 }

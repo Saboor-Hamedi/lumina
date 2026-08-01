@@ -104,6 +104,17 @@ const GraphSidebar = ({ isOpen = true, searchQuery, setSearchQuery, graphTheme, 
                 <span className="slider round"></span>
               </label>
             </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-main)' }}>
+              <span>3D Sphere Mode</span>
+              <label className="switch">
+                <input 
+                  type="checkbox" 
+                  checked={settings.graph3DMode ?? false}
+                  onChange={(e) => updateSetting('graph3DMode', e.target.checked)}
+                />
+                <span className="slider round"></span>
+              </label>
+            </div>
           </div>
         </div>
 

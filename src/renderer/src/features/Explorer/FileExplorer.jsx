@@ -96,6 +96,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   
   // Track last clicked/selected folder for "New Note" sidebar button
   const [lastClickedFolder, setLastClickedFolder] = useState(null)
+  const [sidebarFocus, setSidebarFocus] = useState(null) // null | 'root' | 'folder'
 
   const searchInputRef = useRef(null)
   const modalRef = useRef(null)
@@ -122,6 +123,10 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   useEffect(() => {
     expandedFoldersRef.current = expandedFolders
   }, [expandedFolders])
+
+  useEffect(() => {
+    setSidebarFocus(null)
+  }, [selectedSnippetId])
 
   const sortBy = settings.sortBy || 'name'
   const sortDirection = settings.sortDirection || 'asc'
@@ -306,7 +311,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   useEffect(() => {
     const handleTriggerNewNote = () => {
       let targetFolderId = lastClickedFolder
-      if (!targetFolderId) {
+      if (targetFolderId === null) {
         const selectedSnippetId = useVaultStore.getState().selectedSnippet?.id
         const snippets = useVaultStore.getState().snippets
         const activeSnippet = snippets.find(s => s.id === selectedSnippetId)
@@ -495,10 +500,12 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
           isPinned={context.pinnedFolders.includes(item.id)}
           onTogglePin={context.togglePinnedFolder}
           onToggle={(id, e) => {
+            context.setSidebarFocus('folder')
             context.setSelectedIndex(index)
             context.toggleFolder(id, e)
           }}
           onContextMenu={(id, e) => {
+            context.setSidebarFocus('folder')
             context.setSelectedIndex(index)
             context.handleFolderContextMenu(id, e)
           }}
@@ -547,7 +554,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
             key={item.snippet.id}
             snippet={item.snippet}
             onClick={context.handleSelect}
-            isActive={item.snippet.id === context.selectedSnippetId || index === context.selectedIndex}
+            isActive={(item.snippet.id === context.selectedSnippetId && context.sidebarFocus === null) || index === context.selectedIndex}
             searchQuery={context.query}
             matchSnippet={context.matchMetaMap?.get(item.snippet.id)?.matchSnippet || ''}
             depth={item.depth}
@@ -919,6 +926,12 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
         <div 
           className="start-menu-body"
           tabIndex={-1}
+          onClick={(e) => {
+            if (e.target.closest('.virtuoso-row') || e.target.closest('.tree-item')) return
+            setSelectedIndex(-1)
+            setLastClickedFolder('')
+            setSidebarFocus('root')
+          }}
           onContextMenu={(e) => {
             if (e.target.closest('.virtuoso-row') || e.target.closest('.tree-item')) return
             e.preventDefault()
@@ -1034,6 +1047,9 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                           expandedFolders,
                           selectedIndex,
                           selectedSnippetId,
+                          lastClickedFolder,
+                          sidebarFocus,
+                          setSidebarFocus,
                           folderColors,
                           renamingFolder,
                           renamingValue,

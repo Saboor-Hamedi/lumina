@@ -285,6 +285,18 @@ const MarkdownEditor = React.memo(
       snippetRef.current = snippet
       setTitle(snippet?.title || '')
 
+      const isSameFile = previousSnippet?.id === snippet?.id
+
+      if (!isSameFile) {
+        // We just switched tabs! 
+        // DO NOT manually sync or touch editorKey. React's `key` on AtomicCodeMirrorEditor 
+        // will handle the complete remount flawlessly.
+        lastSavedCodeRef.current = snippet?.code
+        latestCodeRef.current = snippet?.code || ''
+        setIsDirty(false)
+        return
+      }
+
       if (editorHandleRef.current) {
         const currentCode = editorHandleRef.current.getMarkdown()
         const codeChangedFromOutside = snippet?.code !== lastSavedCodeRef.current
@@ -297,22 +309,21 @@ const MarkdownEditor = React.memo(
             return
           }
 
-          const isSameFile = previousSnippet?.id === snippet?.id
           const hasLocalEdits = currentCode !== lastSavedCodeRef.current
           const isTrivialExternalChange = (snippet?.code || '').trim() === (lastSavedCodeRef.current || '').trim()
 
-          if (isSameFile && hasLocalEdits && !isTrivialExternalChange) {
+          if (hasLocalEdits && !isTrivialExternalChange) {
             // REAL CONFLICT! Show the custom ConfirmModal
             setConflictPrompt({
               snippetCode: snippet?.code,
               snippetTitle: snippet?.title
             })
-          } else if (isSameFile && hasLocalEdits && isTrivialExternalChange) {
+          } else if (hasLocalEdits && isTrivialExternalChange) {
             // Trivial external change (e.g. backend added a trailing newline to frontmatter)
             // But user has real local edits. Keep local edits!
             lastSavedCodeRef.current = snippet?.code
           } else {
-            // No local edits, OR switching tabs. Safe to overwrite immediately.
+            // No local edits. Safe to overwrite immediately.
             setIsDirty(false)
             lastSavedCodeRef.current = snippet?.code
 

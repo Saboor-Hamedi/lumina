@@ -198,9 +198,9 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             n.vx = oldN.vx
             n.vy = oldN.vy
           } else {
-            // Break exact center symmetry so radial force works instantly
-            n.x = (Math.random() - 0.5) * 200
-            n.y = (Math.random() - 0.5) * 200
+            // Spawn nodes over a much wider area so the physics engine doesn't have to spend 3 seconds exploding them
+            n.x = (Math.random() - 0.5) * 2000
+            n.y = (Math.random() - 0.5) * 2000
           }
 
           n.linkCount = linkCounts[n.id] || 0
@@ -316,11 +316,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               graphRef.current.zoom(1.0, 400) // Lowered zoom from 1.5 to 1.0
             }
           } else if (isFirstRender) {
-            // Allow the graph to explode naturally from the center without hacking the initial zoom
-            // After 2.5 seconds (when the explosion starts to settle), smoothly zoom out to perfectly frame the final graph
-            setTimeout(() => {
-              if (graphRef.current) graphRef.current.zoomToFit(2500, 100)
-            }, 2500)
+            // Instantly frame the graph without waiting 2.5 seconds
+            if (graphRef.current) graphRef.current.zoomToFit(400, 50)
           }
         }, 100) // Small delay to ensure WebGL engine is ready
       }

@@ -44,14 +44,14 @@ async function createWindow() {
   const appIcon = electron.nativeImage.createFromPath(iconPath)
 
   const translucency = await SettingsManager.get('translucency')
-  const windowBounds = (await SettingsManager.get('windowBounds')) || { width: 900, height: 700 }
+  const windowBounds = (await SettingsManager.get('windowBounds')) || { width: 1000, height: 700 }
 
   mainWindow = new BrowserWindow({
     width: windowBounds.width,
     height: windowBounds.height,
     x: windowBounds.x,
     y: windowBounds.y,
-    minWidth: 400,
+    minWidth: 500,
     minHeight: 500,
     icon: appIcon,
     show: false,

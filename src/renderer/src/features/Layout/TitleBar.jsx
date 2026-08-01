@@ -44,17 +44,17 @@ const TitleBar = () => {
         <div className="window-controls" data-testid="window-controls">
           <ToolTip text="Minimize" position="bottom">
             <button onClick={handleMinimize} className="control-btn">
-              <Minus size={12} />
+              <Minus size={14} strokeWidth={2} />
             </button>
           </ToolTip>
           <ToolTip text="Maximize" position="bottom">
             <button onClick={handleToggleMaximize} className="control-btn">
-              <Square size={11} />
+              <Square size={14} strokeWidth={2} />
             </button>
           </ToolTip>
           <ToolTip text="Close" position="bottom">
             <button onClick={handleClose} className="control-btn close">
-              <X size={12} />
+              <X size={14} strokeWidth={2} />
             </button>
           </ToolTip>
         </div>
