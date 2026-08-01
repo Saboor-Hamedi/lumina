@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { X, Square, Copy, Network, RefreshCw, Layers, Search, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import ForceGraph2D from 'react-force-graph-2d'
-import ForceGraph3D from 'react-force-graph-3d'
+import Graph3D from './Graph3D'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useAIStore } from '../AI/tools/LuminaChat'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
@@ -369,6 +369,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
           settings.graphNodeColor !== prev.graphNodeColor
         ) {
           if (!graphRef.current) return
+          if (is3DMode) return // Graph3D handles its own live physics
           const fg = graphRef.current
 
           // Delay execution to ensure 3D physics engine is initialized on mount
@@ -382,35 +383,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             fg.d3Force('custom_x').strength(0)
             fg.d3Force('custom_y').strength(0)
             
-            if (is3DMode) {
-              fg.d3Force('custom_gravity', (alpha) => {
-                const strength = centerForce * 0.1
-                const maxRadius = 1000
-                const orphanPull = 0.5
-                
-                graphData.nodes.forEach(n => {
-                  if (n.val <= 1) {
-                    // Orphans: gently pull them to a spherical shell so they don't shoot to infinity
-                    const dist = Math.hypot(n.x || 0, n.y || 0, n.z || 0) || 1
-                    if (dist > maxRadius) {
-                      const force = (dist - maxRadius) * orphanPull * alpha / dist
-                      n.vx -= (n.x || 0) * force
-                      n.vy -= (n.y || 0) * force
-                      n.vz -= (n.z || 0) * force
-                    }
-                  } else {
-                    n.vx -= (n.x || 0) * strength * alpha
-                    n.vy -= (n.y || 0) * strength * alpha
-                    n.vz -= (n.z || 0) * strength * alpha
-                  }
-                })
-              })
-              if (fg.d3Force('custom_radial')) fg.d3Force('custom_radial', null)
-              if (fg.d3Force('custom_charge')) fg.d3Force('custom_charge', null)
-              if (fg.d3Force('custom_collide')) fg.d3Force('custom_collide', null)
-              
-              if (fg.d3Force('charge')) fg.d3Force('charge').strength(-500 * repelForce)
-            } else {
+            if (!is3DMode) {
               fg.d3Force('custom_gravity', null)
               if (fg.d3Force('custom_radial')) {
                 fg.d3Force('custom_radial')
@@ -447,6 +420,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
 
     // Initial Setup
     if (!graphRef.current) return
+    if (is3DMode) return // Graph3D handles its own initial physics setup
     const fg = graphRef.current
     
     // Defer initialization slightly so ForceGraph3D's internal engine has mounted and created d3ForceLayout
@@ -462,40 +436,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       if (!fg.d3Force('custom_x')) fg.d3Force('custom_x', forceX(0))
       if (!fg.d3Force('custom_y')) fg.d3Force('custom_y', forceY(0))
 
-      if (is3DMode) {
-        fg.d3Force('custom_radial', null)
-        fg.d3Force('custom_charge', null)
-        fg.d3Force('custom_collide', null)
-        
-        fg.d3Force('custom_gravity', (alpha) => {
-          const strength = centerForce * 0.1
-          const maxRadius = 1000
-          const orphanPull = 0.5
-          
-          graphData.nodes.forEach(n => {
-            if (n.val <= 1) {
-              const dist = Math.hypot(n.x || 0, n.y || 0, n.z || 0) || 1
-              if (dist > maxRadius) {
-                const force = (dist - maxRadius) * orphanPull * alpha / dist
-                n.vx -= (n.x || 0) * force
-                n.vy -= (n.y || 0) * force
-                n.vz -= (n.z || 0) * force
-              }
-            } else {
-              n.vx -= (n.x || 0) * strength * alpha
-              n.vy -= (n.y || 0) * strength * alpha
-              n.vz -= (n.z || 0) * strength * alpha
-            }
-          })
-        })
-        if (fg.cameraPosition) {
-          setTimeout(() => fg.cameraPosition({ z: 2000 }, { x: 0, y: 0, z: 0 }, 0), 100)
-        }
-        if (fg.controls) {
-          const controls = fg.controls()
-          if (controls) controls.enableDamping = false // Stop the slippery camera drifting
-        }
-      } else {
+      if (!is3DMode) {
         fg.d3Force('custom_gravity', null)
         if (!fg.d3Force('custom_radial')) fg.d3Force('custom_radial', forceRadial(800))
         if (!fg.d3Force('custom_charge')) fg.d3Force('custom_charge', forceManyBody())
@@ -530,10 +471,6 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
           })
           .strength(0.75)
           .iterations(1)
-      } else {
-        if (fg.d3Force('charge')) {
-          fg.d3Force('charge').strength(-500 * repelForce)
-        }
       }
 
       // Extremely elastic links like a spiderweb
@@ -732,14 +669,19 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
         </div>
 
         {is3DMode ? (
-          <ForceGraph3D
+          <Graph3D
             key="3d-graph-embedded"
             ref={graphRef}
             width={dimensions.width}
             height={dimensions.height}
             graphData={graphData}
             nodeColor={(node) => nodeColor(node)}
-            nodeVal={(node) => (node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2) * (useSettingsStore.getState().settings.graphNodeSize || 1.5) * 2}
+            nodeVal={(node) => {
+              const base = node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2
+              const r = base * (useSettingsStore.getState().settings.graphNodeSize || 1.5) * 2
+              // nodeVal in 3D is volume, so radius = cbrt(val). We cube it to get the proper physical size and hitbox!
+              return r * r * r
+            }}
             nodeOpacity={0.9}
             nodeResolution={16}
             linkColor={(link) => {
@@ -763,6 +705,9 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             d3AlphaDecay={isSpinning ? 0 : 0.02}
             d3VelocityDecay={0.3}
             showNavInfo={false}
+            linkDirectionalParticles={1}
+            linkDirectionalParticleWidth={2}
+            linkDirectionalParticleSpeed={0.005}
           />
         ) : (
           <ForceGraph2D
@@ -877,14 +822,18 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
 
         <div className="nexus-body">
           {is3DMode ? (
-            <ForceGraph3D
+            <Graph3D
               key="3d-graph-modal"
               ref={graphRef}
               width={dimensions.width}
               height={dimensions.height - 32}
               graphData={graphData}
               nodeColor={(node) => nodeColor(node)}
-              nodeVal={(node) => (node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2) * (useSettingsStore.getState().settings.graphNodeSize || 1.5) * 2}
+              nodeVal={(node) => {
+                const base = node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2
+                const r = base * (useSettingsStore.getState().settings.graphNodeSize || 1.5) * 2
+                return r * r * r
+              }}
               nodeOpacity={0.9}
               nodeResolution={16}
               linkColor={(link) => {
@@ -947,10 +896,14 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               onNodeDragEnd={(node) => {
                 node.fx = null
                 node.fy = null
+                node.fz = null
               }}
               backgroundColor="transparent"
               d3AlphaDecay={isSpinning ? 0 : 0.02}
               d3VelocityDecay={0.3}
+              linkDirectionalParticles={1}
+              linkDirectionalParticleWidth={2}
+              linkDirectionalParticleSpeed={0.005}
             />
           )}
         <GraphMiniMap 
