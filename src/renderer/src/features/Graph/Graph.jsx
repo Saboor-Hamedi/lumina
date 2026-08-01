@@ -725,6 +725,11 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 if (s) onNavigate(s)
               }
             }}
+            onNodeDragEnd={(node) => {
+              node.fx = null
+              node.fy = null
+              node.fz = null
+            }}
             backgroundColor="rgba(0,0,0,0)"
             d3AlphaDecay={isSpinning ? 0 : 0.02}
             d3VelocityDecay={0.3}
@@ -879,6 +884,11 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                   const s = snippets.find((sn) => sn.id === node.snippetId)
                   if (s) onNavigate(s)
                 }
+              }}
+              onNodeDragEnd={(node) => {
+                node.fx = null
+                node.fy = null
+                node.fz = null
               }}
               backgroundColor="rgba(0,0,0,0)"
               d3AlphaDecay={isSpinning ? 0 : 0.02}
