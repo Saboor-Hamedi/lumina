@@ -811,7 +811,10 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
         left={
           <button
             className="win-btn"
-            onClick={handleToggleSidebar}
+            onClick={(e) => {
+              handleToggleSidebar(e)
+              e.currentTarget.blur()
+            }}
             title={graphSidebarOpen ? 'Close Sidebar' : 'Open Sidebar'}
             style={{ marginLeft: '-10px' }}
           >

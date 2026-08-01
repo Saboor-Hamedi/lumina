@@ -13,7 +13,7 @@
   background: var(--bg-panel, #1e1e1e) !important;
   box-shadow: none !important;
   font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
-  font-size: 0.88em;
+  font-size: 13px !important; /* Fixed px instead of em so it isn't affected by editor font zoom */
   color: var(--text-main, #d4d4d4);
 }
 
@@ -103,7 +103,7 @@
 .cm-line.cb-code-header::before {
   content: attr(data-cb-lang);
   position: absolute;
-  right: 12px;
+  right: 6px;
   top: 50%;
   transform: translateY(-50%);
   padding: 4px 10px;
@@ -111,7 +111,7 @@
   font-weight: 500;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   color: var(--text-muted, rgba(255, 255, 255, 0.4));
-  background: rgba(255, 255, 255, 0.05);
+  background: transparent !important;
   border-radius: 4px;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -124,8 +124,8 @@
 
 .cm-line.cb-code-header:hover::before {
   color: var(--text-main, rgba(255, 255, 255, 0.9));
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: transparent !important;
+  border-color: transparent !important;
 }
 
 /* Copied flash feedback */
@@ -224,7 +224,7 @@
 
 [data-theme='light'] .cm-line.cb-code-header::before {
   color: var(--text-muted, #6b7280) !important;
-  background: rgba(0, 0, 0, 0.05) !important;
+  background: transparent !important;
 }
 
 [data-theme='light'] .cm-line.cm-atomic-fenced-code span[class*="string"],

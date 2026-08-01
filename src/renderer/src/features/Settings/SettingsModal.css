@@ -360,8 +360,8 @@
 .switch {
   position: relative;
   display: inline-block;
-  width: 44px;
-  height: 24px;
+  width: 34px;
+  height: 18px;
   flex-shrink: 0;
 }
 
@@ -378,23 +378,23 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.08);
   transition: .4s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: 24px;
+  border-radius: 18px;
   border: 1px solid var(--border-dim);
 }
 
 .slider:before {
   position: absolute;
   content: "";
-  height: 18px;
-  width: 18px;
-  left: 2px;
-  bottom: 2px;
+  height: 14px;
+  width: 14px;
+  left: 1px;
+  bottom: 1px;
   background-color: white;
   transition: .4s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 50%;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
 input:checked + .slider {
@@ -407,7 +407,7 @@ input:focus + .slider {
 }
 
 input:checked + .slider:before {
-  transform: translateX(20px);
+  transform: translateX(16px);
 }
 
 /* Shortcut Badge */
