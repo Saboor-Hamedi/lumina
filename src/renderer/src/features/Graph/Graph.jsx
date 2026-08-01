@@ -15,6 +15,24 @@ import GraphSidebar from './GraphSidebar'
 import GraphMiniMap from './GraphMiniMap'
 import './Graph.css'
 
+const sharedSphereGeometry = new THREE.SphereGeometry(1, 16, 16)
+const materialCache = {}
+const getMaterial = (color) => {
+  if (!materialCache[color]) {
+    materialCache[color] = new THREE.MeshPhysicalMaterial({
+      color: color,
+      metalness: 0.2,
+      roughness: 0.2,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.1,
+      transmission: 0.1,
+      opacity: 0.9,
+      transparent: true
+    })
+  }
+  return materialCache[color]
+}
+
 /**
  * Graph Component
  * Beautiful knowledge graph visualization with multiple modes and themes.
@@ -533,13 +551,19 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   // Precompute line colors to save 60,000+ calculations per second
   const defaultLineColor = useMemo(() => {
     const isSelectedTheme = graphTheme === 'space' || graphTheme === 'nebula'
+    if (is3DMode) {
+      return isSelectedTheme ? 'rgba(255, 255, 255, 0.15)' : 'rgba(150, 150, 150, 0.25)' 
+    }
     return isSelectedTheme ? 'rgba(255, 255, 255, 0.04)' : 'rgba(150, 150, 150, 0.08)' // Extremely faint so it's not muddy
-  }, [graphTheme])
+  }, [graphTheme, is3DMode])
 
   const dimmedLineColor = useMemo(() => {
     const isSelectedTheme = graphTheme === 'space' || graphTheme === 'nebula'
+    if (is3DMode) {
+      return isSelectedTheme ? 'rgba(255, 255, 255, 0.05)' : 'rgba(150, 150, 150, 0.1)'
+    }
     return isSelectedTheme ? 'rgba(255, 255, 255, 0.01)' : 'rgba(150, 150, 150, 0.02)'
-  }, [graphTheme])
+  }, [graphTheme, is3DMode])
 
   if (!isOpen && !embedded) return null
 
@@ -679,31 +703,21 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             nodeThreeObject={(node) => {
               const base = node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2
               const targetRadius = base * (useSettingsStore.getState().settings.graphNodeSize || 1.5)
-              const color = nodeColor(node)
               
-              const geometry = new THREE.SphereGeometry(targetRadius, 32, 32)
-              const material = new THREE.MeshPhysicalMaterial({
-                color: color,
-                metalness: 0.2,
-                roughness: 0.2,
-                clearcoat: 1.0,
-                clearcoatRoughness: 0.1,
-                transmission: 0.1,
-                opacity: 0.9,
-                transparent: true
-              })
-              return new THREE.Mesh(geometry, material)
+              const mesh = new THREE.Mesh(sharedSphereGeometry, getMaterial(nodeColor(node)))
+              mesh.scale.set(targetRadius, targetRadius, targetRadius)
+              return mesh
             }}
             linkColor={(link) => {
               if (!hoverNode) return defaultLineColor
               const sourceId = link.source.id || link.source
               const targetId = link.target.id || link.target
               return sourceId === hoverNode.id || targetId === hoverNode.id
-                ? 'rgba(64, 186, 250, 0.8)'
-                : dimmedLineColor
+                ? 'rgba(64, 186, 250, 0.9)'
+                : 'rgba(150, 150, 150, 0.5)'
             }}
             linkWidth={0.5}
-            linkOpacity={0.3}
+            linkOpacity={0.6}
             onNodeHover={(node) => setHoverNode(node)}
             onNodeClick={(node) => {
               if (node.snippetId) {
@@ -711,7 +725,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 if (s) onNavigate(s)
               }
             }}
-            backgroundColor="#000000"
+            backgroundColor="rgba(0,0,0,0)"
             d3AlphaDecay={isSpinning ? 0 : 0.02}
             d3VelocityDecay={0.3}
             showNavInfo={false}
@@ -841,31 +855,21 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               nodeThreeObject={(node) => {
                 const base = node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2
                 const targetRadius = base * (useSettingsStore.getState().settings.graphNodeSize || 1.5)
-                const color = nodeColor(node)
                 
-                const geometry = new THREE.SphereGeometry(targetRadius, 32, 32)
-                const material = new THREE.MeshPhysicalMaterial({
-                  color: color,
-                  metalness: 0.2,
-                  roughness: 0.2,
-                  clearcoat: 1.0,
-                  clearcoatRoughness: 0.1,
-                  transmission: 0.1,
-                  opacity: 0.9,
-                  transparent: true
-                })
-                return new THREE.Mesh(geometry, material)
+                const mesh = new THREE.Mesh(sharedSphereGeometry, getMaterial(nodeColor(node)))
+                mesh.scale.set(targetRadius, targetRadius, targetRadius)
+                return mesh
               }}
               linkColor={(link) => {
                 if (!hoverNode) return defaultLineColor
                 const sourceId = link.source.id || link.source
                 const targetId = link.target.id || link.target
                 return sourceId === hoverNode.id || targetId === hoverNode.id
-                  ? 'rgba(64, 186, 250, 0.8)'
-                  : dimmedLineColor
+                  ? 'rgba(64, 186, 250, 0.9)'
+                  : 'rgba(150, 150, 150, 0.5)'
               }}
               linkWidth={0.5}
-              linkOpacity={0.3}
+              linkOpacity={0.6}
               onNodeHover={(node) => setHoverNode(node)}
               onNodeClick={(node) => {
                 if (node.snippetId) {
@@ -873,7 +877,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                   if (s) onNavigate(s)
                 }
               }}
-              backgroundColor="#000000"
+              backgroundColor="rgba(0,0,0,0)"
               d3AlphaDecay={isSpinning ? 0 : 0.02}
               d3VelocityDecay={0.3}
               showNavInfo={false}
