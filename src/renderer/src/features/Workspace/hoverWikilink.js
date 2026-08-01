@@ -94,7 +94,13 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
       const contentEl = document.createElement('div')
       contentEl.className = 'wiki-hover-content'
 
-      let parsedSnippet = contentSnippet.replace(
+      let parsedSnippet = contentSnippet
+      const lines = parsedSnippet.split('\n')
+      if (lines.length > 15) {
+        parsedSnippet = lines.slice(0, 15).join('\n') + '\n\n...'
+      }
+
+      parsedSnippet = parsedSnippet.replace(
         /\[\[(.*?)\]\]/g,
         '<span class="cm-atomic-wiki-link">$1</span>'
       )
@@ -355,6 +361,7 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
   }
 
   const handleMouseOver = (e) => {
+    if (!e.target || typeof e.target.closest !== 'function') return
     const linkEl = e.target.closest('.cm-atomic-wiki-link, .cm-atomic-wikilink-wrap')
     if (!linkEl || !wrapper.contains(linkEl)) return
 
@@ -394,7 +401,10 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
 
   const handleDocumentClick = (e) => {
     if (hoverCard && !hoverCard.contains(e.target)) {
-      const linkEl = e.target.closest('.cm-atomic-wiki-link, .cm-atomic-wikilink-wrap')
+      let linkEl = null
+      if (e.target && typeof e.target.closest === 'function') {
+        linkEl = e.target.closest('.cm-atomic-wiki-link, .cm-atomic-wikilink-wrap')
+      }
       if (!linkEl || !wrapper.contains(linkEl)) {
         removeCard()
       }
@@ -402,11 +412,14 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
   }
 
   const handleDocumentMouseMove = (e) => {
-    let isOverLink = e.target.closest('.cm-atomic-wiki-link, .cm-atomic-wikilink-wrap')
+    let isOverLink = null
+    if (e.target && typeof e.target.closest === 'function') {
+      isOverLink = e.target.closest('.cm-atomic-wiki-link, .cm-atomic-wikilink-wrap')
+    }
     if (isOverLink && !wrapper.contains(isOverLink)) {
       isOverLink = null // Ignore links from other editor instances
     }
-    const isOverCard = hoverCard && hoverCard.contains(e.target)
+    const isOverCard = hoverCard && (hoverCard.contains(e.target) || (e.target && e.target.closest && e.target.closest('.cm-wiki-hover')))
 
     if (isOverLink) {
       if (closeTimeout) {
@@ -451,15 +464,25 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
     }
   }
 
+  const handleMouseLeave = () => {
+    if (hoverCard && !closeTimeout) {
+      closeTimeout = setTimeout(() => {
+        removeCard(true)
+      }, 350)
+    }
+  }
+
   wrapper.addEventListener('mouseover', handleMouseOver)
   document.addEventListener('mousedown', handleDocumentClick)
   document.addEventListener('mousemove', handleDocumentMouseMove)
+  document.addEventListener('mouseleave', handleMouseLeave)
   window.addEventListener('keydown', handleKeyDown, true)
 
   return () => {
     wrapper.removeEventListener('mouseover', handleMouseOver)
     document.removeEventListener('mousedown', handleDocumentClick)
     document.removeEventListener('mousemove', handleDocumentMouseMove)
+    document.removeEventListener('mouseleave', handleMouseLeave)
     window.removeEventListener('keydown', handleKeyDown, true)
     removeCard()
     clearTimeout(hoverTimeout)
