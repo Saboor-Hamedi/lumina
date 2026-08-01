@@ -372,7 +372,8 @@ npm run analyze
 **Large Dependencies Detected:**
 - CodeMirror packages (editor functionality)
 - @xenova/transformers (AI/ML models)
-- react-force-graph-2d (graph visualization)
+- react-force-graph-2d / react-force-graph-3d (graph visualization)
+- three (3D graph WebGL rendering)
 - react-markdown (markdown rendering)
 - highlight.js (syntax highlighting)
 - pdf-lib (PDF generation)

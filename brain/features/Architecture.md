@@ -38,7 +38,8 @@
 - `highlight.js 11.11.1` - Syntax highlighting
 - `lucide-react 0.555.0` - Icon system
 - `@xenova/transformers 2.17.2` - Local AI embeddings (semantic search)
-- `react-force-graph-2d 1.29.0` - Knowledge graph visualization
+- `react-force-graph-2d 1.29.0` / `react-force-graph-3d` - Dual-mode knowledge graph visualization
+- `three 0.185.1` - WebGL 3D rendering for 3D graph nodes
 - `flexsearch 0.8.212` - Full-text search engine
 
 #### Build Tools
@@ -756,24 +757,26 @@ showToast('❌ Failed to delete', 'error')
 
 ### Knowledge Graph Visualization
 
-**Location**: `src/renderer/src/features/Graph/Graph.jsx`
+**Location**: `src/renderer/src/features/Graph/Graph.jsx` and `Graph3D.jsx`
 
-**Purpose**: Interactive force-directed graph showing relationships between notes.
+**Purpose**: Interactive force-directed graph showing relationships between notes, supporting both 2D and 3D WebGL rendering modes.
 
 **Features:**
 
+- **Dual Modes (2D/3D)**: Seamless toggle between 2D canvas rendering and rich 3D WebGL space.
 - **WikiLink Connections**: Automatic links between notes based on `[[WikiLinks]]`
 - **Tag-Based Grouping**: Visual clusters for notes sharing tags
 - **Ghost Nodes**: Placeholder nodes for linked but non-existent notes
-- **Semantic Links**: AI-powered similarity connections (dashed lines)
+- **Semantic Links**: AI-powered similarity connections (directional flowing particles)
 - **Interactive Highlighting**: Hover to see neighbors and connections
-- **Zoom & Pan Controls**: Responsive canvas with smooth navigation
-- **Click-to-Navigate**: Click any node to open that note
+- **Advanced 3D Physics**: Custom `d3-force-3d` collision with dynamic volume-based hitboxes preventing node tangling.
+- **Premium 3D Aesthetics**: Nodes rendered as glossy, glass-like `MeshPhysicalMaterial` spheres in Three.js with smooth camera auto-rotation and orbit damping.
+- **Click-to-Navigate**: Click any node to open that note in the workspace.
 
 **Implementation:**
 
 ```javascript
-// Uses react-force-graph-2d with custom rendering
+// Uses react-force-graph-2d and react-force-graph-3d with custom rendering
 const data = useMemo(() => {
   const rawData = buildGraphData(snippets)
   const semantic = buildSemanticLinks(nodes, links, snippets, embeddingsCache)
@@ -783,11 +786,10 @@ const data = useMemo(() => {
 
 **Visual Customization:**
 
-- **Node Colors**: Purple (notes), Teal (tags), Gray (ghost nodes)
-- **Node Size**: Proportional to connection count (centrality)
-- **Link Styles**: Solid (WikiLinks), Dashed (semantic similarity)
-- **Label Visibility**: Zoom-dependent, always visible on hover
-- **Glow Effects**: Hub nodes and hovered nodes have shadow glow
+- **Node Colors**: Dynamic palette per-theme.
+- **Node Size**: Proportional to connection count (centrality) ensuring proper 3D volumes (`targetRadius^3`).
+- **Link Styles**: Flowing directional particles along links for visual data flow.
+- **Label Visibility**: Zoom-dependent in 2D, minimap guidance.
 
 **Access**: Click the Network icon in the Activity Bar (left sidebar)
 

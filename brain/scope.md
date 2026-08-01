@@ -30,7 +30,7 @@ This document outlines the strategic vision and feature scope for the evolution 
 
 ### 2.1 Infinite 2D Spatial Whiteboard (Canvas Mode)
 * **Concept:** A visual spatial canvas (`.canvas` JSON format) allowing users to escape linear documents and arrange thoughts in 2D space.
-* **Mechanics:** Users can drop Markdown note cards, images, PDFs, atomic tables, and live AI chat blocks onto an infinite zoomable canvas (`react-force-graph` / custom WebGL renderer). Cards can be visually grouped with colored swimlanes, connected with directional arrows, and edited live side-by-side.
+* **Mechanics:** Users can toggle between an infinite 2D zoomable canvas and a rich 3D spatial WebGL environment (`react-force-graph-3d` / Three.js). Nodes use physical materials, dynamic collision physics, and directional particle flow to represent knowledge architecture. Notes can be visually grouped, connected with directional arrows, and edited live.
 
 ### 2.2 Time-Travel Graph Evolution
 * **Concept:** Watch your intellectual network grow and cluster over time.
