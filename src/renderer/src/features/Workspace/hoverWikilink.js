@@ -242,6 +242,12 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
         codeEl.style.fontSize = '13px'
         codeEl.style.lineHeight = '1.5'
 
+        if (lang !== 'text' && !hljs.getLanguage(lang)) {
+          codeEl.classList.remove(`language-${lang}`)
+          // We can optionally add a generic class to prevent auto-detect from doing crazy things
+          codeEl.classList.add('nohighlight')
+        }
+
         try {
           hljs.highlightElement(codeEl)
         } catch (err) {

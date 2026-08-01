@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import { Target } from 'lucide-react'
 
-const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style }) => {
+const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DMode }) => {
   const canvasRef = useRef(null)
   const rafRef = useRef(null)
 
@@ -65,28 +65,30 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style }) => 
 
       // 3. Draw viewport box
       try {
-        const currentZoom = graphRef.current.zoom()
-        const currentCenter = graphRef.current.centerAt()
-        
-        if (currentZoom && currentCenter) {
-          const vpWidthGraph = mainWidth / currentZoom
-          const vpHeightGraph = mainHeight / currentZoom
+        if (!is3DMode && graphRef.current.zoom && graphRef.current.centerAt) {
+          const currentZoom = graphRef.current.zoom()
+          const currentCenter = graphRef.current.centerAt()
           
-          const vpMinX = currentCenter.x - vpWidthGraph / 2
-          const vpMinY = currentCenter.y - vpHeightGraph / 2
-          
-          const boxX = vpMinX * scale + offsetX
-          const boxY = vpMinY * scale + offsetY
-          const boxW = vpWidthGraph * scale
-          const boxH = vpHeightGraph * scale
-          
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'
-          ctx.lineWidth = 1
-          ctx.strokeRect(boxX, boxY, boxW, boxH)
-          
-          // Semi-transparent fill for viewport
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.05)'
-          ctx.fillRect(boxX, boxY, boxW, boxH)
+          if (currentZoom && currentCenter) {
+            const vpWidthGraph = mainWidth / currentZoom
+            const vpHeightGraph = mainHeight / currentZoom
+            
+            const vpMinX = currentCenter.x - vpWidthGraph / 2
+            const vpMinY = currentCenter.y - vpHeightGraph / 2
+            
+            const boxX = vpMinX * scale + offsetX
+            const boxY = vpMinY * scale + offsetY
+            const boxW = vpWidthGraph * scale
+            const boxH = vpHeightGraph * scale
+            
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'
+            ctx.lineWidth = 1
+            ctx.strokeRect(boxX, boxY, boxW, boxH)
+            
+            // Semi-transparent fill for viewport
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)'
+            ctx.fillRect(boxX, boxY, boxW, boxH)
+          }
         }
       } catch (err) {
         // centerAt/zoom might throw if not fully initialized
@@ -103,7 +105,7 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style }) => 
 
   const handleRecenter = (e) => {
     e.stopPropagation()
-    if (graphRef.current) {
+    if (graphRef.current && graphRef.current.zoomToFit) {
       graphRef.current.zoomToFit(800, 100)
     }
   }

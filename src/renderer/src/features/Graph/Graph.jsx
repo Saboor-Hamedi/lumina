@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { X, Square, Copy, Network, RefreshCw, Layers, Search, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import ForceGraph2D from 'react-force-graph-2d'
+import ForceGraph3D from 'react-force-graph-3d'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useAIStore } from '../AI/tools/LuminaChat'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
@@ -35,6 +36,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   const graphHideGhosts = useSettingsStore(s => s.settings.graphHideGhosts)
   const graphHideOrphans = useSettingsStore(s => s.settings.graphHideOrphans)
   const graphSidebarOpen = useSettingsStore(s => s.settings.graphSidebarOpen ?? true)
+  const is3DMode = useSettingsStore(s => s.settings.graph3DMode ?? false)
 
   const [hoverNode, setHoverNode] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -201,6 +203,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             // Spawn nodes over a much wider area so the physics engine doesn't have to spend 3 seconds exploding them
             n.x = (Math.random() - 0.5) * 2000
             n.y = (Math.random() - 0.5) * 2000
+            n.z = (Math.random() - 0.5) * 2000
           }
 
           n.linkCount = linkCounts[n.id] || 0
@@ -309,20 +312,41 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
         prevSelectedId.current = selectedSnippet?.id
 
         setTimeout(() => {
+          if (!graphRef.current) return
           if (selectedSnippet) {
             const node = graphData.nodes.find((n) => n.snippetId === selectedSnippet.id)
             if (node) {
-              graphRef.current.centerAt(node.x || 0, node.y || 0, 400)
-              graphRef.current.zoom(1.0, 400) // Lowered zoom from 1.5 to 1.0
+              if (is3DMode) {
+                // In 3D, position the camera to look at the node from a reasonable distance
+                const distance = 200;
+                const distRatio = 1 + distance / Math.max(1, Math.hypot(node.x || 0, node.y || 0, node.z || 0));
+                
+                graphRef.current.cameraPosition(
+                  { x: (node.x || 0) * distRatio, y: (node.y || 0) * distRatio, z: (node.z || 0) * distRatio }, // new position
+                  { x: node.x || 0, y: node.y || 0, z: node.z || 0 }, // lookAt
+                  400  // ms transition duration
+                );
+              } else {
+                if (graphRef.current.centerAt) {
+                  graphRef.current.centerAt(node.x || 0, node.y || 0, 400)
+                  graphRef.current.zoom(1.0, 400) // Lowered zoom from 1.5 to 1.0
+                }
+              }
             }
           } else if (isFirstRender) {
             // Instantly frame the graph without waiting 2.5 seconds
-            if (graphRef.current) graphRef.current.zoomToFit(400, 50)
+            if (is3DMode && graphRef.current.cameraPosition) {
+              // 3D zoomToFit
+              graphRef.current.zoomToFit(400, 50)
+            } else if (!is3DMode && graphRef.current.zoomToFit) {
+              // 2D zoomToFit
+              graphRef.current.zoomToFit(400, 50)
+            }
           }
         }, 100) // Small delay to ensure WebGL engine is ready
       }
     }
-  }, [selectedSnippet, isBuildingGraph, graphData.nodes])
+  }, [selectedSnippet, isBuildingGraph, graphData.nodes, is3DMode])
 
   // Ref for debouncing reheat
   const reheatTimeoutRef = useRef(null)
@@ -347,36 +371,76 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
           if (!graphRef.current) return
           const fg = graphRef.current
 
-          const sizeMult = settings.graphNodeSize || 1.5
-          const centerForce = settings.graphCenterForce ?? 0.05
-          const repelForce = settings.graphRepelForce ?? 0.3
-          const linkForce = settings.graphLinkForce ?? 0.05
+          // Delay execution to ensure 3D physics engine is initialized on mount
+          setTimeout(() => {
+            const sizeMult = settings.graphNodeSize || 1.5
+            const centerForce = settings.graphCenterForce ?? 0.05
+            const repelForce = settings.graphRepelForce ?? 0.3
+            const linkForce = settings.graphLinkForce ?? 0.05
 
-          // Update force parameters instantly
-          fg.d3Force('custom_x').strength(0)
-          fg.d3Force('custom_y').strength(0)
-          if (fg.d3Force('custom_radial')) {
-            fg.d3Force('custom_radial')
-              .radius((d) => (d.val <= 1 ? 800 : 0))
-              .strength((d) => (d.val <= 1 ? 0.2 : centerForce))
-          }
-          fg.d3Force('custom_charge').strength(-500 * repelForce) // Reduced from -3000 so orphans don't shoot to infinity
-          
-          fg.d3Force('custom_collide')
-            .radius((d) => {
-              const baseR = d.val ? Math.max(2, Math.sqrt(d.val) * 2.5) : 2
-              return baseR * sizeMult + 15 // Physical gap
-            })
-            .strength(0.75)
-            .iterations(1)
+            // Update force parameters instantly
+            fg.d3Force('custom_x').strength(0)
+            fg.d3Force('custom_y').strength(0)
+            
+            if (is3DMode) {
+              fg.d3Force('custom_gravity', (alpha) => {
+                const strength = centerForce * 0.1
+                const maxRadius = 1000
+                const orphanPull = 0.5
+                
+                graphData.nodes.forEach(n => {
+                  if (n.val <= 1) {
+                    // Orphans: gently pull them to a spherical shell so they don't shoot to infinity
+                    const dist = Math.hypot(n.x || 0, n.y || 0, n.z || 0) || 1
+                    if (dist > maxRadius) {
+                      const force = (dist - maxRadius) * orphanPull * alpha / dist
+                      n.vx -= (n.x || 0) * force
+                      n.vy -= (n.y || 0) * force
+                      n.vz -= (n.z || 0) * force
+                    }
+                  } else {
+                    n.vx -= (n.x || 0) * strength * alpha
+                    n.vy -= (n.y || 0) * strength * alpha
+                    n.vz -= (n.z || 0) * strength * alpha
+                  }
+                })
+              })
+              if (fg.d3Force('custom_radial')) fg.d3Force('custom_radial', null)
+              if (fg.d3Force('custom_charge')) fg.d3Force('custom_charge', null)
+              if (fg.d3Force('custom_collide')) fg.d3Force('custom_collide', null)
+              
+              if (fg.d3Force('charge')) fg.d3Force('charge').strength(-500 * repelForce)
+            } else {
+              fg.d3Force('custom_gravity', null)
+              if (fg.d3Force('custom_radial')) {
+                fg.d3Force('custom_radial')
+                  .radius((d) => (d.val <= 1 ? 800 : 0))
+                  .strength((d) => (d.val <= 1 ? 0.2 : centerForce))
+              }
+              
+              // Ensure 2D forces exist and default 3D/2D charge is disabled
+              if (fg.d3Force('charge')) fg.d3Force('charge', null)
+              if (!fg.d3Force('custom_charge')) fg.d3Force('custom_charge', forceManyBody())
+              if (!fg.d3Force('custom_collide')) fg.d3Force('custom_collide', forceCollide())
 
-          if (fg.d3Force('link')) fg.d3Force('link').strength(linkForce)
+              fg.d3Force('custom_charge').strength(-500 * repelForce)
+              fg.d3Force('custom_collide')
+                .radius((d) => {
+                  const baseR = d.val ? Math.max(2, Math.sqrt(d.val) * 2.5) : 2
+                  return baseR * sizeMult + 15
+                })
+                .strength(0.75)
+                .iterations(1)
+            }
 
-          // Debounce the reheat to prevent violent shaking when dragging sliders
-          if (reheatTimeoutRef.current) clearTimeout(reheatTimeoutRef.current)
-          reheatTimeoutRef.current = setTimeout(() => {
-            if (graphRef.current) graphRef.current.d3ReheatSimulation()
-          }, 300)
+            if (fg.d3Force('link')) fg.d3Force('link').strength(linkForce)
+
+            // Debounce the reheat to prevent violent shaking when dragging sliders
+            if (reheatTimeoutRef.current) clearTimeout(reheatTimeoutRef.current)
+            reheatTimeoutRef.current = setTimeout(() => {
+              if (graphRef.current) graphRef.current.d3ReheatSimulation()
+            }, 300)
+          }, 50)
         }
       }
     )
@@ -384,85 +448,149 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     // Initial Setup
     if (!graphRef.current) return
     const fg = graphRef.current
-    const initialSettings = useSettingsStore.getState().settings
-
-    const sizeMult = initialSettings.graphNodeSize || 1.5
-    const centerForce = initialSettings.graphCenterForce ?? 0.05
-    const repelForce = initialSettings.graphRepelForce ?? 0.3
-    const linkForce = initialSettings.graphLinkForce ?? 0.05
-
-    // Initialize core forces only if they don't exist
-    if (!fg.d3Force('custom_x')) fg.d3Force('custom_x', forceX(0))
-    if (!fg.d3Force('custom_y')) fg.d3Force('custom_y', forceY(0))
-    if (!fg.d3Force('custom_radial')) fg.d3Force('custom_radial', forceRadial(800))
-    if (!fg.d3Force('custom_charge')) fg.d3Force('custom_charge', forceManyBody())
-    if (!fg.d3Force('custom_collide')) fg.d3Force('custom_collide', forceCollide())
-
-    // Disable default forces to prevent conflicts
-    fg.d3Force('x', null)
-    fg.d3Force('y', null)
-    fg.d3Force('charge', null)
-    fg.d3Force('radial', null)
-
-    // Apply initial forces
-    fg.d3Force('custom_x').strength(0)
-    fg.d3Force('custom_y').strength(0)
-    fg.d3Force('custom_radial')
-      .radius((d) => (d.val <= 1 ? 800 : 0))
-      .strength((d) => (d.val <= 1 ? 0.2 : centerForce))
-    fg.d3Force('custom_charge').strength(-500 * repelForce)
     
-    fg.d3Force('custom_collide')
-      .radius((d) => {
-        const baseR = d.val ? Math.max(2, Math.sqrt(d.val) * 2.5) : 2
-        return baseR * sizeMult + 15
-      })
-      .strength(0.75)
-      .iterations(1)
+    // Defer initialization slightly so ForceGraph3D's internal engine has mounted and created d3ForceLayout
+    const initTimer = setTimeout(() => {
+      const initialSettings = useSettingsStore.getState().settings
 
-    // Extremely elastic links like a spiderweb
-    if (fg.d3Force('link')) fg.d3Force('link').distance(150).strength(linkForce)
+      const sizeMult = initialSettings.graphNodeSize || 1.5
+      const centerForce = initialSettings.graphCenterForce ?? 0.05
+      const repelForce = initialSettings.graphRepelForce ?? 0.3
+      const linkForce = initialSettings.graphLinkForce ?? 0.05
 
-    fg.d3ReheatSimulation()
+      // Initialize core forces only if they don't exist
+      if (!fg.d3Force('custom_x')) fg.d3Force('custom_x', forceX(0))
+      if (!fg.d3Force('custom_y')) fg.d3Force('custom_y', forceY(0))
 
-    return () => unsubscribe()
-  }, [])
+      if (is3DMode) {
+        fg.d3Force('custom_radial', null)
+        fg.d3Force('custom_charge', null)
+        fg.d3Force('custom_collide', null)
+        
+        fg.d3Force('custom_gravity', (alpha) => {
+          const strength = centerForce * 0.1
+          const maxRadius = 1000
+          const orphanPull = 0.5
+          
+          graphData.nodes.forEach(n => {
+            if (n.val <= 1) {
+              const dist = Math.hypot(n.x || 0, n.y || 0, n.z || 0) || 1
+              if (dist > maxRadius) {
+                const force = (dist - maxRadius) * orphanPull * alpha / dist
+                n.vx -= (n.x || 0) * force
+                n.vy -= (n.y || 0) * force
+                n.vz -= (n.z || 0) * force
+              }
+            } else {
+              n.vx -= (n.x || 0) * strength * alpha
+              n.vy -= (n.y || 0) * strength * alpha
+              n.vz -= (n.z || 0) * strength * alpha
+            }
+          })
+        })
+        if (fg.cameraPosition) {
+          setTimeout(() => fg.cameraPosition({ z: 2000 }, { x: 0, y: 0, z: 0 }, 0), 100)
+        }
+        if (fg.controls) {
+          const controls = fg.controls()
+          if (controls) controls.enableDamping = false // Stop the slippery camera drifting
+        }
+      } else {
+        fg.d3Force('custom_gravity', null)
+        if (!fg.d3Force('custom_radial')) fg.d3Force('custom_radial', forceRadial(800))
+        if (!fg.d3Force('custom_charge')) fg.d3Force('custom_charge', forceManyBody())
+        if (!fg.d3Force('custom_collide')) fg.d3Force('custom_collide', forceCollide())
+      }
+
+      // Disable default forces to prevent conflicts
+      fg.d3Force('x', null)
+      fg.d3Force('y', null)
+      fg.d3Force('z', null)
+      fg.d3Force('radial', null)
+      fg.d3Force('center', null)
+      
+      if (!is3DMode) {
+        fg.d3Force('charge', null)
+      }
+
+      // Apply initial forces
+      fg.d3Force('custom_x').strength(0)
+      fg.d3Force('custom_y').strength(0)
+      
+      if (!is3DMode) {
+        fg.d3Force('custom_radial')
+          .radius((d) => (d.val <= 1 ? 800 : 0))
+          .strength((d) => (d.val <= 1 ? 0.2 : centerForce))
+          
+        fg.d3Force('custom_charge').strength(-500 * repelForce)
+        fg.d3Force('custom_collide')
+          .radius((d) => {
+            const baseR = d.val ? Math.max(2, Math.sqrt(d.val) * 2.5) : 2
+            return baseR * sizeMult + 15
+          })
+          .strength(0.75)
+          .iterations(1)
+      } else {
+        if (fg.d3Force('charge')) {
+          fg.d3Force('charge').strength(-500 * repelForce)
+        }
+      }
+
+      // Extremely elastic links like a spiderweb
+      if (fg.d3Force('link')) fg.d3Force('link').distance(150).strength(linkForce)
+
+      fg.d3ReheatSimulation()
+    }, 100) // 100ms initialization delay
+
+    return () => {
+      unsubscribe()
+      clearTimeout(initTimer)
+    }
+  }, [is3DMode])
 
   // Auto-Spin Logic
   useEffect(() => {
+    let spinTimer
     if (!graphRef.current) return
-    const fg = graphRef.current
 
-    if (isSpinning) {
-      const forceSpin = () => {
-        let nodes
-        function force(alpha) {
-          if (!nodes) return
-          for (let i = 0, n = nodes.length; i < n; ++i) {
-            const node = nodes[i]
-            const dx = node.x || 0
-            const dy = node.y || 0
-            const dist = Math.sqrt(dx * dx + dy * dy)
-            if (dist > 0) {
-              // Apply tangential velocity for rotation
-              node.vx += (-dy / dist) * 1.5 * alpha
-              node.vy += (dx / dist) * 1.5 * alpha
+    // Defer so that ForceGraph3D engine is fully spun up
+    spinTimer = setTimeout(() => {
+      const fg = graphRef.current
+      if (!fg) return
+
+      if (isSpinning) {
+        const forceSpin = () => {
+          let nodes
+          function force(alpha) {
+            if (!nodes) return
+            for (let i = 0, n = nodes.length; i < n; ++i) {
+              const node = nodes[i]
+              const dx = node.x || 0
+              const dy = node.y || 0
+              const dist = Math.sqrt(dx * dx + dy * dy)
+              if (dist > 0) {
+                // Apply tangential velocity for rotation
+                node.vx += (-dy / dist) * 1.5 * alpha
+                node.vy += (dx / dist) * 1.5 * alpha
+              }
             }
           }
+          force.initialize = function (_) {
+            nodes = _
+          }
+          return force
         }
-        force.initialize = function (_) {
-          nodes = _
-        }
-        return force
-      }
 
-      fg.d3Force('spin', forceSpin())
-      fg.d3ReheatSimulation()
-    } else {
-      fg.d3Force('spin', null)
-      fg.d3ReheatSimulation()
-    }
-  }, [isSpinning])
+        fg.d3Force('spin', forceSpin())
+        fg.d3ReheatSimulation()
+      } else {
+        fg.d3Force('spin', null)
+        fg.d3ReheatSimulation()
+      }
+    }, 150)
+
+    return () => clearTimeout(spinTimer)
+  }, [isSpinning, is3DMode])
 
   // Precompute line colors to save 60,000+ calculations per second
   const defaultLineColor = useMemo(() => {
@@ -603,54 +731,91 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
           </div>
         </div>
 
-        <ForceGraph2D
-          ref={graphRef}
-          width={dimensions.width}
-          height={dimensions.height}
-          graphData={graphData}
-          nodeCanvasObject={paintNode}
-          onZoom={() => {
-            // Trackpad zoom can be jittery, zooming works best when not interfering
-          }}
-          onNodeHover={(node, prev) => {
-            setHoverNode(node)
-          }}
-          nodePointerAreaPaint={(node, color, ctx) => {
-            const sizeMult = useSettingsStore.getState().settings.graphNodeSize || 1.5
-            const r = (node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2) * sizeMult
-            ctx.fillStyle = color
-            ctx.beginPath()
-            ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false)
-            ctx.fill()
-          }}
-          linkColor={(link) => {
-            if (!hoverNode) return defaultLineColor
-            const sourceId = link.source.id || link.source
-            const targetId = link.target.id || link.target
-            return sourceId === hoverNode.id || targetId === hoverNode.id
-              ? 'rgba(64, 186, 250, 0.8)'
-              : dimmedLineColor
-          }}
-          linkDirectionalParticles={0}
-          onNodeClick={(node) => {
-            if (node.snippetId) {
-              const s = snippets.find((sn) => sn.id === node.snippetId)
-              if (s) onNavigate(s)
-            }
-          }}
-          onNodeDragEnd={(node) => {
-            node.fx = null
-            node.fy = null
-          }}
-          backgroundColor="transparent"
-          d3AlphaDecay={isSpinning ? 0 : 0.02}
-          d3VelocityDecay={0.3} // Lower viscosity for smoother dragging
-        />
+        {is3DMode ? (
+          <ForceGraph3D
+            key="3d-graph-embedded"
+            ref={graphRef}
+            width={dimensions.width}
+            height={dimensions.height}
+            graphData={graphData}
+            nodeColor={(node) => nodeColor(node)}
+            nodeVal={(node) => (node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2) * (useSettingsStore.getState().settings.graphNodeSize || 1.5) * 2}
+            nodeOpacity={0.9}
+            nodeResolution={16}
+            linkColor={(link) => {
+              if (!hoverNode) return defaultLineColor
+              const sourceId = link.source.id || link.source
+              const targetId = link.target.id || link.target
+              return sourceId === hoverNode.id || targetId === hoverNode.id
+                ? 'rgba(64, 186, 250, 0.8)'
+                : dimmedLineColor
+            }}
+            linkWidth={0.5}
+            linkOpacity={0.3}
+            onNodeHover={(node) => setHoverNode(node)}
+            onNodeClick={(node) => {
+              if (node.snippetId) {
+                const s = snippets.find((sn) => sn.id === node.snippetId)
+                if (s) onNavigate(s)
+              }
+            }}
+            backgroundColor="#000000"
+            d3AlphaDecay={isSpinning ? 0 : 0.02}
+            d3VelocityDecay={0.3}
+            showNavInfo={false}
+          />
+        ) : (
+          <ForceGraph2D
+            key="2d-graph-embedded"
+            ref={graphRef}
+            width={dimensions.width}
+            height={dimensions.height}
+            graphData={graphData}
+            nodeCanvasObject={paintNode}
+            onZoom={() => {
+              // Trackpad zoom can be jittery, zooming works best when not interfering
+            }}
+            onNodeHover={(node, prev) => {
+              setHoverNode(node)
+            }}
+            nodePointerAreaPaint={(node, color, ctx) => {
+              const sizeMult = useSettingsStore.getState().settings.graphNodeSize || 1.5
+              const r = (node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2) * sizeMult
+              ctx.fillStyle = color
+              ctx.beginPath()
+              ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false)
+              ctx.fill()
+            }}
+            linkColor={(link) => {
+              if (!hoverNode) return defaultLineColor
+              const sourceId = link.source.id || link.source
+              const targetId = link.target.id || link.target
+              return sourceId === hoverNode.id || targetId === hoverNode.id
+                ? 'rgba(64, 186, 250, 0.8)'
+                : dimmedLineColor
+            }}
+            linkDirectionalParticles={0}
+            onNodeClick={(node) => {
+              if (node.snippetId) {
+                const s = snippets.find((sn) => sn.id === node.snippetId)
+                if (s) onNavigate(s)
+              }
+            }}
+            onNodeDragEnd={(node) => {
+              node.fx = null
+              node.fy = null
+            }}
+            backgroundColor="transparent"
+            d3AlphaDecay={isSpinning ? 0 : 0.02}
+            d3VelocityDecay={0.3} // Lower viscosity for smoother dragging
+          />
+        )}
         <GraphMiniMap 
           graphRef={graphRef} 
           graphData={graphData} 
           mainWidth={dimensions.width} 
           mainHeight={dimensions.height} 
+          is3DMode={is3DMode}
         />
       </div>
     )
@@ -711,52 +876,89 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
         />
 
         <div className="nexus-body">
-          <ForceGraph2D
-            ref={graphRef}
-            width={dimensions.width}
-            height={dimensions.height - 32}
-            graphData={graphData}
-          nodeCanvasObject={paintNode}
-          onNodeHover={(node, prev) => {
-            setHoverNode(node)
-          }}
-          nodePointerAreaPaint={(node, color, ctx) => {
-            const sizeMult = useSettingsStore.getState().settings.graphNodeSize || 1.5
-            const r = (node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2) * sizeMult
-            ctx.fillStyle = color
-            ctx.beginPath()
-            ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false)
-            ctx.fill()
-          }}
-          linkColor={(link) => {
-            if (!hoverNode) return defaultLineColor
-            const sourceId = link.source.id || link.source
-            const targetId = link.target.id || link.target
-            return sourceId === hoverNode.id || targetId === hoverNode.id
-              ? 'rgba(64, 186, 250, 0.8)'
-              : dimmedLineColor
-          }}
-          linkWidth={0.5}
-          linkDirectionalParticles={0}
-          onNodeClick={(node) => {
-            if (node.snippetId) {
-              const s = snippets.find((sn) => sn.id === node.snippetId)
-              if (s) onNavigate(s)
-            }
-          }}
-          onNodeDragEnd={(node) => {
-            node.fx = null
-            node.fy = null
-          }}
-          backgroundColor="transparent"
-          d3AlphaDecay={isSpinning ? 0 : 0.02}
-          d3VelocityDecay={0.3} // Lower viscosity for smoother, more fluid dragging
-        />
+          {is3DMode ? (
+            <ForceGraph3D
+              key="3d-graph-modal"
+              ref={graphRef}
+              width={dimensions.width}
+              height={dimensions.height - 32}
+              graphData={graphData}
+              nodeColor={(node) => nodeColor(node)}
+              nodeVal={(node) => (node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2) * (useSettingsStore.getState().settings.graphNodeSize || 1.5) * 2}
+              nodeOpacity={0.9}
+              nodeResolution={16}
+              linkColor={(link) => {
+                if (!hoverNode) return defaultLineColor
+                const sourceId = link.source.id || link.source
+                const targetId = link.target.id || link.target
+                return sourceId === hoverNode.id || targetId === hoverNode.id
+                  ? 'rgba(64, 186, 250, 0.8)'
+                  : dimmedLineColor
+              }}
+              linkWidth={0.5}
+              linkOpacity={0.3}
+              onNodeHover={(node) => setHoverNode(node)}
+              onNodeClick={(node) => {
+                if (node.snippetId) {
+                  const s = snippets.find((sn) => sn.id === node.snippetId)
+                  if (s) onNavigate(s)
+                }
+              }}
+              backgroundColor="#000000"
+              d3AlphaDecay={isSpinning ? 0 : 0.02}
+              d3VelocityDecay={0.3}
+              showNavInfo={false}
+            />
+          ) : (
+            <ForceGraph2D
+              key="2d-graph-modal"
+              ref={graphRef}
+              width={dimensions.width}
+              height={dimensions.height - 32}
+              graphData={graphData}
+              nodeCanvasObject={paintNode}
+              onNodeHover={(node, prev) => {
+                setHoverNode(node)
+              }}
+              nodePointerAreaPaint={(node, color, ctx) => {
+                const sizeMult = useSettingsStore.getState().settings.graphNodeSize || 1.5
+                const r = (node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2) * sizeMult
+                ctx.fillStyle = color
+                ctx.beginPath()
+                ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false)
+                ctx.fill()
+              }}
+              linkColor={(link) => {
+                if (!hoverNode) return defaultLineColor
+                const sourceId = link.source.id || link.source
+                const targetId = link.target.id || link.target
+                return sourceId === hoverNode.id || targetId === hoverNode.id
+                  ? 'rgba(64, 186, 250, 0.8)'
+                  : dimmedLineColor
+              }}
+              linkWidth={0.5}
+              linkDirectionalParticles={0}
+              onNodeClick={(node) => {
+                if (node.snippetId) {
+                  const s = snippets.find((sn) => sn.id === node.snippetId)
+                  if (s) onNavigate(s)
+                }
+              }}
+              onNodeDragEnd={(node) => {
+                node.fx = null
+                node.fy = null
+              }}
+              backgroundColor="transparent"
+              d3AlphaDecay={isSpinning ? 0 : 0.02}
+              d3VelocityDecay={0.3}
+            />
+          )}
         <GraphMiniMap 
           graphRef={graphRef} 
           graphData={graphData} 
           mainWidth={dimensions.width} 
-          mainHeight={dimensions.height - 32} 
+          mainHeight={dimensions.height - 32}
+          is3DMode={is3DMode} 
         />
       </div>
       </div>
