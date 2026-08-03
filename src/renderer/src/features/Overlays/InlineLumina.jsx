@@ -203,23 +203,7 @@ const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title, cursorPosi
     }
   }, [isOpen])
 
-  useEffect(() => {
-    const handleGlobalKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen) {
-        e.preventDefault()
-        e.stopPropagation()
-        handleCancel()
-      }
-    }
 
-    if (isOpen) {
-      window.addEventListener('keydown', handleGlobalKeyDown, { capture: true })
-    }
-
-    return () => {
-      window.removeEventListener('keydown', handleGlobalKeyDown, { capture: true })
-    }
-  }, [isOpen, handleCancel])
 
   const handleStop = useCallback(() => {
     if (abortController) {
@@ -251,6 +235,24 @@ const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title, cursorPosi
     handleStop()
     onClose()
   }, [handleStop, onClose])
+
+  useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        e.preventDefault()
+        e.stopPropagation()
+        handleCancel()
+      }
+    }
+
+    if (isOpen) {
+      window.addEventListener('keydown', handleGlobalKeyDown, { capture: true })
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleGlobalKeyDown, { capture: true })
+    }
+  }, [isOpen, handleCancel])
 
   const handleSubmit = useCallback(
     async (e) => {

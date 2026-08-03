@@ -69,6 +69,8 @@ test('note count is shown in sidebar', async () => {
 test('welcome page shortcuts are visible when no notes exist', async () => {
   // Welcome action cards shown when vault is empty
   await expect(page.locator('text=Create a new note')).toBeVisible({ timeout: 20_000 })
-  await expect(page.locator('text=Quick Search')).toBeVisible({ timeout: 20_000 })
-  await expect(page.locator('text=AI Assistant')).toBeVisible({ timeout: 20_000 })
+  await expect(page.getByRole('button', { name: /Quick Search/ })).toBeVisible({
+    timeout: 20_000
+  })
+  await expect(page.getByRole('button', { name: /AI Assistant/ })).toBeVisible({ timeout: 20_000 })
 })
