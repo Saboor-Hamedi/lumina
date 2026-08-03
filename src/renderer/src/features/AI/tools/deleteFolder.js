@@ -1,7 +1,7 @@
 import * as aiSdk from 'ai'
 
 export const deleteFolderTool = aiSdk.tool({
-  description: 'Delete a folder and ALL its contents from the vault.',
+  description: '',
   inputSchema: aiSdk.jsonSchema({
     type: 'object',
     properties: { path: { type: 'string', description: 'The folder path to delete' } },

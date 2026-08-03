@@ -1,7 +1,7 @@
 import * as aiSdk from 'ai'
 
 export const renameFolderTool = aiSdk.tool({
-  description: 'Rename a folder in the vault.',
+  description: '',
   inputSchema: aiSdk.jsonSchema({
     type: 'object',
     properties: { 

@@ -1,7 +1,7 @@
 import * as aiSdk from 'ai'
 
 export const deleteFileTool = aiSdk.tool({
-  description: 'Delete a file from the vault.',
+  description: '',
   inputSchema: aiSdk.jsonSchema({
     type: 'object',
     properties: {

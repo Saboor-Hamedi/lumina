@@ -1,7 +1,7 @@
 import * as aiSdk from 'ai'
 
 export const createFileTool = aiSdk.tool({
-  description: 'Create a new markdown file in the vault.',
+  description: '',
   inputSchema: aiSdk.jsonSchema({
     type: 'object',
     properties: {

@@ -1117,7 +1117,7 @@ ${vaultAccessNote}`
                       parts.push(`${appliedCreations} file(s) about your request`)
                     if (appliedUpdates > 0) parts.push(`${appliedUpdates} file(s) updated`)
                     if (appliedDeletions > 0) parts.push(`Deleted`)
-                    return `I've ${parts.join(' and ')}. You can find them in your vault!`
+                    return `I've ${parts.join(' and ')}. You can find them in your workspace!`
                   }
                   return text
                 })()

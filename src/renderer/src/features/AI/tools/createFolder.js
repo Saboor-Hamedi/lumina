@@ -1,7 +1,7 @@
 import * as aiSdk from 'ai'
 
 export const createFolderTool = aiSdk.tool({
-  description: 'Create a new folder in the vault.',
+  description: '',
   inputSchema: aiSdk.jsonSchema({
     type: 'object',
     properties: { path: { type: 'string', description: 'The folder path to create (e.g. "my-approach")' } },

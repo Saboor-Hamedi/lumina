@@ -1,7 +1,7 @@
 import * as aiSdk from 'ai'
 
 export const renameFileTool = aiSdk.tool({
-  description: 'Rename a file in the vault. Preserves the file folder and all content. Use this instead of delete+create when renaming.',
+  description: '',
   inputSchema: aiSdk.jsonSchema({
     type: 'object',
     properties: {
