@@ -612,6 +612,8 @@ const MarkdownEditor = React.memo(
       setIsDirty(true)
     }, [])
 
+    const handleCloseInlineAI = useCallback(() => setIsInlineAIOpen(false), [])
+
     const wikiLinkCompletionSource = useCallback((context) => {
       if (document.activeElement?.classList.contains('cm-atomic-table-cell-source')) {
         return null
@@ -1107,7 +1109,7 @@ const MarkdownEditor = React.memo(
           {isInlineAIOpen && (
             <InlineLumina
               isOpen={isInlineAIOpen}
-              onClose={() => setIsInlineAIOpen(false)}
+              onClose={handleCloseInlineAI}
               onInsert={handleInlineAIInsert}
               cursorPosition={realViewRef.current?.state.selection.main}
               editorView={realViewRef.current}

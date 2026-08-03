@@ -4,7 +4,7 @@ import remarkGfm from 'remark-gfm'
 import { GripVertical, X, Check, Copy, Loader2 } from 'lucide-react'
 import './InlineLumina.css'
 
-const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title }) => {
+const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title, cursorPosition }) => {
   const [query, setQuery] = useState('')
   const [lastQuery, setLastQuery] = useState('')
   const [response, setResponse] = useState('')
@@ -57,7 +57,7 @@ const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title }) => {
         }
       })
     }
-  }, [isOpen, editorView])
+  }, [isOpen, editorView]) // intentionally omit cursorPosition so it does NOT move
 
   const getSelectedText = useCallback(() => {
     if (!editorView) return null
@@ -182,10 +182,15 @@ const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title }) => {
 
   useEffect(() => {
     if (isOpen) {
-      setContextRange(getSelectedText())
       setTimeout(() => inputRef.current?.focus(), 100)
     }
-  }, [isOpen, getSelectedText])
+  }, [isOpen])
+  
+  useEffect(() => {
+    if (isOpen) {
+      setContextRange(getSelectedText())
+    }
+  }, [isOpen, getSelectedText, cursorPosition])
 
   useEffect(() => {
     if (!isOpen) {
@@ -197,6 +202,24 @@ const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title }) => {
       setContextRange(null)
     }
   }, [isOpen])
+
+  useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        e.preventDefault()
+        e.stopPropagation()
+        handleCancel()
+      }
+    }
+
+    if (isOpen) {
+      window.addEventListener('keydown', handleGlobalKeyDown, { capture: true })
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleGlobalKeyDown, { capture: true })
+    }
+  }, [isOpen, handleCancel])
 
   const handleStop = useCallback(() => {
     if (abortController) {
@@ -252,10 +275,11 @@ const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title }) => {
         let systemPrompt = `You are a premium AI writing assistant integrated directly into a user's text editor.
 
 CRITICAL INSTRUCTIONS:
-1. If the user asks you to rewrite, twist, translate, expand, summarize, or modify the provided context, you MUST output ONLY the final text.
-2. DO NOT include any conversational filler (e.g., "Here is the rewritten text:", "Sure, I can help").
-3. DO NOT wrap the text in markdown code blocks (\`\`\`) unless the user explicitly asks for code.
-4. If the user asks a general question (or asks "what do you see" or "what is the file name" or asks to summarize the file), answer concisely based on the Current Editor Context and full file contents provided below. You DO have access to this context; treat it as what you are currently "looking at".`
+1. You have access to the Full File Contents. Use this to deeply understand the topic, links, tags, and tone of the entire document.
+2. When the user asks you to modify, expand, or rewrite the Target Block (their selection/cursor position), you MUST use the Full File Context to inform your changes. Ensure your output seamlessly integrates with the rest of the document.
+3. If modifying text, output ONLY the final text for the Target Block. DO NOT include conversational filler like "Here is the expanded text:".
+4. DO NOT wrap the text in markdown code blocks (\`\`\`) unless the user explicitly asks for code.
+5. If the user asks a general question (e.g., "what is this file about", "summarize", "what is the file name"), answer concisely based on the Full File Contents.`
 
         if (title) {
           systemPrompt += `\n\n**File Name / Title:** ${title}`
@@ -263,14 +287,14 @@ CRITICAL INSTRUCTIONS:
 
         if (contextRange) {
           if (contextRange.fullText) {
-            systemPrompt += `\n\n**Full File Contents (For context/summarization if asked):**\n\`\`\`\n${contextRange.fullText}\n\`\`\``
+            systemPrompt += `\n\n**Full File Contents (For deep context & understanding):**\n\`\`\`\n${contextRange.fullText}\n\`\`\``
           }
           if (contextRange.text) {
-            systemPrompt += '\n\n**Current Target Block (Where the user\'s cursor is currently located):**\n' + contextRange.text
+            systemPrompt += '\n\n**Current Target Block (Where the user\'s cursor/selection is located):**\n' + contextRange.text
             if (contextRange.isSelection) {
-              systemPrompt += '\n\n*(The user has highlighted the Target Block above. This is exactly what you see. Operate strictly on this selection unless they ask about the whole file).*'
+              systemPrompt += '\n\n*(The user has highlighted the Target Block above. You must operate strictly on replacing/expanding this selection, but use the Full File Contents for context).*'
             } else {
-              systemPrompt += '\n\n*(This is the Target Block surrounding the user cursor. This is exactly what you see. Operate strictly on this block unless they ask about the whole file).*'
+              systemPrompt += '\n\n*(This is the Target Block surrounding the user cursor. You must operate strictly on this block, but use the Full File Contents for context).*'
             }
           }
         }
@@ -362,6 +386,11 @@ CRITICAL INSTRUCTIONS:
     [query, isGenerating, contextRange, title]
   )
 
+  const modalStyle = React.useMemo(() => ({
+    top: typeof modalPosition.top === 'number' ? `${modalPosition.top}px` : modalPosition.top,
+    left: typeof modalPosition.left === 'number' ? `${modalPosition.left}px` : modalPosition.left,
+  }), [modalPosition.top, modalPosition.left])
+
   if (!isOpen) return null
 
   return (
@@ -370,10 +399,7 @@ CRITICAL INSTRUCTIONS:
         ref={modalRef}
         className="inline-lumina-modal"
         onClick={(e) => e.stopPropagation()}
-        style={{
-          top: typeof modalPosition.top === 'number' ? `${modalPosition.top}px` : modalPosition.top,
-          left: typeof modalPosition.left === 'number' ? `${modalPosition.left}px` : modalPosition.left,
-        }}
+        style={modalStyle}
       >
         <form onSubmit={handleSubmit} className="inline-lumina-form-compact">
           <div className="inline-lumina-drag-handle" title="Drag" onMouseDown={handleDragStart}>
@@ -454,4 +480,4 @@ CRITICAL INSTRUCTIONS:
   )
 }
 
-export default InlineLumina
+export default React.memo(InlineLumina)
