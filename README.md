@@ -161,9 +161,7 @@ lumina/
 │       ├── vault.e2e.test.js    # vault directory tests
 │       └── note.e2e.test.js     # note create/rename/delete
 ├── brain/                       # project documentation
-│   ├── introduction.md
-│   ├── features/                # feature deep-dives
-│   └── vault/                   # vault system docs
+│   └── introduction.md
 └── scripts/
 ```
 
@@ -256,17 +254,11 @@ npm run e2e:debug               # open playwright inspector
 
 ## documentation
 
-the `brain/` directory contains comprehensive project docs for agents and developers:
+the `brain/` directory contains the core project documentation:
 
 | path | covers |
 |------|--------|
 | `brain/introduction.md` | entry point, table of contents |
-| `brain/features/01-architecture.md` | full system architecture (main, preload, renderer, cm6, ipc, themes, export) |
-| `brain/features/02-ai.md` | ai system (store, providers, worker, chat, composer, image gen) |
-| `brain/vault/01-overview.md` | vault system (manager, indexer, search, store, data flows) |
-| `brain/features/03-testing.md` | testing guide (commands, coverage, mock patterns, ci/cd) |
-| `brain/features/04-roadmap.md` | project roadmap and planned features |
-| `brain/features/05-devnotes.md` | active dev notes and architecture decisions |
 
 ---
 

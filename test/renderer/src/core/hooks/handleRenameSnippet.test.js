@@ -15,7 +15,7 @@ describe('handleRenameSnippet', () => {
       showToast
     })
 
-    expect(showToast).toHaveBeenCalledWith('❌ Cannot rename: No snippet selected.', 'error')
+    expect(showToast).toHaveBeenCalledWith('❌ Cannot rename: No note selected.', 'error')
     expect(setRenameModal).toHaveBeenCalledWith({ isOpen: false, item: null })
   })
 

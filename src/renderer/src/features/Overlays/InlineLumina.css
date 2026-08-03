@@ -1,0 +1,213 @@
+/* InlineAIModal.css */
+.inline-lumina-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  pointer-events: none;
+  z-index: var(--z-modal, 2000);
+  animation: fadeIn 0.1s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.inline-lumina-modal {
+  position: absolute;
+  background: rgba(30, 30, 30, 0.85); /* Slightly translucent */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08); /* Extremely subtle border */
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 1px rgba(0,0,0,0.5); /* Softer drop shadow */
+  width: 420px; /* Reduced width */
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  pointer-events: all;
+  opacity: 1;
+  z-index: calc(var(--z-modal, 2000) + 1);
+  color: var(--text-main, #e5e5e5);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.inline-lumina-form-compact {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px; /* Reduced padding */
+  position: relative;
+}
+
+.inline-lumina-drag-handle {
+  color: var(--text-muted, #666); /* Subtler grip */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: grab;
+}
+
+.inline-lumina-drag-handle:active {
+  cursor: grabbing;
+}
+
+.inline-lumina-input-compact {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-main, #e5e5e5);
+  font-size: 13px; /* Slightly smaller text */
+  font-family: inherit;
+  outline: none;
+  padding: 0;
+  height: 20px;
+}
+
+.inline-lumina-input-compact::placeholder {
+  color: var(--text-faint, #666);
+}
+
+.inline-lumina-input-compact:disabled {
+  opacity: 0.5;
+}
+
+.inline-lumina-send-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted, #888);
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.inline-lumina-send-btn:hover:not(:disabled) {
+  background: var(--bg-active, #333);
+  color: var(--text-main, #e5e5e5);
+}
+
+.inline-lumina-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.inline-lumina-escape-hint {
+  padding: 0 16px 12px 16px;
+  font-size: 13px;
+  color: var(--text-muted, #888);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.inline-lumina-escape-hint kbd {
+  background: var(--bg-active, #333);
+  border: 1px solid var(--border-dim, #444);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-main, #e5e5e5);
+}
+
+.inline-lumina-response-compact {
+  padding: 16px;
+  background: transparent;
+  border-top: 1px solid var(--border-dim, #333);
+  max-height: 300px;
+  overflow-y: auto;
+  font-size: 14px;
+  line-height: 1.6;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.inline-lumina-response-content {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.inline-lumina-response-content p { margin-top: 0; margin-bottom: 8px; color: var(--text-muted, #a3a3a3); }
+.inline-lumina-response-content p:last-child { margin-bottom: 0; }
+.inline-lumina-response-content code {
+  background: var(--bg-active, #333);
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+
+.inline-lumina-actions-compact {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  background: transparent;
+  align-items: center;
+}
+
+.inline-lumina-btn-compact {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--border-dim, #444);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-main, #e5e5e5);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.inline-lumina-btn-compact:hover:not(:disabled) {
+  background: var(--bg-active, #333);
+  border-color: var(--border-card, #555);
+}
+
+.inline-lumina-btn-compact:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.inline-lumina-btn-insert {
+  background: #38bdf8;
+  border-color: #38bdf8;
+  color: #fff;
+}
+
+.inline-lumina-btn-insert:hover:not(:disabled) {
+  background: #0ea5e9;
+  border-color: #0ea5e9;
+  color: #fff;
+}
+
+.inline-lumina-btn-close {
+  padding: 0;
+  width: 26px;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

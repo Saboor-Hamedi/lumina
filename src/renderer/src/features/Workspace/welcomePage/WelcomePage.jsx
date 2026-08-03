@@ -16,8 +16,8 @@ const WelcomePage = ({ onNew }) => {
       <div className="welcome-inner-centered">
         
         <div className="welcome-header-hero">
-          <h1 className="hero-title">Welcome to Lumina</h1>
-          <p className="hero-subtitle">Your personal workspace for thinking, writing, and connecting ideas.</p>
+          <h1 className="hero-title">What are you thinking about today?</h1>
+          <p className="hero-subtitle">Your personal AI-powered workspace for ideas, research, and writing.</p>
         </div>
 
         <div className="welcome-actions-grid">

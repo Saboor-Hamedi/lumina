@@ -31,6 +31,7 @@ import '@atomic-editor/editor/styles.css'
 import FindWidget from '../Workspace/components/FindWidget'
 import PreviewModal from '../Overlays/PreviewModal/PreviewModal'
 import OverwriteModal from '../Overlays/Modals/OverwriteModal'
+import InlineLumina from '../Overlays/InlineLumina'
 import RulerScrollbar from './RulerScrollbar'
 import { useZoom } from './useZoom'
 
@@ -95,6 +96,7 @@ const MarkdownEditor = React.memo(
     const [replaceModeActive, setReplaceModeActive] = useState(false)
     const [copiedBlockId, setCopiedBlockId] = useState(null)
     const [conflictPrompt, setConflictPrompt] = useState(null)
+    const [isInlineAIOpen, setIsInlineAIOpen] = useState(false)
 
     const isActiveRef = useRef(isActive)
     useEffect(() => {
@@ -581,8 +583,34 @@ const MarkdownEditor = React.memo(
     useKeyboardShortcuts({
       onSave: () => {
         if (isActive) handleSave()
+      },
+      onInlineAI: () => {
+        setIsInlineAIOpen(true)
+        return true
       }
     })
+
+    const handleInlineAIInsert = useCallback((text, range = null) => {
+      if (!realViewRef.current) return
+      
+      const view = realViewRef.current
+      const selection = view.state.selection.main
+      
+      const from = range ? range.from : selection.from
+      const to = range ? range.to : selection.to
+      
+      const transaction = view.state.update({
+        changes: {
+          from: from,
+          to: to,
+          insert: text
+        },
+        selection: { anchor: from + text.length }
+      })
+      
+      view.dispatch(transaction)
+      setIsDirty(true)
+    }, [])
 
     const wikiLinkCompletionSource = useCallback((context) => {
       if (document.activeElement?.classList.contains('cm-atomic-table-cell-source')) {
@@ -1069,12 +1097,23 @@ const MarkdownEditor = React.memo(
             onExportMarkdown={handleExportMarkdown}
             onPreview={() => setIsPreviewOpen(true)}
           />
-          <PreviewModal
-            isOpen={isPreviewOpen}
-            onClose={() => setIsPreviewOpen(false)}
-            title={title}
-            content={snippetRef.current?.code || ''}
+          <PreviewModal 
+            isOpen={isPreviewOpen} 
+            onClose={() => setIsPreviewOpen(false)} 
+            title={title} 
+            content={snippet?.code} 
+            timestamp={snippet?.timestamp} 
           />
+          {isInlineAIOpen && (
+            <InlineLumina
+              isOpen={isInlineAIOpen}
+              onClose={() => setIsInlineAIOpen(false)}
+              onInsert={handleInlineAIInsert}
+              cursorPosition={realViewRef.current?.state.selection.main}
+              editorView={realViewRef.current}
+              title={title}
+            />
+          )}
           <OverwriteModal
             isOpen={!!conflictPrompt}
             onClose={handleOverwriteClose}

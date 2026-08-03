@@ -282,7 +282,19 @@ app.whenReady().then(async () => {
       if (!content) throw new Error('No content provided')
 
       // Import marked dynamically (ESM)
-      const { marked } = await import('marked')
+      const { Marked } = await import('marked')
+      const { markedHighlight } = await import('marked-highlight')
+      const hljs = require('highlight.js')
+
+      const marked = new Marked(
+        markedHighlight({
+          langPrefix: 'hljs language-',
+          highlight(code, lang) {
+            const language = hljs.getLanguage(lang) ? lang : 'plaintext'
+            return hljs.highlight(code, { language }).value
+          }
+        })
+      )
 
       // Convert wikilinks to HTML before parsing
       const processedContent = (content || '').replace(/\[\[(.*?)\]\]/g, '<a href="#">$1</a>')
@@ -438,7 +450,19 @@ app.whenReady().then(async () => {
 
       // Now do the heavy work (markdown conversion and PDF generation)
       // Import marked dynamically
-      const { marked } = await import('marked')
+      const { Marked } = await import('marked')
+      const { markedHighlight } = await import('marked-highlight')
+      const hljs = require('highlight.js')
+
+      const marked = new Marked(
+        markedHighlight({
+          langPrefix: 'hljs language-',
+          highlight(code, lang) {
+            const language = hljs.getLanguage(lang) ? lang : 'plaintext'
+            return hljs.highlight(code, { language }).value
+          }
+        })
+      )
 
       // Convert wikilinks to HTML before parsing
       const processedContent = (content || '').replace(/\[\[(.*?)\]\]/g, '<a href="#">$1</a>')
@@ -450,6 +474,7 @@ app.whenReady().then(async () => {
 <head>
   <meta charset="utf-8">
   <title>${title || 'Untitled'}</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github.min.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
