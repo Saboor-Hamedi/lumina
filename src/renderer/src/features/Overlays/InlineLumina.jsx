@@ -432,6 +432,14 @@ CRITICAL INSTRUCTIONS:
           >
             {isGenerating ? <Loader2 size={14} className="spinning" /> : <Check size={14} />}
           </button>
+          <button
+            type="button"
+            className="inline-lumina-send-btn"
+            onClick={handleCancel}
+            title="Close (Esc)"
+          >
+            <X size={14} />
+          </button>
         </form>
 
         {!response && !isGenerating && (
@@ -464,14 +472,6 @@ CRITICAL INSTRUCTIONS:
                 >
                   {copied ? <Check size={14} /> : <Copy size={14} />}
                   {copied ? 'Copied' : 'Copy'}
-                </button>
-
-                <button
-                  className="inline-lumina-btn-compact inline-lumina-btn-close"
-                  onClick={handleCancel}
-                  title="Close"
-                >
-                  <X size={14} />
                 </button>
               </div>
             )}
