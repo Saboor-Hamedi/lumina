@@ -1,7 +1,7 @@
 {
   "name": "lumina",
-  "version": "1.0.26",
-  "description": "Lumina - A premium, vault-based snippet sanctuary.",
+  "version": "1.0.27",
+  "description": "Lumina - A premium, AI-powered thinking environment.",
   "main": "./out/main/index.js",
   "author": "Saboor Hamedi",
   "homepage": "https://electron-vite.org",

@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useVaultStore } from '../store/useVaultStore'
 
 export const useTag = () => {
-  const { snippets } = useVaultStore()
+  const snippets = useVaultStore(state => state.snippets)
 
   const tags = useMemo(() => {
     const tagSet = new Set()

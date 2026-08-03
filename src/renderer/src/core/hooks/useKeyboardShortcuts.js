@@ -8,12 +8,13 @@ const escapeHandlers = []
 
 const handleGlobalKeyDown = (e) => {
   if (e.key === 'Escape' || e.key === 'Esc') {
-    if (escapeHandlers.length > 0) {
-      const topHandler = escapeHandlers[escapeHandlers.length - 1]
-      const handled = topHandler(e)
+    for (let i = escapeHandlers.length - 1; i >= 0; i--) {
+      const handler = escapeHandlers[i]
+      const handled = handler(e)
       if (handled) {
         e.preventDefault()
         e.stopPropagation()
+        break
       }
     }
   }
@@ -112,6 +113,12 @@ export const useKeyboardShortcuts = (shortcuts) => {
       if (isCmd && !e.shiftKey && key === 'n' && shortcutsRef.current.onNew) {
         e.preventDefault()
         shortcutsRef.current.onNew()
+      }
+
+      // Open Docs: Ctrl+D
+      if (isCmd && !e.shiftKey && key === 'd' && shortcutsRef.current.onOpenDocs) {
+        e.preventDefault()
+        shortcutsRef.current.onOpenDocs()
       }
 
       // Toggle Theme: Ctrl+T

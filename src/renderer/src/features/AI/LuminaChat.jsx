@@ -7,6 +7,7 @@ import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useAIStore } from './tools/LuminaChat'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
+import { useShallow } from 'zustand/react/shallow'
 import { getSnippetIcon } from '../Icons/iconMapper'
 import { Composer } from './Composer'
 import ModalHeader from '../Overlays/ModalHeader'
@@ -436,7 +437,11 @@ const LuminaChat = ({ isOpen, onClose, onUnfloat }) => {
     switchSession,
     deleteSession
   } = useAIStore()
-  const { selectedSnippet, snippets, openTabs } = useVaultStore()
+  const { selectedSnippet, snippets, openTabs } = useVaultStore(useShallow(state => ({
+    selectedSnippet: state.selectedSnippet,
+    snippets: state.snippets,
+    openTabs: state.openTabs
+  })))
 
   const listRef = useRef(null)
 

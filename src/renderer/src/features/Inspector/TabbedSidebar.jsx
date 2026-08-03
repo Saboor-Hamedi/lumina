@@ -3,14 +3,23 @@ import { Info, List as ListIcon } from 'lucide-react'
 import SnippetDetails from './SnippetDetails'
 import SnippetOutline from './SnippetOutline'
 import ErrorBoundary from '../../components/ErrorBoundary'
+import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import './SnippetDetails.css'
 
 const TabbedSidebar = ({
   rightSidebarTab,
   setRightSidebarTab,
   selectedSnippet,
-  isLoading
+  isLoading,
+  isRightSidebarOpen,
+  setIsRightSidebarOpen
 }) => {
+  useKeyboardShortcuts({
+    onEscape: isRightSidebarOpen ? () => {
+      setIsRightSidebarOpen(false)
+      return true
+    } : null
+  })
   return (
     <div className="inspector-panel">
       {/* Tab-style header - matches workspace tabs */}

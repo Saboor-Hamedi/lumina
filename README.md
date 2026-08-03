@@ -9,7 +9,7 @@
   <img src="https://img.shields.io/badge/license-MIT-green" alt="license">
 </p>
 
-lumina is a note-taking desktop app where everything is plain markdown on disk. features a multi-tab workspace, knowledge graph, ai semantic search (local + cloud), 18 themes, and a codemirror 6 editor with wikilinks, mermaid diagrams, callouts, and live preview.
+lumina is a premium, AI-powered thinking environment. features a multi-tab workspace, knowledge graph, ai semantic search (local + cloud), 18 themes, and a beautiful editor with wikilinks, mermaid diagrams, callouts, and progressive disclosure formatting.
 
 ---
 
@@ -17,14 +17,14 @@ lumina is a note-taking desktop app where everything is plain markdown on disk. 
 
 ### core
 
-- **vault-first** — all notes are plain `.md` files with yaml frontmatter. you own your data.
+- **workspace-first** — all notes are stored locally as plain text files. you own your data.
 - **multi-tab workspace** — open many notes at once with pinned tabs, drag reorder, dirty indicators
 - **live preview** — wysiwym editing with intelligent syntax hiding
 - **wikilinks** — `[[link]]` and `[[link|display]]` with auto-update on rename
 - **knowledge graph** — interactive force-directed graph visualisation of note connections
 - **ai semantic search** — local embeddings via onnx (privacy-first) or cloud providers
 - **daily notes** — one-click journal creation with auto-date
-- **multi-vault** — switch between vault directories
+- **multi-workspace** — switch between workspace directories
 
 ### editor
 
@@ -41,7 +41,7 @@ lumina is a note-taking desktop app where everything is plain markdown on disk. 
 - **multi-model** — deepseek (v3 / r1), openai (gpt-4o), anthropic (claude), ollama (local)
 - **chat panel + modal** — sidebar chat or floating modal overlay
 - **composer with slash commands** — `/fast`, `/think`, `/creative`, `/code`, `/image`, `/clear`
-- **rag context** — optional semantic search over your vault as context for every query
+- **rag context** — optional semantic search over your workspace as context for every query
 - **image generation** — huggingface inference api
 - **local embeddings** — `all-minilm-l6-v2` via @xenova/transformers in a web worker
 
@@ -50,14 +50,14 @@ lumina is a note-taking desktop app where everything is plain markdown on disk. 
 - **18 themes** — dark, light, high-contrast, nature-inspired palettes
 - **glassmorphism** — mirror mode with backdrop blur and translucency
 - **resizable sidebars** — left explorer + right panels, fully configurable
-- **command palette** — `ctrl/cmd+p` for instant feature access
+- **quick search** — `ctrl/cmd+p` for instant feature access
 - **keyboard-first** — comprehensive shortcuts (customisable)
 - **tab management** — pin, reorder, close to right, close others
 
 ### search
 
 - **full-text** — fast keyword search via flexsearch
-- **semantic** — vector similarity search over your entire vault
+- **semantic** — vector similarity search over your entire workspace
 - **tags** — visual tag pills with autocomplete
 - **file explorer** — familiar tree view with folder colours
 
@@ -107,7 +107,7 @@ npm run build:linux  # linux
 this references [[another note]] and [[yet another note|display text]].
 ```
 
-renaming a note auto-updates all `[[links]]` across the vault.
+renaming a note auto-updates all `[[links]]` across the workspace.
 
 ### use the ai
 

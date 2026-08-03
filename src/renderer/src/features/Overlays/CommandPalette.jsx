@@ -26,6 +26,7 @@ import { rankSnippets, getHighlightRegex } from '../../core/utils/searchRanker'
 import { FixedSizeList as List } from '../../components/utils/VirtualList'
 import { useTag } from '../../core/hooks/useTag'
 import { useMention } from '../../core/hooks/useMention'
+import { useShallow } from 'zustand/react/shallow'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useAIStore } from '../AI/tools/LuminaChat'
 import { useVaultStore } from '../../core/store/useVaultStore'
@@ -204,7 +205,10 @@ const CommandPalette = React.memo(
     const previousFocusRef = useRef(null)
 
     const { searchNotes, isModelReady, modelLoadingProgress, aiError } = useAIStore()
-    const { dirtySnippetIds, folders } = useVaultStore()
+    const { dirtySnippetIds, folders } = useVaultStore(useShallow(state => ({
+      dirtySnippetIds: state.dirtySnippetIds,
+      folders: state.folders
+    })))
     const { settings, updateSetting } = useSettingsStore()
     const { tags } = useTag()
     const { mentions } = useMention()
@@ -284,8 +288,8 @@ const CommandPalette = React.memo(
         { id: 'action-reload-window', title: 'Developer: Reload Window', matchType: 'action', action: 'reload-window', shortcut: 'Ctrl + R' },
         { id: 'action-chat', title: 'Chat: Open AI Chat', matchType: 'action', action: 'chat', shortcut: 'Ctrl + Shift + \\' },
         { id: 'action-docs', title: 'Docs: Open Documentation', matchType: 'action', action: 'docs' },
-        { id: 'action-new', title: 'Note: Create New Snippet', matchType: 'action', action: 'new', shortcut: 'Ctrl + N' },
-        { id: 'action-rename', title: 'Note: Rename Snippet', matchType: 'action', action: 'rename', shortcut: 'Ctrl + R' },
+        { id: 'action-new', title: 'Note: Create New Note', matchType: 'action', action: 'new', shortcut: 'Ctrl + N' },
+        { id: 'action-rename', title: 'Note: Rename Note', matchType: 'action', action: 'rename', shortcut: 'Ctrl + R' },
         { id: 'action-graph', title: 'Graph: Open Knowledge Nexus', matchType: 'action', action: 'graph', shortcut: 'Ctrl + G' }
       ].filter((a) => !actionQuery || a.title.toLowerCase().includes(actionQuery))
 

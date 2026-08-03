@@ -10,6 +10,7 @@ import {
 import { restrictToHorizontalAxis } from '@dnd-kit/modifiers'
 import { Virtuoso } from 'react-virtuoso'
 import { useVaultStore, GRAPH_TAB_ID } from '../../../core/store/useVaultStore'
+import { useShallow } from 'zustand/react/shallow'
 import ContextMenu from '../../Overlays/ContextMenu'
 import PromptModal from '../../Overlays/PromptModal'
 import IconModal from '../../Icons/IconModal'
@@ -104,7 +105,23 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
     saveSnippet,
     dirtySnippetIds,
     pinnedTabIds
-  } = useVaultStore()
+  } = useVaultStore(useShallow(state => ({
+    snippets: state.snippets,
+    openTabs: state.openTabs,
+    activeTabId: state.activeTabId,
+    selectedSnippet: state.selectedSnippet,
+    setActiveTabId: state.setActiveTabId,
+    setSelectedSnippet: state.setSelectedSnippet,
+    reorderTabs: state.reorderTabs,
+    closeTab: state.closeTab,
+    closeOtherTabs: state.closeOtherTabs,
+    closeTabsToRight: state.closeTabsToRight,
+    closeAllTabs: state.closeAllTabs,
+    togglePinTab: state.togglePinTab,
+    saveSnippet: state.saveSnippet,
+    dirtySnippetIds: state.dirtySnippetIds,
+    pinnedTabIds: state.pinnedTabIds
+  })))
 
   const [contextMenu, setContextMenu] = useState(null)
   const [prompt, setPrompt] = useState(null)

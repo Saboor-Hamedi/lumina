@@ -30,7 +30,7 @@ const PropertyRow = ({ icon: Icon, name, value, iconColor = 'var(--text-muted)' 
 
 const SnippetDetails = ({ snippet, isLoading = false }) => {
   // Get vault path from settings for display
-  const vaultPath = useSettingsStore.getState().settings.vaultPath || 'Default Vault'
+  const vaultPath = useSettingsStore.getState().settings.vaultPath || 'Default Workspace'
   const pinnedTabIds = useVaultStore((state) => state.pinnedTabIds)
 
   if (isLoading) {

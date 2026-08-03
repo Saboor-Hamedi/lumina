@@ -4,12 +4,7 @@ const StatusBar = ({ wordCount, extension, onToggleInspector, onDocsClick }) => 
   return (
     <div className="status-bar">
       <div className="status-bar-left">
-        <span
-          className="mode-toggle active"
-        >
-          {extension || 'md'}
-        </span>
-        <span className="separator">/</span>
+
         <ToolTip text="Toggle Details Modal (Ctrl + \)" position="top">
           <span
             className="mode-toggle"

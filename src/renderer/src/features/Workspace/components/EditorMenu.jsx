@@ -114,18 +114,7 @@ const EditorMenu = ({
                   right: `${menuPosition.right}px`
                 }}
               >
-                <div
-                  className="dropdown-item"
-                  onClick={() => {
-                    onSave()
-                    setShowMoreMenu(false)
-                  }}
-                >
-                  <span className="menu-label">Save File</span>
-                  <span className="shortcut-label">Ctrl+S</span>
-                  <Save size={12} className="menu-icon-right" />
-                </div>
-                <div className="dropdown-divider" />
+
                 <div
                   className="dropdown-item"
                   onClick={() => {
@@ -134,7 +123,7 @@ const EditorMenu = ({
                   }}
                 >
                   <span className="menu-label">Preview Note</span>
-                  <span className="shortcut-label">Ctrl+P</span>
+                  <span className="shortcut-label">Ctrl+\</span>
                   <FileText size={12} className="menu-icon-right" />
                 </div>
                 <div className="dropdown-divider" />
@@ -205,65 +194,25 @@ const EditorMenu = ({
                       if (onExportMarkdown && typeof onExportMarkdown === 'function') {
                         const result = await onExportMarkdown()
                         if (result?.success) {
-                          showToast('Markdown file exported successfully', 'success')
+                          showToast('Text file exported successfully', 'success')
                         } else if (result?.canceled) {
                           // User canceled, no notification needed
                         } else {
-                          showToast('Failed to export markdown', 'error')
+                          showToast('Failed to export text file', 'error')
                         }
                       }
                     } catch (error) {
-                      console.error('Failed to export markdown:', error)
-                      showToast('Failed to export markdown', 'error')
+                      console.error('Failed to export text file:', error)
+                      showToast('Failed to export text file', 'error')
                     }
                     setShowMoreMenu(false)
                   }}
                 >
-                  <span className="menu-label">Export as Markdown</span>
+                  <span className="menu-label">Export as Text File</span>
                   <FileText size={12} className="menu-icon-right" />
                 </div>
-                <div className="dropdown-divider" />
-                <div
-                  className="dropdown-item"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    setShowMoreMenu(false)
-                    // Use setTimeout to ensure menu closes before opening modal
-                    setTimeout(() => {
-                      if (onInlineAI) {
-                        onInlineAI()
-                      }
-                    }, 0)
-                  }}
-                >
-                  <span className="menu-label">Inline AI</span>
-                  <span className="shortcut-label">Ctrl+K</span>
-                  <Zap size={12} className="menu-icon-right" />
-                </div>
-                <div
-                  className="dropdown-item"
-                  onClick={() => {
-                    onToggleInspector()
-                    setShowMoreMenu(false)
-                  }}
-                >
-                  <span className="menu-label">Toggle Inspector</span>
-                  <span className="shortcut-label">Ctrl+I</span>
-                  <Sidebar size={12} className="menu-icon-right" />
-                </div>
-                <div className="dropdown-divider" />
-                <div
-                  className="dropdown-item"
-                  onClick={() => {
-                    // Trigger details modal via custom event
-                    window.dispatchEvent(new CustomEvent('open-details-modal'))
-                    setShowMoreMenu(false)
-                  }}
-                >
-                  <span className="menu-label">Show Details</span>
-                  <FileText size={12} className="menu-icon-right" />
-                </div>
+
+
               </div>,
               document.body
             )}

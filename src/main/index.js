@@ -284,8 +284,9 @@ app.whenReady().then(async () => {
       // Import marked dynamically (ESM)
       const { marked } = await import('marked')
 
-      // Convert markdown to HTML
-      const htmlContent = await marked.parse(content || '')
+      // Convert wikilinks to HTML before parsing
+      const processedContent = (content || '').replace(/\[\[(.*?)\]\]/g, '<a href="#">$1</a>')
+      const htmlContent = await marked.parse(processedContent)
 
       // Create standalone HTML with embedded CSS
       const html = `<!DOCTYPE html>
@@ -439,8 +440,9 @@ app.whenReady().then(async () => {
       // Import marked dynamically
       const { marked } = await import('marked')
 
-      // Convert markdown to HTML
-      const htmlContent = await marked.parse(content || '')
+      // Convert wikilinks to HTML before parsing
+      const processedContent = (content || '').replace(/\[\[(.*?)\]\]/g, '<a href="#">$1</a>')
+      const htmlContent = await marked.parse(processedContent)
 
       // Create HTML for PDF
       const html = `<!DOCTYPE html>
@@ -451,13 +453,12 @@ app.whenReady().then(async () => {
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Roboto', sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
       line-height: 1.6;
-      color: #1a1a1a;
+      color: #222222;
       background: #ffffff;
-      padding: 40px;
-      max-width: 800px;
-      margin: 0 auto;
+      padding: 0;
+      margin: 0;
     }
     h1, h2, h3, h4, h5, h6 {
       margin-top: 1.5em;
@@ -465,60 +466,75 @@ app.whenReady().then(async () => {
       font-weight: 600;
       line-height: 1.2;
     }
-    h1 { font-size: 2em; border-bottom: 2px solid #eaecef; padding-bottom: 0.3em; }
-    h2 { font-size: 1.5em; border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; }
-    h3 { font-size: 1.25em; }
-    p { margin-bottom: 1em; }
+    h1 { font-size: 2.2em; border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; margin-bottom: 1em; }
+    h2 { font-size: 1.6em; border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; margin-top: 1.5em; }
+    h3 { font-size: 1.3em; margin-top: 1.2em; }
+    p { margin-bottom: 1.2em; color: #333333; }
     code {
-      background: #f4f4f4;
-      padding: 2px 6px;
-      border-radius: 3px;
-      font-family: 'Consolas', 'Monaco', monospace;
-      font-size: 0.9em;
+      background: #f5f7f9;
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.85em;
+      color: #eb5757;
     }
     pre {
-      background: #f4f4f4;
-      padding: 15px;
+      background: #f8f9fa;
+      padding: 16px;
       border-radius: 8px;
-      overflow-x: auto;
-      margin: 1em 0;
+      border: 1px solid #e9ecef;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      margin: 1.5em 0;
     }
     pre code {
       background: none;
       padding: 0;
+      color: #24292e;
+      border: none;
     }
     blockquote {
       border-left: 4px solid #dfe2e5;
       padding-left: 1em;
-      margin: 1em 0;
+      margin: 1.5em 0;
       color: #6a737d;
+      font-style: italic;
     }
     ul, ol {
-      margin: 1em 0;
+      margin: 1.2em 0;
       padding-left: 2em;
+      color: #333333;
     }
     li {
-      margin: 0.5em 0;
+      margin: 0.4em 0;
     }
     table {
       border-collapse: collapse;
-      margin: 1em 0;
+      margin: 2em 0;
       width: 100%;
+      font-size: 0.95em;
     }
     th, td {
-      border: 1px solid #dfe2e5;
-      padding: 8px 12px;
+      border-bottom: 1px solid #e9ecef;
+      padding: 12px 16px;
       text-align: left;
     }
     th {
-      background: #f4f4f4;
+      background: #f8f9fa;
       font-weight: 600;
+      color: #495057;
+      border-top: 1px solid #e9ecef;
+    }
+    tr:nth-child(even) {
+      background: #fafbfc;
     }
     img {
       max-width: 100%;
       height: auto;
-      border-radius: 4px;
-      margin: 1em 0;
+      border-radius: 6px;
+      margin: 1.5em 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
     a {
       color: #0366d6;
@@ -564,8 +580,9 @@ app.whenReady().then(async () => {
         printBackground: true,
         pageSize: 'A4',
         margins: {
-          top: 1,
-          bottom: 1,
+          marginType: 'custom',
+          top: 0.75,
+          bottom: 0.75,
           left: 1,
           right: 1
         }

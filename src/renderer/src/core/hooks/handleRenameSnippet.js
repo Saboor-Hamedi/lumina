@@ -7,7 +7,7 @@ export const handleRenameSnippet = async ({
   showToast
 }) => {
   if (!renameModal.item) {
-    if (showToast) showToast('❌ Cannot rename: No snippet selected.', 'error')
+    if (showToast) showToast('❌ Cannot rename: No note selected.', 'error')
     setRenameModal({ isOpen: false, item: null })
     return
   } // Prevent multiple renames at once
@@ -54,10 +54,10 @@ export const handleRenameSnippet = async ({
 
   try {
     await saveSnippet(updatedItem)
-    if (showToast) showToast('✓ Snippet renamed successfully', 'success')
+    if (showToast) showToast('✓ Note renamed successfully', 'success')
   } catch (error) {
     console.error('Failed to save item after rename:', error)
-    if (showToast) showToast('❌ Failed to rename snippet.', 'error')
+    if (showToast) showToast('❌ Failed to rename note.', 'error')
     // Revert the optimistic update if save failed
     if (setSelectedSnippet) {
       setSelectedSnippet(renameModal.item)

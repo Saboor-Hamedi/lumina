@@ -7,6 +7,7 @@ import ConfirmModal from '../../Overlays/Modals/ConfirmModal'
 import IconModal from '../../Icons/IconModal'
 import ToolTip from '../../../components/atoms/ToolTip'
 import { getSnippetIcon } from '../../Icons/iconMapper'
+import { useShallow } from 'zustand/react/shallow'
 import { getHighlightRegex } from '../../../core/utils/searchRanker'
 
 const SidebarItem = ({
@@ -19,8 +20,14 @@ const SidebarItem = ({
   searchQuery,
   matchSnippet
 }) => {
-  const { dirtySnippetIds, deleteSnippet, saveSnippet } = useVaultStore()
-  const { togglePinnedFolder } = useSettingsStore()
+  const { dirtySnippetIds, deleteSnippet, saveSnippet } = useVaultStore(useShallow(state => ({
+    dirtySnippetIds: state.dirtySnippetIds,
+    deleteSnippet: state.deleteSnippet,
+    saveSnippet: state.saveSnippet
+  })))
+  const { togglePinnedFolder } = useSettingsStore(useShallow(state => ({
+    togglePinnedFolder: state.togglePinnedFolder
+  })))
   const isDirty = dirtySnippetIds.includes(snippet.id)
 
   const [isRenaming, setIsRenaming] = useState(false)

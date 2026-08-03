@@ -33,7 +33,7 @@ describe('IndexingStatus', () => {
     global.window.api.onIndexProgress = onIndexProgress
 
     render(<IndexingStatus />)
-    expect(screen.getByText('Indexing')).toBeInTheDocument()
+    expect(screen.getByText('Indexing...')).toBeInTheDocument()
     expect(screen.getByText('50%')).toBeInTheDocument()
   })
 
@@ -44,7 +44,8 @@ describe('IndexingStatus', () => {
     global.window.api.onIndexProgress = onIndexProgress
 
     render(<IndexingStatus />)
-    expect(screen.getByText('Indexed')).toBeInTheDocument()
+    expect(screen.getByText('Indexing complete')).toBeInTheDocument()
+    expect(screen.getByText('All files up to date.')).toBeInTheDocument()
   })
 
   it('shows up-to-date stage as complete', () => {
@@ -54,7 +55,17 @@ describe('IndexingStatus', () => {
     global.window.api.onIndexProgress = onIndexProgress
 
     render(<IndexingStatus />)
-    expect(screen.getByText('Indexed')).toBeInTheDocument()
+    expect(screen.getByText('Indexing complete')).toBeInTheDocument()
+  })
+
+  it('hides percentage when complete', () => {
+    const onIndexProgress = vi.fn((cb) => {
+      cb({ progress: 100, stage: 'completed', indexed: 10, total: 10 })
+    })
+    global.window.api.onIndexProgress = onIndexProgress
+
+    render(<IndexingStatus />)
+    expect(screen.queryByText('100%')).not.toBeInTheDocument()
   })
 
   it('auto-hides after 1 second when complete', () => {
@@ -64,13 +75,13 @@ describe('IndexingStatus', () => {
     global.window.api.onIndexProgress = onIndexProgress
 
     render(<IndexingStatus />)
-    expect(screen.getByText('Indexed')).toBeInTheDocument()
+    expect(screen.getByText('Indexing complete')).toBeInTheDocument()
 
     act(() => {
       vi.advanceTimersByTime(1001)
     })
 
-    expect(screen.queryByText('Indexed')).not.toBeInTheDocument()
+    expect(screen.queryByText('Indexing complete')).not.toBeInTheDocument()
   })
 
   it('displays scanning stage message', () => {

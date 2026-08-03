@@ -994,7 +994,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                     <ChevronsUp size={14} />
                   </button>
                 </ToolTip>
-                <ToolTip text="Refresh Vault">
+                <ToolTip text="Refresh Workspace">
                   <button
                       className="sort-toggle-btn"
                       onClick={(e) => {
@@ -1037,6 +1037,13 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                         style={{ flex: 1, height: '100%' }}
                         data={flatTree}
                         overscan={400}
+                        computeItemKey={(index, item) => {
+                          if (item.type === 'file') return item.snippet.id
+                          if (item.type === 'folder') return item.id
+                          if (item.type === 'input') return `input-${item.parentId}`
+                          if (item.type === 'root-drop') return 'root-drop-zone'
+                          return index
+                        }}
                         context={{
                           creatingValue,
                           setCreatingValue,

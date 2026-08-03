@@ -27,6 +27,7 @@ import LuminaChat from '../AI/LuminaChat'
 import SnippetDetails from '../Inspector/SnippetDetails'
 import { useAIStore } from '../AI/tools/LuminaChat'
 import { useTypingSound } from '../../core/hooks/useTypingSound'
+import { useShallow } from 'zustand/react/shallow'
 import { X, Maximize2, Trash2, History, Bot, Info, MessageSquare } from 'lucide-react'
 
 import TabbedSidebar from '../Inspector/TabbedSidebar'
@@ -51,7 +52,16 @@ const AppShell = () => {
     loadVault,
     activeTabId,
     openTabs
-  } = useVaultStore()
+  } = useVaultStore(useShallow(state => ({
+    snippets: state.snippets,
+    selectedSnippet: state.selectedSnippet,
+    setSelectedSnippet: state.setSelectedSnippet,
+    saveSnippet: state.saveSnippet,
+    isLoading: state.isLoading,
+    loadVault: state.loadVault,
+    activeTabId: state.activeTabId,
+    openTabs: state.openTabs
+  })))
   const { toast, showToast, clearToast } = useToast()
   const settings = useSettingsStore((state) => state.settings)
 
@@ -365,7 +375,7 @@ const AppShell = () => {
         if (selectedSnippet) {
           setRenameModal({ isOpen: true, item: selectedSnippet, newName: selectedSnippet.title })
         } else {
-          showToast('No snippet selected to rename', 'info')
+          showToast('No note selected to rename', 'info')
         }
       }
     }
@@ -429,6 +439,9 @@ const AppShell = () => {
       setPaletteInitialQuery('>')
       setShowPalette(true)
     },
+    onOpenDocs: () => {
+      setShowDocsModal(true)
+    },
     onEscape: () => {
       if (showAIChatModal) {
         setShowAIChatModal(false)
@@ -448,6 +461,14 @@ const AppShell = () => {
       }
       if (showDeleteConfirm) {
         setShowDeleteConfirm(false)
+        return true
+      }
+      if (isRightSidebarOpen) {
+        setIsRightSidebarOpen(false)
+        return true
+      }
+      if (showDocsModal) {
+        setShowDocsModal(false)
         return true
       }
       return false
@@ -517,7 +538,6 @@ const AppShell = () => {
       setSelectedSnippet(newSnippet)
       setActiveTab('files')
       setShowPalette(false)
-      showToast('New note created', 'success')
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('focus-title-input'))
       }, 50)

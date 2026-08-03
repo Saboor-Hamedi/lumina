@@ -22,12 +22,36 @@ const MAIN_ENTRY = path.join(projectRoot, 'out/main/index.js')
  * env var (the main process reads this when NODE_ENV=test to skip the last-vault
  * config file, ensuring a clean state every time).
  *
+ * Retries the launch a few times: on Windows, rapidly launching many Electron
+ * instances back-to-back can transiently fail with STATUS_DLL_INIT_FAILED
+ * (0xC0000142), unrelated to the app itself.
+ *
  * @returns {{ app, page, vaultPath, cleanup }}
  */
 async function launchApp() {
   // Fresh temp vault per test run — tests never share state
   const vaultPath = await fs.mkdtemp(path.join(os.tmpdir(), 'lumina-e2e-'))
 
+  const maxAttempts = 3
+  let lastError
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const appInstance = await launchOnce(vaultPath)
+      return appInstance
+    } catch (err) {
+      lastError = err
+      if (attempt < maxAttempts) {
+        console.warn(`[launch] Electron launch attempt ${attempt} failed, retrying...`)
+        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt))
+      }
+    }
+  }
+
+  throw lastError
+}
+
+async function launchOnce(vaultPath) {
   const appInstance = await electron.launch({
     args: [MAIN_ENTRY],
     env: {

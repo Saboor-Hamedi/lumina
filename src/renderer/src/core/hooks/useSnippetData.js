@@ -47,7 +47,7 @@ export const useSnippetData = () => {
     try {
       if (window.api?.deleteSnippet) {
         const confirmed = await window.api.confirmDelete(
-          'Are you sure you want to delete this snippet from the vault?'
+          'Are you sure you want to delete this note from the workspace?'
         )
         if (!confirmed) return
 

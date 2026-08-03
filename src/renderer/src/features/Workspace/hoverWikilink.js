@@ -45,27 +45,37 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
       headerTitle.textContent = title
       headerTitle.style.fontSize = '12px'
       headerTitle.style.fontWeight = '600'
+      headerTitle.style.lineHeight = '1'
       headerTitle.style.color = 'var(--text-faint)'
       headerTitle.style.overflow = 'hidden'
       headerTitle.style.textOverflow = 'ellipsis'
       headerTitle.style.whiteSpace = 'nowrap'
       headerTitle.style.flex = '1'
+      headerTitle.style.transform = 'translateY(1px)' // visual optical adjustment for center
       
       header.appendChild(headerTitle)
 
       if (noteId) {
         const expandIcon = document.createElement('div')
-        expandIcon.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>`
+        expandIcon.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>`
         expandIcon.style.display = 'flex'
         expandIcon.style.alignItems = 'center'
         expandIcon.style.justifyContent = 'center'
         expandIcon.style.cursor = 'pointer'
         expandIcon.style.color = 'var(--text-faint)'
-        expandIcon.style.transition = 'color 0.2s'
+        expandIcon.style.transition = 'all 0.2s'
         expandIcon.style.marginLeft = '8px'
+        expandIcon.style.padding = '2px'
+        expandIcon.style.borderRadius = '4px'
         
-        expandIcon.onmouseover = () => (expandIcon.style.color = 'var(--text-accent)')
-        expandIcon.onmouseout = () => (expandIcon.style.color = 'var(--text-faint)')
+        expandIcon.onmouseover = () => {
+          expandIcon.style.color = 'var(--text-accent)'
+          expandIcon.style.background = 'var(--bg-modifier-hover, rgba(255, 255, 255, 0.05))'
+        }
+        expandIcon.onmouseout = () => {
+          expandIcon.style.color = 'var(--text-faint)'
+          expandIcon.style.background = 'transparent'
+        }
 
         expandIcon.addEventListener('click', (evt) => {
           evt.preventDefault()
