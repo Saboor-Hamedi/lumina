@@ -51,7 +51,8 @@ async function uploadToGoogleDrive(filePath, accessToken) {
   })
 
   if (!initResponse.ok) {
-    throw new Error(`Failed to initiate upload: ${initResponse.statusText}`)
+    const errorText = await initResponse.text()
+    throw new Error(`Failed to initiate upload: ${initResponse.status} ${initResponse.statusText} - ${errorText}`)
   }
 
   const uploadUrl = initResponse.headers.get('location')
@@ -71,7 +72,8 @@ async function uploadToGoogleDrive(filePath, accessToken) {
   })
 
   if (!uploadResponse.ok) {
-    throw new Error(`Failed to upload file data: ${uploadResponse.statusText}`)
+    const errorText = await uploadResponse.text()
+    throw new Error(`Upload failed: ${uploadResponse.status} ${uploadResponse.statusText} - ${errorText}`)
   }
 }
 
