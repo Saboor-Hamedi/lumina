@@ -53,7 +53,15 @@ export const handleExportDocs = async (mainWindow, payload) => {
     })
 
     if (!canceled && filePath) {
-      await fs.writeFile(filePath, fileBuffer)
+      // Ensure fileBuffer is a Node Buffer (in case html-to-docx returned a Blob/ArrayBuffer due to bundler quirks)
+      let finalBuffer = fileBuffer
+      if (fileBuffer instanceof ArrayBuffer) {
+        finalBuffer = Buffer.from(fileBuffer)
+      } else if (fileBuffer && typeof fileBuffer.arrayBuffer === 'function') {
+        finalBuffer = Buffer.from(await fileBuffer.arrayBuffer())
+      }
+      
+      await fs.writeFile(filePath, finalBuffer)
       return { success: true, filePath }
     }
 
