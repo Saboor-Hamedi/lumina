@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react'
-import { Settings, Palette, Cloud, RefreshCw, LogOut } from 'lucide-react'
+import { Settings, Palette, Cloud, RefreshCw, LogOut, Check } from 'lucide-react'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
 import { useUpdateStore } from '../../../core/store/useUpdateStore'
 
@@ -50,11 +50,10 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
       className="setting-dropdown-menu"
       style={{
         position: 'absolute',
-        bottom: '100%', // Above the footer
-        left: '0',
-        width: '100%',
-        minWidth: '200px',
-        marginBottom: '4px',
+        bottom: '0', // Parallel to the footer's bottom
+        left: '100%', // To the right of the sidebar
+        width: '200px',
+        marginLeft: '12px', // Gap between sidebar and dropdown
         backgroundColor: 'var(--bg-app)',
         border: '1px solid var(--border-dim)',
         borderRadius: 'var(--radius-md)',
@@ -190,22 +189,29 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
       {googleUser && (
         <DropdownItem 
           icon={<Cloud size={14} />} 
-          label="Backup Workspace to Drive" 
+          label={
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+              <span>Backup Workspace to Drive</span>
+              {useSettingsStore.getState().settings?.lastSync && (Date.now() - useSettingsStore.getState().settings.lastSync < 86400000) && (
+                <Check size={14} color="var(--text-accent)" />
+              )}
+            </div>
+          }
           onClick={async () => { 
             try {
               if (window.api?.backupWorkspace) {
+                // Don't close immediately so user can see progress toast
+                onClose()
                 const res = await window.api.backupWorkspace()
                 if (res?.error) {
                   console.error('Backup failed:', res.error)
-                  // Could trigger a toast here
                 } else {
                   console.log('Backup successful')
+                  useSettingsStore.getState().updateSetting('lastSync', Date.now())
                 }
               }
             } catch (err) {
               console.error('Backup error:', err)
-            } finally {
-              onClose()
             }
           }} 
         />

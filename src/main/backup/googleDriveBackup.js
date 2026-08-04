@@ -97,7 +97,8 @@ export async function backupToDrive(vaultPath, sender) {
       sender.send('index:progress', { type: 'backup', stage: 'scanning', progress: 0 })
     }
 
-    const backupFileName = `Lumina_Backup_${new Date().toISOString().replace(/[:.]/g, '-')}.zip`
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+    const backupFileName = `lumina-${timestamp}.zip`
     const backupFilePath = path.join(app.getPath('temp'), backupFileName)
 
     // 1. Zip the workspace
