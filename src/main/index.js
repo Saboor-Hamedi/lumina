@@ -14,6 +14,7 @@ import { handleExportDocs } from '../export/exportDocs'
 import { handleExportPDF } from '../export/exportPDF'
 import { handleExportMarkdown } from '../export/exportMarkdown'
 import { handleExportText } from '../export/exportText'
+import { handleExportHTML } from '../export/exportHTML'
 
 // Force rebuild timestamp: 5
 
@@ -280,6 +281,7 @@ app.whenReady().then(async () => {
   })
 
   // Export handlers
+  ipcMain.handle('window:export-html', async (_, payload) => handleExportHTML(mainWindow, payload))
   ipcMain.handle('window:export-docs', async (_, payload) => handleExportDocs(mainWindow, payload))
   ipcMain.handle('window:export-pdf', async (_, payload) => handleExportPDF(mainWindow, payload))
   ipcMain.handle('window:export-markdown', async (_, payload) => handleExportMarkdown(mainWindow, payload))
