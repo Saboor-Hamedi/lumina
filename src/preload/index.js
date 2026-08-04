@@ -85,7 +85,12 @@ const api = {
 
   // Image Generation (bypasses CSP by using main process)
   generateImage: (endpoint, headers, body) =>
-    electronAPI.ipcRenderer.invoke('ai:generateImage', { endpoint, headers, body })
+    electronAPI.ipcRenderer.invoke('ai:generateImage', { endpoint, headers, body }),
+
+  // Google Auth
+  loginWithGoogle: (clientId) => electronAPI.ipcRenderer.invoke('auth:loginWithGoogle', clientId),
+  getGoogleUser: () => electronAPI.ipcRenderer.invoke('auth:getGoogleUser'),
+  logoutFromGoogle: () => electronAPI.ipcRenderer.invoke('auth:logoutFromGoogle')
 }
 
 // Expose APIs

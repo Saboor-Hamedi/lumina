@@ -47,9 +47,7 @@ describe('handleExportHTML', () => {
   })
 
   it('throws when no content provided', async () => {
-    await expect(handleExportHTML(null, { title: 'Empty' })).rejects.toThrow(
-      'No content provided'
-    )
+    await expect(handleExportHTML(null, { title: 'Empty' })).rejects.toThrow('No content provided')
   })
 
   it('throws when payload is empty', async () => {

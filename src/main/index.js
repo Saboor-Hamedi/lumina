@@ -15,6 +15,7 @@ import { handleExportPDF } from '../export/exportPDF'
 import { handleExportMarkdown } from '../export/exportMarkdown'
 import { handleExportText } from '../export/exportText'
 import { handleExportHTML } from '../export/exportHTML'
+import { setupGoogleAuth } from './auth/googleAuth'
 
 // Force rebuild timestamp: 5
 
@@ -288,6 +289,9 @@ app.whenReady().then(async () => {
     handleExportMarkdown(mainWindow, payload)
   )
   ipcMain.handle('window:export-text', async (_, payload) => handleExportText(mainWindow, payload))
+
+  // Setup Google Auth
+  setupGoogleAuth()
 
   // Receive renderer logs and append to a file in userData
   ipcMain.on('renderer:log', async (_, payload) => {

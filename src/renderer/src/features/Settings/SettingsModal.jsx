@@ -3,6 +3,7 @@ import { X, Settings, ArrowUpCircle, RefreshCw, CheckCircle, Info } from 'lucide
 import ThemeModal from '../Theme/ThemeModal'
 import ModalHeader from '../Overlays/ModalHeader'
 import ColorModal from '../Overlays/ColorModal'
+import AuthGoogle from './auth/AuthGoogle'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useToast } from '../../core/hooks/useToast'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
@@ -201,9 +202,16 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
             >
               Graph
             </button>
+            <button
+              className={`nav-item ${activeTab === 'sync' ? 'active' : ''}`}
+              onClick={() => setActiveTab('sync')}
+            >
+              Cloud Sync
+            </button>
           </aside>
 
           <main className="settings-body">
+            {activeTab === 'sync' && <AuthGoogle />}
             {activeTab === 'general' && (
               <div className="settings-pane">
                 <section>

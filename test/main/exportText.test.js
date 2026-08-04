@@ -85,9 +85,7 @@ describe('handleExportText', () => {
   })
 
   it('throws when no content provided', async () => {
-    await expect(handleExportText(null, { title: 'Empty' })).rejects.toThrow(
-      'No content provided'
-    )
+    await expect(handleExportText(null, { title: 'Empty' })).rejects.toThrow('No content provided')
     expect(showSaveDialog).not.toHaveBeenCalled()
   })
 })

@@ -99,9 +99,7 @@ describe('handleExportPDF', () => {
   })
 
   it('throws when no content provided', async () => {
-    await expect(handleExportPDF(null, { title: 'Empty' })).rejects.toThrow(
-      'No content provided'
-    )
+    await expect(handleExportPDF(null, { title: 'Empty' })).rejects.toThrow('No content provided')
     expect(showSaveDialog).not.toHaveBeenCalled()
   })
 
