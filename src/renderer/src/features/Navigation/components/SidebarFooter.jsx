@@ -10,7 +10,7 @@ const SidebarFooter = memo(({ onThemeClick, onSettingsClick }) => {
   const googleUser = useSettingsStore((state) => state.settings?.googleUser)
 
   return (
-    <div className="sidebar-footer-section" ref={footerRef}>
+    <div className="sidebar-footer-section" ref={footerRef} style={{ position: 'relative', width: '100%' }}>
       <ToolTip text="Account & Settings">
         <button 
           className="sidebar-icon-btn" 
@@ -27,16 +27,21 @@ const SidebarFooter = memo(({ onThemeClick, onSettingsClick }) => {
             background: 'transparent'
           }}
         >
-          {googleUser?.picture ? (
-            <img 
-              src={googleUser.picture} 
-              alt="Profile" 
-              style={{ width: '18px', height: '18px', borderRadius: '50%', objectFit: 'cover' }} 
-              onError={(e) => {
-                e.target.style.display = 'none';
-                e.target.insertAdjacentHTML('afterend', '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>')
-              }}
-            />
+          {googleUser ? (
+            googleUser.picture ? (
+              <img 
+                src={googleUser.picture} 
+                alt="Profile" 
+                referrerPolicy="no-referrer"
+                style={{ width: '18px', height: '18px', borderRadius: '50%', objectFit: 'cover' }} 
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.insertAdjacentHTML('afterend', '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>')
+                }}
+              />
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            )
           ) : (
             <Settings size={14} />
           )}

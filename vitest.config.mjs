@@ -15,11 +15,6 @@ export default defineConfig({
       'src/renderer/**/*.test.{js,jsx}'
     ],
     exclude: ['node_modules', 'out', 'build', 'dist', 'test/e2e'],
-    server: {
-      deps: {
-        inline: [/[\\/]useResizable[\\/]/]
-      }
-    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -34,9 +29,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@renderer': resolve('src/renderer/src'),
-      passport: resolve('useResizable/tests/mocks/passport.js'),
-      'passport-google-oauth': resolve('useResizable/tests/mocks/passport-google-oauth.js')
+      '@renderer': resolve('src/renderer/src')
     }
   }
 })

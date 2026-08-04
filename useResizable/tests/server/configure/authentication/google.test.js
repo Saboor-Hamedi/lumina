@@ -23,7 +23,11 @@ describe('google authentication config', () => {
 
   beforeEach(() => {
     useSpy = vi.spyOn(passport, 'use').mockImplementation(() => {})
-    authenticateSpy = vi.spyOn(passport, 'authenticate').mockReturnValue(vi.fn())
+    // authenticate returns express middleware; call next() to reach the
+    // success handler that redirects to '/'
+    authenticateSpy = vi
+      .spyOn(passport, 'authenticate')
+      .mockReturnValue((req, res, next) => next())
 
     app = {
       setValue: vi.fn(),
@@ -86,11 +90,12 @@ describe('google authentication config', () => {
   it('callback route redirects to home on success', () => {
     setupGoogleAuth(app, db)
 
-    const callbackRoute = app.get.mock.calls.find(
-      ([path]) => path === '/auth/google/callback'
-    )[1]
+    // Route is: app.get(path, passport.authenticate(...), successHandler)
+    const route = app.get.mock.calls.find(([path]) => path === '/auth/google/callback')
+    const successHandler = route[2] // redirects to '/'
+
     const res = { redirect: vi.fn() }
-    callbackRoute({}, res)
+    successHandler({}, res)
     expect(res.redirect).toHaveBeenCalledWith('/')
   })
 })
