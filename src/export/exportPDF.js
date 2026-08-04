@@ -58,6 +58,9 @@ export const handleExportPDF = async (mainWindow, payload) => {
   <title>${title || 'Untitled'}</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github.min.css">
   <style>
+    @page {
+      margin: 2.0cm 2.5cm;
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Times New Roman', serif;
@@ -245,16 +248,9 @@ export const handleExportPDF = async (mainWindow, payload) => {
       })
     `);
 
-    // Generate PDF with custom margins (converted from cm to inches: 1cm = 0.3937in)
+    // Generate PDF relying on @page CSS for margins
     const pdfData = await printWin.webContents.printToPDF({
       printBackground: true,
-      margins: {
-        marginType: 'custom',
-        top: 2.0 * 0.3937,    // 2.0 cm
-        bottom: 2.0 * 0.3937, // 2.0 cm
-        left: 2.5 * 0.3937,   // 2.5 cm
-        right: 2.5 * 0.3937   // 2.5 cm
-      },
       pageSize: 'A4'
     })
 
