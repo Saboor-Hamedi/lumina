@@ -18,7 +18,7 @@ const AuthGoogle = () => {
     try {
       if (window.api?.loginWithGoogle) {
         // Using the user-provided ID
-        const clientId = 'gen-lang-client-0676439198'
+        const clientId = '736587690312-33s4trbiculu5dvctb92lkl6njgc14ae.apps.googleusercontent.com'
         const userInfo = await window.api.loginWithGoogle(clientId)
         if (userInfo && userInfo.error) {
           setError(userInfo.error)
