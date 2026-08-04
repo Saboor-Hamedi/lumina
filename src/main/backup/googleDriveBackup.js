@@ -35,7 +35,7 @@ async function uploadToGoogleDrive(filePath, accessToken) {
   const fileStats = fs.statSync(filePath)
   
   // 1. Initiate resumable upload session
-  const initResponse = await net.fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable', {
+  const initResponse = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -62,7 +62,7 @@ async function uploadToGoogleDrive(filePath, accessToken) {
 
   // 2. Upload the file data
   const fileData = fs.readFileSync(filePath)
-  const uploadResponse = await net.fetch(uploadUrl, {
+  const uploadResponse = await fetch(uploadUrl, {
     method: 'PUT',
     headers: {
       'Content-Length': fileStats.size.toString(),
