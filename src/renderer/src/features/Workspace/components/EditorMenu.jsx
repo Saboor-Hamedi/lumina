@@ -32,6 +32,8 @@ const EditorMenu = ({
   onExportHTML,
   onExportPDF,
   onExportMarkdown,
+  onExportText,
+  onExportDocs,
   onInlineAI,
   onPreview
 }) => {
@@ -209,8 +211,56 @@ const EditorMenu = ({
                     setShowMoreMenu(false)
                   }}
                 >
-                  <span className="menu-label">Export as Text File</span>
+                  <span className="menu-label">Export as Markdown</span>
                   <FileText size={12} className="menu-icon-right" />
+                </div>
+                <div
+                  className="dropdown-item"
+                  onClick={async () => {
+                    try {
+                      if (onExportText && typeof onExportText === 'function') {
+                        const result = await onExportText()
+                        if (result?.success) {
+                          showToast('Text file exported successfully', 'success')
+                        } else if (result?.canceled) {
+                          // User canceled
+                        } else {
+                          showToast('Failed to export text file', 'error')
+                        }
+                      }
+                    } catch (error) {
+                      console.error('Failed to export text file:', error)
+                      showToast('Failed to export text file', 'error')
+                    }
+                    setShowMoreMenu(false)
+                  }}
+                >
+                  <span className="menu-label">Export as Plain Text</span>
+                  <FileType size={12} className="menu-icon-right" />
+                </div>
+                <div
+                  className="dropdown-item"
+                  onClick={async () => {
+                    try {
+                      if (onExportDocs && typeof onExportDocs === 'function') {
+                        const result = await onExportDocs()
+                        if (result?.success) {
+                          showToast('HTML Doc exported successfully', 'success')
+                        } else if (result?.canceled) {
+                          // User canceled
+                        } else {
+                          showToast('Failed to export Docs', 'error')
+                        }
+                      }
+                    } catch (error) {
+                      console.error('Failed to export Docs:', error)
+                      showToast('Failed to export Docs', 'error')
+                    }
+                    setShowMoreMenu(false)
+                  }}
+                >
+                  <span className="menu-label">Export as HTML Docs</span>
+                  <FileCode size={12} className="menu-icon-right" />
                 </div>
 
 

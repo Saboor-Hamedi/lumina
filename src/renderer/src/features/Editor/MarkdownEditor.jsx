@@ -535,6 +535,38 @@ const MarkdownEditor = React.memo(
       }
     }, [snippet, title, showToast])
 
+    const handleExportText = useCallback(async () => {
+      if (!snippet || !editorHandleRef.current) return
+      if (!window.api?.exportText) return
+      try {
+        const code = editorHandleRef.current.getMarkdown()
+        return await window.api.exportText({
+          title: title || snippet.title || 'Untitled',
+          content: code,
+          language: snippet.language || 'markdown'
+        })
+      } catch (error) {
+        showToast('Failed to export text', 'error')
+        throw error
+      }
+    }, [snippet, title, showToast])
+
+    const handleExportDocs = useCallback(async () => {
+      if (!snippet || !editorHandleRef.current) return
+      if (!window.api?.exportDocs) return
+      try {
+        const code = editorHandleRef.current.getMarkdown()
+        return await window.api.exportDocs({
+          title: title || snippet.title || 'Untitled',
+          content: code,
+          language: snippet.language || 'markdown'
+        })
+      } catch (error) {
+        showToast('Failed to export Docs', 'error')
+        throw error
+      }
+    }, [snippet, title, showToast])
+
     const handleExportMarkdown = useCallback(async () => {
       if (!snippet || !editorHandleRef.current) return
       if (!window.api?.exportMarkdown) return
@@ -1097,6 +1129,8 @@ const MarkdownEditor = React.memo(
             onExportHTML={handleExportHTML}
             onExportPDF={handleExportPDF}
             onExportMarkdown={handleExportMarkdown}
+            onExportText={handleExportText}
+            onExportDocs={handleExportDocs}
             onInlineAI={() => setIsInlineAIOpen(true)}
             onPreview={() => setIsPreviewOpen(true)}
           />
