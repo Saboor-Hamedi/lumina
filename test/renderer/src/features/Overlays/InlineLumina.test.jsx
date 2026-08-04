@@ -231,7 +231,7 @@ describe('InlineLumina', () => {
       await userEvent.type(input, 'expand this')
       await userEvent.keyboard('{Enter}')
 
-      const closeBtn = await screen.findByTitle('Close')
+      const closeBtn = await screen.findByTitle('Close (Esc)')
       await userEvent.click(closeBtn)
 
       expect(onClose).toHaveBeenCalled()
