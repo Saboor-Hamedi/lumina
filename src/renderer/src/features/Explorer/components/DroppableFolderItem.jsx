@@ -78,9 +78,10 @@ export const DroppableFolderItem = React.memo(
                 top: 0,
                 bottom: 0,
                 width: '1.5px',
-                backgroundColor: i === item.depth - 1 
-                  ? 'var(--text-accent)' 
-                  : 'rgba(var(--text-accent-rgb, 64, 186, 250), 0.35)',
+                backgroundColor:
+                  i === item.depth - 1
+                    ? 'var(--text-accent)'
+                    : 'rgba(var(--text-accent-rgb, 64, 186, 250), 0.35)',
                 opacity: i === item.depth - 1 ? 0.85 : 1
               }}
             />
@@ -143,9 +144,17 @@ export const DroppableFolderItem = React.memo(
           >
             <span style={{ display: 'inline-flex', flexShrink: 0 }}>
               {isExpanded ? (
-                <FolderOpen size={14} fill={folderColor || "#e8a825"} color={folderColor || "#e8a825"} />
+                <FolderOpen
+                  size={14}
+                  fill={folderColor || '#e8a825'}
+                  color={folderColor || '#e8a825'}
+                />
               ) : (
-                <Folder size={14} fill={folderColor || "#e8a825"} color={folderColor || "#e8a825"} />
+                <Folder
+                  size={14}
+                  fill={folderColor || '#e8a825'}
+                  color={folderColor || '#e8a825'}
+                />
               )}
             </span>
             {isRenaming ? (
@@ -163,7 +172,17 @@ export const DroppableFolderItem = React.memo(
               />
             ) : (
               <ToolTip text={item.name} position="bottom" delay={600}>
-                <span className="folder-name" style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+                <span
+                  className="folder-name"
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    display: 'block'
+                  }}
+                >
                   {highlightText(item.name, searchQuery)}
                 </span>
               </ToolTip>

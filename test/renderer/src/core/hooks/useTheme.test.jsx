@@ -64,6 +64,8 @@ describe('useTheme', () => {
     })
 
     // It should have applied the dracula background color
-    expect(document.documentElement.style.getPropertyValue('--bg-app')).toBe(THEMES.dracula.colors['--bg-app'])
+    expect(document.documentElement.style.getPropertyValue('--bg-app')).toBe(
+      THEMES.dracula.colors['--bg-app']
+    )
   })
 })

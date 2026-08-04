@@ -15,7 +15,7 @@ const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title, cursorPosi
   const [contextRange, setContextRange] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
   const dragStartPos = useRef({ x: 0, y: 0, top: 0, left: 0 })
-  
+
   const inputRef = useRef(null)
   const modalRef = useRef(null)
 
@@ -28,11 +28,11 @@ const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title, cursorPosi
           const selection = editorView.state.selection.main
           const pos = selection.head || selection.from
           const coords = editorView.coordsAtPos(pos)
-          
+
           if (coords) {
             const modalRect = modalRef.current.getBoundingClientRect()
             const actualModalHeight = modalRect.height > 0 ? modalRect.height : 50
-            const actualModalWidth = 420 
+            const actualModalWidth = 420
 
             const viewportWidth = window.innerWidth
             const viewportHeight = window.innerHeight
@@ -40,7 +40,8 @@ const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title, cursorPosi
             let top = coords.bottom + 10
             let left = coords.left
 
-            if (left + actualModalWidth > viewportWidth) left = viewportWidth - actualModalWidth - 20
+            if (left + actualModalWidth > viewportWidth)
+              left = viewportWidth - actualModalWidth - 20
             if (left < 20) left = 20
 
             if (top + actualModalHeight > viewportHeight) {
@@ -101,7 +102,12 @@ const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title, cursorPosi
           }
         }
 
-        if (codeStartNum !== -1 && codeEndNum !== -1 && codeStartNum <= startLineNumber && codeEndNum >= startLineNumber) {
+        if (
+          codeStartNum !== -1 &&
+          codeEndNum !== -1 &&
+          codeStartNum <= startLineNumber &&
+          codeEndNum >= startLineNumber
+        ) {
           startLineNumber = codeStartNum
           endLineNumber = codeEndNum
         } else {
@@ -137,35 +143,41 @@ const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title, cursorPosi
     }
   }, [editorView])
 
-  const handleDragStart = useCallback((e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(true)
-    dragStartPos.current = {
-      x: e.clientX,
-      y: e.clientY,
-      top: typeof modalPosition.top === 'number' ? modalPosition.top : 0,
-      left: typeof modalPosition.left === 'number' ? modalPosition.left : 0
-    }
-  }, [modalPosition])
+  const handleDragStart = useCallback(
+    (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setIsDragging(true)
+      dragStartPos.current = {
+        x: e.clientX,
+        y: e.clientY,
+        top: typeof modalPosition.top === 'number' ? modalPosition.top : 0,
+        left: typeof modalPosition.left === 'number' ? modalPosition.left : 0
+      }
+    },
+    [modalPosition]
+  )
 
-  const handleDrag = useCallback((e) => {
-    if (!isDragging) return
-    const deltaX = e.clientX - dragStartPos.current.x
-    const deltaY = e.clientY - dragStartPos.current.y
-    const newLeft = dragStartPos.current.left + deltaX
-    const newTop = dragStartPos.current.top + deltaY
+  const handleDrag = useCallback(
+    (e) => {
+      if (!isDragging) return
+      const deltaX = e.clientX - dragStartPos.current.x
+      const deltaY = e.clientY - dragStartPos.current.y
+      const newLeft = dragStartPos.current.left + deltaX
+      const newTop = dragStartPos.current.top + deltaY
 
-    const viewportWidth = window.innerWidth
-    const viewportHeight = window.innerHeight
-    const modalWidth = 420
-    const modalHeight = modalRef.current?.getBoundingClientRect().height || 200
+      const viewportWidth = window.innerWidth
+      const viewportHeight = window.innerHeight
+      const modalWidth = 420
+      const modalHeight = modalRef.current?.getBoundingClientRect().height || 200
 
-    setModalPosition({
-      top: Math.max(10, Math.min(newTop, viewportHeight - modalHeight - 10)),
-      left: Math.max(10, Math.min(newLeft, viewportWidth - modalWidth - 10))
-    })
-  }, [isDragging])
+      setModalPosition({
+        top: Math.max(10, Math.min(newTop, viewportHeight - modalHeight - 10)),
+        left: Math.max(10, Math.min(newLeft, viewportWidth - modalWidth - 10))
+      })
+    },
+    [isDragging]
+  )
 
   const handleDragEnd = useCallback(() => setIsDragging(false), [])
 
@@ -185,7 +197,7 @@ const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title, cursorPosi
       setTimeout(() => inputRef.current?.focus(), 100)
     }
   }, [isOpen])
-  
+
   useEffect(() => {
     if (isOpen) {
       setContextRange(getSelectedText())
@@ -202,8 +214,6 @@ const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title, cursorPosi
       setContextRange(null)
     }
   }, [isOpen])
-
-
 
   const handleStop = useCallback(() => {
     if (abortController) {
@@ -265,7 +275,7 @@ const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title, cursorPosi
 
       const currentQuery = query.trim()
       setLastQuery(currentQuery)
-      setQuery('') 
+      setQuery('')
       setIsGenerating(true)
       setResponse('')
       setCopied(false)
@@ -292,11 +302,15 @@ CRITICAL INSTRUCTIONS:
             systemPrompt += `\n\n**Full File Contents (For deep context & understanding):**\n\`\`\`\n${contextRange.fullText}\n\`\`\``
           }
           if (contextRange.text) {
-            systemPrompt += '\n\n**Current Target Block (Where the user\'s cursor/selection is located):**\n' + contextRange.text
+            systemPrompt +=
+              "\n\n**Current Target Block (Where the user's cursor/selection is located):**\n" +
+              contextRange.text
             if (contextRange.isSelection) {
-              systemPrompt += '\n\n*(The user has highlighted the Target Block above. You must operate strictly on replacing/expanding this selection, but use the Full File Contents for context).*'
+              systemPrompt +=
+                '\n\n*(The user has highlighted the Target Block above. You must operate strictly on replacing/expanding this selection, but use the Full File Contents for context).*'
             } else {
-              systemPrompt += '\n\n*(This is the Target Block surrounding the user cursor. You must operate strictly on this block, but use the Full File Contents for context).*'
+              systemPrompt +=
+                '\n\n*(This is the Target Block surrounding the user cursor. You must operate strictly on this block, but use the Full File Contents for context).*'
             }
           }
         }
@@ -358,10 +372,10 @@ CRITICAL INSTRUCTIONS:
         while (true) {
           const { done, value } = await reader.read()
           if (done) break
-          
+
           const chunk = decoder.decode(value, { stream: true })
           const lines = chunk.split('\n')
-          
+
           for (const line of lines) {
             if (line.startsWith('data: ') && line !== 'data: [DONE]') {
               try {
@@ -376,7 +390,7 @@ CRITICAL INSTRUCTIONS:
         }
       } catch (err) {
         if (err.name === 'AbortError') {
-          setResponse(prev => prev + '\n\n*(Generation stopped)*')
+          setResponse((prev) => prev + '\n\n*(Generation stopped)*')
         } else {
           setResponse(`**Error:** ${err.message}`)
         }
@@ -388,15 +402,23 @@ CRITICAL INSTRUCTIONS:
     [query, isGenerating, contextRange, title]
   )
 
-  const modalStyle = React.useMemo(() => ({
-    top: typeof modalPosition.top === 'number' ? `${modalPosition.top}px` : modalPosition.top,
-    left: typeof modalPosition.left === 'number' ? `${modalPosition.left}px` : modalPosition.left,
-  }), [modalPosition.top, modalPosition.left])
+  const modalStyle = React.useMemo(
+    () => ({
+      top: typeof modalPosition.top === 'number' ? `${modalPosition.top}px` : modalPosition.top,
+      left: typeof modalPosition.left === 'number' ? `${modalPosition.left}px` : modalPosition.left
+    }),
+    [modalPosition.top, modalPosition.left]
+  )
 
   if (!isOpen) return null
 
   return (
-    <div className="inline-lumina-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) handleCancel() }}>
+    <div
+      className="inline-lumina-overlay"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) handleCancel()
+      }}
+    >
       <div
         ref={modalRef}
         className="inline-lumina-modal"
@@ -411,7 +433,11 @@ CRITICAL INSTRUCTIONS:
             ref={inputRef}
             type="text"
             className="inline-lumina-input-compact"
-            placeholder={contextRange && contextRange.isSelection ? "Ask Lumina to edit selection..." : "Ask Lumina..."}
+            placeholder={
+              contextRange && contextRange.isSelection
+                ? 'Ask Lumina to edit selection...'
+                : 'Ask Lumina...'
+            }
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
@@ -452,7 +478,9 @@ CRITICAL INSTRUCTIONS:
           <>
             <div className="inline-lumina-response-compact">
               <div className="inline-lumina-response-content">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{response || '*Thinking...*'}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {response || '*Thinking...*'}
+                </ReactMarkdown>
               </div>
             </div>
 
@@ -466,10 +494,7 @@ CRITICAL INSTRUCTIONS:
                   Insert
                 </button>
 
-                <button
-                  className="inline-lumina-btn-compact"
-                  onClick={handleCopy}
-                >
+                <button className="inline-lumina-btn-compact" onClick={handleCopy}>
                   {copied ? <Check size={14} /> : <Copy size={14} />}
                   {copied ? 'Copied' : 'Copy'}
                 </button>

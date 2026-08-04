@@ -52,16 +52,18 @@ const AppShell = () => {
     loadVault,
     activeTabId,
     openTabs
-  } = useVaultStore(useShallow(state => ({
-    snippets: state.snippets,
-    selectedSnippet: state.selectedSnippet,
-    setSelectedSnippet: state.setSelectedSnippet,
-    saveSnippet: state.saveSnippet,
-    isLoading: state.isLoading,
-    loadVault: state.loadVault,
-    activeTabId: state.activeTabId,
-    openTabs: state.openTabs
-  })))
+  } = useVaultStore(
+    useShallow((state) => ({
+      snippets: state.snippets,
+      selectedSnippet: state.selectedSnippet,
+      setSelectedSnippet: state.setSelectedSnippet,
+      saveSnippet: state.saveSnippet,
+      isLoading: state.isLoading,
+      loadVault: state.loadVault,
+      activeTabId: state.activeTabId,
+      openTabs: state.openTabs
+    }))
+  )
   const { toast, showToast, clearToast } = useToast()
   const settings = useSettingsStore((state) => state.settings)
 
@@ -247,7 +249,8 @@ const AppShell = () => {
       else if (typeof actualSettings.isLeftSidebarOpen === 'boolean')
         setIsLeftSidebarOpen(actualSettings.isLeftSidebarOpen)
 
-      const rawLeftWidth = legacySidebar.width || legacySidebar.leftWidth || actualSettings.leftWidth
+      const rawLeftWidth =
+        legacySidebar.width || legacySidebar.leftWidth || actualSettings.leftWidth
       if (rawLeftWidth) {
         const clampedLeft = Math.min(500, Math.max(150, Number(rawLeftWidth)))
         setLeftWidth(clampedLeft)
@@ -260,7 +263,8 @@ const AppShell = () => {
       else if (typeof actualSettings.isRightSidebarOpen === 'boolean')
         setIsRightSidebarOpen(actualSettings.isRightSidebarOpen)
 
-      const rawRightWidth = legacyRSidebar.width || legacyRSidebar.rightWidth || actualSettings.rightWidth
+      const rawRightWidth =
+        legacyRSidebar.width || legacyRSidebar.rightWidth || actualSettings.rightWidth
       if (rawRightWidth) {
         const clampedRight = Math.min(500, Math.max(160, Number(rawRightWidth)))
         setRightWidth(clampedRight)
@@ -325,7 +329,6 @@ const AppShell = () => {
 
   const pinnedTabIds = useVaultStore((state) => state.pinnedTabIds)
 
-
   // Ctrl+B - toggle Explorer Modal
   useEffect(() => {
     const handleExplorerShortcut = (e) => {
@@ -356,7 +359,11 @@ const AppShell = () => {
   useEffect(() => {
     const handleAIChatShortcut = (e) => {
       const key = e.key && e.key.toLowerCase()
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (key === '\\' || key === '|' || e.code === 'Backslash')) {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.shiftKey &&
+        (key === '\\' || key === '|' || e.code === 'Backslash')
+      ) {
         e.preventDefault()
         setShowAIChatModal((prev) => !prev)
       }
@@ -593,7 +600,7 @@ const AppShell = () => {
       <main className="shell-main">
         {/* Show TabBar even if no tabs are open so WindowControls remain visible */}
         {(activeTab === 'files' || activeTab === 'search') && (
-          <TabBar 
+          <TabBar
             isSidebarOpen={isRightSidebarOpen}
             onToggleSidebar={() => setIsRightSidebarOpen((prev) => !prev)}
             isLeftSidebarOpen={isLeftSidebarOpen}
@@ -601,8 +608,12 @@ const AppShell = () => {
           />
         )}
 
-        {openTabs.filter(id => id === GRAPH_TAB_ID || snippets.some(s => s.id === id)).length > 0 ? (
-          <div className="workspace-container" style={{ display: 'flex', flexDirection: 'row', flex: 1, overflow: 'hidden' }}>
+        {openTabs.filter((id) => id === GRAPH_TAB_ID || snippets.some((s) => s.id === id)).length >
+        0 ? (
+          <div
+            className="workspace-container"
+            style={{ display: 'flex', flexDirection: 'row', flex: 1, overflow: 'hidden' }}
+          >
             <div
               style={{
                 position: 'relative',
@@ -612,47 +623,47 @@ const AppShell = () => {
                 overflow: 'hidden'
               }}
             >
-            {openTabs.map((tabId) => {
-              let snippet = snippets.find((s) => s.id === tabId)
-              if (!snippet) return null
-              const effectiveSelectedId = selectedSnippet?.id || activeTabId || openTabs[0]
-              const isSelected = effectiveSelectedId === tabId
+              {openTabs.map((tabId) => {
+                let snippet = snippets.find((s) => s.id === tabId)
+                if (!snippet) return null
+                const effectiveSelectedId = selectedSnippet?.id || activeTabId || openTabs[0]
+                const isSelected = effectiveSelectedId === tabId
 
-              return (
-                <div
-                  key={tabId}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    opacity: isSelected ? 1 : 0,
-                    pointerEvents: isSelected ? 'auto' : 'none',
-                    visibility: isSelected ? 'visible' : 'hidden',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    overflow: 'hidden',
-                    zIndex: isSelected ? 10 : 1
-                  }}
-                >
-                  <ErrorBoundary>
-                    <MarkdownEditor
-                      snippet={snippet}
-                      onSave={saveSnippet}
-                      onToggleInspector={handleToggleInspector}
-                      isActive={isSelected}
-                      onToggleExplorerModal={() => setShowExplorerModal((prev) => !prev)}
-                      onSettingsClick={() => setShowSettings(true)}
-                      onThemeClick={() => setShowThemeModal(true)}
-                      onGraphClick={() => setShowGraph(true)}
-                    />
-                  </ErrorBoundary>
-                </div>
-              )
-            })}
+                return (
+                  <div
+                    key={tabId}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      opacity: isSelected ? 1 : 0,
+                      pointerEvents: isSelected ? 'auto' : 'none',
+                      visibility: isSelected ? 'visible' : 'hidden',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      overflow: 'hidden',
+                      zIndex: isSelected ? 10 : 1
+                    }}
+                  >
+                    <ErrorBoundary>
+                      <MarkdownEditor
+                        snippet={snippet}
+                        onSave={saveSnippet}
+                        onToggleInspector={handleToggleInspector}
+                        isActive={isSelected}
+                        onToggleExplorerModal={() => setShowExplorerModal((prev) => !prev)}
+                        onSettingsClick={() => setShowSettings(true)}
+                        onThemeClick={() => setShowThemeModal(true)}
+                        onGraphClick={() => setShowGraph(true)}
+                      />
+                    </ErrorBoundary>
+                  </div>
+                )
+              })}
+            </div>
           </div>
-        </div>
         ) : isRestoring ? (
           <div className="shell-main-placeholder" />
         ) : (
@@ -684,8 +695,18 @@ const AppShell = () => {
           />
         </aside>
         <StatusBar
-          wordCount={selectedSnippet?.code ? selectedSnippet.code.trim().split(/\s+/).filter(Boolean).length : 0}
-          extension={selectedSnippet?.title && selectedSnippet.title.includes('.') ? selectedSnippet.title.split('.').pop() : (selectedSnippet ? 'md' : '')}
+          wordCount={
+            selectedSnippet?.code
+              ? selectedSnippet.code.trim().split(/\s+/).filter(Boolean).length
+              : 0
+          }
+          extension={
+            selectedSnippet?.title && selectedSnippet.title.includes('.')
+              ? selectedSnippet.title.split('.').pop()
+              : selectedSnippet
+                ? 'md'
+                : ''
+          }
           onToggleInspector={handleToggleInspector}
           onToggleExplorerModal={() => setShowExplorerModal((prev) => !prev)}
           onSettingsClick={() => setShowSettings(true)}
@@ -694,7 +715,6 @@ const AppShell = () => {
           onDocsClick={() => setShowDocsModal(true)}
         />
       </main>
-
 
       {showSettings && (
         <SettingsModal
@@ -781,10 +801,7 @@ const AppShell = () => {
         />
       )}
       {showDocsModal && (
-        <Documentation
-          isOpen={showDocsModal}
-          onClose={() => setShowDocsModal(false)}
-        />
+        <Documentation isOpen={showDocsModal} onClose={() => setShowDocsModal(false)} />
       )}
       <ConfirmModal
         isOpen={showDeleteConfirm}

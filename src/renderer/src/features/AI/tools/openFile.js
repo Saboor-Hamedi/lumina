@@ -13,13 +13,18 @@ export const openFileTool = aiSdk.tool({
     const vs = useVaultStore.getState()
     const snippets = Array.from(vs.snippets.values())
     let target = snippets.find((s) => s.title.toLowerCase() === cleanTitle.toLowerCase())
-    if (!target) target = snippets.find((s) => s.title.toLowerCase().includes(cleanTitle.toLowerCase()))
-    
+    if (!target)
+      target = snippets.find((s) => s.title.toLowerCase().includes(cleanTitle.toLowerCase()))
+
     if (!target) return { success: false, error: 'File not found' }
-    
+
     vs.setSelectedSnippet(target)
     vs.setActiveTabId(target.id)
-    
-    return { success: true, title: target.title, instruction_to_ai: `File "${target.title}" is now open in the editor. Tell the user you have opened it for them.` }
+
+    return {
+      success: true,
+      title: target.title,
+      instruction_to_ai: `File "${target.title}" is now open in the editor. Tell the user you have opened it for them.`
+    }
   }
 })

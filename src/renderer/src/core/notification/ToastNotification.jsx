@@ -37,11 +37,11 @@ const ToastNotification = ({ toast, onClose }) => {
   }
 
   return (
-    <div className={`toast-notification horizontal toast-${toast.type} ${isExiting ? 'toast-exit' : ''}`}>
+    <div
+      className={`toast-notification horizontal toast-${toast.type} ${isExiting ? 'toast-exit' : ''}`}
+    >
       <div className="toast-content">
-        <div className="toast-icon-wrapper">
-          {getIcon()}
-        </div>
+        <div className="toast-icon-wrapper">{getIcon()}</div>
         <span className="toast-message">{toast.message}</span>
         <button className="toast-close" onClick={handleClose} aria-label="Close notification">
           <X size={14} />

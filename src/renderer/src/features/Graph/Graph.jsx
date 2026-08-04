@@ -1,5 +1,15 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
-import { X, Square, Copy, Network, RefreshCw, Layers, Search, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import {
+  X,
+  Square,
+  Copy,
+  Network,
+  RefreshCw,
+  Layers,
+  Search,
+  PanelLeftClose,
+  PanelLeftOpen
+} from 'lucide-react'
 import ForceGraph2D from 'react-force-graph-2d'
 import * as THREE from 'three'
 import Graph3D from './Graph3D'
@@ -48,21 +58,21 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   const selectedSnippet = useVaultStore((s) => s.selectedSnippet)
   const dirtySnippetIds = useVaultStore((s) => s.dirtySnippetIds)
   const embeddingsCache = useAIStore((s) => s.embeddingsCache)
-  
+
   // Granular subscriptions so physics sliders do not cause React re-renders!
-  const graphTheme = useSettingsStore(s => s.settings.graphTheme || 'default')
-  const graphHideTags = useSettingsStore(s => s.settings.graphHideTags)
-  const graphHideGhosts = useSettingsStore(s => s.settings.graphHideGhosts)
-  const graphHideOrphans = useSettingsStore(s => s.settings.graphHideOrphans)
-  const graphSidebarOpen = useSettingsStore(s => s.settings.graphSidebarOpen ?? true)
-  const is3DMode = useSettingsStore(s => s.settings.graph3DMode ?? false)
+  const graphTheme = useSettingsStore((s) => s.settings.graphTheme || 'default')
+  const graphHideTags = useSettingsStore((s) => s.settings.graphHideTags)
+  const graphHideGhosts = useSettingsStore((s) => s.settings.graphHideGhosts)
+  const graphHideOrphans = useSettingsStore((s) => s.settings.graphHideOrphans)
+  const graphSidebarOpen = useSettingsStore((s) => s.settings.graphSidebarOpen ?? true)
+  const is3DMode = useSettingsStore((s) => s.settings.graph3DMode ?? false)
 
   const [hoverNode, setHoverNode] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 })
-  const isMaximized = useSettingsStore(s => s.settings.graphModalMaximized ?? false)
-  
-  const isSpinning = useSettingsStore(s => s.settings.graphAnimate ?? true)
+  const isMaximized = useSettingsStore((s) => s.settings.graphModalMaximized ?? false)
+
+  const isSpinning = useSettingsStore((s) => s.settings.graphAnimate ?? true)
   const graphRef = useRef()
   const containerRef = useRef()
   const [dimensions, setDimensions] = useState({
@@ -80,9 +90,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     updateSettings({ graphSidebarOpen: !(settings.graphSidebarOpen ?? true) })
   }, [])
 
-  const modalPos = useRef(
-    JSON.parse(localStorage.getItem('graph-modal-pos') || '{"x":0,"y":0}')
-  )
+  const modalPos = useRef(JSON.parse(localStorage.getItem('graph-modal-pos') || '{"x":0,"y":0}'))
   const isDraggingModal = useRef(false)
   const dragStart = useRef({ x: 0, y: 0 })
 
@@ -91,20 +99,20 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (!isDraggingModal.current || isMaximized) return
-      
+
       const newX = e.clientX - dragStart.current.x
       const newY = e.clientY - dragStart.current.y
       modalPos.current = { x: newX, y: newY }
-      
+
       if (rafId.current) cancelAnimationFrame(rafId.current)
-      
+
       rafId.current = requestAnimationFrame(() => {
         if (containerRef.current) {
           containerRef.current.style.transform = `translate3d(${newX}px, ${newY}px, 0)`
         }
       })
     }
-    
+
     const handleMouseUp = () => {
       isDraggingModal.current = false
       if (rafId.current) cancelAnimationFrame(rafId.current)
@@ -123,19 +131,22 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     }
   }, [isMaximized])
 
-  const handleModalHeaderMouseDown = useCallback((e) => {
-    if (isMaximized) return
-    isDraggingModal.current = true
-    
-    if (containerRef.current) {
-      containerRef.current.style.transition = 'none'
-    }
+  const handleModalHeaderMouseDown = useCallback(
+    (e) => {
+      if (isMaximized) return
+      isDraggingModal.current = true
 
-    dragStart.current = {
-      x: e.clientX - modalPos.current.x,
-      y: e.clientY - modalPos.current.y
-    }
-  }, [isMaximized])
+      if (containerRef.current) {
+        containerRef.current.style.transition = 'none'
+      }
+
+      dragStart.current = {
+        x: e.clientX - modalPos.current.x,
+        y: e.clientY - modalPos.current.y
+      }
+    },
+    [isMaximized]
+  )
 
   // Localized Escape Handler (only for modal mode)
   useKeyboardShortcuts({
@@ -249,8 +260,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
           }
         })
 
-        const isSameStructure = 
-          prev.nodes.length === nodes.length && 
+        const isSameStructure =
+          prev.nodes.length === nodes.length &&
           prev.links.length === links.length &&
           nodes.every((n) => prevNodes.has(n.id)) &&
           links.every((l, i) => {
@@ -294,7 +305,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     if (graphHideGhosts) {
       nodes = nodes.filter((n) => n.group !== 'ghost')
     }
-    
+
     // Filter links to only keep those whose nodes still exist
     const validNodeIds = new Set(nodes.map((n) => n.id))
     links = links.filter((l) => {
@@ -302,18 +313,18 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       const tgt = typeof l.target === 'object' ? l.target.id : l.target
       return validNodeIds.has(src) && validNodeIds.has(tgt)
     })
-    
+
     if (graphHideOrphans) {
       const nodesWithLinks = new Set()
-      links.forEach(l => {
+      links.forEach((l) => {
         const src = typeof l.source === 'object' ? l.source.id : l.source
         const tgt = typeof l.target === 'object' ? l.target.id : l.target
         nodesWithLinks.add(src)
         nodesWithLinks.add(tgt)
       })
-      nodes = nodes.filter(n => nodesWithLinks.has(n.id))
+      nodes = nodes.filter((n) => nodesWithLinks.has(n.id))
     }
-    
+
     return { nodes, links }
   }, [rawGraphData, graphHideTags, graphHideGhosts, graphHideOrphans])
 
@@ -337,14 +348,19 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             if (node) {
               if (is3DMode) {
                 // In 3D, position the camera to look at the node from a reasonable distance
-                const distance = 200;
-                const distRatio = 1 + distance / Math.max(1, Math.hypot(node.x || 0, node.y || 0, node.z || 0));
-                
+                const distance = 200
+                const distRatio =
+                  1 + distance / Math.max(1, Math.hypot(node.x || 0, node.y || 0, node.z || 0))
+
                 graphRef.current.cameraPosition(
-                  { x: (node.x || 0) * distRatio, y: (node.y || 0) * distRatio, z: (node.z || 0) * distRatio }, // new position
+                  {
+                    x: (node.x || 0) * distRatio,
+                    y: (node.y || 0) * distRatio,
+                    z: (node.z || 0) * distRatio
+                  }, // new position
                   { x: node.x || 0, y: node.y || 0, z: node.z || 0 }, // lookAt
-                  400  // ms transition duration
-                );
+                  400 // ms transition duration
+                )
               } else {
                 if (graphRef.current.centerAt) {
                   graphRef.current.centerAt(node.x || 0, node.y || 0, 400)
@@ -373,75 +389,73 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   // Physics Engine Setup
   useEffect(() => {
     // Unsubscribe listener for Live Physics without React Re-renders
-    const unsubscribe = useSettingsStore.subscribe(
-      (state, prevState) => {
-        const { settings } = state
-        const prev = prevState.settings
-        
-        // Only update if one of the physics settings actually changed
-        if (
-          settings.graphNodeSize !== prev.graphNodeSize ||
-          settings.graphCenterForce !== prev.graphCenterForce ||
-          settings.graphRepelForce !== prev.graphRepelForce ||
-          settings.graphLinkForce !== prev.graphLinkForce ||
-          settings.graphShowTexts !== prev.graphShowTexts ||
-          settings.graphNodeColor !== prev.graphNodeColor
-        ) {
-          if (!graphRef.current) return
-          if (is3DMode) return // Graph3D handles its own live physics
-          const fg = graphRef.current
+    const unsubscribe = useSettingsStore.subscribe((state, prevState) => {
+      const { settings } = state
+      const prev = prevState.settings
 
-          // Delay execution to ensure 3D physics engine is initialized on mount
-          setTimeout(() => {
-            const sizeMult = settings.graphNodeSize || 1.5
-            const centerForce = settings.graphCenterForce ?? 0.05
-            const repelForce = settings.graphRepelForce ?? 0.3
-            const linkForce = settings.graphLinkForce ?? 0.05
+      // Only update if one of the physics settings actually changed
+      if (
+        settings.graphNodeSize !== prev.graphNodeSize ||
+        settings.graphCenterForce !== prev.graphCenterForce ||
+        settings.graphRepelForce !== prev.graphRepelForce ||
+        settings.graphLinkForce !== prev.graphLinkForce ||
+        settings.graphShowTexts !== prev.graphShowTexts ||
+        settings.graphNodeColor !== prev.graphNodeColor
+      ) {
+        if (!graphRef.current) return
+        if (is3DMode) return // Graph3D handles its own live physics
+        const fg = graphRef.current
 
-            // Update force parameters instantly
-            fg.d3Force('custom_x').strength(0)
-            fg.d3Force('custom_y').strength(0)
-            
-            if (!is3DMode) {
-              fg.d3Force('custom_gravity', null)
-              if (fg.d3Force('custom_radial')) {
-                fg.d3Force('custom_radial')
-                  .radius((d) => (d.val <= 1 ? 800 : 0))
-                  .strength((d) => (d.val <= 1 ? 0.2 : centerForce))
-              }
-              
-              // Ensure 2D forces exist and default 3D/2D charge is disabled
-              if (fg.d3Force('charge')) fg.d3Force('charge', null)
-              if (!fg.d3Force('custom_charge')) fg.d3Force('custom_charge', forceManyBody())
-              if (!fg.d3Force('custom_collide')) fg.d3Force('custom_collide', forceCollide())
+        // Delay execution to ensure 3D physics engine is initialized on mount
+        setTimeout(() => {
+          const sizeMult = settings.graphNodeSize || 1.5
+          const centerForce = settings.graphCenterForce ?? 0.05
+          const repelForce = settings.graphRepelForce ?? 0.3
+          const linkForce = settings.graphLinkForce ?? 0.05
 
-              fg.d3Force('custom_charge').strength(-500 * repelForce)
-              fg.d3Force('custom_collide')
-                .radius((d) => {
-                  const baseR = d.val ? Math.max(2, Math.sqrt(d.val) * 2.5) : 2
-                  return baseR * sizeMult + 15
-                })
-                .strength(0.75)
-                .iterations(1)
+          // Update force parameters instantly
+          fg.d3Force('custom_x').strength(0)
+          fg.d3Force('custom_y').strength(0)
+
+          if (!is3DMode) {
+            fg.d3Force('custom_gravity', null)
+            if (fg.d3Force('custom_radial')) {
+              fg.d3Force('custom_radial')
+                .radius((d) => (d.val <= 1 ? 800 : 0))
+                .strength((d) => (d.val <= 1 ? 0.2 : centerForce))
             }
 
-            if (fg.d3Force('link')) fg.d3Force('link').strength(linkForce)
+            // Ensure 2D forces exist and default 3D/2D charge is disabled
+            if (fg.d3Force('charge')) fg.d3Force('charge', null)
+            if (!fg.d3Force('custom_charge')) fg.d3Force('custom_charge', forceManyBody())
+            if (!fg.d3Force('custom_collide')) fg.d3Force('custom_collide', forceCollide())
 
-            // Debounce the reheat to prevent violent shaking when dragging sliders
-            if (reheatTimeoutRef.current) clearTimeout(reheatTimeoutRef.current)
-            reheatTimeoutRef.current = setTimeout(() => {
-              if (graphRef.current) graphRef.current.d3ReheatSimulation()
-            }, 300)
-          }, 50)
-        }
+            fg.d3Force('custom_charge').strength(-500 * repelForce)
+            fg.d3Force('custom_collide')
+              .radius((d) => {
+                const baseR = d.val ? Math.max(2, Math.sqrt(d.val) * 2.5) : 2
+                return baseR * sizeMult + 15
+              })
+              .strength(0.75)
+              .iterations(1)
+          }
+
+          if (fg.d3Force('link')) fg.d3Force('link').strength(linkForce)
+
+          // Debounce the reheat to prevent violent shaking when dragging sliders
+          if (reheatTimeoutRef.current) clearTimeout(reheatTimeoutRef.current)
+          reheatTimeoutRef.current = setTimeout(() => {
+            if (graphRef.current) graphRef.current.d3ReheatSimulation()
+          }, 300)
+        }, 50)
       }
-    )
+    })
 
     // Initial Setup
     if (!graphRef.current) return
     if (is3DMode) return // Graph3D handles its own initial physics setup
     const fg = graphRef.current
-    
+
     // Defer initialization slightly so ForceGraph3D's internal engine has mounted and created d3ForceLayout
     const initTimer = setTimeout(() => {
       const initialSettings = useSettingsStore.getState().settings
@@ -468,7 +482,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       fg.d3Force('z', null)
       fg.d3Force('radial', null)
       fg.d3Force('center', null)
-      
+
       if (!is3DMode) {
         fg.d3Force('charge', null)
       }
@@ -476,12 +490,12 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       // Apply initial forces
       fg.d3Force('custom_x').strength(0)
       fg.d3Force('custom_y').strength(0)
-      
+
       if (!is3DMode) {
         fg.d3Force('custom_radial')
           .radius((d) => (d.val <= 1 ? 800 : 0))
           .strength((d) => (d.val <= 1 ? 0.2 : centerForce))
-          
+
         fg.d3Force('custom_charge').strength(-500 * repelForce)
         fg.d3Force('custom_collide')
           .radius((d) => {
@@ -552,7 +566,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   const defaultLineColor = useMemo(() => {
     const isSelectedTheme = graphTheme === 'space' || graphTheme === 'nebula'
     if (is3DMode) {
-      return isSelectedTheme ? 'rgba(255, 255, 255, 0.15)' : 'rgba(150, 150, 150, 0.25)' 
+      return isSelectedTheme ? 'rgba(255, 255, 255, 0.15)' : 'rgba(150, 150, 150, 0.25)'
     }
     return isSelectedTheme ? 'rgba(255, 255, 255, 0.04)' : 'rgba(150, 150, 150, 0.08)' // Extremely faint so it's not muddy
   }, [graphTheme, is3DMode])
@@ -618,7 +632,11 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       if (isActive || isHovered || isSearchMatch) {
         ctx.beginPath()
         ctx.arc(node.x, node.y, r + 4, 0, 2 * Math.PI, false)
-        ctx.fillStyle = isSearchMatch ? 'rgba(255, 255, 255, 0.4)' : isActive ? 'rgba(255, 170, 0, 0.3)' : 'rgba(64, 186, 250, 0.3)'
+        ctx.fillStyle = isSearchMatch
+          ? 'rgba(255, 255, 255, 0.4)'
+          : isActive
+            ? 'rgba(255, 170, 0, 0.3)'
+            : 'rgba(64, 186, 250, 0.3)'
         ctx.fill()
       }
 
@@ -642,7 +660,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
 
       let shouldShow = false
       const liveSettings = useSettingsStore.getState().settings
-      const showTextsSetting = liveSettings.graphShowTexts !== false && liveSettings.graphShowTexts !== 'false'
+      const showTextsSetting =
+        liveSettings.graphShowTexts !== false && liveSettings.graphShowTexts !== 'false'
 
       if (showTextsSetting) {
         if (isHovered) shouldShow = true
@@ -658,17 +677,18 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
         if (isSearchDimmed && !isHovered) {
           ctx.globalAlpha = 0.1
         }
-        ctx.fillStyle = isSearchMatch ? '#ffffff' : isActive ? '#ffaa00' : isHovered ? '#fff' : 'rgba(255, 255, 255, 0.9)'
+        ctx.fillStyle = isSearchMatch
+          ? '#ffffff'
+          : isActive
+            ? '#ffaa00'
+            : isHovered
+              ? '#fff'
+              : 'rgba(255, 255, 255, 0.9)'
         ctx.fillText(label, node.x, node.y + r + 2)
         ctx.globalAlpha = 1.0
       }
     },
-    [
-      selectedSnippet,
-      hoverNode,
-      hoverNeighbors,
-      searchQuery
-    ]
+    [selectedSnippet, hoverNode, hoverNeighbors, searchQuery]
   )
 
   // Render as embedded (tab) or modal
@@ -702,8 +722,9 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             graphData={graphData}
             nodeThreeObject={(node) => {
               const base = node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2
-              const targetRadius = base * (useSettingsStore.getState().settings.graphNodeSize || 1.5)
-              
+              const targetRadius =
+                base * (useSettingsStore.getState().settings.graphNodeSize || 1.5)
+
               const mesh = new THREE.Mesh(sharedSphereGeometry, getMaterial(nodeColor(node)))
               mesh.scale.set(targetRadius, targetRadius, targetRadius)
               return mesh
@@ -784,11 +805,11 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             d3VelocityDecay={0.3} // Lower viscosity for smoother dragging
           />
         )}
-        <GraphMiniMap 
-          graphRef={graphRef} 
-          graphData={graphData} 
-          mainWidth={dimensions.width} 
-          mainHeight={dimensions.height} 
+        <GraphMiniMap
+          graphRef={graphRef}
+          graphData={graphData}
+          mainWidth={dimensions.width}
+          mainHeight={dimensions.height}
           is3DMode={is3DMode}
         />
       </div>
@@ -802,10 +823,12 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       className={`nexus-container modal-container${isMaximized ? ' maximized' : ''}`}
       onClick={(e) => e.stopPropagation()}
       data-graph-theme={graphTheme}
-      style={{ 
+      style={{
         flexDirection: 'column',
-        transform: isMaximized ? 'none' : `translate3d(${modalPos.current.x}px, ${modalPos.current.y}px, 0)`,
-        transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)' 
+        transform: isMaximized
+          ? 'none'
+          : `translate3d(${modalPos.current.x}px, ${modalPos.current.y}px, 0)`,
+        transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
       }}
     >
       <ModalHeader
@@ -823,7 +846,11 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             title={graphSidebarOpen ? 'Close Sidebar' : 'Open Sidebar'}
             style={{ marginLeft: '-10px' }}
           >
-            {graphSidebarOpen ? <PanelLeftClose size={12} strokeWidth={2} /> : <PanelLeftOpen size={12} strokeWidth={2} />}
+            {graphSidebarOpen ? (
+              <PanelLeftClose size={12} strokeWidth={2} />
+            ) : (
+              <PanelLeftOpen size={12} strokeWidth={2} />
+            )}
           </button>
         }
         right={
@@ -842,7 +869,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       />
 
       <div className="nexus-main" style={{ position: 'relative', flex: 1, overflow: 'hidden' }}>
-        <GraphSidebar 
+        <GraphSidebar
           isOpen={graphSidebarOpen}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
@@ -862,8 +889,9 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               graphData={graphData}
               nodeThreeObject={(node) => {
                 const base = node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2
-                const targetRadius = base * (useSettingsStore.getState().settings.graphNodeSize || 1.5)
-                
+                const targetRadius =
+                  base * (useSettingsStore.getState().settings.graphNodeSize || 1.5)
+
                 const mesh = new THREE.Mesh(sharedSphereGeometry, getMaterial(nodeColor(node)))
                 mesh.scale.set(targetRadius, targetRadius, targetRadius)
                 return mesh
@@ -942,14 +970,14 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               linkDirectionalParticleSpeed={0.005}
             />
           )}
-        <GraphMiniMap 
-          graphRef={graphRef} 
-          graphData={graphData} 
-          mainWidth={dimensions.width} 
-          mainHeight={dimensions.height - 32}
-          is3DMode={is3DMode} 
-        />
-      </div>
+          <GraphMiniMap
+            graphRef={graphRef}
+            graphData={graphData}
+            mainWidth={dimensions.width}
+            mainHeight={dimensions.height - 32}
+            is3DMode={is3DMode}
+          />
+        </div>
       </div>
     </div>
   )

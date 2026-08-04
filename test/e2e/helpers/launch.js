@@ -71,10 +71,13 @@ async function launchOnce(vaultPath) {
   // networkidle ensures React has finished its initial render cycle
   await page.waitForLoadState('networkidle').catch(() => {})
 
-
   async function cleanup() {
-    try { await appInstance.close() } catch {}
-    try { await fs.rm(vaultPath, { recursive: true, force: true }) } catch {}
+    try {
+      await appInstance.close()
+    } catch {}
+    try {
+      await fs.rm(vaultPath, { recursive: true, force: true })
+    } catch {}
   }
 
   return { app: appInstance, page, vaultPath, cleanup }
@@ -91,7 +94,10 @@ async function invokeIPC(page, method, ...args) {
  * Wait for text to appear on page.
  */
 async function waitForText(page, text, options = {}) {
-  await page.locator(`text=${text}`).first().waitFor({ state: 'visible', ...options })
+  await page
+    .locator(`text=${text}`)
+    .first()
+    .waitFor({ state: 'visible', ...options })
 }
 
 module.exports = { launchApp, invokeIPC, waitForText }

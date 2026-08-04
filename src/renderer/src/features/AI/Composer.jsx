@@ -9,11 +9,11 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
   const [input, setInput] = useState('')
   const [showSlashMenu, setShowSlashMenu] = useState(false)
   const [slashFilter, setSlashFilter] = useState('')
-  
+
   const [showMentionMenu, setShowMentionMenu] = useState(false)
   const [mentionFilter, setMentionFilter] = useState('')
   const [attachedMentions, setAttachedMentions] = useState([])
-  
+
   const textareaRef = useRef(null)
 
   const { settings, updateSettings } = useSettingsStore()
@@ -78,11 +78,11 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
     const regex = /(?:^|\s)@([^\s]*)$/
     const newVal = input.replace(regex, '')
     setInput(newVal)
-    
-    if (!attachedMentions.find(s => s.id === snippet.id)) {
+
+    if (!attachedMentions.find((s) => s.id === snippet.id)) {
       setAttachedMentions([...attachedMentions, snippet])
     }
-    
+
     setShowMentionMenu(false)
     textareaRef.current?.focus()
   }
@@ -150,12 +150,14 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
         {/* Attached Mentions */}
         {attachedMentions.length > 0 && (
           <div className="attached-mentions-container">
-            {attachedMentions.map(mention => (
+            {attachedMentions.map((mention) => (
               <div key={mention.id} className="mention-pill">
                 <span className="mention-pill-title">@{mention.title}</span>
-                <button 
+                <button
                   className="mention-pill-close"
-                  onClick={() => setAttachedMentions(prev => prev.filter(m => m.id !== mention.id))}
+                  onClick={() =>
+                    setAttachedMentions((prev) => prev.filter((m) => m.id !== mention.id))
+                  }
                 >
                   <X size={10} />
                 </button>
@@ -184,8 +186,6 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
               {getProviderLabel()}
               <ChevronDown size={10} />
             </button>
-
-
           </div>
 
           {/* Right: char count + send/stop */}

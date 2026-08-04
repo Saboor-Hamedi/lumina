@@ -18,10 +18,10 @@ const ToolTip = ({ text, children, position = 'top', delay = 300 }) => {
         let top = 0
         let left = 'auto'
         let right = 'auto'
-        
+
         // Add a slight gap
         const gap = 6
-        
+
         if (position === 'top') {
           top = rect.top - gap
           left = rect.left + rect.width / 2
@@ -39,7 +39,7 @@ const ToolTip = ({ text, children, position = 'top', delay = 300 }) => {
           top = rect.top + rect.height / 2
           left = rect.right + gap
         }
-        
+
         setCoords({ top, left, right })
         setIsVisible(true)
       }
@@ -81,15 +81,16 @@ const ToolTip = ({ text, children, position = 'top', delay = 300 }) => {
   return (
     <>
       {clonedChild}
-      {isVisible && createPortal(
-        <div 
-          className={`tooltip-portal tooltip-${position}`}
-          style={{ top: coords.top, left: coords.left, right: coords.right }}
-        >
-          {text}
-        </div>,
-        document.body
-      )}
+      {isVisible &&
+        createPortal(
+          <div
+            className={`tooltip-portal tooltip-${position}`}
+            style={{ top: coords.top, left: coords.left, right: coords.right }}
+          >
+            {text}
+          </div>,
+          document.body
+        )}
     </>
   )
 }

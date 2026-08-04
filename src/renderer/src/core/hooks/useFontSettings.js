@@ -913,9 +913,7 @@ export const useFontSettings = () => {
       persistTheme({ caretStyle: style })
 
       // Force immediate update across all components
-      window.dispatchEvent(
-        new CustomEvent('caret-style-update', { detail: { caretStyle: style } })
-      )
+      window.dispatchEvent(new CustomEvent('caret-style-update', { detail: { caretStyle: style } }))
     },
     [persistTheme]
   )

@@ -8,10 +8,56 @@
  */
 
 const STOP_WORDS = new Set([
-  'how', 'the', 'a', 'an', 'in', 'on', 'of', 'to', 'is', 'are', 'was', 'were', 'for', 'and', 'or',
-  'it', 'with', 'that', 'this', 'by', 'from', 'at', 'what', 'why', 'when', 'where', 'who', 'does',
-  'do', 'did', 'can', 'could', 'should', 'would', 'about', 'as', 'into', 'like', 'through', 'after',
-  'over', 'between', 'out', 'against', 'during', 'without', 'before', 'under', 'around', 'among'
+  'how',
+  'the',
+  'a',
+  'an',
+  'in',
+  'on',
+  'of',
+  'to',
+  'is',
+  'are',
+  'was',
+  'were',
+  'for',
+  'and',
+  'or',
+  'it',
+  'with',
+  'that',
+  'this',
+  'by',
+  'from',
+  'at',
+  'what',
+  'why',
+  'when',
+  'where',
+  'who',
+  'does',
+  'do',
+  'did',
+  'can',
+  'could',
+  'should',
+  'would',
+  'about',
+  'as',
+  'into',
+  'like',
+  'through',
+  'after',
+  'over',
+  'between',
+  'out',
+  'against',
+  'during',
+  'without',
+  'before',
+  'under',
+  'around',
+  'among'
 ])
 
 export function escapeRegExp(string) {
@@ -100,9 +146,8 @@ export function extractContentSnippet(body, rawQuery, significantTokens) {
  * Score a single snippet against search tokens.
  */
 export function scoreSnippet(snippet, searchInfo, fuseScore = 1) {
-  const { raw, significantTokens } = typeof searchInfo === 'string'
-    ? getSearchTokens(searchInfo)
-    : searchInfo
+  const { raw, significantTokens } =
+    typeof searchInfo === 'string' ? getSearchTokens(searchInfo) : searchInfo
 
   if (!raw) return 0
 
@@ -209,7 +254,9 @@ export function rankSnippets(snippets, query, fuseIndex) {
     const fuseScore = fuseScoreMap.get(snippet.id) ?? 1
     const hasFuseMatch = fuseScore < 1
     const hasExactPhrase = raw && fullText.indexOf(raw) !== -1
-    const matchingTokensCount = significantTokens.filter((token) => fullText.indexOf(token) !== -1).length
+    const matchingTokensCount = significantTokens.filter(
+      (token) => fullText.indexOf(token) !== -1
+    ).length
     const hasKeywordMatch = matchingTokensCount > 0
 
     if (!hasFuseMatch && !hasExactPhrase && !hasKeywordMatch) {
@@ -219,11 +266,19 @@ export function rankSnippets(snippets, query, fuseIndex) {
     const score = scoreSnippet(snippet, searchInfo, fuseScore)
     if (score <= 0 && !hasFuseMatch) return
 
-    const matchSnippet = extractContentSnippet(snippet.code || snippet.content || '', raw, significantTokens)
+    const matchSnippet = extractContentSnippet(
+      snippet.code || snippet.content || '',
+      raw,
+      significantTokens
+    )
     let matchType = 'content'
     if (hasExactPhrase && title.indexOf(raw) !== -1) {
       matchType = 'title'
-    } else if (hasFuseMatch && (!hasExactPhrase || body.indexOf(raw) === -1) && matchingTokensCount === 0) {
+    } else if (
+      hasFuseMatch &&
+      (!hasExactPhrase || body.indexOf(raw) === -1) &&
+      matchingTokensCount === 0
+    ) {
       matchType = 'title'
     }
 

@@ -45,10 +45,7 @@ test('renderer loads without JS errors', async () => {
   await page.waitForTimeout(2000)
 
   const fatalErrors = errors.filter(
-    (e) =>
-      !e.includes('IndexedDB') &&
-      !e.includes('extension') &&
-      !e.includes('devtools')
+    (e) => !e.includes('IndexedDB') && !e.includes('extension') && !e.includes('devtools')
   )
 
   expect(fatalErrors).toHaveLength(0)

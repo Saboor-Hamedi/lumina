@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useVaultStore } from '../store/useVaultStore'
 
 export const useMention = () => {
-  const snippets = useVaultStore(state => state.snippets)
+  const snippets = useVaultStore((state) => state.snippets)
 
   const mentions = useMemo(() => {
     const mentionSet = new Set()

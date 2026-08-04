@@ -650,14 +650,14 @@ class TableWidget extends WidgetType {
   toDOM(view) {
     const wrap = document.createElement('div')
     wrap.className = 'cm-atomic-table'
-    
+
     wrap.addEventListener('mousedown', (event) => {
       const source = event.target.closest('.cm-atomic-table-cell-source')
       if (source) return // Let normal focus happen if they clicked directly in the editable text
 
       // They clicked on padding, borders, or table margins
       event.preventDefault() // Prevent CodeMirror from taking focus and drawing a giant cursor
-      
+
       const cell = event.target.closest('td, th')
       if (cell) {
         const innerSource = cell.querySelector('.cm-atomic-table-cell-source')
@@ -863,26 +863,26 @@ function makeCell(tag, text, view) {
       if (sel && sel.rangeCount > 0) {
         const range = sel.getRangeAt(0)
         if (range.collapsed) {
-           const text = source.textContent || ''
-           const offset = getCaretCharOffset(source) || 0
-           if (offset < text.length && text[offset] === '`') {
-             // Skip over closing backtick
-             setCaretCharOffset(source, offset + 1)
-             updateActiveMarkForSource(source)
-             event.preventDefault()
-             event.stopPropagation()
-             return
-           } else {
-             // Auto-pair
-             const newText = text.slice(0, offset) + '``' + text.slice(offset)
-             source.textContent = newText
-             commit()
-             setCaretCharOffset(source, offset + 1)
-             updateActiveMarkForSource(source)
-             event.preventDefault()
-             event.stopPropagation()
-             return
-           }
+          const text = source.textContent || ''
+          const offset = getCaretCharOffset(source) || 0
+          if (offset < text.length && text[offset] === '`') {
+            // Skip over closing backtick
+            setCaretCharOffset(source, offset + 1)
+            updateActiveMarkForSource(source)
+            event.preventDefault()
+            event.stopPropagation()
+            return
+          } else {
+            // Auto-pair
+            const newText = text.slice(0, offset) + '``' + text.slice(offset)
+            source.textContent = newText
+            commit()
+            setCaretCharOffset(source, offset + 1)
+            updateActiveMarkForSource(source)
+            event.preventDefault()
+            event.stopPropagation()
+            return
+          }
         }
       }
     }
@@ -1031,7 +1031,11 @@ function makeCell(tag, text, view) {
       const sel = win?.getSelection()
       if (sel && sel.rangeCount > 0) {
         const anchor = sel.anchorNode
-        if (anchor && anchor.parentElement && anchor.parentElement.closest('.cm-atomic-inline-code-wrap')) {
+        if (
+          anchor &&
+          anchor.parentElement &&
+          anchor.parentElement.closest('.cm-atomic-inline-code-wrap')
+        ) {
           // Inside inline code, allow typing literal pipe without splitting cell
           return
         }

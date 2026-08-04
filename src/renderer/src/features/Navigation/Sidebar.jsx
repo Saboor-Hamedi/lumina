@@ -8,10 +8,7 @@ const Sidebar = memo(({ onSettingsClick, onThemeClick, onToggleGraph, onToggleAI
   return (
     <div className="unified-sidebar">
       {/* Top Header Section */}
-      <SidebarHeader 
-        onToggleGraph={onToggleGraph} 
-        onToggleAIChat={onToggleAIChat} 
-      />
+      <SidebarHeader onToggleGraph={onToggleGraph} onToggleAIChat={onToggleAIChat} />
 
       {/* Middle Scrollable Section (FileExplorer) */}
       <div className="sidebar-scrollable-content">
@@ -19,10 +16,7 @@ const Sidebar = memo(({ onSettingsClick, onThemeClick, onToggleGraph, onToggleAI
       </div>
 
       {/* Bottom Footer Section */}
-      <SidebarFooter 
-        onSettingsClick={onSettingsClick} 
-        onThemeClick={onThemeClick} 
-      />
+      <SidebarFooter onSettingsClick={onSettingsClick} onThemeClick={onThemeClick} />
     </div>
   )
 })

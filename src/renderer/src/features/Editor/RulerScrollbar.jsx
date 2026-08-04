@@ -18,7 +18,7 @@ const RulerScrollbar = ({ scrollerRef }) => {
     }
 
     scroller.addEventListener('scroll', handleScroll, { passive: true })
-    
+
     const resizeObserver = new ResizeObserver(() => {
       handleScroll()
     })
@@ -40,7 +40,7 @@ const RulerScrollbar = ({ scrollerRef }) => {
     if (containerRef.current) {
       setContainerHeight(containerRef.current.clientHeight)
     }
-    const resizeObserver = new ResizeObserver(entries => {
+    const resizeObserver = new ResizeObserver((entries) => {
       for (let entry of entries) {
         setContainerHeight(entry.contentRect.height)
       }
@@ -58,7 +58,7 @@ const RulerScrollbar = ({ scrollerRef }) => {
     const startY = e.clientY
     const startScrollTop = scroller.scrollTop
     const maxScroll = scroller.scrollHeight - scroller.clientHeight
-    
+
     // ratio: pixels of scroll per pixel of mouse movement
     // The tape visual length is tapeHeight.
     // If the tape moves tapeHeight, the scroll moves maxScroll.
@@ -85,18 +85,17 @@ const RulerScrollbar = ({ scrollerRef }) => {
   const numTicks = 150 // Long enough tape
   const tickSpacing = 8
   const tapeHeight = (numTicks - 1) * tickSpacing
-  
+
   const centerOffset = containerHeight / 2
-  const tapeOffset = centerOffset - (scrollProgress * tapeHeight)
+  const tapeOffset = centerOffset - scrollProgress * tapeHeight
 
   return (
-    <div 
-      className="ruler-scrollbar-wrapper" 
-      ref={containerRef}
-      onPointerDown={handlePointerDown}
-    >
+    <div className="ruler-scrollbar-wrapper" ref={containerRef} onPointerDown={handlePointerDown}>
       <div className="ruler-tape-container">
-        <div className="ruler-tape" style={{ transform: `translateY(${tapeOffset}px)`, height: `${tapeHeight}px` }}>
+        <div
+          className="ruler-tape"
+          style={{ transform: `translateY(${tapeOffset}px)`, height: `${tapeHeight}px` }}
+        >
           {Array.from({ length: numTicks }).map((_, i) => (
             <div key={i} className={`ruler-tick ${i % 5 === 0 ? 'major' : 'minor'}`} />
           ))}

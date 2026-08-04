@@ -136,7 +136,7 @@ export const buildSemanticLinks = (nodes, links, snippets, embeddingsCache) => {
       let magSq = 0
       for (let k = 0; k < vec.length; k++) magSq += vec[k] * vec[k]
       const mag = Math.sqrt(magSq)
-      
+
       const normVec = new Float32Array(vec.length)
       if (mag > 0) {
         for (let k = 0; k < vec.length; k++) normVec[k] = vec[k] / mag

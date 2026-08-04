@@ -35,7 +35,9 @@ describe('VaultManager', () => {
       await VaultManager.watcher.close()
       VaultManager.watcher = null
     }
-    try { await fs.rm(testVaultPath, { recursive: true, force: true }) } catch (err) {}
+    try {
+      await fs.rm(testVaultPath, { recursive: true, force: true })
+    } catch (err) {}
     VaultManager.vaultPath = originalVaultPath
     VaultManager.snippets.clear()
   })
@@ -44,14 +46,20 @@ describe('VaultManager', () => {
     it('creates vault directory if it does not exist', async () => {
       const newVaultPath = path.join(os.tmpdir(), `lumina-new-${Date.now()}`)
       await VaultManager.init(newVaultPath, os.tmpdir())
-      const exists = await fs.access(newVaultPath).then(() => true).catch(() => false)
+      const exists = await fs
+        .access(newVaultPath)
+        .then(() => true)
+        .catch(() => false)
       expect(exists).toBe(true)
       await fs.rm(newVaultPath, { recursive: true, force: true })
     })
 
     it('creates assets directory', async () => {
       const assetsPath = path.join(testVaultPath, 'assets')
-      const exists = await fs.access(assetsPath).then(() => true).catch(() => false)
+      const exists = await fs
+        .access(assetsPath)
+        .then(() => true)
+        .catch(() => false)
       expect(exists).toBe(true)
     })
   })
@@ -79,7 +87,10 @@ describe('VaultManager', () => {
       }
       await VaultManager.saveSnippet(snippet)
       const filePath = path.join(testVaultPath, 'Save Test.md')
-      const exists = await fs.access(filePath).then(() => true).catch(() => false)
+      const exists = await fs
+        .access(filePath)
+        .then(() => true)
+        .catch(() => false)
       expect(exists).toBe(true)
     })
   })
@@ -98,7 +109,10 @@ describe('VaultManager', () => {
       const result = await VaultManager.deleteSnippet('delete-test')
       const filePath = path.join(testVaultPath, 'Delete Test.md')
       expect(result).toBe(filePath)
-      const exists = await fs.access(filePath).then(() => true).catch(() => false)
+      const exists = await fs
+        .access(filePath)
+        .then(() => true)
+        .catch(() => false)
       expect(exists).toBe(false)
     })
   })
@@ -106,10 +120,18 @@ describe('VaultManager', () => {
   describe('getSnippets', () => {
     it('returns sorted snippets by timestamp', async () => {
       await VaultManager.saveSnippet({
-        id: '1', title: 'First', code: 'Content 1', language: 'markdown', timestamp: 1000
+        id: '1',
+        title: 'First',
+        code: 'Content 1',
+        language: 'markdown',
+        timestamp: 1000
       })
       await VaultManager.saveSnippet({
-        id: '2', title: 'Second', code: 'Content 2', language: 'markdown', timestamp: 2000
+        id: '2',
+        title: 'Second',
+        code: 'Content 2',
+        language: 'markdown',
+        timestamp: 2000
       })
       const { snippets } = VaultManager.getSnippets()
       expect(snippets[0].id).toBe('2')

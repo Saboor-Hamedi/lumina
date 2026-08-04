@@ -27,7 +27,7 @@ export const handleExportPDF = async (mainWindow, payload) => {
       markedHighlight({
         langPrefix: 'hljs language-',
         highlight(code, lang) {
-          if (lang === 'mermaid') return code;
+          if (lang === 'mermaid') return code
           const language = hljs.getLanguage(lang) ? lang : 'plaintext'
           return hljs.highlight(code, { language }).value
         }
@@ -38,7 +38,10 @@ export const handleExportPDF = async (mainWindow, payload) => {
       renderer: {
         code(token) {
           if (token.lang === 'mermaid') {
-            const escaped = token.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            const escaped = token.text
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
             return `<div class="mermaid">${escaped}</div>`
           }
           return false
@@ -241,7 +244,7 @@ export const handleExportPDF = async (mainWindow, payload) => {
           setTimeout(resolve, 3000); // 3 seconds timeout fallback
         }
       })
-    `);
+    `)
 
     // Generate PDF relying on @page CSS for margins
     const pdfData = await printWin.webContents.printToPDF({

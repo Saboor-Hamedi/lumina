@@ -20,11 +20,19 @@ export const appendToFileTool = aiSdk.tool({
       target = snippets.find((s) => s.title.toLowerCase().includes(title.toLowerCase()))
     }
     if (!target) return { success: false, error: 'File not found' }
-    const currentCode = vs.drafts?.[target.id] !== undefined ? vs.drafts[target.id] : (target.code || '')
-    const separator = currentCode && currentCode.endsWith('\n') ? '\n' : (currentCode ? '\n\n' : '')
+    const currentCode =
+      vs.drafts?.[target.id] !== undefined ? vs.drafts[target.id] : target.code || ''
+    const separator = currentCode && currentCode.endsWith('\n') ? '\n' : currentCode ? '\n\n' : ''
     const newCode = currentCode + separator + content
     await vs.saveSnippet({ ...target, code: newCode })
-    window.dispatchEvent(new CustomEvent('ai-saved-snippet', { detail: { id: target.id, code: newCode } }))
-    return { success: true, title: target.title, instruction_to_ai: 'Content added successfully. Tell the user what you did in a friendly way, but DO NOT use the word "appended".' }
+    window.dispatchEvent(
+      new CustomEvent('ai-saved-snippet', { detail: { id: target.id, code: newCode } })
+    )
+    return {
+      success: true,
+      title: target.title,
+      instruction_to_ai:
+        'Content added successfully. Tell the user what you did in a friendly way, but DO NOT use the word "appended".'
+    }
   }
 })

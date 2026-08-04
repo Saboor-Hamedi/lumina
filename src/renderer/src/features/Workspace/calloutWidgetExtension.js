@@ -15,7 +15,7 @@ class CalloutHeaderWidget extends WidgetType {
   toDOM() {
     const wrap = document.createElement('span')
     wrap.className = `lumina-callout-header lumina-callout-${this.type}`
-    
+
     const icon = document.createElement('span')
     icon.className = 'lumina-callout-icon'
     // SVG icons based on type
@@ -32,72 +32,83 @@ class CalloutHeaderWidget extends WidgetType {
     } else {
       icon.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>`
     }
-    
+
     const text = document.createElement('span')
     text.className = 'lumina-callout-title'
     text.textContent = this.title || this.type.toUpperCase()
-    
+
     wrap.appendChild(icon)
     wrap.appendChild(text)
-    
+
     return wrap
   }
 }
 
-const calloutPlugin = ViewPlugin.fromClass(class {
-  constructor(view) {
-    this.decorations = this.buildDecorations(view)
-  }
-
-  update(update) {
-    if (update.docChanged || update.viewportChanged || update.selectionSet) {
-      this.decorations = this.buildDecorations(update.view)
+const calloutPlugin = ViewPlugin.fromClass(
+  class {
+    constructor(view) {
+      this.decorations = this.buildDecorations(view)
     }
-  }
 
-  buildDecorations(view) {
-    const builder = []
-    const doc = view.state.doc
-    
-    for (let {from, to} of view.visibleRanges) {
-      syntaxTree(view.state).iterate({
-        from, to,
-        enter(node) {
-          if (node.name === 'QuoteMark') {
-            const line = doc.lineAt(node.from)
-            // check if first line of quote
-            const blockStart = line.text.match(/^>\s*\[!([a-zA-Z]+)\](.*)/)
-            if (blockStart) {
-              const type = blockStart[1]
-              const title = blockStart[2].trim()
-              
-              // Only replace if cursor is NOT on this line
-              const cursor = view.state.selection.main.head
-              if (cursor < line.from || cursor > line.to) {
-                const replaceFrom = line.from + line.text.indexOf('[')
-                const replaceTo = line.to
-                builder.push(Decoration.replace({
-                  widget: new CalloutHeaderWidget(type, title)
-                }).range(replaceFrom, replaceTo))
+    update(update) {
+      if (update.docChanged || update.viewportChanged || update.selectionSet) {
+        this.decorations = this.buildDecorations(update.view)
+      }
+    }
+
+    buildDecorations(view) {
+      const builder = []
+      const doc = view.state.doc
+
+      for (let { from, to } of view.visibleRanges) {
+        syntaxTree(view.state).iterate({
+          from,
+          to,
+          enter(node) {
+            if (node.name === 'QuoteMark') {
+              const line = doc.lineAt(node.from)
+              // check if first line of quote
+              const blockStart = line.text.match(/^>\s*\[!([a-zA-Z]+)\](.*)/)
+              if (blockStart) {
+                const type = blockStart[1]
+                const title = blockStart[2].trim()
+
+                // Only replace if cursor is NOT on this line
+                const cursor = view.state.selection.main.head
+                if (cursor < line.from || cursor > line.to) {
+                  const replaceFrom = line.from + line.text.indexOf('[')
+                  const replaceTo = line.to
+                  builder.push(
+                    Decoration.replace({
+                      widget: new CalloutHeaderWidget(type, title)
+                    }).range(replaceFrom, replaceTo)
+                  )
+                }
+
+                builder.push(
+                  Decoration.line({
+                    class: `lumina-callout-line lumina-callout-line-${type.toLowerCase()}`
+                  }).range(line.from)
+                )
+              } else if (line.text.startsWith('>')) {
+                // Might be continuation of a callout block, we would need a stateful parser
+                // For simplicity, just style it as a blockquote
               }
-              
-              builder.push(Decoration.line({
-                class: `lumina-callout-line lumina-callout-line-${type.toLowerCase()}`
-              }).range(line.from))
-            } else if (line.text.startsWith('>')) {
-               // Might be continuation of a callout block, we would need a stateful parser
-               // For simplicity, just style it as a blockquote
             }
           }
-        }
-      })
+        })
+      }
+
+      // Sort decorations
+      return Decoration.set(
+        builder.sort((a, b) => a.from - b.from),
+        true
+      )
     }
-    
-    // Sort decorations
-    return Decoration.set(builder.sort((a, b) => a.from - b.from), true)
+  },
+  {
+    decorations: (v) => v.decorations
   }
-}, {
-  decorations: v => v.decorations
-})
+)
 
 export const calloutExtension = calloutPlugin

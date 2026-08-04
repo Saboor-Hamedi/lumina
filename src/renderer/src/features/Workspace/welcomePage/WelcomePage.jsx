@@ -4,9 +4,11 @@ import icon from '../../../assets/icon.png'
 import './WelcomePage.css'
 
 const WelcomePage = ({ onNew }) => {
-  const handlePalette = () => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
-  const handleAIChat = () => window.dispatchEvent(new KeyboardEvent('keydown', { key: '\\', ctrlKey: true, shiftKey: true }))
-  
+  const handlePalette = () =>
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
+  const handleAIChat = () =>
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: '\\', ctrlKey: true, shiftKey: true }))
+
   return (
     <div className="welcome-page">
       <div className="welcome-watermark">
@@ -14,14 +16,14 @@ const WelcomePage = ({ onNew }) => {
       </div>
 
       <div className="welcome-inner-centered">
-        
         <div className="welcome-header-hero">
           <h1 className="hero-title">What are you thinking about today?</h1>
-          <p className="hero-subtitle">Your personal AI-powered workspace for ideas, research, and writing.</p>
+          <p className="hero-subtitle">
+            Your personal AI-powered workspace for ideas, research, and writing.
+          </p>
         </div>
 
         <div className="welcome-actions-grid">
-          
           <button className="welcome-action-card" onClick={onNew}>
             <div className="action-card-icon" style={{ color: 'var(--text-accent, #3b82f6)' }}>
               <FileText size={24} />
@@ -44,7 +46,12 @@ const WelcomePage = ({ onNew }) => {
             <div className="action-shortcut">Ctrl + P</div>
           </button>
 
-          <button className="welcome-action-card" onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }))}>
+          <button
+            className="welcome-action-card"
+            onClick={() =>
+              window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }))
+            }
+          >
             <div className="action-card-icon" style={{ color: '#f59e0b' }}>
               <FolderTree size={24} />
             </div>
@@ -65,14 +72,14 @@ const WelcomePage = ({ onNew }) => {
             </div>
             <div className="action-shortcut">Ctrl+Shift+I</div>
           </button>
-
         </div>
 
         <div className="welcome-footer-hint">
           <Command size={14} />
-          <span>Press <strong>Ctrl+P</strong> anywhere to open Quick Search</span>
+          <span>
+            Press <strong>Ctrl+P</strong> anywhere to open Quick Search
+          </span>
         </div>
-
       </div>
     </div>
   )

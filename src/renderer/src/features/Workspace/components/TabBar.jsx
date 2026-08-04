@@ -1,5 +1,15 @@
 import React, { useRef, useState, useCallback, useMemo, memo, useEffect } from 'react'
-import { X, Pin, MoreHorizontal, ArrowRight, Trash2, Image, PanelLeftOpen, PanelLeftClose, Network } from 'lucide-react'
+import {
+  X,
+  Pin,
+  MoreHorizontal,
+  ArrowRight,
+  Trash2,
+  Image,
+  PanelLeftOpen,
+  PanelLeftClose,
+  Network
+} from 'lucide-react'
 import { DndContext, closestCenter, useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -31,7 +41,8 @@ const SortableTabItem = memo(
 
     const getIcon = () => {
       if (isPinned) return <Pin size={12} className="tab-icon pinned-icon" />
-      if (id === GRAPH_TAB_ID || snippet?.type === 'graph') return <Network size={12} className="tab-icon" />
+      if (id === GRAPH_TAB_ID || snippet?.type === 'graph')
+        return <Network size={12} className="tab-icon" />
       if (snippet) return getSnippetIcon(snippet, 12, 'tab-icon')
       return null
     }
@@ -43,37 +54,34 @@ const SortableTabItem = memo(
         <div
           ref={setNodeRef}
           className={`workspace-tab ${isActive ? 'active' : ''} ${isDirty ? 'is-dirty' : ''} ${isDragging ? 'dragging' : ''} ${isPinned ? 'pinned' : ''}`}
-        style={{
-          transform: transform ? `translate3d(${transform.x}px, 0, 0)` : undefined,
-          transition: transition || undefined,
-          opacity: isDragging ? 0.4 : 1
-        }}
-        {...attributes}
-        {...listeners}
-        onClick={() => onOpen(id)}
-        onAuxClick={(e) => e.button === 1 && onClose(e, id)}
-        onContextMenu={(e) => onContextMenu(e, id)}
-      >
-        <div className="tab-context">
-          {getIcon()}
-          <span className="tab-title">{getTitle()}</span>
-        </div>
+          style={{
+            transform: transform ? `translate3d(${transform.x}px, 0, 0)` : undefined,
+            transition: transition || undefined,
+            opacity: isDragging ? 0.4 : 1
+          }}
+          {...attributes}
+          {...listeners}
+          onClick={() => onOpen(id)}
+          onAuxClick={(e) => e.button === 1 && onClose(e, id)}
+          onContextMenu={(e) => onContextMenu(e, id)}
+        >
+          <div className="tab-context">
+            {getIcon()}
+            <span className="tab-title">{getTitle()}</span>
+          </div>
 
-        <div className="tab-actions">
-          {isDirty ? (
-            <div
-              className="dirty-indicator tab-dirty"
-              onClick={(e) => onClose(e, id)}
-            />
-          ) : (
-            !isPinned && (
-              <button className="tab-close-btn" onClick={(e) => onClose(e, id)}>
-                <X size={14} />
-              </button>
-            )
-          )}
+          <div className="tab-actions">
+            {isDirty ? (
+              <div className="dirty-indicator tab-dirty" onClick={(e) => onClose(e, id)} />
+            ) : (
+              !isPinned && (
+                <button className="tab-close-btn" onClick={(e) => onClose(e, id)}>
+                  <X size={14} />
+                </button>
+              )
+            )}
+          </div>
         </div>
-      </div>
       </ToolTip>
     )
   }
@@ -105,23 +113,25 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
     saveSnippet,
     dirtySnippetIds,
     pinnedTabIds
-  } = useVaultStore(useShallow(state => ({
-    snippets: state.snippets,
-    openTabs: state.openTabs,
-    activeTabId: state.activeTabId,
-    selectedSnippet: state.selectedSnippet,
-    setActiveTabId: state.setActiveTabId,
-    setSelectedSnippet: state.setSelectedSnippet,
-    reorderTabs: state.reorderTabs,
-    closeTab: state.closeTab,
-    closeOtherTabs: state.closeOtherTabs,
-    closeTabsToRight: state.closeTabsToRight,
-    closeAllTabs: state.closeAllTabs,
-    togglePinTab: state.togglePinTab,
-    saveSnippet: state.saveSnippet,
-    dirtySnippetIds: state.dirtySnippetIds,
-    pinnedTabIds: state.pinnedTabIds
-  })))
+  } = useVaultStore(
+    useShallow((state) => ({
+      snippets: state.snippets,
+      openTabs: state.openTabs,
+      activeTabId: state.activeTabId,
+      selectedSnippet: state.selectedSnippet,
+      setActiveTabId: state.setActiveTabId,
+      setSelectedSnippet: state.setSelectedSnippet,
+      reorderTabs: state.reorderTabs,
+      closeTab: state.closeTab,
+      closeOtherTabs: state.closeOtherTabs,
+      closeTabsToRight: state.closeTabsToRight,
+      closeAllTabs: state.closeAllTabs,
+      togglePinTab: state.togglePinTab,
+      saveSnippet: state.saveSnippet,
+      dirtySnippetIds: state.dirtySnippetIds,
+      pinnedTabIds: state.pinnedTabIds
+    }))
+  )
 
   const [contextMenu, setContextMenu] = useState(null)
   const [prompt, setPrompt] = useState(null)
@@ -140,20 +150,24 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
   // Auto-scroll to active tab when it changes
   useEffect(() => {
     if (!tabbarRef.current || !activeTabId) return
-    
+
     // Use requestAnimationFrame to ensure DOM is updated and painted
     requestAnimationFrame(() => {
       if (!tabbarRef.current) return
-      
+
       const activeTabElement = tabbarRef.current.querySelector('.workspace-tab.active')
       if (activeTabElement) {
         // Scroll the tabbar so the active tab is visible
         const containerRect = tabbarRef.current.getBoundingClientRect()
         const tabRect = activeTabElement.getBoundingClientRect()
-        
+
         // If the tab is partially or fully out of view to the left or right, scroll it
         if (tabRect.left < containerRect.left || tabRect.right > containerRect.right) {
-          const scrollLeftTarget = tabbarRef.current.scrollLeft + (tabRect.left - containerRect.left) - (containerRect.width / 2) + (tabRect.width / 2)
+          const scrollLeftTarget =
+            tabbarRef.current.scrollLeft +
+            (tabRect.left - containerRect.left) -
+            containerRect.width / 2 +
+            tabRect.width / 2
           tabbarRef.current.scrollTo({ left: scrollLeftTarget, behavior: 'smooth' })
         }
       }
@@ -237,14 +251,29 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
 
   if (openTabs.length === 0) {
     return (
-      <div className="tabbar-outer-wrapper" style={{ display: 'flex', width: '100%', position: 'relative', flexShrink: 0, minWidth: 0, justifyContent: 'flex-end' }}>
+      <div
+        className="tabbar-outer-wrapper"
+        style={{
+          display: 'flex',
+          width: '100%',
+          position: 'relative',
+          flexShrink: 0,
+          minWidth: 0,
+          justifyContent: 'flex-end'
+        }}
+      >
         <WindowControls isSidebarOpen={isSidebarOpen} onToggleSidebar={onToggleSidebar} />
       </div>
     )
   }
 
   return (
-    <DndContext sensors={sensors} onDragEnd={handleDragEnd} collisionDetection={closestCenter} modifiers={[restrictToHorizontalAxis]}>
+    <DndContext
+      sensors={sensors}
+      onDragEnd={handleDragEnd}
+      collisionDetection={closestCenter}
+      modifiers={[restrictToHorizontalAxis]}
+    >
       <div
         className="tabbar-outer-wrapper"
         style={{ display: 'flex', width: '100%', position: 'relative', flexShrink: 0, minWidth: 0 }}
@@ -256,11 +285,18 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
           style={{ flex: 1, paddingLeft: onToggleLeftSidebar ? '44px' : '0', minWidth: 0 }}
         >
           <SortableContext items={openTabs} strategy={horizontalListSortingStrategy}>
-            <div className="tabs-container" style={{ display: 'flex', height: '100%', alignItems: 'stretch' }}>
+            <div
+              className="tabs-container"
+              style={{ display: 'flex', height: '100%', alignItems: 'stretch' }}
+            >
               {openTabs.map((id) => {
                 const snippet = snippetMap.get(id)
                 if (!snippet && id !== GRAPH_TAB_ID) return null
-                const tabSnippet = snippet || (id === GRAPH_TAB_ID ? { id: GRAPH_TAB_ID, title: 'Knowledge Graph', type: 'graph' } : null)
+                const tabSnippet =
+                  snippet ||
+                  (id === GRAPH_TAB_ID
+                    ? { id: GRAPH_TAB_ID, title: 'Knowledge Graph', type: 'graph' }
+                    : null)
                 return (
                   <SortableTabItem
                     key={id}
@@ -281,12 +317,12 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
 
         {/* Floating Left Sidebar Toggle */}
         {onToggleLeftSidebar && (
-          <div 
-            className="window-controls-float-left" 
-            style={{ 
-              position: 'absolute', 
-              left: 0, 
-              top: 0, 
+          <div
+            className="window-controls-float-left"
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
               bottom: 0,
               height: '100%',
               display: 'flex',
@@ -296,14 +332,17 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
               WebkitAppRegion: 'no-drag'
             }}
           >
-            <ToolTip text={isLeftSidebarOpen ? "Close Left Sidebar" : "Open Left Sidebar"} position="bottom">
-              <button 
-                onClick={onToggleLeftSidebar} 
+            <ToolTip
+              text={isLeftSidebarOpen ? 'Close Left Sidebar' : 'Open Left Sidebar'}
+              position="bottom"
+            >
+              <button
+                onClick={onToggleLeftSidebar}
                 className="control-btn"
-                style={{ 
-                  background: 'transparent', 
-                  border: 'none', 
-                  color: 'var(--text-faint)', 
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-faint)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -313,8 +352,14 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
                   borderRadius: '0',
                   transition: 'background 0.1s, color 0.1s'
                 }}
-                onMouseOver={(e) => { e.currentTarget.style.color = 'var(--text-main)'; e.currentTarget.style.background = 'var(--bg-active)'; }}
-                onMouseOut={(e) => { e.currentTarget.style.color = 'var(--text-faint)'; e.currentTarget.style.background = 'transparent'; }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.color = 'var(--text-main)'
+                  e.currentTarget.style.background = 'var(--bg-active)'
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.color = 'var(--text-faint)'
+                  e.currentTarget.style.background = 'transparent'
+                }}
               >
                 {isLeftSidebarOpen ? <PanelLeftClose size={14} /> : <PanelLeftOpen size={14} />}
               </button>

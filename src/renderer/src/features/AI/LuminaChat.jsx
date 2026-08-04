@@ -2,7 +2,29 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { createPortal } from 'react-dom'
-import { MessageSquare, Maximize, Minimize, Minus, Trash2, ArrowDownToLine, History, Copy, ThumbsUp, ThumbsDown, Check, Send, Square, Download, X as CloseIcon, Plus, ChevronLeft, ChevronRight, Sparkles, PanelLeftClose, PanelRightClose } from 'lucide-react'
+import {
+  MessageSquare,
+  Maximize,
+  Minimize,
+  Minus,
+  Trash2,
+  ArrowDownToLine,
+  History,
+  Copy,
+  ThumbsUp,
+  ThumbsDown,
+  Check,
+  Send,
+  Square,
+  Download,
+  X as CloseIcon,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+  PanelLeftClose,
+  PanelRightClose
+} from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useAIStore } from './tools/LuminaChat'
 import { useVaultStore } from '../../core/store/useVaultStore'
@@ -29,10 +51,10 @@ const CodeBlock = React.memo(({ inline, className, children, ...props }) => {
     return (
       <div className="chat-code-block">
         <div className="chat-code-header" style={{ justifyContent: 'flex-end' }}>
-          <span 
-            className="chat-code-lang" 
-            style={{ 
-              textTransform: 'uppercase', 
+          <span
+            className="chat-code-lang"
+            style={{
+              textTransform: 'uppercase',
               cursor: 'pointer',
               padding: '2px 6px',
               borderRadius: '4px',
@@ -57,11 +79,32 @@ const CodeBlock = React.memo(({ inline, className, children, ...props }) => {
             }}
           >
             {copied ? (
-              <span style={{ color: '#4caf50', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold' }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span
+                style={{
+                  color: '#4caf50',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontWeight: 'bold'
+                }}
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
                 COPIED
               </span>
-            ) : lang}
+            ) : (
+              lang
+            )}
           </span>
         </div>
         {!isDelete && (
@@ -92,15 +135,15 @@ const CodeBlock = React.memo(({ inline, className, children, ...props }) => {
   )
 })
 
-
 const MessageContent = React.memo(
   ({ content }) => {
     // Pre-process content to handle custom XML tags like <readFile>
-    const processedContent = content?.replace(/<readFile>([\s\S]*?)<\/readFile>/g, (match, inner) => {
-      const titleMatch = inner.match(/title:\s*"([^"]+)"/);
-      const fileName = titleMatch ? titleMatch[1] : 'File';
-      return `\n> 📄 **Reading:** ${fileName}\n`;
-    }) || content;
+    const processedContent =
+      content?.replace(/<readFile>([\s\S]*?)<\/readFile>/g, (match, inner) => {
+        const titleMatch = inner.match(/title:\s*"([^"]+)"/)
+        const fileName = titleMatch ? titleMatch[1] : 'File'
+        return `\n> 📄 **Reading:** ${fileName}\n`
+      }) || content
 
     return (
       <ReactMarkdown
@@ -166,7 +209,6 @@ const ChatActions = ({ msg, index, onCopy, onRate }) => {
  * Memoized for performance - expensive AI operations and message rendering.
  */
 
-
 const LuminaChat = ({ isOpen, onClose, onUnfloat }) => {
   useKeyboardShortcuts({
     onEscape: isOpen ? onClose : null
@@ -176,24 +218,28 @@ const LuminaChat = ({ isOpen, onClose, onUnfloat }) => {
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
   const [isMaximized, setIsMaximized] = useState(false)
-  
+
   const [isMinimized, setIsMinimized] = useState(() => {
     try {
-      const saved = useSettingsStore.getState().settings.aiChatModalState || localStorage.getItem('aiChatModalState')
+      const saved =
+        useSettingsStore.getState().settings.aiChatModalState ||
+        localStorage.getItem('aiChatModalState')
       const parsed = typeof saved === 'string' ? JSON.parse(saved) : saved
       return parsed?.isMinimized ?? false
     } catch (e) {
       return false
     }
   })
-  
+
   const [resizeDirection, setResizeDirection] = useState(null)
   const dragStartPos = useRef({ x: 0, y: 0, top: 0, left: 0 })
   const resizeStartPos = useRef({ x: 0, y: 0, width: 0, height: 0, left: 0, top: 0 })
 
   const [modalState, setModalState] = useState(() => {
     try {
-      const saved = useSettingsStore.getState().settings.aiChatModalState || localStorage.getItem('aiChatModalState')
+      const saved =
+        useSettingsStore.getState().settings.aiChatModalState ||
+        localStorage.getItem('aiChatModalState')
       if (saved) {
         const parsed = typeof saved === 'string' ? JSON.parse(saved) : saved
         return {
@@ -211,8 +257,8 @@ const LuminaChat = ({ isOpen, onClose, onUnfloat }) => {
       height: 600
     }
   })
-  
-  const updateSetting = useSettingsStore(state => state.updateSetting)
+
+  const updateSetting = useSettingsStore((state) => state.updateSetting)
 
   const previousFocusRef = useRef(null)
 
@@ -362,14 +408,20 @@ const LuminaChat = ({ isOpen, onClose, onUnfloat }) => {
       }
       if (resizeDirection.includes('left')) {
         newWidth = Math.max(minWidth, Math.min(maxWidth, resizeStartPos.current.width - deltaX))
-        newLeft = Math.max(0, resizeStartPos.current.left + (resizeStartPos.current.width - newWidth))
+        newLeft = Math.max(
+          0,
+          resizeStartPos.current.left + (resizeStartPos.current.width - newWidth)
+        )
       }
       if (resizeDirection.includes('bottom')) {
         newHeight = Math.max(minHeight, Math.min(maxHeight, resizeStartPos.current.height + deltaY))
       }
       if (resizeDirection.includes('top')) {
         newHeight = Math.max(minHeight, Math.min(maxHeight, resizeStartPos.current.height - deltaY))
-        newTop = Math.max(0, resizeStartPos.current.top + (resizeStartPos.current.height - newHeight))
+        newTop = Math.max(
+          0,
+          resizeStartPos.current.top + (resizeStartPos.current.height - newHeight)
+        )
       }
       if (modalRef.current) {
         modalRef.current.style.width = `${newWidth}px`
@@ -377,7 +429,12 @@ const LuminaChat = ({ isOpen, onClose, onUnfloat }) => {
         modalRef.current.style.left = `${newLeft}px`
         modalRef.current.style.top = `${newTop}px`
       }
-      resizeStartPos.current.latestState = { width: newWidth, height: newHeight, left: newLeft, top: newTop }
+      resizeStartPos.current.latestState = {
+        width: newWidth,
+        height: newHeight,
+        left: newLeft,
+        top: newTop
+      }
     },
     [isResizing, isMaximized, resizeDirection]
   )
@@ -422,7 +479,6 @@ const LuminaChat = ({ isOpen, onClose, onUnfloat }) => {
     }
   }, [isResizing, handleResize, handleResizeEnd])
 
-
   const {
     chatMessages,
     isChatLoading,
@@ -437,11 +493,13 @@ const LuminaChat = ({ isOpen, onClose, onUnfloat }) => {
     switchSession,
     deleteSession
   } = useAIStore()
-  const { selectedSnippet, snippets, openTabs } = useVaultStore(useShallow(state => ({
-    selectedSnippet: state.selectedSnippet,
-    snippets: state.snippets,
-    openTabs: state.openTabs
-  })))
+  const { selectedSnippet, snippets, openTabs } = useVaultStore(
+    useShallow((state) => ({
+      selectedSnippet: state.selectedSnippet,
+      snippets: state.snippets,
+      openTabs: state.openTabs
+    }))
+  )
 
   const listRef = useRef(null)
 
@@ -452,7 +510,7 @@ const LuminaChat = ({ isOpen, onClose, onUnfloat }) => {
         listRef.current.scrollTop = listRef.current.scrollHeight
       }
     }
-    
+
     scrollToBottom()
     // Small delay to ensure DOM is fully laid out (e.g. after modal open)
     const timeoutId = setTimeout(scrollToBottom, 50)
@@ -472,8 +530,6 @@ const LuminaChat = ({ isOpen, onClose, onUnfloat }) => {
     window.addEventListener('ai-toggle-history', handler)
     return () => window.removeEventListener('ai-toggle-history', handler)
   }, [])
-
-
 
   const handleCopy = (text) => {
     navigator.clipboard.writeText(text)
@@ -572,23 +628,30 @@ const LuminaChat = ({ isOpen, onClose, onUnfloat }) => {
             marginRight: msg.role === 'user' ? '5px' : '0'
           }}
         >
-          <div
-            className={`chat-bubble ${msg.role}`}
-          >
+          <div className={`chat-bubble ${msg.role}`}>
             {msg.attachedMentions && msg.attachedMentions.length > 0 && (
-              <div style={{ 
-                display: 'flex', 
-                flexDirection: 'row',
-                gap: '4px', 
-                marginBottom: msg.content.trim() ? '8px' : '0',
-                overflowX: 'auto',
-                paddingBottom: '4px',
-                maxWidth: '100%',
-                flexWrap: 'nowrap'
-              }} className="mentions-scroll-container">
-                {msg.attachedMentions.map(m => (
-                  <div key={m.id} className="mention-pill" style={{ padding: '2px 6px', fontSize: '10px', flexShrink: 0 }}>
-                    <span className="mention-pill-title" style={{ maxWidth: '200px' }}>@{m.title}</span>
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  gap: '4px',
+                  marginBottom: msg.content.trim() ? '8px' : '0',
+                  overflowX: 'auto',
+                  paddingBottom: '4px',
+                  maxWidth: '100%',
+                  flexWrap: 'nowrap'
+                }}
+                className="mentions-scroll-container"
+              >
+                {msg.attachedMentions.map((m) => (
+                  <div
+                    key={m.id}
+                    className="mention-pill"
+                    style={{ padding: '2px 6px', fontSize: '10px', flexShrink: 0 }}
+                  >
+                    <span className="mention-pill-title" style={{ maxWidth: '200px' }}>
+                      @{m.title}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -619,12 +682,7 @@ const LuminaChat = ({ isOpen, onClose, onUnfloat }) => {
             )}
           </div>
           {msg.role === 'assistant' && (
-            <ChatActions
-              msg={msg}
-              index={index}
-              onCopy={handleCopy}
-              onRate={handleRating}
-            />
+            <ChatActions msg={msg} index={index} onCopy={handleCopy} onRate={handleRating} />
           )}
         </div>
       </div>
@@ -644,18 +702,25 @@ const LuminaChat = ({ isOpen, onClose, onUnfloat }) => {
           ...(isMaximized
             ? { top: 0, left: 0, width: '100vw', height: 'calc(100vh - 28px)' }
             : isMinimized
-            ? { top: 'auto', left: 'auto', bottom: '40px', right: '20px', width: '280px' }
-            : {
-                top: isDragging ? (dragStartPos.current.latestTop ?? modalState.top) : modalState.top,
-                left: isDragging ? (dragStartPos.current.latestLeft ?? modalState.left) : modalState.left,
-                width: isResizing ? undefined : modalState.width,
-                height: isResizing ? undefined : modalState.height
-              })
+              ? { top: 'auto', left: 'auto', bottom: '40px', right: '20px', width: '280px' }
+              : {
+                  top: isDragging
+                    ? (dragStartPos.current.latestTop ?? modalState.top)
+                    : modalState.top,
+                  left: isDragging
+                    ? (dragStartPos.current.latestLeft ?? modalState.left)
+                    : modalState.left,
+                  width: isResizing ? undefined : modalState.width,
+                  height: isResizing ? undefined : modalState.height
+                })
         }}
       >
         <ModalHeader
           onMouseDown={handleDragStart}
-          onDoubleClick={(e) => { e.preventDefault(); e.stopPropagation() }}
+          onDoubleClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+          }}
           style={{ cursor: 'default' }}
           left={
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '-10px' }}>
@@ -670,7 +735,12 @@ const LuminaChat = ({ isOpen, onClose, onUnfloat }) => {
               >
                 {showSessions ? <PanelLeftClose size={16} /> : <PanelRightClose size={16} />}
               </button>
-              <div className="theme-modal-title" style={{ fontSize: '13px', fontWeight: 600, opacity: 0.9 }}>Lumina AI</div>
+              <div
+                className="theme-modal-title"
+                style={{ fontSize: '13px', fontWeight: 600, opacity: 0.9 }}
+              >
+                Lumina AI
+              </div>
             </div>
           }
           right={
@@ -704,163 +774,206 @@ const LuminaChat = ({ isOpen, onClose, onUnfloat }) => {
 
         {!isMaximized && (
           <>
-            <div className="resize-handle resize-handle-right" onMouseDown={(e) => handleResizeStart(e, 'right')} />
-            <div className="resize-handle resize-handle-bottom" onMouseDown={(e) => handleResizeStart(e, 'bottom')} />
-            <div className="resize-handle resize-handle-bottom-right" onMouseDown={(e) => handleResizeStart(e, 'bottom-right')} />
-            <div className="resize-handle resize-handle-left" onMouseDown={(e) => handleResizeStart(e, 'left')} />
-            <div className="resize-handle resize-handle-top" onMouseDown={(e) => handleResizeStart(e, 'top')} />
-            <div className="resize-handle resize-handle-top-left" onMouseDown={(e) => handleResizeStart(e, 'top-left')} />
-            <div className="resize-handle resize-handle-top-right" onMouseDown={(e) => handleResizeStart(e, 'top-right')} />
-            <div className="resize-handle resize-handle-bottom-left" onMouseDown={(e) => handleResizeStart(e, 'bottom-left')} />
+            <div
+              className="resize-handle resize-handle-right"
+              onMouseDown={(e) => handleResizeStart(e, 'right')}
+            />
+            <div
+              className="resize-handle resize-handle-bottom"
+              onMouseDown={(e) => handleResizeStart(e, 'bottom')}
+            />
+            <div
+              className="resize-handle resize-handle-bottom-right"
+              onMouseDown={(e) => handleResizeStart(e, 'bottom-right')}
+            />
+            <div
+              className="resize-handle resize-handle-left"
+              onMouseDown={(e) => handleResizeStart(e, 'left')}
+            />
+            <div
+              className="resize-handle resize-handle-top"
+              onMouseDown={(e) => handleResizeStart(e, 'top')}
+            />
+            <div
+              className="resize-handle resize-handle-top-left"
+              onMouseDown={(e) => handleResizeStart(e, 'top-left')}
+            />
+            <div
+              className="resize-handle resize-handle-top-right"
+              onMouseDown={(e) => handleResizeStart(e, 'top-right')}
+            />
+            <div
+              className="resize-handle resize-handle-bottom-left"
+              onMouseDown={(e) => handleResizeStart(e, 'bottom-left')}
+            />
           </>
         )}
-        
+
         {(isDragging || isResizing) && (
-          <div style={{ position: 'fixed', inset: 0, zIndex: 99999, cursor: isDragging ? 'grabbing' : 'auto' }} />
-        )}
-
-        <div className="ai-chat-modal-body" style={{ height: 'calc(100% - 40px)', flex: 1, display: 'flex', flexDirection: 'column', userSelect: 'text' }}>
-          <div className="chat-container">
-      {/* Sessions Sidebar */}
-      <div className={`chat-sessions-sidebar ${showSessions ? 'open' : ''}`}>
-        <div className="sessions-header">
-          <History size={14} />
-          <span>History</span>
-          <button
-            className="new-chat-btn"
-            onClick={() => {
-              createNewSession()
-              setShowSessions(false)
-            }}
-            title="New Chat"
-          >
-            <Plus size={14} />
-          </button>
-        </div>
-        <div className="sessions-list">
-          {sessions.map((s) => (
-            <div
-              key={s.id}
-              className={`session-item ${activeSessionId === s.id ? 'active' : ''}`}
-              onClick={() => {
-                switchSession(s.id)
-              }}
-            >
-              <MessageSquare size={14} />
-              <span className="session-title">{s.title || 'New Chat'}</span>
-              <button
-                className="delete-session-btn"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  deleteSession(s.id)
-                }}
-              >
-                <Trash2 size={12} />
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="chat-main" onClick={() => { if (showSessions) setShowSessions(false) }}>
-        <div className="chat-messages" ref={listRef}>
-          {visibleMessages.length === 0 ? (
-            <div className="chat-empty">
-              
-              <h2
-                style={{
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  color: 'var(--text-main)',
-                  margin: '8px 0 4px 0'
-                }}
-              >
-                How can I help you today?
-              </h2>
-              {selectedSnippet && (
-                <button
-                  className="chat-suggestion-btn"
-                  onClick={() =>
-                    sendChatMessage(`Explain the code in "${selectedSnippet.title}"`, [
-                      selectedSnippet
-                    ])
-                  }
-                >
-                  Explain "{selectedSnippet.title}"
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="chat-msg-list">
-              {renderedMessages}
-              <div className="chat-footer-area">
-                {(() => {
-                  const lastMessage = chatMessages[chatMessages.length - 1]
-                  const hasAssistantMessage = lastMessage && lastMessage.role === 'assistant'
-                  const showTyping = isChatLoading && !hasAssistantMessage
-                  return (
-                    <>
-                      {showTyping && (
-                        <div
-                          className="chat-row assistant"
-                          style={{
-                            marginBottom: '6px',
-                            display: 'flex',
-                            gap: '6px',
-                            alignItems: 'flex-start'
-                          }}
-                        >
-                          <div className="thinking-indicator">
-                            <span className="thinking-text">
-                              <span className="thinking-dot-pulse" />
-                              Thinking...
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                      {chatError && (
-                        <div className="chat-error">
-                          <strong>Error:</strong> {chatError}
-                          {chatError.includes('API Key') && (
-                            <button
-                              onClick={() =>
-                                window.dispatchEvent(new CustomEvent('open-settings-ai'))
-                              }
-                              style={{
-                                marginTop: '8px',
-                                padding: '4px 8px',
-                                fontSize: '12px',
-                                background: 'var(--bg-active)',
-                                border: '1px solid var(--border-dim)',
-                                borderRadius: '4px',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              Open Settings
-                            </button>
-                          )}
-                        </div>
-                      )}
-                      
-                    </>
-                  )
-                })()}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="chat-input-area">
-          <Composer
-            onSend={handleSendMessage}
-            isLoading={isChatLoading}
-            onCancel={() => {
-              if (isChatLoading) cancelChat()
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 99999,
+              cursor: isDragging ? 'grabbing' : 'auto'
             }}
           />
-        </div>
-      </div>
-    </div>
+        )}
+
+        <div
+          className="ai-chat-modal-body"
+          style={{
+            height: 'calc(100% - 40px)',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            userSelect: 'text'
+          }}
+        >
+          <div className="chat-container">
+            {/* Sessions Sidebar */}
+            <div className={`chat-sessions-sidebar ${showSessions ? 'open' : ''}`}>
+              <div className="sessions-header">
+                <History size={14} />
+                <span>History</span>
+                <button
+                  className="new-chat-btn"
+                  onClick={() => {
+                    createNewSession()
+                    setShowSessions(false)
+                  }}
+                  title="New Chat"
+                >
+                  <Plus size={14} />
+                </button>
+              </div>
+              <div className="sessions-list">
+                {sessions.map((s) => (
+                  <div
+                    key={s.id}
+                    className={`session-item ${activeSessionId === s.id ? 'active' : ''}`}
+                    onClick={() => {
+                      switchSession(s.id)
+                    }}
+                  >
+                    <MessageSquare size={14} />
+                    <span className="session-title">{s.title || 'New Chat'}</span>
+                    <button
+                      className="delete-session-btn"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        deleteSession(s.id)
+                      }}
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div
+              className="chat-main"
+              onClick={() => {
+                if (showSessions) setShowSessions(false)
+              }}
+            >
+              <div className="chat-messages" ref={listRef}>
+                {visibleMessages.length === 0 ? (
+                  <div className="chat-empty">
+                    <h2
+                      style={{
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        color: 'var(--text-main)',
+                        margin: '8px 0 4px 0'
+                      }}
+                    >
+                      How can I help you today?
+                    </h2>
+                    {selectedSnippet && (
+                      <button
+                        className="chat-suggestion-btn"
+                        onClick={() =>
+                          sendChatMessage(`Explain the code in "${selectedSnippet.title}"`, [
+                            selectedSnippet
+                          ])
+                        }
+                      >
+                        Explain "{selectedSnippet.title}"
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="chat-msg-list">
+                    {renderedMessages}
+                    <div className="chat-footer-area">
+                      {(() => {
+                        const lastMessage = chatMessages[chatMessages.length - 1]
+                        const hasAssistantMessage = lastMessage && lastMessage.role === 'assistant'
+                        const showTyping = isChatLoading && !hasAssistantMessage
+                        return (
+                          <>
+                            {showTyping && (
+                              <div
+                                className="chat-row assistant"
+                                style={{
+                                  marginBottom: '6px',
+                                  display: 'flex',
+                                  gap: '6px',
+                                  alignItems: 'flex-start'
+                                }}
+                              >
+                                <div className="thinking-indicator">
+                                  <span className="thinking-text">
+                                    <span className="thinking-dot-pulse" />
+                                    Thinking...
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                            {chatError && (
+                              <div className="chat-error">
+                                <strong>Error:</strong> {chatError}
+                                {chatError.includes('API Key') && (
+                                  <button
+                                    onClick={() =>
+                                      window.dispatchEvent(new CustomEvent('open-settings-ai'))
+                                    }
+                                    style={{
+                                      marginTop: '8px',
+                                      padding: '4px 8px',
+                                      fontSize: '12px',
+                                      background: 'var(--bg-active)',
+                                      border: '1px solid var(--border-dim)',
+                                      borderRadius: '4px',
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    Open Settings
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </>
+                        )
+                      })()}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="chat-input-area">
+                <Composer
+                  onSend={handleSendMessage}
+                  isLoading={isChatLoading}
+                  onCancel={() => {
+                    if (isChatLoading) cancelChat()
+                  }}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

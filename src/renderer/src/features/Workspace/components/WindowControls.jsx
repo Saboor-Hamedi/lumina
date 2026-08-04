@@ -11,7 +11,7 @@ const WindowControls = ({ isSidebarOpen, onToggleSidebar }) => {
         </div>
       </ToolTip>
       {onToggleSidebar && (
-        <ToolTip text={isSidebarOpen ? "Close Sidebar" : "Open Sidebar"} position="bottom">
+        <ToolTip text={isSidebarOpen ? 'Close Sidebar' : 'Open Sidebar'} position="bottom">
           <button onClick={onToggleSidebar} className="control-btn">
             {isSidebarOpen ? <PanelRightClose size={14} /> : <PanelRightOpen size={14} />}
           </button>

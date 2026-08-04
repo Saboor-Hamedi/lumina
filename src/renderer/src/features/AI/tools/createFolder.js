@@ -4,7 +4,9 @@ export const createFolderTool = aiSdk.tool({
   description: '',
   inputSchema: aiSdk.jsonSchema({
     type: 'object',
-    properties: { path: { type: 'string', description: 'The folder path to create (e.g. "my-approach")' } },
+    properties: {
+      path: { type: 'string', description: 'The folder path to create (e.g. "my-approach")' }
+    },
     required: ['path']
   }),
   execute: async ({ path }) => {

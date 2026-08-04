@@ -14,8 +14,12 @@ const ModalHeader = ({
   style = {}
 }) => {
   return (
-    <header className="pane-header" onMouseDown={onMouseDown} onDoubleClick={onDoubleClick} style={style}>
-
+    <header
+      className="pane-header"
+      onMouseDown={onMouseDown}
+      onDoubleClick={onDoubleClick}
+      style={style}
+    >
       <div className="modal-left">
         {left ? (
           left

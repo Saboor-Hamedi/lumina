@@ -1,5 +1,16 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { Search, Replace, ReplaceAll, X, ChevronUp, ChevronDown, Type, AlignLeft, Regex, ChevronRight } from 'lucide-react'
+import {
+  Search,
+  Replace,
+  ReplaceAll,
+  X,
+  ChevronUp,
+  ChevronDown,
+  Type,
+  AlignLeft,
+  Regex,
+  ChevronRight
+} from 'lucide-react'
 import { useKeyboardShortcuts } from '../../../core/hooks/useKeyboardShortcuts'
 import './FindWidget.css'
 

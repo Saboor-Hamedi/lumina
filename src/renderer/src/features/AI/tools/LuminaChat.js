@@ -16,7 +16,9 @@ export const useAIStore = create((set, get) => {
 
   const getWorker = () => {
     if (!worker) {
-      worker = new Worker(new URL('../../../core/ai/ai.worker.js', import.meta.url), { type: 'module' })
+      worker = new Worker(new URL('../../../core/ai/ai.worker.js', import.meta.url), {
+        type: 'module'
+      })
 
       worker.onmessage = (e) => {
         const { type, status, id, result, progress } = e.data
@@ -102,7 +104,6 @@ export const useAIStore = create((set, get) => {
     chatError: null,
     isChatLoading: false,
     chatController: null,
-
 
     generateEmbedding: (text) => {
       return new Promise((resolve, reject) => {
@@ -263,7 +264,7 @@ export const useAIStore = create((set, get) => {
     createNewSession: async () => {
       const state = get()
       // Check if there's already an empty session
-      const emptySession = state.sessions.find(s => s.messages.length === 0)
+      const emptySession = state.sessions.find((s) => s.messages.length === 0)
       if (emptySession) {
         state.switchSession(emptySession.id)
         return
@@ -413,9 +414,16 @@ export const useAIStore = create((set, get) => {
       }
     },
 
-
-    sendChatMessage: async (message, contextSnippets = [], mode = 'Standard', attachedMentions = []) => {
-      if ((!message || typeof message !== 'string' || !message.trim()) && (!attachedMentions || attachedMentions.length === 0)) {
+    sendChatMessage: async (
+      message,
+      contextSnippets = [],
+      mode = 'Standard',
+      attachedMentions = []
+    ) => {
+      if (
+        (!message || typeof message !== 'string' || !message.trim()) &&
+        (!attachedMentions || attachedMentions.length === 0)
+      ) {
         set({ chatError: 'Message cannot be empty.' })
         return
       }
@@ -522,7 +530,7 @@ export const useAIStore = create((set, get) => {
 
       if (attachedMentions && attachedMentions.length > 0) {
         attachedMentions.forEach((snip) => {
-          if (!mentionedSnippets.some(ms => ms.id === snip.id)) {
+          if (!mentionedSnippets.some((ms) => ms.id === snip.id)) {
             mentionedSnippets.push(snip)
           }
         })
@@ -670,23 +678,27 @@ ${vaultAccessNote}`
           const { useVaultStore } = await import('../../../core/store/useVaultStore')
           const vs = useVaultStore.getState()
           contextSnippets.forEach((snip) => {
-            const currentCode = vs.drafts?.[snip.id] !== undefined ? vs.drafts[snip.id] : (snip.code || '')
+            const currentCode =
+              vs.drafts?.[snip.id] !== undefined ? vs.drafts[snip.id] : snip.code || ''
             systemPrompt += `[File: ${snip.title}]\n${currentCode.slice(0, 1500)}\n\n`
           })
         }
 
         if (mentionedSnippets.length > 0) {
-          systemPrompt += '\n\n**Explicitly Mentioned (@) — content already provided, do NOT call readFile:**\n'
+          systemPrompt +=
+            '\n\n**Explicitly Mentioned (@) — content already provided, do NOT call readFile:**\n'
           mentionedSnippets.forEach((snip) => {
             systemPrompt += `[Target Note: ${snip.title}]\n${snip.code.slice(0, 3000)}\n\n`
           })
-          systemPrompt += 'The @-mentioned file content is ABOVE. Do NOT call readFile for these files. Use appendToFile or updateFile directly.\n'
+          systemPrompt +=
+            'The @-mentioned file content is ABOVE. Do NOT call readFile for these files. Use appendToFile or updateFile directly.\n'
         }
 
         // --- Auto-detected file mentions ---
         const preloadedFiles = [...mentionedSnippets, ...requestedFiles]
         if (requestedFiles.length > 0) {
-          systemPrompt += '\n\n**Workspace Files Referenced (content already provided below — do NOT call readFile):**\n'
+          systemPrompt +=
+            '\n\n**Workspace Files Referenced (content already provided below — do NOT call readFile):**\n'
           requestedFiles.forEach((f) => {
             systemPrompt += `--- ${f.title} ---\n${f.code}\n`
           })
@@ -788,13 +800,15 @@ ${vaultAccessNote}`
         timeoutId = setTimeout(() => controller?.abort(), 180000)
 
         // Prepare Messages (History only, system passed separately)
-        const finalMessages = newHistory.filter(m => m.role !== 'system').slice(-6)
+        const finalMessages = newHistory.filter((m) => m.role !== 'system').slice(-6)
 
         // Only block readFile when user clearly wants to WRITE and file is already pre-loaded.
         // For explain/read/summarize requests, always keep readFile available.
         const hasPreloadedFiles = mentionedSnippets.length > 0 || requestedFiles.length > 0
-        const writeIntentKeywords = /\b(write|add|append|insert|put|include|create new|type|place|set|clear|empty|erase|wipe|delete all|remove all)\b/i
-        const readIntentKeywords = /\b(explain|read|summarize|describe|tell me|what is|what does|show me|analyze|review)\b/i
+        const writeIntentKeywords =
+          /\b(write|add|append|insert|put|include|create new|type|place|set|clear|empty|erase|wipe|delete all|remove all)\b/i
+        const readIntentKeywords =
+          /\b(explain|read|summarize|describe|tell me|what is|what does|show me|analyze|review)\b/i
         const isWriteIntent = writeIntentKeywords.test(message) && !readIntentKeywords.test(message)
         const blockReadFile = hasPreloadedFiles && isWriteIntent
 
@@ -827,7 +841,9 @@ ${vaultAccessNote}`
               temperature: modeCfg.temperature,
               maxTokens: modeCfg.max_tokens,
               abortSignal: controller.signal,
-              tools: Object.fromEntries(Object.entries(sdkTools).filter(([, v]) => v !== undefined)),
+              tools: Object.fromEntries(
+                Object.entries(sdkTools).filter(([, v]) => v !== undefined)
+              ),
               maxSteps: 15
             })
 
@@ -867,15 +883,20 @@ ${vaultAccessNote}`
               const steps = await result.steps
               const lastStep = steps?.[steps.length - 1]
               const stoppedOnToolCall = lastStep?.toolCalls?.length > 0
-              
+
               if (stoppedOnToolCall) {
                 // Foolproof manual follow-up if model stubbornly stopped after tool call
-                const toolOutputs = steps.flatMap((s) => s.toolResults?.map((tr) => JSON.stringify(tr.result)) || []).join('\n\n')
-                
+                const toolOutputs = steps
+                  .flatMap((s) => s.toolResults?.map((tr) => JSON.stringify(tr.result)) || [])
+                  .join('\n\n')
+
                 const followUpMessages = [
                   ...finalMessages,
                   { role: 'assistant', content: fullContent },
-                  { role: 'user', content: `Tool execution results:\n${toolOutputs}\n\nPlease summarize these results to the user and confirm the task is complete. Do NOT attempt to call any more tools.` }
+                  {
+                    role: 'user',
+                    content: `Tool execution results:\n${toolOutputs}\n\nPlease summarize these results to the user and confirm the task is complete. Do NOT attempt to call any more tools.`
+                  }
                 ]
 
                 if (fullContent.trim() && !fullContent.endsWith('\n')) {
@@ -883,10 +904,14 @@ ${vaultAccessNote}`
                 }
 
                 const followUpResult = aiSdk.streamText({
-                  model: createDeepseekProvider({ apiKey: visibleKey })(activeModel || 'deepseek-chat'),
+                  model: createDeepseekProvider({ apiKey: visibleKey })(
+                    activeModel || 'deepseek-chat'
+                  ),
                   system: systemPrompt,
                   messages: followUpMessages,
-                  tools: Object.fromEntries(Object.entries(sdkTools).filter(([, v]) => v !== undefined)),
+                  tools: Object.fromEntries(
+                    Object.entries(sdkTools).filter(([, v]) => v !== undefined)
+                  ),
                   maxSteps: 15,
                   temperature: modeCfg.temperature,
                   maxTokens: modeCfg.max_tokens,

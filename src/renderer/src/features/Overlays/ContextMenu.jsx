@@ -51,25 +51,26 @@ const ContextMenu = ({ x, y, options, onClose }) => {
         onClick={(e) => e.stopPropagation()}
         onContextMenu={(e) => e.stopPropagation()}
       >
-      {options.map((opt, i) => {
-        if (opt.type === 'divider') return <div key={i} className="menu-divider" />
-        if (opt.type === 'custom') return <React.Fragment key={i}>{opt.render(onClose)}</React.Fragment>
+        {options.map((opt, i) => {
+          if (opt.type === 'divider') return <div key={i} className="menu-divider" />
+          if (opt.type === 'custom')
+            return <React.Fragment key={i}>{opt.render(onClose)}</React.Fragment>
 
-        return (
-          <div
-            key={i}
-            className={`menu-item ${opt.danger ? 'danger' : ''}`}
-            onClick={() => {
-              opt.onClick()
-              onClose()
-            }}
-          >
-            <span className="menu-label">{opt.label}</span>
-            {opt.shortcut && <span className="menu-shortcut">{opt.shortcut}</span>}
-            <div className="menu-icon-right">{opt.icon}</div>
-          </div>
-        )
-      })}
+          return (
+            <div
+              key={i}
+              className={`menu-item ${opt.danger ? 'danger' : ''}`}
+              onClick={() => {
+                opt.onClick()
+                onClose()
+              }}
+            >
+              <span className="menu-label">{opt.label}</span>
+              {opt.shortcut && <span className="menu-shortcut">{opt.shortcut}</span>}
+              <div className="menu-icon-right">{opt.icon}</div>
+            </div>
+          )
+        })}
       </div>
     </>,
     document.body

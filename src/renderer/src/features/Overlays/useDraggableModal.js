@@ -6,16 +6,19 @@ export const useDraggableModal = () => {
   const dragStart = useRef({ x: 0, y: 0 })
   const initialPos = useRef({ x: 0, y: 0 })
 
-  const handleDragStart = useCallback((e) => {
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur()
-    }
-    e.preventDefault()
-    e.stopPropagation()
-    isDragging.current = true
-    dragStart.current = { x: e.clientX, y: e.clientY }
-    initialPos.current = { x: position.x, y: position.y }
-  }, [position])
+  const handleDragStart = useCallback(
+    (e) => {
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur()
+      }
+      e.preventDefault()
+      e.stopPropagation()
+      isDragging.current = true
+      dragStart.current = { x: e.clientX, y: e.clientY }
+      initialPos.current = { x: position.x, y: position.y }
+    },
+    [position]
+  )
 
   useEffect(() => {
     const handleMouseMove = (e) => {

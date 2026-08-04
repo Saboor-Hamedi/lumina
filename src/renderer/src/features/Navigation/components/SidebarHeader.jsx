@@ -5,11 +5,13 @@ import { useVaultStore } from '../../../core/store/useVaultStore'
 import { useShallow } from 'zustand/react/shallow'
 
 const SidebarHeader = memo(({ onToggleGraph, onToggleAIChat }) => {
-  const { snippets, saveSnippet, setSelectedSnippet } = useVaultStore(useShallow(state => ({
-    snippets: state.snippets,
-    saveSnippet: state.saveSnippet,
-    setSelectedSnippet: state.setSelectedSnippet
-  })))
+  const { snippets, saveSnippet, setSelectedSnippet } = useVaultStore(
+    useShallow((state) => ({
+      snippets: state.snippets,
+      saveSnippet: state.saveSnippet,
+      setSelectedSnippet: state.setSelectedSnippet
+    }))
+  )
 
   const handleNewNote = () => {
     window.dispatchEvent(new CustomEvent('trigger-new-note'))

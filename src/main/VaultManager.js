@@ -158,10 +158,12 @@ class VaultManager {
               if (data.title) {
                 const expectedCleanName = sanitizeTitleForFilename(data.title)
                 const actualCleanName = fileName.replace(/\.md$/i, '')
-                
+
                 // If it doesn't match the expected name AND it doesn't match expected name + ID suffix
-                if (actualCleanName !== expectedCleanName && 
-                    !actualCleanName.startsWith(`${expectedCleanName}-`)) {
+                if (
+                  actualCleanName !== expectedCleanName &&
+                  !actualCleanName.startsWith(`${expectedCleanName}-`)
+                ) {
                   displayTitle = actualCleanName
                   data.title = displayTitle
                   needsHealing = true // Trigger a rewrite to sync the frontmatter
@@ -262,7 +264,7 @@ class VaultManager {
     // Fallback to the snippet object from the frontend if it's missing in our cache.
     // This happens if scanVault() runs concurrently and overwrites the cache before this save.
     const oldFileName = oldSnippet ? oldSnippet.fileName : snippet.fileName
-    const oldRelativeFolder = oldSnippet ? (oldSnippet.folderId || '') : (snippet.folderId || '')
+    const oldRelativeFolder = oldSnippet ? oldSnippet.folderId || '' : snippet.folderId || ''
 
     if (oldFileName) {
       if (oldFileName !== newFileName || oldRelativeFolder !== relativeFolder) {
@@ -476,8 +478,6 @@ class VaultManager {
       throw err
     }
   }
-
-
 
   getSnippets() {
     const list = Array.from(this.snippets.values())

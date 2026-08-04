@@ -26,7 +26,13 @@ test.afterEach(async () => {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function makeNote({ id, title, content = 'Test content', language = 'markdown', timestamp = Date.now() }) {
+function makeNote({
+  id,
+  title,
+  content = 'Test content',
+  language = 'markdown',
+  timestamp = Date.now()
+}) {
   return `---
 id: ${id}
 title: ${title}
@@ -46,7 +52,10 @@ async function writeNote(vaultDir, title, data) {
 }
 
 async function fileExists(filePath) {
-  return fs.access(filePath).then(() => true).catch(() => false)
+  return fs
+    .access(filePath)
+    .then(() => true)
+    .catch(() => false)
 }
 
 // ─── Create ───────────────────────────────────────────────────────────────────
@@ -158,7 +167,7 @@ test('delete note: file is removed from disk', async () => {
 
 test('delete note: other notes are unaffected', async () => {
   const keep = await writeNote(vaultPath, 'Keep This', { id: 'keep-1', content: 'Keep me' })
-  const del  = await writeNote(vaultPath, 'Delete This', { id: 'del-1', content: 'Delete me' })
+  const del = await writeNote(vaultPath, 'Delete This', { id: 'del-1', content: 'Delete me' })
 
   await fs.unlink(del)
 

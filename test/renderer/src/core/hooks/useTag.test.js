@@ -45,9 +45,13 @@ describe('useTag', () => {
 
   it('ignores tags inside code blocks', () => {
     useVaultStore.setState({
-      snippets: [{
-        id: '1', title: 'Test', code: '```\n#this-is-code\n```\nOutside #realtag'
-      }]
+      snippets: [
+        {
+          id: '1',
+          title: 'Test',
+          code: '```\n#this-is-code\n```\nOutside #realtag'
+        }
+      ]
     })
 
     const { result } = renderHook(() => useTag())

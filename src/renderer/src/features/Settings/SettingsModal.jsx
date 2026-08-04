@@ -11,7 +11,14 @@ import { useUpdateStore } from '../../core/store/useUpdateStore'
 import { useRef } from 'react'
 import './SettingsModal.css'
 
-const ColorPickerInput = ({ initialColor, defaultColor, onColorChange, previewProperty, title, ariaLabel }) => {
+const ColorPickerInput = ({
+  initialColor,
+  defaultColor,
+  onColorChange,
+  previewProperty,
+  title,
+  ariaLabel
+}) => {
   const [isOpen, setIsOpen] = useState(false)
   const displayColor = initialColor
     ? initialColor.startsWith('#')
@@ -201,24 +208,51 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
               <div className="settings-pane">
                 <section>
                   <h3>App Updates</h3>
-                  <div className="settings-block" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: 'var(--bg-primary)', borderRadius: '6px' }}>
-                    <div className="update-info" style={{ display: 'flex', flexDirection: 'column', gap: '4px', userSelect: 'text' }}>
-                      <div style={{ fontSize: '12px', color: 'var(--text-main)', fontWeight: '600' }}>
+                  <div
+                    className="settings-block"
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '16px',
+                      background: 'var(--bg-primary)',
+                      borderRadius: '6px'
+                    }}
+                  >
+                    <div
+                      className="update-info"
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px',
+                        userSelect: 'text'
+                      }}
+                    >
+                      <div
+                        style={{ fontSize: '12px', color: 'var(--text-main)', fontWeight: '600' }}
+                      >
                         Version {appVersion || '...'}
                       </div>
-                      
-                      {(status === 'available' || status === 'ready' || status === 'downloading') ? (
+
+                      {status === 'available' || status === 'ready' || status === 'downloading' ? (
                         <div style={{ fontSize: '10px', color: 'var(--text-accent)' }}>
-                          {status === 'downloading' ? `Downloading update... ${Math.round(progress?.percent || 0)}%` : 'New version available!'}
+                          {status === 'downloading'
+                            ? `Downloading update... ${Math.round(progress?.percent || 0)}%`
+                            : 'New version available!'}
                         </div>
                       ) : (
                         <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                          {status === 'not-available' ? 'No update.' : status === 'error' ? 'Update failed. Please try again.' : 'Check to see if there are any updates available.'}
+                          {status === 'not-available'
+                            ? 'No update.'
+                            : status === 'error'
+                              ? 'Update failed. Please try again.'
+                              : 'Check to see if there are any updates available.'}
                         </div>
                       )}
                     </div>
-                    
-                    <button 
+
+                    <button
                       className={`btn btn-primary update-action-btn ${status === 'checking' || status === 'downloading' ? 'pulse-opacity' : ''}`}
                       onClick={() => {
                         if (status === 'available') download()
@@ -234,17 +268,40 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
 
                 <section>
                   <h3>Workspace Configuration</h3>
-                  <div className="settings-block" style={{ padding: '16px', background: 'var(--bg-primary)', borderRadius: '6px' }}>
+                  <div
+                    className="settings-block"
+                    style={{
+                      padding: '16px',
+                      background: 'var(--bg-primary)',
+                      borderRadius: '6px'
+                    }}
+                  >
                     <div className="row-info" style={{ marginBottom: '16px' }}>
                       <div className="row-label">Workspace Location</div>
-                      <div className="row-hint">This is where all your markdown notes, assets, and AI indexes are stored securely on your local device.</div>
+                      <div className="row-hint">
+                        This is where all your markdown notes, assets, and AI indexes are stored
+                        securely on your local device.
+                      </div>
                     </div>
-                    
+
                     <div className="vault-path-display">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="vault-icon">
-                        <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="vault-icon"
+                      >
+                        <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
                       </svg>
-                      <span className="path-text">{settings.vaultPath || 'No workspace selected (using default)'}</span>
+                      <span className="path-text">
+                        {settings.vaultPath || 'No workspace selected (using default)'}
+                      </span>
                     </div>
 
                     <div className="vault-actions">

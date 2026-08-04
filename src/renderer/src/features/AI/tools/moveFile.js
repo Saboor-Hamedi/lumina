@@ -6,7 +6,11 @@ export const moveFileTool = aiSdk.tool({
     type: 'object',
     properties: {
       title: { type: 'string', description: 'The file title to move' },
-      newFolderId: { type: 'string', description: 'The new folder path (e.g. "my-approach"). Use empty string "" to move to root.' }
+      newFolderId: {
+        type: 'string',
+        description:
+          'The new folder path (e.g. "my-approach"). Use empty string "" to move to root.'
+      }
     },
     required: ['title', 'newFolderId']
   }),
@@ -20,9 +24,14 @@ export const moveFileTool = aiSdk.tool({
       target = snippets.find((s) => s.title.toLowerCase().includes(cleanTitle.toLowerCase()))
     }
     if (!target) return { success: false, error: 'File not found' }
-    
+
     await vs.saveSnippet({ ...target, folderId: newFolderId })
     await vs.loadVault()
-    return { success: true, title: target.title, newFolderId, instruction_to_ai: `File moved to folder "${newFolderId}" successfully.` }
+    return {
+      success: true,
+      title: target.title,
+      newFolderId,
+      instruction_to_ai: `File moved to folder "${newFolderId}" successfully.`
+    }
   }
 })

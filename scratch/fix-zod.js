@@ -1,9 +1,14 @@
-const fs = require('fs');
-const path = require('path');
-const toolsDir = 'b:/electron/lumina/src/renderer/src/features/AI/tools';
+const fs = require('fs')
+const path = require('path')
+const toolsDir = 'b:/electron/lumina/src/renderer/src/features/AI/tools'
 
-const files = fs.readdirSync(toolsDir).filter(f => f.endsWith('.js') && !f.includes('index') && !f.includes('LuminaChat') && !f.includes('bulk'));
-files.push('executeBulkPlan.js');
+const files = fs
+  .readdirSync(toolsDir)
+  .filter(
+    (f) =>
+      f.endsWith('.js') && !f.includes('index') && !f.includes('LuminaChat') && !f.includes('bulk')
+  )
+files.push('executeBulkPlan.js')
 
 const schemas = {
   'createFile.js': `{
@@ -116,22 +121,28 @@ const schemas = {
     },
     required: ['title']
   }`
-};
+}
 
-files.forEach(f => {
-  const filePath = path.join(toolsDir, f);
-  let content = fs.readFileSync(filePath, 'utf8');
+files.forEach((f) => {
+  const filePath = path.join(toolsDir, f)
+  let content = fs.readFileSync(filePath, 'utf8')
 
   // Replace import { z } from 'zod'
-  content = content.replace(/import { z } from 'zod'\n/g, '');
+  content = content.replace(/import { z } from 'zod'\n/g, '')
 
   if (schemas[f]) {
     // Replace parameters: z.object(...) with parameters: aiSdk.jsonSchema(...)
-    content = content.replace(/parameters:\s*z\.object\([\s\S]*?\),/, 'parameters: aiSdk.jsonSchema(' + schemas[f] + '),');
+    content = content.replace(
+      /parameters:\s*z\.object\([\s\S]*?\),/,
+      'parameters: aiSdk.jsonSchema(' + schemas[f] + '),'
+    )
     // For executeBulkPlan.js where it doesn't have a trailing comma
-    content = content.replace(/parameters:\s*z\.object\([\s\S]*?\)\s+}\)/, 'parameters: aiSdk.jsonSchema(' + schemas[f] + ')\n  })');
+    content = content.replace(
+      /parameters:\s*z\.object\([\s\S]*?\)\s+}\)/,
+      'parameters: aiSdk.jsonSchema(' + schemas[f] + ')\n  })'
+    )
   }
 
-  fs.writeFileSync(filePath, content, 'utf8');
-  console.log('Fixed ' + f);
-});
+  fs.writeFileSync(filePath, content, 'utf8')
+  console.log('Fixed ' + f)
+})

@@ -17,10 +17,7 @@ module.exports = defineConfig({
   // Retry once on CI for flaky startup
   retries: process.env.CI ? 1 : 0,
 
-  reporter: [
-    ['list'],
-    ['html', { outputFolder: 'test/e2e/report', open: 'never' }]
-  ],
+  reporter: [['list'], ['html', { outputFolder: 'test/e2e/report', open: 'never' }]],
 
   use: {
     screenshot: 'only-on-failure',

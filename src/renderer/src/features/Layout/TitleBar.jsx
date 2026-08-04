@@ -28,7 +28,9 @@ const TitleBar = () => {
             alt="Lumina Logo"
             style={{ width: 14, height: 14, objectFit: 'contain' }}
           />
-          <span className="app-name" data-testid="app-name">Lumina</span>
+          <span className="app-name" data-testid="app-name">
+            Lumina
+          </span>
         </div>
       </div>
 

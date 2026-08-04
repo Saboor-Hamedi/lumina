@@ -10,7 +10,10 @@ export function useFileSearch(snippets, query, settings) {
   // 0. Fuse Index (title + folderId, with score info)
   const fuseIndex = useMemo(() => {
     return new Fuse(snippets, {
-      keys: [{ name: 'title', weight: 3 }, { name: 'folderId', weight: 1 }],
+      keys: [
+        { name: 'title', weight: 3 },
+        { name: 'folderId', weight: 1 }
+      ],
       threshold: 0.4,
       ignoreLocation: true,
       includeScore: true

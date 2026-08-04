@@ -4,12 +4,16 @@ import userEvent from '@testing-library/user-event'
 import InlineLumina from '../../../../../src/renderer/src/features/Overlays/InlineLumina'
 import { useSettingsStore } from '../../../../../src/renderer/src/core/store/useSettingsStore'
 
-function makeEditorView({ docText = 'first line\nsecond line', selection = { from: 0, to: 0 } } = {}) {
+function makeEditorView({
+  docText = 'first line\nsecond line',
+  selection = { from: 0, to: 0 }
+} = {}) {
   const lines = docText.split('\n')
   const lineInfo = (num) => {
     let acc = 0
     for (let i = 0; i < lines.length; i++) {
-      if (i + 1 === num) return { number: num, from: acc, to: acc + lines[i].length, text: lines[i] }
+      if (i + 1 === num)
+        return { number: num, from: acc, to: acc + lines[i].length, text: lines[i] }
       acc += lines[i].length + 1
     }
     return { number: num, from: acc, to: acc, text: '' }
@@ -139,7 +143,9 @@ describe('InlineLumina', () => {
     })
 
     it('renders a streaming response when a key is configured', async () => {
-      useSettingsStore.setState({ settings: { deepSeekKey: 'test-key', deepSeekModel: 'deepseek-chat' } })
+      useSettingsStore.setState({
+        settings: { deepSeekKey: 'test-key', deepSeekModel: 'deepseek-chat' }
+      })
       mockStreamingResponse([makeDelta('Hello '), makeDelta('world')])
 
       renderOpen()
@@ -157,8 +163,12 @@ describe('InlineLumina', () => {
     })
 
     it('shows error message when API returns non-ok', async () => {
-      useSettingsStore.setState({ settings: { deepSeekKey: 'test-key', deepSeekModel: 'deepseek-chat' } })
-      global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500, json: () => Promise.resolve({}) })
+      useSettingsStore.setState({
+        settings: { deepSeekKey: 'test-key', deepSeekModel: 'deepseek-chat' }
+      })
+      global.fetch = vi
+        .fn()
+        .mockResolvedValue({ ok: false, status: 500, json: () => Promise.resolve({}) })
 
       renderOpen()
       const input = screen.getByPlaceholderText('Ask Lumina...')
@@ -173,7 +183,9 @@ describe('InlineLumina', () => {
 
   describe('actions', () => {
     it('calls onInsert with response when Insert clicked', async () => {
-      useSettingsStore.setState({ settings: { deepSeekKey: 'test-key', deepSeekModel: 'deepseek-chat' } })
+      useSettingsStore.setState({
+        settings: { deepSeekKey: 'test-key', deepSeekModel: 'deepseek-chat' }
+      })
       mockStreamingResponse([makeDelta('Expanded text')])
       const onInsert = vi.fn()
 
@@ -190,7 +202,9 @@ describe('InlineLumina', () => {
 
     it('passes from/to range to onInsert when selection context exists', async () => {
       const view = makeEditorView({ docText: 'hello world', selection: { from: 0, to: 5 } })
-      useSettingsStore.setState({ settings: { deepSeekKey: 'test-key', deepSeekModel: 'deepseek-chat' } })
+      useSettingsStore.setState({
+        settings: { deepSeekKey: 'test-key', deepSeekModel: 'deepseek-chat' }
+      })
       mockStreamingResponse([makeDelta('Replacement')])
       const onInsert = vi.fn()
 
@@ -206,7 +220,9 @@ describe('InlineLumina', () => {
     })
 
     it('copies response to clipboard', async () => {
-      useSettingsStore.setState({ settings: { deepSeekKey: 'test-key', deepSeekModel: 'deepseek-chat' } })
+      useSettingsStore.setState({
+        settings: { deepSeekKey: 'test-key', deepSeekModel: 'deepseek-chat' }
+      })
       mockStreamingResponse([makeDelta('Copyable text')])
 
       renderOpen()
@@ -222,7 +238,9 @@ describe('InlineLumina', () => {
     })
 
     it('calls onClose when close button clicked', async () => {
-      useSettingsStore.setState({ settings: { deepSeekKey: 'test-key', deepSeekModel: 'deepseek-chat' } })
+      useSettingsStore.setState({
+        settings: { deepSeekKey: 'test-key', deepSeekModel: 'deepseek-chat' }
+      })
       mockStreamingResponse([makeDelta('Text')])
       const onClose = vi.fn()
 
@@ -260,13 +278,13 @@ describe('InlineLumina', () => {
 
   describe('reset', () => {
     it('clears state when closed again', async () => {
-      useSettingsStore.setState({ settings: { deepSeekKey: 'test-key', deepSeekModel: 'deepseek-chat' } })
+      useSettingsStore.setState({
+        settings: { deepSeekKey: 'test-key', deepSeekModel: 'deepseek-chat' }
+      })
       mockStreamingResponse([makeDelta('Generated')])
 
       const onClose = vi.fn()
-      const { rerender } = render(
-        <InlineLumina isOpen onClose={onClose} onInsert={vi.fn()} />
-      )
+      const { rerender } = render(<InlineLumina isOpen onClose={onClose} onInsert={vi.fn()} />)
       const input = screen.getByPlaceholderText('Ask Lumina...')
       await userEvent.type(input, 'expand this')
       await userEvent.keyboard('{Enter}')

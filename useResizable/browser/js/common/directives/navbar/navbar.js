@@ -1,48 +1,43 @@
 app.directive('navbar', function ($rootScope, AuthService, AUTH_EVENTS, $state) {
+  return {
+    restrict: 'E',
+    scope: {},
+    templateUrl: 'js/common/directives/navbar/navbar.html',
+    link: function (scope) {
+      scope.items = [
+        { label: 'Home', state: 'home' },
+        { label: 'About', state: 'about' },
+        { label: 'Documentation', state: 'docs' },
+        { label: 'Members Only', state: 'membersOnly', auth: true }
+      ]
 
-    return {
-        restrict: 'E',
-        scope: {},
-        templateUrl: 'js/common/directives/navbar/navbar.html',
-        link: function (scope) {
+      scope.user = null
 
-            scope.items = [
-                { label: 'Home', state: 'home' },
-                { label: 'About', state: 'about' },
-                { label: 'Documentation', state: 'docs' },
-                { label: 'Members Only', state: 'membersOnly', auth: true }
-            ];
+      scope.isLoggedIn = function () {
+        return AuthService.isAuthenticated()
+      }
 
-            scope.user = null;
+      scope.logout = function () {
+        AuthService.logout().then(function () {
+          $state.go('home')
+        })
+      }
 
-            scope.isLoggedIn = function () {
-                return AuthService.isAuthenticated();
-            };
+      var setUser = function () {
+        AuthService.getLoggedInUser().then(function (user) {
+          scope.user = user
+        })
+      }
 
-            scope.logout = function () {
-                AuthService.logout().then(function () {
-                   $state.go('home');
-                });
-            };
+      var removeUser = function () {
+        scope.user = null
+      }
 
-            var setUser = function () {
-                AuthService.getLoggedInUser().then(function (user) {
-                    scope.user = user;
-                });
-            };
+      setUser()
 
-            var removeUser = function () {
-                scope.user = null;
-            };
-
-            setUser();
-
-            $rootScope.$on(AUTH_EVENTS.loginSuccess, setUser);
-            $rootScope.$on(AUTH_EVENTS.logoutSuccess, removeUser);
-            $rootScope.$on(AUTH_EVENTS.sessionTimeout, removeUser);
-
-        }
-
-    };
-
-});
+      $rootScope.$on(AUTH_EVENTS.loginSuccess, setUser)
+      $rootScope.$on(AUTH_EVENTS.logoutSuccess, removeUser)
+      $rootScope.$on(AUTH_EVENTS.sessionTimeout, removeUser)
+    }
+  }
+})

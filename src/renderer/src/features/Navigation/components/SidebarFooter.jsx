@@ -20,14 +20,29 @@ const SidebarFooter = memo(({ onThemeClick, onSettingsClick }) => {
       </ToolTip>
 
       <div className="sidebar-footer-actions">
-        {(status === 'available' || status === 'downloading' || status === 'ready' || status === 'error' || status === 'checking') && (
-          <ToolTip text={status === 'downloading' ? `Downloading... ${Math.round(progress?.percent || 0)}%` : 'Update Lumina'}>
-            <button 
+        {(status === 'available' ||
+          status === 'downloading' ||
+          status === 'ready' ||
+          status === 'error' ||
+          status === 'checking') && (
+          <ToolTip
+            text={
+              status === 'downloading'
+                ? `Downloading... ${Math.round(progress?.percent || 0)}%`
+                : 'Update Lumina'
+            }
+          >
+            <button
               className={`sidebar-icon-btn update-btn ${status === 'downloading' ? 'loading' : ''} ${status === 'error' ? 'error' : ''}`}
-              onClick={status === 'error' ? () => useUpdateStore.getState().check() : handleUpdateClick}
+              onClick={
+                status === 'error' ? () => useUpdateStore.getState().check() : handleUpdateClick
+              }
             >
               {status === 'ready' || status === 'checking' ? (
-                <RefreshCw size={14} className={status === 'checking' ? 'spin-slow checking-spin' : 'spin-slow'} />
+                <RefreshCw
+                  size={14}
+                  className={status === 'checking' ? 'spin-slow checking-spin' : 'spin-slow'}
+                />
               ) : (
                 <ArrowUpCircle size={14} color={status === 'error' ? '#ef4444' : undefined} />
               )}

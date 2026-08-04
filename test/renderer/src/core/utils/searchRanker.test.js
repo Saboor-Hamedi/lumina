@@ -101,7 +101,8 @@ describe('searchRanker', () => {
   })
 
   describe('extractContentSnippet', () => {
-    const body = 'This is a long body of text that contains the search query somewhere in the middle for testing purposes.'
+    const body =
+      'This is a long body of text that contains the search query somewhere in the middle for testing purposes.'
 
     it('returns empty for null body', () => {
       expect(extractContentSnippet(null, 'test', ['test'])).toBe('')

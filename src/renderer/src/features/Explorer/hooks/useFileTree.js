@@ -63,7 +63,10 @@ export function useFileTree({
 
     // Helper: recursively calculate total notes inside a folder hierarchy for collapsed item badges
     const getNoteCount = (node) => {
-      return node.files.length + Object.values(node.children).reduce((acc, child) => acc + getNoteCount(child), 0)
+      return (
+        node.files.length +
+        Object.values(node.children).reduce((acc, child) => acc + getNoteCount(child), 0)
+      )
     }
 
     const traverse = (node, depth, parentId = '') => {

@@ -38,7 +38,7 @@ export const useSettingsStore = create((set, get) => ({
     openaiKey: null,
     anthropicKey: null,
     ollamaUrl: 'http://localhost:11434/api/chat',
-    
+
     // Favorites
     pinnedFolders: []
   },
@@ -219,13 +219,13 @@ export const useSettingsStore = create((set, get) => ({
   togglePinnedFolder: async (folderId) => {
     const current = get().settings.pinnedFolders || []
     const newPinned = current.includes(folderId)
-      ? current.filter(id => id !== folderId)
+      ? current.filter((id) => id !== folderId)
       : [...current, folderId]
-      
+
     set((state) => ({
       settings: { ...state.settings, pinnedFolders: newPinned }
     }))
-    
+
     try {
       if (window.api && window.api.saveSetting) {
         await window.api.saveSetting('pinnedFolders', newPinned)

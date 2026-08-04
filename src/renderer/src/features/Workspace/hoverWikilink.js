@@ -52,7 +52,7 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
       headerTitle.style.whiteSpace = 'nowrap'
       headerTitle.style.flex = '1'
       headerTitle.style.transform = 'translateY(1px)' // visual optical adjustment for center
-      
+
       header.appendChild(headerTitle)
 
       if (noteId) {
@@ -67,7 +67,7 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
         expandIcon.style.marginLeft = '8px'
         expandIcon.style.padding = '2px'
         expandIcon.style.borderRadius = '4px'
-        
+
         expandIcon.onmouseover = () => {
           expandIcon.style.color = 'var(--text-accent)'
           expandIcon.style.background = 'var(--bg-modifier-hover, rgba(255, 255, 255, 0.05))'
@@ -123,17 +123,17 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
           const code = block.textContent
           const id = `hover-mermaid-${Date.now()}-${idx}`
           const pre = block.parentElement
-          
+
           const wrapper = document.createElement('div')
           wrapper.className = 'cm-mermaid-widget'
           wrapper.style.margin = '10px 0'
-          
+
           const scrollWrap = document.createElement('div')
           scrollWrap.className = 'mermaid-scroll-wrap'
-          
+
           const contentDiv = document.createElement('div')
           contentDiv.className = 'mermaid-content'
-          
+
           contentDiv.innerHTML = `
             <div class="mermaid-loading">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -149,12 +149,12 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
               Rendering Graph...
             </div>
           `
-          
+
           scrollWrap.appendChild(contentDiv)
           wrapper.appendChild(scrollWrap)
-          
+
           pre.replaceWith(wrapper)
-          
+
           renderMermaidToElement(contentDiv, code, id)
         })
       }
@@ -165,7 +165,7 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
         if (codeEl.classList.contains('language-mermaid')) return
 
         const pre = codeEl.parentElement
-        
+
         let lang = 'text'
         codeEl.classList.forEach((cls) => {
           if (cls.startsWith('language-')) {
@@ -192,7 +192,7 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
         header.style.alignItems = 'center'
         header.style.justifyContent = 'flex-end'
         header.style.padding = '0 12px'
-        
+
         const langPill = document.createElement('span')
         langPill.textContent = lang.toUpperCase()
         langPill.style.fontSize = '10px'
@@ -217,16 +217,16 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
           langPill.style.background = 'rgba(255, 255, 255, 0.05)'
           langPill.style.borderColor = 'transparent'
         }
-        
+
         langPill.onclick = (e) => {
           e.stopPropagation()
           navigator.clipboard.writeText(codeEl.textContent)
-          
+
           langPill.textContent = 'COPIED!'
           langPill.style.color = '#10b981'
           langPill.style.borderColor = 'rgba(16, 185, 129, 0.2)'
           langPill.style.background = 'rgba(16, 185, 129, 0.1)'
-          
+
           setTimeout(() => {
             langPill.textContent = lang.toUpperCase()
             langPill.style.color = 'var(--text-muted, rgba(255, 255, 255, 0.4))'
@@ -246,7 +246,7 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
         pre.style.cursor = 'default'
         pre.style.margin = '0'
         pre.style.padding = '0'
-        
+
         codeEl.style.display = 'block'
         codeEl.style.padding = '12px'
         codeEl.style.background = 'transparent'
@@ -306,7 +306,8 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
           let targetSnippet = snippets?.find(
             (s) =>
               s.title &&
-              (s.title.toLowerCase() === targetLower || s.title.toLowerCase() === `${targetLower}.md`)
+              (s.title.toLowerCase() === targetLower ||
+                s.title.toLowerCase() === `${targetLower}.md`)
           )
           if (!targetSnippet) {
             targetSnippet = {
@@ -340,7 +341,7 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
     const rect = hoverCard.getBoundingClientRect()
 
     let top = y + 20
-    let left = x - (rect.width / 2)
+    let left = x - rect.width / 2
 
     const viewportWidth = window.innerWidth
     const viewportHeight = window.innerHeight
@@ -355,7 +356,7 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
     // Smart positioning: if there is no space below, place it above the cursor
     if (top + rect.height > viewportHeight - 20) {
       top = y - rect.height - 20
-      
+
       // If it also doesn't fit above, stick to top of screen
       if (top < 20) {
         top = 20
@@ -426,14 +427,18 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
     if (isOverLink && !wrapper.contains(isOverLink)) {
       isOverLink = null // Ignore links from other editor instances
     }
-    const isOverCard = hoverCard && (hoverCard.contains(e.target) || (e.target && e.target.closest && e.target.closest('.cm-wiki-hover')))
+    const isOverCard =
+      hoverCard &&
+      (hoverCard.contains(e.target) ||
+        (e.target && e.target.closest && e.target.closest('.cm-wiki-hover')))
 
     if (isOverLink) {
       if (closeTimeout) {
         clearTimeout(closeTimeout)
         closeTimeout = null
       }
-      const target = isOverLink.getAttribute('data-wiki-link-target') || isOverLink.getAttribute('data-url')
+      const target =
+        isOverLink.getAttribute('data-wiki-link-target') || isOverLink.getAttribute('data-url')
       if (target && currentTarget !== target && !hoverCard && !hoverTimeout) {
         handleMouseOver(e)
       }

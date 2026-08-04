@@ -2,12 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import './RenameModal.css'
 
-const RenameModal = ({
-  isOpen,
-  onClose,
-  onRename,
-  initialName = ''
-}) => {
+const RenameModal = ({ isOpen, onClose, onRename, initialName = '' }) => {
   const [newName, setNewName] = useState(initialName)
   const inputRef = useRef(null)
 

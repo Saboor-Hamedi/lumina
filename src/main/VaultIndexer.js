@@ -710,10 +710,12 @@ class VaultIndexer {
 
       // Detect and remove deleted files from index
       const currentFilesSet = new Set(files)
-      const deletedFiles = Object.keys(state.files || {}).filter(f => !currentFilesSet.has(f))
-      
+      const deletedFiles = Object.keys(state.files || {}).filter((f) => !currentFilesSet.has(f))
+
       if (deletedFiles.length > 0) {
-        console.info(`[VaultIndexer] Found ${deletedFiles.length} deleted files to remove from index`)
+        console.info(
+          `[VaultIndexer] Found ${deletedFiles.length} deleted files to remove from index`
+        )
         await this.appendToIndex([], Buffer.alloc(0), deletedFiles)
         for (const df of deletedFiles) {
           delete state.files[df]

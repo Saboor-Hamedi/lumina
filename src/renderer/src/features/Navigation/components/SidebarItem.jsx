@@ -20,14 +20,18 @@ const SidebarItem = ({
   searchQuery,
   matchSnippet
 }) => {
-  const { dirtySnippetIds, deleteSnippet, saveSnippet } = useVaultStore(useShallow(state => ({
-    dirtySnippetIds: state.dirtySnippetIds,
-    deleteSnippet: state.deleteSnippet,
-    saveSnippet: state.saveSnippet
-  })))
-  const { togglePinnedFolder } = useSettingsStore(useShallow(state => ({
-    togglePinnedFolder: state.togglePinnedFolder
-  })))
+  const { dirtySnippetIds, deleteSnippet, saveSnippet } = useVaultStore(
+    useShallow((state) => ({
+      dirtySnippetIds: state.dirtySnippetIds,
+      deleteSnippet: state.deleteSnippet,
+      saveSnippet: state.saveSnippet
+    }))
+  )
+  const { togglePinnedFolder } = useSettingsStore(
+    useShallow((state) => ({
+      togglePinnedFolder: state.togglePinnedFolder
+    }))
+  )
   const isDirty = dirtySnippetIds.includes(snippet.id)
 
   const [isRenaming, setIsRenaming] = useState(false)
@@ -164,13 +168,13 @@ const SidebarItem = ({
         ref={dndProps?.setNodeRef}
         className="start-grid-item"
         onClick={(e) => {
-          if (e.button !== 0) return; // Ensure only left clicks trigger selection
-          if (!isRenaming && onClick) onClick(e);
+          if (e.button !== 0) return // Ensure only left clicks trigger selection
+          if (!isRenaming && onClick) onClick(e)
         }}
         onContextMenu={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          handleContextMenu(e);
+          e.preventDefault()
+          e.stopPropagation()
+          handleContextMenu(e)
         }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -218,13 +222,13 @@ const SidebarItem = ({
       ref={dndProps?.setNodeRef}
       className={`tree-item ${isActive ? 'active' : ''} ${isDirty ? 'is-dirty' : ''}`}
       onClick={(e) => {
-        if (e.button !== 0) return;
-        if (!isRenaming && onClick) onClick(e);
+        if (e.button !== 0) return
+        if (!isRenaming && onClick) onClick(e)
       }}
       onContextMenu={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        handleContextMenu(e);
+        e.preventDefault()
+        e.stopPropagation()
+        handleContextMenu(e)
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -257,9 +261,21 @@ const SidebarItem = ({
           onClick={(e) => e.stopPropagation()}
         />
       ) : (
-        <div className="item-title-col" style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+        <div
+          className="item-title-col"
+          style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}
+        >
           <ToolTip text={snippet.title || 'Untitled'} position="bottom" delay={600}>
-            <span className="item-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', ...(isActive ? { color: 'var(--text-accent)' } : {}) }}>
+            <span
+              className="item-title"
+              style={{
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                display: 'block',
+                ...(isActive ? { color: 'var(--text-accent)' } : {})
+              }}
+            >
               {highlightText(snippet.title || 'Untitled', searchQuery)}
             </span>
           </ToolTip>

@@ -11,8 +11,18 @@ import { useDraggableModal } from './useDraggableModal'
 import './ColorModal.css'
 
 const PRESET_PALETTE = [
-  '#40bafa', '#3b82f6', '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e',
-  '#f97316', '#f59e0b', '#10b981', '#14b8a6', '#06b6d4', '#ffffff'
+  '#40bafa',
+  '#3b82f6',
+  '#6366f1',
+  '#8b5cf6',
+  '#ec4899',
+  '#f43f5e',
+  '#f97316',
+  '#f59e0b',
+  '#10b981',
+  '#14b8a6',
+  '#06b6d4',
+  '#ffffff'
 ]
 
 const ColorModal = ({
@@ -70,7 +80,12 @@ const ColorModal = ({
   return createPortal(
     <div className="modal-overlay color-modal-overlay" onClick={handleCancel}>
       <div className="color-modal-container" onClick={(e) => e.stopPropagation()} style={dragStyle}>
-        <ModalHeader title={title || 'Select Color'} onClose={handleCancel} onMouseDown={handleDragStart} style={{ cursor: 'grab' }} />
+        <ModalHeader
+          title={title || 'Select Color'}
+          onClose={handleCancel}
+          onMouseDown={handleDragStart}
+          style={{ cursor: 'grab' }}
+        />
 
         <div className="color-modal-body">
           {/* Curated Palette Grid */}

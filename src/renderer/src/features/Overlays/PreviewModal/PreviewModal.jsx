@@ -12,7 +12,11 @@ import { htmlWidgetExtension } from '../../Workspace/htmlWidgetExtension'
 import { tables } from '../../Workspace/tableWidgetExtension'
 import { mermaidWidgetExtension } from '../../Workspace/mermaidWidgetExtension'
 import { calloutExtension } from '../../Workspace/calloutWidgetExtension'
-import { codeBlockDecorations, codeMap, luminaSyntaxHighlighting } from '../../Workspace/codeBlockHeader'
+import {
+  codeBlockDecorations,
+  codeMap,
+  luminaSyntaxHighlighting
+} from '../../Workspace/codeBlockHeader'
 import '@atomic-editor/editor/styles.css'
 import '../../Editor/MarkdownEditor.css'
 import '../../Editor/CodeWrapper.css'
@@ -25,13 +29,13 @@ const PreviewModal = ({ isOpen, onClose, title, content }) => {
   const [copiedBlockId, setCopiedBlockId] = useState(null)
 
   useKeyboardShortcuts({
-    onEscape: isOpen ? () => {
-      onClose()
-      return true
-    } : undefined
+    onEscape: isOpen
+      ? () => {
+          onClose()
+          return true
+        }
+      : undefined
   })
-
-  
 
   useEffect(() => {
     if (isOpen) {
@@ -46,55 +50,60 @@ const PreviewModal = ({ isOpen, onClose, title, content }) => {
     }
   }, [isOpen])
 
-  const handleLinkClick = useMemo(() => async (url) => {
-    if (url.match(/^(https?|mailto|file):\/\//i)) {
-      window.open(url, '_blank')
-      return
-    }
-    try {
-      const { snippets, setSelectedSnippet } = useVaultStore.getState()
-      const targetLower = url.toLowerCase()
-      const targetSnippet = snippets.find(
-        (s) =>
-          s.title &&
-          (s.title.toLowerCase() === targetLower ||
-            s.title.toLowerCase() === `${targetLower}.md`)
-      )
-      if (targetSnippet) {
-        setSelectedSnippet(targetSnippet)
-        onClose()
+  const handleLinkClick = useMemo(
+    () => async (url) => {
+      if (url.match(/^(https?|mailto|file):\/\//i)) {
+        window.open(url, '_blank')
+        return
       }
-    } catch (e) {
-      console.error(e)
-    }
-  }, [onClose])
-
-  const extensions = useMemo(() => [
-    EditorState.readOnly.of(true),
-    EditorView.editable.of(false),
-    imageWidgetExtension,
-    htmlWidgetExtension,
-    mermaidWidgetExtension,
-    calloutExtension,
-    codeBlockDecorations,
-    luminaSyntaxHighlighting,
-    tables({ onLinkClick: handleLinkClick }),
-    wikiLinks({
-      openOnClick: true,
-      resolve: async (target) => {
-        const { snippets } = useVaultStore.getState()
-        const targetLower = target.toLowerCase()
-        const exists = snippets.some(
+      try {
+        const { snippets, setSelectedSnippet } = useVaultStore.getState()
+        const targetLower = url.toLowerCase()
+        const targetSnippet = snippets.find(
           (s) =>
             s.title &&
-            (s.title.toLowerCase() === targetLower ||
-              s.title.toLowerCase() === `${targetLower}.md`)
+            (s.title.toLowerCase() === targetLower || s.title.toLowerCase() === `${targetLower}.md`)
         )
-        return { label: target, status: exists ? 'resolved' : 'missing' }
-      },
-      onOpen: handleLinkClick
-    })
-  ], [handleLinkClick])
+        if (targetSnippet) {
+          setSelectedSnippet(targetSnippet)
+          onClose()
+        }
+      } catch (e) {
+        console.error(e)
+      }
+    },
+    [onClose]
+  )
+
+  const extensions = useMemo(
+    () => [
+      EditorState.readOnly.of(true),
+      EditorView.editable.of(false),
+      imageWidgetExtension,
+      htmlWidgetExtension,
+      mermaidWidgetExtension,
+      calloutExtension,
+      codeBlockDecorations,
+      luminaSyntaxHighlighting,
+      tables({ onLinkClick: handleLinkClick }),
+      wikiLinks({
+        openOnClick: true,
+        resolve: async (target) => {
+          const { snippets } = useVaultStore.getState()
+          const targetLower = target.toLowerCase()
+          const exists = snippets.some(
+            (s) =>
+              s.title &&
+              (s.title.toLowerCase() === targetLower ||
+                s.title.toLowerCase() === `${targetLower}.md`)
+          )
+          return { label: target, status: exists ? 'resolved' : 'missing' }
+        },
+        onOpen: handleLinkClick
+      })
+    ],
+    [handleLinkClick]
+  )
 
   if (!isOpen) return null
 
@@ -105,20 +114,28 @@ const PreviewModal = ({ isOpen, onClose, title, content }) => {
       <span className="preview-indicator-tag">PREVIEW</span>
       <div className="preview-stat-sep" />
       <div className="preview-stat-item">
-        <FileText size={12}/> {wordCount} words
+        <FileText size={12} /> {wordCount} words
       </div>
     </div>
   )
 
   return createPortal(
     <div className="modal-overlay theme-modal-overlay" onClick={onClose}>
-      <div 
-        className="modal-container theme-modal-container preview-modal-container" 
+      <div
+        className="modal-container theme-modal-container preview-modal-container"
         onClick={(e) => e.stopPropagation()}
       >
-        <ModalHeader title={`Preview: ${title}`} right={headerStats} icon={<FileText size={16} />} onClose={onClose} />
+        <ModalHeader
+          title={`Preview: ${title}`}
+          right={headerStats}
+          icon={<FileText size={16} />}
+          onClose={onClose}
+        />
 
-        <div className="preview-body preview-modal-body seamless-scrollbar markdown-editor mode-source" style={{ overflowY: 'auto', flex: 1, padding: '24px 32px', background: 'var(--bg-app)' }}>
+        <div
+          className="preview-body preview-modal-body seamless-scrollbar markdown-editor mode-source"
+          style={{ overflowY: 'auto', flex: 1, padding: '24px 32px', background: 'var(--bg-app)' }}
+        >
           <style>{`
             .preview-modal-body .editor-canvas-wrap {
               max-width: 100% !important;
@@ -151,9 +168,15 @@ const PreviewModal = ({ isOpen, onClose, title, content }) => {
               }
             }
           `}</style>
-          <div 
-            className="editor-canvas-wrap" 
-            style={{ height: 'auto', display: 'block', width: '100%', maxWidth: '100%', padding: 0 }}
+          <div
+            className="editor-canvas-wrap"
+            style={{
+              height: 'auto',
+              display: 'block',
+              width: '100%',
+              maxWidth: '100%',
+              padding: 0
+            }}
             onMouseDown={async (e) => {
               const codeLine = e.target.closest('.cm-line.cb-code-header')
               if (codeLine) {
@@ -188,10 +211,31 @@ const PreviewModal = ({ isOpen, onClose, title, content }) => {
                 blurEditorOnMount={true}
               />
             ) : (
-              <div style={{ padding: '60px', color: 'var(--text-faint)', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+              <div
+                style={{
+                  padding: '60px',
+                  color: 'var(--text-faint)',
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '12px'
+                }}
+              >
                 <div className="mermaid-loading" style={{ opacity: 0.5 }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-loader-2">
-                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="lucide lucide-loader-2"
+                  >
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
                   </svg>
                 </div>
               </div>

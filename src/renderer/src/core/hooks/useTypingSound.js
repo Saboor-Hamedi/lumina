@@ -75,11 +75,12 @@ export function useTypingSound() {
       // Fast check: Is focus inside the CodeMirror or ProseMirror editor?
       const target = e.target
       if (!target) return
-      
-      const isEditor = target.classList?.contains('cm-content') || 
-                       target.classList?.contains('ProseMirror') ||
-                       (target.closest && (target.closest('.cm-editor') || target.closest('.ProseMirror')))
-      
+
+      const isEditor =
+        target.classList?.contains('cm-content') ||
+        target.classList?.contains('ProseMirror') ||
+        (target.closest && (target.closest('.cm-editor') || target.closest('.ProseMirror')))
+
       if (isEditor) {
         playSound()
       }

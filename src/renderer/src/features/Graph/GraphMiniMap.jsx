@@ -9,10 +9,10 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DM
     const draw = () => {
       const canvas = canvasRef.current
       if (!canvas || !graphRef.current) return
-      
+
       const ctx = canvas.getContext('2d')
       const { width, height } = canvas
-      
+
       // Clear background
       ctx.clearRect(0, 0, width, height)
 
@@ -23,7 +23,10 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DM
       }
 
       // 1. Calculate bounds of the entire graph
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+      let minX = Infinity,
+        minY = Infinity,
+        maxX = -Infinity,
+        maxY = -Infinity
       for (let i = 0; i < nodes.length; i++) {
         const n = nodes[i]
         if (n.x < minX) minX = n.x
@@ -57,7 +60,7 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DM
         const cx = n.x * scale + offsetX
         const cy = n.y * scale + offsetY
         const r = Math.max(1, (n.val ? Math.sqrt(n.val) : 1) * 0.5)
-        
+
         ctx.beginPath()
         ctx.arc(cx, cy, r, 0, Math.PI * 2)
         ctx.fill()
@@ -68,23 +71,23 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DM
         if (!is3DMode && graphRef.current.zoom && graphRef.current.centerAt) {
           const currentZoom = graphRef.current.zoom()
           const currentCenter = graphRef.current.centerAt()
-          
+
           if (currentZoom && currentCenter) {
             const vpWidthGraph = mainWidth / currentZoom
             const vpHeightGraph = mainHeight / currentZoom
-            
+
             const vpMinX = currentCenter.x - vpWidthGraph / 2
             const vpMinY = currentCenter.y - vpHeightGraph / 2
-            
+
             const boxX = vpMinX * scale + offsetX
             const boxY = vpMinY * scale + offsetY
             const boxW = vpWidthGraph * scale
             const boxH = vpHeightGraph * scale
-            
+
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'
             ctx.lineWidth = 1
             ctx.strokeRect(boxX, boxY, boxW, boxH)
-            
+
             // Semi-transparent fill for viewport
             ctx.fillStyle = 'rgba(255, 255, 255, 0.05)'
             ctx.fillRect(boxX, boxY, boxW, boxH)
@@ -111,7 +114,7 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DM
   }
 
   return (
-    <div 
+    <div
       style={{
         position: 'absolute',
         bottom: '24px',
@@ -128,13 +131,13 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DM
       }}
       onClick={(e) => e.stopPropagation()}
     >
-      <canvas 
+      <canvas
         ref={canvasRef}
         width={160}
         height={120}
         style={{ width: '100%', height: '100%', display: 'block' }}
       />
-      
+
       {/* Recenter Button Overlay */}
       <button
         onClick={handleRecenter}

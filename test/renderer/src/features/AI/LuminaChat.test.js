@@ -47,7 +47,7 @@ describe('useAIStore', () => {
     it('should resolve when worker responds with complete status', async () => {
       const { result } = renderHook(() => useAIStore())
       const worker = global.__mockWorkerInstance
-      
+
       let embeddingPromise
       act(() => {
         embeddingPromise = result.current.generateEmbedding('test text')

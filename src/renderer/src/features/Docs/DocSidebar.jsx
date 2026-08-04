@@ -8,11 +8,11 @@ const DocSidebar = ({ docs, selectedDoc, setSelectedDoc }) => {
   const groupedDocs = useMemo(() => {
     const groups = { root: [] }
     const query = searchQuery.toLowerCase()
-    
-    Object.keys(docs).forEach(path => {
+
+    Object.keys(docs).forEach((path) => {
       const name = path.split('/').pop().replace('.md', '')
       if (query && !name.toLowerCase().includes(query)) return
-      
+
       const parts = path.split('/')
       if (parts.length === 1) {
         groups.root.push(path)
@@ -30,26 +30,28 @@ const DocSidebar = ({ docs, selectedDoc, setSelectedDoc }) => {
       <div className="docs-sidebar-header">
         <div className="docs-search-wrapper">
           <Search size={14} className="docs-search-icon" />
-          <input 
-            type="text" 
-            className="docs-search-input" 
-            placeholder="Search docs..." 
+          <input
+            type="text"
+            className="docs-search-input"
+            placeholder="Search docs..."
             value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
       </div>
       <div className="docs-sidebar-scrollable">
-        {Object.keys(groupedDocs).map(folder => {
+        {Object.keys(groupedDocs).map((folder) => {
           const files = groupedDocs[folder]
           if (files.length === 0) return null
           return (
             <div key={folder} className="docs-sidebar-group">
-              <div className="docs-sidebar-group-title">{folder === 'root' ? 'General' : folder}</div>
-              {files.map(path => {
+              <div className="docs-sidebar-group-title">
+                {folder === 'root' ? 'General' : folder}
+              </div>
+              {files.map((path) => {
                 const name = path.split('/').pop().replace('.md', '')
                 return (
-                  <div 
+                  <div
                     key={path}
                     className={`docs-sidebar-item ${selectedDoc === path ? 'active' : ''}`}
                     onClick={() => setSelectedDoc(path)}
@@ -62,8 +64,15 @@ const DocSidebar = ({ docs, selectedDoc, setSelectedDoc }) => {
             </div>
           )
         })}
-        {Object.keys(groupedDocs).every(folder => groupedDocs[folder].length === 0) && (
-          <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-faint)', fontSize: '13px' }}>
+        {Object.keys(groupedDocs).every((folder) => groupedDocs[folder].length === 0) && (
+          <div
+            style={{
+              padding: '20px',
+              textAlign: 'center',
+              color: 'var(--text-faint)',
+              fontSize: '13px'
+            }}
+          >
             No documents found.
           </div>
         )}

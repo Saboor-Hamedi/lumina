@@ -5,8 +5,8 @@ import { tags as t } from '@lezer/highlight'
 
 export const luminaSyntaxHighlighting = syntaxHighlighting(
   HighlightStyle.define([
-    { 
-      tag: [t.heading, t.heading1, t.heading2, t.heading3, t.heading4, t.heading5, t.heading6], 
+    {
+      tag: [t.heading, t.heading1, t.heading2, t.heading3, t.heading4, t.heading5, t.heading6],
       class: 'lumina-heading-text'
     },
     { tag: [t.string, t.special(t.string)], class: 'lumina-syntax-string' },

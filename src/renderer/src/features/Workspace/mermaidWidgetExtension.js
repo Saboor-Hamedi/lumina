@@ -29,7 +29,7 @@ class MermaidWidget extends WidgetType {
       if (view.state.readOnly) return
       // Ignore clicks on buttons
       if (e.target.closest('.mermaid-edit-btn')) return
-      
+
       const pos = view.posAtDOM(wrap)
       if (pos !== null) {
         view.dispatch({ selection: { anchor: pos + 1 }, scrollIntoView: true })
@@ -78,14 +78,19 @@ class MermaidWidget extends WidgetType {
         if (svgEl) {
           try {
             await copyMermaidAsImage(svgEl)
-            
+
             setCopiedImage(true)
             setTimeout(() => setCopiedImage(false), 1500)
           } catch (err) {
             console.error('Failed to copy mermaid image', err)
-            window.dispatchEvent(new CustomEvent('show-toast', { 
-              detail: { message: `Failed to copy diagram: ${err.message || 'Tainted canvas'}`, type: 'error' } 
-            }))
+            window.dispatchEvent(
+              new CustomEvent('show-toast', {
+                detail: {
+                  message: `Failed to copy diagram: ${err.message || 'Tainted canvas'}`,
+                  type: 'error'
+                }
+              })
+            )
           }
         }
       }
@@ -109,54 +114,120 @@ class MermaidWidget extends WidgetType {
         }
       }
 
-      const copyIcon = React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: 14, height: 14, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", style: { display: 'block' } },
+      const copyIcon = React.createElement(
+        'svg',
+        {
+          xmlns: 'http://www.w3.org/2000/svg',
+          width: 14,
+          height: 14,
+          viewBox: '0 0 24 24',
+          fill: 'none',
+          stroke: 'currentColor',
+          strokeWidth: 2,
+          strokeLinecap: 'round',
+          strokeLinejoin: 'round',
+          style: { display: 'block' }
+        },
         React.createElement('rect', { x: 3, y: 3, width: 18, height: 18, rx: 2, ry: 2 }),
         React.createElement('circle', { cx: 8.5, cy: 8.5, r: 1.5 }),
-        React.createElement('polyline', { points: "21 15 16 10 5 21" })
+        React.createElement('polyline', { points: '21 15 16 10 5 21' })
       )
 
-      const textCopyIcon = React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: 14, height: 14, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", style: { display: 'block' } },
+      const textCopyIcon = React.createElement(
+        'svg',
+        {
+          xmlns: 'http://www.w3.org/2000/svg',
+          width: 14,
+          height: 14,
+          viewBox: '0 0 24 24',
+          fill: 'none',
+          stroke: 'currentColor',
+          strokeWidth: 2,
+          strokeLinecap: 'round',
+          strokeLinejoin: 'round',
+          style: { display: 'block' }
+        },
         React.createElement('rect', { x: 9, y: 9, width: 13, height: 13, rx: 2, ry: 2 }),
-        React.createElement('path', { d: "M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" })
+        React.createElement('path', {
+          d: 'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'
+        })
       )
 
-      const checkIcon = React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: 14, height: 14, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", style: { display: 'block' } },
-        React.createElement('polyline', { points: "20 6 9 17 4 12" })
+      const checkIcon = React.createElement(
+        'svg',
+        {
+          xmlns: 'http://www.w3.org/2000/svg',
+          width: 14,
+          height: 14,
+          viewBox: '0 0 24 24',
+          fill: 'none',
+          stroke: 'currentColor',
+          strokeWidth: 2,
+          strokeLinecap: 'round',
+          strokeLinejoin: 'round',
+          style: { display: 'block' }
+        },
+        React.createElement('polyline', { points: '20 6 9 17 4 12' })
       )
 
-      const editBtn = React.createElement(ToolTip, { text: 'Edit Code', position: 'top' },
-        React.createElement('div', { className: 'mermaid-edit-btn', style: { position: 'static' }, onClick: handleEdit }, '</>')
+      const editBtn = React.createElement(
+        ToolTip,
+        { text: 'Edit Code', position: 'top' },
+        React.createElement(
+          'div',
+          { className: 'mermaid-edit-btn', style: { position: 'static' }, onClick: handleEdit },
+          '</>'
+        )
       )
 
-      const copyImageBtn = React.createElement(ToolTip, { text: 'Copy as Image', position: 'top' },
-        React.createElement('div', { 
-          className: 'mermaid-edit-btn', 
-          style: { 
-            position: 'static', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: copiedImage ? '#4ade80' : undefined,
-            borderColor: copiedImage ? '#4ade80' : undefined
-          }, 
-          onClick: handleCopyImage 
-        }, copiedImage ? checkIcon : copyIcon)
+      const copyImageBtn = React.createElement(
+        ToolTip,
+        { text: 'Copy as Image', position: 'top' },
+        React.createElement(
+          'div',
+          {
+            className: 'mermaid-edit-btn',
+            style: {
+              position: 'static',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: copiedImage ? '#4ade80' : undefined,
+              borderColor: copiedImage ? '#4ade80' : undefined
+            },
+            onClick: handleCopyImage
+          },
+          copiedImage ? checkIcon : copyIcon
+        )
       )
 
-      const copySyntaxBtn = React.createElement(ToolTip, { text: 'Copy Syntax', position: 'top' },
-        React.createElement('div', { 
-          className: 'mermaid-edit-btn', 
-          style: { 
-            position: 'static', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: copiedSyntax ? '#4ade80' : undefined,
-            borderColor: copiedSyntax ? '#4ade80' : undefined
-          }, 
-          onClick: handleCopySyntax 
-        }, copiedSyntax ? checkIcon : textCopyIcon)
+      const copySyntaxBtn = React.createElement(
+        ToolTip,
+        { text: 'Copy Syntax', position: 'top' },
+        React.createElement(
+          'div',
+          {
+            className: 'mermaid-edit-btn',
+            style: {
+              position: 'static',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: copiedSyntax ? '#4ade80' : undefined,
+              borderColor: copiedSyntax ? '#4ade80' : undefined
+            },
+            onClick: handleCopySyntax
+          },
+          copiedSyntax ? checkIcon : textCopyIcon
+        )
       )
 
-      return React.createElement('div', { style: { display: 'flex', gap: '8px' } }, 
+      return React.createElement(
+        'div',
+        { style: { display: 'flex', gap: '8px' } },
         view.state.readOnly ? null : editBtn,
         copySyntaxBtn,
         copyImageBtn
-
       )
     }
 
@@ -164,7 +235,7 @@ class MermaidWidget extends WidgetType {
 
     const bodyWrap = document.createElement('div')
     bodyWrap.className = 'mermaid-widget-body'
-    
+
     const scrollWrap = document.createElement('div')
     scrollWrap.className = 'mermaid-scroll-wrap'
 

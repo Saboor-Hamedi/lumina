@@ -85,9 +85,7 @@ describe('handleRenameSnippet', () => {
       showToast: vi.fn()
     })
 
-    expect(saveSnippet).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Untitled' })
-    )
+    expect(saveSnippet).toHaveBeenCalledWith(expect.objectContaining({ title: 'Untitled' }))
   })
 
   it('reverts optimistic update on save failure', async () => {

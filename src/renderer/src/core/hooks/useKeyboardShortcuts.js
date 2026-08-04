@@ -59,7 +59,7 @@ export const useKeyboardShortcuts = (shortcuts) => {
     const handleOtherKeys = (e) => {
       // Prevent keyboard auto-repeat from triggering actions multiple times rapidly (e.g. creating 10 new notes)
       if (e.repeat) return
-      
+
       const isCmd = e.ctrlKey || e.metaKey
       const key = e.key.toLowerCase()
 
@@ -96,7 +96,7 @@ export const useKeyboardShortcuts = (shortcuts) => {
         e.preventDefault()
         shortcutsRef.current.onTogglePalette()
       }
-      
+
       // Toggle Command Palette: Ctrl+Shift+P
       if (isCmd && e.shiftKey && key === 'p' && shortcutsRef.current.onToggleCommandPalette) {
         e.preventDefault()

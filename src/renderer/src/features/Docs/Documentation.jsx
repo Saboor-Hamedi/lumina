@@ -8,39 +8,43 @@ import DocSidebar from './DocSidebar'
 import './Documentation.css'
 
 // Use Vite's glob import to read all markdown files in brain/ directory as raw strings
-const markdownFiles = import.meta.glob('../../../../../brain/**/*.md', { query: '?raw', eager: true, import: 'default' })
+const markdownFiles = import.meta.glob('../../../../../brain/**/*.md', {
+  query: '?raw',
+  eager: true,
+  import: 'default'
+})
 
 const DocsContent = React.memo(({ content, setSelectedDoc, docs }) => (
   <div className="docs-content">
     <div className="docs-content-inner">
       {content ? (
-        <ReactMarkdown 
+        <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           components={{
             a: ({ node, href, children, ...props }) => {
               return (
-                <a 
-                  href={href} 
-                  {...props} 
+                <a
+                  href={href}
+                  {...props}
                   onClick={(e) => {
-                    e.preventDefault();
-                    if (!href) return;
-                    
+                    e.preventDefault()
+                    if (!href) return
+
                     // Only handle internal brain/.md links
                     if (href.endsWith('.md')) {
                       // Normalize the path by removing leading './' or 'brain/'
-                      let targetPath = href.replace(/^(?:\.\/|brain\/)+/, '');
-                      
+                      let targetPath = href.replace(/^(?:\.\/|brain\/)+/, '')
+
                       // Support relative paths like 'features/01-architecture.md'
                       // If targetPath exists in docs, select it
                       if (docs && docs[targetPath]) {
-                        if (setSelectedDoc) setSelectedDoc(targetPath);
+                        if (setSelectedDoc) setSelectedDoc(targetPath)
                       } else {
                         // Attempt to find by filename only
-                        const filename = targetPath.split('/').pop();
-                        const match = Object.keys(docs || {}).find(k => k.endsWith(filename));
-                        if (match && setSelectedDoc) setSelectedDoc(match);
-                        else if (setSelectedDoc) setSelectedDoc(targetPath);
+                        const filename = targetPath.split('/').pop()
+                        const match = Object.keys(docs || {}).find((k) => k.endsWith(filename))
+                        if (match && setSelectedDoc) setSelectedDoc(match)
+                        else if (setSelectedDoc) setSelectedDoc(targetPath)
                       }
                     }
                     // Vault or external links do nothing
@@ -71,11 +75,9 @@ const Documentation = ({ isOpen, onClose }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isMaximized, setIsMaximized] = useState(false)
   const [isDraggingModal, setIsDraggingModal] = useState(false)
-  
+
   const containerRef = useRef()
-  const modalPos = useRef(
-    JSON.parse(localStorage.getItem('docs-modal-pos') || '{"x":0,"y":0}')
-  )
+  const modalPos = useRef(JSON.parse(localStorage.getItem('docs-modal-pos') || '{"x":0,"y":0}'))
   const dragStart = useRef({ x: 0, y: 0 })
   const rafId = useRef(null)
 
@@ -91,11 +93,11 @@ const Documentation = ({ isOpen, onClose }) => {
         }
       }
       setDocs(loadedDocs)
-      
+
       // Select the first doc by default (e.g. introduction.md)
-      const introDoc = Object.keys(loadedDocs).find(k => k.includes('introduction.md'))
+      const introDoc = Object.keys(loadedDocs).find((k) => k.includes('introduction.md'))
       const defaultDoc = introDoc || Object.keys(loadedDocs)[0]
-      
+
       if (defaultDoc) {
         setSelectedDoc(defaultDoc)
       }
@@ -113,12 +115,14 @@ const Documentation = ({ isOpen, onClose }) => {
           })
         } else if (typeof docs[selectedDoc] === 'function') {
           docs[selectedDoc]()
-            .then(text => {
+            .then((text) => {
               startTransition(() => setContent(text))
             })
-            .catch(err => {
+            .catch((err) => {
               startTransition(() => {
-                setContent(`# Error\n\nFailed to load document: \`${selectedDoc}\`\n\n*Error details: ${err.message}*`)
+                setContent(
+                  `# Error\n\nFailed to load document: \`${selectedDoc}\`\n\n*Error details: ${err.message}*`
+                )
               })
             })
         } else {
@@ -128,7 +132,9 @@ const Documentation = ({ isOpen, onClose }) => {
         }
       } else {
         startTransition(() => {
-          setContent(`# Document Not Found\n\nThe requested documentation file \`${selectedDoc}\` could not be found or has been renamed.\n\nPlease select another document from the sidebar.`)
+          setContent(
+            `# Document Not Found\n\nThe requested documentation file \`${selectedDoc}\` could not be found or has been renamed.\n\nPlease select another document from the sidebar.`
+          )
         })
       }
     } else {
@@ -139,31 +145,31 @@ const Documentation = ({ isOpen, onClose }) => {
   }, [selectedDoc, docs])
 
   const handleToggleMaximize = useCallback(() => {
-    setIsMaximized(prev => !prev)
+    setIsMaximized((prev) => !prev)
   }, [])
 
   const handleToggleSidebar = useCallback(() => {
-    setIsSidebarOpen(prev => !prev)
+    setIsSidebarOpen((prev) => !prev)
   }, [])
 
   // Drag logic
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (!isDraggingModal || isMaximized) return
-      
+
       const newX = e.clientX - dragStart.current.x
       const newY = e.clientY - dragStart.current.y
       modalPos.current = { x: newX, y: newY }
-      
+
       if (rafId.current) cancelAnimationFrame(rafId.current)
-      
+
       rafId.current = requestAnimationFrame(() => {
         if (containerRef.current) {
           containerRef.current.style.transform = `translate3d(${newX}px, ${newY}px, 0)`
         }
       })
     }
-    
+
     const handleMouseUp = () => {
       setIsDraggingModal(false)
       if (rafId.current) cancelAnimationFrame(rafId.current)
@@ -182,19 +188,22 @@ const Documentation = ({ isOpen, onClose }) => {
     }
   }, [isMaximized, isDraggingModal])
 
-  const handleModalHeaderMouseDown = useCallback((e) => {
-    if (isMaximized) return
-    setIsDraggingModal(true)
-    
-    if (containerRef.current) {
-      containerRef.current.style.transition = 'none'
-    }
+  const handleModalHeaderMouseDown = useCallback(
+    (e) => {
+      if (isMaximized) return
+      setIsDraggingModal(true)
 
-    dragStart.current = {
-      x: e.clientX - modalPos.current.x,
-      y: e.clientY - modalPos.current.y
-    }
-  }, [isMaximized])
+      if (containerRef.current) {
+        containerRef.current.style.transition = 'none'
+      }
+
+      dragStart.current = {
+        x: e.clientX - modalPos.current.x,
+        y: e.clientY - modalPos.current.y
+      }
+    },
+    [isMaximized]
+  )
 
   useKeyboardShortcuts({
     onEscape: () => {
@@ -209,18 +218,24 @@ const Documentation = ({ isOpen, onClose }) => {
   if (!isOpen) return null
 
   return (
-    <div className="nexus-overlay" onClick={onClose} style={{ backdropFilter: 'blur(4px)', background: 'rgba(0,0,0,0.4)' }}>
+    <div
+      className="nexus-overlay"
+      onClick={onClose}
+      style={{ backdropFilter: 'blur(4px)', background: 'rgba(0,0,0,0.4)' }}
+    >
       <div
         ref={containerRef}
         className={`nexus-container modal-container${isMaximized ? ' maximized' : ''}`}
         onClick={(e) => e.stopPropagation()}
-        style={{ 
+        style={{
           flexDirection: 'column',
           width: isMaximized ? '100%' : '90%',
           height: isMaximized ? '100%' : '700px',
           maxWidth: isMaximized ? 'none' : '1000px',
           maxHeight: isMaximized ? 'none' : '85vh',
-          transform: isMaximized ? 'none' : `translate3d(${modalPos.current.x}px, ${modalPos.current.y}px, 0)`,
+          transform: isMaximized
+            ? 'none'
+            : `translate3d(${modalPos.current.x}px, ${modalPos.current.y}px, 0)`,
           transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
           boxShadow: '0 12px 40px rgba(0, 0, 0, 0.4)',
           overflow: 'hidden'
@@ -239,7 +254,11 @@ const Documentation = ({ isOpen, onClose }) => {
               title={isSidebarOpen ? 'Close Sidebar' : 'Open Sidebar'}
               style={{ marginLeft: '-10px' }}
             >
-              {isSidebarOpen ? <PanelLeftClose size={12} strokeWidth={2} /> : <PanelLeftOpen size={12} strokeWidth={2} />}
+              {isSidebarOpen ? (
+                <PanelLeftClose size={12} strokeWidth={2} />
+              ) : (
+                <PanelLeftOpen size={12} strokeWidth={2} />
+              )}
             </button>
           }
           right={
@@ -259,13 +278,9 @@ const Documentation = ({ isOpen, onClose }) => {
 
         <div className="docs-container">
           {isSidebarOpen && (
-            <DocSidebar 
-              docs={docs} 
-              selectedDoc={selectedDoc} 
-              setSelectedDoc={setSelectedDoc} 
-            />
+            <DocSidebar docs={docs} selectedDoc={selectedDoc} setSelectedDoc={setSelectedDoc} />
           )}
-          
+
           <DocsContent content={content} docs={docs} setSelectedDoc={setSelectedDoc} />
         </div>
       </div>

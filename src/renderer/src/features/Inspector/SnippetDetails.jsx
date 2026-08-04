@@ -48,7 +48,16 @@ const SnippetDetails = ({ snippet, isLoading = false }) => {
   if (!snippet) {
     return (
       <div className="details-modal-body" style={{ height: '100%', overflowY: 'auto' }}>
-        <div className="panel-empty" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)' }}>
+        <div
+          className="panel-empty"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            color: 'var(--text-muted)'
+          }}
+        >
           No file selected
         </div>
       </div>
@@ -59,36 +68,40 @@ const SnippetDetails = ({ snippet, isLoading = false }) => {
   const charCount = snippet.code?.length || 0
   const wordCount = snippet.code?.trim() ? snippet.code.trim().split(/\s+/).length : 0
   const readTime = Math.ceil(wordCount / 200) + 'm'
-  
+
   // Calculate true tag count (Frontmatter + Inline Tags, ignoring headings)
   const tagSet = new Set()
-  
+
   // 1. Frontmatter tags
   if (snippet.tags) {
-    const rawTags = Array.isArray(snippet.tags) 
-      ? snippet.tags 
-      : (typeof snippet.tags === 'string' && snippet.tags.trim() !== '' ? snippet.tags.split(',') : [])
-    rawTags.forEach(t => {
+    const rawTags = Array.isArray(snippet.tags)
+      ? snippet.tags
+      : typeof snippet.tags === 'string' && snippet.tags.trim() !== ''
+        ? snippet.tags.split(',')
+        : []
+    rawTags.forEach((t) => {
       const trimmed = String(t).trim()
       if (trimmed) tagSet.add(trimmed.startsWith('#') ? trimmed : `#${trimmed}`)
     })
   }
 
   // 2. Inline markdown tags and mentions
-  let codeWithoutBlocks = (snippet.code || '').replace(/```[\s\S]*?```/g, '').replace(/`[^`]+`/g, '')
+  let codeWithoutBlocks = (snippet.code || '')
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/`[^`]+`/g, '')
   const tagRegex = /(?:^|\s)(#[\w-]+)/g
   const mentionRegex = /(?:^|\s)(@[\w-]+)/g
   let match
-  
+
   while ((match = tagRegex.exec(codeWithoutBlocks)) !== null) {
     tagSet.add(match[1])
   }
-  
+
   const mentionSet = new Set()
   while ((match = mentionRegex.exec(codeWithoutBlocks)) !== null) {
     mentionSet.add(match[1])
   }
-  
+
   const tagCount = tagSet.size
   const mentionCount = mentionSet.size
 
@@ -98,96 +111,48 @@ const SnippetDetails = ({ snippet, isLoading = false }) => {
         <div className="properties-header">Properties</div>
         <div className="properties-list">
           {/* Default Properties */}
-          <PropertyRow 
-            icon={Fingerprint} 
-            name="id" 
-            value={snippet.id} 
-            iconColor="#8b5cf6" 
+          <PropertyRow icon={Fingerprint} name="id" value={snippet.id} iconColor="#8b5cf6" />
+          <PropertyRow icon={Type} name="title" value={snippet.title} iconColor="#ec4899" />
+          <PropertyRow
+            icon={FolderOpen}
+            name="location"
+            value={snippet.folderId || '/'}
+            iconColor="#eab308"
           />
-          <PropertyRow 
-            icon={Type} 
-            name="title" 
-            value={snippet.title} 
-            iconColor="#ec4899" 
+          <PropertyRow
+            icon={Clock}
+            name="timestamp"
+            value={new Date(snippet.timestamp).toLocaleDateString()}
+            iconColor="#14b8a6"
           />
-          <PropertyRow 
-            icon={FolderOpen} 
-            name="location" 
-            value={snippet.folderId || '/'} 
-            iconColor="#eab308" 
-          />
-          <PropertyRow 
-            icon={Clock} 
-            name="timestamp" 
-            value={new Date(snippet.timestamp).toLocaleDateString()} 
-            iconColor="#14b8a6" 
-          />
-          <PropertyRow 
-            icon={Code} 
-            name="language" 
-            value={snippet.language} 
-            iconColor="#3b82f6" 
-          />
-          
+          <PropertyRow icon={Code} name="language" value={snippet.language} iconColor="#3b82f6" />
+
           {/* Extended Properties that mimic Obsidian frontmatter features */}
-          <PropertyRow 
-            icon={Tag} 
-            name="tags" 
-            value={tagCount} 
-            iconColor="#10b981" 
+          <PropertyRow icon={Tag} name="tags" value={tagCount} iconColor="#10b981" />
+          <PropertyRow icon={Users} name="mentions" value={mentionCount} iconColor="#8b5cf6" />
+          <PropertyRow
+            icon={Pin}
+            name="isPinned"
+            value={pinnedTabIds.includes(snippet.id) ? 'true' : 'false'}
+            iconColor="#f97316"
           />
-          <PropertyRow 
-            icon={Users} 
-            name="mentions" 
-            value={mentionCount} 
-            iconColor="#8b5cf6" 
+          <PropertyRow
+            icon={FileCode}
+            name="customIcon"
+            value={snippet.customIcon || 'none'}
+            iconColor="#6366f1"
           />
-          <PropertyRow 
-            icon={Pin} 
-            name="isPinned" 
-            value={pinnedTabIds.includes(snippet.id) ? 'true' : 'false'} 
-            iconColor="#f97316" 
-          />
-          <PropertyRow 
-            icon={FileCode} 
-            name="customIcon" 
-            value={snippet.customIcon || 'none'} 
-            iconColor="#6366f1" 
-          />
-          <PropertyRow 
-            icon={AtSign} 
-            name="aliases" 
-            value="none" 
-            iconColor="#f43f5e" 
-          />
-          <PropertyRow 
-            icon={Layout} 
-            name="cssclasses" 
-            value="none" 
-            iconColor="#0ea5e9" 
-          />
+          <PropertyRow icon={AtSign} name="aliases" value="none" iconColor="#f43f5e" />
+          <PropertyRow icon={Layout} name="cssclasses" value="none" iconColor="#0ea5e9" />
         </div>
 
-        <div className="properties-header" style={{ marginTop: '24px' }}>Statistics</div>
+        <div className="properties-header" style={{ marginTop: '24px' }}>
+          Statistics
+        </div>
         <div className="properties-list">
-          <PropertyRow 
-            icon={Hash} 
-            name="characters" 
-            value={charCount} 
-            iconColor="#a855f7" 
-          />
-          <PropertyRow 
-            icon={Type} 
-            name="words" 
-            value={wordCount} 
-            iconColor="#ef4444" 
-          />
-          <PropertyRow 
-            icon={Eye} 
-            name="readTime" 
-            value={readTime} 
-            iconColor="#22c55e" 
-          />
+          <PropertyRow icon={Hash} name="characters" value={charCount} iconColor="#a855f7" />
+          <PropertyRow icon={Type} name="words" value={wordCount} iconColor="#ef4444" />
+          <PropertyRow icon={Eye} name="readTime" value={readTime} iconColor="#22c55e" />
         </div>
       </div>
     </div>

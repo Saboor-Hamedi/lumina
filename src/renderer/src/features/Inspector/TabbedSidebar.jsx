@@ -15,10 +15,12 @@ const TabbedSidebar = ({
   setIsRightSidebarOpen
 }) => {
   useKeyboardShortcuts({
-    onEscape: isRightSidebarOpen ? () => {
-      setIsRightSidebarOpen(false)
-      return true
-    } : null
+    onEscape: isRightSidebarOpen
+      ? () => {
+          setIsRightSidebarOpen(false)
+          return true
+        }
+      : null
   })
   return (
     <div className="inspector-panel">
@@ -27,20 +29,29 @@ const TabbedSidebar = ({
         className="panel-header-tabs workspace-tabbar"
         style={{ position: 'relative', display: 'flex', alignItems: 'center' }}
       >
-        <div 
+        <div
           className={`workspace-tab ${rightSidebarTab === 'details' ? 'active' : ''}`}
           onClick={() => setRightSidebarTab('details')}
-          style={{ cursor: 'pointer', borderRight: '1px solid var(--border-subtle)', paddingRight: '16px' }}
+          style={{
+            cursor: 'pointer',
+            borderRight: '1px solid var(--border-subtle)',
+            paddingRight: '16px'
+          }}
         >
           <div
             className="tab-context"
             style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
           >
             <Info size={13} style={{ opacity: rightSidebarTab === 'details' ? 1 : 0.6 }} />
-            <span className="tab-title" style={{ opacity: rightSidebarTab === 'details' ? 1 : 0.6 }}>Details</span>
+            <span
+              className="tab-title"
+              style={{ opacity: rightSidebarTab === 'details' ? 1 : 0.6 }}
+            >
+              Details
+            </span>
           </div>
         </div>
-        <div 
+        <div
           className={`workspace-tab ${rightSidebarTab === 'outline' ? 'active' : ''}`}
           onClick={() => setRightSidebarTab('outline')}
           style={{ cursor: 'pointer', paddingRight: '16px' }}
@@ -50,7 +61,12 @@ const TabbedSidebar = ({
             style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
           >
             <ListIcon size={13} style={{ opacity: rightSidebarTab === 'outline' ? 1 : 0.6 }} />
-            <span className="tab-title" style={{ opacity: rightSidebarTab === 'outline' ? 1 : 0.6 }}>Outline</span>
+            <span
+              className="tab-title"
+              style={{ opacity: rightSidebarTab === 'outline' ? 1 : 0.6 }}
+            >
+              Outline
+            </span>
           </div>
         </div>
         <div className="flex-1" style={{ WebkitAppRegion: 'drag', height: '100%' }} />

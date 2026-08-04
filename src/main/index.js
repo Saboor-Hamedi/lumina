@@ -284,7 +284,9 @@ app.whenReady().then(async () => {
   ipcMain.handle('window:export-html', async (_, payload) => handleExportHTML(mainWindow, payload))
   ipcMain.handle('window:export-docs', async (_, payload) => handleExportDocs(mainWindow, payload))
   ipcMain.handle('window:export-pdf', async (_, payload) => handleExportPDF(mainWindow, payload))
-  ipcMain.handle('window:export-markdown', async (_, payload) => handleExportMarkdown(mainWindow, payload))
+  ipcMain.handle('window:export-markdown', async (_, payload) =>
+    handleExportMarkdown(mainWindow, payload)
+  )
   ipcMain.handle('window:export-text', async (_, payload) => handleExportText(mainWindow, payload))
 
   // Receive renderer logs and append to a file in userData

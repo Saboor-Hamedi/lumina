@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { useVaultStore, GRAPH_TAB_ID } from '../../../../../src/renderer/src/core/store/useVaultStore'
+import {
+  useVaultStore,
+  GRAPH_TAB_ID
+} from '../../../../../src/renderer/src/core/store/useVaultStore'
 
 // Mock the cache module
 vi.mock('../../../../../src/renderer/src/core/db/cache', () => ({

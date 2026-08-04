@@ -15,7 +15,7 @@ export const handleExportDocs = async (mainWindow, payload) => {
       markedHighlight({
         langPrefix: 'hljs language-',
         highlight(code, lang) {
-          if (lang === 'mermaid') return code;
+          if (lang === 'mermaid') return code
           const language = hljs.getLanguage(lang) ? lang : 'plaintext'
           return hljs.highlight(code, { language }).value
         }
@@ -26,7 +26,10 @@ export const handleExportDocs = async (mainWindow, payload) => {
       renderer: {
         code(token) {
           if (token.lang === 'mermaid') {
-            const escaped = token.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            const escaped = token.text
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
             return `<div class="mermaid">${escaped}</div>`
           }
           return false
@@ -243,17 +246,19 @@ export const handleExportDocs = async (mainWindow, payload) => {
           setTimeout(() => resolve(document.documentElement.outerHTML), 5000); // 5 seconds timeout fallback
         }
       })
-    `);
-    
+    `)
+
     // Close window
-    printWin.close();
+    printWin.close()
 
     // Strip out the script tags so MS word doesn't complain about them
-    const cleanHtml = renderedHtml.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+    const cleanHtml = renderedHtml.replace(
+      /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+      ''
+    )
 
     await fs.writeFile(filePath, cleanHtml, 'utf-8')
     return { success: true, filePath }
-
   } catch (error) {
     console.error('[Main] Export Docs failed:', error)
     throw error

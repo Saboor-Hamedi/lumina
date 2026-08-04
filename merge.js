@@ -1,42 +1,46 @@
-const fs = require('fs');
+const fs = require('fs')
 
-const modalPath = 'b:/electron/lumina/src/renderer/src/features/Overlays/AIChatModal.jsx';
-const panelPath = 'b:/electron/lumina/src/renderer/src/features/AI/AIChatPanel.jsx';
-const modalCssPath = 'b:/electron/lumina/src/renderer/src/features/Overlays/AIChatModal.css';
-const panelCssPath = 'b:/electron/lumina/src/renderer/src/features/AI/AIChatPanel.css';
+const modalPath = 'b:/electron/lumina/src/renderer/src/features/Overlays/AIChatModal.jsx'
+const panelPath = 'b:/electron/lumina/src/renderer/src/features/AI/AIChatPanel.jsx'
+const modalCssPath = 'b:/electron/lumina/src/renderer/src/features/Overlays/AIChatModal.css'
+const panelCssPath = 'b:/electron/lumina/src/renderer/src/features/AI/AIChatPanel.css'
 
-let modalCode = fs.readFileSync(modalPath, 'utf8').replace(/\r\n/g, '\n');
-let panelCode = fs.readFileSync(panelPath, 'utf8').replace(/\r\n/g, '\n');
-let modalCss = fs.readFileSync(modalCssPath, 'utf8');
-let panelCss = fs.readFileSync(panelCssPath, 'utf8');
+let modalCode = fs.readFileSync(modalPath, 'utf8').replace(/\r\n/g, '\n')
+let panelCode = fs.readFileSync(panelPath, 'utf8').replace(/\r\n/g, '\n')
+let modalCss = fs.readFileSync(modalCssPath, 'utf8')
+let panelCss = fs.readFileSync(panelCssPath, 'utf8')
 
 // Combine CSS
-let combinedCss = modalCss + '\n\n' + panelCss;
-fs.writeFileSync(modalCssPath, combinedCss);
+let combinedCss = modalCss + '\n\n' + panelCss
+fs.writeFileSync(modalCssPath, combinedCss)
 
-const componentsStart = panelCode.indexOf('const CodeBlock =');
-const mainComponentStart = panelCode.indexOf('const AIChatPanel =');
+const componentsStart = panelCode.indexOf('const CodeBlock =')
+const mainComponentStart = panelCode.indexOf('const AIChatPanel =')
 
-const helperComponents = panelCode.substring(componentsStart, mainComponentStart);
+const helperComponents = panelCode.substring(componentsStart, mainComponentStart)
 
 // find where return is
-const lastReturn = panelCode.indexOf('  return (\n    <div className="chat-container">');
+const lastReturn = panelCode.indexOf('  return (\n    <div className="chat-container">')
 
-const hooksStrRaw = panelCode.substring(mainComponentStart, lastReturn);
-const firstBrace = hooksStrRaw.indexOf('{');
-const hooksStr = hooksStrRaw.substring(firstBrace + 1);
+const hooksStrRaw = panelCode.substring(mainComponentStart, lastReturn)
+const firstBrace = hooksStrRaw.indexOf('{')
+const hooksStr = hooksStrRaw.substring(firstBrace + 1)
 
-let jsxStr = panelCode.substring(lastReturn);
-const firstDiv = jsxStr.indexOf('<div className="chat-container"');
-const lastDiv = jsxStr.lastIndexOf('</div>');
-const innerJsx = jsxStr.substring(firstDiv, lastDiv + 6);
+let jsxStr = panelCode.substring(lastReturn)
+const firstDiv = jsxStr.indexOf('<div className="chat-container"')
+const lastDiv = jsxStr.lastIndexOf('</div>')
+const innerJsx = jsxStr.substring(firstDiv, lastDiv + 6)
 
-let cleanJsx = innerJsx;
-cleanJsx = cleanJsx.replace(/<div className="chat-empty-icon".*?>✨<\/div>/, '');
-cleanJsx = cleanJsx.replace(/<h2.*?>\s*How can I help you today\?\s*<\/h2>/, '');
-cleanJsx = cleanJsx.replace(/<p.*?>\s*I can help you write code, explain complex concepts, or manage your workspace\.\s*<\/p>/, '');
+let cleanJsx = innerJsx
+cleanJsx = cleanJsx.replace(/<div className="chat-empty-icon".*?>✨<\/div>/, '')
+cleanJsx = cleanJsx.replace(/<h2.*?>\s*How can I help you today\?\s*<\/h2>/, '')
+cleanJsx = cleanJsx.replace(
+  /<p.*?>\s*I can help you write code, explain complex concepts, or manage your workspace\.\s*<\/p>/,
+  ''
+)
 
-let newModalCode = `import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+let newModalCode =
+  `import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { createPortal } from 'react-dom'
@@ -50,7 +54,9 @@ import ModalHeader from './ModalHeader'
 import '../Layout/AppShell.css'
 import './AIChatModal.css'
 
-` + helperComponents + `
+` +
+  helperComponents +
+  `
 
 const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
   const modalRef = useRef(null)
@@ -266,7 +272,9 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
     }
   }, [isResizing, handleResize, handleResizeEnd])
 
-` + hooksStr + `
+` +
+  hooksStr +
+  `
   if (!isOpen) return null
 
   return (
@@ -354,7 +362,9 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
         )}
 
         <div className="ai-chat-modal-body" style={{ height: 'calc(100% - 40px)', flex: 1, display: 'flex', flexDirection: 'column' }}>
-          ` + cleanJsx + `
+          ` +
+  cleanJsx +
+  `
         </div>
       </div>
     </div>
@@ -362,7 +372,7 @@ const AIChatModal = ({ isOpen, onClose, onUnfloat }) => {
 }
 
 export default React.memo(AIChatModal)
-`;
+`
 
-fs.writeFileSync(modalPath, newModalCode);
-console.log('Successfully merged AIChatPanel into AIChatModal (FIXED)');
+fs.writeFileSync(modalPath, newModalCode)
+console.log('Successfully merged AIChatPanel into AIChatModal (FIXED)')

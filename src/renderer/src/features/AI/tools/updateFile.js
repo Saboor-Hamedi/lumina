@@ -27,7 +27,8 @@ export const updateFileTool = aiSdk.tool({
     if (!target) return { success: false, error: 'File not found' }
 
     let newCode
-    const currentCode = vs.drafts?.[target.id] !== undefined ? vs.drafts[target.id] : (target.code || '')
+    const currentCode =
+      vs.drafts?.[target.id] !== undefined ? vs.drafts[target.id] : target.code || ''
     if (search !== undefined) {
       const searchLower = search.toLowerCase()
       if (search !== '' && !currentCode.toLowerCase().includes(searchLower)) {
@@ -49,11 +50,14 @@ export const updateFileTool = aiSdk.tool({
     }
 
     await vs.saveSnippet({ ...target, code: newCode })
-    window.dispatchEvent(new CustomEvent('ai-saved-snippet', { detail: { id: target.id, code: newCode } }))
-    return { 
-      success: true, 
+    window.dispatchEvent(
+      new CustomEvent('ai-saved-snippet', { detail: { id: target.id, code: newCode } })
+    )
+    return {
+      success: true,
       title,
-      instruction_to_ai: "File updated successfully. You MUST now respond to the user and summarize exactly what changes you made."
+      instruction_to_ai:
+        'File updated successfully. You MUST now respond to the user and summarize exactly what changes you made.'
     }
   }
 })

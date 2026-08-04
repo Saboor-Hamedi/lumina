@@ -4,13 +4,20 @@ import { useSettingsStore } from '../../core/store/useSettingsStore'
 import './GraphSidebar.css'
 import '../../assets/toggle-theme.css'
 
-const GraphSidebar = ({ isOpen = true, searchQuery, setSearchQuery, graphTheme, onHeaderMouseDown, isMaximized }) => {
+const GraphSidebar = ({
+  isOpen = true,
+  searchQuery,
+  setSearchQuery,
+  graphTheme,
+  onHeaderMouseDown,
+  isMaximized
+}) => {
   const { settings, updateSetting } = useSettingsStore()
 
   return (
     <div className={`nexus-sidebar ${isOpen ? '' : 'closed'}`}>
-      <div 
-        className="nexus-sidebar-header" 
+      <div
+        className="nexus-sidebar-header"
         onMouseDown={onHeaderMouseDown}
         style={{ cursor: isMaximized ? 'default' : 'grab' }}
       >
@@ -29,7 +36,6 @@ const GraphSidebar = ({ isOpen = true, searchQuery, setSearchQuery, graphTheme, 
           />
         </div>
 
-
         <div className="nexus-sidebar-section">
           <div style={{ display: 'flex', gap: '8px', marginTop: '4px', justifyContent: 'center' }}>
             {[
@@ -39,8 +45,8 @@ const GraphSidebar = ({ isOpen = true, searchQuery, setSearchQuery, graphTheme, 
               { id: 'ocean', color: 'linear-gradient(135deg, #02111d, #073a5a)' },
               { id: 'sunset', color: 'linear-gradient(135deg, #2a0826, #6b1432)' },
               { id: 'neural', color: 'linear-gradient(135deg, #0a192f, #112240)' }
-            ].map(theme => (
-              <button 
+            ].map((theme) => (
+              <button
                 key={theme.id}
                 title={theme.id.charAt(0).toUpperCase() + theme.id.slice(1)}
                 onClick={() => updateSetting('graphTheme', theme.id)}
@@ -59,8 +65,8 @@ const GraphSidebar = ({ isOpen = true, searchQuery, setSearchQuery, graphTheme, 
                   boxShadow: 'none',
                   transition: 'transform 0.2s'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.1)')}
+                onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
               >
                 {graphTheme === theme.id && <Check size={14} color="#ffffff" strokeWidth={3} />}
               </button>
@@ -70,45 +76,79 @@ const GraphSidebar = ({ isOpen = true, searchQuery, setSearchQuery, graphTheme, 
 
         <div className="nexus-sidebar-section" style={{ marginTop: '12px' }}>
           <div className="nexus-section-title">Filters</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '4px 2px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-main)' }}>
+          <div
+            style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '4px 2px' }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontSize: '12px',
+                color: 'var(--text-main)'
+              }}
+            >
               <span>Show Tags</span>
               <label className="switch">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={!settings.graphHideTags}
                   onChange={(e) => updateSetting('graphHideTags', !e.target.checked)}
                 />
                 <span className="slider round"></span>
               </label>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-main)' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontSize: '12px',
+                color: 'var(--text-main)'
+              }}
+            >
               <span>Show Unresolved Links</span>
               <label className="switch">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={!settings.graphHideGhosts}
                   onChange={(e) => updateSetting('graphHideGhosts', !e.target.checked)}
                 />
                 <span className="slider round"></span>
               </label>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-main)' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontSize: '12px',
+                color: 'var(--text-main)'
+              }}
+            >
               <span>Show Orphans</span>
               <label className="switch">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={!settings.graphHideOrphans}
                   onChange={(e) => updateSetting('graphHideOrphans', !e.target.checked)}
                 />
                 <span className="slider round"></span>
               </label>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-main)' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontSize: '12px',
+                color: 'var(--text-main)'
+              }}
+            >
               <span>3D Sphere Mode</span>
               <label className="switch">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={settings.graph3DMode ?? false}
                   onChange={(e) => updateSetting('graph3DMode', e.target.checked)}
                 />
@@ -120,51 +160,93 @@ const GraphSidebar = ({ isOpen = true, searchQuery, setSearchQuery, graphTheme, 
 
         <div className="nexus-sidebar-section" style={{ marginTop: '12px' }}>
           <div className="nexus-section-title">Display</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '12px 2px' }}>
+          <div
+            style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '12px 2px' }}
+          >
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: '11px',
+                  color: 'var(--text-muted)',
+                  fontWeight: 500
+                }}
+              >
                 <span>Node Size</span>
               </div>
-              <input 
-                type="range" 
+              <input
+                type="range"
                 className="graph-slider"
-                min="0.5" max="3.0" step="0.1" 
+                min="0.5"
+                max="3.0"
+                step="0.1"
                 value={settings.graphNodeSize || 1.5}
                 onChange={(e) => updateSetting('graphNodeSize', parseFloat(e.target.value))}
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: '11px',
+                  color: 'var(--text-muted)',
+                  fontWeight: 500
+                }}
+              >
                 <span>Center Force</span>
               </div>
-              <input 
-                type="range" 
+              <input
+                type="range"
                 className="graph-slider"
-                min="0.0" max="1.0" step="0.01" 
+                min="0.0"
+                max="1.0"
+                step="0.01"
                 value={settings.graphCenterForce ?? 0.05}
                 onChange={(e) => updateSetting('graphCenterForce', parseFloat(e.target.value))}
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: '11px',
+                  color: 'var(--text-muted)',
+                  fontWeight: 500
+                }}
+              >
                 <span>Repel Force</span>
               </div>
-              <input 
-                type="range" 
+              <input
+                type="range"
                 className="graph-slider"
-                min="0.0" max="1.0" step="0.01" 
+                min="0.0"
+                max="1.0"
+                step="0.01"
                 value={settings.graphRepelForce ?? 0.3}
                 onChange={(e) => updateSetting('graphRepelForce', parseFloat(e.target.value))}
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: '11px',
+                  color: 'var(--text-muted)',
+                  fontWeight: 500
+                }}
+              >
                 <span>Link Force</span>
               </div>
-              <input 
-                type="range" 
+              <input
+                type="range"
                 className="graph-slider"
-                min="0.0" max="1.0" step="0.01" 
+                min="0.0"
+                max="1.0"
+                step="0.01"
                 value={settings.graphLinkForce ?? 0.05}
                 onChange={(e) => updateSetting('graphLinkForce', parseFloat(e.target.value))}
               />
@@ -173,8 +255,8 @@ const GraphSidebar = ({ isOpen = true, searchQuery, setSearchQuery, graphTheme, 
         </div>
       </div>
 
-      <div 
-        className="nexus-sidebar-footer" 
+      <div
+        className="nexus-sidebar-footer"
         style={{
           padding: '8px 16px',
           borderTop: '1px solid var(--border-dim)',
@@ -186,7 +268,9 @@ const GraphSidebar = ({ isOpen = true, searchQuery, setSearchQuery, graphTheme, 
         <button
           className={`theme-toggle ${settings.graphAnimate !== false ? 'active' : ''}`}
           title={settings.graphAnimate !== false ? 'Stop Rotation' : 'Auto Rotate'}
-          onClick={() => updateSetting('graphAnimate', settings.graphAnimate === false ? true : false)}
+          onClick={() =>
+            updateSetting('graphAnimate', settings.graphAnimate === false ? true : false)
+          }
           style={{
             width: '24px',
             height: '24px',
@@ -199,7 +283,11 @@ const GraphSidebar = ({ isOpen = true, searchQuery, setSearchQuery, graphTheme, 
             justifyContent: 'center'
           }}
         >
-          <RefreshCw size={12} className={settings.graphAnimate !== false ? 'spin-icon' : ''} color={settings.graphAnimate !== false ? 'var(--text-accent)' : 'var(--text-muted)'} />
+          <RefreshCw
+            size={12}
+            className={settings.graphAnimate !== false ? 'spin-icon' : ''}
+            color={settings.graphAnimate !== false ? 'var(--text-accent)' : 'var(--text-muted)'}
+          />
         </button>
       </div>
     </div>

@@ -16,7 +16,11 @@ import { syntaxTree, HighlightStyle, syntaxHighlighting } from '@codemirror/lang
 import { tags as t } from '@lezer/highlight'
 import { autocompletion, startCompletion } from '@codemirror/autocomplete'
 import { EditorState, Prec, StateField, StateEffect } from '@codemirror/state'
-import { codeBlockDecorations, codeMap, luminaSyntaxHighlighting } from '../Workspace/codeBlockHeader'
+import {
+  codeBlockDecorations,
+  codeMap,
+  luminaSyntaxHighlighting
+} from '../Workspace/codeBlockHeader'
 import { EditorView, placeholder, keymap, ViewPlugin, Decoration } from '@codemirror/view'
 import { imageDropExtension } from '../Workspace/imageDropExtension'
 import { imageWidgetExtension } from '../Workspace/imageWidgetExtension'
@@ -166,7 +170,7 @@ const MarkdownEditor = React.memo(
           setShowFindWidget(true)
         } else if (e.key === '\\' && (e.ctrlKey || e.metaKey)) {
           e.preventDefault()
-          setIsPreviewOpen(prev => !prev)
+          setIsPreviewOpen((prev) => !prev)
         }
       }
 
@@ -220,7 +224,6 @@ const MarkdownEditor = React.memo(
         titleRef.current.select()
       }
 
-
       const handleScrollToLine = (e) => {
         if (!isActiveRef.current || !realViewRef.current) return
         const view = realViewRef.current
@@ -230,21 +233,21 @@ const MarkdownEditor = React.memo(
           const doc = view.state.doc
           const targetLineNum = Math.max(1, Math.min(lineNum, doc.lines))
           const targetLine = doc.line(targetLineNum)
-          
+
           view.dispatch({
             selection: { anchor: targetLine.from }
           })
-          
+
           // Since .cm-scroller is overflow: visible in CSS, CodeMirror's scrollIntoView doesn't work.
           // We must manually scroll the outer .editor-scroller wrapper.
           const lineBlock = view.lineBlockAt(targetLine.from)
           const scroller = view.dom.closest('.editor-scroller')
-          
+
           if (scroller) {
-            const scrollY = lineBlock.top - (scroller.clientHeight / 2) + (lineBlock.height / 2)
+            const scrollY = lineBlock.top - scroller.clientHeight / 2 + lineBlock.height / 2
             scroller.scrollTo({ top: Math.max(0, scrollY), behavior: 'smooth' })
           }
-          
+
           setTimeout(() => {
             if (realViewRef.current && realViewRef.current.contentDOM) {
               realViewRef.current.contentDOM.focus({ preventScroll: true })
@@ -290,8 +293,8 @@ const MarkdownEditor = React.memo(
       const isSameFile = previousSnippet?.id === snippet?.id
 
       if (!isSameFile) {
-        // We just switched tabs! 
-        // DO NOT manually sync or touch editorKey. React's `key` on AtomicCodeMirrorEditor 
+        // We just switched tabs!
+        // DO NOT manually sync or touch editorKey. React's `key` on AtomicCodeMirrorEditor
         // will handle the complete remount flawlessly.
         lastSavedCodeRef.current = snippet?.code
         latestCodeRef.current = snippet?.code || ''
@@ -305,14 +308,15 @@ const MarkdownEditor = React.memo(
 
         if (codeChangedFromOutside) {
           const timeSinceLastSave = Date.now() - lastSaveTimeRef.current
-          // If we saved within the last 3 seconds, this is almost certainly an out-of-order 
+          // If we saved within the last 3 seconds, this is almost certainly an out-of-order
           // echo from the file system watcher (chokidar) reading an old save.
           if (timeSinceLastSave < 3000) {
             return
           }
 
           const hasLocalEdits = currentCode !== lastSavedCodeRef.current
-          const isTrivialExternalChange = (snippet?.code || '').trim() === (lastSavedCodeRef.current || '').trim()
+          const isTrivialExternalChange =
+            (snippet?.code || '').trim() === (lastSavedCodeRef.current || '').trim()
 
           if (hasLocalEdits && !isTrivialExternalChange) {
             // REAL CONFLICT! Show the custom ConfirmModal
@@ -332,7 +336,10 @@ const MarkdownEditor = React.memo(
             if (realViewRef.current) {
               const view = realViewRef.current
               const needsClear = snippet?.code === '' && view.state.doc.length > 0
-              if ((typeof snippet?.code === 'string' && currentCode !== snippet.code) || needsClear) {
+              if (
+                (typeof snippet?.code === 'string' && currentCode !== snippet.code) ||
+                needsClear
+              ) {
                 view.dispatch({
                   changes: { from: 0, to: view.state.doc.length, insert: snippet.code || '' }
                 })
@@ -378,7 +385,6 @@ const MarkdownEditor = React.memo(
       return () => window.removeEventListener('ai-saved-snippet', handleAISave)
     }, [snippet?.id, setDirty])
 
-
     // Cleanup on unmount (Tab switch / close)
     useEffect(() => {
       isMountedRef.current = true
@@ -419,7 +425,11 @@ const MarkdownEditor = React.memo(
         if (settings?.autoSave) {
           if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
           autoSaveTimerRef.current = setTimeout(() => {
-            if (isMountedRef.current && snippetRef.current?.id === snippet?.id && handleSaveRef.current) {
+            if (
+              isMountedRef.current &&
+              snippetRef.current?.id === snippet?.id &&
+              handleSaveRef.current
+            ) {
               handleSaveRef.current()
             }
           }, 1500)
@@ -491,7 +501,11 @@ const MarkdownEditor = React.memo(
 
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
       const timer = setTimeout(() => {
-        if (isMountedRef.current && snippetRef.current?.id === snippet.id && handleSaveRef.current) {
+        if (
+          isMountedRef.current &&
+          snippetRef.current?.id === snippet.id &&
+          handleSaveRef.current
+        ) {
           handleSaveRef.current()
         }
       }, 1500)
@@ -624,13 +638,13 @@ const MarkdownEditor = React.memo(
 
     const handleInlineAIInsert = useCallback((text, range = null) => {
       if (!realViewRef.current) return
-      
+
       const view = realViewRef.current
       const selection = view.state.selection.main
-      
+
       const from = range ? range.from : selection.from
       const to = range ? range.to : selection.to
-      
+
       const transaction = view.state.update({
         changes: {
           from: from,
@@ -639,7 +653,7 @@ const MarkdownEditor = React.memo(
         },
         selection: { anchor: from + text.length }
       })
-      
+
       view.dispatch(transaction)
       setIsDirty(true)
     }, [])
@@ -769,10 +783,10 @@ const MarkdownEditor = React.memo(
                   if (singleLineCodeMatch) {
                     const inside = singleLineCodeMatch[1]
                     const relativePos = pos - (line.from + 3) // 3 is length of ```
-                    
+
                     let beforeCursor = ''
                     let afterCursor = ''
-                    
+
                     if (relativePos <= 0) {
                       afterCursor = inside
                     } else if (relativePos >= inside.length) {
@@ -781,10 +795,10 @@ const MarkdownEditor = React.memo(
                       beforeCursor = inside.slice(0, relativePos)
                       afterCursor = inside.slice(relativePos)
                     }
-                    
+
                     let lang = ''
                     let contentBefore = ''
-                    
+
                     // Try to extract language from beforeCursor
                     const langMatch = beforeCursor.match(/^([a-zA-Z0-9+#-]+)(?:\s+|$)/)
                     if (langMatch) {
@@ -793,27 +807,30 @@ const MarkdownEditor = React.memo(
                     } else {
                       contentBefore = beforeCursor
                     }
-                    
+
                     let insertText = `\`\`\`${lang}\n`
                     let newCursorPos = line.from + insertText.length
-                    
-                    if (contentBefore.trim() || (!contentBefore.trim() && beforeCursor.endsWith(' ') && !langMatch)) {
+
+                    if (
+                      contentBefore.trim() ||
+                      (!contentBefore.trim() && beforeCursor.endsWith(' ') && !langMatch)
+                    ) {
                       // If there is actual content, or they just typed a space in content
                       insertText += `${contentBefore}\n`
                       newCursorPos = line.from + insertText.length
                     }
-                    
+
                     insertText += `${afterCursor}\n\`\`\``
-                    
+
                     if (relativePos >= inside.length) {
-                       insertText += '\n'
-                       newCursorPos = line.from + insertText.length
+                      insertText += '\n'
+                      newCursorPos = line.from + insertText.length
                     }
 
                     view.dispatch({
-                      changes: { 
-                        from: line.from, 
-                        to: line.to, 
+                      changes: {
+                        from: line.from,
+                        to: line.to,
                         insert: insertText
                       },
                       selection: { anchor: newCursorPos }
@@ -827,7 +844,11 @@ const MarkdownEditor = React.memo(
                     const posAfter = stateAfter.selection.main.head
                     const lineAfter = stateAfter.doc.lineAt(posAfter)
                     // If the new line only contains list markup (like "2." or "-") and lacks a trailing space
-                    if (/^(\s*[-*+]|\s*\d+\.)\s*$/.test(lineAfter.text) && !lineAfter.text.endsWith(' ') && posAfter === lineAfter.to) {
+                    if (
+                      /^(\s*[-*+]|\s*\d+\.)\s*$/.test(lineAfter.text) &&
+                      !lineAfter.text.endsWith(' ') &&
+                      posAfter === lineAfter.to
+                    ) {
                       view.dispatch({
                         changes: { from: lineAfter.to, insert: ' ' },
                         selection: { anchor: lineAfter.to + 1 }
@@ -944,40 +965,43 @@ const MarkdownEditor = React.memo(
       [showToast, autocompleteTriggerListener, wikiLinkCompletionSource]
     )
 
-    const handleTableLinkClick = useCallback(async (url) => {
-      if (url.match(/^(https?|mailto|file):\/\//i)) {
-        window.open(url, '_blank')
-        return
-      }
-      
-      showToast(`Opening wikilink: ${url}`, 'info')
-      try {
-        const { snippets, saveSnippet, setSelectedSnippet } = useVaultStore.getState()
-        const targetLower = url.toLowerCase()
-        let targetSnippet = snippets.find(
-          (s) =>
-            s.title &&
-            (s.title.toLowerCase() === targetLower ||
-              s.title.toLowerCase() === `${targetLower}.md`)
-        )
-
-        if (!targetSnippet) {
-          showToast(`Creating new note: ${url}`, 'info')
-          targetSnippet = {
-            id: crypto.randomUUID(),
-            title: url,
-            code: `# ${url}\n\n`,
-            language: 'markdown',
-            tags: '',
-            timestamp: Date.now()
-          }
-          await saveSnippet(targetSnippet)
+    const handleTableLinkClick = useCallback(
+      async (url) => {
+        if (url.match(/^(https?|mailto|file):\/\//i)) {
+          window.open(url, '_blank')
+          return
         }
-        setSelectedSnippet(targetSnippet)
-      } catch (e) {
-        showToast(`Error: ${e.message}`, 'error')
-      }
-    }, [showToast])
+
+        showToast(`Opening wikilink: ${url}`, 'info')
+        try {
+          const { snippets, saveSnippet, setSelectedSnippet } = useVaultStore.getState()
+          const targetLower = url.toLowerCase()
+          let targetSnippet = snippets.find(
+            (s) =>
+              s.title &&
+              (s.title.toLowerCase() === targetLower ||
+                s.title.toLowerCase() === `${targetLower}.md`)
+          )
+
+          if (!targetSnippet) {
+            showToast(`Creating new note: ${url}`, 'info')
+            targetSnippet = {
+              id: crypto.randomUUID(),
+              title: url,
+              code: `# ${url}\n\n`,
+              language: 'markdown',
+              tags: '',
+              timestamp: Date.now()
+            }
+            await saveSnippet(targetSnippet)
+          }
+          setSelectedSnippet(targetSnippet)
+        } catch (e) {
+          showToast(`Error: ${e.message}`, 'error')
+        }
+      },
+      [showToast]
+    )
 
     const finalExtensions = React.useMemo(
       () => [
@@ -1134,12 +1158,12 @@ const MarkdownEditor = React.memo(
             onInlineAI={() => setIsInlineAIOpen(true)}
             onPreview={() => setIsPreviewOpen(true)}
           />
-          <PreviewModal 
-            isOpen={isPreviewOpen} 
-            onClose={() => setIsPreviewOpen(false)} 
-            title={title} 
-            content={snippet?.code} 
-            timestamp={snippet?.timestamp} 
+          <PreviewModal
+            isOpen={isPreviewOpen}
+            onClose={() => setIsPreviewOpen(false)}
+            title={title}
+            content={snippet?.code}
+            timestamp={snippet?.timestamp}
           />
           {isInlineAIOpen && (
             <InlineLumina
@@ -1191,7 +1215,6 @@ const MarkdownEditor = React.memo(
             />
           </div>
         </div>
-
       </div>
     )
   },

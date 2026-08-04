@@ -117,7 +117,6 @@ const EditorMenu = ({
                   right: `${menuPosition.right}px`
                 }}
               >
-
                 <div
                   className="dropdown-item"
                   onClick={() => {
@@ -262,8 +261,6 @@ const EditorMenu = ({
                   <span className="menu-label">Export as Docs</span>
                   <FileCode size={12} className="menu-icon-right" />
                 </div>
-
-
               </div>,
               document.body
             )}

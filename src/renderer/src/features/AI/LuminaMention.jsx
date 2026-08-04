@@ -47,7 +47,15 @@ export const LuminaMention = ({ isOpen, filterText, onSelect, onClose }) => {
 
   return (
     <div className="slash-menu-container">
-      <div style={{ padding: '4px 10px', fontSize: '10px', color: 'var(--text-faint)', textTransform: 'uppercase', fontWeight: 600 }}>
+      <div
+        style={{
+          padding: '4px 10px',
+          fontSize: '10px',
+          color: 'var(--text-faint)',
+          textTransform: 'uppercase',
+          fontWeight: 600
+        }}
+      >
         Attach File Context
       </div>
       {filteredSnippets.map((snippet, index) => (
@@ -57,7 +65,9 @@ export const LuminaMention = ({ isOpen, filterText, onSelect, onClose }) => {
           onClick={() => onSelect(snippet)}
           onMouseEnter={() => setSelectedIndex(index)}
         >
-          <div className="slash-icon"><FileText size={14} /></div>
+          <div className="slash-icon">
+            <FileText size={14} />
+          </div>
           <div className="slash-content">
             <span className="slash-label">{snippet.title}</span>
             <span className="slash-desc">Includes full file content</span>

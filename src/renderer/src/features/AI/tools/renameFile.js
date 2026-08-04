@@ -25,7 +25,14 @@ export const renameFileTool = aiSdk.tool({
     )
     if (duplicate) return { success: false, error: `A file named "${newTitle}" already exists` }
     await vs.saveSnippet({ ...target, title: newTitle })
-    window.dispatchEvent(new CustomEvent('ai-saved-snippet', { detail: { id: target.id, code: target.code } }))
-    return { success: true, oldTitle, newTitle, instruction_to_ai: `File renamed from "${oldTitle}" to "${newTitle}" successfully. Confirm this to the user.` }
+    window.dispatchEvent(
+      new CustomEvent('ai-saved-snippet', { detail: { id: target.id, code: target.code } })
+    )
+    return {
+      success: true,
+      oldTitle,
+      newTitle,
+      instruction_to_ai: `File renamed from "${oldTitle}" to "${newTitle}" successfully. Confirm this to the user.`
+    }
   }
 })

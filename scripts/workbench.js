@@ -110,11 +110,22 @@ async function analyzeCodebase() {
 
   async function walk(dir) {
     let entries
-    try { entries = await fs.readdir(dir, { withFileTypes: true }) } catch { return }
+    try {
+      entries = await fs.readdir(dir, { withFileTypes: true })
+    } catch {
+      return
+    }
     for (const e of entries) {
       const full = path.join(dir, e.name)
-      if (e.name.startsWith('.') || ['node_modules','build','out','dist','.workbench-test'].includes(e.name)) continue
-      if (e.isDirectory()) { await walk(full); continue }
+      if (
+        e.name.startsWith('.') ||
+        ['node_modules', 'build', 'out', 'dist', '.workbench-test'].includes(e.name)
+      )
+        continue
+      if (e.isDirectory()) {
+        await walk(full)
+        continue
+      }
       if (!e.isFile()) continue
 
       const ext = path.extname(e.name) || '(none)'
@@ -124,11 +135,15 @@ async function analyzeCodebase() {
       stats.files++
       stats.lines += lines
       stats.bytes += Buffer.byteLength(content)
-      stats.byExt[ext] = (stats.byExt[ext] || { files: 0, lines: 0 })
+      stats.byExt[ext] = stats.byExt[ext] || { files: 0, lines: 0 }
       stats.byExt[ext].files++
       stats.byExt[ext].lines += lines
 
-      if (full.includes(`${path.sep}test${path.sep}`) || e.name.endsWith('.test.js') || e.name.endsWith('.test.jsx')) {
+      if (
+        full.includes(`${path.sep}test${path.sep}`) ||
+        e.name.endsWith('.test.js') ||
+        e.name.endsWith('.test.jsx')
+      ) {
         stats.testFiles++
         stats.testLines += lines
       }
@@ -150,7 +165,9 @@ async function analyzeCodebase() {
     .sort((a, b) => b[1].files - a[1].files)
     .slice(0, 6)
     .forEach(([ext, s]) => {
-      console.log(`    ${col('cyan', ext.padEnd(12))} ${String(s.files).padStart(4)} files   ${String(s.lines.toLocaleString()).padStart(8)} lines`)
+      console.log(
+        `    ${col('cyan', ext.padEnd(12))} ${String(s.files).padStart(4)} files   ${String(s.lines.toLocaleString()).padStart(8)} lines`
+      )
     })
 
   return stats
@@ -168,10 +185,17 @@ async function analyzeTests() {
 
   async function walkTests(dir) {
     let entries
-    try { entries = await fs.readdir(dir, { withFileTypes: true }) } catch { return }
+    try {
+      entries = await fs.readdir(dir, { withFileTypes: true })
+    } catch {
+      return
+    }
     for (const e of entries) {
       const full = path.join(dir, e.name)
-      if (e.isDirectory()) { await walkTests(full); continue }
+      if (e.isDirectory()) {
+        await walkTests(full)
+        continue
+      }
       if (!e.name.endsWith('.test.js') && !e.name.endsWith('.test.jsx')) continue
 
       totalFiles++
@@ -179,7 +203,11 @@ async function analyzeTests() {
       const itMatches = content.match(/^\s*it\s*\(/gm) || []
       const count = itMatches.length
       totalTests += count
-      suites.push({ name: e.name.replace(/\.test\.[jt]sx?$/, ''), file: path.relative(projectRoot, full), count })
+      suites.push({
+        name: e.name.replace(/\.test\.[jt]sx?$/, ''),
+        file: path.relative(projectRoot, full),
+        count
+      })
     }
   }
 
@@ -189,14 +217,20 @@ async function analyzeTests() {
   row('Total test cases', col('bright', totalTests.toString()))
 
   console.log(`\n  ${col('dim', 'Suites:')}`)
-  suites.sort((a, b) => b.count - a.count).forEach(s => {
-    const b = bar(s.count, Math.max(...suites.map(x => x.count)))
-    console.log(`    ${col('white', s.name.padEnd(30))} ${b} ${String(s.count).padStart(3)} tests`)
-  })
+  suites
+    .sort((a, b) => b.count - a.count)
+    .forEach((s) => {
+      const b = bar(s.count, Math.max(...suites.map((x) => x.count)))
+      console.log(
+        `    ${col('white', s.name.padEnd(30))} ${b} ${String(s.count).padStart(3)} tests`
+      )
+    })
 
   // Run vitest in run mode and capture exit code
   console.log(`\n  ${col('dim', 'Running test suite...')}`)
-  let passed = 0, failed = 0, duration = '?'
+  let passed = 0,
+    failed = 0,
+    duration = '?'
   try {
     const out = execSync('npx vitest run 2>&1', {
       cwd: projectRoot,
@@ -206,18 +240,18 @@ async function analyzeTests() {
     // Match: 'Tests  5 failed | 112 passed (117)' or 'Tests  117 passed (117)'
     const passMatch = out.match(/Tests\s+(?:\d+\s+failed\s+\|\s+)?(\d+)\s+passed/)
     const failMatch = out.match(/(\d+)\s+failed/)
-    const durMatch  = out.match(/Duration\s+([\d.]+s)/)
-    passed   = passMatch ? parseInt(passMatch[1]) : 0
-    failed   = failMatch ? parseInt(failMatch[1]) : 0
-    duration = durMatch  ? durMatch[1]            : '?'
+    const durMatch = out.match(/Duration\s+([\d.]+s)/)
+    passed = passMatch ? parseInt(passMatch[1]) : 0
+    failed = failMatch ? parseInt(failMatch[1]) : 0
+    duration = durMatch ? durMatch[1] : '?'
   } catch (e) {
     const out = (e.stdout || '') + (e.stderr || '') + (typeof e.output === 'string' ? e.output : '')
     const passMatch = out.match(/Tests\s+(?:\d+\s+failed\s+\|\s+)?(\d+)\s+passed/)
     const failMatch = out.match(/(\d+)\s+failed/)
-    const durMatch  = out.match(/Duration\s+([\d.]+s)/)
-    passed   = passMatch ? parseInt(passMatch[1]) : 0
-    failed   = failMatch ? parseInt(failMatch[1]) : 0
-    duration = durMatch  ? durMatch[1]            : '?'
+    const durMatch = out.match(/Duration\s+([\d.]+s)/)
+    passed = passMatch ? parseInt(passMatch[1]) : 0
+    failed = failMatch ? parseInt(failMatch[1]) : 0
+    duration = durMatch ? durMatch[1] : '?'
   }
 
   const total = passed + failed
@@ -236,12 +270,14 @@ async function analyzeBundleSize() {
   let totalDeps = 0
   try {
     const entries = await fs.readdir(nmPath, { withFileTypes: true })
-    totalDeps = entries.filter(e => e.isDirectory() && !e.name.startsWith('.')).length
+    totalDeps = entries.filter((e) => e.isDirectory() && !e.name.startsWith('.')).length
   } catch {}
   row('Direct node_modules folders', col('bright', totalDeps.toString()))
 
   // package.json dep counts
-  const pkgRaw = await fs.readFile(path.join(projectRoot, 'package.json'), 'utf-8').catch(() => '{}')
+  const pkgRaw = await fs
+    .readFile(path.join(projectRoot, 'package.json'), 'utf-8')
+    .catch(() => '{}')
   const pkg = JSON.parse(pkgRaw)
   const depCount = Object.keys(pkg.dependencies || {}).length
   const devCount = Object.keys(pkg.devDependencies || {}).length
@@ -254,10 +290,17 @@ async function analyzeBundleSize() {
   let builtExists = false
   async function sizeOf(dir) {
     let entries
-    try { entries = await fs.readdir(dir, { withFileTypes: true }) } catch { return }
+    try {
+      entries = await fs.readdir(dir, { withFileTypes: true })
+    } catch {
+      return
+    }
     for (const e of entries) {
       const full = path.join(dir, e.name)
-      if (e.isDirectory()) { await sizeOf(full); continue }
+      if (e.isDirectory()) {
+        await sizeOf(full)
+        continue
+      }
       const stat = await fs.stat(full).catch(() => null)
       if (stat) builtSize += stat.size
     }
@@ -284,11 +327,11 @@ async function measureFileOps() {
   try {
     await measure('mkdir (recursive)', () => fs.mkdir(testDir, { recursive: true }))
     await measure('write file (1 KB)', () => fs.writeFile(testFile, '# Test\n' + 'x'.repeat(1000)))
-    await measure('read file (1 KB)',  () => fs.readFile(testFile, 'utf-8'))
-    await measure('stat file',         () => fs.stat(testFile))
-    await measure('readdir',           () => fs.readdir(testDir))
-    await measure('unlink file',       () => fs.unlink(testFile))
-    await measure('rmdir',             () => fs.rm(testDir, { recursive: true, force: true }))
+    await measure('read file (1 KB)', () => fs.readFile(testFile, 'utf-8'))
+    await measure('stat file', () => fs.stat(testFile))
+    await measure('readdir', () => fs.readdir(testDir))
+    await measure('unlink file', () => fs.unlink(testFile))
+    await measure('rmdir', () => fs.rm(testDir, { recursive: true, force: true }))
   } catch (e) {
     console.log(`  ${cross} ${col('red', e.message)}`)
     await fs.rm(testDir, { recursive: true, force: true }).catch(() => {})
@@ -308,13 +351,17 @@ async function measureDataOps() {
   }))
 
   let json = ''
-  await measure('JSON.stringify (2000 items)', () => { json = JSON.stringify(items) })
-  await measure('JSON.parse (2000 items)',     () => JSON.parse(json))
-  await measure('Array.filter (2000 items)',   () => items.filter(s => s.language === 'markdown'))
-  await measure('Array.sort by timestamp',     () => [...items].sort((a, b) => b.timestamp - a.timestamp))
-  await measure('Map construction (2000)',     () => new Map(items.map(s => [s.id, s])))
-  await measure('Map.get by ID',              () => {
-    const m = new Map(items.map(s => [s.id, s]))
+  await measure('JSON.stringify (2000 items)', () => {
+    json = JSON.stringify(items)
+  })
+  await measure('JSON.parse (2000 items)', () => JSON.parse(json))
+  await measure('Array.filter (2000 items)', () => items.filter((s) => s.language === 'markdown'))
+  await measure('Array.sort by timestamp', () =>
+    [...items].sort((a, b) => b.timestamp - a.timestamp)
+  )
+  await measure('Map construction (2000)', () => new Map(items.map((s) => [s.id, s])))
+  await measure('Map.get by ID', () => {
+    const m = new Map(items.map((s) => [s.id, s]))
     return m.get('snippet-1000')
   })
 }
@@ -329,13 +376,17 @@ async function measureSearchOps() {
     type: i % 2 === 0 ? 'snippet' : 'note'
   }))
 
-  await measure('Full-text search (5000 chunks)',    () => index.filter(x => x.text.toLowerCase().includes('topic 5')))
-  await measure('Filter by type (5000 chunks)',      () => index.filter(x => x.type === 'snippet'))
-  await measure('Sort by ID (5000 chunks)',          () => [...index].sort((a, b) => a.id.localeCompare(b.id)))
-  await measure('Regex search (5000 chunks)',        () => index.filter(x => /topic [135]/.test(x.text)))
-  await measure('Multi-word AND search (5000)',      () => {
+  await measure('Full-text search (5000 chunks)', () =>
+    index.filter((x) => x.text.toLowerCase().includes('topic 5'))
+  )
+  await measure('Filter by type (5000 chunks)', () => index.filter((x) => x.type === 'snippet'))
+  await measure('Sort by ID (5000 chunks)', () =>
+    [...index].sort((a, b) => a.id.localeCompare(b.id))
+  )
+  await measure('Regex search (5000 chunks)', () => index.filter((x) => /topic [135]/.test(x.text)))
+  await measure('Multi-word AND search (5000)', () => {
     const terms = ['lumina', 'chunk']
-    return index.filter(x => terms.every(t => x.text.includes(t)))
+    return index.filter((x) => terms.every((t) => x.text.includes(t)))
   })
 }
 
@@ -351,33 +402,42 @@ async function measureStoreOps() {
   }))
   let store = { snippets: [], selected: null }
 
-  await measure('Set 1000 snippets',        () => { store.snippets = snippets })
-  await measure('Find by ID',               () => store.snippets.find(s => s.id === 'snippet-500'))
-  await measure('Filter pinned',            () => store.snippets.filter(s => s.isPinned))
-  await measure('Immutable update snippet', () => {
-    store.snippets = store.snippets.map(s => s.id === 'snippet-500' ? { ...s, title: 'Updated' } : s)
+  await measure('Set 1000 snippets', () => {
+    store.snippets = snippets
   })
-  await measure('Sort by timestamp',        () => [...store.snippets].sort((a, b) => b.timestamp - a.timestamp))
+  await measure('Find by ID', () => store.snippets.find((s) => s.id === 'snippet-500'))
+  await measure('Filter pinned', () => store.snippets.filter((s) => s.isPinned))
+  await measure('Immutable update snippet', () => {
+    store.snippets = store.snippets.map((s) =>
+      s.id === 'snippet-500' ? { ...s, title: 'Updated' } : s
+    )
+  })
+  await measure('Sort by timestamp', () =>
+    [...store.snippets].sort((a, b) => b.timestamp - a.timestamp)
+  )
 }
 
 // ─── Section 8: Markdown processing ──────────────────────────────────────────
 async function measureMarkdownOps() {
   header('📝  Markdown Processing')
-  const md = `# Title\n\n**bold** and *italic*.\n\n## Section\n\n- Item 1\n- Item 2\n\n\`\`\`js\nconst x = 1\n\`\`\`\n\n[Link](https://example.com)\n`.repeat(100)
+  const md =
+    `# Title\n\n**bold** and *italic*.\n\n## Section\n\n- Item 1\n- Item 2\n\n\`\`\`js\nconst x = 1\n\`\`\`\n\n[Link](https://example.com)\n`.repeat(
+      100
+    )
 
-  await measure('Split by lines',         () => md.split('\n'))
-  await measure('Count words',            () => md.trim().split(/\s+/).length)
-  await measure('Extract code blocks',    () => md.match(/```[\s\S]*?```/g) || [])
-  await measure('Extract links',          () => md.match(/\[([^\]]+)\]\(([^)]+)\)/g) || [])
-  await measure('Extract headings',       () => md.match(/^#{1,6}\s+.+$/gm) || [])
-  await measure('Strip markdown syntax',  () => md.replace(/[*_`#\[\]()]/g, ''))
+  await measure('Split by lines', () => md.split('\n'))
+  await measure('Count words', () => md.trim().split(/\s+/).length)
+  await measure('Extract code blocks', () => md.match(/```[\s\S]*?```/g) || [])
+  await measure('Extract links', () => md.match(/\[([^\]]+)\]\(([^)]+)\)/g) || [])
+  await measure('Extract headings', () => md.match(/^#{1,6}\s+.+$/gm) || [])
+  await measure('Strip markdown syntax', () => md.replace(/[*_`#\[\]()]/g, ''))
 }
 
 // ─── Section 9: Summary ──────────────────────────────────────────────────────
 function generateSummary(startTime) {
   const totalTime = performance.now() - startTime
-  const passed = results.filter(r => r.ok).length
-  const failed = results.filter(r => !r.ok).length
+  const passed = results.filter((r) => r.ok).length
+  const failed = results.filter((r) => !r.ok).length
   const slowest = [...results].sort((a, b) => b.duration - a.duration).slice(0, 5)
   const fastest = [...results].sort((a, b) => a.duration - b.duration).slice(0, 3)
 
@@ -393,15 +453,19 @@ function generateSummary(startTime) {
 
   if (slowest.length) {
     console.log(`\n  ${col('yellow', 'Slowest operations:')}`)
-    slowest.forEach(r => {
-      console.log(`    ${col('dim', '•')} ${r.label.padEnd(42)} ${col('yellow', formatTime(r.duration))}`)
+    slowest.forEach((r) => {
+      console.log(
+        `    ${col('dim', '•')} ${r.label.padEnd(42)} ${col('yellow', formatTime(r.duration))}`
+      )
     })
   }
 
   if (fastest.length) {
     console.log(`\n  ${col('green', 'Fastest operations:')}`)
-    fastest.forEach(r => {
-      console.log(`    ${col('dim', '•')} ${r.label.padEnd(42)} ${col('green', formatTime(r.duration))}`)
+    fastest.forEach((r) => {
+      console.log(
+        `    ${col('dim', '•')} ${r.label.padEnd(42)} ${col('green', formatTime(r.duration))}`
+      )
     })
   }
 
@@ -410,13 +474,17 @@ function generateSummary(startTime) {
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 const startTime = performance.now()
-console.log(`\n${col('bright', '╔══════════════════════════════════════════════════════════════╗')}`)
-console.log(`${col('bright', '║')}  ${col('cyan', '⚡  Lumina Performance Workbench')}${' '.repeat(31)}${col('bright', '║')}`)
+console.log(
+  `\n${col('bright', '╔══════════════════════════════════════════════════════════════╗')}`
+)
+console.log(
+  `${col('bright', '║')}  ${col('cyan', '⚡  Lumina Performance Workbench')}${' '.repeat(31)}${col('bright', '║')}`
+)
 console.log(`${col('bright', '╚══════════════════════════════════════════════════════════════╝')}`)
 
 try {
   await analyzeCodebase()
-  await analyzeTests()       // ← includes running the test suite
+  await analyzeTests() // ← includes running the test suite
   await analyzeBundleSize()
   await measureFileOps()
   await measureDataOps()

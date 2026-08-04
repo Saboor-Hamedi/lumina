@@ -1,7 +1,10 @@
 import React, { useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react'
 
 export const FixedSizeList = forwardRef(
-  ({ height, itemCount, itemSize, width, itemData, children: RowComponent, className, onScroll }, ref) => {
+  (
+    { height, itemCount, itemSize, width, itemData, children: RowComponent, className, onScroll },
+    ref
+  ) => {
     const containerRef = useRef(null)
     const [scrollTop, setScrollTop] = useState(0)
 

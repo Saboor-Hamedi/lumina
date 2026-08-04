@@ -55,7 +55,13 @@ import Fuse from 'fuse.js'
 import { rankSnippets } from '../../core/utils/searchRanker'
 import './FileExplorer.css'
 
-import { SortableListItem, DroppableFolderItem, SortableGridItem, OverlayWrapper, DroppableRootZone } from './components'
+import {
+  SortableListItem,
+  DroppableFolderItem,
+  SortableGridItem,
+  OverlayWrapper,
+  DroppableRootZone
+} from './components'
 import { useFileSearch } from './hooks/useFileSearch'
 import { useFileTree } from './hooks/useFileTree'
 
@@ -93,7 +99,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   // context menu & confirm
   const [folderContext, setFolderContext] = useState(null) // { x, y, folderId }
   const [deleteConfirmFolder, setDeleteConfirmFolder] = useState(null)
-  
+
   // Track last clicked/selected folder for "New Note" sidebar button
   const [lastClickedFolder, setLastClickedFolder] = useState(null)
   const [sidebarFocus, setSidebarFocus] = useState(null) // null | 'root' | 'folder'
@@ -110,7 +116,11 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   const folderColors = useVaultStore((state) => state.folderColors)
   const setFolderColor = useVaultStore((state) => state.setFolderColor)
   const setSelectedSnippet = useVaultStore((state) => state.setSelectedSnippet)
-  const selectedSnippetId = useVaultStore((state) => state.selectedSnippet?.id || (state.activeTabId && state.activeTabId !== GRAPH_TAB_ID ? state.activeTabId : null))
+  const selectedSnippetId = useVaultStore(
+    (state) =>
+      state.selectedSnippet?.id ||
+      (state.activeTabId && state.activeTabId !== GRAPH_TAB_ID ? state.activeTabId : null)
+  )
   const saveSnippet = useVaultStore((state) => state.saveSnippet)
   const loadVault = useVaultStore((state) => state.loadVault)
   const isLoading = useVaultStore((state) => state.isLoading)
@@ -220,7 +230,11 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     return () => window.removeEventListener('keydown', handler, { capture: true })
   }, [isOpen, onClose])
 
-  const { filteredSnippets, isQueryActive, matchMetaMap, pinnedItems, allSnippets } = useFileSearch(snippets, query, settings)
+  const { filteredSnippets, isQueryActive, matchMetaMap, pinnedItems, allSnippets } = useFileSearch(
+    snippets,
+    query,
+    settings
+  )
 
   const flatTree = useFileTree({
     allSnippets,
@@ -236,7 +250,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   useEffect(() => {
     if (creating) {
       // Find index of input
-      const idx = flatTree.findIndex(item => item.type === 'input')
+      const idx = flatTree.findIndex((item) => item.type === 'input')
       if (idx !== -1 && virtuosoRef.current) {
         // Small timeout to allow virtuoso to measure items
         setTimeout(() => {
@@ -261,7 +275,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     const foldersToExpand = []
     const parts = activeSnippet.folderId.split('/')
     let currentPath = ''
-    
+
     for (const part of parts) {
       currentPath = currentPath ? `${currentPath}/${part}` : part
       foldersToExpand.push(currentPath)
@@ -270,7 +284,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     const currentSet = expandedFoldersRef.current
     const next = new Set(currentSet)
     let changed = false
-    
+
     for (const id of foldersToExpand) {
       if (!next.has(id)) {
         next.add(id)
@@ -288,9 +302,11 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   useEffect(() => {
     if (!selectedSnippetId || !virtuosoRef.current || flatTree.length === 0) return
     if (lastScrolledSnippetRef.current === selectedSnippetId) return
-    
-    const idx = flatTree.findIndex(item => item.type === 'file' && item.snippet && item.snippet.id === selectedSnippetId)
-    
+
+    const idx = flatTree.findIndex(
+      (item) => item.type === 'file' && item.snippet && item.snippet.id === selectedSnippetId
+    )
+
     // Do not auto-scroll if the selection was just made by clicking inside this explorer
     // BUT we must still set it as visually active!
     if (Date.now() - clickedInExplorerRef.current < 200) {
@@ -314,10 +330,10 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
       if (targetFolderId === null) {
         const selectedSnippetId = useVaultStore.getState().selectedSnippet?.id
         const snippets = useVaultStore.getState().snippets
-        const activeSnippet = snippets.find(s => s.id === selectedSnippetId)
+        const activeSnippet = snippets.find((s) => s.id === selectedSnippetId)
         targetFolderId = activeSnippet?.folderId || ''
       }
-      
+
       if (targetFolderId) {
         setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
       }
@@ -370,7 +386,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
         const next = new Set(currentSet)
         if (next.has(folderId)) next.delete(folderId)
         else next.add(folderId)
-        
+
         setExpandedFolders(next)
         updateSetting('expandedFolders', Array.from(next))
       }
@@ -425,9 +441,10 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                   top: 0,
                   bottom: 0,
                   width: '1.5px',
-                  backgroundColor: i === item.depth - 1 
-                    ? 'var(--text-accent)' 
-                    : 'rgba(var(--text-accent-rgb, 64, 186, 250), 0.35)',
+                  backgroundColor:
+                    i === item.depth - 1
+                      ? 'var(--text-accent)'
+                      : 'rgba(var(--text-accent-rgb, 64, 186, 250), 0.35)',
                   opacity: i === item.depth - 1 ? 0.85 : 1
                 }}
               />
@@ -446,24 +463,24 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
             </React.Fragment>
           ))}
           <div
-              className="folder-tree-main creating-input"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '2px 6px',
-                borderRadius: '4px',
-                background: 'transparent',
-                marginLeft: '5px',
-                paddingLeft: '1px'
-              }}
-            >
-              {item.kind === 'folder' ? (
-                <Folder size={14} fill="#e8a825" color="#e8a825" className="folder-icon-color" />
-              ) : (
-                <FileText size={14} className="icon-blue" />
-              )}
-              <input
+            className="folder-tree-main creating-input"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '2px 6px',
+              borderRadius: '4px',
+              background: 'transparent',
+              marginLeft: '5px',
+              paddingLeft: '1px'
+            }}
+          >
+            {item.kind === 'folder' ? (
+              <Folder size={14} fill="#e8a825" color="#e8a825" className="folder-icon-color" />
+            ) : (
+              <FileText size={14} className="icon-blue" />
+            )}
+            <input
               autoFocus
               value={context.creatingValue}
               onChange={(e) => context.setCreatingValue(e.target.value)}
@@ -528,9 +545,10 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                   top: 0,
                   bottom: 0,
                   width: '1.5px',
-                  backgroundColor: i === item.depth - 1 
-                    ? 'var(--text-accent)' 
-                    : 'rgba(var(--text-accent-rgb, 64, 186, 250), 0.35)',
+                  backgroundColor:
+                    i === item.depth - 1
+                      ? 'var(--text-accent)'
+                      : 'rgba(var(--text-accent-rgb, 64, 186, 250), 0.35)',
                   opacity: i === item.depth - 1 ? 0.85 : 1,
                   zIndex: 0
                 }}
@@ -554,7 +572,10 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
             key={item.snippet.id}
             snippet={item.snippet}
             onClick={context.handleSelect}
-            isActive={(item.snippet.id === context.selectedSnippetId && context.sidebarFocus === null) || index === context.selectedIndex}
+            isActive={
+              (item.snippet.id === context.selectedSnippetId && context.sidebarFocus === null) ||
+              index === context.selectedIndex
+            }
             searchQuery={context.query}
             matchSnippet={context.matchMetaMap?.get(item.snippet.id)?.matchSnippet || ''}
             depth={item.depth}
@@ -923,7 +944,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
         </div>
 
         {/* Scrollable Body */}
-        <div 
+        <div
           className="start-menu-body"
           tabIndex={-1}
           onClick={(e) => {
@@ -956,15 +977,24 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                   >
                     <div
                       className="recommended-list"
-                      style={{ display: 'flex', flexDirection: 'column', flex: 1, overflowY: 'auto' }}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        flex: 1,
+                        overflowY: 'auto'
+                      }}
                     >
                       {pinnedItems.map((item) => (
-                        <div key={item.id} className="favorite-item-wrapper" style={{ position: 'relative' }}>
+                        <div
+                          key={item.id}
+                          className="favorite-item-wrapper"
+                          style={{ position: 'relative' }}
+                        >
                           <SortableListItem
                             snippet={item}
                             onClick={() => {
                               if (item.itemType === 'folder') {
-                                setExpandedFolders(prev => new Set(prev).add(item.id))
+                                setExpandedFolders((prev) => new Set(prev).add(item.id))
                                 setActiveTab('all')
                               } else {
                                 handleSelect(item)
@@ -988,14 +1018,14 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                 <h3>
                   {allSnippets.length} {allSnippets.length === 1 ? 'Note' : 'Notes'}
                 </h3>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <ToolTip text="Collapse All Folders">
-                  <button className="sort-toggle-btn" onClick={collapseAllFolders}>
-                    <ChevronsUp size={14} />
-                  </button>
-                </ToolTip>
-                <ToolTip text="Refresh Workspace">
-                  <button
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <ToolTip text="Collapse All Folders">
+                    <button className="sort-toggle-btn" onClick={collapseAllFolders}>
+                      <ChevronsUp size={14} />
+                    </button>
+                  </ToolTip>
+                  <ToolTip text="Refresh Workspace">
+                    <button
                       className="sort-toggle-btn"
                       onClick={(e) => {
                         e.stopPropagation()
@@ -1111,7 +1141,11 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                                 marginLeft: '-6px'
                               }}
                             >
-                              <Folder size={14} fill={folderColors[activeListDragItem.item.id] || "#e8a825"} color={folderColors[activeListDragItem.item.id] || "#e8a825"} />
+                              <Folder
+                                size={14}
+                                fill={folderColors[activeListDragItem.item.id] || '#e8a825'}
+                                color={folderColors[activeListDragItem.item.id] || '#e8a825'}
+                              />
                               <span className="folder-name">{activeListDragItem.item.name}</span>
                             </div>
                           </div>
@@ -1188,8 +1222,14 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
               }
             },
             {
-              label: pinnedFolders.includes(folderContext.folderId) ? 'Unpin from Favorites' : 'Pin to Favorites',
-              icon: pinnedFolders.includes(folderContext.folderId) ? <StarOff size={14} /> : <Star size={14} />,
+              label: pinnedFolders.includes(folderContext.folderId)
+                ? 'Unpin from Favorites'
+                : 'Pin to Favorites',
+              icon: pinnedFolders.includes(folderContext.folderId) ? (
+                <StarOff size={14} />
+              ) : (
+                <Star size={14} />
+              ),
               onClick: () => {
                 if (!folderContext.folderId) return
                 togglePinnedFolder(folderContext.folderId)
@@ -1201,7 +1241,9 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
             {
               type: 'custom',
               render: (onClose) => {
-                const currentCol = folderContext.folderId ? (folderColors[folderContext.folderId] || null) : null
+                const currentCol = folderContext.folderId
+                  ? folderColors[folderContext.folderId] || null
+                  : null
                 return (
                   <div
                     style={{
@@ -1213,12 +1255,33 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                     }}
                   >
                     {[
-                      { id: null, bg: 'var(--bg-panel)', border: '1px dashed var(--border-main)', title: 'Default Color (Reset)' },
-                      { id: 'rgba(59, 130, 246, 0.2)', bg: 'rgba(59, 130, 246, 0.5)', title: 'Blue' },
-                      { id: 'rgba(168, 85, 247, 0.2)', bg: 'rgba(168, 85, 247, 0.5)', title: 'Purple' },
+                      {
+                        id: null,
+                        bg: 'var(--bg-panel)',
+                        border: '1px dashed var(--border-main)',
+                        title: 'Default Color (Reset)'
+                      },
+                      {
+                        id: 'rgba(59, 130, 246, 0.2)',
+                        bg: 'rgba(59, 130, 246, 0.5)',
+                        title: 'Blue'
+                      },
+                      {
+                        id: 'rgba(168, 85, 247, 0.2)',
+                        bg: 'rgba(168, 85, 247, 0.5)',
+                        title: 'Purple'
+                      },
                       { id: 'rgba(239, 68, 68, 0.2)', bg: 'rgba(239, 68, 68, 0.5)', title: 'Red' },
-                      { id: 'rgba(34, 197, 94, 0.2)', bg: 'rgba(34, 197, 94, 0.5)', title: 'Green' },
-                      { id: 'rgba(249, 115, 22, 0.2)', bg: 'rgba(249, 115, 22, 0.5)', title: 'Orange' }
+                      {
+                        id: 'rgba(34, 197, 94, 0.2)',
+                        bg: 'rgba(34, 197, 94, 0.5)',
+                        title: 'Green'
+                      },
+                      {
+                        id: 'rgba(249, 115, 22, 0.2)',
+                        bg: 'rgba(249, 115, 22, 0.5)',
+                        title: 'Orange'
+                      }
                     ].map((c, idx) => {
                       const isSelected = currentCol === c.id
                       return (
@@ -1236,7 +1299,9 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                             height: '20px',
                             borderRadius: '4px',
                             background: c.bg,
-                            border: isSelected ? '2px solid #10b981' : (c.border || '1px solid rgba(255, 255, 255, 0.1)'),
+                            border: isSelected
+                              ? '2px solid #10b981'
+                              : c.border || '1px solid rgba(255, 255, 255, 0.1)',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',

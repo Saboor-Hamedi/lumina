@@ -122,17 +122,22 @@ const CommandPaletteRow = React.memo(({ index, style, data }) => {
       {isAction ? (
         (() => {
           if (item.action === 'settings') {
-            if (item.tab === 'general') return <Settings size={18} className="item-icon action-icon" />
-            if (item.tab === 'appearance') return <Palette size={18} className="item-icon action-icon" />
-            if (item.tab === 'shortcuts') return <Keyboard size={18} className="item-icon action-icon" />
+            if (item.tab === 'general')
+              return <Settings size={18} className="item-icon action-icon" />
+            if (item.tab === 'appearance')
+              return <Palette size={18} className="item-icon action-icon" />
+            if (item.tab === 'shortcuts')
+              return <Keyboard size={18} className="item-icon action-icon" />
             if (item.tab === 'ai') return <Bot size={18} className="item-icon action-icon" />
             if (item.tab === 'type') return <Type size={18} className="item-icon action-icon" />
             if (item.tab === 'graph') return <Network size={18} className="item-icon action-icon" />
             return <Settings size={18} className="item-icon action-icon" />
           }
           if (item.action === 'new') return <Plus size={18} className="item-icon action-icon" />
-          if (item.action === 'graph') return <Network size={18} className="item-icon action-icon" />
-          if (item.action === 'chat') return <MessageSquare size={18} className="item-icon action-icon" />
+          if (item.action === 'graph')
+            return <Network size={18} className="item-icon action-icon" />
+          if (item.action === 'chat')
+            return <MessageSquare size={18} className="item-icon action-icon" />
           if (item.action === 'docs') return <Book size={18} className="item-icon action-icon" />
           return <Zap size={18} className="item-icon action-icon" />
         })()
@@ -146,7 +151,9 @@ const CommandPaletteRow = React.memo(({ index, style, data }) => {
         (() => {
           const lang = (item.language || 'markdown').toLowerCase()
           const title = (item.title || '').toLowerCase()
-          if (['javascript', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'python', 'py'].includes(lang))
+          if (
+            ['javascript', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'python', 'py'].includes(lang)
+          )
             return <FileCode size={18} className="item-icon" />
           if (lang === 'json') return <FileJson size={18} className="item-icon" />
           if (lang === 'markdown' || lang === 'md' || title.endsWith('.md'))
@@ -160,7 +167,13 @@ const CommandPaletteRow = React.memo(({ index, style, data }) => {
       <div className="item-info">
         <div
           className="item-header-row"
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', minWidth: 0 }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            width: '100%',
+            minWidth: 0
+          }}
         >
           <div className="item-title">
             {item.folderId && item.matchType !== 'folder' && (
@@ -187,7 +200,11 @@ const CommandPaletteRow = React.memo(({ index, style, data }) => {
         </div>
         {(item.matchSnippet || isSemantic) && (
           <div className={`item-secondary ${isSemantic ? 'semantic-badge' : ''}`}>
-            {isSemantic ? '✨ AI Match' : <HighlightText text={item.matchSnippet} highlight={query} />}
+            {isSemantic ? (
+              '✨ AI Match'
+            ) : (
+              <HighlightText text={item.matchSnippet} highlight={query} />
+            )}
           </div>
         )}
       </div>
@@ -195,7 +212,19 @@ const CommandPaletteRow = React.memo(({ index, style, data }) => {
   )
 })
 const CommandPalette = React.memo(
-  ({ isOpen, onClose, items, onSelect, onNew, onToggleSettings, onToggleGraph, onToggleChat, onToggleDocs, onRename, initialQuery = '' }) => {
+  ({
+    isOpen,
+    onClose,
+    items,
+    onSelect,
+    onNew,
+    onToggleSettings,
+    onToggleGraph,
+    onToggleChat,
+    onToggleDocs,
+    onRename,
+    initialQuery = ''
+  }) => {
     const [query, setQuery] = useState('')
     const deferredQuery = useDeferredValue(query)
     const [selectedIndex, setSelectedIndex] = useState(0)
@@ -205,10 +234,12 @@ const CommandPalette = React.memo(
     const previousFocusRef = useRef(null)
 
     const { searchNotes, isModelReady, modelLoadingProgress, aiError } = useAIStore()
-    const { dirtySnippetIds, folders } = useVaultStore(useShallow(state => ({
-      dirtySnippetIds: state.dirtySnippetIds,
-      folders: state.folders
-    })))
+    const { dirtySnippetIds, folders } = useVaultStore(
+      useShallow((state) => ({
+        dirtySnippetIds: state.dirtySnippetIds,
+        folders: state.folders
+      }))
+    )
     const { settings, updateSetting } = useSettingsStore()
     const { tags } = useTag()
     const { mentions } = useMention()
@@ -278,19 +309,96 @@ const CommandPalette = React.memo(
       const actionQuery = isActionQuery ? lowerQuery.slice(1).trim() : lowerQuery
 
       const systemActions = [
-        { id: 'action-settings-general', title: 'Settings: General', matchType: 'action', action: 'settings', tab: 'general', shortcut: 'Ctrl + ,' },
-        { id: 'action-settings-appearance', title: 'Settings: Theme', matchType: 'action', action: 'settings', tab: 'appearance' },
-        { id: 'action-settings-shortcuts', title: 'Settings: Shortcuts', matchType: 'action', action: 'settings', tab: 'shortcuts' },
-        { id: 'action-settings-ai', title: 'Settings: AI & Language Models', matchType: 'action', action: 'settings', tab: 'ai' },
-        { id: 'action-settings-type', title: 'Settings: Typography', matchType: 'action', action: 'settings', tab: 'type' },
-        { id: 'action-settings-graph', title: 'Settings: Graph Node Settings', matchType: 'action',  action: 'settings', tab: 'graph' },
-        { id: 'action-toggle-type-sound', title: `Toggle Mechanical Keyboard Sound (${settings?.typeSound ? 'On' : 'Off'})`, matchType: 'action', action: 'toggle-type-sound' },
-        { id: 'action-reload-window', title: 'Developer: Reload Window', matchType: 'action', action: 'reload-window', shortcut: 'Ctrl + R' },
-        { id: 'action-chat', title: 'Chat: Open AI Chat', matchType: 'action', action: 'chat', shortcut: 'Ctrl + Shift + \\' },
-        { id: 'action-docs', title: 'Docs: Open Documentation', matchType: 'action', action: 'docs' },
-        { id: 'action-new', title: 'Note: Create New Note', matchType: 'action', action: 'new', shortcut: 'Ctrl + N' },
-        { id: 'action-rename', title: 'Note: Rename Note', matchType: 'action', action: 'rename', shortcut: 'Ctrl + R' },
-        { id: 'action-graph', title: 'Graph: Open Knowledge Nexus', matchType: 'action', action: 'graph', shortcut: 'Ctrl + G' }
+        {
+          id: 'action-settings-general',
+          title: 'Settings: General',
+          matchType: 'action',
+          action: 'settings',
+          tab: 'general',
+          shortcut: 'Ctrl + ,'
+        },
+        {
+          id: 'action-settings-appearance',
+          title: 'Settings: Theme',
+          matchType: 'action',
+          action: 'settings',
+          tab: 'appearance'
+        },
+        {
+          id: 'action-settings-shortcuts',
+          title: 'Settings: Shortcuts',
+          matchType: 'action',
+          action: 'settings',
+          tab: 'shortcuts'
+        },
+        {
+          id: 'action-settings-ai',
+          title: 'Settings: AI & Language Models',
+          matchType: 'action',
+          action: 'settings',
+          tab: 'ai'
+        },
+        {
+          id: 'action-settings-type',
+          title: 'Settings: Typography',
+          matchType: 'action',
+          action: 'settings',
+          tab: 'type'
+        },
+        {
+          id: 'action-settings-graph',
+          title: 'Settings: Graph Node Settings',
+          matchType: 'action',
+          action: 'settings',
+          tab: 'graph'
+        },
+        {
+          id: 'action-toggle-type-sound',
+          title: `Toggle Mechanical Keyboard Sound (${settings?.typeSound ? 'On' : 'Off'})`,
+          matchType: 'action',
+          action: 'toggle-type-sound'
+        },
+        {
+          id: 'action-reload-window',
+          title: 'Developer: Reload Window',
+          matchType: 'action',
+          action: 'reload-window',
+          shortcut: 'Ctrl + R'
+        },
+        {
+          id: 'action-chat',
+          title: 'Chat: Open AI Chat',
+          matchType: 'action',
+          action: 'chat',
+          shortcut: 'Ctrl + Shift + \\'
+        },
+        {
+          id: 'action-docs',
+          title: 'Docs: Open Documentation',
+          matchType: 'action',
+          action: 'docs'
+        },
+        {
+          id: 'action-new',
+          title: 'Note: Create New Note',
+          matchType: 'action',
+          action: 'new',
+          shortcut: 'Ctrl + N'
+        },
+        {
+          id: 'action-rename',
+          title: 'Note: Rename Note',
+          matchType: 'action',
+          action: 'rename',
+          shortcut: 'Ctrl + R'
+        },
+        {
+          id: 'action-graph',
+          title: 'Graph: Open Knowledge Nexus',
+          matchType: 'action',
+          action: 'graph',
+          shortcut: 'Ctrl + G'
+        }
       ].filter((a) => !actionQuery || a.title.toLowerCase().includes(actionQuery))
 
       // If it's a command query (starts with >), return ONLY system actions (like VS Code)
@@ -425,40 +533,43 @@ const CommandPalette = React.memo(
       }
     }
 
-    const itemData = useMemo(() => ({
-      filtered,
-      selectedIndex,
-      setSelectedIndex,
-      query,
-      setQuery,
-      inputRef,
-      onSelect,
-      onNew,
-      onToggleSettings,
-      onToggleGraph,
-      onToggleChat,
-      onToggleDocs,
-      onRename,
-      onClose,
-      dirtySnippetIds,
-      settings,
-      updateSetting
-    }), [
-      filtered,
-      selectedIndex,
-      query,
-      dirtySnippetIds,
-      settings,
-      onSelect,
-      onNew,
-      onToggleSettings,
-      onToggleGraph,
-      onToggleChat,
-      onToggleDocs,
-      onRename,
-      onClose,
-      updateSetting
-    ])
+    const itemData = useMemo(
+      () => ({
+        filtered,
+        selectedIndex,
+        setSelectedIndex,
+        query,
+        setQuery,
+        inputRef,
+        onSelect,
+        onNew,
+        onToggleSettings,
+        onToggleGraph,
+        onToggleChat,
+        onToggleDocs,
+        onRename,
+        onClose,
+        dirtySnippetIds,
+        settings,
+        updateSetting
+      }),
+      [
+        filtered,
+        selectedIndex,
+        query,
+        dirtySnippetIds,
+        settings,
+        onSelect,
+        onNew,
+        onToggleSettings,
+        onToggleGraph,
+        onToggleChat,
+        onToggleDocs,
+        onRename,
+        onClose,
+        updateSetting
+      ]
+    )
 
     if (!isOpen) return null
 
@@ -470,7 +581,11 @@ const CommandPalette = React.memo(
             <input
               ref={inputRef}
               type="text"
-              placeholder={query.startsWith('>') ? "Search commands..." : "Search notes... (Type > for commands)"}
+              placeholder={
+                query.startsWith('>')
+                  ? 'Search commands...'
+                  : 'Search notes... (Type > for commands)'
+              }
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value)

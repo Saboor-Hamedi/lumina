@@ -9,20 +9,20 @@ export const handleExportText = async (mainWindow, payload) => {
     // Use marked to convert to HTML, then strip tags for robust plain text
     const { Marked } = await import('marked')
     const marked = new Marked()
-    
+
     // First, convert wikilinks to standard links so they can be stripped gracefully
     const processedContent = (content || '').replace(/\[\[(.*?)\]\]/g, '$1')
-    
+
     let html = await marked.parse(processedContent)
-    
+
     // Convert block elements to newlines
     let textContent = html.replace(/<br\s*\/?>/gi, '\n')
     textContent = textContent.replace(/<\/p>|<\/h[1-6]>|<\/div>|<\/li>|<\/blockquote>/gi, '\n\n')
     textContent = textContent.replace(/<li>/gi, '- ')
-    
+
     // Strip all remaining HTML tags
     textContent = textContent.replace(/<[^>]*>?/gm, '')
-    
+
     // Decode HTML entities
     textContent = textContent
       .replace(/&amp;/g, '&')
@@ -31,7 +31,7 @@ export const handleExportText = async (mainWindow, payload) => {
       .replace(/&quot;/g, '"')
       .replace(/&#39;/g, "'")
       .replace(/&nbsp;/g, ' ')
-      
+
     // Clean up multiple newlines
     textContent = textContent.replace(/\n\s*\n\s*\n/g, '\n\n').trim()
 
