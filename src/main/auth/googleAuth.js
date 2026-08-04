@@ -14,10 +14,10 @@ export function setupGoogleAuth() {
         }
       })
 
-      // Use the Implicit Flow (response_type=token) which does not require a client secret.
-      // We use a dummy redirect URI that Electron will intercept before it actually loads.
+      // We use the standard Authorization Code flow (response_type=code)
+      // because "Desktop App" client types do not support response_type=token
       const redirectUri = 'http://localhost/oauth2callback'
-      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=https://www.googleapis.com/auth/drive.file email profile`
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=https://www.googleapis.com/auth/drive.file email profile`
 
       authWindow.loadURL(authUrl)
 
@@ -25,12 +25,10 @@ export function setupGoogleAuth() {
         if (url.startsWith(redirectUri)) {
           e.preventDefault()
 
-          // With response_type=token, the access token is returned in the URL hash, not query params.
-          // Example: http://localhost/oauth2callback#access_token=ya29...&token_type=Bearer&expires_in=3599
-          const hashString = new URL(url).hash.substring(1)
-          const params = new URLSearchParams(hashString)
-          const accessToken = params.get('access_token')
-          const error = params.get('error')
+          // Extract the authorization code from the query parameters
+          const urlObj = new URL(url)
+          const code = urlObj.searchParams.get('code')
+          const error = urlObj.searchParams.get('error')
 
           authWindow.close()
 
@@ -39,18 +37,39 @@ export function setupGoogleAuth() {
             return
           }
 
-          if (accessToken) {
+          if (code) {
             try {
+              // Exchange the authorization code for an access token using the Client Secret
+              const tokenResponse = await net.fetch('https://oauth2.googleapis.com/token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({
+                  client_id: clientId,
+                  client_secret: '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', // From user's previous message
+                  code: code,
+                  grant_type: 'authorization_code',
+                  redirect_uri: redirectUri
+                }).toString()
+              })
+
+              if (!tokenResponse.ok) {
+                const errText = await tokenResponse.text()
+                throw new Error(`Token exchange failed: ${errText}`)
+              }
+
+              const tokenData = await tokenResponse.json()
+              const accessToken = tokenData.access_token
+
               // Fetch user profile info using the access token to show in the UI
-              const response = await net.fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+              const profileResponse = await net.fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
                 headers: { Authorization: `Bearer ${accessToken}` }
               })
 
-              if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`)
+              if (!profileResponse.ok) {
+                throw new Error(`Profile fetch failed: ${profileResponse.status}`)
               }
 
-              const profile = await response.json()
+              const profile = await profileResponse.json()
 
               const user = {
                 name: profile.name,
