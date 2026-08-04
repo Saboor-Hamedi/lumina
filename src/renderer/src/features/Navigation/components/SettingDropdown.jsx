@@ -199,22 +199,54 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
       )}
 
       {googleUser && (
-        <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 'var(--radius-sm, 4px)' }}>
-          {/* Inline progress bar bg */}
+        <div
+          style={{
+            position: 'relative',
+            borderRadius: 'var(--radius-sm, 4px)',
+            overflow: 'hidden',
+            border: isBackingUp
+              ? '1px solid var(--text-accent, #40bafa)'
+              : backupState === 'done'
+              ? '1px solid rgba(34,197,94,0.4)'
+              : backupState === 'error'
+              ? '1px solid rgba(239,68,68,0.4)'
+              : '1px solid transparent',
+            transition: 'border-color 0.3s'
+          }}
+        >
+          {/* Animated fill track */}
+          {(isBackingUp || backupState === 'done') && (
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: backupState === 'done'
+                  ? 'rgba(34,197,94,0.08)'
+                  : 'linear-gradient(90deg, var(--text-accent, #40bafa) 0%, transparent 100%)',
+                opacity: backupState === 'done' ? 1 : 0.1,
+                width: backupState === 'done' ? '100%' : `${backupProgress}%`,
+                transition: 'width 0.5s ease-out, opacity 0.3s',
+                pointerEvents: 'none'
+              }}
+            />
+          )}
+
+          {/* Bottom progress bar stripe */}
           {isBackingUp && (
             <div
               style={{
                 position: 'absolute',
-                left: 0, top: 0, bottom: 0,
+                bottom: 0,
+                left: 0,
+                height: '2px',
                 width: `${backupProgress}%`,
-                backgroundColor: 'var(--text-accent)',
-                opacity: 0.12,
-                transition: 'width 0.4s ease-out',
-                pointerEvents: 'none',
-                borderRadius: 'var(--radius-sm, 4px)'
+                backgroundColor: 'var(--text-accent, #40bafa)',
+                transition: 'width 0.5s ease-out',
+                borderRadius: '0 2px 2px 0'
               }}
             />
           )}
+
           <button
             onClick={handleBackup}
             disabled={isBackingUp}
@@ -223,46 +255,58 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
               display: 'flex',
               alignItems: 'center',
               gap: '10px',
-              padding: '6px 10px',
+              padding: '7px 10px',
               border: 'none',
               background: 'transparent',
-              color: 'var(--text-main)',
+              color: backupState === 'done'
+                ? '#22c55e'
+                : backupState === 'error'
+                ? 'rgba(239,68,68,0.9)'
+                : 'var(--text-main)',
               fontSize: '12px',
               fontWeight: '500',
               cursor: isBackingUp ? 'default' : 'pointer',
               borderRadius: 'var(--radius-sm, 4px)',
               textAlign: 'left',
               width: '100%',
-              transition: 'background-color 0.1s'
+              transition: 'background-color 0.15s, color 0.3s'
             }}
             onMouseEnter={(e) => { if (!isBackingUp) e.currentTarget.style.backgroundColor = 'var(--bg-active)' }}
             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
           >
             {/* Left icon */}
             {isBackingUp ? (
-              <Loader2 size={14} style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />
+              <Loader2 size={14} style={{ animation: 'spin 1s linear infinite', flexShrink: 0, color: 'var(--text-accent)' }} />
             ) : backupState === 'done' ? (
-              <Check size={14} color="var(--text-accent)" style={{ flexShrink: 0 }} />
+              <Check size={14} style={{ flexShrink: 0, color: '#22c55e' }} />
+            ) : backupState === 'error' ? (
+              <Cloud size={14} style={{ flexShrink: 0, color: 'rgba(239,68,68,0.9)' }} />
             ) : (
               <Cloud size={14} style={{ flexShrink: 0 }} />
             )}
 
-            {/* Label + right checkmark */}
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', minWidth: 0 }}>
-              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {backupState === 'zipping'
-                  ? 'Compressing workspace…'
-                  : backupState === 'uploading'
-                  ? `Uploading… ${Math.round(backupProgress)}%`
-                  : backupState === 'done'
-                  ? 'Backup complete!'
-                  : backupState === 'error'
-                  ? 'Backup failed — retry?'
-                  : 'Backup Workspace to Drive'}
-              </span>
-              {/* Synced checkmark — only show when idle and synced recently */}
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', minWidth: 0, gap: '6px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
+                  {backupState === 'zipping'
+                    ? 'Backup Workspace to Drive'
+                    : backupState === 'uploading'
+                    ? 'Backup Workspace to Drive'
+                    : backupState === 'done'
+                    ? 'Backup complete!'
+                    : backupState === 'error'
+                    ? 'Backup failed — retry?'
+                    : 'Backup Workspace to Drive'}
+                </span>
+                {isBackingUp && (
+                  <span style={{ fontSize: '10px', color: 'var(--text-accent)', fontWeight: 400, lineHeight: 1.2, marginTop: '1px' }}>
+                    {backupState === 'zipping' ? 'Compressing workspace…' : `Uploading… ${Math.round(backupProgress)}%`}
+                  </span>
+                )}
+              </div>
+              {/* Synced tick when idle */}
               {backupState === 'idle' && isSynced && (
-                <Check size={12} color="var(--text-accent)" style={{ flexShrink: 0, marginLeft: '4px' }} />
+                <Check size={11} color="var(--text-accent)" style={{ flexShrink: 0 }} />
               )}
             </div>
           </button>

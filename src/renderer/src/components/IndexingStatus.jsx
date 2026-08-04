@@ -10,6 +10,9 @@ const IndexingStatus = () => {
     if (!window.api?.onIndexProgress) return
 
     const unsubscribe = window.api.onIndexProgress((newStats) => {
+      // Ignore backup events — those are handled inline in the SettingDropdown
+      if (newStats?.type === 'backup') return
+
       setStats(newStats)
       setIsVisible(true)
     })
@@ -30,7 +33,7 @@ const IndexingStatus = () => {
     const timer = setTimeout(() => {
       setIsVisible(false)
       setStats(null)
-    }, 1000)
+    }, 1500)
 
     return () => clearTimeout(timer)
   }, [stats])
@@ -40,7 +43,6 @@ const IndexingStatus = () => {
   const isComplete =
     stats.progress >= 100 || stats.stage === 'up-to-date' || stats.stage === 'completed'
 
-  // Ensure progress remains visually bounded between 0 and 100
   const safeProgress = Math.min(100, Math.max(0, stats.progress || 0))
 
   return (
@@ -66,15 +68,8 @@ const IndexingStatus = () => {
           )}
         </div>
 
-        <div
-          className="indexing-toast-message"
-          style={{ display: 'flex', flexDirection: 'column' }}
-        >
-          <div>
-            {isComplete 
-              ? (stats.type === 'backup' ? 'Backup complete' : 'Indexing complete') 
-              : (stats.type === 'backup' ? 'Backing up to Drive...' : 'Indexing...')}
-          </div>
+        <div className="indexing-toast-message" style={{ display: 'flex', flexDirection: 'column' }}>
+          <div>{isComplete ? 'Indexing complete' : 'Indexing…'}</div>
           <div
             style={{
               fontSize: '10.5px',
@@ -85,13 +80,11 @@ const IndexingStatus = () => {
               fontVariantNumeric: 'tabular-nums'
             }}
           >
-            {stats.type === 'backup'
-              ? (stats.stage === 'scanning' ? 'Compressing workspace...' : stats.stage === 'uploading' ? 'Uploading to Drive...' : 'Workspace synced to Drive.')
-              : (stats.stage === 'scanning' || stats.stage === 'checking'
-              ? `Scanning ${stats.found || stats.total || 0} files...`
+            {stats.stage === 'scanning' || stats.stage === 'checking'
+              ? `Scanning ${stats.found || stats.total || 0} files…`
               : stats.stage === 'up-to-date' || stats.stage === 'completed' || stats.progress >= 100
-                ? 'All files up to date.'
-                : `Processed ${stats.indexed || 0} of ${stats.total || 0} files`)}
+              ? 'All files up to date.'
+              : `Processed ${stats.indexed || 0} of ${stats.total || 0} files`}
           </div>
         </div>
 
