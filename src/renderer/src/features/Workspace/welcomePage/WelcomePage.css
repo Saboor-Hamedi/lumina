@@ -319,9 +319,9 @@
   justify-content: center;
   height: 100%;
   width: 100%;
-  max-width: 800px;
+  max-width: 760px;
   margin: 0 auto;
-  gap: 48px;
+  gap: 32px;
   position: relative;
   z-index: 1;
 }
@@ -360,18 +360,18 @@
 }
 
 .hero-title {
-  font-size: 2.2rem;
-  font-weight: 500;
+  font-size: 1.6rem;
+  font-weight: 600;
   color: var(--text-main);
   margin: 0;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 .hero-subtitle {
-  font-size: 1.05rem;
+  font-size: 0.875rem;
   color: var(--text-faint);
   margin: 0;
-  max-width: 400px;
+  max-width: 380px;
   line-height: 1.6;
   font-weight: 400;
 }
@@ -379,7 +379,7 @@
 .welcome-actions-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  gap: 10px;
   width: 100%;
   animation: fadeUp 0.6s ease-out 0.1s both;
 }
@@ -387,32 +387,32 @@
 .welcome-action-card {
   display: flex;
   align-items: center;
-  gap: 16px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color, rgba(255,255,255,0.05));
-  border-radius: 12px;
-  padding: 20px;
+  gap: 12px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  border-radius: 10px;
+  padding: 14px 16px;
   cursor: pointer;
   text-align: left;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.15s ease;
   color: var(--text-main);
 }
 
 .welcome-action-card:hover {
-  background: var(--bg-tertiary, rgba(255,255,255,0.05));
-  border-color: var(--border-hover, rgba(255,255,255,0.1));
-  transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+  background: var(--bg-active);
+  border-color: var(--border-dim);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
 .action-card-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.05);
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--bg-app);
   flex-shrink: 0;
 }
 
@@ -420,40 +420,41 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .action-card-content h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-main);
 }
 
 .action-card-content p {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   color: var(--text-faint);
 }
 
 .action-shortcut {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.7rem;
+  font-weight: 500;
   color: var(--text-faint);
-  background: rgba(255,255,255,0.05);
-  padding: 4px 8px;
+  background: var(--bg-app);
+  padding: 3px 7px;
   border-radius: 4px;
-  border: 1px solid rgba(255,255,255,0.05);
+  border: 1px solid var(--border-dim);
+  flex-shrink: 0;
 }
 
 .welcome-footer-hint {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   color: var(--text-faint);
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   animation: fadeUp 0.6s ease-out 0.2s both;
-  margin-top: 16px;
+  margin-top: 4px;
 }
 
 .welcome-footer-hint strong {
