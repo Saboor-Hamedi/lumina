@@ -26,7 +26,7 @@ const WelcomePage = ({ onNew }) => {
         <div className="welcome-actions-grid">
           <button className="welcome-action-card" onClick={onNew}>
             <div className="action-card-icon" style={{ color: 'var(--text-accent, #3b82f6)' }}>
-              <FileText size={24} />
+              <FileText size={16} />
             </div>
             <div className="action-card-content">
               <h3>Create a new note</h3>
@@ -37,7 +37,7 @@ const WelcomePage = ({ onNew }) => {
 
           <button className="welcome-action-card" onClick={handlePalette}>
             <div className="action-card-icon" style={{ color: '#10b981' }}>
-              <Search size={24} />
+              <Search size={16} />
             </div>
             <div className="action-card-content">
               <h3>Quick Search</h3>
@@ -53,7 +53,7 @@ const WelcomePage = ({ onNew }) => {
             }
           >
             <div className="action-card-icon" style={{ color: '#f59e0b' }}>
-              <FolderTree size={24} />
+              <FolderTree size={16} />
             </div>
             <div className="action-card-content">
               <h3>Toggle Sidebar</h3>
@@ -64,7 +64,7 @@ const WelcomePage = ({ onNew }) => {
 
           <button className="welcome-action-card" onClick={handleAIChat}>
             <div className="action-card-icon" style={{ color: '#8b5cf6' }}>
-              <Sparkles size={24} />
+              <Sparkles size={16} />
             </div>
             <div className="action-card-content">
               <h3>AI Assistant</h3>
