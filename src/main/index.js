@@ -280,7 +280,7 @@ app.whenReady().then(async () => {
   })
 
   // Export handlers
-  ipcMain.handle('window:export-html', async (_, payload) => handleExportDocs(mainWindow, payload))
+  ipcMain.handle('window:export-docs', async (_, payload) => handleExportDocs(mainWindow, payload))
   ipcMain.handle('window:export-pdf', async (_, payload) => handleExportPDF(mainWindow, payload))
   ipcMain.handle('window:export-markdown', async (_, payload) => handleExportMarkdown(mainWindow, payload))
   ipcMain.handle('window:export-text', async (_, payload) => handleExportText(mainWindow, payload))
