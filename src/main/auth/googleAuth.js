@@ -5,7 +5,6 @@ import SettingsManager from '../SettingsManager'
 
 let authServer = null
 
-
 export function setupGoogleAuth() {
   ipcMain.handle('auth:loginWithGoogle', async (event, clientId) => {
     return new Promise((resolve) => {
@@ -40,60 +39,67 @@ export function setupGoogleAuth() {
             authServer.close()
             authServer = null
 
-          if (error) {
-            resolve({ error: `Google returned error: ${error}` })
-            return
-          }
-
-          if (code) {
-            try {
-              // Exchange the authorization code for an access token using the Client Secret
-              const tokenResponse = await net.fetch('https://oauth2.googleapis.com/token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({
-                  client_id: clientId,
-                  client_secret: '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', // From user's previous message
-                  code: code,
-                  grant_type: 'authorization_code',
-                  redirect_uri: redirectUri
-                }).toString()
-              })
-
-              if (!tokenResponse.ok) {
-                const errText = await tokenResponse.text()
-                throw new Error(`Token exchange failed: ${errText}`)
-              }
-
-              const tokenData = await tokenResponse.json()
-              const accessToken = tokenData.access_token
-
-              // Fetch user profile info using the access token to show in the UI
-              const profileResponse = await net.fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-                headers: { Authorization: `Bearer ${accessToken}` }
-              })
-
-              if (!profileResponse.ok) {
-                throw new Error(`Profile fetch failed: ${profileResponse.status}`)
-              }
-
-              const profile = await profileResponse.json()
-
-              const user = {
-                name: profile.name,
-                email: profile.email,
-                picture: profile.picture,
-                token: accessToken
-              }
-
-              await SettingsManager.save('googleUser', user)
-              resolve(user)
-            } catch (fetchErr) {
-              resolve({ error: `Failed to fetch profile: ${fetchErr.message}` })
+            if (error) {
+              resolve({ error: `Google returned error: ${error}` })
+              return
             }
-          } else {
-            resolve({ error: 'Failed to retrieve access token from Google.' })
+
+            if (code) {
+              try {
+                // Exchange the authorization code for an access token using the Client Secret
+                const tokenResponse = await net.fetch('https://oauth2.googleapis.com/token', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                  body: new URLSearchParams({
+                    client_id: clientId,
+                    client_secret: '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', // From user's previous message
+                    code: code,
+                    grant_type: 'authorization_code',
+                    redirect_uri: redirectUri
+                  }).toString()
+                })
+
+                if (!tokenResponse.ok) {
+                  const errText = await tokenResponse.text()
+                  throw new Error(`Token exchange failed: ${errText}`)
+                }
+
+                const tokenData = await tokenResponse.json()
+                const accessToken = tokenData.access_token
+
+                // Fetch user profile info using the access token to show in the UI
+                const profileResponse = await net.fetch(
+                  'https://www.googleapis.com/oauth2/v2/userinfo',
+                  {
+                    headers: { Authorization: `Bearer ${accessToken}` }
+                  }
+                )
+
+                if (!profileResponse.ok) {
+                  throw new Error(`Profile fetch failed: ${profileResponse.status}`)
+                }
+
+                const profile = await profileResponse.json()
+
+                const user = {
+                  name: profile.name,
+                  email: profile.email,
+                  picture: profile.picture,
+                  token: accessToken
+                }
+
+                await SettingsManager.save('googleUser', user)
+                resolve(user)
+              } catch (fetchErr) {
+                resolve({ error: `Failed to fetch profile: ${fetchErr.message}` })
+              }
+            } else {
+              resolve({ error: 'Failed to retrieve access token from Google.' })
+            }
           }
+        } catch (serverErr) {
+          console.error(serverErr)
+          resolve({ error: 'Local server encountered an error.' })
         }
       })
 
