@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react'
-import { Settings, Palette, Cloud, RefreshCw } from 'lucide-react'
+import { Settings, Palette, Cloud, RefreshCw, LogOut } from 'lucide-react'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
 import { useUpdateStore } from '../../../core/store/useUpdateStore'
 
@@ -176,6 +176,17 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
             } finally {
               onClose()
             }
+          }}
+        />
+      )}
+
+      {googleUser && (
+        <DropdownItem
+          icon={<LogOut size={14} />}
+          label="Sign Out"
+          onClick={() => {
+            useSettingsStore.getState().updateSetting('googleUser', null)
+            onClose()
           }}
         />
       )}
