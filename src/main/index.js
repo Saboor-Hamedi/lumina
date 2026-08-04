@@ -478,18 +478,22 @@ app.whenReady().then(async () => {
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      font-family: 'Times New Roman', serif;
       line-height: 1.6;
       color: #222222;
       background: #ffffff;
       padding: 0;
       margin: 0;
+      font-size: 12px;
+      text-align: justify;
     }
     h1, h2, h3, h4, h5, h6 {
       margin-top: 1.5em;
       margin-bottom: 0.5em;
       font-weight: 600;
       line-height: 1.2;
+      font-size: 14px;
+      text-align: left;
     }
     h1 { font-size: 2.2em; border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; margin-bottom: 1em; }
     h2 { font-size: 1.6em; border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; margin-top: 1.5em; }
@@ -538,7 +542,8 @@ app.whenReady().then(async () => {
       border-collapse: collapse;
       margin: 2em 0;
       width: 100%;
-      font-size: 0.95em;
+      font-size: 12px;
+      font-weight: normal;
     }
     th, td {
       border-bottom: 1px solid #e9ecef;

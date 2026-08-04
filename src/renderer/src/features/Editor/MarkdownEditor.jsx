@@ -1097,6 +1097,7 @@ const MarkdownEditor = React.memo(
             onExportHTML={handleExportHTML}
             onExportPDF={handleExportPDF}
             onExportMarkdown={handleExportMarkdown}
+            onInlineAI={() => setIsInlineAIOpen(true)}
             onPreview={() => setIsPreviewOpen(true)}
           />
           <PreviewModal 

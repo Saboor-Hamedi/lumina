@@ -89,6 +89,20 @@ const EditorMenu = ({
     <div className="editor-titlebar">
       <div className="editor-controls">
         <div className="menu-container">
+          {onInlineAI && (
+            <ToolTip text="Inline Lumina (Ctrl+K)" position="bottom-right">
+              <button
+                className="icon-btn"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onInlineAI()
+                }}
+              >
+                <Zap size={18} />
+              </button>
+            </ToolTip>
+          )}
+
           <ToolTip text="More Options (Ctrl+I)" position="bottom-right">
             <button
               className={`icon-btn menu-trigger ${showMoreMenu ? 'active' : ''}`}
