@@ -37,23 +37,24 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
   }
 
   return (
-    <div
-      ref={dropdownRef}
+    <div 
+      ref={dropdownRef} 
       className="setting-dropdown-menu"
       style={{
         position: 'absolute',
-        bottom: '60px',
-        left: '10px',
+        bottom: '36px', // Above the footer
+        left: '12px',
         width: '240px',
-        backgroundColor: 'var(--bg-secondary)',
-        border: '1px solid var(--border-color)',
-        borderRadius: '8px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-        padding: '8px',
+        backgroundColor: 'var(--bg-app)',
+        border: '1px solid var(--border-dim)',
+        borderRadius: 'var(--radius-lg)',
+        boxShadow: 'var(--shadow-popup, 0 4px 12px rgba(0,0,0,0.15))',
+        padding: '6px',
         zIndex: 100,
         display: 'flex',
         flexDirection: 'column',
-        gap: '4px'
+        gap: '2px',
+        color: 'var(--text-main)'
       }}
     >
       <div
@@ -62,7 +63,7 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
           alignItems: 'center',
           gap: '12px',
           padding: '8px',
-          borderBottom: '1px solid var(--border-color)',
+          borderBottom: '1px solid var(--border-dim)',
           marginBottom: '4px'
         }}
       >
@@ -70,30 +71,30 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
           <img
             src={googleUser.picture}
             alt="Profile"
-            style={{ width: '32px', height: '32px', borderRadius: '50%' }}
+            style={{ width: '28px', height: '28px', borderRadius: '50%' }}
           />
         ) : (
           <div
             style={{
-              width: '32px',
-              height: '32px',
+              width: '28px',
+              height: '28px',
               borderRadius: '50%',
-              backgroundColor: 'var(--primary-color)',
+              backgroundColor: 'var(--text-accent)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'white'
+              color: '#ffffff'
             }}
           >
-            <Cloud size={16} />
+            <Cloud size={14} />
           </div>
         )}
         <div style={{ flex: 1, overflow: 'hidden' }}>
           <div
             style={{
-              fontSize: '13px',
+              fontSize: '12px',
               fontWeight: '600',
-              color: 'var(--text-primary)',
+              color: 'var(--text-main)',
               whiteSpace: 'nowrap',
               textOverflow: 'ellipsis',
               overflow: 'hidden'
@@ -105,7 +106,7 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
             <div
               style={{
                 fontSize: '11px',
-                color: 'var(--text-secondary)',
+                color: 'var(--text-muted)',
                 whiteSpace: 'nowrap',
                 textOverflow: 'ellipsis',
                 overflow: 'hidden'
@@ -117,45 +118,32 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
         </div>
       </div>
 
-      <DropdownItem
-        icon={<Settings size={16} />}
-        label="Settings"
-        onClick={() => {
-          onSettingsClick()
-          onClose()
-        }}
+      <DropdownItem 
+        icon={<Settings size={14} />} 
+        label="Settings" 
+        onClick={() => { onSettingsClick(); onClose(); }} 
       />
-
-      <DropdownItem
-        icon={<Palette size={16} />}
-        label="Change Theme"
-        onClick={() => {
-          onThemeClick()
-          onClose()
-        }}
+      
+      <DropdownItem 
+        icon={<Palette size={14} />} 
+        label="Change Theme" 
+        onClick={() => { onThemeClick(); onClose(); }} 
       />
 
       {(status === 'available' || status === 'ready' || status === 'downloading') && (
-        <DropdownItem
-          icon={<RefreshCw size={16} className={status === 'downloading' ? 'spin-slow' : ''} />}
-          label={
-            status === 'downloading'
-              ? `Downloading... ${Math.round(progress?.percent || 0)}%`
-              : 'Update Available'
-          }
+        <DropdownItem 
+          icon={<RefreshCw size={14} className={status === 'downloading' ? 'spin-slow' : ''} />} 
+          label={status === 'downloading' ? `Downloading... ${Math.round(progress?.percent || 0)}%` : 'Update Available'} 
           onClick={handleUpdateClick}
           highlight
         />
       )}
 
       {!googleUser && (
-        <DropdownItem
-          icon={<Cloud size={16} />}
-          label="Sign In to Sync"
-          onClick={() => {
-            onSettingsClick()
-            onClose()
-          }}
+        <DropdownItem 
+          icon={<Cloud size={14} />} 
+          label="Sign In to Sync" 
+          onClick={() => { onSettingsClick(); onClose(); }} 
         />
       )}
     </div>
@@ -164,25 +152,32 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
 
 const DropdownItem = ({ icon, label, onClick, highlight }) => {
   return (
-    <button
+    <button 
       onClick={onClick}
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '12px',
-        padding: '8px 12px',
+        gap: '10px',
+        padding: '6px 10px',
         border: 'none',
         background: 'transparent',
-        color: highlight ? 'var(--primary-color)' : 'var(--text-primary)',
-        fontSize: '13px',
+        color: highlight ? 'var(--text-accent)' : 'var(--text-main)',
+        fontSize: '12px',
+        fontWeight: '500',
         cursor: 'pointer',
-        borderRadius: '6px',
+        borderRadius: 'var(--radius-sm, 4px)',
         textAlign: 'left',
         width: '100%',
-        transition: 'background-color 0.2s'
+        transition: 'background-color 0.1s, color 0.1s',
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)')}
-      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = 'var(--bg-active)'
+        if (!highlight) e.currentTarget.style.color = 'var(--text-main)'
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = 'transparent'
+        e.currentTarget.style.color = highlight ? 'var(--text-accent)' : 'var(--text-main)'
+      }}
     >
       {icon}
       <span>{label}</span>

@@ -10,51 +10,20 @@ const SidebarFooter = memo(({ onThemeClick, onSettingsClick }) => {
   const googleUser = useSettingsStore((state) => state.settings?.googleUser)
 
   return (
-    <div
-      className="sidebar-footer-section"
-      ref={footerRef}
-      style={{ position: 'relative', display: 'flex', justifyContent: 'center', padding: '16px 0' }}
-    >
+    <div className="sidebar-footer-section" ref={footerRef}>
       <ToolTip text="Account & Settings">
-        <button
-          className="sidebar-profile-btn"
+        <button 
+          className="sidebar-icon-btn" 
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-            border: 'none',
-            background: 'transparent',
-            cursor: 'pointer',
-            padding: 0,
-            overflow: 'hidden',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: '2px solid transparent',
-            transition: 'border-color 0.2s'
-          }}
         >
           {googleUser?.picture ? (
-            <img
-              src={googleUser.picture}
-              alt="Profile"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            <img 
+              src={googleUser.picture} 
+              alt="Profile" 
+              style={{ width: '16px', height: '16px', borderRadius: '50%', objectFit: 'cover' }} 
             />
           ) : (
-            <div
-              style={{
-                width: '100%',
-                height: '100%',
-                backgroundColor: 'var(--bg-tertiary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--text-secondary)'
-              }}
-            >
-              <User size={20} />
-            </div>
+            <User size={14} />
           )}
         </button>
       </ToolTip>
