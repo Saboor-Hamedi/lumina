@@ -257,7 +257,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('db:saveSettings', (_, settings) => SettingsManager.setMultiple(settings))
   ipcMain.handle('db:getTheme', () => SettingsManager.get('theme'))
   ipcMain.handle('db:saveTheme', (_, theme) => SettingsManager.set('theme', theme))
-  ipcMain.handle('backup:start', () => backupToDrive(VaultManager.vaultPath))
+  ipcMain.handle('backup:start', (event) => backupToDrive(VaultManager.vaultPath, event.sender))
 
   ipcMain.handle('vault:readAsset', async (_, relativePath) => {
     return VaultManager.readAsset(relativePath)

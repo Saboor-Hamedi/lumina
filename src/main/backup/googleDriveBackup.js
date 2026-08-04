@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import archiver from 'archiver'
+import { ZipArchive } from 'archiver'
 import { net, app } from 'electron'
 import SettingsManager from '../SettingsManager'
 
@@ -12,9 +12,7 @@ import SettingsManager from '../SettingsManager'
  */
 function zipDirectory(sourceDir, outPath) {
   return new Promise((resolve, reject) => {
-    // Handle CJS/ESM interop
-    const createArchive = typeof archiver === 'function' ? archiver : (archiver.default || archiver.create)
-    const archive = createArchive('zip', { zlib: { level: 9 } })
+    const archive = new ZipArchive({ zlib: { level: 9 } })
     const stream = fs.createWriteStream(outPath)
 
     stream.on('close', () => resolve())
@@ -80,8 +78,9 @@ async function uploadToGoogleDrive(filePath, accessToken) {
 /**
  * Main backup function exposed to IPC.
  * @param {string} vaultPath - Path to the current workspace/vault.
+ * @param {Electron.WebContents} sender - The web contents to send progress to.
  */
-export async function backupToDrive(vaultPath) {
+export async function backupToDrive(vaultPath, sender) {
   try {
     const user = await SettingsManager.get('googleUser')
     if (!user || !user.token) {
@@ -92,11 +91,19 @@ export async function backupToDrive(vaultPath) {
       throw new Error('Vault path does not exist')
     }
 
+    if (sender) {
+      sender.send('index:progress', { type: 'backup', stage: 'scanning', progress: 0 })
+    }
+
     const backupFileName = `Lumina_Backup_${new Date().toISOString().replace(/[:.]/g, '-')}.zip`
     const backupFilePath = path.join(app.getPath('temp'), backupFileName)
 
     // 1. Zip the workspace
     await zipDirectory(vaultPath, backupFilePath)
+
+    if (sender) {
+      sender.send('index:progress', { type: 'backup', stage: 'uploading', progress: 50 })
+    }
 
     // 2. Upload to Google Drive
     await uploadToGoogleDrive(backupFilePath, user.token)
@@ -106,9 +113,17 @@ export async function backupToDrive(vaultPath) {
       fs.unlinkSync(backupFilePath)
     }
 
+    if (sender) {
+      sender.send('index:progress', { type: 'backup', stage: 'completed', progress: 100 })
+    }
+
     return { success: true }
   } catch (err) {
     console.error('Backup error:', err)
+    if (sender) {
+      // Clear the progress if it fails
+      sender.send('index:progress', { type: 'backup', stage: 'completed', progress: 100 })
+    }
     return { error: err.message }
   }
 }

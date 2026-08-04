@@ -70,7 +70,11 @@ const IndexingStatus = () => {
           className="indexing-toast-message"
           style={{ display: 'flex', flexDirection: 'column' }}
         >
-          <div>{isComplete ? 'Indexing complete' : 'Indexing...'}</div>
+          <div>
+            {isComplete 
+              ? (stats.type === 'backup' ? 'Backup complete' : 'Indexing complete') 
+              : (stats.type === 'backup' ? 'Backing up to Drive...' : 'Indexing...')}
+          </div>
           <div
             style={{
               fontSize: '10.5px',
@@ -81,11 +85,13 @@ const IndexingStatus = () => {
               fontVariantNumeric: 'tabular-nums'
             }}
           >
-            {stats.stage === 'scanning' || stats.stage === 'checking'
+            {stats.type === 'backup'
+              ? (stats.stage === 'scanning' ? 'Compressing workspace...' : stats.stage === 'uploading' ? 'Uploading to Drive...' : 'Workspace synced to Drive.')
+              : (stats.stage === 'scanning' || stats.stage === 'checking'
               ? `Scanning ${stats.found || stats.total || 0} files...`
               : stats.stage === 'up-to-date' || stats.stage === 'completed' || stats.progress >= 100
                 ? 'All files up to date.'
-                : `Processed ${stats.indexed || 0} of ${stats.total || 0} files`}
+                : `Processed ${stats.indexed || 0} of ${stats.total || 0} files`)}
           </div>
         </div>
 
