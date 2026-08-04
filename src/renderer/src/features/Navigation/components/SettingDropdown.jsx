@@ -107,8 +107,9 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
       style={{
         position: 'absolute',
         bottom: '100%',
-        left: '0',
-        width: '100%',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: 'calc(100% - 20px)',
         marginBottom: '8px',
         backgroundColor: 'var(--bg-app)',
         border: '1px solid var(--border-dim)',

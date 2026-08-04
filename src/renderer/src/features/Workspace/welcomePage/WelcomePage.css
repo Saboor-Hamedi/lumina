@@ -3,11 +3,11 @@
   width: 100%;
   height: 100%;
   display: flex;
-  align-items: stretch;
+  align-items: center;
   justify-content: center;
   padding: 24px;
   background: var(--bg-app);
-  overflow: hidden; /* No scrolling - single page */
+  overflow: hidden;
 }
 
 .welcome-inner {
@@ -311,31 +311,57 @@
   color: var(--text-main);
 }
 
-/* NEW WELCOME PAGE STYLES */
+/* ── Top section: title + subtitle ── */
 .welcome-inner-centered {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  height: 100%;
+  justify-content: space-between;
   width: 100%;
-  max-width: 760px;
-  margin: 0 auto;
-  gap: 32px;
+  max-width: 420px;
+  height: 48vh;
+  max-height: 440px;
   position: relative;
   z-index: 1;
+  padding: 16px;
 }
 
+.welcome-header-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  animation: fadeUp 0.5s ease-out;
+}
+
+.hero-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+  letter-spacing: -0.03em;
+}
+
+.hero-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-faint);
+  margin: 0;
+  max-width: 340px;
+  line-height: 1.5;
+}
+
+/* ── Watermark: fills the middle ── */
 .welcome-watermark {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 50vh;
-  height: 50vh;
-  max-width: 500px;
-  max-height: 500px;
-  opacity: 0.04;
+  width: 55vh;
+  height: 55vh;
+  max-width: 520px;
+  max-height: 520px;
+  opacity: 0.07;
   pointer-events: none;
   z-index: 0;
   display: flex;
@@ -347,39 +373,23 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: grayscale(100%);
+  border-radius: 5px;
 }
 
-.welcome-header-hero {
+/* ── Bottom group: buttons + hint ── */
+.welcome-bottom-group {
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
-  gap: 16px;
-  animation: fadeUp 0.6s ease-out;
-}
-
-.hero-title {
-  font-size: 1.6rem;
-  font-weight: 600;
-  color: var(--text-main);
-  margin: 0;
-  letter-spacing: -0.02em;
-}
-
-.hero-subtitle {
-  font-size: 0.875rem;
-  color: var(--text-faint);
-  margin: 0;
-  max-width: 380px;
-  line-height: 1.6;
-  font-weight: 400;
+  gap: 10px;
+  width: 100%;
+  animation: fadeUp 0.5s ease-out 0.1s both;
 }
 
 .welcome-actions-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
   width: 100%;
   animation: fadeUp 0.6s ease-out 0.1s both;
 }
@@ -387,31 +397,31 @@
 .welcome-action-card {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
   background: var(--bg-panel);
   border: 1px solid var(--border-dim);
-  border-radius: 10px;
-  padding: 14px 16px;
+  border-radius: 6px;
+  padding: 5px 8px;
   cursor: pointer;
   text-align: left;
   transition: all 0.15s ease;
   color: var(--text-main);
+  min-width: 0;
 }
 
 .welcome-action-card:hover {
   background: var(--bg-active);
-  border-color: var(--border-dim);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .action-card-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
   background: var(--bg-app);
   flex-shrink: 0;
 }
@@ -420,31 +430,40 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .action-card-content h3 {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: 0.7rem;
   font-weight: 600;
   color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .action-card-content p {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.62rem;
   color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .action-shortcut {
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   font-weight: 500;
   color: var(--text-faint);
   background: var(--bg-app);
-  padding: 3px 7px;
-  border-radius: 4px;
+  padding: 1px 4px;
+  border-radius: 3px;
   border: 1px solid var(--border-dim);
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .welcome-footer-hint {
@@ -452,9 +471,8 @@
   align-items: center;
   gap: 6px;
   color: var(--text-faint);
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   animation: fadeUp 0.6s ease-out 0.2s both;
-  margin-top: 4px;
 }
 
 .welcome-footer-hint strong {

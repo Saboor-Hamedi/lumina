@@ -16,12 +16,14 @@ describe('SettingDropdown', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     useSettingsStore.setState({
-      settings: { ...useSettingsStore.getState().settings, googleUser: null }
+      settings: { ...useSettingsStore.getState().settings, googleUser: null, lastSync: null }
     })
     useUpdateStore.setState({ status: 'idle', progress: null })
     global.window.api = {
       ...global.window.api,
-      loginWithGoogle: vi.fn()
+      loginWithGoogle: vi.fn(),
+      backupWorkspace: vi.fn(),
+      onIndexProgress: vi.fn()
     }
   })
 
@@ -30,16 +32,16 @@ describe('SettingDropdown', () => {
     expect(container.firstChild).toBeNull()
   })
 
-  it('renders Settings and Change Theme items when open', () => {
+  it('renders Settings and Theme items when open', () => {
     render(<SettingDropdown {...defaultProps()} />)
     expect(screen.getByText('Settings')).toBeInTheDocument()
-    expect(screen.getByText('Change Theme')).toBeInTheDocument()
+    expect(screen.getByText('Theme')).toBeInTheDocument()
   })
 
-  it('shows "Not signed in" when no google user', () => {
+  it('shows Sign In to Sync when no google user', () => {
     render(<SettingDropdown {...defaultProps()} />)
-    expect(screen.getByText('Not signed in')).toBeInTheDocument()
     expect(screen.getByText('Sign In to Sync')).toBeInTheDocument()
+    expect(screen.queryByText('Sign Out')).not.toBeInTheDocument()
   })
 
   it('shows google user name when logged in', () => {
@@ -68,22 +70,37 @@ describe('SettingDropdown', () => {
     expect(screen.queryByText('Sign In to Sync')).not.toBeInTheDocument()
   })
 
-  it('calls onSettingsClick and onClose when Settings clicked', () => {
+  it('shows backup button when logged in', () => {
+    useSettingsStore.setState({
+      settings: {
+        ...useSettingsStore.getState().settings,
+        googleUser: { name: 'John Doe', email: 'john@example.com' }
+      }
+    })
+
+    render(<SettingDropdown {...defaultProps()} />)
+    expect(screen.getAllByText('Backup Workspace to Drive')).toHaveLength(1)
+  })
+
+  it('does not show backup button when logged out', () => {
+    render(<SettingDropdown {...defaultProps()} />)
+    expect(screen.queryByText('Backup Workspace to Drive')).not.toBeInTheDocument()
+  })
+
+  it('calls onSettingsClick when Settings clicked', () => {
     const props = defaultProps()
     render(<SettingDropdown {...props} />)
     fireEvent.click(screen.getByText('Settings'))
 
     expect(props.onSettingsClick).toHaveBeenCalledTimes(1)
-    expect(props.onClose).toHaveBeenCalledTimes(1)
   })
 
-  it('calls onThemeClick and onClose when Change Theme clicked', () => {
+  it('calls onThemeClick when Theme clicked', () => {
     const props = defaultProps()
     render(<SettingDropdown {...props} />)
-    fireEvent.click(screen.getByText('Change Theme'))
+    fireEvent.click(screen.getByText('Theme'))
 
     expect(props.onThemeClick).toHaveBeenCalledTimes(1)
-    expect(props.onClose).toHaveBeenCalledTimes(1)
   })
 
   it('closes on Escape key when open', () => {
@@ -198,6 +215,41 @@ describe('SettingDropdown', () => {
 
       expect(install).toHaveBeenCalled()
       install.mockRestore()
+    })
+  })
+
+  describe('backup', () => {
+    const loggedIn = () => ({
+      settings: {
+        ...useSettingsStore.getState().settings,
+        googleUser: { name: 'John', email: 'j@example.com' }
+      }
+    })
+
+    it('calls backupWorkspace when backup button clicked', () => {
+      useSettingsStore.setState(loggedIn())
+      global.window.api.backupWorkspace.mockResolvedValue({})
+
+      render(<SettingDropdown {...defaultProps()} />)
+      fireEvent.click(screen.getByText('Backup Workspace to Drive'))
+
+      expect(global.window.api.backupWorkspace).toHaveBeenCalled()
+    })
+
+    it('updates lastSync when backup completes via progress event', async () => {
+      useSettingsStore.setState(loggedIn())
+      global.window.api.backupWorkspace.mockResolvedValue({})
+
+      render(<SettingDropdown {...defaultProps()} />)
+
+      const progressCb = global.window.api.onIndexProgress.mock.calls[0][0]
+      fireEvent.click(screen.getByText('Backup Workspace to Drive'))
+
+      await vi.waitFor(() => {
+        progressCb({ type: 'backup', stage: 'completed', progress: 100 })
+      })
+
+      expect(useSettingsStore.getState().settings.lastSync).not.toBeNull()
     })
   })
 })

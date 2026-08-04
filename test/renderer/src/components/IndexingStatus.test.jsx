@@ -33,7 +33,7 @@ describe('IndexingStatus', () => {
     global.window.api.onIndexProgress = onIndexProgress
 
     render(<IndexingStatus />)
-    expect(screen.getByText('Indexing...')).toBeInTheDocument()
+    expect(screen.getByText('Indexing…')).toBeInTheDocument()
     expect(screen.getByText('50%')).toBeInTheDocument()
   })
 
@@ -68,7 +68,7 @@ describe('IndexingStatus', () => {
     expect(screen.queryByText('100%')).not.toBeInTheDocument()
   })
 
-  it('auto-hides after 1 second when complete', () => {
+  it('auto-hides after 1.5 seconds when complete', () => {
     const onIndexProgress = vi.fn((cb) => {
       cb({ progress: 100, stage: 'completed', indexed: 10, total: 10 })
     })
@@ -78,7 +78,7 @@ describe('IndexingStatus', () => {
     expect(screen.getByText('Indexing complete')).toBeInTheDocument()
 
     act(() => {
-      vi.advanceTimersByTime(1001)
+      vi.advanceTimersByTime(1501)
     })
 
     expect(screen.queryByText('Indexing complete')).not.toBeInTheDocument()
@@ -102,6 +102,16 @@ describe('IndexingStatus', () => {
 
     render(<IndexingStatus />)
     expect(screen.getByText(/Processed 4 of 10 files/)).toBeInTheDocument()
+  })
+
+  it('ignores backup-type progress events', () => {
+    const onIndexProgress = vi.fn((cb) => {
+      cb({ type: 'backup', stage: 'uploading', progress: 60 })
+    })
+    global.window.api.onIndexProgress = onIndexProgress
+
+    const { container } = render(<IndexingStatus />)
+    expect(container.firstChild).toBeNull()
   })
 
   it('unsubscribes on unmount', () => {
