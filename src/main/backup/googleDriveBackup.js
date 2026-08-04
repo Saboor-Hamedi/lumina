@@ -12,7 +12,9 @@ import SettingsManager from '../SettingsManager'
  */
 function zipDirectory(sourceDir, outPath) {
   return new Promise((resolve, reject) => {
-    const archive = archiver('zip', { zlib: { level: 9 } })
+    // Handle CJS/ESM interop
+    const createArchive = typeof archiver === 'function' ? archiver : (archiver.default || archiver.create)
+    const archive = createArchive('zip', { zlib: { level: 9 } })
     const stream = fs.createWriteStream(outPath)
 
     stream.on('close', () => resolve())

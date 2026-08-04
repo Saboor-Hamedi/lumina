@@ -17,7 +17,7 @@ export default defineConfig({
     exclude: ['node_modules', 'out', 'build', 'dist', 'test/e2e'],
     server: {
       deps: {
-        inline: [/useResizable/]
+        inline: [/[\\/]useResizable[\\/]/]
       }
     },
     coverage: {

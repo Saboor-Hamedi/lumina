@@ -79,7 +79,11 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
           <img
             src={googleUser.picture}
             alt="Profile"
-            style={{ width: '28px', height: '28px', borderRadius: '50%' }}
+            style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.insertAdjacentHTML('afterend', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin: 2px;"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>')
+            }}
           />
         ) : (
           <div
