@@ -36,9 +36,9 @@ export const handleExportPDF = async (mainWindow, payload) => {
 
     marked.use({
       renderer: {
-        code(code, lang) {
-          if (lang === 'mermaid') {
-            const escaped = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        code(token) {
+          if (token.lang === 'mermaid') {
+            const escaped = token.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
             return `<div class="mermaid">${escaped}</div>`
           }
           return false

@@ -15,11 +15,24 @@ export const handleExportDocs = async (mainWindow, payload) => {
       markedHighlight({
         langPrefix: 'hljs language-',
         highlight(code, lang) {
+          if (lang === 'mermaid') return code;
           const language = hljs.getLanguage(lang) ? lang : 'plaintext'
           return hljs.highlight(code, { language }).value
         }
       })
     )
+
+    marked.use({
+      renderer: {
+        code(token) {
+          if (token.lang === 'mermaid') {
+            const escaped = token.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            return `<div class="mermaid">${escaped}</div>`
+          }
+          return false
+        }
+      }
+    })
 
     // Convert wikilinks to HTML before parsing
     const processedContent = (content || '').replace(/\[\[(.*?)\]\]/g, '<a href="#">$1</a>')
@@ -114,6 +127,49 @@ export const handleExportDocs = async (mainWindow, payload) => {
 <body>
   <h1>${title || 'Untitled'}</h1>
   ${htmlContent}
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@9.4.3/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: false, theme: 'default' });
+    
+    async function renderMermaid() {
+      try {
+        const elements = document.querySelectorAll('.mermaid');
+        if (elements.length > 0) {
+          mermaid.init(undefined, elements);
+        }
+        
+        const svgs = document.querySelectorAll('.mermaid svg');
+        svgs.forEach(svgEl => {
+           const shapes = svgEl.querySelectorAll('.node rect, .node circle, .node ellipse, .node polygon, .node path, .mindmap-node rect, .mindmap-node circle, .mindmap-node ellipse, .mindmap-node polygon, .mindmap-node path, .cluster rect');
+           shapes.forEach(shape => {
+             shape.style.setProperty('fill', 'transparent', 'important');
+             shape.style.setProperty('stroke', '#000000', 'important');
+             shape.style.setProperty('stroke-width', '1px', 'important');
+           });
+           const texts = svgEl.querySelectorAll('.node .label text, .mindmap-node text, .label text, .edgeLabel text, .cluster-label text, text, tspan, p, span, div');
+           texts.forEach(text => {
+             text.style.setProperty('color', '#000000', 'important');
+             text.style.setProperty('fill', '#000000', 'important');
+             text.style.setProperty('stroke', 'none', 'important');
+           });
+           const edges = svgEl.querySelectorAll('.edgePath path, .mindmap-edges path, path.link, path.edge, .flowchart-link');
+           edges.forEach(edge => {
+             edge.style.setProperty('stroke', '#000000', 'important');
+             edge.style.setProperty('stroke-width', '1px', 'important');
+             edge.style.setProperty('fill', 'none', 'important');
+           });
+           const markers = svgEl.querySelectorAll('marker path, marker polygon, marker circle');
+           markers.forEach(marker => {
+             marker.style.setProperty('fill', '#000000', 'important');
+             marker.style.setProperty('stroke', '#000000', 'important');
+           });
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    window.addEventListener('load', renderMermaid);
+  </script>
 </body>
 </html>`
 
