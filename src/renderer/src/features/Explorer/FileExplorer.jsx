@@ -849,11 +849,11 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
 
         {/* Search Bar */}
         <div className="start-menu-search relative">
-          <Search size={14} className="search-icon" />
+          <Search size={12} className="search-icon" />
           <input
             ref={searchInputRef}
             type="text"
-            placeholder="Search for notes"
+            placeholder="Search (Ctrl + Shift + F)"
             value={displayQuery}
             onChange={(e) => {
               const v = e.target.value
