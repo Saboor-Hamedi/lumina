@@ -259,7 +259,7 @@ const EditorMenu = ({
                     setShowMoreMenu(false)
                   }}
                 >
-                  <span className="menu-label">Export as HTML Docs</span>
+                  <span className="menu-label">Export as Docs</span>
                   <FileCode size={12} className="menu-icon-right" />
                 </div>
 

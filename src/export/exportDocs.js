@@ -175,9 +175,9 @@ export const handleExportDocs = async (mainWindow, payload) => {
 
     // Show save dialog
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
-      title: 'Export as HTML/Docs',
-      defaultPath: `${title || 'Untitled'}.html`,
-      filters: [{ name: 'HTML Files', extensions: ['html'] }]
+      title: 'Export as Docs',
+      defaultPath: `${title || 'Untitled'}.doc`,
+      filters: [{ name: 'Word Document', extensions: ['doc', 'docx'] }]
     })
 
     if (!canceled && filePath) {

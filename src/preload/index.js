@@ -60,6 +60,8 @@ const api = {
   exportPDF: (payload) => electronAPI.ipcRenderer.invoke('window:export-pdf', payload),
   exportHTML: (payload) => electronAPI.ipcRenderer.invoke('window:export-html', payload),
   exportMarkdown: (payload) => electronAPI.ipcRenderer.invoke('window:export-markdown', payload),
+  exportText: (payload) => electronAPI.ipcRenderer.invoke('window:export-text', payload),
+  exportDocs: (payload) => electronAPI.ipcRenderer.invoke('window:export-docs', payload),
 
   // Vault Indexing
   indexVault: (vaultPath, options) =>
