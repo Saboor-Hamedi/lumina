@@ -16,6 +16,7 @@ import { handleExportMarkdown } from '../export/exportMarkdown'
 import { handleExportText } from '../export/exportText'
 import { handleExportHTML } from '../export/exportHTML'
 import { setupGoogleAuth } from './auth/googleAuth'
+import { backupToDrive } from './backup/googleDriveBackup'
 
 // Force rebuild timestamp: 5
 
@@ -256,6 +257,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('db:saveSettings', (_, settings) => SettingsManager.setMultiple(settings))
   ipcMain.handle('db:getTheme', () => SettingsManager.get('theme'))
   ipcMain.handle('db:saveTheme', (_, theme) => SettingsManager.set('theme', theme))
+  ipcMain.handle('backup:start', () => backupToDrive(VaultManager.vaultPath))
 
   ipcMain.handle('vault:readAsset', async (_, relativePath) => {
     return VaultManager.readAsset(relativePath)

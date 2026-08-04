@@ -181,13 +181,37 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
       )}
 
       {googleUser && (
-        <DropdownItem
-          icon={<LogOut size={14} />}
-          label="Sign Out"
-          onClick={() => {
+        <DropdownItem 
+          icon={<Cloud size={14} />} 
+          label="Backup Workspace to Drive" 
+          onClick={async () => { 
+            try {
+              if (window.api?.backupWorkspace) {
+                const res = await window.api.backupWorkspace()
+                if (res?.error) {
+                  console.error('Backup failed:', res.error)
+                  // Could trigger a toast here
+                } else {
+                  console.log('Backup successful')
+                }
+              }
+            } catch (err) {
+              console.error('Backup error:', err)
+            } finally {
+              onClose()
+            }
+          }} 
+        />
+      )}
+
+      {googleUser && (
+        <DropdownItem 
+          icon={<LogOut size={14} />} 
+          label="Sign Out" 
+          onClick={() => { 
             useSettingsStore.getState().updateSetting('googleUser', null)
             onClose()
-          }}
+          }} 
         />
       )}
     </div>

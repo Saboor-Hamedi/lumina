@@ -89,6 +89,7 @@ const api = {
 
   // Google Auth
   loginWithGoogle: (clientId) => electronAPI.ipcRenderer.invoke('auth:loginWithGoogle', clientId),
+  backupWorkspace: () => electronAPI.ipcRenderer.invoke('backup:start'),
   getGoogleUser: () => electronAPI.ipcRenderer.invoke('auth:getGoogleUser'),
   logoutFromGoogle: () => electronAPI.ipcRenderer.invoke('auth:logoutFromGoogle')
 }
