@@ -1,36 +1,44 @@
-import { ipcMain, BrowserWindow, net } from 'electron'
+import { ipcMain, shell, net } from 'electron'
+import http from 'http'
+import url from 'url'
 import SettingsManager from '../SettingsManager'
+
+let authServer = null
+
 
 export function setupGoogleAuth() {
   ipcMain.handle('auth:loginWithGoogle', async (event, clientId) => {
     return new Promise((resolve) => {
-      let authWindow = new BrowserWindow({
-        width: 600,
-        height: 700,
-        show: true,
-        webPreferences: {
-          nodeIntegration: false,
-          contextIsolation: true
-        }
-      })
+      if (authServer) {
+        authServer.close()
+      }
 
-      // We use the standard Authorization Code flow (response_type=code)
-      // because "Desktop App" client types do not support response_type=token
-      const redirectUri = 'http://localhost/oauth2callback'
+      const redirectUri = 'http://localhost:3000/oauth2callback'
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=https://www.googleapis.com/auth/drive.file email profile`
 
-      authWindow.loadURL(authUrl)
+      authServer = http.createServer(async (req, res) => {
+        try {
+          const reqUrl = url.parse(req.url, true)
 
-      authWindow.webContents.on('will-redirect', async (e, url) => {
-        if (url.startsWith(redirectUri)) {
-          e.preventDefault()
+          if (reqUrl.pathname === '/oauth2callback') {
+            res.writeHead(200, { 'Content-Type': 'text/html' })
+            res.end(`
+              <html>
+                <body style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; background: #121212; color: white;">
+                  <div style="text-align: center;">
+                    <h2>Authentication Successful!</h2>
+                    <p style="color: #888;">You can close this tab and return to Lumina.</p>
+                    <script>window.close()</script>
+                  </div>
+                </body>
+              </html>
+            `)
 
-          // Extract the authorization code from the query parameters
-          const urlObj = new URL(url)
-          const code = urlObj.searchParams.get('code')
-          const error = urlObj.searchParams.get('error')
+            const code = reqUrl.query.code
+            const error = reqUrl.query.error
 
-          authWindow.close()
+            authServer.close()
+            authServer = null
 
           if (error) {
             resolve({ error: `Google returned error: ${error}` })
@@ -89,10 +97,19 @@ export function setupGoogleAuth() {
         }
       })
 
-      authWindow.on('closed', () => {
-        authWindow = null
-        resolve({ error: 'Authentication window was closed.' })
+      authServer.listen(3000, () => {
+        // Open the auth URL in the user's default browser (e.g. Chrome)
+        shell.openExternal(authUrl)
       })
+
+      // Timeout after 2 minutes to prevent the server from hanging indefinitely
+      setTimeout(() => {
+        if (authServer) {
+          authServer.close()
+          authServer = null
+          resolve({ error: 'Authentication window timed out.' })
+        }
+      }, 120000)
     })
   })
 
