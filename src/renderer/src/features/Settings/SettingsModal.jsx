@@ -8,7 +8,6 @@ import { useToast } from '../../core/hooks/useToast'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useFontSettings } from '../../core/hooks/useFontSettings'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
-import { useRef } from 'react'
 import './SettingsModal.css'
 
 const ColorPickerInput = ({

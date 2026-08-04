@@ -12,10 +12,7 @@ const SidebarFooter = memo(({ onThemeClick, onSettingsClick }) => {
   return (
     <div className="sidebar-footer-section" ref={footerRef}>
       <ToolTip text="Account & Settings">
-        <button 
-          className="sidebar-icon-btn" 
-          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-        >
+        <button className="sidebar-icon-btn" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
           <Settings size={14} />
         </button>
       </ToolTip>

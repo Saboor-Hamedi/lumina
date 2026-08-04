@@ -158,13 +158,14 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
       )}
 
       {!googleUser && (
-        <DropdownItem 
-          icon={<Cloud size={14} />} 
-          label="Sign In to Sync" 
-          onClick={async () => { 
+        <DropdownItem
+          icon={<Cloud size={14} />}
+          label="Sign In to Sync"
+          onClick={async () => {
             try {
               if (window.api?.loginWithGoogle) {
-                const clientId = '736587690312-33s4trbiculu5dvctb92lkl6njgc14ae.apps.googleusercontent.com'
+                const clientId =
+                  '736587690312-33s4trbiculu5dvctb92lkl6njgc14ae.apps.googleusercontent.com'
                 const userInfo = await window.api.loginWithGoogle(clientId)
                 if (userInfo && !userInfo.error) {
                   useSettingsStore.getState().updateSetting('googleUser', userInfo)
@@ -175,7 +176,7 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
             } finally {
               onClose()
             }
-          }} 
+          }}
         />
       )}
     </div>
