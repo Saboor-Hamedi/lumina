@@ -1,14 +1,14 @@
 import fs from 'fs'
 import path from 'path'
 import { ZipArchive } from 'archiver'
-import { net, app } from 'electron'
+import { app } from 'electron'
 import SettingsManager from '../SettingsManager'
+
+// Fixed backup filename — always the same file on Drive so it gets updated, never duplicated
+const BACKUP_FILE_NAME = 'lumina-backup.zip'
 
 /**
  * Creates a zip archive of the given directory.
- * @param {string} sourceDir - The folder to zip.
- * @param {string} outPath - The output zip file path.
- * @returns {Promise<void>}
  */
 function zipDirectory(sourceDir, outPath) {
   return new Promise((resolve, reject) => {
@@ -25,18 +25,54 @@ function zipDirectory(sourceDir, outPath) {
 }
 
 /**
- * Uploads a file to Google Drive.
- * @param {string} filePath - Local path to the file to upload.
- * @param {string} accessToken - Google OAuth access token.
- * @returns {Promise<void>}
+ * Search Google Drive for an existing backup file by name.
+ * Returns the file ID if found, or null.
  */
-async function uploadToGoogleDrive(filePath, accessToken) {
-  const fileName = path.basename(filePath)
+async function findExistingBackup(accessToken) {
+  const query = encodeURIComponent(`name='${BACKUP_FILE_NAME}' and trashed=false`)
+  const response = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,name)&spaces=drive`,
+    {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    }
+  )
+
+  if (!response.ok) {
+    console.warn('Could not search Drive for existing backup:', response.status)
+    return null
+  }
+
+  const data = await response.json()
+  if (data.files && data.files.length > 0) {
+    return data.files[0].id // Return the first match
+  }
+  return null
+}
+
+/**
+ * Upload a file to Google Drive.
+ * - If existingFileId is provided: PATCH (update in place)
+ * - Otherwise: POST (create new)
+ */
+async function uploadToGoogleDrive(filePath, accessToken, existingFileId = null) {
   const fileStats = fs.statSync(filePath)
-  
-  // 1. Initiate resumable upload session
-  const initResponse = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable', {
-    method: 'POST',
+
+  let initUrl
+  let initMethod
+
+  if (existingFileId) {
+    // Update existing file — use PATCH with the file's ID
+    initUrl = `https://www.googleapis.com/upload/drive/v3/files/${existingFileId}?uploadType=resumable`
+    initMethod = 'PATCH'
+  } else {
+    // Create new file
+    initUrl = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable'
+    initMethod = 'POST'
+  }
+
+  // Initiate resumable upload session
+  const initResponse = await fetch(initUrl, {
+    method: initMethod,
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
@@ -44,9 +80,8 @@ async function uploadToGoogleDrive(filePath, accessToken) {
       'X-Upload-Content-Length': fileStats.size.toString()
     },
     body: JSON.stringify({
-      name: fileName,
-      mimeType: 'application/zip',
-      // parents: [folderId] // Optional: if we want to place it in a specific folder
+      name: BACKUP_FILE_NAME,
+      mimeType: 'application/zip'
     })
   })
 
@@ -60,7 +95,7 @@ async function uploadToGoogleDrive(filePath, accessToken) {
     throw new Error('No upload location returned by Google Drive API')
   }
 
-  // 2. Upload the file data
+  // Upload the file data
   const fileData = fs.readFileSync(filePath)
   const uploadResponse = await fetch(uploadUrl, {
     method: 'PUT',
@@ -79,8 +114,6 @@ async function uploadToGoogleDrive(filePath, accessToken) {
 
 /**
  * Main backup function exposed to IPC.
- * @param {string} vaultPath - Path to the current workspace/vault.
- * @param {Electron.WebContents} sender - The web contents to send progress to.
  */
 export async function backupToDrive(vaultPath, sender) {
   try {
@@ -94,24 +127,29 @@ export async function backupToDrive(vaultPath, sender) {
     }
 
     if (sender) {
-      sender.send('index:progress', { type: 'backup', stage: 'scanning', progress: 0 })
+      sender.send('index:progress', { type: 'backup', stage: 'scanning', progress: 5 })
     }
 
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-    const backupFileName = `lumina-${timestamp}.zip`
-    const backupFilePath = path.join(app.getPath('temp'), backupFileName)
+    const backupFilePath = path.join(app.getPath('temp'), BACKUP_FILE_NAME)
 
     // 1. Zip the workspace
     await zipDirectory(vaultPath, backupFilePath)
 
     if (sender) {
-      sender.send('index:progress', { type: 'backup', stage: 'uploading', progress: 50 })
+      sender.send('index:progress', { type: 'backup', stage: 'uploading', progress: 40 })
     }
 
-    // 2. Upload to Google Drive
-    await uploadToGoogleDrive(backupFilePath, user.token)
+    // 2. Check if a backup already exists on Drive
+    const existingFileId = await findExistingBackup(user.token)
 
-    // 3. Cleanup temp file
+    if (sender) {
+      sender.send('index:progress', { type: 'backup', stage: 'uploading', progress: 55 })
+    }
+
+    // 3. Upload — update if exists, create if not
+    await uploadToGoogleDrive(backupFilePath, user.token, existingFileId)
+
+    // 4. Cleanup temp file
     if (fs.existsSync(backupFilePath)) {
       fs.unlinkSync(backupFilePath)
     }
@@ -120,11 +158,10 @@ export async function backupToDrive(vaultPath, sender) {
       sender.send('index:progress', { type: 'backup', stage: 'completed', progress: 100 })
     }
 
-    return { success: true }
+    return { success: true, updated: !!existingFileId }
   } catch (err) {
     console.error('Backup error:', err)
     if (sender) {
-      // Clear the progress if it fails
       sender.send('index:progress', { type: 'backup', stage: 'completed', progress: 100 })
     }
     return { error: err.message }
