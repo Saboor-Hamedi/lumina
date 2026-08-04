@@ -54,22 +54,27 @@ export const handleExportDocs = async (mainWindow, payload) => {
     h3 { font-size: 1.25em; }
     p { margin-bottom: 1em; }
     code {
-      background: #f4f4f4;
+      background: transparent;
       padding: 2px 6px;
-      border-radius: 3px;
       font-family: 'Consolas', 'Monaco', monospace;
       font-size: 0.9em;
+      color: #333;
     }
     pre {
-      background: #f4f4f4;
-      padding: 15px;
-      border-radius: 6px;
+      background: #ffffff;
+      padding: 12px 0;
+      border: none;
+      border-top: 1px dashed #ccc;
+      border-bottom: 1px dashed #ccc;
+      border-radius: 0;
       overflow-x: auto;
       margin: 1.5em 0;
     }
     pre code {
       background: transparent;
       padding: 0;
+      color: #222;
+      border: none;
     }
     blockquote {
       border-left: 4px solid #0066cc;
@@ -88,14 +93,23 @@ export const handleExportDocs = async (mainWindow, payload) => {
       border-collapse: collapse;
       width: 100%;
       margin: 1.5em 0;
+      font-size: 14px;
     }
     th, td {
-      border: 1px solid #ddd;
-      padding: 8px 12px;
+      border: none;
+      border-bottom: 1px solid #eee;
+      padding: 10px 14px;
       text-align: left;
     }
     th {
-      background-color: #f8f8f8;
+      background: transparent;
+      font-weight: 600;
+      color: #222;
+      border-top: 2px solid #222;
+      border-bottom: 1px solid #222;
+    }
+    tr:nth-child(even) {
+      background: transparent;
     }
   </style>
 </head>

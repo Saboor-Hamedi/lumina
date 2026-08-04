@@ -27,11 +27,24 @@ export const handleExportPDF = async (mainWindow, payload) => {
       markedHighlight({
         langPrefix: 'hljs language-',
         highlight(code, lang) {
+          if (lang === 'mermaid') return code;
           const language = hljs.getLanguage(lang) ? lang : 'plaintext'
           return hljs.highlight(code, { language }).value
         }
       })
     )
+
+    marked.use({
+      renderer: {
+        code(code, lang) {
+          if (lang === 'mermaid') {
+            const escaped = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            return `<div class="mermaid">${escaped}</div>`
+          }
+          return false
+        }
+      }
+    })
 
     // Convert wikilinks to HTML before parsing
     const processedContent = (content || '').replace(/\[\[(.*?)\]\]/g, '<a href="#">$1</a>')
@@ -69,18 +82,18 @@ export const handleExportPDF = async (mainWindow, payload) => {
     h3 { font-size: 1.3em; margin-top: 1.2em; }
     p { margin-bottom: 1.2em; color: #333333; }
     code {
-      background: #f5f7f9;
-      padding: 3px 6px;
-      border-radius: 4px;
+      background: transparent;
       font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-      font-size: 0.85em;
-      color: #eb5757;
+      font-size: 0.9em;
+      color: #333;
     }
     pre {
-      background: #f8f9fa;
-      padding: 16px;
-      border-radius: 8px;
-      border: 1px solid #e9ecef;
+      background: #ffffff;
+      padding: 12px 0;
+      border: none;
+      border-top: 1px dashed #ccc;
+      border-bottom: 1px dashed #ccc;
+      border-radius: 0;
       white-space: pre-wrap;
       word-wrap: break-word;
       overflow-wrap: break-word;
@@ -89,7 +102,7 @@ export const handleExportPDF = async (mainWindow, payload) => {
     pre code {
       background: none;
       padding: 0;
-      color: #24292e;
+      color: #222;
       border: none;
     }
     blockquote {
@@ -115,18 +128,20 @@ export const handleExportPDF = async (mainWindow, payload) => {
       font-weight: normal;
     }
     th, td {
-      border-bottom: 1px solid #e9ecef;
-      padding: 12px 16px;
+      border: none;
+      border-bottom: 1px solid #eee;
+      padding: 10px 14px;
       text-align: left;
     }
     th {
-      background: #f8f9fa;
+      background: transparent;
       font-weight: 600;
-      color: #495057;
-      border-top: 1px solid #e9ecef;
+      color: #222;
+      border-top: 2px solid #222;
+      border-bottom: 1px solid #222;
     }
     tr:nth-child(even) {
-      background: #fafbfc;
+      background: transparent;
     }
     img {
       max-width: 100%;
@@ -148,6 +163,55 @@ export const handleExportPDF = async (mainWindow, payload) => {
 </head>
 <body>
   ${htmlContent}
+  
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: false, theme: 'default' });
+    
+    async function renderMermaid() {
+      try {
+        const elements = document.querySelectorAll('.mermaid');
+        for (let i = 0; i < elements.length; i++) {
+          const el = elements[i];
+          const code = el.textContent;
+          const { svg } = await mermaid.render('mermaid-' + i, code);
+          el.innerHTML = svg;
+          
+          const svgEl = el.querySelector('svg');
+          if (svgEl) {
+             const shapes = svgEl.querySelectorAll('.node rect, .node circle, .node ellipse, .node polygon, .node path, .mindmap-node rect, .mindmap-node circle, .mindmap-node ellipse, .mindmap-node polygon, .mindmap-node path, .cluster rect');
+             shapes.forEach(shape => {
+               shape.style.setProperty('fill', 'transparent', 'important');
+               shape.style.setProperty('stroke', '#000000', 'important');
+               shape.style.setProperty('stroke-width', '1px', 'important');
+             });
+             const texts = svgEl.querySelectorAll('.node .label text, .mindmap-node text, .label text, .edgeLabel text, .cluster-label text, text, tspan, p, span, div');
+             texts.forEach(text => {
+               text.style.setProperty('color', '#000000', 'important');
+               text.style.setProperty('fill', '#000000', 'important');
+               text.style.setProperty('stroke', 'none', 'important');
+             });
+             const edges = svgEl.querySelectorAll('.edgePath path, .mindmap-edges path, path.link, path.edge, .flowchart-link');
+             edges.forEach(edge => {
+               edge.style.setProperty('stroke', '#000000', 'important');
+               edge.style.setProperty('stroke-width', '1px', 'important');
+               edge.style.setProperty('fill', 'none', 'important');
+             });
+             const markers = svgEl.querySelectorAll('marker path, marker polygon, marker circle');
+             markers.forEach(marker => {
+               marker.style.setProperty('fill', '#000000', 'important');
+               marker.style.setProperty('stroke', '#000000', 'important');
+             });
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        document.body.classList.add('mermaid-done');
+      }
+    }
+    window.addEventListener('load', renderMermaid);
+  </script>
 </body>
 </html>`
 
@@ -163,8 +227,23 @@ export const handleExportPDF = async (mainWindow, payload) => {
     // Load the HTML
     await printWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
 
-    // Wait a brief moment for fonts/styles to apply (especially highlight.js)
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    // Wait for mermaid to finish rendering and fonts to apply
+    await printWin.webContents.executeJavaScript(`
+      new Promise((resolve) => {
+        if (document.body.classList.contains('mermaid-done')) {
+          setTimeout(resolve, 500);
+        } else {
+          const observer = new MutationObserver(() => {
+            if (document.body.classList.contains('mermaid-done')) {
+              observer.disconnect();
+              setTimeout(resolve, 500); // extra wait for fonts/styles
+            }
+          });
+          observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+          setTimeout(resolve, 3000); // 3 seconds timeout fallback
+        }
+      })
+    `);
 
     // Generate PDF with custom margins (converted from cm to inches: 1cm = 0.3937in)
     const pdfData = await printWin.webContents.printToPDF({
