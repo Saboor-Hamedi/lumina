@@ -203,15 +203,7 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
           style={{
             position: 'relative',
             borderRadius: 'var(--radius-sm, 4px)',
-            overflow: 'hidden',
-            border: isBackingUp
-              ? '1px solid var(--text-accent, #40bafa)'
-              : backupState === 'done'
-              ? '1px solid rgba(34,197,94,0.4)'
-              : backupState === 'error'
-              ? '1px solid rgba(239,68,68,0.4)'
-              : '1px solid transparent',
-            transition: 'border-color 0.3s'
+            overflow: 'hidden'
           }}
         >
           {/* Animated fill track */}
