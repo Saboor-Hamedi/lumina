@@ -20,11 +20,19 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
       }
     }
 
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('keydown', handleKeyDown)
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
     }
   }, [isOpen, onClose, anchorRef])
 
@@ -157,7 +165,10 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
             try {
               if (window.api?.loginWithGoogle) {
                 const clientId = '736587690312-33s4trbiculu5dvctb92lkl6njgc14ae.apps.googleusercontent.com'
-                await window.api.loginWithGoogle(clientId)
+                const userInfo = await window.api.loginWithGoogle(clientId)
+                if (userInfo && !userInfo.error) {
+                  useSettingsStore.getState().updateSetting('googleUser', userInfo)
+                }
               }
             } catch (err) {
               console.error('Login failed', err)
