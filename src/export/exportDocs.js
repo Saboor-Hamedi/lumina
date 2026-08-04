@@ -61,12 +61,10 @@ export const handleExportDocs = async (mainWindow, payload) => {
       color: #333;
     }
     pre {
-      background: #ffffff;
-      padding: 12px 0;
+      background: #f8f9fa;
+      padding: 12px 16px;
       border: none;
-      border-top: 1px dashed #ccc;
-      border-bottom: 1px dashed #ccc;
-      border-radius: 0;
+      border-radius: 4px;
       overflow-x: auto;
       margin: 1.5em 0;
     }
@@ -105,8 +103,8 @@ export const handleExportDocs = async (mainWindow, payload) => {
       background: transparent;
       font-weight: 600;
       color: #222;
-      border-top: 2px solid #222;
-      border-bottom: 1px solid #222;
+      border: none;
+      border-bottom: 1px solid #ddd;
     }
     tr:nth-child(even) {
       background: transparent;

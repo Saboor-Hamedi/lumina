@@ -91,12 +91,10 @@ export const handleExportPDF = async (mainWindow, payload) => {
       color: #333;
     }
     pre {
-      background: #ffffff;
-      padding: 12px 0;
+      background: #f8f9fa;
+      padding: 12px 16px;
       border: none;
-      border-top: 1px dashed #ccc;
-      border-bottom: 1px dashed #ccc;
-      border-radius: 0;
+      border-radius: 4px;
       white-space: pre-wrap;
       word-wrap: break-word;
       overflow-wrap: break-word;
@@ -140,8 +138,8 @@ export const handleExportPDF = async (mainWindow, payload) => {
       background: transparent;
       font-weight: 600;
       color: #222;
-      border-top: 2px solid #222;
-      border-bottom: 1px solid #222;
+      border: none;
+      border-bottom: 1px solid #ddd;
     }
     tr:nth-child(even) {
       background: transparent;
@@ -167,22 +165,20 @@ export const handleExportPDF = async (mainWindow, payload) => {
 <body>
   ${htmlContent}
   
-  <script type="module">
-    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@9.4.3/dist/mermaid.min.js"></script>
+  <script>
     mermaid.initialize({ startOnLoad: false, theme: 'default' });
     
     async function renderMermaid() {
       try {
         const elements = document.querySelectorAll('.mermaid');
-        for (let i = 0; i < elements.length; i++) {
-          const el = elements[i];
-          const code = el.textContent;
-          const { svg } = await mermaid.render('mermaid-' + i, code);
-          el.innerHTML = svg;
-          
-          const svgEl = el.querySelector('svg');
-          if (svgEl) {
-             const shapes = svgEl.querySelectorAll('.node rect, .node circle, .node ellipse, .node polygon, .node path, .mindmap-node rect, .mindmap-node circle, .mindmap-node ellipse, .mindmap-node polygon, .mindmap-node path, .cluster rect');
+        if (elements.length > 0) {
+          mermaid.init(undefined, elements);
+        }
+        
+        const svgs = document.querySelectorAll('.mermaid svg');
+        svgs.forEach(svgEl => {
+           const shapes = svgEl.querySelectorAll('.node rect, .node circle, .node ellipse, .node polygon, .node path, .mindmap-node rect, .mindmap-node circle, .mindmap-node ellipse, .mindmap-node polygon, .mindmap-node path, .cluster rect');
              shapes.forEach(shape => {
                shape.style.setProperty('fill', 'transparent', 'important');
                shape.style.setProperty('stroke', '#000000', 'important');
@@ -205,8 +201,7 @@ export const handleExportPDF = async (mainWindow, payload) => {
                marker.style.setProperty('fill', '#000000', 'important');
                marker.style.setProperty('stroke', '#000000', 'important');
              });
-          }
-        }
+        });
       } catch (err) {
         console.error(err);
       } finally {
