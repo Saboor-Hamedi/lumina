@@ -166,11 +166,15 @@ export const handleExportPDF = async (mainWindow, payload) => {
     // Wait a brief moment for fonts/styles to apply (especially highlight.js)
     await new Promise((resolve) => setTimeout(resolve, 500))
 
-    // Generate PDF
+    // Generate PDF with custom margins (converted from cm to inches: 1cm = 0.3937in)
     const pdfData = await printWin.webContents.printToPDF({
       printBackground: true,
       margins: {
-        marginType: 'default'
+        marginType: 'custom',
+        top: 2.0 * 0.3937,    // 2.0 cm
+        bottom: 2.0 * 0.3937, // 2.0 cm
+        left: 2.5 * 0.3937,   // 2.5 cm
+        right: 2.5 * 0.3937   // 2.5 cm
       },
       pageSize: 'A4'
     })
