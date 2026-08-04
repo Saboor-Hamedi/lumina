@@ -37,8 +37,8 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
   }
 
   return (
-    <div 
-      ref={dropdownRef} 
+    <div
+      ref={dropdownRef}
       className="setting-dropdown-menu"
       style={{
         position: 'absolute',
@@ -118,22 +118,32 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
         </div>
       </div>
 
-      <DropdownItem 
-        icon={<Settings size={14} />} 
-        label="Settings" 
-        onClick={() => { onSettingsClick(); onClose(); }} 
+      <DropdownItem
+        icon={<Settings size={14} />}
+        label="Settings"
+        onClick={() => {
+          onSettingsClick()
+          onClose()
+        }}
       />
-      
-      <DropdownItem 
-        icon={<Palette size={14} />} 
-        label="Change Theme" 
-        onClick={() => { onThemeClick(); onClose(); }} 
+
+      <DropdownItem
+        icon={<Palette size={14} />}
+        label="Change Theme"
+        onClick={() => {
+          onThemeClick()
+          onClose()
+        }}
       />
 
       {(status === 'available' || status === 'ready' || status === 'downloading') && (
-        <DropdownItem 
-          icon={<RefreshCw size={14} className={status === 'downloading' ? 'spin-slow' : ''} />} 
-          label={status === 'downloading' ? `Downloading... ${Math.round(progress?.percent || 0)}%` : 'Update Available'} 
+        <DropdownItem
+          icon={<RefreshCw size={14} className={status === 'downloading' ? 'spin-slow' : ''} />}
+          label={
+            status === 'downloading'
+              ? `Downloading... ${Math.round(progress?.percent || 0)}%`
+              : 'Update Available'
+          }
           onClick={handleUpdateClick}
           highlight
         />
@@ -143,7 +153,18 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
         <DropdownItem 
           icon={<Cloud size={14} />} 
           label="Sign In to Sync" 
-          onClick={() => { onSettingsClick(); onClose(); }} 
+          onClick={async () => { 
+            try {
+              if (window.api?.loginWithGoogle) {
+                const clientId = '736587690312-33s4trbiculu5dvctb92lkl6njgc14ae.apps.googleusercontent.com'
+                await window.api.loginWithGoogle(clientId)
+              }
+            } catch (err) {
+              console.error('Login failed', err)
+            } finally {
+              onClose()
+            }
+          }} 
         />
       )}
     </div>
@@ -152,7 +173,7 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
 
 const DropdownItem = ({ icon, label, onClick, highlight }) => {
   return (
-    <button 
+    <button
       onClick={onClick}
       style={{
         display: 'flex',
@@ -168,7 +189,7 @@ const DropdownItem = ({ icon, label, onClick, highlight }) => {
         borderRadius: 'var(--radius-sm, 4px)',
         textAlign: 'left',
         width: '100%',
-        transition: 'background-color 0.1s, color 0.1s',
+        transition: 'background-color 0.1s, color 0.1s'
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.backgroundColor = 'var(--bg-active)'
