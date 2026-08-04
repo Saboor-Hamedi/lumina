@@ -702,24 +702,6 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                   </section>
                 )}
 
-                <section style={{ marginTop: '32px' }}>
-                  <h3>Image Generation (Hugging Face)</h3>
-                  <div className="settings-row">
-                    <div className="row-info">
-                      <div className="row-label">API Key</div>
-                      <div className="row-hint">Required for image generation commands.</div>
-                    </div>
-                    <input
-                      type="password"
-                      className="settings-select"
-                      value={settings.huggingFaceKey || ''}
-                      onChange={(e) =>
-                        updateSetting('huggingFaceKey', e.target.value.trim() || null)
-                      }
-                      placeholder="hf_..."
-                    />
-                  </div>
-                </section>
 
                 <section>
                   <h3>Local Features</h3>
