@@ -16,7 +16,7 @@ export async function copyMermaidAsImage(svgElement) {
         '.node rect, .node circle, .node ellipse, .node polygon, .node path, .mindmap-node rect, .mindmap-node circle, .mindmap-node ellipse, .mindmap-node polygon, .mindmap-node path, .cluster rect, rect.actor, .actor, rect.note, .note, rect.task, .task, rect.labelBox, .labelBox, .pieTitleText, .pieSector, .rect, .labelBkg, .label-container, .activation0, .activation1, .activation2, rect'
       )
       shapes.forEach((shape) => {
-        shape.style.setProperty('fill', 'transparent', 'important')
+        shape.style.setProperty('fill', '#ffffff', 'important')
         shape.style.setProperty('stroke', '#000000', 'important')
         shape.style.setProperty('stroke-width', '1px', 'important')
       })
@@ -67,6 +67,10 @@ export async function copyMermaidAsImage(svgElement) {
           canvas.width = parseFloat(width)
           canvas.height = parseFloat(height)
           const ctx = canvas.getContext('2d')
+
+          // Fill canvas with white background
+          ctx.fillStyle = '#ffffff'
+          ctx.fillRect(0, 0, canvas.width, canvas.height)
 
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
           DOMURL.revokeObjectURL(url)
