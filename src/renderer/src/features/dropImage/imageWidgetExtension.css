@@ -66,15 +66,21 @@
   right: 8px;
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 4px;
-  background: rgba(30, 30, 30, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  opacity: 1;
+  gap: 2px;
+  padding: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 6px;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: all 0.2s ease;
   z-index: 10;
+  pointer-events: none; /* Ignore clicks when invisible */
+}
+
+.cm-image-widget-wrapper:hover .image-widget-header {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
 }
 
 .image-widget-title {
@@ -91,29 +97,29 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border-radius: 4px;
   border: none;
   background: transparent;
-  color: #ccc;
+  color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .image-widget-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
   color: #fff;
 }
 
 .image-widget-btn.active {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.25);
   color: #fff;
 }
 
 .image-widget-btn svg {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
 }
 
 /* 
