@@ -117,6 +117,16 @@
 .cm-atomic-table-cell-source .cm-content {
   caret-color: var(--caret-color, var(--text-accent, #40bafa)) !important;
 }
+
+/* When CodeMirror selects the table, draw an overlay that matches the selection color */
+.cm-atomic-table.cm-widget-selected-by-cm::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(64, 186, 250, 0.35) !important;
+  pointer-events: none;
+  z-index: 10;
+}
 .cm-atomic-table-cell-source .cm-line,
 .cm-atomic-table-cell-preview {
   font-size: var(--font-size-editor, 16px) !important;
@@ -238,10 +248,6 @@
 }
 .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
   background-color: rgba(64, 186, 250, 0.35) !important;
-  border-radius: 5px !important;
-  /* Slightly expand the selection box so it fully covers widgets without gaps */
-  padding: 2px 4px !important;
-  margin: -2px -4px !important;
 }
 .cm-content ::selection {
   background: transparent !important; /* Prevent native double backgrounds */
@@ -1367,7 +1373,6 @@ html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {
 /* Unified Selection: CodeMirror Robust Selection */
 .cm-selectionBackground {
   background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.3) !important;
-  border-radius: 5px !important;
 }
 
 .cm-selectionMatch {

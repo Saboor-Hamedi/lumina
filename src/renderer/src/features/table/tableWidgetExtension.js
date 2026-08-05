@@ -695,6 +695,7 @@ class TableWidget extends WidgetType {
     wrap.addEventListener('keydown', (event) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
         event.preventDefault()
+        event.stopPropagation()
         view.dispatch({
           selection: { anchor: 0, head: view.state.doc.length }
         })
@@ -1538,11 +1539,34 @@ const defaultLinkOpener = (url) => {
 export const tableLinkClickFacet = Facet.define({
   combine: (values) => values[0] ?? defaultLinkOpener
 })
+
+const tableSelectionSyncPlugin = ViewPlugin.fromClass(class {
+  update(update) {
+    if (update.selectionSet || update.docChanged || update.viewportChanged) {
+      this.syncSelection(update.view)
+    }
+  }
+  syncSelection(view) {
+    const sel = view.state.selection.main
+    const tables = view.dom.querySelectorAll('.cm-atomic-table')
+    for (const table of tables) {
+      const pos = view.posAtDOM(table)
+      // Check if this pos is inside the selection
+      if (pos >= sel.from && pos <= sel.to && !sel.empty) {
+        table.classList.add('cm-widget-selected-by-cm')
+      } else {
+        table.classList.remove('cm-widget-selected-by-cm')
+      }
+    }
+  }
+})
+
 export function tables(config = {}) {
   setupTableFormattingToolbar()
   return [
     tableField,
     treeProgressPlugin,
+    tableSelectionSyncPlugin,
     ...(config.onLinkClick ? [tableLinkClickFacet.of(config.onLinkClick)] : []),
     Prec.high(keymap.of([{ key: 'Backspace', run: backspaceAtTableBoundary }]))
   ]
