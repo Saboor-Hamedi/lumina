@@ -62,25 +62,16 @@
  */
 .image-widget-header {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 6px;
+  right: 6px;
   display: flex;
   align-items: center;
   gap: 2px;
-  padding: 4px;
+  padding: 2px;
   background: rgba(0, 0, 0, 0.4);
-  border-radius: 6px;
-  opacity: 0;
-  transform: translateY(-4px);
-  transition: all 0.2s ease;
-  z-index: 10;
-  pointer-events: none; /* Ignore clicks when invisible */
-}
-
-.cm-image-widget-wrapper:hover .image-widget-header {
+  border-radius: 4px;
   opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
+  z-index: 10;
 }
 
 .image-widget-title {
@@ -97,9 +88,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
   border: none;
   background: transparent;
   color: rgba(255, 255, 255, 0.7);
@@ -118,8 +109,8 @@
 }
 
 .image-widget-btn svg {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
 }
 
 /* 
