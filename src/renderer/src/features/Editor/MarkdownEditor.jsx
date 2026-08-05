@@ -22,8 +22,8 @@ import {
   luminaSyntaxHighlighting
 } from '../Workspace/codeBlockHeader'
 import { EditorView, placeholder, keymap, ViewPlugin, Decoration } from '@codemirror/view'
-import { imageDropExtension } from '../Workspace/imageDropExtension'
-import { imageWidgetExtension } from '../Workspace/imageWidgetExtension'
+import { imageDropExtension } from '../dropImage/imageDropExtension'
+import { imageWidgetExtension } from '../dropImage/imageWidgetExtension'
 import { htmlWidgetExtension } from '../Workspace/htmlWidgetExtension'
 import { insertNewlineContinueMarkup } from '@codemirror/lang-markdown'
 import { setupWikilinkHover } from '../Workspace/hoverWikilink'
