@@ -1552,7 +1552,7 @@ const tableSelectionSyncPlugin = ViewPlugin.fromClass(class {
     for (const table of tables) {
       const pos = view.posAtDOM(table)
       // Check if this pos is inside the selection
-      if (pos >= sel.from && pos <= sel.to && !sel.empty) {
+      if (pos !== null && pos >= sel.from && pos <= sel.to && !sel.empty) {
         table.classList.add('cm-widget-selected-by-cm')
       } else {
         table.classList.remove('cm-widget-selected-by-cm')

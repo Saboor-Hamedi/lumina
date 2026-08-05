@@ -118,14 +118,14 @@
   caret-color: var(--caret-color, var(--text-accent, #40bafa)) !important;
 }
 
-/* When CodeMirror selects the table, draw an overlay that matches the selection color */
-.cm-atomic-table.cm-widget-selected-by-cm::after {
-  content: "";
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-color: rgba(64, 186, 250, 0.35) !important;
-  pointer-events: none;
-  z-index: 10;
+/* When CodeMirror selects the table, make it obviously highlighted like grid selection */
+.cm-atomic-table.cm-widget-selected-by-cm td,
+.cm-atomic-table.cm-widget-selected-by-cm th {
+  background-color: rgba(var(--text-accent-rgb, 64, 186, 250), 0.7) !important;
+}
+.cm-atomic-table.cm-widget-selected-by-cm .cm-atomic-table-cell-source,
+.cm-atomic-table.cm-widget-selected-by-cm .cm-content {
+  color: #fff !important;
 }
 .cm-atomic-table-cell-source .cm-line,
 .cm-atomic-table-cell-preview {
@@ -251,6 +251,12 @@
 }
 .cm-content ::selection {
   background: transparent !important; /* Prevent native double backgrounds */
+}
+/* Re-enable native selection inside actively edited table cells */
+.cm-atomic-table-cell-source:focus ::selection,
+.cm-atomic-table-cell-source:focus-within ::selection {
+  background: rgba(64, 186, 250, 0.4) !important;
+  color: inherit !important;
 }
 
 
