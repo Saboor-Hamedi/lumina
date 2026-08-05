@@ -52,8 +52,10 @@
 
 /* Standard line padding for text readability */
 .cm-line {
-  padding: 0 4px 0 0 !important;
-  /* Remove left padding to align with title */
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  padding-right: 4px !important;
+  /* We purposefully omit padding-left !important because CodeMirror uses inline padding-left and text-indent for list indents! */
 }
 
 
@@ -1300,8 +1302,10 @@
   background-color: transparent !important;
   border: none !important;
   position: relative !important;
-  padding: 0 !important;
-  /* No padding to prevent layout shift */
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  padding-right: 0 !important;
+  /* Do not strip padding-left because CodeMirror needs it for list indentation */
   transition: none !important;
 }
 .cm-atomic-table table {
