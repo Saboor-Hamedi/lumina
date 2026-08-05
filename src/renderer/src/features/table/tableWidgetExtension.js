@@ -14,6 +14,8 @@ import { treeGrowthEffect, treeProgressPlugin } from './tree-progress'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { TableAutocomplete } from './wikilinkAutocompletion'
 import { setupTableFormattingToolbar } from './tableFormattingToolbar'
+import { openCellMenu } from './tableContextMenu'
+import { setupTableSelection } from './tableGridSelection'
 // Removed global tooltip repositioner
 
 function collectCells(state, rowNode) {
@@ -129,7 +131,7 @@ export function serializeTable(model) {
   }
   return lines.join('\n')
 }
-function readModelFromDom(wrap) {
+export function readModelFromDom(wrap) {
   const header = Array.from(wrap.querySelectorAll('thead th')).map(readCellSource)
   const alignments = Array.from(wrap.querySelectorAll('thead th')).map(th => {
     if (th.style.textAlign === 'center') return 'center'
@@ -688,8 +690,25 @@ class TableWidget extends WidgetType {
   toDOM(view) {
     const wrap = document.createElement('div')
     wrap.className = 'cm-atomic-table'
+    wrap.tabIndex = -1
+
+    wrap.addEventListener('keydown', (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
+        event.preventDefault()
+        view.dispatch({
+          selection: { anchor: 0, head: view.state.doc.length }
+        })
+        view.focus()
+      }
+    })
 
     wrap.addEventListener('mousedown', (event) => {
+      // If the editor has a selection (like from Ctrl+A), clear it when clicking the table!
+      if (!view.state.selection.main.empty) {
+        const pos = view.posAtDOM(wrap)
+        view.dispatch({ selection: { anchor: pos, head: pos } })
+      }
+
       const source = event.target.closest('.cm-atomic-table-cell-source')
       if (source) return // Let normal focus happen if they clicked directly in the editable text
 
@@ -712,7 +731,11 @@ class TableWidget extends WidgetType {
     const headerRow = document.createElement('tr')
     for (let i = 0; i < this.model.header.length; i++) {
       const cell = makeCell('th', this.model.header[i], view)
-      if (this.model.alignments?.[i]) cell.style.textAlign = this.model.alignments[i]
+      if (this.model.alignments?.[i]) {
+        cell.style.textAlign = this.model.alignments[i]
+        const source = cell.querySelector('.cm-atomic-table-cell-source')
+        if (source) source.style.textAlign = this.model.alignments[i]
+      }
       headerRow.appendChild(cell)
     }
     thead.appendChild(headerRow)
@@ -723,12 +746,18 @@ class TableWidget extends WidgetType {
       const tr = document.createElement('tr')
       for (let c = 0; c < colCount; c++) {
         const cell = makeCell('td', row[c] ?? '', view)
-        if (this.model.alignments?.[c]) cell.style.textAlign = this.model.alignments[c]
+        if (this.model.alignments?.[c]) {
+          cell.style.textAlign = this.model.alignments[c]
+          const source = cell.querySelector('.cm-atomic-table-cell-source')
+          if (source) source.style.textAlign = this.model.alignments[c]
+        }
         tr.appendChild(cell)
       }
       tbody.appendChild(tr)
     }
     table.appendChild(tbody)
+    
+    setupTableSelection(wrap, view)
     return wrap
   }
   updateDOM(dom, view) {
@@ -738,6 +767,16 @@ class TableWidget extends WidgetType {
     if (ths.length !== this.model.header.length) return false
     for (let i = 0; i < this.model.header.length; i++) {
       const source = ths[i].querySelector('.cm-atomic-table-cell-source')
+      
+      // Sync alignments
+      if (this.model.alignments?.[i]) {
+        ths[i].style.textAlign = this.model.alignments[i]
+        if (source) source.style.textAlign = this.model.alignments[i]
+      } else {
+        ths[i].style.textAlign = ''
+        if (source) source.style.textAlign = ''
+      }
+
       if (source && source.textContent !== this.model.header[i]) {
         const isFocused = document.activeElement === source
         source.parentElement.dataset.raw = this.model.header[i]
@@ -754,6 +793,16 @@ class TableWidget extends WidgetType {
       const tds = Array.from(trs[r].querySelectorAll('td'))
       for (let c = 0; c < tds.length; c++) {
         const source = tds[c].querySelector('.cm-atomic-table-cell-source')
+        
+        // Sync alignments
+        if (this.model.alignments?.[c]) {
+          tds[c].style.textAlign = this.model.alignments[c]
+          if (source) source.style.textAlign = this.model.alignments[c]
+        } else {
+          tds[c].style.textAlign = ''
+          if (source) source.style.textAlign = ''
+        }
+
         if (source && source.textContent !== this.model.rows[r][c]) {
           const isFocused = document.activeElement === source
           source.parentElement.dataset.raw = this.model.rows[r][c]
@@ -1236,258 +1285,13 @@ function makeCell(tag, text, view) {
   return cell
 }
 // ---- context menu -------------------------------------------------
-function cellRowIndex(cell) {
-  // Rows are indexed within tbody (header isn't a "row" we can
-  // insert-above; header context items are column-only).
-  const tr = cell.closest('tr')
-  const tbody = tr?.closest('tbody')
-  if (!tr || !tbody) return -1
-  return Array.from(tbody.querySelectorAll('tr')).indexOf(tr)
-}
-function cellColIndex(cell) {
-  const tr = cell.closest('tr')
-  if (!tr) return -1
-  return Array.from(tr.querySelectorAll('th, td')).indexOf(cell)
-}
-function dispatchModel(view, wrap, nextModel) {
+export function dispatchModel(view, wrap, nextModel) {
   const range = findCurrentTableRange(view, wrap)
   if (!range) return
   const next = serializeTable(nextModel)
   view.dispatch({
     changes: { from: range.from, to: range.to, insert: next }
   })
-}
-function openCellMenu(view, cell, x, y) {
-  const wrap = cell.closest('.cm-atomic-table')
-  if (!wrap) return
-  const isHeader = cell.tagName === 'TH'
-  const row = cellRowIndex(cell)
-  const col = cellColIndex(cell)
-  const menu = document.createElement('div')
-  menu.className = 'cm-atomic-table-menu'
-  menu.style.left = `${x}px`
-  menu.style.top = `${y}px`
-  const items = []
-  if (!isHeader) {
-    items.push({
-      label: 'Insert row above',
-      action: () => {
-        const m = readModelFromDom(wrap)
-        m.rows.splice(
-          row,
-          0,
-          m.header.map(() => '')
-        )
-        dispatchModel(view, wrap, m)
-      }
-    })
-    items.push({
-      label: 'Insert row below',
-      action: () => {
-        const m = readModelFromDom(wrap)
-        m.rows.splice(
-          row + 1,
-          0,
-          m.header.map(() => '')
-        )
-        dispatchModel(view, wrap, m)
-      }
-    })
-    items.push({
-      label: 'Move row up',
-      action: () => {
-        if (row <= 0) return
-        const m = readModelFromDom(wrap)
-        const temp = m.rows[row]
-        m.rows[row] = m.rows[row - 1]
-        m.rows[row - 1] = temp
-        dispatchModel(view, wrap, m)
-      }
-    })
-    items.push({
-      label: 'Move row down',
-      action: () => {
-        const m = readModelFromDom(wrap)
-        if (row >= m.rows.length - 1) return
-        const temp = m.rows[row]
-        m.rows[row] = m.rows[row + 1]
-        m.rows[row + 1] = temp
-        dispatchModel(view, wrap, m)
-      }
-    })
-    items.push({
-      label: 'Delete row',
-      action: () => {
-        const m = readModelFromDom(wrap)
-        if (row >= 0 && row < m.rows.length) m.rows.splice(row, 1)
-        dispatchModel(view, wrap, m)
-      }
-    })
-    items.push('separator')
-  }
-  items.push({
-    label: 'Insert column left',
-    action: () => {
-      const m = readModelFromDom(wrap)
-      m.header.splice(col, 0, '')
-      m.alignments.splice(col, 0, '')
-      for (const r of m.rows) r.splice(col, 0, '')
-      dispatchModel(view, wrap, m)
-    }
-  })
-  items.push({
-    label: 'Insert column right',
-    action: () => {
-      const m = readModelFromDom(wrap)
-      m.header.splice(col + 1, 0, '')
-      m.alignments.splice(col + 1, 0, '')
-      for (const r of m.rows) r.splice(col + 1, 0, '')
-      dispatchModel(view, wrap, m)
-    }
-  })
-  items.push({
-    label: 'Move column left',
-    action: () => {
-      if (col <= 0) return
-      const m = readModelFromDom(wrap)
-      const tempH = m.header[col]
-      m.header[col] = m.header[col - 1]
-      m.header[col - 1] = tempH
-      const tempA = m.alignments[col]
-      m.alignments[col] = m.alignments[col - 1]
-      m.alignments[col - 1] = tempA
-      for (const r of m.rows) {
-        const temp = r[col]
-        r[col] = r[col - 1]
-        r[col - 1] = temp
-      }
-      dispatchModel(view, wrap, m)
-    }
-  })
-  items.push({
-    label: 'Move column right',
-    action: () => {
-      const m = readModelFromDom(wrap)
-      if (col >= m.header.length - 1) return
-      const tempH = m.header[col]
-      m.header[col] = m.header[col + 1]
-      m.header[col + 1] = tempH
-      const tempA = m.alignments[col]
-      m.alignments[col] = m.alignments[col + 1]
-      m.alignments[col + 1] = tempA
-      for (const r of m.rows) {
-        const temp = r[col]
-        r[col] = r[col + 1]
-        r[col + 1] = temp
-      }
-      dispatchModel(view, wrap, m)
-    }
-  })
-  items.push({
-    label: 'Delete column',
-    action: () => {
-      const m = readModelFromDom(wrap)
-      if (m.header.length <= 1 || col < 0) return
-      m.header.splice(col, 1)
-      m.alignments.splice(col, 1)
-      for (const r of m.rows) r.splice(col, 1)
-      dispatchModel(view, wrap, m)
-    }
-  })
-  items.push('separator')
-  items.push({
-    label: 'Align Left',
-    action: () => {
-      const m = readModelFromDom(wrap)
-      m.alignments[col] = 'left'
-      dispatchModel(view, wrap, m)
-    }
-  })
-  items.push({
-    label: 'Align Center',
-    action: () => {
-      const m = readModelFromDom(wrap)
-      m.alignments[col] = 'center'
-      dispatchModel(view, wrap, m)
-    }
-  })
-  items.push({
-    label: 'Align Right',
-    action: () => {
-      const m = readModelFromDom(wrap)
-      m.alignments[col] = 'right'
-      dispatchModel(view, wrap, m)
-    }
-  })
-  items.push('separator')
-  items.push({
-    label: 'Sort Ascending',
-    action: () => {
-      const m = readModelFromDom(wrap)
-      m.rows.sort((a, b) => {
-        const valA = (a[col] || '').trim()
-        const valB = (b[col] || '').trim()
-        return valA.localeCompare(valB, undefined, { numeric: true })
-      })
-      dispatchModel(view, wrap, m)
-    }
-  })
-  items.push({
-    label: 'Sort Descending',
-    action: () => {
-      const m = readModelFromDom(wrap)
-      m.rows.sort((a, b) => {
-        const valA = (a[col] || '').trim()
-        const valB = (b[col] || '').trim()
-        return valB.localeCompare(valA, undefined, { numeric: true })
-      })
-      dispatchModel(view, wrap, m)
-    }
-  })
-  const dismiss = () => {
-    menu.remove()
-    document.removeEventListener('mousedown', onDocDown, true)
-    document.removeEventListener('keydown', onDocKey, true)
-  }
-  const onDocDown = (event) => {
-    if (event.target instanceof Node && menu.contains(event.target)) return
-    dismiss()
-  }
-  const onDocKey = (event) => {
-    if (event.key === 'Escape') dismiss()
-  }
-  for (const item of items) {
-    if (item === 'separator') {
-      const sep = document.createElement('div')
-      sep.className = 'cm-atomic-table-menu-sep'
-      menu.appendChild(sep)
-      continue
-    }
-    const btn = document.createElement('button')
-    btn.type = 'button'
-    btn.className = 'cm-atomic-table-menu-item'
-    btn.textContent = item.label
-    btn.addEventListener('click', () => {
-      item.action()
-      dismiss()
-    })
-    menu.appendChild(btn)
-  }
-  document.body.appendChild(menu)
-  // Clip the menu inside the viewport if it overflows.
-  const rect = menu.getBoundingClientRect()
-  if (rect.right > window.innerWidth) {
-    menu.style.left = `${Math.max(4, window.innerWidth - rect.width - 4)}px`
-  }
-  if (rect.bottom > window.innerHeight) {
-    menu.style.top = `${Math.max(4, window.innerHeight - rect.height - 4)}px`
-  }
-  // Deferred listener attach so the current contextmenu→document
-  // mousedown cycle doesn't immediately dismiss us.
-  setTimeout(() => {
-    document.addEventListener('mousedown', onDocDown, true)
-    document.addEventListener('keydown', onDocKey, true)
-  }, 0)
 }
 function dispatchModelFromDom(view, cell) {
   const wrap = cell.closest('.cm-atomic-table')

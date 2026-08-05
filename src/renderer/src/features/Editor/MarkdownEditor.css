@@ -114,7 +114,9 @@
 .cm-atomic-table th,
 .cm-atomic-table td,
 .cm-atomic-table-cell-source,
-.cm-atomic-table-cell-source .cm-content,
+.cm-atomic-table-cell-source .cm-content {
+  caret-color: var(--caret-color, var(--text-accent, #40bafa)) !important;
+}
 .cm-atomic-table-cell-source .cm-line,
 .cm-atomic-table-cell-preview {
   font-size: var(--font-size-editor, 16px) !important;
@@ -161,11 +163,12 @@
 .cm-editor.cm-table-focused .cm-cursorLayer,
 .markdown-editor:has(.cm-atomic-table:focus-within) .cm-cursorLayer,
 .cm-editor:has(.cm-atomic-table:focus-within) .cm-cursorLayer,
-.markdown-editor:has(.cm-atomic-table-cell-source:focus) .cm-cursorLayer {
+.markdown-editor:has(.cm-atomic-table-cell-source:focus) .cm-cursorLayer,
+.cm-editor:has(.cm-atomic-table:hover) .cm-cursorLayer,
+.cm-editor:has(.cm-atomic-table:active) .cm-cursorLayer {
   display: none !important;
   opacity: 0 !important;
   visibility: hidden !important;
-  
 }
 
 /* Inline Code Pill Style - your existing code */
@@ -229,8 +232,15 @@
 }
 
 /* Global Selection Style for CM6: High visibility for "Robust" feel */
+.markdown-editor .cm-editor .cm-scroller .cm-selectionLayer {
+  z-index: 10 !important; /* Bring above content to cover opaque atomic widgets */
+  pointer-events: none !important;
+}
 .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
   background-color: rgba(64, 186, 250, 0.35) !important;
+}
+.cm-content ::selection {
+  background: transparent !important; /* Prevent native double backgrounds */
 }
 
 
@@ -1351,8 +1361,7 @@ html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {
 }
 
 /* Unified Selection: CodeMirror Robust Selection */
-.cm-selectionBackground,
-.cm-content ::selection {
+.cm-selectionBackground {
   background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.3) !important;
 }
 
@@ -1987,6 +1996,22 @@ html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {
 }
 
 .virtuoso-scroller-no-scrollbar::-webkit-scrollbar { display: none; }
+
+.cm-table-cell-selected {
+  background-color: #2196F3 !important;
+  color: #fff !important;
+}
+.cm-table-cell-selected .cm-atomic-table-cell-source,
+.cm-table-cell-selected .cm-content {
+  color: #fff !important;
+}
+
+.cm-table-selecting {
+  user-select: none !important;
+}
+.cm-table-selecting * {
+  user-select: none !important;
+}
 
 
 
