@@ -8,7 +8,7 @@ import {
   StateField,
   Transaction
 } from '@codemirror/state'
-import { Decoration, EditorView, WidgetType, keymap } from '@codemirror/view'
+import { Decoration, EditorView, WidgetType, keymap, ViewPlugin } from '@codemirror/view'
 import { undo, redo } from '@codemirror/commands'
 import { treeGrowthEffect, treeProgressPlugin } from './tree-progress'
 import { useVaultStore } from '../../core/store/useVaultStore'
