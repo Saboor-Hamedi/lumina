@@ -60,17 +60,48 @@ function applyFormatting(tag) {
   if (!sel || sel.isCollapsed) return
   
   const range = sel.getRangeAt(0)
-  const source = range.startContainer.parentElement?.closest('.cm-atomic-table-cell-source')
+  const source = range.startContainer.parentElement?.closest('.cm-atomic-table-cell-source') ||
+                 (range.startContainer.nodeType === Node.ELEMENT_NODE && range.startContainer.closest('.cm-atomic-table-cell-source'))
   if (!source) return
 
-  // We have a selection inside the cell.
-  // We need to wrap it with the tag.
-  // However, `execCommand` is deprecated and manipulating DOM ranges directly in contentEditable is tricky.
-  // The easiest way for our plain-text-backed contentEditable is to:
-  // 1. Get the current textContent of the selection.
-  // 2. document.execCommand('insertText', false, `${tag}${selectedText}${tag}`)
-  // This will insert it into the DOM, and our `input` listener on the cell will pick it up and re-render.
-  
-  const text = sel.toString()
+  let text = sel.toString()
+
+  // Case 1: They highlighted the marks themselves (e.g. "**hello**")
+  if (text.startsWith(tag) && text.endsWith(tag) && text.length >= tag.length * 2) {
+    document.execCommand('insertText', false, text.substring(tag.length, text.length - tag.length))
+    return
+  }
+
+  // Case 2: They highlighted text inside an existing mark wrap
+  let wrapClass = ''
+  if (tag === '**') wrapClass = 'cm-atomic-strong-wrap'
+  else if (tag === '_') wrapClass = 'cm-atomic-em-wrap'
+  else if (tag === '~~') wrapClass = 'cm-atomic-strike-wrap'
+  else if (tag === '`') wrapClass = 'cm-atomic-inline-code-wrap'
+
+  if (wrapClass) {
+    let node = range.commonAncestorContainer
+    if (node.nodeType === Node.TEXT_NODE) node = node.parentElement
+    const wrap = node.closest('.' + wrapClass)
+    
+    if (wrap && source.contains(wrap)) {
+      // Select the entire wrap so we replace the delimiters too
+      const newRange = document.createRange()
+      newRange.selectNodeContents(wrap)
+      sel.removeAllRanges()
+      sel.addRange(newRange)
+      
+      const wrapText = sel.toString()
+      if (wrapText.startsWith(tag) && wrapText.endsWith(tag) && wrapText.length >= tag.length * 2) {
+        document.execCommand('insertText', false, wrapText.substring(tag.length, wrapText.length - tag.length))
+      } else {
+        // Fallback just in case textContent was weird
+        document.execCommand('insertText', false, wrapText)
+      }
+      return
+    }
+  }
+
+  // Case 3: Normal wrap
   document.execCommand('insertText', false, `${tag}${text}${tag}`)
 }
