@@ -157,3 +157,56 @@
   font-family: var(--font-editor);
   background: rgba(239, 68, 68, 0.1);
 }
+
+/* 
+ * ============ CAPTION ============
+ */
+.image-widget-caption {
+  font-family: var(--font-editor, sans-serif);
+  font-size: 13px;
+  color: var(--text-muted, #888);
+  margin-top: 8px;
+  text-align: center;
+  font-style: italic;
+  max-width: 90%;
+}
+
+/* 
+ * ============ LIGHTBOX ============
+ */
+.image-lightbox-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  cursor: zoom-out;
+}
+
+.image-lightbox-overlay.show {
+  opacity: 1;
+}
+
+.image-lightbox-image {
+  max-width: 95vw;
+  max-height: 95vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  transform: scale(0.95);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.image-lightbox-overlay.show .image-lightbox-image {
+  transform: scale(1);
+}
+

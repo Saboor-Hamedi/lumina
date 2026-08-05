@@ -1,6 +1,9 @@
 import { WidgetType, EditorView, Decoration } from '@codemirror/view'
 import { StateField } from '@codemirror/state'
 import './imageWidgetExtension.css'
+import { attachLightbox } from './imageLightbox'
+import { copyImageToClipboard } from './imageClipboard'
+import { createCaptionElement } from './imageCaption'
 
 const urlCache = new Map()
 
@@ -16,7 +19,9 @@ const icons = {
   center: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="12" x2="3" y2="12"></line><polyline points="8 7 3 12 8 17"></polyline><polyline points="16 17 21 12 16 7"></polyline></svg>`,
   right: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="12" x2="21" y2="12"></line><polyline points="16 7 21 12 16 17"></polyline><line x1="3" y1="19" x2="3" y2="5"></line></svg>`,
   code: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>`,
-  image: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`
+  image: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`,
+  copy: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`,
+  check: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`
 }
 
 class ImageWidget extends WidgetType {
@@ -165,6 +170,19 @@ class ImageWidget extends WidgetType {
     const btnRight = this.createBtn(icons.right, 'Align Right', () => updateImage(undefined, 'right'))
     if (this.align === 'right') btnRight.classList.add('active')
 
+    // Copy Image Button
+    const btnCopy = this.createBtn(icons.copy, 'Copy Image', () => {
+      const origHtml = btnCopy.innerHTML
+      copyImageToClipboard(this.url, () => {
+        btnCopy.innerHTML = icons.check
+        btnCopy.style.color = '#4ade80'
+        setTimeout(() => {
+          btnCopy.innerHTML = origHtml
+          btnCopy.style.color = ''
+        }, 2000)
+      })
+    })
+
     // Edit Source Button
     const btnEdit = this.createBtn(icons.code, 'Edit Source', () => {
       if (view.state.readOnly) return
@@ -183,7 +201,7 @@ class ImageWidget extends WidgetType {
       return el
     }
 
-    actions.append(btnLeft, btnCenter, btnRight, separator(), btnEdit)
+    actions.append(btnCopy, separator(), btnLeft, btnCenter, btnRight, separator(), btnEdit)
     header.append(title, actions)
     // Removed wrap.appendChild(header) so it can be placed inside the body
 
@@ -196,6 +214,8 @@ class ImageWidget extends WidgetType {
     const img = document.createElement('img')
     img.alt = this.actualAlt
     img.draggable = false
+    
+    attachLightbox(img)
 
     img.onload = () => {
       if (view && view.requestMeasure) {
@@ -289,6 +309,11 @@ class ImageWidget extends WidgetType {
 
     body.appendChild(handle)
     wrap.appendChild(body)
+
+    const caption = createCaptionElement(this.actualAlt)
+    if (caption) {
+      wrap.appendChild(caption)
+    }
 
     return wrap
   }
