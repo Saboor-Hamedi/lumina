@@ -1,0 +1,159 @@
+/* 
+ * ============================================================
+ * IMAGE WIDGET EXTENSION
+ * Gorgeous block-level image widget with hover controls
+ * ============================================================
+ */
+
+.cm-image-widget-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: max-content;
+  max-width: 100%;
+  margin: 16px 0;
+  line-height: 0;
+}
+
+.cm-image-widget-wrapper.align-center {
+  margin: 16px auto !important;
+}
+
+.cm-image-widget-wrapper.align-right {
+  margin: 16px 0 16px auto !important;
+}
+
+.cm-image-widget-wrapper.align-left {
+  margin: 16px auto 16px 0 !important;
+}
+
+/* 
+ * ============ BODY ============
+ */
+.image-widget-body {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  min-width: 40px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-editor);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--border-dim);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.image-widget-body:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+}
+
+.image-widget-body img {
+  display: block;
+  max-width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  width: 100%;
+}
+
+/* 
+ * ============ FLOATING HEADER ============
+ */
+.image-widget-header {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  background: rgba(30, 30, 30, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  opacity: 1;
+  z-index: 10;
+}
+
+.image-widget-title {
+  display: none;
+}
+
+.image-widget-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.image-widget-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: #ccc;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.image-widget-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.image-widget-btn.active {
+  background: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
+.image-widget-btn svg {
+  width: 10px;
+  height: 10px;
+}
+
+/* 
+ * ============ RESIZE HANDLE ============
+ */
+.image-widget-resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 18px;
+  height: 18px;
+  cursor: se-resize;
+  z-index: 10;
+  background: linear-gradient(135deg, transparent 50%, var(--text-accent, #3b82f6) 50%);
+  border-bottom-right-radius: 7px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.cm-image-widget-wrapper:hover .image-widget-resize-handle {
+  opacity: 0.7;
+}
+
+.cm-image-widget-wrapper.resizing .image-widget-resize-handle {
+  opacity: 1;
+}
+
+.cm-image-widget-wrapper.resizing img {
+  user-select: none;
+  pointer-events: none;
+}
+
+.image-widget-error {
+  padding: 16px;
+  color: #ef4444;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-editor);
+  background: rgba(239, 68, 68, 0.1);
+}

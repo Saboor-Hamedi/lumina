@@ -220,12 +220,11 @@ app.whenReady().then(async () => {
 
       if (parsedUrl.hostname === 'local') {
         // Standard robust URL format: asset://local/.lumina/assets/image.png
-        relativePath = decodeURIComponent(parsedUrl.pathname.slice(1))
+        relativePath = decodeURIComponent(parsedUrl.pathname.replace(/^\/+/, ''))
       } else {
         // Fallback for old markdown format just in case
         let fallbackUrl = request.url.replace('asset://', '').replace('asset:///', '')
-        if (fallbackUrl.startsWith('/')) fallbackUrl = fallbackUrl.slice(1)
-        relativePath = decodeURIComponent(fallbackUrl)
+        relativePath = decodeURIComponent(fallbackUrl.replace(/^\/+/, ''))
       }
 
       if (!VaultManager.vaultPath || !relativePath)
@@ -243,7 +242,8 @@ app.whenReady().then(async () => {
       else if (ext === '.webp') mimeType = 'image/webp'
       else if (ext === '.svg') mimeType = 'image/svg+xml'
 
-      return new Response(data, {
+      const arrayBuffer = new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
+      return new Response(arrayBuffer, {
         headers: { 'Content-Type': mimeType }
       })
     } catch (error) {

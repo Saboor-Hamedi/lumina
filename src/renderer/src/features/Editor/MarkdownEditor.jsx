@@ -1007,7 +1007,7 @@ const MarkdownEditor = React.memo(
       () => [
         ...editorExtensions,
         dropExtension,
-        imageWidgetExtension,
+        Prec.highest(imageWidgetExtension),
         htmlWidgetExtension,
         calloutExtension,
         Prec.highest(tables({ onLinkClick: handleTableLinkClick }))

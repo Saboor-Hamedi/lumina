@@ -363,3 +363,8 @@ body {
   background: var(--bg-active);
   color: #ef4444;
 }
+
+/* Hide Atomic Editor's default image widget to prevent conflicts with Lumina's custom IPC image widget */
+.cm-atomic-image {
+  display: none !important;
+}

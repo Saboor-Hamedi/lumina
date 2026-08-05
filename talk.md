@@ -1,48 +1,44 @@
-Backup error: Error: Failed to initiate upload: 403  - {
-  "error": {
-    "code": 403,
-    "message": "Google Drive API has not been used in project 736587690312 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=736587690312 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.",
-    "errors": [
-      {
-        "message": "Google Drive API has not been used in project 736587690312 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=736587690312 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.",
-        "domain": "usageLimits",
-        "reason": "accessNotConfigured",
-        "extendedHelp": "https://console.developers.google.com"
-      }
-    ],
-    "status": "PERMISSION_DENIED",
-    "details": [
-      {
-        "@type": "type.googleapis.com/google.rpc.ErrorInfo",
-        "reason": "SERVICE_DISABLED",
-        "domain": "googleapis.com",
-        "metadata": {
-          "consumer": "projects/736587690312",
-          "containerInfo": "736587690312",
-          "service": "drive.googleapis.com",
-          "serviceTitle": "Google Drive API",
-          "activationUrl": "https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=736587690312"
-        }
-      },
-      {
-        "@type": "type.googleapis.com/google.rpc.LocalizedMessage",
-        "locale": "en-US",
-        "message": "Google Drive API has not been used in project 736587690312 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=736587690312 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."
-      },
-      {
-        "@type": "type.googleapis.com/google.rpc.Help",
-        "links": [
-          {
-            "description": "Google developers console API activation",
-            "url": "https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=736587690312"
-          }
-        ]
-      }
-    ]
-  }
-}
+[Main] Cache cleared successfully
+11:17:58 PM [vite] (client) Pre-transform error: Failed to parse source for import analysis because the content contains invalid JS syntax. If you are using JSX, make sure to name the file with the .jsx or .tsx extension.
+  Plugin: vite:import-analysis
+  File: B:/electron/lumina/src/renderer/src/features/Workspace/imageWidgetExtension.js:305:0
+  303 |    }
+  304 |  )
+  305 |  
+      |  ^
+11:17:59 PM [vite] (client) Pre-transform error: Failed to parse source for import analysis because the content contains invalid JS syntax. If you are using JSX, make sure to name the file with the .jsx or .tsx extension.
+  Plugin: vite:import-analysis
+  File: B:/electron/lumina/src/renderer/src/features/Workspace/imageWidgetExtension.js:305:0
+  303 |    }
+  304 |  )
+  305 |  
+      |  ^ (x2)
+11:18:01 PM [vite] Internal server error: Failed to parse source for import analysis because the content contains invalid JS syntax. If you are using JSX, make sure to name the file with the .jsx or .tsx extension.
+  Plugin: vite:import-analysis
+  File: B:/electron/lumina/src/renderer/src/features/Workspace/imageWidgetExtension.js:305:0
+  303 |    }
+  304 |  )
+  305 |  
+      |  ^
+      at TransformPluginContext._formatLog (file:///B:/electron/lumina/node_modules/vite/dist/node/chunks/config.js:29618:43)
+      at TransformPluginContext.error (file:///B:/electron/lumina/node_modules/vite/dist/node/chunks/config.js:29615:14)
+      at TransformPluginContext.transform (file:///B:/electron/lumina/node_modules/vite/dist/node/chunks/config.js:27701:10)
+      at async EnvironmentPluginContainer.transform (file:///B:/electron/lumina/node_modules/vite/dist/node/chunks/config.js:29416:14)
+      at async loadAndTransform (file:///B:/electron/lumina/node_modules/vite/dist/node/chunks/config.js:23287:26)
+      at async viteTransformMiddleware (file:///B:/electron/lumina/node_modules/vite/dist/node/chunks/config.js:25159:20)
+[Main] Starting background indexing after renderer ready...
+[IndexerWorker] Loading embedding model...
+[VaultIndexer] Loaded state with 623 tracked files
+[VaultIndexer] Loaded state with 623 tracked files
+[VaultIndexer] State files count: 623
+[VaultIndexer] Found 1 deleted files to remove from index
+[VaultIndexer] Files to process: 2
+[VaultIndexer] Found 2 files that need indexing
+[IndexerWorker] Embedder loaded
+[VaultIndexer] Loaded state with 623 tracked files
+[VaultIndexer] ✓ Index complete: 1 files, 1 chunks
+[Main] Background indexing complete, reloading search index...
+[VaultSearch] ✓ Loaded 6779 chunks into memory
 
-    at uploadToGoogleDrive (B:\electron\lumina\out\main\index.js:2488:11)
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async backupToDrive (B:\electron\lumina\out\main\index.js:2525:5)
-    at async Session.<anonymous> (node:electron/js2c/browser_init:2:107280)
+
+

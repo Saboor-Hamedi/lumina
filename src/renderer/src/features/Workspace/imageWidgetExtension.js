@@ -1,250 +1,392 @@
-import { WidgetType, EditorView, Decoration, MatchDecorator, ViewPlugin } from '@codemirror/view'
+import { WidgetType, EditorView, Decoration } from '@codemirror/view'
+import { StateField } from '@codemirror/state'
+import './imageWidgetExtension.css'
 
 const urlCache = new Map()
 
+// Helper icons
+const createIcon = (svgString) => {
+  const template = document.createElement('template')
+  template.innerHTML = svgString.trim()
+  return template.content.firstChild
+}
+
+const icons = {
+  left: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="12" x2="3" y2="12"></line><polyline points="8 7 3 12 8 17"></polyline><line x1="21" y1="19" x2="21" y2="5"></line></svg>`,
+  center: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="12" x2="3" y2="12"></line><polyline points="8 7 3 12 8 17"></polyline><polyline points="16 17 21 12 16 7"></polyline></svg>`,
+  right: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="12" x2="21" y2="12"></line><polyline points="16 7 21 12 16 17"></polyline><line x1="3" y1="19" x2="3" y2="5"></line></svg>`,
+  code: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>`,
+  image: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`
+}
+
 class ImageWidget extends WidgetType {
-  constructor(altText, url, pos, view) {
+  constructor(altText, url, pos, originalLength) {
     super()
     this.altText = altText
     this.url = url
     this.pos = pos
-    this.view = view
+    this.originalLength = originalLength
 
     // Parse alt text for styling e.g., ![alt|300x200|center]
     this.parts = altText.split('|')
-    this.actualAlt = this.parts[0] || ''
+    this.actualAlt = this.parts[0] ? this.parts[0].trim() : ''
 
     this.width = 'auto'
-    this.align = 'left'
+    this.align = 'center' // Default to center for images
 
-    // Simple heuristic: if part contains a number it might be width, if it contains left/center/right it's align
     for (let i = 1; i < this.parts.length; i++) {
-      const part = this.parts[i].toLowerCase()
+      const part = this.parts[i].toLowerCase().trim()
       if (['left', 'center', 'right'].includes(part)) {
         this.align = part
-      } else if (/^\d+(x\d+)?$/.test(part) || /^\d+%$/.test(part) || /^\d+px$/.test(part)) {
-        this.width = part.includes('x')
-          ? part.split('x')[0] + 'px'
-          : !isNaN(part)
-            ? part + 'px'
-            : part
+      } else {
+        const isWxH = /^\d+x\d+$/.test(part)
+        const isPercent = /^\d+%$/.test(part)
+        const isPx = /^\d+px$/.test(part)
+        const isNum = /^\d+$/.test(part)
+
+        if (isWxH) this.width = part.split('x')[0] + 'px'
+        else if (isPercent || isPx) this.width = part
+        else if (isNum) this.width = part + 'px'
       }
     }
   }
 
   eq(other) {
-    return other.url === this.url && other.altText === this.altText
+    // Only return false if the core URL changes. Otherwise, reuse the DOM node!
+    return other.url === this.url
   }
 
-  toDOM() {
-    const wrap = document.createElement('span')
-    wrap.className = `cm-image-widget-wrapper align-${this.align}`
-    wrap.style.position = 'relative'
+  updateDOM(dom, view) {
+    // Update the widget reference on the DOM node so event listeners always use the fresh state
+    dom.__imageWidget = this
 
-    if (this.align === 'center') {
-      wrap.style.display = 'block'
-      wrap.style.textAlign = 'center'
-      wrap.style.margin = '10px 0'
-      wrap.style.width = '100%'
-    } else if (this.align === 'right') {
-      wrap.style.display = 'block'
-      wrap.style.textAlign = 'right'
-      wrap.style.margin = '10px 0'
-      wrap.style.width = '100%'
+    // Apply visual updates instantly without rebuilding the DOM
+    dom.className = `cm-image-widget-wrapper align-${this.align}`
+    
+    if (this.width !== 'auto') {
+      dom.style.width = this.width
     } else {
-      wrap.style.display = 'inline-block'
-      wrap.style.margin = '2px 4px 2px 0'
-      wrap.style.verticalAlign = 'middle'
+      dom.style.width = '' // Reset to default
     }
+
+    // Update active state of alignment buttons
+    const actions = dom.querySelector('.image-widget-actions')
+    if (actions) {
+      const btns = actions.querySelectorAll('button.image-widget-btn')
+      btns.forEach(btn => btn.classList.remove('active'))
+      if (this.align === 'left' && btns[0]) btns[0].classList.add('active')
+      if (this.align === 'center' && btns[1]) btns[1].classList.add('active')
+      if (this.align === 'right' && btns[2]) btns[2].classList.add('active')
+    }
+
+    return true
+  }
+
+  toDOM(view) {
+    const wrap = document.createElement('div')
+    wrap.className = `cm-image-widget-wrapper align-${this.align}`
+    wrap.__imageWidget = this
+
+    // ----------------------------------------------------------------
+    // HEADER
+    // ----------------------------------------------------------------
+    const header = document.createElement('div')
+    header.className = 'image-widget-header'
+
+    const title = document.createElement('div')
+    title.className = 'image-widget-title'
+    title.appendChild(createIcon(icons.image))
+    
+    const actions = document.createElement('div')
+    actions.className = 'image-widget-actions'
+
+    const updateImage = (newWidth, newAlign) => {
+      let pos = view.posAtDOM(wrap)
+      if (pos === null && wrap.__imageWidget) pos = wrap.__imageWidget.pos
+      if (pos === null || pos === undefined) return
+
+      const docStr = view.state.doc.toString()
+      
+      // Search a large window to safely find the exact markdown string.
+      // We use 2000 characters to ensure long URLs or alt texts are never cut off.
+      const searchStart = Math.max(0, pos - 500)
+      const searchEnd = Math.min(docStr.length, pos + 2000)
+      const windowStr = docStr.slice(searchStart, searchEnd)
+      
+      const regex = /!\[([^\]]*)\]\(([^)]+)\)/g
+      let match
+      let closestMatch = null
+      let minDistance = Infinity
+      
+      while ((match = regex.exec(windowStr)) !== null) {
+        if (match[2] === wrap.__imageWidget.url) {
+          const matchPos = searchStart + match.index
+          const distance = Math.abs(matchPos - pos)
+          if (distance < minDistance) {
+            minDistance = distance
+            closestMatch = { match, pos: matchPos }
+          }
+        }
+      }
+
+      if (!closestMatch) return // Abort safely if somehow not found
+
+      const currentAltText = closestMatch.match[1]
+      const currentUrl = closestMatch.match[2]
+      const currentLen = closestMatch.match[0].length
+      const actualPos = closestMatch.pos
+
+      const parts = currentAltText.split('|')
+      const actualAlt = parts[0] ? parts[0].trim() : ''
+
+      // Parse current width and align from the live text
+      let currentWidth = 'auto'
+      let currentAlign = 'center'
+      for (let i = 1; i < parts.length; i++) {
+        const p = parts[i].toLowerCase().trim()
+        if (['left', 'center', 'right'].includes(p)) {
+          currentAlign = p
+        } else {
+          const isWxH = /^\d+x\d+$/.test(p)
+          const isPercent = /^\d+%$/.test(p)
+          const isPx = /^\d+px$/.test(p)
+          const isNum = /^\d+$/.test(p)
+          if (isWxH) currentWidth = p.split('x')[0] + 'px'
+          else if (isPercent || isPx) currentWidth = p
+          else if (isNum) currentWidth = p + 'px'
+        }
+      }
+
+      const finalWidth = newWidth !== undefined ? newWidth : currentWidth
+      const finalAlign = newAlign !== undefined ? newAlign : currentAlign
+
+      const newParts = [actualAlt]
+      if (finalWidth && finalWidth !== 'auto') newParts.push(finalWidth)
+      if (finalAlign && finalAlign !== 'center') newParts.push(finalAlign)
+
+      const newAlt = newParts.join('|')
+      const newText = `![${newAlt}](${currentUrl})`
+
+      view.dispatch({
+        changes: { from: actualPos, to: actualPos + currentLen, insert: newText }
+      })
+    }
+
+    // Align Buttons (Pass undefined to use current value)
+    const btnLeft = this.createBtn(icons.left, 'Align Left', () => updateImage(undefined, 'left'))
+    if (this.align === 'left') btnLeft.classList.add('active')
+    
+    const btnCenter = this.createBtn(icons.center, 'Align Center', () => updateImage(undefined, 'center'))
+    if (this.align === 'center') btnCenter.classList.add('active')
+    
+    const btnRight = this.createBtn(icons.right, 'Align Right', () => updateImage(undefined, 'right'))
+    if (this.align === 'right') btnRight.classList.add('active')
+
+    // Edit Source Button
+    const btnEdit = this.createBtn(icons.code, 'Edit Source', () => {
+      if (view.state.readOnly) return
+      const pos = view.posAtDOM(wrap)
+      if (pos === null) return
+      view.dispatch({ selection: { anchor: pos + 1 }, scrollIntoView: true })
+      view.focus()
+    })
+
+    const separator = () => {
+      const el = document.createElement('div')
+      el.style.width = '1px'
+      el.style.height = '12px'
+      el.style.background = 'var(--border-dim)'
+      el.style.margin = '0 4px'
+      return el
+    }
+
+    actions.append(btnLeft, btnCenter, btnRight, separator(), btnEdit)
+    header.append(title, actions)
+    wrap.appendChild(header)
+
+    // ----------------------------------------------------------------
+    // BODY & IMAGE
+    // ----------------------------------------------------------------
+    const body = document.createElement('div')
+    body.className = 'image-widget-body'
 
     const img = document.createElement('img')
     img.alt = this.actualAlt
-    img.style.maxWidth = '100%'
-    img.style.minHeight = '20px' // Ensure it has at least some initial height
-    img.style.borderRadius = '4px'
-    img.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)'
+    img.draggable = false
 
-    // Force CodeMirror to recalculate line heights once the image asynchronously loads
     img.onload = () => {
-      if (this.view && this.view.requestMeasure) {
-        this.view.requestMeasure()
+      if (view && view.requestMeasure) {
+        view.requestMeasure()
       }
     }
 
     img.onerror = () => {
+      const widget = wrap.__imageWidget
       console.error('[ImageWidget] Failed to load image at URL:', img.src)
-      wrap.innerHTML = `<div style="color: #ff6b6b; padding: 10px; border: 1px dashed #ff6b6b; border-radius: 4px; background: rgba(255,0,0,0.1);">
-        ❌ Image Failed to Render: ${this.actualAlt}
-      </div>`
-      if (this.view && this.view.requestMeasure) this.view.requestMeasure()
+      body.innerHTML = ''
+      const errorDiv = document.createElement('div')
+      errorDiv.className = 'image-widget-error'
+      errorDiv.innerHTML = `❌ Image Failed to Render: ${widget.actualAlt}`
+      body.appendChild(errorDiv)
+      if (view && view.requestMeasure) view.requestMeasure()
     }
 
-    // Completely bypass Chromium URL parser/CSP bugs using IPC binary transfer
     if (this.url && !this.url.startsWith('http') && !this.url.startsWith('data:')) {
+      const cleanUrl = this.url.startsWith('/') ? this.url.slice(1) : this.url;
+      
       if (urlCache.has(this.url)) {
-        img.src = urlCache.get(this.url)
-      } else if (window.api && window.api.readAsset) {
-        window.api
-          .readAsset(decodeURIComponent(this.url))
-          .then((buffer) => {
-            let data
-            if (buffer && buffer.type === 'Buffer' && Array.isArray(buffer.data)) {
-              data = new Uint8Array(buffer.data)
-            } else {
-              data = new Uint8Array(buffer)
-            }
-
-            const ext = this.url.split('.').pop().toLowerCase()
-            let mimeType = 'image/png'
-            if (ext === 'jpg' || ext === 'jpeg') mimeType = 'image/jpeg'
-            else if (ext === 'gif') mimeType = 'image/gif'
-            else if (ext === 'svg') mimeType = 'image/svg+xml'
-            else if (ext === 'webp') mimeType = 'image/webp'
-
-            const blob = new Blob([data], { type: mimeType })
-            const objectUrl = URL.createObjectURL(blob)
-            urlCache.set(this.url, objectUrl)
-            img.src = objectUrl
-          })
-          .catch((err) => {
-            console.error('[ImageWidget] IPC Fetch error:', err)
-            wrap.innerHTML = `<div style="color: #ff6b6b; padding: 10px; border: 1px dashed #ff6b6b; border-radius: 4px; background: rgba(255,0,0,0.1);">
-              ❌ Failed to read local file: ${this.url}
-            </div>`
-            if (this.view && this.view.requestMeasure) this.view.requestMeasure()
-          })
+        urlCache.get(this.url).then(objectUrl => {
+          img.src = objectUrl;
+        }).catch(() => {
+          img.onerror();
+        });
       } else {
-        img.src = `asset://local/${this.url}`
+        const fetchPromise = window.api.readAsset(cleanUrl)
+          .then((buffer) => {
+            const blob = new Blob([buffer]);
+            return URL.createObjectURL(blob);
+          });
+        urlCache.set(this.url, fetchPromise);
+
+        fetchPromise.then(objectUrl => {
+          img.src = objectUrl;
+        }).catch((err) => {
+          console.error('[ImageWidget] IPC readAsset failed:', err);
+          img.onerror();
+        });
       }
     } else {
-      img.src = this.url
+      img.src = this.url;
     }
 
     if (this.width !== 'auto') {
-      img.style.width = this.width
+      wrap.style.width = this.width // Apply width to wrapper
     }
 
-    wrap.appendChild(img)
+    body.appendChild(img)
 
-    // Interaction Toolbar (shown on hover)
-    const toolbar = document.createElement('div')
-    toolbar.className = 'cm-image-toolbar'
-    toolbar.style.position = 'absolute'
-    toolbar.style.top = '4px'
-    toolbar.style.right = '4px'
-    toolbar.style.display = 'none'
-    toolbar.style.gap = '4px'
-    toolbar.style.background = 'rgba(0,0,0,0.6)'
-    toolbar.style.padding = '4px'
-    toolbar.style.borderRadius = '4px'
+    // ----------------------------------------------------------------
+    // NATIVE DRAG RESIZE HANDLE
+    // ----------------------------------------------------------------
+    const handle = document.createElement('div')
+    handle.className = 'image-widget-resize-handle'
+    
+    // Explicitly prevent CodeMirror from stealing focus on the handle
+    handle.onmousedown = (e) => {
+      if (view.state.readOnly) return
+      e.preventDefault()
+      e.stopPropagation()
 
-    const alignLeftBtn = this.createBtn('⬅️', 'Left Align')
-    const alignCenterBtn = this.createBtn('↔️', 'Center Align')
-    const alignRightBtn = this.createBtn('➡️', 'Right Align')
-    const resizeSmallBtn = this.createBtn('S', 'Small')
-    const resizeMediumBtn = this.createBtn('M', 'Medium')
-    const resizeLargeBtn = this.createBtn('L', 'Large')
+      const startX = e.clientX
+      const startWidth = wrap.offsetWidth
+      wrap.classList.add('resizing')
 
-    const updateImage = (newWidth, newAlign) => {
-      const parts = [this.actualAlt]
-      if (newWidth) parts.push(newWidth)
-      if (newAlign) parts.push(newAlign)
+      const onMouseMove = (moveEvent) => {
+        const deltaX = moveEvent.clientX - startX
+        const newWidth = Math.max(50, startWidth + deltaX) // Min width 50px
+        wrap.style.width = `${newWidth}px`
+        if (view && view.requestMeasure) view.requestMeasure()
+      }
 
-      const newAlt = parts.join('|')
-      const newText = `![${newAlt}](${this.url})`
+      const onMouseUp = () => {
+        window.removeEventListener('mousemove', onMouseMove)
+        window.removeEventListener('mouseup', onMouseUp)
+        wrap.classList.remove('resizing')
+        
+        // Save the final width to markdown using current widget state
+        const finalWidth = wrap.offsetWidth
+        const widget = wrap.__imageWidget
+        updateImage(`${finalWidth}px`, widget.align)
+      }
 
-      // Calculate length of the old markdown text
-      const oldLength = `![${this.altText}](${this.url})`.length
-
-      this.view.dispatch({
-        changes: { from: this.pos, to: this.pos + oldLength, insert: newText }
-      })
+      window.addEventListener('mousemove', onMouseMove)
+      window.addEventListener('mouseup', onMouseUp)
     }
 
-    alignLeftBtn.onclick = () =>
-      updateImage(this.width !== 'auto' ? parseInt(this.width) : null, 'left')
-    alignCenterBtn.onclick = () =>
-      updateImage(this.width !== 'auto' ? parseInt(this.width) : null, 'center')
-    alignRightBtn.onclick = () =>
-      updateImage(this.width !== 'auto' ? parseInt(this.width) : null, 'right')
-
-    resizeSmallBtn.onclick = () => updateImage('200', this.align)
-    resizeMediumBtn.onclick = () => updateImage('400', this.align)
-    resizeLargeBtn.onclick = () => updateImage('800', this.align)
-
-    toolbar.append(
-      alignLeftBtn,
-      alignCenterBtn,
-      alignRightBtn,
-      resizeSmallBtn,
-      resizeMediumBtn,
-      resizeLargeBtn
-    )
-    wrap.appendChild(toolbar)
-
-    wrap.onmouseenter = () => (toolbar.style.display = 'flex')
-    wrap.onmouseleave = () => (toolbar.style.display = 'none')
+    body.appendChild(handle)
+    wrap.appendChild(body)
 
     return wrap
   }
 
-  createBtn(text, title) {
+  createBtn(content, title, onClick) {
     const btn = document.createElement('button')
-    btn.innerText = text
+    btn.className = 'image-widget-btn'
     btn.title = title
-    btn.style.background = 'transparent'
-    btn.style.border = 'none'
-    btn.style.color = 'white'
-    btn.style.cursor = 'pointer'
-    btn.style.fontSize = '12px'
-    btn.style.padding = '2px 4px'
-    btn.style.borderRadius = '2px'
-    btn.onmouseover = () => (btn.style.background = 'rgba(255,255,255,0.2)')
-    btn.onmouseout = () => (btn.style.background = 'transparent')
+    
+    if (typeof content === 'string' && !content.startsWith('<')) {
+      btn.innerText = content
+      btn.style.fontSize = '11px'
+      btn.style.fontWeight = '600'
+    } else {
+      btn.appendChild(typeof content === 'string' ? createIcon(content) : content)
+    }
+
+    btn.onmousedown = (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    btn.onclick = (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      if (onClick) onClick(e)
+    }
+
     return btn
   }
 
   ignoreEvent() {
-    return false
+    return true
   }
 }
 
-function buildDecorations(view) {
+class EmptyWidget extends WidgetType {
+  eq() { return true }
+  toDOM() {
+    return document.createElement('span')
+  }
+}
+
+function buildDecorations(state) {
   const widgets = []
-  const selection = view.state.selection
+  const selection = state.selection.main
 
-  // Iterate line by line to prevent regex from matching across line breaks
-  for (let { from, to } of view.visibleRanges) {
-    const startLine = view.state.doc.lineAt(from).number
-    const endLine = view.state.doc.lineAt(to).number
+  // Iterate over visible doc lines
+  for (let i = 1; i <= state.doc.lines; i++) {
+    const line = state.doc.line(i)
+    const text = line.text
 
-    for (let i = startLine; i <= endLine; i++) {
-      const line = view.state.doc.line(i)
-      const text = line.text
+    const regex = /!\[([^\]]*)\]\(([^)]+)\)/g
+    let match
+    while ((match = regex.exec(text)) !== null) {
+      const matchFrom = line.from + match.index
+      const matchTo = matchFrom + match[0].length
 
-      const regex = /!\[([^\]]*)\]\(([^)]+)\)/g
-      let match
-      while ((match = regex.exec(text)) !== null) {
-        const matchFrom = line.from + match.index
-        const matchTo = matchFrom + match[0].length
+      // EXACT boundary checking. If the cursor is right next to the brackets, it counts as inside.
+      const intersects = selection.from <= matchTo && selection.to >= matchFrom
 
-        // Check if cursor intersects this match
-        let intersects = false
-        for (const range of selection.ranges) {
-          if (range.from <= matchTo && range.to >= matchFrom) {
-            intersects = true
-            break
-          }
-        }
+      if (intersects) {
+        // Cursor is INSIDE the markdown text. 
+        // OBSIDIAN STYLE: Do not render the image widget, do not hide the text.
+        // The text simply appears seamlessly in the editor.
+      } else {
+        // Cursor is OUTSIDE.
+        // OBSIDIAN STYLE: Render the image block widget, and COMPLETELY HIDE the raw text.
+        const widget = new ImageWidget(match[1], match[2], matchFrom, match[0].length)
+        widgets.push(
+          Decoration.widget({
+            widget: widget,
+            block: true,
+            side: -1
+          }).range(matchFrom)
+        )
 
-        // If cursor is NOT inside the markdown text, hide it and show the widget
-        if (!intersects) {
-          widgets.push(
-            Decoration.replace({
-              widget: new ImageWidget(match[1], match[2], matchFrom, view)
-            }).range(matchFrom, matchTo)
-          )
-        }
+        widgets.push(
+          Decoration.replace({
+            widget: new EmptyWidget(),
+            inclusive: false
+          }).range(matchFrom, matchTo)
+        )
       }
     }
   }
@@ -252,18 +394,15 @@ function buildDecorations(view) {
   return Decoration.set(widgets, true)
 }
 
-export const imageWidgetExtension = ViewPlugin.fromClass(
-  class {
-    constructor(view) {
-      this.decorations = buildDecorations(view)
-    }
-    update(update) {
-      if (update.docChanged || update.selectionSet || update.viewportChanged) {
-        this.decorations = buildDecorations(update.view)
-      }
-    }
+export const imageWidgetExtension = StateField.define({
+  create(state) {
+    return buildDecorations(state)
   },
-  {
-    decorations: (v) => v.decorations
-  }
-)
+  update(value, tr) {
+    if (tr.docChanged || tr.selection) {
+      return buildDecorations(tr.state)
+    }
+    return value
+  },
+  provide: (f) => EditorView.decorations.from(f)
+})
