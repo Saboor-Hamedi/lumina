@@ -61,38 +61,8 @@ class ImageWidget extends WidgetType {
   }
 
   updateDOM(dom, view) {
-    // Update the widget reference on the DOM node so event listeners always use the fresh state
-    dom.__imageWidget = this
-
-    // Apply visual updates instantly without rebuilding the DOM
-    dom.className = `cm-image-widget-wrapper align-${this.align}`
-    
-    const body = dom.querySelector('.image-widget-body')
-    if (body) {
-      if (this.width !== 'auto') {
-        body.style.width = this.width
-      } else {
-        body.style.width = '' // Reset to default
-      }
-    }
-
-    // Update the actual image alt text if it changed
-    const img = dom.querySelector('img')
-    if (img && img.alt !== this.actualAlt) {
-      img.alt = this.actualAlt
-    }
-
-    // Update active state of alignment buttons
-    const actions = dom.querySelector('.image-widget-actions')
-    if (actions) {
-      const btns = actions.querySelectorAll('button.image-widget-btn')
-      btns.forEach(btn => btn.classList.remove('active'))
-      if (this.align === 'left' && btns[0]) btns[0].classList.add('active')
-      if (this.align === 'center' && btns[1]) btns[1].classList.add('active')
-      if (this.align === 'right' && btns[2]) btns[2].classList.add('active')
-    }
-
-    return true
+    // Force a complete rebuild of the widget to guarantee all closures and DOM state are fresh.
+    return false
   }
 
   toDOM(view) {
