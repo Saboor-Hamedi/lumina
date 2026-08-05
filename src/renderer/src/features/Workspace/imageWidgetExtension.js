@@ -52,8 +52,12 @@ class ImageWidget extends WidgetType {
   }
 
   eq(other) {
-    // Only return false if the core URL changes. Otherwise, reuse the DOM node!
-    return other.url === this.url
+    // Only return true if ALL visual properties are identical!
+    // If we return false, CodeMirror calls updateDOM() to update the live elements without blinking.
+    return other.url === this.url && 
+           other.align === this.align && 
+           other.width === this.width &&
+           other.actualAlt === this.actualAlt
   }
 
   updateDOM(dom, view) {
@@ -63,10 +67,19 @@ class ImageWidget extends WidgetType {
     // Apply visual updates instantly without rebuilding the DOM
     dom.className = `cm-image-widget-wrapper align-${this.align}`
     
-    if (this.width !== 'auto') {
-      dom.style.width = this.width
-    } else {
-      dom.style.width = '' // Reset to default
+    const body = dom.querySelector('.image-widget-body')
+    if (body) {
+      if (this.width !== 'auto') {
+        body.style.width = this.width
+      } else {
+        body.style.width = '' // Reset to default
+      }
+    }
+
+    // Update the actual image alt text if it changed
+    const img = dom.querySelector('img')
+    if (img && img.alt !== this.actualAlt) {
+      img.alt = this.actualAlt
     }
 
     // Update active state of alignment buttons
@@ -202,7 +215,7 @@ class ImageWidget extends WidgetType {
 
     actions.append(btnLeft, btnCenter, btnRight, separator(), btnEdit)
     header.append(title, actions)
-    wrap.appendChild(header)
+    // Removed wrap.appendChild(header) so it can be placed inside the body
 
     // ----------------------------------------------------------------
     // BODY & IMAGE
@@ -260,10 +273,11 @@ class ImageWidget extends WidgetType {
     }
 
     if (this.width !== 'auto') {
-      wrap.style.width = this.width // Apply width to wrapper
+      body.style.width = this.width // Apply width to the inner body
     }
 
     body.appendChild(img)
+    body.appendChild(header) // Toolbar is now perfectly anchored inside the image!
 
     // ----------------------------------------------------------------
     // NATIVE DRAG RESIZE HANDLE
@@ -278,13 +292,13 @@ class ImageWidget extends WidgetType {
       e.stopPropagation()
 
       const startX = e.clientX
-      const startWidth = wrap.offsetWidth
+      const startWidth = body.offsetWidth
       wrap.classList.add('resizing')
 
       const onMouseMove = (moveEvent) => {
         const deltaX = moveEvent.clientX - startX
         const newWidth = Math.max(50, startWidth + deltaX) // Min width 50px
-        wrap.style.width = `${newWidth}px`
+        body.style.width = `${newWidth}px`
         if (view && view.requestMeasure) view.requestMeasure()
       }
 
@@ -294,7 +308,7 @@ class ImageWidget extends WidgetType {
         wrap.classList.remove('resizing')
         
         // Save the final width to markdown using current widget state
-        const finalWidth = wrap.offsetWidth
+        const finalWidth = body.offsetWidth
         const widget = wrap.__imageWidget
         updateImage(`${finalWidth}px`, widget.align)
       }
@@ -362,8 +376,8 @@ function buildDecorations(state) {
       const matchFrom = line.from + match.index
       const matchTo = matchFrom + match[0].length
 
-      // EXACT boundary checking. If the cursor is right next to the brackets, it counts as inside.
-      const intersects = selection.from <= matchTo && selection.to >= matchFrom
+      // EXACT boundary checking.
+      const intersects = selection.from < matchTo && selection.to > matchFrom
 
       if (intersects) {
         // Cursor is INSIDE the markdown text. 
