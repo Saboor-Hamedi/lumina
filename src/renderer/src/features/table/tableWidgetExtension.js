@@ -997,6 +997,42 @@ function makeCell(tag, text, view) {
       return
     }
 
+    if (event.key === 'ArrowUp') {
+      const thead = cell.closest('table')?.querySelector('thead tr')
+      const colCount = thead ? thead.querySelectorAll('th').length : 1
+      moveCellFocus(view, cell, -colCount, { appendOnOverflow: false })
+      event.preventDefault()
+      event.stopPropagation()
+      return
+    }
+    if (event.key === 'ArrowDown') {
+      const thead = cell.closest('table')?.querySelector('thead tr')
+      const colCount = thead ? thead.querySelectorAll('th').length : 1
+      moveCellFocus(view, cell, colCount, { appendOnOverflow: false })
+      event.preventDefault()
+      event.stopPropagation()
+      return
+    }
+    if (event.key === 'ArrowLeft') {
+      const offset = getCaretCharOffset(source) || 0
+      if (offset === 0) {
+        moveCellFocus(view, cell, -1, { appendOnOverflow: false })
+        event.preventDefault()
+        event.stopPropagation()
+        return
+      }
+    }
+    if (event.key === 'ArrowRight') {
+      const offset = getCaretCharOffset(source) || 0
+      const textLen = source.textContent?.length || 0
+      if (offset >= textLen) {
+        moveCellFocus(view, cell, 1, { appendOnOverflow: false })
+        event.preventDefault()
+        event.stopPropagation()
+        return
+      }
+    }
+
     if (event.key === 'Backspace') {
       const offset = getCaretCharOffset(source)
       const text = source.textContent || ''
@@ -1330,7 +1366,7 @@ function dispatchModelFromDom(view, cell) {
     annotations: Transaction.userEvent.of('input.type')
   })
 }
-function moveCellFocus(view, cell, dir) {
+function moveCellFocus(view, cell, dir, opts = { appendOnOverflow: true }) {
   const wrap = cell.closest('.cm-atomic-table')
   if (!wrap) return
   const cells = getAllCells(wrap)
@@ -1338,26 +1374,46 @@ function moveCellFocus(view, cell, dir) {
   if (idx < 0) return
   const next = idx + dir
   if (next < 0) {
-    // Shift-Tab from the first cell — blur the source; let the
-    // browser decide where focus goes next (probably the previous
-    // focusable element on the page). CM6 keeps its own selection
-    // where it was.
-    getCellSource(cell)?.blur()
+    const pos = view.posAtDOM(wrap)
+    if (pos !== null) {
+      view.dispatch({ selection: { anchor: pos } })
+      view.focus()
+    }
     return
   }
   if (next >= cells.length) {
-    // Tab past the last cell — append a new empty row and focus its
-    // corresponding cell. We dispatch through the same path as a cell edit,
-    // then grab the new cell after the DOM reconciles.
-    const thead = wrap.querySelector('thead tr')
-    const colCount = thead ? thead.querySelectorAll('th').length : 1
-    appendRow(view, wrap, idx % colCount)
+    if (opts.appendOnOverflow) {
+      const thead = wrap.querySelector('thead tr')
+      const colCount = thead ? thead.querySelectorAll('th').length : 1
+      appendRow(view, wrap, idx % colCount)
+    } else {
+      // jump out below
+      const range = findCurrentTableRange(view, wrap)
+      if (range) {
+        view.dispatch({ selection: { anchor: range.to } })
+        view.focus()
+      }
+    }
     return
   }
   const source = getCellSource(cells[next])
   if (!source) return
   source.focus()
-  placeCaretAtEnd(source)
+  
+  if (dir > 0) {
+    // Moving forward/down: place caret at start
+    const sel = source.ownerDocument?.defaultView?.getSelection()
+    if (sel) {
+      const range = document.createRange()
+      range.selectNodeContents(source)
+      range.collapse(true)
+      sel.removeAllRanges()
+      sel.addRange(range)
+    }
+  } else {
+    // Moving backward/up: place caret at end
+    placeCaretAtEnd(source)
+  }
 }
 function appendRow(view, wrap, focusColIndex = 0) {
   const range = findCurrentTableRange(view, wrap)
