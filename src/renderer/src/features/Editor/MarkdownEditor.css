@@ -1874,7 +1874,7 @@ html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {
 
 /* Bullet points & numbers: Add more gap between the marker and the text */
 .markdown-editor .cm-atomic-list-marker {
-  margin-right: 8px !important;
+  padding-right: 8px !important;
   width: auto !important;
   min-width: 1.2em !important;
   text-align: right;
