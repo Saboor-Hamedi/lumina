@@ -285,11 +285,26 @@ class ImageWidget extends WidgetType {
       const startWidth = body.offsetWidth
       wrap.classList.add('resizing')
 
+      const align = wrap.__imageWidget.align
+      let animationFrame = null
+
       const onMouseMove = (moveEvent) => {
-        const deltaX = moveEvent.clientX - startX
-        const newWidth = Math.max(50, startWidth + deltaX) // Min width 50px
-        body.style.width = `${newWidth}px`
-        if (view && view.requestMeasure) view.requestMeasure()
+        if (animationFrame) cancelAnimationFrame(animationFrame)
+        
+        animationFrame = requestAnimationFrame(() => {
+          let deltaX = moveEvent.clientX - startX
+          
+          // Adjust delta math to keep the resize handle perfectly pinned to the mouse cursor
+          if (align === 'center') {
+            deltaX *= 2
+          } else if (align === 'right') {
+            deltaX = -deltaX // When right aligned, moving left (negative deltaX) increases width
+          }
+          
+          const newWidth = Math.max(50, startWidth + deltaX) // Min width 50px
+          body.style.width = `${newWidth}px`
+          if (view && view.requestMeasure) view.requestMeasure()
+        })
       }
 
       const onMouseUp = () => {

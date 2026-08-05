@@ -210,3 +210,14 @@
   transform: scale(1);
 }
 
+
+/* Move resize handle to bottom-left when right-aligned */
+.cm-image-widget-wrapper.align-right .image-widget-resize-handle {
+  right: auto;
+  left: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 7px;
+  cursor: sw-resize;
+  background: linear-gradient(225deg, transparent 50%, var(--text-accent, #3b82f6) 50%);
+}
+
