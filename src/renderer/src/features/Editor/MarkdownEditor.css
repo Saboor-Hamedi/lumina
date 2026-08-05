@@ -133,10 +133,6 @@
   line-height: 1.5 !important;
 }
 
-.cm-atomic-table-cell-source :not(.active) > .cm-atomic-mark {
-  display: none !important;
-}
-
 .cm-atomic-table table {
   width: max-content !important;
   min-width: 100% !important;
@@ -194,10 +190,10 @@
 
 /* Inline Code Pill Style */
 .cm-atomic-inline-code {
-  background: var(--bg-hover, rgba(120, 108, 108, 0.1)) !important;
+  background: transparent !important;
   color: var(--text-accent, #ff79c6) !important;
-  border-radius: 4px;
-  padding: 2px 4px;
+  border-radius: 0 !important;
+  padding: 0 !important;
 }
 
 /* Remove highlight when actively editing so it looks like plain markdown */
