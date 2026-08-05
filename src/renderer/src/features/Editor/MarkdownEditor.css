@@ -238,6 +238,10 @@
 }
 .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
   background-color: rgba(64, 186, 250, 0.35) !important;
+  border-radius: 5px !important;
+  /* Slightly expand the selection box so it fully covers widgets without gaps */
+  padding: 2px 4px !important;
+  margin: -2px -4px !important;
 }
 .cm-content ::selection {
   background: transparent !important; /* Prevent native double backgrounds */
@@ -1363,6 +1367,7 @@ html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {
 /* Unified Selection: CodeMirror Robust Selection */
 .cm-selectionBackground {
   background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.3) !important;
+  border-radius: 5px !important;
 }
 
 .cm-selectionMatch {
