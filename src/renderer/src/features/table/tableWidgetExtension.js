@@ -13,7 +13,7 @@ import { undo, redo } from '@codemirror/commands'
 import { treeGrowthEffect, treeProgressPlugin } from './tree-progress'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { TableAutocomplete } from './wikilinkAutocompletion'
-
+import { setupTableFormattingToolbar } from './tableFormattingToolbar'
 // Removed global tooltip repositioner
 
 function collectCells(state, rowNode) {
@@ -55,18 +55,39 @@ export function splitRowCells(line) {
 function parseTable(state, tableNode) {
   const header = []
   const rows = []
+  let delimiterLine = ''
   const cursor = tableNode.cursor()
   if (!cursor.firstChild()) return null
   do {
     if (cursor.name === 'TableHeader') {
       header.push(...collectCells(state, cursor.node))
+      // The delimiter row follows the header
+      const headerLine = state.doc.lineAt(cursor.to)
+      if (headerLine.number < state.doc.lines) {
+        delimiterLine = state.doc.line(headerLine.number + 1).text
+      }
     } else if (cursor.name === 'TableRow') {
       rows.push(collectCells(state, cursor.node))
     }
     // TableDelimiter (per-row `|` and whole-line `|---|---|`) is ignored.
   } while (cursor.nextSibling())
   if (header.length === 0) return null
-  return { header, rows }
+
+  const alignments = []
+  if (delimiterLine) {
+    const delimiterCells = splitRowCells(delimiterLine)
+    for (const cell of delimiterCells) {
+      const s = cell.trim()
+      if (s.startsWith(':') && s.endsWith(':')) alignments.push('center')
+      else if (s.endsWith(':')) alignments.push('right')
+      else if (s.startsWith(':')) alignments.push('left')
+      else alignments.push('')
+    }
+  }
+  // Pad alignments array if needed
+  while (alignments.length < header.length) alignments.push('')
+
+  return { header, rows, alignments }
 }
 // Escape cell content so it can't break the row's GFM structure: an
 // unescaped `|` would split the cell into two columns, and a stray
@@ -90,7 +111,17 @@ export function serializeTable(model) {
   const columnCount = model.header.length
   const lines = []
   lines.push('| ' + model.header.map(escapeCell).join(' | ') + ' |')
-  lines.push('| ' + model.header.map(() => '---').join(' | ') + ' |')
+  
+  const delimiterRow = []
+  for (let c = 0; c < columnCount; c++) {
+    const align = model.alignments?.[c] || ''
+    if (align === 'center') delimiterRow.push(':---:')
+    else if (align === 'right') delimiterRow.push('---:')
+    else if (align === 'left') delimiterRow.push(':---')
+    else delimiterRow.push('---')
+  }
+  lines.push('| ' + delimiterRow.join(' | ') + ' |')
+
   for (const row of model.rows) {
     const padded = []
     for (let c = 0; c < columnCount; c++) padded.push(escapeCell(row[c] ?? ''))
@@ -100,10 +131,16 @@ export function serializeTable(model) {
 }
 function readModelFromDom(wrap) {
   const header = Array.from(wrap.querySelectorAll('thead th')).map(readCellSource)
+  const alignments = Array.from(wrap.querySelectorAll('thead th')).map(th => {
+    if (th.style.textAlign === 'center') return 'center'
+    if (th.style.textAlign === 'right') return 'right'
+    if (th.style.textAlign === 'left') return 'left'
+    return ''
+  })
   const rows = Array.from(wrap.querySelectorAll('tbody tr')).map((tr) =>
     Array.from(tr.querySelectorAll('td')).map(readCellSource)
   )
-  return { header, rows }
+  return { header, rows, alignments }
 }
 // A cell's raw markdown lives in `dataset.raw` — the source of truth
 // that `readModelFromDom` reads when serializing the table back to
@@ -639,6 +676,7 @@ class TableWidget extends WidgetType {
     if (other.model.rows.length !== this.model.rows.length) return false
     for (let i = 0; i < this.model.header.length; i++) {
       if (other.model.header[i] !== this.model.header[i]) return false
+      if (other.model.alignments?.[i] !== this.model.alignments?.[i]) return false
     }
     for (let r = 0; r < this.model.rows.length; r++) {
       for (let c = 0; c < this.model.rows[r].length; c++) {
@@ -672,8 +710,10 @@ class TableWidget extends WidgetType {
     wrap.appendChild(table)
     const thead = document.createElement('thead')
     const headerRow = document.createElement('tr')
-    for (const text of this.model.header) {
-      headerRow.appendChild(makeCell('th', text, view))
+    for (let i = 0; i < this.model.header.length; i++) {
+      const cell = makeCell('th', this.model.header[i], view)
+      if (this.model.alignments?.[i]) cell.style.textAlign = this.model.alignments[i]
+      headerRow.appendChild(cell)
     }
     thead.appendChild(headerRow)
     table.appendChild(thead)
@@ -682,7 +722,9 @@ class TableWidget extends WidgetType {
     for (const row of this.model.rows) {
       const tr = document.createElement('tr')
       for (let c = 0; c < colCount; c++) {
-        tr.appendChild(makeCell('td', row[c] ?? '', view))
+        const cell = makeCell('td', row[c] ?? '', view)
+        if (this.model.alignments?.[c]) cell.style.textAlign = this.model.alignments[c]
+        tr.appendChild(cell)
       }
       tbody.appendChild(tr)
     }
@@ -1252,6 +1294,28 @@ function openCellMenu(view, cell, x, y) {
       }
     })
     items.push({
+      label: 'Move row up',
+      action: () => {
+        if (row <= 0) return
+        const m = readModelFromDom(wrap)
+        const temp = m.rows[row]
+        m.rows[row] = m.rows[row - 1]
+        m.rows[row - 1] = temp
+        dispatchModel(view, wrap, m)
+      }
+    })
+    items.push({
+      label: 'Move row down',
+      action: () => {
+        const m = readModelFromDom(wrap)
+        if (row >= m.rows.length - 1) return
+        const temp = m.rows[row]
+        m.rows[row] = m.rows[row + 1]
+        m.rows[row + 1] = temp
+        dispatchModel(view, wrap, m)
+      }
+    })
+    items.push({
       label: 'Delete row',
       action: () => {
         const m = readModelFromDom(wrap)
@@ -1266,6 +1330,7 @@ function openCellMenu(view, cell, x, y) {
     action: () => {
       const m = readModelFromDom(wrap)
       m.header.splice(col, 0, '')
+      m.alignments.splice(col, 0, '')
       for (const r of m.rows) r.splice(col, 0, '')
       dispatchModel(view, wrap, m)
     }
@@ -1275,7 +1340,46 @@ function openCellMenu(view, cell, x, y) {
     action: () => {
       const m = readModelFromDom(wrap)
       m.header.splice(col + 1, 0, '')
+      m.alignments.splice(col + 1, 0, '')
       for (const r of m.rows) r.splice(col + 1, 0, '')
+      dispatchModel(view, wrap, m)
+    }
+  })
+  items.push({
+    label: 'Move column left',
+    action: () => {
+      if (col <= 0) return
+      const m = readModelFromDom(wrap)
+      const tempH = m.header[col]
+      m.header[col] = m.header[col - 1]
+      m.header[col - 1] = tempH
+      const tempA = m.alignments[col]
+      m.alignments[col] = m.alignments[col - 1]
+      m.alignments[col - 1] = tempA
+      for (const r of m.rows) {
+        const temp = r[col]
+        r[col] = r[col - 1]
+        r[col - 1] = temp
+      }
+      dispatchModel(view, wrap, m)
+    }
+  })
+  items.push({
+    label: 'Move column right',
+    action: () => {
+      const m = readModelFromDom(wrap)
+      if (col >= m.header.length - 1) return
+      const tempH = m.header[col]
+      m.header[col] = m.header[col + 1]
+      m.header[col + 1] = tempH
+      const tempA = m.alignments[col]
+      m.alignments[col] = m.alignments[col + 1]
+      m.alignments[col + 1] = tempA
+      for (const r of m.rows) {
+        const temp = r[col]
+        r[col] = r[col + 1]
+        r[col + 1] = temp
+      }
       dispatchModel(view, wrap, m)
     }
   })
@@ -1283,12 +1387,60 @@ function openCellMenu(view, cell, x, y) {
     label: 'Delete column',
     action: () => {
       const m = readModelFromDom(wrap)
-      // Guard: don't leave the table with zero columns — lezer
-      // wouldn't re-parse that as a Table and the widget would
-      // vanish mid-edit. Keeping the last column as the floor.
       if (m.header.length <= 1 || col < 0) return
       m.header.splice(col, 1)
+      m.alignments.splice(col, 1)
       for (const r of m.rows) r.splice(col, 1)
+      dispatchModel(view, wrap, m)
+    }
+  })
+  items.push('separator')
+  items.push({
+    label: 'Align Left',
+    action: () => {
+      const m = readModelFromDom(wrap)
+      m.alignments[col] = 'left'
+      dispatchModel(view, wrap, m)
+    }
+  })
+  items.push({
+    label: 'Align Center',
+    action: () => {
+      const m = readModelFromDom(wrap)
+      m.alignments[col] = 'center'
+      dispatchModel(view, wrap, m)
+    }
+  })
+  items.push({
+    label: 'Align Right',
+    action: () => {
+      const m = readModelFromDom(wrap)
+      m.alignments[col] = 'right'
+      dispatchModel(view, wrap, m)
+    }
+  })
+  items.push('separator')
+  items.push({
+    label: 'Sort Ascending',
+    action: () => {
+      const m = readModelFromDom(wrap)
+      m.rows.sort((a, b) => {
+        const valA = (a[col] || '').trim()
+        const valB = (b[col] || '').trim()
+        return valA.localeCompare(valB, undefined, { numeric: true })
+      })
+      dispatchModel(view, wrap, m)
+    }
+  })
+  items.push({
+    label: 'Sort Descending',
+    action: () => {
+      const m = readModelFromDom(wrap)
+      m.rows.sort((a, b) => {
+        const valA = (a[col] || '').trim()
+        const valB = (b[col] || '').trim()
+        return valB.localeCompare(valA, undefined, { numeric: true })
+      })
       dispatchModel(view, wrap, m)
     }
   })
@@ -1583,6 +1735,7 @@ export const tableLinkClickFacet = Facet.define({
   combine: (values) => values[0] ?? defaultLinkOpener
 })
 export function tables(config = {}) {
+  setupTableFormattingToolbar()
   return [
     tableField,
     treeProgressPlugin,
