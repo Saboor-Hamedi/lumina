@@ -627,7 +627,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
         liveSettings.graphShowTexts !== false && liveSettings.graphShowTexts !== 'false'
 
       if (showTextsSetting) {
-        if (isHovered || isActive) shouldShow = true
+        if (isActive) shouldShow = true
       }
 
       if (shouldShow) {
@@ -717,6 +717,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             d3VelocityDecay={0.8}
             showNavInfo={false}
             linkDirectionalParticles={0}
+            nodeLabel={(node) => (node.id || '').replace(/[*"']/g, '')}
             onEngineStop={() => setIsEngineReady(true)}
           />
         ) : (
@@ -763,6 +764,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             backgroundColor="transparent"
             d3AlphaDecay={0.05}
             d3VelocityDecay={0.8}
+            nodeLabel={(node) => (node.id || '').replace(/[*"']/g, '')}
             onEngineStop={() => setIsEngineReady(true)}
           />
         )}
@@ -934,6 +936,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               d3AlphaDecay={0.05}
               d3VelocityDecay={0.8}
               linkDirectionalParticles={0}
+              nodeLabel={(node) => (node.id || '').replace(/[*"']/g, '')}
               onEngineStop={() => setIsEngineReady(true)}
             />
           )}
