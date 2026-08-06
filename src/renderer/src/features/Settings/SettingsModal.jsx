@@ -323,7 +323,7 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                     <label className="switch">
                       <input
                         type="checkbox"
-                        checked={settings.enableDevTools || false}
+                        checked={settings.enableDevTools ?? true}
                         onChange={(e) => updateSetting('enableDevTools', e.target.checked)}
                       />
                       <span className="slider"></span>

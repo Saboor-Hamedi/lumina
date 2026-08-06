@@ -27,7 +27,7 @@ class SettingsManager {
         width: 300,
         isRightOpen: false
       },
-      enableDevTools: false,
+      enableDevTools: true,
       // AI Settings
       deepSeekKey: null,
       deepSeekModel: 'deepseek-chat',
