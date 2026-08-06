@@ -554,3 +554,18 @@
   }
 }
 /* Graph theme end */
+
+/* Force Graph Tooltips */
+.scene-tooltip,
+.graph-tooltip {
+  z-index: 100000 !important;
+  color: var(--text-main) !important;
+  background: rgba(0, 0, 0, 0.85) !important;
+  padding: 6px 12px !important;
+  border-radius: 6px !important;
+  border: 1px solid var(--border-color) !important;
+  font-family: Inter, sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  pointer-events: none !important;
+}

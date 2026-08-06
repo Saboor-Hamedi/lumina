@@ -615,39 +615,6 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       ctx.fillStyle = nodeColor(node)
       ctx.fill()
       ctx.globalAlpha = 1.0
-
-      // Text Logic: Compensatory Scaling
-      const baseFontSize = 10
-      const fontSize = baseFontSize / globalScale
-      ctx.font = `${fontSize}px Inter, sans-serif`
-
-      let shouldShow = false
-      const liveSettings = useSettingsStore.getState().settings
-      const showTextsSetting =
-        liveSettings.graphShowTexts !== false && liveSettings.graphShowTexts !== 'false'
-
-      if (showTextsSetting) {
-        if (isActive) shouldShow = true
-      }
-
-      if (shouldShow) {
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'top'
-
-        // Fill
-        if (isSearchDimmed && !isHovered) {
-          ctx.globalAlpha = 0.1
-        }
-        ctx.fillStyle = isSearchMatch
-          ? '#ffffff'
-          : isActive
-            ? '#ffaa00'
-            : isHovered
-              ? '#fff'
-              : 'rgba(255, 255, 255, 0.9)'
-        ctx.fillText(label, node.x, node.y + r + 2)
-        ctx.globalAlpha = 1.0
-      }
     },
     [selectedSnippet, hoverNode, hoverNeighbors, searchQuery]
   )
