@@ -313,6 +313,23 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                     </div>
                   </div>
                 </section>
+                <section>
+                  <h3>Advanced</h3>
+                  <div className="settings-row">
+                    <div className="row-info">
+                      <div className="row-label">Enable Developer Tools</div>
+                      <div className="row-hint">Allow toggling Developer Tools (Ctrl+Shift+I / F12) in production mode.</div>
+                    </div>
+                    <label className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={settings.enableDevTools || false}
+                        onChange={(e) => updateSetting('enableDevTools', e.target.checked)}
+                      />
+                      <span className="slider"></span>
+                    </label>
+                  </div>
+                </section>
               </div>
             )}
 

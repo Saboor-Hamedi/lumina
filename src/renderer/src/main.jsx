@@ -28,6 +28,18 @@ const bootTheme = () => {
 
 bootTheme()
 
+if (import.meta.env.PROD) {
+  console.clear()
+  console.log(
+    '%c LUMINA ',
+    'font-size: 50px; font-weight: bold; color: white; background: linear-gradient(to right, #1e1e1e 0%, #3a3a3a 100%); border-radius: 8px; padding: 10px;'
+  )
+  console.log(
+    '%cThe premium AI-powered thinking environment.',
+    'font-size: 14px; color: #888; font-style: italic;'
+  )
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <App />

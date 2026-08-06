@@ -52,6 +52,7 @@ async function createWindow() {
 
   const translucency = await SettingsManager.get('translucency')
   const windowBounds = (await SettingsManager.get('windowBounds')) || { width: 1000, height: 700 }
+  let allowDevTools = (await SettingsManager.get('enableDevTools')) === true
 
   mainWindow = new BrowserWindow({
     width: windowBounds.width,
@@ -92,14 +93,16 @@ async function createWindow() {
     console.error('[Main] Failed to clear cache:', err)
   }
 
-  // Disable DevTools Shortcuts in Production
+  // Disable DevTools Shortcuts in Production unless explicitly allowed in settings
   if (app.isPackaged) {
     mainWindow.webContents.on('before-input-event', (event, input) => {
-      if (
-        (input.control && input.shift && input.key.toLowerCase() === 'i') ||
-        input.key === 'F12'
-      ) {
-        event.preventDefault()
+      if (!allowDevTools) {
+        if (
+          (input.control && input.shift && input.key.toLowerCase() === 'i') ||
+          input.key === 'F12'
+        ) {
+          event.preventDefault()
+        }
       }
     })
   }
@@ -111,6 +114,7 @@ async function createWindow() {
     }, 5000)
 
     SettingsManager.notifyRenderer = (settings) => {
+      allowDevTools = settings.enableDevTools === true
       BrowserWindow.getAllWindows().forEach((win) => {
         if (win && !win.isDestroyed()) {
           win.webContents.send('settings:changed', settings)
