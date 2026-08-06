@@ -675,9 +675,9 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               }
             }}
             onNodeDragEnd={(node) => {
-              node.fx = node.x
-              node.fy = node.y
-              node.fz = node.z
+              node.fx = null
+              node.fy = null
+              node.fz = null
             }}
             backgroundColor="rgba(0,0,0,0)"
             d3AlphaDecay={0.05}
@@ -725,8 +725,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               }
             }}
             onNodeDragEnd={(node) => {
-              node.fx = node.x
-              node.fy = node.y
+              node.fx = null
+              node.fy = null
             }}
             backgroundColor="transparent"
             d3AlphaDecay={0.05}
@@ -850,9 +850,9 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 }
               }}
               onNodeDragEnd={(node) => {
-                node.fx = node.x
-                node.fy = node.y
-                node.fz = node.z
+                node.fx = null
+                node.fy = null
+                node.fz = null
               }}
               backgroundColor="rgba(0,0,0,0)"
               d3AlphaDecay={0.05}
@@ -894,8 +894,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 }
               }}
               onNodeDragEnd={(node) => {
-                node.fx = node.x
-                node.fy = node.y
+                node.fx = null
+                node.fy = null
               }}
               backgroundColor="transparent"
               d3AlphaDecay={0.05}
