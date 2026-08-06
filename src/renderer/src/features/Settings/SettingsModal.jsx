@@ -320,7 +320,7 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                       <div className="row-label">Enable Developer Tools</div>
                       <div className="row-hint">Allow toggling Developer Tools (Ctrl+Shift+I / F12) in production mode.</div>
                     </div>
-                    <label className="toggle-switch">
+                    <label className="switch">
                       <input
                         type="checkbox"
                         checked={settings.enableDevTools || false}
