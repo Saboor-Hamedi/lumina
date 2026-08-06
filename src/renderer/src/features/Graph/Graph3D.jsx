@@ -162,10 +162,6 @@ const Graph3D = React.forwardRef(({ graphData, ...restProps }, ref) => {
       }
 
       if (fg.d3Force('link')) fg.d3Force('link').distance(150).strength(linkForce)
-
-      setTimeout(() => {
-        if (internalRef.current) internalRef.current.d3ReheatSimulation()
-      }, 150)
     }, 150)
 
     return () => {
