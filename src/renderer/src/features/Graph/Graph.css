@@ -230,6 +230,10 @@
 
 /* --- THEMED GRAPH BACKGROUNDS --- */
 
+.nexus-container[data-graph-theme='default'] .nexus-body {
+  background: var(--bg-app) !important;
+}
+
 .nexus-container[data-graph-theme='space'] .nexus-body {
   background: #020617 !important;
 }
