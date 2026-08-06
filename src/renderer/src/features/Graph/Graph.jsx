@@ -75,6 +75,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   const isSpinning = useSettingsStore((s) => s.settings.graphAnimate ?? false)
   const graphRef = useRef()
   const containerRef = useRef()
+  const [isEngineReady, setIsEngineReady] = useState(false)
   const [dimensions, setDimensions] = useState({
     width: embedded ? 800 : window.innerWidth * 0.95,
     height: embedded ? 600 : window.innerHeight * 0.92
@@ -452,6 +453,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     })
 
     // Initial Setup
+    setIsEngineReady(false)
     if (!graphRef.current) return
     if (is3DMode) return // Graph3D handles its own initial physics setup
     const fg = graphRef.current
@@ -710,11 +712,11 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               node.fz = null
             }}
             backgroundColor="rgba(0,0,0,0)"
-            warmupTicks={100}
             d3AlphaDecay={0.05}
             d3VelocityDecay={0.3}
             showNavInfo={false}
             linkDirectionalParticles={0}
+            onEngineStop={() => setIsEngineReady(true)}
           />
         ) : (
           <ForceGraph2D
@@ -758,9 +760,9 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               node.fy = null
             }}
             backgroundColor="transparent"
-            warmupTicks={100}
             d3AlphaDecay={0.05}
             d3VelocityDecay={0.3} // Lower viscosity for smoother dragging
+            onEngineStop={() => setIsEngineReady(true)}
           />
         )}
         <GraphMiniMap
@@ -837,7 +839,13 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
           isMaximized={isMaximized}
         />
 
-        <div className="nexus-body">
+        <div className="nexus-body" style={{ position: 'relative' }}>
+          {/* Initializer Pulse Overlay */}
+          <div className={`graph-initializer ${isEngineReady ? 'ready' : ''}`}>
+            <div className="pulse-ring"></div>
+            <div className="graph-initializer-text">Initializing Physics</div>
+          </div>
+
           {is3DMode ? (
             <Graph3D
               key="3d-graph-modal"
@@ -922,10 +930,10 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 node.fz = null
               }}
               backgroundColor="transparent"
-              warmupTicks={100}
               d3AlphaDecay={0.05}
               d3VelocityDecay={0.3}
               linkDirectionalParticles={0}
+              onEngineStop={() => setIsEngineReady(true)}
             />
           )}
           <GraphMiniMap
