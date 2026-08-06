@@ -627,9 +627,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
         liveSettings.graphShowTexts !== false && liveSettings.graphShowTexts !== 'false'
 
       if (showTextsSetting) {
-        if (isHovered) shouldShow = true
-        else if (globalScale > 1.8) shouldShow = true
-        else if ((isActive || node.val > 5) && globalScale > 1.2) shouldShow = true
+        if (isHovered || isActive) shouldShow = true
       }
 
       if (shouldShow) {
