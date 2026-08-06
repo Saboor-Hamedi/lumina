@@ -752,7 +752,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               node.fz = null
             }}
             backgroundColor="rgba(0,0,0,0)"
-            d3AlphaDecay={isSpinning ? 0 : 0.02}
+            warmupTicks={100}
+            d3AlphaDecay={0.05}
             d3VelocityDecay={0.3}
             showNavInfo={false}
             linkDirectionalParticles={1}
@@ -801,7 +802,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               node.fy = null
             }}
             backgroundColor="transparent"
-            d3AlphaDecay={isSpinning ? 0 : 0.02}
+            warmupTicks={100}
+            d3AlphaDecay={0.05}
             d3VelocityDecay={0.3} // Lower viscosity for smoother dragging
           />
         )}
@@ -919,7 +921,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 node.fz = null
               }}
               backgroundColor="rgba(0,0,0,0)"
-              d3AlphaDecay={isSpinning ? 0 : 0.02}
+              warmupTicks={100}
+              d3AlphaDecay={0.05}
               d3VelocityDecay={0.3}
               showNavInfo={false}
             />
@@ -963,7 +966,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 node.fz = null
               }}
               backgroundColor="transparent"
-              d3AlphaDecay={isSpinning ? 0 : 0.02}
+              warmupTicks={100}
+              d3AlphaDecay={0.05}
               d3VelocityDecay={0.3}
               linkDirectionalParticles={1}
               linkDirectionalParticleWidth={2}
