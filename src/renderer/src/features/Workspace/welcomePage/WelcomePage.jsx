@@ -1,6 +1,5 @@
 import React from 'react'
 import { FileText, Search, Sparkles, FolderTree, Command } from 'lucide-react'
-import icon from '../../../assets/icon.png'
 import './WelcomePage.css'
 
 const WelcomePage = ({ onNew }) => {
@@ -12,7 +11,57 @@ const WelcomePage = ({ onNew }) => {
   return (
     <div className="welcome-page">
       <div className="welcome-watermark">
-        <img src={icon} alt="Lumina" />
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="lumina-watermark-svg">
+          <defs>
+            <linearGradient id="neonGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#8b5cf6" />
+              <stop offset="50%" stopColor="#3b82f6" />
+              <stop offset="100%" stopColor="#10b981" />
+            </linearGradient>
+            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          {/* Abstract Network 'L' */}
+          <path
+            d="M 25 15 L 25 80 L 80 80"
+            fill="none"
+            stroke="url(#neonGradient)"
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            filter="url(#glow)"
+            opacity="0.8"
+          />
+
+          {/* Sub-connections for graph effect */}
+          <path
+            d="M 25 45 L 50 30 M 25 80 L 15 65 M 50 80 L 70 50"
+            fill="none"
+            stroke="url(#neonGradient)"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeDasharray="4 6"
+            opacity="0.4"
+          />
+
+          {/* Nodes */}
+          <circle cx="25" cy="15" r="5" fill="#8b5cf6" filter="url(#glow)" />
+          <circle cx="25" cy="45" r="3.5" fill="#6366f1" filter="url(#glow)" />
+          <circle cx="25" cy="80" r="6" fill="#3b82f6" filter="url(#glow)" />
+          <circle cx="50" cy="80" r="4" fill="#0ea5e9" filter="url(#glow)" />
+          <circle cx="80" cy="80" r="5" fill="#10b981" filter="url(#glow)" />
+
+          {/* Satellite nodes */}
+          <circle cx="50" cy="30" r="2.5" fill="#a855f7" opacity="0.6" />
+          <circle cx="15" cy="65" r="2" fill="#8b5cf6" opacity="0.6" />
+          <circle cx="70" cy="50" r="2.5" fill="#14b8a6" opacity="0.6" />
+        </svg>
       </div>
 
       {/* All content sits inside the watermark area, spread top to bottom */}
