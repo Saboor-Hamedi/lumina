@@ -648,14 +648,13 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             width={dimensions.width}
             height={dimensions.height}
             graphData={graphData}
-            nodeThreeObject={(node) => {
+            nodeColor={nodeColor}
+            nodeRelSize={4}
+            nodeVal={(node) => {
               const base = node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2
               const targetRadius =
                 base * (useSettingsStore.getState().settings.graphNodeSize || 1.5)
-
-              const mesh = new THREE.Mesh(sharedSphereGeometry, getMaterial(nodeColor(node)))
-              mesh.scale.set(targetRadius, targetRadius, targetRadius)
-              return mesh
+              return Math.pow(targetRadius / 4, 3)
             }}
             linkColor={(link) => {
               if (!hoverNode) return defaultLineColor
@@ -823,14 +822,13 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               width={dimensions.width}
               height={dimensions.height - 32}
               graphData={graphData}
-              nodeThreeObject={(node) => {
+              nodeColor={nodeColor}
+              nodeRelSize={4}
+              nodeVal={(node) => {
                 const base = node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2
                 const targetRadius =
                   base * (useSettingsStore.getState().settings.graphNodeSize || 1.5)
-
-                const mesh = new THREE.Mesh(sharedSphereGeometry, getMaterial(nodeColor(node)))
-                mesh.scale.set(targetRadius, targetRadius, targetRadius)
-                return mesh
+                return Math.pow(targetRadius / 4, 3)
               }}
               linkColor={(link) => {
                 if (!hoverNode) return defaultLineColor
