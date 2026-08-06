@@ -656,16 +656,17 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 base * (useSettingsStore.getState().settings.graphNodeSize || 1.5)
               return Math.pow(targetRadius / 4, 3)
             }}
+            nodeResolution={6}
+            linkResolution={3}
             linkColor={(link) => {
               if (!hoverNode) return defaultLineColor
               const sourceId = link.source.id || link.source
               const targetId = link.target.id || link.target
               return sourceId === hoverNode.id || targetId === hoverNode.id
-                ? 'rgba(64, 186, 250, 0.9)'
-                : 'rgba(150, 150, 150, 0.5)'
+                ? '#40bafa'
+                : '#333333'
             }}
             linkWidth={0.5}
-            linkOpacity={0.6}
             onNodeHover={(node) => setHoverNode(node)}
             onNodeClick={(node) => {
               if (node.snippetId) {
@@ -713,8 +714,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               const sourceId = link.source.id || link.source
               const targetId = link.target.id || link.target
               return sourceId === hoverNode.id || targetId === hoverNode.id
-                ? 'rgba(64, 186, 250, 0.8)'
-                : dimmedLineColor
+                ? '#40bafa'
+                : '#333333'
             }}
             linkDirectionalParticles={0}
             onNodeClick={(node) => {
@@ -830,16 +831,17 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                   base * (useSettingsStore.getState().settings.graphNodeSize || 1.5)
                 return Math.pow(targetRadius / 4, 3)
               }}
+              nodeResolution={6}
+              linkResolution={3}
               linkColor={(link) => {
                 if (!hoverNode) return defaultLineColor
                 const sourceId = link.source.id || link.source
                 const targetId = link.target.id || link.target
                 return sourceId === hoverNode.id || targetId === hoverNode.id
-                  ? 'rgba(64, 186, 250, 0.9)'
-                  : 'rgba(150, 150, 150, 0.5)'
+                  ? '#40bafa'
+                  : '#333333'
               }}
               linkWidth={0.5}
-              linkOpacity={0.6}
               onNodeHover={(node) => setHoverNode(node)}
               onNodeClick={(node) => {
                 if (node.snippetId) {
@@ -881,8 +883,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 const sourceId = link.source.id || link.source
                 const targetId = link.target.id || link.target
                 return sourceId === hoverNode.id || targetId === hoverNode.id
-                  ? 'rgba(64, 186, 250, 0.8)'
-                  : dimmedLineColor
+                  ? '#40bafa'
+                  : '#333333'
               }}
               linkWidth={0.5}
               onNodeClick={(node) => {
