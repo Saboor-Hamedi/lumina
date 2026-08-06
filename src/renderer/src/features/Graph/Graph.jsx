@@ -454,6 +454,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
 
     // Initial Setup
     setIsEngineReady(false)
+    const safetyTimer = setTimeout(() => setIsEngineReady(true), 1500)
+    
     if (!graphRef.current) return
     if (is3DMode) return // Graph3D handles its own initial physics setup
     const fg = graphRef.current
@@ -517,6 +519,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     return () => {
       unsubscribe()
       clearTimeout(initTimer)
+      clearTimeout(safetyTimer)
     }
   }, [is3DMode])
 
@@ -713,7 +716,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             }}
             backgroundColor="rgba(0,0,0,0)"
             d3AlphaDecay={0.05}
-            d3VelocityDecay={0.3}
+            d3VelocityDecay={0.8}
             showNavInfo={false}
             linkDirectionalParticles={0}
             onEngineStop={() => setIsEngineReady(true)}
@@ -761,7 +764,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             }}
             backgroundColor="transparent"
             d3AlphaDecay={0.05}
-            d3VelocityDecay={0.3} // Lower viscosity for smoother dragging
+            d3VelocityDecay={0.8}
             onEngineStop={() => setIsEngineReady(true)}
           />
         )}
@@ -931,7 +934,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               }}
               backgroundColor="transparent"
               d3AlphaDecay={0.05}
-              d3VelocityDecay={0.3}
+              d3VelocityDecay={0.8}
               linkDirectionalParticles={0}
               onEngineStop={() => setIsEngineReady(true)}
             />
