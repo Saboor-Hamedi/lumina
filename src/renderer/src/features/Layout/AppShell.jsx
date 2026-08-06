@@ -65,7 +65,8 @@ const AppShell = () => {
     }))
   )
   const { toast, showToast, clearToast } = useToast()
-  const settings = useSettingsStore((state) => state.settings)
+  const sidebarSetting = useSettingsStore((state) => state.settings?.sidebar)
+  const rightSidebarSetting = useSettingsStore((state) => state.settings?.rightSidebar)
 
   // Initialize typing sound hook globally
   useTypingSound()
@@ -115,7 +116,7 @@ const AppShell = () => {
    */
   useEffect(() => {
     if (isRestoring) return
-    const currentSidebar = settings.sidebar || {}
+    const currentSidebar = sidebarSetting || {}
     useSettingsStore.getState().updateSettings({
       sidebar: {
         ...currentSidebar,
@@ -129,7 +130,7 @@ const AppShell = () => {
    */
   useEffect(() => {
     if (isRestoring) return
-    const currentRSidebar = settings.rightSidebar || {}
+    const currentRSidebar = rightSidebarSetting || {}
     useSettingsStore.getState().updateSettings({
       rightSidebar: {
         ...currentRSidebar,
@@ -165,7 +166,7 @@ const AppShell = () => {
       // Persist new widths
       if (resizingSide) {
         if (resizingSide === 'left') {
-          const currentSidebar = settings.sidebar || {}
+          const currentSidebar = sidebarSetting || {}
           useSettingsStore.getState().updateSettings({
             sidebar: {
               ...currentSidebar,
@@ -173,7 +174,7 @@ const AppShell = () => {
             }
           })
         } else {
-          const currentRSidebar = settings.rightSidebar || {}
+          const currentRSidebar = rightSidebarSetting || {}
           useSettingsStore.getState().updateSettings({
             rightSidebar: {
               ...currentRSidebar,
@@ -314,8 +315,8 @@ const AppShell = () => {
 
   // Reactive Sidebar Toggles - Sync local state with store changes
   useEffect(() => {
-    const sidebar = settings.sidebar || {}
-    const rSidebar = settings.rightSidebar || {}
+    const sidebar = sidebarSetting || {}
+    const rSidebar = rightSidebarSetting || {}
 
     // Left
     if (typeof sidebar.isLeftOpen === 'boolean' && sidebar.isLeftOpen !== isLeftSidebarOpen) {
@@ -325,7 +326,7 @@ const AppShell = () => {
     if (typeof rSidebar.isRightOpen === 'boolean' && rSidebar.isRightOpen !== isRightSidebarOpen) {
       setIsRightSidebarOpen(rSidebar.isRightOpen)
     }
-  }, [settings.sidebar, settings.rightSidebar])
+  }, [sidebarSetting, rightSidebarSetting])
 
   const pinnedTabIds = useVaultStore((state) => state.pinnedTabIds)
 
