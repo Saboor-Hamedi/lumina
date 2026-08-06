@@ -855,7 +855,6 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 node.fz = node.z
               }}
               backgroundColor="rgba(0,0,0,0)"
-              warmupTicks={100}
               d3AlphaDecay={0.05}
               d3VelocityDecay={0.4}
               showNavInfo={false}
