@@ -675,13 +675,13 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               }
             }}
             onNodeDragEnd={(node) => {
-              node.fx = null
-              node.fy = null
-              node.fz = null
+              node.fx = node.x
+              node.fy = node.y
+              node.fz = node.z
             }}
             backgroundColor="rgba(0,0,0,0)"
             d3AlphaDecay={0.05}
-            d3VelocityDecay={0.8}
+            d3VelocityDecay={0.4}
             showNavInfo={false}
             linkDirectionalParticles={0}
             nodeLabel={(node) => (node.id || '').replace(/[*"']/g, '')}
@@ -725,12 +725,12 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               }
             }}
             onNodeDragEnd={(node) => {
-              node.fx = null
-              node.fy = null
+              node.fx = node.x
+              node.fy = node.y
             }}
             backgroundColor="transparent"
             d3AlphaDecay={0.05}
-            d3VelocityDecay={0.8}
+            d3VelocityDecay={0.4}
             nodeLabel={(node) => (node.id || '').replace(/[*"']/g, '')}
             onEngineStop={() => setIsEngineReady(true)}
           />
@@ -850,14 +850,14 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 }
               }}
               onNodeDragEnd={(node) => {
-                node.fx = null
-                node.fy = null
-                node.fz = null
+                node.fx = node.x
+                node.fy = node.y
+                node.fz = node.z
               }}
               backgroundColor="rgba(0,0,0,0)"
               warmupTicks={100}
               d3AlphaDecay={0.05}
-              d3VelocityDecay={0.3}
+              d3VelocityDecay={0.4}
               showNavInfo={false}
             />
           ) : (
@@ -895,13 +895,12 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 }
               }}
               onNodeDragEnd={(node) => {
-                node.fx = null
-                node.fy = null
-                node.fz = null
+                node.fx = node.x
+                node.fy = node.y
               }}
               backgroundColor="transparent"
               d3AlphaDecay={0.05}
-              d3VelocityDecay={0.8}
+              d3VelocityDecay={0.4}
               linkDirectionalParticles={0}
               nodeLabel={(node) => (node.id || '').replace(/[*"']/g, '')}
               onEngineStop={() => setIsEngineReady(true)}
