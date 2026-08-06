@@ -72,7 +72,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 })
   const isMaximized = useSettingsStore((s) => s.settings.graphModalMaximized ?? false)
 
-  const isSpinning = useSettingsStore((s) => s.settings.graphAnimate ?? true)
+  const isSpinning = useSettingsStore((s) => s.settings.graphAnimate ?? false)
   const graphRef = useRef()
   const containerRef = useRef()
   const [dimensions, setDimensions] = useState({
@@ -518,49 +518,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     }
   }, [is3DMode])
 
-  // Auto-Spin Logic
-  useEffect(() => {
-    let spinTimer
-    if (!graphRef.current) return
-
-    // Defer so that ForceGraph3D engine is fully spun up
-    spinTimer = setTimeout(() => {
-      const fg = graphRef.current
-      if (!fg) return
-
-      if (isSpinning) {
-        const forceSpin = () => {
-          let nodes
-          function force(alpha) {
-            if (!nodes) return
-            for (let i = 0, n = nodes.length; i < n; ++i) {
-              const node = nodes[i]
-              const dx = node.x || 0
-              const dy = node.y || 0
-              const dist = Math.sqrt(dx * dx + dy * dy)
-              if (dist > 0) {
-                // Apply tangential velocity for rotation
-                node.vx += (-dy / dist) * 1.5 * alpha
-                node.vy += (dx / dist) * 1.5 * alpha
-              }
-            }
-          }
-          force.initialize = function (_) {
-            nodes = _
-          }
-          return force
-        }
-
-        fg.d3Force('spin', forceSpin())
-        fg.d3ReheatSimulation()
-      } else {
-        fg.d3Force('spin', null)
-        fg.d3ReheatSimulation()
-      }
-    }, 150)
-
-    return () => clearTimeout(spinTimer)
-  }, [isSpinning, is3DMode])
+  // Auto-Spin Logic removed to prevent CPU heavy continuous physics simulation
 
   // Precompute line colors to save 60,000+ calculations per second
   const defaultLineColor = useMemo(() => {
@@ -756,9 +714,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             d3AlphaDecay={0.05}
             d3VelocityDecay={0.3}
             showNavInfo={false}
-            linkDirectionalParticles={1}
-            linkDirectionalParticleWidth={2}
-            linkDirectionalParticleSpeed={0.005}
+            linkDirectionalParticles={0}
           />
         ) : (
           <ForceGraph2D
@@ -969,9 +925,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               warmupTicks={100}
               d3AlphaDecay={0.05}
               d3VelocityDecay={0.3}
-              linkDirectionalParticles={1}
-              linkDirectionalParticleWidth={2}
-              linkDirectionalParticleSpeed={0.005}
+              linkDirectionalParticles={0}
             />
           )}
           <GraphMiniMap
