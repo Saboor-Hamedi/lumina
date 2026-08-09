@@ -87,8 +87,8 @@ export const handleExportDocs = async (mainWindow, payload) => {
   <title>${title || 'Untitled'}</title>
   <style>
     body {
-      font-family: 'Segoe UI', Calibri, 'Helvetica Neue', Arial, sans-serif;
-      line-height: 1.7;
+      font-family: 'Times New Roman', serif;
+      line-height: 1.5;
       color: #1a1a1a;
       background: #ffffff;
       padding: 0;
@@ -98,7 +98,7 @@ export const handleExportDocs = async (mainWindow, payload) => {
     }
     h1, h2, h3, h4, h5, h6 {
       color: #0f172a;
-      font-family: 'Segoe UI', Calibri, 'Helvetica Neue', Arial, sans-serif;
+      font-family: 'Times New Roman', serif;
       margin-top: 1.8em;
       margin-bottom: 0.6em;
       font-weight: 700;
@@ -107,7 +107,7 @@ export const handleExportDocs = async (mainWindow, payload) => {
     }
     h1 { 
       margin-bottom: 1em; 
-      font-size: 24pt; 
+      font-size: 18pt; 
       border-bottom: 1px solid #e2e8f0;
       padding-bottom: 8pt;
       color: #1e293b;
@@ -174,6 +174,8 @@ export const handleExportDocs = async (mainWindow, payload) => {
     img {
       max-width: 100%;
       height: auto;
+      display: block;
+      box-sizing: border-box;
       border-radius: 8px;
       margin: 2em 0;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
