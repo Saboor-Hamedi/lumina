@@ -105,101 +105,116 @@ export const handleExportPDF = async (mainWindow, payload) => {
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: 'Times New Roman', serif;
-      line-height: 1.6;
-      color: #222222;
+      font-family: 'Segoe UI', Calibri, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.7;
+      color: #1a1a1a;
       background: #ffffff;
       padding: 0;
       margin: 0;
-      font-size: 12px;
-      text-align: justify;
-    }
-    h1, h2, h3, h4, h5, h6 {
-      margin-top: 1.5em;
-      margin-bottom: 0.5em;
-      font-weight: 600;
-      line-height: 1.2;
-      font-size: 14px;
+      font-size: 11pt;
       text-align: left;
     }
-    h1 { margin-bottom: 1em; }
-    h2 { margin-top: 1.5em; }
-    h3 { font-size: 1.3em; margin-top: 1.2em; }
-    p { margin-bottom: 1.2em; color: #333333; }
+    h1, h2, h3, h4, h5, h6 {
+      color: #0f172a;
+      font-family: 'Segoe UI', Calibri, 'Helvetica Neue', Arial, sans-serif;
+      margin-top: 1.8em;
+      margin-bottom: 0.6em;
+      font-weight: 700;
+      line-height: 1.25;
+      text-align: left;
+    }
+    h1 { 
+      margin-bottom: 1em; 
+      font-size: 24pt; 
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 8pt;
+      color: #1e293b;
+    }
+    h2 { 
+      margin-top: 1.5em; 
+      font-size: 18pt; 
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 4pt;
+    }
+    h3 { font-size: 14pt; margin-top: 1.2em; color: #334155; }
+    h4 { font-size: 12pt; margin-top: 1.2em; color: #475569; }
+    p { margin-bottom: 1.2em; color: #334155; }
     code {
-      background: transparent;
-      font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-      font-size: 0.9em;
-      color: #333;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 10pt;
+      background-color: #f1f5f9;
+      color: #e11d48;
+      padding: 2px 4px;
+      border-radius: 4px;
     }
     pre {
-      background: #f8f9fa;
-      padding: 12px 16px;
-      border: none;
-      border-radius: 4px;
+      background: #f8fafc;
+      padding: 16px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
       white-space: pre-wrap;
       word-wrap: break-word;
-      overflow-wrap: break-word;
       margin: 1.5em 0;
     }
     pre code {
-      background: none;
+      background: transparent;
       padding: 0;
-      color: #222;
-      border: none;
+      color: #334155;
     }
     blockquote {
-      border-left: 4px solid #dfe2e5;
-      padding-left: 1em;
+      border-left: 4px solid #6366f1;
+      background-color: #f8fafc;
+      padding: 12px 16px;
       margin: 1.5em 0;
-      color: #6a737d;
+      color: #475569;
       font-style: italic;
-    }
-    ul, ol {
-      margin: 1.2em 0;
-      padding-left: 2em;
-      color: #333333;
-    }
-    li {
-      margin: 0.4em 0;
+      border-radius: 0 6px 6px 0;
     }
     table {
       border-collapse: collapse;
       margin: 2em 0;
       width: 100%;
-      font-size: 12px;
-      font-weight: normal;
+      font-size: 11pt;
     }
     th, td {
-      border: none;
-      border-bottom: 1px solid #eee;
-      padding: 10px 14px;
+      border: 1px solid #cbd5e1;
+      padding: 12px 16px;
       text-align: left;
     }
     th {
-      background: transparent;
+      background: #f1f5f9;
       font-weight: 600;
-      color: #222;
-      border: none;
-      border-bottom: 1px solid #ddd;
+      color: #0f172a;
     }
     tr:nth-child(even) {
-      background: transparent;
+      background: #f8fafc;
     }
     img {
       max-width: 100%;
       height: auto;
-      border-radius: 6px;
-      margin: 1.5em 0;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      border-radius: 8px;
+      margin: 2em 0;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
     a {
-      color: #0366d6;
+      color: #2563eb;
       text-decoration: none;
     }
+    a:hover {
+      text-decoration: underline;
+    }
+    ul, ol {
+      margin: 1.2em 0;
+      padding-left: 2em;
+      color: #334155;
+    }
+    li {
+      margin: 0.4em 0;
+    }
     hr {
-      border: none;
-      border-top: 1px solid #eaecef;
+      border: 0;
+      height: 1px;
+      background: #e2e8f0;
       margin: 2em 0;
     }
   </style>
