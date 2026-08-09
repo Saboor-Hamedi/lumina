@@ -50,7 +50,13 @@ export const handleExportDocs = async (mainWindow, payload) => {
       
       if (!url.startsWith('http') && !url.startsWith('data:')) {
         try {
-          const cleanUrl = url.startsWith('/') ? url.slice(1) : url
+          let cleanUrl = url.startsWith('/') ? url.slice(1) : url
+          // Strip optional <> that markdown uses for URLs with spaces
+          if (cleanUrl.startsWith('<') && cleanUrl.endsWith('>')) {
+            cleanUrl = cleanUrl.slice(1, -1)
+          }
+          cleanUrl = decodeURIComponent(cleanUrl)
+          
           const buffer = await VaultManager.readAsset(cleanUrl)
           
           let mimeType = 'image/png'
