@@ -112,7 +112,7 @@ export const handleExportPDF = async (mainWindow, payload) => {
       padding: 0;
       margin: 0;
       font-size: 11pt;
-      text-align: left;
+      text-align: justify;
     }
     h1, h2, h3, h4, h5, h6 {
       color: #0f172a;
@@ -124,17 +124,18 @@ export const handleExportPDF = async (mainWindow, payload) => {
       text-align: left;
     }
     h1 { 
-      margin-bottom: 1em; 
-      font-size: 18pt; 
+      margin-top: 2pt;
+      margin-bottom: 2pt; 
+      font-size: 16pt; 
       color: #1e293b;
     }
     h2 { 
       margin-top: 1.5em; 
-      font-size: 16pt; 
+      font-size: 14pt; 
     }
-    h3 { font-size: 14pt; margin-top: 1.2em; color: #334155; }
+    h3 { font-size: 13pt; margin-top: 1.2em; color: #334155; }
     h4 { font-size: 12pt; margin-top: 1.2em; color: #475569; }
-    p { margin-bottom: 1.2em; color: #334155; }
+    p { margin-bottom: 1.2em; color: #334155; text-align: justify; }
     code {
       font-family: 'Consolas', 'Courier New', monospace;
       font-size: 10pt;
@@ -174,12 +175,12 @@ export const handleExportPDF = async (mainWindow, payload) => {
     }
     th, td {
       border: 1px solid #cbd5e1;
-      padding: 12px 16px;
+      padding: 6px 10px;
       text-align: left;
     }
     th {
       background: #f1f5f9;
-      font-weight: 600;
+      font-weight: normal;
       color: #0f172a;
     }
     tr:nth-child(even) {
