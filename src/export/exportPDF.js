@@ -1,5 +1,6 @@
 import { dialog, BrowserWindow } from 'electron'
 import fs from 'fs/promises'
+import VaultManager from '../main/VaultManager.js'
 
 export const handleExportPDF = async (mainWindow, payload) => {
   try {
@@ -49,8 +50,40 @@ export const handleExportPDF = async (mainWindow, payload) => {
       }
     })
 
+    // Convert local images to base64 data URIs so they render in the isolated BrowserWindow
+    let processedContent = content || ''
+    const imgRegex = /!\[([^\]]*)\]\(([^)]+)\)/g
+    const matches = [...processedContent.matchAll(imgRegex)]
+    
+    for (const match of matches) {
+      const fullMatch = match[0]
+      const alt = match[1]
+      const url = match[2]
+      
+      if (!url.startsWith('http') && !url.startsWith('data:')) {
+        try {
+          const cleanUrl = url.startsWith('/') ? url.slice(1) : url
+          const buffer = await VaultManager.readAsset(cleanUrl)
+          
+          let mimeType = 'image/png'
+          const lowerUrl = cleanUrl.toLowerCase()
+          if (lowerUrl.endsWith('.jpg') || lowerUrl.endsWith('.jpeg')) mimeType = 'image/jpeg'
+          else if (lowerUrl.endsWith('.gif')) mimeType = 'image/gif'
+          else if (lowerUrl.endsWith('.svg')) mimeType = 'image/svg+xml'
+          else if (lowerUrl.endsWith('.webp')) mimeType = 'image/webp'
+          
+          const base64 = buffer.toString('base64')
+          const dataUri = `data:${mimeType};base64,${base64}`
+          
+          processedContent = processedContent.replace(fullMatch, `![${alt}](${dataUri})`)
+        } catch (e) {
+          console.error('[Export] Failed to convert image to base64:', url, e)
+        }
+      }
+    }
+
     // Convert wikilinks to HTML before parsing
-    const processedContent = (content || '').replace(/\[\[(.*?)\]\]/g, '<a href="#">$1</a>')
+    processedContent = processedContent.replace(/\[\[(.*?)\]\]/g, '<a href="#">$1</a>')
     const htmlContent = await marked.parse(processedContent)
 
     // Create HTML for PDF

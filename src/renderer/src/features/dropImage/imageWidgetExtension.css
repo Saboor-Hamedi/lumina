@@ -37,11 +37,13 @@
   justify-content: center;
   min-height: 40px;
   min-width: 40px;
+  max-width: 100%;
   border-radius: 8px;
   background: var(--bg-editor);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   border: 1px solid var(--border-dim);
   transition: box-shadow 0.2s ease, transform 0.2s ease;
+  box-sizing: border-box;
 }
 
 .image-widget-body:hover {
