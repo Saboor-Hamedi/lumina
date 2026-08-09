@@ -3,6 +3,7 @@ import path from 'path'
 import { ZipArchive } from 'archiver'
 import { app } from 'electron'
 import SettingsManager from '../SettingsManager'
+import { net } from 'electron'
 
 // Fixed backup filename — always the same file on Drive so it gets updated, never duplicated
 const BACKUP_FILE_NAME = 'lumina-backup.zip'
@@ -38,6 +39,9 @@ async function findExistingBackup(accessToken) {
   )
 
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('401_UNAUTHORIZED')
+    }
     console.warn('Could not search Drive for existing backup:', response.status)
     return null
   }
@@ -112,6 +116,32 @@ async function uploadToGoogleDrive(filePath, accessToken, existingFileId = null)
   }
 }
 
+async function refreshAccessToken(user) {
+  if (!user.refreshToken || !user.clientId) {
+    throw new Error('Missing refresh token or client ID. Please logout and log back in.')
+  }
+
+  const response = await net.fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: user.clientId,
+      client_secret: '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',
+      refresh_token: user.refreshToken,
+      grant_type: 'refresh_token'
+    }).toString()
+  })
+
+  if (!response.ok) {
+    throw new Error('Failed to refresh access token. Please logout and log back in.')
+  }
+
+  const data = await response.json()
+  user.token = data.access_token
+  await SettingsManager.set('googleUser', user)
+  return user.token
+}
+
 /**
  * Main backup function exposed to IPC.
  */
@@ -140,7 +170,18 @@ export async function backupToDrive(vaultPath, sender) {
     }
 
     // 2. Check if a backup already exists on Drive
-    const existingFileId = await findExistingBackup(user.token)
+    let existingFileId = null
+    try {
+      existingFileId = await findExistingBackup(user.token)
+    } catch (err) {
+      if (err.message === '401_UNAUTHORIZED') {
+        console.info('Access token expired, attempting to refresh...')
+        user.token = await refreshAccessToken(user)
+        existingFileId = await findExistingBackup(user.token)
+      } else {
+        throw err
+      }
+    }
 
     if (sender) {
       sender.send('index:progress', { type: 'backup', stage: 'uploading', progress: 55 })

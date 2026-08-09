@@ -47,7 +47,8 @@ class SettingsManager {
       graphCenterForce: 0.05,
       graphRepelForce: 0.3,
       graphLinkForce: 0.05,
-      graphAnimate: true,
+      graph3DMode: false,
+      graphAnimate: false,
       // Window bounds
       windowBounds: { width: 900, height: 700, x: null, y: null }
     }

@@ -88,7 +88,7 @@ const MarkdownEditor = React.memo(
       isActive
     })
 
-    const inlineMetadata = useSettingsStore((state) => state.settings?.inlineMetadata)
+    const inlineMetadata = useSettingsStore((state) => state.settings?.inlineMetadata !== false)
     const snippets = useVaultStore((state) => state.snippets)
     const setSelectedSnippet = useVaultStore((state) => state.setSelectedSnippet)
     const setDirty = useVaultStore((state) => state.setDirty)

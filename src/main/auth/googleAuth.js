@@ -13,7 +13,7 @@ export function setupGoogleAuth() {
       }
 
       const redirectUri = 'http://localhost:3000/oauth2callback'
-      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=https://www.googleapis.com/auth/drive.file email profile`
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&access_type=offline&prompt=consent&scope=https://www.googleapis.com/auth/drive.file email profile`
 
       authServer = http.createServer(async (req, res) => {
         try {
@@ -66,6 +66,7 @@ export function setupGoogleAuth() {
 
                 const tokenData = await tokenResponse.json()
                 const accessToken = tokenData.access_token
+                const refreshToken = tokenData.refresh_token // From offline access
 
                 // Fetch user profile info using the access token to show in the UI
                 const profileResponse = await net.fetch(
@@ -85,10 +86,12 @@ export function setupGoogleAuth() {
                   name: profile.name,
                   email: profile.email,
                   picture: profile.picture,
-                  token: accessToken
+                  token: accessToken,
+                  refreshToken: refreshToken,
+                  clientId: clientId
                 }
 
-                await SettingsManager.save('googleUser', user)
+                await SettingsManager.set('googleUser', user)
                 resolve(user)
               } catch (fetchErr) {
                 resolve({ error: `Failed to fetch profile: ${fetchErr.message}` })

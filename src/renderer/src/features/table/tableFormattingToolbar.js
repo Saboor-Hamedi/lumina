@@ -64,11 +64,17 @@ function applyFormatting(tag) {
                  (range.startContainer.nodeType === Node.ELEMENT_NODE && range.startContainer.closest('.cm-atomic-table-cell-source'))
   if (!source) return
 
-  let text = sel.toString()
+  const text = sel.toString()
+  const trimmed = text.trim()
 
   // Case 1: They highlighted the marks themselves (e.g. "**hello**")
-  if (text.startsWith(tag) && text.endsWith(tag) && text.length >= tag.length * 2) {
-    document.execCommand('insertText', false, text.substring(tag.length, text.length - tag.length))
+  if (trimmed.startsWith(tag) && trimmed.endsWith(tag) && trimmed.length >= tag.length * 2) {
+    const startIdx = text.indexOf(trimmed)
+    const endIdx = startIdx + trimmed.length
+    const leading = text.substring(0, startIdx)
+    const trailing = text.substring(endIdx)
+    const inner = trimmed.substring(tag.length, trimmed.length - tag.length)
+    document.execCommand('insertText', false, leading + inner + trailing)
     return
   }
 
@@ -91,13 +97,11 @@ function applyFormatting(tag) {
       sel.removeAllRanges()
       sel.addRange(newRange)
       
-      const wrapText = sel.toString()
-      if (wrapText.startsWith(tag) && wrapText.endsWith(tag) && wrapText.length >= tag.length * 2) {
-        document.execCommand('insertText', false, wrapText.substring(tag.length, wrapText.length - tag.length))
-      } else {
-        // Fallback just in case textContent was weird
-        document.execCommand('insertText', false, wrapText)
-      }
+      const wrapText = wrap.textContent
+      let innerText = wrapText
+      if (innerText.startsWith(tag)) innerText = innerText.substring(tag.length)
+      if (innerText.endsWith(tag)) innerText = innerText.substring(0, innerText.length - tag.length)
+      document.execCommand('insertText', false, innerText)
       return
     }
   }

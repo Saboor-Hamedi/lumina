@@ -656,8 +656,6 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 base * (useSettingsStore.getState().settings.graphNodeSize || 1.5)
               return Math.pow(targetRadius / 4, 3)
             }}
-            nodeResolution={6}
-            linkResolution={3}
             linkColor={(link) => {
               if (!hoverNode) return defaultLineColor
               const sourceId = link.source.id || link.source
@@ -831,8 +829,6 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                   base * (useSettingsStore.getState().settings.graphNodeSize || 1.5)
                 return Math.pow(targetRadius / 4, 3)
               }}
-              nodeResolution={6}
-              linkResolution={3}
               linkColor={(link) => {
                 if (!hoverNode) return defaultLineColor
                 const sourceId = link.source.id || link.source
