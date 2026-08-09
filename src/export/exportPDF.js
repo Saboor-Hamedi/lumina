@@ -126,15 +126,11 @@ export const handleExportPDF = async (mainWindow, payload) => {
     h1 { 
       margin-bottom: 1em; 
       font-size: 18pt; 
-      border-bottom: 1px solid #e2e8f0;
-      padding-bottom: 8pt;
       color: #1e293b;
     }
     h2 { 
       margin-top: 1.5em; 
-      font-size: 18pt; 
-      border-bottom: 1px solid #e2e8f0;
-      padding-bottom: 4pt;
+      font-size: 16pt; 
     }
     h3 { font-size: 14pt; margin-top: 1.2em; color: #334155; }
     h4 { font-size: 12pt; margin-top: 1.2em; color: #475569; }
@@ -192,11 +188,6 @@ export const handleExportPDF = async (mainWindow, payload) => {
     img {
       max-width: 100%;
       height: auto;
-      display: block;
-      box-sizing: border-box;
-      border-radius: 8px;
-      margin: 2em 0;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
     a {
       color: #2563eb;
