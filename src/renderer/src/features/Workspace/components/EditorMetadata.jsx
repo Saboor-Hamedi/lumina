@@ -62,7 +62,7 @@ const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef }) => {
             }}
             style={{
               background: 'transparent',
-              border: '1px solid var(--border-dim, rgba(255,255,255,0.1))',
+              border: 'none',
               borderRadius: '5px',
               height: '22px',
               display: 'flex',
