@@ -906,7 +906,9 @@
 }
 
 .cm-placeholder {
-  font-size: 1.2em;
+  font-size: 1.1em;
+  font-style: italic;
+  opacity: 0.6;
   color: var(--text-faint) !important;
 }
 

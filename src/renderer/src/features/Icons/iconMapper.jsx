@@ -895,7 +895,7 @@ export const getSnippetIcon = (snippet, size = 14, className = 'item-icon', colo
     }
   }
 
-  const iconColor = colorOverride || getIconColor(Icon, snippet.title)
+  const iconColor = snippet.color || colorOverride || getIconColor(Icon, snippet.title)
   return <Icon size={size} className={className} style={{ color: iconColor }} />
 }
 

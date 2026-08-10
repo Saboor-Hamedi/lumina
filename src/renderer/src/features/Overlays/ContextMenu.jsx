@@ -59,11 +59,13 @@ const ContextMenu = ({ x, y, options, onClose }) => {
           return (
             <div
               key={i}
-              className={`menu-item ${opt.danger ? 'danger' : ''}`}
+              className={`menu-item ${opt.danger ? 'danger' : ''} ${opt.disabled ? 'disabled' : ''}`}
               onClick={() => {
+                if (opt.disabled) return
                 opt.onClick()
                 onClose()
               }}
+              style={opt.disabled ? { opacity: 0.5, cursor: 'not-allowed', pointerEvents: 'none' } : {}}
             >
               <span className="menu-label">{opt.label}</span>
               {opt.shortcut && <span className="menu-shortcut">{opt.shortcut}</span>}

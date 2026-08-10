@@ -282,7 +282,7 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
           className="workspace-tabbar"
           ref={tabbarRef}
           onWheel={handleWheel}
-          style={{ flex: 1, paddingLeft: onToggleLeftSidebar ? '44px' : '0', minWidth: 0 }}
+          style={{ flex: 1, paddingLeft: onToggleLeftSidebar ? '40px' : '0', minWidth: 0 }}
         >
           <SortableContext items={openTabs} strategy={horizontalListSortingStrategy}>
             <div

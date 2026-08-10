@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { GripVertical, X, Check, Copy, Loader2 } from 'lucide-react'
@@ -412,7 +413,7 @@ CRITICAL INSTRUCTIONS:
 
   if (!isOpen) return null
 
-  return (
+  return createPortal(
     <div
       className="inline-lumina-overlay"
       onMouseDown={(e) => {
@@ -503,7 +504,8 @@ CRITICAL INSTRUCTIONS:
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

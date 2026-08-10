@@ -914,7 +914,6 @@ const MarkdownEditor = React.memo(
         codeBlockDecorations,
         mermaidWidgetExtension,
         tagMentionExtension,
-        placeholder('Start writing...'),
         wikiLinks({
           openOnClick: true,
           resolve: async (target) => {
@@ -1006,6 +1005,7 @@ const MarkdownEditor = React.memo(
     const finalExtensions = React.useMemo(
       () => [
         ...editorExtensions,
+        placeholder("Start writing... Type '#' for heading, or press Ctrl+P to search"),
         dropExtension,
         Prec.highest(imageWidgetExtension),
         htmlWidgetExtension,
