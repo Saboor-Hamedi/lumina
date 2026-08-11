@@ -16,7 +16,8 @@ import {
   Trash2,
   Check,
   X,
-  FilePlus
+  FilePlus,
+  Clipboard
 } from 'lucide-react'
 import { useVaultStore, GRAPH_TAB_ID } from '../../core/store/useVaultStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
@@ -64,6 +65,7 @@ import {
 } from './components'
 import { useFileSearch } from './hooks/useFileSearch'
 import { useFileTree } from './hooks/useFileTree'
+import { useContextMenu } from '../Navigation/hooks/useContextMenu'
 
 const VirtuosoFooter = () => <div style={{ height: '24px' }} />
 
@@ -124,6 +126,8 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   const saveSnippet = useVaultStore((state) => state.saveSnippet)
   const loadVault = useVaultStore((state) => state.loadVault)
   const isLoading = useVaultStore((state) => state.isLoading)
+  const clipboard = useVaultStore((state) => state.clipboard)
+  const setClipboard = useVaultStore((state) => state.setClipboard)
 
   const clickedInExplorerRef = useRef(0)
   const lastScrolledSnippetRef = useRef(null)
@@ -133,6 +137,45 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   useEffect(() => {
     expandedFoldersRef.current = expandedFolders
   }, [expandedFolders])
+
+  useEffect(() => {
+    setSidebarFocus(null)
+  }, [isOpen])
+
+  const contextMenuOptions = useContextMenu({
+    item: folderContext?.folderId || null,
+    type: folderContext?.folderId ? 'folder' : 'body',
+    callbacks: {
+      onCreateNote: () => {
+        if (folderContext?.folderId) {
+          setExpandedFolders((prev) => new Set(prev).add(folderContext.folderId))
+        }
+        setCreating({ type: 'file', parentId: folderContext?.folderId || null })
+        setCreatingValue('')
+      },
+      onCreateFolder: () => {
+        if (folderContext?.folderId) {
+          setExpandedFolders((prev) => new Set(prev).add(folderContext.folderId))
+        }
+        setCreating({ type: 'folder', parentId: folderContext?.folderId || null })
+        setCreatingValue('')
+      },
+      onRename: () => {
+        if (folderContext?.folderId) {
+          const parts = folderContext.folderId.split('/')
+          setRenamingValue(parts[parts.length - 1])
+          setRenamingFolder(folderContext.folderId)
+        }
+      },
+      onDelete: () => {
+        if (folderContext?.folderId) {
+          setDeleteConfirmFolder(folderContext.folderId)
+        }
+      },
+      onClose: () => setFolderContext(null),
+      isFolderPinned: folderContext?.folderId ? pinnedFolders.includes(folderContext.folderId) : false
+    }
+  })
 
   useEffect(() => {
     setSidebarFocus(null)
@@ -1188,159 +1231,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
           x={folderContext.x}
           y={folderContext.y}
           onClose={() => setFolderContext(null)}
-          options={[
-            {
-              label: 'Create Subfolder',
-              icon: <FolderPlus size={14} />,
-              onClick: () => {
-                if (folderContext.folderId) {
-                  setExpandedFolders((prev) => new Set(prev).add(folderContext.folderId))
-                }
-                setCreating({ type: 'folder', parentId: folderContext.folderId })
-                setCreatingValue('')
-              }
-            },
-            {
-              label: 'Create Note',
-              icon: <FilePlus size={14} />,
-              onClick: () => {
-                if (folderContext.folderId) {
-                  setExpandedFolders((prev) => new Set(prev).add(folderContext.folderId))
-                }
-                setCreating({ type: 'file', parentId: folderContext.folderId })
-                setCreatingValue('')
-              }
-            },
-            {
-              label: 'Rename',
-              icon: <Edit2 size={14} />,
-              onClick: () => {
-                if (!folderContext.folderId) return
-                const parts = folderContext.folderId.split('/')
-                setRenamingValue(parts[parts.length - 1])
-                setRenamingFolder(folderContext.folderId)
-              }
-            },
-            {
-              label: pinnedFolders.includes(folderContext.folderId)
-                ? 'Unpin from Favorites'
-                : 'Pin to Favorites',
-              icon: pinnedFolders.includes(folderContext.folderId) ? (
-                <StarOff size={14} />
-              ) : (
-                <Star size={14} />
-              ),
-              onClick: () => {
-                if (!folderContext.folderId) return
-                togglePinnedFolder(folderContext.folderId)
-              }
-            },
-            {
-              type: 'divider'
-            },
-            {
-              type: 'custom',
-              render: (onClose) => {
-                const currentCol = folderContext.folderId
-                  ? folderColors[folderContext.folderId] || null
-                  : null
-                return (
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '6px 10px',
-                      gap: '6px'
-                    }}
-                  >
-                    {[
-                      {
-                        id: null,
-                        bg: 'var(--bg-panel)',
-                        border: '1px dashed var(--border-main)',
-                        title: 'Default Color (Reset)'
-                      },
-                      {
-                        id: 'rgba(59, 130, 246, 0.2)',
-                        bg: 'rgba(59, 130, 246, 0.5)',
-                        title: 'Blue'
-                      },
-                      {
-                        id: 'rgba(168, 85, 247, 0.2)',
-                        bg: 'rgba(168, 85, 247, 0.5)',
-                        title: 'Purple'
-                      },
-                      { id: 'rgba(239, 68, 68, 0.2)', bg: 'rgba(239, 68, 68, 0.5)', title: 'Red' },
-                      {
-                        id: 'rgba(34, 197, 94, 0.2)',
-                        bg: 'rgba(34, 197, 94, 0.5)',
-                        title: 'Green'
-                      },
-                      {
-                        id: 'rgba(249, 115, 22, 0.2)',
-                        bg: 'rgba(249, 115, 22, 0.5)',
-                        title: 'Orange'
-                      }
-                    ].map((c, idx) => {
-                      const isSelected = currentCol === c.id
-                      return (
-                        <div
-                          key={idx}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            if (!folderContext.folderId) return
-                            setFolderColor(folderContext.folderId, c.id)
-                            onClose()
-                          }}
-                          title={c.title}
-                          style={{
-                            width: '20px',
-                            height: '20px',
-                            borderRadius: '4px',
-                            background: c.bg,
-                            border: isSelected
-                              ? '2px solid #10b981'
-                              : c.border || '1px solid rgba(255, 255, 255, 0.1)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'transform 0.15s, box-shadow 0.15s',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'scale(1.15)'
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'scale(1)'
-                          }}
-                        >
-                          {isSelected ? (
-                            <Check size={12} color="#10b981" strokeWidth={3} />
-                          ) : (
-                            c.id === null && <X size={12} color="var(--text-faint)" />
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                )
-              }
-            },
-            {
-              type: 'divider'
-            },
-            {
-              label: 'Delete Folder',
-              icon: <Trash2 size={14} />,
-              danger: true,
-              onClick: () => {
-                if (!folderContext.folderId) return
-                setDeleteConfirmFolder(folderContext.folderId)
-              }
-            }
-          ]}
+          options={contextMenuOptions}
         />
       )}
 

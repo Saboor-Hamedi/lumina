@@ -631,10 +631,19 @@ const MarkdownEditor = React.memo(
         if (isActive) handleSave()
       },
       onInlineAI: () => {
-        setIsInlineAIOpen(true)
-        return true
+        if (isActive) {
+          setIsInlineAIOpen(true)
+          return true
+        }
+        return false
       }
     })
+
+    useEffect(() => {
+      if (!isActive && isInlineAIOpen) {
+        setIsInlineAIOpen(false)
+      }
+    }, [isActive, isInlineAIOpen])
 
     const handleInlineAIInsert = useCallback((text, range = null) => {
       if (!realViewRef.current) return

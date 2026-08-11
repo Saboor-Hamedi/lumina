@@ -21,8 +21,10 @@ export const useVaultStore = create((set, get) => ({
   openTabs: [], // List of snippet IDs currently open (can include GRAPH_TAB_ID)
   activeTabId: null, // The ID of the currently focused tab
   pinnedTabIds: [], // List of IDs for pinned tabs
+  clipboard: null, // { action: 'copy'|'cut', item: snippet|folder }
 
   setSnippets: (snippets) => set({ snippets }),
+  setClipboard: (clipboard) => set({ clipboard }),
 
   restoreSession: (tabs, activeId, pinnedIds = []) => {
     set((state) => {

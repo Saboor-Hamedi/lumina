@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Star, StarOff, Trash2, Edit2, Pin, ExternalLink, Palette, Image, Folder, FileText, Copy, Scissors, Check, X } from 'lucide-react'
+import { Star, StarOff, Trash2, Edit2, Pin, ExternalLink, Palette, Image, Folder, FileText, Copy, Scissors, Clipboard, Check, X } from 'lucide-react'
 import { useVaultStore } from '../../../core/store/useVaultStore'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
 import ContextMenu from '../../Overlays/ContextMenu'
@@ -9,6 +9,7 @@ import ToolTip from '../../../components/atoms/ToolTip'
 import { getSnippetIcon } from '../../Icons/iconMapper'
 import { useShallow } from 'zustand/react/shallow'
 import { getHighlightRegex } from '../../../core/utils/searchRanker'
+import { useContextMenu } from '../hooks/useContextMenu'
 
 const SidebarItem = ({
   snippet,
@@ -118,99 +119,17 @@ const SidebarItem = ({
     )
   }
 
-  const menuOptions = [
-    {
-      label: snippet.isPinned ? 'Remove from Favorites' : 'Add to Favorites',
-      icon: <Star size={14} />,
-      onClick: handleTogglePin
-    },
-    { label: 'Rename', icon: <Edit2 size={14} />, onClick: () => setIsRenaming(true) },
-    { label: 'Change Icon', icon: <Image size={14} />, onClick: () => setShowIconPicker(true) },
-    {
-      label: 'Show in Explorer',
-      icon: <ExternalLink size={14} />,
-      onClick: () => window.api?.openVaultFolder?.()
-    },
-    { type: 'divider' },
-    {
-      label: 'Delete',
-      icon: <Trash2 size={14} />,
-      danger: true,
-      onClick: () => setShowDeleteConfirm(true)
-    },
-    { type: 'divider' },
-    {
-      type: 'custom',
-      render: (onClose) => {
-        const currentCol = snippet.color || null
-        return (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '6px 10px',
-              gap: '6px'
-            }}
-          >
-            {[
-              {
-                id: null,
-                bg: 'var(--bg-panel)',
-                border: '1px dashed var(--border-main)',
-                title: 'Default Color (Reset)'
-              },
-              { id: 'rgba(59, 130, 246, 0.2)', bg: 'rgba(59, 130, 246, 0.5)', title: 'Blue' },
-              { id: 'rgba(168, 85, 247, 0.2)', bg: 'rgba(168, 85, 247, 0.5)', title: 'Purple' },
-              { id: 'rgba(239, 68, 68, 0.2)', bg: 'rgba(239, 68, 68, 0.5)', title: 'Red' },
-              { id: 'rgba(34, 197, 94, 0.2)', bg: 'rgba(34, 197, 94, 0.5)', title: 'Green' },
-              { id: 'rgba(249, 115, 22, 0.2)', bg: 'rgba(249, 115, 22, 0.5)', title: 'Orange' }
-            ].map((c, idx) => {
-              const isSelected = currentCol === c.id
-              return (
-                <div
-                  key={idx}
-                  onClick={async (e) => {
-                    e.stopPropagation()
-                    await saveSnippet({ ...snippet, color: c.id })
-                    onClose()
-                  }}
-                  title={c.title}
-                  style={{
-                    width: '20px',
-                    height: '20px',
-                    borderRadius: '4px',
-                    background: c.bg,
-                    border: isSelected
-                      ? '2px solid #10b981'
-                      : c.border || '1px solid rgba(255, 255, 255, 0.1)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'transform 0.15s, box-shadow 0.15s',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.15)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)'
-                  }}
-                >
-                  {isSelected ? (
-                    <Check size={12} color="#10b981" strokeWidth={3} />
-                  ) : (
-                    c.id === null && <X size={12} color="var(--text-faint)" />
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )
-      }
+  const menuOptions = useContextMenu({
+    item: snippet,
+    type: 'file',
+    callbacks: {
+      onOpen: onClick,
+      onRename: () => setIsRenaming(true),
+      onTogglePin: handleTogglePin,
+      onDelete: () => setShowDeleteConfirm(true),
+      onClose: () => setContextMenu(null)
     }
-  ]
+  })
 
   const modals = (
     <>
