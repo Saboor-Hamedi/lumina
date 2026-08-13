@@ -101,17 +101,26 @@ export const useVaultStore = create((set, get) => ({
     set((state) => {
       const nextTabs = state.openTabs.filter((tid) => tid !== id)
 
-      // If we are closing the active tab, find a new one
+      // If we are closing the active tab (or if it's out of sync), find a new one
       let nextActiveId = state.activeTabId
-      if (state.activeTabId === id) {
+      if (state.activeTabId === id || state.selectedSnippet?.id === id || !nextTabs.includes(nextActiveId)) {
         const idx = state.openTabs.indexOf(id)
-        nextActiveId = nextTabs[idx] || nextTabs[idx - 1] || null
+        // If idx is -1, fallback to first available
+        if (idx === -1) {
+          nextActiveId = nextTabs[0] || null
+        } else {
+          nextActiveId = nextTabs[idx] || nextTabs[idx - 1] || null
+        }
+      }
+      
+      if (!nextActiveId && nextTabs.length > 0) {
+        nextActiveId = nextTabs[0]
       }
 
       // Handle next selected snippet (only if nextActiveId is not GRAPH_TAB_ID)
       const nextSelected =
         nextActiveId && nextActiveId !== GRAPH_TAB_ID
-          ? state.snippets.find((s) => s.id === nextActiveId)
+          ? state.snippets.find((s) => s.id === nextActiveId) || null
           : null
 
       return {
@@ -381,35 +390,25 @@ export const useVaultStore = create((set, get) => ({
     set((state) => {
       const next = state.snippets.filter((s) => s.id !== id)
       const nextTabs = state.openTabs.filter((tid) => tid !== id)
-      const wasOnlyTab = state.openTabs.length === 1
-      const isActiveTab = state.activeTabId === id
 
       let nextActiveId = state.activeTabId
-      let nextSelectedSnippet = state.selectedSnippet
-
-      if (state.selectedSnippet?.id === id || isActiveTab) {
-        if (wasOnlyTab) {
-          nextActiveId = null
-          nextSelectedSnippet = null
-        } else if (nextTabs.length > 0) {
-          if (isActiveTab) {
-            const currentIdx = state.openTabs.indexOf(id)
-            const nextIdx = currentIdx < nextTabs.length ? currentIdx : nextTabs.length - 1
-            nextActiveId = nextTabs[nextIdx]
-          } else {
-            nextActiveId = nextTabs[0]
-          }
-
-          if (nextActiveId !== GRAPH_TAB_ID) {
-            nextSelectedSnippet = next.find((s) => s.id === nextActiveId) || null
-          } else {
-            nextSelectedSnippet = null
-          }
+      if (state.activeTabId === id || state.selectedSnippet?.id === id || !nextTabs.includes(nextActiveId)) {
+        const idx = state.openTabs.indexOf(id)
+        if (idx === -1) {
+          nextActiveId = nextTabs[0] || null
         } else {
-          nextActiveId = null
-          nextSelectedSnippet = null
+          nextActiveId = nextTabs[idx] || nextTabs[idx - 1] || null
         }
       }
+
+      if (!nextActiveId && nextTabs.length > 0) {
+        nextActiveId = nextTabs[0]
+      }
+
+      const nextSelectedSnippet =
+        nextActiveId && nextActiveId !== GRAPH_TAB_ID
+          ? next.find((s) => s.id === nextActiveId) || null
+          : null
 
       const nextDrafts = { ...state.drafts }
       delete nextDrafts[id]

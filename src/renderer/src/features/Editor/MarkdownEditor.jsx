@@ -161,7 +161,13 @@ const MarkdownEditor = React.memo(
 
       if (realViewRef.current) {
         requestAnimationFrame(() => {
-          if (realViewRef.current) realViewRef.current.requestMeasure()
+          if (realViewRef.current) {
+            realViewRef.current.requestMeasure()
+            // Force a second measure slightly later in case DOM layout isn't fully flushed
+            setTimeout(() => {
+              if (realViewRef.current) realViewRef.current.requestMeasure()
+            }, 50)
+          }
         })
       }
 
