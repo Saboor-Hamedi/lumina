@@ -17,6 +17,7 @@ import { handleExportText } from '../export/exportText'
 import { handleExportHTML } from '../export/exportHTML'
 import { setupGoogleAuth } from './auth/googleAuth'
 import { backupToDrive } from './backup/googleDriveBackup'
+import { registerOpenNoteHandler } from './handlers/useOpenNote'
 
 // Force rebuild timestamp: 5
 
@@ -511,6 +512,8 @@ app.whenReady().then(async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({ properties: ['openDirectory'] })
     return canceled ? null : filePaths[0]
   })
+
+  registerOpenNoteHandler()
 
   ipcMain.handle('confirm-delete', async (event, message) => {
     const res = await dialog.showMessageBox({

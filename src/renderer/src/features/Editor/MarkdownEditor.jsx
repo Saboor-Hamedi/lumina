@@ -159,6 +159,12 @@ const MarkdownEditor = React.memo(
     useEffect(() => {
       if (!isActive) return
 
+      if (realViewRef.current) {
+        requestAnimationFrame(() => {
+          if (realViewRef.current) realViewRef.current.requestMeasure()
+        })
+      }
+
       const handleGlobalKeyDown = (e) => {
         if (e.key === 'f' && (e.ctrlKey || e.metaKey)) {
           e.preventDefault()

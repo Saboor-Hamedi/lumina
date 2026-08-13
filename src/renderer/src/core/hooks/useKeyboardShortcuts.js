@@ -97,6 +97,12 @@ export const useKeyboardShortcuts = (shortcuts) => {
         shortcutsRef.current.onTogglePalette()
       }
 
+      // Open File: Ctrl+O
+      if (isCmd && !e.shiftKey && key === 'o' && shortcutsRef.current.onOpenFile) {
+        e.preventDefault()
+        shortcutsRef.current.onOpenFile()
+      }
+
       // Toggle Command Palette: Ctrl+Shift+P
       if (isCmd && e.shiftKey && key === 'p' && shortcutsRef.current.onToggleCommandPalette) {
         e.preventDefault()

@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Calendar } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
 
+
 const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef }) => {
   const [error, setError] = useState(false)
 
@@ -53,7 +54,7 @@ const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef }) => {
           Title cannot be empty
         </div>
       )}
-      <div style={{ marginTop: '8px', paddingLeft: '4px' }}>
+      <div style={{ marginTop: '8px', paddingLeft: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
         <ToolTip text="Ask AI (Ctrl+K)" position="bottom">
           <button
             onClick={(e) => {
@@ -87,6 +88,8 @@ const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef }) => {
             <span style={{ fontSize: '12px', fontWeight: 500 }}>Ask AI</span>
           </button>
         </ToolTip>
+
+
       </div>
     </div>
   )

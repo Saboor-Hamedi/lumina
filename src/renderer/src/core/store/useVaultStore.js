@@ -28,9 +28,11 @@ export const useVaultStore = create((set, get) => ({
 
   restoreSession: (tabs, activeId, pinnedIds = []) => {
     set((state) => {
-      // Trust the saved tabs; TabBar handles missing snippets gracefully.
-      const validTabs = tabs
-      const validPinned = pinnedIds
+      // Filter out any tabs that no longer exist in the vault
+      const validTabs = tabs.filter(
+        (id) => id === GRAPH_TAB_ID || state.snippets.some((s) => s.id === id)
+      )
+      const validPinned = pinnedIds.filter((id) => validTabs.includes(id))
 
       // Handle active tab: can be a snippet or GRAPH_TAB_ID
       const validActiveId = activeId && validTabs.includes(activeId) ? activeId : null
@@ -376,11 +378,10 @@ export const useVaultStore = create((set, get) => ({
       }
 
       await window.api.deleteSnippet(id)
-      const next = get().snippets.filter((s) => s.id !== id)
-      set({ snippets: next })
-
-      // Close tab if it was open and update selected snippet
+      
+      // Atomically update snippets, openTabs, and active tab
       set((state) => {
+        const next = state.snippets.filter((s) => s.id !== id)
         const nextTabs = state.openTabs.filter((tid) => tid !== id)
         const wasOnlyTab = state.openTabs.length === 1
         const isActiveTab = state.activeTabId === id
@@ -423,6 +424,7 @@ export const useVaultStore = create((set, get) => ({
         delete nextDrafts[id]
 
         return {
+          snippets: next,
           openTabs: nextTabs,
           activeTabId: nextActiveId,
           selectedSnippet: nextSelectedSnippet,

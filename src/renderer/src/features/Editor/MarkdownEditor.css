@@ -1849,7 +1849,7 @@ html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {
 .markdown-editor .cm-line.cm-atomic-blockquote {
   border: none !important;
   padding: 4px 16px 4px 20px !important;
-  margin: 4px 0 !important;
+  margin: 0 !important;
   font-style: italic !important;
   font-size: 0.95em !important;
   position: relative !important;

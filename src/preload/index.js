@@ -39,6 +39,7 @@ const api = {
 
   // Dialogs
   confirmDelete: (msg) => electronAPI.ipcRenderer.invoke('confirm-delete', msg),
+  openFile: () => electronAPI.ipcRenderer.invoke('dialog:openFile'),
 
   // Window controls
   minimize: () => electronAPI.ipcRenderer.invoke('window:minimize'),
