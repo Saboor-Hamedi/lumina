@@ -367,74 +367,71 @@ export const useVaultStore = create((set, get) => ({
       throw new Error('Snippet ID is required')
     }
 
-    try {
-      if (!window.api?.deleteSnippet) {
-        throw new Error('Delete API is not available. Please restart the application.')
-      }
+    if (!window.api?.deleteSnippet) {
+      throw new Error('Delete API is not available. Please restart the application.')
+    }
 
-      if (!skipConfirm) {
-        const confirmed = await window.api.confirmDelete('Permenantly delete this note?')
-        if (!confirmed) return
-      }
+    if (!skipConfirm) {
+      const confirmed = await window.api.confirmDelete('Permenantly delete this note?')
+      if (!confirmed) return
+    }
 
-      await window.api.deleteSnippet(id)
-      
-      // Atomically update snippets, openTabs, and active tab
-      set((state) => {
-        const next = state.snippets.filter((s) => s.id !== id)
-        const nextTabs = state.openTabs.filter((tid) => tid !== id)
-        const wasOnlyTab = state.openTabs.length === 1
-        const isActiveTab = state.activeTabId === id
+    // 1. Optimistically update state to select adjacent tab before deleting.
+    // This prevents race conditions with `loadVault` triggered by the file watcher.
+    set((state) => {
+      const next = state.snippets.filter((s) => s.id !== id)
+      const nextTabs = state.openTabs.filter((tid) => tid !== id)
+      const wasOnlyTab = state.openTabs.length === 1
+      const isActiveTab = state.activeTabId === id
 
-        let nextActiveId = state.activeTabId
-        let nextSelectedSnippet = state.selectedSnippet
+      let nextActiveId = state.activeTabId
+      let nextSelectedSnippet = state.selectedSnippet
 
-        // If the deleted snippet was selected or was the active tab
-        if (state.selectedSnippet?.id === id || isActiveTab) {
-          if (wasOnlyTab) {
-            // This was the only tab open: show welcome page, don't auto-open another
-            nextActiveId = null
-            nextSelectedSnippet = null
-          } else if (nextTabs.length > 0) {
-            // Multiple tabs: jump to the next tab
-            if (isActiveTab) {
-              // Find next tab (use same index, or last if we were at the end)
-              const currentIdx = state.openTabs.indexOf(id)
-              const nextIdx = currentIdx < nextTabs.length ? currentIdx : nextTabs.length - 1
-              nextActiveId = nextTabs[nextIdx]
-            } else {
-              // Was selected but not active tab, jump to first open tab
-              nextActiveId = nextTabs[0]
-            }
-
-            // Find the snippet for the next tab (if not graph tab)
-            if (nextActiveId !== GRAPH_TAB_ID) {
-              nextSelectedSnippet = next.find((s) => s.id === nextActiveId) || null
-            } else {
-              nextSelectedSnippet = null
-            }
+      if (state.selectedSnippet?.id === id || isActiveTab) {
+        if (wasOnlyTab) {
+          nextActiveId = null
+          nextSelectedSnippet = null
+        } else if (nextTabs.length > 0) {
+          if (isActiveTab) {
+            const currentIdx = state.openTabs.indexOf(id)
+            const nextIdx = currentIdx < nextTabs.length ? currentIdx : nextTabs.length - 1
+            nextActiveId = nextTabs[nextIdx]
           } else {
-            // No more tabs open: show welcome page, don't auto-open
-            nextActiveId = null
+            nextActiveId = nextTabs[0]
+          }
+
+          if (nextActiveId !== GRAPH_TAB_ID) {
+            nextSelectedSnippet = next.find((s) => s.id === nextActiveId) || null
+          } else {
             nextSelectedSnippet = null
           }
+        } else {
+          nextActiveId = null
+          nextSelectedSnippet = null
         }
+      }
 
-        const nextDrafts = { ...state.drafts }
-        delete nextDrafts[id]
+      const nextDrafts = { ...state.drafts }
+      delete nextDrafts[id]
 
-        return {
-          snippets: next,
-          openTabs: nextTabs,
-          activeTabId: nextActiveId,
-          selectedSnippet: nextSelectedSnippet,
-          drafts: nextDrafts,
-          dirtySnippetIds: state.dirtySnippetIds.filter((dId) => dId !== id)
-        }
-      })
+      return {
+        snippets: next,
+        openTabs: nextTabs,
+        activeTabId: nextActiveId,
+        selectedSnippet: nextSelectedSnippet,
+        drafts: nextDrafts,
+        dirtySnippetIds: state.dirtySnippetIds.filter((dId) => dId !== id)
+      }
+    })
+
+    // 2. Perform the actual deletion
+    try {
+      await window.api.deleteSnippet(id)
     } catch (err) {
       console.error('[VaultStore] ✗ Delete failed:', err)
-      throw err // Re-throw so callers can handle the error
+      // Rollback: reload the vault from disk
+      useVaultStore.getState().loadVault()
+      throw err 
     }
   },
 
