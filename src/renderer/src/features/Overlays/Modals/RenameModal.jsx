@@ -1,16 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import './RenameModal.css'
 
 const RenameModal = ({ isOpen, onClose, onRename, initialName = '' }) => {
-  const [newName, setNewName] = useState(initialName)
   const inputRef = useRef(null)
 
   useEffect(() => {
     if (isOpen) {
-      setNewName(initialName)
       setTimeout(() => {
         if (inputRef.current) {
+          inputRef.current.value = initialName
           inputRef.current.focus()
           inputRef.current.select()
         }
@@ -35,6 +34,8 @@ const RenameModal = ({ isOpen, onClose, onRename, initialName = '' }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    if (!inputRef.current) return
+    const newName = inputRef.current.value
     if (newName.trim() && newName.trim() !== initialName) {
       onRename(newName.trim())
     }
@@ -49,8 +50,7 @@ const RenameModal = ({ isOpen, onClose, onRename, initialName = '' }) => {
             ref={inputRef}
             className="rename-input"
             type="text"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
+            defaultValue={initialName}
             placeholder="Enter new name..."
           />
         </form>

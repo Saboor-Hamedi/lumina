@@ -113,7 +113,7 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
         marginBottom: '8px',
         backgroundColor: 'var(--bg-app)',
         border: '1px solid var(--border-dim)',
-        borderRadius: 'var(--radius-md)',
+        borderRadius: 'var(--radius-md, 5px)',
         boxShadow: 'var(--shadow-popup, 0 4px 12px rgba(0,0,0,0.15))',
         padding: '4px',
         zIndex: 100,

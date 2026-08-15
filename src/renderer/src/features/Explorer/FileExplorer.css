@@ -160,6 +160,18 @@
   margin: 0;
 }
 
+.start-section-header .header-actions {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.start-section:hover .header-actions,
+.start-section:focus-within .header-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 /* Segmented Tabs */
 .explorer-segmented-tabs {
   display: flex;
@@ -365,11 +377,11 @@
 }
 
 .folder-tree-main:hover {
-  background: var(--bg-active);
+  background: rgba(150, 150, 150, 0.1);
 }
 
 .folder-tree-main.active {
-  background: var(--bg-active);
+  /* VS Code folders don't have a persistent selected background */
 }
 
 .folder-tree-actions {
@@ -505,7 +517,7 @@
 }
 
 .start-section .tree-item:hover {
-  background: var(--bg-active);
+  background: rgba(150, 150, 150, 0.1);
 }
 
 .load-more-btn {

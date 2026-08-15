@@ -69,36 +69,7 @@ export const DroppableFolderItem = React.memo(
           opacity: isDragging ? 0.5 : 1
         }}
       >
-        {Array.from({ length: item.depth }).map((_, i) => (
-          <React.Fragment key={`line-${i}`}>
-            <div
-              style={{
-                position: 'absolute',
-                left: `${i * 12 + 15}px`,
-                top: 0,
-                bottom: 0,
-                width: '1.5px',
-                backgroundColor:
-                  i === item.depth - 1
-                    ? 'var(--text-accent)'
-                    : 'rgba(var(--text-accent-rgb, 64, 186, 250), 0.35)',
-                opacity: i === item.depth - 1 ? 0.85 : 1
-              }}
-            />
-            {i === item.depth - 1 && (
-              <div
-                style={{
-                  position: 'absolute',
-                  left: `${i * 12 + 15}px`,
-                  top: '50%',
-                  width: '7px',
-                  height: '1.5px',
-                  backgroundColor: 'var(--text-accent)'
-                }}
-              />
-            )}
-          </React.Fragment>
-        ))}
+
         <div
           ref={setDraggableRef}
           className={`folder-tree-main ${isOver ? 'folder-over' : ''} ${isActive ? 'active' : ''}`}
@@ -161,13 +132,12 @@ export const DroppableFolderItem = React.memo(
               <input
                 autoFocus
                 className="inline-create-input"
-                value={renameValue}
-                onChange={(e) => setRenameValue(e.target.value)}
+                defaultValue={renameValue}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') submitRename()
+                  if (e.key === 'Enter') submitRename(e.target.value)
                   if (e.key === 'Escape') cancelRename()
                 }}
-                onBlur={submitRename}
+                onBlur={(e) => submitRename(e.target.value)}
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (

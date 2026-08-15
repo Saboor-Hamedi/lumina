@@ -475,36 +475,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
             paddingLeft: `${item.depth * 12}px`
           }}
         >
-          {Array.from({ length: item.depth }).map((_, i) => (
-            <React.Fragment key={`line-${i}`}>
-              <div
-                style={{
-                  position: 'absolute',
-                  left: `${i * 12 + 15}px`,
-                  top: 0,
-                  bottom: 0,
-                  width: '1.5px',
-                  backgroundColor:
-                    i === item.depth - 1
-                      ? 'var(--text-accent)'
-                      : 'rgba(var(--text-accent-rgb, 64, 186, 250), 0.35)',
-                  opacity: i === item.depth - 1 ? 0.85 : 1
-                }}
-              />
-              {i === item.depth - 1 && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: `${i * 12 + 15}px`,
-                    top: '50%',
-                    width: '7px',
-                    height: '1.5px',
-                    backgroundColor: 'var(--text-accent)'
-                  }}
-                />
-              )}
-            </React.Fragment>
-          ))}
+
           <div
             className="folder-tree-main creating-input"
             style={{
@@ -525,15 +496,15 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
             )}
             <input
               autoFocus
-              value={context.creatingValue}
-              onChange={(e) => context.setCreatingValue(e.target.value)}
+              className="inline-create-input"
+              defaultValue={context.creatingValue}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') context.submitCreation()
+                if (e.key === 'Enter') context.submitCreation(e.target.value)
                 if (e.key === 'Escape') context.setCreating(null)
               }}
-              onBlur={() => context.submitCreation()}
+              onBlur={(e) => context.submitCreation(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
               placeholder={`New ${item.kind}...`}
-              className="inline-create-input"
             />
           </div>
         </div>
@@ -579,38 +550,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
             paddingLeft: `${item.depth * 12}px`
           }}
         >
-          {Array.from({ length: item.depth }).map((_, i) => (
-            <React.Fragment key={`line-${i}`}>
-              <div
-                style={{
-                  position: 'absolute',
-                  left: `${i * 12 + 15}px`,
-                  top: 0,
-                  bottom: 0,
-                  width: '1.5px',
-                  backgroundColor:
-                    i === item.depth - 1
-                      ? 'var(--text-accent)'
-                      : 'rgba(var(--text-accent-rgb, 64, 186, 250), 0.35)',
-                  opacity: i === item.depth - 1 ? 0.85 : 1,
-                  zIndex: 0
-                }}
-              />
-              {i === item.depth - 1 && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: `${i * 12 + 15}px`,
-                    top: '50%',
-                    width: '7px',
-                    height: '1.5px',
-                    backgroundColor: 'var(--text-accent)',
-                    zIndex: 0
-                  }}
-                />
-              )}
-            </React.Fragment>
-          ))}
+
           <SortableListItem
             key={item.snippet.id}
             snippet={item.snippet}
@@ -765,13 +705,14 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     }
   }
 
-  const submitCreation = async () => {
-    if (!creating || !creatingValue.trim()) {
+  const submitCreation = async (value) => {
+    const valToUse = typeof value === 'string' ? value : creatingValue
+    if (!creating || !valToUse.trim()) {
       setCreating(null)
       return
     }
 
-    const sanitizedName = creatingValue.trim().replace(/[<>:"/\\|?*]/g, '')
+    const sanitizedName = valToUse.trim().replace(/[<>:"/\\|?*]/g, '')
     if (!sanitizedName) {
       setCreating(null)
       return
@@ -814,13 +755,14 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     setCreatingValue('')
   }
 
-  const submitRename = async () => {
-    if (!renamingFolder || !renamingValue.trim()) {
+  const submitRename = async (value) => {
+    const valToUse = typeof value === 'string' ? value : renamingValue
+    if (!renamingFolder || !valToUse.trim()) {
       setRenamingFolder(null)
       return
     }
 
-    const sanitizedName = renamingValue.trim().replace(/[<>:"/\\|?*]/g, '')
+    const sanitizedName = valToUse.trim().replace(/[<>:"/\\|?*]/g, '')
     if (!sanitizedName) {
       setRenamingFolder(null)
       return
@@ -1061,13 +1003,24 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                 <h3>
                   {allSnippets.length} {allSnippets.length === 1 ? 'Note' : 'Notes'}
                 </h3>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <ToolTip text="Collapse All Folders">
-                    <button className="sort-toggle-btn" onClick={collapseAllFolders}>
-                      <ChevronsUp size={14} />
+                <div className="header-actions" style={{ display: 'flex', gap: '4px' }}>
+                  <ToolTip text="New Note">
+                    <button className="sort-toggle-btn" onClick={(e) => {
+                      e.stopPropagation()
+                      window.dispatchEvent(new CustomEvent('trigger-new-note'))
+                    }}>
+                      <FilePlus size={14} />
                     </button>
                   </ToolTip>
-                  <ToolTip text="Refresh Workspace">
+                  <ToolTip text="New Folder">
+                    <button className="sort-toggle-btn" onClick={(e) => {
+                      e.stopPropagation()
+                      setCreating({ type: 'folder', parentId: null })
+                    }}>
+                      <FolderPlus size={14} />
+                    </button>
+                  </ToolTip>
+                  <ToolTip text="Refresh Explorer">
                     <button
                       className="sort-toggle-btn"
                       onClick={(e) => {
@@ -1080,9 +1033,9 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                       <RefreshCw size={14} className={isLoading ? 'spin-animation' : ''} />
                     </button>
                   </ToolTip>
-                  <ToolTip text={`Sort by ${sortBy} (${sortDirection})`}>
-                    <button className="sort-toggle-btn" onClick={handleSortToggle}>
-                      <ArrowUpDown size={14} />
+                  <ToolTip text="Collapse Folders in Explorer">
+                    <button className="sort-toggle-btn" onClick={collapseAllFolders}>
+                      <ChevronsUp size={14} />
                     </button>
                   </ToolTip>
                 </div>
