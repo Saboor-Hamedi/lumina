@@ -447,6 +447,28 @@ const AppShell = () => {
       setPaletteInitialQuery('>')
       setShowPalette(true)
     },
+    onOpenFile: async () => {
+      try {
+        if (!window.api?.openFile) return
+        const file = await window.api.openFile()
+        // file.content can be an empty string, so check typeof
+        if (file && typeof file.content === 'string') {
+          const newSnippet = {
+            id: Date.now().toString(),
+            title: file.name.replace(/\.[^/.]+$/, ""),
+            code: file.content,
+            language: 'markdown',
+            timestamp: Date.now()
+          }
+          await saveSnippet(newSnippet)
+          setSelectedSnippet(newSnippet)
+          showToast(`Opened ${file.name}`, 'success')
+        }
+      } catch (err) {
+        console.error('Failed to import file:', err)
+        showToast('Failed to open file', 'error')
+      }
+    },
     onOpenDocs: () => {
       setShowDocsModal(true)
     },
