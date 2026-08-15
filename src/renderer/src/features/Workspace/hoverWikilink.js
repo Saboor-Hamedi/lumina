@@ -113,6 +113,29 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
       )
       contentEl.innerHTML = marked.parse(parsedSnippet)
 
+      // Resolve local image assets so they display correctly in the hover card
+      const allImages = contentEl.querySelectorAll('img')
+      allImages.forEach((img) => {
+        const url = img.getAttribute('src')
+        img.style.maxWidth = '100%'
+        img.style.borderRadius = '6px'
+        img.style.marginTop = '8px'
+        
+        if (url && !url.startsWith('http') && !url.startsWith('data:')) {
+          const cleanUrl = url.startsWith('/') ? url.slice(1) : url
+          img.src = '' // Clear until loaded
+          window.api.readAsset(cleanUrl)
+            .then((buffer) => {
+              const blob = new Blob([buffer])
+              img.src = URL.createObjectURL(blob)
+            })
+            .catch((err) => {
+              console.error('[HoverCard] Failed to load image asset:', err)
+              img.alt = '❌ Failed to load image'
+            })
+        }
+      })
+
       contentWrap.appendChild(contentEl)
       hoverCard.appendChild(contentWrap)
 

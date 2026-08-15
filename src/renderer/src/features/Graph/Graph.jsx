@@ -25,19 +25,14 @@ import GraphSidebar from './GraphSidebar'
 import GraphMiniMap from './GraphMiniMap'
 import './Graph.css'
 
-const sharedSphereGeometry = new THREE.SphereGeometry(1, 16, 16)
+const sharedSphereGeometry = new THREE.SphereGeometry(1, 8, 8)
 const materialCache = {}
 const getMaterial = (color) => {
   if (!materialCache[color]) {
-    materialCache[color] = new THREE.MeshPhysicalMaterial({
+    materialCache[color] = new THREE.MeshBasicMaterial({
       color: color,
-      metalness: 0.2,
-      roughness: 0.2,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.1,
-      transmission: 0.1,
-      opacity: 0.9,
-      transparent: true
+      transparent: true,
+      opacity: 0.9
     })
   }
   return materialCache[color]
@@ -650,11 +645,14 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             graphData={graphData}
             nodeColor={nodeColor}
             nodeRelSize={4}
-            nodeVal={(node) => {
+            nodeThreeObject={(node) => {
               const base = node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2
               const targetRadius =
                 base * (useSettingsStore.getState().settings.graphNodeSize || 1.5)
-              return Math.pow(targetRadius / 4, 3)
+              const r = targetRadius / 4
+              const mesh = new THREE.Mesh(sharedSphereGeometry, getMaterial(nodeColor(node)))
+              mesh.scale.set(r, r, r)
+              return mesh
             }}
             linkColor={(link) => {
               if (!hoverNode) return defaultLineColor
@@ -823,11 +821,14 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               graphData={graphData}
               nodeColor={nodeColor}
               nodeRelSize={4}
-              nodeVal={(node) => {
+              nodeThreeObject={(node) => {
                 const base = node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2
                 const targetRadius =
                   base * (useSettingsStore.getState().settings.graphNodeSize || 1.5)
-                return Math.pow(targetRadius / 4, 3)
+                const r = targetRadius / 4
+                const mesh = new THREE.Mesh(sharedSphereGeometry, getMaterial(nodeColor(node)))
+                mesh.scale.set(r, r, r)
+                return mesh
               }}
               linkColor={(link) => {
                 if (!hoverNode) return defaultLineColor
