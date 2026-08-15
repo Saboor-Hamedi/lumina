@@ -2,7 +2,30 @@
 
 Full guidance for implementing a user-friendly experience. Target: people with no technical background. They should be able to start using Lumina within 30 seconds and understand every feature without reading a manual.
 
-> **Current state (verified against the project):** the "vault → workspace" rename is already done in user-facing copy (Welcome page, Settings). Internal code still uses "vault" (`vaultPath`, `loadVault`, `useVaultStore`, CSS `vault-icon`/`vault-path-display`) — that is an internal cleanup, not user-facing. The guidance below reflects the real, remaining gaps.
+> **Current state (verified against the project):** the "vault → workspace" rename is already done in user-facing copy (Welcome page, Settings). Internal code still uses "vault" (`vaultPath`, `loadVault`, `useVaultStore`, CSS `vault-icon`/`vault-path-display`) — that is an internal cleanup, not user-facing.
+>
+> **Known app bugs found during review (fix these):**
+> - `Ctrl+Shift+\` opens AI chat. `Ctrl+Shift+I` is Developer Tools, NOT AI. The Welcome page's "AI Assistant" card advertises `Ctrl+Shift+I` — correct the label to `Ctrl+Shift+\`.
+> - `Ctrl+B` toggles the sidebar (correct). `Ctrl+Shift+B` must be DISABLED — it currently conflicts with `Ctrl+B` and should be removed (AppShell:346-353).
+> - `Ctrl+I` opens the Inspector/Details panel (correct).
+> - `Ctrl+P` opens Quick Search (correct).
+> - `Ctrl+O` must open a file dialog to import/grab `.md` files from the local machine — currently NOT working (it does not open). `window.api.openFile` and the `dialog:openFile` IPC handler exist but `onOpenFile` is not wired up in AppShell, so `Ctrl+O` does nothing. Fix the wiring so `Ctrl+O` opens the dialog.
+> - Shortcuts shown in the app (e.g. on the Welcome page / File Explorer) must match the actual shortcuts. Ensure the correct shortcut list is displayed consistently everywhere.
+> - The AI chat already has a permanent sidebar icon (SidebarHeader "AI Chat" button) — the one-click entry point already exists, keep it.
+> - Settings currently has **6 tabs**: General, Appearance, Shortcuts, AI, Type, Graph (SettingsModal:168-198).
+
+> **Canonical shortcut list (single source of truth):**
+> - `Ctrl+N` — New note
+> - `Ctrl+P` — Quick Search
+> - `Ctrl+Shift+P` — Command Palette
+> - `Ctrl+B` — Toggle sidebar
+> - `Ctrl+Shift+\` — AI chat
+> - `Ctrl+I` — Inspector / Details
+> - `Ctrl+O` — Open/import a `.md` file (currently broken — must open the file dialog)
+> - `Ctrl+G` — Knowledge Graph
+> - `Ctrl+,` — Settings
+
+The guidance below reflects the real, remaining gaps.
 
 ---
 
@@ -44,7 +67,7 @@ AI is Lumina's superpower. Non-technical users should discover it instantly.
 2. Never block the app on an API key. No key = full note-taking still works.
 
 ### AI discoverability
-- The AI chat already exists with a sidebar button and Ctrl+Shift+I. Make sure it is also one click away from an obvious, permanent icon (not only a shortcut).
+- The AI chat already exists with a permanent "AI Chat" sidebar icon AND the `Ctrl+Shift+\` shortcut. Both entry points are fine — keep them. Do NOT advertise `Ctrl+Shift+I` (that is Developer Tools). Fix the Welcome page label.
 - Every empty state should offer a natural-language suggestion, e.g.:
   - "Tip: select text and press Ctrl+K to let AI rewrite it."
   - "Ask Lumina anything about your notes."
@@ -60,7 +83,7 @@ AI is Lumina's superpower. Non-technical users should discover it instantly.
 ## 3. Onboarding in ~30 Seconds, Zero Reading
 
 ### First-run walkthrough
-- The Welcome page already has 4 action cards (Create a new note / Quick Search / Toggle Sidebar / AI Assistant) with shortcuts. Wrap them into a 4-step spotlight walkthrough on first run:
+- The Welcome page already has 4 action cards (Create a new note / Quick Search / Toggle Sidebar / AI Assistant). Note: the "AI Assistant" card shortcut is currently wrong (`Ctrl+Shift+I`) — it should be `Ctrl+Shift+\`. The "Toggle Sidebar" card (`Ctrl+B`) is correct. Wrap the cards into a 4-step spotlight walkthrough on first run:
   1. "This is your notebook."
   2. "Click here to create a note."
   3. "This is AI — ask it anything."
@@ -86,11 +109,11 @@ AI is Lumina's superpower. Non-technical users should discover it instantly.
 
 Fewer choices = less overwhelm.
 
-- Collapse settings into 2 tabs:
-  1. **Look & Feel** (theme, font size, language)
-  2. **AI** (provider, model, key)
-- The Settings modal currently exposes Workspace Location (path) and export/developer options. Move these under an "Advanced" toggle:
-  - Workspace Location → keep available but under Advanced, labeled "Choose where your notes are stored"
+- The Settings modal currently has 6 tabs: General, Appearance, Shortcuts, AI, Type, Graph. Reduce the visible choices:
+  - Merge into 2 friendly tabs: **Look & Feel** (Appearance, Type) and **AI**.
+  - Keep **Shortcuts** and **Graph** under an "Advanced" toggle.
+  - **General** holds Workspace Location (path) + developer options — move these under "Advanced", label as "Choose where your notes are stored".
+- Move technical/developer items under "Advanced":
   - Ollama Local AI / Semantic Indexing / developer reload → Advanced
 - Safe defaults:
   - Auto-save: ON

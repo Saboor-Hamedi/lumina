@@ -12,7 +12,7 @@ const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title, cursorPosi
   const [isGenerating, setIsGenerating] = useState(false)
   const [abortController, setAbortController] = useState(null)
   const [copied, setCopied] = useState(false)
-  const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 })
+  const [modalPosition, setModalPosition] = useState({ top: '30%', left: '50%', transform: 'translate(-50%, -50%)' })
   const [contextRange, setContextRange] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
   const dragStartPos = useRef({ x: 0, y: 0, top: 0, left: 0 })
@@ -22,7 +22,7 @@ const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title, cursorPosi
 
   useEffect(() => {
     if (isOpen && editorView && !isDragging) {
-      requestAnimationFrame(() => {
+      const timer = setTimeout(() => {
         if (!modalRef.current) return
 
         try {
@@ -51,13 +51,15 @@ const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title, cursorPosi
 
             setModalPosition({
               top: Math.max(10, top),
-              left: Math.max(10, left)
+              left: Math.max(10, left),
+              transform: 'none'
             })
           }
         } catch (err) {
           console.warn('[InlineLumina] Could not get cursor coordinates:', err)
         }
-      })
+      }, 10)
+      return () => clearTimeout(timer)
     }
   }, [isOpen, editorView]) // intentionally omit cursorPosition so it does NOT move
 
@@ -149,14 +151,16 @@ const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title, cursorPosi
       e.preventDefault()
       e.stopPropagation()
       setIsDragging(true)
+      
+      const rect = modalRef.current.getBoundingClientRect()
       dragStartPos.current = {
         x: e.clientX,
         y: e.clientY,
-        top: typeof modalPosition.top === 'number' ? modalPosition.top : 0,
-        left: typeof modalPosition.left === 'number' ? modalPosition.left : 0
+        top: rect.top,
+        left: rect.left
       }
     },
-    [modalPosition]
+    []
   )
 
   const handleDrag = useCallback(
@@ -174,7 +178,8 @@ const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title, cursorPosi
 
       setModalPosition({
         top: Math.max(10, Math.min(newTop, viewportHeight - modalHeight - 10)),
-        left: Math.max(10, Math.min(newLeft, viewportWidth - modalWidth - 10))
+        left: Math.max(10, Math.min(newLeft, viewportWidth - modalWidth - 10)),
+        transform: 'none'
       })
     },
     [isDragging]
@@ -404,11 +409,17 @@ CRITICAL INSTRUCTIONS:
   )
 
   const modalStyle = React.useMemo(
-    () => ({
-      top: typeof modalPosition.top === 'number' ? `${modalPosition.top}px` : modalPosition.top,
-      left: typeof modalPosition.left === 'number' ? `${modalPosition.left}px` : modalPosition.left
-    }),
-    [modalPosition.top, modalPosition.left]
+    () => {
+      const style = {
+        top: typeof modalPosition.top === 'number' ? `${modalPosition.top}px` : modalPosition.top,
+        left: typeof modalPosition.left === 'number' ? `${modalPosition.left}px` : modalPosition.left
+      }
+      if (modalPosition.transform) {
+        style.transform = modalPosition.transform
+      }
+      return style
+    },
+    [modalPosition]
   )
 
   if (!isOpen) return null
