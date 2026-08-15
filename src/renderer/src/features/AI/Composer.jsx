@@ -191,7 +191,18 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
           {/* Right: char count + send/stop */}
           <div className="composer-right">
             {input.length > 0 && <span className="char-count">{input.length}</span>}
-            {mode !== 'Standard' && <span className="mode-badge">{mode}</span>}
+            {mode !== 'Standard' && (
+              <span className="mode-badge">
+                {
+                  {
+                    Fast: 'Quick answer',
+                    Thinking: 'Detailed thinking',
+                    Creative: 'Creative',
+                    Coder: 'Code help'
+                  }[mode] || mode
+                }
+              </span>
+            )}
 
             <button
               className={`send-btn ${isLoading ? 'stop' : ''}`}

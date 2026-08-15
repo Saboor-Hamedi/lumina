@@ -205,3 +205,44 @@ export const useKeyboardShortcuts = (shortcuts) => {
     return () => window.removeEventListener('keydown', handleOtherKeys, { capture: true })
   }, [])
 }
+
+export const SHORTCUT_DISPLAY_GROUPS = [
+  {
+    title: 'General',
+    items: [
+      { label: 'Settings', key: 'Ctrl + ,' },
+      { label: 'Quick Search', key: 'Ctrl + P' },
+      { label: 'Command Palette', key: 'Ctrl + Shift + P' },
+      { label: 'Global Search', key: 'Ctrl + Shift + F' },
+      { label: 'Toggle Theme', key: 'Ctrl + T' }
+    ]
+  },
+  {
+    title: 'File',
+    items: [
+      { label: 'New Note', key: 'Ctrl + N' },
+      { label: 'Open File', key: 'Ctrl + O' },
+      { label: 'Save', key: 'Ctrl + S' },
+      { label: 'Close Tab', key: 'Ctrl + W' },
+      { label: 'Close Window', key: 'Ctrl + Shift + W' },
+      { label: 'Delete Note', key: 'Ctrl + Shift + D', isDanger: true }
+    ]
+  },
+  {
+    title: 'Navigation',
+    items: [
+      { label: 'Toggle Left Sidebar', key: 'Ctrl + B' },
+      { label: 'Toggle Inspector', key: 'Ctrl + I' },
+      { label: 'Graph View', key: 'Ctrl + G' },
+      { label: 'Toggle Preview', key: 'Ctrl + \\' },
+      { label: 'Next Tab', key: 'Ctrl + Tab' },
+      { label: 'Previous Tab', key: 'Ctrl + Shift + Tab' }
+    ]
+  },
+  {
+    title: 'Editor',
+    items: [
+      { label: 'Inline AI', key: 'Ctrl + K' }
+    ]
+  }
+]

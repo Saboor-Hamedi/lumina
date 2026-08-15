@@ -20,7 +20,7 @@
 }
 
 .docs-sidebar-header {
-  padding: 16px 20px;
+  padding: 8px 12px;
   border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-panel);
 }
@@ -78,27 +78,29 @@
 }
 
 .docs-sidebar-item {
-  padding: 8px 20px;
-  font-size: 13px;
-  color: var(--text-main);
+  height: 28px;
+  padding: 0 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
-  transition: all 0.15s ease;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
   border-left: 3px solid transparent;
-  margin: 2px 0;
 }
 
 .docs-sidebar-item:hover {
-  background: var(--bg-hover);
-  color: var(--text-accent);
+  background: rgba(255,255,255,0.03);
+  color: var(--text-main);
 }
 
 .docs-sidebar-item.active {
   background: var(--bg-active);
   color: var(--text-accent);
-  border-left: 3px solid var(--text-accent);
   font-weight: 600;
+  border-left-color: var(--text-accent);
 }
 
 .docs-content {
@@ -119,11 +121,17 @@
   cursor: text;
 }
 
+.docs-content-inner::after {
+  content: '';
+  display: block;
+  height: 120px;
+}
+
 /* Premium Markdown Typography */
 .docs-content-inner h1 {
-  font-size: 2.25rem;
+  font-size: 1.75rem;
   font-weight: 800;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
   color: var(--text-main);
   border-bottom: 1px solid var(--border-dim);
   padding-bottom: 0.5rem;
@@ -131,10 +139,10 @@
 }
 
 .docs-content-inner h2 {
-  font-size: 1.75rem;
+  font-size: 1.4rem;
   font-weight: 700;
-  margin-top: 2rem;
-  margin-bottom: 1rem;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
   color: var(--text-main);
   line-height: 1.3;
 }
@@ -148,10 +156,10 @@
 }
 
 .docs-content-inner p {
-  line-height: 1.7;
-  margin-bottom: 1.25rem;
+  line-height: 1.6;
+  margin-bottom: 1rem;
   color: var(--text-muted);
-  font-size: 1.05rem;
+  font-size: 0.9rem;
 }
 
 .docs-content-inner a {
@@ -197,11 +205,11 @@
 }
 
 .docs-content-inner ul, .docs-content-inner ol {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
   padding-left: 1.5rem;
   color: var(--text-muted);
-  line-height: 1.7;
-  font-size: 1.05rem;
+  line-height: 1.6;
+  font-size: 0.9rem;
 }
 
 .docs-content-inner li {

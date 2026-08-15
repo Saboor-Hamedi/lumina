@@ -5,14 +5,14 @@ import './SlashCommandMenu.css'
 export const SLASH_COMMANDS = [
   {
     id: 'fast',
-    label: 'Fast Mode',
+    label: 'Quick answer',
     desc: 'Short, concise answers.',
     icon: <Zap size={14} />,
     action: (setMode) => setMode('Fast')
   },
   {
     id: 'think',
-    label: 'Thinking Mode',
+    label: 'Detailed thinking',
     desc: 'Step-by-step reasoning (CoT).',
     icon: <Brain size={14} />,
     action: (setMode) => setMode('Thinking')
@@ -26,7 +26,7 @@ export const SLASH_COMMANDS = [
   },
   {
     id: 'code',
-    label: 'Coder',
+    label: 'Code help',
     desc: 'Specialized for programming.',
     icon: <Code size={14} />,
     action: (setMode) => setMode('Coder')

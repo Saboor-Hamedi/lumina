@@ -1,5 +1,5 @@
 import React from 'react'
-import { Square, X, Minus } from 'lucide-react'
+import { Square, X, Minus, Search } from 'lucide-react'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import logoUrl from '../../assets/logo.png'
 import ToolTip from '../../components/atoms/ToolTip'
@@ -23,10 +23,20 @@ const TitleBar = () => {
     <div className="title-bar" data-testid="title-bar">
       <div className="title-left">
         <div className="app-logo">
-          <img
-            src={logoUrl}
-            alt="Lumina Logo"
-            style={{ width: 14, height: 14, objectFit: 'contain' }}
+          <div
+            style={{
+              width: 14,
+              height: 14,
+              backgroundColor: 'var(--text-accent)',
+              maskImage: `url(${logoUrl})`,
+              WebkitMaskImage: `url(${logoUrl})`,
+              maskSize: 'contain',
+              WebkitMaskSize: 'contain',
+              maskRepeat: 'no-repeat',
+              WebkitMaskRepeat: 'no-repeat',
+              maskPosition: 'center',
+              WebkitMaskPosition: 'center'
+            }}
           />
           <span className="app-name" data-testid="app-name">
             Lumina
@@ -39,7 +49,7 @@ const TitleBar = () => {
           className="unified-search-bar"
           onClick={() => window.dispatchEvent(new CustomEvent('open-ask-anything'))}
         >
-          <span className="search-icon">🔍</span>
+          <span className="search-icon"><Search size={12} /></span>
           <span className="search-placeholder">Ask anything or Search...</span>
           <span className="search-shortcut">Ctrl+P</span>
         </div>

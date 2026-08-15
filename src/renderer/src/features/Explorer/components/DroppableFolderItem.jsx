@@ -165,8 +165,8 @@ export const DroppableFolderItem = React.memo(
                   fontSize: '8px',
                   lineHeight: '10px',
                   color: 'var(--text-accent)',
-                  background: 'rgba(var(--text-accent-rgb, 64, 186, 250), 0.12)',
-                  border: '1px solid rgba(var(--text-accent-rgb, 64, 186, 250), 0.22)',
+                  background: 'transparent',
+                  border: 'none',
                   padding: '0px 4px',
                   borderRadius: '6px',
                   marginRight: '4px',
@@ -176,7 +176,7 @@ export const DroppableFolderItem = React.memo(
                   justifyContent: 'center',
                   minWidth: '14px',
                   height: '13px',
-                  opacity: 0.95
+                  opacity: 0.8
                 }}
               >
                 {item.count}

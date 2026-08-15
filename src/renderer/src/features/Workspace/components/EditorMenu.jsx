@@ -144,7 +144,7 @@ const EditorMenu = ({
                     setShowMoreMenu(false)
                   }}
                 >
-                  <span className="menu-label">Copy Raw Markdown</span>
+                  <span className="menu-label">Copy as Plain Text</span>
                   <Copy size={12} className="menu-icon-right" />
                 </div>
                 <div
@@ -162,7 +162,7 @@ const EditorMenu = ({
                     setShowMoreMenu(false)
                   }}
                 >
-                  <span className="menu-label">Copy HTML Code</span>
+                  <span className="menu-label">Copy as Web Code</span>
                   <FileCode size={12} className="menu-icon-right" />
                 </div>
                 <div
@@ -210,7 +210,7 @@ const EditorMenu = ({
                     setShowMoreMenu(false)
                   }}
                 >
-                  <span className="menu-label">Export as Markdown</span>
+                  <span className="menu-label">Save as File (.md)</span>
                   <FileText size={12} className="menu-icon-right" />
                 </div>
                 <div
@@ -234,7 +234,7 @@ const EditorMenu = ({
                     setShowMoreMenu(false)
                   }}
                 >
-                  <span className="menu-label">Export as Plain Text</span>
+                  <span className="menu-label">Save as Text</span>
                   <FileType size={12} className="menu-icon-right" />
                 </div>
                 <div
@@ -258,7 +258,7 @@ const EditorMenu = ({
                     setShowMoreMenu(false)
                   }}
                 >
-                  <span className="menu-label">Export as Docs</span>
+                  <span className="menu-label">Save as Word Document</span>
                   <FileCode size={12} className="menu-icon-right" />
                 </div>
               </div>,

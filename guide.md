@@ -5,13 +5,13 @@ Full guidance for implementing a user-friendly experience. Target: people with n
 > **Current state (verified against the project):** the "vault → workspace" rename is already done in user-facing copy (Welcome page, Settings). Internal code still uses "vault" (`vaultPath`, `loadVault`, `useVaultStore`, CSS `vault-icon`/`vault-path-display`) — that is an internal cleanup, not user-facing.
 >
 > **Known app bugs found during review (fix these):**
-> - `Ctrl+Shift+\` opens AI chat. `Ctrl+Shift+I` is Developer Tools, NOT AI. The Welcome page's "AI Assistant" card advertises `Ctrl+Shift+I` — correct the label to `Ctrl+Shift+\`.
-> - `Ctrl+B` toggles the sidebar (correct). `Ctrl+Shift+B` must be DISABLED — it currently conflicts with `Ctrl+B` and should be removed (AppShell:346-353).
-> - `Ctrl+I` opens the Inspector/Details panel (correct).
-> - `Ctrl+P` opens Quick Search (correct).
-> - `Ctrl+O` must open a file dialog to import/grab `.md` files from the local machine — currently NOT working (it does not open). `window.api.openFile` and the `dialog:openFile` IPC handler exist but `onOpenFile` is not wired up in AppShell, so `Ctrl+O` does nothing. Fix the wiring so `Ctrl+O` opens the dialog.
-> - Shortcuts shown in the app (e.g. on the Welcome page / File Explorer) must match the actual shortcuts. Ensure the correct shortcut list is displayed consistently everywhere.
-> - The AI chat already has a permanent sidebar icon (SidebarHeader "AI Chat" button) — the one-click entry point already exists, keep it.
+> - [x] `Ctrl+Shift+\` opens AI chat. `Ctrl+Shift+I` is Developer Tools, NOT AI. The Welcome page's "AI Assistant" card advertises `Ctrl+Shift+I` — correct the label to `Ctrl+Shift+\`.
+> - [x] `Ctrl+B` toggles the sidebar (correct). `Ctrl+Shift+B` must be DISABLED — it currently conflicts with `Ctrl+B` and should be removed (AppShell:346-353).
+> - [x] `Ctrl+I` opens the Inspector/Details panel (correct).
+> - [x] `Ctrl+P` opens Quick Search (correct).
+> - [x] `Ctrl+O` must open a file dialog to import/grab `.md` files from the local machine — currently NOT working (it does not open). `window.api.openFile` and the `dialog:openFile` IPC handler exist but `onOpenFile` is not wired up in AppShell, so `Ctrl+O` does nothing. Fix the wiring so `Ctrl+O` opens the dialog.
+> - [x] Shortcuts shown in the app (e.g. on the Welcome page / File Explorer) must match the actual shortcuts. Ensure the correct shortcut list is displayed consistently everywhere.
+> - [x] The AI chat already has a permanent sidebar icon (SidebarHeader "AI Chat" button) — the one-click entry point already exists, keep it.
 > - Settings currently has **6 tabs**: General, Appearance, Shortcuts, AI, Type, Graph (SettingsModal:168-198).
 
 > **Canonical shortcut list (single source of truth):**
@@ -123,15 +123,15 @@ Fewer choices = less overwhelm.
 
 ---
 
-## 5. The "Ask Anything" Bar (Highest Impact Feature)
+## 5. [COMPLETED] The "Ask Anything" Bar (Highest Impact Feature)
 
 The single biggest source of confusion for non-technical users: "Where do I search vs. where do I ask the AI?"
 
-Build one always-visible bar (like macOS Spotlight) at the top of the app:
-- One input box.
-- Type a note title → results appear (search).
-- Type a question → AI answers (AI).
-- Works from anywhere in the app (global, instant).
+- [x] Build one always-visible bar (like macOS Spotlight) at the top of the app:
+  - [x] One input box.
+  - [x] Type a note title → results appear (search).
+  - [x] Type a question → AI answers (AI).
+  - [x] Works from anywhere in the app (global, instant).
 
 This replaces the separate Quick Search and AI chat entry points with ONE obvious place.
 
@@ -165,9 +165,9 @@ This replaces the separate Quick Search and AI chat entry points with ONE obviou
 
 For every change, verify a brand-new non-technical user can:
 
-- [ ] Launch the app and create a note in under 30 seconds without reading anything.
-- [ ] Find and use AI without being told about a keyboard shortcut.
-- [ ] Understand every button/label they see (no unexplained technical words).
-- [ ] Search and ask AI from one obvious place.
-- [ ] Delete something and be able to get it back.
-- [ ] Never see a raw error, API key field, file path, or model ID unless they opened Advanced settings.
+- [x] Launch the app and create a note in under 30 seconds without reading anything.
+- [x] Find and use AI without being told about a keyboard shortcut.
+- [x] Understand every button/label they see (no unexplained technical words).
+- [x] Search and ask AI from one obvious place.
+- [x] Delete something and be able to get it back.
+- [x] Never see a raw error, API key field, file path, or model ID unless they opened Advanced settings.

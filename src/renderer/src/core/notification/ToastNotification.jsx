@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { CheckCircle2, XCircle, Info, X } from 'lucide-react'
 import './ToastNotification.css'
 
@@ -36,7 +37,7 @@ const ToastNotification = ({ toast, onClose }) => {
     }
   }
 
-  return (
+  return createPortal(
     <div
       className={`toast-notification horizontal toast-${toast.type} ${isExiting ? 'toast-exit' : ''}`}
     >
@@ -47,7 +48,8 @@ const ToastNotification = ({ toast, onClose }) => {
           <X size={14} />
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

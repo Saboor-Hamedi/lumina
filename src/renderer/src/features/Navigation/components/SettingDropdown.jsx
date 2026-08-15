@@ -163,8 +163,22 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
         </>
       )}
 
-      <DropdownItem icon={<Settings size={14} />} label="Settings" onClick={onSettingsClick} />
-      <DropdownItem icon={<Palette size={14} />} label="Theme" onClick={onThemeClick} />
+      <DropdownItem 
+        icon={<Settings size={14} />} 
+        label="Settings" 
+        onClick={() => {
+          onClose()
+          onSettingsClick && onSettingsClick()
+        }} 
+      />
+      <DropdownItem 
+        icon={<Palette size={14} />} 
+        label="Theme" 
+        onClick={() => {
+          onClose()
+          onThemeClick && onThemeClick()
+        }} 
+      />
 
       <div style={{ height: '1px', backgroundColor: 'var(--border-dim)', margin: '4px 0' }} />
 

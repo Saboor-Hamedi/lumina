@@ -3,7 +3,7 @@ import { X, Settings, ArrowUpCircle, RefreshCw, CheckCircle, Info } from 'lucide
 import ThemeModal from '../Theme/ThemeModal'
 import ModalHeader from '../Overlays/ModalHeader'
 import ColorModal from '../Overlays/ColorModal'
-import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
+import { useKeyboardShortcuts, SHORTCUT_DISPLAY_GROUPS } from '../../core/hooks/useKeyboardShortcuts'
 import { useToast } from '../../core/hooks/useToast'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useFontSettings } from '../../core/hooks/useFontSettings'
@@ -108,6 +108,12 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
   } = useFontSettings()
 
   const [appVersion, setAppVersion] = useState('')
+  const isMac = navigator.userAgent.toLowerCase().includes('mac')
+  
+  const formatShortcutKey = (keyString) => {
+    if (!isMac) return keyString
+    return keyString.replace(/Ctrl/g, '⌘').replace(/Shift/g, '⇧').replace(/Alt/g, '⌥')
+  }
 
   // Update activeTab when initialTab prop changes
   useEffect(() => {
@@ -624,9 +630,10 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                     <h3>DeepSeek Configuration</h3>
                     <div className="settings-row">
                       <div className="row-info">
-                        <div className="row-label">API Key</div>
+                        <div className="row-label">Connect an AI (optional)</div>
                         <div className="row-hint">
-                          Enter your DeepSeek API key (starts with sk-...).
+                          Paste your key here (starts with sk-...)
+                          {' '}<a href="https://platform.deepseek.com/" target="_blank" rel="noreferrer" style={{color: 'var(--text-accent)'}}>Where do I find this?</a>
                         </div>
                       </div>
                       <input
@@ -661,8 +668,11 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                     <h3>OpenAI Configuration</h3>
                     <div className="settings-row">
                       <div className="row-info">
-                        <div className="row-label">API Key</div>
-                        <div className="row-hint">Requires GPT-4o access (starts with sk-...).</div>
+                        <div className="row-label">Connect an AI (optional)</div>
+                        <div className="row-hint">
+                          Requires GPT-4o access (starts with sk-...)
+                          {' '}<a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer" style={{color: 'var(--text-accent)'}}>Where do I find this?</a>
+                        </div>
                       </div>
                       <input
                         type="password"
@@ -681,9 +691,10 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                     <h3>Anthropic Configuration</h3>
                     <div className="settings-row">
                       <div className="row-info">
-                        <div className="row-label">API Key</div>
+                        <div className="row-label">Connect an AI (optional)</div>
                         <div className="row-hint">
-                          Claude 3.5 Sonnet key (starts with sk-ant-...).
+                          Claude 3.5 Sonnet key (starts with sk-ant-...)
+                          {' '}<a href="https://console.anthropic.com/" target="_blank" rel="noreferrer" style={{color: 'var(--text-accent)'}}>Where do I find this?</a>
                         </div>
                       </div>
                       <input
@@ -702,10 +713,10 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                 {/* Ollama Configuration */}
                 {settings.activeProvider === 'ollama' && (
                   <section style={{ marginTop: '24px', animation: 'fadeIn 0.3s' }}>
-                    <h3>Ollama Local AI</h3>
+                    <h3>Use AI on this computer</h3>
                     <div className="settings-row">
                       <div className="row-info">
-                        <div className="row-label">Server URL</div>
+                        <div className="row-label">Connection Address</div>
                         <div className="row-hint">Default is http://localhost:11434/api/chat</div>
                       </div>
                       <input
@@ -724,8 +735,8 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
                   <h3>Local Features</h3>
                   <div className="settings-row">
                     <div className="row-info">
-                      <div className="row-label">Semantic Indexing</div>
-                      <div className="row-hint">Enable RAG context for current provider.</div>
+                      <div className="row-label">Smart Search (learns as you write)</div>
+                      <div className="row-hint">Improve answers using your notes.</div>
                     </div>
                     <label className="switch">
                       <input
@@ -854,83 +865,19 @@ const SettingsModal = ({ onClose, onOpenTheme, initialTab = 'general' }) => {
 
             {activeTab === 'shortcuts' && (
               <div className="settings-pane">
-                <section>
-                  <h3>General</h3>
-                  <div className="settings-row">
-                    <div className="row-info">Settings</div>
-                    <div className="shortcut-badge">Ctrl + ,</div>
-                  </div>
-                  <div className="settings-row">
-                    <div className="row-info">Quick Search</div>
-                    <div className="shortcut-badge">Ctrl + P</div>
-                  </div>
-                </section>
-
-                <section>
-                  <h3>File</h3>
-                  <div className="settings-row">
-                    <div className="row-info">New Note</div>
-                    <div className="shortcut-badge">Ctrl + N</div>
-                  </div>
-                  <div className="settings-row">
-                    <div className="row-info">Rename Note</div>
-                    <div className="shortcut-badge">Ctrl + R</div>
-                  </div>
-                  <div className="settings-row">
-                    <div className="row-info">Save</div>
-                    <div className="shortcut-badge">Ctrl + S</div>
-                  </div>
-                  <div className="settings-row">
-                    <div className="row-info">Close Tab</div>
-                    <div className="shortcut-badge">Ctrl + W</div>
-                  </div>
-                  <div className="settings-row">
-                    <div className="row-info">Close Window</div>
-                    <div className="shortcut-badge">Ctrl + Shift + W</div>
-                  </div>
-                  <div className="settings-row">
-                    <div className="row-info" style={{ color: '#ef4444' }}>
-                      Delete Note
-                    </div>
-                    <div className="shortcut-badge">Ctrl + Shift + D</div>
-                  </div>
-                </section>
-
-                <section>
-                  <h3>Navigation</h3>
-                  <div className="settings-row">
-                    <div className="row-info">Toggle Left Sidebar</div>
-                    <div className="shortcut-badge">Ctrl + B</div>
-                  </div>
-                  <div className="settings-row">
-                    <div className="row-info">Toggle Inspector</div>
-                    <div className="shortcut-badge">Ctrl + I</div>
-                  </div>
-                  <div className="settings-row">
-                    <div className="row-info">Graph View</div>
-                    <div className="shortcut-badge">Ctrl + G</div>
-                  </div>
-                  <div className="settings-row">
-                    <div className="row-info">Toggle Preview</div>
-                    <div className="shortcut-badge">Ctrl + \</div>
-                  </div>
-                  <div className="settings-row">
-                    <div className="row-info">Next Tab</div>
-                    <div className="shortcut-badge">Ctrl + Tab</div>
-                  </div>
-                  <div className="settings-row">
-                    <div className="row-info">Previous Tab</div>
-                    <div className="shortcut-badge">Ctrl + Shift + Tab</div>
-                  </div>
-                </section>
-
-                <section>
-                  <h3>Editor</h3>
-                  <div className="settings-row">
-                    <div className="row-info">Inline AI</div>
-                    <div className="shortcut-badge">Ctrl + K</div>
-                  </div>
-                </section>
+                {SHORTCUT_DISPLAY_GROUPS.map((group, i) => (
+                  <section key={i}>
+                    <h3>{group.title}</h3>
+                    {group.items.map((item, j) => (
+                      <div className="settings-row" key={j}>
+                        <div className="row-info" style={item.isDanger ? { color: '#ef4444' } : {}}>
+                          {item.label}
+                        </div>
+                        <div className="shortcut-badge">{formatShortcutKey(item.key)}</div>
+                      </div>
+                    ))}
+                  </section>
+                ))}
               </div>
             )}
           </main>
