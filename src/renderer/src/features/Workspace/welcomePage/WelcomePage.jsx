@@ -123,7 +123,7 @@ const WelcomePage = ({ onNew }) => {
                 <h3>AI Assistant</h3>
                 <p>Chat with your knowledge</p>
               </div>
-              <div className="action-shortcut">Ctrl+Shift+I</div>
+              <div className="action-shortcut">Ctrl+Shift+\</div>
             </button>
           </div>
 

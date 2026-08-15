@@ -859,7 +859,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
           <input
             ref={searchInputRef}
             type="text"
-            placeholder="Search (Ctrl + Shift + F)"
+            placeholder="Search notes..."
             value={displayQuery}
             onChange={(e) => {
               const v = e.target.value

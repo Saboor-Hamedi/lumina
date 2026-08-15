@@ -330,31 +330,7 @@ const AppShell = () => {
 
   const pinnedTabIds = useVaultStore((state) => state.pinnedTabIds)
 
-  // Ctrl+B - toggle Explorer Modal
-  useEffect(() => {
-    const handleExplorerShortcut = (e) => {
-      const key = e.key && e.key.toLowerCase()
-      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && key === 'b') {
-        e.preventDefault()
-        setShowExplorerModal((prev) => !prev)
-      }
-    }
-    window.addEventListener('keydown', handleExplorerShortcut)
-    return () => window.removeEventListener('keydown', handleExplorerShortcut)
-  }, [])
 
-  // Ctrl+Shift+B - toggle left sidebar visibility
-  useEffect(() => {
-    const handleSidebarToggleShortcut = (e) => {
-      const key = e.key && e.key.toLowerCase()
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && key === 'b') {
-        e.preventDefault()
-        setIsLeftSidebarOpen((prev) => !prev)
-      }
-    }
-    window.addEventListener('keydown', handleSidebarToggleShortcut)
-    return () => window.removeEventListener('keydown', handleSidebarToggleShortcut)
-  }, [])
 
   // Ctrl+Shift+\ - toggle AI Chat Modal
   useEffect(() => {
