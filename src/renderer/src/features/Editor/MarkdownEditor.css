@@ -327,7 +327,6 @@
   overflow-x: auto; overflow-y: hidden;
   user-select: none;
   flex-shrink: 0;
-  -webkit-app-region: drag; /* Allow frameless window dragging from tab bar */
 }
 
 .workspace-tabbar::-webkit-scrollbar {
@@ -347,7 +346,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 2px 4px 0 14px;
+  padding: 0 0 0 14px;
   gap: 8px;
   background: transparent;
   color: var(--text-muted);
@@ -514,9 +513,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  margin-left: 8px;
+  width: 28px;
+  height: 100%;
+  margin-left: 4px;
 }
 
 .tab-close-btn {
@@ -527,16 +526,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
-  transition: background 0.15s, color 0.15s;
-  padding: 2px;
-  opacity: 0.5;
+  border-radius: 0;
+  transition: background 0.15s, color 0.15s, opacity 0.15s;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+}
+
+.workspace-tab:hover .tab-close-btn {
+  opacity: 0.6;
 }
 
 .tab-close-btn:hover {
-  opacity: 1;
-  background: var(--bg-active);
+  opacity: 1 !important;
   color: var(--text-main);
+  background: rgba(128, 128, 128, 0.15);
 }
 
 .tab-dirty {
@@ -725,6 +729,12 @@
   color: var(--text-faint);
   cursor: pointer;
   transition: background 0.1s, color 0.1s;
+  outline: none;
+}
+
+.window-controls-float .control-btn:focus:not(:hover) {
+  background: transparent;
+  color: var(--text-faint);
 }
 
 .window-controls-float .control-btn:hover {

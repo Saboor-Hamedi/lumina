@@ -278,11 +278,46 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
         className="tabbar-outer-wrapper"
         style={{ display: 'flex', width: '100%', position: 'relative', flexShrink: 0, minWidth: 0 }}
       >
+        {/* Floating Left Sidebar Toggle (now inline flex item) */}
+        {onToggleLeftSidebar && (
+          <div
+            className="window-controls-float-left"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              zIndex: 100,
+              background: 'var(--bg-editor)',
+              WebkitAppRegion: 'no-drag',
+              flexShrink: 0
+            }}
+          >
+            <ToolTip
+              text={isLeftSidebarOpen ? 'Close Left Sidebar' : 'Open Left Sidebar'}
+              position="bottom"
+            >
+              <button
+                onClick={onToggleLeftSidebar}
+                className="control-btn left-sidebar-toggle-btn"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '40px',
+                  height: '100%',
+                  borderRadius: '0'
+                }}
+              >
+                {isLeftSidebarOpen ? <PanelLeftClose size={14} /> : <PanelLeftOpen size={14} />}
+              </button>
+            </ToolTip>
+          </div>
+        )}
+
         <div
           className="workspace-tabbar"
           ref={tabbarRef}
           onWheel={handleWheel}
-          style={{ flex: 1, paddingLeft: onToggleLeftSidebar ? '40px' : '0', minWidth: 0 }}
+          style={{ flex: 1, minWidth: 0 }}
         >
           <SortableContext items={openTabs} strategy={horizontalListSortingStrategy}>
             <div
@@ -315,57 +350,7 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
           </SortableContext>
         </div>
 
-        {/* Floating Left Sidebar Toggle */}
-        {onToggleLeftSidebar && (
-          <div
-            className="window-controls-float-left"
-            style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              bottom: 0,
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              zIndex: 100,
-              background: 'var(--bg-app)',
-              WebkitAppRegion: 'no-drag'
-            }}
-          >
-            <ToolTip
-              text={isLeftSidebarOpen ? 'Close Left Sidebar' : 'Open Left Sidebar'}
-              position="bottom"
-            >
-              <button
-                onClick={onToggleLeftSidebar}
-                className="control-btn"
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: 'var(--text-faint)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '40px',
-                  height: '100%',
-                  borderRadius: '0',
-                  transition: 'background 0.1s, color 0.1s'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.color = 'var(--text-main)'
-                  e.currentTarget.style.background = 'var(--bg-active)'
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.color = 'var(--text-faint)'
-                  e.currentTarget.style.background = 'transparent'
-                }}
-              >
-                {isLeftSidebarOpen ? <PanelLeftClose size={14} /> : <PanelLeftOpen size={14} />}
-              </button>
-            </ToolTip>
-          </div>
-        )}
+        {/* Removed absolute window-controls-float-left from here as it's moved above */}
 
         {/* Floating Window Controls */}
         <WindowControls isSidebarOpen={isSidebarOpen} onToggleSidebar={onToggleSidebar} />

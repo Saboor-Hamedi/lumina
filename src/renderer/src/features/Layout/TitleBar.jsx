@@ -35,11 +35,14 @@ const TitleBar = () => {
       </div>
 
       <div className="title-center">
-        {selectedSnippet ? (
-          <span className="doc-title">{selectedSnippet.title}</span>
-        ) : version ? (
-          <span className="doc-title dim">v{version}</span>
-        ) : null}
+        <div 
+          className="unified-search-bar"
+          onClick={() => window.dispatchEvent(new CustomEvent('open-ask-anything'))}
+        >
+          <span className="search-icon">🔍</span>
+          <span className="search-placeholder">Ask anything or Search...</span>
+          <span className="search-shortcut">Ctrl+P</span>
+        </div>
       </div>
 
       <div className="title-right">

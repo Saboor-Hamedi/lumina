@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react'
 import AppShell from './features/Layout/AppShell'
+import TitleBar from './features/Layout/TitleBar'
 import { useTheme } from './core/hooks/useTheme'
 import { applyTheme } from './core/themes/themeDefinitions'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -30,7 +31,11 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <div className="lumina-app">
+      <div
+        className="lumina-app"
+        style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}
+      >
+        <TitleBar />
         <ErrorBoundary>
           <AppShell />
         </ErrorBoundary>

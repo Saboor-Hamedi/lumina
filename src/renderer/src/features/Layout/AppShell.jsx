@@ -574,6 +574,16 @@ const AppShell = () => {
   const handleToggleGraph = useCallback(() => setShowGraph(true), [])
   const handleToggleAIChat = useCallback(() => setShowAIChatModal(true), [])
 
+  useEffect(() => {
+    const handleAskAnything = (e) => {
+      const query = e.detail?.query || ''
+      setPaletteInitialQuery(query)
+      setShowPalette(true)
+    }
+    window.addEventListener('open-ask-anything', handleAskAnything)
+    return () => window.removeEventListener('open-ask-anything', handleAskAnything)
+  }, [])
+
   return (
     <div
       className={`app-shell ${isLeftSidebarOpen ? 'left-open' : 'left-closed'} ${isRightSidebarOpen ? 'right-open' : 'right-closed'} ${resizingSide ? 'is-resizing' : ''}`}
