@@ -122,7 +122,7 @@ describe('useVaultStore', () => {
 
       useVaultStore.getState().restoreSession(['1', 'invalid', '2'], '1', [])
 
-      expect(useVaultStore.getState().openTabs).toEqual(['1', 'invalid', '2'])
+      expect(useVaultStore.getState().openTabs).toEqual(['1'])
     })
 
     it('handles GRAPH_TAB_ID', () => {

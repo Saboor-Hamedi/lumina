@@ -267,9 +267,9 @@ describe('InlineLumina', () => {
 
     it('closes when clicking overlay background', () => {
       const onClose = vi.fn()
-      const { container } = renderOpen({ onClose })
+      renderOpen({ onClose })
 
-      const overlay = container.querySelector('.inline-lumina-overlay')
+      const overlay = document.querySelector('.inline-lumina-overlay')
       fireEvent.mouseDown(overlay, { target: overlay })
 
       expect(onClose).toHaveBeenCalled()
