@@ -1,11 +1,11 @@
 import React from 'react'
-import { Square, X, Minus, Search } from 'lucide-react'
+import { Square, X, Minus, Search, MessageSquare } from 'lucide-react'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import logoUrl from '../../assets/logo.png'
 import ToolTip from '../../components/atoms/ToolTip'
 import './TitleBar.css'
 
-const TitleBar = () => {
+const TitleBar = ({ onToggleAIChat }) => {
   const handleMinimize = () => window.api?.minimize()
   const handleToggleMaximize = () => window.api?.toggleMaximize()
   const handleClose = () => window.api?.closeWindow()
@@ -57,6 +57,11 @@ const TitleBar = () => {
 
       <div className="title-right">
         <div className="window-controls" data-testid="window-controls">
+          <ToolTip text="AI Chat" position="bottom">
+            <button onClick={() => window.dispatchEvent(new CustomEvent('open-ai-chat'))} className="control-btn" style={{ color: 'var(--text-accent)' }}>
+              <MessageSquare size={14} strokeWidth={2} />
+            </button>
+          </ToolTip>
           <ToolTip text="Minimize" position="bottom">
             <button onClick={handleMinimize} className="control-btn">
               <Minus size={14} strokeWidth={2} />

@@ -4,11 +4,11 @@ import SidebarHeader from './components/SidebarHeader'
 import SidebarFooter from './components/SidebarFooter'
 import './Sidebar.css'
 
-const Sidebar = memo(({ onSettingsClick, onThemeClick, onToggleGraph, onToggleAIChat }) => {
+const Sidebar = memo(({ onSettingsClick, onThemeClick, onToggleGraph }) => {
   return (
     <div className="unified-sidebar">
       {/* Top Header Section */}
-      <SidebarHeader onToggleGraph={onToggleGraph} onToggleAIChat={onToggleAIChat} />
+      <SidebarHeader onToggleGraph={onToggleGraph} />
 
       {/* Middle Scrollable Section (FileExplorer) */}
       <div className="sidebar-scrollable-content">

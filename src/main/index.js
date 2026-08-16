@@ -78,7 +78,7 @@ async function createWindow() {
       nodeIntegration: false,
       webSecurity: app.isPackaged,
       sandbox: false,
-      devTools: !app.isPackaged,
+      devTools: true,
       cache: true,
       partition: 'persist:main',
       allowRunningInsecureContent: false

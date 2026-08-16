@@ -518,8 +518,20 @@ export const useAIStore = create((set, get) => {
 
       const visibleKey = deepSeekKey || import.meta.env.VITE_DEEPSEEK_KEY
 
+      // Normal Chat Flow
+      const userMsg = {
+        id: crypto.randomUUID(),
+        role: 'user',
+        content: message.trim(),
+        timestamp: Date.now(),
+        attachedMentions: attachedMentions
+      }
+
+      const currentMessages = get().chatMessages || []
+      const newHistory = [...currentMessages, userMsg]
+
       if (!visibleKey) {
-        set({ chatError: 'Missing API Key. Please configure it in Settings > AI Models.' })
+        set({ chatMessages: newHistory, chatError: 'Missing API Key. Please configure it in Settings > Assistant.' })
         return
       }
 
@@ -572,18 +584,6 @@ export const useAIStore = create((set, get) => {
       } catch (err) {
         console.warn('[AIStore] File mention detection failed:', err)
       }
-
-      // Normal Chat Flow
-      const userMsg = {
-        id: crypto.randomUUID(),
-        role: 'user',
-        content: message.trim(),
-        timestamp: Date.now(),
-        attachedMentions: attachedMentions
-      }
-
-      const currentMessages = get().chatMessages || []
-      const newHistory = [...currentMessages, userMsg]
 
       const assistantMsg = {
         id: crypto.randomUUID(),

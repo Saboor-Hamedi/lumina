@@ -381,7 +381,7 @@ export const useVaultStore = create((set, get) => ({
     }
 
     if (!skipConfirm) {
-      const confirmed = await window.api.confirmDelete('Permenantly delete this note?')
+      const confirmed = await window.api.confirmDelete('Permanently delete this note?')
       if (!confirmed) return
     }
 

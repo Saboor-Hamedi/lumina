@@ -214,7 +214,8 @@ export const SHORTCUT_DISPLAY_GROUPS = [
       { label: 'Quick Search', key: 'Ctrl + P' },
       { label: 'Command Palette', key: 'Ctrl + Shift + P' },
       { label: 'Global Search', key: 'Ctrl + Shift + F' },
-      { label: 'Toggle Theme', key: 'Ctrl + T' }
+      { label: 'Toggle Theme', key: 'Ctrl + T' },
+      { label: 'AI Chat', key: 'Ctrl + Shift + \\' }
     ]
   },
   {

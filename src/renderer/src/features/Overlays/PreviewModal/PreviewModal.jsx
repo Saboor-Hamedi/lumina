@@ -126,7 +126,7 @@ const PreviewModal = ({ isOpen, onClose, title, content }) => {
         onClick={(e) => e.stopPropagation()}
       >
         <ModalHeader
-          title={`Preview: ${title}`}
+          title={title}
           right={headerStats}
           icon={<FileText size={16} />}
           onClose={onClose}

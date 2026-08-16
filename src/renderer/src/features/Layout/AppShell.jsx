@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import MarkdownEditor from '../Editor/MarkdownEditor'
-import SettingsModal from '../Settings/SettingsModal'
+import Settings from '../Settings/Settings'
 import Sidebar from '../Navigation/Sidebar'
 import ThemeModal from '../Theme/ThemeModal'
 import CommandPalette from '../Overlays/CommandPalette'
@@ -581,7 +581,11 @@ const AppShell = () => {
       setShowPalette(true)
     }
     window.addEventListener('open-ask-anything', handleAskAnything)
-    return () => window.removeEventListener('open-ask-anything', handleAskAnything)
+    window.addEventListener('open-ai-chat', handleToggleAIChat)
+    return () => {
+      window.removeEventListener('open-ask-anything', handleAskAnything)
+      window.removeEventListener('open-ai-chat', handleToggleAIChat)
+    }
   }, [])
 
   return (
@@ -726,7 +730,7 @@ const AppShell = () => {
       </main>
 
       {showSettings && (
-        <SettingsModal
+        <Settings
           onClose={() => {
             setShowSettings(false)
             setSettingsInitialTab('general') // Reset to default

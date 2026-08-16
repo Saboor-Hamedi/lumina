@@ -134,11 +134,11 @@ export function useContextMenu({ item, type, callbacks }) {
               border: '1px dashed var(--border-main)',
               title: 'Default Color (Reset)'
             },
-            { id: 'rgba(59, 130, 246, 0.2)', bg: 'rgba(59, 130, 246, 0.5)', title: 'Blue' },
-            { id: 'rgba(168, 85, 247, 0.2)', bg: 'rgba(168, 85, 247, 0.5)', title: 'Purple' },
-            { id: 'rgba(239, 68, 68, 0.2)', bg: 'rgba(239, 68, 68, 0.5)', title: 'Red' },
-            { id: 'rgba(34, 197, 94, 0.2)', bg: 'rgba(34, 197, 94, 0.5)', title: 'Green' },
-            { id: 'rgba(249, 115, 22, 0.2)', bg: 'rgba(249, 115, 22, 0.5)', title: 'Orange' }
+            { id: '#60a5fa', bg: '#60a5fa', title: 'Blue' },
+            { id: '#c084fc', bg: '#c084fc', title: 'Purple' },
+            { id: '#f87171', bg: '#f87171', title: 'Red' },
+            { id: '#4ade80', bg: '#4ade80', title: 'Green' },
+            { id: '#fb923c', bg: '#fb923c', title: 'Orange' }
           ].map((c, idx) => {
             const isSelected = currentCol === c.id
             return (

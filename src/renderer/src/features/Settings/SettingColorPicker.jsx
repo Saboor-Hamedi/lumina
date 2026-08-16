@@ -1,14 +1,14 @@
 /**
- * ColorModal (Unified General Color Picker)
+ * SettingColorPicker (Unified General Color Picker)
  * System color picker used in SettingsModal. Changing colors here affects app theming, notes, and carets.
  */
 import React, { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Check } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
-import ModalHeader from './ModalHeader'
-import { useDraggableModal } from './useDraggableModal'
-import './ColorModal.css'
+import ModalHeader from '../Overlays/ModalHeader'
+import { useDraggableModal } from '../Overlays/useDraggableModal'
+import './SettingColorPicker.css'
 
 const PRESET_PALETTE = [
   '#40bafa',
@@ -25,7 +25,7 @@ const PRESET_PALETTE = [
   '#ffffff'
 ]
 
-const ColorModal = ({
+const SettingColorPicker = ({
   isOpen,
   onClose,
   initialColor,
@@ -162,4 +162,4 @@ const ColorModal = ({
   )
 }
 
-export default ColorModal
+export default SettingColorPicker

@@ -23,7 +23,8 @@ import {
   ChevronRight,
   Sparkles,
   PanelLeftClose,
-  PanelRightClose
+  PanelRightClose,
+  Settings as SettingsIcon
 } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useAIStore } from './tools/LuminaChat'
@@ -704,14 +705,22 @@ const LuminaChat = ({ isOpen, onClose, onUnfloat }) => {
             : isMinimized
               ? { top: 'auto', left: 'auto', bottom: '40px', right: '20px', width: '280px' }
               : {
-                  top: isDragging
+                  top: isResizing 
+                    ? (resizeStartPos.current?.latestState?.top ?? modalState.top)
+                    : isDragging
                     ? (dragStartPos.current.latestTop ?? modalState.top)
                     : modalState.top,
-                  left: isDragging
+                  left: isResizing 
+                    ? (resizeStartPos.current?.latestState?.left ?? modalState.left)
+                    : isDragging
                     ? (dragStartPos.current.latestLeft ?? modalState.left)
                     : modalState.left,
-                  width: isResizing ? undefined : modalState.width,
-                  height: isResizing ? undefined : modalState.height
+                  width: isResizing 
+                    ? (resizeStartPos.current?.latestState?.width ?? modalState.width)
+                    : modalState.width,
+                  height: isResizing 
+                    ? (resizeStartPos.current?.latestState?.height ?? modalState.height)
+                    : modalState.height
                 })
         }}
       >
@@ -933,26 +942,53 @@ const LuminaChat = ({ isOpen, onClose, onUnfloat }) => {
                               </div>
                             )}
                             {chatError && (
-                              <div className="chat-error">
-                                <strong>Error:</strong> {chatError}
-                                {chatError.includes('API Key') && (
-                                  <button
-                                    onClick={() =>
-                                      window.dispatchEvent(new CustomEvent('open-settings-ai'))
-                                    }
-                                    style={{
-                                      marginTop: '8px',
-                                      padding: '4px 8px',
-                                      fontSize: '12px',
-                                      background: 'var(--bg-active)',
-                                      border: '1px solid var(--border-dim)',
-                                      borderRadius: '4px',
-                                      cursor: 'pointer'
-                                    }}
-                                  >
-                                    Open Settings
-                                  </button>
-                                )}
+                              <div
+                                className="chat-row assistant"
+                                style={{
+                                  marginBottom: '6px',
+                                  display: 'flex',
+                                  gap: '6px',
+                                  alignItems: 'flex-start'
+                                }}
+                              >
+                                <div
+                                  className="chat-content-stack"
+                                  style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'flex-start',
+                                    maxWidth: '100%',
+                                    minWidth: 0,
+                                    flexShrink: 1,
+                                    width: 'auto'
+                                  }}
+                                >
+                                  <div className="chat-bubble assistant" style={{ border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                                    <MessageContent content={`**Error:** ${chatError}`} />
+                                    {chatError.includes('API Key') && (
+                                      <button
+                                        onClick={() =>
+                                          window.dispatchEvent(new CustomEvent('open-ai-settings'))
+                                        }
+                                        style={{
+                                          marginTop: '12px',
+                                          padding: '6px 12px',
+                                          fontSize: '13px',
+                                          background: 'var(--bg-active)',
+                                          border: '1px solid var(--border-dim)',
+                                          borderRadius: '6px',
+                                          cursor: 'pointer',
+                                          color: 'var(--text-main)',
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: '6px'
+                                        }}
+                                      >
+                                        <SettingsIcon size={14} /> Open Settings
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
                             )}
                           </>

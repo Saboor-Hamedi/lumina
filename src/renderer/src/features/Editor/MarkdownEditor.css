@@ -208,12 +208,12 @@
 /* Inline Tag and Mention Styles */
 .cm-inline-tag,
 .cm-inline-mention {
-  position: relative !important; /* Add this */
+  position: relative !important;
   color: var(--text-accent, #ff79c6) !important;
   cursor: pointer !important;
   font-weight: 500 !important;
-  padding: 1px 4px !important;
-  border-radius: 4px !important;
+  padding: 1px 4px 1px 0px !important;
+  border-radius: 0 4px 4px 0 !important;
   transition: all 0.2s ease !important;
 }
 
@@ -223,6 +223,8 @@
   font-size: 0.85em;
   font-weight: 300;
   margin-right: 0;
+  padding: 1px 0px 1px 4px !important;
+  border-radius: 4px 0 0 4px !important;
 }
 
 .cm-inline-tag:hover,
@@ -714,7 +716,6 @@
   background: var(--bg-editor); /* Match tabbar background for seamless look */
   z-index: 100;
   -webkit-app-region: no-drag;
-  padding-left: 8px;
   flex-shrink: 0;
 }
 

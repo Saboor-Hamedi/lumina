@@ -4,7 +4,7 @@ import ToolTip from '../../../components/atoms/ToolTip'
 import { useVaultStore } from '../../../core/store/useVaultStore'
 import { useShallow } from 'zustand/react/shallow'
 
-const SidebarHeader = memo(({ onToggleGraph, onToggleAIChat }) => {
+const SidebarHeader = memo(({ onToggleGraph }) => {
   const { snippets, saveSnippet, setSelectedSnippet } = useVaultStore(
     useShallow((state) => ({
       snippets: state.snippets,
@@ -50,27 +50,19 @@ const SidebarHeader = memo(({ onToggleGraph, onToggleAIChat }) => {
   }
 
   return (
-    <div className="sidebar-header-section">
-      <button className="new-note-btn" onClick={handleNewNote}>
-        <Plus size={14} /> New Note
+    <div className="sidebar-header-section" style={{ gap: '4px', justifyContent: 'space-between', display: 'flex' }}>
+      <button className="new-note-btn" onClick={handleNewNote} style={{ flex: 1, padding: '4px', minWidth: 0, justifyContent: 'center' }}>
+        <Plus size={14} style={{ flexShrink: 0 }} /> 
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>New</span>
       </button>
-      <div className="sidebar-top-actions">
-        <ToolTip text="Daily Note">
-          <button className="sidebar-icon-btn" onClick={handleDailyNote}>
-            <Calendar size={14} />
-          </button>
-        </ToolTip>
-        <ToolTip text="Graph View (Ctrl+G)">
-          <button className="sidebar-icon-btn" onClick={onToggleGraph}>
-            <Network size={14} />
-          </button>
-        </ToolTip>
-        <ToolTip text="AI Chat">
-          <button className="sidebar-icon-btn" onClick={onToggleAIChat}>
-            <MessageSquare size={14} />
-          </button>
-        </ToolTip>
-      </div>
+      <button className="new-note-btn" onClick={handleDailyNote} style={{ flex: 1, padding: '4px', minWidth: 0, justifyContent: 'center' }}>
+        <Calendar size={14} style={{ flexShrink: 0 }} /> 
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Daily</span>
+      </button>
+      <button className="new-note-btn" onClick={onToggleGraph} style={{ flex: 1, padding: '4px', minWidth: 0, justifyContent: 'center' }}>
+        <Network size={14} style={{ flexShrink: 0 }} /> 
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Graph</span>
+      </button>
     </div>
   )
 })

@@ -392,7 +392,6 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
             { type: 'divider' },
             {
               label: 'Close All',
-              icon: <Trash2 size={14} />,
               danger: true,
               onClick: () => closeAllTabs()
             }
