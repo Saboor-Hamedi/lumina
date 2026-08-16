@@ -812,6 +812,17 @@ export const getThemeIds = () => {
 }
 
 /**
+ * Convert hex color to rgb string
+ */
+const hexToRgb = (hex) => {
+  if (!hex) return null
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  return result
+    ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`
+    : null
+}
+
+/**
  * Apply theme to document
  * Applies all theme colors including caret styling
  * Caret color matches theme accent unless user has set a custom color
@@ -826,6 +837,7 @@ export const applyTheme = (themeId) => {
   // Only preserve custom color if explicitly set (not empty string)
   let customCaretColor = null
   let customCaretWidth = null
+  let customThemeAccentColor = null
 
   try {
     const savedColors = localStorage.getItem('theme-colors')
@@ -838,6 +850,9 @@ export const applyTheme = (themeId) => {
       // Only use custom width if it's explicitly set
       if (parsed.caretWidth && parsed.caretWidth !== '2px') {
         customCaretWidth = parsed.caretWidth
+      }
+      if (parsed.themeAccentColor && parsed.themeAccentColor.trim() !== '') {
+        customThemeAccentColor = parsed.themeAccentColor
       }
     }
   } catch (e) {
@@ -857,6 +872,11 @@ export const applyTheme = (themeId) => {
       root.style.setProperty(varName, customCaretColor)
     } else if (varName === '--caret-width' && customCaretWidth) {
       root.style.setProperty(varName, customCaretWidth)
+    } else if (varName === '--text-accent' && customThemeAccentColor) {
+      root.style.setProperty(varName, customThemeAccentColor)
+    } else if (varName === '--text-accent-rgb' && customThemeAccentColor) {
+      const rgb = hexToRgb(customThemeAccentColor)
+      root.style.setProperty(varName, rgb || value)
     } else {
       root.style.setProperty(varName, value)
     }

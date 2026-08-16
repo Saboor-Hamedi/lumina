@@ -1,22 +1,22 @@
 import { MatchDecorator, Decoration, ViewPlugin } from '@codemirror/view'
 
 const tagPrefixDecorator = new MatchDecorator({
-  regexp: /(?<=\s|^)(#)(?=[\w-]+)/g,
+  regexp: /(?<=\W|^)(#)(?=[\w-]+)/g,
   decoration: (match) => Decoration.mark({ class: 'cm-tag-prefix' })
 })
 
 const tagTextDecorator = new MatchDecorator({
-  regexp: /(?<=\s#|^#)([\w-]+)/g,
+  regexp: /(?<=\W#|^#)([\w-]+)/g,
   decoration: (match) => Decoration.mark({ class: 'cm-inline-tag' })
 })
 
 const mentionPrefixDecorator = new MatchDecorator({
-  regexp: /(?<=\s|^)(@)(?=[\w-]+)/g,
+  regexp: /(?<=\W|^)(@)(?=[\w-]+)/g,
   decoration: (match) => Decoration.mark({ class: 'cm-mention-prefix' })
 })
 
 const mentionTextDecorator = new MatchDecorator({
-  regexp: /(?<=\s@|^@)([\w-]+)/g,
+  regexp: /(?<=\W@|^@)([\w-]+)/g,
   decoration: (match) => Decoration.mark({ class: 'cm-inline-mention' })
 })
 

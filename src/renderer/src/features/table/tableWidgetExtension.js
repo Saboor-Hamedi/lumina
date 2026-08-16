@@ -260,6 +260,25 @@ function matchCellMarkAt(raw, from) {
       end: from + m[0].length
     }
   }
+  // Tags and Mentions
+  const prevChar = from > 0 ? raw[from - 1] : ''
+  if (!/\w/.test(prevChar)) {
+    m = rest.match(/^#([\w-]+)/)
+    if (m) {
+      return {
+        token: { type: 'tag', text: m[1] },
+        end: from + m[0].length
+      }
+    }
+    m = rest.match(/^@([\w-]+)/)
+    if (m) {
+      return {
+        token: { type: 'mention', text: m[1] },
+        end: from + m[0].length
+      }
+    }
+  }
+
   // Italic with `_`. Avoid triggering inside words like `snake_case`
   // by requiring the char before `_` to not be a word character.
   // (Fallback to true when `_` is at start-of-input.)
@@ -292,6 +311,30 @@ function buildCellSourceDom(raw) {
 function renderCellToken(tok) {
   if (tok.type === 'text') {
     return document.createTextNode(tok.text)
+  }
+  if (tok.type === 'tag') {
+    const frag = document.createDocumentFragment()
+    const prefix = document.createElement('span')
+    prefix.className = 'cm-tag-prefix'
+    prefix.textContent = '#'
+    frag.appendChild(prefix)
+    const text = document.createElement('span')
+    text.className = 'cm-inline-tag'
+    text.textContent = tok.text
+    frag.appendChild(text)
+    return frag
+  }
+  if (tok.type === 'mention') {
+    const frag = document.createDocumentFragment()
+    const prefix = document.createElement('span')
+    prefix.className = 'cm-mention-prefix'
+    prefix.textContent = '@'
+    frag.appendChild(prefix)
+    const text = document.createElement('span')
+    text.className = 'cm-inline-mention'
+    text.textContent = tok.text
+    frag.appendChild(text)
+    return frag
   }
   if (tok.type === 'strong') {
     const wrap = document.createElement('span')
