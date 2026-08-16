@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react'
+import React, { useRef, useState, useEffect, useLayoutEffect, forwardRef, useImperativeHandle } from 'react'
 
 export const FixedSizeList = forwardRef(
   (
@@ -7,6 +7,13 @@ export const FixedSizeList = forwardRef(
   ) => {
     const containerRef = useRef(null)
     const [scrollTop, setScrollTop] = useState(0)
+
+    // Prevent browser from restoring scroll position which desyncs from React state
+    useLayoutEffect(() => {
+      if (containerRef.current) {
+        containerRef.current.scrollTop = 0
+      }
+    }, [])
 
     useImperativeHandle(ref, () => ({
       get container() {

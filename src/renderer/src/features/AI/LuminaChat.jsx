@@ -136,7 +136,7 @@ const CodeBlock = React.memo(({ inline, className, children, ...props }) => {
   )
 })
 
-const MessageContent = React.memo(
+export const MessageContent = React.memo(
   ({ content }) => {
     // Pre-process content to handle custom XML tags like <readFile>
     const processedContent =

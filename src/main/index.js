@@ -18,6 +18,7 @@ import { handleExportHTML } from '../export/exportHTML'
 import { setupGoogleAuth } from './auth/googleAuth'
 import { backupToDrive } from './backup/googleDriveBackup'
 import { registerOpenNoteHandler } from './handlers/useOpenNote'
+import { useResizeWindowValue } from './handlers/useResizeWindowValue'
 
 // Force rebuild timestamp: 5
 
@@ -154,13 +155,8 @@ async function createWindow() {
     return { action: 'deny' }
   })
 
-  // Save window bounds on close
-  mainWindow.on('close', () => {
-    if (mainWindow && !mainWindow.isMaximized() && !mainWindow.isMinimized()) {
-      const bounds = mainWindow.getBounds()
-      SettingsManager.set('windowBounds', bounds).catch(console.error)
-    }
-  })
+  // Save window bounds on resize, move, and close
+  useResizeWindowValue(mainWindow)
 
   const isDev = !app.isPackaged
   if (isDev && process.env['ELECTRON_RENDERER_URL']) {

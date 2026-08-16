@@ -736,6 +736,7 @@ class TableWidget extends WidgetType {
     wrap.tabIndex = -1
 
     wrap.addEventListener('keydown', (event) => {
+      if (view.state.readOnly) return
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
         event.preventDefault()
         event.stopPropagation()
@@ -747,6 +748,7 @@ class TableWidget extends WidgetType {
     })
 
     wrap.addEventListener('mousedown', (event) => {
+      if (view.state.readOnly) return
       // If the editor has a selection (like from Ctrl+A), clear it when clicking the table!
       if (!view.state.selection.main.empty) {
         const pos = view.posAtDOM(wrap)
@@ -1310,6 +1312,7 @@ function makeCell(tag, text, view) {
     }
   })
   cell.addEventListener('contextmenu', (event) => {
+    if (view.state.readOnly) return
     event.preventDefault()
     event.stopPropagation()
     openCellMenu(view, cell, event.clientX, event.clientY)
@@ -1325,6 +1328,10 @@ function makeCell(tag, text, view) {
     if (!(target instanceof Element)) return null
     return target.closest('.cm-atomic-link-icon')
   }
+  source.addEventListener('keydown', (event) => {
+    if (view.state.readOnly) return
+    if (event.key === 'Tab') {return}
+  })
   source.addEventListener('pointerdown', (event) => {
     if (event.button !== 0) return
     // Block focus / caret placement when pressing the icon; the open

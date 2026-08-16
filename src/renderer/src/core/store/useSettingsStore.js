@@ -39,6 +39,10 @@ export const useSettingsStore = create((set, get) => ({
     anthropicKey: null,
     ollamaUrl: 'http://localhost:11434/api/chat',
 
+    // Command Palette
+    commandPaletteMode: 'search',
+    commandPaletteSplitRatio: 50,
+
     // Favorites
     pinnedFolders: []
   },

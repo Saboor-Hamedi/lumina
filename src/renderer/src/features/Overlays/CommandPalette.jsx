@@ -19,18 +19,23 @@ import {
   Type,
   Bot,
   MessageSquare,
-  Book
+  Book,
+  Square,
+  GripVertical,
+  Trash2
 } from 'lucide-react'
 import Fuse from 'fuse.js'
 import { rankSnippets, getHighlightRegex } from '../../core/utils/searchRanker'
-import { FixedSizeList as List } from '../../components/utils/VirtualList'
 import { useTag } from '../../core/hooks/useTag'
 import { useMention } from '../../core/hooks/useMention'
 import { useShallow } from 'zustand/react/shallow'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useAIStore } from '../AI/tools/LuminaChat'
+import { MessageContent } from '../AI/LuminaChat'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
+import { PreviewCommandPalette } from './PreviewCommandPalette'
+import '../AI/LuminaChat.css'
 import './CommandPalette.css'
 
 /**
@@ -58,13 +63,14 @@ const HighlightText = React.memo(({ text, highlight }) => {
   )
 })
 
-const CommandPaletteRow = React.memo(({ index, style, data }) => {
-  const {
-    filtered,
-    selectedIndex,
-    setSelectedIndex,
-    query,
-    setQuery,
+const CommandPaletteRow = React.memo(
+  React.forwardRef(({ index, data }, ref) => {
+    const {
+      filtered,
+      selectedIndex,
+      setSelectedIndex,
+      deferredQuery: query,
+      setQuery,
     inputRef,
     onSelect,
     onNew,
@@ -86,7 +92,7 @@ const CommandPaletteRow = React.memo(({ index, style, data }) => {
 
   return (
     <div
-      style={style}
+      ref={ref}
       className={`palette-item ${isActive ? 'active' : ''} ${isAction ? 'is-action' : ''}`}
       onClick={() => {
         if (item.action === 'filter') {
@@ -210,7 +216,7 @@ const CommandPaletteRow = React.memo(({ index, style, data }) => {
       </div>
     </div>
   )
-})
+}))
 const CommandPalette = React.memo(
   ({
     isOpen,
@@ -229,11 +235,15 @@ const CommandPalette = React.memo(
     const deferredQuery = useDeferredValue(query)
     const [selectedIndex, setSelectedIndex] = useState(0)
     const [aiResults, setAiResults] = useState([])
+    const [mode, setMode] = useState('search') // 'search' | 'ai'
+    const [splitRatio, setSplitRatio] = useState(50)
     const inputRef = useRef(null)
     const listRef = useRef(null)
+    const itemRefs = useRef({})
     const previousFocusRef = useRef(null)
+    const chatScrollRef = useRef(null)
 
-    const { searchNotes, isModelReady, modelLoadingProgress, aiError } = useAIStore()
+    const { searchNotes, isModelReady, modelLoadingProgress, aiError, chatMessages, isChatLoading, cancelChat, sendChatMessage, clearChat } = useAIStore()
     const { dirtySnippetIds, folders } = useVaultStore(
       useShallow((state) => ({
         dirtySnippetIds: state.dirtySnippetIds,
@@ -267,6 +277,7 @@ const CommandPalette = React.memo(
         setQuery(initialQuery)
         setSelectedIndex(0)
         setAiResults([])
+        setMode(settings.commandPaletteMode || 'search')
         setTimeout(() => inputRef.current?.focus(), 50)
       } else {
         if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
@@ -274,6 +285,19 @@ const CommandPalette = React.memo(
         }
       }
     }, [isOpen, initialQuery])
+
+    useEffect(() => {
+      if (mode === 'ai' && chatScrollRef.current) {
+        const scrollToBottom = () => {
+          if (chatScrollRef.current) {
+            chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight
+          }
+        }
+        scrollToBottom()
+        const timeoutId = setTimeout(scrollToBottom, 50)
+        return () => clearTimeout(timeoutId)
+      }
+    }, [chatMessages, isChatLoading, isOpen, mode])
 
     // AI Search Debounce
     useEffect(() => {
@@ -403,11 +427,11 @@ const CommandPalette = React.memo(
 
       // If it's a command query (starts with >), return ONLY system actions (like VS Code)
       if (isActionQuery) {
-        return systemActions
+        return systemActions.slice(0, 10)
       }
 
       // If it's empty, return recent/all files
-      if (!lowerQuery) return items.slice(0, 50)
+      if (!lowerQuery) return items.slice(0, 5)
 
       // 1. Text Matches (Title & Folder via Fuse, Content via shared rankSnippets)
       const { results: textMatches } = rankSnippets(items, actionQuery, fuseIndex)
@@ -479,7 +503,7 @@ const CommandPalette = React.memo(
         (a, b) => b.score - a.score
       )
 
-      return finalResults.slice(0, 50)
+      return finalResults.slice(0, 10)
     }, [deferredQuery, items, tags, mentions, folders, fuseIndex, aiResults, settings?.typeSound])
 
     useEffect(() => {
@@ -488,20 +512,59 @@ const CommandPalette = React.memo(
       }
     }, [filtered.length, selectedIndex])
 
+    // Auto-scroll to selected item
     useEffect(() => {
-      if (listRef.current && filtered.length > 0) {
-        listRef.current.scrollToItem(selectedIndex, 'auto')
+      if (filtered.length > 0 && itemRefs.current[selectedIndex]) {
+        itemRefs.current[selectedIndex].scrollIntoView({ block: 'nearest' })
       }
     }, [selectedIndex])
+
+    // Explicitly reset scroll when returning to search mode to prevent layout shift glitches
+    useEffect(() => {
+      if (mode === 'search' && listRef.current) {
+        listRef.current.scrollTop = 0
+      }
+    }, [mode])
+
+    const handleResizerMouseDown = (e) => {
+      e.preventDefault()
+      const startX = e.clientX
+      const startRatio = splitRatio
+      
+      const handleMouseMove = (moveEvent) => {
+        const deltaX = moveEvent.clientX - startX
+        const modalWidth = 820 // fixed max width for now
+        const deltaRatio = (deltaX / modalWidth) * 100
+        const newRatio = Math.max(20, Math.min(80, startRatio + deltaRatio))
+        setSplitRatio(newRatio)
+      }
+      
+      const handleMouseUp = () => {
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+        updateSetting('commandPaletteSplitRatio', splitRatio)
+      }
+      
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+    }
 
     const handleKeyDown = (e) => {
       if (e.key === 'ArrowDown') {
         e.preventDefault()
-        setSelectedIndex((prev) => (prev + 1) % filtered.length)
+        if (mode === 'search') setSelectedIndex((prev) => (prev + 1) % filtered.length)
       } else if (e.key === 'ArrowUp') {
         e.preventDefault()
-        setSelectedIndex((prev) => (prev - 1 + filtered.length) % filtered.length)
+        if (mode === 'search') setSelectedIndex((prev) => (prev - 1 + filtered.length) % filtered.length)
       } else if (e.key === 'Enter') {
+        if (mode === 'ai') {
+          if (query.trim() && !isChatLoading) {
+            sendChatMessage(query.trim())
+            setQuery('')
+          }
+          return
+        }
+
         const item = filtered[selectedIndex]
         if (item) {
           if (item.action === 'filter') {
@@ -538,7 +601,7 @@ const CommandPalette = React.memo(
         filtered,
         selectedIndex,
         setSelectedIndex,
-        query,
+        deferredQuery,
         setQuery,
         inputRef,
         onSelect,
@@ -556,7 +619,7 @@ const CommandPalette = React.memo(
       [
         filtered,
         selectedIndex,
-        query,
+        deferredQuery,
         dirtySnippetIds,
         settings,
         onSelect,
@@ -571,6 +634,12 @@ const CommandPalette = React.memo(
       ]
     )
 
+    const selectedItemContent = useMemo(() => {
+      const item = filtered[selectedIndex]
+      if (!item || item.matchType === 'action' || item.matchType === 'folder' || item.matchType === 'tag' || item.matchType === 'mention') return null
+      return item.code || item.matchSnippet || ''
+    }, [filtered, selectedIndex])
+
     if (!isOpen) return null
 
     return createPortal(
@@ -582,7 +651,9 @@ const CommandPalette = React.memo(
               ref={inputRef}
               type="text"
               placeholder={
-                query.startsWith('>')
+                mode === 'ai'
+                  ? 'Ask Lumina anything...'
+                  : query.startsWith('>')
                   ? 'Search commands...'
                   : 'Search notes... (Type > for commands)'
               }
@@ -593,43 +664,161 @@ const CommandPalette = React.memo(
               }}
               onKeyDown={handleKeyDown}
             />
-            <div className="palette-hint">
-              {aiError ? (
-                <span style={{ color: 'var(--text-error)' }}>⚠️ AI Error: {aiError}</span>
-              ) : (
-                <kbd>ESC</kbd>
-              )}
-            </div>
-          </div>
-
-          <div
-            className="palette-results"
-            style={{ height: filtered.length > 0 ? Math.min(filtered.length * 48, 320) : 100 }}
-          >
-            {filtered.length > 0 ? (
-              <List
-                ref={listRef}
-                itemData={itemData}
-                height={Math.min(filtered.length * 48, 320)}
-                itemCount={filtered.length}
-                itemSize={48}
-                width="100%"
+            <div className="palette-mode-toggle">
+              <button
+                className={`palette-mode-btn ${mode === 'search' ? 'active' : ''}`}
+                onClick={() => {
+                  setMode('search')
+                  updateSetting('commandPaletteMode', 'search')
+                }}
               >
-                {CommandPaletteRow}
-              </List>
-            ) : (
-              <div className="palette-empty">No matching notes found</div>
+                Search
+              </button>
+              <button
+                className={`palette-mode-btn ${mode === 'ai' ? 'active' : ''}`}
+                onClick={() => {
+                  setMode('ai')
+                  updateSetting('commandPaletteMode', 'ai')
+                }}
+              >
+                Ask AI
+              </button>
+            </div>
+            {mode === 'ai' && (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {isChatLoading && (
+                  <button 
+                    className="palette-stop-btn"
+                    onClick={cancelChat}
+                  >
+                    <Square size={10} fill="currentColor" /> Stop
+                  </button>
+                )}
+                {chatMessages?.length > 0 && (
+                  <button 
+                    className="palette-stop-btn"
+                    style={{ background: 'transparent', borderColor: 'transparent', padding: '0 8px', color: 'var(--text-faint)' }}
+                    onClick={clearChat}
+                    title="Clear Session"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
             )}
           </div>
+
+        <div className="palette-body">
+          {mode === 'search' ? (
+            <>
+              <div className="palette-results-col" style={{ width: `${splitRatio}%`, display: 'flex', flexDirection: 'column' }}>
+                <div
+                  className="palette-results seamless-scrollbar"
+                  ref={listRef}
+                  style={{ height: filtered.length > 0 ? '100%' : 100, overflowY: 'auto' }}
+                >
+                  {filtered.length > 0 ? (
+                    filtered.map((item, index) => (
+                      <CommandPaletteRow 
+                        key={item.id || item.action || index}
+                        index={index}
+                        data={itemData}
+                        ref={(el) => (itemRefs.current[index] = el)}
+                      />
+                    ))
+                  ) : (
+                    <div className="palette-zero-results">
+                      <Search size={24} style={{ opacity: 0.3 }} />
+                      <span>No matching notes found for "{query}"</span>
+                      {query.trim().length > 0 && (
+                        <button 
+                          className="palette-ask-lumina-btn"
+                          onClick={() => {
+                            setMode('ai')
+                            updateSetting('commandPaletteMode', 'ai')
+                            sendChatMessage(query.trim())
+                            setQuery('')
+                          }}
+                        >
+                          Ask Lumina: "{query}"
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="palette-resizer" onMouseDown={handleResizerMouseDown}>
+                <div className="resizer-grip">
+                  <GripVertical size={14} />
+                </div>
+              </div>
+              
+              <div className="palette-preview-col" style={{ width: `${100 - splitRatio}%` }}>
+                {selectedItemContent ? (
+                  <PreviewCommandPalette 
+                    key={filtered[selectedIndex]?.id || 'preview'}
+                    content={selectedItemContent} 
+                    onClose={onClose}
+                  />
+                ) : (
+                  <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-faint)', opacity: 0.5, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <FileText size={48} strokeWidth={1} />
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="palette-chat-container" style={{ flex: 1, width: '100%' }}>
+              <div className="palette-chat-messages seamless-scrollbar" ref={chatScrollRef}>
+                {!chatMessages || chatMessages.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-faint)' }}>
+                    <Bot size={32} style={{ opacity: 0.5, marginBottom: '16px' }} />
+                    <p>Ask Lumina any question.</p>
+                    <p style={{ fontSize: '12px', opacity: 0.7 }}>I'll search your knowledge base and answer.</p>
+                  </div>
+                ) : (
+                  chatMessages.map((msg, i) => (
+                    <div 
+                      key={i} 
+                      className={`chat-bubble ${msg.role}`}
+                      style={{ padding: '0 12px' }}
+                    >
+                      {msg.role === 'assistant' && !msg.content?.trim() && !msg.imageUrl && ((i === chatMessages.length - 1 && isChatLoading) || msg.isGenerating) ? (
+                        <div className="thinking-indicator">
+                          <span className="thinking-text">
+                            <span className="thinking-dot-pulse" />
+                            Thinking...
+                          </span>
+                        </div>
+                      ) : msg.role === 'assistant' ? (
+                        <MessageContent content={msg.content} />
+                      ) : (
+                        msg.content
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
           <div className="palette-footer">
             <div className="footer-tip">
               <span>
                 <kbd>↑</kbd> <kbd>↓</kbd> to navigate
               </span>
-              <span>
-                <kbd>↵</kbd> to open
-              </span>
+              {mode === 'search' && (
+                <span>
+                  <kbd>↵</kbd> to open
+                </span>
+              )}
+              {mode === 'ai' && (
+                <span>
+                  <kbd>↵</kbd> to send
+                </span>
+              )}
             </div>
             <div className="footer-tip">
               <span>

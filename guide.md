@@ -1,173 +1,115 @@
-# Lumina — Making the App Easy for Non-Technical Users
+# Lumina — "Ask Anything" Command Palette Spec
 
-Full guidance for implementing a user-friendly experience. Target: people with no technical background. They should be able to start using Lumina within 30 seconds and understand every feature without reading a manual.
+One always-visible bar (like macOS Spotlight) at the top of the app. One input box.
+Type a note title → results appear (search). Type a question → AI answers (AI).
+Works from anywhere (global, instant). This is the single source of truth for
+implementing `src/renderer/src/features/Overlays/CommandPalette.jsx`.
 
-> **Current state (verified against the project):** the "vault → workspace" rename is already done in user-facing copy (Welcome page, Settings). Internal code still uses "vault" (`vaultPath`, `loadVault`, `useVaultStore`, CSS `vault-icon`/`vault-path-display`) — that is an internal cleanup, not user-facing.
->
-> **Known app bugs found during review (fix these):**
-> - [x] `Ctrl+Shift+\` opens AI chat. `Ctrl+Shift+I` is Developer Tools, NOT AI. The Welcome page's "AI Assistant" card advertises `Ctrl+Shift+I` — correct the label to `Ctrl+Shift+\`.
-> - [x] `Ctrl+B` toggles the sidebar (correct). `Ctrl+Shift+B` must be DISABLED — it currently conflicts with `Ctrl+B` and should be removed (AppShell:346-353).
-> - [x] `Ctrl+I` opens the Inspector/Details panel (correct).
-> - [x] `Ctrl+P` opens Quick Search (correct).
-> - [x] `Ctrl+O` must open a file dialog to import/grab `.md` files from the local machine — currently NOT working (it does not open). `window.api.openFile` and the `dialog:openFile` IPC handler exist but `onOpenFile` is not wired up in AppShell, so `Ctrl+O` does nothing. Fix the wiring so `Ctrl+O` opens the dialog.
-> - [x] Shortcuts shown in the app (e.g. on the Welcome page / File Explorer) must match the actual shortcuts. Ensure the correct shortcut list is displayed consistently everywhere.
-> - [x] The AI chat already has a permanent sidebar icon (SidebarHeader "AI Chat" button) — the one-click entry point already exists, keep it.
-> - Settings currently has **6 tabs**: General, Appearance, Shortcuts, AI, Type, Graph (SettingsModal:168-198).
-
-> **Canonical shortcut list (single source of truth):**
-> - `Ctrl+N` — New note
-> - `Ctrl+P` — Quick Search
-> - `Ctrl+Shift+P` — Command Palette
-> - `Ctrl+B` — Toggle sidebar
-> - `Ctrl+Shift+\` — AI chat
-> - `Ctrl+I` — Inspector / Details
-> - `Ctrl+O` — Open/import a `.md` file (currently broken — must open the file dialog)
-> - `Ctrl+G` — Knowledge Graph
-> - `Ctrl+,` — Settings
-
-The guidance below reflects the real, remaining gaps.
+> Implement exactly. Do not redesign.
 
 ---
 
-## 1. Kill the Jargon — Use Plain Language
+## 1. Layout
 
-Non-technical users are confused by technical terms. Replace them everywhere (UI copy, empty states, tooltips, settings):
+Two-column split. Widen the container from `500px` → `~820px`, height `320px` → `~480px`
+(`CommandPalette.css`: `.command-palette-container`, `.palette-results`). Preview needs
+real width for mermaid/tables.
 
-| Current term | Use instead |
-| --- | --- |
-| RAG / Semantic Indexing / Embeddings | "Smart Search (learns as you write)" |
-| Enable RAG context for current provider | "Improve answers using your notes" |
-| Model ID (e.g. deepseek-chat / R1) | "Simple", "Balanced", "Creative" pickers |
-| API Key | "Connect an AI (optional)" |
-| "Enter your DeepSeek API key (starts with sk-...)" | "Paste your key here (starts with sk-...)" with a "Where do I find this?" link |
-| Ollama Local AI / localhost:11434 | "Use AI on this computer" (hide the server URL) |
-| Copy Raw Markdown | "Copy as Plain Text" |
-| Copy HTML Code | "Copy as Web Code" (or move under Advanced) |
-| Export as Markdown | "Save as File (.md)" |
-| Export as Docs | "Save as Word Document" |
-| Export as Plain Text | "Save as Text" |
-| @-mentions / [[wikilinks]] | "Link to another note" (tooltip: "Type @ to link") |
-| Command Palette / Quick Search | "Search" |
+```
+┌────────────────────────────────────────────────────────────────────┐
+│  [🔍]  query................................  [ 🔍 Search | ✨ Ask AI ] │
+├───────────────────────────────┬────────────────────────────────────┤
+│  Results (left, ~45%)         │  Preview (right, ~55%)             │
+│  ▶ Result 1  ← selected       │  ┌──────────────────────────────┐  │
+│  ▶ Result 2                   │  │ full-fidelity note rendering: │  │
+│  ▶ Result 3                   │  │ mermaid · images · tables     │  │
+│  ✨ AI Match: …               │  │ callouts · wikilinks · code   │  │
+├───────────────────────────────┴────────────────────────────────────┤
+│  ↑↓ navigate · ↵ open/send · ESC dismiss                           │
+└────────────────────────────────────────────────────────────────────┘
+```
 
-Notes:
-- "Workspace" is already the accepted user-facing term — keep it. Do not revert to "vault".
-- Every setting that does not need explaining should be removed from the main view.
-- Add a small "What's this?" tooltip (?) next to anything technical that must remain.
+**Responsive:** below ~900px viewport, fall back to single column (no preview pane).
 
 ---
 
-## 2. Make AI the Default Path, Not a Hidden Power Tool
+## 2. Two modes (segmented toggle, top-right of input)
 
-AI is Lumina's superpower. Non-technical users should discover it instantly.
+Two beautiful buttons: `🔍 Search` and `✨ Ask AI`. Default = Search.
 
-### First launch flow (max 2 steps)
-1. Show one friendly question: "Do you want smart AI help?"
-   - Option A: "Yes" → paste a key (or pick a provider) → done.
-   - Option B: "Not now" → app works fully offline, no friction.
-2. Never block the app on an API key. No key = full note-taking still works.
+### Search mode (default)
+- Type → results list on the **left**; live preview of the **selected** note on the **right**.
+- **Arrow keys** move selection + update the preview. Mouse hover does NOT change
+  preview. **Mouse click opens** the note.
+- **Enter** opens the selected note in the editor.
 
-### AI discoverability
-- The AI chat already exists with a permanent "AI Chat" sidebar icon AND the `Ctrl+Shift+\` shortcut. Both entry points are fine — keep them. Do NOT advertise `Ctrl+Shift+I` (that is Developer Tools). Fix the Welcome page label.
-- Every empty state should offer a natural-language suggestion, e.g.:
-  - "Tip: select text and press Ctrl+K to let AI rewrite it."
-  - "Ask Lumina anything about your notes."
-- The chat panel already labels modes (Fast/Thinking/Creative/Coder). Make them plain words:
-  - Fast → "Quick answer"
-  - Thinking → "Detailed thinking"
-  - Creative → "Creative"
-  - Coder → "Code help"
-- The model pill (DeepSeek/OpenAI/Claude/Ollama) should read as a friendly label, e.g. "AI Model: Balanced", with the actual provider hidden in a tooltip.
+### Ask AI mode
+- Results area becomes a compact **inline chat**: user message + streamed answer.
+- Reuse `useAIStore.sendChatMessage()` (`features/AI/tools/LuminaChat.js`) and the
+  `MessageContent` renderer (`features/AI/LuminaChat.jsx:139` — export it for reuse).
+  Shares the same session as the floating chat.
+- Palette input sends on Enter; add a **Stop** button while generating; Escape closes.
+- **No @mentions, no images, no slash commands** in the palette — plain question →
+  answer. The full chat is one click away.
 
 ---
 
-## 3. Onboarding in ~30 Seconds, Zero Reading
+## 3. Auto-route rule (the key part)
 
-### First-run walkthrough
-- The Welcome page already has 4 action cards (Create a new note / Quick Search / Toggle Sidebar / AI Assistant). Note: the "AI Assistant" card shortcut is currently wrong (`Ctrl+Shift+I`) — it should be `Ctrl+Shift+\`. The "Toggle Sidebar" card (`Ctrl+B`) is correct. Wrap the cards into a 4-step spotlight walkthrough on first run:
-  1. "This is your notebook."
-  2. "Click here to create a note."
-  3. "This is AI — ask it anything."
-  4. "Search everything here."
-- Non-blocking: user can dismiss anytime.
+In **Search mode**, when the query returns **zero results**:
+- Show `"No matching notes"` + one action row: `✨ Ask Lumina: "<query>"`.
+- Pressing **Enter** (or clicking it) switches to **Ask AI mode** and sends the query
+  immediately — the answer streams in the same palette. The user never leaves the window.
 
-### Help menu (permanent)
-- Add a "Help" button (e.g. "?" in sidebar or title bar).
-- Animated GIF guides (not text walls) for the top 5 actions:
-  1. Create a note
-  2. Search notes
-  3. Use AI
-  4. Organize into folders
-  5. Export/share a note
+When results exist, Enter opens the selected note normally.
 
-### Learning by doing
-- Auto-create a sample "Welcome note" on first run containing clickable demos and tips inside the note itself.
-- Keep it deletable; don't show it again once deleted.
+Flow: type → preview shows → Enter opens the note. OR type something with no matches →
+Enter → AI answers right there.
 
 ---
 
-## 4. Reduce Decisions and Settings
+## 4. Preview pane — full editor stack (mermaid, images, tables)
 
-Fewer choices = less overwhelm.
+The preview is NOT a lightweight markdown render. It must look like
+`features/Overlays/PreviewModal/PreviewModal.jsx`:
 
-- The Settings modal currently has 6 tabs: General, Appearance, Shortcuts, AI, Type, Graph. Reduce the visible choices:
-  - Merge into 2 friendly tabs: **Look & Feel** (Appearance, Type) and **AI**.
-  - Keep **Shortcuts** and **Graph** under an "Advanced" toggle.
-  - **General** holds Workspace Location (path) + developer options — move these under "Advanced", label as "Choose where your notes are stored".
-- Move technical/developer items under "Advanced":
-  - Ollama Local AI / Semantic Indexing / developer reload → Advanced
-- Safe defaults:
-  - Auto-save: ON
-  - Delete: move to a recoverable "Trash" instead of permanent delete + scary confirm dialog
-  - Theme: system / auto
-- One "Reset to defaults" button so users feel safe experimenting.
+- Extract the read-only editor from `PreviewModal.jsx:78-106` into a shared component,
+  e.g. `features/Overlays/PreviewModal/NotePreview.jsx`, accepting `content` + `title`.
+- Extensions (copy from PreviewModal):
+  `EditorState.readOnly.of(true)`, `EditorView.editable.of(false)`, `imageWidgetExtension`,
+  `htmlWidgetExtension`, `mermaidWidgetExtension`, `calloutExtension`,
+  `codeBlockDecorations`, `luminaSyntaxHighlighting`, `tables`, `wikiLinks`
+  (resolve via `useVaultStore`; `onOpen` opens the target note + closes the palette).
+- Import `MarkdownEditor.css`, `CodeWrapper.css`, `@atomic-editor/editor/styles.css`
+  + the inline `.preview-body` overrides (`PreviewModal.jsx:139-170`).
+- Data source: `snippets` already carry `code` with frontmatter stripped
+  (`VaultManager.js:195`) — no parsing needed.
 
----
+### Performance (critical)
+Mounting a full CodeMirror + mermaid per arrow key is too heavy:
+1. **Debounce preview mount** — create/re-create the editor only after the selection
+   settles (~150-200ms after the last arrow/click).
+2. Show a lightweight loading placeholder while mermaid renders (reuse PreviewModal's
+   spinner, `PreviewModal.jsx:213-242`).
+3. **Key the editor by note id** so React unmounts the old editor before mounting the
+   new one (only one preview editor exists at a time).
+4. Keep the results list virtualized (already is).
 
-## 5. [COMPLETED] The "Ask Anything" Bar (Highest Impact Feature)
-
-The single biggest source of confusion for non-technical users: "Where do I search vs. where do I ask the AI?"
-
-- [x] Build one always-visible bar (like macOS Spotlight) at the top of the app:
-  - [x] One input box.
-  - [x] Type a note title → results appear (search).
-  - [x] Type a question → AI answers (AI).
-  - [x] Works from anywhere in the app (global, instant).
-
-This replaces the separate Quick Search and AI chat entry points with ONE obvious place.
-
----
-
-## 6. Friendly Copy and Empty States Everywhere
-
-- Never show raw errors ("Error: IPC timeout"). Show human messages: "Something went wrong. Please try again."
-- Empty states must teach, not show nothing:
-  - No notes → "Create your first note" + button.
-  - No search results → "No matching notes. Ask Lumina instead?" + button.
-  - Chat empty → "How can I help you today?" + 3 example prompts users can tap.
-- All confirmations in plain words:
-  - "Delete Note?" → "Move this note to Trash?" with buttons "Keep it" / "Move to Trash".
+### Known constraint
+`codeMap` in `features/Workspace/codeBlockHeader.js:22` is a module-level singleton
+cleared on every rebuild. With the main editor + preview editor mounted at once,
+code-header copy state can be overwritten. **Low-risk path:** accept current behavior
+(PreviewModal already coexists this way); verify preview copy works and only disable it
+if it visibly breaks.
 
 ---
 
-## 7. Build Priority (Do in This Order)
+## 5. Files to touch
 
-1. **"Ask Anything" unified bar** — changes how the whole app feels.
-2. **AI-first onboarding** — optional key, one-click chat, plain-language AI modes.
-3. **Plain-language overhaul** — replace remaining jargon (RAG, API Key, model IDs, export labels).
-4. **Friendly empty states + error messages** — low effort, high polish.
-5. **Recoverable Trash** — remove fear of deletion.
-6. **Help menu with GIF guides** — final layer of support.
-7. **Internal cleanup (optional)** — rename `vaultPath` / `loadVault` / `useVaultStore` / CSS `vault-*` to workspace terms for consistency (developer-facing only, no user impact).
-
----
-
-## 8. Acceptance Checklist (How an Agent Knows It's Done)
-
-For every change, verify a brand-new non-technical user can:
-
-- [x] Launch the app and create a note in under 30 seconds without reading anything.
-- [x] Find and use AI without being told about a keyboard shortcut.
-- [x] Understand every button/label they see (no unexplained technical words).
-- [x] Search and ask AI from one obvious place.
-- [x] Delete something and be able to get it back.
-- [x] Never see a raw error, API key field, file path, or model ID unless they opened Advanced settings.
+| File | Change |
+|---|---|
+| `features/Overlays/CommandPalette.jsx` | `mode` state, Search/Ask AI toggle, split layout, preview pane, zero-result auto-route, AI send handler, keyboard wiring |
+| `features/Overlays/CommandPalette.css` | wide container (~820px), 2-column grid, toggle styles, preview pane, responsive fallback |
+| `features/Overlays/PreviewModal/NotePreview.jsx` (new) | extracted read-only editor preview from PreviewModal |
+| `features/Overlays/PreviewModal/PreviewModal.jsx` | (optional) refactor to reuse NotePreview |
+| `features/AI/LuminaChat.jsx` | export `MessageContent` |
