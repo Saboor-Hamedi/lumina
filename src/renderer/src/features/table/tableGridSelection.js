@@ -78,28 +78,29 @@ export function setupTableSelection(wrap, view) {
     const brCell = getCellAt(maxR, maxC)
     
     if (tlCell && brCell) {
-      let overlay = wrap.querySelector('.cm-table-selection-overlay')
+      const scrollContainer = wrap.querySelector('.cm-table-scroll-container') || wrap
+      let overlay = scrollContainer.querySelector('.cm-table-selection-overlay')
       if (!overlay) {
         overlay = document.createElement('div')
         overlay.className = 'cm-table-selection-overlay'
         overlay.style.pointerEvents = 'none' // GUARANTEE clicks pass through to the cells!
         
-        // Ensure wrap is relative so the absolute overlay positions correctly
-        const computed = window.getComputedStyle(wrap)
+        // Ensure container is relative so the absolute overlay positions correctly
+        const computed = window.getComputedStyle(scrollContainer)
         if (computed.position === 'static') {
-          wrap.style.position = 'relative'
+          scrollContainer.style.position = 'relative'
         }
-        wrap.appendChild(overlay)
+        scrollContainer.appendChild(overlay)
       }
       
-      const wrapRect = wrap.getBoundingClientRect()
+      const containerRect = scrollContainer.getBoundingClientRect()
       const tlRect = tlCell.getBoundingClientRect()
       const brRect = brCell.getBoundingClientRect()
       
-      // Calculate coordinates relative to the wrap container
-      // Add scroll offsets of the wrapper if it has any overflow scroll
-      const topOffset = tlRect.top - wrapRect.top + wrap.scrollTop
-      const leftOffset = tlRect.left - wrapRect.left + wrap.scrollLeft
+      // Calculate coordinates relative to the scroll container
+      // Add scroll offsets of the container so the overlay scrolls with the table
+      const topOffset = tlRect.top - containerRect.top + scrollContainer.scrollTop
+      const leftOffset = tlRect.left - containerRect.left + scrollContainer.scrollLeft
       const width = brRect.right - tlRect.left
       const height = brRect.bottom - tlRect.top
       

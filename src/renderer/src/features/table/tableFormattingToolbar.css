@@ -104,6 +104,15 @@
   overflow: hidden !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 0 1px var(--border-dim) !important;
   background: var(--bg-primary, transparent) !important;
+  width: max-content !important;
+  max-width: 100% !important;
+}
+
+.cm-table-scroll-container {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  position: relative; /* For the grid selection overlay */
 }
 
 .cm-atomic-table table {
@@ -117,12 +126,12 @@
 }
 
 /* Table scrollbar */
-.cm-atomic-table table::-webkit-scrollbar {
-  height: 4px;
+.cm-table-scroll-container::-webkit-scrollbar {
+  height: 6px;
 }
-.cm-atomic-table table::-webkit-scrollbar-thumb {
+.cm-table-scroll-container::-webkit-scrollbar-thumb {
   background: var(--border-dim);
-  border-radius: 2px;
+  border-radius: 3px;
 }
 
 /* Table cells */

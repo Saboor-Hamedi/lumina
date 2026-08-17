@@ -115,8 +115,12 @@ export class TableWidget extends WidgetType {
       }
     })
 
+    const scrollContainer = document.createElement('div')
+    scrollContainer.className = 'cm-table-scroll-container'
+
     const table = document.createElement('table')
-    wrap.appendChild(table)
+    scrollContainer.appendChild(table)
+    wrap.appendChild(scrollContainer)
 
     const cornerHandle = document.createElement('div')
     cornerHandle.className = 'cm-table-handle cm-table-corner-handle'
