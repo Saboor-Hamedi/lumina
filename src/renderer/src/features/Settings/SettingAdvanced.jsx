@@ -156,6 +156,35 @@ const SettingAdvanced = () => {
       </section>
       
       <section style={{ marginTop: '32px' }}>
+        <h3>System Integration</h3>
+        
+        <div className="settings-row">
+          <div className="row-info">
+            <div className="row-label">Launch Lumina on Startup</div>
+            <div className="row-hint">Automatically start Lumina silently in the background when your computer boots up.</div>
+          </div>
+          <label className="switch">
+            <input
+              type="checkbox"
+              checked={settings.launchOnStartup === true}
+              onChange={(e) => updateSetting('launchOnStartup', e.target.checked)}
+            />
+            <span className="slider round"></span>
+          </label>
+        </div>
+
+        <div className="settings-row">
+          <div className="row-info">
+            <div className="row-label">Global Spotlight Shortcut</div>
+            <div className="row-hint">Summon the Command Palette from anywhere on your computer (requires restart to apply changes).</div>
+          </div>
+          <div className="shortcut-badge" style={{ fontSize: '13px' }}>
+            {formatShortcutKey('Ctrl+Space')}
+          </div>
+        </div>
+      </section>
+
+      <section style={{ marginTop: '32px' }}>
         <h3>Graph Visualization</h3>
         <div className="settings-row">
           <div className="row-info">

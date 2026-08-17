@@ -103,8 +103,8 @@ export const useKeyboardShortcuts = (shortcuts) => {
         shortcutsRef.current.onOpenFile()
       }
 
-      // Toggle Command Palette: Ctrl+Shift+P
-      if (isCmd && e.shiftKey && key === 'p' && shortcutsRef.current.onToggleCommandPalette) {
+      // Command Palette (Internal Spotlight): Ctrl+Space
+      if (isCmd && !e.shiftKey && (key === ' ' || e.code === 'Space') && shortcutsRef.current.onToggleCommandPalette) {
         e.preventDefault()
         shortcutsRef.current.onToggleCommandPalette()
       }
@@ -210,9 +210,9 @@ export const SHORTCUT_DISPLAY_GROUPS = [
   {
     title: 'General',
     items: [
+      { label: 'Spotlight (Internal & Global)', key: 'Ctrl + Space' },
       { label: 'Settings', key: 'Ctrl + ,' },
       { label: 'Quick Search', key: 'Ctrl + P' },
-      { label: 'Command Palette', key: 'Ctrl + Shift + P' },
       { label: 'Global Search', key: 'Ctrl + Shift + F' },
       { label: 'Toggle Theme', key: 'Ctrl + T' },
       { label: 'AI Chat', key: 'Ctrl + Shift + \\' }

@@ -244,10 +244,11 @@ const CommandPalette = React.memo(
     const chatScrollRef = useRef(null)
 
     const { searchNotes, isModelReady, modelLoadingProgress, aiError, chatMessages, isChatLoading, cancelChat, sendChatMessage, clearChat } = useAIStore()
-    const { dirtySnippetIds, folders } = useVaultStore(
+    const { dirtySnippetIds, folders, selectedSnippet } = useVaultStore(
       useShallow((state) => ({
         dirtySnippetIds: state.dirtySnippetIds,
-        folders: state.folders
+        folders: state.folders,
+        selectedSnippet: state.selectedSnippet
       }))
     )
     const { settings, updateSetting } = useSettingsStore()
@@ -559,7 +560,7 @@ const CommandPalette = React.memo(
       } else if (e.key === 'Enter') {
         if (mode === 'ai') {
           if (query.trim() && !isChatLoading) {
-            sendChatMessage(query.trim())
+            sendChatMessage(query.trim(), selectedSnippet ? [selectedSnippet] : [])
             setQuery('')
           }
           return
@@ -736,8 +737,10 @@ const CommandPalette = React.memo(
                           onClick={() => {
                             setMode('ai')
                             updateSetting('commandPaletteMode', 'ai')
-                            sendChatMessage(query.trim())
-                            setQuery('')
+                            if (query.trim() && !isChatLoading) {
+                              sendChatMessage(query.trim(), selectedSnippet ? [selectedSnippet] : [])
+                              setQuery('')
+                            }
                           }}
                         >
                           Ask Lumina: "{query}"

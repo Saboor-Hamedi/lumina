@@ -28,6 +28,8 @@ class SettingsManager {
         isRightOpen: false
       },
       enableDevTools: true,
+      launchOnStartup: false,
+      globalShortcut: 'Ctrl+Space',
       // AI Settings
       deepSeekKey: null,
       deepSeekModel: 'deepseek-chat',

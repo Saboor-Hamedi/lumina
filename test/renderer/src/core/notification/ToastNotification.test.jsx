@@ -42,7 +42,7 @@ describe('ToastNotification', () => {
     const toast = { type: 'success', message: 'Test' }
     const { container } = render(<ToastNotification toast={toast} />)
 
-    const toastElement = container.querySelector('.toast-notification')
+    const toastElement = document.body.querySelector('.toast-notification')
     expect(toastElement).toHaveClass('toast-success')
   })
 

@@ -19,6 +19,8 @@ import { setupGoogleAuth } from './auth/googleAuth'
 import { backupToDrive } from './backup/googleDriveBackup'
 import { registerOpenNoteHandler } from './handlers/useOpenNote'
 import { useResizeWindowValue } from './handlers/useResizeWindowValue'
+import { useGlobalShortcut } from './handlers/useGlobalShortcut'
+import { updateAutoLauncher } from './handlers/useAutoLauncher'
 
 // Force rebuild timestamp: 5
 
@@ -109,20 +111,34 @@ async function createWindow() {
     })
   }
 
-  mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
+  mainWindow.on('ready-to-show', async () => {
+    // Only show the window if it's not set to launch hidden on startup
+    const launchOnStartup = await SettingsManager.get('launchOnStartup')
+    const openAsHidden = process.argv.includes('--hidden') // or any auto-launch flag you use
+    if (!(launchOnStartup && openAsHidden)) {
+      mainWindow.show()
+    }
+    
     setTimeout(() => {
       new AppUpdater(mainWindow)
     }, 5000)
 
     SettingsManager.notifyRenderer = (settings) => {
       allowDevTools = settings.enableDevTools === true
+      useGlobalShortcut(mainWindow, settings)
+      updateAutoLauncher(settings.launchOnStartup)
       BrowserWindow.getAllWindows().forEach((win) => {
         if (win && !win.isDestroyed()) {
           win.webContents.send('settings:changed', settings)
         }
       })
     }
+    
+    // Initialize shortcuts and auto-launch with current settings
+    SettingsManager.get().then(settings => {
+      useGlobalShortcut(mainWindow, settings)
+      updateAutoLauncher(settings.launchOnStartup)
+    })
   })
 
   // Robust Crash Handling (Renderer)

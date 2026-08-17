@@ -46,6 +46,11 @@ const api = {
   toggleMaximize: () => electronAPI.ipcRenderer.invoke('window:toggle-maximize'),
   closeWindow: () => electronAPI.ipcRenderer.invoke('window:close'),
   setTranslucency: (enabled) => electronAPI.ipcRenderer.invoke('window:set-translucency', enabled),
+  onToggleCommandPalette: (cb) => {
+    const listener = () => cb()
+    electronAPI.ipcRenderer.on('window:toggle-command-palette', listener)
+    return () => electronAPI.ipcRenderer.removeListener('window:toggle-command-palette', listener)
+  },
   getVersion: () => electronAPI.ipcRenderer.invoke('app:getVersion'),
   // Auto-Updater
   checkForUpdates: () => electronAPI.ipcRenderer.invoke('update:check'),

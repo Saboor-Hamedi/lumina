@@ -296,10 +296,19 @@ const AppShell = () => {
     }
     window.addEventListener('open-ai-settings', handleOpenAISettings)
 
+    // Listen for Global Shortcut from Main Process
+    let cleanupGlobalShortcut = null
+    if (window.api?.onToggleCommandPalette) {
+      cleanupGlobalShortcut = window.api.onToggleCommandPalette(() => {
+        setShowPalette(prev => !prev)
+      })
+    }
+
     return () => {
       unsub && unsub()
       window.removeEventListener('open-details-modal', handleOpenDetailsModal)
       window.removeEventListener('open-ai-settings', handleOpenAISettings)
+      if (cleanupGlobalShortcut) cleanupGlobalShortcut()
     }
   }, [])
 

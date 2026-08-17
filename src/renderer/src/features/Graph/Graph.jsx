@@ -610,6 +610,16 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       ctx.fillStyle = nodeColor(node)
       ctx.fill()
       ctx.globalAlpha = 1.0
+
+      // Draw text if graphShowTexts is true and not dimmed by search
+      if (useSettingsStore.getState().settings.graphShowTexts !== false && !isSearchDimmed) {
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillStyle = 'var(--text-main, #d4d4d4)'
+        const fontSize = isActive || isHovered ? 14 : 10
+        ctx.font = `${fontSize}px Inter, sans-serif`
+        ctx.fillText(label, node.x, node.y + r + (isActive || isHovered ? 12 : 8))
+      }
     },
     [selectedSnippet, hoverNode, hoverNeighbors, searchQuery]
   )
@@ -855,6 +865,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               d3AlphaDecay={0.05}
               d3VelocityDecay={0.4}
               showNavInfo={false}
+              nodeLabel={(node) => (node.id || '').replace(/[*"']/g, '')}
             />
           ) : (
             <ForceGraph2D
