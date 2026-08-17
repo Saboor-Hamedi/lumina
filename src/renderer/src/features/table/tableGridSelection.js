@@ -158,6 +158,9 @@ export function setupTableSelection(wrap, view) {
       window.getSelection().removeAllRanges()
     }
     
+    // Ensure the wrapper has focus so it can receive the Ctrl+C keydown event!
+    wrap.focus()
+    
     renderSelection()
   })
 

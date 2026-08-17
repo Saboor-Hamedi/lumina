@@ -224,6 +224,7 @@
   pointer-events: none; /* Let clicks pass through to the cells beneath */
   z-index: 5;
   border-radius: 4px;
+  box-sizing: border-box; /* Fixes bottom-right overflow issue */
   transition: all 0.05s linear; /* Smooth resizing */
   display: none;
 }
