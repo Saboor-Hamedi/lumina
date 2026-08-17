@@ -123,6 +123,8 @@
   max-width: calc(var(--font-size-editor, 16px) * 16) !important;
   padding: calc(var(--font-size-editor, 16px) * 0.4) calc(var(--font-size-editor, 16px) * 0.65) !important;
   border: 1px solid var(--border-dim) !important;
+  vertical-align: top !important;
+  text-align: justify;
 }
 
 .cm-atomic-table th {
@@ -300,8 +302,10 @@
 
 .cm-atomic-table-menu-item {
   position: relative;
-  display: flex;
-  align-items: center;
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
   gap: 8px;
   width: 100%;
   padding: 6px 12px;

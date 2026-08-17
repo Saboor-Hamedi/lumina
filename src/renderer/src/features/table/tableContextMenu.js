@@ -1,4 +1,5 @@
-import { readModelFromDom, dispatchModel } from './tableWidgetExtension.js'
+import { dispatchModel } from './tableWidgetExtension.js'
+import { readModelFromDom } from './tableModel.js'
 import { icons } from './icons.js'
 
 export function cellRowIndex(cell) {
@@ -174,18 +175,24 @@ export function openCellMenu(view, cell, x, y) {
 
   const dismiss = () => {
     menu.remove()
+    document.querySelectorAll('.cm-atomic-table-submenu').forEach(el => el.remove())
     document.removeEventListener('mousedown', onDocDown, true)
     document.removeEventListener('keydown', onDocKey, true)
   }
   const onDocDown = (event) => {
-    if (event.target instanceof Node && menu.contains(event.target)) return
+    if (event.target instanceof Node) {
+      if (menu.contains(event.target)) return
+      // Prevent dismiss if clicking inside ANY portaled submenu
+      const inSubmenu = Array.from(document.querySelectorAll('.cm-atomic-table-submenu')).some(sub => sub.contains(event.target))
+      if (inSubmenu) return
+    }
     dismiss()
   }
   const onDocKey = (event) => {
     if (event.key === 'Escape') dismiss()
   }
 
-  function buildMenuDom(menuItems, parentEl) {
+  function buildMenuDom(menuItems, parentEl, isSubmenu = false) {
     for (const item of menuItems) {
       if (item.type === 'separator') {
         const sep = document.createElement('div')
@@ -194,8 +201,7 @@ export function openCellMenu(view, cell, x, y) {
         continue
       }
       
-      const btn = document.createElement('button')
-      btn.type = 'button'
+      const btn = document.createElement('div')
       btn.className = 'cm-atomic-table-menu-item'
       
       const iconSpan = document.createElement('span')
@@ -216,30 +222,77 @@ export function openCellMenu(view, cell, x, y) {
         
         const submenuEl = document.createElement('div')
         submenuEl.className = 'cm-atomic-table-menu cm-atomic-table-submenu'
-        buildMenuDom(item.items, submenuEl)
-        btn.appendChild(submenuEl)
+        buildMenuDom(item.items, submenuEl, true)
         
-        btn.addEventListener('mouseenter', () => {
-           Array.from(parentEl.querySelectorAll('.cm-atomic-table-submenu.open')).forEach(el => el.classList.remove('open'))
-           submenuEl.classList.add('open')
-           
-           const rect = submenuEl.getBoundingClientRect()
-           if (rect.right > window.innerWidth) {
-             submenuEl.style.left = 'auto'
-             submenuEl.style.right = '100%'
-           } else {
-             submenuEl.style.left = '100%'
-             submenuEl.style.right = 'auto'
+        // Append directly to document.body so it can NEVER be clipped
+        document.body.appendChild(submenuEl)
+        
+        const openSubmenu = () => {
+           try {
+             // Close all other submenus first
+             Array.from(document.querySelectorAll('.cm-atomic-table-submenu')).forEach(el => {
+               el.style.display = 'none'
+               el.classList.remove('open')
+             })
+             
+             // Show this submenu
+             submenuEl.style.display = 'flex'
+             submenuEl.style.position = 'fixed'
+             submenuEl.style.margin = '0' // prevent margin offset
+             submenuEl.classList.add('open')
+             
+             const btnRect = btn.getBoundingClientRect()
+             
+             // Measure dimensions after making it visible
+             const rect = submenuEl.getBoundingClientRect()
+             const subWidth = rect.width || 200
+             const subHeight = rect.height || 300
+             
+             // Portal Horizontal Positioning (fixed to viewport)
+             if (btnRect.right + subWidth > window.innerWidth) {
+               submenuEl.style.left = `${Math.max(4, btnRect.left - subWidth)}px`
+               submenuEl.style.right = 'auto'
+             } else {
+               submenuEl.style.left = `${btnRect.right}px`
+               submenuEl.style.right = 'auto'
+             }
+             
+             // Portal Vertical Positioning (fixed to viewport)
+             if (btnRect.top + subHeight > window.innerHeight) {
+               submenuEl.style.top = `${Math.max(4, btnRect.bottom - subHeight)}px`
+               submenuEl.style.bottom = 'auto'
+             } else {
+               submenuEl.style.top = `${btnRect.top - 4}px` // -4px for alignment with menu item
+               submenuEl.style.bottom = 'auto'
+             }
+           } catch(err) {
+             labelSpan.textContent = 'Err: ' + err.message
            }
+        }
+        btn.addEventListener('pointerenter', openSubmenu)
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation()
+          openSubmenu()
         })
       } else {
         btn.addEventListener('click', () => {
           item.action()
-          dismiss()
+          // dismiss is handled below
+          menu.remove()
+          document.querySelectorAll('.cm-atomic-table-submenu').forEach(el => el.remove())
+          document.removeEventListener('mousedown', onDocDown, true)
+          document.removeEventListener('keydown', onDocKey, true)
         })
-        btn.addEventListener('mouseenter', () => {
-           Array.from(parentEl.querySelectorAll('.cm-atomic-table-submenu.open')).forEach(el => el.classList.remove('open'))
-        })
+        
+        // Only attach the close-submenu behavior if this is a MAIN menu item
+        if (!isSubmenu) {
+          btn.addEventListener('pointerenter', () => {
+             Array.from(document.querySelectorAll('.cm-atomic-table-submenu')).forEach(el => {
+               el.style.display = 'none'
+               el.classList.remove('open')
+             })
+          })
+        }
       }
       
       parentEl.appendChild(btn)

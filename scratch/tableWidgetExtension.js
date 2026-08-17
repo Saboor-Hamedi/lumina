@@ -1,19 +1,4 @@
-import { ensureSyntaxTree, syntaxTree } from '@codemirror/language'
-import { Decoration, EditorView, WidgetType, keymap, ViewPlugin } from '@codemirror/view'
-import { StateField, StateEffect, Facet, Prec } from '@codemirror/state'
-import { undo, redo } from '@codemirror/commands'
-import { treeGrowthEffect, treeProgressPlugin } from './tree-progress'
-import { useVaultStore } from '../../core/store/useVaultStore'
-import { TableAutocomplete } from './wikilinkAutocompletion'
-import { setupTableFormattingToolbar } from './tableFormattingToolbar'
-import { openCellMenu } from './tableContextMenu'
-import { setupTableSelection } from './tableGridSelection'
-import { icons } from './icons.js'
-
-import { parseTable, serializeTable, readModelFromDom, getCellSource } from './tableModel'
-import { renderCellSourceDecorated, makeCell } from './tableCellDom'
-
-export function findCurrentTableRange(view, dom) {
+function findCurrentTableRange(view, dom) {
   const pos = view.posAtDOM(dom)
   if (pos < 0) return null
   const tree = syntaxTree(view.state)
@@ -37,7 +22,7 @@ export function findCurrentTableRange(view, dom) {
   return null
 }
 // ---- DOM helpers ----------------------------------------------------
-export function placeCaretAtEnd(el) {
+function placeCaretAtEnd(el) {
   const range = document.createRange()
   range.selectNodeContents(el)
   range.collapse(false)
@@ -46,11 +31,11 @@ export function placeCaretAtEnd(el) {
   sel.removeAllRanges()
   sel.addRange(range)
 }
-export function getAllCells(wrap) {
+function getAllCells(wrap) {
   return Array.from(wrap.querySelectorAll('th, td'))
 }
 // ---- widget ---------------------------------------------------------
-export class TableWidget extends WidgetType {
+class TableWidget extends WidgetType {
   constructor(model) {
     super()
     Object.defineProperty(this, 'model', {
@@ -266,7 +251,7 @@ export function dispatchModel(view, wrap, nextModel) {
     changes: { from: range.from, to: range.to, insert: next }
   })
 }
-export function dispatchModelFromDom(view, cell) {
+function dispatchModelFromDom(view, cell) {
   const wrap = cell.closest('.cm-atomic-table')
   if (!wrap) return
   const range = findCurrentTableRange(view, wrap)
@@ -302,7 +287,7 @@ export function dispatchModelFromDom(view, cell) {
     annotations: Transaction.userEvent.of('input.type')
   })
 }
-export function moveCellFocus(view, cell, dir, opts = { appendOnOverflow: true }) {
+function moveCellFocus(view, cell, dir, opts = { appendOnOverflow: true }) {
   const wrap = cell.closest('.cm-atomic-table')
   if (!wrap) return
   const cells = getAllCells(wrap)
@@ -351,7 +336,7 @@ export function moveCellFocus(view, cell, dir, opts = { appendOnOverflow: true }
     placeCaretAtEnd(source)
   }
 }
-export function appendRow(view, wrap, focusColIndex = 0) {
+function appendRow(view, wrap, focusColIndex = 0) {
   const range = findCurrentTableRange(view, wrap)
   if (!range) return
   const model = readModelFromDom(wrap)
@@ -404,7 +389,7 @@ export function appendRow(view, wrap, focusColIndex = 0) {
 // uses for treating the table as an atomic unit for deletion. The
 // caller can press backspace again to actually delete the selected
 // table.
-export function backspaceAtTableBoundary(view) {
+function backspaceAtTableBoundary(view) {
   const { state } = view
   const sel = state.selection.main
   if (!sel.empty) return false
@@ -435,7 +420,7 @@ export function backspaceAtTableBoundary(view) {
   return true
 }
 // ---- state field ----------------------------------------------------
-export function buildTableWidgets(state) {
+function buildTableWidgets(state) {
   const ranges = []
   // Force full-doc parse so tables past the initial parsed region
   // also get the widget treatment. This StateField only rebuilds on
@@ -478,7 +463,7 @@ export function buildTableWidgets(state) {
 //
 // If neither fires, skip the full-doc walk and just map existing
 // decorations through the change.
-export function changeAffectsTables(tr, existing) {
+function changeAffectsTables(tr, existing) {
   let affected = false
   tr.changes.iterChanges((fromA, toA) => {
     if (affected) return
@@ -502,55 +487,8 @@ export function changeAffectsTables(tr, existing) {
   })
   return affected
 }
-const tableField = StateField.define({
-  create: (state) => buildTableWidgets(state),
-  update(deco, tr) {
-    // Tree-growth effect: lezer's background parser caught up to a
-    // region that wasn't parsed when we last built. Rebuild so any
-    // newly-visible Table nodes get their widget.
-    for (const effect of tr.effects) {
-      if (effect.is(treeGrowthEffect)) return buildTableWidgets(tr.state)
-    }
-    if (!tr.docChanged) return deco
-    const mapped = deco.map(tr.changes)
-    if (!changeAffectsTables(tr, deco)) return mapped
-    return buildTableWidgets(tr.state)
-  },
-  provide: (f) => EditorView.decorations.from(f)
-})
-const defaultLinkOpener = (url) => {
-  try {
-    window.open(url, '_blank', 'noopener,noreferrer')
-  } catch {
-    // window.open can throw in sandboxed iframes etc.
-  }
-}
-// Per-view facet so `makeCell`'s pointerdown handler can look up the
-// current link-click callback. Avoids threading the config through the
-// widget constructor and toDOM args.
 export const tableLinkClickFacet = Facet.define({
   combine: (values) => values[0] ?? defaultLinkOpener
-})
-
-const tableSelectionSyncPlugin = ViewPlugin.fromClass(class {
-  update(update) {
-    if (update.selectionSet || update.docChanged || update.viewportChanged) {
-      this.syncSelection(update.view)
-    }
-  }
-  syncSelection(view) {
-    const sel = view.state.selection.main
-    const tables = view.dom.querySelectorAll('.cm-atomic-table')
-    for (const table of tables) {
-      const pos = view.posAtDOM(table)
-      // Check if this pos is inside the selection
-      if (pos !== null && pos >= sel.from && pos <= sel.to && !sel.empty) {
-        table.classList.add('cm-widget-selected-by-cm')
-      } else {
-        table.classList.remove('cm-widget-selected-by-cm')
-      }
-    }
-  }
 })
 
 export function tables(config = {}) {
