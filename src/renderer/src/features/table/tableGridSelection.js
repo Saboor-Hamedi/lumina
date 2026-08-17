@@ -157,18 +157,31 @@ export function setupTableSelection(wrap, view) {
     const minC = Math.min(start.c, end.c)
     const maxC = Math.max(start.c, end.c)
 
-    let tsv = ''
-    for (let r = minR; r <= maxR; r++) {
+    let markdown = []
+    
+    // If header is selected, generate markdown header and delimiter
+    if (minR === -1) {
+      let headerText = []
+      for (let c = minC; c <= maxC; c++) {
+        const cell = getCellAt(-1, c)
+        const source = cell?.querySelector('.cm-atomic-table-cell-source')
+        headerText.push((source ? source.textContent : '').replace(/\\|\\/g, '\\|'))
+      }
+      markdown.push('| ' + headerText.join(' | ') + ' |')
+      markdown.push('|' + headerText.map(() => '---').join('|') + '|')
+    }
+    
+    for (let r = Math.max(0, minR); r <= maxR; r++) {
       let rowText = []
       for (let c = minC; c <= maxC; c++) {
         const cell = getCellAt(r, c)
         const source = cell?.querySelector('.cm-atomic-table-cell-source')
-        rowText.push(source ? source.textContent : '')
+        rowText.push((source ? source.textContent : '').replace(/\\|\\/g, '\\|'))
       }
-      tsv += rowText.join('\t') + '\n'
+      markdown.push('| ' + rowText.join(' | ') + ' |')
     }
     
-    e.clipboardData.setData('text/plain', tsv)
+    e.clipboardData.setData('text/plain', markdown.join('\n'))
     e.preventDefault()
   })
 

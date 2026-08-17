@@ -33,11 +33,49 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
+/* Hide the huge native cursor on the line containing the block widget */
+.cm-line:has(> .cm-atomic-table) {
+  caret-color: transparent !important;
+}
+
 /* --- TABLE CORE STRUCTURE --- */
-.cm-atomic-table {
+.cm-table-scroll-wrap {
   display: block;
-  position: relative !important;
+  overflow: auto;
   max-width: 100% !important;
+  margin: 4px 0 !important;
+  box-sizing: border-box;
+}
+
+/* Elegant Premium Scrollbar for the table container */
+.cm-table-scroll-wrap::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+  background: transparent;
+}
+.cm-table-scroll-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+.cm-table-scroll-wrap::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+.cm-table-scroll-wrap:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+.cm-table-scroll-wrap::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+.cm-table-scroll-wrap::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.cm-atomic-table {
+  position: relative !important;
+  display: block;
+  width: max-content !important;
+  padding: 18px 24px 24px 18px !important;
   box-sizing: border-box;
   font-size: var(--font-size-editor, 16px) !important;
   border: none !important;
@@ -59,10 +97,8 @@
   line-height: 1.5 !important;
 }
 
-/* Inner table element has overflow to allow scrolling without clipping the outer wrap */
 .cm-atomic-table table {
-  display: block;
-  overflow-x: auto;
+  display: table !important;
   width: max-content !important;
   min-width: 100% !important;
   table-layout: auto !important;
@@ -158,55 +194,59 @@
 .cm-table-add-btn {
   position: absolute;
   cursor: pointer;
-  background: var(--bg-panel, rgba(0,0,0,0.2));
-  border: 1px dashed var(--border-dim, rgba(255, 255, 255, 0.1));
+  background: var(--bg-surface, #1e1e1e);
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.1));
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text-muted, #888);
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 10;
   opacity: 0;
   pointer-events: none;
+  transform: scale(0.9);
 }
 
 .cm-atomic-table:hover .cm-table-add-btn {
   opacity: 1;
   pointer-events: auto;
+  transform: scale(1);
 }
 
 .cm-table-add-btn:hover {
-  background: rgba(var(--text-accent-rgb, 33, 150, 243), 0.1);
+  background: var(--bg-panel, #2a2a2a);
   color: var(--text-accent, #2196f3);
   border-color: var(--text-accent, #2196f3);
-  border-style: solid;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  transform: scale(1.1);
 }
 
 .cm-table-add-btn:active {
-  background: rgba(var(--text-accent-rgb, 33, 150, 243), 0.2);
+  transform: scale(0.95);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 
 .cm-table-add-row-btn {
-  bottom: -24px;
-  left: 0;
-  right: 0;
-  height: 20px;
-  border-radius: 0 0 4px 4px;
+  bottom: 0px;
+  left: 50%;
+  margin-left: -12px;
 }
 
 .cm-table-add-col-btn {
-  right: -24px;
-  top: 0;
-  bottom: 0;
-  width: 20px;
-  border-radius: 0 4px 4px 0;
+  right: 0px;
+  top: 50%;
+  margin-top: -12px;
 }
 
 /* --- CORNER HANDLE --- */
 .cm-table-corner-handle {
   position: absolute;
-  top: -14px;
-  left: -14px;
+  top: 4px; /* 18px padding - 14px offset */
+  left: 4px; /* 18px padding - 14px offset */
   width: 28px;
   height: 28px;
   cursor: pointer;
