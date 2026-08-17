@@ -300,8 +300,10 @@ const CommandPalette = React.memo(
       }
     }, [chatMessages, isChatLoading, isOpen, mode])
 
-    // AI Search Debounce
+    // AI Search Debounce (Skip if in AI Chat mode)
     useEffect(() => {
+      if (mode === 'ai') return
+      
       const timer = setTimeout(async () => {
         if (deferredQuery.trim().length > 2) {
           const results = await searchNotes(deferredQuery, 0.45)
@@ -311,7 +313,7 @@ const CommandPalette = React.memo(
         }
       }, 400)
       return () => clearTimeout(timer)
-    }, [deferredQuery])
+    }, [deferredQuery, mode])
 
     const fuseIndex = useMemo(() => {
       return new Fuse(items, {
@@ -327,6 +329,8 @@ const CommandPalette = React.memo(
     }, [items])
 
     const filtered = useMemo(() => {
+      if (mode === 'ai') return [] // Skip all heavy searching if we are just chatting
+      
       const lowerQuery = deferredQuery.toLowerCase().trim()
 
       // 0. System Actions (Show if query starts with > or matches)
@@ -641,12 +645,45 @@ const CommandPalette = React.memo(
       return item.code || item.matchSnippet || ''
     }, [filtered, selectedIndex])
 
+    const chatContent = useMemo(() => (
+      <div className="palette-chat-messages seamless-scrollbar" ref={chatScrollRef}>
+        {!chatMessages || chatMessages.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-faint)' }}>
+            <Bot size={32} style={{ opacity: 0.5, marginBottom: '16px' }} />
+            <p>Ask Lumina any question.</p>
+            <p style={{ fontSize: '12px', opacity: 0.7 }}>I'll search your knowledge base and answer.</p>
+          </div>
+        ) : (
+          chatMessages.map((msg, i) => (
+            <div 
+              key={i} 
+              className={`chat-bubble ${msg.role}`}
+              style={{ padding: '0 12px' }}
+            >
+              {msg.role === 'assistant' && !msg.content?.trim() && !msg.imageUrl && ((i === chatMessages.length - 1 && isChatLoading) || msg.isGenerating) ? (
+                <div className="thinking-indicator">
+                  <span className="thinking-text">
+                    <span className="thinking-dot-pulse" />
+                    Thinking...
+                  </span>
+                </div>
+              ) : msg.role === 'assistant' ? (
+                <MessageContent content={msg.content} />
+              ) : (
+                msg.content
+              )}
+            </div>
+          ))
+        )}
+      </div>
+    ), [chatMessages, isChatLoading])
+
     if (!isOpen) return null
 
     return createPortal(
       <div className="command-palette-overlay" onClick={onClose}>
         <div className="command-palette-container" onClick={(e) => e.stopPropagation()}>
-          <div className="palette-input-wrap">
+          <div className="palette-input-wrap horizontal">
             <Search size={18} className="palette-search-icon" />
             <input
               ref={inputRef}
@@ -667,7 +704,7 @@ const CommandPalette = React.memo(
             />
             <div className="palette-mode-toggle">
               <button
-                className={`palette-mode-btn ${mode === 'search' ? 'active' : ''}`}
+                className={`palette-header-btn ${mode === 'search' ? 'active' : ''}`}
                 onClick={() => {
                   setMode('search')
                   updateSetting('commandPaletteMode', 'search')
@@ -676,7 +713,7 @@ const CommandPalette = React.memo(
                 Search
               </button>
               <button
-                className={`palette-mode-btn ${mode === 'ai' ? 'active' : ''}`}
+                className={`palette-header-btn ${mode === 'ai' ? 'active' : ''}`}
                 onClick={() => {
                   setMode('ai')
                   updateSetting('commandPaletteMode', 'ai')
@@ -684,29 +721,25 @@ const CommandPalette = React.memo(
               >
                 Ask AI
               </button>
+              {mode === 'ai' && isChatLoading && (
+                <button 
+                  className="palette-header-btn danger"
+                  onClick={cancelChat}
+                >
+                  <Square size={10} fill="currentColor" /> Stop
+                </button>
+              )}
+              {mode === 'ai' && chatMessages?.length > 0 && (
+                <button 
+                  className="palette-header-btn danger"
+                  style={{ padding: '0 8px' }}
+                  onClick={clearChat}
+                  title="Clear Session"
+                >
+                  <Trash2 size={13} />
+                </button>
+              )}
             </div>
-            {mode === 'ai' && (
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {isChatLoading && (
-                  <button 
-                    className="palette-stop-btn"
-                    onClick={cancelChat}
-                  >
-                    <Square size={10} fill="currentColor" /> Stop
-                  </button>
-                )}
-                {chatMessages?.length > 0 && (
-                  <button 
-                    className="palette-stop-btn"
-                    style={{ background: 'transparent', borderColor: 'transparent', padding: '0 8px', color: 'var(--text-faint)' }}
-                    onClick={clearChat}
-                    title="Clear Session"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                )}
-              </div>
-            )}
           </div>
 
         <div className="palette-body">
@@ -773,41 +806,12 @@ const CommandPalette = React.memo(
             </>
           ) : (
             <div className="palette-chat-container" style={{ flex: 1, width: '100%' }}>
-              <div className="palette-chat-messages seamless-scrollbar" ref={chatScrollRef}>
-                {!chatMessages || chatMessages.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-faint)' }}>
-                    <Bot size={32} style={{ opacity: 0.5, marginBottom: '16px' }} />
-                    <p>Ask Lumina any question.</p>
-                    <p style={{ fontSize: '12px', opacity: 0.7 }}>I'll search your knowledge base and answer.</p>
-                  </div>
-                ) : (
-                  chatMessages.map((msg, i) => (
-                    <div 
-                      key={i} 
-                      className={`chat-bubble ${msg.role}`}
-                      style={{ padding: '0 12px' }}
-                    >
-                      {msg.role === 'assistant' && !msg.content?.trim() && !msg.imageUrl && ((i === chatMessages.length - 1 && isChatLoading) || msg.isGenerating) ? (
-                        <div className="thinking-indicator">
-                          <span className="thinking-text">
-                            <span className="thinking-dot-pulse" />
-                            Thinking...
-                          </span>
-                        </div>
-                      ) : msg.role === 'assistant' ? (
-                        <MessageContent content={msg.content} />
-                      ) : (
-                        msg.content
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
+              {chatContent}
             </div>
           )}
         </div>
 
-          <div className="palette-footer">
+          <div className="palette-footer horizontal horizontal-top">
             <div className="footer-tip">
               <span>
                 <kbd>↑</kbd> <kbd>↓</kbd> to navigate

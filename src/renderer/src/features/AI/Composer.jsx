@@ -20,19 +20,27 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
   const mode = settings.activeAIMode || 'Standard'
   const setMode = (newMode) => updateSettings({ activeAIMode: newMode })
 
-  // Auto-resize textarea
+  // Auto-resize textarea with requestAnimationFrame to prevent synchronous layout thrashing (input lag)
   useEffect(() => {
-    if (textareaRef.current) {
-      if (!input.trim()) {
-        textareaRef.current.style.height = '38px'
-        textareaRef.current.style.overflowY = 'hidden'
-      } else {
+    if (!textareaRef.current) return
+    
+    let rafId
+    
+    if (!input.trim()) {
+      textareaRef.current.style.height = '38px'
+      textareaRef.current.style.overflowY = 'hidden'
+    } else {
+      rafId = requestAnimationFrame(() => {
+        if (!textareaRef.current) return
         textareaRef.current.style.height = 'auto'
         const nextHeight = Math.min(textareaRef.current.scrollHeight, 140)
         textareaRef.current.style.height = `${nextHeight}px`
-        textareaRef.current.style.overflowY =
-          textareaRef.current.scrollHeight > 140 ? 'auto' : 'hidden'
-      }
+        textareaRef.current.style.overflowY = textareaRef.current.scrollHeight > 140 ? 'auto' : 'hidden'
+      })
+    }
+    
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId)
     }
   }, [input])
 

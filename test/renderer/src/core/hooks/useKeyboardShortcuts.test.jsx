@@ -82,11 +82,11 @@ describe('useKeyboardShortcuts', () => {
     expect(onTogglePalette).toHaveBeenCalled()
   })
 
-  it('calls onToggleCommandPalette on Ctrl+Shift+P', () => {
+  it('calls onToggleCommandPalette on Ctrl+Space', () => {
     const onToggleCommandPalette = vi.fn()
     renderHook(() => useKeyboardShortcuts({ onToggleCommandPalette }))
 
-    triggerKey('p', { ctrl: true, shift: true })
+    triggerKey(' ', { ctrl: true })
     expect(onToggleCommandPalette).toHaveBeenCalled()
   })
 

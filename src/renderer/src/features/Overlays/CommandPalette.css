@@ -38,7 +38,6 @@
   padding: 12px 16px;
   gap: 12px;
   background: rgba(0,0,0,0.02);
-  border-bottom: 1px solid var(--border-dim);
   flex-shrink: 0;
 }
 
@@ -243,7 +242,6 @@
 .palette-footer {
   padding: 10px 20px;
   background: var(--bg-sidebar);
-  border-top: 1px solid var(--border-dim);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -489,38 +487,64 @@ kbd {
 
 .palette-mode-toggle {
   display: flex;
-  gap: 4px;
+  gap: 6px;
 }
-.palette-mode-btn {
-  padding: 4px 8px !important;
-  font-size: 11px !important;
-  border-radius: 6px !important;
-  height: 24px !important;
-}
-.palette-ask-lumina-btn {
-  padding: 8px 14px !important;
-  font-size: 12px !important;
-  border-radius: 6px !important;
-}
-.palette-stop-btn {
+
+.palette-header-btn {
   padding: 4px 10px !important;
   font-size: 11px !important;
   font-weight: 500;
-  border-radius: 12px !important;
+  border-radius: 6px !important;
   height: 24px !important;
-  background: transparent !important;
+  background: var(--bg-card) !important;
   border: 1px solid var(--border-dim) !important;
   color: var(--text-muted) !important;
   cursor: pointer;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
-.palette-stop-btn:hover {
+
+.palette-header-btn:hover {
+  background: var(--bg-active) !important;
+  color: var(--text-main) !important;
+  border-color: var(--text-accent) !important;
+}
+
+.palette-header-btn.active {
+  background: var(--text-accent) !important;
+  color: #fff !important;
+  border-color: var(--text-accent) !important;
+  box-shadow: 0 2px 4px rgba(var(--text-accent-rgb), 0.3);
+}
+
+.palette-header-btn.danger {
+  color: var(--text-muted) !important;
+}
+
+.palette-header-btn.danger:hover {
   color: #ff5f56 !important;
-  border-color: rgba(255, 95, 86, 0.3) !important;
-  background: rgba(255, 95, 86, 0.05) !important;
+  border-color: rgba(255, 95, 86, 0.4) !important;
+  background: rgba(255, 95, 86, 0.08) !important;
+}
+
+.palette-ask-lumina-btn {
+  padding: 8px 14px !important;
+  font-size: 12px !important;
+  border-radius: 6px !important;
+  background: var(--bg-card);
+  border: 1px solid var(--border-dim);
+  color: var(--text-accent);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.palette-ask-lumina-btn:hover {
+  background: var(--text-accent);
+  color: #fff;
 }
 
 

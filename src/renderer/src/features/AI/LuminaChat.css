@@ -782,6 +782,45 @@
   margin-bottom: 0;
 }
 
+/* Horizontal Rule - Matching MarkdownEditor.jsx with Transparent Background Fix */
+.chat-bubble hr {
+  border: none !important;
+  height: 2px !important;
+  padding: 0 !important;
+  background: none !important;
+  width: 100% !important;
+  max-width: 150px !important;
+  margin: 24px auto !important;
+  position: relative !important;
+}
+
+.chat-bubble hr::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  /* Split the gradient in the middle so we don't need a background mask */
+  background: linear-gradient(to right, transparent 0%, var(--text-accent) 25%, transparent 40%, transparent 60%, var(--text-accent) 75%, transparent 100%) !important;
+  pointer-events: none !important; 
+  box-shadow: 0 0 8px rgba(var(--text-accent-rgb), 0.15);
+}
+
+.chat-bubble hr::after {
+  content: '✦ ✦ ✦' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+  padding: 0 !important;
+  font-size: 12px !important;
+  opacity: 0.3 !important;
+  pointer-events: none !important;
+}
+
 /* Headers */
 
 .chat-bubble h1,
@@ -800,14 +839,12 @@
   font-size: 2em; 
   color: var(--text-accent);
   padding-bottom: 0.3em;
-  border-bottom: 1px solid var(--border-dim);
 }
 
 .chat-bubble h2 { 
   font-size: 1.6em; 
   color: var(--text-main);
   padding-bottom: 0.3em;
-  border-bottom: 1px solid var(--border-dim);
 }
 
 .chat-bubble h3 { 
