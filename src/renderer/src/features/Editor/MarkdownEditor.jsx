@@ -1054,12 +1054,19 @@ const MarkdownEditor = React.memo(
             try {
               const { snippets, saveSnippet, setSelectedSnippet } = useVaultStore.getState()
               const targetLower = target.toLowerCase()
-              let targetSnippet = snippets.find(
-                (s) =>
-                  s.title &&
-                  (s.title.toLowerCase() === targetLower ||
-                    s.title.toLowerCase() === `${targetLower}.md`)
-              )
+              let targetSnippet = snippets.find((s) => {
+                if (!s.title) return false
+                
+                const titleLower = s.title.toLowerCase()
+                const fullPathLower = s.folderId ? `${s.folderId}/${s.title}`.toLowerCase() : titleLower
+                
+                return (
+                  titleLower === targetLower ||
+                  titleLower === `${targetLower}.md` ||
+                  fullPathLower === targetLower ||
+                  fullPathLower === `${targetLower}.md`
+                )
+              })
               if (!targetSnippet) {
                 targetSnippet = {
                   id: crypto.randomUUID(),

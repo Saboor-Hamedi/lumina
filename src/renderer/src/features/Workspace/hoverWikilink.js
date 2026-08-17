@@ -415,11 +415,19 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
       const { snippets } = getVaultStore()
       const targetLower = target.toLowerCase()
 
-      let note = snippets.find(
-        (s) =>
-          s.title &&
-          (s.title.toLowerCase() === targetLower || s.title.toLowerCase() === `${targetLower}.md`)
-      )
+      let note = snippets.find((s) => {
+        if (!s.title) return false
+        
+        const titleLower = s.title.toLowerCase()
+        const fullPathLower = s.folderId ? `${s.folderId}/${s.title}`.toLowerCase() : titleLower
+        
+        return (
+          titleLower === targetLower ||
+          titleLower === `${targetLower}.md` ||
+          fullPathLower === targetLower ||
+          fullPathLower === `${targetLower}.md`
+        )
+      })
 
       if (note) {
         const rawContent = note.code || ''
