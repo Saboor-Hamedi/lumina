@@ -52,7 +52,7 @@ test('app shell is visible with new note button after setting operations', async
   await invokeIPC(page, 'saveSetting', 'theme', 'dark')
   await invokeIPC(page, 'saveSetting', 'fontSize', 16)
 
-  await expect(page.getByRole('button', { name: 'New Note', exact: true })).toBeVisible({
+  await expect(page.getByRole('button', { name: 'New', exact: true })).toBeVisible({
     timeout: 20_000
   })
 })

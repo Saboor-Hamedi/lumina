@@ -54,7 +54,7 @@ const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef }) => {
           Title cannot be empty
         </div>
       )}
-      <div style={{ marginTop: '8px', paddingLeft: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
         <ToolTip text="Ask AI (Ctrl+K)" position="bottom">
           <button
             onClick={(e) => {
@@ -62,6 +62,7 @@ const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef }) => {
               window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))
             }}
             style={{
+              marginLeft: '-8px',
               background: 'transparent',
               border: 'none',
               borderRadius: '5px',

@@ -113,23 +113,25 @@ export function setupTableSelection(wrap, view) {
     }
   }
 
-  wrap.addEventListener('mousedown', (e) => {
+  // Use capture phase on document to guarantee we see the mousedown before any child
+  // components (like wikilinks) can stop propagation.
+  document.addEventListener('mousedown', (e) => {
+    if (!wrap.contains(e.target)) return // Handled by the window mousedown for outside clicks
+
     const cell = e.target.closest('th, td')
     if (!cell) {
-      // Clicked outside table cells, clear selection
       clearSelectionVisuals()
       startCell = null
       endCell = null
       return
     }
 
-    // They clicked a cell. Clear existing grid selection immediately to allow normal text selection
+    // They clicked a cell inside this table wrapper.
     clearSelectionVisuals()
-
     isDragging = true
     startCell = cell
     endCell = cell
-  })
+  }, true)
 
   window.addEventListener('mousemove', (e) => {
     if (!startCell) return
@@ -185,7 +187,24 @@ export function setupTableSelection(wrap, view) {
   })
 
   wrap.addEventListener('keydown', (e) => {
-    if (!hasSelection) return
+    if (!hasSelection) {
+      // If they press Escape while editing text inside a cell, exit text editing mode and select the cell!
+      if (e.key === 'Escape') {
+        const source = document.activeElement
+        if (source && source.classList.contains('cm-atomic-table-cell-source')) {
+          const cell = source.closest('th, td')
+          if (cell) {
+            source.blur()
+            wrap.focus()
+            startCell = cell
+            endCell = cell
+            renderSelection()
+            e.preventDefault()
+          }
+        }
+      }
+      return
+    }
 
     const selected = Array.from(wrap.querySelectorAll('.cm-table-cell-selected'))
     if (selected.length === 0) return

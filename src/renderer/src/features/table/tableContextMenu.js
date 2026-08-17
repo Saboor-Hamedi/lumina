@@ -248,9 +248,13 @@ export function openCellMenu(view, cell, x, y) {
              const subWidth = rect.width || 200
              const subHeight = rect.height || 300
              
+             // Find the editor boundaries to constrain the menu smartly
+             const editorEl = wrap.closest('.cm-scroller') || wrap.closest('.cm-editor') || document.body
+             const editorRect = editorEl.getBoundingClientRect()
+             
              // Portal Horizontal Positioning (fixed to viewport)
-             if (btnRect.right + subWidth > window.innerWidth) {
-               submenuEl.style.left = `${Math.max(4, btnRect.left - subWidth)}px`
+             if (btnRect.right + subWidth > editorRect.right) {
+               submenuEl.style.left = `${Math.max(editorRect.left + 4, btnRect.left - subWidth)}px`
                submenuEl.style.right = 'auto'
              } else {
                submenuEl.style.left = `${btnRect.right}px`
@@ -258,8 +262,8 @@ export function openCellMenu(view, cell, x, y) {
              }
              
              // Portal Vertical Positioning (fixed to viewport)
-             if (btnRect.top + subHeight > window.innerHeight) {
-               submenuEl.style.top = `${Math.max(4, btnRect.bottom - subHeight)}px`
+             if (btnRect.top + subHeight > editorRect.bottom) {
+               submenuEl.style.top = `${Math.max(editorRect.top + 4, btnRect.bottom - subHeight)}px`
                submenuEl.style.bottom = 'auto'
              } else {
                submenuEl.style.top = `${btnRect.top - 4}px` // -4px for alignment with menu item
@@ -302,12 +306,15 @@ export function openCellMenu(view, cell, x, y) {
   buildMenuDom(items, menu)
   document.body.appendChild(menu)
   
+  const editorEl = wrap.closest('.cm-scroller') || wrap.closest('.cm-editor') || document.body
+  const editorRect = editorEl.getBoundingClientRect()
+
   const rect = menu.getBoundingClientRect()
-  if (rect.right > window.innerWidth) {
-    menu.style.left = `${Math.max(4, window.innerWidth - rect.width - 4)}px`
+  if (rect.right > editorRect.right) {
+    menu.style.left = `${Math.max(editorRect.left + 4, editorRect.right - rect.width - 4)}px`
   }
-  if (rect.bottom > window.innerHeight) {
-    menu.style.top = `${Math.max(4, window.innerHeight - rect.height - 4)}px`
+  if (rect.bottom > editorRect.bottom) {
+    menu.style.top = `${Math.max(editorRect.top + 4, editorRect.bottom - rect.height - 4)}px`
   }
   
   setTimeout(() => {

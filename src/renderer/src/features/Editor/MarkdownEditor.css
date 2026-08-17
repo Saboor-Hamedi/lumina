@@ -65,21 +65,23 @@
 /* Horizontal line */
 .cm-line.cm-atomic-hr {
   border: none !important;
-  height: 2px !important;
+  height: 24px !important; /* Full height for easy clicking/selection */
   padding: 0 !important;
-  background: linear-gradient(to right, transparent, var(--text-accent) 30%, var(--text-accent) 70%, transparent) !important;
+  background: transparent !important;
   width: 100% !important;
-  max-width: 150px !important;
-  margin: 0 auto !important;
+  max-width: none !important;
+  margin: 0 !important;
   position: relative !important;
+  color: transparent !important; /* Hide the raw '---' text if any leaks through */
 }
 
 .cm-line.cm-atomic-hr::before {
   content: '';
   position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 50%;
+  width: 150px;
   height: 2px;
   background: linear-gradient(to right, transparent, var(--text-accent) 20%, var(--text-accent) 80%, transparent);
   pointer-events: none !important; 
@@ -89,16 +91,19 @@
 /* Change this to add icon */
 .cm-line.cm-atomic-hr::after {/**/
   content: '✦ ✦ ✦' !important;
- position: absolute !important;
-  inset: 0 !important;  /* Covers entire element */
+  position: absolute !important;
+  left: 50% !important;
+  transform: translateX(-50%) translateY(-50%) !important;
+  top: 50% !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  background: var(--bg-app) !important;
+  background: var(--bg-editor, var(--bg-app)) !important;
   padding: 0 12px !important;
   font-size: 12px !important;
   opacity: 0.3 !important;
   pointer-events: none !important;
+  color: var(--text-main) !important;
 }
 
 /* Inline Code Pill Style - your existing code */
@@ -313,8 +318,6 @@
   color: transparent !important;
   background: transparent !important;
   opacity: 0 !important;
-  pointer-events: none !important;
-  user-select: none !important;
   display: inline !important;
   width: auto !important;
   min-width: 0 !important;
@@ -792,7 +795,7 @@
   border: none;
   background: transparent;
   color: var(--text-muted);
-   padding: 4px 16px; 
+  padding: 4px 0;
   line-height: 1;
   margin-top: 10px;
   width: 100%;

@@ -18,6 +18,8 @@ lumina is a premium, AI-powered thinking environment. features a multi-tab works
 ### core
 
 - **workspace-first** — all notes are stored locally as plain text files. you own your data.
+- **"Ask Anything" bar (spotlight)** — press `ctrl+space` anywhere (even when the window is hidden) to search notes or ask the AI from one place
+- **global spotlight** — summon the command palette from anywhere on your computer, even when lumina is in the background
 - **multi-tab workspace** — open many notes at once with pinned tabs, drag reorder, dirty indicators
 - **live preview** — wysiwym editing with intelligent syntax hiding
 - **wikilinks** — `[[link]]` and `[[link|display]]` with auto-update on rename
@@ -50,7 +52,7 @@ lumina is a premium, AI-powered thinking environment. features a multi-tab works
 - **18 themes** — dark, light, high-contrast, nature-inspired palettes
 - **glassmorphism** — mirror mode with backdrop blur and translucency
 - **resizable sidebars** — left explorer + right panels, fully configurable
-- **quick search** — `ctrl/cmd+p` for instant feature access
+- **quick search / spotlight** — `ctrl+space` for the global "ask anything" bar; `ctrl/cmd+p` for instant note access
 - **keyboard-first** — comprehensive shortcuts (customisable)
 - **tab management** — pin, reorder, close to right, close others
 
@@ -101,6 +103,15 @@ npm run build:linux  # linux
 
 `ctrl/cmd + n` → start typing → auto-saves.
 
+### ask anything (spotlight)
+
+`ctrl/cmd + space` opens the global **Ask Anything** bar — it works from anywhere on
+your computer, even when lumina is hidden in the background.
+
+- type a note title → live results with a preview; press enter to open it
+- type a question → press enter and the AI answers right in the bar
+- use the `Search` / `Ask AI` toggle to switch between finding notes and chatting
+
 ### link notes
 
 ```markdown
@@ -111,8 +122,10 @@ renaming a note auto-updates all `[[links]]` across the workspace.
 
 ### use the ai
 
+- `ctrl/cmd + space` — ask anything from the global spotlight bar
+- `ctrl/cmd + shift + \` — open the full ai chat panel
 - `ctrl/cmd + k` — open inline ai
-- click the ai icon in the right sidebar — full chat panel
+- click the ai icon in the title bar — full chat panel
 - type `/` in the composer — slash commands
 
 ### graph view

@@ -102,7 +102,9 @@ export class TableWidget extends WidgetType {
       const source = event.target.closest('.cm-atomic-table-cell-source')
       if (source) return // Let normal focus happen if they clicked directly in the editable text
 
-      // They clicked on padding, borders, or table margins
+      if (!event.target.closest('.cm-table-scroll-container')) return // Let CodeMirror handle clicks in the 16px top/bottom spacer gap
+
+      // They clicked on padding or borders inside the visual table container
       event.preventDefault() // Prevent CodeMirror from taking focus and drawing a giant cursor
 
       const cell = event.target.closest('td, th')

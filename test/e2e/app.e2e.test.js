@@ -52,8 +52,8 @@ test('renderer loads without JS errors', async () => {
 })
 
 test('app shell renders with sidebar', async () => {
-  // Target the New Note button specifically (not the welcome page text which also says "new note")
-  await expect(page.getByRole('button', { name: 'New Note', exact: true })).toBeVisible({
+  // Target the New button specifically (not the welcome page text which also says "new note")
+  await expect(page.getByRole('button', { name: 'New', exact: true })).toBeVisible({
     timeout: 20_000
   })
 })

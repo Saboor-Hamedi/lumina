@@ -87,7 +87,7 @@ test('exportText rejects when content is missing', async () => {
 
 test('app remains responsive after export operations', async () => {
   await invokeIPC(page, 'exportHTML', { title: 'Note', content: 'body' })
-  await expect(page.getByRole('button', { name: 'New Note', exact: true })).toBeVisible({
+  await expect(page.getByRole('button', { name: 'New', exact: true })).toBeVisible({
     timeout: 20_000
   })
 })

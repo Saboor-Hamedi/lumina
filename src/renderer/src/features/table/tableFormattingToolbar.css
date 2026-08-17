@@ -99,11 +99,7 @@
 
 /* Outer table wrapper for rounded corners and shadow */
 .cm-atomic-table {
-  margin: 16px 0 !important;
-  border-radius: 8px !important;
-  overflow: hidden !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 0 1px var(--border-dim) !important;
-  background: var(--bg-primary, transparent) !important;
+  padding: 16px 0 !important;
   width: max-content !important;
   max-width: 100% !important;
 }
@@ -113,6 +109,10 @@
   max-width: 100%;
   overflow-x: auto;
   position: relative; /* For the grid selection overlay */
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 0 1px var(--border-dim) !important;
+  background: var(--bg-primary, transparent) !important;
+  box-sizing: border-box;
 }
 
 .cm-atomic-table table {

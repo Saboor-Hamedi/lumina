@@ -5,13 +5,23 @@ Lumina is designed to be highly keyboard-accessible. Here is a comprehensive lis
 ## Global Actions
 | Shortcut | Action |
 |----------|--------|
+| `Ctrl + Space` | **Spotlight / Command Palette** — opens the "Ask Anything" bar from anywhere in the app (also works globally, even when the window is hidden) |
 | `Ctrl + P` | Toggle quick snippet palette |
-| `Ctrl + Shift + P` | Open Command Palette (Actions & Navigation) |
 | `Ctrl + Shift + F` | Global Search |
 | `Ctrl + S` | Save current file |
 | `Ctrl + N` | Create a new snippet |
 | `Ctrl + R` | Rename the current snippet |
 | `Ctrl + Shift + D` | Delete current snippet |
+
+## Spotlight & "Ask Anything"
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl + Space` | Open the "Ask Anything" bar (global, works even when Lumina is in the background) |
+| `Tab` / `Shift + Tab` | Switch between **Search** and **Ask AI** modes in the bar |
+| `Enter` | Open the selected note, or send your question to the AI |
+| `Escape` | Close the bar |
+
+The "Ask Anything" bar is the one place to search your notes **and** ask Lumina questions. Type a note title to see live results with a preview, or type a question and press Enter to get an AI answer.
 
 ## Navigation & UI
 | Shortcut | Action |
@@ -30,6 +40,7 @@ Lumina is designed to be highly keyboard-accessible. Here is a comprehensive lis
 ## AI Features
 | Shortcut | Action |
 |----------|--------|
+| `Ctrl + Shift + \` | Open the AI Chat panel |
 | `Ctrl + K` | Open Inline AI Editor |
 
 ## General Navigation

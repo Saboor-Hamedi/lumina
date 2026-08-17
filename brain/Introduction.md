@@ -8,6 +8,16 @@ At its core, Lumina is designed for people who write and think. It features a be
 
 - **End-to-End Privacy:** Everything is stored directly on your machine. No cloud subscriptions, no data mining.
 - **AI Research Partner:** Chat with an AI that has full context of your entire workspace. Ask it to summarize folders, brainstorm new ideas, or connect related concepts.
+- **"Ask Anything" Bar (Spotlight):** Press `Ctrl + Space` anywhere — even when Lumina is in the background — to open one bar that searches your notes and answers your questions with AI. Type a title to get live results with a preview, or type a question to get an answer.
 - **Knowledge Map:** Visualize how your thoughts connect. See your ideas grow organically over time in a beautiful, interactive graph.
 - **Distraction-Free Environment:** A sleek, customizable interface designed to help you focus on what matters most—your writing. 
 - **Instant Search:** Find any note, thought, or idea instantly with a powerful global search.
+
+## Getting Started
+
+1. **Create a note** — press `Ctrl + N` and start typing. It auto-saves.
+2. **Ask anything** — press `Ctrl + Space` to open the Spotlight bar, type a note title to find it, or type a question and press Enter for an AI answer.
+3. **Open AI Chat** — press `Ctrl + Shift + \` to chat with Lumina about your workspace.
+4. **Explore connections** — open the Knowledge Map (`Ctrl + G`) to see how your notes link together.
+
+For the full shortcut list, see [Shortcuts.md](./Shortcuts.md).
