@@ -543,8 +543,15 @@ const tableSelectionSyncPlugin = ViewPlugin.fromClass(class {
     const tables = view.dom.querySelectorAll('.cm-atomic-table')
     for (const table of tables) {
       const pos = view.posAtDOM(table)
-      // Check if this pos is inside the selection
-      if (pos !== null && pos >= sel.from && pos <= sel.to && !sel.empty) {
+      // Check if this pos is inside the CodeMirror selection
+      const isSelected = pos !== null && pos >= sel.from && pos <= sel.to && !sel.empty
+      
+      // If the actual DOM focus is INSIDE the table, the user is editing it.
+      // Do NOT highlight the entire table blue in this case.
+      const hasFocus = table.contains(document.activeElement)
+      const hasDomSelection = window.getSelection().anchorNode && table.contains(window.getSelection().anchorNode)
+      
+      if (isSelected && !hasFocus && !hasDomSelection) {
         table.classList.add('cm-widget-selected-by-cm')
       } else {
         table.classList.remove('cm-widget-selected-by-cm')

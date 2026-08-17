@@ -40,6 +40,8 @@ export function setupTableSelection(wrap, view) {
     wrap.querySelectorAll('.cm-table-cell-selected').forEach(el => {
       el.classList.remove('cm-table-cell-selected')
     })
+    const overlay = wrap.querySelector('.cm-table-selection-overlay')
+    if (overlay) overlay.style.display = 'none'
     hasSelection = false
   }
 
@@ -61,6 +63,7 @@ export function setupTableSelection(wrap, view) {
     if (minR === maxR && minC === maxC) return
 
     hasSelection = true
+    
     for (let r = minR; r <= maxR; r++) {
       for (let c = minC; c <= maxC; c++) {
         const cell = getCellAt(r, c)
@@ -69,12 +72,50 @@ export function setupTableSelection(wrap, view) {
         }
       }
     }
+    
+    // Find the top-left and bottom-right cells
+    const tlCell = getCellAt(minR, minC)
+    const brCell = getCellAt(maxR, maxC)
+    
+    if (tlCell && brCell) {
+      let overlay = wrap.querySelector('.cm-table-selection-overlay')
+      if (!overlay) {
+        overlay = document.createElement('div')
+        overlay.className = 'cm-table-selection-overlay'
+        overlay.style.pointerEvents = 'none' // GUARANTEE clicks pass through to the cells!
+        
+        // Ensure wrap is relative so the absolute overlay positions correctly
+        const computed = window.getComputedStyle(wrap)
+        if (computed.position === 'static') {
+          wrap.style.position = 'relative'
+        }
+        wrap.appendChild(overlay)
+      }
+      
+      const wrapRect = wrap.getBoundingClientRect()
+      const tlRect = tlCell.getBoundingClientRect()
+      const brRect = brCell.getBoundingClientRect()
+      
+      // Calculate coordinates relative to the wrap container
+      // Add scroll offsets of the wrapper if it has any overflow scroll
+      const topOffset = tlRect.top - wrapRect.top + wrap.scrollTop
+      const leftOffset = tlRect.left - wrapRect.left + wrap.scrollLeft
+      const width = brRect.right - tlRect.left
+      const height = brRect.bottom - tlRect.top
+      
+      // Apply to overlay
+      overlay.style.top = `${topOffset}px`
+      overlay.style.left = `${leftOffset}px`
+      overlay.style.width = `${width}px`
+      overlay.style.height = `${height}px`
+      overlay.style.display = 'block'
+    }
   }
 
   wrap.addEventListener('mousedown', (e) => {
     const cell = e.target.closest('th, td')
     if (!cell) {
-      // Clicked outside table cells (e.g. padding), clear selection
+      // Clicked outside table cells, clear selection
       clearSelectionVisuals()
       startCell = null
       endCell = null
@@ -83,11 +124,6 @@ export function setupTableSelection(wrap, view) {
 
     // They clicked a cell. Clear existing grid selection immediately to allow normal text selection
     clearSelectionVisuals()
-
-    const source = e.target.closest('.cm-atomic-table-cell-source')
-    if (!source) {
-      e.preventDefault()
-    }
 
     isDragging = true
     startCell = cell
@@ -136,11 +172,61 @@ export function setupTableSelection(wrap, view) {
     }
   })
 
+  window.addEventListener('mousedown', (e) => {
+    if (!wrap.contains(e.target)) {
+      clearSelectionVisuals()
+      startCell = null
+      endCell = null
+    }
+  })
+
   wrap.addEventListener('keydown', (e) => {
     if (!hasSelection) return
 
     const selected = Array.from(wrap.querySelectorAll('.cm-table-cell-selected'))
     if (selected.length === 0) return
+
+    // Intercept Ctrl+C / Cmd+C because the native 'copy' event won't fire if the browser selection is empty
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+      e.preventDefault()
+      
+      const start = getCoords(startCell)
+      const end = getCoords(endCell)
+      const minR = Math.min(start.r, end.r)
+      const maxR = Math.max(start.r, end.r)
+      const minC = Math.min(start.c, end.c)
+      const maxC = Math.max(start.c, end.c)
+
+      let markdown = []
+      
+      if (minR === -1) {
+        let headerText = []
+        for (let c = minC; c <= maxC; c++) {
+          const cell = getCellAt(-1, c)
+          const source = cell?.querySelector('.cm-atomic-table-cell-source')
+          headerText.push((source ? source.textContent : '').replace(/\|/g, '\\|'))
+        }
+        markdown.push('| ' + headerText.join(' | ') + ' |')
+        
+        let dividerText = []
+        for (let c = minC; c <= maxC; c++) dividerText.push('---')
+        markdown.push('| ' + dividerText.join(' | ') + ' |')
+      }
+      
+      const bodyStart = Math.max(0, minR)
+      for (let r = bodyStart; r <= maxR; r++) {
+        let rowText = []
+        for (let c = minC; c <= maxC; c++) {
+          const cell = getCellAt(r, c)
+          const source = cell?.querySelector('.cm-atomic-table-cell-source')
+          rowText.push((source ? source.textContent : '').replace(/\|/g, '\\|'))
+        }
+        markdown.push('| ' + rowText.join(' | ') + ' |')
+      }
+      
+      navigator.clipboard.writeText(markdown.join('\n'))
+      return
+    }
 
     if (e.key === 'Backspace' || e.key === 'Delete') {
       e.preventDefault()
@@ -150,12 +236,15 @@ export function setupTableSelection(wrap, view) {
       })
       const m = readModelFromDom(wrap)
       dispatchModel(view, wrap, m)
+      return
     }
     
     // Phase 3: Keyboard selection via Shift + Arrow Keys
     if (e.shiftKey && e.key.startsWith('Arrow')) {
       e.preventDefault()
-      const end = getCoords(endCell)
+      const end = getCoords(endCell || startCell)
+      if (end.c === -1) return
+      
       let r = end.r
       let c = end.c
       
@@ -172,12 +261,16 @@ export function setupTableSelection(wrap, view) {
       
       const newEnd = getCellAt(r, c)
       if (newEnd) {
+        if (!startCell) startCell = newEnd
         endCell = newEnd
         renderSelection()
       }
+      return
     }
     
-    if (e.key === 'Escape') {
+    // If they press an un-shifted arrow key, start typing, or hit Escape,
+    // we MUST clear the grid selection and return control to the native text cursor.
+    if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
       clearSelectionVisuals()
       startCell = null
       endCell = null
@@ -185,43 +278,6 @@ export function setupTableSelection(wrap, view) {
   })
 
   wrap.tabIndex = -1 
-  wrap.addEventListener('copy', (e) => {
-    const selected = Array.from(wrap.querySelectorAll('.cm-table-cell-selected'))
-    if (selected.length === 0) return
-    
-    const start = getCoords(startCell)
-    const end = getCoords(endCell)
-    const minR = Math.min(start.r, end.r)
-    const maxR = Math.max(start.r, end.r)
-    const minC = Math.min(start.c, end.c)
-    const maxC = Math.max(start.c, end.c)
-
-    let markdown = []
-    
-    if (minR === -1) {
-      let headerText = []
-      for (let c = minC; c <= maxC; c++) {
-        const cell = getCellAt(-1, c)
-        const source = cell?.querySelector('.cm-atomic-table-cell-source')
-        headerText.push((source ? source.textContent : '').replace(/\|/g, '\\|'))
-      }
-      markdown.push('| ' + headerText.join(' | ') + ' |')
-      markdown.push('|' + headerText.map(() => '---').join('|') + '|')
-    }
-    
-    for (let r = Math.max(0, minR); r <= maxR; r++) {
-      let rowText = []
-      for (let c = minC; c <= maxC; c++) {
-        const cell = getCellAt(r, c)
-        const source = cell?.querySelector('.cm-atomic-table-cell-source')
-        rowText.push((source ? source.textContent : '').replace(/\|/g, '\\|'))
-      }
-      markdown.push('| ' + rowText.join(' | ') + ' |')
-    }
-    
-    e.clipboardData.setData('text/plain', markdown.join('\n'))
-    e.preventDefault()
-  })
 
   wrap.__setGridSelection = (c1, c2) => {
     startCell = c1

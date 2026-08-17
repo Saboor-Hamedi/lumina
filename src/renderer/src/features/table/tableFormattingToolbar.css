@@ -97,12 +97,23 @@
   line-height: 1.5 !important;
 }
 
+/* Outer table wrapper for rounded corners and shadow */
+.cm-atomic-table {
+  margin: 16px 0 !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 0 1px var(--border-dim) !important;
+  background: var(--bg-primary, transparent) !important;
+}
+
 .cm-atomic-table table {
   display: table !important;
   width: max-content !important;
   min-width: 100% !important;
   table-layout: auto !important;
   border-collapse: collapse !important;
+  margin: 0 !important;
+  border-style: hidden !important; /* Hides outer borders from the table itself so the wrapper's radius shows cleanly */
 }
 
 /* Table scrollbar */
@@ -121,16 +132,26 @@
   overflow-wrap: break-word !important;
   white-space: normal !important;
   max-width: calc(var(--font-size-editor, 16px) * 16) !important;
-  padding: calc(var(--font-size-editor, 16px) * 0.4) calc(var(--font-size-editor, 16px) * 0.65) !important;
+  padding: 0 !important; /* Padding moved to inner source for better click targeting */
   border: 1px solid var(--border-dim) !important;
   vertical-align: top !important;
   text-align: justify;
+  transition: background 0.15s ease;
 }
 
+.cm-atomic-table-cell-source {
+  display: block;
+  min-height: 1.5em;
+  padding: calc(var(--font-size-editor, 16px) * 0.5) calc(var(--font-size-editor, 16px) * 0.75) !important;
+  box-sizing: border-box;
+}
+
+
 .cm-atomic-table th {
-  background: var(--bg-panel) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
   color: var(--text-main) !important;
   font-weight: 600 !important;
+  border-bottom: 2px solid var(--border-dim) !important;
 }
 
 .cm-atomic-table td {
@@ -138,8 +159,22 @@
   color: var(--text-main) !important;
 }
 
+/* Zebra Striping for alternating rows */
+.cm-atomic-table tbody tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.015) !important;
+}
+
+/* Row hover effect for better readability (overrides zebra striping on hover) */
+.cm-atomic-table tbody tr:hover td {
+  background: var(--bg-surface-hover, rgba(255, 255, 255, 0.04)) !important;
+}
+
+
 /* --- CURSOR AND SELECTION FIXES --- */
 /* Hide CodeMirror native cursor when a table cell has focus to avoid double cursors outside the table */
+.cm-cursor {
+  max-height: 1.5em; /* Prevent the cursor from stretching to the full height of a block widget table! */
+}
 .cm-editor.cm-table-focused .cm-cursorLayer,
 .markdown-editor:has(.cm-atomic-table:focus-within) .cm-cursorLayer,
 .cm-editor:has(.cm-atomic-table:focus-within) .cm-cursorLayer,
@@ -182,15 +217,17 @@
 }
 
 /* 2) When selected via table Grid Selection logic (clicking and dragging) */
-.cm-atomic-table td.cm-table-cell-selected,
-.cm-atomic-table th.cm-table-cell-selected {
-  background-color: rgba(var(--text-accent-rgb, 64, 186, 250), 0.3) !important;
+.cm-table-selection-overlay {
+  position: absolute;
+  background-color: rgba(var(--text-accent-rgb, 64, 186, 250), 0.15) !important;
+  border: 2px solid rgba(var(--text-accent-rgb, 64, 186, 250), 0.8) !important;
+  pointer-events: none; /* Let clicks pass through to the cells beneath */
+  z-index: 5;
+  border-radius: 4px;
+  transition: all 0.05s linear; /* Smooth resizing */
+  display: none;
 }
 
-.cm-atomic-table td.cm-table-cell-selected .cm-atomic-table-cell-source,
-.cm-atomic-table th.cm-table-cell-selected .cm-atomic-table-cell-source {
-  color: #fff !important;
-}
 
 /* --- ADD ROW / COL BUTTONS --- */
 .cm-table-add-btn {
