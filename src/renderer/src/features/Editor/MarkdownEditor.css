@@ -38,7 +38,7 @@
   position: relative;
 }
 
-.markdown-editor .lumina-heading-text::after {
+.markdown-editor .lumina-heading-text::after {/**//**/
   content: '';
   position: absolute;
   bottom: -4px; /* A bit of spacing below the text */
@@ -51,7 +51,7 @@
 }
 
 /* Standard line padding for text readability */
-.cm-line {
+.cm-line {/**/
   padding-top: 0 !important;
   padding-bottom: 0 !important;
   padding-right: 4px !important;
@@ -87,10 +87,10 @@
 }
 
 /* Change this to add icon */
-.cm-line.cm-atomic-hr::after {
+.cm-line.cm-atomic-hr::after {/**/
   content: '✦ ✦ ✦' !important;
  position: absolute !important;
-  inset: 0 !important; /* Covers entire element */
+  inset: 0 !important;  /* Covers entire element */
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -99,84 +99,6 @@
   font-size: 12px !important;
   opacity: 0.3 !important;
   pointer-events: none !important;
-}
-/* Eng */
-
-/* ADD TABLES HERE - after HR, before inline code */
-.cm-atomic-table {
-  display: block;
-  overflow-x: auto;
-  position: relative !important;
-  max-width: 100% !important;
-  box-sizing: border-box;
-  font-size: var(--font-size-editor, 16px) !important;
-}
-
-.cm-atomic-table table,
-.cm-atomic-table th,
-.cm-atomic-table td,
-.cm-atomic-table-cell-source,
-.cm-atomic-table-cell-source .cm-content {
-  caret-color: var(--caret-color, var(--text-accent, #40bafa)) !important;
-}
-
-/* When CodeMirror selects the table, make it obviously highlighted like grid selection */
-.cm-atomic-table.cm-widget-selected-by-cm td,
-.cm-atomic-table.cm-widget-selected-by-cm th {
-  background-color: rgba(var(--text-accent-rgb, 64, 186, 250), 0.7) !important;
-}
-.cm-atomic-table.cm-widget-selected-by-cm .cm-atomic-table-cell-source,
-.cm-atomic-table.cm-widget-selected-by-cm .cm-content {
-  color: #fff !important;
-}
-.cm-atomic-table-cell-source .cm-line,
-.cm-atomic-table-cell-preview {
-  font-size: var(--font-size-editor, 16px) !important;
-  line-height: 1.5 !important;
-}
-
-.cm-atomic-table table {
-  width: max-content !important;
-  min-width: 100% !important;
-  table-layout: auto !important;
-  border-collapse: collapse !important;
-}
-
-.cm-atomic-table th,
-.cm-atomic-table td {
-  word-wrap: break-word !important;
-  overflow-wrap: break-word !important;
-  white-space: normal !important;
-  max-width: calc(var(--font-size-editor, 16px) * 16) !important;
-  padding: calc(var(--font-size-editor, 16px) * 0.4) calc(var(--font-size-editor, 16px) * 0.65) !important;
-  border: 1px solid var(--border-dim) !important;
-}
-
-.cm-atomic-table th {
-  background: var(--bg-panel) !important;
-  color: var(--text-main) !important;
-  font-weight: 600 !important;
-}
-
-.cm-atomic-table td {
-  background: transparent !important;
-  color: var(--text-main) !important;
-}
-
-.cm-atomic-table tr:nth-child(even) td {
-  background: var(--bg-card, rgba(0, 0, 0, 0.02)) !important;
-}
-
-/* Hide CodeMirror native cursor when a table cell has focus to avoid double cursors outside the table */
-.cm-editor.cm-table-focused .cm-cursorLayer,
-.markdown-editor:has(.cm-atomic-table:focus-within) .cm-cursorLayer,
-.cm-editor:has(.cm-atomic-table:focus-within) .cm-cursorLayer,
-.markdown-editor:has(.cm-atomic-table-cell-source:focus) .cm-cursorLayer,
-.cm-editor:has(.cm-atomic-table:hover) .cm-cursorLayer,
-.cm-editor:has(.cm-atomic-table:active) .cm-cursorLayer {
-  display: none !important;
-  opacity: 0 !important;
-  visibility: hidden !important;
 }
 
 /* Inline Code Pill Style - your existing code */
@@ -242,25 +164,21 @@
 }
 
 /* Global Selection Style for CM6: High visibility for "Robust" feel */
-.markdown-editor .cm-editor .cm-scroller .cm-selectionLayer {
-  z-index: 10 !important; /* Bring above content to cover opaque atomic widgets */
+.markdown-editor .cm-editor .cm-scroller .cm-selectionLayer {/**/
+  z-index: 10 !important;  
+  /* Bring above content to cover opaque atomic widgets  */
   pointer-events: none !important;
 }
 .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
   background-color: rgba(64, 186, 250, 0.35) !important;
 }
-.cm-content ::selection {
-  background: transparent !important; /* Prevent native double backgrounds */
-}
-/* Re-enable native selection inside actively edited table cells */
-.cm-atomic-table-cell-source:focus ::selection,
-.cm-atomic-table-cell-source:focus-within ::selection {
-  background: rgba(64, 186, 250, 0.4) !important;
-  color: inherit !important;
+.cm-content ::selection {/**/
+  background: transparent !important; 
+   /* Prevent native double backgrounds  */
 }
 
 
-.markdown-editor {
+.markdown-editor {/**/
   position: relative;
   display: flex;
   flex-direction: column;
@@ -270,7 +188,7 @@
   background: var(--bg-editor, var(--bg-app)) !important;
   --atomic-editor-selection-bg: rgba(64, 186, 250, 0.35) !important;
 
-  /* Enforce Atomic Editor Theme Colors */
+   /* Enforce Atomic Editor Theme Colors */
   --atomic-editor-accent: var(--text-accent);
   --atomic-editor-link: var(--text-accent);
   --atomic-editor-link-hover: var(--text-accent-hover);
@@ -341,7 +259,7 @@
   align-items: stretch;
 }
 
-.workspace-tab {
+.workspace-tab {/**/
   min-width: 80px;
   max-width: 180px;
   height: 100%;
@@ -361,7 +279,8 @@
   margin: 0;
   border-radius: 0;
   outline: none;
-  -webkit-app-region: no-drag; /* Ensure tabs themselves are clickable */
+  -webkit-app-region: no-drag;  
+  /* Ensure tabs themselves are clickable  */
 }
 
 .workspace-tab:hover {
@@ -389,8 +308,8 @@
   pointer-events: none;
 }
 
-.cm-hidden-mark {
-  /* Hide mark visually but keep layout/spacing to prevent jumps */
+.cm-hidden-mark {/**/
+   /* Hide mark visually but keep layout/spacing to prevent jumps  */
   color: transparent !important;
   background: transparent !important;
   opacity: 0 !important;
@@ -483,11 +402,11 @@
   letter-spacing: -0.01em;
 }
 
-.tab-icon {
+.tab-icon {/**/
   opacity: 0.7;
   flex-shrink: 0;
   transition: opacity 0.2s;
-  /* Allow inline styles from fileIconMapper to override */
+   /* Allow inline styles from fileIconMapper to override  */
 }
 
 .workspace-tab.active .tab-icon {
@@ -604,7 +523,7 @@
   font-size: 1.125rem;
 }
 
-.editor-breadcrumb {
+.editor-breadcrumb {/**/
   display: flex;
   align-items: center;
   gap: 8px;
@@ -613,7 +532,6 @@
   
   flex: 1;
   min-width: 0;
-  /* Critical for truncation */
 }
 
 .breadcrumb-item {
@@ -640,14 +558,14 @@
   opacity: 0.6;
 }
 
-.status-bar {
+.status-bar {/**/
   display: flex;
   justify-content: space-between;
   align-items: center;
   height: 28px;
   padding: 0 16px;
   background: var(--bg-panel);
-  /* border-top: 1px solid var(--border-dim); */
+   border-top: 1px solid var(--border-dim); 
   font-size: 0.8em;
   color: var(--text-faint);
   z-index: 100;
@@ -656,11 +574,12 @@
 }
 
 .status-bar-left,
-.status-bar-right {
+.status-bar-right {/**/
   display: flex;
   align-items: center;
   gap: 12px;
-  flex: 1; /* allow sides to take equal space */
+  flex: 1;  
+  /* allow sides to take equal space  */
 }
 
 .status-bar-right {
@@ -709,11 +628,12 @@
 }
 
 /* Floating Window Controls in TabBar */
-.window-controls-float {
+.window-controls-float {/**/
   height: 32px;
   display: flex;
   align-items: center;
-  background: var(--bg-editor); /* Match tabbar background for seamless look */
+  background: var(--bg-editor);  
+  /* Match tabbar background for seamless look  */
   z-index: 100;
   -webkit-app-region: no-drag;
   flex-shrink: 0;
@@ -743,10 +663,10 @@
   color: var(--text-main);
 }
 
-.window-controls-float .control-btn.drag-btn {
+.window-controls-float .control-btn.drag-btn {/**/
   -webkit-app-region: drag;
   opacity: 0.6;
-  width: 28px; /* Slightly narrower than other buttons */
+  width: 28px;  
   cursor: grab !important; 
 }
 
@@ -779,7 +699,7 @@
   flex: 1;
 }
 
-.editor-scroller {
+.editor-scroller {/**/
   flex: 1;
   min-height: 0;
   display: flex;
@@ -788,11 +708,11 @@
   scroll-behavior: smooth;
   overflow-y: auto;
   overflow-x: hidden;
-  scrollbar-width: none; /* Firefox */
+  scrollbar-width: none;   
 }
 
-.editor-scroller::-webkit-scrollbar {
-  display: none; /* Chrome/Safari/Edge */
+.editor-scroller::-webkit-scrollbar {/**/
+  display: none; 
 }
 
 .editor-canvas-wrap {
@@ -822,9 +742,9 @@
   margin: 0 !important;
 }
 
-.markdown-editor .atomic-cm-editor .cm-editor {
+.markdown-editor .atomic-cm-editor .cm-editor {/**/
   flex: 1;
-  /* Key for full height focus area */
+   /* Key for full height focus area  */
   background: transparent !important;
   display: flex;
   flex-direction: column;
@@ -866,13 +786,13 @@
   }
 }
 
-.editor-large-title {
+.editor-large-title {/**/
   font-size: 14px !important;
   font-weight: 600;
   border: none;
   background: transparent;
   color: var(--text-muted);
-  /* padding: 4px 16px; */
+   padding: 4px 16px; 
   line-height: 1;
   margin-top: 10px;
   width: 100%;
@@ -889,26 +809,26 @@
 /*
  * CodeMirror Host
  */
-.cm-host-container {
+.cm-host-container {/**/
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 80vh;
-  /* Prevent layout collapse during view recreation */
+   /* Prevent layout collapse during view recreation  */
 }
 
-.cm-editor {
+.cm-editor {/**/
   flex: 1;
-  /* Key for full height focus area */
+   /* Key for full height focus area  */
   background: transparent !important;
   display: flex;
   flex-direction: column;
 }
 
-.cm-content {
+.cm-content {/**/
   line-height: 1.8;
   color: var(--text-main) !important;
-  /* Allow CodeMirror to manage padding-bottom for scrollPastEnd */
+   /* Allow CodeMirror to manage padding-bottom for scrollPastEnd */
   padding: 4px 40px;
   min-height: 70vh;
   width: 100% !important;
@@ -1025,9 +945,9 @@
   align-items: center;
 }
 
-.native-dropdown-menu {
+.native-dropdown-menu {/**//**/
   position: fixed;
-  /* Changed from absolute - now portaled to body */
+   /* Changed from absolute - now portaled to body */
   min-width: 240px;
   background: var(--bg-panel);
   border: 1px solid var(--border-subtle);
@@ -1035,7 +955,7 @@
   padding: 6px;
   box-shadow: 0 4px 5px rgba(0, 0, 0, 0.3);
   z-index: 100000;
-  /* Higher than CodeMirror tooltips (99999) */
+   /* Higher than CodeMirror tooltips (99999) */
   backdrop-filter: blur(20px);
   animation: nativeMenuAppear 0.15s cubic-bezier(0, 0, 0.2, 1);
   transform-origin: top right;
@@ -1054,13 +974,13 @@
   }
 }
 
-.dropdown-item {
+.dropdown-item {/**/
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 8px 12px;
   font-size: 13px;
-  /* Slightly larger for native look */
+   /* Slightly larger for native look  */
   color: var(--text-main);
   cursor: pointer;
   border-radius: 6px;
@@ -1103,9 +1023,9 @@
   opacity: 0.5;
 }
 
-.mode-reading .cm-content {
+.mode-reading .cm-content {/**/
   cursor: default;
-  /* Preview mode - not editable */
+   /* Preview mode - not editable */
 }
 
 .mode-source .cm-content {
@@ -1120,13 +1040,13 @@
 }
 
 /* Inline Metadata Bar - Moved under Title */
-.editor-metadata-bar {
+.editor-metadata-bar {/**/
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 8px;
   padding: 0 0 16px 0;
-  /* Align perfectly with editor content */
+   /* Align perfectly with editor content */
   margin: 0;
   border-bottom: none;
   font-size: calc(var(--font-size-editor, 14px) * 0.85);
@@ -1163,14 +1083,14 @@
   flex-wrap: wrap;
 }
 
-.tag-pill {
+.tag-pill {/**/
   display: flex;
   align-items: center;
   gap: 3px;
   background: var(--bg-active);
   color: var(--text-accent);
   padding: 1px 4px;
-  /* very small padding */
+   /* very small padding */
   border-radius: 3px;
   font-size: 9px;
   
@@ -1217,7 +1137,7 @@
   min-width: 120px;
 }
 
-.tag-input-wrap input {
+.tag-input-wrap input {/**/
   background: transparent;
   border: none;
   outline: none;
@@ -1225,11 +1145,11 @@
   font-family: inherit;
   font-size: 11px;
   padding: 4px 6px;
-  /* small padding to prevent huge hit area */
+   /* small padding to prevent huge hit area */
   width: 100%;
 }
 
-.tag-suggestions {
+.tag-suggestions {/**/
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
@@ -1242,7 +1162,7 @@
   overflow-y: auto;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   z-index: 10000;
-  /* High z-index to appear above tabbar and other elements */
+   /* High z-index to appear above tabbar and other elements */
   backdrop-filter: blur(10px);
 }
 
@@ -1274,11 +1194,11 @@
   white-space: nowrap;
 }
 
-.meta-icon {
+.meta-icon {/**/
   color: var(--text-accent);
   opacity: 0.8;
   margin-right: 4px;
-  /* Give the icon some breathing room */
+   /* Give the icon some breathing room */  
 }
 
 .editor-metadata-bar kbd {
@@ -1289,75 +1209,27 @@
   font-size: 0.7rem;
 }
 
-/* --- PREMIUM OBSIDIAN AESTHETICS --- */
-
-
-/* table */
-
-.cm-atomic-table {
-  /* background-color: red */
-}
-.cm-atomic-table {
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-.cm-atomic-table {
-  overflow-x: auto !important;
-  max-width: 100% !important;
-}
-
 
 /* end table */
 /* Active Line Highlight (Indicator only, no full-width block to avoid selection confusion) */
-.cm-activeLine {
+.cm-activeLine {/**/
   background-color: transparent !important;
   border: none !important;
   position: relative !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
   padding-right: 0 !important;
-  /* Do not strip padding-left because CodeMirror needs it for list indentation */
+   /* Do not strip padding-left because CodeMirror needs it for list indentation */
   transition: none !important;
-}
-.cm-atomic-table table {
-  table-layout: auto;
-  width: max-content;
-  min-width: 100%;
-  font-size: var(--font-size-editor, 16px) !important;
-}
-
-.cm-atomic-table td,
-.cm-atomic-table th {
-  word-wrap: break-word;
-  white-space: normal;
-  font-size: var(--font-size-editor, 16px) !important;
-}
-/* Remove table inspector highlight */
-.cm-atomic-table {
-  outline: none !important;
-  box-shadow: none !important;
-  border: none !important;
-}
-
-/* Style scrollbar if present */
-.cm-atomic-table::-webkit-scrollbar {
-  height: 4px;
-}
-
-.cm-atomic-table::-webkit-scrollbar-thumb {
-  background: var(--border-dim);
-  border-radius: 2px;
 }
 /* Use pseudo-element for 1px border with 1px margin from content - prevents layout shift */
 
 /* Ensure active line border extends to full height for headings */
-.cm-heading.cm-activeLine {
-  /* Remove default border-left and use pseudo-element for full-height border */
+.cm-heading.cm-activeLine {/**//**/
+   /* Remove default border-left and use pseudo-element for full-height border */
   border-left: none !important;
   padding-left: 0 !important;
-  /* No left padding to ensure border alignment */
+   /* No left padding to ensure border alignment */
   box-sizing: border-box;
   position: relative;
 }
@@ -1366,15 +1238,15 @@
 
 
 /* Use pseudo-element to ensure border extends to full height including padding */
-html[data-use-active-line-border="true"] .cm-heading.cm-activeLine::before {
+html[data-use-active-line-border="true"] .cm-heading.cm-activeLine::before {/**//**/
   content: '';
   position: absolute;
   left: 1px;
-  /* 1px margin from content */
+   /* 1px margin from content */
   top: 0;
   bottom: 0;
   width: 1px;
-  /* 1px border */
+   /* 1px border */
   background: var(--text-accent);
   z-index: 1;
 }
@@ -1384,8 +1256,7 @@ html[data-use-active-line-border="true"] .cm-heading.cm-activeLine::before {
 
 html[data-use-active-line-border="true"][data-theme='dark'] .cm-activeLine,
 html[data-use-active-line-border="true"][data-theme='obsidian-robust'] .cm-activeLine,
-html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {
-  /* Box-shadow color is already set via var(--text-accent) */
+html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {/**/
   box-shadow: inset 1px 0 0 0 var(--text-accent) !important;
 }
 
@@ -1394,10 +1265,10 @@ html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {
   background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.3) !important;
 }
 
-.cm-selectionMatch {
+.cm-selectionMatch {/**/
   background-color: rgba(var(--text-accent-rgb), 0.15) !important;
   border-bottom: 2px solid var(--text-accent);
-  /* Ensure selection match doesn't cause layout shift */
+   /* Ensure selection match doesn't cause layout shift */
   padding: 0 !important;
   margin: 0 !important;
   box-sizing: border-box !important;
@@ -1433,47 +1304,47 @@ html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {
 }
 
 /* Image Alt Text in Live Preview */
-.cm-image-alt-text {
+.cm-image-alt-text {/**//**/
   color: var(--text-accent);
   
   background: rgba(var(--text-accent-rgb), 0.1);
   border-radius: 4px;
   padding: 0 4px;
   cursor: zoom-in;
-  /* clearly indicates interactivity */
+   /* clearly indicates interactivity */
   display: inline-block;
-  /* better hover targeting */
+   /* better hover targeting */
 }
 
-.cm-image-alt-text::before {
+.cm-image-alt-text::before {/**/
   content: '🖼️ ';
-  /* Simple icon indicator */
+   /* Simple icon indicator */ 
   font-size: 0.8em;
   opacity: 0.7;
 }
 
 /* --- BOTTOM STICKY FOOTER --- */
-.editor-footer-bar {
+.editor-footer-bar {/**//**//**//**//**/
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 16px;
-  /* Horizontal padding only */
+   /* Horizontal padding only */
   height: 32px;
-  /* Fixed slim height */
+   /* Fixed slim height */
   background: var(--bg-panel);
-  /* Theme-aware background */
+   /* Theme-aware background */
   border-top: 1px solid var(--border-subtle);
   z-index: 1000;
   backdrop-filter: blur(10px);
   box-shadow: none;
-  /* margin-top: auto; Handled by flex parent */
+   margin-top: auto; /* Handled by flex parent */
   font-size: 11px;
-  /* Base font size for footer */
+   /* Base font size for footer */
 }
 
-.seamless-editor {
-  /* Ensure footer stays at bottom */
+.seamless-editor {/**/
+   /* Ensure footer stays at bottom */
   display: flex;
   flex-direction: column;
   position: relative;
@@ -2025,32 +1896,3 @@ html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {
 }
 
 .virtuoso-scroller-no-scrollbar::-webkit-scrollbar { display: none; }
-
-.cm-table-cell-selected {
-  background-color: #2196F3 !important;
-  color: #fff !important;
-}
-.cm-table-cell-selected .cm-atomic-table-cell-source,
-.cm-table-cell-selected .cm-content {
-  color: #fff !important;
-}
-
-.cm-table-selecting {
-  user-select: none !important;
-}
-.cm-table-selecting * {
-  user-select: none !important;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-

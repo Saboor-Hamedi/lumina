@@ -32,3 +32,205 @@
 .table-formatting-toolbar button:hover {
   background: rgba(255, 255, 255, 0.2);
 }
+
+/* --- TABLE CORE STRUCTURE --- */
+.cm-atomic-table {
+  display: block;
+  position: relative !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+  font-size: var(--font-size-editor, 16px) !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.cm-atomic-table table,
+.cm-atomic-table th,
+.cm-atomic-table td,
+.cm-atomic-table-cell-source,
+.cm-atomic-table-cell-source .cm-content {
+  caret-color: var(--caret-color, var(--text-accent, #40bafa)) !important;
+}
+
+.cm-atomic-table-cell-source .cm-line,
+.cm-atomic-table-cell-preview {
+  font-size: var(--font-size-editor, 16px) !important;
+  line-height: 1.5 !important;
+}
+
+/* Inner table element has overflow to allow scrolling without clipping the outer wrap */
+.cm-atomic-table table {
+  display: block;
+  overflow-x: auto;
+  width: max-content !important;
+  min-width: 100% !important;
+  table-layout: auto !important;
+  border-collapse: collapse !important;
+}
+
+/* Table scrollbar */
+.cm-atomic-table table::-webkit-scrollbar {
+  height: 4px;
+}
+.cm-atomic-table table::-webkit-scrollbar-thumb {
+  background: var(--border-dim);
+  border-radius: 2px;
+}
+
+/* Table cells */
+.cm-atomic-table th,
+.cm-atomic-table td {
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+  max-width: calc(var(--font-size-editor, 16px) * 16) !important;
+  padding: calc(var(--font-size-editor, 16px) * 0.4) calc(var(--font-size-editor, 16px) * 0.65) !important;
+  border: 1px solid var(--border-dim) !important;
+}
+
+.cm-atomic-table th {
+  background: var(--bg-panel) !important;
+  color: var(--text-main) !important;
+  font-weight: 600 !important;
+}
+
+.cm-atomic-table td {
+  background: transparent !important;
+  color: var(--text-main) !important;
+}
+
+/* --- CURSOR AND SELECTION FIXES --- */
+/* Hide CodeMirror native cursor when a table cell has focus to avoid double cursors outside the table */
+.cm-editor.cm-table-focused .cm-cursorLayer,
+.markdown-editor:has(.cm-atomic-table:focus-within) .cm-cursorLayer,
+.cm-editor:has(.cm-atomic-table:focus-within) .cm-cursorLayer,
+.markdown-editor:has(.cm-atomic-table-cell-source:focus) .cm-cursorLayer,
+.cm-editor:has(.cm-atomic-table:hover) .cm-cursorLayer,
+.cm-editor:has(.cm-atomic-table:active) .cm-cursorLayer {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Re-enable native selection inside actively edited table cells */
+.cm-atomic-table-cell-source:focus ::selection,
+.cm-atomic-table-cell-source:focus-within ::selection {
+  background: rgba(64, 186, 250, 0.4) !important;
+  color: inherit !important;
+}
+
+/* --- TABLE SELECTION STYLES (Phase 1) --- */
+
+.cm-table-selecting {
+  user-select: none !important;
+}
+.cm-table-selecting * {
+  user-select: none !important;
+}
+.cm-table-dragging * {
+  cursor: grabbing !important;
+}
+
+/* 1) When selected via native CodeMirror (e.g. shift arrow keys over the widget) */
+.cm-atomic-table.cm-widget-selected-by-cm td,
+.cm-atomic-table.cm-widget-selected-by-cm th {
+  background-color: rgba(var(--text-accent-rgb, 64, 186, 250), 0.7) !important;
+}
+
+.cm-atomic-table.cm-widget-selected-by-cm .cm-atomic-table-cell-source,
+.cm-atomic-table.cm-widget-selected-by-cm .cm-content {
+  color: #fff !important;
+}
+
+/* 2) When selected via table Grid Selection logic (clicking and dragging) */
+.cm-atomic-table td.cm-table-cell-selected,
+.cm-atomic-table th.cm-table-cell-selected {
+  background-color: rgba(var(--text-accent-rgb, 64, 186, 250), 0.3) !important;
+}
+
+.cm-atomic-table td.cm-table-cell-selected .cm-atomic-table-cell-source,
+.cm-atomic-table th.cm-table-cell-selected .cm-atomic-table-cell-source {
+  color: #fff !important;
+}
+
+/* --- ADD ROW / COL BUTTONS --- */
+.cm-table-add-btn {
+  position: absolute;
+  cursor: pointer;
+  background: var(--bg-panel, rgba(0,0,0,0.2));
+  border: 1px dashed var(--border-dim, rgba(255, 255, 255, 0.1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted, #888);
+  transition: all 0.2s ease;
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cm-atomic-table:hover .cm-table-add-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.cm-table-add-btn:hover {
+  background: rgba(var(--text-accent-rgb, 33, 150, 243), 0.1);
+  color: var(--text-accent, #2196f3);
+  border-color: var(--text-accent, #2196f3);
+  border-style: solid;
+}
+
+.cm-table-add-btn:active {
+  background: rgba(var(--text-accent-rgb, 33, 150, 243), 0.2);
+}
+
+.cm-table-add-row-btn {
+  bottom: -24px;
+  left: 0;
+  right: 0;
+  height: 20px;
+  border-radius: 0 0 4px 4px;
+}
+
+.cm-table-add-col-btn {
+  right: -24px;
+  top: 0;
+  bottom: 0;
+  width: 20px;
+  border-radius: 0 4px 4px 0;
+}
+
+/* --- CORNER HANDLE --- */
+.cm-table-corner-handle {
+  position: absolute;
+  top: -14px;
+  left: -14px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  background: var(--bg-surface, #1e1e1e);
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.1));
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted, #888);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 10;
+}
+
+.cm-table-corner-handle:hover {
+  background: var(--bg-panel, #2a2a2a);
+  color: var(--text-normal, #fff);
+  border-color: var(--text-accent, #2196f3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.cm-table-corner-handle:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}

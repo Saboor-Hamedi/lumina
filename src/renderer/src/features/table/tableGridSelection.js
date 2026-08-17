@@ -35,12 +35,9 @@ export function setupTableSelection(wrap, view) {
   }
 
   function renderSelection() {
+    // 1. One selection owner, no inline styles race.
     wrap.querySelectorAll('.cm-table-cell-selected').forEach(el => {
       el.classList.remove('cm-table-cell-selected')
-      el.style.backgroundColor = ''
-      el.style.color = ''
-      const source = el.querySelector('.cm-atomic-table-cell-source')
-      if (source) source.style.color = ''
     })
     
     if (!startCell || !endCell) return
@@ -54,18 +51,13 @@ export function setupTableSelection(wrap, view) {
     const minC = Math.min(start.c, end.c)
     const maxC = Math.max(start.c, end.c)
 
-    // Only render if it's more than 1 cell
-    if (minR === maxR && minC === maxC) return
+    // Removed the minR === maxR && minC === maxC bailout to allow single cell selection
 
     for (let r = minR; r <= maxR; r++) {
       for (let c = minC; c <= maxC; c++) {
         const cell = getCellAt(r, c)
         if (cell) {
           cell.classList.add('cm-table-cell-selected')
-          cell.style.backgroundColor = '#2196F3'
-          cell.style.color = '#fff'
-          const source = cell.querySelector('.cm-atomic-table-cell-source')
-          if (source) source.style.color = '#fff'
         }
       }
     }
@@ -103,7 +95,16 @@ export function setupTableSelection(wrap, view) {
     if (!target) return
     
     const cell = target.closest('th, td')
-    if (!cell || cell === endCell || !wrap.contains(cell)) return
+    
+    // Re-resolve wrap by position during mousemove so drag survives re-renders
+    const currentWrap = target.closest('.cm-atomic-table')
+    
+    if (!cell || cell === endCell || !currentWrap) return
+    // Ensure we are dragging within the same logical table even if DOM replaced
+    if (currentWrap !== wrap && !wrap.contains(cell)) {
+       // It might be a new DOM element for the same table. We'll verify it's a table cell.
+       if (!cell.closest('.cm-atomic-table')) return
+    }
     
     endCell = cell
     
@@ -144,6 +145,7 @@ export function setupTableSelection(wrap, view) {
     }
   })
 
+  wrap.tabIndex = -1 // Allow wrap to receive focus for copy events
   wrap.addEventListener('copy', (e) => {
     const selected = Array.from(wrap.querySelectorAll('.cm-table-cell-selected'))
     if (selected.length === 0) return
@@ -169,4 +171,18 @@ export function setupTableSelection(wrap, view) {
     e.clipboardData.setData('text/plain', tsv)
     e.preventDefault()
   })
+
+  wrap.__setGridSelection = (c1, c2) => {
+    startCell = c1
+    endCell = c2
+    renderSelection()
+    if (document.activeElement && wrap.contains(document.activeElement)) {
+      document.activeElement.blur()
+      window.getSelection().removeAllRanges()
+    }
+    wrap.focus({ preventScroll: true }) // Give wrap focus so Ctrl+C triggers copy listener
+  }
+
+  wrap.__getCellAt = getCellAt
 }
+

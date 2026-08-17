@@ -749,11 +749,6 @@ class TableWidget extends WidgetType {
 
     wrap.addEventListener('mousedown', (event) => {
       if (view.state.readOnly) return
-      // If the editor has a selection (like from Ctrl+A), clear it when clicking the table!
-      if (!view.state.selection.main.empty) {
-        const pos = view.posAtDOM(wrap)
-        view.dispatch({ selection: { anchor: pos, head: pos } })
-      }
 
       const source = event.target.closest('.cm-atomic-table-cell-source')
       if (source) return // Let normal focus happen if they clicked directly in the editable text
@@ -773,7 +768,43 @@ class TableWidget extends WidgetType {
 
     const table = document.createElement('table')
     wrap.appendChild(table)
+
+    const cornerHandle = document.createElement('div')
+    cornerHandle.className = 'cm-table-handle cm-table-corner-handle'
+    cornerHandle.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>`
+    cornerHandle.addEventListener('mousedown', (e) => {
+      e.preventDefault(); e.stopPropagation()
+      wrap.__setGridSelection?.(
+        wrap.__getCellAt(-1, 0),
+        wrap.__getCellAt(this.model.rows.length - 1, this.model.header.length - 1)
+      )
+    })
+    wrap.appendChild(cornerHandle)
+
+    const addRowBtn = document.createElement('div')
+    addRowBtn.className = 'cm-table-add-btn cm-table-add-row-btn'
+    addRowBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>'
+    addRowBtn.addEventListener('mousedown', (e) => {
+      e.preventDefault(); e.stopPropagation()
+      this.model.rows.push(Array(this.model.header.length).fill(''))
+      dispatchModel(view, wrap, this.model)
+    })
+    wrap.appendChild(addRowBtn)
+
+    const addColBtn = document.createElement('div')
+    addColBtn.className = 'cm-table-add-btn cm-table-add-col-btn'
+    addColBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>'
+    addColBtn.addEventListener('mousedown', (e) => {
+      e.preventDefault(); e.stopPropagation()
+      this.model.header.push('')
+      if (this.model.alignments) this.model.alignments.push('left')
+      this.model.rows.forEach(r => r.push(''))
+      dispatchModel(view, wrap, this.model)
+    })
+    wrap.appendChild(addColBtn)
+
     const thead = document.createElement('thead')
+
     const headerRow = document.createElement('tr')
     for (let i = 0; i < this.model.header.length; i++) {
       const cell = makeCell('th', this.model.header[i], view)
@@ -784,11 +815,13 @@ class TableWidget extends WidgetType {
       }
       headerRow.appendChild(cell)
     }
+
     thead.appendChild(headerRow)
     table.appendChild(thead)
     const tbody = document.createElement('tbody')
     const colCount = this.model.header.length
-    for (const row of this.model.rows) {
+    for (let r = 0; r < this.model.rows.length; r++) {
+      const row = this.model.rows[r]
       const tr = document.createElement('tr')
       for (let c = 0; c < colCount; c++) {
         const cell = makeCell('td', row[c] ?? '', view)

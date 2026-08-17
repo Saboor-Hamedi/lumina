@@ -126,3 +126,66 @@ AI tab.
 - [ ] Settings has a working "Reset to defaults".
 - [ ] Spotlight honors the configured shortcut (or clearly fixed/preset).
 - [ ] No `localhost`/API URLs in the main AI Assistant tab.
+
+---
+
+## 6. [SPEC] Obsidian-style Table Selection & Editing
+
+Tables are rendered as a WYSIWYG widget (`features/table/tableWidgetExtension.js`) with
+contenteditable cells. Selection/editing must match Obsidian. **The whole table, a column,
+or a row must be selectable with the cursor (mouse) — not via Ctrl+A.** Fix in this order.
+
+### 6.1 Current problems (verified)
+
+- **Mouse drag-select doesn't register.** The widget's own `mousedown` (tableWidgetExtension.js:750-772)
+  focuses the source + dispatches a CM selection on drag start; grid-select's `mousemove`
+  (tableGridSelection.js:91-118) then checks `wrap.contains(cell)` against a possibly
+  re-rendered `wrap`, so the highlight never sticks.
+- **Highlight is transparent / unreliable.** `.cm-table-cell-selected` (MarkdownEditor.css:2029-2036)
+  uses `background-color: #2196F3 !important`, but it fights `background: transparent !important`
+  on `td`/`th` (lines 161-168) and `renderSelection` clears inline styles on every mousemove.
+- **Single-cell selection is suppressed** — `renderSelection` bails on a 1×1 range
+  (tableGridSelection.js:57-58), so a clicked cell shows nothing.
+
+### 6.2 Phase 1 — Fix cursor selection (mouse)
+
+1. **One selection owner.** Unify selection state on the `wrap` element; single
+   `renderSelection()` path. Remove the inline-style cleanup race.
+2. **Theme-accent highlight.** Use one CSS class with `var(--text-accent-rgb)` (not hardcoded
+   `#2196F3`); remove the `background: transparent !important` override conflict on cells.
+3. **Reliable drag.** On the widget `mousedown`, only `preventDefault` for cell-padding clicks;
+   do NOT dispatch a CM selection at drag start. Re-resolve `wrap` by position during
+   `mousemove` (same approach as `findCurrentTableRange`) so drag survives re-renders.
+4. **Single-cell select.** Remove the 1×1 bailout — clicking a cell visibly selects it.
+
+### 6.3 Phase 2 — Obsidian cursor selection affordances
+
+5. **Corner handle** — top-left, appears on hover over the widget. **Click selects the whole
+   table.** Draggable to move the table. This is how a user selects the entire table.
+6. **Column select** — small arrow above each header on hover → click selects that column.
+7. **Row select** — left-edge handle per row on hover → click selects that row.
+8. **Drag reorder** — drag a header to reorder columns; drag a row handle to reorder rows.
+   Persist via the existing `dispatchModel(view, wrap, model)`.
+   *(Column resize: SKIPPED — markdown has no column-width syntax.)*
+
+### 6.4 Phase 3 — Keyboard & polish
+
+9. **Shift+Arrow** extends the selection across cells.
+10. **Escape** clears the selection.
+11. **Delete/Backspace** clears selected cells (already exists — keep).
+12. Context menu (`tableContextMenu.js`) reuses the new selection state for delete/clear actions.
+
+### 6.5 Files to touch
+
+| File | Change |
+|---|---|
+| `features/table/tableWidgetExtension.js` | corner/column/row handles in `toDOM`; mousedown no longer fights drag; drag reorder dispatch |
+| `features/table/tableGridSelection.js` | single render path, theme-accent class, single-cell select, drag re-resolve, Shift+Arrow, Escape |
+| `features/table/tableContextMenu.js` | reuse new selection state |
+| `features/Editor/MarkdownEditor.css` | accent `.cm-table-cell-selected`, corner/arrow/handle styles, remove transparent-override conflict |
+
+### 6.6 Out of scope
+
+- Whole-table selection via `Ctrl+A` (selection is cursor/mouse-driven, per decision).
+- Column resize (skipped by decision).
+- Recoverable Trash (unchanged).
