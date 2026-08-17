@@ -51,7 +51,11 @@ export function setupTableSelection(wrap, view) {
     const minC = Math.min(start.c, end.c)
     const maxC = Math.max(start.c, end.c)
 
-    // Removed the minR === maxR && minC === maxC bailout to allow single cell selection
+    if (minR === maxR && minC === maxC) {
+      startCell = null
+      endCell = null
+      return
+    }
 
     for (let r = minR; r <= maxR; r++) {
       for (let c = minC; c <= maxC; c++) {
