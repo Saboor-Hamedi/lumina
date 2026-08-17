@@ -129,6 +129,15 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   const clipboard = useVaultStore((state) => state.clipboard)
   const setClipboard = useVaultStore((state) => state.setClipboard)
 
+  // Hide system folders (like Templates) from the main sidebar and note count
+  const visibleSnippets = useMemo(() => {
+    return snippets.filter(s => !s.folderId || !s.folderId.startsWith('Templates'))
+  }, [snippets])
+
+  const visibleFolders = useMemo(() => {
+    return folders.filter(f => !f.startsWith('Templates'))
+  }, [folders])
+
   const clickedInExplorerRef = useRef(0)
   const lastScrolledSnippetRef = useRef(null)
   const lastAutoExpandedSnippetRef = useRef(null)
@@ -274,14 +283,14 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   }, [isOpen, onClose])
 
   const { filteredSnippets, isQueryActive, matchMetaMap, pinnedItems, allSnippets } = useFileSearch(
-    snippets,
+    visibleSnippets,
     query,
     settings
   )
 
   const flatTree = useFileTree({
     allSnippets,
-    folders,
+    folders: visibleFolders,
     activeTab,
     query,
     expandedFolders,

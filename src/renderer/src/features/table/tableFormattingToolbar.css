@@ -99,7 +99,7 @@
 
 /* Outer table wrapper for rounded corners and shadow */
 .cm-atomic-table {
-  padding: 16px 0 !important;
+  padding: 24px 0 16px 0 !important;
   width: max-content !important;
   max-width: 100% !important;
 }
@@ -109,9 +109,7 @@
   max-width: 100%;
   overflow-x: auto;
   position: relative; /* For the grid selection overlay */
-  border-radius: 8px !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 0 1px var(--border-dim) !important;
-  background: var(--bg-primary, transparent) !important;
+  /* This is now purely an invisible scroll wrapper */
   box-sizing: border-box;
 }
 
@@ -120,18 +118,20 @@
   width: max-content !important;
   min-width: 100% !important;
   table-layout: auto !important;
-  border-collapse: collapse !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
   margin: 0 !important;
-  border-style: hidden !important; /* Hides outer borders from the table itself so the wrapper's radius shows cleanly */
+  
+  /* Apply container visuals directly to the table */
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid var(--border-dim) !important;
+  background: var(--bg-primary, transparent) !important;
 }
 
 /* Table scrollbar */
 .cm-table-scroll-container::-webkit-scrollbar {
-  height: 6px;
-}
-.cm-table-scroll-container::-webkit-scrollbar-thumb {
-  background: var(--border-dim);
-  border-radius: 3px;
+  display: none;
 }
 
 /* Table cells */
@@ -141,8 +141,10 @@
   overflow-wrap: break-word !important;
   white-space: normal !important;
   max-width: calc(var(--font-size-editor, 16px) * 16) !important;
-  padding: 0 !important; /* Padding moved to inner source for better click targeting */
+  padding: 0 !important;
   border: 1px solid var(--border-dim) !important;
+  border-top: none !important;
+  border-left: none !important;
   vertical-align: top !important;
   text-align: justify;
   transition: background 0.15s ease;
@@ -153,6 +155,7 @@
   min-height: 1.5em;
   padding: calc(var(--font-size-editor, 16px) * 0.5) calc(var(--font-size-editor, 16px) * 0.75) !important;
   box-sizing: border-box;
+  caret-color: var(--caret-color, var(--text-accent));
 }
 
 
@@ -161,6 +164,29 @@
   color: var(--text-main) !important;
   font-weight: 600 !important;
   border-bottom: 2px solid var(--border-dim) !important;
+}
+
+/* Explicitly round the corners of the table to prevent bleeding */
+.cm-atomic-table th:first-child {
+  border-top-left-radius: 7px !important; /* 7px to fit perfectly inside the 1px outer border */
+}
+.cm-atomic-table th:last-child {
+  border-top-right-radius: 7px !important;
+}
+.cm-atomic-table tr:last-child td:first-child {
+  border-bottom-left-radius: 7px !important;
+}
+.cm-atomic-table tr:last-child td:last-child {
+  border-bottom-right-radius: 7px !important;
+}
+
+/* Prevent inner cells from duplicating the table's outer border */
+.cm-atomic-table th:last-child,
+.cm-atomic-table td:last-child {
+  border-right: none !important;
+}
+.cm-atomic-table tr:last-child td {
+  border-bottom: none !important;
 }
 
 .cm-atomic-table td {
@@ -243,16 +269,16 @@
 .cm-table-add-btn {
   position: absolute;
   cursor: pointer;
-  background: var(--bg-surface, #1e1e1e);
-  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.1));
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   width: 24px;
   height: 24px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 10;
   opacity: 0;
@@ -267,16 +293,16 @@
 }
 
 .cm-table-add-btn:hover {
-  background: var(--bg-panel, #2a2a2a);
-  color: var(--text-accent, #2196f3);
-  border-color: var(--text-accent, #2196f3);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  background: var(--bg-active);
+  color: var(--text-accent);
+  border-color: var(--text-accent);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
   transform: scale(1.1);
 }
 
 .cm-table-add-btn:active {
   transform: scale(0.95);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .cm-table-add-row-btn {
@@ -291,37 +317,51 @@
   margin-top: -12px;
 }
 
-/* --- CORNER HANDLE --- */
-.cm-table-corner-handle {
+/* --- CORNER HANDLES (Knob & Delete) --- */
+.cm-table-action-area {
   position: absolute;
-  top: 8px; /* 18px padding - 10px offset */
-  left: 8px; /* 18px padding - 10px offset */
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: row;
+  gap: 2px;
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cm-atomic-table:hover .cm-table-action-area {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.cm-table-corner-handle, .cm-table-delete-btn {
   width: 20px;
   height: 20px;
   cursor: pointer;
-  background: var(--bg-surface, #1e1e1e);
-  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.1));
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  border-radius: 6px;
+  background: transparent;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-muted, #888);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  z-index: 10;
+  color: var(--text-muted);
+  transition: all 0.15s ease;
 }
 
-.cm-table-corner-handle:hover {
-  background: var(--bg-panel, #2a2a2a);
-  color: var(--text-normal, #fff);
-  border-color: var(--text-accent, #2196f3);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+.cm-table-corner-handle svg, .cm-table-delete-btn svg {
+  width: 12px;
+  height: 12px;
 }
 
-.cm-table-corner-handle:active {
-  transform: translateY(1px);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+.cm-table-corner-handle:hover, .cm-table-delete-btn:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+.cm-table-delete-btn:hover {
+  color: var(--error, #f87171);
 }
 /* --- CONTEXT MENU --- */
 .cm-atomic-table-menu {
@@ -329,9 +369,9 @@
   z-index: 10000;
   display: flex;
   flex-direction: column;
-  background: var(--bg-panel, #2a2a2a);
-  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.1));
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   border-radius: 6px;
   padding: 4px;
   min-width: 200px;

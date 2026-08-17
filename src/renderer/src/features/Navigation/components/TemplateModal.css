@@ -1,0 +1,228 @@
+.template-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.template-modal-container {
+  background: var(--bg-app);
+  border: 1px solid var(--border-dim);
+  border-radius: 8px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  width: 90%;
+  max-width: 1000px;
+  height: 700px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.template-modal-toolbar {
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--bg-app);
+  border-bottom: 1px solid var(--border-dim);
+}
+
+.template-search-input {
+  width: 300px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  border-radius: 4px;
+  color: var(--text-main);
+  padding: 8px 12px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.template-search-input:focus {
+  border-color: var(--text-accent);
+}
+
+.template-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  padding: 20px 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.template-modal-card {
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  border-radius: 6px;
+  background: transparent;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.template-modal-card.focused .template-card-body,
+.template-modal-card:hover .template-card-body {
+  opacity: 0.9;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.template-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+}
+
+.template-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-accent);
+}
+
+.template-modal-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.template-card-body {
+  padding: 14px 16px;
+  height: 110px;
+  width: 100%;
+  border: 1px solid var(--border-dim);
+  border-radius: 6px;
+  background: var(--bg-app);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+  position: relative;
+  transition: all 0.2s;
+}
+
+/* Fade out the bottom of the wireframe preview */
+.template-card-body::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: linear-gradient(to bottom, transparent, var(--bg-app));
+  pointer-events: none;
+}
+
+.template-preview-line {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--text-muted);
+  opacity: 0.2;
+}
+
+.template-preview-h1 {
+  height: 8px;
+  width: 60%;
+  background: var(--text-accent, var(--text-main));
+  opacity: 0.8;
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+
+.template-preview-h2 {
+  height: 6px;
+  width: 40%;
+  background: var(--text-main);
+  opacity: 0.4;
+  border-radius: 3px;
+  margin-top: 4px;
+  margin-bottom: 2px;
+}
+
+.template-preview-text {
+  width: 80%;
+}
+
+.template-preview-text.short {
+  width: 50%;
+}
+
+.template-preview-text.long {
+  width: 95%;
+}
+
+.template-preview-list-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 6px;
+}
+
+.template-preview-bullet {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  opacity: 0.4;
+}
+
+.template-preview-checkbox {
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid var(--text-muted);
+  border-radius: 2px;
+  opacity: 0.4;
+}
+
+.template-preview-list-text {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--text-muted);
+  opacity: 0.2;
+  max-width: 60%;
+}
+
+.template-preview-gap {
+  height: 2px;
+}
+
+.template-preview-table-row {
+  display: flex;
+  gap: 0;
+  width: 90%;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.template-preview-table-cell {
+  flex: 1;
+  height: 12px;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border-subtle);
+}
+
+.template-preview-table-cell:last-child {
+  border-right: none;
+}
+
+.template-modal-stats {
+  font-size: 12px;
+  color: var(--text-muted);
+}

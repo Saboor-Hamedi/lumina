@@ -124,6 +124,9 @@ export class TableWidget extends WidgetType {
     scrollContainer.appendChild(table)
     wrap.appendChild(scrollContainer)
 
+    const actionArea = document.createElement('div')
+    actionArea.className = 'cm-table-action-area'
+
     const cornerHandle = document.createElement('div')
     cornerHandle.className = 'cm-table-handle cm-table-corner-handle'
     cornerHandle.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>`
@@ -134,7 +137,23 @@ export class TableWidget extends WidgetType {
         wrap.__getCellAt(this.model.rows.length - 1, this.model.header.length - 1)
       )
     })
-    wrap.appendChild(cornerHandle)
+    actionArea.appendChild(cornerHandle)
+
+    const deleteBtn = document.createElement('div')
+    deleteBtn.className = 'cm-table-handle cm-table-delete-btn'
+    deleteBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>`
+    deleteBtn.addEventListener('mousedown', (e) => {
+      e.preventDefault(); e.stopPropagation()
+      const range = findCurrentTableRange(view, wrap)
+      if (range) {
+        view.dispatch({
+          changes: { from: range.from, to: range.to, insert: '' }
+        })
+      }
+    })
+    actionArea.appendChild(deleteBtn)
+
+    wrap.appendChild(actionArea)
 
     const addRowBtn = document.createElement('div')
     addRowBtn.className = 'cm-table-add-btn cm-table-add-row-btn'

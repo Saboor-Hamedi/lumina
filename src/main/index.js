@@ -9,7 +9,7 @@ import AppUpdater from './AppUpdater'
 import VaultIndexer from './VaultIndexer'
 import VaultSearch from './VaultSearch'
 import Database from 'better-sqlite3'
-import iconAsset from '../../resources/icon.ico?asset'
+import iconAsset from '../../resources/icon.png?asset'
 import { handleExportDocs } from '../export/exportDocs'
 import { handleExportPDF } from '../export/exportPDF'
 import { handleExportMarkdown } from '../export/exportMarkdown'
@@ -20,6 +20,7 @@ import { backupToDrive } from './backup/googleDriveBackup'
 import { registerOpenNoteHandler } from './handlers/useOpenNote'
 import { useResizeWindowValue } from './handlers/useResizeWindowValue'
 import { useGlobalShortcut } from './handlers/useGlobalShortcut'
+import { useTrayIcon, isAppQuitting, setAppQuitting } from './handlers/useTrayIcon'
 import { updateAutoLauncher } from './handlers/useAutoLauncher'
 
 // Force rebuild timestamp: 5
@@ -156,9 +157,13 @@ async function createWindow() {
     if (result.response === 0) {
       mainWindow.reload()
     } else {
+      setAppQuitting(true)
       app.quit()
     }
   })
+
+  // Initialize System Tray background mode
+  useTrayIcon(mainWindow, app, appIcon)
 
   // Handle updates
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -630,7 +635,7 @@ app.whenReady().then(async () => {
 })
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+  if (process.platform !== 'darwin' && isAppQuitting()) {
     app.quit()
   }
 })
