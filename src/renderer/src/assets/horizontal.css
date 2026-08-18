@@ -40,7 +40,6 @@ div.horizontal-divider {
 /* --- Editor Horizontal Line Override --- */
 .cm-line.cm-atomic-hr {
   border: none !important;
-  height: 24px !important;
   padding: 0 !important;
   background: transparent !important;
   width: 100% !important;
@@ -56,11 +55,13 @@ div.horizontal-divider {
 }
 
 .cm-line.cm-atomic-hr,
-.cm-line.cm-atomic-hr > *:not(::before):not(::after) {
+.cm-line.cm-atomic-hr * {
   border: none !important;
   box-shadow: none !important;
   outline: none !important;
   background: transparent !important;
+  color: transparent !important;
+  text-decoration: none !important;
 }
 
 .cm-line.cm-atomic-hr::before {
@@ -74,6 +75,7 @@ div.horizontal-divider {
   background: linear-gradient(to right, transparent 0%, var(--text-accent) 25%, transparent 40%, transparent 60%, var(--text-accent) 75%, transparent 100%) !important;
   pointer-events: none !important; 
   box-shadow: 0 0 8px rgba(var(--text-accent-rgb), 0.15);
+  border: none !important;
 }
 
 .cm-line.cm-atomic-hr::after {

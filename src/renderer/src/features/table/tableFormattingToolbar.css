@@ -73,8 +73,8 @@
 
 .cm-atomic-table {
   position: relative;
-  margin: 1.5em 0;
-  padding: 28px 0 8px 0 !important;
+  margin: 0;
+  padding: 0 !important;
   display: block;
   width: 100%;
   max-width: 100%;
@@ -93,6 +93,7 @@
   
   /* Fix cursor entering the container padding */
   user-select: none;
+  background-color: gray;
 }
 
 .cm-atomic-table::-webkit-scrollbar {
