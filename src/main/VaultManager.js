@@ -479,6 +479,23 @@ class VaultManager {
     }
   }
 
+  async deleteAsset(relativePath) {
+    if (!this.vaultPath) throw new Error('No vault open')
+    try {
+      const finalPath = path.join(this.vaultPath, relativePath)
+      // Prevent deleting arbitrary files outside the vault
+      if (!finalPath.startsWith(this.vaultPath)) {
+        throw new Error('Invalid asset path')
+      }
+      await fs.unlink(finalPath)
+      console.info('[VaultManager] ✓ Asset deleted:', relativePath)
+      return true
+    } catch (err) {
+      console.error('[VaultManager] ✗ Failed to delete asset:', relativePath, err)
+      throw err
+    }
+  }
+
   getSnippets() {
     const list = Array.from(this.snippets.values())
     return {

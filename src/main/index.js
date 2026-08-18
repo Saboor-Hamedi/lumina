@@ -361,6 +361,7 @@ app.whenReady().then(async () => {
     return updatedSnippet
   })
   ipcMain.handle('vault:saveImage', (_, { buffer, name }) => VaultManager.saveImage(buffer, name))
+  ipcMain.handle('vault:deleteAsset', (_, relPath) => VaultManager.deleteAsset(relPath))
   ipcMain.handle('vault:deleteSnippet', async (_, id) => {
     try {
       const deletedPath = await VaultManager.deleteSnippet(id)

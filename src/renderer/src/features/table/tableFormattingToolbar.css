@@ -429,3 +429,6 @@
   background: var(--border-dim, rgba(255, 255, 255, 0.1));
   margin: 4px 0;
 }
+
+.cm-atomic-image-wrap .cm-atomic-mark { display: none !important; }
+

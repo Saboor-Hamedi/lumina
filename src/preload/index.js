@@ -7,6 +7,7 @@ const api = {
   getSnippets: () => electronAPI.ipcRenderer.invoke('vault:getSnippets'),
   saveSnippet: (snippet) => electronAPI.ipcRenderer.invoke('vault:saveSnippet', snippet),
   saveImage: (buffer, name) => electronAPI.ipcRenderer.invoke('vault:saveImage', { buffer, name }),
+  deleteAsset: (relativePath) => electronAPI.ipcRenderer.invoke('vault:deleteAsset', relativePath),
   deleteSnippet: (id) => electronAPI.ipcRenderer.invoke('vault:deleteSnippet', id),
   readAsset: (relativePath) => electronAPI.ipcRenderer.invoke('vault:readAsset', relativePath),
   cleanOrphans: () => electronAPI.ipcRenderer.invoke('vault:cleanOrphans'),

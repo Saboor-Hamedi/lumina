@@ -14,13 +14,15 @@ import { escapeCell, readModelFromDom, getCellSource } from './tableModel'
 import { parseCellInline } from './tableInlineParsing'
 import { findCurrentTableRange, placeCaretAtEnd, dispatchModel, dispatchModelFromDom, moveCellFocus, tableLinkClickFacet, tables } from './tableWidgetExtension'
 
-export function buildCellSourceDom(raw) {
+import { ImageWidget } from '../dropImage/imageWidgetExtension'
+
+export function buildCellSourceDom(raw, view) {
   const frag = document.createDocumentFragment()
   const tokens = parseCellInline(raw)
-  for (const tok of tokens) frag.appendChild(renderCellToken(tok))
+  for (const tok of tokens) frag.appendChild(renderCellToken(tok, view))
   return frag
 }
-export function renderCellToken(tok) {
+export function renderCellToken(tok, view) {
   if (tok.type === 'text') {
     return document.createTextNode(tok.text)
   }
@@ -54,7 +56,7 @@ export function renderCellToken(tok) {
     wrap.appendChild(makeCellMark(tok.delim))
     const inner = document.createElement('span')
     inner.className = 'cm-atomic-strong'
-    inner.appendChild(renderTokensTo(tok.children))
+    inner.appendChild(renderTokensTo(tok.children, view))
     wrap.appendChild(inner)
     wrap.appendChild(makeCellMark(tok.delim))
     return wrap
@@ -76,7 +78,7 @@ export function renderCellToken(tok) {
     wrap.appendChild(makeCellMark(tok.delim))
     const inner = document.createElement('span')
     inner.className = 'cm-atomic-em'
-    inner.appendChild(renderTokensTo(tok.children))
+    inner.appendChild(renderTokensTo(tok.children, view))
     wrap.appendChild(inner)
     wrap.appendChild(makeCellMark(tok.delim))
     return wrap
@@ -87,7 +89,7 @@ export function renderCellToken(tok) {
     wrap.appendChild(makeCellMark('~~'))
     const inner = document.createElement('span')
     inner.className = 'cm-atomic-strike'
-    inner.appendChild(renderTokensTo(tok.children))
+    inner.appendChild(renderTokensTo(tok.children, view))
     wrap.appendChild(inner)
     wrap.appendChild(makeCellMark('~~'))
     return wrap
@@ -102,44 +104,83 @@ export function renderCellToken(tok) {
     inner.className = 'cm-atomic-link cm-atomic-wiki-link' // Use wiki-link to match CSS
     inner.dataset.url = tok.url
     inner.dataset.wikiLinkTarget = tok.url
-    inner.appendChild(renderTokensTo(tok.textChildren))
+    inner.appendChild(renderTokensTo(tok.textChildren, view))
     wrap.appendChild(inner)
     wrap.appendChild(makeCellMark(']]'))
     return wrap
   }
-  // Link. Shape mirrors the outer-editor markup: `.cm-atomic-link` on
-  // the visible text (picks up link color + external-link icon via
-  // `::after`), faint marks for `[`, `]`, `(`, URL, `)`. `data-url`
-  // lets the cell-source click handler open the right URL without
-  // re-parsing.
-  const wrap = document.createElement('span')
-  wrap.className = 'cm-atomic-link-wrap'
-  wrap.dataset.url = tok.url
-  wrap.appendChild(makeCellMark('['))
-  const inner = document.createElement('span')
-  inner.className = 'cm-atomic-link'
-  inner.appendChild(renderTokensTo(tok.textChildren))
-  wrap.appendChild(inner)
-  wrap.appendChild(makeCellMark(']'))
-  wrap.appendChild(makeCellMark('('))
-  const urlMark = makeCellMark(tok.url)
-  urlMark.classList.add('cm-atomic-link-url')
-  wrap.appendChild(urlMark)
-  wrap.appendChild(makeCellMark(')'))
-  // Real, clickable external-link icon. A CSS `::after` pseudo can't
-  // receive a click (no event target), so the icon is its own
-  // non-editable element; the source's delegated click handler opens
-  // the URL. `contenteditable=false` keeps it out of caret navigation
-  // and out of the cell's serialized text.
-  const icon = document.createElement('span')
-  icon.className = 'cm-atomic-link-icon'
-  icon.setAttribute('aria-hidden', 'true')
-  wrap.appendChild(icon)
-  return wrap
+  if (tok.type === 'link') {
+    // Link. Shape mirrors the outer-editor markup: `.cm-atomic-link` on
+    // the visible text (picks up link color + external-link icon via
+    // `::after`), faint marks for `[`, `]`, `(`, URL, `)`. `data-url`
+    // lets the cell-source click handler open the right URL without
+    // re-parsing.
+    const wrap = document.createElement('span')
+    wrap.className = 'cm-atomic-link-wrap'
+    wrap.dataset.url = tok.url
+    wrap.appendChild(makeCellMark('['))
+    const inner = document.createElement('span')
+    inner.className = 'cm-atomic-link'
+    inner.appendChild(renderTokensTo(tok.textChildren, view))
+    wrap.appendChild(inner)
+    wrap.appendChild(makeCellMark(']'))
+    wrap.appendChild(makeCellMark('('))
+    const urlMark = makeCellMark(tok.url)
+    urlMark.classList.add('cm-atomic-link-url')
+    wrap.appendChild(urlMark)
+    wrap.appendChild(makeCellMark(')'))
+    // Real, clickable external-link icon. A CSS `::after` pseudo can't
+    // receive a click (no event target), so the icon is its own
+    // non-editable element; the source's delegated click handler opens
+    // the URL. `contenteditable=false` keeps it out of caret navigation
+    // and out of the cell's serialized text.
+    const icon = document.createElement('span')
+    icon.className = 'cm-atomic-link-icon'
+    icon.setAttribute('aria-hidden', 'true')
+    wrap.appendChild(icon)
+    return wrap
+  }
+
+  if (tok.type === 'image') {
+    const wrap = document.createElement('span')
+    wrap.className = 'cm-atomic-image-wrap'
+    const markSpan = makeCellMark(tok.raw)
+    wrap.appendChild(markSpan)
+    
+    if (view) {
+      const onUpdate = (newText) => {
+        markSpan.textContent = newText
+        const cell = wrap.closest('th, td')
+        if (cell) {
+          const sourceEl = cell.querySelector('.cm-atomic-table-cell-source')
+          
+          let text = ''
+          for (const child of sourceEl.childNodes) {
+            if (child.nodeType === Node.TEXT_NODE) text += child.nodeValue
+            else if (child.classList?.contains('cm-atomic-image-wrap')) {
+              const mark = child.querySelector('.cm-atomic-mark')
+              if (mark) text += mark.textContent
+            } else text += child.textContent
+          }
+          
+          cell.dataset.raw = text
+          import('./tableWidgetExtension').then(module => {
+            module.dispatchModelFromDom(view, cell)
+          })
+        }
+      }
+      const widget = new ImageWidget(tok.alt, tok.url, 0, tok.raw.length, onUpdate)
+      const dom = widget.toDOM(view)
+      wrap.appendChild(dom)
+    }
+    return wrap
+  }
+
+  return document.createTextNode('')
 }
-export function renderTokensTo(tokens) {
+export function renderTokensTo(tokens, view) {
   const frag = document.createDocumentFragment()
-  for (const tok of tokens) frag.appendChild(renderCellToken(tok))
+  for (const tok of tokens) frag.appendChild(renderCellToken(tok, view))
   return frag
 }
 export function makeCellMark(text) {
@@ -158,7 +199,8 @@ export function makeCellMark(text) {
 // outer editor's cursor-inside-link unfold for every inline mark.
 export function renderCellSourceDecorated(source) {
   const raw = source.parentElement?.dataset.raw ?? ''
-  source.replaceChildren(buildCellSourceDom(raw))
+  const view = source.parentElement?.__view
+  source.replaceChildren(buildCellSourceDom(raw, view))
 }
 // Caret utilities — encode positions as character offsets within the
 // element's textContent so we can survive the full-DOM re-render that
@@ -282,7 +324,8 @@ export const MARK_WRAP_CLASSES = [
   'cm-atomic-em-wrap',
   'cm-atomic-strike-wrap',
   'cm-atomic-link-wrap',
-  'cm-atomic-inline-code-wrap'
+  'cm-atomic-inline-code-wrap',
+  'cm-atomic-image-wrap'
 ]
 function isMarkWrap(el) {
   for (const c of MARK_WRAP_CLASSES) if (el.classList.contains(c)) return true
@@ -318,59 +361,6 @@ export function clearActiveMarksInSource(source) {
     el.classList.remove('active')
   }
 }
-// Scan raw markdown for `![alt](url)` occurrences. The regex bans `]`
-// inside the alt and whitespace inside the URL so we fail closed on
-// malformed sources rather than embedding a broken preview.
-export function extractCellImages(text) {
-  const imgs = []
-  const re = /!\[([^\]]*)\]\(([^\s)"']+)(?:\s+["'][^)]*["'])?\)/g
-  for (const match of text.matchAll(re)) {
-    imgs.push({ alt: match[1] || '', src: match[2] })
-  }
-  return imgs
-}
-// Refresh (or remove) the image-preview strip that sits below the
-// source line. Mirrors how images render outside tables: the
-// `![alt](url)` markdown is the source of truth, but on an inactive
-// cell (no focus inside) the raw source hides and only the rendered
-// image remains visible. `data-has-image` flips on for that CSS hook.
-export function refreshCellPreview(cell) {
-  const existing = cell.querySelector('.cm-atomic-table-cell-preview')
-  if (existing) existing.remove()
-  const text = cell.dataset.raw ?? ''
-  const imgs = extractCellImages(text)
-  if (imgs.length === 0) {
-    delete cell.dataset.hasImage
-    return
-  }
-  cell.dataset.hasImage = 'true'
-  const preview = document.createElement('div')
-  preview.className = 'cm-atomic-table-cell-preview'
-  // Preview is visual only — no caret, no contenteditable scope.
-  // Keeping it out of contenteditable also means clicking the image
-  // won't create a phantom caret position at the preview boundary.
-  preview.contentEditable = 'false'
-  for (const { src, alt } of imgs) {
-    const img = document.createElement('img')
-    img.src = src
-    img.alt = alt
-    img.loading = 'lazy'
-    img.className = 'cm-atomic-table-cell-image'
-    // Clicking the image puts the caret in the source text so the
-    // user can edit the underlying markdown — same affordance as
-    // clicking a block-level image outside a table.
-    img.addEventListener('pointerdown', (event) => {
-      event.preventDefault()
-      event.stopPropagation()
-      const source = getCellSource(cell)
-      if (!source) return
-      source.focus()
-      placeCaretAtEnd(source)
-    })
-    preview.appendChild(img)
-  }
-  cell.appendChild(preview)
-}
 // ---- position resolution --------------------------------------------
 // posAtDOM on a block-replace widget returns the start of the replaced
 // range. Walk the tree from there to find the enclosing Table node so
@@ -379,6 +369,7 @@ export function refreshCellPreview(cell) {
 export function makeCell(tag, text, view) {
   const cell = document.createElement(tag)
   cell.dataset.raw = text
+  cell.__view = view
   // The cell itself is not contenteditable — only the inner source
   // element is. This keeps the image preview strictly visual (no
   // phantom caret positions around images) while the source text
@@ -395,13 +386,29 @@ export function makeCell(tag, text, view) {
   // uniformly to every inline mark inside cells.
   cell.appendChild(source)
   renderCellSourceDecorated(source)
+
+  const extractSourceText = (el) => {
+    let text = ''
+    for (const child of el.childNodes) {
+      if (child.nodeType === Node.TEXT_NODE) {
+        text += child.nodeValue
+      } else if (child.classList?.contains('cm-atomic-image-wrap')) {
+        const mark = child.querySelector('.cm-atomic-mark')
+        if (mark) text += mark.textContent
+      } else {
+        text += child.textContent
+      }
+    }
+    return text || ''
+  }
+
   // Commit the cell's current DOM text to `dataset.raw`, re-render its
   // decorated form (so marks the user just typed — e.g. a new `**` pair
   // — decorate immediately), restore the caret across that rebuild, and
   // push the change into the document.
   let currentCellText = cell.dataset.raw
   const commit = () => {
-    const newText = source.textContent || ''
+    const newText = extractSourceText(source)
     const offset = getCaretCharOffset(source)
     if (currentCellText !== newText) {
       currentCellText = newText
@@ -410,8 +417,7 @@ export function makeCell(tag, text, view) {
     renderCellSourceDecorated(source)
     if (offset != null) setCaretCharOffset(source, offset)
     updateActiveMarkForSource(source)
-    refreshCellPreview(cell)
-    dispatchModelFromDom(view, cell)
+        dispatchModelFromDom(view, cell)
   }
 
   const autocomplete = new TableAutocomplete(
@@ -444,18 +450,38 @@ export function makeCell(tag, text, view) {
   // verbatim; newlines and `|` corrupt the row. We flatten whitespace
   // and strip markup here, and `escapeCell` neutralizes any literal `|`
   // on serialize.
-  source.addEventListener('paste', (event) => {
+  source.addEventListener('paste', async (event) => {
+    const files = Array.from(event.clipboardData?.files || [])
+    const imageFiles = files.filter((f) => f.type.startsWith('image/'))
+
+    if (imageFiles.length > 0) {
+      event.preventDefault()
+      event.stopPropagation()
+      
+      const file = imageFiles[0]
+      try {
+        const arrayBuffer = await file.arrayBuffer()
+        const uint8Array = new Uint8Array(arrayBuffer)
+        
+        const ext = file.type.split('/')[1] || 'png'
+        const filename = (file.name === 'image.png' || file.name === 'image.jpeg') 
+          ? `Pasted image ${Date.now()}.${ext}` 
+          : file.name
+
+        const relativePath = await window.api.saveImage(uint8Array, filename)
+        if (relativePath) {
+          const markdownToInsert = `![${filename}](${relativePath})`
+          document.execCommand('insertText', false, markdownToInsert)
+        }
+      } catch (error) {
+        console.error('Failed to save pasted image in table:', error)
+      }
+      return
+    }
+
     event.preventDefault()
     const text = (event.clipboardData?.getData('text/plain') ?? '').replace(/\s+/g, ' ').trim()
-    const sel = source.ownerDocument.defaultView?.getSelection()
-    if (!sel || sel.rangeCount === 0) return
-    const range = sel.getRangeAt(0)
-    range.deleteContents()
-    range.insertNode(document.createTextNode(text))
-    range.collapse(false)
-    sel.removeAllRanges()
-    sel.addRange(range)
-    commit()
+    document.execCommand('insertText', false, text)
   })
   // Caret-position listeners. `focus` / `mouseup` / `keyup` cover the
   // three ways the caret can land in a new mark without firing an
@@ -878,7 +904,6 @@ export function makeCell(tag, text, view) {
     source.focus()
     placeCaretAtEnd(source)
   })
-  refreshCellPreview(cell)
-  return cell
+    return cell
 }
 // ---- context menu -------------------------------------------------

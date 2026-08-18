@@ -204,6 +204,7 @@ export class TableWidget extends WidgetType {
     const ths = Array.from(theadTr.querySelectorAll('th'))
     if (ths.length !== this.model.header.length) return false
     for (let i = 0; i < this.model.header.length; i++) {
+      ths[i].__view = view
       const source = ths[i].querySelector('.cm-atomic-table-cell-source')
       
       // Sync alignments
@@ -230,6 +231,7 @@ export class TableWidget extends WidgetType {
     for (let r = 0; r < trs.length; r++) {
       const tds = Array.from(trs[r].querySelectorAll('td'))
       for (let c = 0; c < tds.length; c++) {
+        tds[c].__view = view
         const source = tds[c].querySelector('.cm-atomic-table-cell-source')
         
         // Sync alignments

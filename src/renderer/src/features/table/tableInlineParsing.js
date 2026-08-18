@@ -88,9 +88,22 @@ export function matchCellMarkAt(raw, from) {
       end: from + m[0].length
     }
   }
+  // Image `![alt](url)`
+  m = rest.match(/^!\[([^\]]*)\]\(([^)]+)\)/)
+  if (m) {
+    return {
+      token: {
+        type: 'image',
+        alt: m[1],
+        url: m[2],
+        raw: m[0]
+      },
+      end: from + m[0].length
+    }
+  }
   // Link `[text](url)`. Reject empty text / url via `+` quantifiers.
   // `]` and `)` can't appear unescaped inside their respective fields.
-  m = rest.match(/^\[([^\]\n]+)\]\(([^\s)"'\n]+)\)/)
+  m = rest.match(/^\[([^\]\n]+)\]\(([^)]+)\)/)
   if (m) {
     return {
       token: {

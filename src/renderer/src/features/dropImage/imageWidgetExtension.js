@@ -21,16 +21,18 @@ const icons = {
   code: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>`,
   image: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`,
   copy: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`,
-  check: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`
+  check: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
+  trash: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`
 }
 
-class ImageWidget extends WidgetType {
-  constructor(altText, url, pos, originalLength) {
+export class ImageWidget extends WidgetType {
+  constructor(altText, url, pos, originalLength, onUpdate = null) {
     super()
     this.altText = altText
     this.url = url
     this.pos = pos
     this.originalLength = originalLength
+    this.onUpdate = onUpdate
 
     // Parse alt text for styling e.g., ![alt|300x200|center]
     this.parts = altText.split('|')
@@ -89,40 +91,47 @@ class ImageWidget extends WidgetType {
     actions.className = 'image-widget-actions'
 
     const updateImage = (newWidth, newAlign) => {
-      let pos = view.posAtDOM(wrap)
-      if (pos === null && wrap.__imageWidget) pos = wrap.__imageWidget.pos
-      if (pos === null || pos === undefined) return
+      let currentAltText = ''
+      let currentUrl = ''
+      let actualPos = 0
+      let currentLen = 0
 
-      const docStr = view.state.doc.toString()
-      
-      // Search a large window to safely find the exact markdown string.
-      // We use 2000 characters to ensure long URLs or alt texts are never cut off.
-      const searchStart = Math.max(0, pos - 500)
-      const searchEnd = Math.min(docStr.length, pos + 2000)
-      const windowStr = docStr.slice(searchStart, searchEnd)
-      
-      const regex = /!\[([^\]]*)\]\(([^)]+)\)/g
-      let match
-      let closestMatch = null
-      let minDistance = Infinity
-      
-      while ((match = regex.exec(windowStr)) !== null) {
-        if (match[2] === wrap.__imageWidget.url) {
-          const matchPos = searchStart + match.index
-          const distance = Math.abs(matchPos - pos)
-          if (distance < minDistance) {
-            minDistance = distance
-            closestMatch = { match, pos: matchPos }
+      if (this.onUpdate) {
+        currentAltText = this.altText
+        currentUrl = this.url
+      } else {
+        let pos = view.posAtDOM(wrap)
+        if (pos === null && wrap.__imageWidget) pos = wrap.__imageWidget.pos
+        if (pos === null || pos === undefined) return
+
+        const docStr = view.state.doc.toString()
+        const searchStart = Math.max(0, pos - 500)
+        const searchEnd = Math.min(docStr.length, pos + 2000)
+        const windowStr = docStr.slice(searchStart, searchEnd)
+        
+        const regex = /!\[([^\]]*)\]\(([^)]+)\)/g
+        let match
+        let closestMatch = null
+        let minDistance = Infinity
+        
+        while ((match = regex.exec(windowStr)) !== null) {
+          if (match[2] === wrap.__imageWidget.url) {
+            const matchPos = searchStart + match.index
+            const distance = Math.abs(matchPos - pos)
+            if (distance < minDistance) {
+              minDistance = distance
+              closestMatch = { match, pos: matchPos }
+            }
           }
         }
+
+        if (!closestMatch) return // Abort safely if somehow not found
+
+        currentAltText = closestMatch.match[1]
+        currentUrl = closestMatch.match[2]
+        currentLen = closestMatch.match[0].length
+        actualPos = closestMatch.pos
       }
-
-      if (!closestMatch) return // Abort safely if somehow not found
-
-      const currentAltText = closestMatch.match[1]
-      const currentUrl = closestMatch.match[2]
-      const currentLen = closestMatch.match[0].length
-      const actualPos = closestMatch.pos
 
       const parts = currentAltText.split('|')
       const actualAlt = parts[0] ? parts[0].trim() : ''
@@ -154,6 +163,15 @@ class ImageWidget extends WidgetType {
 
       const newAlt = newParts.join('|')
       const newText = `![${newAlt}](${currentUrl})`
+
+      if (this.onUpdate) {
+        this.onUpdate(newText)
+        // Also update local state so subsequent clicks don't revert
+        this.altText = newAlt
+        this.width = finalWidth !== 'auto' ? finalWidth : 'auto'
+        this.align = finalAlign
+        return
+      }
 
       view.dispatch({
         changes: { from: actualPos, to: actualPos + currentLen, insert: newText }
@@ -191,6 +209,75 @@ class ImageWidget extends WidgetType {
       view.dispatch({ selection: { anchor: pos + 1 }, scrollIntoView: true })
       view.focus()
     })
+    
+    if (this.onUpdate) {
+      btnEdit.style.display = 'none'
+    }
+
+    // Delete Button
+    const btnDelete = this.createBtn(icons.trash, 'Delete Image', async () => {
+      if (view.state.readOnly) return
+
+      if (this.onUpdate) {
+        this.onUpdate('')
+        if (this.url && !this.url.startsWith('http') && !this.url.startsWith('data:')) {
+          const cleanUrl = this.url.startsWith('/') ? this.url.slice(1) : this.url;
+          if (window.api && window.api.deleteAsset) {
+            try {
+              await window.api.deleteAsset(cleanUrl)
+            } catch (err) {
+              console.error('Failed to delete asset:', err)
+            }
+          }
+        }
+        return
+      }
+      
+      let pos = view.posAtDOM(wrap)
+      if (pos === null && wrap.__imageWidget) pos = wrap.__imageWidget.pos
+      if (pos === null || pos === undefined) return
+      
+      const docStr = view.state.doc.toString()
+      const searchStart = Math.max(0, pos - 500)
+      const searchEnd = Math.min(docStr.length, pos + 2000)
+      const windowStr = docStr.slice(searchStart, searchEnd)
+      
+      const regex = /!\[([^\]]*)\]\(([^)]+)\)/g
+      let match
+      let closestMatch = null
+      let minDistance = Infinity
+      
+      while ((match = regex.exec(windowStr)) !== null) {
+        if (match[2] === wrap.__imageWidget.url) {
+          const matchPos = searchStart + match.index
+          const distance = Math.abs(matchPos - pos)
+          if (distance < minDistance) {
+            minDistance = distance
+            closestMatch = { match, pos: matchPos }
+          }
+        }
+      }
+
+      if (closestMatch) {
+        const { match: m, pos: actualPos } = closestMatch
+        const currentLen = m[0].length
+        view.dispatch({
+          changes: { from: actualPos, to: actualPos + currentLen, insert: '' }
+        })
+        
+        // Also delete from disk if it's a local asset
+        if (this.url && !this.url.startsWith('http') && !this.url.startsWith('data:')) {
+          const cleanUrl = this.url.startsWith('/') ? this.url.slice(1) : this.url;
+          if (window.api && window.api.deleteAsset) {
+            try {
+              await window.api.deleteAsset(cleanUrl)
+            } catch (err) {
+              console.error('Failed to delete asset:', err)
+            }
+          }
+        }
+      }
+    })
 
     const separator = () => {
       const el = document.createElement('div')
@@ -201,7 +288,7 @@ class ImageWidget extends WidgetType {
       return el
     }
 
-    actions.append(btnCopy, separator(), btnLeft, btnCenter, btnRight, separator(), btnEdit)
+    actions.append(btnCopy, separator(), btnLeft, btnCenter, btnRight, separator(), btnEdit, btnDelete)
     header.append(title, actions)
     // Removed wrap.appendChild(header) so it can be placed inside the body
 
@@ -226,11 +313,17 @@ class ImageWidget extends WidgetType {
     img.onerror = () => {
       const widget = wrap.__imageWidget
       console.error('[ImageWidget] Failed to load image at URL:', img.src)
-      body.innerHTML = ''
+      
       const errorDiv = document.createElement('div')
       errorDiv.className = 'image-widget-error'
       errorDiv.innerHTML = `❌ Image Failed to Render: ${widget.actualAlt}`
-      body.appendChild(errorDiv)
+      
+      if (img.parentNode) {
+        body.replaceChild(errorDiv, img)
+      } else {
+        body.appendChild(errorDiv)
+      }
+      
       if (view && view.requestMeasure) view.requestMeasure()
     }
 
