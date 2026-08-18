@@ -99,24 +99,30 @@
 
 /* Outer table wrapper for rounded corners and shadow */
 .cm-atomic-table {
-  padding: 24px 0 16px 0 !important;
+  padding: 28px 0 8px 0 !important;
   width: max-content !important;
   max-width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .cm-table-scroll-container {
   width: 100%;
   max-width: 100%;
-  overflow-x: auto;
+  overflow: visible !important;
   position: relative; /* For the grid selection overlay */
   /* This is now purely an invisible scroll wrapper */
   box-sizing: border-box;
+  scrollbar-width: none;
+}
+.cm-table-scroll-container::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 .cm-atomic-table table {
   display: table !important;
   width: max-content !important;
-  min-width: 100% !important;
   table-layout: auto !important;
   border-collapse: separate !important;
   border-spacing: 0 !important;
@@ -127,11 +133,6 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
   border: 1px solid var(--border-dim) !important;
   background: var(--bg-primary, transparent) !important;
-}
-
-/* Table scrollbar */
-.cm-table-scroll-container::-webkit-scrollbar {
-  display: none;
 }
 
 /* Table cells */
@@ -204,7 +205,25 @@
   background: var(--bg-surface-hover, rgba(255, 255, 255, 0.04)) !important;
 }
 
+/* --- INLINE MARKDOWN STYLES --- */
+/* Hide markdown marks by default */
+.cm-atomic-mark {
+  display: none;
+}
 
+/* Reveal markdown marks when the cell is focused, or when explicitly active */
+.cm-atomic-table-cell-source:focus .cm-atomic-mark,
+.cm-atomic-table-cell-source:focus-within .cm-atomic-mark,
+.cm-atomic-table-cell-source:focus .cm-atomic-link-url,
+.cm-atomic-table-cell-source:focus-within .cm-atomic-link-url,
+.cm-atomic-table-cell-source:focus .cm-atomic-link-icon,
+.cm-atomic-table-cell-source:focus-within .cm-atomic-link-icon,
+.active > .cm-atomic-mark,
+.active > .cm-atomic-link-url,
+.active > .cm-atomic-link-icon {
+  display: inline;
+  color: var(--text-muted, #888);
+}
 /* --- CURSOR AND SELECTION FIXES --- */
 /* Hide CodeMirror native cursor when a table cell has focus to avoid double cursors outside the table */
 .cm-cursor {
@@ -264,58 +283,6 @@
   display: none;
 }
 
-
-/* --- ADD ROW / COL BUTTONS --- */
-.cm-table-add-btn {
-  position: absolute;
-  cursor: pointer;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-subtle);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  z-index: 10;
-  opacity: 0;
-  pointer-events: none;
-  transform: scale(0.9);
-}
-
-.cm-atomic-table:hover .cm-table-add-btn {
-  opacity: 1;
-  pointer-events: auto;
-  transform: scale(1);
-}
-
-.cm-table-add-btn:hover {
-  background: var(--bg-active);
-  color: var(--text-accent);
-  border-color: var(--text-accent);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-  transform: scale(1.1);
-}
-
-.cm-table-add-btn:active {
-  transform: scale(0.95);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-}
-
-.cm-table-add-row-btn {
-  bottom: 0px;
-  left: 50%;
-  margin-left: -12px;
-}
-
-.cm-table-add-col-btn {
-  right: 0px;
-  top: 50%;
-  margin-top: -12px;
-}
 
 /* --- CORNER HANDLES (Knob & Delete) --- */
 .cm-table-action-area {
@@ -404,6 +371,36 @@
   text-align: left;
   border-radius: 4px;
   cursor: pointer;
+}
+/* --- Table Drag & Drop Handles --- */
+.cm-table-drag-handle {
+  border-radius: 4px;
+  transition: opacity 0.15s ease, background-color 0.1s ease, color 0.1s ease;
+}
+
+.cm-atomic-table.is-dragging-cols th,
+.cm-atomic-table.is-dragging-cols td,
+.cm-atomic-table.is-dragging-rows tr {
+  transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), opacity 0.15s ease !important;
+}
+
+.cm-table-drag-handle:hover {
+  background-color: var(--bg-secondary, rgba(255, 255, 255, 0.1));
+  color: var(--text-main, #fff) !important;
+}
+
+.cm-table-drop-indicator {
+  background: var(--text-accent, #2196f3);
+}
+
+.cm-table-insert-marker {
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.cm-table-insert-marker:hover {
+  transform: translate(-50%, -50%) scale(1.15) !important;
+  background: var(--text-main, #fff) !important;
+  color: var(--bg-panel, #2a2a2a) !important;
 }
 
 .cm-atomic-table-menu-item:hover {

@@ -93,7 +93,7 @@ function applyFormatting(tag) {
     if (wrap && source.contains(wrap)) {
       // Select the entire wrap so we replace the delimiters too
       const newRange = document.createRange()
-      newRange.selectNodeContents(wrap)
+      newRange.selectNode(wrap)
       sel.removeAllRanges()
       sel.addRange(newRange)
       

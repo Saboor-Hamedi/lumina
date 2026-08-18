@@ -8,6 +8,8 @@ import { TableAutocomplete } from './wikilinkAutocompletion'
 import { setupTableFormattingToolbar } from './tableFormattingToolbar'
 import { openCellMenu } from './tableContextMenu'
 import { setupTableSelection } from './tableGridSelection'
+import { setupTableDragAndDrop } from './tableDragAndDrop'
+import { setupTableInsertion } from './tableInsertion'
 import { icons } from './icons.js'
 
 import { parseTable, serializeTable, readModelFromDom, getCellSource } from './tableModel'
@@ -129,7 +131,7 @@ export class TableWidget extends WidgetType {
 
     const cornerHandle = document.createElement('div')
     cornerHandle.className = 'cm-table-handle cm-table-corner-handle'
-    cornerHandle.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>`
+    cornerHandle.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="3"></line></svg>`
     cornerHandle.addEventListener('mousedown', (e) => {
       e.preventDefault(); e.stopPropagation()
       wrap.__setGridSelection?.(
@@ -155,37 +157,7 @@ export class TableWidget extends WidgetType {
 
     wrap.appendChild(actionArea)
 
-    const addRowBtn = document.createElement('div')
-    addRowBtn.className = 'cm-table-add-btn cm-table-add-row-btn'
-    addRowBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>'
-    addRowBtn.addEventListener('mousedown', (e) => {
-      e.preventDefault(); e.stopPropagation()
-      const nextModel = {
-        header: [...this.model.header],
-        alignments: [...(this.model.alignments || [])],
-        rows: this.model.rows.map(r => [...r])
-      }
-      nextModel.rows.push(Array(nextModel.header.length).fill(''))
-      dispatchModel(view, wrap, nextModel)
-    })
-    wrap.appendChild(addRowBtn)
 
-    const addColBtn = document.createElement('div')
-    addColBtn.className = 'cm-table-add-btn cm-table-add-col-btn'
-    addColBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>'
-    addColBtn.addEventListener('mousedown', (e) => {
-      e.preventDefault(); e.stopPropagation()
-      const nextModel = {
-        header: [...this.model.header],
-        alignments: [...(this.model.alignments || [])],
-        rows: this.model.rows.map(r => [...r])
-      }
-      nextModel.header.push('')
-      nextModel.alignments.push('left')
-      nextModel.rows.forEach(r => r.push(''))
-      dispatchModel(view, wrap, nextModel)
-    })
-    wrap.appendChild(addColBtn)
 
     const thead = document.createElement('thead')
 
@@ -221,6 +193,9 @@ export class TableWidget extends WidgetType {
     table.appendChild(tbody)
     
     setupTableSelection(wrap, view)
+    setupTableDragAndDrop(wrap, view)
+    setupTableInsertion(wrap, view)
+    
     return wrap
   }
   updateDOM(dom, view) {
