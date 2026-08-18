@@ -34,8 +34,9 @@ export class ImageWidget extends WidgetType {
     this.originalLength = originalLength
     this.onUpdate = onUpdate
 
-    // Parse alt text for styling e.g., ![alt|300x200|center]
-    this.parts = altText.split('|')
+    // Unescape markdown pipes in alt text before parsing
+    const unescapedAltText = altText.replace(/\\\|/g, '|')
+    this.parts = unescapedAltText.split('|')
     this.actualAlt = this.parts[0] ? this.parts[0].trim() : ''
 
     this.width = 'auto'
@@ -211,26 +212,64 @@ export class ImageWidget extends WidgetType {
     })
     
     if (this.onUpdate) {
-      btnEdit.style.display = 'none'
+      btnEdit.onclick = (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        if (view.state.readOnly) return
+        
+        if (wrap) {
+           const outerWrap = wrap.parentElement
+           if (outerWrap && outerWrap.classList.contains('cm-atomic-image-wrap')) {
+             // Add active class manually so markSpan becomes display: inline and focusable
+             outerWrap.classList.add('active')
+             
+             const markSpan = outerWrap.querySelector('.cm-atomic-mark')
+             if (markSpan) {
+               // Focus and place cursor at the end of the markdown string
+               const sel = window.getSelection()
+               const range = document.createRange()
+               range.selectNodeContents(markSpan)
+               range.collapse(false)
+               sel.removeAllRanges()
+               sel.addRange(range)
+               
+               // Dispatch mouseup to trigger updateActiveMarkForSource in tableCellDom.js
+               markSpan.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }))
+             }
+           }
+        }
+      }
     }
 
     // Delete Button
-    const btnDelete = this.createBtn(icons.trash, 'Delete Image', async () => {
+    const btnDelete = this.createBtn(icons.trash, 'Delete Image', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
       if (view.state.readOnly) return
 
       if (this.onUpdate) {
-        this.onUpdate('')
         if (this.url && !this.url.startsWith('http') && !this.url.startsWith('data:')) {
           const cleanUrl = this.url.startsWith('/') ? this.url.slice(1) : this.url;
           if (window.api && window.api.deleteAsset) {
-            try {
-              await window.api.deleteAsset(cleanUrl)
-            } catch (err) {
-              console.error('Failed to delete asset:', err)
-            }
+            window.api.deleteAsset(cleanUrl).catch(err => {
+              if (!err.message.includes('ENOENT')) {
+                console.error('Failed to delete asset:', err)
+              }
+            })
           }
         }
+        this.onUpdate('')
         return
+      }
+      
+      // If there's no onUpdate, fall back to replacing the text using this.pos and this.originalLength
+      if (this.url && !this.url.startsWith('http') && !this.url.startsWith('data:')) {
+        const cleanUrl = this.url.startsWith('/') ? this.url.slice(1) : this.url;
+        if (window.api && window.api.deleteAsset) {
+          window.api.deleteAsset(cleanUrl).catch(err => {
+            console.error('Failed to delete asset:', err)
+          })
+        }
       }
       
       let pos = view.posAtDOM(wrap)
@@ -269,11 +308,11 @@ export class ImageWidget extends WidgetType {
         if (this.url && !this.url.startsWith('http') && !this.url.startsWith('data:')) {
           const cleanUrl = this.url.startsWith('/') ? this.url.slice(1) : this.url;
           if (window.api && window.api.deleteAsset) {
-            try {
-              await window.api.deleteAsset(cleanUrl)
-            } catch (err) {
-              console.error('Failed to delete asset:', err)
-            }
+            window.api.deleteAsset(cleanUrl).catch(err => {
+              if (!err.message.includes('ENOENT')) {
+                console.error('Failed to delete asset:', err)
+              }
+            })
           }
         }
       }
@@ -337,12 +376,20 @@ export class ImageWidget extends WidgetType {
           img.onerror();
         });
       } else {
-        const fetchPromise = window.api.readAsset(cleanUrl)
-          .then((buffer) => {
-            const blob = new Blob([buffer]);
-            return URL.createObjectURL(blob);
-          });
-        urlCache.set(this.url, fetchPromise);
+        const fetchWithRetry = async (url, retries = 5, delay = 50) => {
+          for (let i = 0; i < retries; i++) {
+            try {
+              const buffer = await window.api.readAsset(url)
+              return URL.createObjectURL(new Blob([buffer]))
+            } catch (err) {
+              if (i === retries - 1) throw err
+              await new Promise(resolve => setTimeout(resolve, delay))
+            }
+          }
+        }
+        
+        const fetchPromise = fetchWithRetry(cleanUrl)
+        urlCache.set(this.url, fetchPromise)
 
         fetchPromise.then(objectUrl => {
           img.src = objectUrl;

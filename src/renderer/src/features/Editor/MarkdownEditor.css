@@ -61,50 +61,6 @@
 
 
 
-/* Horizontal line */
-/* Horizontal line */
-.cm-line.cm-atomic-hr {
-  border: none !important;
-  height: 24px !important; /* Full height for easy clicking/selection */
-  padding: 0 !important;
-  background: transparent !important;
-  width: 100% !important;
-  max-width: none !important;
-  margin: 0 !important;
-  position: relative !important;
-  color: transparent !important; /* Hide the raw '---' text if any leaks through */
-}
-
-.cm-line.cm-atomic-hr::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  top: 50%;
-  width: 150px;
-  height: 2px;
-  background: linear-gradient(to right, transparent, var(--text-accent) 20%, var(--text-accent) 80%, transparent);
-  pointer-events: none !important; 
-  box-shadow: 0 0 8px rgba(var(--text-accent-rgb), 0.15);
-}
-
-/* Change this to add icon */
-.cm-line.cm-atomic-hr::after {/**/
-  content: '✦ ✦ ✦' !important;
-  position: absolute !important;
-  left: 50% !important;
-  transform: translateX(-50%) translateY(-50%) !important;
-  top: 50% !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  background: var(--bg-editor, var(--bg-app)) !important;
-  padding: 0 12px !important;
-  font-size: 12px !important;
-  opacity: 0.3 !important;
-  pointer-events: none !important;
-  color: var(--text-main) !important;
-}
 
 /* Inline Code Pill Style - your existing code */
 .cm-atomic-inline-code {
@@ -1742,22 +1698,6 @@ html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {/**
   color: var(--text-muted) !important;
 }
 
-.markdown-editor .cm-line.cm-atomic-blockquote:not(:has(+ .cm-line.cm-atomic-blockquote))::after {
-  content: '' !important;
-  position: absolute !important;
-  left: 10% !important;
-  right: 10% !important;
-  bottom: -1px !important;
-  height: 1px !important;
-  background: linear-gradient(to right, 
-    transparent, 
-    var(--text-accent) 20%, 
-    var(--text-accent) 80%, 
-    transparent
-  ) !important;
-  opacity: 0.15 !important;
-  pointer-events: none !important;
-}
 
 /* Bullet points & numbers: Add more gap between the marker and the text */
 .markdown-editor .cm-atomic-list-marker {

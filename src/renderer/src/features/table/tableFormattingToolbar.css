@@ -72,15 +72,33 @@
 }
 
 .cm-atomic-table {
-  position: relative !important;
+  position: relative;
+  margin: 1.5em 0;
+  padding: 28px 0 8px 0 !important;
   display: block;
-  width: max-content !important;
-  padding: 18px 24px 24px 18px !important;
+  width: 100%;
+  max-width: 100%;
+  border-radius: 8px;
   box-sizing: border-box;
   font-size: var(--font-size-editor, 16px) !important;
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
+  
+  /* Scroll behavior */
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE 10+ */
+  
+  /* Fix cursor entering the container padding */
+  user-select: none;
+}
+
+.cm-atomic-table::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 .cm-atomic-table table,
@@ -91,28 +109,23 @@
   caret-color: var(--caret-color, var(--text-accent, #40bafa)) !important;
 }
 
+.cm-atomic-table th,
+.cm-atomic-table td {
+  user-select: text; /* Re-enable selection for cells */
+}
+
 .cm-atomic-table-cell-source .cm-line,
 .cm-atomic-table-cell-preview {
   font-size: var(--font-size-editor, 16px) !important;
   line-height: 1.5 !important;
 }
 
-/* Outer table wrapper for rounded corners and shadow */
-.cm-atomic-table {
-  padding: 28px 0 8px 0 !important;
-  width: max-content !important;
-  max-width: 100% !important;
-  box-sizing: border-box !important;
-}
-
 .cm-table-scroll-container {
-  width: 100%;
-  max-width: 100%;
+  width: max-content;
+  max-width: none !important;
   overflow: visible !important;
   position: relative; /* For the grid selection overlay */
-  /* This is now purely an invisible scroll wrapper */
   box-sizing: border-box;
-  scrollbar-width: none;
 }
 .cm-table-scroll-container::-webkit-scrollbar {
   display: none !important;
@@ -432,3 +445,22 @@
 
 .cm-atomic-image-wrap .cm-atomic-mark { display: none !important; }
 
+
+.col-resizer {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+  background: transparent;
+  transition: background 0.15s ease;
+}
+.col-resizer:hover, .cm-atomic-table.resizing .col-resizer, .col-resizer.resizer-hover {
+  background: var(--text-accent, #2196f3);
+}
+.cm-atomic-table th {
+  resize: none !important;
+  position: relative;
+}

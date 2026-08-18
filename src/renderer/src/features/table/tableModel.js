@@ -31,9 +31,14 @@ export function splitRowCells(line) {
   for (let i = 0; i < s.length; i++) {
     const ch = s[i]
     // A backslash escapes the next char (e.g. `\|` is a literal pipe in
-    // a GFM cell) — keep both and don't treat the pipe as a separator.
+    // a GFM cell). Unescape `\|` back to `|` for our internal model, 
+    // but preserve backslashes for everything else so we don't lose data.
     if (ch === '\\' && i + 1 < s.length) {
-      buf += ch + s[i + 1]
+      if (s[i + 1] === '|') {
+        buf += '|'
+      } else {
+        buf += '\\' + s[i + 1]
+      }
       i++
       continue
     }

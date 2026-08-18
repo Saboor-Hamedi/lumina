@@ -1,6 +1,6 @@
 import { ensureSyntaxTree, syntaxTree } from '@codemirror/language'
 import { Decoration, EditorView, WidgetType, keymap, ViewPlugin } from '@codemirror/view'
-import { StateField, StateEffect, Facet, Prec } from '@codemirror/state'
+import { StateField, StateEffect, Facet, Prec, Transaction } from '@codemirror/state'
 import { undo, redo } from '@codemirror/commands'
 import { treeGrowthEffect, treeProgressPlugin } from './tree-progress'
 import { useVaultStore } from '../../core/store/useVaultStore'
@@ -10,6 +10,7 @@ import { openCellMenu } from './tableContextMenu'
 import { setupTableSelection } from './tableGridSelection'
 import { setupTableDragAndDrop } from './tableDragAndDrop'
 import { setupTableInsertion } from './tableInsertion'
+import { setupTableColResizing } from './tableColResizing'
 import { icons } from './icons.js'
 
 import { parseTable, serializeTable, readModelFromDom, getCellSource } from './tableModel'
@@ -192,9 +193,11 @@ export class TableWidget extends WidgetType {
     }
     table.appendChild(tbody)
     
+    setupTableFormattingToolbar(wrap, view)
     setupTableSelection(wrap, view)
     setupTableDragAndDrop(wrap, view)
     setupTableInsertion(wrap, view)
+    setupTableColResizing(wrap, view)
     
     return wrap
   }
@@ -216,7 +219,7 @@ export class TableWidget extends WidgetType {
         if (source) source.style.textAlign = ''
       }
 
-      if (source && source.textContent !== this.model.header[i]) {
+      if (source && source.parentElement.dataset.raw !== this.model.header[i]) {
         const isFocused = document.activeElement === source
         source.parentElement.dataset.raw = this.model.header[i]
         renderCellSourceDecorated(source)
@@ -243,7 +246,7 @@ export class TableWidget extends WidgetType {
           if (source) source.style.textAlign = ''
         }
 
-        if (source && source.textContent !== this.model.rows[r][c]) {
+        if (source && source.parentElement.dataset.raw !== this.model.rows[r][c]) {
           const isFocused = document.activeElement === source
           source.parentElement.dataset.raw = this.model.rows[r][c]
           renderCellSourceDecorated(source)

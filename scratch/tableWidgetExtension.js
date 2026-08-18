@@ -54,13 +54,7 @@ class TableWidget extends WidgetType {
     if (other.model.header.length !== this.model.header.length) return false
     if (other.model.rows.length !== this.model.rows.length) return false
     for (let i = 0; i < this.model.header.length; i++) {
-      if (other.model.header[i] !== this.model.header[i]) return false
       if (other.model.alignments?.[i] !== this.model.alignments?.[i]) return false
-    }
-    for (let r = 0; r < this.model.rows.length; r++) {
-      for (let c = 0; c < this.model.rows[r].length; c++) {
-        if (other.model.rows[r][c] !== this.model.rows[r][c]) return false
-      }
     }
     return true
   }
@@ -123,6 +117,7 @@ class TableWidget extends WidgetType {
       const nextModel = {
         header: [...this.model.header],
         alignments: [...(this.model.alignments || [])],
+        widths: [...(this.model.widths || [])],
         rows: this.model.rows.map(r => [...r])
       }
       nextModel.rows.push(Array(nextModel.header.length).fill(''))
@@ -138,16 +133,94 @@ class TableWidget extends WidgetType {
       const nextModel = {
         header: [...this.model.header],
         alignments: [...(this.model.alignments || [])],
+        widths: [...(this.model.widths || [])],
         rows: this.model.rows.map(r => [...r])
       }
       nextModel.header.push('')
       nextModel.alignments.push('left')
+      nextModel.widths.push('')
       nextModel.rows.forEach(r => r.push(''))
       dispatchModel(view, wrap, nextModel)
     })
     wrap.appendChild(addColBtn)
 
     const thead = document.createElement('thead')
+
+    const addResizer = (cell, colIndex) => {
+      cell.style.position = 'relative'
+
+      const resizer = document.createElement('div')
+      resizer.className = 'col-resizer'
+      resizer.title = 'Drag to resize column'
+
+      const setHover = (active) => {
+        const table = cell.closest('table')
+        if (!table) return
+        const trs = Array.from(table.querySelectorAll('tr'))
+        for (const tr of trs) {
+          const c = tr.children[colIndex]
+          if (c) {
+            const r = c.querySelector('.col-resizer')
+            if (r) {
+              if (active) r.classList.add('resizer-hover')
+              else r.classList.remove('resizer-hover')
+            }
+          }
+        }
+      }
+
+      resizer.addEventListener('mouseenter', () => setHover(true))
+      resizer.addEventListener('mouseleave', () => setHover(false))
+
+      let startX, startWidth
+      resizer.addEventListener('mousedown', (e) => {
+        if (view.state.readOnly) return
+        e.preventDefault()
+        e.stopPropagation()
+        startX = e.clientX
+        setHover(true)
+        
+        const theadEl = cell.closest('table').querySelector('thead')
+        const th = theadEl.querySelectorAll('th')[colIndex]
+        if (!th) return
+        
+        startWidth = th.offsetWidth
+
+        const onMouseMove = (moveEvent) => {
+          const newWidth = Math.max(30, startWidth + (moveEvent.clientX - startX))
+          const widthStr = `${newWidth}px`
+          
+          th.style.setProperty('width', widthStr, 'important')
+          th.style.setProperty('min-width', widthStr, 'important')
+          th.style.setProperty('max-width', widthStr, 'important')
+
+          const table = cell.closest('table')
+          if (table) {
+            const trs = Array.from(table.querySelectorAll('tbody tr'))
+            for (const tr of trs) {
+              const td = tr.children[colIndex]
+              if (td) {
+                td.style.setProperty('width', widthStr, 'important')
+                td.style.setProperty('min-width', widthStr, 'important')
+                td.style.setProperty('max-width', widthStr, 'important')
+              }
+            }
+          }
+        }
+
+        const onMouseUp = () => {
+          setHover(false)
+          document.removeEventListener('mousemove', onMouseMove)
+          document.removeEventListener('mouseup', onMouseUp)
+          dispatchModelFromDom(view, cell)
+        }
+
+        document.addEventListener('mousemove', onMouseMove)
+        document.addEventListener('mouseup', onMouseUp)
+      })
+
+      cell.appendChild(resizer)
+    }
 
     const headerRow = document.createElement('tr')
     for (let i = 0; i < this.model.header.length; i++) {
@@ -157,6 +230,13 @@ class TableWidget extends WidgetType {
         const source = cell.querySelector('.cm-atomic-table-cell-source')
         if (source) source.style.textAlign = this.model.alignments[i]
       }
+      if (this.model.widths?.[i]) {
+        cell.style.setProperty('width', this.model.widths[i], 'important')
+        cell.style.setProperty('min-width', this.model.widths[i], 'important')
+        cell.style.setProperty('max-width', this.model.widths[i], 'important')
+      }
+      
+      addResizer(cell, i)
       headerRow.appendChild(cell)
     }
 
@@ -174,6 +254,12 @@ class TableWidget extends WidgetType {
           const source = cell.querySelector('.cm-atomic-table-cell-source')
           if (source) source.style.textAlign = this.model.alignments[c]
         }
+        if (this.model.widths?.[c]) {
+          cell.style.setProperty('width', this.model.widths[c], 'important')
+          cell.style.setProperty('min-width', this.model.widths[c], 'important')
+          cell.style.setProperty('max-width', this.model.widths[c], 'important')
+        }
+        addResizer(cell, c)
         tr.appendChild(cell)
       }
       tbody.appendChild(tr)
@@ -198,6 +284,38 @@ class TableWidget extends WidgetType {
       } else {
         ths[i].style.textAlign = ''
         if (source) source.style.textAlign = ''
+      }
+
+      // Sync widths
+      if (this.model.widths?.[i]) {
+        const w = this.model.widths[i]
+        ths[i].style.setProperty('width', w, 'important')
+        ths[i].style.setProperty('min-width', w, 'important')
+        ths[i].style.setProperty('max-width', w, 'important')
+      } else {
+        ths[i].style.removeProperty('width')
+        ths[i].style.removeProperty('min-width')
+        ths[i].style.removeProperty('max-width')
+      }
+
+      const table = dom.querySelector('table')
+      if (table) {
+        const trs = Array.from(table.querySelectorAll('tbody tr'))
+        for (const tr of trs) {
+          const td = tr.children[i]
+          if (td) {
+            if (this.model.widths?.[i]) {
+              const w = this.model.widths[i]
+              td.style.setProperty('width', w, 'important')
+              td.style.setProperty('min-width', w, 'important')
+              td.style.setProperty('max-width', w, 'important')
+            } else {
+              td.style.removeProperty('width')
+              td.style.removeProperty('min-width')
+              td.style.removeProperty('max-width')
+            }
+          }
+        }
       }
 
       if (source && source.textContent !== this.model.header[i]) {

@@ -37,12 +37,24 @@ export function splitRowCells(line) {
 function parseTable(state, tableNode) {
   const header = []
   const rows = []
+  const widths = []
   let delimiterLine = ''
   const cursor = tableNode.cursor()
   if (!cursor.firstChild()) return null
   do {
     if (cursor.name === 'TableHeader') {
-      header.push(...collectCells(state, cursor.node))
+      const cells = collectCells(state, cursor.node)
+      for (let i = 0; i < cells.length; i++) {
+        let text = cells[i]
+        const wMatch = text.match(/<!--\s*width:\s*(\d+px)\s*-->/)
+        if (wMatch) {
+          widths[i] = wMatch[1]
+          text = text.replace(/<!--\s*width:\s*\d+px\s*-->/, '').trim()
+        } else {
+          widths[i] = ''
+        }
+        header.push(text)
+      }
       // The delimiter row follows the header
       const headerLine = state.doc.lineAt(cursor.to)
       if (headerLine.number < state.doc.lines) {
@@ -69,7 +81,7 @@ function parseTable(state, tableNode) {
   // Pad alignments array if needed
   while (alignments.length < header.length) alignments.push('')
 
-  return { header, rows, alignments }
+  return { header, rows, alignments, widths }
 }
 // Escape cell content so it can't break the row's GFM structure: an
 // unescaped `|` would split the cell into two columns, and a stray
@@ -92,7 +104,16 @@ function escapeCell(text) {
 export function serializeTable(model) {
   const columnCount = model.header.length
   const lines = []
-  lines.push('| ' + model.header.map(escapeCell).join(' | ') + ' |')
+  
+  const headerCells = []
+  for (let c = 0; c < columnCount; c++) {
+    let text = escapeCell(model.header[c] ?? '')
+    if (model.widths?.[c]) {
+      text += ` <!-- width: ${model.widths[c]} -->`
+    }
+    headerCells.push(text)
+  }
+  lines.push('| ' + headerCells.join(' | ') + ' |')
   
   const delimiterRow = []
   for (let c = 0; c < columnCount; c++) {
@@ -113,6 +134,7 @@ export function serializeTable(model) {
 }
 export function readModelFromDom(wrap) {
   const header = Array.from(wrap.querySelectorAll('thead th')).map(readCellSource)
+  const widths = Array.from(wrap.querySelectorAll('thead th')).map(th => th.style.width || '')
   const alignments = Array.from(wrap.querySelectorAll('thead th')).map(th => {
     if (th.style.textAlign === 'center') return 'center'
     if (th.style.textAlign === 'right') return 'right'
@@ -122,7 +144,7 @@ export function readModelFromDom(wrap) {
   const rows = Array.from(wrap.querySelectorAll('tbody tr')).map((tr) =>
     Array.from(tr.querySelectorAll('td')).map(readCellSource)
   )
-  return { header, rows, alignments }
+  return { header, rows, alignments, widths }
 }
 // A cell's raw markdown lives in `dataset.raw` — the source of truth
 // that `readModelFromDom` reads when serializing the table back to

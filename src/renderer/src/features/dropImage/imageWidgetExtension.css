@@ -259,3 +259,6 @@
   background: linear-gradient(225deg, transparent 50%, var(--text-accent, #3b82f6) 50%);
 }
 
+
+.cm-image-widget-wrapper.align-right .image-widget-resize-handle { left: -5px; right: auto; cursor: ew-resize; }
+

@@ -4,8 +4,8 @@
   position: relative;
 }
 
-.horizontal::after,
-.horizontal-line::after,
+.horizontal:not(hr)::after,
+.horizontal-line:not(hr)::after,
 .toast-notification::after {
   content: '';
   position: absolute;
@@ -18,14 +18,15 @@
   pointer-events: none;
 }
 
-.horizontal.horizontal-top::after,
-.horizontal-line.horizontal-top::after {
+.horizontal.horizontal-top:not(hr)::after,
+.horizontal-line.horizontal-top:not(hr)::after {
   bottom: auto;
   top: 0;
 }
 
 /* Standalone horizontal divider element (<hr className="horizontal" /> or <div className="horizontal-divider" />) */
 hr.horizontal,
+hr.horizontal-line,
 div.horizontal-divider {
   border: none;
   height: 2px;
@@ -34,4 +35,60 @@ div.horizontal-divider {
   background: radial-gradient(ellipse at center, var(--text-accent) 0%, transparent 70%);
   opacity: 0.9;
   flex-shrink: 0;
+}
+
+/* --- Editor Horizontal Line Override --- */
+.cm-line.cm-atomic-hr {
+  border: none !important;
+  height: 24px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  position: relative !important;
+  color: transparent !important;
+}
+
+/* Ensure any natively rendered HR elements inside the line are completely hidden */
+.cm-line.cm-atomic-hr hr {
+  display: none !important;
+}
+
+.cm-line.cm-atomic-hr,
+.cm-line.cm-atomic-hr > *:not(::before):not(::after) {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  background: transparent !important;
+}
+
+.cm-line.cm-atomic-hr::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 50%;
+  width: 250px;
+  height: 2px;
+  background: linear-gradient(to right, transparent 0%, var(--text-accent) 25%, transparent 40%, transparent 60%, var(--text-accent) 75%, transparent 100%) !important;
+  pointer-events: none !important; 
+  box-shadow: 0 0 8px rgba(var(--text-accent-rgb), 0.15);
+}
+
+.cm-line.cm-atomic-hr::after {
+  content: '✦ ✦ ✦' !important;
+  position: absolute !important;
+  left: 50% !important;
+  transform: translateX(-50%) translateY(-50%) !important;
+  top: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: var(--bg-editor, var(--bg-app)) !important;
+  padding: 0 12px !important;
+  font-size: 12px !important;
+  opacity: 0.3 !important;
+  pointer-events: none !important;
+  color: var(--text-main) !important;
 }

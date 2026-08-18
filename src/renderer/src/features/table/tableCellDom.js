@@ -164,9 +164,12 @@ export function renderCellToken(tok, view) {
           }
           
           cell.dataset.raw = text
-          import('./tableWidgetExtension').then(module => {
-            module.dispatchModelFromDom(view, cell)
-          })
+          
+          // FORCE the DOM to rebuild immediately so the deleted widget actually vanishes
+          // before CodeMirror diffs the table state!
+          renderCellSourceDecorated(sourceEl)
+          
+          dispatchModelFromDom(view, cell)
         }
       }
       const widget = new ImageWidget(tok.alt, tok.url, 0, tok.raw.length, onUpdate)
@@ -743,9 +746,10 @@ export function makeCell(tag, text, view) {
         if (
           anchor &&
           anchor.parentElement &&
-          anchor.parentElement.closest('.cm-atomic-inline-code-wrap')
+          (anchor.parentElement.closest('.cm-atomic-inline-code-wrap') ||
+           anchor.parentElement.closest('.cm-atomic-image-wrap'))
         ) {
-          // Inside inline code, allow typing literal pipe without splitting cell
+          // Inside inline code or image source, allow typing literal pipe without splitting cell
           return
         }
       }

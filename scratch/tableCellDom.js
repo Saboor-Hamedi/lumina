@@ -607,6 +607,8 @@ function makeCell(tag, text, view) {
               const { from } = findCurrentTableRange(view, wrap) || { from: 0 }
               // Delete column
               m.header.splice(col, 1)
+              if (m.alignments) m.alignments.splice(col, 1)
+              if (m.widths) m.widths.splice(col, 1)
               for (const r of m.rows) r.splice(col, 1)
               dispatchModel(view, wrap, m)
 
@@ -716,11 +718,15 @@ function makeCell(tag, text, view) {
         if (cell.tagName === 'TH') {
           m.header[col] = leftText
           m.header.splice(col + 1, 0, rightText)
+          if (m.alignments) m.alignments.splice(col + 1, 0, '')
+          if (m.widths) m.widths.splice(col + 1, 0, '')
           for (const r of m.rows) r.splice(col + 1, 0, '')
         } else {
           const row = cellRowIndex(cell)
           m.rows[row][col] = leftText
           m.header.splice(col + 1, 0, '')
+          if (m.alignments) m.alignments.splice(col + 1, 0, '')
+          if (m.widths) m.widths.splice(col + 1, 0, '')
           for (let r = 0; r < m.rows.length; r++) {
             if (r === row) {
               m.rows[r].splice(col + 1, 0, rightText)

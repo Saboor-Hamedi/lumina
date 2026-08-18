@@ -57,83 +57,72 @@ export function setupTableInsertion(wrap, view) {
     const tableRect = table.getBoundingClientRect()
     const THRESHOLD = 12
 
-    let foundRowGap = false
+    const targetCell = e.target.closest('th, td')
+    if (!targetCell) {
+      rowInsertHandle.style.opacity = '0'
+      rowInsertHandle.style.pointerEvents = 'none'
+      colInsertHandle.style.opacity = '0'
+      colInsertHandle.style.pointerEvents = 'none'
+      return
+    }
+    
+    const cellRect = targetCell.getBoundingClientRect()
+    const tr = targetCell.parentElement
+    const isHeader = targetCell.tagName === 'TH'
+    const isFirstCell = Array.from(tr.children).indexOf(targetCell) === 0
+    const rowIndex = Array.from(table.querySelectorAll('tr')).indexOf(tr)
+    const colIndex = Array.from(tr.children).indexOf(targetCell)
+    
     let foundColGap = false
+    let foundRowGap = false
 
-    // Check Row Gaps
-    const rows = Array.from(table.querySelectorAll('tr'))
-    for (let i = 0; i <= rows.length; i++) {
-      let boundaryY = 0
-      let isTopEdge = i === 0
-      let isBottomEdge = i === rows.length
+    // Column Insertion (ONLY allowed when hovering a header cell)
+    if (isHeader) {
+      const distLeft = Math.abs(e.clientX - cellRect.left)
+      const distRight = Math.abs(e.clientX - cellRect.right)
       
-      if (isTopEdge) {
-        boundaryY = rows[0].getBoundingClientRect().top
-      } else if (isBottomEdge) {
-        boundaryY = rows[rows.length - 1].getBoundingClientRect().bottom
-      } else {
-        const topRect = rows[i - 1].getBoundingClientRect()
-        const botRect = rows[i].getBoundingClientRect()
-        boundaryY = (topRect.bottom + botRect.top) / 2
+      if (distLeft < THRESHOLD || distRight < THRESHOLD) {
+        const isLeft = distLeft < distRight
+        const insertIndex = isLeft ? colIndex : colIndex + 1
+        
+        let markerX = (isLeft ? cellRect.left : cellRect.right) - wrapRect.left
+        let markerY = cellRect.top + (cellRect.height / 2) - wrapRect.top
+        
+        // Push slightly inward on absolute edges
+        if (insertIndex === 0) markerX += 7
+        if (insertIndex === tr.children.length) markerX -= 7
+        
+        colInsertHandle.style.left = `${markerX}px`
+        colInsertHandle.style.top = `${markerY}px`
+        colInsertHandle.style.opacity = '1'
+        colInsertHandle.style.pointerEvents = 'auto'
+        colInsertHandle.dataset.index = insertIndex.toString()
+        foundColGap = true
       }
-
-      if (Math.abs(e.clientY - boundaryY) < THRESHOLD) {
-        let markerY = boundaryY - wrapRect.top
-        // Clamp to prevent marker from spilling outside the top/bottom table boundaries
-        if (isTopEdge) markerY += 7
-        if (isBottomEdge) markerY -= 7
+    }
+    
+    // Row Insertion (ONLY allowed when hovering the first cell in any row)
+    if (isFirstCell) {
+      const distTop = Math.abs(e.clientY - cellRect.top)
+      const distBottom = Math.abs(e.clientY - cellRect.bottom)
+      
+      if (distTop < THRESHOLD || distBottom < THRESHOLD) {
+        const isTop = distTop < distBottom
+        const insertIndex = isTop ? rowIndex : rowIndex + 1
+        
+        let markerY = (isTop ? cellRect.top : cellRect.bottom) - wrapRect.top
+        let markerX = tableRect.left - wrapRect.left + 7 // Pinned left
+        
+        // Push slightly inward on absolute edges
+        if (insertIndex === 0) markerY += 7
+        if (insertIndex === table.querySelectorAll('tr').length) markerY -= 7
         
         rowInsertHandle.style.top = `${markerY}px`
-        let markerX = e.clientX - wrapRect.left
-        // Clamp to table left/right
-        markerX = Math.max(markerX, tableRect.left - wrapRect.left + 7)
-        markerX = Math.min(markerX, tableRect.right - wrapRect.left - 7)
         rowInsertHandle.style.left = `${markerX}px`
         rowInsertHandle.style.opacity = '1'
         rowInsertHandle.style.pointerEvents = 'auto'
-        rowInsertHandle.dataset.index = i.toString()
+        rowInsertHandle.dataset.index = insertIndex.toString()
         foundRowGap = true
-        break
-      }
-    }
-
-    // Check Col Gaps
-    const firstRow = rows[0]
-    if (firstRow) {
-      const cells = Array.from(firstRow.children)
-      for (let i = 0; i <= cells.length; i++) {
-        let boundaryX = 0
-        let isLeftEdge = i === 0
-        let isRightEdge = i === cells.length
-        
-        if (isLeftEdge) {
-          boundaryX = cells[0].getBoundingClientRect().left
-        } else if (isRightEdge) {
-          boundaryX = cells[cells.length - 1].getBoundingClientRect().right
-        } else {
-          const leftRect = cells[i - 1].getBoundingClientRect()
-          const rightRect = cells[i].getBoundingClientRect()
-          boundaryX = (leftRect.right + rightRect.left) / 2
-        }
-
-        if (Math.abs(e.clientX - boundaryX) < THRESHOLD) {
-          let markerX = boundaryX - wrapRect.left
-          // Clamp to prevent marker from spilling outside the left/right table boundaries
-          if (isLeftEdge) markerX += 7
-          if (isRightEdge) markerX -= 7
-          
-          colInsertHandle.style.left = `${markerX}px`
-          let markerY = e.clientY - wrapRect.top
-          // Clamp to table top/bottom
-          markerY = Math.max(markerY, tableRect.top - wrapRect.top + 7)
-          markerY = Math.min(markerY, tableRect.bottom - wrapRect.top - 7)
-          colInsertHandle.style.top = `${markerY}px`
-          colInsertHandle.style.opacity = '1'
-          colInsertHandle.style.pointerEvents = 'auto'
-          colInsertHandle.dataset.index = i.toString()
-          foundColGap = true
-          break
-        }
       }
     }
 
