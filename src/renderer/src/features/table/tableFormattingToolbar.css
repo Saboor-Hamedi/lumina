@@ -273,8 +273,8 @@
 /* 2) When selected via table Grid Selection logic (clicking and dragging) */
 .cm-table-selection-overlay {
   position: absolute;
-  background-color: rgba(var(--text-accent-rgb, 64, 186, 250), 0.15) !important;
-  border: 2px solid rgba(var(--text-accent-rgb, 64, 186, 250), 0.8) !important;
+  background-color: rgba(147, 51, 234, 0.15) !important;
+  border: 2px solid rgba(147, 51, 234, 0.8) !important;
   pointer-events: none; /* Let clicks pass through to the cells beneath */
   z-index: 5;
   border-radius: 4px;

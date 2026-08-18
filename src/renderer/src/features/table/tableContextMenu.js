@@ -156,22 +156,94 @@ export function openCellMenu(view, cell, x, y) {
     })
   ]
 
-  const items = []
-  if (!isHeader) {
-    items.push(createSubmenu('Row', icons.row, rowSubmenu))
+  let items = []
+  const selection = wrap.__getGridSelection ? wrap.__getGridSelection() : null
+  
+  const minR = selection ? selection.minR : row
+  const maxR = selection ? selection.maxR : row
+  const minC = selection ? selection.minC : col
+  const maxC = selection ? selection.maxC : col
+
+  const applyFormatToSelection = (formatFn) => {
+    const m = readModelFromDom(wrap)
+    for (let r = minR; r <= maxR; r++) {
+      if (r === -1) {
+        for (let c = minC; c <= maxC; c++) m.header[c] = formatFn(m.header[c] || '')
+      } else {
+        if (m.rows[r]) {
+          for (let c = minC; c <= maxC; c++) m.rows[r][c] = formatFn(m.rows[r][c] || '')
+        }
+      }
+    }
+    dispatchModel(view, wrap, m)
   }
-  items.push(createSubmenu('Column', icons.column, colSubmenu))
+
+  const toggleTag = (text, tag) => {
+    let t = text.trim()
+    if (t.startsWith(tag) && t.endsWith(tag) && t.length >= tag.length * 2) {
+      return t.substring(tag.length, t.length - tag.length)
+    }
+    return `${tag}${t}${tag}`
+  }
+
+  const formatSubmenu = [
+    createItem('Bold', icons.bold, () => applyFormatToSelection(t => toggleTag(t, '**'))),
+    createItem('Italic', icons.italic, () => applyFormatToSelection(t => toggleTag(t, '_'))),
+    createItem('Strikethrough', icons.strikethrough, () => applyFormatToSelection(t => toggleTag(t, '~~'))),
+    createItem('Code', icons.code, () => applyFormatToSelection(t => toggleTag(t, '`'))),
+    createSeparator(),
+    createItem('Clear formatting', icons.eraser, () => applyFormatToSelection(t => t.replace(/(\*\*|__|~~|`|_|\*)/g, '')))
+  ]
+
+  items.push(createSubmenu('Format', icons.format, formatSubmenu))
   items.push(createSeparator())
-  items.push(createItem('Sort by column (A to Z)', icons.sortAsc, () => {
+  
+  items.push(createItem('Align left', icons.alignLeft, () => {
     const m = readModelFromDom(wrap)
-    m.rows.sort((a, b) => (a[col] || '').trim().localeCompare((b[col] || '').trim(), undefined, { numeric: true }))
+    for (let c = minC; c <= maxC; c++) m.alignments[c] = 'left'
     dispatchModel(view, wrap, m)
   }))
-  items.push(createItem('Sort by column (Z to A)', icons.sortDesc, () => {
+  items.push(createItem('Align center', icons.alignCenter, () => {
     const m = readModelFromDom(wrap)
-    m.rows.sort((a, b) => (b[col] || '').trim().localeCompare((a[col] || '').trim(), undefined, { numeric: true }))
+    for (let c = minC; c <= maxC; c++) m.alignments[c] = 'center'
     dispatchModel(view, wrap, m)
   }))
+  items.push(createItem('Align right', icons.alignRight, () => {
+    const m = readModelFromDom(wrap)
+    for (let c = minC; c <= maxC; c++) m.alignments[c] = 'right'
+    dispatchModel(view, wrap, m)
+  }))
+  items.push(createSeparator())
+  
+  items.push(createItem('Clear cells', icons.clearCells, () => applyFormatToSelection(() => '')))
+  
+  if (selection) {
+    items.push(createItem('Delete rows', icons.delete, () => {
+      if (minR !== -1) {
+        const m = readModelFromDom(wrap)
+        const numRows = maxR - minR + 1
+        m.rows.splice(minR, numRows)
+        dispatchModel(view, wrap, m)
+      }
+    }))
+  } else {
+    items.push(createSeparator())
+    if (!isHeader) {
+      items.push(createSubmenu('Row', icons.row, rowSubmenu))
+    }
+    items.push(createSubmenu('Column', icons.column, colSubmenu))
+    items.push(createSeparator())
+    items.push(createItem('Sort by column (A to Z)', icons.sortAsc, () => {
+      const m = readModelFromDom(wrap)
+      m.rows.sort((a, b) => (a[col] || '').trim().localeCompare((b[col] || '').trim(), undefined, { numeric: true }))
+      dispatchModel(view, wrap, m)
+    }))
+    items.push(createItem('Sort by column (Z to A)', icons.sortDesc, () => {
+      const m = readModelFromDom(wrap)
+      m.rows.sort((a, b) => (b[col] || '').trim().localeCompare((a[col] || '').trim(), undefined, { numeric: true }))
+      dispatchModel(view, wrap, m)
+    }))
+  }
 
   const dismiss = () => {
     menu.remove()

@@ -116,6 +116,7 @@ export function setupTableSelection(wrap, view) {
   // Use capture phase on document to guarantee we see the mousedown before any child
   // components (like wikilinks) can stop propagation.
   document.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return // Only left-clicks start selection
     if (!wrap.contains(e.target)) return // Handled by the window mousedown for outside clicks
 
     const cell = e.target.closest('th, td')
@@ -179,6 +180,7 @@ export function setupTableSelection(wrap, view) {
   })
 
   window.addEventListener('mousedown', (e) => {
+    if (e.target.closest('.cm-atomic-table-menu')) return
     if (!wrap.contains(e.target)) {
       clearSelectionVisuals()
       startCell = null
@@ -314,4 +316,16 @@ export function setupTableSelection(wrap, view) {
   }
 
   wrap.__getCellAt = getCellAt
+  wrap.__getGridSelection = () => {
+    if (!hasSelection || !startCell || !endCell) return null
+    const start = getCoords(startCell)
+    const end = getCoords(endCell)
+    if (start.c === -1 || end.c === -1) return null
+    return {
+      minR: Math.min(start.r, end.r),
+      maxR: Math.max(start.r, end.r),
+      minC: Math.min(start.c, end.c),
+      maxC: Math.max(start.c, end.c)
+    }
+  }
 }
