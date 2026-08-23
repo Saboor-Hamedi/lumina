@@ -74,7 +74,7 @@
 .cm-atomic-table {
   position: relative;
   margin: 0;
-  padding: 0 !important;
+  padding: 24px 0 0 24px !important;
   display: block;
   width: 100%;
   max-width: 100%;
@@ -143,9 +143,9 @@
   margin: 0 !important;
   
   /* Apply container visuals directly to the table */
-  border-radius: 8px !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
-  border: 1px solid var(--border-dim) !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1)) !important;
   background: var(--bg-primary, transparent) !important;
 }
 
@@ -157,7 +157,7 @@
   white-space: normal !important;
   max-width: calc(var(--font-size-editor, 16px) * 16) !important;
   padding: 0 !important;
-  border: 1px solid var(--border-dim) !important;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1)) !important;
   border-top: none !important;
   border-left: none !important;
   vertical-align: top !important;
@@ -175,10 +175,10 @@
 
 
 .cm-atomic-table th {
-  background: rgba(255, 255, 255, 0.03) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
   color: var(--text-main) !important;
   font-weight: 600 !important;
-  border-bottom: 2px solid var(--border-dim) !important;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1)) !important;
 }
 
 /* Explicitly round the corners of the table to prevent bleeding */
@@ -301,11 +301,10 @@
 /* --- CORNER HANDLES (Knob & Delete) --- */
 .cm-table-action-area {
   position: absolute;
-  top: 2px;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 24px;
+  left: 2px;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   gap: 2px;
   z-index: 10;
   opacity: 0;
@@ -326,7 +325,8 @@
   border-radius: 4px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
+  padding-right: 4px;
   color: var(--text-muted);
   transition: all 0.15s ease;
 }

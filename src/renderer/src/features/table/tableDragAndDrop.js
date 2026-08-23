@@ -97,7 +97,7 @@ export function setupTableDragAndDrop(wrap, view) {
     if (tbody) {
       const rect = tr.getBoundingClientRect()
       rowHandle.style.top = `${rect.top - wrapRect.top + rect.height / 2 - 10}px` // Centered vertically
-      rowHandle.style.left = `${tableRect.left - wrapRect.left - 24}px` // Sit outside the table
+      rowHandle.style.left = `${tableRect.left - wrapRect.left + wrap.scrollLeft - 24}px` // Sit outside the table
       rowHandle.style.width = `20px`
       rowHandle.style.height = `20px`
       rowHandle.style.opacity = '1'
@@ -114,7 +114,7 @@ export function setupTableDragAndDrop(wrap, view) {
     const colIndex = Array.from(tr.children).indexOf(cell)
     if (colIndex >= 0) {
       const rect = cell.getBoundingClientRect()
-      colHandle.style.left = `${rect.left - wrapRect.left + rect.width / 2 - 10}px` // Centered horizontally
+      colHandle.style.left = `${rect.left - wrapRect.left + wrap.scrollLeft + rect.width / 2 - 10}px` // Centered horizontally
       colHandle.style.top = `${tableRect.top - wrapRect.top - 24}px` // Sit outside the table
       colHandle.style.width = `20px`
       colHandle.style.height = `20px`

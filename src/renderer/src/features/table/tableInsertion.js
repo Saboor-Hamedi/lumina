@@ -85,7 +85,7 @@ export function setupTableInsertion(wrap, view) {
         const isLeft = distLeft < distRight
         const insertIndex = isLeft ? colIndex : colIndex + 1
         
-        let markerX = (isLeft ? cellRect.left : cellRect.right) - wrapRect.left
+        let markerX = (isLeft ? cellRect.left : cellRect.right) - wrapRect.left + wrap.scrollLeft
         let markerY = cellRect.top + (cellRect.height / 2) - wrapRect.top
         
         // Push slightly inward on absolute edges
@@ -111,7 +111,7 @@ export function setupTableInsertion(wrap, view) {
         const insertIndex = isTop ? rowIndex : rowIndex + 1
         
         let markerY = (isTop ? cellRect.top : cellRect.bottom) - wrapRect.top
-        let markerX = tableRect.left - wrapRect.left + 7 // Pinned left
+        let markerX = tableRect.left - wrapRect.left + wrap.scrollLeft + 7 // Pinned left
         
         // Push slightly inward on absolute edges
         if (insertIndex === 0) markerY += 7
