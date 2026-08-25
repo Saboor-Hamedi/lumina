@@ -2,6 +2,7 @@ import React, { forwardRef } from 'react'
 import ForceGraph2D from 'react-force-graph-2d'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useVaultStore } from '../../core/store/useVaultStore'
+import { usePerformanceStore } from './usePerformanceStore'
 
 const Graph2D = forwardRef(
   (
@@ -38,6 +39,12 @@ const Graph2D = forwardRef(
           ctx.arc(node.x, node.y, hitRadius, 0, 2 * Math.PI, false)
           ctx.fill()
         }}
+        linkVisibility={(link) => {
+          const isDragging = usePerformanceStore.getState().metrics.isDragging
+          if (!isDragging) return true
+          // If dragging, ONLY render links attached to the dragged/hovered node
+          return link.source === hoverNode || link.target === hoverNode
+        }}
         linkColor={(link) => {
           if (!hoverNode) return defaultLineColor
           return link.source === hoverNode || link.target === hoverNode ? '#40bafa' : 'rgba(150, 150, 150, 0.05)'
@@ -53,9 +60,23 @@ const Graph2D = forwardRef(
             if (s && onNavigate) onNavigate(s)
           }
         }}
+        onNodeDrag={(node) => {
+          usePerformanceStore.getState().setDragging(true)
+        }}
         onNodeDragEnd={(node) => {
+          usePerformanceStore.getState().setDragging(false)
           node.fx = null
           node.fy = null
+        }}
+        onRenderFramePre={() => {
+          window._luminaFrameStart = performance.now()
+        }}
+        onRenderFramePost={() => {
+          const now = performance.now()
+          const frameTime = now - window._luminaFrameStart
+          const fps = window._luminaLastFrame ? 1000 / (now - window._luminaLastFrame) : 60
+          window._luminaLastFrame = now
+          usePerformanceStore.getState().updateMetrics({ frameTime, fps, nodeCount: graphData?.nodes?.length || 0, linkCount: graphData?.links?.length || 0 })
         }}
         backgroundColor="transparent"
         d3AlphaDecay={0.05}

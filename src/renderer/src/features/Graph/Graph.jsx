@@ -16,6 +16,8 @@ import Graph2D from './Graph2D'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useAIStore } from '../AI/tools/LuminaChat'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
+import { usePerformanceStore } from './usePerformanceStore'
+import PerformancePanel from './PerformancePanel'
 import { buildGraphData, buildSemanticLinks } from '../../core/utils/graphBuilder'
 import { forceRadial, forceManyBody, forceCollide, forceCenter, forceX, forceY } from 'd3-force'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
@@ -657,6 +659,11 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               mesh.scale.set(r, r, r)
               return mesh
             }}
+            linkVisibility={(link) => {
+              const isDragging = usePerformanceStore.getState().metrics.isDragging
+              if (!isDragging) return true
+              return link.source === hoverNode || link.target === hoverNode
+            }}
             linkColor={(link) => {
               if (!hoverNode) return defaultLineColor
               return link.source === hoverNode || link.target === hoverNode ? '#40bafa' : 'rgba(150, 150, 150, 0.05)'
@@ -669,10 +676,24 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 if (s) onNavigate(s)
               }
             }}
+            onNodeDrag={(node) => {
+              usePerformanceStore.getState().setDragging(true)
+            }}
             onNodeDragEnd={(node) => {
+              usePerformanceStore.getState().setDragging(false)
               node.fx = null
               node.fy = null
               node.fz = null
+            }}
+            onRenderFramePre={() => {
+              window._luminaFrameStart = performance.now()
+            }}
+            onRenderFramePost={() => {
+              const now = performance.now()
+              const frameTime = now - window._luminaFrameStart
+              const fps = window._luminaLastFrame ? 1000 / (now - window._luminaLastFrame) : 60
+              window._luminaLastFrame = now
+              usePerformanceStore.getState().updateMetrics({ frameTime, fps, nodeCount: graphData?.nodes?.length || 0, linkCount: graphData?.links?.length || 0 })
             }}
             backgroundColor="rgba(0,0,0,0)"
             d3AlphaDecay={0.05}
@@ -760,6 +781,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       />
 
       <div className="nexus-main" style={{ position: 'relative', flex: 1, overflow: 'hidden' }}>
+        <PerformancePanel />
         <GraphSidebar
           isOpen={graphSidebarOpen}
           searchQuery={searchQuery}
@@ -794,6 +816,11 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 mesh.scale.set(r, r, r)
                 return mesh
               }}
+              linkVisibility={(link) => {
+                const isDragging = usePerformanceStore.getState().metrics.isDragging
+                if (!isDragging) return true
+                return link.source === hoverNode || link.target === hoverNode
+              }}
               linkColor={(link) => {
                 if (!hoverNode) return defaultLineColor
                 return link.source === hoverNode || link.target === hoverNode ? '#40bafa' : 'rgba(150, 150, 150, 0.05)'
@@ -806,7 +833,11 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                   if (s) onNavigate(s)
                 }
               }}
+              onNodeDrag={(node) => {
+                usePerformanceStore.getState().setDragging(true)
+              }}
               onNodeDragEnd={(node) => {
+                usePerformanceStore.getState().setDragging(false)
                 node.fx = null
                 node.fy = null
                 node.fz = null

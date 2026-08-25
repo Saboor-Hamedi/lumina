@@ -1,3 +1,5 @@
+import { usePerformanceStore } from './usePerformanceStore'
+
 export const stringToColor = (str) => {
   let hash = 0
   for (let i = 0; i < str.length; i++) {
@@ -51,8 +53,10 @@ export const drawNode = (
   
   ctx.globalAlpha = 1.0
 
+  const isDragging = usePerformanceStore.getState().metrics.isDragging
+
   // Draw text (Optimized: fillText is slow, so only render if required)
-  if (showText && !isSearchDimmed) {
+  if (!isDragging && showText && (isHovered || isActive || isSearchMatch || globalScale > 1.5)) {
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillStyle = 'var(--text-main, #d4d4d4)'
