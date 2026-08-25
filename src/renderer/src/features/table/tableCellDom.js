@@ -12,7 +12,15 @@ import { icons } from './icons.js'
 
 import { escapeCell, readModelFromDom, getCellSource } from './tableModel'
 import { parseCellInline } from './tableInlineParsing'
-import { findCurrentTableRange, placeCaretAtEnd, dispatchModel, dispatchModelFromDom, moveCellFocus, tableLinkClickFacet, tables } from './tableWidgetExtension'
+import {
+  findCurrentTableRange,
+  placeCaretAtEnd,
+  dispatchModel,
+  dispatchModelFromDom,
+  moveCellFocus,
+  tableLinkClickFacet,
+  tables
+} from './tableWidgetExtension'
 
 import { ImageWidget } from '../dropImage/imageWidgetExtension'
 
@@ -146,14 +154,14 @@ export function renderCellToken(tok, view) {
     wrap.className = 'cm-atomic-image-wrap'
     const markSpan = makeCellMark(tok.raw)
     wrap.appendChild(markSpan)
-    
+
     if (view) {
       const onUpdate = (newText) => {
         markSpan.textContent = newText
         const cell = wrap.closest('th, td')
         if (cell) {
           const sourceEl = cell.querySelector('.cm-atomic-table-cell-source')
-          
+
           let text = ''
           for (const child of sourceEl.childNodes) {
             if (child.nodeType === Node.TEXT_NODE) text += child.nodeValue
@@ -162,13 +170,13 @@ export function renderCellToken(tok, view) {
               if (mark) text += mark.textContent
             } else text += child.textContent
           }
-          
+
           cell.dataset.raw = text
-          
+
           // FORCE the DOM to rebuild immediately so the deleted widget actually vanishes
           // before CodeMirror diffs the table state!
           renderCellSourceDecorated(sourceEl)
-          
+
           dispatchModelFromDom(view, cell)
         }
       }
@@ -420,7 +428,7 @@ export function makeCell(tag, text, view) {
     renderCellSourceDecorated(source)
     if (offset != null) setCaretCharOffset(source, offset)
     updateActiveMarkForSource(source)
-        dispatchModelFromDom(view, cell)
+    dispatchModelFromDom(view, cell)
   }
 
   const autocomplete = new TableAutocomplete(
@@ -460,16 +468,17 @@ export function makeCell(tag, text, view) {
     if (imageFiles.length > 0) {
       event.preventDefault()
       event.stopPropagation()
-      
+
       const file = imageFiles[0]
       try {
         const arrayBuffer = await file.arrayBuffer()
         const uint8Array = new Uint8Array(arrayBuffer)
-        
+
         const ext = file.type.split('/')[1] || 'png'
-        const filename = (file.name === 'image.png' || file.name === 'image.jpeg') 
-          ? `Pasted image ${Date.now()}.${ext}` 
-          : file.name
+        const filename =
+          file.name === 'image.png' || file.name === 'image.jpeg'
+            ? `Pasted image ${Date.now()}.${ext}`
+            : file.name
 
         const relativePath = await window.api.saveImage(uint8Array, filename)
         if (relativePath) {
@@ -747,7 +756,7 @@ export function makeCell(tag, text, view) {
           anchor &&
           anchor.parentElement &&
           (anchor.parentElement.closest('.cm-atomic-inline-code-wrap') ||
-           anchor.parentElement.closest('.cm-atomic-image-wrap'))
+            anchor.parentElement.closest('.cm-atomic-image-wrap'))
         ) {
           // Inside inline code or image source, allow typing literal pipe without splitting cell
           return
@@ -870,7 +879,9 @@ export function makeCell(tag, text, view) {
   }
   source.addEventListener('keydown', (event) => {
     if (view.state.readOnly) return
-    if (event.key === 'Tab') {return}
+    if (event.key === 'Tab') {
+      return
+    }
   })
   source.addEventListener('pointerdown', (event) => {
     if (event.button !== 0) return
@@ -908,6 +919,6 @@ export function makeCell(tag, text, view) {
     source.focus()
     placeCaretAtEnd(source)
   })
-    return cell
+  return cell
 }
 // ---- context menu -------------------------------------------------

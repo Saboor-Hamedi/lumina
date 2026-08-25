@@ -10,7 +10,6 @@ import { openCellMenu } from './tableContextMenu'
 import { setupTableSelection } from './tableGridSelection'
 import { icons } from './icons.js'
 
-
 export function collectCells(state, rowNode) {
   // Split the row's raw line on unescaped `|` rather than collecting
   // lezer `TableCell` nodes. lezer emits NO `TableCell` for an empty
@@ -31,7 +30,7 @@ export function splitRowCells(line) {
   for (let i = 0; i < s.length; i++) {
     const ch = s[i]
     // A backslash escapes the next char (e.g. `\|` is a literal pipe in
-    // a GFM cell). Unescape `\|` back to `|` for our internal model, 
+    // a GFM cell). Unescape `\|` back to `|` for our internal model,
     // but preserve backslashes for everything else so we don't lose data.
     if (ch === '\\' && i + 1 < s.length) {
       if (s[i + 1] === '|') {
@@ -111,7 +110,7 @@ export function serializeTable(model) {
   const columnCount = model.header.length
   const lines = []
   lines.push('| ' + model.header.map(escapeCell).join(' | ') + ' |')
-  
+
   const delimiterRow = []
   for (let c = 0; c < columnCount; c++) {
     const align = model.alignments?.[c] || ''
@@ -131,7 +130,7 @@ export function serializeTable(model) {
 }
 export function readModelFromDom(wrap) {
   const header = Array.from(wrap.querySelectorAll('thead th')).map(readCellSource)
-  const alignments = Array.from(wrap.querySelectorAll('thead th')).map(th => {
+  const alignments = Array.from(wrap.querySelectorAll('thead th')).map((th) => {
     if (th.style.textAlign === 'center') return 'center'
     if (th.style.textAlign === 'right') return 'right'
     if (th.style.textAlign === 'left') return 'left'

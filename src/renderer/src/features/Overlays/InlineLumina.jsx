@@ -12,7 +12,11 @@ const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title, cursorPosi
   const [isGenerating, setIsGenerating] = useState(false)
   const [abortController, setAbortController] = useState(null)
   const [copied, setCopied] = useState(false)
-  const [modalPosition, setModalPosition] = useState({ top: '30%', left: '50%', transform: 'translate(-50%, -50%)' })
+  const [modalPosition, setModalPosition] = useState({
+    top: '30%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)'
+  })
   const [contextRange, setContextRange] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
   const dragStartPos = useRef({ x: 0, y: 0, top: 0, left: 0 })
@@ -146,22 +150,19 @@ const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title, cursorPosi
     }
   }, [editorView])
 
-  const handleDragStart = useCallback(
-    (e) => {
-      e.preventDefault()
-      e.stopPropagation()
-      setIsDragging(true)
-      
-      const rect = modalRef.current.getBoundingClientRect()
-      dragStartPos.current = {
-        x: e.clientX,
-        y: e.clientY,
-        top: rect.top,
-        left: rect.left
-      }
-    },
-    []
-  )
+  const handleDragStart = useCallback((e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+
+    const rect = modalRef.current.getBoundingClientRect()
+    dragStartPos.current = {
+      x: e.clientX,
+      y: e.clientY,
+      top: rect.top,
+      left: rect.left
+    }
+  }, [])
 
   const handleDrag = useCallback(
     (e) => {
@@ -408,19 +409,16 @@ CRITICAL INSTRUCTIONS:
     [query, isGenerating, contextRange, title]
   )
 
-  const modalStyle = React.useMemo(
-    () => {
-      const style = {
-        top: typeof modalPosition.top === 'number' ? `${modalPosition.top}px` : modalPosition.top,
-        left: typeof modalPosition.left === 'number' ? `${modalPosition.left}px` : modalPosition.left
-      }
-      if (modalPosition.transform) {
-        style.transform = modalPosition.transform
-      }
-      return style
-    },
-    [modalPosition]
-  )
+  const modalStyle = React.useMemo(() => {
+    const style = {
+      top: typeof modalPosition.top === 'number' ? `${modalPosition.top}px` : modalPosition.top,
+      left: typeof modalPosition.left === 'number' ? `${modalPosition.left}px` : modalPosition.left
+    }
+    if (modalPosition.transform) {
+      style.transform = modalPosition.transform
+    }
+    return style
+  }, [modalPosition])
 
   if (!isOpen) return null
 

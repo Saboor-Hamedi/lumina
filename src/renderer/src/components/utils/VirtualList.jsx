@@ -1,4 +1,11 @@
-import React, { useRef, useState, useEffect, useLayoutEffect, forwardRef, useImperativeHandle } from 'react'
+import React, {
+  useRef,
+  useState,
+  useEffect,
+  useLayoutEffect,
+  forwardRef,
+  useImperativeHandle
+} from 'react'
 
 export const FixedSizeList = forwardRef(
   (

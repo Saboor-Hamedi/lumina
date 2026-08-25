@@ -10,7 +10,7 @@ const SettingAdvanced = () => {
   const { showToast } = useToast()
   const [appVersion, setAppVersion] = useState('')
   const isMac = navigator.userAgent.toLowerCase().includes('mac')
-  
+
   const formatShortcutKey = (keyString) => {
     if (!isMac) return keyString
     return keyString.replace(/Ctrl/g, '⌘').replace(/Shift/g, '⇧').replace(/Alt/g, '⌥')
@@ -119,8 +119,8 @@ const SettingAdvanced = () => {
           <div className="row-info" style={{ marginBottom: '16px' }}>
             <div className="row-label">Workspace Location</div>
             <div className="row-hint">
-              This is where all your markdown notes, assets, and AI indexes are stored
-              securely on your local device.
+              This is where all your markdown notes, assets, and AI indexes are stored securely on
+              your local device.
             </div>
           </div>
 
@@ -154,14 +154,16 @@ const SettingAdvanced = () => {
           </div>
         </div>
       </section>
-      
+
       <section style={{ marginTop: '32px' }}>
         <h3>System Integration</h3>
-        
+
         <div className="settings-row">
           <div className="row-info">
             <div className="row-label">Launch Lumina on Startup</div>
-            <div className="row-hint">Automatically start Lumina silently in the background when your computer boots up.</div>
+            <div className="row-hint">
+              Automatically start Lumina silently in the background when your computer boots up.
+            </div>
           </div>
           <label className="switch">
             <input
@@ -176,7 +178,10 @@ const SettingAdvanced = () => {
         <div className="settings-row">
           <div className="row-info">
             <div className="row-label">Global Spotlight Shortcut</div>
-            <div className="row-hint">Summon the Command Palette from anywhere on your computer (requires restart to apply changes).</div>
+            <div className="row-hint">
+              Summon the Command Palette from anywhere on your computer (requires restart to apply
+              changes).
+            </div>
           </div>
           <div className="shortcut-badge" style={{ fontSize: '13px' }}>
             {formatShortcutKey('Ctrl+Space')}
@@ -216,9 +221,7 @@ const SettingAdvanced = () => {
           <label className="switch">
             <input
               type="checkbox"
-              checked={
-                settings.graphShowTexts !== false && settings.graphShowTexts !== 'false'
-              }
+              checked={settings.graphShowTexts !== false && settings.graphShowTexts !== 'false'}
               onChange={(e) => updateSetting('graphShowTexts', e.target.checked)}
             />
             <span className="slider round"></span>
@@ -233,8 +236,7 @@ const SettingAdvanced = () => {
           <div className="color-picker-row" style={{ display: 'flex', gap: '12px' }}>
             {['#40bafa', '#14b8a6', '#f59e0b', '#ec4899', '#8b5cf6'].map((color) => {
               const isSelected =
-                (settings.graphNodeColor || '#40bafa').toLowerCase() ===
-                color.toLowerCase()
+                (settings.graphNodeColor || '#40bafa').toLowerCase() === color.toLowerCase()
               return (
                 <div
                   key={color}
@@ -262,12 +264,27 @@ const SettingAdvanced = () => {
         <h3>Keyboard Shortcuts</h3>
         <div className="settings-block" style={{ padding: '0', background: 'transparent' }}>
           {SHORTCUT_DISPLAY_GROUPS.map((group, i) => (
-            <div key={i} style={{ marginBottom: i < SHORTCUT_DISPLAY_GROUPS.length - 1 ? '24px' : '0' }}>
-              <h4 style={{ fontSize: '13px', color: 'var(--text-main)', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid var(--border-subtle)' }}>
+            <div
+              key={i}
+              style={{ marginBottom: i < SHORTCUT_DISPLAY_GROUPS.length - 1 ? '24px' : '0' }}
+            >
+              <h4
+                style={{
+                  fontSize: '13px',
+                  color: 'var(--text-main)',
+                  marginBottom: '12px',
+                  paddingBottom: '8px',
+                  borderBottom: '1px solid var(--border-subtle)'
+                }}
+              >
                 {group.title}
               </h4>
               {group.items.map((item, j) => (
-                <div className="settings-row" key={j} style={{ padding: '8px 0', borderBottom: 'none' }}>
+                <div
+                  className="settings-row"
+                  key={j}
+                  style={{ padding: '8px 0', borderBottom: 'none' }}
+                >
                   <div className="row-info" style={item.isDanger ? { color: '#ef4444' } : {}}>
                     {item.label}
                   </div>
@@ -284,7 +301,9 @@ const SettingAdvanced = () => {
         <div className="settings-row">
           <div className="row-info">
             <div className="row-label">Enable Developer Tools</div>
-            <div className="row-hint">Allow toggling Developer Tools (Ctrl+Shift+I / F12) in production mode.</div>
+            <div className="row-hint">
+              Allow toggling Developer Tools (Ctrl+Shift+I / F12) in production mode.
+            </div>
           </div>
           <label className="switch">
             <input

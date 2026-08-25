@@ -140,21 +140,56 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
                 src={googleUser.picture}
                 alt="Profile"
                 referrerPolicy="no-referrer"
-                style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
-                onError={(e) => { e.target.style.display = 'none' }}
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  flexShrink: 0
+                }}
+                onError={(e) => {
+                  e.target.style.display = 'none'
+                }}
               />
             ) : (
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <svg
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ flexShrink: 0 }}
+              >
                 <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
             )}
             <div style={{ overflow: 'hidden' }}>
-              <div style={{ fontSize: '12px', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-main)' }}>
+              <div
+                style={{
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  color: 'var(--text-main)'
+                }}
+              >
                 {googleUser.name}
               </div>
               {googleUser.email && (
-                <div style={{ fontSize: '10px', color: 'var(--text-faint)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div
+                  style={{
+                    fontSize: '10px',
+                    color: 'var(--text-faint)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}
+                >
                   {googleUser.email}
                 </div>
               )}
@@ -163,29 +198,38 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
         </>
       )}
 
-      <DropdownItem 
-        icon={<Settings size={14} />} 
-        label="Settings" 
+      <DropdownItem
+        icon={<Settings size={14} />}
+        label="Settings"
         onClick={() => {
           onClose()
           onSettingsClick && onSettingsClick()
-        }} 
+        }}
       />
-      <DropdownItem 
-        icon={<Palette size={14} />} 
-        label="Theme" 
+      <DropdownItem
+        icon={<Palette size={14} />}
+        label="Theme"
         onClick={() => {
           onClose()
           onThemeClick && onThemeClick()
-        }} 
+        }}
       />
 
       <div style={{ height: '1px', backgroundColor: 'var(--border-dim)', margin: '4px 0' }} />
 
       {(status === 'available' || status === 'ready' || status === 'downloading') && (
         <DropdownItem
-          icon={<RefreshCw size={14} style={{ animation: status === 'downloading' ? 'spin 1.5s linear infinite' : 'none' }} />}
-          label={status === 'downloading' ? `Downloading... ${Math.round(progress?.percent || 0)}%` : 'Update Available'}
+          icon={
+            <RefreshCw
+              size={14}
+              style={{ animation: status === 'downloading' ? 'spin 1.5s linear infinite' : 'none' }}
+            />
+          }
+          label={
+            status === 'downloading'
+              ? `Downloading... ${Math.round(progress?.percent || 0)}%`
+              : 'Update Available'
+          }
           onClick={handleUpdateClick}
           highlight
         />
@@ -198,7 +242,8 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
           onClick={async () => {
             try {
               if (window.api?.loginWithGoogle) {
-                const clientId = '736587690312-33s4trbiculu5dvctb92lkl6njgc14ae.apps.googleusercontent.com'
+                const clientId =
+                  '736587690312-33s4trbiculu5dvctb92lkl6njgc14ae.apps.googleusercontent.com'
                 const userInfo = await window.api.loginWithGoogle(clientId)
                 if (userInfo && !userInfo.error) {
                   useSettingsStore.getState().updateSetting('googleUser', userInfo)
@@ -227,9 +272,10 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
               style={{
                 position: 'absolute',
                 inset: 0,
-                background: backupState === 'done'
-                  ? 'rgba(34,197,94,0.08)'
-                  : 'linear-gradient(90deg, var(--text-accent, #40bafa) 0%, transparent 100%)',
+                background:
+                  backupState === 'done'
+                    ? 'rgba(34,197,94,0.08)'
+                    : 'linear-gradient(90deg, var(--text-accent, #40bafa) 0%, transparent 100%)',
                 opacity: backupState === 'done' ? 1 : 0.1,
                 width: backupState === 'done' ? '100%' : `${backupProgress}%`,
                 transition: 'width 0.5s ease-out, opacity 0.3s',
@@ -265,11 +311,12 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
               padding: '7px 10px',
               border: 'none',
               background: 'transparent',
-              color: backupState === 'done'
-                ? '#22c55e'
-                : backupState === 'error'
-                ? 'rgba(239,68,68,0.9)'
-                : 'var(--text-main)',
+              color:
+                backupState === 'done'
+                  ? '#22c55e'
+                  : backupState === 'error'
+                    ? 'rgba(239,68,68,0.9)'
+                    : 'var(--text-main)',
               fontSize: '12px',
               fontWeight: '500',
               cursor: isBackingUp ? 'default' : 'pointer',
@@ -278,12 +325,23 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
               width: '100%',
               transition: 'background-color 0.15s, color 0.3s'
             }}
-            onMouseEnter={(e) => { if (!isBackingUp) e.currentTarget.style.backgroundColor = 'var(--bg-active)' }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
+            onMouseEnter={(e) => {
+              if (!isBackingUp) e.currentTarget.style.backgroundColor = 'var(--bg-active)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent'
+            }}
           >
             {/* Left icon */}
             {isBackingUp ? (
-              <Loader2 size={14} style={{ animation: 'spin 1s linear infinite', flexShrink: 0, color: 'var(--text-accent)' }} />
+              <Loader2
+                size={14}
+                style={{
+                  animation: 'spin 1s linear infinite',
+                  flexShrink: 0,
+                  color: 'var(--text-accent)'
+                }}
+              />
             ) : backupState === 'done' ? (
               <Check size={14} style={{ flexShrink: 0, color: '#22c55e' }} />
             ) : backupState === 'error' ? (
@@ -292,22 +350,48 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
               <Cloud size={14} style={{ flexShrink: 0 }} />
             )}
 
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', minWidth: 0, gap: '6px' }}>
+            <div
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                minWidth: 0,
+                gap: '6px'
+              }}
+            >
               <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
+                <span
+                  style={{
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    lineHeight: 1.3
+                  }}
+                >
                   {backupState === 'zipping'
                     ? 'Backup Workspace to Drive'
                     : backupState === 'uploading'
-                    ? 'Backup Workspace to Drive'
-                    : backupState === 'done'
-                    ? 'Backup complete!'
-                    : backupState === 'error'
-                    ? 'Backup failed — retry?'
-                    : 'Backup Workspace to Drive'}
+                      ? 'Backup Workspace to Drive'
+                      : backupState === 'done'
+                        ? 'Backup complete!'
+                        : backupState === 'error'
+                          ? 'Backup failed — retry?'
+                          : 'Backup Workspace to Drive'}
                 </span>
                 {isBackingUp && (
-                  <span style={{ fontSize: '10px', color: 'var(--text-accent)', fontWeight: 400, lineHeight: 1.2, marginTop: '1px' }}>
-                    {backupState === 'zipping' ? 'Compressing workspace…' : `Uploading… ${Math.round(backupProgress)}%`}
+                  <span
+                    style={{
+                      fontSize: '10px',
+                      color: 'var(--text-accent)',
+                      fontWeight: 400,
+                      lineHeight: 1.2,
+                      marginTop: '1px'
+                    }}
+                  >
+                    {backupState === 'zipping'
+                      ? 'Compressing workspace…'
+                      : `Uploading… ${Math.round(backupProgress)}%`}
                   </span>
                 )}
               </div>

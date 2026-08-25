@@ -1,15 +1,45 @@
-import React, { useState } from 'react'
-import { Calendar } from 'lucide-react'
+import React, { useState, useEffect, useRef } from 'react'
+import { Calendar, Network } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
-
+import InlineGraph from '../../Graph/InlineGraph'
+import { useVaultStore } from '../../../core/store/useVaultStore'
+import { useKeyboardShortcuts } from '../../../core/hooks/useKeyboardShortcuts'
 
 const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef }) => {
   const [error, setError] = useState(false)
+  const [showLocalGraph, setShowLocalGraph] = useState(false)
+  const containerRef = useRef(null)
+
+  useKeyboardShortcuts({
+    onEscape: showLocalGraph
+      ? () => {
+          setShowLocalGraph(false)
+          return true
+        }
+      : null
+  })
+
+  useEffect(() => {
+    if (!showLocalGraph) return
+
+    const handleOutsideClick = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setShowLocalGraph(false)
+      }
+    }
+
+    // Use capture phase to ensure it runs before other events might stop propagation
+    document.addEventListener('mousedown', handleOutsideClick, true)
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick, true)
+    }
+  }, [showLocalGraph])
 
   if (!snippet) return null
 
   return (
-    <div className="editor-metadata-bar" style={{ position: 'relative' }}>
+    <div ref={containerRef} className="editor-metadata-bar" style={{ position: 'relative' }}>
       <input
         type="text"
         ref={titleRef}
@@ -90,8 +120,69 @@ const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef }) => {
           </button>
         </ToolTip>
 
-
+        <ToolTip text="Linked Mentions" position="bottom">
+          <button
+            onClick={(e) => {
+              e.preventDefault()
+              setShowLocalGraph(!showLocalGraph)
+            }}
+            style={{
+              background: showLocalGraph
+                ? 'var(--bg-active, rgba(255,255,255,0.05))'
+                : 'transparent',
+              border: 'none',
+              borderRadius: '5px',
+              height: '22px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: showLocalGraph ? 'var(--text-main, #e5e5e5)' : 'var(--text-muted, #888)',
+              transition: 'all 0.2s ease',
+              padding: '0 8px',
+              gap: '6px'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-main, #e5e5e5)'
+              if (!showLocalGraph)
+                e.currentTarget.style.background = 'var(--bg-active, rgba(255,255,255,0.05))'
+            }}
+            onMouseLeave={(e) => {
+              if (!showLocalGraph) {
+                e.currentTarget.style.color = 'var(--text-muted, #888)'
+                e.currentTarget.style.background = 'transparent'
+              }
+            }}
+          >
+            <Network size={12} />
+            <span style={{ fontSize: '12px', fontWeight: 500 }}>Local Graph</span>
+          </button>
+        </ToolTip>
       </div>
+
+      {showLocalGraph && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            marginTop: '8px',
+            width: '100%',
+            zIndex: 50,
+            borderRadius: '8px',
+            border: '1px solid var(--border-color, rgba(255,255,255,0.05))',
+            overflow: 'hidden'
+          }}
+        >
+          <InlineGraph
+            focusNodeId={snippet.id}
+            onNavigate={(id) => {
+              useVaultStore.getState().openTab(id)
+              setShowLocalGraph(false) // Close dropdown on navigation
+            }}
+          />
+        </div>
+      )}
     </div>
   )
 }

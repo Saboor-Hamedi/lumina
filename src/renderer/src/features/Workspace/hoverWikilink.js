@@ -120,11 +120,12 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
         img.style.maxWidth = '100%'
         img.style.borderRadius = '6px'
         img.style.marginTop = '8px'
-        
+
         if (url && !url.startsWith('http') && !url.startsWith('data:')) {
           const cleanUrl = url.startsWith('/') ? url.slice(1) : url
           img.src = '' // Clear until loaded
-          window.api.readAsset(cleanUrl)
+          window.api
+            .readAsset(cleanUrl)
             .then((buffer) => {
               const blob = new Blob([buffer])
               img.src = URL.createObjectURL(blob)
@@ -417,10 +418,10 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
 
       let note = snippets.find((s) => {
         if (!s.title) return false
-        
+
         const titleLower = s.title.toLowerCase()
         const fullPathLower = s.folderId ? `${s.folderId}/${s.title}`.toLowerCase() : titleLower
-        
+
         return (
           titleLower === targetLower ||
           titleLower === `${targetLower}.md` ||

@@ -93,7 +93,7 @@
   
   /* Fix cursor entering the container padding */
   user-select: none;
-  background-color: gray;
+  /* background-color: gray; */
 }
 
 .cm-atomic-table::-webkit-scrollbar {

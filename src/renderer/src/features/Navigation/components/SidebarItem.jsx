@@ -1,5 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Star, StarOff, Trash2, Edit2, Pin, ExternalLink, Palette, Image, Folder, FileText, Copy, Scissors, Clipboard, Check, X } from 'lucide-react'
+import {
+  Star,
+  StarOff,
+  Trash2,
+  Edit2,
+  Pin,
+  ExternalLink,
+  Palette,
+  Image,
+  Folder,
+  FileText,
+  Copy,
+  Scissors,
+  Clipboard,
+  Check,
+  X
+} from 'lucide-react'
 import { useVaultStore } from '../../../core/store/useVaultStore'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
 import ContextMenu from '../../Overlays/ContextMenu'
@@ -127,6 +143,7 @@ const SidebarItem = ({
       onRename: () => setIsRenaming(true),
       onTogglePin: handleTogglePin,
       onDelete: () => setShowDeleteConfirm(true),
+      onCloseNote: () => useVaultStore.getState().closeTab(snippet.id),
       onClose: () => setContextMenu(null)
     }
   })
@@ -265,7 +282,11 @@ const SidebarItem = ({
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
                 display: 'block',
-                ...(displayColor ? { color: displayColor } : isActive ? { color: 'var(--text-accent)' } : {})
+                ...(displayColor
+                  ? { color: displayColor }
+                  : isActive
+                    ? { color: 'var(--text-accent)' }
+                    : {})
               }}
             >
               {highlightText(snippet.title || 'Untitled', searchQuery)}

@@ -1,5 +1,4 @@
-
-const jsdom = require("jsdom")
+const jsdom = require('jsdom')
 const { JSDOM } = jsdom
 const dom = new JSDOM(`
   <div class="cm-atomic-table-cell-source">
@@ -13,19 +12,18 @@ const dom = new JSDOM(`
   </div>
 `)
 const document = dom.window.document
-const sourceEl = document.querySelector(".cm-atomic-table-cell-source")
-const markSpan = document.querySelector(".cm-atomic-image-wrap .cm-atomic-mark")
+const sourceEl = document.querySelector('.cm-atomic-table-cell-source')
+const markSpan = document.querySelector('.cm-atomic-image-wrap .cm-atomic-mark')
 
-markSpan.textContent = ""
-let text = ""
+markSpan.textContent = ''
+let text = ''
 for (const child of sourceEl.childNodes) {
   if (child.nodeType === 3) text += child.nodeValue
-  else if (child.classList && child.classList.contains("cm-atomic-image-wrap")) {
-    const mark = child.querySelector(".cm-atomic-mark")
+  else if (child.classList && child.classList.contains('cm-atomic-image-wrap')) {
+    const mark = child.querySelector('.cm-atomic-mark')
     if (mark) text += mark.textContent
   } else {
     text += child.textContent
   }
 }
 console.log(text.trim())
-

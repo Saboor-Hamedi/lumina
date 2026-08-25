@@ -23,9 +23,9 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
   // Auto-resize textarea with requestAnimationFrame to prevent synchronous layout thrashing (input lag)
   useEffect(() => {
     if (!textareaRef.current) return
-    
+
     let rafId
-    
+
     if (!input.trim()) {
       textareaRef.current.style.height = '38px'
       textareaRef.current.style.overflowY = 'hidden'
@@ -35,10 +35,11 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
         textareaRef.current.style.height = 'auto'
         const nextHeight = Math.min(textareaRef.current.scrollHeight, 140)
         textareaRef.current.style.height = `${nextHeight}px`
-        textareaRef.current.style.overflowY = textareaRef.current.scrollHeight > 140 ? 'auto' : 'hidden'
+        textareaRef.current.style.overflowY =
+          textareaRef.current.scrollHeight > 140 ? 'auto' : 'hidden'
       })
     }
-    
+
     return () => {
       if (rafId) cancelAnimationFrame(rafId)
     }
@@ -201,14 +202,12 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
             {input.length > 0 && <span className="char-count">{input.length}</span>}
             {mode !== 'Standard' && (
               <span className="mode-badge">
-                {
-                  {
-                    Fast: 'Quick answer',
-                    Thinking: 'Detailed thinking',
-                    Creative: 'Creative',
-                    Coder: 'Code help'
-                  }[mode] || mode
-                }
+                {{
+                  Fast: 'Quick answer',
+                  Thinking: 'Detailed thinking',
+                  Creative: 'Creative',
+                  Coder: 'Code help'
+                }[mode] || mode}
               </span>
             )}
 

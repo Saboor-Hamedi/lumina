@@ -34,8 +34,15 @@ const SettingAssistant = () => {
             <div className="row-info">
               <div className="row-label">Connect an AI (optional)</div>
               <div className="row-hint">
-                Paste your key here (starts with sk-...)
-                {' '}<a href="https://platform.deepseek.com/" target="_blank" rel="noreferrer" style={{color: 'var(--text-accent)'}}>Where do I find this?</a>
+                Paste your key here (starts with sk-...){' '}
+                <a
+                  href="https://platform.deepseek.com/"
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: 'var(--text-accent)' }}
+                >
+                  Where do I find this?
+                </a>
               </div>
             </div>
             <input
@@ -70,8 +77,15 @@ const SettingAssistant = () => {
             <div className="row-info">
               <div className="row-label">Connect an AI (optional)</div>
               <div className="row-hint">
-                Requires GPT-4o access (starts with sk-...)
-                {' '}<a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer" style={{color: 'var(--text-accent)'}}>Where do I find this?</a>
+                Requires GPT-4o access (starts with sk-...){' '}
+                <a
+                  href="https://platform.openai.com/api-keys"
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: 'var(--text-accent)' }}
+                >
+                  Where do I find this?
+                </a>
               </div>
             </div>
             <input
@@ -93,8 +107,15 @@ const SettingAssistant = () => {
             <div className="row-info">
               <div className="row-label">Connect an AI (optional)</div>
               <div className="row-hint">
-                Claude 3.5 Sonnet key (starts with sk-ant-...)
-                {' '}<a href="https://console.anthropic.com/" target="_blank" rel="noreferrer" style={{color: 'var(--text-accent)'}}>Where do I find this?</a>
+                Claude 3.5 Sonnet key (starts with sk-ant-...){' '}
+                <a
+                  href="https://console.anthropic.com/"
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: 'var(--text-accent)' }}
+                >
+                  Where do I find this?
+                </a>
               </div>
             </div>
             <input

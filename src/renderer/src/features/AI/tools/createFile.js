@@ -1,7 +1,8 @@
 import * as aiSdk from 'ai'
 
 export const createFileTool = aiSdk.tool({
-  description: 'Create a new file in the workspace. ONLY use this if the user EXPLICITLY asks to "create", "make", or "write" a NEW file. Do not use this to just answer a question.',
+  description:
+    'Create a new file in the workspace. ONLY use this if the user EXPLICITLY asks to "create", "make", or "write" a NEW file. Do not use this to just answer a question.',
   inputSchema: aiSdk.jsonSchema({
     type: 'object',
     properties: {

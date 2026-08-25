@@ -11,10 +11,7 @@ const TemplateModal = ({ isOpen, onClose, templates, onSelectTemplate }) => {
 
   // Prepend a blank note option so users always have a way out
   const allOptions = useMemo(() => {
-    return [
-      { id: 'blank', title: 'Blank Note', code: '' },
-      ...templates
-    ]
+    return [{ id: 'blank', title: 'Blank Note', code: '' }, ...templates]
   }, [templates])
 
   const filteredTemplates = useMemo(() => {
@@ -51,11 +48,11 @@ const TemplateModal = ({ isOpen, onClose, templates, onSelectTemplate }) => {
   // Parses template markdown into visual wireframe lines
   const renderWireframe = (code) => {
     if (!code) return <div className="template-preview-line template-preview-text" />
-    
+
     const lines = code.split('\n').slice(0, 8) // only care about first ~8 lines
     return lines.map((line, i) => {
       const trimmed = line.trim()
-      
+
       if (trimmed === '') {
         return <div key={i} className="template-preview-gap" />
       }
@@ -69,7 +66,10 @@ const TemplateModal = ({ isOpen, onClose, templates, onSelectTemplate }) => {
         return (
           <div key={i} className="template-preview-list-item">
             <div className="template-preview-checkbox" />
-            <div className="template-preview-list-text" style={{ width: Math.random() * 40 + 40 + '%' }} />
+            <div
+              className="template-preview-list-text"
+              style={{ width: Math.random() * 40 + 40 + '%' }}
+            />
           </div>
         )
       }
@@ -77,13 +77,20 @@ const TemplateModal = ({ isOpen, onClose, templates, onSelectTemplate }) => {
         return (
           <div key={i} className="template-preview-list-item">
             <div className="template-preview-bullet" />
-            <div className="template-preview-list-text" style={{ width: Math.random() * 40 + 40 + '%' }} />
+            <div
+              className="template-preview-list-text"
+              style={{ width: Math.random() * 40 + 40 + '%' }}
+            />
           </div>
         )
       }
       if (trimmed.startsWith('>')) {
         return (
-          <div key={i} className="template-preview-list-item" style={{ paddingLeft: '2px', borderLeft: '2px solid var(--text-muted)' }}>
+          <div
+            key={i}
+            className="template-preview-list-item"
+            style={{ paddingLeft: '2px', borderLeft: '2px solid var(--text-muted)' }}
+          >
             <div className="template-preview-list-text" style={{ width: '90%' }} />
           </div>
         )
@@ -97,7 +104,7 @@ const TemplateModal = ({ isOpen, onClose, templates, onSelectTemplate }) => {
           </div>
         )
       }
-      
+
       // Standard text line
       const widthClass = trimmed.length > 50 ? 'long' : trimmed.length < 15 ? 'short' : ''
       return <div key={i} className={`template-preview-line template-preview-text ${widthClass}`} />
@@ -107,7 +114,11 @@ const TemplateModal = ({ isOpen, onClose, templates, onSelectTemplate }) => {
   return createPortal(
     <div className="template-modal-overlay" onClick={onClose}>
       <div className="template-modal-container" onClick={(e) => e.stopPropagation()}>
-        <ModalHeader title="Select Daily Note Template" icon={<FileText size={16} />} onClose={onClose} />
+        <ModalHeader
+          title="Select Daily Note Template"
+          icon={<FileText size={16} />}
+          onClose={onClose}
+        />
 
         <div className="template-modal-toolbar">
           <input
@@ -140,9 +151,13 @@ const TemplateModal = ({ isOpen, onClose, templates, onSelectTemplate }) => {
                 <span className="template-modal-name">{t.title?.replace('.md', '')}</span>
               </div>
               <div className="template-card-body">
-                {t.id === 'blank' 
-                  ? <div style={{ color: 'var(--text-muted)', fontSize: '11px', lineHeight: 1.4 }}>Start with a completely empty daily note. No predefined structure.</div> 
-                  : renderWireframe(t.code)}
+                {t.id === 'blank' ? (
+                  <div style={{ color: 'var(--text-muted)', fontSize: '11px', lineHeight: 1.4 }}>
+                    Start with a completely empty daily note. No predefined structure.
+                  </div>
+                ) : (
+                  renderWireframe(t.code)
+                )}
               </div>
             </div>
           ))}

@@ -104,7 +104,7 @@ function escapeCell(text) {
 export function serializeTable(model) {
   const columnCount = model.header.length
   const lines = []
-  
+
   const headerCells = []
   for (let c = 0; c < columnCount; c++) {
     let text = escapeCell(model.header[c] ?? '')
@@ -114,7 +114,7 @@ export function serializeTable(model) {
     headerCells.push(text)
   }
   lines.push('| ' + headerCells.join(' | ') + ' |')
-  
+
   const delimiterRow = []
   for (let c = 0; c < columnCount; c++) {
     const align = model.alignments?.[c] || ''
@@ -134,8 +134,8 @@ export function serializeTable(model) {
 }
 export function readModelFromDom(wrap) {
   const header = Array.from(wrap.querySelectorAll('thead th')).map(readCellSource)
-  const widths = Array.from(wrap.querySelectorAll('thead th')).map(th => th.style.width || '')
-  const alignments = Array.from(wrap.querySelectorAll('thead th')).map(th => {
+  const widths = Array.from(wrap.querySelectorAll('thead th')).map((th) => th.style.width || '')
+  const alignments = Array.from(wrap.querySelectorAll('thead th')).map((th) => {
     if (th.style.textAlign === 'center') return 'center'
     if (th.style.textAlign === 'right') return 'right'
     if (th.style.textAlign === 'left') return 'left'

@@ -69,7 +69,6 @@ export const DroppableFolderItem = React.memo(
           opacity: isDragging ? 0.5 : 1
         }}
       >
-
         <div
           ref={setDraggableRef}
           className={`folder-tree-main ${isOver ? 'folder-over' : ''} ${isActive ? 'active' : ''}`}

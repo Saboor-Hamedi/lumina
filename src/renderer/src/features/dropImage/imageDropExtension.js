@@ -65,12 +65,13 @@ export const imageDropExtension = (onToast) =>
           try {
             const arrayBuffer = await file.arrayBuffer()
             const uint8Array = new Uint8Array(arrayBuffer)
-            
+
             // Generate a better filename if it's a generic paste (like 'image.png' from clipboard)
             const ext = file.type.split('/')[1] || 'png'
-            const filename = (file.name === 'image.png' || file.name === 'image.jpeg') 
-              ? `Pasted image ${Date.now()}.${ext}` 
-              : file.name
+            const filename =
+              file.name === 'image.png' || file.name === 'image.jpeg'
+                ? `Pasted image ${Date.now()}.${ext}`
+                : file.name
 
             const relativePath = await window.api.saveImage(uint8Array, filename)
 

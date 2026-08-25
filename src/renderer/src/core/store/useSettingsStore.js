@@ -42,7 +42,7 @@ export const useSettingsStore = create((set, get) => ({
     // Command Palette
     commandPaletteMode: 'search',
     commandPaletteSplitRatio: 50,
-    
+
     // Desktop Integration
     launchOnStartup: false,
     globalShortcut: 'Ctrl+Space',

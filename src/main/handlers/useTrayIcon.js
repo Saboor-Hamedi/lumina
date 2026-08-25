@@ -25,10 +25,10 @@ export function useTrayIcon(mainWindow, app, appIcon) {
         }
       }
     ])
-    
+
     tray.setToolTip('Lumina')
     tray.setContextMenu(contextMenu)
-    
+
     tray.on('click', () => {
       if (mainWindow && !mainWindow.isDestroyed()) {
         if (mainWindow.isVisible()) {

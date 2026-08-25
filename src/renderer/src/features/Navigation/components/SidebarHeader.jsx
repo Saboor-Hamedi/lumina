@@ -19,15 +19,30 @@ const SidebarHeader = memo(({ onToggleGraph }) => {
   }
 
   return (
-    <div className="sidebar-header-section" style={{ gap: '4px', justifyContent: 'space-between', display: 'flex' }}>
-      <button className="new-note-btn" onClick={handleNewNote} style={{ flex: 1, padding: '4px', minWidth: 0, justifyContent: 'center' }}>
-        <Plus size={14} style={{ flexShrink: 0 }} /> 
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>New</span>
+    <div
+      className="sidebar-header-section"
+      style={{ gap: '4px', justifyContent: 'space-between', display: 'flex' }}
+    >
+      <button
+        className="new-note-btn"
+        onClick={handleNewNote}
+        style={{ flex: 1, padding: '4px', minWidth: 0, justifyContent: 'center' }}
+      >
+        <Plus size={14} style={{ flexShrink: 0 }} />
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          New
+        </span>
       </button>
       <DailyNotes />
-      <button className="new-note-btn" onClick={onToggleGraph} style={{ flex: 1, padding: '4px', minWidth: 0, justifyContent: 'center' }}>
-        <Network size={14} style={{ flexShrink: 0 }} /> 
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Graph</span>
+      <button
+        className="new-note-btn"
+        onClick={onToggleGraph}
+        style={{ flex: 1, padding: '4px', minWidth: 0, justifyContent: 'center' }}
+      >
+        <Network size={14} style={{ flexShrink: 0 }} />
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          Graph
+        </span>
       </button>
     </div>
   )

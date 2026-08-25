@@ -1056,10 +1056,12 @@ const MarkdownEditor = React.memo(
               const targetLower = target.toLowerCase()
               let targetSnippet = snippets.find((s) => {
                 if (!s.title) return false
-                
+
                 const titleLower = s.title.toLowerCase()
-                const fullPathLower = s.folderId ? `${s.folderId}/${s.title}`.toLowerCase() : titleLower
-                
+                const fullPathLower = s.folderId
+                  ? `${s.folderId}/${s.title}`.toLowerCase()
+                  : titleLower
+
                 return (
                   titleLower === targetLower ||
                   titleLower === `${targetLower}.md` ||

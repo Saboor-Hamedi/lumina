@@ -11,7 +11,8 @@ const api = {
   deleteSnippet: (id) => electronAPI.ipcRenderer.invoke('vault:deleteSnippet', id),
   readAsset: (relativePath) => electronAPI.ipcRenderer.invoke('vault:readAsset', relativePath),
   cleanOrphans: () => electronAPI.ipcRenderer.invoke('vault:cleanOrphans'),
-  openVaultFolder: () => electronAPI.ipcRenderer.invoke('vault:open-folder'),
+  openVaultFolder: (relativePath) =>
+    electronAPI.ipcRenderer.invoke('vault:open-folder', relativePath),
   selectVault: () => electronAPI.ipcRenderer.invoke('vault:select-folder'),
 
   // Folder Ops

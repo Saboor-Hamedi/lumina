@@ -33,7 +33,13 @@ function App() {
     <ErrorBoundary>
       <div
         className="lumina-app"
-        style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100vh',
+          width: '100vw',
+          overflow: 'hidden'
+        }}
       >
         <TitleBar />
         <ErrorBoundary>

@@ -65,11 +65,48 @@ const ContextMenu = ({ x, y, options, onClose }) => {
                 opt.onClick()
                 onClose()
               }}
-              style={opt.disabled ? { opacity: 0.5, cursor: 'not-allowed', pointerEvents: 'none' } : {}}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px',
+                ...(opt.disabled
+                  ? { opacity: 0.5, cursor: 'not-allowed', pointerEvents: 'none' }
+                  : {})
+              }}
             >
-              <span className="menu-label">{opt.label}</span>
-              {opt.shortcut && <span className="menu-shortcut">{opt.shortcut}</span>}
-              <div className="menu-icon-right">{opt.icon}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {opt.icon && (
+                  <div
+                    className="menu-icon-left"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      color: opt.danger ? 'var(--text-danger, #ef4444)' : 'var(--text-faint)'
+                    }}
+                  >
+                    {opt.icon}
+                  </div>
+                )}
+                <span className="menu-label" style={{ whiteSpace: 'nowrap' }}>
+                  {opt.label}
+                </span>
+              </div>
+
+              {opt.shortcut && (
+                <kbd
+                  className="menu-shortcut"
+                  style={{
+                    fontSize: '10px',
+                    color: 'var(--text-muted, var(--text-main))',
+                    opacity: 0.8,
+                    padding: '2px 6px',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {opt.shortcut}
+                </kbd>
+              )}
             </div>
           )
         })}

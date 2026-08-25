@@ -7,16 +7,16 @@ export const buildGraphData = (snippets) => {
   const nodes = []
   const links = []
   const nodeMap = new Map()
+  const nodeMapLower = new Map() // Optimization for O(1) case-insensitive lookups
 
   // 1. Create Nodes (Existing Notes)
   snippets.forEach((snippet) => {
-    // Use Title as ID for visual simplicity (or ID if we want robustness, but links use titles)
-    // We'll use Title as the unique key because WikiLinks use Titles.
-    // To handle case-insensitivity, we might normalize, but for display we want original.
     const id = snippet.title || 'Untitled'
     if (!nodeMap.has(id)) {
-      nodeMap.set(id, { id, group: 'note', val: 1, snippetId: snippet.id })
-      nodes.push(nodeMap.get(id))
+      const node = { id, group: 'note', val: 1, snippetId: snippet.id }
+      nodeMap.set(id, node)
+      nodeMapLower.set(id.toLowerCase(), node)
+      nodes.push(node)
     }
   })
 
@@ -36,14 +36,16 @@ export const buildGraphData = (snippets) => {
 
       // If target doesn't exist as a node yet (Ghost Node), create it
       // but mark it as 'ghost' (not a real file yet)
-      let targetNode = nodes.find((n) => n.id && n.id.toLowerCase() === targetTitle.toLowerCase())
+      let targetNode = nodeMapLower.get(targetTitle.toLowerCase())
 
       if (!targetNode) {
         // Create a ghost node
         const ghostId = targetTitle // Use the casing from the link
         if (!nodeMap.has(ghostId)) {
-          nodeMap.set(ghostId, { id: ghostId, group: 'ghost', val: 0.5 })
-          nodes.push(nodeMap.get(ghostId))
+          const ghostNode = { id: ghostId, group: 'ghost', val: 0.5 }
+          nodeMap.set(ghostId, ghostNode)
+          nodeMapLower.set(ghostId.toLowerCase(), ghostNode)
+          nodes.push(ghostNode)
         }
         targetNode = nodeMap.get(ghostId)
       }

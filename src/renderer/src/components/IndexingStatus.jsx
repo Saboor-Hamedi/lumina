@@ -68,7 +68,10 @@ const IndexingStatus = () => {
           )}
         </div>
 
-        <div className="indexing-toast-message" style={{ display: 'flex', flexDirection: 'column' }}>
+        <div
+          className="indexing-toast-message"
+          style={{ display: 'flex', flexDirection: 'column' }}
+        >
           <div>{isComplete ? 'Indexing complete' : 'Indexing…'}</div>
           <div
             style={{
@@ -83,8 +86,8 @@ const IndexingStatus = () => {
             {stats.stage === 'scanning' || stats.stage === 'checking'
               ? `Scanning ${stats.found || stats.total || 0} files…`
               : stats.stage === 'up-to-date' || stats.stage === 'completed' || stats.progress >= 100
-              ? 'All files up to date.'
-              : `Processed ${stats.indexed || 0} of ${stats.total || 0} files`}
+                ? 'All files up to date.'
+                : `Processed ${stats.indexed || 0} of ${stats.total || 0} files`}
           </div>
         </div>
 

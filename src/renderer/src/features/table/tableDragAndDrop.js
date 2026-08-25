@@ -162,18 +162,18 @@ export function setupTableDragAndDrop(wrap, view) {
 
     function cloneCellToText(originalCell) {
       const newCell = document.createElement(originalCell.tagName)
-      
+
       const rect = originalCell.getBoundingClientRect()
       newCell.style.width = `${rect.width}px`
       newCell.style.height = `${rect.height}px`
       newCell.style.boxSizing = 'border-box'
-      
+
       newCell.style.padding = '8px 12px'
       newCell.style.border = '1px solid var(--border-dim)'
       newCell.style.textAlign = 'left'
       newCell.style.whiteSpace = 'normal'
       newCell.style.overflow = 'hidden'
-      
+
       // Grab text from the CodeMirror content if it exists, otherwise use innerText
       const cmContent = originalCell.querySelector('.cm-content')
       newCell.textContent = cmContent ? cmContent.innerText : originalCell.innerText

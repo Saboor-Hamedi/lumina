@@ -375,6 +375,7 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
             { type: 'divider' },
             {
               label: 'Close',
+              shortcut: 'Ctrl+W',
               icon: <X size={14} />,
               disabled: pinnedTabIds.includes(contextMenu.id),
               onClick: () => handleCloseTrigger({ stopPropagation: () => {} }, contextMenu.id)

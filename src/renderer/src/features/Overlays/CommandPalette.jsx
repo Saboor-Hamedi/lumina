@@ -71,152 +71,154 @@ const CommandPaletteRow = React.memo(
       setSelectedIndex,
       deferredQuery: query,
       setQuery,
-    inputRef,
-    onSelect,
-    onNew,
-    onToggleSettings,
-    onToggleGraph,
-    onToggleChat,
-    onClose,
-    dirtySnippetIds,
-    settings,
-    updateSetting,
-    onRename,
-    onToggleDocs
-  } = data
+      inputRef,
+      onSelect,
+      onNew,
+      onToggleSettings,
+      onToggleGraph,
+      onToggleChat,
+      onClose,
+      dirtySnippetIds,
+      settings,
+      updateSetting,
+      onRename,
+      onToggleDocs
+    } = data
 
-  const item = filtered[index]
-  const isActive = index === selectedIndex
-  const isSemantic = item.matchType === 'semantic'
-  const isAction = item.matchType === 'action'
+    const item = filtered[index]
+    const isActive = index === selectedIndex
+    const isSemantic = item.matchType === 'semantic'
+    const isAction = item.matchType === 'action'
 
-  return (
-    <div
-      ref={ref}
-      className={`palette-item ${isActive ? 'active' : ''} ${isAction ? 'is-action' : ''}`}
-      onClick={() => {
-        if (item.action === 'filter') {
-          setQuery(item.value + ' ')
-          inputRef.current?.focus()
-          return
-        }
-        if (isAction) {
-          if (item.action === 'settings') onToggleSettings?.(item.tab)
-          else if (item.action === 'new') onNew?.()
-          else if (item.action === 'graph') onToggleGraph?.()
-          else if (item.action === 'chat') onToggleChat?.()
-          else if (item.action === 'docs') onToggleDocs?.()
-          else if (item.action === 'rename') onRename?.()
-          else if (item.action === 'reload-window') window.location.reload()
-          else if (item.action === 'toggle-type-sound') {
-            updateSetting('typeSound', !settings.typeSound)
-            // don't close palette on toggle so they see it change, or close?
-            // Actually, keep it simple and just close or not. Let's just not close it so they can see the toggle change!
+    return (
+      <div
+        ref={ref}
+        className={`palette-item ${isActive ? 'active' : ''} ${isAction ? 'is-action' : ''}`}
+        onClick={() => {
+          if (item.action === 'filter') {
+            setQuery(item.value + ' ')
+            inputRef.current?.focus()
             return
           }
-        } else if (item.matchType === 'folder') {
-          // Just close, no action
-        } else {
-          onSelect(item)
-        }
-        onClose()
-      }}
-      onMouseMove={() => {
-        if (selectedIndex !== index) setSelectedIndex(index)
-      }}
-    >
-      {isAction ? (
-        (() => {
-          if (item.action === 'settings') {
-            if (item.tab === 'general')
-              return <Settings size={18} className="item-icon action-icon" />
-            if (item.tab === 'appearance')
-              return <Palette size={18} className="item-icon action-icon" />
-            if (item.tab === 'shortcuts')
-              return <Keyboard size={18} className="item-icon action-icon" />
-            if (item.tab === 'ai') return <Bot size={18} className="item-icon action-icon" />
-            if (item.tab === 'type') return <Type size={18} className="item-icon action-icon" />
-            if (item.tab === 'graph') return <Network size={18} className="item-icon action-icon" />
-            return <Settings size={18} className="item-icon action-icon" />
+          if (isAction) {
+            if (item.action === 'settings') onToggleSettings?.(item.tab)
+            else if (item.action === 'new') onNew?.()
+            else if (item.action === 'graph') onToggleGraph?.()
+            else if (item.action === 'chat') onToggleChat?.()
+            else if (item.action === 'docs') onToggleDocs?.()
+            else if (item.action === 'rename') onRename?.()
+            else if (item.action === 'reload-window') window.location.reload()
+            else if (item.action === 'toggle-type-sound') {
+              updateSetting('typeSound', !settings.typeSound)
+              // don't close palette on toggle so they see it change, or close?
+              // Actually, keep it simple and just close or not. Let's just not close it so they can see the toggle change!
+              return
+            }
+          } else if (item.matchType === 'folder') {
+            // Just close, no action
+          } else {
+            onSelect(item)
           }
-          if (item.action === 'new') return <Plus size={18} className="item-icon action-icon" />
-          if (item.action === 'graph')
-            return <Network size={18} className="item-icon action-icon" />
-          if (item.action === 'chat')
-            return <MessageSquare size={18} className="item-icon action-icon" />
-          if (item.action === 'docs') return <Book size={18} className="item-icon action-icon" />
-          return <Zap size={18} className="item-icon action-icon" />
-        })()
-      ) : item.matchType === 'folder' ? (
-        <Folder size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
-      ) : item.matchType === 'tag' ? (
-        <Hash size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
-      ) : item.matchType === 'mention' ? (
-        <AtSign size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
-      ) : (
-        (() => {
-          const lang = (item.language || 'markdown').toLowerCase()
-          const title = (item.title || '').toLowerCase()
-          if (
-            ['javascript', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'python', 'py'].includes(lang)
-          )
-            return <FileCode size={18} className="item-icon" />
-          if (lang === 'json') return <FileJson size={18} className="item-icon" />
-          if (lang === 'markdown' || lang === 'md' || title.endsWith('.md'))
-            return <Hash size={18} className="item-icon" />
-          if (['png', 'jpg', 'jpeg', 'gif', 'svg'].some((ext) => title.endsWith('.' + ext)))
-            return <ImageIcon size={18} className="item-icon" />
-          return <FileText size={18} className="item-icon" />
-        })()
-      )}
+          onClose()
+        }}
+        onMouseMove={() => {
+          if (selectedIndex !== index) setSelectedIndex(index)
+        }}
+      >
+        {isAction ? (
+          (() => {
+            if (item.action === 'settings') {
+              if (item.tab === 'general')
+                return <Settings size={18} className="item-icon action-icon" />
+              if (item.tab === 'appearance')
+                return <Palette size={18} className="item-icon action-icon" />
+              if (item.tab === 'shortcuts')
+                return <Keyboard size={18} className="item-icon action-icon" />
+              if (item.tab === 'ai') return <Bot size={18} className="item-icon action-icon" />
+              if (item.tab === 'type') return <Type size={18} className="item-icon action-icon" />
+              if (item.tab === 'graph')
+                return <Network size={18} className="item-icon action-icon" />
+              return <Settings size={18} className="item-icon action-icon" />
+            }
+            if (item.action === 'new') return <Plus size={18} className="item-icon action-icon" />
+            if (item.action === 'graph')
+              return <Network size={18} className="item-icon action-icon" />
+            if (item.action === 'chat')
+              return <MessageSquare size={18} className="item-icon action-icon" />
+            if (item.action === 'docs') return <Book size={18} className="item-icon action-icon" />
+            return <Zap size={18} className="item-icon action-icon" />
+          })()
+        ) : item.matchType === 'folder' ? (
+          <Folder size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
+        ) : item.matchType === 'tag' ? (
+          <Hash size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
+        ) : item.matchType === 'mention' ? (
+          <AtSign size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
+        ) : (
+          (() => {
+            const lang = (item.language || 'markdown').toLowerCase()
+            const title = (item.title || '').toLowerCase()
+            if (
+              ['javascript', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'python', 'py'].includes(lang)
+            )
+              return <FileCode size={18} className="item-icon" />
+            if (lang === 'json') return <FileJson size={18} className="item-icon" />
+            if (lang === 'markdown' || lang === 'md' || title.endsWith('.md'))
+              return <Hash size={18} className="item-icon" />
+            if (['png', 'jpg', 'jpeg', 'gif', 'svg'].some((ext) => title.endsWith('.' + ext)))
+              return <ImageIcon size={18} className="item-icon" />
+            return <FileText size={18} className="item-icon" />
+          })()
+        )}
 
-      <div className="item-info">
-        <div
-          className="item-header-row"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            width: '100%',
-            minWidth: 0
-          }}
-        >
-          <div className="item-title">
-            {item.folderId && item.matchType !== 'folder' && (
-              <span className="folder-prefix">{item.folderId}/</span>
-            )}
-            <HighlightText text={item.title || 'Untitled'} highlight={query} />
-            {item.id && dirtySnippetIds.includes(item.id) && (
-              <div className="dirty-indicator" style={{ marginLeft: '8px' }} />
+        <div className="item-info">
+          <div
+            className="item-header-row"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              width: '100%',
+              minWidth: 0
+            }}
+          >
+            <div className="item-title">
+              {item.folderId && item.matchType !== 'folder' && (
+                <span className="folder-prefix">{item.folderId}/</span>
+              )}
+              <HighlightText text={item.title || 'Untitled'} highlight={query} />
+              {item.id && dirtySnippetIds.includes(item.id) && (
+                <div className="dirty-indicator" style={{ marginLeft: '8px' }} />
+              )}
+            </div>
+            {(item.shortcut || (item.folderPath && !item.matchSnippet)) && (
+              <div className="item-meta-right" style={{ flexShrink: 0, marginLeft: '8px' }}>
+                {item.shortcut ? (
+                  <div className="palette-shortcut">
+                    {item.shortcut.split('+').map((key, i) => (
+                      <kbd key={i}>{key.trim()}</kbd>
+                    ))}
+                  </div>
+                ) : (
+                  <span style={{ opacity: 0.6, fontSize: '11px' }}>in {item.folderPath}</span>
+                )}
+              </div>
             )}
           </div>
-          {(item.shortcut || (item.folderPath && !item.matchSnippet)) && (
-            <div className="item-meta-right" style={{ flexShrink: 0, marginLeft: '8px' }}>
-              {item.shortcut ? (
-                <div className="palette-shortcut">
-                  {item.shortcut.split('+').map((key, i) => (
-                    <kbd key={i}>{key.trim()}</kbd>
-                  ))}
-                </div>
+          {(item.matchSnippet || isSemantic) && (
+            <div className={`item-secondary ${isSemantic ? 'semantic-badge' : ''}`}>
+              {isSemantic ? (
+                '✨ AI Match'
               ) : (
-                <span style={{ opacity: 0.6, fontSize: '11px' }}>in {item.folderPath}</span>
+                <HighlightText text={item.matchSnippet} highlight={query} />
               )}
             </div>
           )}
         </div>
-        {(item.matchSnippet || isSemantic) && (
-          <div className={`item-secondary ${isSemantic ? 'semantic-badge' : ''}`}>
-            {isSemantic ? (
-              '✨ AI Match'
-            ) : (
-              <HighlightText text={item.matchSnippet} highlight={query} />
-            )}
-          </div>
-        )}
       </div>
-    </div>
-  )
-}))
+    )
+  })
+)
 const CommandPalette = React.memo(
   ({
     isOpen,
@@ -243,7 +245,17 @@ const CommandPalette = React.memo(
     const previousFocusRef = useRef(null)
     const chatScrollRef = useRef(null)
 
-    const { searchNotes, isModelReady, modelLoadingProgress, aiError, chatMessages, isChatLoading, cancelChat, sendChatMessage, clearChat } = useAIStore()
+    const {
+      searchNotes,
+      isModelReady,
+      modelLoadingProgress,
+      aiError,
+      chatMessages,
+      isChatLoading,
+      cancelChat,
+      sendChatMessage,
+      clearChat
+    } = useAIStore()
     const { dirtySnippetIds, folders, selectedSnippet } = useVaultStore(
       useShallow((state) => ({
         dirtySnippetIds: state.dirtySnippetIds,
@@ -303,7 +315,7 @@ const CommandPalette = React.memo(
     // AI Search Debounce (Skip if in AI Chat mode)
     useEffect(() => {
       if (mode === 'ai') return
-      
+
       const timer = setTimeout(async () => {
         if (deferredQuery.trim().length > 2) {
           const results = await searchNotes(deferredQuery, 0.45)
@@ -330,7 +342,7 @@ const CommandPalette = React.memo(
 
     const filtered = useMemo(() => {
       if (mode === 'ai') return [] // Skip all heavy searching if we are just chatting
-      
+
       const lowerQuery = deferredQuery.toLowerCase().trim()
 
       // 0. System Actions (Show if query starts with > or matches)
@@ -535,7 +547,7 @@ const CommandPalette = React.memo(
       e.preventDefault()
       const startX = e.clientX
       const startRatio = splitRatio
-      
+
       const handleMouseMove = (moveEvent) => {
         const deltaX = moveEvent.clientX - startX
         const modalWidth = 820 // fixed max width for now
@@ -543,13 +555,13 @@ const CommandPalette = React.memo(
         const newRatio = Math.max(20, Math.min(80, startRatio + deltaRatio))
         setSplitRatio(newRatio)
       }
-      
+
       const handleMouseUp = () => {
         document.removeEventListener('mousemove', handleMouseMove)
         document.removeEventListener('mouseup', handleMouseUp)
         updateSetting('commandPaletteSplitRatio', splitRatio)
       }
-      
+
       document.addEventListener('mousemove', handleMouseMove)
       document.addEventListener('mouseup', handleMouseUp)
     }
@@ -560,7 +572,8 @@ const CommandPalette = React.memo(
         if (mode === 'search') setSelectedIndex((prev) => (prev + 1) % filtered.length)
       } else if (e.key === 'ArrowUp') {
         e.preventDefault()
-        if (mode === 'search') setSelectedIndex((prev) => (prev - 1 + filtered.length) % filtered.length)
+        if (mode === 'search')
+          setSelectedIndex((prev) => (prev - 1 + filtered.length) % filtered.length)
       } else if (e.key === 'Enter') {
         if (mode === 'ai') {
           if (query.trim() && !isChatLoading) {
@@ -641,42 +654,53 @@ const CommandPalette = React.memo(
 
     const selectedItemContent = useMemo(() => {
       const item = filtered[selectedIndex]
-      if (!item || item.matchType === 'action' || item.matchType === 'folder' || item.matchType === 'tag' || item.matchType === 'mention') return null
+      if (
+        !item ||
+        item.matchType === 'action' ||
+        item.matchType === 'folder' ||
+        item.matchType === 'tag' ||
+        item.matchType === 'mention'
+      )
+        return null
       return item.code || item.matchSnippet || ''
     }, [filtered, selectedIndex])
 
-    const chatContent = useMemo(() => (
-      <div className="palette-chat-messages seamless-scrollbar" ref={chatScrollRef}>
-        {!chatMessages || chatMessages.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-faint)' }}>
-            <Bot size={32} style={{ opacity: 0.5, marginBottom: '16px' }} />
-            <p>Ask Lumina any question.</p>
-            <p style={{ fontSize: '12px', opacity: 0.7 }}>I'll search your knowledge base and answer.</p>
-          </div>
-        ) : (
-          chatMessages.map((msg, i) => (
-            <div 
-              key={i} 
-              className={`chat-bubble ${msg.role}`}
-              style={{ padding: '0 12px' }}
-            >
-              {msg.role === 'assistant' && !msg.content?.trim() && !msg.imageUrl && ((i === chatMessages.length - 1 && isChatLoading) || msg.isGenerating) ? (
-                <div className="thinking-indicator">
-                  <span className="thinking-text">
-                    <span className="thinking-dot-pulse" />
-                    Thinking...
-                  </span>
-                </div>
-              ) : msg.role === 'assistant' ? (
-                <MessageContent content={msg.content} />
-              ) : (
-                msg.content
-              )}
+    const chatContent = useMemo(
+      () => (
+        <div className="palette-chat-messages seamless-scrollbar" ref={chatScrollRef}>
+          {!chatMessages || chatMessages.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-faint)' }}>
+              <Bot size={32} style={{ opacity: 0.5, marginBottom: '16px' }} />
+              <p>Ask Lumina any question.</p>
+              <p style={{ fontSize: '12px', opacity: 0.7 }}>
+                I'll search your knowledge base and answer.
+              </p>
             </div>
-          ))
-        )}
-      </div>
-    ), [chatMessages, isChatLoading])
+          ) : (
+            chatMessages.map((msg, i) => (
+              <div key={i} className={`chat-bubble ${msg.role}`} style={{ padding: '0 12px' }}>
+                {msg.role === 'assistant' &&
+                !msg.content?.trim() &&
+                !msg.imageUrl &&
+                ((i === chatMessages.length - 1 && isChatLoading) || msg.isGenerating) ? (
+                  <div className="thinking-indicator">
+                    <span className="thinking-text">
+                      <span className="thinking-dot-pulse" />
+                      Thinking...
+                    </span>
+                  </div>
+                ) : msg.role === 'assistant' ? (
+                  <MessageContent content={msg.content} />
+                ) : (
+                  msg.content
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      ),
+      [chatMessages, isChatLoading]
+    )
 
     if (!isOpen) return null
 
@@ -692,8 +716,8 @@ const CommandPalette = React.memo(
                 mode === 'ai'
                   ? 'Ask Lumina anything...'
                   : query.startsWith('>')
-                  ? 'Search commands...'
-                  : 'Search notes... (Type > for commands)'
+                    ? 'Search commands...'
+                    : 'Search notes... (Type > for commands)'
               }
               value={query}
               onChange={(e) => {
@@ -722,15 +746,12 @@ const CommandPalette = React.memo(
                 Ask AI
               </button>
               {mode === 'ai' && isChatLoading && (
-                <button 
-                  className="palette-header-btn danger"
-                  onClick={cancelChat}
-                >
+                <button className="palette-header-btn danger" onClick={cancelChat}>
                   <Square size={10} fill="currentColor" /> Stop
                 </button>
               )}
               {mode === 'ai' && chatMessages?.length > 0 && (
-                <button 
+                <button
                   className="palette-header-btn danger"
                   style={{ padding: '0 8px' }}
                   onClick={clearChat}
@@ -742,74 +763,91 @@ const CommandPalette = React.memo(
             </div>
           </div>
 
-        <div className="palette-body">
-          {mode === 'search' ? (
-            <>
-              <div className="palette-results-col" style={{ width: `${splitRatio}%`, display: 'flex', flexDirection: 'column' }}>
+          <div className="palette-body">
+            {mode === 'search' ? (
+              <>
                 <div
-                  className="palette-results seamless-scrollbar"
-                  ref={listRef}
-                  style={{ height: filtered.length > 0 ? '100%' : 100, overflowY: 'auto' }}
+                  className="palette-results-col"
+                  style={{ width: `${splitRatio}%`, display: 'flex', flexDirection: 'column' }}
                 >
-                  {filtered.length > 0 ? (
-                    filtered.map((item, index) => (
-                      <CommandPaletteRow 
-                        key={item.id || item.action || index}
-                        index={index}
-                        data={itemData}
-                        ref={(el) => (itemRefs.current[index] = el)}
-                      />
-                    ))
+                  <div
+                    className="palette-results seamless-scrollbar"
+                    ref={listRef}
+                    style={{ height: filtered.length > 0 ? '100%' : 100, overflowY: 'auto' }}
+                  >
+                    {filtered.length > 0 ? (
+                      filtered.map((item, index) => (
+                        <CommandPaletteRow
+                          key={item.id || item.action || index}
+                          index={index}
+                          data={itemData}
+                          ref={(el) => (itemRefs.current[index] = el)}
+                        />
+                      ))
+                    ) : (
+                      <div className="palette-zero-results">
+                        <Search size={24} style={{ opacity: 0.3 }} />
+                        <span>No matching notes found for "{query}"</span>
+                        {query.trim().length > 0 && (
+                          <button
+                            className="palette-ask-lumina-btn"
+                            onClick={() => {
+                              setMode('ai')
+                              updateSetting('commandPaletteMode', 'ai')
+                              if (query.trim() && !isChatLoading) {
+                                sendChatMessage(
+                                  query.trim(),
+                                  selectedSnippet ? [selectedSnippet] : []
+                                )
+                                setQuery('')
+                              }
+                            }}
+                          >
+                            Ask Lumina: "{query}"
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="palette-resizer" onMouseDown={handleResizerMouseDown}>
+                  <div className="resizer-grip">
+                    <GripVertical size={14} />
+                  </div>
+                </div>
+
+                <div className="palette-preview-col" style={{ width: `${100 - splitRatio}%` }}>
+                  {selectedItemContent ? (
+                    <PreviewCommandPalette
+                      key={filtered[selectedIndex]?.id || 'preview'}
+                      content={selectedItemContent}
+                      onClose={onClose}
+                    />
                   ) : (
-                    <div className="palette-zero-results">
-                      <Search size={24} style={{ opacity: 0.3 }} />
-                      <span>No matching notes found for "{query}"</span>
-                      {query.trim().length > 0 && (
-                        <button 
-                          className="palette-ask-lumina-btn"
-                          onClick={() => {
-                            setMode('ai')
-                            updateSetting('commandPaletteMode', 'ai')
-                            if (query.trim() && !isChatLoading) {
-                              sendChatMessage(query.trim(), selectedSnippet ? [selectedSnippet] : [])
-                              setQuery('')
-                            }
-                          }}
-                        >
-                          Ask Lumina: "{query}"
-                        </button>
-                      )}
+                    <div
+                      style={{
+                        padding: '40px',
+                        textAlign: 'center',
+                        color: 'var(--text-faint)',
+                        opacity: 0.5,
+                        flex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <FileText size={48} strokeWidth={1} />
                     </div>
                   )}
                 </div>
+              </>
+            ) : (
+              <div className="palette-chat-container" style={{ flex: 1, width: '100%' }}>
+                {chatContent}
               </div>
-              
-              <div className="palette-resizer" onMouseDown={handleResizerMouseDown}>
-                <div className="resizer-grip">
-                  <GripVertical size={14} />
-                </div>
-              </div>
-              
-              <div className="palette-preview-col" style={{ width: `${100 - splitRatio}%` }}>
-                {selectedItemContent ? (
-                  <PreviewCommandPalette 
-                    key={filtered[selectedIndex]?.id || 'preview'}
-                    content={selectedItemContent} 
-                    onClose={onClose}
-                  />
-                ) : (
-                  <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-faint)', opacity: 0.5, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <FileText size={48} strokeWidth={1} />
-                  </div>
-                )}
-              </div>
-            </>
-          ) : (
-            <div className="palette-chat-container" style={{ flex: 1, width: '100%' }}>
-              {chatContent}
-            </div>
-          )}
-        </div>
+            )}
+          </div>
 
           <div className="palette-footer horizontal horizontal-top">
             <div className="footer-tip">

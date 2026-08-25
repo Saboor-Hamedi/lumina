@@ -11,7 +11,7 @@ export function setupTableSelection(wrap, view) {
     const isHeader = cell.tagName === 'TH'
     const tr = cell.closest('tr')
     const tbody = tr?.closest('tbody')
-    
+
     let r = -1
     if (isHeader) {
       r = -1
@@ -37,7 +37,7 @@ export function setupTableSelection(wrap, view) {
   }
 
   function clearSelectionVisuals() {
-    wrap.querySelectorAll('.cm-table-cell-selected').forEach(el => {
+    wrap.querySelectorAll('.cm-table-cell-selected').forEach((el) => {
       el.classList.remove('cm-table-cell-selected')
     })
     const overlay = wrap.querySelector('.cm-table-selection-overlay')
@@ -47,9 +47,9 @@ export function setupTableSelection(wrap, view) {
 
   function renderSelection() {
     clearSelectionVisuals()
-    
+
     if (!startCell || !endCell) return
-    
+
     const start = getCoords(startCell)
     const end = getCoords(endCell)
     if (start.c === -1 || end.c === -1) return
@@ -63,7 +63,7 @@ export function setupTableSelection(wrap, view) {
     if (minR === maxR && minC === maxC) return
 
     hasSelection = true
-    
+
     for (let r = minR; r <= maxR; r++) {
       for (let c = minC; c <= maxC; c++) {
         const cell = getCellAt(r, c)
@@ -72,11 +72,11 @@ export function setupTableSelection(wrap, view) {
         }
       }
     }
-    
+
     // Find the top-left and bottom-right cells
     const tlCell = getCellAt(minR, minC)
     const brCell = getCellAt(maxR, maxC)
-    
+
     if (tlCell && brCell) {
       const scrollContainer = wrap.querySelector('.cm-table-scroll-container') || wrap
       let overlay = scrollContainer.querySelector('.cm-table-selection-overlay')
@@ -84,7 +84,7 @@ export function setupTableSelection(wrap, view) {
         overlay = document.createElement('div')
         overlay.className = 'cm-table-selection-overlay'
         overlay.style.pointerEvents = 'none' // GUARANTEE clicks pass through to the cells!
-        
+
         // Ensure container is relative so the absolute overlay positions correctly
         const computed = window.getComputedStyle(scrollContainer)
         if (computed.position === 'static') {
@@ -92,18 +92,18 @@ export function setupTableSelection(wrap, view) {
         }
         scrollContainer.appendChild(overlay)
       }
-      
+
       const containerRect = scrollContainer.getBoundingClientRect()
       const tlRect = tlCell.getBoundingClientRect()
       const brRect = brCell.getBoundingClientRect()
-      
+
       // Calculate coordinates relative to the scroll container
       // Add scroll offsets of the container so the overlay scrolls with the table
       const topOffset = tlRect.top - containerRect.top + scrollContainer.scrollTop
       const leftOffset = tlRect.left - containerRect.left + scrollContainer.scrollLeft
       const width = brRect.right - tlRect.left
       const height = brRect.bottom - tlRect.top
-      
+
       // Apply to overlay
       overlay.style.top = `${topOffset}px`
       overlay.style.left = `${leftOffset}px`
@@ -115,67 +115,71 @@ export function setupTableSelection(wrap, view) {
 
   // Use capture phase on document to guarantee we see the mousedown before any child
   // components (like wikilinks) can stop propagation.
-  document.addEventListener('mousedown', (e) => {
-    if (e.button !== 0) return // Only left-clicks start selection
-    if (!wrap.contains(e.target)) return // Handled by the window mousedown for outside clicks
+  document.addEventListener(
+    'mousedown',
+    (e) => {
+      if (e.button !== 0) return // Only left-clicks start selection
+      if (!wrap.contains(e.target)) return // Handled by the window mousedown for outside clicks
 
-    const cell = e.target.closest('th, td')
-    if (!cell) {
+      const cell = e.target.closest('th, td')
+      if (!cell) {
+        clearSelectionVisuals()
+        startCell = null
+        endCell = null
+        return
+      }
+
+      // They clicked a cell inside this table wrapper.
       clearSelectionVisuals()
-      startCell = null
-      endCell = null
-      return
-    }
-
-    // They clicked a cell inside this table wrapper.
-    clearSelectionVisuals()
-    isDragging = true
-    startCell = cell
-    endCell = cell
-  }, true)
+      isDragging = true
+      startCell = cell
+      endCell = cell
+    },
+    true
+  )
 
   window.addEventListener('mousemove', (e) => {
     if (!startCell) return
-    
+
     if ((e.buttons & 1) !== 1) {
       isDragging = false
       wrap.classList.remove('cm-table-selecting')
       return
     }
-    
+
     const target = document.elementFromPoint(e.clientX, e.clientY)
     if (!target) return
-    
+
     const cell = target.closest('th, td')
     const currentWrap = target.closest('.cm-atomic-table')
-    
+
     if (!cell || cell === endCell || !currentWrap) return
     if (currentWrap !== wrap && !wrap.contains(cell)) {
-       if (!cell.closest('.cm-atomic-table')) return
+      if (!cell.closest('.cm-atomic-table')) return
     }
-    
+
     endCell = cell
-    
+
     wrap.classList.add('cm-table-selecting')
     if (document.activeElement && wrap.contains(document.activeElement)) {
       document.activeElement.blur()
       window.getSelection().removeAllRanges()
     }
-    
+
     // Ensure the wrapper has focus so it can receive the Ctrl+C keydown event!
     wrap.focus()
-    
+
     renderSelection()
   })
 
   window.addEventListener('mouseup', () => {
     isDragging = false
     wrap.classList.remove('cm-table-selecting')
-    
+
     // If they just clicked/dragged within a single cell, don't keep it as a grid selection start
     if (startCell === endCell) {
-       startCell = null
-       endCell = null
+      startCell = null
+      endCell = null
     }
   })
 
@@ -214,7 +218,7 @@ export function setupTableSelection(wrap, view) {
     // Intercept Ctrl+C / Cmd+C because the native 'copy' event won't fire if the browser selection is empty
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
       e.preventDefault()
-      
+
       const start = getCoords(startCell)
       const end = getCoords(endCell)
       const minR = Math.min(start.r, end.r)
@@ -223,7 +227,7 @@ export function setupTableSelection(wrap, view) {
       const maxC = Math.max(start.c, end.c)
 
       let markdown = []
-      
+
       if (minR === -1) {
         let headerText = []
         for (let c = minC; c <= maxC; c++) {
@@ -232,12 +236,12 @@ export function setupTableSelection(wrap, view) {
           headerText.push((source ? source.textContent : '').replace(/\|/g, '\\|'))
         }
         markdown.push('| ' + headerText.join(' | ') + ' |')
-        
+
         let dividerText = []
         for (let c = minC; c <= maxC; c++) dividerText.push('---')
         markdown.push('| ' + dividerText.join(' | ') + ' |')
       }
-      
+
       const bodyStart = Math.max(0, minR)
       for (let r = bodyStart; r <= maxR; r++) {
         let rowText = []
@@ -248,14 +252,14 @@ export function setupTableSelection(wrap, view) {
         }
         markdown.push('| ' + rowText.join(' | ') + ' |')
       }
-      
+
       navigator.clipboard.writeText(markdown.join('\n'))
       return
     }
 
     if (e.key === 'Backspace' || e.key === 'Delete') {
       e.preventDefault()
-      selected.forEach(cell => {
+      selected.forEach((cell) => {
         const source = cell.querySelector('.cm-atomic-table-cell-source')
         if (source) source.textContent = ''
       })
@@ -263,16 +267,16 @@ export function setupTableSelection(wrap, view) {
       dispatchModel(view, wrap, m)
       return
     }
-    
+
     // Phase 3: Keyboard selection via Shift + Arrow Keys
     if (e.shiftKey && e.key.startsWith('Arrow')) {
       e.preventDefault()
       const end = getCoords(endCell || startCell)
       if (end.c === -1) return
-      
+
       let r = end.r
       let c = end.c
-      
+
       if (e.key === 'ArrowUp') r = Math.max(-1, r - 1)
       if (e.key === 'ArrowDown') {
         const rowCount = wrap.querySelectorAll('tbody tr').length
@@ -283,7 +287,7 @@ export function setupTableSelection(wrap, view) {
         const colCount = wrap.querySelectorAll('thead th').length
         c = Math.min(colCount - 1, c + 1)
       }
-      
+
       const newEnd = getCellAt(r, c)
       if (newEnd) {
         if (!startCell) startCell = newEnd
@@ -292,7 +296,7 @@ export function setupTableSelection(wrap, view) {
       }
       return
     }
-    
+
     // If they press an un-shifted arrow key, start typing, or hit Escape,
     // we MUST clear the grid selection and return control to the native text cursor.
     if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
@@ -302,7 +306,7 @@ export function setupTableSelection(wrap, view) {
     }
   })
 
-  wrap.tabIndex = -1 
+  wrap.tabIndex = -1
 
   wrap.__setGridSelection = (c1, c2) => {
     startCell = c1

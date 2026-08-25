@@ -1422,4 +1422,4 @@ By the end of this session, I want to:
 **Pre-work for next time:** 
 `
   }
-];
+]

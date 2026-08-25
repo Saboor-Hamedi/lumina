@@ -103,7 +103,11 @@ export const useVaultStore = create((set, get) => ({
 
       // If we are closing the active tab (or if it's out of sync), find a new one
       let nextActiveId = state.activeTabId
-      if (state.activeTabId === id || state.selectedSnippet?.id === id || !nextTabs.includes(nextActiveId)) {
+      if (
+        state.activeTabId === id ||
+        state.selectedSnippet?.id === id ||
+        !nextTabs.includes(nextActiveId)
+      ) {
         const idx = state.openTabs.indexOf(id)
         // If idx is -1, fallback to first available
         if (idx === -1) {
@@ -112,7 +116,7 @@ export const useVaultStore = create((set, get) => ({
           nextActiveId = nextTabs[idx] || nextTabs[idx - 1] || null
         }
       }
-      
+
       if (!nextActiveId && nextTabs.length > 0) {
         nextActiveId = nextTabs[0]
       }
@@ -392,7 +396,11 @@ export const useVaultStore = create((set, get) => ({
       const nextTabs = state.openTabs.filter((tid) => tid !== id)
 
       let nextActiveId = state.activeTabId
-      if (state.activeTabId === id || state.selectedSnippet?.id === id || !nextTabs.includes(nextActiveId)) {
+      if (
+        state.activeTabId === id ||
+        state.selectedSnippet?.id === id ||
+        !nextTabs.includes(nextActiveId)
+      ) {
         const idx = state.openTabs.indexOf(id)
         if (idx === -1) {
           nextActiveId = nextTabs[0] || null
@@ -430,7 +438,7 @@ export const useVaultStore = create((set, get) => ({
       console.error('[VaultStore] ✗ Delete failed:', err)
       // Rollback: reload the vault from disk
       useVaultStore.getState().loadVault()
-      throw err 
+      throw err
     }
   },
 

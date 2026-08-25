@@ -66,6 +66,7 @@ import {
 import { useFileSearch } from './hooks/useFileSearch'
 import { useFileTree } from './hooks/useFileTree'
 import { useContextMenu } from '../Navigation/hooks/useContextMenu'
+import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 
 const VirtuosoFooter = () => <div style={{ height: '24px' }} />
 
@@ -131,11 +132,11 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
 
   // Hide system folders (like Templates) from the main sidebar and note count
   const visibleSnippets = useMemo(() => {
-    return snippets.filter(s => !s.folderId || !s.folderId.startsWith('Templates'))
+    return snippets.filter((s) => !s.folderId || !s.folderId.startsWith('Templates'))
   }, [snippets])
 
   const visibleFolders = useMemo(() => {
-    return folders.filter(f => !f.startsWith('Templates'))
+    return folders.filter((f) => !f.startsWith('Templates'))
   }, [folders])
 
   const clickedInExplorerRef = useRef(0)
@@ -150,6 +151,31 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   useEffect(() => {
     setSidebarFocus(null)
   }, [isOpen])
+
+  useKeyboardShortcuts({
+    onRevealInExplorer: () => {
+      if (selectedIndex >= 0 && selectedIndex < flatTree.length) {
+        const item = flatTree[selectedIndex]
+        if (item?.type === 'file' && item.snippet) {
+          const relativePath =
+            (item.snippet.folderId ? item.snippet.folderId + '/' : '') + item.snippet.fileName
+          window.api?.openVaultFolder?.(relativePath)
+        } else if (item?.type === 'folder') {
+          window.api?.openVaultFolder?.(item.id)
+        }
+      } else if (selectedSnippetId) {
+        // Fallback to currently selected note if nothing is highlighted in tree
+        const snippet = allSnippets.find((s) => s.id === selectedSnippetId)
+        if (snippet) {
+          const relativePath = (snippet.folderId ? snippet.folderId + '/' : '') + snippet.fileName
+          window.api?.openVaultFolder?.(relativePath)
+        }
+      } else {
+        // Fallback to root
+        window.api?.openVaultFolder?.()
+      }
+    }
+  })
 
   const contextMenuOptions = useContextMenu({
     item: folderContext?.folderId || null,
@@ -182,7 +208,9 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
         }
       },
       onClose: () => setFolderContext(null),
-      isFolderPinned: folderContext?.folderId ? pinnedFolders.includes(folderContext.folderId) : false
+      isFolderPinned: folderContext?.folderId
+        ? pinnedFolders.includes(folderContext.folderId)
+        : false
     }
   })
 
@@ -484,7 +512,6 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
             paddingLeft: `${item.depth * 12}px`
           }}
         >
-
           <div
             className="folder-tree-main creating-input"
             style={{
@@ -559,7 +586,6 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
             paddingLeft: `${item.depth * 12}px`
           }}
         >
-
           <SortableListItem
             key={item.snippet.id}
             snippet={item.snippet}
@@ -1014,18 +1040,24 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                 </h3>
                 <div className="header-actions" style={{ display: 'flex', gap: '4px' }}>
                   <ToolTip text="New Note">
-                    <button className="sort-toggle-btn" onClick={(e) => {
-                      e.stopPropagation()
-                      window.dispatchEvent(new CustomEvent('trigger-new-note'))
-                    }}>
+                    <button
+                      className="sort-toggle-btn"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        window.dispatchEvent(new CustomEvent('trigger-new-note'))
+                      }}
+                    >
                       <FilePlus size={14} />
                     </button>
                   </ToolTip>
                   <ToolTip text="New Folder">
-                    <button className="sort-toggle-btn" onClick={(e) => {
-                      e.stopPropagation()
-                      setCreating({ type: 'folder', parentId: null })
-                    }}>
+                    <button
+                      className="sort-toggle-btn"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setCreating({ type: 'folder', parentId: null })
+                      }}
+                    >
                       <FolderPlus size={14} />
                     </button>
                   </ToolTip>

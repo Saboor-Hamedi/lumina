@@ -97,12 +97,13 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DM
         // centerAt/zoom might throw if not fully initialized
       }
 
-      rafRef.current = requestAnimationFrame(draw)
+      // Throttle minimap redraw to ~15fps (every 66ms) instead of 60fps to prevent main thread freezing
+      rafRef.current = setTimeout(draw, 66)
     }
 
-    rafRef.current = requestAnimationFrame(draw)
+    rafRef.current = setTimeout(draw, 66)
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      if (rafRef.current) clearTimeout(rafRef.current)
     }
   }, [graphData, graphRef, mainWidth, mainHeight])
 

@@ -37,31 +37,35 @@ export function setupTableFormattingToolbar() {
     }
 
     const range = sel.getRangeAt(0)
-    const source = range.startContainer.parentElement?.closest('.cm-atomic-table-cell-source') || 
-                   (range.startContainer.nodeType === Node.ELEMENT_NODE && range.startContainer.closest('.cm-atomic-table-cell-source'))
-    
+    const source =
+      range.startContainer.parentElement?.closest('.cm-atomic-table-cell-source') ||
+      (range.startContainer.nodeType === Node.ELEMENT_NODE &&
+        range.startContainer.closest('.cm-atomic-table-cell-source'))
+
     if (!source || !document.activeElement || !source.contains(document.activeElement)) {
       toolbar.style.display = 'none'
       return
     }
 
-    // Don't show toolbar if we are just selecting across multiple nodes in a complex way for now, 
+    // Don't show toolbar if we are just selecting across multiple nodes in a complex way for now,
     // or if we're in the middle of a mark
     const rect = range.getBoundingClientRect()
-    
+
     toolbar.style.display = 'flex'
     toolbar.style.top = `${rect.top - toolbar.offsetHeight - 8}px`
-    toolbar.style.left = `${rect.left + (rect.width / 2) - (toolbar.offsetWidth / 2)}px`
+    toolbar.style.left = `${rect.left + rect.width / 2 - toolbar.offsetWidth / 2}px`
   })
 }
 
 function applyFormatting(tag) {
   const sel = window.getSelection()
   if (!sel || sel.isCollapsed) return
-  
+
   const range = sel.getRangeAt(0)
-  const source = range.startContainer.parentElement?.closest('.cm-atomic-table-cell-source') ||
-                 (range.startContainer.nodeType === Node.ELEMENT_NODE && range.startContainer.closest('.cm-atomic-table-cell-source'))
+  const source =
+    range.startContainer.parentElement?.closest('.cm-atomic-table-cell-source') ||
+    (range.startContainer.nodeType === Node.ELEMENT_NODE &&
+      range.startContainer.closest('.cm-atomic-table-cell-source'))
   if (!source) return
 
   const text = sel.toString()
@@ -89,14 +93,14 @@ function applyFormatting(tag) {
     let node = range.commonAncestorContainer
     if (node.nodeType === Node.TEXT_NODE) node = node.parentElement
     const wrap = node.closest('.' + wrapClass)
-    
+
     if (wrap && source.contains(wrap)) {
       // Select the entire wrap so we replace the delimiters too
       const newRange = document.createRange()
       newRange.selectNode(wrap)
       sel.removeAllRanges()
       sel.addRange(newRange)
-      
+
       const wrapText = wrap.textContent
       let innerText = wrapText
       if (innerText.startsWith(tag)) innerText = innerText.substring(tag.length)

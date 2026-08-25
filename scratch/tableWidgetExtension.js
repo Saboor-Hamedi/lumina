@@ -101,7 +101,8 @@ class TableWidget extends WidgetType {
     cornerHandle.className = 'cm-table-handle cm-table-corner-handle'
     cornerHandle.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>`
     cornerHandle.addEventListener('mousedown', (e) => {
-      e.preventDefault(); e.stopPropagation()
+      e.preventDefault()
+      e.stopPropagation()
       wrap.__setGridSelection?.(
         wrap.__getCellAt(-1, 0),
         wrap.__getCellAt(this.model.rows.length - 1, this.model.header.length - 1)
@@ -111,14 +112,16 @@ class TableWidget extends WidgetType {
 
     const addRowBtn = document.createElement('div')
     addRowBtn.className = 'cm-table-add-btn cm-table-add-row-btn'
-    addRowBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>'
+    addRowBtn.innerHTML =
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>'
     addRowBtn.addEventListener('mousedown', (e) => {
-      e.preventDefault(); e.stopPropagation()
+      e.preventDefault()
+      e.stopPropagation()
       const nextModel = {
         header: [...this.model.header],
         alignments: [...(this.model.alignments || [])],
         widths: [...(this.model.widths || [])],
-        rows: this.model.rows.map(r => [...r])
+        rows: this.model.rows.map((r) => [...r])
       }
       nextModel.rows.push(Array(nextModel.header.length).fill(''))
       dispatchModel(view, wrap, nextModel)
@@ -127,19 +130,21 @@ class TableWidget extends WidgetType {
 
     const addColBtn = document.createElement('div')
     addColBtn.className = 'cm-table-add-btn cm-table-add-col-btn'
-    addColBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>'
+    addColBtn.innerHTML =
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>'
     addColBtn.addEventListener('mousedown', (e) => {
-      e.preventDefault(); e.stopPropagation()
+      e.preventDefault()
+      e.stopPropagation()
       const nextModel = {
         header: [...this.model.header],
         alignments: [...(this.model.alignments || [])],
         widths: [...(this.model.widths || [])],
-        rows: this.model.rows.map(r => [...r])
+        rows: this.model.rows.map((r) => [...r])
       }
       nextModel.header.push('')
       nextModel.alignments.push('left')
       nextModel.widths.push('')
-      nextModel.rows.forEach(r => r.push(''))
+      nextModel.rows.forEach((r) => r.push(''))
       dispatchModel(view, wrap, nextModel)
     })
     wrap.appendChild(addColBtn)
@@ -179,17 +184,17 @@ class TableWidget extends WidgetType {
         e.stopPropagation()
         startX = e.clientX
         setHover(true)
-        
+
         const theadEl = cell.closest('table').querySelector('thead')
         const th = theadEl.querySelectorAll('th')[colIndex]
         if (!th) return
-        
+
         startWidth = th.offsetWidth
 
         const onMouseMove = (moveEvent) => {
           const newWidth = Math.max(30, startWidth + (moveEvent.clientX - startX))
           const widthStr = `${newWidth}px`
-          
+
           th.style.setProperty('width', widthStr, 'important')
           th.style.setProperty('min-width', widthStr, 'important')
           th.style.setProperty('max-width', widthStr, 'important')
@@ -235,7 +240,7 @@ class TableWidget extends WidgetType {
         cell.style.setProperty('min-width', this.model.widths[i], 'important')
         cell.style.setProperty('max-width', this.model.widths[i], 'important')
       }
-      
+
       addResizer(cell, i)
       headerRow.appendChild(cell)
     }
@@ -265,7 +270,7 @@ class TableWidget extends WidgetType {
       tbody.appendChild(tr)
     }
     table.appendChild(tbody)
-    
+
     setupTableSelection(wrap, view)
     return wrap
   }
@@ -276,7 +281,7 @@ class TableWidget extends WidgetType {
     if (ths.length !== this.model.header.length) return false
     for (let i = 0; i < this.model.header.length; i++) {
       const source = ths[i].querySelector('.cm-atomic-table-cell-source')
-      
+
       // Sync alignments
       if (this.model.alignments?.[i]) {
         ths[i].style.textAlign = this.model.alignments[i]
@@ -334,7 +339,7 @@ class TableWidget extends WidgetType {
       const tds = Array.from(trs[r].querySelectorAll('td'))
       for (let c = 0; c < tds.length; c++) {
         const source = tds[c].querySelector('.cm-atomic-table-cell-source')
-        
+
         // Sync alignments
         if (this.model.alignments?.[c]) {
           tds[c].style.textAlign = this.model.alignments[c]
@@ -438,7 +443,7 @@ function moveCellFocus(view, cell, dir, opts = { appendOnOverflow: true }) {
   const source = getCellSource(cells[next])
   if (!source) return
   source.focus()
-  
+
   if (dir > 0) {
     // Moving forward/down: place caret at start
     const sel = source.ownerDocument?.defaultView?.getSelection()

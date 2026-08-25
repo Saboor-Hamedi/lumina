@@ -62,10 +62,12 @@ export class ImageWidget extends WidgetType {
   eq(other) {
     // Only return true if ALL visual properties are identical!
     // If we return false, CodeMirror calls updateDOM() to update the live elements without blinking.
-    return other.url === this.url && 
-           other.align === this.align && 
-           other.width === this.width &&
-           other.actualAlt === this.actualAlt
+    return (
+      other.url === this.url &&
+      other.align === this.align &&
+      other.width === this.width &&
+      other.actualAlt === this.actualAlt
+    )
   }
 
   updateDOM(dom, view) {
@@ -87,7 +89,7 @@ export class ImageWidget extends WidgetType {
     const title = document.createElement('div')
     title.className = 'image-widget-title'
     title.appendChild(createIcon(icons.image))
-    
+
     const actions = document.createElement('div')
     actions.className = 'image-widget-actions'
 
@@ -109,12 +111,12 @@ export class ImageWidget extends WidgetType {
         const searchStart = Math.max(0, pos - 500)
         const searchEnd = Math.min(docStr.length, pos + 2000)
         const windowStr = docStr.slice(searchStart, searchEnd)
-        
+
         const regex = /!\[([^\]]*)\]\(([^)]+)\)/g
         let match
         let closestMatch = null
         let minDistance = Infinity
-        
+
         while ((match = regex.exec(windowStr)) !== null) {
           if (match[2] === wrap.__imageWidget.url) {
             const matchPos = searchStart + match.index
@@ -182,11 +184,15 @@ export class ImageWidget extends WidgetType {
     // Align Buttons (Pass undefined to use current value)
     const btnLeft = this.createBtn(icons.left, 'Align Left', () => updateImage(undefined, 'left'))
     if (this.align === 'left') btnLeft.classList.add('active')
-    
-    const btnCenter = this.createBtn(icons.center, 'Align Center', () => updateImage(undefined, 'center'))
+
+    const btnCenter = this.createBtn(icons.center, 'Align Center', () =>
+      updateImage(undefined, 'center')
+    )
     if (this.align === 'center') btnCenter.classList.add('active')
-    
-    const btnRight = this.createBtn(icons.right, 'Align Right', () => updateImage(undefined, 'right'))
+
+    const btnRight = this.createBtn(icons.right, 'Align Right', () =>
+      updateImage(undefined, 'right')
+    )
     if (this.align === 'right') btnRight.classList.add('active')
 
     // Copy Image Button
@@ -210,33 +216,33 @@ export class ImageWidget extends WidgetType {
       view.dispatch({ selection: { anchor: pos + 1 }, scrollIntoView: true })
       view.focus()
     })
-    
+
     if (this.onUpdate) {
       btnEdit.onclick = (e) => {
         e.preventDefault()
         e.stopPropagation()
         if (view.state.readOnly) return
-        
+
         if (wrap) {
-           const outerWrap = wrap.parentElement
-           if (outerWrap && outerWrap.classList.contains('cm-atomic-image-wrap')) {
-             // Add active class manually so markSpan becomes display: inline and focusable
-             outerWrap.classList.add('active')
-             
-             const markSpan = outerWrap.querySelector('.cm-atomic-mark')
-             if (markSpan) {
-               // Focus and place cursor at the end of the markdown string
-               const sel = window.getSelection()
-               const range = document.createRange()
-               range.selectNodeContents(markSpan)
-               range.collapse(false)
-               sel.removeAllRanges()
-               sel.addRange(range)
-               
-               // Dispatch mouseup to trigger updateActiveMarkForSource in tableCellDom.js
-               markSpan.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }))
-             }
-           }
+          const outerWrap = wrap.parentElement
+          if (outerWrap && outerWrap.classList.contains('cm-atomic-image-wrap')) {
+            // Add active class manually so markSpan becomes display: inline and focusable
+            outerWrap.classList.add('active')
+
+            const markSpan = outerWrap.querySelector('.cm-atomic-mark')
+            if (markSpan) {
+              // Focus and place cursor at the end of the markdown string
+              const sel = window.getSelection()
+              const range = document.createRange()
+              range.selectNodeContents(markSpan)
+              range.collapse(false)
+              sel.removeAllRanges()
+              sel.addRange(range)
+
+              // Dispatch mouseup to trigger updateActiveMarkForSource in tableCellDom.js
+              markSpan.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }))
+            }
+          }
         }
       }
     }
@@ -249,9 +255,9 @@ export class ImageWidget extends WidgetType {
 
       if (this.onUpdate) {
         if (this.url && !this.url.startsWith('http') && !this.url.startsWith('data:')) {
-          const cleanUrl = this.url.startsWith('/') ? this.url.slice(1) : this.url;
+          const cleanUrl = this.url.startsWith('/') ? this.url.slice(1) : this.url
           if (window.api && window.api.deleteAsset) {
-            window.api.deleteAsset(cleanUrl).catch(err => {
+            window.api.deleteAsset(cleanUrl).catch((err) => {
               if (!err.message.includes('ENOENT')) {
                 console.error('Failed to delete asset:', err)
               }
@@ -261,31 +267,31 @@ export class ImageWidget extends WidgetType {
         this.onUpdate('')
         return
       }
-      
+
       // If there's no onUpdate, fall back to replacing the text using this.pos and this.originalLength
       if (this.url && !this.url.startsWith('http') && !this.url.startsWith('data:')) {
-        const cleanUrl = this.url.startsWith('/') ? this.url.slice(1) : this.url;
+        const cleanUrl = this.url.startsWith('/') ? this.url.slice(1) : this.url
         if (window.api && window.api.deleteAsset) {
-          window.api.deleteAsset(cleanUrl).catch(err => {
+          window.api.deleteAsset(cleanUrl).catch((err) => {
             console.error('Failed to delete asset:', err)
           })
         }
       }
-      
+
       let pos = view.posAtDOM(wrap)
       if (pos === null && wrap.__imageWidget) pos = wrap.__imageWidget.pos
       if (pos === null || pos === undefined) return
-      
+
       const docStr = view.state.doc.toString()
       const searchStart = Math.max(0, pos - 500)
       const searchEnd = Math.min(docStr.length, pos + 2000)
       const windowStr = docStr.slice(searchStart, searchEnd)
-      
+
       const regex = /!\[([^\]]*)\]\(([^)]+)\)/g
       let match
       let closestMatch = null
       let minDistance = Infinity
-      
+
       while ((match = regex.exec(windowStr)) !== null) {
         if (match[2] === wrap.__imageWidget.url) {
           const matchPos = searchStart + match.index
@@ -303,12 +309,12 @@ export class ImageWidget extends WidgetType {
         view.dispatch({
           changes: { from: actualPos, to: actualPos + currentLen, insert: '' }
         })
-        
+
         // Also delete from disk if it's a local asset
         if (this.url && !this.url.startsWith('http') && !this.url.startsWith('data:')) {
-          const cleanUrl = this.url.startsWith('/') ? this.url.slice(1) : this.url;
+          const cleanUrl = this.url.startsWith('/') ? this.url.slice(1) : this.url
           if (window.api && window.api.deleteAsset) {
-            window.api.deleteAsset(cleanUrl).catch(err => {
+            window.api.deleteAsset(cleanUrl).catch((err) => {
               if (!err.message.includes('ENOENT')) {
                 console.error('Failed to delete asset:', err)
               }
@@ -327,7 +333,16 @@ export class ImageWidget extends WidgetType {
       return el
     }
 
-    actions.append(btnCopy, separator(), btnLeft, btnCenter, btnRight, separator(), btnEdit, btnDelete)
+    actions.append(
+      btnCopy,
+      separator(),
+      btnLeft,
+      btnCenter,
+      btnRight,
+      separator(),
+      btnEdit,
+      btnDelete
+    )
     header.append(title, actions)
     // Removed wrap.appendChild(header) so it can be placed inside the body
 
@@ -340,7 +355,7 @@ export class ImageWidget extends WidgetType {
     const img = document.createElement('img')
     img.alt = this.actualAlt
     img.draggable = false
-    
+
     attachLightbox(img)
 
     img.onload = () => {
@@ -352,29 +367,32 @@ export class ImageWidget extends WidgetType {
     img.onerror = () => {
       const widget = wrap.__imageWidget
       console.error('[ImageWidget] Failed to load image at URL:', img.src)
-      
+
       const errorDiv = document.createElement('div')
       errorDiv.className = 'image-widget-error'
       errorDiv.innerHTML = `❌ Image Failed to Render: ${widget.actualAlt}`
-      
+
       if (img.parentNode) {
         body.replaceChild(errorDiv, img)
       } else {
         body.appendChild(errorDiv)
       }
-      
+
       if (view && view.requestMeasure) view.requestMeasure()
     }
 
     if (this.url && !this.url.startsWith('http') && !this.url.startsWith('data:')) {
-      const cleanUrl = this.url.startsWith('/') ? this.url.slice(1) : this.url;
-      
+      const cleanUrl = this.url.startsWith('/') ? this.url.slice(1) : this.url
+
       if (urlCache.has(this.url)) {
-        urlCache.get(this.url).then(objectUrl => {
-          img.src = objectUrl;
-        }).catch(() => {
-          img.onerror();
-        });
+        urlCache
+          .get(this.url)
+          .then((objectUrl) => {
+            img.src = objectUrl
+          })
+          .catch(() => {
+            img.onerror()
+          })
       } else {
         const fetchWithRetry = async (url, retries = 5, delay = 50) => {
           for (let i = 0; i < retries; i++) {
@@ -383,23 +401,25 @@ export class ImageWidget extends WidgetType {
               return URL.createObjectURL(new Blob([buffer]))
             } catch (err) {
               if (i === retries - 1) throw err
-              await new Promise(resolve => setTimeout(resolve, delay))
+              await new Promise((resolve) => setTimeout(resolve, delay))
             }
           }
         }
-        
+
         const fetchPromise = fetchWithRetry(cleanUrl)
         urlCache.set(this.url, fetchPromise)
 
-        fetchPromise.then(objectUrl => {
-          img.src = objectUrl;
-        }).catch((err) => {
-          console.error('[ImageWidget] IPC readAsset failed:', err);
-          img.onerror();
-        });
+        fetchPromise
+          .then((objectUrl) => {
+            img.src = objectUrl
+          })
+          .catch((err) => {
+            console.error('[ImageWidget] IPC readAsset failed:', err)
+            img.onerror()
+          })
       }
     } else {
-      img.src = this.url;
+      img.src = this.url
     }
 
     if (this.width !== 'auto') {
@@ -414,7 +434,7 @@ export class ImageWidget extends WidgetType {
     // ----------------------------------------------------------------
     const handle = document.createElement('div')
     handle.className = 'image-widget-resize-handle'
-    
+
     // Explicitly prevent CodeMirror from stealing focus on the handle
     handle.onmousedown = (e) => {
       if (view.state.readOnly) return
@@ -430,17 +450,17 @@ export class ImageWidget extends WidgetType {
 
       const onMouseMove = (moveEvent) => {
         if (animationFrame) cancelAnimationFrame(animationFrame)
-        
+
         animationFrame = requestAnimationFrame(() => {
           let deltaX = moveEvent.clientX - startX
-          
+
           // Adjust delta math to keep the resize handle perfectly pinned to the mouse cursor
           if (align === 'center') {
             deltaX *= 2
           } else if (align === 'right') {
             deltaX = -deltaX // When right aligned, moving left (negative deltaX) increases width
           }
-          
+
           const newWidth = Math.max(50, startWidth + deltaX) // Min width 50px
           body.style.width = `${newWidth}px`
           if (view && view.requestMeasure) view.requestMeasure()
@@ -451,7 +471,7 @@ export class ImageWidget extends WidgetType {
         window.removeEventListener('mousemove', onMouseMove)
         window.removeEventListener('mouseup', onMouseUp)
         wrap.classList.remove('resizing')
-        
+
         // Save the final width to markdown using current widget state
         const finalWidth = body.offsetWidth
         const widget = wrap.__imageWidget
@@ -477,7 +497,7 @@ export class ImageWidget extends WidgetType {
     const btn = document.createElement('button')
     btn.className = 'image-widget-btn'
     btn.title = title
-    
+
     if (typeof content === 'string' && !content.startsWith('<')) {
       btn.innerText = content
       btn.style.fontSize = '11px'
@@ -505,7 +525,9 @@ export class ImageWidget extends WidgetType {
 }
 
 class EmptyWidget extends WidgetType {
-  eq() { return true }
+  eq() {
+    return true
+  }
   toDOM() {
     return document.createElement('span')
   }
@@ -530,7 +552,7 @@ function buildDecorations(state) {
       const intersects = selection.from < matchTo && selection.to > matchFrom
 
       if (intersects) {
-        // Cursor is INSIDE the markdown text. 
+        // Cursor is INSIDE the markdown text.
         // OBSIDIAN STYLE: Do not render the image widget, do not hide the text.
         // The text simply appears seamlessly in the editor.
       } else {

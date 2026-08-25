@@ -449,7 +449,10 @@ export const useFontSettings = () => {
           root.style.setProperty('--text-accent', stateThemeAccentColor)
           const rgbMatch = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(stateThemeAccentColor)
           if (rgbMatch) {
-            root.style.setProperty('--text-accent-rgb', `${parseInt(rgbMatch[1], 16)}, ${parseInt(rgbMatch[2], 16)}, ${parseInt(rgbMatch[3], 16)}`)
+            root.style.setProperty(
+              '--text-accent-rgb',
+              `${parseInt(rgbMatch[1], 16)}, ${parseInt(rgbMatch[2], 16)}, ${parseInt(rgbMatch[3], 16)}`
+            )
           }
         }
 
@@ -970,13 +973,19 @@ export const useFontSettings = () => {
         root.style.setProperty('--text-accent', rawColor)
         const rgbMatch = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(rawColor)
         if (rgbMatch) {
-          root.style.setProperty('--text-accent-rgb', `${parseInt(rgbMatch[1], 16)}, ${parseInt(rgbMatch[2], 16)}, ${parseInt(rgbMatch[3], 16)}`)
+          root.style.setProperty(
+            '--text-accent-rgb',
+            `${parseInt(rgbMatch[1], 16)}, ${parseInt(rgbMatch[2], 16)}, ${parseInt(rgbMatch[3], 16)}`
+          )
         }
       } else {
         const themeName = root.getAttribute('data-theme') || DEFAULTS.THEME
         const currentTheme = getTheme(themeName)
         root.style.setProperty('--text-accent', currentTheme.colors['--text-accent'] || '#40bafa')
-        root.style.setProperty('--text-accent-rgb', currentTheme.colors['--text-accent-rgb'] || '64, 186, 250')
+        root.style.setProperty(
+          '--text-accent-rgb',
+          currentTheme.colors['--text-accent-rgb'] || '64, 186, 250'
+        )
       }
 
       // Debounce React state and disk IO to prevent lag

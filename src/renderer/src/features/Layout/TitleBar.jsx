@@ -45,11 +45,13 @@ const TitleBar = ({ onToggleAIChat }) => {
       </div>
 
       <div className="title-center">
-        <div 
+        <div
           className="unified-search-bar"
           onClick={() => window.dispatchEvent(new CustomEvent('open-ask-anything'))}
         >
-          <span className="search-icon"><Search size={12} /></span>
+          <span className="search-icon">
+            <Search size={12} />
+          </span>
           <span className="search-placeholder">Ask anything or Search...</span>
           <span className="search-shortcut">Ctrl+P</span>
         </div>
@@ -58,7 +60,11 @@ const TitleBar = ({ onToggleAIChat }) => {
       <div className="title-right">
         <div className="window-controls" data-testid="window-controls">
           <ToolTip text="AI Chat" position="bottom">
-            <button onClick={() => window.dispatchEvent(new CustomEvent('open-ai-chat'))} className="control-btn" style={{ color: 'var(--text-accent)' }}>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('open-ai-chat'))}
+              className="control-btn"
+              style={{ color: 'var(--text-accent)' }}
+            >
               <MessageSquare size={14} strokeWidth={2} />
             </button>
           </ToolTip>

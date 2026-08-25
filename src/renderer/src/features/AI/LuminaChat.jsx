@@ -705,20 +705,20 @@ const LuminaChat = ({ isOpen, onClose, onUnfloat }) => {
             : isMinimized
               ? { top: 'auto', left: 'auto', bottom: '40px', right: '20px', width: '280px' }
               : {
-                  top: isResizing 
+                  top: isResizing
                     ? (resizeStartPos.current?.latestState?.top ?? modalState.top)
                     : isDragging
-                    ? (dragStartPos.current.latestTop ?? modalState.top)
-                    : modalState.top,
-                  left: isResizing 
+                      ? (dragStartPos.current.latestTop ?? modalState.top)
+                      : modalState.top,
+                  left: isResizing
                     ? (resizeStartPos.current?.latestState?.left ?? modalState.left)
                     : isDragging
-                    ? (dragStartPos.current.latestLeft ?? modalState.left)
-                    : modalState.left,
-                  width: isResizing 
+                      ? (dragStartPos.current.latestLeft ?? modalState.left)
+                      : modalState.left,
+                  width: isResizing
                     ? (resizeStartPos.current?.latestState?.width ?? modalState.width)
                     : modalState.width,
-                  height: isResizing 
+                  height: isResizing
                     ? (resizeStartPos.current?.latestState?.height ?? modalState.height)
                     : modalState.height
                 })
@@ -963,7 +963,10 @@ const LuminaChat = ({ isOpen, onClose, onUnfloat }) => {
                                     width: 'auto'
                                   }}
                                 >
-                                  <div className="chat-bubble assistant" style={{ border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                                  <div
+                                    className="chat-bubble assistant"
+                                    style={{ border: '1px solid rgba(239, 68, 68, 0.2)' }}
+                                  >
                                     <MessageContent content={`**Error:** ${chatError}`} />
                                     {chatError.includes('API Key') && (
                                       <button

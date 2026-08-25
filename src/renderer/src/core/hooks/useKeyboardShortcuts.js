@@ -104,7 +104,12 @@ export const useKeyboardShortcuts = (shortcuts) => {
       }
 
       // Command Palette (Internal Spotlight): Ctrl+Space
-      if (isCmd && !e.shiftKey && (key === ' ' || e.code === 'Space') && shortcutsRef.current.onToggleCommandPalette) {
+      if (
+        isCmd &&
+        !e.shiftKey &&
+        (key === ' ' || e.code === 'Space') &&
+        shortcutsRef.current.onToggleCommandPalette
+      ) {
         e.preventDefault()
         shortcutsRef.current.onToggleCommandPalette()
       }
@@ -137,6 +142,20 @@ export const useKeyboardShortcuts = (shortcuts) => {
       if (isCmd && e.shiftKey && key === 'd' && shortcutsRef.current.onDelete) {
         e.preventDefault()
         shortcutsRef.current.onDelete()
+      }
+
+      // Reveal in Explorer: Ctrl+Shift+E
+      if (isCmd && e.shiftKey && key === 'e' && shortcutsRef.current.onRevealInExplorer) {
+        e.preventDefault()
+        e.stopPropagation()
+        shortcutsRef.current.onRevealInExplorer()
+      }
+
+      // Rename: Ctrl+R
+      if (isCmd && !e.shiftKey && key === 'r' && shortcutsRef.current.onRename) {
+        e.preventDefault()
+        e.stopPropagation()
+        shortcutsRef.current.onRename()
       }
 
       // Toggle Inspector: Ctrl+I
@@ -242,8 +261,6 @@ export const SHORTCUT_DISPLAY_GROUPS = [
   },
   {
     title: 'Editor',
-    items: [
-      { label: 'Inline AI', key: 'Ctrl + K' }
-    ]
+    items: [{ label: 'Inline AI', key: 'Ctrl + K' }]
   }
 ]

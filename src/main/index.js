@@ -119,7 +119,7 @@ async function createWindow() {
     if (!(launchOnStartup && openAsHidden)) {
       mainWindow.show()
     }
-    
+
     setTimeout(() => {
       new AppUpdater(mainWindow)
     }, 5000)
@@ -134,9 +134,9 @@ async function createWindow() {
         }
       })
     }
-    
+
     // Initialize shortcuts and auto-launch with current settings
-    SettingsManager.get().then(settings => {
+    SettingsManager.get().then((settings) => {
       useGlobalShortcut(mainWindow, settings)
       updateAutoLauncher(settings.launchOnStartup)
     })
@@ -386,9 +386,14 @@ app.whenReady().then(async () => {
   ipcMain.handle('vault:deleteFolder', async (_, path) => await VaultManager.deleteFolder(path))
 
   // System
-  ipcMain.handle('vault:open-folder', async () => {
+  ipcMain.handle('vault:open-folder', async (_, relativePath) => {
     if (VaultManager.vaultPath) {
-      await shell.openPath(VaultManager.vaultPath)
+      if (relativePath) {
+        const { join } = require('path')
+        shell.showItemInFolder(join(VaultManager.vaultPath, relativePath))
+      } else {
+        await shell.openPath(VaultManager.vaultPath)
+      }
     }
   })
 

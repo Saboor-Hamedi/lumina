@@ -10,9 +10,9 @@ import {
   PanelLeftClose,
   PanelLeftOpen
 } from 'lucide-react'
-import ForceGraph2D from 'react-force-graph-2d'
 import * as THREE from 'three'
 import Graph3D from './Graph3D'
+import Graph2D from './Graph2D'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useAIStore } from '../AI/tools/LuminaChat'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
@@ -24,6 +24,7 @@ import GraphThemeSelector from './GraphThemeSelector'
 import GraphSidebar from './GraphSidebar'
 import GraphMiniMap from './GraphMiniMap'
 import './Graph.css'
+import { getNodeColor, drawNode } from './graphs'
 
 const sharedSphereGeometry = new THREE.SphereGeometry(1, 8, 8)
 const materialCache = {}
@@ -217,24 +218,15 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
 
       setRawGraphData((prev) => {
         const prevNodes = new Map(prev.nodes.map((n) => [n.id, n]))
+        const prevLinks = new Map(
+          prev.links.map((l) => {
+            const s = typeof l.source === 'object' ? l.source.id : l.source
+            const t = typeof l.target === 'object' ? l.target.id : l.target
+            return [`${s}|${t}`, l]
+          })
+        )
 
-        nodes.forEach((n) => {
-          const oldN = prevNodes.get(n.id)
-          if (oldN && oldN.x !== undefined) {
-            n.x = oldN.x
-            n.y = oldN.y
-            n.vx = oldN.vx
-            n.vy = oldN.vy
-          } else {
-            // Spawn nodes over a much wider area so the physics engine doesn't have to spend 3 seconds exploding them
-            n.x = (Math.random() - 0.5) * 2000
-            n.y = (Math.random() - 0.5) * 2000
-            n.z = (Math.random() - 0.5) * 2000
-          }
-
-          n.linkCount = linkCounts[n.id] || 0
-          n.val = n.linkCount + 1 // Exponential scaling base
-
+        const nextNodes = nodes.map((n) => {
           if (n.snippetId) {
             const s = snippets.find((sn) => sn.id === n.snippetId)
             if (s && s.tags) {
@@ -247,20 +239,46 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 n.primaryTag = String(rawTags[0]).trim().toLowerCase()
               }
             }
-
             const age = now - (s?.timestamp || now)
-            // Normalized age: 0 (new) to 1 (old)
             n.ageFactor = Math.min(1, age / maxAge)
           } else {
-            n.ageFactor = 0.5 // Standard for ghost/tags
+            n.ageFactor = 0.5
           }
+          n.linkCount = linkCounts[n.id] || 0
+          n.val = n.linkCount + 1
+
+          const oldN = prevNodes.get(n.id)
+          if (oldN) {
+            oldN.ageFactor = n.ageFactor
+            oldN.val = n.val
+            oldN.linkCount = n.linkCount
+            oldN.primaryTag = n.primaryTag
+            return oldN
+          }
+
+          n.x = (Math.random() - 0.5) * 2000
+          n.y = (Math.random() - 0.5) * 2000
+          n.z = (Math.random() - 0.5) * 2000
+          return n
+        })
+
+        const nextLinks = links.map((l) => {
+          const s = typeof l.source === 'object' ? l.source.id : l.source
+          const t = typeof l.target === 'object' ? l.target.id : l.target
+          const oldL = prevLinks.get(`${s}|${t}`)
+          if (oldL) {
+            oldL.value = l.value
+            if (l.type) oldL.type = l.type
+            return oldL
+          }
+          return l
         })
 
         const isSameStructure =
-          prev.nodes.length === nodes.length &&
-          prev.links.length === links.length &&
-          nodes.every((n) => prevNodes.has(n.id)) &&
-          links.every((l, i) => {
+          prev.nodes.length === nextNodes.length &&
+          prev.links.length === nextLinks.length &&
+          nextNodes.every((n) => prevNodes.has(n.id)) &&
+          nextLinks.every((l, i) => {
             const prevL = prev.links[i]
             const src = typeof l.source === 'object' ? l.source.id : l.source
             const tgt = typeof l.target === 'object' ? l.target.id : l.target
@@ -270,21 +288,10 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
           })
 
         if (isSameStructure) {
-          // Mutate existing nodes for minor prop changes to avoid triggering a full React re-render
-          // which would cause react-force-graph to reheat the physics simulation and jiggle
-          nodes.forEach((n) => {
-            const oldN = prevNodes.get(n.id)
-            if (oldN) {
-              oldN.ageFactor = n.ageFactor
-              oldN.val = n.val
-              oldN.linkCount = n.linkCount
-              oldN.primaryTag = n.primaryTag
-            }
-          })
           return prev
         }
 
-        return { nodes, links }
+        return { nodes: nextNodes, links: nextLinks }
       })
 
       setIsBuildingGraph(false)
@@ -423,10 +430,13 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
 
             // Ensure 2D forces exist and default 3D/2D charge is disabled
             if (fg.d3Force('charge')) fg.d3Force('charge', null)
-            if (!fg.d3Force('custom_charge')) fg.d3Force('custom_charge', forceManyBody())
+            if (!fg.d3Force('custom_charge'))
+              fg.d3Force('custom_charge', forceManyBody().distanceMax(1000))
             if (!fg.d3Force('custom_collide')) fg.d3Force('custom_collide', forceCollide())
 
-            fg.d3Force('custom_charge').strength(-500 * repelForce)
+            fg.d3Force('custom_charge')
+              .strength(-500 * repelForce)
+              .distanceMax(1000)
             fg.d3Force('custom_collide')
               .radius((d) => {
                 const baseR = d.val ? Math.max(2, Math.sqrt(d.val) * 2.5) : 2
@@ -450,7 +460,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     // Initial Setup
     setIsEngineReady(false)
     const safetyTimer = setTimeout(() => setIsEngineReady(true), 1500)
-    
+
     if (!graphRef.current) return
     if (is3DMode) return // Graph3D handles its own initial physics setup
     const fg = graphRef.current
@@ -552,76 +562,49 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     return neighbors
   }, [hoverNode, graphData.links])
 
-  // Deterministic color generation based on primary tag
-  const stringToColor = (str) => {
-    let hash = 0
-    for (let i = 0; i < str.length; i++) {
-      hash = str.charCodeAt(i) + ((hash << 5) - hash)
-    }
-    const h = Math.abs(hash) % 360
-    return `hsl(${h}, 70%, 55%)`
-  }
-
   const nodeColor = (node) => {
-    if (selectedSnippet && node.snippetId === selectedSnippet.id) return '#ffffff'
-    if (node.group === 'ghost') return 'rgba(150,150,150,0.3)'
-    if (node.group === 'tag') return '#14b8a6' // Teal for Tags
-    if (node.group === 'mention') return '#ff79c6' // Pink/Accent for Mentions
-
-    // Dynamic color by category/tag
-    if (node.primaryTag) return stringToColor(node.primaryTag)
-
-    return useSettingsStore.getState().settings.graphNodeColor || '#40bafa' // Default blue for Notes
+    const defaultColor = useSettingsStore.getState().settings.graphNodeColor || '#40bafa'
+    return getNodeColor(node, selectedSnippet?.id, defaultColor)
   }
+
+  const normalizedSearchQuery = useMemo(() => searchQuery.trim().toLowerCase(), [searchQuery])
 
   const paintNode = useCallback(
     (node, ctx, globalScale) => {
       const isActive = selectedSnippet && node.snippetId === selectedSnippet.id
       const isHovered = hoverNode === node
-      const label = (node.id || '').replace(/[*"']/g, '')
       const sizeMult = useSettingsStore.getState().settings.graphNodeSize || 1.5
       const r = (node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2) * sizeMult
 
-      const q = searchQuery.trim().toLowerCase()
-      const isSearchMatch = q !== '' && label.toLowerCase().includes(q)
-      const isSearchDimmed = q !== '' && !isSearchMatch
+      const label = (node.id || '').replace(/[*"']/g, '')
+      const isSearchMatch =
+        normalizedSearchQuery !== '' && label.toLowerCase().includes(normalizedSearchQuery)
+      const isSearchDimmed = normalizedSearchQuery !== '' && !isSearchMatch
 
-      // High-Performance Node Circle Glow (Replaces expensive shadowBlur)
-      if (isActive || isHovered || isSearchMatch) {
-        ctx.beginPath()
-        ctx.arc(node.x, node.y, r + 4, 0, 2 * Math.PI, false)
-        ctx.fillStyle = isSearchMatch
-          ? 'rgba(255, 255, 255, 0.4)'
-          : isActive
-            ? 'rgba(255, 170, 0, 0.3)'
-            : 'rgba(64, 186, 250, 0.3)'
-        ctx.fill()
-      }
+      const isNeighborDimmed = hoverNode && hoverNode !== node && !hoverNeighbors.has(node.id)
 
-      // Dimming logic
-      if (isSearchDimmed && !isHovered && !isActive) {
-        ctx.globalAlpha = 0.05
-      } else if (hoverNode && hoverNode !== node && !hoverNeighbors.has(node.id)) {
-        ctx.globalAlpha = 0.15
-      }
+      // LEVEL OF DETAIL (LOD) OPTIMIZATION:
+      // Canvas fillText is extremely expensive. For thousands of nodes, drawing text every frame kills FPS.
+      // Only draw text if explicitly hovered/active/searched, OR if the user is zoomed in close enough (globalScale > 1.5)
+      const globalShowText = useSettingsStore.getState().settings.graphShowTexts !== false
+      const showText =
+        globalShowText && (isActive || isHovered || isSearchMatch || globalScale >= 1.2)
 
-      ctx.beginPath()
-      ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false)
-      ctx.fillStyle = nodeColor(node)
-      ctx.fill()
-      ctx.globalAlpha = 1.0
-
-      // Draw text if graphShowTexts is true and not dimmed by search
-      if (useSettingsStore.getState().settings.graphShowTexts !== false && !isSearchDimmed) {
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'middle'
-        ctx.fillStyle = 'var(--text-main, #d4d4d4)'
-        const fontSize = isActive || isHovered ? 14 : 10
-        ctx.font = `${fontSize}px Inter, sans-serif`
-        ctx.fillText(label, node.x, node.y + r + (isActive || isHovered ? 12 : 8))
-      }
+      drawNode(
+        ctx,
+        node,
+        r,
+        nodeColor(node),
+        isActive,
+        isHovered,
+        isSearchMatch,
+        isSearchDimmed,
+        isNeighborDimmed,
+        showText,
+        globalScale
+      )
     },
-    [selectedSnippet, hoverNode, hoverNeighbors, searchQuery]
+    [selectedSnippet, hoverNode, hoverNeighbors, normalizedSearchQuery]
   )
 
   // Render as embedded (tab) or modal
@@ -668,9 +651,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               if (!hoverNode) return defaultLineColor
               const sourceId = link.source.id || link.source
               const targetId = link.target.id || link.target
-              return sourceId === hoverNode.id || targetId === hoverNode.id
-                ? '#40bafa'
-                : '#333333'
+              return sourceId === hoverNode.id || targetId === hoverNode.id ? '#40bafa' : '#333333'
             }}
             linkWidth={0.5}
             onNodeHover={(node) => setHoverNode(node)}
@@ -694,51 +675,17 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             onEngineStop={() => setIsEngineReady(true)}
           />
         ) : (
-          <ForceGraph2D
+          <Graph2D
             key="2d-graph-embedded"
             ref={graphRef}
-            width={dimensions.width}
-            height={dimensions.height}
+            dimensions={dimensions}
             graphData={graphData}
-            nodeCanvasObject={paintNode}
-            onZoom={() => {
-              // Trackpad zoom can be jittery, zooming works best when not interfering
-            }}
-            onNodeHover={(node, prev) => {
-              setHoverNode(node)
-            }}
-            nodePointerAreaPaint={(node, color, ctx) => {
-              const sizeMult = useSettingsStore.getState().settings.graphNodeSize || 1.5
-              const r = (node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2) * sizeMult
-              ctx.fillStyle = color
-              ctx.beginPath()
-              ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false)
-              ctx.fill()
-            }}
-            linkColor={(link) => {
-              if (!hoverNode) return defaultLineColor
-              const sourceId = link.source.id || link.source
-              const targetId = link.target.id || link.target
-              return sourceId === hoverNode.id || targetId === hoverNode.id
-                ? '#40bafa'
-                : '#333333'
-            }}
-            linkDirectionalParticles={0}
-            onNodeClick={(node) => {
-              if (node.snippetId) {
-                const s = snippets.find((sn) => sn.id === node.snippetId)
-                if (s) onNavigate(s)
-              }
-            }}
-            onNodeDragEnd={(node) => {
-              node.fx = null
-              node.fy = null
-            }}
-            backgroundColor="transparent"
-            d3AlphaDecay={0.05}
-            d3VelocityDecay={0.4}
-            nodeLabel={(node) => (node.id || '').replace(/[*"']/g, '')}
-            onEngineStop={() => setIsEngineReady(true)}
+            paintNode={paintNode}
+            hoverNode={hoverNode}
+            setHoverNode={setHoverNode}
+            defaultLineColor={defaultLineColor}
+            onNavigate={onNavigate}
+            setIsEngineReady={setIsEngineReady}
           />
         )}
         <GraphMiniMap
@@ -868,49 +815,17 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               nodeLabel={(node) => (node.id || '').replace(/[*"']/g, '')}
             />
           ) : (
-            <ForceGraph2D
+            <Graph2D
               key="2d-graph-modal"
               ref={graphRef}
-              width={dimensions.width}
-              height={dimensions.height - 32}
+              dimensions={{ width: dimensions.width, height: dimensions.height - 32 }}
               graphData={graphData}
-              nodeCanvasObject={paintNode}
-              onNodeHover={(node, prev) => {
-                setHoverNode(node)
-              }}
-              nodePointerAreaPaint={(node, color, ctx) => {
-                const sizeMult = useSettingsStore.getState().settings.graphNodeSize || 1.5
-                const r = (node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2) * sizeMult
-                ctx.fillStyle = color
-                ctx.beginPath()
-                ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false)
-                ctx.fill()
-              }}
-              linkColor={(link) => {
-                if (!hoverNode) return defaultLineColor
-                const sourceId = link.source.id || link.source
-                const targetId = link.target.id || link.target
-                return sourceId === hoverNode.id || targetId === hoverNode.id
-                  ? '#40bafa'
-                  : '#333333'
-              }}
-              linkWidth={0.5}
-              onNodeClick={(node) => {
-                if (node.snippetId) {
-                  const s = snippets.find((sn) => sn.id === node.snippetId)
-                  if (s) onNavigate(s)
-                }
-              }}
-              onNodeDragEnd={(node) => {
-                node.fx = null
-                node.fy = null
-              }}
-              backgroundColor="transparent"
-              d3AlphaDecay={0.05}
-              d3VelocityDecay={0.4}
-              linkDirectionalParticles={0}
-              nodeLabel={(node) => (node.id || '').replace(/[*"']/g, '')}
-              onEngineStop={() => setIsEngineReady(true)}
+              paintNode={paintNode}
+              hoverNode={hoverNode}
+              setHoverNode={setHoverNode}
+              defaultLineColor={defaultLineColor}
+              onNavigate={onNavigate}
+              setIsEngineReady={setIsEngineReady}
             />
           )}
           <GraphMiniMap

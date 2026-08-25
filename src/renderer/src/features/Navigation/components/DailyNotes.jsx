@@ -31,7 +31,7 @@ const DailyNotes = memo(() => {
     }
 
     for (const t of defaultTemplates) {
-      const exists = snippets.find(s => s.folderId === 'Templates' && s.title === t.title)
+      const exists = snippets.find((s) => s.folderId === 'Templates' && s.title === t.title)
       if (!exists) {
         const newSnippet = {
           id: crypto.randomUUID(),
@@ -48,13 +48,15 @@ const DailyNotes = memo(() => {
 
   const handleDailyNote = async () => {
     // Skip heavy IPC checks if all templates are already seeded
-    const currentTemplates = useVaultStore.getState().snippets.filter(s => s.folderId === 'Templates')
+    const currentTemplates = useVaultStore
+      .getState()
+      .snippets.filter((s) => s.folderId === 'Templates')
     if (currentTemplates.length < defaultTemplates.length) {
       await seedTemplates()
     }
-    
+
     // Update template list and open modal
-    setTemplates(useVaultStore.getState().snippets.filter(s => s.folderId === 'Templates'))
+    setTemplates(useVaultStore.getState().snippets.filter((s) => s.folderId === 'Templates'))
     setIsModalOpen(true)
   }
 
@@ -62,7 +64,7 @@ const DailyNotes = memo(() => {
     const today = getTodayTitle()
     const templateName = template.id === 'blank' ? 'Note' : template.title.replace('.md', '')
     const finalTitle = `${today} - ${templateName}`
-    
+
     if (window.api?.createFolder) {
       try {
         await window.api.createFolder('DailyNotes')
@@ -85,13 +87,19 @@ const DailyNotes = memo(() => {
 
   return (
     <>
-      <button className="new-note-btn" onClick={handleDailyNote} style={{ flex: 1, padding: '4px', minWidth: 0, justifyContent: 'center' }}>
-        <Calendar size={14} style={{ flexShrink: 0 }} /> 
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Daily</span>
+      <button
+        className="new-note-btn"
+        onClick={handleDailyNote}
+        style={{ flex: 1, padding: '4px', minWidth: 0, justifyContent: 'center' }}
+      >
+        <Calendar size={14} style={{ flexShrink: 0 }} />
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          Daily
+        </span>
       </button>
 
       {isModalOpen && (
-        <TemplateModal 
+        <TemplateModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           templates={templates}

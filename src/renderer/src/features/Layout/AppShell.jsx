@@ -300,7 +300,7 @@ const AppShell = () => {
     let cleanupGlobalShortcut = null
     if (window.api?.onToggleCommandPalette) {
       cleanupGlobalShortcut = window.api.onToggleCommandPalette(() => {
-        setShowPalette(prev => !prev)
+        setShowPalette((prev) => !prev)
       })
     }
 
@@ -338,8 +338,6 @@ const AppShell = () => {
   }, [sidebarSetting, rightSidebarSetting])
 
   const pinnedTabIds = useVaultStore((state) => state.pinnedTabIds)
-
-
 
   // Ctrl+Shift+\ - toggle AI Chat Modal
   useEffect(() => {
@@ -440,7 +438,7 @@ const AppShell = () => {
         if (file && typeof file.content === 'string') {
           const newSnippet = {
             id: Date.now().toString(),
-            title: file.name.replace(/\.[^/.]+$/, ""),
+            title: file.name.replace(/\.[^/.]+$/, ''),
             code: file.content,
             language: 'markdown',
             timestamp: Date.now()
@@ -501,8 +499,8 @@ const AppShell = () => {
       }
     },
     onCloseTab: () => {
-      if (selectedSnippet) {
-        useVaultStore.getState().closeTab(selectedSnippet.id)
+      if (activeTabId) {
+        useVaultStore.getState().closeTab(activeTabId)
       }
     },
     onCloseWindow: () => {

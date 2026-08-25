@@ -134,7 +134,8 @@ export class TableWidget extends WidgetType {
     cornerHandle.className = 'cm-table-handle cm-table-corner-handle'
     cornerHandle.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>`
     cornerHandle.addEventListener('mousedown', (e) => {
-      e.preventDefault(); e.stopPropagation()
+      e.preventDefault()
+      e.stopPropagation()
       wrap.__setGridSelection?.(
         wrap.__getCellAt(-1, 0),
         wrap.__getCellAt(this.model.rows.length - 1, this.model.header.length - 1)
@@ -146,7 +147,8 @@ export class TableWidget extends WidgetType {
     deleteBtn.className = 'cm-table-handle cm-table-delete-btn'
     deleteBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>`
     deleteBtn.addEventListener('mousedown', (e) => {
-      e.preventDefault(); e.stopPropagation()
+      e.preventDefault()
+      e.stopPropagation()
       const range = findCurrentTableRange(view, wrap)
       if (range) {
         view.dispatch({
@@ -157,8 +159,6 @@ export class TableWidget extends WidgetType {
     actionArea.appendChild(deleteBtn)
 
     wrap.appendChild(actionArea)
-
-
 
     const thead = document.createElement('thead')
 
@@ -192,13 +192,13 @@ export class TableWidget extends WidgetType {
       tbody.appendChild(tr)
     }
     table.appendChild(tbody)
-    
+
     setupTableFormattingToolbar(wrap, view)
     setupTableSelection(wrap, view)
     setupTableDragAndDrop(wrap, view)
     setupTableInsertion(wrap, view)
     setupTableColResizing(wrap, view)
-    
+
     return wrap
   }
   updateDOM(dom, view) {
@@ -209,7 +209,7 @@ export class TableWidget extends WidgetType {
     for (let i = 0; i < this.model.header.length; i++) {
       ths[i].__view = view
       const source = ths[i].querySelector('.cm-atomic-table-cell-source')
-      
+
       // Sync alignments
       if (this.model.alignments?.[i]) {
         ths[i].style.textAlign = this.model.alignments[i]
@@ -236,7 +236,7 @@ export class TableWidget extends WidgetType {
       for (let c = 0; c < tds.length; c++) {
         tds[c].__view = view
         const source = tds[c].querySelector('.cm-atomic-table-cell-source')
-        
+
         // Sync alignments
         if (this.model.alignments?.[c]) {
           tds[c].style.textAlign = this.model.alignments[c]
@@ -340,7 +340,7 @@ export function moveCellFocus(view, cell, dir, opts = { appendOnOverflow: true }
   const source = getCellSource(cells[next])
   if (!source) return
   source.focus()
-  
+
   if (dir > 0) {
     // Moving forward/down: place caret at start
     const sel = source.ownerDocument?.defaultView?.getSelection()
@@ -537,33 +537,36 @@ export const tableLinkClickFacet = Facet.define({
   combine: (values) => values[0] ?? defaultLinkOpener
 })
 
-const tableSelectionSyncPlugin = ViewPlugin.fromClass(class {
-  update(update) {
-    if (update.selectionSet || update.docChanged || update.viewportChanged) {
-      this.syncSelection(update.view)
+const tableSelectionSyncPlugin = ViewPlugin.fromClass(
+  class {
+    update(update) {
+      if (update.selectionSet || update.docChanged || update.viewportChanged) {
+        this.syncSelection(update.view)
+      }
     }
-  }
-  syncSelection(view) {
-    const sel = view.state.selection.main
-    const tables = view.dom.querySelectorAll('.cm-atomic-table')
-    for (const table of tables) {
-      const pos = view.posAtDOM(table)
-      // Check if this pos is inside the CodeMirror selection
-      const isSelected = pos !== null && pos >= sel.from && pos <= sel.to && !sel.empty
-      
-      // If the actual DOM focus is INSIDE the table, the user is editing it.
-      // Do NOT highlight the entire table blue in this case.
-      const hasFocus = table.contains(document.activeElement)
-      const hasDomSelection = window.getSelection().anchorNode && table.contains(window.getSelection().anchorNode)
-      
-      if (isSelected && !hasFocus && !hasDomSelection) {
-        table.classList.add('cm-widget-selected-by-cm')
-      } else {
-        table.classList.remove('cm-widget-selected-by-cm')
+    syncSelection(view) {
+      const sel = view.state.selection.main
+      const tables = view.dom.querySelectorAll('.cm-atomic-table')
+      for (const table of tables) {
+        const pos = view.posAtDOM(table)
+        // Check if this pos is inside the CodeMirror selection
+        const isSelected = pos !== null && pos >= sel.from && pos <= sel.to && !sel.empty
+
+        // If the actual DOM focus is INSIDE the table, the user is editing it.
+        // Do NOT highlight the entire table blue in this case.
+        const hasFocus = table.contains(document.activeElement)
+        const hasDomSelection =
+          window.getSelection().anchorNode && table.contains(window.getSelection().anchorNode)
+
+        if (isSelected && !hasFocus && !hasDomSelection) {
+          table.classList.add('cm-widget-selected-by-cm')
+        } else {
+          table.classList.remove('cm-widget-selected-by-cm')
+        }
       }
     }
   }
-})
+)
 
 export function tables(config = {}) {
   setupTableFormattingToolbar()

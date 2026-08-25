@@ -823,7 +823,9 @@ function makeCell(tag, text, view) {
   }
   source.addEventListener('keydown', (event) => {
     if (view.state.readOnly) return
-    if (event.key === 'Tab') {return}
+    if (event.key === 'Tab') {
+      return
+    }
   })
   source.addEventListener('pointerdown', (event) => {
     if (event.button !== 0) return

@@ -10,7 +10,6 @@ import { openCellMenu } from './tableContextMenu'
 import { setupTableSelection } from './tableGridSelection'
 import { icons } from './icons.js'
 
-
 export function parseCellInline(raw) {
   const tokens = []
   let textBuf = ''

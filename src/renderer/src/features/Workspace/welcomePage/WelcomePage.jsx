@@ -11,7 +11,11 @@ const WelcomePage = ({ onNew }) => {
   return (
     <div className="welcome-page">
       <div className="welcome-watermark">
-        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="lumina-watermark-svg">
+        <svg
+          viewBox="0 0 100 100"
+          xmlns="http://www.w3.org/2000/svg"
+          className="lumina-watermark-svg"
+        >
           <defs>
             <linearGradient id="neonGradient" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#8b5cf6" />

@@ -531,7 +531,10 @@ export const useAIStore = create((set, get) => {
       const newHistory = [...currentMessages, userMsg]
 
       if (!visibleKey) {
-        set({ chatMessages: newHistory, chatError: 'Missing API Key. Please configure it in Settings > Assistant.' })
+        set({
+          chatMessages: newHistory,
+          chatError: 'Missing API Key. Please configure it in Settings > Assistant.'
+        })
         return
       }
 

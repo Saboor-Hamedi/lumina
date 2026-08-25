@@ -100,11 +100,13 @@ const SettingLookAndFeel = ({ onOpenTheme }) => {
             Theme Gallery
           </button>
         </div>
-        
+
         <div className="settings-row">
           <div className="row-info">
             <div className="row-label">Theme Accent Color</div>
-            <div className="row-hint">Pick the app's accent color. Leave default for theme accent.</div>
+            <div className="row-hint">
+              Pick the app's accent color. Leave default for theme accent.
+            </div>
           </div>
           <div className="caret-color-controls">
             <ColorPickerInput
@@ -174,7 +176,9 @@ const SettingLookAndFeel = ({ onOpenTheme }) => {
         <div className="settings-row">
           <div className="row-info">
             <div className="row-label">Caret Style</div>
-            <div className="row-hint">Customize the caret appearance (smooth, block, or sharp).</div>
+            <div className="row-hint">
+              Customize the caret appearance (smooth, block, or sharp).
+            </div>
           </div>
           <select
             value={caretStyle || 'smooth'}
@@ -186,7 +190,7 @@ const SettingLookAndFeel = ({ onOpenTheme }) => {
             <option value="sharp">Sharp Line</option>
           </select>
         </div>
-        
+
         <div className="settings-row">
           <div className="row-info">
             <div className="row-label">Caret Width</div>
@@ -239,11 +243,13 @@ const SettingLookAndFeel = ({ onOpenTheme }) => {
 
       <section style={{ marginTop: '32px' }}>
         <h3>Interface & Behavior</h3>
-        
+
         <div className="settings-row">
           <div className="row-info">
             <div className="row-label">Mirror Mode</div>
-            <div className="row-hint">Enable Glassmorphism / Reflections for sidebars and panels. Premium aesthetic.</div>
+            <div className="row-hint">
+              Enable Glassmorphism / Reflections for sidebars and panels. Premium aesthetic.
+            </div>
           </div>
           <label className="switch">
             <input
@@ -258,7 +264,9 @@ const SettingLookAndFeel = ({ onOpenTheme }) => {
         <div className="settings-row">
           <div className="row-info">
             <div className="row-label">Full Translucency</div>
-            <div className="row-hint">Enable Acrylic backdrop blur (Windows 11). Requires restart for best results.</div>
+            <div className="row-hint">
+              Enable Acrylic backdrop blur (Windows 11). Requires restart for best results.
+            </div>
           </div>
           <label className="switch">
             <input
@@ -273,7 +281,9 @@ const SettingLookAndFeel = ({ onOpenTheme }) => {
         <div className="settings-row">
           <div className="row-info">
             <div className="row-label">Active Line Left Border</div>
-            <div className="row-hint">Show a colored left border on the line where the cursor is currently placed.</div>
+            <div className="row-hint">
+              Show a colored left border on the line where the cursor is currently placed.
+            </div>
           </div>
           <label className="switch">
             <input
@@ -319,9 +329,7 @@ const SettingLookAndFeel = ({ onOpenTheme }) => {
                 max="100"
                 step="1"
                 value={settings.typeSoundVolume ?? 50}
-                onChange={(e) =>
-                  updateSetting('typeSoundVolume', parseInt(e.target.value, 10))
-                }
+                onChange={(e) => updateSetting('typeSoundVolume', parseInt(e.target.value, 10))}
               />
               <span>{settings.typeSoundVolume ?? 50}%</span>
             </div>

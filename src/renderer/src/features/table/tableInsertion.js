@@ -65,14 +65,14 @@ export function setupTableInsertion(wrap, view) {
       colInsertHandle.style.pointerEvents = 'none'
       return
     }
-    
+
     const cellRect = targetCell.getBoundingClientRect()
     const tr = targetCell.parentElement
     const isHeader = targetCell.tagName === 'TH'
     const isFirstCell = Array.from(tr.children).indexOf(targetCell) === 0
     const rowIndex = Array.from(table.querySelectorAll('tr')).indexOf(tr)
     const colIndex = Array.from(tr.children).indexOf(targetCell)
-    
+
     let foundColGap = false
     let foundRowGap = false
 
@@ -80,18 +80,18 @@ export function setupTableInsertion(wrap, view) {
     if (isHeader) {
       const distLeft = Math.abs(e.clientX - cellRect.left)
       const distRight = Math.abs(e.clientX - cellRect.right)
-      
+
       if (distLeft < THRESHOLD || distRight < THRESHOLD) {
         const isLeft = distLeft < distRight
         const insertIndex = isLeft ? colIndex : colIndex + 1
-        
+
         let markerX = (isLeft ? cellRect.left : cellRect.right) - wrapRect.left + wrap.scrollLeft
-        let markerY = cellRect.top + (cellRect.height / 2) - wrapRect.top
-        
+        let markerY = cellRect.top + cellRect.height / 2 - wrapRect.top
+
         // Push slightly inward on absolute edges
         if (insertIndex === 0) markerX += 7
         if (insertIndex === tr.children.length) markerX -= 7
-        
+
         colInsertHandle.style.left = `${markerX}px`
         colInsertHandle.style.top = `${markerY}px`
         colInsertHandle.style.opacity = '1'
@@ -100,23 +100,23 @@ export function setupTableInsertion(wrap, view) {
         foundColGap = true
       }
     }
-    
+
     // Row Insertion (ONLY allowed when hovering the first cell in any row)
     if (isFirstCell) {
       const distTop = Math.abs(e.clientY - cellRect.top)
       const distBottom = Math.abs(e.clientY - cellRect.bottom)
-      
+
       if (distTop < THRESHOLD || distBottom < THRESHOLD) {
         const isTop = distTop < distBottom
         const insertIndex = isTop ? rowIndex : rowIndex + 1
-        
+
         let markerY = (isTop ? cellRect.top : cellRect.bottom) - wrapRect.top
         let markerX = tableRect.left - wrapRect.left + wrap.scrollLeft + 7 // Pinned left
-        
+
         // Push slightly inward on absolute edges
         if (insertIndex === 0) markerY += 7
         if (insertIndex === table.querySelectorAll('tr').length) markerY -= 7
-        
+
         rowInsertHandle.style.top = `${markerY}px`
         rowInsertHandle.style.left = `${markerX}px`
         rowInsertHandle.style.opacity = '1'
@@ -153,11 +153,11 @@ export function setupTableInsertion(wrap, view) {
     const nextModel = {
       header: [...model.header],
       alignments: [...(model.alignments || [])],
-      rows: model.rows.map(r => [...r])
+      rows: model.rows.map((r) => [...r])
     }
 
     const newRow = Array(nextModel.header.length).fill('')
-    
+
     if (index === 0) {
       nextModel.rows.unshift([...nextModel.header])
       nextModel.header = newRow
@@ -178,12 +178,12 @@ export function setupTableInsertion(wrap, view) {
     const nextModel = {
       header: [...model.header],
       alignments: [...(model.alignments || [])],
-      rows: model.rows.map(r => [...r])
+      rows: model.rows.map((r) => [...r])
     }
 
     nextModel.header.splice(index, 0, '')
     nextModel.alignments.splice(index, 0, 'left')
-    nextModel.rows.forEach(r => r.splice(index, 0, ''))
+    nextModel.rows.forEach((r) => r.splice(index, 0, ''))
 
     dispatchModel(view, wrap, nextModel)
   })
