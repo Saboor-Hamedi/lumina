@@ -59,9 +59,8 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
         return
       }
 
-      // Pin central node exactly at the center for a clean layout
-      centralNode.fx = 0
-      centralNode.fy = 0
+      // We no longer rigidly pin the central node so it can bounce elastically.
+      // A d3 force will pull it to the center instead.
 
       const centralTitle = centralNode.id
       const neighbors = new Set()
@@ -129,7 +128,12 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
     if (graphRef.current) {
       // Gentle physics for small inline graph
       graphRef.current.d3Force('charge', forceManyBody().strength(-120))
-      graphRef.current.d3Force('center', forceCenter())
+      
+      // Pull central node elastically to the exact center (0,0) without rigid pinning
+      graphRef.current.d3Force('radial', forceRadial(0, 0, 0).strength((node) => {
+        return node.snippetId === focusNodeId ? 1.0 : 0
+      }))
+
       // Add a stronger collision force so they don't touch/overlap each other
       graphRef.current.d3Force('collide', forceCollide((node) => {
         return (node.snippetId === focusNodeId ? 8 : node.val ? Math.min(6, Math.max(2, Math.sqrt(node.val) * 2)) : 3) + 2
@@ -237,28 +241,27 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
               const sourceId = link.source.id || link.source
               const targetId = link.target.id || link.target
               return sourceId === hNode.id || targetId === hNode.id
-                ? 'rgba(255, 255, 255, 0.5)' // Lighter highlight instead of bright gold
-                : 'rgba(150,150,150,0.05)' // Dim the links of non-neighbors
+                ? '#40bafa'
+                : 'rgba(150,150,150,0.05)'
             }}
             linkWidth={(link) => {
               const hNode = hoverNode
-              if (!hNode) return 1
+              if (!hNode) return 0.2
               const sourceId = link.source.id || link.source
               const targetId = link.target.id || link.target
-              return sourceId === hNode.id || targetId === hNode.id ? 2 : 1
+              return sourceId === hNode.id || targetId === hNode.id ? 1.0 : 0.1
             }}
             onNodeHover={(node) => {
               document.body.style.cursor = node ? 'pointer' : 'default'
               setHoverNode(node)
             }}
             onNodeClick={handleNodeClick}
-            // Z-index trick: Draw the dragged/hovered node after everything else
-            nodeCanvasObjectMode={(node) => (node === hoverNode ? 'after' : 'replace')}
             onNodeDragEnd={(node) => {
-              // Same exact behavior as Graph.jsx - let physics take over after drop!
-              if (node.snippetId !== focusNodeId) {
-                node.fx = null
-                node.fy = null
+              // Unpin ALL nodes (including central node) so they bounce elastically via physics
+              node.fx = null
+              node.fy = null
+              if (graphRef.current) {
+                graphRef.current.d3ReheatSimulation()
               }
             }}
             enableNodeDrag={true}
@@ -266,7 +269,7 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
             enablePanInteraction={true}
             // Handle velocity decay - higher value means it settles much faster and doesn't drift
             d3AlphaDecay={0.05}
-            d3VelocityDecay={0.8}
+            d3VelocityDecay={0.4}
             backgroundColor="transparent"
           />
         </>

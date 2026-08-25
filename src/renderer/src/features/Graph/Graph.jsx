@@ -62,6 +62,9 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   const graphHideOrphans = useSettingsStore((s) => s.settings.graphHideOrphans)
   const graphSidebarOpen = useSettingsStore((s) => s.settings.graphSidebarOpen ?? true)
   const is3DMode = useSettingsStore((s) => s.settings.graph3DMode ?? false)
+  const graphNodeSize = useSettingsStore((s) => s.settings.graphNodeSize || 1.5)
+  const graphNodeColor = useSettingsStore((s) => s.settings.graphNodeColor || '#40bafa')
+  const graphShowTexts = useSettingsStore((s) => s.settings.graphShowTexts !== false)
 
   const [hoverNode, setHoverNode] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -439,7 +442,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               .distanceMax(1000)
             fg.d3Force('custom_collide')
               .radius((d) => {
-                const baseR = d.val ? Math.max(2, Math.sqrt(d.val) * 2.5) : 2
+                const baseR = d.val ? Math.min(12, Math.max(2, Math.sqrt(d.val) * 2.5)) : 2
                 return baseR * sizeMult + 15
               })
               .strength(0.2) // Lowered strength so it doesn't rigidly lock up when dragging
@@ -508,7 +511,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
         fg.d3Force('custom_charge').strength(-500 * repelForce)
         fg.d3Force('custom_collide')
           .radius((d) => {
-            const baseR = d.val ? Math.max(2, Math.sqrt(d.val) * 2.5) : 2
+            const baseR = d.val ? Math.min(12, Math.max(2, Math.sqrt(d.val) * 2.5)) : 2
             return baseR * sizeMult + 15
           })
           .strength(0.2) // Lowered strength so it doesn't rigidly lock up when dragging
@@ -562,10 +565,9 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     return neighbors
   }, [hoverNode, graphData.links])
 
-  const nodeColor = (node) => {
-    const defaultColor = useSettingsStore.getState().settings.graphNodeColor || '#40bafa'
-    return getNodeColor(node, selectedSnippet?.id, defaultColor)
-  }
+  const nodeColorFn = useCallback((node) => {
+    return getNodeColor(node, selectedSnippet?.id, graphNodeColor)
+  }, [selectedSnippet, graphNodeColor])
 
   const normalizedSearchQuery = useMemo(() => searchQuery.trim().toLowerCase(), [searchQuery])
 
@@ -573,8 +575,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     (node, ctx, globalScale) => {
       const isActive = selectedSnippet && node.snippetId === selectedSnippet.id
       const isHovered = hoverNode === node
-      const sizeMult = useSettingsStore.getState().settings.graphNodeSize || 1.5
-      const r = (node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2) * sizeMult
+      // Cap maximum radius so highly-linked nodes don't become massive planets covering the screen
+      const r = (node.val ? Math.min(12, Math.max(2, Math.sqrt(node.val) * 2.5)) : 2) * graphNodeSize
 
       const label = (node.id || '').replace(/[*"']/g, '')
       const isSearchMatch =
@@ -586,15 +588,14 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       // LEVEL OF DETAIL (LOD) OPTIMIZATION:
       // Canvas fillText is extremely expensive. For thousands of nodes, drawing text every frame kills FPS.
       // Only draw text if explicitly hovered/active/searched, OR if the user is zoomed in close enough (globalScale > 1.5)
-      const globalShowText = useSettingsStore.getState().settings.graphShowTexts !== false
       const showText =
-        globalShowText && (isActive || isHovered || isSearchMatch || globalScale >= 1.2)
+        graphShowTexts && (isActive || isHovered || isSearchMatch || globalScale >= 1.2)
 
       drawNode(
         ctx,
         node,
         r,
-        nodeColor(node),
+        nodeColorFn(node),
         isActive,
         isHovered,
         isSearchMatch,
@@ -604,7 +605,15 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
         globalScale
       )
     },
-    [selectedSnippet, hoverNode, hoverNeighbors, normalizedSearchQuery]
+    [
+      selectedSnippet,
+      hoverNode,
+      hoverNeighbors,
+      normalizedSearchQuery,
+      graphNodeSize,
+      graphShowTexts,
+      nodeColorFn
+    ]
   )
 
   // Render as embedded (tab) or modal
@@ -636,14 +645,13 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             width={dimensions.width}
             height={dimensions.height}
             graphData={graphData}
-            nodeColor={nodeColor}
+            nodeColor={nodeColorFn}
             nodeRelSize={4}
             nodeThreeObject={(node) => {
-              const base = node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2
-              const targetRadius =
-                base * (useSettingsStore.getState().settings.graphNodeSize || 1.5)
-              const r = targetRadius / 4
-              const mesh = new THREE.Mesh(sharedSphereGeometry, getMaterial(nodeColor(node)))
+              const base = node.val ? Math.min(12, Math.max(2, Math.sqrt(node.val) * 2.5)) : 2
+              const targetRadius = base * graphNodeSize
+              const r = targetRadius // Restored correct size
+              const mesh = new THREE.Mesh(sharedSphereGeometry, getMaterial(nodeColorFn(node)))
               mesh.scale.set(r, r, r)
               return mesh
             }}
@@ -651,7 +659,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               if (!hoverNode) return defaultLineColor
               const sourceId = link.source.id || link.source
               const targetId = link.target.id || link.target
-              return sourceId === hoverNode.id || targetId === hoverNode.id ? '#40bafa' : '#333333'
+              return sourceId === hoverNode.id || targetId === hoverNode.id ? '#40bafa' : 'rgba(150, 150, 150, 0.05)'
             }}
             linkWidth={0.5}
             onNodeHover={(node) => setHoverNode(node)}
@@ -776,14 +784,13 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               width={dimensions.width}
               height={dimensions.height - 32}
               graphData={graphData}
-              nodeColor={nodeColor}
+              nodeColor={nodeColorFn}
               nodeRelSize={4}
               nodeThreeObject={(node) => {
-                const base = node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 2
-                const targetRadius =
-                  base * (useSettingsStore.getState().settings.graphNodeSize || 1.5)
-                const r = targetRadius / 4
-                const mesh = new THREE.Mesh(sharedSphereGeometry, getMaterial(nodeColor(node)))
+                const base = node.val ? Math.min(12, Math.max(2, Math.sqrt(node.val) * 2.5)) : 2
+                const targetRadius = base * graphNodeSize
+                const r = targetRadius // Restored correct size
+                const mesh = new THREE.Mesh(sharedSphereGeometry, getMaterial(nodeColorFn(node)))
                 mesh.scale.set(r, r, r)
                 return mesh
               }}
@@ -793,7 +800,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 const targetId = link.target.id || link.target
                 return sourceId === hoverNode.id || targetId === hoverNode.id
                   ? '#40bafa'
-                  : '#333333'
+                  : 'rgba(150, 150, 150, 0.05)'
               }}
               linkWidth={0.5}
               onNodeHover={(node) => setHoverNode(node)}
