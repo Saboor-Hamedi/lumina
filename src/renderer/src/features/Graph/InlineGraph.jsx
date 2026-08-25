@@ -224,15 +224,18 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
             graphData={graphData}
             nodeCanvasObject={paintNode}
             nodePointerAreaPaint={(node, color, ctx) => {
-              const r =
+              const baseR =
                 node.snippetId === focusNodeId
                   ? 8
                   : node.val
                     ? Math.min(6, Math.max(2, Math.sqrt(node.val) * 2))
                     : 3
+              // Create a massive invisible hit area so the mouse doesn't easily slip off during rapid drags
+              const hitRadius = Math.max(baseR + 10, 15)
+              
               ctx.fillStyle = color
               ctx.beginPath()
-              ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false)
+              ctx.arc(node.x, node.y, hitRadius, 0, 2 * Math.PI, false)
               ctx.fill()
             }}
             linkColor={(link) => {
@@ -249,7 +252,7 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
               if (!hNode) return 0.2
               const sourceId = link.source.id || link.source
               const targetId = link.target.id || link.target
-              return sourceId === hNode.id || targetId === hNode.id ? 1.0 : 0.1
+              return sourceId === hNode.id || targetId === hNode.id ? 0.4 : 0.1
             }}
             onNodeHover={(node) => {
               document.body.style.cursor = node ? 'pointer' : 'default'
@@ -260,9 +263,6 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
               // Unpin ALL nodes (including central node) so they bounce elastically via physics
               node.fx = null
               node.fy = null
-              if (graphRef.current) {
-                graphRef.current.d3ReheatSimulation()
-              }
             }}
             enableNodeDrag={true}
             enableZoomInteraction={true}

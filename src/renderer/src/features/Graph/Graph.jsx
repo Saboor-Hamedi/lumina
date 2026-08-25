@@ -375,13 +375,14 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               }
             }
           } else if (isFirstRender) {
-            // Instantly frame the graph without waiting 2.5 seconds
+            // Instantly frame the graph at a comfortable default zoom without zoomToFit jumping
             if (is3DMode && graphRef.current.cameraPosition) {
-              // 3D zoomToFit
-              graphRef.current.zoomToFit(400, 50)
-            } else if (!is3DMode && graphRef.current.zoomToFit) {
-              // 2D zoomToFit
-              graphRef.current.zoomToFit(400, 50)
+              // 3D default zoom
+              graphRef.current.cameraPosition({ z: 1500 }, null, 400)
+            } else if (!is3DMode && graphRef.current.zoom) {
+              // 2D default zoom
+              graphRef.current.centerAt(0, 0, 0)
+              graphRef.current.zoom(1.0, 50)
             }
           }
         }, 100) // Small delay to ensure WebGL engine is ready
@@ -435,18 +436,15 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             if (fg.d3Force('charge')) fg.d3Force('charge', null)
             if (!fg.d3Force('custom_charge'))
               fg.d3Force('custom_charge', forceManyBody().distanceMax(1000))
-            if (!fg.d3Force('custom_collide')) fg.d3Force('custom_collide', forceCollide())
+            
+            // Remove collision force entirely so dragging is silky smooth and non-blocking
 
             fg.d3Force('custom_charge')
               .strength(-500 * repelForce)
               .distanceMax(1000)
-            fg.d3Force('custom_collide')
-              .radius((d) => {
-                const baseR = d.val ? Math.min(12, Math.max(2, Math.sqrt(d.val) * 2.5)) : 2
-                return baseR * sizeMult + 15
-              })
-              .strength(0.2) // Lowered strength so it doesn't rigidly lock up when dragging
-              .iterations(1)
+            
+            // We no longer use custom_collide, so remove it if it exists
+            if (fg.d3Force('custom_collide')) fg.d3Force('custom_collide', null)
           }
 
           if (fg.d3Force('link')) fg.d3Force('link').strength(linkForce)
@@ -508,14 +506,14 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
           .radius((d) => (d.val <= 1 ? 800 : 0))
           .strength((d) => (d.val <= 1 ? 0.2 : centerForce))
 
+        // Use standard forceManyBody for general repulsion
+        if (!fg.d3Force('custom_charge'))
+          fg.d3Force('custom_charge', forceManyBody().distanceMax(1000))
+
         fg.d3Force('custom_charge').strength(-500 * repelForce)
-        fg.d3Force('custom_collide')
-          .radius((d) => {
-            const baseR = d.val ? Math.min(12, Math.max(2, Math.sqrt(d.val) * 2.5)) : 2
-            return baseR * sizeMult + 15
-          })
-          .strength(0.2) // Lowered strength so it doesn't rigidly lock up when dragging
-          .iterations(1)
+        
+        // Remove collision force if it exists
+        if (fg.d3Force('custom_collide')) fg.d3Force('custom_collide', null)
       }
 
       // Extremely elastic links like a spiderweb

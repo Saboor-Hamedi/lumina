@@ -49,12 +49,6 @@ export const drawNode = (
   ctx.fillStyle = color
   ctx.fill()
   
-  // Make hovered node slightly lighter without changing its size or adding rings
-  if (isHovered) {
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)'
-    ctx.fill()
-  }
-  
   ctx.globalAlpha = 1.0
 
   // Draw text (Optimized: fillText is slow, so only render if required)

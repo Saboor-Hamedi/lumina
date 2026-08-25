@@ -29,10 +29,12 @@ const Graph2D = forwardRef(
         onNodeHover={(node) => setHoverNode(node)}
         nodePointerAreaPaint={(node, color, ctx) => {
           const sizeMult = useSettingsStore.getState().settings.graphNodeSize || 1.5
-          const r = (node.val ? Math.min(12, Math.max(2, Math.sqrt(node.val) * 2.5)) : 2) * sizeMult
+          const baseR = (node.val ? Math.min(12, Math.max(2, Math.sqrt(node.val) * 2.5)) : 2) * sizeMult
+          const hitRadius = Math.max(baseR + 10, 15)
+          
           ctx.fillStyle = color
           ctx.beginPath()
-          ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false)
+          ctx.arc(node.x, node.y, hitRadius, 0, 2 * Math.PI, false)
           ctx.fill()
         }}
         linkColor={(link) => {
@@ -45,7 +47,7 @@ const Graph2D = forwardRef(
           if (!hoverNode) return 0.2
           const sourceId = link.source.id || link.source
           const targetId = link.target.id || link.target
-          return sourceId === hoverNode.id || targetId === hoverNode.id ? 1.0 : 0.1
+          return sourceId === hoverNode.id || targetId === hoverNode.id ? 0.4 : 0.1
         }}
         linkDirectionalParticles={0}
         onNodeClick={(node) => {
@@ -57,9 +59,6 @@ const Graph2D = forwardRef(
         onNodeDragEnd={(node) => {
           node.fx = null
           node.fy = null
-          if (ref && typeof ref !== 'function' && ref.current) {
-            ref.current.d3ReheatSimulation()
-          }
         }}
         backgroundColor="transparent"
         d3AlphaDecay={0.05}
