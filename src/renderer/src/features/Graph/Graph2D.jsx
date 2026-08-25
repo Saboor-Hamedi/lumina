@@ -39,15 +39,11 @@ const Graph2D = forwardRef(
         }}
         linkColor={(link) => {
           if (!hoverNode) return defaultLineColor
-          const sourceId = link.source.id || link.source
-          const targetId = link.target.id || link.target
-          return sourceId === hoverNode.id || targetId === hoverNode.id ? '#40bafa' : 'rgba(150, 150, 150, 0.05)'
+          return link.source === hoverNode || link.target === hoverNode ? '#40bafa' : 'rgba(150, 150, 150, 0.05)'
         }}
         linkWidth={(link) => {
           if (!hoverNode) return 0.2
-          const sourceId = link.source.id || link.source
-          const targetId = link.target.id || link.target
-          return sourceId === hoverNode.id || targetId === hoverNode.id ? 0.4 : 0.1
+          return link.source === hoverNode || link.target === hoverNode ? 0.4 : 0.1
         }}
         linkDirectionalParticles={0}
         onNodeClick={(node) => {

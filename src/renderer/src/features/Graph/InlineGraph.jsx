@@ -241,18 +241,12 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
             linkColor={(link) => {
               const hNode = hoverNode
               if (!hNode) return 'rgba(150,150,150,0.2)'
-              const sourceId = link.source.id || link.source
-              const targetId = link.target.id || link.target
-              return sourceId === hNode.id || targetId === hNode.id
-                ? '#40bafa'
-                : 'rgba(150,150,150,0.05)'
+              return link.source === hNode || link.target === hNode ? '#40bafa' : 'rgba(150,150,150,0.05)'
             }}
             linkWidth={(link) => {
               const hNode = hoverNode
               if (!hNode) return 0.2
-              const sourceId = link.source.id || link.source
-              const targetId = link.target.id || link.target
-              return sourceId === hNode.id || targetId === hNode.id ? 0.4 : 0.1
+              return link.source === hNode || link.target === hNode ? 0.4 : 0.1
             }}
             onNodeHover={(node) => {
               document.body.style.cursor = node ? 'pointer' : 'default'

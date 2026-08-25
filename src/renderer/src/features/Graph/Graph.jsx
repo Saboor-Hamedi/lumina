@@ -435,13 +435,13 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             // Ensure 2D forces exist and default 3D/2D charge is disabled
             if (fg.d3Force('charge')) fg.d3Force('charge', null)
             if (!fg.d3Force('custom_charge'))
-              fg.d3Force('custom_charge', forceManyBody().distanceMax(1000))
+              fg.d3Force('custom_charge', forceManyBody().distanceMax(300))
             
             // Remove collision force entirely so dragging is silky smooth and non-blocking
 
             fg.d3Force('custom_charge')
               .strength(-500 * repelForce)
-              .distanceMax(1000)
+              .distanceMax(300)
             
             // We no longer use custom_collide, so remove it if it exists
             if (fg.d3Force('custom_collide')) fg.d3Force('custom_collide', null)
@@ -508,7 +508,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
 
         // Use standard forceManyBody for general repulsion
         if (!fg.d3Force('custom_charge'))
-          fg.d3Force('custom_charge', forceManyBody().distanceMax(1000))
+          fg.d3Force('custom_charge', forceManyBody().distanceMax(300))
 
         fg.d3Force('custom_charge').strength(-500 * repelForce)
         
@@ -655,9 +655,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             }}
             linkColor={(link) => {
               if (!hoverNode) return defaultLineColor
-              const sourceId = link.source.id || link.source
-              const targetId = link.target.id || link.target
-              return sourceId === hoverNode.id || targetId === hoverNode.id ? '#40bafa' : 'rgba(150, 150, 150, 0.05)'
+              return link.source === hoverNode || link.target === hoverNode ? '#40bafa' : 'rgba(150, 150, 150, 0.05)'
             }}
             linkWidth={0.5}
             onNodeHover={(node) => setHoverNode(node)}
@@ -794,11 +792,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               }}
               linkColor={(link) => {
                 if (!hoverNode) return defaultLineColor
-                const sourceId = link.source.id || link.source
-                const targetId = link.target.id || link.target
-                return sourceId === hoverNode.id || targetId === hoverNode.id
-                  ? '#40bafa'
-                  : 'rgba(150, 150, 150, 0.05)'
+                return link.source === hoverNode || link.target === hoverNode ? '#40bafa' : 'rgba(150, 150, 150, 0.05)'
               }}
               linkWidth={0.5}
               onNodeHover={(node) => setHoverNode(node)}
