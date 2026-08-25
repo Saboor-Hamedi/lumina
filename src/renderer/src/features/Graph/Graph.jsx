@@ -474,54 +474,22 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     const initTimer = setTimeout(() => {
       const initialSettings = useSettingsStore.getState().settings
 
-      const sizeMult = initialSettings.graphNodeSize || 1.5
-      const centerForce = initialSettings.graphCenterForce ?? 0.05
       const repelForce = initialSettings.graphRepelForce ?? 0.3
       const linkForce = initialSettings.graphLinkForce ?? 0.05
 
-      // Initialize core forces only if they don't exist
-      if (!fg.d3Force('custom_x')) fg.d3Force('custom_x', forceX(0))
-      if (!fg.d3Force('custom_y')) fg.d3Force('custom_y', forceY(0))
-
+      // Initialize clean standard forces
       if (!is3DMode) {
-        fg.d3Force('custom_gravity', null)
-        if (!fg.d3Force('custom_radial')) fg.d3Force('custom_radial', forceRadial(800))
-        if (!fg.d3Force('custom_charge')) fg.d3Force('custom_charge', forceManyBody())
-        if (!fg.d3Force('custom_collide')) fg.d3Force('custom_collide', forceCollide())
-      }
-
-      // Disable default forces to prevent conflicts
-      fg.d3Force('x', null)
-      fg.d3Force('y', null)
-      fg.d3Force('z', null)
-      fg.d3Force('radial', null)
-      fg.d3Force('center', null)
-
-      if (!is3DMode) {
-        fg.d3Force('charge', null)
-      }
-
-      // Apply initial forces
-      fg.d3Force('custom_x').strength(0)
-      fg.d3Force('custom_y').strength(0)
-
-      if (!is3DMode) {
-        fg.d3Force('custom_radial')
-          .radius((d) => (d.val <= 1 ? 800 : 0))
-          .strength((d) => (d.val <= 1 ? 0.2 : centerForce))
-
-        // Use standard forceManyBody for general repulsion
-        if (!fg.d3Force('custom_charge'))
-          fg.d3Force('custom_charge', forceManyBody().distanceMax(2000))
-
-        fg.d3Force('custom_charge').strength(-500 * repelForce)
+        // Standard Obsidian physics: Repel everything, connect links, and pull softly to center.
+        fg.d3Force('center', forceCenter(0, 0))
+        fg.d3Force('charge', forceManyBody().strength(-500 * repelForce))
         
-        // Remove collision force if it exists
+        // Remove collision entirely for silky smooth dragging
+        if (fg.d3Force('collide')) fg.d3Force('collide', null)
         if (fg.d3Force('custom_collide')) fg.d3Force('custom_collide', null)
       }
 
       // Extremely elastic links like a spiderweb
-      if (fg.d3Force('link')) fg.d3Force('link').distance(150).strength(linkForce)
+      if (fg.d3Force('link')) fg.d3Force('link').distance(100).strength(linkForce)
 
       fg.d3ReheatSimulation()
     }, 100) // 100ms initialization delay

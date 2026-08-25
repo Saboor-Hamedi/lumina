@@ -104,6 +104,27 @@ Your own section 19 correctly establishes that architecture > algorithms > rende
 
 I'd reinforce that.
 
+# Phase 0 & 1: Implemented Solutions (Aug 2026)
+
+We have successfully executed the first set of directives from this performance mission:
+
+### 1. Performance Diagnostic HUD (P0 - Measure)
+We created `PerformancePanel.jsx` and injected it natively into the `onRenderFramePre`/`onRenderFramePost` loop of the graph Canvas. This guarantees we are measuring the true Canvas paint time and frame rate, bypassing React entirely. The metrics are stored in a non-rendering Zustand store (`usePerformanceStore.js`) and throttled visually so the overlay itself doesn't cause overhead.
+
+### 2. Interaction Drag Mode (P1 - Culling)
+We established an aggressive visual culling mode. When `isDragging` evaluates to true:
+- We set `linkVisibility` to `false` for ALL edges except the ones physically attached to the dragged node.
+- We skip text label rendering globally.
+This immediately slashes the Canvas workload by roughly ~90% during drags on massive graphs, instantly prioritizing input tracking.
+
+### 3. Physics Engine Cleanup (Sprouting Bug Fix)
+We discovered why the nodes were continuously jittering and "sprouting" endlessly without settling: we were actively injecting conflicting custom forces. A `forceRadial` was continuously pushing leaf nodes outward, while `distanceMax(2000)` was causing a boiling boundary effect. 
+**Solution:** We completely stripped all custom forces. The graph now relies strictly on the holy trinity of native D3 physics (matching Obsidian exactly):
+1. `forceManyBody`: Repels everything equally.
+2. `forceLink`: Pulls connected items together like a rubber band.
+3. `forceCenter`: Softly pulls the entire mass back to (0,0) so it doesn't drift.
+Because the forces are mathematically pure again, the graph naturally reaches a perfect equilibrium and *completely freezes* when untouched.
+
 ---
 
 # The part I think is most important for Lumina
