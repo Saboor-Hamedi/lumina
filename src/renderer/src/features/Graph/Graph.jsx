@@ -442,7 +442,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 const baseR = d.val ? Math.max(2, Math.sqrt(d.val) * 2.5) : 2
                 return baseR * sizeMult + 15
               })
-              .strength(0.75)
+              .strength(0.2) // Lowered strength so it doesn't rigidly lock up when dragging
               .iterations(1)
           }
 
@@ -511,7 +511,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             const baseR = d.val ? Math.max(2, Math.sqrt(d.val) * 2.5) : 2
             return baseR * sizeMult + 15
           })
-          .strength(0.75)
+          .strength(0.2) // Lowered strength so it doesn't rigidly lock up when dragging
           .iterations(1)
       }
 

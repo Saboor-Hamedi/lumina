@@ -35,11 +35,18 @@ const Graph2D = forwardRef(
           ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false)
           ctx.fill()
         }}
+        nodeCanvasObjectMode={(node) => (node === hoverNode ? 'after' : 'replace')}
         linkColor={(link) => {
           if (!hoverNode) return defaultLineColor
           const sourceId = link.source.id || link.source
           const targetId = link.target.id || link.target
-          return sourceId === hoverNode.id || targetId === hoverNode.id ? '#40bafa' : '#333333'
+          return sourceId === hoverNode.id || targetId === hoverNode.id ? 'rgba(255, 255, 255, 0.5)' : '#333333'
+        }}
+        linkWidth={(link) => {
+          if (!hoverNode) return 0.2
+          const sourceId = link.source.id || link.source
+          const targetId = link.target.id || link.target
+          return sourceId === hoverNode.id || targetId === hoverNode.id ? 1.0 : 0.1
         }}
         linkDirectionalParticles={0}
         onNodeClick={(node) => {

@@ -34,18 +34,8 @@ export const drawNode = (
 ) => {
   const label = (node.id || '').replace(/[*"']/g, '')
 
-  // Lightweight Node Highlight (Stroke instead of heavy fill)
-  if (isActive || isHovered || isSearchMatch) {
-    ctx.beginPath()
-    ctx.arc(node.x, node.y, r + 2, 0, 2 * Math.PI, false)
-    ctx.strokeStyle = isSearchMatch
-      ? 'rgba(255, 255, 255, 0.8)'
-      : isActive
-        ? 'rgba(255, 170, 0, 0.8)'
-        : 'rgba(64, 186, 250, 0.8)'
-    ctx.lineWidth = 1 / globalScale // Keep stroke 1px regardless of zoom
-    ctx.stroke()
-  }
+  // Removed ring/glow completely for a minimal look as requested
+  // The rest of the graph will dim, which is enough to highlight the node
 
   // Dimming logic
   if (isSearchDimmed && !isHovered && !isActive) {
@@ -58,6 +48,13 @@ export const drawNode = (
   ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false)
   ctx.fillStyle = color
   ctx.fill()
+  
+  // Make hovered node slightly lighter without changing its size or adding rings
+  if (isHovered) {
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)'
+    ctx.fill()
+  }
+  
   ctx.globalAlpha = 1.0
 
   // Draw text (Optimized: fillText is slow, so only render if required)
@@ -68,12 +65,13 @@ export const drawNode = (
 
     // Dynamic text sizing based on zoom level (globalScale)
     // By dividing by globalScale, the text remains a consistent physical size on the screen
-    const baseSize = isActive || isHovered ? 14 : 10
+    // Keep size static on hover as requested
+    const baseSize = 8
     const fontSize = baseSize / globalScale
     ctx.font = `${fontSize}px Inter, sans-serif`
     
     // Offset the text below the node
-    const offset = (isActive || isHovered ? 12 : 8) / globalScale
+    const offset = 6 / globalScale
     ctx.fillText(label, node.x, node.y + r + offset)
   }
 }

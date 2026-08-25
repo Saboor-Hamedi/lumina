@@ -132,7 +132,7 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
       graphRef.current.d3Force('center', forceCenter())
       // Add a stronger collision force so they don't touch/overlap each other
       graphRef.current.d3Force('collide', forceCollide((node) => {
-        return (node.snippetId === focusNodeId ? 8 : node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 4) + 2
+        return (node.snippetId === focusNodeId ? 8 : node.val ? Math.min(6, Math.max(2, Math.sqrt(node.val) * 2)) : 3) + 2
       }).strength(1))
 
       setTimeout(() => {
@@ -166,8 +166,9 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
     (node, ctx, globalScale) => {
       const isActive = node.snippetId === focusNodeId
       const isHovered = hoverNode === node
-      // Central node becomes smaller (8 instead of 12)
-      const r = isActive ? 8 : node.val ? Math.max(2, Math.sqrt(node.val) * 2.5) : 4
+      
+      // Central node is 8. Secondary nodes are capped at 6 to ensure they never overpower the central node.
+      const r = isActive ? 8 : node.val ? Math.min(6, Math.max(2, Math.sqrt(node.val) * 2)) : 3
       
       const isNeighborDimmed = hoverNode && hoverNode !== node && !hoverNeighbors.has(node.id)
 
@@ -223,8 +224,8 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
                 node.snippetId === focusNodeId
                   ? 8
                   : node.val
-                    ? Math.max(2, Math.sqrt(node.val) * 2.5)
-                    : 4
+                    ? Math.min(6, Math.max(2, Math.sqrt(node.val) * 2))
+                    : 3
               ctx.fillStyle = color
               ctx.beginPath()
               ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false)
@@ -236,7 +237,7 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
               const sourceId = link.source.id || link.source
               const targetId = link.target.id || link.target
               return sourceId === hNode.id || targetId === hNode.id
-                ? 'rgba(232, 168, 37, 0.8)'
+                ? 'rgba(255, 255, 255, 0.5)' // Lighter highlight instead of bright gold
                 : 'rgba(150,150,150,0.05)' // Dim the links of non-neighbors
             }}
             linkWidth={(link) => {
