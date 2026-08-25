@@ -47,6 +47,11 @@ export default function PerformancePanel() {
       <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#fff' }}>PERFORMANCE</div>
       <div>FPS: {localMetrics.fps.toFixed(1)}</div>
       <div>Frame: {localMetrics.frameTime.toFixed(1)} ms</div>
+      
+      <div style={{ margin: '6px 0', borderTop: '1px dashed #555' }}></div>
+      <div style={{ color: '#aaa' }}>Links: {(localMetrics.linksRenderTime || 0).toFixed(1)} ms</div>
+      <div style={{ color: '#aaa' }}>Nodes: {(localMetrics.nodesRenderTime || 0).toFixed(1)} ms</div>
+      
       <div style={{ margin: '6px 0', borderTop: '1px dashed #555' }}></div>
       <div>Nodes: {localMetrics.nodeCount}</div>
       <div>Links: {localMetrics.linkCount}</div>

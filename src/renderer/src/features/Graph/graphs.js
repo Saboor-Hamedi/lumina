@@ -46,6 +46,9 @@ export const drawNode = (
     ctx.globalAlpha = 0.15
   }
 
+  // Track exact node render time
+  const start = performance.now()
+
   ctx.beginPath()
   ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false)
   ctx.fillStyle = color
@@ -53,7 +56,7 @@ export const drawNode = (
   
   ctx.globalAlpha = 1.0
 
-  const isDragging = usePerformanceStore.getState().metrics.isDragging
+  const isDragging = window._luminaIsDragging
 
   // Draw text (Optimized: fillText is slow, so only render if required)
   if (!isDragging && showText && (isHovered || isActive || isSearchMatch || globalScale > 1.5)) {
@@ -69,7 +72,10 @@ export const drawNode = (
     ctx.font = `${fontSize}px Inter, sans-serif`
     
     // Offset the text below the node
-    const offset = 6 / globalScale
-    ctx.fillText(label, node.x, node.y + r + offset)
+    ctx.fillText(label, node.x, node.y + r + 6 / globalScale)
+  }
+
+  if (window._luminaNodesRenderTime !== undefined) {
+    window._luminaNodesRenderTime += (performance.now() - start)
   }
 }

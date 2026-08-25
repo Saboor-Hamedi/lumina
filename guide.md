@@ -1,419 +1,579 @@
-Yes — I reviewed the plan you uploaded. It is already a **strong performance-engineering plan**, and the overall direction is correct. 
+This screenshot is actually very useful because it tells us something important:
 
-But I would **not let the agent execute all 30 sections sequentially**. There are several places where the plan can send the agent down expensive rabbit holes before it has proven where the bottleneck actually is.
+**Phase 1 has exposed a serious bottleneck — but the HUD itself currently has a measurement problem.**
 
-### The biggest change I'd make
+The graph contains **2,008 nodes and 7,170 links**, and the screenshot reports:
 
-Your plan currently says things like:
+* `FPS: 1.7`
+* `Frame: 59.6 ms`
+* `State: IDLE`
 
-> investigate OffscreenCanvas → investigate WebGL → investigate Worker simulation → investigate alternative physics
+The `59.6 ms` figure is the most interesting number. 
 
-Those are good options, but they should be **conditional branches**, not a linear roadmap.
+### First: the FPS number is almost certainly wrong
 
-The agent should operate like this:
+If the measured frame time is **59.6 ms**, the corresponding rate is approximately:
 
-```text
-                    PROFILE
-                       │
-                       ▼
-              FIND DOMINANT COST
-                       │
-          ┌────────────┼────────────┐
-          │            │            │
-          ▼            ▼            ▼
-      Rendering     Physics      Interaction
-          │            │            │
-          ▼            ▼            ▼
-       Canvas       d3-force    hit testing
-          │            │            │
-          ▼            ▼            ▼
-       WebGL?       Worker?     Spatial index?
+**1000 / 59.6 ≈ 16.8 FPS**
+
+—not 1.7 FPS.
+
+So before your agent makes any architectural decisions based on the HUD, **fix the instrumentation**.
+
+The library documents `onRenderFramePre` and `onRenderFramePost` as callbacks surrounding the canvas node/link rendering for every frame. ([npm][1])
+
+Your current measurement:
+
+```js
+onRenderFramePre={() => {
+  window._luminaFrameStart = performance.now()
+}}
+
+onRenderFramePost={() => {
+  const now = performance.now()
+  const frameTime = now - window._luminaFrameStart
+  ...
+}}
 ```
 
-That is the key.
+is useful for measuring **graph canvas render duration**, but it is **not the complete browser frame duration**.
 
-Your plan already correctly says **“profile before optimizing”** and requires simulation/rendering breakdowns.  I would make that requirement even stronger: **the agent is not allowed to introduce a major architectural technology until profiling proves that technology addresses the dominant bottleneck.**
+That's an important distinction.
 
 ---
 
-## I would also change your definition of "Obsidian speed"
+# The bigger issue I see
 
-Don't make **60 FPS** the only target.
+Your agent says:
 
-Your plan already recognizes this later — a graph can report 60 FPS and still feel sluggish because of input latency. 
+> "The graph now relies strictly on the holy trinity of native D3 physics ... matching Obsidian exactly."
 
-Make these the primary UX metrics:
+I would **stop the agent from making that claim**.
 
-```text
-1. Pointer → visual response latency
-2. Drag smoothness
-3. Pan smoothness
-4. Zoom smoothness
-5. Hover latency
-6. Frame-time consistency
-7. FPS
-```
+You have demonstrated that removing the custom forces fixed the endless "sprouting" behavior. That's good.
 
-In other words:
+But you have **not demonstrated that this matches Obsidian's physics implementation**.
 
-**16 ms × 60 FPS is useful, but frame-time spikes are what humans actually notice.**
-
-I'd rather have:
+More importantly, your screenshot shows:
 
 ```text
-58 FPS
-17 ms average
-18–22 ms most frames
+State: IDLE
+2,008 nodes
+7,170 links
+59.6 ms canvas render
 ```
 
-than:
+That means we may have reached the most important discovery of Phase 1:
 
-```text
-60 FPS
-8 ms average
-80–150 ms spikes
-```
+> **The physics may no longer be the primary problem. Rendering may be.**
 
-The second one will feel terrible.
+And that's excellent information.
 
 ---
 
-# One important correction
+# I would now tell the agent to stop changing physics
 
-Your plan says:
+Seriously.
 
-> `link.source === hoverNode` is an optimization over `link.source.id === hoverNode.id`
-
-That's fine as a micro-optimization, but don't let the agent describe this as an **O(1) vs something more expensive algorithmically**.
-
-Both are effectively O(1).
-
-The real benefit is:
+Don't let it start tuning:
 
 ```text
-object identity comparison
+forceManyBody
+forceLink
+forceCenter
+theta
+distanceMax
+alpha
+velocityDecay
+```
+
+yet.
+
+The screenshot gives us a much stronger hypothesis:
+
+```text
+Physics
+   ↓
+possibly OK / settled
+
+Canvas
+   ↓
+~60ms render
+   ↓
+~17 FPS
+   ↓
+PROBLEM
+```
+
+The next phase should therefore be **render pipeline profiling**, not more D3 tuning.
+
+---
+
+# There is also a problem in the drag optimization
+
+Your agent implemented:
+
+```js
+linkVisibility={(link) => {
+  const isDragging =
+    usePerformanceStore.getState().metrics.isDragging
+
+  if (!isDragging) return true
+
+  return link.source === hoverNode ||
+         link.target === hoverNode
+}}
+```
+
+This is exactly the kind of thing I would **not keep** in the final architecture.
+
+Why?
+
+Because `linkVisibility` is evaluated for links, and you've now put:
+
+```js
+usePerformanceStore.getState()
+```
+
+inside that hot path.
+
+You previously eliminated this kind of polling specifically because the goal was to remove state access from render loops.
+
+So we've accidentally reintroduced it.
+
+Instead, make the interaction state an imperative variable/ref:
+
+```js
+let draggingNode = null
+```
+
+or:
+
+```js
+const draggingNodeRef = useRef(null)
+```
+
+Then the render callback reads:
+
+```js
+const draggingNode = draggingNodeRef.current
+```
+
+No Zustand lookup.
+
+Even better, don't make every link execute a JavaScript visibility function during dragging if you can avoid it.
+
+---
+
+# There's an even bigger opportunity
+
+Your current strategy:
+
+```text
+7,170 links
+
+DRAGGING
+   ↓
+evaluate 7,170 links
+   ↓
+keep a few
+   ↓
+draw a few
+```
+
+is better than drawing 7,170 links.
+
+But you're still **iterating over the graph's link collection**.
+
+The ideal architecture is:
+
+```text
+NORMAL
+
+7,170 links
+   ↓
+render
+
+
+DRAG
+
+dragged node
+   ↓
+adjacency map
+   ↓
+12 connected links
+   ↓
+render 12
+```
+
+That means the expensive operation becomes proportional to:
+
+```text
+degree(draggedNode)
+```
+
+rather than:
+
+```text
+totalLinks
+```
+
+For a node with 15 connections, that's a massive difference.
+
+---
+
+# Your screenshot tells us something else
+
+Look at the graph.
+
+There are thousands of tiny nodes and extremely faint lines everywhere.
+
+At this zoom level, the user cannot meaningfully perceive most of those links.
+
+Yet Canvas is apparently spending approximately **60 ms per render** processing them.
+
+This is exactly what your original performance principle was getting at:
+
+> Don't ask the browser to render things the user cannot perceive.
+
+Your LOD system should therefore apply to **links**, not just labels.
+
+Right now you have:
+
+```text
+Node LOD
+    ✓
+
+Text LOD
+    ✓
+
+Link LOD
+    ✗ / insufficient
+```
+
+That's the next major optimization.
+
+---
+
+# I'd make Phase 2 very specific
+
+Tell your agent:
+
+### Do NOT implement WebGL yet.
+
+First prove where the 59.6 ms goes.
+
+Instrument:
+
+```text
+Total canvas render
+├── link iteration
+├── link drawing
+├── node iteration
+├── node drawing
+├── labels
+├── pointer/hit detection
+└── custom effects
+```
+
+You want a report like:
+
+```text
+GRAPH: 2,008 nodes / 7,170 links
+
+Canvas render:       59.6 ms
+
+Links:
+  iteration:          2.1 ms
+  drawing:           47.8 ms
+
+Nodes:
+  iteration:          0.4 ms
+  drawing:             5.2 ms
+
+Labels:               1.8 ms
+Other:                2.3 ms
+```
+
+If you get something like that, **we know exactly what to attack.**
+
+---
+
+# And I would change the Performance HUD
+
+Don't update Zustand on every frame.
+
+This:
+
+```js
+usePerformanceStore.getState().updateMetrics({
+  frameTime,
+  fps
+})
+```
+
+still performs a state update every frame.
+
+Even if you call the visual panel only every 250 ms, you're still mutating the store every frame.
+
+That's unnecessary.
+
+Use plain imperative variables:
+
+```js
+let frameCount = 0
+let frameTimeTotal = 0
+let lastSample = performance.now()
+```
+
+Accumulate continuously.
+
+Then every ~250–500 ms:
+
+```text
+calculate FPS
+calculate average frame time
+calculate p95
+publish ONE UI update
+```
+
+So:
+
+```text
+60 frames
+   ↓
+plain JS counters
+
+        ↓ every 500ms
+
+ONE Zustand update
         ↓
-fewer property accesses
-        ↓
-lower constant overhead
+PerformancePanel
 ```
 
-So this should remain a **micro-optimization**, not an architectural performance milestone.
+rather than:
 
-Your own section 19 correctly establishes that architecture > algorithms > rendering > allocations > micro-optimizations. 
+```text
+60 frames
+   ↓
+60 Zustand updates
+   ↓
+React/store machinery
+```
 
-I'd reinforce that.
-
-# Phase 0 & 1: Implemented Solutions (Aug 2026)
-
-We have successfully executed the first set of directives from this performance mission:
-
-### 1. Performance Diagnostic HUD (P0 - Measure)
-We created `PerformancePanel.jsx` and injected it natively into the `onRenderFramePre`/`onRenderFramePost` loop of the graph Canvas. This guarantees we are measuring the true Canvas paint time and frame rate, bypassing React entirely. The metrics are stored in a non-rendering Zustand store (`usePerformanceStore.js`) and throttled visually so the overlay itself doesn't cause overhead.
-
-### 2. Interaction Drag Mode (P1 - Culling)
-We established an aggressive visual culling mode. When `isDragging` evaluates to true:
-- We set `linkVisibility` to `false` for ALL edges except the ones physically attached to the dragged node.
-- We skip text label rendering globally.
-This immediately slashes the Canvas workload by roughly ~90% during drags on massive graphs, instantly prioritizing input tracking.
-
-### 3. Physics Engine Cleanup (Sprouting Bug Fix)
-We discovered why the nodes were continuously jittering and "sprouting" endlessly without settling: we were actively injecting conflicting custom forces. A `forceRadial` was continuously pushing leaf nodes outward, while `distanceMax(2000)` was causing a boiling boundary effect. 
-**Solution:** We completely stripped all custom forces. The graph now relies strictly on the holy trinity of native D3 physics (matching Obsidian exactly):
-1. `forceManyBody`: Repels everything equally.
-2. `forceLink`: Pulls connected items together like a rubber band.
-3. `forceCenter`: Softly pulls the entire mass back to (0,0) so it doesn't drift.
-Because the forces are mathematically pure again, the graph naturally reaches a perfect equilibrium and *completely freezes* when untouched.
+The diagnostic system should be **virtually free**.
 
 ---
 
-# The part I think is most important for Lumina
+# Also add these three metrics
 
-I'd make **dragging** its own engineering project.
-
-Your current pain point is:
+Your HUD currently gives:
 
 ```text
-Mouse
-  ↓
-drag
-  ↓
-D3 simulation
-  ↓
-thousands of nodes
-  ↓
-thousands of links
-  ↓
-Canvas redraw
-  ↓
-mouse moves again
+FPS
+Frame
+Nodes
+Links
+State
 ```
 
-That is where I'd attack first.
+Good.
 
-The agent should implement a temporary:
+Add:
 
 ```text
-INTERACTION MODE
+Render:     XX ms
+Simulation: XX ms
+Main task:  XX ms
 ```
 
-as your plan already proposes. 
-
-But I'd go further.
-
-During drag:
+And especially:
 
 ```text
-                DRAGGING
-                   │
-        ┌──────────┼──────────┐
-        ▼          ▼          ▼
-      INPUT      PHYSICS    RENDER
-        │          │          │
-     highest    reduced     reduced
-    priority    precision   fidelity
+P95 Frame
 ```
 
 For example:
 
-### Normal
-
 ```text
-nodes        ✓
-links        ✓
-labels       ✓
-hover        ✓
-physics      full
-effects      ✓
+PERFORMANCE
+
+FPS          58.4
+Frame        17.1 ms
+P95          21.3 ms
+
+Render       12.4 ms
+Simulation    3.2 ms
+Other         1.5 ms
+
+Nodes       2,008
+Links       7,170
+
+State       IDLE
 ```
 
-### Dragging
-
-```text
-nodes        ✓ lightweight
-links        simplified/cached
-labels       ✗
-hover        simplified
-physics      reduced
-effects      ✗
-```
-
-### Release
-
-```text
-restore visual quality
-       ↓
-short stabilization
-       ↓
-settle
-```
-
-That is much more likely to produce the **“this feels fast”** effect you're after than shaving another 2% from `paintNode()`.
+That will tell us much more than average FPS.
 
 ---
 
-# And I would strongly prioritize this experiment
+# One particularly important test
 
-Your plan proposes:
+Have the agent perform this experiment:
 
-> static links + dynamic nodes
-
-That is potentially huge. 
-
-I'd have the agent test three implementations:
+### Test 1 — Nodes only
 
 ```text
-A. Current
-   Canvas redraw everything
-
-B. Cached Canvas
-   static links
-   dynamic nodes
-
-C. WebGL links
-   GPU links
-   Canvas interaction layer
+2,008 nodes
+0 links
 ```
 
-Then benchmark them.
+Measure.
 
-If B gives you:
+### Test 2 — Links only
 
 ```text
-42 FPS → 57 FPS
+0 nodes
+7,170 links
 ```
 
-you may not need WebGL yet.
+Measure.
 
-If B gives:
+### Test 3 — Full graph
 
 ```text
-42 FPS → 47 FPS
+2,008 nodes
+7,170 links
 ```
 
-but C gives:
+Measure.
+
+### Test 4 — Labels disabled
+
+### Test 5 — Links disabled
+
+### Test 6 — Custom node rendering disabled
+
+This will immediately reveal the dominant renderer.
+
+For example:
 
 ```text
-42 FPS → 85 FPS
+                         59.6ms
+                            │
+              ┌─────────────┴─────────────┐
+              │                           │
+          links only                  nodes only
+            48ms                         5ms
 ```
 
-then you have your answer.
+Boom.
+
+We know where to go.
 
 ---
 
-# One more thing: don't underestimate the Web Worker
+# My current hypothesis
 
-Your plan correctly identifies Worker simulation as a serious option. 
+Based **only on what you've shown me**, I'd rank the likely bottlenecks:
 
-But there's a subtle point:
+### 🟥 #1 — Link rendering
 
-**Moving D3 to a worker doesn't automatically make the graph faster.**
+7,170 edges × Canvas operations.
 
-It primarily makes the **main thread less blocked**.
+### 🟥 #2 — Link accessor/visibility evaluation
 
-That can be extremely valuable for Lumina because:
+Thousands of JS function calls per frame.
 
-```text
-Worker
-   │
-   └── physics
+### 🟧 #3 — Canvas redraw itself
 
-Main thread
-   ├── mouse
-   ├── keyboard
-   ├── rendering
-   └── UI
-```
+Especially if the entire canvas is cleared and rebuilt every frame.
 
-Even if total CPU work remains similar, the graph can **feel dramatically more responsive** because pointer events aren't waiting behind physics calculations.
+### 🟧 #4 — Node custom rendering
 
-So measure both:
+2,008 isn't huge, but custom Canvas drawing adds up.
 
-```text
-Total computation
-```
+### 🟨 #5 — Physics
 
-and:
+Probably less important **if the graph truly reaches IDLE**.
 
-```text
-Main-thread blocking
-```
+### 🟨 #6 — React/Zustand
+
+Potentially relevant, but we need profiling before blaming it.
 
 ---
 
-# My revised execution order
+# And one architectural direction I'd seriously test
 
-If I were directing your agent, I'd make it:
-
-### Phase 0 — Baseline
-
-No optimization.
-
-Measure:
+Your eventual 2D renderer could become:
 
 ```text
-500 / 1k / 2k / 5k / 10k nodes
+                 LUMINA GRAPH
+                      │
+          ┌───────────┴───────────┐
+          │                       │
+       STATIC                  DYNAMIC
+          │                       │
+          ▼                       ▼
+     Cached links             Nodes
+          │                   Hover
+          │                   Drag
+          │                   Selection
+          ▼                       │
+     Canvas/WebGL                 │
+          │                       │
+          └───────────┬───────────┘
+                      ▼
+                   Screen
 ```
 
-and the corresponding links.
+During normal operation, links don't necessarily need to be reconstructed from scratch every frame.
 
-Your plan already has an excellent benchmark matrix. 
-
-### Phase 1 — Find the killer
-
-Determine:
+During dragging:
 
 ```text
-Is it Canvas?
-Is it D3?
-Is it React?
-Is it GC?
-Is it hit detection?
+cached graph
+     +
+dragged node
+     +
+its local edges
 ```
 
-### Phase 2 — Fix dragging
-
-This should be the **#1 UX priority**.
-
-### Phase 3 — Separate runtime from React
-
-Get graph physics and rendering completely out of React's reactive lifecycle. Your plan is already heading in this direction. 
-
-### Phase 4 — Kill unnecessary rendering
-
-LOD + cached links + interaction mode.
-
-### Phase 5 — Optimize interaction
-
-Spatial index + adjacency maps + zero-allocation hot paths.
-
-### Phase 6 — Optimize physics
-
-`distanceMax`, force strength, iterations, worker experiments.
-
-### Phase 7 — GPU
-
-Only now:
+rather than:
 
 ```text
-Canvas → WebGL
-```
-
-if profiling says rendering is still the bottleneck.
-
-### Phase 8 — Extreme scale
-
-Only if necessary:
-
-```text
-Worker
+2,008 nodes
 +
-WebGL
+7,170 edges
 +
-LOD
-+
-clustering
+all rendering
 ```
+
+That's the kind of architectural change that can actually move Lumina toward the **Obsidian-feel** you're chasing.
 
 ---
 
-## The architecture I'd ultimately aim for
+## Bottom line
 
-Not necessarily immediately, but this is the direction:
+**Phase 1 was successful diagnostically, but I would not call it successful performance-wise yet.**
 
-```text
-                         LUMINA GRAPH
-                              │
-                    ┌─────────┴─────────┐
-                    │                   │
-                 WORKER             MAIN THREAD
-                    │                   │
-              Force Physics        User Input
-                    │                   │
-                    ▼                   ▼
-                Positions          Interaction
-                    │                   │
-                    └─────────┬─────────┘
-                              │
-                              ▼
-                       RENDER PIPELINE
-                              │
-                    ┌─────────┴─────────┐
-                    │                   │
-                 WebGL              Canvas
-                    │                   │
-               massive links      nodes/labels
-                    │              selection
-                    │              interaction
-                    └─────────┬─────────┘
-                              ▼
-                         60+ FPS UX
-```
+You discovered:
 
-**That is the architecture I'd want your agent to investigate, not blindly implement.**
+1. The physics no longer appears to be endlessly exploding.
+2. The graph can reach an `IDLE` state.
+3. You have a real performance HUD.
+4. You have ~2,000 nodes / ~7,000 links as a realistic stress case.
+5. **The renderer appears to be taking ~60 ms per canvas render.**
 
-And your existing plan is already close: it explicitly covers simulation/render separation, interaction mode, cached links, WebGL, React isolation, spatial indexing, physics tuning, Workers, LOD, clustering, and regression benchmarking.   
+That's actually a great result from Phase 1 because we've narrowed the battlefield.
 
-**So I wouldn't throw your plan away. I'd change the agent's operating principle from "execute these 30 optimizations" to "run controlled experiments until the bottleneck disappears."**
+**Don't let the agent jump to WebGL, Web Workers, or another physics engine yet.**
 
-That will prevent the agent from spending days implementing clever optimizations that don't move Lumina's actual frame-time needle.
+The next directive should be:
+
+> **"Prove exactly what consumes the ~60 ms Canvas render before changing architecture."**
+
+Once we have that breakdown, we can make a much more surgical call: **cached Canvas, aggressive link LOD, batched rendering, WebGL links, or a deeper renderer replacement.**
+
+And one more thing: **fix the FPS metric before trusting any benchmark**. The screenshot's `1.7 FPS` and `59.6 ms frame` cannot both describe the same frame-rate calculation. The ~59.6 ms number corresponds to roughly **16.8 FPS**, so your agent should resolve that instrumentation discrepancy first.
+
+[1]: https://www.npmjs.com/package/react-force-graph?activeTab=versions&utm_source=chatgpt.com "react-force-graph - npm"

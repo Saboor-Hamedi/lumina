@@ -40,8 +40,7 @@ const Graph2D = forwardRef(
           ctx.fill()
         }}
         linkVisibility={(link) => {
-          const isDragging = usePerformanceStore.getState().metrics.isDragging
-          if (!isDragging) return true
+          if (!window._luminaIsDragging) return true
           // If dragging, ONLY render links attached to the dragged/hovered node
           return link.source === hoverNode || link.target === hoverNode
         }}
@@ -61,22 +60,35 @@ const Graph2D = forwardRef(
           }
         }}
         onNodeDrag={(node) => {
+          window._luminaIsDragging = true
           usePerformanceStore.getState().setDragging(true)
         }}
         onNodeDragEnd={(node) => {
+          window._luminaIsDragging = false
           usePerformanceStore.getState().setDragging(false)
           node.fx = null
           node.fy = null
         }}
         onRenderFramePre={() => {
           window._luminaFrameStart = performance.now()
+          window._luminaNodesRenderTime = 0
         }}
         onRenderFramePost={() => {
           const now = performance.now()
           const frameTime = now - window._luminaFrameStart
+          const nodesTime = window._luminaNodesRenderTime
+          const linksTime = Math.max(0, frameTime - nodesTime) // Rough estimate for now since links render before nodes
+          
           const fps = window._luminaLastFrame ? 1000 / (now - window._luminaLastFrame) : 60
           window._luminaLastFrame = now
-          usePerformanceStore.getState().updateMetrics({ frameTime, fps, nodeCount: graphData?.nodes?.length || 0, linkCount: graphData?.links?.length || 0 })
+          usePerformanceStore.getState().updateMetrics({ 
+            frameTime, 
+            fps, 
+            nodesRenderTime: nodesTime,
+            linksRenderTime: linksTime,
+            nodeCount: graphData?.nodes?.length || 0, 
+            linkCount: graphData?.links?.length || 0 
+          })
         }}
         backgroundColor="transparent"
         d3AlphaDecay={0.05}

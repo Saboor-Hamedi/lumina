@@ -628,8 +628,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               return mesh
             }}
             linkVisibility={(link) => {
-              const isDragging = usePerformanceStore.getState().metrics.isDragging
-              if (!isDragging) return true
+              if (!window._luminaIsDragging) return true
               return link.source === hoverNode || link.target === hoverNode
             }}
             linkColor={(link) => {
@@ -645,9 +644,11 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               }
             }}
             onNodeDrag={(node) => {
+              window._luminaIsDragging = true
               usePerformanceStore.getState().setDragging(true)
             }}
             onNodeDragEnd={(node) => {
+              window._luminaIsDragging = false
               usePerformanceStore.getState().setDragging(false)
               node.fx = null
               node.fy = null
@@ -785,8 +786,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 return mesh
               }}
               linkVisibility={(link) => {
-                const isDragging = usePerformanceStore.getState().metrics.isDragging
-                if (!isDragging) return true
+                if (!window._luminaIsDragging) return true
                 return link.source === hoverNode || link.target === hoverNode
               }}
               linkColor={(link) => {
@@ -802,9 +802,11 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 }
               }}
               onNodeDrag={(node) => {
+                window._luminaIsDragging = true
                 usePerformanceStore.getState().setDragging(true)
               }}
               onNodeDragEnd={(node) => {
+                window._luminaIsDragging = false
                 usePerformanceStore.getState().setDragging(false)
                 node.fx = null
                 node.fy = null
