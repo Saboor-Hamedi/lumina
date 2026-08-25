@@ -29,8 +29,9 @@ const Graph2D = forwardRef(
         onNodeHover={(node) => setHoverNode(node)}
         nodePointerAreaPaint={(node, color, ctx) => {
           const sizeMult = useSettingsStore.getState().settings.graphNodeSize || 1.5
-          const baseR = (node.val ? Math.min(12, Math.max(2, Math.sqrt(node.val) * 2.5)) : 2) * sizeMult
-          const hitRadius = Math.max(baseR + 10, 15)
+          const baseR = node.val ? Math.min(20, Math.max(4, Math.sqrt(node.val) * 3)) : 4
+          const r = baseR * sizeMult + 5
+          const hitRadius = Math.max(r + 10, 15)
           
           ctx.fillStyle = color
           ctx.beginPath()
