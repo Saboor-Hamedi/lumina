@@ -27,8 +27,8 @@ export default function PerformancePanel() {
     <div
       style={{
         position: 'absolute',
-        bottom: '160px', // Just above the minimap (120px height + 24px bottom + 16px gap)
-        right: '24px',
+        bottom: '136px', 
+        right: '8px',
         width: '160px',
         height: 'auto',
         background: 'rgba(0, 0, 0, 0.8)',

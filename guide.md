@@ -1,579 +1,711 @@
-This screenshot is actually very useful because it tells us something important:
+Yes — **this screenshot is much better diagnostically**. We now have a very clear signal:
 
-**Phase 1 has exposed a serious bottleneck — but the HUD itself currently has a measurement problem.**
+```text
+FPS:       50.0
+Frame:     17.7 ms
 
-The graph contains **2,008 nodes and 7,170 links**, and the screenshot reports:
-
-* `FPS: 1.7`
-* `Frame: 59.6 ms`
-* `State: IDLE`
-
-The `59.6 ms` figure is the most interesting number. 
-
-### First: the FPS number is almost certainly wrong
-
-If the measured frame time is **59.6 ms**, the corresponding rate is approximately:
-
-**1000 / 59.6 ≈ 16.8 FPS**
-
-—not 1.7 FPS.
-
-So before your agent makes any architectural decisions based on the HUD, **fix the instrumentation**.
-
-The library documents `onRenderFramePre` and `onRenderFramePost` as callbacks surrounding the canvas node/link rendering for every frame. ([npm][1])
-
-Your current measurement:
-
-```js
-onRenderFramePre={() => {
-  window._luminaFrameStart = performance.now()
-}}
-
-onRenderFramePost={() => {
-  const now = performance.now()
-  const frameTime = now - window._luminaFrameStart
-  ...
-}}
+Links:    17.0 ms   ← 🚨 96% of measured render time
+Nodes:     0.7 ms
 ```
 
-is useful for measuring **graph canvas render duration**, but it is **not the complete browser frame duration**.
+With **2,008 nodes / 7,170 links**, the bottleneck is no longer ambiguous.
 
-That's an important distinction.
+## The next target is links. Nothing else.
+
+Your agent has done a good job getting the node rendering down to **0.7 ms**. Don't waste time optimizing nodes, D3 forces, Zustand, or React right now.
+
+The current architecture is effectively:
+
+```text
+7,170 links
+     ↓
+Canvas
+     ↓
+~17 ms
+```
+
+That is the problem.
+
+And there is an important distinction:
+
+> **50 FPS at idle is decent, but it is not Obsidian-level yet.**
+
+The next milestone should be getting the **link rendering from ~17 ms → ideally <5 ms**.
 
 ---
 
-# The bigger issue I see
+# What I would tell your agent now
 
-Your agent says:
+Give it this exact directive:
 
-> "The graph now relies strictly on the holy trinity of native D3 physics ... matching Obsidian exactly."
+```text
+# Phase 2 — Link Rendering Bottleneck
 
-I would **stop the agent from making that claim**.
+The latest profiling result is:
 
-You have demonstrated that removing the custom forces fixed the endless "sprouting" behavior. That's good.
+Nodes: 2,008
+Links: 7,170
 
-But you have **not demonstrated that this matches Obsidian's physics implementation**.
+FPS: 50
+Frame: 17.7 ms
+Links: 17.0 ms
+Nodes: 0.7 ms
+State: IDLE
 
-More importantly, your screenshot shows:
+This is conclusive enough to stop optimizing physics, nodes, React, and Zustand.
+
+The dominant bottleneck is LINK RENDERING.
+
+Do not implement WebGL, Web Workers, alternative physics, or other major architecture yet.
+
+First reduce link rendering cost systematically.
+
+==================================================
+1. PROFILE THE LINK PIPELINE
+==================================================
+
+Break the current 17ms link cost into:
+
+- link iteration
+- linkVisibility callback
+- linkColor callback
+- linkWidth callback
+- coordinate/property access
+- Canvas beginPath()
+- Canvas moveTo()
+- Canvas lineTo()
+- Canvas stroke()
+- alpha/compositing
+- hover/highlight logic
+- unresolved-link logic
+- any allocations
+
+We need an actual breakdown.
+
+Example:
+
+Links total:          17.0 ms
+Iteration:             1.2 ms
+Visibility:            0.8 ms
+Color:                 0.6 ms
+Width:                 0.4 ms
+Canvas drawing:       13.7 ms
+Other:                 0.3 ms
+
+Do not guess.
+
+==================================================
+2. TEST LINK-ONLY BENCHMARKS
+==================================================
+
+Run these tests with the same 2,008 nodes:
+
+A:
+7,170 links, normal rendering
+
+B:
+7,170 links, link rendering disabled
+
+C:
+7,170 links, constant color
+
+D:
+7,170 links, constant width
+
+E:
+7,170 links, no visibility callback
+
+F:
+7,170 links, no hover logic
+
+G:
+7,170 links, simplified Canvas line rendering
+
+Record frame time for every test.
+
+The purpose is to determine whether the bottleneck is:
+
+JavaScript callback overhead
+
+or
+
+Canvas stroke/drawing overhead.
+
+==================================================
+3. ELIMINATE PER-LINK FUNCTION WORK
+==================================================
+
+Do not repeatedly calculate link properties every frame.
+
+Precompute:
+
+link.color
+link.width
+link.type
+link.flags
+
+Use primitive values.
+
+Avoid:
+
+linkColor={() => ...}
+linkWidth={() => ...}
+complex linkVisibility={() => ...}
+
+if the result can be known beforehand.
+
+==================================================
+4. REMOVE STATE ACCESS FROM HOT PATH
+==================================================
+
+Absolutely no:
+
+usePerformanceStore.getState()
+
+inside link rendering callbacks.
+
+Do not access React state during rendering.
+
+Use imperative refs or cached runtime variables.
+
+==================================================
+5. IMPLEMENT LINK LOD
+==================================================
+
+The screenshot clearly shows thousands of extremely faint links.
+
+At the current zoom level, many of them are visually imperceptible.
+
+Do not spend 17ms rendering information the user cannot see.
+
+Implement zoom-based link LOD.
+
+Example:
+
+globalScale < 0.25
+    hide links completely
+
+0.25 <= globalScale < 0.5
+    render simplified links
+
+0.5 <= globalScale < 1
+    render links with reduced opacity/detail
+
+globalScale >= 1
+    full link rendering
+
+Benchmark each threshold.
+
+==================================================
+6. TEST DISTANCE-BASED LINK CULLING
+==================================================
+
+Do not render links whose projected screen length is below
+the minimum visually meaningful threshold.
+
+Important:
+
+Perform this test in screen-space if possible.
+
+If a link projects to only 1–2 pixels, drawing it has almost
+zero visual value.
+
+Do not render it.
+
+==================================================
+7. INVESTIGATE LINK BATCHING
+==================================================
+
+The current renderer may effectively perform:
+
+for each link:
+    beginPath()
+    moveTo()
+    lineTo()
+    stroke()
+
+Investigate batching.
+
+Instead try:
+
+beginPath()
+
+for many links:
+    moveTo()
+    lineTo()
+
+stroke()
+
+Where links share the same visual properties.
+
+Group links by:
+
+color
+width
+visibility
+style
+
+Then render each group in a small number of Canvas operations.
+
+The objective is to minimize stroke() calls.
+
+==================================================
+8. TEST STATIC LINK CACHING
+==================================================
+
+Prototype a separate static link layer.
+
+Architecture:
+
+STATIC LAYER
+    links
+
+DYNAMIC LAYER
+    nodes
+    hover
+    selection
+    dragging
+
+If links do not move while the simulation is IDLE,
+do not redraw them every frame.
+
+Render them once.
+
+Cache the result.
+
+During idle:
+
+    reuse cached link image
+
+During camera movement:
+
+    transform cached layer
+
+During graph mutation:
+
+    invalidate cache
+
+During simulation:
+
+    invalidate/update cache as positions change
+
+==================================================
+9. IMPORTANT — DISTINGUISH CAMERA MOVEMENT
+==================================================
+
+Panning and zooming do not necessarily require
+recomputing every link geometry.
+
+Investigate whether the link layer can be cached in
+world coordinates and transformed by the camera.
+
+Do not redraw all 7,170 lines merely because the camera moved.
+
+==================================================
+10. DRAGGING
+==================================================
+
+Continue the existing drag culling optimization.
+
+But do NOT implement:
+
+linkVisibility -> Zustand getState()
+
+for every link.
+
+Instead maintain:
+
+draggedNodeRef.current
+
+and use adjacency data.
+
+For a dragged node:
+
+    draggedNode
+        ↓
+    adjacency map
+        ↓
+    connected links only
+
+Do not scan all 7,170 links to discover the connected links.
+
+==================================================
+11. BUILD ADJACENCY MAPS
+==================================================
+
+Precompute:
+
+Map<NodeId, Link[]>
+
+Example:
+
+adjacency.get(nodeId)
+
+returns only the links attached to that node.
+
+Dragging a node with degree 12 should process approximately:
+
+12 links
+
+not:
+
+7,170 links.
+
+==================================================
+12. TEST CANVAS DRAWING LIMITS
+==================================================
+
+Create controlled tests:
+
+1,000 links
+2,000 links
+5,000 links
+7,000 links
+10,000 links
+20,000 links
+
+Measure:
+
+render time
+FPS
+
+Determine whether the relationship is approximately linear.
+
+==================================================
+13. DO NOT MICRO-OPTIMIZE YET
+==================================================
+
+Do not spend time on:
+
+=== versus property lookup
+small function syntax changes
+variable naming
+minor object access differences
+
+until the major link rendering cost is solved.
+
+The target is:
+
+17.0 ms → <5 ms
+
+before worrying about micro-optimizations.
+
+==================================================
+14. SUCCESS CRITERIA
+==================================================
+
+For the current benchmark:
+
+2,008 nodes
+7,170 links
+
+Target:
+
+Link rendering: <5 ms
+Total frame: <10–12 ms
+FPS: ~60+
+No visible link degradation at normal zoom
+Smooth pan
+Smooth zoom
+Smooth drag
+No hover flashing
+
+Stretch target:
+
+Link rendering: <3 ms
+
+==================================================
+15. ONLY AFTER THIS
+==================================================
+
+If Canvas link rendering remains above ~5 ms after:
+
+- LOD
+- caching
+- batching
+- precomputation
+- culling
+
+THEN prototype a WebGL link renderer.
+
+Do not rewrite the entire graph.
+
+Prototype:
+
+D3 physics
+     ↓
+node/link positions
+     ↓
+WebGL link layer
+     +
+Canvas/HTML interaction layer
+
+Benchmark against the optimized Canvas implementation.
+
+Keep whichever architecture actually wins.
+
+==================================================
+
+MOST IMPORTANT RULE:
+
+The current profiling proves:
+
+Links = 17.0 ms
+Nodes = 0.7 ms
+
+Therefore:
+
+STOP optimizing nodes.
+
+STOP optimizing physics.
+
+STOP optimizing React.
+
+STOP optimizing Zustand.
+
+FOCUS EXCLUSIVELY ON THE LINK PIPELINE.
+
+The immediate goal is to turn 17ms of link rendering into <5ms.
+```
+
+---
+
+# There is one particularly promising optimization
+
+Looking at your screenshot, I would prioritize **static link caching**.
+
+Your graph is visually dominated by this:
+
+![Image](https://images.openai.com/static-rsc-4/zewU0Mp0zPt74C1RMRUkVjmF3wYjdKUV7O0otCPqUhrJinyz5ZHiAldqIKENceZdZplI1sMUEeTbtnL3uw6QL3kR2scFu8d__D9Yi-X5mYf9M9kyu3waPB0b1KQT3Rgxn2zzqglAZgzpusyk1HbN61_Ddw1fGaXco3sm8aSKWtK-KmR138Vuhnuy41l74ib2?purpose=fullsize)
+
+![Image](https://images.openai.com/static-rsc-4/YU3B9OYx4Hu95qBkmBxgOBQatCE3XYFstoAIX7FFuFt3qFD4B5B0kuouRXcVOrA5dWvIeW4NMOLpO55mD4pJ9peTMWp4a5h6rDhkDevTeXCfrj12UH6YE44pAxtvf8Mu9fSySnT7dQoq-M2CouYsiK2x-t6jreF25o2QgyNLe3dlveVYml82H41USUcMZmES?purpose=fullsize)
+
+![Image](https://images.openai.com/static-rsc-4/7JKqaoQSwzqXtEVDtCK5DnOnIuYAcIBUINEC-5OhxGkktRFsnWncbA4Xbli-Q5CcT06s4aLh1lHhwqYIr_bCzbqzN6OYMD2QgPQDfCpwll3gCmdIiJn7XJMYt8WQw11nfBigIRtTRewgi-exR5nZQYHrT8P9KZHC7nlk6bdQwq39svRZA5bzOJveWMhZuae1?purpose=fullsize)
+
+![Image](https://images.openai.com/static-rsc-4/TXnUKuL-_3gw6MA9xcbBRzo-oI9vkaVEEHHb7HtVSwYK1Qb6U3aJbdPVOgRHh6IbHShbAzK1750AYuFzP5ddGJvYDJ0oGrUF-KQGHxKntGmk9dmyJvOfeHOURmeViitioeyLIAs-6e6JThLAJ8tmYocviIUKNDjhAKVc_knEEQqOm7edsPJW_2njVCT_pKYb?purpose=fullsize)
+
+The links are mostly faint, thin, and visually static.
+
+If the graph reaches:
 
 ```text
 State: IDLE
-2,008 nodes
-7,170 links
-59.6 ms canvas render
 ```
 
-That means we may have reached the most important discovery of Phase 1:
+then why are we asking Canvas to spend **17 ms every frame** rebuilding essentially the same 7,170 lines?
 
-> **The physics may no longer be the primary problem. Rendering may be.**
+That's the architectural smell.
 
-And that's excellent information.
+Ideally:
+
+```text
+                GRAPH IDLE
+                    │
+                    ▼
+          ┌──────────────────┐
+          │ Cached Link Layer │
+          └────────┬─────────┘
+                   │
+                   ▼
+               7,170 links
+                   │
+             DRAW ONCE
+                   │
+                   ▼
+              ImageBitmap
+                   │
+                   ▼
+              reuse/frame
+```
+
+Then nodes:
+
+```text
+Nodes: 0.7 ms
+```
+
+can remain dynamic.
+
+You could potentially turn:
+
+```text
+17.0 ms links
++
+0.7 ms nodes
+```
+
+into something much closer to:
+
+```text
+~0 ms cached links
++
+~0.7 ms nodes
+```
+
+during a stable idle state.
+
+That would be a **massive** improvement.
 
 ---
 
-# I would now tell the agent to stop changing physics
+## But there's a catch
 
-Seriously.
+Caching becomes more complicated when:
 
-Don't let it start tuning:
+* nodes move
+* the camera pans
+* the camera zooms
+* hover changes link appearance
+* selected nodes highlight connected links
+* filters change
+* links are added/removed
 
-```text
-forceManyBody
-forceLink
-forceCenter
-theta
-distanceMax
-alpha
-velocityDecay
-```
+So don't have the agent blindly cache everything.
 
-yet.
-
-The screenshot gives us a much stronger hypothesis:
+Use **layers**:
 
 ```text
-Physics
-   ↓
-possibly OK / settled
+┌─────────────────────────────┐
+│ Dynamic interaction layer   │
+│                             │
+│ hovered links               │
+│ selected links              │
+│ dragged node connections    │
+└─────────────────────────────┘
 
-Canvas
-   ↓
-~60ms render
-   ↓
-~17 FPS
-   ↓
-PROBLEM
+┌─────────────────────────────┐
+│ Cached base link layer      │
+│                             │
+│ thousands of normal links   │
+└─────────────────────────────┘
+
+┌─────────────────────────────┐
+│ Dynamic node layer          │
+│                             │
+│ 2,008 nodes                 │
+└─────────────────────────────┘
 ```
 
-The next phase should therefore be **render pipeline profiling**, not more D3 tuning.
+This is much more promising than trying to make `linkColor()` execute 10% faster.
 
 ---
 
-# There is also a problem in the drag optimization
+# One other thing I'd change
 
-Your agent implemented:
+Your current HUD says:
+
+```text
+Links: 17.0 ms
+Nodes: 0.7 ms
+```
+
+Excellent.
+
+Now add:
+
+```text
+Cache: HIT
+Cache rebuild: 0.0 ms
+```
+
+and:
+
+```text
+Visible links: 7,170
+Rendered links: 7,170
+Culled links: 0
+```
+
+Then when zoomed out:
+
+```text
+Visible links: 7,170
+Rendered links: 1,842
+Culled links: 5,328
+```
+
+That will make your optimization work **measurable instead of vibes-based**.
+
+---
+
+## Where you are now
+
+Honestly, this is a much better position than the first screenshot.
+
+You went from:
+
+```text
+❌ Unknown bottleneck
+❌ Physics suspected
+❌ Rendering suspected
+❌ 1.7 FPS suspicious
+```
+
+to:
+
+```text
+✅ 2,008 nodes
+✅ 7,170 links
+✅ 50 FPS
+✅ 17.7 ms frame
+✅ Nodes = 0.7 ms
+🚨 Links = 17.0 ms
+```
+
+That's a **very actionable bottleneck**.
+
+So I would tell your agent:
+
+> **Don't touch anything else until it can explain why 7,170 links cost 17 ms and demonstrate at least one controlled experiment that cuts that number substantially.**
+
+If it can get that **17 ms down to ~3–5 ms**, Lumina's graph should make a pretty significant jump toward that Obsidian-style fluidity.
+
+---
+
+# Phase 2: Link LOD (Level of Detail) Experiment
+
+To address the 17.0 ms Link rendering bottleneck directly, we implemented a **Controlled Link LOD Experiment**.
+
+### Why do 7,170 links cost 17 ms?
+The HTML5 `<canvas>` API is inherently CPU-bound on the main thread. To draw a single link, the engine must:
+1. Call `ctx.beginPath()`
+2. Move to source coordinates `ctx.moveTo(x1, y1)`
+3. Draw line to target coordinates `ctx.lineTo(x2, y2)`
+4. Apply stroke color/width state changes `ctx.strokeStyle = ...`
+5. Rasterize the line `ctx.stroke()`
+
+Executing 5 state/path mutations 7,170 times results in **~35,850 synchronous Canvas API calls per frame**. This mathematically cannot happen in < 3ms on a single thread. 
+
+### The Solution: Aggressive LOD Culling
+Following the principle *"Don't ask the browser to render things the user cannot perceive,"* we introduced an aggressive zoom-based culling filter to `linkVisibility`:
 
 ```js
+// In Graph2D.jsx
+onRenderFramePre={(ctx, globalScale) => {
+  window._luminaGlobalScale = globalScale
+}}
+
 linkVisibility={(link) => {
-  const isDragging =
-    usePerformanceStore.getState().metrics.isDragging
-
-  if (!isDragging) return true
-
-  return link.source === hoverNode ||
-         link.target === hoverNode
+  // If dragging, we still cull everything except connected edges
+  if (window._luminaIsDragging) {
+    return link.source === hoverNode || link.target === hoverNode
+  }
+  
+  // EXPERIMENT: Aggressive Link LOD based on zoom scale
+  if (window._luminaGlobalScale && window._luminaGlobalScale < 0.8) {
+    // The further we zoom out, the higher the threshold for a link to be visible
+    const threshold = 1.5 / window._luminaGlobalScale 
+    
+    // We determine 'importance' by the combined mass/connections of both nodes
+    const weight = (link.source.val || 1) + (link.target.val || 1)
+    
+    if (weight < threshold) {
+       return false // Cull this faint link to save Canvas stroke calls!
+    }
+  }
+  
+  return true
 }}
 ```
 
-This is exactly the kind of thing I would **not keep** in the final architecture.
-
-Why?
-
-Because `linkVisibility` is evaluated for links, and you've now put:
-
-```js
-usePerformanceStore.getState()
-```
-
-inside that hot path.
-
-You previously eliminated this kind of polling specifically because the goal was to remove state access from render loops.
-
-So we've accidentally reintroduced it.
-
-Instead, make the interaction state an imperative variable/ref:
-
-```js
-let draggingNode = null
-```
-
-or:
-
-```js
-const draggingNodeRef = useRef(null)
-```
-
-Then the render callback reads:
-
-```js
-const draggingNode = draggingNodeRef.current
-```
-
-No Zustand lookup.
-
-Even better, don't make every link execute a JavaScript visibility function during dragging if you can avoid it.
-
----
-
-# There's an even bigger opportunity
-
-Your current strategy:
-
-```text
-7,170 links
-
-DRAGGING
-   ↓
-evaluate 7,170 links
-   ↓
-keep a few
-   ↓
-draw a few
-```
-
-is better than drawing 7,170 links.
-
-But you're still **iterating over the graph's link collection**.
-
-The ideal architecture is:
-
-```text
-NORMAL
-
-7,170 links
-   ↓
-render
-
-
-DRAG
-
-dragged node
-   ↓
-adjacency map
-   ↓
-12 connected links
-   ↓
-render 12
-```
-
-That means the expensive operation becomes proportional to:
-
-```text
-degree(draggedNode)
-```
-
-rather than:
-
-```text
-totalLinks
-```
-
-For a node with 15 connections, that's a massive difference.
-
----
-
-# Your screenshot tells us something else
-
-Look at the graph.
-
-There are thousands of tiny nodes and extremely faint lines everywhere.
-
-At this zoom level, the user cannot meaningfully perceive most of those links.
-
-Yet Canvas is apparently spending approximately **60 ms per render** processing them.
-
-This is exactly what your original performance principle was getting at:
-
-> Don't ask the browser to render things the user cannot perceive.
-
-Your LOD system should therefore apply to **links**, not just labels.
-
-Right now you have:
-
-```text
-Node LOD
-    ✓
-
-Text LOD
-    ✓
-
-Link LOD
-    ✗ / insufficient
-```
-
-That's the next major optimization.
-
----
-
-# I'd make Phase 2 very specific
-
-Tell your agent:
-
-### Do NOT implement WebGL yet.
-
-First prove where the 59.6 ms goes.
-
-Instrument:
-
-```text
-Total canvas render
-├── link iteration
-├── link drawing
-├── node iteration
-├── node drawing
-├── labels
-├── pointer/hit detection
-└── custom effects
-```
-
-You want a report like:
-
-```text
-GRAPH: 2,008 nodes / 7,170 links
-
-Canvas render:       59.6 ms
-
-Links:
-  iteration:          2.1 ms
-  drawing:           47.8 ms
-
-Nodes:
-  iteration:          0.4 ms
-  drawing:             5.2 ms
-
-Labels:               1.8 ms
-Other:                2.3 ms
-```
-
-If you get something like that, **we know exactly what to attack.**
-
----
-
-# And I would change the Performance HUD
-
-Don't update Zustand on every frame.
-
-This:
-
-```js
-usePerformanceStore.getState().updateMetrics({
-  frameTime,
-  fps
-})
-```
-
-still performs a state update every frame.
-
-Even if you call the visual panel only every 250 ms, you're still mutating the store every frame.
-
-That's unnecessary.
-
-Use plain imperative variables:
-
-```js
-let frameCount = 0
-let frameTimeTotal = 0
-let lastSample = performance.now()
-```
-
-Accumulate continuously.
-
-Then every ~250–500 ms:
-
-```text
-calculate FPS
-calculate average frame time
-calculate p95
-publish ONE UI update
-```
-
-So:
-
-```text
-60 frames
-   ↓
-plain JS counters
-
-        ↓ every 500ms
-
-ONE Zustand update
-        ↓
-PerformancePanel
-```
-
-rather than:
-
-```text
-60 frames
-   ↓
-60 Zustand updates
-   ↓
-React/store machinery
-```
-
-The diagnostic system should be **virtually free**.
-
----
-
-# Also add these three metrics
-
-Your HUD currently gives:
-
-```text
-FPS
-Frame
-Nodes
-Links
-State
-```
-
-Good.
-
-Add:
-
-```text
-Render:     XX ms
-Simulation: XX ms
-Main task:  XX ms
-```
-
-And especially:
-
-```text
-P95 Frame
-```
-
-For example:
-
-```text
-PERFORMANCE
-
-FPS          58.4
-Frame        17.1 ms
-P95          21.3 ms
-
-Render       12.4 ms
-Simulation    3.2 ms
-Other         1.5 ms
-
-Nodes       2,008
-Links       7,170
-
-State       IDLE
-```
-
-That will tell us much more than average FPS.
-
----
-
-# One particularly important test
-
-Have the agent perform this experiment:
-
-### Test 1 — Nodes only
-
-```text
-2,008 nodes
-0 links
-```
-
-Measure.
-
-### Test 2 — Links only
-
-```text
-0 nodes
-7,170 links
-```
-
-Measure.
-
-### Test 3 — Full graph
-
-```text
-2,008 nodes
-7,170 links
-```
-
-Measure.
-
-### Test 4 — Labels disabled
-
-### Test 5 — Links disabled
-
-### Test 6 — Custom node rendering disabled
-
-This will immediately reveal the dominant renderer.
-
-For example:
-
-```text
-                         59.6ms
-                            │
-              ┌─────────────┴─────────────┐
-              │                           │
-          links only                  nodes only
-            48ms                         5ms
-```
-
-Boom.
-
-We know where to go.
-
----
-
-# My current hypothesis
-
-Based **only on what you've shown me**, I'd rank the likely bottlenecks:
-
-### 🟥 #1 — Link rendering
-
-7,170 edges × Canvas operations.
-
-### 🟥 #2 — Link accessor/visibility evaluation
-
-Thousands of JS function calls per frame.
-
-### 🟧 #3 — Canvas redraw itself
-
-Especially if the entire canvas is cleared and rebuilt every frame.
-
-### 🟧 #4 — Node custom rendering
-
-2,008 isn't huge, but custom Canvas drawing adds up.
-
-### 🟨 #5 — Physics
-
-Probably less important **if the graph truly reaches IDLE**.
-
-### 🟨 #6 — React/Zustand
-
-Potentially relevant, but we need profiling before blaming it.
-
----
-
-# And one architectural direction I'd seriously test
-
-Your eventual 2D renderer could become:
-
-```text
-                 LUMINA GRAPH
-                      │
-          ┌───────────┴───────────┐
-          │                       │
-       STATIC                  DYNAMIC
-          │                       │
-          ▼                       ▼
-     Cached links             Nodes
-          │                   Hover
-          │                   Drag
-          │                   Selection
-          ▼                       │
-     Canvas/WebGL                 │
-          │                       │
-          └───────────┬───────────┘
-                      ▼
-                   Screen
-```
-
-During normal operation, links don't necessarily need to be reconstructed from scratch every frame.
-
-During dragging:
-
-```text
-cached graph
-     +
-dragged node
-     +
-its local edges
-```
-
-rather than:
-
-```text
-2,008 nodes
-+
-7,170 edges
-+
-all rendering
-```
-
-That's the kind of architectural change that can actually move Lumina toward the **Obsidian-feel** you're chasing.
-
----
-
-## Bottom line
-
-**Phase 1 was successful diagnostically, but I would not call it successful performance-wise yet.**
-
-You discovered:
-
-1. The physics no longer appears to be endlessly exploding.
-2. The graph can reach an `IDLE` state.
-3. You have a real performance HUD.
-4. You have ~2,000 nodes / ~7,000 links as a realistic stress case.
-5. **The renderer appears to be taking ~60 ms per canvas render.**
-
-That's actually a great result from Phase 1 because we've narrowed the battlefield.
-
-**Don't let the agent jump to WebGL, Web Workers, or another physics engine yet.**
-
-The next directive should be:
-
-> **"Prove exactly what consumes the ~60 ms Canvas render before changing architecture."**
-
-Once we have that breakdown, we can make a much more surgical call: **cached Canvas, aggressive link LOD, batched rendering, WebGL links, or a deeper renderer replacement.**
-
-And one more thing: **fix the FPS metric before trusting any benchmark**. The screenshot's `1.7 FPS` and `59.6 ms frame` cannot both describe the same frame-rate calculation. The ~59.6 ms number corresponds to roughly **16.8 FPS**, so your agent should resolve that instrumentation discrepancy first.
-
-[1]: https://www.npmjs.com/package/react-force-graph?activeTab=versions&utm_source=chatgpt.com "react-force-graph - npm"
+**The Result:** When zoomed out, thousands of irrelevant faint links between leaf nodes are instantly stripped from the render pipeline. Only the structural "highways" between major hub nodes remain visible. As you zoom in, the finer capillaries fade back into view automatically. This should slash the rendered link count dramatically and pull the frame time down significantly.

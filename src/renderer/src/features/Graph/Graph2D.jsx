@@ -32,7 +32,7 @@ const Graph2D = forwardRef(
           const sizeMult = useSettingsStore.getState().settings.graphNodeSize || 1.5
           const baseR = node.val ? Math.min(20, Math.max(4, Math.sqrt(node.val) * 3)) : 4
           const r = baseR * sizeMult + 5
-          const hitRadius = Math.max(r + 10, 15)
+          const hitRadius = window._luminaIsDragging ? Math.max(r + 20, 25) : r
           
           ctx.fillStyle = color
           ctx.beginPath()
@@ -40,9 +40,22 @@ const Graph2D = forwardRef(
           ctx.fill()
         }}
         linkVisibility={(link) => {
-          if (!window._luminaIsDragging) return true
-          // If dragging, ONLY render links attached to the dragged/hovered node
-          return link.source === hoverNode || link.target === hoverNode
+          if (window._luminaIsDragging) {
+            return link.source === hoverNode || link.target === hoverNode
+          }
+          
+          // EXPERIMENT: Aggressive Link LOD based on zoom scale
+          if (window._luminaGlobalScale && window._luminaGlobalScale < 0.8) {
+            // The further we zoom out, the higher the threshold for a link to be visible
+            const threshold = 1.5 / window._luminaGlobalScale 
+            const weight = (link.source.val || 1) + (link.target.val || 1)
+            
+            if (weight < threshold) {
+               return false // Cull this faint link to save Canvas stroke calls!
+            }
+          }
+          
+          return true
         }}
         linkColor={(link) => {
           if (!hoverNode) return defaultLineColor
@@ -69,7 +82,8 @@ const Graph2D = forwardRef(
           node.fx = null
           node.fy = null
         }}
-        onRenderFramePre={() => {
+        onRenderFramePre={(ctx, globalScale) => {
+          window._luminaGlobalScale = globalScale
           window._luminaFrameStart = performance.now()
           window._luminaNodesRenderTime = 0
         }}

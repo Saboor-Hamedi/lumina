@@ -118,8 +118,8 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DM
     <div
       style={{
         position: 'absolute',
-        bottom: '24px',
-        right: '24px',
+        bottom: '8px',
+        right: '8px',
         width: '160px',
         height: '120px',
         background: 'var(--bg-panel)',
