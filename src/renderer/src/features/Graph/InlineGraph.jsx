@@ -3,7 +3,7 @@ import ForceGraph2D from 'react-force-graph-2d'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { buildGraphData } from '../../core/utils/graphBuilder'
-import { forceManyBody, forceCollide } from 'd3-force'
+import { forceManyBody, forceCollide, forceX, forceY } from 'd3-force'
 import './Graph.css'
 import { getNodeColor, drawNode } from './graphs'
 import PerformancePanel from './PerformancePanel'
@@ -83,18 +83,21 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
           })
         )
 
-        const nextNodes = filteredNodes.map((n) => {
+        const nextNodes = filteredNodes.map((n, i) => {
           const oldN = prevNodes.get(n.id)
           if (oldN) {
             oldN.val = n.val
             oldN.group = n.group
             oldN.primaryTag = n.primaryTag
-            oldN.snippetId = n.snippetId // Ensure snippetId is always up to date
+            oldN.snippetId = n.snippetId
             return oldN
           }
+          
           if (n.snippetId !== focusNodeId) {
-            n.x = (Math.random() - 0.5) * 40
-            n.y = (Math.random() - 0.5) * 40
+            const angle = (i / filteredNodes.length) * 2 * Math.PI
+            const radius = 100 + Math.random() * 50 // Spread them out immediately
+            n.x = radius * Math.cos(angle)
+            n.y = radius * Math.sin(angle)
           }
           return n
         })
@@ -120,11 +123,15 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
   // Setup forces ONCE when the graph mounts — never again
   useEffect(() => {
     if (!graphRef.current) return
-    graphRef.current.d3Force('charge', forceManyBody().strength(-150))
+    graphRef.current.d3Force('charge', forceManyBody().strength(-150).distanceMax(800))
     graphRef.current.d3Force('radial', null)
     graphRef.current.d3Force('collide', forceCollide((node) => {
       return (node.snippetId === focusNodeId ? 7 : node.val ? Math.min(5, Math.max(2, Math.sqrt(node.val) * 1.5)) : 2) + 4
     }).strength(0.8))
+    
+    // Dedicated orphan pull to prevent floating nodes
+    graphRef.current.d3Force('orphanPullX', forceX(0).strength(n => (n.val === 1 ? 0.25 : 0.03)))
+    graphRef.current.d3Force('orphanPullY', forceY(0).strength(n => (n.val === 1 ? 0.25 : 0.03)))
   }, []) // empty deps = runs once only
 
   // Pin center node and auto-fit when data or focus changes
@@ -235,16 +242,17 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
               document.body.style.cursor = node ? 'pointer' : 'default'
               setHoverNode(node)
             }}
-            onNodeClick={(node) => {
-              if (graphRef.current) {
+            onNodeClick={(node, event) => {
+              if (!node || !node.snippetId || !onNavigate) return
+              
+              // PRIMARY ACTION: Always open the note immediately
+              onNavigate(node.snippetId)
+
+              // Optional: zoom only if holding modifier
+              if ((event.ctrlKey || event.metaKey) && graphRef.current) {
                 graphRef.current.centerAt(node.x, node.y, 800)
                 graphRef.current.zoom(10, 800)
               }
-              setTimeout(() => {
-                if (onNavigate && node.snippetId) {
-                  onNavigate(node.snippetId)
-                }
-              }, 150)
             }}
             onNodeDrag={(node) => {
               draggedNodeRef.current = node
@@ -257,9 +265,9 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
             enableNodeDrag={true}
             enableZoomInteraction={true}
             enablePanInteraction={true}
-            d3AlphaDecay={0.1}
-            d3VelocityDecay={0.6}
-            warmupTicks={50}
+            d3AlphaDecay={0.025}
+            d3VelocityDecay={0.4}
+            warmupTicks={80}
             backgroundColor="transparent"
             onRenderFramePre={() => {
               window._luminaInlineFrameStart = performance.now()

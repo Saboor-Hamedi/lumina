@@ -177,7 +177,7 @@ const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef }) => {
           <InlineGraph
             focusNodeId={snippet.id}
             onNavigate={(id) => {
-              useVaultStore.getState().openTab(id)
+              useVaultStore.getState().setActiveTabId(id)
               setShowLocalGraph(false) // Close dropdown on navigation
             }}
           />
