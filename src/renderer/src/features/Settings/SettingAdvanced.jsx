@@ -200,7 +200,7 @@ const SettingAdvanced = () => {
             <input
               type="range"
               min="0.5"
-              max="3.0"
+              max="2.0"
               step="0.1"
               defaultValue={settings.graphNodeSize || 1.5}
               onMouseUp={(e) => {

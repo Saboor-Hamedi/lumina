@@ -4,6 +4,12 @@ import { Target } from 'lucide-react'
 const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DMode }) => {
   const canvasRef = useRef(null)
   const rafRef = useRef(null)
+  const graphDataRef = useRef(graphData)
+
+  // Keep ref current so the draw loop always reads the latest node positions
+  useEffect(() => {
+    graphDataRef.current = graphData
+  }, [graphData])
 
   useEffect(() => {
     const draw = () => {
@@ -13,10 +19,9 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DM
       const ctx = canvas.getContext('2d')
       const { width, height } = canvas
 
-      // Clear background
       ctx.clearRect(0, 0, width, height)
 
-      const nodes = graphData?.nodes || []
+      const nodes = graphDataRef.current?.nodes || []
       if (nodes.length === 0) {
         rafRef.current = requestAnimationFrame(draw)
         return
@@ -31,8 +36,13 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DM
         const n = nodes[i]
         if (n.x < minX) minX = n.x
         if (n.x > maxX) maxX = n.x
-        if (n.y < minY) minY = n.y
-        if (n.y > maxY) maxY = n.y
+        if (is3DMode) {
+          if (n.z < minY) minY = n.z
+          if (n.z > maxY) maxY = n.z
+        } else {
+          if (n.y < minY) minY = n.y
+          if (n.y > maxY) maxY = n.y
+        }
       }
 
       // Add a small safety margin
@@ -57,8 +67,17 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DM
       ctx.fillStyle = 'rgba(64, 186, 250, 0.4)'
       for (let i = 0; i < nodes.length; i++) {
         const n = nodes[i]
-        const cx = n.x * scale + offsetX
-        const cy = n.y * scale + offsetY
+        
+        let cx, cy
+        if (is3DMode) {
+          // 3D mode: Project X and Z onto the 2D canvas (top-down view)
+          cx = n.x * scale + offsetX
+          cy = n.z * scale + offsetY // Map Z to Y for top-down floor-plan
+        } else {
+          cx = n.x * scale + offsetX
+          cy = n.y * scale + offsetY
+        }
+        
         const r = Math.max(1, (n.val ? Math.sqrt(n.val) : 1) * 0.5)
 
         ctx.beginPath()
@@ -66,7 +85,7 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DM
         ctx.fill()
       }
 
-      // 3. Draw viewport box
+      // 3. Draw viewport box (Only in 2D mode, 3D viewport mapping is too complex)
       try {
         if (!is3DMode && graphRef.current.zoom && graphRef.current.centerAt) {
           const currentZoom = graphRef.current.zoom()
@@ -97,15 +116,18 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DM
         // centerAt/zoom might throw if not fully initialized
       }
 
-      // Throttle minimap redraw to ~15fps (every 66ms) instead of 60fps to prevent main thread freezing
-      rafRef.current = setTimeout(draw, 66)
+      // Throttle to ~15 FPS
+      rafRef.current = setTimeout(() => rafRef.current = requestAnimationFrame(draw), 66)
     }
 
-    rafRef.current = setTimeout(draw, 66)
+    rafRef.current = requestAnimationFrame(draw)
     return () => {
-      if (rafRef.current) clearTimeout(rafRef.current)
+      if (rafRef.current) {
+        clearTimeout(rafRef.current)
+        cancelAnimationFrame(rafRef.current)
+      }
     }
-  }, [graphData, graphRef, mainWidth, mainHeight])
+  }, [graphRef, mainWidth, mainHeight])
 
   const handleRecenter = (e) => {
     e.stopPropagation()

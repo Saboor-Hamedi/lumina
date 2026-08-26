@@ -149,7 +149,7 @@ const Graph3D = React.forwardRef(({ graphData, ...restProps }, ref) => {
         'custom_collide',
         forceCollide()
           .radius((n) => {
-            const base = n.val ? Math.max(2, Math.sqrt(n.val) * 2.5) : 2
+            const base = n.val ? Math.min(8, Math.max(2, Math.sqrt(n.val) * 2.2)) : 2
             const sizeMult = initialSettings.graphNodeSize || 1.5
             return base * sizeMult + 2
           })
@@ -171,7 +171,15 @@ const Graph3D = React.forwardRef(({ graphData, ...restProps }, ref) => {
     }
   }, [graphData])
 
-  return <ForceGraph3D ref={internalRef} graphData={graphData} {...restProps} />
+  return <ForceGraph3D 
+    ref={internalRef} 
+    graphData={graphData} 
+    glConfig={{ antialias: false, alpha: true, premultipliedAlpha: false }}
+    dpr={window.devicePixelRatio > 1 ? 1.5 : 1}
+    cooldownTicks={150}
+    onEngineStop={() => { window._luminaPhysicsActive = false }}
+    {...restProps} 
+  />
 })
 
 Graph3D.displayName = 'Graph3D'

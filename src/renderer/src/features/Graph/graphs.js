@@ -36,9 +36,6 @@ export const drawNode = (
 ) => {
   const label = (node.id || '').replace(/[*"']/g, '')
 
-  // Removed ring/glow completely for a minimal look as requested
-  // The rest of the graph will dim, which is enough to highlight the node
-
   // Dimming logic
   if (isSearchDimmed && !isHovered && !isActive) {
     ctx.globalAlpha = 0.05
@@ -53,26 +50,32 @@ export const drawNode = (
   ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false)
   ctx.fillStyle = color
   ctx.fill()
-  
+
   ctx.globalAlpha = 1.0
 
   const isDragging = window._luminaIsDragging
 
-  // Draw text (Optimized: fillText is slow, so only render if required)
+  // Draw text only when needed (fillText is expensive — skip during drag and when zoomed out)
   if (!isDragging && showText && (isHovered || isActive || isSearchMatch || globalScale > 1.5)) {
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.fillStyle = 'var(--text-main, #d4d4d4)'
-
-    // Dynamic text sizing based on zoom level (globalScale)
-    // By dividing by globalScale, the text remains a consistent physical size on the screen
-    // Keep size static on hover as requested
-    const baseSize = 8
-    const fontSize = baseSize / globalScale
+    // Font size relative to the canvas coordinate system, so it scales naturally with zoom
+    const fontSize = 4 
     ctx.font = `${fontSize}px Inter, sans-serif`
-    
-    // Offset the text below the node
-    ctx.fillText(label, node.x, node.y + r + 6 / globalScale)
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'top'
+
+    // Subtle text shadow for readability on any background
+    ctx.shadowColor = 'rgba(0,0,0,0.8)'
+    ctx.shadowBlur = 2 / globalScale // Scale the blur down when zoomed in
+
+    // Fade in text gracefully as user zooms in
+    const textAlpha = isHovered || isActive ? 1 : Math.min(1, (globalScale - 1.2) / 0.8)
+    ctx.globalAlpha = textAlpha
+
+    ctx.fillStyle = isActive ? '#ffffff' : 'var(--text-main, #d4d4d4)'
+    ctx.fillText(label, node.x, node.y + r + 2)
+
+    ctx.shadowBlur = 0
+    ctx.globalAlpha = 1.0
   }
 
   if (window._luminaNodesRenderTime !== undefined) {

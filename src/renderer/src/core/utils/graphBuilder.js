@@ -100,13 +100,16 @@ export const buildGraphData = (snippets) => {
     }
   })
 
-  // 3. Calculate "Mass" (Centrality)
+  // 3. Calculate "Mass" (Centrality) — capped to prevent hub nodes from becoming huge
   links.forEach((link) => {
     const source = nodeMap.get(link.source)
     const target = nodeMap.get(link.target)
     if (source) source.val += 0.5
     if (target) target.val += 0.5
   })
+
+  // Hard cap: no node can exceed val 8 — keeps the visual size reasonable
+  nodes.forEach((n) => { if (n.val > 8) n.val = 8 })
 
   // Sort nodes by mass so larger nodes render on top of smaller ones
   nodes.sort((a, b) => a.val - b.val)

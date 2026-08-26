@@ -507,7 +507,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   const defaultLineColor = useMemo(() => {
     const isSelectedTheme = graphTheme === 'space' || graphTheme === 'nebula'
     if (is3DMode) {
-      return isSelectedTheme ? 'rgba(255, 255, 255, 0.15)' : 'rgba(150, 150, 150, 0.25)'
+      return isSelectedTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(150, 150, 150, 0.15)'
     }
     return isSelectedTheme ? 'rgba(255, 255, 255, 0.04)' : 'rgba(150, 150, 150, 0.08)' // Extremely faint so it's not muddy
   }, [graphTheme, is3DMode])
@@ -545,10 +545,9 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     (node, ctx, globalScale) => {
       const isActive = selectedSnippet && node.snippetId === selectedSnippet.id
       const isHovered = hoverNode === node
-      // Cap maximum radius so highly-linked nodes don't become massive planets covering the screen
-      // Increased base size by ~10px as requested
-      const baseR = node.val ? Math.min(20, Math.max(4, Math.sqrt(node.val) * 3)) : 4
-      const r = baseR * graphNodeSize + 5
+      // Cap max radius tightly — nodes should be dots, not planets
+      const baseR = node.val ? Math.min(8, Math.max(2, Math.sqrt(node.val) * 2.2)) : 2
+      const r = baseR * graphNodeSize + 2
 
       const label = (node.id || '').replace(/[*"']/g, '')
       const isSearchMatch =
@@ -620,9 +619,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             nodeColor={nodeColorFn}
             nodeRelSize={4}
             nodeThreeObject={(node) => {
-              const base = node.val ? Math.min(20, Math.max(4, Math.sqrt(node.val) * 3)) : 4
-              const targetRadius = base * graphNodeSize + 5
-              const r = targetRadius // Restored correct size
+              const base = node.val ? Math.min(8, Math.max(2, Math.sqrt(node.val) * 2.2)) : 2
+              const r = base * graphNodeSize + 2
               const mesh = new THREE.Mesh(sharedSphereGeometry, getMaterial(nodeColorFn(node)))
               mesh.scale.set(r, r, r)
               return mesh
@@ -638,10 +636,25 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             linkWidth={0.5}
             onNodeHover={(node) => setHoverNode(node)}
             onNodeClick={(node) => {
-              if (node.snippetId) {
-                const s = snippets.find((sn) => sn.id === node.snippetId)
-                if (s) onNavigate(s)
+              if (graphRef.current && is3DMode) {
+                const distance = 400
+                const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z)
+                graphRef.current.cameraPosition(
+                  { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
+                  node,
+                  1000
+                )
+              } else if (graphRef.current && !is3DMode) {
+                graphRef.current.centerAt(node.x, node.y, 1000)
+                graphRef.current.zoom(8, 1000)
               }
+
+              setTimeout(() => {
+                if (node.snippetId) {
+                  const s = snippets.find((sn) => sn.id === node.snippetId)
+                  if (s) onNavigate(s)
+                }
+              }, 150)
             }}
             onNodeDrag={(node) => {
               window._luminaIsDragging = true
@@ -778,9 +791,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               nodeColor={nodeColorFn}
               nodeRelSize={4}
               nodeThreeObject={(node) => {
-                const base = node.val ? Math.min(20, Math.max(4, Math.sqrt(node.val) * 3)) : 4
-                const targetRadius = base * graphNodeSize + 5
-                const r = targetRadius // Restored correct size
+                const base = node.val ? Math.min(8, Math.max(2, Math.sqrt(node.val) * 2.2)) : 2
+                const r = base * graphNodeSize + 2
                 const mesh = new THREE.Mesh(sharedSphereGeometry, getMaterial(nodeColorFn(node)))
                 mesh.scale.set(r, r, r)
                 return mesh
@@ -796,10 +808,25 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               linkWidth={0.5}
               onNodeHover={(node) => setHoverNode(node)}
               onNodeClick={(node) => {
-                if (node.snippetId) {
-                  const s = snippets.find((sn) => sn.id === node.snippetId)
-                  if (s) onNavigate(s)
+                if (graphRef.current) {
+                  // Obsidian-style camera fly-to
+                  const distance = 400
+                  const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z)
+                  graphRef.current.cameraPosition(
+                    { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
+                    node,
+                    1000
+                  )
                 }
+
+                // Wait 150ms before navigating so they see the start of the fly-to, 
+                // but don't hold them up too long
+                setTimeout(() => {
+                  if (node.snippetId) {
+                    const s = snippets.find((sn) => sn.id === node.snippetId)
+                    if (s) onNavigate(s)
+                  }
+                }, 150)
               }}
               onNodeDrag={(node) => {
                 window._luminaIsDragging = true

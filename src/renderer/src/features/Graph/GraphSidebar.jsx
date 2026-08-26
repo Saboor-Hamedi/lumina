@@ -179,7 +179,7 @@ const GraphSidebar = ({
                 type="range"
                 className="graph-slider"
                 min="0.5"
-                max="3.0"
+                max="2.0"
                 step="0.1"
                 value={settings.graphNodeSize || 1.5}
                 onChange={(e) => updateSetting('graphNodeSize', parseFloat(e.target.value))}

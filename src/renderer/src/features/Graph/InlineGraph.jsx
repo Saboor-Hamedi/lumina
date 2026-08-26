@@ -3,16 +3,12 @@ import ForceGraph2D from 'react-force-graph-2d'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { buildGraphData } from '../../core/utils/graphBuilder'
-import { forceRadial, forceManyBody, forceCollide, forceCenter } from 'd3-force'
+import { forceManyBody, forceCollide } from 'd3-force'
 import './Graph.css'
 import { getNodeColor, drawNode } from './graphs'
-
-// Static theme colors to avoid runtime function calls during render
-const THEME_COLORS = {
-  default: { center: '#e8a825', node: '#666', link: 'rgba(150,150,150,0.2)' },
-  dark: { center: '#fbbf24', node: '#4b5563', link: 'rgba(75,85,99,0.3)' },
-  light: { center: '#d97706', node: '#9ca3af', link: 'rgba(156,163,175,0.4)' }
-}
+import PerformancePanel from './PerformancePanel'
+import GraphMiniMap from './GraphMiniMap'
+import { usePerformanceStore } from './usePerformanceStore'
 
 const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
   const snippets = useVaultStore((s) => s.snippets)
@@ -21,17 +17,14 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
   const graphRef = useRef()
   const containerRef = useRef()
 
-  const [dimensions, setDimensions] = useState({ width: 0, height: 250 }) // Default height
+  const [dimensions, setDimensions] = useState({ width: 0, height: 320 })
 
   useEffect(() => {
     if (!containerRef.current) return
     const resizeObserver = new ResizeObserver((entries) => {
       for (let entry of entries) {
-        setDimensions({
-          width: entry.contentRect.width,
-          height: 250
-        })
-      }
+          setDimensions({ width: entry.contentRect.width, height: 320 })
+        }
     })
     resizeObserver.observe(containerRef.current)
     return () => resizeObserver.disconnect()
@@ -39,8 +32,12 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
 
   const [graphData, setGraphData] = useState({ nodes: [], links: [] })
 
+  // Reset zoom guard whenever the user switches to a different note
   useEffect(() => {
-    // Defer heavy calculation so the dropdown UI opens instantly without freezing
+    hasInitialized.current = false
+  }, [focusNodeId])
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       const rawData = buildGraphData(snippets, {
         graphHideTags: true,
@@ -59,17 +56,12 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
         return
       }
 
-      // We no longer rigidly pin the central node so it can bounce elastically.
-      // A d3 force will pull it to the center instead.
-
       const centralTitle = centralNode.id
-      const neighbors = new Set()
-      neighbors.add(centralTitle)
+      const neighbors = new Set([centralTitle])
 
       rawData.links.forEach((link) => {
         const sourceId = typeof link.source === 'object' ? link.source.id : link.source
         const targetId = typeof link.target === 'object' ? link.target.id : link.target
-
         if (sourceId === centralTitle) neighbors.add(targetId)
         if (targetId === centralTitle) neighbors.add(sourceId)
       })
@@ -97,6 +89,7 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
             oldN.val = n.val
             oldN.group = n.group
             oldN.primaryTag = n.primaryTag
+            oldN.snippetId = n.snippetId // Ensure snippetId is always up to date
             return oldN
           }
           if (n.snippetId !== focusNodeId) {
@@ -110,10 +103,7 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
           const s = typeof l.source === 'object' ? l.source.id : l.source
           const t = typeof l.target === 'object' ? l.target.id : l.target
           const oldL = prevLinks.get(`${s}|${t}`)
-          if (oldL) {
-            oldL.value = l.value
-            return oldL
-          }
+          if (oldL) { oldL.value = l.value; return oldL }
           return l
         })
 
@@ -124,30 +114,47 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
     return () => clearTimeout(timer)
   }, [snippets, focusNodeId])
 
+  const hasInitialized = useRef(false)
+  const draggedNodeRef = useRef(null)
+
+  // Setup forces ONCE when the graph mounts — never again
   useEffect(() => {
-    if (graphRef.current) {
-      // Gentle physics for small inline graph
-      graphRef.current.d3Force('charge', forceManyBody().strength(-120))
-      
-      // Pull central node elastically to the exact center (0,0) without rigid pinning
-      graphRef.current.d3Force('radial', forceRadial(0, 0, 0).strength((node) => {
-        return node.snippetId === focusNodeId ? 1.0 : 0
-      }))
+    if (!graphRef.current) return
+    graphRef.current.d3Force('charge', forceManyBody().strength(-150))
+    graphRef.current.d3Force('radial', null)
+    graphRef.current.d3Force('collide', forceCollide((node) => {
+      return (node.snippetId === focusNodeId ? 7 : node.val ? Math.min(5, Math.max(2, Math.sqrt(node.val) * 1.5)) : 2) + 4
+    }).strength(0.8))
+  }, []) // empty deps = runs once only
 
-      // Add a stronger collision force so they don't touch/overlap each other
-      graphRef.current.d3Force('collide', forceCollide((node) => {
-        return (node.snippetId === focusNodeId ? 8 : node.val ? Math.min(6, Math.max(2, Math.sqrt(node.val) * 2)) : 3) + 2
-      }).strength(1))
+  // Pin center node and auto-fit when data or focus changes
+  useEffect(() => {
+    if (graphData.nodes.length === 0) return
 
+    // Pin center node at origin, release all others (unless currently being dragged)
+    graphData.nodes.forEach((node) => {
+      if (node.snippetId === focusNodeId) {
+        node.fx = 0
+        node.fy = 0
+      } else if (node !== draggedNodeRef.current) {
+        // Don't reset fx/fy on the node the user is currently dragging
+        node.fx = undefined
+        node.fy = undefined
+      }
+    })
+
+    // Auto-fit only the first time this focus node's data appears
+    if (!hasInitialized.current) {
+      hasInitialized.current = true
       setTimeout(() => {
-        graphRef.current?.zoomToFit(0, 20)
-        graphRef.current?.d3ReheatSimulation()
-      }, 50)
+        if (!graphRef.current) return
+        graphRef.current.zoomToFit(400, 20)
+      }, 300)
     }
   }, [graphData, focusNodeId])
 
   const [hoverNode, setHoverNode] = useState(null)
-  
+
   const hoverNeighbors = React.useMemo(() => {
     if (!hoverNode) return new Set()
     const neighbors = new Set()
@@ -161,7 +168,6 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
   }, [hoverNode, graphData.links])
 
   const nodeColor = (node) => {
-    // Override default node color if it's the focus node
     if (node.snippetId === focusNodeId) return '#e8a825'
     return getNodeColor(node, focusNodeId)
   }
@@ -170,34 +176,18 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
     (node, ctx, globalScale) => {
       const isActive = node.snippetId === focusNodeId
       const isHovered = hoverNode === node
-      
-      // Central node is 8. Secondary nodes are capped at 6 to ensure they never overpower the central node.
-      const r = isActive ? 8 : node.val ? Math.min(6, Math.max(2, Math.sqrt(node.val) * 2)) : 3
-      
+      const r = isActive ? 7 : node.val ? Math.min(5, Math.max(2, Math.sqrt(node.val) * 1.5)) : 2
       const isNeighborDimmed = hoverNode && hoverNode !== node && !hoverNeighbors.has(node.id)
 
-      drawNode(
-        ctx,
-        node,
-        r,
-        nodeColor(node),
-        isActive,
-        isHovered,
-        false, // isSearchMatch
-        false, // isSearchDimmed
-        isNeighborDimmed, // Dim nodes that are not neighbors of the hovered node
-        isActive || isHovered,
-        globalScale
-      )
+      drawNode(ctx, node, r, nodeColor(node), isActive, isHovered,
+        false, false, isNeighborDimmed, isActive || isHovered, globalScale)
     },
     [focusNodeId, hoverNode, hoverNeighbors]
   )
 
   const handleNodeClick = useCallback(
     (node) => {
-      if (onNavigate && node.snippetId) {
-        onNavigate(node.snippetId)
-      }
+      if (onNavigate && node.snippetId) onNavigate(node.snippetId)
     },
     [onNavigate]
   )
@@ -208,7 +198,7 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
       className={`inline-graph-container graph-theme-${graphTheme}`}
       style={{
         width: '100%',
-        height: '250px',
+        height: `${dimensions.height}px`,
         borderRadius: '8px',
         background: 'var(--bg-panel, #111)',
         overflow: 'hidden',
@@ -224,47 +214,79 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
             graphData={graphData}
             nodeCanvasObject={paintNode}
             nodePointerAreaPaint={(node, color, ctx) => {
-              const baseR =
-                node.snippetId === focusNodeId
-                  ? 8
-                  : node.val
-                    ? Math.min(6, Math.max(2, Math.sqrt(node.val) * 2))
-                    : 3
-              // Create a massive invisible hit area so the mouse doesn't easily slip off during rapid drags
-              const hitRadius = Math.max(baseR + 10, 15)
-              
+              const r = node.snippetId === focusNodeId ? 7
+                : node.val ? Math.min(5, Math.max(2, Math.sqrt(node.val) * 1.5)) : 2
+              const hitRadius = Math.max(r + 5, 10) // Minimum 10px hit radius (20px diameter) for easy clicking
               ctx.fillStyle = color
               ctx.beginPath()
               ctx.arc(node.x, node.y, hitRadius, 0, 2 * Math.PI, false)
               ctx.fill()
             }}
             linkColor={(link) => {
-              const hNode = hoverNode
-              if (!hNode) return 'rgba(150,150,150,0.2)'
-              return link.source === hNode || link.target === hNode ? '#40bafa' : 'rgba(150,150,150,0.05)'
+              if (!hoverNode) return 'rgba(150,150,150,0.2)'
+              return link.source === hoverNode || link.target === hoverNode
+                ? '#40bafa' : 'rgba(150,150,150,0.05)'
             }}
             linkWidth={(link) => {
-              const hNode = hoverNode
-              if (!hNode) return 0.2
-              return link.source === hNode || link.target === hNode ? 0.4 : 0.1
+              if (!hoverNode) return 0.2
+              return link.source === hoverNode || link.target === hoverNode ? 0.4 : 0.1
             }}
             onNodeHover={(node) => {
               document.body.style.cursor = node ? 'pointer' : 'default'
               setHoverNode(node)
             }}
-            onNodeClick={handleNodeClick}
+            onNodeClick={(node) => {
+              if (graphRef.current) {
+                graphRef.current.centerAt(node.x, node.y, 800)
+                graphRef.current.zoom(10, 800)
+              }
+              setTimeout(() => {
+                if (onNavigate && node.snippetId) {
+                  onNavigate(node.snippetId)
+                }
+              }, 150)
+            }}
+            onNodeDrag={(node) => {
+              draggedNodeRef.current = node
+            }}
             onNodeDragEnd={(node) => {
-              // Unpin ALL nodes (including central node) so they bounce elastically via physics
               node.fx = null
               node.fy = null
+              draggedNodeRef.current = null
             }}
             enableNodeDrag={true}
             enableZoomInteraction={true}
             enablePanInteraction={true}
-            // Handle velocity decay - higher value means it settles much faster and doesn't drift
-            d3AlphaDecay={0.05}
-            d3VelocityDecay={0.4}
+            d3AlphaDecay={0.1}
+            d3VelocityDecay={0.6}
+            warmupTicks={50}
             backgroundColor="transparent"
+            onRenderFramePre={() => {
+              window._luminaInlineFrameStart = performance.now()
+            }}
+            onRenderFramePost={() => {
+              const now = performance.now()
+              const frameTime = now - (window._luminaInlineFrameStart || now)
+              const fps = window._luminaInlineLastFrame ? 1000 / (now - window._luminaInlineLastFrame) : 60
+              window._luminaInlineLastFrame = now
+              if (!window._luminaInlineLastHud || now - window._luminaInlineLastHud > 500) {
+                window._luminaInlineLastHud = now
+                usePerformanceStore.getState().updateMetrics({
+                  fps, frameTime,
+                  nodesRenderTime: 0, linksRenderTime: 0,
+                  nodeCount: graphData?.nodes?.length || 0,
+                  linkCount: graphData?.links?.length || 0
+                })
+              }
+            }}
+          />
+          <PerformancePanel compact={true} />
+          <GraphMiniMap
+            graphRef={graphRef}
+            graphData={graphData}
+            mainWidth={dimensions.width}
+            mainHeight={dimensions.height}
+            is3DMode={false}
           />
         </>
       )}

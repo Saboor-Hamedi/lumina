@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { usePerformanceStore } from './usePerformanceStore'
 
-export default function PerformancePanel() {
+export default function PerformancePanel({ compact = false, is3DMode = false }) {
   const [localMetrics, setLocalMetrics] = useState(null)
 
   useEffect(() => {
-    // Throttle React updates to twice a second so the panel itself doesn't cause lag
     let animationFrameId
     let lastUpdate = 0
     
@@ -22,6 +21,34 @@ export default function PerformancePanel() {
   }, [])
 
   if (!localMetrics) return null
+
+  if (compact) {
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          top: '8px',
+          left: '8px',
+          background: 'rgba(0, 0, 0, 0.7)',
+          color: '#0f0',
+          fontFamily: 'monospace',
+          padding: '6px 10px',
+          borderRadius: '4px',
+          fontSize: '10px',
+          zIndex: 9999,
+          pointerEvents: 'none',
+          border: '1px solid #333',
+          display: 'flex',
+          gap: '12px'
+        }}
+      >
+        <span>FPS: {localMetrics.fps.toFixed(1)}</span>
+        <span>Frame: {localMetrics.frameTime.toFixed(1)}ms</span>
+        <span style={{ color: '#aaa' }}>N: {localMetrics.nodeCount} | L: {localMetrics.linkCount}</span>
+        {is3DMode && <span style={{ color: '#b57edd' }}>[GPU]</span>}
+      </div>
+    )
+  }
 
   return (
     <div
@@ -49,8 +76,14 @@ export default function PerformancePanel() {
       <div>Frame: {localMetrics.frameTime.toFixed(1)} ms</div>
       
       <div style={{ margin: '6px 0', borderTop: '1px dashed #555' }}></div>
-      <div style={{ color: '#aaa' }}>Links: {(localMetrics.linksRenderTime || 0).toFixed(1)} ms</div>
-      <div style={{ color: '#aaa' }}>Nodes: {(localMetrics.nodesRenderTime || 0).toFixed(1)} ms</div>
+      {is3DMode ? (
+        <div style={{ color: '#b57edd', fontWeight: 'bold' }}>GPU Accelerated</div>
+      ) : (
+        <>
+          <div style={{ color: '#aaa' }}>Links: {(localMetrics.linksRenderTime || 0).toFixed(1)} ms</div>
+          <div style={{ color: '#aaa' }}>Nodes: {(localMetrics.nodesRenderTime || 0).toFixed(1)} ms</div>
+        </>
+      )}
       
       <div style={{ margin: '6px 0', borderTop: '1px dashed #555' }}></div>
       <div>Nodes: {localMetrics.nodeCount}</div>

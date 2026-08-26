@@ -14,7 +14,10 @@ const Graph2D = forwardRef(
       setHoverNode,
       defaultLineColor,
       onNavigate,
-      setIsEngineReady
+      setIsEngineReady,
+      onWorkerDragStart,
+      onWorkerDrag,
+      onWorkerDragEnd
     },
     ref
   ) => {
@@ -40,18 +43,25 @@ const Graph2D = forwardRef(
           ctx.fill()
         }}
         linkVisibility={(link) => {
-          if (window._luminaIsDragging) {
-            return link.source === hoverNode || link.target === hoverNode
+          if (window._luminaIsDragging || window._luminaIsPanning) {
+            // When interacting heavily, only show links connected to hovered node (if any)
+            if (hoverNode) {
+              return link.source === hoverNode || link.target === hoverNode
+            }
+            // If just panning, hide extremely faint links aggressively to keep it 60 FPS
+            if (window._luminaIsPanning) {
+              const weight = (link.source.val || 1) + (link.target.val || 1)
+              return weight > 3 // Only show strong links while panning
+            }
           }
           
           // EXPERIMENT: Aggressive Link LOD based on zoom scale
           if (window._luminaGlobalScale && window._luminaGlobalScale < 0.8) {
-            // The further we zoom out, the higher the threshold for a link to be visible
             const threshold = 1.5 / window._luminaGlobalScale 
             const weight = (link.source.val || 1) + (link.target.val || 1)
             
             if (weight < threshold) {
-               return false // Cull this faint link to save Canvas stroke calls!
+               return false 
             }
           }
           
@@ -75,44 +85,149 @@ const Graph2D = forwardRef(
         onNodeDrag={(node) => {
           window._luminaIsDragging = true
           usePerformanceStore.getState().setDragging(true)
+          if (onWorkerDragStart) onWorkerDragStart()
+          if (onWorkerDrag) onWorkerDrag(node)
         }}
         onNodeDragEnd={(node) => {
           window._luminaIsDragging = false
           usePerformanceStore.getState().setDragging(false)
           node.fx = null
           node.fy = null
+          if (onWorkerDragEnd) onWorkerDragEnd(node)
         }}
         onRenderFramePre={(ctx, globalScale) => {
+          const TARGET_FPS = 60
+          const FRAME_MIN_TIME = 1000 / TARGET_FPS
+          const now = performance.now()
+          
+          if (!window._luminaLastVsyncFrame) window._luminaLastVsyncFrame = now
+          const delta = now - window._luminaLastVsyncFrame
+          
+          // If the frame came too fast, we can't technically cancel the canvas draw in all versions of the lib,
+          // but we can track the pacing and exit our heavy logic early if it was supported.
+          
+          window._luminaLastVsyncFrame = now - (delta % FRAME_MIN_TIME) // Adjust for drift
+          
           window._luminaGlobalScale = globalScale
-          window._luminaFrameStart = performance.now()
+          window._luminaFrameStart = now
           window._luminaNodesRenderTime = 0
         }}
         onRenderFramePost={() => {
           const now = performance.now()
           const frameTime = now - window._luminaFrameStart
           const nodesTime = window._luminaNodesRenderTime
-          const linksTime = Math.max(0, frameTime - nodesTime) // Rough estimate for now since links render before nodes
+          const linksTime = Math.max(0, frameTime - nodesTime)
           
           const fps = window._luminaLastFrame ? 1000 / (now - window._luminaLastFrame) : 60
           window._luminaLastFrame = now
-          usePerformanceStore.getState().updateMetrics({ 
-            frameTime, 
-            fps, 
-            nodesRenderTime: nodesTime,
-            linksRenderTime: linksTime,
-            nodeCount: graphData?.nodes?.length || 0, 
-            linkCount: graphData?.links?.length || 0 
-          })
+          
+          // THROTTLE HUD UPDATES TO EVERY 500MS
+          if (!window._luminaLastHudUpdate || now - window._luminaLastHudUpdate > 500) {
+            window._luminaLastHudUpdate = now
+            usePerformanceStore.getState().updateMetrics({ 
+              frameTime, 
+              fps, 
+              nodesRenderTime: nodesTime,
+              linksRenderTime: linksTime,
+              nodeCount: graphData?.nodes?.length || 0, 
+              linkCount: graphData?.links?.length || 0 
+            })
+          }
         }}
         backgroundColor="transparent"
         d3AlphaDecay={0.05}
         d3VelocityDecay={0.4}
         nodeLabel={(node) => (node.id || '').replace(/[*"']/g, '')}
+        onZoom={(transform) => {
+          window._luminaIsPanning = true
+          if (window._luminaPanTimeout) clearTimeout(window._luminaPanTimeout)
+          window._luminaPanTimeout = setTimeout(() => {
+            window._luminaIsPanning = false
+          }, 150)
+        }}
         onEngineStop={() => setIsEngineReady(true)}
       />
     )
   }
 )
 
-Graph2D.displayName = 'Graph2D'
-export default React.memo(Graph2D)
+export default React.memo(React.forwardRef(function Graph2DWrapper(props, ref) {
+  const fgRef = React.useRef()
+  
+  React.useImperativeHandle(ref, () => fgRef.current, [])
+
+  const workerRef = React.useRef(null)
+
+  React.useEffect(() => {
+    if (fgRef.current) {
+      fgRef.current.d3Force('charge', null)
+      fgRef.current.d3Force('link', null)
+      fgRef.current.d3Force('center', null)
+      fgRef.current.d3Force('collide', null)
+    }
+
+    workerRef.current = new Worker(new URL('./physics.worker.js', import.meta.url), { type: 'module' })
+
+    const repelForce = useSettingsStore.getState().settings.repelForce || 1
+    const linkForce = useSettingsStore.getState().settings.linkForce || 1
+
+    const safeNodes = props.graphData.nodes.map(n => ({ id: n.id, val: n.val, x: n.x, y: n.y, fx: n.fx, fy: n.fy }))
+    const safeLinks = props.graphData.links.map(l => ({ 
+      source: typeof l.source === 'object' ? l.source.id : l.source, 
+      target: typeof l.target === 'object' ? l.target.id : l.target 
+    }))
+
+    workerRef.current.postMessage({
+      type: 'INIT',
+      payload: {
+        nodes: safeNodes,
+        links: safeLinks,
+        settings: { repelForce, linkForce }
+      }
+    })
+
+    workerRef.current.onmessage = (e) => {
+      const { type, positions } = e.data
+      if (type === 'TICK' && fgRef.current && props.graphData.nodes) {
+        for (let i = 0; i < props.graphData.nodes.length; i++) {
+          props.graphData.nodes[i].x = positions[i * 2]
+          props.graphData.nodes[i].y = positions[i * 2 + 1]
+        }
+        fgRef.current.d3ReheatSimulation()
+        
+        // Return ownership of the memory buffer to the worker instantly
+        workerRef.current.postMessage({ type: 'RELEASE_BUFFER', payload: { buffer: positions.buffer } }, [positions.buffer])
+      }
+    }
+
+    return () => {
+      if (workerRef.current) {
+        workerRef.current.terminate()
+      }
+    }
+  }, [props.graphData])
+
+  React.useEffect(() => {
+    return useSettingsStore.subscribe((state) => {
+      if (workerRef.current) {
+        workerRef.current.postMessage({
+          type: 'UPDATE_SETTINGS',
+          payload: {
+            settings: {
+              repelForce: state.settings.repelForce || 1,
+              linkForce: state.settings.linkForce || 1
+            }
+          }
+        })
+      }
+    })
+  }, [])
+
+  return <Graph2D 
+    {...props} 
+    ref={fgRef} 
+    onWorkerDragStart={() => workerRef.current?.postMessage({ type: 'DRAG_START' })}
+    onWorkerDrag={(node) => workerRef.current?.postMessage({ type: 'DRAG', payload: { id: node.id, x: node.x, y: node.y } })}
+    onWorkerDragEnd={(node) => workerRef.current?.postMessage({ type: 'DRAG_END', payload: { id: node.id } })}
+  />
+}))

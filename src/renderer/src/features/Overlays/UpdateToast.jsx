@@ -16,13 +16,20 @@ const UpdateToast = () => {
     if (status === 'checking') {
       const timer = setTimeout(() => {
         useUpdateStore.setState({ status: 'idle' })
-      }, 10000) // 10 seconds timeout
+      }, 5000) // close after 5s if check completes or gets stuck
       return () => clearTimeout(timer)
     }
     if (status === 'not-available') {
       const timer = setTimeout(() => {
         useUpdateStore.setState({ status: 'idle' })
-      }, 3000) // 3 seconds timeout
+      }, 3000)
+      return () => clearTimeout(timer)
+    }
+    if (status === 'error') {
+      // Private repo or network failure — auto-close silently after 3s
+      const timer = setTimeout(() => {
+        useUpdateStore.setState({ status: 'idle' })
+      }, 3000)
       return () => clearTimeout(timer)
     }
   }, [status])
