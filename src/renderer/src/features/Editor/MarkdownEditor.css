@@ -93,10 +93,11 @@
 .cm-inline-mention {
   position: relative !important;
   color: var(--text-accent, #ff79c6) !important;
-  cursor: pointer !important;
+  cursor: text !important;
   font-weight: 500 !important;
-  padding: 1px 4px 1px 0px !important;
-  border-radius: 0 4px 4px 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: inline !important;
   transition: all 0.2s ease !important;
 }
 
@@ -131,7 +132,7 @@
   pointer-events: none !important;
 }
 .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
-  background-color: rgba(64, 186, 250, 0.35) !important;
+  background-color: color-mix(in srgb, var(--text-accent) 40%, transparent) !important;
 }
 .cm-content ::selection {/**/
   background: transparent !important; 
@@ -291,11 +292,11 @@
 .cm-atomic-wiki-link,
 .cm-atomic-wikilink-wrap {
   color: var(--text-accent) !important;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  
-  position: relative;
-  display: inline !important;
+  cursor: text !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  position: relative; /* Needed for the hover tooltip */
+  display: inline !important; /* Critical: must be inline so CodeMirror calculates line-ends correctly */
 }
 
 .cm-atomic-wiki-link:hover,

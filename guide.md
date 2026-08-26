@@ -1,119 +1,201 @@
-Got it. Here is the clean, dimension-agnostic brief for your agent — no 2D/3D assumptions, just pure problem → cause → fix.
+This is a classic ProseMirror/Tiptap inline node selection bug. The issue is almost certainly caused by `user-select: none`, aggressive padding/margins on the wikilink wrapper, or a missing `cursor: text` declaration on the boundaries, which prevents the browser's native caret from landing at the edges of the inline node [[1]][[21]].
+
+Here is the clean, dry prompt for your agent to extract the CSS and fix the selection/cursor behavior.
 
 ---
 
-### 📋 Agent Brief: Inline Graph — 3 Critical Fixes
+## 📋 Agent Prompt: Extract Wikilink CSS & Fix Inline Selection/Cursor Bug
 
-**Status:** Rendering performance is excellent (78 FPS, 3.1ms frame time, 680 nodes, 1313 links). The minimap is working. Now fix these three UX/physics regressions before shipping.
-
----
-
-#### 🔴 Issue 1: Isolated Nodes Floating Away
-**What the user sees:** A handful of nodes are completely detached from the main cluster, floating alone at the edges or off-screen.
-
-**Why it's happening:**
-Nodes with zero connections (orphans) have no link force pulling them toward any neighbor. The repulsion charge (`-800`) pushes them outward with nothing to counteract it. They drift until they leave the visible area entirely.
-
-**Fix:**
-```javascript
-// After building the simulation forces, add a dedicated orphan pull
-const orphanIds = new Set(
-  nodes.filter(n => (n.degree || 0) === 0).map(n => n.id)
-);
-
-// Apply a stronger centering force ONLY to orphans
-simulation.force('orphanPull', forceX(0).strength(n => 
-  orphanIds.has(n.id) ? 0.25 : 0.03
-));
-simulation.force('orphanPullY', forceY(0).strength(n => 
-  orphanIds.has(n.id) ? 0.25 : 0.03
-));
-```
-Also cap `charge.distanceMax` to `800` so orphans can't be pushed beyond the viewport.
+### Objective
+1. Extract all scattered Wikilink-related CSS into a single dedicated file: `src/assets/wikilink.css`.
+2. Fix the critical UX bug where users cannot easily select the wikilink background or place their cursor at the immediate start/end of the wikilink.
 
 ---
 
-#### 🔴 Issue 2: Click Zooms Instead of Opening the Note
-**What the user sees:** Clicking a node triggers a camera zoom/fly-to animation. The note never opens. This breaks the core purpose of the inline graph.
+### Part 1: CSS Extraction & Consolidation
 
-**Why it's happening:**
-The `onNodeClick` handler was overwritten during the performance optimization phase. The navigation call (`openNote`, router push, or equivalent) was either removed entirely or buried inside a camera animation callback that never resolves.
+**Task:** Find all CSS/SCSS/styled-components related to the Wikilink node/decoration across the codebase and move them into `src/assets/wikilink.css`.
 
-**Fix:**
-```javascript
-onNodeClick={(node, event) => {
-  if (!node) return;
+**Search targets:**
+- Any styles targeting `.wikilink`, `[data-wikilink]`, `.tiptap-wikilink`, or similar class names.
+- Styles inside the Wikilink NodeView component (if using React NodeView).
+- Styles inside the editor's global CSS that target wikilink decorations.
 
-  // ✅ PRIMARY ACTION: Always open the note immediately
-  openNote(node.id); // ← this must fire first, unconditionally
+**Deliverable:**
+Create `src/assets/wikilink.css` and import it in the Wikilink extension/component file. Delete the old scattered styles.
 
-  // ❌ REMOVE or gate the zoom behavior:
-  // Only zoom if user holds Ctrl/Cmd (optional secondary action)
-  if (event.ctrlKey || event.metaKey) {
-    flyToNode(node); // keep this as a power-user feature only
-  }
-}}
+```css
+/* src/assets/wikilink.css */
 
-// Also ensure cursor feedback so users know nodes are clickable
-onNodeHover={(node) => {
-  document.body.style.cursor = node ? 'pointer' : 'default';
-}}
-```
-
----
-
-#### 🔴 Issue 3: Graph Opens Tangled (Hairball on Mount)
-**What the user sees:** Every time the inline graph opens, all nodes start clumped in a single point and visibly explode outward over 1–2 seconds before settling. It looks broken even though it resolves eventually.
-
-**Why it's happening:**
-Three compounding causes:
-1. Nodes arrive at the renderer without pre-assigned positions → they all default to `(0, 0)` → singularity collapse
-2. The physics simulation starts at full energy (`alpha = 1.0`) → violent initial expansion
-3. The renderer draws frames *before* the first stable position update arrives from the worker/simulation
-
-**Fix — apply all three together:**
-
-**Step A: Pre-seed positions before the graph ever mounts**
-```javascript
-// Run this ONCE before passing data to the graph component
-nodes.forEach((node, i) => {
-  if (node.x !== undefined && node.y !== undefined) return; // already seeded
+/* Base wikilink inline node/decoration */
+.wikilink {
+  /* Reset any properties that block selection */
+  user-select: text;           /* CRITICAL: Must be 'text', not 'none' */
+  -webkit-user-select: text;
+  cursor: text;                /* CRITICAL: Shows text cursor at boundaries */
   
-  const angle = (i / nodes.length) * 2 * Math.PI;
-  const radius = 300 + Math.random() * 100; // slight randomness prevents perfect overlap
-  node.x = radius * Math.cos(angle);
-  node.y = radius * Math.sin(angle);
-});
-```
-
-**Step B: Lower the initial simulation energy**
-```javascript
-simulation
-  .alpha(0.4)          // start at 40% energy instead of 100%
-  .alphaDecay(0.025)   // settle faster, less violent expansion
-  .velocityDecay(0.4); // more friction = less bouncing
-```
-
-**Step C: Warm up the simulation silently before first paint**
-```javascript
-// Run N ticks synchronously BEFORE attaching the render loop
-// The graph appears already laid out — no visible tangle
-const WARMUP_TICKS = 80;
-for (let i = 0; i < WARMUP_TICKS; i++) {
-  simulation.tick();
+  /* Visual styling */
+  color: #a78bfa;              /* Lumina purple */
+  text-decoration: none;
+  border-radius: 4px;
+  padding: 1px 2px;            /* Keep padding minimal (1-2px max) to prevent cursor dead zones */
+  margin: 0 1px;               /* Minimal margin so cursor can land between links */
+  
+  /* Background only on hover or when ProseMirror applies .selected */
+  background: transparent;
+  transition: background 0.15s ease;
 }
-// NOW start rendering
-simulation.on('tick', renderFrame);
-simulation.restart();
-```
 
-If physics runs in a Web Worker, do the warmup **inside the worker** before posting the first position buffer back to the main thread.
+.wikilink:hover {
+  background: rgba(167, 139, 250, 0.12);
+}
+
+/* ProseMirror applies this class when the node is selected */
+.wikilink.ProseMirror-selectednode,
+.wikilink.selected {
+  background: rgba(167, 139, 250, 0.25);
+  outline: 1px solid rgba(167, 139, 250, 0.4);
+}
+
+/* The external link icon inside the wikilink */
+.wikilink-icon {
+  display: inline-flex;
+  align-items: center;
+  width: 12px;
+  height: 12px;
+  margin-left: 2px;
+  opacity: 0.5;
+  vertical-align: middle;
+  pointer-events: none;        /* Prevent icon from stealing cursor/click events */
+  user-select: none;           /* Icon itself should not be selectable */
+}
+
+/* Unresolved wikilink variant */
+.wikilink.unresolved {
+  color: #f87171;
+  border-bottom: 1px dashed rgba(248, 113, 113, 0.4);
+}
+```
 
 ---
 
-### ✅ Verification Checklist
-After fixes, confirm:
-- [ ] Orphan nodes stay within the visible graph area, not floating off-screen
-- [ ] Single click on any node opens its note immediately — no zoom animation
-- [ ] Graph appears in a readable, spread-out state within 100ms of opening — no visible tangle or explosion
-- [ ] Frame time stays under 5ms after all changes
+### Part 2: Fix the Selection & Cursor Bug
+
+**Root Cause Analysis:**
+The inability to place the cursor at the start/end of an inline node in ProseMirror/Tiptap is caused by one or more of these CSS/DOM issues [[1]][[21]]:
+
+1. **`user-select: none`** on the wikilink wrapper — This tells the browser the element is not part of the text flow, so the caret skips over it entirely.
+2. **Excessive `padding` or `margin`** — Creates "dead zones" where the browser doesn't know whether to place the caret inside or outside the node.
+3. **`display: inline-flex` or `display: flex`** on the wrapper — Inline nodes MUST be `display: inline` or `display: inline-block`. Flexbox breaks the native text caret positioning at boundaries [[1]].
+4. **Child elements with `pointer-events: auto`** — The external link icon inside the wikilink may be intercepting mouse events, preventing the caret from landing.
+
+**Fix Checklist (apply ALL of these):**
+
+#### A. CSS Fixes (in `wikilink.css`)
+```css
+.wikilink {
+  /* ✅ MUST be inline or inline-block — NEVER flex/grid */
+  display: inline;
+  
+  /* ✅ MUST allow text selection */
+  user-select: text;
+  -webkit-user-select: text;
+  
+  /* ✅ MUST show text cursor */
+  cursor: text;
+  
+  /* ✅ Keep padding to absolute minimum (1px) */
+  padding: 1px 2px;
+  margin: 0;
+  
+  /* ✅ No border that adds box-model space (use box-shadow or outline instead) */
+  border: none;
+  box-shadow: inset 0 0 0 1px transparent;
+}
+
+.wikilink.ProseMirror-selectednode {
+  box-shadow: inset 0 0 0 1px rgba(167, 139, 250, 0.4);
+  background: rgba(167, 139, 250, 0.2);
+}
+
+/* ✅ All child elements inside wikilink must not steal pointer events */
+.wikilink > * {
+  pointer-events: none;
+  user-select: none;
+}
+```
+
+#### B. DOM/NodeView Fixes (in the Wikilink extension)
+If you're using a React NodeView or custom DOM output, ensure the rendered HTML structure is flat and inline:
+
+```html
+<!-- ✅ CORRECT: Simple inline span -->
+<span class="wikilink" data-wikilink="true">
+  Visual Regression Testing
+  <span class="wikilink-icon">↗</span>
+</span>
+
+<!-- ❌ WRONG: Nested divs, flex containers, or anchors that break caret -->
+<div class="wikilink-wrapper" style="display: flex;">
+  <a href="..." class="wikilink">Visual Regression Testing</a>
+  <button class="wikilink-icon">↗</button>
+</div>
+```
+
+**Key rules for the DOM:**
+- The root element MUST be `<span>` (not `<div>`, not `<a>`).
+- Do NOT use `<a href>` tags for wikilinks — they hijack click events and break ProseMirror's selection model. Use `<span data-href="...">` and handle navigation via `onClick` on the editor level.
+- The icon must be a `<span>`, not a `<button>` or `<svg>` with pointer events.
+
+#### C. ProseMirror Plugin Fix (if CSS alone doesn't solve it)
+If the cursor still won't land at the boundaries after the CSS fixes, you need a ProseMirror plugin that explicitly allows cursor placement at inline node edges [[1]]:
+
+```typescript
+// In your Wikilink extension's addProseMirrorPlugins()
+import { Plugin, PluginKey } from '@tiptap/pm/state';
+
+addProseMirrorPlugins() {
+  return [
+    new Plugin({
+      key: new PluginKey('wikilinkCursorFix'),
+      props: {
+        // Allow the cursor to sit at the boundaries of wikilink nodes
+        handleClickOn: (view, pos, node, nodePos, event, direct) => {
+          // If clicking directly on a wikilink, let ProseMirror handle it normally
+          if (node.type.name === 'wikilink') return false;
+          return false;
+        },
+      },
+      appendTransaction: (transactions, oldState, newState) => {
+        // Ensure selection doesn't get stuck inside wikilink nodes
+        const { selection } = newState;
+        if (selection.empty) {
+          const $pos = selection.$from;
+          const nodeBefore = $pos.nodeBefore;
+          const nodeAfter = $pos.nodeAfter;
+          
+          // If cursor is trapped between two wikilinks, nudge it
+          if (nodeBefore?.type.name === 'wikilink' && nodeAfter?.type.name === 'wikilink') {
+            // This is fine — cursor is between two links, which is valid
+          }
+        }
+        return null;
+      },
+    }),
+  ];
+}
+```
+
+---
+
+### Part 3: Verification
+
+After applying all fixes, verify these exact scenarios:
+
+- [ ] **Cursor at start:** Click immediately before a wikilink → caret appears before the `[[`
+- [ ] **Cursor at end:** Click immediately after a wikilink → caret appears after the `]]`
+- [ ] **Background selection:** Click and drag across a wikilink → the purple background highlights smoothly
+- [ ] **Multi-link selection:** Drag across multiple wikilinks in a row → all backgrounds highlight, no dead zones
+- [ ] **Icon doesn't interfere:** Clicking the ↗ icon doesn't block cursor placement
+- [ ] **CSS is consolidated:** All wikilink styles live in `src/assets/wikilink.css`, no scattered styles remain
+- [ ] **No `<a>` tags:** Wikilinks render as `<span>`, not `<a href>`

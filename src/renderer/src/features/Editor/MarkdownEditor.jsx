@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import EditorMenu from '../Workspace/components/EditorMenu'
+import EditorMenu from './menu/EditorMenu'
 import EditorMetadata from '../Workspace/components/EditorMetadata'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
@@ -38,6 +38,8 @@ import OverwriteModal from '../Overlays/Modals/OverwriteModal'
 import InlineLumina from '../Overlays/InlineLumina'
 import RulerScrollbar from './RulerScrollbar'
 import { useZoom } from './useZoom'
+import ContextMenu from '../Overlays/ContextMenu'
+import { getEditorContextMenuOptions } from './menu'
 
 const updateSearchHighlights = StateEffect.define()
 
@@ -98,6 +100,7 @@ const MarkdownEditor = React.memo(
     const [editorKey, setEditorKey] = useState(Date.now())
     const [showFindWidget, setShowFindWidget] = useState(false)
     const [replaceModeActive, setReplaceModeActive] = useState(false)
+    const [contextMenu, setContextMenu] = useState(null)
     const [copiedBlockId, setCopiedBlockId] = useState(null)
     const [conflictPrompt, setConflictPrompt] = useState(null)
     const [isInlineAIOpen, setIsInlineAIOpen] = useState(false)
@@ -1214,7 +1217,24 @@ const MarkdownEditor = React.memo(
             confirmText="Overwrite"
             cancelText="Keep My Edits"
           />
-          <div className="editor-canvas-wrap" ref={editorWrapperRef}>
+          <div 
+            className="editor-canvas-wrap" 
+            ref={editorWrapperRef}
+            onContextMenu={(e) => {
+              const isEditor = e.target.closest('.cm-editor') || e.target.closest('.editor-canvas-wrap')
+              if (!isEditor) return
+              e.preventDefault()
+              setContextMenu({ x: e.clientX, y: e.clientY })
+            }}
+          >
+            {contextMenu && (
+              <ContextMenu
+                x={contextMenu.x}
+                y={contextMenu.y}
+                options={getEditorContextMenuOptions(realViewRef.current)}
+                onClose={() => setContextMenu(null)}
+              />
+            )}
             {inlineMetadata && (
               <EditorMetadata
                 titleRef={titleRef}

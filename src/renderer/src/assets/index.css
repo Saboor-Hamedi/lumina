@@ -298,8 +298,6 @@ body {
   position: fixed;
   min-width: 180px;
   background: var(--bg-panel);
-  background: color-mix(in srgb, var(--bg-panel), transparent 5%);
-  backdrop-filter: blur(30px);
   border: 1px solid var(--border-dim);
   border-radius: 8px;
   padding: 4px;
