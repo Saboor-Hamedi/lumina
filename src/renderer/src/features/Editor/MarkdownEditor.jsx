@@ -40,6 +40,7 @@ import RulerScrollbar from './RulerScrollbar'
 import { useZoom } from './useZoom'
 import ContextMenu from '../Overlays/ContextMenu'
 import { getEditorContextMenuOptions } from './menu'
+import { wikilinkCaretFix } from './wikilinkCaret'
 
 const updateSearchHighlights = StateEffect.define()
 
@@ -938,6 +939,7 @@ const MarkdownEditor = React.memo(
         codeBlockDecorations,
         mermaidWidgetExtension,
         tagMentionExtension,
+        wikilinkCaretFix,
         wikiLinks({
           openOnClick: true,
           resolve: async (target) => {
@@ -955,7 +957,7 @@ const MarkdownEditor = React.memo(
             }
           },
           onOpen: async (target) => {
-            showToast(`Opening wikilink: ${target}`, 'info')
+            // showToast(`Opening wikilink: ${target}`, 'info')
             try {
               const { snippets, saveSnippet, setSelectedSnippet } = useVaultStore.getState()
               const targetLower = target.toLowerCase()
@@ -995,7 +997,7 @@ const MarkdownEditor = React.memo(
           return
         }
 
-        showToast(`Opening wikilink: ${url}`, 'info')
+        // showToast(`Opening wikilink: ${url}`, 'info')
         try {
           const { snippets, saveSnippet, setSelectedSnippet } = useVaultStore.getState()
           const targetLower = url.toLowerCase()

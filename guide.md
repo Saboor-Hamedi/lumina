@@ -1,201 +1,151 @@
-This is a classic ProseMirror/Tiptap inline node selection bug. The issue is almost certainly caused by `user-select: none`, aggressive padding/margins on the wikilink wrapper, or a missing `cursor: text` declaration on the boundaries, which prevents the browser's native caret from landing at the edges of the inline node [[1]][[21]].
+I see it clearly now. Two problems visible in this screenshot:
 
-Here is the clean, dry prompt for your agent to extract the CSS and fix the selection/cursor behavior.
+1. **The ↗ icon is STILL there** — your agent hasn't removed it yet
+2. **`API Testing` (the last wikilink) has no `]]` closing brackets rendered** — it's missing the hidden syntax wrapper entirely, which means CodeMirror doesn't know where the widget ends, so the caret has nowhere to land after it
 
----
-
-## 📋 Agent Prompt: Extract Wikilink CSS & Fix Inline Selection/Cursor Bug
-
-### Objective
-1. Extract all scattered Wikilink-related CSS into a single dedicated file: `src/assets/wikilink.css`.
-2. Fix the critical UX bug where users cannot easily select the wikilink background or place their cursor at the immediate start/end of the wikilink.
-
----
-
-### Part 1: CSS Extraction & Consolidation
-
-**Task:** Find all CSS/SCSS/styled-components related to the Wikilink node/decoration across the codebase and move them into `src/assets/wikilink.css`.
-
-**Search targets:**
-- Any styles targeting `.wikilink`, `[data-wikilink]`, `.tiptap-wikilink`, or similar class names.
-- Styles inside the Wikilink NodeView component (if using React NodeView).
-- Styles inside the editor's global CSS that target wikilink decorations.
-
-**Deliverable:**
-Create `src/assets/wikilink.css` and import it in the Wikilink extension/component file. Delete the old scattered styles.
-
-```css
-/* src/assets/wikilink.css */
-
-/* Base wikilink inline node/decoration */
-.wikilink {
-  /* Reset any properties that block selection */
-  user-select: text;           /* CRITICAL: Must be 'text', not 'none' */
-  -webkit-user-select: text;
-  cursor: text;                /* CRITICAL: Shows text cursor at boundaries */
-  
-  /* Visual styling */
-  color: #a78bfa;              /* Lumina purple */
-  text-decoration: none;
-  border-radius: 4px;
-  padding: 1px 2px;            /* Keep padding minimal (1-2px max) to prevent cursor dead zones */
-  margin: 0 1px;               /* Minimal margin so cursor can land between links */
-  
-  /* Background only on hover or when ProseMirror applies .selected */
-  background: transparent;
-  transition: background 0.15s ease;
-}
-
-.wikilink:hover {
-  background: rgba(167, 139, 250, 0.12);
-}
-
-/* ProseMirror applies this class when the node is selected */
-.wikilink.ProseMirror-selectednode,
-.wikilink.selected {
-  background: rgba(167, 139, 250, 0.25);
-  outline: 1px solid rgba(167, 139, 250, 0.4);
-}
-
-/* The external link icon inside the wikilink */
-.wikilink-icon {
-  display: inline-flex;
-  align-items: center;
-  width: 12px;
-  height: 12px;
-  margin-left: 2px;
-  opacity: 0.5;
-  vertical-align: middle;
-  pointer-events: none;        /* Prevent icon from stealing cursor/click events */
-  user-select: none;           /* Icon itself should not be selectable */
-}
-
-/* Unresolved wikilink variant */
-.wikilink.unresolved {
-  color: #f87171;
-  border-bottom: 1px dashed rgba(248, 113, 113, 0.4);
-}
-```
-
----
-
-### Part 2: Fix the Selection & Cursor Bug
-
-**Root Cause Analysis:**
-The inability to place the cursor at the start/end of an inline node in ProseMirror/Tiptap is caused by one or more of these CSS/DOM issues [[1]][[21]]:
-
-1. **`user-select: none`** on the wikilink wrapper — This tells the browser the element is not part of the text flow, so the caret skips over it entirely.
-2. **Excessive `padding` or `margin`** — Creates "dead zones" where the browser doesn't know whether to place the caret inside or outside the node.
-3. **`display: inline-flex` or `display: flex`** on the wrapper — Inline nodes MUST be `display: inline` or `display: inline-block`. Flexbox breaks the native text caret positioning at boundaries [[1]].
-4. **Child elements with `pointer-events: auto`** — The external link icon inside the wikilink may be intercepting mouse events, preventing the caret from landing.
-
-**Fix Checklist (apply ALL of these):**
-
-#### A. CSS Fixes (in `wikilink.css`)
-```css
-.wikilink {
-  /* ✅ MUST be inline or inline-block — NEVER flex/grid */
-  display: inline;
-  
-  /* ✅ MUST allow text selection */
-  user-select: text;
-  -webkit-user-select: text;
-  
-  /* ✅ MUST show text cursor */
-  cursor: text;
-  
-  /* ✅ Keep padding to absolute minimum (1px) */
-  padding: 1px 2px;
-  margin: 0;
-  
-  /* ✅ No border that adds box-model space (use box-shadow or outline instead) */
-  border: none;
-  box-shadow: inset 0 0 0 1px transparent;
-}
-
-.wikilink.ProseMirror-selectednode {
-  box-shadow: inset 0 0 0 1px rgba(167, 139, 250, 0.4);
-  background: rgba(167, 139, 250, 0.2);
-}
-
-/* ✅ All child elements inside wikilink must not steal pointer events */
-.wikilink > * {
-  pointer-events: none;
-  user-select: none;
-}
-```
-
-#### B. DOM/NodeView Fixes (in the Wikilink extension)
-If you're using a React NodeView or custom DOM output, ensure the rendered HTML structure is flat and inline:
+The last wikilink is structurally broken compared to the others. Look at the DOM difference:
 
 ```html
-<!-- ✅ CORRECT: Simple inline span -->
-<span class="wikilink" data-wikilink="true">
-  Visual Regression Testing
-  <span class="wikilink-icon">↗</span>
-</span>
+<!-- Working wikilinks have BOTH hidden syntax + widget: -->
+<span class="cm-atomic-wiki-link-hidden-syntax">[[ ... ]]</span>
+<span class="cm-atomic-wiki-link" contenteditable="false">Visual Regression Testing</span>
 
-<!-- ❌ WRONG: Nested divs, flex containers, or anchors that break caret -->
-<div class="wikilink-wrapper" style="display: flex;">
-  <a href="..." class="wikilink">Visual Regression Testing</a>
-  <button class="wikilink-icon">↗</button>
-</div>
+<!-- API Testing is MISSING the hidden syntax wrapper: -->
+<span class="cm-atomic-wiki-link" contenteditable="false">API Testing</span>
+<!-- ← No cm-atomic-wiki-link-hidden-syntax after it = no caret landing zone -->
 ```
 
-**Key rules for the DOM:**
-- The root element MUST be `<span>` (not `<div>`, not `<a>`).
-- Do NOT use `<a href>` tags for wikilinks — they hijack click events and break ProseMirror's selection model. Use `<span data-href="...">` and handle navigation via `onClick` on the editor level.
-- The icon must be a `<span>`, not a `<button>` or `<svg>` with pointer events.
+---
 
-#### C. ProseMirror Plugin Fix (if CSS alone doesn't solve it)
-If the cursor still won't land at the boundaries after the CSS fixes, you need a ProseMirror plugin that explicitly allows cursor placement at inline node edges [[1]]:
+### 📋 Agent Prompt: Fix Last Wikilink Caret Bug + Remove Icon
+
+#### Bug 1: The ↗ Icon Is Still There
+**This was already requested. Remove it now.** Search for `external-link`, `link-icon`, `↗`, `ExternalLink`, `wikilink-icon` across the entire codebase and delete every reference. The icon must be gone.
+
+#### Bug 2: Cannot Place Cursor After the Last Wikilink
+
+**Root Cause:** The last wikilink (`API Testing`) is missing its trailing `cm-atomic-wiki-link-hidden-syntax` decoration and/or the trailing `cm-widgetBuffer`. Without a text node or buffer after the final atomic widget, CodeMirror has no valid position to place the caret.
+
+This happens because the regex or decoration builder that creates wikilink decorations is not emitting a trailing buffer/syntax span for the **last match** in the line.
+
+**Fix in your decoration builder:**
 
 ```typescript
-// In your Wikilink extension's addProseMirrorPlugins()
-import { Plugin, PluginKey } from '@tiptap/pm/state';
+function buildWikiLinkDecorations(state: EditorState): DecorationSet {
+  const builder: Range<Decoration>[] = [];
+  const regex = /\[\[([^\]]+)\]\]/g;
+  const text = state.doc.sliceString(0);
+  let match;
 
-addProseMirrorPlugins() {
-  return [
-    new Plugin({
-      key: new PluginKey('wikilinkCursorFix'),
-      props: {
-        // Allow the cursor to sit at the boundaries of wikilink nodes
-        handleClickOn: (view, pos, node, nodePos, event, direct) => {
-          // If clicking directly on a wikilink, let ProseMirror handle it normally
-          if (node.type.name === 'wikilink') return false;
-          return false;
-        },
-      },
-      appendTransaction: (transactions, oldState, newState) => {
-        // Ensure selection doesn't get stuck inside wikilink nodes
-        const { selection } = newState;
-        if (selection.empty) {
-          const $pos = selection.$from;
-          const nodeBefore = $pos.nodeBefore;
-          const nodeAfter = $pos.nodeAfter;
-          
-          // If cursor is trapped between two wikilinks, nudge it
-          if (nodeBefore?.type.name === 'wikilink' && nodeAfter?.type.name === 'wikilink') {
-            // This is fine — cursor is between two links, which is valid
-          }
-        }
-        return null;
-      },
-    }),
-  ];
+  while ((match = regex.exec(text)) !== null) {
+    const from = match.index;
+    const to = from + match[0].length;
+    const target = match[1];
+    const resolved = isNoteResolved(target);
+
+    // Widget replacement for the full [[target]]
+    builder.push(
+      Decoration.replace({
+        widget: new WikiLinkWidget(target, resolved),
+      }).range(from, to)
+    );
+
+    // ✅ CRITICAL: If this is the LAST wikilink in the document/line,
+    // ensure there's a zero-width space after it so the caret can land
+    const charAfter = text[to]; // character immediately after ]]
+    if (charAfter === undefined || charAfter === '\n' || to === text.length) {
+      // Add a point decoration that inserts a caret anchor after the widget
+      builder.push(
+        Decoration.widget({
+          widget: new CaretAnchorWidget(),
+          side: 1, // Place AFTER the replaced range
+        }).range(to)
+      );
+    }
+  }
+
+  return Decoration.set(builder, true);
+}
+
+// Simple widget that renders a zero-width space for caret landing
+class CaretAnchorWidget extends WidgetType {
+  toDOM(): HTMLElement {
+    const span = document.createElement('span');
+    span.textContent = '\u200B'; // Zero-width space
+    span.style.userSelect = 'text';
+    span.style.cursor = 'text';
+    span.style.display = 'inline';
+    span.style.width = '0';
+    span.style.overflow = 'visible';
+    return span;
+  }
+  ignoreEvent(): boolean { return false; }
+}
+```
+
+**Alternative simpler fix — in the WikiLinkWidget itself:**
+
+```typescript
+class WikiLinkWidget extends WidgetType {
+  toDOM(view: EditorView): HTMLElement {
+    const wrapper = document.createElement('span');
+    wrapper.className = 'cm-wikilink-wrapper';
+    wrapper.style.display = 'inline';
+
+    // The visible wikilink
+    const span = document.createElement('span');
+    span.className = `cm-atomic-wiki-link ${this.resolved ? 'cm-atomic-wiki-link-resolved' : 'cm-atomic-wiki-link-unresolved'}`;
+    span.dataset.wikiLinkTarget = this.target;
+    span.contentEditable = 'false';
+    span.style.display = 'inline';
+    span.style.cursor = 'pointer';
+    span.textContent = this.target;
+
+    // NO ICON. Plain text only.
+
+    wrapper.appendChild(span);
+
+    // ✅ ALWAYS append a zero-width space after EVERY wikilink
+    // This guarantees the caret can always land after it, even on the last one
+    const anchor = document.createTextNode('\u200B');
+    wrapper.appendChild(anchor);
+
+    return wrapper;
+  }
+
+  ignoreEvent(): boolean { return false; }
+}
+```
+
+**And the CSS:**
+
+```css
+.cm-wikilink-wrapper {
+  display: inline;
+  user-select: text;
+  cursor: text;
+}
+
+.cm-atomic-wiki-link {
+  display: inline;
+  color: #a78bfa;
+  cursor: pointer;
+  padding: 0 1px;
+}
+
+/* Hide the zero-width anchor visually */
+.cm-wikilink-wrapper > .cm-atomic-wiki-link + * {
+  font-size: 0;
+  line-height: 0;
+  user-select: text;
 }
 ```
 
 ---
 
-### Part 3: Verification
+### ✅ Verification Checklist
 
-After applying all fixes, verify these exact scenarios:
-
-- [ ] **Cursor at start:** Click immediately before a wikilink → caret appears before the `[[`
-- [ ] **Cursor at end:** Click immediately after a wikilink → caret appears after the `]]`
-- [ ] **Background selection:** Click and drag across a wikilink → the purple background highlights smoothly
-- [ ] **Multi-link selection:** Drag across multiple wikilinks in a row → all backgrounds highlight, no dead zones
-- [ ] **Icon doesn't interfere:** Clicking the ↗ icon doesn't block cursor placement
-- [ ] **CSS is consolidated:** All wikilink styles live in `src/assets/wikilink.css`, no scattered styles remain
-- [ ] **No `<a>` tags:** Wikilinks render as `<span>`, not `<a href>`
+- [ ] The ↗ icon is completely gone from all wikilinks
+- [ ] Cursor can be placed after `API Testing` (the last wikilink)
+- [ ] Cursor can be placed after every wikilink, not just the last one
+- [ ] All wikilinks render as plain text with no child elements

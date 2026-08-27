@@ -2,12 +2,23 @@ import React, { useEffect, useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, ChevronRight } from 'lucide-react'
 
-const MenuItem = ({ opt, onClose, setHoveredId, hoveredId }) => {
-  const isHovered = hoveredId === opt.id || hoveredId === opt.label
+/**
+ * ContextMenu
+ * Base overlay component for rendering all context menus.
+ * 
+ * CSS LOCATION: src/renderer/src/assets/contextMenu.css
+ * 
+ * USAGE LOCATIONS:
+ * - Editor Menu: src/renderer/src/features/Editor/menu/index.jsx (Passed into Editor via MarkdownEditor)
+ * - File Explorer Nodes: src/renderer/src/features/Navigation/hooks/useContextMenu.jsx
+ */
+
+const MenuItem = ({ opt, onClose }) => {
   const hasChildren = opt.children && opt.children.length > 0
   const itemRef = useRef(null)
-  const [submenuStyle, setSubmenuStyle] = useState({ top: -4, left: '100%' })
+  const [isFlipped, setIsFlipped] = useState(false)
   const submenuRef = useRef(null)
+  const [isHovered, setIsHovered] = useState(false)
 
   useEffect(() => {
     if (isHovered && hasChildren && itemRef.current && submenuRef.current) {
@@ -16,9 +27,9 @@ const MenuItem = ({ opt, onClose, setHoveredId, hoveredId }) => {
       
       // Edge detection for right side
       if (parentRect.right + submenuRect.width > window.innerWidth - 10) {
-        setSubmenuStyle({ top: -4, right: '100%', left: 'auto' })
+        setIsFlipped(true)
       } else {
-        setSubmenuStyle({ top: -4, left: '100%', right: 'auto' })
+        setIsFlipped(false)
       }
     }
   }, [isHovered, hasChildren])
@@ -31,14 +42,15 @@ const MenuItem = ({ opt, onClose, setHoveredId, hoveredId }) => {
     return <React.Fragment>{opt.render(onClose)}</React.Fragment>
   }
 
-  const itemId = opt.id || opt.label
-
   return (
     <div
       ref={itemRef}
       className={`menu-item ${opt.danger ? 'danger' : ''} ${opt.disabled ? 'disabled' : ''} ${isHovered ? 'hovered' : ''}`}
       onMouseEnter={() => {
-        if (!opt.disabled) setHoveredId(itemId)
+        if (!opt.disabled) setIsHovered(true)
+      }}
+      onMouseLeave={() => {
+        setIsHovered(false)
       }}
       onClick={(e) => {
         e.stopPropagation()
@@ -84,7 +96,8 @@ const MenuItem = ({ opt, onClose, setHoveredId, hoveredId }) => {
               color: 'var(--text-muted, var(--text-main))',
               opacity: 0.8,
               padding: '2px 6px',
-              whiteSpace: 'nowrap'
+              whiteSpace: 'nowrap',
+              background: 'transparent'
             }}
           >
             {opt.shortcut}
@@ -96,17 +109,14 @@ const MenuItem = ({ opt, onClose, setHoveredId, hoveredId }) => {
 
       {hasChildren && isHovered && (
         <div 
-          className="context-menu submenu" 
+          className={`context-menu submenu ${isFlipped ? 'flip-left' : ''}`}
           ref={submenuRef}
-          style={{ ...submenuStyle, position: 'absolute', zIndex: 10000 }}
         >
           {opt.children.map((child, i) => (
             <MenuItem 
               key={child.id || i} 
               opt={child} 
               onClose={onClose} 
-              setHoveredId={() => {}} 
-              hoveredId={null} 
             />
           ))}
         </div>
@@ -116,8 +126,6 @@ const MenuItem = ({ opt, onClose, setHoveredId, hoveredId }) => {
 }
 
 const ContextMenu = ({ x, y, options, onClose }) => {
-  const [hoveredId, setHoveredId] = useState(null)
-
   useEffect(() => {
     const handleGlobalClick = () => onClose()
     const handleKeyDown = (e) => {
@@ -135,15 +143,7 @@ const ContextMenu = ({ x, y, options, onClose }) => {
   const menuX = Math.min(x, window.innerWidth - 220)
   const menuY = Math.min(y, window.innerHeight - (options.length * 36 + 20))
 
-  const closeTimeout = useRef(null)
 
-  const handleMouseLeave = () => {
-    closeTimeout.current = setTimeout(() => setHoveredId(null), 300)
-  }
-
-  const handleMouseEnter = () => {
-    if (closeTimeout.current) clearTimeout(closeTimeout.current)
-  }
 
   return createPortal(
     <>
@@ -172,19 +172,12 @@ const ContextMenu = ({ x, y, options, onClose }) => {
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
         onContextMenu={(e) => e.stopPropagation()}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
       >
         {options.map((opt, i) => (
           <MenuItem 
             key={opt.id || i} 
             opt={opt} 
             onClose={onClose} 
-            setHoveredId={(id) => {
-              if (closeTimeout.current) clearTimeout(closeTimeout.current)
-              setHoveredId(id)
-            }} 
-            hoveredId={hoveredId} 
           />
         ))}
       </div>

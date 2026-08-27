@@ -20,134 +20,7 @@ import { useVaultStore } from '../../../core/store/useVaultStore'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
 import { useShallow } from 'zustand/react/shallow'
 
-const BackgroundSubmenu = ({
-  currentCol,
-  type,
-  item,
-  saveSnippet,
-  setFolderColor,
-  callbacks,
-  onClose
-}) => {
-  const [isOpen, setIsOpen] = React.useState(false)
-  const menuRef = React.useRef(null)
 
-  React.useLayoutEffect(() => {
-    if (isOpen && menuRef.current) {
-      const rect = menuRef.current.getBoundingClientRect()
-      if (rect.bottom > window.innerHeight - 10) {
-        menuRef.current.style.top = 'auto'
-        menuRef.current.style.bottom = '-6px'
-      } else {
-        menuRef.current.style.top = '-6px'
-        menuRef.current.style.bottom = 'auto'
-      }
-    }
-  }, [isOpen])
-
-  return (
-    <div
-      className="menu-item"
-      onMouseEnter={() => setIsOpen(true)}
-      onMouseLeave={() => setIsOpen(false)}
-      style={{
-        position: 'relative',
-        overflow: 'visible',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '12px'
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <div
-          className="menu-icon-left"
-          style={{ display: 'flex', alignItems: 'center', color: 'var(--text-faint)' }}
-        >
-          <Palette size={14} />
-        </div>
-        <span className="menu-label" style={{ whiteSpace: 'nowrap' }}>
-          Background
-        </span>
-      </div>
-      <div
-        className="menu-icon-right"
-        style={{ display: 'flex', alignItems: 'center', color: 'var(--text-faint)', opacity: 0.6 }}
-      >
-        <ChevronRight size={14} />
-      </div>
-
-      {isOpen && (
-        <div
-          ref={menuRef}
-          className="context-menu"
-          style={{
-            position: 'absolute',
-            top: '-6px', // Initial guess, overridden by useLayoutEffect
-            left: '100%',
-            marginLeft: '4px',
-            display: 'flex',
-            flexDirection: 'column',
-            zIndex: 99999
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {[
-            {
-              id: null,
-              bg: 'var(--bg-panel)',
-              border: '1px dashed var(--border-main)',
-              title: 'Default (Reset)'
-            },
-            { id: '#60a5fa', bg: '#60a5fa', title: 'Blue' },
-            { id: '#c084fc', bg: '#c084fc', title: 'Purple' },
-            { id: '#f87171', bg: '#f87171', title: 'Red' },
-            { id: '#4ade80', bg: '#4ade80', title: 'Green' },
-            { id: '#fb923c', bg: '#fb923c', title: 'Orange' }
-          ].map((c, idx) => {
-            const isSelected = currentCol === c.id
-            return (
-              <div
-                key={idx}
-                className="menu-item"
-                onClick={async (e) => {
-                  e.stopPropagation()
-                  if (type === 'file' && item) {
-                    await saveSnippet({ ...item, color: c.id })
-                  } else if (type === 'folder' && item) {
-                    setFolderColor(item, c.id)
-                  }
-                  onClose()
-                  callbacks.onClose?.()
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                <div
-                  style={{
-                    width: '10px',
-                    height: '10px',
-                    borderRadius: '50%',
-                    background: c.bg,
-                    border: c.border || '1px solid rgba(255, 255, 255, 0.1)',
-                    flexShrink: 0
-                  }}
-                />
-                <span className="menu-label" style={{ whiteSpace: 'nowrap', flex: 1 }}>
-                  {c.title}
-                </span>
-                {isSelected && <Check size={14} color="#10b981" />}
-              </div>
-            )
-          })}
-        </div>
-      )}
-    </div>
-  )
-}
 
 export function useContextMenu({ item, type, callbacks }) {
   const { saveSnippet, clipboard, setClipboard, snippets, folderColors, setFolderColor } =
@@ -234,29 +107,52 @@ export function useContextMenu({ item, type, callbacks }) {
     [clipboard, type, item, snippets, saveSnippet, setClipboard, callbacks]
   )
 
-  const renderColorPicker = useCallback(
-    (onClose) => {
-      let currentCol = null
-      if (type === 'file' && item) {
-        currentCol = item.color || null
-      } else if (type === 'folder' && item) {
-        currentCol = folderColors[item] || null
-      }
+  const colorPickerOption = useMemo(() => {
+    let currentCol = null
+    if (type === 'file' && item) {
+      currentCol = item.color || null
+    } else if (type === 'folder' && item) {
+      currentCol = folderColors[item] || null
+    }
 
-      return (
-        <BackgroundSubmenu
-          currentCol={currentCol}
-          type={type}
-          item={item}
-          saveSnippet={saveSnippet}
-          setFolderColor={setFolderColor}
-          callbacks={callbacks}
-          onClose={onClose}
-        />
-      )
-    },
-    [type, item, folderColors, saveSnippet, setFolderColor, callbacks]
-  )
+    const colors = [
+      { id: null, bg: 'var(--bg-panel)', border: '1px dashed var(--border-main)', title: 'Default (Reset)' },
+      { id: '#60a5fa', bg: '#60a5fa', title: 'Blue' },
+      { id: '#c084fc', bg: '#c084fc', title: 'Purple' },
+      { id: '#f87171', bg: '#f87171', title: 'Red' },
+      { id: '#4ade80', bg: '#4ade80', title: 'Green' },
+      { id: '#fb923c', bg: '#fb923c', title: 'Orange' }
+    ]
+
+    return {
+      label: 'Background',
+      icon: <Palette size={14} />,
+      children: colors.map((c) => ({
+        id: c.id || 'default',
+        label: c.title,
+        icon: (
+          <div
+            style={{
+              width: '10px',
+              height: '10px',
+              borderRadius: '50%',
+              background: c.bg,
+              border: c.border || '1px solid rgba(255, 255, 255, 0.1)'
+            }}
+          />
+        ),
+        isActive: () => currentCol === c.id,
+        onClick: async () => {
+          if (type === 'file' && item) {
+            await saveSnippet({ ...item, color: c.id })
+          } else if (type === 'folder' && item) {
+            setFolderColor(item, c.id)
+          }
+          // Intentionally do not close menu to preview color
+        }
+      }))
+    }
+  }, [type, item, folderColors, saveSnippet, setFolderColor])
 
   const options = useMemo(() => {
     if (type === 'file') {
@@ -333,10 +229,7 @@ export function useContextMenu({ item, type, callbacks }) {
           }
         },
         { type: 'divider' },
-        {
-          type: 'custom',
-          render: renderColorPicker
-        },
+        colorPickerOption,
         { type: 'divider' },
         {
           label: 'Close',
@@ -429,10 +322,7 @@ export function useContextMenu({ item, type, callbacks }) {
                 }
               },
               { type: 'divider' },
-              {
-                type: 'custom',
-                render: renderColorPicker
-              }
+              colorPickerOption
             ]
           : [])
       ]
@@ -448,7 +338,7 @@ export function useContextMenu({ item, type, callbacks }) {
     handlePaste,
     callbacks,
     togglePinnedFolder,
-    renderColorPicker
+    colorPickerOption
   ])
 
   return options
