@@ -20,12 +20,14 @@ export const usePerformanceStore = create((set, get) => ({
   },
 
   setDragging: (isDragging) => {
+    if (get().metrics.isDragging === isDragging) return;
     set((state) => ({
       metrics: { ...state.metrics, isDragging }
     }))
   },
 
   setHoveredNode: (nodeId) => {
+    if (get().metrics.hoveredNodeId === nodeId) return;
     set((state) => ({
       metrics: { ...state.metrics, hoveredNodeId: nodeId }
     }))

@@ -1,44 +1,85 @@
-Here is the clean, high-level brief for your agent. It focuses purely on the visual behavior and UX requirements without dictating implementation details.
+**Bingo.** You just discovered the single biggest performance killer in graph visualization: **Link Rendering Cost**.
 
-### 📋 Agent Brief: Fix Table Handle Alignment & Visual Noise
+Look at your telemetry:
+-   **With Unresolved Links:** 7,147 links → 25 FPS (33ms frame time)
+-   **Without Unresolved Links:** 113 links → **86.2 FPS** (4.7ms frame time)
 
-**Objective:** The table editing handles (selection boxes, drag icons, delete buttons) are currently visually broken. They appear misaligned with the content, float outside the table boundaries, and create visual noise that distracts from the reading experience. Fix the styling and positioning so they feel like a native part of the Lumina UI.
+You went from **unusable to buttery smooth** by hiding 98% of the links. This proves that **links are 10x more expensive than nodes** in Canvas 2D rendering.
 
-#### 1. The "Purple Box" Selection Issue
--   **Problem:** Clicking or hovering near the "Note" header triggers a full-column selection highlight (the purple box). This is too aggressive for a read-only roadmap view and looks like a debug artifact.
--   **Fix:** 
-    -   Make the column selection handle **subtle and contextual**. It should only appear when the user explicitly intends to select (e.g., click-and-hold), not on accidental hover.
-    -   Style the selection border to match the table's existing border color (`rgba(255,255,255,0.1)`) instead of the bright purple accent, unless actively dragging.
-    -   Ensure the selection box respects the cell padding—it should frame the *text*, not cut through it.
+### Why This Happens
+Unresolved links (broken references, typos, deleted notes) often form a **dense web of cross-connections** that don't follow the clean radial hierarchy. They create:
+1.  **Long crossing lines** that span the entire viewport (more pixels to rasterize)
+2.  **Visual overdraw** where hundreds of faint lines overlap in the center
+3.  **No spatial locality** — unlike resolved links that cluster neatly, unresolved links scatter everywhere
 
-#### 2. Misaligned Drag/Delete Icons
--   **Problem:** The row/column handles (drag grip, delete icon) are floating absolutely and are not aligned with the table's content grid. They appear to the left of the `#` column or overlap text, breaking the visual rhythm.
--   **Fix:** 
-    -   Constrain all handles to the **exact vertical center** of their respective rows/columns.
-    -   Position them *inside* the cell boundaries (with consistent padding), not outside. They should feel "attached" to the content, not floating above it.
-    -   Use the same horizontal alignment as the cell content (e.g., if `#` is left-aligned, the handle should be left-aligned within its reserved space).
+### The Smart Fix: Don't Hide Them, *Optimize* Them
 
-#### 3. Visual Hierarchy & Opacity
--   **Problem:** The handles are always visible or too opaque, competing with the actual content (links, time estimates, descriptions).
--   **Fix:** 
-    -   **Default State:** Handles should be **invisible** (opacity 0) until the user hovers over the specific row/column.
-    -   **Hover State:** Fade in smoothly (200ms transition) to opacity 0.6.
-    -   **Active/Drag State:** Full opacity (1.0) with a subtle glow or border to indicate interactivity.
-    -   **Delete Icon:** Use a distinct color (muted red) only on hover to prevent accidental clicks.
+Instead of forcing users to toggle them off, make unresolved links **cheap to render**:
 
-#### 4. Z-Index & Layering
--   **Problem:** Handles sometimes render *behind* table borders or text, making them unclickable or partially obscured.
--   **Fix:** Ensure handles always have a higher z-index than table content but lower than modals/tooltips. They must never clip or obscure text.
+#### 1. Render Unresolved Links as "Ghost Lines"
+-   Use **1px width** (not 2px)
+-   Set opacity to **0.08-0.12** (barely visible)
+-   Use a **single muted color** (gray/white) instead of per-link colors
+-   **Batch them together** in one `ctx.stroke()` call
+
+```typescript
+// Separate resolved vs unresolved links during batching
+const resolvedLinksByColor = new Map();
+const unresolvedLinks: Link[] = [];
+
+visibleLinks.forEach(link => {
+  if (link.unresolved) {
+    unresolvedLinks.push(link);
+  } else {
+    const color = getLinkColor(link);
+    if (!resolvedLinksByColor.has(color)) resolvedLinksByColor.set(color, []);
+    resolvedLinksByColor.get(color).push(link);
+  }
+});
+
+// Draw unresolved links FIRST as a single cheap batch
+if (unresolvedLinks.length > 0) {
+  ctx.beginPath();
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+  ctx.lineWidth = 1;
+  unresolvedLinks.forEach(link => {
+    ctx.moveTo(link.source.x, link.source.y);
+    ctx.lineTo(link.target.x, link.target.y);
+  });
+  ctx.stroke(); // ONE stroke call for ALL unresolved links
+}
+
+// Then draw resolved links normally (batched by color)
+resolvedLinksByColor.forEach((links, color) => {
+  ctx.beginPath();
+  ctx.strokeStyle = color;
+  links.forEach(link => {
+    ctx.moveTo(link.source.x, link.source.y);
+    ctx.lineTo(link.target.x, link.target.y);
+  });
+  ctx.stroke();
+});
+```
+
+#### 2. Add a "Link Density" Slider
+Instead of a binary on/off toggle for unresolved links, add a slider in DISPLAY settings:
+-   **Label:** "Unresolved Link Visibility"
+-   **Range:** 0% (hidden) → 100% (full opacity)
+-   **Default:** 30% (subtle but visible)
+
+This lets users **gradually reveal** unresolved links without nuking performance.
+
+#### 3. LOD Culling for Unresolved Links
+At default zoom, hide unresolved links entirely. Only show them when:
+-   User zooms in (>1.2x scale)
+-   User hovers over a node with unresolved connections
+-   User explicitly increases the "Unresolved Link Visibility" slider
 
 ---
 
-### ✅ Verification Checklist
-- [ ] Column selection box is subtle and only appears on intentional interaction  
-- [ ] Drag/delete icons are perfectly vertically centered within rows  
-- [ ] Handles respect cell padding and never overlap text  
-- [ ] Handles are invisible by default, fade in on hover  
-- [ ] Delete icon uses distinct color only on hover  
-- [ ] No visual clipping or z-index issues  
-- [ ] Table content remains fully readable at all times  
+### ✅ Expected Result
+-   **86 FPS** with unresolved links *enabled* (but optimized)
+-   Users can still see broken references when needed
+-   No more "all or nothing" toggle frustration
 
-This will make the table feel like a polished, intentional UI component—not a raw editor widget.
+**You've proven the bottleneck. Now make it invisible.** 🚀

@@ -22,6 +22,7 @@ const Graph2D = forwardRef(
     ref
   ) => {
     const snippets = useVaultStore((s) => s.snippets)
+    const selectedSnippet = useVaultStore((s) => s.selectedSnippet)
 
     return (
       <ForceGraph2D
@@ -30,7 +31,10 @@ const Graph2D = forwardRef(
         height={dimensions.height}
         graphData={graphData}
         nodeCanvasObject={paintNode}
-        onNodeHover={(node) => setHoverNode(node)}
+        onNodeHover={(node) => {
+          if (window._luminaIsDragging) return
+          setHoverNode(node)
+        }}
         nodePointerAreaPaint={(node, color, ctx) => {
           const sizeMult = useSettingsStore.getState().settings.graphNodeSize || 1.5
           const baseR = node.val ? Math.min(20, Math.max(4, Math.sqrt(node.val) * 3)) : 4
@@ -68,12 +72,41 @@ const Graph2D = forwardRef(
           return true
         }}
         linkColor={(link) => {
-          if (!hoverNode) return defaultLineColor
-          return link.source === hoverNode || link.target === hoverNode ? '#40bafa' : 'rgba(150, 150, 150, 0.05)'
+          const isHoverConnected = hoverNode && (link.source === hoverNode || link.target === hoverNode);
+          const isSelectedConnected = selectedSnippet && ((link.source.snippetId === selectedSnippet.id) || (link.target.snippetId === selectedSnippet.id));
+          
+          if (!hoverNode && !selectedSnippet) return defaultLineColor;
+          
+          const isActive = hoverNode ? isHoverConnected : isSelectedConnected;
+          
+          const settings = useSettingsStore.getState().settings;
+          const dimOpacity = settings.graphLinkDimOpacity ?? 0.05;
+          
+          if (!isActive) {
+            return `rgba(150, 150, 150, ${dimOpacity})`;
+          }
+          
+          const highlightOpacity = settings.graphLinkHighlightOpacity ?? 0.6;
+          const accentColor = settings.graphNodeColor || '#40bafa';
+          
+          const hexToRgba = (hex, alpha) => {
+            if (hex.startsWith('#')) {
+              const r = parseInt(hex.slice(1, 3), 16);
+              const g = parseInt(hex.slice(3, 5), 16);
+              const b = parseInt(hex.slice(5, 7), 16);
+              return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+            }
+            return hex;
+          };
+
+          return hexToRgba(accentColor, highlightOpacity);
         }}
         linkWidth={(link) => {
-          if (!hoverNode) return 0.2
-          return link.source === hoverNode || link.target === hoverNode ? 0.4 : 0.1
+          const isHoverConnected = hoverNode && (link.source === hoverNode || link.target === hoverNode);
+          const isSelectedConnected = selectedSnippet && ((link.source.snippetId === selectedSnippet.id) || (link.target.snippetId === selectedSnippet.id));
+          if (!hoverNode && !selectedSnippet) return 0.2;
+          const isActive = hoverNode ? isHoverConnected : isSelectedConnected;
+          return isActive ? 0.4 : 0.1;
         }}
         linkDirectionalParticles={0}
         onNodeClick={(node) => {
@@ -83,14 +116,17 @@ const Graph2D = forwardRef(
           }
         }}
         onNodeDrag={(node) => {
-          window._luminaIsDragging = true
-          usePerformanceStore.getState().setDragging(true)
-          if (onWorkerDragStart) onWorkerDragStart()
+          if (!window._luminaIsDragging) {
+            window._luminaIsDragging = true
+            usePerformanceStore.getState().setDragging(true)
+            if (onWorkerDragStart) onWorkerDragStart()
+          }
           if (onWorkerDrag) onWorkerDrag(node)
         }}
         onNodeDragEnd={(node) => {
           window._luminaIsDragging = false
           usePerformanceStore.getState().setDragging(false)
+          if (setHoverNode) setHoverNode(null)
           node.fx = null
           node.fy = null
           if (onWorkerDragEnd) onWorkerDragEnd(node)
@@ -168,8 +204,9 @@ export default React.memo(React.forwardRef(function Graph2DWrapper(props, ref) {
 
     workerRef.current = new Worker(new URL('./physics.worker.js', import.meta.url), { type: 'module' })
 
-    const repelForce = useSettingsStore.getState().settings.repelForce || 1
-    const linkForce = useSettingsStore.getState().settings.linkForce || 1
+    const repelForce = useSettingsStore.getState().settings.graphRepelForce ?? 0.3
+    const linkForce = useSettingsStore.getState().settings.graphLinkForce ?? 0.05
+    const centerForce = useSettingsStore.getState().settings.graphCenterForce ?? 0.05
 
     const safeNodes = props.graphData.nodes.map(n => ({ id: n.id, val: n.val, x: n.x, y: n.y, fx: n.fx, fy: n.fy }))
     const safeLinks = props.graphData.links.map(l => ({ 
@@ -182,7 +219,7 @@ export default React.memo(React.forwardRef(function Graph2DWrapper(props, ref) {
       payload: {
         nodes: safeNodes,
         links: safeLinks,
-        settings: { repelForce, linkForce }
+        settings: { repelForce, linkForce, centerForce }
       }
     })
 
@@ -214,8 +251,9 @@ export default React.memo(React.forwardRef(function Graph2DWrapper(props, ref) {
           type: 'UPDATE_SETTINGS',
           payload: {
             settings: {
-              repelForce: state.settings.repelForce || 1,
-              linkForce: state.settings.linkForce || 1
+              repelForce: state.settings.graphRepelForce ?? 0.3,
+              linkForce: state.settings.graphLinkForce ?? 0.05,
+              centerForce: state.settings.graphCenterForce ?? 0.05
             }
           }
         })

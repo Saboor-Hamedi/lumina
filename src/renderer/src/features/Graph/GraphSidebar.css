@@ -1,16 +1,19 @@
 .nexus-sidebar {
   width: 260px;
   background: var(--bg-sidebar);
-  border-right: 1px solid var(--border-dim);
+  border: 1px solid var(--border-dim);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
   position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
+  left: 12px;
+  top: 12px;
+  bottom: auto;
+  max-height: calc(100% - 24px);
   z-index: 50;
 }
 
@@ -46,6 +49,7 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  overflow-y: auto;
 }
 
 .nexus-search-wrap {

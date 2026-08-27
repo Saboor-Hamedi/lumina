@@ -12,7 +12,14 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DM
   }, [graphData])
 
   useEffect(() => {
-    const draw = () => {
+    let lastDrawTime = 0
+    const draw = (timestamp) => {
+      rafRef.current = requestAnimationFrame(draw)
+      
+      // Throttle to ~10 FPS (100ms) to save CPU
+      if (timestamp - lastDrawTime < 100) return
+      lastDrawTime = timestamp
+
       const canvas = canvasRef.current
       if (!canvas || !graphRef.current) return
 
@@ -23,7 +30,6 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DM
 
       const nodes = graphDataRef.current?.nodes || []
       if (nodes.length === 0) {
-        rafRef.current = requestAnimationFrame(draw)
         return
       }
 
@@ -115,17 +121,11 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DM
       } catch (err) {
         // centerAt/zoom might throw if not fully initialized
       }
-
-      // Throttle to ~15 FPS
-      rafRef.current = setTimeout(() => rafRef.current = requestAnimationFrame(draw), 66)
     }
 
     rafRef.current = requestAnimationFrame(draw)
     return () => {
-      if (rafRef.current) {
-        clearTimeout(rafRef.current)
-        cancelAnimationFrame(rafRef.current)
-      }
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
     }
   }, [graphRef, mainWidth, mainHeight])
 

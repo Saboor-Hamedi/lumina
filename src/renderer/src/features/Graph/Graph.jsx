@@ -136,6 +136,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   const handleModalHeaderMouseDown = useCallback(
     (e) => {
       if (isMaximized) return
+      if (e.target.closest('button')) return // Do not drag if clicking a button
+      
       isDraggingModal.current = true
 
       if (containerRef.current) {
@@ -398,107 +400,14 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   const reheatTimeoutRef = useRef(null)
 
   // Physics Engine Setup
+  // (Removed: Graph2D handles its own physics in a WebWorker to prevent main-thread freezing,
+  // and Graph3D handles its own internal physics. This legacy block was causing the main thread
+  // to fight the WebWorker, halving the framerate).
   useEffect(() => {
-    // Unsubscribe listener for Live Physics without React Re-renders
-    const unsubscribe = useSettingsStore.subscribe((state, prevState) => {
-      const { settings } = state
-      const prev = prevState.settings
-
-      // Only update if one of the physics settings actually changed
-      if (
-        settings.graphNodeSize !== prev.graphNodeSize ||
-        settings.graphCenterForce !== prev.graphCenterForce ||
-        settings.graphRepelForce !== prev.graphRepelForce ||
-        settings.graphLinkForce !== prev.graphLinkForce ||
-        settings.graphShowTexts !== prev.graphShowTexts ||
-        settings.graphNodeColor !== prev.graphNodeColor
-      ) {
-        if (!graphRef.current) return
-        if (is3DMode) return // Graph3D handles its own live physics
-        const fg = graphRef.current
-
-        // Delay execution to ensure 3D physics engine is initialized on mount
-        setTimeout(() => {
-          const sizeMult = settings.graphNodeSize || 1.5
-          const centerForce = settings.graphCenterForce ?? 0.05
-          const repelForce = settings.graphRepelForce ?? 0.3
-          const linkForce = settings.graphLinkForce ?? 0.05
-
-          // Update force parameters instantly
-          fg.d3Force('custom_x').strength(0)
-          fg.d3Force('custom_y').strength(0)
-
-          if (!is3DMode) {
-            fg.d3Force('custom_gravity', null)
-            if (fg.d3Force('custom_radial')) {
-              fg.d3Force('custom_radial')
-                .radius((d) => (d.val <= 1 ? 800 : 0))
-                .strength((d) => (d.val <= 1 ? 0.2 : centerForce))
-            }
-
-            // Ensure 2D forces exist and default 3D/2D charge is disabled
-            if (fg.d3Force('charge')) fg.d3Force('charge', null)
-            if (!fg.d3Force('custom_charge'))
-              fg.d3Force('custom_charge', forceManyBody().distanceMax(2000))
-            
-            // Remove collision force entirely so dragging is silky smooth and non-blocking
-
-            fg.d3Force('custom_charge')
-              .strength(-500 * repelForce)
-              .distanceMax(2000)
-            
-            // We no longer use custom_collide, so remove it if it exists
-            if (fg.d3Force('custom_collide')) fg.d3Force('custom_collide', null)
-          }
-
-          if (fg.d3Force('link')) fg.d3Force('link').strength(linkForce)
-
-          // Debounce the reheat to prevent violent shaking when dragging sliders
-          if (reheatTimeoutRef.current) clearTimeout(reheatTimeoutRef.current)
-          reheatTimeoutRef.current = setTimeout(() => {
-            if (graphRef.current) graphRef.current.d3ReheatSimulation()
-          }, 300)
-        }, 50)
-      }
-    })
-
-    // Initial Setup
+    // We still need to trigger the initial pulse overlay removal
     setIsEngineReady(false)
     const safetyTimer = setTimeout(() => setIsEngineReady(true), 1500)
-
-    if (!graphRef.current) return
-    if (is3DMode) return // Graph3D handles its own initial physics setup
-    const fg = graphRef.current
-
-    // Defer initialization slightly so ForceGraph3D's internal engine has mounted and created d3ForceLayout
-    const initTimer = setTimeout(() => {
-      const initialSettings = useSettingsStore.getState().settings
-
-      const repelForce = initialSettings.graphRepelForce ?? 0.3
-      const linkForce = initialSettings.graphLinkForce ?? 0.05
-
-      // Initialize clean standard forces
-      if (!is3DMode) {
-        // Standard Obsidian physics: Repel everything, connect links, and pull softly to center.
-        fg.d3Force('center', forceCenter(0, 0))
-        fg.d3Force('charge', forceManyBody().strength(-500 * repelForce))
-        
-        // Remove collision entirely for silky smooth dragging
-        if (fg.d3Force('collide')) fg.d3Force('collide', null)
-        if (fg.d3Force('custom_collide')) fg.d3Force('custom_collide', null)
-      }
-
-      // Extremely elastic links like a spiderweb
-      if (fg.d3Force('link')) fg.d3Force('link').distance(100).strength(linkForce)
-
-      fg.d3ReheatSimulation()
-    }, 100) // 100ms initialization delay
-
-    return () => {
-      unsubscribe()
-      clearTimeout(initTimer)
-      clearTimeout(safetyTimer)
-    }
+    return () => clearTimeout(safetyTimer)
   }, [is3DMode])
 
   // Auto-Spin Logic removed to prevent CPU heavy continuous physics simulation
@@ -546,8 +455,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       const isActive = selectedSnippet && node.snippetId === selectedSnippet.id
       const isHovered = hoverNode === node
       // Cap max radius tightly — nodes should be dots, not planets
-      const baseR = node.val ? Math.min(8, Math.max(2, Math.sqrt(node.val) * 2.2)) : 2
-      const r = baseR * graphNodeSize + 2
+      const baseR = node.val ? Math.min(10, Math.max(3, Math.sqrt(node.val) * 2.8)) : 3
+      const r = baseR * graphNodeSize + 3
 
       const label = (node.id || '').replace(/[*"']/g, '')
       const isSearchMatch =
@@ -619,8 +528,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             nodeColor={nodeColorFn}
             nodeRelSize={4}
             nodeThreeObject={(node) => {
-              const base = node.val ? Math.min(8, Math.max(2, Math.sqrt(node.val) * 2.2)) : 2
-              const r = base * graphNodeSize + 2
+              const base = node.val ? Math.min(10, Math.max(3, Math.sqrt(node.val) * 2.8)) : 3
+              const r = base * graphNodeSize + 3
               const mesh = new THREE.Mesh(sharedSphereGeometry, getMaterial(nodeColorFn(node)))
               mesh.scale.set(r, r, r)
               return mesh
@@ -630,8 +539,34 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               return link.source === hoverNode || link.target === hoverNode
             }}
             linkColor={(link) => {
-              if (!hoverNode) return defaultLineColor
-              return link.source === hoverNode || link.target === hoverNode ? '#40bafa' : 'rgba(150, 150, 150, 0.05)'
+              const isHoverConnected = hoverNode && (link.source === hoverNode || link.target === hoverNode);
+              const isSelectedConnected = selectedSnippet && ((link.source.snippetId === selectedSnippet.id) || (link.target.snippetId === selectedSnippet.id));
+              
+              if (!hoverNode && !selectedSnippet) return defaultLineColor;
+              
+              const isActive = hoverNode ? isHoverConnected : isSelectedConnected;
+              
+              const { settings } = useSettingsStore.getState();
+              const dimOpacity = settings.graphLinkDimOpacity ?? 0.05;
+              
+              if (!isActive) {
+                return `rgba(150, 150, 150, ${dimOpacity})`;
+              }
+              
+              const highlightOpacity = settings.graphLinkHighlightOpacity ?? 0.6;
+              const accentColor = settings.graphNodeColor || '#40bafa';
+              
+              const hexToRgba = (hex, alpha) => {
+                if (hex.startsWith('#')) {
+                  const r = parseInt(hex.slice(1, 3), 16);
+                  const g = parseInt(hex.slice(3, 5), 16);
+                  const b = parseInt(hex.slice(5, 7), 16);
+                  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                }
+                return hex;
+              };
+
+              return hexToRgba(accentColor, highlightOpacity);
             }}
             linkWidth={0.5}
             onNodeHover={(node) => setHoverNode(node)}
@@ -657,15 +592,19 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               }, 150)
             }}
             onNodeDrag={(node) => {
-              window._luminaIsDragging = true
-              usePerformanceStore.getState().setDragging(true)
+              if (!window._luminaIsDragging) {
+                window._luminaIsDragging = true
+                usePerformanceStore.getState().setDragging(true)
+              }
             }}
             onNodeDragEnd={(node) => {
               window._luminaIsDragging = false
               usePerformanceStore.getState().setDragging(false)
+              setHoverNode(null)
               node.fx = null
               node.fy = null
               node.fz = null
+              if (graphRef.current) graphRef.current.d3ReheatSimulation()
             }}
             onRenderFramePre={() => {
               window._luminaFrameStart = performance.now()
@@ -770,8 +709,6 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
           setSearchQuery={setSearchQuery}
           isSpinning={isSpinning}
           graphTheme={graphTheme}
-          onHeaderMouseDown={handleModalHeaderMouseDown}
-          isMaximized={isMaximized}
         />
 
         <div className="nexus-body" style={{ position: 'relative' }}>
@@ -791,8 +728,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               nodeColor={nodeColorFn}
               nodeRelSize={4}
               nodeThreeObject={(node) => {
-                const base = node.val ? Math.min(8, Math.max(2, Math.sqrt(node.val) * 2.2)) : 2
-                const r = base * graphNodeSize + 2
+                const base = node.val ? Math.min(10, Math.max(3, Math.sqrt(node.val) * 2.8)) : 3
+                const r = base * graphNodeSize + 3
                 const mesh = new THREE.Mesh(sharedSphereGeometry, getMaterial(nodeColorFn(node)))
                 mesh.scale.set(r, r, r)
                 return mesh
@@ -802,8 +739,34 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 return link.source === hoverNode || link.target === hoverNode
               }}
               linkColor={(link) => {
-                if (!hoverNode) return defaultLineColor
-                return link.source === hoverNode || link.target === hoverNode ? '#40bafa' : 'rgba(150, 150, 150, 0.05)'
+                const isHoverConnected = hoverNode && (link.source === hoverNode || link.target === hoverNode);
+                const isSelectedConnected = selectedSnippet && ((link.source.snippetId === selectedSnippet.id) || (link.target.snippetId === selectedSnippet.id));
+                
+                if (!hoverNode && !selectedSnippet) return defaultLineColor;
+                
+                const isActive = hoverNode ? isHoverConnected : isSelectedConnected;
+                
+                const { settings } = useSettingsStore.getState();
+                const dimOpacity = settings.graphLinkDimOpacity ?? 0.05;
+                
+                if (!isActive) {
+                  return `rgba(150, 150, 150, ${dimOpacity})`;
+                }
+                
+                const highlightOpacity = settings.graphLinkHighlightOpacity ?? 0.6;
+                const accentColor = settings.graphNodeColor || '#40bafa';
+                
+                const hexToRgba = (hex, alpha) => {
+                  if (hex.startsWith('#')) {
+                    const r = parseInt(hex.slice(1, 3), 16);
+                    const g = parseInt(hex.slice(3, 5), 16);
+                    const b = parseInt(hex.slice(5, 7), 16);
+                    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                  }
+                  return hex;
+                };
+
+                return hexToRgba(accentColor, highlightOpacity);
               }}
               linkWidth={0.5}
               onNodeHover={(node) => setHoverNode(node)}
@@ -835,9 +798,11 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               onNodeDragEnd={(node) => {
                 window._luminaIsDragging = false
                 usePerformanceStore.getState().setDragging(false)
+                setHoverNode(null)
                 node.fx = null
                 node.fy = null
                 node.fz = null
+                if (graphRef.current) graphRef.current.d3ReheatSimulation()
               }}
               backgroundColor="rgba(0,0,0,0)"
               d3AlphaDecay={0.05}

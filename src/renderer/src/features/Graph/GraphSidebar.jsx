@@ -8,30 +8,43 @@ const GraphSidebar = ({
   isOpen = true,
   searchQuery,
   setSearchQuery,
-  graphTheme,
-  onHeaderMouseDown,
-  isMaximized
+  graphTheme
 }) => {
   const { settings, updateSetting } = useSettingsStore()
+  
+  // Fast optimistic update for instant slider preview without heavy I/O
+  const fastUpdate = (key, val) => {
+    useSettingsStore.setState(state => ({
+      settings: { ...state.settings, [key]: val }
+    }))
+  }
+
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery || '')
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localSearchQuery !== searchQuery) {
+        setSearchQuery(localSearchQuery)
+      }
+    }, 150)
+    return () => clearTimeout(timer)
+  }, [localSearchQuery, setSearchQuery, searchQuery])
+
+  useEffect(() => {
+    if (searchQuery !== localSearchQuery) {
+      setLocalSearchQuery(searchQuery || '')
+    }
+  }, [searchQuery])
 
   return (
     <div className={`nexus-sidebar ${isOpen ? '' : 'closed'}`}>
-      <div
-        className="nexus-sidebar-header"
-        onMouseDown={onHeaderMouseDown}
-        style={{ cursor: isMaximized ? 'default' : 'grab' }}
-      >
-        <Network size={16} />
-        <span>Graph Nexus</span>
-      </div>
-
       <div className="nexus-sidebar-content">
         <div className="nexus-search-wrap">
           <input
             type="text"
             placeholder="Search nodes..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={localSearchQuery}
+            onChange={(e) => setLocalSearchQuery(e.target.value)}
             className="nexus-search-input"
           />
         </div>
@@ -182,7 +195,9 @@ const GraphSidebar = ({
                 max="2.0"
                 step="0.1"
                 value={settings.graphNodeSize || 1.5}
-                onChange={(e) => updateSetting('graphNodeSize', parseFloat(e.target.value))}
+                onChange={(e) => fastUpdate('graphNodeSize', parseFloat(e.target.value))}
+                onMouseUp={(e) => updateSetting('graphNodeSize', parseFloat(e.target.value))}
+                onTouchEnd={(e) => updateSetting('graphNodeSize', parseFloat(e.target.value))}
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -204,7 +219,9 @@ const GraphSidebar = ({
                 max="1.0"
                 step="0.01"
                 value={settings.graphCenterForce ?? 0.05}
-                onChange={(e) => updateSetting('graphCenterForce', parseFloat(e.target.value))}
+                onChange={(e) => fastUpdate('graphCenterForce', parseFloat(e.target.value))}
+                onMouseUp={(e) => updateSetting('graphCenterForce', parseFloat(e.target.value))}
+                onTouchEnd={(e) => updateSetting('graphCenterForce', parseFloat(e.target.value))}
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -226,7 +243,9 @@ const GraphSidebar = ({
                 max="1.0"
                 step="0.01"
                 value={settings.graphRepelForce ?? 0.3}
-                onChange={(e) => updateSetting('graphRepelForce', parseFloat(e.target.value))}
+                onChange={(e) => fastUpdate('graphRepelForce', parseFloat(e.target.value))}
+                onMouseUp={(e) => updateSetting('graphRepelForce', parseFloat(e.target.value))}
+                onTouchEnd={(e) => updateSetting('graphRepelForce', parseFloat(e.target.value))}
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -248,7 +267,57 @@ const GraphSidebar = ({
                 max="1.0"
                 step="0.01"
                 value={settings.graphLinkForce ?? 0.05}
-                onChange={(e) => updateSetting('graphLinkForce', parseFloat(e.target.value))}
+                onChange={(e) => fastUpdate('graphLinkForce', parseFloat(e.target.value))}
+                onMouseUp={(e) => updateSetting('graphLinkForce', parseFloat(e.target.value))}
+                onTouchEnd={(e) => updateSetting('graphLinkForce', parseFloat(e.target.value))}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: '11px',
+                  color: 'var(--text-muted)',
+                  fontWeight: 500
+                }}
+              >
+                <span>Selected Link Opacity</span>
+              </div>
+              <input
+                type="range"
+                className="graph-slider"
+                min="0.1"
+                max="1.0"
+                step="0.05"
+                value={settings.graphLinkHighlightOpacity ?? 0.6}
+                onChange={(e) => fastUpdate('graphLinkHighlightOpacity', parseFloat(e.target.value))}
+                onMouseUp={(e) => updateSetting('graphLinkHighlightOpacity', parseFloat(e.target.value))}
+                onTouchEnd={(e) => updateSetting('graphLinkHighlightOpacity', parseFloat(e.target.value))}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: '11px',
+                  color: 'var(--text-muted)',
+                  fontWeight: 500
+                }}
+              >
+                <span>Inactive Link Opacity</span>
+              </div>
+              <input
+                type="range"
+                className="graph-slider"
+                min="0.0"
+                max="0.3"
+                step="0.01"
+                value={settings.graphLinkDimOpacity ?? 0.05}
+                onChange={(e) => fastUpdate('graphLinkDimOpacity', parseFloat(e.target.value))}
+                onMouseUp={(e) => updateSetting('graphLinkDimOpacity', parseFloat(e.target.value))}
+                onTouchEnd={(e) => updateSetting('graphLinkDimOpacity', parseFloat(e.target.value))}
               />
             </div>
           </div>

@@ -32,8 +32,9 @@ self.onmessage = (e) => {
           .strength(0.1 * (payload.settings?.linkForce || 1))
       )
       .force('collide', forceCollide().radius(15).iterations(1))
-      .force('x', forceX(0).strength(0.05))
-      .force('y', forceY(0).strength(0.05))
+      .force('center', forceCenter(0, 0))
+      .force('x', forceX(0).strength(payload.settings?.centerForce ?? 0.05))
+      .force('y', forceY(0).strength(payload.settings?.centerForce ?? 0.05))
       .alphaDecay(0.05)
       
     // Allocate ONCE when the worker starts
@@ -57,6 +58,8 @@ self.onmessage = (e) => {
     if (!simulation) return
     simulation.force('charge').strength(-800 * (payload.settings?.repelForce || 1))
     simulation.force('link').strength(0.1 * (payload.settings?.linkForce || 1))
+    simulation.force('x').strength(payload.settings?.centerForce ?? 0.05)
+    simulation.force('y').strength(payload.settings?.centerForce ?? 0.05)
     simulation.alpha(1).restart()
   } else if (type === 'RELEASE_BUFFER') {
     // Main thread has finished reading and returned ownership of the exact same memory!
@@ -80,6 +83,7 @@ self.onmessage = (e) => {
       node.fx = null
       node.fy = null
       simulation.alphaTarget(0)
+      simulation.alpha(1).restart()
     }
   } else if (type === 'REHEAT') {
     if (simulation) simulation.alpha(1).restart()
