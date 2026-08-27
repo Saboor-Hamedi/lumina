@@ -1,0 +1,406 @@
+.update-details-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-left: 10px;
+}
+
+.update-trigger-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  -webkit-app-region: no-drag;
+}
+
+.update-trigger-btn:hover {
+  color: var(--text-main);
+  background: var(--bg-hover);
+}
+
+.update-trigger-btn.has-update {
+  color: #10b981;
+  animation: pulse-update 2s infinite;
+}
+
+@keyframes pulse-update {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.8; }
+}
+
+.update-details-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 0;
+  width: 320px; /* Made bigger */
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: updateDropdownAppear 0.2s cubic-bezier(0, 0, 0.2, 1) forwards;
+  will-change: transform, opacity;
+  transform-origin: top left;
+  -webkit-app-region: no-drag; /* prevent window dragging when interacting */
+}
+
+@keyframes updateDropdownAppear {
+  from { opacity: 0; transform: scale(0.95) translateY(-4px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.update-details-header {
+  padding: 16px 20px 8px 20px;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.update-version-showcase {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.version-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.version-block.latest {
+  align-items: flex-end;
+}
+
+.version-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text-faint);
+}
+
+.version-label.beta {
+  color: #8b5cf6;
+}
+
+.version-number {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.2px;
+}
+
+.version-divider {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+}
+
+.animated-arrow {
+  color: var(--text-accent);
+  animation: slideArrow 1.5s ease-in-out infinite;
+}
+
+@keyframes slideArrow {
+  0%, 100% { transform: translateX(-4px); opacity: 0.5; }
+  50% { transform: translateX(4px); opacity: 1; }
+}
+
+/* Segmented Control */
+.channel-toggle {
+  display: flex;
+  background: var(--bg-active);
+  border-radius: 6px;
+  padding: 2px;
+  margin-bottom: 12px;
+}
+
+.channel-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.channel-btn.active {
+  background: var(--bg-panel);
+  color: var(--text-main);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.channel-btn:not(.active):hover {
+  color: var(--text-main);
+}
+
+.update-details-body {
+  padding: 16px 20px;
+  font-size: 13px;
+  color: var(--text-muted);
+  max-height: 250px;
+  overflow-y: auto;
+  line-height: 1.6;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.release-category {
+  margin-bottom: 16px;
+}
+
+.release-category:last-of-type {
+  margin-bottom: 12px;
+}
+
+.category-title {
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.category-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.category-items li {
+  position: relative;
+  padding-left: 14px;
+  color: var(--text-muted);
+}
+
+.category-items li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--text-faint);
+}
+
+.changelog-link {
+  display: inline-block;
+  color: var(--text-accent);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 8px;
+}
+
+.changelog-link:hover {
+  text-decoration: underline;
+}
+
+.update-details-footer {
+  padding: 12px 20px 16px 20px;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.update-install-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.update-install-btn.primary-solid {
+  background: var(--bg-active);
+  color: var(--text-main);
+  border: 1px solid var(--border-dim);
+}
+
+.update-install-btn.primary-solid:hover {
+  background: var(--text-accent);
+  color: #fff;
+  border-color: var(--text-accent);
+}
+
+.up-to-date-message {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: #10b981;
+}
+
+.footer-actions-secondary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.text-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.text-btn:hover {
+  color: var(--text-muted);
+}
+
+.settings-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.settings-btn:hover {
+  color: var(--text-main);
+  background: var(--bg-hover);
+}
+
+.settings-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.setting-item input[type="checkbox"] {
+  display: none;
+}
+
+.update-preference-checkbox {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #4b5563; /* Gray-600 */
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  margin: 0;
+  display: inline-block;
+}
+
+.update-preference-checkbox:checked {
+  background: #8b5cf6; /* Lumina purple */
+  border-color: #8b5cf6;
+}
+
+.update-preference-checkbox:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.update-preference-checkbox:hover {
+  border-color: #8b5cf6;
+}
+
+.update-preference-checkbox:focus-visible {
+  outline: 2px solid rgba(139, 92, 246, 0.3);
+  outline-offset: 2px;
+}
+
+.progress-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.progress-text {
+  font-size: 11px;
+  color: var(--text-accent);
+  font-weight: 500;
+}
+
+.progress-bar-bg {
+  height: 4px;
+  background: var(--bg-active);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--text-accent);
+  border-radius: 2px;
+  transition: width 0.2s ease;
+}
+
+.update-install-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--text-accent);
+  color: #fff;
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.update-install-btn:hover {
+  background: var(--text-main);
+}

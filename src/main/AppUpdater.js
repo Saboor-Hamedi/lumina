@@ -63,7 +63,12 @@ class AppUpdater {
 
     ipcMain.removeHandler('update:install')
     ipcMain.handle('update:install', () => {
-      autoUpdater.quitAndInstall()
+      // isSilent = true, isForceRunAfter = true
+      autoUpdater.quitAndInstall(true, true)
+    })
+
+    ipcMain.on('check-for-updates', () => {
+      autoUpdater.checkForUpdates()
     })
   }
 

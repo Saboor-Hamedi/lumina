@@ -399,20 +399,21 @@
   align-items: center;
   gap: 6px;
   background: var(--bg-panel);
-  border: 1px solid var(--border-dim);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 6px;
   padding: 5px 8px;
   cursor: pointer;
   text-align: left;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   color: var(--text-main);
   min-width: 0;
 }
 
 .welcome-action-card:hover {
-  background: var(--bg-active);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+  border-color: rgba(var(--text-accent-rgb, 139, 92, 246), 0.3);
+  box-shadow: 0 8px 24px rgba(var(--text-accent-rgb, 139, 92, 246), 0.1);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .action-card-icon {

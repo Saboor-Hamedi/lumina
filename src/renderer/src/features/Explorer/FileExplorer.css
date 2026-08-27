@@ -341,6 +341,12 @@
   position: relative;
 }
 
+.start-section .tree-item.active {
+  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.1) !important;
+  border-left: 2px solid var(--text-accent);
+  color: var(--text-main);
+}
+
 .start-section .tree-item .item-icon-wrap {
   display: flex;
   align-items: center;

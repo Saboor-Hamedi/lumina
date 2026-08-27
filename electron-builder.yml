@@ -24,6 +24,8 @@ nsis:
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
+  oneClick: true
+  perMachine: false
 mac:
   icon: resources/icon.png
   entitlementsInherit: build/entitlements.mac.plist

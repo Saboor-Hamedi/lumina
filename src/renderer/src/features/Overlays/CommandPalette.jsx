@@ -107,6 +107,7 @@ const CommandPaletteRow = React.memo(
             else if (item.action === 'chat') onToggleChat?.()
             else if (item.action === 'docs') onToggleDocs?.()
             else if (item.action === 'rename') onRename?.()
+            else if (item.action === 'update') window.electron?.ipcRenderer.send('check-for-updates')
             else if (item.action === 'reload-window') window.location.reload()
             else if (item.action === 'toggle-type-sound') {
               updateSetting('typeSound', !settings.typeSound)
@@ -439,6 +440,12 @@ const CommandPalette = React.memo(
           matchType: 'action',
           action: 'graph',
           shortcut: 'Ctrl + G'
+        },
+        {
+          id: 'action-update',
+          title: 'App: Check for Updates',
+          matchType: 'action',
+          action: 'update'
         }
       ].filter((a) => !actionQuery || a.title.toLowerCase().includes(actionQuery))
 
@@ -597,6 +604,7 @@ const CommandPalette = React.memo(
             else if (item.action === 'chat') onToggleChat?.()
             else if (item.action === 'docs') onToggleDocs?.()
             else if (item.action === 'rename') onRename?.()
+            else if (item.action === 'update') window.electron?.ipcRenderer.send('check-for-updates')
             else if (item.action === 'reload-window') window.location.reload()
             else if (item.action === 'toggle-type-sound') {
               updateSetting('typeSound', !settings.typeSound)

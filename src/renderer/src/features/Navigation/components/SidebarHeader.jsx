@@ -35,7 +35,7 @@ const SidebarHeader = memo(({ onToggleGraph }) => {
       </button>
       <DailyNotes />
       <button
-        className="new-note-btn"
+        className="new-note-btn graph-header-btn"
         onClick={onToggleGraph}
         style={{ flex: 1, padding: '4px', minWidth: 0, justifyContent: 'center' }}
       >

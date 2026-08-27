@@ -240,9 +240,6 @@
 }
 /* --- CURSOR AND SELECTION FIXES --- */
 /* Hide CodeMirror native cursor when a table cell has focus to avoid double cursors outside the table */
-.cm-cursor {
-  max-height: 1.5em; /* Prevent the cursor from stretching to the full height of a block widget table! */
-}
 .cm-editor.cm-table-focused .cm-cursorLayer,
 .markdown-editor:has(.cm-atomic-table:focus-within) .cm-cursorLayer,
 .cm-editor:has(.cm-atomic-table:focus-within) .cm-cursorLayer,

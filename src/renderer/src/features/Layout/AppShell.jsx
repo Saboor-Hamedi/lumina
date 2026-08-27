@@ -17,7 +17,6 @@ import ToastNotification from '../../core/notification'
 import ConfirmModal from '../Overlays/Modals/ConfirmModal'
 import RenameModal from '../Overlays/Modals/RenameModal'
 import { handleRenameSnippet } from '../../core/hooks/handleRenameSnippet'
-import UpdateToast from '../Overlays/UpdateToast'
 import ErrorBoundary from '../../components/ErrorBoundary'
 import './AppShell.css'
 import '../Overlays/Modals/ConfirmModal.css'
@@ -72,9 +71,9 @@ const AppShell = () => {
   useTypingSound()
   const [settingsInitialTab, setSettingsInitialTab] = useState('general')
 
-  // Always default to 'files' instead of restoring from settings
   const [activeTab, setActiveTab] = useState('files')
   const [showSettings, setShowSettings] = useState(false)
+  const [initialSettingsTab, setInitialSettingsTab] = useState('general')
   const [showThemeModal, setShowThemeModal] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
   const [paletteInitialQuery, setPaletteInitialQuery] = useState('')
@@ -424,6 +423,10 @@ const AppShell = () => {
     onFind: () => window.dispatchEvent(new CustomEvent('find-in-editor')),
     onTogglePalette: () => {
       setPaletteInitialQuery('')
+      setShowPalette(true)
+    },
+    onTogglePaletteCommandMode: () => {
+      setPaletteInitialQuery('> ')
       setShowPalette(true)
     },
     onToggleCommandPalette: () => {
@@ -845,7 +848,6 @@ const AppShell = () => {
           })
         }}
       />
-      <UpdateToast />
       <ToastNotification toast={toast} onClose={clearToast} />
       <IndexingStatus />
     </div>

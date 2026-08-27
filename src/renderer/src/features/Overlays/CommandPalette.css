@@ -1,14 +1,15 @@
 .command-palette-overlay {
   position: fixed;
   inset: 0;
-  background: var(--bg-overlay);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: flex-start;
   justify-content: center;
   padding-top: 15vh;
   z-index: 9999;
-  animation: fadeIn 0.1s ease-out;
-  backdrop-filter: blur(4px);
+  animation: fadeIn 0.15s ease-out;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .command-palette-container {
@@ -16,15 +17,14 @@
   max-width: 820px;
   height: 480px;
   background: var(--bg-app);
-  border-radius: 10px;
+  border-radius: 12px;
   box-shadow: 
-    0 16px 40px rgba(0, 0, 0, 0.4), 
-    0 0 0 1px var(--border-dim);
+    0 24px 54px rgba(0, 0, 0, 0.5), 
+    0 0 0 1px var(--border-card);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: palette-slide-down 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  border: 1px solid var(--border-card);
+  animation: palette-slide-down 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes palette-slide-down {
@@ -35,9 +35,10 @@
 .palette-input-wrap {
   display: flex;
   align-items: center;
-  padding: 12px 16px;
+  padding: 16px 20px;
   gap: 12px;
-  background: rgba(0,0,0,0.02);
+  background: transparent;
+  border-bottom: 1px solid var(--border-dim);
   flex-shrink: 0;
 }
 
@@ -50,7 +51,7 @@
   flex: 1;
   background: transparent;
   border: none;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--text-main);
   font-weight: 500;
   font-family: inherit;
@@ -58,7 +59,7 @@
 }
 
 .palette-input-wrap input::placeholder {
-  font-size: 12.5px;
+  font-size: 15px;
   font-weight: 400;
   color: var(--text-muted);
   opacity: 0.75;
@@ -92,7 +93,7 @@
   width: 55%;
   display: flex;
   flex-direction: column;
-  background: var(--bg-card);
+  background: var(--bg-app); /* Match main background for unity */
   min-height: 0;
   overflow: hidden;
   position: relative;
@@ -101,35 +102,38 @@
 .palette-results {
   flex: 1;
   overflow-y: hidden;
-  padding: 12px 0;
-  margin-top: 4px;
+  padding: 8px 0;
 }
 
 .palette-item {
   height: 48px;
   padding: 0 16px;
+  margin: 2px 12px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   gap: 12px;
   cursor: pointer;
-  transition: all 0.1s ease;
+  transition: all 0.1s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   box-sizing: border-box;
 }
 
 .palette-item.active {
-  background: var(--bg-active);
+  background: var(--bg-hover);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
 .palette-item.active::before {
   content: '';
   position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
+  left: -2px; /* Pull it slightly out */
+  top: 50%;
+  transform: translateY(-50%);
+  height: 20px;
   width: 3px;
   background: var(--text-accent);
-  border-radius: 0 2px 2px 0;
+  border-radius: 0 4px 4px 0;
 }
 
 .item-icon {

@@ -491,7 +491,6 @@ const MarkdownEditor = React.memo(
           }
           setIsDirty(false)
           setDirty(snippet.id, false)
-          showToast('Note saved', 'success')
         }
       } catch (error) {
         console.error('Failed to save note:', error)

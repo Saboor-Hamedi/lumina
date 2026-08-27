@@ -3,6 +3,7 @@ import { Square, X, Minus, Search, MessageSquare } from 'lucide-react'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import logoUrl from '../../assets/logo.png'
 import ToolTip from '../../components/atoms/ToolTip'
+import UpdateDetails from '../../components/update/UpdateDetails'
 import './TitleBar.css'
 
 const TitleBar = ({ onToggleAIChat }) => {
@@ -22,25 +23,29 @@ const TitleBar = ({ onToggleAIChat }) => {
   return (
     <div className="title-bar" data-testid="title-bar">
       <div className="title-left">
-        <div className="app-logo">
-          <div
-            style={{
-              width: 14,
-              height: 14,
-              backgroundColor: 'var(--text-accent)',
-              maskImage: `url(${logoUrl})`,
-              WebkitMaskImage: `url(${logoUrl})`,
-              maskSize: 'contain',
-              WebkitMaskSize: 'contain',
-              maskRepeat: 'no-repeat',
-              WebkitMaskRepeat: 'no-repeat',
-              maskPosition: 'center',
-              WebkitMaskPosition: 'center'
-            }}
-          />
-          <span className="app-name" data-testid="app-name">
-            Lumina
-          </span>
+        <div className="app-logo-wrapper" style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+          <div className="app-logo">
+            <div
+              style={{
+                width: 14,
+                height: 14,
+                backgroundColor: 'var(--text-accent)',
+                maskImage: `url(${logoUrl})`,
+                WebkitMaskImage: `url(${logoUrl})`,
+                maskSize: 'contain',
+                WebkitMaskSize: 'contain',
+                maskRepeat: 'no-repeat',
+                WebkitMaskRepeat: 'no-repeat',
+                maskPosition: 'center',
+                WebkitMaskPosition: 'center'
+              }}
+            />
+            <span className="app-name" data-testid="app-name">
+              Lumina
+            </span>
+          </div>
+          
+          <UpdateDetails />
         </div>
       </div>
 

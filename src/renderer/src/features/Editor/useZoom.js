@@ -55,7 +55,8 @@ export const useZoom = ({
    */
   const setZoom = useCallback(
     (newSize) => {
-      const clamped = Math.max(minSize, Math.min(maxSize, Math.round(newSize)))
+      // Use fractional font sizes for buttery smooth trackpad zooming
+      const clamped = Math.max(minSize, Math.min(maxSize, Number(newSize.toFixed(2))))
       if (clamped === sizeRef.current) return
 
       sizeRef.current = clamped
@@ -99,36 +100,21 @@ export const useZoom = ({
     setZoom(defaultSize)
   }, [setZoom, defaultSize])
 
-  // Handle Ctrl/Cmd + Mouse Wheel over the editor container with VS Code-style smooth accumulation
+  // Handle Ctrl/Cmd + Mouse Wheel over the editor container with continuous trackpad support
   useEffect(() => {
     const element = containerRef?.current
     if (!element) return
-
-    const PIXELS_PER_STEP = 35 // Smooth accumulator threshold for trackpad gestures & notched scroll wheels
-    let wheelAccumulator = 0
-    let lastWheelTime = 0
 
     const handleWheel = (e) => {
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault()
         e.stopPropagation()
 
-        const now = Date.now()
-        // Reset accumulator if scrolling paused for over 300ms
-        if (now - lastWheelTime > 300) {
-          wheelAccumulator = 0
-        }
-        lastWheelTime = now
-
-        wheelAccumulator += e.deltaY
-
-        if (Math.abs(wheelAccumulator) >= PIXELS_PER_STEP) {
-          const deltaSteps = -Math.trunc(wheelAccumulator / PIXELS_PER_STEP)
-          if (deltaSteps !== 0) {
-            wheelAccumulator += deltaSteps * PIXELS_PER_STEP
-            setZoom(sizeRef.current + deltaSteps * step)
-          }
-        }
+        // Use a much smaller multiplier. Standard mouse wheels send deltaY of 100 or 120 per notch.
+        // 100 * 0.01 = 1px per notch. Trackpads fire smaller values rapidly, which will still be smooth.
+        const ZOOM_SPEED = 0.01
+        const zoomDelta = -(e.deltaY * ZOOM_SPEED)
+        setZoom(sizeRef.current + zoomDelta)
       }
     }
 
