@@ -59,6 +59,13 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
 
   // Granular subscriptions so physics sliders do not cause React re-renders!
   const graphTheme = useSettingsStore((s) => s.settings.graphTheme || 'default')
+  
+  const handleRecenter = (e) => {
+    if (e) e.stopPropagation()
+    if (graphRef.current && graphRef.current.zoomToFit) {
+      graphRef.current.zoomToFit(800, 100) // animate for 800ms with 100px padding
+    }
+  }
   const graphHideTags = useSettingsStore((s) => s.settings.graphHideTags)
   const graphHideGhosts = useSettingsStore((s) => s.settings.graphHideGhosts)
   const graphHideOrphans = useSettingsStore((s) => s.settings.graphHideOrphans)
@@ -621,7 +628,6 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             d3VelocityDecay={0.4}
             showNavInfo={false}
             linkDirectionalParticles={0}
-            nodeLabel={(node) => (node.id || '').replace(/[*"']/g, '')}
             onEngineStop={() => setIsEngineReady(true)}
           />
         ) : (
@@ -638,13 +644,6 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             setIsEngineReady={setIsEngineReady}
           />
         )}
-        <GraphMiniMap
-          graphRef={graphRef}
-          graphData={graphData}
-          mainWidth={dimensions.width}
-          mainHeight={dimensions.height}
-          is3DMode={is3DMode}
-        />
       </div>
     )
   }
@@ -672,7 +671,9 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
         left={
           <button
             className="win-btn"
+            onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => {
+              e.stopPropagation()
               handleToggleSidebar(e)
               e.currentTarget.blur()
             }}
@@ -689,7 +690,11 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
         right={
           <button
             className="win-btn"
-            onClick={handleToggleMaximize}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation()
+              handleToggleMaximize()
+            }}
             title={isMaximized ? 'Restore' : 'Maximize'}
           >
             {isMaximized ? (
@@ -702,7 +707,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       />
 
       <div className="nexus-main" style={{ position: 'relative', flex: 1, overflow: 'hidden' }}>
-        <PerformancePanel />
+        <PerformancePanel onRecenter={handleRecenter} />
         <GraphSidebar
           isOpen={graphSidebarOpen}
           searchQuery={searchQuery}
@@ -808,7 +813,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               d3AlphaDecay={0.05}
               d3VelocityDecay={0.4}
               showNavInfo={false}
-              nodeLabel={(node) => (node.id || '').replace(/[*"']/g, '')}
+
             />
           ) : (
             <Graph2D
@@ -824,13 +829,6 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               setIsEngineReady={setIsEngineReady}
             />
           )}
-          <GraphMiniMap
-            graphRef={graphRef}
-            graphData={graphData}
-            mainWidth={dimensions.width}
-            mainHeight={dimensions.height - 32}
-            is3DMode={is3DMode}
-          />
         </div>
       </div>
     </div>

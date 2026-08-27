@@ -296,30 +296,54 @@ const GraphSidebar = ({
                 onTouchEnd={(e) => updateSetting('graphLinkHighlightOpacity', parseFloat(e.target.value))}
               />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  fontSize: '11px',
-                  color: 'var(--text-muted)',
-                  fontWeight: 500
-                }}
-              >
-                <span>Inactive Link Opacity</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    fontSize: '11px',
+                    color: 'var(--text-muted)',
+                    fontWeight: 500
+                  }}
+                >
+                  <span>Inactive Link Opacity</span>
+                </div>
+                <input
+                  type="range"
+                  className="graph-slider"
+                  min="0.0"
+                  max="0.3"
+                  step="0.01"
+                  value={settings.graphLinkDimOpacity ?? 0.05}
+                  onChange={(e) => fastUpdate('graphLinkDimOpacity', parseFloat(e.target.value))}
+                  onMouseUp={(e) => updateSetting('graphLinkDimOpacity', parseFloat(e.target.value))}
+                  onTouchEnd={(e) => updateSetting('graphLinkDimOpacity', parseFloat(e.target.value))}
+                />
               </div>
-              <input
-                type="range"
-                className="graph-slider"
-                min="0.0"
-                max="0.3"
-                step="0.01"
-                value={settings.graphLinkDimOpacity ?? 0.05}
-                onChange={(e) => fastUpdate('graphLinkDimOpacity', parseFloat(e.target.value))}
-                onMouseUp={(e) => updateSetting('graphLinkDimOpacity', parseFloat(e.target.value))}
-                onTouchEnd={(e) => updateSetting('graphLinkDimOpacity', parseFloat(e.target.value))}
-              />
-            </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    fontSize: '11px',
+                    color: 'var(--text-muted)',
+                    fontWeight: 500
+                  }}
+                >
+                  <span>Unresolved Link Opacity</span>
+                </div>
+                <input
+                  type="range"
+                  className="graph-slider"
+                  min="0.0"
+                  max="1.0"
+                  step="0.05"
+                  value={settings.graphGhostLinkOpacity ?? 0.3}
+                  onChange={(e) => fastUpdate('graphGhostLinkOpacity', parseFloat(e.target.value))}
+                  onMouseUp={(e) => updateSetting('graphGhostLinkOpacity', parseFloat(e.target.value))}
+                  onTouchEnd={(e) => updateSetting('graphGhostLinkOpacity', parseFloat(e.target.value))}
+                />
+              </div>
           </div>
         </div>
       </div>

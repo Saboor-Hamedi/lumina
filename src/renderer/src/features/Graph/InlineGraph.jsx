@@ -207,6 +207,13 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate, hideMiniMap = false }
     [onNavigate]
   )
 
+  const handleRecenter = (e) => {
+    if (e) e.stopPropagation()
+    if (graphRef.current && graphRef.current.zoomToFit) {
+      graphRef.current.zoomToFit(800, 50)
+    }
+  }
+
   return (
     <div
       ref={containerRef}
@@ -301,7 +308,7 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate, hideMiniMap = false }
               }
             }}
           />
-          <PerformancePanel compact={true} />
+          <PerformancePanel compact={true} onRecenter={handleRecenter} />
           {/* MiniMap is disabled for InlineGraph per user request */}
           {/* <GraphMiniMap
               graphRef={graphRef}

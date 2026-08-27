@@ -48,65 +48,78 @@ const Graph2D = forwardRef(
         }}
         linkVisibility={(link) => {
           if (window._luminaIsDragging || window._luminaIsPanning) {
-            // When interacting heavily, only show links connected to hovered node (if any)
             if (hoverNode) {
               return link.source === hoverNode || link.target === hoverNode
             }
-            // If just panning, hide extremely faint links aggressively to keep it 60 FPS
             if (window._luminaIsPanning) {
               const weight = (link.source.val || 1) + (link.target.val || 1)
-              return weight > 3 // Only show strong links while panning
+              return weight > 3 
             }
           }
+          const isSelected = selectedSnippet && (link.source.snippetId === selectedSnippet.id || link.target.snippetId === selectedSnippet.id)
+          const isHovered = hoverNode && (link.source.id === hoverNode?.id || link.target.id === hoverNode?.id)
+          if (isSelected || isHovered) return true
+
+          const isGhost = link.source.group === 'ghost' || link.target.group === 'ghost'
           
-          // EXPERIMENT: Aggressive Link LOD based on zoom scale
-          if (window._luminaGlobalScale && window._luminaGlobalScale < 0.8) {
-            const threshold = 1.5 / window._luminaGlobalScale 
-            const weight = (link.source.val || 1) + (link.target.val || 1)
+          if (isGhost) {
+            // LOD Culling for Unresolved Links
+            const scale = window._luminaGlobalScale || 1
+            const visibilitySlider = useSettingsStore.getState().settings.graphGhostLinkOpacity ?? 0.3
             
-            if (weight < threshold) {
-               return false 
+            // If the user completely hides them via slider, or zoom is too far out
+            if (visibilitySlider <= 0) return false
+            if (scale < 1.2 && visibilitySlider < 0.5) return false
+          } else {
+            // Standard Link LOD
+            if (window._luminaGlobalScale && window._luminaGlobalScale < 0.8) {
+              const threshold = 1.5 / window._luminaGlobalScale 
+              const weight = (link.source.val || 1) + (link.target.val || 1)
+              if (weight < threshold) return false 
             }
           }
           
           return true
         }}
         linkColor={(link) => {
-          const isHoverConnected = hoverNode && (link.source === hoverNode || link.target === hoverNode);
+          const isHoverConnected = hoverNode && (link.source.id === hoverNode.id || link.target.id === hoverNode.id);
           const isSelectedConnected = selectedSnippet && ((link.source.snippetId === selectedSnippet.id) || (link.target.snippetId === selectedSnippet.id));
-          
-          if (!hoverNode && !selectedSnippet) return defaultLineColor;
-          
-          const isActive = hoverNode ? isHoverConnected : isSelectedConnected;
+          const isActive = isHoverConnected || isSelectedConnected;
           
           const settings = useSettingsStore.getState().settings;
-          const dimOpacity = settings.graphLinkDimOpacity ?? 0.05;
+          const isGhost = link.source.group === 'ghost' || link.target.group === 'ghost';
           
-          if (!isActive) {
-            return `rgba(150, 150, 150, ${dimOpacity})`;
+          if (isActive) {
+            const highlightOpacity = settings.graphLinkHighlightOpacity ?? 0.6;
+            const accentColor = settings.graphNodeColor || '#40bafa';
+            
+            if (accentColor.startsWith('#')) {
+              const r = parseInt(accentColor.slice(1, 3), 16);
+              const g = parseInt(accentColor.slice(3, 5), 16);
+              const b = parseInt(accentColor.slice(5, 7), 16);
+              return `rgba(${r}, ${g}, ${b}, ${highlightOpacity})`;
+            }
+            return accentColor;
           }
           
-          const highlightOpacity = settings.graphLinkHighlightOpacity ?? 0.6;
-          const accentColor = settings.graphNodeColor || '#40bafa';
+          if (isGhost) {
+            const ghostOpacity = settings.graphGhostLinkOpacity ?? 0.3;
+            // Exactly batch all ghost links with a single static string
+            return `rgba(255, 255, 255, ${ghostOpacity * 0.3})`;
+          }
           
-          const hexToRgba = (hex, alpha) => {
-            if (hex.startsWith('#')) {
-              const r = parseInt(hex.slice(1, 3), 16);
-              const g = parseInt(hex.slice(3, 5), 16);
-              const b = parseInt(hex.slice(5, 7), 16);
-              return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-            }
-            return hex;
-          };
-
-          return hexToRgba(accentColor, highlightOpacity);
+          const dimOpacity = settings.graphLinkDimOpacity ?? 0.05;
+          return `rgba(150, 150, 150, ${dimOpacity})`;
         }}
         linkWidth={(link) => {
-          const isHoverConnected = hoverNode && (link.source === hoverNode || link.target === hoverNode);
+          const isHoverConnected = hoverNode && (link.source.id === hoverNode.id || link.target.id === hoverNode.id);
           const isSelectedConnected = selectedSnippet && ((link.source.snippetId === selectedSnippet.id) || (link.target.snippetId === selectedSnippet.id));
-          if (!hoverNode && !selectedSnippet) return 0.2;
-          const isActive = hoverNode ? isHoverConnected : isSelectedConnected;
-          return isActive ? 0.4 : 0.1;
+          const isActive = isHoverConnected || isSelectedConnected;
+          
+          if (isActive) return 0.4;
+          
+          const isGhost = link.source.group === 'ghost' || link.target.group === 'ghost';
+          return isGhost ? 0.1 : 0.2; // 1px equivalent at scale
         }}
         linkDirectionalParticles={0}
         onNodeClick={(node) => {
@@ -173,7 +186,7 @@ const Graph2D = forwardRef(
         backgroundColor="transparent"
         d3AlphaDecay={0.05}
         d3VelocityDecay={0.4}
-        nodeLabel={(node) => (node.id || '').replace(/[*"']/g, '')}
+
         onZoom={(transform) => {
           window._luminaIsPanning = true
           if (window._luminaPanTimeout) clearTimeout(window._luminaPanTimeout)
