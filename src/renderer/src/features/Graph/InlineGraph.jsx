@@ -10,7 +10,7 @@ import PerformancePanel from './PerformancePanel'
 import GraphMiniMap from './GraphMiniMap'
 import { usePerformanceStore } from './usePerformanceStore'
 
-const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
+const InlineGraph = React.memo(({ focusNodeId, onNavigate, hideMiniMap = false }) => {
   const snippets = useVaultStore((s) => s.snippets)
   const graphTheme = useSettingsStore((s) => s.settings.graphTheme || 'default')
 
@@ -23,7 +23,10 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
     if (!containerRef.current) return
     const resizeObserver = new ResizeObserver((entries) => {
       for (let entry of entries) {
-          setDimensions({ width: entry.contentRect.width, height: 320 })
+          setDimensions({ 
+            width: entry.contentRect.width, 
+            height: entry.contentRect.height > 100 ? entry.contentRect.height : 320 
+          })
         }
     })
     resizeObserver.observe(containerRef.current)
@@ -35,6 +38,11 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
   // Reset zoom guard whenever the user switches to a different note
   useEffect(() => {
     hasInitialized.current = false
+  }, [focusNodeId])
+
+  const focusNodeIdRef = useRef(focusNodeId)
+  useEffect(() => {
+    focusNodeIdRef.current = focusNodeId
   }, [focusNodeId])
 
   useEffect(() => {
@@ -112,7 +120,7 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
 
         return { nodes: nextNodes, links: nextLinks }
       })
-    }, 50)
+    }, 150)
 
     return () => clearTimeout(timer)
   }, [snippets, focusNodeId])
@@ -126,7 +134,7 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
     graphRef.current.d3Force('charge', forceManyBody().strength(-150).distanceMax(800))
     graphRef.current.d3Force('radial', null)
     graphRef.current.d3Force('collide', forceCollide((node) => {
-      return (node.snippetId === focusNodeId ? 7 : node.val ? Math.min(5, Math.max(2, Math.sqrt(node.val) * 1.5)) : 2) + 4
+      return (node.snippetId === focusNodeIdRef.current ? 7 : node.val ? Math.min(5, Math.max(2, Math.sqrt(node.val) * 1.5)) : 2) + 4
     }).strength(0.8))
     
     // Dedicated orphan pull to prevent floating nodes
@@ -205,7 +213,8 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
       className={`inline-graph-container graph-theme-${graphTheme}`}
       style={{
         width: '100%',
-        height: `${dimensions.height}px`,
+        height: '100%',
+        minHeight: '320px',
         borderRadius: '8px',
         background: 'var(--bg-panel, #111)',
         overflow: 'hidden',
@@ -261,6 +270,10 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
               node.fx = null
               node.fy = null
               draggedNodeRef.current = null
+              if (graphRef.current) {
+                // Re-energize the simulation so the dropped node springs elastically back into place
+                graphRef.current.d3ReheatSimulation()
+              }
             }}
             enableNodeDrag={true}
             enableZoomInteraction={true}
@@ -289,13 +302,14 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate }) => {
             }}
           />
           <PerformancePanel compact={true} />
-          <GraphMiniMap
-            graphRef={graphRef}
-            graphData={graphData}
-            mainWidth={dimensions.width}
-            mainHeight={dimensions.height}
-            is3DMode={false}
-          />
+          {/* MiniMap is disabled for InlineGraph per user request */}
+          {/* <GraphMiniMap
+              graphRef={graphRef}
+              graphData={graphData}
+              mainWidth={dimensions.width}
+              mainHeight={dimensions.height}
+              is3DMode={false}
+            /> */}
         </>
       )}
     </div>
