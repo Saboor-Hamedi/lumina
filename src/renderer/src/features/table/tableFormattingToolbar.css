@@ -277,43 +277,9 @@
 }
 
 .cm-atomic-table.cm-widget-selected-by-cm .cm-atomic-table-cell-source,
-.cm-atomic-table.cm-widget-selected-by-cm .cm-content {
-  color: #fff !important;
-}
-
-/* 2) When selected via table Grid Selection logic (clicking and dragging) */
-.cm-table-selection-overlay {
-  position: absolute;
-  background-color: rgba(147, 51, 234, 0.15) !important;
-  border: 2px solid rgba(147, 51, 234, 0.8) !important;
-  pointer-events: none; /* Let clicks pass through to the cells beneath */
-  z-index: 5;
-  border-radius: 4px;
-  box-sizing: border-box; /* Fixes bottom-right overflow issue */
-  transition: all 0.05s linear; /* Smooth resizing */
-  display: none;
-}
 
 
 /* --- CORNER HANDLES (Knob & Delete) --- */
-.cm-table-action-area {
-  position: absolute;
-  top: 24px;
-  left: 2px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  z-index: 10;
-  opacity: 0;
-  pointer-events: none;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.cm-atomic-table:hover .cm-table-action-area {
-  opacity: 1;
-  pointer-events: auto;
-}
-
 .cm-table-corner-handle, .cm-table-delete-btn {
   width: 20px;
   height: 20px;
@@ -322,18 +288,11 @@
   border-radius: 4px;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  padding-right: 4px;
+  justify-content: center;
   color: var(--text-muted);
-  transition: all 0.15s ease;
 }
 
-.cm-table-corner-handle svg, .cm-table-delete-btn svg {
-  width: 12px;
-  height: 12px;
-}
-
-.cm-table-corner-handle:hover, .cm-table-delete-btn:hover {
+.cm-table-corner-handle:hover {
   background: var(--bg-active);
   color: var(--text-main);
 }
@@ -462,3 +421,23 @@
   resize: none !important;
   position: relative;
 }
+
+.cm-table-delete-btn:hover { background: rgba(239, 68, 68, 0.1); color: var(--text-danger, #ef4444); }
+
+
+.cm-table-handle svg { width: 14px; height: 14px; pointer-events: none; }
+
+
+/* 2) When selected via table Grid Selection logic (clicking and dragging) */
+.cm-table-selection-overlay {
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  pointer-events: none; /* Let clicks pass through to the cells beneath */
+  z-index: 5;
+  border-radius: 4px;
+  box-sizing: border-box; /* Fixes bottom-right overflow issue */
+  transition: all 0.05s linear; /* Smooth resizing */
+  display: none;
+}
+

@@ -80,47 +80,48 @@ export function setupTableDragAndDrop(wrap, view) {
 
     const cell = e.target.closest('th, td')
     if (!cell || !wrap.contains(cell)) {
-      // Don't aggressively hide handles if we are just hovering over the table padding!
-      // They will hide properly when 'mouseleave' fires on the wrap.
       return
     }
 
     const tr = cell.closest('tr')
-    const tbody = tr?.closest('tbody')
-    const table = wrap.querySelector('table')
-    if (!table) return
+    if (!tr) return
+
+    const tbody = tr.closest('tbody')
 
     const wrapRect = wrap.getBoundingClientRect()
+    const table = wrap.querySelector('table')
+    if (!table) return
     const tableRect = table.getBoundingClientRect()
 
-    // Show row handle
+    // Show row handle outside the left edge
     if (tbody) {
       const rect = tr.getBoundingClientRect()
       rowHandle.style.top = `${rect.top - wrapRect.top + rect.height / 2 - 10}px` // Centered vertically
-      rowHandle.style.left = `${tableRect.left - wrapRect.left + wrap.scrollLeft - 24}px` // Sit outside the table
+      rowHandle.style.left = `${tableRect.left - wrapRect.left + wrap.scrollLeft - 24}px` // Outside the left edge
       rowHandle.style.width = `20px`
       rowHandle.style.height = `20px`
       rowHandle.style.opacity = '1'
       rowHandle.style.pointerEvents = 'auto'
-
-      const rowIndex = Array.from(tbody.children).indexOf(tr)
-      rowHandle.dataset.index = rowIndex.toString()
+      rowHandle.dataset.index = Array.from(tbody.children).indexOf(tr).toString()
     } else {
       rowHandle.style.opacity = '0'
       rowHandle.style.pointerEvents = 'none'
     }
 
-    // Show col handle
+    // Show col handle outside the top edge
     const colIndex = Array.from(tr.children).indexOf(cell)
     if (colIndex >= 0) {
       const rect = cell.getBoundingClientRect()
       colHandle.style.left = `${rect.left - wrapRect.left + wrap.scrollLeft + rect.width / 2 - 10}px` // Centered horizontally
-      colHandle.style.top = `${tableRect.top - wrapRect.top - 24}px` // Sit outside the table
+      colHandle.style.top = `${tableRect.top - wrapRect.top - 24}px` // Outside the top edge
       colHandle.style.width = `20px`
       colHandle.style.height = `20px`
       colHandle.style.opacity = '1'
       colHandle.style.pointerEvents = 'auto'
       colHandle.dataset.index = colIndex.toString()
+    } else {
+      colHandle.style.opacity = '0'
+      colHandle.style.pointerEvents = 'none'
     }
   })
 

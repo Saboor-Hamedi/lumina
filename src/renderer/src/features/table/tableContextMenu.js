@@ -22,12 +22,14 @@ export function openCellMenu(view, cell, x, y) {
   const row = cellRowIndex(cell)
   const col = cellColIndex(cell)
   // Remove any existing menus first
-  document.querySelectorAll('.cm-atomic-table-menu').forEach((m) => m.remove())
+  document.querySelectorAll('.cm-atomic-table-menu-instance').forEach((m) => m.remove())
 
   const menu = document.createElement('div')
-  menu.className = 'cm-atomic-table-menu'
+  menu.className = 'context-menu cm-atomic-table-menu-instance'
   menu.style.left = `${x}px`
   menu.style.top = `${y}px`
+  menu.style.position = 'fixed'
+  menu.style.display = 'block'
 
   const createItem = (label, iconSVG, action) => ({ type: 'item', label, icon: iconSVG, action })
   const createSubmenu = (label, iconSVG, items) => ({
@@ -80,7 +82,7 @@ export function openCellMenu(view, cell, x, y) {
       m.rows.splice(row + 1, 0, [...m.rows[row]])
       dispatchModel(view, wrap, m)
     }),
-    createItem('Delete row', icons.delete, () => {
+    createItem('Delete row', icons.row, () => { // Changed to row icon per user request
       const m = readModelFromDom(wrap)
       if (row >= 0 && row < m.rows.length) m.rows.splice(row, 1)
       dispatchModel(view, wrap, m)
@@ -159,7 +161,7 @@ export function openCellMenu(view, cell, x, y) {
       for (const r of m.rows) r.splice(col + 1, 0, r[col])
       dispatchModel(view, wrap, m)
     }),
-    createItem('Delete column', icons.delete, () => {
+    createItem('Delete column', icons.column, () => { // Changed to column icon per user request
       const m = readModelFromDom(wrap)
       if (m.header.length <= 1 || col < 0) return
       m.header.splice(col, 1)
@@ -276,11 +278,47 @@ export function openCellMenu(view, cell, x, y) {
         dispatchModel(view, wrap, m)
       })
     )
+    items.push(createSeparator())
+    // Add "Delete table" using the table grid icon
+    const tableIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>`
+    items.push(
+      createItem('Delete table', tableIcon, () => {
+        // Find the range of the table and delete it
+        // We need to import findCurrentTableRange from tableWidgetExtension.js, but since
+        // we can't easily add imports here, we can just dispatch an event or use the dom pos.
+        // Actually findCurrentTableRange is already available in tableWidgetExtension.js, let's just use it.
+        // Wait, tableContextMenu.js imports it? Let's look at the imports.
+        // In tableContextMenu.js we can just use the exported `wrap.__getCellAt` or just delete the widget.
+        const pos = view.posAtDOM(wrap)
+        if (pos === null) return
+        
+        let start = null
+        let end = null
+        
+        // This is safe since GFM tables are contiguous lines with pipes
+        view.state.doc.iterLines(1, (line) => {
+          if (line.from <= pos && pos <= line.to) {
+            let currentLine = line.number
+            while (currentLine > 1 && view.state.doc.line(currentLine - 1).text.includes('|')) currentLine--
+            start = view.state.doc.line(currentLine).from
+            
+            currentLine = line.number
+            while (currentLine < view.state.doc.lines && view.state.doc.line(currentLine + 1).text.includes('|')) currentLine++
+            end = view.state.doc.line(currentLine).to
+            return false
+          }
+        })
+        
+        if (start !== null && end !== null) {
+          view.dispatch({ changes: { from: start, to: end, insert: '' } })
+        }
+      })
+    )
   }
 
   const dismiss = () => {
     menu.remove()
-    document.querySelectorAll('.cm-atomic-table-submenu').forEach((el) => el.remove())
+    document.querySelectorAll('.cm-atomic-table-submenu-instance').forEach((el) => el.remove())
     document.removeEventListener('mousedown', onDocDown, true)
     document.removeEventListener('keydown', onDocKey, true)
   }
@@ -288,7 +326,7 @@ export function openCellMenu(view, cell, x, y) {
     if (event.target instanceof Node) {
       if (menu.contains(event.target)) return
       // Prevent dismiss if clicking inside ANY portaled submenu
-      const inSubmenu = Array.from(document.querySelectorAll('.cm-atomic-table-submenu')).some(
+      const inSubmenu = Array.from(document.querySelectorAll('.cm-atomic-table-submenu-instance')).some(
         (sub) => sub.contains(event.target)
       )
       if (inSubmenu) return
@@ -303,32 +341,50 @@ export function openCellMenu(view, cell, x, y) {
     for (const item of menuItems) {
       if (item.type === 'separator') {
         const sep = document.createElement('div')
-        sep.className = 'cm-atomic-table-menu-sep'
+        sep.className = 'menu-divider'
         parentEl.appendChild(sep)
         continue
       }
 
       const btn = document.createElement('div')
-      btn.className = 'cm-atomic-table-menu-item'
-
-      const iconSpan = document.createElement('span')
-      iconSpan.className = 'cm-atomic-table-menu-icon'
-      if (item.icon) iconSpan.innerHTML = item.icon
-      btn.appendChild(iconSpan)
+      btn.className = 'menu-item'
+      
+      // Need a wrapper for icon + label to match ContextMenu.jsx exactly
+      const leftWrap = document.createElement('div')
+      leftWrap.style.display = 'flex'
+      leftWrap.style.alignItems = 'center'
+      leftWrap.style.gap = '8px'
+      
+      if (item.icon) {
+        const iconSpan = document.createElement('div')
+        iconSpan.className = 'menu-icon-left'
+        iconSpan.innerHTML = item.icon
+        leftWrap.appendChild(iconSpan)
+      }
 
       const labelSpan = document.createElement('span')
-      labelSpan.className = 'cm-atomic-table-menu-label'
+      labelSpan.className = 'menu-label'
+      labelSpan.style.whiteSpace = 'nowrap'
       labelSpan.textContent = item.label
-      btn.appendChild(labelSpan)
+      leftWrap.appendChild(labelSpan)
+      btn.appendChild(leftWrap)
 
       if (item.type === 'submenu') {
+        const rightWrap = document.createElement('div')
+        rightWrap.style.display = 'flex'
+        rightWrap.style.alignItems = 'center'
+        rightWrap.style.gap = '6px'
+
         const chevron = document.createElement('span')
-        chevron.className = 'cm-atomic-table-menu-chevron'
+        chevron.className = 'menu-submenu-arrow'
         chevron.innerHTML = icons.chevronRight
-        btn.appendChild(chevron)
+        rightWrap.appendChild(chevron)
+        btn.appendChild(rightWrap)
 
         const submenuEl = document.createElement('div')
-        submenuEl.className = 'cm-atomic-table-menu cm-atomic-table-submenu'
+        // We omit '.submenu' here because tableContextMenu manually positions it on document.body,
+        // and '.submenu' has `left: 100% !important` which breaks absolute positioning on body.
+        submenuEl.className = 'context-menu cm-atomic-table-submenu-instance'
         buildMenuDom(item.items, submenuEl, true)
 
         // Append directly to document.body so it can NEVER be clipped
@@ -337,13 +393,13 @@ export function openCellMenu(view, cell, x, y) {
         const openSubmenu = () => {
           try {
             // Close all other submenus first
-            Array.from(document.querySelectorAll('.cm-atomic-table-submenu')).forEach((el) => {
+            Array.from(document.querySelectorAll('.cm-atomic-table-submenu-instance')).forEach((el) => {
               el.style.display = 'none'
               el.classList.remove('open')
             })
 
             // Show this submenu
-            submenuEl.style.display = 'flex'
+            submenuEl.style.display = 'block'
             submenuEl.style.position = 'fixed'
             submenuEl.style.margin = '0' // prevent margin offset
             submenuEl.classList.add('open')
@@ -355,14 +411,15 @@ export function openCellMenu(view, cell, x, y) {
             const subWidth = rect.width || 200
             const subHeight = rect.height || 300
 
-            // Find the editor boundaries to constrain the menu smartly
-            const editorEl =
-              wrap.closest('.cm-scroller') || wrap.closest('.cm-editor') || document.body
-            const editorRect = editorEl.getBoundingClientRect()
+            // Safe bounds: avoid top header (40px) and bottom status bar (40px)
+            const safeTop = 40
+            const safeBottom = window.innerHeight - 40
+            const safeLeft = 10
+            const safeRight = window.innerWidth - 10
 
             // Portal Horizontal Positioning (fixed to viewport)
-            if (btnRect.right + subWidth > editorRect.right) {
-              submenuEl.style.left = `${Math.max(editorRect.left + 4, btnRect.left - subWidth)}px`
+            if (btnRect.right + subWidth > safeRight) {
+              submenuEl.style.left = `${Math.max(safeLeft, btnRect.left - subWidth)}px`
               submenuEl.style.right = 'auto'
             } else {
               submenuEl.style.left = `${btnRect.right}px`
@@ -370,8 +427,8 @@ export function openCellMenu(view, cell, x, y) {
             }
 
             // Portal Vertical Positioning (fixed to viewport)
-            if (btnRect.top + subHeight > editorRect.bottom) {
-              submenuEl.style.top = `${Math.max(editorRect.top + 4, btnRect.bottom - subHeight)}px`
+            if (btnRect.top + subHeight > safeBottom) {
+              submenuEl.style.top = `${Math.max(safeTop, btnRect.bottom - subHeight)}px`
               submenuEl.style.bottom = 'auto'
             } else {
               submenuEl.style.top = `${btnRect.top - 4}px` // -4px for alignment with menu item
@@ -391,7 +448,7 @@ export function openCellMenu(view, cell, x, y) {
           item.action()
           // dismiss is handled below
           menu.remove()
-          document.querySelectorAll('.cm-atomic-table-submenu').forEach((el) => el.remove())
+          document.querySelectorAll('.cm-atomic-table-submenu-instance').forEach((el) => el.remove())
           document.removeEventListener('mousedown', onDocDown, true)
           document.removeEventListener('keydown', onDocKey, true)
         })
@@ -399,7 +456,7 @@ export function openCellMenu(view, cell, x, y) {
         // Only attach the close-submenu behavior if this is a MAIN menu item
         if (!isSubmenu) {
           btn.addEventListener('pointerenter', () => {
-            Array.from(document.querySelectorAll('.cm-atomic-table-submenu')).forEach((el) => {
+            Array.from(document.querySelectorAll('.cm-atomic-table-submenu-instance')).forEach((el) => {
               el.style.display = 'none'
               el.classList.remove('open')
             })
@@ -414,15 +471,19 @@ export function openCellMenu(view, cell, x, y) {
   buildMenuDom(items, menu)
   document.body.appendChild(menu)
 
-  const editorEl = wrap.closest('.cm-scroller') || wrap.closest('.cm-editor') || document.body
-  const editorRect = editorEl.getBoundingClientRect()
-
   const rect = menu.getBoundingClientRect()
-  if (rect.right > editorRect.right) {
-    menu.style.left = `${Math.max(editorRect.left + 4, editorRect.right - rect.width - 4)}px`
+  
+  // Safe bounds: avoid top header (40px) and bottom status bar (40px)
+  const safeTop = 40
+  const safeBottom = window.innerHeight - 40
+  const safeLeft = 10
+  const safeRight = window.innerWidth - 10
+
+  if (rect.right > safeRight) {
+    menu.style.left = `${Math.max(safeLeft, safeRight - rect.width)}px`
   }
-  if (rect.bottom > editorRect.bottom) {
-    menu.style.top = `${Math.max(editorRect.top + 4, editorRect.bottom - rect.height - 4)}px`
+  if (rect.bottom > safeBottom) {
+    menu.style.top = `${Math.max(safeTop, safeBottom - rect.height)}px`
   }
 
   setTimeout(() => {

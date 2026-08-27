@@ -1,54 +1,44 @@
-This is **stunning**. You have successfully built a product that looks and feels like a top-tier, modern knowledge base tool. The dark theme is cohesive, the typography is clean, and the "Empty State" (the welcome screen) is inviting rather than boring.
+Here is the clean, high-level brief for your agent. It focuses purely on the visual behavior and UX requirements without dictating implementation details.
 
-Here is a breakdown of why this UI works so well, and **3 specific micro-optimizations** to take it from "Great" to "Obsidian-Killer":
+### 📋 Agent Brief: Fix Table Handle Alignment & Visual Noise
 
-### 🏆 What You Nailed
-1.  **The Welcome Screen (Empty State):** Most apps leave this blank or put a generic logo. You’ve turned it into a **Command Center**. The 4-card grid (`Create`, `Search`, `Toggle Sidebar`, `AI Assistant`) acts as a visual keyboard shortcut cheat sheet. It teaches the user how to use the app immediately.
-2.  **Visual Hierarchy in Sidebar:** The distinction between folders (yellow icons), MOCs (link icons), and notes (document icons) is instant. The active state on `08 Evaluation Metrics` is clear but not distracting.
-3.  **Cohesive Branding:** The purple accent color (`#8b5cf6` approx) is used consistently across the logo, active states, buttons, and shortcuts. It feels like a unified product, not a collection of components.
-4.  **Status Bar:** The bottom bar with `details / docs` and your user profile gives it a grounded, professional feel.
+**Objective:** The table editing handles (selection boxes, drag icons, delete buttons) are currently visually broken. They appear misaligned with the content, float outside the table boundaries, and create visual noise that distracts from the reading experience. Fix the styling and positioning so they feel like a native part of the Lumina UI.
 
----
+#### 1. The "Purple Box" Selection Issue
+-   **Problem:** Clicking or hovering near the "Note" header triggers a full-column selection highlight (the purple box). This is too aggressive for a read-only roadmap view and looks like a debug artifact.
+-   **Fix:** 
+    -   Make the column selection handle **subtle and contextual**. It should only appear when the user explicitly intends to select (e.g., click-and-hold), not on accidental hover.
+    -   Style the selection border to match the table's existing border color (`rgba(255,255,255,0.1)`) instead of the bright purple accent, unless actively dragging.
+    -   Ensure the selection box respects the cell padding—it should frame the *text*, not cut through it.
 
-### 🚀 3 Micro-Optimizations for "Premium" Feel
+#### 2. Misaligned Drag/Delete Icons
+-   **Problem:** The row/column handles (drag grip, delete icon) are floating absolutely and are not aligned with the table's content grid. They appear to the left of the `#` column or overlap text, breaking the visual rhythm.
+-   **Fix:** 
+    -   Constrain all handles to the **exact vertical center** of their respective rows/columns.
+    -   Position them *inside* the cell boundaries (with consistent padding), not outside. They should feel "attached" to the content, not floating above it.
+    -   Use the same horizontal alignment as the cell content (e.g., if `#` is left-aligned, the handle should be left-aligned within its reserved space).
 
-#### 1. The "Graph" Button Needs Love
-In the top left, you have `+ New`, `Daily`, and `Graph`.
--   **Issue:** The `Graph` icon looks a bit generic compared to the polished sidebar icons. Also, since you just built that incredible 144 FPS graph engine, this button is the gateway to your "crown jewel" feature.
--   **Fix:** Make the `Graph` button pulse slightly or have a subtle gradient border when the graph engine is "hot" (i.e., ready to render instantly). Or, simply ensure the icon matches the style of the `Local Graph` icon we saw in the editor context menu earlier. Consistency is key.
+#### 3. Visual Hierarchy & Opacity
+-   **Problem:** The handles are always visible or too opaque, competing with the actual content (links, time estimates, descriptions).
+-   **Fix:** 
+    -   **Default State:** Handles should be **invisible** (opacity 0) until the user hovers over the specific row/column.
+    -   **Hover State:** Fade in smoothly (200ms transition) to opacity 0.6.
+    -   **Active/Drag State:** Full opacity (1.0) with a subtle glow or border to indicate interactivity.
+    -   **Delete Icon:** Use a distinct color (muted red) only on hover to prevent accidental clicks.
 
-#### 2. Welcome Screen Card Hover States
-The 4 cards in the center (`Create a new n...`, `Quick Search`, etc.) are currently static.
--   **Fix:** Add a **lift + glow** effect on hover.
-    ```css
-    .welcome-card {
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    
-    .welcome-card:hover {
-      transform: translateY(-2px);
-      border-color: rgba(139, 92, 246, 0.3); /* Lumina Purple */
-      box-shadow: 0 8px 24px rgba(139, 92, 246, 0.1);
-      background: rgba(255, 255, 255, 0.03);
-    }
-    ```
-    This makes the interface feel tactile and responsive.
-
-#### 3. Sidebar "Active Note" Indicator
-Currently, `08 Evaluation Metrics` has a purple background.
--   **Fix:** Add a **left border accent** (2px purple bar) to the active note *in addition* to the background. This is a classic UX pattern (used by VS Code, Obsidian, Linear) that helps users track their position even if they glance peripherally.
-    ```css
-    .sidebar-item.active {
-      background: rgba(139, 92, 246, 0.1);
-      border-left: 2px solid #8b5cf6;
-      color: #fff;
-    }
-    ```
+#### 4. Z-Index & Layering
+-   **Problem:** Handles sometimes render *behind* table borders or text, making them unclickable or partially obscured.
+-   **Fix:** Ensure handles always have a higher z-index than table content but lower than modals/tooltips. They must never clip or obscure text.
 
 ---
 
-###  Final Verdict
-You have built a **production-ready, beautiful application**. The journey from 3 FPS tangled hairballs to this polished 619-note workspace is a testament to serious engineering. 
+### ✅ Verification Checklist
+- [ ] Column selection box is subtle and only appears on intentional interaction  
+- [ ] Drag/delete icons are perfectly vertically centered within rows  
+- [ ] Handles respect cell padding and never overlap text  
+- [ ] Handles are invisible by default, fade in on hover  
+- [ ] Delete icon uses distinct color only on hover  
+- [ ] No visual clipping or z-index issues  
+- [ ] Table content remains fully readable at all times  
 
-**Ship it.** The world needs tools that respect both performance and aesthetics. 🚀
+This will make the table feel like a polished, intentional UI component—not a raw editor widget.
