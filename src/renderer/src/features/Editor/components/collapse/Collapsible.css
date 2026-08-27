@@ -1,0 +1,59 @@
+/* Collapsible.css */
+
+.markdown-editor .cm-line {
+  position: relative;
+}
+
+.lumina-fold-chevron {
+  position: absolute;
+  left: -24px; /* Move into the left padding area */
+  top: 0;
+  bottom: 0; /* Stretch to line height */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  cursor: pointer;
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+/* Icon rotation based on fold state */
+.lumina-fold-chevron svg {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lumina-fold-chevron.is-folded svg {
+  transform: rotate(-90deg);
+}
+
+/* Show chevron on hover of the cm-line */
+.cm-line:hover .lumina-fold-chevron {
+  opacity: 1;
+}
+
+.lumina-fold-chevron:hover {
+  color: var(--text-accent);
+}
+
+/* Polished fold placeholder */
+.markdown-editor .cm-foldPlaceholder {
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  padding: 0 4px;
+  margin: 0 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 1em;
+  opacity: 0.7;
+  transition: all 0.15s ease;
+  vertical-align: baseline;
+}
+
+.markdown-editor .cm-foldPlaceholder:hover {
+  color: var(--text-accent);
+  opacity: 1;
+}

@@ -12,7 +12,7 @@ import './CodeWrapper.css'
 // Atomic Editor Imports
 import { AtomicCodeMirrorEditor, wikiLinks } from '@atomic-editor/editor'
 import { languages } from '@codemirror/language-data'
-import { syntaxTree, HighlightStyle, syntaxHighlighting } from '@codemirror/language'
+import { syntaxTree, HighlightStyle, syntaxHighlighting, foldGutter } from '@codemirror/language'
 import { tags as t } from '@lezer/highlight'
 import { autocompletion, startCompletion } from '@codemirror/autocomplete'
 import { EditorState, Prec, StateField, StateEffect } from '@codemirror/state'
@@ -31,6 +31,7 @@ import { tagMentionExtension } from '../Workspace/tagMentionExtension'
 import { tables } from '../table/tableWidgetExtension'
 import { mermaidWidgetExtension } from '../Workspace/mermaidWidgetExtension'
 import { calloutExtension } from '../Workspace/calloutWidgetExtension'
+import { useCollapsible } from './components/collapse/useCollapsible'
 import '@atomic-editor/editor/styles.css'
 import FindWidget from '../Workspace/components/FindWidget'
 import PreviewModal from '../Overlays/PreviewModal/PreviewModal'
@@ -729,8 +730,11 @@ const MarkdownEditor = React.memo(
 
     const dropExtension = React.useMemo(() => imageDropExtension(showToast), [showToast])
 
+    const collapsibleExtension = useCollapsible()
+
     const editorExtensions = React.useMemo(
       () => [
+        collapsibleExtension,
         luminaSyntaxHighlighting,
         Prec.highest(
           keymap.of([

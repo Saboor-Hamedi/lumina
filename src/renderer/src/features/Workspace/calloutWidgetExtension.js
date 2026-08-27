@@ -59,44 +59,61 @@ const calloutPlugin = ViewPlugin.fromClass(
     buildDecorations(view) {
       const builder = []
       const doc = view.state.doc
+      let currentCalloutType = null
+      let currentCalloutLevel = 0
 
       for (let { from, to } of view.visibleRanges) {
-        syntaxTree(view.state).iterate({
-          from,
-          to,
-          enter(node) {
-            if (node.name === 'QuoteMark') {
-              const line = doc.lineAt(node.from)
-              // check if first line of quote
-              const blockStart = line.text.match(/^>\s*\[!([a-zA-Z]+)\](.*)/)
-              if (blockStart) {
-                const type = blockStart[1]
-                const title = blockStart[2].trim()
+        let lineIdx = doc.lineAt(from).number
+        const endLineIdx = doc.lineAt(to).number
 
-                // Only replace if cursor is NOT on this line
-                const cursor = view.state.selection.main.head
-                if (cursor < line.from || cursor > line.to) {
-                  const replaceFrom = line.from + line.text.indexOf('[')
-                  const replaceTo = line.to
-                  builder.push(
-                    Decoration.replace({
-                      widget: new CalloutHeaderWidget(type, title)
-                    }).range(replaceFrom, replaceTo)
-                  )
-                }
+        for (; lineIdx <= endLineIdx; lineIdx++) {
+          const line = doc.line(lineIdx)
+          
+          // Count blockquote level
+          const match = line.text.match(/^(>\s*)+/)
+          if (match) {
+            const level = match[0].match(/>/g).length
+            
+            // Is this a new callout header?
+            const blockStart = line.text.match(/^(?:>\s*)+\[!([a-zA-Z]+)\](.*)/)
+            if (blockStart) {
+              currentCalloutLevel = level
+              currentCalloutType = blockStart[1]
+              const title = blockStart[2].trim()
 
+              // Only replace if cursor is NOT on this line
+              const cursor = view.state.selection.main.head
+              if (cursor < line.from || cursor > line.to) {
+                const replaceFrom = line.from + line.text.indexOf('[')
+                const replaceTo = line.to
                 builder.push(
-                  Decoration.line({
-                    class: `lumina-callout-line lumina-callout-line-${type.toLowerCase()}`
-                  }).range(line.from)
+                  Decoration.replace({
+                    widget: new CalloutHeaderWidget(currentCalloutType, title)
+                  }).range(replaceFrom, replaceTo)
                 )
-              } else if (line.text.startsWith('>')) {
-                // Might be continuation of a callout block, we would need a stateful parser
-                // For simplicity, just style it as a blockquote
               }
+
+              builder.push(
+                Decoration.line({
+                  class: `lumina-callout-line lumina-callout-line-${currentCalloutType.toLowerCase()}`
+                }).range(line.from)
+              )
+            } else if (currentCalloutType && level >= currentCalloutLevel) {
+              // Continuation of callout
+              builder.push(
+                Decoration.line({
+                  class: `lumina-callout-line lumina-callout-line-${currentCalloutType.toLowerCase()}`
+                }).range(line.from)
+              )
+            } else {
+              // Reset if level drops
+              currentCalloutType = null
             }
+          } else {
+            // Not a blockquote, reset
+            currentCalloutType = null
           }
-        })
+        }
       }
 
       // Sort decorations

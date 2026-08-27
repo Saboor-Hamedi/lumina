@@ -1640,17 +1640,52 @@ html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {/**
 
 /* --- OVERRIDES FOR MARKDOWN ELEMENTS --- */
 
-/* Blockquote - matching HR style */
+/* Blockquote */
 .markdown-editor .cm-line.cm-atomic-blockquote {
   border: none !important;
-  padding: 4px 16px 4px 20px !important;
-  margin: 0 !important;
+  border-left: 1px solid var(--text-accent) !important;
+  padding: 4px 16px !important;
+  margin: 4px 0 !important;
   font-style: italic !important;
   font-size: 0.95em !important;
   position: relative !important;
-  background: rgba(var(--text-accent-rgb), 0.03) !important;
+  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.04) !important;
   color: var(--text-muted) !important;
+  border-radius: 0 4px 4px 0;
 }
+
+/* Callout Styling */
+.lumina-callout-line {
+  background-color: rgba(var(--text-accent-rgb, 139, 92, 246), 0.08) !important;
+  border-left: 3px solid var(--text-accent) !important;
+  padding: 6px 14px !important;
+  border-radius: 0 6px 6px 0 !important;
+  margin-top: 4px !important;
+  margin-bottom: 4px !important;
+}
+.lumina-callout-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--text-accent);
+  margin-bottom: 2px;
+  font-size: 0.95em;
+  font-style: normal; /* Override blockquote italic */
+}
+.lumina-callout-icon {
+  display: flex;
+  align-items: center;
+}
+.lumina-callout-icon svg {
+  width: 16px;
+  height: 16px;
+}
+.lumina-callout-title {
+  text-transform: capitalize;
+}
+
+/* CSS moved to components/collapse/Collapsible.css */
 
 
 /* Bullet points & numbers: Add more gap between the marker and the text */
