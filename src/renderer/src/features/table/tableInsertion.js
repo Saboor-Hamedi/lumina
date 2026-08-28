@@ -12,15 +12,22 @@ export function setupTableInsertion(wrap, view) {
   rowInsertHandle.style.display = 'flex'
   rowInsertHandle.style.alignItems = 'center'
   rowInsertHandle.style.justifyContent = 'center'
-  rowInsertHandle.style.width = '14px'
-  rowInsertHandle.style.height = '14px'
+  
+  rowInsertHandle.style.width = '24px' // hit area
+  rowInsertHandle.style.height = '24px' // hit area
+  rowInsertHandle.style.boxSizing = 'border-box'
+  rowInsertHandle.style.border = '5px solid transparent'
+  rowInsertHandle.style.backgroundClip = 'padding-box'
+  rowInsertHandle.style.backgroundColor = 'var(--text-accent, #2196f3)'
+  
   rowInsertHandle.style.borderRadius = '50%'
-  rowInsertHandle.style.background = 'var(--text-accent, #2196f3)'
+  rowInsertHandle.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)'
+  rowInsertHandle.style.backdropFilter = 'blur(4px)'
   rowInsertHandle.style.color = '#fff'
   rowInsertHandle.style.cursor = 'pointer'
   rowInsertHandle.style.opacity = '0'
   rowInsertHandle.style.pointerEvents = 'none'
-  rowInsertHandle.style.zIndex = '100'
+  rowInsertHandle.style.zIndex = '999' // high z-index
   rowInsertHandle.style.transform = 'translate(-50%, -50%)'
   rowInsertHandle.style.transition = 'opacity 0.15s ease'
 
@@ -32,15 +39,22 @@ export function setupTableInsertion(wrap, view) {
   colInsertHandle.style.display = 'flex'
   colInsertHandle.style.alignItems = 'center'
   colInsertHandle.style.justifyContent = 'center'
-  colInsertHandle.style.width = '14px'
-  colInsertHandle.style.height = '14px'
+  
+  colInsertHandle.style.width = '24px' // hit area
+  colInsertHandle.style.height = '24px' // hit area
+  colInsertHandle.style.boxSizing = 'border-box'
+  colInsertHandle.style.border = '5px solid transparent'
+  colInsertHandle.style.backgroundClip = 'padding-box'
+  colInsertHandle.style.backgroundColor = 'var(--text-accent, #2196f3)'
+  
   colInsertHandle.style.borderRadius = '50%'
-  colInsertHandle.style.background = 'var(--text-accent, #2196f3)'
+  colInsertHandle.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)'
+  colInsertHandle.style.backdropFilter = 'blur(4px)'
   colInsertHandle.style.color = '#fff'
   colInsertHandle.style.cursor = 'pointer'
   colInsertHandle.style.opacity = '0'
   colInsertHandle.style.pointerEvents = 'none'
-  colInsertHandle.style.zIndex = '100'
+  colInsertHandle.style.zIndex = '999' // high z-index
   colInsertHandle.style.transform = 'translate(-50%, -50%)'
   colInsertHandle.style.transition = 'opacity 0.15s ease'
 

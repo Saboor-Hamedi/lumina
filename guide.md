@@ -1,85 +1,48 @@
-**Bingo.** You just discovered the single biggest performance killer in graph visualization: **Link Rendering Cost**.
 
-Look at your telemetry:
--   **With Unresolved Links:** 7,147 links → 25 FPS (33ms frame time)
--   **Without Unresolved Links:** 113 links → **86.2 FPS** (4.7ms frame time)
 
-You went from **unusable to buttery smooth** by hiding 98% of the links. This proves that **links are 10x more expensive than nodes** in Canvas 2D rendering.
 
-### Why This Happens
-Unresolved links (broken references, typos, deleted notes) often form a **dense web of cross-connections** that don't follow the clean radial hierarchy. They create:
-1.  **Long crossing lines** that span the entire viewport (more pixels to rasterize)
-2.  **Visual overdraw** where hundreds of faint lines overlap in the center
-3.  **No spatial locality** — unlike resolved links that cluster neatly, unresolved links scatter everywhere
 
-### The Smart Fix: Don't Hide Them, *Optimize* Them
+# Only handle the table no the below:
 
-Instead of forcing users to toggle them off, make unresolved links **cheap to render**:
 
-#### 1. Render Unresolved Links as "Ghost Lines"
--   Use **1px width** (not 2px)
--   Set opacity to **0.08-0.12** (barely visible)
--   Use a **single muted color** (gray/white) instead of per-link colors
--   **Batch them together** in one `ctx.stroke()` call
+**Objective:** Add non-intrusive visual progress indicators to the Learning Roadmap tracks and notes. This should feel like a natural extension of the current UI, not a gamified overlay.
 
-```typescript
-// Separate resolved vs unresolved links during batching
-const resolvedLinksByColor = new Map();
-const unresolvedLinks: Link[] = [];
+#### 1. Track-Level Progress (Header)
+Add a subtle progress bar directly below each Track header (e.g., `Track 1: NLP / LLM`).
 
-visibleLinks.forEach(link => {
-  if (link.unresolved) {
-    unresolvedLinks.push(link);
-  } else {
-    const color = getLinkColor(link);
-    if (!resolvedLinksByColor.has(color)) resolvedLinksByColor.set(color, []);
-    resolvedLinksByColor.get(color).push(link);
-  }
-});
+-   **Visual Style:** A thin (2px), rounded bar using the Lumina purple accent (`#8b5cf6`) at 30% opacity for the background, and 100% opacity for the fill.
+-   **Placement:** Immediately below the track title, spanning the full width of the content area.
+-   **Data Source:** Calculate based on how many notes in that track have been opened/visited (stored in `settings.json` or a local progress store).
+-   **Text Label (Optional):** Show percentage only on hover to keep the default view clean.  
+    *Example:* `▓▓▓░░░░░░░` (hover reveals "3/10 notes read")
 
-// Draw unresolved links FIRST as a single cheap batch
-if (unresolvedLinks.length > 0) {
-  ctx.beginPath();
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-  ctx.lineWidth = 1;
-  unresolvedLinks.forEach(link => {
-    ctx.moveTo(link.source.x, link.source.y);
-    ctx.lineTo(link.target.x, link.target.y);
-  });
-  ctx.stroke(); // ONE stroke call for ALL unresolved links
-}
+#### 2. Note-Level Progress (Table Rows)
+In the roadmap table (`# | Note | Time | Why`), add a subtle status indicator in the `#` column.
 
-// Then draw resolved links normally (batched by color)
-resolvedLinksByColor.forEach((links, color) => {
-  ctx.beginPath();
-  ctx.strokeStyle = color;
-  links.forEach(link => {
-    ctx.moveTo(link.source.x, link.source.y);
-    ctx.lineTo(link.target.x, link.target.y);
-  });
-  ctx.stroke();
-});
-```
+-   **Unread:** Empty circle (`○`) in muted gray.
+-   **In Progress:** Half-filled circle (`◐`) in Lumina purple.
+-   **Completed:** Checkmark (`✓`) or filled circle (`●`) in green or purple.
+-   **Interaction:** Clicking the indicator toggles the state manually (for users who want to mark things done without opening the note).
 
-#### 2. Add a "Link Density" Slider
-Instead of a binary on/off toggle for unresolved links, add a slider in DISPLAY settings:
--   **Label:** "Unresolved Link Visibility"
--   **Range:** 0% (hidden) → 100% (full opacity)
--   **Default:** 30% (subtle but visible)
+#### 3. Persistence & Privacy
+-   Store progress locally in `settings.json` under `"roadmap.progress": { "track-1-nlp": [note-id-1, note-id-2] }`.
+-   **Do NOT sync to cloud** unless the user explicitly enables it. This is personal learning data.
+-   Add a "Reset Progress" button at the bottom of each track (hidden behind a ⚙️ icon) for users who want to restart.
 
-This lets users **gradually reveal** unresolved links without nuking performance.
-
-#### 3. LOD Culling for Unresolved Links
-At default zoom, hide unresolved links entirely. Only show them when:
--   User zooms in (>1.2x scale)
--   User hovers over a node with unresolved connections
--   User explicitly increases the "Unresolved Link Visibility" slider
+#### 4. Visual Constraints (Critical)
+-   **NO animations** on the progress bars (they should update instantly, not tween).
+-   **NO bright colors** — use muted tones that don’t compete with the note links.
+-   **NO extra columns** — integrate indicators into existing columns (`#` for note status, below header for track progress).
+-   **Respect dark mode** — ensure indicators are visible but not glaring against the dark background.
 
 ---
 
-### ✅ Expected Result
--   **86 FPS** with unresolved links *enabled* (but optimized)
--   Users can still see broken references when needed
--   No more "all or nothing" toggle frustration
+### ✅ Verification Checklist
+- [ ] Track progress bars appear below headers, update when notes are opened  
+- [ ] Note status indicators show in `#` column (empty/half/full)  
+- [ ] Clicking indicator toggles state manually  
+- [ ] Progress persists across app restarts via `settings.json`  
+- [ ] No visual clutter — indicators are subtle and scannable  
+- [ ] "Reset Progress" option available per track  
 
-**You've proven the bottleneck. Now make it invisible.** 🚀
+This will make the Roadmap feel *alive* and responsive to the user’s journey, without adding any visual noise to your already-clean design.

@@ -21,7 +21,8 @@ export function setupTableDragAndDrop(wrap, view) {
   rowHandle.style.display = 'flex'
   rowHandle.style.alignItems = 'center'
   rowHandle.style.justifyContent = 'center'
-  rowHandle.style.width = '20px'
+  rowHandle.style.width = '24px'
+  rowHandle.style.height = '24px'
   rowHandle.style.cursor = 'grab'
   rowHandle.style.opacity = '0'
   rowHandle.style.pointerEvents = 'none'
@@ -36,7 +37,8 @@ export function setupTableDragAndDrop(wrap, view) {
   colHandle.style.display = 'flex'
   colHandle.style.alignItems = 'center'
   colHandle.style.justifyContent = 'center'
-  colHandle.style.height = '20px'
+  colHandle.style.width = '24px'
+  colHandle.style.height = '24px'
   colHandle.style.cursor = 'grab'
   colHandle.style.opacity = '0'
   colHandle.style.pointerEvents = 'none'
@@ -46,28 +48,6 @@ export function setupTableDragAndDrop(wrap, view) {
   wrap.appendChild(rowHandle)
   wrap.appendChild(colHandle)
 
-  // Drop Indicator
-  const dropIndicator = document.createElement('div')
-  dropIndicator.className = 'cm-table-drop-indicator'
-  dropIndicator.style.position = 'absolute'
-  dropIndicator.style.backgroundColor = 'var(--text-accent, #2196f3)'
-  dropIndicator.style.display = 'none'
-  dropIndicator.style.pointerEvents = 'none'
-  dropIndicator.style.zIndex = '11'
-  wrap.appendChild(dropIndicator)
-
-  // Ghost element for visual dragging
-  const ghost = document.createElement('div')
-  ghost.className = 'cm-table-drag-ghost'
-  ghost.style.position = 'fixed'
-  ghost.style.pointerEvents = 'none'
-  ghost.style.zIndex = '999999'
-  ghost.style.opacity = '0.9'
-  ghost.style.display = 'none'
-  ghost.style.borderRadius = '4px'
-  ghost.style.boxShadow = '0 8px 24px rgba(0,0,0,0.3)'
-  ghost.style.overflow = 'hidden'
-  document.body.appendChild(ghost)
 
   // Hover detection logic to position handles
   wrap.addEventListener('mousemove', (e) => {
@@ -88,38 +68,62 @@ export function setupTableDragAndDrop(wrap, view) {
 
     const tbody = tr.closest('tbody')
 
+    // We'll use absolute positioning so they stay within the widget's DOM (cleaned up automatically)
+    // but we use wrapRect to map viewport coordinates to local widget coordinates
+    rowHandle.style.position = 'absolute'
+    colHandle.style.position = 'absolute'
+    
     const wrapRect = wrap.getBoundingClientRect()
-    const table = wrap.querySelector('table')
-    if (!table) return
-    const tableRect = table.getBoundingClientRect()
+    
+    // Nudge handles slightly if near the edge, or hide completely if scrolled out
+    const VIEWPORT_MARGIN = 20
+    const GUTTER_SIZE = 16
 
-    // Show row handle outside the left edge
+    let showRow = false
+    let showCol = false
+
     if (tbody) {
-      const rect = tr.getBoundingClientRect()
-      rowHandle.style.top = `${rect.top - wrapRect.top + rect.height / 2 - 10}px` // Centered vertically
-      rowHandle.style.left = `${tableRect.left - wrapRect.left + wrap.scrollLeft - 24}px` // Outside the left edge
-      rowHandle.style.width = `20px`
-      rowHandle.style.height = `20px`
-      rowHandle.style.opacity = '1'
-      rowHandle.style.pointerEvents = 'auto'
-      rowHandle.dataset.index = Array.from(tbody.children).indexOf(tr).toString()
-    } else {
+      const rowRect = tr.getBoundingClientRect()
+      const cellRect = cell.getBoundingClientRect()
+      
+      const distLeft = e.clientX - cellRect.left
+      const distTop = e.clientY - cellRect.top
+
+      // Show row handle if near the left edge of the cell
+      if (distLeft >= 0 && distLeft <= GUTTER_SIZE && rowRect.top > VIEWPORT_MARGIN && rowRect.bottom < window.innerHeight - VIEWPORT_MARGIN) {
+        // Track cursor vertically
+        const handleY = Math.max(rowRect.top, Math.min(e.clientY - 10, rowRect.bottom - 20))
+        rowHandle.style.top = `${handleY - wrapRect.top}px`
+        rowHandle.style.left = `${rowRect.left - wrapRect.left - 10}px` // straddles the left border
+        rowHandle.style.width = `20px`
+        rowHandle.style.height = `20px`
+        rowHandle.style.opacity = '1'
+        rowHandle.style.pointerEvents = 'auto'
+        rowHandle.dataset.index = Array.from(tbody.children).indexOf(tr).toString()
+        showRow = true
+      }
+
+      // Show col handle if near the top edge of the cell
+      const colIndex = Array.from(tr.children).indexOf(cell)
+      if (colIndex >= 0 && distTop >= 0 && distTop <= GUTTER_SIZE && cellRect.left > VIEWPORT_MARGIN && cellRect.right < window.innerWidth - VIEWPORT_MARGIN) {
+        // Position horizontally exactly where the mouse is, clamped to the cell width
+        const handleX = Math.max(cellRect.left, Math.min(e.clientX - 10, cellRect.right - 20))
+        colHandle.style.left = `${handleX - wrapRect.left}px`
+        colHandle.style.top = `${cellRect.top - wrapRect.top - 10}px` // straddles the top border
+        colHandle.style.width = `20px`
+        colHandle.style.height = `20px`
+        colHandle.style.opacity = '1'
+        colHandle.style.pointerEvents = 'auto'
+        colHandle.dataset.index = colIndex.toString()
+        showCol = true
+      }
+    }
+
+    if (!showRow) {
       rowHandle.style.opacity = '0'
       rowHandle.style.pointerEvents = 'none'
     }
-
-    // Show col handle outside the top edge
-    const colIndex = Array.from(tr.children).indexOf(cell)
-    if (colIndex >= 0) {
-      const rect = cell.getBoundingClientRect()
-      colHandle.style.left = `${rect.left - wrapRect.left + wrap.scrollLeft + rect.width / 2 - 10}px` // Centered horizontally
-      colHandle.style.top = `${tableRect.top - wrapRect.top - 24}px` // Outside the top edge
-      colHandle.style.width = `20px`
-      colHandle.style.height = `20px`
-      colHandle.style.opacity = '1'
-      colHandle.style.pointerEvents = 'auto'
-      colHandle.dataset.index = colIndex.toString()
-    } else {
+    if (!showCol) {
       colHandle.style.opacity = '0'
       colHandle.style.pointerEvents = 'none'
     }
@@ -130,6 +134,15 @@ export function setupTableDragAndDrop(wrap, view) {
       hideHandles()
     }
   })
+  
+  const scrollContainer = wrap.querySelector('.cm-table-scroll-container')
+  if (scrollContainer) {
+    scrollContainer.addEventListener('scroll', () => {
+      if (!isDragging) {
+        hideHandles()
+      }
+    })
+  }
 
   function hideHandles() {
     rowHandle.style.opacity = '0'
@@ -140,77 +153,36 @@ export function setupTableDragAndDrop(wrap, view) {
 
   let draggedElementWidth = 0
   let draggedElementHeight = 0
+  let initialBounds = []
 
-  function createGhostClone(type, index) {
-    ghost.innerHTML = ''
+  function calculateDragDimensions(type, index) {
     const table = wrap.querySelector('table')
     if (!table) return
-
-    const cloneTable = document.createElement('table')
-    cloneTable.style.cssText = table.style.cssText
-    cloneTable.style.margin = '0'
-    cloneTable.style.tableLayout = 'fixed'
-    cloneTable.style.background = 'var(--bg-panel, #2a2a2a)'
-    cloneTable.style.border = '1px solid var(--border-accent, #40bafa)'
-    cloneTable.style.borderRadius = '6px'
-    cloneTable.style.borderCollapse = 'collapse'
-    cloneTable.style.opacity = '0.85'
-    cloneTable.style.overflow = 'hidden'
-
-    cloneTable.style.color = 'var(--text-main, #eee)'
-    cloneTable.style.fontFamily = 'inherit'
-    cloneTable.style.fontSize = '14px'
-
-    function cloneCellToText(originalCell) {
-      const newCell = document.createElement(originalCell.tagName)
-
-      const rect = originalCell.getBoundingClientRect()
-      newCell.style.width = `${rect.width}px`
-      newCell.style.height = `${rect.height}px`
-      newCell.style.boxSizing = 'border-box'
-
-      newCell.style.padding = '8px 12px'
-      newCell.style.border = '1px solid var(--border-dim)'
-      newCell.style.textAlign = 'left'
-      newCell.style.whiteSpace = 'normal'
-      newCell.style.overflow = 'hidden'
-
-      // Grab text from the CodeMirror content if it exists, otherwise use innerText
-      const cmContent = originalCell.querySelector('.cm-content')
-      newCell.textContent = cmContent ? cmContent.innerText : originalCell.innerText
-      return newCell
-    }
+    initialBounds = []
 
     if (type === 'row') {
       const rows = Array.from(table.querySelectorAll('tr'))
-      const tr = document.createElement('tr')
-      Array.from(rows[index].children).forEach((cell) => {
-        tr.appendChild(cloneCellToText(cell))
-      })
-      const tbody = document.createElement('tbody')
-      tbody.appendChild(tr)
-      cloneTable.appendChild(tbody)
       draggedElementHeight = rows[index].getBoundingClientRect().height
-      cloneTable.style.width = `${table.getBoundingClientRect().width}px`
-    } else {
-      const rows = Array.from(table.querySelectorAll('tr'))
-      rows.forEach((row) => {
-        const tr = document.createElement('tr')
-        const cells = Array.from(row.children)
-        if (cells[index]) {
-          tr.appendChild(cloneCellToText(cells[index]))
-        }
-        cloneTable.appendChild(tr)
+      rows.forEach(r => {
+        const rect = r.getBoundingClientRect()
+        initialBounds.push({ top: rect.top, bottom: rect.bottom, height: rect.height })
       })
+    } else {
       const headers = Array.from(table.querySelectorAll('thead th'))
       if (headers[index]) {
         draggedElementWidth = headers[index].getBoundingClientRect().width
-        cloneTable.style.width = `${draggedElementWidth}px`
       }
+      headers.forEach(h => {
+        const rect = h.getBoundingClientRect()
+        initialBounds.push({ left: rect.left, right: rect.right, width: rect.width })
+      })
     }
-
-    ghost.appendChild(cloneTable)
   }
+
+  let dragStartX = 0
+  let dragStartY = 0
+  let initialHandleLeft = 0
+  let initialHandleTop = 0
 
   // Drag start
   function onDragStart(e, type, index) {
@@ -220,11 +192,22 @@ export function setupTableDragAndDrop(wrap, view) {
     dragStartIndex = index
     currentDropIndex = index
 
-    createGhostClone(type, index)
+    dragStartX = e.clientX
+    dragStartY = e.clientY
+    
+    // Lock the initial position before we switch to transform
+    const wrapRect = wrap.getBoundingClientRect()
+    if (type === 'row') {
+      initialHandleLeft = parseFloat(rowHandle.style.left) || 0
+      initialHandleTop = parseFloat(rowHandle.style.top) || 0
+      rowHandle.style.cursor = 'grabbing'
+    } else {
+      initialHandleLeft = parseFloat(colHandle.style.left) || 0
+      initialHandleTop = parseFloat(colHandle.style.top) || 0
+      colHandle.style.cursor = 'grabbing'
+    }
 
-    ghost.style.display = 'block'
-    ghost.style.left = `${e.clientX + 15}px`
-    ghost.style.top = `${e.clientY + 15}px`
+    calculateDragDimensions(type, index)
 
     // Fade out original
     const table = wrap.querySelector('table')
@@ -257,88 +240,132 @@ export function setupTableDragAndDrop(wrap, view) {
     onDragStart(e, 'col', parseInt(colHandle.dataset.index, 10))
   )
 
+  let rafId = null
+
   function onDragMove(e) {
     if (!isDragging) return
+    
+    if (rafId) cancelAnimationFrame(rafId)
+    
+    rafId = requestAnimationFrame(() => {
+      const dx = e.clientX - dragStartX
+      const dy = e.clientY - dragStartY
 
-    ghost.style.left = `${e.clientX + 15}px`
-    ghost.style.top = `${e.clientY + 15}px`
+      if (dragType === 'row') {
+        rowHandle.style.transform = `translate3d(${dx}px, ${dy}px, 0)`
+      } else {
+        colHandle.style.transform = `translate3d(${dx}px, ${dy}px, 0)`
+      }
 
-    const table = wrap.querySelector('table')
-    if (!table) return
+      const table = wrap.querySelector('table')
+      if (!table) return
 
-    // Hide standard drop indicator if we use live shifting
-    dropIndicator.style.display = 'none'
+  
 
     if (dragType === 'row') {
-      const rows = Array.from(wrap.querySelectorAll('tr'))
-      let targetIndex = rows.length
-      for (let i = 0; i < rows.length; i++) {
-        const rect = rows[i].getBoundingClientRect()
-        if (e.clientY < rect.top + rect.height / 2) {
-          targetIndex = i
+      let proposedIndex = currentDropIndex
+      while (proposedIndex > 0) {
+        if (e.clientY < initialBounds[proposedIndex - 1].top) {
+          proposedIndex--
+        } else {
           break
         }
       }
-      currentDropIndex = targetIndex
+      while (proposedIndex < initialBounds.length - 1) {
+        if (e.clientY > initialBounds[proposedIndex + 1].bottom) {
+          proposedIndex++
+        } else {
+          break
+        }
+      }
+      currentDropIndex = proposedIndex
+
+      const targetIndex = currentDropIndex
+      const rows = Array.from(wrap.querySelectorAll('tr'))
 
       // Live shifting
       rows.forEach((row, i) => {
         if (i === dragStartIndex) {
-          // The dragged row shifts backwards/forwards depending on the target to visually "swap"
+          let shift = 0
           if (targetIndex > dragStartIndex) {
-            row.style.transform = `translateY(${(targetIndex - dragStartIndex - 1) * draggedElementHeight}px)` // approximate
+            for (let j = dragStartIndex + 1; j <= targetIndex; j++) {
+              shift += initialBounds[j].height
+            }
           } else {
-            row.style.transform = `translateY(${(targetIndex - dragStartIndex) * draggedElementHeight}px)` // approximate
+            for (let j = targetIndex; j < dragStartIndex; j++) {
+              shift -= initialBounds[j].height
+            }
           }
-          // Actually, precise shifting of the dragged row is tricky because rows vary in height.
-          // Let's just keep the dragged row where it is (it's faded out anyway) or shift it perfectly.
-          // For now, let's keep it simple: dragged row stays put, others shift.
-          row.style.transform = 'none'
+          row.style.transform = `translateY(${shift}px)`
+        } else if (i > dragStartIndex && i <= targetIndex) {
+          row.style.transform = `translateY(-${initialBounds[dragStartIndex].height}px)`
         } else if (i >= targetIndex && i < dragStartIndex) {
-          row.style.transform = `translateY(${draggedElementHeight}px)`
-        } else if (i > dragStartIndex && i < targetIndex) {
-          row.style.transform = `translateY(-${draggedElementHeight}px)`
+          row.style.transform = `translateY(${initialBounds[dragStartIndex].height}px)`
         } else {
           row.style.transform = 'none'
         }
       })
     } else {
-      const headerCells = Array.from(wrap.querySelectorAll('thead th'))
-      let targetIndex = headerCells.length
-      for (let i = 0; i < headerCells.length; i++) {
-        const rect = headerCells[i].getBoundingClientRect()
-        if (e.clientX < rect.left + rect.width / 2) {
-          targetIndex = i
+      let proposedIndex = currentDropIndex
+      while (proposedIndex > 0) {
+        if (e.clientX < initialBounds[proposedIndex - 1].left) {
+          proposedIndex--
+        } else {
           break
         }
       }
-      currentDropIndex = targetIndex
+      while (proposedIndex < initialBounds.length - 1) {
+        if (e.clientX > initialBounds[proposedIndex + 1].right) {
+          proposedIndex++
+        } else {
+          break
+        }
+      }
+      currentDropIndex = proposedIndex
+
+      const targetIndex = currentDropIndex
+      const rows = Array.from(wrap.querySelectorAll('tr'))
 
       // Live shifting
-      const rows = Array.from(wrap.querySelectorAll('tr'))
       rows.forEach((row) => {
         Array.from(row.children).forEach((cell, i) => {
           if (i === dragStartIndex) {
-            cell.style.transform = 'none'
+            let shift = 0
+            if (targetIndex > dragStartIndex) {
+              for (let j = dragStartIndex + 1; j <= targetIndex; j++) {
+                shift += initialBounds[j].width
+              }
+            } else {
+              for (let j = targetIndex; j < dragStartIndex; j++) {
+                shift -= initialBounds[j].width
+              }
+            }
+            cell.style.transform = `translateX(${shift}px)`
+          } else if (i > dragStartIndex && i <= targetIndex) {
+            cell.style.transform = `translateX(-${initialBounds[dragStartIndex].width}px)`
           } else if (i >= targetIndex && i < dragStartIndex) {
-            cell.style.transform = `translateX(${draggedElementWidth}px)`
-          } else if (i > dragStartIndex && i < targetIndex) {
-            cell.style.transform = `translateX(-${draggedElementWidth}px)`
+            cell.style.transform = `translateX(${initialBounds[dragStartIndex].width}px)`
           } else {
             cell.style.transform = 'none'
           }
         })
       })
     }
+    })
   }
 
   function onDragEnd() {
     isDragging = false
     document.body.style.cursor = ''
+    
+    if (rafId) cancelAnimationFrame(rafId)
+    
     rowHandle.style.cursor = 'grab'
     colHandle.style.cursor = 'grab'
-    ghost.style.display = 'none'
-    dropIndicator.style.display = 'none'
+    rowHandle.style.transform = 'none'
+    colHandle.style.transform = 'none'
+    
+    hideHandles()
 
     wrap.classList.remove('is-dragging-rows')
     wrap.classList.remove('is-dragging-cols')

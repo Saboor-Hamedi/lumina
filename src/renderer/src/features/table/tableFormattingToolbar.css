@@ -73,11 +73,11 @@
 
 .cm-atomic-table {
   position: relative;
-  margin: 0;
-  padding: 24px 0 0 24px !important;
+  margin: 16px 0 !important;
+  padding: 0 !important;
   display: block;
-  width: 100%;
-  max-width: 100%;
+  width: max-content !important;
+  max-width: 100% !important;
   border-radius: 8px;
   box-sizing: border-box;
   font-size: var(--font-size-editor, 16px) !important;
@@ -85,21 +85,16 @@
   outline: none !important;
   box-shadow: none !important;
   
-  /* Scroll behavior */
-  overflow-x: auto !important;
-  overflow-y: hidden !important;
-  scrollbar-width: none !important; /* Firefox */
-  -ms-overflow-style: none !important; /* IE 10+ */
-  
-  /* Fix cursor entering the container padding */
+  overflow: visible !important;
   user-select: none;
-  /* background-color: gray; */
 }
 
 .cm-atomic-table::-webkit-scrollbar {
   display: none !important;
-  width: 0 !important;
-  height: 0 !important;
+}
+
+.cm-atomic-table-widget {
+  display: block;
 }
 
 .cm-atomic-table table,
@@ -123,10 +118,19 @@
 
 .cm-table-scroll-container {
   width: max-content;
-  max-width: none !important;
-  overflow: visible !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE 10+ */
   position: relative; /* For the grid selection overlay */
   box-sizing: border-box;
+}
+
+.cm-table-scroll-container::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 .cm-table-scroll-container::-webkit-scrollbar {
   display: none !important;
@@ -165,6 +169,14 @@
   transition: background 0.15s ease;
 }
 
+/* Smooth live-shifting for columns and rows */
+.cm-atomic-table.is-dragging-cols th,
+.cm-atomic-table.is-dragging-cols td,
+.cm-atomic-table.is-dragging-rows tr {
+  transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1) !important;
+  will-change: transform;
+}
+
 .cm-atomic-table-cell-source {
   display: block;
   min-height: 1.5em;
@@ -193,6 +205,53 @@
 }
 .cm-atomic-table tr:last-child td:last-child {
   border-bottom-right-radius: 7px !important;
+}
+
+/* 
+ * Grid Selection Layer 
+ * 
+ * We render the selection using two different DOM elements:
+ * 1) A highlight overlay div that draws the blue semi-transparent box
+ * 2) CSS classes on the cells themselves to override border colors for the "active" cell
+ */
+
+/* 1) Cell borders when they are part of a selection */
+.cm-atomic-table th.cm-table-cell-selected,
+.cm-atomic-table td.cm-table-cell-selected {
+  /* We don't change background here because the overlay div handles that, 
+     but we could highlight the borders */
+  position: relative;
+}
+
+/* The actual "active" cell (where the cursor conceptually is) */
+.cm-atomic-table th.cm-table-cell-active,
+.cm-atomic-table td.cm-table-cell-active {
+  /* Optional: a stronger border for the active cell */
+  box-shadow: inset 0 0 0 1px var(--text-accent, #40bafa) !important;
+  z-index: 2; /* Bring active cell border above others */
+}
+
+
+/* 2) When selected via table Grid Selection logic (clicking and dragging) */
+.cm-table-selection-overlay {
+  position: absolute;
+  background-color: color-mix(in srgb, var(--text-accent, #40bafa) 15%, transparent) !important;
+  border: 1px solid var(--text-accent, #40bafa) !important;
+  pointer-events: none; /* Let clicks pass through to the cells beneath */
+  z-index: 5;
+  border-radius: 0 !important;
+  box-sizing: border-box; /* Fixes bottom-right overflow issue */
+  transition: all 0.05s linear; /* Smooth resizing */
+  display: none;
+}
+
+/* Prevent cm-activeLine from adding left border/box-shadow on tables */
+.cm-activeLine:has(.cm-atomic-table),
+.cm-atomic-table:focus,
+.cm-table-scroll-container:focus {
+  box-shadow: none !important;
+  outline: none !important;
+  border: none !important;
 }
 
 /* Prevent inner cells from duplicating the table's outer border */
@@ -428,16 +487,4 @@
 .cm-table-handle svg { width: 14px; height: 14px; pointer-events: none; }
 
 
-/* 2) When selected via table Grid Selection logic (clicking and dragging) */
-.cm-table-selection-overlay {
-  position: absolute;
-  background-color: rgba(255, 255, 255, 0.05) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  pointer-events: none; /* Let clicks pass through to the cells beneath */
-  z-index: 5;
-  border-radius: 4px;
-  box-sizing: border-box; /* Fixes bottom-right overflow issue */
-  transition: all 0.05s linear; /* Smooth resizing */
-  display: none;
-}
 
