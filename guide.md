@@ -10,7 +10,7 @@
 #### 1. Track-Level Progress (Header)
 Add a subtle progress bar directly below each Track header (e.g., `Track 1: NLP / LLM`).
 
--   **Visual Style:** A thin (2px), rounded bar using the Lumina purple accent (`#8b5cf6`) at 30% opacity for the background, and 100% opacity for the fill.
+-   **Visual Style:** A thin (2px), rounded bar using the Lumina purple accent at 30% opacity for the background, and 100% opacity for the fill.
 -   **Placement:** Immediately below the track title, spanning the full width of the content area.
 -   **Data Source:** Calculate based on how many notes in that track have been opened/visited (stored in `settings.json` or a local progress store).
 -   **Text Label (Optional):** Show percentage only on hover to keep the default view clean.  

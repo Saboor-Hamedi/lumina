@@ -117,10 +117,10 @@
 }
 
 .cm-table-scroll-container {
-  width: max-content;
+  width: 100% !important;
   max-width: 100% !important;
   overflow-x: auto !important;
-  overflow-y: hidden !important;
+  overflow-y: visible !important;
   scrollbar-width: none !important; /* Firefox */
   -ms-overflow-style: none !important; /* IE 10+ */
   position: relative; /* For the grid selection overlay */
@@ -132,15 +132,11 @@
   width: 0 !important;
   height: 0 !important;
 }
-.cm-table-scroll-container::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
-}
 
 .cm-atomic-table table {
   display: table !important;
   width: max-content !important;
+  min-width: max-content !important;
   table-layout: auto !important;
   border-collapse: separate !important;
   border-spacing: 0 !important;
@@ -298,6 +294,11 @@
   color: var(--text-muted, #888);
 }
 /* --- CURSOR AND SELECTION FIXES --- */
+/* Prevent CodeMirror from drawing gigantic cursors next to block widgets */
+.cm-cursorLayer .cm-cursor {
+  max-height: 24px !important;
+}
+
 /* Hide CodeMirror native cursor when a table cell has focus to avoid double cursors outside the table */
 .cm-editor.cm-table-focused .cm-cursorLayer,
 .markdown-editor:has(.cm-atomic-table:focus-within) .cm-cursorLayer,
@@ -424,12 +425,6 @@
 
 .cm-table-insert-marker {
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-}
-
-.cm-table-insert-marker:hover {
-  transform: translate(-50%, -50%) scale(1.15) !important;
-  background: var(--text-main, #fff) !important;
-  color: var(--bg-panel, #2a2a2a) !important;
 }
 
 .cm-atomic-table-menu-item:hover {
