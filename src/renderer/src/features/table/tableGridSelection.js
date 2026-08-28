@@ -138,14 +138,55 @@ export function setupTableSelection(wrap, view) {
     true
   )
 
+  let lastMouseX = 0
+  let lastMouseY = 0
+  let autoscrollRaf = null
+
+  function checkAutoscroll() {
+    if (!isDragging) return
+    const scrollContainer = wrap.querySelector('.cm-table-scroll-container')
+    if (!scrollContainer) return
+    
+    const rect = scrollContainer.getBoundingClientRect()
+    const edgeThreshold = 40
+    let dx = 0
+    
+    // Calculate scroll speed based on distance to edge for smooth acceleration
+    if (lastMouseX < rect.left + edgeThreshold) {
+      dx = Math.max(-15, lastMouseX - (rect.left + edgeThreshold))
+    } else if (lastMouseX > rect.right - edgeThreshold) {
+      dx = Math.min(15, lastMouseX - (rect.right - edgeThreshold))
+    }
+    
+    if (dx !== 0) {
+      scrollContainer.scrollLeft += dx
+      
+      const target = document.elementFromPoint(lastMouseX, lastMouseY)
+      if (target) {
+        const cell = target.closest('th, td')
+        if (cell && cell !== endCell && wrap.contains(cell)) {
+          endCell = cell
+          renderSelection()
+        }
+      }
+      autoscrollRaf = requestAnimationFrame(checkAutoscroll)
+    } else {
+      autoscrollRaf = null
+    }
+  }
+
   window.addEventListener('mousemove', (e) => {
     if (!startCell) return
 
     if ((e.buttons & 1) !== 1) {
       isDragging = false
       wrap.classList.remove('cm-table-selecting')
+      if (autoscrollRaf) { cancelAnimationFrame(autoscrollRaf); autoscrollRaf = null; }
       return
     }
+
+    lastMouseX = e.clientX
+    lastMouseY = e.clientY
 
     const target = document.elementFromPoint(e.clientX, e.clientY)
     if (!target) return
@@ -153,9 +194,15 @@ export function setupTableSelection(wrap, view) {
     const cell = target.closest('th, td')
     const currentWrap = target.closest('.cm-atomic-table')
 
-    if (!cell || cell === endCell || !currentWrap) return
+    if (!cell || cell === endCell || !currentWrap) {
+      if (!autoscrollRaf) autoscrollRaf = requestAnimationFrame(checkAutoscroll)
+      return
+    }
     if (currentWrap !== wrap && !wrap.contains(cell)) {
-      if (!cell.closest('.cm-atomic-table')) return
+      if (!cell.closest('.cm-atomic-table')) {
+        if (!autoscrollRaf) autoscrollRaf = requestAnimationFrame(checkAutoscroll)
+        return
+      }
     }
 
     endCell = cell
@@ -166,20 +213,25 @@ export function setupTableSelection(wrap, view) {
       window.getSelection().removeAllRanges()
     }
 
-    // Ensure the wrapper has focus so it can receive the Ctrl+C keydown event!
-    wrap.focus()
-
+    wrap.focus({ preventScroll: true })
     renderSelection()
+    
+    if (!autoscrollRaf) autoscrollRaf = requestAnimationFrame(checkAutoscroll)
   })
 
   window.addEventListener('mouseup', () => {
     isDragging = false
     wrap.classList.remove('cm-table-selecting')
+    if (autoscrollRaf) {
+      cancelAnimationFrame(autoscrollRaf)
+      autoscrollRaf = null
+    }
 
     // If they just clicked/dragged within a single cell, don't keep it as a grid selection start
     if (startCell === endCell) {
       startCell = null
       endCell = null
+      clearSelectionVisuals()
     }
   })
 

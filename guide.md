@@ -1,9 +1,5 @@
 
-
-
-
 # Only handle the table no the below:
-
 
 **Objective:** Add non-intrusive visual progress indicators to the Learning Roadmap tracks and notes. This should feel like a natural extension of the current UI, not a gamified overlay.
 

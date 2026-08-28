@@ -73,8 +73,8 @@
 
 .cm-atomic-table {
   position: relative;
-  margin: 16px 0 !important;
-  padding: 0 !important;
+  margin: 0 !important;
+  padding: 16px 0 !important;
   display: block;
   width: max-content !important;
   max-width: 100% !important;
@@ -294,10 +294,7 @@
   color: var(--text-muted, #888);
 }
 /* --- CURSOR AND SELECTION FIXES --- */
-/* Prevent CodeMirror from drawing gigantic cursors next to block widgets */
-.cm-cursorLayer .cm-cursor {
-  max-height: 24px !important;
-}
+
 
 /* Hide CodeMirror native cursor when a table cell has focus to avoid double cursors outside the table */
 .cm-editor.cm-table-focused .cm-cursorLayer,

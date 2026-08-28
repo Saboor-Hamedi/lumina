@@ -591,24 +591,28 @@ export function makeCell(tag, text, view) {
     }
 
     if (event.key === 'ArrowUp') {
-      const thead = cell.closest('table')?.querySelector('thead tr')
-      const colCount = thead ? thead.querySelectorAll('th').length : 1
-      moveCellFocus(view, cell, -colCount, { appendOnOverflow: false })
-      event.preventDefault()
-      event.stopPropagation()
-      return
+      if (event.ctrlKey || event.metaKey || true) { // Always jump on up/down (or maybe only on ctrl? No, keeping original behavior for non-ctrl too, but catching ctrl explicitly)
+        const thead = cell.closest('table')?.querySelector('thead tr')
+        const colCount = thead ? thead.querySelectorAll('th').length : 1
+        moveCellFocus(view, cell, -colCount, { appendOnOverflow: false })
+        event.preventDefault()
+        event.stopPropagation()
+        return
+      }
     }
     if (event.key === 'ArrowDown') {
-      const thead = cell.closest('table')?.querySelector('thead tr')
-      const colCount = thead ? thead.querySelectorAll('th').length : 1
-      moveCellFocus(view, cell, colCount, { appendOnOverflow: false })
-      event.preventDefault()
-      event.stopPropagation()
-      return
+      if (event.ctrlKey || event.metaKey || true) {
+        const thead = cell.closest('table')?.querySelector('thead tr')
+        const colCount = thead ? thead.querySelectorAll('th').length : 1
+        moveCellFocus(view, cell, colCount, { appendOnOverflow: false })
+        event.preventDefault()
+        event.stopPropagation()
+        return
+      }
     }
     if (event.key === 'ArrowLeft') {
       const offset = getCaretCharOffset(source) || 0
-      if (offset === 0) {
+      if (offset === 0 || event.ctrlKey || event.metaKey) {
         moveCellFocus(view, cell, -1, { appendOnOverflow: false })
         event.preventDefault()
         event.stopPropagation()
@@ -618,7 +622,7 @@ export function makeCell(tag, text, view) {
     if (event.key === 'ArrowRight') {
       const offset = getCaretCharOffset(source) || 0
       const textLen = source.textContent?.length || 0
-      if (offset >= textLen) {
+      if (offset >= textLen || event.ctrlKey || event.metaKey) {
         moveCellFocus(view, cell, 1, { appendOnOverflow: false })
         event.preventDefault()
         event.stopPropagation()

@@ -63,6 +63,11 @@ export class TableWidget extends WidgetType {
       value: model
     })
   }
+  
+  get estimatedHeight() {
+    return this.model.rows.length * 35 + 50
+  }
+
   // Structure-only equality. Typing in a cell produces a new
   // TableWidget with the same dimensions but different cell contents.
   // Returning true here means CM6 keeps the existing DOM instead of
@@ -422,13 +427,23 @@ export function buildTableWidgets(state) {
       if (node.name !== 'Table') return
       const model = parseTable(state, node.node)
       if (!model) return
-      // Block-replace needs whole-line coverage.
       const startLine = doc.lineAt(node.from)
       const endLine = doc.lineAt(node.to)
+      
+      // We CANNOT use block: true on a replace decoration that crosses newlines, 
+      // otherwise it corrupts CodeMirror's internal viewport block layout index!
+      // Instead, we insert a block widget at the start, and use an inline replace to hide the text.
+      ranges.push(
+        Decoration.widget({
+          widget: new TableWidget(model),
+          block: true,
+          side: -1
+        }).range(startLine.from)
+      )
+      
       ranges.push(
         Decoration.replace({
-          widget: new TableWidget(model),
-          block: true
+          inclusive: false
         }).range(startLine.from, endLine.to)
       )
       return false // don't descend

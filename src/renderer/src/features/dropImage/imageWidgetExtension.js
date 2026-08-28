@@ -59,6 +59,16 @@ export class ImageWidget extends WidgetType {
     }
   }
 
+  get estimatedHeight() {
+    // If we have a pixel width, assume roughly similar height (or just a safe default)
+    // If no width is specified, default to 300px which is a reasonable guess for an image block
+    const parsedWidth = parseInt(this.width)
+    if (!isNaN(parsedWidth) && this.width.includes('px')) {
+      return parsedWidth * 0.75 // Assume 4:3 aspect ratio roughly
+    }
+    return 300
+  }
+
   eq(other) {
     // Only return true if ALL visual properties are identical!
     // If we return false, CodeMirror calls updateDOM() to update the live elements without blinking.
@@ -381,6 +391,10 @@ export class ImageWidget extends WidgetType {
       if (view && view.requestMeasure) view.requestMeasure()
     }
 
+    img.onload = () => {
+      if (view && view.requestMeasure) view.requestMeasure()
+    }
+
     if (this.url && !this.url.startsWith('http') && !this.url.startsWith('data:')) {
       const cleanUrl = this.url.startsWith('/') ? this.url.slice(1) : this.url
 
@@ -524,14 +538,6 @@ export class ImageWidget extends WidgetType {
   }
 }
 
-class EmptyWidget extends WidgetType {
-  eq() {
-    return true
-  }
-  toDOM() {
-    return document.createElement('span')
-  }
-}
 
 function buildDecorations(state) {
   const widgets = []
@@ -569,7 +575,6 @@ function buildDecorations(state) {
 
         widgets.push(
           Decoration.replace({
-            widget: new EmptyWidget(),
             inclusive: false
           }).range(matchFrom, matchTo)
         )
