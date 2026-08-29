@@ -3,11 +3,14 @@
 */
 .cm-line.cm-atomic-fenced-code {
   box-sizing: border-box !important;
-  width: 100% !important;
-  max-width: 100% !important;
+  width: calc(100% - 4px) !important;
+  max-width: calc(100% - 4px) !important;
+  margin-right: 4px !important;
+  margin-left: 0 !important;
   display: block !important;
   padding: 2px 1em !important;
-  margin: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
   line-height: 1.6 !important;
   background: var(--bg-panel, #1e1e1e) !important;
   box-shadow: none !important;
@@ -23,8 +26,10 @@
 /* Copy button on first line of code blocks */
 .cm-line.cb-code-header {
   box-sizing: border-box !important;
-  width: 100% !important;
-  max-width: 100% !important;
+  width: calc(100% - 4px) !important;
+  max-width: calc(100% - 4px) !important;
+  margin-right: 4px !important;
+  margin-left: 0 !important;
   display: block !important;
   position: relative;
   padding-left: 12px !important;
@@ -49,8 +54,10 @@
 /* Wrapper body for code blocks in editor */
 .cm-line.cm-atomic-fenced-code:not(.cb-code-header) {
   box-sizing: border-box !important;
-  width: 100% !important;
-  max-width: 100% !important;
+  width: calc(100% - 4px) !important;
+  max-width: calc(100% - 4px) !important;
+  margin-right: 4px !important;
+  margin-left: 0 !important;
   display: block !important;
   background: rgba(0, 0, 0, 0.2) !important;
   border-left: 1px solid var(--border-dim) !important;
@@ -61,8 +68,10 @@
 /* Fix for .cm-activeLine removing borders and padding */
 .cm-line.cm-atomic-fenced-code:not(.cb-code-header).cm-activeLine {
   box-sizing: border-box !important;
-  width: 100% !important;
-  max-width: 100% !important;
+  width: calc(100% - 4px) !important;
+  max-width: calc(100% - 4px) !important;
+  margin-right: 4px !important;
+  margin-left: 0 !important;
   display: block !important;
   border-left: 1px solid var(--border-dim) !important;
   border-right: 1px solid var(--border-dim) !important;
