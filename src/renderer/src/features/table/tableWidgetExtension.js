@@ -207,9 +207,17 @@ export class TableWidget extends WidgetType {
     leftGroup.appendChild(createTableTitleDOM(view, wrap, this.model))
     leftGroup.appendChild(createTableViewModeToggleDOM(view, wrap, this.model))
 
-    // Right group: Quick Actions/Export + Delete button
+    // Right group: Dimension Badge + Quick Actions/Export + Delete button
     const rightGroup = document.createElement('div')
     rightGroup.className = 'cm-table-ui-right'
+
+    // Dimension Badge: "3 Rows • 4 Cols"
+    const dimBadge = document.createElement('div')
+    dimBadge.className = 'cm-table-dim-badge'
+    const rowCount = this.model.rows.length
+    const colCount = this.model.header.length
+    dimBadge.textContent = `${rowCount} ${rowCount === 1 ? 'Row' : 'Rows'} • ${colCount} ${colCount === 1 ? 'Col' : 'Cols'}`
+    rightGroup.appendChild(dimBadge)
 
     rightGroup.appendChild(createTableQuickActionsDOM(view, wrap, this.model))
 
@@ -247,7 +255,6 @@ export class TableWidget extends WidgetType {
     scrollContainer.appendChild(table)
     wrap.appendChild(scrollContainer)
 
-    const colCount = this.model.header.length
     const thead = document.createElement('thead')
 
     const headerRow = document.createElement('tr')
@@ -264,19 +271,51 @@ export class TableWidget extends WidgetType {
     thead.appendChild(headerRow)
     table.appendChild(thead)
     const tbody = document.createElement('tbody')
-    for (let r = 0; r < this.model.rows.length; r++) {
-      const row = this.model.rows[r]
-      const tr = document.createElement('tr')
-      for (let c = 0; c < colCount; c++) {
-        const cell = makeCell('td', row[c] ?? '', view)
-        if (this.model.alignments?.[c]) {
-          cell.style.textAlign = this.model.alignments[c]
-          const source = cell.querySelector('.cm-atomic-table-cell-source')
-          if (source) source.style.textAlign = this.model.alignments[c]
+
+    if (rowCount === 0) {
+      const emptyTr = document.createElement('tr')
+      emptyTr.className = 'cm-table-empty-row'
+      const emptyTd = document.createElement('td')
+      emptyTd.colSpan = colCount || 1
+      emptyTd.className = 'cm-table-empty-cell'
+      emptyTd.innerHTML = `
+        <div class="cm-table-empty-state">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+            <line x1="3" y1="15" x2="21" y2="15"></line>
+            <line x1="9" y1="3" x2="9" y2="21"></line>
+            <line x1="15" y1="3" x2="15" y2="21"></line>
+          </svg>
+          <span>No data rows yet</span>
+          <button type="button" class="cm-table-empty-add-btn">+ Add Row</button>
+        </div>
+      `
+      const addBtn = emptyTd.querySelector('.cm-table-empty-add-btn')
+      addBtn.addEventListener('click', (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        const m = readModelFromDom(wrap)
+        m.rows.push(Array(colCount).fill(''))
+        dispatchModel(view, wrap, m)
+      })
+      emptyTr.appendChild(emptyTd)
+      tbody.appendChild(emptyTr)
+    } else {
+      for (let r = 0; r < rowCount; r++) {
+        const row = this.model.rows[r]
+        const tr = document.createElement('tr')
+        for (let c = 0; c < colCount; c++) {
+          const cell = makeCell('td', row[c] ?? '', view)
+          if (this.model.alignments?.[c]) {
+            cell.style.textAlign = this.model.alignments[c]
+            const source = cell.querySelector('.cm-atomic-table-cell-source')
+            if (source) source.style.textAlign = this.model.alignments[c]
+          }
+          tr.appendChild(cell)
         }
-        tr.appendChild(cell)
+        tbody.appendChild(tr)
       }
-      tbody.appendChild(tr)
     }
     table.appendChild(tbody)
 

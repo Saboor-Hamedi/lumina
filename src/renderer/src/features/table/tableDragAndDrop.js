@@ -20,8 +20,8 @@ export function setupTableDragAndDrop(wrap, view) {
   rowHandle.style.display = 'flex'
   rowHandle.style.alignItems = 'center'
   rowHandle.style.justifyContent = 'center'
-  rowHandle.style.width = '20px'
-  rowHandle.style.height = '20px'
+  rowHandle.style.width = '15px'
+  rowHandle.style.height = '15px'
   rowHandle.style.cursor = 'grab'
   rowHandle.style.opacity = '0'
   rowHandle.style.pointerEvents = 'none'
@@ -36,8 +36,8 @@ export function setupTableDragAndDrop(wrap, view) {
   colHandle.style.display = 'flex'
   colHandle.style.alignItems = 'center'
   colHandle.style.justifyContent = 'center'
-  colHandle.style.width = '20px'
-  colHandle.style.height = '20px'
+  colHandle.style.width = '15px'
+  colHandle.style.height = '15px'
   colHandle.style.cursor = 'grab'
   colHandle.style.opacity = '0'
   colHandle.style.pointerEvents = 'none'
@@ -80,9 +80,9 @@ export function setupTableDragAndDrop(wrap, view) {
 
     // Column handle: appears when hovering over header cells TH or top of cells
     if (isHeader) {
-      const handleX = Math.max(cellRect.left + 2, Math.min(e.clientX - 10, cellRect.right - 22))
+      const handleX = Math.max(cellRect.left + 2, Math.min(e.clientX - 7, cellRect.right - 18))
       colHandle.style.left = `${handleX - wrapRect.left}px`
-      colHandle.style.top = `${cellRect.top - wrapRect.top - 8}px`
+      colHandle.style.top = `${cellRect.top - wrapRect.top - 7}px`
       colHandle.style.opacity = '1'
       colHandle.style.pointerEvents = 'auto'
       colHandle.dataset.index = colIndex.toString()
@@ -90,9 +90,9 @@ export function setupTableDragAndDrop(wrap, view) {
     } else {
       const distTop = e.clientY - cellRect.top
       if (distTop >= 0 && distTop <= 16) {
-        const handleX = Math.max(cellRect.left + 2, Math.min(e.clientX - 10, cellRect.right - 22))
+        const handleX = Math.max(cellRect.left + 2, Math.min(e.clientX - 7, cellRect.right - 18))
         colHandle.style.left = `${handleX - wrapRect.left}px`
-        colHandle.style.top = `${cellRect.top - wrapRect.top - 8}px`
+        colHandle.style.top = `${cellRect.top - wrapRect.top - 7}px`
         colHandle.style.opacity = '1'
         colHandle.style.pointerEvents = 'auto'
         colHandle.dataset.index = colIndex.toString()
@@ -109,9 +109,9 @@ export function setupTableDragAndDrop(wrap, view) {
           const rowRect = tr.getBoundingClientRect()
           const distLeft = e.clientX - rowRect.left
           if (distLeft >= -10 && distLeft <= 36) {
-            const handleY = Math.max(rowRect.top + 2, Math.min(e.clientY - 10, rowRect.bottom - 22))
+            const handleY = Math.max(rowRect.top + 2, Math.min(e.clientY - 7, rowRect.bottom - 18))
             rowHandle.style.top = `${handleY - wrapRect.top}px`
-            rowHandle.style.left = `${rowRect.left - wrapRect.left - 10}px`
+            rowHandle.style.left = `${rowRect.left - wrapRect.left - 8}px`
             rowHandle.style.opacity = '1'
             rowHandle.style.pointerEvents = 'auto'
             rowHandle.dataset.index = rowIndex.toString()
