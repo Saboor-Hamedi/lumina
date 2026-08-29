@@ -73,10 +73,10 @@
 
 .cm-atomic-table {
   position: relative;
-  margin: 0 !important;
-  padding: 16px 0 !important;
+  margin: 16px 0 !important;
+  padding: 0 !important;
   display: block;
-  width: max-content !important;
+  width: 100% !important;
   max-width: 100% !important;
   border-radius: 8px;
   box-sizing: border-box;
@@ -89,12 +89,66 @@
   user-select: none;
 }
 
+
 .cm-atomic-table::-webkit-scrollbar {
   display: none !important;
 }
 
 .cm-atomic-table-widget {
   display: block;
+}
+
+.cm-table-ui-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  background: var(--bg-secondary, rgba(100, 100, 100, 0.5));
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  border-bottom: none;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+  user-select: none;
+}
+
+.cm-atomic-table:hover .cm-table-ui-header,
+.cm-atomic-table:focus-within .cm-table-ui-header {
+  opacity: 1;
+}
+
+.cm-table-ui-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted, rgba(255, 255, 255, 0.5));
+  cursor: grab;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.cm-table-ui-drag-handle:hover {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.1));
+  color: var(--text-normal, #fff);
+}
+
+.cm-table-ui-delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted, rgba(255, 255, 255, 0.5));
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.cm-table-ui-delete-btn:hover {
+  background: rgba(244, 67, 54, 0.1);
+  color: #f44336;
 }
 
 .cm-atomic-table table,
@@ -143,7 +197,10 @@
   margin: 0 !important;
   
   /* Apply container visuals directly to the table */
-  border-radius: 6px !important;
+  border-bottom-left-radius: 6px !important;
+  border-bottom-right-radius: 6px !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
   box-shadow: none !important;
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1)) !important;
   background: var(--bg-primary, transparent) !important;

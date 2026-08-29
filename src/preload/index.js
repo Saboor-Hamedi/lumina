@@ -47,7 +47,6 @@ const api = {
   minimize: () => electronAPI.ipcRenderer.invoke('window:minimize'),
   toggleMaximize: () => electronAPI.ipcRenderer.invoke('window:toggle-maximize'),
   closeWindow: () => electronAPI.ipcRenderer.invoke('window:close'),
-  setTranslucency: (enabled) => electronAPI.ipcRenderer.invoke('window:set-translucency', enabled),
   onToggleCommandPalette: (cb) => {
     const listener = () => cb()
     electronAPI.ipcRenderer.on('window:toggle-command-palette', listener)

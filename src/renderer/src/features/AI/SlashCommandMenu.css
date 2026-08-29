@@ -17,10 +17,7 @@
   animation: slideUp 0.15s ease-out;
 }
 
-[data-mirror-mode='true'] .slash-menu-container {
-  background: rgb(30, 30, 30); /* Fully opaque */
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
+
 
 .slash-menu-item {
   display: flex;

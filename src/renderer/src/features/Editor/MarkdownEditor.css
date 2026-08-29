@@ -10,45 +10,46 @@
   
 }
 
-/* Typography Hierarchy */
+/* Typography Hierarchy - Clean, calm, professional scale */
 .markdown-editor .cm-heading1,
-.markdown-editor h1,
-.lumina-heading-text {
-  color: var(--text-accent) !important;
+.markdown-editor h1 {
+  font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
+  font-size: 1.45em !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.025em !important;
+  color: var(--text-main, #ffffff) !important;
 }
 
 .markdown-editor .cm-heading2,
 .markdown-editor h2 {
-  color: var(--text-main) !important;
+  font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
+  font-size: 1.25em !important;
+  font-weight: 650 !important;
+  letter-spacing: -0.02em !important;
+  color: var(--text-main, #f8fafc) !important;
 }
 
 .markdown-editor .cm-heading3,
+.markdown-editor h3 {
+  font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
+  font-size: 1.1em !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.015em !important;
+  color: var(--text-main, #f1f5f9) !important;
+}
+
 .markdown-editor .cm-heading4,
 .markdown-editor .cm-heading5,
 .markdown-editor .cm-heading6,
-.markdown-editor h3,
 .markdown-editor h4,
 .markdown-editor h5,
 .markdown-editor h6 {
-  color: var(--text-dim) !important;
+  font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
+  font-size: 1em !important;
+  font-weight: 600 !important;
+  color: var(--text-muted, #94a3b8) !important;
 }
 
-/* Add a thin, fading accent line under Markdown headings in the editor */
-.markdown-editor .lumina-heading-text {
-  position: relative;
-}
-
-.markdown-editor .lumina-heading-text::after {/**//**/
-  content: '';
-  position: absolute;
-  bottom: -4px; /* A bit of spacing below the text */
-  left: 0;
-  height: 1px;
-  width: 50%; /* exactly 50% of the title text width */
-  background: linear-gradient(to right, var(--text-accent), transparent);
-  opacity: 0.5;
-  pointer-events: none;
-}
 
 /* Standard line padding for text readability */
 .cm-line {/**/
@@ -164,6 +165,34 @@
 
 /* Override cursor color and width from app caret settings */
 .markdown-editor .cm-cursor,
+.cm-cursor {
+  max-height: 1.5em !important;
+}
+
+/* --- FIX: Prevent Table Shrinkage on Ctrl+A (Select All) --- */
+
+/* Force the table widget to keep its natural width even when the line is selected */
+.cm-line:has(.cm-atomic-table).cm-selectedLine .cm-atomic-table,
+.cm-line:has(.cm-atomic-table).cm-activeLine .cm-atomic-table,
+.cm-editor:focus-within .cm-atomic-table {
+  width: max-content !important;
+  min-width: max-content !important;
+  display: block !important;
+}
+
+/* Ensure the scroll wrapper doesn't collapse */
+.cm-table-scroll-wrap:has(.cm-atomic-table),
+.cm-table-scroll-container {
+  min-width: fit-content !important;
+  width: auto !important;
+  display: block !important;
+}
+
+/* Prevent selection overlays from interfering with table dimensions */
+.cm-selectionLayer {
+  pointer-events: none; /* Let clicks pass through to the table */
+}
+.markdown-editor .cm-cursor,
 .markdown-editor .cm-dropCursor {
   border-left-color: var(--caret-color, var(--text-accent)) !important;
   border-left-width: var(--caret-width, 2px) !important;
@@ -266,8 +295,9 @@
   left: 0;
   height: 2px;
   width: 100%;
-  background: radial-gradient(ellipse at center, var(--text-accent) 0%, transparent 70%);
-  opacity: 0.8;
+  background: var(--text-accent);
+  box-shadow: 0 0 6px rgba(var(--text-accent-rgb), 0.35);
+  opacity: 0.9;
   pointer-events: none;
 }
 
@@ -489,24 +519,24 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 28px;
-  padding: 0 16px;
+  height: 26px;
+  padding: 0 20px;
   background: var(--bg-panel);
-   border-top: 1px solid var(--border-dim); 
-  font-size: 0.8em;
+  border-top: 1px solid var(--border-dim);
+  font-size: 11px;
   color: var(--text-faint);
   z-index: 100;
   flex-shrink: 0;
   width: 100%;
+  letter-spacing: 0.01em;
 }
 
 .status-bar-left,
 .status-bar-right {/**/
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex: 1;  
-  /* allow sides to take equal space  */
+  gap: 8px;
+  flex: 1;
 }
 
 .status-bar-right {
@@ -520,30 +550,16 @@
   flex: 1;
 }
 
-.start-menu-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
-  cursor: pointer;
-  color: var(--text-muted);
-  transition: all 0.2s;
-}
-
-.start-menu-button:hover {
-  background: var(--bg-hover);
-  color: var(--text-accent);
-}
-
 .status-bar .mode-toggle {
   cursor: pointer;
-  transition: color 0.2s;
+  transition: color 0.15s;
+  padding: 2px 4px;
+  border-radius: 3px;
 }
 
 .status-bar .mode-toggle:hover {
   color: var(--text-main);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .status-bar .mode-toggle.active {
@@ -551,8 +567,10 @@
 }
 
 .status-bar .separator {
-  opacity: 0.5;
+  opacity: 0.3;
+  font-size: 10px;
 }
+
 
 /* Floating Window Controls in TabBar */
 .window-controls-float {/**/
@@ -714,23 +732,30 @@
 }
 
 .editor-large-title {/**/
-  font-size: 14px !important;
-  font-weight: 600;
+  font-size: clamp(26px, 2.2vw, 32px) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.03em !important;
   border: none;
   background: transparent;
-  color: var(--text-muted);
-  padding: 4px 0;
-  line-height: 1;
-  margin-top: 10px;
+  color: var(--text-main, #f3f4f6);
+  padding: 8px 0 4px 0;
+  line-height: 1.25;
+  margin-top: 4px;
   width: 100%;
-  font-family: inherit;
+  font-family: var(--font-editor, 'Inter', system-ui, sans-serif) !important;
   outline: none;
   text-align: left;
+  transition: color 0.15s ease;
+}
+
+.editor-large-title:focus {
+  color: var(--text-main, #ffffff);
 }
 
 .editor-large-title::placeholder {
-  color: var(--text-faint);
-  opacity: 0.5;
+  color: var(--text-faint, rgba(255, 255, 255, 0.25));
+  font-weight: 600;
+  opacity: 0.6;
 }
 
 /*
@@ -959,12 +984,7 @@
   cursor: text;
 }
 
-[data-translucency='true'] .shell-sidebar-left,
-[data-translucency='true'] .shell-sidebar-right,
-[data-translucency='true'] .shell-ribbon {
-  background: var(--bg-sidebar) !important;
-  backdrop-filter: blur(10px);
-}
+
 
 /* Inline Metadata Bar - Moved under Title */
 .editor-metadata-bar {/**/

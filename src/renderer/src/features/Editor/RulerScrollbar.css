@@ -1,4 +1,5 @@
 .ruler-scrollbar-wrapper {
+  display: none; /* Hidden: left margin gutter removed per design guide */
   position: absolute;
   left: 0;
   top: 50%;
@@ -10,9 +11,9 @@
   cursor: ns-resize;
   pointer-events: auto;
   user-select: none;
-  display: flex;
   justify-content: flex-start;
 }
+
 
 .ruler-tape-container {
   position: absolute;
@@ -37,37 +38,40 @@
 }
 
 .ruler-tick {
-  width: 6px;
+  width: 5px;
   height: 1px;
   min-height: 1px;
   background: var(--text-main);
-  opacity: 0.35;
+  opacity: 0.12;
   margin-bottom: 7px; /* tickSpacing - 1px height */
-  transition: opacity 0.2s;
+  transition: opacity 0.2s, width 0.2s;
   flex-shrink: 0;
 }
 
 .ruler-tick.major {
-  width: 12px;
-  opacity: 0.65;
+  width: 10px;
+  opacity: 0.25;
 }
 
 .ruler-scrollbar-wrapper:hover .ruler-tick {
-  opacity: 0.55;
+  opacity: 0.4;
 }
+
 .ruler-scrollbar-wrapper:hover .ruler-tick.major {
-  opacity: 0.85;
+  width: 14px;
+  opacity: 0.75;
 }
 
 .ruler-center-mark {
   position: absolute;
   top: 50%;
   left: 0;
-  width: 16px;
+  width: 14px;
   height: 2px;
   background: var(--text-accent);
   transform: translateY(-50%);
-  box-shadow: 0 0 4px var(--text-accent);
+  box-shadow: 0 0 6px rgba(var(--text-accent-rgb), 0.5);
   pointer-events: none;
   z-index: 2;
+  border-radius: 1px;
 }

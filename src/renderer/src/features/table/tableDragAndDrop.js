@@ -286,17 +286,9 @@ export function setupTableDragAndDrop(wrap, view) {
       // Live shifting
       rows.forEach((row, i) => {
         if (i === dragStartIndex) {
-          let shift = 0
-          if (targetIndex > dragStartIndex) {
-            for (let j = dragStartIndex + 1; j <= targetIndex; j++) {
-              shift += initialBounds[j].height
-            }
-          } else {
-            for (let j = targetIndex; j < dragStartIndex; j++) {
-              shift -= initialBounds[j].height
-            }
-          }
-          row.style.transform = `translateY(${shift}px)`
+          row.style.transform = `translateY(${dy}px)`
+          row.style.zIndex = '1'
+          row.style.position = 'relative'
         } else if (i > dragStartIndex && i <= targetIndex) {
           row.style.transform = `translateY(-${initialBounds[dragStartIndex].height}px)`
         } else if (i >= targetIndex && i < dragStartIndex) {
@@ -330,17 +322,9 @@ export function setupTableDragAndDrop(wrap, view) {
       rows.forEach((row) => {
         Array.from(row.children).forEach((cell, i) => {
           if (i === dragStartIndex) {
-            let shift = 0
-            if (targetIndex > dragStartIndex) {
-              for (let j = dragStartIndex + 1; j <= targetIndex; j++) {
-                shift += initialBounds[j].width
-              }
-            } else {
-              for (let j = targetIndex; j < dragStartIndex; j++) {
-                shift -= initialBounds[j].width
-              }
-            }
-            cell.style.transform = `translateX(${shift}px)`
+            cell.style.transform = `translateX(${dx}px)`
+            cell.style.zIndex = '1'
+            cell.style.position = 'relative'
           } else if (i > dragStartIndex && i <= targetIndex) {
             cell.style.transform = `translateX(-${initialBounds[dragStartIndex].width}px)`
           } else if (i >= targetIndex && i < dragStartIndex) {
@@ -376,9 +360,13 @@ export function setupTableDragAndDrop(wrap, view) {
       rows.forEach((row) => {
         row.style.transform = 'none'
         row.style.opacity = '1'
+        row.style.position = ''
+        row.style.zIndex = ''
         Array.from(row.children).forEach((cell) => {
           cell.style.transform = 'none'
           cell.style.opacity = '1'
+          cell.style.position = ''
+          cell.style.zIndex = ''
         })
       })
     }
@@ -386,9 +374,7 @@ export function setupTableDragAndDrop(wrap, view) {
     window.removeEventListener('mousemove', onDragMove)
     window.removeEventListener('mouseup', onDragEnd)
 
-    // Check if drop actually moves it (drop target before or immediately after itself)
-    // Check if drop actually moves it (drop target before or immediately after itself)
-    if (currentDropIndex === dragStartIndex || currentDropIndex === dragStartIndex + 1) {
+    if (currentDropIndex === dragStartIndex) {
       return
     }
 
@@ -401,15 +387,13 @@ export function setupTableDragAndDrop(wrap, view) {
 
     if (dragType === 'row') {
       const [movedRow] = nextModel.rows.splice(dragStartIndex, 1)
-      let insertIndex = currentDropIndex
-      if (insertIndex > dragStartIndex) insertIndex-- // shift down
+      const insertIndex = currentDropIndex
       nextModel.rows.splice(insertIndex, 0, movedRow)
     } else if (dragType === 'col') {
       const [movedHead] = nextModel.header.splice(dragStartIndex, 1)
       const [movedAlign] = nextModel.alignments.splice(dragStartIndex, 1)
 
-      let insertIndex = currentDropIndex
-      if (insertIndex > dragStartIndex) insertIndex--
+      const insertIndex = currentDropIndex
 
       nextModel.header.splice(insertIndex, 0, movedHead)
       if (movedAlign !== undefined) nextModel.alignments.splice(insertIndex, 0, movedAlign)

@@ -20,20 +20,32 @@ export function findCurrentTableRange(view, dom) {
   const pos = view.posAtDOM(dom)
   if (pos < 0) return null
   const tree = syntaxTree(view.state)
+  // Check the exact pos first
   let node = tree.resolveInner(pos, 1)
   while (node && node.name !== 'Table') node = node.parent
   if (node) return { from: node.from, to: node.to }
+  
+  // If not found (e.g. because of leading whitespace indentation),
+  // search forward slightly on the same line.
+  const line = view.state.doc.lineAt(pos)
+  node = tree.resolveInner(line.from, 1)
+  while (node && node.name !== 'Table') {
+    if (node.to > line.to) break
+    node = node.parent || tree.resolveInner(node.to + 1, 1)
+  }
+  if (node && node.name === 'Table') return { from: node.from, to: node.to }
+
   // Fallback: scan for the nearest Table node containing or starting
   // at pos. Rare — resolveInner + parent walk handles almost every
   // case — but guards against parser edge cases.
   let found = null
   tree.iterate({
+    from: line.from,
+    to: line.to,
     enter: (n) => {
       if (n.name !== 'Table') return
-      if (n.from <= pos && n.to >= pos) {
-        found = n.node
-        return false
-      }
+      found = n.node
+      return false
     }
   })
   if (found) return { from: found.from, to: found.to }
@@ -110,6 +122,8 @@ export class TableWidget extends WidgetType {
       const source = event.target.closest('.cm-atomic-table-cell-source')
       if (source) return // Let normal focus happen if they clicked directly in the editable text
 
+      if (event.target.closest('.cm-table-ui-header')) return // Let clicks inside the header pass through to buttons
+
       if (!event.target.closest('.cm-table-scroll-container')) return // Let CodeMirror handle clicks in the 16px top/bottom spacer gap
 
       // They clicked on padding or borders inside the visual table container
@@ -124,6 +138,43 @@ export class TableWidget extends WidgetType {
         }
       }
     })
+
+    const header = document.createElement('div')
+    header.className = 'cm-table-ui-header'
+    header.contentEditable = 'false'
+    
+    const dragHandle = document.createElement('div')
+    dragHandle.className = 'cm-table-ui-drag-handle'
+    dragHandle.title = 'Drag table'
+    dragHandle.innerHTML = icons.grip
+    dragHandle.draggable = true
+    dragHandle.addEventListener('dragstart', (e) => {
+      const range = findCurrentTableRange(view, wrap)
+      if (range) {
+        const text = view.state.sliceDoc(range.from, range.to)
+        e.dataTransfer.setData('text/plain', text)
+        e.dataTransfer.effectAllowed = 'move'
+        // Let CodeMirror know we are dragging this range so it can move instead of copy
+        view.dispatch({ selection: { anchor: range.from, head: range.to } })
+      }
+    })
+
+    const deleteBtn = document.createElement('button')
+    deleteBtn.className = 'cm-table-ui-delete-btn'
+    deleteBtn.title = 'Delete table'
+    deleteBtn.innerHTML = icons.delete
+    deleteBtn.addEventListener('mousedown', (e) => {
+      e.preventDefault() // prevent losing focus
+      e.stopPropagation()
+      const range = findCurrentTableRange(view, wrap)
+      if (range) {
+        view.dispatch({ changes: { from: range.from, to: range.to, insert: '' } })
+      }
+    })
+
+    header.appendChild(dragHandle)
+    header.appendChild(deleteBtn)
+    wrap.appendChild(header)
 
     const scrollContainer = document.createElement('div')
     scrollContainer.className = 'cm-table-scroll-container'
@@ -287,25 +338,44 @@ export function moveCellFocus(view, cell, dir, opts = { appendOnOverflow: true }
   if (idx < 0) return
   const next = idx + dir
   if (next < 0) {
-    const pos = view.posAtDOM(wrap)
-    if (pos !== null) {
-      view.dispatch({ selection: { anchor: pos } })
-      view.focus()
+    const range = findCurrentTableRange(view, wrap)
+    let targetPos = range ? range.from : Math.max(0, view.posAtDOM(wrap) - 1)
+    if (range) {
+      if (targetPos > 0 && view.state.sliceDoc(targetPos - 1, targetPos) === '\n') {
+        targetPos -= 1
+      }
+    } else {
+      // Emergency fallback if table boundaries lost
+      targetPos = Math.max(0, targetPos - 1)
     }
+    view.dispatch({ selection: { anchor: targetPos } })
+    view.focus()
     return
   }
   if (next >= cells.length) {
     if (opts.appendOnOverflow) {
       const thead = wrap.querySelector('thead tr')
       const colCount = thead ? thead.querySelectorAll('th').length : 1
-      appendRow(view, wrap, idx % colCount)
+      const focusCol = (Math.abs(dir) === 1) ? 0 : (idx % colCount)
+      appendRow(view, wrap, focusCol)
     } else {
-      // jump out below
+      // jump out below safely
       const range = findCurrentTableRange(view, wrap)
+      let targetPos = range ? range.to : view.posAtDOM(wrap) + 10 // fallback
+      
       if (range) {
-        view.dispatch({ selection: { anchor: range.to } })
-        view.focus()
+        if (targetPos < view.state.doc.length && view.state.sliceDoc(targetPos, targetPos + 1) === '\n') {
+          targetPos += 1
+        } else if (targetPos === view.state.doc.length) {
+          view.dispatch({ changes: { from: targetPos, insert: '\n' } })
+          targetPos += 1
+        }
+      } else {
+        // Extreme fallback if table range totally lost: just throw them to the end of the doc
+        targetPos = view.state.doc.length
       }
+      view.dispatch({ selection: { anchor: targetPos } })
+      view.focus()
     }
     return
   }
@@ -348,18 +418,10 @@ export function appendRow(view, wrap, focusColIndex = 0) {
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       const tables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
-      let target = null
-      for (const el of tables) {
-        try {
-          if (view.posAtDOM(el) === from) {
-            target = el
-            break
-          }
-        } catch {
-          // posAtDOM can throw on detached/transitional DOM nodes
-          // — skip and keep looking.
-        }
-      }
+      const target = tables.find(t => {
+        const r = findCurrentTableRange(view, t)
+        return r && r.from === from
+      })
       if (!target) return
       const rows = target.querySelectorAll('tbody tr')
       if (!rows.length) return
@@ -411,6 +473,103 @@ export function backspaceAtTableBoundary(view) {
   })
   return true
 }
+
+export function arrowUpIntoTable(view) {
+  const { state } = view
+  const sel = state.selection.main
+  if (!sel.empty) return false
+  const pos = sel.head
+
+  const line = state.doc.lineAt(pos)
+  if (line.number === 1) return false
+  
+  const prevLine = state.doc.line(line.number - 1)
+  
+  const tree = syntaxTree(state)
+  let tableNode = null
+  tree.iterate({
+    from: prevLine.from,
+    to: prevLine.to,
+    enter: (n) => {
+      if (n.name === 'Table') {
+        tableNode = n.node
+        return false
+      }
+    }
+  })
+
+  if (!tableNode) return false
+
+  const tables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
+  const startLine = state.doc.lineAt(tableNode.from)
+  const target = tables.find(t => {
+    try {
+      const pos = view.posAtDOM(t)
+      return pos === startLine.from || pos === tableNode.from
+    } catch { return false }
+  })
+  
+  if (target) {
+    const trs = Array.from(target.querySelectorAll('tbody tr'))
+    const lastRow = trs.length > 0 ? trs[trs.length - 1] : target.querySelector('thead tr')
+    if (lastRow) {
+      const cell = lastRow.querySelector('.cm-atomic-table-cell-source')
+      if (cell) {
+        cell.focus()
+        placeCaretAtEnd(cell)
+        return true
+      }
+    }
+  }
+  return false
+}
+
+export function arrowDownIntoTable(view) {
+  const { state } = view
+  const sel = state.selection.main
+  if (!sel.empty) return false
+  const pos = sel.head
+
+  const line = state.doc.lineAt(pos)
+  if (line.number === state.doc.lines) return false
+  
+  const nextLine = state.doc.line(line.number + 1)
+  
+  const tree = syntaxTree(state)
+  let tableNode = null
+  tree.iterate({
+    from: nextLine.from,
+    to: nextLine.to,
+    enter: (n) => {
+      if (n.name === 'Table') {
+        tableNode = n.node
+        return false
+      }
+    }
+  })
+
+  if (!tableNode) return false
+
+  const tables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
+  const startLine = state.doc.lineAt(tableNode.from)
+  const target = tables.find(t => {
+    try {
+      const pos = view.posAtDOM(t)
+      return pos === startLine.from || pos === tableNode.from
+    } catch { return false }
+  })
+  
+  if (target) {
+    const cell = target.querySelector('thead .cm-atomic-table-cell-source')
+    if (cell) {
+      cell.focus()
+      placeCaretAtEnd(cell)
+      return true
+    }
+  }
+  return false
+}
+
 // ---- state field ----------------------------------------------------
 export function buildTableWidgets(state) {
   const ranges = []
@@ -429,21 +588,10 @@ export function buildTableWidgets(state) {
       if (!model) return
       const startLine = doc.lineAt(node.from)
       const endLine = doc.lineAt(node.to)
-      
-      // We CANNOT use block: true on a replace decoration that crosses newlines, 
-      // otherwise it corrupts CodeMirror's internal viewport block layout index!
-      // Instead, we insert a block widget at the start, and use an inline replace to hide the text.
-      ranges.push(
-        Decoration.widget({
-          widget: new TableWidget(model),
-          block: true,
-          side: -1
-        }).range(startLine.from)
-      )
-      
       ranges.push(
         Decoration.replace({
-          inclusive: false
+          widget: new TableWidget(model),
+          block: true
         }).range(startLine.from, endLine.to)
       )
       return false // don't descend
@@ -550,6 +698,30 @@ const tableSelectionSyncPlugin = ViewPlugin.fromClass(
   }
 )
 
+export function preventTableDeletion(view, event) {
+  const sel = view.state.selection.main
+  if (sel.empty) return false
+  
+  // Check if the selection exactly matches a table
+  const tables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
+  for (const t of tables) {
+    const r = findCurrentTableRange(view, t)
+    if (r && sel.from === r.from && sel.to === r.to) {
+      // The table is fully selected natively!
+      if (event === 'Enter') {
+        // Just focus the table instead of deleting it!
+        const cell = t.querySelector('.cm-atomic-table-cell-source')
+        if (cell) {
+          cell.focus()
+          placeCaretAtEnd(cell)
+        }
+        return true
+      }
+    }
+  }
+  return false
+}
+
 export function tables(config = {}) {
   setupTableFormattingToolbar()
   return [
@@ -557,6 +729,13 @@ export function tables(config = {}) {
     treeProgressPlugin,
     tableSelectionSyncPlugin,
     ...(config.onLinkClick ? [tableLinkClickFacet.of(config.onLinkClick)] : []),
-    Prec.high(keymap.of([{ key: 'Backspace', run: backspaceAtTableBoundary }]))
+    Prec.high(
+      keymap.of([
+        { key: 'Backspace', run: backspaceAtTableBoundary },
+        { key: 'Enter', run: (view) => preventTableDeletion(view, 'Enter') },
+        { key: 'ArrowUp', run: arrowUpIntoTable },
+        { key: 'ArrowDown', run: arrowDownIntoTable }
+      ])
+    )
   ]
 }

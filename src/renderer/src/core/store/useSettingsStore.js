@@ -19,8 +19,6 @@ export const useSettingsStore = create((set, get) => ({
     sortBy: 'name',
     sortDirection: 'asc',
     noteOrder: null, // Array of snippet IDs for custom drag sort order
-    translucency: false,
-    mirrorMode: true, // New premium feature default
     inlineMetadata: true,
     graphTheme: 'default',
     graphNodeSize: 1.5,
@@ -78,16 +76,6 @@ export const useSettingsStore = create((set, get) => ({
           root.setAttribute('data-theme', mergedSettings.theme)
           root.style.setProperty('--font-editor', mergedSettings.fontFamily)
           root.style.setProperty('--font-size-editor', `${mergedSettings.fontSize}px`)
-          root.setAttribute('data-translucency', mergedSettings.translucency ? 'true' : 'false')
-          root.setAttribute('data-mirror-mode', mergedSettings.mirrorMode ? 'true' : 'false')
-          document.body.setAttribute(
-            'data-mirror-mode',
-            mergedSettings.mirrorMode ? 'true' : 'false'
-          )
-          // Apply window effect via IPC
-          if (window.api && window.api.setTranslucency) {
-            window.api.setTranslucency(mergedSettings.translucency)
-          }
           // Subscribe to external changes via IPC (main process watcher)
           if (window.api && typeof window.api.onSettingsChanged === 'function') {
             // Ensure we don't double-subscribe
@@ -104,18 +92,6 @@ export const useSettingsStore = create((set, get) => ({
                   root.style.setProperty('--font-editor', updatedParams.fontFamily)
                   root.style.setProperty('--font-size-editor', `${updatedParams.fontSize}px`)
                   root.style.setProperty('--cursor-style', updatedParams.cursorStyle)
-                  root.setAttribute(
-                    'data-translucency',
-                    updatedParams.translucency ? 'true' : 'false'
-                  )
-                  root.setAttribute('data-mirror-mode', updatedParams.mirrorMode ? 'true' : 'false')
-                  document.body.setAttribute(
-                    'data-mirror-mode',
-                    updatedParams.mirrorMode ? 'true' : 'false'
-                  )
-                  if (window.api && window.api.setTranslucency) {
-                    window.api.setTranslucency(updatedParams.translucency)
-                  }
                 } catch (err) {
                   console.error('[useSettingsStore] Error applying external settings:', err)
                 }
@@ -143,15 +119,6 @@ export const useSettingsStore = create((set, get) => ({
               root.setAttribute('data-theme', mergedSettings.theme)
               root.style.setProperty('--font-editor', mergedSettings.fontFamily)
               root.style.setProperty('--font-size-editor', `${mergedSettings.fontSize}px`)
-              root.setAttribute('data-translucency', mergedSettings.translucency ? 'true' : 'false')
-              root.setAttribute('data-mirror-mode', mergedSettings.mirrorMode ? 'true' : 'false')
-              document.body.setAttribute(
-                'data-mirror-mode',
-                mergedSettings.mirrorMode ? 'true' : 'false'
-              )
-              if (window.api && window.api.setTranslucency) {
-                window.api.setTranslucency(mergedSettings.translucency)
-              }
               // Subscribe to IPC settings changes if available
               if (window.api && typeof window.api.onSettingsChanged === 'function') {
                 if (!get().settingsWatcherUnsubscribe) {
@@ -164,13 +131,6 @@ export const useSettingsStore = create((set, get) => ({
                       root.style.setProperty('--font-editor', merged.fontFamily)
                       root.style.setProperty('--font-size-editor', `${merged.fontSize}px`)
                       root.style.setProperty('--cursor-style', newSettings.cursorStyle)
-                      root.setAttribute(
-                        'data-translucency',
-                        newSettings.translucency ? 'true' : 'false'
-                      )
-                      if (window.api && window.api.setTranslucency) {
-                        window.api.setTranslucency(newSettings.translucency)
-                      }
                     } catch (err) {
                       console.error(
                         '[useSettingsStore] Error applying external settings (retry):',
@@ -204,16 +164,6 @@ export const useSettingsStore = create((set, get) => ({
     if (key === 'theme') root.setAttribute('data-theme', value)
     if (key === 'fontFamily') root.style.setProperty('--font-editor', value)
     if (key === 'fontSize') root.style.setProperty('--font-size-editor', `${value}px`)
-    if (key === 'translucency') {
-      root.setAttribute('data-translucency', value ? 'true' : 'false')
-      if (window.api && window.api.setTranslucency) {
-        window.api.setTranslucency(value)
-      }
-    }
-    if (key === 'mirrorMode') {
-      root.setAttribute('data-mirror-mode', value ? 'true' : 'false')
-      document.body.setAttribute('data-mirror-mode', value ? 'true' : 'false')
-    }
 
     // Persist to settings.json
     try {

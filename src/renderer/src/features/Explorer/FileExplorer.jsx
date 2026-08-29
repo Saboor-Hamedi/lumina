@@ -932,11 +932,8 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                 }
               }
             }}
-            className="pr-14"
+            className="w-full"
           />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
-            <AppVersion />
-          </div>
         </div>
 
         {/* Segmented Tabs */}

@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Calendar, Network } from 'lucide-react'
+import { Calendar, Network, Sparkles } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
 import InlineGraph from '../../Graph/InlineGraph'
 import { useVaultStore } from '../../../core/store/useVaultStore'
 import { useKeyboardShortcuts } from '../../../core/hooks/useKeyboardShortcuts'
+import RoadmapProgressBar, { LearnedButton, LearningTrackBadge } from '../../roadmap/RoadmapProgressBar'
 
 const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef }) => {
   const [error, setError] = useState(false)
@@ -84,7 +85,7 @@ const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef }) => {
           Title cannot be empty
         </div>
       )}
-      <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
         <ToolTip text="Ask AI (Ctrl+K)" position="bottom">
           <button
             onClick={(e) => {
@@ -92,31 +93,34 @@ const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef }) => {
               window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))
             }}
             style={{
-              marginLeft: '-8px',
-              background: 'transparent',
-              border: 'none',
-              borderRadius: '5px',
-              height: '22px',
-              display: 'flex',
+              background: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid rgba(255, 255, 255, 0.07)',
+              borderRadius: '6px',
+              height: '24px',
+              display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              color: 'var(--text-muted, #888)',
-              transition: 'all 0.2s ease',
-              padding: '0 8px',
-              gap: '6px'
+              color: 'var(--text-muted, #94a3b8)',
+              transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+              padding: '0 9px',
+              gap: '5px',
+              fontSize: '12px',
+              fontWeight: 500
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.color = 'var(--text-main, #e5e5e5)'
-              e.currentTarget.style.background = 'var(--bg-active, rgba(255,255,255,0.05))'
+              e.currentTarget.style.color = 'var(--text-main, #f8fafc)'
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)'
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.color = 'var(--text-muted, #888)'
-              e.currentTarget.style.background = 'transparent'
+              e.currentTarget.style.color = 'var(--text-muted, #94a3b8)'
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)'
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.07)'
             }}
           >
-            <span style={{ fontSize: '14px', lineHeight: 1 }}>+</span>
-            <span style={{ fontSize: '12px', fontWeight: 500 }}>Ask AI</span>
+            <Sparkles size={12} style={{ opacity: 0.8 }} />
+            <span>Ask AI</span>
           </button>
         </ToolTip>
 
@@ -128,36 +132,46 @@ const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef }) => {
             }}
             style={{
               background: showLocalGraph
-                ? 'var(--bg-active, rgba(255,255,255,0.05))'
-                : 'transparent',
-              border: 'none',
-              borderRadius: '5px',
-              height: '22px',
-              display: 'flex',
+                ? 'rgba(var(--text-accent-rgb, 139, 92, 246), 0.12)'
+                : 'rgba(255, 255, 255, 0.03)',
+              border: showLocalGraph
+                ? '1px solid rgba(var(--text-accent-rgb, 139, 92, 246), 0.35)'
+                : '1px solid rgba(255, 255, 255, 0.07)',
+              borderRadius: '6px',
+              height: '24px',
+              display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              color: showLocalGraph ? 'var(--text-main, #e5e5e5)' : 'var(--text-muted, #888)',
-              transition: 'all 0.2s ease',
-              padding: '0 8px',
-              gap: '6px'
+              color: showLocalGraph ? 'var(--text-accent, #a78bfa)' : 'var(--text-muted, #94a3b8)',
+              transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+              padding: '0 9px',
+              gap: '5px',
+              fontSize: '12px',
+              fontWeight: showLocalGraph ? 600 : 500
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.color = 'var(--text-main, #e5e5e5)'
-              if (!showLocalGraph)
-                e.currentTarget.style.background = 'var(--bg-active, rgba(255,255,255,0.05))'
+              if (!showLocalGraph) {
+                e.currentTarget.style.color = 'var(--text-main, #f8fafc)'
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)'
+              }
             }}
             onMouseLeave={(e) => {
               if (!showLocalGraph) {
-                e.currentTarget.style.color = 'var(--text-muted, #888)'
-                e.currentTarget.style.background = 'transparent'
+                e.currentTarget.style.color = 'var(--text-muted, #94a3b8)'
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)'
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.07)'
               }
             }}
           >
-            <Network size={12} />
-            <span style={{ fontSize: '12px', fontWeight: 500 }}>Local Graph</span>
+            <Network size={12} style={{ opacity: showLocalGraph ? 1 : 0.8 }} />
+            <span>Local Graph</span>
           </button>
         </ToolTip>
+
+        <LearnedButton snippet={snippet} />
+        <LearningTrackBadge />
       </div>
 
       {showLocalGraph && (
@@ -183,6 +197,8 @@ const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef }) => {
           />
         </div>
       )}
+
+    
     </div>
   )
 }

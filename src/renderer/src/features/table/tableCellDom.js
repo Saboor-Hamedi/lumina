@@ -591,7 +591,7 @@ export function makeCell(tag, text, view) {
     }
 
     if (event.key === 'ArrowUp') {
-      if (event.ctrlKey || event.metaKey || true) { // Always jump on up/down (or maybe only on ctrl? No, keeping original behavior for non-ctrl too, but catching ctrl explicitly)
+      if (event.ctrlKey || event.metaKey || true) {
         const thead = cell.closest('table')?.querySelector('thead tr')
         const colCount = thead ? thead.querySelectorAll('th').length : 1
         moveCellFocus(view, cell, -colCount, { appendOnOverflow: false })

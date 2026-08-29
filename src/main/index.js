@@ -55,7 +55,6 @@ async function createWindow() {
   const iconPath = iconAsset
   const appIcon = electron.nativeImage.createFromPath(iconPath)
 
-  const translucency = await SettingsManager.get('translucency')
   const windowBounds = (await SettingsManager.get('windowBounds')) || { width: 1000, height: 700 }
   let allowDevTools = (await SettingsManager.get('enableDevTools')) === true
 
@@ -69,9 +68,7 @@ async function createWindow() {
     icon: appIcon,
     show: false,
     frame: false,
-    transparent: translucency,
-    backgroundColor: translucency ? '#00000000' : undefined,
-    backgroundMaterial: translucency ? 'acrylic' : undefined,
+    backgroundColor: '#000000',
     resizable: true,
     maximizable: true,
     minimizable: true,
@@ -300,10 +297,7 @@ app.whenReady().then(async () => {
     else mainWindow?.maximize()
   })
   ipcMain.handle('window:close', () => mainWindow?.close())
-  ipcMain.handle('window:set-translucency', (_, enabled) => {
-    if (!mainWindow) return
-    if (process.platform === 'win32') mainWindow.setBackgroundMaterial(enabled ? 'acrylic' : 'none')
-  })
+
 
   // Export handlers
   ipcMain.handle('window:export-html', async (_, payload) => handleExportHTML(mainWindow, payload))

@@ -1,4 +1,4 @@
-import { dispatchModel } from './tableWidgetExtension.js'
+import { dispatchModel, findCurrentTableRange } from './tableWidgetExtension.js'
 import { readModelFromDom } from './tableModel.js'
 import { icons } from './icons.js'
 
@@ -283,34 +283,9 @@ export function openCellMenu(view, cell, x, y) {
     const tableIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>`
     items.push(
       createItem('Delete table', tableIcon, () => {
-        // Find the range of the table and delete it
-        // We need to import findCurrentTableRange from tableWidgetExtension.js, but since
-        // we can't easily add imports here, we can just dispatch an event or use the dom pos.
-        // Actually findCurrentTableRange is already available in tableWidgetExtension.js, let's just use it.
-        // Wait, tableContextMenu.js imports it? Let's look at the imports.
-        // In tableContextMenu.js we can just use the exported `wrap.__getCellAt` or just delete the widget.
-        const pos = view.posAtDOM(wrap)
-        if (pos === null) return
-        
-        let start = null
-        let end = null
-        
-        // This is safe since GFM tables are contiguous lines with pipes
-        view.state.doc.iterLines(1, (line) => {
-          if (line.from <= pos && pos <= line.to) {
-            let currentLine = line.number
-            while (currentLine > 1 && view.state.doc.line(currentLine - 1).text.includes('|')) currentLine--
-            start = view.state.doc.line(currentLine).from
-            
-            currentLine = line.number
-            while (currentLine < view.state.doc.lines && view.state.doc.line(currentLine + 1).text.includes('|')) currentLine++
-            end = view.state.doc.line(currentLine).to
-            return false
-          }
-        })
-        
-        if (start !== null && end !== null) {
-          view.dispatch({ changes: { from: start, to: end, insert: '' } })
+        const range = findCurrentTableRange(view, wrap)
+        if (range) {
+          view.dispatch({ changes: { from: range.from, to: range.to, insert: '' } })
         }
       })
     )
