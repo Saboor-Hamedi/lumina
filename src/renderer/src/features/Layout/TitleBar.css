@@ -3,6 +3,7 @@
    ========================================================================== */
 
 .title-bar {
+  position: relative;
   height: 38px;
   display: flex;
   align-items: center;
@@ -12,7 +13,7 @@
   -webkit-app-region: drag;
   user-select: none;
   flex-shrink: 0;
-  z-index: 100;
+  z-index: 9999;
 }
 
 .title-left {

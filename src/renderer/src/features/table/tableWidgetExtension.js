@@ -800,8 +800,6 @@ const tableSelectionSyncPlugin = ViewPlugin.fromClass(
       const isFullDocSelect = sel.from === 0 && sel.to === view.state.doc.length && !sel.empty
       if (isFullDocSelect) {
         for (const table of tables) {
-          const currentWidth = table.offsetWidth
-          if (currentWidth > 0) table.style.minWidth = currentWidth + 'px'
           const hasFocus = table.contains(document.activeElement)
           const hasDomSelection =
             window.getSelection().anchorNode && table.contains(window.getSelection().anchorNode)
@@ -813,11 +811,6 @@ const tableSelectionSyncPlugin = ViewPlugin.fromClass(
       }
 
       for (const table of tables) {
-        // Pin the table's current width before any layout query so reflow
-        // cannot collapse it.
-        const currentWidth = table.offsetWidth
-        if (currentWidth > 0) table.style.minWidth = currentWidth + 'px'
-
         const pos = view.posAtDOM(table)
         const isSelected = pos !== null && pos >= sel.from && pos <= sel.to && !sel.empty
 
@@ -829,8 +822,6 @@ const tableSelectionSyncPlugin = ViewPlugin.fromClass(
           table.classList.add('cm-widget-selected-by-cm')
         } else {
           table.classList.remove('cm-widget-selected-by-cm')
-          // Release the pinned width once deselected
-          table.style.minWidth = ''
         }
       }
     }
