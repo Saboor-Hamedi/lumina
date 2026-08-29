@@ -90,20 +90,61 @@ export class ImageWidget extends WidgetType {
     wrap.className = `cm-image-widget-wrapper align-${this.align}`
     wrap.__imageWidget = this
 
+    const card = document.createElement('div')
+    card.className = 'cm-image-card'
+
+    // Prevent mousedown from bubbling up and selecting the heading above
+    wrap.addEventListener('mousedown', (e) => e.stopPropagation())
+    card.addEventListener('mousedown', (e) => e.stopPropagation())
+
     // ----------------------------------------------------------------
-    // HEADER
+    // HEADER (Table-like design)
     // ----------------------------------------------------------------
     const header = document.createElement('div')
     header.className = 'image-widget-header'
 
-    const title = document.createElement('div')
-    title.className = 'image-widget-title'
-    title.appendChild(createIcon(icons.image))
+    const leftGroup = document.createElement('div')
+    leftGroup.className = 'image-widget-left'
 
-    const actions = document.createElement('div')
-    actions.className = 'image-widget-actions'
+    const rightGroup = document.createElement('div')
+    rightGroup.className = 'image-widget-right'
 
-    const updateImage = (newWidth, newAlign) => {
+    // View Mode Toggle: [ Image | Source ]
+    const viewToggle = document.createElement('div')
+    viewToggle.className = 'cm-table-view-toggle'
+
+    const imageBtn = document.createElement('button')
+    imageBtn.type = 'button'
+    imageBtn.className = 'palette-header-btn cm-table-view-btn active'
+    imageBtn.innerHTML = `
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+        <polyline points="21 15 16 10 5 21"></polyline>
+      </svg>
+      <span>Image</span>
+    `
+    imageBtn.title = 'Rendered image view'
+
+    const sourceBtn = document.createElement('button')
+    sourceBtn.type = 'button'
+    sourceBtn.className = 'palette-header-btn cm-table-view-btn'
+    sourceBtn.innerHTML = `
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="16 18 22 12 16 6"></polyline>
+        <polyline points="8 6 2 12 8 18"></polyline>
+      </svg>
+      <span>Source</span>
+    `
+    sourceBtn.title = 'Markdown source view'
+
+    viewToggle.appendChild(imageBtn)
+    viewToggle.appendChild(sourceBtn)
+    leftGroup.appendChild(viewToggle)
+
+    header.appendChild(leftGroup)
+
+    const updateImage = (newWidth, newAlign, newAltText, newUrl) => {
       let currentAltText = ''
       let currentUrl = ''
       let actualPos = 0
@@ -138,7 +179,7 @@ export class ImageWidget extends WidgetType {
           }
         }
 
-        if (!closestMatch) return // Abort safely if somehow not found
+        if (!closestMatch) return
 
         currentAltText = closestMatch.match[1]
         currentUrl = closestMatch.match[2]
@@ -147,9 +188,9 @@ export class ImageWidget extends WidgetType {
       }
 
       const parts = currentAltText.split('|')
-      const actualAlt = parts[0] ? parts[0].trim() : ''
+      const actualAlt = newAltText !== undefined ? newAltText : (parts[0] ? parts[0].trim() : '')
+      const finalUrl = newUrl !== undefined ? newUrl : currentUrl
 
-      // Parse current width and align from the live text
       let currentWidth = 'auto'
       let currentAlign = 'center'
       for (let i = 1; i < parts.length; i++) {
@@ -175,11 +216,10 @@ export class ImageWidget extends WidgetType {
       if (finalAlign && finalAlign !== 'center') newParts.push(finalAlign)
 
       const newAlt = newParts.join('|')
-      const newText = `![${newAlt}](${currentUrl})`
+      const newText = `![${newAlt}](${finalUrl})`
 
       if (this.onUpdate) {
         this.onUpdate(newText)
-        // Also update local state so subsequent clicks don't revert
         this.altText = newAlt
         this.width = finalWidth !== 'auto' ? finalWidth : 'auto'
         this.align = finalAlign
@@ -191,7 +231,7 @@ export class ImageWidget extends WidgetType {
       })
     }
 
-    // Align Buttons (Pass undefined to use current value)
+    // Align Buttons
     const btnLeft = this.createBtn(icons.left, 'Align Left', () => updateImage(undefined, 'left'))
     if (this.align === 'left') btnLeft.classList.add('active')
 
@@ -205,6 +245,10 @@ export class ImageWidget extends WidgetType {
     )
     if (this.align === 'right') btnRight.classList.add('active')
 
+    rightGroup.appendChild(btnLeft)
+    rightGroup.appendChild(btnCenter)
+    rightGroup.appendChild(btnRight)
+
     // Copy Image Button
     const btnCopy = this.createBtn(icons.copy, 'Copy Image', () => {
       const origHtml = btnCopy.innerHTML
@@ -217,45 +261,7 @@ export class ImageWidget extends WidgetType {
         }, 2000)
       })
     })
-
-    // Edit Source Button
-    const btnEdit = this.createBtn(icons.code, 'Edit Source', () => {
-      if (view.state.readOnly) return
-      const pos = view.posAtDOM(wrap)
-      if (pos === null) return
-      view.dispatch({ selection: { anchor: pos + 1 }, scrollIntoView: true })
-      view.focus()
-    })
-
-    if (this.onUpdate) {
-      btnEdit.onclick = (e) => {
-        e.preventDefault()
-        e.stopPropagation()
-        if (view.state.readOnly) return
-
-        if (wrap) {
-          const outerWrap = wrap.parentElement
-          if (outerWrap && outerWrap.classList.contains('cm-atomic-image-wrap')) {
-            // Add active class manually so markSpan becomes display: inline and focusable
-            outerWrap.classList.add('active')
-
-            const markSpan = outerWrap.querySelector('.cm-atomic-mark')
-            if (markSpan) {
-              // Focus and place cursor at the end of the markdown string
-              const sel = window.getSelection()
-              const range = document.createRange()
-              range.selectNodeContents(markSpan)
-              range.collapse(false)
-              sel.removeAllRanges()
-              sel.addRange(range)
-
-              // Dispatch mouseup to trigger updateActiveMarkForSource in tableCellDom.js
-              markSpan.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }))
-            }
-          }
-        }
-      }
-    }
+    rightGroup.appendChild(btnCopy)
 
     // Delete Button
     const btnDelete = this.createBtn(icons.trash, 'Delete Image', (e) => {
@@ -278,7 +284,6 @@ export class ImageWidget extends WidgetType {
         return
       }
 
-      // If there's no onUpdate, fall back to replacing the text using this.pos and this.originalLength
       if (this.url && !this.url.startsWith('http') && !this.url.startsWith('data:')) {
         const cleanUrl = this.url.startsWith('/') ? this.url.slice(1) : this.url
         if (window.api && window.api.deleteAsset) {
@@ -319,42 +324,94 @@ export class ImageWidget extends WidgetType {
         view.dispatch({
           changes: { from: actualPos, to: actualPos + currentLen, insert: '' }
         })
-
-        // Also delete from disk if it's a local asset
-        if (this.url && !this.url.startsWith('http') && !this.url.startsWith('data:')) {
-          const cleanUrl = this.url.startsWith('/') ? this.url.slice(1) : this.url
-          if (window.api && window.api.deleteAsset) {
-            window.api.deleteAsset(cleanUrl).catch((err) => {
-              if (!err.message.includes('ENOENT')) {
-                console.error('Failed to delete asset:', err)
-              }
-            })
-          }
-        }
       }
     })
+    btnDelete.classList.add('delete')
+    rightGroup.appendChild(btnDelete)
 
-    const separator = () => {
-      const el = document.createElement('div')
-      el.style.width = '1px'
-      el.style.height = '12px'
-      el.style.background = 'var(--border-dim)'
-      el.style.margin = '0 4px'
-      return el
+    header.appendChild(rightGroup)
+    card.appendChild(header)
+
+    // ----------------------------------------------------------------
+    // SOURCE CONTAINER
+    // ----------------------------------------------------------------
+    const sourceContainer = document.createElement('div')
+    sourceContainer.className = 'image-widget-source-container'
+
+    const sourceTextarea = document.createElement('textarea')
+    sourceTextarea.className = 'image-widget-source-textarea'
+    sourceTextarea.spellcheck = false
+    sourceTextarea.value = `![${this.altText}](${this.url})`
+
+    const adjustHeight = () => {
+      sourceTextarea.style.height = 'auto'
+      sourceTextarea.style.height = `${sourceTextarea.scrollHeight}px`
     }
+    sourceTextarea.addEventListener('input', adjustHeight)
+    sourceTextarea.addEventListener('keydown', (e) => e.stopPropagation())
 
-    actions.append(
-      btnCopy,
-      separator(),
-      btnLeft,
-      btnCenter,
-      btnRight,
-      separator(),
-      btnEdit,
-      btnDelete
-    )
-    header.append(title, actions)
-    // Removed wrap.appendChild(header) so it can be placed inside the body
+    sourceContainer.appendChild(sourceTextarea)
+    card.appendChild(sourceContainer)
+
+    const caption = createCaptionElement(this.actualAlt)
+
+    imageBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      if (imageBtn.classList.contains('active')) return
+      imageBtn.classList.add('active')
+      sourceBtn.classList.remove('active')
+
+      const rawText = sourceTextarea.value.trim()
+      const m = rawText.match(/!\[([^\]]*)\]\(([^)]+)\)/)
+      if (m) {
+        const newAltFull = m[1]
+        const newUrl = m[2]
+        const parts = newAltFull.split('|')
+        const newAltText = parts[0] ? parts[0].trim() : ''
+        let newWidth = undefined
+        let newAlign = undefined
+        for (let i = 1; i < parts.length; i++) {
+          const p = parts[i].toLowerCase().trim()
+          if (['left', 'center', 'right'].includes(p)) newAlign = p
+          else newWidth = p
+        }
+        updateImage(newWidth, newAlign, newAltText, newUrl)
+      }
+
+      body.style.display = 'flex'
+      sourceContainer.style.display = 'none'
+      if (caption) caption.style.display = 'block'
+      if (this.width !== 'auto') {
+        card.style.width = this.width
+        body.style.width = this.width
+      } else {
+        card.style.width = 'fit-content'
+        body.style.width = 'auto'
+      }
+      if (view && view.requestMeasure) view.requestMeasure()
+    })
+
+    sourceBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      if (sourceBtn.classList.contains('active')) return
+      sourceBtn.classList.add('active')
+      imageBtn.classList.remove('active')
+
+      const currentW = card.offsetWidth || body.offsetWidth
+      if (currentW > 0) {
+        card.style.width = `${currentW}px`
+      }
+
+      sourceTextarea.value = `![${this.altText}](${this.url})`
+      body.style.display = 'none'
+      sourceContainer.style.display = 'block'
+      if (caption) caption.style.display = 'none'
+      adjustHeight()
+      sourceTextarea.focus()
+      if (view && view.requestMeasure) view.requestMeasure()
+    })
 
     // ----------------------------------------------------------------
     // BODY & IMAGE
@@ -388,10 +445,6 @@ export class ImageWidget extends WidgetType {
         body.appendChild(errorDiv)
       }
 
-      if (view && view.requestMeasure) view.requestMeasure()
-    }
-
-    img.onload = () => {
       if (view && view.requestMeasure) view.requestMeasure()
     }
 
@@ -437,11 +490,11 @@ export class ImageWidget extends WidgetType {
     }
 
     if (this.width !== 'auto') {
-      body.style.width = this.width // Apply width to the inner body
+      body.style.width = this.width
+      card.style.width = this.width
     }
 
     body.appendChild(img)
-    body.appendChild(header) // Toolbar is now perfectly anchored inside the image!
 
     // ----------------------------------------------------------------
     // NATIVE DRAG RESIZE HANDLE
@@ -449,7 +502,6 @@ export class ImageWidget extends WidgetType {
     const handle = document.createElement('div')
     handle.className = 'image-widget-resize-handle'
 
-    // Explicitly prevent CodeMirror from stealing focus on the handle
     handle.onmousedown = (e) => {
       if (view.state.readOnly) return
       e.preventDefault()
@@ -468,15 +520,15 @@ export class ImageWidget extends WidgetType {
         animationFrame = requestAnimationFrame(() => {
           let deltaX = moveEvent.clientX - startX
 
-          // Adjust delta math to keep the resize handle perfectly pinned to the mouse cursor
           if (align === 'center') {
             deltaX *= 2
           } else if (align === 'right') {
-            deltaX = -deltaX // When right aligned, moving left (negative deltaX) increases width
+            deltaX = -deltaX
           }
 
-          const newWidth = Math.max(50, startWidth + deltaX) // Min width 50px
+          const newWidth = Math.max(80, startWidth + deltaX)
           body.style.width = `${newWidth}px`
+          card.style.width = `${newWidth}px`
           if (view && view.requestMeasure) view.requestMeasure()
         })
       }
@@ -486,7 +538,6 @@ export class ImageWidget extends WidgetType {
         window.removeEventListener('mouseup', onMouseUp)
         wrap.classList.remove('resizing')
 
-        // Save the final width to markdown using current widget state
         const finalWidth = body.offsetWidth
         const widget = wrap.__imageWidget
         updateImage(`${finalWidth}px`, widget.align)
@@ -497,9 +548,9 @@ export class ImageWidget extends WidgetType {
     }
 
     body.appendChild(handle)
-    wrap.appendChild(body)
+    card.appendChild(body)
+    wrap.appendChild(card)
 
-    const caption = createCaptionElement(this.actualAlt)
     if (caption) {
       wrap.appendChild(caption)
     }
