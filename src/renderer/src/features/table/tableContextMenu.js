@@ -1,18 +1,23 @@
 import { dispatchModel, findCurrentTableRange } from './tableWidgetExtension.js'
 import { readModelFromDom } from './tableModel.js'
 import { icons } from './icons.js'
+import { copyTableAs, exportTableAsCSV, duplicateTable } from './tableQuickActions.js'
 
 export function cellRowIndex(cell) {
-  const tr = cell.closest('tr')
-  const tbody = tr?.closest('tbody')
+  if (!cell) return -1
+  const targetCell = cell.closest ? (cell.closest('th, td') || cell) : cell
+  const tr = targetCell.closest ? targetCell.closest('tr') : null
+  const tbody = tr?.closest ? tr.closest('tbody') : null
   if (!tr || !tbody) return -1
   return Array.from(tbody.querySelectorAll('tr')).indexOf(tr)
 }
 
 export function cellColIndex(cell) {
-  const tr = cell.closest('tr')
+  if (!cell) return -1
+  const targetCell = cell.closest ? (cell.closest('th, td') || cell) : cell
+  const tr = targetCell.closest ? targetCell.closest('tr') : null
   if (!tr) return -1
-  return Array.from(tr.querySelectorAll('th, td')).indexOf(cell)
+  return Array.from(tr.querySelectorAll('th, td')).indexOf(targetCell)
 }
 
 export function openCellMenu(view, cell, x, y) {
@@ -21,6 +26,7 @@ export function openCellMenu(view, cell, x, y) {
   const isHeader = cell.tagName === 'TH'
   const row = cellRowIndex(cell)
   const col = cellColIndex(cell)
+
   // Remove any existing menus first
   document.querySelectorAll('.cm-atomic-table-menu-instance').forEach((m) => m.remove())
 
@@ -40,154 +46,208 @@ export function openCellMenu(view, cell, x, y) {
   })
   const createSeparator = () => ({ type: 'separator' })
 
-  const rowSubmenu = [
-    createItem('Insert row above', icons.addUp, () => {
-      const m = readModelFromDom(wrap)
-      m.rows.splice(
-        row,
-        0,
-        m.header.map(() => '')
-      )
-      dispatchModel(view, wrap, m)
-    }),
-    createItem('Insert row below', icons.addDown, () => {
-      const m = readModelFromDom(wrap)
-      m.rows.splice(
-        row + 1,
-        0,
-        m.header.map(() => '')
-      )
-      dispatchModel(view, wrap, m)
-    }),
-    createSeparator(),
-    createItem('Move row up', icons.moveUp, () => {
-      if (row <= 0) return
-      const m = readModelFromDom(wrap)
-      const temp = m.rows[row]
-      m.rows[row] = m.rows[row - 1]
-      m.rows[row - 1] = temp
-      dispatchModel(view, wrap, m)
-    }),
-    createItem('Move row down', icons.moveDown, () => {
-      const m = readModelFromDom(wrap)
-      if (row >= m.rows.length - 1) return
-      const temp = m.rows[row]
-      m.rows[row] = m.rows[row + 1]
-      m.rows[row + 1] = temp
-      dispatchModel(view, wrap, m)
-    }),
-    createSeparator(),
-    createItem('Duplicate row', icons.duplicate, () => {
-      const m = readModelFromDom(wrap)
-      m.rows.splice(row + 1, 0, [...m.rows[row]])
-      dispatchModel(view, wrap, m)
-    }),
-    createItem('Delete row', icons.row, () => {
-      const m = readModelFromDom(wrap)
-      const sel = wrap.__getGridSelection ? wrap.__getGridSelection() : null
-      if (sel && sel.minR >= 0 && sel.maxR >= 0) {
-        const deleteCount = sel.maxR - sel.minR + 1
-        m.rows.splice(sel.minR, deleteCount)
-      } else if (row >= 0 && row < m.rows.length) {
-        m.rows.splice(row, 1)
-      }
-      dispatchModel(view, wrap, m)
-    })
-  ]
-
-  const colSubmenu = [
-    createItem('Add column to the left', icons.addLeft, () => {
-      const m = readModelFromDom(wrap)
-      m.header.splice(col, 0, '')
-      m.alignments.splice(col, 0, '')
-      for (const r of m.rows) r.splice(col, 0, '')
-      dispatchModel(view, wrap, m)
-    }),
-    createItem('Add column to the right', icons.addRight, () => {
-      const m = readModelFromDom(wrap)
-      m.header.splice(col + 1, 0, '')
-      m.alignments.splice(col + 1, 0, '')
-      for (const r of m.rows) r.splice(col + 1, 0, '')
-      dispatchModel(view, wrap, m)
-    }),
-    createSeparator(),
-    createItem('Move column left', icons.moveLeft, () => {
-      if (col <= 0) return
-      const m = readModelFromDom(wrap)
-      const tempH = m.header[col]
-      m.header[col] = m.header[col - 1]
-      m.header[col - 1] = tempH
-      const tempA = m.alignments[col]
-      m.alignments[col] = m.alignments[col - 1]
-      m.alignments[col - 1] = tempA
-      for (const r of m.rows) {
-        const temp = r[col]
-        r[col] = r[col - 1]
-        r[col - 1] = temp
-      }
-      dispatchModel(view, wrap, m)
-    }),
-    createItem('Move column right', icons.moveRight, () => {
-      const m = readModelFromDom(wrap)
-      if (col >= m.header.length - 1) return
-      const tempH = m.header[col]
-      m.header[col] = m.header[col + 1]
-      m.header[col + 1] = tempH
-      const tempA = m.alignments[col]
-      m.alignments[col] = m.alignments[col + 1]
-      m.alignments[col + 1] = tempA
-      for (const r of m.rows) {
-        const temp = r[col]
-        r[col] = r[col + 1]
-        r[col + 1] = temp
-      }
-      dispatchModel(view, wrap, m)
-    }),
-    createSeparator(),
-    createItem('Align left', icons.alignLeft, () => {
-      const m = readModelFromDom(wrap)
-      m.alignments[col] = 'left'
-      dispatchModel(view, wrap, m)
-    }),
-    createItem('Align center', icons.alignCenter, () => {
-      const m = readModelFromDom(wrap)
-      m.alignments[col] = 'center'
-      dispatchModel(view, wrap, m)
-    }),
-    createItem('Align right', icons.alignRight, () => {
-      const m = readModelFromDom(wrap)
-      m.alignments[col] = 'right'
-      dispatchModel(view, wrap, m)
-    }),
-    createSeparator(),
-    createItem('Duplicate column', icons.duplicate, () => {
-      const m = readModelFromDom(wrap)
-      m.header.splice(col + 1, 0, m.header[col])
-      m.alignments.splice(col + 1, 0, m.alignments[col])
-      for (const r of m.rows) r.splice(col + 1, 0, r[col])
-      dispatchModel(view, wrap, m)
-    }),
-    createItem('Delete column', icons.column, () => {
-      const m = readModelFromDom(wrap)
-      const sel = wrap.__getGridSelection ? wrap.__getGridSelection() : null
-      if (sel && sel.minC >= 0 && sel.maxC >= 0) {
-        const deleteCount = sel.maxC - sel.minC + 1
-        if (m.header.length > deleteCount) {
-          m.header.splice(sel.minC, deleteCount)
-          m.alignments.splice(sel.minC, deleteCount)
-          for (const r of m.rows) r.splice(sel.minC, deleteCount)
-        }
-      } else if (col >= 0 && col < m.header.length && m.header.length > 1) {
-        m.header.splice(col, 1)
-        m.alignments.splice(col, 1)
-        for (const r of m.rows) r.splice(col, 1)
-      }
-      dispatchModel(view, wrap, m)
-    })
-  ]
-
-  let items = []
   const selection = wrap.__getGridSelection ? wrap.__getGridSelection() : null
+  let targetRow = row
+  let rowDeleteCount = 1
+
+  if (selection) {
+    if (selection.minR >= 0) {
+      targetRow = selection.minR
+      rowDeleteCount = selection.maxR - selection.minR + 1
+    } else if (selection.minR === -1 && selection.maxR >= 0) {
+      targetRow = 0
+      rowDeleteCount = selection.maxR + 1
+    } else if (selection.minR === -1 && selection.maxR === -1) {
+      targetRow = 0
+      rowDeleteCount = 1
+    }
+  } else if (row < 0) {
+    targetRow = 0
+    rowDeleteCount = 1
+  }
+
+  let targetCol = col
+  let colDeleteCount = 1
+
+  if (selection && selection.minC >= 0) {
+    targetCol = selection.minC
+    colDeleteCount = selection.maxC - selection.minC + 1
+  } else if (col < 0) {
+    targetCol = 0
+    colDeleteCount = 1
+  }
+
+  // Row Submenu
+  const rowSubmenu = [
+    createItem('Add Row Above', icons.addUp, () => {
+      const m = readModelFromDom(wrap)
+      const rIdx = targetRow >= 0 ? targetRow : 0
+      m.rows.splice(
+        rIdx,
+        0,
+        m.header.map(() => '')
+      )
+      dispatchModel(view, wrap, m)
+    }),
+    createItem('Add Row Below', icons.addDown, () => {
+      const m = readModelFromDom(wrap)
+      const rIdx = targetRow >= 0 ? targetRow : m.rows.length - 1
+      m.rows.splice(
+        rIdx + 1,
+        0,
+        m.header.map(() => '')
+      )
+      dispatchModel(view, wrap, m)
+    }),
+    createSeparator(),
+    createItem('Duplicate Row', icons.duplicate, () => {
+      const m = readModelFromDom(wrap)
+      const rIdx = targetRow >= 0 ? targetRow : 0
+      if (m.rows[rIdx]) {
+        m.rows.splice(rIdx + 1, 0, [...m.rows[rIdx]])
+        dispatchModel(view, wrap, m)
+      }
+    }),
+    createItem('Move Row Up', icons.moveUp, () => {
+      if (targetRow <= 0) return
+      const m = readModelFromDom(wrap)
+      const temp = m.rows[targetRow]
+      m.rows[targetRow] = m.rows[targetRow - 1]
+      m.rows[targetRow - 1] = temp
+      dispatchModel(view, wrap, m)
+    }),
+    createItem('Move Row Down', icons.moveDown, () => {
+      const m = readModelFromDom(wrap)
+      if (targetRow >= m.rows.length - 1 || targetRow < 0) return
+      const temp = m.rows[targetRow]
+      m.rows[targetRow] = m.rows[targetRow + 1]
+      m.rows[targetRow + 1] = temp
+      dispatchModel(view, wrap, m)
+    }),
+    createSeparator(),
+    createItem(
+      rowDeleteCount > 1 ? `Delete ${rowDeleteCount} Rows` : 'Delete Row',
+      icons.row,
+      () => {
+        const m = readModelFromDom(wrap)
+        if (targetRow >= 0 && targetRow < m.rows.length) {
+          if (m.rows.length <= rowDeleteCount) {
+            m.rows = [m.header.map(() => '')]
+          } else {
+            m.rows.splice(targetRow, rowDeleteCount)
+          }
+          dispatchModel(view, wrap, m)
+        }
+      }
+    )
+  ]
+
+  // Column Submenu
+  const colSubmenu = [
+    createItem('Add Column Left', icons.addLeft, () => {
+      const m = readModelFromDom(wrap)
+      const cIdx = targetCol >= 0 ? targetCol : 0
+      m.header.splice(cIdx, 0, '')
+      m.alignments.splice(cIdx, 0, '')
+      for (const r of m.rows) r.splice(cIdx, 0, '')
+      dispatchModel(view, wrap, m)
+    }),
+    createItem('Add Column Right', icons.addRight, () => {
+      const m = readModelFromDom(wrap)
+      const cIdx = targetCol >= 0 ? targetCol : m.header.length - 1
+      m.header.splice(cIdx + 1, 0, '')
+      m.alignments.splice(cIdx + 1, 0, '')
+      for (const r of m.rows) r.splice(cIdx + 1, 0, '')
+      dispatchModel(view, wrap, m)
+    }),
+    createSeparator(),
+    createItem('Duplicate Column', icons.duplicate, () => {
+      const m = readModelFromDom(wrap)
+      const cIdx = targetCol >= 0 ? targetCol : 0
+      if (cIdx >= 0 && cIdx < m.header.length) {
+        m.header.splice(cIdx + 1, 0, m.header[cIdx])
+        m.alignments.splice(cIdx + 1, 0, m.alignments[cIdx])
+        for (const r of m.rows) r.splice(cIdx + 1, 0, r[cIdx])
+        dispatchModel(view, wrap, m)
+      }
+    }),
+    createItem('Move Column Left', icons.moveLeft, () => {
+      if (targetCol <= 0) return
+      const m = readModelFromDom(wrap)
+      const tempH = m.header[targetCol]
+      m.header[targetCol] = m.header[targetCol - 1]
+      m.header[targetCol - 1] = tempH
+      const tempA = m.alignments[targetCol]
+      m.alignments[targetCol] = m.alignments[targetCol - 1]
+      m.alignments[targetCol - 1] = tempA
+      for (const r of m.rows) {
+        const temp = r[targetCol]
+        r[targetCol] = r[targetCol - 1]
+        r[targetCol - 1] = temp
+      }
+      dispatchModel(view, wrap, m)
+    }),
+    createItem('Move Column Right', icons.moveRight, () => {
+      const m = readModelFromDom(wrap)
+      if (targetCol >= m.header.length - 1 || targetCol < 0) return
+      const tempH = m.header[targetCol]
+      m.header[targetCol] = m.header[targetCol + 1]
+      m.header[targetCol + 1] = tempH
+      const tempA = m.alignments[targetCol]
+      m.alignments[targetCol] = m.alignments[targetCol + 1]
+      m.alignments[targetCol + 1] = tempA
+      for (const r of m.rows) {
+        const temp = r[targetCol]
+        r[targetCol] = r[targetCol + 1]
+        r[targetCol + 1] = temp
+      }
+      dispatchModel(view, wrap, m)
+    }),
+    createSeparator(),
+    createItem(
+      colDeleteCount > 1 ? `Delete ${colDeleteCount} Columns` : 'Delete Column',
+      icons.column,
+      () => {
+        const m = readModelFromDom(wrap)
+        if (targetCol >= 0 && targetCol < m.header.length) {
+          const deleteCount = Math.min(colDeleteCount, m.header.length - 1)
+          if (deleteCount > 0) {
+            m.header.splice(targetCol, deleteCount)
+            m.alignments.splice(targetCol, deleteCount)
+            for (const r of m.rows) {
+              if (r.length > targetCol) r.splice(targetCol, deleteCount)
+            }
+            dispatchModel(view, wrap, m)
+          }
+        }
+      }
+    )
+  ]
+
+  // Export & Copy Submenu
+  const exportSubmenu = [
+    createItem('Copy as Plain Text', icons.duplicate, () => {
+      const m = readModelFromDom(wrap)
+      copyTableAs(m, 'markdown')
+    }),
+    createItem('Copy as Spreadsheet', icons.column, () => {
+      const m = readModelFromDom(wrap)
+      copyTableAs(m, 'csv')
+    }),
+    createItem('Copy as Data (JSON)', icons.code, () => {
+      const m = readModelFromDom(wrap)
+      copyTableAs(m, 'json')
+    }),
+    createSeparator(),
+    createItem('Save as Spreadsheet (.csv)', icons.settings, () => {
+      const m = readModelFromDom(wrap)
+      exportTableAsCSV(m)
+    }),
+    createItem('Duplicate Table', icons.duplicate, () => {
+      const m = readModelFromDom(wrap)
+      duplicateTable(view, wrap, m)
+    })
+  ]
 
   const minR = selection ? selection.minR : row
   const maxR = selection ? selection.maxR : row
@@ -222,32 +282,39 @@ export function openCellMenu(view, cell, x, y) {
     createItem('Strikethrough', icons.strikethrough, () =>
       applyFormatToSelection((t) => toggleTag(t, '~~'))
     ),
-    createItem('Code', icons.code, () => applyFormatToSelection((t) => toggleTag(t, '`'))),
+    createItem('Inline Code', icons.code, () => applyFormatToSelection((t) => toggleTag(t, '`'))),
     createSeparator(),
-    createItem('Clear formatting', icons.eraser, () =>
+    createItem('Clear Formatting', icons.eraser, () =>
       applyFormatToSelection((t) => t.replace(/(\*\*|__|~~|`|_|\*)/g, ''))
     )
   ]
 
+  const items = []
+
+  items.push(createSubmenu('Row', icons.row, rowSubmenu))
+  items.push(createSubmenu('Column', icons.column, colSubmenu))
+  items.push(createSeparator())
+
   items.push(createSubmenu('Format', icons.format, formatSubmenu))
+  items.push(createSubmenu('More Options', icons.duplicate, exportSubmenu))
   items.push(createSeparator())
 
   items.push(
-    createItem('Align left', icons.alignLeft, () => {
+    createItem('Align Left', icons.alignLeft, () => {
       const m = readModelFromDom(wrap)
       for (let c = minC; c <= maxC; c++) m.alignments[c] = 'left'
       dispatchModel(view, wrap, m)
     })
   )
   items.push(
-    createItem('Align center', icons.alignCenter, () => {
+    createItem('Align Center', icons.alignCenter, () => {
       const m = readModelFromDom(wrap)
       for (let c = minC; c <= maxC; c++) m.alignments[c] = 'center'
       dispatchModel(view, wrap, m)
     })
   )
   items.push(
-    createItem('Align right', icons.alignRight, () => {
+    createItem('Align Right', icons.alignRight, () => {
       const m = readModelFromDom(wrap)
       for (let c = minC; c <= maxC; c++) m.alignments[c] = 'right'
       dispatchModel(view, wrap, m)
@@ -255,56 +322,42 @@ export function openCellMenu(view, cell, x, y) {
   )
   items.push(createSeparator())
 
-  items.push(createItem('Clear cells', icons.clearCells, () => applyFormatToSelection(() => '')))
+  items.push(createItem('Clear Cells', icons.clearCells, () => applyFormatToSelection(() => '')))
+  items.push(createSeparator())
 
-  if (selection) {
-    items.push(
-      createItem('Delete rows', icons.delete, () => {
-        if (minR !== -1) {
-          const m = readModelFromDom(wrap)
-          const numRows = maxR - minR + 1
-          m.rows.splice(minR, numRows)
-          dispatchModel(view, wrap, m)
-        }
-      })
-    )
-  } else {
-    items.push(createSeparator())
-    if (!isHeader) {
-      items.push(createSubmenu('Row', icons.row, rowSubmenu))
-    }
-    items.push(createSubmenu('Column', icons.column, colSubmenu))
-    items.push(createSeparator())
-    items.push(
-      createItem('Sort by column (A to Z)', icons.sortAsc, () => {
-        const m = readModelFromDom(wrap)
-        m.rows.sort((a, b) =>
-          (a[col] || '').trim().localeCompare((b[col] || '').trim(), undefined, { numeric: true })
-        )
-        dispatchModel(view, wrap, m)
-      })
-    )
-    items.push(
-      createItem('Sort by column (Z to A)', icons.sortDesc, () => {
-        const m = readModelFromDom(wrap)
-        m.rows.sort((a, b) =>
-          (b[col] || '').trim().localeCompare((a[col] || '').trim(), undefined, { numeric: true })
-        )
-        dispatchModel(view, wrap, m)
-      })
-    )
-    items.push(createSeparator())
-    // Add "Delete table" using the table grid icon
-    const tableIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>`
-    items.push(
-      createItem('Delete table', tableIcon, () => {
-        const range = findCurrentTableRange(view, wrap)
-        if (range) {
-          view.dispatch({ changes: { from: range.from, to: range.to, insert: '' } })
-        }
-      })
-    )
-  }
+  items.push(
+    createItem('Sort Column (A to Z)', icons.sortAsc, () => {
+      const m = readModelFromDom(wrap)
+      m.rows.sort((a, b) =>
+        (a[targetCol] || '').trim().localeCompare((b[targetCol] || '').trim(), undefined, {
+          numeric: true
+        })
+      )
+      dispatchModel(view, wrap, m)
+    })
+  )
+  items.push(
+    createItem('Sort Column (Z to A)', icons.sortDesc, () => {
+      const m = readModelFromDom(wrap)
+      m.rows.sort((a, b) =>
+        (b[targetCol] || '').trim().localeCompare((a[targetCol] || '').trim(), undefined, {
+          numeric: true
+        })
+      )
+      dispatchModel(view, wrap, m)
+    })
+  )
+  items.push(createSeparator())
+
+  const tableIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>`
+  items.push(
+    createItem('Delete Table', tableIcon, () => {
+      const range = findCurrentTableRange(view, wrap)
+      if (range) {
+        view.dispatch({ changes: { from: range.from, to: range.to, insert: '' } })
+      }
+    })
+  )
 
   const dismiss = () => {
     menu.remove()

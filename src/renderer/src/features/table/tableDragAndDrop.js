@@ -8,7 +8,6 @@ export function setupTableDragAndDrop(wrap, view) {
   let dragStartIndex = -1
   let currentDropIndex = -1
 
-  // Set position relative on the wrap if not already
   if (window.getComputedStyle(wrap).position === 'static') {
     wrap.style.position = 'relative'
   }
@@ -21,8 +20,8 @@ export function setupTableDragAndDrop(wrap, view) {
   rowHandle.style.display = 'flex'
   rowHandle.style.alignItems = 'center'
   rowHandle.style.justifyContent = 'center'
-  rowHandle.style.width = '24px'
-  rowHandle.style.height = '24px'
+  rowHandle.style.width = '20px'
+  rowHandle.style.height = '20px'
   rowHandle.style.cursor = 'grab'
   rowHandle.style.opacity = '0'
   rowHandle.style.pointerEvents = 'none'
@@ -37,8 +36,8 @@ export function setupTableDragAndDrop(wrap, view) {
   colHandle.style.display = 'flex'
   colHandle.style.alignItems = 'center'
   colHandle.style.justifyContent = 'center'
-  colHandle.style.width = '24px'
-  colHandle.style.height = '24px'
+  colHandle.style.width = '20px'
+  colHandle.style.height = '20px'
   colHandle.style.cursor = 'grab'
   colHandle.style.opacity = '0'
   colHandle.style.pointerEvents = 'none'
@@ -48,74 +47,77 @@ export function setupTableDragAndDrop(wrap, view) {
   wrap.appendChild(rowHandle)
   wrap.appendChild(colHandle)
 
-
   // Hover detection logic to position handles
   wrap.addEventListener('mousemove', (e) => {
     if (isDragging) return
 
-    // If hovering directly over the handle, keep it visible!
     if (e.target.closest('.cm-table-drag-handle')) {
       return
     }
 
     const cell = e.target.closest('th, td')
     if (!cell || !wrap.contains(cell)) {
+      hideHandles()
       return
     }
 
     const tr = cell.closest('tr')
-    if (!tr) return
+    if (!tr) {
+      hideHandles()
+      return
+    }
 
-    const tbody = tr.closest('tbody')
+    const table = wrap.querySelector('table')
+    if (!table) return
 
-    // We'll use absolute positioning so they stay within the widget's DOM (cleaned up automatically)
-    // but we use wrapRect to map viewport coordinates to local widget coordinates
-    rowHandle.style.position = 'absolute'
-    colHandle.style.position = 'absolute'
-    
     const wrapRect = wrap.getBoundingClientRect()
-    
-    // Nudge handles slightly if near the edge, or hide completely if scrolled out
-    const VIEWPORT_MARGIN = 20
-    const GUTTER_SIZE = 16
+    const cellRect = cell.getBoundingClientRect()
+    const isHeader = cell.tagName === 'TH' || tr.parentElement.tagName === 'THEAD'
+    const colIndex = Array.from(tr.children).indexOf(cell)
 
     let showRow = false
     let showCol = false
 
-    if (tbody) {
-      const rowRect = tr.getBoundingClientRect()
-      const cellRect = cell.getBoundingClientRect()
-      
-      const distLeft = e.clientX - cellRect.left
+    // Column handle: appears when hovering over header cells TH or top of cells
+    if (isHeader) {
+      const handleX = Math.max(cellRect.left + 2, Math.min(e.clientX - 10, cellRect.right - 22))
+      colHandle.style.left = `${handleX - wrapRect.left}px`
+      colHandle.style.top = `${cellRect.top - wrapRect.top - 8}px`
+      colHandle.style.opacity = '1'
+      colHandle.style.pointerEvents = 'auto'
+      colHandle.dataset.index = colIndex.toString()
+      showCol = true
+    } else {
       const distTop = e.clientY - cellRect.top
-
-      // Show row handle if near the left edge of the cell
-      if (distLeft >= 0 && distLeft <= GUTTER_SIZE && rowRect.top > VIEWPORT_MARGIN && rowRect.bottom < window.innerHeight - VIEWPORT_MARGIN) {
-        // Track cursor vertically
-        const handleY = Math.max(rowRect.top, Math.min(e.clientY - 10, rowRect.bottom - 20))
-        rowHandle.style.top = `${handleY - wrapRect.top}px`
-        rowHandle.style.left = `${rowRect.left - wrapRect.left - 10}px` // straddles the left border
-        rowHandle.style.width = `20px`
-        rowHandle.style.height = `20px`
-        rowHandle.style.opacity = '1'
-        rowHandle.style.pointerEvents = 'auto'
-        rowHandle.dataset.index = Array.from(tbody.children).indexOf(tr).toString()
-        showRow = true
-      }
-
-      // Show col handle if near the top edge of the cell
-      const colIndex = Array.from(tr.children).indexOf(cell)
-      if (colIndex >= 0 && distTop >= 0 && distTop <= GUTTER_SIZE && cellRect.left > VIEWPORT_MARGIN && cellRect.right < window.innerWidth - VIEWPORT_MARGIN) {
-        // Position horizontally exactly where the mouse is, clamped to the cell width
-        const handleX = Math.max(cellRect.left, Math.min(e.clientX - 10, cellRect.right - 20))
+      if (distTop >= 0 && distTop <= 16) {
+        const handleX = Math.max(cellRect.left + 2, Math.min(e.clientX - 10, cellRect.right - 22))
         colHandle.style.left = `${handleX - wrapRect.left}px`
-        colHandle.style.top = `${cellRect.top - wrapRect.top - 10}px` // straddles the top border
-        colHandle.style.width = `20px`
-        colHandle.style.height = `20px`
+        colHandle.style.top = `${cellRect.top - wrapRect.top - 8}px`
         colHandle.style.opacity = '1'
         colHandle.style.pointerEvents = 'auto'
         colHandle.dataset.index = colIndex.toString()
         showCol = true
+      }
+    }
+
+    // Row handle: appears when hovering over body rows (near the left border or first cell)
+    if (!isHeader) {
+      const tbody = table.querySelector('tbody')
+      if (tbody) {
+        const rowIndex = Array.from(tbody.children).indexOf(tr)
+        if (rowIndex >= 0) {
+          const rowRect = tr.getBoundingClientRect()
+          const distLeft = e.clientX - rowRect.left
+          if (distLeft >= -10 && distLeft <= 36) {
+            const handleY = Math.max(rowRect.top + 2, Math.min(e.clientY - 10, rowRect.bottom - 22))
+            rowHandle.style.top = `${handleY - wrapRect.top}px`
+            rowHandle.style.left = `${rowRect.left - wrapRect.left - 10}px`
+            rowHandle.style.opacity = '1'
+            rowHandle.style.pointerEvents = 'auto'
+            rowHandle.dataset.index = rowIndex.toString()
+            showRow = true
+          }
+        }
       }
     }
 
@@ -130,17 +132,13 @@ export function setupTableDragAndDrop(wrap, view) {
   })
 
   wrap.addEventListener('mouseleave', () => {
-    if (!isDragging) {
-      hideHandles()
-    }
+    if (!isDragging) hideHandles()
   })
-  
+
   const scrollContainer = wrap.querySelector('.cm-table-scroll-container')
   if (scrollContainer) {
     scrollContainer.addEventListener('scroll', () => {
-      if (!isDragging) {
-        hideHandles()
-      }
+      if (!isDragging) hideHandles()
     })
   }
 
@@ -151,42 +149,47 @@ export function setupTableDragAndDrop(wrap, view) {
     colHandle.style.pointerEvents = 'none'
   }
 
-  let draggedElementWidth = 0
-  let draggedElementHeight = 0
   let initialBounds = []
 
-  function calculateDragDimensions(type, index) {
+  function calculateDragDimensions(type) {
     const table = wrap.querySelector('table')
     if (!table) return
     initialBounds = []
 
     if (type === 'row') {
-      const rows = Array.from(table.querySelectorAll('tr'))
-      draggedElementHeight = rows[index].getBoundingClientRect().height
-      rows.forEach(r => {
+      const tbody = table.querySelector('tbody')
+      const rows = tbody ? Array.from(tbody.children) : []
+      rows.forEach((r) => {
         const rect = r.getBoundingClientRect()
-        initialBounds.push({ top: rect.top, bottom: rect.bottom, height: rect.height })
+        initialBounds.push({
+          top: rect.top,
+          bottom: rect.bottom,
+          mid: (rect.top + rect.bottom) / 2,
+          height: rect.height
+        })
       })
     } else {
       const headers = Array.from(table.querySelectorAll('thead th'))
-      if (headers[index]) {
-        draggedElementWidth = headers[index].getBoundingClientRect().width
-      }
-      headers.forEach(h => {
+      headers.forEach((h) => {
         const rect = h.getBoundingClientRect()
-        initialBounds.push({ left: rect.left, right: rect.right, width: rect.width })
+        initialBounds.push({
+          left: rect.left,
+          right: rect.right,
+          mid: (rect.left + rect.right) / 2,
+          width: rect.width
+        })
       })
     }
   }
 
   let dragStartX = 0
   let dragStartY = 0
-  let initialHandleLeft = 0
-  let initialHandleTop = 0
 
-  // Drag start
   function onDragStart(e, type, index) {
+    if (isNaN(index) || index < 0) return
     e.preventDefault()
+    e.stopPropagation()
+
     isDragging = true
     dragType = type
     dragStartIndex = index
@@ -194,34 +197,29 @@ export function setupTableDragAndDrop(wrap, view) {
 
     dragStartX = e.clientX
     dragStartY = e.clientY
-    
-    // Lock the initial position before we switch to transform
-    const wrapRect = wrap.getBoundingClientRect()
+
     if (type === 'row') {
-      initialHandleLeft = parseFloat(rowHandle.style.left) || 0
-      initialHandleTop = parseFloat(rowHandle.style.top) || 0
       rowHandle.style.cursor = 'grabbing'
     } else {
-      initialHandleLeft = parseFloat(colHandle.style.left) || 0
-      initialHandleTop = parseFloat(colHandle.style.top) || 0
       colHandle.style.cursor = 'grabbing'
     }
 
-    calculateDragDimensions(type, index)
+    calculateDragDimensions(type)
 
-    // Fade out original
+    // Visual feedback
     const table = wrap.querySelector('table')
     if (table) {
       if (type === 'row') {
         wrap.classList.add('is-dragging-rows')
-        const rows = Array.from(table.querySelectorAll('tr'))
-        if (rows[index]) rows[index].style.opacity = '0.3'
+        const tbody = table.querySelector('tbody')
+        const rows = tbody ? Array.from(tbody.children) : []
+        if (rows[index]) rows[index].style.opacity = '0.4'
       } else {
         wrap.classList.add('is-dragging-cols')
         const rows = Array.from(table.querySelectorAll('tr'))
         rows.forEach((row) => {
           if (row.children[index]) {
-            row.children[index].style.opacity = '0.3'
+            row.children[index].style.opacity = '0.4'
           }
         })
       }
@@ -229,126 +227,106 @@ export function setupTableDragAndDrop(wrap, view) {
 
     window.addEventListener('mousemove', onDragMove)
     window.addEventListener('mouseup', onDragEnd)
-
     document.body.style.cursor = 'grabbing'
   }
 
-  rowHandle.addEventListener('mousedown', (e) =>
-    onDragStart(e, 'row', parseInt(rowHandle.dataset.index, 10))
-  )
-  colHandle.addEventListener('mousedown', (e) =>
-    onDragStart(e, 'col', parseInt(colHandle.dataset.index, 10))
-  )
+  rowHandle.addEventListener('mousedown', (e) => {
+    const idx = parseInt(rowHandle.dataset.index, 10)
+    onDragStart(e, 'row', idx)
+  })
+
+  colHandle.addEventListener('mousedown', (e) => {
+    const idx = parseInt(colHandle.dataset.index, 10)
+    onDragStart(e, 'col', idx)
+  })
 
   let rafId = null
 
   function onDragMove(e) {
-    if (!isDragging) return
-    
+    if (!isDragging || initialBounds.length === 0) return
+
     if (rafId) cancelAnimationFrame(rafId)
-    
+
     rafId = requestAnimationFrame(() => {
       const dx = e.clientX - dragStartX
       const dy = e.clientY - dragStartY
 
       if (dragType === 'row') {
         rowHandle.style.transform = `translate3d(${dx}px, ${dy}px, 0)`
-      } else {
-        colHandle.style.transform = `translate3d(${dx}px, ${dy}px, 0)`
-      }
 
-      const table = wrap.querySelector('table')
-      if (!table) return
-
-  
-
-    if (dragType === 'row') {
-      let proposedIndex = currentDropIndex
-      while (proposedIndex > 0) {
-        if (e.clientY < initialBounds[proposedIndex - 1].top) {
-          proposedIndex--
-        } else {
-          break
+        // Calculate proposed drop index based on row midpoints
+        let proposed = 0
+        for (let i = 0; i < initialBounds.length; i++) {
+          if (e.clientY > initialBounds[i].mid) {
+            proposed = i
+          }
         }
-      }
-      while (proposedIndex < initialBounds.length - 1) {
-        if (e.clientY > initialBounds[proposedIndex + 1].bottom) {
-          proposedIndex++
-        } else {
-          break
-        }
-      }
-      currentDropIndex = proposedIndex
+        proposed = Math.max(0, Math.min(initialBounds.length - 1, proposed))
+        currentDropIndex = proposed
 
-      const targetIndex = currentDropIndex
-      const rows = Array.from(wrap.querySelectorAll('tr'))
+        const tbody = wrap.querySelector('tbody')
+        const rows = tbody ? Array.from(tbody.children) : []
+        const draggedHeight = initialBounds[dragStartIndex]?.height || 28
 
-      // Live shifting
-      rows.forEach((row, i) => {
-        if (i === dragStartIndex) {
-          row.style.transform = `translateY(${dy}px)`
-          row.style.zIndex = '1'
-          row.style.position = 'relative'
-        } else if (i > dragStartIndex && i <= targetIndex) {
-          row.style.transform = `translateY(-${initialBounds[dragStartIndex].height}px)`
-        } else if (i >= targetIndex && i < dragStartIndex) {
-          row.style.transform = `translateY(${initialBounds[dragStartIndex].height}px)`
-        } else {
-          row.style.transform = 'none'
-        }
-      })
-    } else {
-      let proposedIndex = currentDropIndex
-      while (proposedIndex > 0) {
-        if (e.clientX < initialBounds[proposedIndex - 1].left) {
-          proposedIndex--
-        } else {
-          break
-        }
-      }
-      while (proposedIndex < initialBounds.length - 1) {
-        if (e.clientX > initialBounds[proposedIndex + 1].right) {
-          proposedIndex++
-        } else {
-          break
-        }
-      }
-      currentDropIndex = proposedIndex
-
-      const targetIndex = currentDropIndex
-      const rows = Array.from(wrap.querySelectorAll('tr'))
-
-      // Live shifting
-      rows.forEach((row) => {
-        Array.from(row.children).forEach((cell, i) => {
+        rows.forEach((row, i) => {
           if (i === dragStartIndex) {
-            cell.style.transform = `translateX(${dx}px)`
-            cell.style.zIndex = '1'
-            cell.style.position = 'relative'
-          } else if (i > dragStartIndex && i <= targetIndex) {
-            cell.style.transform = `translateX(-${initialBounds[dragStartIndex].width}px)`
-          } else if (i >= targetIndex && i < dragStartIndex) {
-            cell.style.transform = `translateX(${initialBounds[dragStartIndex].width}px)`
+            row.style.transform = `translateY(${dy}px)`
+            row.style.zIndex = '10'
+            row.style.position = 'relative'
+          } else if (i > dragStartIndex && i <= currentDropIndex) {
+            row.style.transform = `translateY(-${draggedHeight}px)`
+          } else if (i < dragStartIndex && i >= currentDropIndex) {
+            row.style.transform = `translateY(${draggedHeight}px)`
           } else {
-            cell.style.transform = 'none'
+            row.style.transform = 'none'
           }
         })
-      })
-    }
+      } else {
+        colHandle.style.transform = `translate3d(${dx}px, ${dy}px, 0)`
+
+        // Calculate proposed drop index based on column midpoints
+        let proposed = 0
+        for (let i = 0; i < initialBounds.length; i++) {
+          if (e.clientX > initialBounds[i].mid) {
+            proposed = i
+          }
+        }
+        proposed = Math.max(0, Math.min(initialBounds.length - 1, proposed))
+        currentDropIndex = proposed
+
+        const rows = Array.from(wrap.querySelectorAll('tr'))
+        const draggedWidth = initialBounds[dragStartIndex]?.width || 80
+
+        rows.forEach((row) => {
+          Array.from(row.children).forEach((cell, i) => {
+            if (i === dragStartIndex) {
+              cell.style.transform = `translateX(${dx}px)`
+              cell.style.zIndex = '10'
+              cell.style.position = 'relative'
+            } else if (i > dragStartIndex && i <= currentDropIndex) {
+              cell.style.transform = `translateX(-${draggedWidth}px)`
+            } else if (i < dragStartIndex && i >= currentDropIndex) {
+              cell.style.transform = `translateX(${draggedWidth}px)`
+            } else {
+              cell.style.transform = 'none'
+            }
+          })
+        })
+      }
     })
   }
 
   function onDragEnd() {
     isDragging = false
     document.body.style.cursor = ''
-    
+
     if (rafId) cancelAnimationFrame(rafId)
-    
+
     rowHandle.style.cursor = 'grab'
     colHandle.style.cursor = 'grab'
     rowHandle.style.transform = 'none'
     colHandle.style.transform = 'none'
-    
+
     hideHandles()
 
     wrap.classList.remove('is-dragging-rows')
@@ -374,7 +352,7 @@ export function setupTableDragAndDrop(wrap, view) {
     window.removeEventListener('mousemove', onDragMove)
     window.removeEventListener('mouseup', onDragEnd)
 
-    if (currentDropIndex === dragStartIndex) {
+    if (currentDropIndex === dragStartIndex || currentDropIndex < 0 || dragStartIndex < 0) {
       return
     }
 
@@ -382,28 +360,33 @@ export function setupTableDragAndDrop(wrap, view) {
     const nextModel = {
       header: [...model.header],
       alignments: [...(model.alignments || [])],
-      rows: model.rows.map((r) => [...r])
+      rows: model.rows.map((r) => [...r]),
+      caption: model.caption
     }
 
     if (dragType === 'row') {
-      const [movedRow] = nextModel.rows.splice(dragStartIndex, 1)
-      const insertIndex = currentDropIndex
-      nextModel.rows.splice(insertIndex, 0, movedRow)
+      if (dragStartIndex < nextModel.rows.length && currentDropIndex < nextModel.rows.length) {
+        const [movedRow] = nextModel.rows.splice(dragStartIndex, 1)
+        nextModel.rows.splice(currentDropIndex, 0, movedRow)
+        dispatchModel(view, wrap, nextModel)
+      }
     } else if (dragType === 'col') {
-      const [movedHead] = nextModel.header.splice(dragStartIndex, 1)
-      const [movedAlign] = nextModel.alignments.splice(dragStartIndex, 1)
+      if (dragStartIndex < nextModel.header.length && currentDropIndex < nextModel.header.length) {
+        const [movedHead] = nextModel.header.splice(dragStartIndex, 1)
+        const [movedAlign] = nextModel.alignments.splice(dragStartIndex, 1)
 
-      const insertIndex = currentDropIndex
+        nextModel.header.splice(currentDropIndex, 0, movedHead)
+        if (movedAlign !== undefined) {
+          nextModel.alignments.splice(currentDropIndex, 0, movedAlign)
+        }
 
-      nextModel.header.splice(insertIndex, 0, movedHead)
-      if (movedAlign !== undefined) nextModel.alignments.splice(insertIndex, 0, movedAlign)
+        nextModel.rows.forEach((r) => {
+          const [movedCell] = r.splice(dragStartIndex, 1)
+          r.splice(currentDropIndex, 0, movedCell)
+        })
 
-      nextModel.rows.forEach((r) => {
-        const [movedCell] = r.splice(dragStartIndex, 1)
-        r.splice(insertIndex, 0, movedCell)
-      })
+        dispatchModel(view, wrap, nextModel)
+      }
     }
-
-    dispatchModel(view, wrap, nextModel)
   }
 }

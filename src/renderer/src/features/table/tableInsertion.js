@@ -122,21 +122,25 @@ export function setupTableInsertion(wrap, view) {
 
       if (distTop < THRESHOLD || distBottom < THRESHOLD) {
         const isTop = distTop < distBottom
-        const insertIndex = isTop ? rowIndex : rowIndex + 1
 
-        let markerY = (isTop ? cellRect.top : cellRect.bottom) - wrapRect.top
-        let markerX = tableRect.left - wrapRect.left + wrap.scrollLeft + 7 // Pinned left
+        // Cannot insert a row ABOVE the table header (header must remain at the top)
+        if (!isHeader || !isTop) {
+          const insertIndex = isTop ? rowIndex : rowIndex + 1
 
-        // Push slightly inward on absolute edges
-        if (insertIndex === 0) markerY += 7
-        if (insertIndex === table.querySelectorAll('tr').length) markerY -= 7
+          let markerY = (isTop ? cellRect.top : cellRect.bottom) - wrapRect.top
+          let markerX = tableRect.left - wrapRect.left + wrap.scrollLeft + 7 // Pinned left
 
-        rowInsertHandle.style.top = `${markerY}px`
-        rowInsertHandle.style.left = `${markerX}px`
-        rowInsertHandle.style.opacity = '1'
-        rowInsertHandle.style.pointerEvents = 'auto'
-        rowInsertHandle.dataset.index = insertIndex.toString()
-        foundRowGap = true
+          // Push slightly inward on absolute edges
+          if (insertIndex === 1) markerY += 7
+          if (insertIndex === table.querySelectorAll('tr').length) markerY -= 7
+
+          rowInsertHandle.style.top = `${markerY}px`
+          rowInsertHandle.style.left = `${markerX}px`
+          rowInsertHandle.style.opacity = '1'
+          rowInsertHandle.style.pointerEvents = 'auto'
+          rowInsertHandle.dataset.index = insertIndex.toString()
+          foundRowGap = true
+        }
       }
     }
 
@@ -161,7 +165,7 @@ export function setupTableInsertion(wrap, view) {
     e.preventDefault()
     e.stopPropagation()
     const index = parseInt(rowInsertHandle.dataset.index, 10)
-    if (isNaN(index)) return
+    if (isNaN(index) || index < 1) return
 
     const model = readModelFromDom(wrap)
     const nextModel = {
@@ -171,13 +175,7 @@ export function setupTableInsertion(wrap, view) {
     }
 
     const newRow = Array(nextModel.header.length).fill('')
-
-    if (index === 0) {
-      nextModel.rows.unshift([...nextModel.header])
-      nextModel.header = newRow
-    } else {
-      nextModel.rows.splice(index - 1, 0, newRow)
-    }
+    nextModel.rows.splice(index - 1, 0, newRow)
 
     dispatchModel(view, wrap, nextModel)
   })

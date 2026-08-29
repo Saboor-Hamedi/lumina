@@ -169,8 +169,89 @@ export function readModelFromDom(wrap) {
 // acceptable tradeoff because the escapes are typically ingestion
 // artifacts users don't want to preserve anyway).
 export function readCellSource(cell) {
-  return (cell.dataset.raw ?? '').trim()
+  if (cell.dataset.raw !== undefined && cell.dataset.raw !== null) {
+    return cell.dataset.raw.trim()
+  }
+  const source = cell.querySelector('.cm-atomic-table-cell-source')
+  return (source ? source.textContent : '').trim()
 }
 export function getCellSource(cell) {
   return cell.querySelector('.cm-atomic-table-cell-source')
+}
+
+/**
+ * Robustly parses any raw markdown table string into a clean table model.
+ */
+export function serializeTableOnly(model) {
+  const columnCount = model.header.length
+  const lines = []
+
+  lines.push('| ' + model.header.map(escapeCell).join(' | ') + ' |')
+
+  const delimiterRow = []
+  for (let c = 0; c < columnCount; c++) {
+    const align = model.alignments?.[c] || ''
+    if (align === 'center') delimiterRow.push(':---:')
+    else if (align === 'right') delimiterRow.push('---:')
+    else if (align === 'left') delimiterRow.push(':---')
+    else delimiterRow.push('---')
+  }
+  lines.push('| ' + delimiterRow.join(' | ') + ' |')
+
+  for (const row of model.rows) {
+    const padded = []
+    for (let c = 0; c < columnCount; c++) padded.push(escapeCell(row[c] ?? ''))
+    lines.push('| ' + padded.join(' | ') + ' |')
+  }
+  return lines.join('\n')
+}
+
+export function parseMarkdownTableText(markdown, defaultCaption = '') {
+  const lines = markdown.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length > 0)
+  if (lines.length === 0) return null
+
+  let caption = defaultCaption || ''
+  let startIdx = 0
+  if (lines[0].match(/^<!--\s*table:\s*(.*?)\s*-->$/i) || lines[0].match(/^Table:\s*(.+)$/i)) {
+    const m = lines[0].match(/^<!--\s*table:\s*(.*?)\s*-->$/i) || lines[0].match(/^Table:\s*(.+)$/i)
+    caption = m[1].trim()
+    startIdx = 1
+  }
+
+  if (startIdx >= lines.length) return null
+
+  const headerLine = lines[startIdx]
+  const header = splitRowCells(headerLine)
+  if (header.length === 0) return null
+
+  let alignments = Array(header.length).fill('')
+  let delimiterIdx = startIdx + 1
+  if (delimiterIdx < lines.length && lines[delimiterIdx].includes('-')) {
+    const delimCells = splitRowCells(lines[delimiterIdx])
+    alignments = delimCells.map((s) => {
+      const t = s.trim()
+      if (t.startsWith(':') && t.endsWith(':')) return 'center'
+      if (t.endsWith(':')) return 'right'
+      if (t.startsWith(':')) return 'left'
+      return ''
+    })
+    while (alignments.length < header.length) alignments.push('')
+    startIdx = delimiterIdx + 1
+  } else {
+    startIdx = startIdx + 1
+  }
+
+  const rows = []
+  for (let i = startIdx; i < lines.length; i++) {
+    if (!lines[i].includes('|')) continue
+    const cells = splitRowCells(lines[i])
+    while (cells.length < header.length) cells.push('')
+    rows.push(cells.slice(0, header.length))
+  }
+
+  if (rows.length === 0) {
+    rows.push(Array(header.length).fill(''))
+  }
+
+  return { header, rows, alignments, caption }
 }

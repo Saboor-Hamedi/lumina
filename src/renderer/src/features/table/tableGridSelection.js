@@ -311,6 +311,45 @@ export function setupTableSelection(wrap, view) {
 
     if (e.key === 'Backspace' || e.key === 'Delete') {
       e.preventDefault()
+      const start = getCoords(startCell)
+      const end = getCoords(endCell)
+      const minR = Math.min(start.r, end.r)
+      const maxR = Math.max(start.r, end.r)
+      const minC = Math.min(start.c, end.c)
+      const maxC = Math.max(start.c, end.c)
+      const colTotal = wrap.querySelectorAll('thead th').length
+      const rowTotal = wrap.querySelectorAll('tbody tr').length
+
+      // If full row(s) are selected (and not the header row), delete the row(s)!
+      if (minR >= 0 && minC === 0 && maxC >= colTotal - 1) {
+        const m = readModelFromDom(wrap)
+        const deleteCount = maxR - minR + 1
+        if (m.rows.length <= deleteCount) {
+          m.rows = [m.header.map(() => '')]
+        } else {
+          m.rows.splice(minR, deleteCount)
+        }
+        clearSelectionVisuals()
+        startCell = null
+        endCell = null
+        dispatchModel(view, wrap, m)
+        return
+      }
+
+      // If full column(s) are selected (from header to bottom), delete the column(s)!
+      if (minR === -1 && maxR === rowTotal - 1 && colTotal > (maxC - minC + 1)) {
+        const m = readModelFromDom(wrap)
+        const deleteCount = maxC - minC + 1
+        m.header.splice(minC, deleteCount)
+        m.alignments.splice(minC, deleteCount)
+        for (const r of m.rows) r.splice(minC, deleteCount)
+        clearSelectionVisuals()
+        startCell = null
+        endCell = null
+        dispatchModel(view, wrap, m)
+        return
+      }
+
       selected.forEach((cell) => {
         const source = cell.querySelector('.cm-atomic-table-cell-source')
         if (source) source.textContent = ''

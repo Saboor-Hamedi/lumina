@@ -42,8 +42,9 @@
 .cm-table-scroll-wrap {
   display: block;
   overflow: visible;
-  max-width: 100% !important;
-  margin: 2px 0 !important;
+  width: calc(100% - 4px) !important;
+  max-width: calc(100% - 4px) !important;
+  margin: 2px 4px 2px 0 !important;
   box-sizing: border-box;
 }
 
@@ -74,11 +75,11 @@
 
 .cm-atomic-table {
   position: relative;
-  margin: 8px 0 4px 0 !important;
+  margin: 8px 4px 4px 0 !important;
   padding: 0 !important;
   display: block;
-  width: max-content !important;
-  max-width: 100% !important;
+  width: calc(100% - 4px) !important;
+  max-width: calc(100% - 4px) !important;
   border-radius: 8px;
   box-sizing: border-box;
   font-size: var(--font-size-editor, 16px) !important;
@@ -130,71 +131,340 @@
   flex-shrink: 0;
 }
 
-.cm-table-ui-title-input {
-  background: transparent;
-  border: 1px solid transparent;
+.cm-table-title-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.cm-table-title-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 7px;
   border-radius: 4px;
-  padding: 2px 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-main, #e2e8f0);
   font-size: 11px;
   font-weight: 500;
-  color: var(--text-main, #e2e8f0);
-  font-family: inherit;
+  cursor: pointer;
   outline: none;
-  max-width: 220px;
-  width: auto;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.cm-table-title-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.cm-table-title-icon {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted, #94a3b8);
+  opacity: 0.8;
+  transition: opacity 0.15s ease;
+}
+
+.cm-table-title-btn:hover .cm-table-title-icon {
+  opacity: 1;
+  color: var(--text-accent, #a78bfa);
+}
+
+.cm-table-title-label {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* Table / Source Mode Segmented Toggle */
+.cm-table-view-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+  user-select: none;
+}
+
+.cm-table-view-btn {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+  height: 22px !important;
+  padding: 0 8px !important;
+  background: var(--bg-card, rgba(255, 255, 255, 0.05)) !important;
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.1)) !important;
+  color: var(--text-muted, #94a3b8) !important;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  outline: none;
+}
+
+.cm-table-view-btn:hover {
+  background: var(--bg-active, rgba(255, 255, 255, 0.1)) !important;
+  color: var(--text-main, #ffffff) !important;
+  border-color: var(--text-accent, #6366f1) !important;
+}
+
+.cm-table-view-btn.active {
+  background: var(--text-accent, #6366f1) !important;
+  color: #ffffff !important;
+  border-color: var(--text-accent, #6366f1) !important;
+  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.35) !important;
+  font-weight: 600 !important;
+}
+
+.cm-table-view-btn svg {
+  opacity: 0.85;
+}
+
+.cm-table-view-btn.active svg {
+  opacity: 1;
+  color: #ffffff !important;
+}
+
+/* Table Markdown Source Container & Editor */
+.cm-table-source-container {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg-app, rgba(0, 0, 0, 0.4));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  border-top: none;
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+  padding: 6px 10px;
+  margin: 0;
+  animation: tableSourceDropdownIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes tableSourceDropdownIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cm-table-source-textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 2px 0;
+  min-height: 24px;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', monospace);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-main, #e2e8f0);
+  tab-size: 2;
+  white-space: pre;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.cm-table-source-textarea::-webkit-scrollbar {
+  height: 4px;
+}
+
+.cm-table-source-textarea::-webkit-scrollbar-thumb {
+  background: var(--border-subtle, rgba(255, 255, 255, 0.15));
+  border-radius: 2px;
+}
+
+.cm-table-rename-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  min-width: 240px;
+  background: var(--bg-panel, #18181b);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(20px);
+  animation: tableRenameDropdownIn 0.15s cubic-bezier(0, 0, 0.2, 1);
+}
+
+.cm-table-rename-header {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted, #94a3b8);
+  letter-spacing: 0.02em;
+}
+
+@keyframes tableRenameDropdownIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.cm-table-rename-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg-app, rgba(0, 0, 0, 0.35));
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.15));
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-main, #ffffff);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.cm-table-rename-input:focus {
+  border-color: var(--text-accent, #a78bfa);
+}
+
+.cm-table-rename-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.cm-table-rename-cancel-btn {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.cm-table-ui-title-input::placeholder {
-  color: var(--text-faint, rgba(255, 255, 255, 0.35));
-  font-weight: 400;
-  font-style: italic;
-}
-
-.cm-table-ui-title-input:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.cm-table-ui-title-input:focus {
-  background: var(--bg-app, rgba(0, 0, 0, 0.4));
-  border-color: var(--text-accent, #a78bfa);
-  color: var(--text-main, #ffffff);
-  width: 220px;
-}
-
-.cm-table-dim-badge {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-muted, #94a3b8);
+.cm-table-rename-cancel-btn:hover {
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 1px 6px;
+  color: var(--text-main, #ffffff);
+}
+
+.cm-table-rename-save-btn {
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  background: var(--accent-primary, #6366f1);
+  color: #ffffff;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.cm-table-rename-save-btn:hover {
+  opacity: 0.9;
+}
+
+.cm-table-actions-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.cm-table-actions-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted, #94a3b8);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  padding: 3px 4px;
   border-radius: 4px;
-  line-height: 1.3;
-  user-select: none;
-  white-space: nowrap;
-  letter-spacing: 0.02em;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.cm-table-actions-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.cm-table-actions-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  min-width: 220px;
+  background: var(--bg-panel, #18181b);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(20px);
+  animation: tableRenameDropdownIn 0.15s cubic-bezier(0, 0, 0.2, 1);
+}
+
+.cm-table-actions-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-main, #e2e8f0);
+  font-size: 11px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease;
+  outline: none;
+}
+
+.cm-table-actions-item:hover {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.08));
+  color: #ffffff;
+}
+
+.cm-table-actions-item-icon {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted, #94a3b8);
+  flex-shrink: 0;
+}
+
+.cm-table-actions-separator {
+  height: 1px;
+  background: var(--border-subtle, rgba(255, 255, 255, 0.08));
+  margin: 4px 2px;
 }
 
 .cm-atomic-table:hover .cm-table-ui-header,
 .cm-atomic-table:focus-within .cm-table-ui-header {
   opacity: 1;
-}
-
-.cm-table-ui-drag-handle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted, rgba(255, 255, 255, 0.5));
-  cursor: grab;
-  padding: 4px;
-  border-radius: 4px;
-}
-
-.cm-table-ui-drag-handle:hover {
-  background: var(--bg-hover, rgba(255, 255, 255, 0.1));
-  color: var(--text-normal, #fff);
 }
 
 .cm-table-ui-delete-btn {
@@ -444,7 +714,13 @@
 
 /* 1) When selected via native CodeMirror (e.g. Ctrl+A / shift arrow keys over the widget) */
 .cm-atomic-table.cm-widget-selected-by-cm {
-  min-width: max-content !important;
+  outline: 2px solid var(--text-accent, #6366f1) !important;
+  outline-offset: -1px;
+  background-color: color-mix(in srgb, var(--text-accent, #6366f1) 12%, transparent) !important;
+  border-radius: 8px !important;
+  width: calc(100% - 4px) !important;
+  max-width: calc(100% - 4px) !important;
+  margin-right: 4px !important;
 }
 
 /* --- CORNER HANDLES (Knob & Delete) --- */

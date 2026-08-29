@@ -12,38 +12,86 @@ import { setupTableDragAndDrop } from './tableDragAndDrop'
 import { setupTableInsertion } from './tableInsertion'
 import { setupTableColResizing } from './tableColResizing'
 import { icons } from './icons.js'
+import { createTableTitleDOM } from './tableRename.js'
+import { createTableQuickActionsDOM } from './tableQuickActions.js'
+import { createTableViewModeToggleDOM } from './tableSourceView.js'
 
 import { parseTable, serializeTable, readModelFromDom, getCellSource } from './tableModel'
 import { renderCellSourceDecorated, makeCell } from './tableCellDom'
 
 export function findCurrentTableRange(view, dom) {
-  const pos = view.posAtDOM(dom)
-  if (pos < 0) return null
+  if (!dom) return null
+  const wrap = dom.closest ? (dom.closest('.cm-atomic-table') || dom) : dom
+  if (!wrap) return null
+
+  const doc = view.state.doc
   const tree = syntaxTree(view.state)
-  let node = tree.resolveInner(pos, 1)
-  while (node && node.name !== 'Table') node = node.parent
-  let from = -1
-  let to = -1
-  if (node) {
-    from = node.from
-    to = node.to
-  } else {
-    const line = view.state.doc.lineAt(pos)
-    node = tree.resolveInner(line.from, 1)
-    while (node && node.name !== 'Table') {
-      if (node.to > line.to) break
-      node = node.parent || tree.resolveInner(node.to + 1, 1)
-    }
-    if (node && node.name === 'Table') {
-      from = node.from
-      to = node.to
+
+  let pos = -1
+  try {
+    pos = view.posAtDOM(wrap)
+  } catch {}
+
+  if (pos < 0) {
+    const child = wrap.querySelector('th, td, .cm-atomic-table-cell-source')
+    if (child) {
+      try {
+        pos = view.posAtDOM(child)
+      } catch {}
     }
   }
-  if (from >= 0 && to >= 0) {
-    const startLine = view.state.doc.lineAt(from)
+
+  // Find all Table nodes in the syntax tree
+  const tableNodes = []
+  tree.iterate({
+    enter: (n) => {
+      if (n.name === 'Table') {
+        tableNodes.push(n.node)
+        return false
+      }
+    }
+  })
+
+  if (tableNodes.length === 0) return null
+
+  let targetNode = null
+
+  // 1. If pos is valid, find the Table node that directly matches or is nearest to pos
+  if (pos >= 0) {
+    let closest = null
+    let minDist = Infinity
+    for (const n of tableNodes) {
+      if (pos >= n.from && pos <= n.to) {
+        targetNode = n
+        break
+      }
+      const dist = Math.min(Math.abs(n.from - pos), Math.abs(n.to - pos))
+      if (dist < minDist) {
+        minDist = dist
+        closest = n
+      }
+    }
+    if (!targetNode && closest && minDist <= 250) {
+      targetNode = closest
+    }
+  }
+
+  // 2. Fallback: match by DOM index among all rendered tables in document
+  if (!targetNode) {
+    const allTables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
+    const tableIdx = allTables.indexOf(wrap)
+    if (tableIdx >= 0 && tableIdx < tableNodes.length) {
+      targetNode = tableNodes[tableIdx]
+    } else {
+      targetNode = tableNodes[0]
+    }
+  }
+
+  if (targetNode) {
+    const startLine = doc.lineAt(targetNode.from)
     let fromPos = startLine.from
     if (startLine.number > 1) {
-      const prevLine = view.state.doc.line(startLine.number - 1)
+      const prevLine = doc.line(startLine.number - 1)
       if (
         prevLine.text.trim().match(/^<!--\s*table:\s*(.*?)\s*-->$/i) ||
         prevLine.text.trim().match(/^Table:\s*(.+)$/i)
@@ -51,9 +99,10 @@ export function findCurrentTableRange(view, dom) {
         fromPos = prevLine.from
       }
     }
-    const endLine = view.state.doc.lineAt(to)
+    const endLine = doc.lineAt(targetNode.to)
     return { from: fromPos, to: endLine.to }
   }
+
   return null
 }
 // ---- DOM helpers ----------------------------------------------------
@@ -152,63 +201,17 @@ export class TableWidget extends WidgetType {
     header.className = 'cm-table-ui-header'
     header.contentEditable = 'false'
 
-    // Left group: Drag handle + Editable Table Title
+    // Left group: Editable Table Title Trigger + [Table | Source] View Toggle
     const leftGroup = document.createElement('div')
     leftGroup.className = 'cm-table-ui-left'
-    
-    const dragHandle = document.createElement('div')
-    dragHandle.className = 'cm-table-ui-drag-handle'
-    dragHandle.title = 'Drag table'
-    dragHandle.innerHTML = icons.grip
-    dragHandle.draggable = true
-    dragHandle.addEventListener('dragstart', (e) => {
-      const range = findCurrentTableRange(view, wrap)
-      if (range) {
-        const text = view.state.sliceDoc(range.from, range.to)
-        e.dataTransfer.setData('text/plain', text)
-        e.dataTransfer.effectAllowed = 'move'
-        // Let CodeMirror know we are dragging this range so it can move instead of copy
-        view.dispatch({ selection: { anchor: range.from, head: range.to } })
-      }
-    })
-    leftGroup.appendChild(dragHandle)
+    leftGroup.appendChild(createTableTitleDOM(view, wrap, this.model))
+    leftGroup.appendChild(createTableViewModeToggleDOM(view, wrap, this.model))
 
-    const titleInput = document.createElement('input')
-    titleInput.type = 'text'
-    titleInput.className = 'cm-table-ui-title-input'
-    titleInput.placeholder = 'Table title...'
-    titleInput.value = this.model.caption || ''
-    titleInput.title = 'Click to edit table title'
-
-    titleInput.addEventListener('mousedown', (e) => e.stopPropagation())
-    titleInput.addEventListener('keydown', (e) => {
-      e.stopPropagation()
-      if (e.key === 'Enter') {
-        titleInput.blur()
-      }
-    })
-    titleInput.addEventListener('change', () => {
-      wrap.dataset.caption = titleInput.value.trim()
-      const range = findCurrentTableRange(view, wrap)
-      if (range) {
-        const updatedModel = { ...this.model, caption: titleInput.value.trim() }
-        const newText = serializeTable(updatedModel)
-        view.dispatch({ changes: { from: range.from, to: range.to, insert: newText } })
-      }
-    })
-    leftGroup.appendChild(titleInput)
-
-    // Right group: Dimension badge + Delete button
+    // Right group: Quick Actions/Export + Delete button
     const rightGroup = document.createElement('div')
     rightGroup.className = 'cm-table-ui-right'
 
-    const colCount = this.model.header.length
-    const rowCount = this.model.rows.length
-    const dimBadge = document.createElement('span')
-    dimBadge.className = 'cm-table-dim-badge'
-    dimBadge.title = `${rowCount} rows × ${colCount} columns`
-    dimBadge.textContent = `${rowCount} × ${colCount}`
-    rightGroup.appendChild(dimBadge)
+    rightGroup.appendChild(createTableQuickActionsDOM(view, wrap, this.model))
 
     const deleteBtn = document.createElement('button')
     deleteBtn.className = 'cm-table-ui-delete-btn'
@@ -219,7 +222,16 @@ export class TableWidget extends WidgetType {
       e.stopPropagation()
       const range = findCurrentTableRange(view, wrap)
       if (range) {
-        view.dispatch({ changes: { from: range.from, to: range.to, insert: '' } })
+        let from = range.from
+        let to = range.to
+        const doc = view.state.doc
+        if (to < doc.length && view.state.sliceDoc(to, to + 1) === '\n') {
+          to += 1
+        } else if (from > 0 && view.state.sliceDoc(from - 1, from) === '\n') {
+          from -= 1
+        }
+        view.dispatch({ changes: { from, to, insert: '' } })
+        view.focus()
       }
     })
     rightGroup.appendChild(deleteBtn)
@@ -235,10 +247,11 @@ export class TableWidget extends WidgetType {
     scrollContainer.appendChild(table)
     wrap.appendChild(scrollContainer)
 
+    const colCount = this.model.header.length
     const thead = document.createElement('thead')
 
     const headerRow = document.createElement('tr')
-    for (let i = 0; i < this.model.header.length; i++) {
+    for (let i = 0; i < colCount; i++) {
       const cell = makeCell('th', this.model.header[i], view)
       if (this.model.alignments?.[i]) {
         cell.style.textAlign = this.model.alignments[i]
