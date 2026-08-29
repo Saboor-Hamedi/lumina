@@ -722,12 +722,16 @@
 }
 
 /* Prevent cm-activeLine from adding left border/box-shadow on tables */
-.cm-activeLine:has(.cm-atomic-table),
+.cm-activeLine:has(.cm-atomic-table) {
+  box-shadow: none !important;
+  outline: none !important;
+  border-left: none !important;
+}
+
 .cm-atomic-table:focus,
 .cm-table-scroll-container:focus {
   box-shadow: none !important;
   outline: none !important;
-  border: none !important;
 }
 
 /* Prevent inner cells from duplicating the table's outer border */
