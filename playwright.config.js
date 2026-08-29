@@ -14,8 +14,10 @@ module.exports = defineConfig({
   workers: 1,
   fullyParallel: false,
 
-  // Retry once on CI for flaky startup
-  retries: process.env.CI ? 1 : 0,
+  // Retry flaky launches — on Windows, rapidly launching many Electron instances
+  // back-to-back intermittently crashes with 0xC0000409 (fast-fail). Files pass in
+  // isolation but can fail under sustained full-suite load, so retry a couple times.
+  retries: process.env.CI ? 2 : 1,
 
   reporter: [['list'], ['html', { outputFolder: 'test/e2e/report', open: 'never' }]],
 

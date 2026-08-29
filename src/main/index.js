@@ -23,7 +23,14 @@ import { useGlobalShortcut } from './handlers/useGlobalShortcut'
 import { useTrayIcon, isAppQuitting, setAppQuitting } from './handlers/useTrayIcon'
 import { updateAutoLauncher } from './handlers/useAutoLauncher'
 
-// Force rebuild timestamp: 5
+// Force rebuild timestamp: 6
+
+// E2E test isolation: give each launched app its own userData dir so rapid
+// relaunches never contend on the same SQLite DB / cache (prevents Windows
+// fast-fail crashes 0xC0000409 under Playwright).
+if (process.env.LUMINA_TEST_USERDATA) {
+  app.setPath('userData', process.env.LUMINA_TEST_USERDATA)
+}
 
 let mainWindow
 let hasIndexed = false
@@ -635,7 +642,9 @@ app.whenReady().then(async () => {
 })
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin' && isAppQuitting()) {
+  const settings = SettingsManager.getAll()
+  const launchOnStartup = settings?.launchOnStartup === true
+  if (process.platform !== 'darwin' && (!launchOnStartup || isAppQuitting())) {
     app.quit()
   }
 })

@@ -69,7 +69,7 @@ const AppShell = () => {
 
   // Initialize typing sound hook globally
   useTypingSound()
-  const [settingsInitialTab, setSettingsInitialTab] = useState('general')
+  const [settingsInitialTab, setSettingsInitialTab] = useState('look-and-feel')
 
   const [activeTab, setActiveTab] = useState('files')
   const [showSettings, setShowSettings] = useState(false)
@@ -743,7 +743,7 @@ const AppShell = () => {
         <Settings
           onClose={() => {
             setShowSettings(false)
-            setSettingsInitialTab('general') // Reset to default
+            setSettingsInitialTab('look-and-feel') // Reset to default
           }}
           onOpenTheme={() => {
             setShowSettings(false)
@@ -799,7 +799,7 @@ const AppShell = () => {
         }}
         onNew={handleNew}
         onToggleSettings={(tab) => {
-          setSettingsInitialTab(tab || 'general')
+          setSettingsInitialTab(tab || 'look-and-feel')
           setShowSettings(true)
         }}
         onToggleGraph={() => setShowGraph(true)}

@@ -8,6 +8,9 @@ build
 
 .env
 .antigravityignore
-test/
 
 # notes/
+
+# Playwright test artifacts
+test-results/
+test/e2e/report/

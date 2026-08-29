@@ -10,9 +10,9 @@ import './Settings.css'
 
 const Settings = ({ onClose, onOpenTheme, initialTab = 'look-and-feel' }) => {
   const mapInitialTab = (tab) => {
-    if (['general', 'shortcuts', 'graph'].includes(tab)) return 'advanced'
-    if (['appearance', 'type'].includes(tab)) return 'look-and-feel'
-    if (tab === 'ai') return 'assistant'
+    if (['shortcuts', 'graph', 'advanced'].includes(tab)) return 'advanced'
+    if (['ai', 'assistant'].includes(tab)) return 'assistant'
+    if (['look-and-feel', 'appearance', 'type', 'general'].includes(tab)) return 'look-and-feel'
     return 'look-and-feel'
   }
 
