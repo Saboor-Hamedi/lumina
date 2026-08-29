@@ -20,35 +20,40 @@ export function findCurrentTableRange(view, dom) {
   const pos = view.posAtDOM(dom)
   if (pos < 0) return null
   const tree = syntaxTree(view.state)
-  // Check the exact pos first
   let node = tree.resolveInner(pos, 1)
   while (node && node.name !== 'Table') node = node.parent
-  if (node) return { from: node.from, to: node.to }
-  
-  // If not found (e.g. because of leading whitespace indentation),
-  // search forward slightly on the same line.
-  const line = view.state.doc.lineAt(pos)
-  node = tree.resolveInner(line.from, 1)
-  while (node && node.name !== 'Table') {
-    if (node.to > line.to) break
-    node = node.parent || tree.resolveInner(node.to + 1, 1)
-  }
-  if (node && node.name === 'Table') return { from: node.from, to: node.to }
-
-  // Fallback: scan for the nearest Table node containing or starting
-  // at pos. Rare — resolveInner + parent walk handles almost every
-  // case — but guards against parser edge cases.
-  let found = null
-  tree.iterate({
-    from: line.from,
-    to: line.to,
-    enter: (n) => {
-      if (n.name !== 'Table') return
-      found = n.node
-      return false
+  let from = -1
+  let to = -1
+  if (node) {
+    from = node.from
+    to = node.to
+  } else {
+    const line = view.state.doc.lineAt(pos)
+    node = tree.resolveInner(line.from, 1)
+    while (node && node.name !== 'Table') {
+      if (node.to > line.to) break
+      node = node.parent || tree.resolveInner(node.to + 1, 1)
     }
-  })
-  if (found) return { from: found.from, to: found.to }
+    if (node && node.name === 'Table') {
+      from = node.from
+      to = node.to
+    }
+  }
+  if (from >= 0 && to >= 0) {
+    const startLine = view.state.doc.lineAt(from)
+    let fromPos = startLine.from
+    if (startLine.number > 1) {
+      const prevLine = view.state.doc.line(startLine.number - 1)
+      if (
+        prevLine.text.trim().match(/^<!--\s*table:\s*(.*?)\s*-->$/i) ||
+        prevLine.text.trim().match(/^Table:\s*(.+)$/i)
+      ) {
+        fromPos = prevLine.from
+      }
+    }
+    const endLine = view.state.doc.lineAt(to)
+    return { from: fromPos, to: endLine.to }
+  }
   return null
 }
 // ---- DOM helpers ----------------------------------------------------
@@ -86,6 +91,7 @@ export class TableWidget extends WidgetType {
   // calling `toDOM` again — which is what lets the caret survive
   // across the per-keystroke dispatch cycle.
   eq(other) {
+    if (other.model.caption !== this.model.caption) return false
     if (other.model.header.length !== this.model.header.length) return false
     if (other.model.rows.length !== this.model.rows.length) return false
     for (let i = 0; i < this.model.header.length; i++) {
@@ -103,6 +109,9 @@ export class TableWidget extends WidgetType {
     const wrap = document.createElement('div')
     wrap.className = 'cm-atomic-table'
     wrap.tabIndex = -1
+    if (this.model.caption) {
+      wrap.dataset.caption = this.model.caption
+    }
 
     wrap.addEventListener('keydown', (event) => {
       if (view.state.readOnly) return
@@ -142,6 +151,10 @@ export class TableWidget extends WidgetType {
     const header = document.createElement('div')
     header.className = 'cm-table-ui-header'
     header.contentEditable = 'false'
+
+    // Left group: Drag handle + Editable Table Title
+    const leftGroup = document.createElement('div')
+    leftGroup.className = 'cm-table-ui-left'
     
     const dragHandle = document.createElement('div')
     dragHandle.className = 'cm-table-ui-drag-handle'
@@ -158,6 +171,44 @@ export class TableWidget extends WidgetType {
         view.dispatch({ selection: { anchor: range.from, head: range.to } })
       }
     })
+    leftGroup.appendChild(dragHandle)
+
+    const titleInput = document.createElement('input')
+    titleInput.type = 'text'
+    titleInput.className = 'cm-table-ui-title-input'
+    titleInput.placeholder = 'Table title...'
+    titleInput.value = this.model.caption || ''
+    titleInput.title = 'Click to edit table title'
+
+    titleInput.addEventListener('mousedown', (e) => e.stopPropagation())
+    titleInput.addEventListener('keydown', (e) => {
+      e.stopPropagation()
+      if (e.key === 'Enter') {
+        titleInput.blur()
+      }
+    })
+    titleInput.addEventListener('change', () => {
+      wrap.dataset.caption = titleInput.value.trim()
+      const range = findCurrentTableRange(view, wrap)
+      if (range) {
+        const updatedModel = { ...this.model, caption: titleInput.value.trim() }
+        const newText = serializeTable(updatedModel)
+        view.dispatch({ changes: { from: range.from, to: range.to, insert: newText } })
+      }
+    })
+    leftGroup.appendChild(titleInput)
+
+    // Right group: Dimension badge + Delete button
+    const rightGroup = document.createElement('div')
+    rightGroup.className = 'cm-table-ui-right'
+
+    const colCount = this.model.header.length
+    const rowCount = this.model.rows.length
+    const dimBadge = document.createElement('span')
+    dimBadge.className = 'cm-table-dim-badge'
+    dimBadge.title = `${rowCount} rows × ${colCount} columns`
+    dimBadge.textContent = `${rowCount} × ${colCount}`
+    rightGroup.appendChild(dimBadge)
 
     const deleteBtn = document.createElement('button')
     deleteBtn.className = 'cm-table-ui-delete-btn'
@@ -171,9 +222,10 @@ export class TableWidget extends WidgetType {
         view.dispatch({ changes: { from: range.from, to: range.to, insert: '' } })
       }
     })
+    rightGroup.appendChild(deleteBtn)
 
-    header.appendChild(dragHandle)
-    header.appendChild(deleteBtn)
+    header.appendChild(leftGroup)
+    header.appendChild(rightGroup)
     wrap.appendChild(header)
 
     const scrollContainer = document.createElement('div')
@@ -199,7 +251,6 @@ export class TableWidget extends WidgetType {
     thead.appendChild(headerRow)
     table.appendChild(thead)
     const tbody = document.createElement('tbody')
-    const colCount = this.model.header.length
     for (let r = 0; r < this.model.rows.length; r++) {
       const row = this.model.rows[r]
       const tr = document.createElement('tr')
@@ -591,11 +642,21 @@ export function buildTableWidgets(state) {
       if (!model) return
       const startLine = doc.lineAt(node.from)
       const endLine = doc.lineAt(node.to)
+      let fromPos = startLine.from
+      if (startLine.number > 1) {
+        const prevLine = doc.line(startLine.number - 1)
+        if (
+          prevLine.text.trim().match(/^<!--\s*table:\s*(.*?)\s*-->$/i) ||
+          prevLine.text.trim().match(/^Table:\s*(.+)$/i)
+        ) {
+          fromPos = prevLine.from
+        }
+      }
       ranges.push(
         Decoration.replace({
           widget: new TableWidget(model),
           block: true
-        }).range(startLine.from, endLine.to)
+        }).range(fromPos, endLine.to)
       )
       return false // don't descend
     }

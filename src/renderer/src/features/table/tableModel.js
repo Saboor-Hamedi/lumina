@@ -86,7 +86,17 @@ export function parseTable(state, tableNode) {
   // Pad alignments array if needed
   while (alignments.length < header.length) alignments.push('')
 
-  return { header, rows, alignments }
+  let caption = ''
+  const startLine = state.doc.lineAt(tableNode.from)
+  if (startLine.number > 1) {
+    const prevLine = state.doc.line(startLine.number - 1).text.trim()
+    const titleMatch = prevLine.match(/^<!--\s*table:\s*(.*?)\s*-->$/i) || prevLine.match(/^Table:\s*(.+)$/i)
+    if (titleMatch) {
+      caption = titleMatch[1].trim()
+    }
+  }
+
+  return { header, rows, alignments, caption }
 }
 // Escape cell content so it can't break the row's GFM structure: an
 // unescaped `|` would split the cell into two columns, and a stray
@@ -109,6 +119,11 @@ export function escapeCell(text) {
 export function serializeTable(model) {
   const columnCount = model.header.length
   const lines = []
+
+  if (model.caption && model.caption.trim()) {
+    lines.push(`<!-- table: ${model.caption.trim()} -->`)
+  }
+
   lines.push('| ' + model.header.map(escapeCell).join(' | ') + ' |')
 
   const delimiterRow = []
@@ -139,7 +154,9 @@ export function readModelFromDom(wrap) {
   const rows = Array.from(wrap.querySelectorAll('tbody tr')).map((tr) =>
     Array.from(tr.querySelectorAll('td')).map(readCellSource)
   )
-  return { header, rows, alignments }
+  const titleInput = wrap.querySelector('.cm-table-ui-title-input')
+  const caption = titleInput ? titleInput.value.trim() : (wrap.dataset.caption || '')
+  return { header, rows, alignments, caption }
 }
 // A cell's raw markdown lives in `dataset.raw` — the source of truth
 // that `readModelFromDom` reads when serializing the table back to

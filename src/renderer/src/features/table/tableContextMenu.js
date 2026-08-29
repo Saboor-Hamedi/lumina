@@ -82,9 +82,15 @@ export function openCellMenu(view, cell, x, y) {
       m.rows.splice(row + 1, 0, [...m.rows[row]])
       dispatchModel(view, wrap, m)
     }),
-    createItem('Delete row', icons.row, () => { // Changed to row icon per user request
+    createItem('Delete row', icons.row, () => {
       const m = readModelFromDom(wrap)
-      if (row >= 0 && row < m.rows.length) m.rows.splice(row, 1)
+      const sel = wrap.__getGridSelection ? wrap.__getGridSelection() : null
+      if (sel && sel.minR >= 0 && sel.maxR >= 0) {
+        const deleteCount = sel.maxR - sel.minR + 1
+        m.rows.splice(sel.minR, deleteCount)
+      } else if (row >= 0 && row < m.rows.length) {
+        m.rows.splice(row, 1)
+      }
       dispatchModel(view, wrap, m)
     })
   ]
@@ -161,12 +167,21 @@ export function openCellMenu(view, cell, x, y) {
       for (const r of m.rows) r.splice(col + 1, 0, r[col])
       dispatchModel(view, wrap, m)
     }),
-    createItem('Delete column', icons.column, () => { // Changed to column icon per user request
+    createItem('Delete column', icons.column, () => {
       const m = readModelFromDom(wrap)
-      if (m.header.length <= 1 || col < 0) return
-      m.header.splice(col, 1)
-      m.alignments.splice(col, 1)
-      for (const r of m.rows) r.splice(col, 1)
+      const sel = wrap.__getGridSelection ? wrap.__getGridSelection() : null
+      if (sel && sel.minC >= 0 && sel.maxC >= 0) {
+        const deleteCount = sel.maxC - sel.minC + 1
+        if (m.header.length > deleteCount) {
+          m.header.splice(sel.minC, deleteCount)
+          m.alignments.splice(sel.minC, deleteCount)
+          for (const r of m.rows) r.splice(sel.minC, deleteCount)
+        }
+      } else if (col >= 0 && col < m.header.length && m.header.length > 1) {
+        m.header.splice(col, 1)
+        m.alignments.splice(col, 1)
+        for (const r of m.rows) r.splice(col, 1)
+      }
       dispatchModel(view, wrap, m)
     })
   ]
