@@ -41,11 +41,12 @@
 /* --- TABLE CORE STRUCTURE --- */
 .cm-table-scroll-wrap {
   display: block;
-  overflow: auto;
+  overflow: visible;
   max-width: 100% !important;
-  margin: 4px 0 !important;
+  margin: 2px 0 !important;
   box-sizing: border-box;
 }
+
 
 /* Elegant Premium Scrollbar for the table container */
 .cm-table-scroll-wrap::-webkit-scrollbar {
@@ -73,10 +74,10 @@
 
 .cm-atomic-table {
   position: relative;
-  margin: 16px 0 !important;
+  margin: 8px 0 4px 0 !important;
   padding: 0 !important;
   display: block;
-  width: 100% !important;
+  width: max-content !important;
   max-width: 100% !important;
   border-radius: 8px;
   box-sizing: border-box;
@@ -84,7 +85,6 @@
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
-  
   overflow: visible !important;
   user-select: none;
 }
@@ -384,7 +384,13 @@
   cursor: grabbing !important;
 }
 
-/* 1) When selected via native CodeMirror (e.g. shift arrow keys over the widget) */
+/* 1) When selected via native CodeMirror (e.g. Ctrl+A / shift arrow keys over the widget) */
+.cm-atomic-table.cm-widget-selected-by-cm {
+  /* Lock dimensions so the table cannot shrink during selection reflow */
+  min-width: max-content !important;
+  contain: layout style !important;
+}
+
 .cm-atomic-table.cm-widget-selected-by-cm td,
 .cm-atomic-table.cm-widget-selected-by-cm th {
   background-color: rgba(var(--text-accent-rgb, 64, 186, 250), 0.7) !important;

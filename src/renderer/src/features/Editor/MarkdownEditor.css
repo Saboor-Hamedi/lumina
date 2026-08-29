@@ -169,24 +169,23 @@
   max-height: 1.5em !important;
 }
 
-/* --- FIX: Prevent Table Shrinkage on Ctrl+A (Select All) --- */
+/* --- Table Stability: Prevent layout shift on focus / Ctrl+A --- */
 
-/* Force the table widget to keep its natural width even when the line is selected */
+/* Keep the widget rendering as a block regardless of selection state */
 .cm-line:has(.cm-atomic-table).cm-selectedLine .cm-atomic-table,
 .cm-line:has(.cm-atomic-table).cm-activeLine .cm-atomic-table,
 .cm-editor:focus-within .cm-atomic-table {
-  width: max-content !important;
-  min-width: max-content !important;
   display: block !important;
 }
 
-/* Ensure the scroll wrapper doesn't collapse */
+/* Ensure the scroll wrapper never collapses */
 .cm-table-scroll-wrap:has(.cm-atomic-table),
 .cm-table-scroll-container {
-  min-width: fit-content !important;
-  width: auto !important;
+  min-width: 0 !important;
+  width: 100% !important;
   display: block !important;
 }
+
 
 /* Prevent selection overlays from interfering with table dimensions */
 .cm-selectionLayer {

@@ -479,21 +479,23 @@ export function arrowUpIntoTable(view) {
   const sel = state.selection.main
   if (!sel.empty) return false
   const pos = sel.head
+  if (pos === 0) return false
 
-  const line = state.doc.lineAt(pos)
-  if (line.number === 1) return false
-  
-  const prevLine = state.doc.line(line.number - 1)
-  
+  // Scan backwards in the syntax tree for a Table node whose end is
+  // adjacent to the current cursor position. The table widget is a
+  // block Decoration.replace that swallows all source lines, so
+  // line.number - 1 points *inside* the replaced range and won't
+  // find anything. We look up to ~3 chars back to handle the \n
+  // separator between the table and the following line.
   const tree = syntaxTree(state)
   let tableNode = null
   tree.iterate({
-    from: prevLine.from,
-    to: prevLine.to,
+    from: Math.max(0, pos - 3),
+    to: pos,
     enter: (n) => {
-      if (n.name === 'Table') {
+      if (n.name !== 'Table') return
+      if (n.to === pos || n.to + 1 === pos || n.to + 2 === pos) {
         tableNode = n.node
-        return false
       }
     }
   })
@@ -504,11 +506,11 @@ export function arrowUpIntoTable(view) {
   const startLine = state.doc.lineAt(tableNode.from)
   const target = tables.find(t => {
     try {
-      const pos = view.posAtDOM(t)
-      return pos === startLine.from || pos === tableNode.from
+      const p = view.posAtDOM(t)
+      return p === startLine.from || p === tableNode.from
     } catch { return false }
   })
-  
+
   if (target) {
     const trs = Array.from(target.querySelectorAll('tbody tr'))
     const lastRow = trs.length > 0 ? trs[trs.length - 1] : target.querySelector('thead tr')
@@ -523,6 +525,7 @@ export function arrowUpIntoTable(view) {
   }
   return false
 }
+
 
 export function arrowDownIntoTable(view) {
   const { state } = view
@@ -677,13 +680,32 @@ const tableSelectionSyncPlugin = ViewPlugin.fromClass(
     syncSelection(view) {
       const sel = view.state.selection.main
       const tables = view.dom.querySelectorAll('.cm-atomic-table')
+
+      // Full-document selection (Ctrl+A): just mark all tables as selected
+      // without calling posAtDOM which triggers a layout measurement and
+      // causes the widget to shrink during reflow.
+      const isFullDocSelect = sel.from === 0 && sel.to === view.state.doc.length && !sel.empty
+      if (isFullDocSelect) {
+        for (const table of tables) {
+          const hasFocus = table.contains(document.activeElement)
+          const hasDomSelection =
+            window.getSelection().anchorNode && table.contains(window.getSelection().anchorNode)
+          if (!hasFocus && !hasDomSelection) {
+            table.classList.add('cm-widget-selected-by-cm')
+          }
+        }
+        return
+      }
+
       for (const table of tables) {
+        // Pin the table's current width before any layout query so reflow
+        // cannot collapse it.
+        const currentWidth = table.offsetWidth
+        if (currentWidth > 0) table.style.minWidth = currentWidth + 'px'
+
         const pos = view.posAtDOM(table)
-        // Check if this pos is inside the CodeMirror selection
         const isSelected = pos !== null && pos >= sel.from && pos <= sel.to && !sel.empty
 
-        // If the actual DOM focus is INSIDE the table, the user is editing it.
-        // Do NOT highlight the entire table blue in this case.
         const hasFocus = table.contains(document.activeElement)
         const hasDomSelection =
           window.getSelection().anchorNode && table.contains(window.getSelection().anchorNode)
@@ -692,11 +714,14 @@ const tableSelectionSyncPlugin = ViewPlugin.fromClass(
           table.classList.add('cm-widget-selected-by-cm')
         } else {
           table.classList.remove('cm-widget-selected-by-cm')
+          // Release the pinned width once deselected
+          table.style.minWidth = ''
         }
       }
     }
   }
 )
+
 
 export function preventTableDeletion(view, event) {
   const sel = view.state.selection.main
