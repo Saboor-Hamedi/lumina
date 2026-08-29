@@ -104,22 +104,23 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
     <div
       ref={dropdownRef}
       className="setting-dropdown-menu"
+      onClick={(e) => e.stopPropagation()}
       style={{
         position: 'absolute',
-        bottom: '100%',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: 'calc(100% - 20px)',
-        marginBottom: '8px',
-        backgroundColor: 'var(--bg-app)',
-        border: '1px solid var(--border-dim)',
-        borderRadius: 'var(--radius-md, 5px)',
-        boxShadow: 'var(--shadow-popup, 0 4px 12px rgba(0,0,0,0.15))',
-        padding: '4px',
-        zIndex: 100,
+        bottom: 'calc(100% + 6px)',
+        left: 0,
+        right: 0,
+        width: '100%',
+        backgroundColor: 'var(--bg-app, #121218)',
+        border: '1px solid rgba(255, 255, 255, 0.06)',
+        borderRadius: '8px',
+        boxShadow: 'none',
+        padding: '5px',
+        zIndex: 9999,
         display: 'flex',
         flexDirection: 'column',
-        gap: '2px'
+        gap: '2px',
+        boxSizing: 'border-box'
       }}
     >
       {/* ── Profile header (when logged in) ── */}
@@ -201,6 +202,7 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
       <DropdownItem
         icon={<Settings size={14} />}
         label="Settings"
+        shortcut="Ctrl+,"
         onClick={() => {
           onClose()
           onSettingsClick && onSettingsClick()
@@ -209,6 +211,7 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
       <DropdownItem
         icon={<Palette size={14} />}
         label="Theme"
+        shortcut="Ctrl+T"
         onClick={() => {
           onClose()
           onThemeClick && onThemeClick()
@@ -418,7 +421,7 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
   )
 }
 
-const DropdownItem = ({ icon, label, onClick, highlight }) => {
+const DropdownItem = ({ icon, label, shortcut, onClick, highlight }) => {
   return (
     <button
       onClick={onClick}
@@ -447,8 +450,23 @@ const DropdownItem = ({ icon, label, onClick, highlight }) => {
     >
       {icon}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>{label}</div>
+      {shortcut && (
+        <span
+          style={{
+            fontSize: '11px',
+            color: 'var(--text-faint, #64748b)',
+            fontFamily: 'inherit',
+            marginLeft: 'auto',
+            letterSpacing: '0.02em',
+            userSelect: 'none'
+          }}
+        >
+          {shortcut}
+        </span>
+      )}
     </button>
   )
 }
 
 export default SettingDropdown
+

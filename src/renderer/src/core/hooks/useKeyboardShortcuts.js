@@ -138,6 +138,12 @@ export const useKeyboardShortcuts = (shortcuts) => {
         shortcutsRef.current.onOpenDocs()
       }
 
+      // Open Shortcuts: Ctrl+? or Ctrl+/
+      if (isCmd && (e.key === '?' || key === '/' || (e.shiftKey && key === '/')) && shortcutsRef.current.onOpenShortcuts) {
+        e.preventDefault()
+        shortcutsRef.current.onOpenShortcuts()
+      }
+
       // Toggle Theme: Ctrl+T
       if (isCmd && !e.shiftKey && key === 't' && shortcutsRef.current.onToggleTheme) {
         e.preventDefault()
@@ -237,6 +243,7 @@ export const SHORTCUT_DISPLAY_GROUPS = [
     items: [
       { label: 'Spotlight (Internal & Global)', key: 'Ctrl + Space' },
       { label: 'Settings', key: 'Ctrl + ,' },
+      { label: 'Keyboard Shortcuts', key: 'Ctrl + /' },
       { label: 'Quick Search', key: 'Ctrl + P' },
       { label: 'Global Search', key: 'Ctrl + Shift + F' },
       { label: 'Toggle Theme', key: 'Ctrl + T' },

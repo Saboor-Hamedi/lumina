@@ -4,6 +4,7 @@ import {
   FileText,
   FileCode,
   Files,
+  NotebookText,
   Star,
   StarOff,
   Pin,
@@ -61,7 +62,8 @@ import {
   DroppableFolderItem,
   SortableGridItem,
   OverlayWrapper,
-  DroppableRootZone
+  DroppableRootZone,
+  NoteNumbers
 } from './components'
 import { useFileSearch } from './hooks/useFileSearch'
 import { useFileTree } from './hooks/useFileTree'
@@ -945,7 +947,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
               setCreating(null)
             }}
           >
-            <Files size={12} />
+            <NotebookText size={12} />
             <span>All Notes</span>
           </button>
           <button
@@ -1032,9 +1034,14 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
           {activeTab === 'all' && (
             <div className="start-section">
               <div className="start-section-header">
-                <h3>
-                  {allSnippets.length} {allSnippets.length === 1 ? 'Note' : 'Notes'}
-                </h3>
+                <div className="section-title-wrap" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {isQueryActive && <h3>Search Results</h3>}
+                  <NoteNumbers
+                    count={isQueryActive ? filteredSnippets.length : allSnippets.length}
+                    total={allSnippets.length}
+                    isQueryActive={isQueryActive}
+                  />
+                </div>
                 <div className="header-actions" style={{ display: 'flex', gap: '4px' }}>
                   <ToolTip text="New Note">
                     <button

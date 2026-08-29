@@ -1,32 +1,47 @@
 import React from 'react'
+import { BookOpen, PanelRight, Keyboard } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
-const StatusBar = ({ wordCount, extension, onToggleInspector, onDocsClick }) => {
+import '../../../assets/statusbar.css'
+
+const StatusBar = ({
+  onToggleInspector,
+  onDocsClick,
+  onShortcutsClick
+}) => {
   return (
     <div className="status-bar">
+      {/* Left utility buttons */}
       <div className="status-bar-left">
-        <ToolTip text="Toggle Details Modal (Ctrl + \)" position="top">
-          <span className="mode-toggle" onClick={onToggleInspector}>
-            details
-          </span>
+        <ToolTip text="Toggle Details & Outline (Ctrl + \)" position="top">
+          <button className="status-bar-btn" onClick={onToggleInspector}>
+            <PanelRight size={12} />
+            <span>Details</span>
+          </button>
         </ToolTip>
-        <span className="separator">/</span>
-        <ToolTip text="Open Documentation" position="top">
-          <span className="mode-toggle" onClick={onDocsClick}>
-            docs
-          </span>
+
+        <span className="status-bar-divider" />
+
+        <ToolTip text="Documentation (Ctrl + D)" position="top">
+          <button className="status-bar-btn" onClick={onDocsClick}>
+            <BookOpen size={12} />
+            <span>Docs</span>
+          </button>
+        </ToolTip>
+
+        <span className="status-bar-divider" />
+
+        <ToolTip text="Keyboard Shortcuts (Ctrl + ? / Ctrl + /)" position="top">
+          <button className="status-bar-btn" onClick={onShortcutsClick}>
+            <Keyboard size={12} />
+            <span>Shortcuts</span>
+          </button>
         </ToolTip>
       </div>
 
-      <div
-        className="status-bar-center"
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}
-      >
-        {/* Empty space where start button was */}
-      </div>
-
-      <div className="status-bar-right"></div>
+      {/* Center & Right spacer */}
+      <div className="status-bar-right" />
     </div>
   )
 }
 
-export default StatusBar
+export default React.memo(StatusBar)

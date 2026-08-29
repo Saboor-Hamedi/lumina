@@ -28,7 +28,7 @@ export function LearnedButton({ snippet }) {
   if (!snippet?.id) return null
 
   return (
-    <ToolTip text={isLearned ? 'Mark as Unlearned' : 'Mark as Understood / Learned'} position="bottom">
+    <ToolTip text={isLearned ? 'Mark as Not Learned' : 'Mark as Learned'} position="bottom">
       <button
         onClick={toggleLearned}
         style={{
@@ -63,7 +63,7 @@ export function LearnedButton({ snippet }) {
         }}
       >
         <Check size={12} style={{ opacity: isLearned ? 1 : 0.6 }} />
-        <span>{isLearned ? 'Learned' : 'Understand'}</span>
+        <span>{isLearned ? 'Learned' : 'Mark Learned'}</span>
       </button>
     </ToolTip>
   )
@@ -81,7 +81,7 @@ export function LearningTrackBadge() {
   const percentage = Math.min(100, Math.round((learnedCount / total) * 100))
 
   return (
-    <ToolTip text={`Learning Track: ${learnedCount} of ${total} notes understood (${percentage}%)`} position="bottom">
+    <ToolTip text={`Learning Track: ${learnedCount} of ${total} notes learned (${percentage}%)`} position="bottom">
       <div
         style={{
           marginLeft: 'auto',

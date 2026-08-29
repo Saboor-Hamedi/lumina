@@ -2,14 +2,13 @@ import React, { useEffect, useState } from 'react'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
 import { useToast } from '../../core/hooks/useToast'
-import { SHORTCUT_DISPLAY_GROUPS } from '../../core/hooks/useKeyboardShortcuts'
 
 const SettingAdvanced = () => {
   const { settings, updateSetting } = useSettingsStore()
   const { status, progress, download, install, check } = useUpdateStore()
   const { showToast } = useToast()
   const [appVersion, setAppVersion] = useState('')
-  const isMac = navigator.userAgent.toLowerCase().includes('mac')
+  const isMac = typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('mac')
 
   const formatShortcutKey = (keyString) => {
     if (!isMac) return keyString
@@ -260,41 +259,6 @@ const SettingAdvanced = () => {
         </div>
       </section>
 
-      <section style={{ marginTop: '32px' }}>
-        <h3>Keyboard Shortcuts</h3>
-        <div className="settings-block" style={{ padding: '0', background: 'transparent' }}>
-          {SHORTCUT_DISPLAY_GROUPS.map((group, i) => (
-            <div
-              key={i}
-              style={{ marginBottom: i < SHORTCUT_DISPLAY_GROUPS.length - 1 ? '24px' : '0' }}
-            >
-              <h4
-                style={{
-                  fontSize: '13px',
-                  color: 'var(--text-main)',
-                  marginBottom: '12px',
-                  paddingBottom: '8px',
-                  borderBottom: '1px solid var(--border-subtle)'
-                }}
-              >
-                {group.title}
-              </h4>
-              {group.items.map((item, j) => (
-                <div
-                  className="settings-row"
-                  key={j}
-                  style={{ padding: '8px 0', borderBottom: 'none' }}
-                >
-                  <div className="row-info" style={item.isDanger ? { color: '#ef4444' } : {}}>
-                    {item.label}
-                  </div>
-                  <div className="shortcut-badge">{formatShortcutKey(item.key)}</div>
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      </section>
 
       <section style={{ marginTop: '32px' }}>
         <h3>Developer Options</h3>

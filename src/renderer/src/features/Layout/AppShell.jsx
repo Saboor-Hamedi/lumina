@@ -458,6 +458,10 @@ const AppShell = () => {
     onOpenDocs: () => {
       setShowDocsModal(true)
     },
+    onOpenShortcuts: () => {
+      setSettingsInitialTab('shortcuts')
+      setShowSettings(true)
+    },
     onEscape: () => {
       if (showAIChatModal) {
         setShowAIChatModal(false)
@@ -718,24 +722,16 @@ const AppShell = () => {
           />
         </aside>
         <StatusBar
-          wordCount={
-            selectedSnippet?.code
-              ? selectedSnippet.code.trim().split(/\s+/).filter(Boolean).length
-              : 0
-          }
-          extension={
-            selectedSnippet?.title && selectedSnippet.title.includes('.')
-              ? selectedSnippet.title.split('.').pop()
-              : selectedSnippet
-                ? 'md'
-                : ''
-          }
           onToggleInspector={handleToggleInspector}
           onToggleExplorerModal={() => setShowExplorerModal((prev) => !prev)}
           onSettingsClick={() => setShowSettings(true)}
           onThemeClick={() => setShowThemeModal(true)}
           onGraphClick={() => setShowGraph(true)}
           onDocsClick={() => setShowDocsModal(true)}
+          onShortcutsClick={() => {
+            setSettingsInitialTab('shortcuts')
+            setShowSettings(true)
+          }}
         />
       </main>
 

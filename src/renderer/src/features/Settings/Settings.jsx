@@ -5,12 +5,14 @@ import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import SettingTab from './SettingTab'
 import SettingLookAndFeel from './SettingLookAndFeel'
 import SettingAssistant from './SettingAssistant'
+import SettingShortcuts from './SettingShortcuts'
 import SettingAdvanced from './SettingAdvanced'
 import './Settings.css'
 
 const Settings = ({ onClose, onOpenTheme, initialTab = 'look-and-feel' }) => {
   const mapInitialTab = (tab) => {
-    if (['shortcuts', 'graph', 'advanced'].includes(tab)) return 'advanced'
+    if (tab === 'shortcuts') return 'shortcuts'
+    if (['graph', 'advanced'].includes(tab)) return 'advanced'
     if (['ai', 'assistant'].includes(tab)) return 'assistant'
     if (['look-and-feel', 'appearance', 'type', 'general'].includes(tab)) return 'look-and-feel'
     return 'look-and-feel'
@@ -36,6 +38,7 @@ const Settings = ({ onClose, onOpenTheme, initialTab = 'look-and-feel' }) => {
           <main className="settings-body">
             {activeTab === 'look-and-feel' && <SettingLookAndFeel onOpenTheme={onOpenTheme} />}
             {activeTab === 'assistant' && <SettingAssistant />}
+            {activeTab === 'shortcuts' && <SettingShortcuts />}
             {activeTab === 'advanced' && <SettingAdvanced />}
           </main>
         </div>

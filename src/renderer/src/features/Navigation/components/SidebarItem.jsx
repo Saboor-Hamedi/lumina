@@ -257,6 +257,7 @@ const SidebarItem = ({
         <input
           ref={renameInputRef}
           className="inline-rename-input"
+          placeholder="Note title..."
           value={renameValue}
           onChange={(e) => setRenameValue(e.target.value)}
           onBlur={handleRename}
@@ -268,6 +269,11 @@ const SidebarItem = ({
             }
           }}
           onClick={(e) => e.stopPropagation()}
+          style={{
+            flex: 1,
+            minWidth: 0,
+            width: '100%'
+          }}
         />
       ) : (
         <div
@@ -312,16 +318,23 @@ const SidebarItem = ({
         </div>
       )}
 
-      <div className="item-meta-right">
+      <div className="item-meta-right" style={{ height: '100%', display: 'flex', alignItems: 'center' }}>
         {(isHovered || snippet.isPinned) && !isRenaming && (
-          <div className={`hover-actions ${snippet.isPinned ? 'is-pinned' : ''}`}>
+          <div className={`hover-actions ${snippet.isPinned ? 'is-pinned' : ''}`} style={{ height: '100%', display: 'flex', alignItems: 'center' }}>
             <ToolTip text={snippet.isPinned ? 'Remove from Favorites' : 'Add to Favorites'}>
               <button
                 className="action-btn"
                 onClick={handleTogglePin}
-                style={{ color: snippet.isPinned ? '#fbbf24' : undefined }}
+                style={{
+                  color: snippet.isPinned ? '#fbbf24' : undefined,
+                  height: '24px',
+                  width: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
               >
-                <Star size={12} fill={snippet.isPinned ? 'currentColor' : 'none'} />
+                <Star size={13} strokeWidth={2.2} fill={snippet.isPinned ? 'currentColor' : 'none'} />
               </button>
             </ToolTip>
           </div>
