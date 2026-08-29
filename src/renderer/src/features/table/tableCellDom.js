@@ -152,6 +152,7 @@ export function renderCellToken(tok, view) {
   if (tok.type === 'image') {
     const wrap = document.createElement('span')
     wrap.className = 'cm-atomic-image-wrap'
+    wrap.setAttribute('contenteditable', 'false')
     const markSpan = makeCellMark(tok.raw)
     wrap.appendChild(markSpan)
 

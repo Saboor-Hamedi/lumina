@@ -88,10 +88,12 @@ export class ImageWidget extends WidgetType {
   toDOM(view) {
     const wrap = document.createElement('div')
     wrap.className = `cm-image-widget-wrapper align-${this.align}`
+    wrap.setAttribute('contenteditable', 'false')
     wrap.__imageWidget = this
 
     const card = document.createElement('div')
     card.className = 'cm-image-card'
+    card.setAttribute('contenteditable', 'false')
 
     // Prevent mousedown from bubbling up and selecting the heading above
     wrap.addEventListener('mousedown', (e) => e.stopPropagation())
@@ -337,6 +339,7 @@ export class ImageWidget extends WidgetType {
     // ----------------------------------------------------------------
     const sourceContainer = document.createElement('div')
     sourceContainer.className = 'image-widget-source-container'
+    sourceContainer.setAttribute('contenteditable', 'false')
 
     const sourceTextarea = document.createElement('textarea')
     sourceTextarea.className = 'image-widget-source-textarea'
@@ -347,8 +350,30 @@ export class ImageWidget extends WidgetType {
       sourceTextarea.style.height = 'auto'
       sourceTextarea.style.height = `${sourceTextarea.scrollHeight}px`
     }
-    sourceTextarea.addEventListener('input', adjustHeight)
-    sourceTextarea.addEventListener('keydown', (e) => e.stopPropagation())
+
+    const stopPropagation = (e) => e.stopPropagation()
+    sourceTextarea.addEventListener('keydown', stopPropagation)
+    sourceTextarea.addEventListener('keyup', stopPropagation)
+    sourceTextarea.addEventListener('keypress', stopPropagation)
+    sourceTextarea.addEventListener('input', (e) => {
+      e.stopPropagation()
+      adjustHeight()
+    })
+    sourceTextarea.addEventListener('beforeinput', stopPropagation)
+    sourceTextarea.addEventListener('paste', stopPropagation)
+    sourceTextarea.addEventListener('copy', stopPropagation)
+    sourceTextarea.addEventListener('cut', stopPropagation)
+    sourceTextarea.addEventListener('mousedown', stopPropagation)
+    sourceTextarea.addEventListener('mouseup', stopPropagation)
+    sourceTextarea.addEventListener('pointerdown', stopPropagation)
+    sourceTextarea.addEventListener('pointerup', stopPropagation)
+    sourceTextarea.addEventListener('click', stopPropagation)
+    sourceTextarea.addEventListener('focus', stopPropagation)
+    sourceTextarea.addEventListener('blur', stopPropagation)
+
+    sourceContainer.addEventListener('mousedown', stopPropagation)
+    sourceContainer.addEventListener('pointerdown', stopPropagation)
+    sourceContainer.addEventListener('click', stopPropagation)
 
     sourceContainer.appendChild(sourceTextarea)
     card.appendChild(sourceContainer)
