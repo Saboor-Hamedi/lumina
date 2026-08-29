@@ -172,6 +172,7 @@
 
 .cm-table-scroll-container {
   width: 100% !important;
+  min-width: 260px !important;
   max-width: 100% !important;
   overflow-x: auto !important;
   overflow-y: visible !important;
@@ -190,7 +191,7 @@
 .cm-atomic-table table {
   display: table !important;
   width: max-content !important;
-  min-width: max-content !important;
+  min-width: 260px !important;
   table-layout: auto !important;
   border-collapse: separate !important;
   border-spacing: 0 !important;
@@ -209,16 +210,13 @@
 /* Table cells */
 .cm-atomic-table th,
 .cm-atomic-table td {
-  word-wrap: break-word !important;
-  overflow-wrap: break-word !important;
-  white-space: normal !important;
-  max-width: calc(var(--font-size-editor, 16px) * 16) !important;
+  min-width: 140px !important;
   padding: 0 !important;
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1)) !important;
   border-top: none !important;
   border-left: none !important;
   vertical-align: top !important;
-  text-align: justify;
+  text-align: left;
   transition: background 0.15s ease;
 }
 
@@ -226,16 +224,20 @@
 .cm-atomic-table.is-dragging-cols th,
 .cm-atomic-table.is-dragging-cols td,
 .cm-atomic-table.is-dragging-rows tr {
-  transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1) !important;
+  transition: transform 0.15s cubic-bezier(0.2, 0, 1) !important;
   will-change: transform;
 }
 
 .cm-atomic-table-cell-source {
   display: block;
+  min-width: 120px !important;
   min-height: 1.5em;
   padding: calc(var(--font-size-editor, 16px) * 0.5) calc(var(--font-size-editor, 16px) * 0.75) !important;
   box-sizing: border-box;
   caret-color: var(--caret-color, var(--text-accent));
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
 }
 
 
@@ -244,21 +246,13 @@
   color: var(--text-main) !important;
   font-weight: 600 !important;
   border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1)) !important;
+  border-radius: 0 !important;
 }
 
-/* Explicitly round the corners of the table to prevent bleeding */
-.cm-atomic-table th:first-child {
-  border-top-left-radius: 7px !important; /* 7px to fit perfectly inside the 1px outer border */
+.cm-atomic-table td {
+  border-radius: 0 !important;
 }
-.cm-atomic-table th:last-child {
-  border-top-right-radius: 7px !important;
-}
-.cm-atomic-table tr:last-child td:first-child {
-  border-bottom-left-radius: 7px !important;
-}
-.cm-atomic-table tr:last-child td:last-child {
-  border-bottom-right-radius: 7px !important;
-}
+
 
 /* 
  * Grid Selection Layer 
@@ -386,20 +380,11 @@
 
 /* 1) When selected via native CodeMirror (e.g. Ctrl+A / shift arrow keys over the widget) */
 .cm-atomic-table.cm-widget-selected-by-cm {
-  /* Lock dimensions so the table cannot shrink during selection reflow */
   min-width: max-content !important;
-  contain: layout style !important;
 }
-
-.cm-atomic-table.cm-widget-selected-by-cm td,
-.cm-atomic-table.cm-widget-selected-by-cm th {
-  background-color: rgba(var(--text-accent-rgb, 64, 186, 250), 0.7) !important;
-}
-
-.cm-atomic-table.cm-widget-selected-by-cm .cm-atomic-table-cell-source,
-
 
 /* --- CORNER HANDLES (Knob & Delete) --- */
+
 .cm-table-corner-handle, .cm-table-delete-btn {
   width: 20px;
   height: 20px;

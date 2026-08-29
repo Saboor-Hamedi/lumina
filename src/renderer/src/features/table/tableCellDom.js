@@ -591,24 +591,49 @@ export function makeCell(tag, text, view) {
     }
 
     if (event.key === 'ArrowUp') {
-      if (event.ctrlKey || event.metaKey || true) {
-        const thead = cell.closest('table')?.querySelector('thead tr')
-        const colCount = thead ? thead.querySelectorAll('th').length : 1
+      const thead = cell.closest('table')?.querySelector('thead tr')
+      const colCount = thead ? thead.querySelectorAll('th').length : 1
+      const wrap = cell.closest('.cm-atomic-table')
+      const cells = wrap ? Array.from(wrap.querySelectorAll('th, td')) : []
+      const idx = cells.indexOf(cell)
+      // Only intercept if we're NOT in the first row — otherwise let the
+      // event fall through so arrowUpIntoTable (CodeMirror keymap) exits.
+      if (idx >= colCount) {
         moveCellFocus(view, cell, -colCount, { appendOnOverflow: false })
         event.preventDefault()
         event.stopPropagation()
-        return
       }
+      return
     }
     if (event.key === 'ArrowDown') {
-      if (event.ctrlKey || event.metaKey || true) {
-        const thead = cell.closest('table')?.querySelector('thead tr')
-        const colCount = thead ? thead.querySelectorAll('th').length : 1
+      const thead = cell.closest('table')?.querySelector('thead tr')
+      const colCount = thead ? thead.querySelectorAll('th').length : 1
+      const wrap = cell.closest('.cm-atomic-table')
+      const cells = wrap ? Array.from(wrap.querySelectorAll('th, td')) : []
+      const idx = cells.indexOf(cell)
+      // Only intercept if we're NOT in the last row — otherwise exit the table.
+      if (idx < cells.length - colCount) {
         moveCellFocus(view, cell, colCount, { appendOnOverflow: false })
         event.preventDefault()
         event.stopPropagation()
-        return
+      } else {
+        // Last row: exit below the table
+        const range = findCurrentTableRange(view, wrap)
+        if (range) {
+          event.preventDefault()
+          event.stopPropagation()
+          let targetPos = range.to
+          if (targetPos < view.state.doc.length && view.state.sliceDoc(targetPos, targetPos + 1) === '\n') {
+            targetPos += 1
+          } else if (targetPos === view.state.doc.length) {
+            view.dispatch({ changes: { from: targetPos, insert: '\n' } })
+            targetPos += 1
+          }
+          view.dispatch({ selection: { anchor: targetPos } })
+          view.focus()
+        }
       }
+      return
     }
     if (event.key === 'ArrowLeft') {
       const offset = getCaretCharOffset(source) || 0

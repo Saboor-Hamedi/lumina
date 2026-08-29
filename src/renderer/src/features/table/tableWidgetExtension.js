@@ -687,6 +687,8 @@ const tableSelectionSyncPlugin = ViewPlugin.fromClass(
       const isFullDocSelect = sel.from === 0 && sel.to === view.state.doc.length && !sel.empty
       if (isFullDocSelect) {
         for (const table of tables) {
+          const currentWidth = table.offsetWidth
+          if (currentWidth > 0) table.style.minWidth = currentWidth + 'px'
           const hasFocus = table.contains(document.activeElement)
           const hasDomSelection =
             window.getSelection().anchorNode && table.contains(window.getSelection().anchorNode)

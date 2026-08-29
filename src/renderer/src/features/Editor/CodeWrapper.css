@@ -4,7 +4,6 @@
 .cm-line.cm-atomic-fenced-code {
   box-sizing: border-box !important;
   width: 100% !important;
-  min-width: 100% !important;
   max-width: 100% !important;
   display: block !important;
   padding: 2px 1em !important;
@@ -25,7 +24,6 @@
 .cm-line.cb-code-header {
   box-sizing: border-box !important;
   width: 100% !important;
-  min-width: 100% !important;
   max-width: 100% !important;
   display: block !important;
   position: relative;
@@ -52,7 +50,6 @@
 .cm-line.cm-atomic-fenced-code:not(.cb-code-header) {
   box-sizing: border-box !important;
   width: 100% !important;
-  min-width: 100% !important;
   max-width: 100% !important;
   display: block !important;
   background: rgba(0, 0, 0, 0.2) !important;
@@ -65,7 +62,6 @@
 .cm-line.cm-atomic-fenced-code:not(.cb-code-header).cm-activeLine {
   box-sizing: border-box !important;
   width: 100% !important;
-  min-width: 100% !important;
   max-width: 100% !important;
   display: block !important;
   border-left: 1px solid var(--border-dim) !important;

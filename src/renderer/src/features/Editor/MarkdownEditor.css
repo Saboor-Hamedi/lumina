@@ -171,20 +171,40 @@
 
 /* --- Table Stability: Prevent layout shift on focus / Ctrl+A --- */
 
-/* Keep the widget rendering as a block regardless of selection state */
+/* Lock the outer wrapper so CM's selectedLine reflow cannot collapse it */
 .cm-line:has(.cm-atomic-table).cm-selectedLine .cm-atomic-table,
 .cm-line:has(.cm-atomic-table).cm-activeLine .cm-atomic-table,
 .cm-editor:focus-within .cm-atomic-table {
+  width: max-content !important;
+  min-width: 260px !important;
   display: block !important;
 }
 
-/* Ensure the scroll wrapper never collapses */
-.cm-table-scroll-wrap:has(.cm-atomic-table),
-.cm-table-scroll-container {
-  min-width: 0 !important;
-  width: 100% !important;
+/* Lock the scroll container */
+.cm-line:has(.cm-atomic-table).cm-selectedLine .cm-table-scroll-container,
+.cm-line:has(.cm-atomic-table).cm-activeLine .cm-table-scroll-container,
+.cm-editor:focus-within .cm-table-scroll-container {
+  width: max-content !important;
+  min-width: 260px !important;
   display: block !important;
 }
+
+/* Lock the inner <table> so auto column widths don't recalculate */
+.cm-line:has(.cm-atomic-table).cm-selectedLine .cm-atomic-table table,
+.cm-line:has(.cm-atomic-table).cm-activeLine .cm-atomic-table table,
+.cm-editor:focus-within .cm-atomic-table table {
+  width: max-content !important;
+  min-width: 260px !important;
+}
+
+.cm-line:has(.cm-atomic-table).cm-selectedLine th,
+.cm-line:has(.cm-atomic-table).cm-selectedLine td,
+.cm-line:has(.cm-atomic-table).cm-activeLine th,
+.cm-line:has(.cm-atomic-table).cm-activeLine td {
+  min-width: 140px !important;
+}
+
+
 
 
 /* Prevent selection overlays from interfering with table dimensions */
