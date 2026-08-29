@@ -382,13 +382,31 @@
 }
 
 .start-section .tree-item .item-icon-wrap {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   flex-shrink: 0;
   color: var(--text-muted, #94a3b8);
+  line-height: 1;
+  transition: color 0.12s ease;
+}
+
+.start-section .tree-item:hover .item-icon-wrap {
+  color: var(--text-main, #f8fafc);
+}
+
+.start-section .tree-item.active .item-icon-wrap {
+  color: var(--text-accent, #a78bfa);
+}
+
+.start-section .tree-item .item-title-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
 }
 
 .start-section .tree-item .item-title {
@@ -399,7 +417,9 @@
   font-size: 12.5px;
   font-weight: 450;
   color: var(--text-main, #f1f5f9);
-  line-height: 28px;
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
 }
 
 .start-section .tree-item .folder-name {
@@ -410,6 +430,7 @@
   font-size: 12.5px;
   font-weight: 500;
   color: var(--text-main, #f1f5f9);
+  line-height: 1.2;
 }
 
 /* Nested creation buttons (appear on hover) */

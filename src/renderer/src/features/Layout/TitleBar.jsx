@@ -13,6 +13,7 @@ const TitleBar = ({ onToggleAIChat }) => {
 
   const [version, setVersion] = React.useState('')
   const selectedSnippet = useVaultStore((s) => s.selectedSnippet)
+  const isMac = typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('mac')
 
   React.useEffect(() => {
     if (window.api?.getVersion) {
@@ -53,12 +54,17 @@ const TitleBar = ({ onToggleAIChat }) => {
         <div
           className="unified-search-bar"
           onClick={() => window.dispatchEvent(new CustomEvent('open-ask-anything'))}
+          title="Search or Ask AI (Ctrl + P)"
         >
           <span className="search-icon">
-            <Search size={12} />
+            <Search size={13} />
           </span>
           <span className="search-placeholder">Ask anything or Search...</span>
-          <span className="search-shortcut">Ctrl+P</span>
+          <div className="search-shortcuts-wrap">
+            <kbd className="titlebar-kbd">{isMac ? '⌘' : 'Ctrl'}</kbd>
+            <span className="titlebar-kbd-plus">+</span>
+            <kbd className="titlebar-kbd">P</kbd>
+          </div>
         </div>
       </div>
 

@@ -23,8 +23,8 @@ import { useVaultStore, GRAPH_TAB_ID } from '../../../core/store/useVaultStore'
 import { useShallow } from 'zustand/react/shallow'
 import ContextMenu from '../../Overlays/ContextMenu'
 import PromptModal from '../../Overlays/PromptModal'
-import IconModal from '../../Icons/IconModal'
-import { getSnippetIcon } from '../../Icons/iconMapper'
+import IconPicker from '../../Icons/IconPicker'
+import { getSnippetIcon } from '../../Icons/FileIcon'
 import WindowControls from './WindowControls'
 import ToolTip from '../../../components/atoms/ToolTip'
 
@@ -369,6 +369,7 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
             },
             {
               label: 'Change Icon',
+              shortcut: 'Win + Shift + .',
               icon: <Image size={14} />,
               onClick: () => setIconPickerId(contextMenu.id)
             },
@@ -411,7 +412,7 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
         onDiscard={handleDiscard}
       />
 
-      <IconModal
+      <IconPicker
         isOpen={!!iconPickerId}
         onClose={() => setIconPickerId(null)}
         currentIcon={snippetMap.get(iconPickerId)?.customIcon}

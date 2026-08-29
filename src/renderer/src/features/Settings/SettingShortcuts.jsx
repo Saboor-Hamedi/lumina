@@ -20,7 +20,7 @@ const SettingShortcuts = () => {
     const rawKeys = keyString.split('+').map((k) => k.trim())
     const formattedKeys = rawKeys.map((k) => {
       if (!isMac) return k
-      return k.replace(/^Ctrl$/i, '⌘').replace(/^Shift$/i, '⇧').replace(/^Alt$/i, '⌥')
+      return k.replace(/^Ctrl$/i, '⌘').replace(/^Shift$/i, '⇧').replace(/^Alt$/i, '⌥').replace(/^Win$/i, '⌘')
     })
 
     return (

@@ -16,6 +16,7 @@ import { useToast } from '../../core/hooks/useToast'
 import ToastNotification from '../../core/notification'
 import ConfirmModal from '../Overlays/Modals/ConfirmModal'
 import RenameModal from '../Overlays/Modals/RenameModal'
+import IconPicker from '../Icons/IconPicker'
 import { handleRenameSnippet } from '../../core/hooks/handleRenameSnippet'
 import ErrorBoundary from '../../components/ErrorBoundary'
 import './AppShell.css'
@@ -84,6 +85,7 @@ const AppShell = () => {
     return useSettingsStore.getState().settings?.aiChatModalState?.isOpen || false
   })
   const [showExplorerModal, setShowExplorerModal] = useState(false)
+  const [showActiveIconPicker, setShowActiveIconPicker] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true)
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false)
@@ -462,7 +464,19 @@ const AppShell = () => {
       setSettingsInitialTab('shortcuts')
       setShowSettings(true)
     },
+    onChangeIcon: () => {
+      const active = selectedSnippet || snippets.find((s) => s.id === activeTabId)
+      if (active) {
+        setShowActiveIconPicker(true)
+      } else {
+        showToast('Open a note to change its icon', 'info')
+      }
+    },
     onEscape: () => {
+      if (showActiveIconPicker) {
+        setShowActiveIconPicker(false)
+        return true
+      }
       if (showAIChatModal) {
         setShowAIChatModal(false)
         return true
@@ -844,6 +858,19 @@ const AppShell = () => {
           })
         }}
       />
+      {showActiveIconPicker && (
+        <IconPicker
+          isOpen={showActiveIconPicker}
+          onClose={() => setShowActiveIconPicker(false)}
+          currentIcon={(selectedSnippet || snippets.find((s) => s.id === activeTabId))?.customIcon}
+          onSelect={(iconName) => {
+            const active = selectedSnippet || snippets.find((s) => s.id === activeTabId)
+            if (active) {
+              saveSnippet({ ...active, customIcon: iconName })
+            }
+          }}
+        />
+      )}
       <ToastNotification toast={toast} onClose={clearToast} />
       <IndexingStatus />
     </div>

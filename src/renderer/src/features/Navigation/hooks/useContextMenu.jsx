@@ -195,6 +195,15 @@ export function useContextMenu({ item, type, callbacks }) {
           }
         },
         {
+          label: 'Change Icon',
+          shortcut: 'Win + Shift + .',
+          icon: <Palette size={14} />,
+          onClick: () => {
+            callbacks.onChangeIcon?.()
+            callbacks.onClose?.()
+          }
+        },
+        {
           label: 'Copy',
           icon: <Copy size={14} />,
           onClick: handleCopy

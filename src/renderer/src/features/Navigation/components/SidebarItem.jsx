@@ -20,9 +20,9 @@ import { useVaultStore } from '../../../core/store/useVaultStore'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
 import ContextMenu from '../../Overlays/ContextMenu'
 import ConfirmModal from '../../Overlays/Modals/ConfirmModal'
-import IconModal from '../../Icons/IconModal'
+import IconPicker from '../../Icons/IconPicker'
 import ToolTip from '../../../components/atoms/ToolTip'
-import { getSnippetIcon } from '../../Icons/iconMapper'
+import { getSnippetIcon } from '../../Icons/FileIcon'
 import { useShallow } from 'zustand/react/shallow'
 import { getHighlightRegex } from '../../../core/utils/searchRanker'
 import { useContextMenu } from '../hooks/useContextMenu'
@@ -107,9 +107,7 @@ const SidebarItem = ({
   const getIcon = () => {
     if (snippet.itemType === 'folder') {
       return (
-        <div className="item-icon">
-          <Folder size={14} fill="var(--text-accent)" color="var(--text-accent)" />
-        </div>
+        <Folder size={14} fill="var(--text-accent)" color="var(--text-accent)" className="item-icon" />
       )
     }
     return getSnippetIcon(snippet, 14, 'item-icon')
@@ -141,6 +139,7 @@ const SidebarItem = ({
     callbacks: {
       onOpen: onClick,
       onRename: () => setIsRenaming(true),
+      onChangeIcon: () => setShowIconPicker(true),
       onTogglePin: handleTogglePin,
       onDelete: () => setShowDeleteConfirm(true),
       onCloseNote: () => useVaultStore.getState().closeTab(snippet.id),
@@ -154,7 +153,7 @@ const SidebarItem = ({
         <ContextMenu {...contextMenu} options={menuOptions} onClose={() => setContextMenu(null)} />
       )}
 
-      <IconModal
+      <IconPicker
         isOpen={showIconPicker}
         onClose={() => setShowIconPicker(false)}
         currentIcon={snippet.customIcon}

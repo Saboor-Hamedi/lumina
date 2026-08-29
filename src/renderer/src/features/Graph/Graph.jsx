@@ -99,11 +99,18 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     updateSettings({ graphSidebarOpen: !(settings.graphSidebarOpen ?? true) })
   }, [])
 
-  const modalPos = useRef(JSON.parse(localStorage.getItem('graph-modal-pos') || '{"x":0,"y":0}'))
+  const modalPos = useRef({ x: 0, y: 0 })
   const isDraggingModal = useRef(false)
   const dragStart = useRef({ x: 0, y: 0 })
 
   const rafId = useRef(null)
+
+  useEffect(() => {
+    modalPos.current = { x: 0, y: 0 }
+    if (containerRef.current && !isMaximized) {
+      containerRef.current.style.transform = 'translate3d(0px, 0px, 0)'
+    }
+  }, [isOpen, isMaximized])
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -125,10 +132,6 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     const handleMouseUp = () => {
       isDraggingModal.current = false
       if (rafId.current) cancelAnimationFrame(rafId.current)
-      if (containerRef.current && !isMaximized) {
-        containerRef.current.style.transition = 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
-        localStorage.setItem('graph-modal-pos', JSON.stringify(modalPos.current))
-      }
     }
 
     window.addEventListener('mousemove', handleMouseMove, { passive: true })
@@ -652,7 +655,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   const container = (
     <div
       ref={containerRef}
-      className={`nexus-container modal-container${isMaximized ? ' maximized' : ''}`}
+      className={`nexus-container${isMaximized ? ' maximized' : ''}`}
       onClick={(e) => e.stopPropagation()}
       data-graph-theme={graphTheme}
       style={{
@@ -660,7 +663,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
         transform: isMaximized
           ? 'none'
           : `translate3d(${modalPos.current.x}px, ${modalPos.current.y}px, 0)`,
-        transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+        position: 'relative',
+        willChange: 'transform'
       }}
     >
       <ModalHeader

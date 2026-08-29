@@ -89,19 +89,31 @@ const MenuItem = ({ opt, onClose }) => {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
         {opt.shortcut && (
-          <kbd
-            className="menu-shortcut"
-            style={{
-              fontSize: '10px',
-              color: 'var(--text-muted, var(--text-main))',
-              opacity: 0.8,
-              padding: '2px 6px',
-              whiteSpace: 'nowrap',
-              background: 'transparent'
-            }}
-          >
-            {opt.shortcut}
-          </kbd>
+          <span className="menu-shortcut-wrap" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+            {opt.shortcut.split('+').map((part, pIdx, arr) => (
+              <React.Fragment key={pIdx}>
+                <kbd
+                  className="menu-shortcut"
+                  style={{
+                    fontSize: '10px',
+                    fontWeight: 600,
+                    color: 'var(--text-muted, #94a3b8)',
+                    padding: '1px 5px',
+                    borderRadius: '4px',
+                    background: 'rgba(255, 255, 255, 0.06)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    lineHeight: 1.3,
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {part.trim()}
+                </kbd>
+                {pIdx < arr.length - 1 && (
+                  <span style={{ fontSize: '9px', color: 'var(--text-faint, #64748b)' }}>+</span>
+                )}
+              </React.Fragment>
+            ))}
+          </span>
         )}
         {opt.isActive && opt.isActive() && <Check size={14} className="menu-check" style={{ color: 'var(--text-faint)' }} />}
         {hasChildren && <ChevronRight size={14} className="menu-submenu-arrow" style={{ color: 'var(--text-faint)' }} />}

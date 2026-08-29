@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { AtomicCodeMirrorEditor, wikiLinks } from '@atomic-editor/editor'
-import { EditorState } from '@codemirror/state'
+import { EditorState, Prec } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { languages } from '@codemirror/language-data'
 import { useVaultStore } from '../../core/store/useVaultStore'
@@ -14,6 +14,7 @@ import {
   codeMap,
   luminaSyntaxHighlighting
 } from '../Workspace/codeBlockHeader'
+import { Sparkles } from 'lucide-react'
 
 import '@atomic-editor/editor/styles.css'
 import '../Editor/MarkdownEditor.css'
@@ -21,7 +22,7 @@ import '../Editor/CodeWrapper.css'
 
 /**
  * A reusable, full-fidelity read-only markdown preview.
- * This mounts a CodeMirror editor with all extensions (mermaid, tables, images, etc.)
+ * Inherits 100% of the editor's typography, extensions, tables, and scrolling.
  */
 export const PreviewCommandPalette = React.memo(({ content, onClose }) => {
   const [shouldRenderEditor, setShouldRenderEditor] = useState(false)
@@ -29,7 +30,7 @@ export const PreviewCommandPalette = React.memo(({ content, onClose }) => {
 
   useEffect(() => {
     // Delay mount to avoid blocking UI thread instantly
-    const timer = setTimeout(() => setShouldRenderEditor(true), 150)
+    const timer = setTimeout(() => setShouldRenderEditor(true), 120)
     return () => clearTimeout(timer)
   }, [content]) // Reset on content change
 
@@ -68,7 +69,7 @@ export const PreviewCommandPalette = React.memo(({ content, onClose }) => {
       calloutExtension,
       codeBlockDecorations,
       luminaSyntaxHighlighting,
-      tables({ onLinkClick: handleLinkClick }),
+      Prec.highest(tables({ onLinkClick: handleLinkClick })),
       wikiLinks({
         openOnClick: true,
         resolve: async (target) => {
@@ -90,113 +91,95 @@ export const PreviewCommandPalette = React.memo(({ content, onClose }) => {
 
   return (
     <div
-      className="preview-body seamless-scrollbar markdown-editor mode-source"
-      style={{ overflowY: 'auto', flex: 1, padding: '24px 32px', background: 'var(--bg-app)' }}
+      className="markdown-editor mode-source preview-body seamless-scrollbar"
+      style={{
+        overflowY: 'auto',
+        overflowX: 'auto',
+        flex: 1,
+        height: '100%',
+        padding: '24px 28px',
+        background: 'var(--bg-app)'
+      }}
     >
       <style>{`
-        .preview-body .editor-canvas-wrap {
-          max-width: 720px !important;
-          width: 100% !important;
-          padding: 0 !important;
-          margin: 0 auto !important;
+        .preview-body .cm-table-ui-header,
+        .preview-body .cm-table-ui-delete-btn,
+        .preview-body .cm-table-ui-drag-handle {
+          display: none !important;
         }
-        .preview-body .cm-content,
-        .preview-body .atomic-cm-editor .cm-content,
-        .preview-body .atomic-cm-editor .cm-scroller {
-          max-width: 720px !important;
-          width: 100% !important;
-          padding-left: 0 !important;
-          padding-right: 0 !important;
-          margin: 0 auto !important;
+        .preview-body .cm-atomic-table table {
+          border-top-left-radius: 6px !important;
+          border-top-right-radius: 6px !important;
         }
-        .preview-body .cm-line.cb-code-header::before {
-          cursor: pointer !important;
-        }
-        .preview-body .cm-line.cb-code-header.cb-copied::before,
-        .preview-body .cm-line.cb-code-header[data-cb-id="${copiedBlockId}"]::before {
-          content: '✓ COPIED' !important;
-          color: #4caf50 !important;
-          background: transparent !important;
-          border-color: transparent !important;
-          font-weight: bold !important;
-        }
-        @media (max-width: 768px) {
-          .preview-body {
-            padding: 16px 12px !important;
+        ${
+          copiedBlockId != null
+            ? `
+          .cm-line.cb-code-header[data-cb-id="${copiedBlockId}"]::before {
+            content: '✓ COPIED' !important;
+            color: #4caf50 !important;
+            background: transparent !important;
+            border-color: transparent !important;
+            font-weight: bold !important;
           }
+        `
+            : ''
         }
       `}</style>
-      <div
-        className="editor-canvas-wrap"
-        style={{
-          height: 'auto',
-          display: 'block',
-          width: '100%',
-          maxWidth: '100%',
-          padding: 0
-        }}
-        onMouseDown={async (e) => {
-          const codeLine = e.target.closest('.cm-line.cb-code-header')
-          if (codeLine) {
-            const rect = codeLine.getBoundingClientRect()
-            if (e.clientX < rect.right - 100 && !e.target.closest('span')) return
-            const id = codeLine.getAttribute('data-cb-id')
-            const code = id != null ? codeMap.get(Number(id)) : null
-            if (code != null) {
-              e.preventDefault()
-              e.stopPropagation()
-              try {
-                await navigator.clipboard.writeText(code)
-                codeLine.classList.add('cb-copied')
-                setCopiedBlockId(id)
-                setTimeout(() => {
-                  if (codeLine) codeLine.classList.remove('cb-copied')
-                  setCopiedBlockId(null)
-                }, 3000)
-              } catch (err) {
-                console.error('Failed to copy: ', err)
+      <div className="editor-scroller" style={{ overflow: 'visible', height: 'auto', padding: 0 }}>
+        <div
+          className="editor-canvas-wrap"
+          style={{ maxWidth: '100%', padding: 0, margin: 0 }}
+          onMouseDown={async (e) => {
+            const codeLine = e.target.closest('.cm-line.cb-code-header')
+            if (codeLine) {
+              const rect = codeLine.getBoundingClientRect()
+              if (e.clientX < rect.right - 100 && !e.target.closest('span')) return
+              const id = codeLine.getAttribute('data-cb-id')
+              const code = id != null ? codeMap.get(Number(id)) : null
+              if (code != null) {
+                e.preventDefault()
+                e.stopPropagation()
+                try {
+                  await navigator.clipboard.writeText(code)
+                  codeLine.classList.add('cb-copied')
+                  setCopiedBlockId(id)
+                  setTimeout(() => {
+                    if (codeLine) codeLine.classList.remove('cb-copied')
+                    setCopiedBlockId(null)
+                  }, 3000)
+                } catch (err) {
+                  console.error('Failed to copy: ', err)
+                }
               }
             }
-          }
-        }}
-      >
-        {shouldRenderEditor ? (
-          <AtomicCodeMirrorEditor
-            markdownSource={content || ''}
-            codeLanguages={languages}
-            extensions={extensions}
-            blurEditorOnMount={true}
-          />
-        ) : (
-          <div
-            style={{
-              padding: '60px',
-              color: 'var(--text-faint)',
-              textAlign: 'center',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '12px'
-            }}
-          >
-            <div className="mermaid-loading" style={{ opacity: 0.5 }}>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="lucide lucide-loader-2"
-              >
-                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-              </svg>
+          }}
+        >
+          {shouldRenderEditor ? (
+            <AtomicCodeMirrorEditor
+              markdownSource={content || ''}
+              codeLanguages={languages}
+              extensions={extensions}
+              blurEditorOnMount={true}
+            />
+          ) : (
+            <div
+              style={{
+                padding: '60px',
+                color: 'var(--text-faint)',
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '12px'
+              }}
+            >
+              <div className="mermaid-loading" style={{ opacity: 0.5 }}>
+                <Sparkles size={24} />
+              </div>
+              <span style={{ fontSize: '12px', opacity: 0.7 }}>Rendering preview...</span>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   )
