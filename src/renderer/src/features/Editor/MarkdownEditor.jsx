@@ -7,7 +7,7 @@ import { useVaultStore } from '../../core/store/useVaultStore'
 import { useToast } from '../../core/hooks/useToast'
 import ToastNotification from '../../core/notification'
 import './MarkdownEditor.css'
-import './CodeWrapper.css'
+import '../codeBlock/CodeWrapper.css'
 
 // Atomic Editor Imports
 import { AtomicCodeMirrorEditor, wikiLinks } from '@atomic-editor/editor'
@@ -19,8 +19,9 @@ import { EditorState, Prec, StateField, StateEffect } from '@codemirror/state'
 import {
   codeBlockDecorations,
   codeMap,
-  luminaSyntaxHighlighting
-} from '../Workspace/codeBlockHeader'
+  luminaSyntaxHighlighting,
+  copyCodeAsImage
+} from '../codeBlock/codeBlockHeader'
 import { EditorView, placeholder, keymap, ViewPlugin, Decoration } from '@codemirror/view'
 import { imageDropExtension } from '../dropImage/imageDropExtension'
 import { imageWidgetExtension } from '../dropImage/imageWidgetExtension'
@@ -1096,29 +1097,9 @@ const MarkdownEditor = React.memo(
           return
         }
 
-        // Code block copy click
-        const codeLine = e.target.closest('.cm-line.cb-code-header')
-        if (codeLine) {
-          const rect = codeLine.getBoundingClientRect()
-          // Only copy if clicked on the right side (the language pill)
-          if (e.clientX < rect.right - 80) return
-          const id = codeLine.getAttribute('data-cb-id')
-          const code = id != null ? codeMap.get(Number(id)) : null
-          if (code != null) {
-            e.preventDefault()
-            e.stopPropagation()
-            try {
-              await navigator.clipboard.writeText(code)
-              codeLine.classList.add('cb-copied')
-              setCopiedBlockId(id)
-              setTimeout(() => {
-                if (codeLine) codeLine.classList.remove('cb-copied')
-                setCopiedBlockId(null)
-              }, 3000)
-            } catch (err) {
-              console.error('Failed to copy: ', err)
-            }
-          }
+        // Code block actions are handled cleanly by React ActionsOverlay in codeBlockHeader
+        if (e.target.closest('.mermaid-edit-btn') || e.target.closest('.mermaid-widget-header')) {
+          return
         }
       }
 

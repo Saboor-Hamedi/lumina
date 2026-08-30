@@ -12,13 +12,14 @@ import { calloutExtension } from '../Workspace/calloutWidgetExtension'
 import {
   codeBlockDecorations,
   codeMap,
-  luminaSyntaxHighlighting
-} from '../Workspace/codeBlockHeader'
+  luminaSyntaxHighlighting,
+  copyCodeAsImage
+} from '../codeBlock/codeBlockHeader'
 import { Sparkles } from 'lucide-react'
 
 import '@atomic-editor/editor/styles.css'
 import '../Editor/MarkdownEditor.css'
-import '../Editor/CodeWrapper.css'
+import '../codeBlock/CodeWrapper.css'
 
 /**
  * A reusable, full-fidelity read-only markdown preview.
@@ -129,28 +130,10 @@ export const PreviewCommandPalette = React.memo(({ content, onClose }) => {
         <div
           className="editor-canvas-wrap"
           style={{ maxWidth: '100%', padding: 0, margin: 0 }}
-          onMouseDown={async (e) => {
-            const codeLine = e.target.closest('.cm-line.cb-code-header')
-            if (codeLine) {
-              const rect = codeLine.getBoundingClientRect()
-              if (e.clientX < rect.right - 100 && !e.target.closest('span')) return
-              const id = codeLine.getAttribute('data-cb-id')
-              const code = id != null ? codeMap.get(Number(id)) : null
-              if (code != null) {
-                e.preventDefault()
-                e.stopPropagation()
-                try {
-                  await navigator.clipboard.writeText(code)
-                  codeLine.classList.add('cb-copied')
-                  setCopiedBlockId(id)
-                  setTimeout(() => {
-                    if (codeLine) codeLine.classList.remove('cb-copied')
-                    setCopiedBlockId(null)
-                  }, 3000)
-                } catch (err) {
-                  console.error('Failed to copy: ', err)
-                }
-              }
+          onMouseDown={(e) => {
+            if (e.target.closest('.mermaid-edit-btn') || e.target.closest('.mermaid-widget-header')) {
+              e.preventDefault()
+              e.stopPropagation()
             }
           }}
         >
