@@ -226,13 +226,34 @@
   border-right: none !important;
 }
 
-.cm-selectionLayer {
-  pointer-events: none;
+.cm-atomic-wiki-link,
+.cm-atomic-wikilink-wrap {
+  display: inline !important;
+  white-space: nowrap !important;
+  padding-right: 0 !important;
+  margin-right: 0 !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+.cm-line .cm-atomic-wiki-link::after {
+  content: '';
+  display: inline-block;
+  width: 0;
+  pointer-events: none !important;
+}
+
+.cm-selectionLayer,
+.cm-cursorLayer {
+  pointer-events: none !important;
 }
 .markdown-editor .cm-cursor,
-.markdown-editor .cm-dropCursor {
+.markdown-editor .cm-dropCursor,
+.cm-cursor,
+.cm-dropCursor {
   border-left-color: var(--caret-color, var(--text-accent)) !important;
   border-left-width: var(--caret-width, 2px) !important;
+  pointer-events: none !important;
 }
 
 /* Block cursor */
@@ -1109,6 +1130,7 @@ html[data-use-active-line-border="true"] .cm-heading.cm-activeLine::before {
   width: 1px;
   background: var(--text-accent);
   z-index: 1;
+  pointer-events: none !important;
 }
 
 html[data-use-active-line-border="true"][data-theme='dark'] .cm-activeLine,
@@ -1119,6 +1141,12 @@ html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {
 
 .cm-selectionBackground {
   background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.3) !important;
+  pointer-events: none !important;
+}
+
+.cm-selectionLayer,
+.cm-selectionLayer * {
+  pointer-events: none !important;
 }
 
 .cm-selectionMatch {
@@ -1127,6 +1155,7 @@ html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {
   padding: 0 !important;
   margin: 0 !important;
   box-sizing: border-box !important;
+  pointer-events: none !important;
 }
 
 .cm-image-container {

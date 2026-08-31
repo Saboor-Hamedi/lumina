@@ -3,8 +3,9 @@
 /* The wrapper MUST be inline for multi-line caret to work */
 .cm-wikilink-wrapper {
   display: inline !important;
-  user-select: text !important;
-  cursor: text !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  cursor: pointer !important;
   white-space: normal !important;
   word-break: normal !important;
 }
@@ -15,12 +16,15 @@
   display: inline !important;          /* ✅ MUST be inline for line wrapping */
   color: var(--text-accent, #a78bfa) !important;
   text-decoration: none;
-  padding: 0 1px !important;           /* Minimal padding — no dead zones */
+  padding: 0 2px !important;
+  margin: 0 !important;
   border-radius: 4px;
   cursor: pointer !important;
-  vertical-align: baseline !important; /* Align with surrounding text */
+  vertical-align: baseline !important;
   background: transparent;
   transition: background 0.15s ease;
+  user-select: none !important;
+  -webkit-user-select: none !important;
   
   /* Reset CodeMirror atomic overrides that break caret */
   width: auto !important;
@@ -36,9 +40,11 @@
 }
 
 /* Ensure all internal elements do not steal the cursor/pointer events */
-.cm-atomic-wikilink-wrap * {
+.cm-atomic-wikilink-wrap *,
+.cm-atomic-wiki-link * {
   pointer-events: none !important;
   user-select: none !important;
+  -webkit-user-select: none !important;
 }
 
 /* The external link tooltip inside the wikilink */
@@ -56,7 +62,7 @@
   color: var(--text-muted);
   white-space: nowrap;
   z-index: 1000;
-  pointer-events: none;
+  pointer-events: none !important;
   opacity: 0.9;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
@@ -80,32 +86,21 @@
   display: none !important;
 }
 
-/* Ensure no trailing padding from default widgets, but leave 1px for caret to land on */
-.cm-atomic-wiki-link,
-.cm-atomic-wikilink-wrap,
-.cm-atomic-wiki-link-unresolved {
-  padding-right: 1px !important;
-  margin-right: 1px !important;
-}
-
 /* The pipe separators and text lines */
 .cm-line {
   /* Ensure the parent line allows wrapping and selection */
   user-select: text !important;
   -webkit-user-select: text !important;
-  white-space: pre-wrap !important;    /* ✅ Allow wrapping, preserve spaces */
-  word-wrap: break-word !important;    /* ✅ Break long lines */
-  display: block !important;           /* ✅ NOT flex */
-  overflow: visible !important;        /* ✅ NOT hidden */
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+  display: block !important;
+  overflow: visible !important;
 }
 
-/* Chrome Caret Bug Fix: 
- * If a line ends exactly with an atomic widget (like a wikilink), Chrome cannot render the caret after it.
- * Injecting a zero-width space via ::after creates a valid text-boundary for the browser's painting engine.
- */
-.cm-line:has(> .cm-atomic-wikilink-wrap:last-child)::after,
-.cm-line:has(> .cm-atomic-wiki-link:last-child)::after {
-  content: "\200B";
+/* Prevent any pseudo-elements on line from capturing clicks */
+.cm-line::after,
+.cm-line::before {
+  pointer-events: none !important;
 }
 
 

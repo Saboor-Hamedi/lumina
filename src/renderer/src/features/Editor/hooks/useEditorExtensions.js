@@ -18,7 +18,7 @@ import React, { useCallback, useMemo } from 'react'
 import { wikiLinks } from '@atomic-editor/editor'
 import { syntaxTree } from '@codemirror/language'
 import { autocompletion, startCompletion } from '@codemirror/autocomplete'
-import { Prec, StateField, StateEffect } from '@codemirror/state'
+import { Prec, StateField, StateEffect, EditorState } from '@codemirror/state'
 import { EditorView, placeholder, keymap, ViewPlugin, Decoration } from '@codemirror/view'
 import { cursorLineUp as defaultCursorLineUp, cursorLineDown as defaultCursorLineDown } from '@codemirror/commands'
 import { insertNewlineContinueMarkup } from '@codemirror/lang-markdown'
@@ -79,12 +79,22 @@ export function useEditorExtensions({
               const savedSelection = localStorage.getItem(`cursor-${snippetRef.current.id}`)
               if (savedSelection) {
                 try {
-                  const { anchor, head } = JSON.parse(savedSelection)
-                  if (anchor <= view.state.doc.length && head <= view.state.doc.length) {
-                    view.dispatch({ selection: { anchor, head }, scrollIntoView: true })
+                  const parsed = JSON.parse(savedSelection)
+                  const anchor = typeof parsed?.anchor === 'number' ? Math.max(0, Math.min(parsed.anchor, view.state.doc.length)) : null
+                  if (anchor !== null) {
+                    const line = view.state.doc.lineAt(anchor)
+                    const validPos = Math.min(anchor, line.to)
+                    view.dispatch({
+                      selection: { anchor: validPos, head: validPos },
+                      scrollIntoView: true
+                    })
                     view.focus()
                   }
-                } catch (e) {}
+                } catch (e) {
+                  try {
+                    localStorage.removeItem(`cursor-${snippetRef.current.id}`)
+                  } catch {}
+                }
               }
             }
           }, 10)
@@ -219,6 +229,81 @@ export function useEditorExtensions({
     },
     [showToast]
   )
+
+  const wikiLinksExtension = useMemo(() => {
+    const ext = wikiLinks({
+      openOnClick: true,
+      inclusiveStart: false,
+      inclusiveEnd: false,
+      resolve: async (target) => {
+        const { snippets } = useVaultStore.getState()
+        const targetLower = target.toLowerCase()
+        const exists = snippets.some(
+          (s) =>
+            s.title &&
+            (s.title.toLowerCase() === targetLower ||
+              s.title.toLowerCase() === `${targetLower}.md`)
+        )
+        return {
+          label: target,
+          status: exists ? 'resolved' : 'missing'
+        }
+      },
+      onOpen: async (target) => {
+        try {
+          const { snippets, saveSnippet, setSelectedSnippet } = useVaultStore.getState()
+          const targetLower = target.toLowerCase()
+          let targetSnippet = snippets.find(
+            (s) =>
+              s.title &&
+              (s.title.toLowerCase() === targetLower ||
+                s.title.toLowerCase() === `${targetLower}.md`)
+          )
+
+          if (!targetSnippet) {
+            showToast(`Creating new note: ${target}`, 'info')
+            targetSnippet = {
+              id: crypto.randomUUID(),
+              title: target,
+              code: `# ${target}\n\n`,
+              language: 'markdown',
+              tags: '',
+              timestamp: Date.now()
+            }
+            await saveSnippet(targetSnippet)
+          }
+          setSelectedSnippet(targetSnippet)
+        } catch (e) {
+          showToast(`Error: ${e.message}`, 'error')
+        }
+      }
+    })
+
+    // Patch WikiLinkWidget prototype so ignoreEvent returns true, permanently preventing posBefore error
+    try {
+      const field = Array.isArray(ext) ? ext.find((e) => e && typeof e.create === 'function') : null
+      if (field) {
+        const dummyState = EditorState.create({
+          doc: '[[test]]',
+          extensions: [ext]
+        })
+        const fieldValue = dummyState.field(field, false)
+        const deco = fieldValue?.decorations || fieldValue
+        if (deco && typeof deco.between === 'function') {
+          deco.between(0, 8, (_from, _to, value) => {
+            if (value?.spec?.widget) {
+              const proto = Object.getPrototypeOf(value.spec.widget)
+              if (proto) {
+                proto.ignoreEvent = () => true
+              }
+            }
+          })
+        }
+      }
+    } catch {}
+
+    return ext
+  }, [showToast])
 
   // --- Keymap & High-Priority Extensions ---
   const editorExtensions = useMemo(
@@ -554,51 +639,7 @@ export function useEditorExtensions({
       tagMentionExtension,
       wikilinkCaretFix,
       emptyLineSelectionFix,
-      wikiLinks({
-        openOnClick: true,
-        resolve: async (target) => {
-          const { snippets } = useVaultStore.getState()
-          const targetLower = target.toLowerCase()
-          const exists = snippets.some(
-            (s) =>
-              s.title &&
-              (s.title.toLowerCase() === targetLower ||
-                s.title.toLowerCase() === `${targetLower}.md`)
-          )
-          return {
-            label: target,
-            status: exists ? 'resolved' : 'missing'
-          }
-        },
-        onOpen: async (target) => {
-          try {
-            const { snippets, saveSnippet, setSelectedSnippet } = useVaultStore.getState()
-            const targetLower = target.toLowerCase()
-            let targetSnippet = snippets.find(
-              (s) =>
-                s.title &&
-                (s.title.toLowerCase() === targetLower ||
-                  s.title.toLowerCase() === `${targetLower}.md`)
-            )
-
-            if (!targetSnippet) {
-              showToast(`Creating new note: ${target}`, 'info')
-              targetSnippet = {
-                id: crypto.randomUUID(),
-                title: target,
-                code: `# ${target}\n\n`,
-                language: 'markdown',
-                tags: '',
-                timestamp: Date.now()
-              }
-              await saveSnippet(targetSnippet)
-            }
-            setSelectedSnippet(targetSnippet)
-          } catch (e) {
-            showToast(`Error: ${e.message}`, 'error')
-          }
-        }
-      })
+      wikiLinksExtension
     ],
     [
       showToast,
@@ -609,7 +650,8 @@ export function useEditorExtensions({
       isActiveRef,
       showFindWidgetRef,
       setShowFindWidget,
-      setReplaceModeActive
+      setReplaceModeActive,
+      wikiLinksExtension
     ]
   )
 

@@ -13,6 +13,23 @@
  */
 import { EditorView } from '@codemirror/view'
 
+const safeDispatch = (view, transaction) => {
+  try {
+    if (!view || view.isDestroyed) return
+    const docLength = view.state.doc.length
+    if (transaction.selection) {
+      const { anchor, head } = transaction.selection.main || transaction.selection || {}
+      if (typeof anchor === 'number' && (anchor > docLength || head > docLength)) {
+        console.warn('Wikilink caret fix: invalid selection range', { anchor, head, docLength })
+        return
+      }
+    }
+    view.dispatch(transaction)
+  } catch (err) {
+    console.error('Wikilink caret fix failed:', err)
+  }
+}
+
 export const wikilinkCaretFix = EditorView.domEventHandlers({
   mousedown(e, view) {
     const target = e.target
@@ -21,44 +38,57 @@ export const wikilinkCaretFix = EditorView.domEventHandlers({
     const wikilink = target.closest('.cm-atomic-wiki-link') || target.closest('.cm-atomic-wikilink-wrap')
     if (!wikilink) return false
 
+    // Prevent CodeMirror's basicMouseSelection from crashing on internal widget nodes
+    e.preventDefault()
+    e.stopPropagation()
+
     const rect = wikilink.getBoundingClientRect()
-    // Check if user clicked on the right half of the wikilink widget
     const isRightHalf = e.clientX > rect.left + (rect.width / 2)
 
-    if (isRightHalf) {
-      // Get the document position BEFORE the widget
-      let pos = null
-      try {
-        pos = view.posAtCoords({ x: rect.left + 2, y: rect.top + (rect.height / 2) })
-      } catch {}
-      if (pos === null) {
-        try {
-          pos = view.posAtDOM(wikilink)
-        } catch {
-          return false
-        }
+    // Find the line containing the wikilink
+    const parentLine = wikilink.closest('.cm-line')
+    let linePos = 0
+    try {
+      if (parentLine) {
+        linePos = view.posAtDOM(parentLine)
+      } else {
+        const coords = view.posAtCoords({ x: Math.max(0, rect.left - 5), y: rect.top + (rect.height / 2) })
+        linePos = coords?.pos ?? 0
       }
-      if (pos !== null) {
-        // Read the text ahead to find the exact length of the [[...]] syntax
-        const textAhead = view.state.doc.sliceString(pos, Math.min(pos + 200, view.state.doc.length))
-        const match = textAhead.match(/^\[\[.*?\]\]/)
-        
-        if (match) {
-          const endPos = pos + match[0].length
-          
-          // Force CodeMirror to set the cursor AFTER the wikilink
-          view.dispatch({
-            selection: { anchor: endPos, head: endPos },
-            userEvent: 'select'
-          })
-          
-          // Prevent browser from overriding our explicit selection
-          e.preventDefault()
-          return true
-        }
-      }
+    } catch {
+      linePos = 0
     }
-    
-    return false
+
+    const line = view.state.doc.lineAt(linePos)
+    const lineText = line.text
+
+    // Find all [[...]] in this line and match by DOM index among links in this line
+    const linksInLine = parentLine
+      ? Array.from(parentLine.querySelectorAll('.cm-atomic-wiki-link, .cm-atomic-wikilink-wrap'))
+      : [wikilink]
+    const linkIndex = linksInLine.indexOf(wikilink)
+
+    const regex = /\[\[(.*?)\]\]/g
+    let match
+    let count = 0
+    let linkFrom = line.from
+    let linkTo = line.from
+
+    while ((match = regex.exec(lineText)) !== null) {
+      if (count === linkIndex || linkIndex === -1) {
+        linkFrom = line.from + match.index
+        linkTo = linkFrom + match[0].length
+        break
+      }
+      count++
+    }
+
+    const targetPos = isRightHalf ? linkTo : linkFrom
+    safeDispatch(view, {
+      selection: { anchor: targetPos, head: targetPos },
+      userEvent: 'select'
+    })
+    view.focus()
+    return true
   }
 })
