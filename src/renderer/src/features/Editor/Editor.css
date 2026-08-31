@@ -211,14 +211,14 @@
 .cm-atomic-table table {
   width: 100% !important;
   min-width: 100% !important;
-  table-layout: auto !important;
+  table-layout: fixed !important;
   display: table !important;
   box-sizing: border-box !important;
 }
 
 .cm-atomic-table th,
 .cm-atomic-table td {
-  min-width: 120px !important;
+  min-width: 80px !important;
 }
 
 .cm-atomic-table th:last-child,
