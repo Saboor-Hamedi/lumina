@@ -196,16 +196,16 @@ const EditorMenu = ({
                       if (onExportMarkdown && typeof onExportMarkdown === 'function') {
                         const result = await onExportMarkdown()
                         if (result?.success) {
-                          showToast('Text file exported successfully', 'success')
+                          showToast('Markdown file exported successfully', 'success')
                         } else if (result?.canceled) {
                           // User canceled, no notification needed
                         } else {
-                          showToast('Failed to export text file', 'error')
+                          showToast('Failed to export markdown file', 'error')
                         }
                       }
                     } catch (error) {
-                      console.error('Failed to export text file:', error)
-                      showToast('Failed to export text file', 'error')
+                      console.error('Failed to export markdown file:', error)
+                      showToast('Failed to export markdown file', 'error')
                     }
                     setShowMoreMenu(false)
                   }}
@@ -234,7 +234,7 @@ const EditorMenu = ({
                     setShowMoreMenu(false)
                   }}
                 >
-                  <span className="menu-label">Save as Text</span>
+                  <span className="menu-label">Save as Text (.txt)</span>
                   <FileType size={12} className="menu-icon-right" />
                 </div>
                 <div

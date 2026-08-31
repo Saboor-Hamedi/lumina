@@ -99,33 +99,26 @@
   padding: 0 !important;
 }
 
-/* Inline Tag and Mention Styles */
+/* Inline Tag and Mention Styles - Unified Connected Flat Pills */
 .cm-inline-tag,
 .cm-inline-mention {
   position: relative !important;
-  color: var(--text-accent, #ff79c6) !important;
+  color: var(--text-accent) !important;
   cursor: pointer !important;
   font-weight: 500 !important;
-  padding: 0 4px !important;
-  margin: 0 !important;
-  display: inline-block !important;
-  border-radius: 4px !important;
-  transition: all 0.2s ease !important;
-}
-
-.cm-tag-prefix,
-.cm-mention-prefix {
-  color: var(--text-accent, #ff79c6) !important;
-  font-size: 0.85em;
-  font-weight: 300;
-  margin-right: 0;
-  padding: 1px 0px 1px 4px !important;
-  border-radius: 4px 0 0 4px !important;
+  padding: 1px 5px !important;
+  margin: 0 1px !important;
+  display: inline !important;
+  border-radius: 2px !important;
+  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.08) !important;
+  transition: all 0.15s ease !important;
+  vertical-align: baseline !important;
 }
 
 .cm-inline-tag:hover,
 .cm-inline-mention:hover {
-  text-decoration: underline;
+  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.16) !important;
+  text-decoration: none !important;
 }
 
 /* Search Highlight Style */
@@ -1216,7 +1209,7 @@ html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {
 .cm-wiki-hover {
   background: var(--bg-panel, #18181b);
   border: 1px solid var(--border-card, rgba(255, 255, 255, 0.15)) !important;
-  border-radius: 10px;
+  border-radius: 2px;
   width: 540px;
   max-width: calc(100vw - 48px);
   min-width: 320px;
@@ -1226,11 +1219,11 @@ html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {
   display: flex;
   flex-direction: column;
   max-height: 400px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
   padding: 0 !important;
   overflow: hidden !important;
   user-select: text;
-  animation: tooltipFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: tooltipFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes tooltipFadeIn {
