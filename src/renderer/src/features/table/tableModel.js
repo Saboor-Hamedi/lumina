@@ -1,14 +1,6 @@
-import { ensureSyntaxTree, syntaxTree } from '@codemirror/language'
-import { Decoration, EditorView, WidgetType, keymap, ViewPlugin } from '@codemirror/view'
-import { StateField, StateEffect, Facet } from '@codemirror/state'
-import { undo, redo } from '@codemirror/commands'
-import { treeGrowthEffect, treeProgressPlugin } from './tableProgress'
-import { useVaultStore } from '../../core/store/useVaultStore'
-import { TableAutocomplete } from './tableAutocomplete'
-import { setupTableFormattingToolbar } from './table'
-import { openCellMenu } from './tableContextMenu'
-import { setupTableSelection } from './tableSelection'
-import { icons } from './tableIcons.js'
+/**
+ * Table Data Model & Serialization Utilities
+ */
 
 export function collectCells(state, rowNode) {
   // Split the row's raw line on unescaped `|` rather than collecting
