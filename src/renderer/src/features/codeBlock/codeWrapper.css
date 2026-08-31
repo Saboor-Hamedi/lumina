@@ -5,15 +5,14 @@
 .code-block-widget-header {
   margin: 0 !important;
   width: 100% !important;
-  height: 32px;
-  background: rgba(255, 255, 255, 0.03);
+  height: 30px;
+  background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border-dim);
-  border-top-left-radius: 6px;
-  border-top-right-radius: 6px;
+  border-radius: 2px 2px 0 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 12px;
+  padding: 0 10px;
   user-select: none;
   cursor: pointer !important;
   box-sizing: border-box !important;
@@ -45,12 +44,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   padding: 0;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: 2px;
   color: var(--text-muted);
   cursor: pointer !important;
   transition: all 0.15s ease;
@@ -70,9 +69,9 @@
   max-width: 100% !important;
   margin: 0 !important;
   display: block !important;
-  padding: 2px 12px !important;
+  padding: 2px 10px !important;
   line-height: 1.6 !important;
-  background: rgba(0, 0, 0, 0.2) !important;
+  background: rgba(0, 0, 0, 0.15) !important;
   box-shadow: none !important;
   font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
   font-size: 13px !important;
@@ -96,22 +95,20 @@
 .cm-line:not(.cm-atomic-fenced-code) + .cm-line.cm-atomic-fenced-code,
 .cm-line.cm-atomic-fenced-code:first-child {
   border-top: 1px solid var(--border-dim) !important;
-  border-top-left-radius: 6px !important;
-  border-top-right-radius: 6px !important;
+  border-radius: 2px 2px 0 0 !important;
   margin-top: 0 !important;
   padding-top: 4px !important;
 }
 
-/* Ensure the closing fence line forms the bottom border and rounded corners without collapsing metrics */
+/* Ensure the closing fence line forms the bottom border and flat corners without collapsing metrics */
 .cm-line.cm-atomic-fenced-code:has(+ :not(.cm-atomic-fenced-code)),
 .cm-line.cm-atomic-fenced-code:last-child {
   border-bottom: 1px solid var(--border-dim) !important;
-  border-bottom-left-radius: 6px !important;
-  border-bottom-right-radius: 6px !important;
+  border-radius: 0 0 2px 2px !important;
   margin-bottom: 0 !important;
   border-left: 1px solid var(--border-dim) !important;
   border-right: 1px solid var(--border-dim) !important;
-  background: rgba(0, 0, 0, 0.2) !important;
+  background: rgba(0, 0, 0, 0.15) !important;
   opacity: 0.5;
   font-size: 11px !important;
 }

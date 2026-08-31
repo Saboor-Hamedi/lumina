@@ -22,19 +22,18 @@
   box-sizing: border-box;
 }
 
-/* Header bar matching CodeBlockHeader */
+/* Header bar matching CodeBlockHeader - Flat minimal design */
 .mermaid-widget-header {
   position: relative;
   width: 100%;
-  height: 32px;
-  background: rgba(255, 255, 255, 0.03);
+  height: 30px;
+  background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border-dim);
-  border-top-left-radius: 6px;
-  border-top-right-radius: 6px;
+  border-radius: 2px 2px 0 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 12px;
+  padding: 0 10px;
   user-select: none;
   box-sizing: border-box;
 }
@@ -63,12 +62,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   padding: 0;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: 2px;
   color: var(--text-muted);
   cursor: pointer !important;
   transition: all 0.15s ease;
@@ -82,19 +81,19 @@
   border-color: var(--border-dim, rgba(255, 255, 255, 0.1));
 }
 
-/* Inline Diagram Body with Zoom-In Cursor */
+/* Inline Diagram Body with Flat Design */
 .mermaid-widget-body {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.15);
   border-left: 1px solid var(--border-dim);
   border-right: 1px solid var(--border-dim);
   border-bottom: 1px solid var(--border-dim);
-  border-bottom-left-radius: 6px;
-  border-bottom-right-radius: 6px;
+  border-radius: 0 0 2px 2px;
   overflow: hidden;
   display: flex;
   justify-content: center;
   padding: 16px 12px;
   cursor: zoom-in;
+  position: relative;
 }
 
 .cm-mermaid-widget .mermaid-content svg {
