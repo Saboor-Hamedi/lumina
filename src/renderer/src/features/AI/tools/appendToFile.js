@@ -31,8 +31,10 @@ export const appendToFileTool = aiSdk.tool({
     return {
       success: true,
       title: target.title,
+      writtenContent: content,
+      summary: `Added the content to **${target.title}**!`,
       instruction_to_ai:
-        'Content added successfully. Tell the user what you did in a friendly way, but DO NOT use the word "appended".'
+        'Content added successfully. Tell the user what was added in a friendly, helpful way, but DO NOT use the word "appended".'
     }
   }
 })

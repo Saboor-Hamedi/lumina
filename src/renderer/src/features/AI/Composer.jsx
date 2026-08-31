@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import {
   Send,
   Square,
@@ -27,6 +27,7 @@ export const Composer = ({ onSend, onStop, isLoading = false }) => {
   const [attachedMentions, setAttachedMentions] = useState([])
 
   const textareaRef = useRef(null)
+  const backdropRef = useRef(null)
 
   const { settings, updateSettings } = useSettingsStore()
   const mode = settings.activeAIMode || 'Standard'
@@ -39,16 +40,26 @@ export const Composer = ({ onSend, onStop, isLoading = false }) => {
     let rafId = requestAnimationFrame(() => {
       if (!textareaRef.current) return
       textareaRef.current.style.height = 'auto'
-      const nextHeight = Math.min(Math.max(textareaRef.current.scrollHeight, 40), 160)
+      const nextHeight = Math.min(Math.max(textareaRef.current.scrollHeight, 44), 160)
       textareaRef.current.style.height = `${nextHeight}px`
       textareaRef.current.style.overflowY =
         textareaRef.current.scrollHeight > 160 ? 'auto' : 'hidden'
+      if (backdropRef.current) {
+        backdropRef.current.style.height = `${nextHeight}px`
+      }
     })
 
     return () => {
       if (rafId) cancelAnimationFrame(rafId)
     }
   }, [input])
+
+  const handleScroll = useCallback(() => {
+    if (backdropRef.current && textareaRef.current) {
+      backdropRef.current.scrollTop = textareaRef.current.scrollTop
+      backdropRef.current.scrollLeft = textareaRef.current.scrollLeft
+    }
+  }, [])
 
   const prevIsLoading = useRef(isLoading)
   useEffect(() => {
@@ -185,16 +196,41 @@ export const Composer = ({ onSend, onStop, isLoading = false }) => {
 
       {/* Unified Card */}
       <div className="composer-card" onClick={() => textareaRef.current?.focus()}>
-        <textarea
-          ref={textareaRef}
-          className="composer-textarea"
-          value={input}
-          onChange={handleOnChange}
-          onKeyDown={handleKeyDown}
-          placeholder="Ask AI... type '@' to mention notes, '/' for commands"
-          rows={1}
-          disabled={isLoading}
-        />
+        <div className="composer-input-area-wrapper">
+          {/* Synchronized color backdrop for colored @mentions */}
+          <div ref={backdropRef} className="composer-backdrop" aria-hidden="true">
+            {(() => {
+              if (!input) return null
+              const parts = input.split(/(@[a-zA-Z0-9_\-./]+)/g)
+              return parts.map((part, idx) => {
+                if (part.startsWith('@') && part.length > 1) {
+                  return (
+                    <span key={idx} className="composer-mention-token">
+                      {part}
+                    </span>
+                  )
+                }
+                return part
+              })
+            })()}
+          </div>
+
+          <textarea
+            ref={textareaRef}
+            className="composer-textarea"
+            value={input}
+            onChange={handleOnChange}
+            onKeyDown={handleKeyDown}
+            onScroll={handleScroll}
+            placeholder="Ask AI... type '@' to mention notes, '/' for commands"
+            rows={1}
+            disabled={isLoading}
+            spellCheck="false"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+          />
+        </div>
 
         {/* Inner Footer — model, modes, char count, send */}
         <div className="composer-inner-footer">

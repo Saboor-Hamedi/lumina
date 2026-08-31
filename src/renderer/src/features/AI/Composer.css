@@ -7,6 +7,11 @@
   background: var(--bg-panel);
   border-top: 1px solid var(--border-dim);
   position: relative;
+  font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
+}
+
+.composer-container * {
+  font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif);
 }
 
 /* ─── Unified card ─────────────────────────────── */
@@ -25,23 +30,59 @@
   box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb, 64, 186, 250), 0.1);
 }
 
+/* ─── Input Area with Colored Mention Backdrop ─── */
+.composer-input-area-wrapper {
+  position: relative;
+  width: 100%;
+  min-height: 44px;
+  max-height: 140px;
+}
+
+.composer-backdrop,
+.composer-textarea {
+  font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
+  font-size: 13px;
+  line-height: 1.45;
+  letter-spacing: normal;
+  padding: 10px 12px 6px;
+  margin: 0;
+  box-sizing: border-box;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  tab-size: 2;
+}
+
+.composer-backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: var(--text-main);
+  overflow-y: hidden;
+  user-select: none;
+  z-index: 1;
+}
+
+.composer-mention-token {
+  color: var(--text-accent);
+  font-weight: 500;
+  background: none;
+}
+
 /* ─── Textarea ─────────────────────────────────── */
 .composer-textarea {
+  position: relative;
   width: 100%;
   border: none;
   background: transparent;
-  color: var(--text-main);
-  font-family: var(--font-editor, 'Inter'), sans-serif;
-  font-size: 13px;
-  line-height: 1.45;
+  color: transparent;
+  caret-color: var(--text-main);
   resize: none;
   min-height: 44px;
   max-height: 140px;
   outline: none;
-  padding: 10px 12px 6px;
-  margin: 0;
-  box-sizing: border-box;
   overflow-y: auto;
+  z-index: 2;
 }
 
 .composer-textarea::-webkit-scrollbar {

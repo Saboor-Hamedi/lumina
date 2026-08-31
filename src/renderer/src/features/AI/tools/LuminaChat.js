@@ -672,8 +672,8 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
 - **To check what note is open** → call checkFile.
 - **For "add", "write more", "append"** → call appendToFile DIRECTLY. Never read first.
 - **For "edit", "change", "replace"** → call updateFile with 'search' and 'replace' to modify ONLY the target part without wiping the file.
-- **For "rename" or "call it"** → call renameFile DIRECTLY. NEVER delete and recreate.
-- **For "move"** → call moveFile DIRECTLY to change the folder of an existing file.
+- **For "rename"** → ONLY call renameFile if the user has provided the new title. If the user only says "rename it" without giving the new name, simply ask them what they want to rename it to.
+- **For "move"** → ONLY call moveFile if the user provided the destination folder. If not provided, ask first.
 - **For "create folder"** → call createFolder DIRECTLY.
 - **For "read" or "explain" or "tell me about"** → if content is below, answer IMMEDIATELY. If not below, call readFile immediately.
 - **For "clear", "empty", or "wipe"** → call clearFile directly.
@@ -910,75 +910,22 @@ ${vaultAccessNote}`
               }
             }
 
-            // Fallback: if tools were used but AI left empty text, show confirmation
-            try {
-              const steps = await result.steps
-              const lastStep = steps?.[steps.length - 1]
-              const stoppedOnToolCall = lastStep?.toolCalls?.length > 0
-
-              if (stoppedOnToolCall) {
-                // Foolproof manual follow-up if model stubbornly stopped after tool call
-                const toolOutputs = steps
-                  .flatMap((s) => s.toolResults?.map((tr) => JSON.stringify(tr.result)) || [])
-                  .join('\n\n')
-
-                const followUpMessages = [
-                  ...finalMessages,
-                  { role: 'assistant', content: fullContent },
-                  {
-                    role: 'user',
-                    content: `Tool execution results:\n${toolOutputs}\n\nPlease summarize these results to the user and confirm the task is complete. Do NOT attempt to call any more tools.`
-                  }
-                ]
-
-                if (fullContent.trim() && !fullContent.endsWith('\n')) {
-                  fullContent += '\n\n'
-                }
-
-                const followUpResult = aiSdk.streamText({
-                  model: createDeepseekProvider({ apiKey: visibleKey })(
-                    activeModel || 'deepseek-chat'
-                  ),
-                  system: systemPrompt,
-                  messages: followUpMessages,
-                  tools: Object.fromEntries(
-                    Object.entries(sdkTools).filter(([, v]) => v !== undefined)
-                  ),
-                  maxSteps: 15,
-                  temperature: modeCfg.temperature,
-                  maxTokens: modeCfg.max_tokens,
-                  abortSignal: controller.signal
-                })
-
-                for await (const chunk of followUpResult.fullStream) {
-                  if (chunk.type === 'text-delta') {
-                    fullContent += chunk.textDelta || chunk.text || ''
-                  } else if (chunk.type === 'tool-result') {
-                    const res = chunk.result
-                    if (res && res.success === false) {
-                      fullContent += `\n\n*(⚠️ ${chunk.toolName}: ${res.error})*`
-                    }
-                  } else if (chunk.type === 'tool-error') {
-                    const errMsg = chunk.error?.message || chunk.error || 'Unknown tool error'
-                    fullContent += `\n\n*(⚠️ Tool error: ${errMsg})*`
-                  } else if (chunk.type === 'error') {
-                    fullContent += `\n\n*(❌ Stream error: ${chunk.error?.message || chunk.error})*`
-                  }
-
-                  const now = Date.now()
-                  if (now - lastUpdateTime >= UPDATE_INTERVAL) {
-                    lastUpdateTime = now
-                    set((state) => {
-                      const msgs = [...state.chatMessages]
-                      if (msgs.length > 0)
-                        msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: fullContent }
-                      return { chatMessages: msgs }
-                    })
+            // Fallback: only if AI executed tools but left empty text response
+            if (!fullContent.trim()) {
+              try {
+                const steps = await result.steps
+                const toolResults = steps?.flatMap((s) => s.toolResults || []) || []
+                if (toolResults.length > 0) {
+                  const lastRes = toolResults[toolResults.length - 1]?.result
+                  if (lastRes?.summary) {
+                    fullContent = lastRes.summary
+                  } else if (lastRes?.title) {
+                    fullContent = `Done! Successfully updated **${lastRes.title}**.`
+                  } else {
+                    fullContent = 'Done!'
                   }
                 }
-              }
-            } catch (err) {
-              console.warn('[AIStore] Follow-up fallback failed:', err)
+              } catch (_) {}
             }
           } else {
             // Fallback: existing provider-based streaming (for non-tool providers)

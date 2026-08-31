@@ -31,6 +31,20 @@
   flex-direction: column;
   overflow: hidden;
   animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
+}
+
+.lumina-chat-container,
+.chat-messages,
+.chat-bubble,
+.user-message-inline {
+  font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
+}
+
+.chat-bubble code,
+.chat-bubble pre,
+.chat-bubble pre code {
+  font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', Consolas, monospace) !important;
 }
 
 .ai-chat-modal-container.dragging {

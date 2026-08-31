@@ -15,6 +15,7 @@
   padding: 4px;
   margin-bottom: 8px;
   animation: slideUp 0.15s ease-out;
+  font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
 }
 
 
