@@ -1,150 +1,51 @@
-OBJECTIVE:
-Redesign ONLY two UI surfaces in the Lumina app to feel subtle, premium, 
-and minimal. Do NOT touch the editor canvas, table widgets, note body, 
-sidebar, or any functional logic. Pure visual/CSS refinement only.
+# Lumina AI Intelligence & Architectural Guide
 
-SCOPE (strictly limited to these two components):
-1. The Note Header / Action Bar (the row containing the note title, 
-   "Ask AI", "Local Graph", "Learned" button, and "Track: 10%" indicator)
-2. The Lumina AI Chat Modal/Panel (the floating chat window with the 
-   message list and the "Ask AI... or type '/' for commands" input)
+This document outlines the core intelligence architecture and capabilities of **Lumina AI**, designed as an intellectual thought partner for your Personal Knowledge Management (PKM) thinking environment.
 
-OUT OF SCOPE — DO NOT MODIFY:
-- The markdown editor body or CodeMirror instance
-- Any table widget, table CSS, or table rendering logic
-- The left sidebar / note list
-- Any state management, hooks, or business logic
-- Color tokens already defined in the theme (reuse existing CSS variables)
+---
 
-============================================================
-PART 1 — NOTE HEADER / ACTION BAR REDESIGN
-============================================================
+## 🏛️ 5 Core Pillars of Lumina AI Intelligence
 
-Current problems: buttons look heavy, the "Learned" pill is too loud, 
-the "Track: 10%" badge feels disconnected, spacing is inconsistent.
+### 1. 🌐 Knowledge Graph & 2-Hop Backlink Context Extraction
+* **Purpose:** Provides deep topological context beyond simple vector search by traversing the workspace graph.
+* **Mechanism:**
+  - Extracts outgoing `[[wikilinks]]` and incoming backlinks from active notes and mentioned files.
+  - Identifies 1-hop and 2-hop connected concept clusters, parent topics, and prerequisites.
+  - Injects a compact topological Knowledge Graph summary directly into the prompt context for true context-awareness.
 
-Design direction: quiet, editorial, breathable. Think Linear / Notion / 
-Raycast level of restraint.
+### 2. ⚡ Live Progressive Synchronization & Stream Mirroring
+* **Purpose:** Seamless real-time coordination between the AI Chat and the CodeMirror workspace editor.
+* **Mechanism:**
+  - Single-pass native streaming (`aiSdk.streamText`) ensures zero thread lockups, pauses, or freezing.
+  - Dispatches `ai-saved-snippet` events to update open editor tab buffers immediately.
+  - Switches active tab selection (`vs.setActiveTabId`) upon note creation so users can observe notes live.
 
-Requirements:
-- Reduce overall header height slightly; increase horizontal breathing room
-- Action buttons ("Ask AI", "Local Graph") should be GHOST style by default:
-    * transparent background, muted text color (var(--text-muted))
-    * small icon + label, 13px font, medium weight
-    * on hover: very subtle background rgba(255,255,255,0.04), 
-      text brightens to var(--text-normal)
-    * NO borders, NO shadows in default state
-    * border-radius: 6px, padding: 5px 10px, gap: 6px between icon and label
-- "Learned" button states:
-    * INACTIVE: same ghost style as other buttons, neutral icon
-    * ACTIVE: soft filled pill using accent at LOW opacity 
-      (background: color-mix(in srgb, var(--text-accent) 12%, transparent)),
-      text in var(--text-accent), subtle 1px border in 
-      color-mix(in srgb, var(--text-accent) 25%, transparent)
-      checkmark icon, NO glow, NO shadow
-- "Track: 10%" indicator:
-    * make it quieter — smaller (12px), muted text
-    * format as "10% learned" with a tiny 2px-tall, 40px-wide progress 
-      sliver to its left (track bg at 8% opacity, fill in accent)
-    * align it cleanly to the far right, vertically centered
-- The note title:
-    * slightly larger, semibold, var(--text-main)
-    * remove any heavy underline; if a divider is needed use a 1px line 
-      at 6% opacity spanning full width with generous margin below
-- Transitions: all hover/active states use 120ms ease, nothing bouncy
-- Dark mode: ensure ghost buttons remain legible but never glaring
+### 3. 🎯 Dynamic Intent Routing & Self-Healing Loop
+* **Purpose:** Zero-friction classification of user intent (writing vs. conversing) and autonomous error recovery.
+* **Mechanism:**
+  - Categorizes requests dynamically: *Targeted Note Edit*, *New Note Creation*, *Conceptual Query*, *Refactoring*.
+  - **Self-Healing Hook:** Automatically traps tool errors or minor file naming mismatches and retries with corrected parameters before displaying results.
 
-============================================================
-PART 2 — LUMINA AI CHAT MODAL REDESIGN
-============================================================
+### 4. 🔗 Natural, Non-Repetitive Wikilinking
+* **Purpose:** Connects knowledge graph nodes purposefully without spamming brackets.
+* **Mechanism:**
+  - Enforces selective wikilinking (`[[Note Title]]` and `[[Note Title|Alias]]`) only on distinct concepts and related notes.
+  - Prevents bracket pollution across standard conversational chat responses.
 
-Current problems: modal feels boxy and generic, message bubbles are 
-undefined, the input bar looks like an afterthought, the header 
-("Lumina AI" + icons) is cramped, @mention chips are too saturated.
+### 5. 🛑 Robust Abort & Smart Scroll Lifecycle
+* **Purpose:** Flawless UX with instant stop controls and zero-shaking scroll interactions.
+* **Mechanism:**
+  - Immediate `AbortController` registration and propagation across all stream and tool loops.
+  - Pulsating visual stop button indicator during generation.
+  - Smart auto-scroll that pauses smoothly when the user scrolls up to read.
 
-Design direction: calm, focused, conversational. Like a premium 
-assistant that doesn't shout. Floating glass panel aesthetic.
+---
 
-Requirements:
+## 📂 Modular Architecture (DRY Pattern)
 
-MODAL CONTAINER:
-- background: var(--bg-panel) with backdrop-filter: blur(20px) saturate(140%)
-- border: 1px solid rgba(255,255,255,0.06)
-- border-radius: 14px
-- box-shadow: 0 24px 60px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.2)
-- subtle inner top highlight: inset 0 1px 0 rgba(255,255,255,0.04)
-- max-width ~480px, comfortable padding
-
-MODAL HEADER ("Lumina AI" + control icons):
-- reduce visual weight — title at 13px, medium weight, var(--text-muted) 
-  NOT bold white
-- control icons (copy/expand/close) ghost style, 28x28px hit area, 
-  muted color, hover → rgba(255,255,255,0.06) background
-- thin 1px divider below header at 6% opacity
-- generous padding (14px 18px)
-
-MESSAGE LIST:
-- USER messages (right aligned):
-    * soft accent-tinted bubble: 
-      background color-mix(in srgb, var(--text-accent) 10%, transparent)
-    * border: 1px solid color-mix(in srgb, var(--text-accent) 18%, transparent)
-    * border-radius: 14px 14px 4px 14px (tail points bottom-right)
-    * text in var(--text-main), 14px, line-height 1.55
-    * @mention chips inside user msg: SMALLER and QUIETER than now —
-      background color-mix(in srgb, var(--text-accent) 14%, transparent),
-      text in var(--text-accent), 12px, padding 1px 7px, radius 5px,
-      NO heavy purple block — make it feel inline and subtle
-- ASSISTANT messages (left aligned):
-    * NO bubble background — just clean text on the panel surface 
-      (this is the premium move; bubbles for bot = cheap)
-    * text in var(--text-normal), 14px, line-height 1.6
-    * a tiny 2px accent dot or thin vertical accent bar (2px wide, 
-      rounded, 60% height of the message, at 40% opacity) on the left 
-      edge to mark assistant turns subtly
-    * code snippets inside assistant msg: slightly inset, 
-      background rgba(255,255,255,0.03), radius 6px, mono font
-- message action icons (copy / thumbs up / down) under each msg:
-    * hidden by default, fade in on message hover (opacity 0 → 1, 120ms)
-    * ghost style, 12px icons, muted, hover brightens
-- spacing between messages: 16px, between user+assistant pair: 20px
-
-INPUT BAR (bottom):
-- container: background rgba(255,255,255,0.025), 
-  border 1px solid rgba(255,255,255,0.07), border-radius 12px
-- on focus-within: border brightens to 
-  color-mix(in srgb, var(--text-accent) 35%, transparent),
-  add faint outer ring box-shadow 0 0 0 3px color-mix(in srgb, var(--text-accent) 8%, transparent)
-  NO harsh full-purple border like current
-- placeholder text: var(--text-muted) at 70% opacity, 14px
-- the "DeepSeek" model selector pill (bottom-left):
-    * quiet chip — background rgba(255,255,255,0.04), 12px, muted text,
-      small chevron, radius 6px, hover brightens subtly
-- send button (bottom-right):
-    * ghost/disabled state when empty: muted icon only
-    * active state (text present): soft accent fill at low opacity, 
-      accent-colored icon, radius 8px, 30x30px
-    * NO solid bright purple block
-- padding inside input: 12px 14px
-
-SCROLLBAR (inside modal):
-- 6px wide, transparent track, thumb at rgba(255,255,255,0.08),
-  hover rgba(255,255,255,0.16), rounded — match the table scrollbar style
-
-============================================================
-GLOBAL RULES FOR BOTH REDESIGNS
-============================================================
-- Reuse existing CSS variables (--text-accent, --bg-panel, --text-muted, 
-  --text-main, --border-subtle). Do NOT hardcode new hex colors except 
-  rgba overlays.
-- ZERO animations on layout/size. Only opacity/color/background 
-  transitions at 120ms ease.
-- Respect dark mode fully — test every state against the dark background.
-- Keep everything SUBTLE. If a element draws the eye more than the note 
-  content itself, it is too loud — tone it down.
-- Maintain all existing functionality, click handlers, and props. 
-  This is CSS/markup-class changes ONLY.
-
-DELIVERABLE:
-Output the updated CSS (and minimal JSX class changes if needed) for 
-the header component and the AI modal component. Show before/after 
-reasoning briefly. Do not modify any other file.
+The AI engine is organized into dedicated, single-responsibility modules:
+- `src/renderer/src/features/AI/services/graphContext.js`: Knowledge Graph traversal & backlink resolution.
+- `src/renderer/src/features/AI/services/intentRouter.js`: Intent categorization & few-shot prompts.
+- `src/renderer/src/features/AI/services/selfHealing.js`: Autonomous tool error correction.
+- `src/renderer/src/features/AI/tools/`: Discrete, sandboxed tool definitions (`createFile`, `appendToFile`, `updateFile`, `clearFile`, `renameFile`, `readFile`, etc.).
+- `src/renderer/src/features/AI/tools/LuminaChat.js`: Orchestrator store connecting UI, streaming, and execution.

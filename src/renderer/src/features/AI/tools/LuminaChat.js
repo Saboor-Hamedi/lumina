@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 import { db, openDb } from '../../../core/db/cache'
+import { extractGraphContext } from '../services/graphContext.js'
+import { detectUserIntent, getDynamicExemplars } from '../services/intentRouter.js'
 
 let aiSdk
 let createDeepseekProvider
@@ -791,16 +793,35 @@ ${vaultAccessNote}`
           'User: "Explain Grammars" → [Call readFile immediately]\n' +
           'User: "Open Grammars" → [Call openFile immediately]'
 
-        // --- Existing files list ---
+        // --- Existing files list & Knowledge Graph Context ---
         try {
           const { useVaultStore } = await import('../../../core/store/useVaultStore')
           const vs = useVaultStore.getState()
-          const allSnippets = vs.snippets || []
+          const allSnippets = Array.isArray(vs.snippets) ? vs.snippets : Object.values(vs.snippets || {})
           const allFolders = vs.folders || []
           if (allSnippets.length > 0 || allFolders.length > 0) {
             const titles = allSnippets.map((s) => s.title).join(', ')
             const folders = allFolders.join(', ')
             systemPrompt += `\n\n**EXISTING FILES**: ${titles || 'None'}\n**EXISTING FOLDERS**: ${folders || 'None'}\nNever create a file or folder whose name is already in these lists. Use updateFile to modify files instead.`
+          }
+
+          // Feature 1: Knowledge Graph Topology (1-2 Hop Backlinks & Forward Links)
+          const targetSnippets =
+            mentionedSnippets.length > 0
+              ? mentionedSnippets
+              : vs.selectedSnippet
+                ? [vs.selectedSnippet]
+                : []
+          const graphTopology = extractGraphContext(targetSnippets, allSnippets, 2, 6)
+          if (graphTopology) {
+            systemPrompt += graphTopology
+          }
+
+          // Feature 3: Dynamic Intent Routing & Few-Shot Exemplars
+          const detectedIntent = detectUserIntent(message, mentionedSnippets, vs.selectedSnippet)
+          const exemplars = getDynamicExemplars(detectedIntent)
+          if (exemplars) {
+            systemPrompt += exemplars
           }
         } catch (_) {}
 
