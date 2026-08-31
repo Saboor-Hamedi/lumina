@@ -515,7 +515,9 @@ const mermaidDecorationsField = StateField.define({
     return buildMermaidDecorations(state)
   },
   update(value, tr) {
-    if (tr.docChanged || tr.selection || tr.effects.some((e) => e.is(setEditingMermaid))) {
+    const prevEditing = tr.startState.field(editingMermaidField, false)
+    const nextEditing = tr.state.field(editingMermaidField, false)
+    if (tr.docChanged || prevEditing !== nextEditing || tr.effects.some((e) => e.is(setEditingMermaid))) {
       return buildMermaidDecorations(tr.state)
     }
     return value

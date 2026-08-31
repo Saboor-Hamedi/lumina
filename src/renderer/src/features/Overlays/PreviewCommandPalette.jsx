@@ -18,7 +18,7 @@ import {
 import { Sparkles } from 'lucide-react'
 
 import '@atomic-editor/editor/styles.css'
-import '../Editor/MarkdownEditor.css'
+import '../Editor/Editor.css'
 import '../codeBlock/codeWrapper.css'
 
 /**

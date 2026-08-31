@@ -310,8 +310,8 @@ function buildDecorations(state) {
           return
         }
 
-        // When cursor touches/focuses the block, remove header and reveal raw code for editing
-        const overlaps = selection.from <= node.to + 1 && selection.to >= node.from - 1
+        // When cursor is strictly inside the block, reveal raw code for editing
+        const overlaps = selection.from <= node.to && selection.to >= node.from
         if (overlaps) {
           return
         }
@@ -333,12 +333,36 @@ function buildDecorations(state) {
   return builder.finish()
 }
 
+function selectionTouchesFencedCode(state) {
+  const tree = syntaxTree(state)
+  const sel = state.selection.main
+  let touches = false
+  tree.iterate({
+    from: sel.from,
+    to: sel.to,
+    enter(node) {
+      if (node.name === 'FencedCode') {
+        touches = true
+        return false
+      }
+    }
+  })
+  return touches
+}
+
 export const codeBlockDecorations = StateField.define({
   create(state) {
     return buildDecorations(state)
   },
   update(decorations, tr) {
-    if (tr.docChanged || tr.selection) return buildDecorations(tr.state)
+    if (tr.docChanged) return buildDecorations(tr.state)
+    if (tr.selection) {
+      const prevTouched = selectionTouchesFencedCode(tr.startState)
+      const nextTouched = selectionTouchesFencedCode(tr.state)
+      if (prevTouched || nextTouched) {
+        return buildDecorations(tr.state)
+      }
+    }
     return decorations
   },
   provide: (f) => [EditorView.decorations.from(f), codeBlockHoverHandler]

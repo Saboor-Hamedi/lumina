@@ -661,13 +661,24 @@ function buildDecorations(state) {
   return Decoration.set(widgets, true)
 }
 
+function lineHasImageSyntax(text) {
+  return text.includes('![') && text.includes('](')
+}
+
 export const imageWidgetExtension = StateField.define({
   create(state) {
     return buildDecorations(state)
   },
   update(value, tr) {
-    if (tr.docChanged || tr.selection) {
-      return buildDecorations(tr.state)
+    if (tr.docChanged) return buildDecorations(tr.state)
+    if (tr.selection) {
+      const prevPos = tr.startState.selection.main.head
+      const nextPos = tr.state.selection.main.head
+      const prevLine = tr.startState.doc.lineAt(prevPos)
+      const nextLine = tr.state.doc.lineAt(nextPos)
+      if (lineHasImageSyntax(prevLine.text) || lineHasImageSyntax(nextLine.text)) {
+        return buildDecorations(tr.state)
+      }
     }
     return value
   },

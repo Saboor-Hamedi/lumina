@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import MarkdownEditor from '../Editor/MarkdownEditor'
+import Editor from '../Editor/Editor'
 import Settings from '../Settings/Settings'
 import Sidebar from '../Navigation/Sidebar'
 import ThemeModal from '../Theme/ThemeModal'
@@ -689,7 +689,7 @@ const AppShell = () => {
                     }}
                   >
                     <ErrorBoundary>
-                      <MarkdownEditor
+                      <Editor
                         snippet={snippet}
                         onSave={saveSnippet}
                         onToggleInspector={handleToggleInspector}

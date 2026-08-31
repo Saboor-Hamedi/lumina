@@ -6,7 +6,7 @@ import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { useToast } from '../../core/hooks/useToast'
 import ToastNotification from '../../core/notification'
-import './MarkdownEditor.css'
+import './Editor.css'
 import '../codeBlock/codeWrapper.css'
 
 // Atomic Editor Imports
@@ -63,7 +63,7 @@ const searchHighlightField = StateField.define({
   provide: (f) => EditorView.decorations.from(f)
 })
 
-const MarkdownEditor = React.memo(
+const Editor = React.memo(
   ({
     snippet,
     onSave,
@@ -666,7 +666,6 @@ const MarkdownEditor = React.memo(
 
     const handleInlineAIInsert = useCallback((text, range = null) => {
       if (!realViewRef.current) return
-
       const view = realViewRef.current
       const selection = view.state.selection.main
 
@@ -1405,6 +1404,6 @@ const MarkdownEditor = React.memo(
   }
 )
 
-MarkdownEditor.displayName = 'MarkdownEditor'
+Editor.displayName = 'Editor'
 
-export default MarkdownEditor
+export default Editor

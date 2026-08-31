@@ -133,13 +133,33 @@ function buildDecorations(state) {
   return Decoration.set(allDecos, true)
 }
 
+function selectionTouchesHtml(state) {
+  const tree = syntaxTree(state)
+  const sel = state.selection.main
+  let touches = false
+  tree.iterate({
+    from: sel.from,
+    to: sel.to,
+    enter(node) {
+      if (node.name === 'HTMLBlock' || node.name === 'HTMLTag') {
+        touches = true
+        return false
+      }
+    }
+  })
+  return touches
+}
+
 export const htmlWidgetExtension = StateField.define({
   create(state) {
     return buildDecorations(state)
   },
   update(value, tr) {
-    if (tr.docChanged || tr.selection) {
-      return buildDecorations(tr.state)
+    if (tr.docChanged) return buildDecorations(tr.state)
+    if (tr.selection) {
+      if (selectionTouchesHtml(tr.startState) || selectionTouchesHtml(tr.state)) {
+        return buildDecorations(tr.state)
+      }
     }
     return value
   },
