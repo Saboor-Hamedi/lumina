@@ -180,7 +180,7 @@ export function createTableQuickActionsDOM(view, wrap, model) {
 
     const rect = btn.getBoundingClientRect()
     dropdown.style.top = `${rect.bottom + 4}px`
-    dropdown.style.left = `${Math.max(10, Math.min(rect.right - 180, window.innerWidth - 190))}px`
+    dropdown.style.left = `${Math.max(10, Math.min(rect.right - 240, window.innerWidth - 250))}px`
 
     const currentModel = readModelFromDom(wrap)
 

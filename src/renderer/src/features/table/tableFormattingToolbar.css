@@ -422,14 +422,14 @@
   z-index: 100000 !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 1px !important;
-  padding: 3px !important;
-  min-width: 165px !important;
-  width: 170px !important;
+  gap: 2px !important;
+  padding: 6px !important;
+  min-width: 240px !important;
+  width: 240px !important;
   background: var(--bg-panel, #18181b) !important;
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12)) !important;
   border-radius: 2px !important;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
   backdrop-filter: blur(20px) !important;
 }
 
@@ -437,15 +437,14 @@
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  gap: 6px !important;
+  gap: 12px !important;
   width: 100% !important;
-  padding: 4px 8px !important;
-  height: 26px !important;
+  padding: 7px 12px !important;
   background: transparent !important;
   border: none !important;
   border-radius: 2px !important;
   color: var(--text-main, #e2e8f0) !important;
-  font-size: 11.5px !important;
+  font-size: 13px !important;
   font-weight: 500 !important;
   cursor: pointer !important;
   transition: background 0.12s ease !important;
@@ -459,7 +458,7 @@
 
 .cm-table-actions-dropdown .dropdown-divider {
   height: 1px !important;
-  margin: 2px 0 !important;
+  margin: 4px 0 !important;
   background: var(--border-subtle, rgba(255, 255, 255, 0.08)) !important;
 }
 
