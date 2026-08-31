@@ -99,25 +99,28 @@
   padding: 0 !important;
 }
 
-/* Inline Tag and Mention Styles - Unified Connected Flat Pills */
+/* Inline Tag and Mention Styles - Connected, unified flat pills */
 .cm-inline-tag,
 .cm-inline-mention {
-  position: relative !important;
-  color: var(--text-accent) !important;
-  cursor: pointer !important;
-  font-weight: 500 !important;
-  padding: 1px 5px !important;
-  margin: 0 1px !important;
   display: inline !important;
+  color: var(--text-accent) !important;
+  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.1) !important;
   border-radius: 2px !important;
-  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.08) !important;
-  transition: all 0.15s ease !important;
+  padding: 1px 4px !important;
+  margin: 0 !important;
+  font-weight: 500 !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  box-decoration-break: clone !important;
+  -webkit-box-decoration-break: clone !important;
+  transition: background 0.15s ease !important;
   vertical-align: baseline !important;
 }
 
 .cm-inline-tag:hover,
 .cm-inline-mention:hover {
-  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.16) !important;
+  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.2) !important;
   text-decoration: none !important;
 }
 

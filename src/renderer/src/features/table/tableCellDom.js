@@ -35,28 +35,16 @@ export function renderCellToken(tok, view) {
     return document.createTextNode(tok.text)
   }
   if (tok.type === 'tag') {
-    const frag = document.createDocumentFragment()
-    const prefix = document.createElement('span')
-    prefix.className = 'cm-tag-prefix'
-    prefix.textContent = '#'
-    frag.appendChild(prefix)
-    const text = document.createElement('span')
-    text.className = 'cm-inline-tag'
-    text.textContent = tok.text
-    frag.appendChild(text)
-    return frag
+    const span = document.createElement('span')
+    span.className = 'cm-inline-tag'
+    span.textContent = `#${tok.text}`
+    return span
   }
   if (tok.type === 'mention') {
-    const frag = document.createDocumentFragment()
-    const prefix = document.createElement('span')
-    prefix.className = 'cm-mention-prefix'
-    prefix.textContent = '@'
-    frag.appendChild(prefix)
-    const text = document.createElement('span')
-    text.className = 'cm-inline-mention'
-    text.textContent = tok.text
-    frag.appendChild(text)
-    return frag
+    const span = document.createElement('span')
+    span.className = 'cm-inline-mention'
+    span.textContent = `@${tok.text}`
+    return span
   }
   if (tok.type === 'strong') {
     const wrap = document.createElement('span')
