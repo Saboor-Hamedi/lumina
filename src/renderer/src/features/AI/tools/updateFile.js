@@ -32,12 +32,17 @@ export const updateFileTool = aiSdk.tool({
   execute: async ({ title, search, replace, content, sectionHeader }) => {
     const { useVaultStore } = await import('../../../core/store/useVaultStore')
     const vs = useVaultStore.getState()
-    const snippets = Array.from(vs.snippets.values())
+    const snippets = Array.isArray(vs.snippets) ? vs.snippets : Object.values(vs.snippets || {})
 
-    const cleanTitle = title.trim().toLowerCase().replace(/\.md$/, '')
-    let target = snippets.find((s) => s.title.toLowerCase().replace(/\.md$/, '') === cleanTitle)
+    const cleanTitle = (title || '').trim().toLowerCase().replace(/\.md$/, '')
+    let target = snippets.find(
+      (s) => (s.title || '').toLowerCase().replace(/\.md$/, '') === cleanTitle
+    )
     if (!target) {
-      target = snippets.find((s) => s.title.toLowerCase().includes(cleanTitle))
+      target = snippets.find((s) => (s.title || '').toLowerCase().includes(cleanTitle))
+    }
+    if (!target && vs.selectedSnippet) {
+      target = vs.selectedSnippet
     }
     if (!target) return { success: false, error: `File "${title}" not found.` }
 
@@ -80,7 +85,7 @@ export const updateFileTool = aiSdk.tool({
           } else {
             return {
               success: false,
-              error: `Target text to replace was not found in "${target.title}". Check the file content first with readFile or checkFile.`
+              error: `Target text to replace was not found in "${target.title}".`
             }
           }
         }
@@ -96,9 +101,18 @@ export const updateFileTool = aiSdk.tool({
       }
     }
 
-    await vs.saveSnippet({ ...target, code: newCode })
+    const updated = await vs.saveSnippet({ ...target, code: newCode })
+    if (vs.setSelectedSnippet) {
+      vs.setSelectedSnippet(updated || { ...target, code: newCode })
+    }
+    if (vs.setActiveTabId) {
+      vs.setActiveTabId(target.id)
+    }
+
     window.dispatchEvent(
-      new CustomEvent('ai-saved-snippet', { detail: { id: target.id, code: newCode } })
+      new CustomEvent('ai-saved-snippet', {
+        detail: { id: target.id, code: newCode, title: target.title }
+      })
     )
 
     return {

@@ -207,12 +207,12 @@
   border-radius: 4px;
 }
 
-/* Send / Stop button */
+/* Send / Stop buttons */
+.composer-send-btn,
 .send-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
   background: var(--text-accent);
   color: #fff;
   border: none;
@@ -221,33 +221,67 @@
   height: 26px;
   padding: 0;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
 }
 
+.composer-send-btn:hover:not(:disabled),
 .send-btn:hover:not(:disabled) {
   background: var(--text-accent-hover, var(--text-accent));
   transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(var(--text-accent-rgb, 64, 186, 250), 0.3);
 }
 
+.composer-send-btn:disabled,
 .send-btn:disabled {
   background: var(--bg-active);
   color: var(--text-faint);
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
   transform: none;
 }
 
+/* Pulsating Glowing Stop Button */
+.composer-stop-btn,
 .send-btn.stop {
-  background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
-  border-radius: 50%;
-  transform: scale(0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #ef4444 !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: stopButtonPulse 1.8s infinite ease-in-out;
 }
 
+.composer-stop-btn:hover,
 .send-btn.stop:hover {
-  background: rgba(239, 68, 68, 0.25);
-  transform: scale(1);
+  background: rgba(239, 68, 68, 0.3) !important;
+  border-color: #ef4444 !important;
+  transform: scale(1.06);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.45);
+}
+
+.composer-stop-btn:active,
+.send-btn.stop:active {
+  transform: scale(0.94);
+}
+
+@keyframes stopButtonPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 7px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
 }
 
 .spin-icon {

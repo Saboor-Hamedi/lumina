@@ -2,7 +2,7 @@ import * as aiSdk from 'ai'
 
 export const checkFileTool = aiSdk.tool({
   description:
-    'Check the currently active/focused file in the workspace or inspect details of any specific file. Returns title, word count, line count, folder, tags, and active cursor/selection context so the AI has 100% situational awareness.',
+    'Check the currently active/focused file in the workspace or inspect details of any specific file. Returns title, word count, line count, folder, tags, and full content so the AI has 100% situational awareness.',
   inputSchema: aiSdk.jsonSchema({
     type: 'object',
     properties: {
@@ -32,7 +32,7 @@ export const checkFileTool = aiSdk.tool({
       return {
         success: false,
         error: title ? `File "${title}" not found.` : 'No file is currently open in the editor.',
-        instruction_to_ai: 'Inform the user that no active file was found.'
+        instruction_to_ai: 'No active file found. Provide the answer directly in chat.'
       }
     }
 
@@ -54,10 +54,10 @@ export const checkFileTool = aiSdk.tool({
         wordCount,
         charCount,
         isActiveFile: vs.selectedSnippet?.id === target.id,
-        preview: lines.slice(0, 10).join('\n') + (lines.length > 10 ? '\n...' : '')
+        content: currentCode
       },
       instruction_to_ai:
-        'You have verified the file details. You can now perform informed edits, explanations, or operations.'
+        'You have the full file details. Now immediately write the full substantive response or edits for the user without any filler preamble.'
     }
   }
 })

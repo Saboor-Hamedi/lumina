@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react'
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import {
   Send,
   Square,
@@ -16,9 +16,10 @@ import {
 import SlashCommandMenu from './SlashCommandMenu'
 import LuminaMention from './LuminaMention'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
+import { useVaultStore } from '../../core/store/useVaultStore'
 import './Composer.css'
 
-export const Composer = ({ onSend, onStop, isLoading = false }) => {
+export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
   const [input, setInput] = useState('')
   const [showSlashMenu, setShowSlashMenu] = useState(false)
   const [slashFilter, setSlashFilter] = useState('')
@@ -26,8 +27,25 @@ export const Composer = ({ onSend, onStop, isLoading = false }) => {
   const [mentionFilter, setMentionFilter] = useState('')
   const [attachedMentions, setAttachedMentions] = useState([])
 
+  const handleStop = onStop || onCancel
+
   const textareaRef = useRef(null)
   const backdropRef = useRef(null)
+
+  const snippets = useVaultStore((state) => state.snippets) || []
+
+  const mentionRegex = useMemo(() => {
+    const titles = snippets
+      .map((s) => s.title)
+      .filter(Boolean)
+      .sort((a, b) => b.length - a.length)
+      .map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+
+    if (titles.length > 0) {
+      return new RegExp(`(@(?:${titles.join('|')}|[a-zA-Z0-9_\\-./]+))`, 'gi')
+    }
+    return /(@[a-zA-Z0-9_\-./]+)/g
+  }, [snippets])
 
   const { settings, updateSettings } = useSettingsStore()
   const mode = settings.activeAIMode || 'Standard'
@@ -201,7 +219,7 @@ export const Composer = ({ onSend, onStop, isLoading = false }) => {
           <div ref={backdropRef} className="composer-backdrop" aria-hidden="true">
             {(() => {
               if (!input) return null
-              const parts = input.split(/(@[a-zA-Z0-9_\-./]+)/g)
+              const parts = input.split(mentionRegex)
               return parts.map((part, idx) => {
                 if (part.startsWith('@') && part.length > 1) {
                   return (
@@ -249,8 +267,16 @@ export const Composer = ({ onSend, onStop, isLoading = false }) => {
             )}
 
             {isLoading ? (
-              <button className="composer-stop-btn" onClick={onStop} title="Stop generation">
-                <Square size={12} fill="currentColor" />
+              <button
+                className="composer-stop-btn"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  if (handleStop) handleStop()
+                }}
+                title="Stop generation"
+              >
+                <Square size={11} fill="currentColor" />
               </button>
             ) : (
               <button

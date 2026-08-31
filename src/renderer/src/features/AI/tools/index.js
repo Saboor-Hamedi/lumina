@@ -16,7 +16,6 @@ export const getAITools = (blockReadFile) => {
   return {
     createFile: createFileTool,
     readFile: getReadFileTool(blockReadFile),
-    checkFile: checkFileTool,
     clearFile: clearFileTool,
     openFile: openFileTool,
     updateFile: updateFileTool,

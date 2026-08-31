@@ -17,7 +17,7 @@ export const clearFileTool = aiSdk.tool({
   execute: async ({ title, keepHeader = false }) => {
     const { useVaultStore } = await import('../../../core/store/useVaultStore')
     const vs = useVaultStore.getState()
-    const snippets = Array.from(vs.snippets.values())
+    const snippets = Array.isArray(vs.snippets) ? vs.snippets : Object.values(vs.snippets || {})
 
     const cleanTitle = title.trim().toLowerCase().replace(/\.md$/, '')
     let target = snippets.find((s) => s.title.toLowerCase().replace(/\.md$/, '') === cleanTitle)

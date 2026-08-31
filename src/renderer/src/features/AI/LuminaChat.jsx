@@ -214,20 +214,37 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, onPopOut = nul
     }))
   )
 
+  const userMentionRegex = useMemo(() => {
+    const list = snippets || []
+    const titles = list
+      .map((s) => s.title)
+      .filter(Boolean)
+      .sort((a, b) => b.length - a.length)
+      .map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+
+    if (titles.length > 0) {
+      return new RegExp(`(@(?:${titles.join('|')}|[a-zA-Z0-9_\\-./]+))`, 'gi')
+    }
+    return /(@[a-zA-Z0-9_\-./]+)/g
+  }, [snippets])
+
   const listRef = useRef(null)
+  const autoScrollRef = useRef(true)
   const [showSessions, setShowSessions] = useState(false)
 
-  // Auto-scroll to bottom when messages change or during streaming
-  useEffect(() => {
-    const scrollToBottom = () => {
-      if (listRef.current) {
-        listRef.current.scrollTop = listRef.current.scrollHeight
-      }
-    }
+  const handleMessageScroll = useCallback(() => {
+    if (!listRef.current) return
+    const { scrollTop, scrollHeight, clientHeight } = listRef.current
+    // User is at bottom if within 80px
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 80
+    autoScrollRef.current = isAtBottom
+  }, [])
 
-    scrollToBottom()
-    const timeoutId = setTimeout(scrollToBottom, 50)
-    return () => clearTimeout(timeoutId)
+  // Auto-scroll to bottom only if user hasn't scrolled up
+  useEffect(() => {
+    if (autoScrollRef.current && listRef.current) {
+      listRef.current.scrollTop = listRef.current.scrollHeight
+    }
   }, [chatMessages, isChatLoading])
 
   // Load chat history on mount
@@ -263,6 +280,7 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, onPopOut = nul
   const handleSendMessage = useCallback(
     async (text, mode = 'Standard', attachedMentions = []) => {
       if (!text.trim() && attachedMentions.length === 0) return
+      autoScrollRef.current = true
 
       try {
         const contextSnippets = []
@@ -351,7 +369,7 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, onPopOut = nul
               >
                 {(() => {
                   const content = msg.content || ''
-                  const parts = content.split(/(@[a-zA-Z0-9_\-./]+)/g)
+                  const parts = content.split(userMentionRegex)
                   return parts.map((part, pIdx) => {
                     if (part.startsWith('@') && part.length > 1) {
                       return (
@@ -463,7 +481,7 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, onPopOut = nul
             if (showSessions) setShowSessions(false)
           }}
         >
-          <div className="chat-messages" ref={listRef}>
+          <div className="chat-messages" ref={listRef} onScroll={handleMessageScroll}>
             {visibleMessages.length === 0 ? (
               <div className="chat-empty">
                 <h2
@@ -582,9 +600,8 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, onPopOut = nul
             <Composer
               onSend={handleSendMessage}
               isLoading={isChatLoading}
-              onCancel={() => {
-                if (isChatLoading) cancelChat()
-              }}
+              onStop={cancelChat}
+              onCancel={cancelChat}
             />
           </div>
         </div>

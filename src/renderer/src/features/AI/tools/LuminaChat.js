@@ -405,13 +405,17 @@ export const useAIStore = create((set, get) => {
 
     cancelChat: () => {
       const controller = get().chatController
-      if (controller && !controller.signal.aborted) {
-        controller.abort()
-        set({
-          isChatLoading: false,
-          chatController: null
-        })
+      if (controller) {
+        try {
+          controller.abort()
+        } catch (e) {
+          console.warn('[AIStore] Abort error:', e)
+        }
       }
+      set({
+        isChatLoading: false,
+        chatController: null
+      })
     },
 
     sendChatMessage: async (
@@ -538,15 +542,13 @@ export const useAIStore = create((set, get) => {
         return
       }
 
-      // 0. Parse @mentions with fuzzy punctuation/hyphen tolerance
+      // 0. Parse @mentions (multi-word and single-word titles)
       const normalize = (str) =>
         (str || '')
           .toLowerCase()
           .replace(/[-_ .]/g, '')
           .replace(/\.md$/, '')
 
-      const mentionRegex = /@([^ \n\t]+)/g
-      const mentions = [...message.matchAll(mentionRegex)].map((m) => m[1])
       const mentionedSnippets = []
 
       if (attachedMentions && attachedMentions.length > 0) {
@@ -557,27 +559,45 @@ export const useAIStore = create((set, get) => {
         })
       }
 
-      if (mentions.length > 0) {
-        try {
-          const vaultModule = await import('../../../core/store/useVaultStore')
-          const vaultSnippets = vaultModule.useVaultStore.getState().snippets
-          mentions.forEach((mentionTitle) => {
-            const normMention = normalize(mentionTitle)
-            const found = vaultSnippets.find((s) => {
-              const normTitle = normalize(s.title || '')
-              return (
-                normTitle === normMention ||
-                normTitle.includes(normMention) ||
-                normMention.includes(normTitle)
-              )
-            })
-            if (found && !mentionedSnippets.some((ms) => ms.id === found.id)) {
-              mentionedSnippets.push(found)
+      try {
+        const vaultModule = await import('../../../core/store/useVaultStore')
+        const vaultSnippets = vaultModule.useVaultStore.getState().snippets || []
+
+        // Match longest multi-word titles first so "@Types of RAG" matches as one entity
+        const sortedSnippets = [...vaultSnippets].sort(
+          (a, b) => (b.title?.length || 0) - (a.title?.length || 0)
+        )
+
+        for (const snip of sortedSnippets) {
+          if (!snip.title) continue
+          const escaped = snip.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+          const pattern = new RegExp(`@${escaped}(?=[\\s,;.!?]|$)`, 'i')
+          if (pattern.test(message)) {
+            if (!mentionedSnippets.some((ms) => ms.id === snip.id)) {
+              mentionedSnippets.push(snip)
             }
-          })
-        } catch (err) {
-          console.warn('[AIStore] Mention scan failed:', err)
+          }
         }
+
+        // Fallback single-word mention scan
+        const singleMentionRegex = /@([^\s,;.!?]+)/g
+        const singleMentions = [...message.matchAll(singleMentionRegex)].map((m) => m[1])
+        singleMentions.forEach((mentionTitle) => {
+          const normMention = normalize(mentionTitle)
+          const found = vaultSnippets.find((s) => {
+            const normTitle = normalize(s.title || '')
+            return (
+              normTitle === normMention ||
+              normTitle.includes(normMention) ||
+              normMention.includes(normTitle)
+            )
+          })
+          if (found && !mentionedSnippets.some((ms) => ms.id === found.id)) {
+            mentionedSnippets.push(found)
+          }
+        })
+      } catch (err) {
+        console.warn('[AIStore] Mention scan failed:', err)
       }
 
       // 1. Auto-detect file mentions by name (e.g. "What do you know about QuickNote?")
@@ -608,10 +628,16 @@ export const useAIStore = create((set, get) => {
         content: '',
         timestamp: Date.now()
       }
-      set({ chatMessages: [...newHistory, assistantMsg], isChatLoading: true, chatError: null })
 
-      let controller = null
-      let timeoutId = null
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller?.abort(), 180000)
+
+      set({
+        chatMessages: [...newHistory, assistantMsg],
+        isChatLoading: true,
+        chatError: null,
+        chatController: controller
+      })
 
       try {
         let vaultContext = []
@@ -651,11 +677,18 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
 - Provide high-signal, detailed responses.
 - Cite file names clearly when quoting specific context.
 - **Follow EVERY instruction the user gives**. If they ask for wikilinks, headers, formatting, or structure — do it without skipping.
-- Produce **comprehensive, detailed content**.
-- When the user asks about a file, read its content from "PRIMARY TARGET FILES" or "Workspace Files Referenced" below and immediately provide a substantive answer. NEVER say "Let me check" or "Let me read" without answering in the same response.
+- Produce **comprehensive, rich, detailed content**.
+
+**🔗 WIKILINKS GUIDELINES**:
+- Lumina supports double-bracket wikilinks: \`[[Note Title]]\` or \`[[Note Title|Alias]]\`.
+- Use wikilinks **naturally and selectively** (e.g., when referencing other important notes or distinct concepts).
+- **DO NOT SPAM WIKILINKS**: Never wrap every sentence, header, bullet, or repetition of a topic with brackets. In chat responses and conversational suggestions, write in clean, polished prose without repetitive \`[[\` \`]]\` tags.
+
+**CRITICAL EXECUTION DIRECTIVES**:
+- **NEVER OUTPUT FILLER PROMISES**: Never say "Let me first check...", "Let me see what's in the file...", or "I will look into it" without immediately writing the full answer. If you call a tool, call it silently without chatting first.
+- **IMMEDIATE DELIVERY**: When asked to draft, explain, or write a note, deliver the complete, rich, structured markdown right away!
 
 **TOOLS AVAILABLE** (use these for file operations):
-- 'checkFile' — check the currently active file in the editor or inspect file metadata/line count
 - 'readFile' — read a workspace file by title (only use when you do NOT already have the file content)
 - 'appendToFile' — add new content to the END of an existing file
 - 'createFile' — create a brand new workspace file (provide title + content)
@@ -668,19 +701,19 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
 - 'moveFile' — move a file into a specific folder (provide title and newFolderId)
 - 'openFile' — open a file in the user's editor tab so they can see it
 
-**HOW TO USE THEM**:
-- **To check what note is open** → call checkFile.
-- **For "add", "write more", "append"** → call appendToFile DIRECTLY. Never read first.
-- **For "edit", "change", "replace"** → call updateFile with 'search' and 'replace' to modify ONLY the target part without wiping the file.
-- **For "rename"** → ONLY call renameFile if the user has provided the new title. If the user only says "rename it" without giving the new name, simply ask them what they want to rename it to.
-- **For "move"** → ONLY call moveFile if the user provided the destination folder. If not provided, ask first.
-- **For "create folder"** → call createFolder DIRECTLY.
-- **For "read" or "explain" or "tell me about"** → if content is below, answer IMMEDIATELY. If not below, call readFile immediately.
-- **For "clear", "empty", or "wipe"** → call clearFile directly.
-- **For "delete" or "remove"** → call deleteFile directly (or deleteFolder for folders).
-- **For "create" or "new"** → call createFile (for files) or createFolder (for folders).
-- **For "open" or "look at"** → call openFile to open the file in the user's editor.
-- When done, write a friendly summary of what you changed.
+**HOW TO USE TOOLS & ROUTE INTENT**:
+1. **WHEN THE USER @-MENTIONS A FILE (e.g. \`@NoteTitle write...\`, \`@NoteTitle add...\`, \`@NoteTitle update...\`)**:
+   - The user has targeted that specific note.
+   - ALWAYS call \`appendToFile\` (for additions/notes) or \`updateFile\` (for targeted edits) directly to write to that file in the workspace editor!
+2. **WHEN THE USER ASKS TO CREATE A NOTE OR TOPIC FILE (e.g. "write a draft on X", "write a topic about X", "create a note about X", "write comprehensive note on X", "make a file for X")**:
+   - ALWAYS call \`createFile\` to create and open that note in the workspace editor with rich markdown headings and \`[[wikilinks]]\`!
+3. **WHEN THE USER ASKS A CONVERSATIONAL OR CONCEPTUAL QUESTION (e.g. "tell me about RAG", "what is RAG?", "how does RAG work?", "compare X and Y")**:
+   - Answer and explain directly in the chat window without modifying files!
+4. **FOR "clear", "empty", or "wipe"** → call \`clearFile\` directly.
+5. **FOR "rename"** → ONLY call \`renameFile\` if a new name is specified. If not, ask first.
+6. **FOR "delete"** → call \`deleteFile\`.
+7. **FOR "open"** → call \`openFile\`.
+8. When modifying a file, call the tool and provide a clean, insightful thought-partner walkthrough in the chat. NEVER output pre-tool filler like "I'll add...".
 
 **CONTEXT**:
 ${vaultAccessNote}`
@@ -826,11 +859,6 @@ ${vaultAccessNote}`
 
         const provider = AIProviderFactory.createProvider(providerType, providerConfig)
 
-        // Abort Controller
-        controller = new AbortController()
-        set({ chatController: controller })
-        timeoutId = setTimeout(() => controller?.abort(), 180000)
-
         // Prepare Messages (History only, system passed separately)
         const finalMessages = newHistory.filter((m) => m.role !== 'system').slice(-6)
 
@@ -880,6 +908,7 @@ ${vaultAccessNote}`
             })
 
             for await (const chunk of result.fullStream) {
+              if (controller.signal.aborted) break
               if (!chunk || typeof chunk.type !== 'string') continue
               if (chunk.type === 'text-delta') {
                 fullContent += chunk.textDelta || chunk.text || ''
@@ -888,6 +917,9 @@ ${vaultAccessNote}`
                 if (res && res.success === false) {
                   console.warn(`[AIStore] Tool ${chunk.toolName} failed:`, res.error)
                   fullContent += `\n\n*(⚠️ ${chunk.toolName}: ${res.error})*`
+                } else if (res && res.writtenContent) {
+                  const prefix = fullContent.trim() ? `${fullContent.trim()}\n\n` : ''
+                  fullContent = `${prefix}${res.writtenContent}`
                 }
               } else if (chunk.type === 'tool-error') {
                 const errMsg = chunk.error?.message || chunk.error || 'Unknown tool error'
@@ -910,7 +942,7 @@ ${vaultAccessNote}`
               }
             }
 
-            // Fallback: only if AI executed tools but left empty text response
+            // If the model executed tools without emitting text in step 2, show the tool summary
             if (!fullContent.trim()) {
               try {
                 const steps = await result.steps
@@ -920,7 +952,7 @@ ${vaultAccessNote}`
                   if (lastRes?.summary) {
                     fullContent = lastRes.summary
                   } else if (lastRes?.title) {
-                    fullContent = `Done! Successfully updated **${lastRes.title}**.`
+                    fullContent = `Done! Successfully saved to **${lastRes.title}**.`
                   } else {
                     fullContent = 'Done!'
                   }
@@ -937,6 +969,7 @@ ${vaultAccessNote}`
             })
 
             for await (const chunk of stream) {
+              if (controller.signal.aborted) break
               if (chunk) {
                 fullContent += chunk
 
@@ -1162,6 +1195,9 @@ ${vaultAccessNote}`
             chatController: null
           }
         })
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId)
+        set({ isChatLoading: false, chatController: null })
       }
     }
   }

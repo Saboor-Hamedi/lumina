@@ -21,7 +21,7 @@ export const renameFileTool = aiSdk.tool({
 
     const { useVaultStore } = await import('../../../core/store/useVaultStore')
     const vs = useVaultStore.getState()
-    const snippets = Array.from(vs.snippets.values())
+    const snippets = Array.isArray(vs.snippets) ? vs.snippets : Object.values(vs.snippets || {})
 
     const normalize = (t) => t.toLowerCase().replace(/\.md$/, '').trim()
     let target = snippets.find((s) => normalize(s.title) === normalize(cleanOldTitle))
@@ -30,12 +30,16 @@ export const renameFileTool = aiSdk.tool({
     }
     if (!target) return { success: false, error: `File "${oldTitle}" not found in workspace.` }
 
-    const duplicate = Array.from(vs.snippets.values()).find(
+    const duplicate = snippets.find(
       (s) => s.id !== target.id && normalize(s.title) === normalize(cleanNewTitle)
     )
     if (duplicate) return { success: false, error: `A file named "${cleanNewTitle}" already exists.` }
 
-    await vs.saveSnippet({ ...target, title: cleanNewTitle })
+    const updated = await vs.saveSnippet({ ...target, title: cleanNewTitle })
+    if (vs.setSelectedSnippet) {
+      vs.setSelectedSnippet(updated || { ...target, title: cleanNewTitle })
+    }
+
     window.dispatchEvent(
       new CustomEvent('ai-saved-snippet', { detail: { id: target.id, code: target.code, title: cleanNewTitle } })
     )

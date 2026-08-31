@@ -2,7 +2,7 @@ import * as aiSdk from 'ai'
 
 export const createFileTool = aiSdk.tool({
   description:
-    'Create a new file in the workspace. ONLY use this if the user EXPLICITLY asks to "create", "make", or "write" a NEW file. Do not use this to just answer a question.',
+    'Create a new note file in the workspace editor. Use this whenever the user asks to create, draft, or write a new note or topic file.',
   inputSchema: aiSdk.jsonSchema({
     type: 'object',
     properties: {
@@ -30,13 +30,41 @@ export const createFileTool = aiSdk.tool({
       language: 'markdown',
       timestamp: Date.now()
     }
-    await vs.saveSnippet(snippet)
+    const saved = await vs.saveSnippet(snippet)
+    const targetSnippet = saved || snippet
+
+    // Immediately select and switch active editor to this new note
+    if (vs.setSelectedSnippet) {
+      vs.setSelectedSnippet(targetSnippet)
+    }
+    if (vs.setActiveTabId) {
+      vs.setActiveTabId(targetSnippet.id)
+    }
+
+    window.dispatchEvent(
+      new CustomEvent('ai-saved-snippet', {
+        detail: { id: targetSnippet.id, code: targetSnippet.code, title: targetSnippet.title }
+      })
+    )
+
+    const headers = (content.match(/^#{1,3}\s+(.+)$/gm) || []).map((h) =>
+      h.replace(/^#{1,3}\s+/, '')
+    )
+
+    const wikilinks = (content.match(/\[\[(.*?)\]\]/g) || []).map((w) =>
+      w.replace(/^\[\[|\]\]$/g, '')
+    )
+
     return {
       success: true,
-      id: snippet.id,
-      title,
-      folderId: snippet.folderId,
-      instruction_to_ai: 'File created successfully! Tell the user.'
+      id: targetSnippet.id,
+      title: targetSnippet.title,
+      folderId: targetSnippet.folderId,
+      writtenContent: content,
+      topics: headers.slice(0, 8),
+      wikilinks: wikilinks.slice(0, 10),
+      summary: `Created **${targetSnippet.title}** covering: ${headers.slice(0, 5).join(', ')}.`,
+      instruction_to_ai: `File "${targetSnippet.title}" was created and opened in the editor. Now provide a rich, structured feedback walkthrough in chat explaining what was built, highlighting key wikilinks, and discussing the concepts.`
     }
   }
 })
