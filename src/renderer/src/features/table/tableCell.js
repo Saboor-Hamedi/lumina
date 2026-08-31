@@ -528,19 +528,36 @@ export function makeCell(tag, text, view) {
       event.preventDefault()
       event.stopPropagation()
 
-      // Ctrl+Enter / Cmd+Enter: escape the table and position cursor on the line below
+      // Ctrl+Enter / Cmd+Enter: create a new line directly below the table and place cursor on it
       if (event.ctrlKey || event.metaKey) {
         const wrap = cell.closest('.cm-atomic-table')
         const range = findCurrentTableRange(view, wrap)
         if (range) {
-          let targetPos = range.to
-          if (targetPos < view.state.doc.length && view.state.sliceDoc(targetPos, targetPos + 1) === '\n') {
-            targetPos += 1
-          } else if (targetPos === view.state.doc.length) {
-            view.dispatch({ changes: { from: targetPos, insert: '\n' } })
-            targetPos += 1
+          source.blur()
+          let insertPos = range.to
+          const doc = view.state.doc
+          let prefix = '\n'
+          let targetPos = insertPos
+
+          if (insertPos < doc.length) {
+            if (doc.sliceString(insertPos, insertPos + 1) === '\n') {
+              insertPos += 1
+              prefix = '\n'
+              targetPos = insertPos
+            } else {
+              prefix = '\n\n'
+              targetPos = insertPos + 1
+            }
+          } else {
+            prefix = '\n'
+            targetPos = insertPos + 1
           }
-          view.dispatch({ selection: { anchor: targetPos } })
+
+          view.dispatch({
+            changes: { from: insertPos, to: insertPos, insert: prefix },
+            selection: { anchor: targetPos },
+            scrollIntoView: true
+          })
           view.focus()
         }
         return
