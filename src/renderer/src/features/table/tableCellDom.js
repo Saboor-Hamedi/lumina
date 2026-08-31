@@ -6,7 +6,7 @@ import { treeGrowthEffect, treeProgressPlugin } from './tree-progress'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { TableAutocomplete } from './wikilinkAutocompletion'
 import { setupTableFormattingToolbar } from './tableFormattingToolbar'
-import { openCellMenu } from './tableContextMenu'
+import { openCellMenu, cellColIndex, cellRowIndex } from './tableContextMenu'
 import { setupTableSelection } from './tableGridSelection'
 import { icons } from './icons.js'
 
