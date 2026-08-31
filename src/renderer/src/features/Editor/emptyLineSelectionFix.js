@@ -1,41 +1,32 @@
-import { EditorView } from '@codemirror/view'
-import { EditorState } from '@codemirror/state'
-
 /**
- * Prevents full-width selection background rectangles from appearing on empty lines
- * when double-clicking or selecting empty whitespace/newlines.
+ * =========================================================================================
+ * Empty Line Selection Fix (`emptyLineSelectionFix.js`)
+ * =========================================================================================
+ *
+ * Purpose:
+ * Prevents full-width rectangular selection backgrounds when double-clicking on empty lines,
+ * while ensuring 100% smooth, native word selection, paragraph selection, and drag selection.
+ * =========================================================================================
  */
-export const emptyLineSelectionFix = [
-  EditorView.domEventHandlers({
-    dblclick(e, view) {
-      const pos = view.posAtCoords({ x: e.clientX, y: e.clientY })
-      if (pos !== null) {
-        const line = view.state.doc.lineAt(pos)
-        if (line.text.trim().length === 0) {
-          e.preventDefault()
-          e.stopPropagation()
-          view.dispatch({
-            selection: { anchor: line.from },
-            scrollIntoView: true
-          })
-          view.focus()
-          return true
-        }
-      }
-      return false
+
+import { EditorView } from '@codemirror/view'
+
+export const emptyLineSelectionFix = EditorView.domEventHandlers({
+  dblclick(e, view) {
+    const pos = view.posAtCoords({ x: e.clientX, y: e.clientY })
+    if (pos === null) return false
+
+    const line = view.state.doc.lineAt(pos)
+    // Only intercept if the line is completely empty whitespace
+    if (line.text.trim().length === 0) {
+      e.preventDefault()
+      view.dispatch({
+        selection: { anchor: line.from }
+      })
+      return true
     }
-  }),
-  EditorState.transactionFilter.of((tr) => {
-    if (tr.selection && tr.isUserEvent('select')) {
-      const sel = tr.selection.main
-      if (!sel.empty) {
-        const line = tr.state.doc.lineAt(sel.from)
-        // If the selection is solely covering an empty line / newline
-        if (line.text.trim().length === 0 && sel.to <= line.to + 1) {
-          return [tr, { selection: { anchor: line.from } }]
-        }
-      }
-    }
-    return tr
-  })
-]
+
+    // Allow native CodeMirror / browser double-click word selection for all text
+    return false
+  }
+})

@@ -40,6 +40,7 @@ import OverwriteModal from '../Overlays/Modals/OverwriteModal'
 import InlineLumina from '../Overlays/InlineLumina'
 import RulerScrollbar from './RulerScrollbar'
 import { useZoom } from './useZoom'
+import { cursorLineUp as defaultCursorLineUp, cursorLineDown as defaultCursorLineDown } from '@codemirror/commands'
 import ContextMenu from '../Overlays/ContextMenu'
 import { getEditorContextMenuOptions } from './menu'
 import { wikilinkCaretFix } from './wikilinkCaret'
@@ -740,6 +741,106 @@ const MarkdownEditor = React.memo(
         luminaSyntaxHighlighting,
         Prec.highest(
           keymap.of([
+            {
+              key: 'ArrowUp',
+              run: (view) => {
+                const sel = view.state.selection.main
+                if (!sel.empty) return defaultCursorLineUp(view)
+
+                const pos = sel.head
+                const doc = view.state.doc
+                const currentLine = doc.lineAt(pos)
+
+                if (currentLine.number <= 1) {
+                  if (pos !== currentLine.from) {
+                    view.dispatch({ selection: { anchor: currentLine.from }, scrollIntoView: true })
+                    return true
+                  }
+                  return defaultCursorLineUp(view)
+                }
+
+                const initialPos = sel.head
+                const col = pos - currentLine.from
+
+                // Try defaultCursorLineUp for multi-line wrapped paragraphs
+                const handled = defaultCursorLineUp(view)
+                const newPos = view.state.selection.main.head
+
+                if (handled && newPos !== initialPos) {
+                  const newLine = doc.lineAt(newPos)
+                  // If it moved within the same wrapped line, allow it
+                  if (newLine.number === currentLine.number) {
+                    return true
+                  }
+                  // If it moved strictly to the previous line (line.number - 1), allow it
+                  if (newLine.number === currentLine.number - 1) {
+                    return true
+                  }
+                }
+
+                // If default movement jumped multiple lines or got stuck, enforce moving to line N - 1
+                const targetLine = doc.line(currentLine.number - 1)
+                const targetCol = Math.min(col, targetLine.length)
+                const targetPos = targetLine.from + targetCol
+
+                view.dispatch({
+                  selection: { anchor: targetPos },
+                  scrollIntoView: true,
+                  userEvent: 'select'
+                })
+                return true
+              }
+            },
+            {
+              key: 'ArrowDown',
+              run: (view) => {
+                const sel = view.state.selection.main
+                if (!sel.empty) return defaultCursorLineDown(view)
+
+                const pos = sel.head
+                const doc = view.state.doc
+                const currentLine = doc.lineAt(pos)
+
+                if (currentLine.number >= doc.lines) {
+                  if (pos !== currentLine.to) {
+                    view.dispatch({ selection: { anchor: currentLine.to }, scrollIntoView: true })
+                    return true
+                  }
+                  return defaultCursorLineDown(view)
+                }
+
+                const initialPos = sel.head
+                const col = pos - currentLine.from
+
+                // Try defaultCursorLineDown for multi-line wrapped paragraphs
+                const handled = defaultCursorLineDown(view)
+                const newPos = view.state.selection.main.head
+
+                if (handled && newPos !== initialPos) {
+                  const newLine = doc.lineAt(newPos)
+                  // If it moved within the same wrapped line, allow it
+                  if (newLine.number === currentLine.number) {
+                    return true
+                  }
+                  // If it moved strictly to the next line (line.number + 1), allow it
+                  if (newLine.number === currentLine.number + 1) {
+                    return true
+                  }
+                }
+
+                // If default movement jumped multiple lines or got stuck, enforce moving to line N + 1
+                const targetLine = doc.line(currentLine.number + 1)
+                const targetCol = Math.min(col, targetLine.length)
+                const targetPos = targetLine.from + targetCol
+
+                view.dispatch({
+                  selection: { anchor: targetPos },
+                  scrollIntoView: true,
+                  userEvent: 'select'
+                })
+                return true
+              }
+            },
             {
               key: 'Mod-Enter',
               run: (view) => {

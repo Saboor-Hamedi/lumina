@@ -134,11 +134,12 @@
   pointer-events: none !important;
 }
 .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
-  background-color: color-mix(in srgb, var(--text-accent) 40%, transparent) !important;
+  background-color: color-mix(in srgb, var(--text-accent) 35%, transparent) !important;
+  border-radius: 2px;
 }
 .cm-content ::selection {/**/
   background: transparent !important; 
-   /* Prevent native double backgrounds  */
+  /* Prevent native double backgrounds  */
 }
 
 
