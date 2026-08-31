@@ -1,23 +1,13 @@
 import { MatchDecorator, Decoration, ViewPlugin } from '@codemirror/view'
 
-const tagPrefixDecorator = new MatchDecorator({
-  regexp: /(?<=\W|^)(#)(?=[\w-]+)/g,
-  decoration: (match) => Decoration.mark({ class: 'cm-tag-prefix' })
+const tagDecorator = new MatchDecorator({
+  regexp: /(?<=\W|^)(#[a-zA-Z0-9_\u00C0-\u017F\u0600-\u06FF\u0400-\u04FF\u4E00-\u9FFF-]+)/g,
+  decoration: () => Decoration.mark({ class: 'cm-inline-tag' })
 })
 
-const tagTextDecorator = new MatchDecorator({
-  regexp: /(?<=\W#|^#)([\w-]+)/g,
-  decoration: (match) => Decoration.mark({ class: 'cm-inline-tag' })
-})
-
-const mentionPrefixDecorator = new MatchDecorator({
-  regexp: /(?<=\W|^)(@)(?=[\w-]+)/g,
-  decoration: (match) => Decoration.mark({ class: 'cm-mention-prefix' })
-})
-
-const mentionTextDecorator = new MatchDecorator({
-  regexp: /(?<=\W@|^@)([\w-]+)/g,
-  decoration: (match) => Decoration.mark({ class: 'cm-inline-mention' })
+const mentionDecorator = new MatchDecorator({
+  regexp: /(?<=\W|^)(@[a-zA-Z0-9_\u00C0-\u017F\u0600-\u06FF\u0400-\u04FF\u4E00-\u9FFF-]+)/g,
+  decoration: () => Decoration.mark({ class: 'cm-inline-mention' })
 })
 
 function createPlugin(decorator) {
@@ -35,8 +25,6 @@ function createPlugin(decorator) {
 }
 
 export const tagMentionExtension = [
-  createPlugin(tagPrefixDecorator),
-  createPlugin(tagTextDecorator),
-  createPlugin(mentionPrefixDecorator),
-  createPlugin(mentionTextDecorator)
+  createPlugin(tagDecorator),
+  createPlugin(mentionDecorator)
 ]
