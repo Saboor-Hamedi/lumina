@@ -527,6 +527,25 @@ export function makeCell(tag, text, view) {
     if (event.key === 'Enter') {
       event.preventDefault()
       event.stopPropagation()
+
+      // Ctrl+Enter / Cmd+Enter: escape the table and position cursor on the line below
+      if (event.ctrlKey || event.metaKey) {
+        const wrap = cell.closest('.cm-atomic-table')
+        const range = findCurrentTableRange(view, wrap)
+        if (range) {
+          let targetPos = range.to
+          if (targetPos < view.state.doc.length && view.state.sliceDoc(targetPos, targetPos + 1) === '\n') {
+            targetPos += 1
+          } else if (targetPos === view.state.doc.length) {
+            view.dispatch({ changes: { from: targetPos, insert: '\n' } })
+            targetPos += 1
+          }
+          view.dispatch({ selection: { anchor: targetPos } })
+          view.focus()
+        }
+        return
+      }
+
       const thead = cell.closest('table')?.querySelector('thead tr')
       const colCount = thead ? thead.querySelectorAll('th').length : 1
       moveCellFocus(view, cell, event.shiftKey ? -colCount : colCount)
