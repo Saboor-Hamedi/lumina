@@ -1,3 +1,4 @@
+import { undo, redo } from '@codemirror/commands'
 import { TableAutocomplete } from './tableAutocomplete'
 import { openCellMenu, cellColIndex, cellRowIndex } from './tableContextMenu'
 import { readModelFromDom } from './tableModel'
@@ -824,20 +825,11 @@ export function makeCell(tag, text, view) {
       }
     }
 
-    // Forward Undo/Redo commands to CodeMirror view
+    // Forward Undo/Redo commands to CodeMirror view safely
     const isMac = /Mac/.test(navigator.platform)
     if ((isMac ? event.metaKey : event.ctrlKey) && event.key.toLowerCase() === 'z') {
       event.preventDefault()
       event.stopPropagation()
-
-      // Sync CodeMirror selection to the table so undo doesn't jump to the top
-      const wrap = cell.closest('.cm-atomic-table')
-      if (wrap) {
-        const range = findCurrentTableRange(view, wrap)
-        if (range) {
-          view.dispatch({ selection: { anchor: range.from } })
-        }
-      }
 
       restoreFocusAfterHistory(view, cell, source, () => {
         if (event.shiftKey) {
@@ -851,13 +843,7 @@ export function makeCell(tag, text, view) {
     if (!isMac && event.ctrlKey && event.key.toLowerCase() === 'y') {
       event.preventDefault()
       event.stopPropagation()
-      const wrap = cell.closest('.cm-atomic-table')
-      if (wrap) {
-        const range = findCurrentTableRange(view, wrap)
-        if (range) {
-          view.dispatch({ selection: { anchor: range.from } })
-        }
-      }
+
       restoreFocusAfterHistory(view, cell, source, () => {
         redo(view)
       })
