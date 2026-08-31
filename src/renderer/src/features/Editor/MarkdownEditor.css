@@ -1,0 +1,1797 @@
+.cm-content {
+  font-family: var(--font-editor, 'Inter', system-ui, sans-serif) !important;
+  font-size: var(--font-size-editor, 16px) !important;
+  line-height: var(--line-height-editor, 1.6) !important;
+  padding: 0 0 0 0 !important;
+  color: var(--text-main);
+  max-width: none !important;
+  width: 100% !important;
+  
+  
+}
+
+/* Typography Hierarchy - Clean, calm, professional scale */
+.markdown-editor .cm-heading1,
+.markdown-editor h1 {
+  font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
+  font-size: 1.45em !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.025em !important;
+  color: var(--text-main, #ffffff) !important;
+}
+
+.markdown-editor .cm-heading2,
+.markdown-editor h2 {
+  font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
+  font-size: 1.25em !important;
+  font-weight: 650 !important;
+  letter-spacing: -0.02em !important;
+  color: var(--text-main, #f8fafc) !important;
+}
+
+.markdown-editor .cm-heading3,
+.markdown-editor h3 {
+  font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
+  font-size: 1.1em !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.015em !important;
+  color: var(--text-main, #f1f5f9) !important;
+}
+
+.markdown-editor .cm-heading4,
+.markdown-editor .cm-heading5,
+.markdown-editor .cm-heading6,
+.markdown-editor h4,
+.markdown-editor h5,
+.markdown-editor h6 {
+  font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
+  font-size: 1em !important;
+  font-weight: 600 !important;
+  color: var(--text-muted, #94a3b8) !important;
+}
+
+
+/* Standard line padding for text readability */
+.cm-line {/**/
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  padding-right: 4px !important;
+  /* We purposefully omit padding-left !important because CodeMirror uses inline padding-left and text-indent for list indents! */
+}
+
+
+
+
+
+/* Inline Code Pill Style - your existing code */
+.cm-atomic-inline-code {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.1)) !important;
+  color: var(--text-accent, #ff79c6) !important;
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+
+
+
+
+/* Inline Code Pill Style */
+.cm-atomic-inline-code {
+  background: transparent !important;
+  color: var(--text-accent, #ff79c6) !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+
+/* Remove highlight when actively editing so it looks like plain markdown */
+.cm-atomic-inline-code-wrap.active .cm-atomic-inline-code {
+  background: transparent !important;
+  color: inherit !important;
+  padding: 0 !important;
+}
+
+/* Inline Tag and Mention Styles */
+.cm-inline-tag,
+.cm-inline-mention {
+  position: relative !important;
+  color: var(--text-accent, #ff79c6) !important;
+  cursor: pointer !important;
+  font-weight: 500 !important;
+  padding: 0 4px !important;
+  margin: 0 !important;
+  display: inline-block !important;
+  border-radius: 4px !important;
+  transition: all 0.2s ease !important;
+}
+
+.cm-tag-prefix,
+.cm-mention-prefix {
+  color: var(--text-accent, #ff79c6) !important;
+  font-size: 0.85em;
+  font-weight: 300;
+  margin-right: 0;
+  padding: 1px 0px 1px 4px !important;
+  border-radius: 4px 0 0 4px !important;
+}
+
+.cm-inline-tag:hover,
+.cm-inline-mention:hover {
+  text-decoration: underline;
+}
+
+/* Search Highlight Style */
+.cm-search-highlight {
+  background-color: var(--text-accent) !important;
+  color: white !important;
+  padding: 2px 0 !important;
+  border-radius: 2px !important;
+  font-weight: 600 !important;
+}
+
+/* Global Selection Style for CM6: High visibility for "Robust" feel */
+.markdown-editor .cm-editor .cm-scroller .cm-selectionLayer {/**/
+  z-index: 10 !important;  
+  /* Bring above content to cover opaque atomic widgets  */
+  pointer-events: none !important;
+}
+.markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
+  background-color: color-mix(in srgb, var(--text-accent) 35%, transparent) !important;
+  border-radius: 2px;
+}
+.cm-content ::selection {/**/
+  background: transparent !important; 
+  /* Prevent native double backgrounds  */
+}
+
+
+.markdown-editor {/**/
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-x: auto; overflow-y: hidden;
+  background: var(--bg-editor, var(--bg-app)) !important;
+  --atomic-editor-selection-bg: rgba(64, 186, 250, 0.35) !important;
+
+   /* Enforce Atomic Editor Theme Colors */
+  --atomic-editor-accent: var(--text-accent);
+  --atomic-editor-link: var(--text-accent);
+  --atomic-editor-link-hover: var(--text-accent-hover);
+  --atomic-editor-fg: var(--text-main);
+  --atomic-editor-fg-muted: var(--text-muted);
+  --atomic-editor-border: var(--border-dim);
+  --atomic-editor-bg-surface: var(--bg-panel);
+  --atomic-editor-accent-bright: var(--caret-color, var(--text-accent));
+}
+
+/* Override cursor color and width from app caret settings */
+.markdown-editor .cm-cursor,
+.cm-cursor {
+  max-height: 1.5em !important;
+}
+
+/* --- Table Stability: Prevent layout shift on focus / Ctrl+A --- */
+
+/* Lock the outer wrapper so CM's selectedLine reflow cannot collapse it */
+.cm-line:has(.cm-atomic-table).cm-selectedLine .cm-atomic-table,
+.cm-line:has(.cm-atomic-table).cm-activeLine .cm-atomic-table,
+.cm-editor:focus-within .cm-atomic-table {
+  width: max-content !important;
+  min-width: 260px !important;
+  display: block !important;
+}
+
+/* Lock the scroll container */
+.cm-line:has(.cm-atomic-table).cm-selectedLine .cm-table-scroll-container,
+.cm-line:has(.cm-atomic-table).cm-activeLine .cm-table-scroll-container,
+.cm-editor:focus-within .cm-table-scroll-container {
+  width: max-content !important;
+  min-width: 260px !important;
+  display: block !important;
+}
+
+/* Lock the inner <table> so auto column widths don't recalculate */
+.cm-line:has(.cm-atomic-table).cm-selectedLine .cm-atomic-table table,
+.cm-line:has(.cm-atomic-table).cm-activeLine .cm-atomic-table table,
+.cm-editor:focus-within .cm-atomic-table table {
+  width: max-content !important;
+  min-width: 260px !important;
+}
+
+.cm-line:has(.cm-atomic-table).cm-selectedLine th,
+.cm-line:has(.cm-atomic-table).cm-selectedLine td,
+.cm-line:has(.cm-atomic-table).cm-activeLine th,
+.cm-line:has(.cm-atomic-table).cm-activeLine td {
+  min-width: 140px !important;
+}
+
+
+
+
+/* Prevent selection overlays from interfering with table dimensions */
+.cm-selectionLayer {
+  pointer-events: none; /* Let clicks pass through to the table */
+}
+.markdown-editor .cm-cursor,
+.markdown-editor .cm-dropCursor {
+  border-left-color: var(--caret-color, var(--text-accent)) !important;
+  border-left-width: var(--caret-width, 2px) !important;
+}
+
+/* Block cursor */
+[data-caret-style="block"] .cm-cursor,
+.markdown-editor.cursor-block .cm-cursor {
+  border-left-color: transparent !important;
+  background: var(--caret-color, var(--text-accent));
+  width: 0.6em;
+  opacity: 0.6;
+  border-radius: 1px;
+}
+
+/* Sharp cursor — thin line, width still respects --caret-width */
+[data-caret-style="sharp"] .cm-cursor,
+.markdown-editor.cursor-sharp .cm-cursor {
+  background: transparent;
+  width: auto;
+  opacity: 1;
+  border-radius: 0 !important;
+  transition: none !important;
+}
+
+/* Smooth cursor — default, width still respects --caret-width */
+[data-caret-style="smooth"] .cm-cursor,
+.markdown-editor.cursor-smooth .cm-cursor {
+  background: transparent;
+  width: auto;
+  opacity: 1;
+  border-radius: 4px !important;
+  transition: border-left-color 0.15s ease, border-left-width 0.15s ease !important;
+}
+
+
+
+/* --- WORKSPACE TABBAR --- */
+.workspace-tabbar {
+  height: 32px;
+  background: var(--bg-editor);
+  display: flex;
+  align-items: stretch;
+  overflow-x: auto; overflow-y: hidden;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.workspace-tabbar::-webkit-scrollbar {
+  display: none;
+}
+
+.tabs-container {
+  display: flex;
+  height: 100%;
+  align-items: stretch;
+}
+
+.workspace-tab {/**/
+  min-width: 80px;
+  max-width: 180px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0 0 14px;
+  gap: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  flex-shrink: 0;
+  user-select: none;
+  margin: 0;
+  border-radius: 0;
+  outline: none;
+  -webkit-app-region: no-drag;  
+  /* Ensure tabs themselves are clickable  */
+}
+
+.workspace-tab:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+.workspace-tab.active {
+  background: var(--bg-panel);
+  color: var(--text-main);
+  
+  box-shadow: inset 0 0 0 1px var(--border-dim);
+}
+
+/* Fading accent line on the inner bottom border of the active tab */
+.workspace-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  background: var(--text-accent);
+  box-shadow: 0 0 6px rgba(var(--text-accent-rgb), 0.35);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.cm-hidden-mark {/**/
+   /* Hide mark visually but keep layout/spacing to prevent jumps  */
+  color: transparent !important;
+  background: transparent !important;
+  opacity: 0 !important;
+  display: inline !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: auto !important;
+  overflow: visible !important;
+  position: static !important;
+  visibility: visible !important;
+  text-indent: 0 !important;
+  transition: none !important;
+  transform: none !important;
+}
+
+/* Wiki links styling has been extracted to src/assets/wikilink.css */
+
+/* HTML Link Text Styling */
+.cm-html-link-text {
+  color: var(--atomic-editor-link, var(--text-accent, #3b82f6));
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.cm-html-link-text:hover {
+  text-decoration: underline;
+}
+
+
+.tab-context {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+}
+
+.workspace-tab.pinned {
+  min-width: 40px;
+  max-width: 160px;
+  background: rgba(var(--text-accent-rgb), 0.05);
+}
+
+.pinned-icon {
+  color: var(--text-accent);
+  opacity: 1 !important;
+}
+
+.tab-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.01em;
+  font-size: 12px;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+}
+
+.tab-icon {
+  opacity: 0.75;
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.workspace-tab.active .tab-icon {
+  opacity: 1;
+  color: var(--text-accent, #a78bfa);
+}
+
+.workspace-tab:hover .tab-icon {
+  opacity: 1;
+  color: var(--text-main, #f8fafc);
+}
+
+/* Pinned icon styling */
+.tab-icon.pinned-icon {
+  color: var(--text-accent);
+  opacity: 0.8;
+}
+
+.tab-color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tab-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 100%;
+  margin-left: 4px;
+}
+
+.tab-close-btn {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  transition: background 0.15s, color 0.15s, opacity 0.15s;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+}
+
+.workspace-tab:hover .tab-close-btn {
+  opacity: 0.6;
+}
+
+.tab-close-btn:hover {
+  opacity: 1 !important;
+  color: var(--text-main);
+  background: rgba(128, 128, 128, 0.15);
+}
+
+.tab-dirty {
+  width: 8px !important;
+  height: 8px !important;
+  background: #eab308;
+  border-radius: 50%;
+  animation: statusPulse 2s infinite ease-in-out;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.tab-dirty:hover {
+  background: #f59e0b;
+  transform: scale(1.2);
+}
+
+.workspace-tab.dragging {
+  opacity: 0.4;
+  background: var(--bg-active);
+  cursor: grabbing;
+}
+
+.workspace-tab.drop-left::before,
+.workspace-tab.drop-right::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  background: var(--text-accent);
+  border-radius: 1px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.workspace-tab.drop-left::before {
+  left: -1px;
+}
+
+.workspace-tab.drop-right::before {
+  right: -1px;
+}
+
+.editor-titlebar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  min-height: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--bg-main);
+  border-bottom: none;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 1.125rem;
+}
+
+.editor-breadcrumb {/**/
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-faint);
+  
+  flex: 1;
+  min-width: 0;
+}
+
+.breadcrumb-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: default;
+}
+
+.breadcrumb-item.clickable {
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.breadcrumb-item.clickable:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+.breadcrumb-icon {
+  color: var(--text-accent);
+  opacity: 0.6;
+}
+
+
+
+/* Floating Window Controls in TabBar */
+.window-controls-float {/**/
+  height: 32px;
+  display: flex;
+  align-items: center;
+  background: var(--bg-editor);  
+  /* Match tabbar background for seamless look  */
+  z-index: 100;
+  -webkit-app-region: no-drag;
+  flex-shrink: 0;
+}
+
+.window-controls-float .control-btn {
+  width: 40px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  outline: none;
+}
+
+.window-controls-float .control-btn:focus:not(:hover) {
+  background: transparent;
+  color: var(--text-faint);
+}
+
+.window-controls-float .control-btn:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+.window-controls-float .control-btn.drag-btn {/**/
+  -webkit-app-region: drag;
+  opacity: 0.6;
+  width: 28px;  
+  cursor: grab !important; 
+}
+
+.window-controls-float .control-btn.drag-btn:hover {
+  opacity: 1;
+  background: var(--bg-active);
+  color: var(--text-main);
+  cursor: grab !important;
+
+}
+
+.window-controls-float .control-btn.drag-btn:active {
+  cursor: grabbing !important;
+}
+
+.window-controls-float .control-btn.close:hover {
+  background: #e81123;
+  color: white;
+}
+
+.breadcrumb-sep {
+  opacity: 0.3;
+}
+
+.breadcrumb-active {
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow-x: auto; overflow-y: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.editor-scroller {/**/
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  scroll-behavior: smooth;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;   
+}
+
+.editor-scroller::-webkit-scrollbar {/**/
+  display: none; 
+}
+
+.editor-canvas-wrap {
+  width: 100%;
+  max-width: 850px; 
+  margin: 0 auto;
+  padding: 0 40px 40px 40px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  cursor: text;
+  animation: noteFadeIn 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity, transform;
+}
+
+
+
+
+.markdown-editor .atomic-cm-editor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+.markdown-editor .atomic-cm-editor .cm-editor {/**/
+  flex: 1;
+   /* Key for full height focus area  */
+  background: transparent !important;
+  display: flex;
+  flex-direction: column;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+.markdown-editor .atomic-cm-editor .cm-scroller {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100% !important;
+  max-width: none !important;
+  align-items: stretch !important;
+  background: transparent !important;
+}
+
+.markdown-editor .atomic-cm-editor .cm-content {
+  flex: 1;
+  min-width: 100% !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  margin-inline: 0 !important;
+  padding: 0 0 100px 0 !important;
+  user-select: text !important;
+}
+
+
+
+@keyframes noteFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.editor-large-title {/**/
+  font-size: clamp(26px, 2.2vw, 32px) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.03em !important;
+  border: none;
+  background: transparent;
+  color: var(--text-main, #f3f4f6);
+  padding: 8px 0 4px 0;
+  line-height: 1.25;
+  margin-top: 4px;
+  width: 100%;
+  font-family: var(--font-editor, 'Inter', system-ui, sans-serif) !important;
+  outline: none;
+  text-align: left;
+  transition: color 0.15s ease;
+}
+
+.editor-large-title:focus {
+  color: var(--text-main, #ffffff);
+}
+
+.editor-large-title::placeholder {
+  color: var(--text-faint, rgba(255, 255, 255, 0.25));
+  font-weight: 600;
+  opacity: 0.6;
+}
+
+/*
+ * CodeMirror Host
+ */
+.cm-host-container {/**/
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 80vh;
+   /* Prevent layout collapse during view recreation  */
+}
+
+.cm-editor {/**/
+  flex: 1;
+   /* Key for full height focus area  */
+  background: transparent !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.cm-content {/**/
+  line-height: 1.8;
+  color: var(--text-main) !important;
+   /* Allow CodeMirror to manage padding-bottom for scrollPastEnd */
+  padding: 4px 40px;
+  min-height: 70vh;
+  width: 100% !important;
+  max-width: 800px !important;
+  margin: 0 auto !important;
+}
+
+.cm-placeholder {
+  font-size: 1.1em;
+  font-style: italic;
+  opacity: 0.6;
+  color: var(--text-faint) !important;
+}
+
+/* Hide CM Active Selection borders if any */
+.cm-activeLine {
+  background-color: var(--bg-active) !important;
+}
+
+.status-pill {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  color: var(--text-faint);
+  opacity: 0.5;
+}
+
+.status-pill.dirty {
+  color: var(--text-accent);
+  opacity: 1;
+}
+
+.editor-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0.8;
+  transition: opacity 0.3s;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.seamless-editor:hover .editor-controls {
+  opacity: 1;
+}
+
+.mode-toggle {
+  display: flex;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  border: none;
+  gap: 8px;
+}
+
+.mode-btn {
+  background: transparent;
+  border: none;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-faint);
+  border-radius: 0;
+  cursor: pointer;
+  transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  outline: none;
+}
+
+.mode-btn:hover {
+  color: var(--text-muted);
+  background: transparent;
+}
+
+.mode-btn.active {
+  background: transparent;
+  color: var(--text-accent);
+  box-shadow: none;
+}
+
+.icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.icon-btn:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+  transform: translateY(-1px);
+}
+
+.icon-btn:active,
+.icon-btn.active {
+  background: var(--bg-active);
+  color: var(--text-main);
+  transform: translateY(0);
+}
+
+/* --- NATIVE-LOOKING DROPDOWN --- */
+.menu-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.native-dropdown-menu {/**//**/
+  position: fixed;
+   /* Changed from absolute - now portaled to body */
+  min-width: 240px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 6px;
+  box-shadow: 0 4px 5px rgba(0, 0, 0, 0.3);
+  z-index: 100000;
+   /* Higher than CodeMirror tooltips (99999) */
+  backdrop-filter: blur(20px);
+  animation: nativeMenuAppear 0.15s cubic-bezier(0, 0, 0.2, 1);
+  transform-origin: top right;
+  overflow-x: auto; overflow-y: hidden;
+}
+
+@keyframes nativeMenuAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.dropdown-item {/**/
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  font-size: 13px;
+   /* Slightly larger for native look  */
+  color: var(--text-main);
+  cursor: pointer;
+  border-radius: 6px;
+  transition:
+    background 0.15s,
+    transform 0.1s;
+  user-select: none;
+}
+
+.dropdown-item:hover {
+  background: var(--bg-active);
+}
+
+.dropdown-item:active {
+  transform: scale(0.98);
+}
+
+.menu-label {
+  flex: 1;
+  
+}
+
+.shortcut-label {
+  font-size: 11px;
+  color: var(--text-faint);
+  opacity: 0.6;
+  margin-right: 4px;
+}
+
+.menu-icon-right {
+  opacity: 0.7;
+  color: var(--text-accent);
+  flex-shrink: 0;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 5px 6px;
+  opacity: 0.5;
+}
+
+.mode-reading .cm-content {/**/
+  cursor: default;
+   /* Preview mode - not editable */
+}
+
+.mode-source .cm-content {
+  cursor: text;
+}
+
+
+
+/* Inline Metadata Bar - Moved under Title */
+.editor-metadata-bar {/**/
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 0 0 16px 0;
+   /* Align perfectly with editor content */
+  margin: 0;
+  border-bottom: none;
+  font-size: calc(var(--font-size-editor, 14px) * 0.85);
+  line-height: 1.1;
+  color: var(--text-muted);
+  min-height: 0;
+  box-sizing: border-box;
+  background: var(--bg-app);
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+}
+
+
+.meta-tag-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.tag-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tag-pill {/**/
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: var(--bg-active);
+  color: var(--text-accent);
+  padding: 1px 4px;
+   /* very small padding */
+  border-radius: 3px;
+  font-size: 9px;
+  
+  border: 1px solid rgba(var(--text-accent-rgb), 0.15);
+  transition: all 0.2s;
+}
+
+.tag-pill:hover {
+  background: rgba(var(--text-accent-rgb), 0.15);
+  border-color: rgba(var(--text-accent-rgb), 0.3);
+}
+
+.tag-remove {
+  background: transparent;
+  border: none;
+  color: currentColor;
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  transition: all 0.2s;
+  margin-left: 1px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.tag-remove:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.tag-remove:hover {
+  opacity: 1;
+}
+
+.tag-input-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 120px;
+}
+
+.tag-input-wrap input {/**/
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 11px;
+  padding: 4px 6px;
+   /* small padding to prevent huge hit area */
+  width: 100%;
+}
+
+.tag-suggestions {/**/
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-card);
+  border-radius: 8px;
+  padding: 4px;
+  min-width: 150px;
+  max-height: 200px;
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  z-index: 10000;
+   /* High z-index to appear above tabbar and other elements */
+  backdrop-filter: blur(10px);
+}
+
+.suggestion-item {
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.suggestion-item:hover {
+  background: var(--bg-active);
+  color: var(--text-accent);
+}
+
+.meta-info-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.6;
+  padding: 2px 0;
+  background: transparent;
+  border: none;
+  font-size: 10px;
+  
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.meta-icon {/**/
+  color: var(--text-accent);
+  opacity: 0.8;
+  margin-right: 4px;
+   /* Give the icon some breathing room */  
+}
+
+.editor-metadata-bar kbd {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+}
+
+
+/* end table */
+/* Active Line Highlight (Indicator only, no full-width block to avoid selection confusion) */
+.cm-activeLine {/**/
+  background-color: transparent !important;
+  border: none !important;
+  position: relative !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  padding-right: 0 !important;
+   /* Do not strip padding-left because CodeMirror needs it for list indentation */
+  transition: none !important;
+}
+/* Use pseudo-element for 1px border with 1px margin from content - prevents layout shift */
+
+/* Ensure active line border extends to full height for headings */
+.cm-heading.cm-activeLine {/**//**/
+   /* Remove default border-left and use pseudo-element for full-height border */
+  border-left: none !important;
+  padding-left: 0 !important;
+   /* No left padding to ensure border alignment */
+  box-sizing: border-box;
+  position: relative;
+}
+
+
+
+
+/* Use pseudo-element to ensure border extends to full height including padding */
+html[data-use-active-line-border="true"] .cm-heading.cm-activeLine::before {/**//**/
+  content: '';
+  position: absolute;
+  left: 1px;
+   /* 1px margin from content */
+  top: 0;
+  bottom: 0;
+  width: 1px;
+   /* 1px border */
+  background: var(--text-accent);
+  z-index: 1;
+}
+
+
+/* end */
+
+html[data-use-active-line-border="true"][data-theme='dark'] .cm-activeLine,
+html[data-use-active-line-border="true"][data-theme='obsidian-robust'] .cm-activeLine,
+html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {/**/
+  box-shadow: inset 1px 0 0 0 var(--text-accent) !important;
+}
+
+/* Unified Selection: CodeMirror Robust Selection */
+.cm-selectionBackground {
+  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.3) !important;
+}
+
+.cm-selectionMatch {/**/
+  background-color: rgba(var(--text-accent-rgb), 0.15) !important;
+  border-bottom: 2px solid var(--text-accent);
+   /* Ensure selection match doesn't cause layout shift */
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
+
+/* Image Previews */
+.cm-image-container {
+  display: block;
+  margin: 1.5em 0;
+  border-radius: 8px;
+  overflow-x: auto; overflow-y: hidden;
+  border: 1px solid var(--border-dim);
+  background: var(--bg-panel);
+  max-width: fit-content;
+}
+
+.cm-image-container img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  transition: transform 0.3s ease;
+}
+
+.cm-image-container:hover img {
+  transform: scale(1.01);
+}
+
+
+/* GLOBAL TOOLTIP FIX */
+.cm-tooltip {
+  z-index: 99999 !important;
+}
+
+/* Image Alt Text in Live Preview */
+.cm-image-alt-text {/**//**/
+  color: var(--text-accent);
+  
+  background: rgba(var(--text-accent-rgb), 0.1);
+  border-radius: 4px;
+  padding: 0 4px;
+  cursor: zoom-in;
+   /* clearly indicates interactivity */
+  display: inline-block;
+   /* better hover targeting */
+}
+
+.cm-image-alt-text::before {/**/
+  content: '🖼️ ';
+   /* Simple icon indicator */ 
+  font-size: 0.8em;
+  opacity: 0.7;
+}
+
+/* --- BOTTOM STICKY FOOTER --- */
+.editor-footer-bar {/**//**//**//**//**/
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+   /* Horizontal padding only */
+  height: 32px;
+   /* Fixed slim height */
+  background: var(--bg-panel);
+   /* Theme-aware background */
+  border-top: 1px solid var(--border-subtle);
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+  box-shadow: none;
+   margin-top: auto; /* Handled by flex parent */
+  font-size: 11px;
+   /* Base font size for footer */
+}
+
+.seamless-editor {/**/
+   /* Ensure footer stays at bottom */
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* .editor-scroller consolidated above */
+
+/* Selection layers removed above to fix dual-color issue */
+
+/* CM6 internal scroll disabled — outer .editor-scroller handles all scrolling */
+.cm-scroller {
+  scrollbar-width: none;
+  overflow: visible !important;
+}
+
+.cm-scroller::-webkit-scrollbar {
+  width: 6px;
+}
+
+.cm-scroller::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+[data-theme='dark'] .cm-scroller::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.cm-editor {
+  height: auto !important;
+}
+
+/* --- Wiki Hover Tooltip --- */
+.cm-wiki-hover {
+  background: var(--bg-panel, #18181b);
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.15)) !important;
+  border-radius: 10px;
+  width: 540px;
+  max-width: calc(100vw - 48px);
+  min-width: 320px;
+  z-index: var(--z-overlay, 1000);
+  backdrop-filter: blur(24px);
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  max-height: 400px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  user-select: text;
+  animation: tooltipFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* CodeMirror Tooltip Container Override */
+.cm-tooltip {
+  z-index: 99999 !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+/* Header Section */
+.wiki-hover-header {
+  padding: 10px 14px;
+  border-bottom: none !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+  background: var(--bg-card, rgba(0, 0, 0, 0.18));
+}
+
+.wiki-hover-title-h1 {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-accent);
+  margin-top: 10px;
+  margin-bottom: 20px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.wiki-hover-meta {
+  font-size: 10px;
+  color: var(--text-faint);
+  
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Content Section (Scrollable) */
+.wiki-hover-content-wrap {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  min-height: 100px;
+  max-height: 340px;
+  padding: 12px 20px;
+  background: transparent;
+}
+
+/* Custom scrollbar for hover content */
+.wiki-hover-content-wrap::-webkit-scrollbar {
+  width: 6px;
+}
+
+.wiki-hover-content-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.wiki-hover-content-wrap::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-radius: 3px;
+}
+
+.wiki-hover-content-wrap::-webkit-scrollbar-thumb:hover {
+  background: var(--text-faint);
+}
+
+.wiki-hover-content {
+  font-size: 14px;
+  color: var(--text-main);
+  line-height: 1.7;
+  white-space: normal;
+  word-wrap: break-word;
+  font-family: var(--font-editor);
+}
+
+.wiki-hover-content h1,
+.wiki-hover-content h2,
+.wiki-hover-content h3 {
+  color: var(--text-main);
+  font-weight: 700;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+.wiki-hover-content p {
+  margin-bottom: 1em;
+}
+
+.wiki-hover-content ul,
+.wiki-hover-content ol {
+  padding-left: 20px;
+  margin-bottom: 1em;
+}
+
+/* Responsive Tables inside hover card */
+.wiki-hover-content table {
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  margin: 12px 0;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.12));
+}
+
+.wiki-hover-content th,
+.wiki-hover-content td {
+  padding: 8px 10px;
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.12));
+  text-align: left;
+  font-size: 13px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+.wiki-hover-content th {
+  background: var(--bg-card, rgba(255, 255, 255, 0.08));
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.wiki-hover-content tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.wiki-hover-content blockquote {
+  margin: 12px 0;
+  padding: 8px 14px;
+  border-left: 3px solid var(--text-accent);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 0 6px 6px 0;
+  color: var(--text-muted);
+}
+
+
+
+/* Footer Section */
+.wiki-hover-footer {
+  padding: 8px 12px;
+  border-top: 1px solid var(--border-dim);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: var(--text-faint);
+  flex-shrink: 0;
+}
+
+.wiki-hover-timestamp {
+  font-weight: 600;
+  opacity: 0.5;
+}
+
+/* Not Found State Styled Like RenameModal */
+.cm-wiki-hover.rename-modal-style.not-found-modal {
+  background: var(--bg-app, #121212) !important;
+  border-radius: 8px !important;
+  padding: 14px 24px !important;
+  width: auto !important;
+  min-width: 260px !important;
+  max-width: 420px !important;
+  border: none !important;
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.15), 
+    0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+  position: absolute !important;
+  z-index: 10000 !important;
+  pointer-events: auto !important;
+  overflow: hidden !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+}
+
+.cm-wiki-hover.rename-modal-style.not-found-modal::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  background: radial-gradient(ellipse at center, var(--text-accent) 0%, transparent 70%);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.not-found-rename-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  transition: opacity 0.15s ease;
+}
+
+.not-found-rename-box:hover {
+  opacity: 0.85;
+}
+
+.not-found-rename-title {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  font-family: var(--font-editor, 'Inter'), sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  outline: none;
+  padding: 4px 0 6px 0;
+  text-align: center;
+  word-break: break-word;
+}
+
+.not-found-rename-subtitle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-accent, #60a5fa);
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 2px;
+  opacity: 0.9;
+}
+
+/* Error State */
+.cm-wiki-hover.error {
+  padding: 12px;
+  color: var(--text-warning);
+  font-size: 11px;
+  text-align: center;
+}
+
+/* Ghost Completion & Autocomplete Tooltip */
+.cm-tooltip-autocomplete {
+  background: var(--bg-panel) !important;
+  border: 1px solid var(--border-dim) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4) !important;
+  backdrop-filter: blur(8px);
+  padding: 4px !important;
+  animation: palette-slide-down 0.2s cubic-bezier(0, 0, 0.2, 1);
+  overflow: hidden !important;
+}
+
+.cm-tooltip-autocomplete ul {
+  max-height: 280px !important;
+}
+
+.cm-tooltip-autocomplete ul li {
+  padding: 6px 12px !important;
+  border-radius: 6px !important;
+  font-size: 13px !important;
+  color: var(--text-muted) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  transition: all 0.1s ease;
+}
+
+.cm-tooltip-autocomplete ul li[aria-selected] {
+  background: var(--bg-active) !important;
+  color: var(--text-accent) !important;
+}
+
+.cm-completionLabel {
+  font-weight: 500 !important;
+}
+
+.cm-completionDetail {
+  font-size: 10px !important;
+  opacity: 0.5 !important;
+  font-style: italic !important;
+  margin-left: auto !important;
+}
+
+
+
+/* Spinner animation for loading states */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Hide CodeMirror Autocomplete Icons */
+.cm-tooltip-autocomplete ul li .cm-completionIcon {
+  display: none !important;
+}
+
+/* Wiki link overrides removed to src/assets/wikilink.css */
+
+/* --- OVERRIDES FOR MARKDOWN ELEMENTS --- */
+
+/* Blockquote */
+.markdown-editor .cm-line.cm-atomic-blockquote {
+  border: none !important;
+  border-left: 1px solid var(--text-accent) !important;
+  padding: 4px 16px !important;
+  margin: 4px 0 !important;
+  font-style: italic !important;
+  font-size: 0.95em !important;
+  position: relative !important;
+  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.04) !important;
+  color: var(--text-muted) !important;
+  border-radius: 0 4px 4px 0;
+}
+
+/* Callout Styling */
+.lumina-callout-line {
+  background-color: rgba(var(--text-accent-rgb, 139, 92, 246), 0.08) !important;
+  border-left: 3px solid var(--text-accent) !important;
+  padding: 6px 14px !important;
+  border-radius: 0 6px 6px 0 !important;
+  margin-top: 4px !important;
+  margin-bottom: 4px !important;
+}
+.lumina-callout-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--text-accent);
+  margin-bottom: 2px;
+  font-size: 0.95em;
+  font-style: normal; /* Override blockquote italic */
+}
+.lumina-callout-icon {
+  display: flex;
+  align-items: center;
+}
+.lumina-callout-icon svg {
+  width: 16px;
+  height: 16px;
+}
+.lumina-callout-title {
+  text-transform: capitalize;
+}
+
+/* CSS moved to components/collapse/Collapsible.css */
+
+
+/* Bullet points & numbers: Add more gap between the marker and the text */
+.markdown-editor .cm-atomic-list-marker {
+  padding-right: 8px !important;
+  width: auto !important;
+  min-width: 1.2em !important;
+  text-align: right;
+  display: inline-block;
+}
+
+.cm-inline-line {
+  display: inline !important;
+}
+
+.cm-center-container {
+  text-align: center;
+}
+
+/* --- Mermaid Widget Styles --- */
+.cm-mermaid-widget {
+  display: block;
+  text-align: center;
+  min-height: 80px;
+}
+
+.cm-mermaid-widget .mermaid-scroll-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+}
+
+.cm-mermaid-widget .mermaid-content {
+  display: inline-block;
+  min-width: min-content;
+  padding: 12px;
+}
+
+.cm-mermaid-widget svg {
+  max-width: none !important;
+  height: auto;
+}
+
+.cm-mermaid-widget .mermaid-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-faint);
+  font-size: 14px;
+  
+  letter-spacing: 0.02em;
+  animation: mermaid-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.cm-mermaid-widget .mermaid-loading svg {
+  width: 18px;
+  height: 18px;
+  animation: mermaid-spin 1.5s linear infinite;
+  color: var(--text-accent);
+}
+
+@keyframes mermaid-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes mermaid-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.cm-mermaid-widget .mermaid-error {
+  color: var(--text-error, #ff5555);
+  padding: 16px;
+  background: rgba(255, 85, 85, 0.05);
+  border: 1px solid rgba(255, 85, 85, 0.2);
+  border-radius: 8px;
+  font-family: var(--font-editor, monospace);
+  font-size: 13px;
+  white-space: pre-wrap;
+  width: 100%;
+}
+
+/* Callout Styling */
+.lumina-callout-line {
+  background-color: rgba(var(--text-accent-rgb, 255, 64, 129), 0.05);
+  border-left: 3px solid var(--text-accent);
+  padding-left: 12px;
+}
+.lumina-callout-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--text-accent);
+  margin-bottom: 4px;
+}
+.lumina-callout-icon {
+  display: flex;
+  align-items: center;
+}
+.lumina-callout-icon svg {
+  width: 16px;
+  height: 16px;
+}
+.lumina-callout-title {
+  text-transform: capitalize;
+}
+
+.virtuoso-scroller-no-scrollbar::-webkit-scrollbar { display: none; }
