@@ -363,8 +363,24 @@ export class TableWidget extends WidgetType {
 
     const tbody = dom.querySelector('tbody')
     if (!tbody) return false
-    const trs = Array.from(tbody.querySelectorAll('tr'))
+    const hasEmptyRow = !!tbody.querySelector('.cm-table-empty-row')
+    if (this.model.rows.length === 0) {
+      if (!hasEmptyRow) return false
+      return true
+    }
+    if (hasEmptyRow) return false
+
+    const trs = Array.from(tbody.querySelectorAll('tr:not(.cm-table-empty-row)'))
     if (trs.length !== this.model.rows.length) return false
+
+    // Update dimension badge if present
+    const dimBadge = dom.querySelector('.cm-table-dim-badge')
+    if (dimBadge) {
+      const rowCount = this.model.rows.length
+      const colCount = this.model.header.length
+      dimBadge.textContent = `${rowCount} ${rowCount === 1 ? 'Row' : 'Rows'} • ${colCount} ${colCount === 1 ? 'Col' : 'Cols'}`
+    }
+
     for (let r = 0; r < trs.length; r++) {
       const tds = Array.from(trs[r].querySelectorAll('td'))
       for (let c = 0; c < tds.length; c++) {
