@@ -12,8 +12,9 @@
 .markdown-editor .cm-heading1,
 .markdown-editor h1 {
   font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
-  font-size: 1.45em !important;
+  font-size: 1.4em !important;
   font-weight: 700 !important;
+  line-height: 1.35 !important;
   letter-spacing: -0.025em !important;
   color: var(--text-main, #ffffff) !important;
 }
@@ -21,8 +22,9 @@
 .markdown-editor .cm-heading2,
 .markdown-editor h2 {
   font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
-  font-size: 1.25em !important;
+  font-size: 1.22em !important;
   font-weight: 650 !important;
+  line-height: 1.4 !important;
   letter-spacing: -0.02em !important;
   color: var(--text-main, #f8fafc) !important;
 }
@@ -32,6 +34,7 @@
   font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
   font-size: 1.1em !important;
   font-weight: 600 !important;
+  line-height: 1.45 !important;
   letter-spacing: -0.015em !important;
   color: var(--text-main, #f1f5f9) !important;
 }
@@ -45,14 +48,16 @@
   font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
   font-size: 1em !important;
   font-weight: 600 !important;
+  line-height: 1.5 !important;
   color: var(--text-muted, #94a3b8) !important;
 }
 
-/* Standard line padding for text readability */
+/* Standard line padding for text readability and precise hit targeting */
 .cm-line {
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
+  padding-top: 1px !important;
+  padding-bottom: 1px !important;
   padding-right: 4px !important;
+  line-height: var(--line-height-editor, 1.6) !important;
 }
 
 /* Inline Code Pill Style */
@@ -110,7 +115,7 @@
 
 /* Global Selection Style for CM6: High visibility for "Robust" feel */
 .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer {
-  z-index: 10 !important;  
+  z-index: 0 !important;  
   pointer-events: none !important;
 }
 .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
@@ -118,7 +123,7 @@
   border-radius: 2px;
 }
 .cm-content ::selection {
-  background: transparent !important; 
+  background: color-mix(in srgb, var(--text-accent) 35%, transparent) !important; 
 }
 
 .markdown-editor {
@@ -696,25 +701,11 @@
   flex-direction: column;
 }
 
-.cm-content {
-  line-height: 1.8;
-  color: var(--text-main) !important;
-  padding: 4px 40px;
-  min-height: 70vh;
-  width: 100% !important;
-  max-width: 800px !important;
-  margin: 0 auto !important;
-}
-
 .cm-placeholder {
   font-size: 1.1em;
   font-style: italic;
   opacity: 0.6;
   color: var(--text-faint) !important;
-}
-
-.cm-activeLine {
-  background-color: var(--bg-active) !important;
 }
 
 .status-pill {
