@@ -3,9 +3,8 @@
 */
 
 .code-block-widget-header {
-  margin: 8px 0 0 0;
-  width: calc(100% - 4px);
-  margin-right: 4px;
+  margin: 0 !important;
+  width: 100% !important;
   height: 32px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border-dim);
@@ -17,7 +16,7 @@
   padding: 0 12px;
   user-select: none;
   cursor: pointer !important;
-  box-sizing: border-box;
+  box-sizing: border-box !important;
 }
 
 .code-block-widget-header .mermaid-widget-lang-label,
@@ -67,12 +66,9 @@
 
 .cm-line.cm-atomic-fenced-code {
   box-sizing: border-box !important;
-  width: calc(100% - 4px) !important;
-  max-width: calc(100% - 4px) !important;
-  margin-right: 4px !important;
-  margin-left: 0 !important;
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
   display: block !important;
   padding: 2px 12px !important;
   line-height: 1.6 !important;
@@ -91,22 +87,22 @@
   background-color: var(--bg-active, #2a2a2a) !important;
 }
 
-/* Hide opening fence when header is present (view mode) */
-.code-block-widget-header + .cm-line.cm-atomic-fenced-code:not(.cm-activeLine) {
-  display: none !important;
+/* Opening fence styling */
+.code-block-widget-header + .cm-line.cm-atomic-fenced-code {
+  border-top: none !important;
 }
 
-/* When in edit mode (header removed), give opening line proper top borders and clean padding */
+/* When in edit mode (header removed), give opening line proper top borders */
 .cm-line:not(.cm-atomic-fenced-code) + .cm-line.cm-atomic-fenced-code,
 .cm-line.cm-atomic-fenced-code:first-child {
   border-top: 1px solid var(--border-dim) !important;
   border-top-left-radius: 6px !important;
   border-top-right-radius: 6px !important;
   margin-top: 0 !important;
-  padding-top: 6px !important;
+  padding-top: 4px !important;
 }
 
-/* Ensure the last line forms the bottom border and rounded corners */
+/* Ensure the closing fence line forms the bottom border and rounded corners without collapsing metrics */
 .cm-line.cm-atomic-fenced-code:has(+ :not(.cm-atomic-fenced-code)),
 .cm-line.cm-atomic-fenced-code:last-child {
   border-bottom: 1px solid var(--border-dim) !important;
@@ -116,18 +112,14 @@
   border-left: 1px solid var(--border-dim) !important;
   border-right: 1px solid var(--border-dim) !important;
   background: rgba(0, 0, 0, 0.2) !important;
+  opacity: 0.5;
+  font-size: 11px !important;
 }
 
-/* In view mode (not activeLine), collapse closing backticks into a clean 6px bottom border cap */
-.cm-line.cm-atomic-fenced-code:has(+ :not(.cm-atomic-fenced-code)):not(.cm-activeLine),
-.cm-line.cm-atomic-fenced-code:last-child:not(.cm-activeLine) {
-  font-size: 0 !important;
-  line-height: 0 !important;
-  height: 6px !important;
-  min-height: 6px !important;
-  padding: 0 !important;
-  margin-bottom: 0 !important;
-  color: transparent !important;
+/* When active, show full opacity */
+.cm-line.cm-atomic-fenced-code:has(+ :not(.cm-atomic-fenced-code)).cm-activeLine,
+.cm-line.cm-atomic-fenced-code:last-child.cm-activeLine {
+  opacity: 1 !important;
 }
 
 /* Selection style for code blocks */
