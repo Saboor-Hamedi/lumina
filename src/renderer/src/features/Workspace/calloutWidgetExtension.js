@@ -1,5 +1,4 @@
 import { Decoration, ViewPlugin, WidgetType } from '@codemirror/view'
-import { syntaxTree } from '@codemirror/language'
 
 class CalloutHeaderWidget extends WidgetType {
   constructor(type, title) {

@@ -1,28 +1,13 @@
-import { ensureSyntaxTree, syntaxTree } from '@codemirror/language'
-import { Decoration, EditorView, WidgetType, keymap, ViewPlugin } from '@codemirror/view'
-import { StateField, StateEffect, Facet } from '@codemirror/state'
-import { undo, redo } from '@codemirror/commands'
-import { treeGrowthEffect, treeProgressPlugin } from './tree-progress'
-import { useVaultStore } from '../../core/store/useVaultStore'
 import { TableAutocomplete } from './wikilinkAutocompletion'
-import { setupTableFormattingToolbar } from './tableFormattingToolbar'
 import { openCellMenu, cellColIndex, cellRowIndex } from './tableContextMenu'
-import { setupTableSelection } from './tableGridSelection'
-import { icons } from './icons.js'
-
-import { escapeCell, readModelFromDom, getCellSource } from './tableModel'
+import { readModelFromDom } from './tableModel'
 import { parseCellInline } from './tableInlineParsing'
 import {
   findCurrentTableRange,
   placeCaretAtEnd,
   dispatchModel,
-  dispatchModelFromDom,
-  moveCellFocus,
-  tableLinkClickFacet,
-  tables
+  dispatchModelFromDom
 } from './tableWidgetExtension'
-
-import { ImageWidget } from '../dropImage/imageWidgetExtension'
 
 export function buildCellSourceDom(raw, view) {
   const frag = document.createDocumentFragment()

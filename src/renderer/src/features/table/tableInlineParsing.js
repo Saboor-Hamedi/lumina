@@ -1,14 +1,7 @@
-import { ensureSyntaxTree, syntaxTree } from '@codemirror/language'
-import { Decoration, EditorView, WidgetType, keymap, ViewPlugin } from '@codemirror/view'
-import { StateField, StateEffect, Facet } from '@codemirror/state'
-import { undo, redo } from '@codemirror/commands'
-import { treeGrowthEffect, treeProgressPlugin } from './tree-progress'
-import { useVaultStore } from '../../core/store/useVaultStore'
-import { TableAutocomplete } from './wikilinkAutocompletion'
-import { setupTableFormattingToolbar } from './tableFormattingToolbar'
-import { openCellMenu } from './tableContextMenu'
-import { setupTableSelection } from './tableGridSelection'
-import { icons } from './icons.js'
+/**
+ * Table Inline Parsing Utility
+ * Parses inline Markdown tokens (bold, italics, code, wikilinks, tags, mentions) inside table cells.
+ */
 
 export function parseCellInline(raw) {
   const tokens = []
