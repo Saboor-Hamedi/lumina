@@ -21,9 +21,9 @@ describe('RoadmapProgressBar', () => {
       expect(container.firstChild).toBeNull()
     })
 
-    it('renders Understand when not learned', () => {
+    it('renders Mark Learned when not learned', () => {
       render(<LearnedButton snippet={{ id: '1', title: 'Note' }} />)
-      expect(screen.getByText('Understand')).toBeInTheDocument()
+      expect(screen.getByText('Mark Learned')).toBeInTheDocument()
     })
 
     it('renders Learned when snippet isLearned', () => {
@@ -40,7 +40,7 @@ describe('RoadmapProgressBar', () => {
       })
       render(<LearnedButton snippet={{ id: '1', title: 'Note' }} />)
 
-      fireEvent.click(screen.getByText('Understand'))
+      fireEvent.click(screen.getByText('Mark Learned'))
       expect(saveSnippet).toHaveBeenCalledWith(
         expect.objectContaining({ id: '1', isLearned: true })
       )
@@ -55,7 +55,7 @@ describe('RoadmapProgressBar', () => {
       })
       render(<LearnedButton snippet={{ id: '1', title: 'Note' }} />)
 
-      fireEvent.click(screen.getByText('Understand'))
+      fireEvent.click(screen.getByText('Mark Learned'))
       await vi.waitFor(() => {
         expect(errorSpy).toHaveBeenCalledWith(
           'Failed to toggle learned status:',

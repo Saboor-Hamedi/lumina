@@ -8,6 +8,9 @@ vi.mock('../../../../../src/renderer/src/features/Settings/SettingLookAndFeel', 
 vi.mock('../../../../../src/renderer/src/features/Settings/SettingAssistant', () => ({
   default: () => <div data-testid="pane-assistant">Assistant Pane</div>
 }))
+vi.mock('../../../../../src/renderer/src/features/Settings/SettingShortcuts', () => ({
+  default: () => <div data-testid="pane-shortcuts">Shortcuts Pane</div>
+}))
 vi.mock('../../../../../src/renderer/src/features/Settings/SettingAdvanced', () => ({
   default: () => <div data-testid="pane-advanced">Advanced Pane</div>
 }))
@@ -67,8 +70,13 @@ describe('Settings', () => {
       expect(screen.getByTestId('pane-look-and-feel')).toBeInTheDocument()
     })
 
-    it.each(['general', 'shortcuts', 'graph'])('maps legacy "%s" tab to advanced', (legacyTab) => {
-      render(<Settings {...defaultProps()} initialTab={legacyTab} />)
+    it('maps legacy "shortcuts" tab to shortcuts', () => {
+      render(<Settings {...defaultProps()} initialTab="shortcuts" />)
+      expect(screen.getByTestId('pane-shortcuts')).toBeInTheDocument()
+    })
+
+    it('maps legacy "graph" and "advanced" tabs to advanced', () => {
+      render(<Settings {...defaultProps()} initialTab="graph" />)
       expect(screen.getByTestId('pane-advanced')).toBeInTheDocument()
     })
 

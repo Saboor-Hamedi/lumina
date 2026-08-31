@@ -40,7 +40,8 @@ describe('ContextMenu', () => {
       { id: 'a', label: 'Active', isActive: () => true, onClick: vi.fn() }
     ]
     render(<ContextMenu x={10} y={10} options={options} onClose={onClose} />)
-    expect(screen.getByText('Ctrl+O')).toBeInTheDocument()
+    expect(screen.getByText('Ctrl')).toBeInTheDocument()
+    expect(screen.getByText('O')).toBeInTheDocument()
   })
 
   it('calls option onClick and closes', () => {

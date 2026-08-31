@@ -135,15 +135,6 @@ describe('SettingAdvanced', () => {
     expect(useSettingsStore.getState().settings.graphNodeColor).toBe('#f59e0b')
   })
 
-  it('renders all keyboard shortcut groups', async () => {
-    await renderAdvanced()
-    expect(screen.getByText('Keyboard Shortcuts')).toBeInTheDocument()
-    expect(screen.getByText('General')).toBeInTheDocument()
-    expect(screen.getByText('File')).toBeInTheDocument()
-    expect(screen.getByText('Navigation')).toBeInTheDocument()
-    expect(screen.getByText('Editor')).toBeInTheDocument()
-    expect(screen.getByText('AI Chat')).toBeInTheDocument()
-  })
 
   it('toggles Enable Developer Tools', async () => {
     await renderAdvanced()
