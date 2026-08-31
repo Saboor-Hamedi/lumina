@@ -578,29 +578,57 @@ export function backspaceAtTableBoundary(view) {
   if (!sel.empty) return false
   const pos = sel.head
   if (pos === 0) return false
+
+  const line = state.doc.lineAt(pos)
+  // If the caret is not at the start of the line, let normal backspace edit text
+  if (pos !== line.from) return false
+
   const tree = syntaxTree(state)
   let tableBefore = null
-  // Scan a few positions back for a Table whose end is adjacent to
-  // the caret. `table.to` is the position just after the table's
-  // last character — if the caret sits on the next line, `pos` will
-  // be one past `table.to` (the \n separator at `table.to` + start
-  // of the line after). Accept both.
   tree.iterate({
-    from: Math.max(0, pos - 2),
+    from: Math.max(0, pos - 3),
     to: pos,
     enter: (n) => {
       if (n.name !== 'Table') return
-      if (n.to === pos || n.to + 1 === pos) {
+      if (n.to === pos || n.to + 1 === pos || n.to + 2 === pos) {
         tableBefore = n.node
       }
     }
   })
+
   if (!tableBefore) return false
-  const range = tableBefore
-  view.dispatch({
-    selection: EditorSelection.range(range.from, range.to)
+
+  const tables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
+  const startLine = state.doc.lineAt(tableBefore.from)
+  const target = tables.find((t) => {
+    try {
+      const p = view.posAtDOM(t)
+      return p === startLine.from || p === tableBefore.from
+    } catch {
+      return false
+    }
   })
-  return true
+
+  if (target) {
+    const trs = Array.from(target.querySelectorAll('tbody tr'))
+    const lastRow = trs.length > 0 ? trs[trs.length - 1] : target.querySelector('thead tr')
+    if (lastRow) {
+      const cells = lastRow.querySelectorAll('.cm-atomic-table-cell-source')
+      const lastCell = cells[cells.length - 1]
+      if (lastCell) {
+        if (line.text.trim() === '') {
+          view.dispatch({
+            changes: { from: Math.max(0, line.from - 1), to: line.to, insert: '' }
+          })
+        }
+        lastCell.focus()
+        placeCaretAtEnd(lastCell)
+        return true
+      }
+    }
+  }
+
+  return false
 }
 
 export function arrowUpIntoTable(view) {
