@@ -395,7 +395,8 @@ export function dispatchModel(view, wrap, nextModel) {
   if (!range) return
   const next = serializeTable(nextModel)
   view.dispatch({
-    changes: { from: range.from, to: range.to, insert: next }
+    changes: { from: range.from, to: range.to, insert: next },
+    annotations: Transaction.userEvent.of('input')
   })
 }
 export function dispatchModelFromDom(view, cell) {
@@ -509,7 +510,8 @@ export function appendRow(view, wrap, focusColIndex = 0) {
   model.rows.push(model.header.map(() => ''))
   const next = serializeTable(model)
   view.dispatch({
-    changes: { from: range.from, to: range.to, insert: next }
+    changes: { from: range.from, to: range.to, insert: next },
+    annotations: Transaction.userEvent.of('input')
   })
   // Adding a row changes the widget's row count, so `eq` returns
   // false and CM6 rebuilds the widget DOM. The old `wrap` reference
