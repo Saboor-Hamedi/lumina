@@ -82,7 +82,7 @@
   display: block;
   width: fit-content !important;
   max-width: calc(100% - 4px) !important;
-  border-radius: 6px !important;
+  border-radius: 2px !important;
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1)) !important;
   background: var(--bg-app, #18181b) !important;
   box-sizing: border-box !important;
@@ -110,8 +110,8 @@
   background: var(--bg-app, #18181b) !important;
   border: none !important;
   border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08)) !important;
-  border-top-left-radius: 5px;
-  border-top-right-radius: 5px;
+  border-top-left-radius: 2px !important;
+  border-top-right-radius: 2px !important;
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
   opacity: 1;
@@ -309,7 +309,7 @@
   min-width: 240px;
   background: var(--bg-panel, #18181b);
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
-  border-radius: 8px;
+  border-radius: 2px !important;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(20px);
   animation: tableRenameDropdownIn 0.15s cubic-bezier(0, 0, 0.2, 1);
@@ -338,7 +338,7 @@
   box-sizing: border-box;
   background: var(--bg-app, rgba(0, 0, 0, 0.35));
   border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.15));
-  border-radius: 6px;
+  border-radius: 2px !important;
   padding: 6px 10px;
   font-size: 12px;
   font-weight: 500;
@@ -362,7 +362,7 @@
   padding: 4px 10px;
   font-size: 11px;
   font-weight: 500;
-  border-radius: 6px;
+  border-radius: 2px !important;
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
   background: transparent;
   color: var(--text-muted, #94a3b8);
@@ -379,7 +379,7 @@
   padding: 4px 12px;
   font-size: 11px;
   font-weight: 600;
-  border-radius: 6px;
+  border-radius: 2px !important;
   border: none;
   background: var(--accent-primary, #6366f1);
   color: #ffffff;
@@ -418,57 +418,49 @@
 }
 
 .cm-table-actions-dropdown {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 6px;
-  min-width: 220px;
-  background: var(--bg-panel, #18181b);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(20px);
-  animation: tableRenameDropdownIn 0.15s cubic-bezier(0, 0, 0.2, 1);
+  position: fixed !important;
+  z-index: 100000 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1px !important;
+  padding: 3px !important;
+  min-width: 165px !important;
+  width: 170px !important;
+  background: var(--bg-panel, #18181b) !important;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12)) !important;
+  border-radius: 2px !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45) !important;
+  backdrop-filter: blur(20px) !important;
 }
 
-.cm-table-actions-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 5px 8px;
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  color: var(--text-main, #e2e8f0);
-  font-size: 11px;
-  font-weight: 500;
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.12s ease;
-  outline: none;
+.cm-table-actions-dropdown .dropdown-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 6px !important;
+  width: 100% !important;
+  padding: 4px 8px !important;
+  height: 26px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 2px !important;
+  color: var(--text-main, #e2e8f0) !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: background 0.12s ease !important;
+  box-sizing: border-box !important;
 }
 
-.cm-table-actions-item:hover {
-  background: var(--bg-hover, rgba(255, 255, 255, 0.08));
-  color: #ffffff;
+.cm-table-actions-dropdown .dropdown-item:hover {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.08)) !important;
+  color: #ffffff !important;
 }
 
-.cm-table-actions-item-icon {
-  display: flex;
-  align-items: center;
-  color: var(--text-muted, #94a3b8);
-  flex-shrink: 0;
-}
-
-.cm-table-actions-separator {
-  height: 1px;
-  background: var(--border-subtle, rgba(255, 255, 255, 0.08));
-  margin: 4px 2px;
+.cm-table-actions-dropdown .dropdown-divider {
+  height: 1px !important;
+  margin: 2px 0 !important;
+  background: var(--border-subtle, rgba(255, 255, 255, 0.08)) !important;
 }
 
 .cm-atomic-table:hover .cm-table-ui-header,
