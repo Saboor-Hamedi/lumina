@@ -38,8 +38,24 @@ div.horizontal-divider {
 }
 
 /* --- Editor Horizontal Line Override --- */
-.cm-line.cm-atomic-hr {
+.cm-line.cm-atomic-hr,
+.cm-line:has(.cm-hr),
+.cm-line:has(hr),
+.cm-hr,
+hr {
   border: none !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  text-decoration: none !important;
+}
+
+.cm-line.cm-atomic-hr,
+.cm-line:has(.cm-hr),
+.cm-line:has(hr) {
+  border: none !important;
+  border-top: none !important;
   padding: 0 !important;
   background: transparent !important;
   width: 100% !important;
@@ -49,14 +65,17 @@ div.horizontal-divider {
   color: transparent !important;
 }
 
-/* Ensure any natively rendered HR elements inside the line are completely hidden */
-.cm-line.cm-atomic-hr hr {
-  display: none !important;
-}
-
+/* Ensure any natively rendered HR elements or text inside the line are completely hidden and borderless */
+.cm-line.cm-atomic-hr hr,
+.cm-line:has(.cm-hr) hr,
+.cm-line.cm-atomic-hr .cm-hr,
+.cm-line:has(.cm-hr) .cm-hr,
 .cm-line.cm-atomic-hr,
-.cm-line.cm-atomic-hr * {
+.cm-line.cm-atomic-hr *,
+.cm-line:has(.cm-hr),
+.cm-line:has(.cm-hr) * {
   border: none !important;
+  border-top: none !important;
   box-shadow: none !important;
   outline: none !important;
   background: transparent !important;
@@ -64,7 +83,8 @@ div.horizontal-divider {
   text-decoration: none !important;
 }
 
-.cm-line.cm-atomic-hr::before {
+.cm-line.cm-atomic-hr::before,
+.cm-line:has(.cm-hr)::before {
   content: '';
   position: absolute;
   left: 50%;
@@ -78,7 +98,8 @@ div.horizontal-divider {
   border: none !important;
 }
 
-.cm-line.cm-atomic-hr::after {
+.cm-line.cm-atomic-hr::after,
+.cm-line:has(.cm-hr)::after {
   content: '✦ ✦ ✦' !important;
   position: absolute !important;
   left: 50% !important;
@@ -93,4 +114,5 @@ div.horizontal-divider {
   opacity: 0.3 !important;
   pointer-events: none !important;
   color: var(--text-main) !important;
+  border: none !important;
 }
