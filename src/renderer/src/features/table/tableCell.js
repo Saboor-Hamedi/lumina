@@ -1,4 +1,5 @@
 import { undo, redo } from '@codemirror/commands'
+import { ImageWidget } from '../dropImage/imageWidgetExtension'
 import { TableAutocomplete } from './tableAutocomplete'
 import { openCellMenu, cellColIndex, cellRowIndex } from './tableContextMenu'
 import { readModelFromDom } from './tableModel'
@@ -528,34 +529,36 @@ export function makeCell(tag, text, view) {
       event.preventDefault()
       event.stopPropagation()
 
-      // Ctrl+Enter / Cmd+Enter: create a new line directly below the table and place cursor on it
+      // Ctrl+Enter / Cmd+Enter: create a clean 2-gap spacing directly below the table and place cursor on it
       if (event.ctrlKey || event.metaKey) {
         const wrap = cell.closest('.cm-atomic-table')
         const range = findCurrentTableRange(view, wrap)
         if (range) {
           source.blur()
-          let insertPos = range.to
           const doc = view.state.doc
-          let prefix = '\n'
-          let targetPos = insertPos
+          const endPos = range.to
+          let insertText = '\n\n'
+          let targetPos = endPos + 2
 
-          if (insertPos < doc.length) {
-            if (doc.sliceString(insertPos, insertPos + 1) === '\n') {
-              insertPos += 1
-              prefix = '\n'
-              targetPos = insertPos
+          // If there is already a newline directly after the table
+          if (endPos < doc.length && doc.sliceString(endPos, endPos + 1) === '\n') {
+            if (endPos + 1 < doc.length && doc.sliceString(endPos + 1, endPos + 2) === '\n') {
+              targetPos = endPos + 2
+              view.dispatch({
+                selection: { anchor: targetPos, head: targetPos },
+                scrollIntoView: true
+              })
+              view.focus()
+              return
             } else {
-              prefix = '\n\n'
-              targetPos = insertPos + 1
+              insertText = '\n'
+              targetPos = endPos + 2
             }
-          } else {
-            prefix = '\n'
-            targetPos = insertPos + 1
           }
 
           view.dispatch({
-            changes: { from: insertPos, to: insertPos, insert: prefix },
-            selection: { anchor: targetPos },
+            changes: { from: endPos, to: endPos, insert: insertText },
+            selection: { anchor: targetPos, head: targetPos },
             scrollIntoView: true
           })
           view.focus()

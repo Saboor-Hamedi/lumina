@@ -16,8 +16,9 @@ import { EditorView } from '@codemirror/view'
 export const wikilinkCaretFix = EditorView.domEventHandlers({
   mousedown(e, view) {
     const target = e.target
+    if (!target || target.closest('.cm-atomic-table')) return false
+
     const wikilink = target.closest('.cm-atomic-wiki-link') || target.closest('.cm-atomic-wikilink-wrap')
-    
     if (!wikilink) return false
 
     const rect = wikilink.getBoundingClientRect()
@@ -26,7 +27,17 @@ export const wikilinkCaretFix = EditorView.domEventHandlers({
 
     if (isRightHalf) {
       // Get the document position BEFORE the widget
-      const pos = view.posAtDOM(wikilink)
+      let pos = null
+      try {
+        pos = view.posAtCoords({ x: rect.left + 2, y: rect.top + (rect.height / 2) })
+      } catch {}
+      if (pos === null) {
+        try {
+          pos = view.posAtDOM(wikilink)
+        } catch {
+          return false
+        }
+      }
       if (pos !== null) {
         // Read the text ahead to find the exact length of the [[...]] syntax
         const textAhead = view.state.doc.sliceString(pos, Math.min(pos + 200, view.state.doc.length))

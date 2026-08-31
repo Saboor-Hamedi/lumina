@@ -69,7 +69,7 @@ describe('DailyNotes', () => {
     )
     expect(templateSaves.length).toBe(TEMPLATE_COUNT)
     expect(templateSaves[0][0].language).toBe('markdown')
-    expect(screen.getByTestId('template-modal')).toBeInTheDocument()
+    expect(await screen.findByTestId('template-modal')).toBeInTheDocument()
   })
 
   it('does not re-seed templates when all are already present', async () => {

@@ -101,7 +101,16 @@ export function findCurrentTableRange(view, dom) {
       }
     }
     const endLine = doc.lineAt(targetNode.to)
-    return { from: fromPos, to: endLine.to }
+    let lastTableLine = startLine
+    for (let n = startLine.number; n <= endLine.number; n++) {
+      const l = doc.line(n)
+      if (l.text.includes('|')) {
+        lastTableLine = l
+      } else {
+        break
+      }
+    }
+    return { from: fromPos, to: lastTableLine.to }
   }
 
   return null
@@ -758,11 +767,20 @@ export function buildTableWidgets(state) {
           fromPos = prevLine.from
         }
       }
+      let lastTableLine = startLine
+      for (let n = startLine.number; n <= endLine.number; n++) {
+        const l = doc.line(n)
+        if (l.text.includes('|')) {
+          lastTableLine = l
+        } else {
+          break
+        }
+      }
       ranges.push(
         Decoration.replace({
           widget: new TableWidget(model),
           block: true
-        }).range(fromPos, endLine.to)
+        }).range(fromPos, lastTableLine.to)
       )
       return false // don't descend
     }

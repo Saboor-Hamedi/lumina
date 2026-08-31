@@ -51,14 +51,20 @@ export function parseTable(state, tableNode) {
   if (!cursor.firstChild()) return null
   do {
     if (cursor.name === 'TableHeader') {
-      header.push(...collectCells(state, cursor.node))
-      // The delimiter row follows the header
-      const headerLine = state.doc.lineAt(cursor.to)
-      if (headerLine.number < state.doc.lines) {
-        delimiterLine = state.doc.line(headerLine.number + 1).text
+      const line = state.doc.lineAt(cursor.from).text
+      if (line.includes('|')) {
+        header.push(...collectCells(state, cursor.node))
+        // The delimiter row follows the header
+        const headerLine = state.doc.lineAt(cursor.to)
+        if (headerLine.number < state.doc.lines) {
+          delimiterLine = state.doc.line(headerLine.number + 1).text
+        }
       }
     } else if (cursor.name === 'TableRow') {
-      rows.push(collectCells(state, cursor.node))
+      const line = state.doc.lineAt(cursor.from).text
+      if (line.includes('|')) {
+        rows.push(collectCells(state, cursor.node))
+      }
     }
     // TableDelimiter (per-row `|` and whole-line `|---|---|`) is ignored.
   } while (cursor.nextSibling())
