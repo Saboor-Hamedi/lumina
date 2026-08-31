@@ -72,9 +72,7 @@
 /* Standard line padding and whitespace consistency */
 .cm-line {
   line-height: var(--line-height-editor, 1.6) !important;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-  padding-right: 4px !important;
+  padding: 0 !important;
   margin: 0 !important;
   box-sizing: border-box !important;
 }
@@ -155,12 +153,21 @@
 /* Ensure Mermaid diagrams and Images visually reflect Ctrl+A / range selection */
 .cm-line.cm-selectedLine .cm-mermaid-widget,
 .cm-line.cm-selectedLine .cm-image-container,
+.cm-mermaid-widget:has(::selection),
 .cm-mermaid-widget::selection,
 .cm-image-container::selection,
 .cm-image-container img::selection {
   background-color: color-mix(in srgb, var(--text-accent) 25%, transparent) !important;
-  outline: 2px solid var(--text-accent);
+  outline: 1px solid var(--text-accent);
   outline-offset: 1px;
+}
+
+.cm-mermaid-widget {
+  user-select: text !important;
+}
+
+.cm-mermaid-widget *::selection {
+  background: color-mix(in srgb, var(--text-accent) 35%, transparent) !important;
 }
 
 .markdown-editor {
