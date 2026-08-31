@@ -8,9 +8,9 @@
   width: 100% !important;
 }
 
-/* Typography Hierarchy - Clean, calm, professional scale without font compounding */
-.markdown-editor .cm-line.cm-atomic-h1,
-.markdown-editor .cm-heading1 {
+/* Typography Hierarchy - Clean, unified line metrics without baseline shift */
+.cm-line.cm-atomic-h1,
+.cm-line:has(.cm-heading1) {
   font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
   font-size: 1.4em !important;
   font-weight: 700 !important;
@@ -18,57 +18,71 @@
   letter-spacing: -0.025em !important;
   color: var(--text-main, #ffffff) !important;
 }
-.markdown-editor .cm-line.cm-atomic-h1 .cm-heading1 {
-  font-size: 1em !important; /* Prevent double-scaling inside cm-atomic-h1 */
-}
 
-.markdown-editor .cm-line.cm-atomic-h2,
-.markdown-editor .cm-heading2 {
+.cm-line.cm-atomic-h2,
+.cm-line:has(.cm-heading2) {
   font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
-  font-size: 1.25em !important;
+  font-size: 1.22em !important;
   font-weight: 650 !important;
   line-height: 1.4 !important;
   letter-spacing: -0.02em !important;
   color: var(--text-main, #f8fafc) !important;
 }
-.markdown-editor .cm-line.cm-atomic-h2 .cm-heading2 {
-  font-size: 1em !important; /* Prevent double-scaling inside cm-atomic-h2 */
-}
 
-.markdown-editor .cm-line.cm-atomic-h3,
-.markdown-editor .cm-heading3 {
+.cm-line.cm-atomic-h3,
+.cm-line:has(.cm-heading3) {
   font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
-  font-size: 1.12em !important;
+  font-size: 1.1em !important;
   font-weight: 600 !important;
   line-height: 1.45 !important;
   letter-spacing: -0.015em !important;
   color: var(--text-main, #f1f5f9) !important;
 }
-.markdown-editor .cm-line.cm-atomic-h3 .cm-heading3 {
-  font-size: 1em !important; /* Prevent double-scaling inside cm-atomic-h3 */
-}
 
-.markdown-editor .cm-line.cm-atomic-h4,
-.markdown-editor .cm-line.cm-atomic-h5,
-.markdown-editor .cm-line.cm-atomic-h6,
-.markdown-editor .cm-heading4,
-.markdown-editor .cm-heading5,
-.markdown-editor .cm-heading6 {
+.cm-line.cm-atomic-h4,
+.cm-line.cm-atomic-h5,
+.cm-line.cm-atomic-h6,
+.cm-line:has(.cm-heading4),
+.cm-line:has(.cm-heading5),
+.cm-line:has(.cm-heading6) {
   font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
   font-size: 1em !important;
   font-weight: 600 !important;
   line-height: 1.5 !important;
   color: var(--text-muted, #94a3b8) !important;
 }
-.markdown-editor .cm-line.cm-atomic-h4 .cm-heading4,
-.markdown-editor .cm-line.cm-atomic-h5 .cm-heading5,
-.markdown-editor .cm-line.cm-atomic-h6 .cm-heading6 {
-  font-size: 1em !important;
+
+/* Reset all inline heading mark spans so they inherit line geometry and keep baseline 1:1 */
+.cm-heading,
+.cm-heading1,
+.cm-heading2,
+.cm-heading3,
+.cm-heading4,
+.cm-heading5,
+.cm-heading6,
+.lumina-heading-text {
+  font-size: inherit !important;
+  line-height: inherit !important;
+  font-weight: inherit !important;
+  font-family: inherit !important;
+  display: inline !important;
+  vertical-align: baseline !important;
 }
 
-/* Standard line padding for text readability and precise hit targeting */
+/* Standard line padding and whitespace consistency */
 .cm-line {
+  line-height: var(--line-height-editor, 1.6) !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
   padding-right: 4px !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* Consistent height for blank lines / empty whitespace lines */
+.cm-line:empty,
+.cm-line:has(> br:only-child) {
+  min-height: 1.6em !important;
   line-height: var(--line-height-editor, 1.6) !important;
 }
 
@@ -125,9 +139,9 @@
   font-weight: 600 !important;
 }
 
-/* Global Selection Style for CM6: High visibility for "Robust" feel */
+/* Global Selection Style for CM6: High visibility for "Robust" feel covering widgets & images */
 .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer {
-  z-index: 0 !important;  
+  z-index: 10 !important;  
   pointer-events: none !important;
 }
 .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
@@ -136,6 +150,17 @@
 }
 .cm-content ::selection {
   background: color-mix(in srgb, var(--text-accent) 35%, transparent) !important; 
+}
+
+/* Ensure Mermaid diagrams and Images visually reflect Ctrl+A / range selection */
+.cm-line.cm-selectedLine .cm-mermaid-widget,
+.cm-line.cm-selectedLine .cm-image-container,
+.cm-mermaid-widget::selection,
+.cm-image-container::selection,
+.cm-image-container img::selection {
+  background-color: color-mix(in srgb, var(--text-accent) 25%, transparent) !important;
+  outline: 2px solid var(--text-accent);
+  outline-offset: 1px;
 }
 
 .markdown-editor {
