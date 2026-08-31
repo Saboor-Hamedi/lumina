@@ -1,8 +1,29 @@
+/**
+ * =========================================================================================
+ * Mermaid Widget Extension (`mermaidWidgetExtension.js`)
+ * =========================================================================================
+ * 
+ * Architecture & Design:
+ * 1. View Mode (Default):
+ *    - Replaces ```mermaid fenced code blocks with an interactive `MermaidWidget`.
+ *    - Renders the diagram seamlessly with theme-aware tokens (--bg-panel, --text-accent, etc.).
+ *    - Clicking anywhere on the diagram opens the interactive lightbox modal (pan, zoom, reset).
+ * 2. Dedicated Edit Trigger:
+ *    - The source code is ONLY revealed when clicking the `</>` (Edit Code) button in the header.
+ *    - Clicking, selecting, or navigating text above/below the diagram will NOT collapse it into code.
+ * 3. StateField & StateEffect (`editingMermaidField`):
+ *    - Manages the active editing block ID/offset atomically.
+ *    - Automatically handles position mapping (`tr.changes.mapPos(value)`) on doc changes.
+ *    - Exits edit mode and re-renders the diagram as soon as the caret leaves the block.
+ * =========================================================================================
+ */
+
 import { syntaxTree } from '@codemirror/language'
 import { Decoration, WidgetType, EditorView } from '@codemirror/view'
-import { StateField } from '@codemirror/state'
+import { StateField, StateEffect } from '@codemirror/state'
 import mermaid from 'mermaid'
 import { copyMermaidAsImage } from './copyMermaidAsImage'
+import { openMermaidLightbox } from './mermaidLightbox'
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import ToolTip from '../../components/atoms/ToolTip'
@@ -10,6 +31,50 @@ import './mermaidCodeWrapper.css'
 
 let mermaidIdCounter = 0
 
+// Effect used to explicitly activate raw markdown editing for a specific Mermaid block
+export const setEditingMermaid = StateEffect.define()
+
+/**
+ * Tracks which Mermaid block (by node.from offset) is currently in raw edit mode.
+ * If the user moves the cursor outside the block boundaries, it automatically resets to null.
+ */
+export const editingMermaidField = StateField.define({
+  create() {
+    return null
+  },
+  update(value, tr) {
+    for (const effect of tr.effects) {
+      if (effect.is(setEditingMermaid)) {
+        return effect.value
+      }
+    }
+
+    if (value !== null) {
+      const currentPos = tr.docChanged ? tr.changes.mapPos(value) : value
+      const tree = syntaxTree(tr.state)
+      const node = tree.resolveInner(currentPos, 1)
+      let fenced = node
+      while (fenced && fenced.name !== 'FencedCode') {
+        fenced = fenced.parent
+      }
+
+      if (fenced) {
+        const sel = tr.state.selection.main
+        // Keep in edit mode as long as the selection stays inside this fenced code block
+        if (sel.from >= fenced.from && sel.to <= fenced.to) {
+          return fenced.from
+        }
+      }
+      return null
+    }
+
+    return null
+  }
+})
+
+/**
+ * CodeMirror 6 Widget that renders the Mermaid header bar and diagram body.
+ */
 class MermaidWidget extends WidgetType {
   constructor(code) {
     super()
@@ -24,29 +89,23 @@ class MermaidWidget extends WidgetType {
     const wrap = document.createElement('div')
     wrap.className = 'cm-mermaid-widget'
 
-    // Clicking anywhere on the widget enters edit mode
-    wrap.addEventListener('click', (e) => {
-      if (view.state.readOnly) return
-      // Ignore clicks on buttons
+    // Prevent mousedown on the diagram from shifting editor selection or focusing behind widget
+    wrap.addEventListener('mousedown', (e) => {
       if (e.target.closest('.mermaid-edit-btn')) return
-
-      const pos = view.posAtDOM(wrap)
-      if (pos !== null) {
-        view.dispatch({ selection: { anchor: pos + 1 }, scrollIntoView: true })
-        view.focus()
-      }
+      e.stopPropagation()
     })
 
-    // Header Bar (Like CodeWrapper)
+    // --- Header Bar ---
     const header = document.createElement('div')
     header.className = 'mermaid-widget-header'
+    header.setAttribute('contenteditable', 'false')
 
     const langLabel = document.createElement('span')
     langLabel.className = 'mermaid-widget-lang-label'
     langLabel.textContent = 'MERMAID'
     header.appendChild(langLabel)
 
-    // Action Buttons Container (Rendered via React to support ToolTip)
+    // Action Buttons Container (Rendered via React for ToolTip integration)
     const actionsWrap = document.createElement('div')
     actionsWrap.style.display = 'flex'
     actionsWrap.style.alignItems = 'center'
@@ -60,17 +119,32 @@ class MermaidWidget extends WidgetType {
       const [copiedImage, setCopiedImage] = React.useState(false)
       const [copiedSyntax, setCopiedSyntax] = React.useState(false)
 
+      // Dedicated trigger to enter raw markdown edit mode
       const handleEdit = (e) => {
         if (view.state.readOnly) return
         e.preventDefault()
         e.stopPropagation()
         const pos = view.posAtDOM(wrap)
         if (pos !== null) {
-          view.dispatch({ selection: { anchor: pos + 1 }, scrollIntoView: true })
+          const tree = syntaxTree(view.state)
+          const node = tree.resolveInner(pos, 1)
+          let fenced = node
+          while (fenced && fenced.name !== 'FencedCode') {
+            fenced = fenced.parent
+          }
+          const from = fenced ? fenced.from : pos
+          // Focus cursor right after the opening fence line
+          const targetPos = Math.min(from + '```mermaid\n'.length, view.state.doc.length)
+          view.dispatch({
+            effects: setEditingMermaid.of(from),
+            selection: { anchor: targetPos },
+            scrollIntoView: true
+          })
           view.focus()
         }
       }
 
+      // Copies the diagram as a PNG image
       const handleCopyImage = async (e) => {
         e.preventDefault()
         e.stopPropagation()
@@ -78,7 +152,6 @@ class MermaidWidget extends WidgetType {
         if (svgEl) {
           try {
             await copyMermaidAsImage(svgEl)
-
             setCopiedImage(true)
             setTimeout(() => setCopiedImage(false), 1500)
           } catch (err) {
@@ -95,6 +168,7 @@ class MermaidWidget extends WidgetType {
         }
       }
 
+      // Copies the raw Mermaid markdown syntax
       const handleCopySyntax = async (e) => {
         e.preventDefault()
         e.stopPropagation()
@@ -113,6 +187,24 @@ class MermaidWidget extends WidgetType {
           console.error('Failed to copy mermaid syntax', err)
         }
       }
+
+      const editIcon = React.createElement(
+        'svg',
+        {
+          xmlns: 'http://www.w3.org/2000/svg',
+          width: 14,
+          height: 14,
+          viewBox: '0 0 24 24',
+          fill: 'none',
+          stroke: 'currentColor',
+          strokeWidth: 2,
+          strokeLinecap: 'round',
+          strokeLinejoin: 'round',
+          style: { display: 'block' }
+        },
+        React.createElement('polyline', { points: '16 18 22 12 16 6' }),
+        React.createElement('polyline', { points: '8 6 2 12 8 18' })
+      )
 
       const copyIcon = React.createElement(
         'svg',
@@ -175,8 +267,11 @@ class MermaidWidget extends WidgetType {
         { text: 'Edit Code', position: 'top' },
         React.createElement(
           'div',
-          { className: 'mermaid-edit-btn', style: { position: 'static' }, onClick: handleEdit },
-          '</>'
+          {
+            className: 'mermaid-edit-btn',
+            onClick: handleEdit
+          },
+          editIcon
         )
       )
 
@@ -188,10 +283,6 @@ class MermaidWidget extends WidgetType {
           {
             className: 'mermaid-edit-btn',
             style: {
-              position: 'static',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
               color: copiedImage ? '#4ade80' : undefined,
               borderColor: copiedImage ? '#4ade80' : undefined
             },
@@ -203,16 +294,12 @@ class MermaidWidget extends WidgetType {
 
       const copySyntaxBtn = React.createElement(
         ToolTip,
-        { text: 'Copy Syntax', position: 'top' },
+        { text: 'Copy Code', position: 'top' },
         React.createElement(
           'div',
           {
             className: 'mermaid-edit-btn',
             style: {
-              position: 'static',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
               color: copiedSyntax ? '#4ade80' : undefined,
               borderColor: copiedSyntax ? '#4ade80' : undefined
             },
@@ -224,7 +311,7 @@ class MermaidWidget extends WidgetType {
 
       return React.createElement(
         'div',
-        { style: { display: 'flex', gap: '8px' } },
+        { style: { display: 'flex', alignItems: 'center', gap: '6px' } },
         view.state.readOnly ? null : editBtn,
         copySyntaxBtn,
         copyImageBtn
@@ -233,8 +320,20 @@ class MermaidWidget extends WidgetType {
 
     root.render(React.createElement(ActionsOverlay))
 
+    // --- Diagram Body Container ---
     const bodyWrap = document.createElement('div')
     bodyWrap.className = 'mermaid-widget-body'
+    bodyWrap.title = 'Click to open diagram in full view'
+
+    // Clicking the diagram body opens the full-screen interactive lightbox modal
+    bodyWrap.addEventListener('click', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      const svg = bodyWrap.querySelector('svg')
+      if (svg) {
+        openMermaidLightbox(svg)
+      }
+    })
 
     const scrollWrap = document.createElement('div')
     scrollWrap.className = 'mermaid-scroll-wrap'
@@ -242,10 +341,9 @@ class MermaidWidget extends WidgetType {
     const contentDiv = document.createElement('div')
     contentDiv.className = 'mermaid-content'
 
-    // Add a pulsing skeleton loading state with a spinner
     contentDiv.innerHTML = `
       <div class="mermaid-loading">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="12" y1="2" x2="12" y2="6"></line>
           <line x1="12" y1="18" x2="12" y2="22"></line>
           <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
@@ -255,16 +353,14 @@ class MermaidWidget extends WidgetType {
           <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
           <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
         </svg>
-        Rendering Graph...
+        Rendering...
       </div>
     `
     scrollWrap.appendChild(contentDiv)
     bodyWrap.appendChild(scrollWrap)
     wrap.appendChild(bodyWrap)
 
-    // We generate a unique ID for mermaid to use
     const id = `mermaid-${mermaidIdCounter++}`
-
     renderMermaidToElement(contentDiv, this.code, id)
     return wrap
   }
@@ -278,6 +374,10 @@ class MermaidWidget extends WidgetType {
   }
 }
 
+/**
+ * Asynchronously renders a Mermaid diagram into a target DOM container.
+ * Injects Lumina's active theme CSS variables for seamless styling.
+ */
 export function renderMermaidToElement(container, code, uniqueId) {
   const computed = getComputedStyle(document.documentElement)
 
@@ -297,7 +397,6 @@ export function renderMermaidToElement(container, code, uniqueId) {
         startOnLoad: false,
         theme: 'base',
         useMaxWidth: false,
-        // Prevent <foreignObject> usage which taints canvas export
         htmlLabels: false,
         flowchart: { htmlLabels: false },
         sequence: { htmlLabels: false },
@@ -305,23 +404,18 @@ export function renderMermaidToElement(container, code, uniqueId) {
         class: { htmlLabels: false },
         themeVariables: {
           fontFamily: fontEditor,
-
-          // Flowcharts & General
           primaryColor: bgPanel,
           primaryBorderColor: 'transparent',
           primaryTextColor: accent,
           lineColor: textFaint,
           textColor: textMain,
           mainBkg: bgPrimary,
-
           nodeBkg: bgPanel,
           nodeBorder: 'transparent',
           nodeTextColor: accent,
           clusterBkg: 'transparent',
           clusterBorder: 'transparent',
           edgeLabelBackground: bgPanel,
-
-          // Sequence Diagrams
           actorBkg: bgPanel,
           actorBorder: 'transparent',
           actorTextColor: accent,
@@ -379,21 +473,21 @@ export function renderMermaidToElement(container, code, uniqueId) {
   }, 0)
 }
 
+/**
+ * Builds the CodeMirror decoration set replacing ```mermaid blocks with MermaidWidgets.
+ */
 function buildMermaidDecorations(state) {
   const widgets = []
   const tree = syntaxTree(state)
-  const selection = state.selection.main
+  const editingPos = state.field(editingMermaidField, false)
 
   tree.iterate({
     enter(node) {
       if (node.name === 'FencedCode') {
         const text = state.sliceDoc(node.from, node.to)
-        if (text.startsWith('```mermaid')) {
-          // If the selection overlaps the block at all, or touches its edges, do NOT render the widget.
-          // This prevents the diagram from instantly closing on you if you drag-select slightly outside the bounds,
-          // and it elegantly opens the diagram as your arrow keys approach the boundaries.
-          const overlaps = selection.from <= node.to + 1 && selection.to >= node.from - 1
-          if (overlaps) {
+        if (text.startsWith('```mermaid') || text.startsWith('~~~mermaid')) {
+          // If this specific diagram block was explicitly toggled to edit mode via the </> button, show raw code
+          if (editingPos !== null && editingPos === node.from) {
             return
           }
 
@@ -416,15 +510,17 @@ function buildMermaidDecorations(state) {
   return Decoration.set(widgets, true)
 }
 
-export const mermaidWidgetExtension = StateField.define({
+const mermaidDecorationsField = StateField.define({
   create(state) {
     return buildMermaidDecorations(state)
   },
   update(value, tr) {
-    if (tr.docChanged || tr.selection) {
+    if (tr.docChanged || tr.selection || tr.effects.some((e) => e.is(setEditingMermaid))) {
       return buildMermaidDecorations(tr.state)
     }
     return value
   },
   provide: (f) => EditorView.decorations.from(f)
 })
+
+export const mermaidWidgetExtension = [editingMermaidField, mermaidDecorationsField]

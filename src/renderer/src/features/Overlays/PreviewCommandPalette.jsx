@@ -19,7 +19,7 @@ import { Sparkles } from 'lucide-react'
 
 import '@atomic-editor/editor/styles.css'
 import '../Editor/MarkdownEditor.css'
-import '../codeBlock/CodeWrapper.css'
+import '../codeBlock/codeWrapper.css'
 
 /**
  * A reusable, full-fidelity read-only markdown preview.

@@ -1767,37 +1767,6 @@ html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {/**
   width: 100%;
 }
 
-.cm-mermaid-widget .mermaid-edit-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  padding: 4px 8px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-card);
-  border-radius: 6px;
-  font-family: var(--font-editor, monospace);
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-faint);
-  cursor: pointer;
-  opacity: 0;
-  transform: translateY(4px);
-  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-  z-index: 10;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  letter-spacing: 1px;
-}
-
-.cm-mermaid-widget:hover .mermaid-edit-btn {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.cm-mermaid-widget .mermaid-edit-btn:hover {
-  color: var(--text-accent);
-  border-color: var(--text-accent);
-}
-
 /* Callout Styling */
 .lumina-callout-line {
   background-color: rgba(var(--text-accent-rgb, 255, 64, 129), 0.05);

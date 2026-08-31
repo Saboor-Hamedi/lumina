@@ -1,0 +1,183 @@
+/*
+  CODE BLOCK GEOMETRY — Exact match to Mermaid Code Wrapper
+*/
+
+.code-block-widget-header {
+  margin: 8px 0 0 0;
+  width: calc(100% - 4px);
+  margin-right: 4px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-dim);
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  user-select: none;
+  cursor: pointer !important;
+  box-sizing: border-box;
+}
+
+.code-block-widget-header .mermaid-widget-lang-label,
+.code-block-widget-header .mermaid-edit-btn {
+  opacity: 0;
+  transition: opacity 0.15s ease-in-out;
+}
+
+.code-block-widget-header:hover .mermaid-widget-lang-label,
+.code-block-widget-header:hover .mermaid-edit-btn,
+.code-block-widget-header.is-hovered .mermaid-widget-lang-label,
+.code-block-widget-header.is-hovered .mermaid-edit-btn {
+  opacity: 1;
+}
+
+.code-block-widget-header .mermaid-widget-lang-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: text !important;
+}
+
+.code-block-widget-header .mermaid-edit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer !important;
+  transition: all 0.15s ease;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.code-block-widget-header .mermaid-edit-btn:hover {
+  color: var(--text-accent, #40bafa);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--border-dim, rgba(255, 255, 255, 0.1));
+}
+
+.cm-line.cm-atomic-fenced-code {
+  box-sizing: border-box !important;
+  width: calc(100% - 4px) !important;
+  max-width: calc(100% - 4px) !important;
+  margin-right: 4px !important;
+  margin-left: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  display: block !important;
+  padding: 2px 12px !important;
+  line-height: 1.6 !important;
+  background: rgba(0, 0, 0, 0.2) !important;
+  box-shadow: none !important;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
+  font-size: 13px !important;
+  color: var(--text-main, #d4d4d4);
+  border-left: 1px solid var(--border-dim) !important;
+  border-right: 1px solid var(--border-dim) !important;
+  cursor: text !important;
+  user-select: text !important;
+}
+
+.cm-line.cm-atomic-fenced-code.cm-activeLine {
+  background-color: var(--bg-active, #2a2a2a) !important;
+}
+
+/* Hide opening fence when header is present (view mode) */
+.code-block-widget-header + .cm-line.cm-atomic-fenced-code:not(.cm-activeLine) {
+  display: none !important;
+}
+
+/* When in edit mode (header removed), give opening line proper top borders and clean margin */
+.cm-line:not(.cm-atomic-fenced-code) + .cm-line.cm-atomic-fenced-code,
+.cm-line.cm-atomic-fenced-code:first-child {
+  border-top: 1px solid var(--border-dim) !important;
+  border-top-left-radius: 6px !important;
+  border-top-right-radius: 6px !important;
+  margin-top: 8px !important;
+  padding-top: 6px !important;
+}
+
+/* Ensure the last line forms the bottom border and rounded corners */
+.cm-line.cm-atomic-fenced-code:has(+ :not(.cm-atomic-fenced-code)),
+.cm-line.cm-atomic-fenced-code:last-child {
+  border-bottom: 1px solid var(--border-dim) !important;
+  border-bottom-left-radius: 6px !important;
+  border-bottom-right-radius: 6px !important;
+  margin-bottom: 8px !important;
+  border-left: 1px solid var(--border-dim) !important;
+  border-right: 1px solid var(--border-dim) !important;
+  background: rgba(0, 0, 0, 0.2) !important;
+}
+
+/* In view mode (not activeLine), collapse closing backticks into a clean 6px bottom border cap */
+.cm-line.cm-atomic-fenced-code:has(+ :not(.cm-atomic-fenced-code)):not(.cm-activeLine),
+.cm-line.cm-atomic-fenced-code:last-child:not(.cm-activeLine) {
+  font-size: 0 !important;
+  line-height: 0 !important;
+  height: 6px !important;
+  min-height: 6px !important;
+  padding: 0 !important;
+  color: transparent !important;
+}
+
+/* Selection style for code blocks */
+.markdown-editor .cm-line.cm-atomic-fenced-code .cm-selectionBackground {
+  background-color: rgba(86, 156, 214, 0.45) !important;
+}
+
+/* Prevent t.monospace or atomic-theme from tinting plain code in fenced code blocks with --atomic-editor-link / --text-accent */
+.cm-line.cm-atomic-fenced-code span[class*='monospace'] {
+  font-family: inherit !important;
+}
+
+/* Dark theme specific syntax colors */
+[data-theme='dark'] .cm-line.cm-atomic-fenced-code span[class*='string'],
+.cm-line.cm-atomic-fenced-code span[class*='string'] {
+  color: #ce9178 !important;
+}
+
+[data-theme='dark'] .cm-line.cm-atomic-fenced-code span[class*='keyword'],
+.cm-line.cm-atomic-fenced-code span[class*='keyword'] {
+  color: #569cd6 !important;
+}
+
+[data-theme='dark'] .cm-line.cm-atomic-fenced-code span[class*='comment'],
+.cm-line.cm-atomic-fenced-code span[class*='comment'] {
+  color: #6a9955 !important;
+  font-style: italic !important;
+}
+
+[data-theme='dark'] .cm-line.cm-atomic-fenced-code span[class*='number'],
+.cm-line.cm-atomic-fenced-code span[class*='number'] {
+  color: #b5cea8 !important;
+}
+
+[data-theme='dark'] .cm-line.cm-atomic-fenced-code span[class*='variable'],
+.cm-line.cm-atomic-fenced-code span[class*='variable'] {
+  color: #9cdcfe !important;
+}
+
+[data-theme='dark'] .cm-line.cm-atomic-fenced-code span[class*='type'],
+.cm-line.cm-atomic-fenced-code span[class*='type'] {
+  color: #4ec9b0 !important;
+}
+
+[data-theme='dark'] .cm-line.cm-atomic-fenced-code span[class*='operator'],
+.cm-line.cm-atomic-fenced-code span[class*='operator'] {
+  color: #d4d4d4 !important;
+}
+
+/* Light theme support */
+[data-theme='light'] .cm-line.cm-atomic-fenced-code {
+  background: rgba(0, 0, 0, 0.03) !important;
+  color: #24292e !important;
+}

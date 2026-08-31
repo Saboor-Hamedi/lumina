@@ -7,7 +7,7 @@ import { useVaultStore } from '../../core/store/useVaultStore'
 import { useToast } from '../../core/hooks/useToast'
 import ToastNotification from '../../core/notification'
 import './MarkdownEditor.css'
-import '../codeBlock/CodeWrapper.css'
+import '../codeBlock/codeWrapper.css'
 
 // Atomic Editor Imports
 import { AtomicCodeMirrorEditor, wikiLinks } from '@atomic-editor/editor'
@@ -43,6 +43,7 @@ import { useZoom } from './useZoom'
 import ContextMenu from '../Overlays/ContextMenu'
 import { getEditorContextMenuOptions } from './menu'
 import { wikilinkCaretFix } from './wikilinkCaret'
+import { emptyLineSelectionFix } from './emptyLineSelectionFix'
 
 const updateSearchHighlights = StateEffect.define()
 
@@ -944,6 +945,7 @@ const MarkdownEditor = React.memo(
         mermaidWidgetExtension,
         tagMentionExtension,
         wikilinkCaretFix,
+        emptyLineSelectionFix,
         wikiLinks({
           openOnClick: true,
           resolve: async (target) => {

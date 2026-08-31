@@ -1,12 +1,27 @@
 /*
-  Mermaid Code Wrapper Geometry
+  =========================================================================================
+  Mermaid Code Wrapper & Lightbox Styles (`mermaidCodeWrapper.css`)
+  =========================================================================================
+  
+  Contains:
+  1. Mermaid Inline Code Block Widget (Header bar, hover states, diagram container)
+  2. Fullscreen Interactive Lightbox Modal (2px border radius, backdrop blur, canvas)
+  3. Floating Bottom Control Panel (2px border radius, zoom indicators, pill buttons)
+  =========================================================================================
 */
 
+/*
+  =========================================================================================
+  1. MERMAID INLINE WIDGET
+  =========================================================================================
+*/
 .cm-mermaid-widget {
-  margin: 4px 0;
+  margin: 8px 0;
   cursor: text;
+  box-sizing: border-box;
 }
 
+/* Header bar matching CodeBlockHeader */
 .mermaid-widget-header {
   position: relative;
   height: 32px;
@@ -19,6 +34,19 @@
   justify-content: space-between;
   padding: 0 12px;
   user-select: none;
+  box-sizing: border-box;
+}
+
+/* Language label & action buttons fade in smoothly on block hover */
+.mermaid-widget-header .mermaid-widget-lang-label,
+.mermaid-widget-header .mermaid-edit-btn {
+  opacity: 0;
+  transition: opacity 0.15s ease-in-out;
+}
+
+.cm-mermaid-widget:hover .mermaid-widget-header .mermaid-widget-lang-label,
+.cm-mermaid-widget:hover .mermaid-widget-header .mermaid-edit-btn {
+  opacity: 1;
 }
 
 .mermaid-widget-lang-label {
@@ -26,8 +54,33 @@
   font-weight: 500;
   color: var(--text-muted);
   letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
+.mermaid-widget-header .mermaid-edit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer !important;
+  transition: all 0.15s ease;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.mermaid-widget-header .mermaid-edit-btn:hover {
+  color: var(--text-accent, #40bafa);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--border-dim, rgba(255, 255, 255, 0.1));
+}
+
+/* Inline Diagram Body with Zoom-In Cursor */
 .mermaid-widget-body {
   background: rgba(0, 0, 0, 0.2);
   border-left: 1px solid var(--border-dim);
@@ -36,4 +89,171 @@
   border-bottom-left-radius: 6px;
   border-bottom-right-radius: 6px;
   overflow: hidden;
+  display: flex;
+  justify-content: center;
+  padding: 16px 12px;
+  cursor: zoom-in;
+}
+
+.cm-mermaid-widget .mermaid-content svg {
+  animation: mermaid-fade-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes mermaid-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.cm-mermaid-widget .mermaid-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 20px;
+  opacity: 0.7;
+  letter-spacing: 0.02em;
+}
+
+/*
+  =========================================================================================
+  2. FULLSCREEN INTERACTIVE LIGHTBOX MODAL (2px border radius)
+  =========================================================================================
+*/
+.mermaid-lightbox-overlay {
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.mermaid-lightbox-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 95vw;
+  max-width: 95vw;
+  height: 90vh;
+  max-height: 90vh;
+  transform: scale(0.96);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mermaid-lightbox-overlay.show .mermaid-lightbox-wrapper {
+  transform: scale(1);
+}
+
+/* Modal Card with 2px border radius and overflow: hidden to clip internal contents cleanly */
+.mermaid-lightbox-card {
+  position: relative;
+  background: var(--bg-panel, #18181b);
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.12));
+  border-radius: 2px;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* Interactive Viewport for Pan & Drag interactions */
+.mermaid-lightbox-viewport {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  box-sizing: border-box;
+}
+
+.mermaid-lightbox-viewport.is-panning {
+  cursor: grabbing;
+}
+
+/* Transformed Canvas Container */
+.mermaid-lightbox-canvas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center center;
+  transition: transform 0.05s ease-out;
+  pointer-events: none;
+  max-width: 90%;
+  max-height: 85%;
+}
+
+.mermaid-lightbox-canvas svg {
+  pointer-events: auto;
+  user-select: none;
+}
+
+/*
+  =========================================================================================
+  3. FLOATING BOTTOM CONTROL PANEL (2px border radius)
+  =========================================================================================
+*/
+.mermaid-lightbox-toolbar {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(24, 24, 27, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.14));
+  border-radius: 2px;
+  padding: 4px 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  user-select: none;
+}
+
+.mermaid-toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  color: var(--text-muted, #a0a0a0);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.mermaid-toolbar-btn:hover {
+  color: var(--text-accent, #40bafa);
+  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  border-color: var(--border-dim, rgba(255, 255, 255, 0.15));
+}
+
+.mermaid-toolbar-zoom-text {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-editor, monospace);
+  color: var(--text-muted, #a0a0a0);
+  min-width: 44px;
+  text-align: center;
+  padding: 0 4px;
+}
+
+.mermaid-lightbox-wrapper .image-lightbox-close {
+  border-radius: 2px;
 }

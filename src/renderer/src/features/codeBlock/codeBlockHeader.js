@@ -6,7 +6,7 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 import ToolTip from '../../components/atoms/ToolTip'
 import { copyCodeAsImage } from './copyCodeAsImage'
-import './CodeWrapper.css'
+import './codeWrapper.css'
 
 export { copyCodeAsImage } from './copyCodeAsImage'
 
@@ -58,15 +58,36 @@ class CodeBlockHeaderWidget extends WidgetType {
     wrap.className = 'mermaid-widget-header code-block-widget-header'
     wrap.setAttribute('contenteditable', 'false')
 
-    // Prevent editor focus / caret shifts on header click
-    wrap.addEventListener('mousedown', (e) => {
-      e.preventDefault()
-      e.stopPropagation()
+    // Clicking the header or language badge jumps cursor directly after opening backticks (```|) to edit language
+    wrap.addEventListener('click', (e) => {
+      if (view.state.readOnly) return
+      if (e.target.closest('.mermaid-edit-btn')) return
+
+      const pos = view.posAtDOM(wrap)
+      if (pos !== null) {
+        const tree = syntaxTree(view.state)
+        const node = tree.resolveInner(pos, 1)
+        let fenced = node
+        while (fenced && fenced.type.name !== 'FencedCode') {
+          fenced = fenced.parent
+        }
+        const from = fenced ? fenced.from : pos
+        const firstLine = view.state
+          .sliceDoc(from, Math.min(from + 50, view.state.doc.length))
+          .split('\n')[0]
+        const fenceMatch = firstLine.match(/^(`{3,}|~{3,})/)
+        const fenceLen = fenceMatch ? fenceMatch[1].length : 3
+        const targetPos = from + fenceLen
+
+        view.dispatch({ selection: { anchor: targetPos }, scrollIntoView: true })
+        view.focus()
+      }
     })
 
     const langLabel = document.createElement('span')
     langLabel.className = 'mermaid-widget-lang-label'
     langLabel.textContent = this.lang
+    langLabel.title = 'Click to change language'
     wrap.appendChild(langLabel)
 
     // Action Buttons Container (Exact match to Mermaid actions)
@@ -189,10 +210,6 @@ class CodeBlockHeaderWidget extends WidgetType {
           {
             className: 'mermaid-edit-btn',
             style: {
-              position: 'static',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
               color: copiedImage ? '#4ade80' : undefined,
               borderColor: copiedImage ? '#4ade80' : undefined
             },
@@ -210,10 +227,6 @@ class CodeBlockHeaderWidget extends WidgetType {
           {
             className: 'mermaid-edit-btn',
             style: {
-              position: 'static',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
               color: copiedSyntax ? '#4ade80' : undefined,
               borderColor: copiedSyntax ? '#4ade80' : undefined
             },
@@ -225,7 +238,7 @@ class CodeBlockHeaderWidget extends WidgetType {
 
       return React.createElement(
         'div',
-        { style: { display: 'flex', gap: '8px' } },
+        { style: { display: 'flex', alignItems: 'center', gap: '6px' } },
         copySyntaxBtn,
         copyImageBtn
       )
@@ -243,9 +256,42 @@ class CodeBlockHeaderWidget extends WidgetType {
   }
 }
 
+let currentHoveredHeader = null
+
+const codeBlockHoverHandler = EditorView.domEventHandlers({
+  mousemove(e) {
+    const line = e.target.closest('.cm-line.cm-atomic-fenced-code')
+    let header = null
+    if (line) {
+      let prev = line.previousElementSibling
+      while (prev && prev.classList.contains('cm-line')) {
+        prev = prev.previousElementSibling
+      }
+      if (prev && prev.classList.contains('code-block-widget-header')) {
+        header = prev
+      }
+    } else {
+      const h = e.target.closest('.code-block-widget-header')
+      if (h) header = h
+    }
+    if (currentHoveredHeader !== header) {
+      if (currentHoveredHeader) currentHoveredHeader.classList.remove('is-hovered')
+      if (header) header.classList.add('is-hovered')
+      currentHoveredHeader = header
+    }
+  },
+  mouseleave() {
+    if (currentHoveredHeader) {
+      currentHoveredHeader.classList.remove('is-hovered')
+      currentHoveredHeader = null
+    }
+  }
+})
+
 function buildDecorations(state) {
   const builder = new RangeSetBuilder()
   const tree = syntaxTree(state)
+  const selection = state.selection.main
 
   tree.iterate({
     enter(node) {
@@ -256,10 +302,21 @@ function buildDecorations(state) {
         const lang = (match && match[2]) || ''
 
         // Exclude mermaid diagrams entirely — mermaid is handled by mermaidWidgetExtension
-        if (lang.toLowerCase() === 'mermaid' || text.startsWith('```mermaid') || text.startsWith('~~~mermaid')) {
+        if (
+          lang.toLowerCase() === 'mermaid' ||
+          text.startsWith('```mermaid') ||
+          text.startsWith('~~~mermaid')
+        ) {
           return
         }
 
+        // When cursor touches/focuses the block, remove header and reveal raw code for editing
+        const overlaps = selection.from <= node.to + 1 && selection.to >= node.from - 1
+        if (overlaps) {
+          return
+        }
+
+        // When not focused, render the header widget
         builder.add(
           node.from,
           node.from,
@@ -281,8 +338,8 @@ export const codeBlockDecorations = StateField.define({
     return buildDecorations(state)
   },
   update(decorations, tr) {
-    if (tr.docChanged) return buildDecorations(tr.state)
+    if (tr.docChanged || tr.selection) return buildDecorations(tr.state)
     return decorations
   },
-  provide: (f) => EditorView.decorations.from(f)
+  provide: (f) => [EditorView.decorations.from(f), codeBlockHoverHandler]
 })
