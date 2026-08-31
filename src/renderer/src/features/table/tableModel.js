@@ -143,7 +143,7 @@ export function readModelFromDom(wrap) {
     if (th.style.textAlign === 'left') return 'left'
     return ''
   })
-  const rows = Array.from(wrap.querySelectorAll('tbody tr')).map((tr) =>
+  const rows = Array.from(wrap.querySelectorAll('tbody tr:not(.cm-table-empty-row)')).map((tr) =>
     Array.from(tr.querySelectorAll('td')).map(readCellSource)
   )
   const titleInput = wrap.querySelector('.cm-table-ui-title-input')
