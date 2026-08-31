@@ -103,4 +103,14 @@
   pointer-events: none !important;
 }
 
+/* Ensure hidden syntax text is completely zero-size to prevent any ghost or duplicate letters */
+.cm-atomic-wiki-link-hidden-syntax {
+  color: transparent !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  letter-spacing: 0 !important;
+  user-select: none !important;
+  pointer-events: none !important;
+}
+
 

@@ -35,7 +35,32 @@ export const wikilinkCaretFix = EditorView.domEventHandlers({
     const target = e.target
     if (!target || target.closest('.cm-atomic-table')) return false
 
-    const wikilink = target.closest('.cm-atomic-wiki-link') || target.closest('.cm-atomic-wikilink-wrap')
+    let wikilink =
+      target.closest('.cm-atomic-wiki-link') ||
+      target.closest('.cm-atomic-wikilink-wrap') ||
+      target.closest('.cm-atomic-wiki-link-hidden-syntax')
+
+    const parentLine = target.closest('.cm-line')
+
+    if (!wikilink && parentLine) {
+      // If clicking on the line space after/before a wikilink, find the link on this line
+      const linksOnLine = Array.from(
+        parentLine.querySelectorAll('.cm-atomic-wiki-link, .cm-atomic-wikilink-wrap, .cm-atomic-wiki-link-hidden-syntax')
+      )
+      if (linksOnLine.length > 0) {
+        // Pick the link closest to click position
+        wikilink = linksOnLine.reduce((closest, el) => {
+          const r = el.getBoundingClientRect()
+          const dist = Math.min(Math.abs(e.clientX - r.left), Math.abs(e.clientX - r.right))
+          const closestDist = Math.min(
+            Math.abs(e.clientX - closest.getBoundingClientRect().left),
+            Math.abs(e.clientX - closest.getBoundingClientRect().right)
+          )
+          return dist < closestDist ? el : closest
+        }, linksOnLine[0])
+      }
+    }
+
     if (!wikilink) return false
 
     // Prevent CodeMirror's basicMouseSelection from crashing on internal widget nodes
@@ -43,10 +68,9 @@ export const wikilinkCaretFix = EditorView.domEventHandlers({
     e.stopPropagation()
 
     const rect = wikilink.getBoundingClientRect()
-    const isRightHalf = e.clientX > rect.left + (rect.width / 2)
+    const isRightHalf = e.clientX >= (rect.left + rect.width / 2)
 
     // Find the line containing the wikilink
-    const parentLine = wikilink.closest('.cm-line')
     let linePos = 0
     try {
       if (parentLine) {
@@ -62,28 +86,48 @@ export const wikilinkCaretFix = EditorView.domEventHandlers({
     const line = view.state.doc.lineAt(linePos)
     const lineText = line.text
 
-    // Find all [[...]] in this line and match by DOM index among links in this line
-    const linksInLine = parentLine
-      ? Array.from(parentLine.querySelectorAll('.cm-atomic-wiki-link, .cm-atomic-wikilink-wrap'))
-      : [wikilink]
-    const linkIndex = linksInLine.indexOf(wikilink)
-
-    const regex = /\[\[(.*?)\]\]/g
-    let match
-    let count = 0
+    // If target is the hidden syntax mark directly, resolve from its DOM position
     let linkFrom = line.from
-    let linkTo = line.from
+    let linkTo = line.to
 
-    while ((match = regex.exec(lineText)) !== null) {
-      if (count === linkIndex || linkIndex === -1) {
-        linkFrom = line.from + match.index
-        linkTo = linkFrom + match[0].length
-        break
+    try {
+      if (wikilink.classList.contains('cm-atomic-wiki-link-hidden-syntax')) {
+        const domPos = view.posAtDOM(wikilink)
+        if (domPos >= line.from && domPos <= line.to) {
+          const offsetInLine = domPos - line.from
+          const remaining = lineText.slice(offsetInLine)
+          const m = remaining.match(/^\[\[(.*?)\]\]/)
+          if (m) {
+            linkFrom = domPos
+            linkTo = domPos + m[0].length
+          }
+        }
       }
-      count++
+    } catch {}
+
+    if (linkTo === line.to && linkFrom === line.from) {
+      // Find all [[...]] in this line and match by DOM index among links in this line
+      const linksInLine = parentLine
+        ? Array.from(parentLine.querySelectorAll('.cm-atomic-wiki-link, .cm-atomic-wikilink-wrap, .cm-atomic-wiki-link-hidden-syntax'))
+        : [wikilink]
+      const linkIndex = linksInLine.indexOf(wikilink)
+
+      const regex = /\[\[(.*?)\]\]/g
+      let match
+      let count = 0
+
+      while ((match = regex.exec(lineText)) !== null) {
+        if (count === linkIndex || linkIndex === -1) {
+          linkFrom = line.from + match.index
+          linkTo = linkFrom + match[0].length
+          break
+        }
+        count++
+      }
     }
 
     const targetPos = isRightHalf ? linkTo : linkFrom
+
     safeDispatch(view, {
       selection: { anchor: targetPos, head: targetPos },
       userEvent: 'select'
