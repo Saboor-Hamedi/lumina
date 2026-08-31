@@ -8,9 +8,9 @@
   width: 100% !important;
 }
 
-/* Typography Hierarchy - Clean, calm, professional scale */
-.markdown-editor .cm-heading1,
-.markdown-editor h1 {
+/* Typography Hierarchy - Clean, calm, professional scale without font compounding */
+.markdown-editor .cm-line.cm-atomic-h1,
+.markdown-editor .cm-heading1 {
   font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
   font-size: 1.4em !important;
   font-weight: 700 !important;
@@ -18,44 +18,56 @@
   letter-spacing: -0.025em !important;
   color: var(--text-main, #ffffff) !important;
 }
+.markdown-editor .cm-line.cm-atomic-h1 .cm-heading1 {
+  font-size: 1em !important; /* Prevent double-scaling inside cm-atomic-h1 */
+}
 
-.markdown-editor .cm-heading2,
-.markdown-editor h2 {
+.markdown-editor .cm-line.cm-atomic-h2,
+.markdown-editor .cm-heading2 {
   font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
-  font-size: 1.22em !important;
+  font-size: 1.25em !important;
   font-weight: 650 !important;
   line-height: 1.4 !important;
   letter-spacing: -0.02em !important;
   color: var(--text-main, #f8fafc) !important;
 }
+.markdown-editor .cm-line.cm-atomic-h2 .cm-heading2 {
+  font-size: 1em !important; /* Prevent double-scaling inside cm-atomic-h2 */
+}
 
-.markdown-editor .cm-heading3,
-.markdown-editor h3 {
+.markdown-editor .cm-line.cm-atomic-h3,
+.markdown-editor .cm-heading3 {
   font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
-  font-size: 1.1em !important;
+  font-size: 1.12em !important;
   font-weight: 600 !important;
   line-height: 1.45 !important;
   letter-spacing: -0.015em !important;
   color: var(--text-main, #f1f5f9) !important;
 }
+.markdown-editor .cm-line.cm-atomic-h3 .cm-heading3 {
+  font-size: 1em !important; /* Prevent double-scaling inside cm-atomic-h3 */
+}
 
+.markdown-editor .cm-line.cm-atomic-h4,
+.markdown-editor .cm-line.cm-atomic-h5,
+.markdown-editor .cm-line.cm-atomic-h6,
 .markdown-editor .cm-heading4,
 .markdown-editor .cm-heading5,
-.markdown-editor .cm-heading6,
-.markdown-editor h4,
-.markdown-editor h5,
-.markdown-editor h6 {
+.markdown-editor .cm-heading6 {
   font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
   font-size: 1em !important;
   font-weight: 600 !important;
   line-height: 1.5 !important;
   color: var(--text-muted, #94a3b8) !important;
 }
+.markdown-editor .cm-line.cm-atomic-h4 .cm-heading4,
+.markdown-editor .cm-line.cm-atomic-h5 .cm-heading5,
+.markdown-editor .cm-line.cm-atomic-h6 .cm-heading6 {
+  font-size: 1em !important;
+}
 
 /* Standard line padding for text readability and precise hit targeting */
 .cm-line {
-  padding-top: 1px !important;
-  padding-bottom: 1px !important;
   padding-right: 4px !important;
   line-height: var(--line-height-editor, 1.6) !important;
 }
