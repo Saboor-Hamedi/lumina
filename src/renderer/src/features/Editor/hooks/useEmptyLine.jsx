@@ -1,6 +1,6 @@
 /**
  * =========================================================================================
- * Empty Line Selection Fix (`emptyLineSelectionFix.js`)
+ * Empty Line Selection Fix Hook (`useEmptyLine.jsx`)
  * =========================================================================================
  *
  * Purpose:
@@ -30,3 +30,5 @@ export const emptyLineSelectionFix = EditorView.domEventHandlers({
     return false
   }
 })
+
+export default emptyLineSelectionFix

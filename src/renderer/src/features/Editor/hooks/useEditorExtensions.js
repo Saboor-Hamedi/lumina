@@ -37,7 +37,7 @@ import { mermaidWidgetExtension } from '../../Workspace/mermaidWidgetExtension'
 import { calloutExtension } from '../../Workspace/calloutWidgetExtension'
 import { useCollapsible } from '../collapse/useCollapsible'
 import { wikilinkCaretFix } from '../wikilinkCaret'
-import { emptyLineSelectionFix } from '../emptyLineSelectionFix'
+import { emptyLineSelectionFix } from './useEmptyLine'
 
 export const updateSearchHighlights = StateEffect.define()
 

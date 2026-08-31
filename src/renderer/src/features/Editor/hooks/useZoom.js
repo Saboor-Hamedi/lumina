@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react'
-import { useSettingsStore } from '../../core/store/useSettingsStore'
-import { useFontSettings } from '../../core/hooks/useFontSettings'
+import { useSettingsStore } from '../../../core/store/useSettingsStore'
+import { useFontSettings } from '../../../core/hooks/useFontSettings'
 
 /**
  * useZoom Hook
