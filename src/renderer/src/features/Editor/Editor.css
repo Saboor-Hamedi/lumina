@@ -193,35 +193,37 @@
   max-height: 1.5em !important;
 }
 
-/* --- Table Stability: Prevent layout shift on focus / Ctrl+A --- */
-.cm-line:has(.cm-atomic-table).cm-selectedLine .cm-atomic-table,
-.cm-line:has(.cm-atomic-table).cm-activeLine .cm-atomic-table,
-.cm-editor:focus-within .cm-atomic-table {
-  width: max-content !important;
-  min-width: 260px !important;
-  display: block !important;
+/* --- Table Stability: Fill container 100% without right-side gaps --- */
+.cm-atomic-table {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  border-radius: 2px !important;
 }
 
-.cm-line:has(.cm-atomic-table).cm-selectedLine .cm-table-scroll-container,
-.cm-line:has(.cm-atomic-table).cm-activeLine .cm-table-scroll-container,
-.cm-editor:focus-within .cm-table-scroll-container {
-  width: max-content !important;
-  min-width: 260px !important;
-  display: block !important;
+.cm-table-scroll-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  box-sizing: border-box !important;
 }
 
-.cm-line:has(.cm-atomic-table).cm-selectedLine .cm-atomic-table table,
-.cm-line:has(.cm-atomic-table).cm-activeLine .cm-atomic-table table,
-.cm-editor:focus-within .cm-atomic-table table {
-  width: max-content !important;
-  min-width: 260px !important;
+.cm-atomic-table table {
+  width: 100% !important;
+  min-width: 100% !important;
+  table-layout: auto !important;
+  display: table !important;
+  box-sizing: border-box !important;
 }
 
-.cm-line:has(.cm-atomic-table).cm-selectedLine th,
-.cm-line:has(.cm-atomic-table).cm-selectedLine td,
-.cm-line:has(.cm-atomic-table).cm-activeLine th,
-.cm-line:has(.cm-atomic-table).cm-activeLine td {
-  min-width: 140px !important;
+.cm-atomic-table th,
+.cm-atomic-table td {
+  min-width: 120px !important;
+}
+
+.cm-atomic-table th:last-child,
+.cm-atomic-table td:last-child {
+  border-right: none !important;
 }
 
 .cm-selectionLayer {
