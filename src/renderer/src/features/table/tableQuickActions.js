@@ -37,11 +37,29 @@ export function modelToJSON(model) {
 }
 
 /**
+ * Converts a table model into plain text format (tab-separated columns, newline rows).
+ */
+export function modelToPlainText(model) {
+  const lines = []
+  lines.push(model.header.map((h) => (h || '').trim()).join('\t'))
+  for (const row of model.rows) {
+    const cells = []
+    for (let c = 0; c < model.header.length; c++) {
+      cells.push((row[c] || '').trim())
+    }
+    lines.push(cells.join('\t'))
+  }
+  return lines.join('\n')
+}
+
+/**
  * Copies table data to clipboard in specified format.
  */
-export async function copyTableAs(model, format = 'markdown') {
+export async function copyTableAs(model, format = 'plain') {
   let text = ''
-  if (format === 'markdown') {
+  if (format === 'plain' || format === 'text') {
+    text = modelToPlainText(model)
+  } else if (format === 'markdown') {
     text = serializeTable(model)
   } else if (format === 'csv') {
     text = modelToCSV(model)
@@ -176,7 +194,7 @@ export function createTableQuickActionsDOM(view, wrap, model) {
     dropdown = document.createElement('div')
     dropdown.className = 'native-dropdown-menu cm-table-actions-dropdown'
     dropdown.style.position = 'fixed'
-    dropdown.style.zIndex = '99999'
+    dropdown.style.zIndex = '100000'
 
     const rect = btn.getBoundingClientRect()
     dropdown.style.top = `${rect.bottom + 4}px`
@@ -188,6 +206,14 @@ export function createTableQuickActionsDOM(view, wrap, model) {
       {
         label: 'Copy as Plain Text',
         icon: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`,
+        action: async () => {
+          await copyTableAs(currentModel, 'plain')
+          showCopiedNotice()
+        }
+      },
+      {
+        label: 'Copy as Markdown',
+        icon: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
         action: async () => {
           await copyTableAs(currentModel, 'markdown')
           showCopiedNotice()

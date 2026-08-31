@@ -228,6 +228,10 @@ export function openCellMenu(view, cell, x, y) {
   const exportSubmenu = [
     createItem('Copy as Plain Text', icons.duplicate, () => {
       const m = readModelFromDom(wrap)
+      copyTableAs(m, 'plain')
+    }),
+    createItem('Copy as Markdown', icons.code, () => {
+      const m = readModelFromDom(wrap)
       copyTableAs(m, 'markdown')
     }),
     createItem('Copy as Spreadsheet', icons.column, () => {
