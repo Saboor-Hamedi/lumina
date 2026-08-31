@@ -175,6 +175,12 @@ export function createTableQuickActionsDOM(view, wrap, model) {
 
     dropdown = document.createElement('div')
     dropdown.className = 'native-dropdown-menu cm-table-actions-dropdown'
+    dropdown.style.position = 'fixed'
+    dropdown.style.zIndex = '99999'
+
+    const rect = btn.getBoundingClientRect()
+    dropdown.style.top = `${rect.bottom + 4}px`
+    dropdown.style.left = `${Math.max(10, Math.min(rect.right - 180, window.innerWidth - 190))}px`
 
     const currentModel = readModelFromDom(wrap)
 
@@ -241,7 +247,7 @@ export function createTableQuickActionsDOM(view, wrap, model) {
       }
     })
 
-    container.appendChild(dropdown)
+    document.body.appendChild(dropdown)
 
     document.addEventListener('mousedown', onOutsideClick, true)
     document.addEventListener('keydown', onKeyDown, true)

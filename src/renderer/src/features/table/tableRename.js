@@ -75,6 +75,12 @@ export function createTableTitleDOM(view, wrap, model) {
 
     dropdown = document.createElement('div')
     dropdown.className = 'native-dropdown-menu cm-table-rename-dropdown'
+    dropdown.style.position = 'fixed'
+    dropdown.style.zIndex = '99999'
+
+    const rect = titleBtn.getBoundingClientRect()
+    dropdown.style.top = `${rect.bottom + 4}px`
+    dropdown.style.left = `${Math.max(10, Math.min(rect.left, window.innerWidth - 260))}px`
 
     const titleHeader = document.createElement('div')
     titleHeader.className = 'cm-table-rename-header'
@@ -140,10 +146,10 @@ export function createTableTitleDOM(view, wrap, model) {
     dropdown.appendChild(titleHeader)
     dropdown.appendChild(input)
     dropdown.appendChild(btnGroup)
-    container.appendChild(dropdown)
+    document.body.appendChild(dropdown)
 
     setTimeout(() => {
-      input.focus()
+      input.focus({ preventScroll: true })
       input.select()
     }, 10)
 
