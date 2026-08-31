@@ -236,74 +236,57 @@ export function setCaretCharOffset(container, offset) {
 }
 
 export function restoreFocusAfterHistory(view, cell, source, action) {
-  const wrap = cell.closest('.cm-atomic-table')
-  if (!wrap) {
-    action()
-    return
-  }
+  const wrap = cell?.closest ? cell.closest('.cm-atomic-table') : null
+  const tr = cell?.closest ? cell.closest('tr') : null
+  const isHeader = cell?.tagName === 'TH'
+  const rows = wrap ? Array.from(wrap.querySelectorAll(isHeader ? 'thead tr' : 'tbody tr')) : []
+  const rowIdx = isHeader ? 0 : Math.max(0, rows.indexOf(tr))
+  const cells = tr ? Array.from(tr.querySelectorAll('th, td')) : []
+  const colIdx = Math.max(0, cells.indexOf(cell))
+  const offset = source ? getCaretCharOffset(source) || 0 : 0
 
-  const range = findCurrentTableRange(view, wrap)
-  if (!range) {
-    action()
-    return
-  }
-
-  const tr = cell.closest('tr')
-  if (!tr) {
-    action()
-    return
-  }
-
-  const isHeader = cell.tagName === 'TH'
-  const rows = Array.from(wrap.querySelectorAll(isHeader ? 'thead tr' : 'tbody tr'))
-  const rowIdx = isHeader ? -1 : rows.indexOf(tr)
-  const cells = Array.from(tr.querySelectorAll('th, td'))
-  const colIdx = cells.indexOf(cell)
-  const offset = getCaretCharOffset(source) || 0
+  const scroller = view?.scrollDOM
+  const scrollTop = scroller ? scroller.scrollTop : 0
+  const scrollLeft = scroller ? scroller.scrollLeft : 0
 
   action()
 
-  const { from } = range
+  // Lock scroll position immediately to prevent jumping
+  if (scroller) {
+    scroller.scrollTop = scrollTop
+    scroller.scrollLeft = scrollLeft
+  }
+
   requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
+    if (scroller) {
+      scroller.scrollTop = scrollTop
+      scroller.scrollLeft = scrollLeft
+    }
+
+    // Find the target table and cell
+    let targetWrap = wrap && document.body.contains(wrap) ? wrap : null
+    if (!targetWrap && view?.dom) {
       const tables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
-      let targetWrap = null
-      const head = view.state.selection.main.head
+      targetWrap = tables[0] || null
+    }
 
-      for (const w of tables) {
-        const r = findCurrentTableRange(view, w)
-        if (r && r.from <= head && r.to >= head) {
-          targetWrap = w
-          break
-        }
-      }
-
-      if (!targetWrap) {
-        for (const w of tables) {
-          const r = findCurrentTableRange(view, w)
-          if (r && r.from === from) {
-            targetWrap = w
-            break
+    if (targetWrap) {
+      const trs = Array.from(targetWrap.querySelectorAll(isHeader ? 'thead tr' : 'tbody tr'))
+      const targetTr = trs[Math.max(0, Math.min(rowIdx, trs.length - 1))]
+      if (targetTr) {
+        const targetCells = Array.from(targetTr.querySelectorAll('th, td'))
+        const targetCell = targetCells[Math.max(0, Math.min(colIdx, targetCells.length - 1))]
+        if (targetCell) {
+          const newSource = targetCell.querySelector('.cm-atomic-table-cell-source')
+          if (newSource) {
+            newSource.focus({ preventScroll: true })
+            const len = (newSource.textContent || '').length
+            setCaretCharOffset(newSource, Math.min(offset, len))
+            updateActiveMarkForSource(newSource)
           }
         }
       }
-
-      if (targetWrap) {
-        const trs = Array.from(targetWrap.querySelectorAll(isHeader ? 'thead tr' : 'tbody tr'))
-        const targetTr = trs[Math.max(0, Math.min(isHeader ? 0 : rowIdx, trs.length - 1))]
-        if (targetTr) {
-          const targetCells = Array.from(targetTr.querySelectorAll('th, td'))
-          const targetCell = targetCells[Math.max(0, Math.min(colIdx, targetCells.length - 1))]
-          if (targetCell) {
-            const newSource = targetCell.querySelector('.cm-atomic-table-cell-source')
-            if (newSource) {
-              newSource.focus()
-              setCaretCharOffset(newSource, Math.min(offset, (newSource.textContent || '').length))
-            }
-          }
-        }
-      }
-    })
+    }
   })
 }
 export const MARK_WRAP_CLASSES = [
