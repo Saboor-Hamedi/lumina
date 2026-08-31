@@ -1,15 +1,27 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Send, Zap, Brain, Palette, Code, Square, ChevronDown, Loader2 } from 'lucide-react'
+import {
+  Send,
+  Square,
+  Sparkles,
+  ChevronDown,
+  Brain,
+  Zap,
+  Palette,
+  Code,
+  Globe,
+  Sliders,
+  Paperclip,
+  Check
+} from 'lucide-react'
+import SlashCommandMenu from './SlashCommandMenu'
+import LuminaMention from './LuminaMention'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import './Composer.css'
-import { SlashCommandMenu } from './SlashCommandMenu'
-import { LuminaMention } from './LuminaMention'
-import { X } from 'lucide-react'
-export const Composer = ({ onSend, isLoading, onCancel }) => {
+
+export const Composer = ({ onSend, onStop, isLoading = false }) => {
   const [input, setInput] = useState('')
   const [showSlashMenu, setShowSlashMenu] = useState(false)
   const [slashFilter, setSlashFilter] = useState('')
-
   const [showMentionMenu, setShowMentionMenu] = useState(false)
   const [mentionFilter, setMentionFilter] = useState('')
   const [attachedMentions, setAttachedMentions] = useState([])
@@ -20,25 +32,18 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
   const mode = settings.activeAIMode || 'Standard'
   const setMode = (newMode) => updateSettings({ activeAIMode: newMode })
 
-  // Auto-resize textarea with requestAnimationFrame to prevent synchronous layout thrashing (input lag)
+  // Auto-resize textarea with requestAnimationFrame
   useEffect(() => {
     if (!textareaRef.current) return
 
-    let rafId
-
-    if (!input.trim()) {
-      textareaRef.current.style.height = '38px'
-      textareaRef.current.style.overflowY = 'hidden'
-    } else {
-      rafId = requestAnimationFrame(() => {
-        if (!textareaRef.current) return
-        textareaRef.current.style.height = 'auto'
-        const nextHeight = Math.min(textareaRef.current.scrollHeight, 140)
-        textareaRef.current.style.height = `${nextHeight}px`
-        textareaRef.current.style.overflowY =
-          textareaRef.current.scrollHeight > 140 ? 'auto' : 'hidden'
-      })
-    }
+    let rafId = requestAnimationFrame(() => {
+      if (!textareaRef.current) return
+      textareaRef.current.style.height = 'auto'
+      const nextHeight = Math.min(Math.max(textareaRef.current.scrollHeight, 40), 160)
+      textareaRef.current.style.height = `${nextHeight}px`
+      textareaRef.current.style.overflowY =
+        textareaRef.current.scrollHeight > 160 ? 'auto' : 'hidden'
+    })
 
     return () => {
       if (rafId) cancelAnimationFrame(rafId)
@@ -59,20 +64,20 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
     const newVal = e.target.value
     setInput(newVal)
 
+    // Check for slash command at the very start
     if (newVal.startsWith('/')) {
-      setShowSlashMenu(true)
       setSlashFilter(newVal.slice(1))
-      setShowMentionMenu(false)
-      return
-    }
-
-    const mentionMatch = newVal.match(/(?:^|\s)@([^\s]*)$/)
-    if (mentionMatch) {
-      setShowMentionMenu(true)
-      setMentionFilter(mentionMatch[1])
-      setShowSlashMenu(false)
+      setShowSlashMenu(true)
     } else {
       setShowSlashMenu(false)
+    }
+
+    // Check for @mention trigger
+    const mentionMatch = newVal.match(/(?:^|\s)@([^\s]*)$/)
+    if (mentionMatch) {
+      setMentionFilter(mentionMatch[1])
+      setShowMentionMenu(true)
+    } else {
       setShowMentionMenu(false)
     }
   }
@@ -84,16 +89,40 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
   }
 
   const handleMentionSelect = (snippet) => {
-    const regex = /(?:^|\s)@([^\s]*)$/
-    const newVal = input.replace(regex, '')
+    const textarea = textareaRef.current
+    const cursor = textarea ? textarea.selectionStart : input.length
+    const textBeforeCursor = input.slice(0, cursor)
+    const textAfterCursor = input.slice(cursor)
+
+    const match = textBeforeCursor.match(/(?:^|\s)@([^\s]*)$/)
+    const mentionTitle = snippet.title || 'Untitled'
+    const mentionText = `@${mentionTitle} `
+
+    let newVal = ''
+    let newCursorPos = 0
+
+    if (match) {
+      const matchIndex = match.index + (match[0].startsWith(' ') ? 1 : 0)
+      newVal = input.slice(0, matchIndex) + mentionText + textAfterCursor
+      newCursorPos = matchIndex + mentionText.length
+    } else {
+      newVal = input + mentionText
+      newCursorPos = newVal.length
+    }
+
     setInput(newVal)
 
     if (!attachedMentions.find((s) => s.id === snippet.id)) {
-      setAttachedMentions([...attachedMentions, snippet])
+      setAttachedMentions((prev) => [...prev, snippet])
     }
 
     setShowMentionMenu(false)
-    textareaRef.current?.focus()
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus()
+        textareaRef.current.setSelectionRange(newCursorPos, newCursorPos)
+      }
+    }, 0)
   }
 
   const handleKeyDown = (e) => {
@@ -110,7 +139,7 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
   }
 
   const handleSend = () => {
-    if ((!input.trim() && attachedMentions.length === 0) || isLoading) return
+    if (!input.trim() || isLoading) return
     onSend(input, mode, attachedMentions)
     setInput('')
     setAttachedMentions([])
@@ -155,34 +184,14 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
       />
 
       {/* Unified Card */}
-      <div className="composer-card">
-        {/* Attached Mentions */}
-        {attachedMentions.length > 0 && (
-          <div className="attached-mentions-container">
-            {attachedMentions.map((mention) => (
-              <div key={mention.id} className="mention-pill">
-                <span className="mention-pill-title">@{mention.title}</span>
-                <button
-                  className="mention-pill-close"
-                  onClick={() =>
-                    setAttachedMentions((prev) => prev.filter((m) => m.id !== mention.id))
-                  }
-                >
-                  <X size={10} />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Textarea */}
+      <div className="composer-card" onClick={() => textareaRef.current?.focus()}>
         <textarea
           ref={textareaRef}
           className="composer-textarea"
           value={input}
           onChange={handleOnChange}
           onKeyDown={handleKeyDown}
-          placeholder="Ask AI... or type '/' for commands"
+          placeholder="Ask AI... type '@' to mention notes, '/' for commands"
           rows={1}
           disabled={isLoading}
         />
@@ -199,33 +208,29 @@ export const Composer = ({ onSend, isLoading, onCancel }) => {
 
           {/* Right: char count + send/stop */}
           <div className="composer-right">
-            {input.length > 0 && <span className="char-count">{input.length}</span>}
-            {mode !== 'Standard' && (
-              <span className="mode-badge">
-                {{
-                  Fast: 'Quick answer',
-                  Thinking: 'Detailed thinking',
-                  Creative: 'Creative',
-                  Coder: 'Code help'
-                }[mode] || mode}
-              </span>
+            {input.length > 80 && (
+              <span className="composer-char-count">{input.length}</span>
             )}
 
-            <button
-              className={`send-btn ${isLoading ? 'stop' : ''}`}
-              onClick={isLoading ? onCancel : handleSend}
-              disabled={!isLoading && !input.trim() && attachedMentions.length === 0}
-              title={isLoading ? 'Stop generation' : 'Send (Enter)'}
-            >
-              {isLoading ? (
-                <Loader2 size={13} strokeWidth={2.5} className="spin-icon" />
-              ) : (
-                <Send size={12} strokeWidth={2.5} />
-              )}
-            </button>
+            {isLoading ? (
+              <button className="composer-stop-btn" onClick={onStop} title="Stop generation">
+                <Square size={12} fill="currentColor" />
+              </button>
+            ) : (
+              <button
+                className="composer-send-btn"
+                onClick={handleSend}
+                disabled={!input.trim()}
+                title="Send (Enter)"
+              >
+                <Send size={13} />
+              </button>
+            )}
           </div>
         </div>
       </div>
     </div>
   )
 }
+
+export default Composer

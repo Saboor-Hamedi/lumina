@@ -33,6 +33,7 @@ export const useSettingsStore = create((set, get) => ({
     activeProvider: 'deepseek', // 'deepseek', 'openai', 'anthropic', 'ollama'
     activeModel: null, // If null, provider uses its default
     activeAIMode: 'Standard', // Saves selected AI mode
+    aiChatDisplayMode: 'sidebar', // 'sidebar' | 'modal'
     openaiKey: null,
     anthropicKey: null,
     ollamaUrl: 'http://localhost:11434/api/chat',

@@ -34,14 +34,36 @@ const UpdateFooter = ({ status, progress, install, onClose }) => {
     )
   }
 
+  const percentValue =
+    typeof progress === 'number'
+      ? progress
+      : typeof progress?.percent === 'number'
+        ? progress.percent
+        : typeof progress?.progress === 'number'
+          ? progress.progress
+          : 0
+
+  const safePercent = isNaN(percentValue) ? 0 : Math.min(100, Math.max(0, Math.round(percentValue)))
+
   return (
     <div className="update-details-footer">
       {status === 'downloading' || status === 'available' ? (
         <button className="update-install-btn primary-solid" style={{ cursor: 'default' }}>
-          <div className="progress-bar-fill" style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${progress || 0}%`, background: 'rgba(255,255,255,0.2)', transition: 'width 0.3s' }} />
+          <div
+            className="progress-bar-fill"
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              height: '100%',
+              width: `${safePercent}%`,
+              background: 'rgba(255,255,255,0.2)',
+              transition: 'width 0.3s'
+            }}
+          />
           <Loader2 size={14} className="spin" style={{ position: 'relative', zIndex: 1 }} />
           <span style={{ position: 'relative', zIndex: 1 }}>
-            {status === 'available' ? 'Preparing download...' : `Downloading... ${Math.round(progress)}%`}
+            {status === 'available' ? 'Preparing download...' : `Downloading... ${safePercent}%`}
           </span>
         </button>
       ) : status === 'ready' ? (

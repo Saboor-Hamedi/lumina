@@ -17,32 +17,42 @@
 
 .sidebar-resizer {
   position: absolute;
-  /* top: 80px;
-  bottom: 80px;
-  width: 6px; */
+  top: 0;
+  bottom: 0;
+  width: 8px;
   cursor: ew-resize;
   background: transparent;
   transition: background 0.2s;
-  z-index: 1000;
+  z-index: 1001;
   margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .sidebar-resizer.left {
-  right: -3px;
-  /* Center on the right edge of sidebar */
-  transform: translateX(0);
+  right: -4px;
 }
 
 .sidebar-resizer.right {
-  left: -3px;
-  /* Center on the left edge of sidebar */
-  transform: translateX(0);
+  left: -4px;
 }
 
-.sidebar-resizer:hover,
-.app-shell.is-resizing .sidebar-resizer {
+.sidebar-resizer::after {
+  content: '';
+  width: 3px;
+  height: 32px;
+  border-radius: 3px;
+  background: var(--border-dim, rgba(255, 255, 255, 0.15));
+  opacity: 0.6;
+  transition: opacity 0.2s, background 0.2s, height 0.2s;
+}
+
+.sidebar-resizer:hover::after,
+.app-shell.is-resizing .sidebar-resizer::after {
   background: var(--text-accent);
-  opacity: 0.5;
+  opacity: 1;
+  height: 48px;
 }
 
 .app-shell>* {
@@ -101,7 +111,7 @@
   position: absolute;
   top: 32px;
   right: 0;
-  bottom: 28px;
+  bottom: 24px;
   width: var(--right-sidebar-width, 320px);
   background: var(--bg-sidebar) !important;
   backdrop-filter: blur(24px) saturate(1.5);

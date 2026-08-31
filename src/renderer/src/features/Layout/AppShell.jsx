@@ -146,24 +146,30 @@ const AppShell = () => {
 
   // Sidebar Resizing Logic
   useEffect(() => {
+    let rafId = null
+
     const handleMouseMove = (e) => {
       if (!resizingSide) return
+      if (rafId) cancelAnimationFrame(rafId)
 
-      if (resizingSide === 'left') {
-        let newWidth = e.clientX - 60 // Compensate for Ribbon
-        if (newWidth < 180) newWidth = 180
-        if (newWidth > 500) newWidth = 500
-        setLeftWidth(newWidth)
-      } else {
-        // Right Resizer
-        let newWidth = window.innerWidth - e.clientX
-        if (newWidth < 180) newWidth = 180
-        if (newWidth > 300) newWidth = 300
-        setRightWidth(newWidth)
-      }
+      rafId = requestAnimationFrame(() => {
+        if (resizingSide === 'left') {
+          let newWidth = e.clientX - 60 // Compensate for Ribbon
+          if (newWidth < 180) newWidth = 180
+          if (newWidth > 500) newWidth = 500
+          setLeftWidth(newWidth)
+        } else {
+          // Right Resizer
+          let newWidth = window.innerWidth - e.clientX
+          if (newWidth < 220) newWidth = 220
+          if (newWidth > 650) newWidth = 650
+          setRightWidth(newWidth)
+        }
+      })
     }
 
     const handleMouseUp = () => {
+      if (rafId) cancelAnimationFrame(rafId)
       // Persist new widths
       if (resizingSide) {
         if (resizingSide === 'left') {
@@ -188,11 +194,12 @@ const AppShell = () => {
     }
 
     if (resizingSide) {
-      window.addEventListener('mousemove', handleMouseMove)
+      window.addEventListener('mousemove', handleMouseMove, { passive: true })
       window.addEventListener('mouseup', handleMouseUp)
     }
 
     return () => {
+      if (rafId) cancelAnimationFrame(rafId)
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
     }
@@ -510,6 +517,7 @@ const AppShell = () => {
     onToggleSettings: () => setShowSettings(true),
     onToggleTheme: () => setShowThemeModal(true),
     onToggleGraph: () => setShowGraph(true),
+    onToggleAIChat: () => handleToggleAIChat(),
     onToggleSidebar: () => setIsLeftSidebarOpen((prev) => !prev),
     onToggleInspector: handleToggleInspector,
     onNew: () => handleNew(),
@@ -600,7 +608,20 @@ const AppShell = () => {
   const handleOpenSettings = useCallback(() => setShowSettings(true), [])
   const handleOpenTheme = useCallback(() => setShowThemeModal(true), [])
   const handleToggleGraph = useCallback(() => setShowGraph(true), [])
-  const handleToggleAIChat = useCallback(() => setShowAIChatModal(true), [])
+  const handleToggleAIChat = useCallback(() => {
+    const currentMode = useSettingsStore.getState().settings.aiChatDisplayMode || 'sidebar'
+    if (currentMode === 'modal') {
+      setShowAIChatModal((prev) => !prev)
+    } else {
+      // Sidebar mode: toggle right sidebar with chat tab
+      if (isRightSidebarOpen && rightSidebarTab === 'chat') {
+        setIsRightSidebarOpen(false)
+      } else {
+        setRightSidebarTab('chat')
+        setIsRightSidebarOpen(true)
+      }
+    }
+  }, [isRightSidebarOpen, rightSidebarTab])
 
   useEffect(() => {
     const handleAskAnything = (e) => {
@@ -721,6 +742,9 @@ const AppShell = () => {
 
         {/* Inspector overlay — floats over shell-main from the right */}
         <aside className="shell-sidebar-right">
+          {isRightSidebarOpen && (
+            <div className="sidebar-resizer right" onMouseDown={() => setResizingSide('right')} />
+          )}
           <TabbedSidebar
             rightSidebarTab={rightSidebarTab}
             setRightSidebarTab={setRightSidebarTab}
@@ -768,34 +792,20 @@ const AppShell = () => {
       <LuminaChat
         isOpen={showAIChatModal}
         onClose={() => {
-          // Just close the modal, don't restore sidebar
           setShowAIChatModal(false)
           setSavedRightSidebarState(null)
         }}
+        onDock={() => {
+          setShowAIChatModal(false)
+          useSettingsStore.getState().updateSetting('aiChatDisplayMode', 'sidebar')
+          setRightSidebarTab('chat')
+          setIsRightSidebarOpen(true)
+        }}
         onUnfloat={() => {
-          // Close modal AND restore sidebar to its previous state
-          try {
-            setShowAIChatModal(false)
-            if (savedRightSidebarState?.isOpen) {
-              if (savedRightSidebarState.width) {
-                setRightWidth(savedRightSidebarState.width)
-              }
-              setIsRightSidebarOpen(true)
-
-              // Persist both at once in the restructured rightSidebar object
-              const currentRSidebar = settings.rightSidebar || {}
-              useSettingsStore.getState().updateSettings({
-                rightSidebar: {
-                  ...currentRSidebar,
-                  width: savedRightSidebarState.width || rightWidth,
-                  isRightOpen: true
-                }
-              })
-            }
-            setSavedRightSidebarState(null)
-          } catch (error) {
-            console.error('[AppShell] Failed to unfloat AI chat:', error)
-          }
+          setShowAIChatModal(false)
+          useSettingsStore.getState().updateSetting('aiChatDisplayMode', 'sidebar')
+          setRightSidebarTab('chat')
+          setIsRightSidebarOpen(true)
         }}
       />
       <CommandPalette

@@ -208,9 +208,19 @@ export const useKeyboardShortcuts = (shortcuts) => {
         }
       }
 
-      // Toggle Preview: Ctrl+\ or Ctrl+Shift+V
+      // AI Chat: Ctrl+Shift+\
       const isBackslash = e.key === '\\' || e.key === '|'
-      const triggerPreview = (isCmd && isBackslash) || (isCmd && e.shiftKey && key === 'v')
+      if (isCmd && e.shiftKey && isBackslash) {
+        if (shortcutsRef.current.onToggleAIChat) {
+          e.preventDefault()
+          e.stopPropagation()
+          shortcutsRef.current.onToggleAIChat()
+          return
+        }
+      }
+
+      // Toggle Preview: Ctrl+\ or Ctrl+Shift+V
+      const triggerPreview = (isCmd && !e.shiftKey && isBackslash) || (isCmd && e.shiftKey && key === 'v')
 
       if (triggerPreview) {
         if (shortcutsRef.current.onTogglePreview) {

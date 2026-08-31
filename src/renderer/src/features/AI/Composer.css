@@ -33,14 +33,26 @@
   color: var(--text-main);
   font-family: var(--font-editor, 'Inter'), sans-serif;
   font-size: 13px;
-  line-height: 1.4;
+  line-height: 1.45;
   resize: none;
-  min-height: 58px;
+  min-height: 44px;
   max-height: 140px;
   outline: none;
-  padding: 10px 12px;
+  padding: 10px 12px 6px;
+  margin: 0;
   box-sizing: border-box;
-  overflow-y: hidden;
+  overflow-y: auto;
+}
+
+.composer-textarea::-webkit-scrollbar {
+  width: 3px;
+}
+.composer-textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+.composer-textarea::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb, rgba(255, 255, 255, 0.1));
+  border-radius: 2px;
 }
 
 .composer-textarea::placeholder {
@@ -205,45 +217,32 @@
   100% { transform: rotate(360deg); }
 }
 
-/* ─── Attached Mentions ─────────────────────────── */
-.attached-mentions-container {
-  display: flex;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  gap: 6px;
-  padding: 10px 12px 2px 12px;
-}
 
-.attached-mentions-container::-webkit-scrollbar {
-  height: 4px;
-}
-.attached-mentions-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-.attached-mentions-container::-webkit-scrollbar-thumb {
-  background: var(--scroll-thumb, rgba(255, 255, 255, 0.1));
-  border-radius: 2px;
-}
 
 .mention-pill {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
-  background: var(--bg-active);
-  border: 1px solid var(--border-dim);
-  border-radius: 12px;
-  padding: 3px 8px;
-  font-size: 11px;
-  font-family: var(--font-mono, monospace);
+  height: 22px;
+  line-height: 20px;
+  box-sizing: border-box;
+  background: rgba(var(--text-accent-rgb, 167, 139, 250), 0.15);
+  border: 1px solid rgba(var(--text-accent-rgb, 167, 139, 250), 0.25);
+  border-radius: 4px;
+  padding: 0 6px;
+  font-size: 12px;
+  font-family: var(--font-editor, 'Inter'), sans-serif;
+  font-weight: 500;
   color: var(--text-accent);
+  vertical-align: middle;
 }
 
 .mention-pill-title {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 150px;
+  max-width: 180px;
 }
 
 .mention-pill-close {
@@ -252,15 +251,17 @@
   justify-content: center;
   background: transparent;
   border: none;
-  padding: 2px;
-  margin-right: -4px;
-  border-radius: 50%;
-  color: var(--text-faint);
+  padding: 1px;
+  margin-right: -2px;
+  border-radius: 3px;
+  color: var(--text-accent);
+  opacity: 0.7;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: opacity 0.15s, background 0.15s;
 }
 
 .mention-pill-close:hover {
-  color: var(--text-main);
-  background: rgba(255, 255, 255, 0.1);
+  opacity: 1;
+  background: rgba(var(--text-accent-rgb, 167, 139, 250), 0.25);
 }
+

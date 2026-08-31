@@ -163,12 +163,9 @@
 /* Inspector Tabs - Match TabBar Styling */
 .panel-header-tabs {
   height: 32px;
-  /* Match workspace-tabbar height */
   display: flex;
-  background: var(--bg-app);
-  /* Match tabbar background */
-  border-bottom: 1px solid var(--border-dim);
-  /* Match tabbar border */
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
@@ -178,24 +175,22 @@
   overflow: hidden;
 }
 
-/* Tab styling - matches workspace tabs */
+/* Tab styling - seamless, no bold borders */
 .panel-header-tabs .workspace-tab {
-  min-width: 80px;
-  max-width: 180px;
   height: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 10px;
+  justify-content: center;
+  padding: 0 12px;
   gap: 6px;
-  border-right: none;
-  border-bottom: 1px solid var(--border-dim);
+  border: none;
+  border-bottom: 1px solid transparent;
   background: transparent;
   color: var(--text-muted);
   font-size: 12px;
   cursor: pointer;
   position: relative;
-  transition: background 0.15s;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
   flex-shrink: 0;
   user-select: none;
 }
@@ -206,10 +201,59 @@
 }
 
 .panel-header-tabs .workspace-tab.active {
-  background: var(--bg-app);
+  background: transparent;
   color: var(--text-main);
-  font-weight: 500;
-  border-bottom-color: var(--bg-app);
+  font-weight: 600;
+  border-bottom: 1px solid var(--text-accent);
+}
+
+/* Sub-header under the tabs */
+.inspector-sub-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-panel);
+  flex-shrink: 0;
+  min-height: 28px;
+}
+
+.inspector-sub-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-faint);
+}
+
+.inspector-sub-badge {
+  font-size: 11px;
+  color: var(--text-muted);
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inspector-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.inspector-action-btn:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
 }
 
 

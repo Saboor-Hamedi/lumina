@@ -77,3 +77,5 @@ export const LuminaMention = ({ isOpen, filterText, onSelect, onClose }) => {
     </div>
   )
 }
+
+export default LuminaMention

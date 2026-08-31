@@ -11,10 +11,23 @@ describe('UpdateFooter', () => {
     expect(screen.queryByRole('button', { name: /Restart & Install Now/ })).toBeNull()
   })
 
-  it('shows download progress when downloading', () => {
+  it('shows download progress when downloading with number', () => {
     render(<UpdateFooter status="downloading" progress={50} install={vi.fn()} onClose={vi.fn()} />)
 
     expect(screen.getByText(/Downloading\.\.\. 50%/)).toBeInTheDocument()
+  })
+
+  it('shows download progress when downloading with ProgressInfo object', () => {
+    render(
+      <UpdateFooter
+        status="downloading"
+        progress={{ percent: 75.4, bytesPerSecond: 1024 }}
+        install={vi.fn()}
+        onClose={vi.fn()}
+      />
+    )
+
+    expect(screen.getByText(/Downloading\.\.\. 75%/)).toBeInTheDocument()
   })
 
   it('shows preparing message when available', () => {

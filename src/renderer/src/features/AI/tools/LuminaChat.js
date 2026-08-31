@@ -538,7 +538,13 @@ export const useAIStore = create((set, get) => {
         return
       }
 
-      // 0. Parse @mentions
+      // 0. Parse @mentions with fuzzy punctuation/hyphen tolerance
+      const normalize = (str) =>
+        (str || '')
+          .toLowerCase()
+          .replace(/[-_ .]/g, '')
+          .replace(/\.md$/, '')
+
       const mentionRegex = /@([^ \n\t]+)/g
       const mentions = [...message.matchAll(mentionRegex)].map((m) => m[1])
       const mentionedSnippets = []
@@ -556,11 +562,15 @@ export const useAIStore = create((set, get) => {
           const vaultModule = await import('../../../core/store/useVaultStore')
           const vaultSnippets = vaultModule.useVaultStore.getState().snippets
           mentions.forEach((mentionTitle) => {
-            const found = vaultSnippets.find(
-              (s) =>
-                s.title.toLowerCase() === mentionTitle.toLowerCase() ||
-                s.title.toLowerCase().includes(mentionTitle.toLowerCase())
-            )
+            const normMention = normalize(mentionTitle)
+            const found = vaultSnippets.find((s) => {
+              const normTitle = normalize(s.title || '')
+              return (
+                normTitle === normMention ||
+                normTitle.includes(normMention) ||
+                normMention.includes(normTitle)
+              )
+            })
             if (found && !mentionedSnippets.some((ms) => ms.id === found.id)) {
               mentionedSnippets.push(found)
             }
@@ -570,15 +580,19 @@ export const useAIStore = create((set, get) => {
         }
       }
 
-      // 1. Auto-detect file mentions by name (not just @mentions)
+      // 1. Auto-detect file mentions by name (e.g. "What do you know about QuickNote?")
       const requestedFiles = []
       try {
         const vaultModule = await import('../../../core/store/useVaultStore')
         const vaultSnippets = vaultModule.useVaultStore.getState().snippets
-        const queryLower = message.toLowerCase()
+        const queryNorm = normalize(message)
         vaultSnippets.forEach((s) => {
-          if (s.title && queryLower.includes(s.title.toLowerCase().replace(/\.md$/, '').trim())) {
-            if (!requestedFiles.some((f) => f.id === s.id)) {
+          const normTitle = normalize(s.title || '')
+          if (normTitle && normTitle.length >= 3 && queryNorm.includes(normTitle)) {
+            if (
+              !mentionedSnippets.some((m) => m.id === s.id) &&
+              !requestedFiles.some((f) => f.id === s.id)
+            ) {
               requestedFiles.push(s)
             }
           }
@@ -637,14 +651,16 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
 - Provide high-signal, detailed responses.
 - Cite file names clearly when quoting specific context.
 - **Follow EVERY instruction the user gives**. If they ask for wikilinks, headers, formatting, or structure — do it without skipping.
-- Produce **comprehensive, detailed content**. A file about "SQL queries" should include real examples, syntax, edge cases, and practical usage — not just "Basic Query Patterns" with one sentence.
-- When the user asks about a file, read its content from "Files Mentioned" below and immediately provide a substantive description. Never just acknowledge the file — answer directly with detail.
+- Produce **comprehensive, detailed content**.
+- When the user asks about a file, read its content from "PRIMARY TARGET FILES" or "Workspace Files Referenced" below and immediately provide a substantive answer. NEVER say "Let me check" or "Let me read" without answering in the same response.
 
 **TOOLS AVAILABLE** (use these for file operations):
+- 'checkFile' — check the currently active file in the editor or inspect file metadata/line count
 - 'readFile' — read a workspace file by title (only use when you do NOT already have the file content)
 - 'appendToFile' — add new content to the END of an existing file
 - 'createFile' — create a brand new workspace file (provide title + content)
-- 'updateFile' — replace specific text in a workspace file (use search+replace)
+- 'updateFile' — replace specific text/section in a workspace file (ALWAYS prefer search+replace for targeted edits)
+- 'clearFile' — clear the content of a file or reset it cleanly
 - 'renameFile' — rename a file (preserves folder and content) — ALWAYS use this instead of delete+create
 - 'deleteFile' — delete a workspace file by title
 - 'createFolder' — create a new folder in the workspace (provide path)
@@ -653,30 +669,57 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
 - 'openFile' — open a file in the user's editor tab so they can see it
 
 **HOW TO USE THEM**:
+- **To check what note is open** → call checkFile.
 - **For "add", "write more", "append"** → call appendToFile DIRECTLY. Never read first.
+- **For "edit", "change", "replace"** → call updateFile with 'search' and 'replace' to modify ONLY the target part without wiping the file.
 - **For "rename" or "call it"** → call renameFile DIRECTLY. NEVER delete and recreate.
 - **For "move"** → call moveFile DIRECTLY to change the folder of an existing file.
 - **For "create folder"** → call createFolder DIRECTLY.
-- **For "read" or "explain" or "tell me about"** → call readFile, then describe the content.
-- **For "clear", "empty", or "wipe"** → call updateFile with content: "".
-- **For "replace" or "fix" specific text** → call updateFile with search+replace.
+- **For "read" or "explain" or "tell me about"** → if content is below, answer IMMEDIATELY. If not below, call readFile immediately.
+- **For "clear", "empty", or "wipe"** → call clearFile directly.
 - **For "delete" or "remove"** → call deleteFile directly (or deleteFolder for folders).
 - **For "create" or "new"** → call createFile (for files) or createFolder (for folders).
 - **For "open" or "look at"** → call openFile to open the file in the user's editor.
-- NEVER call readFile if the file content is already provided in this prompt.
 - When done, write a friendly summary of what you changed.
 
 **CONTEXT**:
 ${vaultAccessNote}`
 
-        if (vaultContext.length > 0) {
-          systemPrompt += `\n\n**Workspace Knowledge:**\n`
-          vaultContext.forEach((ctx, i) => {
-            systemPrompt += `[${i + 1}] source: ${ctx.file}\n${ctx.text}\n\n`
+        if (mentionedSnippets.length > 0) {
+          const { useVaultStore } = await import('../../../core/store/useVaultStore')
+          const vs = useVaultStore.getState()
+          systemPrompt +=
+            '\n\n**🎯 PRIMARY TARGET FILES (@-MENTIONED BY USER — YOUR HIGHEST FOCUS):**\n'
+          mentionedSnippets.forEach((snip) => {
+            const currentContent =
+              vs.drafts?.[snip.id] !== undefined ? vs.drafts[snip.id] : snip.code || ''
+            systemPrompt += `[Target Note: ${snip.title}]\n${currentContent}\n\n`
           })
+          systemPrompt +=
+            'CRITICAL DIRECTIVE:\n' +
+            '1. The note content is ALREADY PROVIDED ABOVE in this prompt. Do NOT call readFile for this note.\n' +
+            '2. Answer the user\'s question immediately, accurately, and thoroughly using the content above.\n' +
+            '3. NEVER output conversational filler like "Let me check" or "Let me read what is in it". You ALREADY have the content right here, so give the actual answer immediately!\n'
         }
 
-        if (contextSnippets.length > 0) {
+        if (requestedFiles.length > 0) {
+          const { useVaultStore } = await import('../../../core/store/useVaultStore')
+          const vs = useVaultStore.getState()
+          systemPrompt +=
+            '\n\n**Workspace Files Referenced (content already provided below):**\n'
+          requestedFiles.forEach((f) => {
+            if (!mentionedSnippets.some((m) => m.id === f.id)) {
+              const currentContent =
+                vs.drafts?.[f.id] !== undefined ? vs.drafts[f.id] : f.code || ''
+              systemPrompt += `--- ${f.title} ---\n${currentContent}\n`
+            }
+          })
+          systemPrompt +=
+            'CRITICAL: The content of these files is ALREADY provided above. Answer questions about them directly right now without saying "let me read it".\n'
+        }
+
+        // Only inject active tabs context if no explicit @-mentions were attached
+        if (mentionedSnippets.length === 0 && contextSnippets.length > 0) {
           systemPrompt += '\n\n**Active Tabs Context:**\n'
           const { useVaultStore } = await import('../../../core/store/useVaultStore')
           const vs = useVaultStore.getState()
@@ -687,26 +730,12 @@ ${vaultAccessNote}`
           })
         }
 
-        if (mentionedSnippets.length > 0) {
-          systemPrompt +=
-            '\n\n**Explicitly Mentioned (@) — content already provided, do NOT call readFile:**\n'
-          mentionedSnippets.forEach((snip) => {
-            systemPrompt += `[Target Note: ${snip.title}]\n${snip.code.slice(0, 3000)}\n\n`
+        // Only inject generic workspace knowledge if no specific file is explicitly targeted
+        if (mentionedSnippets.length === 0 && vaultContext.length > 0) {
+          systemPrompt += `\n\n**Workspace Knowledge:**\n`
+          vaultContext.forEach((ctx, i) => {
+            systemPrompt += `[${i + 1}] source: ${ctx.file}\n${ctx.text}\n\n`
           })
-          systemPrompt +=
-            'The @-mentioned file content is ABOVE. Do NOT call readFile for these files. Use appendToFile or updateFile directly.\n'
-        }
-
-        // --- Auto-detected file mentions ---
-        const preloadedFiles = [...mentionedSnippets, ...requestedFiles]
-        if (requestedFiles.length > 0) {
-          systemPrompt +=
-            '\n\n**Workspace Files Referenced (content already provided below — do NOT call readFile):**\n'
-          requestedFiles.forEach((f) => {
-            systemPrompt += `--- ${f.title} ---\n${f.code}\n`
-          })
-          systemPrompt +=
-            '\nThe file content is ALREADY in this prompt. Do NOT call readFile. Call appendToFile, updateFile, or deleteFile as needed — or answer from the content above.\n'
         }
 
         systemPrompt +=

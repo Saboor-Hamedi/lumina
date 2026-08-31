@@ -110,3 +110,5 @@ export const SlashCommandMenu = ({ isOpen, filterText, onSelect, onClose }) => {
     </div>
   )
 }
+
+export default SlashCommandMenu

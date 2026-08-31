@@ -14,7 +14,7 @@
 .modal-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   padding-left: 10px;
   height: 100%;
 }
@@ -24,22 +24,23 @@
   right: 0;
   top: 0;
   bottom: 0;
+  height: 100%;
   display: flex;
-  align-items: center;
+  align-items: stretch;
 }
 
 .modal-title-stack {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px; /* 12px by default */
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-main);
   opacity: 0.9;
 }
 
-.modal-close {
-  width: 32px;
+.modal-right button {
+  width: 34px;
   height: 100%;
   display: flex;
   align-items: center;
@@ -49,14 +50,28 @@
   background: transparent;
   color: var(--text-faint);
   cursor: pointer;
-  transition: background 0.1s;
+  transition: background 0.12s ease, color 0.12s ease;
+  flex-shrink: 0;
+  padding: 0;
+  margin: 0;
 }
 
-.modal-close:hover {
-  background: #e81123; /* Windows close red */
-  color: white;
+.modal-right button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
 }
 
-.modal-close:active {
-  background: #f1707a; /* Windows close active red */
+.modal-close {
+  width: 36px !important;
+}
+
+.modal-close:hover,
+.modal-right button.modal-close:hover {
+  background: #e81123 !important; /* Windows close red */
+  color: white !important;
+}
+
+.modal-close:active,
+.modal-right button.modal-close:active {
+  background: #f1707a !important; /* Windows close active red */
 }

@@ -5,11 +5,11 @@ export const getReadFileTool = (blockReadFile) => {
 
   return aiSdk.tool({
     description:
-      'Read the contents of an existing file. Only use when file content is not already in the prompt.',
+      'Read the contents of an existing file. Only use when file content is not already in the prompt or context.',
     inputSchema: aiSdk.jsonSchema({
       type: 'object',
       properties: {
-        title: { type: 'string', description: 'The file title' }
+        title: { type: 'string', description: 'The file title to read' }
       },
       required: ['title']
     }),
@@ -17,18 +17,22 @@ export const getReadFileTool = (blockReadFile) => {
       const { useVaultStore } = await import('../../../core/store/useVaultStore')
       const vs = useVaultStore.getState()
       const snippets = Array.from(vs.snippets.values())
-      let target = snippets.find((s) => s.title.toLowerCase() === title.toLowerCase())
+
+      const cleanTitle = title.trim().toLowerCase().replace(/\.md$/, '')
+      let target = snippets.find((s) => s.title.toLowerCase().replace(/\.md$/, '') === cleanTitle)
       if (!target) {
-        target = snippets.find((s) => s.title.toLowerCase().includes(title.toLowerCase()))
+        target = snippets.find((s) => s.title.toLowerCase().includes(cleanTitle))
       }
-      if (!target) return { success: false, error: 'File not found' }
+      if (!target) return { success: false, error: `File "${title}" not found.` }
+
       const currentCode =
         vs.drafts?.[target.id] !== undefined ? vs.drafts[target.id] : target.code || ''
       return {
         success: true,
+        title: target.title,
         content: currentCode,
         instruction_to_ai:
-          'File read successfully. You MUST now respond to the user and explain or summarize this content based on their original request.'
+          'File read successfully. You MUST now respond to the user and answer based on this content.'
       }
     }
   })
