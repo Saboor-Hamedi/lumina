@@ -78,38 +78,12 @@ export function openCellMenu(view, cell, x, y) {
   const rowSubmenu = []
   if (isHeader) {
     rowSubmenu.push(
-      createItem('Add Row Below (First Row)', icons.addDown, () => {
+      createItem('Add Row Below', icons.addDown, () => {
         const m = readModelFromDom(wrap)
         m.rows.unshift(m.header.map(() => ''))
         dispatchModel(view, wrap, m)
-      }),
-      createSeparator(),
-      createItem('Clear Header Cell', icons.eraser, () => {
-        const m = readModelFromDom(wrap)
-        if (targetCol >= 0 && targetCol < m.header.length) {
-          m.header[targetCol] = ''
-          dispatchModel(view, wrap, m)
-        }
-      }),
-      createItem('Clear Header Row', icons.eraser, () => {
-        const m = readModelFromDom(wrap)
-        m.header = m.header.map(() => '')
-        dispatchModel(view, wrap, m)
       })
     )
-    const currentModel = readModelFromDom(wrap)
-    if (currentModel.rows.length > 0) {
-      rowSubmenu.push(
-        createSeparator(),
-        createItem('Delete First Row', icons.row, () => {
-          const m = readModelFromDom(wrap)
-          if (m.rows.length > 0) {
-            m.rows.splice(0, 1)
-            dispatchModel(view, wrap, m)
-          }
-        })
-      )
-    }
   } else {
     rowSubmenu.push(
       createItem('Add Row Above', icons.addUp, () => {
@@ -367,8 +341,6 @@ export function openCellMenu(view, cell, x, y) {
   )
   items.push(createSeparator())
 
-  items.push(createItem('Clear Cells', icons.clearCells, () => applyFormatToSelection(() => '')))
-  items.push(createSeparator())
 
   items.push(
     createItem('Sort Column (A to Z)', icons.sortAsc, () => {
