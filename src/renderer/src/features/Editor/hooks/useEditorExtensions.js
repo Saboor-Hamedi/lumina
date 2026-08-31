@@ -35,7 +35,7 @@ import { tagMentionExtension } from '../../Workspace/tagMentionExtension'
 import { tables } from '../../table/tableWidgetExtension'
 import { mermaidWidgetExtension } from '../../Workspace/mermaidWidgetExtension'
 import { calloutExtension } from '../../Workspace/calloutWidgetExtension'
-import { useCollapsible } from '../components/collapse/useCollapsible'
+import { useCollapsible } from '../collapse/useCollapsible'
 import { wikilinkCaretFix } from '../wikilinkCaret'
 import { emptyLineSelectionFix } from '../emptyLineSelectionFix'
 

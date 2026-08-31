@@ -16,7 +16,7 @@ import OverwriteModal from '../Overlays/Modals/OverwriteModal'
 import InlineLumina from '../Overlays/InlineLumina'
 import RulerScrollbar from './RulerScrollbar'
 import FindWidget from '../Workspace/components/FindWidget'
-import { EditorCanvas } from './components/EditorCanvas'
+import { EditorCanvas } from './EditorCanvas'
 
 import { useToast } from '../../core/hooks/useToast'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
