@@ -1,4 +1,4 @@
-import './tableFormattingToolbar.css'
+import './table.css'
 
 export function setupTableFormattingToolbar() {
   if (document.getElementById('table-formatting-toolbar')) return

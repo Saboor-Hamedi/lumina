@@ -1,5 +1,5 @@
 import { serializeTable, readModelFromDom } from './tableModel.js'
-import { findCurrentTableRange } from './tableWidgetExtension.js'
+import { findCurrentTableRange } from './tableExtension.js'
 
 /**
  * Creates the Table Title display and interactive Rename Dropdown popover.

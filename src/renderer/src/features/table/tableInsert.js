@@ -1,4 +1,4 @@
-import { dispatchModel } from './tableWidgetExtension.js'
+import { dispatchModel } from './tableExtension.js'
 import { readModelFromDom } from './tableModel.js'
 
 export function setupTableInsertion(wrap, view) {

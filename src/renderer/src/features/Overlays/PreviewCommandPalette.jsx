@@ -6,7 +6,7 @@ import { languages } from '@codemirror/language-data'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import { imageWidgetExtension } from '../dropImage/imageWidgetExtension'
 import { htmlWidgetExtension } from '../Workspace/htmlWidgetExtension'
-import { tables } from '../table/tableWidgetExtension'
+import { tables } from '../table/tableExtension'
 import { mermaidWidgetExtension } from '../Workspace/mermaidWidgetExtension'
 import { calloutExtension } from '../Workspace/calloutWidgetExtension'
 import {

@@ -1,13 +1,14 @@
-import { TableAutocomplete } from './wikilinkAutocompletion'
+import { TableAutocomplete } from './tableAutocomplete'
 import { openCellMenu, cellColIndex, cellRowIndex } from './tableContextMenu'
 import { readModelFromDom } from './tableModel'
-import { parseCellInline } from './tableInlineParsing'
+import { parseCellInline } from './tableParser'
 import {
   findCurrentTableRange,
   placeCaretAtEnd,
   dispatchModel,
-  dispatchModelFromDom
-} from './tableWidgetExtension'
+  dispatchModelFromDom,
+  moveCellFocus
+} from './tableExtension'
 
 export function buildCellSourceDom(raw, view) {
   const frag = document.createDocumentFragment()

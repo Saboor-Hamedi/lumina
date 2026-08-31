@@ -1,6 +1,6 @@
-import { dispatchModel } from './tableWidgetExtension.js'
+import { dispatchModel } from './tableExtension.js'
 import { readModelFromDom } from './tableModel.js'
-import { icons } from './icons.js'
+import { icons } from './tableIcons.js'
 
 export function setupTableDragAndDrop(wrap, view) {
   let isDragging = false

@@ -1,7 +1,7 @@
-import { dispatchModel, findCurrentTableRange } from './tableWidgetExtension.js'
+import { dispatchModel, findCurrentTableRange } from './tableExtension.js'
 import { readModelFromDom } from './tableModel.js'
-import { icons } from './icons.js'
-import { copyTableAs, exportTableAsCSV, duplicateTable } from './tableQuickActions.js'
+import { icons } from './tableIcons.js'
+import { copyTableAs, exportTableAsCSV, duplicateTable } from './tableActions.js'
 
 export function cellRowIndex(cell) {
   if (!cell) return -1

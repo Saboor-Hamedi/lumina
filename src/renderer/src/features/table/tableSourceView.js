@@ -1,5 +1,5 @@
 import { serializeTableOnly, readModelFromDom, parseMarkdownTableText } from './tableModel.js'
-import { findCurrentTableRange, dispatchModel } from './tableWidgetExtension.js'
+import { findCurrentTableRange, dispatchModel } from './tableExtension.js'
 
 /**
  * Creates the [ Table | Source ] segmented toggle button for the table header.
