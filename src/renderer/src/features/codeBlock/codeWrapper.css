@@ -96,13 +96,13 @@
   display: none !important;
 }
 
-/* When in edit mode (header removed), give opening line proper top borders and clean margin */
+/* When in edit mode (header removed), give opening line proper top borders and clean padding */
 .cm-line:not(.cm-atomic-fenced-code) + .cm-line.cm-atomic-fenced-code,
 .cm-line.cm-atomic-fenced-code:first-child {
   border-top: 1px solid var(--border-dim) !important;
   border-top-left-radius: 6px !important;
   border-top-right-radius: 6px !important;
-  margin-top: 8px !important;
+  margin-top: 0 !important;
   padding-top: 6px !important;
 }
 
@@ -112,7 +112,7 @@
   border-bottom: 1px solid var(--border-dim) !important;
   border-bottom-left-radius: 6px !important;
   border-bottom-right-radius: 6px !important;
-  margin-bottom: 8px !important;
+  margin-bottom: 0 !important;
   border-left: 1px solid var(--border-dim) !important;
   border-right: 1px solid var(--border-dim) !important;
   background: rgba(0, 0, 0, 0.2) !important;
@@ -126,6 +126,7 @@
   height: 6px !important;
   min-height: 6px !important;
   padding: 0 !important;
+  margin-bottom: 0 !important;
   color: transparent !important;
 }
 
