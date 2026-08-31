@@ -1,5 +1,6 @@
 import { StateField } from '@codemirror/state'
 import { EditorView, Decoration, WidgetType } from '@codemirror/view'
+import { syntaxTree } from '@codemirror/language'
 
 class HiddenHtmlWidget extends WidgetType {
   toDOM() {
