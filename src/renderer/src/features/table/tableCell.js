@@ -458,23 +458,14 @@ export function makeCell(tag, text, view) {
   // three ways the caret can land in a new mark without firing an
   // input event (click-to-place, arrow-key nav, tab-into-cell). The
   // update is idempotent — redundant calls cost nothing.
-  // Focus updates the active CodeMirror selection so history is anchored to the table
   source.addEventListener('focus', () => {
     view.dom.classList.add('cm-table-focused')
     updateActiveMarkForSource(source)
-    const wrap = cell.closest('.cm-atomic-table')
-    if (wrap) {
-      const range = findCurrentTableRange(view, wrap)
-      if (range) {
-        // Sync CM selection to anchor table state
-        view.dispatch({ selection: { anchor: range.from } })
-      }
-    }
   })
   source.addEventListener('mouseup', () => updateActiveMarkForSource(source))
   source.addEventListener('keyup', () => updateActiveMarkForSource(source))
 
-  source.addEventListener('blur', (e) => {
+  source.addEventListener('blur', () => {
     requestAnimationFrame(() => {
       if (
         !view.dom.contains(document.activeElement) ||
@@ -485,13 +476,6 @@ export function makeCell(tag, text, view) {
     })
     clearActiveMarksInSource(source)
     autocomplete.close()
-    const wrap = cell.closest('.cm-atomic-table')
-    if (wrap) {
-      const range = findCurrentTableRange(view, wrap)
-      if (range) {
-        view.dispatch({ selection: { anchor: range.from } })
-      }
-    }
   })
   source.addEventListener('keydown', (event) => {
     if (autocomplete.handleKeyDown(event)) {
