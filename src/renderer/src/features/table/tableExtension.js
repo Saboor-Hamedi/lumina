@@ -293,13 +293,20 @@ export class TableWidget extends WidgetType {
         </div>
       `
       const addBtn = emptyTd.querySelector('.cm-table-empty-add-btn')
-      addBtn.addEventListener('click', (e) => {
+      const handleAddRow = (e) => {
         e.preventDefault()
         e.stopPropagation()
         const m = readModelFromDom(wrap)
-        m.rows.push(Array(colCount).fill(''))
+        const cols = m.header.length > 0 ? m.header.length : (colCount || 1)
+        m.rows = [Array(cols).fill('')]
         dispatchModel(view, wrap, m)
-      })
+        requestAnimationFrame(() => {
+          const firstCell = wrap.querySelector('tbody td .cm-atomic-table-cell-source')
+          if (firstCell) firstCell.focus()
+        })
+      }
+      addBtn.addEventListener('mousedown', handleAddRow)
+      addBtn.addEventListener('click', handleAddRow)
       emptyTr.appendChild(emptyTd)
       tbody.appendChild(emptyTr)
     } else {
