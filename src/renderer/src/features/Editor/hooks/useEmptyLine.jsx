@@ -1,11 +1,12 @@
 /**
  * =========================================================================================
- * Empty Line Selection Fix Hook (`useEmptyLine.jsx`)
+ * Empty Line & Line Selection Fix Hook (`useEmptyLine.jsx`)
  * =========================================================================================
  *
  * Purpose:
- * Prevents full-width rectangular selection backgrounds when double-clicking on empty lines,
- * while ensuring 100% smooth, native word selection, paragraph selection, and drag selection.
+ * Prevents full-width rectangular selection backgrounds when double-clicking on empty lines or
+ * past the end of headings/paragraphs, and ensures triple-clicks select strictly the line content
+ * (line.from to line.to) without capturing the trailing newline (\n) which spills onto next lines.
  * =========================================================================================
  */
 
@@ -18,7 +19,7 @@ export const emptyLineSelectionFix = EditorView.domEventHandlers({
       if (!coords || typeof coords.pos !== 'number') return false
 
       const line = view.state.doc.lineAt(coords.pos)
-      // Only intercept if the line is completely empty whitespace
+      // 1. If the line is empty whitespace, collapse caret to line.from
       if (line.text.trim().length === 0) {
         e.preventDefault()
         view.dispatch({
@@ -26,11 +27,39 @@ export const emptyLineSelectionFix = EditorView.domEventHandlers({
         })
         return true
       }
+
+      // 2. If double-clicking past the text on the line, select only the text without trailing \n
+      if (coords.pos >= line.to) {
+        e.preventDefault()
+        view.dispatch({
+          selection: { anchor: line.from, head: line.to }
+        })
+        return true
+      }
     } catch {
       return false
     }
 
-    // Allow native CodeMirror / browser double-click word selection for all text
+    return false
+  },
+
+  click(e, view) {
+    // 3. Triple-click on a line: select strictly the line text without capturing trailing newline
+    if (e.detail === 3) {
+      try {
+        const coords = view.posAtCoords({ x: e.clientX, y: e.clientY })
+        if (!coords || typeof coords.pos !== 'number') return false
+
+        const line = view.state.doc.lineAt(coords.pos)
+        e.preventDefault()
+        view.dispatch({
+          selection: { anchor: line.from, head: line.to }
+        })
+        return true
+      } catch {
+        return false
+      }
+    }
     return false
   }
 })
