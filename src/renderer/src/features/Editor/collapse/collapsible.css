@@ -44,24 +44,24 @@
   background: rgba(255, 255, 255, 0.05);
 }
 
-/* Polished flat fold placeholder */
+/* Sleek, minimal fold placeholder with NO background and NO border */
 .markdown-editor .cm-foldPlaceholder {
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text-muted);
-  border: 1px solid var(--border-dim);
-  padding: 1px 6px;
-  margin: 0 4px;
-  border-radius: 2px;
+  background: transparent !important;
+  color: var(--text-faint, #666666) !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 4px !important;
+  margin: 0 2px !important;
   cursor: pointer;
-  font-weight: 600;
-  font-size: 0.85em;
-  opacity: 0.8;
-  transition: all 0.15s ease;
+  font-weight: 500;
+  font-size: 0.9em;
+  opacity: 0.55;
+  transition: opacity 0.15s ease, color 0.15s ease;
   vertical-align: baseline;
+  user-select: none;
 }
 
 .markdown-editor .cm-foldPlaceholder:hover {
-  color: var(--text-accent);
-  border-color: var(--text-accent);
+  color: var(--text-accent, #40bafa) !important;
   opacity: 1;
 }

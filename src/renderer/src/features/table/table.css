@@ -509,12 +509,12 @@
   width: 100% !important;
   max-width: 100% !important;
   overflow-x: auto !important;
-  overflow-y: visible !important;
+  overflow-y: hidden !important;
   position: relative;
   box-sizing: border-box;
   border-bottom-left-radius: 0 !important;
   border-bottom-right-radius: 0 !important;
-  scrollbar-width: none !important; /* Firefox */
+  scrollbar-width: none !important; /* Firefox: completely invisible scroll */
   -ms-overflow-style: none !important; /* IE 10+ */
 }
 
@@ -522,6 +522,7 @@
   display: none !important;
   width: 0 !important;
   height: 0 !important;
+  background: transparent !important;
 }
 
 /* Ensure the last column header and cells are never clipped */
@@ -532,9 +533,9 @@
 
 .cm-atomic-table table {
   display: table !important;
-  width: 100% !important;
+  width: max-content !important;
   min-width: 100% !important;
-  table-layout: fixed !important;
+  table-layout: auto !important;
   border-collapse: separate !important;
   border-spacing: 0 !important;
   margin: 0 !important;
@@ -547,7 +548,7 @@
 /* Table cells */
 .cm-atomic-table th,
 .cm-atomic-table td {
-  min-width: 80px !important;
+  min-width: 110px !important;
   padding: 0 !important;
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08)) !important;
   border-top: none !important;

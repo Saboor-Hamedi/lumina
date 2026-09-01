@@ -1,6 +1,7 @@
 @import './horizontal.css';
 @import './wikilink.css';
 @import './contextMenu.css';
+@import './lists.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

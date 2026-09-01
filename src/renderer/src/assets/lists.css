@@ -1,0 +1,101 @@
+/* ==========================================================================
+   Lumina Multi-Level List & Bullet Styling (`lists.css`)
+   ========================================================================== */
+
+/* Base List Line: Inward Indentation from Headings and Paragraphs */
+.markdown-editor .cm-line:has(.cm-atomic-list-marker),
+.cm-line:has(.cm-atomic-list-marker) {
+  padding-left: 2.2em !important;
+  text-indent: -1.4em !important;
+}
+
+/* List Marker Alcove with crisp spacing gap before text */
+.markdown-editor .cm-atomic-list-marker,
+.cm-atomic-list-marker {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 0.8em !important;
+  min-width: 0.8em !important;
+  max-width: 0.8em !important;
+  margin-right: 0.6em !important;
+  padding: 0 !important;
+  vertical-align: baseline !important;
+  user-select: none;
+  box-sizing: border-box !important;
+}
+
+/* Level 0 Parent Bullet: Refined, Solid Bullet (•) */
+.markdown-editor .cm-atomic-bullet,
+.cm-atomic-bullet {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  color: var(--text-muted, #888888) !important;
+  font-size: 0.85em !important;
+  line-height: 1 !important;
+  font-weight: 700 !important;
+  opacity: 0.85;
+}
+
+/* Level 1 Child Nested Bullet (Indented with 2 spaces or Tab): Open Circle (◦) */
+.markdown-editor .cm-line[style*="padding-left: 2.6"] .cm-atomic-bullet,
+.markdown-editor .cm-line[style*="padding-left: 2.8"] .cm-atomic-bullet,
+.cm-line[style*="padding-left: 2.6"] .cm-atomic-bullet,
+.cm-line[style*="padding-left: 2.8"] .cm-atomic-bullet {
+  font-size: 0.8em !important;
+  opacity: 0.75;
+}
+
+/* Level 2 Sub-Child Nested Bullet (Indented with 4 spaces): Refined Square (▪) */
+.markdown-editor .cm-line[style*="padding-left: 3"] .cm-atomic-bullet,
+.markdown-editor .cm-line[style*="padding-left: 4"] .cm-atomic-bullet,
+.cm-line[style*="padding-left: 3"] .cm-atomic-bullet,
+.cm-line[style*="padding-left: 4"] .cm-atomic-bullet {
+  font-size: 0.75em !important;
+  opacity: 0.65;
+}
+
+/* Active Line Bullet Accent */
+.cm-activeLine .cm-atomic-bullet {
+  opacity: 1;
+}
+
+/* Task list checkbox styling */
+.markdown-editor .cm-atomic-task-checkbox,
+.cm-atomic-task-checkbox {
+  display: inline-block !important;
+  width: 14px !important;
+  height: 14px !important;
+  margin: 0 8px 0 0 !important;
+  padding: 0 !important;
+  vertical-align: -2px !important;
+  accent-color: var(--text-accent, #40bafa);
+  cursor: pointer;
+  border-radius: 3px;
+  transition: transform 0.12s ease;
+}
+
+.cm-atomic-task-checkbox:hover {
+  transform: scale(1.08);
+}
+
+/* Completed task line styling */
+.cm-line.cm-atomic-task-done {
+  color: var(--text-faint, #666666) !important;
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+/* Ordered list numerals & alphanumeric markers (1., 1-, a), a-, a.) */
+.markdown-editor .cm-atomic-list-marker:not(:has(.cm-atomic-bullet)):not(:has(.cm-atomic-task-checkbox)) {
+  color: var(--text-muted, #888888);
+  font-size: 0.9em;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  width: auto !important;
+  min-width: 1em !important;
+  margin-right: 0.5em !important;
+  text-align: right !important;
+}

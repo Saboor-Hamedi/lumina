@@ -167,8 +167,8 @@ export const useKeyboardShortcuts = (shortcuts) => {
         shortcutsRef.current.onOpenShortcuts()
       }
 
-      // Change Note / Tab Icon: Win + Shift + . or Ctrl + Shift + . (or Win + .)
-      if (isCmd && (key === '.' || e.code === 'Period' || e.key === '>') && shortcutsRef.current.onChangeIcon) {
+      // Change Note / Tab Icon: Ctrl + Shift + . (or Cmd + Shift + .)
+      if (isCmd && e.shiftKey && (key === '.' || e.code === 'Period' || e.key === '>') && shortcutsRef.current.onChangeIcon) {
         e.preventDefault()
         e.stopPropagation()
         shortcutsRef.current.onChangeIcon()
@@ -296,7 +296,7 @@ export const SHORTCUT_DISPLAY_GROUPS = [
       { label: 'New Note', key: 'Ctrl + N' },
       { label: 'Open File', key: 'Ctrl + O' },
       { label: 'Save', key: 'Ctrl + S' },
-      { label: 'Change Note / Tab Icon', key: 'Win + Shift + .' },
+      { label: 'Change Note / Tab Icon', key: 'Ctrl + Shift + .' },
       { label: 'Close Tab', key: 'Ctrl + W' },
       { label: 'Close Window', key: 'Ctrl + Shift + W' },
       { label: 'Delete Note', key: 'Ctrl + Shift + D', isDanger: true }

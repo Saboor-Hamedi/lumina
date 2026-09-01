@@ -313,6 +313,44 @@ export function useEditorExtensions({
       Prec.highest(
         keymap.of([
           {
+            key: 'Tab',
+            run: (view) => {
+              if (!isActiveRef.current) return false
+              const state = view.state
+              const pos = state.selection.main.head
+              const line = state.doc.lineAt(pos)
+              const listMatch = line.text.match(/^(\s*)([-*+]|\d+[.\-)]|[a-zA-Z][.\-)])\s+/)
+              if (listMatch) {
+                // Indent list item to child level: add 2 spaces
+                view.dispatch({
+                  changes: { from: line.from, insert: '  ' },
+                  selection: { anchor: pos + 2 }
+                })
+                return true
+              }
+              return false
+            }
+          },
+          {
+            key: 'Shift-Tab',
+            run: (view) => {
+              if (!isActiveRef.current) return false
+              const state = view.state
+              const pos = state.selection.main.head
+              const line = state.doc.lineAt(pos)
+              const listMatch = line.text.match(/^(\s{2,})([*+-]|\d+[.\-)]|[a-zA-Z][.\-)])\s+/)
+              if (listMatch) {
+                // Outdent list item back to parent level: remove 2 spaces
+                view.dispatch({
+                  changes: { from: line.from, to: line.from + 2, insert: '' },
+                  selection: { anchor: Math.max(line.from, pos - 2) }
+                })
+                return true
+              }
+              return false
+            }
+          },
+          {
             key: 'ArrowUp',
             run: (view) => {
               const sel = view.state.selection.main
@@ -562,23 +600,53 @@ export function useEditorExtensions({
                   return true
                 }
 
-                const didRun = insertNewlineContinueMarkup(view)
-                if (didRun) {
-                  const stateAfter = view.state
-                  const posAfter = stateAfter.selection.main.head
-                  const lineAfter = stateAfter.doc.lineAt(posAfter)
-                  if (
-                    /^(\s*[-*+]|\s*\d+\.)\s*$/.test(lineAfter.text) &&
-                    !lineAfter.text.endsWith(' ') &&
-                    posAfter === lineAfter.to
-                  ) {
-                    view.dispatch({
-                      changes: { from: lineAfter.to, insert: ' ' },
-                      selection: { anchor: lineAfter.to + 1 }
-                    })
-                  }
+                // Feature 3: Smart List Auto-Continuation (-, *, +, 1., 1-, 1), a., a), a-, A., A), A-)
+                const lineText = line.text
+
+                // 3a. Exit empty list line on Enter
+                const emptyListMatch = lineText.match(/^(\s*)([-*+]|\d+[.\-)]|[a-zA-Z][.\-)])\s*$/)
+                if (emptyListMatch && pos === line.to) {
+                  view.dispatch({
+                    changes: { from: line.from, to: line.to, insert: '' },
+                    selection: { anchor: line.from }
+                  })
                   return true
                 }
+
+                // 3b. Continue active list format
+                const textBefore = lineText.slice(0, pos - line.from)
+                const listMatch = textBefore.match(/^(\s*)([-*+]|(\d+)([.\-)])|([a-zA-Z])([.\-)]))\s+(.*)$/)
+                if (listMatch) {
+                  const indent = listMatch[1]
+                  const fullMarker = listMatch[2]
+                  const num = listMatch[3]
+                  const numDelim = listMatch[4]
+                  const letter = listMatch[5]
+                  const letterDelim = listMatch[6]
+
+                  let nextMarker = fullMarker
+                  if (num !== undefined && numDelim) {
+                    const nextNum = parseInt(num, 10) + 1
+                    nextMarker = `${nextNum}${numDelim}`
+                  } else if (letter !== undefined && letterDelim) {
+                    const charCode = letter.charCodeAt(0)
+                    let nextChar = letter
+                    if (letter === 'z') nextChar = 'aa'
+                    else if (letter === 'Z') nextChar = 'AA'
+                    else nextChar = String.fromCharCode(charCode + 1)
+                    nextMarker = `${nextChar}${letterDelim}`
+                  }
+
+                  const insertText = `\n${indent}${nextMarker} `
+                  view.dispatch({
+                    changes: { from: pos, insert: insertText },
+                    selection: { anchor: pos + insertText.length }
+                  })
+                  return true
+                }
+
+                const didRun = insertNewlineContinueMarkup(view)
+                if (didRun) return true
               }
               return false
             }
