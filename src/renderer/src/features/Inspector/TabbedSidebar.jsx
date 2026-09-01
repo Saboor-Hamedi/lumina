@@ -1,5 +1,5 @@
 import React from 'react'
-import { Info, List as ListIcon, MessageSquare, ExternalLink, PanelLeftClose } from 'lucide-react'
+import { Info, List as ListIcon, MessageSquare, ExternalLink, History } from 'lucide-react'
 import SnippetDetails from './SnippetDetails'
 import SnippetOutline from './SnippetOutline'
 import { LuminaChatContent } from '../AI/LuminaChat'
@@ -116,7 +116,7 @@ const TabbedSidebar = ({
               title="Toggle History"
               aria-label="Toggle History"
             >
-              <PanelLeftClose size={13} />
+              <History size={13} />
             </button>
             <span className="inspector-sub-title">AI Assistant</span>
           </div>

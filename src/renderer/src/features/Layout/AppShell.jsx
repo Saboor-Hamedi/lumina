@@ -157,12 +157,14 @@ const AppShell = () => {
           let newWidth = e.clientX - 60 // Compensate for Ribbon
           if (newWidth < 180) newWidth = 180
           if (newWidth > 500) newWidth = 500
+          document.documentElement.style.setProperty('--sidebar-width', `${newWidth}px`)
           setLeftWidth(newWidth)
         } else {
           // Right Resizer
           let newWidth = window.innerWidth - e.clientX
           if (newWidth < 220) newWidth = 220
           if (newWidth > 650) newWidth = 650
+          document.documentElement.style.setProperty('--right-sidebar-width', `${newWidth}px`)
           setRightWidth(newWidth)
         }
       })
@@ -347,7 +349,7 @@ const AppShell = () => {
 
   const pinnedTabIds = useVaultStore((state) => state.pinnedTabIds)
 
-  // Ctrl+Shift+\ - toggle AI Chat Modal
+  // Ctrl+Shift+\ - Open AI Chat Modal and focus Composer textarea
   useEffect(() => {
     const handleAIChatShortcut = (e) => {
       const key = e.key && e.key.toLowerCase()
@@ -357,7 +359,10 @@ const AppShell = () => {
         (key === '\\' || key === '|' || e.code === 'Backslash')
       ) {
         e.preventDefault()
-        setShowAIChatModal((prev) => !prev)
+        setShowAIChatModal(true)
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('focus-ai-composer'))
+        }, 50)
       }
     }
     window.addEventListener('keydown', handleAIChatShortcut)

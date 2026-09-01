@@ -8,12 +8,35 @@ const escapeHandlers = []
 
 const handleGlobalKeyDown = (e) => {
   if (e.key === 'Escape' || e.key === 'Esc') {
+    // 1. Check topmost ephemeral hover cards first
+    const hoverCard = document.querySelector('.cm-wiki-hover, .wikilink-hover-card, .hover-preview-card')
+    if (hoverCard) {
+      e.preventDefault()
+      e.stopPropagation()
+      e.stopImmediatePropagation()
+      window.dispatchEvent(new CustomEvent('close-hover-card'))
+      hoverCard.remove()
+      return
+    }
+
+    // 2. Lightboxes (Mermaid or Image Lightbox)
+    const lightbox = document.querySelector('.mermaid-lightbox-overlay.show, .image-lightbox-overlay.show')
+    if (lightbox) {
+      e.preventDefault()
+      e.stopPropagation()
+      e.stopImmediatePropagation()
+      window.dispatchEvent(new CustomEvent('close-lightbox'))
+      return
+    }
+
+    // 3. Process registered stack-based handlers in strict LIFO order
     for (let i = escapeHandlers.length - 1; i >= 0; i--) {
       const handler = escapeHandlers[i]
       const handled = handler(e)
       if (handled) {
         e.preventDefault()
         e.stopPropagation()
+        e.stopImmediatePropagation()
         break
       }
     }

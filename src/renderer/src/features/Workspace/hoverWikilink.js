@@ -503,8 +503,16 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
     if (e.key === 'Escape' && hoverCard) {
       e.preventDefault()
       e.stopPropagation()
+      e.stopImmediatePropagation()
       clearTimeout(hoverTimeout)
       removeCard(false) // Keep currentTarget so it doesn't instantly reopen if mouse is still on it
+    }
+  }
+
+  const handleCloseHoverCard = () => {
+    if (hoverCard) {
+      clearTimeout(hoverTimeout)
+      removeCard(false)
     }
   }
 
@@ -521,6 +529,7 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
   document.addEventListener('mousemove', handleDocumentMouseMove)
   document.addEventListener('mouseleave', handleMouseLeave)
   window.addEventListener('keydown', handleKeyDown, true)
+  window.addEventListener('close-hover-card', handleCloseHoverCard)
 
   return () => {
     wrapper.removeEventListener('mouseover', handleMouseOver)
@@ -528,6 +537,7 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
     document.removeEventListener('mousemove', handleDocumentMouseMove)
     document.removeEventListener('mouseleave', handleMouseLeave)
     window.removeEventListener('keydown', handleKeyDown, true)
+    window.removeEventListener('close-hover-card', handleCloseHoverCard)
     removeCard()
     clearTimeout(hoverTimeout)
     clearTimeout(closeTimeout)

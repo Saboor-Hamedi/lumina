@@ -30,10 +30,10 @@ export const PreviewCommandPalette = React.memo(({ content, onClose }) => {
   const [copiedBlockId, setCopiedBlockId] = useState(null)
 
   useEffect(() => {
-    // Delay mount to avoid blocking UI thread instantly
-    const timer = setTimeout(() => setShouldRenderEditor(true), 120)
+    // Mount editor smoothly on initial render
+    const timer = setTimeout(() => setShouldRenderEditor(true), 30)
     return () => clearTimeout(timer)
-  }, [content]) // Reset on content change
+  }, [])
 
   const handleLinkClick = useMemo(
     () => async (url) => {
@@ -95,10 +95,10 @@ export const PreviewCommandPalette = React.memo(({ content, onClose }) => {
       className="markdown-editor mode-source preview-body seamless-scrollbar"
       style={{
         overflowY: 'auto',
-        overflowX: 'auto',
+        overflowX: 'hidden',
         flex: 1,
         height: '100%',
-        padding: '24px 28px',
+        padding: '24px 20px',
         background: 'var(--bg-app)'
       }}
     >
@@ -111,6 +111,12 @@ export const PreviewCommandPalette = React.memo(({ content, onClose }) => {
         .preview-body .cm-atomic-table table {
           border-top-left-radius: 6px !important;
           border-top-right-radius: 6px !important;
+        }
+        .preview-body .editor-canvas-wrap {
+          width: 100% !important;
+          max-width: 850px !important;
+          margin: 0 auto !important;
+          padding: 0 20px 40px 20px !important;
         }
         ${
           copiedBlockId != null
@@ -129,7 +135,7 @@ export const PreviewCommandPalette = React.memo(({ content, onClose }) => {
       <div className="editor-scroller" style={{ overflow: 'visible', height: 'auto', padding: 0 }}>
         <div
           className="editor-canvas-wrap"
-          style={{ maxWidth: '100%', padding: 0, margin: 0 }}
+          style={{ maxWidth: '850px', width: '100%', margin: '0 auto', padding: '0 20px 40px 20px' }}
           onMouseDown={(e) => {
             if (e.target.closest('.mermaid-edit-btn') || e.target.closest('.mermaid-widget-header')) {
               e.preventDefault()

@@ -1,16 +1,14 @@
 import { dialog, BrowserWindow } from 'electron'
 import fs from 'fs/promises'
+import { Marked } from 'marked'
+import { markedHighlight } from 'marked-highlight'
+import hljs from 'highlight.js'
 import VaultManager from '../main/VaultManager.js'
 
 export const handleExportDocs = async (mainWindow, payload) => {
   try {
     const { title, content } = payload || {}
     if (!content) throw new Error('No content provided')
-
-    // Import marked dynamically
-    const { Marked } = await import('marked')
-    const { markedHighlight } = await import('marked-highlight')
-    const hljs = (await import('highlight.js')).default
 
     const marked = new Marked(
       markedHighlight({

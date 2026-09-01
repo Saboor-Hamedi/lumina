@@ -1,5 +1,8 @@
 import { dialog, BrowserWindow } from 'electron'
 import fs from 'fs/promises'
+import { Marked } from 'marked'
+import { markedHighlight } from 'marked-highlight'
+import hljs from 'highlight.js'
 import VaultManager from '../main/VaultManager.js'
 
 export const handleExportPDF = async (mainWindow, payload) => {
@@ -17,12 +20,6 @@ export const handleExportPDF = async (mainWindow, payload) => {
     if (canceled || !filePath) {
       return { success: false, canceled: true }
     }
-
-    // Now do the heavy work (markdown conversion and PDF generation)
-    // Import marked dynamically
-    const { Marked } = await import('marked')
-    const { markedHighlight } = await import('marked-highlight')
-    const hljs = (await import('highlight.js')).default
 
     const marked = new Marked(
       markedHighlight({

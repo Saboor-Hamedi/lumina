@@ -198,7 +198,8 @@ const Editor = React.memo(
             isOpen={isPreviewOpen}
             onClose={() => setIsPreviewOpen(false)}
             title={title}
-            content={snippet?.code}
+            content={latestCodeRef.current !== undefined ? latestCodeRef.current : snippet?.code}
+            snippetId={snippet?.id}
             timestamp={snippet?.timestamp}
           />
 

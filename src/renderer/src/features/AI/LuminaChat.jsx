@@ -18,7 +18,14 @@ import {
   PanelRightOpen,
   Settings as SettingsIcon,
   ExternalLink,
-  ArrowRightToLine
+  ArrowRightToLine,
+  FileText,
+  Info,
+  Lightbulb,
+  AlertTriangle,
+  AlertCircle,
+  ShieldAlert,
+  Code as CodeIcon
 } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useAIStore } from './tools/LuminaChat'
@@ -44,51 +51,37 @@ const CodeBlock = React.memo(({ inline, className, children, ...props }) => {
 
     return (
       <div className="chat-code-block">
-        <div className="chat-code-header" style={{ justifyContent: 'flex-end' }}>
-          <span
-            className="chat-code-lang"
-            style={{
-              textTransform: 'uppercase',
-              cursor: 'pointer',
-              padding: '2px 6px',
-              borderRadius: '4px',
-              transition: 'background 0.2s'
-            }}
-            onClick={async () => {
-              if (!isDelete) {
+        <div className="chat-code-header">
+          <div className="chat-code-header-left">
+            <CodeIcon size={12} style={{ opacity: 0.6 }} />
+            <span className="chat-code-lang">{lang}</span>
+          </div>
+          {!isDelete && (
+            <button
+              className="chat-code-copy-btn"
+              onClick={async () => {
                 try {
                   await navigator.clipboard.writeText(codeString)
                   setCopied(true)
-                  setTimeout(() => setCopied(false), 3000)
+                  setTimeout(() => setCopied(false), 2000)
                 } catch (err) {
                   console.error('Failed to copy: ', err)
                 }
-              }
-            }}
-            onMouseEnter={(e) => {
-              if (!isDelete) e.target.style.background = 'rgba(255, 255, 255, 0.1)'
-            }}
-            onMouseLeave={(e) => {
-              if (!isDelete) e.target.style.background = 'transparent'
-            }}
-          >
-            {copied ? (
-              <span
-                style={{
-                  color: '#4caf50',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  fontWeight: 'bold'
-                }}
-              >
-                <Check size={12} strokeWidth={3} />
-                COPIED
-              </span>
-            ) : (
-              lang
-            )}
-          </span>
+              }}
+              title="Copy code"
+            >
+              {copied ? (
+                <span className="copied-text">
+                  <Check size={11} strokeWidth={3} /> COPIED
+                </span>
+              ) : (
+                <>
+                  <Copy size={11} />
+                  <span>Copy</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
         {!isDelete && (
           <SyntaxHighlighter
@@ -97,10 +90,11 @@ const CodeBlock = React.memo(({ inline, className, children, ...props }) => {
             PreTag="div"
             customStyle={{
               margin: 0,
-              background: 'transparent',
-              padding: '12px',
-              fontSize: '13px',
-              lineHeight: '1.5'
+              background: 'rgba(0, 0, 0, 0.22)',
+              padding: '12px 14px',
+              fontSize: '12.5px',
+              lineHeight: '1.55',
+              fontFamily: 'var(--font-mono, monospace)'
             }}
             {...props}
           >
@@ -112,21 +106,205 @@ const CodeBlock = React.memo(({ inline, className, children, ...props }) => {
   }
 
   return (
-    <code className={className} {...props}>
+    <code className={`chat-inline-code ${className || ''}`} {...props}>
       {children}
     </code>
   )
 })
 
+const ChatBlockquote = ({ children }) => {
+  let calloutType = null
+  try {
+    const arr = React.Children.toArray(children)
+    if (arr.length > 0 && arr[0]?.props?.children) {
+      const firstText = String(React.Children.toArray(arr[0].props.children)[0] || '')
+      const match = firstText.match(/^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]/i)
+      if (match) {
+        calloutType = match[1].toUpperCase()
+      }
+    }
+  } catch (_) {}
+
+  if (calloutType) {
+    const config = {
+      NOTE: {
+        icon: Info,
+        color: 'var(--text-accent, #40bafa)',
+        title: 'NOTE',
+        border: 'rgba(64, 186, 250, 0.35)',
+        bg: 'rgba(64, 186, 250, 0.06)'
+      },
+      TIP: {
+        icon: Lightbulb,
+        color: '#4ade80',
+        title: 'TIP',
+        border: 'rgba(74, 222, 128, 0.35)',
+        bg: 'rgba(74, 222, 128, 0.06)'
+      },
+      IMPORTANT: {
+        icon: AlertCircle,
+        color: '#a78bfa',
+        title: 'IMPORTANT',
+        border: 'rgba(167, 139, 250, 0.35)',
+        bg: 'rgba(167, 139, 250, 0.06)'
+      },
+      WARNING: {
+        icon: AlertTriangle,
+        color: '#f59e0b',
+        title: 'WARNING',
+        border: 'rgba(245, 158, 11, 0.35)',
+        bg: 'rgba(245, 158, 11, 0.06)'
+      },
+      CAUTION: {
+        icon: ShieldAlert,
+        color: '#ef4444',
+        title: 'CAUTION',
+        border: 'rgba(239, 68, 68, 0.35)',
+        bg: 'rgba(239, 68, 68, 0.06)'
+      }
+    }[calloutType]
+
+    const IconComp = config.icon
+
+    return (
+      <div
+        className="chat-callout-card"
+        style={{
+          margin: '12px 0',
+          padding: '10px 14px',
+          borderRadius: '4px',
+          borderLeft: `3px solid ${config.color}`,
+          background: config.bg,
+          borderTop: `1px solid ${config.border}`,
+          borderRight: `1px solid ${config.border}`,
+          borderBottom: `1px solid ${config.border}`
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: config.color,
+            fontWeight: 600,
+            fontSize: '11.5px',
+            letterSpacing: '0.5px',
+            marginBottom: '4px'
+          }}
+        >
+          <IconComp size={13} />
+          <span>{config.title}</span>
+        </div>
+        <div className="chat-callout-body">{children}</div>
+      </div>
+    )
+  }
+
+  return <blockquote className="chat-blockquote">{children}</blockquote>
+}
+
+const openNoteInEditor = (rawTitle) => {
+  if (!rawTitle) return
+  try {
+    const { snippets, setSelectedSnippet, setActiveTabId } = useVaultStore.getState()
+    const snippetList = Array.isArray(snippets) ? snippets : Object.values(snippets || {})
+    const clean = decodeURIComponent(rawTitle)
+      .toLowerCase()
+      .trim()
+      .replace(/^#/, '')
+      .replace(/\.md$/, '')
+      .replace(/^file:\/\/\/?/, '')
+      .split(/[/\\]/)
+      .pop()
+
+    // 1. Exact title match
+    let target = snippetList.find(
+      (s) => (s.title || '').toLowerCase().trim().replace(/\.md$/, '') === clean
+    )
+    // 2. Partial title match
+    if (!target) {
+      target = snippetList.find((s) =>
+        (s.title || '').toLowerCase().trim().replace(/\.md$/, '').includes(clean)
+      )
+    }
+    // 3. ID match
+    if (!target) {
+      target = snippetList.find((s) => s.id === rawTitle)
+    }
+
+    if (target) {
+      if (setSelectedSnippet) setSelectedSnippet(target)
+      if (setActiveTabId) setActiveTabId(target.id)
+    }
+  } catch (err) {
+    console.error('Failed to open note in editor:', err)
+  }
+}
+
+const ChatLink = ({ href, children, ...props }) => {
+  // If it's a wikilink or internal note reference or not an external web URL
+  const isExternal = href && /^(https?|mailto):/i.test(href)
+
+  if (!isExternal || href?.startsWith('wikilink:')) {
+    const rawTarget = href?.startsWith('wikilink:')
+      ? href.replace('wikilink:', '')
+      : href || String(children || '')
+
+    return (
+      <span
+        className="chat-wikilink-chip"
+        onClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          openNoteInEditor(rawTarget)
+        }}
+        title={`Open note: ${decodeURIComponent(rawTarget)}`}
+      >
+        {children}
+      </span>
+    )
+  }
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="chat-external-link"
+      onClick={(e) => {
+        if (window.electron?.ipcRenderer) {
+          e.preventDefault()
+          window.electron.ipcRenderer.send('open-external-url', href)
+        }
+      }}
+      {...props}
+    >
+      {children}
+    </a>
+  )
+}
+
 export const MessageContent = React.memo(
   ({ content }) => {
-    // Pre-process content to handle custom XML tags like <readFile>
-    const processedContent =
-      content?.replace(/<readFile>([\s\S]*?)<\/readFile>/g, (match, inner) => {
+    // Pre-process content to handle custom XML tags and wikilinks
+    const processedContent = useMemo(() => {
+      if (!content) return ''
+      let processed = content.replace(/<readFile>([\s\S]*?)<\/readFile>/g, (match, inner) => {
         const titleMatch = inner.match(/title:\s*"([^"]+)"/)
         const fileName = titleMatch ? titleMatch[1] : 'File'
         return `\n> 📄 **Reading:** ${fileName}\n`
-      }) || content
+      })
+
+      // Convert [[Note Title]] and [[Note Title|Alias]] into wikilink format
+      processed = processed.replace(/\[\[(.*?)\]\]/g, (match, inner) => {
+        const [target, alias] = inner.split('|')
+        const cleanTarget = target.trim()
+        const displayText = (alias || cleanTarget).trim()
+        return `[${displayText}](wikilink:${encodeURIComponent(cleanTarget)})`
+      })
+
+      return processed
+    }, [content])
 
     return (
       <ReactMarkdown
@@ -134,8 +312,10 @@ export const MessageContent = React.memo(
         components={{
           pre: ({ children }) => <>{children}</>,
           code: CodeBlock,
+          blockquote: ChatBlockquote,
+          a: ChatLink,
           table: ({ children }) => (
-            <div className="table-wrapper">
+            <div className="table-wrapper chat-table-wrapper">
               <table>{children}</table>
             </div>
           )
@@ -365,7 +545,7 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, onPopOut = nul
             {msg.role === 'user' ? (
               <div
                 className="user-message-inline"
-                style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}
+                style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap', textAlign: 'left' }}
               >
                 {(() => {
                   const content = msg.content || ''
@@ -854,12 +1034,12 @@ const LuminaChat = ({ isOpen, onClose, onDock, onUnfloat }) => {
         className={`modal-container ai-chat-modal-container ${isMaximized ? 'maximized' : ''} ${isMinimized ? 'minimized' : ''} ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''}`}
         onClick={(e) => e.stopPropagation()}
         style={{
-          position: 'absolute',
           ...(isMaximized
-            ? { top: 0, left: 0, width: '100vw', height: 'calc(100vh - 28px)' }
+            ? { position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', borderRadius: 0 }
             : isMinimized
-              ? { top: 'auto', left: 'auto', bottom: '40px', right: '20px', width: '280px' }
+              ? { position: 'fixed', top: 'auto', left: 'auto', bottom: '26px', right: '14px', width: '220px' }
               : {
+                  position: 'absolute',
                   top: modalState.top,
                   left: modalState.left,
                   width: modalState.width,

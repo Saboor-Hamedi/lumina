@@ -5,8 +5,9 @@ import ModalHeader from '../ModalHeader'
 import { PreviewCommandPalette } from '../PreviewCommandPalette'
 import './PreviewModal.css'
 import { useKeyboardShortcuts } from '../../../core/hooks/useKeyboardShortcuts'
+import { useVaultStore } from '../../../core/store/useVaultStore'
 
-const PreviewModal = ({ isOpen, onClose, title, content }) => {
+const PreviewModal = ({ isOpen, onClose, title, content, snippetId }) => {
   useKeyboardShortcuts({
     onEscape: isOpen
       ? () => {
@@ -16,9 +17,26 @@ const PreviewModal = ({ isOpen, onClose, title, content }) => {
       : undefined
   })
 
+  // Live real-time subscription to editor drafts and snippets
+  const draft = useVaultStore((state) => (snippetId ? state.drafts?.[snippetId] : undefined))
+  const activeSnippet = useVaultStore((state) =>
+    snippetId
+      ? (Array.isArray(state.snippets) ? state.snippets : Object.values(state.snippets || {})).find(
+          (s) => s.id === snippetId
+        )
+      : null
+  )
+
+  const liveContent =
+    draft !== undefined
+      ? draft
+      : activeSnippet?.code !== undefined
+        ? activeSnippet.code
+        : content || ''
+
   if (!isOpen) return null
 
-  const wordCount = content ? content.split(/\s+/).filter(Boolean).length : 0
+  const wordCount = liveContent ? liveContent.split(/\s+/).filter(Boolean).length : 0
 
   const headerStats = (
     <div className="preview-stats-bar">
@@ -43,7 +61,7 @@ const PreviewModal = ({ isOpen, onClose, title, content }) => {
           onClose={onClose}
         />
 
-        <PreviewCommandPalette content={content} onClose={onClose} />
+        <PreviewCommandPalette content={liveContent} onClose={onClose} />
       </div>
     </div>,
     document.getElementById('modal-root') || document.body

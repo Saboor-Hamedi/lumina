@@ -89,6 +89,49 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
     prevIsLoading.current = isLoading
   }, [isLoading])
 
+  // Focus textarea on Ctrl+Shift+\ or focus-ai-composer event
+  useEffect(() => {
+    const handleFocusShortcut = (e) => {
+      const key = e.key && e.key.toLowerCase()
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.shiftKey &&
+        (key === '\\' || key === '|' || e.code === 'Backslash')
+      ) {
+        e.preventDefault()
+        if (textareaRef.current) {
+          textareaRef.current.focus()
+          const len = textareaRef.current.value.length
+          textareaRef.current.setSelectionRange(len, len)
+        }
+      }
+    }
+
+    const handleCustomFocus = () => {
+      if (textareaRef.current) {
+        textareaRef.current.focus()
+        const len = textareaRef.current.value.length
+        textareaRef.current.setSelectionRange(len, len)
+      }
+    }
+
+    window.addEventListener('keydown', handleFocusShortcut, { capture: true })
+    window.addEventListener('focus-ai-composer', handleCustomFocus)
+
+    // Autofocus on mount
+    const timer = setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus()
+      }
+    }, 80)
+
+    return () => {
+      window.removeEventListener('keydown', handleFocusShortcut, { capture: true })
+      window.removeEventListener('focus-ai-composer', handleCustomFocus)
+      clearTimeout(timer)
+    }
+  }, [])
+
   const handleOnChange = (e) => {
     const newVal = e.target.value
     setInput(newVal)
