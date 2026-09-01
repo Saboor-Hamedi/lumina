@@ -95,6 +95,7 @@ const CommandPaletteRow = React.memo(
         ref={ref}
         className={`palette-item ${isActive ? 'active' : ''} ${isAction ? 'is-action' : ''}`}
         onClick={() => {
+          if (selectedIndex !== index) setSelectedIndex(index)
           if (item.action === 'filter') {
             setQuery(item.value + ' ')
             inputRef.current?.focus()
@@ -111,8 +112,6 @@ const CommandPaletteRow = React.memo(
             else if (item.action === 'reload-window') window.location.reload()
             else if (item.action === 'toggle-type-sound') {
               updateSetting('typeSound', !settings.typeSound)
-              // don't close palette on toggle so they see it change, or close?
-              // Actually, keep it simple and just close or not. Let's just not close it so they can see the toggle change!
               return
             }
           } else if (item.matchType === 'folder') {
@@ -121,9 +120,6 @@ const CommandPaletteRow = React.memo(
             onSelect(item)
           }
           onClose()
-        }}
-        onMouseMove={() => {
-          if (selectedIndex !== index) setSelectedIndex(index)
         }}
       >
         {isAction ? (

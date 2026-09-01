@@ -1,48 +1,141 @@
+/**
+ * Enhanced ToolTip Styles with Arrow Knob and Shortcut Badges
+ */
+
 .tooltip-portal {
   position: fixed;
-  z-index: 10000;
+  z-index: 99999;
   pointer-events: none;
-  background: var(--bg-panel);
-  color: var(--text-main);
-  border: 1px solid var(--border-dim);
-  padding: 3px 6px;
+  background: var(--bg-panel, #252526);
+  color: var(--text-main, #cccccc);
+  border: 1px solid var(--border-dim, #454545);
+  padding: 4px 8px;
   border-radius: 4px;
-  font-size: 8px;
+  font-size: 11px;
   font-weight: 500;
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  user-select: none;
   
-  /* Initial state for animation */
+  /* Smooth animation */
   opacity: 0;
-  animation: tooltipFadeIn 0.15s ease-out forwards;
+  animation: tooltipFadeIn 0.12s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes tooltipFadeIn {
-  from { opacity: 0; transform: var(--start-transform); }
-  to { opacity: 1; transform: var(--end-transform); }
+  from {
+    opacity: 0;
+    transform: var(--start-transform);
+  }
+  to {
+    opacity: 1;
+    transform: var(--end-transform);
+  }
 }
 
+.tooltip-content-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tooltip-label {
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.tooltip-kbd {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text-accent, #c4b5fd);
+  letter-spacing: 0.3px;
+  line-height: 1;
+}
+
+/* =========================================================================
+   SPEECH BUBBLE ARROW KNOB (POINTER)
+   ========================================================================= */
+
+.tooltip-arrow {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--bg-panel, #252526);
+  border: 1px solid var(--border-dim, #454545);
+  transform: rotate(45deg);
+}
+
+/* TOP POSITION (Knob at bottom pointing down) */
 .tooltip-top {
-  --start-transform: translate(-50%, calc(-100% + 4px));
-  --end-transform: translate(-50%, -100%);
+  --start-transform: translate(-50%, calc(-100% + 4px)) scale(0.96);
+  --end-transform: translate(-50%, -100%) scale(1);
 }
 
+.tooltip-top .tooltip-arrow {
+  bottom: -4px;
+  left: 50%;
+  margin-left: -3px;
+  border-top: none;
+  border-left: none;
+}
+
+/* BOTTOM POSITION (Knob at top pointing up) */
 .tooltip-bottom {
-  --start-transform: translate(-50%, -4px);
-  --end-transform: translate(-50%, 0);
+  --start-transform: translate(-50%, -4px) scale(0.96);
+  --end-transform: translate(-50%, 0) scale(1);
 }
 
+.tooltip-bottom .tooltip-arrow {
+  top: -4px;
+  left: 50%;
+  margin-left: -3px;
+  border-bottom: none;
+  border-right: none;
+}
+
+/* BOTTOM-RIGHT POSITION */
 .tooltip-bottom-right {
-  --start-transform: translate(0, -4px);
-  --end-transform: translate(0, 0);
+  --start-transform: translate(0, -4px) scale(0.96);
+  --end-transform: translate(0, 0) scale(1);
 }
 
+.tooltip-bottom-right .tooltip-arrow {
+  top: -4px;
+  right: 12px;
+  border-bottom: none;
+  border-right: none;
+}
+
+/* LEFT POSITION (Knob on right pointing right) */
 .tooltip-left {
-  --start-transform: translate(calc(-100% + 4px), -50%);
-  --end-transform: translate(-100%, -50%);
+  --start-transform: translate(calc(-100% + 4px), -50%) scale(0.96);
+  --end-transform: translate(-100%, -50%) scale(1);
 }
 
+.tooltip-left .tooltip-arrow {
+  right: -4px;
+  top: 50%;
+  margin-top: -3px;
+  border-bottom: none;
+  border-left: none;
+}
+
+/* RIGHT POSITION (Knob on left pointing left) */
 .tooltip-right {
-  --start-transform: translate(-4px, -50%);
-  --end-transform: translate(0, -50%);
+  --start-transform: translate(-4px, -50%) scale(0.96);
+  --end-transform: translate(0, -50%) scale(1);
+}
+
+.tooltip-right .tooltip-arrow {
+  left: -4px;
+  top: 50%;
+  margin-top: -3px;
+  border-top: none;
+  border-right: none;
 }

@@ -247,9 +247,5 @@ export function parseMarkdownTableText(markdown, defaultCaption = '') {
     rows.push(cells.slice(0, header.length))
   }
 
-  if (rows.length === 0) {
-    rows.push(Array(header.length).fill(''))
-  }
-
   return { header, rows, alignments, caption }
 }

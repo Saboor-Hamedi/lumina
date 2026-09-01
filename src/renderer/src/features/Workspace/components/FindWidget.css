@@ -1,21 +1,39 @@
-.find-widget {
-  /* Absolute overlay inside .markdown-editor */
+/**
+ * =========================================================================================
+ * Pixel-Perfect VS Code Find & Replace Widget Styles (`FindWidget.css`)
+ * =========================================================================================
+ */
+
+.vs-find-part {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 5px;
+  right: 24px;
   z-index: 1000;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
   background: var(--bg-panel, #252526);
-  border: 1px solid var(--border-subtle, #454545);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-  animation: slideDownFind 0.2s ease-out;
-  border-radius: 6px;
-  width: 380px;
-  max-width: 100%;
-  min-width: 280px;
-  padding: 6px 3px;
+  border: 1px solid var(--border-dim, #454545);
+  border-radius: 5px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  padding: 4px;
+  box-sizing: border-box;
+  user-select: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  animation: vsDropIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes slideDownFind {
+/* Search Highlights Across Editor and Tables */
+.cm-searchMatch,
+.cm-table-search-match {
+  background-color: rgba(234, 179, 8, 0.38) !important;
+  border-bottom: 1.5px solid #eab308 !important;
+  border-radius: 2px !important;
+  color: inherit !important;
+  display: inline !important;
+}
+
+@keyframes vsDropIn {
   from {
     transform: translateY(-100%);
     opacity: 0;
@@ -26,356 +44,210 @@
   }
 }
 
-.find-widget-content {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  font-size: 12px;
-  flex-wrap: nowrap;
-}
-
-.find-inputs-col {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex: 1;
-  min-width: 0;
-}
-
-.find-input-group {
-  position: relative;
-  display: flex;
-  align-items: center;
-  background: var(--bg-app, #1e1e1e);
-  border: 1px solid var(--border-subtle, #3c3c3c);
-  border-radius: 2px;
-  padding: 3px 6px;
-  transition: border-color 0.15s;
-  gap: 4px;
-  width: 100%;
-  min-width: 0;
-  height: 24px;
-  box-sizing: border-box;
-  flex: 0 0 auto;
-}
-
-.find-input-group:focus-within {
-    border-color: var(--border-subtle, #3c3c3c);
-
-}
-
-.replace-input-group {
-  animation: slideDownReplace 0.15s ease-out;
-}
-
-@keyframes slideDownReplace {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.find-icon {
-  color: var(--text-muted, #858585);
-  flex-shrink: 0;
-  width: 14px;
-  height: 14px;
-  opacity: 0.8;
-}
-
-.find-input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  color: var(--text-main, #cccccc);
-  font-size: 12px;
-  outline: none;
-  padding: 0;
-  min-width: 30px;
-  height: 20px;
-  line-height: 20px;
-  font-family: inherit;
-}
-
-.find-input::placeholder {
-  color: var(--text-faint, #6a6a6a);
-  font-size: 12px;
-}
-
-.find-input-actions {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex-shrink: 0;
-}
-
-.find-action-btn {
+/* ==========================================
+   LEFT COLUMN: EXPAND/COLLAPSE REPLACE TOGGLE
+   ========================================== */
+.vs-toggle-col {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--text-muted, #858585);
-  cursor: pointer;
-  border-radius: 2px;
-  transition: all 0.15s;
-  position: relative;
+  width: 20px;
+  height: 24px;
   flex-shrink: 0;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
 }
 
-.find-action-btn:hover {
-  background: var(--bg-hover, #3a3a3a);
-  color: var(--text-main, #cccccc);
+.vs-toggle-col.expanded {
+  height: 52px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.15));
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.02);
 }
 
-.find-action-btn.active {
-  background: var(--text-accent, #007acc);
-  color: white;
-}
-
-.find-action-btn.active:hover {
-  background: var(--text-accent-hover, #005a9e);
-}
-
-.find-action-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.find-controls-col {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex-shrink: 0;
-  padding-top: 1px;
-  min-width: 130px;
-}
-
-.find-search-controls {
+.vs-toggle-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
-  height: 26px;
-  flex-shrink: 0;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #858585);
+  cursor: pointer;
+  padding: 0;
+  border-radius: 2px;
+  transition: color 0.15s ease;
 }
 
-.find-match-count {
-  font-size: 10px;
-  color: var(--text-faint, #6a6a6a);
-  font-weight: 400;
-  pointer-events: none;
-  white-space: nowrap;
-  width: 70px;
-  min-width: 70px;
-  max-width: 70px;
-  text-align: right;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  user-select: none;
-  padding-right: 2px;
-  font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
-  margin-left: -10px;
+.vs-toggle-btn:hover {
+  color: var(--text-main, #ffffff);
 }
 
-.find-navigation {
+/* ==========================================
+   CENTER COLUMN: INPUTS
+   ========================================== */
+.vs-inputs-col {
   display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.vs-input-box {
+  display: flex;
+  align-items: center;
+  width: 240px;
+  height: 24px;
+  background: var(--bg-app, #1e1e1e);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.15));
+  border-radius: 2px;
+  padding: 0 2px 0 6px;
+  box-sizing: border-box;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.vs-input-box:focus-within {
+  border-color: var(--text-accent, #8b5cf6) !important;
+  outline: 1px solid var(--text-accent, #8b5cf6);
+}
+
+.vs-input-box.no-results {
+  border-color: #f87171 !important;
+}
+
+.vs-input-box.no-results:focus-within {
+  border-color: #f87171 !important;
+  outline: 1px solid #f87171 !important;
+}
+
+.vs-text-input {
+  flex: 1;
+  min-width: 30px;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-main, #cccccc);
+  font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', monospace);
+  font-size: 12px;
+  line-height: 22px;
+  outline: none;
+  padding: 0;
+  margin: 0;
+}
+
+.vs-text-input::placeholder {
+  color: var(--text-faint, #6a6a6a);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 12px;
+}
+
+/* Inline Action Toggles inside Input (Aa, ab, .*, AB) */
+.vs-inline-actions {
+  display: flex;
+  align-items: center;
   gap: 1px;
   flex-shrink: 0;
 }
 
-.find-nav-btn {
+.vs-action-toggle {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 18px;
   padding: 0;
-  border: 1px solid transparent;
   background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
   color: var(--text-muted, #858585);
   cursor: pointer;
-  border-radius: 2px;
-  transition: all 0.15s;
+  transition: all 0.1s ease;
+}
+
+.vs-action-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main, #ffffff);
+}
+
+.vs-action-toggle.active {
+  background: var(--bg-active, rgba(139, 92, 246, 0.25));
+  border-color: var(--text-accent, #8b5cf6);
+  color: var(--text-accent, #a78bfa);
+}
+
+/* ==========================================
+   RIGHT COLUMN: CONTROLS & COUNTER
+   ========================================== */
+.vs-controls-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   flex-shrink: 0;
 }
 
-.find-nav-btn:hover:not(:disabled) {
-  background: var(--bg-hover, #3a3a3a);
-  border-color: var(--border-subtle, #454545);
-  color: var(--text-main, #cccccc);
+.vs-control-row {
+  display: flex;
+  align-items: center;
+  height: 24px;
+  gap: 2px;
 }
 
-.find-nav-btn:disabled {
-  opacity: 0.3;
+.vs-count-badge {
+  font-size: 12px;
+  color: var(--text-muted, #858585);
+  min-width: 68px;
+  text-align: right;
+  padding: 0 4px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.vs-count-badge.no-results-text {
+  color: #f87171 !important;
+  font-weight: 500;
+}
+
+.vs-tool-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: var(--text-muted, #858585);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  flex-shrink: 0;
+}
+
+.vs-tool-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-main, #ffffff);
+}
+
+.vs-tool-btn.active {
+  background: var(--bg-active, rgba(139, 92, 246, 0.25));
+  border-color: var(--text-accent, #8b5cf6);
+  color: var(--text-accent, #a78bfa);
+}
+
+.vs-tool-btn:disabled {
+  opacity: 0.35;
   cursor: default;
 }
 
-.find-nav-btn:disabled:hover {
-  background: transparent;
-  border-color: transparent;
+.vs-close-icon-btn:hover {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #f87171 !important;
 }
 
-.find-toggle-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 26px;
-  margin-left: 5px;
-  flex-shrink: 0;
-}
-
-.find-toggle-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--text-muted, #858585);
-  cursor: pointer;
-  border-radius: 2px;
-  transition: all 0.15s;
-  flex-shrink: 0;
-  margin-left: -4px;
-}
-
-.find-toggle-btn:hover {
-  background: var(--bg-hover, #3a3a3a);
-  color: var(--text-main, #cccccc);
-}
-
-.find-toggle-icon {
-  transition: transform 0.15s ease;
-  width: 14px;
-  height: 14px;
-}
-
-.find-toggle-btn.expanded .find-toggle-icon {
-  transform: rotate(90deg);
-}
-
-.find-close-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--text-muted, #858585);
-  cursor: pointer;
-  border-radius: 2px;
-  transition: all 0.15s;
-  flex-shrink: 0;
-}
-
-.find-close-btn:hover {
-  background: var(--bg-hover, #3a3a3a);
-  color: var(--text-main, #cccccc);
-}
-
-.find-replace-controls {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  height: 26px;
-  animation: slideDownReplace 0.15s ease-out;
-  justify-content: flex-end;
-  padding-right: 1px;
-  flex-shrink: 0;
-}
-
-.replace-action-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 0 8px;
-  height: 22px;
-  border: none;
-  background: transparent;
-  color: var(--text-accent, #007acc);
-  cursor: pointer;
-  border-radius: 2px;
-  font-size: 11px;
-  font-weight: 500;
-  transition: all 0.15s;
-  letter-spacing: 0.3px;
-  flex-shrink: 0;
-}
-
-.replace-action-btn:hover:not(:disabled) {
-  background: var(--text-accent, #007acc);
-  color: white;
-}
-
-.replace-action-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.replace-action-btn:disabled:hover {
-  background: transparent;
-  color: var(--text-accent, #007acc);
-}
-
-.replace-all-action-btn {
-  position: relative;
-  padding-right: 20px;
-}
-
-.replace-all-badge {
-  position: absolute;
-  right: 4px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 7px;
-  font-weight: 700;
-  line-height: 1;
-  opacity: 0.9;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-/* Icons inside buttons */
-.find-action-btn svg,
-.find-nav-btn svg,
-.find-toggle-btn svg,
-.find-close-btn svg {
-  width: 12px;
-  height: 12px;
-  flex-shrink: 0;
-}
-
-.replace-action-btn svg {
-  width: 11px;
-  height: 11px;
-  flex-shrink: 0;
-}
-
-/* Match "No results" text - always show */
-.find-match-count:empty::before {
-  content: "No results";
-  color: var(--text-faint, #6a6a6a);
-}
-
-/* Hide empty state properly */
-.find-match-count:empty {
-  display: block;
-}
-
-/* Fix for when there are results */
-.find-match-count:not(:empty)::before {
-  display: none;
+.vs-replace-control-row {
+  justify-content: flex-start;
+  margin-left: auto;
 }

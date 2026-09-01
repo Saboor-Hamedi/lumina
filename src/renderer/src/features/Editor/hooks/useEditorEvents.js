@@ -17,6 +17,7 @@
 import { useEffect, useRef } from 'react'
 import { Decoration } from '@codemirror/view'
 import { updateSearchHighlights } from './useEditorExtensions'
+import { applyTableSearchHighlight, clearTableSearchHighlight } from '../../table/tableCell'
 
 export function useEditorEvents({
   isActive,
@@ -81,6 +82,7 @@ export function useEditorEvents({
 
       if (!pattern || !e.detail.searchQuery) {
         view.dispatch({ effects: updateSearchHighlights.of(Decoration.none) })
+        clearTableSearchHighlight(view.dom)
         return
       }
 
@@ -94,14 +96,17 @@ export function useEditorEvents({
           decorations.push(mark.range(match.index, match.index + match[0].length))
         }
         view.dispatch({ effects: updateSearchHighlights.of(Decoration.set(decorations, true)) })
+        applyTableSearchHighlight(view.dom, regex)
       } catch (err) {
         view.dispatch({ effects: updateSearchHighlights.of(Decoration.none) })
+        clearTableSearchHighlight(view.dom)
       }
     }
 
     const handleSearchClear = () => {
       if (!isActiveRef.current || !realViewRef.current) return
       realViewRef.current.dispatch({ effects: updateSearchHighlights.of(Decoration.none) })
+      clearTableSearchHighlight(realViewRef.current.dom)
     }
 
     const handleFocusEditorStart = () => {

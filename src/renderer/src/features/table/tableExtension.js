@@ -430,6 +430,9 @@ export function dispatchModel(view, wrap, nextModel) {
     changes: { from: range.from, to: range.to, insert: next },
     annotations: Transaction.userEvent.of('input')
   })
+  if (view && !view.hasFocus) {
+    view.focus()
+  }
 }
 export function dispatchModelFromDom(view, cell) {
   const wrap = cell.closest('.cm-atomic-table')

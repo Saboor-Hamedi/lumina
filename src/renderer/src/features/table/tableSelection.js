@@ -324,11 +324,7 @@ export function setupTableSelection(wrap, view) {
       if (minR >= 0 && minC === 0 && maxC >= colTotal - 1) {
         const m = readModelFromDom(wrap)
         const deleteCount = maxR - minR + 1
-        if (m.rows.length <= deleteCount) {
-          m.rows = [m.header.map(() => '')]
-        } else {
-          m.rows.splice(minR, deleteCount)
-        }
+        m.rows.splice(minR, deleteCount)
         clearSelectionVisuals()
         startCell = null
         endCell = null
@@ -337,7 +333,21 @@ export function setupTableSelection(wrap, view) {
       }
 
       // If full column(s) are selected (from header to bottom), delete the column(s)!
-      if (minR === -1 && maxR === rowTotal - 1 && colTotal > (maxC - minC + 1)) {
+      if (minR === -1 && maxR === rowTotal - 1) {
+        if (colTotal <= (maxC - minC + 1)) {
+          // Entire table is selected: delete the entire table
+          const range = findCurrentTableRange(view, wrap)
+          if (range) {
+            clearSelectionVisuals()
+            startCell = null
+            endCell = null
+            view.dispatch({
+              changes: { from: range.from, to: range.to, insert: '' }
+            })
+            view.focus()
+            return
+          }
+        }
         const m = readModelFromDom(wrap)
         const deleteCount = maxC - minC + 1
         m.header.splice(minC, deleteCount)

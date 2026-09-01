@@ -106,8 +106,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 4px 10px;
+  gap: 8px;
+  padding: 4px 8px;
   background: var(--bg-app, #18181b) !important;
   border: none !important;
   border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08)) !important;
@@ -120,14 +120,21 @@
   user-select: none;
   min-height: 30px;
   box-sizing: border-box;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.cm-table-ui-header::-webkit-scrollbar {
+  display: none;
 }
 
 .cm-table-ui-left {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex: 1;
-  min-width: 0;
+  flex-shrink: 0;
+  min-width: fit-content;
 }
 
 .cm-table-ui-right {
@@ -135,6 +142,7 @@
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
+  min-width: fit-content;
 }
 
 .cm-table-title-container {
@@ -514,15 +522,29 @@
   box-sizing: border-box;
   border-bottom-left-radius: 0 !important;
   border-bottom-right-radius: 0 !important;
-  scrollbar-width: none !important; /* Firefox: completely invisible scroll */
-  -ms-overflow-style: none !important; /* IE 10+ */
+  scrollbar-width: thin !important;
+  scrollbar-color: var(--border-dim, rgba(255, 255, 255, 0.2)) transparent !important;
 }
 
 .cm-table-scroll-container::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
+  display: block !important;
+  height: 5px !important;
   background: transparent !important;
+}
+
+.cm-table-scroll-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.cm-table-scroll-container::-webkit-scrollbar-thumb {
+  background: var(--border-dim, rgba(255, 255, 255, 0.18));
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+
+.cm-table-scroll-container:hover::-webkit-scrollbar-thumb {
+  background: var(--text-muted, rgba(255, 255, 255, 0.35));
 }
 
 /* Ensure the last column header and cells are never clipped */
@@ -643,6 +665,7 @@
   gap: 8px;
   color: var(--text-muted, #94a3b8);
   font-size: 12px;
+  animation: tableRowEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .cm-table-empty-state svg {
@@ -652,22 +675,46 @@
 
 .cm-table-empty-add-btn {
   margin-top: 4px;
-  padding: 4px 12px;
+  padding: 5px 14px;
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 550;
   border-radius: 6px;
   background: var(--bg-card, rgba(255, 255, 255, 0.06));
   border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.12));
   color: var(--text-accent, #6366f1);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .cm-table-empty-add-btn:hover {
   background: var(--text-accent, #6366f1);
   color: #ffffff;
   border-color: var(--text-accent, #6366f1);
-  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+  transform: translateY(-1px);
+}
+
+.cm-table-empty-add-btn:active {
+  transform: translateY(0) scale(0.96);
+}
+
+/* Subtle fade & slide-down micro-interaction when rows appear */
+@keyframes tableRowEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cm-atomic-table tbody tr:not(.cm-table-empty-row) {
+  animation: tableRowEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* 
@@ -755,17 +802,12 @@
 
 /* --- INLINE MARKDOWN STYLES --- */
 /* Hide markdown marks by default */
-.cm-atomic-mark {
+.cm-atomic-mark,
+.cm-atomic-link-url {
   display: none;
 }
 
-/* Reveal markdown marks when the cell is focused, or when explicitly active */
-.cm-atomic-table-cell-source:focus .cm-atomic-mark,
-.cm-atomic-table-cell-source:focus-within .cm-atomic-mark,
-.cm-atomic-table-cell-source:focus .cm-atomic-link-url,
-.cm-atomic-table-cell-source:focus-within .cm-atomic-link-url,
-.cm-atomic-table-cell-source:focus .cm-atomic-link-icon,
-.cm-atomic-table-cell-source:focus-within .cm-atomic-link-icon,
+/* Reveal markdown marks ONLY when the specific mark wrap is actively being edited */
 .active > .cm-atomic-mark,
 .active > .cm-atomic-link-url,
 .active > .cm-atomic-link-icon {

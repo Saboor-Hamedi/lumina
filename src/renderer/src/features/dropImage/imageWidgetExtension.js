@@ -458,11 +458,16 @@ export class ImageWidget extends WidgetType {
 
     img.onerror = () => {
       const widget = wrap.__imageWidget
-      console.error('[ImageWidget] Failed to load image at URL:', img.src)
-
       const errorDiv = document.createElement('div')
       errorDiv.className = 'image-widget-error'
-      errorDiv.innerHTML = `❌ Image Failed to Render: ${widget.actualAlt}`
+      errorDiv.style.padding = '16px'
+      errorDiv.style.textAlign = 'center'
+      errorDiv.style.color = 'var(--text-faint, #858585)'
+      errorDiv.style.fontSize = '12px'
+      errorDiv.style.background = 'var(--bg-app, rgba(0,0,0,0.2))'
+      errorDiv.style.borderRadius = '4px'
+      errorDiv.style.border = '1px dashed var(--border-subtle, rgba(255,255,255,0.1))'
+      errorDiv.innerHTML = `🖼️ Image Not Found: <code>${widget.actualAlt || widget.url}</code>`
 
       if (img.parentNode) {
         body.replaceChild(errorDiv, img)
@@ -480,22 +485,29 @@ export class ImageWidget extends WidgetType {
         urlCache
           .get(this.url)
           .then((objectUrl) => {
-            img.src = objectUrl
+            if (objectUrl) {
+              img.src = objectUrl
+            } else {
+              img.onerror()
+            }
           })
           .catch(() => {
             img.onerror()
           })
       } else {
-        const fetchWithRetry = async (url, retries = 5, delay = 50) => {
+        const fetchWithRetry = async (url, retries = 3, delay = 50) => {
+          if (!window.api || !window.api.readAsset) return null
           for (let i = 0; i < retries; i++) {
             try {
               const buffer = await window.api.readAsset(url)
+              if (!buffer) return null
               return URL.createObjectURL(new Blob([buffer]))
             } catch (err) {
-              if (i === retries - 1) throw err
+              if (i === retries - 1) return null
               await new Promise((resolve) => setTimeout(resolve, delay))
             }
           }
+          return null
         }
 
         const fetchPromise = fetchWithRetry(cleanUrl)
@@ -503,10 +515,13 @@ export class ImageWidget extends WidgetType {
 
         fetchPromise
           .then((objectUrl) => {
-            img.src = objectUrl
+            if (objectUrl) {
+              img.src = objectUrl
+            } else {
+              img.onerror()
+            }
           })
-          .catch((err) => {
-            console.error('[ImageWidget] IPC readAsset failed:', err)
+          .catch(() => {
             img.onerror()
           })
       }

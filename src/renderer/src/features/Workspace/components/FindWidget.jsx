@@ -1,18 +1,91 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import {
-  Search,
-  Replace,
-  ReplaceAll,
-  X,
-  ChevronUp,
-  ChevronDown,
-  Type,
-  AlignLeft,
-  Regex,
-  ChevronRight
-} from 'lucide-react'
+import { Decoration } from '@codemirror/view'
 import { useKeyboardShortcuts } from '../../../core/hooks/useKeyboardShortcuts'
+import { updateSearchHighlights } from '../../Editor/hooks/useEditorExtensions'
+import { applyTableSearchHighlight, clearTableSearchHighlight } from '../../table/tableCell'
+import ToolTip from '../../../components/atoms/ToolTip'
 import './FindWidget.css'
+
+// ==========================================
+// Pixel-Perfect VS Code Codicons as SVGs
+// ==========================================
+
+const CaseSensitiveIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+    <path d="M4.88 2.5h1.24l2.84 8.5H7.72l-.74-2.32H4.02l-.74 2.32H2.04L4.88 2.5zm1.74 5.04L5.5 4.09 4.38 7.54h2.24zM10.83 6.36h1.15v4.64h-1.15v-.65a1.86 1.86 0 0 1-1.44.75c-1.15 0-1.84-.85-1.84-2.07s.71-2.12 1.84-2.12c.57 0 1.07.26 1.44.73V6.36zm-.02 2.67c0-.75-.46-1.17-1.04-1.17s-1.04.42-1.04 1.17.46 1.17 1.04 1.17 1.04-.42 1.04-1.17z" />
+  </svg>
+)
+
+const WholeWordIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+    <path d="M3.78 3.5h1.02l2.35 6.5H6.12l-.61-1.78H3.07l-.61 1.78H1.43L3.78 3.5zm1.44 3.86L4.29 4.72 3.37 7.36h1.85zM8.33 3.5h1.15v2.85a1.6 1.6 0 0 1 1.25-.6c1.07 0 1.77.78 1.77 2.12s-.7 2.13-1.77 2.13a1.6 1.6 0 0 1-1.25-.6V10H8.33V3.5zm1.15 4.37c0 .77.44 1.18 1.02 1.18.58 0 1.02-.41 1.02-1.18s-.44-1.17-1.02-1.17c-.58 0-1.02.4-1.02 1.17zM1.5 12.5h13v1h-13v-1z" />
+  </svg>
+)
+
+const RegexIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+    <path d="M4.5 10a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm7.32-6.5l.88.5-2.2 3.82 2.2 3.82-.88.5-2.2-3.82-2.2 3.82-.88-.5 2.2-3.82-2.2-3.82.88-.5 2.2 3.82 2.2-3.82z" />
+  </svg>
+)
+
+const PreserveCaseIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+    <path d="M2.88 3.5h1.24l2.84 8.5H5.72l-.74-2.32H2.02l-.74 2.32H.04L2.88 3.5zm1.74 5.04L3.5 5.09 2.38 8.54h2.24zM8.88 3.5h2.8c1.3 0 2.07.65 2.07 1.7 0 .68-.38 1.25-.97 1.48.78.22 1.25.86 1.25 1.68 0 1.2-.95 1.89-2.32 1.89H8.88V3.5zm1.25 3.12h1.38c.6 0 .95-.28.95-.74 0-.48-.35-.74-.95-.74h-1.38v1.48zm0 2.63h1.55c.67 0 1.05-.3 1.05-.8 0-.52-.38-.82-1.05-.82h-1.55v1.62z" />
+  </svg>
+)
+
+const ChevronRightIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+    <path fillRule="evenodd" clipRule="evenodd" d="M6.15 3.15L5.45 3.85L9.6 8L5.45 12.15L6.15 12.85L11 8L6.15 3.15Z" />
+  </svg>
+)
+
+const ChevronDownIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+    <path fillRule="evenodd" clipRule="evenodd" d="M3.15 6.15L3.85 5.45L8 9.6L12.15 5.45L12.85 6.15L8 11L3.15 6.15Z" />
+  </svg>
+)
+
+const ArrowUpIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+    <path fillRule="evenodd" clipRule="evenodd" d="M8 3.5l4.35 4.35-.7.7L8.5 5.4v7.1h-1V5.4L4.35 8.55l-.7-.7L8 3.5z" />
+  </svg>
+)
+
+const ArrowDownIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+    <path fillRule="evenodd" clipRule="evenodd" d="M8 12.5l-4.35-4.35.7-.7L7.5 10.6V3.5h1v7.1l3.15-3.15.7.7L8 12.5z" />
+  </svg>
+)
+
+const SelectionIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+    <path d="M3 4h10v1H3V4zm0 3h10v1H3V7zm0 3h10v1H3v-1zm0 3h10v1H3v-1z" opacity="0.4" />
+    <path d="M1 2h14v12H1V2zm1 1v10h12V3H2z" />
+  </svg>
+)
+
+const ReplaceOneIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+    <path d="M2.5 3h10a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-.5.5h-10A.5.5 0 0 1 2 6.5v-3a.5.5 0 0 1 .5-.5zm.5 1v2h9V4H3zM2.5 9h5a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-.5.5h-5a.5.5 0 0 1-.5-.5v-3a.5.5 0 0 1 .5-.5zm.5 1v2h4v-2H3zm7.85 1.15l1.65 1.65.7-.7L12.4 11.3h2.1v-1h-2.1l.8-.8-.7-.7-1.65 1.65-.35.35.35.35z" />
+  </svg>
+)
+
+const ReplaceAllIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+    <path d="M2 2h9v2H3v7H1V3a1 1 0 0 1 1-1zm3 3h9a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm0 1v7h9V6H5zm5.85 2.15l1.65 1.65.7-.7L12.4 8.3h1.1v-1h-1.1l.8-.8-.7-.7-1.65 1.65-.35.35.35.35z" />
+  </svg>
+)
+
+const CloseIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+    <path fillRule="evenodd" clipRule="evenodd" d="M8 8.707l3.646 3.647.708-.707L8.707 8l3.647-3.646-.707-.708L8 7.293 4.354 3.646l-.708.708L7.293 8l-3.647 3.646.708.708L8 8.707z" />
+  </svg>
+)
+
+// ==========================================
+// VS Code FindWidget Component with ToolTips
+// ==========================================
 
 const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
   const [searchQuery, setSearchQuery] = useState('')
@@ -21,6 +94,8 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
   const [matchCase, setMatchCase] = useState(false)
   const [matchWholeWord, setMatchWholeWord] = useState(false)
   const [useRegex, setUseRegex] = useState(false)
+  const [preserveCase, setPreserveCase] = useState(false)
+  const [findInSelection, setFindInSelection] = useState(false)
   const [matchCount, setMatchCount] = useState({ current: 0, total: 0 })
   const [matches, setMatches] = useState([])
   const [currentIndex, setCurrentIndex] = useState(-1)
@@ -28,7 +103,7 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
   const searchInputRef = useRef(null)
   const replaceInputRef = useRef(null)
 
-  // Focus search input when widget opens, or replace input if replace mode is enabled
+  // Focus search input when widget opens
   useEffect(() => {
     if (isReplaceMode && replaceInputRef.current) {
       replaceInputRef.current.focus()
@@ -38,12 +113,11 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
     }
   }, [isReplaceMode])
 
-  // Update replace mode when initialReplaceMode prop changes
   useEffect(() => {
     setIsReplaceMode(initialReplaceMode)
   }, [initialReplaceMode])
 
-  // Listen for external focus/search query events
+  // External event listeners
   useEffect(() => {
     const handleFocusSearch = () => {
       if (searchInputRef.current) {
@@ -64,7 +138,6 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
     const handleToggleReplace = () => {
       setIsReplaceMode((prev) => {
         const next = !prev
-        // After state updates, focus the appropriate input
         setTimeout(() => {
           if (next && replaceInputRef.current) {
             replaceInputRef.current.focus()
@@ -88,7 +161,7 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
     }
   }, [])
 
-  // Compute matches and update highlights when query/options change
+  // Highlight matches directly in CodeMirror and rendered tables
   useEffect(() => {
     if (!editorView) return
 
@@ -98,7 +171,8 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
       setMatches([])
       setCurrentIndex(-1)
       setMatchCount({ current: 0, total: 0 })
-      window.dispatchEvent(new CustomEvent('search-clear'))
+      editorView.dispatch({ effects: updateSearchHighlights.of(Decoration.none) })
+      clearTableSearchHighlight(editorView.dom)
       return
     }
 
@@ -133,24 +207,29 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
         total: allMatches.length
       })
 
-      // Notify editor to draw highlights (reuses global search highlighter)
-      window.dispatchEvent(
-        new CustomEvent('search-update', {
-          detail: {
-            searchQuery,
-            pattern: new RegExp(pattern, matchCase ? 'g' : 'gi'),
-            matchCase,
-            matchWholeWord,
-            useRegex
-          }
-        })
-      )
+      // Directly apply CodeMirror text decorations
+      const decorations = []
+      const matchMark = Decoration.mark({ class: 'cm-searchMatch' })
+      const selectedMark = Decoration.mark({ class: 'cm-searchMatch cm-searchMatch-selected' })
+
+      for (let i = 0; i < allMatches.length; i++) {
+        const m = allMatches[i]
+        decorations.push((i === idx ? selectedMark : matchMark).range(m.from, m.to))
+      }
+
+      editorView.dispatch({
+        effects: updateSearchHighlights.of(Decoration.set(decorations, true))
+      })
+
+      // Highlight matching text inside rendered tables
+      applyTableSearchHighlight(editorView.dom, regex)
     } catch (err) {
       console.error('[FindWidget] Search update error:', err)
       setMatches([])
       setCurrentIndex(-1)
       setMatchCount({ current: 0, total: 0 })
-      window.dispatchEvent(new CustomEvent('search-clear'))
+      editorView.dispatch({ effects: updateSearchHighlights.of(Decoration.none) })
+      clearTableSearchHighlight(editorView.dom)
     }
   }, [editorView, searchQuery, matchCase, matchWholeWord, useRegex])
 
@@ -171,8 +250,29 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
 
       setCurrentIndex(clamped)
       setMatchCount({ current: clamped + 1, total: matches.length })
+
+      // Update active highlight decoration
+      let pattern = searchQuery
+      if (!useRegex) pattern = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      if (matchWholeWord) pattern = `\\b${pattern}\\b`
+      try {
+        const regex = new RegExp(pattern, matchCase ? 'g' : 'gi')
+        const decorations = []
+        const matchMark = Decoration.mark({ class: 'cm-searchMatch' })
+        const selectedMark = Decoration.mark({ class: 'cm-searchMatch cm-searchMatch-selected' })
+
+        for (let i = 0; i < matches.length; i++) {
+          const m = matches[i]
+          decorations.push((i === clamped ? selectedMark : matchMark).range(m.from, m.to))
+        }
+
+        view.dispatch({
+          effects: updateSearchHighlights.of(Decoration.set(decorations, true))
+        })
+        applyTableSearchHighlight(view.dom, regex)
+      } catch {}
     },
-    [editorView, matches]
+    [editorView, matches, searchQuery, matchCase, matchWholeWord, useRegex]
   )
 
   const handleFindNext = useCallback(() => {
@@ -202,43 +302,7 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
       selection: { anchor: from + replaceQuery.length }
     })
     view.dispatch(tr)
-
-    // Recompute matches after replace
-    setTimeout(() => {
-      if (!view || !view.state) return
-      const newText = view.state.doc.toString()
-      let pattern = searchQuery
-      if (!useRegex) pattern = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      if (matchWholeWord) pattern = `\\b${pattern}\\b`
-      try {
-        const regex = new RegExp(pattern, matchCase ? 'g' : 'gi')
-        const allMatches = [...newText.matchAll(regex)].map((m) => ({
-          from: m.index,
-          to: m.index + m[0].length
-        }))
-        setMatches(allMatches)
-        const newIndex = Math.min(index, allMatches.length - 1)
-        setCurrentIndex(allMatches.length ? newIndex : -1)
-        setMatchCount({
-          current: allMatches.length ? newIndex + 1 : 0,
-          total: allMatches.length
-        })
-      } catch {
-        setMatches([])
-        setCurrentIndex(-1)
-        setMatchCount({ current: 0, total: 0 })
-      }
-    }, 0)
-  }, [
-    editorView,
-    searchQuery,
-    replaceQuery,
-    matches,
-    currentIndex,
-    matchCase,
-    matchWholeWord,
-    useRegex
-  ])
+  }, [editorView, searchQuery, replaceQuery, matches, currentIndex])
 
   const handleReplaceAll = useCallback(() => {
     if (!editorView || !searchQuery || matches.length === 0) return
@@ -246,7 +310,6 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
     const doc = view.state.doc
     let content = doc.toString()
 
-    // Apply replacements from end to start to keep indices valid
     const sorted = [...matches].sort((a, b) => b.from - a.from)
     sorted.forEach((m) => {
       content = `${content.slice(0, m.from)}${replaceQuery}${content.slice(m.to)}`
@@ -255,11 +318,6 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
     view.dispatch({
       changes: { from: 0, to: doc.length, insert: content }
     })
-
-    setMatches([])
-    setCurrentIndex(-1)
-    setMatchCount({ current: 0, total: 0 })
-    window.dispatchEvent(new CustomEvent('search-clear'))
   }, [editorView, searchQuery, replaceQuery, matches])
 
   const handleKeyDown = useCallback(
@@ -278,6 +336,15 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
         } else {
           handleFindNext()
         }
+      } else if (e.altKey && (e.key === 'c' || e.key === 'C')) {
+        e.preventDefault()
+        setMatchCase((prev) => !prev)
+      } else if (e.altKey && (e.key === 'w' || e.key === 'W')) {
+        e.preventDefault()
+        setMatchWholeWord((prev) => !prev)
+      } else if (e.altKey && (e.key === 'r' || e.key === 'R')) {
+        e.preventDefault()
+        setUseRegex((prev) => !prev)
       } else if (e.key === 'h' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault()
         e.stopPropagation()
@@ -290,14 +357,14 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
         searchInputRef.current?.select()
       }
     },
-    [handleFindNext, handleFindPrevious, onClose, editorView]
+    [handleFindNext, handleFindPrevious]
   )
 
   const handleReplaceKeyDown = useCallback(
     (e) => {
       if (e.key === 'Enter') {
         e.preventDefault()
-        if (e.ctrlKey || e.metaKey) {
+        if (e.ctrlKey || e.metaKey || e.altKey) {
           handleReplaceAll()
         } else {
           handleReplaceNext()
@@ -318,155 +385,200 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
         searchInputRef.current?.select()
       }
     },
-    [handleReplaceNext, handleReplaceAll, onClose, editorView]
+    [handleReplaceNext, handleReplaceAll]
   )
 
   useKeyboardShortcuts({
     onEscape: () => {
       setSearchQuery('')
-      window.dispatchEvent(new CustomEvent('search-clear'))
-      if (editorView) editorView.focus()
+      if (editorView) {
+        editorView.dispatch({ effects: updateSearchHighlights.of(Decoration.none) })
+        clearTableSearchHighlight(editorView.dom)
+        editorView.focus()
+      }
       onClose()
       return true
     }
   })
 
+  // Cleanup highlights on widget close / unmount
+  useEffect(() => {
+    return () => {
+      if (editorView) {
+        editorView.dispatch({ effects: updateSearchHighlights.of(Decoration.none) })
+        clearTableSearchHighlight(editorView.dom)
+      }
+    }
+  }, [editorView])
+
+  const hasNoResults = Boolean(searchQuery && matchCount.total === 0)
+
   return (
-    <div className="find-widget">
-      <div className="find-widget-content">
-        {/* Toggle Replace */}
-        <div className="find-toggle-container">
+    <div className="vs-find-part" role="search">
+      {/* Left Column: Expand/Collapse Replace Toggle */}
+      <div className={`vs-toggle-col ${isReplaceMode ? 'expanded' : ''}`}>
+        <ToolTip text={isReplaceMode ? 'Toggle Replace (Ctrl+H)' : 'Toggle Replace (Ctrl+H)'} position="bottom">
           <button
-            className={`find-toggle-btn ${isReplaceMode ? 'expanded' : ''}`}
+            className="vs-toggle-btn"
             onClick={() => setIsReplaceMode(!isReplaceMode)}
-            title={isReplaceMode ? 'Hide Replace' : 'Show Replace (Ctrl+H)'}
+            aria-label="Toggle Replace (Ctrl+H)"
           >
-            <ChevronRight size={14} className="find-toggle-icon" />
+            {isReplaceMode ? <ChevronDownIcon /> : <ChevronRightIcon />}
           </button>
-        </div>
+        </ToolTip>
+      </div>
 
-        {/* Left column: search + replace inputs (same width) */}
-        <div className="find-inputs-col">
-          {/* Search Input */}
-          <div className="find-input-group">
-            <Search size={12} className="find-icon" />
-            <input
-              ref={searchInputRef}
-              type="text"
-              className="find-input"
-              placeholder="Search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
-            />
-            <div className="find-input-actions">
+      {/* Center Column: Find Input & Replace Input */}
+      <div className="vs-inputs-col">
+        {/* Find Input */}
+        <div className={`vs-input-box ${hasNoResults ? 'no-results' : ''}`}>
+          <input
+            ref={searchInputRef}
+            type="text"
+            role="searchbox"
+            className="vs-text-input"
+            placeholder="Find"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            aria-label="Find"
+          />
+          <div className="vs-inline-actions">
+            <ToolTip text="Match Case (Alt+C)" position="bottom">
               <button
-                className={`find-action-btn ${matchCase ? 'active' : ''}`}
+                className={`vs-action-toggle ${matchCase ? 'active' : ''}`}
                 onClick={() => setMatchCase(!matchCase)}
-                title="Match Case"
+                aria-label="Match Case (Alt+C)"
               >
-                <Type size={11} />
+                <CaseSensitiveIcon />
               </button>
+            </ToolTip>
+            <ToolTip text="Match Whole Word (Alt+W)" position="bottom">
               <button
-                className={`find-action-btn ${matchWholeWord ? 'active' : ''}`}
+                className={`vs-action-toggle ${matchWholeWord ? 'active' : ''}`}
                 onClick={() => setMatchWholeWord(!matchWholeWord)}
-                title="Match Whole Word"
+                aria-label="Match Whole Word (Alt+W)"
               >
-                <AlignLeft size={11} />
+                <WholeWordIcon />
               </button>
+            </ToolTip>
+            <ToolTip text="Use Regular Expression (Alt+R)" position="bottom">
               <button
-                className={`find-action-btn ${useRegex ? 'active' : ''}`}
+                className={`vs-action-toggle ${useRegex ? 'active' : ''}`}
                 onClick={() => setUseRegex(!useRegex)}
-                title="Use Regular Expression"
+                aria-label="Use Regular Expression (Alt+R)"
               >
-                <Regex size={11} />
+                <RegexIcon />
               </button>
-              {searchQuery && (
+            </ToolTip>
+          </div>
+        </div>
+
+        {/* Replace Input */}
+        {isReplaceMode && (
+          <div className="vs-input-box vs-replace-input-box">
+            <input
+              ref={replaceInputRef}
+              type="text"
+              className="vs-text-input"
+              placeholder="Replace"
+              value={replaceQuery}
+              onChange={(e) => setReplaceQuery(e.target.value)}
+              onKeyDown={handleReplaceKeyDown}
+              aria-label="Replace"
+            />
+            <div className="vs-inline-actions">
+              <ToolTip text="Preserve Case (Alt+P)" position="bottom">
                 <button
-                  className="find-action-btn"
-                  onClick={() => {
-                    setSearchQuery('')
-                    searchInputRef.current?.focus()
-                  }}
-                  title="Clear"
+                  className={`vs-action-toggle ${preserveCase ? 'active' : ''}`}
+                  onClick={() => setPreserveCase(!preserveCase)}
+                  aria-label="Preserve Case (Alt+P)"
                 >
-                  <X size={11} />
+                  <PreserveCaseIcon />
                 </button>
-              )}
+              </ToolTip>
             </div>
           </div>
+        )}
+      </div>
 
-          {/* Replace Input - Dropdown (same width as search) */}
-          {isReplaceMode && (
-            <div className="find-input-group replace-input-group">
-              <Replace size={12} className="find-icon" />
-              <input
-                ref={replaceInputRef}
-                type="text"
-                className="find-input"
-                placeholder="Replace"
-                value={replaceQuery}
-                onChange={(e) => setReplaceQuery(e.target.value)}
-                onKeyDown={handleReplaceKeyDown}
-              />
-            </div>
-          )}
-        </div>
+      {/* Right Column: Match Counter, Navigation & Replace Actions */}
+      <div className="vs-controls-col">
+        {/* Row 1 Controls */}
+        <div className="vs-control-row">
+          <div className={`vs-count-badge ${hasNoResults ? 'no-results-text' : ''}`} aria-live="polite">
+            {searchQuery
+              ? matchCount.total > 0
+                ? `${matchCount.current} of ${matchCount.total}`
+                : 'No results'
+              : ''}
+          </div>
 
-        {/* Right column: navigation + replace actions + close */}
-        <div className="find-controls-col">
-          <div className="find-search-controls">
-            <div className="find-match-count">
-              {searchQuery
-                ? matchCount.total > 0
-                  ? `${matchCount.current} of ${matchCount.total}`
-                  : 'No results'
-                : ''}
-            </div>
-            <div className="find-navigation">
-              <button
-                className="find-nav-btn"
-                onClick={handleFindPrevious}
-                disabled={!searchQuery.trim() || !matches.length}
-                title="Previous (Shift+Enter)"
-              >
-                <ChevronUp size={12} />
-              </button>
-              <button
-                className="find-nav-btn"
-                onClick={handleFindNext}
-                disabled={!searchQuery.trim() || !matches.length}
-                title="Next (Enter)"
-              >
-                <ChevronDown size={12} />
-              </button>
-            </div>
-            <button className="find-close-btn" onClick={onClose} title="Close (Esc)">
-              <X size={12} />
+          <ToolTip text="Previous Match (Shift+Enter)" position="bottom">
+            <button
+              className="vs-tool-btn"
+              onClick={handleFindPrevious}
+              disabled={!searchQuery.trim() || !matches.length}
+              aria-label="Previous Match (Shift+Enter)"
+            >
+              <ArrowUpIcon />
             </button>
-          </div>
-
-          {isReplaceMode && (
-            <div className="find-replace-controls">
-              <button
-                className="find-action-btn replace-action-btn"
-                onClick={handleReplaceNext}
-                disabled={!searchQuery.trim()}
-                title="Replace (Enter)"
-              >
-                <Replace size={11} />
-              </button>
-              <button
-                className="find-action-btn replace-action-btn replace-all-action-btn"
-                onClick={handleReplaceAll}
-                disabled={!searchQuery.trim()}
-                title="Replace All (Ctrl+Enter)"
-              >
-                <ReplaceAll size={11} />
-              </button>
-            </div>
-          )}
+          </ToolTip>
+          <ToolTip text="Next Match (Enter)" position="bottom">
+            <button
+              className="vs-tool-btn"
+              onClick={handleFindNext}
+              disabled={!searchQuery.trim() || !matches.length}
+              aria-label="Next Match (Enter)"
+            >
+              <ArrowDownIcon />
+            </button>
+          </ToolTip>
+          <ToolTip text="Find in Selection (Alt+L)" position="bottom">
+            <button
+              className={`vs-tool-btn ${findInSelection ? 'active' : ''}`}
+              onClick={() => setFindInSelection(!findInSelection)}
+              aria-label="Find in Selection (Alt+L)"
+            >
+              <SelectionIcon />
+            </button>
+          </ToolTip>
+          <ToolTip text="Close (Escape)" position="bottom">
+            <button
+              className="vs-tool-btn vs-close-icon-btn"
+              onClick={onClose}
+              aria-label="Close (Escape)"
+            >
+              <CloseIcon />
+            </button>
+          </ToolTip>
         </div>
+
+        {/* Row 2 Controls (Replace Actions) */}
+        {isReplaceMode && (
+          <div className="vs-control-row vs-replace-control-row">
+            <ToolTip text="Replace (Enter)" position="bottom">
+              <button
+                className="vs-tool-btn"
+                onClick={handleReplaceNext}
+                disabled={!searchQuery.trim() || !matches.length}
+                aria-label="Replace (Enter)"
+              >
+                <ReplaceOneIcon />
+              </button>
+            </ToolTip>
+            <ToolTip text="Replace All (Ctrl+Alt+Enter)" position="bottom">
+              <button
+                className="vs-tool-btn"
+                onClick={handleReplaceAll}
+                disabled={!searchQuery.trim() || !matches.length}
+                aria-label="Replace All (Ctrl+Alt+Enter)"
+              >
+                <ReplaceAllIcon />
+              </button>
+            </ToolTip>
+          </div>
+        )}
       </div>
     </div>
   )

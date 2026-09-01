@@ -12,6 +12,39 @@ import {
   moveCellFocus
 } from './tableExtension'
 
+function renderTextWithHighlight(text) {
+  const pattern = window.__lumina_active_search_pattern
+  if (!pattern || !text) return document.createTextNode(text)
+
+  const regex = new RegExp(pattern.source, pattern.flags)
+  regex.lastIndex = 0
+
+  if (!regex.test(text)) return document.createTextNode(text)
+  regex.lastIndex = 0
+
+  const frag = document.createDocumentFragment()
+  let lastIdx = 0
+  let match
+  while ((match = regex.exec(text)) !== null) {
+    if (match[0].length === 0) {
+      regex.lastIndex++
+      continue
+    }
+    if (match.index > lastIdx) {
+      frag.appendChild(document.createTextNode(text.slice(lastIdx, match.index)))
+    }
+    const mark = document.createElement('mark')
+    mark.className = 'cm-searchMatch cm-table-search-match'
+    mark.textContent = match[0]
+    frag.appendChild(mark)
+    lastIdx = match.index + match[0].length
+  }
+  if (lastIdx < text.length) {
+    frag.appendChild(document.createTextNode(text.slice(lastIdx)))
+  }
+  return frag
+}
+
 export function buildCellSourceDom(raw, view) {
   const frag = document.createDocumentFragment()
   const tokens = parseCellInline(raw)
@@ -20,7 +53,7 @@ export function buildCellSourceDom(raw, view) {
 }
 export function renderCellToken(tok, view) {
   if (tok.type === 'text') {
-    return document.createTextNode(tok.text)
+    return renderTextWithHighlight(tok.text)
   }
   if (tok.type === 'tag') {
     const span = document.createElement('span')
@@ -51,7 +84,7 @@ export function renderCellToken(tok, view) {
     wrap.appendChild(makeCellMark('`'))
     const inner = document.createElement('span')
     inner.className = 'cm-atomic-inline-code'
-    inner.textContent = tok.text
+    inner.appendChild(renderTextWithHighlight(tok.text))
     wrap.appendChild(inner)
     wrap.appendChild(makeCellMark('`'))
     return wrap
@@ -917,4 +950,27 @@ export function makeCell(tag, text, view) {
   })
   return cell
 }
-// ---- context menu -------------------------------------------------
+
+// =========================================================================
+// Table Search Highlighting (Highlights search matches inside table cells)
+// =========================================================================
+
+export function applyTableSearchHighlight(root, pattern) {
+  window.__lumina_active_search_pattern = pattern
+  const container = root || document
+  const sources = container.querySelectorAll ? container.querySelectorAll('.cm-atomic-table-cell-source') : []
+  sources.forEach((source) => {
+    renderCellSourceDecorated(source)
+  })
+}
+
+export function clearTableSearchHighlight(root) {
+  window.__lumina_active_search_pattern = null
+  const container = root || document
+  const sources = container.querySelectorAll ? container.querySelectorAll('.cm-atomic-table-cell-source') : []
+  sources.forEach((source) => {
+    renderCellSourceDecorated(source)
+  })
+}
+
+

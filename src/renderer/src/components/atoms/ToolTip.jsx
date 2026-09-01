@@ -1,15 +1,32 @@
-import React, { useState, useRef, cloneElement } from 'react'
+import React, { useState, useRef, cloneElement, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import './ToolTip.css'
 
-const ToolTip = ({ text, children, position = 'top', delay = 300 }) => {
+/**
+ * Enhanced ToolTip component with speech bubble arrow knob and shortcut badge support.
+ */
+const ToolTip = ({ text, children, position = 'top', delay = 200 }) => {
   const [isVisible, setIsVisible] = useState(false)
   const [coords, setCoords] = useState({ top: 0, left: 0, right: 'auto' })
   const childRef = useRef(null)
   const timeoutRef = useRef(null)
 
+  const formattedContent = useMemo(() => {
+    if (!text || typeof text !== 'string') return text
+    const match = text.match(/^(.*?)(?:\s*\(([^)]+)\))?$/)
+    if (match && match[2]) {
+      return (
+        <span className="tooltip-content-wrap">
+          <span className="tooltip-label">{match[1]}</span>
+          <kbd className="tooltip-kbd">{match[2]}</kbd>
+        </span>
+      )
+    }
+    return <span className="tooltip-label">{text}</span>
+  }, [text])
+
   const handleMouseEnter = (e) => {
-    if (children.props.onMouseEnter) {
+    if (children?.props?.onMouseEnter) {
       children.props.onMouseEnter(e)
     }
     timeoutRef.current = setTimeout(() => {
@@ -19,8 +36,7 @@ const ToolTip = ({ text, children, position = 'top', delay = 300 }) => {
         let left = 'auto'
         let right = 'auto'
 
-        // Add a slight gap
-        const gap = 6
+        const gap = 8
 
         if (position === 'top') {
           top = rect.top - gap
@@ -47,7 +63,7 @@ const ToolTip = ({ text, children, position = 'top', delay = 300 }) => {
   }
 
   const handleMouseLeave = (e) => {
-    if (children.props.onMouseLeave) {
+    if (children?.props?.onMouseLeave) {
       children.props.onMouseLeave(e)
     }
     clearTimeout(timeoutRef.current)
@@ -55,7 +71,7 @@ const ToolTip = ({ text, children, position = 'top', delay = 300 }) => {
   }
 
   const handleClick = (e) => {
-    if (children.props.onClick) {
+    if (children?.props?.onClick) {
       children.props.onClick(e)
     }
     clearTimeout(timeoutRef.current)
@@ -86,8 +102,10 @@ const ToolTip = ({ text, children, position = 'top', delay = 300 }) => {
           <div
             className={`tooltip-portal tooltip-${position}`}
             style={{ top: coords.top, left: coords.left, right: coords.right }}
+            role="tooltip"
           >
-            {text}
+            {formattedContent}
+            <div className="tooltip-arrow" />
           </div>,
           document.body
         )}
@@ -95,4 +113,4 @@ const ToolTip = ({ text, children, position = 'top', delay = 300 }) => {
   )
 }
 
-export default ToolTip
+export default React.memo(ToolTip)
