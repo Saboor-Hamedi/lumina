@@ -46,19 +46,16 @@
   flex-shrink: 0;
 }
 
-.editor-slash-search-input {
+.editor-slash-search-text {
   flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--text-main, #ffffff);
-  font-size: 11.5px;
+  color: var(--text-muted, #94a3b8);
+  font-size: 11px;
+  font-weight: 500;
   font-family: inherit;
-  padding: 0;
-}
-
-.editor-slash-search-input::placeholder {
-  color: var(--text-faint, rgba(255, 255, 255, 0.35));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;
 }
 
 .editor-slash-search-badge {

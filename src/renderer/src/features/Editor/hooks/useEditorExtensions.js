@@ -560,10 +560,20 @@ export function useEditorExtensions({
                   return true
                 }
 
-                // Feature 3: Smart List Auto-Continuation (-, *, +, 1., 1-, 1), a., a), a-, A., A), A-)
+                // Feature 3: Smart List & Blockquote Auto-Continuation
                 const lineText = line.text
 
-                // 3a. Exit empty list line on Enter
+                // 3a. Exit empty blockquote line on Enter
+                const emptyQuoteMatch = lineText.match(/^(\s*>+\s*)$/)
+                if (emptyQuoteMatch && pos === line.to) {
+                  view.dispatch({
+                    changes: { from: line.from, to: line.to, insert: '' },
+                    selection: { anchor: line.from }
+                  })
+                  return true
+                }
+
+                // 3b. Exit empty list line on Enter
                 const emptyListMatch = lineText.match(/^(\s*)([-*+]|\d+[.\-)]|[a-zA-Z][.\-)])\s*$/)
                 if (emptyListMatch && pos === line.to) {
                   view.dispatch({
@@ -573,8 +583,29 @@ export function useEditorExtensions({
                   return true
                 }
 
-                // 3b. Continue active list format
+                // 3c. Pure empty line: insert regular newline and prevent syntax markup mangling
+                if (lineText === '') {
+                  view.dispatch({
+                    changes: { from: pos, insert: '\n' },
+                    selection: { anchor: pos + 1 }
+                  })
+                  return true
+                }
+
+                // 3d. Continue active blockquote
                 const textBefore = lineText.slice(0, pos - line.from)
+                const quoteMatch = textBefore.match(/^(\s*>+)\s+(.*)$/)
+                if (quoteMatch) {
+                  const marker = quoteMatch[1]
+                  const insertText = `\n${marker} `
+                  view.dispatch({
+                    changes: { from: pos, insert: insertText },
+                    selection: { anchor: pos + insertText.length }
+                  })
+                  return true
+                }
+
+                // 3e. Continue active list format
                 const listMatch = textBefore.match(/^(\s*)([-*+]|(\d+)([.\-)])|([a-zA-Z])([.\-)]))\s+(.*)$/)
                 if (listMatch) {
                   const indent = listMatch[1]

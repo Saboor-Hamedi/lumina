@@ -1,9 +1,9 @@
 /**
  * EditorSlash.jsx
  * 
- * Floating, intelligent slash command palette for the Lumina Markdown Editor.
- * Features categorized commands, real-time interactive search input, smart boundary repositioning,
- * 2px rounded corners, and CodeMirror-synchronized arrow key navigation.
+ * Native, zero-friction inline slash command palette for the Lumina Markdown Editor.
+ * Focus remains 100% in the editor while typing; CodeMirror keymap coordinates seamless
+ * arrow browsing, selection, and instant markdown replacement.
  */
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
@@ -62,22 +62,12 @@ export const EditorSlash = ({
   slashHandlerRef
 }) => {
   const [selectedIndex, setSelectedIndex] = useState(0)
-  const [localQuery, setLocalQuery] = useState(query)
   const menuRef = useRef(null)
   const selectedItemRef = useRef(null)
-  const searchInputRef = useRef(null)
 
-  // Keep local query synchronized with editor query
-  useEffect(() => {
-    setLocalQuery(query)
-  }, [query])
-
-  // Active query is either from direct input or editor keystrokes
-  const activeQuery = localQuery !== undefined ? localQuery : query
-
-  // Filter commands fuzzily by query, keywords, and description
+  // Filter commands fuzzily based on the live query typed in CodeMirror
   const filteredCommands = useMemo(() => {
-    const q = (activeQuery || '').toLowerCase().trim()
+    const q = (query || '').toLowerCase().trim()
     if (!q) return EDITOR_SLASH_COMMANDS
 
     return EDITOR_SLASH_COMMANDS.filter((cmd) => {
@@ -86,14 +76,14 @@ export const EditorSlash = ({
       const matchKeywords = cmd.keywords?.some((k) => k.toLowerCase().includes(q))
       return matchLabel || matchDesc || matchKeywords
     })
-  }, [activeQuery])
+  }, [query])
 
   // Reset selection index when query changes
   useEffect(() => {
     setSelectedIndex(0)
-  }, [activeQuery])
+  }, [query])
 
-  // Auto-scroll selected item into view
+  // Auto-scroll selected item into view smoothly
   useEffect(() => {
     if (selectedItemRef.current) {
       selectedItemRef.current.scrollIntoView({
@@ -103,20 +93,7 @@ export const EditorSlash = ({
     }
   }, [selectedIndex])
 
-  // Auto-focus search input immediately when menu opens
-  useEffect(() => {
-    if (isOpen && searchInputRef.current) {
-      const timer = setTimeout(() => {
-        searchInputRef.current?.focus()
-        if (searchInputRef.current && searchInputRef.current.value) {
-          searchInputRef.current.select()
-        }
-      }, 10)
-      return () => clearTimeout(timer)
-    }
-  }, [isOpen])
-
-  // Bind CodeMirror keymap navigation handler to slashHandlerRef
+  // Connect CodeMirror keymap navigation directly to menu state
   useEffect(() => {
     if (slashHandlerRef) {
       slashHandlerRef.current = {
@@ -144,32 +121,6 @@ export const EditorSlash = ({
       }
     }
   }, [isOpen, filteredCommands, selectedIndex, onSelect, onClose, slashHandlerRef])
-
-  // Keyboard navigation when typing directly inside search input
-  const handleSearchInputKeyDown = (e) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      if (filteredCommands.length > 0) {
-        setSelectedIndex((prev) => (prev + 1) % filteredCommands.length)
-      }
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      if (filteredCommands.length > 0) {
-        setSelectedIndex((prev) => (prev - 1 + filteredCommands.length) % filteredCommands.length)
-      }
-    } else if (e.key === 'Enter' || e.key === 'Tab') {
-      e.preventDefault()
-      if (filteredCommands[selectedIndex]) {
-        onSelect(filteredCommands[selectedIndex])
-      }
-    } else if (e.key === 'Escape') {
-      e.preventDefault()
-      onClose()
-    } else if (e.key === 'Backspace' && activeQuery === '') {
-      e.preventDefault()
-      onClose()
-    }
-  }
 
   if (!isOpen || !coords) return null
 
@@ -204,25 +155,18 @@ export const EditorSlash = ({
 
   return (
     <div className="editor-slash-palette" style={style} ref={menuRef}>
-      {/* Real Interactive Search Input */}
+      {/* Clean Live Filter Indicator */}
       <div className="editor-slash-search-row">
         <Search size={12} className="editor-slash-search-icon" />
-        <input
-          ref={searchInputRef}
-          type="text"
-          className="editor-slash-search-input"
-          placeholder="Filter commands..."
-          value={activeQuery}
-          onChange={(e) => setLocalQuery(e.target.value)}
-          onKeyDown={handleSearchInputKeyDown}
-          onClick={(e) => e.stopPropagation()}
-        />
+        <span className="editor-slash-search-text">
+          {query ? `Filtering: /${query}` : 'Type to filter...'}
+        </span>
         <span className="editor-slash-search-badge">ESC</span>
       </div>
 
       <div className="editor-slash-list">
         {filteredCommands.length === 0 ? (
-          <div className="editor-slash-empty">No matching commands for "{activeQuery}"</div>
+          <div className="editor-slash-empty">No matching commands for "/{query}"</div>
         ) : (
           filteredCommands.map((cmd, index) => {
             const isSelected = index === selectedIndex
