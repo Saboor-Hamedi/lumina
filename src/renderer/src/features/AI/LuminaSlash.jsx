@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Zap, Brain, Palette, Image as ImageIcon, Code, Eraser } from 'lucide-react'
-import './SlashCommandMenu.css'
+import './luminSlash.css'
 
 export const SLASH_COMMANDS = [
   {
@@ -52,7 +52,7 @@ export const SLASH_COMMANDS = [
   }
 ]
 
-export const SlashCommandMenu = ({ isOpen, filterText, onSelect, onClose }) => {
+export const LuminaSlash = ({ isOpen, filterText, onSelect, onClose }) => {
   const [selectedIndex, setSelectedIndex] = useState(0)
 
   const filteredCommands = SLASH_COMMANDS.filter(
@@ -111,4 +111,4 @@ export const SlashCommandMenu = ({ isOpen, filterText, onSelect, onClose }) => {
   )
 }
 
-export default SlashCommandMenu
+export default LuminaSlash

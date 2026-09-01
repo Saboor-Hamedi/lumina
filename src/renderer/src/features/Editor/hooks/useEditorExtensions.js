@@ -36,8 +36,8 @@ import { tables } from '../../table/tableExtension'
 import { mermaidWidgetExtension } from '../../Workspace/mermaidWidgetExtension'
 import { calloutExtension } from '../../Workspace/calloutWidgetExtension'
 import { useCollapsible } from '../collapse/useCollapsible'
-import { wikilinkCaretFix } from '../wikilinkCaret'
 import { emptyLineSelectionFix } from './useEmptyLine'
+import { createEditorSlashPlugin } from '../../slash'
 
 export const updateSearchHighlights = StateEffect.define()
 
@@ -63,7 +63,9 @@ export function useEditorExtensions({
   isActiveRef,
   showFindWidgetRef,
   setShowFindWidget,
-  setReplaceModeActive
+  setReplaceModeActive,
+  onSlashStateChange,
+  slashHandlerRef
 }) {
   // --- View Capture & Cursor Persistence Plugin ---
   const captureViewPlugin = useMemo(() => {
@@ -664,7 +666,8 @@ export function useEditorExtensions({
       mermaidWidgetExtension,
       tagMentionExtension,
       emptyLineSelectionFix,
-      wikiLinksExtension
+      wikiLinksExtension,
+      ...(onSlashStateChange ? createEditorSlashPlugin({ onSlashStateChange, slashHandlerRef }) : [])
     ],
     [
       showToast,
@@ -676,7 +679,9 @@ export function useEditorExtensions({
       showFindWidgetRef,
       setShowFindWidget,
       setReplaceModeActive,
-      wikiLinksExtension
+      wikiLinksExtension,
+      onSlashStateChange,
+      slashHandlerRef
     ]
   )
 

@@ -26,6 +26,7 @@ import { useEditorState } from './hooks/useEditorState'
 import { useEditorExports } from './hooks/useEditorExports'
 import { useEditorEvents } from './hooks/useEditorEvents'
 import { useEditorExtensions } from './hooks/useEditorExtensions'
+import { EditorSlash } from '../slash'
 
 import './Editor.css'
 import '../codeBlock/codeWrapper.css'
@@ -43,6 +44,8 @@ const Editor = React.memo(
     const [showFindWidget, setShowFindWidget] = useState(false)
     const [replaceModeActive, setReplaceModeActive] = useState(false)
     const [isInlineAIOpen, setIsInlineAIOpen] = useState(false)
+    const [slashState, setSlashState] = useState({ isOpen: false })
+    const slashHandlerRef = useRef({ isOpen: false })
 
     // DOM & Editor references
     const editorHandleRef = useRef(null)
@@ -125,7 +128,9 @@ const Editor = React.memo(
       isActiveRef,
       showFindWidgetRef,
       setShowFindWidget,
-      setReplaceModeActive
+      setReplaceModeActive,
+      onSlashStateChange: setSlashState,
+      slashHandlerRef
     })
 
     // Keyboard Shortcuts
@@ -170,6 +175,22 @@ const Editor = React.memo(
             editorView={realViewRef.current}
             onClose={() => setShowFindWidget(false)}
             initialReplaceMode={replaceModeActive}
+          />
+        )}
+
+        {slashState.isOpen && (
+          <EditorSlash
+            isOpen={slashState.isOpen}
+            query={slashState.query}
+            coords={slashState.coords}
+            slashHandlerRef={slashHandlerRef}
+            onSelect={(cmd) => {
+              if (slashState.view && typeof cmd.execute === 'function') {
+                cmd.execute(slashState.view, slashState.from, slashState.to)
+              }
+              setSlashState({ isOpen: false })
+            }}
+            onClose={() => setSlashState({ isOpen: false })}
           />
         )}
 

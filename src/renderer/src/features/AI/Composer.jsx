@@ -13,7 +13,7 @@ import {
   Paperclip,
   Check
 } from 'lucide-react'
-import SlashCommandMenu from './SlashCommandMenu'
+import { LuminaSlash } from './LuminaSlash'
 import LuminaMention from './LuminaMention'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useVaultStore } from '../../core/store/useVaultStore'
@@ -241,7 +241,7 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
 
   return (
     <div className="composer-container">
-      <SlashCommandMenu
+      <LuminaSlash
         isOpen={showSlashMenu}
         filterText={slashFilter}
         onSelect={handleCommandSelect}

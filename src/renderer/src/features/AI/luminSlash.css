@@ -1,4 +1,4 @@
-/* SlashCommandMenu.css */
+/* luminSlash.css */
 .slash-menu-container {
   position: absolute;
   bottom: 100%; /* Shows above the input */
@@ -17,8 +17,6 @@
   animation: slideUp 0.15s ease-out;
   font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
 }
-
-
 
 .slash-menu-item {
   display: flex;

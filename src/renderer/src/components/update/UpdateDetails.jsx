@@ -156,7 +156,7 @@ Fixed
                 rel="noreferrer"
                 className="changelog-link"
               >
-                View Full Changelog →
+                View Full Changelog
               </a>
             </div>
           </div>
