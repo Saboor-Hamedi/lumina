@@ -43,8 +43,27 @@ const UpdateDetails = () => {
 
   const newVersion = updateInfo?.version || currentVersion
   
-  // Dummy parser for categorized release notes, or use default if empty
-  const rawNotes = updateInfo?.releaseNotes || 'New\n- Completely redesigned Update Command Center\n- Support for automatic silent background updates\n\nFixed\n- Editor caret height bug when zooming\n- Context menu closing prematurely on hover\n\nImproved\n- Context menu performance and rendering speed'
+  // Categorized release notes parser with latest version highlights
+  const rawNotes =
+    updateInfo?.releaseNotes ||
+    `New
+- Native Mark-Based Wikilinks: Seamless text selection and instant editing across all internal links
+- Multi-Format List Auto-Continuation: Smart continuation on Enter for numbered (1., 1-, 1)), lettered (a), a-, A.), and bullet (- , * , +) lists
+- Invisible Horizontal Table Scrolling: Tables with many columns now pan smoothly with zero scrollbar clutter
+- Dynamic Headings Block Cursor: Caret height and width dynamically adapt to heading font sizes and hide cleanly during text selection
+- Hierarchical Nested Lists: Tab / Shift-Tab indentation with progressive bullet styling (• ➔ ◦ ➔ ▪)
+
+Improved
+- Document Selection: Fixed line and heading selection to wrap tightly around text without full-width bleeding or newline spill
+- Fold Placeholders: Minimal, transparent heading collapse indicator that cleanly hides nested wikilinks
+- IconPicker Shortcut: Dedicated shortcut restricted to Ctrl + Shift + . (Cmd + Shift + .)
+- Clean Link Typography: Removed trailing external link icons from all internal note wikilinks
+- Table Column Layout: Natural column sizing preventing squished columns on wide data tables
+
+Fixed
+- Eliminated RangeError: Invalid child in posBefore when clicking, dragging, or double-clicking wikilinks
+- Resolved caret snapping and mousedown event hijacking inside CodeMirror
+- Cleaned up selection layer overlapping with resting caret blocks`
   
   const parseNotes = (text) => {
     const categories = []
@@ -85,19 +104,61 @@ const UpdateDetails = () => {
           <UpdateHeader currentVersion={currentVersion} newVersion={newVersion} status={status} />
 
           <div className="update-details-body selectable-text">
-            {parsedNotes.map((category, i) => (
-              <div key={i} className="release-category">
-                <div className="category-title">{category.title}</div>
-                <ul className="category-items">
-                  {category.items.map((item, j) => (
-                    <li key={j}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-            <a href="https://github.com/Saboor-Hamedi/lumina/releases" target="_blank" rel="noreferrer" className="changelog-link">
-              View Full Changelog
-            </a>
+            {parsedNotes.map((category, i) => {
+              const catKey = category.title.toLowerCase()
+              const isNew = catKey.includes('new')
+              const isFixed = catKey.includes('fix')
+              const isImproved = catKey.includes('improv')
+
+              return (
+                <div
+                  key={i}
+                  className={`release-category release-category-${isNew ? 'new' : isFixed ? 'fixed' : isImproved ? 'improved' : 'default'}`}
+                >
+                  <div className="category-header">
+                    <span
+                      className={`category-badge badge-${isNew ? 'new' : isFixed ? 'fixed' : isImproved ? 'improved' : 'default'}`}
+                    >
+                      {category.title}
+                    </span>
+                  </div>
+                  <ul className="category-items">
+                    {category.items.map((item, j) => {
+                      const colonIdx = item.indexOf(':')
+                      if (colonIdx !== -1) {
+                        const title = item.slice(0, colonIdx)
+                        const desc = item.slice(colonIdx + 1)
+                        return (
+                          <li key={j} className="release-item">
+                            <span className="release-bullet">•</span>
+                            <span className="release-text">
+                              <strong className="release-item-title">{title}:</strong>
+                              <span className="release-item-desc">{desc}</span>
+                            </span>
+                          </li>
+                        )
+                      }
+                      return (
+                        <li key={j} className="release-item">
+                          <span className="release-bullet">•</span>
+                          <span className="release-text">{item}</span>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </div>
+              )
+            })}
+            <div className="changelog-footer">
+              <a
+                href="https://github.com/Saboor-Hamedi/lumina/releases"
+                target="_blank"
+                rel="noreferrer"
+                className="changelog-link"
+              >
+                View Full Changelog →
+              </a>
+            </div>
           </div>
 
           <UpdateFooter 
