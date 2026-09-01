@@ -31,6 +31,7 @@ export const getReadFileTool = (blockReadFile) => {
         success: true,
         title: target.title,
         content: currentCode,
+        writtenContent: `### 📄 ${target.title}\n\n${currentCode}`,
         instruction_to_ai:
           'File read successfully. You MUST now respond to the user and answer based on this content.'
       }

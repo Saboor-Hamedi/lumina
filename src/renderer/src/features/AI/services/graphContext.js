@@ -1,40 +1,49 @@
 /**
- * Knowledge Graph Context Extractor
+ * Knowledge Graph Context Extractor (Polished)
  * Traverses 1-hop and 2-hop backlinks, forward links, and connected clusters in the vault.
  */
 
-export const extractGraphContext = (targetSnippets, allSnippets, maxHops = 2, maxConnectedNotes = 6) => {
+export const extractGraphContext = (
+  targetSnippets,
+  allSnippets,
+  maxHops = 2,
+  maxConnectedNotes = 6
+) => {
   if (!targetSnippets || targetSnippets.length === 0 || !allSnippets || allSnippets.length === 0) {
     return ''
   }
 
-  const snippetMap = new Map()
+  // Canonical title dictionary (lowercased -> original casing)
+  const canonicalTitles = new Map()
   allSnippets.forEach((s) => {
     if (s?.title) {
-      snippetMap.set(s.title.toLowerCase().trim(), s)
-      snippetMap.set(s.id, s)
+      const clean = s.title.trim()
+      canonicalTitles.set(clean.toLowerCase(), clean)
     }
   })
 
   const linkRegex = /\[\[(.*?)\]\]/g
-  const forwardLinks = new Map() // noteTitle -> Set of linked note titles
-  const backLinks = new Map() // noteTitle -> Set of notes linking to it
+  const forwardLinks = new Map() // lowerTitle -> Set of lowerTitle targets
+  const backLinks = new Map() // lowerTitle -> Set of lowerTitle sources
 
   allSnippets.forEach((s) => {
     const sTitle = (s.title || '').trim()
     if (!sTitle) return
+    const sKey = sTitle.toLowerCase()
     const code = s.code || ''
     const matches = [...code.matchAll(linkRegex)].map((m) => {
       const raw = m[1] || ''
-      return raw.split('|')[0].split('#')[0].trim()
+      return raw.split('|')[0].split('#')[0].trim().toLowerCase()
     })
 
-    if (!forwardLinks.has(sTitle)) forwardLinks.set(sTitle, new Set())
-    matches.forEach((target) => {
-      forwardLinks.get(sTitle).add(target)
+    if (!forwardLinks.has(sKey)) forwardLinks.set(sKey, new Set())
+    matches.forEach((targetKey) => {
+      if (!targetKey || targetKey === sKey) return // Skip empty or self-links
 
-      if (!backLinks.has(target)) backLinks.set(target, new Set())
-      backLinks.get(target).add(sTitle)
+      forwardLinks.get(sKey).add(targetKey)
+
+      if (!backLinks.has(targetKey)) backLinks.set(targetKey, new Set())
+      backLinks.get(targetKey).add(sKey)
     })
   })
 
@@ -45,26 +54,36 @@ export const extractGraphContext = (targetSnippets, allSnippets, maxHops = 2, ma
   targetSnippets.forEach((ts) => {
     const title = (ts.title || '').trim()
     if (!title) return
-    visited.add(title.toLowerCase())
+    const tKey = title.toLowerCase()
+    visited.add(tKey)
 
-    const fwd = Array.from(forwardLinks.get(title) || [])
-    const bwd = Array.from(backLinks.get(title) || [])
+    const fwd = Array.from(forwardLinks.get(tKey) || [])
+    const bwd = Array.from(backLinks.get(tKey) || [])
 
-    const directConnections = [...new Set([...fwd, ...bwd])]
-    if (directConnections.length > 0) {
-      graphConnections.push(`- **${title}** directly connects to: ${directConnections.map((c) => `[[${c}]]`).join(', ')}`)
+    const directKeys = [...new Set([...fwd, ...bwd])].filter((k) => k !== tKey)
+    if (directKeys.length > 0) {
+      const formattedDirect = directKeys
+        .map((k) => `[[${canonicalTitles.get(k) || k}]]`)
+        .join(', ')
+      graphConnections.push(`- **${title}** directly connects to: ${formattedDirect}`)
     }
 
     if (maxHops >= 2) {
-      directConnections.slice(0, 3).forEach((neighbor) => {
-        const nKey = neighbor.toLowerCase()
-        if (!visited.has(nKey)) {
-          visited.add(nKey)
-          const nFwd = Array.from(forwardLinks.get(neighbor) || [])
-          const nBwd = Array.from(backLinks.get(neighbor) || [])
-          const secondHop = [...new Set([...nFwd, ...nBwd])].filter((n) => n.toLowerCase() !== title.toLowerCase())
+      directKeys.slice(0, 3).forEach((neighborKey) => {
+        if (!visited.has(neighborKey)) {
+          visited.add(neighborKey)
+          const nFwd = Array.from(forwardLinks.get(neighborKey) || [])
+          const nBwd = Array.from(backLinks.get(neighborKey) || [])
+          const secondHop = [...new Set([...nFwd, ...nBwd])].filter(
+            (k) => k !== tKey && k !== neighborKey
+          )
           if (secondHop.length > 0) {
-            graphConnections.push(`  └─ [[${neighbor}]] connects deeper to: ${secondHop.slice(0, 3).map((c) => `[[${c}]]`).join(', ')}`)
+            const neighborName = canonicalTitles.get(neighborKey) || neighborKey
+            const formattedSecond = secondHop
+              .slice(0, 3)
+              .map((k) => `[[${canonicalTitles.get(k) || k}]]`)
+              .join(', ')
+            graphConnections.push(`  └─ [[${neighborName}]] connects deeper to: ${formattedSecond}`)
           }
         }
       })

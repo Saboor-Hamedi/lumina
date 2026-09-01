@@ -50,6 +50,7 @@ export const updateFileTool = aiSdk.tool({
       vs.drafts?.[target.id] !== undefined ? vs.drafts[target.id] : target.code || ''
 
     let newCode
+    let writtenText = replace || content || ''
 
     // 1. Targeted Section Replacement
     if (sectionHeader && replace !== undefined) {
@@ -58,26 +59,22 @@ export const updateFileTool = aiSdk.tool({
       if (sectionRegex.test(currentCode)) {
         newCode = currentCode.replace(sectionRegex, `${sectionHeader}\n\n${replace.trim()}\n\n`)
       } else {
-        // Append section at end if not found
         newCode = `${currentCode.trimEnd()}\n\n${sectionHeader}\n\n${replace.trim()}\n`
       }
+      writtenText = `### ${sectionHeader}\n\n${replace.trim()}`
     }
     // 2. Targeted Search and Replace
     else if (search !== undefined) {
       if (search === '') {
-        // Prepend to top
         newCode = (replace ?? '') + '\n' + currentCode
       } else if (currentCode.includes(search)) {
-        // Exact match
         newCode = currentCode.replace(search, replace ?? '')
       } else {
-        // Normalized whitespace fallback
         const normCurrent = currentCode.replace(/\r\n/g, '\n')
         const normSearch = search.replace(/\r\n/g, '\n')
         if (normCurrent.includes(normSearch)) {
           newCode = normCurrent.replace(normSearch, replace ?? '')
         } else {
-          // Case-insensitive fallback
           const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
           const regex = new RegExp(escaped, 'i')
           if (regex.test(currentCode)) {
@@ -94,6 +91,7 @@ export const updateFileTool = aiSdk.tool({
     // 3. Full Content Overwrite
     else if (content !== undefined) {
       newCode = content
+      writtenText = content
     } else {
       return {
         success: false,
@@ -118,6 +116,8 @@ export const updateFileTool = aiSdk.tool({
     return {
       success: true,
       title: target.title,
+      writtenContent: writtenText || newCode,
+      summary: `Updated **${target.title}** with requested additions!`,
       instruction_to_ai:
         'File updated successfully with targeted edits. Respond to the user and summarize specifically what was modified.'
     }

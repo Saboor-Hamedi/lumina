@@ -452,21 +452,6 @@ export function renderMermaidToElement(container, code, uniqueId) {
       })
       const { svg } = await mermaid.render(uniqueId, code)
       container.innerHTML = svg
-
-      const svgEl = container.querySelector('svg')
-      if (svgEl) {
-        svgEl.removeAttribute('width')
-        svgEl.style.maxWidth = 'none'
-
-        const viewBox = svgEl.getAttribute('viewBox')
-        if (viewBox) {
-          const parts = viewBox.split(' ')
-          if (parts.length === 4) {
-            const nativeWidth = parseFloat(parts[2])
-            svgEl.style.width = nativeWidth * 0.75 + 'px'
-          }
-        }
-      }
     } catch (err) {
       container.innerHTML = `<div class="mermaid-error"><strong>Mermaid Syntax Error</strong>\n${err.message}</div>`
     }

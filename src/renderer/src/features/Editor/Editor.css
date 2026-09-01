@@ -1656,18 +1656,20 @@ html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {
 .cm-mermaid-widget .mermaid-scroll-wrap {
   width: 100%;
   overflow-x: auto;
-  border-bottom-left-radius: 6px;
-  border-bottom-right-radius: 6px;
+  overflow-y: hidden;
+  display: block;
+  text-align: center;
 }
 
 .cm-mermaid-widget .mermaid-content {
   display: inline-block;
-  min-width: min-content;
-  padding: 12px;
+  max-width: 100%;
+  margin: 0 auto;
+  text-align: initial;
 }
 
 .cm-mermaid-widget svg {
-  max-width: none !important;
+  max-width: 100%;
   height: auto;
 }
 

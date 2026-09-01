@@ -686,9 +686,12 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
 - Use wikilinks **naturally and selectively** (e.g., when referencing other important notes or distinct concepts).
 - **DO NOT SPAM WIKILINKS**: Never wrap every sentence, header, bullet, or repetition of a topic with brackets. In chat responses and conversational suggestions, write in clean, polished prose without repetitive \`[[\` \`]]\` tags.
 
-**CRITICAL EXECUTION DIRECTIVES**:
-- **NEVER OUTPUT FILLER PROMISES**: Never say "Let me first check...", "Let me see what's in the file...", or "I will look into it" without immediately writing the full answer. If you call a tool, call it silently without chatting first.
-- **IMMEDIATE DELIVERY**: When asked to draft, explain, or write a note, deliver the complete, rich, structured markdown right away!
+**CRITICAL EXECUTION DIRECTIVES (ZERO TOLERANCE FOR FILLER PROMISES)**:
+- **ABSOLUTE BAN ON FUTURE-TENSE PROMISES**: NEVER say "Let me read the file...", "Let me pull that up...", "I'll read it now...", "Let me check...", or "Let me see what's in it".
+- When the user asks "what do you see?", "what do you read?", "have you read?", "so when?", or asks about any file:
+  The note content is ALREADY provided in your context below.
+  You MUST output the ACTUAL explanation, summary, and breakdown of what is inside the note IMMEDIATELY.
+  NEVER promise to read it — simply deliver the actual answer right now!
 
 **TOOLS AVAILABLE** (use these for file operations):
 - 'readFile' — read a workspace file by title (only use when you do NOT already have the file content)
@@ -704,18 +707,21 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
 - 'openFile' — open a file in the user's editor tab so they can see it
 
 **HOW TO USE TOOLS & ROUTE INTENT**:
-1. **WHEN THE USER @-MENTIONS A FILE (e.g. \`@NoteTitle write...\`, \`@NoteTitle add...\`, \`@NoteTitle update...\`)**:
-   - The user has targeted that specific note.
+1. **WHEN THE USER @-MENTIONS A FILE TO WRITE/ADD/EDIT (e.g. \`@NoteTitle write...\`, \`@NoteTitle add...\`, \`@NoteTitle update...\`)**:
+   - The user wants you to write to that note.
    - ALWAYS call \`appendToFile\` (for additions/notes) or \`updateFile\` (for targeted edits) directly to write to that file in the workspace editor!
-2. **WHEN THE USER ASKS TO CREATE A NOTE OR TOPIC FILE (e.g. "write a draft on X", "write a topic about X", "create a note about X", "write comprehensive note on X", "make a file for X")**:
-   - ALWAYS call \`createFile\` to create and open that note in the workspace editor with rich markdown headings and \`[[wikilinks]]\`!
-3. **WHEN THE USER ASKS A CONVERSATIONAL OR CONCEPTUAL QUESTION (e.g. "tell me about RAG", "what is RAG?", "how does RAG work?", "compare X and Y")**:
+2. **WHEN THE USER ASKS WHAT IS IN A NOTE OR TO EXPLAIN/SUMMARIZE (e.g. "what do you see @NoteTitle", "what's in @NoteTitle", "summarize @NoteTitle", "explain @NoteTitle")**:
+   - The note content is ALREADY provided below in this prompt under PRIMARY TARGET FILES.
+   - DO NOT call file writing tools. Immediately summarize and explain the content and structure of the note directly in the chat!
+3. **WHEN THE USER ASKS TO CREATE A NOTE OR TOPIC FILE (e.g. "write a draft on X", "write a topic about X", "create a note about X", "write comprehensive note on X", "make a file for X")**:
+   - ALWAYS call \`createFile\` to create and open that note in the workspace editor with rich markdown headings!
+4. **WHEN THE USER ASKS A CONVERSATIONAL OR CONCEPTUAL QUESTION (e.g. "tell me about RAG", "what is RAG?", "how does RAG work?", "compare X and Y")**:
    - Answer and explain directly in the chat window without modifying files!
-4. **FOR "clear", "empty", or "wipe"** → call \`clearFile\` directly.
-5. **FOR "rename"** → ONLY call \`renameFile\` if a new name is specified. If not, ask first.
-6. **FOR "delete"** → call \`deleteFile\`.
-7. **FOR "open"** → call \`openFile\`.
-8. When modifying a file, call the tool and provide a clean, insightful thought-partner walkthrough in the chat. NEVER output pre-tool filler like "I'll add...".
+5. **FOR "clear", "empty", or "wipe"** → call \`clearFile\` directly.
+6. **FOR "rename"** → ONLY call \`renameFile\` if a new name is specified. If not, ask first.
+7. **FOR "delete"** → call \`deleteFile\`.
+8. **FOR "open"** → call \`openFile\`.
+9. When modifying a file, call the tool and provide a clean, insightful thought-partner walkthrough in the chat. NEVER output pre-tool filler like "I'll add...".
 
 **CONTEXT**:
 ${vaultAccessNote}`
@@ -753,11 +759,26 @@ ${vaultAccessNote}`
             'CRITICAL: The content of these files is ALREADY provided above. Answer questions about them directly right now without saying "let me read it".\n'
         }
 
+        // Inject active open note if no explicit @-mentions were attached
+        const { useVaultStore } = await import('../../../core/store/useVaultStore')
+        const vs = useVaultStore.getState()
+        if (mentionedSnippets.length === 0 && vs.selectedSnippet) {
+          const activeNote = vs.selectedSnippet
+          const activeCode =
+            vs.drafts?.[activeNote.id] !== undefined
+              ? vs.drafts[activeNote.id]
+              : activeNote.code || ''
+          systemPrompt +=
+            `\n\n**🎯 CURRENTLY OPEN ACTIVE NOTE IN EDITOR: [Note: ${activeNote.title}]**\n` +
+            `${activeCode}\n\n` +
+            `CRITICAL DIRECTIVE:\n` +
+            `1. The user is currently viewing this open note in their workspace editor.\n` +
+            `2. When they ask "what do you see", "what do you read", "what is this", or ask questions about their note, the content is ALREADY provided above. Answer and explain immediately based on this content without calling readFile or saying "let me read it"!\n`
+        }
+
         // Only inject active tabs context if no explicit @-mentions were attached
         if (mentionedSnippets.length === 0 && contextSnippets.length > 0) {
           systemPrompt += '\n\n**Active Tabs Context:**\n'
-          const { useVaultStore } = await import('../../../core/store/useVaultStore')
-          const vs = useVaultStore.getState()
           contextSnippets.forEach((snip) => {
             const currentCode =
               vs.drafts?.[snip.id] !== undefined ? vs.drafts[snip.id] : snip.code || ''
@@ -939,8 +960,13 @@ ${vaultAccessNote}`
                   console.warn(`[AIStore] Tool ${chunk.toolName} failed:`, res.error)
                   fullContent += `\n\n*(⚠️ ${chunk.toolName}: ${res.error})*`
                 } else if (res && res.writtenContent) {
-                  const prefix = fullContent.trim() ? `${fullContent.trim()}\n\n` : ''
-                  fullContent = `${prefix}${res.writtenContent}`
+                  fullContent = res.writtenContent
+                  set((state) => {
+                    const msgs = [...state.chatMessages]
+                    if (msgs.length > 0)
+                      msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: fullContent }
+                    return { chatMessages: msgs }
+                  })
                 }
               } else if (chunk.type === 'tool-error') {
                 const errMsg = chunk.error?.message || chunk.error || 'Unknown tool error'
@@ -963,23 +989,37 @@ ${vaultAccessNote}`
               }
             }
 
-            // If the model executed tools without emitting text in step 2, show the tool summary
-            if (!fullContent.trim()) {
-              try {
-                const steps = await result.steps
-                const toolResults = steps?.flatMap((s) => s.toolResults || []) || []
-                if (toolResults.length > 0) {
-                  const lastRes = toolResults[toolResults.length - 1]?.result
-                  if (lastRes?.summary) {
+            // Post-stream inspection: Ensure filler text is always replaced with real content
+            try {
+              const steps = await result.steps
+              const toolResults = steps?.flatMap((s) => s.toolResults || []) || []
+              if (toolResults.length > 0) {
+                const lastRes = toolResults[toolResults.length - 1]?.result
+                if (
+                  !fullContent.trim() ||
+                  fullContent.length < 160 ||
+                  /^(let me|reading|i'll read|you asked|i will)\b/i.test(fullContent.trim())
+                ) {
+                  if (lastRes?.writtenContent) {
+                    fullContent = lastRes.writtenContent
+                  } else if (lastRes?.content) {
+                    fullContent = `### 📄 ${lastRes.title || 'Note'}\n\n${lastRes.content}`
+                  } else if (lastRes?.summary) {
                     fullContent = lastRes.summary
                   } else if (lastRes?.title) {
                     fullContent = `Done! Successfully saved to **${lastRes.title}**.`
-                  } else {
-                    fullContent = 'Done!'
                   }
                 }
-              } catch (_) {}
-            }
+              }
+            } catch (_) {}
+
+            // Guaranteed final state update so UI always renders the complete final content
+            set((state) => {
+              const msgs = [...state.chatMessages]
+              if (msgs.length > 0)
+                msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: fullContent || 'Done!' }
+              return { chatMessages: msgs }
+            })
           } else {
             // Fallback: existing provider-based streaming (for non-tool providers)
             const stream = provider.chatStream(finalMessages, {

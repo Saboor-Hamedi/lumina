@@ -89,14 +89,56 @@
   border-bottom: 1px solid var(--border-dim);
   border-radius: 0 0 2px 2px;
   overflow: hidden;
-  display: flex;
-  justify-content: center;
-  padding: 16px 12px;
+  display: block;
+  width: 100%;
+  padding: 0;
   cursor: zoom-in;
   position: relative;
+  box-sizing: border-box;
+}
+
+.cm-mermaid-widget .mermaid-scroll-wrap {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  display: block;
+  text-align: center;
+  padding: 22px 18px 16px;
+  min-height: 120px;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+.cm-mermaid-widget .mermaid-scroll-wrap::-webkit-scrollbar {
+  height: 5px;
+}
+
+.cm-mermaid-widget .mermaid-scroll-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cm-mermaid-widget .mermaid-scroll-wrap::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+}
+
+.cm-mermaid-widget .mermaid-scroll-wrap::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.cm-mermaid-widget .mermaid-content {
+  display: inline-block;
+  max-width: 100%;
+  margin: 0 auto;
+  text-align: initial;
 }
 
 .cm-mermaid-widget .mermaid-content svg {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto;
   animation: mermaid-fade-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
