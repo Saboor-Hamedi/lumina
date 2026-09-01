@@ -18,23 +18,29 @@ self.onmessage = (e) => {
 
     if (simulation) simulation.stop()
 
+    const nodeCount = nodes.length
+    const baseCharge = nodeCount <= 8 ? -250 : -800
+    const centerStrength = nodeCount <= 8 ? 0.15 : (payload.settings?.centerForce ?? 0.05)
+
     // Pure Physics based precisely on guide.md
     simulation = forceSimulation(nodes)
-      .force('charge', forceManyBody()
-          .strength(-800 * (payload.settings?.repelForce || 1))
+      .force(
+        'charge',
+        forceManyBody()
+          .strength(baseCharge * (payload.settings?.repelForce || 1))
           .distanceMax(1000)
       )
       .force(
         'link',
         forceLink(links)
           .id((d) => d.id)
-          .distance((link) => 30 + ((link.weight || 1) * 2))
+          .distance((link) => (nodeCount <= 8 ? 60 : 30) + ((link.weight || 1) * 2))
           .strength(0.1 * (payload.settings?.linkForce || 1))
       )
       .force('collide', forceCollide().radius(15).iterations(1))
       .force('center', forceCenter(0, 0))
-      .force('x', forceX(0).strength(payload.settings?.centerForce ?? 0.05))
-      .force('y', forceY(0).strength(payload.settings?.centerForce ?? 0.05))
+      .force('x', forceX(0).strength(centerStrength))
+      .force('y', forceY(0).strength(centerStrength))
       .alphaDecay(0.05)
       
     // Allocate ONCE when the worker starts
@@ -56,10 +62,13 @@ self.onmessage = (e) => {
     })
   } else if (type === 'UPDATE_SETTINGS') {
     if (!simulation) return
-    simulation.force('charge').strength(-800 * (payload.settings?.repelForce || 1))
+    const nodeCount = nodes.length
+    const baseCharge = nodeCount <= 8 ? -250 : -800
+    const centerStrength = nodeCount <= 8 ? 0.15 : (payload.settings?.centerForce ?? 0.05)
+    simulation.force('charge').strength(baseCharge * (payload.settings?.repelForce || 1))
     simulation.force('link').strength(0.1 * (payload.settings?.linkForce || 1))
-    simulation.force('x').strength(payload.settings?.centerForce ?? 0.05)
-    simulation.force('y').strength(payload.settings?.centerForce ?? 0.05)
+    simulation.force('x').strength(centerStrength)
+    simulation.force('y').strength(centerStrength)
     simulation.alpha(1).restart()
   } else if (type === 'RELEASE_BUFFER') {
     // Main thread has finished reading and returned ownership of the exact same memory!

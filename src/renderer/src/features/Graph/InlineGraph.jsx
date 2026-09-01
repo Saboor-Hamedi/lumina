@@ -92,20 +92,47 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate, hideMiniMap = false }
         )
 
         const nextNodes = filteredNodes.map((n, i) => {
+          const isCenter = n.snippetId === focusNodeId
+          const angle = (i / Math.max(1, filteredNodes.length - 1)) * 2 * Math.PI + Math.PI / 4
+          const radius = 75
+
           const oldN = prevNodes.get(n.id)
           if (oldN) {
             oldN.val = n.val
             oldN.group = n.group
             oldN.primaryTag = n.primaryTag
             oldN.snippetId = n.snippetId
+            if (isCenter) {
+              oldN.fx = 0
+              oldN.fy = 0
+              oldN.x = 0
+              oldN.y = 0
+            } else {
+              oldN.fx = undefined
+              oldN.fy = undefined
+              // If it was previously stuck at (0, 0), displace it outwards
+              if (Math.hypot(oldN.x || 0, oldN.y || 0) < 20) {
+                oldN.x = radius * Math.cos(angle)
+                oldN.y = radius * Math.sin(angle)
+                oldN.vx = Math.cos(angle) * 2
+                oldN.vy = Math.sin(angle) * 2
+              }
+            }
             return oldN
           }
           
-          if (n.snippetId !== focusNodeId) {
-            const angle = (i / filteredNodes.length) * 2 * Math.PI
-            const radius = 100 + Math.random() * 50 // Spread them out immediately
+          if (isCenter) {
+            n.fx = 0
+            n.fy = 0
+            n.x = 0
+            n.y = 0
+          } else {
+            n.fx = undefined
+            n.fy = undefined
             n.x = radius * Math.cos(angle)
             n.y = radius * Math.sin(angle)
+            n.vx = Math.cos(angle) * 2
+            n.vy = Math.sin(angle) * 2
           }
           return n
         })
@@ -131,15 +158,17 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate, hideMiniMap = false }
   // Setup forces ONCE when the graph mounts — never again
   useEffect(() => {
     if (!graphRef.current) return
-    graphRef.current.d3Force('charge', forceManyBody().strength(-150).distanceMax(800))
+    graphRef.current.d3Force('charge', forceManyBody().strength(-300).distanceMax(600))
     graphRef.current.d3Force('radial', null)
-    graphRef.current.d3Force('collide', forceCollide((node) => {
-      return (node.snippetId === focusNodeIdRef.current ? 7 : node.val ? Math.min(5, Math.max(2, Math.sqrt(node.val) * 1.5)) : 2) + 4
-    }).strength(0.8))
+    graphRef.current.d3Force('collide', forceCollide(25).strength(1))
     
-    // Dedicated orphan pull to prevent floating nodes
-    graphRef.current.d3Force('orphanPullX', forceX(0).strength(n => (n.val === 1 ? 0.25 : 0.03)))
-    graphRef.current.d3Force('orphanPullY', forceY(0).strength(n => (n.val === 1 ? 0.25 : 0.03)))
+    if (graphRef.current.d3Force('link')) {
+      graphRef.current.d3Force('link').distance(80).strength(0.7)
+    }
+
+    // Gentle global centering without collapsing neighbor nodes into (0, 0)
+    graphRef.current.d3Force('orphanPullX', forceX(0).strength(0.02))
+    graphRef.current.d3Force('orphanPullY', forceY(0).strength(0.02))
   }, []) // empty deps = runs once only
 
   // Pin center node and auto-fit when data or focus changes
@@ -158,12 +187,26 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate, hideMiniMap = false }
       }
     })
 
+    if (graphRef.current) {
+      graphRef.current.d3ReheatSimulation()
+    }
+
     // Auto-fit only the first time this focus node's data appears
     if (!hasInitialized.current) {
       hasInitialized.current = true
       setTimeout(() => {
         if (!graphRef.current) return
-        graphRef.current.zoomToFit(400, 20)
+        if (graphData.nodes.length <= 2) {
+          graphRef.current.centerAt(0, 0, 400)
+          graphRef.current.zoom(1.8, 400)
+        } else {
+          graphRef.current.zoomToFit(400, 60)
+          setTimeout(() => {
+            if (graphRef.current && graphRef.current.zoom() > 2.5) {
+              graphRef.current.zoom(2.0, 300)
+            }
+          }, 450)
+        }
       }, 300)
     }
   }, [graphData, focusNodeId])
@@ -191,7 +234,7 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate, hideMiniMap = false }
     (node, ctx, globalScale) => {
       const isActive = node.snippetId === focusNodeId
       const isHovered = hoverNode === node
-      const r = isActive ? 7 : node.val ? Math.min(5, Math.max(2, Math.sqrt(node.val) * 1.5)) : 2
+      const r = isActive ? 5 : node.val ? Math.min(4, Math.max(2, Math.sqrt(node.val) * 1.2)) : 2
       const isNeighborDimmed = hoverNode && hoverNode !== node && !hoverNeighbors.has(node.id)
 
       drawNode(ctx, node, r, nodeColor(node), isActive, isHovered,

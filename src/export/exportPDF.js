@@ -98,87 +98,110 @@ export const handleExportPDF = async (mainWindow, payload) => {
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github.min.css">
   <style>
     @page {
-      margin: 2.0cm 2.5cm;
+      size: A4;
+      margin: 20mm 20mm;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: 'Times New Roman', serif;
-      line-height: 1.5;
-      color: #1a1a1a;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #1e293b;
       background: #ffffff;
       padding: 0;
       margin: 0;
-      font-size: 11pt;
-      text-align: justify;
+      font-size: 10.5pt;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
     }
     h1, h2, h3, h4, h5, h6 {
       color: #0f172a;
-      font-family: 'Times New Roman', serif;
-      margin-top: 1.8em;
-      margin-bottom: 0.6em;
       font-weight: 700;
-      line-height: 1.25;
-      text-align: left;
+      line-height: 1.3;
+      page-break-after: avoid;
+      break-after: avoid;
     }
     h1 { 
-      margin-top: 2pt;
-      margin-bottom: 2pt; 
-      font-size: 16pt; 
-      color: #1e293b;
+      font-size: 20pt; 
+      margin-top: 0;
+      margin-bottom: 12pt;
+      padding-bottom: 6pt;
+      border-bottom: 1.5px solid #e2e8f0;
+      color: #0f172a;
     }
     h2 { 
-      margin-top: 1.5em; 
-      font-size: 14pt; 
+      font-size: 15pt; 
+      margin-top: 18pt; 
+      margin-bottom: 8pt;
+      padding-bottom: 4pt;
+      border-bottom: 1px solid #f1f5f9;
+      color: #1e293b;
     }
-    h3 { font-size: 13pt; margin-top: 1.2em; color: #334155; }
-    h4 { font-size: 12pt; margin-top: 1.2em; color: #475569; }
-    p { margin-bottom: 1.2em; color: #334155; text-align: justify; }
+    h3 { font-size: 12.5pt; margin-top: 14pt; margin-bottom: 6pt; color: #334155; }
+    h4 { font-size: 11pt; margin-top: 12pt; margin-bottom: 4pt; color: #475569; }
+    p { 
+      margin-bottom: 10pt; 
+      color: #334155; 
+      text-align: left;
+    }
     code {
-      font-family: 'Consolas', 'Courier New', monospace;
-      font-size: 10pt;
+      font-family: 'Consolas', 'Fira Code', 'Courier New', monospace;
+      font-size: 9.5pt;
       background-color: #f1f5f9;
       color: #e11d48;
-      padding: 2px 4px;
+      padding: 2px 5px;
       border-radius: 4px;
+      border: 1px solid #e2e8f0;
     }
     pre {
       background: #f8fafc;
-      padding: 16px;
+      padding: 14px 18px;
       border: 1px solid #e2e8f0;
       border-radius: 6px;
       white-space: pre-wrap;
       word-wrap: break-word;
-      margin: 1.5em 0;
+      margin: 12pt 0;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     pre code {
       background: transparent;
       padding: 0;
-      color: #334155;
+      border: none;
+      color: #1e293b;
+      font-size: 9pt;
+      line-height: 1.5;
     }
     blockquote {
-      border-left: 4px solid #6366f1;
+      border-left: 3.5px solid #6366f1;
       background-color: #f8fafc;
-      padding: 12px 16px;
-      margin: 1.5em 0;
+      padding: 10px 16px;
+      margin: 12pt 0;
       color: #475569;
       font-style: italic;
       border-radius: 0 6px 6px 0;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     table {
       border-collapse: collapse;
-      margin: 2em 0;
+      margin: 14pt 0;
       width: 100%;
-      font-size: 11pt;
+      font-size: 10pt;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     th, td {
       border: 1px solid #cbd5e1;
-      padding: 6px 10px;
+      padding: 7px 12px;
       text-align: left;
     }
     th {
       background: #f1f5f9;
-      font-weight: normal;
+      font-weight: 600;
       color: #0f172a;
+      font-size: 9.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
     }
     tr:nth-child(even) {
       background: #f8fafc;
@@ -186,6 +209,10 @@ export const handleExportPDF = async (mainWindow, payload) => {
     img {
       max-width: 100%;
       height: auto;
+      border-radius: 6px;
+      margin: 10pt 0;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     a {
       color: #2563eb;
@@ -195,18 +222,18 @@ export const handleExportPDF = async (mainWindow, payload) => {
       text-decoration: underline;
     }
     ul, ol {
-      margin: 1.2em 0;
-      padding-left: 2em;
+      margin: 10pt 0;
+      padding-left: 22pt;
       color: #334155;
     }
     li {
-      margin: 0.4em 0;
+      margin: 3pt 0;
     }
     hr {
       border: 0;
       height: 1px;
       background: #e2e8f0;
-      margin: 2em 0;
+      margin: 18pt 0;
     }
   </style>
 </head>

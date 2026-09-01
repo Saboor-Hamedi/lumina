@@ -273,9 +273,10 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             return oldN
           }
 
-          n.x = (Math.random() - 0.5) * 2000
-          n.y = (Math.random() - 0.5) * 2000
-          n.z = (Math.random() - 0.5) * 2000
+          const spread = nodes.length <= 10 ? 200 : 1000
+          n.x = (Math.random() - 0.5) * spread
+          n.y = (Math.random() - 0.5) * spread
+          n.z = (Math.random() - 0.5) * spread
           return n
         })
 
