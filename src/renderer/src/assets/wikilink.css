@@ -1,116 +1,59 @@
-/* src/assets/wikilink.css */
+/* ==========================================================================
+   Lumina Wikilink Styling (`wikilink.css`)
+   ========================================================================== */
 
-/* The wrapper MUST be inline for multi-line caret to work */
-.cm-wikilink-wrapper {
-  display: inline !important;
-  user-select: none !important;
-  -webkit-user-select: none !important;
-  cursor: pointer !important;
-  white-space: normal !important;
-  word-break: normal !important;
-}
-
-/* Base wikilink inline node/decoration */
-.cm-atomic-wiki-link,
-.cm-atomic-wikilink-wrap {
-  display: inline !important;          /* ✅ MUST be inline for line wrapping */
-  color: var(--text-accent, #a78bfa) !important;
-  text-decoration: none;
-  padding: 0 2px !important;
-  margin: 0 !important;
-  border-radius: 4px;
-  cursor: pointer !important;
-  vertical-align: baseline !important;
-  background: transparent;
-  transition: background 0.15s ease;
-  user-select: none !important;
-  -webkit-user-select: none !important;
-  
-  /* Reset CodeMirror atomic overrides that break caret */
-  width: auto !important;
-  height: auto !important;
-  transform: none !important;
-}
-
-.cm-atomic-wiki-link:hover,
-.cm-atomic-wikilink-wrap:hover {
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  background: rgba(var(--text-accent-rgb, 167, 139, 250), 0.12);
-}
-
-/* Ensure all internal elements do not steal the cursor/pointer events */
-.cm-atomic-wikilink-wrap *,
-.cm-atomic-wiki-link * {
-  pointer-events: none !important;
-  user-select: none !important;
-  -webkit-user-select: none !important;
-}
-
-/* The external link tooltip inside the wikilink */
-.cm-atomic-wiki-link:hover::after,
-.cm-atomic-wikilink-wrap:hover::after {
-  content: "Click to follow link";
-  position: absolute;
-  top: 100%;
-  left: 0;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  color: var(--text-muted);
-  white-space: nowrap;
-  z-index: 1000;
-  pointer-events: none !important;
-  opacity: 0.9;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-/* Hide Atomic Editor wiki link icon (the ⍈ icon) */
-.cm-atomic-wiki-link::after,
-.cm-atomic-wikilink-wrap::after,
-.cm-atomic-wiki-link svg,
-.cm-atomic-wikilink-wrap svg,
-.cm-atomic-wiki-link-unresolved::after,
-.cm-atomic-wiki-link-unresolved svg,
-.cm-atomic-wiki-link .cm-atomic-link-icon,
-.cm-atomic-wikilink-wrap .cm-atomic-link-icon,
-.wikilink-icon,
-.cm-atomic-wiki-link-hidden-syntax::after,
-.cm-atomic-wiki-link-hidden-syntax svg,
-.cm-atomic-wiki-link-hidden-syntax .cm-atomic-link::after,
-.cm-atomic-wiki-link + .cm-atomic-link-icon,
-.cm-atomic-wiki-link-hidden-syntax + .cm-atomic-link-icon,
-.cm-atomic-wiki-link-unresolved + .cm-atomic-link-icon {
+/* Wikilink syntax brackets ([[ and ]]) hidden on inactive lines */
+.cm-wikilink-syntax {
   display: none !important;
 }
 
-/* The pipe separators and text lines */
-.cm-line {
-  /* Ensure the parent line allows wrapping and selection */
+/* Base Wikilink Text (100% Native Document Text) */
+.cm-atomic-wiki-link {
+  display: inline !important;
+  color: var(--text-accent, #40bafa) !important;
+  text-decoration: underline !important;
+  text-decoration-thickness: 1px !important;
+  text-underline-offset: 3px !important;
+  cursor: pointer !important;
   user-select: text !important;
   -webkit-user-select: text !important;
-  white-space: pre-wrap !important;
-  word-wrap: break-word !important;
-  display: block !important;
-  overflow: visible !important;
+  transition: color 0.15s ease, opacity 0.15s ease;
 }
 
-/* Prevent any pseudo-elements on line from capturing clicks */
-.cm-line::after,
-.cm-line::before {
-  pointer-events: none !important;
+.cm-atomic-wiki-link:hover {
+  color: var(--text-accent-hover, #30a9e9) !important;
+  opacity: 0.9;
 }
 
-/* Ensure hidden syntax text is completely zero-size to prevent any ghost or duplicate letters */
-.cm-atomic-wiki-link-hidden-syntax {
-  color: transparent !important;
-  font-size: 0 !important;
-  line-height: 0 !important;
-  letter-spacing: 0 !important;
-  user-select: none !important;
-  pointer-events: none !important;
+/* Completely remove external link icon (↗) from wikilinks */
+.cm-atomic-wiki-link::after,
+.cm-atomic-wikilink-wrap::after,
+.cm-atomic-wiki-link-resolved::after,
+.cm-atomic-wiki-link-active::after,
+.cm-atomic-wiki-link .cm-atomic-link-icon,
+.cm-atomic-wiki-link-resolved .cm-atomic-link-icon {
+  display: none !important;
+  content: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
+/* Active Editing State: reveals the raw [[brackets]] seamlessly */
+.cm-atomic-wiki-link-active {
+  text-decoration: none !important;
+  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.12) !important;
+  border-radius: 3px;
+  padding: 0 2px;
+}
 
+.cm-atomic-wiki-link-active .cm-wikilink-syntax {
+  display: inline !important;
+  color: var(--text-faint, #777777) !important;
+}
+
+/* Selection Highlight inside wikilinks */
+.cm-atomic-wiki-link::selection,
+.cm-atomic-wiki-link-active::selection {
+  background: var(--bg-selection, rgba(64, 186, 250, 0.35)) !important;
+  color: inherit !important;
+}

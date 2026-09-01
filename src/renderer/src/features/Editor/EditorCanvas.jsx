@@ -43,68 +43,16 @@ export const EditorCanvas = React.memo(
     const inlineMetadata = useSettingsStore((state) => state.settings?.inlineMetadata !== false)
     const snippets = useVaultStore((state) => state.snippets)
 
-    // --- Forceful Native Event Listener for Wikilinks ---
+    // --- Setup Wikilink Hover Preview ---
     useEffect(() => {
       const wrapper = editorWrapperRef.current
       if (!wrapper) return
 
       const cleanupHover = setupWikilinkHover(wrapper, useVaultStore.getState)
-
-      const handleMouseDown = async (e) => {
-        const linkEl = e.target.closest('.cm-atomic-wiki-link')
-        if (linkEl) {
-          e.preventDefault()
-          e.stopPropagation()
-          const target = linkEl.getAttribute('data-wiki-link-target')
-          if (target) {
-            try {
-              const { snippets: allSnippets, saveSnippet, setSelectedSnippet } = useVaultStore.getState()
-              const targetLower = target.toLowerCase()
-              let targetSnippet = allSnippets.find((s) => {
-                if (!s.title) return false
-
-                const titleLower = s.title.toLowerCase()
-                const fullPathLower = s.folderId
-                  ? `${s.folderId}/${s.title}`.toLowerCase()
-                  : titleLower
-
-                return (
-                  titleLower === targetLower ||
-                  titleLower === `${targetLower}.md` ||
-                  fullPathLower === targetLower ||
-                  fullPathLower === `${targetLower}.md`
-                )
-              })
-              if (!targetSnippet) {
-                targetSnippet = {
-                  id: crypto.randomUUID(),
-                  title: target,
-                  code: `# ${target}\n\n`,
-                  language: 'markdown',
-                  tags: '',
-                  timestamp: Date.now()
-                }
-                await saveSnippet(targetSnippet)
-              }
-              setSelectedSnippet(targetSnippet)
-            } catch (err) {
-              showToast(`Failed to open wikilink: ${err.message}`, 'error')
-            }
-          }
-          return
-        }
-
-        if (e.target.closest('.mermaid-edit-btn') || e.target.closest('.mermaid-widget-header')) {
-          return
-        }
-      }
-
-      wrapper.addEventListener('mousedown', handleMouseDown, { capture: true })
       return () => {
-        wrapper.removeEventListener('mousedown', handleMouseDown, { capture: true })
         cleanupHover()
       }
-    }, [showToast])
+    }, [])
 
     return (
       <div

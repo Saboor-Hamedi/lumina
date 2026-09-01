@@ -242,15 +242,22 @@
   white-space: nowrap !important;
   padding-right: 0 !important;
   margin-right: 0 !important;
-  user-select: none !important;
-  -webkit-user-select: none !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
 }
 
-.cm-line .cm-atomic-wiki-link::after {
-  content: '';
-  display: inline-block;
-  width: 0;
-  pointer-events: none !important;
+/* Suppress all external link icons on wikilinks and markdown links */
+.markdown-editor .cm-atomic-link::after,
+.markdown-editor .cm-atomic-wiki-link::after,
+.cm-atomic-link::after,
+.cm-atomic-wiki-link::after,
+.cm-atomic-link-icon {
+  display: none !important;
+  content: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
 }
 
 .cm-selectionLayer,
@@ -266,14 +273,21 @@
   pointer-events: none !important;
 }
 
-/* Block cursor */
+/* Block cursor - scales with line height and title font metrics */
 [data-caret-style="block"] .cm-cursor,
 .markdown-editor.cursor-block .cm-cursor {
   border-left-color: transparent !important;
-  background: var(--caret-color, var(--text-accent));
-  width: 0.6em;
-  opacity: 0.6;
-  border-radius: 1px;
+  background: var(--caret-color, var(--text-accent)) !important;
+  width: 0.58em !important;
+  opacity: 0.65 !important;
+  border-radius: 2px !important;
+  box-sizing: border-box !important;
+}
+
+/* Hide standalone cursor block while selecting a text range so it doesn't clash with the selection box */
+.markdown-editor:has(.cm-selectionBackground) .cm-cursorLayer,
+.cm-editor:has(.cm-selectionBackground) .cm-cursorLayer {
+  opacity: 0 !important;
 }
 
 /* Sharp cursor */
