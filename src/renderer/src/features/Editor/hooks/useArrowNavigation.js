@@ -10,11 +10,17 @@
 import { EditorView } from '@codemirror/view'
 import { cursorLineUp as defaultCursorLineUp, cursorLineDown as defaultCursorLineDown } from '@codemirror/commands'
 import { syntaxTree } from '@codemirror/language'
+import { completionStatus } from '@codemirror/autocomplete'
 
 /**
  * Handles ArrowUp navigation with multi-line block widget bypass.
  */
 export function handleArrowUp(view) {
+  // If autocompletion list or slash popup is active, yield to completion keymap
+  if (completionStatus(view.state) !== null) {
+    return false
+  }
+
   const sel = view.state.selection.main
   if (!sel.empty) return defaultCursorLineUp(view)
 
@@ -79,6 +85,11 @@ export function handleArrowUp(view) {
  * Handles ArrowDown navigation with multi-line block widget bypass.
  */
 export function handleArrowDown(view) {
+  // If autocompletion list or slash popup is active, yield to completion keymap
+  if (completionStatus(view.state) !== null) {
+    return false
+  }
+
   const sel = view.state.selection.main
   if (!sel.empty) return defaultCursorLineDown(view)
 

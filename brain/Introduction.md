@@ -1,23 +1,39 @@
 # Lumina — Your AI-Powered Thinking Workspace
 
-**Lumina** is a premium, privacy-focused workspace for your notes, research, and ideas. Instead of storing your thoughts in a proprietary cloud where you can't control them, Lumina keeps everything securely on your local computer in a "Workspace" of plain text notes. This means your data is always yours, always fast, and always accessible.
+**Lumina** is a high-performance, privacy-focused knowledge workspace for your notes, ideas, and research. Built entirely on local-first principles, Lumina stores everything directly on your computer in plain Markdown notes. Your data belongs to you—always fast, offline-first, and completely secure.
 
-At its core, Lumina is designed for people who write and think. It features a beautiful, distraction-free editor, a visual Knowledge Graph that shows how your ideas connect, and a deeply integrated AI Assistant. The AI acts as your personal research partner—it understands your entire workspace, so you can ask it questions about your own notes, brainstorm new ideas, or have it help you write, all without ever leaving the app.
+---
 
-## Key Features
+## Core Capabilities
 
-- **End-to-End Privacy:** Everything is stored directly on your machine. No cloud subscriptions, no data mining.
-- **AI Research Partner:** Chat with an AI that has full context of your entire workspace. Ask it to summarize folders, brainstorm new ideas, or connect related concepts.
-- **"Ask Anything" Bar (Spotlight):** Press `Ctrl + Space` anywhere — even when Lumina is in the background — to open one bar that searches your notes and answers your questions with AI. Type a title to get live results with a preview, or type a question to get an answer.
-- **Knowledge Map:** Visualize how your thoughts connect. See your ideas grow organically over time in a beautiful, interactive graph.
-- **Distraction-Free Environment:** A sleek, customizable interface designed to help you focus on what matters most—your writing. 
-- **Instant Search:** Find any note, thought, or idea instantly with a powerful global search.
+- **Rich Live Preview Editor:** Powered by CodeMirror 6 with live-rendered widgets for interactive tables, Mermaid diagrams, Obsidian-style callouts (`[!NOTE]`, `[!TIP]`), KaTeX mathematical expressions, syntax-highlighted code blocks, and task lists.
+- **Deep AI Integration:** Lumina includes an integrated AI research partner with full context of your workspace. Summarize folders, brainstorm connections, extract tasks, and chat with your notes.
+- **Visual Knowledge Graph:** Explore your ideas visually through an interactive physics-driven graph that maps how notes link together.
+- **Spotlight Quick Switcher (`Ctrl + Space` / `Ctrl + P`):** Instantly navigate notes, search document text, or ask the AI questions with live preview cards.
+- **Roadmap & Progress Views:** Track project milestones and tasks with automated roadmap completion progress bars.
+- **Interactive Markdown Tables:** Create, resize, format, and organize tabular data with full keyboard navigation and cell formatting.
+
+---
 
 ## Getting Started
 
-1. **Create a note** — press `Ctrl + N` and start typing. It auto-saves.
-2. **Ask anything** — press `Ctrl + Space` to open the Spotlight bar, type a note title to find it, or type a question and press Enter for an AI answer.
-3. **Open AI Chat** — press `Ctrl + Shift + \` to chat with Lumina about your workspace.
-4. **Explore connections** — open the Knowledge Map (`Ctrl + G`) to see how your notes link together.
+1. **Create a Note** — Press `Ctrl + N` to create a new note.
+2. **Find Anything** — Press `Ctrl + Space` or `Ctrl + P` to search notes across your entire vault.
+3. **Link Notes** — Type `[[` to trigger wikilink autocompletion and connect related concepts.
+4. **Open Knowledge Graph** — Press `Ctrl + G` to view your connected graph.
+5. **Open Documentation** — Access the complete **Learning Markdown** guides and cheat sheets from the Help menu.
 
-For the full shortcut list, see [Shortcuts.md](./Shortcuts.md).
+---
+
+## Learning Markdown
+
+Explore the organized chapters in the sidebar under **Learning Markdown**:
+1. [Basic Syntax](references/01-basic-syntax.md) — Headings, formatting, lists, links, and blockquotes.
+2. [Code & Syntax](references/02-code-and-syntax.md) — Fenced code blocks and language highlighting.
+3. [Tables & Task Lists](references/03-tables-and-tasklists.md) — Interactive tables and checklists.
+4. [Mermaid Diagrams](references/04-mermaid-diagrams.md) — Flowcharts, sequence diagrams, and ERDs.
+5. [Math & HTML](references/05-math-and-html.md) — KaTeX equations and HTML elements.
+6. [Callouts & Admonitions](references/06-admonitions-and-advanced.md) — Alert callouts, YAML metadata, and footnotes.
+7. [Best Practices & Cheat Sheet](references/07-best-practices.md) — Structuring tips and quick reference card.
+
+For the full list of keyboard shortcuts, see [Keyboard Shortcuts](shortcuts.md).

@@ -8,12 +8,18 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
   let hoverTimeout = null
   let closeTimeout = null
   let currentTarget = null
+  let activeHoverEl = null
 
   const removeCard = (resetTarget = true) => {
     if (hoverCard) {
-      hoverCard.remove()
+      if (hoverCard.parentNode) {
+        hoverCard.parentNode.removeChild(hoverCard)
+      } else if (typeof hoverCard.remove === 'function') {
+        hoverCard.remove()
+      }
       hoverCard = null
     }
+    activeHoverEl = null
     if (resetTarget) {
       currentTarget = null
     }
@@ -21,18 +27,22 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
       clearTimeout(closeTimeout)
       closeTimeout = null
     }
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout)
+      hoverTimeout = null
+    }
   }
 
-  const createCard = (x, y, title, contentSnippet, timestamp, noteId) => {
+  const createCard = (linkEl, title, contentSnippet, timestamp, noteId) => {
     removeCard(false) // Do NOT reset currentTarget when refreshing the card
 
     hoverCard = document.createElement('div')
     hoverCard.className = 'cm-wiki-hover horizontal'
-    hoverCard.style.position = 'absolute'
-    hoverCard.style.visibility = 'hidden' // Prevent any 0,0 flash/shake on creation
+    hoverCard.style.position = 'fixed'
+    hoverCard.style.borderRadius = '2px'
+    hoverCard.style.visibility = 'hidden' // Prevent 0,0 flash
 
     if (contentSnippet !== null && contentSnippet !== undefined) {
-      // Very minimal and compact header for title and expand button
       const header = document.createElement('div')
       header.className = 'wiki-hover-header horizontal'
       header.style.display = 'flex'
@@ -51,7 +61,7 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
       headerTitle.style.textOverflow = 'ellipsis'
       headerTitle.style.whiteSpace = 'nowrap'
       headerTitle.style.flex = '1'
-      headerTitle.style.transform = 'translateY(1px)' // visual optical adjustment for center
+      headerTitle.style.transform = 'translateY(1px)'
 
       header.appendChild(headerTitle)
 
@@ -66,7 +76,7 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
         expandIcon.style.transition = 'all 0.2s'
         expandIcon.style.marginLeft = '8px'
         expandIcon.style.padding = '2px'
-        expandIcon.style.borderRadius = '4px'
+        expandIcon.style.borderRadius = '2px'
 
         expandIcon.onmouseover = () => {
           expandIcon.style.color = 'var(--text-accent)'
@@ -81,7 +91,7 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
           evt.preventDefault()
           evt.stopPropagation()
           const { snippets, setSelectedSnippet } = getVaultStore()
-          const targetNote = snippets.find((s) => s.id === noteId)
+          const targetNote = snippets?.find((s) => s.id === noteId)
           if (targetNote && setSelectedSnippet) {
             setSelectedSnippet(targetNote)
             removeCard()
@@ -93,7 +103,6 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
 
       hoverCard.appendChild(header)
 
-      // Content Wrap
       const contentWrap = document.createElement('div')
       contentWrap.className = 'wiki-hover-content-wrap'
       contentWrap.style.padding = '4px 12px 12px 12px'
@@ -101,7 +110,7 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
       const contentEl = document.createElement('div')
       contentEl.className = 'wiki-hover-content'
 
-      let parsedSnippet = contentSnippet
+      let parsedSnippet = String(contentSnippet || '')
       const lines = parsedSnippet.split('\n')
       if (lines.length > 15) {
         parsedSnippet = lines.slice(0, 15).join('\n') + '\n\n...'
@@ -113,19 +122,19 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
       )
       contentEl.innerHTML = marked.parse(parsedSnippet)
 
-      // Resolve local image assets so they display correctly in the hover card
+      // Resolve local image assets
       const allImages = contentEl.querySelectorAll('img')
       allImages.forEach((img) => {
         const url = img.getAttribute('src')
         img.style.maxWidth = '100%'
-        img.style.borderRadius = '6px'
+        img.style.borderRadius = '2px'
         img.style.marginTop = '8px'
 
         if (url && !url.startsWith('http') && !url.startsWith('data:')) {
           const cleanUrl = url.startsWith('/') ? url.slice(1) : url
-          img.src = '' // Clear until loaded
+          img.src = ''
           window.api
-            .readAsset(cleanUrl)
+            ?.readAsset(cleanUrl)
             .then((buffer) => {
               const blob = new Blob([buffer])
               img.src = URL.createObjectURL(blob)
@@ -148,9 +157,10 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
           const id = `hover-mermaid-${Date.now()}-${idx}`
           const pre = block.parentElement
 
-          const wrapper = document.createElement('div')
-          wrapper.className = 'cm-mermaid-widget'
-          wrapper.style.margin = '10px 0'
+          const widgetWrap = document.createElement('div')
+          widgetWrap.className = 'cm-mermaid-widget'
+          widgetWrap.style.margin = '10px 0'
+          widgetWrap.style.borderRadius = '2px'
 
           const scrollWrap = document.createElement('div')
           scrollWrap.className = 'mermaid-scroll-wrap'
@@ -175,9 +185,8 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
           `
 
           scrollWrap.appendChild(contentDiv)
-          wrapper.appendChild(scrollWrap)
-
-          pre.replaceWith(wrapper)
+          widgetWrap.appendChild(scrollWrap)
+          pre.replaceWith(widgetWrap)
 
           renderMermaidToElement(contentDiv, code, id)
         })
@@ -197,15 +206,15 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
           }
         })
 
-        const wrapper = document.createElement('div')
-        wrapper.className = 'hover-code-wrapper'
-        wrapper.style.display = 'block'
-        wrapper.style.marginTop = '12px'
-        wrapper.style.marginBottom = '12px'
-        wrapper.style.borderRadius = '8px'
-        wrapper.style.overflow = 'hidden'
-        wrapper.style.background = 'var(--bg-editor, #1e1e1e)'
-        wrapper.style.border = '1px solid var(--border-dim, rgba(255,255,255,0.05))'
+        const codeWrapper = document.createElement('div')
+        codeWrapper.className = 'hover-code-wrapper'
+        codeWrapper.style.display = 'block'
+        codeWrapper.style.marginTop = '12px'
+        codeWrapper.style.marginBottom = '12px'
+        codeWrapper.style.borderRadius = '2px'
+        codeWrapper.style.overflow = 'hidden'
+        codeWrapper.style.background = 'var(--bg-editor, #1e1e1e)'
+        codeWrapper.style.border = '1px solid var(--border-dim, rgba(255,255,255,0.05))'
 
         const header = document.createElement('div')
         header.style.position = 'relative'
@@ -224,7 +233,7 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
         langPill.style.color = 'var(--text-muted, rgba(255, 255, 255, 0.4))'
         langPill.style.background = 'rgba(255, 255, 255, 0.05)'
         langPill.style.padding = '4px 10px'
-        langPill.style.borderRadius = '4px'
+        langPill.style.borderRadius = '2px'
         langPill.style.letterSpacing = '0.5px'
         langPill.style.cursor = 'pointer'
         langPill.style.transition = 'all 0.2s ease'
@@ -260,9 +269,9 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
         }
         header.appendChild(langPill)
 
-        pre.replaceWith(wrapper)
-        wrapper.appendChild(header)
-        wrapper.appendChild(pre)
+        codeWrapper.appendChild(header)
+        codeWrapper.appendChild(pre)
+        pre.replaceWith(codeWrapper)
 
         pre.className = ''
         pre.style.whiteSpace = 'pre-wrap'
@@ -281,7 +290,6 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
 
         if (lang !== 'text' && !hljs.getLanguage(lang)) {
           codeEl.classList.remove(`language-${lang}`)
-          // We can optionally add a generic class to prevent auto-detect from doing crazy things
           codeEl.classList.add('nohighlight')
         }
 
@@ -305,6 +313,7 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
       hoverCard.dataset.noteId = noteId
     } else {
       hoverCard.className = 'cm-wiki-hover rename-modal-style not-found-modal'
+      hoverCard.style.borderRadius = '2px'
 
       const contentBox = document.createElement('div')
       contentBox.className = 'not-found-rename-box'
@@ -355,50 +364,126 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
     document.body.appendChild(hoverCard)
 
     const wrapperRect = wrapper.getBoundingClientRect()
+    const contentEl = wrapper.querySelector('.cm-content') || wrapper
+    const contentRect = contentEl.getBoundingClientRect()
+    
+    let linkRect = null
+    if (linkEl && typeof linkEl.getBoundingClientRect === 'function') {
+      linkRect = linkEl.getBoundingClientRect()
+    } else if (linkEl && typeof linkEl.left === 'number') {
+      linkRect = linkEl
+    } else {
+      linkRect = {
+        left: wrapperRect.left + 20,
+        right: wrapperRect.left + 100,
+        top: wrapperRect.top + 20,
+        bottom: wrapperRect.top + 40,
+        width: 80,
+        height: 20
+      }
+    }
 
-    if (wrapperRect.width < 540) {
-      hoverCard.style.maxWidth = `${Math.max(200, wrapperRect.width - 40)}px`
+    // Responsive width: strictly constrained within editor content & wrapper dimensions
+    const maxAllowedWidth = Math.max(220, Math.min(540, contentRect.width, wrapperRect.width - 24))
+    hoverCard.style.maxWidth = `${maxAllowedWidth}px`
+    if (contentRect.width < 540) {
       hoverCard.style.minWidth = 'auto'
       hoverCard.style.whiteSpace = 'normal'
     }
 
     const rect = hoverCard.getBoundingClientRect()
 
-    let top = y + 20
-    let left = x - rect.width / 2
+    // 1. Parallel alignment with the link and editor text column
+    let left = linkRect.left
 
-    const viewportWidth = window.innerWidth
-    const viewportHeight = window.innerHeight
-
-    if (left + rect.width > viewportWidth - 20) {
-      left = viewportWidth - rect.width - 20
-    }
-    if (left < 20) {
-      left = 20
+    const maxRight = Math.min(window.innerWidth - 12, contentRect.right, wrapperRect.right - 12)
+    if (left + rect.width > maxRight) {
+      left = maxRight - rect.width
     }
 
-    // Smart positioning: if there is no space below, place it above the cursor
-    if (top + rect.height > viewportHeight - 20) {
-      top = y - rect.height - 20
+    const minLeft = Math.max(12, contentRect.left, wrapperRect.left + 12)
+    if (left < minLeft) {
+      left = minLeft
+    }
 
-      // If it also doesn't fit above, stick to top of screen
-      if (top < 20) {
-        top = 20
+    // 2. Vertical positioning: right beneath the link or above if space is tight
+    let top = linkRect.bottom + 6
+
+    const bottomLimit = Math.min(window.innerHeight - 12, wrapperRect.bottom - 12)
+    const topLimit = Math.max(12, wrapperRect.top + 12)
+
+    if (top + rect.height > bottomLimit) {
+      top = linkRect.top - rect.height - 6
+      if (top < topLimit) {
+        top = topLimit
       }
     }
 
+    hoverCard.addEventListener('mouseenter', () => {
+      if (closeTimeout) {
+        clearTimeout(closeTimeout)
+        closeTimeout = null
+      }
+    })
+
+    hoverCard.addEventListener('mouseleave', (e) => {
+      if (e.relatedTarget && (e.relatedTarget.closest?.('.cm-atomic-wiki-link, .cm-atomic-wikilink-wrap') === activeHoverEl)) {
+        return
+      }
+      if (!closeTimeout) {
+        closeTimeout = setTimeout(() => {
+          removeCard(true)
+        }, 300)
+      }
+    })
+
     hoverCard.style.top = `${Math.round(top)}px`
     hoverCard.style.left = `${Math.round(left)}px`
-    hoverCard.style.visibility = 'visible' // Show smoothly at exact integer coordinates
+    hoverCard.style.visibility = 'visible'
+  }
+
+  const triggerHoverForTarget = (linkEl, target) => {
+    if (!target) return
+    const { snippets } = getVaultStore()
+    const targetLower = target.toLowerCase()
+
+    let note = snippets?.find((s) => {
+      if (!s.title) return false
+      const titleLower = s.title.toLowerCase()
+      const fullPathLower = s.folderId ? `${s.folderId}/${s.title}`.toLowerCase() : titleLower
+      return (
+        titleLower === targetLower ||
+        titleLower === `${targetLower}.md` ||
+        fullPathLower === targetLower ||
+        fullPathLower === `${targetLower}.md`
+      )
+    })
+
+    if (note) {
+      const rawContent = note.code || ''
+      createCard(linkEl, note.title, rawContent, note.updatedAt, note.id)
+    } else {
+      createCard(linkEl, target, null, null, null)
+    }
   }
 
   const handleMouseOver = (e) => {
     if (!e.target || typeof e.target.closest !== 'function') return
-    const linkEl = e.target.closest('.cm-atomic-wiki-link, .cm-atomic-wikilink-wrap')
+    const linkEl = e.target.closest('.cm-atomic-wiki-link, .cm-atomic-wikilink-wrap, [data-wiki-link-target]')
     if (!linkEl || !wrapper.contains(linkEl)) return
 
-    const target = linkEl.getAttribute('data-wiki-link-target') || linkEl.getAttribute('data-url')
+    // Never trigger hover preview on links that are currently active/being edited with caret
+    if (linkEl.classList.contains('cm-atomic-wiki-link-active') || linkEl.closest('.cm-atomic-wiki-link-active')) {
+      return
+    }
+
+    const target =
+      linkEl.getAttribute('data-wiki-link-target') ||
+      linkEl.getAttribute('data-url') ||
+      linkEl.textContent?.replace(/^\[\[|\]\]$/g, '').trim()
     if (!target) return
+
+    activeHoverEl = linkEl
 
     if (closeTimeout) {
       clearTimeout(closeTimeout)
@@ -412,38 +497,37 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
     hoverTimeout = setTimeout(() => {
       hoverTimeout = null
       if (currentTarget !== target) return
+      triggerHoverForTarget(linkEl, target)
+    }, 200)
+  }
 
-      const { snippets } = getVaultStore()
-      const targetLower = target.toLowerCase()
+  const handleMouseOut = (e) => {
+    if (!e.target || typeof e.target.closest !== 'function') return
+    const linkEl = e.target.closest('.cm-atomic-wiki-link, .cm-atomic-wikilink-wrap, [data-wiki-link-target]')
+    if (!linkEl) return
 
-      let note = snippets.find((s) => {
-        if (!s.title) return false
+    // If moving directly into the hover card, do not close
+    if (e.relatedTarget && (hoverCard?.contains(e.relatedTarget) || e.relatedTarget.closest?.('.cm-wiki-hover'))) {
+      return
+    }
 
-        const titleLower = s.title.toLowerCase()
-        const fullPathLower = s.folderId ? `${s.folderId}/${s.title}`.toLowerCase() : titleLower
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout)
+      hoverTimeout = null
+    }
 
-        return (
-          titleLower === targetLower ||
-          titleLower === `${targetLower}.md` ||
-          fullPathLower === targetLower ||
-          fullPathLower === `${targetLower}.md`
-        )
-      })
-
-      if (note) {
-        const rawContent = note.code || ''
-        createCard(e.clientX, e.clientY, note.title, rawContent, note.updatedAt, note.id)
-      } else {
-        createCard(e.clientX, e.clientY, target, null, null, null)
-      }
-    }, 350)
+    if (hoverCard && !closeTimeout) {
+      closeTimeout = setTimeout(() => {
+        removeCard(true)
+      }, 300)
+    }
   }
 
   const handleDocumentClick = (e) => {
     if (hoverCard && !hoverCard.contains(e.target)) {
       let linkEl = null
       if (e.target && typeof e.target.closest === 'function') {
-        linkEl = e.target.closest('.cm-atomic-wiki-link, .cm-atomic-wikilink-wrap')
+        linkEl = e.target.closest('.cm-atomic-wiki-link, .cm-atomic-wikilink-wrap, [data-wiki-link-target]')
       }
       if (!linkEl || !wrapper.contains(linkEl)) {
         removeCard()
@@ -451,61 +535,32 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
     }
   }
 
-  const handleDocumentMouseMove = (e) => {
-    let isOverLink = null
-    if (e.target && typeof e.target.closest === 'function') {
-      isOverLink = e.target.closest('.cm-atomic-wiki-link, .cm-atomic-wikilink-wrap')
-    }
-    if (isOverLink && !wrapper.contains(isOverLink)) {
-      isOverLink = null // Ignore links from other editor instances
-    }
-    const isOverCard =
-      hoverCard &&
-      (hoverCard.contains(e.target) ||
-        (e.target && e.target.closest && e.target.closest('.cm-wiki-hover')))
-
-    if (isOverLink) {
-      if (closeTimeout) {
-        clearTimeout(closeTimeout)
-        closeTimeout = null
-      }
-      const target =
-        isOverLink.getAttribute('data-wiki-link-target') || isOverLink.getAttribute('data-url')
-      if (target && currentTarget !== target && !hoverCard && !hoverTimeout) {
-        handleMouseOver(e)
-      }
-    } else if (isOverCard) {
-      if (closeTimeout) {
-        clearTimeout(closeTimeout)
-        closeTimeout = null
-      }
-      if (hoverTimeout) {
-        clearTimeout(hoverTimeout)
-        hoverTimeout = null
-      }
-    } else {
-      if (hoverTimeout) {
-        clearTimeout(hoverTimeout)
-        hoverTimeout = null
-      }
-
-      if (hoverCard && !closeTimeout) {
-        closeTimeout = setTimeout(() => {
-          removeCard(true)
-        }, 350)
-      } else if (!hoverCard && !hoverTimeout && !closeTimeout) {
-        currentTarget = null
-      }
-    }
-  }
-
   const handleKeyDown = (e) => {
-    if (e.key === 'Escape' && hoverCard) {
+    if (!hoverCard) return
+
+    if (e.key === 'Escape') {
       e.preventDefault()
       e.stopPropagation()
       e.stopImmediatePropagation()
       clearTimeout(hoverTimeout)
-      removeCard(false) // Keep currentTarget so it doesn't instantly reopen if mouse is still on it
+      removeCard(false)
+      return
+    }
+
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'PageDown' || e.key === 'PageUp') {
+      const scrollWrap = hoverCard.querySelector('.wiki-hover-content-wrap') || hoverCard
+      const scrollAmount = (e.key === 'PageDown' || e.key === 'PageUp') ? 160 : 40
+
+      if (scrollWrap) {
+        if (e.key === 'ArrowDown' || e.key === 'PageDown') {
+          scrollWrap.scrollTop += scrollAmount
+        } else {
+          scrollWrap.scrollTop -= scrollAmount
+        }
+        e.preventDefault()
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }
     }
   }
 
@@ -516,27 +571,17 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
     }
   }
 
-  const handleMouseLeave = () => {
-    if (hoverCard && !closeTimeout) {
-      closeTimeout = setTimeout(() => {
-        removeCard(true)
-      }, 350)
-    }
-  }
-
   wrapper.addEventListener('mouseover', handleMouseOver)
+  wrapper.addEventListener('mouseout', handleMouseOut)
   document.addEventListener('mousedown', handleDocumentClick)
-  document.addEventListener('mousemove', handleDocumentMouseMove)
-  document.addEventListener('mouseleave', handleMouseLeave)
-  window.addEventListener('keydown', handleKeyDown, true)
+  document.addEventListener('keydown', handleKeyDown, true)
   window.addEventListener('close-hover-card', handleCloseHoverCard)
 
   return () => {
     wrapper.removeEventListener('mouseover', handleMouseOver)
+    wrapper.removeEventListener('mouseout', handleMouseOut)
     document.removeEventListener('mousedown', handleDocumentClick)
-    document.removeEventListener('mousemove', handleDocumentMouseMove)
-    document.removeEventListener('mouseleave', handleMouseLeave)
-    window.removeEventListener('keydown', handleKeyDown, true)
+    document.removeEventListener('keydown', handleKeyDown, true)
     window.removeEventListener('close-hover-card', handleCloseHoverCard)
     removeCard()
     clearTimeout(hoverTimeout)

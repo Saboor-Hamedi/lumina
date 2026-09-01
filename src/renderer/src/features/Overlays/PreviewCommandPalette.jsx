@@ -25,18 +25,23 @@ import '../codeBlock/codeWrapper.css'
  * A reusable, full-fidelity read-only markdown preview.
  * Inherits 100% of the editor's typography, extensions, tables, and scrolling.
  */
-export const PreviewCommandPalette = React.memo(({ content, onClose }) => {
-  const [shouldRenderEditor, setShouldRenderEditor] = useState(false)
-  const [copiedBlockId, setCopiedBlockId] = useState(null)
+export const PreviewCommandPalette = React.memo(({ content, onClose, customLinkHandler, footerNav }) => {
+  const scrollerRef = React.useRef(null)
+  const [shouldRenderEditor] = useState(true)
 
   useEffect(() => {
-    // Mount editor smoothly on initial render
-    const timer = setTimeout(() => setShouldRenderEditor(true), 30)
-    return () => clearTimeout(timer)
-  }, [])
+    if (scrollerRef.current) {
+      scrollerRef.current.scrollTop = 0
+    }
+  }, [content])
 
   const handleLinkClick = useMemo(
     () => async (url) => {
+      if (customLinkHandler) {
+        const handled = customLinkHandler(url)
+        if (handled) return
+      }
+
       if (url.match(/^(https?|mailto|file):\/\//i)) {
         window.open(url, '_blank')
         return
@@ -44,7 +49,7 @@ export const PreviewCommandPalette = React.memo(({ content, onClose }) => {
       try {
         const { snippets, setSelectedSnippet } = useVaultStore.getState()
         const targetLower = url.toLowerCase()
-        const targetSnippet = snippets.find(
+        const targetSnippet = snippets?.find(
           (s) =>
             s.title &&
             (s.title.toLowerCase() === targetLower || s.title.toLowerCase() === `${targetLower}.md`)
@@ -57,7 +62,7 @@ export const PreviewCommandPalette = React.memo(({ content, onClose }) => {
         console.error(e)
       }
     },
-    [onClose]
+    [onClose, customLinkHandler]
   )
 
   const extensions = useMemo(
@@ -92,6 +97,7 @@ export const PreviewCommandPalette = React.memo(({ content, onClose }) => {
 
   return (
     <div
+      ref={scrollerRef}
       className="markdown-editor mode-source preview-body seamless-scrollbar"
       style={{
         overflowY: 'auto',
@@ -117,19 +123,6 @@ export const PreviewCommandPalette = React.memo(({ content, onClose }) => {
           max-width: 850px !important;
           margin: 0 auto !important;
           padding: 0 20px 40px 20px !important;
-        }
-        ${
-          copiedBlockId != null
-            ? `
-          .cm-line.cb-code-header[data-cb-id="${copiedBlockId}"]::before {
-            content: '✓ COPIED' !important;
-            color: #4caf50 !important;
-            background: transparent !important;
-            border-color: transparent !important;
-            font-weight: bold !important;
-          }
-        `
-            : ''
         }
       `}</style>
       <div className="editor-scroller" style={{ overflow: 'visible', height: 'auto', padding: 0 }}>
@@ -168,6 +161,7 @@ export const PreviewCommandPalette = React.memo(({ content, onClose }) => {
               <span style={{ fontSize: '12px', opacity: 0.7 }}>Rendering preview...</span>
             </div>
           )}
+          {footerNav}
         </div>
       </div>
     </div>

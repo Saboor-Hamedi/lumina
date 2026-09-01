@@ -1447,7 +1447,7 @@ html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {
 
 .cm-wiki-hover.rename-modal-style.not-found-modal {
   background: var(--bg-app, #121212) !important;
-  border-radius: 8px !important;
+  border-radius: 2px !important;
   padding: 14px 24px !important;
   width: auto !important;
   min-width: 260px !important;

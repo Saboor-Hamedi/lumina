@@ -51,9 +51,10 @@ export function useWikilinkCompletion({ showToast }) {
     if (match.from === match.to && !context.explicit) return null
 
     const { snippets } = useVaultStore.getState()
+    const query = match[1] ? match[1].toLowerCase() : ''
 
-    let opts = snippets
-      .filter((s) => s.title)
+    const opts = (snippets || [])
+      .filter((s) => s.title && (!query || s.title.toLowerCase().includes(query)))
       .map((s) => ({
         label: s.title,
         type: 'text',
@@ -73,9 +74,7 @@ export function useWikilinkCompletion({ showToast }) {
         }
       }))
 
-    if (opts.length === 0) {
-      opts = [{ label: 'No notes found', apply: ']]' }]
-    }
+    if (opts.length === 0) return null
 
     return {
       from: match.from + 2,

@@ -28,11 +28,11 @@ export const emptyLineSelectionFix = EditorView.domEventHandlers({
         return true
       }
 
-      // 2. If double-clicking past the text on the line, select only the text without trailing \n
+      // 2. If double-clicking past the text on the line, simply place the caret at line.to without selecting full block
       if (coords.pos >= line.to) {
         e.preventDefault()
         view.dispatch({
-          selection: { anchor: line.from, head: line.to }
+          selection: { anchor: line.to }
         })
         return true
       }

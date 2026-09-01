@@ -1,72 +1,125 @@
-import React, { useState, useEffect, useRef, useCallback, startTransition } from 'react'
-import { Square, Copy, Book, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import React, { useState, useEffect, useRef, useCallback, startTransition, useMemo } from 'react'
+import { Square, Copy, Book, PanelLeftClose, PanelLeftOpen, FileText, Clock, ChevronLeft, ChevronRight } from 'lucide-react'
 import ModalHeader from '../Overlays/ModalHeader'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import DocSidebar from './DocSidebar'
+import { PreviewCommandPalette } from '../Overlays/PreviewCommandPalette'
+import '../Overlays/PreviewModal/PreviewModal.css'
 import './Documentation.css'
 
 // Use Vite's glob import to read all markdown files in brain/ directory as raw strings
-const markdownFiles = import.meta.glob('../../../../../brain/**/*.md', {
+const markdownFiles = import.meta.glob(['../../../../../brain/**/*.md', '../../../../../brain/*.md'], {
   query: '?raw',
   eager: true,
   import: 'default'
 })
 
-const DocsContent = React.memo(({ content, setSelectedDoc, docs }) => (
-  <div className="docs-content">
-    <div className="docs-content-inner">
-      {content ? (
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          components={{
-            a: ({ node, href, children, ...props }) => {
-              return (
-                <a
-                  href={href}
-                  {...props}
-                  onClick={(e) => {
-                    e.preventDefault()
-                    if (!href) return
+const formatDocTitle = (name) => {
+  const customTitles = {
+    introduction: 'Introduction to Lumina',
+    shortcuts: 'Keyboard Shortcuts',
+    'quick-start': 'Quick Start Guide',
+    '01-basic-syntax': '1. Basic Syntax',
+    '02-code-and-syntax': '2. Code & Syntax Highlighting',
+    '03-tables-and-tasklists': '3. Tables & Task Lists',
+    '04-mermaid-diagrams': '4. Mermaid Diagrams',
+    '05-math-and-html': '5. Math & HTML Support',
+    '06-admonitions-and-advanced': '6. Callouts & Admonitions',
+    '07-best-practices': '7. Best Practices & Cheat Sheet'
+  }
+  if (customTitles[name.toLowerCase()]) return customTitles[name.toLowerCase()]
+  return name
+    .replace(/^[0-9]+-/, '')
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+}
 
-                    // Only handle internal brain/.md links
-                    if (href.endsWith('.md')) {
-                      // Normalize the path by removing leading './' or 'brain/'
-                      let targetPath = href.replace(/^(?:\.\/|brain\/)+/, '')
+const DocsContent = React.memo(({ content, setSelectedDoc, docs, selectedDoc, prevDoc, nextDoc }) => {
+  const handleCustomLink = useCallback(
+    (url) => {
+      if (!url) return false
 
-                      // Support relative paths like 'features/01-architecture.md'
-                      // If targetPath exists in docs, select it
-                      if (docs && docs[targetPath]) {
-                        if (setSelectedDoc) setSelectedDoc(targetPath)
-                      } else {
-                        // Attempt to find by filename only
-                        const filename = targetPath.split('/').pop()
-                        const match = Object.keys(docs || {}).find((k) => k.endsWith(filename))
-                        if (match && setSelectedDoc) setSelectedDoc(match)
-                        else if (setSelectedDoc) setSelectedDoc(targetPath)
-                      }
-                    }
-                    // Vault or external links do nothing
-                  }}
-                >
-                  {children}
-                </a>
-              )
-            }
-          }}
+      if (url.endsWith('.md')) {
+        let targetPath = url.replace(/^(?:\.\/|brain\/)+/, '')
+        if (docs && docs[targetPath]) {
+          if (setSelectedDoc) setSelectedDoc(targetPath)
+          return true
+        }
+        const filename = targetPath.split('/').pop()
+        const match = Object.keys(docs || {}).find((k) => k.endsWith(filename))
+        if (match && setSelectedDoc) {
+          setSelectedDoc(match)
+          return true
+        }
+      }
+      return false
+    },
+    [docs, setSelectedDoc]
+  )
+
+  if (!content) {
+    return (
+      <div className="docs-empty-state">
+        <Book size={48} className="docs-empty-state-icon" />
+        <p>Select a document to read</p>
+      </div>
+    )
+  }
+
+  const footerNav = (prevDoc || nextDoc) ? (
+    <div className="docs-nav-footer">
+      {prevDoc ? (
+        <button
+          className="docs-nav-btn prev-btn"
+          onClick={() => setSelectedDoc(prevDoc)}
         >
-          {content}
-        </ReactMarkdown>
+          <span className="docs-nav-btn-label">
+            <ChevronLeft size={12} className="docs-nav-arrow-left" /> Previous
+          </span>
+          <span className="docs-nav-btn-title">
+            {formatDocTitle(prevDoc.split('/').pop().replace('.md', ''))}
+          </span>
+        </button>
       ) : (
-        <div className="docs-empty-state">
-          <Book size={48} className="docs-empty-state-icon" />
-          <p>Select a document to read</p>
-        </div>
+        <div />
+      )}
+
+      {nextDoc && (
+        <button
+          className="docs-nav-btn next-btn"
+          onClick={() => setSelectedDoc(nextDoc)}
+        >
+          <span className="docs-nav-btn-label">
+            Next <ChevronRight size={12} className="docs-nav-arrow-right" />
+          </span>
+          <span className="docs-nav-btn-title">
+            {formatDocTitle(nextDoc.split('/').pop().replace('.md', ''))}
+          </span>
+        </button>
       )}
     </div>
-  </div>
-))
+  ) : null
+
+  return (
+    <div
+      className="docs-content"
+      style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        overflow: 'hidden',
+        background: 'var(--bg-app)'
+      }}
+    >
+      <PreviewCommandPalette
+        content={content}
+        customLinkHandler={handleCustomLink}
+        footerNav={footerNav}
+      />
+    </div>
+  )
+})
 
 const Documentation = ({ isOpen, onClose }) => {
   const [docs, setDocs] = useState({})
@@ -94,9 +147,10 @@ const Documentation = ({ isOpen, onClose }) => {
       }
       setDocs(loadedDocs)
 
-      // Select the first doc by default (e.g. introduction.md)
-      const introDoc = Object.keys(loadedDocs).find((k) => k.includes('introduction.md'))
-      const defaultDoc = introDoc || Object.keys(loadedDocs)[0]
+      // Select default doc (prefer introduction.md or 01-basic-syntax.md)
+      const introDoc = Object.keys(loadedDocs).find((k) => k.toLowerCase().includes('introduction'))
+      const syntaxDoc = Object.keys(loadedDocs).find((k) => k.includes('01-basic-syntax'))
+      const defaultDoc = introDoc || syntaxDoc || Object.keys(loadedDocs)[0]
 
       if (defaultDoc) {
         setSelectedDoc(defaultDoc)
@@ -104,6 +158,25 @@ const Documentation = ({ isOpen, onClose }) => {
     }
     loadDocs()
   }, [])
+
+  // Ordered list of docs for next/prev navigation
+  const sortedDocList = useMemo(() => {
+    const list = []
+    const ignored = ['refrences.md', 'lumina.md', 'scope.md']
+    Object.keys(docs)
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
+      .forEach((path) => {
+        const filename = path.split('/').pop()
+        if (!ignored.includes(filename.toLowerCase())) {
+          list.push(path)
+        }
+      })
+    return list
+  }, [docs])
+
+  const currentIndex = sortedDocList.indexOf(selectedDoc)
+  const prevDoc = currentIndex > 0 ? sortedDocList[currentIndex - 1] : null
+  const nextDoc = currentIndex >= 0 && currentIndex < sortedDocList.length - 1 ? sortedDocList[currentIndex + 1] : null
 
   // Load content when selectedDoc changes
   useEffect(() => {
@@ -215,30 +288,50 @@ const Documentation = ({ isOpen, onClose }) => {
     }
   })
 
+  const readingStats = useMemo(() => {
+    const words = content ? content.split(/\s+/).filter(Boolean).length : 0
+    const minutes = Math.max(1, Math.ceil(words / 200))
+    return { words, minutes }
+  }, [content])
+
+  const headerStats = (
+    <div className="preview-stats-bar" style={{ marginRight: '16px' }}>
+      <span className="preview-indicator-tag">DOCS</span>
+      <div className="preview-stat-sep" />
+      <div className="preview-stat-item">
+        <FileText size={12} /> {readingStats.words} words
+      </div>
+      <div className="preview-stat-sep" />
+      <div className="preview-stat-item">
+        <Clock size={12} /> ~{readingStats.minutes} min read
+      </div>
+    </div>
+  )
+
   if (!isOpen) return null
 
   return (
     <div
-      className="nexus-overlay"
+      className="nexus-overlay preview-overlay-glass"
       onClick={onClose}
-      style={{ backdropFilter: 'blur(4px)', background: 'rgba(0,0,0,0.4)' }}
     >
       <div
         ref={containerRef}
-        className={`nexus-container modal-container${isMaximized ? ' maximized' : ''}`}
+        className={`nexus-container modal-container preview-modal-container${isMaximized ? ' maximized' : ''}`}
         onClick={(e) => e.stopPropagation()}
         style={{
           flexDirection: 'column',
-          width: isMaximized ? '100%' : '90%',
-          height: isMaximized ? '100%' : '700px',
-          maxWidth: isMaximized ? 'none' : '1000px',
-          maxHeight: isMaximized ? 'none' : '85vh',
+          width: isMaximized ? '100vw' : '92vw',
+          height: isMaximized ? '100vh' : '88vh',
+          maxWidth: isMaximized ? 'none' : '1100px',
+          maxHeight: isMaximized ? 'none' : '90vh',
           transform: isMaximized
             ? 'none'
             : `translate3d(${modalPos.current.x}px, ${modalPos.current.y}px, 0)`,
           transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-          boxShadow: '0 12px 40px rgba(0, 0, 0, 0.4)',
-          overflow: 'hidden'
+          boxShadow: '0 30px 60px rgba(0, 0, 0, 0.6)',
+          overflow: 'hidden',
+          borderRadius: isMaximized ? '0' : '6px'
         }}
       >
         <ModalHeader
@@ -262,17 +355,20 @@ const Documentation = ({ isOpen, onClose }) => {
             </button>
           }
           right={
-            <button
-              className="win-btn"
-              onClick={handleToggleMaximize}
-              title={isMaximized ? 'Restore' : 'Maximize'}
-            >
-              {isMaximized ? (
-                <Copy size={12} strokeWidth={2} />
-              ) : (
-                <Square size={12} strokeWidth={2} />
-              )}
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              {headerStats}
+              <button
+                className="win-btn"
+                onClick={handleToggleMaximize}
+                title={isMaximized ? 'Restore' : 'Maximize'}
+              >
+                {isMaximized ? (
+                  <Copy size={12} strokeWidth={2} />
+                ) : (
+                  <Square size={12} strokeWidth={2} />
+                )}
+              </button>
+            </div>
           }
         />
 
@@ -281,7 +377,14 @@ const Documentation = ({ isOpen, onClose }) => {
             <DocSidebar docs={docs} selectedDoc={selectedDoc} setSelectedDoc={setSelectedDoc} />
           )}
 
-          <DocsContent content={content} docs={docs} setSelectedDoc={setSelectedDoc} />
+          <DocsContent
+            content={content}
+            docs={docs}
+            selectedDoc={selectedDoc}
+            setSelectedDoc={setSelectedDoc}
+            prevDoc={prevDoc}
+            nextDoc={nextDoc}
+          />
         </div>
       </div>
     </div>
