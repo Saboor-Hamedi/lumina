@@ -154,6 +154,30 @@ export function useEditorEvents({
       }
     }
 
+    const handleScrollToCursor = () => {
+      if (!isActiveRef.current || !realViewRef.current) return
+      const view = realViewRef.current
+      try {
+        const head = view.state.selection.main.head
+        const line = view.state.doc.lineAt(head)
+        const lineBlock = view.lineBlockAt(line.from)
+        const scroller = view.dom.closest('.editor-scroller')
+
+        if (scroller) {
+          const scrollY = lineBlock.top - scroller.clientHeight / 2 + lineBlock.height / 2
+          scroller.scrollTo({ top: Math.max(0, scrollY), behavior: 'smooth' })
+        }
+
+        setTimeout(() => {
+          if (realViewRef.current && realViewRef.current.contentDOM) {
+            realViewRef.current.contentDOM.focus({ preventScroll: true })
+          }
+        }, 50)
+      } catch (err) {
+        console.error('[Editor] Scroll to cursor error:', err)
+      }
+    }
+
     const handleGlobalToast = (e) => {
       if (!isActiveRef.current) return
       const { message, type } = e.detail || {}
@@ -167,6 +191,7 @@ export function useEditorEvents({
     window.addEventListener('focus-editor-start', handleFocusEditorStart)
     window.addEventListener('focus-title-input', handleFocusTitleInput)
     window.addEventListener('editor-scroll-to-line', handleScrollToLine)
+    window.addEventListener('editor-scroll-to-cursor', handleScrollToCursor)
     window.addEventListener('show-toast', handleGlobalToast)
     return () => {
       window.removeEventListener('search-update', handleSearchUpdate)
@@ -174,6 +199,7 @@ export function useEditorEvents({
       window.removeEventListener('focus-editor-start', handleFocusEditorStart)
       window.removeEventListener('focus-title-input', handleFocusTitleInput)
       window.removeEventListener('editor-scroll-to-line', handleScrollToLine)
+      window.removeEventListener('editor-scroll-to-cursor', handleScrollToCursor)
       window.removeEventListener('show-toast', handleGlobalToast)
     }
   }, [showToast, realViewRef, titleRef])

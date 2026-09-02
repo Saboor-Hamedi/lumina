@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useVaultStore } from '../../core/store/useVaultStore'
 import {
@@ -14,23 +14,65 @@ import {
   Layout,
   AtSign,
   Fingerprint,
-  Users
+  Users,
+  Copy,
+  Check
 } from 'lucide-react'
-import './SnippetDetails.css'
+import ToolTip from '../../components/atoms/ToolTip'
+import './NoteDetails.css'
 
-const PropertyRow = ({ icon: Icon, name, value, iconColor = 'var(--text-muted)' }) => (
-  <div className="property-row">
-    <div className="property-name">
-      <Icon size={14} className="property-icon" style={{ color: iconColor }} />
-      <span>{name}</span>
+const PropertyRow = ({
+  icon: Icon,
+  name,
+  value,
+  rawCopyValue,
+  iconColor = 'var(--text-muted)',
+  copyable = false
+}) => {
+  const [copied, setCopied] = useState(false)
+  const isDimmed = value === 'none' || value === 0 || value === '0' || value === 'false' || value === 'null'
+
+  const handleCopy = (e) => {
+    if (!copyable) return
+    e.stopPropagation()
+    const textToCopy = rawCopyValue || String(value)
+    navigator.clipboard.writeText(textToCopy)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+
+  const content = (
+    <div
+      className={`property-row ${copyable ? 'is-copyable' : ''} ${copied ? 'copied' : ''}`}
+      onClick={copyable ? handleCopy : undefined}
+    >
+      <div className="property-name">
+        <Icon size={14} className="property-icon" style={{ color: iconColor }} />
+        <span>{name}</span>
+      </div>
+      <div className="property-value-wrapper">
+        <span className={`property-value ${isDimmed ? 'is-dimmed' : ''}`}>{value}</span>
+        {copyable && (
+          <span className="property-copy-icon">
+            {copied ? <Check size={12} /> : <Copy size={12} />}
+          </span>
+        )}
+      </div>
     </div>
-    <div className="property-value">{value}</div>
-  </div>
-)
+  )
 
-const SnippetDetails = ({ snippet, isLoading = false }) => {
-  // Get vault path from settings for display
-  const vaultPath = useSettingsStore.getState().settings.vaultPath || 'Default Workspace'
+  if (copyable) {
+    return (
+      <ToolTip text={copied ? 'Copied ID' : 'Copy ID'} position="top">
+        {content}
+      </ToolTip>
+    )
+  }
+
+  return content
+}
+
+export const NoteDetails = ({ snippet, isLoading = false }) => {
   const pinnedTabIds = useVaultStore((state) => state.pinnedTabIds)
 
   if (isLoading) {
@@ -58,7 +100,7 @@ const SnippetDetails = ({ snippet, isLoading = false }) => {
             color: 'var(--text-muted)'
           }}
         >
-          No file selected
+          No note selected
         </div>
       </div>
     )
@@ -67,12 +109,11 @@ const SnippetDetails = ({ snippet, isLoading = false }) => {
   // Calculate statistics
   const charCount = snippet.code?.length || 0
   const wordCount = snippet.code?.trim() ? snippet.code.trim().split(/\s+/).length : 0
-  const readTime = Math.ceil(wordCount / 200) + 'm'
+  const readTime = Math.max(1, Math.ceil(wordCount / 200)) + 'm'
 
   // Calculate true tag count (Frontmatter + Inline Tags, ignoring headings)
   const tagSet = new Set()
 
-  // 1. Frontmatter tags
   if (snippet.tags) {
     const rawTags = Array.isArray(snippet.tags)
       ? snippet.tags
@@ -85,7 +126,6 @@ const SnippetDetails = ({ snippet, isLoading = false }) => {
     })
   }
 
-  // 2. Inline markdown tags and mentions
   let codeWithoutBlocks = (snippet.code || '')
     .replace(/```[\s\S]*?```/g, '')
     .replace(/`[^`]+`/g, '')
@@ -110,9 +150,15 @@ const SnippetDetails = ({ snippet, isLoading = false }) => {
       <div className="properties-container">
         <div className="properties-header">Properties</div>
         <div className="properties-list">
-          {/* Default Properties */}
-          <PropertyRow icon={Fingerprint} name="id" value={snippet.id} iconColor="#8b5cf6" />
-          <PropertyRow icon={Type} name="title" value={snippet.title} iconColor="#ec4899" />
+          <PropertyRow
+            icon={Fingerprint}
+            name="id"
+            value={snippet.id}
+            rawCopyValue={snippet.id}
+            copyable={true}
+            iconColor="#8b5cf6"
+          />
+          <PropertyRow icon={Type} name="title" value={snippet.title || 'Untitled'} iconColor="#ec4899" />
           <PropertyRow
             icon={FolderOpen}
             name="location"
@@ -122,12 +168,10 @@ const SnippetDetails = ({ snippet, isLoading = false }) => {
           <PropertyRow
             icon={Clock}
             name="timestamp"
-            value={new Date(snippet.timestamp).toLocaleDateString()}
+            value={snippet.timestamp ? new Date(snippet.timestamp).toLocaleDateString() : 'none'}
             iconColor="#14b8a6"
           />
-          <PropertyRow icon={Code} name="language" value={snippet.language} iconColor="#3b82f6" />
-
-          {/* Extended Properties that mimic Obsidian frontmatter features */}
+          <PropertyRow icon={Code} name="language" value={snippet.language || 'markdown'} iconColor="#3b82f6" />
           <PropertyRow icon={Tag} name="tags" value={tagCount} iconColor="#10b981" />
           <PropertyRow icon={Users} name="mentions" value={mentionCount} iconColor="#8b5cf6" />
           <PropertyRow
@@ -150,8 +194,8 @@ const SnippetDetails = ({ snippet, isLoading = false }) => {
           Statistics
         </div>
         <div className="properties-list">
-          <PropertyRow icon={Hash} name="characters" value={charCount} iconColor="#a855f7" />
-          <PropertyRow icon={Type} name="words" value={wordCount} iconColor="#ef4444" />
+          <PropertyRow icon={Hash} name="characters" value={charCount.toLocaleString()} iconColor="#a855f7" />
+          <PropertyRow icon={Type} name="words" value={wordCount.toLocaleString()} iconColor="#ef4444" />
           <PropertyRow icon={Eye} name="readTime" value={readTime} iconColor="#22c55e" />
         </div>
       </div>
@@ -159,4 +203,4 @@ const SnippetDetails = ({ snippet, isLoading = false }) => {
   )
 }
 
-export default SnippetDetails
+export default NoteDetails

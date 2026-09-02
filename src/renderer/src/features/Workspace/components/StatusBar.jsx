@@ -78,8 +78,11 @@ const StatusBar = ({
       <div className="status-bar-right">
         {selectedSnippet && (
           <>
-            <ToolTip text="Cursor Position • Line & Column" position="top">
-              <span className="status-bar-item">
+            <ToolTip text="Scroll to Cursor" position="top">
+              <span
+                className="status-bar-item interactive"
+                onClick={() => window.dispatchEvent(new CustomEvent('editor-scroll-to-cursor'))}
+              >
                 <Navigation size={11} style={{ opacity: 0.7 }} />
                 <span>
                   Ln {cursorPos.line}, Col {cursorPos.col}
@@ -90,8 +93,11 @@ const StatusBar = ({
 
             <span className="status-bar-divider" />
 
-            <ToolTip text="Total Document Words" position="top">
-              <span className="status-bar-item">
+            <ToolTip text="Click to view Details & Properties" position="top">
+              <span
+                className="status-bar-item interactive"
+                onClick={onToggleInspector}
+              >
                 <FileText size={11} style={{ opacity: 0.7 }} />
                 <span>{stats.words} words</span>
               </span>
@@ -99,8 +105,11 @@ const StatusBar = ({
 
             <span className="status-bar-divider" />
 
-            <ToolTip text="Total Document Characters" position="top">
-              <span className="status-bar-item">
+            <ToolTip text="Click to view Details & Statistics" position="top">
+              <span
+                className="status-bar-item interactive"
+                onClick={onToggleInspector}
+              >
                 <Hash size={11} style={{ opacity: 0.7 }} />
                 <span>{stats.chars} chars</span>
               </span>
@@ -109,7 +118,10 @@ const StatusBar = ({
             <span className="status-bar-divider" />
 
             <ToolTip text="Estimated Reading Time • 200 WPM" position="top">
-              <span className="status-bar-item">
+              <span
+                className="status-bar-item interactive"
+                onClick={onToggleInspector}
+              >
                 <Clock size={11} style={{ opacity: 0.7 }} />
                 <span>{stats.readTime}</span>
               </span>

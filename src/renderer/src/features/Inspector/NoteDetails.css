@@ -1,6 +1,7 @@
 /**
- * SnippetDetails Styles
- * Inspector panel for displaying file properties and statistics.
+ * ============================================================================
+ * NoteDetails & RightSidebar Styles (`NoteDetails.css`)
+ * ============================================================================
  */
 
 .details-modal-body {
@@ -23,16 +24,16 @@
   padding-left: 4px;
 }
 
-.properties-list {
-  display: flex;
-  flex-direction: column;
-}
-
 .property-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 4px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  transition: background 0.12s ease;
 }
 
 .property-row:last-child {
@@ -43,23 +44,63 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--text-muted);
-  font-size: 13px;
+  color: var(--text-muted, #94a3b8);
+  font-size: 12.5px;
+  flex-shrink: 0;
 }
 
 .property-icon {
   opacity: 0.9;
 }
 
+.property-value-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: calc(100% - 90px);
+  justify-content: flex-end;
+}
+
 .property-value {
-  color: var(--text-muted);
-  font-size: 13px;
+  color: var(--text-main, #f1f5f9);
+  font-size: 12px;
   text-align: right;
   font-family: var(--font-mono, monospace);
-  max-width: 60%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: color 0.15s ease, opacity 0.15s ease;
+}
+
+.property-value.is-dimmed {
+  opacity: 0.45;
+  color: var(--text-faint, #64748b);
+}
+
+.property-row.is-copyable {
+  cursor: pointer;
+}
+
+.property-row.is-copyable:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.property-copy-icon {
+  opacity: 0;
+  color: var(--text-muted);
+  transition: opacity 0.15s ease, color 0.15s ease;
+  display: flex;
+  align-items: center;
+}
+
+.property-row:hover .property-copy-icon {
+  opacity: 1;
+}
+
+.property-row.copied .property-copy-icon {
+  opacity: 1;
+  color: var(--text-accent, #10b981);
 }
 
 .skeleton-inspector {
@@ -75,10 +116,11 @@
 }
 
 /* ==========================================================================
-   Snippet Outline Styles
+   Note Outline Styles
    ========================================================================== */
 
-.snippet-outline {
+.snippet-outline,
+.note-outline {
   padding: 16px;
   overflow-y: auto;
   height: 100%;
@@ -127,10 +169,6 @@
   width: 100%;
 }
 
-/* 
-  Draw a vertical guide line spanning the entire tree.
-  We calculate indentation padding dynamically in React.
-*/
 .outline-item-indent-guide {
   position: absolute;
   top: 0;
@@ -154,13 +192,14 @@
   font-family: monospace;
   min-width: 16px;
 }
+
 .inspector-panel {
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 
-/* Inspector Tabs - Match TabBar Styling */
+/* Inspector Tabs */
 .panel-header-tabs {
   height: 32px;
   display: flex;
@@ -169,13 +208,11 @@
   flex-shrink: 0;
 }
 
-/* When using workspace-tabbar class, apply tab styling */
 .panel-header-tabs.workspace-tabbar {
   padding: 0;
   overflow: hidden;
 }
 
-/* Tab styling - seamless, no bold borders */
 .panel-header-tabs .workspace-tab {
   height: 100%;
   display: flex;
@@ -207,7 +244,6 @@
   border-bottom: 1px solid var(--text-accent);
 }
 
-/* Sub-header under the tabs — strictly 28px height across Details, Outline, and Chat */
 .inspector-sub-header {
   display: flex;
   align-items: center;
@@ -261,7 +297,6 @@
   color: var(--text-main);
 }
 
-
 .panel-header-tabs .tab-context {
   display: flex;
   align-items: center;
@@ -290,112 +325,3 @@
 .panel-header-tabs .workspace-tab:hover .tab-icon {
   opacity: 1;
 }
-
-.panel-header-tabs .tab-actions {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  margin-left: 6px;
-}
-
-.panel-header-tabs .tab-close-btn {
-  background: transparent;
-  border: none;
-  color: inherit;
-  opacity: 0;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: all 0.2s;
-  padding: 2px;
-}
-
-.panel-header-tabs .workspace-tab:hover .tab-close-btn {
-  opacity: 0.6;
-}
-
-.panel-header-tabs .tab-close-btn:hover {
-  opacity: 1 !important;
-  background: var(--bg-active);
-  color: var(--text-main);
-}
-
-/* Float/Modal button styling */
-.panel-header-tabs .tab-float-btn {
-  background: transparent;
-  border: none;
-  color: inherit;
-  opacity: 0.6;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: all 0.2s;
-  padding: 2px;
-  width: 18px;
-  height: 18px;
-}
-
-.panel-header-tabs .tab-float-btn:hover {
-  opacity: 1 !important;
-  background: var(--bg-active);
-  color: var(--text-accent);
-}
-
-/* Float button on the very right side of tabbar */
-.panel-header-tabs .tab-float-btn-right {
-  background: transparent;
-  border: none;
-  color: inherit;
-  opacity: 0.6;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0;
-  transition: all 0.2s;
-  padding: 0;
-  width: 32px;
-  height: 40px;
-  /* Match panel header height */
-}
-
-.panel-header-tabs .tab-float-btn-right:hover {
-  opacity: 1 !important;
-  background: var(--bg-active);
-  color: var(--text-accent);
-}
-
-/* Clear History button in sidebar tab */
-.panel-header-tabs .tab-clear-btn {
-  background: transparent;
-  border: none;
-  color: inherit;
-  opacity: 0.6;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0;
-  transition: all 0.2s;
-  padding: 0;
-  width: 32px;
-  height: 40px;
-  /* Match panel header height */
-}
-
-.panel-header-tabs .tab-clear-btn:hover:not(:disabled) {
-  opacity: 1 !important;
-  background: var(--bg-active);
-  color: var(--text-accent);
-}
-
-.panel-header-tabs .tab-clear-btn:disabled {
-  cursor: not-allowed;
-}
-

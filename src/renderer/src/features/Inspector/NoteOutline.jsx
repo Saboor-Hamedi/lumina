@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
-import './SnippetDetails.css'
+import './NoteDetails.css'
 
-const SnippetOutline = ({ snippet }) => {
+export const NoteOutline = ({ snippet }) => {
   const headings = useMemo(() => {
     if (!snippet || !snippet.code) return []
     const lines = snippet.code.split('\n')
@@ -12,7 +12,7 @@ const SnippetOutline = ({ snippet }) => {
         extracted.push({
           level: match[1].length,
           text: match[2],
-          line: index + 1 // 1-indexed for the editor
+          line: index + 1
         })
       }
     })
@@ -32,7 +32,7 @@ const SnippetOutline = ({ snippet }) => {
             color: 'var(--text-muted)'
           }}
         >
-          No file selected
+          No note selected
         </div>
       </div>
     )
@@ -58,14 +58,13 @@ const SnippetOutline = ({ snippet }) => {
   }
 
   return (
-    <div className="snippet-outline">
+    <div className="note-outline">
       <ul className="outline-tree">
         {headings.map((h, i) => (
           <li
             key={i}
             className="outline-item"
             onClick={() => {
-              // Dispatch event to scroll the editor to this line
               window.dispatchEvent(
                 new CustomEvent('editor-scroll-to-line', { detail: { line: h.line } })
               )
@@ -75,7 +74,6 @@ const SnippetOutline = ({ snippet }) => {
               className="outline-item-content"
               style={{ paddingLeft: `${(h.level - 1) * 16}px` }}
             >
-              {/* Render vertical guide lines for deep nesting */}
               {h.level > 1 && (
                 <div
                   className="outline-item-indent-guide"
@@ -92,4 +90,4 @@ const SnippetOutline = ({ snippet }) => {
   )
 }
 
-export default SnippetOutline
+export default NoteOutline

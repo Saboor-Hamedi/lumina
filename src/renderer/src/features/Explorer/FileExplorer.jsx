@@ -593,7 +593,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
             snippet={item.snippet}
             onClick={context.handleSelect}
             isActive={
-              (item.snippet.id === context.selectedSnippetId && context.sidebarFocus === null) ||
+              item.snippet.id === context.selectedSnippetId ||
               index === context.selectedIndex
             }
             searchQuery={context.query}

@@ -24,13 +24,13 @@ import '../Overlays/Modals/ConfirmModal.css'
 import '../Overlays/Modals/RenameModal.css'
 
 import LuminaChat from '../AI/LuminaChat'
-import SnippetDetails from '../Inspector/SnippetDetails'
 import { useAIStore } from '../AI/tools/LuminaChat'
 import { useTypingSound } from '../../core/hooks/useTypingSound'
 import { useShallow } from 'zustand/react/shallow'
 import { X, Maximize2, Trash2, History, Bot, Info, MessageSquare } from 'lucide-react'
 
-import TabbedSidebar from '../Inspector/TabbedSidebar'
+import RightSidebar from '../Inspector/RightSidebar'
+import Breadcrumbs from '../Breadcrumbs'
 import IndexingStatus from '../../components/IndexingStatus'
 import StatusBar from '../Workspace/components/StatusBar'
 
@@ -715,12 +715,17 @@ const AppShell = () => {
       <main className="shell-main">
         {/* Show TabBar even if no tabs are open so WindowControls remain visible */}
         {(activeTab === 'files' || activeTab === 'search') && (
-          <TabBar
-            isSidebarOpen={isRightSidebarOpen}
-            onToggleSidebar={() => setIsRightSidebarOpen((prev) => !prev)}
-            isLeftSidebarOpen={isLeftSidebarOpen}
-            onToggleLeftSidebar={() => setIsLeftSidebarOpen((prev) => !prev)}
-          />
+          <>
+            <TabBar
+              isSidebarOpen={isRightSidebarOpen}
+              onToggleSidebar={() => setIsRightSidebarOpen((prev) => !prev)}
+              isLeftSidebarOpen={isLeftSidebarOpen}
+              onToggleLeftSidebar={() => setIsLeftSidebarOpen((prev) => !prev)}
+            />
+            {selectedSnippet && activeTabId !== GRAPH_TAB_ID && (
+              <Breadcrumbs snippet={selectedSnippet} />
+            )}
+          </>
         )}
 
         {openTabs.filter((id) => id === GRAPH_TAB_ID || snippets.some((s) => s.id === id)).length >
@@ -811,7 +816,7 @@ const AppShell = () => {
               }}
             />
           )}
-          <TabbedSidebar
+          <RightSidebar
             rightSidebarTab={rightSidebarTab}
             setRightSidebarTab={setRightSidebarTab}
             setSettingsInitialTab={setSettingsInitialTab}

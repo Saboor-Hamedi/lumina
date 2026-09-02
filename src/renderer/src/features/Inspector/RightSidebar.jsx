@@ -1,15 +1,15 @@
 import React from 'react'
 import { Info, List as ListIcon, MessageSquare, ExternalLink, History } from 'lucide-react'
-import SnippetDetails from './SnippetDetails'
-import SnippetOutline from './SnippetOutline'
+import NoteDetails from './NoteDetails'
+import NoteOutline from './NoteOutline'
 import { LuminaChatContent } from '../AI/LuminaChat'
 import ErrorBoundary from '../../components/ErrorBoundary'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import ToolTip from '../../components/atoms/ToolTip'
-import './SnippetDetails.css'
+import './NoteDetails.css'
 
-const TabbedSidebar = ({
+export const RightSidebar = ({
   rightSidebarTab,
   setRightSidebarTab,
   selectedSnippet,
@@ -85,10 +85,10 @@ const TabbedSidebar = ({
         <div className="flex-1" style={{ WebkitAppRegion: 'drag', height: '100%' }} />
       </div>
 
-      {/* Sub-header under the tabs — consistent 28px height across all tabs */}
+      {/* Sub-header under the tabs */}
       {rightSidebarTab === 'details' && (
         <div className="inspector-sub-header">
-          <span className="inspector-sub-title">File Details</span>
+          <span className="inspector-sub-title">Note Details</span>
           {selectedSnippet?.title && (
             <span className="inspector-sub-badge" title={selectedSnippet.title}>
               {selectedSnippet.title}
@@ -99,7 +99,7 @@ const TabbedSidebar = ({
 
       {rightSidebarTab === 'outline' && (
         <div className="inspector-sub-header">
-          <span className="inspector-sub-title">Document Outline</span>
+          <span className="inspector-sub-title">Note Outline</span>
           {selectedSnippet?.title && (
             <span className="inspector-sub-badge" title={selectedSnippet.title}>
               {selectedSnippet.title}
@@ -147,11 +147,11 @@ const TabbedSidebar = ({
       >
         <ErrorBoundary>
           {rightSidebarTab === 'outline' ? (
-            <SnippetOutline snippet={selectedSnippet} />
+            <NoteOutline snippet={selectedSnippet} />
           ) : rightSidebarTab === 'chat' ? (
             <LuminaChatContent isSidebar={true} onPopOut={handlePopOut} />
           ) : (
-            <SnippetDetails snippet={selectedSnippet} isLoading={isLoading} />
+            <NoteDetails snippet={selectedSnippet} isLoading={isLoading} />
           )}
         </ErrorBoundary>
       </div>
@@ -159,4 +159,4 @@ const TabbedSidebar = ({
   )
 }
 
-export default TabbedSidebar
+export default RightSidebar

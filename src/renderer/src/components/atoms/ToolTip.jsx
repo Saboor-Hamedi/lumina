@@ -151,6 +151,8 @@ const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
       if (typeof ref === 'function') ref(node)
       else if (ref) ref.current = node
     },
+    title: undefined,
+    'aria-label': typeof text === 'string' ? text.replace(/\s*\([^)]+\)$/, '').trim() : undefined,
     onMouseEnter: handleMouseEnter,
     onMouseLeave: handleMouseLeave,
     onClick: handleClick
