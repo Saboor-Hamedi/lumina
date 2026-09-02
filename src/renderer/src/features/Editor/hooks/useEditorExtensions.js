@@ -105,8 +105,20 @@ export function useEditorExtensions({
           }, 10)
         }
         update(update) {
-          if (update.selectionSet && snippetRef.current?.id) {
-            const { anchor, head } = update.state.selection.main
+          if ((update.selectionSet || update.docChanged) && snippetRef.current?.id) {
+            const { anchor, head, from, to } = update.state.selection.main
+            const line = update.state.doc.lineAt(head)
+            window.dispatchEvent(
+              new CustomEvent('editor-cursor-pos', {
+                detail: {
+                  snippetId: snippetRef.current.id,
+                  line: line.number,
+                  col: head - line.from + 1,
+                  selectedChars: Math.abs(to - from)
+                }
+              })
+            )
+
             clearTimeout(saveTimeout)
             saveTimeout = setTimeout(() => {
               localStorage.setItem(

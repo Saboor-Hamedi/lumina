@@ -67,3 +67,27 @@
   background: rgba(255, 255, 255, 0.1);
   margin: 0 1px;
 }
+
+.status-bar-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  height: 18px;
+  border-radius: 4px;
+  color: var(--text-faint, #64748b);
+  font-size: 11px;
+  font-weight: 500;
+  transition: all 0.12s ease;
+  cursor: default;
+  white-space: nowrap;
+}
+
+.status-bar-item.interactive {
+  cursor: pointer;
+}
+
+.status-bar-item.interactive:hover {
+  color: var(--text-main, #f8fafc);
+  background: rgba(255, 255, 255, 0.06);
+}

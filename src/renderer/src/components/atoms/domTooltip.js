@@ -23,39 +23,94 @@ function formatTooltipContent(text) {
 export function showDomTooltip(targetEl, text, position = 'top') {
   hideDomTooltip()
 
-  const tooltipEl = document.createElement('div')
-  tooltipEl.className = `tooltip-portal tooltip-${position}`
-  tooltipEl.setAttribute('role', 'tooltip')
-  tooltipEl.innerHTML = `${formatTooltipContent(text)}<div class="tooltip-arrow"></div>`
-  document.body.appendChild(tooltipEl)
-  activeTooltipEl = tooltipEl
-
   const rect = targetEl.getBoundingClientRect()
   const gap = 8
-  let top = 0
-  let left = 'auto'
-  let right = 'auto'
 
-  if (position === 'top') {
-    top = rect.top - gap
-    left = `${rect.left + rect.width / 2}px`
-  } else if (position === 'bottom') {
-    top = rect.bottom + gap
-    left = `${rect.left + rect.width / 2}px`
-  } else if (position === 'bottom-right') {
-    top = rect.bottom + gap
-    right = `${window.innerWidth - rect.right}px`
-  } else if (position === 'left') {
-    top = rect.top + rect.height / 2
-    left = `${rect.left - gap}px`
-  } else if (position === 'right') {
-    top = rect.top + rect.height / 2
-    left = `${rect.right + gap}px`
+  let isTop = position.startsWith('top')
+  let isBottom = position.startsWith('bottom')
+  let isLeft = position === 'left'
+  let isRight = position === 'right'
+
+  if (!isTop && !isBottom && !isLeft && !isRight) {
+    isTop = true
   }
 
-  tooltipEl.style.top = `${top}px`
-  tooltipEl.style.left = left
-  if (right !== 'auto') tooltipEl.style.right = right
+  // Screen boundary detection
+  if (isTop && rect.top < 40) {
+    isTop = false
+    isBottom = true
+  } else if (isBottom && rect.bottom > window.innerHeight - 40) {
+    isTop = true
+    isBottom = false
+  }
+
+  let topStyle = 'auto'
+  let bottomStyle = 'auto'
+  let leftStyle = 'auto'
+  let rightStyle = 'auto'
+  let transformStyle = 'none'
+  let arrowPos = {}
+
+  if (isTop) {
+    bottomStyle = `${Math.round(window.innerHeight - rect.top + gap)}px`
+    arrowPos.bottom = '-4px'
+  } else if (isBottom) {
+    topStyle = `${Math.round(rect.bottom + gap)}px`
+    arrowPos.top = '-4px'
+  }
+
+  const elemCenterX = rect.left + rect.width / 2
+
+  if (isLeft) {
+    topStyle = `${Math.round(rect.top + rect.height / 2)}px`
+    rightStyle = `${Math.round(window.innerWidth - rect.left + gap)}px`
+    transformStyle = 'translateY(-50%)'
+    arrowPos = { right: '-4px', top: '50%', marginTop: '-3px' }
+  } else if (isRight) {
+    topStyle = `${Math.round(rect.top + rect.height / 2)}px`
+    leftStyle = `${Math.round(rect.right + gap)}px`
+    transformStyle = 'translateY(-50%)'
+    arrowPos = { left: '-4px', top: '50%', marginTop: '-3px' }
+  } else {
+    // Horizontal alignment for Top & Bottom tooltips
+    if (elemCenterX > window.innerWidth - 130) {
+      const rightPad = Math.max(8, window.innerWidth - rect.right)
+      rightStyle = `${Math.round(rightPad)}px`
+      transformStyle = 'none'
+      const knobRight = Math.max(10, Math.round(rect.right - elemCenterX + 8))
+      arrowPos.right = `${knobRight}px`
+    } else if (elemCenterX < 130) {
+      const leftPad = Math.max(8, rect.left)
+      leftStyle = `${Math.round(leftPad)}px`
+      transformStyle = 'none'
+      const knobLeft = Math.max(10, Math.round(elemCenterX - rect.left + 8))
+      arrowPos.left = `${knobLeft}px`
+    } else {
+      leftStyle = `${Math.round(elemCenterX)}px`
+      transformStyle = 'translateX(-50%)'
+      arrowPos.left = '50%'
+      arrowPos.marginLeft = '-3px'
+    }
+  }
+
+  const tooltipEl = document.createElement('div')
+  tooltipEl.className = `tooltip-portal ${isTop ? 'tooltip-pos-top' : isBottom ? 'tooltip-pos-bottom' : isLeft ? 'tooltip-pos-left' : 'tooltip-pos-right'}`
+  tooltipEl.setAttribute('role', 'tooltip')
+  tooltipEl.style.top = topStyle
+  tooltipEl.style.bottom = bottomStyle
+  tooltipEl.style.left = leftStyle
+  tooltipEl.style.right = rightStyle
+  tooltipEl.style.transform = transformStyle
+
+  const arrow = document.createElement('div')
+  arrow.className = 'tooltip-arrow'
+  Object.assign(arrow.style, arrowPos)
+
+  tooltipEl.innerHTML = formatTooltipContent(text)
+  tooltipEl.appendChild(arrow)
+
+  document.body.appendChild(tooltipEl)
+  activeTooltipEl = tooltipEl
 }
 
 export function hideDomTooltip() {
