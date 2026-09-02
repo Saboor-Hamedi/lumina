@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import './RenameModal.css'
 
-const RenameModal = ({ isOpen, onClose, onRename, initialName = '' }) => {
+const RenameModal = ({ isOpen, onClose, onRename, initialName = '', itemType = 'note' }) => {
   const inputRef = useRef(null)
 
   useEffect(() => {
@@ -51,7 +51,7 @@ const RenameModal = ({ isOpen, onClose, onRename, initialName = '' }) => {
             className="rename-input"
             type="text"
             defaultValue={initialName}
-            placeholder="Enter new name..."
+            placeholder={itemType === 'folder' ? 'Rename folder...' : 'Rename note...'}
           />
         </form>
       </div>

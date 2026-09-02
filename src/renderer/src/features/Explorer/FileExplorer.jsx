@@ -466,6 +466,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
         setSelectedNoteIds(new Set())
         setLastClickedNoteId(null)
         setLastClickedFolder(null)
+        useVaultStore.getState().setSelectedFolder(null)
         setSelectedIndex(-1)
         setSidebarFocus(null)
       }
@@ -498,6 +499,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
       setSelectedNoteIds(new Set())
       setLastClickedNoteId(null)
       setLastClickedFolder(null)
+      useVaultStore.getState().setSelectedFolder(null)
       setSelectedIndex(-1)
       setSidebarFocus('root')
     }
@@ -532,6 +534,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     (folderId, e) => {
       if (e) e.stopPropagation()
       setLastClickedFolder(folderId)
+      useVaultStore.getState().setSelectedFolder(folderId)
       if (query.trim()) {
         setCollapsedDuringSearch((prev) => {
           const next = new Set(prev)
@@ -570,6 +573,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
       if (!snippet) return
       clickedInExplorerRef.current = Date.now()
       setLastClickedFolder(snippet.folderId || '')
+      useVaultStore.getState().setSelectedFolder(null)
       setSidebarFocus('note')
       setSelectedSnippet(snippet)
       onClose?.()
@@ -580,6 +584,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   const handleNoteClick = useCallback(
     (snippet, e) => {
       if (!snippet) return
+      useVaultStore.getState().setSelectedFolder(null)
       const isCtrl = e?.ctrlKey || e?.metaKey
       const isShift = e?.shiftKey
 
@@ -835,32 +840,10 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
       if (String(over.id).startsWith('folder-') || String(over.id).startsWith('drag-folder-')) {
         const targetFolderId = String(over.id).replace('folder-', '').replace('drag-folder-', '')
 
-        if (sourceFolderId !== targetFolderId) {
-          const sourceParent = sourceFolderId.includes('/')
-            ? sourceFolderId.substring(0, sourceFolderId.lastIndexOf('/'))
-            : ''
-          const targetParent = targetFolderId.includes('/')
-            ? targetFolderId.substring(0, targetFolderId.lastIndexOf('/'))
-            : ''
-
-          // Same-level folder reordering
-          if (sourceParent === targetParent) {
-            const allCurrentFolders = Array.from(
-              new Set([...(settings.folderOrder || []), ...visibleFolders])
-            )
-            const oldIndex = allCurrentFolders.indexOf(sourceFolderId)
-            const newIndex = allCurrentFolders.indexOf(targetFolderId)
-            if (oldIndex !== -1 && newIndex !== -1) {
-              const newOrder = arrayMove(allCurrentFolders, oldIndex, newIndex)
-              updateSetting('folderOrder', newOrder)
-              return
-            }
-          }
-
-          // Prevent moving a folder into itself or its own subfolders
-          if (!targetFolderId.startsWith(sourceFolderId + '/')) {
-            const folderName = sourceFolderId.split('/').pop()
-            const newPath = targetFolderId ? `${targetFolderId}/${folderName}` : folderName
+        if (sourceFolderId !== targetFolderId && !targetFolderId.startsWith(sourceFolderId + '/')) {
+          const folderName = sourceFolderId.split('/').pop()
+          const newPath = targetFolderId ? `${targetFolderId}/${folderName}` : folderName
+          if (newPath !== sourceFolderId) {
             try {
               await window.api.renameFolder(sourceFolderId, newPath)
               setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
@@ -1384,15 +1367,21 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                       ) : activeListDragItem?.type === 'file' ? (
                         <OverlayWrapper>
                           <div
-                            className="start-section"
-                            style={{ margin: 0, width: 'max-content', position: 'relative' }}
+                            style={{
+                              width: '220px',
+                              maxWidth: '220px',
+                              overflow: 'hidden',
+                              position: 'relative'
+                            }}
                           >
                             <div
                               style={{
-                                opacity: 0.9,
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
-                                borderRadius: '4px',
-                                background: 'var(--bg-panel)'
+                                opacity: 0.95,
+                                boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+                                borderRadius: '6px',
+                                background: 'var(--bg-panel, #1e1e2e)',
+                                border: '1px solid var(--border-color, rgba(255,255,255,0.1))',
+                                overflow: 'hidden'
                               }}
                             >
                               <SidebarItem

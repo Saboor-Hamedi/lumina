@@ -14,6 +14,7 @@ export const useVaultStore = create((set, get) => ({
   folders: [],
   folderColors: {},
   selectedSnippet: null,
+  selectedFolder: null,
   isLoading: true,
   searchQuery: '',
   dirtySnippetIds: [],
@@ -24,6 +25,7 @@ export const useVaultStore = create((set, get) => ({
   clipboard: null, // { action: 'copy'|'cut', item: snippet|folder }
 
   setSnippets: (snippets) => set({ snippets }),
+  setSelectedFolder: (selectedFolder) => set({ selectedFolder }),
   setClipboard: (clipboard) => set({ clipboard }),
 
   restoreSession: (tabs, activeId, pinnedIds = []) => {

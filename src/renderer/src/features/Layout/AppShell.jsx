@@ -403,17 +403,29 @@ const AppShell = () => {
     return () => window.removeEventListener('keydown', handleAIChatShortcut)
   }, [])
 
-  // Ctrl+R - rename selected snippet
+  // Ctrl+R - rename selected folder or note
   useEffect(() => {
     const handleRenameShortcut = (e) => {
       const key = e.key && e.key.toLowerCase()
       // Make sure we only catch standard Ctrl+R without shift/alt to allow other shortcuts
       if ((e.ctrlKey || e.metaKey) && key === 'r' && !e.shiftKey && !e.altKey) {
         e.preventDefault() // prevent browser reload
-        if (selectedSnippet) {
-          setRenameModal({ isOpen: true, item: selectedSnippet, newName: selectedSnippet.title })
+        const currentSelectedFolder = useVaultStore.getState().selectedFolder
+        if (currentSelectedFolder) {
+          const folderName = currentSelectedFolder.split('/').pop()
+          setRenameModal({
+            isOpen: true,
+            item: { type: 'folder', id: currentSelectedFolder, name: folderName },
+            newName: folderName
+          })
+        } else if (selectedSnippet) {
+          setRenameModal({
+            isOpen: true,
+            item: selectedSnippet,
+            newName: selectedSnippet.title
+          })
         } else {
-          showToast('No note selected to rename', 'info')
+          showToast('No note or folder selected to rename', 'info')
         }
       }
     }
@@ -927,16 +939,37 @@ const AppShell = () => {
       <RenameModal
         isOpen={renameModal.isOpen}
         initialName={renameModal.newName}
+        itemType={renameModal.item?.type === 'folder' ? 'folder' : 'note'}
         onClose={() => setRenameModal({ isOpen: false, item: null, newName: '' })}
-        onRename={(newName) => {
-          handleRenameSnippet({
-            renameModal: { ...renameModal, newName },
-            saveSnippet,
-            setSelectedSnippet,
-            setRenameModal,
-            setIsCreatingSnippet: () => {},
-            showToast
-          })
+        onRename={async (newName) => {
+          if (renameModal.item?.type === 'folder') {
+            const folderId = renameModal.item.id
+            const parentPath = folderId.includes('/')
+              ? folderId.substring(0, folderId.lastIndexOf('/'))
+              : ''
+            const newFolderPath = parentPath ? `${parentPath}/${newName}` : newName
+            if (newFolderPath !== folderId) {
+              try {
+                await window.api.renameFolder(folderId, newFolderPath)
+                useVaultStore.getState().setSelectedFolder(newFolderPath)
+                await loadVault()
+                showToast('✓ Folder renamed successfully', 'success')
+              } catch (err) {
+                console.error('Failed to rename folder:', err)
+                showToast('❌ Failed to rename folder', 'error')
+              }
+            }
+            setRenameModal({ isOpen: false, item: null, newName: '' })
+          } else {
+            handleRenameSnippet({
+              renameModal: { ...renameModal, newName },
+              saveSnippet,
+              setSelectedSnippet,
+              setRenameModal,
+              setIsCreatingSnippet: () => {},
+              showToast
+            })
+          }
         }}
       />
       {showActiveIconPicker && (
