@@ -31,6 +31,7 @@ import {
   PointerSensor,
   TouchSensor,
   useDraggable,
+  useDroppable,
   DragOverlay,
   defaultDropAnimationSideEffects,
   useDndContext
@@ -72,6 +73,22 @@ import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 
 const VirtuosoFooter = () => <div style={{ height: '24px' }} />
 
+const DroppableVirtuosoWrapper = ({ children, isDragging, isRootFocused, onClick, onPointerDown }) => {
+  const { isOver, setNodeRef } = useDroppable({ id: 'root-drop-zone' })
+  const showDropHighlight = isOver && isDragging
+  return (
+    <div
+      ref={setNodeRef}
+      onClick={onClick}
+      onPointerDown={onPointerDown}
+      className={`recommended-list ${showDropHighlight ? 'root-drop-over' : ''} ${isRootFocused ? 'root-body-focused' : ''}`}
+      style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}
+    >
+      {children}
+    </div>
+  )
+}
+
 /**
  * Centered Explorer Modal (Start Menu Replica)
  */
@@ -100,6 +117,10 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
 
   // drag state
   const [activeListDragItem, setActiveListDragItem] = useState(null) // { type: 'folder' | 'file', id, item: folderData, snippet: fileData }
+
+  // multi-select state
+  const [selectedNoteIds, setSelectedNoteIds] = useState(() => new Set())
+  const [lastClickedNoteId, setLastClickedNoteId] = useState(null)
 
   // context menu & confirm
   const [folderContext, setFolderContext] = useState(null) // { x, y, folderId }
@@ -427,6 +448,50 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     return () => window.removeEventListener('trigger-new-note', handleTriggerNewNote)
   }, [lastClickedFolder, setExpandedFolders, setCreating, setCreatingValue])
 
+  // Deselect on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setSelectedNoteIds(new Set())
+        setLastClickedNoteId(null)
+        setLastClickedFolder(null)
+        setSelectedIndex(-1)
+        setSidebarFocus(null)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  // Deselect when clicking outside the explorer (e.g. editor, inspector, header)
+  useEffect(() => {
+    const handleDocumentPointerDown = (e) => {
+      if (modalRef.current && !modalRef.current.contains(e.target)) {
+        setSidebarFocus(null)
+      }
+    }
+    document.addEventListener('pointerdown', handleDocumentPointerDown)
+    return () => document.removeEventListener('pointerdown', handleDocumentPointerDown)
+  }, [])
+
+  // Deselect on clicking empty background space inside explorer
+  const handleBackgroundClick = useCallback((e) => {
+    if (
+      !e.target.closest('.tree-item') &&
+      !e.target.closest('.folder-tree-main') &&
+      !e.target.closest('.header-actions') &&
+      !e.target.closest('.sort-toggle-btn') &&
+      !e.target.closest('.inline-create-input') &&
+      !e.target.closest('.inline-rename-input')
+    ) {
+      setSelectedNoteIds(new Set())
+      setLastClickedNoteId(null)
+      setLastClickedFolder(null)
+      setSelectedIndex(-1)
+      setSidebarFocus('root')
+    }
+  }, [])
+
   // Intelligent selection: default to the best matching note instead of a folder
   useEffect(() => {
     if (query.trim() && flatTree.length > 0) {
@@ -491,17 +556,58 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
 
   const handleSelect = useCallback(
     (snippet) => {
+      if (!snippet) return
       clickedInExplorerRef.current = Date.now()
       setLastClickedFolder(snippet.folderId || '')
+      setSidebarFocus('note')
+      setSelectedSnippet(snippet)
       onClose?.()
-
-      setTimeout(() => {
-        React.startTransition(() => {
-          setSelectedSnippet(snippet)
-        })
-      }, 15)
     },
     [setSelectedSnippet, onClose]
+  )
+
+  const handleNoteClick = useCallback(
+    (snippet, e) => {
+      if (!snippet) return
+      const isCtrl = e?.ctrlKey || e?.metaKey
+      const isShift = e?.shiftKey
+
+      if (isCtrl) {
+        setSelectedNoteIds((prev) => {
+          const next = new Set(prev)
+          if (next.has(snippet.id)) {
+            next.delete(snippet.id)
+          } else {
+            next.add(snippet.id)
+          }
+          return next
+        })
+        setLastClickedNoteId(snippet.id)
+        setSidebarFocus('note')
+        setLastClickedFolder(snippet.folderId || '')
+      } else if (isShift && lastClickedNoteId) {
+        const visibleFiles = flatTree
+          .filter((f) => f.type === 'file' && f.snippet)
+          .map((f) => f.snippet)
+        const startIdx = visibleFiles.findIndex((s) => s.id === lastClickedNoteId)
+        const endIdx = visibleFiles.findIndex((s) => s.id === snippet.id)
+
+        if (startIdx !== -1 && endIdx !== -1) {
+          const [minIdx, maxIdx] = startIdx < endIdx ? [startIdx, endIdx] : [endIdx, startIdx]
+          const rangeIds = visibleFiles.slice(minIdx, maxIdx + 1).map((s) => s.id)
+          setSelectedNoteIds(new Set(rangeIds))
+        }
+        setSidebarFocus('note')
+        setLastClickedFolder(snippet.folderId || '')
+      } else {
+        setSelectedNoteIds(new Set([snippet.id]))
+        setLastClickedNoteId(snippet.id)
+        setSidebarFocus('note')
+        setLastClickedFolder(snippet.folderId || '')
+        handleSelect(snippet)
+      }
+    },
+    [flatTree, lastClickedNoteId, handleSelect]
   )
 
   const renderItemContent = useCallback((index, item, context) => {
@@ -511,7 +617,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
           className="folder-tree-item"
           style={{
             position: 'relative',
-            paddingLeft: `${item.depth * 12}px`
+            paddingLeft: `${item.depth * 12 + (item.kind === 'folder' ? 0 : 16)}px`
           }}
         >
           <div
@@ -548,62 +654,80 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
         </div>
       )
     } else if (item.type === 'root-drop') {
-      return <DroppableRootZone />
+      return null
     } else if (item.type === 'folder') {
-      const isExpanded = context.query.trim()
-        ? !context.collapsedDuringSearch.has(item.id)
-        : context.expandedFolders.has(item.id)
-      const isActive = index === context.selectedIndex
+      const isExpanded = context.query?.trim()
+        ? !context.collapsedDuringSearch?.has(item.id)
+        : context.expandedFolders?.has(item.id)
+      const isActive =
+        sidebarFocus === 'folder' && (lastClickedFolder === item.id || index === selectedIndex)
       return (
         <DroppableFolderItem
           item={item}
           isExpanded={isExpanded}
           isActive={isActive}
           searchQuery={context.query}
-          folderColor={context.folderColors[item.id]}
+          folderColor={context.folderColors?.[item.id]}
           isRenaming={context.renamingFolder === item.id}
           renameValue={context.renamingValue}
           setRenameValue={context.setRenamingValue}
           submitRename={context.submitRename}
           cancelRename={context.cancelRename}
-          isPinned={context.pinnedFolders.includes(item.id)}
+          isPinned={context.pinnedFolders?.includes(item.id)}
           onTogglePin={context.togglePinnedFolder}
           onToggle={(id, e) => {
-            context.setSidebarFocus('folder')
-            context.setSelectedIndex(index)
-            context.toggleFolder(id, e)
+            setSidebarFocus('folder')
+            setLastClickedFolder(id)
+            setSelectedIndex(index)
+            toggleFolder(id, e)
           }}
           onContextMenu={(id, e) => {
-            context.setSidebarFocus('folder')
-            context.setSelectedIndex(index)
-            context.handleFolderContextMenu(id, e)
+            setSidebarFocus('folder')
+            setLastClickedFolder(id)
+            setSelectedIndex(index)
+            handleFolderContextMenu(id, e)
           }}
         />
       )
     } else {
+      const isMultiSelected = selectedNoteIds.has(item.snippet.id)
+      const isNoteActive =
+        isMultiSelected ||
+        (selectedNoteIds.size === 0 && item.snippet.id === selectedSnippetId && sidebarFocus !== 'root') ||
+        (index === selectedIndex && sidebarFocus === 'note')
+      const filePaddingLeft = `${item.depth * 12 + (item.depth === 0 ? 16 : 14)}px`
+
       return (
         <div
           style={{
             position: 'relative',
-            paddingLeft: `${item.depth * 12}px`
+            paddingLeft: filePaddingLeft
           }}
         >
           <SortableListItem
             key={item.snippet.id}
             snippet={item.snippet}
-            onClick={context.handleSelect}
-            isActive={
-              item.snippet.id === context.selectedSnippetId ||
-              index === context.selectedIndex
-            }
-            searchQuery={context.query}
-            matchSnippet={context.matchMetaMap?.get(item.snippet.id)?.matchSnippet || ''}
+            onClick={handleNoteClick}
+            isActive={isNoteActive}
+            searchQuery={query}
+            matchSnippet={matchMetaMap?.get(item.snippet.id)?.matchSnippet || ''}
             depth={item.depth}
           />
         </div>
       )
     }
-  }, [])
+  }, [
+    sidebarFocus,
+    lastClickedFolder,
+    selectedNoteIds,
+    selectedSnippetId,
+    selectedIndex,
+    query,
+    matchMetaMap,
+    toggleFolder,
+    handleFolderContextMenu,
+    handleNoteClick
+  ])
 
   if (!isEmbedded && (!isOpen || !isPositionReady)) return null
 
@@ -638,10 +762,15 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
       const activeSnippet = allSnippets.find((s) => s.id === active.id)
       if (activeSnippet) {
         const flatItem = flatTree.find((f) => f.type === 'file' && f.snippet.id === active.id)
+        const isMulti = selectedNoteIds.has(active.id) && selectedNoteIds.size > 1
+        const draggedSnippetIds = isMulti ? Array.from(selectedNoteIds) : [active.id]
+
         setActiveListDragItem({
           type: 'file',
           id: active.id,
           snippet: activeSnippet,
+          draggedSnippetIds,
+          count: draggedSnippetIds.length,
           depth: flatItem ? flatItem.depth : 0
         })
       }
@@ -649,6 +778,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   }
 
   const handleListDragEnd = async (event) => {
+    const dragItem = activeListDragItem
     setActiveListDragItem(null)
     const { active, over } = event
     if (!over || active.id === over.id) return
@@ -664,11 +794,17 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
           } catch (e) {}
         }
       } else {
-        const activeSnippet = allSnippets.find((s) => s.id === active.id)
-        if (activeSnippet && activeSnippet.folderId !== '') {
-          try {
-            await saveSnippet({ ...activeSnippet, folderId: '' })
-          } catch (e) {}
+        const idsToMove = dragItem?.draggedSnippetIds?.length
+          ? dragItem.draggedSnippetIds
+          : [active.id]
+
+        const snippetsToMove = allSnippets.filter((s) => idsToMove.includes(s.id))
+        for (const s of snippetsToMove) {
+          if (s.folderId !== '') {
+            try {
+              await saveSnippet({ ...s, folderId: '' })
+            } catch (e) {}
+          }
         }
       }
       return
@@ -700,15 +836,21 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
       // Check if dropped into a folder
       if (String(over.id).startsWith('folder-')) {
         const targetFolderId = String(over.id).replace('folder-', '')
-        const activeSnippet = allSnippets.find((s) => s.id === active.id)
-        if (activeSnippet && activeSnippet.folderId !== targetFolderId) {
-          try {
-            await saveSnippet({ ...activeSnippet, folderId: targetFolderId })
-            setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
-          } catch (e) {
-            console.error('Failed to move snippet to folder:', e)
+        const idsToMove = dragItem?.draggedSnippetIds?.length
+          ? dragItem.draggedSnippetIds
+          : [active.id]
+
+        const snippetsToMove = allSnippets.filter((s) => idsToMove.includes(s.id))
+        for (const s of snippetsToMove) {
+          if (s.folderId !== targetFolderId) {
+            try {
+              await saveSnippet({ ...s, folderId: targetFolderId })
+            } catch (e) {
+              console.error('Failed to move snippet to folder:', e)
+            }
           }
         }
+        setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
         return
       }
 
@@ -790,6 +932,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     }
     setCreating(null)
     setCreatingValue('')
+    setSidebarFocus(null)
   }
 
   const submitRename = async (value) => {
@@ -843,9 +986,10 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
       <div
         ref={modalRef}
         className={isEmbedded ? 'explorer-embedded-container' : 'start-menu-container'}
-        onClick={() => {
+        onPointerDown={handleBackgroundClick}
+        onClick={(e) => {
           setFolderContext(null)
-          setSelectedIndex(-1)
+          handleBackgroundClick(e)
         }}
         style={
           !isEmbedded
@@ -1032,7 +1176,11 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
 
           {/* All Notes Section */}
           {activeTab === 'all' && (
-            <div className="start-section">
+            <div
+              className="start-section"
+              onPointerDown={handleBackgroundClick}
+              onClick={handleBackgroundClick}
+            >
               <div className="start-section-header">
                 <div className="section-title-wrap" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   {isQueryActive && <h3>Search Results</h3>}
@@ -1048,7 +1196,11 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                       className="sort-toggle-btn"
                       onClick={(e) => {
                         e.stopPropagation()
-                        window.dispatchEvent(new CustomEvent('trigger-new-note'))
+                        const targetParent = lastClickedFolder || ''
+                        setCreating({ type: 'file', parentId: targetParent })
+                        if (targetParent) {
+                          setExpandedFolders((prev) => new Set(prev).add(targetParent))
+                        }
                       }}
                     >
                       <FilePlus size={14} />
@@ -1059,7 +1211,11 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                       className="sort-toggle-btn"
                       onClick={(e) => {
                         e.stopPropagation()
-                        setCreating({ type: 'folder', parentId: null })
+                        const targetParent = lastClickedFolder || null
+                        setCreating({ type: 'folder', parentId: targetParent })
+                        if (targetParent) {
+                          setExpandedFolders((prev) => new Set(prev).add(targetParent))
+                        }
                       }}
                     >
                       <FolderPlus size={14} />
@@ -1099,9 +1255,11 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                     items={allSnippets.map((s) => s.id)}
                     strategy={verticalListSortingStrategy}
                   >
-                    <div
-                      className="recommended-list"
-                      style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+                    <DroppableVirtuosoWrapper
+                      isDragging={!!activeListDragItem}
+                      isRootFocused={sidebarFocus === 'root'}
+                      onClick={handleBackgroundClick}
+                      onPointerDown={handleBackgroundClick}
                     >
                       <Virtuoso
                         ref={virtuosoRef}
@@ -1125,9 +1283,11 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                           expandedFolders,
                           selectedIndex,
                           selectedSnippetId,
+                          selectedNoteIds,
                           lastClickedFolder,
                           sidebarFocus,
                           setSidebarFocus,
+                          setLastClickedFolder,
                           folderColors,
                           renamingFolder,
                           renamingValue,
@@ -1139,6 +1299,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                           setSelectedIndex,
                           toggleFolder,
                           handleFolderContextMenu,
+                          handleNoteClick,
                           handleSelect
                         }}
                         components={{
@@ -1146,7 +1307,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                         }}
                         itemContent={renderItemContent}
                       />
-                    </div>
+                    </DroppableVirtuosoWrapper>
                   </SortableContext>
                   {createPortal(
                     <DragOverlay
@@ -1195,12 +1356,12 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                         <OverlayWrapper>
                           <div
                             className="start-section"
-                            style={{ margin: 0, width: 'max-content' }}
+                            style={{ margin: 0, width: 'max-content', position: 'relative' }}
                           >
                             <div
                               style={{
-                                opacity: 0.8,
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                                opacity: 0.9,
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
                                 borderRadius: '4px',
                                 background: 'var(--bg-panel)'
                               }}
@@ -1209,8 +1370,28 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                                 snippet={activeListDragItem.snippet}
                                 variant="list"
                                 isActive={false}
+                                searchQuery=""
                               />
                             </div>
+                            {activeListDragItem.count > 1 && (
+                              <span
+                                style={{
+                                  position: 'absolute',
+                                  top: '-6px',
+                                  right: '-6px',
+                                  background: 'var(--text-accent, #6366f1)',
+                                  color: '#ffffff',
+                                  fontSize: '10px',
+                                  fontWeight: 700,
+                                  padding: '1px 6px',
+                                  borderRadius: '10px',
+                                  boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
+                                  zIndex: 10
+                                }}
+                              >
+                                +{activeListDragItem.count}
+                              </span>
+                            )}
                           </div>
                         </OverlayWrapper>
                       ) : null}

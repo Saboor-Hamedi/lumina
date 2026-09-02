@@ -66,10 +66,14 @@ describe('UpdateDetails', () => {
     )
   })
 
-  it('calls download automatically when status becomes available', () => {
+  it('renders Download Update button when status is available and calls download on click', () => {
     const download = vi.fn()
     useUpdateStore.setState({ status: 'available', download })
     render(<UpdateDetails />)
+    fireEvent.click(screen.getByTitle('Check for updates'))
+    const downloadBtn = screen.getByRole('button', { name: /Download Update/ })
+    expect(downloadBtn).toBeInTheDocument()
+    fireEvent.click(downloadBtn)
     expect(download).toHaveBeenCalled()
   })
 

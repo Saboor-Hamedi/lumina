@@ -176,6 +176,8 @@ const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
     return children
   }
 
+  const titleVal = children.props.title || (typeof text === 'string' ? text.trim() : undefined)
+
   const clonedChild = cloneElement(children, {
     ref: (node) => {
       childRef.current = node
@@ -183,11 +185,8 @@ const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
       if (typeof ref === 'function') ref(node)
       else if (ref) ref.current = node
     },
-    title: children.props.title || undefined,
-    'aria-label':
-      children.props['aria-label'] ||
-      children.props.title ||
-      (typeof text === 'string' ? text.trim() : undefined),
+    title: titleVal,
+    'aria-label': children.props['aria-label'] || titleVal,
     onMouseEnter: handleMouseEnter,
     onMouseLeave: handleMouseLeave,
     onClick: handleClick

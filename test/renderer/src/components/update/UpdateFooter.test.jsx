@@ -30,10 +30,22 @@ describe('UpdateFooter', () => {
     expect(screen.getByText(/Downloading\.\.\. 75%/)).toBeInTheDocument()
   })
 
-  it('shows preparing message when available', () => {
-    render(<UpdateFooter status="available" progress={null} install={vi.fn()} onClose={vi.fn()} />)
+  it('shows download button when available and calls download on click', () => {
+    const download = vi.fn()
+    render(
+      <UpdateFooter
+        status="available"
+        progress={null}
+        download={download}
+        install={vi.fn()}
+        onClose={vi.fn()}
+      />
+    )
 
-    expect(screen.getByText(/Preparing download\.\.\./)).toBeInTheDocument()
+    const downloadBtn = screen.getByRole('button', { name: /Download Update/ })
+    expect(downloadBtn).toBeInTheDocument()
+    fireEvent.click(downloadBtn)
+    expect(download).toHaveBeenCalled()
   })
 
   it('shows install button and calls install when ready', () => {
@@ -69,11 +81,9 @@ describe('UpdateFooter', () => {
     expect(screen.getByText('Download updates automatically')).toBeInTheDocument()
     expect(screen.getByText('Install updates on quit')).toBeInTheDocument()
     expect(screen.getByText('Notify me about pre-releases')).toBeInTheDocument()
-    expect(screen.getByText('Update Preferences')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Done' }))
 
-    expect(screen.getByTitle('Update Preferences')).toBeInTheDocument()
-    expect(screen.getByText('Last checked: Just now')).toBeInTheDocument()
+    expect(screen.queryByText('Download updates automatically')).toBeNull()
   })
 })

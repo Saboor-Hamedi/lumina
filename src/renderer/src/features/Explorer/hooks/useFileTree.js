@@ -56,11 +56,6 @@ export function useFileTree({
 
     const flat = []
 
-    // Inject drop to root zone if dragging
-    if (activeListDragItem) {
-      flat.push({ type: 'root-drop', id: 'root-drop-zone', depth: 0 })
-    }
-
     // Helper: recursively calculate total notes inside a folder hierarchy for collapsed item badges
     const getNoteCount = (node) => {
       return (

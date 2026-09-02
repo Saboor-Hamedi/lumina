@@ -7,7 +7,7 @@ import ToolTip from '../atoms/ToolTip'
 import './UpdateDetails.css'
 
 const UpdateDetails = () => {
-  const { status, updateInfo, progress, download, install } = useUpdateStore()
+  const { status, updateInfo, progress, download, install, check } = useUpdateStore()
   const [currentVersion, setCurrentVersion] = useState('1.0.0')
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef(null)
@@ -17,13 +17,6 @@ const UpdateDetails = () => {
       window.api.getVersion().then(setCurrentVersion)
     }
   }, [])
-
-  // Automatically download if available
-  useEffect(() => {
-    if (status === 'available') {
-      download()
-    }
-  }, [status, download])
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -48,23 +41,24 @@ const UpdateDetails = () => {
   const rawNotes =
     updateInfo?.releaseNotes ||
     `New
-- Native Mark-Based Wikilinks: Seamless text selection and instant editing across all internal links
-- Multi-Format List Auto-Continuation: Smart continuation on Enter for numbered (1., 1-, 1)), lettered (a), a-, A.), and bullet (- , * , +) lists
-- Invisible Horizontal Table Scrolling: Tables with many columns now pan smoothly with zero scrollbar clutter
-- Dynamic Headings Block Cursor: Caret height and width dynamically adapt to heading font sizes and hide cleanly during text selection
-- Hierarchical Nested Lists: Tab / Shift-Tab indentation with progressive bullet styling (• ➔ ◦ ➔ ▪)
+- Editor Breadcrumbs Header: Minimalist, responsive breadcrumb bar below the tab bar showing active folder hierarchy and quick navigation
+- Ultra-Fast Note & Folder Hover Previews: Exterior preview cards with live word count, reading time, folder badges, tags, clean markdown preview, and folder contents list
+- Status Bar Interactive Actions: Clickable line/col indicators to instantly jump and center cursor, word/char counters, and live indexing status
+- Modal Lightbox for Images & Mermaid: Fullscreen preview with smooth zoom controls, docked toolbar, and immediate Escape key closing
+- Refined Properties Inspector: Tabbed Right Sidebar with dedicated 0.5px subtle tab borders, live note outline navigation, and stats overview
 
 Improved
-- Document Selection: Fixed line and heading selection to wrap tightly around text without full-width bleeding or newline spill
-- Fold Placeholders: Minimal, transparent heading collapse indicator that cleanly hides nested wikilinks
-- IconPicker Shortcut: Dedicated shortcut restricted to Ctrl + Shift + . (Cmd + Shift + .)
-- Clean Link Typography: Removed trailing external link icons from all internal note wikilinks
-- Table Column Layout: Natural column sizing preventing squished columns on wide data tables
+- Exterior Tooltip Anchor: Explorer tooltips float cleanly outside the left sidebar onto the editor canvas with accurate speech-bubble arrow pointers
+- Fast Cursor Tracking: 25ms instant warm-up tracking when sweeping cursor across files and folders
+- Suppressed Browser Default Tooltips: Cleaned native HTML tooltips across Mermaid diagrams, image embeds, and Markdown table toolbars
+- Invisible Horizontal Table Scrolling: Tables with many columns pan smoothly with zero scrollbar clutter
+- Dynamic Heading Block Cursor: Caret height and width adapt to heading font sizes and hide cleanly during text selection
 
 Fixed
-- Eliminated RangeError: Invalid child in posBefore when clicking, dragging, or double-clicking wikilinks
-- Resolved caret snapping and mousedown event hijacking inside CodeMirror
-- Cleaned up selection layer overlapping with resting caret blocks`
+- Sidebar Focus & Selection: Fixed note deselection when interacting with empty root areas in the explorer sidebar
+- Right Sidebar Tab Underlines: Removed 2px thick purple pseudo-element bleed from the inspector tabs
+- Note Preview Word Counting: Resolved word count reading from note markdown code body
+- Modal Lightbox Escape Dismissal: Guaranteed instant closing of image and Mermaid lightboxes on Escape`
   
   const parseNotes = (text) => {
     const categories = []
@@ -163,11 +157,14 @@ Fixed
             </div>
           </div>
 
-          <UpdateFooter 
-            status={status} 
-            progress={progress} 
-            install={install} 
-            onClose={() => setIsOpen(false)} 
+          <UpdateFooter
+            status={status}
+            progress={progress}
+            install={install}
+            download={download}
+            check={check}
+            newVersion={newVersion}
+            onClose={() => setIsOpen(false)}
           />
         </div>
       )}
