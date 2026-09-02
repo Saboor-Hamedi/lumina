@@ -23,13 +23,10 @@ export const DroppableFolderItem = React.memo(
   }) => {
     const { isOver, setNodeRef: setDroppableRef } = useDroppable({ id: `folder-${item.id}` })
     const [isHovered, setIsHovered] = useState(false)
-    const snippets = useVaultStore((state) => state.snippets)
-
-    const folderSnippets = useMemo(() => {
-      return (snippets || []).filter((s) => s.folderId === item.id)
-    }, [snippets, item.id])
 
     const getFolderTooltipContent = () => {
+      const allSnippets = useVaultStore.getState().snippets || []
+      const folderSnippets = allSnippets.filter((s) => s.folderId === item.id)
       const noteCount = folderSnippets.length
       const totalWords = folderSnippets.reduce((acc, s) => {
         const raw = s.code || s.content || s.body || ''
@@ -97,26 +94,12 @@ export const DroppableFolderItem = React.memo(
       data: { type: 'folder', item }
     })
 
-    // Spring-loaded folder expansion
-    useEffect(() => {
-      let timer = null
-      if (isOver && !isExpanded && !isRenaming) {
-        timer = setTimeout(() => {
-          onToggle(item.id, null)
-        }, 600) // 600ms hover to expand
-      }
-      return () => {
-        if (timer) clearTimeout(timer)
-      }
-    }, [isOver, isExpanded, isRenaming, item.id, onToggle])
-
     return (
       <div
         ref={setDroppableRef}
         className="folder-tree-item"
         style={{
           position: 'relative',
-          paddingLeft: `${item.depth * 12}px`,
           opacity: isDragging ? 0.5 : 1
         }}
       >

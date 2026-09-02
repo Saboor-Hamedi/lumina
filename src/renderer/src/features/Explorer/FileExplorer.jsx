@@ -175,6 +175,16 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     setSidebarFocus(null)
   }, [isOpen])
 
+  useEffect(() => {
+    if (visibleFolders && visibleFolders.length > 0) {
+      const currentOrder = settings.folderOrder || []
+      const missing = visibleFolders.filter((f) => !currentOrder.includes(f))
+      if (missing.length > 0) {
+        updateSetting('folderOrder', [...currentOrder, ...missing])
+      }
+    }
+  }, [visibleFolders, settings.folderOrder, updateSetting])
+
   useKeyboardShortcuts({
     onRevealInExplorer: () => {
       if (selectedIndex >= 0 && selectedIndex < flatTree.length) {
@@ -347,7 +357,8 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     expandedFolders,
     creating,
     activeListDragItem,
-    collapsedDuringSearch
+    collapsedDuringSearch,
+    folderOrder: settings.folderOrder
   })
 
   useEffect(() => {
@@ -617,7 +628,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
           className="folder-tree-item"
           style={{
             position: 'relative',
-            paddingLeft: `${item.depth * 12 + (item.kind === 'folder' ? 0 : 16)}px`
+            paddingLeft: `${item.depth * 10 + (item.kind === 'folder' ? 0 : 10)}px`
           }}
         >
           <div
@@ -662,40 +673,48 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
       const isActive =
         sidebarFocus === 'folder' && (lastClickedFolder === item.id || index === selectedIndex)
       return (
-        <DroppableFolderItem
-          item={item}
-          isExpanded={isExpanded}
-          isActive={isActive}
-          searchQuery={context.query}
-          folderColor={context.folderColors?.[item.id]}
-          isRenaming={context.renamingFolder === item.id}
-          renameValue={context.renamingValue}
-          setRenameValue={context.setRenamingValue}
-          submitRename={context.submitRename}
-          cancelRename={context.cancelRename}
-          isPinned={context.pinnedFolders?.includes(item.id)}
-          onTogglePin={context.togglePinnedFolder}
-          onToggle={(id, e) => {
-            setSidebarFocus('folder')
-            setLastClickedFolder(id)
-            setSelectedIndex(index)
-            toggleFolder(id, e)
+        <div
+          style={{
+            position: 'relative',
+            paddingLeft: `${item.depth * 10}px`
           }}
-          onContextMenu={(id, e) => {
-            setSidebarFocus('folder')
-            setLastClickedFolder(id)
-            setSelectedIndex(index)
-            handleFolderContextMenu(id, e)
-          }}
-        />
+        >
+          <DroppableFolderItem
+            item={item}
+            isExpanded={isExpanded}
+            isActive={isActive}
+            searchQuery={context.query}
+            folderColor={context.folderColors?.[item.id]}
+            isRenaming={context.renamingFolder === item.id}
+            renameValue={context.renamingValue}
+            setRenameValue={context.setRenamingValue}
+            submitRename={context.submitRename}
+            cancelRename={context.cancelRename}
+            isPinned={context.pinnedFolders?.includes(item.id)}
+            onTogglePin={context.togglePinnedFolder}
+            onToggle={(id, e) => {
+              setSidebarFocus('folder')
+              setLastClickedFolder(id)
+              setSelectedIndex(index)
+              toggleFolder(id, e)
+            }}
+            onContextMenu={(id, e) => {
+              setSidebarFocus('folder')
+              setLastClickedFolder(id)
+              setSelectedIndex(index)
+              handleFolderContextMenu(id, e)
+            }}
+          />
+        </div>
       )
     } else {
       const isMultiSelected = selectedNoteIds.has(item.snippet.id)
       const isNoteActive =
-        isMultiSelected ||
-        (selectedNoteIds.size === 0 && item.snippet.id === selectedSnippetId && sidebarFocus !== 'root') ||
-        (index === selectedIndex && sidebarFocus === 'note')
-      const filePaddingLeft = `${item.depth * 12 + (item.depth === 0 ? 16 : 14)}px`
+        sidebarFocus === 'note' &&
+        (isMultiSelected ||
+          (selectedNoteIds.size === 0 && item.snippet.id === selectedSnippetId) ||
+          index === selectedIndex)
+      const filePaddingLeft = `${item.depth * 10 + 10}px`
 
       return (
         <div
@@ -813,19 +832,42 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     if (String(active.id).startsWith('drag-folder-')) {
       const sourceFolderId = String(active.id).replace('drag-folder-', '')
 
-      if (String(over.id).startsWith('folder-')) {
-        const targetFolderId = String(over.id).replace('folder-', '')
+      if (String(over.id).startsWith('folder-') || String(over.id).startsWith('drag-folder-')) {
+        const targetFolderId = String(over.id).replace('folder-', '').replace('drag-folder-', '')
 
-        // Prevent moving a folder into itself or its own subfolders
-        if (sourceFolderId !== targetFolderId && !targetFolderId.startsWith(sourceFolderId + '/')) {
-          const folderName = sourceFolderId.split('/').pop()
-          const newPath = targetFolderId ? `${targetFolderId}/${folderName}` : folderName
-          try {
-            await window.api.renameFolder(sourceFolderId, newPath)
-            setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
-            await loadVault()
-          } catch (e) {
-            console.error('Failed to move folder:', e)
+        if (sourceFolderId !== targetFolderId) {
+          const sourceParent = sourceFolderId.includes('/')
+            ? sourceFolderId.substring(0, sourceFolderId.lastIndexOf('/'))
+            : ''
+          const targetParent = targetFolderId.includes('/')
+            ? targetFolderId.substring(0, targetFolderId.lastIndexOf('/'))
+            : ''
+
+          // Same-level folder reordering
+          if (sourceParent === targetParent) {
+            const allCurrentFolders = Array.from(
+              new Set([...(settings.folderOrder || []), ...visibleFolders])
+            )
+            const oldIndex = allCurrentFolders.indexOf(sourceFolderId)
+            const newIndex = allCurrentFolders.indexOf(targetFolderId)
+            if (oldIndex !== -1 && newIndex !== -1) {
+              const newOrder = arrayMove(allCurrentFolders, oldIndex, newIndex)
+              updateSetting('folderOrder', newOrder)
+              return
+            }
+          }
+
+          // Prevent moving a folder into itself or its own subfolders
+          if (!targetFolderId.startsWith(sourceFolderId + '/')) {
+            const folderName = sourceFolderId.split('/').pop()
+            const newPath = targetFolderId ? `${targetFolderId}/${folderName}` : folderName
+            try {
+              await window.api.renameFolder(sourceFolderId, newPath)
+              setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
+              await loadVault()
+            } catch (e) {
+              console.error('Failed to move folder:', e)
+            }
           }
         }
       }
@@ -902,6 +944,10 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
         const folderPath = creating.parentId
           ? `${creating.parentId}/${sanitizedName}`
           : sanitizedName
+        const currentOrder = settings.folderOrder || []
+        if (!currentOrder.includes(folderPath)) {
+          await updateSetting('folderOrder', [...currentOrder, folderPath])
+        }
         await window.api.createFolder(folderPath)
         setExpandedFolders((prev) => new Set(prev).add(folderPath))
         await loadVault()
@@ -922,10 +968,6 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
         await saveSnippet(newSnippet)
         if (folderId) setExpandedFolders((prev) => new Set(prev).add(folderId))
         handleSelect(newSnippet)
-      }
-
-      if (virtuosoRef.current && !creating.parentId) {
-        virtuosoRef.current.scrollToIndex({ index: 0, align: 'start' })
       }
     } catch (err) {
       console.error('Failed to create:', err)
@@ -1319,39 +1361,26 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                       }}
                     >
                       {activeListDragItem?.type === 'folder' ? (
-                        <OverlayWrapper>
-                          <div
-                            className="folder-tree-main"
-                            style={{
-                              width: 'max-content',
-                              opacity: 0.8,
-                              background: 'var(--bg-panel)',
-                              borderRadius: '4px',
-                              paddingRight: '8px',
-                              boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                            }}
-                          >
-                            <ChevronRight size={14} className="folder-chevron" />
-                            <div
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                color: folderColors[activeListDragItem.item.id] || undefined,
-                                padding: '2px 6px',
-                                borderRadius: '4px',
-                                marginLeft: '-6px'
-                              }}
-                            >
-                              <Folder
-                                size={14}
-                                fill={folderColors[activeListDragItem.item.id] || '#e8a825'}
-                                color={folderColors[activeListDragItem.item.id] || '#e8a825'}
-                              />
-                              <span className="folder-name">{activeListDragItem.item.name}</span>
-                            </div>
-                          </div>
-                        </OverlayWrapper>
+                        <div
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '4px 10px',
+                            borderRadius: '6px',
+                            background: 'var(--bg-panel, #1e1e2e)',
+                            border: '1px solid var(--border-color, rgba(255,255,255,0.12))',
+                            boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                            color: 'var(--text-main)',
+                            fontSize: '13px',
+                            fontWeight: 500,
+                            pointerEvents: 'none',
+                            transform: 'translate3d(0, 0, 0)'
+                          }}
+                        >
+                          <Folder size={14} fill="#e8a825" color="#e8a825" />
+                          <span>{activeListDragItem.item?.name || 'Folder'}</span>
+                        </div>
                       ) : activeListDragItem?.type === 'file' ? (
                         <OverlayWrapper>
                           <div

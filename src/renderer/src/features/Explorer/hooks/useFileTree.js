@@ -8,7 +8,8 @@ export function useFileTree({
   expandedFolders,
   creating,
   activeListDragItem,
-  collapsedDuringSearch
+  collapsedDuringSearch,
+  folderOrder
 }) {
   const flatTree = useMemo(() => {
     if (activeTab !== 'all') return []
@@ -20,8 +21,9 @@ export function useFileTree({
 
     // 1. Build Folders
     folders.forEach((folderPath) => {
-      if (!q || folderPath.toLowerCase().includes(q)) {
-        const parts = folderPath.split('/')
+      const cleanPath = (folderPath || '').replace(/\\/g, '/')
+      if (!q || cleanPath.toLowerCase().includes(q)) {
+        const parts = cleanPath.split('/').filter(Boolean)
         let current = root
         let currentPath = ''
         parts.forEach((part) => {
@@ -36,11 +38,11 @@ export function useFileTree({
 
     // 2. Build Snippets
     allSnippets.forEach((snippet) => {
-      const folderId = snippet.folderId || ''
+      const folderId = (snippet.folderId || '').replace(/\\/g, '/')
       if (!folderId) {
         root.files.push(snippet)
       } else {
-        const parts = folderId.split('/')
+        const parts = folderId.split('/').filter(Boolean)
         let current = root
         let currentPath = ''
         parts.forEach((part) => {
@@ -65,8 +67,17 @@ export function useFileTree({
     }
 
     const traverse = (node, depth, parentId = '') => {
-      // Sort folders alphabetically
-      const folderNames = Object.keys(node.children).sort((a, b) => a.localeCompare(b))
+      const order = Array.isArray(folderOrder) ? folderOrder : []
+      const folderNames = Object.keys(node.children).sort((a, b) => {
+        const fullPathA = parentId ? `${parentId}/${a}` : a
+        const fullPathB = parentId ? `${parentId}/${b}` : b
+        const idxA = order.indexOf(fullPathA)
+        const idxB = order.indexOf(fullPathB)
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB
+        if (idxA !== -1) return -1
+        if (idxB !== -1) return 1
+        return 0
+      })
 
       folderNames.forEach((name) => {
         const folder = node.children[name]
@@ -107,8 +118,8 @@ export function useFileTree({
     query,
     expandedFolders,
     creating,
-    activeListDragItem,
-    collapsedDuringSearch
+    collapsedDuringSearch,
+    folderOrder
   ])
 
   return flatTree

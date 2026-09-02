@@ -433,6 +433,10 @@
   line-height: 1.2;
 }
 
+.folder-tree-item {
+  transform: translateZ(0);
+}
+
 /* Nested creation buttons (appear on hover) */
 .folder-tree-main {
   display: flex;
@@ -444,7 +448,7 @@
   height: 28px;
   margin: 1px 4px;
   border-radius: 6px;
-  transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background 0.12s ease, box-shadow 0.12s ease;
   position: relative;
   cursor: pointer;
 }

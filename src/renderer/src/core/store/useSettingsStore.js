@@ -46,8 +46,9 @@ export const useSettingsStore = create((set, get) => ({
     launchOnStartup: false,
     globalShortcut: 'Ctrl+Space',
 
-    // Favorites
-    pinnedFolders: []
+    // Favorites & Ordering
+    pinnedFolders: [],
+    folderOrder: []
   },
 
   isLoading: true,
