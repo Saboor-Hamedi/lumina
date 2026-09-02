@@ -26,8 +26,8 @@ export const togglePrefix = (view, prefix) => {
     const line = state.doc.line(i)
     const text = line.text
     
-    // Match any existing block prefix (headings, lists, tasks, blockquotes)
-    const match = text.match(/^(#{1,6}\s+|-\s+\[[ x]\]\s+|-\s+|\d+\.\s+|>\s+)/)
+    // Match any existing block prefix (headings, lists, tasks, multi-level blockquotes)
+    const match = text.match(/^(#{1,6}\s+|-\s+\[[ x]\]\s+|-\s+|\d+\.\s+|>+\s*)/)
     
     const from = line.from
     let to = line.from

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { toggleMark, clearFormatting } from './formatActions'
 import { togglePrefix } from './paragraphActions'
+import { toggleQuoteMark } from '../hooks/useQuote'
 import { insertSnippet } from './insertActions'
 import { selectAll, cutText, copyText, pastePlainText } from './clipboardActions'
 
@@ -81,7 +82,7 @@ export const getEditorContextMenuOptions = (view) => {
         { id: 'h5', label: 'Heading 5', icon: <Heading5 size={14} />, action: () => togglePrefix(view, '##### ') },
         { id: 'h6', label: 'Heading 6', icon: <Heading6 size={14} />, action: () => togglePrefix(view, '###### ') },
         { id: 'body', label: 'Body', icon: <AlignLeft size={14} />, action: () => togglePrefix(view, '') },
-        { id: 'quote', label: 'Quote', icon: <Quote size={14} />, action: () => togglePrefix(view, '> ') },
+        { id: 'quote', label: 'Quote', icon: <Quote size={14} />, action: () => toggleQuoteMark(view) },
       ]
     },
     {

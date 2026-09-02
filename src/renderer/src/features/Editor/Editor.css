@@ -1578,18 +1578,68 @@ html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {
   display: none !important;
 }
 
-/* Blockquote - Flat Minimal Styling */
+/* Blockquote - Flat Minimal Styling & Visual Nested Depths */
 .markdown-editor .cm-line.cm-atomic-blockquote {
   border: none !important;
   border-left: 2px solid var(--text-accent) !important;
-  padding: 4px 14px !important;
   margin: 0 !important;
   font-style: italic !important;
   font-size: 0.95em !important;
   position: relative !important;
-  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.04) !important;
   color: var(--text-muted) !important;
   border-radius: 0 2px 2px 0 !important;
+  transition: padding-left 0.15s ease, background 0.15s ease;
+}
+
+/* Depth 1: Level 1 Quote (`> `) — Single Vertical Line */
+.markdown-editor .cm-line.cm-blockquote-depth-1 {
+  border-left: 2px solid var(--text-accent) !important;
+  padding-left: 14px !important;
+  background-color: rgba(var(--text-accent-rgb, 139, 92, 246), 0.04) !important;
+}
+
+/* Depth 2: Level 2 Nested Quote (`>> `) — Continuous Outer Line + Indented 2nd Line */
+.markdown-editor .cm-line.cm-blockquote-depth-2 {
+  border-left: 2px solid var(--text-accent) !important;
+  padding-left: 28px !important;
+  background-image: linear-gradient(to right,
+    transparent 0px, transparent 12px,
+    var(--text-accent) 12px, var(--text-accent) 14px,
+    transparent 14px
+  ) !important;
+  background-color: rgba(var(--text-accent-rgb, 139, 92, 246), 0.06) !important;
+}
+
+/* Depth 3: Level 3 Nested Quote (`>>> `) — Continuous Outer Line + 2nd Line + 3rd Line */
+.markdown-editor .cm-line.cm-blockquote-depth-3 {
+  border-left: 2px solid var(--text-accent) !important;
+  padding-left: 42px !important;
+  background-image: linear-gradient(to right,
+    transparent 0px, transparent 12px,
+    var(--text-accent) 12px, var(--text-accent) 14px,
+    transparent 14px, transparent 26px,
+    var(--text-accent) 26px, var(--text-accent) 28px,
+    transparent 28px
+  ) !important;
+  background-color: rgba(var(--text-accent-rgb, 139, 92, 246), 0.08) !important;
+}
+
+/* Depth 4+: Level 4+ Deep Nested Quote (`>>>> `) — 4 Parallel Vertical Lines */
+.markdown-editor .cm-line.cm-blockquote-depth-4,
+.markdown-editor .cm-line.cm-blockquote-depth-5,
+.markdown-editor .cm-line.cm-blockquote-depth-6 {
+  border-left: 2px solid var(--text-accent) !important;
+  padding-left: 56px !important;
+  background-image: linear-gradient(to right,
+    transparent 0px, transparent 12px,
+    var(--text-accent) 12px, var(--text-accent) 14px,
+    transparent 14px, transparent 26px,
+    var(--text-accent) 26px, var(--text-accent) 28px,
+    transparent 28px, transparent 40px,
+    var(--text-accent) 40px, var(--text-accent) 42px,
+    transparent 42px
+  ) !important;
+  background-color: rgba(var(--text-accent-rgb, 139, 92, 246), 0.10) !important;
 }
 
 /* Callout Styling - Flat Modern Palette */
@@ -1599,6 +1649,26 @@ html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {
   padding: 4px 12px !important;
   border-radius: 0 2px 2px 0 !important;
   margin: 0 !important;
+}
+
+.lumina-callout-line.cm-blockquote-depth-2 {
+  padding-left: 28px !important;
+  background-image: linear-gradient(to right,
+    transparent 0px, transparent 12px,
+    var(--text-accent) 12px, var(--text-accent) 14px,
+    transparent 14px
+  ) !important;
+}
+
+.lumina-callout-line.cm-blockquote-depth-3 {
+  padding-left: 42px !important;
+  background-image: linear-gradient(to right,
+    transparent 0px, transparent 12px,
+    var(--text-accent) 12px, var(--text-accent) 14px,
+    transparent 14px, transparent 26px,
+    var(--text-accent) 26px, var(--text-accent) 28px,
+    transparent 28px
+  ) !important;
 }
 
 .lumina-callout-line-note {

@@ -26,7 +26,11 @@ export const DroppableFolderItem = React.memo(
 
     const getFolderTooltipContent = () => {
       const allSnippets = useVaultStore.getState().snippets || []
-      const folderSnippets = allSnippets.filter((s) => s.folderId === item.id)
+      const targetFolderId = (item.id || '').replace(/\\/g, '/')
+      const folderSnippets = allSnippets.filter((s) => {
+        const sFolder = (s.folderId || '').replace(/\\/g, '/')
+        return sFolder === targetFolderId || sFolder.startsWith(targetFolderId + '/')
+      })
       const noteCount = folderSnippets.length
       const totalWords = folderSnippets.reduce((acc, s) => {
         const raw = s.code || s.content || s.body || ''
@@ -48,7 +52,7 @@ export const DroppableFolderItem = React.memo(
             {totalWords > 0 && (
               <>
                 <span>·</span>
-                <span>{totalWords} words</span>
+                <span>{totalWords.toLocaleString()} words</span>
               </>
             )}
           </div>
