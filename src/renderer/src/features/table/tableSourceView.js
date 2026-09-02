@@ -27,7 +27,7 @@ export function createTableViewModeToggleDOM(view, wrap, model) {
     </svg>
     <span>Table</span>
   `
-  tableBtn.title = 'Visual table view'
+  tableBtn.setAttribute('data-tooltip', 'Visual Table View')
 
   const sourceBtn = document.createElement('button')
   sourceBtn.type = 'button'
@@ -39,7 +39,7 @@ export function createTableViewModeToggleDOM(view, wrap, model) {
     </svg>
     <span>Source</span>
   `
-  sourceBtn.title = 'Markdown source view'
+  sourceBtn.setAttribute('data-tooltip', 'Markdown Source View')
 
   container.appendChild(tableBtn)
   container.appendChild(sourceBtn)

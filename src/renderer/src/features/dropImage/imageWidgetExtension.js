@@ -126,7 +126,7 @@ export class ImageWidget extends WidgetType {
       </svg>
       <span>Image</span>
     `
-    imageBtn.title = 'Rendered image view'
+    imageBtn.setAttribute('data-tooltip', 'Rendered Image View')
 
     const sourceBtn = document.createElement('button')
     sourceBtn.type = 'button'
@@ -138,7 +138,7 @@ export class ImageWidget extends WidgetType {
       </svg>
       <span>Source</span>
     `
-    sourceBtn.title = 'Markdown source view'
+    sourceBtn.setAttribute('data-tooltip', 'Markdown Source View')
 
     viewToggle.appendChild(imageBtn)
     viewToggle.appendChild(sourceBtn)
@@ -601,7 +601,9 @@ export class ImageWidget extends WidgetType {
   createBtn(content, title, onClick) {
     const btn = document.createElement('button')
     btn.className = 'image-widget-btn'
-    btn.title = title
+    if (title) {
+      btn.setAttribute('data-tooltip', title)
+    }
 
     if (typeof content === 'string' && !content.startsWith('<')) {
       btn.innerText = content

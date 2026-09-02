@@ -240,6 +240,7 @@ export function openMermaidLightbox(svgEl) {
     window.removeEventListener('mousemove', onMouseMove)
     window.removeEventListener('mouseup', onMouseUp)
     window.removeEventListener('keydown', onKeyDown, true)
+    window.removeEventListener('close-lightbox', close)
     setTimeout(() => overlay.remove(), 250)
   }
 
@@ -252,13 +253,14 @@ export function openMermaidLightbox(svgEl) {
 
   // Intercept Escape key globally while modal is active
   const onKeyDown = (k) => {
-    if (k.key === 'Escape') {
+    if (k.key === 'Escape' || k.key === 'Esc' || k.keyCode === 27) {
       k.preventDefault()
       k.stopPropagation()
       close()
     }
   }
   window.addEventListener('keydown', onKeyDown, true)
+  window.addEventListener('close-lightbox', close)
 
   wrapper.appendChild(card)
   wrapper.appendChild(closeBtn)

@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { useDroppable, useDraggable } from '@dnd-kit/core'
 import { ChevronRight, ChevronDown, Folder, FolderOpen } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
+import { useVaultStore } from '../../../core/store/useVaultStore'
 
 export const DroppableFolderItem = React.memo(
   ({
@@ -22,6 +23,56 @@ export const DroppableFolderItem = React.memo(
   }) => {
     const { isOver, setNodeRef: setDroppableRef } = useDroppable({ id: `folder-${item.id}` })
     const [isHovered, setIsHovered] = useState(false)
+    const snippets = useVaultStore((state) => state.snippets)
+
+    const folderSnippets = useMemo(() => {
+      return (snippets || []).filter((s) => s.folderId === item.id)
+    }, [snippets, item.id])
+
+    const getFolderTooltipContent = () => {
+      const noteCount = folderSnippets.length
+      const totalWords = folderSnippets.reduce((acc, s) => {
+        const raw = s.code || s.content || s.body || ''
+        return acc + (raw.trim() ? raw.trim().split(/\s+/).length : 0)
+      }, 0)
+
+      const previewList = folderSnippets.slice(0, 5)
+      const remainingCount = noteCount - previewList.length
+
+      return (
+        <div className="tooltip-card-preview tooltip-folder-preview">
+          <div className="tooltip-card-header">
+            <span className="tooltip-card-title">📁 {item.name}</span>
+          </div>
+          <div className="tooltip-card-meta">
+            <span>
+              {noteCount} {noteCount === 1 ? 'note' : 'notes'}
+            </span>
+            {totalWords > 0 && (
+              <>
+                <span>·</span>
+                <span>{totalWords} words</span>
+              </>
+            )}
+          </div>
+          {previewList.length > 0 ? (
+            <div className="tooltip-folder-list">
+              {previewList.map((note) => (
+                <div key={note.id} className="tooltip-folder-list-item">
+                  <span className="tooltip-folder-file-bullet">📄</span>
+                  <span className="tooltip-folder-file-name">{note.title || 'Untitled'}</span>
+                </div>
+              ))}
+              {remainingCount > 0 && (
+                <div className="tooltip-folder-more">+{remainingCount} more notes...</div>
+              )}
+            </div>
+          ) : (
+            <div className="tooltip-card-empty">Empty folder</div>
+          )}
+        </div>
+      )
+    }
 
     const highlightText = (text, query) => {
       if (!query || !text) return text
@@ -140,7 +191,7 @@ export const DroppableFolderItem = React.memo(
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (
-              <ToolTip text={item.name} position="bottom" delay={600}>
+              <ToolTip text={getFolderTooltipContent()} position="right" delay={100}>
                 <span
                   className="folder-name"
                   style={{

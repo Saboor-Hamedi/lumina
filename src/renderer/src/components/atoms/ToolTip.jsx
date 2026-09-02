@@ -2,9 +2,12 @@ import React, { useState, useRef, cloneElement, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import './ToolTip.css'
 
+// Shared warm-up tracker across all tooltips for instant hover switching
+let globalLastTooltipTimestamp = 0
+
 /**
  * Ultra-Smooth High-Precision ToolTip component with dynamic collision detection,
- * speech bubble arrow knob alignment, and zero-background shortcut styling.
+ * speech bubble arrow knob alignment, instant warm-up tracking, and zero-background shortcut styling.
  */
 const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
   const [isVisible, setIsVisible] = useState(false)
@@ -13,7 +16,9 @@ const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
   const timeoutRef = useRef(null)
 
   const formattedContent = useMemo(() => {
-    if (!text || typeof text !== 'string') return text
+    if (!text) return null
+    if (React.isValidElement(text)) return text
+    if (typeof text !== 'string') return text
     const match = text.match(/^(.*?)(?:\s*\(([^)]+)\))?$/)
     if (match && match[2]) {
       return (
@@ -31,6 +36,10 @@ const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
       children.props.onMouseEnter(e)
     }
     clearTimeout(timeoutRef.current)
+
+    const isWarmedUp = Date.now() - globalLastTooltipTimestamp < 450
+    const effectiveDelay = isWarmedUp ? 25 : delay
+
     timeoutRef.current = setTimeout(() => {
       if (childRef.current) {
         const rect = childRef.current.getBoundingClientRect()
@@ -70,36 +79,55 @@ const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
         }
 
         const elemCenterX = rect.left + rect.width / 2
+        const elemCenterY = rect.top + rect.height / 2
 
         if (isLeft) {
-          topStyle = `${Math.round(rect.top + rect.height / 2)}px`
+          topStyle = `${Math.round(elemCenterY)}px`
           rightStyle = `${Math.round(window.innerWidth - rect.left + gap)}px`
           transformStyle = 'translateY(-50%)'
           arrowPos = { right: '-4px', top: '50%', marginTop: '-3px' }
         } else if (isRight) {
-          topStyle = `${Math.round(rect.top + rect.height / 2)}px`
-          leftStyle = `${Math.round(rect.right + gap)}px`
-          transformStyle = 'translateY(-50%)'
-          arrowPos = { left: '-4px', top: '50%', marginTop: '-3px' }
+          // Push tooltip completely outside to the right of the sidebar container
+          const sidebarContainer = childRef.current.closest(
+            '.shell-sidebar-left, aside, .app-sidebar, .sidebar, .sidebar-body, .sidebar-nav, .start-menu-panel, .start-menu-left, .file-explorer-sidebar, .left-sidebar, .explorer-panel'
+          )
+          const effectiveRight = sidebarContainer
+            ? sidebarContainer.getBoundingClientRect().right
+            : rect.right
+
+          leftStyle = `${Math.round(effectiveRight + gap)}px`
+
+          if (elemCenterY < 80) {
+            topStyle = '16px'
+            transformStyle = 'none'
+            const knobTop = Math.max(12, Math.round(elemCenterY - 16))
+            arrowPos = { left: '-4px', top: `${knobTop}px` }
+          } else if (elemCenterY > window.innerHeight - 100) {
+            bottomStyle = '16px'
+            topStyle = 'auto'
+            transformStyle = 'none'
+            const knobBottom = Math.max(12, Math.round(window.innerHeight - elemCenterY - 16))
+            arrowPos = { left: '-4px', bottom: `${knobBottom}px` }
+          } else {
+            topStyle = `${Math.round(elemCenterY)}px`
+            transformStyle = 'translateY(-50%)'
+            arrowPos = { left: '-4px', top: '50%', marginTop: '-3px' }
+          }
         } else {
           // Horizontal alignment for Top & Bottom tooltips:
-          // Check if hovering near right window edge (e.g. TitleBar close icon, Inspector toggles, StatusBar right items)
           if (elemCenterX > window.innerWidth - 130) {
             const rightPad = Math.max(8, window.innerWidth - rect.right)
             rightStyle = `${Math.round(rightPad)}px`
             transformStyle = 'none'
-            // Align arrow knob right over the center of the hovered element
             const knobRight = Math.max(10, Math.round(rect.right - elemCenterX + 8))
             arrowPos.right = `${knobRight}px`
           } else if (elemCenterX < 130) {
-            // Near left window edge
             const leftPad = Math.max(8, rect.left)
             leftStyle = `${Math.round(leftPad)}px`
             transformStyle = 'none'
             const knobLeft = Math.max(10, Math.round(elemCenterX - rect.left + 8))
             arrowPos.left = `${knobLeft}px`
           } else {
-            // Centered
             leftStyle = `${Math.round(elemCenterX)}px`
             transformStyle = 'translateX(-50%)'
             arrowPos.left = '50%'
@@ -119,9 +147,10 @@ const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
           isRight,
           arrowPos
         })
+        globalLastTooltipTimestamp = Date.now()
         setIsVisible(true)
       }
-    }, delay)
+    }, effectiveDelay)
   }
 
   const handleMouseLeave = (e) => {
@@ -129,6 +158,9 @@ const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
       children.props.onMouseLeave(e)
     }
     clearTimeout(timeoutRef.current)
+    if (isVisible) {
+      globalLastTooltipTimestamp = Date.now()
+    }
     setIsVisible(false)
   }
 
@@ -151,8 +183,11 @@ const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
       if (typeof ref === 'function') ref(node)
       else if (ref) ref.current = node
     },
-    title: undefined,
-    'aria-label': typeof text === 'string' ? text.replace(/\s*\([^)]+\)$/, '').trim() : undefined,
+    title: children.props.title || undefined,
+    'aria-label':
+      children.props['aria-label'] ||
+      children.props.title ||
+      (typeof text === 'string' ? text.trim() : undefined),
     onMouseEnter: handleMouseEnter,
     onMouseLeave: handleMouseLeave,
     onClick: handleClick

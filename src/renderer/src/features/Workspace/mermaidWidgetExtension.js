@@ -72,6 +72,17 @@ export const editingMermaidField = StateField.define({
   }
 })
 
+const mermaidSvgCache = new Map()
+
+export function clearMermaidCache() {
+  mermaidSvgCache.clear()
+}
+
+// Clear diagram cache when app theme changes
+if (typeof window !== 'undefined') {
+  window.addEventListener('theme-changed', clearMermaidCache)
+}
+
 /**
  * CodeMirror 6 Widget that renders the Mermaid header bar and diagram body.
  */
@@ -323,7 +334,7 @@ class MermaidWidget extends WidgetType {
     // --- Diagram Body Container ---
     const bodyWrap = document.createElement('div')
     bodyWrap.className = 'mermaid-widget-body'
-    bodyWrap.title = 'Click to open diagram in full view'
+    bodyWrap.removeAttribute('title')
 
     // Clicking the diagram body opens the full-screen interactive lightbox modal
     bodyWrap.addEventListener('click', (e) => {
@@ -341,27 +352,32 @@ class MermaidWidget extends WidgetType {
     const contentDiv = document.createElement('div')
     contentDiv.className = 'mermaid-content'
 
-    contentDiv.innerHTML = `
-      <div class="mermaid-loading">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="12" y1="2" x2="12" y2="6"></line>
-          <line x1="12" y1="18" x2="12" y2="22"></line>
-          <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
-          <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
-          <line x1="2" y1="12" x2="6" y2="12"></line>
-          <line x1="18" y1="12" x2="22" y2="12"></line>
-          <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
-          <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
-        </svg>
-        Rendering...
-      </div>
-    `
+    const cachedSvg = mermaidSvgCache.get(this.code)
+    if (cachedSvg) {
+      contentDiv.innerHTML = cachedSvg
+    } else {
+      contentDiv.innerHTML = `
+        <div class="mermaid-loading">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="2" x2="12" y2="6"></line>
+            <line x1="12" y1="18" x2="12" y2="22"></line>
+            <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+            <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+            <line x1="2" y1="12" x2="6" y2="12"></line>
+            <line x1="18" y1="12" x2="22" y2="12"></line>
+            <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+            <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+          </svg>
+          Rendering...
+        </div>
+      `
+      const id = `mermaid-${mermaidIdCounter++}`
+      renderMermaidToElement(contentDiv, this.code, id)
+    }
+
     scrollWrap.appendChild(contentDiv)
     bodyWrap.appendChild(scrollWrap)
     wrap.appendChild(bodyWrap)
-
-    const id = `mermaid-${mermaidIdCounter++}`
-    renderMermaidToElement(contentDiv, this.code, id)
     return wrap
   }
 
@@ -451,6 +467,7 @@ export function renderMermaidToElement(container, code, uniqueId) {
         `
       })
       const { svg } = await mermaid.render(uniqueId, code)
+      mermaidSvgCache.set(code, svg)
       container.innerHTML = svg
     } catch (err) {
       container.innerHTML = `<div class="mermaid-error"><strong>Mermaid Syntax Error</strong>\n${err.message}</div>`

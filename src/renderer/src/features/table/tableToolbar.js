@@ -18,7 +18,7 @@ export function setupTableFormattingToolbar() {
   actions.forEach(({ icon, tag, label }) => {
     const btn = document.createElement('button')
     btn.innerHTML = icon
-    btn.title = label
+    btn.setAttribute('data-tooltip', label)
     btn.type = 'button'
     btn.addEventListener('mousedown', (e) => {
       e.preventDefault() // prevent losing selection

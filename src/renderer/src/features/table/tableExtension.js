@@ -218,7 +218,7 @@ export class TableWidget extends WidgetType {
 
     const deleteBtn = document.createElement('button')
     deleteBtn.className = 'cm-table-ui-delete-btn'
-    deleteBtn.title = 'Delete table'
+    deleteBtn.setAttribute('data-tooltip', 'Delete table')
     deleteBtn.innerHTML = icons.delete
     deleteBtn.addEventListener('mousedown', (e) => {
       e.preventDefault() // prevent losing focus

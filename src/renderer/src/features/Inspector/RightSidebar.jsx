@@ -46,39 +46,45 @@ export const RightSidebar = ({
   return (
     <div className="inspector-panel">
       {/* Tab-style header */}
-      <div className="panel-header-tabs workspace-tabbar">
+      <div className="panel-header-tabs inspector-tabbar">
         <div
-          className={`workspace-tab ${rightSidebarTab === 'details' ? 'active' : ''}`}
+          className={`inspector-tab ${rightSidebarTab === 'details' ? 'active' : ''}`}
           onClick={() => setRightSidebarTab('details')}
         >
-          <div className="tab-context">
-            <Info size={13} className="tab-icon" />
-            <span className="tab-title">Details</span>
-          </div>
+          <ToolTip text="Note Details" position="bottom">
+            <div className="tab-context">
+              <Info size={13} className="tab-icon" />
+              <span className="tab-title">Details</span>
+            </div>
+          </ToolTip>
         </div>
 
         <div
-          className={`workspace-tab ${rightSidebarTab === 'outline' ? 'active' : ''}`}
+          className={`inspector-tab ${rightSidebarTab === 'outline' ? 'active' : ''}`}
           onClick={() => setRightSidebarTab('outline')}
         >
-          <div className="tab-context">
-            <ListIcon size={13} className="tab-icon" />
-            <span className="tab-title">Outline</span>
-          </div>
+          <ToolTip text="Note Outline" position="bottom">
+            <div className="tab-context">
+              <ListIcon size={13} className="tab-icon" />
+              <span className="tab-title">Outline</span>
+            </div>
+          </ToolTip>
         </div>
 
         {aiChatDisplayMode === 'sidebar' && (
           <div
-            className={`workspace-tab ${rightSidebarTab === 'chat' ? 'active' : ''}`}
+            className={`inspector-tab ${rightSidebarTab === 'chat' ? 'active' : ''}`}
             onClick={() => {
               setRightSidebarTab('chat')
               updateSetting('aiChatDisplayMode', 'sidebar')
             }}
           >
-            <div className="tab-context">
-              <MessageSquare size={13} className="tab-icon" />
-              <span className="tab-title">Chat</span>
-            </div>
+            <ToolTip text="AI Chat" position="bottom">
+              <div className="tab-context">
+                <MessageSquare size={13} className="tab-icon" />
+                <span className="tab-title">Chat</span>
+              </div>
+            </ToolTip>
           </div>
         )}
 

@@ -101,3 +101,127 @@
   border-top: none;
   border-right: none;
 }
+
+/* =========================================================================
+   RICH NOTE PREVIEW CARD TOOLTIP
+   ========================================================================= */
+
+.tooltip-card-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 250px;
+  min-width: 170px;
+  white-space: normal;
+  text-align: left;
+  padding: 2px 1px;
+}
+
+.tooltip-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.tooltip-card-title {
+  font-weight: 600;
+  font-size: 11.5px;
+  color: var(--text-main, #f8fafc);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tooltip-card-meta {
+  font-size: 10px;
+  color: var(--text-faint, #64748b);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.2px;
+}
+
+.tooltip-card-body {
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--text-muted, #94a3b8);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+  opacity: 0.9;
+}
+
+.tooltip-badge-folder {
+  color: var(--text-accent, #6366f1);
+  font-weight: 500;
+}
+
+.tooltip-card-tags {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 1px;
+}
+
+.tooltip-tag {
+  font-size: 9.5px;
+  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  color: var(--text-accent, #c4b5fd);
+  padding: 1px 4px;
+  border-radius: 3px;
+  line-height: 1.2;
+}
+
+.tooltip-card-empty {
+  font-size: 10px;
+  font-style: italic;
+  color: var(--text-faint, #64748b);
+  opacity: 0.7;
+}
+
+/* Folder Tooltip Note List */
+.tooltip-folder-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 3px;
+  border-top: 0.5px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  padding-top: 4px;
+}
+
+.tooltip-folder-list-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-main, #f8fafc);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tooltip-folder-file-bullet {
+  font-size: 10px;
+  opacity: 0.75;
+  flex-shrink: 0;
+}
+
+.tooltip-folder-file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10.5px;
+  color: var(--text-muted, #94a3b8);
+}
+
+.tooltip-folder-more {
+  font-size: 9.5px;
+  color: var(--text-faint, #64748b);
+  font-style: italic;
+  margin-top: 2px;
+  padding-left: 15px;
+}

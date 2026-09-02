@@ -123,7 +123,7 @@ export function setupTableHeaderSorting(wrap, view) {
 
     const trigger = document.createElement('span')
     trigger.className = 'cm-table-sort-trigger'
-    trigger.title = 'Click to sort column (A-Z / 0-9)'
+    trigger.setAttribute('data-tooltip', 'Click to sort column (A-Z / 0-9)')
     trigger.innerHTML = `
       <svg class="cm-sort-icon cm-sort-neutral" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="m7 15 5 5 5-5"/>
@@ -155,10 +155,10 @@ export function setupTableHeaderSorting(wrap, view) {
         icon.className = `cm-sort-icon cm-sort-${nextDir}`
         if (nextDir === 'asc') {
           icon.innerHTML = `<path d="m18 15-6-6-6 6"/>`
-          trigger.title = 'Sorted Ascending (Click for Descending)'
+          trigger.setAttribute('data-tooltip', 'Sorted Ascending (Click for Descending)')
         } else {
           icon.innerHTML = `<path d="m6 9 6 6 6-6"/>`
-          trigger.title = 'Sorted Descending (Click for Ascending)'
+          trigger.setAttribute('data-tooltip', 'Sorted Descending (Click for Ascending)')
         }
       }
 

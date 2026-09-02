@@ -165,6 +165,7 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DM
       {/* Recenter Button Overlay */}
       <ToolTip text="Recenter Graph" position="top">
         <button
+          title="Recenter Graph"
           onClick={handleRecenter}
           style={{
             position: 'absolute',

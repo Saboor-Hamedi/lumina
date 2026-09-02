@@ -16,7 +16,7 @@ export function createTableTitleDOM(view, wrap, model) {
   const titleBtn = document.createElement('button')
   titleBtn.type = 'button'
   titleBtn.className = 'cm-table-title-btn'
-  titleBtn.title = 'Click to rename table'
+  titleBtn.setAttribute('data-tooltip', 'Click to rename table')
 
   const currentTitle = model.caption ? model.caption.trim() : ''
 

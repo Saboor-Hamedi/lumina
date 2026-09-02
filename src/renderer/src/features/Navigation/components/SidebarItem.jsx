@@ -133,6 +133,64 @@ const SidebarItem = ({
     )
   }
 
+  const getNoteTooltipContent = (item) => {
+    if (!item) return ''
+    if (item.itemType === 'folder') {
+      return item.title || 'Folder'
+    }
+    const title = item.title || 'Untitled Note'
+    const rawContent = item.code || item.content || item.body || ''
+    const cleanBody = rawContent
+      .replace(/^#+\s+/gm, '')
+      .replace(/```[\s\S]*?```/g, '')
+      .replace(/\[\[(.*?)\]\]/g, '$1')
+      .replace(/\[(.*?)\]\(.*?\)/g, '$1')
+      .replace(/!\[.*?\]\(.*?\)/g, '')
+      .replace(/[`*_\~>#]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+
+    const wordCount = rawContent.trim() ? rawContent.trim().split(/\s+/).length : 0
+    const readTime = Math.max(1, Math.ceil(wordCount / 200)) + 'm'
+    const folderText = item.folderId && item.folderId !== 'root' ? item.folderId : null
+
+    let tagsList = []
+    if (item.tags) {
+      if (Array.isArray(item.tags)) tagsList = item.tags
+      else if (typeof item.tags === 'string') {
+        tagsList = item.tags.split(',').map((t) => t.trim()).filter(Boolean)
+      }
+    }
+
+    return (
+      <div className="tooltip-card-preview">
+        <div className="tooltip-card-header">
+          <span className="tooltip-card-title">{title}</span>
+        </div>
+        <div className="tooltip-card-meta">
+          {folderText && <span className="tooltip-badge-folder">📁 {folderText}</span>}
+          <span>{wordCount} {wordCount === 1 ? 'word' : 'words'}</span>
+          <span>·</span>
+          <span>{readTime} read</span>
+        </div>
+        {tagsList.length > 0 && (
+          <div className="tooltip-card-tags">
+            {tagsList.slice(0, 3).map((t, idx) => (
+              <span key={idx} className="tooltip-tag">
+                #{String(t).replace(/^#/, '')}
+              </span>
+            ))}
+          </div>
+        )}
+        {cleanBody ? (
+          <div className="tooltip-card-body">{cleanBody.slice(0, 180)}</div>
+        ) : (
+          <div className="tooltip-card-empty">Empty note</div>
+        )}
+      </div>
+    )
+  }
+
   const menuOptions = useContextMenu({
     item: snippet,
     type: 'file',
@@ -213,7 +271,7 @@ const SidebarItem = ({
             onPointerDown={(e) => e.stopPropagation()}
           />
         ) : (
-          <ToolTip text={snippet.title || 'Untitled'} position="bottom" delay={600}>
+          <ToolTip text={getNoteTooltipContent(snippet)} position="bottom" delay={100}>
             <span className="item-label" style={displayColor ? { color: displayColor } : undefined}>
               {highlightText(snippet.title || 'Untitled', searchQuery)}
             </span>
@@ -279,7 +337,7 @@ const SidebarItem = ({
           className="item-title-col"
           style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}
         >
-          <ToolTip text={snippet.title || 'Untitled'} position="bottom" delay={600}>
+          <ToolTip text={getNoteTooltipContent(snippet)} position="right" delay={100}>
             <span
               className="item-title"
               style={{
