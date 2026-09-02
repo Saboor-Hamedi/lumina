@@ -300,3 +300,22 @@
 .mermaid-lightbox-wrapper .image-lightbox-close {
   border-radius: 2px;
 }
+
+/* Light theme support */
+[data-theme='light'] .mermaid-widget-header {
+  background: #f7f7f7 !important;
+  border-color: #e5e7eb !important;
+}
+
+[data-theme='light'] .mermaid-widget-header .mermaid-widget-lang-label {
+  color: #64748b !important;
+}
+
+[data-theme='light'] .mermaid-widget-header .mermaid-edit-btn:hover {
+  background: rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-theme='light'] .mermaid-diagram-container {
+  background: #f7f7f7 !important;
+  border-color: #e5e7eb !important;
+}

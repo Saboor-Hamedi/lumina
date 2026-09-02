@@ -167,8 +167,62 @@
   color: #d4d4d4 !important;
 }
 
-/* Light theme support */
+/* Light theme support with #f7f7f7 */
+[data-theme='light'] .code-block-widget-header {
+  background: #f7f7f7 !important;
+  border-color: #e5e7eb !important;
+}
+
+[data-theme='light'] .code-block-widget-header .mermaid-widget-lang-label {
+  color: #64748b !important;
+}
+
+[data-theme='light'] .code-block-widget-header .mermaid-edit-btn:hover {
+  background: rgba(0, 0, 0, 0.06) !important;
+}
+
 [data-theme='light'] .cm-line.cm-atomic-fenced-code {
-  background: rgba(0, 0, 0, 0.03) !important;
-  color: #24292e !important;
+  background: #f7f7f7 !important;
+  color: #1e293b !important;
+  border-color: #e5e7eb !important;
+}
+
+[data-theme='light'] .cm-line.cm-atomic-fenced-code.cm-activeLine {
+  background-color: #f0f0f0 !important;
+}
+
+[data-theme='light'] .cm-line.cm-atomic-fenced-code:has(+ :not(.cm-atomic-fenced-code)),
+[data-theme='light'] .cm-line.cm-atomic-fenced-code:last-child {
+  background: #f7f7f7 !important;
+  border-color: #e5e7eb !important;
+  color: #94a3b8 !important;
+}
+
+[data-theme='light'] .cm-line.cm-atomic-fenced-code span[class*='string'] {
+  color: #a31515 !important;
+}
+
+[data-theme='light'] .cm-line.cm-atomic-fenced-code span[class*='keyword'] {
+  color: #0000ff !important;
+}
+
+[data-theme='light'] .cm-line.cm-atomic-fenced-code span[class*='comment'] {
+  color: #008000 !important;
+  font-style: italic !important;
+}
+
+[data-theme='light'] .cm-line.cm-atomic-fenced-code span[class*='number'] {
+  color: #098658 !important;
+}
+
+[data-theme='light'] .cm-line.cm-atomic-fenced-code span[class*='variable'] {
+  color: #001080 !important;
+}
+
+[data-theme='light'] .cm-line.cm-atomic-fenced-code span[class*='type'] {
+  color: #267f99 !important;
+}
+
+[data-theme='light'] .cm-line.cm-atomic-fenced-code span[class*='operator'] {
+  color: #000000 !important;
 }

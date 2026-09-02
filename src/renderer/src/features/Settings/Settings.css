@@ -34,12 +34,16 @@
 
 .settings-sidebar {
   width: 175px;
-  background: rgba(0, 0, 0, 0.12);
-  border-right: 1px solid var(--border-dim, rgba(255, 255, 255, 0.06));
+  background: var(--bg-panel, rgba(0, 0, 0, 0.12));
+  border-right: 1px solid var(--border-dim);
   padding: 12px 6px;
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+[data-theme="light"] .settings-sidebar {
+  background: #e0e0e0;
 }
 
 .nav-item {
@@ -61,13 +65,13 @@
 }
 
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text-main, #f8fafc);
+  background: var(--bg-active);
+  color: var(--text-main);
 }
 
 .nav-item.active {
-  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.12);
-  color: var(--text-accent, #a78bfa);
+  background: var(--bg-active);
+  color: var(--text-accent);
   font-weight: 600;
 }
 

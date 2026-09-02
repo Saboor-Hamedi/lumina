@@ -63,7 +63,11 @@ export function useExplorerSelection({
         !e.target.closest('.header-actions') &&
         !e.target.closest('.sort-toggle-btn') &&
         !e.target.closest('.inline-create-input') &&
-        !e.target.closest('.inline-rename-input')
+        !e.target.closest('.inline-rename-input') &&
+        !e.target.closest('.start-menu-search') &&
+        !e.target.closest('.explorer-segmented-tabs') &&
+        !e.target.closest('.start-section-header') &&
+        !e.target.closest('.explorer-header-container')
       ) {
         setSelectedNoteIds(new Set())
         setLastClickedNoteId(null)

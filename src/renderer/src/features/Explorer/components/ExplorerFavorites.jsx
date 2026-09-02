@@ -74,6 +74,7 @@ export const ExplorerFavorites = ({
                   />
                 </div>
               ))}
+              <div style={{ height: '36px', minHeight: '36px', width: '100%', cursor: 'default' }} />
             </div>
           </SortableContext>
         </DndContext>

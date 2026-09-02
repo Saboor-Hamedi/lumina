@@ -41,24 +41,21 @@ const UpdateDetails = () => {
   const rawNotes =
     updateInfo?.releaseNotes ||
     `New
-- Explorer Hook Architecture: Extracted FileExplorer into focused hooks (useExplorerSelection, useExplorerDnd, useExplorerOperations, useFolderContextMenu) and components (ExplorerHeader, ExplorerFavorites) — FileExplorer.jsx reduced from 1,400+ to ~830 lines
-- Folder Rename via Keyboard: Select a folder in the explorer and press Ctrl+R (Cmd+R on Mac) to rename it inline using the unified RenameModal, same as renaming notes
-- Drag Overlay Width Constraint: Note drag previews are now capped to sidebar width (~220px) with text ellipsis so long titles no longer overflow during drag
+- Nested Blockquotes: You can now nest quotes inside quotes — press Tab to go deeper (> becomes >>) and Shift+Tab to come back out
+- Rename Folders with Keyboard: Press Ctrl+R while a folder is selected to rename it instantly, just like renaming notes
+- Drag Preview Stays Tidy: When dragging a note with a long name the preview label stays compact and never overflows the sidebar
 
 Improved
-- Folder Nesting via Drag & Drop: Dropping a folder onto another folder now reliably nests it; dropping onto the root zone correctly moves it back to root level
-- Explorer Indentation Precision: Root folders sit at 0px, subfolders at 10px depth steps, root notes at 10px, and subfolder notes at depth×10+10px — all consistent
-- Folder Creation Order: New folders always append to the bottom of the list and are never sorted alphabetically, preserving your custom drag order
-- Drag Hover Stability: Folders no longer auto-expand or shift during a drag pass — only explicit drops trigger expand
-- Path Normalization on Windows: All vault folder paths are normalized from backslash to forward slash preventing tree hierarchy bugs on Windows
-- Performance: Eliminated redundant re-renders in explorer by splitting large monolithic state into scoped hooks with stable references
+- Drag and Drop into Folders: Dropping a folder onto another folder now reliably moves it inside — no more needing to try multiple times
+- Folder Order Stays Yours: New folders always appear at the bottom and never jump around alphabetically, your custom order is always preserved
+- Explorer Loads Faster: The file explorer is noticeably snappier when opening vaults with many notes and folders
+- Update Check No Longer Spins Forever: If there is no internet or the server does not respond the update check stops cleanly instead of loading indefinitely
 
 Fixed
-- activeListDragItem Reference Error: Resolved undefined variable crash caused by hook initialization order in FileExplorer
-- expandedFolders Before Initialization: Fixed temporal dead zone error by reordering useExplorerOperations before useFileTree call
-- Duplicate State Declarations: Removed leftover inline expandedFolders, creating, renamingFolder state blocks that conflicted with extracted hooks
-- Context Menu Premature Access: Moved useContextMenu call below hook initialization so setExpandedFolders and setCreating are available
-- Folder Drop Inside Another Folder: Fixed logic where same-level drag IDs were misidentified, blocking nesting; now correctly targets folder-{id} drop zones`
+- Clicking the Wrong Line: Selecting a heading or a line inside a quote now correctly lands on the line you clicked
+- Dragging Into a Folder Was Unreliable: Fixed an issue where dropping a note or folder into another folder was ignored most of the time
+- Explorer Could Crash on Open: Fixed a startup error that sometimes prevented the file explorer from loading your notes
+- Folder Icon Did Not Update After Moving: Moving a folder now correctly reflects the new location without needing a refresh`
   
   const parseNotes = (text) => {
     const categories = []

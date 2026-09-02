@@ -4,11 +4,11 @@
   height: 100%;
   width: 100%;
   min-width: 0;
-  background: var(--bg-sidebar, rgba(18, 18, 24, 0.8));
+  background: var(--bg-sidebar);
   color: var(--text-main);
   box-sizing: border-box;
   user-select: none;
-  border-right: 1px solid var(--border-dim, rgba(255, 255, 255, 0.06));
+  border-right: 1px solid var(--border-dim);
 }
 
 .sidebar-header-section {
@@ -19,7 +19,7 @@
   flex-direction: row;
   align-items: center;
   gap: 6px;
-  border-bottom: 1px solid var(--border-dim, rgba(255, 255, 255, 0.05));
+  border-bottom: 1px solid var(--border-dim);
   box-sizing: border-box;
 }
 
@@ -30,9 +30,9 @@
   padding: 0 10px;
   height: 28px;
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(255, 255, 255, 0.025);
-  color: var(--text-muted, #94a3b8);
+  border: 1px solid var(--border-dim);
+  background: var(--bg-panel);
+  color: var(--text-muted);
   cursor: pointer;
   font-size: 11.5px;
   font-weight: 500;
@@ -43,16 +43,16 @@
 }
 
 .new-note-btn:hover {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.12);
-  color: var(--text-main, #ffffff);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  background: var(--bg-active);
+  border-color: var(--text-accent);
+  color: var(--text-main);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .graph-header-btn:hover {
-  color: var(--text-accent, #a78bfa);
-  border-color: rgba(var(--text-accent-rgb, 139, 92, 246), 0.3);
-  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.08);
+  color: var(--text-accent);
+  border-color: var(--text-accent);
+  background: var(--bg-active);
 }
 
 .sidebar-scrollable-content {
@@ -74,8 +74,8 @@
   margin: 4px 8px 8px 8px;
   padding: 0 10px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-dim);
+  background: var(--bg-panel);
   box-sizing: border-box;
   flex-shrink: 0;
   transition: all 0.15s ease;
@@ -83,7 +83,7 @@
 }
 
 .sidebar-footer-section:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: var(--bg-active);
+  border-color: var(--border-subtle);
 }
 

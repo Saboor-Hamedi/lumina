@@ -88,7 +88,7 @@ export const RightSidebar = ({
           </div>
         )}
 
-        <div className="flex-1" style={{ WebkitAppRegion: 'drag', height: '100%' }} />
+        <div className="flex-1" style={{ height: '100%', pointerEvents: 'none' }} />
       </div>
 
       {/* Sub-header under the tabs */}

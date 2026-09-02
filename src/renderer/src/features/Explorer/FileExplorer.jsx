@@ -66,7 +66,23 @@ import { useExplorerOperations } from './hooks/useExplorerOperations'
 import { useFolderContextMenu } from './hooks/useFolderContextMenu'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 
-const VirtuosoFooter = () => <div style={{ height: '24px' }} />
+const VirtuosoFooter = ({ context }) => (
+  <div
+    style={{ height: '36px', width: '100%', minHeight: '36px', cursor: 'default' }}
+    onClick={(e) => {
+      e.stopPropagation()
+      if (context?.handleBackgroundClick) {
+        context.handleBackgroundClick(e)
+      }
+    }}
+    onPointerDown={(e) => {
+      e.stopPropagation()
+      if (context?.handleBackgroundClick) {
+        context.handleBackgroundClick(e)
+      }
+    }}
+  />
+)
 
 const DroppableVirtuosoWrapper = ({ children, isDragging, isRootFocused, onClick, onPointerDown }) => {
   const { isOver, setNodeRef } = useDroppable({ id: 'root-drop-zone' })
@@ -582,6 +598,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
           setQuery={setQuery}
           setCollapsedDuringSearch={setCollapsedDuringSearch}
           setSelectedIndex={setSelectedIndex}
+          setSidebarFocus={setSidebarFocus}
           virtuosoRef={virtuosoRef}
           flatTree={flatTree}
           selectedIndex={selectedIndex}
@@ -695,7 +712,8 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                           toggleFolder,
                           handleFolderContextMenu,
                           handleNoteClick,
-                          handleSelect
+                          handleSelect,
+                          handleBackgroundClick
                         }}
                         components={{
                           Footer: VirtuosoFooter
@@ -737,6 +755,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                       ) : activeListDragItem?.type === 'file' ? (
                         <OverlayWrapper>
                           <div
+                            className="start-section"
                             style={{
                               width: '220px',
                               maxWidth: '220px',

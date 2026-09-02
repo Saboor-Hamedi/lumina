@@ -90,7 +90,7 @@ const CodeBlock = React.memo(({ inline, className, children, ...props }) => {
             PreTag="div"
             customStyle={{
               margin: 0,
-              background: 'rgba(0, 0, 0, 0.22)',
+              background: 'transparent',
               padding: '12px 14px',
               fontSize: '12.5px',
               lineHeight: '1.55',
@@ -131,8 +131,8 @@ const ChatBlockquote = ({ children }) => {
         icon: Info,
         color: 'var(--text-accent, #40bafa)',
         title: 'NOTE',
-        border: 'rgba(64, 186, 250, 0.35)',
-        bg: 'rgba(64, 186, 250, 0.06)'
+        border: 'rgba(var(--text-accent-rgb, 64, 186, 250), 0.35)',
+        bg: 'rgba(var(--text-accent-rgb, 64, 186, 250), 0.06)'
       },
       TIP: {
         icon: Lightbulb,

@@ -49,6 +49,7 @@ export const ExplorerHeader = ({
   setQuery,
   setCollapsedDuringSearch,
   setSelectedIndex,
+  setSidebarFocus,
   virtuosoRef,
   flatTree,
   selectedIndex,
@@ -67,7 +68,17 @@ export const ExplorerHeader = ({
   collapseAllFolders
 }) => {
   return (
-    <>
+    <div
+      className="explorer-header-container"
+      onClick={(e) => {
+        e.stopPropagation()
+        if (setSidebarFocus) setSidebarFocus(null)
+      }}
+      onPointerDown={(e) => {
+        e.stopPropagation()
+        if (setSidebarFocus) setSidebarFocus(null)
+      }}
+    >
       {/* Search Bar with Keyboard Navigation */}
       <div className="start-menu-search relative">
         <Search size={12} className="search-icon" />
@@ -76,6 +87,13 @@ export const ExplorerHeader = ({
           type="text"
           placeholder="Search notes..."
           value={displayQuery}
+          onFocus={() => {
+            if (setSidebarFocus) setSidebarFocus(null)
+          }}
+          onClick={(e) => {
+            e.stopPropagation()
+            if (setSidebarFocus) setSidebarFocus(null)
+          }}
           onChange={(e) => {
             const v = e.target.value
             setDisplayQuery(v)
@@ -203,7 +221,7 @@ export const ExplorerHeader = ({
           </div>
         </div>
       )}
-    </>
+    </div>
   )
 }
 
