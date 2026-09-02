@@ -1,23 +1,17 @@
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import {
-  Search,
   FileText,
   FileCode,
   Files,
-  NotebookText,
-  Star,
   StarOff,
   Pin,
   PinOff,
   ArrowUpDown,
-  RefreshCw,
-  FolderPlus,
   Palette,
   Edit2,
   Trash2,
   Check,
   X,
-  FilePlus,
   Clipboard
 } from 'lucide-react'
 import { useVaultStore, GRAPH_TAB_ID } from '../../core/store/useVaultStore'
@@ -26,10 +20,6 @@ import {
   DndContext,
   closestCenter,
   pointerWithin,
-  useSensor,
-  useSensors,
-  PointerSensor,
-  TouchSensor,
   useDraggable,
   useDroppable,
   DragOverlay,
@@ -48,7 +38,7 @@ import { createPortal } from 'react-dom'
 import { Virtuoso } from 'react-virtuoso'
 import SidebarItem from '../Navigation/components/SidebarItem'
 import { useResizable } from '../Overlays/useResizable'
-import { ChevronRight, ChevronDown, Folder, FolderOpen, ChevronsUp } from 'lucide-react'
+import { ChevronRight, ChevronDown, Folder, FolderOpen } from 'lucide-react'
 import ConfirmModal from '../Overlays/Modals/ConfirmModal'
 import ContextMenu from '../Overlays/ContextMenu'
 import ToolTip from '../../components/atoms/ToolTip'
@@ -64,11 +54,16 @@ import {
   SortableGridItem,
   OverlayWrapper,
   DroppableRootZone,
-  NoteNumbers
+  NoteNumbers,
+  ExplorerHeader,
+  ExplorerFavorites
 } from './components'
 import { useFileSearch } from './hooks/useFileSearch'
 import { useFileTree } from './hooks/useFileTree'
-import { useContextMenu } from '../Navigation/hooks/useContextMenu'
+import { useExplorerSelection } from './hooks/useExplorerSelection'
+import { useExplorerDnd } from './hooks/useExplorerDnd'
+import { useExplorerOperations } from './hooks/useExplorerOperations'
+import { useFolderContextMenu } from './hooks/useFolderContextMenu'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 
 const VirtuosoFooter = () => <div style={{ height: '24px' }} />
@@ -95,40 +90,11 @@ const DroppableVirtuosoWrapper = ({ children, isDragging, isRootFocused, onClick
 const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   const [query, setQuery] = useState('')
   const [displayQuery, setDisplayQuery] = useState('')
-  const [selectedIndex, setSelectedIndex] = useState(-1)
   const debounceTimerRef = useRef(null)
 
   const [activeTab, setActiveTab] = useState('all')
   const { settings, updateSetting, togglePinnedFolder } = useSettingsStore()
   const pinnedFolders = settings.pinnedFolders || []
-
-  const [expandedFolders, setExpandedFolders] = useState(
-    () => new Set(settings.expandedFolders || [])
-  )
-  const [collapsedDuringSearch, setCollapsedDuringSearch] = useState(() => new Set())
-
-  // inline creation state
-  const [creating, setCreating] = useState(null) // { type: 'file' | 'folder', parentId: string }
-  const [creatingValue, setCreatingValue] = useState('')
-
-  // rename state
-  const [renamingFolder, setRenamingFolder] = useState(null) // folderId
-  const [renamingValue, setRenamingValue] = useState('')
-
-  // drag state
-  const [activeListDragItem, setActiveListDragItem] = useState(null) // { type: 'folder' | 'file', id, item: folderData, snippet: fileData }
-
-  // multi-select state
-  const [selectedNoteIds, setSelectedNoteIds] = useState(() => new Set())
-  const [lastClickedNoteId, setLastClickedNoteId] = useState(null)
-
-  // context menu & confirm
-  const [folderContext, setFolderContext] = useState(null) // { x, y, folderId }
-  const [deleteConfirmFolder, setDeleteConfirmFolder] = useState(null)
-
-  // Track last clicked/selected folder for "New Note" sidebar button
-  const [lastClickedFolder, setLastClickedFolder] = useState(null)
-  const [sidebarFocus, setSidebarFocus] = useState(null) // null | 'root' | 'folder'
 
   const searchInputRef = useRef(null)
   const modalRef = useRef(null)
@@ -162,29 +128,6 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     return folders.filter((f) => !f.startsWith('Templates'))
   }, [folders])
 
-  const clickedInExplorerRef = useRef(0)
-  const lastScrolledSnippetRef = useRef(null)
-  const lastAutoExpandedSnippetRef = useRef(null)
-  const expandedFoldersRef = useRef(expandedFolders)
-
-  useEffect(() => {
-    expandedFoldersRef.current = expandedFolders
-  }, [expandedFolders])
-
-  useEffect(() => {
-    setSidebarFocus(null)
-  }, [isOpen])
-
-  useEffect(() => {
-    if (visibleFolders && visibleFolders.length > 0) {
-      const currentOrder = settings.folderOrder || []
-      const missing = visibleFolders.filter((f) => !currentOrder.includes(f))
-      if (missing.length > 0) {
-        updateSetting('folderOrder', [...currentOrder, ...missing])
-      }
-    }
-  }, [visibleFolders, settings.folderOrder, updateSetting])
-
   useKeyboardShortcuts({
     onRevealInExplorer: () => {
       if (selectedIndex >= 0 && selectedIndex < flatTree.length) {
@@ -209,47 +152,6 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
       }
     }
   })
-
-  const contextMenuOptions = useContextMenu({
-    item: folderContext?.folderId || null,
-    type: folderContext?.folderId ? 'folder' : 'body',
-    callbacks: {
-      onCreateNote: () => {
-        if (folderContext?.folderId) {
-          setExpandedFolders((prev) => new Set(prev).add(folderContext.folderId))
-        }
-        setCreating({ type: 'file', parentId: folderContext?.folderId || null })
-        setCreatingValue('')
-      },
-      onCreateFolder: () => {
-        if (folderContext?.folderId) {
-          setExpandedFolders((prev) => new Set(prev).add(folderContext.folderId))
-        }
-        setCreating({ type: 'folder', parentId: folderContext?.folderId || null })
-        setCreatingValue('')
-      },
-      onRename: () => {
-        if (folderContext?.folderId) {
-          const parts = folderContext.folderId.split('/')
-          setRenamingValue(parts[parts.length - 1])
-          setRenamingFolder(folderContext.folderId)
-        }
-      },
-      onDelete: () => {
-        if (folderContext?.folderId) {
-          setDeleteConfirmFolder(folderContext.folderId)
-        }
-      },
-      onClose: () => setFolderContext(null),
-      isFolderPinned: folderContext?.folderId
-        ? pinnedFolders.includes(folderContext.folderId)
-        : false
-    }
-  })
-
-  useEffect(() => {
-    setSidebarFocus(null)
-  }, [selectedSnippetId])
 
   const sortBy = settings.sortBy || 'name'
   const sortDirection = settings.sortDirection || 'asc'
@@ -281,21 +183,6 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
 
     useSettingsStore.getState().updateSettings(newSettings)
   }
-
-  // Configure sensors for drag and drop to not interfere with buttons
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 5
-      }
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 250,
-        tolerance: 5
-      }
-    })
-  )
 
   // Focus search input on open
   useEffect(() => {
@@ -349,6 +236,36 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     settings
   )
 
+  const {
+    expandedFolders,
+    setExpandedFolders,
+    collapsedDuringSearch,
+    setCollapsedDuringSearch,
+    creating,
+    setCreating,
+    creatingValue,
+    setCreatingValue,
+    renamingFolder,
+    setRenamingFolder,
+    renamingValue,
+    setRenamingValue,
+    toggleFolder,
+    collapseAllFolders,
+    cancelRename,
+    submitCreation,
+    submitRename
+  } = useExplorerOperations({
+    snippets,
+    visibleFolders,
+    selectedSnippetId,
+    query,
+    flatTree: null,
+    virtuosoRef,
+    setSidebarFocus: (focus) => setSidebarFocus(focus),
+    handleSelect: (s) => handleSelect(s),
+    lastClickedFolder: null
+  })
+
   const flatTree = useFileTree({
     allSnippets,
     folders: visibleFolders,
@@ -356,275 +273,68 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     query,
     expandedFolders,
     creating,
-    activeListDragItem,
     collapsedDuringSearch,
     folderOrder: settings.folderOrder
   })
 
-  useEffect(() => {
-    if (creating) {
-      // Find index of input
-      const idx = flatTree.findIndex((item) => item.type === 'input')
-      if (idx !== -1 && virtuosoRef.current) {
-        // Small timeout to allow virtuoso to measure items
-        setTimeout(() => {
-          virtuosoRef.current?.scrollToIndex({ index: idx, align: 'center' })
-        }, 50)
-      }
-    }
-  }, [creating, flatTree])
+  const {
+    selectedNoteIds,
+    setSelectedNoteIds,
+    lastClickedNoteId,
+    setLastClickedNoteId,
+    lastClickedFolder,
+    setLastClickedFolder,
+    selectedIndex,
+    setSelectedIndex,
+    sidebarFocus,
+    setSidebarFocus,
+    handleSelect,
+    handleNoteClick,
+    handleBackgroundClick
+  } = useExplorerSelection({
+    isOpen,
+    modalRef,
+    virtuosoRef,
+    flatTree,
+    query,
+    selectedSnippetId,
+    onClose
+  })
 
-  // Auto-expand parent folders of active snippet only when switching to a different snippet
-  useEffect(() => {
-    if (!selectedSnippetId) return
-    if (lastAutoExpandedSnippetRef.current === selectedSnippetId) return
-    const activeSnippet = snippets.find((s) => s.id === selectedSnippetId)
-    if (!activeSnippet || !activeSnippet.folderId) {
-      lastAutoExpandedSnippetRef.current = selectedSnippetId
-      return
-    }
+  const {
+    sensors,
+    activeListDragItem,
+    setActiveListDragItem,
+    handleListDragStart,
+    handleListDragEnd
+  } = useExplorerDnd({
+    allSnippets,
+    flatTree,
+    selectedNoteIds,
+    saveSnippet,
+    loadVault,
+    setExpandedFolders
+  })
 
-    lastAutoExpandedSnippetRef.current = selectedSnippetId
-
-    const foldersToExpand = []
-    const parts = activeSnippet.folderId.split('/')
-    let currentPath = ''
-
-    for (const part of parts) {
-      currentPath = currentPath ? `${currentPath}/${part}` : part
-      foldersToExpand.push(currentPath)
-    }
-
-    const currentSet = expandedFoldersRef.current
-    const next = new Set(currentSet)
-    let changed = false
-
-    for (const id of foldersToExpand) {
-      if (!next.has(id)) {
-        next.add(id)
-        changed = true
-      }
-    }
-
-    if (changed) {
-      setExpandedFolders(next)
-      updateSetting('expandedFolders', Array.from(next))
-    }
-  }, [selectedSnippetId, snippets, updateSetting])
-
-  // Auto-scroll to active snippet
-  useEffect(() => {
-    if (!selectedSnippetId || !virtuosoRef.current || flatTree.length === 0) return
-    if (lastScrolledSnippetRef.current === selectedSnippetId) return
-
-    const idx = flatTree.findIndex(
-      (item) => item.type === 'file' && item.snippet && item.snippet.id === selectedSnippetId
-    )
-
-    // Do not auto-scroll if the selection was just made by clicking inside this explorer
-    // BUT we must still set it as visually active!
-    if (Date.now() - clickedInExplorerRef.current < 200) {
-      lastScrolledSnippetRef.current = selectedSnippetId
-      if (idx !== -1) setSelectedIndex(idx)
-      return
-    }
-
-    if (idx !== -1) {
-      lastScrolledSnippetRef.current = selectedSnippetId
-      setTimeout(() => {
-        virtuosoRef.current?.scrollToIndex({ index: idx, align: 'center', behavior: 'smooth' })
-        setSelectedIndex(idx)
-      }, 50)
-    }
-  }, [selectedSnippetId, flatTree])
-
-  useEffect(() => {
-    const handleTriggerNewNote = () => {
-      let targetFolderId = lastClickedFolder
-      if (targetFolderId === null) {
-        const selectedSnippetId = useVaultStore.getState().selectedSnippet?.id
-        const snippets = useVaultStore.getState().snippets
-        const activeSnippet = snippets.find((s) => s.id === selectedSnippetId)
-        targetFolderId = activeSnippet?.folderId || ''
-      }
-
-      if (targetFolderId) {
-        setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
-      }
-      setCreating({ type: 'file', parentId: targetFolderId })
-      setCreatingValue('')
-    }
-
-    window.addEventListener('trigger-new-note', handleTriggerNewNote)
-    return () => window.removeEventListener('trigger-new-note', handleTriggerNewNote)
-  }, [lastClickedFolder, setExpandedFolders, setCreating, setCreatingValue])
-
-  // Deselect on Escape key
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        setSelectedNoteIds(new Set())
-        setLastClickedNoteId(null)
-        setLastClickedFolder(null)
-        useVaultStore.getState().setSelectedFolder(null)
-        setSelectedIndex(-1)
-        setSidebarFocus(null)
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
-
-  // Deselect when clicking outside the explorer (e.g. editor, inspector, header)
-  useEffect(() => {
-    const handleDocumentPointerDown = (e) => {
-      if (modalRef.current && !modalRef.current.contains(e.target)) {
-        setSidebarFocus(null)
-      }
-    }
-    document.addEventListener('pointerdown', handleDocumentPointerDown)
-    return () => document.removeEventListener('pointerdown', handleDocumentPointerDown)
-  }, [])
-
-  // Deselect on clicking empty background space inside explorer
-  const handleBackgroundClick = useCallback((e) => {
-    if (
-      !e.target.closest('.tree-item') &&
-      !e.target.closest('.folder-tree-main') &&
-      !e.target.closest('.header-actions') &&
-      !e.target.closest('.sort-toggle-btn') &&
-      !e.target.closest('.inline-create-input') &&
-      !e.target.closest('.inline-rename-input')
-    ) {
-      setSelectedNoteIds(new Set())
-      setLastClickedNoteId(null)
-      setLastClickedFolder(null)
-      useVaultStore.getState().setSelectedFolder(null)
-      setSelectedIndex(-1)
-      setSidebarFocus('root')
-    }
-  }, [])
-
-  // Intelligent selection: default to the best matching note instead of a folder
-  useEffect(() => {
-    if (query.trim() && flatTree.length > 0) {
-      const q = query.toLowerCase().trim()
-      // 1. Try to find an exact matching note
-      let bestIndex = flatTree.findIndex(
-        (item) => item.type === 'file' && (item.snippet.title || '').toLowerCase() === q
-      )
-      // 2. Otherwise find the first note
-      if (bestIndex === -1) {
-        bestIndex = flatTree.findIndex((item) => item.type === 'file')
-      }
-      // 3. Fallback to folder
-      if (bestIndex === -1) bestIndex = 0
-
-      setSelectedIndex(bestIndex)
-    } else if (!query.trim()) {
-      setSelectedIndex(-1)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query])
-
-  // end search
-  // Compute Flattened Folder Tree
-
-  const toggleFolder = useCallback(
-    (folderId, e) => {
-      if (e) e.stopPropagation()
-      setLastClickedFolder(folderId)
-      useVaultStore.getState().setSelectedFolder(folderId)
-      if (query.trim()) {
-        setCollapsedDuringSearch((prev) => {
-          const next = new Set(prev)
-          if (next.has(folderId)) next.delete(folderId)
-          else next.add(folderId)
-          return next
-        })
-      } else {
-        const currentSet = expandedFoldersRef.current
-        const next = new Set(currentSet)
-        if (next.has(folderId)) next.delete(folderId)
-        else next.add(folderId)
-
-        setExpandedFolders(next)
-        updateSetting('expandedFolders', Array.from(next))
-      }
-    },
-    [updateSetting, query]
-  )
-
-  const collapseAllFolders = (e) => {
-    e.stopPropagation()
-    setExpandedFolders(new Set())
-    updateSetting('expandedFolders', [])
-  }
-
-  const cancelRename = useCallback(() => setRenamingFolder(null), [])
-  const handleFolderContextMenu = useCallback((id, e) => {
-    setFolderContext({ x: e.clientX, y: e.clientY, folderId: id })
-  }, [])
+  const {
+    folderContext,
+    setFolderContext,
+    deleteConfirmFolder,
+    setDeleteConfirmFolder,
+    handleFolderContextMenu,
+    contextMenuOptions,
+    handleConfirmDeleteFolder
+  } = useFolderContextMenu({
+    pinnedFolders,
+    setExpandedFolders,
+    setCreating,
+    setCreatingValue,
+    setRenamingFolder,
+    setRenamingValue,
+    loadVault
+  })
 
   const { size, handleResizeStart } = useResizable(modalRef)
-
-  const handleSelect = useCallback(
-    (snippet) => {
-      if (!snippet) return
-      clickedInExplorerRef.current = Date.now()
-      setLastClickedFolder(snippet.folderId || '')
-      useVaultStore.getState().setSelectedFolder(null)
-      setSidebarFocus('note')
-      setSelectedSnippet(snippet)
-      onClose?.()
-    },
-    [setSelectedSnippet, onClose]
-  )
-
-  const handleNoteClick = useCallback(
-    (snippet, e) => {
-      if (!snippet) return
-      useVaultStore.getState().setSelectedFolder(null)
-      const isCtrl = e?.ctrlKey || e?.metaKey
-      const isShift = e?.shiftKey
-
-      if (isCtrl) {
-        setSelectedNoteIds((prev) => {
-          const next = new Set(prev)
-          if (next.has(snippet.id)) {
-            next.delete(snippet.id)
-          } else {
-            next.add(snippet.id)
-          }
-          return next
-        })
-        setLastClickedNoteId(snippet.id)
-        setSidebarFocus('note')
-        setLastClickedFolder(snippet.folderId || '')
-      } else if (isShift && lastClickedNoteId) {
-        const visibleFiles = flatTree
-          .filter((f) => f.type === 'file' && f.snippet)
-          .map((f) => f.snippet)
-        const startIdx = visibleFiles.findIndex((s) => s.id === lastClickedNoteId)
-        const endIdx = visibleFiles.findIndex((s) => s.id === snippet.id)
-
-        if (startIdx !== -1 && endIdx !== -1) {
-          const [minIdx, maxIdx] = startIdx < endIdx ? [startIdx, endIdx] : [endIdx, startIdx]
-          const rangeIds = visibleFiles.slice(minIdx, maxIdx + 1).map((s) => s.id)
-          setSelectedNoteIds(new Set(rangeIds))
-        }
-        setSidebarFocus('note')
-        setLastClickedFolder(snippet.folderId || '')
-      } else {
-        setSelectedNoteIds(new Set([snippet.id]))
-        setLastClickedNoteId(snippet.id)
-        setSidebarFocus('note')
-        setLastClickedFolder(snippet.folderId || '')
-        handleSelect(snippet)
-      }
-    },
-    [flatTree, lastClickedNoteId, handleSelect]
-  )
 
   const renderItemContent = useCallback((index, item, context) => {
     if (item.type === 'input') {
@@ -778,121 +488,6 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     }
   }
 
-  const handleListDragStart = (event) => {
-    const { active } = event
-    if (String(active.id).startsWith('drag-folder-')) {
-      setActiveListDragItem({ type: 'folder', id: active.id, item: active.data?.current?.item })
-    } else {
-      const activeSnippet = allSnippets.find((s) => s.id === active.id)
-      if (activeSnippet) {
-        const flatItem = flatTree.find((f) => f.type === 'file' && f.snippet.id === active.id)
-        const isMulti = selectedNoteIds.has(active.id) && selectedNoteIds.size > 1
-        const draggedSnippetIds = isMulti ? Array.from(selectedNoteIds) : [active.id]
-
-        setActiveListDragItem({
-          type: 'file',
-          id: active.id,
-          snippet: activeSnippet,
-          draggedSnippetIds,
-          count: draggedSnippetIds.length,
-          depth: flatItem ? flatItem.depth : 0
-        })
-      }
-    }
-  }
-
-  const handleListDragEnd = async (event) => {
-    const dragItem = activeListDragItem
-    setActiveListDragItem(null)
-    const { active, over } = event
-    if (!over || active.id === over.id) return
-
-    if (over.id === 'root-drop-zone') {
-      if (String(active.id).startsWith('drag-folder-')) {
-        const sourceFolderId = String(active.id).replace('drag-folder-', '')
-        const folderName = sourceFolderId.split('/').pop()
-        if (sourceFolderId !== folderName) {
-          try {
-            await window.api.renameFolder(sourceFolderId, folderName)
-            await loadVault()
-          } catch (e) {}
-        }
-      } else {
-        const idsToMove = dragItem?.draggedSnippetIds?.length
-          ? dragItem.draggedSnippetIds
-          : [active.id]
-
-        const snippetsToMove = allSnippets.filter((s) => idsToMove.includes(s.id))
-        for (const s of snippetsToMove) {
-          if (s.folderId !== '') {
-            try {
-              await saveSnippet({ ...s, folderId: '' })
-            } catch (e) {}
-          }
-        }
-      }
-      return
-    }
-
-    if (String(active.id).startsWith('drag-folder-')) {
-      const sourceFolderId = String(active.id).replace('drag-folder-', '')
-
-      if (String(over.id).startsWith('folder-') || String(over.id).startsWith('drag-folder-')) {
-        const targetFolderId = String(over.id).replace('folder-', '').replace('drag-folder-', '')
-
-        if (sourceFolderId !== targetFolderId && !targetFolderId.startsWith(sourceFolderId + '/')) {
-          const folderName = sourceFolderId.split('/').pop()
-          const newPath = targetFolderId ? `${targetFolderId}/${folderName}` : folderName
-          if (newPath !== sourceFolderId) {
-            try {
-              await window.api.renameFolder(sourceFolderId, newPath)
-              setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
-              await loadVault()
-            } catch (e) {
-              console.error('Failed to move folder:', e)
-            }
-          }
-        }
-      }
-      return
-    }
-
-    if (active.id !== over?.id && over) {
-      // Check if dropped into a folder
-      if (String(over.id).startsWith('folder-')) {
-        const targetFolderId = String(over.id).replace('folder-', '')
-        const idsToMove = dragItem?.draggedSnippetIds?.length
-          ? dragItem.draggedSnippetIds
-          : [active.id]
-
-        const snippetsToMove = allSnippets.filter((s) => idsToMove.includes(s.id))
-        for (const s of snippetsToMove) {
-          if (s.folderId !== targetFolderId) {
-            try {
-              await saveSnippet({ ...s, folderId: targetFolderId })
-            } catch (e) {
-              console.error('Failed to move snippet to folder:', e)
-            }
-          }
-        }
-        setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
-        return
-      }
-
-      // Normal reordering
-      const currentListIds = allSnippets.map((s) => s.id)
-      const oldIndex = currentListIds.indexOf(active.id)
-      const newIndex = currentListIds.indexOf(over.id)
-      if (oldIndex !== -1 && newIndex !== -1) {
-        const newOrder = arrayMove(currentListIds, oldIndex, newIndex)
-        useSettingsStore.getState().updateSettings({
-          noteOrder: newOrder,
-          sortBy: 'custom' // Auto switch to custom sort
-        })
-      }
-    }
-  }
-
   const getIconForLanguage = (language) => {
     switch (language) {
       case 'javascript':
@@ -907,85 +502,6 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
       default:
         return <FileText size={28} className="icon-gray" />
     }
-  }
-
-  const submitCreation = async (value) => {
-    const valToUse = typeof value === 'string' ? value : creatingValue
-    if (!creating || !valToUse.trim()) {
-      setCreating(null)
-      return
-    }
-
-    const sanitizedName = valToUse.trim().replace(/[<>:"/\\|?*]/g, '')
-    if (!sanitizedName) {
-      setCreating(null)
-      return
-    }
-
-    try {
-      if (creating.type === 'folder') {
-        const folderPath = creating.parentId
-          ? `${creating.parentId}/${sanitizedName}`
-          : sanitizedName
-        const currentOrder = settings.folderOrder || []
-        if (!currentOrder.includes(folderPath)) {
-          await updateSetting('folderOrder', [...currentOrder, folderPath])
-        }
-        await window.api.createFolder(folderPath)
-        setExpandedFolders((prev) => new Set(prev).add(folderPath))
-        await loadVault()
-      } else {
-        const newId = crypto.randomUUID
-          ? crypto.randomUUID()
-          : Math.random().toString(36).substring(2, 15)
-        const folderId = creating.parentId || ''
-        const newSnippet = {
-          id: newId,
-          title: sanitizedName,
-          code: '',
-          language: 'markdown',
-          tags: '',
-          folderId: folderId,
-          timestamp: Date.now()
-        }
-        await saveSnippet(newSnippet)
-        if (folderId) setExpandedFolders((prev) => new Set(prev).add(folderId))
-        handleSelect(newSnippet)
-      }
-    } catch (err) {
-      console.error('Failed to create:', err)
-    }
-    setCreating(null)
-    setCreatingValue('')
-    setSidebarFocus(null)
-  }
-
-  const submitRename = async (value) => {
-    const valToUse = typeof value === 'string' ? value : renamingValue
-    if (!renamingFolder || !valToUse.trim()) {
-      setRenamingFolder(null)
-      return
-    }
-
-    const sanitizedName = valToUse.trim().replace(/[<>:"/\\|?*]/g, '')
-    if (!sanitizedName) {
-      setRenamingFolder(null)
-      return
-    }
-
-    try {
-      const parts = renamingFolder.split('/')
-      parts[parts.length - 1] = sanitizedName
-      const newPath = parts.join('/')
-
-      if (newPath !== renamingFolder) {
-        await window.api.renameFolder(renamingFolder, newPath)
-        await loadVault()
-      }
-    } catch (err) {
-      console.error('Rename failed:', err)
-    }
-    setRenamingFolder(null)
   }
 
   // search
@@ -1057,79 +573,32 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
           </>
         )}
 
-        {/* Search Bar */}
-
-        {/* Search Bar */}
-        <div className="start-menu-search relative">
-          <Search size={12} className="search-icon" />
-          <input
-            ref={searchInputRef}
-            type="text"
-            placeholder="Search notes..."
-            value={displayQuery}
-            onChange={(e) => {
-              const v = e.target.value
-              setDisplayQuery(v)
-              if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
-              debounceTimerRef.current = setTimeout(() => {
-                setQuery(v)
-                setCollapsedDuringSearch(new Set())
-              }, 300)
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'ArrowDown') {
-                e.preventDefault()
-                setSelectedIndex((prev) => {
-                  const next = prev < 0 ? 0 : Math.min(prev + 1, flatTree.length - 1)
-                  virtuosoRef.current?.scrollToIndex({ index: next, align: 'center' })
-                  return next
-                })
-              } else if (e.key === 'ArrowUp') {
-                e.preventDefault()
-                setSelectedIndex((prev) => {
-                  const next = Math.max(prev - 1, 0)
-                  virtuosoRef.current?.scrollToIndex({ index: next, align: 'center' })
-                  return next
-                })
-              } else if (e.key === 'Enter') {
-                e.preventDefault()
-                if (selectedIndex >= 0 && selectedIndex < flatTree.length) {
-                  const item = flatTree[selectedIndex]
-                  if (item?.type === 'file') {
-                    handleSelect(item.snippet)
-                  } else if (item?.type === 'folder') {
-                    toggleFolder(item.id)
-                  }
-                }
-              }
-            }}
-            className="w-full"
-          />
-        </div>
-
-        {/* Segmented Tabs */}
-        <div className="explorer-segmented-tabs">
-          <button
-            className={`segmented-tab ${activeTab === 'all' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('all')
-              setCreating(null)
-            }}
-          >
-            <NotebookText size={12} />
-            <span>All Notes</span>
-          </button>
-          <button
-            className={`segmented-tab ${activeTab === 'favorites' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('favorites')
-              setCreating(null)
-            }}
-          >
-            <Star size={12} />
-            <span>Favorites</span>
-          </button>
-        </div>
+        {/* Explorer Header: Search, Tabs, Action Buttons */}
+        <ExplorerHeader
+          searchInputRef={searchInputRef}
+          displayQuery={displayQuery}
+          setDisplayQuery={setDisplayQuery}
+          debounceTimerRef={debounceTimerRef}
+          setQuery={setQuery}
+          setCollapsedDuringSearch={setCollapsedDuringSearch}
+          setSelectedIndex={setSelectedIndex}
+          virtuosoRef={virtuosoRef}
+          flatTree={flatTree}
+          selectedIndex={selectedIndex}
+          handleSelect={handleSelect}
+          toggleFolder={toggleFolder}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          setCreating={setCreating}
+          isQueryActive={isQueryActive}
+          filteredSnippets={filteredSnippets}
+          allSnippets={allSnippets}
+          lastClickedFolder={lastClickedFolder}
+          setExpandedFolders={setExpandedFolders}
+          loadVault={loadVault}
+          isLoading={isLoading}
+          collapseAllFolders={collapseAllFolders}
+        />
 
         {/* Scrollable Body */}
         <div
@@ -1150,53 +619,14 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
         >
           {/* Favorites Section */}
           {activeTab === 'favorites' && (
-            <div className="start-section" style={{ flex: 1, minHeight: 0, paddingBottom: '16px' }}>
-              {pinnedItems.length === 0 ? (
-                <div className="empty-state">No favorite notes or folders</div>
-              ) : (
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={pointerWithin}
-                  onDragEnd={handleSortDragEnd}
-                >
-                  <SortableContext
-                    items={pinnedItems.map((s) => s.id)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    <div
-                      className="recommended-list"
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        flex: 1,
-                        overflowY: 'auto'
-                      }}
-                    >
-                      {pinnedItems.map((item) => (
-                        <div
-                          key={item.id}
-                          className="favorite-item-wrapper"
-                          style={{ position: 'relative' }}
-                        >
-                          <SortableListItem
-                            snippet={item}
-                            onClick={() => {
-                              if (item.itemType === 'folder') {
-                                setExpandedFolders((prev) => new Set(prev).add(item.id))
-                                setActiveTab('all')
-                              } else {
-                                handleSelect(item)
-                              }
-                            }}
-                            isActive={false}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </SortableContext>
-                </DndContext>
-              )}
-            </div>
+            <ExplorerFavorites
+              pinnedItems={pinnedItems}
+              sensors={sensors}
+              handleSortDragEnd={handleSortDragEnd}
+              setExpandedFolders={setExpandedFolders}
+              setActiveTab={setActiveTab}
+              handleSelect={handleSelect}
+            />
           )}
 
           {/* All Notes Section */}
@@ -1206,66 +636,6 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
               onPointerDown={handleBackgroundClick}
               onClick={handleBackgroundClick}
             >
-              <div className="start-section-header">
-                <div className="section-title-wrap" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  {isQueryActive && <h3>Search Results</h3>}
-                  <NoteNumbers
-                    count={isQueryActive ? filteredSnippets.length : allSnippets.length}
-                    total={allSnippets.length}
-                    isQueryActive={isQueryActive}
-                  />
-                </div>
-                <div className="header-actions" style={{ display: 'flex', gap: '4px' }}>
-                  <ToolTip text="New Note">
-                    <button
-                      className="sort-toggle-btn"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        const targetParent = lastClickedFolder || ''
-                        setCreating({ type: 'file', parentId: targetParent })
-                        if (targetParent) {
-                          setExpandedFolders((prev) => new Set(prev).add(targetParent))
-                        }
-                      }}
-                    >
-                      <FilePlus size={14} />
-                    </button>
-                  </ToolTip>
-                  <ToolTip text="New Folder">
-                    <button
-                      className="sort-toggle-btn"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        const targetParent = lastClickedFolder || null
-                        setCreating({ type: 'folder', parentId: targetParent })
-                        if (targetParent) {
-                          setExpandedFolders((prev) => new Set(prev).add(targetParent))
-                        }
-                      }}
-                    >
-                      <FolderPlus size={14} />
-                    </button>
-                  </ToolTip>
-                  <ToolTip text="Refresh Explorer">
-                    <button
-                      className="sort-toggle-btn"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        loadVault()
-                      }}
-                      disabled={isLoading}
-                      style={{ opacity: isLoading ? 0.5 : 1 }}
-                    >
-                      <RefreshCw size={14} className={isLoading ? 'spin-animation' : ''} />
-                    </button>
-                  </ToolTip>
-                  <ToolTip text="Collapse Folders in Explorer">
-                    <button className="sort-toggle-btn" onClick={collapseAllFolders}>
-                      <ChevronsUp size={14} />
-                    </button>
-                  </ToolTip>
-                </div>
-              </div>
 
               {flatTree.length === 0 ? (
                 <div className="empty-state">No notes or folders found</div>
@@ -1435,20 +805,14 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
       <ConfirmModal
         isOpen={!!deleteConfirmFolder}
         onClose={() => setDeleteConfirmFolder(null)}
-        onConfirm={async () => {
-          try {
-            await window.api.deleteFolder(deleteConfirmFolder)
-            await loadVault()
-          } catch (e) {
-            console.error(e)
-          }
-        }}
+        onConfirm={handleConfirmDeleteFolder}
         title="Delete Folder"
         message={`Are you sure you want to delete '${deleteConfirmFolder}' and all its contents? This action cannot be undone.`}
         confirmText="Delete Folder"
       />
     </>
   )
+  
 
   if (isEmbedded) return content
 

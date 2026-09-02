@@ -41,24 +41,24 @@ const UpdateDetails = () => {
   const rawNotes =
     updateInfo?.releaseNotes ||
     `New
-- Editor Breadcrumbs Header: Minimalist, responsive breadcrumb bar below the tab bar showing active folder hierarchy and quick navigation
-- Ultra-Fast Note & Folder Hover Previews: Exterior preview cards with live word count, reading time, folder badges, tags, clean markdown preview, and folder contents list
-- Status Bar Interactive Actions: Clickable line/col indicators to instantly jump and center cursor, word/char counters, and live indexing status
-- Modal Lightbox for Images & Mermaid: Fullscreen preview with smooth zoom controls, docked toolbar, and immediate Escape key closing
-- Refined Properties Inspector: Tabbed Right Sidebar with dedicated 0.5px subtle tab borders, live note outline navigation, and stats overview
+- Explorer Hook Architecture: Extracted FileExplorer into focused hooks (useExplorerSelection, useExplorerDnd, useExplorerOperations, useFolderContextMenu) and components (ExplorerHeader, ExplorerFavorites) — FileExplorer.jsx reduced from 1,400+ to ~830 lines
+- Folder Rename via Keyboard: Select a folder in the explorer and press Ctrl+R (Cmd+R on Mac) to rename it inline using the unified RenameModal, same as renaming notes
+- Drag Overlay Width Constraint: Note drag previews are now capped to sidebar width (~220px) with text ellipsis so long titles no longer overflow during drag
 
 Improved
-- Exterior Tooltip Anchor: Explorer tooltips float cleanly outside the left sidebar onto the editor canvas with accurate speech-bubble arrow pointers
-- Fast Cursor Tracking: 25ms instant warm-up tracking when sweeping cursor across files and folders
-- Suppressed Browser Default Tooltips: Cleaned native HTML tooltips across Mermaid diagrams, image embeds, and Markdown table toolbars
-- Invisible Horizontal Table Scrolling: Tables with many columns pan smoothly with zero scrollbar clutter
-- Dynamic Heading Block Cursor: Caret height and width adapt to heading font sizes and hide cleanly during text selection
+- Folder Nesting via Drag & Drop: Dropping a folder onto another folder now reliably nests it; dropping onto the root zone correctly moves it back to root level
+- Explorer Indentation Precision: Root folders sit at 0px, subfolders at 10px depth steps, root notes at 10px, and subfolder notes at depth×10+10px — all consistent
+- Folder Creation Order: New folders always append to the bottom of the list and are never sorted alphabetically, preserving your custom drag order
+- Drag Hover Stability: Folders no longer auto-expand or shift during a drag pass — only explicit drops trigger expand
+- Path Normalization on Windows: All vault folder paths are normalized from backslash to forward slash preventing tree hierarchy bugs on Windows
+- Performance: Eliminated redundant re-renders in explorer by splitting large monolithic state into scoped hooks with stable references
 
 Fixed
-- Sidebar Focus & Selection: Fixed note deselection when interacting with empty root areas in the explorer sidebar
-- Right Sidebar Tab Underlines: Removed 2px thick purple pseudo-element bleed from the inspector tabs
-- Note Preview Word Counting: Resolved word count reading from note markdown code body
-- Modal Lightbox Escape Dismissal: Guaranteed instant closing of image and Mermaid lightboxes on Escape`
+- activeListDragItem Reference Error: Resolved undefined variable crash caused by hook initialization order in FileExplorer
+- expandedFolders Before Initialization: Fixed temporal dead zone error by reordering useExplorerOperations before useFileTree call
+- Duplicate State Declarations: Removed leftover inline expandedFolders, creating, renamingFolder state blocks that conflicted with extracted hooks
+- Context Menu Premature Access: Moved useContextMenu call below hook initialization so setExpandedFolders and setCreating are available
+- Folder Drop Inside Another Folder: Fixed logic where same-level drag IDs were misidentified, blocking nesting; now correctly targets folder-{id} drop zones`
   
   const parseNotes = (text) => {
     const categories = []

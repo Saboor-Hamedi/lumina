@@ -38,7 +38,21 @@ export const useUpdateStore = create((set, get) => ({
 
   check: async () => {
     set({ status: 'checking', error: null })
-    await window.api?.checkForUpdates()
+
+    // Safety timeout — if no response arrives in 15s, reset to idle
+    const timeout = setTimeout(() => {
+      if (useUpdateStore.getState().status === 'checking') {
+        set({ status: 'not-available' })
+      }
+    }, 15000)
+
+    try {
+      await window.api?.checkForUpdates()
+    } catch (e) {
+      set({ status: 'error', error: e?.message || 'Check failed' })
+    } finally {
+      clearTimeout(timeout)
+    }
   },
 
   download: async () => {

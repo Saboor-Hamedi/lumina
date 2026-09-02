@@ -121,15 +121,33 @@ const UpdateFooter = ({
           onClick={install}
         >
           <CheckCircle2 size={14} />
-          <span>Restart & Install Now</span>
+          <span>Restart &amp; Install Now</span>
         </button>
       ) : status === 'checking' ? (
         <button
           className="update-install-btn primary-solid checking-btn"
           style={{ cursor: 'default' }}
+          disabled
         >
           <RefreshCw size={14} className="spin-animation" />
           <span>Checking for updates...</span>
+        </button>
+      ) : status === 'not-available' ? (
+        <button
+          className="update-install-btn check-update-btn primary-solid"
+          onClick={check}
+        >
+          <CheckCircle2 size={14} />
+          <span>You&apos;re up to date — Check again</span>
+        </button>
+      ) : status === 'error' ? (
+        <button
+          className="update-install-btn check-update-btn primary-solid"
+          onClick={check}
+          style={{ borderColor: 'var(--color-error, #ef4444)' }}
+        >
+          <RefreshCw size={14} />
+          <span>Check failed — Retry</span>
         </button>
       ) : (
         <button

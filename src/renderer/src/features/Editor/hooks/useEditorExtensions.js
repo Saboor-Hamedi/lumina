@@ -35,7 +35,7 @@ import { calloutExtension } from './useCallout'
 import { useCollapsible } from '../collapse/useCollapsible'
 import { emptyLineSelectionFix } from './useEmptyLine'
 import { handleTaskEnter, taskMarkKeymap } from './useMark'
-import { handleQuoteEnter } from './useQuote'
+import { handleQuoteEnter, indentQuote, dedentQuote } from './useQuote'
 import { handleListEnter, isListLine } from './useList'
 import { handleCodeFenceEnter } from './useCodeFence'
 import { handleArrowUp, handleArrowDown } from './useArrowNavigation'
@@ -275,6 +275,20 @@ export function useEditorExtensions({
                 })
                 return true
               }
+              return false
+            }
+          },
+          {
+            key: 'Tab',
+            run: (view) => {
+              if (isActiveRef.current && indentQuote(view)) return true
+              return false
+            }
+          },
+          {
+            key: 'Shift-Tab',
+            run: (view) => {
+              if (isActiveRef.current && dedentQuote(view)) return true
               return false
             }
           },
