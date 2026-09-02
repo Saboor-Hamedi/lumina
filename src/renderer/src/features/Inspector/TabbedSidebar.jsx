@@ -6,6 +6,7 @@ import { LuminaChatContent } from '../AI/LuminaChat'
 import ErrorBoundary from '../../components/ErrorBoundary'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
+import ToolTip from '../../components/atoms/ToolTip'
 import './SnippetDetails.css'
 
 const TabbedSidebar = ({
@@ -110,24 +111,26 @@ const TabbedSidebar = ({
       {rightSidebarTab === 'chat' && (
         <div className="inspector-sub-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <button
-              className="inspector-action-btn"
-              onClick={() => window.dispatchEvent(new CustomEvent('ai-toggle-history'))}
-              title="Toggle History"
-              aria-label="Toggle History"
-            >
-              <History size={13} />
-            </button>
+            <ToolTip text="Toggle History" position="bottom">
+              <button
+                className="inspector-action-btn"
+                onClick={() => window.dispatchEvent(new CustomEvent('ai-toggle-history'))}
+                aria-label="Toggle History"
+              >
+                <History size={13} />
+              </button>
+            </ToolTip>
             <span className="inspector-sub-title">AI Assistant</span>
           </div>
-          <button
-            className="inspector-action-btn"
-            onClick={handlePopOut}
-            title="Pop out to floating window"
-            aria-label="Pop out to floating window"
-          >
-            <ExternalLink size={13} />
-          </button>
+          <ToolTip text="Pop out to floating window" position="bottom-right">
+            <button
+              className="inspector-action-btn"
+              onClick={handlePopOut}
+              aria-label="Pop out to floating window"
+            >
+              <ExternalLink size={13} />
+            </button>
+          </ToolTip>
         </div>
       )}
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 import { Target } from 'lucide-react'
+import ToolTip from '../../components/atoms/ToolTip'
 
 const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DMode }) => {
   const canvasRef = useRef(null)
@@ -162,36 +163,38 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DM
       />
 
       {/* Recenter Button Overlay */}
-      <button
-        onClick={handleRecenter}
-        title="Recenter Graph"
-        style={{
-          position: 'absolute',
-          bottom: '8px',
-          right: '8px',
-          width: '24px',
-          height: '24px',
-          background: 'var(--bg-primary)',
-          border: '1px solid var(--border-dim)',
-          borderRadius: '4px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          color: 'var(--text-accent)',
-          padding: 0
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'var(--text-accent)'
-          e.currentTarget.style.color = 'var(--bg-primary)'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'var(--bg-primary)'
-          e.currentTarget.style.color = 'var(--text-accent)'
-        }}
-      >
-        <Target size={14} />
-      </button>
+      <ToolTip text="Recenter Graph" position="top">
+        <button
+          onClick={handleRecenter}
+          style={{
+            position: 'absolute',
+            bottom: '8px',
+            right: '8px',
+            width: '24px',
+            height: '24px',
+            background: 'var(--bg-primary)',
+            border: '1px solid var(--border-dim)',
+            borderRadius: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            color: 'var(--text-muted)',
+            transition: 'all 0.2s',
+            zIndex: 10
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--text-accent)'
+            e.currentTarget.style.borderColor = 'var(--text-accent)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--text-muted)'
+            e.currentTarget.style.borderColor = 'var(--border-dim)'
+          }}
+        >
+          <Target size={12} />
+        </button>
+      </ToolTip>
     </div>
   )
 }

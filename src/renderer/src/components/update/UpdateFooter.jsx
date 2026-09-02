@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Download, Loader2, Settings, ArrowLeft, CheckCircle2 } from 'lucide-react'
+import ToolTip from '../atoms/ToolTip'
 
 const UpdateFooter = ({ status, progress, install, onClose }) => {
   const [showSettings, setShowSettings] = useState(false)
@@ -75,9 +76,11 @@ const UpdateFooter = ({ status, progress, install, onClose }) => {
       
       <div className="footer-actions-secondary" style={{ marginTop: (status === 'idle' || status === 'checking') ? '0' : '4px' }}>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button className="settings-btn" onClick={() => setShowSettings(true)} title="Update Preferences">
-            <Settings size={14} />
-          </button>
+          <ToolTip text="Update Preferences" position="top">
+            <button className="settings-btn" onClick={() => setShowSettings(true)}>
+              <Settings size={14} />
+            </button>
+          </ToolTip>
           {(status === 'idle' || status === 'checking') && (
             <span style={{ fontSize: '11px', color: 'var(--text-faint)', transition: 'color 0.3s' }}>
               Last checked: {minutesAgo === 0 ? 'Just now' : `${minutesAgo} min ago`}

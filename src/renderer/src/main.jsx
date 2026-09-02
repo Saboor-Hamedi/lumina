@@ -3,6 +3,9 @@ import './assets/index.css'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
+import { initDomTooltips } from './components/atoms/domTooltip'
+
+initDomTooltips()
 
 /**
  * Robust Early Theme Loader (VS Code Standard)

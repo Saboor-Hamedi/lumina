@@ -4,6 +4,8 @@ import { TableAutocomplete } from './tableAutocomplete'
 import { openCellMenu, cellColIndex, cellRowIndex } from './tableContextMenu'
 import { readModelFromDom } from './tableModel'
 import { parseCellInline } from './tableParser'
+import { icons } from './tableIcons.js'
+import { applyColumnSort } from './tableSort.js'
 import {
   findCurrentTableRange,
   placeCaretAtEnd,
@@ -390,6 +392,55 @@ export function makeCell(tag, text, view) {
   // uniformly to every inline mark inside cells.
   cell.appendChild(source)
   renderCellSourceDecorated(source)
+
+  if (tag === 'th') {
+    const sortBtn = document.createElement('button')
+    sortBtn.type = 'button'
+    sortBtn.className = 'cm-table-header-sort-btn'
+    sortBtn.setAttribute('data-tooltip', 'Sort Column (A-Z / 0-9)')
+    sortBtn.setAttribute('data-tooltip-pos', 'top')
+    sortBtn.innerHTML = icons.sortAsc
+    sortBtn.contentEditable = 'false'
+
+    const handleSort = (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      const currentView = cell.__view || view
+      const wrap = cell.closest('.cm-atomic-table')
+      if (!wrap || !currentView || currentView.state.readOnly) return
+
+      const colIdx = cellColIndex(cell)
+      if (colIdx < 0) return
+
+      const currentDir = cell.dataset.sortDir || 'none'
+      const nextDir = currentDir === 'asc' ? 'desc' : 'asc'
+
+      // Reset sort indicator on all other th cells in this table
+      const allThs = wrap.querySelectorAll('th')
+      allThs.forEach((otherTh) => {
+        if (otherTh !== cell) {
+          otherTh.dataset.sortDir = ''
+          const btn = otherTh.querySelector('.cm-table-header-sort-btn')
+          if (btn) {
+            btn.innerHTML = icons.sortAsc
+            btn.classList.remove('active')
+          }
+        }
+      })
+
+      cell.dataset.sortDir = nextDir
+      sortBtn.classList.add('active')
+      sortBtn.innerHTML = nextDir === 'asc' ? icons.sortAsc : icons.sortDesc
+      sortBtn.setAttribute('data-tooltip', nextDir === 'asc' ? 'Sorted Ascending (Click for Descending)' : 'Sorted Descending (Click for Ascending)')
+
+      applyColumnSort(currentView, wrap, colIdx, nextDir)
+    }
+
+    sortBtn.addEventListener('mousedown', handleSort)
+    sortBtn.addEventListener('click', handleSort)
+
+    cell.appendChild(sortBtn)
+  }
 
   const extractSourceText = (el) => {
     let text = ''

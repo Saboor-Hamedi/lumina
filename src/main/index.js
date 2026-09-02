@@ -15,6 +15,7 @@ import { handleExportPDF } from '../export/exportPDF'
 import { handleExportMarkdown } from '../export/exportMarkdown'
 import { handleExportText } from '../export/exportText'
 import { handleExportHTML } from '../export/exportHTML'
+import { handleExportCleanHTML, handleExportMarkdownBundle } from '../export/exportBundle'
 import { setupGoogleAuth } from './auth/googleAuth'
 import { backupToDrive } from './backup/googleDriveBackup'
 import { registerOpenNoteHandler } from './handlers/useOpenNote'
@@ -307,11 +308,14 @@ app.whenReady().then(async () => {
 
 
   // Export handlers
-  ipcMain.handle('window:export-html', async (_, payload) => handleExportHTML(mainWindow, payload))
+  ipcMain.handle('window:export-html', async (_, payload) => handleExportCleanHTML(mainWindow, payload))
   ipcMain.handle('window:export-docs', async (_, payload) => handleExportDocs(mainWindow, payload))
   ipcMain.handle('window:export-pdf', async (_, payload) => handleExportPDF(mainWindow, payload))
   ipcMain.handle('window:export-markdown', async (_, payload) =>
     handleExportMarkdown(mainWindow, payload)
+  )
+  ipcMain.handle('window:export-markdown-bundle', async (_, payload) =>
+    handleExportMarkdownBundle(mainWindow, payload)
   )
   ipcMain.handle('window:export-text', async (_, payload) => handleExportText(mainWindow, payload))
 

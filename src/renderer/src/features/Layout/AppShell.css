@@ -19,23 +19,23 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 8px;
+  width: 10px;
   cursor: ew-resize;
   background: transparent;
-  transition: background 0.2s;
   z-index: 1001;
   margin: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  touch-action: none;
 }
 
 .sidebar-resizer.left {
-  right: -4px;
+  right: -5px;
 }
 
 .sidebar-resizer.right {
-  left: -4px;
+  left: -5px;
 }
 
 .sidebar-resizer::after {
@@ -55,6 +55,20 @@
   height: 48px;
 }
 
+body.is-global-resizing,
+body.is-global-resizing * {
+  user-select: none !important;
+  cursor: ew-resize !important;
+  -webkit-user-select: none !important;
+}
+
+body.is-global-resizing iframe,
+body.is-global-resizing webview,
+body.is-global-resizing canvas,
+body.is-global-resizing .cm-editor {
+  pointer-events: none !important;
+}
+
 .app-shell.is-resizing {
   user-select: none !important;
   cursor: ew-resize !important;
@@ -71,9 +85,11 @@
 
 .app-shell.is-resizing .shell-sidebar-left,
 .app-shell.is-resizing .shell-sidebar-right,
-.app-shell.is-resizing .shell-main {
+.app-shell.is-resizing .shell-main,
+.app-shell.is-resizing .unified-sidebar,
+.app-shell.is-resizing * {
   transition: none !important;
-  will-change: width, flex;
+  animation: none !important;
 }
 
 .app-shell>* {
@@ -96,6 +112,8 @@
   overflow: hidden;
   flex-shrink: 0;
   will-change: width;
+  contain: inline-size layout;
+  transform: translateZ(0);
 }
 
 .app-shell.left-open .shell-sidebar-left {
@@ -113,6 +131,8 @@
   flex-direction: column;
   overflow: hidden;
   position: relative;
+  contain: layout;
+  transform: translateZ(0);
 }
 
 .workspace-container {
@@ -140,12 +160,13 @@
   z-index: 1000;
   border-left: 1px solid var(--border-dim);
   box-shadow: none;
-  transform: translateX(100%);
+  transform: translateX(100%) translateZ(0);
   opacity: 0;
   pointer-events: none;
   transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease;
   overflow: hidden;
   flex-shrink: 0;
+  contain: inline-size layout;
 }
 
 .app-shell.right-open .shell-sidebar-right {

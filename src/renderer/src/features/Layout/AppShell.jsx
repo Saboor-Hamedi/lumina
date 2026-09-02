@@ -102,14 +102,24 @@ const AppShell = () => {
   const [resizingSide, setResizingSide] = useState(null)
   const [isRestoring, setIsRestoring] = useState(true)
 
+  const appShellRef = React.useRef(null)
   const widthRef = React.useRef({ left: 250, right: 200 })
 
-  // Update width refs when widths change
+  // Update width refs and CSS custom properties when widths change
   useEffect(() => {
     widthRef.current.left = leftWidth
+    if (appShellRef.current) {
+      appShellRef.current.style.setProperty('--left-sidebar-width', `${leftWidth}px`)
+    }
+    document.documentElement.style.setProperty('--left-sidebar-width', `${leftWidth}px`)
   }, [leftWidth])
+
   useEffect(() => {
     widthRef.current.right = rightWidth
+    if (appShellRef.current) {
+      appShellRef.current.style.setProperty('--right-sidebar-width', `${rightWidth}px`)
+    }
+    document.documentElement.style.setProperty('--right-sidebar-width', `${rightWidth}px`)
   }, [rightWidth])
 
   /**
@@ -144,68 +154,92 @@ const AppShell = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [snippetToDelete, setSnippetToDelete] = useState(null)
 
-  // Sidebar Resizing Logic
+  // Super Lightweight Zero-Lag Sidebar Resizing Engine (VS Code Speed)
   useEffect(() => {
-    let rafId = null
-
     const handleMouseMove = (e) => {
       if (!resizingSide) return
-      if (rafId) cancelAnimationFrame(rafId)
 
-      rafId = requestAnimationFrame(() => {
-        if (resizingSide === 'left') {
-          let newWidth = e.clientX - 60 // Compensate for Ribbon
-          if (newWidth < 180) newWidth = 180
-          if (newWidth > 500) newWidth = 500
-          document.documentElement.style.setProperty('--sidebar-width', `${newWidth}px`)
-          setLeftWidth(newWidth)
-        } else {
-          // Right Resizer
-          let newWidth = window.innerWidth - e.clientX
-          if (newWidth < 220) newWidth = 220
-          if (newWidth > 650) newWidth = 650
-          document.documentElement.style.setProperty('--right-sidebar-width', `${newWidth}px`)
-          setRightWidth(newWidth)
-        }
-      })
+      const shellEl = appShellRef.current
+      const rect = shellEl ? shellEl.getBoundingClientRect() : { left: 0, right: window.innerWidth }
+
+      if (resizingSide === 'left') {
+        let newWidth = e.clientX - rect.left
+        if (newWidth < 180) newWidth = 180
+        if (newWidth > 600) newWidth = 600
+        widthRef.current.left = newWidth
+        if (shellEl) shellEl.style.setProperty('--left-sidebar-width', `${newWidth}px`)
+        document.documentElement.style.setProperty('--left-sidebar-width', `${newWidth}px`)
+      } else if (resizingSide === 'right') {
+        let newWidth = rect.right - e.clientX
+        if (newWidth < 220) newWidth = 220
+        if (newWidth > 750) newWidth = 750
+        widthRef.current.right = newWidth
+        if (shellEl) shellEl.style.setProperty('--right-sidebar-width', `${newWidth}px`)
+        document.documentElement.style.setProperty('--right-sidebar-width', `${newWidth}px`)
+      }
     }
 
     const handleMouseUp = () => {
-      if (rafId) cancelAnimationFrame(rafId)
-      // Persist new widths
-      if (resizingSide) {
-        if (resizingSide === 'left') {
-          const currentSidebar = sidebarSetting || {}
-          useSettingsStore.getState().updateSettings({
-            sidebar: {
-              ...currentSidebar,
-              width: widthRef.current.left
-            }
-          })
-        } else {
-          const currentRSidebar = rightSidebarSetting || {}
-          useSettingsStore.getState().updateSettings({
-            rightSidebar: {
-              ...currentRSidebar,
-              width: widthRef.current.right
-            }
-          })
-        }
+      document.body.classList.remove('is-global-resizing')
+
+      if (resizingSide === 'left') {
+        const finalWidth = widthRef.current.left
+        setLeftWidth(finalWidth)
+        const currentSidebar = sidebarSetting || {}
+        useSettingsStore.getState().updateSettings({
+          sidebar: {
+            ...currentSidebar,
+            width: finalWidth
+          }
+        })
+      } else if (resizingSide === 'right') {
+        const finalWidth = widthRef.current.right
+        setRightWidth(finalWidth)
+        const currentRSidebar = rightSidebarSetting || {}
+        useSettingsStore.getState().updateSettings({
+          rightSidebar: {
+            ...currentRSidebar,
+            width: finalWidth
+          }
+        })
       }
       setResizingSide(null)
     }
 
     if (resizingSide) {
+      document.body.classList.add('is-global-resizing')
       window.addEventListener('mousemove', handleMouseMove, { passive: true })
       window.addEventListener('mouseup', handleMouseUp)
     }
 
     return () => {
-      if (rafId) cancelAnimationFrame(rafId)
+      document.body.classList.remove('is-global-resizing')
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
     }
-  }, [resizingSide]) // Only re-run when resizing starts/stops
+  }, [resizingSide, sidebarSetting, rightSidebarSetting])
+
+  const handleResetSidebar = (side) => {
+    if (side === 'left') {
+      const defaultLeft = 280
+      widthRef.current.left = defaultLeft
+      setLeftWidth(defaultLeft)
+      if (appShellRef.current) appShellRef.current.style.setProperty('--left-sidebar-width', `${defaultLeft}px`)
+      document.documentElement.style.setProperty('--left-sidebar-width', `${defaultLeft}px`)
+      useSettingsStore.getState().updateSettings({
+        sidebar: { ...(sidebarSetting || {}), width: defaultLeft }
+      })
+    } else {
+      const defaultRight = 320
+      widthRef.current.right = defaultRight
+      setRightWidth(defaultRight)
+      if (appShellRef.current) appShellRef.current.style.setProperty('--right-sidebar-width', `${defaultRight}px`)
+      document.documentElement.style.setProperty('--right-sidebar-width', `${defaultRight}px`)
+      useSettingsStore.getState().updateSettings({
+        rightSidebar: { ...(rightSidebarSetting || {}), width: defaultRight }
+      })
+    }
+  }
 
   // Initialize vault & settings on mount
   // Initialize vault & settings on mount
@@ -644,6 +678,7 @@ const AppShell = () => {
 
   return (
     <div
+      ref={appShellRef}
       className={`app-shell ${isLeftSidebarOpen ? 'left-open' : 'left-closed'} ${isRightSidebarOpen ? 'right-open' : 'right-closed'} ${resizingSide ? 'is-resizing' : ''}`}
       style={{
         opacity: isRestoring ? 0 : 1,
@@ -654,7 +689,20 @@ const AppShell = () => {
     >
       <aside className="shell-sidebar-left">
         {isLeftSidebarOpen && (
-          <div className="sidebar-resizer left" onMouseDown={() => setResizingSide('left')} />
+          <div
+            className="sidebar-resizer left"
+            title="Double-click to reset default width (280px)"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setResizingSide('left')
+            }}
+            onDoubleClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              handleResetSidebar('left')
+            }}
+          />
         )}
         <Sidebar
           onSettingsClick={handleOpenSettings}
@@ -748,7 +796,20 @@ const AppShell = () => {
         {/* Inspector overlay — floats over shell-main from the right */}
         <aside className="shell-sidebar-right">
           {isRightSidebarOpen && (
-            <div className="sidebar-resizer right" onMouseDown={() => setResizingSide('right')} />
+            <div
+              className="sidebar-resizer right"
+              title="Double-click to reset default width (320px)"
+              onMouseDown={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setResizingSide('right')
+              }}
+              onDoubleClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                handleResetSidebar('right')
+              }}
+            />
           )}
           <TabbedSidebar
             rightSidebarTab={rightSidebarTab}

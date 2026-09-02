@@ -3,6 +3,7 @@ import { useUpdateStore } from '../../core/store/useUpdateStore'
 import { Download } from 'lucide-react'
 import UpdateHeader from './UpdateHeader'
 import UpdateFooter from './UpdateFooter'
+import ToolTip from '../atoms/ToolTip'
 import './UpdateDetails.css'
 
 const UpdateDetails = () => {
@@ -91,13 +92,14 @@ Fixed
 
   return (
     <div className="update-details-container" ref={dropdownRef}>
-      <button 
-        className={`update-trigger-btn ${status === 'available' || status === 'downloading' || status === 'ready' ? 'has-update' : ''}`}
-        onClick={() => setIsOpen(!isOpen)}
-        title="Check for updates"
-      >
-        <Download size={14} />
-      </button>
+      <ToolTip text="Check for updates" position="bottom">
+        <button 
+          className={`update-trigger-btn ${status === 'available' || status === 'downloading' || status === 'ready' ? 'has-update' : ''}`}
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          <Download size={14} />
+        </button>
+      </ToolTip>
 
       {isOpen && (
         <div className="update-details-dropdown" data-testid="update-details">

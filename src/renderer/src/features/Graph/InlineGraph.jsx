@@ -16,31 +16,32 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate, hideMiniMap = false }
 
   const graphRef = useRef()
   const containerRef = useRef()
+  const hasInitialized = useRef(false)
+  const draggedNodeRef = useRef(null)
+  const focusNodeIdRef = useRef(focusNodeId)
 
   const [dimensions, setDimensions] = useState({ width: 0, height: 320 })
+  const [graphData, setGraphData] = useState({ nodes: [], links: [] })
 
   useEffect(() => {
     if (!containerRef.current) return
     const resizeObserver = new ResizeObserver((entries) => {
       for (let entry of entries) {
-          setDimensions({ 
-            width: entry.contentRect.width, 
-            height: entry.contentRect.height > 100 ? entry.contentRect.height : 320 
-          })
-        }
+        setDimensions({
+          width: entry.contentRect.width,
+          height: entry.contentRect.height > 100 ? entry.contentRect.height : 320
+        })
+      }
     })
     resizeObserver.observe(containerRef.current)
     return () => resizeObserver.disconnect()
   }, [])
-
-  const [graphData, setGraphData] = useState({ nodes: [], links: [] })
 
   // Reset zoom guard whenever the user switches to a different note
   useEffect(() => {
     hasInitialized.current = false
   }, [focusNodeId])
 
-  const focusNodeIdRef = useRef(focusNodeId)
   useEffect(() => {
     focusNodeIdRef.current = focusNodeId
   }, [focusNodeId])
@@ -151,9 +152,6 @@ const InlineGraph = React.memo(({ focusNodeId, onNavigate, hideMiniMap = false }
 
     return () => clearTimeout(timer)
   }, [snippets, focusNodeId])
-
-  const hasInitialized = useRef(false)
-  const draggedNodeRef = useRef(null)
 
   // Setup forces ONCE when the graph mounts — never again
   useEffect(() => {

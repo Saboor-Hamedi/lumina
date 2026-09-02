@@ -51,21 +51,22 @@ const TitleBar = ({ onToggleAIChat }) => {
       </div>
 
       <div className="title-center">
-        <div
-          className="unified-search-bar"
-          onClick={() => window.dispatchEvent(new CustomEvent('open-ask-anything'))}
-          title="Search or Ask AI (Ctrl + P)"
-        >
-          <span className="search-icon">
-            <Search size={13} />
-          </span>
-          <span className="search-placeholder">Ask anything or Search...</span>
-          <div className="search-shortcuts-wrap">
-            <kbd className="titlebar-kbd">{isMac ? '⌘' : 'Ctrl'}</kbd>
-            <span className="titlebar-kbd-plus">+</span>
-            <kbd className="titlebar-kbd">P</kbd>
+        <ToolTip text={isMac ? "Search or Ask AI (⌘P)" : "Search or Ask AI (Ctrl + P)"} position="bottom">
+          <div
+            className="unified-search-bar"
+            onClick={() => window.dispatchEvent(new CustomEvent('open-ask-anything'))}
+          >
+            <span className="search-icon">
+              <Search size={13} />
+            </span>
+            <span className="search-placeholder">Ask anything or Search...</span>
+            <div className="search-shortcuts-wrap">
+              <kbd className="titlebar-kbd">{isMac ? '⌘' : 'Ctrl'}</kbd>
+              <span className="titlebar-kbd-plus">+</span>
+              <kbd className="titlebar-kbd">P</kbd>
+            </div>
           </div>
-        </div>
+        </ToolTip>
       </div>
 
       <div className="title-right">

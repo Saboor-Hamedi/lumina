@@ -95,7 +95,8 @@ const Editor = React.memo(
       handleExportPDF,
       handleExportText,
       handleExportDocs,
-      handleExportMarkdown
+      handleExportMarkdown,
+      handleExportMarkdownBundle
     } = useEditorExports({
       snippet,
       title,
@@ -209,6 +210,7 @@ const Editor = React.memo(
             onExportHTML={handleExportHTML}
             onExportPDF={handleExportPDF}
             onExportMarkdown={handleExportMarkdown}
+            onExportMarkdownBundle={handleExportMarkdownBundle}
             onExportText={handleExportText}
             onExportDocs={handleExportDocs}
             onInlineAI={() => setIsInlineAIOpen(true)}

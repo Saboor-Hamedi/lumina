@@ -440,8 +440,6 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     return isSelectedTheme ? 'rgba(255, 255, 255, 0.01)' : 'rgba(150, 150, 150, 0.02)'
   }, [graphTheme, is3DMode])
 
-  if (!isOpen && !embedded) return null
-
   // Pre-compute neighbors for hover highlighting to prevent O(N^2) canvas lag
   const hoverNeighbors = useMemo(() => {
     if (!hoverNode) return new Set()
@@ -506,6 +504,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       nodeColorFn
     ]
   )
+
+  if (!isOpen && !embedded) return null
 
   // Render as embedded (tab) or modal
   // When embedded, show only the graph visualization with controls overlay

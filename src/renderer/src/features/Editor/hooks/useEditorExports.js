@@ -20,17 +20,18 @@ export function useEditorExports({ snippet, title, editorHandleRef, showToast })
     if (!window.api?.exportHTML) return
     try {
       const code = editorHandleRef.current.getMarkdown()
-      const html = await window.api.exportHTML({
+      const res = await window.api.exportHTML({
         title: title || snippet.title || 'Untitled',
         content: code,
         language: snippet.language || 'markdown'
       })
-      if (html) {
-        await navigator.clipboard.writeText(html)
-        showToast('HTML copied to clipboard', 'success')
+      if (res?.success) {
+        showToast('HTML exported successfully', 'success')
       }
+      return res
     } catch (error) {
       showToast('Failed to export HTML', 'error')
+      throw error
     }
   }, [snippet, title, showToast, editorHandleRef])
 
@@ -98,11 +99,32 @@ export function useEditorExports({ snippet, title, editorHandleRef, showToast })
     }
   }, [snippet, title, showToast, editorHandleRef])
 
+  const handleExportMarkdownBundle = useCallback(async () => {
+    if (!snippet || !editorHandleRef.current) return
+    if (!window.api?.exportMarkdownBundle) return
+    try {
+      const code = editorHandleRef.current.getMarkdown()
+      const res = await window.api.exportMarkdownBundle({
+        title: title || snippet.title || 'Untitled',
+        content: code,
+        language: snippet.language || 'markdown'
+      })
+      if (res?.success) {
+        showToast('Exported Markdown bundle successfully', 'success')
+      }
+      return res
+    } catch (error) {
+      showToast('Failed to export markdown bundle', 'error')
+      throw error
+    }
+  }, [snippet, title, showToast, editorHandleRef])
+
   return {
     handleExportHTML,
     handleExportPDF,
     handleExportText,
     handleExportDocs,
-    handleExportMarkdown
+    handleExportMarkdown,
+    handleExportMarkdownBundle
   }
 }

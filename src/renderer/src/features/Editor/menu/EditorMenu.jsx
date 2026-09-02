@@ -32,6 +32,7 @@ const EditorMenu = ({
   onExportHTML,
   onExportPDF,
   onExportMarkdown,
+  onExportMarkdownBundle,
   onExportText,
   onExportDocs,
   onInlineAI,
@@ -152,8 +153,10 @@ const EditorMenu = ({
                   onClick={async () => {
                     try {
                       if (onExportHTML && typeof onExportHTML === 'function') {
-                        await onExportHTML()
-                        showToast('HTML copied to clipboard', 'success')
+                        const result = await onExportHTML()
+                        if (result?.success) {
+                          showToast('HTML file exported successfully', 'success')
+                        }
                       }
                     } catch (error) {
                       console.error('Failed to export HTML:', error)
@@ -162,7 +165,7 @@ const EditorMenu = ({
                     setShowMoreMenu(false)
                   }}
                 >
-                  <span className="menu-label">Copy as Web Code</span>
+                  <span className="menu-label">Export to HTML (.html)</span>
                   <FileCode size={12} className="menu-icon-right" />
                 </div>
                 <div
@@ -210,8 +213,28 @@ const EditorMenu = ({
                     setShowMoreMenu(false)
                   }}
                 >
-                  <span className="menu-label">Save as File (.md)</span>
+                  <span className="menu-label">Save as Markdown (.md)</span>
                   <FileText size={12} className="menu-icon-right" />
+                </div>
+                <div
+                  className="dropdown-item"
+                  onClick={async () => {
+                    try {
+                      if (onExportMarkdownBundle && typeof onExportMarkdownBundle === 'function') {
+                        const result = await onExportMarkdownBundle()
+                        if (result?.success) {
+                          showToast('Markdown bundle exported successfully', 'success')
+                        }
+                      }
+                    } catch (error) {
+                      console.error('Failed to export markdown bundle:', error)
+                      showToast('Failed to export markdown bundle', 'error')
+                    }
+                    setShowMoreMenu(false)
+                  }}
+                >
+                  <span className="menu-label">Export Markdown Bundle</span>
+                  <FileJson size={12} className="menu-icon-right" />
                 </div>
                 <div
                   className="dropdown-item"

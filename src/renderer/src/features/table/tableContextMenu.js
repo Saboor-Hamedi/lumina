@@ -2,6 +2,7 @@ import { dispatchModel, findCurrentTableRange } from './tableExtension.js'
 import { readModelFromDom } from './tableModel.js'
 import { icons } from './tableIcons.js'
 import { copyTableAs, exportTableAsCSV, duplicateTable } from './tableActions.js'
+import { applyColumnSort } from './tableSort.js'
 
 export function cellRowIndex(cell) {
   if (!cell) return -1
@@ -344,24 +345,14 @@ export function openCellMenu(view, cell, x, y) {
 
   items.push(
     createItem('Sort Column (A to Z)', icons.sortAsc, () => {
-      const m = readModelFromDom(wrap)
-      m.rows.sort((a, b) =>
-        (a[targetCol] || '').trim().localeCompare((b[targetCol] || '').trim(), undefined, {
-          numeric: true
-        })
-      )
-      dispatchModel(view, wrap, m)
+      const cIdx = targetCol >= 0 ? targetCol : 0
+      applyColumnSort(view, wrap, cIdx, 'asc')
     })
   )
   items.push(
     createItem('Sort Column (Z to A)', icons.sortDesc, () => {
-      const m = readModelFromDom(wrap)
-      m.rows.sort((a, b) =>
-        (b[targetCol] || '').trim().localeCompare((a[targetCol] || '').trim(), undefined, {
-          numeric: true
-        })
-      )
-      dispatchModel(view, wrap, m)
+      const cIdx = targetCol >= 0 ? targetCol : 0
+      applyColumnSort(view, wrap, cIdx, 'desc')
     })
   )
   items.push(createSeparator())

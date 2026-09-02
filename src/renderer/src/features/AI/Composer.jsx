@@ -17,6 +17,7 @@ import { LuminaSlash } from './LuminaSlash'
 import LuminaMention from './LuminaMention'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useVaultStore } from '../../core/store/useVaultStore'
+import ToolTip from '../../components/atoms/ToolTip'
 import './Composer.css'
 
 export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
@@ -297,10 +298,12 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
         <div className="composer-inner-footer">
           {/* Left: model pill + mode toggles */}
           <div className="composer-left">
-            <button className="model-pill" onClick={toggleProvider} title="Change AI model">
-              {getProviderLabel()}
-              <ChevronDown size={10} />
-            </button>
+            <ToolTip text="Change AI model" position="top">
+              <button className="model-pill" onClick={toggleProvider}>
+                {getProviderLabel()}
+                <ChevronDown size={10} />
+              </button>
+            </ToolTip>
           </div>
 
           {/* Right: char count + send/stop */}
@@ -310,26 +313,28 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
             )}
 
             {isLoading ? (
-              <button
-                className="composer-stop-btn"
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  if (handleStop) handleStop()
-                }}
-                title="Stop generation"
-              >
-                <Square size={11} fill="currentColor" />
-              </button>
+              <ToolTip text="Stop generation" position="top">
+                <button
+                  className="composer-stop-btn"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    if (handleStop) handleStop()
+                  }}
+                >
+                  <Square size={11} fill="currentColor" />
+                </button>
+              </ToolTip>
             ) : (
-              <button
-                className="composer-send-btn"
-                onClick={handleSend}
-                disabled={!input.trim()}
-                title="Send (Enter)"
-              >
-                <Send size={13} />
-              </button>
+              <ToolTip text="Send (Enter)" position="top">
+                <button
+                  className="composer-send-btn"
+                  onClick={handleSend}
+                  disabled={!input.trim()}
+                >
+                  <Send size={13} />
+                </button>
+              </ToolTip>
             )}
           </div>
         </div>

@@ -144,25 +144,10 @@ export class TableWidget extends WidgetType {
     return this.model.rows.length * 35 + 50
   }
 
-  // Structure-only equality. Typing in a cell produces a new
-  // TableWidget with the same dimensions but different cell contents.
-  // Returning true here means CM6 keeps the existing DOM instead of
-  // calling `toDOM` again — which is what lets the caret survive
-  // across the per-keystroke dispatch cycle.
+  // Return false so CodeMirror calls updateDOM(dom, view) on changes.
+  // updateDOM will then update cell contents in-place and return true to keep the DOM stable.
   eq(other) {
-    if (other.model.caption !== this.model.caption) return false
-    if (other.model.header.length !== this.model.header.length) return false
-    if (other.model.rows.length !== this.model.rows.length) return false
-    for (let i = 0; i < this.model.header.length; i++) {
-      if (other.model.header[i] !== this.model.header[i]) return false
-      if (other.model.alignments?.[i] !== this.model.alignments?.[i]) return false
-    }
-    for (let r = 0; r < this.model.rows.length; r++) {
-      for (let c = 0; c < this.model.rows[r].length; c++) {
-        if (other.model.rows[r][c] !== this.model.rows[r][c]) return false
-      }
-    }
-    return true
+    return false
   }
   toDOM(view) {
     const wrap = document.createElement('div')
