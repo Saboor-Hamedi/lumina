@@ -56,7 +56,8 @@ import {
   DroppableRootZone,
   NoteNumbers,
   ExplorerHeader,
-  ExplorerFavorites
+  ExplorerFavorites,
+  ExternalDropOverlay
 } from './components'
 import { useFileSearch } from './hooks/useFileSearch'
 import { useFileTree } from './hooks/useFileTree'
@@ -64,6 +65,7 @@ import { useExplorerSelection } from './hooks/useExplorerSelection'
 import { useExplorerDnd } from './hooks/useExplorerDnd'
 import { useExplorerOperations } from './hooks/useExplorerOperations'
 import { useFolderContextMenu } from './hooks/useFolderContextMenu'
+import { useExternalFileDrop } from './hooks/useExternalFileDrop'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 
 const VirtuosoFooter = ({ context }) => (
@@ -84,7 +86,17 @@ const VirtuosoFooter = ({ context }) => (
   />
 )
 
-const DroppableVirtuosoWrapper = ({ children, isDragging, isRootFocused, onClick, onPointerDown }) => {
+const DroppableVirtuosoWrapper = ({
+  children,
+  isDragging,
+  isRootFocused,
+  onClick,
+  onPointerDown,
+  onDragEnter,
+  onDragOver,
+  onDragLeave,
+  onDrop
+}) => {
   const { isOver, setNodeRef } = useDroppable({ id: 'root-drop-zone' })
   const showDropHighlight = isOver && isDragging
   return (
@@ -92,6 +104,10 @@ const DroppableVirtuosoWrapper = ({ children, isDragging, isRootFocused, onClick
       ref={setNodeRef}
       onClick={onClick}
       onPointerDown={onPointerDown}
+      onDragEnter={onDragEnter}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
       className={`recommended-list ${showDropHighlight ? 'root-drop-over' : ''} ${isRootFocused ? 'root-body-focused' : ''}`}
       style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}
     >
@@ -330,33 +346,17 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
 
   const handleConfirmBulkDelete = useCallback(async () => {
     try {
-      // 1. Delete selected folders first
-      for (const folderId of Array.from(selectedFolderIds)) {
-        try {
-          await window.api?.deleteFolder?.(folderId)
-        } catch (e) {
-          console.warn('Folder deletion warning:', e)
+      if (window.api?.bulkDelete) {
+        await window.api.bulkDelete({
+          folderIds: Array.from(selectedFolderIds),
+          snippetIds: Array.from(selectedNoteIds)
+        })
+      } else {
+        for (const folderId of Array.from(selectedFolderIds)) {
+          await window.api?.deleteFolder?.(folderId).catch(() => {})
         }
-      }
-
-      // 2. Filter remaining selected notes to only those not inside the deleted folders
-      const deletedFolderSet = Array.from(selectedFolderIds).map((f) => f.replace(/\\/g, '/'))
-      const remainingNotesToDelete = Array.from(selectedNoteIds).filter((noteId) => {
-        const snippet = snippets.find((s) => s.id === noteId)
-        if (!snippet) return false
-        const sFolder = (snippet.folderId || '').replace(/\\/g, '/')
-        const isInsideDeletedFolder = deletedFolderSet.some(
-          (df) => sFolder === df || sFolder.startsWith(df + '/')
-        )
-        return !isInsideDeletedFolder
-      })
-
-      // 3. Delete remaining selected notes safely
-      for (const noteId of remainingNotesToDelete) {
-        try {
-          await deleteSnippet(noteId, true)
-        } catch (e) {
-          console.warn('Note deletion warning:', e)
+        for (const noteId of Array.from(selectedNoteIds)) {
+          await deleteSnippet(noteId, true).catch(() => {})
         }
       }
 
@@ -367,7 +367,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     } finally {
       setBulkDeleteModalOpen(false)
     }
-  }, [selectedFolderIds, selectedNoteIds, snippets, deleteSnippet, clearSelection, loadVault])
+  }, [selectedFolderIds, selectedNoteIds, deleteSnippet, clearSelection, loadVault])
 
   const {
     sensors,
@@ -404,6 +404,15 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     onRequestBulkDelete: () => setBulkDeleteModalOpen(true),
     clearSelection
   })
+
+  const {
+    isDraggingExternal,
+    hoveredFolderId,
+    handleDragEnter: handleExternalDragEnter,
+    handleDragOver: handleExternalDragOver,
+    handleDragLeave: handleExternalDragLeave,
+    handleDrop: handleExternalDrop
+  } = useExternalFileDrop()
 
   const { size, handleResizeStart } = useResizable(modalRef)
 
@@ -480,6 +489,10 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
             cancelRename={context.cancelRename}
             isPinned={context.pinnedFolders?.includes(item.id)}
             onTogglePin={context.togglePinnedFolder}
+            isExternalOver={hoveredFolderId === item.id}
+            onExternalDragEnter={(e) => handleExternalDragEnter(e, item.id)}
+            onExternalDragOver={(e) => handleExternalDragOver(e, item.id)}
+            onExternalDrop={(e) => handleExternalDrop(e, item.id)}
             onToggle={(id, e) => {
               if (e?.ctrlKey || e?.metaKey || e?.shiftKey) {
                 handleFolderClick(id, index, e)
@@ -508,7 +521,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
         (isMultiSelected ||
           (selectedNoteIds.size === 0 && selectedFolderIds.size === 0 && item.snippet.id === selectedSnippetId) ||
           index === selectedIndex)
-      const filePaddingLeft = `${item.depth * 10 + 10}px`
+      const filePaddingLeft = `${item.depth * 10 + 18}px`
 
       return (
         <div
@@ -521,11 +534,11 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
             key={item.snippet.id}
             snippet={item.snippet}
             onClick={(snippet, e) => handleNoteClick(snippet, index, e)}
-            onContextMenu={(snippet, e) => {
-              if (totalSelectedCount > 1 && (selectedNoteIds.has(snippet.id) || selectedFolderIds.size > 0)) {
-                handleFolderContextMenu(snippet.id, e)
-              }
-            }}
+            onContextMenu={
+              totalSelectedCount > 1 && (selectedNoteIds.has(item.snippet.id) || selectedFolderIds.size > 0)
+                ? (snippet, e) => handleFolderContextMenu(snippet.id, e)
+                : undefined
+            }
             isActive={isNoteActive}
             searchQuery={query}
             matchSnippet={matchMetaMap?.get(item.snippet.id)?.matchSnippet || ''}
@@ -542,12 +555,16 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     selectedSnippetId,
     selectedIndex,
     totalSelectedCount,
+    hoveredFolderId,
     query,
     matchMetaMap,
     toggleFolder,
     handleFolderContextMenu,
     handleNoteClick,
-    handleFolderClick
+    handleFolderClick,
+    handleExternalDragEnter,
+    handleExternalDragOver,
+    handleExternalDrop
   ])
 
   if (!isEmbedded && (!isOpen || !isPositionReady)) return null
@@ -721,29 +738,36 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
           {activeTab === 'all' && (
             <div
               className="start-section"
-              onPointerDown={handleBackgroundClick}
               onClick={handleBackgroundClick}
             >
 
-              {flatTree.length === 0 ? (
-                <div className="empty-state">No notes or folders found</div>
-              ) : (
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={pointerWithin}
-                  onDragStart={handleListDragStart}
-                  onDragEnd={handleListDragEnd}
+              <DndContext
+                sensors={sensors}
+                collisionDetection={pointerWithin}
+                onDragStart={handleListDragStart}
+                onDragEnd={handleListDragEnd}
+              >
+                <SortableContext
+                  items={allSnippets.map((s) => s.id)}
+                  strategy={verticalListSortingStrategy}
                 >
-                  <SortableContext
-                    items={allSnippets.map((s) => s.id)}
-                    strategy={verticalListSortingStrategy}
+                  <DroppableVirtuosoWrapper
+                    isDragging={!!activeListDragItem}
+                    isRootFocused={sidebarFocus === 'root' && selectedNoteIds.size === 0 && selectedFolderIds.size === 0}
+                    onClick={handleBackgroundClick}
+                    onDragEnter={(e) => handleExternalDragEnter(e, '')}
+                    onDragOver={(e) => handleExternalDragOver(e, '')}
+                    onDragLeave={handleExternalDragLeave}
+                    onDrop={(e) => handleExternalDrop(e, '')}
                   >
-                    <DroppableVirtuosoWrapper
-                      isDragging={!!activeListDragItem}
-                      isRootFocused={sidebarFocus === 'root' && selectedNoteIds.size === 0 && selectedFolderIds.size === 0}
-                      onClick={handleBackgroundClick}
-                      onPointerDown={handleBackgroundClick}
-                    >
+                    {isDraggingExternal && !hoveredFolderId && (
+                      <ExternalDropOverlay targetName="Vault Root" />
+                    )}
+                    {flatTree.length === 0 ? (
+                      <div className="empty-state" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        No notes or folders found
+                      </div>
+                    ) : (
                       <Virtuoso
                         ref={virtuosoRef}
                         style={{ flex: 1, height: '100%' }}
@@ -791,7 +815,8 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                         }}
                         itemContent={renderItemContent}
                       />
-                    </DroppableVirtuosoWrapper>
+                    )}
+                  </DroppableVirtuosoWrapper>
                   </SortableContext>
                   {createPortal(
                     <DragOverlay
@@ -877,7 +902,6 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                     document.body
                   )}
                 </DndContext>
-              )}
             </div>
           )}
         </div>

@@ -226,7 +226,9 @@ export function useExplorerOperations({
             language: 'markdown',
             tags: '',
             folderId: folderId,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            isPinned: false,
+            isLearned: false
           }
           await saveSnippet(newSnippet)
           if (folderId) setExpandedFolders((prev) => new Set(prev).add(folderId))

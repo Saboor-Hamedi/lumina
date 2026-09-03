@@ -1,4 +1,5 @@
 import { EditorView } from '@codemirror/view'
+import { useVaultStore } from '../../core/store/useVaultStore'
 
 export const imageDropExtension = (onToast) =>
   EditorView.domEventHandlers({
@@ -18,9 +19,8 @@ export const imageDropExtension = (onToast) =>
         event.preventDefault()
         event.stopPropagation()
 
-        // Calculate where the user dropped the file in the text
         const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
-        if (pos == null) return
+        if (pos == null) return true
 
         imageFiles.forEach(async (file) => {
           try {
@@ -29,7 +29,6 @@ export const imageDropExtension = (onToast) =>
             const relativePath = await window.api.saveImage(uint8Array, file.name)
 
             if (relativePath) {
-              // Insert markdown at drop position
               const markdownToInsert = `\n![${file.name}](${relativePath})\n`
 
               view.dispatch({
@@ -47,6 +46,49 @@ export const imageDropExtension = (onToast) =>
 
         return true
       }
+
+      const paths = files
+        .map((f) => (window.api?.getPathForFile ? window.api.getPathForFile(f) : f.path))
+        .filter(Boolean)
+
+      if (paths.length > 0) {
+        event.preventDefault()
+        event.stopPropagation()
+
+        window.api
+          ?.importExternalPaths?.(paths, '')
+          .then(async (result) => {
+            await useVaultStore.getState().loadVault()
+            if (result?.importedFolderIds && result.importedFolderIds.length > 0) {
+              const currentExpanded = useVaultStore.getState().expandedFolders || new Set()
+              const nextExpanded = new Set(currentExpanded)
+              result.importedFolderIds.forEach((fid) => nextExpanded.add(fid))
+              useVaultStore.getState().setExpandedFolders?.(nextExpanded)
+            }
+            if (result?.importedSnippetIds && result.importedSnippetIds.length > 0) {
+              const targetId = result.importedSnippetIds[0]
+              const snippets = useVaultStore.getState().snippets || []
+              const found = snippets.find((s) => s.id === targetId)
+              if (found) {
+                useVaultStore.getState().setSelectedSnippet(found)
+              }
+            }
+            const count = result?.count || paths.length
+            window.dispatchEvent(
+              new CustomEvent('show-toast', {
+                detail: {
+                  message: `✓ Imported ${count} item${count > 1 ? 's' : ''} to vault`,
+                  type: 'success'
+                }
+              })
+            )
+          })
+          .catch((err) => {
+            console.error('Failed to import dropped folder/files:', err)
+          })
+        return true
+      }
+
       return false
     },
 

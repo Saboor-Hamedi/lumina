@@ -199,6 +199,7 @@ class SettingsManager {
       // Store the exact string we are about to write so the watcher can ignore it
       this.lastWrittenData = data
 
+      await fs.mkdir(path.dirname(this.settingsPath), { recursive: true })
       await fs.writeFile(this.settingsPath, data, 'utf8')
 
       // Update cache to match what we saved

@@ -6,3 +6,6 @@ export { DroppableRootZone } from './DroppableRootZone'
 export { NoteNumbers } from './NoteNumbers'
 export { ExplorerHeader } from './ExplorerHeader'
 export { ExplorerFavorites } from './ExplorerFavorites'
+export { default as ExternalDropOverlay } from './ExternalDropOverlay'
+export { VaultStats, default as VaultStatsDefault } from './VaultStats'
+

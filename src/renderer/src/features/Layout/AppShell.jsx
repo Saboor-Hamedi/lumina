@@ -8,6 +8,7 @@ import Graph from '../Graph/Graph'
 import Documentation from '../Docs/Documentation'
 import Dashboard from '../Workspace/components/Dashboard'
 import TabBar from '../Workspace/components/TabBar'
+import ImageViewerTab from '../Workspace/components/ImageViewerTab'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useVaultStore, GRAPH_TAB_ID } from '../../core/store/useVaultStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
@@ -33,6 +34,8 @@ import RightSidebar from '../Inspector/RightSidebar'
 import Breadcrumbs from '../Breadcrumbs'
 import IndexingStatus from '../../components/IndexingStatus'
 import StatusBar from '../Workspace/components/StatusBar'
+import { useExternalFileDrop } from '../Explorer/hooks/useExternalFileDrop'
+import ExternalDropOverlay from '../Explorer/components/ExternalDropOverlay'
 
 /**
  * AppShell Component
@@ -104,6 +107,14 @@ const AppShell = () => {
 
   const appShellRef = React.useRef(null)
   const widthRef = React.useRef({ left: 250, right: 200 })
+
+  const {
+    isDraggingExternal: isWorkspaceDraggingExternal,
+    handleDragEnter: handleWorkspaceDragEnter,
+    handleDragOver: handleWorkspaceDragOver,
+    handleDragLeave: handleWorkspaceDragLeave,
+    handleDrop: handleWorkspaceDrop
+  } = useExternalFileDrop()
 
   // Update width refs and CSS custom properties when widths change
   useEffect(() => {
@@ -744,8 +755,19 @@ const AppShell = () => {
         0 ? (
           <div
             className="workspace-container"
-            style={{ display: 'flex', flexDirection: 'row', flex: 1, overflow: 'hidden' }}
+            onDragEnter={(e) => handleWorkspaceDragEnter(e, '')}
+            onDragOver={(e) => handleWorkspaceDragOver(e, '')}
+            onDragLeave={handleWorkspaceDragLeave}
+            onDrop={(e) => handleWorkspaceDrop(e, '')}
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              flex: 1,
+              overflow: 'hidden',
+              position: 'relative'
+            }}
           >
+            {isWorkspaceDraggingExternal && <ExternalDropOverlay targetName="Vault" />}
             <div
               style={{
                 position: 'relative',
@@ -780,16 +802,20 @@ const AppShell = () => {
                     }}
                   >
                     <ErrorBoundary>
-                      <Editor
-                        snippet={snippet}
-                        onSave={saveSnippet}
-                        onToggleInspector={handleToggleInspector}
-                        isActive={isSelected}
-                        onToggleExplorerModal={() => setShowExplorerModal((prev) => !prev)}
-                        onSettingsClick={() => setShowSettings(true)}
-                        onThemeClick={() => setShowThemeModal(true)}
-                        onGraphClick={() => setShowGraph(true)}
-                      />
+                      {snippet.type === 'image' ? (
+                        <ImageViewerTab snippet={snippet} />
+                      ) : (
+                        <Editor
+                          snippet={snippet}
+                          onSave={saveSnippet}
+                          onToggleInspector={handleToggleInspector}
+                          isActive={isSelected}
+                          onToggleExplorerModal={() => setShowExplorerModal((prev) => !prev)}
+                          onSettingsClick={() => setShowSettings(true)}
+                          onThemeClick={() => setShowThemeModal(true)}
+                          onGraphClick={() => setShowGraph(true)}
+                        />
+                      )}
                     </ErrorBoundary>
                   </div>
                 )

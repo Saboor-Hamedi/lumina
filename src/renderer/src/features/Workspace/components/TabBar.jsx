@@ -27,6 +27,7 @@ import IconPicker from '../../Icons/IconPicker'
 import { getSnippetIcon } from '../../Icons/FileIcon'
 import WindowControls from './WindowControls'
 import ToolTip from '../../../components/atoms/ToolTip'
+import { useExternalFileDrop } from '../../Explorer/hooks/useExternalFileDrop'
 
 /**
  * SortableTabItem — draggable tab using @dnd-kit/sortable
@@ -249,10 +250,21 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
     }
   }, [])
 
+  const {
+    handleDragEnter: handleExternalDragEnter,
+    handleDragOver: handleExternalDragOver,
+    handleDragLeave: handleExternalDragLeave,
+    handleDrop: handleExternalDrop
+  } = useExternalFileDrop()
+
   if (openTabs.length === 0) {
     return (
       <div
         className="tabbar-outer-wrapper"
+        onDragEnter={(e) => handleExternalDragEnter(e, '')}
+        onDragOver={(e) => handleExternalDragOver(e, '')}
+        onDragLeave={handleExternalDragLeave}
+        onDrop={(e) => handleExternalDrop(e, '')}
         style={{
           display: 'flex',
           width: '100%',
@@ -276,6 +288,10 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
     >
       <div
         className="tabbar-outer-wrapper"
+        onDragEnter={(e) => handleExternalDragEnter(e, '')}
+        onDragOver={(e) => handleExternalDragOver(e, '')}
+        onDragLeave={handleExternalDragLeave}
+        onDrop={(e) => handleExternalDrop(e, '')}
         style={{ display: 'flex', width: '100%', position: 'relative', flexShrink: 0, minWidth: 0 }}
       >
         {/* Floating Left Sidebar Toggle (now inline flex item) */}

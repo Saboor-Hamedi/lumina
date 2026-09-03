@@ -4,7 +4,6 @@ import {
   FileText,
   Folder,
   Star,
-  CheckCircle2,
   HardDrive,
   FileCode,
   Image,
@@ -12,16 +11,20 @@ import {
   X
 } from 'lucide-react'
 import { useVaultStore } from '../../../core/store/useVaultStore'
-import './VaultStatsPopover.css'
+import './VaultStats.css'
 
-export const VaultStatsPopover = ({ isOpen, onClose, anchorRef }) => {
+export const VaultStats = ({ isOpen, onClose, anchorRef }) => {
   const popoverRef = useRef(null)
   const snippets = useVaultStore((state) => state.snippets)
   const folders = useVaultStore((state) => state.folders)
   const [coords, setCoords] = useState(null)
 
   const stats = useMemo(() => {
-    const totalNotes = snippets.length
+    const noteSnippets = snippets.filter((s) => s.type !== 'image')
+    const imageSnippets = snippets.filter((s) => s.type === 'image')
+
+    const totalNotes = noteSnippets.length
+    const totalImages = imageSnippets.length
     const folderSet = new Set(folders || [])
 
     snippets.forEach((s) => {
@@ -34,15 +37,16 @@ export const VaultStatsPopover = ({ isOpen, onClose, anchorRef }) => {
     let totalWords = 0
     let totalChars = 0
     let totalLines = 0
-    let totalBytes = 0
+    let totalTextBytes = 0
+    let totalMediaBytes = 0
 
-    snippets.forEach((s) => {
+    noteSnippets.forEach((s) => {
       if (s.isPinned) pinnedCount++
       if (s.isLearned) learnedCount++
 
       const text = s.code || ''
       totalChars += text.length
-      totalBytes += (new TextEncoder().encode(text)).length
+      totalTextBytes += (new TextEncoder().encode(text)).length
 
       if (text.trim()) {
         const words = text.trim().split(/\s+/).filter(Boolean).length
@@ -51,8 +55,13 @@ export const VaultStatsPopover = ({ isOpen, onClose, anchorRef }) => {
       }
     })
 
+    imageSnippets.forEach((img) => {
+      if (img.isPinned) pinnedCount++
+      totalMediaBytes += img.size || 0
+    })
+
     const formatBytes = (bytes) => {
-      if (bytes === 0) return '0 B'
+      if (!bytes || bytes === 0) return '0 B'
       const k = 1024
       const sizes = ['B', 'KB', 'MB', 'GB']
       const i = Math.floor(Math.log(bytes) / Math.log(k))
@@ -67,6 +76,7 @@ export const VaultStatsPopover = ({ isOpen, onClose, anchorRef }) => {
 
     return {
       totalNotes: formatNumber(totalNotes),
+      totalImages: formatNumber(totalImages),
       totalFolders: formatNumber(totalFolders),
       pinnedCount: formatNumber(pinnedCount),
       learnedCount: formatNumber(learnedCount),
@@ -74,7 +84,8 @@ export const VaultStatsPopover = ({ isOpen, onClose, anchorRef }) => {
       totalWords: formatNumber(totalWords),
       totalChars: formatNumber(totalChars),
       totalLines: formatNumber(totalLines),
-      storageSize: formatBytes(totalBytes)
+      storageSize: formatBytes(totalTextBytes),
+      mediaStorageSize: formatBytes(totalMediaBytes)
     }
   }, [snippets, folders])
 
@@ -148,13 +159,13 @@ export const VaultStatsPopover = ({ isOpen, onClose, anchorRef }) => {
         left: `${coords.left}px`
       }}
       role="dialog"
-      aria-label="Vault Details"
+      aria-label="Workspace Details"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="vault-stats-header">
         <div className="vault-stats-title-wrap">
           <Layers size={13} className="vault-stats-title-icon" />
-          <span className="vault-stats-title">Vault Details</span>
+          <span className="vault-stats-title">Workspace Details</span>
         </div>
         <button
           className="vault-stats-close-btn"
@@ -177,6 +188,16 @@ export const VaultStatsPopover = ({ isOpen, onClose, anchorRef }) => {
         </div>
 
         <div className="vault-stats-card">
+          <div className="vault-stats-card-icon" style={{ color: '#38bdf8' }}>
+            <Image size={13} />
+          </div>
+          <div className="vault-stats-card-data">
+            <span className="vault-stats-value">{stats.totalImages}</span>
+            <span className="vault-stats-label">Images</span>
+          </div>
+        </div>
+
+        <div className="vault-stats-card">
           <div className="vault-stats-card-icon">
             <Folder size={13} />
           </div>
@@ -193,16 +214,6 @@ export const VaultStatsPopover = ({ isOpen, onClose, anchorRef }) => {
           <div className="vault-stats-card-data">
             <span className="vault-stats-value">{stats.pinnedCount}</span>
             <span className="vault-stats-label">Favorites</span>
-          </div>
-        </div>
-
-        <div className="vault-stats-card">
-          <div className="vault-stats-card-icon" style={{ color: '#22c55e' }}>
-            <CheckCircle2 size={13} />
-          </div>
-          <div className="vault-stats-card-data">
-            <span className="vault-stats-value">{stats.learnedCount}</span>
-            <span className="vault-stats-label">Learned ({stats.learnedPercent}%)</span>
           </div>
         </div>
       </div>
@@ -235,10 +246,10 @@ export const VaultStatsPopover = ({ isOpen, onClose, anchorRef }) => {
         </div>
         <div className="vault-stats-row">
           <span className="vault-stats-row-label">
-            <Image size={12} /> Attachments & Media
+            <Image size={12} /> Images & Media
           </span>
-          <span className="vault-stats-row-value" style={{ opacity: 0.6 }}>
-            Ready
+          <span className="vault-stats-row-value">
+            {stats.totalImages} files ({stats.mediaStorageSize})
           </span>
         </div>
       </div>
@@ -247,4 +258,4 @@ export const VaultStatsPopover = ({ isOpen, onClose, anchorRef }) => {
   )
 }
 
-export default React.memo(VaultStatsPopover)
+export default React.memo(VaultStats)

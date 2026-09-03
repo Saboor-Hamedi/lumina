@@ -789,10 +789,14 @@
 }
 
 .cm-placeholder {
-  font-size: 1.1em;
-  font-style: italic;
-  opacity: 0.6;
-  color: var(--text-faint) !important;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  color: var(--text-faint, rgba(255, 255, 255, 0.28)) !important;
+  opacity: 0.5;
+  user-select: none;
+  pointer-events: none;
+  letter-spacing: 0.01em;
 }
 
 .status-pill {

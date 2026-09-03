@@ -14,9 +14,7 @@ export const SortableListItem = React.memo(
       transition,
       opacity: isDragging ? 0.5 : 1,
       zIndex: isDragging ? 99 : 1,
-      position: 'relative',
-      marginLeft: '5px',
-      paddingLeft: '3px'
+      position: 'relative'
     }
 
     const handleClick = React.useCallback(

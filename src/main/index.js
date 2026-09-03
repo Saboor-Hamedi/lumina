@@ -388,7 +388,23 @@ app.whenReady().then(async () => {
     'vault:renameFolder',
     async (_, oldPath, newPath) => await VaultManager.renameFolder(oldPath, newPath)
   )
+  ipcMain.handle(
+    'vault:moveFile',
+    async (_, oldRelPath, newRelPath) => await VaultManager.moveFile(oldRelPath, newRelPath)
+  )
   ipcMain.handle('vault:deleteFolder', async (_, path) => await VaultManager.deleteFolder(path))
+  ipcMain.handle('vault:bulkDelete', async (_, { folderIds, snippetIds }) => {
+    const result = await VaultManager.bulkDelete({ folderIds, snippetIds })
+    if (result?.deletedFilePaths && Array.isArray(result.deletedFilePaths)) {
+      result.deletedFilePaths.forEach((fp) => {
+        VaultIndexer.removeFile(fp).catch(() => {})
+      })
+    }
+    return result
+  })
+  ipcMain.handle('vault:importExternalPaths', async (_, { sourcePaths, targetFolderId }) => {
+    return await VaultManager.importExternalPaths(sourcePaths, targetFolderId)
+  })
 
   // System
   ipcMain.handle('vault:open-folder', async (_, relativePath) => {

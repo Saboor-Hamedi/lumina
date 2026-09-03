@@ -67,6 +67,15 @@ export function useFileTree({
     }
 
     const traverse = (node, depth, parentId = '') => {
+      // 1. Inject folder creation input at top of folder list
+      if (
+        creating &&
+        (creating.parentId || '') === parentId &&
+        (creating.type === 'folder' || creating.kind === 'folder')
+      ) {
+        flat.push({ type: 'input', kind: 'folder', parentId, depth })
+      }
+
       const order = Array.isArray(folderOrder) ? folderOrder : []
       const folderNames = Object.keys(node.children).sort((a, b) => {
         const fullPathA = parentId ? `${parentId}/${a}` : a
@@ -76,7 +85,7 @@ export function useFileTree({
         if (idxA !== -1 && idxB !== -1) return idxA - idxB
         if (idxA !== -1) return -1
         if (idxB !== -1) return 1
-        return 0
+        return a.localeCompare(b)
       })
 
       folderNames.forEach((name) => {
@@ -89,13 +98,18 @@ export function useFileTree({
           : expandedFolders.has(folder.id)
 
         if (isExpanded) {
-          // Inject nested creation input
-          if (creating && creating.parentId === folder.id) {
-            flat.push({ type: 'input', kind: creating.type, parentId: folder.id, depth: depth + 1 })
-          }
           traverse(folder, depth + 1, folder.id)
         }
       })
+
+      // 2. Inject note/file creation input at top of file list
+      if (
+        creating &&
+        (creating.parentId || '') === parentId &&
+        (creating.type === 'note' || creating.type === 'file' || creating.kind === 'note' || creating.kind === 'file')
+      ) {
+        flat.push({ type: 'input', kind: 'note', parentId, depth })
+      }
 
       // Files in this level
       node.files.forEach((file) => {
@@ -104,11 +118,6 @@ export function useFileTree({
     }
 
     traverse(root, 0)
-
-    // Inject root level creation input at the bottom
-    if (creating && !creating.parentId) {
-      flat.push({ type: 'input', kind: creating.type, parentId: '', depth: 0 })
-    }
 
     return flat
   }, [

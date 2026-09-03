@@ -19,7 +19,11 @@ export const DroppableFolderItem = React.memo(
     isActive,
     searchQuery,
     isPinned,
-    onTogglePin
+    onTogglePin,
+    isExternalOver,
+    onExternalDragEnter,
+    onExternalDragOver,
+    onExternalDrop
   }) => {
     const { isOver, setNodeRef: setDroppableRef } = useDroppable({ id: `folder-${item.id}` })
     const [isHovered, setIsHovered] = useState(false)
@@ -43,33 +47,28 @@ export const DroppableFolderItem = React.memo(
       return (
         <div className="tooltip-card-preview tooltip-folder-preview">
           <div className="tooltip-card-header">
-            <span className="tooltip-card-title">📁 {item.name}</span>
-          </div>
-          <div className="tooltip-card-meta">
-            <span>
-              {noteCount} {noteCount === 1 ? 'note' : 'notes'}
+            <span className="tooltip-card-title">{item.name}</span>
+            <span className="tooltip-folder-badge">
+              {noteCount} {noteCount === 1 ? 'Note' : 'Notes'}
             </span>
-            {totalWords > 0 && (
-              <>
-                <span>·</span>
-                <span>{totalWords.toLocaleString()} words</span>
-              </>
-            )}
           </div>
-          {previewList.length > 0 ? (
-            <div className="tooltip-folder-list">
-              {previewList.map((note) => (
-                <div key={note.id} className="tooltip-folder-list-item">
-                  <span className="tooltip-folder-file-bullet">📄</span>
-                  <span className="tooltip-folder-file-name">{note.title || 'Untitled'}</span>
+
+          <div className="tooltip-folder-wordcount">
+            {totalWords.toLocaleString()} {totalWords === 1 ? 'word' : 'words'} total
+          </div>
+
+          {previewList.length > 0 && (
+            <div className="tooltip-folder-snippets">
+              {previewList.map((snip) => (
+                <div key={snip.id} className="tooltip-folder-snippet-row">
+                  <span className="tooltip-folder-snippet-dot" />
+                  <span className="tooltip-folder-snippet-name">{snip.title}</span>
                 </div>
               ))}
               {remainingCount > 0 && (
                 <div className="tooltip-folder-more">+{remainingCount} more notes...</div>
               )}
             </div>
-          ) : (
-            <div className="tooltip-card-empty">Empty folder</div>
           )}
         </div>
       )
@@ -95,7 +94,10 @@ export const DroppableFolderItem = React.memo(
       isDragging
     } = useDraggable({
       id: `drag-folder-${item.id}`,
-      data: { type: 'folder', item }
+      data: {
+        type: 'folder',
+        item
+      }
     })
 
     return (
@@ -106,10 +108,13 @@ export const DroppableFolderItem = React.memo(
           position: 'relative',
           opacity: isDragging ? 0.5 : 1
         }}
+        onDragEnter={onExternalDragEnter}
+        onDragOver={onExternalDragOver}
+        onDrop={onExternalDrop}
       >
         <div
           ref={setDraggableRef}
-          className={`folder-tree-main ${isOver ? 'folder-over' : ''} ${isActive ? 'active' : ''}`}
+          className={`folder-tree-main ${isOver || isExternalOver ? 'folder-over' : ''} ${isActive ? 'active' : ''}`}
           style={{
             cursor: 'pointer',
             userSelect: 'none',

@@ -52,6 +52,7 @@ const SidebarItem = ({
   )
   const isDirty = dirtySnippetIds.includes(snippet.id)
   const displayColor = snippet.color || null
+  const isItemPinned = snippet.isPinned === true || snippet.isPinned === 'true'
 
   const [isRenaming, setIsRenaming] = useState(false)
   const [renameValue, setRenameValue] = useState(snippet.title)
@@ -68,8 +69,48 @@ const SidebarItem = ({
   }, [isRenaming])
 
   const handleRename = async () => {
-    if (renameValue.trim() && renameValue !== snippet.title) {
-      await saveSnippet({ ...snippet, title: renameValue })
+    const trimmed = renameValue.trim()
+    if (trimmed && trimmed !== snippet.title) {
+      if (snippet.type === 'image') {
+        const ext = snippet.ext || (snippet.fileName ? `.${snippet.fileName.split('.').pop()}` : '')
+        let targetFileName = trimmed
+        if (ext && !targetFileName.toLowerCase().endsWith(ext.toLowerCase())) {
+          targetFileName = `${targetFileName}${ext}`
+        }
+        const oldRel = snippet.folderId ? `${snippet.folderId}/${snippet.fileName}` : snippet.fileName
+        const newRel = snippet.folderId ? `${snippet.folderId}/${targetFileName}` : targetFileName
+        if (oldRel !== newRel) {
+          try {
+            await window.api?.moveFile?.(oldRel, newRel)
+            const loadVault = useVaultStore.getState().loadVault
+            await loadVault?.()
+
+            const freshSnippets = useVaultStore.getState().snippets || []
+            const newSnippet = freshSnippets.find(
+              (s) => s.relativePath === newRel || (s.fileName === targetFileName && (s.folderId || '') === (snippet.folderId || ''))
+            )
+
+            if (newSnippet) {
+              useVaultStore.setState((state) => {
+                const nextTabs = state.openTabs.map((tid) => (tid === snippet.id ? newSnippet.id : tid))
+                const nextActiveId = state.activeTabId === snippet.id ? newSnippet.id : state.activeTabId
+                const nextPinned = state.pinnedTabIds.map((pid) => (pid === snippet.id ? newSnippet.id : pid))
+                const nextSelected = state.selectedSnippet?.id === snippet.id ? newSnippet : state.selectedSnippet
+                return {
+                  openTabs: nextTabs,
+                  activeTabId: nextActiveId,
+                  pinnedTabIds: nextPinned,
+                  selectedSnippet: nextSelected
+                }
+              })
+            }
+          } catch (err) {
+            console.error('Failed to rename image:', err)
+          }
+        }
+      } else {
+        await saveSnippet({ ...snippet, title: trimmed })
+      }
     }
     setIsRenaming(false)
   }
@@ -86,12 +127,16 @@ const SidebarItem = ({
   }
 
   const handleTogglePin = async (e) => {
-    if (e) e.stopPropagation()
+    if (e) {
+      e.stopPropagation()
+      e.preventDefault()
+    }
     if (!snippet?.id) return
     if (snippet.itemType === 'folder') {
       togglePinnedFolder(snippet.id)
       return
     }
+    if (snippet.type === 'image') return
     try {
       await saveSnippet({ ...snippet, isPinned: !snippet.isPinned })
       setContextMenu(null)
@@ -142,6 +187,26 @@ const SidebarItem = ({
     if (!item) return ''
     if (item.itemType === 'folder') {
       return item.title || 'Folder'
+    }
+    if (item.type === 'image') {
+      const formatSize = (bytes) => {
+        if (!bytes) return ''
+        if (bytes < 1024) return `${bytes} B`
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+      }
+      return (
+        <div className="tooltip-card-preview">
+          <div className="tooltip-card-header">
+            <span className="tooltip-card-title">{item.title || 'Image'}</span>
+          </div>
+          <div className="tooltip-card-meta">
+            <span className="tooltip-badge-folder">🖼️ Image</span>
+            {item.size ? <span>· {formatSize(item.size)}</span> : null}
+            {item.ext ? <span className="uppercase">· {item.ext.replace('.', '')}</span> : null}
+          </div>
+        </div>
+      )
     }
     const title = item.title || 'Untitled Note'
     const rawContent = item.code || item.content || item.body || ''
@@ -381,14 +446,16 @@ const SidebarItem = ({
       )}
 
       <div className="item-meta-right" style={{ height: '100%', display: 'flex', alignItems: 'center' }}>
-        {(isHovered || snippet.isPinned) && !isRenaming && (
-          <div className={`hover-actions ${snippet.isPinned ? 'is-pinned' : ''}`} style={{ height: '100%', display: 'flex', alignItems: 'center' }}>
-            <ToolTip text={snippet.isPinned ? 'Remove from Favorites' : 'Add to Favorites'}>
+        {(isHovered || isItemPinned) && !isRenaming && (
+          <div className={`hover-actions ${isItemPinned ? 'is-pinned' : ''}`} style={{ height: '100%', display: 'flex', alignItems: 'center' }}>
+            <ToolTip text={isItemPinned ? 'Remove from Favorites' : 'Add to Favorites'}>
               <button
                 className="action-btn"
                 onClick={handleTogglePin}
+                onMouseDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
                 style={{
-                  color: snippet.isPinned ? '#fbbf24' : undefined,
+                  color: isItemPinned ? '#fbbf24' : undefined,
                   height: '24px',
                   width: '24px',
                   display: 'flex',
@@ -396,7 +463,7 @@ const SidebarItem = ({
                   justifyContent: 'center'
                 }}
               >
-                <Star size={13} strokeWidth={2.2} fill={snippet.isPinned ? 'currentColor' : 'none'} />
+                <Star size={13} strokeWidth={2.2} fill={isItemPinned ? 'currentColor' : 'none'} />
               </button>
             </ToolTip>
           </div>

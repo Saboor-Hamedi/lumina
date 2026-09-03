@@ -62,6 +62,11 @@ export const getFileIcon = (title = '', language = '') => {
   const titleLower = title.toLowerCase().trim()
   const lang = (language || 'markdown').toLowerCase()
 
+  if (lang === 'image') {
+    _iconCache.set(cacheKey, ImageIcon)
+    return ImageIcon
+  }
+
   // Base name without extension
   const baseName = titleLower.includes('.') ? titleLower.slice(0, titleLower.lastIndexOf('.')) : titleLower
   const ext = titleLower.includes('.') ? titleLower.slice(titleLower.lastIndexOf('.') + 1) : ''
@@ -222,7 +227,7 @@ export const getSnippetIcon = (snippet, size = 14, className = 'item-icon', colo
   let Icon = getFileIcon(snippet.title, snippet.language)
 
   // Custom icon selection (Lucide icon name)
-  if (snippet.customIcon) {
+  if (snippet.customIcon && snippet.customIcon !== 'null' && snippet.customIcon !== 'undefined') {
     if (LucideIcons[snippet.customIcon]) {
       Icon = LucideIcons[snippet.customIcon]
     } else {

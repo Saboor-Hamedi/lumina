@@ -1,15 +1,32 @@
 import React from 'react'
 import { FileText, Search, Sparkles, FolderTree, Command } from 'lucide-react'
+import { useExternalFileDrop } from '../../Explorer/hooks/useExternalFileDrop'
+import ExternalDropOverlay from '../../Explorer/components/ExternalDropOverlay'
 import './WelcomePage.css'
 
 const WelcomePage = ({ onNew }) => {
+  const {
+    isDraggingExternal,
+    handleDragEnter,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop
+  } = useExternalFileDrop()
+
   const handlePalette = () =>
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
   const handleAIChat = () =>
     window.dispatchEvent(new KeyboardEvent('keydown', { key: '\\', ctrlKey: true, shiftKey: true }))
 
   return (
-    <div className="welcome-page">
+    <div
+      className="welcome-page"
+      onDragEnter={(e) => handleDragEnter(e, '')}
+      onDragOver={(e) => handleDragOver(e, '')}
+      onDragLeave={handleDragLeave}
+      onDrop={(e) => handleDrop(e, '')}
+    >
+      {isDraggingExternal && <ExternalDropOverlay targetName="Lumina" />}
       <div className="welcome-watermark">
         <svg
           viewBox="0 0 100 100"

@@ -122,15 +122,52 @@ export function useExplorerDnd({
             ? dragItem.draggedSnippetIds
             : [active.id]
 
+          const migratedImages = new Map()
           const snippetsToMove = allSnippets.filter((s) => idsToMove.includes(s.id))
           for (const s of snippetsToMove) {
             if (s.folderId !== '') {
               try {
-                await saveSnippet({ ...s, folderId: '' })
+                if (s.type === 'image') {
+                  const oldRel = s.folderId ? `${s.folderId}/${s.fileName}` : s.fileName
+                  const newRel = s.fileName
+                  if (oldRel !== newRel) {
+                    await window.api?.moveFile?.(oldRel, newRel)
+                    migratedImages.set(s.id, newRel)
+                  }
+                } else {
+                  await saveSnippet({ ...s, folderId: '' })
+                }
               } catch (e) {
                 console.error('Failed to move snippet to root:', e)
               }
             }
+          }
+          await loadVault()
+
+          if (migratedImages.size > 0) {
+            const freshSnippets = useVaultStore.getState().snippets || []
+            useVaultStore.setState((state) => {
+              let nextTabs = [...state.openTabs]
+              let nextActiveId = state.activeTabId
+              let nextPinned = [...state.pinnedTabIds]
+              let nextSelected = state.selectedSnippet
+
+              for (const [oldId, newRel] of migratedImages.entries()) {
+                const found = freshSnippets.find((sn) => sn.relativePath === newRel)
+                if (found) {
+                  nextTabs = nextTabs.map((tid) => (tid === oldId ? found.id : tid))
+                  nextPinned = nextPinned.map((pid) => (pid === oldId ? found.id : pid))
+                  if (nextActiveId === oldId) nextActiveId = found.id
+                  if (nextSelected?.id === oldId) nextSelected = found
+                }
+              }
+              return {
+                openTabs: nextTabs,
+                activeTabId: nextActiveId,
+                pinnedTabIds: nextPinned,
+                selectedSnippet: nextSelected
+              }
+            })
           }
         }
         return
@@ -169,17 +206,54 @@ export function useExplorerDnd({
             ? dragItem.draggedSnippetIds
             : [active.id]
 
+          const migratedImages = new Map()
           const snippetsToMove = allSnippets.filter((s) => idsToMove.includes(s.id))
           for (const s of snippetsToMove) {
             if (s.folderId !== targetFolderId) {
               try {
-                await saveSnippet({ ...s, folderId: targetFolderId })
+                if (s.type === 'image') {
+                  const oldRel = s.folderId ? `${s.folderId}/${s.fileName}` : s.fileName
+                  const newRel = targetFolderId ? `${targetFolderId}/${s.fileName}` : s.fileName
+                  if (oldRel !== newRel) {
+                    await window.api?.moveFile?.(oldRel, newRel)
+                    migratedImages.set(s.id, newRel)
+                  }
+                } else {
+                  await saveSnippet({ ...s, folderId: targetFolderId })
+                }
               } catch (e) {
                 console.error('Failed to move snippet to folder:', e)
               }
             }
           }
           setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
+          await loadVault()
+
+          if (migratedImages.size > 0) {
+            const freshSnippets = useVaultStore.getState().snippets || []
+            useVaultStore.setState((state) => {
+              let nextTabs = [...state.openTabs]
+              let nextActiveId = state.activeTabId
+              let nextPinned = [...state.pinnedTabIds]
+              let nextSelected = state.selectedSnippet
+
+              for (const [oldId, newRel] of migratedImages.entries()) {
+                const found = freshSnippets.find((sn) => sn.relativePath === newRel)
+                if (found) {
+                  nextTabs = nextTabs.map((tid) => (tid === oldId ? found.id : tid))
+                  nextPinned = nextPinned.map((pid) => (pid === oldId ? found.id : pid))
+                  if (nextActiveId === oldId) nextActiveId = found.id
+                  if (nextSelected?.id === oldId) nextSelected = found
+                }
+              }
+              return {
+                openTabs: nextTabs,
+                activeTabId: nextActiveId,
+                pinnedTabIds: nextPinned,
+                selectedSnippet: nextSelected
+              }
+            })
+          }
           return
         }
 

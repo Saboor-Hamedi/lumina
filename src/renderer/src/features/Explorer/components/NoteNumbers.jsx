@@ -10,7 +10,7 @@
 
 import React, { useState, useRef } from 'react'
 import ToolTip from '../../../components/atoms/ToolTip'
-import VaultStatsPopover from './VaultStatsPopover'
+import VaultStats from './VaultStats'
 
 export const NoteNumbers = ({ count = 0, total, isQueryActive }) => {
   const [isStatsOpen, setIsStatsOpen] = useState(false)
@@ -26,7 +26,7 @@ export const NoteNumbers = ({ count = 0, total, isQueryActive }) => {
 
   return (
     <div className="relative inline-block" style={{ position: 'relative' }}>
-      <ToolTip text={isQueryActive ? text : 'View Vault Details'} position="bottom">
+      <ToolTip text={isQueryActive ? text : 'View Workspace Details'} position="bottom">
         <button
           ref={badgeRef}
           type="button"
@@ -67,7 +67,7 @@ export const NoteNumbers = ({ count = 0, total, isQueryActive }) => {
         </button>
       </ToolTip>
 
-      <VaultStatsPopover
+      <VaultStats
         isOpen={isStatsOpen}
         onClose={() => setIsStatsOpen(false)}
         anchorRef={badgeRef}

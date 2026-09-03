@@ -53,6 +53,9 @@ const getMaterial = (color) => {
  */
 const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false }) => {
   const snippets = useVaultStore((s) => s.snippets)
+  const graphSnippets = useMemo(() => {
+    return snippets.filter((s) => s.type !== 'image' && s.language !== 'image')
+  }, [snippets])
   const selectedSnippet = useVaultStore((s) => s.selectedSnippet)
   const dirtySnippetIds = useVaultStore((s) => s.dirtySnippetIds)
   const embeddingsCache = useAIStore((s) => s.embeddingsCache)
@@ -215,8 +218,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
 
     // Defer the heavy calculation so the modal can instantly animate in
     const timer = setTimeout(() => {
-      const rawData = buildGraphData(snippets)
-      const semantic = buildSemanticLinks(rawData.nodes, rawData.links, snippets, embeddingsCache)
+      const rawData = buildGraphData(graphSnippets)
+      const semantic = buildSemanticLinks(rawData.nodes, rawData.links, graphSnippets, embeddingsCache)
       let nodes = rawData.nodes
       let links = [...rawData.links, ...semantic]
 

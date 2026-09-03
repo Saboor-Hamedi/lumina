@@ -1,0 +1,136 @@
+.image-viewer-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-editor, #121214);
+  overflow: hidden;
+  user-select: none;
+}
+
+.image-viewer-header-info {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.image-viewer-badge {
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted, #94a3b8);
+  background: rgba(24, 24, 27, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  letter-spacing: 0.02em;
+}
+
+.image-viewer-canvas {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.image-viewer-img {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+  transition: transform 0.05s linear;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+  border-radius: 2px;
+}
+
+.image-viewer-loading,
+.image-viewer-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted, #94a3b8);
+  font-size: 13px;
+}
+
+.image-viewer-spin-icon {
+  animation: img-spin 2s linear infinite;
+  color: var(--text-accent, #6366f1);
+}
+
+.image-viewer-toolbar {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(24, 24, 27, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  z-index: 20;
+}
+
+.image-viewer-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: 2px;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.image-viewer-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main, #ffffff);
+}
+
+.image-viewer-btn.copied {
+  color: #10b981;
+}
+
+.image-viewer-zoom-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-main, #ffffff);
+  padding: 0 6px;
+  min-width: 44px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.image-viewer-divider {
+  width: 1px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0 2px;
+}
+
+@keyframes img-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

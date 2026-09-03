@@ -1,549 +1,254 @@
 import fs from 'fs/promises'
 import path from 'path'
-import matter from 'gray-matter'
 import chokidar from 'chokidar'
-import slugify from 'slugify'
-import crypto from 'crypto'
+import { BrowserWindow } from 'electron'
+import { VaultScanner, safeParseFrontmatter } from './VaultScanner'
+import { AssetManager } from './AssetManager'
+import { VaultOperations } from './VaultOperations'
 
-// Clean title for display everywhere (tabs, sidebar, metadata) and filename.
-// This is the single place where we normalize note titles before:
-// - Storing them in frontmatter
-// - Using them to derive on-disk filenames
-// The goal is to keep titles human-friendly while still being valid on all filesystems.
-function sanitizeTitleForFilename(title) {
-  if (!title || typeof title !== 'string') return 'untitled'
-
-  // Remove or neutralize characters that are unsafe or ugly
-  // Characters removed: < > : " / \ | ? * @ # $ % ^ & + = [ ] { } ; , ` ~
-  let cleaned = String(title)
-    // Strip common problematic symbols (Windows + “noisy” chars)
-    .replace(/[<>:"/\\|?*@#$%^&+=\[\]{};,`~]/g, ' ')
-    // Collapse multiple spaces into a single space
-    .replace(/\s+/g, ' ')
-    .trim()
-
-  return cleaned || 'untitled'
-}
+export { safeParseFrontmatter }
 
 class VaultManager {
   constructor() {
     this.vaultPath = null
-    this.watcher = null
     this.snippets = new Map()
     this.folders = new Set()
+    this.watcher = null
+    this.isScanning = false
+    this.scanDebounceTimeout = null
   }
 
-  async init(userPath, defaultDocPath) {
-    this.vaultPath = userPath || path.join(defaultDocPath, 'lumina')
-    await fs.mkdir(this.vaultPath, { recursive: true })
-
-    // Ensure .lumina/assets directory exists
-    const assetsPath = path.join(this.vaultPath, '.lumina', 'assets')
-    try {
-      await fs.mkdir(assetsPath, { recursive: true })
-    } catch (e) {}
-
-    // Initial scan
+  async init(customPath, fallbackDocumentsPath) {
+    let targetPath = customPath
+    if (!targetPath && fallbackDocumentsPath) {
+      targetPath = path.join(fallbackDocumentsPath, 'lumina')
+    }
+    if (!targetPath) {
+      targetPath = path.join(process.env.HOME || process.env.USERPROFILE || '.', 'Documents', 'lumina')
+    }
+    await fs.mkdir(targetPath, { recursive: true })
+    this.setVaultPath(targetPath)
     await this.scanVault()
-
-    // Watch for changes
     this.setupWatcher()
+    return targetPath
+  }
+
+  setVaultPath(dir) {
+    this.vaultPath = dir
+    this.snippets.clear()
+    this.folders.clear()
+    if (this.watcher) {
+      this.watcher.close()
+      this.watcher = null
+    }
+  }
+
+  sanitizeTitleForFilename(title) {
+    return VaultOperations.sanitizeTitleForFilename(title)
   }
 
   setupWatcher() {
-    if (this.watcher) this.watcher.close()
+    if (!this.vaultPath) return
+    if (this.watcher) {
+      this.watcher.close()
+    }
+
     this.watcher = chokidar.watch(this.vaultPath, {
-      ignored: /(^|[\/\\])\../,
+      ignored: [
+        /(^|[/\\])\../,
+        '**/node_modules/**',
+        '**/.git/**',
+        '**/dist/**',
+        '**/build/**',
+        '**/log/**'
+      ],
       persistent: true,
-      ignoreInitial: true
+      ignoreInitial: true,
+      depth: 99,
+      awaitWriteFinish: {
+        stabilityThreshold: 100,
+        pollInterval: 50
+      }
     })
 
-    let scanTimeout = null
-    this.watcher.on('all', async (event, filePath) => {
-      if (filePath.endsWith('.md') || event === 'unlinkDir' || event === 'addDir') {
-        if (scanTimeout) clearTimeout(scanTimeout)
-        scanTimeout = setTimeout(async () => {
-          await this.scanVault()
-          // Notify renderer that snippets changed
-          const electron = require('electron')
-          const wins = electron.BrowserWindow?.getAllWindows() || []
-          wins.forEach((win) => {
-            if (!win.isDestroyed()) {
-              win.webContents.send('vault:updated')
-            }
-          })
-        }, 1000)
+    const triggerScan = () => {
+      clearTimeout(this.scanDebounceTimeout)
+      this.scanDebounceTimeout = setTimeout(async () => {
+        await this.scanVault()
+        this.notifyWindows('vault:updated')
+      }, 50)
+    }
+
+    this.watcher.on('add', (filePath) => {
+      const ext = path.extname(filePath).toLowerCase()
+      const valid = new Set(['.md', '.markdown', '.txt', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg', '.bmp', '.ico', '.avif'])
+      if (valid.has(ext)) triggerScan()
+    })
+
+    this.watcher.on('unlink', triggerScan)
+    this.watcher.on('addDir', triggerScan)
+    this.watcher.on('unlinkDir', triggerScan)
+    this.watcher.on('change', (filePath) => {
+      const ext = path.extname(filePath).toLowerCase()
+      const valid = new Set(['.md', '.markdown', '.txt', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg', '.bmp', '.ico', '.avif'])
+      if (valid.has(ext)) triggerScan()
+    })
+  }
+
+  notifyWindows(channel, data) {
+    const wins = BrowserWindow.getAllWindows()
+    wins.forEach((win) => {
+      if (!win.isDestroyed()) {
+        win.webContents.send(channel, data)
       }
     })
   }
 
   async scanVault() {
-    if (!this.vaultPath) {
-      console.warn('[VaultManager] ✗ Cannot scan vault: No path set.')
-      return null
+    if (!this.vaultPath || this.isScanning) {
+      return { snippets: Array.from(this.snippets.values()), folders: Array.from(this.folders) }
     }
 
-    // Silent scan
+    this.isScanning = true
     try {
-      const mdFiles = []
-      const foundFolders = new Set()
-
-      const walk = async (dir, relativePath = '') => {
-        const entries = await fs.readdir(dir, { withFileTypes: true })
-        for (const entry of entries) {
-          if (
-            entry.name === '.git' ||
-            entry.name === 'assets' ||
-            entry.name.startsWith('.') ||
-            entry.name === 'node_modules' ||
-            entry.name === 'dist' ||
-            entry.name === 'build' ||
-            entry.name === 'log'
-          )
-            continue
-          const fullPath = path.join(dir, entry.name)
-          // Always use forward slashes for cross-platform robustness
-          const relPath = relativePath ? `${relativePath}/${entry.name}` : entry.name
-          if (entry.isDirectory()) {
-            foundFolders.add(relPath)
-            await walk(fullPath, relPath)
-          } else if (entry.isFile() && entry.name.endsWith('.md')) {
-            mdFiles.push({ fileName: entry.name, folderId: relativePath })
-          }
-        }
-      }
-
-      await walk(this.vaultPath)
-
-      const seenIds = new Set()
-      const newSnippets = []
-
-      // Process in batches to avoid EMFILE (too many open files) and improve performance
-      const BATCH_SIZE = 10
-      for (let i = 0; i < mdFiles.length; i += BATCH_SIZE) {
-        const batch = mdFiles.slice(i, i + BATCH_SIZE)
-
-        const batchResults = await Promise.all(
-          batch.map(async (fileObj) => {
-            try {
-              const { fileName, folderId } = fileObj
-              const filePath = path.join(this.vaultPath, folderId, fileName)
-              const stats = await fs.stat(filePath)
-              const rawContent = await fs.readFile(filePath, 'utf-8')
-
-              if (!rawContent.trim()) {
-                return null
-              }
-
-              let data = {}
-              let content = rawContent
-
-              try {
-                const parsed = matter(rawContent)
-                data = parsed.data || {}
-                content = parsed.content !== undefined ? parsed.content : rawContent
-                // Gray-matter sometimes leaves a trailing newline for empty files
-                if (content.trim() === '') {
-                  content = ''
-                }
-              } catch (matterErr) {
-                console.warn(`[VaultManager] Gray-matter parse failed for ${fileName}, applying resilient fallback:`, matterErr.message)
-                // Resilient fallback: extract frontmatter manually with regex if YAML parsing failed
-                const fmMatch = rawContent.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/)
-                if (fmMatch) {
-                  const fmText = fmMatch[1]
-                  content = fmMatch[2] || ''
-
-                  // Extract basic key-value pairs line by line safely
-                  fmText.split(/\r?\n/).forEach((line) => {
-                    const colonIdx = line.indexOf(':')
-                    if (colonIdx !== -1) {
-                      const key = line.slice(0, colonIdx).trim()
-                      let val = line.slice(colonIdx + 1).trim()
-                      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
-                        val = val.slice(1, -1)
-                      }
-                      if (key) data[key] = val
-                    }
-                  })
-                } else {
-                  content = rawContent
-                }
-              }
-
-              let finalId = data.id
-              let needsHealing = false
-
-              // Handle external renames: if filename diverges from sanitized title, use filename as the new title
-              let displayTitle = data.title || fileName.replace(/\.md$/i, '')
-              if (data.title) {
-                const expectedCleanName = sanitizeTitleForFilename(data.title)
-                const actualCleanName = fileName.replace(/\.md$/i, '')
-
-                // If it doesn't match the expected name AND it doesn't match expected name + ID suffix
-                if (
-                  actualCleanName !== expectedCleanName &&
-                  !actualCleanName.startsWith(`${expectedCleanName}-`)
-                ) {
-                  displayTitle = actualCleanName
-                  data.title = displayTitle
-                  needsHealing = true // Trigger a rewrite to sync the frontmatter
-                }
-              }
-
-              // Auto-healing logic: missing or duplicate ID
-              if (!finalId || seenIds.has(finalId)) {
-                finalId = crypto.randomUUID()
-                needsHealing = true
-              }
-              seenIds.add(finalId)
-
-              // If healed, rewrite the file immediately with the new ID
-              if (needsHealing) {
-                const newData = { ...data, id: finalId }
-                try {
-                  const newRawContent = matter.stringify(content, newData)
-                  await fs.writeFile(filePath, newRawContent, 'utf-8')
-                } catch (writeErr) {
-                  console.error(`[VaultManager] Failed to heal ID for ${fileName}:`, writeErr)
-                }
-                data = newData
-              }
-
-              return {
-                id: finalId,
-                title: data.title || fileName.replace('.md', ''),
-                code: content || '',
-                language: data.language || 'markdown',
-                tags: data.tags || '',
-                timestamp: data.timestamp || stats.mtimeMs,
-                selection: data.selection || null,
-                isPinned: data.isPinned || data.pinned || false,
-                isLearned: data.isLearned || data.learned || false,
-                customIcon: data.customIcon || null,
-                color: null,
-                type: 'snippet',
-                is_draft: 0,
-                fileName: fileName,
-                folderId: folderId || ''
-              }
-            } catch (fileErr) {
-              console.error(`[VaultManager] ✗ Failed to read file ${fileName}:`, fileErr)
-              return null
-            }
-          })
-        )
-
-        // Filter out nulls and add to newSnippets
-        newSnippets.push(...batchResults.filter(Boolean))
-
-        // Yield to the OS message pump every 100 files to keep the window perfectly draggable during startup
-        if (i % 100 === 0) {
-          await new Promise((resolve) => setTimeout(resolve, 5))
-        }
-      }
-
-      this.snippets = new Map(newSnippets.map((s) => [s.id, s]))
-      this.folders = foundFolders
-      // Scan complete
-      return { snippets: newSnippets, folders: Array.from(foundFolders) }
-    } catch (err) {
-      console.error('[VaultManager] ✗ Error scanning vault:', err)
-      return { snippets: [], folders: [] } // Return empty structure on failure
+      const { snippets, folders } = await VaultScanner.scan(this.vaultPath)
+      this.snippets = new Map(snippets.map((s) => [s.id, s]))
+      this.folders = new Set(folders)
+      return { snippets, folders }
+    } finally {
+      this.isScanning = false
     }
   }
 
-  /**
-   * Persist a snippet to disk and update in‑memory state.
-   *
-   * Storage layout:
-   * - All notes are stored as Markdown files directly under `this.vaultPath`
-   *   e.g. `<vaultPath>/My Note.md`
-   * - The actual filename is derived from the (cleaned) title and stored on the
-   *   snippet as `fileName` for robust renaming and deletion.
-   * - Attachments (images, etc.) are saved under `<vaultPath>/assets/`.
-   */
   async saveSnippet(snippet) {
-    console.info('[VaultManager] Saving snippet:', snippet.title, 'ID:', snippet.id)
-
-    if (!this.vaultPath) {
-      throw new Error('[VaultManager] Cannot save snippet: vaultPath is not initialized')
-    }
-
-    // 1. Clean the title for display everywhere (tabs, sidebar, metadata) and filename
-    // Example: "config::no" -> "config no"
-    const cleanedTitle = sanitizeTitleForFilename(snippet.title)
-    console.info('[VaultManager] Original title:', snippet.title, '-> Cleaned:', cleanedTitle)
-
-    // 2. Handle Renaming (Delete OLD file if it exists and differs from new one)
-    const oldSnippet = this.snippets.get(snippet.id)
-
-    // Use cleaned title for filename
-    const finalTitle = cleanedTitle || 'untitled'
-    let newFileName = finalTitle.endsWith('.md') ? finalTitle : `${finalTitle}.md`
-    const relativeFolder = snippet.folderId || ''
-
-    // Fallback to the snippet object from the frontend if it's missing in our cache.
-    // This happens if scanVault() runs concurrently and overwrites the cache before this save.
-    const oldFileName = oldSnippet ? oldSnippet.fileName : snippet.fileName
-    const oldRelativeFolder = oldSnippet ? oldSnippet.folderId || '' : snippet.folderId || ''
-
-    if (oldFileName) {
-      if (oldFileName !== newFileName || oldRelativeFolder !== relativeFolder) {
-        const oldPath = path.join(this.vaultPath, oldRelativeFolder, oldFileName)
-        try {
-          await fs.unlink(oldPath)
-          console.info('[VaultManager] ✓ Deleted old file after rename/move:', oldFileName)
-        } catch (err) {
-          console.warn(
-            '[VaultManager] Warning: Could not delete old file:',
-            oldFileName,
-            err.message
-          )
-        }
-      }
-    }
-
-    // 2. Prevent collisions with OTHER snippets in the same folder
-    const collision = Array.from(this.snippets.values()).find((s) => {
-      if (s.id === snippet.id) return false
-      return s.fileName === newFileName && (s.folderId || '') === relativeFolder
-    })
-
-    if (collision) {
-      newFileName = newFileName.replace(/\.md$/i, '') + `-${snippet.id.slice(0, 5)}.md`
-    }
-
-    // 3. Compute the final on-disk path for this note inside the current vault.
-    const finalPath = path.join(this.vaultPath, relativeFolder, newFileName)
-
-    // Only bump timestamp when content actually changes (not for color/pin/tag edits)
-    const contentChanged = !oldSnippet || oldSnippet.code !== snippet.code
-    const newTimestamp = contentChanged
-      ? Date.now()
-      : oldSnippet?.timestamp || snippet.timestamp || Date.now()
-
-    // 4. Prepare Content (strip existing frontmatter from code so matter.stringify never crashes on malformed inner frontmatter)
-    let cleanCode = snippet.code || ''
-    if (/^---\r?\n/.test(cleanCode)) {
-      cleanCode = cleanCode.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '')
-    }
-
-    let fileContent = ''
-    try {
-      fileContent = matter.stringify(cleanCode, {
-        id: snippet.id,
-        title: cleanedTitle,
-        language: snippet.language || 'markdown',
-        tags: snippet.tags || '',
-        selection: snippet.selection || null,
-        isPinned: !!snippet.isPinned,
-        isLearned: !!snippet.isLearned,
-        customIcon: snippet.customIcon || null,
-        timestamp: newTimestamp
-      })
-    } catch (strErr) {
-      console.warn('[VaultManager] matter.stringify failed, using safe fallback frontmatter:', strErr.message)
-      const safeTitle = JSON.stringify(cleanedTitle || '')
-      fileContent = `---\nid: ${snippet.id}\ntitle: ${safeTitle}\nlanguage: ${snippet.language || 'markdown'}\ntags: ${JSON.stringify(snippet.tags || '')}\nisPinned: ${!!snippet.isPinned}\nisLearned: ${!!snippet.isLearned}\ntimestamp: ${newTimestamp}\n---\n\n${cleanCode}`
-    }
-
-    try {
-      // Ensure the parent directory still exists (it may have been deleted externally)
-      const targetDir = path.dirname(finalPath)
-      await fs.mkdir(targetDir, { recursive: true })
-
-      // If we created a new nested folder natively during save, make sure we track it
-      if (relativeFolder) {
-        let current = ''
-        relativeFolder.split('/').forEach((part) => {
-          current = current ? `${current}/${part}` : part
-          this.folders.add(current)
-        })
-      }
-
-      await fs.writeFile(finalPath, fileContent)
-
-      // 5. Update Internal State Immediately (with cleaned title and folderId)
-      const updatedSnippet = {
-        ...snippet,
-        title: cleanedTitle, // Store cleaned title so it shows clean in UI
-        timestamp: newTimestamp,
-        fileName: newFileName, // Update recorded filename
-        folderId: relativeFolder
-      }
-      this.snippets.set(snippet.id, updatedSnippet)
-
-      console.info('[VaultManager] ✓ File saved at:', finalPath)
-      // Return the updated snippet with cleaned title so renderer can update UI
-      return updatedSnippet
-    } catch (err) {
-      console.error('[VaultManager] ✗ Save failed:', err)
-      throw err
-    }
+    const oldSnippet = snippet?.id ? this.snippets.get(snippet.id) : null
+    const result = await VaultOperations.saveSnippet(
+      this.vaultPath,
+      this.snippets,
+      this.folders,
+      snippet,
+      oldSnippet
+    )
+    return result
   }
 
   async deleteSnippet(id) {
-    if (!this.vaultPath) throw new Error('No vault open')
-    const snippet = this.snippets.get(id)
-    if (!snippet) {
-      console.warn(`[VaultManager] Snippet not found or already deleted: ${id}`)
-      return null
-    }
+    return await VaultOperations.deleteSnippet(this.vaultPath, this.snippets, id)
+  }
 
-    const filePath = path.join(this.vaultPath, snippet.folderId || '', snippet.fileName)
-
+  async bulkDelete({ folderIds = [], snippetIds = [] }) {
+    if (this.watcher) await this.watcher.close()
     try {
-      if (fsSync.existsSync(filePath)) {
-        await fs.unlink(filePath)
-      }
-      this.snippets.delete(id)
-      console.info('[VaultManager] ✓ File deleted:', filePath)
-      return filePath
-    } catch (err) {
-      this.snippets.delete(id)
-      console.warn('[VaultManager] Delete file warning:', err?.message)
-      return null
+      const result = await VaultOperations.bulkDelete(
+        this.vaultPath,
+        this.snippets,
+        this.folders,
+        { folderIds, snippetIds }
+      )
+      await this.scanVault()
+      return result
+    } finally {
+      this.setupWatcher()
     }
   }
 
-  // Native Folder Ops
+  async moveFile(oldRelPath, newRelPath) {
+    const result = await VaultOperations.moveFile(this.vaultPath, oldRelPath, newRelPath)
+    await this.scanVault()
+    return result
+  }
+
   async createFolder(folderPath) {
-    if (!this.vaultPath) throw new Error('No vault open')
-    try {
-      const fullPath = path.join(this.vaultPath, folderPath)
-      await fs.mkdir(fullPath, { recursive: true })
-      this.folders.add(folderPath)
-      return true
-    } catch (err) {
-      console.error('[VaultManager] Create folder failed:', err)
-      throw err
-    }
+    const result = await VaultOperations.createFolder(this.vaultPath, this.folders, folderPath)
+    await this.scanVault()
+    this.notifyWindows('vault:updated')
+    return result
   }
 
   async renameFolder(oldPath, newPath) {
-    if (!this.vaultPath) throw new Error('No vault open')
-
-    // Temporarily close watcher to release Windows directory locks
-    if (this.watcher) {
-      await this.watcher.close()
-    }
-
+    if (this.watcher) await this.watcher.close()
     try {
-      const fullOldPath = path.join(this.vaultPath, oldPath)
-      const fullNewPath = path.join(this.vaultPath, newPath)
-      await fs.rename(fullOldPath, fullNewPath)
-
-      // Update in-memory state
-      this.folders.delete(oldPath)
-      this.folders.add(newPath)
-
-      // Find all snippets that were inside oldPath and update their folderId
-      for (const [id, snippet] of this.snippets.entries()) {
-        if (snippet.folderId === oldPath || snippet.folderId.startsWith(`${oldPath}/`)) {
-          snippet.folderId = snippet.folderId.replace(oldPath, newPath)
-          this.snippets.set(id, snippet)
-        }
-      }
-
+      const result = await VaultOperations.renameFolder(
+        this.vaultPath,
+        this.snippets,
+        this.folders,
+        oldPath,
+        newPath
+      )
+      await this.scanVault()
+      this.notifyWindows('vault:updated')
+      return result
+    } finally {
       this.setupWatcher()
-      return true
-    } catch (err) {
-      console.error('[VaultManager] Rename folder failed:', err)
-      this.setupWatcher()
-      throw err
     }
   }
 
   async deleteFolder(folderPath) {
-    if (!this.vaultPath) throw new Error('No vault open')
-
-    // Temporarily close watcher to release Windows directory locks
-    if (this.watcher) {
-      await this.watcher.close()
-    }
-
+    if (this.watcher) await this.watcher.close()
     try {
-      const fullPath = path.join(this.vaultPath, folderPath)
-      await fs.rm(fullPath, { recursive: true, force: true })
+      const result = await VaultOperations.deleteFolder(
+        this.vaultPath,
+        this.snippets,
+        this.folders,
+        folderPath
+      )
+      await this.scanVault()
+      this.notifyWindows('vault:updated')
+      return result
+    } finally {
+      this.setupWatcher()
+    }
+  }
 
-      const normalizedTarget = folderPath.replace(/\\/g, '/')
-      
-      // Delete subfolders from memory
-      for (const f of Array.from(this.folders)) {
-        const normF = f.replace(/\\/g, '/')
-        if (normF === normalizedTarget || normF.startsWith(`${normalizedTarget}/`)) {
-          this.folders.delete(f)
-        }
+  async importExternalPaths(sourcePaths = [], targetFolderId = '') {
+    if (this.watcher) await this.watcher.close()
+    try {
+      const opResult = await VaultOperations.importExternalPaths(
+        this.vaultPath,
+        this.folders,
+        sourcePaths,
+        targetFolderId
+      )
+
+      const scanResult = await this.scanVault()
+      if (scanResult && Array.isArray(scanResult.snippets)) {
+        scanResult.snippets.forEach((s) => {
+          const sFolder = (s.folderId || '').replace(/\\/g, '/')
+          const inImportedFolder = opResult.importedFolderIds.some(
+            (f) => sFolder === f || sFolder.startsWith(f + '/')
+          )
+          const isImportedFile = opResult.importedFileNames.some(
+            (ifn) => ifn.fileName === s.fileName && (ifn.folderId || '') === (s.folderId || '')
+          )
+          if (inImportedFolder || isImportedFile) {
+            opResult.importedSnippetIds.push(s.id)
+          }
+        })
       }
 
-      // Delete snippets inside this folder from memory
-      for (const [id, snippet] of this.snippets.entries()) {
-        const sFolder = (snippet.folderId || '').replace(/\\/g, '/')
-        if (sFolder === normalizedTarget || sFolder.startsWith(`${normalizedTarget}/`)) {
-          this.snippets.delete(id)
-        }
-      }
+      this.notifyWindows('vault:updated')
+      return opResult
+    } finally {
       this.setupWatcher()
-      return true
-    } catch (err) {
-      console.error('[VaultManager] Delete folder failed:', err)
-      this.setupWatcher()
-      throw err
     }
   }
 
   async saveImage(buffer, originalName) {
-    if (!this.vaultPath) throw new Error('No vault open')
-
-    const assetsPath = path.join(this.vaultPath, '.lumina', 'assets')
-    try {
-      await fs.mkdir(assetsPath, { recursive: true })
-    } catch (e) {}
-
-    const ext = path.extname(originalName) || '.png'
-    const baseName = path.basename(originalName, ext)
-    const timestamp = Date.now()
-    const safeName = `${slugify(baseName, { lower: true, strict: true })}-${timestamp}${ext}`
-    const targetPath = path.join(assetsPath, safeName)
-
-    try {
-      await fs.writeFile(targetPath, Buffer.from(buffer))
-      console.info('[VaultManager] ✓ Image saved:', safeName)
-      // Return the pure relative path for clean Markdown, e.g. ".lumina/assets/image.png"
-      return `.lumina/assets/${safeName}`
-    } catch (err) {
-      console.error('[VaultManager] ✗ Failed to save image:', err)
-      throw err
-    }
+    const result = await AssetManager.saveImage(this.vaultPath, buffer, originalName)
+    await this.scanVault()
+    return result
   }
 
   async readAsset(relativePath) {
-    try {
-      const finalPath = path.join(this.vaultPath, relativePath)
-      const data = await fs.readFile(finalPath)
-      return data
-    } catch (err) {
-      console.error('[VaultManager] ✗ Failed to read asset:', relativePath, err)
-      throw err
-    }
+    return await AssetManager.readAsset(this.vaultPath, relativePath)
   }
 
   async deleteAsset(relativePath) {
-    if (!this.vaultPath) throw new Error('No vault open')
-    try {
-      const finalPath = path.join(this.vaultPath, relativePath)
-      // Prevent deleting arbitrary files outside the vault
-      if (!finalPath.startsWith(this.vaultPath)) {
-        throw new Error('Invalid asset path')
-      }
-      await fs.unlink(finalPath)
-      console.info('[VaultManager] ✓ Asset deleted:', relativePath)
-      return true
-    } catch (err) {
-      console.error('[VaultManager] ✗ Failed to delete asset:', relativePath, err)
-      throw err
-    }
+    return await AssetManager.deleteAsset(this.vaultPath, relativePath)
+  }
+
+  async cleanOrphanedAssets() {
+    return await AssetManager.cleanOrphanedAssets(this.vaultPath, this.snippets)
   }
 
   getSnippets() {
@@ -553,30 +258,6 @@ class VaultManager {
         .filter((s) => s && s.id)
         .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)),
       folders: Array.from(this.folders)
-    }
-  }
-
-  async cleanOrphanedAssets() {
-    if (!this.vaultPath) return
-    const assetsPath = path.join(this.vaultPath, '.lumina', 'assets')
-    try {
-      const entries = await fs.readdir(assetsPath, { withFileTypes: true })
-      const allMarkdownContent = Array.from(this.snippets.values())
-        .map((s) => s.code || '')
-        .join('\n')
-
-      for (const entry of entries) {
-        if (entry.isFile()) {
-          // If the exact filename isn't anywhere in the combined text, it's safe to delete
-          if (!allMarkdownContent.includes(entry.name)) {
-            const filePath = path.join(assetsPath, entry.name)
-            await fs.unlink(filePath)
-            console.info('[VaultManager] ✓ Deleted orphaned asset:', entry.name)
-          }
-        }
-      }
-    } catch (e) {
-      // Ignore if assets folder doesn't exist
     }
   }
 }

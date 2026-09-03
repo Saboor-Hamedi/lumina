@@ -1,9 +1,18 @@
-import { contextBridge } from 'electron'
+import { contextBridge, webUtils } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
-// High-performance Robust API Bridge
 const api = {
-  // Vault Ops
+  getPathForFile: (file) => {
+    try {
+      if (webUtils && typeof webUtils.getPathForFile === 'function') {
+        return webUtils.getPathForFile(file)
+      }
+      return file?.path || ''
+    } catch (e) {
+      return file?.path || ''
+    }
+  },
+
   getSnippets: () => electronAPI.ipcRenderer.invoke('vault:getSnippets'),
   saveSnippet: (snippet) => electronAPI.ipcRenderer.invoke('vault:saveSnippet', snippet),
   saveImage: (buffer, name) => electronAPI.ipcRenderer.invoke('vault:saveImage', { buffer, name }),
@@ -15,11 +24,16 @@ const api = {
     electronAPI.ipcRenderer.invoke('vault:open-folder', relativePath),
   selectVault: () => electronAPI.ipcRenderer.invoke('vault:select-folder'),
 
-  // Folder Ops
   createFolder: (path) => electronAPI.ipcRenderer.invoke('vault:createFolder', path),
   renameFolder: (oldPath, newPath) =>
     electronAPI.ipcRenderer.invoke('vault:renameFolder', oldPath, newPath),
+  moveFile: (oldRelPath, newRelPath) =>
+    electronAPI.ipcRenderer.invoke('vault:moveFile', oldRelPath, newRelPath),
   deleteFolder: (path) => electronAPI.ipcRenderer.invoke('vault:deleteFolder', path),
+  bulkDelete: ({ folderIds, snippetIds }) =>
+    electronAPI.ipcRenderer.invoke('vault:bulkDelete', { folderIds, snippetIds }),
+  importExternalPaths: (sourcePaths, targetFolderId) =>
+    electronAPI.ipcRenderer.invoke('vault:importExternalPaths', { sourcePaths, targetFolderId }),
 
   onVaultUpdated: (cb) => {
     const listener = () => cb()

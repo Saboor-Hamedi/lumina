@@ -87,7 +87,7 @@ const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef, onInli
           Title cannot be empty
         </div>
       )}
-      <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+      <div style={{ marginTop: '6px', marginLeft: '-6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
         <ToolTip text="Ask AI (Ctrl+K)" position="bottom">
           <button
             onClick={(e) => {

@@ -389,7 +389,7 @@ export function useEditorExtensions({
   const finalExtensions = useMemo(
     () => [
       ...editorExtensions,
-      placeholder("Start writing... Type '#' for heading, or press Ctrl+P to search"),
+      placeholder("What's in your mind today?"),
       dropExtension,
       Prec.highest(imageWidgetExtension),
       htmlWidgetExtension,
