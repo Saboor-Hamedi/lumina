@@ -33,8 +33,6 @@ import RightSidebar from '../Inspector/RightSidebar'
 import Breadcrumbs from '../Breadcrumbs'
 import Indexing from '../../components/Indexing'
 import StatusBar from './StatusBar'
-import { useExternalFileDrop } from '../Explorer/hooks/useExternalFileDrop'
-import ExternalDropOverlay from '../Explorer/components/ExternalDropOverlay'
 
 /**
  * AppShell Component
@@ -117,13 +115,7 @@ const AppShell = () => {
   const appShellRef = React.useRef(null)
   const widthRef = React.useRef({ left: 250, right: 200 })
 
-  const {
-    isDraggingExternal: isWorkspaceDraggingExternal,
-    handleDragEnter: handleWorkspaceDragEnter,
-    handleDragOver: handleWorkspaceDragOver,
-    handleDragLeave: handleWorkspaceDragLeave,
-    handleDrop: handleWorkspaceDrop
-  } = useExternalFileDrop()
+
 
   // Update width refs and CSS custom properties when widths change
   useEffect(() => {
@@ -768,10 +760,6 @@ const AppShell = () => {
         0 ? (
           <div
             className="workspace-container"
-            onDragEnter={(e) => handleWorkspaceDragEnter(e, '')}
-            onDragOver={(e) => handleWorkspaceDragOver(e, '')}
-            onDragLeave={handleWorkspaceDragLeave}
-            onDrop={(e) => handleWorkspaceDrop(e, '')}
             style={{
               display: 'flex',
               flexDirection: 'row',
@@ -780,7 +768,6 @@ const AppShell = () => {
               position: 'relative'
             }}
           >
-            {isWorkspaceDraggingExternal && <ExternalDropOverlay targetName="Vault" />}
             <div
               style={{
                 position: 'relative',
