@@ -19,7 +19,7 @@ export const renameFileTool = aiSdk.tool({
     const cleanOldTitle = oldTitle.startsWith('@') ? oldTitle.slice(1).trim() : oldTitle.trim()
     const cleanNewTitle = newTitle.startsWith('@') ? newTitle.slice(1).trim() : newTitle.trim()
 
-    const { useVaultStore } = await import('../../../core/store/useVaultStore')
+    const { useVaultStore } = await import('../../../core/store/workspaceStore')
     const vs = useVaultStore.getState()
     const snippets = Array.isArray(vs.snippets) ? vs.snippets : Object.values(vs.snippets || {})
 

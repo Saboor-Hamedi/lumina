@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react'
 import { Folder, ChevronRight, FileText, Database, Check } from 'lucide-react'
-import { useVaultStore } from '../../core/store/useVaultStore'
+import { useVaultStore } from '../../core/store/workspaceStore'
 import ToolTip from '../../components/atoms/ToolTip'
 import './Breadcrumbs.css'
 

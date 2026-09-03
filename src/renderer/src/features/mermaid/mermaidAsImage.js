@@ -5,11 +5,25 @@ export async function copyMermaidAsImage(svgElement) {
 
   return new Promise((resolve, reject) => {
     try {
+      const viewBox = svgElement.viewBox?.baseVal
       const rect = svgElement.getBoundingClientRect()
-      const width = svgElement.getAttribute('width') || rect.width || 800
-      const height = svgElement.getAttribute('height') || rect.height || 600
+      const width = viewBox && viewBox.width > 0 ? viewBox.width : rect.width || 800
+      const height = viewBox && viewBox.height > 0 ? viewBox.height : rect.height || 600
 
       const clonedSvg = svgElement.cloneNode(true)
+      clonedSvg.setAttribute('width', String(width))
+      clonedSvg.setAttribute('height', String(height))
+
+      const svgId = svgElement.id || svgElement.getAttribute('id')
+      if (svgId) {
+        const headStyle =
+          document.getElementById(svgId) ||
+          document.getElementById(`style-${svgId}`) ||
+          document.querySelector(`style[id*="${svgId}"]`)
+        if (headStyle && !clonedSvg.querySelector(`style[id*="${svgId}"]`)) {
+          clonedSvg.prepend(headStyle.cloneNode(true))
+        }
+      }
 
       const serializer = new XMLSerializer()
       let svgString = serializer.serializeToString(clonedSvg)
@@ -18,39 +32,31 @@ export async function copyMermaidAsImage(svgElement) {
         svgString = svgString.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"')
       }
 
-      // Fix invalid entities and unclosed tags that Mermaid outputs
       svgString = svgString.replace(/&nbsp;/g, '&#160;')
       svgString = svgString.replace(/<br>/g, '<br/>')
 
-      const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' })
-      const DOMURL = window.URL || window.webkitURL || window
-      const url = DOMURL.createObjectURL(svgBlob)
+      const base64Data = btoa(unescape(encodeURIComponent(svgString)))
+      const dataUrl = `data:image/svg+xml;base64,${base64Data}`
 
       const img = new Image()
+
       img.onload = () => {
         try {
-          const scale = 2 // Retina scale for crisper images
+          const scale = 2
           const canvas = document.createElement('canvas')
-          canvas.width = parseFloat(width) * scale
-          canvas.height = parseFloat(height) * scale
+          canvas.width = Math.round(width * scale)
+          canvas.height = Math.round(height * scale)
           const ctx = canvas.getContext('2d')
           ctx.scale(scale, scale)
 
-          // Use the computed background color of the widget to match the UI
-          const widgetBody = svgElement.closest('.mermaid-widget-body')
-          const bgColor = widgetBody
-            ? window.getComputedStyle(widgetBody).backgroundColor
-            : 'rgba(0,0,0,0)'
+          ctx.fillStyle = '#18181b'
+          ctx.fillRect(0, 0, width, height)
 
-          ctx.fillStyle = bgColor
-          ctx.fillRect(0, 0, parseFloat(width), parseFloat(height))
-
-          ctx.drawImage(img, 0, 0, parseFloat(width), parseFloat(height))
-          DOMURL.revokeObjectURL(url)
+          ctx.drawImage(img, 0, 0, width, height)
 
           canvas.toBlob(async (blob) => {
             if (!blob) {
-              return reject(new Error('Canvas to Blob failed'))
+              return reject(new Error('Canvas export failed'))
             }
             try {
               const item = new ClipboardItem({ 'image/png': blob })
@@ -66,13 +72,14 @@ export async function copyMermaidAsImage(svgElement) {
       }
 
       img.onerror = () => {
-        DOMURL.revokeObjectURL(url)
-        reject(new Error('Failed to load SVG into Image'))
+        reject(new Error('Failed to rasterize diagram into image'))
       }
 
-      img.src = url
+      img.src = dataUrl
     } catch (err) {
       reject(err)
     }
   })
 }
+
+export default copyMermaidAsImage

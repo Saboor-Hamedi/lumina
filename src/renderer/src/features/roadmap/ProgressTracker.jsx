@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react'
 import { Check } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
-import { useVaultStore } from '../../core/store/useVaultStore'
+import { useVaultStore } from '../../core/store/workspaceStore'
 
 export function LearnedButton({ snippet }) {
   const saveSnippet = useVaultStore((state) => state.saveSnippet)

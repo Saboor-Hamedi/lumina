@@ -1,7 +1,7 @@
 import React, { memo } from 'react'
 import { Plus, Network, MessageSquare, Calendar } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
-import { useVaultStore } from '../../../core/store/useVaultStore'
+import { useVaultStore } from '../../../core/store/workspaceStore'
 import { useShallow } from 'zustand/react/shallow'
 import DailyNotes from './DailyNotes'
 

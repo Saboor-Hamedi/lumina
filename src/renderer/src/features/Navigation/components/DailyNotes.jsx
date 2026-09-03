@@ -1,7 +1,7 @@
 import React, { memo, useState } from 'react'
 import { Calendar } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
-import { useVaultStore } from '../../../core/store/useVaultStore'
+import { useVaultStore } from '../../../core/store/workspaceStore'
 import { useShallow } from 'zustand/react/shallow'
 import TemplateModal from './TemplateModal'
 import { defaultTemplates } from './defaultTemplates'

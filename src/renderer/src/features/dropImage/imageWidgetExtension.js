@@ -499,9 +499,22 @@ export class ImageWidget extends WidgetType {
           if (!window.api || !window.api.readAsset) return null
           for (let i = 0; i < retries; i++) {
             try {
-              const buffer = await window.api.readAsset(url)
-              if (!buffer) return null
-              return URL.createObjectURL(new Blob([buffer]))
+              const res = await window.api.readAsset(url)
+              if (!res) return null
+              if (res.dataUrl) return res.dataUrl
+              if (res.buffer) {
+                return URL.createObjectURL(
+                  new Blob([res.buffer], { type: res.mimeType || 'image/png' })
+                )
+              }
+              if (
+                res instanceof ArrayBuffer ||
+                res instanceof Uint8Array ||
+                (typeof Buffer !== 'undefined' && Buffer.isBuffer(res))
+              ) {
+                return URL.createObjectURL(new Blob([res]))
+              }
+              return null
             } catch (err) {
               if (i === retries - 1) return null
               await new Promise((resolve) => setTimeout(resolve, delay))

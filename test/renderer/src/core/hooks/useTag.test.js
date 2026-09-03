@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { renderHook } from '@testing-library/react'
 import { useTag } from '../../../../../src/renderer/src/core/hooks/useTag'
-import { useVaultStore } from '../../../../../src/renderer/src/core/store/useVaultStore'
+import { useVaultStore } from '../../../../../src/renderer/src/core/store/workspaceStore'
 
 describe('useTag', () => {
   beforeEach(() => {

@@ -42,6 +42,41 @@ export class WorkspaceMediaManager {
     }
   }
 
+  static async saveVaultImage(vaultPath, buffer, targetFolder = '', name = '') {
+    if (!vaultPath) throw new Error('No vault open')
+
+    const normalizedFolder = (targetFolder || '').replace(/\\/g, '/')
+    const folderPath = normalizedFolder ? path.join(vaultPath, normalizedFolder) : vaultPath
+    try {
+      await fs.mkdir(folderPath, { recursive: true })
+    } catch (e) {}
+
+    const ext = path.extname(name) || '.png'
+    let baseName = name ? path.basename(name, ext) : `Pasted image ${Date.now()}`
+    let fileName = `${baseName}${ext}`
+    let targetPath = path.join(folderPath, fileName)
+    let counter = 1
+
+    while (fsSync.existsSync(targetPath)) {
+      fileName = `${baseName} (${counter++})${ext}`
+      targetPath = path.join(folderPath, fileName)
+    }
+
+    try {
+      await fs.writeFile(targetPath, Buffer.from(buffer))
+      const relPath = normalizedFolder ? `${normalizedFolder}/${fileName}` : fileName
+      console.info('[WorkspaceMediaManager] ✓ Vault image saved:', relPath)
+      return {
+        relativePath: relPath.replace(/\\/g, '/'),
+        fileName,
+        folderId: normalizedFolder
+      }
+    } catch (err) {
+      console.error('[WorkspaceMediaManager] ✗ Failed to save vault image:', err)
+      throw err
+    }
+  }
+
   /**
    * Reads an asset from disk and returns its binary buffer, base64 data, and MIME type.
    *

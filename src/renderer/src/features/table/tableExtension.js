@@ -3,7 +3,7 @@ import { Decoration, EditorView, WidgetType, keymap, ViewPlugin } from '@codemir
 import { StateField, StateEffect, Facet, Prec, Transaction } from '@codemirror/state'
 import { undo, redo } from '@codemirror/commands'
 import { treeGrowthEffect, treeProgressPlugin } from './tableParserProgress'
-import { useVaultStore } from '../../core/store/useVaultStore'
+import { useVaultStore } from '../../core/store/workspaceStore'
 import { TableAutocomplete } from './tableAutocomplete'
 import { setupTableFormattingToolbar } from './tableToolbar'
 import './table.css'

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
-import { useVaultStore } from '../../core/store/useVaultStore'
+import { useVaultStore } from '../../core/store/workspaceStore'
 import {
   Clock,
   Code,

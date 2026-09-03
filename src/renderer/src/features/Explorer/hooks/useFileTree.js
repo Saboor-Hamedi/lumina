@@ -19,9 +19,9 @@ export function useFileTree({
     // Build hierarchical tree
     const root = { children: {}, files: [] }
 
-    // 1. Build Folders
     folders.forEach((folderPath) => {
       const cleanPath = (folderPath || '').replace(/\\/g, '/')
+      if (cleanPath.startsWith('.lumina') || cleanPath.startsWith('.')) return
       if (!q || cleanPath.toLowerCase().includes(q)) {
         const parts = cleanPath.split('/').filter(Boolean)
         let current = root
@@ -36,9 +36,9 @@ export function useFileTree({
       }
     })
 
-    // 2. Build Snippets
     allSnippets.forEach((snippet) => {
       const folderId = (snippet.folderId || '').replace(/\\/g, '/')
+      if (folderId.startsWith('.lumina') || folderId.startsWith('.')) return
       if (!folderId) {
         root.files.push(snippet)
       } else {

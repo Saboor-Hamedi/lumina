@@ -13,7 +13,7 @@ import {
 import * as THREE from 'three'
 import Graph3D from './Graph3D'
 import Graph2D from './Graph2D'
-import { useVaultStore } from '../../core/store/useVaultStore'
+import { useVaultStore } from '../../core/store/workspaceStore'
 import { useAIStore } from '../AI/tools/LuminaChat'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { usePerformanceStore } from './usePerformanceStore'

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react'
 import { useDroppable, useDraggable } from '@dnd-kit/core'
 import { ChevronRight, ChevronDown, Folder, FolderOpen } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
-import { useVaultStore } from '../../../core/store/useVaultStore'
+import { useVaultStore } from '../../../core/store/workspaceStore'
 
 export const DroppableFolderItem = React.memo(
   ({

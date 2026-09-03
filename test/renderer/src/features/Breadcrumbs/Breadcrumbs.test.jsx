@@ -3,7 +3,7 @@ import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { Breadcrumbs } from '../../../../../src/renderer/src/features/Breadcrumbs/Breadcrumbs'
 
-vi.mock('../../../../../src/renderer/src/core/store/useVaultStore', () => ({
+vi.mock('../../../../../src/renderer/src/core/store/workspaceStore', () => ({
   useVaultStore: (selector) =>
     selector({
       folders: [{ id: 'f1', name: 'src', parentId: null }],

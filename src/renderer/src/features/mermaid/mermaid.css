@@ -1,20 +1,3 @@
-/*
-  =========================================================================================
-  Mermaid Code Wrapper & Lightbox Styles (`mermaidCodeWrapper.css`)
-  =========================================================================================
-  
-  Contains:
-  1. Mermaid Inline Code Block Widget (Header bar, hover states, diagram container)
-  2. Fullscreen Interactive Lightbox Modal (2px border radius, backdrop blur, canvas)
-  3. Floating Bottom Control Panel (2px border radius, zoom indicators, pill buttons)
-  =========================================================================================
-*/
-
-/*
-  =========================================================================================
-  1. MERMAID INLINE WIDGET
-  =========================================================================================
-*/
 .cm-mermaid-widget {
   margin: 0;
   width: 100%;
@@ -22,7 +5,6 @@
   box-sizing: border-box;
 }
 
-/* Header bar matching CodeBlockHeader - Flat minimal design */
 .mermaid-widget-header {
   position: relative;
   width: 100%;
@@ -38,7 +20,6 @@
   box-sizing: border-box;
 }
 
-/* Language label & action buttons fade in smoothly on block hover */
 .mermaid-widget-header .mermaid-widget-lang-label,
 .mermaid-widget-header .mermaid-edit-btn {
   opacity: 0;
@@ -81,7 +62,6 @@
   border-color: var(--border-dim, rgba(255, 255, 255, 0.1));
 }
 
-/* Inline Diagram Body with Flat Design */
 .mermaid-widget-body {
   background: rgba(0, 0, 0, 0.15);
   border-left: 1px solid var(--border-dim);
@@ -163,11 +143,6 @@
   letter-spacing: 0.02em;
 }
 
-/*
-  =========================================================================================
-  2. FULLSCREEN INTERACTIVE LIGHTBOX MODAL (2px border radius)
-  =========================================================================================
-*/
 .mermaid-lightbox-overlay {
   padding: 20px;
   box-sizing: border-box;
@@ -190,7 +165,6 @@
   transform: scale(1);
 }
 
-/* Modal Card with 2px border radius and overflow: hidden to clip internal contents cleanly */
 .mermaid-lightbox-card {
   position: relative;
   background: var(--bg-panel, #18181b);
@@ -205,7 +179,6 @@
   box-sizing: border-box;
 }
 
-/* Interactive Viewport for Pan & Drag interactions */
 .mermaid-lightbox-viewport {
   flex: 1;
   width: 100%;
@@ -224,28 +197,24 @@
   cursor: grabbing;
 }
 
-/* Transformed Canvas Container */
 .mermaid-lightbox-canvas {
   display: flex;
   align-items: center;
   justify-content: center;
   transform-origin: center center;
-  transition: transform 0.05s ease-out;
   pointer-events: none;
   max-width: 90%;
   max-height: 85%;
 }
 
 .mermaid-lightbox-canvas svg {
-  pointer-events: auto;
+  pointer-events: none;
   user-select: none;
+  shape-rendering: geometricPrecision;
+  text-rendering: geometricPrecision;
+  image-rendering: -webkit-optimize-contrast;
 }
 
-/*
-  =========================================================================================
-  3. FLOATING BOTTOM CONTROL PANEL (2px border radius)
-  =========================================================================================
-*/
 .mermaid-lightbox-toolbar {
   position: absolute;
   bottom: 20px;
@@ -302,7 +271,6 @@
   border-radius: 2px;
 }
 
-/* Light theme support */
 [data-theme='light'] .mermaid-widget-header {
   background: #f7f7f7 !important;
   border-color: #e5e7eb !important;

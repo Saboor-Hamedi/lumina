@@ -5,7 +5,7 @@ import ModalHeader from '../ModalHeader'
 import { PreviewCommandPalette } from '../PreviewCommandPalette'
 import './PreviewModal.css'
 import { useKeyboardShortcuts } from '../../../core/hooks/useKeyboardShortcuts'
-import { useVaultStore } from '../../../core/store/useVaultStore'
+import { useVaultStore } from '../../../core/store/workspaceStore'
 
 const PreviewModal = ({ isOpen, onClose, title, content, snippetId }) => {
   useKeyboardShortcuts({

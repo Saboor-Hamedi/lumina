@@ -3,11 +3,11 @@ import { AtomicCodeMirrorEditor, wikiLinks } from '@atomic-editor/editor'
 import { EditorState, Prec } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { languages } from '@codemirror/language-data'
-import { useVaultStore } from '../../core/store/useVaultStore'
+import { useVaultStore } from '../../core/store/workspaceStore'
 import { imageWidgetExtension } from '../dropImage/imageWidgetExtension'
 import { htmlWidgetExtension } from '../Workspace/htmlWidgetExtension'
 import { tables } from '../table/tableExtension'
-import { mermaidWidgetExtension } from '../Workspace/mermaidWidgetExtension'
+import { mermaidWidgetExtension } from '../mermaid'
 import { calloutExtension } from '../Workspace/calloutWidgetExtension'
 import {
   codeBlockDecorations,

@@ -467,7 +467,7 @@ export const useAIStore = create((set, get) => {
           const generatedContent = await get().generateLocalText(prompt)
 
           // Save to vault
-          const vaultModule = await import('../../../core/store/useVaultStore')
+          const vaultModule = await import('../../../core/store/workspaceStore')
           const vaultStore = vaultModule.useVaultStore.getState()
           const newSnippet = {
             id: crypto.randomUUID(),
@@ -562,7 +562,7 @@ export const useAIStore = create((set, get) => {
       }
 
       try {
-        const vaultModule = await import('../../../core/store/useVaultStore')
+        const vaultModule = await import('../../../core/store/workspaceStore')
         const vaultSnippets = vaultModule.useVaultStore.getState().snippets || []
 
         // Match longest multi-word titles first so "@Types of RAG" matches as one entity
@@ -605,7 +605,7 @@ export const useAIStore = create((set, get) => {
       // 1. Auto-detect file mentions by name (e.g. "What do you know about QuickNote?")
       const requestedFiles = []
       try {
-        const vaultModule = await import('../../../core/store/useVaultStore')
+        const vaultModule = await import('../../../core/store/workspaceStore')
         const vaultSnippets = vaultModule.useVaultStore.getState().snippets
         const queryNorm = normalize(message)
         vaultSnippets.forEach((s) => {
@@ -727,7 +727,7 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
 ${vaultAccessNote}`
 
         if (mentionedSnippets.length > 0) {
-          const { useVaultStore } = await import('../../../core/store/useVaultStore')
+          const { useVaultStore } = await import('../../../core/store/workspaceStore')
           const vs = useVaultStore.getState()
           systemPrompt +=
             '\n\n**🎯 PRIMARY TARGET FILES (@-MENTIONED BY USER — YOUR HIGHEST FOCUS):**\n'
@@ -744,7 +744,7 @@ ${vaultAccessNote}`
         }
 
         if (requestedFiles.length > 0) {
-          const { useVaultStore } = await import('../../../core/store/useVaultStore')
+          const { useVaultStore } = await import('../../../core/store/workspaceStore')
           const vs = useVaultStore.getState()
           systemPrompt +=
             '\n\n**Workspace Files Referenced (content already provided below):**\n'
@@ -760,7 +760,7 @@ ${vaultAccessNote}`
         }
 
         // Inject active open note if no explicit @-mentions were attached
-        const { useVaultStore } = await import('../../../core/store/useVaultStore')
+        const { useVaultStore } = await import('../../../core/store/workspaceStore')
         const vs = useVaultStore.getState()
         if (mentionedSnippets.length === 0 && vs.selectedSnippet) {
           const activeNote = vs.selectedSnippet
@@ -816,7 +816,7 @@ ${vaultAccessNote}`
 
         // --- Existing files list & Knowledge Graph Context ---
         try {
-          const { useVaultStore } = await import('../../../core/store/useVaultStore')
+          const { useVaultStore } = await import('../../../core/store/workspaceStore')
           const vs = useVaultStore.getState()
           const allSnippets = Array.isArray(vs.snippets) ? vs.snippets : Object.values(vs.snippets || {})
           const allFolders = vs.folders || []
@@ -1070,7 +1070,7 @@ ${vaultAccessNote}`
           // AUTO-APPLY LUMINA CREATE/UPDATE BLOCKS (legacy path for non-tool providers)
           if (providerType !== 'deepseek') {
             try {
-              const vaultModule = await import('../../../core/store/useVaultStore')
+              const vaultModule = await import('../../../core/store/workspaceStore')
               const vaultStore = vaultModule.useVaultStore.getState()
               const allSnippets = vaultStore.snippets
               let appliedCreations = 0

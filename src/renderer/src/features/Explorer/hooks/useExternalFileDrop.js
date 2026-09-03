@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { useVaultStore } from '../../../core/store/useVaultStore'
+import { useVaultStore } from '../../../core/store/workspaceStore'
 
 export function useExternalFileDrop() {
   const [isDraggingExternal, setIsDraggingExternal] = useState(false)

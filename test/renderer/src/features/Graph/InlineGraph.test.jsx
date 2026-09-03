@@ -23,7 +23,7 @@ vi.mock('../../../../../src/renderer/src/features/Graph/GraphMiniMap', () => ({
 
 import { render, screen, act } from '@testing-library/react'
 import InlineGraph from '../../../../../src/renderer/src/features/Graph/InlineGraph'
-import { useVaultStore } from '../../../../../src/renderer/src/core/store/useVaultStore'
+import { useVaultStore } from '../../../../../src/renderer/src/core/store/workspaceStore'
 import { useSettingsStore } from '../../../../../src/renderer/src/core/store/useSettingsStore'
 
 describe('InlineGraph', () => {

@@ -1,9 +1,9 @@
 import { EditorView } from '@codemirror/view'
-import { useVaultStore } from '../../core/store/useVaultStore'
+import { useVaultStore } from '../../core/store/workspaceStore'
 
-export const imageDropExtension = (onToast) =>
+export const imageDropExtension = () =>
   EditorView.domEventHandlers({
-    dragover(event, view) {
+    dragover(event) {
       if (event.dataTransfer?.types?.includes('Files')) {
         event.preventDefault()
         event.stopPropagation()
@@ -35,12 +35,9 @@ export const imageDropExtension = (onToast) =>
                 changes: { from: pos, insert: markdownToInsert },
                 selection: { anchor: pos + markdownToInsert.length }
               })
-
-              if (onToast) onToast('Image saved successfully', 'success')
             }
           } catch (error) {
             console.error('Failed to save dropped image:', error)
-            if (onToast) onToast('Failed to save image', 'error')
           }
         })
 
@@ -73,15 +70,6 @@ export const imageDropExtension = (onToast) =>
                 useVaultStore.getState().setSelectedSnippet(found)
               }
             }
-            const count = result?.count || paths.length
-            window.dispatchEvent(
-              new CustomEvent('show-toast', {
-                detail: {
-                  message: `✓ Imported ${count} item${count > 1 ? 's' : ''} to vault`,
-                  type: 'success'
-                }
-              })
-            )
           })
           .catch((err) => {
             console.error('Failed to import dropped folder/files:', err)
@@ -93,14 +81,22 @@ export const imageDropExtension = (onToast) =>
     },
 
     paste(event, view) {
-      const files = Array.from(event.clipboardData?.files || [])
-      const imageFiles = files.filter((f) => f.type.startsWith('image/'))
+      const items = Array.from(event.clipboardData?.items || [])
+      const fileFromItems = items
+        .filter((it) => it.kind === 'file' && it.type.startsWith('image/'))
+        .map((it) => it.getAsFile())
+        .filter(Boolean)
+
+      const directFiles = Array.from(event.clipboardData?.files || []).filter((f) =>
+        f.type.startsWith('image/')
+      )
+
+      const imageFiles = fileFromItems.length > 0 ? fileFromItems : directFiles
 
       if (imageFiles.length > 0) {
         event.preventDefault()
         event.stopPropagation()
 
-        // Get the current cursor position
         const pos = view.state.selection.main.head
 
         imageFiles.forEach(async (file) => {
@@ -108,29 +104,24 @@ export const imageDropExtension = (onToast) =>
             const arrayBuffer = await file.arrayBuffer()
             const uint8Array = new Uint8Array(arrayBuffer)
 
-            // Generate a better filename if it's a generic paste (like 'image.png' from clipboard)
             const ext = file.type.split('/')[1] || 'png'
             const filename =
-              file.name === 'image.png' || file.name === 'image.jpeg'
-                ? `Pasted image ${Date.now()}.${ext}`
-                : file.name
+              file.name && file.name !== 'image.png' && file.name !== 'image.jpeg'
+                ? file.name
+                : `Pasted image ${Date.now()}.${ext}`
 
             const relativePath = await window.api.saveImage(uint8Array, filename)
 
             if (relativePath) {
-              // Insert markdown at cursor position (inline, no newlines)
               const markdownToInsert = `![${filename}](${relativePath})`
 
               view.dispatch({
                 changes: { from: pos, insert: markdownToInsert },
                 selection: { anchor: pos + markdownToInsert.length }
               })
-
-              if (onToast) onToast('Image pasted successfully', 'success')
             }
           } catch (error) {
             console.error('Failed to save pasted image:', error)
-            if (onToast) onToast('Failed to paste image', 'error')
           }
         })
 

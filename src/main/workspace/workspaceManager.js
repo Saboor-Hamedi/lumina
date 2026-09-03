@@ -255,6 +255,18 @@ class WorkspaceManager {
     return result
   }
 
+  async saveVaultImage(buffer, targetFolder = '', name = '') {
+    const result = await WorkspaceMediaManager.saveVaultImage(
+      this.vaultPath,
+      buffer,
+      targetFolder,
+      name
+    )
+    await this.scanVault()
+    this.notifyWindows('vault:updated')
+    return result
+  }
+
   async readAsset(relativePath) {
     return await WorkspaceMediaManager.readAsset(this.vaultPath, relativePath)
   }

@@ -78,7 +78,7 @@ vi.mock('../../../../../src/renderer/src/features/Overlays/ModalHeader', () => {
 
 import { render, screen } from '@testing-library/react'
 import Graph from '../../../../../src/renderer/src/features/Graph/Graph'
-import { useVaultStore } from '../../../../../src/renderer/src/core/store/useVaultStore'
+import { useVaultStore } from '../../../../../src/renderer/src/core/store/workspaceStore'
 import { useSettingsStore } from '../../../../../src/renderer/src/core/store/useSettingsStore'
 
 describe('Graph', () => {

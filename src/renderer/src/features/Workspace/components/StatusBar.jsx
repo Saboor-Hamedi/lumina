@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { BookOpen, PanelRight, Keyboard, FileText, Hash, Clock, Navigation } from 'lucide-react'
-import { useVaultStore } from '../../../core/store/useVaultStore'
+import { useVaultStore } from '../../../core/store/workspaceStore'
 import ToolTip from '../../../components/atoms/ToolTip'
 import '../../../assets/statusbar.css'
 

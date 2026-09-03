@@ -14,7 +14,7 @@ import {
   X,
   Clipboard
 } from 'lucide-react'
-import { useVaultStore, GRAPH_TAB_ID } from '../../core/store/useVaultStore'
+import { useVaultStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import {
   DndContext,
@@ -151,13 +151,20 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   const clipboard = useVaultStore((state) => state.clipboard)
   const setClipboard = useVaultStore((state) => state.setClipboard)
 
-  // Hide system folders (like Templates) from the main sidebar and note count
   const visibleSnippets = useMemo(() => {
-    return snippets.filter((s) => !s.folderId || !s.folderId.startsWith('Templates'))
+    return snippets.filter(
+      (s) =>
+        !s.folderId ||
+        (!s.folderId.startsWith('Templates') &&
+          !s.folderId.startsWith('.lumina') &&
+          !s.folderId.startsWith('.'))
+    )
   }, [snippets])
 
   const visibleFolders = useMemo(() => {
-    return folders.filter((f) => !f.startsWith('Templates'))
+    return folders.filter(
+      (f) => !f.startsWith('Templates') && !f.startsWith('.lumina') && !f.startsWith('.')
+    )
   }, [folders])
 
   useKeyboardShortcuts({
@@ -342,6 +349,76 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     onClose,
     onRequestBulkDelete: () => setBulkDeleteModalOpen(true)
   })
+
+  useEffect(() => {
+    const handleExplorerPaste = async (e) => {
+      const activeEl = document.activeElement
+      if (
+        activeEl?.tagName === 'TEXTAREA' ||
+        activeEl?.tagName === 'INPUT' ||
+        activeEl?.closest('.cm-editor') ||
+        activeEl?.closest('.ai-chat-input')
+      ) {
+        return
+      }
+
+      const items = Array.from(e.clipboardData?.items || [])
+      const fileFromItems = items
+        .filter((it) => it.kind === 'file' && it.type.startsWith('image/'))
+        .map((it) => it.getAsFile())
+        .filter(Boolean)
+
+      const directFiles = Array.from(e.clipboardData?.files || []).filter((f) =>
+        f.type.startsWith('image/')
+      )
+
+      const imageFiles = fileFromItems.length > 0 ? fileFromItems : directFiles
+
+      if (imageFiles.length > 0) {
+        e.preventDefault()
+        e.stopPropagation()
+
+        const targetFolder = lastClickedFolder || ''
+
+        for (const file of imageFiles) {
+          try {
+            const arrayBuffer = await file.arrayBuffer()
+            const uint8Array = new Uint8Array(arrayBuffer)
+            const ext = file.type.split('/')[1] || 'png'
+            const filename =
+              file.name && file.name !== 'image.png' && file.name !== 'image.jpeg'
+                ? file.name
+                : `Pasted image ${Date.now()}.${ext}`
+
+            const result = await window.api?.saveVaultImage?.(
+              uint8Array,
+              targetFolder,
+              filename
+            )
+
+            await loadVault()
+
+            if (result?.relativePath) {
+              const freshSnippets = useVaultStore.getState().snippets || []
+              const targetSnippet = freshSnippets.find(
+                (s) =>
+                  s.relativePath === result.relativePath ||
+                  (s.fileName === result.fileName && (s.folderId || '') === (result.folderId || ''))
+              )
+              if (targetSnippet) {
+                handleSelect(targetSnippet)
+              }
+            }
+          } catch (err) {
+            console.error('Failed to paste image to vault:', err)
+          }
+        }
+      }
+    }
+
+    window.addEventListener('paste', handleExplorerPaste)
+    return () => window.removeEventListener('paste', handleExplorerPaste)
+  }, [lastClickedFolder, loadVault, handleSelect])
 
   const totalSelectedCount = selectedNoteIds.size + selectedFolderIds.size
 

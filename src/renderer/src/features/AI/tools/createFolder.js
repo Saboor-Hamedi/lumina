@@ -13,7 +13,7 @@ export const createFolderTool = aiSdk.tool({
     try {
       await window.api.createFolder(path)
       // Trigger a vault rescan so the UI updates with the new folder immediately
-      const { useVaultStore } = await import('../../../core/store/useVaultStore')
+      const { useVaultStore } = await import('../../../core/store/workspaceStore')
       await useVaultStore.getState().loadVault()
       return { success: true, path, instruction_to_ai: `Folder "${path}" created successfully.` }
     } catch (err) {

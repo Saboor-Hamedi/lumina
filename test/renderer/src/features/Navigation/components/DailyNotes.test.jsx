@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import DailyNotes from '../../../../../../src/renderer/src/features/Navigation/components/DailyNotes'
-import { useVaultStore } from '../../../../../../src/renderer/src/core/store/useVaultStore'
+import { useVaultStore } from '../../../../../../src/renderer/src/core/store/workspaceStore'
 import { defaultTemplates } from '../../../../../../src/renderer/src/features/Navigation/components/defaultTemplates'
 
 vi.mock('../../../../../../src/renderer/src/features/Navigation/components/TemplateModal', () => ({

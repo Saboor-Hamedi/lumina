@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook } from '@testing-library/react'
 import { useContextMenu } from '../../../../../../src/renderer/src/features/Navigation/hooks/useContextMenu'
-import { useVaultStore } from '../../../../../../src/renderer/src/core/store/useVaultStore'
+import { useVaultStore } from '../../../../../../src/renderer/src/core/store/workspaceStore'
 import { useSettingsStore } from '../../../../../../src/renderer/src/core/store/useSettingsStore'
 
 describe('useContextMenu', () => {

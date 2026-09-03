@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react'
 import { EditorView } from '@codemirror/view'
 import { startCompletion } from '@codemirror/autocomplete'
 import { createLuminaWikiLinks } from './luminaWikiLinks'
-import { useVaultStore } from '../../../core/store/useVaultStore'
+import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 
 export function useWikilinkCompletion({ showToast }) {
   const autocompleteTriggerListener = useCallback(
@@ -39,11 +39,17 @@ export function useWikilinkCompletion({ showToast }) {
     if (!match) return null
     if (match.from === match.to && !context.explicit) return null
 
-    const { snippets } = useVaultStore.getState()
+    const { snippets } = useWorkspaceStore.getState()
     const query = match[1] ? match[1].toLowerCase() : ''
 
     const opts = (snippets || [])
-      .filter((s) => s.title && (!query || s.title.toLowerCase().includes(query)))
+      .filter(
+        (s) =>
+          s.title &&
+          s.type !== 'image' &&
+          (!s.folderId || !s.folderId.startsWith('.lumina')) &&
+          (!query || s.title.toLowerCase().includes(query))
+      )
       .map((s) => ({
         label: s.title,
         type: 'text',
@@ -75,11 +81,12 @@ export function useWikilinkCompletion({ showToast }) {
   const openOrCreateNote = useCallback(
     async (target) => {
       try {
-        const { snippets, saveSnippet, setSelectedSnippet } = useVaultStore.getState()
+        const { snippets, saveSnippet, setSelectedSnippet } = useWorkspaceStore.getState()
         const targetLower = target.toLowerCase()
         let targetSnippet = snippets.find(
           (s) =>
             s.title &&
+            s.type !== 'image' &&
             (s.title.toLowerCase() === targetLower ||
               s.title.toLowerCase() === `${targetLower}.md`)
         )

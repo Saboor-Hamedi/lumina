@@ -20,7 +20,7 @@ export const createFileTool = aiSdk.tool({
     required: ['title', 'content']
   }),
   execute: async ({ title, content, folder }) => {
-    const { useVaultStore } = await import('../../../core/store/useVaultStore')
+    const { useVaultStore } = await import('../../../core/store/workspaceStore')
     const vs = useVaultStore.getState()
     const snippet = {
       id: crypto.randomUUID(),

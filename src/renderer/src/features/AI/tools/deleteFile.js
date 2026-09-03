@@ -11,7 +11,7 @@ export const deleteFileTool = aiSdk.tool({
   }),
   execute: async ({ title }) => {
     const cleanTitle = title.startsWith('@') ? title.slice(1) : title
-    const { useVaultStore } = await import('../../../core/store/useVaultStore')
+    const { useVaultStore } = await import('../../../core/store/workspaceStore')
     const vs = useVaultStore.getState()
     const snippets = Array.from(vs.snippets.values())
     let target = snippets.find((s) => s.title.toLowerCase() === cleanTitle.toLowerCase())

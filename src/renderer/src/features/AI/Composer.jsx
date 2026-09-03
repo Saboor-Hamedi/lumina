@@ -16,7 +16,7 @@ import {
 import { LuminaSlash } from './LuminaSlash'
 import LuminaMention from './LuminaMention'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
-import { useVaultStore } from '../../core/store/useVaultStore'
+import { useVaultStore } from '../../core/store/workspaceStore'
 import ToolTip from '../../components/atoms/ToolTip'
 import './Composer.css'
 

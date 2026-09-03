@@ -10,7 +10,7 @@ export const deleteFolderTool = aiSdk.tool({
   execute: async ({ path }) => {
     try {
       await window.api.deleteFolder(path)
-      const { useVaultStore } = await import('../../../core/store/useVaultStore')
+      const { useVaultStore } = await import('../../../core/store/workspaceStore')
       await useVaultStore.getState().loadVault()
       return { success: true, path, instruction_to_ai: `Folder "${path}" deleted successfully.` }
     } catch (err) {

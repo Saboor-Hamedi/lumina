@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
   useVaultStore,
   GRAPH_TAB_ID
-} from '../../../../../src/renderer/src/core/store/useVaultStore'
+} from '../../../../../src/renderer/src/core/store/workspaceStore'
 
 // Mock the cache module
 vi.mock('../../../../../src/renderer/src/core/db/cache', () => ({

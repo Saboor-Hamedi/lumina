@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Calendar, Network, Sparkles } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
 import InlineGraph from '../../Graph/InlineGraph'
-import { useVaultStore } from '../../../core/store/useVaultStore'
+import { useVaultStore } from '../../../core/store/workspaceStore'
 import { useKeyboardShortcuts } from '../../../core/hooks/useKeyboardShortcuts'
 import ProgressTracker, { LearnedButton, LearningTrackBadge } from '../../roadmap/ProgressTracker'
 

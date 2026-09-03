@@ -7,17 +7,24 @@ export async function copyImageToClipboard(imgUrl, onSuccess, onError) {
       blob = await response.blob()
     } else {
       const cleanUrl = imgUrl.startsWith('/') ? imgUrl.slice(1) : imgUrl
-      const buffer = await window.api.readAsset(cleanUrl)
-      const ext = cleanUrl.split('.').pop().toLowerCase()
-      const mime =
-        ext === 'png'
-          ? 'image/png'
-          : ext === 'jpg' || ext === 'jpeg'
-            ? 'image/jpeg'
-            : ext === 'webp'
-              ? 'image/webp'
-              : 'image/png'
-      blob = new Blob([buffer], { type: mime })
+      const res = await window.api.readAsset(cleanUrl)
+      if (res?.dataUrl) {
+        const response = await fetch(res.dataUrl)
+        blob = await response.blob()
+      } else {
+        const buf = res?.buffer || res
+        const ext = cleanUrl.split('.').pop().toLowerCase()
+        const mime =
+          res?.mimeType ||
+          (ext === 'png'
+            ? 'image/png'
+            : ext === 'jpg' || ext === 'jpeg'
+              ? 'image/jpeg'
+              : ext === 'webp'
+                ? 'image/webp'
+                : 'image/png')
+        blob = new Blob([buf], { type: mime })
+      }
     }
 
     // The clipboard API requires image/png on most operating systems.

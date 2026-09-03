@@ -1,4 +1,4 @@
-import { useVaultStore } from '../../core/store/useVaultStore'
+import { useVaultStore } from '../../core/store/workspaceStore'
 
 const fuzzyMatch = (str, query) => {
   let i = 0,

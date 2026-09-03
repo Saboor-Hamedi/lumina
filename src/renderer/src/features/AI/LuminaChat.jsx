@@ -29,7 +29,7 @@ import {
 } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useAIStore } from './tools/LuminaChat'
-import { useVaultStore } from '../../core/store/useVaultStore'
+import { useVaultStore } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useShallow } from 'zustand/react/shallow'
 import { Composer } from './Composer'

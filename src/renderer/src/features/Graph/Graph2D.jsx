@@ -1,7 +1,7 @@
 import React, { forwardRef } from 'react'
 import ForceGraph2D from 'react-force-graph-2d'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
-import { useVaultStore } from '../../core/store/useVaultStore'
+import { useVaultStore } from '../../core/store/workspaceStore'
 import { usePerformanceStore } from './usePerformanceStore'
 
 const Graph2D = forwardRef(

@@ -10,7 +10,7 @@ import {
   Layers,
   X
 } from 'lucide-react'
-import { useVaultStore } from '../../../core/store/useVaultStore'
+import { useVaultStore } from '../../../core/store/workspaceStore'
 import './VaultStats.css'
 
 export const VaultStats = ({ isOpen, onClose, anchorRef }) => {

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import ForceGraph2D from 'react-force-graph-2d'
-import { useVaultStore } from '../../core/store/useVaultStore'
+import { useVaultStore } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { buildGraphData } from '../../core/utils/graphBuilder'
 import { forceManyBody, forceCollide, forceX, forceY } from 'd3-force'

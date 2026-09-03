@@ -16,7 +16,7 @@ import {
   Check,
   X
 } from 'lucide-react'
-import { useVaultStore } from '../../../core/store/useVaultStore'
+import { useVaultStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
 import ContextMenu from '../../Overlays/ContextMenu'
 import ConfirmModal from '../../Overlays/Modals/ConfirmModal'

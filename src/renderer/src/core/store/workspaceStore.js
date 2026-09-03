@@ -252,15 +252,35 @@ export const useWorkspaceStore = create((set, get) => ({
             folderColors = {}
           }
 
+          let persistedOpenTabs = get().openTabs
+          let persistedPinnedTabs = get().pinnedTabIds
+          let persistedActiveId = get().activeTabId
+
+          if (isInitialLoad || persistedOpenTabs.length === 0) {
+            try {
+              const savedTabs = await window.api.getSetting('openTabs')
+              const savedPinned = await window.api.getSetting('pinnedTabIds')
+              const savedLast = await window.api.getSetting('lastSnippetId')
+              if (Array.isArray(savedTabs) && savedTabs.length > 0) {
+                persistedOpenTabs = savedTabs
+              }
+              if (Array.isArray(savedPinned)) {
+                persistedPinnedTabs = savedPinned
+              }
+              if (savedLast) {
+                persistedActiveId = savedLast
+              }
+            } catch {}
+          }
+
           const snippetIdSet = new Set(merged.map((s) => s.id))
-          const validTabs = get().openTabs.filter(
+          const validTabs = persistedOpenTabs.filter(
             (id) => id === GRAPH_TAB_ID || snippetIdSet.has(id)
           )
-          const validPinned = get().pinnedTabIds.filter((id) => validTabs.includes(id))
-          const currentActive = get().activeTabId
+          const validPinned = persistedPinnedTabs.filter((id) => validTabs.includes(id))
           const validActiveId =
-            currentActive && validTabs.includes(currentActive)
-              ? currentActive
+            persistedActiveId && validTabs.includes(persistedActiveId)
+              ? persistedActiveId
               : validTabs[0] || null
           const activeSnippet =
             validActiveId && validActiveId !== GRAPH_TAB_ID
@@ -461,8 +481,18 @@ export const useWorkspaceStore = create((set, get) => ({
   }
 }))
 
+let isStoreInitialized = false
 let lastVaultState = useWorkspaceStore.getState()
+
 useWorkspaceStore.subscribe((state) => {
+  if (state.isLoading) return
+  if (!isStoreInitialized) {
+    if (state.snippets.length > 0) {
+      isStoreInitialized = true
+      lastVaultState = state
+    }
+    return
+  }
   if (state.openTabs !== lastVaultState.openTabs) {
     window.api?.saveSetting('openTabs', state.openTabs)
   }

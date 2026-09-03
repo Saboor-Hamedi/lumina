@@ -19,7 +19,7 @@ import {
 } from '@dnd-kit/sortable'
 import { restrictToHorizontalAxis } from '@dnd-kit/modifiers'
 import { Virtuoso } from 'react-virtuoso'
-import { useVaultStore, GRAPH_TAB_ID } from '../../../core/store/useVaultStore'
+import { useVaultStore, GRAPH_TAB_ID } from '../../../core/store/workspaceStore'
 import { useShallow } from 'zustand/react/shallow'
 import ContextMenu from '../../Overlays/ContextMenu'
 import PromptModal from '../../Overlays/PromptModal'

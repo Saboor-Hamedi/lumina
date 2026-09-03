@@ -17,7 +17,7 @@ export const renameFolderTool = aiSdk.tool({
       } else {
         return { success: false, error: 'renameFolder API is not available' }
       }
-      const { useVaultStore } = await import('../../../core/store/useVaultStore')
+      const { useVaultStore } = await import('../../../core/store/workspaceStore')
       await useVaultStore.getState().loadVault()
       return {
         success: true,

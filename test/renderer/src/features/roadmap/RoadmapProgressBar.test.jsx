@@ -4,7 +4,7 @@ import ProgressTracker, {
   LearnedButton,
   LearningTrackBadge
 } from '../../../../../src/renderer/src/features/roadmap/ProgressTracker'
-import { useVaultStore } from '../../../../../src/renderer/src/core/store/useVaultStore'
+import { useVaultStore } from '../../../../../src/renderer/src/core/store/workspaceStore'
 
 describe('ProgressTracker', () => {
   beforeEach(() => {

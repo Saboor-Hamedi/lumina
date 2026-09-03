@@ -14,7 +14,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
-import { useVaultStore } from '../../../core/store/useVaultStore'
+import { useVaultStore } from '../../../core/store/workspaceStore'
 
 export function useEditorState({ snippet, onSave, showToast, realViewRef, editorHandleRef }) {
   const [title, setTitle] = useState(snippet?.title || '')

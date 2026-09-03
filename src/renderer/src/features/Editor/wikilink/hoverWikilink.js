@@ -1,5 +1,5 @@
 import { marked } from 'marked'
-import { renderMermaidToElement } from '../../Workspace/mermaidWidgetExtension'
+import { renderMermaidToElement } from '../../mermaid'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/atom-one-dark.css'
 
@@ -134,9 +134,13 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
           img.src = ''
           window.api
             ?.readAsset(cleanUrl)
-            .then((buffer) => {
-              const blob = new Blob([buffer])
-              img.src = URL.createObjectURL(blob)
+            .then((res) => {
+              if (res?.dataUrl) {
+                img.src = res.dataUrl
+              } else if (res?.buffer) {
+                const blob = new Blob([res.buffer], { type: res.mimeType || 'image/png' })
+                img.src = URL.createObjectURL(blob)
+              }
             })
             .catch((err) => {
               console.error('[HoverCard] Failed to load image asset:', err)

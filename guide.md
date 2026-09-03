@@ -47,7 +47,7 @@ graph TD
         App[App.jsx / AppShell.jsx]
         
         subgraph Stores [Zustand State Layer]
-            VS_Store[useVaultStore.js - Notes, Tabs, Drafts, Selections]
+            VS_Store[workspaceStore.js - Notes, Tabs, Drafts, Selections]
             ST_Store[useSettingsStore.js - Preferences, Pins, Theme]
             AI_Store[useAIStore.js - Chat, Tools, Embeddings Cache]
             ED_Store[useEditorStore.js - Split, Outline, Focus Mode]
@@ -222,7 +222,7 @@ graph TD
 
 | Store | File | Core Responsibilities |
 | :--- | :--- | :--- |
-| **`useVaultStore`** | `useVaultStore.js` | Note & Image list (`snippets`), folders list, active tabs (`openTabs`), `activeTabId`, `selectedSnippet`, `drafts`, multi-selection IDs (`selectedNoteIds`, `selectedFolderIds`), `loadVault()`, `saveSnippet()`, `deleteSnippet()`. |
+| **`useWorkspaceStore`** | `workspaceStore.js` | Note & Image list (`snippets`), folders list, active tabs (`openTabs`), `activeTabId`, `selectedSnippet`, `drafts`, multi-selection IDs (`selectedNoteIds`, `selectedFolderIds`), `loadVault()`, `saveSnippet()`, `deleteSnippet()`. |
 | **`useSettingsStore`** | `useSettingsStore.js` | User settings (`theme`, `fontSize`, `lineNumbers`, `vimMode`, `folderOrder`, `pinnedFolders`). |
 | **`useAIStore`** | `useAIStore.js` | Conversation history, provider selection, streaming tokens, embeddings cache. |
 | **`useEditorStore`** | `useEditorStore.js` | Split view, outline state, focus mode, typewriter mode. |

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { FileText } from 'lucide-react'
-import { useVaultStore } from '../../core/store/useVaultStore'
+import { useVaultStore } from '../../core/store/workspaceStore'
 import './luminSlash.css' // We can reuse the same CSS structure
 
 export const LuminaMention = ({ isOpen, filterText, onSelect, onClose }) => {

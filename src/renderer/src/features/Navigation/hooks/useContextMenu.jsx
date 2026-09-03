@@ -16,7 +16,7 @@ import {
   Check,
   X
 } from 'lucide-react'
-import { useVaultStore } from '../../../core/store/useVaultStore'
+import { useVaultStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
 import { useShallow } from 'zustand/react/shallow'
 

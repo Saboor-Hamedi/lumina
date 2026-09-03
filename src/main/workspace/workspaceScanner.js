@@ -112,21 +112,6 @@ export class WorkspaceScanner {
 
       await walk(vaultPath)
 
-      const luminaAssetsPath = path.join(vaultPath, '.lumina', 'assets')
-      if (fsSync.existsSync(luminaAssetsPath)) {
-        try {
-          const luminaEntries = await fs.readdir(luminaAssetsPath, { withFileTypes: true })
-          for (const entry of luminaEntries) {
-            if (entry.isFile()) {
-              const ext = path.extname(entry.name).toLowerCase()
-              if (IMAGE_EXTS.has(ext)) {
-                imageFiles.push({ fileName: entry.name, folderId: '.lumina/assets', ext })
-              }
-            }
-          }
-        } catch (e) {}
-      }
-
       const seenIds = new Set()
       const newSnippets = []
 

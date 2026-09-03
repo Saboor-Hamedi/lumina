@@ -1,6 +1,6 @@
 import React from 'react'
 import { Square, X, Minus, Search, MessageSquare } from 'lucide-react'
-import { useVaultStore } from '../../core/store/useVaultStore'
+import { useVaultStore } from '../../core/store/workspaceStore'
 import logoUrl from '../../assets/logo.png'
 import ToolTip from '../../components/atoms/ToolTip'
 import UpdateDetails from '../../components/update/UpdateDetails'

@@ -6,7 +6,7 @@ vi.mock('../../../../../../src/renderer/src/features/Graph/InlineGraph', () => (
 
 import { render, screen, fireEvent } from '@testing-library/react'
 import EditorMetadata from '../../../../../../src/renderer/src/features/Workspace/components/EditorMetadata'
-import { useVaultStore } from '../../../../../../src/renderer/src/core/store/useVaultStore'
+import { useVaultStore } from '../../../../../../src/renderer/src/core/store/workspaceStore'
 
 describe('EditorMetadata', () => {
   beforeEach(() => {

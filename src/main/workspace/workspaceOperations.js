@@ -123,6 +123,14 @@ export class WorkspaceOperations {
     return updatedSnippet
   }
 
+  static isProtectedPath(relPath) {
+    if (!relPath) return true
+    const norm = relPath.replace(/\\/g, '/').replace(/^\/+/, '')
+    const firstSegment = norm.split('/')[0]
+    const protectedNames = ['.git', '.gitignore', '.agent', '.agents', '.lumina']
+    return protectedNames.includes(firstSegment) || protectedNames.includes(norm)
+  }
+
   static async deleteSnippet(vaultPath, snippetsMap, id) {
     if (!vaultPath) throw new Error('No vault open')
     let snippet = snippetsMap.get(id)
@@ -133,7 +141,14 @@ export class WorkspaceOperations {
     }
 
     if (snippet) {
-      const filePath = path.join(vaultPath, snippet.folderId || '', snippet.fileName)
+      const sFolder = (snippet.folderId || '').replace(/\\/g, '/')
+      const fileName = snippet.fileName || `${snippet.title}.md`
+      const relPath = sFolder ? `${sFolder}/${fileName}` : fileName
+      if (this.isProtectedPath(relPath)) {
+        return null
+      }
+
+      const filePath = path.join(vaultPath, snippet.folderId || '', fileName)
       try {
         if (fsSync.existsSync(filePath)) {
           await fs.unlink(filePath)
@@ -144,6 +159,10 @@ export class WorkspaceOperations {
         snippetsMap.delete(snippet.id)
         return null
       }
+    }
+
+    if (this.isProtectedPath(id)) {
+      return null
     }
 
     const directPath = path.join(vaultPath, id)
@@ -162,12 +181,13 @@ export class WorkspaceOperations {
   static async bulkDelete(vaultPath, snippetsMap, foldersSet, { folderIds = [], snippetIds = [] }) {
     if (!vaultPath) throw new Error('No vault open')
     const deletedFilePaths = []
-    const normalizedFolders = folderIds.map((f) => f.replace(/\\/g, '/'))
+    const normalizedFolders = folderIds
+      .map((f) => f.replace(/\\/g, '/'))
+      .filter((f) => !this.isProtectedPath(f))
 
     await Promise.all(
-      folderIds.map(async (folderPath) => {
+      normalizedFolders.map(async (normFolder) => {
         try {
-          const normFolder = folderPath.replace(/\\/g, '/')
           const fullPath = path.join(vaultPath, normFolder)
           if (fsSync.existsSync(fullPath)) {
             await fs.rm(fullPath, { recursive: true, force: true })
@@ -189,7 +209,7 @@ export class WorkspaceOperations {
             }
           }
         } catch (err) {
-          console.warn('[WorkspaceOperations] Bulk folder delete warning:', folderPath, err.message)
+          console.warn('[WorkspaceOperations] Bulk folder delete warning:', normFolder, err.message)
         }
       })
     )
@@ -197,6 +217,8 @@ export class WorkspaceOperations {
     await Promise.all(
       snippetIds.map(async (id) => {
         try {
+          if (this.isProtectedPath(id)) return
+
           let snippet = snippetsMap.get(id)
           if (!snippet) {
             snippet = Array.from(snippetsMap.values()).find(
@@ -212,6 +234,9 @@ export class WorkspaceOperations {
             if (isInsideDeletedFolder) return
 
             const fileName = snippet.fileName || `${snippet.title}.md`
+            const relPath = sFolder ? `${sFolder}/${fileName}` : fileName
+            if (this.isProtectedPath(relPath)) return
+
             const filePath = path.join(vaultPath, snippet.folderId || '', fileName)
             deletedFilePaths.push(filePath)
 
@@ -241,7 +266,7 @@ export class WorkspaceOperations {
 
     return {
       success: true,
-      deletedCount: folderIds.length + snippetIds.length,
+      deletedCount: normalizedFolders.length + snippetIds.length,
       deletedFilePaths
     }
   }
@@ -290,6 +315,9 @@ export class WorkspaceOperations {
 
   static async deleteFolder(vaultPath, snippetsMap, foldersSet, folderPath) {
     if (!vaultPath) throw new Error('No vault open')
+    if (this.isProtectedPath(folderPath)) {
+      return { success: false, deletedFilePaths: [] }
+    }
     const fullPath = path.join(vaultPath, folderPath)
     await fs.rm(fullPath, { recursive: true, force: true })
 

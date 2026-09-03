@@ -14,7 +14,7 @@ export const getReadFileTool = (blockReadFile) => {
       required: ['title']
     }),
     execute: async ({ title }) => {
-      const { useVaultStore } = await import('../../../core/store/useVaultStore')
+      const { useVaultStore } = await import('../../../core/store/workspaceStore')
       const vs = useVaultStore.getState()
       const snippets = Array.isArray(vs.snippets) ? vs.snippets : Object.values(vs.snippets || {})
 
