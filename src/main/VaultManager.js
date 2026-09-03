@@ -147,7 +147,28 @@ class VaultManager {
                   content = ''
                 }
               } catch (matterErr) {
-                // fallback
+                console.warn(`[VaultManager] Gray-matter parse failed for ${fileName}, applying resilient fallback:`, matterErr.message)
+                // Resilient fallback: extract frontmatter manually with regex if YAML parsing failed
+                const fmMatch = rawContent.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/)
+                if (fmMatch) {
+                  const fmText = fmMatch[1]
+                  content = fmMatch[2] || ''
+
+                  // Extract basic key-value pairs line by line safely
+                  fmText.split(/\r?\n/).forEach((line) => {
+                    const colonIdx = line.indexOf(':')
+                    if (colonIdx !== -1) {
+                      const key = line.slice(0, colonIdx).trim()
+                      let val = line.slice(colonIdx + 1).trim()
+                      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+                        val = val.slice(1, -1)
+                      }
+                      if (key) data[key] = val
+                    }
+                  })
+                } else {
+                  content = rawContent
+                }
               }
 
               let finalId = data.id
@@ -302,18 +323,30 @@ class VaultManager {
       ? Date.now()
       : oldSnippet?.timestamp || snippet.timestamp || Date.now()
 
-    // 4. Prepare Content (use cleaned title everywhere)
-    const fileContent = matter.stringify(snippet.code || '', {
-      id: snippet.id,
-      title: cleanedTitle,
-      language: snippet.language || 'markdown',
-      tags: snippet.tags || '',
-      selection: snippet.selection || null,
-      isPinned: !!snippet.isPinned,
-      isLearned: !!snippet.isLearned,
-      customIcon: snippet.customIcon || null,
-      timestamp: newTimestamp
-    })
+    // 4. Prepare Content (strip existing frontmatter from code so matter.stringify never crashes on malformed inner frontmatter)
+    let cleanCode = snippet.code || ''
+    if (/^---\r?\n/.test(cleanCode)) {
+      cleanCode = cleanCode.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '')
+    }
+
+    let fileContent = ''
+    try {
+      fileContent = matter.stringify(cleanCode, {
+        id: snippet.id,
+        title: cleanedTitle,
+        language: snippet.language || 'markdown',
+        tags: snippet.tags || '',
+        selection: snippet.selection || null,
+        isPinned: !!snippet.isPinned,
+        isLearned: !!snippet.isLearned,
+        customIcon: snippet.customIcon || null,
+        timestamp: newTimestamp
+      })
+    } catch (strErr) {
+      console.warn('[VaultManager] matter.stringify failed, using safe fallback frontmatter:', strErr.message)
+      const safeTitle = JSON.stringify(cleanedTitle || '')
+      fileContent = `---\nid: ${snippet.id}\ntitle: ${safeTitle}\nlanguage: ${snippet.language || 'markdown'}\ntags: ${JSON.stringify(snippet.tags || '')}\nisPinned: ${!!snippet.isPinned}\nisLearned: ${!!snippet.isLearned}\ntimestamp: ${newTimestamp}\n---\n\n${cleanCode}`
+    }
 
     try {
       // Ensure the parent directory still exists (it may have been deleted externally)

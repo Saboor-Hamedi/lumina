@@ -176,7 +176,7 @@ const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
     return children
   }
 
-  const titleVal = children.props.title || (typeof text === 'string' ? text.trim() : undefined)
+  const ariaLabelVal = children.props['aria-label'] || children.props.title || (typeof text === 'string' ? text.trim() : undefined)
 
   const clonedChild = cloneElement(children, {
     ref: (node) => {
@@ -185,8 +185,8 @@ const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
       if (typeof ref === 'function') ref(node)
       else if (ref) ref.current = node
     },
-    title: titleVal,
-    'aria-label': children.props['aria-label'] || titleVal,
+    title: undefined, // Suppress default browser tooltip so only our custom tooltip renders
+    'aria-label': ariaLabelVal,
     onMouseEnter: handleMouseEnter,
     onMouseLeave: handleMouseLeave,
     onClick: handleClick

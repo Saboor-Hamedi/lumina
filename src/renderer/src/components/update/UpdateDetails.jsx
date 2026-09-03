@@ -41,21 +41,20 @@ const UpdateDetails = () => {
   const rawNotes =
     updateInfo?.releaseNotes ||
     `New
-- Nested Blockquotes: You can now nest quotes inside quotes — press Tab to go deeper (> becomes >>) and Shift+Tab to come back out
-- Rename Folders with Keyboard: Press Ctrl+R while a folder is selected to rename it instantly, just like renaming notes
-- Drag Preview Stays Tidy: When dragging a note with a long name the preview label stays compact and never overflows the sidebar
+- Markdown Callouts: Bring your notes to life with colorful Note, Tip, Warning, Important, and Caution boxes (just type > [!note]).
+- Instant AI on Any Note: Click "Ask AI" in the note header or press Ctrl+K to get quick answers and edits without needing to click inside the editor first.
+- Adaptive Theme Overlays: Inline AI and search palettes now automatically match your active theme colors and lighting seamlessly.
 
 Improved
-- Drag and Drop into Folders: Dropping a folder onto another folder now reliably moves it inside — no more needing to try multiple times
-- Folder Order Stays Yours: New folders always appear at the bottom and never jump around alphabetically, your custom order is always preserved
-- Explorer Loads Faster: The file explorer is noticeably snappier when opening vaults with many notes and folders
-- Update Check No Longer Spins Forever: If there is no internet or the server does not respond the update check stops cleanly instead of loading indefinitely
+- Clean Code Selection: Selecting multi-line code blocks and quotes is now straight and continuous from edge to edge without jagged steps.
+- Responsive Command Palette: Quick search and note preview now stay open, readable, and responsive even on smaller or split-screen windows.
+- Silky-Smooth AI Popover: Dragging the AI prompt anywhere on your screen is now buttery smooth at 60/120Hz with zero lag.
+- Snappier Chat Streaming: Long conversations stream faster with zero lag on older messages and smooth auto-scrolling.
 
 Fixed
-- Clicking the Wrong Line: Selecting a heading or a line inside a quote now correctly lands on the line you clicked
-- Dragging Into a Folder Was Unreliable: Fixed an issue where dropping a note or folder into another folder was ignored most of the time
-- Explorer Could Crash on Open: Fixed a startup error that sometimes prevented the file explorer from loading your notes
-- Folder Icon Did Not Update After Moving: Moving a folder now correctly reflects the new location without needing a refresh`
+- No More False Conflict Alerts: Rapidly editing and saving your notes will no longer trigger false external conflict prompts.
+- Callouts Stay Visible on Scroll: Callout boxes keep their styling and colors intact when scrolling through long documents.
+- Quote Selection Alignment: Highlighted quotes and markdown blocks now highlight cleanly from edge to edge.`
   
   const parseNotes = (text) => {
     const categories = []

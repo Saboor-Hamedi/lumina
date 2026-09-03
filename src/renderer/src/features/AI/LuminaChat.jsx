@@ -367,6 +367,108 @@ const ChatActions = ({ msg, index, onCopy, onRate }) => {
   )
 }
 
+const ChatMessageRow = React.memo(
+  ({ msg, index, isLast, isChatLoading, userMentionRegex, handleCopy, handleRating }) => {
+    return (
+      <div
+        className={`chat-row ${msg.role}`}
+        style={{
+          marginBottom: '6px',
+          display: 'flex',
+          flexDirection: 'row',
+          gap: '6px',
+          justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
+          alignItems: 'flex-start',
+          width: '100%',
+          minHeight: '28px',
+          willChange: 'auto'
+        }}
+      >
+        <div
+          className="chat-content-stack"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
+            maxWidth: msg.role === 'user' ? '85%' : '100%',
+            minWidth: 0,
+            flexShrink: 1,
+            width: 'auto',
+            marginRight: msg.role === 'user' ? '4px' : '0'
+          }}
+        >
+          <div className={`chat-bubble ${msg.role}`}>
+            {msg.role === 'user' ? (
+              <div
+                className="user-message-inline"
+                style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap', textAlign: 'left' }}
+              >
+                {(() => {
+                  const content = msg.content || ''
+                  const parts = content.split(userMentionRegex)
+                  return parts.map((part, pIdx) => {
+                    if (part.startsWith('@') && part.length > 1) {
+                      return (
+                        <span
+                          key={pIdx}
+                          style={{
+                            color: 'var(--text-accent)',
+                            fontWeight: 500
+                          }}
+                        >
+                          {part}
+                        </span>
+                      )
+                    }
+                    return part
+                  })
+                })()}
+              </div>
+            ) : msg.role === 'assistant' &&
+              !msg.content?.trim() &&
+              !msg.imageUrl &&
+              (isLast && (isChatLoading || msg.isGenerating)) ? (
+              <div className="thinking-indicator">
+                {msg.isGenerating ? (
+                  <span className="thinking-text">
+                    <Sparkles size={11} className="spin" /> Generating image...
+                  </span>
+                ) : (
+                  <span className="thinking-text">
+                    <span className="thinking-dot-pulse" />
+                    Thinking...
+                  </span>
+                )}
+              </div>
+            ) : (
+              <MessageContent
+                content={msg.content}
+                imageUrl={msg.imageUrl}
+                imagePrompt={msg.imagePrompt}
+                onCopy={handleCopy}
+              />
+            )}
+          </div>
+          {msg.role === 'assistant' && (
+            <ChatActions msg={msg} index={index} onCopy={handleCopy} onRate={handleRating} />
+          )}
+        </div>
+      </div>
+    )
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.msg.content === nextProps.msg.content &&
+      prevProps.msg.role === nextProps.msg.role &&
+      prevProps.msg.imageUrl === nextProps.msg.imageUrl &&
+      prevProps.msg.rating === nextProps.msg.rating &&
+      prevProps.msg.isGenerating === nextProps.msg.isGenerating &&
+      prevProps.isLast === nextProps.isLast &&
+      prevProps.isChatLoading === nextProps.isChatLoading
+    )
+  }
+)
+
 /**
  * LuminaChatContent
  * Reusable chat body rendered either in the right sidebar or inside the floating modal.
@@ -420,11 +522,15 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, onPopOut = nul
     autoScrollRef.current = isAtBottom
   }, [])
 
-  // Auto-scroll to bottom only if user hasn't scrolled up
+  // Auto-scroll to bottom using requestAnimationFrame
   useEffect(() => {
-    if (autoScrollRef.current && listRef.current) {
-      listRef.current.scrollTop = listRef.current.scrollHeight
-    }
+    if (!autoScrollRef.current || !listRef.current) return
+    const rafId = requestAnimationFrame(() => {
+      if (listRef.current) {
+        listRef.current.scrollTop = listRef.current.scrollHeight
+      }
+    })
+    return () => cancelAnimationFrame(rafId)
   }, [chatMessages, isChatLoading])
 
   // Load chat history on mount
@@ -512,94 +618,20 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, onPopOut = nul
   }, [chatMessages, isChatLoading])
 
   const renderedMessages = useMemo(() => {
+    const total = visibleMessages.length
     return visibleMessages.map((msg, index) => (
-      <div
+      <ChatMessageRow
         key={msg.id || `msg-${index}`}
-        className={`chat-row ${msg.role}`}
-        style={{
-          marginBottom: '6px',
-          display: 'flex',
-          flexDirection: 'row',
-          gap: '6px',
-          justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-          alignItems: 'flex-start',
-          width: '100%',
-          minHeight: '28px',
-          willChange: 'auto'
-        }}
-      >
-        <div
-          className="chat-content-stack"
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
-            maxWidth: msg.role === 'user' ? '85%' : '100%',
-            minWidth: 0,
-            flexShrink: 1,
-            width: 'auto',
-            marginRight: msg.role === 'user' ? '4px' : '0'
-          }}
-        >
-          <div className={`chat-bubble ${msg.role}`}>
-            {msg.role === 'user' ? (
-              <div
-                className="user-message-inline"
-                style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap', textAlign: 'left' }}
-              >
-                {(() => {
-                  const content = msg.content || ''
-                  const parts = content.split(userMentionRegex)
-                  return parts.map((part, pIdx) => {
-                    if (part.startsWith('@') && part.length > 1) {
-                      return (
-                        <span
-                          key={pIdx}
-                          style={{
-                            color: 'var(--text-accent)',
-                            fontWeight: 500
-                          }}
-                        >
-                          {part}
-                        </span>
-                      )
-                    }
-                    return part
-                  })
-                })()}
-              </div>
-            ) : msg.role === 'assistant' &&
-              !msg.content?.trim() &&
-              !msg.imageUrl &&
-              ((index === visibleMessages.length - 1 && isChatLoading) || msg.isGenerating) ? (
-              <div className="thinking-indicator">
-                {msg.isGenerating ? (
-                  <span className="thinking-text">
-                    <Sparkles size={11} className="spin" /> Generating image...
-                  </span>
-                ) : (
-                  <span className="thinking-text">
-                    <span className="thinking-dot-pulse" />
-                    Thinking...
-                  </span>
-                )}
-              </div>
-            ) : (
-              <MessageContent
-                content={msg.content}
-                imageUrl={msg.imageUrl}
-                imagePrompt={msg.imagePrompt}
-                onCopy={handleCopy}
-              />
-            )}
-          </div>
-          {msg.role === 'assistant' && (
-            <ChatActions msg={msg} index={index} onCopy={handleCopy} onRate={handleRating} />
-          )}
-        </div>
-      </div>
+        msg={msg}
+        index={index}
+        isLast={index === total - 1}
+        isChatLoading={isChatLoading}
+        userMentionRegex={userMentionRegex}
+        handleCopy={handleCopy}
+        handleRating={handleRating}
+      />
     ))
-  }, [visibleMessages, isChatLoading, handleCopy, handleRating])
+  }, [visibleMessages, isChatLoading, userMentionRegex, handleCopy, handleRating])
 
   return (
     <div

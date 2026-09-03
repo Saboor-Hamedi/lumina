@@ -51,41 +51,71 @@ export function LearnedButton({ snippet }) {
         onClick={toggleLearned}
         style={{
           background: isLearned
-            ? 'rgba(var(--text-accent-rgb, 139, 92, 246), 0.12)'
-            : 'rgba(255, 255, 255, 0.03)',
+            ? 'rgba(34, 197, 94, 0.08)'
+            : 'transparent',
           border: isLearned
-            ? '1px solid rgba(var(--text-accent-rgb, 139, 92, 246), 0.35)'
-            : '1px solid rgba(255, 255, 255, 0.07)',
-          borderRadius: '6px',
-          height: '24px',
+            ? '1px solid rgba(34, 197, 94, 0.25)'
+            : '1px solid transparent',
+          borderRadius: '5px',
+          height: '21px',
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
           cursor: 'pointer',
-          color: isLearned ? 'var(--text-accent, #a78bfa)' : 'var(--text-muted, #94a3b8)',
+          color: isLearned ? 'var(--text-main, #f8fafc)' : 'var(--text-muted, #94a3b8)',
           transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-          padding: '0 9px',
-          gap: '5px',
-          fontSize: '12px',
-          fontWeight: isLearned ? 600 : 500
+          padding: '0 6px',
+          gap: '4px',
+          fontSize: '11px',
+          fontWeight: isLearned ? 500 : 400
         }}
         onMouseEnter={(e) => {
           if (!isLearned) {
             e.currentTarget.style.color = 'var(--text-main, #f8fafc)'
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'
-            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)'
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'
+            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)'
           }
         }}
         onMouseLeave={(e) => {
           if (!isLearned) {
             e.currentTarget.style.color = 'var(--text-muted, #94a3b8)'
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)'
-            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.07)'
+            e.currentTarget.style.background = 'transparent'
+            e.currentTarget.style.borderColor = 'transparent'
           }
         }}
       >
-        <Check size={12} style={{ opacity: isLearned ? 1 : 0.6 }} />
-        <span>{isLearned ? 'Learned' : 'Mark Learned'}</span>
+        {isLearned ? (
+          <span
+            style={{
+              width: '12px',
+              height: '12px',
+              borderRadius: '50%',
+              background: '#22c55e',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}
+          >
+            <Check size={8} strokeWidth={3.5} color="#000" />
+          </span>
+        ) : (
+          <span
+            style={{
+              width: '12px',
+              height: '12px',
+              borderRadius: '50%',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}
+          >
+            <Check size={7} strokeWidth={2.5} style={{ opacity: 0.4 }} />
+          </span>
+        )}
+        <span>{isLearned ? 'Learned' : 'Learn'}</span>
       </button>
     </ToolTip>
   )
@@ -154,14 +184,13 @@ export function LearningTrackBadge({ snippetId }) {
           display: 'inline-flex',
           flexDirection: 'column',
           alignItems: 'stretch',
-          gap: '3px',
-          padding: '3px 8px 4px 8px',
-          borderRadius: '5px',
-          background: 'rgba(255, 255, 255, 0.02)',
-          border: '1px solid rgba(255, 255, 255, 0.05)',
+          gap: '2px',
+          padding: '1px 0',
+          background: 'transparent',
+          border: 'none',
           userSelect: 'none',
           cursor: 'default',
-          minWidth: '70px'
+          minWidth: '65px'
         }}
       >
         <div
@@ -171,10 +200,11 @@ export function LearningTrackBadge({ snippetId }) {
             justifyContent: 'space-between',
             gap: '6px',
             fontSize: '11px',
-            color: 'var(--text-muted, #94a3b8)'
+            color: 'var(--text-muted, #94a3b8)',
+            padding: '0 1px'
           }}
         >
-          <span style={{ opacity: 0.7 }}>{stats.isFolder ? 'Track:' : 'Vault:'}</span>
+          <span style={{ opacity: 0.65 }}>{stats.isFolder ? 'Track:' : 'Vault:'}</span>
           <span
             style={{
               fontWeight: 600,
@@ -187,13 +217,13 @@ export function LearningTrackBadge({ snippetId }) {
           </span>
         </div>
 
-        {/* Small micro progress bar right under the right-side badge */}
+        {/* Small micro progress bar right under the transparent track text */}
         <div
           style={{
             width: '100%',
-            height: '2.5px',
+            height: '2px',
             background: 'rgba(255, 255, 255, 0.06)',
-            borderRadius: '2px',
+            borderRadius: '1px',
             overflow: 'hidden'
           }}
         >
@@ -203,7 +233,7 @@ export function LearningTrackBadge({ snippetId }) {
               height: '100%',
               background:
                 'linear-gradient(90deg, var(--text-accent, #8b5cf6), var(--text-accent, #a78bfa))',
-              borderRadius: '2px',
+              borderRadius: '1px',
               transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
           />
