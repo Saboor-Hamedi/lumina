@@ -34,7 +34,7 @@ import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useShallow } from 'zustand/react/shallow'
 import { Composer } from './Composer'
 import ModalHeader from '../Overlays/ModalHeader'
-import '../Layout/AppShell.css'
+import '../../assets/appshell.css'
 import './LuminaChat.css'
 
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'

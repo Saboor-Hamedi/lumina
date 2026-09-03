@@ -4,7 +4,7 @@ import { useVaultStore } from '../../core/store/workspaceStore'
 import logoUrl from '../../assets/logo.png'
 import ToolTip from '../../components/atoms/ToolTip'
 import UpdateDetails from '../../components/update/UpdateDetails'
-import './TitleBar.css'
+import '../../assets/titlebar.css'
 
 const TitleBar = ({ onToggleAIChat }) => {
   const handleMinimize = () => window.api?.minimize()

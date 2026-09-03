@@ -1,14 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Decoration } from '@codemirror/view'
 import { useKeyboardShortcuts } from '../../../core/hooks/useKeyboardShortcuts'
-import { updateSearchHighlights } from '../../Editor/hooks/useEditorExtensions'
+import { updateSearchHighlights } from '../hooks/useEditorExtensions'
 import { applyTableSearchHighlight, clearTableSearchHighlight } from '../../table/tableCell'
 import ToolTip from '../../../components/atoms/ToolTip'
-import './FindWidget.css'
-
-// ==========================================
-// Pixel-Perfect VS Code Codicons as SVGs
-// ==========================================
+import '../../../assets/find.css'
 
 const CaseSensitiveIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -79,7 +75,7 @@ const ReplaceAllIcon = () => (
 
 const CloseIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-    <path fillRule="evenodd" clipRule="evenodd" d="M8 8.707l3.646 3.647.708-.707L8.707 8l3.647-3.646-.707-.708L8 7.293 4.354 3.646l-.708.708L7.293 8l-3.647 3.646.708.708L8 8.707z" />
+    <path fillRule="evenodd" clipRule="evenodd" d="M8 8.707l3.646 3.647.708-.707L8.707 8l3.647-3.646-.708-.708L8 7.293 4.354 3.646l-.708.708L7.293 8l-3.647 3.646.708.708L8 8.707z" />
   </svg>
 )
 
@@ -87,7 +83,7 @@ const CloseIcon = () => (
 // VS Code FindWidget Component with ToolTips
 // ==========================================
 
-const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
+const Find = ({ editorView, onClose, initialReplaceMode = false }) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [replaceQuery, setReplaceQuery] = useState('')
   const [isReplaceMode, setIsReplaceMode] = useState(initialReplaceMode)
@@ -584,4 +580,4 @@ const FindWidget = ({ editorView, onClose, initialReplaceMode = false }) => {
   )
 }
 
-export default FindWidget
+export default Find

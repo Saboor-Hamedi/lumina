@@ -5,9 +5,8 @@ import Sidebar from '../Navigation/Sidebar'
 import ThemeModal from '../Theme/ThemeModal'
 import CommandPalette from '../Overlays/CommandPalette'
 import Graph from '../Graph/Graph'
-import Documentation from '../Docs/Documentation'
-import Dashboard from '../Workspace/components/Dashboard'
-import TabBar from '../Workspace/components/TabBar'
+import { WelcomePage } from '../welcome'
+import TabBar from './TabBar'
 import { ImageViewerTab } from '../media'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useVaultStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
@@ -20,7 +19,7 @@ import RenameModal from '../Overlays/Modals/RenameModal'
 import IconPicker from '../Icons/IconPicker'
 import { handleRenameSnippet } from '../../core/hooks/handleRenameSnippet'
 import ErrorBoundary from '../../components/ErrorBoundary'
-import './AppShell.css'
+import '../../assets/appshell.css'
 import '../Overlays/Modals/ConfirmModal.css'
 import '../Overlays/Modals/RenameModal.css'
 
@@ -33,7 +32,7 @@ import { X, Maximize2, Trash2, History, Bot, Info, MessageSquare } from 'lucide-
 import RightSidebar from '../Inspector/RightSidebar'
 import Breadcrumbs from '../Breadcrumbs'
 import IndexingStatus from '../../components/IndexingStatus'
-import StatusBar from '../Workspace/components/StatusBar'
+import StatusBar from './StatusBar'
 import { useExternalFileDrop } from '../Explorer/hooks/useExternalFileDrop'
 import ExternalDropOverlay from '../Explorer/components/ExternalDropOverlay'
 
@@ -838,13 +837,7 @@ const AppShell = () => {
           <div className="shell-main-placeholder" />
         ) : (
           <ErrorBoundary>
-            <Dashboard
-              onNew={handleNew}
-              onToggleExplorerModal={() => setShowExplorerModal((prev) => !prev)}
-              onSettingsClick={() => setShowSettings(true)}
-              onThemeClick={() => setShowThemeModal(true)}
-              onGraphClick={() => setShowGraph(true)}
-            />
+            <WelcomePage onNew={handleNew} />
           </ErrorBoundary>
         )}
 

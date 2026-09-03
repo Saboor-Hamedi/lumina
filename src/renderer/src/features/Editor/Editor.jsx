@@ -15,7 +15,7 @@ import PreviewModal from '../Overlays/PreviewModal/PreviewModal'
 import OverwriteModal from '../Overlays/Modals/OverwriteModal'
 import InlineLumina from '../Overlays/InlineLumina'
 import RulerScrollbar from './RulerScrollbar'
-import FindWidget from '../Workspace/components/FindWidget'
+import Find from './components/Find'
 import { EditorCanvas } from './EditorCanvas'
 
 import { useToast } from '../../core/hooks/useToast'
@@ -181,7 +181,7 @@ const Editor = React.memo(
         style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}
       >
         {showFindWidget && realViewRef.current && (
-          <FindWidget
+          <Find
             editorView={realViewRef.current}
             onClose={() => setShowFindWidget(false)}
             initialReplaceMode={replaceModeActive}

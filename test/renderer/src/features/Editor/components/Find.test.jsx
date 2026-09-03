@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest'
 import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
-import FindWidget from '../../../../../../src/renderer/src/features/Workspace/components/FindWidget'
+import Find from '../../../../../../src/renderer/src/features/Editor/components/Find'
 
-describe('FindWidget.jsx', () => {
+describe('Find.jsx', () => {
   const mockEditorView = {
     state: {
       doc: {
@@ -20,7 +20,7 @@ describe('FindWidget.jsx', () => {
 
   it('renders search input with role="searchbox" and accessibility labels', () => {
     const onClose = vi.fn()
-    render(<FindWidget editorView={mockEditorView} onClose={onClose} />)
+    render(<Find editorView={mockEditorView} onClose={onClose} />)
 
     const searchInput = screen.getByRole('searchbox')
     expect(searchInput).toBeDefined()
@@ -34,7 +34,7 @@ describe('FindWidget.jsx', () => {
 
   it('toggles match case, whole word, and regex states on click', () => {
     const onClose = vi.fn()
-    render(<FindWidget editorView={mockEditorView} onClose={onClose} />)
+    render(<Find editorView={mockEditorView} onClose={onClose} />)
 
     const matchCaseBtn = screen.getByLabelText('Match Case (Alt+C)')
     expect(matchCaseBtn.className).not.toContain('active')
@@ -49,7 +49,7 @@ describe('FindWidget.jsx', () => {
 
   it('toggles replace row when toggle button is clicked', () => {
     const onClose = vi.fn()
-    render(<FindWidget editorView={mockEditorView} onClose={onClose} />)
+    render(<Find editorView={mockEditorView} onClose={onClose} />)
 
     expect(screen.queryByPlaceholderText('Replace')).toBeNull()
 
@@ -63,7 +63,7 @@ describe('FindWidget.jsx', () => {
 
   it('calls onClose when close button is clicked', () => {
     const onClose = vi.fn()
-    render(<FindWidget editorView={mockEditorView} onClose={onClose} />)
+    render(<Find editorView={mockEditorView} onClose={onClose} />)
 
     const closeBtn = screen.getByLabelText('Close (Escape)')
     fireEvent.click(closeBtn)

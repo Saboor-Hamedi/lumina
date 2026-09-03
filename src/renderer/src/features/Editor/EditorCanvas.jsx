@@ -20,7 +20,7 @@ import { useVaultStore } from '../../core/store/workspaceStore'
 import { setupWikilinkHover } from './wikilink/hoverWikilink'
 import ContextMenu from '../Overlays/ContextMenu'
 import { getEditorContextMenuOptions } from './menu'
-import EditorMetadata from '../Workspace/components/EditorMetadata'
+import EditorMetadata from './components/EditorMetadata'
 
 export const EditorCanvas = React.memo(
   ({

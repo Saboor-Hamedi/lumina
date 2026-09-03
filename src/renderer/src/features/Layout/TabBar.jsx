@@ -19,15 +19,15 @@ import {
 } from '@dnd-kit/sortable'
 import { restrictToHorizontalAxis } from '@dnd-kit/modifiers'
 import { Virtuoso } from 'react-virtuoso'
-import { useVaultStore, GRAPH_TAB_ID } from '../../../core/store/workspaceStore'
+import { useVaultStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
 import { useShallow } from 'zustand/react/shallow'
-import ContextMenu from '../../Overlays/ContextMenu'
-import PromptModal from '../../Overlays/PromptModal'
-import IconPicker from '../../Icons/IconPicker'
-import { getSnippetIcon } from '../../Icons/FileIcon'
+import ContextMenu from '../Overlays/ContextMenu'
+import PromptModal from '../Overlays/PromptModal'
+import IconPicker from '../Icons/IconPicker'
+import { getSnippetIcon } from '../Icons/FileIcon'
 import WindowControls from './WindowControls'
-import ToolTip from '../../../components/atoms/ToolTip'
-import { useExternalFileDrop } from '../../Explorer/hooks/useExternalFileDrop'
+import ToolTip from '../../components/atoms/ToolTip'
+import { useExternalFileDrop } from '../Explorer/hooks/useExternalFileDrop'
 
 /**
  * SortableTabItem — draggable tab using @dnd-kit/sortable

@@ -1,6 +1,6 @@
 import React from 'react'
 import { X, Minus, Square, GripHorizontal, PanelRightOpen, PanelRightClose } from 'lucide-react'
-import ToolTip from '../../../components/atoms/ToolTip'
+import ToolTip from '../../components/atoms/ToolTip'
 
 const WindowControls = ({ isSidebarOpen, onToggleSidebar }) => {
   return (
