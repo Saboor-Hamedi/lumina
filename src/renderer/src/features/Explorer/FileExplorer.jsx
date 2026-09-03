@@ -330,12 +330,36 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
 
   const handleConfirmBulkDelete = useCallback(async () => {
     try {
+      // 1. Delete selected folders first
       for (const folderId of Array.from(selectedFolderIds)) {
-        await window.api?.deleteFolder?.(folderId)
+        try {
+          await window.api?.deleteFolder?.(folderId)
+        } catch (e) {
+          console.warn('Folder deletion warning:', e)
+        }
       }
-      for (const noteId of Array.from(selectedNoteIds)) {
-        await deleteSnippet(noteId, true)
+
+      // 2. Filter remaining selected notes to only those not inside the deleted folders
+      const deletedFolderSet = Array.from(selectedFolderIds).map((f) => f.replace(/\\/g, '/'))
+      const remainingNotesToDelete = Array.from(selectedNoteIds).filter((noteId) => {
+        const snippet = snippets.find((s) => s.id === noteId)
+        if (!snippet) return false
+        const sFolder = (snippet.folderId || '').replace(/\\/g, '/')
+        const isInsideDeletedFolder = deletedFolderSet.some(
+          (df) => sFolder === df || sFolder.startsWith(df + '/')
+        )
+        return !isInsideDeletedFolder
+      })
+
+      // 3. Delete remaining selected notes safely
+      for (const noteId of remainingNotesToDelete) {
+        try {
+          await deleteSnippet(noteId, true)
+        } catch (e) {
+          console.warn('Note deletion warning:', e)
+        }
       }
+
       clearSelection()
       await loadVault()
     } catch (err) {
@@ -343,7 +367,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     } finally {
       setBulkDeleteModalOpen(false)
     }
-  }, [selectedFolderIds, selectedNoteIds, deleteSnippet, clearSelection, loadVault])
+  }, [selectedFolderIds, selectedNoteIds, snippets, deleteSnippet, clearSelection, loadVault])
 
   const {
     sensors,

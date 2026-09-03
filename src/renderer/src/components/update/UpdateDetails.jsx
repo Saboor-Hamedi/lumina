@@ -26,9 +26,8 @@ const UpdateDetails = () => {
     }
     const handleWindowBlur = () => setIsOpen(false)
     
-    // Use pointerdown and capture phase to guarantee it fires before CodeMirror or other elements stop propagation
     document.addEventListener('pointerdown', handleClickOutside, { capture: true })
-    window.addEventListener('blur', handleWindowBlur) // Close if window loses focus
+    window.addEventListener('blur', handleWindowBlur)
     return () => {
       document.removeEventListener('pointerdown', handleClickOutside, { capture: true })
       window.removeEventListener('blur', handleWindowBlur)
@@ -37,24 +36,24 @@ const UpdateDetails = () => {
 
   const newVersion = updateInfo?.version || currentVersion
   
-  // Categorized release notes parser with latest version highlights
   const rawNotes =
     updateInfo?.releaseNotes ||
     `New
-- Markdown Callouts: Bring your notes to life with colorful Note, Tip, Warning, Important, and Caution boxes (just type > [!note]).
-- Instant AI on Any Note: Click "Ask AI" in the note header or press Ctrl+K to get quick answers and edits without needing to click inside the editor first.
-- Adaptive Theme Overlays: Inline AI and search palettes now automatically match your active theme colors and lighting seamlessly.
+- Vault Details & Live Stats: Click the note counter in the Explorer header to inspect real-time vault statistics, including total notes, folders, favorites, learning progress, word counts, characters, and disk storage size.
+- OS-Grade Multi-Selection: Select folders and notes together using Ctrl+Click, Shift+Click continuous range selection, or Ctrl+A to select all.
+- Bulk Folder & Note Deletion: Safely delete selected folders, subdirectories, and notes in bulk with a confirmation dialog.
+- Interactive Mermaid & Image Lightbox: Full-screen pan & zoom modal with smooth vector scaling, 2px borders, and bottom-right floating controls.
 
 Improved
-- Clean Code Selection: Selecting multi-line code blocks and quotes is now straight and continuous from edge to edge without jagged steps.
-- Responsive Command Palette: Quick search and note preview now stay open, readable, and responsive even on smaller or split-screen windows.
-- Silky-Smooth AI Popover: Dragging the AI prompt anywhere on your screen is now buttery smooth at 60/120Hz with zero lag.
-- Snappier Chat Streaming: Long conversations stream faster with zero lag on older messages and smooth auto-scrolling.
+- Stylish Mermaid Support: Custom node styling (style, classDef, colors, and HTML labels) renders accurately in both the editor and fullscreen lightbox.
+- Responsive Narrow Sidebar: File explorer tabs and header actions collapse cleanly to centered icons on narrow window sizes without text wrapping.
+- Refined Borderless Tooltips: Modern, subtle tooltips with 2px corner radius and deep ambient glass blur.
+- Compact Metadata Controls: Sleek and subtle Ask AI, Local Graph, and Learning Track buttons with matching micro-interactions.
 
 Fixed
-- No More False Conflict Alerts: Rapidly editing and saving your notes will no longer trigger false external conflict prompts.
-- Callouts Stay Visible on Scroll: Callout boxes keep their styling and colors intact when scrolling through long documents.
-- Quote Selection Alignment: Highlighted quotes and markdown blocks now highlight cleanly from edge to edge.`
+- Recursive Folder Deletion: Fixed folder deletion on root items and ensured nested folders clean up completely from disk and memory.
+- Nested Note Bulk Deletion: Safely handles notes inside deleted parent folders without missing snippet exceptions.
+- Explorer Focus State: Explorer container focus styling activates strictly on empty background clicks without flashing when selecting items.`
   
   const parseNotes = (text) => {
     const categories = []

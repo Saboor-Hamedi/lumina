@@ -413,27 +413,27 @@ export function renderMermaidToElement(container, code, uniqueId) {
         startOnLoad: false,
         theme: 'base',
         useMaxWidth: false,
-        htmlLabels: false,
-        flowchart: { htmlLabels: false },
-        sequence: { htmlLabels: false },
-        state: { htmlLabels: false },
-        class: { htmlLabels: false },
+        htmlLabels: true,
+        flowchart: { htmlLabels: true, curve: 'basis' },
+        sequence: { htmlLabels: true },
+        state: { htmlLabels: true },
+        class: { htmlLabels: true },
         themeVariables: {
           fontFamily: fontEditor,
           primaryColor: bgPanel,
-          primaryBorderColor: 'transparent',
+          primaryBorderColor: 'rgba(255, 255, 255, 0.1)',
           primaryTextColor: accent,
           lineColor: textFaint,
           textColor: textMain,
           mainBkg: bgPrimary,
           nodeBkg: bgPanel,
-          nodeBorder: 'transparent',
+          nodeBorder: 'rgba(255, 255, 255, 0.1)',
           nodeTextColor: accent,
-          clusterBkg: 'transparent',
-          clusterBorder: 'transparent',
+          clusterBkg: 'rgba(255, 255, 255, 0.02)',
+          clusterBorder: 'rgba(255, 255, 255, 0.08)',
           edgeLabelBackground: bgPanel,
           actorBkg: bgPanel,
-          actorBorder: 'transparent',
+          actorBorder: 'rgba(255, 255, 255, 0.1)',
           actorTextColor: accent,
           actorLineColor: textFaint,
           signalColor: textFaint,
@@ -442,7 +442,7 @@ export function renderMermaidToElement(container, code, uniqueId) {
           noteTextColor: bgPrimary,
           noteBorderColor: 'transparent',
           labelBoxBkg: bgPanel,
-          labelBoxBorderColor: 'transparent',
+          labelBoxBorderColor: 'rgba(255, 255, 255, 0.1)',
           labelTextColor: textMain,
           loopTextColor: textMain,
           activationBkgColor: accent,
@@ -451,18 +451,10 @@ export function renderMermaidToElement(container, code, uniqueId) {
         },
         themeCSS: `
           .node rect, .node circle, .node ellipse, .node polygon, .node path {
-            fill: ${bgPanel} !important;
-            stroke: transparent !important;
-            stroke-width: 0px !important;
+            stroke-width: 1px;
           }
           .node .label, .node .label text {
-            color: ${accent} !important;
-            fill: ${accent} !important;
-          }
-          .cluster rect {
-            fill: transparent !important;
-            stroke: transparent !important;
-            stroke-width: 0px !important;
+            font-family: ${fontEditor};
           }
         `
       })

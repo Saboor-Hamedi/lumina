@@ -30,7 +30,7 @@ import { copyMermaidAsImage } from './copyMermaidAsImage'
  */
 function createMermaidToolbar({ onZoomIn, onZoomOut, onReset, onCopy, getScaleText }) {
   const toolbar = document.createElement('div')
-  toolbar.className = 'mermaid-lightbox-toolbar'
+  toolbar.className = 'mermaid-lightbox-toolbar image-lightbox-toolbar-right'
 
   // Zoom Out Button
   const zoomOutBtn = document.createElement('button')
@@ -128,6 +128,20 @@ export function openMermaidLightbox(svgEl) {
   clone.style.height = 'auto'
   clone.style.maxWidth = '100%'
   clone.style.display = 'block'
+
+  // Ensure scoped style rules from head or parent are preserved inside the lightbox clone
+  const svgId = svgEl.id || svgEl.getAttribute('id')
+  if (svgId) {
+    const headStyle =
+      document.getElementById(svgId) ||
+      document.getElementById(`style-${svgId}`) ||
+      document.querySelector(`style[id*="${svgId}"]`)
+    if (headStyle && !clone.querySelector('style')) {
+      const clonedStyle = headStyle.cloneNode(true)
+      clone.prepend(clonedStyle)
+    }
+  }
+
   canvas.appendChild(clone)
   viewport.appendChild(canvas)
   card.appendChild(viewport)

@@ -386,18 +386,24 @@ class VaultManager {
   async deleteSnippet(id) {
     if (!this.vaultPath) throw new Error('No vault open')
     const snippet = this.snippets.get(id)
-    if (!snippet) throw new Error(`Snippet not found: ${id}`)
+    if (!snippet) {
+      console.warn(`[VaultManager] Snippet not found or already deleted: ${id}`)
+      return null
+    }
 
-    const filePath = path.join(this.vaultPath, snippet.folderId, snippet.fileName)
+    const filePath = path.join(this.vaultPath, snippet.folderId || '', snippet.fileName)
 
     try {
-      await fs.unlink(filePath)
+      if (fsSync.existsSync(filePath)) {
+        await fs.unlink(filePath)
+      }
       this.snippets.delete(id)
       console.info('[VaultManager] ✓ File deleted:', filePath)
       return filePath
     } catch (err) {
-      console.error('[VaultManager] Delete failed:', err)
-      throw err
+      this.snippets.delete(id)
+      console.warn('[VaultManager] Delete file warning:', err?.message)
+      return null
     }
   }
 
