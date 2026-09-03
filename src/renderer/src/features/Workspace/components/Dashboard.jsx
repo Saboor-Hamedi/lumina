@@ -1,5 +1,5 @@
 import React from 'react'
-import { WelcomePage } from '../welcomePage'
+import { WelcomePage } from '../../welcome'
 
 /**
  * Dashboard Component

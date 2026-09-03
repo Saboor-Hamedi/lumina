@@ -1,7 +1,7 @@
 import React from 'react'
 import { FileText, Search, Sparkles, FolderTree, Command } from 'lucide-react'
-import { useExternalFileDrop } from '../../Explorer/hooks/useExternalFileDrop'
-import ExternalDropOverlay from '../../Explorer/components/ExternalDropOverlay'
+import { useExternalFileDrop } from '../Explorer/hooks/useExternalFileDrop'
+import ExternalDropOverlay from '../Explorer/components/ExternalDropOverlay'
 import './WelcomePage.css'
 
 const WelcomePage = ({ onNew }) => {
