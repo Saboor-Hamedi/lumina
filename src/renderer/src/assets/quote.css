@@ -1,0 +1,19 @@
+/* 
+ * ============================================================
+ * LUMINA BLOCKQUOTE STYLING
+ * ============================================================
+ */
+
+.markdown-editor .cm-line.cm-atomic-blockquote,
+.markdown-editor .cm-line:has(.cm-quote) {
+  border: none !important;
+  border-left: none !important;
+  padding: 2px !important;
+  font-style: italic !important;
+  color: var(--text-muted) !important;
+}
+
+.markdown-editor .cm-quote {
+  color: var(--text-accent) !important;
+  font-weight: 600;
+}

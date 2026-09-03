@@ -35,7 +35,7 @@ import { calloutExtension } from './useCallout'
 import { useCollapsible } from '../collapse/useCollapsible'
 import { emptyLineSelectionFix } from './useEmptyLine'
 import { handleTaskEnter, taskMarkKeymap } from './useMark'
-import { handleQuoteEnter, handleQuoteBackspace, indentQuote, dedentQuote, quoteExtension } from './useQuote'
+import { handleQuoteEnter } from './useQuote'
 import { handleListEnter, isListLine } from './useList'
 import { handleCodeFenceEnter } from './useCodeFence'
 import { handleArrowUp, handleArrowDown } from './useArrowNavigation'
@@ -279,27 +279,6 @@ export function useEditorExtensions({
             }
           },
           {
-            key: 'Tab',
-            run: (view) => {
-              if (isActiveRef.current && indentQuote(view)) return true
-              return false
-            }
-          },
-          {
-            key: 'Shift-Tab',
-            run: (view) => {
-              if (isActiveRef.current && dedentQuote(view)) return true
-              return false
-            }
-          },
-          {
-            key: 'Backspace',
-            run: (view) => {
-              if (isActiveRef.current && handleQuoteBackspace(view)) return true
-              return false
-            }
-          },
-          {
             key: 'Enter',
             run: (view) => {
               if (isActiveRef.current) {
@@ -415,7 +394,6 @@ export function useEditorExtensions({
       Prec.highest(imageWidgetExtension),
       htmlWidgetExtension,
       calloutExtension,
-      quoteExtension,
       Prec.highest(tables({ onLinkClick: handleTableLinkClick }))
     ],
     [editorExtensions, dropExtension, handleTableLinkClick]

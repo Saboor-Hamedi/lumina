@@ -2,6 +2,8 @@
 @import './wikilink.css';
 @import './contextMenu.css';
 @import './lists.css';
+@import './callout.css';
+@import './quote.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

@@ -129,6 +129,13 @@ export function useEditorState({ snippet, onSave, showToast, realViewRef, editor
 
     if (editorHandleRef.current) {
       const currentCode = editorHandleRef.current.getMarkdown()
+
+      // If store snippet content matches current editor text or latest edits, sync lastSavedCodeRef and do nothing
+      if (snippet?.code === currentCode || snippet?.code === latestCodeRef.current) {
+        lastSavedCodeRef.current = snippet?.code
+        return
+      }
+
       const codeChangedFromOutside = snippet?.code !== lastSavedCodeRef.current
 
       if (codeChangedFromOutside) {

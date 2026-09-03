@@ -110,64 +110,75 @@ export const calloutPlugin = ViewPlugin.fromClass(
     buildDecorations(view) {
       const builder = []
       const doc = view.state.doc
-      let currentCalloutType = null
-      let currentCalloutLevel = 0
 
       for (let { from, to } of view.visibleRanges) {
-        let lineIdx = doc.lineAt(from).number
+        const startLineNumber = doc.lineAt(from).number
         const endLineIdx = doc.lineAt(to).number
 
-        for (; lineIdx <= endLineIdx; lineIdx++) {
-          const line = doc.line(lineIdx)
+        // Backtrack to the start of the contiguous blockquote group
+        let scanStart = startLineNumber
+        while (scanStart > 1) {
+          const prev = doc.line(scanStart - 1)
+          if (/^\s*>/.test(prev.text)) {
+            scanStart--
+          } else {
+            break
+          }
+        }
 
-          // Count blockquote level
+        let currentCalloutType = null
+        let currentCalloutLevel = 0
+
+        for (let l = scanStart; l <= endLineIdx; l++) {
+          const line = doc.line(l)
           const match = line.text.match(/^(>\s*)+/)
+
           if (match) {
             const level = match[0].match(/>/g).length
-
-            // Is this a new callout header? e.g. > [!note] Title
             const blockStart = line.text.match(/^(?:>\s*)+\[!([a-zA-Z]+)\](.*)/)
+
             if (blockStart) {
               currentCalloutLevel = level
               currentCalloutType = blockStart[1]
               const title = blockStart[2].trim()
 
-              // Only replace if cursor is NOT on this line
-              const cursor = view.state.selection.main.head
-              if (cursor < line.from || cursor > line.to) {
-                const replaceFrom = line.from + line.text.indexOf('[')
-                const replaceTo = line.to
+              // Only decorate if within visible range
+              if (l >= startLineNumber) {
+                const sel = view.state.selection.main
+                const cursor = sel.head
+                if (sel.empty && (cursor < line.from || cursor > line.to)) {
+                  const replaceFrom = line.from + line.text.indexOf('[')
+                  const replaceTo = line.to
+                  builder.push(
+                    Decoration.replace({
+                      widget: new CalloutHeaderWidget(currentCalloutType, title)
+                    }).range(replaceFrom, replaceTo)
+                  )
+                }
+
                 builder.push(
-                  Decoration.replace({
-                    widget: new CalloutHeaderWidget(currentCalloutType, title)
-                  }).range(replaceFrom, replaceTo)
+                  Decoration.line({
+                    class: `lumina-callout-line lumina-callout-line-${currentCalloutType.toLowerCase()}`
+                  }).range(line.from)
                 )
               }
-
-              builder.push(
-                Decoration.line({
-                  class: `lumina-callout-line lumina-callout-line-${currentCalloutType.toLowerCase()}`
-                }).range(line.from)
-              )
             } else if (currentCalloutType && level >= currentCalloutLevel) {
-              // Continuation of callout
-              builder.push(
-                Decoration.line({
-                  class: `lumina-callout-line lumina-callout-line-${currentCalloutType.toLowerCase()}`
-                }).range(line.from)
-              )
+              if (l >= startLineNumber) {
+                builder.push(
+                  Decoration.line({
+                    class: `lumina-callout-line lumina-callout-line-${currentCalloutType.toLowerCase()}`
+                  }).range(line.from)
+                )
+              }
             } else {
-              // Reset if level drops
               currentCalloutType = null
             }
           } else {
-            // Not a blockquote, reset
             currentCalloutType = null
           }
         }
       }
 
-      // Sort decorations
       return Decoration.set(
         builder.sort((a, b) => a.from - b.from),
         true
