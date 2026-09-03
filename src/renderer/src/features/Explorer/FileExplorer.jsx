@@ -457,12 +457,10 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
             isPinned={context.pinnedFolders?.includes(item.id)}
             onTogglePin={context.togglePinnedFolder}
             onToggle={(id, e) => {
-              if (e?.ctrlKey || e?.metaKey) {
-                handleFolderClick(id, e)
+              if (e?.ctrlKey || e?.metaKey || e?.shiftKey) {
+                handleFolderClick(id, index, e)
               } else {
-                setSidebarFocus('folder')
-                setLastClickedFolder(id)
-                setSelectedIndex(index)
+                handleFolderClick(id, index, e)
                 toggleFolder(id, e)
               }
             }}
@@ -498,7 +496,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
           <SortableListItem
             key={item.snippet.id}
             snippet={item.snippet}
-            onClick={handleNoteClick}
+            onClick={(snippet, e) => handleNoteClick(snippet, index, e)}
             onContextMenu={(snippet, e) => {
               if (totalSelectedCount > 1 && (selectedNoteIds.has(snippet.id) || selectedFolderIds.size > 0)) {
                 handleFolderContextMenu(snippet.id, e)
@@ -718,7 +716,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                   >
                     <DroppableVirtuosoWrapper
                       isDragging={!!activeListDragItem}
-                      isRootFocused={sidebarFocus === 'root'}
+                      isRootFocused={sidebarFocus === 'root' && selectedNoteIds.size === 0 && selectedFolderIds.size === 0}
                       onClick={handleBackgroundClick}
                       onPointerDown={handleBackgroundClick}
                     >

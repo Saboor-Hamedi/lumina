@@ -174,6 +174,8 @@ export function useExplorerSelection({
     }
   }, [selectedSnippetId, flatTree, virtuosoRef])
 
+  const [anchorIndex, setAnchorIndex] = useState(null)
+
   const handleSelect = useCallback(
     (snippet) => {
       if (!snippet) return
@@ -188,13 +190,39 @@ export function useExplorerSelection({
   )
 
   const handleNoteClick = useCallback(
-    (snippet, e) => {
+    (snippet, index, e) => {
       if (!snippet) return
       setSelectedFolder(null)
-      const isCtrl = e?.ctrlKey || e?.metaKey
-      const isShift = e?.shiftKey
 
-      if (isCtrl) {
+      // Support (snippet, e) or (snippet, index, e)
+      const event = e || (index?.target ? index : null)
+      const isCtrl = event?.ctrlKey || event?.metaKey
+      const isShift = event?.shiftKey
+
+      let itemIndex = typeof index === 'number' ? index : -1
+      if (itemIndex === -1 && flatTree) {
+        itemIndex = flatTree.findIndex((i) => i.type === 'file' && i.snippet?.id === snippet.id)
+      }
+
+      if (isShift && anchorIndex !== null && flatTree && flatTree.length > 0) {
+        const minIdx = Math.min(anchorIndex, itemIndex)
+        const maxIdx = Math.max(anchorIndex, itemIndex)
+
+        const rangeNotes = new Set()
+        const rangeFolders = new Set()
+
+        flatTree.slice(minIdx, maxIdx + 1).forEach((item) => {
+          if (item.type === 'file' && item.snippet) {
+            rangeNotes.add(item.snippet.id)
+          } else if (item.type === 'folder' && item.id) {
+            rangeFolders.add(item.id)
+          }
+        })
+
+        setSelectedNoteIds(rangeNotes)
+        setSelectedFolderIds(rangeFolders)
+        setSidebarFocus('multi')
+      } else if (isCtrl) {
         setSelectedNoteIds((prev) => {
           const next = new Set(prev)
           if (next.has(snippet.id)) {
@@ -204,41 +232,56 @@ export function useExplorerSelection({
           }
           return next
         })
+        setAnchorIndex(itemIndex)
         setLastClickedNoteId(snippet.id)
-        setSidebarFocus('note')
-        setLastClickedFolder(snippet.folderId || '')
-      } else if (isShift && lastClickedNoteId) {
-        const visibleFiles = flatTree
-          .filter((f) => f.type === 'file' && f.snippet)
-          .map((f) => f.snippet)
-        const startIdx = visibleFiles.findIndex((s) => s.id === lastClickedNoteId)
-        const endIdx = visibleFiles.findIndex((s) => s.id === snippet.id)
-
-        if (startIdx !== -1 && endIdx !== -1) {
-          const [minIdx, maxIdx] = startIdx < endIdx ? [startIdx, endIdx] : [endIdx, startIdx]
-          const rangeIds = visibleFiles.slice(minIdx, maxIdx + 1).map((s) => s.id)
-          setSelectedNoteIds(new Set(rangeIds))
-        }
-        setSidebarFocus('note')
+        setSidebarFocus('multi')
         setLastClickedFolder(snippet.folderId || '')
       } else {
         setSelectedNoteIds(new Set([snippet.id]))
         setSelectedFolderIds(new Set())
+        setAnchorIndex(itemIndex)
         setLastClickedNoteId(snippet.id)
         setSidebarFocus('note')
         setLastClickedFolder(snippet.folderId || '')
         handleSelect(snippet)
       }
     },
-    [flatTree, lastClickedNoteId, handleSelect, setSelectedFolder]
+    [flatTree, anchorIndex, handleSelect, setSelectedFolder]
   )
 
   const handleFolderClick = useCallback(
-    (folderId, e) => {
+    (folderId, index, e) => {
       if (!folderId) return
-      const isCtrl = e?.ctrlKey || e?.metaKey
 
-      if (isCtrl) {
+      // Support (folderId, e) or (folderId, index, e)
+      const event = e || (index?.target ? index : null)
+      const isCtrl = event?.ctrlKey || event?.metaKey
+      const isShift = event?.shiftKey
+
+      let itemIndex = typeof index === 'number' ? index : -1
+      if (itemIndex === -1 && flatTree) {
+        itemIndex = flatTree.findIndex((i) => i.type === 'folder' && i.id === folderId)
+      }
+
+      if (isShift && anchorIndex !== null && flatTree && flatTree.length > 0) {
+        const minIdx = Math.min(anchorIndex, itemIndex)
+        const maxIdx = Math.max(anchorIndex, itemIndex)
+
+        const rangeNotes = new Set()
+        const rangeFolders = new Set()
+
+        flatTree.slice(minIdx, maxIdx + 1).forEach((item) => {
+          if (item.type === 'file' && item.snippet) {
+            rangeNotes.add(item.snippet.id)
+          } else if (item.type === 'folder' && item.id) {
+            rangeFolders.add(item.id)
+          }
+        })
+
+        setSelectedNoteIds(rangeNotes)
+        setSelectedFolderIds(rangeFolders)
+        setSidebarFocus('multi')
+      } else if (isCtrl) {
         setSelectedFolderIds((prev) => {
           const next = new Set(prev)
           if (next.has(folderId)) {
@@ -248,17 +291,19 @@ export function useExplorerSelection({
           }
           return next
         })
-        setSidebarFocus('folder')
+        setAnchorIndex(itemIndex)
+        setSidebarFocus('multi')
         setLastClickedFolder(folderId)
       } else {
         setSelectedFolderIds(new Set([folderId]))
         setSelectedNoteIds(new Set())
+        setAnchorIndex(itemIndex)
         setSidebarFocus('folder')
         setLastClickedFolder(folderId)
         setSelectedFolder(folderId)
       }
     },
-    [setSelectedFolder]
+    [flatTree, anchorIndex, setSelectedFolder]
   )
 
   return {
