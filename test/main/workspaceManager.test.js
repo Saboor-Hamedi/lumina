@@ -31,10 +31,12 @@ describe('VaultManager', () => {
     await fs.mkdir(path.join(testVaultPath, 'assets'), { recursive: true })
     originalVaultPath = VaultManager.vaultPath
     await VaultManager.init(testVaultPath, os.tmpdir())
+    if (VaultManager.watcher) {
+      VaultManager.watcher.on('error', () => {})
+    }
   })
 
   afterEach(async () => {
-    // Close the chokidar watcher before deleting the directory
     if (VaultManager.watcher) {
       await VaultManager.watcher.close()
       VaultManager.watcher = null

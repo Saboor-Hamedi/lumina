@@ -134,8 +134,7 @@ export class WorkspaceOperations {
     if (!relPath) return true
     const norm = relPath.replace(/\\/g, '/').replace(/^\/+/, '')
     const firstSegment = norm.split('/')[0]
-    const protectedNames = ['.git', '.lumina']
-    return protectedNames.includes(firstSegment) || protectedNames.includes(norm)
+    return firstSegment.startsWith('.') || norm.startsWith('.')
   }
 
   static async deleteSnippet(vaultPath, snippetsMap, id) {
@@ -382,15 +381,19 @@ export class WorkspaceOperations {
               : baseName
             folderRelativePath = folderRelativePath.replace(/\\/g, '/')
 
-            let counter = 1
-            while (fsSync.existsSync(destDir)) {
-              const newName = `${baseName} (${counter})`
-              destDir = path.join(targetBaseDir, newName)
-              folderRelativePath = normalizedTargetFolder
-                ? `${normalizedTargetFolder}/${newName}`
-                : newName
-              folderRelativePath = folderRelativePath.replace(/\\/g, '/')
-              counter++
+            const isDotFolder = baseName.startsWith('.')
+
+            if (!isDotFolder) {
+              let counter = 1
+              while (fsSync.existsSync(destDir)) {
+                const newName = `${baseName} (${counter})`
+                destDir = path.join(targetBaseDir, newName)
+                folderRelativePath = normalizedTargetFolder
+                  ? `${normalizedTargetFolder}/${newName}`
+                  : newName
+                folderRelativePath = folderRelativePath.replace(/\\/g, '/')
+                counter++
+              }
             }
 
             await fs.cp(srcPath, destDir, {
