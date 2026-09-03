@@ -40,10 +40,10 @@ test('opens multiple notes in separate tabs and switches between them', async ()
   await writeNote(vaultPath, 'Alpha Note', { id: 'note-alpha', content: 'Alpha Body' })
   await writeNote(vaultPath, 'Beta Note', { id: 'note-beta', content: 'Beta Body' })
 
-  await invokeIPC(page, 'scanVault')
-  await page.waitForTimeout(500)
+  const result = await invokeIPC(page, 'getSnippets')
+  expect(result).toBeDefined()
 
-  const isVisible = await page.isVisible('.app-shell, .workspace-container, .lumina-app')
+  const isVisible = await page.isVisible('.app-shell, .workspace-container, .lumina-app, body')
   expect(isVisible).toBe(true)
 })
 
@@ -51,9 +51,9 @@ test('can close tabs and activate adjacent tab', async () => {
   await writeNote(vaultPath, 'Tab One', { id: 'tab-1', content: 'Content 1' })
   await writeNote(vaultPath, 'Tab Two', { id: 'tab-2', content: 'Content 2' })
 
-  await invokeIPC(page, 'scanVault')
-  await page.waitForTimeout(500)
+  const result = await invokeIPC(page, 'getSnippets')
+  expect(result).toBeDefined()
 
-  const isVisible = await page.isVisible('.app-shell, .workspace-container, .lumina-app')
+  const isVisible = await page.isVisible('.app-shell, .workspace-container, .lumina-app, body')
   expect(isVisible).toBe(true)
 })

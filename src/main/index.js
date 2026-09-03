@@ -128,9 +128,7 @@ async function createWindow() {
       mainWindow.show()
     }
 
-    setTimeout(() => {
-      new AppUpdater(mainWindow)
-    }, 5000)
+    new AppUpdater(mainWindow)
 
     SettingsManager.notifyRenderer = (settings) => {
       allowDevTools = settings.enableDevTools === true

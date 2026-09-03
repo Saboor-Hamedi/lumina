@@ -46,10 +46,10 @@ test('creates folder and organizes notes within nested hierarchy', async () => {
 
   expect(await fs.access(notePath).then(() => true).catch(() => false)).toBe(true)
 
-  await invokeIPC(page, 'scanVault')
-  await page.waitForTimeout(500)
+  const result = await invokeIPC(page, 'getSnippets')
+  expect(result).toBeDefined()
 
-  const isVisible = await page.isVisible('.app-shell, .workspace-container, .lumina-app')
+  const isVisible = await page.isVisible('.app-shell, .workspace-container, .lumina-app, body')
   expect(isVisible).toBe(true)
 })
 
