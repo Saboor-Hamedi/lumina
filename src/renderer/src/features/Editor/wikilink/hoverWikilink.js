@@ -1,5 +1,5 @@
 import { marked } from 'marked'
-import { renderMermaidToElement } from './mermaidWidgetExtension'
+import { renderMermaidToElement } from '../../Workspace/mermaidWidgetExtension'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/atom-one-dark.css'
 
@@ -34,13 +34,13 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
   }
 
   const createCard = (linkEl, title, contentSnippet, timestamp, noteId) => {
-    removeCard(false) // Do NOT reset currentTarget when refreshing the card
+    removeCard(false)
 
     hoverCard = document.createElement('div')
     hoverCard.className = 'cm-wiki-hover horizontal'
     hoverCard.style.position = 'fixed'
     hoverCard.style.borderRadius = '2px'
-    hoverCard.style.visibility = 'hidden' // Prevent 0,0 flash
+    hoverCard.style.visibility = 'hidden'
 
     if (contentSnippet !== null && contentSnippet !== undefined) {
       const header = document.createElement('div')
@@ -122,7 +122,6 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
       )
       contentEl.innerHTML = marked.parse(parsedSnippet)
 
-      // Resolve local image assets
       const allImages = contentEl.querySelectorAll('img')
       allImages.forEach((img) => {
         const url = img.getAttribute('src')
@@ -149,7 +148,6 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
       contentWrap.appendChild(contentEl)
       hoverCard.appendChild(contentWrap)
 
-      // Render mermaid blocks inside the hover card
       const mermaidBlocks = contentEl.querySelectorAll('code.language-mermaid')
       if (mermaidBlocks.length > 0) {
         mermaidBlocks.forEach((block, idx) => {
@@ -192,7 +190,6 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
         })
       }
 
-      // Render non-mermaid code blocks
       const allCodeBlocks = contentEl.querySelectorAll('pre > code')
       allCodeBlocks.forEach((codeEl) => {
         if (codeEl.classList.contains('language-mermaid')) return
@@ -383,7 +380,6 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
       }
     }
 
-    // Responsive width: strictly constrained within editor content & wrapper dimensions
     const maxAllowedWidth = Math.max(220, Math.min(540, contentRect.width, wrapperRect.width - 24))
     hoverCard.style.maxWidth = `${maxAllowedWidth}px`
     if (contentRect.width < 540) {
@@ -393,7 +389,6 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
 
     const rect = hoverCard.getBoundingClientRect()
 
-    // 1. Parallel alignment with the link and editor text column
     let left = linkRect.left
 
     const maxRight = Math.min(window.innerWidth - 12, contentRect.right, wrapperRect.right - 12)
@@ -406,7 +401,6 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
       left = minLeft
     }
 
-    // 2. Vertical positioning: right beneath the link or above if space is tight
     let top = linkRect.bottom + 6
 
     const bottomLimit = Math.min(window.innerHeight - 12, wrapperRect.bottom - 12)
@@ -472,7 +466,6 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
     const linkEl = e.target.closest('.cm-atomic-wiki-link, .cm-atomic-wikilink-wrap, [data-wiki-link-target]')
     if (!linkEl || !wrapper.contains(linkEl)) return
 
-    // Never trigger hover preview on links that are currently active/being edited with caret
     if (linkEl.classList.contains('cm-atomic-wiki-link-active') || linkEl.closest('.cm-atomic-wiki-link-active')) {
       return
     }
@@ -506,7 +499,6 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
     const linkEl = e.target.closest('.cm-atomic-wiki-link, .cm-atomic-wikilink-wrap, [data-wiki-link-target]')
     if (!linkEl) return
 
-    // If moving directly into the hover card, do not close
     if (e.relatedTarget && (hoverCard?.contains(e.relatedTarget) || e.relatedTarget.closest?.('.cm-wiki-hover'))) {
       return
     }
@@ -588,3 +580,5 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
     clearTimeout(closeTimeout)
   }
 }
+
+export default setupWikilinkHover

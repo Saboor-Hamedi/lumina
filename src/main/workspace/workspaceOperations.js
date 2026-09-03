@@ -3,7 +3,7 @@ import fsSync from 'fs'
 import path from 'path'
 import slugify from 'slugify'
 import matter from 'gray-matter'
-import { AssetManager } from '../AssetManager'
+import { WorkspaceMediaManager } from './workspaceMediaManager'
 
 export class WorkspaceOperations {
   static sanitizeTitleForFilename(title) {
@@ -125,20 +125,38 @@ export class WorkspaceOperations {
 
   static async deleteSnippet(vaultPath, snippetsMap, id) {
     if (!vaultPath) throw new Error('No vault open')
-    const snippet = snippetsMap.get(id)
-    if (!snippet) return null
-
-    const filePath = path.join(vaultPath, snippet.folderId || '', snippet.fileName)
-    try {
-      if (fsSync.existsSync(filePath)) {
-        await fs.unlink(filePath)
-      }
-      snippetsMap.delete(id)
-      return filePath
-    } catch (err) {
-      snippetsMap.delete(id)
-      return null
+    let snippet = snippetsMap.get(id)
+    if (!snippet) {
+      snippet = Array.from(snippetsMap.values()).find(
+        (s) => s.id === id || s.relativePath === id || s.fileName === id
+      )
     }
+
+    if (snippet) {
+      const filePath = path.join(vaultPath, snippet.folderId || '', snippet.fileName)
+      try {
+        if (fsSync.existsSync(filePath)) {
+          await fs.unlink(filePath)
+        }
+        snippetsMap.delete(snippet.id)
+        return filePath
+      } catch (err) {
+        snippetsMap.delete(snippet.id)
+        return null
+      }
+    }
+
+    const directPath = path.join(vaultPath, id)
+    if (fsSync.existsSync(directPath)) {
+      try {
+        await fs.unlink(directPath)
+        return directPath
+      } catch (e) {
+        return null
+      }
+    }
+
+    return null
   }
 
   static async bulkDelete(vaultPath, snippetsMap, foldersSet, { folderIds = [], snippetIds = [] }) {
@@ -149,19 +167,22 @@ export class WorkspaceOperations {
     await Promise.all(
       folderIds.map(async (folderPath) => {
         try {
-          const fullPath = path.join(vaultPath, folderPath)
-          await fs.rm(fullPath, { recursive: true, force: true })
+          const normFolder = folderPath.replace(/\\/g, '/')
+          const fullPath = path.join(vaultPath, normFolder)
+          if (fsSync.existsSync(fullPath)) {
+            await fs.rm(fullPath, { recursive: true, force: true })
+          }
 
           for (const f of Array.from(foldersSet)) {
             const normF = f.replace(/\\/g, '/')
-            if (normF === folderPath || normF.startsWith(`${folderPath}/`)) {
+            if (normF === normFolder || normF.startsWith(`${normFolder}/`)) {
               foldersSet.delete(f)
             }
           }
 
           for (const [id, snippet] of snippetsMap.entries()) {
             const sFolder = (snippet.folderId || '').replace(/\\/g, '/')
-            if (sFolder === folderPath || sFolder.startsWith(`${folderPath}/`)) {
+            if (sFolder === normFolder || sFolder.startsWith(`${normFolder}/`)) {
               const sFilePath = path.join(vaultPath, snippet.folderId || '', snippet.fileName || `${snippet.title}.md`)
               deletedFilePaths.push(sFilePath)
               snippetsMap.delete(id)
@@ -176,29 +197,47 @@ export class WorkspaceOperations {
     await Promise.all(
       snippetIds.map(async (id) => {
         try {
-          const snippet = snippetsMap.get(id)
-          if (!snippet) return
-          const sFolder = (snippet.folderId || '').replace(/\\/g, '/')
-          const isInsideDeletedFolder = normalizedFolders.some(
-            (df) => sFolder === df || sFolder.startsWith(`${df}/`)
-          )
-          if (isInsideDeletedFolder) return
-
-          const fileName = snippet.fileName || `${snippet.title}.md`
-          const filePath = path.join(vaultPath, snippet.folderId || '', fileName)
-          deletedFilePaths.push(filePath)
-
-          if (fsSync.existsSync(filePath)) {
-            await fs.unlink(filePath)
+          let snippet = snippetsMap.get(id)
+          if (!snippet) {
+            snippet = Array.from(snippetsMap.values()).find(
+              (s) => s.id === id || s.relativePath === id || s.fileName === id
+            )
           }
-          snippetsMap.delete(id)
+
+          if (snippet) {
+            const sFolder = (snippet.folderId || '').replace(/\\/g, '/')
+            const isInsideDeletedFolder = normalizedFolders.some(
+              (df) => sFolder === df || sFolder.startsWith(`${df}/`)
+            )
+            if (isInsideDeletedFolder) return
+
+            const fileName = snippet.fileName || `${snippet.title}.md`
+            const filePath = path.join(vaultPath, snippet.folderId || '', fileName)
+            deletedFilePaths.push(filePath)
+
+            if (fsSync.existsSync(filePath)) {
+              await fs.unlink(filePath)
+            }
+            snippetsMap.delete(snippet.id)
+          } else {
+            const directPath = path.join(vaultPath, id)
+            if (fsSync.existsSync(directPath)) {
+              deletedFilePaths.push(directPath)
+              const stat = await fs.stat(directPath)
+              if (stat.isDirectory()) {
+                await fs.rm(directPath, { recursive: true, force: true })
+              } else {
+                await fs.unlink(directPath)
+              }
+            }
+          }
         } catch (err) {
           console.warn('[WorkspaceOperations] Bulk note delete warning:', id, err.message)
         }
       })
     )
 
-    await AssetManager.cleanOrphanedAssets(vaultPath, snippetsMap)
+    await WorkspaceMediaManager.cleanOrphanedAssets(vaultPath, snippetsMap)
 
     return {
       success: true,

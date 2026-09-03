@@ -1,20 +1,10 @@
-/**
- * useWikilinkCompletion.js
- * 
- * Modular hook for Wikilinks (`[[...]]`):
- * - Auto-triggers completion popup on typing `[[`
- * - Queries vault store snippets for auto-completing note titles
- * - Handles note creation and navigation on clicking wikilinks
- */
-
 import { useCallback, useMemo } from 'react'
 import { EditorView } from '@codemirror/view'
 import { startCompletion } from '@codemirror/autocomplete'
-import { createLuminaWikiLinks } from '../wikilinks/luminaWikiLinks'
+import { createLuminaWikiLinks } from './luminaWikiLinks'
 import { useVaultStore } from '../../../core/store/useVaultStore'
 
 export function useWikilinkCompletion({ showToast }) {
-  // 1. Trigger autocompletion inside `[[`
   const autocompleteTriggerListener = useCallback(
     EditorView.updateListener.of((update) => {
       if (update.docChanged) {
@@ -40,7 +30,6 @@ export function useWikilinkCompletion({ showToast }) {
     []
   )
 
-  // 2. Completion source matching `[[query` against vault notes
   const wikiLinkCompletionSource = useCallback((context) => {
     if (document.activeElement?.classList.contains('cm-atomic-table-cell-source')) {
       return null
@@ -83,7 +72,6 @@ export function useWikilinkCompletion({ showToast }) {
     }
   }, [])
 
-  // 3. Open or create note when wikilink is clicked
   const openOrCreateNote = useCallback(
     async (target) => {
       try {
@@ -122,7 +110,6 @@ export function useWikilinkCompletion({ showToast }) {
     })
   }, [openOrCreateNote])
 
-  // 4. Table link click handler
   const handleTableLinkClick = useCallback(
     async (url) => {
       if (url.match(/^(https?|mailto|file):\/\//i)) {
@@ -141,3 +128,5 @@ export function useWikilinkCompletion({ showToast }) {
     handleTableLinkClick
   }
 }
+
+export default useWikilinkCompletion

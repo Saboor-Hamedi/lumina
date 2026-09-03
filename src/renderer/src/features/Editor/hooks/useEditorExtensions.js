@@ -39,7 +39,7 @@ import { handleQuoteEnter } from './useQuote'
 import { handleListEnter, isListLine } from './useList'
 import { handleCodeFenceEnter } from './useCodeFence'
 import { handleArrowUp, handleArrowDown } from './useArrowNavigation'
-import { useWikilinkCompletion } from './useWikilinkCompletion'
+import { useWikilinkCompletion } from '../wikilink/useWikilinkCompletion'
 import { createEditorSlashPlugin } from '../../slash'
 
 export const updateSearchHighlights = StateEffect.define()

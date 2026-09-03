@@ -1,10 +1,3 @@
-/**
- * luminaWikiLinks.js
- * 
- * High-performance, 100% native CodeMirror 6 wikilink extension using Decoration.mark.
- * Eliminates all widget-based posBefore errors and provides standard paragraph-like text selection.
- */
-
 import { RangeSetBuilder, StateField } from '@codemirror/state'
 import { Decoration, EditorView } from '@codemirror/view'
 import { useVaultStore } from '../../../core/store/useVaultStore'
@@ -44,11 +37,9 @@ export function createLuminaWikiLinks(config = {}) {
         const startPos = line.from + match.index
         const endPos = startPos + fullMatch.length
 
-        // Check if cursor/selection intersects this wikilink
         const isActive = sel.from <= endPos && sel.to >= startPos
 
         if (isActive) {
-          // While active/editing, show as highlighted text with brackets visible for editing
           builder.add(
             startPos,
             endPos,
@@ -58,27 +49,22 @@ export function createLuminaWikiLinks(config = {}) {
             })
           )
         } else {
-          // Inactive: hide [[, show styled target/alias, hide ]]
           const openBracketEnd = startPos + 2
           const closeBracketStart = endPos - 2
 
-          // Hide [[
           builder.add(
             startPos,
             openBracketEnd,
             Decoration.mark({ class: 'cm-wikilink-syntax' })
           )
 
-          // Styled text
           if (alias) {
             const pipePos = startPos + 2 + match[1].length
-            // Target + pipe hidden
             builder.add(
               openBracketEnd,
               pipePos + 1,
               Decoration.mark({ class: 'cm-wikilink-syntax' })
             )
-            // Alias styled as link
             builder.add(
               pipePos + 1,
               closeBracketStart,
@@ -88,7 +74,6 @@ export function createLuminaWikiLinks(config = {}) {
               })
             )
           } else {
-            // Target styled as link
             builder.add(
               openBracketEnd,
               closeBracketStart,
@@ -99,7 +84,6 @@ export function createLuminaWikiLinks(config = {}) {
             )
           }
 
-          // Hide ]]
           builder.add(
             closeBracketStart,
             endPos,
@@ -112,7 +96,6 @@ export function createLuminaWikiLinks(config = {}) {
     return builder.finish()
   }
 
-  // Click handler (only navigates if it was a pure click, not a drag-selection)
   let clickStartX = 0
   let clickStartY = 0
   let isDragging = false
@@ -128,7 +111,7 @@ export function createLuminaWikiLinks(config = {}) {
         isDragging = true
       }
     },
-    click(e, view) {
+    click(e) {
       if (isDragging) return false
       const link = e.target.closest('.cm-atomic-wiki-link')
       if (!link) return false
@@ -136,7 +119,6 @@ export function createLuminaWikiLinks(config = {}) {
       const target = link.getAttribute('data-wiki-link-target')
       if (!target) return false
 
-      // Check if user is actively holding modifier or clicking link
       e.preventDefault()
       e.stopPropagation()
 
@@ -184,3 +166,5 @@ export function createLuminaWikiLinks(config = {}) {
 
   return [wikiLinkField, clickHandler]
 }
+
+export default createLuminaWikiLinks

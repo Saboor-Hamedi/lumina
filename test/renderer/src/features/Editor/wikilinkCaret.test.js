@@ -7,7 +7,7 @@ vi.mock('@codemirror/view', () => ({
 }))
 
 const { wikilinkCaretFix } = await import(
-  '../../../../../src/renderer/src/features/Editor/wikilinkCaret'
+  '../../../../../src/renderer/src/features/Editor/wikilink/wikilinkCaret'
 )
 
 describe('wikilinkCaretFix', () => {

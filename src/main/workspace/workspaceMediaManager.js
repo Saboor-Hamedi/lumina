@@ -3,7 +3,21 @@ import fsSync from 'fs'
 import path from 'path'
 import slugify from 'slugify'
 
-export class AssetManager {
+/**
+ * WorkspaceMediaManager
+ * 
+ * Manages media assets, embedded images, binary file I/O,
+ * and orphaned asset garbage collection for the workspace.
+ */
+export class WorkspaceMediaManager {
+  /**
+   * Saves a media image buffer to the workspace's `.lumina/assets/` directory.
+   *
+   * @param {string} vaultPath - The absolute path of the workspace vault.
+   * @param {Buffer|Uint8Array|ArrayBuffer} buffer - Binary data of the image.
+   * @param {string} originalName - Original file name with extension.
+   * @returns {Promise<string>} The relative path of the saved asset (e.g., `.lumina/assets/name.png`).
+   */
   static async saveImage(vaultPath, buffer, originalName) {
     if (!vaultPath) throw new Error('No vault open')
 
@@ -20,14 +34,21 @@ export class AssetManager {
 
     try {
       await fs.writeFile(targetPath, Buffer.from(buffer))
-      console.info('[AssetManager] ✓ Image saved:', safeName)
+      console.info('[WorkspaceMediaManager] ✓ Image saved:', safeName)
       return `.lumina/assets/${safeName}`
     } catch (err) {
-      console.error('[AssetManager] ✗ Failed to save image:', err)
+      console.error('[WorkspaceMediaManager] ✗ Failed to save image:', err)
       throw err
     }
   }
 
+  /**
+   * Reads an asset from disk and returns its binary buffer, base64 data, and MIME type.
+   *
+   * @param {string} vaultPath - The absolute path of the workspace vault.
+   * @param {string} relativePath - Relative path to the asset from the vault root.
+   * @returns {Promise<{ buffer: Buffer, base64: string, dataUrl: string, mimeType: string, size: number }>}
+   */
   static async readAsset(vaultPath, relativePath) {
     if (!vaultPath) throw new Error('No vault open')
     try {
@@ -60,11 +81,18 @@ export class AssetManager {
         size: buffer.length
       }
     } catch (err) {
-      console.error('[AssetManager] ✗ Failed to read asset:', relativePath, err)
+      console.error('[WorkspaceMediaManager] ✗ Failed to read asset:', relativePath, err)
       throw err
     }
   }
 
+  /**
+   * Deletes an asset file from the workspace.
+   *
+   * @param {string} vaultPath - The absolute path of the workspace vault.
+   * @param {string} relativePath - Relative path to the asset from the vault root.
+   * @returns {Promise<boolean>} Resolves true when the asset is deleted.
+   */
   static async deleteAsset(vaultPath, relativePath) {
     if (!vaultPath) throw new Error('No vault open')
     try {
@@ -75,14 +103,21 @@ export class AssetManager {
       if (fsSync.existsSync(finalPath)) {
         await fs.unlink(finalPath)
       }
-      console.info('[AssetManager] ✓ Asset deleted:', relativePath)
+      console.info('[WorkspaceMediaManager] ✓ Asset deleted:', relativePath)
       return true
     } catch (err) {
-      console.error('[AssetManager] ✗ Failed to delete asset:', relativePath, err)
+      console.error('[WorkspaceMediaManager] ✗ Failed to delete asset:', relativePath, err)
       throw err
     }
   }
 
+  /**
+   * Scans `.lumina/assets/` and deletes any media files no longer referenced in workspace notes.
+   *
+   * @param {string} vaultPath - The absolute path of the workspace vault.
+   * @param {Map<string, Object>} snippetsMap - In-memory map of active snippets/notes.
+   * @returns {Promise<void>}
+   */
   static async cleanOrphanedAssets(vaultPath, snippetsMap) {
     if (!vaultPath) return
     const assetsPath = path.join(vaultPath, '.lumina', 'assets')
@@ -98,14 +133,14 @@ export class AssetManager {
           if (!allMarkdownContent.includes(entry.name)) {
             const filePath = path.join(assetsPath, entry.name)
             await fs.unlink(filePath)
-            console.info('[AssetManager] ✓ Deleted orphaned asset:', entry.name)
+            console.info('[WorkspaceMediaManager] ✓ Deleted orphaned asset:', entry.name)
           }
         }
       }
     } catch (e) {
-      console.warn('[AssetManager] Orphaned asset cleanup warning:', e.message)
+      console.warn('[WorkspaceMediaManager] Orphaned asset cleanup warning:', e.message)
     }
   }
 }
 
-export default AssetManager
+export default WorkspaceMediaManager

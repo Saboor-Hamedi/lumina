@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { setupWikilinkHover } from '../../../../../src/renderer/src/features/Workspace/hoverWikilink'
+import { setupWikilinkHover } from '../../../../../src/renderer/src/features/Editor/wikilink/hoverWikilink'
 
 describe('hoverWikilink.js', () => {
   let wrapper

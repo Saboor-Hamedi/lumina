@@ -208,13 +208,13 @@ graph TD
 
 | File | Purpose | Key Responsibilities |
 | :--- | :--- | :--- |
-| **`VaultManager.js`** | Facade & Orchestrator | Active vault path, debounced Chokidar watcher (50ms), window event broadcasting (`vault:updated`), `init()` startup. |
-| **`VaultScanner.js`** | Discovery & Normalization | Recursive traversal of `.md` and images, `safeParseFrontmatter`, ID healing, MD5 image hashing, strict type coercion. |
-| **`VaultOperations.js`** | Disk Mutator & Safety | Frontmatter serialization, universal image safety guard, native moves, bulk delete, folder operations, external path import. |
-| **`AssetManager.js`** | Media Management | Saving to `.lumina/assets/`, base64 dataUrl extraction, orphan asset garbage collection. |
+| **`workspaceManager.js`** | Facade & Orchestrator | Active workspace path, debounced Chokidar watcher (50ms), window event broadcasting (`vault:updated`), `init()` startup. |
+| **`workspaceScanner.js`** | Discovery & Normalization | Recursive traversal of `.md` and images, `safeParseFrontmatter`, in-memory ID indexing, strict type coercion. |
+| **`workspaceOperations.js`** | Disk Mutator & Safety | Frontmatter serialization, universal image safety guard, native moves, bulk delete, folder operations, external path import. |
+| **`workspaceMediaManager.js`** | Media Management | Saving to `.lumina/assets/`, base64 dataUrl extraction, orphan asset garbage collection. |
+| **`workspaceIndexer.js`** | Search Engine | Document chunking, worker thread embeddings calculation. |
+| **`workspaceSearch.js`** | Hybrid Search | Vector semantic similarity rankings and cosine distance scoring. |
 | **`SettingsManager.js`** | Preferences Store | Manages `.lumina/settings.json`, automatic directory creation prior to write. |
-| **`VaultIndexer.js`** | Search Engine | SQLite FTS5 database management, document indexing, embeddings calculation. |
-| **`VaultSearch.js`** | Hybrid Search | BM25 text search combined with vector semantic similarity rankings. |
 
 ---
 

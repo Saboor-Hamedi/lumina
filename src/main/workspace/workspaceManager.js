@@ -3,7 +3,7 @@ import path from 'path'
 import chokidar from 'chokidar'
 import { BrowserWindow } from 'electron'
 import { WorkspaceScanner, safeParseFrontmatter } from './workspaceScanner'
-import { AssetManager } from '../AssetManager'
+import { WorkspaceMediaManager } from './workspaceMediaManager'
 import { WorkspaceOperations } from './workspaceOperations'
 
 export { safeParseFrontmatter }
@@ -161,6 +161,7 @@ class WorkspaceManager {
         { folderIds, snippetIds }
       )
       await this.scanVault()
+      this.notifyWindows('vault:updated')
       return result
     } finally {
       this.setupWatcher()
@@ -249,21 +250,21 @@ class WorkspaceManager {
   }
 
   async saveImage(buffer, originalName) {
-    const result = await AssetManager.saveImage(this.vaultPath, buffer, originalName)
+    const result = await WorkspaceMediaManager.saveImage(this.vaultPath, buffer, originalName)
     await this.scanVault()
     return result
   }
 
   async readAsset(relativePath) {
-    return await AssetManager.readAsset(this.vaultPath, relativePath)
+    return await WorkspaceMediaManager.readAsset(this.vaultPath, relativePath)
   }
 
   async deleteAsset(relativePath) {
-    return await AssetManager.deleteAsset(this.vaultPath, relativePath)
+    return await WorkspaceMediaManager.deleteAsset(this.vaultPath, relativePath)
   }
 
   async cleanOrphanedAssets() {
-    return await AssetManager.cleanOrphanedAssets(this.vaultPath, this.snippets)
+    return await WorkspaceMediaManager.cleanOrphanedAssets(this.vaultPath, this.snippets)
   }
 
   getSnippets() {
