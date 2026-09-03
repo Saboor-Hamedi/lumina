@@ -666,6 +666,14 @@ const CommandPalette = React.memo(
         item.matchType === 'mention'
       )
         return null
+
+      if (item.type === 'image') {
+        const relPath =
+          item.relativePath ||
+          (item.folderId ? `${item.folderId}/${item.fileName}` : item.fileName)
+        return `![${item.title || item.fileName}](${relPath})`
+      }
+
       return item.code || item.matchSnippet || ''
     }, [filtered, selectedIndex])
 

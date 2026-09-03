@@ -20,6 +20,7 @@ import { Sparkles } from 'lucide-react'
 import '@atomic-editor/editor/styles.css'
 import '../Editor/Editor.css'
 import '../codeBlock/codeWrapper.css'
+import '../media/imageWidgetExtension.css'
 
 /**
  * A reusable, full-fidelity read-only markdown preview.
@@ -69,7 +70,7 @@ export const PreviewCommandPalette = React.memo(({ content, onClose, customLinkH
     () => [
       EditorState.readOnly.of(true),
       EditorView.editable.of(false),
-      imageWidgetExtension,
+      Prec.highest(imageWidgetExtension),
       htmlWidgetExtension,
       mermaidWidgetExtension,
       calloutExtension,

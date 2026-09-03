@@ -27,12 +27,21 @@ const PreviewModal = ({ isOpen, onClose, title, content, snippetId }) => {
       : null
   )
 
-  const liveContent =
-    draft !== undefined
+  const liveContent = useMemo(() => {
+    if (activeSnippet?.type === 'image') {
+      const relPath =
+        activeSnippet.relativePath ||
+        (activeSnippet.folderId
+          ? `${activeSnippet.folderId}/${activeSnippet.fileName}`
+          : activeSnippet.fileName)
+      return `![${activeSnippet.title || activeSnippet.fileName}](${relPath})`
+    }
+    return draft !== undefined
       ? draft
       : activeSnippet?.code !== undefined
         ? activeSnippet.code
         : content || ''
+  }, [activeSnippet, draft, content])
 
   if (!isOpen) return null
 
