@@ -1,8 +1,9 @@
 import './assets/index.css'
-// import './assets/markdown.css'
+import './assets/globalErrorHandler.css'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
+import GlobalErrorHandler from './components/GlobalErrorHandler'
 import { initDomTooltips } from './components/atoms/domTooltip'
 
 initDomTooltips()
@@ -45,6 +46,8 @@ if (import.meta.env.PROD) {
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <GlobalErrorHandler>
+      <App />
+    </GlobalErrorHandler>
   </StrictMode>
 )

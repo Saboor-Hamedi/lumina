@@ -3,7 +3,7 @@ import { Info, List as ListIcon, MessageSquare, ExternalLink, History } from 'lu
 import NoteDetails from './NoteDetails'
 import NoteOutline from './NoteOutline'
 import { LuminaChatContent } from '../AI/LuminaChat'
-import ErrorBoundary from '../../components/ErrorBoundary'
+import GlobalErrorHandler from '../../components/GlobalErrorHandler'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import ToolTip from '../../components/atoms/ToolTip'
@@ -151,7 +151,7 @@ export const RightSidebar = ({
           minHeight: 0
         }}
       >
-        <ErrorBoundary>
+        <GlobalErrorHandler>
           {rightSidebarTab === 'outline' ? (
             <NoteOutline snippet={selectedSnippet} />
           ) : rightSidebarTab === 'chat' ? (
@@ -159,7 +159,7 @@ export const RightSidebar = ({
           ) : (
             <NoteDetails snippet={selectedSnippet} isLoading={isLoading} />
           )}
-        </ErrorBoundary>
+        </GlobalErrorHandler>
       </div>
     </div>
   )

@@ -3,17 +3,20 @@ import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { Breadcrumbs } from '../../../../../src/renderer/src/features/Breadcrumbs/Breadcrumbs'
 
+const mockSnippet = { id: 's1', title: 'documentation', folderId: 'f1' }
+
 vi.mock('../../../../../src/renderer/src/core/store/workspaceStore', () => ({
   useVaultStore: (selector) =>
     selector({
       folders: [{ id: 'f1', name: 'src', parentId: null }],
-      selectedSnippet: { id: 's1', title: 'documentation', folderId: 'f1' }
+      snippets: [mockSnippet],
+      selectedSnippet: mockSnippet
     })
 }))
 
 describe('Breadcrumbs Component', () => {
   it('renders Vault root and note title', () => {
-    render(<Breadcrumbs />)
+    render(<Breadcrumbs snippet={mockSnippet} />)
     expect(screen.getByText('Vault')).toBeDefined()
     expect(screen.getByText('src')).toBeDefined()
     expect(screen.getByText('documentation')).toBeDefined()
@@ -27,7 +30,7 @@ describe('Breadcrumbs Component', () => {
       }
     })
 
-    render(<Breadcrumbs />)
+    render(<Breadcrumbs snippet={mockSnippet} />)
     const activeItem = screen.getByText('documentation')
     fireEvent.click(activeItem)
 

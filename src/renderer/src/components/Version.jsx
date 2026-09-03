@@ -1,6 +1,6 @@
 import { memo, useEffect, useState } from 'react'
 
-function AppVersion() {
+function Version() {
   const [version, setVersion] = useState('')
 
   useEffect(() => {
@@ -18,4 +18,4 @@ function AppVersion() {
   )
 }
 
-export default memo(AppVersion)
+export default memo(Version)

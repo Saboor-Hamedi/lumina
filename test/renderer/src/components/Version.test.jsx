@@ -1,21 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, act } from '@testing-library/react'
-import AppVersion from '../../../../src/renderer/src/components/AppVersion'
+import Version from '../../../../src/renderer/src/components/Version'
 
-describe('AppVersion', () => {
+describe('Version', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
   it('renders nothing when no version', () => {
-    const { container } = render(<AppVersion />)
+    const { container } = render(<Version />)
     expect(container.firstChild).toBeNull()
   })
 
   it('renders version from window.api.getVersion', async () => {
     global.window.api.getVersion = vi.fn().mockResolvedValue('1.0.26')
 
-    render(<AppVersion />)
+    render(<Version />)
 
     await vi.waitFor(() => {
       expect(screen.getByText('v1.0.26')).toBeInTheDocument()
@@ -24,13 +24,13 @@ describe('AppVersion', () => {
 
   it('handles missing window.api gracefully', () => {
     delete global.window.api.getVersion
-    const { container } = render(<AppVersion />)
+    const { container } = render(<Version />)
     expect(container.firstChild).toBeNull()
   })
 
   it('handles API rejection gracefully', () => {
     global.window.api.getVersion = vi.fn().mockRejectedValue(new Error('fail'))
-    const { container } = render(<AppVersion />)
+    const { container } = render(<Version />)
     expect(container.firstChild).toBeNull()
   })
 })

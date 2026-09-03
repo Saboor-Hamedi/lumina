@@ -21,9 +21,8 @@ const ModalHeader = ({
       style={style}
     >
       <div className="modal-left">
-        {left ? (
-          left
-        ) : icon || title || subtitle ? (
+        {left}
+        {icon || title || subtitle ? (
           <div className="modal-title-stack">
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {title ? (

@@ -90,7 +90,7 @@ describe('Settings', () => {
     it('calls onClose when the overlay background is clicked', () => {
       const props = defaultProps()
       render(<Settings {...props} />)
-      const overlay = document.querySelector('.modal-overlay')
+      const overlay = document.querySelector('.nexus-overlay')
       fireEvent.click(overlay)
       expect(props.onClose).toHaveBeenCalledTimes(1)
     })
@@ -98,7 +98,7 @@ describe('Settings', () => {
     it('does not close when clicking inside the modal container', () => {
       const props = defaultProps()
       render(<Settings {...props} />)
-      const container = document.querySelector('.settings-container')
+      const container = document.querySelector('.modal-container')
       fireEvent.click(container)
       expect(props.onClose).not.toHaveBeenCalled()
     })

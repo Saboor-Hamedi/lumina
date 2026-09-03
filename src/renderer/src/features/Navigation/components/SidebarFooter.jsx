@@ -1,7 +1,7 @@
 import React, { memo, useState, useRef } from 'react'
 import { Settings } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
-import AppVersion from '../../../components/AppVersion'
+import Version from '../../../components/Version'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
 import SettingDropdown from './SettingDropdown'
 
@@ -107,7 +107,7 @@ const SidebarFooter = memo(({ onThemeClick, onSettingsClick }) => {
       </div>
 
       <div style={{ opacity: 0.5, paddingRight: '2px', flexShrink: 0 }}>
-        <AppVersion />
+        <Version />
       </div>
 
       <SettingDropdown

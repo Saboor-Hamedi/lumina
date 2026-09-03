@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { Loader2, CheckCircle2 } from 'lucide-react'
-import './IndexingStatus.css'
+import '../assets/indexingStatus.css'
 
-const IndexingStatus = () => {
+const Indexing = () => {
   const [stats, setStats] = useState(null)
   const [isVisible, setIsVisible] = useState(false)
 
@@ -131,4 +131,4 @@ const IndexingStatus = () => {
   )
 }
 
-export default React.memo(IndexingStatus)
+export default React.memo(Indexing)

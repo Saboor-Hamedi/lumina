@@ -5,6 +5,8 @@ import SidebarFooter from './components/SidebarFooter'
 import './Sidebar.css'
 
 const Sidebar = memo(({ onSettingsClick, onThemeClick, onToggleGraph }) => {
+  
+  
   return (
     <div className="unified-sidebar">
       {/* Top Header Section */}
@@ -21,6 +23,6 @@ const Sidebar = memo(({ onSettingsClick, onThemeClick, onToggleGraph }) => {
   )
 })
 
-Sidebar.displayName = 'Sidebar'
 
+Sidebar.displayName = 'Sidebar'
 export default Sidebar

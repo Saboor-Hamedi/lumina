@@ -1,32 +1,32 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import ErrorBoundary from '../../../../src/renderer/src/components/ErrorBoundary'
+import GlobalErrorHandler from '../../../../src/renderer/src/components/GlobalErrorHandler'
 
 const GoodChild = () => <div>All good</div>
 const BadChild = () => {
   throw new Error('Test error')
 }
 
-describe('ErrorBoundary', () => {
+describe('GlobalErrorHandler', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
   it('renders children when no error', () => {
     render(
-      <ErrorBoundary>
+      <GlobalErrorHandler>
         <GoodChild />
-      </ErrorBoundary>
+      </GlobalErrorHandler>
     )
     expect(screen.getByText('All good')).toBeInTheDocument()
   })
 
   it('renders fallback UI on error', () => {
     render(
-      <ErrorBoundary>
+      <GlobalErrorHandler>
         <BadChild />
-      </ErrorBoundary>
+      </GlobalErrorHandler>
     )
     expect(screen.getByText('Something went wrong')).toBeInTheDocument()
     expect(screen.getByText('Test error')).toBeInTheDocument()
@@ -34,9 +34,9 @@ describe('ErrorBoundary', () => {
 
   it('renders Try Again and Reload App buttons on error', () => {
     render(
-      <ErrorBoundary>
+      <GlobalErrorHandler>
         <BadChild />
-      </ErrorBoundary>
+      </GlobalErrorHandler>
     )
     expect(screen.getByText('Try Again')).toBeInTheDocument()
     expect(screen.getByText('Reload App')).toBeInTheDocument()
@@ -46,9 +46,9 @@ describe('ErrorBoundary', () => {
     const fallback = vi.fn(() => <div>Custom fallback</div>)
 
     render(
-      <ErrorBoundary fallback={fallback}>
+      <GlobalErrorHandler fallback={fallback}>
         <BadChild />
-      </ErrorBoundary>
+      </GlobalErrorHandler>
     )
 
     expect(screen.getByText('Custom fallback')).toBeInTheDocument()
@@ -60,30 +60,28 @@ describe('ErrorBoundary', () => {
     const user = userEvent.setup()
 
     render(
-      <ErrorBoundary onReset={onReset}>
+      <GlobalErrorHandler onReset={onReset}>
         <BadChild />
-      </ErrorBoundary>
+      </GlobalErrorHandler>
     )
 
     await user.click(screen.getByText('Try Again'))
-
     await new Promise((r) => setTimeout(r, 200))
     expect(onReset).toHaveBeenCalled()
   })
 
-  it('shows error details in development mode', () => {
-    const originalEnv = process.env.NODE_ENV
-    process.env.NODE_ENV = 'development'
-
+  it('renders error trace in textarea with copy button', () => {
     render(
-      <ErrorBoundary>
+      <GlobalErrorHandler>
         <BadChild />
-      </ErrorBoundary>
+      </GlobalErrorHandler>
     )
 
-    expect(screen.getByText(/Error Details/)).toBeInTheDocument()
+    const textarea = screen.getByLabelText('Error details log')
+    expect(textarea).toBeInTheDocument()
+    expect(textarea.value).toContain('Test error')
 
-    process.env.NODE_ENV = originalEnv
+    expect(screen.getByTitle('Copy error trace')).toBeInTheDocument()
   })
 
   it('calls window.api.logError when available', () => {
@@ -91,9 +89,9 @@ describe('ErrorBoundary', () => {
     global.window.api = { ...global.window.api, logError }
 
     render(
-      <ErrorBoundary>
+      <GlobalErrorHandler>
         <BadChild />
-      </ErrorBoundary>
+      </GlobalErrorHandler>
     )
 
     expect(logError).toHaveBeenCalled()

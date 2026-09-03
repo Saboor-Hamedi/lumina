@@ -10,7 +10,7 @@ vi.mock('../../../../../src/renderer/src/core/db/cache', () => ({
   getCachedSnippets: vi.fn(() => Promise.resolve([]))
 }))
 
-describe('useVaultStore', () => {
+describe('workspaceStore', () => {
   beforeEach(() => {
     // Reset store to initial state
     useVaultStore.setState({

@@ -24,7 +24,7 @@ describe('UpdateDetails', () => {
 
   it('opens the dropdown on trigger click', async () => {
     render(<UpdateDetails />)
-    fireEvent.click(screen.getByTitle('Check for updates'))
+    fireEvent.click(screen.getByLabelText('Check for updates'))
 
     expect(screen.getByTestId('update-details')).toBeInTheDocument()
     expect(screen.getByText("You're up to date!")).toBeInTheDocument()
@@ -39,7 +39,7 @@ describe('UpdateDetails', () => {
       }
     })
     render(<UpdateDetails />)
-    fireEvent.click(screen.getByTitle('Check for updates'))
+    fireEvent.click(screen.getByLabelText('Check for updates'))
 
     expect(screen.getByText('New')).toBeInTheDocument()
     expect(screen.getByText('feature one')).toBeInTheDocument()
@@ -50,7 +50,7 @@ describe('UpdateDetails', () => {
 
   it('renders default release notes when none provided', () => {
     render(<UpdateDetails />)
-    fireEvent.click(screen.getByTitle('Check for updates'))
+    fireEvent.click(screen.getByLabelText('Check for updates'))
 
     // Default notes include "New" category
     expect(screen.getByText('New')).toBeInTheDocument()
@@ -58,7 +58,7 @@ describe('UpdateDetails', () => {
 
   it('renders changelog link', () => {
     render(<UpdateDetails />)
-    fireEvent.click(screen.getByTitle('Check for updates'))
+    fireEvent.click(screen.getByLabelText('Check for updates'))
 
     expect(screen.getByText('View Full Changelog')).toHaveAttribute(
       'href',
@@ -70,7 +70,7 @@ describe('UpdateDetails', () => {
     const download = vi.fn()
     useUpdateStore.setState({ status: 'available', download })
     render(<UpdateDetails />)
-    fireEvent.click(screen.getByTitle('Check for updates'))
+    fireEvent.click(screen.getByLabelText('Check for updates'))
     const downloadBtn = screen.getByRole('button', { name: /Download Update/ })
     expect(downloadBtn).toBeInTheDocument()
     fireEvent.click(downloadBtn)
@@ -79,7 +79,7 @@ describe('UpdateDetails', () => {
 
   it('closes when clicking outside the dropdown', () => {
     render(<UpdateDetails />)
-    fireEvent.click(screen.getByTitle('Check for updates'))
+    fireEvent.click(screen.getByLabelText('Check for updates'))
     expect(screen.getByTestId('update-details')).toBeInTheDocument()
 
     fireEvent.pointerDown(document.body)
@@ -89,7 +89,7 @@ describe('UpdateDetails', () => {
   it('fetches current version from window.api.getVersion', async () => {
     global.window.api.getVersion = vi.fn().mockResolvedValue('0.9.9')
     render(<UpdateDetails />)
-    fireEvent.click(screen.getByTitle('Check for updates'))
+    fireEvent.click(screen.getByLabelText('Check for updates'))
 
     await vi.waitFor(() => {
       expect(screen.getByText('v0.9.9')).toBeInTheDocument()

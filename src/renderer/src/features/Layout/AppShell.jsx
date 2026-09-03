@@ -18,7 +18,7 @@ import ConfirmModal from '../Overlays/Modals/ConfirmModal'
 import RenameModal from '../Overlays/Modals/RenameModal'
 import IconPicker from '../Icons/IconPicker'
 import { handleRenameSnippet } from '../../core/hooks/handleRenameSnippet'
-import ErrorBoundary from '../../components/ErrorBoundary'
+import GlobalErrorHandler from '../../components/GlobalErrorHandler'
 import '../../assets/appshell.css'
 import '../Overlays/Modals/ConfirmModal.css'
 import '../Overlays/Modals/RenameModal.css'
@@ -31,7 +31,7 @@ import { X, Maximize2, Trash2, History, Bot, Info, MessageSquare } from 'lucide-
 
 import RightSidebar from '../Inspector/RightSidebar'
 import Breadcrumbs from '../Breadcrumbs'
-import IndexingStatus from '../../components/IndexingStatus'
+import Indexing from '../../components/Indexing'
 import StatusBar from './StatusBar'
 import { useExternalFileDrop } from '../Explorer/hooks/useExternalFileDrop'
 import ExternalDropOverlay from '../Explorer/components/ExternalDropOverlay'
@@ -736,13 +736,15 @@ const AppShell = () => {
             }}
           />
         )}
-        <Sidebar
-          onSettingsClick={handleOpenSettings}
-          onThemeClick={handleOpenTheme}
-          onToggleGraph={handleToggleGraph}
-          onToggleAIChat={handleToggleAIChat}
-          onDocsClick={() => setShowDocsModal(true)}
-        />
+        <GlobalErrorHandler>
+          <Sidebar
+            onSettingsClick={handleOpenSettings}
+            onThemeClick={handleOpenTheme}
+            onToggleGraph={handleToggleGraph}
+            onToggleAIChat={handleToggleAIChat}
+            onDocsClick={() => setShowDocsModal(true)}
+          />
+        </GlobalErrorHandler>
       </aside>
       <main className="shell-main">
         {/* Show TabBar even if no tabs are open so WindowControls remain visible */}
@@ -812,7 +814,7 @@ const AppShell = () => {
                       zIndex: isSelected ? 10 : 1
                     }}
                   >
-                    <ErrorBoundary>
+                    <GlobalErrorHandler>
                       {snippet.type === 'image' ? (
                         <ImageViewerTab snippet={snippet} />
                       ) : (
@@ -827,7 +829,7 @@ const AppShell = () => {
                           onGraphClick={() => setShowGraph(true)}
                         />
                       )}
-                    </ErrorBoundary>
+                    </GlobalErrorHandler>
                   </div>
                 )
               })}
@@ -836,9 +838,9 @@ const AppShell = () => {
         ) : isRestoring ? (
           <div className="shell-main-placeholder" />
         ) : (
-          <ErrorBoundary>
+          <GlobalErrorHandler>
             <Welcome onNew={handleNew} />
-          </ErrorBoundary>
+          </GlobalErrorHandler>
         )}
 
         {/* Inspector overlay — floats over shell-main from the right */}
@@ -947,15 +949,17 @@ const AppShell = () => {
       />
       {/* Graph Modal */}
       {showGraph && (
-        <Graph
-          isOpen={showGraph}
-          onClose={() => setShowGraph(false)}
-          onNavigate={(snippet) => {
-            setSelectedSnippet(snippet)
-            setActiveTab('files')
-            setShowGraph(false)
-          }}
-        />
+        <GlobalErrorHandler>
+          <Graph
+            isOpen={showGraph}
+            onClose={() => setShowGraph(false)}
+            onNavigate={(snippet) => {
+              setSelectedSnippet(snippet)
+              setActiveTab('files')
+              setShowGraph(false)
+            }}
+          />
+        </GlobalErrorHandler>
       )}
       {showDocsModal && (
         <Documentation isOpen={showDocsModal} onClose={() => setShowDocsModal(false)} />
@@ -1017,7 +1021,7 @@ const AppShell = () => {
         />
       )}
       <ToastNotification toast={toast} onClose={clearToast} />
-      <IndexingStatus />
+      <Indexing />
     </div>
   )
 }

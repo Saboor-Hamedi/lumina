@@ -6,7 +6,7 @@ describe('UpdateFooter', () => {
   it('shows nothing and keeps footer actions when idle', () => {
     render(<UpdateFooter status="idle" progress={null} install={vi.fn()} onClose={vi.fn()} />)
 
-    expect(screen.getByTitle('Update Preferences')).toBeInTheDocument()
+    expect(screen.getByLabelText('Update Preferences')).toBeInTheDocument()
     expect(screen.getByText('Last checked: Just now')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Restart & Install Now/ })).toBeNull()
   })
@@ -76,7 +76,7 @@ describe('UpdateFooter', () => {
   it('opens settings pane and can go back with Done', () => {
     render(<UpdateFooter status="idle" progress={null} install={vi.fn()} onClose={vi.fn()} />)
 
-    fireEvent.click(screen.getByTitle('Update Preferences'))
+    fireEvent.click(screen.getByLabelText('Update Preferences'))
 
     expect(screen.getByText('Download updates automatically')).toBeInTheDocument()
     expect(screen.getByText('Install updates on quit')).toBeInTheDocument()

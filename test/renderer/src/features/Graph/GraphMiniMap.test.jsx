@@ -44,7 +44,7 @@ describe('GraphMiniMap', () => {
       />
     )
     expect(document.querySelector('canvas')).toBeInTheDocument()
-    expect(screen.getByTitle('Recenter Graph')).toBeInTheDocument()
+    expect(screen.getByLabelText('Recenter Graph')).toBeInTheDocument()
   })
 
   it('calls zoomToFit on recenter click', () => {
@@ -59,7 +59,7 @@ describe('GraphMiniMap', () => {
         mainHeight={600}
       />
     )
-    fireEvent.click(screen.getByTitle('Recenter Graph'))
+    fireEvent.click(screen.getByLabelText('Recenter Graph'))
     expect(zoomToFit).toHaveBeenCalledWith(800, 100)
   })
 

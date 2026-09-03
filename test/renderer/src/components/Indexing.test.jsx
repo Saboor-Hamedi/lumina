@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, act } from '@testing-library/react'
-import IndexingStatus from '../../../../src/renderer/src/components/IndexingStatus'
+import Indexing from '../../../../src/renderer/src/components/Indexing'
 
-describe('IndexingStatus', () => {
+describe('Indexing', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.useFakeTimers()
@@ -14,7 +14,7 @@ describe('IndexingStatus', () => {
   })
 
   it('renders nothing when no stats', () => {
-    const { container } = render(<IndexingStatus />)
+    const { container } = render(<Indexing />)
     expect(container.firstChild).toBeNull()
   })
 
@@ -22,7 +22,7 @@ describe('IndexingStatus', () => {
     const onIndexProgress = vi.fn()
     global.window.api.onIndexProgress = onIndexProgress
 
-    render(<IndexingStatus />)
+    render(<Indexing />)
     expect(onIndexProgress).toHaveBeenCalled()
   })
 
@@ -32,7 +32,7 @@ describe('IndexingStatus', () => {
     })
     global.window.api.onIndexProgress = onIndexProgress
 
-    render(<IndexingStatus />)
+    render(<Indexing />)
     expect(screen.getByText('Indexing…')).toBeInTheDocument()
     expect(screen.getByText('50%')).toBeInTheDocument()
   })
@@ -43,7 +43,7 @@ describe('IndexingStatus', () => {
     })
     global.window.api.onIndexProgress = onIndexProgress
 
-    render(<IndexingStatus />)
+    render(<Indexing />)
     expect(screen.getByText('Indexing complete')).toBeInTheDocument()
     expect(screen.getByText('All files up to date.')).toBeInTheDocument()
   })
@@ -54,7 +54,7 @@ describe('IndexingStatus', () => {
     })
     global.window.api.onIndexProgress = onIndexProgress
 
-    render(<IndexingStatus />)
+    render(<Indexing />)
     expect(screen.getByText('Indexing complete')).toBeInTheDocument()
   })
 
@@ -64,7 +64,7 @@ describe('IndexingStatus', () => {
     })
     global.window.api.onIndexProgress = onIndexProgress
 
-    render(<IndexingStatus />)
+    render(<Indexing />)
     expect(screen.queryByText('100%')).not.toBeInTheDocument()
   })
 
@@ -74,7 +74,7 @@ describe('IndexingStatus', () => {
     })
     global.window.api.onIndexProgress = onIndexProgress
 
-    render(<IndexingStatus />)
+    render(<Indexing />)
     expect(screen.getByText('Indexing complete')).toBeInTheDocument()
 
     act(() => {
@@ -90,7 +90,7 @@ describe('IndexingStatus', () => {
     })
     global.window.api.onIndexProgress = onIndexProgress
 
-    render(<IndexingStatus />)
+    render(<Indexing />)
     expect(screen.getByText(/Scanning 15 files/)).toBeInTheDocument()
   })
 
@@ -100,7 +100,7 @@ describe('IndexingStatus', () => {
     })
     global.window.api.onIndexProgress = onIndexProgress
 
-    render(<IndexingStatus />)
+    render(<Indexing />)
     expect(screen.getByText(/Processed 4 of 10 files/)).toBeInTheDocument()
   })
 
@@ -110,7 +110,7 @@ describe('IndexingStatus', () => {
     })
     global.window.api.onIndexProgress = onIndexProgress
 
-    const { container } = render(<IndexingStatus />)
+    const { container } = render(<Indexing />)
     expect(container.firstChild).toBeNull()
   })
 
@@ -119,7 +119,7 @@ describe('IndexingStatus', () => {
     const onIndexProgress = vi.fn(() => unsubscribe)
     global.window.api.onIndexProgress = onIndexProgress
 
-    const { unmount } = render(<IndexingStatus />)
+    const { unmount } = render(<Indexing />)
     unmount()
 
     expect(unsubscribe).toHaveBeenCalled()
