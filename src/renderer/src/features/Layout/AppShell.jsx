@@ -5,7 +5,7 @@ import Sidebar from '../Navigation/Sidebar'
 import ThemeModal from '../Theme/ThemeModal'
 import CommandPalette from '../Overlays/CommandPalette'
 import Graph from '../Graph/Graph'
-import { WelcomePage } from '../welcome'
+import Welcome from '../../Welcome'
 import TabBar from './TabBar'
 import { ImageViewerTab } from '../media'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
@@ -837,7 +837,7 @@ const AppShell = () => {
           <div className="shell-main-placeholder" />
         ) : (
           <ErrorBoundary>
-            <WelcomePage onNew={handleNew} />
+            <Welcome onNew={handleNew} />
           </ErrorBoundary>
         )}
 

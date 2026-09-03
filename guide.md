@@ -59,7 +59,6 @@ graph TD
             IV[ImageViewerTab.jsx - Binary Image Viewer & Zoom]
             KG[Graph.jsx - 2D / 3D Force-Directed Knowledge Graph]
             AI_UI[LuminaChat.jsx - DeepSeek AI Assistant & Tools]
-            VD[VoiceDictation - Real-Time Speech-to-Text]
             EX[Export Engine - PDF, HTML, DOCX, ZIP Bundle]
         end
 
@@ -165,13 +164,6 @@ graph TD
 - **Local Embeddings & Semantic Search**:
   - Hugging Face `@xenova/transformers` running locally.
   - SQLite vector embeddings cache for semantic search and graph links.
-
----
-
-### 6. Voice Dictation (`src/renderer/src/features/VoiceDictation/`)
-- Real-time speech-to-text dictation using the Web Speech API.
-- Live microphone waveform indicator.
-- Dictated sentences stream directly into the active editor cursor position.
 
 ---
 

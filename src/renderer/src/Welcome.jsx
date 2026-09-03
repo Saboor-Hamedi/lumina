@@ -1,10 +1,10 @@
 import React from 'react'
 import { FileText, Search, Sparkles, FolderTree, Command } from 'lucide-react'
-import { useExternalFileDrop } from '../Explorer/hooks/useExternalFileDrop'
-import ExternalDropOverlay from '../Explorer/components/ExternalDropOverlay'
-import './WelcomePage.css'
+import { useExternalFileDrop } from './features/Explorer/hooks/useExternalFileDrop'
+import ExternalDropOverlay from './features/Explorer/components/ExternalDropOverlay'
+import './assets/welcome.css'
 
-const WelcomePage = ({ onNew }) => {
+const Welcome = ({ onNew }) => {
   const {
     isDraggingExternal,
     handleDragEnter,
@@ -160,4 +160,4 @@ const WelcomePage = ({ onNew }) => {
   )
 }
 
-export default WelcomePage
+export default Welcome
