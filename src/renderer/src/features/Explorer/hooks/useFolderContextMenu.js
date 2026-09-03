@@ -1,27 +1,7 @@
-import { useState, useCallback } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
+import { Trash2, X } from 'lucide-react'
 import { useContextMenu } from '../../Navigation/hooks/useContextMenu'
 
-/**
- * @typedef {Object} FolderContextMenuState
- * @property {number} x - Horizontal mouse coordinate
- * @property {number} y - Vertical mouse coordinate
- * @property {string|null} folderId - Selected folder ID or null for workspace body
- */
-
-/**
- * Custom hook encapsulating the Folder and Workspace Context Menu options,
- * coordinate tracking, and folder deletion confirmation.
- *
- * @param {Object} params
- * @param {Array<string>} params.pinnedFolders - List of pinned folder IDs
- * @param {Function} params.setExpandedFolders - Setter for expanded folders
- * @param {Function} params.setCreating - Setter for inline creation state
- * @param {Function} params.setCreatingValue - Setter for inline creation input value
- * @param {Function} params.setRenamingFolder - Setter for inline renaming folder ID
- * @param {Function} params.setRenamingValue - Setter for inline renaming input value
- * @param {Function} params.loadVault - Vault store loader to refresh tree after deletions
- * @returns {Object} Context menu state, handlers, options, and deletion callbacks
- */
 export function useFolderContextMenu({
   pinnedFolders = [],
   setExpandedFolders,
@@ -29,14 +9,14 @@ export function useFolderContextMenu({
   setCreatingValue,
   setRenamingFolder,
   setRenamingValue,
-  loadVault
+  loadVault,
+  selectedCount = 0,
+  onRequestBulkDelete,
+  clearSelection
 }) {
   const [folderContext, setFolderContext] = useState(null)
   const [deleteConfirmFolder, setDeleteConfirmFolder] = useState(null)
 
-  /**
-   * Opens the context menu at current mouse pointer coordinates.
-   */
   const handleFolderContextMenu = useCallback((id, e) => {
     if (e) {
       e.preventDefault()
@@ -49,10 +29,7 @@ export function useFolderContextMenu({
     })
   }, [])
 
-  /**
-   * Generates context menu action items.
-   */
-  const contextMenuOptions = useContextMenu({
+  const defaultMenuOptions = useContextMenu({
     item: folderContext?.folderId || null,
     type: folderContext?.folderId ? 'folder' : 'body',
     callbacks: {
@@ -89,9 +66,31 @@ export function useFolderContextMenu({
     }
   })
 
-  /**
-   * Executes deletion of the confirmed folder and reloads vault state.
-   */
+  const contextMenuOptions = useMemo(() => {
+    if (selectedCount > 1) {
+      return [
+        {
+          label: `Delete ${selectedCount} Items`,
+          icon: React.createElement(Trash2, { size: 14, className: 'text-danger' }),
+          danger: true,
+          onClick: () => {
+            setFolderContext(null)
+            onRequestBulkDelete?.()
+          }
+        },
+        {
+          label: 'Deselect All',
+          icon: React.createElement(X, { size: 14 }),
+          onClick: () => {
+            setFolderContext(null)
+            clearSelection?.()
+          }
+        }
+      ]
+    }
+    return defaultMenuOptions
+  }, [selectedCount, defaultMenuOptions, onRequestBulkDelete, clearSelection])
+
   const handleConfirmDeleteFolder = useCallback(async () => {
     if (!deleteConfirmFolder) return
     try {

@@ -8,16 +8,18 @@ export function useExplorerSelection({
   flatTree,
   query,
   selectedSnippetId,
-  onClose
+  onClose,
+  onRequestBulkDelete
 }) {
   const setSelectedSnippet = useVaultStore((state) => state.setSelectedSnippet)
   const setSelectedFolder = useVaultStore((state) => state.setSelectedFolder)
 
   const [selectedNoteIds, setSelectedNoteIds] = useState(new Set())
+  const [selectedFolderIds, setSelectedFolderIds] = useState(new Set())
   const [lastClickedNoteId, setLastClickedNoteId] = useState(null)
   const [lastClickedFolder, setLastClickedFolder] = useState(null)
   const [selectedIndex, setSelectedIndex] = useState(-1)
-  const [sidebarFocus, setSidebarFocus] = useState(null) // 'note' | 'folder' | 'root' | null
+  const [sidebarFocus, setSidebarFocus] = useState(null) // 'note' | 'folder' | 'multi' | 'root' | null
 
   const clickedInExplorerRef = useRef(0)
   const lastScrolledSnippetRef = useRef(null)
@@ -27,23 +29,78 @@ export function useExplorerSelection({
     setSidebarFocus(null)
   }, [isOpen])
 
-  // Deselect on Escape key
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        setSelectedNoteIds(new Set())
-        setLastClickedNoteId(null)
-        setLastClickedFolder(null)
-        setSelectedFolder(null)
-        setSelectedIndex(-1)
-        setSidebarFocus(null)
+  // Select all items (both files and folders)
+  const selectAll = useCallback(() => {
+    if (!flatTree || flatTree.length === 0) return
+
+    const noteIds = new Set()
+    const folderIds = new Set()
+
+    flatTree.forEach((item) => {
+      if (item.type === 'file' && item.snippet) {
+        noteIds.add(item.snippet.id)
+      } else if (item.type === 'folder' && item.id) {
+        folderIds.add(item.id)
       }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
+    })
+
+    setSelectedNoteIds(noteIds)
+    setSelectedFolderIds(folderIds)
+    setSidebarFocus('multi')
+  }, [flatTree])
+
+  // Clear all selections
+  const clearSelection = useCallback(() => {
+    setSelectedNoteIds(new Set())
+    setSelectedFolderIds(new Set())
+    setLastClickedNoteId(null)
+    setLastClickedFolder(null)
+    setSelectedFolder(null)
+    setSelectedIndex(-1)
+    setSidebarFocus(null)
   }, [setSelectedFolder])
 
-  // Deselect when clicking outside the explorer (e.g. editor, inspector, header)
+  // Handle Ctrl+A, Escape, Delete, Backspace keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const activeTag = document.activeElement?.tagName?.toLowerCase()
+      const isInput =
+        activeTag === 'input' ||
+        activeTag === 'textarea' ||
+        document.activeElement?.isContentEditable
+
+      if (isInput) return
+
+      // Escape -> Clear Selection
+      if (e.key === 'Escape') {
+        clearSelection()
+        return
+      }
+
+      // Ctrl+A / Cmd+A -> Select All in Explorer
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) {
+        // Only intercept if explorer is open or focused
+        if (isOpen || document.querySelector('.unified-sidebar:hover') || modalRef?.current?.contains(document.activeElement)) {
+          e.preventDefault()
+          selectAll()
+        }
+        return
+      }
+
+      // Delete / Backspace -> Delete Selected Items
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (selectedNoteIds.size > 0 || selectedFolderIds.size > 0 || sidebarFocus === 'folder') {
+          e.preventDefault()
+          onRequestBulkDelete?.()
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, modalRef, selectAll, clearSelection, selectedNoteIds, selectedFolderIds, sidebarFocus, onRequestBulkDelete])
+
+  // Deselect when clicking outside the explorer
   useEffect(() => {
     const handleDocumentPointerDown = (e) => {
       if (modalRef.current && !modalRef.current.contains(e.target)) {
@@ -69,15 +126,11 @@ export function useExplorerSelection({
         !e.target.closest('.start-section-header') &&
         !e.target.closest('.explorer-header-container')
       ) {
-        setSelectedNoteIds(new Set())
-        setLastClickedNoteId(null)
-        setLastClickedFolder(null)
-        setSelectedFolder(null)
-        setSelectedIndex(-1)
+        clearSelection()
         setSidebarFocus('root')
       }
     },
-    [setSelectedFolder]
+    [clearSelection]
   )
 
   // Intelligent selection on query changes
@@ -170,6 +223,7 @@ export function useExplorerSelection({
         setLastClickedFolder(snippet.folderId || '')
       } else {
         setSelectedNoteIds(new Set([snippet.id]))
+        setSelectedFolderIds(new Set())
         setLastClickedNoteId(snippet.id)
         setSidebarFocus('note')
         setLastClickedFolder(snippet.folderId || '')
@@ -179,9 +233,39 @@ export function useExplorerSelection({
     [flatTree, lastClickedNoteId, handleSelect, setSelectedFolder]
   )
 
+  const handleFolderClick = useCallback(
+    (folderId, e) => {
+      if (!folderId) return
+      const isCtrl = e?.ctrlKey || e?.metaKey
+
+      if (isCtrl) {
+        setSelectedFolderIds((prev) => {
+          const next = new Set(prev)
+          if (next.has(folderId)) {
+            next.delete(folderId)
+          } else {
+            next.add(folderId)
+          }
+          return next
+        })
+        setSidebarFocus('folder')
+        setLastClickedFolder(folderId)
+      } else {
+        setSelectedFolderIds(new Set([folderId]))
+        setSelectedNoteIds(new Set())
+        setSidebarFocus('folder')
+        setLastClickedFolder(folderId)
+        setSelectedFolder(folderId)
+      }
+    },
+    [setSelectedFolder]
+  )
+
   return {
     selectedNoteIds,
     setSelectedNoteIds,
+    selectedFolderIds,
+    setSelectedFolderIds,
     lastClickedNoteId,
     setLastClickedNoteId,
     lastClickedFolder,
@@ -190,8 +274,11 @@ export function useExplorerSelection({
     setSelectedIndex,
     sidebarFocus,
     setSidebarFocus,
+    selectAll,
+    clearSelection,
     handleSelect,
     handleNoteClick,
+    handleFolderClick,
     handleBackgroundClick
   }
 }

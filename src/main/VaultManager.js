@@ -461,11 +461,20 @@ class VaultManager {
       const fullPath = path.join(this.vaultPath, folderPath)
       await fs.rm(fullPath, { recursive: true, force: true })
 
-      this.folders.delete(folderPath)
+      const normalizedTarget = folderPath.replace(/\\/g, '/')
+      
+      // Delete subfolders from memory
+      for (const f of Array.from(this.folders)) {
+        const normF = f.replace(/\\/g, '/')
+        if (normF === normalizedTarget || normF.startsWith(`${normalizedTarget}/`)) {
+          this.folders.delete(f)
+        }
+      }
 
       // Delete snippets inside this folder from memory
       for (const [id, snippet] of this.snippets.entries()) {
-        if (snippet.folderId === folderPath || snippet.folderId.startsWith(`${folderPath}/`)) {
+        const sFolder = (snippet.folderId || '').replace(/\\/g, '/')
+        if (sFolder === normalizedTarget || sFolder.startsWith(`${normalizedTarget}/`)) {
           this.snippets.delete(id)
         }
       }

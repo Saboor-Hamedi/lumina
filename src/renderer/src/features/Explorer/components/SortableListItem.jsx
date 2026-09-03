@@ -4,7 +4,7 @@ import { CSS } from '@dnd-kit/utilities'
 import SidebarItem from '../../Navigation/components/SidebarItem'
 
 export const SortableListItem = React.memo(
-  ({ snippet, isActive, onClick, searchQuery, matchSnippet, depth }) => {
+  ({ snippet, isActive, onClick, onContextMenu, searchQuery, matchSnippet, depth }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
       id: snippet.id
     })
@@ -31,6 +31,7 @@ export const SortableListItem = React.memo(
         snippet={snippet}
         variant="list"
         onClick={handleClick}
+        onContextMenu={onContextMenu}
         isActive={isActive}
         searchQuery={searchQuery}
         matchSnippet={matchSnippet}

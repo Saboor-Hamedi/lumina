@@ -31,6 +31,7 @@ const SidebarItem = ({
   snippet,
   isActive,
   onClick,
+  onContextMenu,
   style,
   variant = 'list',
   dndProps,
@@ -76,7 +77,11 @@ const SidebarItem = ({
   const handleContextMenu = (e) => {
     e.preventDefault()
     e.stopPropagation()
-    if (snippet.itemType === 'folder') return // no context menu on favorite folders in the list for now
+    if (onContextMenu) {
+      onContextMenu(snippet, e)
+      return
+    }
+    if (snippet.itemType === 'folder') return
     setContextMenu({ x: e.clientX, y: e.clientY })
   }
 

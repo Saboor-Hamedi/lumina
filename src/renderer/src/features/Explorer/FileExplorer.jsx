@@ -293,9 +293,14 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     folderOrder: settings.folderOrder
   })
 
+  const deleteSnippet = useVaultStore((state) => state.deleteSnippet)
+  const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false)
+
   const {
     selectedNoteIds,
     setSelectedNoteIds,
+    selectedFolderIds,
+    setSelectedFolderIds,
     lastClickedNoteId,
     setLastClickedNoteId,
     lastClickedFolder,
@@ -304,8 +309,11 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     setSelectedIndex,
     sidebarFocus,
     setSidebarFocus,
+    selectAll,
+    clearSelection,
     handleSelect,
     handleNoteClick,
+    handleFolderClick,
     handleBackgroundClick
   } = useExplorerSelection({
     isOpen,
@@ -314,8 +322,28 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     flatTree,
     query,
     selectedSnippetId,
-    onClose
+    onClose,
+    onRequestBulkDelete: () => setBulkDeleteModalOpen(true)
   })
+
+  const totalSelectedCount = selectedNoteIds.size + selectedFolderIds.size
+
+  const handleConfirmBulkDelete = useCallback(async () => {
+    try {
+      for (const folderId of Array.from(selectedFolderIds)) {
+        await window.api?.deleteFolder?.(folderId)
+      }
+      for (const noteId of Array.from(selectedNoteIds)) {
+        await deleteSnippet(noteId, true)
+      }
+      clearSelection()
+      await loadVault()
+    } catch (err) {
+      console.error('Failed to execute bulk deletion:', err)
+    } finally {
+      setBulkDeleteModalOpen(false)
+    }
+  }, [selectedFolderIds, selectedNoteIds, deleteSnippet, clearSelection, loadVault])
 
   const {
     sensors,
@@ -347,7 +375,10 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     setCreatingValue,
     setRenamingFolder,
     setRenamingValue,
-    loadVault
+    loadVault,
+    selectedCount: totalSelectedCount,
+    onRequestBulkDelete: () => setBulkDeleteModalOpen(true),
+    clearSelection
   })
 
   const { size, handleResizeStart } = useResizable(modalRef)
@@ -401,8 +432,10 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
       const isExpanded = context.query?.trim()
         ? !context.collapsedDuringSearch?.has(item.id)
         : context.expandedFolders?.has(item.id)
+      const isMultiSelected = selectedFolderIds.has(item.id)
       const isActive =
-        sidebarFocus === 'folder' && (lastClickedFolder === item.id || index === selectedIndex)
+        isMultiSelected ||
+        (sidebarFocus === 'folder' && (lastClickedFolder === item.id || index === selectedIndex))
       return (
         <div
           style={{
@@ -424,16 +457,24 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
             isPinned={context.pinnedFolders?.includes(item.id)}
             onTogglePin={context.togglePinnedFolder}
             onToggle={(id, e) => {
-              setSidebarFocus('folder')
-              setLastClickedFolder(id)
-              setSelectedIndex(index)
-              toggleFolder(id, e)
+              if (e?.ctrlKey || e?.metaKey) {
+                handleFolderClick(id, e)
+              } else {
+                setSidebarFocus('folder')
+                setLastClickedFolder(id)
+                setSelectedIndex(index)
+                toggleFolder(id, e)
+              }
             }}
             onContextMenu={(id, e) => {
-              setSidebarFocus('folder')
-              setLastClickedFolder(id)
-              setSelectedIndex(index)
-              handleFolderContextMenu(id, e)
+              if (totalSelectedCount > 1 && (selectedFolderIds.has(id) || selectedNoteIds.size > 0)) {
+                handleFolderContextMenu(id, e)
+              } else {
+                setSidebarFocus('folder')
+                setLastClickedFolder(id)
+                setSelectedIndex(index)
+                handleFolderContextMenu(id, e)
+              }
             }}
           />
         </div>
@@ -441,9 +482,9 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     } else {
       const isMultiSelected = selectedNoteIds.has(item.snippet.id)
       const isNoteActive =
-        sidebarFocus === 'note' &&
+        (sidebarFocus === 'note' || sidebarFocus === 'multi') &&
         (isMultiSelected ||
-          (selectedNoteIds.size === 0 && item.snippet.id === selectedSnippetId) ||
+          (selectedNoteIds.size === 0 && selectedFolderIds.size === 0 && item.snippet.id === selectedSnippetId) ||
           index === selectedIndex)
       const filePaddingLeft = `${item.depth * 10 + 10}px`
 
@@ -458,6 +499,11 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
             key={item.snippet.id}
             snippet={item.snippet}
             onClick={handleNoteClick}
+            onContextMenu={(snippet, e) => {
+              if (totalSelectedCount > 1 && (selectedNoteIds.has(snippet.id) || selectedFolderIds.size > 0)) {
+                handleFolderContextMenu(snippet.id, e)
+              }
+            }}
             isActive={isNoteActive}
             searchQuery={query}
             matchSnippet={matchMetaMap?.get(item.snippet.id)?.matchSnippet || ''}
@@ -470,13 +516,16 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     sidebarFocus,
     lastClickedFolder,
     selectedNoteIds,
+    selectedFolderIds,
     selectedSnippetId,
     selectedIndex,
+    totalSelectedCount,
     query,
     matchMetaMap,
     toggleFolder,
     handleFolderContextMenu,
-    handleNoteClick
+    handleNoteClick,
+    handleFolderClick
   ])
 
   if (!isEmbedded && (!isOpen || !isPositionReady)) return null
@@ -828,6 +877,15 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
         title="Delete Folder"
         message={`Are you sure you want to delete '${deleteConfirmFolder}' and all its contents? This action cannot be undone.`}
         confirmText="Delete Folder"
+      />
+
+      <ConfirmModal
+        isOpen={bulkDeleteModalOpen}
+        onClose={() => setBulkDeleteModalOpen(false)}
+        onConfirm={handleConfirmBulkDelete}
+        title={`Delete ${totalSelectedCount} Selected ${totalSelectedCount === 1 ? 'Item' : 'Items'}?`}
+        message={`Are you sure you want to permanently delete ${selectedFolderIds.size > 0 ? `${selectedFolderIds.size} folder${selectedFolderIds.size > 1 ? 's' : ''}` : ''}${selectedFolderIds.size > 0 && selectedNoteIds.size > 0 ? ' and ' : ''}${selectedNoteIds.size > 0 ? `${selectedNoteIds.size} note${selectedNoteIds.size > 1 ? 's' : ''}` : ''} and all nested files? This action cannot be undone.`}
+        confirmText="Delete All"
       />
     </>
   )
