@@ -10,11 +10,10 @@
 
 import { dialog } from 'electron'
 import fs from 'fs/promises'
-import path from 'path'
 import { Marked } from 'marked'
 import { markedHighlight } from 'marked-highlight'
 import hljs from 'highlight.js'
-import VaultManager from '../main/VaultManager.js'
+import VaultManager from '../main/workspace/workspaceManager.js'
 
 /**
  * Builds a self-contained, beautifully styled HTML document from markdown.

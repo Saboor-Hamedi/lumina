@@ -107,17 +107,6 @@ export function useExternalFileDrop() {
         const result = await window.api?.importExternalPaths?.(paths, targetFolderId || '')
         await loadVault()
 
-        const count = result?.count || paths.length
-        const folderLabel = targetFolderId ? `"${targetFolderId}"` : 'vault'
-        window.dispatchEvent(
-          new CustomEvent('show-toast', {
-            detail: {
-              message: `✓ Imported ${count} item${count > 1 ? 's' : ''} to ${folderLabel}`,
-              type: 'success'
-            }
-          })
-        )
-
         if (result?.importedFolderIds && result.importedFolderIds.length > 0) {
           const currentExpanded = useVaultStore.getState().expandedFolders || new Set()
           const nextExpanded = new Set(currentExpanded)
@@ -135,14 +124,6 @@ export function useExternalFileDrop() {
         }
       } catch (err) {
         console.error('Failed to import external files:', err)
-        window.dispatchEvent(
-          new CustomEvent('show-toast', {
-            detail: {
-              message: `Failed to import files: ${err.message}`,
-              type: 'error'
-            }
-          })
-        )
       }
     },
     [isExternalFileDrag, resetDragState, loadVault, setSelectedSnippet]

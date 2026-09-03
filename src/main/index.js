@@ -3,11 +3,14 @@ const { app, shell, BrowserWindow, ipcMain, dialog, protocol, net } = electron.d
 import { join } from 'path'
 import path from 'path'
 import fs from 'fs/promises'
-import VaultManager from './VaultManager'
+import WorkspaceManager from './workspace/workspaceManager'
 import SettingsManager from './SettingsManager'
 import AppUpdater from './AppUpdater'
-import VaultIndexer from './VaultIndexer'
-import VaultSearch from './VaultSearch'
+import WorkspaceIndexer from './workspace/workspaceIndexer'
+import WorkspaceSearch from './workspace/workspaceSearch'
+const VaultManager = WorkspaceManager
+const VaultIndexer = WorkspaceIndexer
+const VaultSearch = WorkspaceSearch
 import Database from 'better-sqlite3'
 import iconAsset from '../../resources/icon.png?asset'
 import { handleExportDocs } from '../export/exportDocs'
@@ -351,18 +354,18 @@ app.whenReady().then(async () => {
   ipcMain.handle('vault:getSnippets', () => VaultManager.getSnippets())
   ipcMain.handle('vault:saveSnippet', async (_, snippet) => {
     const updatedSnippet = await VaultManager.saveSnippet(snippet)
-    // Auto-index updated file in background
     if (VaultManager.vaultPath && updatedSnippet?.fileName) {
       const filePath = path.join(
         VaultManager.vaultPath,
         updatedSnippet.folderId || '',
         updatedSnippet.fileName
       )
-      VaultIndexer.indexFile(filePath, true).catch((err) => {
-        console.error('[Main] Auto-index failed:', err)
-      })
+      VaultIndexer.indexFile(filePath, true)
+        .then(() => VaultSearch.reload())
+        .catch((err) => {
+          console.error('[Main] Auto-index failed:', err)
+        })
     }
-    // Return the updated snippet with cleaned title
     return updatedSnippet
   })
   ipcMain.handle('vault:saveImage', (_, { buffer, name }) => VaultManager.saveImage(buffer, name))
@@ -371,39 +374,88 @@ app.whenReady().then(async () => {
     try {
       const deletedPath = await VaultManager.deleteSnippet(id)
       if (deletedPath && typeof deletedPath === 'string') {
-        VaultIndexer.removeFile(deletedPath).catch((err) => {
-          console.error('[Main] Failed to remove deleted file from index:', err)
-        })
+        await VaultIndexer.deleteChunksForFile(deletedPath)
+        await VaultSearch.reload()
       }
       return true
     } catch (err) {
       throw err
     }
   })
+  ipcMain.handle('vault:deleteChunks', async (_, target) => {
+    try {
+      if (Array.isArray(target)) {
+        await VaultIndexer.deleteChunksForFiles(target)
+      } else {
+        await VaultIndexer.deleteChunksForFile(target)
+      }
+      await VaultSearch.reload()
+      return true
+    } catch (err) {
+      console.error('[Main] Failed to delete chunks:', err)
+      return false
+    }
+  })
   ipcMain.handle('vault:cleanOrphans', async () => await VaultManager.cleanOrphanedAssets())
 
-  // Folder IPC
   ipcMain.handle('vault:createFolder', async (_, path) => await VaultManager.createFolder(path))
   ipcMain.handle(
     'vault:renameFolder',
     async (_, oldPath, newPath) => await VaultManager.renameFolder(oldPath, newPath)
   )
-  ipcMain.handle(
-    'vault:moveFile',
-    async (_, oldRelPath, newRelPath) => await VaultManager.moveFile(oldRelPath, newRelPath)
-  )
-  ipcMain.handle('vault:deleteFolder', async (_, path) => await VaultManager.deleteFolder(path))
+  ipcMain.handle('vault:moveFile', async (_, oldRelPath, newRelPath) => {
+    const result = await VaultManager.moveFile(oldRelPath, newRelPath)
+    if (VaultManager.vaultPath) {
+      const oldFullPath = path.join(VaultManager.vaultPath, oldRelPath)
+      const newFullPath = path.join(VaultManager.vaultPath, newRelPath)
+      await VaultIndexer.deleteChunksForFile(oldFullPath)
+      if (newFullPath.endsWith('.md')) {
+        await VaultIndexer.indexFile(newFullPath, true)
+      }
+      await VaultSearch.reload()
+    }
+    return result
+  })
+  ipcMain.handle('vault:deleteFolder', async (_, folderPath) => {
+    const result = await VaultManager.deleteFolder(folderPath)
+    if (result?.deletedFilePaths && Array.isArray(result.deletedFilePaths)) {
+      await VaultIndexer.removeFiles(result.deletedFilePaths)
+      await VaultSearch.reload()
+    }
+    return result
+  })
   ipcMain.handle('vault:bulkDelete', async (_, { folderIds, snippetIds }) => {
     const result = await VaultManager.bulkDelete({ folderIds, snippetIds })
     if (result?.deletedFilePaths && Array.isArray(result.deletedFilePaths)) {
-      result.deletedFilePaths.forEach((fp) => {
-        VaultIndexer.removeFile(fp).catch(() => {})
-      })
+      await VaultIndexer.removeFiles(result.deletedFilePaths)
+      await VaultSearch.reload()
     }
     return result
   })
   ipcMain.handle('vault:importExternalPaths', async (_, { sourcePaths, targetFolderId }) => {
-    return await VaultManager.importExternalPaths(sourcePaths, targetFolderId)
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('index:progress', {
+        stage: 'scanning',
+        progress: 0,
+        total: sourcePaths?.length || 0,
+        found: sourcePaths?.length || 0
+      })
+    }
+    const result = await VaultManager.importExternalPaths(sourcePaths, targetFolderId)
+    if (VaultManager.vaultPath) {
+      VaultIndexer.indexVault(VaultManager.vaultPath, {
+        onProgress: (prog) => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('index:progress', prog)
+          }
+        }
+      })
+        .then(() => VaultSearch.reload())
+        .catch((err) => {
+          console.error('[Main] Indexing imported files failed:', err)
+        })
+    }
+    return result
   })
 
   // System

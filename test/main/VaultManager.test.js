@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import fs from 'fs/promises'
 import path from 'path'
 import os from 'os'
-import VaultManager from '../../src/main/VaultManager.js'
+import VaultManager from '../../src/main/workspace/workspaceManager.js'
 import matter from 'gray-matter'
 
 vi.mock('electron', () => {
@@ -22,6 +22,10 @@ describe('VaultManager', () => {
   let originalVaultPath
 
   beforeEach(async () => {
+    if (VaultManager.watcher) {
+      await VaultManager.watcher.close()
+      VaultManager.watcher = null
+    }
     testVaultPath = path.join(os.tmpdir(), `lumina-test-${Date.now()}`)
     await fs.mkdir(testVaultPath, { recursive: true })
     await fs.mkdir(path.join(testVaultPath, 'assets'), { recursive: true })
@@ -51,6 +55,10 @@ describe('VaultManager', () => {
         .then(() => true)
         .catch(() => false)
       expect(exists).toBe(true)
+      if (VaultManager.watcher) {
+        await VaultManager.watcher.close()
+        VaultManager.watcher = null
+      }
       await fs.rm(newVaultPath, { recursive: true, force: true })
     })
 

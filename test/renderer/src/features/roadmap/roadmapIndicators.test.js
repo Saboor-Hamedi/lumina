@@ -7,7 +7,7 @@ vi.mock('@codemirror/language', () => ({
   syntaxTree: () => fakeTree
 }))
 
-vi.mock('../../../../../src/renderer/src/features/roadmap/roadmapStore', () => ({
+vi.mock('../../../../../src/renderer/src/features/roadmap/useStoreProgress', () => ({
   STATUS_UNREAD: 0,
   STATUS_IN_PROGRESS: 1,
   STATUS_COMPLETED: 2,
@@ -24,7 +24,7 @@ import {
   getNoteStatus,
   STATUS_COMPLETED,
   STATUS_IN_PROGRESS
-} from '../../../../../src/renderer/src/features/roadmap/roadmapStore'
+} from '../../../../../src/renderer/src/features/roadmap/useStoreProgress'
 
 describe('roadmapIndicators', () => {
   beforeEach(() => {

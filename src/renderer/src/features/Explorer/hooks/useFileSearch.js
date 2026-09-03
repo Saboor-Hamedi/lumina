@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import Fuse from 'fuse.js'
 import { rankSnippets } from '../../../core/utils/searchRanker'
 
-export function useFileSearch(snippets, query, settings) {
+export function useFileSearch(snippets, query, settings, folders = []) {
   const sortBy = settings.sortBy || 'name'
   const sortDirection = settings.sortDirection || 'asc'
   const noteOrder = settings.noteOrder || null
@@ -28,17 +28,27 @@ export function useFileSearch(snippets, query, settings) {
     return { filteredSnippets: results, isQueryActive: true, matchMetaMap }
   }, [query, fuseIndex, snippets])
 
+  const existingFolderIds = useMemo(() => {
+    return new Set(
+      (folders || [])
+        .map((f) => (typeof f === 'string' ? f : f?.id || f?.name || ''))
+        .filter(Boolean)
+    )
+  }, [folders])
+
   // 2. Pinned items (snippets + folders)
   const pinnedItems = useMemo(() => {
     const dbPinned = snippets.filter((s) => s.isPinned).map((s) => ({ ...s, itemType: 'snippet' }))
-    const folderPinned = (settings.pinnedFolders || []).map((folderId) => {
-      return {
-        id: folderId,
-        title: folderId.split('/').pop(),
-        itemType: 'folder',
-        isPinned: true
-      }
-    })
+    const folderPinned = (settings.pinnedFolders || [])
+      .filter((folderId) => existingFolderIds.has(folderId))
+      .map((folderId) => {
+        return {
+          id: folderId,
+          title: folderId.split('/').pop(),
+          itemType: 'folder',
+          isPinned: true
+        }
+      })
 
     const combined = [...dbPinned, ...folderPinned]
     const pinnedOrderMap = new Map((settings.startMenuPinnedOrder || []).map((id, i) => [id, i]))
@@ -51,7 +61,7 @@ export function useFileSearch(snippets, query, settings) {
       return 0
     })
     return combined
-  }, [snippets, settings.startMenuPinnedOrder, settings.pinnedFolders])
+  }, [snippets, settings.startMenuPinnedOrder, settings.pinnedFolders, existingFolderIds])
 
   // 3. All snippets sorted
   const allSnippets = useMemo(() => {

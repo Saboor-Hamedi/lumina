@@ -10,10 +10,10 @@ import {
   resetTrackProgress,
   getTrackStats,
   calculateDocumentRoadmapProgress
-} from '../../../../../src/renderer/src/features/roadmap/roadmapStore'
+} from '../../../../../src/renderer/src/features/roadmap/useStoreProgress'
 import { useSettingsStore } from '../../../../../src/renderer/src/core/store/useSettingsStore'
 
-describe('roadmapStore', () => {
+describe('useStoreProgress', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     useSettingsStore.setState({

@@ -121,7 +121,6 @@ export function useExplorerOperations({
     }
   }, [selectedSnippetId, snippets, updateSetting])
 
-  // External trigger for creating new note
   useEffect(() => {
     const handleTriggerNewNote = () => {
       let targetFolderId = lastClickedFolder
@@ -137,9 +136,62 @@ export function useExplorerOperations({
       setCreatingValue('')
     }
 
+    const handleRevealFolder = (e) => {
+      const folderId = e.detail
+      if (!folderId) return
+
+      const foldersToExpand = []
+      let currentId = folderId
+      const visited = new Set()
+      let depth = 0
+
+      while (currentId && currentId !== '/' && currentId !== 'root' && !visited.has(currentId) && depth < 50) {
+        visited.add(currentId)
+        depth++
+        foldersToExpand.push(currentId)
+        const fObj = visibleFolders?.find((f) => f.id === currentId || f.name === currentId)
+        if (fObj) {
+          currentId = fObj.parentId
+        } else {
+          break
+        }
+      }
+
+      const currentSet = expandedFoldersRef.current
+      const next = new Set(currentSet)
+      let changed = false
+      for (const id of foldersToExpand) {
+        if (!next.has(id)) {
+          next.add(id)
+          changed = true
+        }
+      }
+
+      if (changed) {
+        setExpandedFolders(next)
+        updateSetting('expandedFolders', Array.from(next))
+      }
+
+      useVaultStore.getState().setSelectedFolder(folderId)
+    }
+
+    const handleFocusRoot = () => {
+      useVaultStore.getState().setSelectedFolder(null)
+      if (virtuosoRef?.current) {
+        virtuosoRef.current.scrollToIndex({ index: 0, align: 'start' })
+      }
+    }
+
     window.addEventListener('trigger-new-note', handleTriggerNewNote)
-    return () => window.removeEventListener('trigger-new-note', handleTriggerNewNote)
-  }, [lastClickedFolder, selectedSnippetId, snippets])
+    window.addEventListener('reveal-folder-in-explorer', handleRevealFolder)
+    window.addEventListener('focus-explorer-root', handleFocusRoot)
+
+    return () => {
+      window.removeEventListener('trigger-new-note', handleTriggerNewNote)
+      window.removeEventListener('reveal-folder-in-explorer', handleRevealFolder)
+      window.removeEventListener('focus-explorer-root', handleFocusRoot)
+    }
+  }, [lastClickedFolder, selectedSnippetId, snippets, visibleFolders, virtuosoRef, updateSetting])
 
   /**
    * Toggles folder expansion state and persists to settings store.

@@ -1,49 +1,59 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState, useEffect, useCallback } from 'react'
 import { Check } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
 import { useVaultStore } from '../../core/store/useVaultStore'
 
-/**
- * Clean, self-contained Learn/Understand toggle button for notes
- * Stores `isLearned: true` directly on the snippet document with instant optimistic updates.
- */
 export function LearnedButton({ snippet }) {
   const saveSnippet = useVaultStore((state) => state.saveSnippet)
-  const currentSnippet = useVaultStore(
-    (state) => state.snippets.find((s) => s.id === snippet?.id) || snippet
-  )
-  const isLearned = !!currentSnippet?.isLearned
+  const isStoreLearned = useVaultStore((state) => {
+    const s = state.snippets.find((item) => item.id === snippet?.id)
+    return s ? !!s.isLearned : !!snippet?.isLearned
+  })
 
-  const toggleLearned = async (e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (!currentSnippet?.id) return
+  const [localLearned, setLocalLearned] = useState(isStoreLearned)
 
-    const nextLearnedState = !isLearned
+  useEffect(() => {
+    setLocalLearned(isStoreLearned)
+  }, [isStoreLearned])
 
-    // 1. Optimistic immediate update to local store so UI responds instantly across all notes
-    useVaultStore.setState((state) => ({
-      snippets: state.snippets.map((s) =>
-        s.id === currentSnippet.id ? { ...s, isLearned: nextLearnedState } : s
-      ),
-      selectedSnippet:
-        state.selectedSnippet?.id === currentSnippet.id
-          ? { ...state.selectedSnippet, isLearned: nextLearnedState }
-          : state.selectedSnippet
-    }))
+  const toggleLearned = useCallback(
+    (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      if (!snippet?.id) return
 
-    // 2. Persist to disk
-    try {
-      await saveSnippet({
-        ...currentSnippet,
-        isLearned: nextLearnedState
+      const nextLearnedState = !localLearned
+      setLocalLearned(nextLearnedState)
+
+      requestAnimationFrame(() => {
+        const state = useVaultStore.getState()
+        const targetSnippet = state.snippets.find((s) => s.id === snippet.id) || snippet
+
+        useVaultStore.setState({
+          snippets: state.snippets.map((s) =>
+            s.id === snippet.id ? { ...s, isLearned: nextLearnedState } : s
+          ),
+          selectedSnippet:
+            state.selectedSnippet?.id === snippet.id
+              ? { ...state.selectedSnippet, isLearned: nextLearnedState }
+              : state.selectedSnippet
+        })
+
+        saveSnippet({
+          ...targetSnippet,
+          isLearned: nextLearnedState
+        }).catch((err) => {
+          console.error('[ProgressTracker] Failed to toggle learned status:', err)
+          setLocalLearned(!nextLearnedState)
+        })
       })
-    } catch (err) {
-      console.error('[ProgressTracker] Failed to toggle learned status:', err)
-    }
-  }
+    },
+    [snippet, localLearned, saveSnippet]
+  )
 
   if (!snippet?.id) return null
+
+  const isLearned = localLearned
 
   return (
     <ToolTip text={isLearned ? 'Mark as Not Learned' : 'Mark as Learned'} position="bottom">
@@ -121,10 +131,6 @@ export function LearnedButton({ snippet }) {
   )
 }
 
-/**
- * Compact learning track badge for the action row
- * Displays Topic/Folder progress if inside a folder, or vault stats if at root.
- */
 export function LearningTrackBadge({ snippetId }) {
   const snippets = useVaultStore((state) => state.snippets)
   const selectedSnippet = useVaultStore(
@@ -217,7 +223,6 @@ export function LearningTrackBadge({ snippetId }) {
           </span>
         </div>
 
-        {/* Small micro progress bar right under the transparent track text */}
         <div
           style={{
             width: '100%',
@@ -243,9 +248,6 @@ export function LearningTrackBadge({ snippetId }) {
   )
 }
 
-/**
- * Sleek 2px ambient progress edge line anchored to the header bottom
- */
 export default function ProgressTracker({ snippetId }) {
   const snippets = useVaultStore((state) => state.snippets)
   const selectedSnippet = useVaultStore(
@@ -309,8 +311,7 @@ export default function ProgressTracker({ snippetId }) {
           background: 'rgba(255, 255, 255, 0.04)',
           borderRadius: '1px',
           overflow: 'hidden',
-          position: 'relative',
-          cursor: 'pointer'
+          position: 'relative'
         }}
       >
         <div

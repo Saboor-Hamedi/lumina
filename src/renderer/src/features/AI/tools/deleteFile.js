@@ -20,6 +20,9 @@ export const deleteFileTool = aiSdk.tool({
     }
     if (target) {
       await vs.deleteSnippet(target.id, true)
+      if (window.api?.deleteChunks) {
+        await window.api.deleteChunks(target.title || target.fileName || target.id)
+      }
       return { success: true, title }
     }
     return { success: false, error: 'File not found' }

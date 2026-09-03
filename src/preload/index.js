@@ -32,6 +32,7 @@ const api = {
   deleteFolder: (path) => electronAPI.ipcRenderer.invoke('vault:deleteFolder', path),
   bulkDelete: ({ folderIds, snippetIds }) =>
     electronAPI.ipcRenderer.invoke('vault:bulkDelete', { folderIds, snippetIds }),
+  deleteChunks: (target) => electronAPI.ipcRenderer.invoke('vault:deleteChunks', target),
   importExternalPaths: (sourcePaths, targetFolderId) =>
     electronAPI.ipcRenderer.invoke('vault:importExternalPaths', { sourcePaths, targetFolderId }),
 

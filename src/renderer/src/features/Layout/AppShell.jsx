@@ -71,7 +71,17 @@ const AppShell = () => {
   const sidebarSetting = useSettingsStore((state) => state.settings?.sidebar)
   const rightSidebarSetting = useSettingsStore((state) => state.settings?.rightSidebar)
 
-  // Initialize typing sound hook globally
+  useEffect(() => {
+    const handleGlobalToast = (e) => {
+      const { message, type = 'info', duration = 3000 } = e.detail || {}
+      if (message) {
+        showToast(message, type, duration)
+      }
+    }
+    window.addEventListener('show-toast', handleGlobalToast)
+    return () => window.removeEventListener('show-toast', handleGlobalToast)
+  }, [showToast])
+
   useTypingSound()
   const [settingsInitialTab, setSettingsInitialTab] = useState('look-and-feel')
 
@@ -745,9 +755,11 @@ const AppShell = () => {
               isLeftSidebarOpen={isLeftSidebarOpen}
               onToggleLeftSidebar={() => setIsLeftSidebarOpen((prev) => !prev)}
             />
-            {selectedSnippet && activeTabId !== GRAPH_TAB_ID && (
-              <Breadcrumbs snippet={selectedSnippet} />
-            )}
+            {selectedSnippet &&
+              activeTabId !== GRAPH_TAB_ID &&
+              snippets.some((s) => s.id === selectedSnippet.id) && (
+                <Breadcrumbs snippet={selectedSnippet} />
+              )}
           </>
         )}
 

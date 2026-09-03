@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import RoadmapProgressBar, {
+import ProgressTracker, {
   LearnedButton,
   LearningTrackBadge
-} from '../../../../../src/renderer/src/features/roadmap/RoadmapProgressBar'
+} from '../../../../../src/renderer/src/features/roadmap/ProgressTracker'
 import { useVaultStore } from '../../../../../src/renderer/src/core/store/useVaultStore'
 
-describe('RoadmapProgressBar', () => {
+describe('ProgressTracker', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     useVaultStore.setState({
@@ -21,9 +21,9 @@ describe('RoadmapProgressBar', () => {
       expect(container.firstChild).toBeNull()
     })
 
-    it('renders Mark Learned when not learned', () => {
+    it('renders Learn when not learned', () => {
       render(<LearnedButton snippet={{ id: '1', title: 'Note' }} />)
-      expect(screen.getByText('Mark Learned')).toBeInTheDocument()
+      expect(screen.getByText('Learn')).toBeInTheDocument()
     })
 
     it('renders Learned when snippet isLearned', () => {
@@ -40,10 +40,12 @@ describe('RoadmapProgressBar', () => {
       })
       render(<LearnedButton snippet={{ id: '1', title: 'Note' }} />)
 
-      fireEvent.click(screen.getByText('Mark Learned'))
-      expect(saveSnippet).toHaveBeenCalledWith(
-        expect.objectContaining({ id: '1', isLearned: true })
-      )
+      fireEvent.click(screen.getByText('Learn'))
+      await vi.waitFor(() => {
+        expect(saveSnippet).toHaveBeenCalledWith(
+          expect.objectContaining({ id: '1', isLearned: true })
+        )
+      })
     })
 
     it('logs error when save fails', async () => {
@@ -55,10 +57,10 @@ describe('RoadmapProgressBar', () => {
       })
       render(<LearnedButton snippet={{ id: '1', title: 'Note' }} />)
 
-      fireEvent.click(screen.getByText('Mark Learned'))
+      fireEvent.click(screen.getByText('Learn'))
       await vi.waitFor(() => {
         expect(errorSpy).toHaveBeenCalledWith(
-          'Failed to toggle learned status:',
+          '[ProgressTracker] Failed to toggle learned status:',
           expect.any(Error)
         )
       })
@@ -71,15 +73,15 @@ describe('RoadmapProgressBar', () => {
       expect(container.firstChild).toBeNull()
     })
 
-    it('shows 0% when nothing learned', () => {
+    it('shows count when nothing learned', () => {
       useVaultStore.setState({
         snippets: [{ id: '1' }, { id: '2' }]
       })
       render(<LearningTrackBadge />)
-      expect(screen.getByText('0%')).toBeInTheDocument()
+      expect(screen.getByText('0/2')).toBeInTheDocument()
     })
 
-    it('shows correct percentage', () => {
+    it('shows correct count or percentage', () => {
       useVaultStore.setState({
         snippets: [
           { id: '1', isLearned: true },
@@ -88,14 +90,13 @@ describe('RoadmapProgressBar', () => {
         ]
       })
       render(<LearningTrackBadge />)
-      // 2 of 3 = 67%
-      expect(screen.getByText('67%')).toBeInTheDocument()
+      expect(screen.getByText('2/3')).toBeInTheDocument()
     })
   })
 
-  describe('default RoadmapProgressBar', () => {
+  describe('default ProgressTracker', () => {
     it('renders nothing when no snippets', () => {
-      const { container } = render(<RoadmapProgressBar />)
+      const { container } = render(<ProgressTracker />)
       expect(container.firstChild).toBeNull()
     })
 
@@ -106,17 +107,16 @@ describe('RoadmapProgressBar', () => {
           { id: '2' }
         ]
       })
-      const { container } = render(<RoadmapProgressBar />)
+      const { container } = render(<ProgressTracker />)
       const edge = container.querySelector('.learning-track-progress-edge')
       expect(edge).toBeInTheDocument()
-      // fill is first child div
       const fill = edge.querySelector('div')
       expect(fill.style.width).toBe('50%')
     })
 
     it('shows 100% when all learned', () => {
       useVaultStore.setState({ snippets: [{ id: '1', isLearned: true }] })
-      const { container } = render(<RoadmapProgressBar />)
+      const { container } = render(<ProgressTracker />)
       const fill = container.querySelector('.learning-track-progress-edge div')
       expect(fill.style.width).toBe('100%')
     })

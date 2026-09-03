@@ -57,6 +57,10 @@
   font-weight: 500;
 }
 
+.breadcrumb-item.copied {
+  color: #10b981;
+}
+
 .breadcrumb-separator {
   display: inline-flex;
   align-items: center;

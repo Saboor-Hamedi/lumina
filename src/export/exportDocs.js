@@ -3,7 +3,7 @@ import fs from 'fs/promises'
 import { Marked } from 'marked'
 import { markedHighlight } from 'marked-highlight'
 import hljs from 'highlight.js'
-import VaultManager from '../main/VaultManager.js'
+import VaultManager from '../main/workspace/workspaceManager.js'
 
 export const handleExportDocs = async (mainWindow, payload) => {
   try {

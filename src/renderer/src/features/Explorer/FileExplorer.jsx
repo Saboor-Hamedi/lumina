@@ -265,7 +265,8 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   const { filteredSnippets, isQueryActive, matchMetaMap, pinnedItems, allSnippets } = useFileSearch(
     visibleSnippets,
     query,
-    settings
+    settings,
+    visibleFolders
   )
 
   const {
@@ -346,17 +347,30 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
 
   const handleConfirmBulkDelete = useCallback(async () => {
     try {
+      const deletedFolderIds = Array.from(selectedFolderIds)
+      const deletedSnippetIds = Array.from(selectedNoteIds)
+
       if (window.api?.bulkDelete) {
         await window.api.bulkDelete({
-          folderIds: Array.from(selectedFolderIds),
-          snippetIds: Array.from(selectedNoteIds)
+          folderIds: deletedFolderIds,
+          snippetIds: deletedSnippetIds
         })
       } else {
-        for (const folderId of Array.from(selectedFolderIds)) {
+        for (const folderId of deletedFolderIds) {
           await window.api?.deleteFolder?.(folderId).catch(() => {})
         }
-        for (const noteId of Array.from(selectedNoteIds)) {
+        for (const noteId of deletedSnippetIds) {
           await deleteSnippet(noteId, true).catch(() => {})
+        }
+      }
+
+      if (deletedFolderIds.length > 0) {
+        const currentPinnedFolders = useSettingsStore.getState().settings.pinnedFolders || []
+        const newPinnedFolders = currentPinnedFolders.filter(
+          (fId) => !deletedFolderIds.some((df) => fId === df || fId.startsWith(`${df}/`))
+        )
+        if (newPinnedFolders.length !== currentPinnedFolders.length) {
+          useSettingsStore.getState().updateSettings({ pinnedFolders: newPinnedFolders })
         }
       }
 

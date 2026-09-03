@@ -43,7 +43,7 @@ vi.mock('@codemirror/language', () => ({
 
 const mockTree = { iterate: vi.fn() }
 
-vi.mock('../../../../../src/renderer/src/features/roadmap/roadmapStore', () => ({
+vi.mock('../../../../../src/renderer/src/features/roadmap/useStoreProgress', () => ({
   getTrackStats: vi.fn()
 }))
 
@@ -55,10 +55,10 @@ import {
   buildRoadmapProgressBarDecorations,
   roadmapProgressBarPlugin,
   forceRoadmapUpdateEffect
-} from '../../../../../src/renderer/src/features/roadmap/roadmapProgressBarPlugin'
+} from '../../../../../src/renderer/src/features/roadmap/useProgressTrack'
 import {
   getTrackStats
-} from '../../../../../src/renderer/src/features/roadmap/roadmapStore'
+} from '../../../../../src/renderer/src/features/roadmap/useStoreProgress'
 import { parseTable } from '../../../../../src/renderer/src/features/table/tableModel'
 
 describe('roadmapProgressBarPlugin', () => {
