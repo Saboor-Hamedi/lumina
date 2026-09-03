@@ -159,11 +159,7 @@ export class WorkspaceScanner {
               }
               seenIds.add(finalId)
 
-              const defaultLang = isMarkdown
-                ? 'markdown'
-                : ext === '.txt'
-                  ? 'text'
-                  : ext.replace(/^\./, '')
+              const defaultLang = isMarkdown ? 'markdown' : 'text'
 
               return {
                 id: finalId,

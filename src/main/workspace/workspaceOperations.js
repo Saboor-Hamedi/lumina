@@ -37,12 +37,13 @@ export class WorkspaceOperations {
 
     const rawTitle = (snippet.title || '').trim()
     const cleanedTitle = this.sanitizeTitleForFilename(rawTitle)
-    let newFileName = snippet.fileName || `${cleanedTitle}.md`
+    let newFileName = snippet.fileName || cleanedTitle
 
-    if (!newFileName.toLowerCase().endsWith('.md')) {
+    if (!path.extname(newFileName) && !newFileName.startsWith('.')) {
       newFileName = `${newFileName}.md`
     }
 
+    const isMarkdown = newFileName.toLowerCase().endsWith('.md') || newFileName.toLowerCase().endsWith('.markdown') || newFileName.toLowerCase().endsWith('.mdx')
     const relativeFolder = (snippet.folderId || '').replace(/\\/g, '/')
 
     if (oldSnippet) {
@@ -67,7 +68,9 @@ export class WorkspaceOperations {
     })
 
     if (collision) {
-      newFileName = newFileName.replace(/\.md$/i, '') + `-${snippet.id.slice(0, 5)}.md`
+      const ext = path.extname(newFileName)
+      const base = ext ? newFileName.slice(0, -ext.length) : newFileName
+      newFileName = `${base}-${snippet.id.slice(0, 5)}${ext}`
     }
 
     const finalPath = path.join(vaultPath, relativeFolder, newFileName)
@@ -82,21 +85,25 @@ export class WorkspaceOperations {
     }
 
     let fileContent = ''
-    try {
-      fileContent = matter.stringify(cleanCode, {
-        id: snippet.id,
-        title: cleanedTitle,
-        language: snippet.language || 'markdown',
-        tags: snippet.tags || '',
-        selection: snippet.selection || null,
-        isPinned: !!snippet.isPinned,
-        isLearned: !!snippet.isLearned,
-        customIcon: snippet.customIcon || null,
-        timestamp: newTimestamp
-      })
-    } catch (strErr) {
-      const safeTitle = JSON.stringify(cleanedTitle || '')
-      fileContent = `---\nid: ${snippet.id}\ntitle: ${safeTitle}\nlanguage: ${snippet.language || 'markdown'}\ntags: ${JSON.stringify(snippet.tags || '')}\nisPinned: ${!!snippet.isPinned}\nisLearned: ${!!snippet.isLearned}\ntimestamp: ${newTimestamp}\n---\n\n${cleanCode}`
+    if (isMarkdown) {
+      try {
+        fileContent = matter.stringify(cleanCode, {
+          id: snippet.id,
+          title: cleanedTitle,
+          language: snippet.language || 'markdown',
+          tags: snippet.tags || '',
+          selection: snippet.selection || null,
+          isPinned: !!snippet.isPinned,
+          isLearned: !!snippet.isLearned,
+          customIcon: snippet.customIcon || null,
+          timestamp: newTimestamp
+        })
+      } catch (strErr) {
+        const safeTitle = JSON.stringify(cleanedTitle || '')
+        fileContent = `---\nid: ${snippet.id}\ntitle: ${safeTitle}\nlanguage: ${snippet.language || 'markdown'}\ntags: ${JSON.stringify(snippet.tags || '')}\nisPinned: ${!!snippet.isPinned}\nisLearned: ${!!snippet.isLearned}\ntimestamp: ${newTimestamp}\n---\n\n${cleanCode}`
+      }
+    } else {
+      fileContent = snippet.code || ''
     }
 
     const targetDir = path.dirname(finalPath)
@@ -114,7 +121,7 @@ export class WorkspaceOperations {
 
     const updatedSnippet = {
       ...snippet,
-      title: cleanedTitle,
+      title: isMarkdown ? cleanedTitle : newFileName,
       timestamp: newTimestamp,
       fileName: newFileName,
       folderId: relativeFolder
@@ -127,7 +134,7 @@ export class WorkspaceOperations {
     if (!relPath) return true
     const norm = relPath.replace(/\\/g, '/').replace(/^\/+/, '')
     const firstSegment = norm.split('/')[0]
-    const protectedNames = ['.git', '.gitignore', '.agent', '.agents', '.lumina']
+    const protectedNames = ['.git', '.lumina']
     return protectedNames.includes(firstSegment) || protectedNames.includes(norm)
   }
 

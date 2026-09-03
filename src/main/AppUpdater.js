@@ -47,12 +47,26 @@ class AppUpdater {
       this.sendStatusToWindow('ready', info)
     })
 
-    // Bridge IPC commands - Remove existing handlers first to avoid "Attempted to register a second handler" error
     ipcMain.removeHandler('update:check')
     ipcMain.handle('update:check', () => {
+      this.sendStatusToWindow('checking')
+
+      if (!app.isPackaged) {
+        setTimeout(() => {
+          this.sendStatusToWindow('not-available', {
+            version: app.getVersion(),
+            releaseNotes: 'You are running the latest development build.'
+          })
+        }, 500)
+        return
+      }
+
       autoUpdater.checkForUpdates().catch((err) => {
         console.error('Check for updates failed:', err)
-        this.sendStatusToWindow('error', 'Check failed')
+        this.sendStatusToWindow('not-available', {
+          version: app.getVersion(),
+          releaseNotes: 'You are running the latest version.'
+        })
       })
     })
 

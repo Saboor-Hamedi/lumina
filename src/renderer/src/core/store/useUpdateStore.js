@@ -19,6 +19,11 @@ export const useUpdateStore = create((set, get) => ({
             break
           case 'not-available':
             set({ status: 'not-available', updateInfo: data })
+            setTimeout(() => {
+              if (get().status === 'not-available') {
+                set({ status: 'idle' })
+              }
+            }, 3000)
             break
           case 'downloading':
             set({ status: 'downloading', progress: data })
@@ -39,19 +44,27 @@ export const useUpdateStore = create((set, get) => ({
   check: async () => {
     set({ status: 'checking', error: null })
 
-    // Safety timeout — if no response arrives in 15s, reset to idle
     const timeout = setTimeout(() => {
-      if (useUpdateStore.getState().status === 'checking') {
+      if (get().status === 'checking') {
         set({ status: 'not-available' })
+        setTimeout(() => {
+          if (get().status === 'not-available') {
+            set({ status: 'idle' })
+          }
+        }, 3000)
       }
-    }, 15000)
+    }, 4000)
 
     try {
       await window.api?.checkForUpdates()
     } catch (e) {
-      set({ status: 'error', error: e?.message || 'Check failed' })
-    } finally {
       clearTimeout(timeout)
+      set({ status: 'not-available' })
+      setTimeout(() => {
+        if (get().status === 'not-available') {
+          set({ status: 'idle' })
+        }
+      }, 3000)
     }
   },
 

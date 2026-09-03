@@ -123,6 +123,45 @@ describe('VaultManager', () => {
         .catch(() => false)
       expect(exists).toBe(false)
     })
+
+    it('deletes folder containing .gitignore and other files', async () => {
+      const subFolder = path.join(testVaultPath, 'my-folder')
+      await fs.mkdir(subFolder, { recursive: true })
+      await fs.writeFile(path.join(subFolder, '.gitignore'), 'dist/', 'utf-8')
+      await fs.writeFile(path.join(subFolder, 'notes.md'), '# Notes', 'utf-8')
+
+      await VaultManager.scanVault()
+      expect(VaultManager.folders.has('my-folder')).toBe(true)
+
+      await VaultManager.deleteFolder('my-folder')
+      const folderExists = await fs.access(subFolder).then(() => true).catch(() => false)
+      expect(folderExists).toBe(false)
+      expect(VaultManager.folders.has('my-folder')).toBe(false)
+    })
+
+    it('bulk deletes selected files and folders', async () => {
+      const folderPath = path.join(testVaultPath, 'bulk-folder')
+      await fs.mkdir(folderPath, { recursive: true })
+      await fs.writeFile(path.join(folderPath, 'file1.md'), 'F1', 'utf-8')
+
+      const directFile = path.join(testVaultPath, 'direct.md')
+      await fs.writeFile(directFile, 'F2', 'utf-8')
+
+      await VaultManager.scanVault()
+
+      const mdSnippet = Array.from(VaultManager.snippets.values()).find((s) => s.fileName === 'direct.md')
+
+      await VaultManager.bulkDelete({
+        folderIds: ['bulk-folder'],
+        snippetIds: [mdSnippet.id]
+      })
+
+      const folderExists = await fs.access(folderPath).then(() => true).catch(() => false)
+      const fileExists = await fs.access(directFile).then(() => true).catch(() => false)
+
+      expect(folderExists).toBe(false)
+      expect(fileExists).toBe(false)
+    })
   })
 
   describe('getSnippets', () => {

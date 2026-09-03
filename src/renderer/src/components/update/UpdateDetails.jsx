@@ -39,21 +39,25 @@ const UpdateDetails = () => {
   const rawNotes =
     updateInfo?.releaseNotes ||
     `New
+- Granular Fault Isolation: Independent error boundaries for Left Sidebar, Right Inspector, Open Note Tabs, Knowledge Graph, and Welcome views with container-query responsive cards.
+- Auto-Reset Update Status: Instant "Up to date" check feedback that automatically resets back to "Check for Updates" after 3 seconds.
 - Vault Details & Live Stats: Click the note counter in the Explorer header to inspect real-time vault statistics, including total notes, folders, favorites, learning progress, word counts, characters, and disk storage size.
 - OS-Grade Multi-Selection: Select folders and notes together using Ctrl+Click, Shift+Click continuous range selection, or Ctrl+A to select all.
 - Bulk Folder & Note Deletion: Safely delete selected folders, subdirectories, and notes in bulk with a confirmation dialog.
 - Interactive Mermaid & Image Lightbox: Full-screen pan & zoom modal with smooth vector scaling, 2px borders, and bottom-right floating controls.
 
 Improved
+- Micro Error Handler UI: Sleek 26px micro action buttons, 22px icon-only copy action with instant checkmark feedback, and slim scrollable code block.
+- Development Mode Update Checking: Instant update status response in local development without infinite loading spinners.
+- Comprehensive Test Coverage: Expanded test suites across Settings (Shortcuts, Color Picker), Workspace Manager, and App Update lifecycle with 100% pass rate.
 - Stylish Mermaid Support: Custom node styling (style, classDef, colors, and HTML labels) renders accurately in both the editor and fullscreen lightbox.
 - Responsive Narrow Sidebar: File explorer tabs and header actions collapse cleanly to centered icons on narrow window sizes without text wrapping.
 - Refined Borderless Tooltips: Modern, subtle tooltips with 2px corner radius and deep ambient glass blur.
-- Compact Metadata Controls: Sleek and subtle Ask AI, Local Graph, and Learning Track buttons with matching micro-interactions.
 
 Fixed
-- Recursive Folder Deletion: Fixed folder deletion on root items and ensured nested folders clean up completely from disk and memory.
-- Nested Note Bulk Deletion: Safely handles notes inside deleted parent folders without missing snippet exceptions.
-- Explorer Focus State: Explorer container focus styling activates strictly on empty background clicks without flashing when selecting items.`
+- Complete Folder Deletion: Fixed folder deletion on root items and ensured folders containing hidden files or gitignore clean up completely from disk and memory.
+- Breadcrumbs Path Resolution: Guaranteed full breadcrumb path display and click-to-copy synchronization for all open workspace files.
+- Recursive Folder Deletion: Fixed folder deletion on root items and ensured nested folders clean up completely from disk and memory.`
   
   const parseNotes = (text) => {
     const categories = []

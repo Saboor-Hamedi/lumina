@@ -138,7 +138,7 @@ const UpdateFooter = ({
           onClick={check}
         >
           <CheckCircle2 size={14} />
-          <span>You&apos;re up to date — Check again</span>
+          <span>Up to date</span>
         </button>
       ) : status === 'error' ? (
         <button
