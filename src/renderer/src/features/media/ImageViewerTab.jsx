@@ -9,7 +9,7 @@ import {
   FolderOpen,
   Image as ImageIcon
 } from 'lucide-react'
-import { copyImageToClipboard } from '../../dropImage/imageClipboard'
+import { copyImageToClipboard } from './imageClipboard'
 import './ImageViewerTab.css'
 
 export const ImageViewerTab = ({ snippet }) => {

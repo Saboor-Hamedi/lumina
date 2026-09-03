@@ -58,16 +58,17 @@ export const wikilinkCaretFix = EditorView.domEventHandlers({
     const rect = wikilink.getBoundingClientRect()
     const isRightHalf = clickX > rect.left + rect.width / 2
 
-    const lineBlock = view.lineBlockAt(view.posAtDOM(wikilink))
-    const lineText = view.state.doc.sliceString(lineBlock.from, lineBlock.to)
+    const domPos = typeof view.posAtDOM === 'function' ? view.posAtDOM(wikilink) : 0
+    const line = view.state.doc.lineAt(domPos)
+    const lineText = line.text
 
     const linkRegex = /\[\[([^\]\n|]+)(?:\|([^\]\n]+))?\]\]/g
     const matches = []
     let m
     while ((m = linkRegex.exec(lineText)) !== null) {
       matches.push({
-        from: lineBlock.from + m.index,
-        to: lineBlock.from + m.index + m[0].length,
+        from: line.from + m.index,
+        to: line.from + m.index + m[0].length,
         text: m[0]
       })
     }
@@ -78,15 +79,16 @@ export const wikilinkCaretFix = EditorView.domEventHandlers({
 
     let targetLink = null
 
-    if (wikilink.classList.contains('cm-atomic-wiki-link-hidden-syntax')) {
-      const domPos = view.posAtDOM(wikilink)
+    if (wikilink.classList?.contains?.('cm-atomic-wiki-link-hidden-syntax')) {
+      const domPos = typeof view.posAtDOM === 'function' ? view.posAtDOM(wikilink) : 0
       targetLink = matches.find((link) => domPos >= link.from && domPos <= link.to)
     }
 
     if (!targetLink) {
       const targetText =
-        wikilink.getAttribute('data-wiki-link-target') ||
-        wikilink.getAttribute('data-target') ||
+        (typeof wikilink.getAttribute === 'function' &&
+          (wikilink.getAttribute('data-wiki-link-target') ||
+            wikilink.getAttribute('data-target'))) ||
         wikilink.innerText?.replace(/[\[\]]/g, '').trim()
 
       if (targetText) {
@@ -95,9 +97,14 @@ export const wikilinkCaretFix = EditorView.domEventHandlers({
     }
 
     if (!targetLink) {
-      const linksInLine = parentLine
-        ? Array.from(parentLine.querySelectorAll('.cm-atomic-wiki-link, .cm-atomic-wikilink-wrap, .cm-atomic-wiki-link-hidden-syntax'))
-        : [wikilink]
+      const linksInLine =
+        parentLine && typeof parentLine.querySelectorAll === 'function'
+          ? Array.from(
+              parentLine.querySelectorAll(
+                '.cm-atomic-wiki-link, .cm-atomic-wikilink-wrap, .cm-atomic-wiki-link-hidden-syntax'
+              )
+            )
+          : [wikilink]
       const linkIndex = linksInLine.indexOf(wikilink)
       if (linkIndex !== -1 && matches[linkIndex]) {
         targetLink = matches[linkIndex]
@@ -117,7 +124,7 @@ export const wikilinkCaretFix = EditorView.domEventHandlers({
       view.focus()
       safeDispatch(view, {
         selection: { anchor: targetPos, head: targetPos },
-        scrollIntoView: true
+        userEvent: 'select'
       })
       return true
     }

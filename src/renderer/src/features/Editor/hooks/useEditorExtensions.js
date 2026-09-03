@@ -25,8 +25,7 @@ import {
   codeBlockDecorations,
   luminaSyntaxHighlighting
 } from '../../codeBlock/codeBlockHeader'
-import { imageDropExtension } from '../../dropImage/imageDropExtension'
-import { imageWidgetExtension } from '../../dropImage/imageWidgetExtension'
+import { imageDropExtension, imageWidgetExtension } from '../../media'
 import { htmlWidgetExtension } from '../../Workspace/htmlWidgetExtension'
 import { tagMentionExtension } from '../../Workspace/tagMentionExtension'
 import { tables } from '../../table/tableExtension'

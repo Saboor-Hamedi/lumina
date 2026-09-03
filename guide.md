@@ -127,7 +127,7 @@ graph TD
 
 ---
 
-### 3. First-Class Image & Media Management (`Workspace/`, `dropImage/`)
+### 3. First-Class Image & Media Management (`src/renderer/src/features/media/`)
 - **Native Binary Support**: Supported formats: `.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`, `.svg`, `.bmp`, `.ico`, `.avif`.
 - **Dedicated Image Viewer Tab (`ImageViewerTab.jsx`)**:
   - Smooth pan and zoom from 10% to 500% with mouse wheel and drag controls.

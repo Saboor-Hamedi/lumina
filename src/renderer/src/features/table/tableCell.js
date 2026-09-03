@@ -1,5 +1,5 @@
 import { undo, redo } from '@codemirror/commands'
-import { ImageWidget } from '../dropImage/imageWidgetExtension'
+import { ImageWidget } from '../media'
 import { TableAutocomplete } from './tableAutocomplete'
 import { openCellMenu, cellColIndex, cellRowIndex } from './tableContextMenu'
 import { readModelFromDom } from './tableModel'
