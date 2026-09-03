@@ -35,7 +35,8 @@ export const EditorCanvas = React.memo(
     setTitle,
     onSave,
     setIsDirty,
-    showToast
+    showToast,
+    onInlineAI
   }) => {
     const [contextMenu, setContextMenu] = useState(null)
     const editorWrapperRef = useRef(null)
@@ -82,6 +83,7 @@ export const EditorCanvas = React.memo(
             title={title}
             setTitle={setTitle}
             setIsDirty={setIsDirty}
+            onInlineAI={onInlineAI}
           />
         )}
 

@@ -13,9 +13,11 @@
 }
 
 .command-palette-container {
-  width: 100%;
-  max-width: 820px;
-  height: 480px;
+  width: 92%;
+  max-width: 860px;
+  min-width: 320px;
+  height: 520px;
+  max-height: 85vh;
   background: var(--bg-app);
   border-radius: 12px;
   box-shadow: 
@@ -288,20 +290,18 @@ kbd {
   font-style: italic;
 }
 
-@media (max-width: 900px) {
-  .palette-preview-col {
-    display: none;
+@media (max-width: 580px) {
+  .palette-preview-col,
+  .palette-resizer {
+    display: none !important;
   }
   .palette-results-col {
-    width: 100%;
+    width: 100% !important;
     border-right: none;
   }
   .command-palette-container {
-    max-width: 500px;
-    height: auto;
-  }
-  .palette-results {
-    max-height: 320px;
+    width: 95%;
+    height: 480px;
   }
 }
 

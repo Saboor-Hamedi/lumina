@@ -12,60 +12,115 @@ const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title, cursorPosi
   const [isGenerating, setIsGenerating] = useState(false)
   const [abortController, setAbortController] = useState(null)
   const [copied, setCopied] = useState(false)
-  const [modalPosition, setModalPosition] = useState({
-    top: '30%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)'
-  })
+  const getInitialPosition = useCallback(() => {
+    const modalWidth = 440
+    const defaultLeft = Math.round((window.innerWidth - modalWidth) / 2)
+    const defaultTop = 120
+
+    if (editorView?.hasFocus) {
+      try {
+        const selection = editorView.state.selection.main
+        const pos = selection.head || selection.from
+        const coords = editorView.coordsAtPos(pos)
+        if (coords && coords.top >= 40 && coords.top <= window.innerHeight - 100) {
+          let top = coords.bottom + 10
+          let left = coords.left
+
+          if (left + modalWidth > window.innerWidth - 20) {
+            left = window.innerWidth - modalWidth - 20
+          }
+          if (left < 20) left = 20
+
+          if (top + 50 > window.innerHeight - 20) {
+            top = Math.max(20, coords.top - 60)
+          }
+
+          return {
+            top: `${Math.round(top)}px`,
+            left: `${Math.round(left)}px`,
+            transform: 'none'
+          }
+        }
+      } catch {
+        // Fallback to upper center
+      }
+    }
+
+    return {
+      top: `${defaultTop}px`,
+      left: `${Math.max(20, defaultLeft)}px`,
+      transform: 'none'
+    }
+  }, [editorView])
+
+  const [modalPosition, setModalPosition] = useState(getInitialPosition)
   const [contextRange, setContextRange] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
-  const dragStartPos = useRef({ x: 0, y: 0, top: 0, left: 0 })
 
   const inputRef = useRef(null)
   const modalRef = useRef(null)
 
-  useEffect(() => {
-    if (isOpen && editorView && !isDragging) {
-      const timer = setTimeout(() => {
-        if (!modalRef.current) return
+  // Silky-smooth Drag Handling
+  const handleDragStart = useCallback((e) => {
+    if (e.button !== 0) return
+    e.preventDefault()
+    e.stopPropagation()
 
-        try {
-          const selection = editorView.state.selection.main
-          const pos = selection.head || selection.from
-          const coords = editorView.coordsAtPos(pos)
+    if (!modalRef.current) return
+    const rect = modalRef.current.getBoundingClientRect()
 
-          if (coords) {
-            const modalRect = modalRef.current.getBoundingClientRect()
-            const actualModalHeight = modalRect.height > 0 ? modalRect.height : 50
-            const actualModalWidth = 420
+    const startX = e.clientX
+    const startY = e.clientY
+    const initialLeft = rect.left
+    const initialTop = rect.top
 
-            const viewportWidth = window.innerWidth
-            const viewportHeight = window.innerHeight
+    setModalPosition({
+      top: `${Math.round(initialTop)}px`,
+      left: `${Math.round(initialLeft)}px`,
+      transform: 'none'
+    })
+    setIsDragging(true)
 
-            let top = coords.bottom + 10
-            let left = coords.left
+    let rafId = null
 
-            if (left + actualModalWidth > viewportWidth)
-              left = viewportWidth - actualModalWidth - 20
-            if (left < 20) left = 20
+    const onPointerMove = (moveEvent) => {
+      if (rafId) cancelAnimationFrame(rafId)
+      rafId = requestAnimationFrame(() => {
+        const deltaX = moveEvent.clientX - startX
+        const deltaY = moveEvent.clientY - startY
 
-            if (top + actualModalHeight > viewportHeight) {
-              top = coords.top - actualModalHeight - 10
-            }
+        const modalWidth = rect.width
+        const modalHeight = rect.height
+        const maxLeft = window.innerWidth - modalWidth - 10
+        const maxTop = window.innerHeight - modalHeight - 10
 
-            setModalPosition({
-              top: Math.max(10, top),
-              left: Math.max(10, left),
-              transform: 'none'
-            })
-          }
-        } catch (err) {
-          console.warn('[InlineLumina] Could not get cursor coordinates:', err)
-        }
-      }, 10)
-      return () => clearTimeout(timer)
+        const newLeft = Math.max(10, Math.min(maxLeft, initialLeft + deltaX))
+        const newTop = Math.max(10, Math.min(maxTop, initialTop + deltaY))
+
+        setModalPosition({
+          top: `${Math.round(newTop)}px`,
+          left: `${Math.round(newLeft)}px`,
+          transform: 'none'
+        })
+      })
     }
-  }, [isOpen, editorView]) // intentionally omit cursorPosition so it does NOT move
+
+    const onPointerUp = () => {
+      if (rafId) cancelAnimationFrame(rafId)
+      setIsDragging(false)
+      window.removeEventListener('pointermove', onPointerMove)
+      window.removeEventListener('pointerup', onPointerUp)
+    }
+
+    window.addEventListener('pointermove', onPointerMove, { passive: true })
+    window.addEventListener('pointerup', onPointerUp, { once: true })
+  }, [])
+
+  useEffect(() => {
+    if (isOpen && !isDragging) {
+      setModalPosition(getInitialPosition())
+    }
+  }, [isOpen, getInitialPosition])
 
   const getSelectedText = useCallback(() => {
     if (!editorView) return null
@@ -150,54 +205,7 @@ const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title, cursorPosi
     }
   }, [editorView])
 
-  const handleDragStart = useCallback((e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(true)
 
-    const rect = modalRef.current.getBoundingClientRect()
-    dragStartPos.current = {
-      x: e.clientX,
-      y: e.clientY,
-      top: rect.top,
-      left: rect.left
-    }
-  }, [])
-
-  const handleDrag = useCallback(
-    (e) => {
-      if (!isDragging) return
-      const deltaX = e.clientX - dragStartPos.current.x
-      const deltaY = e.clientY - dragStartPos.current.y
-      const newLeft = dragStartPos.current.left + deltaX
-      const newTop = dragStartPos.current.top + deltaY
-
-      const viewportWidth = window.innerWidth
-      const viewportHeight = window.innerHeight
-      const modalWidth = 420
-      const modalHeight = modalRef.current?.getBoundingClientRect().height || 200
-
-      setModalPosition({
-        top: Math.max(10, Math.min(newTop, viewportHeight - modalHeight - 10)),
-        left: Math.max(10, Math.min(newLeft, viewportWidth - modalWidth - 10)),
-        transform: 'none'
-      })
-    },
-    [isDragging]
-  )
-
-  const handleDragEnd = useCallback(() => setIsDragging(false), [])
-
-  useEffect(() => {
-    if (isDragging) {
-      window.addEventListener('mousemove', handleDrag)
-      window.addEventListener('mouseup', handleDragEnd)
-      return () => {
-        window.removeEventListener('mousemove', handleDrag)
-        window.removeEventListener('mouseup', handleDragEnd)
-      }
-    }
-  }, [isDragging, handleDrag, handleDragEnd])
 
   useEffect(() => {
     if (isOpen) {

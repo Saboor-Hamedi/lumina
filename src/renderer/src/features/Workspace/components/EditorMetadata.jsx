@@ -6,7 +6,7 @@ import { useVaultStore } from '../../../core/store/useVaultStore'
 import { useKeyboardShortcuts } from '../../../core/hooks/useKeyboardShortcuts'
 import RoadmapProgressBar, { LearnedButton, LearningTrackBadge } from '../../roadmap/RoadmapProgressBar'
 
-const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef }) => {
+const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef, onInlineAI }) => {
   const [error, setError] = useState(false)
   const [showLocalGraph, setShowLocalGraph] = useState(false)
   const containerRef = useRef(null)
@@ -70,13 +70,15 @@ const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef }) => {
         <div
           style={{
             position: 'absolute',
-            top: '100%',
-            marginTop: '-4px', // Moved up significantly
-            left: '50%',
-            transform: 'translateX(-50%)',
+            bottom: '-28px',
+            left: 0,
+            background: 'var(--bg-card, #1e293b)',
+            border: '1px solid #ef4444',
             color: '#ef4444',
-            fontSize: '8px',
-            fontWeight: '500',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            fontSize: '11px',
+            zIndex: 10,
             pointerEvents: 'none',
             animation: 'fadeIn 0.2s ease-out',
             whiteSpace: 'nowrap'
@@ -90,7 +92,11 @@ const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef }) => {
           <button
             onClick={(e) => {
               e.preventDefault()
-              window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))
+              if (onInlineAI) {
+                onInlineAI()
+              } else {
+                window.dispatchEvent(new CustomEvent('open-inline-ai'))
+              }
             }}
             style={{
               background: 'rgba(255, 255, 255, 0.03)',

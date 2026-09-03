@@ -104,7 +104,7 @@ export const PreviewCommandPalette = React.memo(({ content, onClose, customLinkH
         overflowX: 'hidden',
         flex: 1,
         height: '100%',
-        padding: '24px 20px',
+        padding: '16px 12px',
         background: 'var(--bg-app)'
       }}
     >
@@ -120,15 +120,15 @@ export const PreviewCommandPalette = React.memo(({ content, onClose, customLinkH
         }
         .preview-body .editor-canvas-wrap {
           width: 100% !important;
-          max-width: 850px !important;
+          max-width: 100% !important;
           margin: 0 auto !important;
-          padding: 0 20px 40px 20px !important;
+          padding: 0 8px 24px 8px !important;
         }
       `}</style>
       <div className="editor-scroller" style={{ overflow: 'visible', height: 'auto', padding: 0 }}>
         <div
           className="editor-canvas-wrap"
-          style={{ maxWidth: '850px', width: '100%', margin: '0 auto', padding: '0 20px 40px 20px' }}
+          style={{ maxWidth: '100%', width: '100%', margin: '0 auto', padding: '0 8px 24px 8px' }}
           onMouseDown={(e) => {
             if (e.target.closest('.mermaid-edit-btn') || e.target.closest('.mermaid-widget-header')) {
               e.preventDefault()

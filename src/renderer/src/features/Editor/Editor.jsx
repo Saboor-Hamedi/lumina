@@ -8,7 +8,7 @@
  * =========================================================================================
  */
 
-import React, { useState, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import EditorMenu from './menu/EditorMenu'
 import ToastNotification from '../../core/notification'
 import PreviewModal from '../Overlays/PreviewModal/PreviewModal'
@@ -148,18 +148,27 @@ const Editor = React.memo(
       }
     })
 
+    useEffect(() => {
+      const handleOpenAIEvent = () => {
+        if (isActive) setIsInlineAIOpen(true)
+      }
+      window.addEventListener('open-inline-ai', handleOpenAIEvent)
+      return () => window.removeEventListener('open-inline-ai', handleOpenAIEvent)
+    }, [isActive])
+
     // Inline Lumina AI Handlers
     const handleInlineAIInsert = useCallback((text, range = null) => {
       if (!realViewRef.current) return
       const view = realViewRef.current
       const selection = view.state.selection.main
-      const from = range ? range.from : selection.from
-      const to = range ? range.to : selection.to
+      const from = range ? range.from : (selection ? selection.from : view.state.doc.length)
+      const to = range ? range.to : (selection ? selection.to : view.state.doc.length)
 
       view.dispatch({
         changes: { from, to, insert: text },
         selection: { anchor: from + text.length }
       })
+      view.focus()
       setIsDirty(true)
     }, [setIsDirty])
 
@@ -260,6 +269,7 @@ const Editor = React.memo(
             onSave={onSave}
             setIsDirty={setIsDirty}
             showToast={showToast}
+            onInlineAI={() => setIsInlineAIOpen(true)}
           />
         </div>
       </div>
