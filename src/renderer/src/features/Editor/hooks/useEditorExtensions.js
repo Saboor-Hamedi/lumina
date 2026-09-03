@@ -26,7 +26,7 @@ import {
   luminaSyntaxHighlighting
 } from '../../codeBlock/codeBlockHeader'
 import { imageDropExtension, imageWidgetExtension } from '../../media'
-import { htmlWidgetExtension } from '../extensions/htmlWidgetExtension'
+import { htmlWidgetExtension } from '../extensions/htmlExtension'
 import { tagMentionExtension } from '../extensions/tagMentionExtension'
 import { tables } from '../../table/tableExtension'
 import { mermaidWidgetExtension } from '../../mermaid'
