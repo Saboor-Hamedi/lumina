@@ -5,10 +5,10 @@ import { EditorView } from '@codemirror/view'
 import { languages } from '@codemirror/language-data'
 import { useVaultStore } from '../../core/store/workspaceStore'
 import { imageWidgetExtension } from '../media'
-import { htmlWidgetExtension } from '../Workspace/htmlWidgetExtension'
+import { htmlWidgetExtension } from '../Editor/extensions/htmlWidgetExtension'
 import { tables } from '../table/tableExtension'
 import { mermaidWidgetExtension } from '../mermaid'
-import { calloutExtension } from '../Workspace/calloutWidgetExtension'
+import { calloutExtension } from '../Editor/hooks/useCallout'
 import {
   codeBlockDecorations,
   codeMap,

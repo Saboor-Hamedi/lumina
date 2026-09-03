@@ -26,8 +26,8 @@ import {
   luminaSyntaxHighlighting
 } from '../../codeBlock/codeBlockHeader'
 import { imageDropExtension, imageWidgetExtension } from '../../media'
-import { htmlWidgetExtension } from '../../Workspace/htmlWidgetExtension'
-import { tagMentionExtension } from '../../Workspace/tagMentionExtension'
+import { htmlWidgetExtension } from '../extensions/htmlWidgetExtension'
+import { tagMentionExtension } from '../extensions/tagMentionExtension'
 import { tables } from '../../table/tableExtension'
 import { mermaidWidgetExtension } from '../../mermaid'
 import { calloutExtension } from './useCallout'
