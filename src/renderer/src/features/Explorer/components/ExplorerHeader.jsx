@@ -136,26 +136,30 @@ export const ExplorerHeader = ({
 
       {/* Segmented Tabs (All Notes vs Favorites) */}
       <div className="explorer-segmented-tabs">
-        <button
-          className={`segmented-tab ${activeTab === 'all' ? 'active' : ''}`}
-          onClick={() => {
-            setActiveTab('all')
-            setCreating(null)
-          }}
-        >
-          <NotebookText size={12} />
-          <span>All Notes</span>
-        </button>
-        <button
-          className={`segmented-tab ${activeTab === 'favorites' ? 'active' : ''}`}
-          onClick={() => {
-            setActiveTab('favorites')
-            setCreating(null)
-          }}
-        >
-          <Star size={12} />
-          <span>Favorites</span>
-        </button>
+        <ToolTip text="All Notes" position="bottom">
+          <button
+            className={`segmented-tab ${activeTab === 'all' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('all')
+              setCreating(null)
+            }}
+          >
+            <NotebookText size={12} />
+            <span>All Notes</span>
+          </button>
+        </ToolTip>
+        <ToolTip text="Favorites" position="bottom">
+          <button
+            className={`segmented-tab ${activeTab === 'favorites' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('favorites')
+              setCreating(null)
+            }}
+          >
+            <Star size={12} />
+            <span>Favorites</span>
+          </button>
+        </ToolTip>
       </div>
 
       {/* Section Header with Actions (Only rendered on 'all' tab) */}

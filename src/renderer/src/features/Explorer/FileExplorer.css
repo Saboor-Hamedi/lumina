@@ -150,8 +150,11 @@
   align-items: center;
   justify-content: space-between;
   margin: 4px 0 6px 0;
-  padding: 0 10px;
+  padding: 0 8px;
   height: 22px;
+  min-width: 0;
+  white-space: nowrap;
+  box-sizing: border-box;
 }
 
 .start-section-header h3 {
@@ -161,6 +164,19 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.section-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  flex: 1;
 }
 
 .explorer-note-numbers {
@@ -172,6 +188,10 @@
   user-select: none;
   transition: color 0.2s ease, background-color 0.2s ease;
   line-height: 1;
+  white-space: nowrap !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
 }
 
 .explorer-note-numbers.is-searching {
@@ -187,7 +207,8 @@
   opacity: 0.45;
   transition: opacity 0.15s ease;
   display: flex;
-  gap: 2px;
+  gap: 1px;
+  flex-shrink: 0;
 }
 
 .start-section:hover .header-actions,
@@ -202,10 +223,11 @@
   display: flex;
   background: rgba(0, 0, 0, 0.22);
   padding: 2px;
-  margin: 0 10px 8px 10px;
+  margin: 0 8px 8px 8px;
   border-radius: 7px;
   border: 1px solid rgba(255, 255, 255, 0.05);
   gap: 2px;
+  min-width: 0;
 }
 
 .segmented-tab {
@@ -213,9 +235,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 5px;
   height: 25px;
-  padding: 0 8px;
+  padding: 0 6px;
   border-radius: 5px;
   border: none;
   background: transparent;
@@ -224,6 +246,14 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.segmented-tab span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap !important;
 }
 
 .segmented-tab:hover {
@@ -242,19 +272,30 @@
   border: none;
   color: var(--text-muted, #94a3b8);
   cursor: pointer;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   padding: 0;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 
 .sort-toggle-btn:hover {
   background: rgba(255, 255, 255, 0.08);
   color: var(--text-main, #f8fafc);
+}
+
+@container sidebar (max-width: 225px) {
+  .segmented-tab span {
+    display: none !important;
+  }
+  .segmented-tab {
+    padding: 0 4px !important;
+    justify-content: center !important;
+  }
 }
 
 /* Pinned Grid */

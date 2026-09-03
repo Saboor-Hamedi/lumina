@@ -9,16 +9,18 @@
   box-sizing: border-box;
   user-select: none;
   border-right: 1px solid var(--border-dim);
+  container-type: inline-size;
+  container-name: sidebar;
 }
 
 .sidebar-header-section {
   height: 42px;
   min-height: 42px;
-  padding: 0 10px;
+  padding: 0 8px;
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   border-bottom: 1px solid var(--border-dim);
   box-sizing: border-box;
 }
@@ -26,8 +28,9 @@
 .new-note-btn {
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 0 10px;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 6px;
   height: 28px;
   border-radius: 6px;
   border: 1px solid var(--border-dim);
@@ -38,7 +41,14 @@
   font-weight: 500;
   letter-spacing: 0.01em;
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  flex-shrink: 0;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.new-note-btn span {
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -53,6 +63,16 @@
   color: var(--text-accent);
   border-color: var(--text-accent);
   background: var(--bg-active);
+}
+
+@container sidebar (max-width: 235px) {
+  .new-note-btn span {
+    display: none !important;
+  }
+  .new-note-btn {
+    padding: 0 4px !important;
+    justify-content: center !important;
+  }
 }
 
 .sidebar-scrollable-content {

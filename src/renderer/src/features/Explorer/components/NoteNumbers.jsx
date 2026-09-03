@@ -2,14 +2,20 @@
  * ============================================================================
  * NoteNumbers Component
  * ============================================================================
- * Clean, dedicated counter badge for the File Explorer header.
- * Displays live note count or filtered search tally with theme-aware styling.
+ * Clean, interactive counter badge for the File Explorer header.
+ * Displays live note count or filtered search tally, and opens the
+ * Vault Details inspector card on click.
  * ============================================================================
  */
 
-import React from 'react'
+import React, { useState, useRef } from 'react'
+import ToolTip from '../../../components/atoms/ToolTip'
+import VaultStatsPopover from './VaultStatsPopover'
 
 export const NoteNumbers = ({ count = 0, total, isQueryActive }) => {
+  const [isStatsOpen, setIsStatsOpen] = useState(false)
+  const badgeRef = useRef(null)
+
   if (count === undefined && total === undefined) return null
 
   const label = count === 1 ? 'Note' : 'Notes'
@@ -19,13 +25,54 @@ export const NoteNumbers = ({ count = 0, total, isQueryActive }) => {
       : `${count} ${label}`
 
   return (
-    <span
-      className={`explorer-note-numbers ${isQueryActive ? 'is-searching' : ''}`}
-      role="status"
-      aria-label={text}
-    >
-      {text}
-    </span>
+    <div className="relative inline-block" style={{ position: 'relative' }}>
+      <ToolTip text={isQueryActive ? text : 'View Vault Details'} position="bottom">
+        <button
+          ref={badgeRef}
+          type="button"
+          className={`explorer-note-numbers ${isQueryActive ? 'is-searching' : ''}`}
+          onClick={(e) => {
+            e.stopPropagation()
+            if (!isQueryActive) {
+              setIsStatsOpen((prev) => !prev)
+            }
+          }}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            padding: '2px 6px',
+            borderRadius: '4px',
+            cursor: isQueryActive ? 'default' : 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            fontSize: '11px',
+            color: 'var(--text-muted, #94a3b8)',
+            transition: 'all 0.15s ease'
+          }}
+          onMouseEnter={(e) => {
+            if (!isQueryActive) {
+              e.currentTarget.style.color = 'var(--text-main, #f8fafc)'
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isQueryActive) {
+              e.currentTarget.style.color = 'var(--text-muted, #94a3b8)'
+              e.currentTarget.style.background = 'transparent'
+            }
+          }}
+          aria-label={text}
+        >
+          {text}
+        </button>
+      </ToolTip>
+
+      <VaultStatsPopover
+        isOpen={isStatsOpen}
+        onClose={() => setIsStatsOpen(false)}
+        anchorRef={badgeRef}
+      />
+    </div>
   )
 }
 

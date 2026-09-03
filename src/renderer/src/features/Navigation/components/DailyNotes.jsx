@@ -1,5 +1,6 @@
 import React, { memo, useState } from 'react'
 import { Calendar } from 'lucide-react'
+import ToolTip from '../../../components/atoms/ToolTip'
 import { useVaultStore } from '../../../core/store/useVaultStore'
 import { useShallow } from 'zustand/react/shallow'
 import TemplateModal from './TemplateModal'
@@ -87,16 +88,18 @@ const DailyNotes = memo(() => {
 
   return (
     <>
-      <button
-        className="new-note-btn"
-        onClick={handleDailyNote}
-        style={{ flex: 1, padding: '4px', minWidth: 0, justifyContent: 'center' }}
-      >
-        <Calendar size={14} style={{ flexShrink: 0 }} />
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          Daily
-        </span>
-      </button>
+      <ToolTip text="Daily Note" position="bottom">
+        <button
+          className="new-note-btn"
+          onClick={handleDailyNote}
+          style={{ flex: 1, padding: '4px', minWidth: 0, justifyContent: 'center' }}
+        >
+          <Calendar size={14} style={{ flexShrink: 0 }} />
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            Daily
+          </span>
+        </button>
+      </ToolTip>
 
       {isModalOpen && (
         <TemplateModal
