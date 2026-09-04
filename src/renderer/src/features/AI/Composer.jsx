@@ -11,7 +11,9 @@ import {
   Globe,
   Sliders,
   Paperclip,
-  Check
+  Check,
+  Plus,
+  X
 } from 'lucide-react'
 import { LuminaSlash } from './LuminaSlash'
 import LuminaMention from './LuminaMention'
@@ -144,14 +146,27 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
 
   const handleCommandSelect = (cmd) => {
     if (cmd && cmd.action) {
-      cmd.action(setMode, setInput)
+      cmd.action(setMode)
     }
     const match = input.match(/(?:^|\s)\/([a-zA-Z0-9_-]*)$/)
     if (match) {
       const matchIndex = match.index + (match[0].startsWith(' ') ? 1 : 0)
-      setInput(input.slice(0, matchIndex))
+      const preserved = input.slice(0, matchIndex)
+      setInput(preserved)
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus()
+          textareaRef.current.setSelectionRange(preserved.length, preserved.length)
+        }
+      }, 0)
     } else {
-      setInput('')
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus()
+          const len = textareaRef.current.value.length
+          textareaRef.current.setSelectionRange(len, len)
+        }
+      }, 0)
     }
     setShowSlashMenu(false)
   }
@@ -216,24 +231,17 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
   const getProviderLabel = () => {
     switch (settings.activeProvider) {
       case 'openai':
-        return '🤖 GPT-4o'
+        return 'GPT-4o'
       case 'anthropic':
-        return '🧠 Claude'
+        return 'Claude'
       case 'ollama':
-        return '🦙 Ollama'
+        return 'Ollama'
       default:
-        return '🐋 DeepSeek'
+        return 'DeepSeek'
     }
   }
 
   const toggleProvider = () => window.dispatchEvent(new CustomEvent('open-ai-settings'))
-
-  const modes = [
-    { id: 'Plan', icon: <Zap size={13} />, title: 'Plan mode' },
-    { id: 'Deep', icon: <Brain size={13} />, title: 'Deep mode' },
-    { id: 'Creative', icon: <Palette size={13} />, title: 'Creative mode' },
-    { id: 'Code', icon: <Code size={13} />, title: 'Code mode' }
-  ]
 
   return (
     <div className="composer-container">
@@ -251,7 +259,6 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
         onClose={() => setShowMentionMenu(false)}
       />
 
-      {/* Unified Card */}
       <div className="composer-card" onClick={() => textareaRef.current?.focus()}>
         {attachedMentions && attachedMentions.length > 0 && (
           <div className="composer-attached-mentions">
@@ -291,32 +298,30 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
           />
         </div>
 
-        {/* Inner Footer — model, modes, char count, send */}
         <div className="composer-inner-footer">
-          {/* Left: model pill + mode toggles */}
           <div className="composer-left">
-            <ToolTip text="Change AI model" position="top">
-              <button className="model-pill" onClick={toggleProvider}>
-                {getProviderLabel()}
-                <ChevronDown size={10} />
+            <ToolTip text="Commands & Modes (/)" position="top">
+              <button
+                type="button"
+                className="composer-plus-btn"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowSlashMenu((prev) => !prev)
+                  setSlashFilter('')
+                  if (textareaRef.current) textareaRef.current.focus()
+                }}
+                title="Commands & Modes"
+              >
+                <Plus size={13} />
               </button>
             </ToolTip>
-            <div className="composer-modes">
-              {modes.map((m) => (
-                <ToolTip key={m.id} text={m.title} position="top">
-                  <button
-                    type="button"
-                    className={`mode-btn ${mode === m.id ? 'active' : ''}`}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setMode(m.id)
-                    }}
-                  >
-                    {m.icon}
-                  </button>
-                </ToolTip>
-              ))}
-            </div>
+
+            <ToolTip text="Change AI model" position="top">
+              <button className="model-pill" onClick={toggleProvider}>
+                <span className="model-pill-name">{getProviderLabel()}</span>
+                <ChevronDown size={10} className="model-pill-chevron" />
+              </button>
+            </ToolTip>
           </div>
 
           <div className="composer-right">
