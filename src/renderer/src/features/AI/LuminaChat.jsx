@@ -43,9 +43,10 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 const CodeBlock = React.memo(({ inline, className, children, ...props }) => {
   const match = /language-([a-zA-Z0-9-]+)/.exec(className || '')
   const [copied, setCopied] = useState(false)
+  const isBlock = !inline || Boolean(match) || String(children).includes('\n')
 
-  if (!inline && match) {
-    const lang = match[1]
+  if (isBlock) {
+    const lang = match ? match[1] : 'text'
     const isDelete = lang.startsWith('lumina-delete')
     const codeString = String(children).replace(/\n$/, '')
 
@@ -86,7 +87,7 @@ const CodeBlock = React.memo(({ inline, className, children, ...props }) => {
         {!isDelete && (
           <SyntaxHighlighter
             style={vscDarkPlus}
-            language={lang}
+            language={lang === 'text' ? 'markdown' : lang}
             PreTag="div"
             customStyle={{
               margin: 0,
@@ -295,7 +296,6 @@ export const MessageContent = React.memo(
         return `\n> 📄 **Reading:** ${fileName}\n`
       })
 
-      // Convert [[Note Title]] and [[Note Title|Alias]] into wikilink format
       processed = processed.replace(/\[\[(.*?)\]\]/g, (match, inner) => {
         const [target, alias] = inner.split('|')
         const cleanTarget = target.trim()
@@ -303,7 +303,50 @@ export const MessageContent = React.memo(
         return `[${displayText}](wikilink:${encodeURIComponent(cleanTarget)})`
       })
 
-      return processed
+      processed = processed.replace(/([^\n])\s*([├└]──|│\s+[├└]──)/g, '$1\n$2')
+      processed = processed.replace(/([├└]──[^\n]+?)\s+([├└]──)/g, '$1\n$2')
+
+      const rawLines = processed.split('\n')
+      let inFence = false
+      const resultLines = []
+      let treeBuffer = []
+
+      for (let i = 0; i < rawLines.length; i++) {
+        const line = rawLines[i]
+        if (line.trim().startsWith('```')) {
+          if (treeBuffer.length > 0) {
+            resultLines.push('```text\n' + treeBuffer.join('\n') + '\n```')
+            treeBuffer = []
+          }
+          inFence = !inFence
+          resultLines.push(line)
+          continue
+        }
+
+        if (!inFence) {
+          const isTreeLine =
+            /[├└]──/.test(line) ||
+            (treeBuffer.length > 0 && (/^[│\s]*[├└─]/.test(line) || /^📁/.test(line.trim()))) ||
+            (/^📁\s+[^/\n]+\s*(?:\(root\)|→|--|\/)/i.test(line.trim()) && i + 1 < rawLines.length && /[├└]──/.test(rawLines[i + 1]))
+
+          if (isTreeLine) {
+            treeBuffer.push(line)
+            continue
+          }
+        }
+
+        if (treeBuffer.length > 0) {
+          resultLines.push('```text\n' + treeBuffer.join('\n') + '\n```')
+          treeBuffer = []
+        }
+        resultLines.push(line)
+      }
+
+      if (treeBuffer.length > 0) {
+        resultLines.push('```text\n' + treeBuffer.join('\n') + '\n```')
+      }
+
+      return resultLines.join('\n')
     }, [content])
 
     return (
@@ -441,12 +484,17 @@ const ChatMessageRow = React.memo(
                 )}
               </div>
             ) : (
-              <MessageContent
-                content={msg.content}
-                imageUrl={msg.imageUrl}
-                imagePrompt={msg.imagePrompt}
-                onCopy={handleCopy}
-              />
+              <>
+                <MessageContent
+                  content={msg.content}
+                  imageUrl={msg.imageUrl}
+                  imagePrompt={msg.imagePrompt}
+                  onCopy={handleCopy}
+                />
+                {isLast && isChatLoading && (
+                  <span className="chat-streaming-cursor" />
+                )}
+              </>
             )}
           </div>
           {msg.role === 'assistant' && (

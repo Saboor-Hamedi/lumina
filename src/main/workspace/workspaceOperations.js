@@ -293,9 +293,15 @@ export class WorkspaceOperations {
 
   static async createFolder(vaultPath, foldersSet, folderPath) {
     if (!vaultPath) throw new Error('No vault open')
-    const fullPath = path.join(vaultPath, folderPath)
+    const normalized = (folderPath || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
+    const fullPath = path.join(vaultPath, normalized)
     await fs.mkdir(fullPath, { recursive: true })
-    foldersSet.add(folderPath)
+
+    let current = ''
+    normalized.split('/').forEach((part) => {
+      current = current ? `${current}/${part}` : part
+      foldersSet.add(current)
+    })
     return true
   }
 
@@ -303,10 +309,18 @@ export class WorkspaceOperations {
     if (!vaultPath) throw new Error('No vault open')
     const fullOldPath = path.join(vaultPath, oldPath)
     const fullNewPath = path.join(vaultPath, newPath)
+    await fs.mkdir(path.dirname(fullNewPath), { recursive: true })
     await fs.rename(fullOldPath, fullNewPath)
 
-    foldersSet.delete(oldPath)
-    foldersSet.add(newPath)
+    for (const f of Array.from(foldersSet)) {
+      if (f === oldPath) {
+        foldersSet.delete(f)
+        foldersSet.add(newPath)
+      } else if (f.startsWith(`${oldPath}/`)) {
+        foldersSet.delete(f)
+        foldersSet.add(f.replace(oldPath, newPath))
+      }
+    }
 
     for (const [id, snippet] of snippetsMap.entries()) {
       if (snippet.folderId === oldPath) {
@@ -324,11 +338,14 @@ export class WorkspaceOperations {
     if (this.isProtectedPath(folderPath)) {
       return { success: false, deletedFilePaths: [] }
     }
-    const fullPath = path.join(vaultPath, folderPath)
-    await fs.rm(fullPath, { recursive: true, force: true })
+    const normalized = (folderPath || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
+    const fullPath = path.join(vaultPath, normalized)
+    try {
+      await fs.rm(fullPath, { recursive: true, force: true })
+    } catch (_) {}
 
     for (const f of Array.from(foldersSet)) {
-      if (f === folderPath || f.startsWith(`${folderPath}/`)) {
+      if (f === normalized || f.startsWith(`${normalized}/`)) {
         foldersSet.delete(f)
       }
     }

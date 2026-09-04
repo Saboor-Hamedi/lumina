@@ -696,8 +696,8 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
 **TOOLS AVAILABLE** (use these for file operations):
 - 'readFile' — read a workspace file by title (only use when you do NOT already have the file content)
 - 'appendToFile' — add new content to the END of an existing file
-- 'createFile' — create a brand new workspace file (provide title + content)
-- 'updateFile' — replace specific text/section in a workspace file (ALWAYS prefer search+replace for targeted edits)
+- 'createFile' — create a brand new workspace file (provide title + content, optional folder)
+- 'updateFile' — targeted update to an existing note. Use \`sectionHeader\` (to replace/update or add a specific section), \`search\` & \`replace\` (for exact lines/words), \`insertAfter\`, or \`insertBefore\`. NEVER rewrite the whole file with \`content\` unless the user explicitly requested a complete rewrite from scratch.
 - 'clearFile' — clear the content of a file or reset it cleanly
 - 'renameFile' — rename a file (preserves folder and content) — ALWAYS use this instead of delete+create
 - 'deleteFile' — delete a workspace file by title
@@ -707,9 +707,10 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
 - 'openFile' — open a file in the user's editor tab so they can see it
 
 **HOW TO USE TOOLS & ROUTE INTENT**:
-1. **WHEN THE USER @-MENTIONS A FILE TO WRITE/ADD/EDIT (e.g. \`@NoteTitle write...\`, \`@NoteTitle add...\`, \`@NoteTitle update...\`)**:
-   - The user wants you to write to that note.
-   - ALWAYS call \`appendToFile\` (for additions/notes) or \`updateFile\` (for targeted edits) directly to write to that file in the workspace editor!
+1. **WHEN THE USER ASKS TO UPDATE, EDIT, MODIFY, OR FIX A NOTE (e.g. \`@NoteTitle update...\`, "update my file", "update this note", "change X to Y in note", "fix X in note", "add section X to note")**:
+   - You MUST use targeted \`updateFile\` (specifying \`sectionHeader\`, \`search\` & \`replace\`, \`insertAfter\`, or \`insertBefore\`).
+   - DO NOT overwrite the whole document. Target only the specific section or lines requested.
+   - In your conversational walkthrough, present the exact updated part or diff clearly so the user sees what changed.
 2. **WHEN THE USER ASKS WHAT IS IN A NOTE OR TO EXPLAIN/SUMMARIZE (e.g. "what do you see @NoteTitle", "what's in @NoteTitle", "summarize @NoteTitle", "explain @NoteTitle")**:
    - The note content is ALREADY provided below in this prompt under PRIMARY TARGET FILES.
    - DO NOT call file writing tools. Immediately summarize and explain the content and structure of the note directly in the chat!
@@ -795,24 +796,40 @@ ${vaultAccessNote}`
         }
 
         systemPrompt +=
-          '\n\nCRITICAL RULES FOR FILE TOOLS:\n' +
-          '1. NEVER output ANY text before calling a tool. Call the tool IMMEDIATELY. NO conversational filler like "Let me do that...".\n' +
-          '2. NEVER use the words "append", "appended", or "appending" in your response. Say "added", "wrote", or just "Done!".\n' +
-          '3. Keep your response extremely brief. Do not over-explain. Do not mention past renames or file states unless asked.\n' +
-          '4. If asked to ADD or WRITE content → call appendToFile DIRECTLY. Do NOT read first.\n' +
-          '5. If asked to RENAME a file → call renameFile DIRECTLY. NEVER use delete+create for rename.\n' +
-          '6. If asked to CLEAR or EMPTY a file → call updateFile with content: "" DIRECTLY.\n' +
-          '7. If asked to EXPLAIN a file → call readFile DIRECTLY.\n' +
-          '8. After ANY tool call, provide a short final response to the user. Never stop silently.\n' +
-          '9. CRITICAL: If you need to perform multiple steps (like renaming THEN appending), DO NOT call multiple tools at once. Call the first tool, wait for it to succeed, and only THEN call the next tool.\n' +
+          '\n\nCRITICAL RULES FOR FILE & FOLDER TOOLS:\n' +
+          '1. NEVER output ANY conversational narration or thinking before calling a tool. If a tool is needed, call the tool IMMEDIATELY on the very first step. Never say "I will create...", "Let me start by...", "Let me do that...". Call the tool directly.\n' +
+          '2. If the user asks to create a folder with a specific name or path (e.g. "create folder Science", "create folder src/database", "add the react js folder structure with all folders") → call createFolder directly with the path (or call createFolder for each folder in the structure).\n' +
+          '3. If the user asks to create a folder WITHOUT specifying a name (e.g. "create a folder", "make a new folder") → politely ask the user: "What would you like to name the folder?" Do NOT create a folder called "New Folder" unless the user explicitly asked for that name.\n' +
+          '4. If the user asks to create a note or file WITHOUT specifying a title/topic (e.g. "create a file", "create a note", "make a new note") → politely ask the user: "What should the note be named, and what topic would you like it to cover?" If the user explicitly asks for a random note (e.g. "create a random note", "draft any note") or provides a title/topic, call createFile immediately.\n' +
+          '5. If asked to DRAFT/CREATE A STUDY PLAN, TEMPLATE, OR FOLDER+FILE STRUCTURE (e.g. "draft them all into my vault", "create a study plan with folders and notes", "generate this structure") → you MUST create the folders AND immediately create the notes inside them with rich markdown content in the SAME response! Call createFolder for directories, and call createFile with folder="<Folder Path>" and full rich content for each note. NEVER stop after creating only folders.\n' +
+          '6. If asked to CREATE A NOTE IN A FOLDER → call createFile with folder="<Folder Path>" (e.g. folder="src/database").\n' +
+          '7. If asked to MOVE A FILE → call moveFile with title="current" (or note title) and folder="<Destination Folder>".\n' +
+          '8. If asked to RENAME a file → call renameFile with oldTitle="current" (or note title) and newTitle="<New Name>". If no new name is provided, ask the user first.\n' +
+          '9. If asked to DELETE a file → call deleteFile with title="current" (or note title) DIRECTLY.\n' +
+          '10. If asked to RENAME A FOLDER → call renameFolder DIRECTLY.\n' +
+          '11. If asked to DELETE A FOLDER (or folders) → call deleteFolder DIRECTLY for each requested folder.\n' +
+          '12. If asked to UPDATE, EDIT, MODIFY, or FIX a note → call updateFile with targeted sectionHeader, search & replace, insertAfter, or insertBefore DIRECTLY. Never wipe the rest of the file.\n' +
+          '13. If asked to ADD or WRITE content to the end of a note → call appendToFile DIRECTLY.\n' +
+          '14. If asked to CLEAR or EMPTY a file → call updateFile with content: "" DIRECTLY.\n' +
+          '15. If asked to EXPLAIN a file → call readFile DIRECTLY.\n' +
+          '16. When outputting folder/file trees or hierarchies in chat responses, ALWAYS wrap them in a code block with language text (e.g. ```text\\n📁 Root\\n├── 📁 01_Folder\\n└── 📁 02_Folder\\n```) with each branch on its own separate line so it renders cleanly.\n' +
+          '17. After performing tool operations, write a comprehensive, clear walkthrough in chat explaining what was built or modified, highlighting key topics, wikilinks, and the exact updated section or diff so the user can see what changed.\n' +
           '\n' +
           'EXAMPLES:\n' +
+          'User: "Create folder Science" → [Call createFolder with path="Science"]\n' +
+          'User: "Create folder database inside src" → [Call createFolder with path="src/database"]\n' +
+          'User: "create a folder" → "What would you like to name the folder?"\n' +
+          'User: "create a file" → "What should the note be named, and what topic would you like it to cover?"\n' +
+          'User: "Draft the NLP study plan into my vault" → [Call createFolder for each folder, AND call createFile for each note inside its folder with full markdown content!]\n' +
+          'User: "Create note Schema in src/database" → [Call createFile with title="Schema" folder="src/database" content="..."]\n' +
+          'User: "Update the Features section in my note" → [Call updateFile with title="current" sectionHeader="## Features" replace="..."]\n' +
+          'User: "Change 100 to 200 in Config" → [Call updateFile with title="Config" search="100" replace="200"]\n' +
+          'User: "Move my current note into src/database" → [Call moveFile with title="current" folder="src/database"]\n' +
+          'User: "Rename folder src to source" → [Call renameFolder with oldPath="src" newPath="source"]\n' +
+          'User: "Delete this note" → [Call deleteFile with title="current"]\n' +
+          'User: "Rename this note to App Architecture" → [Call renameFile with oldTitle="current" newTitle="App Architecture"]\n' +
           'User: "Write hello world" → [Call appendToFile immediately]\n' +
-          'User: "Add one more noun" → [Call appendToFile immediately]\n' +
-          'User: "Rename Grammars to SaboorGrammar" → [Call renameFile immediately]\n' +
-          'User: "Clear Grammars" → [Call updateFile with title="Grammars" content="" immediately]\n' +
-          'User: "Explain Grammars" → [Call readFile immediately]\n' +
-          'User: "Open Grammars" → [Call openFile immediately]'
+          'User: "Clear Grammars" → [Call updateFile with title="Grammars" content="" immediately]'
 
         // --- Existing files list & Knowledge Graph Context ---
         try {
@@ -927,15 +944,6 @@ ${vaultAccessNote}`
             const { getAITools } = await import('./index.js')
             const sdkTools = getAITools(blockReadFile)
 
-            // Show a brief "working" message while the AI thinks
-            set((state) => {
-              const msgs = [...state.chatMessages]
-              if (msgs.length > 0) {
-                msgs[msgs.length - 1].content = 'Thinking...'
-              }
-              return { chatMessages: msgs }
-            })
-
             const result = aiSdk.streamText({
               model: createDeepseekProvider({ apiKey: visibleKey })(activeModel || 'deepseek-chat'),
               system: systemPrompt,
@@ -946,32 +954,108 @@ ${vaultAccessNote}`
               tools: Object.fromEntries(
                 Object.entries(sdkTools).filter(([, v]) => v !== undefined)
               ),
-              maxSteps: 15
+              maxSteps: 30
             })
+
+            const executedActions = []
+            let activeToolStatus = ''
+            let narrativeText = ''
+
+            const buildRealtimeDisplay = () => {
+              const blocks = []
+              if (executedActions.length > 0) {
+                blocks.push(executedActions.join('\n'))
+              }
+              if (activeToolStatus) {
+                blocks.push(activeToolStatus)
+              }
+              if (narrativeText.trim()) {
+                blocks.push(narrativeText.trim())
+              }
+              return blocks.join('\n\n')
+            }
 
             for await (const chunk of result.fullStream) {
               if (controller.signal.aborted) break
               if (!chunk || typeof chunk.type !== 'string') continue
-              if (chunk.type === 'text-delta') {
-                fullContent += chunk.textDelta || chunk.text || ''
+
+              if (chunk.type === 'tool-call') {
+                const args = chunk.args || {}
+                if (chunk.toolName === 'createFolder') {
+                  activeToolStatus = `📁 *Creating folder \`${args.path || '...'}\`...*`
+                } else if (chunk.toolName === 'createFile') {
+                  activeToolStatus = `📝 *Drafting \`${args.title || 'note'}\`${args.folder ? ' in ' + args.folder : ''}...*`
+                } else if (chunk.toolName === 'moveFile') {
+                  activeToolStatus = `📦 *Moving \`${args.title || 'note'}\` to \`${args.folder || 'root'}\`...*`
+                } else if (chunk.toolName === 'deleteFolder') {
+                  activeToolStatus = `🗑️ *Deleting folder \`${args.path || '...'}\`...*`
+                } else if (chunk.toolName === 'deleteFile') {
+                  activeToolStatus = `🗑️ *Deleting note \`${args.title || '...'}\`...*`
+                } else if (chunk.toolName === 'renameFolder') {
+                  activeToolStatus = `✏️ *Renaming folder \`${args.oldPath}\` to \`${args.newPath}\`...*`
+                } else if (chunk.toolName === 'renameFile') {
+                  activeToolStatus = `✏️ *Renaming note \`${args.oldTitle}\` to \`${args.newTitle}\`...*`
+                } else if (chunk.toolName === 'appendToFile') {
+                  activeToolStatus = `✍️ *Writing content to \`${args.title || 'note'}\`...*`
+                } else if (chunk.toolName === 'updateFile') {
+                  if (args.sectionHeader) {
+                    activeToolStatus = `✏️ *Updating section \`${args.sectionHeader}\` in \`${args.title || 'note'}\`...*`
+                  } else if (args.search) {
+                    const preview = (args.search || '').trim().replace(/\n/g, ' ')
+                    const shortSearch = preview.length > 25 ? preview.slice(0, 25) + '...' : preview
+                    activeToolStatus = `✏️ *Modifying targeted part in \`${args.title || 'note'}\` (\`${shortSearch}\`)...*`
+                  } else if (args.insertAfter) {
+                    activeToolStatus = `✏️ *Inserting into \`${args.title || 'note'}\` after \`${(args.insertAfter || '').slice(0, 20)}...\`...*`
+                  } else if (args.insertBefore) {
+                    activeToolStatus = `✏️ *Inserting into \`${args.title || 'note'}\` before \`${(args.insertBefore || '').slice(0, 20)}...\`...*`
+                  } else {
+                    activeToolStatus = `✏️ *Updating \`${args.title || 'note'}\`...*`
+                  }
+                } else if (chunk.toolName === 'clearFile') {
+                  activeToolStatus = `🧹 *Clearing \`${args.title || 'note'}\`...*`
+                } else if (chunk.toolName === 'readFile') {
+                  activeToolStatus = `📄 *Reading \`${args.title || 'note'}\`...*`
+                } else if (chunk.toolName === 'openFile') {
+                  activeToolStatus = `📖 *Opening \`${args.title || 'note'}\`...*`
+                } else {
+                  activeToolStatus = `⚙️ *Executing ${chunk.toolName}...*`
+                }
+
+                fullContent = buildRealtimeDisplay()
+                set((state) => {
+                  const msgs = [...state.chatMessages]
+                  if (msgs.length > 0)
+                    msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: fullContent }
+                  return { chatMessages: msgs }
+                })
               } else if (chunk.type === 'tool-result') {
+                activeToolStatus = ''
                 const res = chunk.result
                 if (res && res.success === false) {
                   console.warn(`[AIStore] Tool ${chunk.toolName} failed:`, res.error)
-                  fullContent += `\n\n*(⚠️ ${chunk.toolName}: ${res.error})*`
-                } else if (res && res.writtenContent) {
-                  fullContent = res.writtenContent
-                  set((state) => {
-                    const msgs = [...state.chatMessages]
-                    if (msgs.length > 0)
-                      msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: fullContent }
-                    return { chatMessages: msgs }
-                  })
+                  executedActions.push(`- ⚠️ *${chunk.toolName} failed: ${res.error}*`)
+                } else if (res && res.summary) {
+                  const entry = `- ${res.summary}`
+                  if (!executedActions.includes(entry) && !executedActions.includes(res.summary)) {
+                    executedActions.push(entry)
+                  }
                 }
+
+                fullContent = buildRealtimeDisplay()
+                set((state) => {
+                  const msgs = [...state.chatMessages]
+                  if (msgs.length > 0)
+                    msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: fullContent }
+                  return { chatMessages: msgs }
+                })
+              } else if (chunk.type === 'text-delta') {
+                narrativeText += chunk.textDelta || chunk.text || ''
+                fullContent = buildRealtimeDisplay()
               } else if (chunk.type === 'tool-error') {
                 const errMsg = chunk.error?.message || chunk.error || 'Unknown tool error'
                 console.warn(`[AIStore] Tool ${chunk.toolName} errored:`, errMsg)
-                fullContent += `\n\n*(⚠️ Tool error: ${errMsg})*`
+                executedActions.push(`- ⚠️ *Tool error: ${errMsg}*`)
+                fullContent = buildRealtimeDisplay()
               } else if (chunk.type === 'error') {
                 console.error('Stream error:', chunk.error)
                 fullContent += `\n\n*(❌ Stream error: ${chunk.error?.message || chunk.error})*`
@@ -980,6 +1064,7 @@ ${vaultAccessNote}`
               const now = Date.now()
               if (now - lastUpdateTime >= UPDATE_INTERVAL) {
                 lastUpdateTime = now
+                fullContent = buildRealtimeDisplay()
                 set((state) => {
                   const msgs = [...state.chatMessages]
                   if (msgs.length > 0)
@@ -989,31 +1074,34 @@ ${vaultAccessNote}`
               }
             }
 
-            // Post-stream inspection: Ensure filler text is always replaced with real content
+            activeToolStatus = ''
+
             try {
               const steps = await result.steps
               const toolResults = steps?.flatMap((s) => s.toolResults || []) || []
               if (toolResults.length > 0) {
-                const lastRes = toolResults[toolResults.length - 1]?.result
-                if (
-                  !fullContent.trim() ||
-                  fullContent.length < 160 ||
-                  /^(let me|reading|i'll read|you asked|i will)\b/i.test(fullContent.trim())
-                ) {
-                  if (lastRes?.writtenContent) {
-                    fullContent = lastRes.writtenContent
-                  } else if (lastRes?.content) {
-                    fullContent = `### 📄 ${lastRes.title || 'Note'}\n\n${lastRes.content}`
-                  } else if (lastRes?.summary) {
-                    fullContent = lastRes.summary
-                  } else if (lastRes?.title) {
-                    fullContent = `Done! Successfully saved to **${lastRes.title}**.`
+                toolResults.forEach((t) => {
+                  const sum = t.result?.summary
+                  if (sum) {
+                    const entry = `- ${sum}`
+                    if (!executedActions.includes(entry) && !executedActions.includes(sum)) {
+                      executedActions.push(entry)
+                    }
                   }
+                })
+
+                if (!narrativeText.trim() || /^(let me|i will|reading|you asked|starting with)\b/i.test(narrativeText.trim())) {
+                  narrativeText = ''
+                }
+
+                fullContent = buildRealtimeDisplay()
+                if (!fullContent.trim()) {
+                  fullContent = 'Done!'
                 }
               }
             } catch (_) {}
 
-            // Guaranteed final state update so UI always renders the complete final content
+            fullContent = buildRealtimeDisplay()
             set((state) => {
               const msgs = [...state.chatMessages]
               if (msgs.length > 0)
@@ -1049,14 +1137,16 @@ ${vaultAccessNote}`
             }
           }
 
-          // Final update to ensure we have the complete message
           set((state) => {
             const msgs = [...state.chatMessages]
+            const finalContent = (fullContent || '').trim()
             if (msgs.length > 0) {
-              msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: fullContent }
+              msgs[msgs.length - 1] = {
+                ...msgs[msgs.length - 1],
+                content: finalContent || 'Done!'
+              }
             }
 
-            // Clean up empty assistant message if no content was generated
             if (msgs.length > 0) {
               const lastMsg = msgs[msgs.length - 1]
               if (lastMsg.role === 'assistant' && !lastMsg.content && !lastMsg.imageUrl) {

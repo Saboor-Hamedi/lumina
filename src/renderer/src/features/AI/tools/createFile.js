@@ -2,7 +2,7 @@ import * as aiSdk from 'ai'
 
 export const createFileTool = aiSdk.tool({
   description:
-    'Create a new note file in the workspace editor. Use this whenever the user asks to create, draft, or write a new note or topic file.',
+    'Create a new note file in the workspace editor. Use this whenever the user asks to create, draft, or write a new note or topic file. You can optionally specify a target folder (e.g. folder="Science" or folder="Mathematics/Calculus").',
   inputSchema: aiSdk.jsonSchema({
     type: 'object',
     properties: {
@@ -14,57 +14,80 @@ export const createFileTool = aiSdk.tool({
       folder: {
         type: 'string',
         description:
-          'Optional. The existing folder path to create the file in (e.g., "English"). If root, leave undefined.'
+          'Optional. The destination folder name or path to create the file in (e.g., "Science", "Projects/Frontend", "Mathematics"). If root level, leave empty or undefined.'
       }
     },
     required: ['title', 'content']
   }),
   execute: async ({ title, content, folder }) => {
-    const { useVaultStore } = await import('../../../core/store/workspaceStore')
-    const vs = useVaultStore.getState()
-    const snippet = {
-      id: crypto.randomUUID(),
-      title,
-      code: content,
-      folderId: folder || '',
-      language: 'markdown',
-      timestamp: Date.now()
-    }
-    const saved = await vs.saveSnippet(snippet)
-    const targetSnippet = saved || snippet
+    try {
+      const cleanTitle = (title || 'Untitled')
+        .trim()
+        .replace(/^@/, '')
+        .replace(/\.md$/i, '')
+      const cleanFolder = (folder || '').trim().replace(/^[/\\]+|[/\\]+$/g, '')
 
-    // Immediately select and switch active editor to this new note
-    if (vs.setSelectedSnippet) {
-      vs.setSelectedSnippet(targetSnippet)
-    }
-    if (vs.setActiveTabId) {
-      vs.setActiveTabId(targetSnippet.id)
-    }
+      const { useVaultStore } = await import('../../../core/store/workspaceStore')
+      const vs = useVaultStore.getState()
 
-    window.dispatchEvent(
-      new CustomEvent('ai-saved-snippet', {
-        detail: { id: targetSnippet.id, code: targetSnippet.code, title: targetSnippet.title }
-      })
-    )
+      if (cleanFolder && window.api?.createFolder) {
+        try {
+          await window.api.createFolder(cleanFolder)
+        } catch (_) {}
+      }
 
-    const headers = (content.match(/^#{1,3}\s+(.+)$/gm) || []).map((h) =>
-      h.replace(/^#{1,3}\s+/, '')
-    )
+      const snippet = {
+        id: crypto.randomUUID(),
+        title: cleanTitle,
+        code: content || '',
+        folderId: cleanFolder || '',
+        language: 'markdown',
+        timestamp: Date.now()
+      }
 
-    const wikilinks = (content.match(/\[\[(.*?)\]\]/g) || []).map((w) =>
-      w.replace(/^\[\[|\]\]$/g, '')
-    )
+      const saved = await vs.saveSnippet(snippet)
+      const targetSnippet = saved || snippet
 
-    return {
-      success: true,
-      id: targetSnippet.id,
-      title: targetSnippet.title,
-      folderId: targetSnippet.folderId,
-      writtenContent: content,
-      topics: headers.slice(0, 8),
-      wikilinks: wikilinks.slice(0, 10),
-      summary: `Created **${targetSnippet.title}** covering: ${headers.slice(0, 5).join(', ')}.`,
-      instruction_to_ai: `File "${targetSnippet.title}" was created and opened in the editor. Now provide a rich, structured feedback walkthrough in chat explaining what was built, highlighting key wikilinks, and discussing the concepts.`
+      if (vs.loadVault) {
+        await vs.loadVault()
+      }
+
+      if (vs.setSelectedSnippet) {
+        vs.setSelectedSnippet(targetSnippet)
+      }
+      if (vs.setActiveTabId) {
+        vs.setActiveTabId(targetSnippet.id)
+      }
+
+      window.dispatchEvent(
+        new CustomEvent('ai-saved-snippet', {
+          detail: { id: targetSnippet.id, code: targetSnippet.code, title: targetSnippet.title }
+        })
+      )
+
+      const headers = (content.match(/^#{1,3}\s+(.+)$/gm) || []).map((h) =>
+        h.replace(/^#{1,3}\s+/, '')
+      )
+
+      const wikilinks = (content.match(/\[\[(.*?)\]\]/g) || []).map((w) =>
+        w.replace(/^\[\[|\]\]$/g, '')
+      )
+
+      const folderContext = cleanFolder ? ` in folder "${cleanFolder}"` : ''
+
+      return {
+        success: true,
+        id: targetSnippet.id,
+        title: targetSnippet.title,
+        folderId: targetSnippet.folderId,
+        writtenContent: content,
+        topics: headers.slice(0, 8),
+        wikilinks: wikilinks.slice(0, 10),
+        summary: `Created **${targetSnippet.title}**${folderContext} covering: ${headers.slice(0, 5).join(', ')}.`,
+        instruction_to_ai: `File "${targetSnippet.title}" was created${folderContext} and opened in the editor. Now provide a rich, structured feedback walkthrough in chat explaining what was built, highlighting key wikilinks, and discussing the concepts.`
+      }
+    } catch (err) {
+      return { success: false, error: err.message || 'Failed to create file' }
     }
   }
 })

@@ -7,6 +7,7 @@ import {
 } from '@dnd-kit/core'
 import { arrayMove } from '@dnd-kit/sortable'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
+import { useVaultStore } from '../../../core/store/workspaceStore'
 
 /**
  * @typedef {Object} DragItemData

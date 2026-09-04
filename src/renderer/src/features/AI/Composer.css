@@ -41,16 +41,23 @@
 .composer-backdrop,
 .composer-textarea {
   font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
-  font-size: 13px;
-  line-height: 1.45;
-  letter-spacing: normal;
-  padding: 10px 12px 6px;
-  margin: 0;
-  box-sizing: border-box;
-  white-space: pre-wrap;
-  word-break: break-word;
-  overflow-wrap: break-word;
-  tab-size: 2;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+  line-height: 20px !important;
+  letter-spacing: 0px !important;
+  word-spacing: 0px !important;
+  text-rendering: optimizeLegibility !important;
+  font-variant-ligatures: none !important;
+  font-feature-settings: normal !important;
+  padding: 10px 12px 6px !important;
+  margin: 0 !important;
+  border: 0 !important;
+  box-sizing: border-box !important;
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  tab-size: 2 !important;
 }
 
 .composer-backdrop {
@@ -61,28 +68,37 @@
   overflow-y: hidden;
   user-select: none;
   z-index: 1;
+  display: block;
 }
 
 .composer-mention-token {
   color: var(--text-accent);
-  font-weight: 500;
+  font-weight: inherit !important;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  letter-spacing: inherit !important;
+  line-height: inherit !important;
   background: none;
+  padding: 0;
+  margin: 0;
+  border: 0;
 }
 
-/* ─── Textarea ─────────────────────────────────── */
 .composer-textarea {
   position: relative;
   width: 100%;
-  border: none;
-  background: transparent;
-  color: transparent;
-  caret-color: var(--text-main);
+  border: 0 !important;
+  background: transparent !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  caret-color: var(--text-main) !important;
   resize: none;
   min-height: 44px;
   max-height: 140px;
-  outline: none;
+  outline: none !important;
   overflow-y: auto;
   z-index: 2;
+  display: block;
 }
 
 .composer-textarea::-webkit-scrollbar {
@@ -189,11 +205,13 @@
   flex-shrink: 0;
 }
 
-.char-count {
-  font-size: 10px;
+.char-count,
+.composer-char-count {
+  font-size: 9.5px;
   color: var(--text-faint);
   font-variant-numeric: tabular-nums;
-  opacity: 0.7;
+  opacity: 0.55;
+  padding: 0 4px;
 }
 
 .mode-badge {

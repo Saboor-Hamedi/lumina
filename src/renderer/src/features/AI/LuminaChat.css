@@ -1247,4 +1247,24 @@
 .table-wrapper {
   width: 100%;
 }
+
+.chat-streaming-cursor {
+  display: inline-block;
+  width: 5px;
+  height: 13px;
+  background-color: var(--text-accent, #40bafa);
+  vertical-align: -1px;
+  margin-left: 3px;
+  border-radius: 1px;
+  animation: chatCursorBlink 0.75s infinite ease-in-out;
+}
+
+@keyframes chatCursorBlink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
 

@@ -264,7 +264,7 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
             {(() => {
               if (!input) return null
               const parts = input.split(mentionRegex)
-              return parts.map((part, idx) => {
+              const rendered = parts.map((part, idx) => {
                 if (part.startsWith('@') && part.length > 1) {
                   return (
                     <span key={idx} className="composer-mention-token">
@@ -274,6 +274,15 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
                 }
                 return part
               })
+              if (input.endsWith('\n')) {
+                return (
+                  <>
+                    {rendered}
+                    {' '}
+                  </>
+                )
+              }
+              return rendered
             })()}
           </div>
 
@@ -306,10 +315,14 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
             </ToolTip>
           </div>
 
-          {/* Right: char count + send/stop */}
           <div className="composer-right">
-            {input.length > 80 && (
-              <span className="composer-char-count">{input.length}</span>
+            {input.trim().length > 0 && (
+              <span className="composer-char-count">
+                {(() => {
+                  const words = input.trim().split(/\s+/).filter(Boolean).length
+                  return `${words} ${words === 1 ? 'word' : 'words'}`
+                })()}
+              </span>
             )}
 
             {isLoading ? (
