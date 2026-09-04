@@ -30,14 +30,14 @@ import {
   Code as CodeIcon
 } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
-import { useAIStore } from './tools/LuminaChat'
+import { useAIStore } from './tools/lumina'
 import { useVaultStore } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useShallow } from 'zustand/react/shallow'
 import { Composer } from './Composer'
 import ModalHeader from '../Overlays/ModalHeader'
 import '../../assets/appshell.css'
-import './LuminaChat.css'
+import './lumina.css'
 
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'

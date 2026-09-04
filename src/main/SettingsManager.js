@@ -65,10 +65,16 @@ class SettingsManager {
   }
 
   async init(vaultPath) {
+    if (!vaultPath && this.vaultPath) {
+      vaultPath = this.vaultPath
+    }
+    if (!vaultPath) {
+      vaultPath = path.join(process.env.USERPROFILE || process.env.HOME || '.', 'Documents', 'lumina')
+    }
+    this.vaultPath = vaultPath
     const luminaDir = path.join(vaultPath, '.lumina')
     this.settingsPath = path.join(luminaDir, 'settings.json')
 
-    // Ensure .lumina directory exists
     try {
       await fs.mkdir(luminaDir, { recursive: true })
     } catch (err) {}
@@ -78,12 +84,10 @@ class SettingsManager {
       const data = await fs.readFile(this.settingsPath, 'utf8')
       this.cache = { ...this.defaultSettings, ...JSON.parse(data) }
     } catch (err) {
-      // File doesn't exist or is corrupt, create default
       this.cache = { ...this.defaultSettings }
       await this.save()
     }
 
-    // Watch for external changes to settings.json
     this.startWatching()
   }
 
@@ -101,8 +105,15 @@ class SettingsManager {
       }
     })
 
+    this.watcher.on('unlink', async () => {
+      if (this.isWriting || Date.now() < this.ignoreWatchEventsUntil) return
+      try {
+        this.cache = { ...this.defaultSettings }
+        await this.save()
+      } catch (_) {}
+    })
+
     this.watcher.on('change', async () => {
-      // Skip if we're the ones writing (avoid infinite loop) or recently wrote
       if (this.isWriting || Date.now() < this.ignoreWatchEventsUntil) {
         return
       }
@@ -110,22 +121,28 @@ class SettingsManager {
       try {
         const data = await fs.readFile(this.settingsPath, 'utf8')
 
-        // Ignore the change if it matches exactly what we just wrote
         if (data === this.lastWrittenData) {
           return
         }
 
-        console.info('[SettingsManager] settings.json changed externally, reloading...')
         const loadedSettings = JSON.parse(data)
-        // Merge: defaults first, then loaded settings (preserves all keys from file)
-        this.cache = { ...this.defaultSettings, ...loadedSettings }
+        const newCache = { ...this.defaultSettings, ...loadedSettings }
 
-        // Notify renderer via callback (set by main process)
+        const oldJson = JSON.stringify(this.cache)
+        const newJson = JSON.stringify(newCache)
+        if (oldJson === newJson) {
+          this.lastWrittenData = data
+          return
+        }
+
+        console.info('[SettingsManager] settings.json changed externally, reloading...')
+        this.cache = newCache
+        this.lastWrittenData = data
+
         if (this.notifyRenderer) {
           this.notifyRenderer(this.cache)
         }
 
-        // Call registered callbacks
         this.onChangeCallbacks.forEach((cb) => {
           try {
             cb(this.cache)
@@ -151,27 +168,43 @@ class SettingsManager {
   }
 
   async get(key) {
-    if (!this.cache) await this.init()
-    return key ? this.cache[key] : this.cache
+    if (!this.cache) {
+      try {
+        await this.init(this.vaultPath)
+      } catch (_) {
+        this.cache = { ...this.defaultSettings }
+      }
+    }
+    const current = this.cache || this.defaultSettings
+    return key ? current[key] : current
   }
 
   async set(key, value) {
-    if (!this.cache) await this.init()
-    this.cache[key] = value
+    if (!this.cache) {
+      try {
+        await this.init(this.vaultPath)
+      } catch (_) {
+        this.cache = { ...this.defaultSettings }
+      }
+    }
+    if (this.cache) {
+      this.cache[key] = value
+    }
     return this.queueSave()
   }
 
   async setMultiple(settings) {
-    if (!this.cache) await this.init()
-    this.cache = { ...this.cache, ...settings }
+    if (!this.cache) {
+      try {
+        await this.init(this.vaultPath)
+      } catch (_) {
+        this.cache = { ...this.defaultSettings }
+      }
+    }
+    this.cache = { ...(this.cache || this.defaultSettings), ...settings }
     return this.queueSave()
   }
 
-  /**
-   * Queues a save operation to prevent concurrent file writes.
-   * If a save is already in progress, the next save will start after it finishes.
-   * Only one pending save is kept to avoid redundant writes.
-   */
   async queueSave() {
     if (this.isWriting) {
       if (this.pendingSave) return this.pendingSave
@@ -190,25 +223,22 @@ class SettingsManager {
   async save() {
     try {
       this.isWriting = true
-      // Merge with defaults to ensure all default keys are present, but preserve user values
       const settingsToSave = { ...this.defaultSettings, ...this.cache }
-
-      // Use direct write to prevent EBUSY locks from chokidar on Windows
       const data = JSON.stringify(settingsToSave, null, 2)
 
-      // Store the exact string we are about to write so the watcher can ignore it
+      if (data === this.lastWrittenData) {
+        this.isWriting = false
+        return
+      }
+
       this.lastWrittenData = data
+      this.ignoreWatchEventsUntil = Date.now() + 2500
 
       await fs.mkdir(path.dirname(this.settingsPath), { recursive: true })
       await fs.writeFile(this.settingsPath, data, 'utf8')
 
-      // Update cache to match what we saved
       this.cache = settingsToSave
 
-      // Ignore watch events for 2 seconds after we save to avoid reverting state
-      this.ignoreWatchEventsUntil = Date.now() + 2000
-
-      // Slight delay to allow OS/Chokidar to settle
       await new Promise((resolve) => setTimeout(resolve, 30))
       this.isWriting = false
     } catch (err) {

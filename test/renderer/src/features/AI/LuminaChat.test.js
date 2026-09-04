@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
-import { useAIStore } from '../../../../../src/renderer/src/features/AI/tools/LuminaChat'
+import { useAIStore } from '../../../../../src/renderer/src/features/AI/tools/lumina'
 
 // Worker is mocked in setup.js
 

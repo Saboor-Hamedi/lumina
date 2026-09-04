@@ -10,7 +10,7 @@ const files = fs
       f !== 'index.js' &&
       f !== 'bulkExecutor.js' &&
       f !== 'executeBulkPlan.js' &&
-      f !== 'LuminaChat.js'
+      f !== 'lumina.js'
   )
 
 for (const file of files) {

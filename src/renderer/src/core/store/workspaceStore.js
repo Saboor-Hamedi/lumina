@@ -241,36 +241,32 @@ export const useWorkspaceStore = create((set, get) => ({
         if (freshData && freshData.snippets) {
           let merged = freshData.snippets
           let folderColors = {}
-          try {
-            const noteColors = (await window.api.getSetting('noteColors')) || {}
-            folderColors = (await window.api.getSetting('folderColors')) || {}
-            merged = freshData.snippets.map((s) => ({
-              ...s,
-              color: s.color || noteColors[s.id] || null
-            }))
-          } catch {
-            folderColors = {}
-          }
-
           let persistedOpenTabs = get().openTabs
           let persistedPinnedTabs = get().pinnedTabIds
           let persistedActiveId = get().activeTabId
 
-          if (isInitialLoad || persistedOpenTabs.length === 0) {
-            try {
-              const savedTabs = await window.api.getSetting('openTabs')
-              const savedPinned = await window.api.getSetting('pinnedTabIds')
-              const savedLast = await window.api.getSetting('lastSnippetId')
-              if (Array.isArray(savedTabs) && savedTabs.length > 0) {
-                persistedOpenTabs = savedTabs
+          try {
+            const allSettings = (await window.api.getSetting()) || {}
+            const noteColors = allSettings.noteColors || {}
+            folderColors = allSettings.folderColors || {}
+            merged = freshData.snippets.map((s) => ({
+              ...s,
+              color: s.color || noteColors[s.id] || null
+            }))
+
+            if (isInitialLoad || persistedOpenTabs.length === 0) {
+              if (Array.isArray(allSettings.openTabs) && allSettings.openTabs.length > 0) {
+                persistedOpenTabs = allSettings.openTabs
               }
-              if (Array.isArray(savedPinned)) {
-                persistedPinnedTabs = savedPinned
+              if (Array.isArray(allSettings.pinnedTabIds)) {
+                persistedPinnedTabs = allSettings.pinnedTabIds
               }
-              if (savedLast) {
-                persistedActiveId = savedLast
+              if (allSettings.lastSnippetId) {
+                persistedActiveId = allSettings.lastSnippetId
               }
-            } catch {}
+            }
+          } catch {
+            folderColors = {}
           }
 
           const snippetIdSet = new Set(merged.map((s) => s.id))

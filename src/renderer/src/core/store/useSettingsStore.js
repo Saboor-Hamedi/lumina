@@ -25,17 +25,17 @@ export const useSettingsStore = create((set, get) => ({
     graphShowTexts: true,
     graphNodeColor: '#40bafa',
     // AI Settings - preserve these during hot reload
-    deepSeekKey: null,
+    deepSeekKey: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_deepseek_key')) || null,
     deepSeekModel: 'deepseek-chat',
     huggingFaceKey: null,
 
     // New Multi-Provider Support
-    activeProvider: 'deepseek',
+    activeProvider: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_active_provider')) || 'deepseek',
     activeModel: null,
-    activeAIMode: 'Plan',
+    activeAIMode: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_active_ai_mode')) || 'Plan',
     aiChatDisplayMode: 'sidebar',
-    openaiKey: null,
-    anthropicKey: null,
+    openaiKey: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_openai_key')) || null,
+    anthropicKey: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_anthropic_key')) || null,
     ollamaUrl: 'http://localhost:11434/api/chat',
 
     // Command Palette
@@ -129,12 +129,27 @@ export const useSettingsStore = create((set, get) => ({
     if (key === 'fontFamily') root.style.setProperty('--font-editor', value)
     if (key === 'fontSize') root.style.setProperty('--font-size-editor', `${value}px`)
 
-    // Persist to settings.json
     try {
-      await window.api.saveSetting(key, value)
+      if (key === 'activeAIMode') {
+        localStorage.setItem('lumina_active_ai_mode', value)
+      } else if (key === 'deepSeekKey') {
+        if (value) localStorage.setItem('lumina_deepseek_key', value)
+        else localStorage.removeItem('lumina_deepseek_key')
+      } else if (key === 'openaiKey') {
+        if (value) localStorage.setItem('lumina_openai_key', value)
+        else localStorage.removeItem('lumina_openai_key')
+      } else if (key === 'anthropicKey') {
+        if (value) localStorage.setItem('lumina_anthropic_key', value)
+        else localStorage.removeItem('lumina_anthropic_key')
+      } else if (key === 'activeProvider') {
+        if (value) localStorage.setItem('lumina_active_provider', value)
+      }
+
+      if (window.api && typeof window.api.saveSetting === 'function') {
+        await window.api.saveSetting(key, value)
+      }
     } catch (err) {
       console.error(`Failed to save setting ${key}:`, err)
-      // Revert on failure? For now, keep optimistic.
     }
   },
 

@@ -1249,6 +1249,50 @@ ${vaultAccessNote}`
                 appliedCreations++
               }
 
+              // 1b. Fallback for XML pseudo tags: <createFile title="..." ...>content</createFile> or <create_file title="...">
+              const xmlCreateMatches = [
+                ...fullContent.matchAll(
+                  /<create(?:File|_file)\s+title=["']([^"']+)["'](?:\s+folder=["']([^"']*)["'])?[^>]*>([\s\S]*?)<\/create(?:File|_file)>/gi
+                )
+              ]
+              for (const match of xmlCreateMatches) {
+                const title = match[1].trim()
+                const folderId = (match[2] || '').trim()
+                const content = match[3].trim()
+
+                if (title && !createMatches.some((c) => c.title === title)) {
+                  if (folderId && window.api?.createFolder) {
+                    try {
+                      await window.api.createFolder(folderId)
+                    } catch (_) {}
+                  }
+                  const newSnippet = {
+                    id: crypto.randomUUID(),
+                    title: title,
+                    code: content,
+                    folderId: folderId || '',
+                    language: 'markdown',
+                    tags: '',
+                    timestamp: Date.now()
+                  }
+                  await vaultStore.saveSnippet(newSnippet)
+                  appliedCreations++
+                }
+              }
+
+              // 1c. Process <createFolder path="..."> pseudo tags
+              const xmlFolderMatches = [
+                ...fullContent.matchAll(/<create(?:Folder|_folder)\s+path=["']([^"']+)["'][^>]*>/gi)
+              ]
+              for (const match of xmlFolderMatches) {
+                const folderPath = match[1].trim()
+                if (folderPath && window.api?.createFolder) {
+                  try {
+                    await window.api.createFolder(folderPath)
+                  } catch (_) {}
+                }
+              }
+
               // 2. Process lumina-update
               const updateMatches = parseLuminaBlocks(fullContent, 'lumina-update')
               for (const { title, content } of updateMatches) {
@@ -1314,6 +1358,8 @@ ${vaultAccessNote}`
                     // Use greedy match to grab the closest ``` after content start
                     text = text.replace(new RegExp(escaped + '[^\\n]*\\n[\\s\\S]*?\\n```', 'g'), '')
                   }
+                  text = text.replace(/<create(?:File|_file)[\s\S]*?<\/create(?:File|_file)>/gi, '')
+                  text = text.replace(/<create(?:Folder|_folder)[^>]*>/gi, '')
                   text = text.replace(/```lumina-delete\s+[^\n]+```\n?/g, '')
                   text = text.replace(/\n{4,}/g, '\n\n\n').trim()
                   // If stripping gutted everything, keep a clean summary

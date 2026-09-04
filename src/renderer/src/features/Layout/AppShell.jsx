@@ -24,8 +24,8 @@ import '../../assets/appshell.css'
 import '../Overlays/Modals/ConfirmModal.css'
 import '../Overlays/Modals/RenameModal.css'
 
-import LuminaChat from '../AI/LuminaChat'
-import { useAIStore } from '../AI/tools/LuminaChat'
+import LuminaChat from '../AI/Lumina'
+import { useAIStore } from '../AI/tools/lumina'
 import { useTypingSound } from '../../core/hooks/useTypingSound'
 import { useShallow } from 'zustand/react/shallow'
 import { X, Maximize2, Trash2, History, Bot, Info, MessageSquare } from 'lucide-react'
@@ -141,27 +141,26 @@ const AppShell = () => {
   useEffect(() => {
     if (isRestoring) return
     const currentSidebar = sidebarSetting || {}
+    if (currentSidebar.isLeftOpen === isLeftSidebarOpen) return
     useSettingsStore.getState().updateSettings({
       sidebar: {
         ...currentSidebar,
         isLeftOpen: isLeftSidebarOpen
       }
     })
-  }, [isLeftSidebarOpen, isRestoring])
+  }, [isLeftSidebarOpen, isRestoring, sidebarSetting])
 
-  /**
-   * Persist right sidebar open/closed state to rightSidebar settings.
-   */
   useEffect(() => {
     if (isRestoring) return
     const currentRSidebar = rightSidebarSetting || {}
+    if (currentRSidebar.isRightOpen === isRightSidebarOpen) return
     useSettingsStore.getState().updateSettings({
       rightSidebar: {
         ...currentRSidebar,
         isRightOpen: isRightSidebarOpen
       }
     })
-  }, [isRightSidebarOpen, isRestoring])
+  }, [isRightSidebarOpen, isRestoring, rightSidebarSetting])
 
   // Deletion State
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -294,10 +293,6 @@ const AppShell = () => {
           if (last) setSelectedSnippet(last)
         }
 
-        if (!actualSettings.rightPanelMode || actualSettings.rightPanelMode === 'metadata') {
-          useSettingsStore.getState().updateSetting('rightPanelMode', 'chat')
-        }
-
         const legacySidebar = actualSettings.sidebar || {}
         if (typeof legacySidebar.isLeftOpen === 'boolean')
           setIsLeftSidebarOpen(legacySidebar.isLeftOpen)
@@ -330,7 +325,13 @@ const AppShell = () => {
       }
     }
 
-    initApp()
+    const fallbackTimer = setTimeout(() => {
+      setIsRestoring(false)
+    }, 1000)
+
+    initApp().finally(() => {
+      clearTimeout(fallbackTimer)
+    })
 
     // Start listening for updates
     const unsub = useUpdateStore.getState().init()
