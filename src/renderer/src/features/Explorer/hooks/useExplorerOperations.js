@@ -58,24 +58,14 @@ export function useExplorerOperations({
       const next = typeof updater === 'function' ? updater(prev) : updater
       const nextSet = next instanceof Set ? next : new Set(next || [])
       expandedFoldersRef.current = nextSet
+      const arr = Array.from(nextSet)
+      try {
+        localStorage.setItem('lumina-expanded-folders', JSON.stringify(arr))
+      } catch (e) {}
+      useSettingsStore.getState().updateSetting('expandedFolders', arr)
       return nextSet
     })
   }, [])
-
-  useEffect(() => {
-    expandedFoldersRef.current = expandedFolders
-    const arr = Array.from(expandedFolders)
-    try {
-      localStorage.setItem('lumina-expanded-folders', JSON.stringify(arr))
-    } catch (e) {}
-    const currentStored = settings.expandedFolders || []
-    if (
-      arr.length !== currentStored.length ||
-      arr.some((f) => !currentStored.includes(f))
-    ) {
-      updateSetting('expandedFolders', arr)
-    }
-  }, [expandedFolders, settings.expandedFolders, updateSetting])
 
   useEffect(() => {
     if (Array.isArray(settings.expandedFolders)) {

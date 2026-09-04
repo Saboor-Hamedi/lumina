@@ -124,16 +124,11 @@ async function createWindow() {
 
     new AppUpdater(mainWindow)
 
-    SettingsManager.notifyRenderer = (settings) => {
+    SettingsManager.onChange((settings) => {
       allowDevTools = settings.enableDevTools === true
       useGlobalShortcut(mainWindow, settings)
       updateAutoLauncher(settings.launchOnStartup)
-      BrowserWindow.getAllWindows().forEach((win) => {
-        if (win && !win.isDestroyed()) {
-          win.webContents.send('settings:changed', settings)
-        }
-      })
-    }
+    })
 
     SettingsManager.get().then((settings) => {
       useGlobalShortcut(mainWindow, settings)

@@ -833,6 +833,7 @@ ${vaultAccessNote}`
           })
         }
 
+        if (isExecutionMode) {
         systemPrompt +=
           '\n\nCRITICAL RULES FOR FILE & FOLDER TOOLS:\n' +
           '1. ZERO TOLERANCE FOR STREAM-OF-CONSCIOUSNESS MONOLOGUES OR PRE-TOOL NARRATION. NEVER output thinking narration before calling tools (e.g. "Let me organize what you mentioned:", "Let me tally everything up first", "Let me first check the current state...", "Let me pick clear names...", "I\'ll rename them... wait..."). When ANY tool operation is needed (creating, updating, renaming, linking, deleting, moving), invoke the tool IMMEDIATELY on step 1 without ANY conversational pre-text!\n' +
@@ -881,6 +882,7 @@ ${vaultAccessNote}`
           'User: "inside my 1-src folder rename the files keep them a single word" → [Look at files in 1-src from EXISTING FILES and call renameFile for EACH file in 1-src with concise single-word names!]\n' +
           'User: "Write hello world" → [Call appendToFile immediately]\n' +
           'User: "Clear Grammars" → [Call updateFile with title="Grammars" content="" immediately]'
+        }
 
         // --- Existing files list & Knowledge Graph Context ---
         try {

@@ -111,7 +111,6 @@ const AppShell = () => {
   const [leftWidth, setLeftWidth] = useState(250)
   const [rightWidth, setRightWidth] = useState(200)
   const [resizingSide, setResizingSide] = useState(null)
-  const [isRestoring, setIsRestoring] = useState(true)
 
   const appShellRef = React.useRef(null)
   const widthRef = React.useRef({ left: 250, right: 200 })
@@ -135,32 +134,44 @@ const AppShell = () => {
     document.documentElement.style.setProperty('--right-sidebar-width', `${rightWidth}px`)
   }, [rightWidth])
 
-  /**
-   * Persist left sidebar open/closed state to sidebar settings.
-   */
-  useEffect(() => {
-    if (isRestoring) return
-    const currentSidebar = sidebarSetting || {}
-    if (currentSidebar.isLeftOpen === isLeftSidebarOpen) return
-    useSettingsStore.getState().updateSettings({
-      sidebar: {
-        ...currentSidebar,
-        isLeftOpen: isLeftSidebarOpen
-      }
+  const handleToggleLeftSidebar = useCallback(() => {
+    setIsLeftSidebarOpen((prev) => {
+      const next = !prev
+      const currentSidebar = sidebarSetting || {}
+      useSettingsStore.getState().updateSettings({
+        sidebar: {
+          ...currentSidebar,
+          isLeftOpen: next
+        }
+      })
+      return next
     })
-  }, [isLeftSidebarOpen, isRestoring, sidebarSetting])
+  }, [sidebarSetting])
 
-  useEffect(() => {
-    if (isRestoring) return
+  const handleToggleRightSidebar = useCallback(() => {
+    setIsRightSidebarOpen((prev) => {
+      const next = !prev
+      const currentRSidebar = rightSidebarSetting || {}
+      useSettingsStore.getState().updateSettings({
+        rightSidebar: {
+          ...currentRSidebar,
+          isRightOpen: next
+        }
+      })
+      return next
+    })
+  }, [rightSidebarSetting])
+
+  const handleCloseRightSidebar = useCallback(() => {
+    setIsRightSidebarOpen(false)
     const currentRSidebar = rightSidebarSetting || {}
-    if (currentRSidebar.isRightOpen === isRightSidebarOpen) return
     useSettingsStore.getState().updateSettings({
       rightSidebar: {
         ...currentRSidebar,
-        isRightOpen: isRightSidebarOpen
+        isRightOpen: false
       }
     })
-  }, [isRightSidebarOpen, isRestoring, rightSidebarSetting])
+  }, [rightSidebarSetting])
 
   // Deletion State
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -320,18 +331,10 @@ const AppShell = () => {
         }
       } catch (err) {
         console.error('AppShell initApp error:', err)
-      } finally {
-        setIsRestoring(false)
       }
     }
 
-    const fallbackTimer = setTimeout(() => {
-      setIsRestoring(false)
-    }, 1000)
-
-    initApp().finally(() => {
-      clearTimeout(fallbackTimer)
-    })
+    initApp()
 
     // Start listening for updates
     const unsub = useUpdateStore.getState().init()
@@ -718,8 +721,6 @@ const AppShell = () => {
       ref={appShellRef}
       className={`app-shell ${isLeftSidebarOpen ? 'left-open' : 'left-closed'} ${isRightSidebarOpen ? 'right-open' : 'right-closed'} ${resizingSide ? 'is-resizing' : ''}`}
       style={{
-        opacity: isRestoring ? 0 : 1,
-        transition: 'opacity 0.2s ease-in-out',
         '--left-sidebar-width': `${leftWidth}px`,
         '--right-sidebar-width': `${rightWidth}px`
       }}
@@ -757,9 +758,9 @@ const AppShell = () => {
           <>
             <TabBar
               isSidebarOpen={isRightSidebarOpen}
-              onToggleSidebar={() => setIsRightSidebarOpen((prev) => !prev)}
+              onToggleSidebar={handleToggleRightSidebar}
               isLeftSidebarOpen={isLeftSidebarOpen}
-              onToggleLeftSidebar={() => setIsLeftSidebarOpen((prev) => !prev)}
+              onToggleLeftSidebar={handleToggleLeftSidebar}
             />
             {selectedSnippet &&
               activeTabId !== GRAPH_TAB_ID &&
@@ -835,8 +836,6 @@ const AppShell = () => {
               })}
             </div>
           </div>
-        ) : isRestoring ? (
-          <div className="shell-main-placeholder" />
         ) : (
           <GlobalErrorHandler>
             <Welcome onNew={handleNew} onLoadStarterVault={handleLoadStarterVault} />
@@ -869,7 +868,7 @@ const AppShell = () => {
             setSavedRightSidebarState={setSavedRightSidebarState}
             isRightSidebarOpen={isRightSidebarOpen}
             rightWidth={rightWidth}
-            setIsRightSidebarOpen={setIsRightSidebarOpen}
+            setIsRightSidebarOpen={handleCloseRightSidebar}
             setShowAIChatModal={setShowAIChatModal}
             selectedSnippet={selectedSnippet}
             isLoading={isLoading}

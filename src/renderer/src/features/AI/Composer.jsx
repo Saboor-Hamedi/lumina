@@ -50,7 +50,7 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
   }, [snippets])
 
   const { settings, updateSetting } = useSettingsStore()
-  const mode = settings.activeAIMode || 'Plan'
+  const mode = settings.activeAIMode || 'Code'
   const setMode = (newMode) => updateSetting('activeAIMode', newMode)
 
   useEffect(() => {

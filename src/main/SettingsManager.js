@@ -1,6 +1,5 @@
 import fs from 'fs/promises'
 import path from 'path'
-import chokidar from 'chokidar'
 
 class SettingsManager {
   constructor() {
@@ -56,12 +55,11 @@ class SettingsManager {
       windowBounds: { width: 900, height: 700, x: null, y: null }
     }
     this.cache = null
-    this.watcher = null
     this.onChangeCallbacks = []
     this.notifyRenderer = null // Set by main process
-    this.isWriting = false // Flag to prevent reloading when we write
-    this.lastWrittenData = null // Stores the exact string we just wrote to avoid echoing our own changes
-    this.ignoreWatchEventsUntil = 0 // Timestamp to ignore watcher events after writing
+    this.isWriting = false
+    this.lastWrittenData = null
+    this.saveTimeout = null
   }
 
   async init(vaultPath) {
@@ -83,81 +81,11 @@ class SettingsManager {
       await fs.access(this.settingsPath)
       const data = await fs.readFile(this.settingsPath, 'utf8')
       this.cache = { ...this.defaultSettings, ...JSON.parse(data) }
+      this.lastWrittenData = JSON.stringify(this.cache, null, 2)
     } catch (err) {
       this.cache = { ...this.defaultSettings }
       await this.save()
     }
-
-    this.startWatching()
-  }
-
-  startWatching() {
-    if (this.watcher) {
-      this.watcher.close()
-    }
-
-    this.watcher = chokidar.watch(this.settingsPath, {
-      persistent: true,
-      ignoreInitial: true,
-      awaitWriteFinish: {
-        stabilityThreshold: 100,
-        pollInterval: 50
-      }
-    })
-
-    this.watcher.on('unlink', async () => {
-      if (this.isWriting || Date.now() < this.ignoreWatchEventsUntil) return
-      try {
-        this.cache = { ...this.defaultSettings }
-        await this.save()
-      } catch (_) {}
-    })
-
-    this.watcher.on('change', async () => {
-      if (this.isWriting || Date.now() < this.ignoreWatchEventsUntil) {
-        return
-      }
-
-      try {
-        const data = await fs.readFile(this.settingsPath, 'utf8')
-
-        if (data === this.lastWrittenData) {
-          return
-        }
-
-        const loadedSettings = JSON.parse(data)
-        const newCache = { ...this.defaultSettings, ...loadedSettings }
-
-        const oldJson = JSON.stringify(this.cache)
-        const newJson = JSON.stringify(newCache)
-        if (oldJson === newJson) {
-          this.lastWrittenData = data
-          return
-        }
-
-        console.info('[SettingsManager] settings.json changed externally, reloading...')
-        this.cache = newCache
-        this.lastWrittenData = data
-
-        if (this.notifyRenderer) {
-          this.notifyRenderer(this.cache)
-        }
-
-        this.onChangeCallbacks.forEach((cb) => {
-          try {
-            cb(this.cache)
-          } catch (err) {
-            console.error('[SettingsManager] Error in onChange callback:', err)
-          }
-        })
-      } catch (err) {
-        console.error('[SettingsManager] Failed to reload settings:', err)
-      }
-    })
-
-    this.watcher.on('error', (err) => {
-      console.error('[SettingsManager] File watcher error:', err)
-    })
   }
 
   onChange(callback) {
@@ -187,9 +115,15 @@ class SettingsManager {
         this.cache = { ...this.defaultSettings }
       }
     }
+
+    if (this.cache && JSON.stringify(this.cache[key]) === JSON.stringify(value)) {
+      return
+    }
+
     if (this.cache) {
       this.cache[key] = value
     }
+
     return this.queueSave()
   }
 
@@ -201,48 +135,61 @@ class SettingsManager {
         this.cache = { ...this.defaultSettings }
       }
     }
-    this.cache = { ...(this.cache || this.defaultSettings), ...settings }
+
+    let changed = false
+    const current = this.cache || this.defaultSettings
+    for (const [k, v] of Object.entries(settings)) {
+      if (JSON.stringify(current[k]) !== JSON.stringify(v)) {
+        current[k] = v
+        changed = true
+      }
+    }
+
+    if (!changed) return
+    this.cache = current
     return this.queueSave()
   }
 
   async queueSave() {
-    if (this.isWriting) {
-      if (this.pendingSave) return this.pendingSave
-      this.pendingSave = (async () => {
-        while (this.isWriting) {
-          await new Promise((resolve) => setTimeout(resolve, 50))
-        }
-        await this.save()
-        this.pendingSave = null
-      })()
-      return this.pendingSave
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout)
     }
-    return this.save()
+
+    return new Promise((resolve) => {
+      this.saveTimeout = setTimeout(async () => {
+        this.saveTimeout = null
+        await this.save()
+        resolve()
+      }, 50)
+    })
   }
 
   async save() {
+    if (!this.settingsPath) return
     try {
       this.isWriting = true
       const settingsToSave = { ...this.defaultSettings, ...this.cache }
       const data = JSON.stringify(settingsToSave, null, 2)
 
       if (data === this.lastWrittenData) {
-        this.isWriting = false
         return
       }
 
       this.lastWrittenData = data
-      this.ignoreWatchEventsUntil = Date.now() + 2500
-
       await fs.mkdir(path.dirname(this.settingsPath), { recursive: true })
       await fs.writeFile(this.settingsPath, data, 'utf8')
-
       this.cache = settingsToSave
 
-      await new Promise((resolve) => setTimeout(resolve, 30))
-      this.isWriting = false
+      this.onChangeCallbacks.forEach((cb) => {
+        try {
+          cb(this.cache)
+        } catch (err) {
+          console.error('[SettingsManager] Error in onChange callback:', err)
+        }
+      })
     } catch (err) {
       console.error('[SettingsManager] Failed to save settings:', err)
+    } finally {
       this.isWriting = false
     }
   }

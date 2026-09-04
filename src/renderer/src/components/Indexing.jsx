@@ -13,6 +13,19 @@ const Indexing = () => {
       // Ignore backup events — those are handled inline in the SettingDropdown
       if (newStats?.type === 'backup') return
 
+      // Don't pop up the toast if the vault is already up-to-date with 0 files to index
+      if (newStats?.stage === 'up-to-date') {
+        setIsVisible(false)
+        setStats(null)
+        return
+      }
+
+      // Only show when actual work begins (files found to process)
+      // Stages 'starting', 'scanned', 'checking' are pre-scans where we don't know yet if any files changed
+      if (['starting', 'scanned', 'checking'].includes(newStats?.stage)) {
+        return
+      }
+
       setStats(newStats)
       setIsVisible(true)
     })
@@ -23,25 +36,23 @@ const Indexing = () => {
   }, [])
 
   useEffect(() => {
-    if (!stats) return
+    if (!stats || !isVisible) return
 
-    const isComplete =
-      stats.progress >= 100 || stats.stage === 'up-to-date' || stats.stage === 'completed'
+    const isComplete = stats.progress >= 100 || stats.stage === 'completed'
 
     if (!isComplete) return
 
     const timer = setTimeout(() => {
       setIsVisible(false)
       setStats(null)
-    }, 1500)
+    }, 2500)
 
     return () => clearTimeout(timer)
-  }, [stats])
+  }, [stats, isVisible])
 
   if (!isVisible || !stats) return null
 
-  const isComplete =
-    stats.progress >= 100 || stats.stage === 'up-to-date' || stats.stage === 'completed'
+  const isComplete = stats.progress >= 100 || stats.stage === 'completed'
 
   const safeProgress = Math.min(100, Math.max(0, stats.progress || 0))
 
@@ -83,11 +94,9 @@ const Indexing = () => {
               fontVariantNumeric: 'tabular-nums'
             }}
           >
-            {stats.stage === 'scanning' || stats.stage === 'checking'
-              ? `Scanning ${stats.found || stats.total || 0} files…`
-              : stats.stage === 'up-to-date' || stats.stage === 'completed' || stats.progress >= 100
-                ? 'All files up to date.'
-                : `Processed ${stats.indexed || 0} of ${stats.total || 0} files`}
+            {isComplete
+              ? `Indexed ${stats.indexed || stats.total || 0} files.`
+              : `Processed ${stats.indexed || 0} of ${stats.total || 0} files`}
           </div>
         </div>
 

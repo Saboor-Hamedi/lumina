@@ -11,13 +11,13 @@ export const AI_MODES = {
 }
 
 export const getAIMode = (modeName) => {
-  if (!modeName || typeof modeName !== 'string') return luminaPlanMode
+  if (!modeName || typeof modeName !== 'string') return luminaCodeMode
   const norm = modeName.trim().toLowerCase()
   if (norm === 'plan') return luminaPlanMode
   if (norm === 'deep' || norm === 'thinking') return luminaDeepMode
   if (norm === 'creative') return luminaCreativeMode
-  if (norm === 'code' || norm === 'coder') return luminaCodeMode
-  return AI_MODES[modeName] || luminaPlanMode
+  if (norm === 'code' || norm === 'coder' || norm === 'standard') return luminaCodeMode
+  return AI_MODES[modeName] || luminaCodeMode
 }
 
 export { luminaPlanMode, luminaDeepMode, luminaCreativeMode, luminaCodeMode }

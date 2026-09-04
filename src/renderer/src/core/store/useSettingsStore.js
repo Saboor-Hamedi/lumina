@@ -32,7 +32,7 @@ export const useSettingsStore = create((set, get) => ({
     // New Multi-Provider Support
     activeProvider: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_active_provider')) || 'deepseek',
     activeModel: null,
-    activeAIMode: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_active_ai_mode')) || 'Plan',
+    activeAIMode: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_active_ai_mode')) || 'Code',
     aiChatDisplayMode: 'sidebar',
     openaiKey: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_openai_key')) || null,
     anthropicKey: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_anthropic_key')) || null,
