@@ -763,10 +763,6 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
 
 **CONTEXT**:
 ${vaultAccessNote}`
-
-          if (modeCfg.systemAddon) {
-            systemPrompt += `\n\n**MODE**: ${modeCfg.systemAddon}`
-          }
         }
 
         if (mentionedSnippets.length > 0) {

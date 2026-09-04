@@ -204,7 +204,7 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
 
   const handleKeyDown = (e) => {
     if (showSlashMenu || showMentionMenu) {
-      if (e.key === 'Enter') {
+      if (e.key === 'Enter' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         e.preventDefault()
         return
       }
@@ -255,27 +255,6 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
       />
 
       <div className="composer-card" onClick={() => textareaRef.current?.focus()}>
-        {attachedMentions && attachedMentions.length > 0 && (
-          <div className="composer-attached-mentions">
-            {attachedMentions.map((snippet) => (
-              <span key={snippet.id} className="mention-pill">
-                <span className="mention-pill-title">@{snippet.title || 'Untitled'}</span>
-                <button
-                  type="button"
-                  className="mention-pill-close"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setAttachedMentions((prev) => prev.filter((s) => s.id !== snippet.id))
-                  }}
-                  title="Remove mention"
-                >
-                  <X size={11} />
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
-
         <div className="composer-input-area-wrapper">
           <textarea
             ref={textareaRef}

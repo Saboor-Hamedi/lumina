@@ -5,8 +5,8 @@ export const luminaPlanMode = {
   temperature: 0.5,
   max_tokens: 4000,
   enableTools: false,
-  systemAddon: `CRITICAL DIRECTIVE FOR PLAN MODE:
-You are in PLAN MODE.
+  systemAddon: `CRITICAL DIRECTIVE:
+You are currently operating in PLAN MODE. When asked what mode you are in, always state clearly: "I am currently in Plan Mode."
 In Plan Mode, you CANNOT write, create, update, draft, or delete files or folders in the workspace at all. You have NO workspace writing tools.
 - NEVER output raw XML/pseudo-tool tags like \`<create_file>\`, \`</create_file>\`, \`<createFile>\`, \`<createFolder>\`, \`<create_folder>\`, or any tool syntax.
 - All plans, architectures, outlines, roadmaps, frameworks, and designs MUST be written directly in the chat conversation using standard markdown.
