@@ -25,6 +25,8 @@ import {
   AlertTriangle,
   AlertCircle,
   ShieldAlert,
+  Brain,
+  ChevronDown,
   Code as CodeIcon
 } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
@@ -40,76 +42,142 @@ import './LuminaChat.css'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
-const CodeBlock = React.memo(({ inline, className, children, ...props }) => {
-  const match = /language-([a-zA-Z0-9-]+)/.exec(className || '')
+const ChatPreBlock = React.memo(({ children, ...props }) => {
   const [copied, setCopied] = useState(false)
-  const isBlock = !inline || Boolean(match) || String(children).includes('\n')
 
-  if (isBlock) {
-    const lang = match ? match[1] : 'text'
-    const isDelete = lang.startsWith('lumina-delete')
-    const codeString = String(children).replace(/\n$/, '')
+  let codeString = ''
+  let className = ''
 
-    return (
-      <div className="chat-code-block">
-        <div className="chat-code-header">
-          <div className="chat-code-header-left">
-            <CodeIcon size={12} style={{ opacity: 0.6 }} />
-            <span className="chat-code-lang">{lang}</span>
-          </div>
-          {!isDelete && (
-            <button
-              className="chat-code-copy-btn"
-              onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(codeString)
-                  setCopied(true)
-                  setTimeout(() => setCopied(false), 2000)
-                } catch (err) {
-                  console.error('Failed to copy: ', err)
-                }
-              }}
-              title="Copy code"
-            >
-              {copied ? (
-                <span className="copied-text">
-                  <Check size={11} strokeWidth={3} /> COPIED
-                </span>
-              ) : (
-                <>
-                  <Copy size={11} />
-                  <span>Copy</span>
-                </>
-              )}
-            </button>
-          )}
-        </div>
-        {!isDelete && (
-          <SyntaxHighlighter
-            style={vscDarkPlus}
-            language={lang === 'text' ? 'markdown' : lang}
-            PreTag="div"
-            customStyle={{
-              margin: 0,
-              background: 'transparent',
-              padding: '12px 14px',
-              fontSize: '12.5px',
-              lineHeight: '1.55',
-              fontFamily: 'var(--font-mono, monospace)'
-            }}
-            {...props}
-          >
-            {codeString}
-          </SyntaxHighlighter>
-        )}
-      </div>
-    )
+  if (React.isValidElement(children)) {
+    className = children.props?.className || ''
+    codeString = String(children.props?.children || '')
+  } else if (typeof children === 'string') {
+    codeString = children
+  } else if (Array.isArray(children)) {
+    codeString = children
+      .map((c) => (React.isValidElement(c) ? c.props?.children : c))
+      .join('')
+  } else {
+    codeString = String(children || '')
   }
 
+  codeString = codeString.replace(/\n$/, '')
+  const match = /language-([a-zA-Z0-9-]+)/.exec(className)
+  const lang = match ? match[1] : 'text'
+  const isDelete = lang.startsWith('lumina-delete')
+  const lineCount = codeString ? codeString.split('\n').length : 0
+
+  return (
+    <div className="chat-code-block">
+      <div className="chat-code-header">
+        <div className="chat-code-header-left">
+          <span className="preview-indicator-tag">{lang.toUpperCase()}</span>
+          <div className="preview-stat-sep" />
+          <span className="chat-code-stats">
+            {lineCount} {lineCount === 1 ? 'line' : 'lines'}
+          </span>
+        </div>
+        {!isDelete && (
+          <button
+            className="chat-code-copy-btn"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(codeString)
+                setCopied(true)
+                setTimeout(() => setCopied(false), 2000)
+              } catch (err) {
+                console.error('Failed to copy: ', err)
+              }
+            }}
+            title="Copy code"
+          >
+            {copied ? (
+              <span className="copied-text">
+                <Check size={11} strokeWidth={3} /> COPIED
+              </span>
+            ) : (
+              <>
+                <Copy size={11} />
+                <span>Copy</span>
+              </>
+            )}
+          </button>
+        )}
+      </div>
+      {!isDelete && (
+        <SyntaxHighlighter
+          style={vscDarkPlus}
+          language={lang === 'text' ? 'markdown' : lang}
+          PreTag="div"
+          className="seamless-scrollbar"
+          customStyle={{
+            margin: 0,
+            background: 'transparent',
+            padding: '10px 14px',
+            fontSize: '12px',
+            lineHeight: '1.5',
+            fontFamily: 'var(--font-mono, monospace)'
+          }}
+          {...props}
+        >
+          {codeString}
+        </SyntaxHighlighter>
+      )}
+    </div>
+  )
+})
+
+const ChatInlineCode = React.memo(({ className, children, ...props }) => {
   return (
     <code className={`chat-inline-code ${className || ''}`} {...props}>
       {children}
     </code>
+  )
+})
+
+const ThinkingBlock = React.memo(({ thinkContent, isStreaming = false }) => {
+  const [isOpen, setIsOpen] = useState(isStreaming)
+
+  useEffect(() => {
+    if (isStreaming) {
+      setIsOpen(true)
+    }
+  }, [isStreaming])
+
+  if (!thinkContent?.trim()) return null
+
+  return (
+    <div className={`chat-thinking-container ${isOpen ? 'open' : 'collapsed'}`}>
+      <button
+        type="button"
+        className="chat-thinking-header"
+        onClick={() => setIsOpen((prev) => !prev)}
+      >
+        <div className="chat-thinking-header-left">
+          <Brain size={13} className={`chat-thinking-brain-icon ${isStreaming ? 'pulsing' : ''}`} />
+          <span className="chat-thinking-title">
+            {isStreaming ? 'Thinking in background...' : 'Thought Process'}
+          </span>
+          <span className="preview-indicator-tag chat-thinking-pill">
+            {isStreaming ? 'REASONING' : 'THOUGHT'}
+          </span>
+        </div>
+        <div className="chat-thinking-header-right">
+          <ChevronDown
+            size={12}
+            className={`chat-thinking-chevron ${isOpen ? 'rotated' : ''}`}
+          />
+        </div>
+      </button>
+
+      {isOpen && (
+        <div className="chat-thinking-body seamless-scrollbar">
+          <div className="chat-thinking-content">
+            {thinkContent.trim()}
+          </div>
+        </div>
+      )}
+    </div>
   )
 })
 
@@ -286,11 +354,25 @@ const ChatLink = ({ href, children, ...props }) => {
 }
 
 export const MessageContent = React.memo(
-  ({ content }) => {
-    // Pre-process content to handle custom XML tags and wikilinks
+  ({ content, isStreaming = false }) => {
+    const { thinkContent, mainContent } = useMemo(() => {
+      if (!content) return { thinkContent: '', mainContent: '' }
+
+      let think = ''
+      let remaining = content
+
+      const thinkMatch = content.match(/<think>([\s\S]*?)(?:<\/think>|$)/i)
+      if (thinkMatch) {
+        think = thinkMatch[1]
+        remaining = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/i, '').trim()
+      }
+
+      return { thinkContent: think, mainContent: remaining }
+    }, [content])
+
     const processedContent = useMemo(() => {
-      if (!content) return ''
-      let processed = content.replace(/<readFile>([\s\S]*?)<\/readFile>/g, (match, inner) => {
+      if (!mainContent) return ''
+      let processed = mainContent.replace(/<readFile>([\s\S]*?)<\/readFile>/g, (match, inner) => {
         const titleMatch = inner.match(/title:\s*"([^"]+)"/)
         const fileName = titleMatch ? titleMatch[1] : 'File'
         return `\n> 📄 **Reading:** ${fileName}\n`
@@ -347,29 +429,36 @@ export const MessageContent = React.memo(
       }
 
       return resultLines.join('\n')
-    }, [content])
+    }, [mainContent])
 
     return (
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={{
-          pre: ({ children }) => <>{children}</>,
-          code: CodeBlock,
-          blockquote: ChatBlockquote,
-          a: ChatLink,
-          table: ({ children }) => (
-            <div className="table-wrapper chat-table-wrapper">
-              <table>{children}</table>
-            </div>
-          )
-        }}
-      >
-        {processedContent}
-      </ReactMarkdown>
+      <>
+        {thinkContent && (
+          <ThinkingBlock thinkContent={thinkContent} isStreaming={isStreaming} />
+        )}
+        {processedContent && (
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              pre: ChatPreBlock,
+              code: ChatInlineCode,
+              blockquote: ChatBlockquote,
+              a: ChatLink,
+              table: ({ children }) => (
+                <div className="table-wrapper chat-table-wrapper">
+                  <table>{children}</table>
+                </div>
+              )
+            }}
+          >
+            {processedContent}
+          </ReactMarkdown>
+        )}
+      </>
     )
   },
   (prevProps, nextProps) => {
-    return prevProps.content === nextProps.content
+    return prevProps.content === nextProps.content && prevProps.isStreaming === nextProps.isStreaming
   }
 )
 
@@ -487,6 +576,7 @@ const ChatMessageRow = React.memo(
               <>
                 <MessageContent
                   content={msg.content}
+                  isStreaming={isLast && isChatLoading}
                   imageUrl={msg.imageUrl}
                   imagePrompt={msg.imagePrompt}
                   onCopy={handleCopy}

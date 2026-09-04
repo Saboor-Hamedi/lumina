@@ -707,10 +707,11 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
 - 'openFile' — open a file in the user's editor tab so they can see it
 
 **HOW TO USE TOOLS & ROUTE INTENT**:
-1. **WHEN THE USER ASKS TO UPDATE, EDIT, MODIFY, OR FIX A NOTE (e.g. \`@NoteTitle update...\`, "update my file", "update this note", "change X to Y in note", "fix X in note", "add section X to note")**:
-   - You MUST use targeted \`updateFile\` (specifying \`sectionHeader\`, \`search\` & \`replace\`, \`insertAfter\`, or \`insertBefore\`).
-   - DO NOT overwrite the whole document. Target only the specific section or lines requested.
+1. **WHEN THE USER ASKS TO UPDATE, EDIT, MODIFY, FIX, CLEAN UP, REMOVE DUPLICATES, OR DEDUPLICATE A NOTE (e.g. \`@NoteTitle update...\`, "Go fix @summary remove the duplicates", "remove them", "update this note", "fix the folder structure in @summary", "remove duplicate folder trees", "change X to Y in note")**:
+   - Look at the note content already provided in your prompt.
+   - You MUST call \`updateFile\` directly on this turn to apply the cleaned content (or remove duplicate sections with \`search\` & \`replace\`, or provide cleaned full \`content\`).
    - In your conversational walkthrough, present the exact updated part or diff clearly so the user sees what changed.
+   - NEVER say "Done!" or promise to fix it without executing \`updateFile\`!
 2. **WHEN THE USER ASKS WHAT IS IN A NOTE OR TO EXPLAIN/SUMMARIZE (e.g. "what do you see @NoteTitle", "what's in @NoteTitle", "summarize @NoteTitle", "explain @NoteTitle")**:
    - The note content is ALREADY provided below in this prompt under PRIMARY TARGET FILES.
    - DO NOT call file writing tools. Immediately summarize and explain the content and structure of the note directly in the chat!
@@ -804,11 +805,11 @@ ${vaultAccessNote}`
           '5. If asked to DRAFT/CREATE A STUDY PLAN, TEMPLATE, OR FOLDER+FILE STRUCTURE (e.g. "draft them all into my vault", "create a study plan with folders and notes", "generate this structure") → you MUST create the folders AND immediately create the notes inside them with rich markdown content in the SAME response! Call createFolder for directories, and call createFile with folder="<Folder Path>" and full rich content for each note. NEVER stop after creating only folders.\n' +
           '6. If asked to CREATE A NOTE IN A FOLDER → call createFile with folder="<Folder Path>" (e.g. folder="src/database").\n' +
           '7. If asked to MOVE A FILE → call moveFile with title="current" (or note title) and folder="<Destination Folder>".\n' +
-          '8. If asked to RENAME a file → call renameFile with oldTitle="current" (or note title) and newTitle="<New Name>". If no new name is provided, ask the user first.\n' +
+          '8. If asked to RENAME a file or RENAME FILES IN A FOLDER (e.g. "rename this note to App Architecture", "inside my 1-src folder rename the files keep them a single word", "rename files in 1-src to be concise") → find all matching files in the workspace (or inside that folder from EXISTING FILES) and call renameFile for EACH file with oldTitle="<current title or folder/title>" and newTitle="<New Name>". NEVER say "Done!" without calling renameFile for all target files!\n' +
           '9. If asked to DELETE a file → call deleteFile with title="current" (or note title) DIRECTLY.\n' +
-          '10. If asked to RENAME A FOLDER → call renameFolder DIRECTLY.\n' +
+          '10. If asked to RENAME A FOLDER or MAKE ALL FOLDERS LOWERCASE/UPPERCASE (e.g. "all folder must be lowercase", "rename all folders to lowercase", "rename folder 1-Src to 1-src") → find all matching folders from EXISTING FOLDERS and call renameFolder for EACH folder directly!\n' +
           '11. If asked to DELETE A FOLDER (or folders) → call deleteFolder DIRECTLY for each requested folder.\n' +
-          '12. If asked to UPDATE, EDIT, MODIFY, or FIX a note → call updateFile with targeted sectionHeader, search & replace, insertAfter, or insertBefore DIRECTLY. Never wipe the rest of the file.\n' +
+          '12. If asked to UPDATE, EDIT, MODIFY, FIX, or REMOVE DUPLICATES in a note → call updateFile DIRECTLY with targeted sectionHeader, search & replace, or full clean content without the duplicates. Never say "Done!" without calling updateFile!\n' +
           '13. If asked to ADD or WRITE content to the end of a note → call appendToFile DIRECTLY.\n' +
           '14. If asked to CLEAR or EMPTY a file → call updateFile with content: "" DIRECTLY.\n' +
           '15. If asked to EXPLAIN a file → call readFile DIRECTLY.\n' +
@@ -822,12 +823,16 @@ ${vaultAccessNote}`
           'User: "create a file" → "What should the note be named, and what topic would you like it to cover?"\n' +
           'User: "Draft the NLP study plan into my vault" → [Call createFolder for each folder, AND call createFile for each note inside its folder with full markdown content!]\n' +
           'User: "Create note Schema in src/database" → [Call createFile with title="Schema" folder="src/database" content="..."]\n' +
+          'User: "Go fix @summary remove the duplicates" → [Look at @summary content, remove duplicate tree blocks, and call updateFile with title="summary" and cleaned content!]\n' +
+          'User: "remove them" (after discussing duplicate sections in note) → [Call updateFile with title="current" and cleaned content without the duplicates!]\n' +
+          'User: "all folder must be lowercase" → [Look at EXISTING FOLDERS and call renameFolder for each uppercase folder with lowercase name!]\n' +
           'User: "Update the Features section in my note" → [Call updateFile with title="current" sectionHeader="## Features" replace="..."]\n' +
           'User: "Change 100 to 200 in Config" → [Call updateFile with title="Config" search="100" replace="200"]\n' +
           'User: "Move my current note into src/database" → [Call moveFile with title="current" folder="src/database"]\n' +
           'User: "Rename folder src to source" → [Call renameFolder with oldPath="src" newPath="source"]\n' +
           'User: "Delete this note" → [Call deleteFile with title="current"]\n' +
           'User: "Rename this note to App Architecture" → [Call renameFile with oldTitle="current" newTitle="App Architecture"]\n' +
+          'User: "inside my 1-src folder rename the files keep them a single word" → [Look at files in 1-src from EXISTING FILES and call renameFile for EACH file in 1-src with concise single-word names!]\n' +
           'User: "Write hello world" → [Call appendToFile immediately]\n' +
           'User: "Clear Grammars" → [Call updateFile with title="Grammars" content="" immediately]'
 
@@ -838,9 +843,11 @@ ${vaultAccessNote}`
           const allSnippets = Array.isArray(vs.snippets) ? vs.snippets : Object.values(vs.snippets || {})
           const allFolders = vs.folders || []
           if (allSnippets.length > 0 || allFolders.length > 0) {
-            const titles = allSnippets.map((s) => s.title).join(', ')
+            const filePaths = allSnippets
+              .map((s) => (s.folderId ? `${s.folderId}/${s.title}` : s.title))
+              .join(', ')
             const folders = allFolders.join(', ')
-            systemPrompt += `\n\n**EXISTING FILES**: ${titles || 'None'}\n**EXISTING FOLDERS**: ${folders || 'None'}\nNever create a file or folder whose name is already in these lists. Use updateFile to modify files instead.`
+            systemPrompt += `\n\n**EXISTING FILES (WITH FOLDER PATHS)**: ${filePaths || 'None'}\n**EXISTING FOLDERS**: ${folders || 'None'}\nUse these exact paths and folders for targeted file operations. When asked to rename, move, update, or clear files in a folder, reference these exact files.`
           }
 
           // Feature 1: Knowledge Graph Topology (1-2 Hop Backlinks & Forward Links)

@@ -1,5 +1,6 @@
 import { EditorView } from '@codemirror/view'
 import { useVaultStore } from '../../core/store/workspaceStore'
+import { useSettingsStore } from '../../core/store/useSettingsStore'
 
 export const imageDropExtension = () =>
   EditorView.domEventHandlers({
@@ -57,10 +58,12 @@ export const imageDropExtension = () =>
           .then(async (result) => {
             await useVaultStore.getState().loadVault()
             if (result?.importedFolderIds && result.importedFolderIds.length > 0) {
-              const currentExpanded = useVaultStore.getState().expandedFolders || new Set()
-              const nextExpanded = new Set(currentExpanded)
-              result.importedFolderIds.forEach((fid) => nextExpanded.add(fid))
-              useVaultStore.getState().setExpandedFolders?.(nextExpanded)
+              const currentExpanded = useSettingsStore.getState().settings.expandedFolders || []
+              const nextExpanded = Array.from(new Set([...currentExpanded, ...result.importedFolderIds]))
+              try {
+                localStorage.setItem('lumina-expanded-folders', JSON.stringify(nextExpanded))
+              } catch (e) {}
+              useSettingsStore.getState().updateSetting('expandedFolders', nextExpanded)
             }
             if (result?.importedSnippetIds && result.importedSnippetIds.length > 0) {
               const targetId = result.importedSnippetIds[0]

@@ -48,7 +48,8 @@ export const useSettingsStore = create((set, get) => ({
 
     // Favorites & Ordering
     pinnedFolders: [],
-    folderOrder: []
+    folderOrder: [],
+    expandedFolders: []
   },
 
   isLoading: true,

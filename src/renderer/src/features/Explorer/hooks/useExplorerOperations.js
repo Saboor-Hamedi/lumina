@@ -39,17 +39,53 @@ export function useExplorerOperations({
   const saveSnippet = useVaultStore((state) => state.saveSnippet)
   const loadVault = useVaultStore((state) => state.loadVault)
 
-  // Folder Expansion State
-  const [expandedFolders, setExpandedFolders] = useState(
-    () => new Set(settings.expandedFolders || [])
-  )
+  const [expandedFolders, setExpandedFoldersRaw] = useState(() => {
+    try {
+      const cached = localStorage.getItem('lumina-expanded-folders')
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        if (Array.isArray(parsed)) return new Set(parsed)
+      }
+    } catch (e) {}
+    return new Set(settings.expandedFolders || [])
+  })
   const [collapsedDuringSearch, setCollapsedDuringSearch] = useState(() => new Set())
   const expandedFoldersRef = useRef(expandedFolders)
   const lastAutoExpandedSnippetRef = useRef(null)
 
+  const setExpandedFolders = useCallback((updater) => {
+    setExpandedFoldersRaw((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater
+      const nextSet = next instanceof Set ? next : new Set(next || [])
+      expandedFoldersRef.current = nextSet
+      const arr = Array.from(nextSet)
+      try {
+        localStorage.setItem('lumina-expanded-folders', JSON.stringify(arr))
+      } catch (e) {}
+      useSettingsStore.getState().updateSetting('expandedFolders', arr)
+      return nextSet
+    })
+  }, [])
+
   useEffect(() => {
     expandedFoldersRef.current = expandedFolders
   }, [expandedFolders])
+
+  useEffect(() => {
+    if (Array.isArray(settings.expandedFolders)) {
+      const incomingSet = new Set(settings.expandedFolders)
+      setExpandedFoldersRaw((prev) => {
+        if (prev.size === incomingSet.size && [...prev].every((x) => incomingSet.has(x))) {
+          return prev
+        }
+        try {
+          localStorage.setItem('lumina-expanded-folders', JSON.stringify(settings.expandedFolders))
+        } catch (e) {}
+        expandedFoldersRef.current = incomingSet
+        return incomingSet
+      })
+    }
+  }, [settings.expandedFolders])
 
   // Sync folderOrder setting if new folders appear on disk
   useEffect(() => {
@@ -117,9 +153,8 @@ export function useExplorerOperations({
 
     if (changed) {
       setExpandedFolders(next)
-      updateSetting('expandedFolders', Array.from(next))
     }
-  }, [selectedSnippetId, snippets, updateSetting])
+  }, [selectedSnippetId, snippets, setExpandedFolders])
 
   useEffect(() => {
     const handleTriggerNewNote = () => {
@@ -169,7 +204,6 @@ export function useExplorerOperations({
 
       if (changed) {
         setExpandedFolders(next)
-        updateSetting('expandedFolders', Array.from(next))
       }
 
       useVaultStore.getState().setSelectedFolder(folderId)
@@ -191,11 +225,8 @@ export function useExplorerOperations({
       window.removeEventListener('reveal-folder-in-explorer', handleRevealFolder)
       window.removeEventListener('focus-explorer-root', handleFocusRoot)
     }
-  }, [lastClickedFolder, selectedSnippetId, snippets, visibleFolders, virtuosoRef, updateSetting])
+  }, [lastClickedFolder, selectedSnippetId, snippets, visibleFolders, virtuosoRef, setExpandedFolders])
 
-  /**
-   * Toggles folder expansion state and persists to settings store.
-   */
   const toggleFolder = useCallback(
     (folderId, e) => {
       if (e) e.stopPropagation()
@@ -208,28 +239,23 @@ export function useExplorerOperations({
           return next
         })
       } else {
-        const currentSet = expandedFoldersRef.current
-        const next = new Set(currentSet)
-        if (next.has(folderId)) next.delete(folderId)
-        else next.add(folderId)
-
-        setExpandedFolders(next)
-        updateSetting('expandedFolders', Array.from(next))
+        setExpandedFolders((prev) => {
+          const next = new Set(prev)
+          if (next.has(folderId)) next.delete(folderId)
+          else next.add(folderId)
+          return next
+        })
       }
     },
-    [updateSetting, query]
+    [setExpandedFolders, query]
   )
 
-  /**
-   * Collapses all open folders in the explorer.
-   */
   const collapseAllFolders = useCallback(
     (e) => {
       if (e) e.stopPropagation()
       setExpandedFolders(new Set())
-      updateSetting('expandedFolders', [])
     },
-    [updateSetting]
+    [setExpandedFolders]
   )
 
   /**
@@ -293,7 +319,7 @@ export function useExplorerOperations({
       setCreatingValue('')
       setSidebarFocus(null)
     },
-    [creating, creatingValue, settings.folderOrder, updateSetting, loadVault, saveSnippet, handleSelect, setSidebarFocus]
+    [creating, creatingValue, settings.folderOrder, updateSetting, loadVault, saveSnippet, handleSelect, setSidebarFocus, setExpandedFolders]
   )
 
   /**

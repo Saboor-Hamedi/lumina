@@ -14,14 +14,15 @@ export const detectUserIntent = (message, mentionedSnippets = [], activeSnippet 
 
   const hasMentions = mentionedSnippets && mentionedSnippets.length > 0
   const clearPatterns = /\b(clear|empty|wipe|erase|reset)\b/i
-  const renamePatterns = /\b(rename|change name of)\b/i
+  const renamePatterns = /\b(rename|change name of|make|set)\b.*\b(folder|folders|directory|file|files|note|notes|lowercase|uppercase)\b/i
   const movePatterns = /\b(move|put|place|transfer|relocate)\b.*\b(folder|directory|root|into|to)\b/i
   const createFolderPatterns = /\b(create|make|add|new)\b.*\b(folder|directory)\b/i
   const organizePatterns = /\b(organize|sort|group|categorize|arrange)\b.*\b(notes|files|workspace|folders)\b/i
-  const readQuestionPatterns =
-    /\b(what do you see|what's in|what is in|what does|show me|tell me about|what do you read|have you read|so when|did you read|read|explain|summarize|review|check|analyze|look at|how does|compare|difference)\b/i
+  const editVerbs =
+    /\b(edit|change|replace|modify|update|fix|refactor|rewrite|remove|delete|strip|clean|clean up|deduplicate|dedup|prune|trim|simplify|correct|format)\b/i
   const writeVerbs = /\b(write|add|append|insert|put|include|compose)\b/i
-  const updateVerbs = /\b(edit|change|replace|modify|update|fix|refactor|rewrite)\b/i
+  const readQuestionPatterns =
+    /\b(what do you see|what's in|what is in|what does|show me|tell me about|what do you read|have you read|so when|did you read|explain|summarize|review|check|analyze|look at|how does|compare|difference)\b/i
   const newNotePatterns =
     /\b(write a draft|write a note|create a note|create a file|make a file|write topic|comprehensive note on|write about)\b/i
 
@@ -45,19 +46,23 @@ export const detectUserIntent = (message, mentionedSnippets = [], activeSnippet 
     return IntentCategory.RENAME_FILE
   }
 
-  if (readQuestionPatterns.test(clean) && !writeVerbs.test(clean)) {
-    return IntentCategory.CONVERSATIONAL_EXPLAIN
+  if (hasMentions && (writeVerbs.test(clean) || editVerbs.test(clean))) {
+    return IntentCategory.TARGETED_EDIT
   }
 
-  if (hasMentions && (writeVerbs.test(clean) || updateVerbs.test(clean))) {
+  if (editVerbs.test(clean) && (hasMentions || activeSnippet || /\b(duplicates?|extra|repeated|section|header|tree|link|links|list|them)\b/i.test(clean))) {
     return IntentCategory.TARGETED_EDIT
+  }
+
+  if (readQuestionPatterns.test(clean) && !writeVerbs.test(clean) && !editVerbs.test(clean)) {
+    return IntentCategory.CONVERSATIONAL_EXPLAIN
   }
 
   if (newNotePatterns.test(clean)) {
     return IntentCategory.CREATE_NOTE
   }
 
-  if (updateVerbs.test(clean) && activeSnippet) {
+  if (editVerbs.test(clean) && activeSnippet) {
     return IntentCategory.TARGETED_EDIT
   }
 
@@ -88,13 +93,15 @@ User: "Draft this study plan into my vault"
 Execution: First call \`createFolder\` for each directory in the plan, then call \`createFile\` for each note inside its respective folder with full structured markdown content.`
 
     case IntentCategory.TARGETED_EDIT:
-      return `\n**EXEMPLAR FOR TARGETED EDIT**:
+      return `\n**EXEMPLAR FOR TARGETED EDIT & CLEANUP**:
 User: "Update the Architecture section in @System Design"
-Execution: Call \`updateFile\` with title="System Design", sectionHeader="## Architecture", and replace="[Updated Architecture Section Content]". Provide a concise walkthrough in chat showing the updated part.
+Execution: Call \`updateFile\` with title="System Design", sectionHeader="## Architecture", and replace="[Updated Architecture Section Content]".
+User: "Go fix @summary remove the duplicates"
+Execution: Look at the content of @summary provided above. Remove the duplicated blocks and call \`updateFile\` with title="summary" and full cleaned content (or search & replace to delete the duplicates) immediately!
+User: "remove them" (referring to repeated sections in open note)
+Execution: Call \`updateFile\` with title="current" and the cleaned note content without the repeated sections immediately!
 User: "Change port 3000 to 8080 in @Config"
-Execution: Call \`updateFile\` with title="Config", search="3000", and replace="8080".
-User: "Add a new section on Vector Embeddings to @Types of RAG"
-Execution: Call \`updateFile\` with title="Types of RAG", sectionHeader="## Vector Embeddings", and replace="...".`
+Execution: Call \`updateFile\` with title="Config", search="3000", and replace="8080".`
 
     case IntentCategory.CREATE_NOTE:
       return `\n**EXEMPLAR FOR NOTE CREATION**:
@@ -111,7 +118,9 @@ Execution: Call \`clearFile\` with title="Quick Notes" immediately.`
     case IntentCategory.RENAME_FILE:
       return `\n**EXEMPLAR FOR RENAMING A FILE**:
 User: "Rename @OldTitle to NewTitle"
-Execution: Call \`renameFile\` with oldTitle="OldTitle" and newTitle="NewTitle" immediately.`
+Execution: Call \`renameFile\` with oldTitle="OldTitle" and newTitle="NewTitle" immediately.
+User: "inside my 1-src folder rename the files keep them a single word"
+Execution: Call \`renameFile\` for each file in folder \`1-src\` with simplified single-word names (e.g. oldTitle="1-src/React Components", newTitle="Components").`
 
     case IntentCategory.CONVERSATIONAL_EXPLAIN:
     default:

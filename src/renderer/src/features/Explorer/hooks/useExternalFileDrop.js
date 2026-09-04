@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useVaultStore } from '../../../core/store/workspaceStore'
+import { useSettingsStore } from '../../../core/store/useSettingsStore'
 
 export function useExternalFileDrop() {
   const [isDraggingExternal, setIsDraggingExternal] = useState(false)
@@ -108,10 +109,12 @@ export function useExternalFileDrop() {
         await loadVault()
 
         if (result?.importedFolderIds && result.importedFolderIds.length > 0) {
-          const currentExpanded = useVaultStore.getState().expandedFolders || new Set()
-          const nextExpanded = new Set(currentExpanded)
-          result.importedFolderIds.forEach((fid) => nextExpanded.add(fid))
-          useVaultStore.getState().setExpandedFolders?.(nextExpanded)
+          const currentExpanded = useSettingsStore.getState().settings.expandedFolders || []
+          const nextExpanded = Array.from(new Set([...currentExpanded, ...result.importedFolderIds]))
+          try {
+            localStorage.setItem('lumina-expanded-folders', JSON.stringify(nextExpanded))
+          } catch (e) {}
+          useSettingsStore.getState().updateSetting('expandedFolders', nextExpanded)
         }
 
         if (result?.importedSnippetIds && result.importedSnippetIds.length > 0) {

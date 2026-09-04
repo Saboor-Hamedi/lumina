@@ -113,8 +113,9 @@
 }
 
 .composer-textarea::placeholder {
-  color: var(--text-faint);
-  opacity: 0.65;
+  color: var(--text-faint) !important;
+  -webkit-text-fill-color: var(--text-faint) !important;
+  opacity: 0.75;
 }
 
 .composer-textarea:disabled {
