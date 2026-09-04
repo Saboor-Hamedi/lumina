@@ -6,6 +6,7 @@ import { languages } from '@codemirror/language-data'
 import { useVaultStore } from '../../core/store/workspaceStore'
 import { imageWidgetExtension } from '../media'
 import { htmlWidgetExtension } from '../Editor/extensions/htmlExtension'
+import { katexExtension } from '../Editor/extensions/katexExtension'
 import { tables } from '../table/tableExtension'
 import { mermaidWidgetExtension } from '../mermaid'
 import { calloutExtension } from '../Editor/hooks/useCallout'
@@ -72,6 +73,7 @@ export const PreviewCommandPalette = React.memo(({ content, onClose, customLinkH
       EditorView.editable.of(false),
       Prec.highest(imageWidgetExtension),
       htmlWidgetExtension,
+      katexExtension,
       mermaidWidgetExtension,
       calloutExtension,
       codeBlockDecorations,

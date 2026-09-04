@@ -179,8 +179,8 @@ export function LearningTrackBadge({ snippetId }) {
   if (!stats || stats.total === 0) return null
 
   const tooltipText = stats.isFolder
-    ? `Topic Track: ${stats.learned} of ${stats.total} notes learned (${stats.percentage}%) • Total Vault: ${stats.vaultLearned}/${stats.vaultTotal}`
-    : `Vault Progress: ${stats.learned} of ${stats.total} notes learned (${stats.percentage}%)`
+    ? `Topic Track: ${stats.learned} of ${stats.total} notes learned (${stats.percentage}%) • Total Workspace: ${stats.vaultLearned}/${stats.vaultTotal}`
+    : `Workspace Progress: ${stats.learned} of ${stats.total} notes learned (${stats.percentage}%)`
 
   return (
     <ToolTip text={tooltipText} position="bottom">
@@ -203,14 +203,12 @@ export function LearningTrackBadge({ snippetId }) {
           style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '6px',
+            justifyContent: 'flex-end',
             fontSize: '11px',
             color: 'var(--text-muted, #94a3b8)',
             padding: '0 1px'
           }}
         >
-          <span style={{ opacity: 0.65 }}>{stats.isFolder ? 'Track:' : 'Vault:'}</span>
           <span
             style={{
               fontWeight: 600,
@@ -296,7 +294,7 @@ export default function ProgressTracker({ snippetId }) {
   if (!stats || stats.total === 0) return null
 
   const tooltipText = stats.isFolder
-    ? `Topic Track: ${stats.learned}/${stats.total} notes understood (${stats.percentage}%) • Total Vault: ${stats.vaultLearned}/${stats.vaultTotal}`
+    ? `Topic Track: ${stats.learned}/${stats.total} notes understood (${stats.percentage}%) • Total Workspace: ${stats.vaultLearned}/${stats.vaultTotal}`
     : `Learning Track: ${stats.learned}/${stats.total} notes understood (${stats.percentage}%)`
 
   return (

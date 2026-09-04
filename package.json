@@ -72,6 +72,7 @@
     "gray-matter": "^4.0.3",
     "highlight.js": "^11.11.1",
     "html-to-docx": "^1.8.0",
+    "katex": "^0.18.5",
     "lucide": "^0.555.0",
     "lucide-react": "^0.555.0",
     "marked": "^17.0.1",

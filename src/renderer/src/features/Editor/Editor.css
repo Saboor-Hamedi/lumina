@@ -1,3 +1,7 @@
+.cm-editor {
+  font-size: var(--font-size-editor, 16px) !important;
+}
+
 .cm-content {
   font-family: var(--font-editor, 'Inter', system-ui, sans-serif) !important;
   font-size: var(--font-size-editor, 16px) !important;
@@ -141,6 +145,7 @@
 .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
   background-color: color-mix(in srgb, var(--text-accent) 35%, transparent) !important;
   border-radius: 2px;
+  transition: none !important;
 }
 .cm-content ::selection {
   background: color-mix(in srgb, var(--text-accent) 35%, transparent) !important; 
@@ -748,20 +753,47 @@
 }
 
 .editor-large-title {
-  font-size: clamp(26px, 2.2vw, 32px) !important;
+  font-size: 28px !important;
   font-weight: 700 !important;
   letter-spacing: -0.03em !important;
   border: none;
   background: transparent;
   color: var(--text-main, #f3f4f6);
-  padding: 8px 0 4px 0;
+  padding: 4px 0 4px 0;
   line-height: 1.25;
-  margin-top: 4px;
+  margin-top: 0;
   width: 100%;
   font-family: var(--font-editor, 'Inter', system-ui, sans-serif) !important;
   outline: none;
   text-align: left;
   transition: color 0.15s ease;
+}
+
+.editor-zoom-hud {
+  position: absolute;
+  bottom: 24px;
+  right: 28px;
+  background: var(--bg-surface, rgba(20, 20, 25, 0.85));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-main, #ffffff);
+  border: 1px solid var(--border-focus, rgba(59, 130, 246, 0.4));
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 4px 10px;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  user-select: none;
+  z-index: 100;
+  animation: zoomHudPop 0.15s ease-out;
+}
+
+@keyframes zoomHudPop {
+  0% { transform: scale(0.92); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 .editor-large-title:focus {
@@ -789,7 +821,9 @@
 }
 
 .cm-placeholder {
-  font-size: 14px;
+  font-size: var(--font-size-editor, 16px) !important;
+  font-family: var(--font-editor, 'Inter', system-ui, sans-serif) !important;
+  line-height: var(--line-height-editor, 1.6) !important;
   font-style: normal;
   font-weight: 400;
   color: var(--text-faint, rgba(255, 255, 255, 0.28)) !important;
@@ -980,10 +1014,10 @@
   flex-direction: column;
   align-items: stretch;
   gap: 8px;
-  padding: 0 0 16px 0;
-  margin: 0;
+  padding: 0 0 12px 0;
+  margin: -10px 0 0 0;
   border-bottom: none;
-  font-size: calc(var(--font-size-editor, 14px) * 0.85);
+  font-size: 12px !important;
   line-height: 1.1;
   color: var(--text-muted);
   min-height: 0;
@@ -991,6 +1025,8 @@
   background: var(--bg-app);
   z-index: 10;
   flex-shrink: 0;
+  --font-size-editor: 16px;
+  --editor-font-size: 1rem;
 }
 
 .meta-row {
@@ -1170,6 +1206,7 @@ html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {
 .cm-selectionBackground {
   background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.3) !important;
   pointer-events: none !important;
+  transition: none !important;
 }
 
 .cm-selectionLayer,

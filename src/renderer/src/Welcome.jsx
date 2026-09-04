@@ -1,10 +1,10 @@
 import React from 'react'
-import { FileText, Search, Sparkles, FolderTree, Command } from 'lucide-react'
+import { FileText, Search, Sparkles, FolderTree, Command, BookOpen } from 'lucide-react'
 import { useExternalFileDrop } from './features/Explorer/hooks/useExternalFileDrop'
 import ExternalDropOverlay from './features/Explorer/components/ExternalDropOverlay'
 import './assets/welcome.css'
 
-const Welcome = ({ onNew }) => {
+const Welcome = ({ onNew, onLoadStarterVault }) => {
   const {
     isDraggingExternal,
     handleDragEnter,
@@ -108,6 +108,19 @@ const Welcome = ({ onNew }) => {
               </div>
               <div className="action-shortcut">Ctrl + N</div>
             </button>
+
+            {onLoadStarterVault && (
+              <button className="welcome-action-card" onClick={onLoadStarterVault}>
+                <div className="action-card-icon" style={{ color: '#ec4899' }}>
+                  <BookOpen size={12} />
+                </div>
+                <div className="action-card-content">
+                  <h3>Explore Starter Vault</h3>
+                  <p>Interactive guides & samples</p>
+                </div>
+                <div className="action-shortcut">Samples</div>
+              </button>
+            )}
 
             <button className="welcome-action-card" onClick={handlePalette}>
               <div className="action-card-icon" style={{ color: '#10b981' }}>

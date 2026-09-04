@@ -1,48 +1,31 @@
-import { useEffect, useCallback, useRef } from 'react'
+import { useEffect, useCallback, useRef, useState } from 'react'
+import { EditorView } from '@codemirror/view'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
 import { useFontSettings } from '../../../core/hooks/useFontSettings'
 
-/**
- * useZoom Hook
- *
- * Standalone zoom management hook specifically designed for the editor.
- * Handles zooming via:
- * - Ctrl/Cmd + Mouse Wheel over the editor container
- * - Ctrl/Cmd + Plus (=/+), Minus (-), and Zero (0) keyboard shortcuts when the editor is active
- *
- * Synchronizes the font size with useSettingsStore (`fontSize`) and useFontSettings (`editorFontSize`),
- * persisting updates directly to `settings.json` and applying CSS variables (`--font-size-editor`, `--editor-font-size`).
- *
- * @param {Object} options
- * @param {React.RefObject} options.containerRef - Ref wrapping the editor DOM container for wheel events
- * @param {number} [options.minSize=10] - Minimum font size in pixels
- * @param {number} [options.maxSize=48] - Maximum font size in pixels
- * @param {number} [options.step=1] - Zoom increment step for wheel scrolling
- * @param {number} [options.defaultSize=16] - Default font size for reset
- * @param {boolean} [options.isActive=true] - Whether this editor instance is currently active
- * @returns {Object} { fontSize, zoomIn, zoomOut, resetZoom, setZoom }
- */
 export const useZoom = ({
   containerRef,
-  minSize = 10,
-  maxSize = 96,
+  realViewRef,
+  minSize = 8,
+  maxSize = 32,
   step = 1,
   defaultSize = 16,
   isActive = true
 } = {}) => {
+  const [zoomBadge, setZoomBadge] = useState(null)
+  const badgeTimerRef = useRef(null)
+
   const settingsFontSize = useSettingsStore((state) => state.settings?.fontSize)
   const updateSetting = useSettingsStore((state) => state.updateSetting)
   const { editorFontSize, updateEditorFontSize } = useFontSettings()
 
   const currentSize = settingsFontSize ?? editorFontSize ?? defaultSize
 
-  // Stable ref for current size to avoid re-binding event listeners on every zoom step
   const sizeRef = useRef(currentSize)
   useEffect(() => {
     sizeRef.current = currentSize
   }, [currentSize])
 
-  // Stable ref for active status
   const isActiveRef = useRef(isActive)
   useEffect(() => {
     isActiveRef.current = isActive
@@ -50,23 +33,52 @@ export const useZoom = ({
 
   const saveDebounceRef = useRef(null)
 
-  /**
-   * Sets live visual font size immediately and debounces store/disk saves for buttery smooth zooming
-   */
   const setZoom = useCallback(
     (newSize) => {
-      // Use fractional font sizes for buttery smooth trackpad zooming
-      const clamped = Math.max(minSize, Math.min(maxSize, Number(newSize.toFixed(2))))
+      const clamped = Math.max(minSize, Math.min(maxSize, Math.round(newSize)))
       if (clamped === sizeRef.current) return
 
       sizeRef.current = clamped
 
-      // 1. Instant 60/120 FPS visual update without store re-renders or disk latency
+      const percent = Math.round((clamped / defaultSize) * 100)
+      setZoomBadge(`${percent}%`)
+
+      if (badgeTimerRef.current) {
+        clearTimeout(badgeTimerRef.current)
+      }
+      badgeTimerRef.current = setTimeout(() => {
+        setZoomBadge(null)
+      }, 1200)
+
       const root = document.documentElement
       root.style.setProperty('--font-size-editor', `${clamped}px`)
       root.style.setProperty('--editor-font-size', `${clamped / 16}rem`)
 
-      // 2. Debounce store updates & disk saves (settings.json / localStorage) by 350ms to prevent stutter during rapid wheel scrolling
+      if (containerRef?.current) {
+        containerRef.current.style.setProperty('--font-size-editor', `${clamped}px`)
+        containerRef.current.style.setProperty('--editor-font-size', `${clamped / 16}rem`)
+      }
+
+      if (realViewRef?.current) {
+        const view = realViewRef.current
+        if (view.dom) {
+          view.dom.style.fontSize = `${clamped}px`
+        }
+        if (view.contentDOM) {
+          view.contentDOM.style.fontSize = `${clamped}px`
+        }
+        view.requestMeasure()
+        view.dispatch({})
+      }
+
+      requestAnimationFrame(() => {
+        if (realViewRef?.current) {
+          const view = realViewRef.current
+          view.requestMeasure()
+          view.dispatch({})
+        }
+      })
+
       if (saveDebounceRef.current) {
         clearTimeout(saveDebounceRef.current)
       }
@@ -77,9 +89,18 @@ export const useZoom = ({
         if (typeof updateEditorFontSize === 'function') {
           updateEditorFontSize(clamped)
         }
-      }, 350)
+        if (realViewRef?.current) {
+          const view = realViewRef.current
+          view.requestMeasure()
+          if (view.state?.selection?.main) {
+            view.dispatch({
+              effects: EditorView.scrollIntoView(view.state.selection.main.head, { y: 'nearest' })
+            })
+          }
+        }
+      }, 150)
     },
-    [minSize, maxSize, updateSetting, updateEditorFontSize]
+    [minSize, maxSize, updateSetting, updateEditorFontSize, containerRef, realViewRef, defaultSize]
   )
 
   const zoomIn = useCallback(
@@ -100,31 +121,29 @@ export const useZoom = ({
     setZoom(defaultSize)
   }, [setZoom, defaultSize])
 
-  // Handle Ctrl/Cmd + Mouse Wheel over the editor container with continuous trackpad support
   useEffect(() => {
-    const element = containerRef?.current
-    if (!element) return
-
     const handleWheel = (e) => {
+      if (!isActiveRef.current) return
       if (e.ctrlKey || e.metaKey) {
-        e.preventDefault()
-        e.stopPropagation()
+        const target = e.target
+        const container = containerRef?.current
+        if (container && (container === target || container.contains(target))) {
+          e.preventDefault()
+          e.stopPropagation()
 
-        // Use a much smaller multiplier. Standard mouse wheels send deltaY of 100 or 120 per notch.
-        // 100 * 0.01 = 1px per notch. Trackpads fire smaller values rapidly, which will still be smooth.
-        const ZOOM_SPEED = 0.01
-        const zoomDelta = -(e.deltaY * ZOOM_SPEED)
-        setZoom(sizeRef.current + zoomDelta)
+          const direction = e.deltaY > 0 ? -1 : 1
+          const delta = direction * (e.altKey ? step * 2 : step)
+          setZoom(sizeRef.current + delta)
+        }
       }
     }
 
-    element.addEventListener('wheel', handleWheel, { passive: false })
+    window.addEventListener('wheel', handleWheel, { capture: true, passive: false })
     return () => {
-      element.removeEventListener('wheel', handleWheel)
+      window.removeEventListener('wheel', handleWheel, { capture: true, passive: false })
     }
   }, [containerRef, setZoom, step])
 
-  // Handle Keyboard Shortcuts (Ctrl+= / Ctrl++, Ctrl+-, Ctrl+0) when editor is active
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (!isActiveRef.current) return
@@ -133,38 +152,47 @@ export const useZoom = ({
       if (!isCmd || e.altKey) return
 
       const key = e.key
+      const code = e.code
 
-      // Zoom In: Ctrl + '=' or Ctrl + '+' or NumpadAdd
-      if (key === '=' || key === '+' || key === 'Add') {
+      if (
+        key === '=' ||
+        key === '+' ||
+        code === 'Equal' ||
+        code === 'NumpadAdd'
+      ) {
         e.preventDefault()
         e.stopPropagation()
-        zoomIn(step * 2) // Snappy 2px step for keyboard shortcuts
-      }
-      // Zoom Out: Ctrl + '-' or Ctrl + '_' or NumpadSubtract
-      else if (key === '-' || key === '_' || key === 'Subtract') {
+        zoomIn(2)
+      } else if (
+        key === '-' ||
+        key === '_' ||
+        code === 'Minus' ||
+        code === 'NumpadSubtract'
+      ) {
         e.preventDefault()
         e.stopPropagation()
-        zoomOut(step * 2)
-      }
-      // Reset Zoom: Ctrl + '0' or Numpad0
-      else if (key === '0' || key === 'Insert') {
-        if (key === '0') {
-          e.preventDefault()
-          e.stopPropagation()
-          resetZoom()
-        }
+        zoomOut(2)
+      } else if (
+        key === '0' ||
+        code === 'Digit0' ||
+        code === 'Numpad0'
+      ) {
+        e.preventDefault()
+        e.stopPropagation()
+        resetZoom()
       }
     }
 
     window.addEventListener('keydown', handleKeyDown, { capture: true })
     return () => window.removeEventListener('keydown', handleKeyDown, { capture: true })
-  }, [zoomIn, zoomOut, resetZoom, step])
+  }, [zoomIn, zoomOut, resetZoom])
 
   return {
     fontSize: currentSize,
     zoomIn,
     zoomOut,
     resetZoom,
-    setZoom
+    setZoom,
+    zoomBadge
   }
 }

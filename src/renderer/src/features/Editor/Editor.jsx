@@ -56,8 +56,9 @@ const Editor = React.memo(
     const showFindWidgetRef = useRef(showFindWidget)
     showFindWidgetRef.current = showFindWidget
 
-    useZoom({
+    const { zoomBadge } = useZoom({
       containerRef: zoomContainerRef,
+      realViewRef,
       isActive
     })
 
@@ -180,6 +181,8 @@ const Editor = React.memo(
         ref={zoomContainerRef}
         style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}
       >
+        {zoomBadge && <div className="editor-zoom-hud">{zoomBadge}</div>}
+
         {showFindWidget && realViewRef.current && (
           <Find
             editorView={realViewRef.current}

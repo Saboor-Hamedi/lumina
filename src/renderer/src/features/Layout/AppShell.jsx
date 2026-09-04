@@ -18,6 +18,7 @@ import ConfirmModal from '../Overlays/Modals/ConfirmModal'
 import RenameModal from '../Overlays/Modals/RenameModal'
 import IconPicker from '../Icons/IconPicker'
 import { handleRenameSnippet } from '../../core/hooks/handleRenameSnippet'
+import { populateStarterVault } from '../../core/utils/starterVault'
 import GlobalErrorHandler from '../../components/GlobalErrorHandler'
 import '../../assets/appshell.css'
 import '../Overlays/Modals/ConfirmModal.css'
@@ -668,6 +669,20 @@ const AppShell = () => {
     }
   }
 
+  const handleLoadStarterVault = useCallback(async () => {
+    try {
+      const created = await populateStarterVault((snippet) => saveSnippet(snippet))
+      if (created && created.length > 0) {
+        const welcomeSnippet = created.find((s) => s.id === 'starter-welcome') || created[0]
+        setSelectedSnippet(welcomeSnippet)
+        setActiveTab('files')
+      }
+    } catch (error) {
+      console.error('[AppShell] Failed to populate starter vault:', error)
+      showToast('Failed to load starter notes', 'error')
+    }
+  }, [saveSnippet, setSelectedSnippet, setActiveTab, showToast])
+
   const handleOpenSettings = useCallback(() => setShowSettings(true), [])
   const handleOpenTheme = useCallback(() => setShowThemeModal(true), [])
   const handleToggleGraph = useCallback(() => setShowGraph(true), [])
@@ -826,7 +841,7 @@ const AppShell = () => {
           <div className="shell-main-placeholder" />
         ) : (
           <GlobalErrorHandler>
-            <Welcome onNew={handleNew} />
+            <Welcome onNew={handleNew} onLoadStarterVault={handleLoadStarterVault} />
           </GlobalErrorHandler>
         )}
 

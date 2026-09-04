@@ -27,6 +27,7 @@ import {
 } from '../../codeBlock/codeBlockHeader'
 import { imageDropExtension, imageWidgetExtension } from '../../media'
 import { htmlWidgetExtension } from '../extensions/htmlExtension'
+import { katexExtension } from '../extensions/katexExtension'
 import { tagMentionExtension } from '../extensions/tagMentionExtension'
 import { tables } from '../../table/tableExtension'
 import { mermaidWidgetExtension } from '../../mermaid'
@@ -392,6 +393,7 @@ export function useEditorExtensions({
       dropExtension,
       Prec.highest(imageWidgetExtension),
       htmlWidgetExtension,
+      katexExtension,
       calloutExtension,
       Prec.highest(tables({ onLinkClick: handleTableLinkClick }))
     ],

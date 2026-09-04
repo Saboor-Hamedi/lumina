@@ -1,0 +1,46 @@
+@import 'katex/dist/katex.min.css';
+
+.cm-katex-inline {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--bg-hover, rgba(125, 125, 125, 0.08));
+  cursor: pointer;
+  vertical-align: baseline;
+  user-select: text;
+  transition: background 0.15s ease;
+}
+
+.cm-katex-inline:hover {
+  background: var(--bg-active, rgba(125, 125, 125, 0.16));
+}
+
+.cm-katex-block {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px 20px;
+  margin: 12px 0;
+  border-radius: 8px;
+  background: var(--card, rgba(125, 125, 125, 0.04));
+  border: 1px solid var(--border, rgba(125, 125, 125, 0.15));
+  overflow-x: auto;
+  cursor: pointer;
+  user-select: text;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.cm-katex-block:hover {
+  border-color: var(--accent, #3b82f6);
+  background: var(--bg-hover, rgba(125, 125, 125, 0.08));
+}
+
+.cm-katex-error {
+  color: var(--danger, #ef4444);
+  font-family: monospace;
+  font-size: 0.9em;
+  padding: 2px 6px;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 4px;
+}
