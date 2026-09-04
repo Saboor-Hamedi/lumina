@@ -57,7 +57,7 @@
   text-rendering: optimizeLegibility !important;
   font-variant-ligatures: normal !important;
   font-feature-settings: "liga" 1, "calt" 1 !important;
-  padding: 10px 12px 8px !important;
+  padding: 12px 12px 12px !important;
   margin: 0 !important;
   border: 0 !important;
   box-sizing: border-box !important;
@@ -70,10 +70,11 @@
   -webkit-text-fill-color: var(--text-main) !important;
   caret-color: var(--text-accent, #40bafa) !important;
   resize: none;
+  height: 44px;
   min-height: 44px;
   max-height: 160px;
   outline: none !important;
-  overflow-y: auto;
+  overflow-y: hidden;
   display: block;
 }
 

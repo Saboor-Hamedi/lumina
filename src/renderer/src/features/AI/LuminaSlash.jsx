@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Zap, Brain, Palette, Image as ImageIcon, Code, Eraser } from 'lucide-react'
+import { Zap, Brain, Palette, Image as ImageIcon, Code, Eraser, Check } from 'lucide-react'
 import './luminSlash.css'
 
 export const SLASH_COMMANDS = [
@@ -33,7 +33,7 @@ export const SLASH_COMMANDS = [
   }
 ]
 
-export const LuminaSlash = ({ isOpen, filterText, onSelect, onClose }) => {
+export const LuminaSlash = ({ isOpen, filterText, activeMode = 'Code', onSelect, onClose }) => {
   const [selectedIndex, setSelectedIndex] = useState(0)
 
   const filteredCommands = SLASH_COMMANDS.filter(
@@ -43,8 +43,12 @@ export const LuminaSlash = ({ isOpen, filterText, onSelect, onClose }) => {
   )
 
   useEffect(() => {
-    setSelectedIndex(0)
-  }, [filterText])
+    // If opening without filter, default selected index to the current active mode
+    const activeIdx = filteredCommands.findIndex(
+      (c) => c.label.toLowerCase() === (activeMode || '').toLowerCase()
+    )
+    setSelectedIndex(activeIdx >= 0 ? activeIdx : 0)
+  }, [filterText, isOpen, activeMode])
 
   useEffect(() => {
     if (!isOpen) return
@@ -74,20 +78,31 @@ export const LuminaSlash = ({ isOpen, filterText, onSelect, onClose }) => {
 
   return (
     <div className="slash-menu-container">
-      {filteredCommands.map((cmd, index) => (
-        <div
-          key={cmd.id}
-          className={`slash-menu-item ${index === selectedIndex ? 'active' : ''}`}
-          onClick={() => onSelect(cmd)}
-          onMouseEnter={() => setSelectedIndex(index)}
-        >
-          <div className="slash-icon">{cmd.icon}</div>
-          <div className="slash-content">
-            <span className="slash-label">{cmd.label}</span>
-            <span className="slash-desc">{cmd.desc}</span>
+      {filteredCommands.map((cmd, index) => {
+        const isCurrentActive =
+          cmd.label.toLowerCase() === (activeMode || '').toLowerCase()
+        const isKeyboardSelected = index === selectedIndex
+
+        return (
+          <div
+            key={cmd.id}
+            className={`slash-menu-item ${isKeyboardSelected ? 'highlighted' : ''} ${isCurrentActive ? 'is-active-mode' : ''}`}
+            onClick={() => onSelect(cmd)}
+            onMouseEnter={() => setSelectedIndex(index)}
+          >
+            <div className="slash-icon">{cmd.icon}</div>
+            <div className="slash-content">
+              <span className="slash-label">{cmd.label}</span>
+              <span className="slash-desc">{cmd.desc}</span>
+            </div>
+            {isCurrentActive && (
+              <div className="slash-active-check">
+                <Check size={12} strokeWidth={2.5} />
+              </div>
+            )}
           </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

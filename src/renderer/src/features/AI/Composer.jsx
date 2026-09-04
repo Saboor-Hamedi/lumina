@@ -54,20 +54,14 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
   const setMode = (newMode) => updateSetting('activeAIMode', newMode)
 
   useEffect(() => {
-    if (!textareaRef.current) return
+    const el = textareaRef.current
+    if (!el) return
 
-    let rafId = requestAnimationFrame(() => {
-      if (!textareaRef.current) return
-      textareaRef.current.style.height = 'auto'
-      const nextHeight = Math.min(Math.max(textareaRef.current.scrollHeight, 44), 160)
-      textareaRef.current.style.height = `${nextHeight}px`
-      textareaRef.current.style.overflowY =
-        textareaRef.current.scrollHeight > 160 ? 'auto' : 'hidden'
-    })
-
-    return () => {
-      if (rafId) cancelAnimationFrame(rafId)
-    }
+    // Keep height completely steady on initial typing
+    el.style.height = 'auto'
+    const newHeight = Math.min(Math.max(el.scrollHeight, 44), 160)
+    el.style.height = `${newHeight}px`
+    el.style.overflowY = el.scrollHeight > 160 ? 'auto' : 'hidden'
   }, [input])
 
   const prevIsLoading = useRef(isLoading)
@@ -248,6 +242,7 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
       <LuminaSlash
         isOpen={showSlashMenu}
         filterText={slashFilter}
+        activeMode={mode}
         onSelect={handleCommandSelect}
         onClose={() => setShowSlashMenu(false)}
       />
@@ -313,6 +308,27 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
                 title="Commands & Modes"
               >
                 <Plus size={13} />
+              </button>
+            </ToolTip>
+
+            <ToolTip text="Change AI mode (/)" position="top">
+              <button
+                type="button"
+                className="model-pill"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowSlashMenu((prev) => !prev)
+                  setSlashFilter('')
+                  if (textareaRef.current) textareaRef.current.focus()
+                }}
+                style={{
+                  color: 'var(--text-accent)',
+                  borderColor: 'rgba(var(--text-accent-rgb, 64, 186, 250), 0.25)',
+                  background: 'rgba(var(--text-accent-rgb, 64, 186, 250), 0.08)'
+                }}
+              >
+                <span className="model-pill-name">{mode}</span>
+                <ChevronDown size={10} className="model-pill-chevron" />
               </button>
             </ToolTip>
 

@@ -3,11 +3,11 @@
   position: absolute;
   bottom: 100%; /* Shows above the input */
   left: 10px;
-  width: 200px;
+  width: 220px;
   background: var(--bg-app); /* Solid opaque background */
   border: 1px solid var(--border-dim);
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
   z-index: 1000;
   overflow: hidden;
   display: flex;
@@ -22,36 +22,54 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 8px;
+  padding: 6px 8px;
   cursor: pointer;
   border-radius: 4px;
-  transition: background 0.1s;
+  transition: background 0.12s ease, color 0.12s ease;
   color: var(--text-main);
+  position: relative;
 }
 
 .slash-menu-item:hover,
-.slash-menu-item.active {
-  background: var(--bg-selection);
+.slash-menu-item.highlighted {
+  background: var(--bg-active, rgba(255, 255, 255, 0.06));
 }
 
-.slash-menu-item.active {
-  background: var(--text-accent);
-  color: white;
+.slash-menu-item.is-active-mode {
+  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.12);
+  color: var(--text-accent);
+}
+
+.slash-menu-item.is-active-mode .slash-label {
+  font-weight: 600;
+  color: var(--text-accent);
 }
 
 .slash-icon {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--bg-panel, rgba(255, 255, 255, 0.05));
   border-radius: 4px;
   flex-shrink: 0;
+  color: var(--text-faint);
 }
 
-.slash-menu-item.active .slash-icon {
-  background: rgba(255, 255, 255, 0.2);
+.slash-menu-item.is-active-mode .slash-icon {
+  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.2);
+  color: var(--text-accent);
+}
+
+.slash-active-check {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-accent);
+  flex-shrink: 0;
+  padding-left: 6px;
 }
 
 .slash-content {
