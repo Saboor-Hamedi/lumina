@@ -266,71 +266,68 @@ const AppShell = () => {
      * @returns {Promise<void>}
      */
     const initApp = async () => {
-      await useSettingsStore.getState().init()
-      await loadVault()
-
-      // Directly fetch from backend to avoid any race conditions with store initialization
-      let actualSettings = useSettingsStore.getState().settings
       try {
-        const backendSettings = await window.api.getSetting()
-        if (backendSettings) {
-          actualSettings = { ...actualSettings, ...backendSettings }
+        await useSettingsStore.getState().init()
+        await loadVault()
+
+        let actualSettings = useSettingsStore.getState().settings || {}
+        try {
+          const backendSettings = await window.api.getSetting()
+          if (backendSettings) {
+            actualSettings = { ...actualSettings, ...backendSettings }
+          }
+        } catch (err) {
+          console.error('Failed to fetch backend settings during init:', err)
+        }
+
+        if (actualSettings.openTabs && Array.isArray(actualSettings.openTabs)) {
+          useVaultStore
+            .getState()
+            .restoreSession(
+              actualSettings.openTabs,
+              actualSettings.lastSnippetId,
+              actualSettings.pinnedTabIds || []
+            )
+        } else if (actualSettings.lastSnippetId) {
+          const allSnippets = useVaultStore.getState().snippets || []
+          const last = allSnippets.find((s) => s.id === actualSettings.lastSnippetId)
+          if (last) setSelectedSnippet(last)
+        }
+
+        if (!actualSettings.rightPanelMode || actualSettings.rightPanelMode === 'metadata') {
+          useSettingsStore.getState().updateSetting('rightPanelMode', 'chat')
+        }
+
+        const legacySidebar = actualSettings.sidebar || {}
+        if (typeof legacySidebar.isLeftOpen === 'boolean')
+          setIsLeftSidebarOpen(legacySidebar.isLeftOpen)
+        else if (typeof actualSettings.isLeftSidebarOpen === 'boolean')
+          setIsLeftSidebarOpen(actualSettings.isLeftSidebarOpen)
+
+        const rawLeftWidth =
+          legacySidebar.width || legacySidebar.leftWidth || actualSettings.leftWidth
+        if (rawLeftWidth) {
+          const clampedLeft = Math.min(500, Math.max(150, Number(rawLeftWidth)))
+          setLeftWidth(clampedLeft)
+        }
+
+        const legacyRSidebar = actualSettings.rightSidebar || {}
+        if (typeof legacyRSidebar.isRightOpen === 'boolean')
+          setIsRightSidebarOpen(legacyRSidebar.isRightOpen)
+        else if (typeof actualSettings.isRightSidebarOpen === 'boolean')
+          setIsRightSidebarOpen(actualSettings.isRightSidebarOpen)
+
+        const rawRightWidth =
+          legacyRSidebar.width || legacyRSidebar.rightWidth || actualSettings.rightWidth
+        if (rawRightWidth) {
+          const clampedRight = Math.min(500, Math.max(160, Number(rawRightWidth)))
+          setRightWidth(clampedRight)
         }
       } catch (err) {
-        console.error('Failed to fetch backend settings during init:', err)
+        console.error('AppShell initApp error:', err)
+      } finally {
+        setIsRestoring(false)
       }
-
-      if (actualSettings.openTabs && Array.isArray(actualSettings.openTabs)) {
-        useVaultStore
-          .getState()
-          .restoreSession(
-            actualSettings.openTabs,
-            actualSettings.lastSnippetId,
-            actualSettings.pinnedTabIds || []
-          )
-      } else if (actualSettings.lastSnippetId) {
-        const allSnippets = useVaultStore.getState().snippets
-        const last = allSnippets.find((s) => s.id === actualSettings.lastSnippetId)
-        if (last) setSelectedSnippet(last)
-      }
-      // Default to chat mode (metadata moved to modal)
-      if (!actualSettings.rightPanelMode || actualSettings.rightPanelMode === 'metadata') {
-        useSettingsStore.getState().updateSetting('rightPanelMode', 'chat')
-      }
-      // Restore Widths & Toggles from split 'sidebar' and 'rightSidebar' objects
-      // Order of precedence: new split objects > legacy migration objects > top-level keys
-
-      // LEFT SIDEBAR
-      const legacySidebar = actualSettings.sidebar || {}
-      if (typeof legacySidebar.isLeftOpen === 'boolean')
-        setIsLeftSidebarOpen(legacySidebar.isLeftOpen)
-      else if (typeof actualSettings.isLeftSidebarOpen === 'boolean')
-        setIsLeftSidebarOpen(actualSettings.isLeftSidebarOpen)
-
-      const rawLeftWidth =
-        legacySidebar.width || legacySidebar.leftWidth || actualSettings.leftWidth
-      if (rawLeftWidth) {
-        const clampedLeft = Math.min(500, Math.max(150, Number(rawLeftWidth)))
-        setLeftWidth(clampedLeft)
-      }
-
-      // RIGHT SIDEBAR
-      const legacyRSidebar = actualSettings.rightSidebar || {}
-      if (typeof legacyRSidebar.isRightOpen === 'boolean')
-        setIsRightSidebarOpen(legacyRSidebar.isRightOpen)
-      else if (typeof actualSettings.isRightSidebarOpen === 'boolean')
-        setIsRightSidebarOpen(actualSettings.isRightSidebarOpen)
-
-      const rawRightWidth =
-        legacyRSidebar.width || legacyRSidebar.rightWidth || actualSettings.rightWidth
-      if (rawRightWidth) {
-        const clampedRight = Math.min(500, Math.max(160, Number(rawRightWidth)))
-        setRightWidth(clampedRight)
-      }
-
-      // Removed restoring activeTab
-
-      setIsRestoring(false)
     }
 
     initApp()

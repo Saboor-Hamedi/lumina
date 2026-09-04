@@ -36,8 +36,8 @@ class SettingsManager {
       huggingFaceKey: null,
       activeProvider: 'deepseek',
       activeModel: null,
-      activeAIMode: 'Standard',
-      aiChatDisplayMode: 'sidebar', // 'sidebar' | 'modal'
+      activeAIMode: 'Plan',
+      aiChatDisplayMode: 'sidebar',
       openaiKey: null,
       anthropicKey: null,
       ollamaUrl: 'http://localhost:11434/api/chat',

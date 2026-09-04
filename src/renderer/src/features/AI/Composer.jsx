@@ -31,7 +31,6 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
   const handleStop = onStop || onCancel
 
   const textareaRef = useRef(null)
-  const backdropRef = useRef(null)
 
   const snippets = useVaultStore((state) => state.snippets) || []
 
@@ -48,11 +47,10 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
     return /(@[a-zA-Z0-9_\-./]+)/g
   }, [snippets])
 
-  const { settings, updateSettings } = useSettingsStore()
-  const mode = settings.activeAIMode || 'Standard'
-  const setMode = (newMode) => updateSettings({ activeAIMode: newMode })
+  const { settings, updateSetting } = useSettingsStore()
+  const mode = settings.activeAIMode || 'Plan'
+  const setMode = (newMode) => updateSetting('activeAIMode', newMode)
 
-  // Auto-resize textarea with requestAnimationFrame
   useEffect(() => {
     if (!textareaRef.current) return
 
@@ -63,22 +61,12 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
       textareaRef.current.style.height = `${nextHeight}px`
       textareaRef.current.style.overflowY =
         textareaRef.current.scrollHeight > 160 ? 'auto' : 'hidden'
-      if (backdropRef.current) {
-        backdropRef.current.style.height = `${nextHeight}px`
-      }
     })
 
     return () => {
       if (rafId) cancelAnimationFrame(rafId)
     }
   }, [input])
-
-  const handleScroll = useCallback(() => {
-    if (backdropRef.current && textareaRef.current) {
-      backdropRef.current.scrollTop = textareaRef.current.scrollTop
-      backdropRef.current.scrollLeft = textareaRef.current.scrollLeft
-    }
-  }, [])
 
   const prevIsLoading = useRef(isLoading)
   useEffect(() => {
@@ -137,15 +125,14 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
     const newVal = e.target.value
     setInput(newVal)
 
-    // Check for slash command at the very start
-    if (newVal.startsWith('/')) {
-      setSlashFilter(newVal.slice(1))
+    const slashMatch = newVal.match(/(?:^|\s)\/([a-zA-Z0-9_-]*)$/)
+    if (slashMatch) {
+      setSlashFilter(slashMatch[1])
       setShowSlashMenu(true)
     } else {
       setShowSlashMenu(false)
     }
 
-    // Check for @mention trigger
     const mentionMatch = newVal.match(/(?:^|\s)@([^\s]*)$/)
     if (mentionMatch) {
       setMentionFilter(mentionMatch[1])
@@ -156,8 +143,16 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
   }
 
   const handleCommandSelect = (cmd) => {
-    cmd.action(setMode, setInput)
-    if (cmd.id !== 'image') setInput('')
+    if (cmd && cmd.action) {
+      cmd.action(setMode, setInput)
+    }
+    const match = input.match(/(?:^|\s)\/([a-zA-Z0-9_-]*)$/)
+    if (match) {
+      const matchIndex = match.index + (match[0].startsWith(' ') ? 1 : 0)
+      setInput(input.slice(0, matchIndex))
+    } else {
+      setInput('')
+    }
     setShowSlashMenu(false)
   }
 
@@ -234,10 +229,10 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
   const toggleProvider = () => window.dispatchEvent(new CustomEvent('open-ai-settings'))
 
   const modes = [
-    { id: 'Fast', icon: <Zap size={13} />, title: 'Fast mode' },
-    { id: 'Thinking', icon: <Brain size={13} />, title: 'Thinking mode' },
+    { id: 'Plan', icon: <Zap size={13} />, title: 'Plan mode' },
+    { id: 'Deep', icon: <Brain size={13} />, title: 'Deep mode' },
     { id: 'Creative', icon: <Palette size={13} />, title: 'Creative mode' },
-    { id: 'Coder', icon: <Code size={13} />, title: 'Coder mode' }
+    { id: 'Code', icon: <Code size={13} />, title: 'Code mode' }
   ]
 
   return (
@@ -258,41 +253,34 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
 
       {/* Unified Card */}
       <div className="composer-card" onClick={() => textareaRef.current?.focus()}>
-        <div className="composer-input-area-wrapper">
-          {/* Synchronized color backdrop for colored @mentions */}
-          <div ref={backdropRef} className="composer-backdrop" aria-hidden="true">
-            {(() => {
-              if (!input) return null
-              const parts = input.split(mentionRegex)
-              const rendered = parts.map((part, idx) => {
-                if (part.startsWith('@') && part.length > 1) {
-                  return (
-                    <span key={idx} className="composer-mention-token">
-                      {part}
-                    </span>
-                  )
-                }
-                return part
-              })
-              if (input.endsWith('\n')) {
-                return (
-                  <>
-                    {rendered}
-                    {' '}
-                  </>
-                )
-              }
-              return rendered
-            })()}
+        {attachedMentions && attachedMentions.length > 0 && (
+          <div className="composer-attached-mentions">
+            {attachedMentions.map((snippet) => (
+              <span key={snippet.id} className="mention-pill">
+                <span className="mention-pill-title">@{snippet.title || 'Untitled'}</span>
+                <button
+                  type="button"
+                  className="mention-pill-close"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setAttachedMentions((prev) => prev.filter((s) => s.id !== snippet.id))
+                  }}
+                  title="Remove mention"
+                >
+                  <X size={11} />
+                </button>
+              </span>
+            ))}
           </div>
+        )}
 
+        <div className="composer-input-area-wrapper">
           <textarea
             ref={textareaRef}
             className="composer-textarea"
             value={input}
             onChange={handleOnChange}
             onKeyDown={handleKeyDown}
-            onScroll={handleScroll}
             placeholder="Ask AI... type '@' to mention notes, '/' for commands"
             rows={1}
             disabled={isLoading}
@@ -313,6 +301,22 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
                 <ChevronDown size={10} />
               </button>
             </ToolTip>
+            <div className="composer-modes">
+              {modes.map((m) => (
+                <ToolTip key={m.id} text={m.title} position="top">
+                  <button
+                    type="button"
+                    className={`mode-btn ${mode === m.id ? 'active' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setMode(m.id)
+                    }}
+                  >
+                    {m.icon}
+                  </button>
+                </ToolTip>
+              ))}
+            </div>
           </div>
 
           <div className="composer-right">

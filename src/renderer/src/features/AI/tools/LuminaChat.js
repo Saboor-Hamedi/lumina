@@ -823,6 +823,7 @@ ${vaultAccessNote}`
           '16. If asked to EXPLAIN a file → call readFile DIRECTLY.\n' +
           '17. When outputting folder/file trees or hierarchies in chat responses, ALWAYS wrap them in a code block with language text (e.g. ```text\\n📁 Root\\n├── 📁 01_Folder\\n└── 📁 02_Folder\\n```) with each branch on its own separate line so it renders cleanly.\n' +
           '18. After performing tool operations, write a comprehensive, clear walkthrough in chat explaining what was built or modified, highlighting key topics, wikilinks, and the exact updated section or diff so the user can see what changed.\n' +
+          '19. NATURAL FILE TITLES WITH SPACES: Lumina natively supports natural titles with spaces (e.g. "Today Log", "Tomorrow Expenses", "Afghanistan Trip Plan", "System Architecture", "Market Strategy"). NEVER use underscores ("_") or dashes ("-") in file titles unless the user explicitly requested them.\n' +
           '\n' +
           'EXAMPLES:\n' +
           'User: "link the files together" → [Call updateFile on each target note with position="top" and replace="> 🔗 **Related:** [[Other Note]]" immediately on step 1]\n' +
@@ -885,40 +886,14 @@ ${vaultAccessNote}`
           }
         } catch (_) {}
 
-        // --- Mode Configuration ---
-        const modeConfigs = {
-          Fast: {
-            temperature: 0.3,
-            max_tokens: 1000,
-            systemAddon: 'Be extremely concise and direct.'
-          },
-          Thinking: {
-            temperature: 0.7,
-            max_tokens: 4000,
-            systemAddon:
-              'Think step-by-step and show your reasoning before giving the final answer.'
-          },
-          Creative: {
-            temperature: 0.9,
-            max_tokens: 4000,
-            systemAddon: 'Be creative, use vivid language and metaphors.'
-          },
-          Coder: {
-            temperature: 0.2,
-            max_tokens: 4000,
-            systemAddon:
-              'You are a Senior Engineer. Output robust, production-ready code with proper error handling.'
-          },
-          Standard: { temperature: 0.7, max_tokens: 4000, systemAddon: '' }
-        }
-        const modeCfg = modeConfigs[mode] || modeConfigs.Standard
+        const { getAIMode } = await import('../modes/index.js')
+        const modeCfg = getAIMode(mode)
 
         if (modeCfg.systemAddon) {
           systemPrompt += `\n\n**MODE**: ${modeCfg.systemAddon}`
         }
 
-        // --- New Provider Architecture ---
-        let providerType = 'deepseek' // Default
+        let providerType = 'deepseek'
         let activeModel = deepSeekModel || 'deepseek-chat'
         let apiKey = visibleKey
 
@@ -931,11 +906,10 @@ ${vaultAccessNote}`
           else if (providerType === 'ollama') apiKey = 'unused'
         }
 
-        // Initialize Provider
         const { AIProviderFactory } = await import('../providers/index.js')
         const providerConfig = {
           apiKey,
-          baseUrl: settingsObj.ollamaUrl // Only relevant for Ollama checking
+          baseUrl: settingsObj.ollamaUrl
         }
 
         const provider = AIProviderFactory.createProvider(providerType, providerConfig)
@@ -965,7 +939,7 @@ ${vaultAccessNote}`
             await ensureAISdk()
 
             const { getAITools } = await import('./index.js')
-            const sdkTools = getAITools(blockReadFile)
+            const sdkTools = modeCfg.enableTools !== false ? getAITools(blockReadFile) : {}
 
             const result = aiSdk.streamText({
               model: createDeepseekProvider({ apiKey: visibleKey })(activeModel || 'deepseek-chat'),

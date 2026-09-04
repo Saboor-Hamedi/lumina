@@ -48,17 +48,6 @@ export const createFileTool = aiSdk.tool({
       const saved = await vs.saveSnippet(snippet)
       const targetSnippet = saved || snippet
 
-      if (vs.loadVault) {
-        await vs.loadVault()
-      }
-
-      if (vs.setSelectedSnippet) {
-        vs.setSelectedSnippet(targetSnippet)
-      }
-      if (vs.setActiveTabId) {
-        vs.setActiveTabId(targetSnippet.id)
-      }
-
       window.dispatchEvent(
         new CustomEvent('ai-saved-snippet', {
           detail: { id: targetSnippet.id, code: targetSnippet.code, title: targetSnippet.title }

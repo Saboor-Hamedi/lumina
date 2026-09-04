@@ -30,10 +30,10 @@ export const useSettingsStore = create((set, get) => ({
     huggingFaceKey: null,
 
     // New Multi-Provider Support
-    activeProvider: 'deepseek', // 'deepseek', 'openai', 'anthropic', 'ollama'
-    activeModel: null, // If null, provider uses its default
-    activeAIMode: 'Standard', // Saves selected AI mode
-    aiChatDisplayMode: 'sidebar', // 'sidebar' | 'modal'
+    activeProvider: 'deepseek',
+    activeModel: null,
+    activeAIMode: 'Plan',
+    aiChatDisplayMode: 'sidebar',
     openaiKey: null,
     anthropicKey: null,
     ollamaUrl: 'http://localhost:11434/api/chat',
@@ -59,33 +59,21 @@ export const useSettingsStore = create((set, get) => ({
   init: async () => {
     try {
       if (window.api && window.api.getSetting) {
-        // Fetch all at once if possible, or key by key. For now, fetch generic.
-        // Or if we implemented `db:getSettings`, but we have specific keys.
-        // Let's assume we can fetch individual or better yet, optimize backend later.
-        // For now, let's just fetch individual or assume backend sends all if key is null?
-        // Actually, SettingsManager.get() returns all if key is null/undefined.
         const allSettings = await window.api.getSetting()
         if (allSettings) {
-          // Merge with defaults to ensure new keys are present
           const currentSettings = get().settings
-          // Deep merge or spread is fine for flat settings. Spread prioritizes 'allSettings' (persisted).
-          // But we want to ensure keys present in 'currentSettings' (defaults) but missing in 'allSettings' are kept.
           const mergedSettings = { ...currentSettings, ...allSettings }
 
-          set({ settings: mergedSettings, isLoading: false })
+          set({ settings: mergedSettings })
 
-          // Apply side effects using merged settings
           const root = document.documentElement
           root.setAttribute('data-theme', mergedSettings.theme)
           root.style.setProperty('--font-editor', mergedSettings.fontFamily)
           root.style.setProperty('--font-size-editor', `${mergedSettings.fontSize}px`)
-          // Subscribe to external changes via IPC (main process watcher)
           if (window.api && typeof window.api.onSettingsChanged === 'function') {
-            // Ensure we don't double-subscribe
             if (!get().settingsWatcherUnsubscribe) {
               const unsub = window.api.onSettingsChanged((newSettings) => {
                 try {
-                  // When external update comes, merge it too
                   const active = get().settings
                   const updatedParams = { ...active, ...newSettings }
                   set({ settings: updatedParams })
@@ -106,53 +94,26 @@ export const useSettingsStore = create((set, get) => ({
       }
     } catch (err) {
       console.error('Failed to load settings:', err)
-      set({ isLoading: false })
-      // Retry once after 1s
       setTimeout(async () => {
         try {
           if (window.api && window.api.getSetting) {
-            const allSettings = await window.api.getSetting().catch(() => null) // Catch IPC error
+            const allSettings = await window.api.getSetting().catch(() => null)
             if (allSettings) {
-              // Merge with current defaults to preserve any new default keys while keeping user values
               const currentDefaults = get().settings
               const mergedSettings = { ...currentDefaults, ...allSettings }
               set({ settings: mergedSettings })
-              // Apply side effects
               const root = document.documentElement
               root.setAttribute('data-theme', mergedSettings.theme)
               root.style.setProperty('--font-editor', mergedSettings.fontFamily)
               root.style.setProperty('--font-size-editor', `${mergedSettings.fontSize}px`)
-              // Subscribe to IPC settings changes if available
-              if (window.api && typeof window.api.onSettingsChanged === 'function') {
-                if (!get().settingsWatcherUnsubscribe) {
-                  const unsub = window.api.onSettingsChanged((newSettings) => {
-                    try {
-                      set((state) => ({ settings: { ...state.settings, ...newSettings } }))
-                      const root = document.documentElement
-                      const merged = { ...get().settings, ...newSettings }
-                      root.setAttribute('data-theme', merged.theme)
-                      root.style.setProperty('--font-editor', merged.fontFamily)
-                      root.style.setProperty('--font-size-editor', `${merged.fontSize}px`)
-                      root.style.setProperty('--cursor-style', newSettings.cursorStyle)
-                    } catch (err) {
-                      console.error(
-                        '[useSettingsStore] Error applying external settings (retry):',
-                        err
-                      )
-                    }
-                  })
-                  set({ settingsWatcherUnsubscribe: unsub })
-                }
-              }
-            } else {
-              console.warn('Backend settings unavailable, using defaults.')
-              // Defaults are already set in initialState
             }
           }
         } catch (e) {
           console.warn('Retry failed', e)
         }
       }, 1000)
+    } finally {
+      set({ isLoading: false })
     }
   },
 

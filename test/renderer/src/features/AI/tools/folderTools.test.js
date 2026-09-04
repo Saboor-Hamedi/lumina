@@ -44,7 +44,7 @@ describe('AI Folder & File Movement Tools', () => {
     expect(useVaultStore.getState().loadVault).toHaveBeenCalled()
   })
 
-  it('createFileTool creates a note with target folder and selects it', async () => {
+  it('createFileTool creates a note with target folder and saves it', async () => {
     const res = await createFileTool.execute({
       title: 'Quantum Mechanics',
       content: '# Quantum\n[[Thermodynamics]]',
@@ -55,7 +55,7 @@ describe('AI Folder & File Movement Tools', () => {
     expect(res.title).toBe('Quantum Mechanics')
     expect(res.folderId).toBe('Science/Physics')
     expect(window.api.createFolder).toHaveBeenCalledWith('Science/Physics')
-    expect(useVaultStore.getState().selectedSnippet.title).toBe('Quantum Mechanics')
+    expect(window.api.saveSnippet).toHaveBeenCalled()
   })
 
   it('moveFileTool moves a named note into a destination folder', async () => {

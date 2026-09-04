@@ -30,16 +30,23 @@
   box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb, 64, 186, 250), 0.1);
 }
 
-/* ─── Input Area with Colored Mention Backdrop ─── */
+/* ─── Input Area & Attached Mentions ─── */
+.composer-attached-mentions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 12px 2px;
+}
+
 .composer-input-area-wrapper {
   position: relative;
   width: 100%;
   min-height: 44px;
-  max-height: 140px;
 }
 
-.composer-backdrop,
 .composer-textarea {
+  position: relative;
+  width: 100%;
   font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
   font-size: 13px !important;
   font-weight: 400 !important;
@@ -50,7 +57,7 @@
   text-rendering: optimizeLegibility !important;
   font-variant-ligatures: normal !important;
   font-feature-settings: "liga" 1, "calt" 1 !important;
-  padding: 10px 12px 6px !important;
+  padding: 10px 12px 8px !important;
   margin: 0 !important;
   border: 0 !important;
   box-sizing: border-box !important;
@@ -58,51 +65,20 @@
   word-break: break-word !important;
   overflow-wrap: break-word !important;
   tab-size: 2 !important;
-}
-
-.composer-backdrop {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  color: var(--text-main);
-  overflow-y: hidden;
-  user-select: none;
-  z-index: 1;
-  display: block;
-}
-
-.composer-mention-token {
-  color: var(--text-accent);
-  font-weight: inherit !important;
-  font-family: inherit !important;
-  font-size: inherit !important;
-  letter-spacing: inherit !important;
-  line-height: inherit !important;
-  background: none;
-  padding: 0;
-  margin: 0;
-  border: 0;
-}
-
-.composer-textarea {
-  position: relative;
-  width: 100%;
-  border: 0 !important;
   background: transparent !important;
-  color: transparent !important;
-  -webkit-text-fill-color: transparent !important;
-  caret-color: var(--text-main) !important;
+  color: var(--text-main) !important;
+  -webkit-text-fill-color: var(--text-main) !important;
+  caret-color: var(--text-accent, #40bafa) !important;
   resize: none;
   min-height: 44px;
-  max-height: 140px;
+  max-height: 160px;
   outline: none !important;
   overflow-y: auto;
-  z-index: 2;
   display: block;
 }
 
 .composer-textarea::-webkit-scrollbar {
-  width: 3px;
+  width: 4px;
 }
 .composer-textarea::-webkit-scrollbar-track {
   background: transparent;

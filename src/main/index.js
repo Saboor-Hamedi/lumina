@@ -97,16 +97,15 @@ async function createWindow() {
     }
   })
 
-  // Clear HTTP cache to fix "No file for..." errors
-  try {
-    const ses = mainWindow.webContents.session
-    await ses.clearCache()
-    console.log('[Main] Cache cleared successfully')
-  } catch (err) {
-    console.error('[Main] Failed to clear cache:', err)
+  const showWindowSafely = async () => {
+    if (!mainWindow || mainWindow.isDestroyed() || mainWindow.isVisible()) return
+    const launchOnStartup = await SettingsManager.get('launchOnStartup').catch(() => false)
+    const openAsHidden = process.argv.includes('--hidden')
+    if (!(launchOnStartup && openAsHidden)) {
+      mainWindow.show()
+    }
   }
 
-  // Disable DevTools Shortcuts in Production unless explicitly allowed in settings
   if (app.isPackaged) {
     mainWindow.webContents.on('before-input-event', (event, input) => {
       if (!allowDevTools) {
@@ -121,12 +120,7 @@ async function createWindow() {
   }
 
   mainWindow.on('ready-to-show', async () => {
-    // Only show the window if it's not set to launch hidden on startup
-    const launchOnStartup = await SettingsManager.get('launchOnStartup')
-    const openAsHidden = process.argv.includes('--hidden') // or any auto-launch flag you use
-    if (!(launchOnStartup && openAsHidden)) {
-      mainWindow.show()
-    }
+    await showWindowSafely()
 
     new AppUpdater(mainWindow)
 
@@ -141,14 +135,16 @@ async function createWindow() {
       })
     }
 
-    // Initialize shortcuts and auto-launch with current settings
     SettingsManager.get().then((settings) => {
       useGlobalShortcut(mainWindow, settings)
       updateAutoLauncher(settings.launchOnStartup)
     })
   })
 
-  // Robust Crash Handling (Renderer)
+  setTimeout(() => {
+    showWindowSafely()
+  }, 1500)
+
   mainWindow.webContents.on('render-process-gone', async (event, details) => {
     console.error('Renderer Process Gone:', details.reason)
     const result = await dialog.showMessageBox(mainWindow, {
@@ -168,10 +164,8 @@ async function createWindow() {
     }
   })
 
-  // Initialize System Tray background mode
   useTrayIcon(mainWindow, app, appIcon)
 
-  // Handle updates
   mainWindow.webContents.setWindowOpenHandler((details) => {
     try {
       const url = new URL(details.url)
@@ -182,11 +176,21 @@ async function createWindow() {
     return { action: 'deny' }
   })
 
-  // Save window bounds on resize, move, and close
   useResizeWindowValue(mainWindow)
 
   const isDev = !app.isPackaged
   if (isDev && process.env['ELECTRON_RENDERER_URL']) {
+    let retryCount = 0
+    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+      if (retryCount < 5 && !mainWindow.isDestroyed()) {
+        retryCount++
+        setTimeout(() => {
+          if (!mainWindow.isDestroyed() && process.env['ELECTRON_RENDERER_URL']) {
+            mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']).catch(() => {})
+          }
+        }, 500)
+      }
+    })
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))

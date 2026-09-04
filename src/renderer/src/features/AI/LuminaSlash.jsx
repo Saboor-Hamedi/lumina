@@ -4,18 +4,18 @@ import './luminSlash.css'
 
 export const SLASH_COMMANDS = [
   {
-    id: 'fast',
-    label: 'Quick answer',
-    desc: 'Short, concise answers.',
+    id: 'plan',
+    label: 'Plan',
+    desc: 'Smart planning, outlines, and architectural design.',
     icon: <Zap size={14} />,
-    action: (setMode) => setMode('Fast')
+    action: (setMode) => setMode('Plan')
   },
   {
-    id: 'think',
-    label: 'Detailed thinking',
-    desc: 'Step-by-step reasoning (CoT).',
+    id: 'deep',
+    label: 'Deep',
+    desc: 'Deep step-by-step reasoning (CoT).',
     icon: <Brain size={14} />,
-    action: (setMode) => setMode('Thinking')
+    action: (setMode) => setMode('Deep')
   },
   {
     id: 'creative',
@@ -26,29 +26,10 @@ export const SLASH_COMMANDS = [
   },
   {
     id: 'code',
-    label: 'Code help',
-    desc: 'Specialized for programming.',
+    label: 'Code',
+    desc: 'Specialized for programming and file execution.',
     icon: <Code size={14} />,
-    action: (setMode) => setMode('Coder')
-  },
-  {
-    id: 'image',
-    label: 'Generate Image',
-    desc: 'Create visuals locally or via API.',
-    icon: <ImageIcon size={14} />,
-    action: (setMode, setInput) => {
-      // Just pre-fill input prefix
-      setInput('/image ')
-    }
-  },
-  {
-    id: 'clear',
-    label: 'Clear Chat',
-    desc: 'Start a fresh context.',
-    icon: <Eraser size={14} />,
-    action: () => {
-      window.dispatchEvent(new CustomEvent('clear-chat-context'))
-    }
+    action: (setMode) => setMode('Code')
   }
 ]
 
