@@ -1,5 +1,8 @@
 .cm-editor {
   font-size: var(--font-size-editor, 16px) !important;
+  font-variant-ligatures: normal !important;
+  font-feature-settings: "liga" 1, "calt" 1, "zero" 1 !important;
+  text-rendering: optimizeLegibility !important;
 }
 
 .cm-content {

@@ -16,9 +16,9 @@
 
 :root {
   /* Typography */
-  --font-editor: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-heading: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  --font-editor: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-heading: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'JetBrainsMono Nerd Font', 'Fira Code', 'Cascadia Code', 'SF Mono', 'Segoe UI Mono', 'Roboto Mono', Menlo, Monaco, Consolas, 'Liberation Mono', 'DejaVu Sans Mono', 'Ubuntu Mono', 'Courier New', monospace;
 
   /* Dimensions & Layout */
   --header-height: 32px;
@@ -299,4 +299,18 @@ body {
 /* Hide Atomic Editor's default image widget to prevent conflicts with Lumina's custom IPC image widget */
 .cm-atomic-image {
   display: none !important;
+}
+
+code,
+pre,
+kbd,
+samp,
+.cm-editor,
+.cm-line,
+.chat-code-block,
+.chat-inline-code,
+.cm-atomic-fenced-code {
+  font-variant-ligatures: normal !important;
+  font-feature-settings: "liga" 1, "calt" 1, "zero" 1 !important;
+  text-rendering: optimizeLegibility !important;
 }

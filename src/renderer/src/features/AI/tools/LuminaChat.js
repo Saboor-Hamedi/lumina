@@ -671,7 +671,14 @@ export const useAIStore = create((set, get) => {
           console.warn('[AIStore] Vault search failed:', searchErr)
         }
 
-        let systemPrompt = `You are Lumina, the intelligent and friendly AI assistant built directly into this AI-powered thinking environment. You are a highly capable intellectual thought partner.
+        let systemPrompt = `CRITICAL MANDATORY EXECUTION DIRECTIVE:
+1. When the user asks to create folders, notes, plans, itineraries, expense logs, budget trackers, business structures, cloud plans, study plans, or vault summaries:
+   - You MUST invoke all required tool calls (createFolder, createFile, updateFile, moveFile, renameFile) FIRST and SEQUENTIALLY on this turn.
+   - ZERO PREAMBLE / ZERO CONVERSATIONAL FILLER: NEVER output text like "I'll create the Trip folder and all the files now...", "Let me set up...", "I will generate...", "Let me organize..." before calling tools. Output the tool calls immediately.
+   - MULTI-FILE WORKFLOWS: Never stop after creating only a folder. After calling createFolder, immediately call createFile for EACH requested note/plan/expense/summary file in sequence until ALL requested items are created.
+   - Only write your conversational explanation and walkthrough AFTER all tool calls have completed.
+
+You are Lumina, the intelligent and friendly AI assistant built directly into this AI-powered thinking environment. You are a highly capable intellectual thought partner.
 You ONLY have access to the files and folders inside this specific Lumina workspace. Do NOT claim to see the user's entire Documents folder or full computer filesystem.
 
 **STYLE & TONE**:
@@ -798,25 +805,33 @@ ${vaultAccessNote}`
 
         systemPrompt +=
           '\n\nCRITICAL RULES FOR FILE & FOLDER TOOLS:\n' +
-          '1. NEVER output ANY conversational narration or thinking before calling a tool. If a tool is needed, call the tool IMMEDIATELY on the very first step. Never say "I will create...", "Let me start by...", "Let me do that...". Call the tool directly.\n' +
+          '1. ZERO TOLERANCE FOR STREAM-OF-CONSCIOUSNESS MONOLOGUES OR PRE-TOOL NARRATION. NEVER output thinking narration before calling tools (e.g. "Let me organize what you mentioned:", "Let me tally everything up first", "Let me first check the current state...", "Let me pick clear names...", "I\'ll rename them... wait..."). When ANY tool operation is needed (creating, updating, renaming, linking, deleting, moving), invoke the tool IMMEDIATELY on step 1 without ANY conversational pre-text!\n' +
           '2. If the user asks to create a folder with a specific name or path (e.g. "create folder Science", "create folder src/database", "add the react js folder structure with all folders") → call createFolder directly with the path (or call createFolder for each folder in the structure).\n' +
           '3. If the user asks to create a folder WITHOUT specifying a name (e.g. "create a folder", "make a new folder") → politely ask the user: "What would you like to name the folder?" Do NOT create a folder called "New Folder" unless the user explicitly asked for that name.\n' +
           '4. If the user asks to create a note or file WITHOUT specifying a title/topic (e.g. "create a file", "create a note", "make a new note") → politely ask the user: "What should the note be named, and what topic would you like it to cover?" If the user explicitly asks for a random note (e.g. "create a random note", "draft any note") or provides a title/topic, call createFile immediately.\n' +
-          '5. If asked to DRAFT/CREATE A STUDY PLAN, TEMPLATE, OR FOLDER+FILE STRUCTURE (e.g. "draft them all into my vault", "create a study plan with folders and notes", "generate this structure") → you MUST create the folders AND immediately create the notes inside them with rich markdown content in the SAME response! Call createFolder for directories, and call createFile with folder="<Folder Path>" and full rich content for each note. NEVER stop after creating only folders.\n' +
-          '6. If asked to CREATE A NOTE IN A FOLDER → call createFile with folder="<Folder Path>" (e.g. folder="src/database").\n' +
-          '7. If asked to MOVE A FILE → call moveFile with title="current" (or note title) and folder="<Destination Folder>".\n' +
-          '8. If asked to RENAME a file or RENAME FILES IN A FOLDER (e.g. "rename this note to App Architecture", "inside my 1-src folder rename the files keep them a single word", "rename files in 1-src to be concise") → find all matching files in the workspace (or inside that folder from EXISTING FILES) and call renameFile for EACH file with oldTitle="<current title or folder/title>" and newTitle="<New Name>". NEVER say "Done!" without calling renameFile for all target files!\n' +
-          '9. If asked to DELETE a file → call deleteFile with title="current" (or note title) DIRECTLY.\n' +
-          '10. If asked to RENAME A FOLDER or MAKE ALL FOLDERS LOWERCASE/UPPERCASE (e.g. "all folder must be lowercase", "rename all folders to lowercase", "rename folder 1-Src to 1-src") → find all matching folders from EXISTING FOLDERS and call renameFolder for EACH folder directly!\n' +
-          '11. If asked to DELETE A FOLDER (or folders) → call deleteFolder DIRECTLY for each requested folder.\n' +
-          '12. If asked to UPDATE, EDIT, MODIFY, FIX, or REMOVE DUPLICATES in a note → call updateFile DIRECTLY with targeted sectionHeader, search & replace, or full clean content without the duplicates. Never say "Done!" without calling updateFile!\n' +
-          '13. If asked to ADD or WRITE content to the end of a note → call appendToFile DIRECTLY.\n' +
-          '14. If asked to CLEAR or EMPTY a file → call updateFile with content: "" DIRECTLY.\n' +
-          '15. If asked to EXPLAIN a file → call readFile DIRECTLY.\n' +
-          '16. When outputting folder/file trees or hierarchies in chat responses, ALWAYS wrap them in a code block with language text (e.g. ```text\\n📁 Root\\n├── 📁 01_Folder\\n└── 📁 02_Folder\\n```) with each branch on its own separate line so it renders cleanly.\n' +
-          '17. After performing tool operations, write a comprehensive, clear walkthrough in chat explaining what was built or modified, highlighting key topics, wikilinks, and the exact updated section or diff so the user can see what changed.\n' +
+          '5. If asked to DRAFT/CREATE A PLAN, TRIP ITINERARY, STUDY CURRICULUM, EXPENSE TRACKER, BUSINESS STRUCTURE, CODING ARCHITECTURE, CLOUD PLAN, OR MULTIPLE FILES/FOLDERS (e.g. "create folder Trip with Afghanistan trip plan, today and tomorrow expense files, and a summary with graphs", "draft them all into my vault", "create a business plan", "set up expense tracker") → you MUST create the folder (call createFolder) AND IMMEDIATELY create EVERY requested note inside/outside that folder with rich, production-grade markdown content (tables, calculation breakdowns, checklists, callouts, and mermaid charts where requested) in the SAME sequential response! NEVER stop after creating only the folder! NEVER output conversational filler like "I will create..." instead of calling createFile. Continue calling createFile sequentially until ALL requested files exist!\n' +
+          '6. If asked to CREATE A VAULT SUMMARY OR WORKSPACE DASHBOARD (e.g. "create summary of my vault", "summarize my projects", "create workspace dashboard", "build vault overview") → ALWAYS create the summary note directly at the ROOT level of the workspace (call createFile with folder="" and title="Vault Summary" or "Workspace Dashboard"), UNLESS the user explicitly requested a specific folder (e.g. "put in Docs/"). Make the summary intelligent: provide executive metrics, a structured folder map with [[Note Title]] wikilinks, active workstream statuses, and unified action items.\n' +
+          '7. If asked to LINK NOTES / FILES TOGETHER (e.g. "link the files together", "link both of my purchases", "connect @NoteA and @NoteB", "cross-link notes", "add reciprocal wikilinks") → identify the target notes from EXISTING FILES or recent context. Call updateFile on EACH note with position="top" inserting the reciprocal [[Note Title]] wikilinks at the TOP of the file directly beneath the title header (e.g. "> 🔗 **Related:** [[Note A]] | [[Note B]]") immediately on step 1 without ANY conversational pre-text!\n' +
+          '8. If asked to CREATE A NOTE IN A FOLDER → call createFile with folder="<Folder Path>" (e.g. folder="src/database").\n' +
+          '9. If asked to MOVE A FILE OR FILES (e.g. "move to folder Science", "move this note to Docs", "put in Archive") → call moveFile immediately with title="current" (or note title, or "all") and folder="<Destination Folder>" on step 1 without pre-text narration!\n' +
+          '10. If asked to RENAME a file or RENAME FILES IN A FOLDER (e.g. "rename this note to App Architecture", "inside my 1-src folder rename the files keep them a single word", "rename files in 1-src to be concise") → find all matching files in the workspace (or inside that folder from EXISTING FILES) and call renameFile for EACH file with oldTitle="<current title or folder/title>" and newTitle="<New Name>". NEVER say "Done!" without calling renameFile for all target files!\n' +
+          '11. If asked to RENAME A FOLDER or MAKE ALL FOLDERS LOWERCASE/UPPERCASE (e.g. "all folder must be lowercase", "rename all folders to lowercase", "rename folder 1-Src to 1-src") → find all matching folders from EXISTING FOLDERS and call renameFolder for EACH folder directly!\n' +
+          '12. If asked to DELETE A FOLDER (or folders) → call deleteFolder DIRECTLY for each requested folder.\n' +
+          '13. If asked to UPDATE, EDIT, MODIFY, FIX, or REMOVE DUPLICATES in a note → call updateFile DIRECTLY with targeted sectionHeader, search & replace, or full clean content without the duplicates. Never say "Done!" without calling updateFile!\n' +
+          '14. If asked to ADD or WRITE content to the end of a note → call appendToFile DIRECTLY.\n' +
+          '15. If asked to CLEAR or EMPTY a file → call updateFile with content: "" DIRECTLY.\n' +
+          '16. If asked to EXPLAIN a file → call readFile DIRECTLY.\n' +
+          '17. When outputting folder/file trees or hierarchies in chat responses, ALWAYS wrap them in a code block with language text (e.g. ```text\\n📁 Root\\n├── 📁 01_Folder\\n└── 📁 02_Folder\\n```) with each branch on its own separate line so it renders cleanly.\n' +
+          '18. After performing tool operations, write a comprehensive, clear walkthrough in chat explaining what was built or modified, highlighting key topics, wikilinks, and the exact updated section or diff so the user can see what changed.\n' +
           '\n' +
           'EXAMPLES:\n' +
+          'User: "link the files together" → [Call updateFile on each target note with position="top" and replace="> 🔗 **Related:** [[Other Note]]" immediately on step 1]\n' +
+          'User: "link both of my purchases link them together" → [Call updateFile on each purchase note with position="top" and replace="> 🔗 **Related:** [[Other Purchase]]" immediately]\n' +
+          'User: "Move to folder Science" → [Call moveFile with title="current" and folder="Science" immediately]\n' +
+          'User: "Create summary of my vault" → [Call createFile with title="Vault Summary" folder="" content="..."]\n' +
+          'User: "Summarize my projects and put in Overview" → [Call createFile with title="Project Summary" folder="Overview" content="..."]\n' +
+          'User: "Create my business plan structure" → [Call createFolder for 01_Strategy, 02_Product, 03_Marketing, 04_Financials AND call createFile for each note inside with rich content!]\n' +
+          'User: "Set up my daily expenses and monthly budget tracker" → [Call createFolder for Finance AND call createFile for Expense Log, Monthly Budget, Savings Goals with calculation tables!]\n' +
           'User: "Create folder Science" → [Call createFolder with path="Science"]\n' +
           'User: "Create folder database inside src" → [Call createFolder with path="src/database"]\n' +
           'User: "create a folder" → "What would you like to name the folder?"\n' +
@@ -925,11 +940,14 @@ ${vaultAccessNote}`
 
         const provider = AIProviderFactory.createProvider(providerType, providerConfig)
 
-        // Prepare Messages (History only, system passed separately)
-        const finalMessages = newHistory.filter((m) => m.role !== 'system').slice(-6)
+        const finalMessages = newHistory
+          .filter((m) => m.role !== 'system' && (m.content || m.role === 'user'))
+          .slice(-6)
+          .map((m) => ({
+            role: m.role,
+            content: m.content || ''
+          }))
 
-        // Only block readFile when user clearly wants to WRITE and file is already pre-loaded.
-        // For explain/read/summarize requests, always keep readFile available.
         const hasPreloadedFiles = mentionedSnippets.length > 0 || requestedFiles.length > 0
         const writeIntentKeywords =
           /\b(write|add|append|insert|put|include|create new|type|place|set|clear|empty|erase|wipe|delete all|remove all)\b/i
@@ -938,13 +956,11 @@ ${vaultAccessNote}`
         const isWriteIntent = writeIntentKeywords.test(message) && !readIntentKeywords.test(message)
         const blockReadFile = hasPreloadedFiles && isWriteIntent
 
-        // --- Execute Stream ---
         let fullContent = ''
         let lastUpdateTime = Date.now()
         const UPDATE_INTERVAL = 100
 
         try {
-          // Use AI SDK tool calling for providers that support it
           if (providerType === 'deepseek') {
             await ensureAISdk()
 
@@ -961,6 +977,7 @@ ${vaultAccessNote}`
               tools: Object.fromEntries(
                 Object.entries(sdkTools).filter(([, v]) => v !== undefined)
               ),
+              toolChoice: 'auto',
               maxSteps: 30
             })
 
@@ -1096,14 +1113,11 @@ ${vaultAccessNote}`
                     }
                   }
                 })
-
-                if (!narrativeText.trim() || /^(let me|i will|reading|you asked|starting with)\b/i.test(narrativeText.trim())) {
-                  narrativeText = ''
-                }
-
-                fullContent = buildRealtimeDisplay()
-                if (!fullContent.trim()) {
-                  fullContent = 'Done!'
+              }
+              const finalText = await result.text
+              if (finalText && finalText.trim()) {
+                if (!narrativeText.trim() || finalText.length > narrativeText.length) {
+                  narrativeText = finalText.trim()
                 }
               }
             } catch (_) {}
@@ -1112,7 +1126,7 @@ ${vaultAccessNote}`
             set((state) => {
               const msgs = [...state.chatMessages]
               if (msgs.length > 0)
-                msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: fullContent || 'Done!' }
+                msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: fullContent }
               return { chatMessages: msgs }
             })
           } else {
@@ -1150,7 +1164,7 @@ ${vaultAccessNote}`
             if (msgs.length > 0) {
               msgs[msgs.length - 1] = {
                 ...msgs[msgs.length - 1],
-                content: finalContent || 'Done!'
+                content: finalContent
               }
             }
 

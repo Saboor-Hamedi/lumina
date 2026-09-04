@@ -76,16 +76,8 @@ export function useFileTree({
         flat.push({ type: 'input', kind: 'folder', parentId, depth })
       }
 
-      const order = Array.isArray(folderOrder) ? folderOrder : []
       const folderNames = Object.keys(node.children).sort((a, b) => {
-        const fullPathA = parentId ? `${parentId}/${a}` : a
-        const fullPathB = parentId ? `${parentId}/${b}` : b
-        const idxA = order.indexOf(fullPathA)
-        const idxB = order.indexOf(fullPathB)
-        if (idxA !== -1 && idxB !== -1) return idxA - idxB
-        if (idxA !== -1) return -1
-        if (idxB !== -1) return 1
-        return a.localeCompare(b)
+        return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
       })
 
       folderNames.forEach((name) => {

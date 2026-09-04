@@ -73,7 +73,10 @@
   line-height: 1.6 !important;
   background: rgba(0, 0, 0, 0.15) !important;
   box-shadow: none !important;
-  font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
+  font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', monospace) !important;
+  font-variant-ligatures: normal !important;
+  font-feature-settings: "liga" 1, "calt" 1, "zero" 1 !important;
+  text-rendering: optimizeLegibility !important;
   font-size: 13px !important;
   color: var(--text-main, #d4d4d4);
   border-left: 1px solid var(--border-dim) !important;

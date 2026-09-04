@@ -58,18 +58,24 @@ export function useExplorerOperations({
       const next = typeof updater === 'function' ? updater(prev) : updater
       const nextSet = next instanceof Set ? next : new Set(next || [])
       expandedFoldersRef.current = nextSet
-      const arr = Array.from(nextSet)
-      try {
-        localStorage.setItem('lumina-expanded-folders', JSON.stringify(arr))
-      } catch (e) {}
-      useSettingsStore.getState().updateSetting('expandedFolders', arr)
       return nextSet
     })
   }, [])
 
   useEffect(() => {
     expandedFoldersRef.current = expandedFolders
-  }, [expandedFolders])
+    const arr = Array.from(expandedFolders)
+    try {
+      localStorage.setItem('lumina-expanded-folders', JSON.stringify(arr))
+    } catch (e) {}
+    const currentStored = settings.expandedFolders || []
+    if (
+      arr.length !== currentStored.length ||
+      arr.some((f) => !currentStored.includes(f))
+    ) {
+      updateSetting('expandedFolders', arr)
+    }
+  }, [expandedFolders, settings.expandedFolders, updateSetting])
 
   useEffect(() => {
     if (Array.isArray(settings.expandedFolders)) {
@@ -78,27 +84,12 @@ export function useExplorerOperations({
         if (prev.size === incomingSet.size && [...prev].every((x) => incomingSet.has(x))) {
           return prev
         }
-        try {
-          localStorage.setItem('lumina-expanded-folders', JSON.stringify(settings.expandedFolders))
-        } catch (e) {}
         expandedFoldersRef.current = incomingSet
         return incomingSet
       })
     }
   }, [settings.expandedFolders])
 
-  // Sync folderOrder setting if new folders appear on disk
-  useEffect(() => {
-    if (visibleFolders && visibleFolders.length > 0) {
-      const currentOrder = settings.folderOrder || []
-      const missing = visibleFolders.filter((f) => !currentOrder.includes(f))
-      if (missing.length > 0) {
-        updateSetting('folderOrder', [...currentOrder, ...missing])
-      }
-    }
-  }, [visibleFolders, settings.folderOrder, updateSetting])
-
-  // Inline Creation State
   const [creating, setCreating] = useState(null) // { type: 'file' | 'folder', parentId: string } | null
   const [creatingValue, setCreatingValue] = useState('')
 
@@ -172,24 +163,17 @@ export function useExplorerOperations({
     }
 
     const handleRevealFolder = (e) => {
-      const folderId = e.detail
+      const raw = e.detail?.folderId || e.detail
+      if (!raw) return
+      const folderId = String(raw).replace(/^[/\\]+|[/\\]+$/g, '')
       if (!folderId) return
 
       const foldersToExpand = []
-      let currentId = folderId
-      const visited = new Set()
-      let depth = 0
-
-      while (currentId && currentId !== '/' && currentId !== 'root' && !visited.has(currentId) && depth < 50) {
-        visited.add(currentId)
-        depth++
-        foldersToExpand.push(currentId)
-        const fObj = visibleFolders?.find((f) => f.id === currentId || f.name === currentId)
-        if (fObj) {
-          currentId = fObj.parentId
-        } else {
-          break
-        }
+      const parts = folderId.split('/').filter(Boolean)
+      let acc = ''
+      for (const p of parts) {
+        acc = acc ? `${acc}/${p}` : p
+        foldersToExpand.push(acc)
       }
 
       const currentSet = expandedFoldersRef.current
@@ -258,14 +242,8 @@ export function useExplorerOperations({
     [setExpandedFolders]
   )
 
-  /**
-   * Cancels the active folder inline rename.
-   */
   const cancelRename = useCallback(() => setRenamingFolder(null), [])
 
-  /**
-   * Submits inline folder or note creation.
-   */
   const submitCreation = useCallback(
     async (value) => {
       const valToUse = typeof value === 'string' ? value : creatingValue
@@ -285,10 +263,6 @@ export function useExplorerOperations({
           const folderPath = creating.parentId
             ? `${creating.parentId}/${sanitizedName}`
             : sanitizedName
-          const currentOrder = settings.folderOrder || []
-          if (!currentOrder.includes(folderPath)) {
-            await updateSetting('folderOrder', [...currentOrder, folderPath])
-          }
           await window.api.createFolder(folderPath)
           setExpandedFolders((prev) => new Set(prev).add(folderPath))
           await loadVault()

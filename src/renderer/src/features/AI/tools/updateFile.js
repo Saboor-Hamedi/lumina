@@ -29,6 +29,10 @@ export const updateFileTool = aiSdk.tool({
         type: 'string',
         description: 'Text, line, or heading in the file before which to insert the new content.'
       },
+      position: {
+        type: 'string',
+        description: 'Where to insert content. Use "top" to place right below the title header (ideal for wikilinks and summaries), or "bottom".'
+      },
       content: {
         type: 'string',
         description:
@@ -37,7 +41,7 @@ export const updateFileTool = aiSdk.tool({
     },
     required: ['title']
   }),
-  execute: async ({ title, search, replace, insertAfter, insertBefore, content, sectionHeader }) => {
+  execute: async ({ title, search, replace, insertAfter, insertBefore, position, content, sectionHeader }) => {
     const { useVaultStore } = await import('../../../core/store/workspaceStore')
     const vs = useVaultStore.getState()
     const snippets = Array.isArray(vs.snippets) ? vs.snippets : Object.values(vs.snippets || {})
@@ -69,7 +73,18 @@ export const updateFileTool = aiSdk.tool({
     let diffPreview = ''
     let summaryText = `Updated **${target.title}**`
 
-    if (sectionHeader && replace !== undefined) {
+    if (position === 'top' && replace !== undefined) {
+      const titleMatch = currentCode.match(/^#\s+[^\r\n]+[\r\n]*/m)
+      if (titleMatch) {
+        const afterTitleIndex = titleMatch.index + titleMatch[0].length
+        newCode = currentCode.slice(0, afterTitleIndex) + '\n' + replace.trim() + '\n\n' + currentCode.slice(afterTitleIndex).replace(/^\n+/, '')
+      } else {
+        newCode = replace.trim() + '\n\n' + currentCode
+      }
+      writtenText = replace.trim()
+      summaryText = `Added top references to **${target.title}**`
+      diffPreview = `\`\`\`markdown\n${replace.trim()}\n\`\`\``
+    } else if (sectionHeader && replace !== undefined) {
       const cleanHeader = sectionHeader.trim()
       const headerTitle = cleanHeader.replace(/^#{1,6}\s*/, '').trim()
       const headerRegex = new RegExp(`^(#{1,6})\\s+${headerTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`, 'im')

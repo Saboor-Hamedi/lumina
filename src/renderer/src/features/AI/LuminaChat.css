@@ -379,14 +379,10 @@
   50%       { opacity: 1;   transform: scale(1.2); }
 }
 
-/* Optimize Virtuoso container - removed scroll-behavior: smooth which breaks Virtuoso */
-
 .chat-messages > div[data-virtuoso-scroller] {
   -webkit-overflow-scrolling: touch;
-  /* Prevent content flickering during scroll */
   contain: layout style paint;
-  /* Ensure content stays visible */
-  overflow-anchor: none;
+  overflow-anchor: auto;
 }
 
 /* Prevent content from disappearing during scroll */
@@ -707,6 +703,8 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
+  overflow-anchor: auto;
+  scroll-behavior: auto !important;
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -950,7 +948,10 @@
   padding: 1.5px 5.5px;
   font-size: 12px;
   font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', monospace);
-  color: var(--text-main);
+  font-variant-ligatures: normal;
+  font-feature-settings: "liga" 1, "calt" 1;
+  text-rendering: optimizeLegibility;
+  color: var(--text-accent, #40bafa);
   word-break: break-word;
 }
 
@@ -989,9 +990,9 @@
 }
 
 [data-theme='light'] .chat-inline-code {
-  background: #f7f7f7 !important;
-  border-color: #e5e7eb !important;
-  color: #0f172a !important;
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+  color: #0284c7 !important;
 }
 
 .chat-code-header-left {

@@ -116,7 +116,10 @@ const ChatPreBlock = React.memo(({ children, ...props }) => {
             padding: '10px 14px',
             fontSize: '12px',
             lineHeight: '1.5',
-            fontFamily: 'var(--font-mono, monospace)'
+            fontFamily: 'var(--font-mono, monospace)',
+            fontVariantLigatures: 'normal',
+            fontFeatureSettings: '"liga" 1, "calt" 1',
+            textRendering: 'optimizeLegibility'
           }}
           {...props}
         >
@@ -655,17 +658,16 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, onPopOut = nul
   const handleMessageScroll = useCallback(() => {
     if (!listRef.current) return
     const { scrollTop, scrollHeight, clientHeight } = listRef.current
-    // User is at bottom if within 80px
-    const isAtBottom = scrollHeight - scrollTop - clientHeight < 80
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 120
     autoScrollRef.current = isAtBottom
   }, [])
 
-  // Auto-scroll to bottom using requestAnimationFrame
   useEffect(() => {
     if (!autoScrollRef.current || !listRef.current) return
+    const el = listRef.current
     const rafId = requestAnimationFrame(() => {
-      if (listRef.current) {
-        listRef.current.scrollTop = listRef.current.scrollHeight
+      if (el && autoScrollRef.current) {
+        el.scrollTop = el.scrollHeight
       }
     })
     return () => cancelAnimationFrame(rafId)

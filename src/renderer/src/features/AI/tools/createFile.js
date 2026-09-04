@@ -2,7 +2,7 @@ import * as aiSdk from 'ai'
 
 export const createFileTool = aiSdk.tool({
   description:
-    'Create a new note file in the workspace editor. Use this whenever the user asks to create, draft, or write a new note or topic file. You can optionally specify a target folder (e.g. folder="Science" or folder="Mathematics/Calculus").',
+    'Create a new note or document in the workspace editor. If the destination folder does not exist, it will be automatically created. You can call createFile multiple times in a single turn to create all requested notes, expense logs, plans, and summaries at once.',
   inputSchema: aiSdk.jsonSchema({
     type: 'object',
     properties: {
@@ -65,6 +65,14 @@ export const createFileTool = aiSdk.tool({
         })
       )
 
+      if (cleanFolder) {
+        window.dispatchEvent(
+          new CustomEvent('reveal-folder-in-explorer', {
+            detail: { folderId: cleanFolder }
+          })
+        )
+      }
+
       const headers = (content.match(/^#{1,3}\s+(.+)$/gm) || []).map((h) =>
         h.replace(/^#{1,3}\s+/, '')
       )
@@ -84,7 +92,7 @@ export const createFileTool = aiSdk.tool({
         topics: headers.slice(0, 8),
         wikilinks: wikilinks.slice(0, 10),
         summary: `Created **${targetSnippet.title}**${folderContext} covering: ${headers.slice(0, 5).join(', ')}.`,
-        instruction_to_ai: `File "${targetSnippet.title}" was created${folderContext} and opened in the editor. Now provide a rich, structured feedback walkthrough in chat explaining what was built, highlighting key wikilinks, and discussing the concepts.`
+        instruction_to_ai: `File "${targetSnippet.title}" was created${folderContext} and opened in the editor. If additional files, plans, expenses, or summaries were requested, continue calling createFile for each remaining file now. Once all files are created, provide a rich, structured feedback walkthrough in chat.`
       }
     } catch (err) {
       return { success: false, error: err.message || 'Failed to create file' }

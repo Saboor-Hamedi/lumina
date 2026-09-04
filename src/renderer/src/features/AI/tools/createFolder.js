@@ -2,7 +2,7 @@ import * as aiSdk from 'ai'
 
 export const createFolderTool = aiSdk.tool({
   description:
-    'Create a new folder or directory in the workspace. Use this whenever the user asks to create, make, or set up a new folder (e.g. "Science", "Projects/Frontend", "Mathematics").',
+    'Create a new folder in the workspace. IMPORTANT: If the user asked to create a folder AND notes/plans/expenses/summaries inside or outside of it, you MUST also call createFile for each requested note in this turn. Do not stop after creating only the folder.',
   inputSchema: aiSdk.jsonSchema({
     type: 'object',
     properties: {
@@ -30,11 +30,17 @@ export const createFolderTool = aiSdk.tool({
         await vs.loadVault()
       }
 
+      window.dispatchEvent(
+        new CustomEvent('reveal-folder-in-explorer', {
+          detail: { folderId: cleanPath }
+        })
+      )
+
       return {
         success: true,
         path: cleanPath,
         summary: `Created folder **${cleanPath}**.`,
-        instruction_to_ai: `Folder "${cleanPath}" created successfully.`
+        instruction_to_ai: `Folder "${cleanPath}" created successfully. If the user requested notes, plans, expense files, or summaries, IMMEDIATELY continue calling createFile for each one now until all items are created.`
       }
     } catch (err) {
       return { success: false, error: err.message || 'Failed to create folder' }
