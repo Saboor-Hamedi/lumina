@@ -126,6 +126,11 @@ export const useZoom = ({
       if (!isActiveRef.current) return
       if (e.ctrlKey || e.metaKey) {
         const target = e.target
+        // If zooming inside graph (InlineGraph or canvas), let the graph handle its own zoom
+        if (target && typeof target.closest === 'function' && target.closest('.inline-graph-container, .graph-container, canvas')) {
+          return
+        }
+
         const container = containerRef?.current
         if (container && (container === target || container.contains(target))) {
           e.preventDefault()

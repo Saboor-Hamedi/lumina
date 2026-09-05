@@ -27,7 +27,13 @@ import {
   ShieldAlert,
   Brain,
   ChevronDown,
-  Code as CodeIcon
+  ChevronUp,
+  Folder,
+  CheckCircle2,
+  Loader2,
+  Code as CodeIcon,
+  RefreshCw,
+  Edit3
 } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useAIStore } from './tools/lumina'
@@ -65,14 +71,21 @@ const ChatPreBlock = React.memo(({ children, ...props }) => {
   const match = /language-([a-zA-Z0-9-]+)/.exec(className)
   const lang = match ? match[1] : 'text'
   const isDelete = lang.startsWith('lumina-delete')
+  const isTree = lang === 'lumina-tree' || (lang === 'text' && /[├└]──/.test(codeString))
   const lineCount = codeString ? codeString.split('\n').length : 0
 
+  const displayTag = isTree ? 'STRUCTURE' : lang.toUpperCase()
+
   return (
-    <div className="chat-code-block">
+    <div className={`chat-code-block ${isTree ? 'is-tree' : ''}`}>
       <div className="chat-code-header">
         <div className="chat-code-header-left">
-          <span className="preview-indicator-tag">{lang.toUpperCase()}</span>
-          <div className="preview-stat-sep" />
+          {isTree ? (
+            <Folder size={11} style={{ color: 'var(--text-accent)', opacity: 0.85 }} />
+          ) : (
+            <CodeIcon size={11} style={{ color: 'var(--text-faint)', opacity: 0.8 }} />
+          )}
+          <span className={`chat-code-tag ${isTree ? 'is-tree' : ''}`}>{displayTag}</span>
           <span className="chat-code-stats">
             {lineCount} {lineCount === 1 ? 'line' : 'lines'}
           </span>
@@ -104,7 +117,18 @@ const ChatPreBlock = React.memo(({ children, ...props }) => {
           </button>
         )}
       </div>
-      {!isDelete && (
+      {!isDelete && isTree ? (
+        <div className="chat-tree-display seamless-scrollbar">
+          {codeString.split('\n').map((line, idx) => {
+            const isFolder = /📁/.test(line) || line.trim().endsWith('/')
+            return (
+              <div key={idx} className={`chat-tree-line ${isFolder ? 'is-folder' : 'is-file'}`}>
+                {line}
+              </div>
+            )
+          })}
+        </div>
+      ) : !isDelete ? (
         <SyntaxHighlighter
           style={vscDarkPlus}
           language={lang === 'text' ? 'markdown' : lang}
@@ -125,7 +149,7 @@ const ChatPreBlock = React.memo(({ children, ...props }) => {
         >
           {codeString}
         </SyntaxHighlighter>
-      )}
+      ) : null}
     </div>
   )
 })
@@ -356,21 +380,290 @@ const ChatLink = ({ href, children, ...props }) => {
   )
 }
 
+const ActivityCard = React.memo(({ rawContent, isStreaming = false }) => {
+  const [isExpanded, setIsExpanded] = useState(true)
+
+  const items = useMemo(() => {
+    if (!rawContent) return []
+    const lines = rawContent.split('\n').map((l) => l.trim()).filter(Boolean)
+    const parsed = []
+    const seen = new Set()
+
+    for (const line of lines) {
+      if (line.includes('*Creating folder') || line.includes('📁 *Creating')) {
+        const m = line.match(/`([^`]+)`/)
+        const target = m ? m[1] : '...'
+        parsed.push({ type: 'folder', target, isActive: true })
+        continue
+      }
+      if (line.includes('*Drafting') || line.includes('📝 *Drafting')) {
+        const titleMatch = line.match(/`([^`]+)`/)
+        const folderMatch = line.match(/in\s+([^\s.*]+)/i)
+        parsed.push({
+          type: 'file',
+          target: titleMatch ? titleMatch[1] : 'note',
+          folder: folderMatch ? folderMatch[1] : null,
+          isActive: true
+        })
+        continue
+      }
+      if (line.includes('*Executing') || line.includes('⚙️ *Executing')) {
+        parsed.push({
+          type: 'generic',
+          target: line.replace(/[*⚙️]/g, '').trim(),
+          isActive: true
+        })
+        continue
+      }
+
+      if (line.toLowerCase().includes('created folder')) {
+        let clean = line
+          .replace(/^[-*•\s📁]+/, '')
+          .replace(/created folder/i, '')
+          .replace(/[`*]/g, '')
+          .replace(/\.$/, '')
+          .trim()
+        if (clean && !seen.has(`folder:${clean}`)) {
+          seen.add(`folder:${clean}`)
+          parsed.push({ type: 'folder', target: clean, action: 'create', isActive: false })
+        }
+        continue
+      }
+
+      if (line.toLowerCase().includes('renamed folder')) {
+        let clean = line
+          .replace(/^[-*•\s📁]+/, '')
+          .replace(/renamed folder/i, '')
+          .replace(/[`*]/g, '')
+          .replace(/\.$/, '')
+          .trim()
+        if (clean && !seen.has(`folder:${clean}`)) {
+          seen.add(`folder:${clean}`)
+          parsed.push({ type: 'folder', target: `Renamed to ${clean.split(' to ').pop() || clean}`, rawText: line.replace(/^[-*•\s📁]+/, ''), action: 'rename', isActive: false })
+        }
+        continue
+      }
+
+      if (line.toLowerCase().includes('renamed note') || line.toLowerCase().includes('renamed file')) {
+        let clean = line
+          .replace(/^[-*•\s📝]+/, '')
+          .replace(/renamed (?:note|file)/i, '')
+          .replace(/[`*]/g, '')
+          .replace(/\.$/, '')
+          .trim()
+        const newPart = clean.split(' to ').pop() || clean
+        if (clean && !seen.has(`file:${clean}`)) {
+          seen.add(`file:${clean}`)
+          parsed.push({ type: 'file', target: newPart, rawText: line.replace(/^[-*•\s📝]+/, ''), action: 'rename', isActive: false })
+        }
+        continue
+      }
+
+      if (line.toLowerCase().includes('created') || line.toLowerCase().includes('drafting')) {
+        let title = ''
+        let folder = ''
+
+        const wikiMatch = line.match(/\[\[(.*?)\]\]/)
+        if (wikiMatch) {
+          title = wikiMatch[1].trim()
+        } else {
+          const boldMatch = line.match(/\*\*([^*]+)\*\*/)
+          if (boldMatch) {
+            title = boldMatch[1].trim()
+          } else {
+            const createdMatch = line.match(/created\s+(?:note\s+)?([^"in`]+?)(?:\s+in\s+folder|\s+in\s+`|\s+in\s+"|$)/i)
+            if (createdMatch) {
+              title = createdMatch[1].trim()
+            }
+          }
+        }
+
+        const folderMatch = line.match(/in\s+(?:folder\s+)?(?:`|"|')?([^`"'\n]+?)(?:`|"|')?(?:\s+covering|$|\.)/i)
+        if (folderMatch) {
+          folder = folderMatch[1].trim().replace(/^[/\\]+|[/\\]+$/g, '')
+        }
+
+        if (title && !seen.has(`file:${title}`)) {
+          seen.add(`file:${title}`)
+          parsed.push({ type: 'file', target: title, folder: folder || null, action: 'create', isActive: false })
+          continue
+        }
+      }
+
+      const cleanLine = line.replace(/^[-*•\s]+/, '').trim()
+      if (cleanLine && !seen.has(cleanLine)) {
+        seen.add(cleanLine)
+        const isRename = /renam/i.test(cleanLine)
+        const isFolder = /folder/i.test(cleanLine)
+        parsed.push({
+          type: isFolder ? 'folder' : isRename ? 'file' : 'generic',
+          target: cleanLine.replace(/[*`]/g, ''),
+          rawText: cleanLine,
+          action: isRename ? 'rename' : 'generic',
+          isActive: false
+        })
+      }
+    }
+
+    return parsed
+  }, [rawContent])
+
+  if (items.length === 0) return null
+
+  const folderCount = items.filter((i) => i.type === 'folder' && !i.isActive).length
+  const fileCount = items.filter((i) => i.type === 'file' && !i.isActive).length
+  const renameCount = items.filter((i) => i.action === 'rename').length
+  const hasActive = items.some((i) => i.isActive) || isStreaming
+
+  let headerTitle = 'Workspace Actions'
+  if (hasActive) {
+    headerTitle = 'Updating workspace...'
+  } else if (renameCount > 0 && renameCount === items.length) {
+    headerTitle = `Renamed ${renameCount} ${renameCount === 1 ? 'item' : 'items'}`
+  } else if (folderCount > 0 && fileCount > 0) {
+    headerTitle = `Created ${folderCount} ${folderCount === 1 ? 'folder' : 'folders'} & ${fileCount} ${fileCount === 1 ? 'note' : 'notes'}`
+  } else if (folderCount > 0) {
+    headerTitle = `Created ${folderCount} ${folderCount === 1 ? 'folder' : 'folders'}`
+  } else if (fileCount > 0) {
+    headerTitle = `Created ${fileCount} ${fileCount === 1 ? 'note' : 'notes'}`
+  }
+
+  return (
+    <div className={`lumina-activity-card ${isExpanded ? 'expanded' : 'collapsed'}`}>
+      <div className="lumina-activity-header" onClick={() => setIsExpanded((prev) => !prev)}>
+        <div className="lumina-activity-title-group">
+          <div className={`lumina-activity-icon-badge ${!hasActive ? 'complete' : ''}`}>
+            {hasActive ? (
+              <Loader2 size={12} className="lumina-activity-spinner" />
+            ) : (
+              <CheckCircle2 size={12} />
+            )}
+          </div>
+          <span className="lumina-activity-main-title">{headerTitle}</span>
+          {!hasActive && items.length > 0 && (
+            <span className="lumina-activity-stats">({items.length})</span>
+          )}
+        </div>
+        <div className="lumina-activity-controls">
+          {hasActive ? (
+            <span className="lumina-activity-badge streaming">Working...</span>
+          ) : (
+            <span className="lumina-activity-badge">Ready</span>
+          )}
+          {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+        </div>
+      </div>
+
+      {isExpanded && (
+        <div className="lumina-activity-body">
+          {items.map((item, idx) => (
+            <div
+              key={idx}
+              className={`lumina-activity-item ${item.type === 'folder' ? 'is-folder' : item.type === 'file' ? 'is-file' : ''}`}
+            >
+              <div className="lumina-activity-item-left">
+                <span className="lumina-activity-item-icon">
+                  {item.action === 'rename' ? (
+                    <RefreshCw size={11} style={{ color: 'var(--text-accent, #40bafa)' }} />
+                  ) : item.type === 'folder' ? (
+                    <Folder size={12} style={{ color: 'var(--text-accent, #40bafa)' }} />
+                  ) : item.type === 'file' ? (
+                    <FileText size={12} style={{ color: 'var(--text-muted)' }} />
+                  ) : (
+                    <Edit3 size={11} style={{ color: 'var(--text-muted)' }} />
+                  )}
+                </span>
+                {item.rawText ? (
+                  <span className="lumina-activity-item-title">
+                    {item.rawText.replace(/\*\*/g, '')}
+                  </span>
+                ) : item.type === 'file' && !item.isActive ? (
+                  <span
+                    className="lumina-activity-item-link"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      openNoteInEditor(item.target)
+                    }}
+                    title={`Click to open ${item.target} in editor`}
+                  >
+                    {item.target}
+                  </span>
+                ) : (
+                  <span className="lumina-activity-item-title">{item.target}</span>
+                )}
+              </div>
+              {item.folder && (
+                <span className="lumina-activity-folder-tag" title={item.folder}>
+                  <Folder size={9} /> {item.folder}
+                </span>
+              )}
+              <div className="lumina-activity-status-check">
+                {item.isActive ? (
+                  <span className="thinking-dot-pulse" style={{ width: 5, height: 5 }} />
+                ) : (
+                  <Check size={11} />
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+})
+
 export const MessageContent = React.memo(
   ({ content, isStreaming = false }) => {
-    const { thinkContent, mainContent } = useMemo(() => {
-      if (!content) return { thinkContent: '', mainContent: '' }
+    const { thinkContent, activityContent, mainContent } = useMemo(() => {
+      if (!content) return { thinkContent: '', activityContent: '', mainContent: '' }
 
       let think = ''
+      let activity = ''
       let remaining = content
 
       const thinkMatch = content.match(/<think>([\s\S]*?)(?:<\/think>|$)/i)
       if (thinkMatch) {
         think = thinkMatch[1]
-        remaining = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/i, '').trim()
+        remaining = remaining.replace(/<think>[\s\S]*?(?:<\/think>|$)/i, '').trim()
       }
 
-      return { thinkContent: think, mainContent: remaining }
+      const actMatch = remaining.match(/<lumina-activity>([\s\S]*?)(?:<\/lumina-activity>|$)/i)
+      if (actMatch) {
+        activity = actMatch[1].trim()
+        remaining = remaining.replace(/<lumina-activity>[\s\S]*?(?:<\/lumina-activity>|$)/i, '').trim()
+      } else {
+        // Fallback detection for raw message lines
+        const lines = remaining.split('\n')
+        const actionLines = []
+        let nonActionStart = 0
+        for (let i = 0; i < lines.length; i++) {
+          const l = lines[i].trim()
+          if (!l) continue
+          if (
+            l.startsWith('- Created') ||
+            l.startsWith('Created folder') ||
+            l.startsWith('Renamed folder') ||
+            l.startsWith('Renamed note') ||
+            l.startsWith('Renamed file') ||
+            l.startsWith('- 📁') ||
+            l.startsWith('- 📝') ||
+            l.startsWith('📁 *Creating') ||
+            l.startsWith('📝 *Drafting') ||
+            /^(?:[-*•]\s*)?(?:Created|Renamed)\s+(?:folder|\*\*|\[\[|[a-zA-Z0-9_]+)/i.test(l)
+          ) {
+            actionLines.push(l)
+            nonActionStart = i + 1
+          } else {
+            break
+          }
+        }
+        if (actionLines.length >= 1) {
+          activity = actionLines.join('\n')
+          remaining = lines.slice(nonActionStart).join('\n').trim()
+        }
+      }
+
+      return { thinkContent: think, activityContent: activity, mainContent: remaining }
     }, [content])
 
     const processedContent = useMemo(() => {
@@ -400,7 +693,7 @@ export const MessageContent = React.memo(
         const line = rawLines[i]
         if (line.trim().startsWith('```')) {
           if (treeBuffer.length > 0) {
-            resultLines.push('```text\n' + treeBuffer.join('\n') + '\n```')
+            resultLines.push('```lumina-tree\n' + treeBuffer.join('\n') + '\n```')
             treeBuffer = []
           }
           inFence = !inFence
@@ -421,14 +714,14 @@ export const MessageContent = React.memo(
         }
 
         if (treeBuffer.length > 0) {
-          resultLines.push('```text\n' + treeBuffer.join('\n') + '\n```')
+          resultLines.push('```lumina-tree\n' + treeBuffer.join('\n') + '\n```')
           treeBuffer = []
         }
         resultLines.push(line)
       }
 
       if (treeBuffer.length > 0) {
-        resultLines.push('```text\n' + treeBuffer.join('\n') + '\n```')
+        resultLines.push('```lumina-tree\n' + treeBuffer.join('\n') + '\n```')
       }
 
       return resultLines.join('\n')
@@ -438,6 +731,9 @@ export const MessageContent = React.memo(
       <>
         {thinkContent && (
           <ThinkingBlock thinkContent={thinkContent} isStreaming={isStreaming} />
+        )}
+        {activityContent && (
+          <ActivityCard rawContent={activityContent} isStreaming={isStreaming} />
         )}
         {processedContent && (
           <ReactMarkdown
@@ -528,7 +824,7 @@ const ChatMessageRow = React.memo(
             maxWidth: msg.role === 'user' ? '85%' : '100%',
             minWidth: 0,
             flexShrink: 1,
-            width: 'auto',
+            width: msg.role === 'user' ? 'auto' : '100%',
             marginRight: msg.role === 'user' ? '4px' : '0'
           }}
         >

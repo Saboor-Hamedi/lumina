@@ -853,7 +853,7 @@ ${vaultAccessNote}`
           '15. If asked to CLEAR or EMPTY a file → call updateFile with content: "" DIRECTLY.\n' +
           '16. If asked to EXPLAIN a file → call readFile DIRECTLY.\n' +
           '17. When outputting folder/file trees or hierarchies in chat responses, ALWAYS wrap them in a code block with language text (e.g. ```text\\n📁 Root\\n├── 📁 01_Folder\\n└── 📁 02_Folder\\n```) with each branch on its own separate line so it renders cleanly.\n' +
-          '18. After performing tool operations, write a comprehensive, clear walkthrough in chat explaining what was built or modified, highlighting key topics, wikilinks, and the exact updated section or diff so the user can see what changed.\n' +
+          '18. After performing tool operations, write a clear, high-value walkthrough in chat explaining what was built or modified, highlighting key topics and wikilinks. Do NOT repeat a raw list of "Created folder X" or "Created file Y" in your text response — the UI activity card already displays every created folder and note cleanly with interactive links.\n' +
           '19. NATURAL FILE TITLES WITH SPACES: Lumina natively supports natural titles with spaces (e.g. "Today Log", "Tomorrow Expenses", "Afghanistan Trip Plan", "System Architecture", "Market Strategy"). NEVER use underscores ("_") or dashes ("-") in file titles unless the user explicitly requested them.\n' +
           '\n' +
           'EXAMPLES:\n' +
@@ -987,11 +987,12 @@ ${vaultAccessNote}`
 
             const buildRealtimeDisplay = () => {
               const blocks = []
-              if (executedActions.length > 0) {
-                blocks.push(executedActions.join('\n'))
-              }
-              if (activeToolStatus) {
-                blocks.push(activeToolStatus)
+              if (executedActions.length > 0 || activeToolStatus) {
+                const actionLines = [...executedActions]
+                if (activeToolStatus) {
+                  actionLines.push(activeToolStatus)
+                }
+                blocks.push(`<lumina-activity>\n${actionLines.join('\n')}\n</lumina-activity>`)
               }
               if (narrativeText.trim()) {
                 blocks.push(narrativeText.trim())
@@ -1057,10 +1058,10 @@ ${vaultAccessNote}`
                 const res = chunk.output || chunk.result
                 if (res && res.success === false) {
                   console.warn(`[AIStore] Tool ${chunk.toolName} failed:`, res.error)
-                  executedActions.push(`- ⚠️ *${chunk.toolName} failed: ${res.error}*`)
+                  executedActions.push(`⚠️ ${chunk.toolName} failed: ${res.error}`)
                 } else if (res && res.summary) {
-                  const entry = `- ${res.summary}`
-                  if (!executedActions.includes(entry) && !executedActions.includes(res.summary)) {
+                  const entry = res.summary
+                  if (!executedActions.includes(entry)) {
                     executedActions.push(entry)
                   }
                 }
@@ -1078,7 +1079,7 @@ ${vaultAccessNote}`
               } else if (chunk.type === 'tool-error') {
                 const errMsg = chunk.error?.message || chunk.error || 'Unknown tool error'
                 console.warn(`[AIStore] Tool ${chunk.toolName} errored:`, errMsg)
-                executedActions.push(`- ⚠️ *Tool error: ${errMsg}*`)
+                executedActions.push(`⚠️ Tool error: ${errMsg}`)
                 fullContent = buildRealtimeDisplay()
               } else if (chunk.type === 'error') {
                 console.error('Stream error:', chunk.error)
@@ -1107,11 +1108,8 @@ ${vaultAccessNote}`
                 toolResults.forEach((t) => {
                   const res = t.output || t.result
                   const sum = res?.summary
-                  if (sum) {
-                    const entry = `- ${sum}`
-                    if (!executedActions.includes(entry) && !executedActions.includes(sum)) {
-                      executedActions.push(entry)
-                    }
+                  if (sum && !executedActions.includes(sum)) {
+                    executedActions.push(sum)
                   }
                 })
               }

@@ -90,7 +90,7 @@ export const createFileTool = aiSdk.tool({
         w.replace(/^\[\[|\]\]$/g, '')
       )
 
-      const folderContext = cleanFolder ? ` in folder "${cleanFolder}"` : ''
+      const folderContext = cleanFolder ? ` in \`${cleanFolder}\`` : ''
 
       return {
         success: true,
@@ -100,7 +100,7 @@ export const createFileTool = aiSdk.tool({
         writtenContent: content,
         topics: headers.slice(0, 8),
         wikilinks: wikilinks.slice(0, 10),
-        summary: `Created **${targetSnippet.title}**${folderContext} covering: ${headers.slice(0, 5).join(', ')}.`,
+        summary: `📝 Created [[${targetSnippet.title}]]${folderContext}`,
         instruction_to_ai: `File "${targetSnippet.title}" was created${folderContext} and opened in the editor. If additional files, plans, expenses, or summaries were requested, continue calling createFile for each remaining file now. Once all files are created, provide a rich, structured feedback walkthrough in chat.`
       }
     } catch (err) {

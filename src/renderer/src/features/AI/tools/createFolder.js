@@ -45,7 +45,7 @@ export const createFolderTool = aiSdk.tool({
       return {
         success: true,
         path: cleanPath,
-        summary: `Created folder **${cleanPath}**.`,
+        summary: `📁 Created folder \`${cleanPath}\``,
         instruction_to_ai: `Folder "${cleanPath}" created successfully. Now continue calling createFile for each requested note inside "${cleanPath}".`
       }
     } catch (err) {
