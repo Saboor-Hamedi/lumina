@@ -1055,9 +1055,7 @@
 }
 
 .chat-bubble.assistant p {
-  text-align: justify;
-  text-justify: inter-word;
-  hyphens: auto;
+  line-height: 1.6;
 }
 
 .chat-bubble > *:first-child {
