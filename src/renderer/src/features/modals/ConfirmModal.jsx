@@ -1,18 +1,17 @@
 import React, { useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { AlertTriangle } from 'lucide-react'
-import './ConfirmModal.css'
+import { AlertCircle } from 'lucide-react'
+import './css/confirmModal.css'
 
-// OverwriteModal: Used when the user and the agent write to the same file at the same time.
-// Added so we don't forget why this specific modal exists!
-const OverwriteModal = ({
+const ConfirmModal = ({
   isOpen,
   onClose,
   onConfirm,
-  title = 'File Modified Externally',
-  message = 'This file was modified externally. Do you want to reload the new version and lose your local edits, or keep your local edits?',
-  confirmText = 'Overwrite',
-  cancelText = 'Keep My Edits'
+  title = 'Are you sure?',
+  message = 'This action cannot be undone.',
+  confirmText = 'Delete',
+  cancelText = 'Cancel',
+  danger = true
 }) => {
   useEffect(() => {
     if (!isOpen) return
@@ -30,19 +29,23 @@ const OverwriteModal = ({
   if (!isOpen) return null
 
   return createPortal(
-    <div className="notification-wrapper">
-      <div className="notification-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="notification-header">
-          <AlertTriangle size={18} className="text-accent" />
-          <h2 className="notification-title">{title}</h2>
+    <div className="modal-overlay confirm-overlay" onClick={onClose}>
+      <div
+        className={`modal-container confirm-modal ${danger ? 'border-danger' : 'border-accent'}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="confirm-header">
+          <AlertCircle size={18} className={danger ? 'text-danger' : 'text-accent'} />
+          <h2 className="confirm-title">{title}</h2>
         </div>
-        <p className="notification-message">{message}</p>
+        <p className="confirm-message">{message}</p>
 
-        <div className="notification-footer">
+        <div className="confirm-footer">
           <button className="btn confirm-cancel" onClick={onClose}>
             {cancelText}
           </button>
           <button
+            autoFocus
             className="btn btn-primary"
             onClick={() => {
               onConfirm()
@@ -58,4 +61,4 @@ const OverwriteModal = ({
   )
 }
 
-export default React.memo(OverwriteModal)
+export default ConfirmModal

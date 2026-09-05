@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { FileText } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../../core/hooks/useKeyboardShortcuts'
-import ModalHeader from '../../Overlays/ModalHeader'
+import ModalHeader from '../../modals/ModalHeader'
 import './TemplateModal.css'
 
 const TemplateModal = ({ isOpen, onClose, templates, onSelectTemplate }) => {

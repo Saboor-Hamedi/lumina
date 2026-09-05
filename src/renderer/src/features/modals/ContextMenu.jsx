@@ -2,17 +2,6 @@ import React, { useEffect, useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, ChevronRight } from 'lucide-react'
 
-/**
- * ContextMenu
- * Base overlay component for rendering all context menus.
- * 
- * CSS LOCATION: src/renderer/src/assets/contextMenu.css
- * 
- * USAGE LOCATIONS:
- * - Editor Menu: src/renderer/src/features/Editor/menu/index.jsx (Passed into Editor via MarkdownEditor)
- * - File Explorer Nodes: src/renderer/src/features/Navigation/hooks/useContextMenu.jsx
- */
-
 const MenuItem = ({ opt, onClose }) => {
   const hasChildren = opt.children && opt.children.length > 0
   const itemRef = useRef(null)
@@ -25,7 +14,6 @@ const MenuItem = ({ opt, onClose }) => {
       const parentRect = itemRef.current.getBoundingClientRect()
       const submenuRect = submenuRef.current.getBoundingClientRect()
       
-      // Edge detection for right side
       if (parentRect.right + submenuRect.width > window.innerWidth - 10) {
         setIsFlipped(true)
       } else {
@@ -55,9 +43,9 @@ const MenuItem = ({ opt, onClose }) => {
       onClick={(e) => {
         e.stopPropagation()
         if (opt.disabled) return
-        if (hasChildren) return // Let hover handle it
+        if (hasChildren) return
         if (opt.onClick) opt.onClick()
-        if (opt.action) opt.action() // Support guide.md action alias
+        if (opt.action) opt.action()
         onClose()
       }}
       style={{
@@ -151,11 +139,8 @@ const ContextMenu = ({ x, y, options, onClose }) => {
     }
   }, [onClose])
 
-  // Simple boundary check to keep menu on screen
   const menuX = Math.min(x, window.innerWidth - 220)
   const menuY = Math.min(y, window.innerHeight - (options.length * 36 + 20))
-
-
 
   return createPortal(
     <>

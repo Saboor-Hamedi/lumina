@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { getTheme } from '../themes/themeDefinitions'
+import { getTheme } from '../../features/theme/hooks/themeDefinitions'
 
 /**
  * Default configuration constants for font and caret settings

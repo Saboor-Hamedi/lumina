@@ -124,7 +124,7 @@
 }
 
 .confirm-modal .btn-warning:hover {
-  background: #d97706; /* darker orange */
+  background: #d97706;
   filter: none;
 }
 
@@ -141,14 +141,14 @@
   bottom: 40px;
   right: 24px;
   z-index: 10001;
-  pointer-events: none; /* Let clicks pass through */
+  pointer-events: none;
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
 .notification-modal {
-  pointer-events: auto; /* Re-enable clicks on the modal itself */
+  pointer-events: auto;
   width: 300px;
   background: var(--bg-panel);
   border: 1px solid var(--border-card);

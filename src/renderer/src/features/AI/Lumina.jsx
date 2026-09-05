@@ -6,7 +6,7 @@ import {
   ArrowRightToLine
 } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
-import ModalHeader from '../Overlays/ModalHeader'
+import ModalHeader from '../modals/ModalHeader'
 import { LuminaChatContent } from './components/LuminaChatContent'
 import { MessageContent } from './components/MessageContent'
 import { ThinkingIndicator } from './components/ThinkingIndicator'

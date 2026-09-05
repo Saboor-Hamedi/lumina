@@ -6,8 +6,8 @@ import React, { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Check } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
-import ModalHeader from '../Overlays/ModalHeader'
-import { useDraggableModal } from '../Overlays/useDraggableModal'
+import ModalHeader from '../modals/ModalHeader'
+import { useDraggableModal } from '../../core/utils/useDraggableModal'
 import './SettingColorPicker.css'
 
 const PRESET_PALETTE = [

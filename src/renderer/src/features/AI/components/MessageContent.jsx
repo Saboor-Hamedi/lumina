@@ -92,53 +92,63 @@ export const MessageContent = React.memo(
       let activityText = ''
       let afterText = ''
 
-      const actMatch = remaining.match(/([\s\S]*?)<lumina-activity>([\s\S]*?)(?:<\/lumina-activity>([\s\S]*)|$)/i)
-      if (actMatch) {
-        beforeText = (actMatch[1] || '').trim()
-        activityText = (actMatch[2] || '').trim()
-        afterText = (actMatch[3] || '').trim()
+      const actMatches = [...remaining.matchAll(/<lumina-activity>([\s\S]*?)<\/lumina-activity>/gi)]
+      if (actMatches.length > 0) {
+        activityText = actMatches.map((m) => (m[1] || '').trim()).filter(Boolean).join('\n')
+        const firstIdx = remaining.search(/<lumina-activity>/i)
+        const lastIdx = remaining.toLowerCase().lastIndexOf('</lumina-activity>')
+        beforeText = firstIdx !== -1 ? remaining.slice(0, firstIdx).trim() : ''
+        afterText = lastIdx !== -1 ? remaining.slice(lastIdx + '</lumina-activity>'.length).trim() : ''
       } else {
-        // Fallback detection for raw message lines
-        const lines = remaining.split('\n')
-        const actionLines = []
-        let firstActionIdx = -1
-        let lastActionIdx = -1
+        const partialAct = remaining.match(/([\s\S]*?)<lumina-activity>([\s\S]*)$/i)
+        if (partialAct) {
+          beforeText = (partialAct[1] || '').trim()
+          activityText = (partialAct[2] || '').trim()
+        } else {
+          const lines = remaining.split('\n')
+          const actionLines = []
+          let firstActionIdx = -1
+          let lastActionIdx = -1
 
-        const isActionLine = (l) => {
-          return (
-            l.startsWith('- Created') ||
-            l.startsWith('Created folder') ||
-            l.startsWith('Renamed folder') ||
-            l.startsWith('Renamed note') ||
-            l.startsWith('Renamed file') ||
-            l.startsWith('- 📁') ||
-            l.startsWith('- 📝') ||
-            l.startsWith('📁 *Creating') ||
-            l.startsWith('📝 *Drafting') ||
-            /^(?:[-*•]\s*)?(?:Created|Renamed)\s+(?:folder|\*\*|\[\[|[a-zA-Z0-9_]+)/i.test(l)
-          )
-        }
+          const isActionLine = (l) => {
+            return (
+              l.startsWith('- Created') ||
+              l.startsWith('Created folder') ||
+              l.startsWith('Renamed folder') ||
+              l.startsWith('Renamed note') ||
+              l.startsWith('Renamed file') ||
+              l.startsWith('- 📁') ||
+              l.startsWith('- 📝') ||
+              l.startsWith('📁 *Creating') ||
+              l.startsWith('📝 *Drafting') ||
+              /^(?:[-*•]\s*)?(?:Created|Renamed)\s+(?:folder|\*\*|\[\[|[a-zA-Z0-9_]+)/i.test(l)
+            )
+          }
 
-        for (let i = 0; i < lines.length; i++) {
-          const l = lines[i].trim()
-          if (!l) continue
-          if (isActionLine(l)) {
-            if (firstActionIdx === -1) firstActionIdx = i
-            lastActionIdx = i
-            actionLines.push(l)
-          } else if (firstActionIdx !== -1) {
-            break
+          for (let i = 0; i < lines.length; i++) {
+            const l = lines[i].trim()
+            if (!l) continue
+            if (isActionLine(l)) {
+              if (firstActionIdx === -1) firstActionIdx = i
+              lastActionIdx = i
+              actionLines.push(l)
+            } else if (firstActionIdx !== -1) {
+              break
+            }
+          }
+
+          if (actionLines.length >= 1 && firstActionIdx !== -1) {
+            activityText = actionLines.join('\n')
+            beforeText = lines.slice(0, firstActionIdx).join('\n').trim()
+            afterText = lines.slice(lastActionIdx + 1).join('\n').trim()
+          } else {
+            beforeText = remaining
           }
         }
-
-        if (actionLines.length >= 1 && firstActionIdx !== -1) {
-          activityText = actionLines.join('\n')
-          beforeText = lines.slice(0, firstActionIdx).join('\n').trim()
-          afterText = lines.slice(lastActionIdx + 1).join('\n').trim()
-        } else {
-          beforeText = remaining
-        }
       }
+
+      beforeText = beforeText.replace(/<\/?lumina-activity>/gi, '').trim()
+      afterText = afterText.replace(/<\/?lumina-activity>/gi, '').trim()
 
       return {
         thinkContent: think,

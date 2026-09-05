@@ -1,4 +1,4 @@
-﻿# Lumina — Comprehensive Project Architecture, Purpose & Developer Reference
+# Lumina — Comprehensive Project Architecture, Purpose & Developer Reference
 
 > **Developer & Agent Notice**: This document is the single source of truth for understanding Lumina's design philosophy, codebase architecture, state flow, AI tool execution pipelines, layout system, and critical development invariants. Read this entire file to quickly onboard into any aspect of the codebase.
 
@@ -258,6 +258,22 @@ const updateSetting = useSettingsStore((state) => state.updateSetting)
 **Root cause**: After store refactor, `settings.folderOrder` was still referenced in a `useCallback` dep array.
 **Fix**: Added individual `folderOrder` selector directly in the hook.
 
+### E. TitleBar Navigation & Inspector Toggle Buttons
+- Relocated both the left sidebar toggle and right sidebar/chat toggle into `TitleBar.jsx`, styled to span the full height of the title bar.
+- Removed duplicate right sidebar toggle button from `TabBar.jsx`, freeing horizontal space for tab chips.
+- Integrated `Ctrl + Shift + \` keyboard shortcut as a smart toggle for the right sidebar (opens chat tab or toggles open/close).
+
+### F. StatusBar Interactive Metric Toggles
+- Enabled click handlers on word count, character count, and reading time in `StatusBar.jsx`.
+- Clicking any metric toggles the right sidebar: if closed, opens to the "Details" tab; if open on Outline or Chat, switches directly to the "Details" tab; if already on "Details", toggles the sidebar closed.
+
+### G. ChatActions & Activity Card Polishing
+- Chat action buttons (Copy, Like, Dislike) are now hidden during message generation/streaming and only display once the assistant finishes.
+- Created `luminaTimer.jsx` with seconds/minutes formatter (`1s`, `2s`, `1m 5s`) to replace the generic pulsing working animation in `ActivityCard.jsx`.
+- Fixed `<lumina-activity>` tag leakage in `MessageContent.jsx`: updated regex from a single match to `matchAll` to capture multiple activity blocks and strip stray tags from markdown outputs.
+- Enhanced `ActivityCard.jsx` to recognize markdown-formatted wikilinks (`[Title](wikilink:...)`) in action items alongside `[[Title]]`.
+- Added CSS safety rule in `lumina.css` to prevent custom `<lumina-activity>` elements from rendering as unstyled text if passed to the DOM.
+
 ---
 
 ## 8. Critical Developer Invariants
@@ -272,3 +288,30 @@ const updateSetting = useSettingsStore((state) => state.updateSetting)
 - **Zero Code Comments Rule**: Never add code comments in modified or newly created files unless explicitly requested.
 - **Natural File Names**: Lumina supports spaces in file names. Do not force underscores or kebab-case.
 - **Local Settings Resilience**: AI keys and `activeAIMode` are dual-persisted to `settings.json` and `localStorage`.
+
+---
+
+## 9. Comprehensive Feature List & Recent Enhancements
+
+### A. TitleBar & Header Navigation
+- **Dual Full-Height Sidebar Toggles**: Integrated both the Left Navigation Sidebar toggle and Right Inspector Sidebar toggle directly inside `TitleBar.jsx` spanning the full 32px height for a clean, unified title bar.
+- **De-cluttered TabBar**: Removed the redundant toggle button from `TabBar.jsx`, reclaiming horizontal room for active document tabs.
+- **Smart Keyboard Shortcut (`Ctrl + Shift + \`)**: Toggles the Right Sidebar directly. If the sidebar is closed or on Details/Outline, it immediately switches to the AI Chat tab; if already viewing AI Chat, it closes the sidebar.
+
+### B. Interactive StatusBar
+- **Word / Char / Reading Time Toggles**: Word count, character count, and reading time in `StatusBar.jsx` are interactive toggle triggers:
+  - If the right sidebar is closed, clicking any metric opens the sidebar and focuses the **Details** tab.
+  - If the right sidebar is open on **Outline** or **Chat**, clicking switches immediately to **Details**.
+  - If the right sidebar is already focused on **Details**, clicking toggles the sidebar closed.
+
+### C. AI Chat Experience & Real-Time Tool Execution
+- **Streaming Action Guard**: Copy, Like, and Dislike action buttons are hidden while the AI model is actively generating or executing tools, rendering only when the message stream is complete.
+- **Lumina Live Elapsed Timer (`luminaTimer.jsx`)**: Replaced the static pulsing animation in tool cards with a live second/minute counter (`1s`, `2s`, `1m 5s`) that accurately displays time elapsed during execution.
+- **Multi-Activity Block Support**: Enhanced `MessageContent.jsx` with a global `matchAll` regex pipeline to merge multiple tool operations into a consolidated interactive `<ActivityCard />` without leaking tags.
+- **Markdown Tag Sanitization**: Automatically strips `<lumina-activity>` tags from surrounding markdown prose, ensuring clean rendering in `ReactMarkdown`.
+- **Hybrid Wikilink Parser in Activity Cards**: Supports both standard double-bracket links (`[[Title]]`) and markdown-formatted wikilinks (`[Title](wikilink:Title)`), allowing all created notes and folders to appear with clickable interactive chips.
+- **CSS Tag Suppressor**: Fallback `display: none !important;` rule in `lumina.css` prevents custom activity tags from ever rendering unstyled in the DOM.
+
+### D. Roadmap & Progress Tracker UI
+- **Clean Background Styling**: Removed unneeded background container boxes from `ProgressTracker.jsx` and debug areas in `Editor.jsx` for an ultra-clean, modern distraction-free reading experience.
+- **Interactive Wikilink Chips**: Styled note links with sleek accent colors and hover underlines without bulky bounding boxes.

@@ -1,5 +1,5 @@
 .prompt-overlay {
-  z-index: 1100; /* Above regular modals */
+  z-index: 1100;
   background: rgba(0, 0, 0, 0.4);
 }
 

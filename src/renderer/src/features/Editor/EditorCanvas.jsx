@@ -18,7 +18,7 @@ import { languages } from '@codemirror/language-data'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useVaultStore } from '../../core/store/workspaceStore'
 import { setupWikilinkHover } from './wikilink/hoverWikilink'
-import ContextMenu from '../Overlays/ContextMenu'
+import ContextMenu from '../modals/ContextMenu'
 import { getEditorContextMenuOptions } from './menu'
 import EditorMetadata from './components/EditorMetadata'
 

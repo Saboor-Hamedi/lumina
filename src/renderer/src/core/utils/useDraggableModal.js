@@ -13,7 +13,6 @@ export const useDraggableModal = () => {
 
   const handleDragStart = useCallback(
     (e) => {
-      // Only drag on primary (left) mouse button
       if (e.button !== 0) return
       if (document.activeElement instanceof HTMLElement) {
         document.activeElement.blur()

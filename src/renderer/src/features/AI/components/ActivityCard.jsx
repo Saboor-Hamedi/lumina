@@ -11,6 +11,7 @@ import {
   ChevronUp
 } from 'lucide-react'
 import { openNoteInEditor } from './ChatLink'
+import { LuminaTimer } from './luminaTimer.jsx'
 
 export const ActivityCard = React.memo(({ rawContent, isStreaming = false }) => {
   const [isExpanded, setIsExpanded] = useState(true)
@@ -107,8 +108,11 @@ export const ActivityCard = React.memo(({ rawContent, isStreaming = false }) => 
         let title = ''
         let folder = ''
 
+        const wikiLinkMdMatch = line.match(/\[([^\]]+)\]\((?:wikilink:[^)]+|https?:[^)]+)\)/)
         const wikiMatch = line.match(/\[\[(.*?)\]\]/)
-        if (wikiMatch) {
+        if (wikiLinkMdMatch) {
+          title = wikiLinkMdMatch[1].trim()
+        } else if (wikiMatch) {
           title = wikiMatch[1].trim()
         } else {
           const boldMatch = line.match(/\*\*([^*]+)\*\*/)
@@ -200,7 +204,9 @@ export const ActivityCard = React.memo(({ rawContent, isStreaming = false }) => 
         </div>
         <div className="lumina-activity-controls">
           {hasActive ? (
-            <span className="lumina-activity-badge streaming">Working...</span>
+            <span className="lumina-activity-badge streaming">
+              <LuminaTimer isRunning={hasActive} />
+            </span>
           ) : (
             <span className="lumina-activity-badge">Ready</span>
           )}

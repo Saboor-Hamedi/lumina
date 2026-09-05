@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { useSettingsStore } from '../../core/store/useSettingsStore'
+import { useSettingsStore } from '../store/useSettingsStore'
 
 export const useResizable = (modalRef, initialWidth = 350, initialHeight = 500) => {
   const { settings } = useSettingsStore()
@@ -13,7 +13,6 @@ export const useResizable = (modalRef, initialWidth = 350, initialHeight = 500) 
   const startPos = useRef({ x: 0, y: 0 })
   const isResizing = useRef(false)
 
-  // Sync with settings loaded from backend async
   useEffect(() => {
     if (!isResizing.current && (settings.explorerModalWidth || settings.explorerModalHeight)) {
       const newSize = {
@@ -39,7 +38,7 @@ export const useResizable = (modalRef, initialWidth = 350, initialHeight = 500) 
 
       const handleMouseMove = (moveEvent) => {
         const deltaX = moveEvent.clientX - startPos.current.x
-        const deltaY = startPos.current.y - moveEvent.clientY // positive when dragging UP
+        const deltaY = startPos.current.y - moveEvent.clientY
 
         let newWidth = startSize.current.width
         let newHeight = startSize.current.height
@@ -48,10 +47,10 @@ export const useResizable = (modalRef, initialWidth = 350, initialHeight = 500) 
           newHeight = Math.max(300, Math.min(600, startSize.current.height + deltaY))
         }
         if (direction.includes('right')) {
-          newWidth = Math.max(300, Math.min(600, startSize.current.width + deltaX * 2)) // *2 keeps it centered
+          newWidth = Math.max(300, Math.min(600, startSize.current.width + deltaX * 2))
         }
         if (direction.includes('left')) {
-          newWidth = Math.max(300, Math.min(600, startSize.current.width - deltaX * 2)) // *2 keeps it centered
+          newWidth = Math.max(300, Math.min(600, startSize.current.width - deltaX * 2))
         }
 
         latestSize.current = { width: newWidth, height: newHeight }
@@ -66,7 +65,6 @@ export const useResizable = (modalRef, initialWidth = 350, initialHeight = 500) 
           modalRef.current.style.transition = ''
         }
 
-        // Persist to store without triggering infinite loop
         useSettingsStore.getState().updateSetting('explorerModalWidth', latestSize.current.width)
         useSettingsStore.getState().updateSetting('explorerModalHeight', latestSize.current.height)
         isResizing.current = false

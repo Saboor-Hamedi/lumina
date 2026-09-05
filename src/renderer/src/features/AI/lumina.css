@@ -807,6 +807,10 @@
 }
 
 /* ─── Lumina Activity / Operations Card ─────────────────────────────── */
+lumina-activity {
+  display: none !important;
+}
+
 .lumina-activity-card {
   margin: 8px 0 14px 0;
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.07));
@@ -911,7 +915,7 @@
   background: transparent;
   color: var(--text-accent);
   border: none;
-  animation: pulse-dot 1.5s infinite;
+  font-variant-numeric: tabular-nums;
 }
 
 .lumina-activity-body {

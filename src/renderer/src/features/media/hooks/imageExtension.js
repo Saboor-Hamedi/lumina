@@ -1,6 +1,6 @@
 import { WidgetType, EditorView, Decoration } from '@codemirror/view'
 import { StateField } from '@codemirror/state'
-import './imageWidgetExtension.css'
+import '../css/imageExtension.css'
 import { attachLightbox } from './imageLightbox'
 import { copyImageToClipboard } from './imageClipboard'
 import { createCaptionElement } from './imageCaption'

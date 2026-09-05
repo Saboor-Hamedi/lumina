@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback, startTransition, useMemo } from 'react'
 import { Square, Copy, Book, PanelLeftClose, PanelLeftOpen, FileText, Clock, ChevronLeft, ChevronRight } from 'lucide-react'
-import ModalHeader from '../Overlays/ModalHeader'
+import ModalHeader from '../modals/ModalHeader'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import DocSidebar from './DocSidebar'
-import { PreviewCommandPalette } from '../Overlays/PreviewCommandPalette'
-import '../Overlays/PreviewModal/PreviewModal.css'
+import { PreviewCommandPalette } from '../commandpalette/PreviewCommandPalette'
+import '../preview/preview.css'
 import './Documentation.css'
 
 // Use Vite's glob import to read all markdown files in brain/ directory as raw strings

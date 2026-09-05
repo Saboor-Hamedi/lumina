@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Settings as SettingsIcon, Square, Copy, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
-import ModalHeader from '../Overlays/ModalHeader'
+import ModalHeader from '../modals/ModalHeader'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import SettingTab from './SettingTab'
 import SettingLookAndFeel from './SettingLookAndFeel'
 import SettingAssistant from './SettingAssistant'
 import SettingShortcuts from './SettingShortcuts'
 import SettingAdvanced from './SettingAdvanced'
-import '../Overlays/PreviewModal/PreviewModal.css'
+import '../preview/preview.css'
 import './Settings.css'
 
 const Settings = ({ onClose, onOpenTheme, initialTab = 'look-and-feel' }) => {

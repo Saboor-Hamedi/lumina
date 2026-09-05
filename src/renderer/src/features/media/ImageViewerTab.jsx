@@ -9,8 +9,8 @@ import {
   FolderOpen,
   Image as ImageIcon
 } from 'lucide-react'
-import { copyImageToClipboard } from './imageClipboard'
-import './ImageViewerTab.css'
+import { copyImageToClipboard } from './hooks/imageClipboard'
+import './css/imageViewTab.css'
 
 export const ImageViewerTab = ({ snippet }) => {
   const [assetData, setAssetData] = useState(null)

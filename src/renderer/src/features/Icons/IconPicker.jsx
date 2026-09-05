@@ -13,7 +13,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { Search, X, Sparkles } from 'lucide-react'
 import * as LucideIcons from 'lucide-react'
-import ModalHeader from '../Overlays/ModalHeader'
+import ModalHeader from '../modals/ModalHeader'
 import { EMOJI_INDEX } from './icons'
 import './IconPicker.css'
 

@@ -22,7 +22,6 @@
   overflow: hidden;
 }
 
-/* Fading accent line on the inner bottom border, matching workspace tabs */
 .rename-modal::after {
   content: '';
   position: absolute;

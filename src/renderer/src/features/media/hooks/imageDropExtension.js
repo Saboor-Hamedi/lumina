@@ -1,6 +1,6 @@
 import { EditorView } from '@codemirror/view'
-import { useVaultStore } from '../../core/store/workspaceStore'
-import { useSettingsStore } from '../../core/store/useSettingsStore'
+import { useVaultStore } from '../../../core/store/workspaceStore'
+import { useSettingsStore } from '../../../core/store/useSettingsStore'
 
 export const imageDropExtension = () =>
   EditorView.domEventHandlers({

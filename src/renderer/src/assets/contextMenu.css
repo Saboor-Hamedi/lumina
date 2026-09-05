@@ -5,7 +5,7 @@
  * LOCATIONS:
  * 1. Editor Context Menu: src/renderer/src/features/Editor/menu/index.jsx
  * 2. File Explorer / Nodes Menu: src/renderer/src/features/Navigation/hooks/useContextMenu.jsx
- * 3. Base Component: src/renderer/src/features/Overlays/ContextMenu.jsx
+ * 3. Base Component: src/renderer/src/features/modals/ContextMenu.jsx
  * 
  * This file (contextMenu.css) is globally imported in index.css.
  */

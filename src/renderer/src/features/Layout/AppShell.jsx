@@ -2,8 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react'
 import Editor from '../Editor/Editor'
 import Settings from '../Settings/Settings'
 import Sidebar from '../Navigation/Sidebar'
-import ThemeModal from '../Theme/ThemeModal'
-import CommandPalette from '../Overlays/CommandPalette'
+import Theme from '../theme/Theme'
+import CommandPalette from '../commandpalette/CommandPalette'
+import Documentation from '../Docs/Documentation'
 import Graph from '../Graph/Graph'
 import Welcome from '../../Welcome'
 import TabBar from './TabBar'
@@ -14,15 +15,15 @@ import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
 import { useToast } from '../../core/hooks/useToast'
 import ToastNotification from '../../core/notification'
-import ConfirmModal from '../Overlays/Modals/ConfirmModal'
-import RenameModal from '../Overlays/Modals/RenameModal'
+import ConfirmModal from '../modals/ConfirmModal'
+import RenameModal from '../modals/RenameModal'
 import IconPicker from '../Icons/IconPicker'
 import { handleRenameSnippet } from '../../core/hooks/handleRenameSnippet'
 import { populateStarterVault } from '../../core/utils/starterVault'
 import GlobalErrorHandler from '../../components/GlobalErrorHandler'
 import '../../assets/appshell.css'
-import '../Overlays/Modals/ConfirmModal.css'
-import '../Overlays/Modals/RenameModal.css'
+import '../modals/css/confirmModal.css'
+import '../modals/css/renameModal.css'
 
 const LuminaChat = React.lazy(() => import('../AI/Lumina'))
 import { useAIStore } from '../AI/tools/lumina'
@@ -1025,7 +1026,7 @@ const AppShell = () => {
         />
       )}
       {showThemeModal && (
-        <ThemeModal isOpen={showThemeModal} onClose={() => setShowThemeModal(false)} />
+        <Theme isOpen={showThemeModal} onClose={() => setShowThemeModal(false)} />
       )}
       {showAIChatModal && (
         <GlobalErrorHandler>

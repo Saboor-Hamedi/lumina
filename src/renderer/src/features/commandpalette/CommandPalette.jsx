@@ -36,7 +36,7 @@ import { useVaultStore } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { PreviewCommandPalette } from './PreviewCommandPalette'
 import '../AI/lumina.css'
-import './CommandPalette.css'
+import './commandPalette.css'
 
 /**
  * Virtualized Command Palette (Obsidian Standard #5)

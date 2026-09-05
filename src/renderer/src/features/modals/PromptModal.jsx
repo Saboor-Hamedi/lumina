@@ -1,13 +1,8 @@
 import React from 'react'
 import { X, AlertTriangle } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
-import './PromptModal.css'
+import './css/promptModal.css'
 
-/**
- * PromptModal Component
- * Standardized premium confirmation dialog.
- * Uses 5px global radius and unified modal system.
- */
 const PromptModal = ({
   isOpen,
   onClose,

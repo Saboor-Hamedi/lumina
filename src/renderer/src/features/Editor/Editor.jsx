@@ -11,9 +11,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import EditorMenu from './menu/EditorMenu'
 import ToastNotification from '../../core/notification'
-import PreviewModal from '../Overlays/PreviewModal/PreviewModal'
-import OverwriteModal from '../Overlays/Modals/OverwriteModal'
-import InlineLumina from '../Overlays/InlineLumina'
+import Preview from '../preview/Preview'
+import OverwriteModal from '../modals/OverwriteModal'
+import InlineLumina from '../AI/InlineLumina'
 import RulerScrollbar from './RulerScrollbar'
 import Find from './components/Find'
 import { EditorCanvas } from './EditorCanvas'
@@ -211,7 +211,7 @@ const Editor = React.memo(
         <RulerScrollbar scrollerRef={scrollerRef} />
 
         <div className="editor-scroller" ref={scrollerRef}>
-          <PreviewModal
+          <Preview
             isOpen={isPreviewOpen}
             onClose={() => setIsPreviewOpen(false)}
             title={title}

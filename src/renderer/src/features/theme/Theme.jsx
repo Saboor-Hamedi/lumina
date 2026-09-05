@@ -1,15 +1,11 @@
 import React, { useState, useMemo } from 'react'
-import { useTheme } from '../../core/hooks/useTheme'
+import { useTheme } from './hooks/useTheme'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { X, Check, Palette } from 'lucide-react'
-import './ThemeModal.css'
-import ModalHeader from '../Overlays/ModalHeader'
+import './css/theme.css'
+import ModalHeader from '../modals/ModalHeader'
 
-/**
- * ThemeModal Component
- * Beautiful theme selector modal with preview cards
- */
-const ThemeModal = ({ isOpen, onClose }) => {
+const Theme = ({ isOpen, onClose }) => {
   const { theme, setTheme, allThemes } = useTheme()
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -132,4 +128,4 @@ const ThemeModal = ({ isOpen, onClose }) => {
   )
 }
 
-export default ThemeModal
+export default Theme

@@ -1,6 +1,6 @@
 import React from 'react'
 import { X } from 'lucide-react'
-import './ModalHeader.css'
+import './css/modalHeader.css'
 
 const ModalHeader = ({
   title = null,

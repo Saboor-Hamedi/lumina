@@ -80,7 +80,7 @@ export const ChatMessageRow = React.memo(
               </>
             )}
           </div>
-          {msg.role === 'assistant' && (
+          {msg.role === 'assistant' && !(isLast && isChatLoading) && !msg.isGenerating && (
             <ChatActions msg={msg} index={index} onCopy={handleCopy} onRate={handleRating} />
           )}
         </div>

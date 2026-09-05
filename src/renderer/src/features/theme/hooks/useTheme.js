@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { applyTheme as applyThemeUtil, getTheme, THEMES } from '../themes/themeDefinitions'
+import { applyTheme as applyThemeUtil, getTheme, THEMES } from './themeDefinitions'
 
 /**
  * useTheme Hook

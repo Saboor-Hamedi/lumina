@@ -1,13 +1,13 @@
 import React, { useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { FileText } from 'lucide-react'
-import ModalHeader from '../ModalHeader'
-import { PreviewCommandPalette } from '../PreviewCommandPalette'
-import './PreviewModal.css'
-import { useKeyboardShortcuts } from '../../../core/hooks/useKeyboardShortcuts'
-import { useVaultStore } from '../../../core/store/workspaceStore'
+import ModalHeader from '../modals/ModalHeader'
+import { PreviewCommandPalette } from '../commandpalette/PreviewCommandPalette'
+import './preview.css'
+import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
+import { useVaultStore } from '../../core/store/workspaceStore'
 
-const PreviewModal = ({ isOpen, onClose, title, content, snippetId }) => {
+const Preview = ({ isOpen, onClose, title, content, snippetId }) => {
   useKeyboardShortcuts({
     onEscape: isOpen
       ? () => {
@@ -17,7 +17,6 @@ const PreviewModal = ({ isOpen, onClose, title, content, snippetId }) => {
       : undefined
   })
 
-  // Live real-time subscription to editor drafts and snippets
   const draft = useVaultStore((state) => (snippetId ? state.drafts?.[snippetId] : undefined))
   const activeSnippet = useVaultStore((state) =>
     snippetId
@@ -66,7 +65,7 @@ const PreviewModal = ({ isOpen, onClose, title, content, snippetId }) => {
         <ModalHeader
           title={title}
           right={headerStats}
-          icon={<FileText size={16} />}
+          icon={<FileText size={14} />}
           onClose={onClose}
         />
 
@@ -77,4 +76,4 @@ const PreviewModal = ({ isOpen, onClose, title, content, snippetId }) => {
   )
 }
 
-export default PreviewModal
+export default Preview

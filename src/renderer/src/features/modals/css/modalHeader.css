@@ -1,9 +1,8 @@
-/* Global Modal Header Styles for all Overlays */
 .pane-header {
   height: 32px;
   display: flex;
   align-items: center;
-  justify-content: flex-start; /* Title on the left */
+  justify-content: flex-start;
   border-bottom: 1px solid var(--border-dim);
   background: var(--bg-sidebar);
   flex-shrink: 0;
@@ -74,11 +73,11 @@
 
 .modal-close:hover,
 .modal-right button.modal-close:hover {
-  background: #e81123 !important; /* Windows close red */
+  background: #e81123 !important;
   color: white !important;
 }
 
 .modal-close:active,
 .modal-right button.modal-close:active {
-  background: #f1707a !important; /* Windows close active red */
+  background: #f1707a !important;
 }

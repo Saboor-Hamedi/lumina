@@ -1,17 +1,16 @@
 import React, { useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { AlertCircle, X } from 'lucide-react'
-import './ConfirmModal.css'
+import { AlertTriangle } from 'lucide-react'
+import './css/confirmModal.css'
 
-const ConfirmModal = ({
+const OverwriteModal = ({
   isOpen,
   onClose,
   onConfirm,
-  title = 'Are you sure?',
-  message = 'This action cannot be undone.',
-  confirmText = 'Delete',
-  cancelText = 'Cancel',
-  danger = true
+  title = 'File Modified Externally',
+  message = 'This file was modified externally. Do you want to reload the new version and lose your local edits, or keep your local edits?',
+  confirmText = 'Overwrite',
+  cancelText = 'Keep My Edits'
 }) => {
   useEffect(() => {
     if (!isOpen) return
@@ -29,23 +28,19 @@ const ConfirmModal = ({
   if (!isOpen) return null
 
   return createPortal(
-    <div className="modal-overlay confirm-overlay" onClick={onClose}>
-      <div
-        className={`modal-container confirm-modal ${danger ? 'border-danger' : 'border-accent'}`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="confirm-header">
-          <AlertCircle size={18} className={danger ? 'text-danger' : 'text-accent'} />
-          <h2 className="confirm-title">{title}</h2>
+    <div className="notification-wrapper">
+      <div className="notification-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="notification-header">
+          <AlertTriangle size={18} className="text-accent" />
+          <h2 className="notification-title">{title}</h2>
         </div>
-        <p className="confirm-message">{message}</p>
+        <p className="notification-message">{message}</p>
 
-        <div className="confirm-footer">
+        <div className="notification-footer">
           <button className="btn confirm-cancel" onClick={onClose}>
             {cancelText}
           </button>
           <button
-            autoFocus
             className="btn btn-primary"
             onClick={() => {
               onConfirm()
@@ -61,4 +56,4 @@ const ConfirmModal = ({
   )
 }
 
-export default ConfirmModal
+export default React.memo(OverwriteModal)
