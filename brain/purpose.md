@@ -291,27 +291,67 @@ const updateSetting = useSettingsStore((state) => state.updateSetting)
 
 ---
 
-## 9. Comprehensive Feature List & Recent Enhancements
+## 9. Comprehensive Feature Catalog
 
-### A. TitleBar & Header Navigation
-- **Dual Full-Height Sidebar Toggles**: Integrated both the Left Navigation Sidebar toggle and Right Inspector Sidebar toggle directly inside `TitleBar.jsx` spanning the full 32px height for a clean, unified title bar.
-- **De-cluttered TabBar**: Removed the redundant toggle button from `TabBar.jsx`, reclaiming horizontal room for active document tabs.
-- **Smart Keyboard Shortcut (`Ctrl + Shift + \`)**: Toggles the Right Sidebar directly. If the sidebar is closed or on Details/Outline, it immediately switches to the AI Chat tab; if already viewing AI Chat, it closes the sidebar.
+### A. Global Command Palette & Spotlight Experience (`CommandPalette.jsx`)
+- **System-Wide Spotlight (`Ctrl+P` / `Cmd+K`)**: Rapid floating launcher to search notes, run application commands, switch themes, open settings, or toggle views.
+- **Dual Engine Search (Fuzzy + Semantic AI)**:
+  - High-velocity fuzzy text matching via **Fuse.js** and `searchRanker.js` over note titles, tags, and document content.
+  - On-demand **Semantic AI Search** allowing conceptual note discovery even when query terms are not in the document title.
+- **Search Modifiers & Prefixes**:
+  - `#` filters by note tags (e.g. `#todo`, `#ideas`, `#work`).
+  - `@` filters by mentions and note links.
+  - `>` or `/` filters system commands and workspace actions.
+  - `+` provides instant creation of a new note directly seeded with the search query.
+- **Live Document Quick-Look Preview (`PreviewCommandPalette.jsx`)**: Instant split-pane markdown preview on the right when navigating search results with keyboard arrow keys.
+- **Direct Application Control**: Trigger graph view, open settings, toggle themes, open documentation, or create folders without touching the mouse.
+- **Inline AI Prompting**: Send AI prompts or trigger prompt workflows directly from the palette input field.
+- **Virtualized & Responsive**: Built with `useDeferredValue` and memoized highlight text rendering to maintain 60 FPS in massive vaults.
 
-### B. Interactive StatusBar
-- **Word / Char / Reading Time Toggles**: Word count, character count, and reading time in `StatusBar.jsx` are interactive toggle triggers:
-  - If the right sidebar is closed, clicking any metric opens the sidebar and focuses the **Details** tab.
-  - If the right sidebar is open on **Outline** or **Chat**, clicking switches immediately to **Details**.
-  - If the right sidebar is already focused on **Details**, clicking toggles the sidebar closed.
+### B. Core Editor & Markdown Engine
+- **CodeMirror 6 Powered**: Enterprise-grade extensible editor with responsive syntax highlighting and fluid caret movement.
+- **Inline Slash (`/`) Commands**: Quick action popover menu inside the editor to insert headings, tables, callouts, checklist items, code blocks, or trigger AI actions right under the cursor.
+- **Wikilinks & Bidirectional Graph Links (`[[...]]`)**: Note cross-referencing with autocomplete dropdowns, live preview hover cards, and seamless caret positioning.
+- **Rich Markdown Elements**: Full support for bold, italic, strikethrough, highlights, code blocks, blockquotes, callouts, and mathematical formulas (KaTeX).
+- **Interactive Markdown Tables**: Intelligent table editing with row/column insertion, cell navigation, and column sorting (`tableSort.js`).
+- **Mechanical Typing Audio Feedback**: Optional realistic typewriter and mechanical keyboard sounds (`useTypingSound`) with customizable volume and audio switch.
+- **Multi-Tab Workspace**: Tab bar with reordering, tab pinning, tab closing, and fast keyboard tab navigation (`Ctrl+Tab`).
 
-### C. AI Chat Experience & Real-Time Tool Execution
-- **Streaming Action Guard**: Copy, Like, and Dislike action buttons are hidden while the AI model is actively generating or executing tools, rendering only when the message stream is complete.
-- **Lumina Live Elapsed Timer (`luminaTimer.jsx`)**: Replaced the static pulsing animation in tool cards with a live second/minute counter (`1s`, `2s`, `1m 5s`) that accurately displays time elapsed during execution.
-- **Multi-Activity Block Support**: Enhanced `MessageContent.jsx` with a global `matchAll` regex pipeline to merge multiple tool operations into a consolidated interactive `<ActivityCard />` without leaking tags.
-- **Markdown Tag Sanitization**: Automatically strips `<lumina-activity>` tags from surrounding markdown prose, ensuring clean rendering in `ReactMarkdown`.
-- **Hybrid Wikilink Parser in Activity Cards**: Supports both standard double-bracket links (`[[Title]]`) and markdown-formatted wikilinks (`[Title](wikilink:Title)`), allowing all created notes and folders to appear with clickable interactive chips.
-- **CSS Tag Suppressor**: Fallback `display: none !important;` rule in `lumina.css` prevents custom activity tags from ever rendering unstyled in the DOM.
+### C. File Organization & Vault Management
+- **Local-First Plaintext Architecture**: 100% data privacy and ownership—all notes and folders are standard files on disk watched by `chokidar`.
+- **Drag-and-Drop Explorer (`@dnd-kit`)**: Smooth, animated reordering and nesting of notes and folders with optimistic state updates.
+- **Multi-Item Selection**: Multi-select notes and folders using Shift+Click, Ctrl+Click, or drag-selection for batch actions (move, delete, export).
+- **Omnipresent Context Menus**: Context menus on notes, folders, and editor text supporting Cut, Copy, Paste, Rename, Delete, Duplicate, and Set Icon.
+- **Custom Note & Folder Icons**: Built-in icon picker allowing custom Lucide icons and accent colors per note or folder.
+- **Vault Insights & Live Metrics**: Explorer counter revealing total notes, folders, word count, character count, and disk footprint.
+- **Daily Notes & Templates**: One-click daily note creation with pre-configured note templates (`TemplateModal.jsx`).
 
-### D. Roadmap & Progress Tracker UI
-- **Clean Background Styling**: Removed unneeded background container boxes from `ProgressTracker.jsx` and debug areas in `Editor.jsx` for an ultra-clean, modern distraction-free reading experience.
-- **Interactive Wikilink Chips**: Styled note links with sleek accent colors and hover underlines without bulky bounding boxes.
+### D. Visual Knowledge Graph (2D & 3D)
+- **Interactive 2D Graph (D3 Force / HTML Canvas)**: Real-time force-directed network diagram displaying note connections, tag links, and knowledge clusters.
+- **Immersive 3D Graph (Three.js / Force-Graph 3D)**: Full 3D sphere-node orbit view with orbit controls, rotation, zoom, and pulsating nodes.
+- **Dedicated Physics Web Worker**: Calculations are offloaded to `physics.worker.js` to eliminate frame drops and keep the renderer interface fluid.
+- **Graph Filters & Tuning**: Controls for node size, link distance, charge strength, toggling orphan notes, hiding ghost notes, and tag filtering.
+- **MiniMap & Performance Panel**: Integrated MiniMap and performance overlay reporting real-time FPS, node count, and edge count.
+
+### E. Lumina AI Copilot & Multi-Provider Architecture
+- **Multi-Provider LLM Integration**: Connects to OpenAI, Anthropic Claude, Groq, Google Gemini, Ollama (offline local models), and DeepSeek.
+- **Inline Lumina Assistant**: Popover prompt tool in the editor for instant text rewriting, grammar fixes, expansion, or inline code generation.
+- **Sidebar AI Chat Assistant**: Dedicated conversation drawer with streaming responses, markdown formatting, syntax highlighted code blocks with one-click copy, and chat history.
+- **Agentic File Tools**: AI tools capable of reading files, searching notes, creating new notes, and restructuring folders with user visibility.
+- **Local Embeddings**: Powered by `@xenova/transformers` for on-device vector search without transmitting private vaults to external servers.
+
+### F. Media & Asset Management
+- **Image Drag-and-Drop & Clipboard Paste**: Direct clipboard pasting and desktop drag-and-drop to embed images into notes.
+- **Image Extension & Widgets**: Custom inline image preview widgets with customizable image captions (`imageCaption.js`, `imageExtension.js`).
+- **Fullscreen Lightbox / Media Viewer**: Zoom, pan, inspect, rotate, and copy images to clipboard without leaving the app (`ImageViewerTab.jsx`, `imageLightbox.js`).
+
+### G. Roadmap & Progress Tracking
+- **ProgressTracker & LearningTrackBadge**: Visual progress badge on notes displaying the completion percentage of learned material.
+- **Mark as Learned (`LearnedButton`)**: One-click status toggle on notes to track curriculum and personal learning progress.
+- **Editor Progress Bar Plugin**: Live progress indicators rendered directly inside markdown files for task lists and roadmaps.
+
+### H. Theming, Typography & UI Polish
+- **21 Custom Built-In Themes**: Comprehensive dark and light themes crafted for ergonomic contrast and long-session comfort.
+- **Custom Typography & Caret Controls**: Font family selector (monospace, sans, serif), font size, line height, and custom caret color synced with the active theme.
+- **Global Error Boundaries**: Graceful crash protection via `GlobalErrorHandler`, preventing white-screen freezes and providing one-click reload.
+- **Built-in Auto Updater**: Compact titlebar update widget with changelog viewer, release notes breakdown (New, Improved, Fixed), channel switcher (Stable / Beta), and background download & install.

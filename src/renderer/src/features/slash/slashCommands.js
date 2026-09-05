@@ -11,6 +11,25 @@ export const SLASH_CATEGORIES = {
   AI_TOOLS: 'AI & Automation'
 }
 
+function safeRange(view, from, to) {
+  const len = view?.state?.doc?.length ?? 0
+  const safeFrom = Math.max(0, Math.min(typeof from === 'number' ? from : len, len))
+  const safeTo = Math.max(safeFrom, Math.min(typeof to === 'number' ? to : safeFrom, len))
+  return { from: safeFrom, to: safeTo }
+}
+
+export function filterSlashCommands(query) {
+  const q = (query || '').toLowerCase().trim()
+  if (!q) return EDITOR_SLASH_COMMANDS
+
+  return EDITOR_SLASH_COMMANDS.filter((cmd) => {
+    const matchLabel = cmd.label.toLowerCase().includes(q)
+    const matchDesc = cmd.desc.toLowerCase().includes(q)
+    const matchKeywords = cmd.keywords?.some((k) => k.toLowerCase().includes(q))
+    return matchLabel || matchDesc || matchKeywords
+  })
+}
+
 export const EDITOR_SLASH_COMMANDS = [
   // --- BASIC BLOCKS ---
   {
@@ -21,9 +40,10 @@ export const EDITOR_SLASH_COMMANDS = [
     icon: 'Heading1',
     category: SLASH_CATEGORIES.BASIC,
     execute: (view, from, to) => {
+      const range = safeRange(view, from, to)
       view.dispatch({
-        changes: { from, to, insert: '# ' },
-        selection: { anchor: from + 2 }
+        changes: { from: range.from, to: range.to, insert: '# ' },
+        selection: { anchor: range.from + 2 }
       })
       view.focus()
     }
@@ -36,9 +56,10 @@ export const EDITOR_SLASH_COMMANDS = [
     icon: 'Heading2',
     category: SLASH_CATEGORIES.BASIC,
     execute: (view, from, to) => {
+      const range = safeRange(view, from, to)
       view.dispatch({
-        changes: { from, to, insert: '## ' },
-        selection: { anchor: from + 3 }
+        changes: { from: range.from, to: range.to, insert: '## ' },
+        selection: { anchor: range.from + 3 }
       })
       view.focus()
     }
@@ -51,9 +72,10 @@ export const EDITOR_SLASH_COMMANDS = [
     icon: 'Heading3',
     category: SLASH_CATEGORIES.BASIC,
     execute: (view, from, to) => {
+      const range = safeRange(view, from, to)
       view.dispatch({
-        changes: { from, to, insert: '### ' },
-        selection: { anchor: from + 4 }
+        changes: { from: range.from, to: range.to, insert: '### ' },
+        selection: { anchor: range.from + 4 }
       })
       view.focus()
     }
@@ -66,9 +88,10 @@ export const EDITOR_SLASH_COMMANDS = [
     icon: 'List',
     category: SLASH_CATEGORIES.BASIC,
     execute: (view, from, to) => {
+      const range = safeRange(view, from, to)
       view.dispatch({
-        changes: { from, to, insert: '- ' },
-        selection: { anchor: from + 2 }
+        changes: { from: range.from, to: range.to, insert: '- ' },
+        selection: { anchor: range.from + 2 }
       })
       view.focus()
     }
@@ -81,9 +104,10 @@ export const EDITOR_SLASH_COMMANDS = [
     icon: 'ListOrdered',
     category: SLASH_CATEGORIES.BASIC,
     execute: (view, from, to) => {
+      const range = safeRange(view, from, to)
       view.dispatch({
-        changes: { from, to, insert: '1. ' },
-        selection: { anchor: from + 3 }
+        changes: { from: range.from, to: range.to, insert: '1. ' },
+        selection: { anchor: range.from + 3 }
       })
       view.focus()
     }
@@ -96,9 +120,10 @@ export const EDITOR_SLASH_COMMANDS = [
     icon: 'CheckSquare',
     category: SLASH_CATEGORIES.BASIC,
     execute: (view, from, to) => {
+      const range = safeRange(view, from, to)
       view.dispatch({
-        changes: { from, to, insert: '- [ ] ' },
-        selection: { anchor: from + 6 }
+        changes: { from: range.from, to: range.to, insert: '- [ ] ' },
+        selection: { anchor: range.from + 6 }
       })
       view.focus()
     }
@@ -111,9 +136,10 @@ export const EDITOR_SLASH_COMMANDS = [
     icon: 'Quote',
     category: SLASH_CATEGORIES.BASIC,
     execute: (view, from, to) => {
+      const range = safeRange(view, from, to)
       view.dispatch({
-        changes: { from, to, insert: '> ' },
-        selection: { anchor: from + 2 }
+        changes: { from: range.from, to: range.to, insert: '> ' },
+        selection: { anchor: range.from + 2 }
       })
       view.focus()
     }
@@ -126,10 +152,11 @@ export const EDITOR_SLASH_COMMANDS = [
     icon: 'Code',
     category: SLASH_CATEGORIES.BASIC,
     execute: (view, from, to) => {
+      const range = safeRange(view, from, to)
       const template = '```javascript\n\n```'
       view.dispatch({
-        changes: { from, to, insert: template },
-        selection: { anchor: from + 14 }
+        changes: { from: range.from, to: range.to, insert: template },
+        selection: { anchor: range.from + 14 }
       })
       view.focus()
     }
@@ -142,9 +169,10 @@ export const EDITOR_SLASH_COMMANDS = [
     icon: 'Minus',
     category: SLASH_CATEGORIES.BASIC,
     execute: (view, from, to) => {
+      const range = safeRange(view, from, to)
       view.dispatch({
-        changes: { from, to, insert: '\n---\n\n' },
-        selection: { anchor: from + 6 }
+        changes: { from: range.from, to: range.to, insert: '\n---\n\n' },
+        selection: { anchor: range.from + 6 }
       })
       view.focus()
     }
@@ -159,10 +187,11 @@ export const EDITOR_SLASH_COMMANDS = [
     icon: 'Table',
     category: SLASH_CATEGORIES.RICH,
     execute: (view, from, to) => {
+      const range = safeRange(view, from, to)
       const tableTemplate = '| Column 1 | Column 2 | Column 3 |\n| :--- | :--- | :--- |\n| Item 1 | Details | Value |\n| Item 2 | Details | Value |\n'
       view.dispatch({
-        changes: { from, to, insert: tableTemplate },
-        selection: { anchor: from + tableTemplate.length }
+        changes: { from: range.from, to: range.to, insert: tableTemplate },
+        selection: { anchor: range.from + tableTemplate.length }
       })
       view.focus()
     }
@@ -175,10 +204,11 @@ export const EDITOR_SLASH_COMMANDS = [
     icon: 'GitFork',
     category: SLASH_CATEGORIES.RICH,
     execute: (view, from, to) => {
+      const range = safeRange(view, from, to)
       const diagram = '```mermaid\ngraph TD;\n    A[Start] --> B[Process];\n    B --> C[Result];\n```\n'
       view.dispatch({
-        changes: { from, to, insert: diagram },
-        selection: { anchor: from + diagram.length }
+        changes: { from: range.from, to: range.to, insert: diagram },
+        selection: { anchor: range.from + diagram.length }
       })
       view.focus()
     }
@@ -191,10 +221,11 @@ export const EDITOR_SLASH_COMMANDS = [
     icon: 'Info',
     category: SLASH_CATEGORIES.RICH,
     execute: (view, from, to) => {
+      const range = safeRange(view, from, to)
       const callout = '> [!NOTE]\n> '
       view.dispatch({
-        changes: { from, to, insert: callout },
-        selection: { anchor: from + callout.length }
+        changes: { from: range.from, to: range.to, insert: callout },
+        selection: { anchor: range.from + callout.length }
       })
       view.focus()
     }
@@ -207,10 +238,11 @@ export const EDITOR_SLASH_COMMANDS = [
     icon: 'AlertTriangle',
     category: SLASH_CATEGORIES.RICH,
     execute: (view, from, to) => {
+      const range = safeRange(view, from, to)
       const callout = '> [!WARNING]\n> '
       view.dispatch({
-        changes: { from, to, insert: callout },
-        selection: { anchor: from + callout.length }
+        changes: { from: range.from, to: range.to, insert: callout },
+        selection: { anchor: range.from + callout.length }
       })
       view.focus()
     }
@@ -223,10 +255,11 @@ export const EDITOR_SLASH_COMMANDS = [
     icon: 'Lightbulb',
     category: SLASH_CATEGORIES.RICH,
     execute: (view, from, to) => {
+      const range = safeRange(view, from, to)
       const callout = '> [!TIP]\n> '
       view.dispatch({
-        changes: { from, to, insert: callout },
-        selection: { anchor: from + callout.length }
+        changes: { from: range.from, to: range.to, insert: callout },
+        selection: { anchor: range.from + callout.length }
       })
       view.focus()
     }
@@ -241,7 +274,8 @@ export const EDITOR_SLASH_COMMANDS = [
     icon: 'Sparkles',
     category: SLASH_CATEGORIES.AI_TOOLS,
     execute: (view, from, to) => {
-      view.dispatch({ changes: { from, to, insert: '' } })
+      const range = safeRange(view, from, to)
+      view.dispatch({ changes: { from: range.from, to: range.to, insert: '' } })
       view.focus()
       window.dispatchEvent(new CustomEvent('open-inline-lumina', {
         detail: { mode: 'generate' }
@@ -256,10 +290,11 @@ export const EDITOR_SLASH_COMMANDS = [
     icon: 'Calendar',
     category: SLASH_CATEGORIES.AI_TOOLS,
     execute: (view, from, to) => {
+      const range = safeRange(view, from, to)
       const d = new Date().toISOString().slice(0, 10)
       view.dispatch({
-        changes: { from, to, insert: d },
-        selection: { anchor: from + d.length }
+        changes: { from: range.from, to: range.to, insert: d },
+        selection: { anchor: range.from + d.length }
       })
       view.focus()
     }
@@ -272,10 +307,11 @@ export const EDITOR_SLASH_COMMANDS = [
     icon: 'Clock',
     category: SLASH_CATEGORIES.AI_TOOLS,
     execute: (view, from, to) => {
+      const range = safeRange(view, from, to)
       const t = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       view.dispatch({
-        changes: { from, to, insert: t },
-        selection: { anchor: from + t.length }
+        changes: { from: range.from, to: range.to, insert: t },
+        selection: { anchor: range.from + t.length }
       })
       view.focus()
     }
@@ -288,9 +324,10 @@ export const EDITOR_SLASH_COMMANDS = [
     icon: 'Link',
     category: SLASH_CATEGORIES.AI_TOOLS,
     execute: (view, from, to) => {
+      const range = safeRange(view, from, to)
       view.dispatch({
-        changes: { from, to, insert: '[[]]' },
-        selection: { anchor: from + 2 }
+        changes: { from: range.from, to: range.to, insert: '[[]]' },
+        selection: { anchor: range.from + 2 }
       })
       view.focus()
     }

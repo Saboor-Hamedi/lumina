@@ -1,12 +1,27 @@
 export async function copyImageToClipboard(imgUrl, onSuccess, onError) {
   try {
-    let blob
+    let dataUrl = imgUrl
 
-    if (imgUrl.startsWith('blob:') || imgUrl.startsWith('data:') || imgUrl.startsWith('http')) {
-      const response = await fetch(imgUrl)
+    if (!imgUrl.startsWith('data:') && !imgUrl.startsWith('blob:') && !imgUrl.startsWith('http')) {
+      const cleanUrl = imgUrl.startsWith('/') ? imgUrl.slice(1) : imgUrl
+      const res = await window.api?.readAsset?.(cleanUrl)
+      if (res?.dataUrl) {
+        dataUrl = res.dataUrl
+      }
+    }
+
+    if (dataUrl?.startsWith('data:') && window.api?.writeImageToClipboard) {
+      await window.api.writeImageToClipboard(dataUrl)
+      if (onSuccess) onSuccess()
+      return
+    }
+
+    let blob
+    if (dataUrl.startsWith('blob:') || dataUrl.startsWith('data:') || dataUrl.startsWith('http')) {
+      const response = await fetch(dataUrl)
       blob = await response.blob()
     } else {
-      const cleanUrl = imgUrl.startsWith('/') ? imgUrl.slice(1) : imgUrl
+      const cleanUrl = dataUrl.startsWith('/') ? dataUrl.slice(1) : dataUrl
       const res = await window.api.readAsset(cleanUrl)
       if (res?.dataUrl) {
         const response = await fetch(res.dataUrl)
@@ -27,8 +42,6 @@ export async function copyImageToClipboard(imgUrl, onSuccess, onError) {
       }
     }
 
-    // The clipboard API requires image/png on most operating systems.
-    // Convert to PNG if it's not already.
     if (blob.type !== 'image/png') {
       const bitmap = await createImageBitmap(blob)
       const canvas = document.createElement('canvas')

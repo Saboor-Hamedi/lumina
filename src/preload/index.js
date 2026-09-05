@@ -21,6 +21,8 @@ const api = {
   deleteAsset: (relativePath) => electronAPI.ipcRenderer.invoke('vault:deleteAsset', relativePath),
   deleteSnippet: (id) => electronAPI.ipcRenderer.invoke('vault:deleteSnippet', id),
   readAsset: (relativePath) => electronAPI.ipcRenderer.invoke('vault:readAsset', relativePath),
+  writeImageToClipboard: (dataUrl) =>
+    electronAPI.ipcRenderer.invoke('clipboard:writeImage', dataUrl),
   cleanOrphans: () => electronAPI.ipcRenderer.invoke('vault:cleanOrphans'),
   openVaultFolder: (relativePath) =>
     electronAPI.ipcRenderer.invoke('vault:open-folder', relativePath),

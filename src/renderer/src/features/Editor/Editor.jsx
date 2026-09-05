@@ -196,14 +196,40 @@ const Editor = React.memo(
             isOpen={slashState.isOpen}
             query={slashState.query}
             coords={slashState.coords}
+            selectedIndex={slashState.selectedIndex ?? 0}
             slashHandlerRef={slashHandlerRef}
             onSelect={(cmd) => {
-              if (slashState.view && typeof cmd.execute === 'function') {
-                cmd.execute(slashState.view, slashState.from, slashState.to)
+              if (slashHandlerRef?.current) {
+                slashHandlerRef.current.isOpen = false
+              }
+              const view = realViewRef.current || slashState.view
+              if (view && typeof cmd.execute === 'function') {
+                const state = view.state
+                const sel = state.selection?.main
+                let from = slashState.from
+                let to = slashState.to
+                if (sel) {
+                  const line = state.doc.lineAt(sel.head)
+                  const textBefore = line.text.slice(0, sel.head - line.from)
+                  const slashIdx = textBefore.lastIndexOf('/')
+                  if (slashIdx >= 0) {
+                    from = line.from + slashIdx
+                    to = sel.head
+                  }
+                }
+                const docLen = state.doc.length
+                const safeFrom = Math.max(0, Math.min(typeof from === 'number' ? from : docLen, docLen))
+                const safeTo = Math.max(safeFrom, Math.min(typeof to === 'number' ? to : safeFrom, docLen))
+                cmd.execute(view, safeFrom, safeTo)
               }
               setSlashState({ isOpen: false })
             }}
-            onClose={() => setSlashState({ isOpen: false })}
+            onClose={() => {
+              if (slashHandlerRef?.current) {
+                slashHandlerRef.current.isOpen = false
+              }
+              setSlashState({ isOpen: false })
+            }}
           />
         )}
 

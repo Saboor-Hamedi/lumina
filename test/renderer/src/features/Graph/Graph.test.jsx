@@ -65,7 +65,7 @@ vi.mock('../../../../../src/renderer/src/features/Graph/GraphThemeSelector', () 
   default: () => <div data-testid="theme-selector" />
 }))
 
-vi.mock('../../../../../src/renderer/src/features/Overlays/ModalHeader', () => {
+vi.mock('../../../../../src/renderer/src/features/modals/ModalHeader', () => {
   const ModalHeader = ({ onClose, left, right }) => (
     <div data-testid="modal-header">
       {left}

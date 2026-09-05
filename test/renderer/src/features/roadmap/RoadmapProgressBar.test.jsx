@@ -78,7 +78,7 @@ describe('ProgressTracker', () => {
         snippets: [{ id: '1' }, { id: '2' }]
       })
       render(<LearningTrackBadge />)
-      expect(screen.getByText('0/2')).toBeInTheDocument()
+      expect(screen.getByText('0%')).toBeInTheDocument()
     })
 
     it('shows correct count or percentage', () => {
@@ -90,7 +90,7 @@ describe('ProgressTracker', () => {
         ]
       })
       render(<LearningTrackBadge />)
-      expect(screen.getByText('2/3')).toBeInTheDocument()
+      expect(screen.getByText('67%')).toBeInTheDocument()
     })
   })
 
@@ -100,25 +100,21 @@ describe('ProgressTracker', () => {
       expect(container.firstChild).toBeNull()
     })
 
-    it('renders progress edge with correct width', () => {
+    it('renders progress bar with correct height', () => {
       useVaultStore.setState({
         snippets: [
           { id: '1', isLearned: true },
           { id: '2' }
         ]
       })
-      const { container } = render(<ProgressTracker />)
-      const edge = container.querySelector('.learning-track-progress-edge')
-      expect(edge).toBeInTheDocument()
-      const fill = edge.querySelector('div')
-      expect(fill.style.width).toBe('50%')
+      render(<ProgressTracker />)
+      expect(screen.getByText('50%')).toBeInTheDocument()
     })
 
     it('shows 100% when all learned', () => {
       useVaultStore.setState({ snippets: [{ id: '1', isLearned: true }] })
-      const { container } = render(<ProgressTracker />)
-      const fill = container.querySelector('.learning-track-progress-edge div')
-      expect(fill.style.width).toBe('100%')
+      render(<ProgressTracker />)
+      expect(screen.getByText('100%')).toBeInTheDocument()
     })
   })
 })

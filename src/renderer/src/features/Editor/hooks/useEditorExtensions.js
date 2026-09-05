@@ -15,7 +15,13 @@
  */
 
 import React, { useMemo } from 'react'
-import { autocompletion } from '@codemirror/autocomplete'
+import {
+  autocompletion,
+  acceptCompletion,
+  closeCompletion,
+  completionStatus,
+  moveCompletionSelection
+} from '@codemirror/autocomplete'
 import { Prec, StateField, StateEffect } from '@codemirror/state'
 import { EditorView, placeholder, keymap, ViewPlugin, Decoration } from '@codemirror/view'
 import { syntaxTree } from '@codemirror/language'
@@ -183,6 +189,12 @@ export function useEditorExtensions({
           {
             key: 'Tab',
             run: (view) => {
+              if (slashHandlerRef?.current?.isOpen) {
+                return Boolean(slashHandlerRef.current.onEnter?.())
+              }
+              if (completionStatus(view.state) === 'active') {
+                if (acceptCompletion(view)) return true
+              }
               if (!isActiveRef.current) return false
               const state = view.state
               const sel = state.selection.main
@@ -263,11 +275,29 @@ export function useEditorExtensions({
           },
           {
             key: 'ArrowUp',
-            run: handleArrowUp
+            run: (view) => {
+              if (slashHandlerRef?.current?.isOpen) {
+                slashHandlerRef.current.onArrowUp?.()
+                return true
+              }
+              if (completionStatus(view.state) === 'active') {
+                return moveCompletionSelection(false)(view)
+              }
+              return handleArrowUp(view)
+            }
           },
           {
             key: 'ArrowDown',
-            run: handleArrowDown
+            run: (view) => {
+              if (slashHandlerRef?.current?.isOpen) {
+                slashHandlerRef.current.onArrowDown?.()
+                return true
+              }
+              if (completionStatus(view.state) === 'active') {
+                return moveCompletionSelection(true)(view)
+              }
+              return handleArrowDown(view)
+            }
           },
           {
             key: 'Mod-Enter',
@@ -308,6 +338,15 @@ export function useEditorExtensions({
           {
             key: 'Enter',
             run: (view) => {
+              if (slashHandlerRef?.current?.isOpen) {
+                const handled = slashHandlerRef.current.onEnter?.()
+                if (handled) return true
+              }
+
+              if (completionStatus(view.state) === 'active') {
+                if (acceptCompletion(view)) return true
+              }
+
               if (isActiveRef.current) {
                 // 1. Code fence auto-close & auto-expansion
                 if (handleCodeFenceEnter(view)) return true
@@ -322,12 +361,12 @@ export function useEditorExtensions({
                 if (handleListEnter(view)) return true
 
                 // 5. Pure empty line: insert regular newline
-                const pos = view.state.selection.main.head
-                const line = view.state.doc.lineAt(pos)
+                const sel = view.state.selection.main
+                const line = view.state.doc.lineAt(sel.head)
                 if (line.text === '') {
                   view.dispatch({
-                    changes: { from: pos, insert: '\n' },
-                    selection: { anchor: pos + 1 },
+                    changes: { from: sel.from, to: sel.to, insert: '\n' },
+                    selection: { anchor: sel.from + 1 },
                     scrollIntoView: true
                   })
                   return true
@@ -335,6 +374,17 @@ export function useEditorExtensions({
 
                 const didRun = insertNewlineContinueMarkup(view)
                 if (didRun) return true
+
+                // 6. Generic or Heading line: insert newline and place cursor on the new line
+                const isHeading = /^#{1,6}\s/.test(line.text)
+                const indent = isHeading ? '' : (line.text.match(/^(\s+)/)?.[1] || '')
+                const insert = '\n' + indent
+                view.dispatch({
+                  changes: { from: sel.from, to: sel.to, insert },
+                  selection: { anchor: sel.from + insert.length },
+                  scrollIntoView: true
+                })
+                return true
               }
               return false
             }
@@ -376,6 +426,13 @@ export function useEditorExtensions({
           {
             key: 'Escape',
             run: () => {
+              if (slashHandlerRef?.current?.isOpen) {
+                slashHandlerRef.current.onClose?.()
+                return true
+              }
+              if (completionStatus(view.state) === 'active') {
+                return closeCompletion(view)
+              }
               if (isActiveRef.current && showFindWidgetRef.current) {
                 setShowFindWidget(false)
                 window.dispatchEvent(new CustomEvent('search-clear'))

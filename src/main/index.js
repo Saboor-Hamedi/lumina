@@ -1,5 +1,5 @@
 import electron from 'electron'
-const { app, shell, BrowserWindow, ipcMain, dialog, protocol, net } = electron.default || electron
+const { app, shell, BrowserWindow, ipcMain, dialog, protocol, net, clipboard, nativeImage } = electron.default || electron
 import { join } from 'path'
 import path from 'path'
 import fs from 'fs/promises'
@@ -288,6 +288,16 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('vault:readAsset', async (_, relativePath) => {
     return VaultManager.readAsset(relativePath)
+  })
+  ipcMain.handle('clipboard:writeImage', async (_, dataUrl) => {
+    try {
+      const img = nativeImage.createFromDataURL(dataUrl)
+      clipboard.writeImage(img)
+      return true
+    } catch (err) {
+      console.error('[Main] Failed to write image to clipboard:', err)
+      throw err
+    }
   })
   ipcMain.handle('app:getVersion', () => app.getVersion()) // show the version
 

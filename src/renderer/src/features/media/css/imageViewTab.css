@@ -11,26 +11,25 @@
 
 .image-viewer-header-info {
   position: absolute;
-  top: 16px;
+  top: 14px;
   right: 16px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   z-index: 10;
   pointer-events: none;
 }
 
 .image-viewer-badge {
-  padding: 3px 8px;
-  font-size: 11px;
+  padding: 0;
+  font-size: 10px;
   font-weight: 500;
-  color: var(--text-muted, #94a3b8);
-  background: rgba(24, 24, 27, 0.75);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 2px;
-  letter-spacing: 0.02em;
+  color: var(--text-faint, #64748b);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  letter-spacing: 0.03em;
+  opacity: 0.85;
 }
 
 .image-viewer-canvas {
@@ -70,9 +69,10 @@
 
 .image-viewer-toolbar {
   position: absolute;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 20px;
+  right: 20px;
+  left: auto;
+  transform: none;
   display: flex;
   align-items: center;
   gap: 4px;

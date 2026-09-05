@@ -27,7 +27,7 @@ describe('UpdateDetails', () => {
     fireEvent.click(screen.getByLabelText('Check for updates'))
 
     expect(screen.getByTestId('update-details')).toBeInTheDocument()
-    expect(screen.getByText("You're up to date!")).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Check for Updates' })).toBeInTheDocument()
   })
 
   it('renders parsed release note categories', async () => {
@@ -71,7 +71,7 @@ describe('UpdateDetails', () => {
     useUpdateStore.setState({ status: 'available', download })
     render(<UpdateDetails />)
     fireEvent.click(screen.getByLabelText('Check for updates'))
-    const downloadBtn = screen.getByRole('button', { name: /Download Update/ })
+    const downloadBtn = screen.getByRole('button', { name: 'Download' })
     expect(downloadBtn).toBeInTheDocument()
     fireEvent.click(downloadBtn)
     expect(download).toHaveBeenCalled()

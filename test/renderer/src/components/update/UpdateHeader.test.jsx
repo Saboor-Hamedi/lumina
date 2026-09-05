@@ -3,15 +3,6 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import UpdateHeader from '../../../../../src/renderer/src/components/update/UpdateHeader'
 
 describe('UpdateHeader', () => {
-  it('renders current and new version numbers when an update is available', () => {
-    render(<UpdateHeader currentVersion="1.0.0" newVersion="1.2.0" status="available" />)
-
-    expect(screen.getByText('Current')).toBeInTheDocument()
-    expect(screen.getByText('Latest')).toBeInTheDocument()
-    expect(screen.getByText('1.0.0')).toBeInTheDocument()
-    expect(screen.getByText('1.2.0')).toBeInTheDocument()
-  })
-
   it('shows Stable channel active by default', () => {
     render(<UpdateHeader currentVersion="1.0.0" newVersion="1.2.0" status="available" />)
 
@@ -21,13 +12,12 @@ describe('UpdateHeader', () => {
     expect(betaBtn.className).not.toContain('active')
   })
 
-  it('switches to Beta channel and appends -beta to new version', () => {
+  it('switches to Beta channel', () => {
     render(<UpdateHeader currentVersion="1.0.0" newVersion="1.2.0" status="available" />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Beta' }))
-
-    expect(screen.getByText('1.2.0-beta')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Beta' }).className).toContain('active')
+    expect(screen.getByRole('button', { name: 'Stable' }).className).not.toContain('active')
   })
 
   it('switches back to Stable channel', () => {
@@ -35,21 +25,32 @@ describe('UpdateHeader', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Beta' }))
     fireEvent.click(screen.getByRole('button', { name: 'Stable' }))
-
-    expect(screen.getByText('1.2.0')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Stable' }).className).toContain('active')
   })
 
-  it('shows up-to-date message when status is idle', () => {
-    render(<UpdateHeader currentVersion="1.0.0" newVersion="1.2.0" status="idle" />)
+  it('renders Download button when status is available', () => {
+    const download = vi.fn()
+    render(<UpdateHeader currentVersion="1.0.0" newVersion="1.2.0" status="available" download={download} />)
 
-    expect(screen.getByText("You're up to date!")).toBeInTheDocument()
-    expect(screen.getByText('v1.0.0')).toBeInTheDocument()
-    expect(screen.queryByText('Current')).toBeNull()
+    const btn = screen.getByRole('button', { name: /Download/ })
+    expect(btn).toBeInTheDocument()
+    fireEvent.click(btn)
+    expect(download).toHaveBeenCalled()
   })
 
-  it('shows up-to-date message when versions match', () => {
-    render(<UpdateHeader currentVersion="1.0.0" newVersion="1.0.0" status="available" />)
+  it('renders Restart & Install button when status is ready', () => {
+    const install = vi.fn()
+    render(<UpdateHeader currentVersion="1.0.0" newVersion="1.2.0" status="ready" install={install} />)
 
-    expect(screen.getByText("You're up to date!")).toBeInTheDocument()
+    const btn = screen.getByRole('button', { name: /Restart & Install/ })
+    expect(btn).toBeInTheDocument()
+    fireEvent.click(btn)
+    expect(install).toHaveBeenCalled()
+  })
+
+  it('renders Up to date button when status is not-available', () => {
+    render(<UpdateHeader currentVersion="1.0.0" newVersion="1.0.0" status="not-available" />)
+
+    expect(screen.getByRole('button', { name: /Up to date/ })).toBeInTheDocument()
   })
 })

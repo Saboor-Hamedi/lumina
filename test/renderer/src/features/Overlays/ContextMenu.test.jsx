@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import ContextMenu from '../../../../../src/renderer/src/features/Overlays/ContextMenu'
+import ContextMenu from '../../../../../src/renderer/src/features/modals/ContextMenu'
 
 describe('ContextMenu', () => {
   const onClose = vi.fn()

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { THEMES, getTheme, getThemeIds, applyTheme } from '../../../../../src/renderer/src/core/themes/themeDefinitions'
+import { THEMES, getTheme, getThemeIds, applyTheme } from '../../../../../src/renderer/src/features/theme/hooks/themeDefinitions'
 
 describe('themeDefinitions', () => {
   describe('THEMES', () => {

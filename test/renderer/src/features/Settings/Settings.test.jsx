@@ -37,16 +37,17 @@ describe('Settings', () => {
     expect(screen.queryByTestId('pane-advanced')).not.toBeInTheDocument()
   })
 
-  it('shows tabs for all three sections', () => {
+  it('shows tabs for all sections', () => {
     render(<Settings {...defaultProps()} />)
     expect(screen.getByRole('button', { name: 'Look & Feel' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'AI Assistant' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Shortcuts' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Lumina AI Assistant' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Advanced' })).toBeInTheDocument()
   })
 
   it('switches to the assistant pane when the AI Assistant tab is clicked', () => {
     render(<Settings {...defaultProps()} />)
-    fireEvent.click(screen.getByRole('button', { name: 'AI Assistant' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Lumina AI Assistant' }))
     expect(screen.getByTestId('pane-assistant')).toBeInTheDocument()
     expect(screen.queryByTestId('pane-look-and-feel')).not.toBeInTheDocument()
   })

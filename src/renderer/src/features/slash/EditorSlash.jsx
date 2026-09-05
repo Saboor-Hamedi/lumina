@@ -29,7 +29,7 @@ import {
   Link,
   HelpCircle
 } from 'lucide-react'
-import { EDITOR_SLASH_COMMANDS } from './slashCommands'
+import { EDITOR_SLASH_COMMANDS, filterSlashCommands } from './slashCommands'
 import './editorSlash.css'
 
 const ICON_MAP = {
@@ -57,31 +57,22 @@ export const EditorSlash = ({
   isOpen,
   query = '',
   coords,
+  selectedIndex: propSelectedIndex = 0,
   onSelect,
   onClose,
   slashHandlerRef
 }) => {
-  const [selectedIndex, setSelectedIndex] = useState(0)
+  const [selectedIndex, setSelectedIndex] = useState(propSelectedIndex)
   const menuRef = useRef(null)
   const selectedItemRef = useRef(null)
 
   // Filter commands fuzzily based on the live query typed in CodeMirror
-  const filteredCommands = useMemo(() => {
-    const q = (query || '').toLowerCase().trim()
-    if (!q) return EDITOR_SLASH_COMMANDS
+  const filteredCommands = useMemo(() => filterSlashCommands(query), [query])
 
-    return EDITOR_SLASH_COMMANDS.filter((cmd) => {
-      const matchLabel = cmd.label.toLowerCase().includes(q)
-      const matchDesc = cmd.desc.toLowerCase().includes(q)
-      const matchKeywords = cmd.keywords?.some((k) => k.toLowerCase().includes(q))
-      return matchLabel || matchDesc || matchKeywords
-    })
-  }, [query])
-
-  // Reset selection index when query changes
+  // Sync selection index with CodeMirror's live navigation
   useEffect(() => {
-    setSelectedIndex(0)
-  }, [query])
+    setSelectedIndex(propSelectedIndex)
+  }, [propSelectedIndex])
 
   // Auto-scroll selected item into view smoothly
   useEffect(() => {
@@ -92,35 +83,6 @@ export const EditorSlash = ({
       })
     }
   }, [selectedIndex])
-
-  // Connect CodeMirror keymap navigation directly to menu state
-  useEffect(() => {
-    if (slashHandlerRef) {
-      slashHandlerRef.current = {
-        isOpen,
-        onArrowDown: () => {
-          if (filteredCommands.length > 0) {
-            setSelectedIndex((prev) => (prev + 1) % filteredCommands.length)
-          }
-        },
-        onArrowUp: () => {
-          if (filteredCommands.length > 0) {
-            setSelectedIndex((prev) => (prev - 1 + filteredCommands.length) % filteredCommands.length)
-          }
-        },
-        onEnter: () => {
-          if (filteredCommands[selectedIndex]) {
-            onSelect(filteredCommands[selectedIndex])
-            return true
-          }
-          return false
-        },
-        onClose: () => {
-          onClose()
-        }
-      }
-    }
-  }, [isOpen, filteredCommands, selectedIndex, onSelect, onClose, slashHandlerRef])
 
   if (!isOpen || !coords) return null
 
@@ -184,7 +146,12 @@ export const EditorSlash = ({
                   ref={isSelected ? selectedItemRef : null}
                   className={`editor-slash-item ${isSelected ? 'is-selected' : ''}`}
                   onClick={() => onSelect(cmd)}
-                  onMouseEnter={() => setSelectedIndex(index)}
+                  onMouseEnter={() => {
+                    setSelectedIndex(index)
+                    if (slashHandlerRef?.current) {
+                      slashHandlerRef.current.selectedIndex = index
+                    }
+                  }}
                 >
                   <div className="editor-slash-icon-wrap">
                     {ICON_MAP[cmd.icon] || <HelpCircle size={13} />}
