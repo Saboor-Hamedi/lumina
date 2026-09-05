@@ -268,10 +268,13 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
         style={{
           display: 'flex',
           width: '100%',
+          height: '32px',
           position: 'relative',
           flexShrink: 0,
           minWidth: 0,
-          justifyContent: 'flex-end'
+          justifyContent: 'flex-end',
+          borderBottom: '1px solid var(--border-dim)',
+          boxSizing: 'border-box'
         }}
       >
         <WindowControls isSidebarOpen={isSidebarOpen} onToggleSidebar={onToggleSidebar} />
@@ -292,7 +295,16 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
         onDragOver={(e) => handleExternalDragOver(e, '')}
         onDragLeave={handleExternalDragLeave}
         onDrop={(e) => handleExternalDrop(e, '')}
-        style={{ display: 'flex', width: '100%', position: 'relative', flexShrink: 0, minWidth: 0 }}
+        style={{
+          display: 'flex',
+          width: '100%',
+          height: '32px',
+          position: 'relative',
+          flexShrink: 0,
+          minWidth: 0,
+          borderBottom: '1px solid var(--border-dim)',
+          boxSizing: 'border-box'
+        }}
       >
         {/* Floating Left Sidebar Toggle (now inline flex item) */}
         {onToggleLeftSidebar && (

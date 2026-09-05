@@ -44,8 +44,30 @@ const StatusBar = ({
     }
   }, [selectedSnippet?.code])
 
+  const statusBarRef = React.useRef(null)
+
+  // Enable invisible horizontal mouse wheel scrolling when status bar content overflows
+  useEffect(() => {
+    const el = statusBarRef.current
+    if (!el) return
+
+    const handleWheel = (e) => {
+      // Check if content overflows horizontally
+      if (el.scrollWidth > el.clientWidth) {
+        // If vertical scrolling on mouse wheel, map deltaY to horizontal scrollLeft
+        if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+          e.preventDefault()
+          el.scrollLeft += e.deltaY
+        }
+      }
+    }
+
+    el.addEventListener('wheel', handleWheel, { passive: false })
+    return () => el.removeEventListener('wheel', handleWheel)
+  }, [])
+
   return (
-    <div className="status-bar" data-testid="status-bar">
+    <div className="status-bar" ref={statusBarRef} data-testid="status-bar">
       {/* Left utility buttons */}
       <div className="status-bar-left">
         <ToolTip text="Toggle Details & Outline (Ctrl + \)" position="top">

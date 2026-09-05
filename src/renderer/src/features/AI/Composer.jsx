@@ -22,7 +22,7 @@ import { useVaultStore } from '../../core/store/workspaceStore'
 import ToolTip from '../../components/atoms/ToolTip'
 import './Composer.css'
 
-export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
+export const Composer = ({ onSend, onStop, onCancel, isLoading = false, isSidebar = false }) => {
   const [input, setInput] = useState('')
   const [showSlashMenu, setShowSlashMenu] = useState(false)
   const [slashFilter, setSlashFilter] = useState('')
@@ -57,12 +57,21 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
     const el = textareaRef.current
     if (!el) return
 
-    // Keep height completely steady on initial typing
-    el.style.height = 'auto'
-    const newHeight = Math.min(Math.max(el.scrollHeight, 44), 160)
+    if (!input || !input.trim()) {
+      const minH = isSidebar ? 34 : 40
+      el.style.height = `${minH}px`
+      el.style.overflowY = 'hidden'
+      return
+    }
+
+    // Reset height temporarily to 0 to compute actual scrollHeight without stuck ballooning
+    el.style.height = '0px'
+    const minH = isSidebar ? 34 : 40
+    const maxH = isSidebar ? 110 : 160
+    const newHeight = Math.min(Math.max(el.scrollHeight, minH), maxH)
     el.style.height = `${newHeight}px`
-    el.style.overflowY = el.scrollHeight > 160 ? 'auto' : 'hidden'
-  }, [input])
+    el.style.overflowY = el.scrollHeight > maxH ? 'auto' : 'hidden'
+  }, [input, isSidebar])
 
   const prevIsLoading = useRef(isLoading)
   useEffect(() => {
@@ -238,7 +247,7 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
   const toggleProvider = () => window.dispatchEvent(new CustomEvent('open-ai-settings'))
 
   return (
-    <div className="composer-container">
+    <div className={`composer-container ${isSidebar ? 'is-sidebar-docked' : ''}`}>
       <LuminaSlash
         isOpen={showSlashMenu}
         filterText={slashFilter}
@@ -262,7 +271,7 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
             value={input}
             onChange={handleOnChange}
             onKeyDown={handleKeyDown}
-            placeholder="Ask Lumina AI... ('@' note, '/' cmd)"
+            placeholder={isSidebar ? "Ask AI... ('@', '/')" : "Ask Lumina AI... ('@' note, '/' cmd)"}
             rows={1}
             disabled={isLoading}
             spellCheck="false"

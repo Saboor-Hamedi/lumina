@@ -92,9 +92,9 @@ const DailyNotes = memo(() => {
         <button
           className="new-note-btn"
           onClick={handleDailyNote}
-          style={{ flex: 1, padding: '4px', minWidth: 0, justifyContent: 'center' }}
+          style={{ flex: 1, minWidth: 0, justifyContent: 'center' }}
         >
-          <Calendar size={14} style={{ flexShrink: 0 }} />
+          <Calendar size={13} style={{ flexShrink: 0 }} />
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             Daily
           </span>

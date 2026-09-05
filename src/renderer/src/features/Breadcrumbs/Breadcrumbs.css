@@ -13,7 +13,7 @@
   max-height: 28px;
   padding: 0 12px;
   background: var(--bg-panel, #18181f);
-  border-bottom: none;
+  border-bottom: 1px solid var(--border-dim);
   font-size: 11.5px;
   color: var(--text-muted, #94a3b8);
   user-select: none;

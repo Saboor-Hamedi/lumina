@@ -114,8 +114,7 @@ const AppShell = () => {
 
   const appShellRef = React.useRef(null)
   const widthRef = React.useRef({ left: 250, right: 200 })
-
-
+  const initialWidthRef = React.useRef({ left: 250, right: 200 })
 
   // Update width refs and CSS custom properties when widths change
   useEffect(() => {
@@ -186,45 +185,79 @@ const AppShell = () => {
       const rect = shellEl ? shellEl.getBoundingClientRect() : { left: 0, right: window.innerWidth }
 
       if (resizingSide === 'left') {
-        let newWidth = e.clientX - rect.left
-        if (newWidth < 180) newWidth = 180
-        if (newWidth > 600) newWidth = 600
-        widthRef.current.left = newWidth
-        if (shellEl) shellEl.style.setProperty('--left-sidebar-width', `${newWidth}px`)
-        document.documentElement.style.setProperty('--left-sidebar-width', `${newWidth}px`)
+        let rawWidth = e.clientX - rect.left
+        // Continuous, smooth tracking down to 0 without any blocking roadblock
+        let clampedWidth = Math.max(0, Math.min(600, rawWidth))
+        widthRef.current.left = rawWidth
+        if (shellEl) shellEl.style.setProperty('--left-sidebar-width', `${clampedWidth}px`)
+        document.documentElement.style.setProperty('--left-sidebar-width', `${clampedWidth}px`)
       } else if (resizingSide === 'right') {
-        let newWidth = rect.right - e.clientX
-        if (newWidth < 220) newWidth = 220
-        if (newWidth > 750) newWidth = 750
-        widthRef.current.right = newWidth
-        if (shellEl) shellEl.style.setProperty('--right-sidebar-width', `${newWidth}px`)
-        document.documentElement.style.setProperty('--right-sidebar-width', `${newWidth}px`)
+        let rawWidth = rect.right - e.clientX
+        // Continuous, smooth tracking down to 0 without any blocking roadblock
+        let clampedWidth = Math.max(0, Math.min(750, rawWidth))
+        widthRef.current.right = rawWidth
+        if (shellEl) shellEl.style.setProperty('--right-sidebar-width', `${clampedWidth}px`)
+        document.documentElement.style.setProperty('--right-sidebar-width', `${clampedWidth}px`)
       }
     }
 
     const handleMouseUp = () => {
       document.body.classList.remove('is-global-resizing')
+      const shellEl = appShellRef.current
 
       if (resizingSide === 'left') {
-        const finalWidth = widthRef.current.left
-        setLeftWidth(finalWidth)
-        const currentSidebar = sidebarSetting || {}
-        useSettingsStore.getState().updateSettings({
-          sidebar: {
-            ...currentSidebar,
-            width: finalWidth
-          }
-        })
+        const raw = widthRef.current.left
+        const initialLeft = initialWidthRef.current.left || leftWidth || 260
+        // Only collapse if dragged all the way into the edge (< 70px)
+        if (raw < 70) {
+          setIsLeftSidebarOpen(false)
+          const currentSidebar = sidebarSetting || {}
+          useSettingsStore.getState().updateSettings({
+            sidebar: {
+              ...currentSidebar,
+              isLeftOpen: false
+            }
+          })
+          const restoreWidth = Math.max(200, initialLeft)
+          if (shellEl) shellEl.style.setProperty('--left-sidebar-width', `${restoreWidth}px`)
+          document.documentElement.style.setProperty('--left-sidebar-width', `${restoreWidth}px`)
+        } else {
+          const finalWidth = Math.max(160, Math.min(600, Math.round(raw)))
+          setLeftWidth(finalWidth)
+          if (shellEl) shellEl.style.setProperty('--left-sidebar-width', `${finalWidth}px`)
+          document.documentElement.style.setProperty('--left-sidebar-width', `${finalWidth}px`)
+          const currentSidebar = sidebarSetting || {}
+          useSettingsStore.getState().updateSettings({
+            sidebar: {
+              ...currentSidebar,
+              width: finalWidth,
+              isLeftOpen: true
+            }
+          })
+        }
       } else if (resizingSide === 'right') {
-        const finalWidth = widthRef.current.right
-        setRightWidth(finalWidth)
-        const currentRSidebar = rightSidebarSetting || {}
-        useSettingsStore.getState().updateSettings({
-          rightSidebar: {
-            ...currentRSidebar,
-            width: finalWidth
-          }
-        })
+        const raw = widthRef.current.right
+        const initialRight = initialWidthRef.current.right || rightWidth || 300
+        // Only collapse if dragged all the way into the edge (< 70px)
+        if (raw < 70) {
+          handleCloseRightSidebar()
+          const restoreWidth = Math.max(240, initialRight)
+          if (shellEl) shellEl.style.setProperty('--right-sidebar-width', `${restoreWidth}px`)
+          document.documentElement.style.setProperty('--right-sidebar-width', `${restoreWidth}px`)
+        } else {
+          const finalWidth = Math.max(160, Math.min(750, Math.round(raw)))
+          setRightWidth(finalWidth)
+          if (shellEl) shellEl.style.setProperty('--right-sidebar-width', `${finalWidth}px`)
+          document.documentElement.style.setProperty('--right-sidebar-width', `${finalWidth}px`)
+          const currentRSidebar = rightSidebarSetting || {}
+          useSettingsStore.getState().updateSettings({
+            rightSidebar: {
+              ...currentRSidebar,
+              width: finalWidth,
+              isRightOpen: true
+            }
+          })
+        }
       }
       setResizingSide(null)
     }
@@ -240,7 +273,7 @@ const AppShell = () => {
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
     }
-  }, [resizingSide, sidebarSetting, rightSidebarSetting])
+  }, [resizingSide, sidebarSetting, rightSidebarSetting, leftWidth, rightWidth, handleCloseRightSidebar])
 
   const handleResetSidebar = (side) => {
     if (side === 'left') {
@@ -733,6 +766,7 @@ const AppShell = () => {
             onMouseDown={(e) => {
               e.preventDefault()
               e.stopPropagation()
+              initialWidthRef.current.left = leftWidth
               setResizingSide('left')
             }}
             onDoubleClick={(e) => {
@@ -740,7 +774,13 @@ const AppShell = () => {
               e.stopPropagation()
               handleResetSidebar('left')
             }}
-          />
+          >
+            <div className="resizer-knob">
+              <span className="knob-dot" />
+              <span className="knob-dot" />
+              <span className="knob-dot" />
+            </div>
+          </div>
         )}
         <GlobalErrorHandler>
           <Sidebar
@@ -842,38 +882,6 @@ const AppShell = () => {
           </GlobalErrorHandler>
         )}
 
-        {/* Inspector overlay — floats over shell-main from the right */}
-        <aside className="shell-sidebar-right">
-          {isRightSidebarOpen && (
-            <div
-              className="sidebar-resizer right"
-              title="Double-click to reset default width (320px)"
-              onMouseDown={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                setResizingSide('right')
-              }}
-              onDoubleClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                handleResetSidebar('right')
-              }}
-            />
-          )}
-          <RightSidebar
-            rightSidebarTab={rightSidebarTab}
-            setRightSidebarTab={setRightSidebarTab}
-            setSettingsInitialTab={setSettingsInitialTab}
-            setShowSettings={setShowSettings}
-            setSavedRightSidebarState={setSavedRightSidebarState}
-            isRightSidebarOpen={isRightSidebarOpen}
-            rightWidth={rightWidth}
-            setIsRightSidebarOpen={handleCloseRightSidebar}
-            setShowAIChatModal={setShowAIChatModal}
-            selectedSnippet={selectedSnippet}
-            isLoading={isLoading}
-          />
-        </aside>
         <StatusBar
           onToggleInspector={handleToggleInspector}
           onToggleExplorerModal={() => setShowExplorerModal((prev) => !prev)}
@@ -887,6 +895,47 @@ const AppShell = () => {
           }}
         />
       </main>
+
+      <aside className="shell-sidebar-right">
+        {isRightSidebarOpen && (
+          <div
+            className="sidebar-resizer right"
+            title="Double-click to reset default width (320px)"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              initialWidthRef.current.right = rightWidth
+              setResizingSide('right')
+            }}
+            onDoubleClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              handleResetSidebar('right')
+            }}
+          >
+            <div className="resizer-knob">
+              <span className="knob-dot" />
+              <span className="knob-dot" />
+              <span className="knob-dot" />
+            </div>
+          </div>
+        )}
+        <GlobalErrorHandler>
+          <RightSidebar
+            rightSidebarTab={rightSidebarTab}
+            setRightSidebarTab={setRightSidebarTab}
+            setSettingsInitialTab={setSettingsInitialTab}
+            setShowSettings={setShowSettings}
+            setSavedRightSidebarState={setSavedRightSidebarState}
+            isRightSidebarOpen={isRightSidebarOpen}
+            rightWidth={rightWidth}
+            setIsRightSidebarOpen={handleCloseRightSidebar}
+            setShowAIChatModal={setShowAIChatModal}
+            selectedSnippet={selectedSnippet}
+            isLoading={isLoading}
+          />
+        </GlobalErrorHandler>
+      </aside>
 
       {showSettings && (
         <Settings

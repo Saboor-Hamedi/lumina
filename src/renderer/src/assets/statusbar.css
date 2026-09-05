@@ -6,9 +6,10 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   height: 24px;
   min-height: 24px;
-  padding: 0 12px;
+  padding: 0 8px;
   background: var(--bg-sidebar);
   border-top: 1px solid var(--border-dim);
   font-size: 11px;
@@ -19,6 +20,16 @@
   box-sizing: border-box;
   letter-spacing: 0.01em;
   user-select: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none; /* Firefox invisible scroll */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.status-bar::-webkit-scrollbar {
+  display: none !important; /* Chrome, Safari, Opera invisible scroll */
+  height: 0px !important;
+  width: 0px !important;
 }
 
 .status-bar-left,
@@ -26,11 +37,13 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  flex: 1;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .status-bar-right {
   justify-content: flex-end;
+  margin-left: auto;
 }
 
 .status-bar-center {

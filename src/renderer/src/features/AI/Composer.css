@@ -108,8 +108,8 @@
   padding: 5px 8px 6px;
   border-top: 1px solid var(--border-dim);
   gap: 6px;
-  flex-wrap: wrap;
-  min-height: 32px;
+  flex-wrap: nowrap;
+  min-height: 30px;
 }
 
 /* Left cluster */
@@ -350,14 +350,24 @@
   padding: 4px 6px;
 }
 
+.is-sidebar-docked .composer-input-area-wrapper {
+  min-height: 34px;
+}
+
 .is-sidebar-docked .composer-textarea {
-  font-size: 12.5px !important;
+  font-size: 12px !important;
+  line-height: 18px !important;
   padding: 8px 10px !important;
+  height: 34px;
+  min-height: 34px;
+  max-height: 110px;
 }
 
 .is-sidebar-docked .composer-inner-footer {
-  padding: 4px 6px 5px;
+  padding: 3px 6px 4px;
   gap: 4px;
+  min-height: 28px;
+  flex-wrap: nowrap;
 }
 
 .is-sidebar-docked .model-pill {

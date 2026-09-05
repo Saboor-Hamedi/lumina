@@ -754,16 +754,6 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Markdown Table Styles */
-
-.chat-input-area {
-  position: relative;
-  padding: 12px;
-  border-top: none;
-  background: transparent;
-  flex-shrink: 0;
-}
-
 /* Multi-Session Sidebar Styles */
 
 .chat-container {

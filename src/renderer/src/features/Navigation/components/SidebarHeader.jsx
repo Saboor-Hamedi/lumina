@@ -27,9 +27,9 @@ const SidebarHeader = memo(({ onToggleGraph }) => {
         <button
           className="new-note-btn"
           onClick={handleNewNote}
-          style={{ flex: 1, padding: '4px', minWidth: 0, justifyContent: 'center' }}
+          style={{ flex: 1, minWidth: 0, justifyContent: 'center' }}
         >
-          <Plus size={14} style={{ flexShrink: 0 }} />
+          <Plus size={13} style={{ flexShrink: 0 }} />
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             New
           </span>
@@ -40,9 +40,9 @@ const SidebarHeader = memo(({ onToggleGraph }) => {
         <button
           className="new-note-btn graph-header-btn"
           onClick={onToggleGraph}
-          style={{ flex: 1, padding: '4px', minWidth: 0, justifyContent: 'center' }}
+          style={{ flex: 1, minWidth: 0, justifyContent: 'center' }}
         >
-          <Network size={14} style={{ flexShrink: 0 }} />
+          <Network size={13} style={{ flexShrink: 0 }} />
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             Graph
           </span>

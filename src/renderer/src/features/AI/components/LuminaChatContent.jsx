@@ -292,6 +292,7 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, onPopOut = nul
 
           <div className="chat-input-area">
             <Composer
+              isSidebar={isSidebar}
               onSend={handleSendMessage}
               isLoading={isChatLoading}
               onStop={cancelChat}

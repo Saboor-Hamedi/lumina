@@ -19,7 +19,7 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 10px;
+  width: 14px;
   cursor: ew-resize;
   background: transparent;
   z-index: 1001;
@@ -31,28 +31,53 @@
 }
 
 .sidebar-resizer.left {
-  right: -5px;
+  right: -9.5px;
 }
 
 .sidebar-resizer.right {
-  left: -5px;
+  left: -9.5px;
 }
 
-.sidebar-resizer::after {
-  content: '';
+/* Elegant micro dots centered cleanly inside the 5px gap without border or background */
+.resizer-knob {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
   width: 3px;
-  height: 32px;
-  border-radius: 3px;
-  background: var(--border-dim, rgba(255, 255, 255, 0.15));
-  opacity: 0.6;
-  transition: opacity 0.2s, background 0.2s, height 0.2s;
+  height: 16px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  opacity: 0.55;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
 }
 
-.sidebar-resizer:hover::after,
-.app-shell.is-resizing .sidebar-resizer::after {
-  background: var(--text-accent);
+.resizer-knob .knob-dot {
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: var(--text-faint, rgba(255, 255, 255, 0.45));
+  border: none;
+  box-shadow: none;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.sidebar-resizer:hover .resizer-knob,
+.app-shell.is-resizing .sidebar-resizer .resizer-knob {
   opacity: 1;
-  height: 48px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.sidebar-resizer:hover .resizer-knob .knob-dot,
+.app-shell.is-resizing .sidebar-resizer .resizer-knob .knob-dot {
+  background: var(--text-accent, #a78bfa);
+  transform: scale(1.25);
 }
 
 body.is-global-resizing,
@@ -108,7 +133,7 @@ body.is-global-resizing .cm-editor {
   border-right: none;
   box-shadow: none;
   pointer-events: none;
-  transition: width 0.25s cubic-bezier(0.2, 0, 0, 1), border-right 0.25s, box-shadow 0.25s;
+  transition: width 0.25s cubic-bezier(0.2, 0, 0, 1), border-right 0.25s, box-shadow 0.25s, margin 0.25s;
   overflow: hidden;
   flex-shrink: 0;
   will-change: width;
@@ -121,6 +146,8 @@ body.is-global-resizing .cm-editor {
   border-right: 1px solid var(--border-dim);
   box-shadow: none;
   pointer-events: auto;
+  margin-right: 5px;
+  overflow: visible;
 }
 
 .shell-main {
@@ -133,6 +160,8 @@ body.is-global-resizing .cm-editor {
   position: relative;
   contain: layout;
   transform: translateZ(0);
+  border-radius: 6px;
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.05));
 }
 
 .workspace-container {
@@ -148,29 +177,32 @@ body.is-global-resizing .cm-editor {
   background: var(--bg-app);
 }
 
+/* Right Sidebar (Docked Flex Child) */
 .shell-sidebar-right {
-  position: absolute;
-  top: 32px;
-  right: 0;
-  bottom: 24px;
-  width: var(--right-sidebar-width, 320px);
+  position: relative;
+  width: 0;
   background: var(--bg-sidebar) !important;
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
   z-index: 1000;
-  border-left: 1px solid var(--border-dim);
-  box-shadow: none !important;
-  transform: translateX(100%) translateZ(0);
-  opacity: 0;
+  border-left: none;
+  box-shadow: none;
   pointer-events: none;
-  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease;
+  transition: width 0.25s cubic-bezier(0.2, 0, 0, 1), border-left 0.25s, box-shadow 0.25s, margin 0.25s;
   overflow: hidden;
   flex-shrink: 0;
+  will-change: width;
   contain: inline-size layout;
+  transform: translateZ(0);
 }
 
 .app-shell.right-open .shell-sidebar-right {
-  transform: translateX(0);
-  opacity: 1;
+  width: var(--right-sidebar-width, 320px);
+  border-left: 1px solid var(--border-dim);
+  box-shadow: none;
   pointer-events: auto;
+  margin-left: 5px;
+  overflow: visible;
 }
 
 

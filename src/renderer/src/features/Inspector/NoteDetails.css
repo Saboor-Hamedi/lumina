@@ -203,9 +203,9 @@
 
 /* Inspector Tabs */
 .panel-header-tabs {
-  height: 28px !important;
-  min-height: 28px !important;
-  max-height: 28px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
   display: flex;
   background: var(--bg-sidebar);
   border-bottom: 1px solid var(--border-dim);
@@ -219,17 +219,17 @@
 }
 
 .panel-header-tabs .inspector-tab {
-  height: 28px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0 12px;
   gap: 6px;
   border: none;
-  border-bottom: 1.5px solid transparent;
+  border-bottom: 2px solid transparent;
   background: transparent;
   color: var(--text-muted);
-  font-size: 11.5px;
+  font-size: 12px;
   cursor: pointer;
   position: relative;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
@@ -251,7 +251,7 @@
   background: transparent;
   color: var(--text-main);
   font-weight: 600;
-  border-bottom: 1.5px solid var(--text-accent);
+  border-bottom: 2px solid var(--text-accent);
 }
 
 .inspector-sub-header {
