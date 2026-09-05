@@ -573,8 +573,17 @@ const AppShell = () => {
   }, [activeTab, updateRightSidebarOpen])
 
   const handleToggleInspector = useCallback(() => {
-    updateRightSidebarOpen((prev) => !prev)
-  }, [updateRightSidebarOpen])
+    if (!isRightSidebarOpenRef.current) {
+      setRightSidebarTab('details')
+      updateRightSidebarOpen(true)
+    } else {
+      if (rightSidebarTab !== 'details') {
+        setRightSidebarTab('details')
+      } else {
+        updateRightSidebarOpen(false)
+      }
+    }
+  }, [rightSidebarTab, updateRightSidebarOpen])
 
   useKeyboardShortcuts({
     onGlobalSearch: () => {
