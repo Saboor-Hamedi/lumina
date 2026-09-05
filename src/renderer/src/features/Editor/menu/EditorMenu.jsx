@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import {
   Save,
   Sidebar,
-  ChevronRight, // Ensure this matches lucide version, or stick to provided
+  ChevronRight,
   Hash,
   FileCode,
   FileJson,
@@ -63,7 +63,6 @@ const EditorMenu = ({
     }
   }, [showMoreMenu])
 
-  // Close on Escape
   useEffect(() => {
     if (!showMoreMenu) return
     const handleKeyDown = (e) => {
@@ -77,22 +76,27 @@ const EditorMenu = ({
     return () => window.removeEventListener('keydown', handleKeyDown, { capture: true })
   }, [showMoreMenu])
 
-  // Calculate menu position when it opens
   useEffect(() => {
     if (showMoreMenu && buttonRef.current) {
       const buttonRect = buttonRef.current.getBoundingClientRect()
       setMenuPosition({
-        top: buttonRect.bottom + 8,
-        right: window.innerWidth - buttonRect.right
+        top: buttonRect.bottom + 6,
+        right: Math.max(8, window.innerWidth - buttonRect.right)
       })
     }
   }, [showMoreMenu])
 
+  useEffect(() => {
+    if (!showMoreMenu) return
+    const handleResize = () => setShowMoreMenu(false)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [showMoreMenu])
+
   return (
-    <div className="editor-titlebar">
-      <div className="editor-controls">
+    <div className="editor-titlebar" style={{ display: 'inline-flex', alignItems: 'center', position: 'relative', top: 'auto', right: 'auto', zIndex: 20 }}>
+      <div className="editor-controls" style={{ margin: 0, gap: 0 }}>
         <div className="menu-container">
-          {/* Inline AI removed per user request */}
           <ToolTip text="More Options (Ctrl+I)" position="bottom-right">
             <button
               className={`icon-btn menu-trigger ${showMoreMenu ? 'active' : ''}`}
@@ -101,8 +105,32 @@ const EditorMenu = ({
                 e.stopPropagation()
                 setShowMoreMenu(!showMoreMenu)
               }}
+              style={{
+                width: '24px',
+                height: '24px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: showMoreMenu ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
+                border: 'none',
+                borderRadius: '4px',
+                padding: 0,
+                cursor: 'pointer',
+                color: showMoreMenu ? 'var(--text-main, #f8fafc)' : 'var(--text-muted, #94a3b8)',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--text-main, #f8fafc)'
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'
+              }}
+              onMouseLeave={(e) => {
+                if (!showMoreMenu) {
+                  e.currentTarget.style.color = 'var(--text-muted, #94a3b8)'
+                  e.currentTarget.style.background = 'transparent'
+                }
+              }}
             >
-              <MoreVertical size={18} />
+              <MoreVertical size={16} />
             </button>
           </ToolTip>
 
@@ -176,9 +204,7 @@ const EditorMenu = ({
                         const result = await onExportPDF()
                         if (result?.success) {
                           showToast('PDF exported successfully', 'success')
-                        } else if (result?.canceled) {
-                          // User canceled, no notification needed
-                        } else {
+                        } else if (!result?.canceled) {
                           showToast('Failed to export PDF', 'error')
                         }
                       }
@@ -200,9 +226,7 @@ const EditorMenu = ({
                         const result = await onExportMarkdown()
                         if (result?.success) {
                           showToast('Markdown file exported successfully', 'success')
-                        } else if (result?.canceled) {
-                          // User canceled, no notification needed
-                        } else {
+                        } else if (!result?.canceled) {
                           showToast('Failed to export markdown file', 'error')
                         }
                       }
@@ -244,9 +268,7 @@ const EditorMenu = ({
                         const result = await onExportText()
                         if (result?.success) {
                           showToast('Text file exported successfully', 'success')
-                        } else if (result?.canceled) {
-                          // User canceled
-                        } else {
+                        } else if (!result?.canceled) {
                           showToast('Failed to export text file', 'error')
                         }
                       }
@@ -268,9 +290,7 @@ const EditorMenu = ({
                         const result = await onExportDocs()
                         if (result?.success) {
                           showToast('HTML Doc exported successfully', 'success')
-                        } else if (result?.canceled) {
-                          // User canceled
-                        } else {
+                        } else if (!result?.canceled) {
                           showToast('Failed to export Docs', 'error')
                         }
                       }

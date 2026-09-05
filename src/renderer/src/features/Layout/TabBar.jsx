@@ -6,8 +6,6 @@ import {
   ArrowRight,
   Trash2,
   Image,
-  PanelLeftOpen,
-  PanelLeftClose,
   Network
 } from 'lucide-react'
 import { DndContext, closestCenter, useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
@@ -25,7 +23,6 @@ import ContextMenu from '../Overlays/ContextMenu'
 import PromptModal from '../Overlays/PromptModal'
 import IconPicker from '../Icons/IconPicker'
 import { getSnippetIcon } from '../Icons/FileIcon'
-import WindowControls from './WindowControls'
 import ToolTip from '../../components/atoms/ToolTip'
 import { useExternalFileDrop } from '../Explorer/hooks/useExternalFileDrop'
 
@@ -272,13 +269,10 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
           position: 'relative',
           flexShrink: 0,
           minWidth: 0,
-          justifyContent: 'flex-end',
           borderBottom: '1px solid var(--border-dim)',
           boxSizing: 'border-box'
         }}
-      >
-        <WindowControls isSidebarOpen={isSidebarOpen} onToggleSidebar={onToggleSidebar} />
-      </div>
+      />
     )
   }
 
@@ -306,41 +300,6 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
           boxSizing: 'border-box'
         }}
       >
-        {/* Floating Left Sidebar Toggle (now inline flex item) */}
-        {onToggleLeftSidebar && (
-          <div
-            className="window-controls-float-left"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              zIndex: 100,
-              background: 'var(--bg-editor)',
-              WebkitAppRegion: 'no-drag',
-              flexShrink: 0
-            }}
-          >
-            <ToolTip
-              text={isLeftSidebarOpen ? 'Close Left Sidebar' : 'Open Left Sidebar'}
-              position="bottom"
-            >
-              <button
-                onClick={onToggleLeftSidebar}
-                className="control-btn left-sidebar-toggle-btn"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '40px',
-                  height: '100%',
-                  borderRadius: '0'
-                }}
-              >
-                {isLeftSidebarOpen ? <PanelLeftClose size={14} /> : <PanelLeftOpen size={14} />}
-              </button>
-            </ToolTip>
-          </div>
-        )}
-
         <div
           className="workspace-tabbar"
           ref={tabbarRef}
@@ -377,11 +336,6 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
             </div>
           </SortableContext>
         </div>
-
-        {/* Removed absolute window-controls-float-left from here as it's moved above */}
-
-        {/* Floating Window Controls */}
-        <WindowControls isSidebarOpen={isSidebarOpen} onToggleSidebar={onToggleSidebar} />
       </div>
 
       {contextMenu && (

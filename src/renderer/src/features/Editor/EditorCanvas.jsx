@@ -36,7 +36,8 @@ export const EditorCanvas = React.memo(
     onSave,
     setIsDirty,
     showToast,
-    onInlineAI
+    onInlineAI,
+    editorMenu
   }) => {
     const [contextMenu, setContextMenu] = useState(null)
     const editorWrapperRef = useRef(null)
@@ -44,7 +45,6 @@ export const EditorCanvas = React.memo(
     const inlineMetadata = useSettingsStore((state) => state.settings?.inlineMetadata !== false)
     const snippets = useVaultStore((state) => state.snippets)
 
-    // --- Setup Wikilink Hover Preview ---
     useEffect(() => {
       const wrapper = editorWrapperRef.current
       if (!wrapper) return
@@ -84,7 +84,13 @@ export const EditorCanvas = React.memo(
             setTitle={setTitle}
             setIsDirty={setIsDirty}
             onInlineAI={onInlineAI}
+            editorMenu={editorMenu}
           />
+        )}
+        {!inlineMetadata && editorMenu && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '4px 0', width: '100%' }}>
+            {editorMenu}
+          </div>
         )}
 
         <AtomicCodeMirrorEditor

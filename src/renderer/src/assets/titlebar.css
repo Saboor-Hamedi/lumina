@@ -5,9 +5,11 @@
 .title-bar {
   position: relative;
   height: 38px;
+  width: 100%;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
-  padding-left: 12px;
+  padding-left: 0;
   background: var(--bg-app, #121218);
   border-bottom: 1px solid var(--border-dim, rgba(255, 255, 255, 0.04));
   -webkit-app-region: drag;
@@ -20,6 +22,12 @@
   display: flex;
   align-items: center;
   flex: 0 0 auto;
+  height: 100%;
+}
+
+.titlebar-sidebar-toggle-btn {
+  -webkit-app-region: no-drag;
+  margin-right: 4px;
 }
 
 .app-logo {

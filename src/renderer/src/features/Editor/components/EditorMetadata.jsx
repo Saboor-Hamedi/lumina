@@ -6,7 +6,7 @@ import { useVaultStore } from '../../../core/store/workspaceStore'
 import { useKeyboardShortcuts } from '../../../core/hooks/useKeyboardShortcuts'
 import ProgressTracker, { LearnedButton, LearningTrackBadge } from '../../roadmap/ProgressTracker'
 
-const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef, onInlineAI }) => {
+const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef, onInlineAI, editorMenu }) => {
   const [error, setError] = useState(false)
   const [showLocalGraph, setShowLocalGraph] = useState(false)
   const containerRef = useRef(null)
@@ -29,7 +29,6 @@ const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef, onInli
       }
     }
 
-    // Use capture phase to ensure it runs before other events might stop propagation
     document.addEventListener('mousedown', handleOutsideClick, true)
 
     return () => {
@@ -41,36 +40,43 @@ const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef, onInli
 
   return (
     <div ref={containerRef} className="editor-metadata-bar" style={{ position: 'relative' }}>
-      <input
-        type="text"
-        ref={titleRef}
-        className={`editor-large-title ${error ? 'title-error-shake' : ''}`}
-        value={title}
-        onChange={(e) => {
-          setTitle(e.target.value)
-          setIsDirty(true)
-          if (error) setError(false)
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault()
-            if (!title || title.trim() === '') {
-              setError(true)
-            } else {
-              setError(false)
-              window.dispatchEvent(new CustomEvent('focus-editor-start'))
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', width: '100%' }}>
+        <input
+          type="text"
+          ref={titleRef}
+          className={`editor-large-title ${error ? 'title-error-shake' : ''}`}
+          value={title}
+          onChange={(e) => {
+            setTitle(e.target.value)
+            setIsDirty(true)
+            if (error) setError(false)
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              if (!title || title.trim() === '') {
+                setError(true)
+              } else {
+                setError(false)
+                window.dispatchEvent(new CustomEvent('focus-editor-start'))
+              }
             }
-          }
-        }}
-        onDoubleClick={(e) => e.target.select()}
-        placeholder="Untitled"
-        spellCheck="false"
-      />
+          }}
+          onDoubleClick={(e) => e.target.select()}
+          placeholder="Untitled"
+          spellCheck="false"
+          style={{ flex: 1, minWidth: 0 }}
+        />
+        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <ProgressTracker snippetId={snippet?.id} />
+          {editorMenu}
+        </div>
+      </div>
       {error && (
         <div
           style={{
             position: 'absolute',
-            bottom: '-28px',
+            top: '40px',
             left: 0,
             background: 'var(--bg-card, #1e293b)',
             border: '1px solid #ef4444',
@@ -177,7 +183,6 @@ const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef, onInli
         </ToolTip>
 
         <LearnedButton snippet={snippet} />
-        <LearningTrackBadge snippetId={snippet?.id} />
       </div>
 
       {showLocalGraph && (
@@ -198,7 +203,7 @@ const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef, onInli
             focusNodeId={snippet.id}
             onNavigate={(id) => {
               useVaultStore.getState().setActiveTabId(id)
-              setShowLocalGraph(false) // Close dropdown on navigation
+              setShowLocalGraph(false)
             }}
           />
         </div>

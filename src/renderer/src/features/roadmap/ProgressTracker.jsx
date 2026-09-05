@@ -178,66 +178,57 @@ export function LearningTrackBadge({ snippetId }) {
 
   if (!stats || stats.total === 0) return null
 
-  const tooltipText = stats.isFolder
-    ? `Topic Track: ${stats.learned} of ${stats.total} notes learned (${stats.percentage}%) • Total Workspace: ${stats.vaultLearned}/${stats.vaultTotal}`
-    : `Workspace Progress: ${stats.learned} of ${stats.total} notes learned (${stats.percentage}%)`
+  const tooltipText = `Progress: ${stats.percentage}% (${stats.learned}/${stats.total})`
 
   return (
-    <ToolTip text={tooltipText} position="bottom">
+    <ToolTip text={tooltipText} position="left">
       <div
         style={{
-          marginLeft: 'auto',
           display: 'inline-flex',
           flexDirection: 'column',
-          alignItems: 'stretch',
-          gap: '2px',
-          padding: '1px 0',
-          background: 'transparent',
-          border: 'none',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '3px',
+          padding: '2px 4px',
+          borderRadius: '4px',
           userSelect: 'none',
           cursor: 'default',
-          minWidth: '65px'
+          background: 'transparent'
         }}
       >
-        <div
+        <span
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-            fontSize: '11px',
-            color: 'var(--text-muted, #94a3b8)',
-            padding: '0 1px'
+            fontSize: '9.5px',
+            fontWeight: 500,
+            fontVariantNumeric: 'tabular-nums',
+            letterSpacing: '-0.02em',
+            color: stats.percentage > 0 ? 'var(--text-accent, #a78bfa)' : 'var(--text-muted, #94a3b8)',
+            lineHeight: 1
           }}
         >
-          <span
-            style={{
-              fontWeight: 600,
-              color: stats.percentage > 0 ? 'var(--text-accent, #a78bfa)' : 'inherit'
-            }}
-          >
-            {stats.isFolder
-              ? `${stats.learned}/${stats.total} (${stats.percentage}%)`
-              : `${stats.learned}/${stats.total}`}
-          </span>
-        </div>
-
+          {stats.percentage}%
+        </span>
         <div
           style={{
-            width: '100%',
-            height: '2px',
-            background: 'rgba(255, 255, 255, 0.06)',
-            borderRadius: '1px',
-            overflow: 'hidden'
+            width: '2.5px',
+            height: '20px',
+            background: 'rgba(255, 255, 255, 0.08)',
+            borderRadius: '2px',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+            position: 'relative'
           }}
         >
           <div
             style={{
-              width: `${stats.percentage}%`,
-              height: '100%',
-              background:
-                'linear-gradient(90deg, var(--text-accent, #8b5cf6), var(--text-accent, #a78bfa))',
-              borderRadius: '1px',
-              transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              width: '100%',
+              height: `${stats.percentage}%`,
+              background: 'linear-gradient(to top, var(--text-accent, #8b5cf6), #a78bfa)',
+              borderRadius: '2px',
+              boxShadow: stats.percentage > 0 ? '0 0 4px rgba(167, 139, 250, 0.4)' : 'none',
+              transition: 'height 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
           />
         </div>
@@ -247,88 +238,7 @@ export function LearningTrackBadge({ snippetId }) {
 }
 
 export default function ProgressTracker({ snippetId }) {
-  const snippets = useVaultStore((state) => state.snippets)
-  const selectedSnippet = useVaultStore(
-    (state) => (snippetId ? state.snippets.find((s) => s.id === snippetId) : state.selectedSnippet)
-  )
-
-  const stats = useMemo(() => {
-    if (!snippets || snippets.length === 0) return null
-
-    const totalVault = snippets.length
-    const learnedVault = snippets.filter((s) => !!s.isLearned).length
-
-    const folderId = selectedSnippet?.folderId
-    const folderSnippets = folderId ? snippets.filter((s) => (s.folderId || '') === folderId) : null
-
-    if (folderSnippets && folderSnippets.length > 0) {
-      const folderTotal = folderSnippets.length
-      const folderLearned = folderSnippets.filter((s) => !!s.isLearned).length
-      const folderPercent = Math.min(100, Math.round((folderLearned / folderTotal) * 100))
-      return {
-        isFolder: true,
-        learned: folderLearned,
-        total: folderTotal,
-        percentage: folderPercent,
-        vaultLearned: learnedVault,
-        vaultTotal: totalVault
-      }
-    }
-
-    const vaultPercent = totalVault > 0 ? (learnedVault / totalVault) * 100 : 0
-    const displayPercent =
-      vaultPercent >= 10 || vaultPercent === 0
-        ? Math.round(vaultPercent)
-        : parseFloat(vaultPercent.toFixed(1))
-
-    return {
-      isFolder: false,
-      learned: learnedVault,
-      total: totalVault,
-      percentage: displayPercent,
-      vaultLearned: learnedVault,
-      vaultTotal: totalVault
-    }
-  }, [snippets, selectedSnippet])
-
-  if (!stats || stats.total === 0) return null
-
-  const tooltipText = stats.isFolder
-    ? `Topic Track: ${stats.learned}/${stats.total} notes understood (${stats.percentage}%) • Total Workspace: ${stats.vaultLearned}/${stats.vaultTotal}`
-    : `Learning Track: ${stats.learned}/${stats.total} notes understood (${stats.percentage}%)`
-
-  return (
-    <ToolTip text={tooltipText} position="bottom">
-      <div
-        className="learning-track-progress-edge"
-        style={{
-          marginTop: '12px',
-          marginBottom: '-12px',
-          width: '100%',
-          height: '2px',
-          background: 'rgba(255, 255, 255, 0.04)',
-          borderRadius: '1px',
-          overflow: 'hidden',
-          position: 'relative'
-        }}
-      >
-        <div
-          style={{
-            width: `${stats.percentage}%`,
-            height: '100%',
-            background:
-              'linear-gradient(90deg, var(--text-accent, #8b5cf6), var(--text-accent, #a78bfa))',
-            boxShadow:
-              stats.percentage > 0
-                ? '0 0 8px rgba(var(--text-accent-rgb, 139, 92, 246), 0.4)'
-                : 'none',
-            borderRadius: '1px',
-            transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-          }}
-        />
-      </div>
-    </ToolTip>
-  )
+  return <LearningTrackBadge snippetId={snippetId} />
 }
 
 export { ProgressTracker as RoadmapProgressBar }

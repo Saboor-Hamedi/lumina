@@ -2,11 +2,11 @@
   display: flex;
   flex: 1;
   height: 100%;
-  width: 100vw;
+  width: 100%;
   overflow: hidden;
   background: var(--bg-app);
   position: relative;
-  border-radius: 2px; 
+  border-radius: 0; 
 }
 
 .app-shell.is-resizing {
@@ -158,13 +158,12 @@ body.is-global-resizing .cm-editor {
   flex: 1;
   background: var(--bg-app);
   min-width: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   position: relative;
-  contain: layout;
-  transform: translateZ(0);
-  border-radius: 6px;
+  border-radius: 0;
   border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.05));
 }
 

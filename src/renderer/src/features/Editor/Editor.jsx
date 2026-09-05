@@ -211,24 +211,6 @@ const Editor = React.memo(
         <RulerScrollbar scrollerRef={scrollerRef} />
 
         <div className="editor-scroller" ref={scrollerRef}>
-          <EditorMenu
-            title={title}
-            snippet={snippet}
-            setSelectedSnippet={setSelectedSnippet}
-            isDirty={isDirty}
-            isSaving={isSaving}
-            onSave={handleSave}
-            onToggleInspector={onToggleInspector}
-            onExportHTML={handleExportHTML}
-            onExportPDF={handleExportPDF}
-            onExportMarkdown={handleExportMarkdown}
-            onExportMarkdownBundle={handleExportMarkdownBundle}
-            onExportText={handleExportText}
-            onExportDocs={handleExportDocs}
-            onInlineAI={() => setIsInlineAIOpen(true)}
-            onPreview={() => setIsPreviewOpen(true)}
-          />
-
           <PreviewModal
             isOpen={isPreviewOpen}
             onClose={() => setIsPreviewOpen(false)}
@@ -273,6 +255,25 @@ const Editor = React.memo(
             setIsDirty={setIsDirty}
             showToast={showToast}
             onInlineAI={() => setIsInlineAIOpen(true)}
+            editorMenu={
+              <EditorMenu
+                title={title}
+                snippet={snippet}
+                setSelectedSnippet={setSelectedSnippet}
+                isDirty={isDirty}
+                isSaving={isSaving}
+                onSave={handleSave}
+                onToggleInspector={onToggleInspector}
+                onExportHTML={handleExportHTML}
+                onExportPDF={handleExportPDF}
+                onExportMarkdown={handleExportMarkdown}
+                onExportMarkdownBundle={handleExportMarkdownBundle}
+                onExportText={handleExportText}
+                onExportDocs={handleExportDocs}
+                onInlineAI={() => setIsInlineAIOpen(true)}
+                onPreview={() => setIsPreviewOpen(true)}
+              />
+            }
           />
         </div>
       </div>

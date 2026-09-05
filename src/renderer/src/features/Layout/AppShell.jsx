@@ -165,6 +165,7 @@ const AppShell = () => {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('lumina_left_sidebar_open', String(next))
     }
+    window.dispatchEvent(new CustomEvent('left-sidebar-toggle', { detail: { open: next } }))
     setTimeout(() => {
       const currentSidebar = useSettingsStore.getState().settings?.sidebar || {}
       if (currentSidebar.isLeftOpen !== next) {
@@ -784,15 +785,14 @@ const AppShell = () => {
     if (currentMode === 'modal') {
       setShowAIChatModal((prev) => !prev)
     } else {
-      // Sidebar mode: toggle right sidebar with chat tab
-      if (isRightSidebarOpen && rightSidebarTab === 'chat') {
+      if (isRightSidebarOpenRef.current) {
         updateRightSidebarOpen(false)
       } else {
         setRightSidebarTab('chat')
         updateRightSidebarOpen(true)
       }
     }
-  }, [isRightSidebarOpen, rightSidebarTab, updateRightSidebarOpen])
+  }, [updateRightSidebarOpen])
 
   useEffect(() => {
     const handleAskAnything = (e) => {
@@ -800,13 +800,21 @@ const AppShell = () => {
       setPaletteInitialQuery(query)
       setShowPalette(true)
     }
+    const handleAIChatEvent = () => {
+      handleToggleAIChat()
+    }
+    const handleToggleLeftSidebarEvent = () => {
+      handleToggleLeftSidebar()
+    }
     window.addEventListener('open-ask-anything', handleAskAnything)
-    window.addEventListener('open-ai-chat', handleToggleAIChat)
+    window.addEventListener('open-ai-chat', handleAIChatEvent)
+    window.addEventListener('toggle-left-sidebar', handleToggleLeftSidebarEvent)
     return () => {
       window.removeEventListener('open-ask-anything', handleAskAnything)
-      window.removeEventListener('open-ai-chat', handleToggleAIChat)
+      window.removeEventListener('open-ai-chat', handleAIChatEvent)
+      window.removeEventListener('toggle-left-sidebar', handleToggleLeftSidebarEvent)
     }
-  }, [])
+  }, [handleToggleAIChat, handleToggleLeftSidebar])
 
   return (
     <div
@@ -852,7 +860,6 @@ const AppShell = () => {
         </div>
       )}
       <main className="shell-main">
-        {/* Show TabBar even if no tabs are open so WindowControls remain visible */}
         {(activeTab === 'files' || activeTab === 'search') && (
           <>
             <TabBar
