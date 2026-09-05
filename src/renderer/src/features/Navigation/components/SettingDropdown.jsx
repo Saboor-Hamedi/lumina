@@ -111,9 +111,9 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
         left: 0,
         right: 0,
         width: '100%',
-        backgroundColor: 'var(--bg-app, #121218)',
-        border: '1px solid rgba(255, 255, 255, 0.06)',
-        borderRadius: '8px',
+        backgroundColor: 'var(--bg-panel, #18181b)',
+        border: '0.5px solid var(--border-dim, rgba(255, 255, 255, 0.15))',
+        borderRadius: '2px',
         boxShadow: 'none',
         padding: '5px',
         zIndex: 9999,
@@ -265,7 +265,7 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
         <div
           style={{
             position: 'relative',
-            borderRadius: 'var(--radius-sm, 4px)',
+            borderRadius: '2px',
             overflow: 'hidden'
           }}
         >
@@ -323,7 +323,7 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
               fontSize: '12px',
               fontWeight: '500',
               cursor: isBackingUp ? 'default' : 'pointer',
-              borderRadius: 'var(--radius-sm, 4px)',
+              borderRadius: '2px',
               textAlign: 'left',
               width: '100%',
               transition: 'background-color 0.15s, color 0.3s'
@@ -436,7 +436,7 @@ const DropdownItem = ({ icon, label, shortcut, onClick, highlight }) => {
         fontSize: '12px',
         fontWeight: '500',
         cursor: 'pointer',
-        borderRadius: 'var(--radius-sm, 4px)',
+        borderRadius: '2px',
         textAlign: 'left',
         width: '100%',
         transition: 'background-color 0.1s, color 0.1s'

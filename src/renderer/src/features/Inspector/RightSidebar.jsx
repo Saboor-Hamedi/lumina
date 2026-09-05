@@ -2,7 +2,9 @@ import React from 'react'
 import { Info, List as ListIcon, MessageSquare, ExternalLink, History } from 'lucide-react'
 import NoteDetails from './NoteDetails'
 import NoteOutline from './NoteOutline'
-import { LuminaChatContent } from '../AI/Lumina'
+const LuminaChatContent = React.lazy(() =>
+  import('../AI/Lumina').then((m) => ({ default: m.LuminaChatContent }))
+)
 import GlobalErrorHandler from '../../components/GlobalErrorHandler'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
@@ -155,7 +157,24 @@ export const RightSidebar = ({
           {rightSidebarTab === 'outline' ? (
             <NoteOutline snippet={selectedSnippet} />
           ) : rightSidebarTab === 'chat' ? (
-            <LuminaChatContent isSidebar={true} onPopOut={handlePopOut} />
+            <React.Suspense
+              fallback={
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '100%',
+                    color: 'var(--text-muted, #888)',
+                    fontSize: 12
+                  }}
+                >
+                  Loading Lumina AI...
+                </div>
+              }
+            >
+              <LuminaChatContent isSidebar={true} onPopOut={handlePopOut} />
+            </React.Suspense>
           ) : (
             <NoteDetails snippet={selectedSnippet} isLoading={isLoading} />
           )}

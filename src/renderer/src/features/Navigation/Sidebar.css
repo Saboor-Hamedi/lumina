@@ -91,10 +91,10 @@
   align-items: center;
   height: 42px;
   min-height: 42px;
-  margin: 4px 8px 8px 8px;
+  margin: 4px 4px 8px 4px;
   padding: 0 10px;
-  border-radius: 8px;
-  border: 1px solid var(--border-dim);
+  border-radius: 2px;
+  border: 0.5px solid var(--border-dim, rgba(255, 255, 255, 0.15));
   background: var(--bg-panel);
   box-sizing: border-box;
   flex-shrink: 0;

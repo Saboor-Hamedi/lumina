@@ -802,6 +802,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
           tabIndex={-1}
           onClick={(e) => {
             if (e.target.closest('.virtuoso-row') || e.target.closest('.tree-item')) return
+            clearSelection()
             setSelectedIndex(-1)
             setLastClickedFolder('')
             setSidebarFocus('root')
@@ -844,7 +845,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                 >
                   <DroppableVirtuosoWrapper
                     isDragging={!!activeListDragItem}
-                    isRootFocused={sidebarFocus === 'root' && selectedNoteIds.size === 0 && selectedFolderIds.size === 0}
+                    isRootFocused={sidebarFocus === 'root'}
                     onClick={handleBackgroundClick}
                     onDragEnter={(e) => handleExternalDragEnter(e, '')}
                     onDragOver={(e) => handleExternalDragOver(e, '')}

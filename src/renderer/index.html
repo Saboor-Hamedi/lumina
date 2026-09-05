@@ -27,6 +27,23 @@
           }
         }
       } catch (e) {}
+
+      // Fail-safe error catcher before React mounts
+      window.addEventListener('error', function (e) {
+        var root = document.getElementById('root')
+        if (root && (!root.children || root.children.length === 0)) {
+          var msg = e && (e.message || (e.error && e.error.message)) ? (e.message || e.error.message) : 'Initialization error'
+          var src = e && e.filename ? e.filename.split('/').pop() + (e.lineno ? ':' + e.lineno : '') : ''
+          root.innerHTML =
+            '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#18181b;color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,sans-serif;padding:24px;text-align:center;">' +
+            '<div style="background:#27272a;border:1px solid #3f3f46;border-radius:8px;max-width:540px;width:100%;padding:24px;box-shadow:0 8px 30px rgba(0,0,0,0.5);">' +
+            '<h2 style="font-size:16px;color:#f87171;margin:0 0 10px 0;font-weight:600;">Application Startup Issue</h2>' +
+            '<p style="font-size:13px;color:#a1a1aa;margin:0 0 12px 0;line-height:1.5;">' + msg + '</p>' +
+            (src ? '<code style="display:block;background:#18181b;padding:8px;border-radius:4px;color:#71717a;font-size:11px;font-family:monospace;margin-bottom:16px;">' + src + '</code>' : '') +
+            '<button onclick="window.location.reload()" style="padding:7px 16px;background:#3b82f6;color:white;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;">Reload</button>' +
+            '</div></div>'
+        }
+      })
     </script>
   </head>
 

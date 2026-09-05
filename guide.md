@@ -1,20 +1,15 @@
-me: Go ceate several folder and files, about database introduce databse, schema, design, and so on
+So far lumina is supporting only Enlish characters, if we go for Arabic, or chines, or other characaters than English neither  the composer, nor lumina understand.
+Also, on wikilink its not working because it different character, how to handle all the characters
+ the whole app understands it 
+  - notes 
+  - folders
+  - composer
+  - lumin
+  - Every single character must be perfect like English. 
 
 
-lumina: I am currently in Code Mode.
-
-I'll create a comprehensive database learning structure with folders and files covering introduction, schema, design, and more.
-
-first, it does not need to tell the user what mode lumina is, unless on plan mode, because it cannot create. 
-second, it has created the folders good naming, but it did not create files only folders.
-
---
-and here again:
-me: you did not create files its only folder
-lumina:You're right — I apologize for that. Let me create the folders and all the files now.
-
-nothing happens, i has typed, i saw something like file icon appeared on the lumina before lumina response what hides or disappears  on lumina
+  i need this to be  robust, DRY separated from other we need to create folder and file simply call it...
 
 
---
-I think, lumina tries to make, something prevents it, and lumina things i have created the file, its not checking wether the files been created or not. 
+
+  tell me how do you handle this?

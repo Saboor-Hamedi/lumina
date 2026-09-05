@@ -14,6 +14,13 @@ export const IntentCategory = {
 export const detectUserIntent = (message, mentionedSnippets = [], activeSnippet = null) => {
   const clean = (message || '').trim().toLowerCase()
 
+  const conversationalOverridePatterns =
+    /\b(let'?s talk|just talk|talk first|don'?t write|do not write|don'?t create|do not create|no files?( yet)?|don'?t save|do not save|just discuss|discuss first|in chat( only)?|brainstorm(ing)? (in|only in) chat|keep (it )?in chat|without (writing|creating|saving))\b/i
+
+  if (conversationalOverridePatterns.test(clean)) {
+    return IntentCategory.CONVERSATIONAL_EXPLAIN
+  }
+
   const hasMentions = mentionedSnippets && mentionedSnippets.length > 0
   const clearPatterns = /\b(clear|empty|wipe|erase|reset)\b/i
   const renamePatterns = /\b(rename|change name of|make|set)\b[\s\S]*\b(folder|folders|directory|file|files|note|notes|lowercase|uppercase)\b/i
@@ -115,16 +122,16 @@ Execution:
 6. Never stop after creating only the folder! Execute all tool calls sequentially until all files are created.
 
 User: "Create my business plan structure"
-Execution: Call \`createFolder\` for folders like \`01_Strategy\`, \`02_Product\`, \`03_Market\`, \`04_Financials\`, and call \`createFile\` for comprehensive notes inside each folder with rich tables, templates, and wikilinks.
+Execution: Call \`createFile\` with folder="" (root level) for notes like \`Business Strategy\`, \`Product Roadmap\`, \`Market Analysis\`, and \`Financial Plan\` with rich tables, templates, and wikilinks. (Folders are only created if explicitly requested).
 
 User: "Set up my daily expense and budget tracker"
-Execution: Call \`createFolder\` for \`Finance\`, and call \`createFile\` for \`Expense Log\`, \`Monthly Budget\`, and \`Savings Goals\` with markdown calculation tables and category breakdowns.
+Execution: Call \`createFile\` with folder="" for \`Expense Log\`, \`Monthly Budget\`, and \`Savings Goals\` with markdown calculation tables and category breakdowns.
 
-User: "Create my cloud architecture and deployment plan"
-Execution: Call \`createFolder\` for \`Architecture\` and \`DevOps\`, and call \`createFile\` for \`System Topology\`, \`API Specifications\`, and \`CI-CD Pipeline\`.
+User: "Create my cloud architecture in folder DevOps"
+Execution: Call \`createFolder\` with path="DevOps", and call \`createFile\` with folder="DevOps" for \`System Topology\`, \`API Specifications\`, and \`CI-CD Pipeline\`.
 
 User: "Structure my study plan for Distributed Systems"
-Execution: Call \`createFolder\` for each module, and call \`createFile\` for syllabus, deep-dive notes, and review flashcards.`
+Execution: Call \`createFile\` with folder="" for syllabus, deep-dive notes, and review flashcards.`
 
     case IntentCategory.CREATE_FOLDER:
       return `\n**EXEMPLAR FOR CREATING A FOLDER**:

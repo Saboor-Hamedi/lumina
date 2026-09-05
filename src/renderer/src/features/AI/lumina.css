@@ -808,12 +808,13 @@
 .chat-bubble.assistant {
   background: transparent;
   white-space: normal;
-  padding: 4px 2px;
+  padding: 4px 8px;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .is-sidebar-docked .chat-bubble.assistant {
-  padding: 2px 0;
+  padding: 4px 8px;
 }
 
 /* ─── Lumina Activity / Operations Card ─────────────────────────────── */
@@ -1635,10 +1636,14 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  margin-top: -4px;
-  margin-left: 12px;
-  opacity: 0.4;
+  margin-top: 2px;
+  margin-left: 4px;
+  opacity: 0.5;
   transition: opacity 0.2s;
+}
+
+.chat-response-actions:hover {
+  opacity: 1;
 }
 
 .chat-response-actions button {

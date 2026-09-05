@@ -24,7 +24,7 @@ import '../../assets/appshell.css'
 import '../Overlays/Modals/ConfirmModal.css'
 import '../Overlays/Modals/RenameModal.css'
 
-import LuminaChat from '../AI/Lumina'
+const LuminaChat = React.lazy(() => import('../AI/Lumina'))
 import { useAIStore } from '../AI/tools/lumina'
 import { useTypingSound } from '../../core/hooks/useTypingSound'
 import { useShallow } from 'zustand/react/shallow'
@@ -904,25 +904,31 @@ const AppShell = () => {
       {showThemeModal && (
         <ThemeModal isOpen={showThemeModal} onClose={() => setShowThemeModal(false)} />
       )}
-      <LuminaChat
-        isOpen={showAIChatModal}
-        onClose={() => {
-          setShowAIChatModal(false)
-          setSavedRightSidebarState(null)
-        }}
-        onDock={() => {
-          setShowAIChatModal(false)
-          useSettingsStore.getState().updateSetting('aiChatDisplayMode', 'sidebar')
-          setRightSidebarTab('chat')
-          setIsRightSidebarOpen(true)
-        }}
-        onUnfloat={() => {
-          setShowAIChatModal(false)
-          useSettingsStore.getState().updateSetting('aiChatDisplayMode', 'sidebar')
-          setRightSidebarTab('chat')
-          setIsRightSidebarOpen(true)
-        }}
-      />
+      {showAIChatModal && (
+        <GlobalErrorHandler>
+          <React.Suspense fallback={null}>
+            <LuminaChat
+              isOpen={showAIChatModal}
+              onClose={() => {
+                setShowAIChatModal(false)
+                setSavedRightSidebarState(null)
+              }}
+              onDock={() => {
+                setShowAIChatModal(false)
+                useSettingsStore.getState().updateSetting('aiChatDisplayMode', 'sidebar')
+                setRightSidebarTab('chat')
+                setIsRightSidebarOpen(true)
+              }}
+              onUnfloat={() => {
+                setShowAIChatModal(false)
+                useSettingsStore.getState().updateSetting('aiChatDisplayMode', 'sidebar')
+                setRightSidebarTab('chat')
+                setIsRightSidebarOpen(true)
+              }}
+            />
+          </React.Suspense>
+        </GlobalErrorHandler>
+      )}
       <CommandPalette
         isOpen={showPalette}
         initialQuery={paletteInitialQuery}
