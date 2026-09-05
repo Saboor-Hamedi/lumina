@@ -7,6 +7,12 @@ Also, on wikilink its not working because it different character, how to handle 
   - lumin
   - Every single character must be perfect like English. 
 
+  - i tried Persian language it shows like this 
+  "
+  
+  "
+
+
 
   i need this to be  robust, DRY separated from other we need to create folder and file simply call it...
 

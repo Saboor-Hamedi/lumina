@@ -50,21 +50,22 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.08));
-  border-radius: 6px;
+  background: transparent;
+  border: none;
+  border-bottom: 0.5px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: 0;
   height: 28px;
   width: 100%;
   max-width: 320px;
-  padding: 0 8px 0 10px;
+  padding: 0 4px;
   cursor: pointer;
-  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: border-color 0.15s ease, color 0.15s ease;
   -webkit-app-region: no-drag;
 }
 
 .unified-search-bar:hover {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.16);
+  background: transparent;
+  border-bottom-color: var(--border-medium, rgba(255, 255, 255, 0.18));
 }
 
 .search-icon {

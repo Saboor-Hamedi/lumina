@@ -45,7 +45,7 @@ const TitleBar = ({ onToggleAIChat }) => {
               Lumina
             </span>
           </div>
-          
+
           <UpdateDetails />
         </div>
       </div>

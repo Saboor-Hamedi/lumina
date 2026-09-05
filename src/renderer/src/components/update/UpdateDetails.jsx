@@ -7,7 +7,7 @@ import ToolTip from '../atoms/ToolTip'
 import './UpdateDetails.css'
 
 const UpdateDetails = () => {
-  const { status, updateInfo, progress, download, install, check } = useUpdateStore()
+  const { status, updateInfo, progress, download, install, check, lastChecked } = useUpdateStore()
   const [currentVersion, setCurrentVersion] = useState('1.0.0')
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef(null)
@@ -24,13 +24,10 @@ const UpdateDetails = () => {
         setIsOpen(false)
       }
     }
-    const handleWindowBlur = () => setIsOpen(false)
     
     document.addEventListener('pointerdown', handleClickOutside, { capture: true })
-    window.addEventListener('blur', handleWindowBlur)
     return () => {
       document.removeEventListener('pointerdown', handleClickOutside, { capture: true })
-      window.removeEventListener('blur', handleWindowBlur)
     }
   }, [])
 
@@ -39,25 +36,23 @@ const UpdateDetails = () => {
   const rawNotes =
     updateInfo?.releaseNotes ||
     `New
-- Granular Fault Isolation: Independent error boundaries for Left Sidebar, Right Inspector, Open Note Tabs, Knowledge Graph, and Welcome views with container-query responsive cards.
-- Auto-Reset Update Status: Instant "Up to date" check feedback that automatically resets back to "Check for Updates" after 3 seconds.
-- Vault Details & Live Stats: Click the note counter in the Explorer header to inspect real-time vault statistics, including total notes, folders, favorites, learning progress, word counts, characters, and disk storage size.
-- OS-Grade Multi-Selection: Select folders and notes together using Ctrl+Click, Shift+Click continuous range selection, or Ctrl+A to select all.
-- Bulk Folder & Note Deletion: Safely delete selected folders, subdirectories, and notes in bulk with a confirmation dialog.
-- Interactive Mermaid & Image Lightbox: Full-screen pan & zoom modal with smooth vector scaling, 2px borders, and bottom-right floating controls.
+- Redesigned Update Window: A wider, cleaner popover with an organized layout, simplified channel switcher, and instant update checks.
+- Vault Insights & Live Stats: Click the note counter in the Explorer header to see your total notes, folders, word counts, and disk storage.
+- Multi-Item Selection: Select multiple notes and folders easily using click-and-drag, Shift+Click, or Ctrl+A.
+- Interactive Image & Diagram Viewer: Open images and diagrams in a smooth fullscreen viewer with zoom and pan controls.
 
 Improved
-- Micro Error Handler UI: Sleek 26px micro action buttons, 22px icon-only copy action with instant checkmark feedback, and slim scrollable code block.
-- Development Mode Update Checking: Instant update status response in local development without infinite loading spinners.
-- Comprehensive Test Coverage: Expanded test suites across Settings (Shortcuts, Color Picker), Workspace Manager, and App Update lifecycle with 100% pass rate.
-- Stylish Mermaid Support: Custom node styling (style, classDef, colors, and HTML labels) renders accurately in both the editor and fullscreen lightbox.
-- Responsive Narrow Sidebar: File explorer tabs and header actions collapse cleanly to centered icons on narrow window sizes without text wrapping.
-- Refined Borderless Tooltips: Modern, subtle tooltips with 2px corner radius and deep ambient glass blur.
+- Cleaner Header & Action Buttons: Moved 'Check for Updates' to the top header with a sleek accent hover and no distracting glows.
+- Sleeker Badges & Tags: Modern, compact 5px rounded badges for update categories and cleaner status indicators.
+- Fresher Explorer Icons: Modernized New Note, New Folder, and Collapse All icons in the file explorer.
+- Compact Window Titlebar: Refined the update button to a neat 22px icon placed comfortably right next to the Lumina logo.
+- Responsive AI Composer: The AI Assistant composer now adapts cleanly when your sidebar is resized or narrowed.
+- Balanced Footer: Moved version and check time neatly to the bottom-right corner for a distraction-free experience.
 
 Fixed
-- Complete Folder Deletion: Fixed folder deletion on root items and ensured folders containing hidden files or gitignore clean up completely from disk and memory.
-- Breadcrumbs Path Resolution: Guaranteed full breadcrumb path display and click-to-copy synchronization for all open workspace files.
-- Recursive Folder Deletion: Fixed folder deletion on root items and ensured nested folders clean up completely from disk and memory.`
+- Update Window Stays Open: The update details window now stays open when switching between Lumina and other desktop apps.
+- Smoother Note Links: Fixed link hover previews so your note connections and wikilinks open reliably.
+- Folder Deletion: Fixed issues where deleted folders occasionally left traces behind.`
   
   const parseNotes = (text) => {
     const categories = []
@@ -89,14 +84,24 @@ Fixed
         <button 
           className={`update-trigger-btn ${status === 'available' || status === 'downloading' || status === 'ready' ? 'has-update' : ''}`}
           onClick={() => setIsOpen(!isOpen)}
+          aria-label="Check for updates"
+          aria-expanded={isOpen}
         >
-          <Download size={14} />
+          <Download size={13} strokeWidth={2} />
         </button>
       </ToolTip>
 
       {isOpen && (
         <div className="update-details-dropdown" data-testid="update-details">
-          <UpdateHeader currentVersion={currentVersion} newVersion={newVersion} status={status} />
+          <UpdateHeader
+            currentVersion={currentVersion}
+            newVersion={newVersion}
+            status={status}
+            progress={progress}
+            download={download}
+            install={install}
+            check={check}
+          />
 
           <div className="update-details-body selectable-text">
             {parsedNotes.map((category, i) => {
@@ -157,6 +162,8 @@ Fixed
           </div>
 
           <UpdateFooter
+            currentVersion={currentVersion}
+            lastChecked={lastChecked}
             status={status}
             progress={progress}
             install={install}

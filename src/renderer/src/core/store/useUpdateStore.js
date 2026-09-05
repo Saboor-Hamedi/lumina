@@ -5,6 +5,7 @@ export const useUpdateStore = create((set, get) => ({
   updateInfo: null,
   progress: null,
   error: null,
+  lastChecked: Date.now(),
 
   init: () => {
     if (window.api?.onUpdateStatus) {
@@ -15,10 +16,10 @@ export const useUpdateStore = create((set, get) => ({
             set({ status: 'checking', error: null })
             break
           case 'available':
-            set({ status: 'available', updateInfo: data })
+            set({ status: 'available', updateInfo: data, lastChecked: Date.now() })
             break
           case 'not-available':
-            set({ status: 'not-available', updateInfo: data })
+            set({ status: 'not-available', updateInfo: data, lastChecked: Date.now() })
             setTimeout(() => {
               if (get().status === 'not-available') {
                 set({ status: 'idle' })
@@ -29,10 +30,10 @@ export const useUpdateStore = create((set, get) => ({
             set({ status: 'downloading', progress: data })
             break
           case 'ready':
-            set({ status: 'ready', updateInfo: data, progress: null })
+            set({ status: 'ready', updateInfo: data, progress: null, lastChecked: Date.now() })
             break
           case 'error':
-            set({ status: 'error', error: data })
+            set({ status: 'error', error: data, lastChecked: Date.now() })
             break
           default:
             break
@@ -46,7 +47,7 @@ export const useUpdateStore = create((set, get) => ({
 
     const timeout = setTimeout(() => {
       if (get().status === 'checking') {
-        set({ status: 'not-available' })
+        set({ status: 'not-available', lastChecked: Date.now() })
         setTimeout(() => {
           if (get().status === 'not-available') {
             set({ status: 'idle' })
@@ -59,7 +60,7 @@ export const useUpdateStore = create((set, get) => ({
       await window.api?.checkForUpdates()
     } catch (e) {
       clearTimeout(timeout)
-      set({ status: 'not-available' })
+      set({ status: 'not-available', lastChecked: Date.now() })
       setTimeout(() => {
         if (get().status === 'not-available') {
           set({ status: 'idle' })

@@ -154,7 +154,7 @@ const Welcome = ({ onNew, onLoadStarterVault }) => {
                 <Sparkles size={12} />
               </div>
               <div className="action-card-content">
-                <h3>AI Assistant</h3>
+                <h3>Lumina AI Assistant</h3>
                 <p>Chat with your knowledge</p>
               </div>
               <div className="action-shortcut">Ctrl+Shift+\</div>

@@ -54,17 +54,22 @@ export function useExplorerOperations({
   const lastAutoExpandedSnippetRef = useRef(null)
 
   const setExpandedFolders = useCallback((updater) => {
+    let nextArr = null
     setExpandedFoldersRaw((prev) => {
       const next = typeof updater === 'function' ? updater(prev) : updater
       const nextSet = next instanceof Set ? next : new Set(next || [])
       expandedFoldersRef.current = nextSet
-      const arr = Array.from(nextSet)
-      try {
-        localStorage.setItem('lumina-expanded-folders', JSON.stringify(arr))
-      } catch (e) {}
-      useSettingsStore.getState().updateSetting('expandedFolders', arr)
+      nextArr = Array.from(nextSet)
       return nextSet
     })
+    if (nextArr) {
+      try {
+        localStorage.setItem('lumina-expanded-folders', JSON.stringify(nextArr))
+      } catch (e) {}
+      queueMicrotask(() => {
+        useSettingsStore.getState().updateSetting('expandedFolders', nextArr)
+      })
+    }
   }, [])
 
   useEffect(() => {

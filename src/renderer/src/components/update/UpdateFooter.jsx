@@ -3,6 +3,8 @@ import { Download, Loader2, Settings, CheckCircle2, RefreshCw } from 'lucide-rea
 import ToolTip from '../atoms/ToolTip'
 
 const UpdateFooter = ({
+  currentVersion,
+  lastChecked,
   status,
   progress,
   install,
@@ -12,14 +14,25 @@ const UpdateFooter = ({
   onClose
 }) => {
   const [showSettings, setShowSettings] = useState(false)
-  const [minutesAgo, setMinutesAgo] = useState(0)
+  const [now, setNow] = useState(Date.now())
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setMinutesAgo((prev) => prev + 1)
-    }, 60000)
+      setNow(Date.now())
+    }, 15000)
     return () => clearInterval(interval)
   }, [])
+
+  const getRelativeTime = () => {
+    if (!lastChecked) return 'Just now'
+    const diffSec = Math.max(0, Math.floor((now - lastChecked) / 1000))
+    if (diffSec < 45) return 'Just now'
+    const diffMin = Math.floor(diffSec / 60)
+    if (diffMin < 60) return `${diffMin}m ago`
+    const diffHours = Math.floor(diffMin / 60)
+    if (diffHours < 24) return `${diffHours}h ago`
+    return `${Math.floor(diffHours / 24)}d ago`
+  }
 
   if (showSettings) {
     return (
@@ -65,128 +78,26 @@ const UpdateFooter = ({
     )
   }
 
-  const percentValue =
-    typeof progress === 'number'
-      ? progress
-      : typeof progress?.percent === 'number'
-        ? progress.percent
-        : typeof progress?.progress === 'number'
-          ? progress.progress
-          : 0
-
-  const safePercent = isNaN(percentValue)
-    ? 0
-    : Math.min(100, Math.max(0, Math.round(percentValue)))
-
   return (
     <div className="update-details-footer">
-      {status === 'available' ? (
-        <button
-          className="update-install-btn update-download-btn primary-solid"
-          onClick={download}
-        >
-          <Download size={14} />
-          <span>Download Update {newVersion ? `(v${newVersion})` : ''}</span>
-        </button>
-      ) : status === 'downloading' ? (
-        <button
-          className="update-install-btn primary-solid downloading-btn"
-          style={{ cursor: 'default' }}
-        >
-          <div
-            className="progress-bar-fill"
-            style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              height: '100%',
-              width: `${safePercent}%`,
-              background: 'var(--text-accent, #6366f1)',
-              opacity: 0.35,
-              transition: 'width 0.3s'
-            }}
-          />
-          <Loader2
-            size={14}
-            className="spin-animation"
-            style={{ position: 'relative', zIndex: 1 }}
-          />
-          <span style={{ position: 'relative', zIndex: 1 }}>
-            Downloading... {safePercent}%
-          </span>
-        </button>
-      ) : status === 'ready' ? (
-        <button
-          className="update-install-btn primary-solid update-ready-btn"
-          onClick={install}
-        >
-          <CheckCircle2 size={14} />
-          <span>Restart &amp; Install Now</span>
-        </button>
-      ) : status === 'checking' ? (
-        <button
-          className="update-install-btn primary-solid checking-btn"
-          style={{ cursor: 'default' }}
-          disabled
-        >
-          <RefreshCw size={14} className="spin-animation" />
-          <span>Checking for updates...</span>
-        </button>
-      ) : status === 'not-available' ? (
-        <button
-          className="update-install-btn check-update-btn primary-solid"
-          onClick={check}
-        >
-          <CheckCircle2 size={14} />
-          <span>Up to date</span>
-        </button>
-      ) : status === 'error' ? (
-        <button
-          className="update-install-btn check-update-btn primary-solid"
-          onClick={check}
-          style={{ borderColor: 'var(--color-error, #ef4444)' }}
-        >
-          <RefreshCw size={14} />
-          <span>Check failed — Retry</span>
-        </button>
-      ) : (
-        <button
-          className="update-install-btn check-update-btn primary-solid"
-          onClick={check}
-        >
-          <RefreshCw size={14} />
-          <span>Check for Updates</span>
-        </button>
-      )}
-
-      <div className="footer-actions-secondary" style={{ marginTop: '6px' }}>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <ToolTip text="Update Preferences" position="top">
-            <button
-              className="settings-btn"
-              onClick={() => setShowSettings(true)}
-              title="Update Preferences"
-            >
-              <Settings size={14} />
-            </button>
-          </ToolTip>
-          <span
-            style={{
-              fontSize: '11px',
-              color: 'var(--text-faint)',
-              transition: 'color 0.3s'
-            }}
+      <div className="footer-actions-secondary">
+        <ToolTip text="Update Preferences" position="top">
+          <button
+            className="settings-btn"
+            onClick={() => setShowSettings(true)}
+            title="Update Preferences"
           >
-            Last checked: {minutesAgo === 0 ? 'Just now' : `${minutesAgo} min ago`}
+            <Settings size={14} />
+          </button>
+        </ToolTip>
+
+        <div className="footer-right-info">
+          <span className="footer-version-text">
+            v{currentVersion || newVersion || '1.0.0'}
           </span>
-        </div>
-        <div style={{ display: 'flex', gap: '4px' }}>
-          <button className="text-btn" onClick={onClose}>
-            Remind Me
-          </button>
-          <button className="text-btn" onClick={onClose}>
-            Not Now
-          </button>
+          <span className="footer-time-text">
+            • {getRelativeTime()}
+          </span>
         </div>
       </div>
     </div>

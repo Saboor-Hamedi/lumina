@@ -45,17 +45,17 @@ describe('Indexing', () => {
 
     render(<Indexing />)
     expect(screen.getByText('Indexing complete')).toBeInTheDocument()
-    expect(screen.getByText('All files up to date.')).toBeInTheDocument()
+    expect(screen.getByText('Indexed 10 files.')).toBeInTheDocument()
   })
 
-  it('shows up-to-date stage as complete', () => {
+  it('ignores up-to-date stage when vault is already up to date', () => {
     const onIndexProgress = vi.fn((cb) => {
       cb({ progress: 100, stage: 'up-to-date', indexed: 10, total: 10 })
     })
     global.window.api.onIndexProgress = onIndexProgress
 
-    render(<Indexing />)
-    expect(screen.getByText('Indexing complete')).toBeInTheDocument()
+    const { container } = render(<Indexing />)
+    expect(container.firstChild).toBeNull()
   })
 
   it('hides percentage when complete', () => {
@@ -68,7 +68,7 @@ describe('Indexing', () => {
     expect(screen.queryByText('100%')).not.toBeInTheDocument()
   })
 
-  it('auto-hides after 1.5 seconds when complete', () => {
+  it('auto-hides after 2.5 seconds when complete', () => {
     const onIndexProgress = vi.fn((cb) => {
       cb({ progress: 100, stage: 'completed', indexed: 10, total: 10 })
     })
@@ -78,20 +78,20 @@ describe('Indexing', () => {
     expect(screen.getByText('Indexing complete')).toBeInTheDocument()
 
     act(() => {
-      vi.advanceTimersByTime(1501)
+      vi.advanceTimersByTime(2501)
     })
 
     expect(screen.queryByText('Indexing complete')).not.toBeInTheDocument()
   })
 
-  it('displays scanning stage message', () => {
+  it('displays processing message during indexing', () => {
     const onIndexProgress = vi.fn((cb) => {
-      cb({ progress: 0, stage: 'scanning', found: 15 })
+      cb({ progress: 10, stage: 'indexing', indexed: 0, total: 15 })
     })
     global.window.api.onIndexProgress = onIndexProgress
 
     render(<Indexing />)
-    expect(screen.getByText(/Scanning 15 files/)).toBeInTheDocument()
+    expect(screen.getByText(/Processed 0 of 15 files/)).toBeInTheDocument()
   })
 
   it('displays processing message during indexing', () => {

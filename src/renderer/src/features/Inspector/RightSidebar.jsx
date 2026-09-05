@@ -128,7 +128,7 @@ export const RightSidebar = ({
                 <History size={13} />
               </button>
             </ToolTip>
-            <span className="inspector-sub-title">AI Assistant</span>
+            <span className="inspector-sub-title">Lumina AI Assistant</span>
           </div>
           <ToolTip text="Pop out to floating window" position="bottom-right">
             <button

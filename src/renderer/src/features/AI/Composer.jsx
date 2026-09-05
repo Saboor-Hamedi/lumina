@@ -262,7 +262,7 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false }) => {
             value={input}
             onChange={handleOnChange}
             onKeyDown={handleKeyDown}
-            placeholder="Ask AI... type '@' to mention notes, '/' for commands"
+            placeholder="Ask Lumina AI... ('@' note, '/' cmd)"
             rows={1}
             disabled={isLoading}
             spellCheck="false"

@@ -31,7 +31,7 @@ import { useMention } from '../../core/hooks/useMention'
 import { useShallow } from 'zustand/react/shallow'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useAIStore } from '../AI/tools/lumina'
-import { MessageContent } from '../AI/Lumina'
+import { MessageContent, ThinkingIndicator } from '../AI/Lumina'
 import { useVaultStore } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { PreviewCommandPalette } from './PreviewCommandPalette'
@@ -695,12 +695,7 @@ const CommandPalette = React.memo(
                 !msg.content?.trim() &&
                 !msg.imageUrl &&
                 ((i === chatMessages.length - 1 && isChatLoading) || msg.isGenerating) ? (
-                  <div className="thinking-indicator">
-                    <span className="thinking-text">
-                      <span className="thinking-dot-pulse" />
-                      Thinking...
-                    </span>
-                  </div>
+                  <ThinkingIndicator isGenerating={msg.isGenerating} />
                 ) : msg.role === 'assistant' ? (
                   <MessageContent content={msg.content} />
                 ) : (

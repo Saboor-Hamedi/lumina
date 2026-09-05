@@ -343,10 +343,9 @@
 .thinking-indicator {
   display: flex;
   align-items: center;
-  padding: 6px 10px;
-  border-radius: 8px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-dim);
+  padding: 4px 0;
+  background: transparent;
+  border: none;
   width: fit-content;
 }
 

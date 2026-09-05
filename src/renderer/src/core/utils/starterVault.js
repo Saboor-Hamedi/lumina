@@ -38,7 +38,7 @@ Discover everything Lumina can do with these interactive starter notes:
 | **Create New Note** | <kbd>Ctrl</kbd> + <kbd>N</kbd> | <kbd>⌘</kbd> + <kbd>N</kbd> |
 | **Toggle Knowledge Graph** | <kbd>Ctrl</kbd> + <kbd>G</kbd> | <kbd>⌘</kbd> + <kbd>G</kbd> |
 | **Toggle Left Sidebar** | <kbd>Ctrl</kbd> + <kbd>B</kbd> | <kbd>⌘</kbd> + <kbd>B</kbd> |
-| **Open AI Assistant** | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>\\</kbd> | <kbd>⌘</kbd> + <kbd>Shift</kbd> + <kbd>\\</kbd> |
+| **Open Lumina AI Assistant** | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>\\</kbd> | <kbd>⌘</kbd> + <kbd>Shift</kbd> + <kbd>\\</kbd> |
 | **Open Preferences / Settings** | <kbd>Ctrl</kbd> + <kbd>,</kbd> | <kbd>⌘</kbd> + <kbd>,</kbd> |
 
 ---

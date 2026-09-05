@@ -3,10 +3,10 @@ import {
   Search,
   NotebookText,
   Star,
-  FilePlus,
-  FolderPlus,
+  FilePenLine,
+  FolderInput,
   RefreshCw,
-  ChevronsUp
+  FoldVertical
 } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
 import NoteNumbers from './NoteNumbers'
@@ -186,7 +186,7 @@ export const ExplorerHeader = ({
                   }
                 }}
               >
-                <FilePlus size={14} />
+                <FilePenLine size={14} />
               </button>
             </ToolTip>
             <ToolTip text="New Folder">
@@ -201,7 +201,7 @@ export const ExplorerHeader = ({
                   }
                 }}
               >
-                <FolderPlus size={14} />
+                <FolderInput size={14} />
               </button>
             </ToolTip>
             <ToolTip text="Refresh Explorer">
@@ -219,7 +219,7 @@ export const ExplorerHeader = ({
             </ToolTip>
             <ToolTip text="Collapse Folders in Explorer">
               <button className="sort-toggle-btn" onClick={collapseAllFolders}>
-                <ChevronsUp size={14} />
+                <FoldVertical size={14} />
               </button>
             </ToolTip>
           </div>

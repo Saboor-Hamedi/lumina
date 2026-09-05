@@ -34,7 +34,7 @@ const SettingTab = ({ activeTab, setActiveTab }) => {
             onClick={() => setActiveTab('assistant')}
           >
             <Sparkles size={14} style={{ flexShrink: 0 }} />
-            <span>AI Assistant</span>
+            <span>Lumina AI Assistant</span>
           </button>
           <button
             className={`nav-item ${activeTab === 'advanced' ? 'active' : ''}`}

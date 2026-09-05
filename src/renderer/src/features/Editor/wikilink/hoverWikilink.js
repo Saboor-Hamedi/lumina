@@ -199,6 +199,7 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
         if (codeEl.classList.contains('language-mermaid')) return
 
         const pre = codeEl.parentElement
+        if (!pre || !pre.parentNode) return
 
         let lang = 'text'
         codeEl.classList.forEach((cls) => {
@@ -271,8 +272,12 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
         header.appendChild(langPill)
 
         codeWrapper.appendChild(header)
-        codeWrapper.appendChild(pre)
-        pre.replaceWith(codeWrapper)
+        if (pre.parentNode) {
+          pre.replaceWith(codeWrapper)
+          codeWrapper.appendChild(pre)
+        } else {
+          codeWrapper.appendChild(pre)
+        }
 
         pre.className = ''
         pre.style.whiteSpace = 'pre-wrap'
