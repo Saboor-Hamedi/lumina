@@ -197,12 +197,20 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  width: 100%;
+  min-width: 0;
   background: var(--bg-sidebar);
   color: var(--text-main);
+  box-sizing: border-box;
+  user-select: none;
+  container-type: inline-size;
+  container-name: inspector;
 }
 
 /* Inspector Tabs */
 .panel-header-tabs {
+  position: relative;
+  z-index: 10;
   height: 32px !important;
   min-height: 32px !important;
   max-height: 32px !important;
@@ -335,3 +343,57 @@
 .panel-header-tabs .workspace-tab:hover .tab-icon {
   opacity: 1;
 }
+
+@container inspector (max-width: 250px) {
+  .panel-header-tabs.inspector-tabbar {
+    justify-content: space-around;
+  }
+  .panel-header-tabs .inspector-tab {
+    flex: 1;
+    min-width: 0;
+    padding: 0 4px !important;
+    gap: 0 !important;
+    justify-content: center !important;
+  }
+  .panel-header-tabs .tab-title {
+    display: none !important;
+  }
+  .panel-header-tabs .tab-context {
+    justify-content: center !important;
+    gap: 0 !important;
+  }
+  .inspector-sub-title {
+    font-size: 10px;
+  }
+  .inspector-sub-badge {
+    max-width: 75px;
+    font-size: 10px;
+  }
+  .properties-container {
+    padding: 10px;
+  }
+  .property-row {
+    padding: 4px 6px;
+    gap: 4px;
+  }
+  .property-name {
+    font-size: 11.5px;
+    gap: 5px;
+  }
+  .property-value-wrapper {
+    font-size: 11.5px;
+  }
+}
+
+@container inspector (max-width: 190px) {
+  .inspector-sub-badge {
+    display: none !important;
+  }
+  .inspector-sub-header {
+    padding: 0 8px;
+  }
+  .properties-container {
+    padding: 6px;
+  }
+}
+

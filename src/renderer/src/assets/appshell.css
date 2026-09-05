@@ -16,26 +16,25 @@
 }
 
 .sidebar-resizer {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 14px;
+  position: relative;
+  width: 5px;
+  flex-shrink: 0;
   cursor: ew-resize;
   background: transparent;
-  z-index: 1001;
-  margin: 0;
+  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: center;
   touch-action: none;
+  align-self: stretch;
 }
 
 .sidebar-resizer.left {
-  right: -9.5px;
+  /* sits between left sidebar and main */
 }
 
 .sidebar-resizer.right {
-  left: -9.5px;
+  /* sits between main and right sidebar */
 }
 
 /* Elegant micro dots centered cleanly inside the 5px gap without border or background */
@@ -127,13 +126,11 @@ body.is-global-resizing .cm-editor {
   position: relative;
   width: 0;
   background: var(--bg-sidebar) !important;
-  backdrop-filter: blur(20px) saturate(1.5);
-  -webkit-backdrop-filter: blur(20px) saturate(1.5);
   z-index: 1000;
   border-right: none;
   box-shadow: none;
   pointer-events: none;
-  transition: width 0.25s cubic-bezier(0.2, 0, 0, 1), border-right 0.25s, box-shadow 0.25s, margin 0.25s;
+  transition: width 0.18s cubic-bezier(0.2, 0.9, 0.4, 1), margin 0.18s cubic-bezier(0.2, 0.9, 0.4, 1);
   overflow: hidden;
   flex-shrink: 0;
   will-change: width;
@@ -146,8 +143,15 @@ body.is-global-resizing .cm-editor {
   border-right: 1px solid var(--border-dim);
   box-shadow: none;
   pointer-events: auto;
-  margin-right: 5px;
   overflow: visible;
+}
+
+/* Keep inner sidebar at natural width so buttons and headers never squish when closing */
+.shell-sidebar-left .unified-sidebar {
+  width: var(--left-sidebar-width, 280px);
+  min-width: var(--left-sidebar-width, 280px);
+  height: 100%;
+  flex-shrink: 0;
 }
 
 .shell-main {
@@ -182,13 +186,11 @@ body.is-global-resizing .cm-editor {
   position: relative;
   width: 0;
   background: var(--bg-sidebar) !important;
-  backdrop-filter: blur(20px) saturate(1.5);
-  -webkit-backdrop-filter: blur(20px) saturate(1.5);
   z-index: 1000;
   border-left: none;
   box-shadow: none;
   pointer-events: none;
-  transition: width 0.25s cubic-bezier(0.2, 0, 0, 1), border-left 0.25s, box-shadow 0.25s, margin 0.25s;
+  transition: width 0.18s cubic-bezier(0.2, 0.9, 0.4, 1), margin 0.18s cubic-bezier(0.2, 0.9, 0.4, 1);
   overflow: hidden;
   flex-shrink: 0;
   will-change: width;
@@ -201,8 +203,16 @@ body.is-global-resizing .cm-editor {
   border-left: 1px solid var(--border-dim);
   box-shadow: none;
   pointer-events: auto;
-  margin-left: 5px;
   overflow: visible;
+}
+
+/* Keep right sidebar inner panel at natural width so tabs never squish when closing */
+.shell-sidebar-right .inspector-panel,
+.shell-sidebar-right > div {
+  width: var(--right-sidebar-width, 320px);
+  min-width: var(--right-sidebar-width, 320px);
+  height: 100%;
+  flex-shrink: 0;
 }
 
 

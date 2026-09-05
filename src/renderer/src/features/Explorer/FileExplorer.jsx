@@ -125,8 +125,25 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   const debounceTimerRef = useRef(null)
 
   const [activeTab, setActiveTab] = useState('all')
-  const { settings, updateSetting, togglePinnedFolder } = useSettingsStore()
-  const pinnedFolders = settings.pinnedFolders || []
+  const sortBy = useSettingsStore((state) => state.settings.sortBy)
+  const sortDirection = useSettingsStore((state) => state.settings.sortDirection)
+  const noteOrder = useSettingsStore((state) => state.settings.noteOrder)
+  const pinnedFolders = useSettingsStore((state) => state.settings.pinnedFolders) || []
+  const folderOrder = useSettingsStore((state) => state.settings.folderOrder)
+  const expandedFoldersSetting = useSettingsStore((state) => state.settings.expandedFolders)
+  const startMenuPinnedOrder = useSettingsStore((state) => state.settings.startMenuPinnedOrder)
+  const updateSetting = useSettingsStore((state) => state.updateSetting)
+  const togglePinnedFolder = useSettingsStore((state) => state.togglePinnedFolder)
+  // Build a stable settings object for hooks that need it
+  const settings = React.useMemo(() => ({
+    sortBy,
+    sortDirection,
+    noteOrder,
+    pinnedFolders,
+    folderOrder,
+    expandedFolders: expandedFoldersSetting,
+    startMenuPinnedOrder
+  }), [sortBy, sortDirection, noteOrder, pinnedFolders, folderOrder, expandedFoldersSetting, startMenuPinnedOrder])
 
   const searchInputRef = useRef(null)
   const modalRef = useRef(null)
@@ -191,10 +208,6 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
       }
     }
   })
-
-  const sortBy = settings.sortBy || 'name'
-  const sortDirection = settings.sortDirection || 'asc'
-  const noteOrder = settings.noteOrder || null
 
   const cycles = [
     { sortBy: 'name', sortDirection: 'asc' },

@@ -35,7 +35,9 @@ export function useExplorerOperations({
   handleSelect,
   lastClickedFolder
 }) {
-  const { settings, updateSetting } = useSettingsStore()
+  const expandedFoldersSetting = useSettingsStore((state) => state.settings?.expandedFolders)
+  const folderOrder = useSettingsStore((state) => state.settings?.folderOrder)
+  const updateSetting = useSettingsStore((state) => state.updateSetting)
   const saveSnippet = useVaultStore((state) => state.saveSnippet)
   const loadVault = useVaultStore((state) => state.loadVault)
 
@@ -47,7 +49,7 @@ export function useExplorerOperations({
         if (Array.isArray(parsed)) return new Set(parsed)
       }
     } catch (e) {}
-    return new Set(settings.expandedFolders || [])
+    return new Set(expandedFoldersSetting || [])
   })
   const [collapsedDuringSearch, setCollapsedDuringSearch] = useState(() => new Set())
   const expandedFoldersRef = useRef(expandedFolders)
@@ -73,8 +75,8 @@ export function useExplorerOperations({
   }, [])
 
   useEffect(() => {
-    if (Array.isArray(settings.expandedFolders)) {
-      const incomingSet = new Set(settings.expandedFolders)
+    if (Array.isArray(expandedFoldersSetting)) {
+      const incomingSet = new Set(expandedFoldersSetting)
       setExpandedFoldersRaw((prev) => {
         if (prev.size === incomingSet.size && [...prev].every((x) => incomingSet.has(x))) {
           return prev
@@ -83,7 +85,7 @@ export function useExplorerOperations({
         return incomingSet
       })
     }
-  }, [settings.expandedFolders])
+  }, [expandedFoldersSetting])
 
   const [creating, setCreating] = useState(null) // { type: 'file' | 'folder', parentId: string } | null
   const [creatingValue, setCreatingValue] = useState('')
@@ -288,7 +290,7 @@ export function useExplorerOperations({
       setCreatingValue('')
       setSidebarFocus(null)
     },
-    [creating, creatingValue, settings.folderOrder, updateSetting, loadVault, saveSnippet, handleSelect, setSidebarFocus, setExpandedFolders]
+    [creating, creatingValue, folderOrder, updateSetting, loadVault, saveSnippet, handleSelect, setSidebarFocus, setExpandedFolders]
   )
 
   /**

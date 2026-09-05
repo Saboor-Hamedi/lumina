@@ -66,8 +66,6 @@ const AppShell = () => {
     }))
   )
   const { toast, showToast, clearToast } = useToast()
-  const sidebarSetting = useSettingsStore((state) => state.settings?.sidebar)
-  const rightSidebarSetting = useSettingsStore((state) => state.settings?.rightSidebar)
 
   useEffect(() => {
     const handleGlobalToast = (e) => {
@@ -98,8 +96,24 @@ const AppShell = () => {
   const [showExplorerModal, setShowExplorerModal] = useState(false)
   const [showActiveIconPicker, setShowActiveIconPicker] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true)
-  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false)
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(() => {
+    if (typeof localStorage !== 'undefined') {
+      const saved = localStorage.getItem('lumina_left_sidebar_open')
+      if (saved !== null) return saved === 'true'
+    }
+    const storeVal = useSettingsStore.getState().settings?.sidebar?.isLeftOpen
+    if (typeof storeVal === 'boolean') return storeVal
+    return true
+  })
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(() => {
+    if (typeof localStorage !== 'undefined') {
+      const saved = localStorage.getItem('lumina_right_sidebar_open')
+      if (saved !== null) return saved === 'true'
+    }
+    const storeVal = useSettingsStore.getState().settings?.rightSidebar?.isRightOpen
+    if (typeof storeVal === 'boolean') return storeVal
+    return false
+  })
   const [rightSidebarTab, setRightSidebarTab] = useState('details')
   const [renameModal, setRenameModal] = useState({ isOpen: false, item: null, newName: '' })
   /**
@@ -133,44 +147,68 @@ const AppShell = () => {
     document.documentElement.style.setProperty('--right-sidebar-width', `${rightWidth}px`)
   }, [rightWidth])
 
+  const isLeftSidebarOpenRef = React.useRef(isLeftSidebarOpen)
+  const isRightSidebarOpenRef = React.useRef(isRightSidebarOpen)
+
+  useEffect(() => {
+    isLeftSidebarOpenRef.current = isLeftSidebarOpen
+  }, [isLeftSidebarOpen])
+
+  useEffect(() => {
+    isRightSidebarOpenRef.current = isRightSidebarOpen
+  }, [isRightSidebarOpen])
+
+  const updateLeftSidebarOpen = useCallback((valOrFn) => {
+    const next = typeof valOrFn === 'function' ? valOrFn(isLeftSidebarOpenRef.current) : valOrFn
+    isLeftSidebarOpenRef.current = next
+    setIsLeftSidebarOpen(next)
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('lumina_left_sidebar_open', String(next))
+    }
+    setTimeout(() => {
+      const currentSidebar = useSettingsStore.getState().settings?.sidebar || {}
+      if (currentSidebar.isLeftOpen !== next) {
+        useSettingsStore.getState().updateSettings({
+          sidebar: {
+            ...currentSidebar,
+            isLeftOpen: next
+          }
+        })
+      }
+    }, 0)
+  }, [])
+
+  const updateRightSidebarOpen = useCallback((valOrFn) => {
+    const next = typeof valOrFn === 'function' ? valOrFn(isRightSidebarOpenRef.current) : valOrFn
+    isRightSidebarOpenRef.current = next
+    setIsRightSidebarOpen(next)
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('lumina_right_sidebar_open', String(next))
+    }
+    setTimeout(() => {
+      const currentRSidebar = useSettingsStore.getState().settings?.rightSidebar || {}
+      if (currentRSidebar.isRightOpen !== next) {
+        useSettingsStore.getState().updateSettings({
+          rightSidebar: {
+            ...currentRSidebar,
+            isRightOpen: next
+          }
+        })
+      }
+    }, 0)
+  }, [])
+
   const handleToggleLeftSidebar = useCallback(() => {
-    setIsLeftSidebarOpen((prev) => {
-      const next = !prev
-      const currentSidebar = sidebarSetting || {}
-      useSettingsStore.getState().updateSettings({
-        sidebar: {
-          ...currentSidebar,
-          isLeftOpen: next
-        }
-      })
-      return next
-    })
-  }, [sidebarSetting])
+    updateLeftSidebarOpen((prev) => !prev)
+  }, [updateLeftSidebarOpen])
 
   const handleToggleRightSidebar = useCallback(() => {
-    setIsRightSidebarOpen((prev) => {
-      const next = !prev
-      const currentRSidebar = rightSidebarSetting || {}
-      useSettingsStore.getState().updateSettings({
-        rightSidebar: {
-          ...currentRSidebar,
-          isRightOpen: next
-        }
-      })
-      return next
-    })
-  }, [rightSidebarSetting])
+    updateRightSidebarOpen((prev) => !prev)
+  }, [updateRightSidebarOpen])
 
   const handleCloseRightSidebar = useCallback(() => {
-    setIsRightSidebarOpen(false)
-    const currentRSidebar = rightSidebarSetting || {}
-    useSettingsStore.getState().updateSettings({
-      rightSidebar: {
-        ...currentRSidebar,
-        isRightOpen: false
-      }
-    })
-  }, [rightSidebarSetting])
+    updateRightSidebarOpen(false)
+  }, [updateRightSidebarOpen])
 
   // Deletion State
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -210,14 +248,7 @@ const AppShell = () => {
         const initialLeft = initialWidthRef.current.left || leftWidth || 260
         // Only collapse if dragged all the way into the edge (< 70px)
         if (raw < 70) {
-          setIsLeftSidebarOpen(false)
-          const currentSidebar = sidebarSetting || {}
-          useSettingsStore.getState().updateSettings({
-            sidebar: {
-              ...currentSidebar,
-              isLeftOpen: false
-            }
-          })
+          updateLeftSidebarOpen(false)
           const restoreWidth = Math.max(200, initialLeft)
           if (shellEl) shellEl.style.setProperty('--left-sidebar-width', `${restoreWidth}px`)
           document.documentElement.style.setProperty('--left-sidebar-width', `${restoreWidth}px`)
@@ -226,14 +257,19 @@ const AppShell = () => {
           setLeftWidth(finalWidth)
           if (shellEl) shellEl.style.setProperty('--left-sidebar-width', `${finalWidth}px`)
           document.documentElement.style.setProperty('--left-sidebar-width', `${finalWidth}px`)
-          const currentSidebar = sidebarSetting || {}
-          useSettingsStore.getState().updateSettings({
-            sidebar: {
-              ...currentSidebar,
-              width: finalWidth,
-              isLeftOpen: true
-            }
-          })
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('lumina_left_sidebar_open', 'true')
+          }
+          setTimeout(() => {
+            const currentSidebar = useSettingsStore.getState().settings?.sidebar || {}
+            useSettingsStore.getState().updateSettings({
+              sidebar: {
+                ...currentSidebar,
+                width: finalWidth,
+                isLeftOpen: true
+              }
+            })
+          }, 0)
         }
       } else if (resizingSide === 'right') {
         const raw = widthRef.current.right
@@ -249,14 +285,19 @@ const AppShell = () => {
           setRightWidth(finalWidth)
           if (shellEl) shellEl.style.setProperty('--right-sidebar-width', `${finalWidth}px`)
           document.documentElement.style.setProperty('--right-sidebar-width', `${finalWidth}px`)
-          const currentRSidebar = rightSidebarSetting || {}
-          useSettingsStore.getState().updateSettings({
-            rightSidebar: {
-              ...currentRSidebar,
-              width: finalWidth,
-              isRightOpen: true
-            }
-          })
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('lumina_right_sidebar_open', 'true')
+          }
+          setTimeout(() => {
+            const currentRSidebar = useSettingsStore.getState().settings?.rightSidebar || {}
+            useSettingsStore.getState().updateSettings({
+              rightSidebar: {
+                ...currentRSidebar,
+                width: finalWidth,
+                isRightOpen: true
+              }
+            })
+          }, 0)
         }
       }
       setResizingSide(null)
@@ -266,14 +307,16 @@ const AppShell = () => {
       document.body.classList.add('is-global-resizing')
       window.addEventListener('mousemove', handleMouseMove, { passive: true })
       window.addEventListener('mouseup', handleMouseUp)
+      window.addEventListener('blur', handleMouseUp)
     }
 
     return () => {
       document.body.classList.remove('is-global-resizing')
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
+      window.removeEventListener('blur', handleMouseUp)
     }
-  }, [resizingSide, sidebarSetting, rightSidebarSetting, leftWidth, rightWidth, handleCloseRightSidebar])
+  }, [resizingSide, leftWidth, rightWidth, handleCloseRightSidebar, updateLeftSidebarOpen])
 
   const handleResetSidebar = (side) => {
     if (side === 'left') {
@@ -282,18 +325,24 @@ const AppShell = () => {
       setLeftWidth(defaultLeft)
       if (appShellRef.current) appShellRef.current.style.setProperty('--left-sidebar-width', `${defaultLeft}px`)
       document.documentElement.style.setProperty('--left-sidebar-width', `${defaultLeft}px`)
-      useSettingsStore.getState().updateSettings({
-        sidebar: { ...(sidebarSetting || {}), width: defaultLeft }
-      })
+      setTimeout(() => {
+        const currentSidebar = useSettingsStore.getState().settings?.sidebar || {}
+        useSettingsStore.getState().updateSettings({
+          sidebar: { ...currentSidebar, width: defaultLeft }
+        })
+      }, 0)
     } else {
       const defaultRight = 320
       widthRef.current.right = defaultRight
       setRightWidth(defaultRight)
       if (appShellRef.current) appShellRef.current.style.setProperty('--right-sidebar-width', `${defaultRight}px`)
       document.documentElement.style.setProperty('--right-sidebar-width', `${defaultRight}px`)
-      useSettingsStore.getState().updateSettings({
-        rightSidebar: { ...(rightSidebarSetting || {}), width: defaultRight }
-      })
+      setTimeout(() => {
+        const currentRSidebar = useSettingsStore.getState().settings?.rightSidebar || {}
+        useSettingsStore.getState().updateSettings({
+          rightSidebar: { ...currentRSidebar, width: defaultRight }
+        })
+      }, 0)
     }
   }
 
@@ -337,11 +386,27 @@ const AppShell = () => {
           if (last) setSelectedSnippet(last)
         }
 
+        let savedLeft = null
+        let savedRight = null
+        if (typeof localStorage !== 'undefined') {
+          savedLeft = localStorage.getItem('lumina_left_sidebar_open')
+          savedRight = localStorage.getItem('lumina_right_sidebar_open')
+        }
+
         const legacySidebar = actualSettings.sidebar || {}
-        if (typeof legacySidebar.isLeftOpen === 'boolean')
+        if (savedLeft !== null) {
+          setIsLeftSidebarOpen(savedLeft === 'true')
+        } else if (typeof legacySidebar.isLeftOpen === 'boolean') {
           setIsLeftSidebarOpen(legacySidebar.isLeftOpen)
-        else if (typeof actualSettings.isLeftSidebarOpen === 'boolean')
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('lumina_left_sidebar_open', String(legacySidebar.isLeftOpen))
+          }
+        } else if (typeof actualSettings.isLeftSidebarOpen === 'boolean') {
           setIsLeftSidebarOpen(actualSettings.isLeftSidebarOpen)
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('lumina_left_sidebar_open', String(actualSettings.isLeftSidebarOpen))
+          }
+        }
 
         const rawLeftWidth =
           legacySidebar.width || legacySidebar.leftWidth || actualSettings.leftWidth
@@ -351,10 +416,19 @@ const AppShell = () => {
         }
 
         const legacyRSidebar = actualSettings.rightSidebar || {}
-        if (typeof legacyRSidebar.isRightOpen === 'boolean')
+        if (savedRight !== null) {
+          setIsRightSidebarOpen(savedRight === 'true')
+        } else if (typeof legacyRSidebar.isRightOpen === 'boolean') {
           setIsRightSidebarOpen(legacyRSidebar.isRightOpen)
-        else if (typeof actualSettings.isRightSidebarOpen === 'boolean')
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('lumina_right_sidebar_open', String(legacyRSidebar.isRightOpen))
+          }
+        } else if (typeof actualSettings.isRightSidebarOpen === 'boolean') {
           setIsRightSidebarOpen(actualSettings.isRightSidebarOpen)
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('lumina_right_sidebar_open', String(actualSettings.isRightSidebarOpen))
+          }
+        }
 
         const rawRightWidth =
           legacyRSidebar.width || legacyRSidebar.rightWidth || actualSettings.rightWidth
@@ -373,10 +447,9 @@ const AppShell = () => {
     const unsub = useUpdateStore.getState().init()
 
     // Listen for details modal open event from EditorTitleBar
-    // Listen for details modal open event from EditorTitleBar
     const handleOpenDetailsModal = () => {
       setRightSidebarTab('details')
-      setIsRightSidebarOpen(true)
+      updateRightSidebarOpen(true)
     }
     window.addEventListener('open-details-modal', handleOpenDetailsModal)
 
@@ -401,7 +474,7 @@ const AppShell = () => {
       window.removeEventListener('open-ai-settings', handleOpenAISettings)
       if (cleanupGlobalShortcut) cleanupGlobalShortcut()
     }
-  }, [])
+  }, [updateRightSidebarOpen])
 
   // Listen for external vault updates
   useEffect(() => {
@@ -413,22 +486,8 @@ const AppShell = () => {
     }
   }, [loadVault])
 
-  // Reactive Sidebar Toggles - Sync local state with store changes
-  useEffect(() => {
-    const sidebar = sidebarSetting || {}
-    const rSidebar = rightSidebarSetting || {}
-
-    // Left
-    if (typeof sidebar.isLeftOpen === 'boolean' && sidebar.isLeftOpen !== isLeftSidebarOpen) {
-      setIsLeftSidebarOpen(sidebar.isLeftOpen)
-    }
-    // Right
-    if (typeof rSidebar.isRightOpen === 'boolean' && rSidebar.isRightOpen !== isRightSidebarOpen) {
-      setIsRightSidebarOpen(rSidebar.isRightOpen)
-    }
-  }, [sidebarSetting, rightSidebarSetting])
-
   const pinnedTabIds = useVaultStore((state) => state.pinnedTabIds)
+
 
   // Ctrl+Shift+\ - Open AI Chat Modal and focus Composer textarea
   useEffect(() => {
@@ -487,13 +546,13 @@ const AppShell = () => {
       const isLarge = window.innerWidth > 700
       // If we just shrank from large to small, close the sidebar
       if (wasLarge && !isLarge) {
-        setIsLeftSidebarOpen(false)
+        updateLeftSidebarOpen(false)
       }
       wasLarge = isLarge
     }
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [])
+  }, [updateLeftSidebarOpen])
 
   // Trigger AI Indexing when snippets change (Background)
   // Note: Vault indexing is handled automatically by main process on vault selection/save
@@ -508,18 +567,18 @@ const AppShell = () => {
   // Close Inspector when switching to Graph
   useEffect(() => {
     if (activeTab === 'graph') {
-      setIsRightSidebarOpen(false)
+      updateRightSidebarOpen(false)
     }
-  }, [activeTab])
+  }, [activeTab, updateRightSidebarOpen])
 
   const handleToggleInspector = useCallback(() => {
-    setIsRightSidebarOpen((prev) => !prev)
-  }, [])
+    updateRightSidebarOpen((prev) => !prev)
+  }, [updateRightSidebarOpen])
 
   useKeyboardShortcuts({
     onGlobalSearch: () => {
       setActiveTab('search')
-      setIsLeftSidebarOpen(true)
+      updateLeftSidebarOpen(true)
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('global-search-focus'))
       }, 50)
@@ -603,7 +662,7 @@ const AppShell = () => {
         return true
       }
       if (isRightSidebarOpen) {
-        setIsRightSidebarOpen(false)
+        updateRightSidebarOpen(false)
         return true
       }
       if (showDocsModal) {
@@ -616,7 +675,7 @@ const AppShell = () => {
     onToggleTheme: () => setShowThemeModal(true),
     onToggleGraph: () => setShowGraph(true),
     onToggleAIChat: () => handleToggleAIChat(),
-    onToggleSidebar: () => setIsLeftSidebarOpen((prev) => !prev),
+    onToggleSidebar: () => updateLeftSidebarOpen((prev) => !prev),
     onToggleInspector: handleToggleInspector,
     onNew: () => handleNew(),
     onDelete: () => {
@@ -727,13 +786,13 @@ const AppShell = () => {
     } else {
       // Sidebar mode: toggle right sidebar with chat tab
       if (isRightSidebarOpen && rightSidebarTab === 'chat') {
-        setIsRightSidebarOpen(false)
+        updateRightSidebarOpen(false)
       } else {
         setRightSidebarTab('chat')
-        setIsRightSidebarOpen(true)
+        updateRightSidebarOpen(true)
       }
     }
-  }, [isRightSidebarOpen, rightSidebarTab])
+  }, [isRightSidebarOpen, rightSidebarTab, updateRightSidebarOpen])
 
   useEffect(() => {
     const handleAskAnything = (e) => {
@@ -759,29 +818,6 @@ const AppShell = () => {
       }}
     >
       <aside className="shell-sidebar-left">
-        {isLeftSidebarOpen && (
-          <div
-            className="sidebar-resizer left"
-            title="Double-click to reset default width (280px)"
-            onMouseDown={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              initialWidthRef.current.left = leftWidth
-              setResizingSide('left')
-            }}
-            onDoubleClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              handleResetSidebar('left')
-            }}
-          >
-            <div className="resizer-knob">
-              <span className="knob-dot" />
-              <span className="knob-dot" />
-              <span className="knob-dot" />
-            </div>
-          </div>
-        )}
         <GlobalErrorHandler>
           <Sidebar
             onSettingsClick={handleOpenSettings}
@@ -792,6 +828,29 @@ const AppShell = () => {
           />
         </GlobalErrorHandler>
       </aside>
+      {isLeftSidebarOpen && (
+        <div
+          className="sidebar-resizer left"
+          title="Double-click to reset default width (280px)"
+          onMouseDown={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            initialWidthRef.current.left = leftWidth
+            setResizingSide('left')
+          }}
+          onDoubleClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            handleResetSidebar('left')
+          }}
+        >
+          <div className="resizer-knob">
+            <span className="knob-dot" />
+            <span className="knob-dot" />
+            <span className="knob-dot" />
+          </div>
+        </div>
+      )}
       <main className="shell-main">
         {/* Show TabBar even if no tabs are open so WindowControls remain visible */}
         {(activeTab === 'files' || activeTab === 'search') && (
@@ -896,30 +955,30 @@ const AppShell = () => {
         />
       </main>
 
-      <aside className="shell-sidebar-right">
-        {isRightSidebarOpen && (
-          <div
-            className="sidebar-resizer right"
-            title="Double-click to reset default width (320px)"
-            onMouseDown={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              initialWidthRef.current.right = rightWidth
-              setResizingSide('right')
-            }}
-            onDoubleClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              handleResetSidebar('right')
-            }}
-          >
-            <div className="resizer-knob">
-              <span className="knob-dot" />
-              <span className="knob-dot" />
-              <span className="knob-dot" />
-            </div>
+      {isRightSidebarOpen && (
+        <div
+          className="sidebar-resizer right"
+          title="Double-click to reset default width (320px)"
+          onMouseDown={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            initialWidthRef.current.right = rightWidth
+            setResizingSide('right')
+          }}
+          onDoubleClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            handleResetSidebar('right')
+          }}
+        >
+          <div className="resizer-knob">
+            <span className="knob-dot" />
+            <span className="knob-dot" />
+            <span className="knob-dot" />
           </div>
-        )}
+        </div>
+      )}
+      <aside className="shell-sidebar-right">
         <GlobalErrorHandler>
           <RightSidebar
             rightSidebarTab={rightSidebarTab}
@@ -936,7 +995,6 @@ const AppShell = () => {
           />
         </GlobalErrorHandler>
       </aside>
-
       {showSettings && (
         <Settings
           onClose={() => {
@@ -966,13 +1024,13 @@ const AppShell = () => {
                 setShowAIChatModal(false)
                 useSettingsStore.getState().updateSetting('aiChatDisplayMode', 'sidebar')
                 setRightSidebarTab('chat')
-                setIsRightSidebarOpen(true)
+                updateRightSidebarOpen(true)
               }}
               onUnfloat={() => {
                 setShowAIChatModal(false)
                 useSettingsStore.getState().updateSetting('aiChatDisplayMode', 'sidebar')
                 setRightSidebarTab('chat')
-                setIsRightSidebarOpen(true)
+                updateRightSidebarOpen(true)
               }}
             />
           </React.Suspense>
