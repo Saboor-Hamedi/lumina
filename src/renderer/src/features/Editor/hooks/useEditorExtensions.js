@@ -126,6 +126,33 @@ export function useEditorExtensions({
                 JSON.stringify({ anchor, head })
               )
             }, 500)
+
+            if (update.docChanged || update.selectionSet || update.transactions.some((tr) => tr.scrollIntoView)) {
+              const v = update.view
+              requestAnimationFrame(() => {
+                if (!v || v.isDestroyed) return
+                const scroller = v.dom.closest('.editor-scroller')
+                if (!scroller) return
+                const currentHead = v.state.selection.main.head
+                const coords = v.coordsAtPos(currentHead)
+                const scrollerRect = scroller.getBoundingClientRect()
+                const bottomMargin = 80
+                const topMargin = 50
+                if (coords) {
+                  if (coords.bottom > scrollerRect.bottom - bottomMargin) {
+                    scroller.scrollTop += coords.bottom - (scrollerRect.bottom - bottomMargin)
+                  } else if (coords.top < scrollerRect.top + topMargin) {
+                    scroller.scrollTop -= (scrollerRect.top + topMargin) - coords.top
+                  }
+                } else {
+                  const lineDOM = v.domAtPos(currentHead)?.node
+                  const el = lineDOM instanceof Element ? lineDOM : lineDOM?.parentElement
+                  if (el && typeof el.scrollIntoView === 'function') {
+                    el.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+                  }
+                }
+              })
+            }
           }
         }
         destroy() {
@@ -300,7 +327,8 @@ export function useEditorExtensions({
                 if (line.text === '') {
                   view.dispatch({
                     changes: { from: pos, insert: '\n' },
-                    selection: { anchor: pos + 1 }
+                    selection: { anchor: pos + 1 },
+                    scrollIntoView: true
                   })
                   return true
                 }

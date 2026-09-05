@@ -556,20 +556,15 @@
 }
 
 .editor-titlebar {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  min-height: 40px;
-  height: 40px;
+  position: absolute;
+  top: 8px;
+  right: 16px;
+  z-index: 20;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 8px 16px;
-  background: var(--bg-main);
-  border-bottom: none;
-  flex-wrap: wrap;
-  gap: 12px;
-  font-size: 1.125rem;
+  justify-content: flex-end;
+  background: transparent;
+  pointer-events: auto;
 }
 
 .editor-breadcrumb {
@@ -675,16 +670,23 @@
   flex: 1;
 }
 
+.markdown-editor {
+  background: #090a10 !important;
+}
+
 .editor-scroller {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background: transparent;
-  scroll-behavior: smooth;
+  background: #111422 !important;
+  scroll-behavior: auto;
   overflow-y: auto;
   overflow-x: hidden;
-  scrollbar-width: none;   
+  scrollbar-width: thin;
+  scrollbar-color: rgba(129, 140, 248, 0.4) transparent;
+  border-left: 2px solid rgba(99, 102, 241, 0.3);
+  border-right: 2px solid rgba(99, 102, 241, 0.3);
 }
 
 .editor-scroller::-webkit-scrollbar {
@@ -693,15 +695,21 @@
 
 .editor-canvas-wrap {
   width: 100%;
-  max-width: 850px; 
+  max-width: 850px;
+  min-height: 100%;
   margin: 0 auto;
-  padding: 0 40px 40px 40px;
+  padding: 12px 16px;
   display: flex;
   flex-direction: column;
-  flex: 1;
+  flex: 1 0 auto;
+  box-sizing: border-box;
   cursor: text;
-  animation: noteFadeIn 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: opacity, transform;
+  background: #18192b !important;
+  border: 2px solid #6366f1 !important;
+  border-radius: 0 !important;
+  box-shadow: none;
+  position: relative;
+  transition: none !important;
 }
 
 .markdown-editor .atomic-cm-editor {
@@ -716,8 +724,12 @@
 }
 
 .markdown-editor .atomic-cm-editor .cm-editor {
-  flex: 1;
-  background: transparent !important;
+  flex: 1 0 auto;
+  min-height: 100%;
+  background: #141328 !important;
+  border: 1px dashed rgba(167, 139, 250, 0.6) !important;
+  border-radius: 0 !important;
+  padding: 8px 12px !important;
   display: flex;
   flex-direction: column;
   width: 100% !important;
@@ -726,13 +738,14 @@
 }
 
 .markdown-editor .atomic-cm-editor .cm-scroller {
-  flex: 1;
+  flex: 1 0 auto;
   display: flex;
   flex-direction: column;
   width: 100% !important;
   max-width: none !important;
   align-items: stretch !important;
   background: transparent !important;
+  overflow: visible !important;
 }
 
 .markdown-editor .atomic-cm-editor .cm-content {
@@ -742,7 +755,7 @@
   max-width: none !important;
   margin: 0 !important;
   margin-inline: 0 !important;
-  padding: 0 0 100px 0 !important;
+  padding: 0 0 40px 0 !important;
   user-select: text !important;
 }
 
