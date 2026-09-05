@@ -840,10 +840,10 @@ ${vaultAccessNote}`
           '2. If the user asks to create a folder with a specific name or path (e.g. "create folder Science", "create folder src/database", "add the react js folder structure with all folders") → call createFolder directly with the path (or call createFolder for each folder in the structure).\n' +
           '3. If the user asks to create a folder WITHOUT specifying a name (e.g. "create a folder", "make a new folder") → politely ask the user: "What would you like to name the folder?" Do NOT create a folder called "New Folder" unless the user explicitly asked for that name.\n' +
           '4. If the user asks to create a note or file WITHOUT specifying a title/topic (e.g. "create a file", "create a note", "make a new note") → politely ask the user: "What should the note be named, and what topic would you like it to cover?" If the user explicitly asks for a random note (e.g. "create a random note", "draft any note") or provides a title/topic, call createFile immediately.\n' +
-          '5. If asked to DRAFT/CREATE A PLAN, TRIP ITINERARY, STUDY CURRICULUM, EXPENSE TRACKER, BUSINESS STRUCTURE, CODING ARCHITECTURE, CLOUD PLAN, OR MULTIPLE FILES/FOLDERS (e.g. "create folder Trip with Afghanistan trip plan, today and tomorrow expense files, and a summary with graphs", "draft them all into my vault", "create a business plan", "set up expense tracker") → you MUST create the folder (call createFolder) AND IMMEDIATELY create EVERY requested note inside/outside that folder with rich, production-grade markdown content (tables, calculation breakdowns, checklists, callouts, and mermaid charts where requested) in the SAME sequential response! NEVER stop after creating only the folder! NEVER output conversational filler like "I will create..." instead of calling createFile. Continue calling createFile sequentially until ALL requested files exist!\n' +
-          '6. If asked to CREATE A VAULT SUMMARY OR WORKSPACE DASHBOARD (e.g. "create summary of my vault", "summarize my projects", "create workspace dashboard", "build vault overview") → ALWAYS create the summary note directly at the ROOT level of the workspace (call createFile with folder="" and title="Vault Summary" or "Workspace Dashboard"), UNLESS the user explicitly requested a specific folder (e.g. "put in Docs/"). Make the summary intelligent: provide executive metrics, a structured folder map with [[Note Title]] wikilinks, active workstream statuses, and unified action items.\n' +
-          '7. If asked to LINK NOTES / FILES TOGETHER (e.g. "link the files together", "link both of my purchases", "connect @NoteA and @NoteB", "cross-link notes", "add reciprocal wikilinks") → identify the target notes from EXISTING FILES or recent context. Call updateFile on EACH note with position="top" inserting the reciprocal [[Note Title]] wikilinks at the TOP of the file directly beneath the title header (e.g. "> 🔗 **Related:** [[Note A]] | [[Note B]]") immediately on step 1 without ANY conversational pre-text!\n' +
-          '8. If asked to CREATE A NOTE IN A FOLDER → call createFile with folder="<Folder Path>" (e.g. folder="src/database").\n' +
+          '5. If asked to CREATE FOLDERS AND FILES (e.g. "create several folders and files about database, schema, design", "create folder Database with introduction, schema, and design files", "set up my project folders and documents") → you MUST call createFolder for the folder(s) AND call createFile for EACH requested file in the SAME response! NEVER stop after creating only the folder! NEVER claim "I created the files" without actually calling createFile for each one! Continue calling createFile until all notes are generated.\n' +
+          '6. If asked to DRAFT/CREATE A PLAN, TRIP ITINERARY, STUDY CURRICULUM, EXPENSE TRACKER, BUSINESS STRUCTURE, CODING ARCHITECTURE, CLOUD PLAN, OR MULTIPLE FILES/FOLDERS → call createFolder AND IMMEDIATELY create EVERY requested note inside/outside that folder with rich markdown content in the SAME turn! Continue calling createFile sequentially until ALL requested files exist!\n' +
+          '7. If asked to CREATE A VAULT SUMMARY OR WORKSPACE DASHBOARD → create the summary note directly at root level (folder="") or requested folder.\n' +
+          '8. If asked to CREATE A NOTE IN A FOLDER OR NESTED FOLDER → call createFile with folder="<Folder Path>" (e.g. folder="Database/Schema", folder="src/components/ui"). The folder will be created automatically if it does not exist.\n' +
           '9. If asked to MOVE A FILE OR FILES (e.g. "move to folder Science", "move this note to Docs", "put in Archive") → call moveFile immediately with title="current" (or note title, or "all") and folder="<Destination Folder>" on step 1 without pre-text narration!\n' +
           '10. If asked to RENAME a file or RENAME FILES IN A FOLDER (e.g. "rename this note to App Architecture", "inside my 1-src folder rename the files keep them a single word", "rename files in 1-src to be concise") → find all matching files in the workspace (or inside that folder from EXISTING FILES) and call renameFile for EACH file with oldTitle="<current title or folder/title>" and newTitle="<New Name>". NEVER say "Done!" without calling renameFile for all target files!\n' +
           '11. If asked to RENAME A FOLDER or MAKE ALL FOLDERS LOWERCASE/UPPERCASE (e.g. "all folder must be lowercase", "rename all folders to lowercase", "rename folder 1-Src to 1-src") → find all matching folders from EXISTING FOLDERS and call renameFolder for EACH folder directly!\n' +
@@ -977,6 +977,7 @@ ${vaultAccessNote}`
                 Object.entries(sdkTools).filter(([, v]) => v !== undefined)
               ),
               toolChoice: 'auto',
+              stopWhen: aiSdk.stepCountIs ? aiSdk.stepCountIs(30) : ({ steps }) => steps.length >= 30,
               maxSteps: 30
             })
 
@@ -1003,7 +1004,7 @@ ${vaultAccessNote}`
               if (!chunk || typeof chunk.type !== 'string') continue
 
               if (chunk.type === 'tool-call') {
-                const args = chunk.args || {}
+                const args = chunk.input || chunk.args || {}
                 if (chunk.toolName === 'createFolder') {
                   activeToolStatus = `📁 *Creating folder \`${args.path || '...'}\`...*`
                 } else if (chunk.toolName === 'createFile') {
@@ -1053,7 +1054,7 @@ ${vaultAccessNote}`
                 })
               } else if (chunk.type === 'tool-result') {
                 activeToolStatus = ''
-                const res = chunk.result
+                const res = chunk.output || chunk.result
                 if (res && res.success === false) {
                   console.warn(`[AIStore] Tool ${chunk.toolName} failed:`, res.error)
                   executedActions.push(`- ⚠️ *${chunk.toolName} failed: ${res.error}*`)
@@ -1072,7 +1073,7 @@ ${vaultAccessNote}`
                   return { chatMessages: msgs }
                 })
               } else if (chunk.type === 'text-delta') {
-                narrativeText += chunk.textDelta || chunk.text || ''
+                narrativeText += chunk.textDelta || chunk.text || chunk.delta || ''
                 fullContent = buildRealtimeDisplay()
               } else if (chunk.type === 'tool-error') {
                 const errMsg = chunk.error?.message || chunk.error || 'Unknown tool error'
@@ -1104,7 +1105,8 @@ ${vaultAccessNote}`
               const toolResults = steps?.flatMap((s) => s.toolResults || []) || []
               if (toolResults.length > 0) {
                 toolResults.forEach((t) => {
-                  const sum = t.result?.summary
+                  const res = t.output || t.result
+                  const sum = res?.summary
                   if (sum) {
                     const entry = `- ${sum}`
                     if (!executedActions.includes(entry) && !executedActions.includes(sum)) {
@@ -1159,11 +1161,13 @@ ${vaultAccessNote}`
 
           set((state) => {
             const msgs = [...state.chatMessages]
-            const finalContent = (fullContent || '').trim()
-            if (msgs.length > 0) {
-              msgs[msgs.length - 1] = {
-                ...msgs[msgs.length - 1],
-                content: finalContent
+            if (providerType !== 'deepseek') {
+              const finalContent = (fullContent || '').trim()
+              if (msgs.length > 0) {
+                msgs[msgs.length - 1] = {
+                  ...msgs[msgs.length - 1],
+                  content: finalContent
+                }
               }
             }
 

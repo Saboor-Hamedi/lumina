@@ -15,7 +15,10 @@ export const createFolderTool = aiSdk.tool({
   }),
   execute: async ({ path }) => {
     try {
-      const cleanPath = (path || '').trim().replace(/^[/\\]+|[/\\]+$/g, '')
+      const cleanPath = (path || '')
+        .trim()
+        .replace(/\\/g, '/')
+        .replace(/^\/+|\/+$/g, '')
       if (!cleanPath) {
         return { success: false, error: 'Folder path cannot be empty.' }
       }
@@ -26,6 +29,9 @@ export const createFolderTool = aiSdk.tool({
 
       const { useVaultStore } = await import('../../../core/store/workspaceStore')
       const vs = useVaultStore.getState()
+      if (vs.addFolder) {
+        vs.addFolder(cleanPath)
+      }
       if (vs.loadVault) {
         await vs.loadVault()
       }
@@ -40,7 +46,7 @@ export const createFolderTool = aiSdk.tool({
         success: true,
         path: cleanPath,
         summary: `Created folder **${cleanPath}**.`,
-        instruction_to_ai: `Folder "${cleanPath}" created successfully. If the user requested notes, plans, expense files, or summaries, IMMEDIATELY continue calling createFile for each one now until all items are created.`
+        instruction_to_ai: `Folder "${cleanPath}" created successfully. Now continue calling createFile for each requested note inside "${cleanPath}".`
       }
     } catch (err) {
       return { success: false, error: err.message || 'Failed to create folder' }

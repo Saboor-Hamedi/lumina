@@ -21,11 +21,27 @@ export const createFileTool = aiSdk.tool({
   }),
   execute: async ({ title, content, folder }) => {
     try {
-      const cleanTitle = (title || 'Untitled')
+      let rawTitle = (title || 'Untitled')
         .trim()
         .replace(/^@/, '')
         .replace(/\.md$/i, '')
-      const cleanFolder = (folder || '').trim().replace(/^[/\\]+|[/\\]+$/g, '')
+        .replace(/\\/g, '/')
+      let rawFolder = (folder || '')
+        .trim()
+        .replace(/\\/g, '/')
+        .replace(/^\/+|\/+$/g, '')
+
+      // If title itself has a folder path (e.g. "Database/Schema/Introduction" or "Database/Schema")
+      if (rawTitle.includes('/')) {
+        const parts = rawTitle.split('/').filter(Boolean)
+        const extractedTitle = parts.pop() || 'Untitled'
+        const titleFolder = parts.join('/')
+        rawFolder = rawFolder ? `${rawFolder}/${titleFolder}` : titleFolder
+        rawTitle = extractedTitle
+      }
+
+      const cleanTitle = rawTitle.trim() || 'Untitled'
+      const cleanFolder = rawFolder.replace(/^\/+|\/+$/g, '')
 
       const { useVaultStore } = await import('../../../core/store/workspaceStore')
       const vs = useVaultStore.getState()
@@ -34,6 +50,10 @@ export const createFileTool = aiSdk.tool({
         try {
           await window.api.createFolder(cleanFolder)
         } catch (_) {}
+      }
+
+      if (cleanFolder && vs.addFolder) {
+        vs.addFolder(cleanFolder)
       }
 
       const snippet = {

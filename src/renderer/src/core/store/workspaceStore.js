@@ -213,6 +213,24 @@ export const useWorkspaceStore = create((set, get) => ({
     set((state) => ({
       drafts: { ...state.drafts, [id]: code }
     })),
+  addFolder: (folderPath) => {
+    if (!folderPath || typeof folderPath !== 'string') return
+    const normalized = folderPath.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
+    if (!normalized) return
+
+    set((state) => {
+      const currentFolders = Array.isArray(state.folders) ? state.folders : []
+      const folderSet = new Set(currentFolders)
+      let current = ''
+      normalized.split('/').forEach((part) => {
+        if (!part) return
+        current = current ? `${current}/${part}` : part
+        folderSet.add(current)
+      })
+      return { folders: Array.from(folderSet) }
+    })
+  },
+
   setDirty: (id, isDirty) =>
     set((state) => {
       const hasId = state.dirtySnippetIds.includes(id)
@@ -364,8 +382,25 @@ export const useWorkspaceStore = create((set, get) => ({
           updates.forEach((u) => window.api.saveSnippet(u).catch(console.error))
         }
 
+        let nextFolders = state.folders || []
+        const rawFolderId = updatedSnippet.folderId || snippet.folderId
+        if (rawFolderId && typeof rawFolderId === 'string') {
+          const normalizedFolder = rawFolderId.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
+          if (normalizedFolder) {
+            const folderSet = new Set(nextFolders)
+            let curr = ''
+            normalizedFolder.split('/').forEach((part) => {
+              if (!part) return
+              curr = curr ? `${curr}/${part}` : part
+              folderSet.add(curr)
+            })
+            nextFolders = Array.from(folderSet)
+          }
+        }
+
         return {
           snippets: nextSnippets,
+          folders: nextFolders,
           drafts: nextDrafts,
           dirtySnippetIds: state.dirtySnippetIds.filter((dId) => dId !== snippet.id)
         }
