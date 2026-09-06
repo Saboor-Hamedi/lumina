@@ -355,3 +355,62 @@ const updateSetting = useSettingsStore((state) => state.updateSetting)
 - **Custom Typography & Caret Controls**: Font family selector (monospace, sans, serif), font size, line height, and custom caret color synced with the active theme.
 - **Global Error Boundaries**: Graceful crash protection via `GlobalErrorHandler`, preventing white-screen freezes and providing one-click reload.
 - **Built-in Auto Updater**: Compact titlebar update widget with changelog viewer, release notes breakdown (New, Improved, Fixed), channel switcher (Stable / Beta), and background download & install.
+
+---
+
+## 10. Sidebar Resize Refactor — Curtain Mechanic (Session Log)
+
+### Goal
+Sidebars previously shrank/compressed their content when dragged inward. The target behavior: dragging inward should **slide a curtain over** the sidebar content — the content stays at full 150px+ width and is simply clipped by the outer container, like a sliding door. Releasing below the 150px threshold snaps the sidebar fully closed.
+
+### Files Changed
+
+#### `src/renderer/src/features/Layout/useSidebarResize.js` *(Created)*
+- Extracted all sidebar resize logic out of `AppShell.jsx` into a dedicated hook.
+- `handleStartResize(side, e)` — attaches `mousemove` / `mouseup` / `blur` listeners imperatively (zero React re-renders during drag).
+- **`onMouseMove` — curtain mechanic**: decouples two CSS variables:
+  - `--left-sidebar-width` / `--right-sidebar-width` — outer container width, follows the drag handle freely (can go to 0px).
+  - `--left-sidebar-content-width` / `--right-sidebar-content-width` — inner content width, clamped at `MIN_SIDEBAR_CONTENT_WIDTH` (150px minimum, never squishes).
+- `onMouseUp` — commits final width to React state + localStorage. If released below `CLOSE_DRAG_THRESHOLD` (150px), sidebar snaps fully closed.
+- Constants: `MIN_SIDEBAR_CONTENT_WIDTH = 150`, `CLOSE_DRAG_THRESHOLD = 150`, `DEFAULT_LEFT_WIDTH = 260`, `DEFAULT_RIGHT_WIDTH = 300`.
+
+#### `src/renderer/src/assets/appshell.css`
+- **Removed `contain: inline-size layout`** from both `.shell-sidebar-left` and `.shell-sidebar-right`. This was the root cause: CSS inline-size containment trapped absolutely-positioned inner children inside the containment box, preventing the width lock from working.
+- **Switched inner container approach** from `position: absolute` to `flex-shrink: 0 !important` + `min-width: 150px !important`. The correct curtain mechanic needs no absolute positioning — the outer clips via `overflow: hidden`, and the inner simply refuses to compress via `flex-shrink: 0`.
+- **Fixed blanket `min-width: 0` rule**: `.app-shell > *` previously applied `min-width: 0` to all direct children including the sidebars. Changed to only apply `min-width: 0` to `.app-shell > .shell-main` (the editor area, which genuinely needs it for flex shrink).
+- **Added `display: flex; flex-direction: column;`** to `.shell-sidebar-left` and `.shell-sidebar-right` outer containers.
+- **Full 150px Floor Across All 5 Sidebar Components**: Added `flex-shrink: 0 !important; min-width: 150px !important; width: 100% !important; box-sizing: border-box !important;` to `.sidebar-header-section`, `.sidebar-scrollable-content`, `.explorer-embedded-container`, `.explorer-header-container`, `.start-section`, `.start-menu-body`, and `.sidebar-footer-section` so no component squishes during drag.
+
+#### `src/renderer/src/features/Navigation/Sidebar.css`
+- `.unified-sidebar`: changed `min-width: 0` → `min-width: 150px`.
+- `.sidebar-header-section`: added `min-width: 150px; flex-shrink: 0;` to lock header buttons.
+- `.sidebar-scrollable-content`: added `min-width: 150px` to prevent the FileExplorer wrapper from compressing.
+- `.sidebar-footer-section`: added `min-width: 150px; flex-shrink: 0;` to lock user profile and version.
+
+#### `src/renderer/src/features/Explorer/FileExplorer.css`
+- `.explorer-header-container`: added `min-width: 150px; flex-shrink: 0; box-sizing: border-box;` to prevent search bar, tabs, and action icons from compressing.
+
+#### `src/renderer/src/features/Inspector/NoteDetails.css`
+- `.inspector-panel`: changed `min-width: 0` → `min-width: 150px` so the right sidebar inner panel doesn't fight the 150px floor set by `appshell.css`.
+
+### How the Curtain Works (Architecture)
+
+```
+.shell-sidebar-left         ← overflow:hidden, width = --left-sidebar-width (follows drag freely, can be 0)
+  └── .unified-sidebar      ← flex-shrink:0, min-width:150px, width = --left-sidebar-content-width (always ≥150px)
+        ├── SidebarHeader   ← flex-shrink:0, min-width:150px, width:100%
+        ├── FileExplorer    ← flex-shrink:0, min-width:150px, width:100%
+        │     ├── ExplorerHeader    ← flex-shrink:0, min-width:150px, width:100%
+        │     ├── ExplorerFavorites ← flex-shrink:0, min-width:150px, width:100%
+        │     └── FileTree (Virtuoso)
+        └── SidebarFooter   ← flex-shrink:0, min-width:150px, width:100%
+```
+
+- When dragging inward: outer shell shrinks, inner content stays at 150px — the outer's `overflow: hidden` masks the inner like a curtain sliding over it.
+- When drag is released ≥ 150px: sidebar locks at that width.
+- When drag is released < 150px: sidebar snaps fully closed.
+
+### Key Invariants Added
+- **Never use `contain: inline-size` on sidebar outer containers** — it prevents the inner `flex-shrink: 0` / `min-width` lock from working correctly.
+- **Inner sidebar content must always have `flex-shrink: 0` + `min-width: 150px`** at every layer of the flex tree (`.unified-sidebar`, `.sidebar-header-section`, `.sidebar-scrollable-content`, `.explorer-embedded-container`, `.explorer-header-container`, `.start-section`, `.start-menu-body`, `.sidebar-footer-section`, `.inspector-panel`).
+- **Only `.shell-main` should have `min-width: 0`** among direct children of `.app-shell`.

@@ -103,7 +103,7 @@ const Settings = ({ onClose, onOpenTheme, initialTab = 'look-and-feel' }) => {
     <div className="nexus-overlay preview-overlay-glass" onClick={onClose}>
       <div
         ref={containerRef}
-        className={`nexus-container modal-container preview-modal-container${isMaximized ? ' maximized' : ''}`}
+        className={`nexus-container modal-container preview-modal-container settings-container${isMaximized ? ' maximized' : ''}`}
         onClick={(e) => e.stopPropagation()}
         style={{
           flexDirection: 'column',

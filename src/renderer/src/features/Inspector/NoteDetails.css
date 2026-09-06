@@ -198,7 +198,7 @@
   flex-direction: column;
   height: 100%;
   width: 100%;
-  min-width: 0;
+  min-width: 150px;
   background: var(--bg-sidebar);
   color: var(--text-main);
   box-sizing: border-box;

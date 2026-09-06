@@ -10,9 +10,9 @@
 }
 
 .app-shell.is-resizing {
-  cursor: row-resize !important;
+  cursor: ew-resize !important;
   transition: none !important;
-  user-select: none;
+  user-select: none !important;
 }
 
 .sidebar-resizer {
@@ -27,6 +27,16 @@
   justify-content: center;
   touch-action: none;
   align-self: stretch;
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease;
+}
+
+.sidebar-resizer.closed,
+.app-shell.left-closed .sidebar-resizer.left,
+.app-shell.right-closed .sidebar-resizer.right {
+  width: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  overflow: hidden !important;
 }
 
 .sidebar-resizer.left {
@@ -98,60 +108,113 @@ body.is-global-resizing .cm-editor {
   cursor: ew-resize !important;
 }
 
-.app-shell.is-resizing * {
-  user-select: none !important;
+.app-shell.is-resizing .shell-sidebar-left,
+.app-shell.is-resizing .shell-sidebar-left *,
+.app-shell.is-resizing .shell-sidebar-right,
+.app-shell.is-resizing .shell-sidebar-right *,
+.app-shell.is-resizing .shell-main,
+.app-shell.is-resizing .unified-sidebar,
+.app-shell.is-resizing .inspector-panel,
+.app-shell.is-resizing .sidebar-resizer {
+  transition: none !important;
+  animation: none !important;
+  will-change: width;
+}
+
+.app-shell.is-resizing .workspace-container {
+  contain: layout paint;
+}
+
+.app-shell.is-resizing .workspace-container,
+.app-shell.is-resizing .cm-editor,
+.app-shell.is-resizing .shell-main,
+.app-shell.is-resizing .shell-sidebar-left .unified-sidebar,
+.app-shell.is-resizing .shell-sidebar-right .inspector-panel {
   pointer-events: none !important;
+  user-select: none !important;
 }
 
 .app-shell.is-resizing .sidebar-resizer {
   pointer-events: auto !important;
 }
 
-.app-shell.is-resizing .shell-sidebar-left,
-.app-shell.is-resizing .shell-sidebar-right,
-.app-shell.is-resizing .shell-main,
-.app-shell.is-resizing .unified-sidebar,
-.app-shell.is-resizing * {
-  transition: none !important;
-  animation: none !important;
+.app-shell > * {
+  min-height: 0;
 }
 
-.app-shell>* {
-  min-height: 0;
+/* Only the editor area needs min-width:0 for flex shrink — sidebars must NOT have it */
+.app-shell > .shell-main {
   min-width: 0;
 }
 
-/* Left Sidebar */
+/* Left Sidebar — curtain outer: clips via overflow:hidden, width follows drag freely */
 .shell-sidebar-left {
   position: relative;
   width: 0;
+  height: 100%;
   background: var(--bg-sidebar) !important;
-  z-index: 1000;
+  z-index: 10;
   border-right: none;
   box-shadow: none;
   pointer-events: none;
-  transition: width 0.18s cubic-bezier(0.2, 0.9, 0.4, 1), margin 0.18s cubic-bezier(0.2, 0.9, 0.4, 1);
+  visibility: hidden;
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.22s;
   overflow: hidden;
   flex-shrink: 0;
   will-change: width;
-  contain: inline-size layout;
   transform: translateZ(0);
+  display: flex;
+  flex-direction: column;
+  /* NO contain: inline-size — it breaks the inner width lock */
 }
 
 .app-shell.left-open .shell-sidebar-left {
-  width: var(--left-sidebar-width, 280px);
+  width: var(--left-sidebar-width, 260px);
   border-right: 1px solid var(--border-dim);
   box-shadow: none;
   pointer-events: auto;
-  overflow: visible;
+  visibility: visible;
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Keep inner sidebar at natural width so buttons and headers never squish when closing */
-.shell-sidebar-left .unified-sidebar {
-  width: var(--left-sidebar-width, 280px);
-  min-width: var(--left-sidebar-width, 280px);
-  height: 100%;
-  flex-shrink: 0;
+/* Curtain inner: never compresses — flex-shrink:0 + min-width locks it at 150px+
+   The outer overflow:hidden masks it as the drag handle moves inward */
+.shell-sidebar-left .unified-sidebar,
+.shell-sidebar-left .error-boundary {
+  flex-shrink: 0 !important;
+  min-width: 150px !important;
+  width: var(--left-sidebar-content-width, var(--left-sidebar-width, 260px)) !important;
+  max-width: none !important;
+  height: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.shell-sidebar-left .sidebar-header-section,
+.shell-sidebar-left .sidebar-scrollable-content,
+.shell-sidebar-left .explorer-embedded-container,
+.shell-sidebar-left .explorer-header-container,
+.shell-sidebar-left .start-section,
+.shell-sidebar-left .start-menu-body,
+.shell-sidebar-left .sidebar-footer-section {
+  flex-shrink: 0 !important;
+  min-width: 150px !important;
+  max-width: none !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.shell-sidebar-left .sidebar-scrollable-content {
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.shell-sidebar-left .start-menu-body {
+  flex: 1 !important;
+  min-height: 0 !important;
 }
 
 .shell-main {
@@ -180,38 +243,48 @@ body.is-global-resizing .cm-editor {
   background: var(--bg-app);
 }
 
-/* Right Sidebar (Docked Flex Child) */
+/* Right Sidebar — curtain outer: clips via overflow:hidden, width follows drag freely */
 .shell-sidebar-right {
   position: relative;
   width: 0;
+  height: 100%;
   background: var(--bg-sidebar) !important;
-  z-index: 1000;
+  z-index: 10;
   border-left: none;
   box-shadow: none;
   pointer-events: none;
-  transition: width 0.18s cubic-bezier(0.2, 0.9, 0.4, 1), margin 0.18s cubic-bezier(0.2, 0.9, 0.4, 1);
+  visibility: hidden;
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.22s;
   overflow: hidden;
   flex-shrink: 0;
   will-change: width;
-  contain: inline-size layout;
   transform: translateZ(0);
+  display: flex;
+  flex-direction: column;
+  /* NO contain: inline-size — it breaks the inner width lock */
 }
 
 .app-shell.right-open .shell-sidebar-right {
-  width: var(--right-sidebar-width, 320px);
+  width: var(--right-sidebar-width, 300px);
   border-left: 1px solid var(--border-dim);
   box-shadow: none;
   pointer-events: auto;
-  overflow: visible;
+  visibility: visible;
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Keep right sidebar inner panel at natural width so tabs never squish when closing */
+/* Curtain inner: never compresses — flex-shrink:0 + min-width locks it at 150px+
+   The outer overflow:hidden masks it as the drag handle moves inward */
 .shell-sidebar-right .inspector-panel,
+.shell-sidebar-right .error-boundary,
 .shell-sidebar-right > div {
-  width: var(--right-sidebar-width, 320px);
-  min-width: var(--right-sidebar-width, 320px);
-  height: 100%;
-  flex-shrink: 0;
+  flex-shrink: 0 !important;
+  min-width: 150px !important;
+  width: var(--right-sidebar-content-width, var(--right-sidebar-width, 300px)) !important;
+  max-width: none !important;
+  height: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden;
 }
 
 

@@ -11,7 +11,7 @@ import { useSettingsStore } from '../../core/store/useSettingsStore'
 import ToolTip from '../../components/atoms/ToolTip'
 import './NoteDetails.css'
 
-export const RightSidebar = ({
+export const RightSidebar = React.memo(({
   rightSidebarTab,
   setRightSidebarTab,
   selectedSnippet,
@@ -182,6 +182,8 @@ export const RightSidebar = ({
       </div>
     </div>
   )
-}
+})
+
+RightSidebar.displayName = 'RightSidebar'
 
 export default RightSidebar

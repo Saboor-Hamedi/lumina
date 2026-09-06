@@ -684,12 +684,15 @@
   scroll-behavior: auto;
   overflow-y: auto;
   overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(129, 140, 248, 0.4) transparent;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 
 .editor-scroller::-webkit-scrollbar {
-  display: none; 
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
 }
 
 .editor-canvas-wrap {
