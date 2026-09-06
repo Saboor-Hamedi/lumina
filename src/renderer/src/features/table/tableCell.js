@@ -495,20 +495,6 @@ export function makeCell(tag, text, view) {
     composing = false
     commit()
   })
-  // Lock column widths on first focus so auto table-layout stops
-  // re-measuring columns on every keystroke (which makes columns jump left).
-  source.addEventListener('focusin', () => {
-    const table = cell.closest('table')
-    if (!table || table.style.tableLayout === 'fixed') return
-    Array.from(table.querySelectorAll('th')).forEach((th) => {
-      if (!th.style.width) {
-        const w = th.offsetWidth
-        th.style.width = w + 'px'
-        th.style.minWidth = w + 'px'
-      }
-    })
-    table.style.tableLayout = 'fixed'
-  })
 
   source.addEventListener('input', (event) => {
     if (composing || event.isComposing) return

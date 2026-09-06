@@ -80,7 +80,8 @@
   margin: 8px 4px 4px 0 !important;
   padding: 0 !important;
   display: block;
-  width: fit-content !important;
+  width: 100% !important;
+  max-width: 100% !important;
   border-radius: 4px !important;
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1)) !important;
   background: var(--bg-app, #18181b) !important;
@@ -663,7 +664,7 @@
   display: table !important;
   width: 100% !important;
   min-width: 100% !important;
-  table-layout: auto !important;
+  table-layout: fixed !important;
   border-collapse: separate !important;
   border-spacing: 0 !important;
   margin: 0 !important;
@@ -698,12 +699,13 @@
   border-bottom: none !important;
 }
 
-/* Smooth live-shifting for columns and rows */
+/* Clean positioning during drag & drop */
 .cm-atomic-table.is-dragging-cols th,
-.cm-atomic-table.is-dragging-cols td,
+.cm-atomic-table.is-dragging-cols td {
+  position: relative;
+}
 .cm-atomic-table.is-dragging-rows tr {
-  transition: transform 0.15s cubic-bezier(0.2, 0, 1) !important;
-  will-change: transform;
+  position: relative;
 }
 
 
@@ -797,6 +799,7 @@
 
 /* Empty State Component */
 .cm-table-empty-cell {
+  width: 100% !important;
   padding: 28px 16px !important;
   text-align: center !important;
   border: none !important;
@@ -1073,12 +1076,6 @@
   transition: opacity 0.15s ease, background-color 0.1s ease, color 0.1s ease;
 }
 
-.cm-atomic-table.is-dragging-cols th,
-.cm-atomic-table.is-dragging-cols td,
-.cm-atomic-table.is-dragging-rows tr {
-  transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), opacity 0.15s ease !important;
-}
-
 .cm-table-drag-handle:hover {
   background-color: var(--bg-secondary, rgba(255, 255, 255, 0.1));
   color: var(--text-main, #fff) !important;
@@ -1121,21 +1118,6 @@
 
 .cm-atomic-image-wrap .cm-atomic-mark { display: none !important; }
 
-
-.col-resizer {
-  position: absolute;
-  top: 0;
-  right: -3px;
-  width: 6px;
-  height: 100%;
-  cursor: col-resize;
-  z-index: 10;
-  background: transparent;
-  transition: background 0.15s ease;
-}
-.col-resizer:hover, .cm-atomic-table.resizing .col-resizer, .col-resizer.resizer-hover {
-  background: var(--text-accent, #2196f3);
-}
 .cm-atomic-table th {
   resize: none !important;
   position: relative;

@@ -94,6 +94,11 @@ export function parseTable(state, tableNode) {
     }
   }
 
+  // Ensure all rows match the header cell count
+  for (let r = 0; r < rows.length; r++) {
+    while (rows[r].length < header.length) rows[r].push('')
+  }
+
   return { header, rows, alignments, caption }
 }
 // Escape cell content so it can't break the row's GFM structure: an

@@ -11,7 +11,6 @@ import { openCellMenu } from './tableContextMenu'
 import { setupTableSelection } from './tableSelection'
 import { setupTableDragAndDrop } from './tableDragDrop'
 import { setupTableInsertion } from './tableInsert'
-import { setupTableColResizing } from './tableResize'
 import { createTableHeaderDOM } from './tableHeader.js'
 import { createTableFooterDOM, updateTableFooterCount } from './tableFooter.js'
 
@@ -264,11 +263,16 @@ export class TableWidget extends WidgetType {
     const rowCount = this.model.rows ? this.model.rows.length : 0
     const colCount = this.model.header ? this.model.header.length : 0
 
+    if (colCount > 0) {
+      table.style.minWidth = `${colCount * 110}px`
+    }
+
     const thead = document.createElement('thead')
 
     const headerRow = document.createElement('tr')
     for (let i = 0; i < colCount; i++) {
       const cell = makeCell('th', this.model.header[i], view)
+      cell.style.width = `${100 / colCount}%`
       if (this.model.alignments?.[i]) {
         cell.style.textAlign = this.model.alignments[i]
         const source = cell.querySelector('.cm-atomic-table-cell-source')
@@ -341,7 +345,6 @@ export class TableWidget extends WidgetType {
     setupTableSelection(wrap, view)
     setupTableDragAndDrop(wrap, view)
     setupTableInsertion(wrap, view)
-    setupTableColResizing(wrap, view)
 
     return wrap
   }
@@ -350,8 +353,15 @@ export class TableWidget extends WidgetType {
     if (!theadTr) return false
     const ths = Array.from(theadTr.querySelectorAll('th'))
     if (ths.length !== this.model.header.length) return false
-    for (let i = 0; i < this.model.header.length; i++) {
+    const colCount = this.model.header.length
+    const table = dom.querySelector('table')
+    if (table && colCount > 0) {
+      table.style.minWidth = `${colCount * 110}px`
+    }
+    for (let i = 0; i < colCount; i++) {
       ths[i].__view = view
+      ths[i].style.width = `${100 / colCount}%`
+      ths[i].style.minWidth = ''
       const source = ths[i].querySelector('.cm-atomic-table-cell-source')
 
       // Sync alignments

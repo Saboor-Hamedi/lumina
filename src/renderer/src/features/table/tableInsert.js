@@ -71,6 +71,18 @@ export function setupTableInsertion(wrap, view) {
     const tableRect = table.getBoundingClientRect()
     const THRESHOLD = 12
 
+    if (
+      wrap.classList.contains('is-dragging-cols') ||
+      wrap.classList.contains('is-dragging-rows') ||
+      e.target.closest('.cm-table-drag-handle')
+    ) {
+      rowInsertHandle.style.opacity = '0'
+      rowInsertHandle.style.pointerEvents = 'none'
+      colInsertHandle.style.opacity = '0'
+      colInsertHandle.style.pointerEvents = 'none'
+      return
+    }
+
     const targetCell = e.target.closest('th, td')
     if (!targetCell) {
       rowInsertHandle.style.opacity = '0'

@@ -119,6 +119,7 @@ export function setupTableSelection(wrap, view) {
     'mousedown',
     (e) => {
       if (e.button !== 0) return // Only left-clicks start selection
+      if (e.target.closest('.cm-table-drag-handle')) return // Don't conflict with table column/row reorder handles
       if (!wrap.contains(e.target)) return // Handled by the window mousedown for outside clicks
 
       const cell = e.target.closest('th, td')
