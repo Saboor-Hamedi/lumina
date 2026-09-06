@@ -178,7 +178,7 @@ export class TableWidget extends WidgetType {
   }
   
   get estimatedHeight() {
-    return this.model.rows.length * 35 + 50
+    return Math.min(450, this.model.rows.length * 35 + 80)
   }
 
   // Return false so CodeMirror calls updateDOM(dom, view) on changes.
@@ -235,10 +235,24 @@ export class TableWidget extends WidgetType {
       }
     })
 
-    wrap.appendChild(createTableHeaderDOM(view, wrap, this.model))
+    createTableHeaderDOM(view, wrap, this.model)
 
     const scrollContainer = document.createElement('div')
     scrollContainer.className = 'cm-table-scroll-container'
+
+    // Prevent wheel events from propagating to CodeMirror scroller so scrolling inside
+    // the table scrolls the table rows/columns, NOT the entire page/editor!
+    scrollContainer.addEventListener(
+      'wheel',
+      (e) => {
+        const canScrollY = scrollContainer.scrollHeight > scrollContainer.clientHeight
+        const canScrollX = scrollContainer.scrollWidth > scrollContainer.clientWidth
+        if (canScrollY || canScrollX) {
+          e.stopPropagation()
+        }
+      },
+      { passive: true }
+    )
 
     const table = document.createElement('table')
     scrollContainer.appendChild(table)
@@ -318,7 +332,7 @@ export class TableWidget extends WidgetType {
     }
     table.appendChild(tbody)
 
-    wrap.appendChild(createTableFooterDOM(rowCount, colCount))
+    wrap.appendChild(createTableFooterDOM(this.model))
 
     setupTableFormattingToolbar(wrap, view)
     setupTableSelection(wrap, view)
@@ -397,9 +411,19 @@ export class TableWidget extends WidgetType {
       dom.dataset.tableTo = String(this.to)
     }
 
-    const rowCount = this.model.rows ? this.model.rows.length : 0
-    const colCount = this.model.header ? this.model.header.length : 0
-    updateTableFooterCount(dom, rowCount, colCount)
+    if (this.model.caption !== dom.dataset.caption) {
+      dom.dataset.caption = this.model.caption || ''
+      const titleLabel = dom.querySelector('.cm-table-title-label')
+      if (titleLabel) {
+        titleLabel.textContent = this.model.caption || 'Table'
+      }
+      const titleBtn = dom.querySelector('.cm-table-title-btn')
+      if (titleBtn) {
+        titleBtn.setAttribute('data-tooltip', this.model.caption || 'Table')
+      }
+    }
+
+    updateTableFooterCount(dom, this.model)
 
     return true
   }
@@ -410,18 +434,78 @@ export class TableWidget extends WidgetType {
     return true
   }
 }
+
+export function cellRowIndex(cell) {
+  if (!cell) return -1
+  const targetCell = cell.closest ? (cell.closest('th, td') || cell) : cell
+  const tr = targetCell.closest ? targetCell.closest('tr') : null
+  const tbody = tr?.closest ? tr.closest('tbody') : null
+  if (!tr || !tbody) return -1
+  return Array.from(tbody.querySelectorAll('tr')).indexOf(tr)
+}
+
+export function cellColIndex(cell) {
+  if (!cell) return -1
+  const targetCell = cell.closest ? (cell.closest('th, td') || cell) : cell
+  const tr = targetCell.closest ? targetCell.closest('tr') : null
+  if (!tr) return -1
+  return Array.from(tr.querySelectorAll('th, td')).indexOf(targetCell)
+}
+
 export function dispatchModel(view, wrap, nextModel) {
   const range = findCurrentTableRange(view, wrap)
   if (!range) return
+
+  // Track focused cell before transaction so we can restore focus
+  const activeEl = document.activeElement
+  const wasInsideTable = wrap && wrap.contains(activeEl)
+  let cellInfo = null
+  if (wasInsideTable && activeEl) {
+    const cell = activeEl.closest('th, td')
+    if (cell) {
+      cellInfo = {
+        isHeader: cell.tagName === 'TH',
+        rowIdx: cellRowIndex(cell),
+        colIdx: cellColIndex(cell)
+      }
+    }
+  }
+
   const next = serializeTable(nextModel)
   view.dispatch({
     changes: { from: range.from, to: range.to, insert: next },
+    // Keep CM6 selection anchored inside the table while the widget DOM
+    // rebuilds — without this the cursor snaps to pos 0.
+    selection: { anchor: range.from },
     annotations: Transaction.userEvent.of('input')
   })
-  if (view && !view.hasFocus) {
-    view.focus()
+
+  // Re-focus the cell if one was active, even across widget DOM rebuilds
+  if (wasInsideTable && cellInfo) {
+    const fromPos = range.from
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const tables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
+        const target = tables.find((t) => {
+          const r = findCurrentTableRange(view, t)
+          return r && r.from === fromPos
+        })
+        if (!target) return
+        const allRows = target.querySelectorAll('tr')
+        const targetTr = cellInfo.isHeader ? allRows[0] : allRows[cellInfo.rowIdx + 1]
+        if (targetTr) {
+          const cells = targetTr.querySelectorAll('.cm-atomic-table-cell-source')
+          const targetCell = cells[cellInfo.colIdx] || cells[0]
+          if (targetCell && document.activeElement !== targetCell) {
+            targetCell.focus()
+            placeCaretAtEnd(targetCell)
+          }
+        }
+      })
+    })
   }
 }
+
 export function dispatchModelFromDom(view, cell) {
   const wrap = cell.closest('.cm-atomic-table')
   if (!wrap) return
@@ -466,18 +550,19 @@ export function moveCellFocus(view, cell, dir, opts = { appendOnOverflow: true }
   if (idx < 0) return
   const next = idx + dir
   if (next < 0) {
-    const range = findCurrentTableRange(view, wrap)
-    let targetPos = range ? range.from : Math.max(0, view.posAtDOM(wrap) - 1)
-    if (range) {
-      if (targetPos > 0 && view.state.sliceDoc(targetPos - 1, targetPos) === '\n') {
-        targetPos -= 1
+    // Never jump out of the table to pos 0 of the editor! Keep focus on the first cell.
+    const firstCellSource = getCellSource(cells[0])
+    if (firstCellSource) {
+      firstCellSource.focus()
+      const sel = firstCellSource.ownerDocument?.defaultView?.getSelection()
+      if (sel) {
+        const range = document.createRange()
+        range.selectNodeContents(firstCellSource)
+        range.collapse(true)
+        sel.removeAllRanges()
+        sel.addRange(range)
       }
-    } else {
-      // Emergency fallback if table boundaries lost
-      targetPos = Math.max(0, targetPos - 1)
     }
-    view.dispatch({ selection: { anchor: targetPos } })
-    view.focus()
     return
   }
   if (next >= cells.length) {
@@ -534,6 +619,9 @@ export function appendRow(view, wrap, focusColIndex = 0) {
   const next = serializeTable(model)
   view.dispatch({
     changes: { from: range.from, to: range.to, insert: next },
+    // Keep CM6 selection anchored at the end of the table so the editor
+    // doesn't snap to pos 0 while the widget DOM is being rebuilt.
+    selection: { anchor: range.from },
     annotations: Transaction.userEvent.of('input')
   })
   // Adding a row changes the widget's row count, so `eq` returns

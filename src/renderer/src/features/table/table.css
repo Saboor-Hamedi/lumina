@@ -105,30 +105,28 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 5px 10px;
-  background: var(--bg-surface, rgba(255, 255, 255, 0.02)) !important;
+  padding: 6px 10px;
+  background: var(--bg-elevated, rgba(255, 255, 255, 0.035)) !important;
   border: none !important;
-  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.07)) !important;
+  border-bottom: 1px solid var(--border-strong, rgba(255, 255, 255, 0.1)) !important;
   border-top-left-radius: 4px !important;
   border-top-right-radius: 4px !important;
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
-  opacity: 1;
   user-select: none;
-  min-height: 32px;
+  min-height: 36px;
   box-sizing: border-box;
 }
 
 .cm-table-ui-footer {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
-  height: 24px;
-  padding: 0 8px;
-  /* Footer is darker/more recessed than the header */
-  background: var(--bg-base, rgba(0, 0, 0, 0.18)) !important;
-  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06)) !important;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 10px;
+  /* Footer is darker/more recessed than the body — clearly separate */
+  background: var(--bg-elevated, rgba(255, 255, 255, 0.025)) !important;
+  border-top: 1px solid var(--border-strong, rgba(255, 255, 255, 0.1)) !important;
   border-bottom-left-radius: 4px !important;
   border-bottom-right-radius: 4px !important;
   user-select: none;
@@ -136,20 +134,26 @@
   box-sizing: border-box;
 }
 
+.cm-table-ui-footer-words {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--text-muted, #71717a);
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+
+.cm-table-ui-footer-spacer {
+  flex: 1;
+}
+
 .cm-table-ui-footer-count {
-  display: inline-flex;
-  align-items: center;
-  padding: 0 6px;
-  height: 16px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   color: var(--text-muted, #71717a);
-  letter-spacing: 0.04em;
-  opacity: 0.9;
+  letter-spacing: 0.01em;
+  opacity: 0.75;
 }
 
 .cm-table-ui-left {
@@ -226,6 +230,82 @@
   font-weight: 600;
   letter-spacing: 0.01em;
   min-width: 0;
+}
+
+/* ─── Table Search Popover ─────────────────────────────────────────────────── */
+
+.cm-table-search-popover {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px !important;
+  min-width: 0;
+}
+
+.cm-table-search-input {
+  flex: 1;
+  min-width: 0;
+  height: 24px;
+  padding: 0 8px;
+  background: var(--bg-input, rgba(255, 255, 255, 0.06)) !important;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1)) !important;
+  border-radius: 3px;
+  color: var(--text-main, #e2e8f0);
+  font-size: 12px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+
+.cm-table-search-input:focus {
+  border-color: var(--text-accent, #818cf8) !important;
+}
+
+.cm-table-search-counter {
+  font-size: 11px;
+  color: var(--text-muted, #71717a);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  min-width: 16px;
+  text-align: right;
+}
+
+/* Highlight inside cells */
+.cm-table-search-mark {
+  background: rgba(250, 204, 21, 0.28);
+  border-radius: 2px;
+  outline: 1px solid rgba(250, 204, 21, 0.45);
+}
+
+/* Non-matching rows hidden */
+.cm-table-row-filtered {
+  display: none !important;
+}
+
+/* Search icon button */
+.cm-table-ui-search-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #71717a);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.cm-table-ui-search-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main, #e2e8f0);
+}
+
+.cm-table-ui-btn--active {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--text-accent, #818cf8) !important;
 }
 
 /* Table / Source Mode Segmented Toggle */
@@ -544,8 +624,11 @@
 .cm-table-scroll-container {
   width: 100% !important;
   max-width: 100% !important;
+  /* Cap height so long tables scroll rather than growing the document infinitely */
+  max-height: 420px;
   overflow-x: auto !important;
-  overflow-y: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
   position: relative;
   box-sizing: border-box;
   border-bottom-left-radius: 0 !important;
@@ -554,9 +637,21 @@
   scrollbar-color: var(--border-dim, rgba(255, 255, 255, 0.2)) transparent !important;
 }
 
+/* Sticky column header — stays visible while scrolling long tables */
+.cm-atomic-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.cm-atomic-table thead th {
+  background: var(--bg-app, #18181b) !important;
+}
+
 .cm-table-scroll-container::-webkit-scrollbar {
   display: block !important;
   height: 5px !important;
+  width: 5px !important;
   background: transparent !important;
 }
 

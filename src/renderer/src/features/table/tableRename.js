@@ -1,5 +1,5 @@
 import { serializeTable, readModelFromDom } from './tableModel.js'
-import { findCurrentTableRange } from './tableExtension.js'
+import { findCurrentTableRange, dispatchModel } from './tableExtension.js'
 
 /**
  * Creates the Table Title display and interactive Rename Dropdown popover.
@@ -55,6 +55,7 @@ export function createTableTitleDOM(view, wrap, model) {
       dropdown = null
       document.removeEventListener('mousedown', onOutsideClick, true)
       document.removeEventListener('keydown', onKeyDown, true)
+      titleBtn.focus({ preventScroll: true })
     }
   }
 
@@ -121,12 +122,11 @@ export function createTableTitleDOM(view, wrap, model) {
       wrap.dataset.caption = newTitle
       model.caption = newTitle
 
-      const range = findCurrentTableRange(view, wrap)
-      if (range) {
-        const nextText = serializeTable({ ...model, caption: newTitle })
-        view.dispatch({ changes: { from: range.from, to: range.to, insert: nextText } })
-      }
+      dispatchModel(view, wrap, { ...model, caption: newTitle })
       closeDropdown()
+      requestAnimationFrame(() => {
+        titleBtn.focus({ preventScroll: true })
+      })
     }
 
     input.addEventListener('keydown', (e) => {

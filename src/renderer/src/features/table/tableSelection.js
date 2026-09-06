@@ -342,7 +342,9 @@ export function setupTableSelection(wrap, view) {
             startCell = null
             endCell = null
             view.dispatch({
-              changes: { from: range.from, to: range.to, insert: '' }
+              changes: { from: range.from, to: range.to, insert: '' },
+              selection: { anchor: range.from },
+              scrollIntoView: true
             })
             view.focus()
             return

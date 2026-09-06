@@ -757,101 +757,78 @@ export function makeCell(tag, text, view) {
 
         const wrap = cell.closest('.cm-atomic-table')
         if (wrap) {
-          const text = source.textContent || ''
           const col = cellColIndex(cell)
           const rowIdx = cellRowIndex(cell)
           const isHeader = cell.tagName === 'TH'
+
+          if (col > 0) {
+            // There is a cell on the left in the same row -> move to it
+            moveCellFocus(view, cell, -1)
+            return
+          }
+
+          // We are at col === 0 (the very beginning of the row, no cell on the left)
+          if (isHeader) {
+            // Header row, col 0: stay here, never jump out of the table!
+            return
+          }
+
+          // We are in a body row at col 0. Check if the current row is completely empty.
           const m = readModelFromDom(wrap)
-
-          if (text === '') {
-            // Check if entire column is empty
-            let colEmpty = m.header.length > 1
-            if (colEmpty) {
-              if (m.header[col].trim() !== '') colEmpty = false
-              for (const r of m.rows) {
-                if (r[col] && r[col].trim() !== '') colEmpty = false
+          let rowEmpty = m.rows.length > 0
+          if (rowEmpty && m.rows[rowIdx]) {
+            for (const c of m.rows[rowIdx]) {
+              if (c && c.trim() !== '') {
+                rowEmpty = false
+                break
               }
-            }
-
-            if (colEmpty) {
-              // Save position BEFORE we modify the DOM
-              const { from } = findCurrentTableRange(view, wrap) || { from: 0 }
-              // Delete column
-              m.header.splice(col, 1)
-              for (const r of m.rows) r.splice(col, 1)
-              dispatchModel(view, wrap, m)
-
-              requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                  const tables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
-                  const target = tables.find((t) => {
-                    try {
-                      return view.posAtDOM(t) === from
-                    } catch {
-                      return false
-                    }
-                  })
-                  if (target) {
-                    const targetRow = target.querySelectorAll('tr')[isHeader ? 0 : rowIdx + 1]
-                    if (targetRow) {
-                      const newCells = targetRow.querySelectorAll('.cm-atomic-table-cell-source')
-                      const focusCol = Math.max(0, col - 1)
-                      if (newCells[focusCol]) {
-                        newCells[focusCol].focus()
-                        placeCaretAtEnd(newCells[focusCol])
-                      }
-                    }
-                  }
-                })
-              })
-              return
-            }
-
-            // Check if entire row is empty
-            let rowEmpty = !isHeader && m.rows.length > 0
-            if (rowEmpty) {
-              for (const c of m.rows[rowIdx]) {
-                if (c && c.trim() !== '') rowEmpty = false
-              }
-            }
-
-            if (rowEmpty) {
-              // Save position BEFORE we modify the DOM
-              const { from } = findCurrentTableRange(view, wrap) || { from: 0 }
-              // Delete row
-              m.rows.splice(rowIdx, 1)
-              dispatchModel(view, wrap, m)
-
-              requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                  const tables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
-                  const target = tables.find((t) => {
-                    try {
-                      return view.posAtDOM(t) === from
-                    } catch {
-                      return false
-                    }
-                  })
-                  if (target) {
-                    const rows = target.querySelectorAll('tr')
-                    const focusTr = rows[Math.max(0, rowIdx)]
-                    if (focusTr) {
-                      const newCells = focusTr.querySelectorAll('.cm-atomic-table-cell-source')
-                      if (newCells[col]) {
-                        newCells[col].focus()
-                        placeCaretAtEnd(newCells[col])
-                      }
-                    }
-                  }
-                })
-              })
-              return
             }
           }
 
-          // If not deleted, move focus to previous cell
-          moveCellFocus(view, cell, -1)
-          return
+          const { from } = findCurrentTableRange(view, wrap) || { from: 0 }
+
+          if (rowEmpty) {
+            // Delete this empty row
+            m.rows.splice(rowIdx, 1)
+            dispatchModel(view, wrap, m)
+
+            // Move caret to the very last cell of the row above
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                const tables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
+                const target = tables.find((t) => {
+                  const r = findCurrentTableRange(view, t)
+                  return r && r.from === from
+                })
+                if (target) {
+                  const allRows = target.querySelectorAll('tr')
+                  const targetTr = allRows[Math.max(0, rowIdx)]
+                  if (targetTr) {
+                    const newCells = targetTr.querySelectorAll('.cm-atomic-table-cell-source')
+                    const lastCell = newCells[newCells.length - 1]
+                    if (lastCell) {
+                      lastCell.focus()
+                      placeCaretAtEnd(lastCell)
+                    }
+                  }
+                }
+              })
+            })
+            return
+          } else {
+            // Row is not empty: move caret to the last cell of the row above
+            const allRows = wrap.querySelectorAll('tr')
+            const targetTr = allRows[Math.max(0, rowIdx)]
+            if (targetTr) {
+              const newCells = targetTr.querySelectorAll('.cm-atomic-table-cell-source')
+              const lastCell = newCells[newCells.length - 1]
+              if (lastCell) {
+                lastCell.focus()
+                placeCaretAtEnd(lastCell)
+              }
+            }
+            return
+          }
         }
       }
     }

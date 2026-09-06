@@ -223,7 +223,11 @@ export function openCellMenu(view, cell, x, y) {
               const doc = view.state.doc
               if (to < doc.length && view.state.sliceDoc(to, to + 1) === '\n') to += 1
               else if (from > 0 && view.state.sliceDoc(from - 1, from) === '\n') from -= 1
-              view.dispatch({ changes: { from, to, insert: '' } })
+              view.dispatch({
+                changes: { from, to, insert: '' },
+                selection: { anchor: from },
+                scrollIntoView: true
+              })
               view.focus()
             }
           } else {
@@ -362,7 +366,12 @@ export function openCellMenu(view, cell, x, y) {
     createItem('Delete Table', tableIcon, () => {
       const range = findCurrentTableRange(view, wrap)
       if (range) {
-        view.dispatch({ changes: { from: range.from, to: range.to, insert: '' } })
+        view.dispatch({
+          changes: { from: range.from, to: range.to, insert: '' },
+          selection: { anchor: range.from },
+          scrollIntoView: true
+        })
+        view.focus()
       }
     })
   )
