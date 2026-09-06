@@ -257,8 +257,6 @@ body.is-global-resizing .cm-editor {
   flex-shrink: 0;
   will-change: width;
   transform: translateZ(0);
-  display: flex;
-  flex-direction: column;
 }
 
 .app-shell.right-open .shell-sidebar-right {
@@ -272,6 +270,10 @@ body.is-global-resizing .cm-editor {
 
 .shell-sidebar-right .inspector-panel,
 .shell-sidebar-right .error-boundary {
+  position: absolute !important;
+  right: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
   flex-shrink: 0 !important;
   min-width: 300px !important;
   width: var(--right-sidebar-content-width, var(--right-sidebar-width, 300px)) !important;

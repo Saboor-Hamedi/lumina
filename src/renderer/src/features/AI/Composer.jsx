@@ -58,7 +58,7 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false, isSideba
     if (!el) return
 
     if (!input || !input.trim()) {
-      const minH = isSidebar ? 34 : 40
+      const minH = 48
       el.style.height = `${minH}px`
       el.style.overflowY = 'hidden'
       return
@@ -66,8 +66,8 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false, isSideba
 
     // Reset height temporarily to 0 to compute actual scrollHeight without stuck ballooning
     el.style.height = '0px'
-    const minH = isSidebar ? 34 : 40
-    const maxH = isSidebar ? 110 : 160
+    const minH = 48
+    const maxH = isSidebar ? 150 : 180
     const newHeight = Math.min(Math.max(el.scrollHeight, minH), maxH)
     el.style.height = `${newHeight}px`
     el.style.overflowY = el.scrollHeight > maxH ? 'auto' : 'hidden'
@@ -302,17 +302,12 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false, isSideba
             <ToolTip text="Change AI mode (/)" position="top">
               <button
                 type="button"
-                className="model-pill"
+                className="model-pill model-pill-mode"
                 onClick={(e) => {
                   e.stopPropagation()
                   setShowSlashMenu((prev) => !prev)
                   setSlashFilter('')
                   if (textareaRef.current) textareaRef.current.focus()
-                }}
-                style={{
-                  color: 'var(--text-accent)',
-                  borderColor: 'rgba(var(--text-accent-rgb, 64, 186, 250), 0.25)',
-                  background: 'rgba(var(--text-accent-rgb, 64, 186, 250), 0.08)'
                 }}
               >
                 <span className="model-pill-name">{mode}</span>

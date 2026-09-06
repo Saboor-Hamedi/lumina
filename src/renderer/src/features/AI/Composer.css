@@ -3,7 +3,7 @@
  */
 
 .composer-container {
-  padding: 8px;
+  padding: 8px 10px;
   background: var(--bg-panel);
   border-top: 1px solid var(--border-dim);
   position: relative;
@@ -20,14 +20,14 @@
   flex-direction: column;
   background: var(--bg-app);
   border: 1px solid var(--border-dim);
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .composer-card:focus-within {
-  border-color: var(--text-accent);
-  box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb, 64, 186, 250), 0.1);
+  border-color: var(--border-hover, rgba(255, 255, 255, 0.16));
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 /* ─── Input Area & Attached Mentions ─── */
@@ -41,23 +41,23 @@
 .composer-input-area-wrapper {
   position: relative;
   width: 100%;
-  min-height: 44px;
+  min-height: 48px;
 }
 
 .composer-textarea {
   position: relative;
   width: 100%;
   font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
-  font-size: 13px !important;
+  font-size: 13.5px !important;
   font-weight: 400 !important;
   font-style: normal !important;
-  line-height: 20px !important;
+  line-height: 21px !important;
   letter-spacing: 0px !important;
   word-spacing: 0px !important;
   text-rendering: optimizeLegibility !important;
   font-variant-ligatures: normal !important;
   font-feature-settings: "liga" 1, "calt" 1 !important;
-  padding: 12px 12px 12px !important;
+  padding: 10px 12px 6px !important;
   margin: 0 !important;
   border: 0 !important;
   box-sizing: border-box !important;
@@ -70,9 +70,9 @@
   -webkit-text-fill-color: var(--text-main) !important;
   caret-color: var(--text-accent, #40bafa) !important;
   resize: none;
-  height: 44px;
-  min-height: 44px;
-  max-height: 160px;
+  height: 48px;
+  min-height: 48px;
+  max-height: 180px;
   outline: none !important;
   overflow-y: hidden;
   display: block;
@@ -90,9 +90,9 @@
 }
 
 .composer-textarea::placeholder {
-  color: var(--text-faint) !important;
-  -webkit-text-fill-color: var(--text-faint) !important;
-  opacity: 0.75;
+  color: var(--text-muted) !important;
+  -webkit-text-fill-color: var(--text-muted) !important;
+  opacity: 0.65;
 }
 
 .composer-textarea:disabled {
@@ -105,7 +105,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 5px 8px 6px;
+  padding: 4px 8px 5px;
   border-top: 1px solid var(--border-dim);
   gap: 6px;
   flex-wrap: nowrap;
@@ -127,12 +127,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 4px;
-  color: var(--text-faint);
+  color: var(--text-muted);
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   cursor: pointer;
   padding: 0;
   transition: all 0.15s ease;
@@ -142,45 +142,48 @@
 .composer-plus-btn:hover {
   color: var(--text-main);
   background: var(--bg-active);
+  border-color: var(--border-dim);
 }
 
 .model-pill {
   display: flex;
   align-items: center;
   gap: 3px;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 500;
-  color: var(--text-faint);
+  color: var(--text-muted);
   background: transparent;
-  padding: 2px 4px;
+  padding: 2px 6px;
   border-radius: 4px;
-  border: none;
+  border: 1px solid transparent;
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
   flex-shrink: 1;
   min-width: 0;
-  max-width: 110px;
-  opacity: 0.75;
+  max-width: 120px;
+  opacity: 0.85;
 }
 
 .model-pill:hover {
   color: var(--text-main);
   background: var(--bg-active);
+  border-color: var(--border-dim);
   opacity: 1;
 }
 
 .model-pill-name {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 75px;
+  max-width: 80px;
 }
 
 .model-pill-chevron {
-  opacity: 0.6;
+  opacity: 0.5;
+  flex-shrink: 0;
 }
 
 /* Right cluster */
@@ -194,20 +197,20 @@
 
 .char-count,
 .composer-char-count {
-  font-size: 9.5px;
+  font-size: 10px;
   color: var(--text-faint);
   font-variant-numeric: tabular-nums;
-  opacity: 0.55;
+  opacity: 0.6;
   padding: 0 4px;
 }
 
 .mode-badge {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
-  color: var(--text-accent);
-  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.1);
+  color: var(--text-muted);
+  background: var(--bg-active);
   padding: 2px 5px;
   border-radius: 4px;
 }
@@ -221,12 +224,12 @@
   background: var(--text-accent);
   color: #fff;
   border: none;
-  border-radius: 6px;
-  width: 26px;
-  height: 26px;
+  border-radius: 5px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.15s ease;
   white-space: nowrap;
 }
 
@@ -234,16 +237,17 @@
 .send-btn:hover:not(:disabled) {
   background: var(--text-accent-hover, var(--text-accent));
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(var(--text-accent-rgb, 64, 186, 250), 0.3);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
 .composer-send-btn:disabled,
 .send-btn:disabled {
-  background: var(--bg-active);
+  background: transparent;
   color: var(--text-faint);
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
   transform: none;
+  box-shadow: none;
 }
 
 /* Pulsating Glowing Stop Button */
@@ -347,35 +351,35 @@
 
 /* ─── Docked Sidebar & Narrow Screen Responsiveness ─── */
 .is-sidebar-docked .composer-container {
-  padding: 4px 6px;
+  padding: 6px 8px;
 }
 
 .is-sidebar-docked .composer-input-area-wrapper {
-  min-height: 34px;
+  min-height: 48px;
 }
 
 .is-sidebar-docked .composer-textarea {
-  font-size: 12px !important;
-  line-height: 18px !important;
-  padding: 8px 10px !important;
-  height: 34px;
-  min-height: 34px;
-  max-height: 110px;
+  font-size: 13px !important;
+  line-height: 20px !important;
+  padding: 10px 12px 6px !important;
+  height: 48px;
+  min-height: 48px;
+  max-height: 150px;
 }
 
 .is-sidebar-docked .composer-inner-footer {
-  padding: 3px 6px 4px;
+  padding: 4px 6px 5px;
   gap: 4px;
-  min-height: 28px;
+  min-height: 30px;
   flex-wrap: nowrap;
 }
 
 .is-sidebar-docked .model-pill {
-  max-width: 90px;
+  max-width: 100px;
 }
 
 .is-sidebar-docked .model-pill-name {
-  max-width: 60px;
+  max-width: 70px;
 }
 
 @media (max-width: 320px) {
@@ -387,11 +391,11 @@
     gap: 3px;
   }
   .model-pill {
-    max-width: 80px;
-    padding: 2px 3px;
+    max-width: 85px;
+    padding: 2px 4px;
   }
   .model-pill-name {
-    max-width: 50px;
+    max-width: 55px;
   }
   .composer-char-count {
     display: none;
