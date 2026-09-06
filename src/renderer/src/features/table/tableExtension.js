@@ -7,7 +7,7 @@ import { useVaultStore } from '../../core/store/workspaceStore'
 import { TableAutocomplete } from './tableAutocomplete'
 import { setupTableFormattingToolbar } from './tableToolbar'
 import './table.css'
-import { openCellMenu } from './tableContextMenu'
+import { openCellMenu } from './tableMenu'
 import { setupTableSelection } from './tableSelection'
 import { setupTableDragAndDrop } from './tableDragDrop'
 import { setupTableInsertion } from './tableInsert'
@@ -159,8 +159,32 @@ export function placeCaretAtEnd(el) {
   sel.removeAllRanges()
   sel.addRange(range)
 }
+export function scrollCellIntoView(scrollContainer, targetCell) {
+  if (!scrollContainer || !targetCell) return
+  const cell = targetCell.closest('th, td') || targetCell
+  const cellRect = cell.getBoundingClientRect()
+  const containerRect = scrollContainer.getBoundingClientRect()
+
+  // Vertical scroll adjustment (ensure cell/cursor is completely above footer)
+  if (cellRect.bottom > containerRect.bottom) {
+    const diff = (cellRect.bottom - containerRect.bottom) + 10
+    scrollContainer.scrollTop += diff
+  } else if (cellRect.top < containerRect.top) {
+    const diff = (containerRect.top - cellRect.top) + 10
+    scrollContainer.scrollTop -= diff
+  }
+
+  // Horizontal scroll adjustment (ensure cell/cursor is within visible columns)
+  if (cellRect.right > containerRect.right) {
+    const diff = (cellRect.right - containerRect.right) + 16
+    scrollContainer.scrollLeft += diff
+  } else if (cellRect.left < containerRect.left) {
+    const diff = (containerRect.left - cellRect.left) + 16
+    scrollContainer.scrollLeft -= diff
+  }
+}
 export function getAllCells(wrap) {
-  return Array.from(wrap.querySelectorAll('th, td'))
+  return Array.from(wrap.querySelectorAll('thead th, tbody tr:not(.cm-table-empty-row) td'))
 }
 // ---- widget ---------------------------------------------------------
 export class TableWidget extends WidgetType {
@@ -346,14 +370,30 @@ export class TableWidget extends WidgetType {
   }
   updateDOM(dom, view) {
     const theadTr = dom.querySelector('thead tr')
-    if (!theadTr) return false
-    const ths = Array.from(theadTr.querySelectorAll('th'))
-    if (ths.length !== this.model.header.length) return false
-    const colCount = this.model.header.length
+    const tbody = dom.querySelector('tbody')
     const table = dom.querySelector('table')
-    if (table && colCount > 0) {
+    if (!theadTr || !tbody || !table) return false
+
+    const colCount = this.model.header.length
+    const rowCount = this.model.rows.length
+
+    if (colCount > 0) {
       table.style.minWidth = `${colCount * 110}px`
     }
+
+    // 1. Sync header row (ths)
+    let ths = Array.from(theadTr.querySelectorAll('th'))
+    while (ths.length < colCount) {
+      const idx = ths.length
+      const th = makeCell('th', this.model.header[idx] ?? '', view)
+      theadTr.appendChild(th)
+      ths.push(th)
+    }
+    while (ths.length > colCount) {
+      const extraTh = ths.pop()
+      extraTh.remove()
+    }
+
     for (let i = 0; i < colCount; i++) {
       ths[i].__view = view
       ths[i].style.width = `${100 / colCount}%`
@@ -361,54 +401,120 @@ export class TableWidget extends WidgetType {
       const source = ths[i].querySelector('.cm-atomic-table-cell-source')
 
       // Sync alignments
-      if (this.model.alignments?.[i]) {
-        ths[i].style.textAlign = this.model.alignments[i]
-        if (source) source.style.textAlign = this.model.alignments[i]
-      } else {
-        ths[i].style.textAlign = ''
-        if (source) source.style.textAlign = ''
-      }
+      const align = this.model.alignments?.[i] || ''
+      ths[i].style.textAlign = align
+      if (source) source.style.textAlign = align
 
-      if (source && source.parentElement.dataset.raw !== this.model.header[i]) {
+      const textVal = this.model.header[i] ?? ''
+      if (source && source.parentElement.dataset.raw !== textVal) {
         const isFocused = document.activeElement === source
-        source.parentElement.dataset.raw = this.model.header[i]
+        source.parentElement.dataset.raw = textVal
         renderCellSourceDecorated(source)
         if (isFocused) placeCaretAtEnd(source)
       }
     }
 
-    const tbody = dom.querySelector('tbody')
-    if (!tbody) return false
-    const hasEmptyRow = !!tbody.querySelector('.cm-table-empty-row')
-    if (this.model.rows.length === 0) {
-      if (!hasEmptyRow) return false
-      return true
-    }
-    if (hasEmptyRow) return false
+    // 2. Sync body rows (trs and tds)
+    const emptyRow = tbody.querySelector('.cm-table-empty-row')
+    if (rowCount === 0) {
+      tbody.querySelectorAll('tr:not(.cm-table-empty-row)').forEach((tr) => tr.remove())
+      if (!emptyRow) {
+        const emptyTr = document.createElement('tr')
+        emptyTr.className = 'cm-table-empty-row'
+        const emptyTd = document.createElement('td')
+        emptyTd.colSpan = colCount || 1
+        emptyTd.className = 'cm-table-empty-cell'
+        emptyTd.innerHTML = `
+          <div class="cm-table-empty-state">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+              <line x1="3" y1="9" x2="21" y2="9"></line>
+              <line x1="3" y1="15" x2="21" y2="15"></line>
+              <line x1="9" y1="3" x2="9" y2="21"></line>
+              <line x1="15" y1="3" x2="15" y2="21"></line>
+            </svg>
+            <span>No data rows yet</span>
+            <button type="button" class="cm-table-empty-add-btn">+ Add Row</button>
+          </div>
+        `
+        const addBtn = emptyTd.querySelector('.cm-table-empty-add-btn')
+        const handleAddRow = (e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          const m = readModelFromDom(dom)
+          const cols = m.header.length > 0 ? m.header.length : (colCount || 1)
+          m.rows = [Array(cols).fill('')]
+          dispatchModel(view, dom, m, { isHeader: false, rowIdx: 0, colIdx: 0 })
+        }
+        addBtn.addEventListener('mousedown', handleAddRow)
+        addBtn.addEventListener('click', handleAddRow)
+        emptyTr.appendChild(emptyTd)
+        tbody.appendChild(emptyTr)
+      } else {
+        const emptyTd = emptyRow.querySelector('.cm-table-empty-cell')
+        if (emptyTd) emptyTd.colSpan = colCount || 1
+      }
+    } else {
+      if (emptyRow) emptyRow.remove()
 
-    const trs = Array.from(tbody.querySelectorAll('tr:not(.cm-table-empty-row)'))
-    if (trs.length !== this.model.rows.length) return false
+      let trs = Array.from(tbody.querySelectorAll('tr:not(.cm-table-empty-row)'))
+      // Add missing rows
+      while (trs.length < rowCount) {
+        const r = trs.length
+        const tr = document.createElement('tr')
+        for (let c = 0; c < colCount; c++) {
+          const cell = makeCell('td', this.model.rows[r]?.[c] ?? '', view)
+          if (this.model.alignments?.[c]) {
+            cell.style.textAlign = this.model.alignments[c]
+            const source = cell.querySelector('.cm-atomic-table-cell-source')
+            if (source) source.style.textAlign = this.model.alignments[c]
+          }
+          tr.appendChild(cell)
+        }
+        tbody.appendChild(tr)
+        trs.push(tr)
+      }
+      // Remove extra rows
+      while (trs.length > rowCount) {
+        const extraTr = trs.pop()
+        extraTr.remove()
+      }
 
-    for (let r = 0; r < trs.length; r++) {
-      const tds = Array.from(trs[r].querySelectorAll('td'))
-      for (let c = 0; c < tds.length; c++) {
-        tds[c].__view = view
-        const source = tds[c].querySelector('.cm-atomic-table-cell-source')
-
-        // Sync alignments
-        if (this.model.alignments?.[c]) {
-          tds[c].style.textAlign = this.model.alignments[c]
-          if (source) source.style.textAlign = this.model.alignments[c]
-        } else {
-          tds[c].style.textAlign = ''
-          if (source) source.style.textAlign = ''
+      // Sync cells within each row
+      for (let r = 0; r < rowCount; r++) {
+        const tr = trs[r]
+        let tds = Array.from(tr.querySelectorAll('td'))
+        while (tds.length < colCount) {
+          const c = tds.length
+          const cell = makeCell('td', this.model.rows[r]?.[c] ?? '', view)
+          if (this.model.alignments?.[c]) {
+            cell.style.textAlign = this.model.alignments[c]
+            const source = cell.querySelector('.cm-atomic-table-cell-source')
+            if (source) source.style.textAlign = this.model.alignments[c]
+          }
+          tr.appendChild(cell)
+          tds.push(cell)
+        }
+        while (tds.length > colCount) {
+          const extraTd = tds.pop()
+          extraTd.remove()
         }
 
-        if (source && source.parentElement.dataset.raw !== this.model.rows[r][c]) {
-          const isFocused = document.activeElement === source
-          source.parentElement.dataset.raw = this.model.rows[r][c]
-          renderCellSourceDecorated(source)
-          if (isFocused) placeCaretAtEnd(source)
+        for (let c = 0; c < colCount; c++) {
+          const td = tds[c]
+          td.__view = view
+          const source = td.querySelector('.cm-atomic-table-cell-source')
+          const align = this.model.alignments?.[c] || ''
+          td.style.textAlign = align
+          if (source) source.style.textAlign = align
+
+          const textVal = this.model.rows[r]?.[c] ?? ''
+          if (source && source.parentElement.dataset.raw !== textVal) {
+            const isFocused = document.activeElement === source
+            source.parentElement.dataset.raw = textVal
+            renderCellSourceDecorated(source)
+            if (isFocused) placeCaretAtEnd(source)
+          }
         }
       }
     }
@@ -492,36 +598,43 @@ export function dispatchModel(view, wrap, nextModel, explicitFocusInfo = null) {
   // Re-focus the cell if one was active or explicitly requested
   if (cellInfo) {
     const fromPos = range.from
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const tables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
-        const target = tables.find((t) => {
-          const r = findCurrentTableRange(view, t)
-          return r && r.from === fromPos
-        })
-        if (!target) return
-        const allRows = target.querySelectorAll('tr')
-        if (!allRows.length) return
-        let targetTr = null
-        if (cellInfo.isHeader) {
-          targetTr = allRows[0]
-        } else {
-          const maxBodyIdx = Math.max(0, allRows.length - 2)
-          const safeBodyIdx = Math.max(0, Math.min(cellInfo.rowIdx, maxBodyIdx))
-          targetTr = allRows[safeBodyIdx + 1]
+    const focusTarget = () => {
+      const tables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
+      const target = (wrap && wrap.isConnected) ? wrap : (tables.find((t) => {
+        const r = findCurrentTableRange(view, t)
+        return r && r.from === fromPos
+      }) || tables[0])
+      if (!target) return
+      let targetTr = null
+      if (cellInfo.isHeader) {
+        targetTr = target.querySelector('thead tr')
+      } else {
+        const bodyRows = target.querySelectorAll('tbody tr:not(.cm-table-empty-row)')
+        if (bodyRows.length > 0) {
+          const safeBodyIdx = Math.max(0, Math.min(cellInfo.rowIdx, bodyRows.length - 1))
+          targetTr = bodyRows[safeBodyIdx]
         }
-        if (targetTr) {
-          const cells = targetTr.querySelectorAll('.cm-atomic-table-cell-source')
-          if (cells.length > 0) {
-            const colIdx = Math.max(0, Math.min(cellInfo.colIdx, cells.length - 1))
-            const targetCell = cells[colIdx]
-            if (targetCell) {
-              targetCell.focus()
-              placeCaretAtEnd(targetCell)
+      }
+      if (targetTr) {
+        const cells = targetTr.querySelectorAll('.cm-atomic-table-cell-source')
+        if (cells.length > 0) {
+          const colIdx = Math.max(0, Math.min(cellInfo.colIdx, cells.length - 1))
+          const targetCell = cells[colIdx]
+          if (targetCell) {
+            const scrollContainer = target.querySelector('.cm-table-scroll-container')
+            if (scrollContainer) {
+              scrollCellIntoView(scrollContainer, targetCell)
             }
+            targetCell.focus({ preventScroll: true })
+            placeCaretAtEnd(targetCell)
           }
         }
-      })
+      }
+    }
+
+    focusTarget()
+    requestAnimationFrame(() => {
+      requestAnimationFrame(focusTarget)
     })
   }
 }
@@ -573,7 +686,7 @@ export function moveCellFocus(view, cell, dir, opts = { appendOnOverflow: true }
     // Never jump out of the table to pos 0 of the editor! Keep focus on the first cell.
     const firstCellSource = getCellSource(cells[0])
     if (firstCellSource) {
-      firstCellSource.focus()
+      firstCellSource.focus({ preventScroll: true })
       const sel = firstCellSource.ownerDocument?.defaultView?.getSelection()
       if (sel) {
         const range = document.createRange()
@@ -589,7 +702,8 @@ export function moveCellFocus(view, cell, dir, opts = { appendOnOverflow: true }
     if (opts.appendOnOverflow) {
       const thead = wrap.querySelector('thead tr')
       const colCount = thead ? thead.querySelectorAll('th').length : 1
-      const focusCol = (Math.abs(dir) === 1) ? 0 : (idx % colCount)
+      const currentCol = cellColIndex(cell)
+      const focusCol = (Math.abs(dir) === 1) ? 0 : Math.max(0, currentCol >= 0 ? currentCol : (idx % colCount))
       appendRow(view, wrap, focusCol)
     } else {
       // jump out below safely
@@ -614,7 +728,11 @@ export function moveCellFocus(view, cell, dir, opts = { appendOnOverflow: true }
   }
   const source = getCellSource(cells[next])
   if (!source) return
-  source.focus()
+  const scrollContainer = wrap.querySelector('.cm-table-scroll-container')
+  if (scrollContainer) {
+    scrollCellIntoView(scrollContainer, source)
+  }
+  source.focus({ preventScroll: true })
 
   if (dir > 0) {
     // Moving forward/down: place caret at start

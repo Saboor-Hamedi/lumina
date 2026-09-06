@@ -1,7 +1,7 @@
 import { undo, redo } from '@codemirror/commands'
 import { ImageWidget } from '../media'
 import { TableAutocomplete } from './tableAutocomplete'
-import { openCellMenu, cellColIndex, cellRowIndex } from './tableContextMenu'
+import { openCellMenu, cellColIndex, cellRowIndex } from './tableMenu'
 import { readModelFromDom } from './tableModel'
 import { parseCellInline } from './tableParser'
 import { icons } from './tableIcons.js'
