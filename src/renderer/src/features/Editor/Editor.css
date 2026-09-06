@@ -212,8 +212,10 @@
 .cm-table-scroll-container {
   width: 100% !important;
   max-width: 100% !important;
+  max-height: 420px;
   overflow-x: auto !important;
-  overflow-y: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
   box-sizing: border-box !important;
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;

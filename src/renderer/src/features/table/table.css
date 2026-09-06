@@ -633,8 +633,8 @@
   box-sizing: border-box;
   border-bottom-left-radius: 0 !important;
   border-bottom-right-radius: 0 !important;
-  scrollbar-width: thin !important;
-  scrollbar-color: var(--border-dim, rgba(255, 255, 255, 0.2)) transparent !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 
 /* Sticky column header — stays visible while scrolling long tables */
@@ -645,40 +645,23 @@
 }
 
 .cm-atomic-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   background: var(--bg-app, #18181b) !important;
 }
 
+/* Invisible scrollbar while maintaining full native scrolling */
 .cm-table-scroll-container::-webkit-scrollbar {
-  display: block !important;
-  height: 5px !important;
-  width: 5px !important;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
   background: transparent !important;
-}
-
-.cm-table-scroll-container::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
-}
-
-.cm-table-scroll-container::-webkit-scrollbar-thumb {
-  background: var(--border-dim, rgba(255, 255, 255, 0.18));
-  border-radius: 4px;
-  transition: background 0.15s ease;
-}
-
-.cm-table-scroll-container:hover::-webkit-scrollbar-thumb {
-  background: var(--text-muted, rgba(255, 255, 255, 0.35));
-}
-
-/* Ensure the last column header and cells are never clipped */
-.cm-atomic-table th:last-child .cm-atomic-table-cell-source,
-.cm-atomic-table td:last-child .cm-atomic-table-cell-source {
-  padding-right: 18px !important;
 }
 
 .cm-atomic-table table {
   display: table !important;
-  width: max-content !important;
+  width: 100% !important;
   min-width: 100% !important;
   table-layout: auto !important;
   border-collapse: separate !important;
@@ -703,6 +686,16 @@
   transition: background 0.15s ease;
   box-sizing: border-box;
   overflow: hidden;
+}
+
+/* Outer border cleanly aligns with table container border */
+.cm-atomic-table th:last-child,
+.cm-atomic-table td:last-child {
+  border-right: none !important;
+}
+
+.cm-atomic-table tbody tr:last-child td {
+  border-bottom: none !important;
 }
 
 /* Smooth live-shifting for columns and rows */

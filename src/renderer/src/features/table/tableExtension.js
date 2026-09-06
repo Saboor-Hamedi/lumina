@@ -249,6 +249,9 @@ export class TableWidget extends WidgetType {
         const canScrollX = scrollContainer.scrollWidth > scrollContainer.clientWidth
         if (canScrollY || canScrollX) {
           e.stopPropagation()
+          if (!canScrollY && canScrollX && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+            scrollContainer.scrollLeft += e.deltaY
+          }
         }
       },
       { passive: true }
