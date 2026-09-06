@@ -123,10 +123,12 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  height: 22px;
-  padding: 0 10px;
-  background: var(--bg-surface, rgba(255, 255, 255, 0.015)) !important;
-  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.05)) !important;
+  gap: 6px;
+  height: 24px;
+  padding: 0 8px;
+  /* Footer is darker/more recessed than the header */
+  background: var(--bg-base, rgba(0, 0, 0, 0.18)) !important;
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06)) !important;
   border-bottom-left-radius: 4px !important;
   border-bottom-right-radius: 4px !important;
   user-select: none;
@@ -135,11 +137,19 @@
 }
 
 .cm-table-ui-footer-count {
-  font-size: 10.5px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 6px;
+  height: 16px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 10px;
   font-weight: 500;
+  font-variant-numeric: tabular-nums;
   color: var(--text-muted, #71717a);
-  letter-spacing: 0.02em;
-  opacity: 0.8;
+  letter-spacing: 0.04em;
+  opacity: 0.9;
 }
 
 .cm-table-ui-left {
@@ -182,8 +192,11 @@
   outline: none;
   transition: all 0.15s ease;
   user-select: none;
-  max-width: 160px;
-  flex-shrink: 0;
+  /* Shrink with the left group so long names truncate rather than expanding */
+  min-width: 0;
+  flex-shrink: 1;
+  /* ~3 words before truncating */
+  max-width: 130px;
 }
 
 .cm-table-title-btn:hover {
@@ -206,12 +219,13 @@
 }
 
 .cm-table-title-label {
-  max-width: 120px;
+  /* Truncate overflow with ellipsis */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-weight: 600;
   letter-spacing: 0.01em;
+  min-width: 0;
 }
 
 /* Table / Source Mode Segmented Toggle */

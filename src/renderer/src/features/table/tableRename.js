@@ -20,7 +20,7 @@ export function createTableTitleDOM(view, wrap, model) {
 
   const currentTitle = model.caption ? model.caption.trim() : ''
 
-  // Icon (Pencil)
+  // Icon (Pencil) — stays on the LEFT of the label
   const iconSpan = document.createElement('span')
   iconSpan.className = 'cm-table-title-icon'
   iconSpan.innerHTML = `
@@ -29,13 +29,22 @@ export function createTableTitleDOM(view, wrap, model) {
     </svg>
   `
 
-  // Label
+  // Label — CSS-truncated; full name shown via domTooltip (data-tooltip)
   const labelSpan = document.createElement('span')
   labelSpan.className = 'cm-table-title-label'
   labelSpan.textContent = currentTitle || 'Table'
 
-  titleBtn.appendChild(labelSpan)
+  // Keep data-tooltip in sync so the domTooltip engine shows the full name on hover
+  const syncTooltip = (text) => {
+    titleBtn.setAttribute('data-tooltip', text || 'Table')
+    // Remove native browser title so only our styled tooltip fires
+    titleBtn.removeAttribute('title')
+  }
+  syncTooltip(currentTitle)
+
+  // Icon first, then label
   titleBtn.appendChild(iconSpan)
+  titleBtn.appendChild(labelSpan)
   container.appendChild(titleBtn)
 
   let dropdown = null
@@ -108,6 +117,7 @@ export function createTableTitleDOM(view, wrap, model) {
     const handleSave = () => {
       const newTitle = input.value.trim()
       labelSpan.textContent = newTitle || 'Table'
+      syncTooltip(newTitle)
       wrap.dataset.caption = newTitle
       model.caption = newTitle
 

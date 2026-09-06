@@ -12,10 +12,8 @@ import { setupTableSelection } from './tableSelection'
 import { setupTableDragAndDrop } from './tableDragDrop'
 import { setupTableInsertion } from './tableInsert'
 import { setupTableColResizing } from './tableResize'
-import { icons } from './tableIcons.js'
-import { createTableTitleDOM } from './tableRename.js'
-import { createTableQuickActionsDOM } from './tableActions.js'
-import { createTableViewModeToggleDOM } from './tableSourceView.js'
+import { createTableHeaderDOM } from './tableHeader.js'
+import { createTableFooterDOM, updateTableFooterCount } from './tableFooter.js'
 
 import { parseTable, serializeTable, readModelFromDom, getCellSource } from './tableModel'
 import { renderCellSourceDecorated, makeCell } from './tableCell'
@@ -237,47 +235,7 @@ export class TableWidget extends WidgetType {
       }
     })
 
-    const header = document.createElement('div')
-    header.className = 'cm-table-ui-header'
-    header.contentEditable = 'false'
-
-    // Left group: Editable Table Title Trigger
-    const leftGroup = document.createElement('div')
-    leftGroup.className = 'cm-table-ui-left'
-    leftGroup.appendChild(createTableTitleDOM(view, wrap, this.model))
-
-    // Right group: [Table | Source] View Toggle + Quick Actions/Export + Delete button
-    const rightGroup = document.createElement('div')
-    rightGroup.className = 'cm-table-ui-right'
-    rightGroup.appendChild(createTableViewModeToggleDOM(view, wrap, this.model))
-    rightGroup.appendChild(createTableQuickActionsDOM(view, wrap, this.model))
-
-    const deleteBtn = document.createElement('button')
-    deleteBtn.className = 'cm-table-ui-delete-btn'
-    deleteBtn.setAttribute('data-tooltip', 'Delete table')
-    deleteBtn.innerHTML = icons.delete
-    deleteBtn.addEventListener('mousedown', (e) => {
-      e.preventDefault() // prevent losing focus
-      e.stopPropagation()
-      const range = findCurrentTableRange(view, wrap)
-      if (range) {
-        let from = range.from
-        let to = range.to
-        const doc = view.state.doc
-        if (to < doc.length && view.state.sliceDoc(to, to + 1) === '\n') {
-          to += 1
-        } else if (from > 0 && view.state.sliceDoc(from - 1, from) === '\n') {
-          from -= 1
-        }
-        view.dispatch({ changes: { from, to, insert: '' } })
-        view.focus()
-      }
-    })
-    rightGroup.appendChild(deleteBtn)
-
-    header.appendChild(leftGroup)
-    header.appendChild(rightGroup)
-    wrap.appendChild(header)
+    wrap.appendChild(createTableHeaderDOM(view, wrap, this.model))
 
     const scrollContainer = document.createElement('div')
     scrollContainer.className = 'cm-table-scroll-container'
@@ -360,16 +318,7 @@ export class TableWidget extends WidgetType {
     }
     table.appendChild(tbody)
 
-    const footer = document.createElement('div')
-    footer.className = 'cm-table-ui-footer'
-    footer.contentEditable = 'false'
-    
-    const countSpan = document.createElement('span')
-    countSpan.className = 'cm-table-ui-footer-count'
-    countSpan.textContent = `${rowCount} ${rowCount === 1 ? 'row' : 'rows'} · ${colCount} ${colCount === 1 ? 'col' : 'cols'}`
-    footer.appendChild(countSpan)
-
-    wrap.appendChild(footer)
+    wrap.appendChild(createTableFooterDOM(rowCount, colCount))
 
     setupTableFormattingToolbar(wrap, view)
     setupTableSelection(wrap, view)
@@ -448,12 +397,9 @@ export class TableWidget extends WidgetType {
       dom.dataset.tableTo = String(this.to)
     }
 
-    const countSpan = dom.querySelector('.cm-table-ui-footer-count')
-    if (countSpan) {
-      const rowCount = this.model.rows ? this.model.rows.length : 0
-      const colCount = this.model.header ? this.model.header.length : 0
-      countSpan.textContent = `${rowCount} ${rowCount === 1 ? 'row' : 'rows'} · ${colCount} ${colCount === 1 ? 'col' : 'cols'}`
-    }
+    const rowCount = this.model.rows ? this.model.rows.length : 0
+    const colCount = this.model.header ? this.model.header.length : 0
+    updateTableFooterCount(dom, rowCount, colCount)
 
     return true
   }
