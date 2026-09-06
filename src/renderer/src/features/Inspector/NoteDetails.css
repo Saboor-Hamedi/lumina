@@ -205,8 +205,6 @@
   color: var(--text-main);
   box-sizing: border-box;
   user-select: none;
-  container-type: inline-size;
-  container-name: inspector;
 }
 
 /* Inspector Tabs */
@@ -330,6 +328,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   letter-spacing: -0.01em;
+  flex-shrink: 0 !important;
 }
 
 .panel-header-tabs .tab-icon {
@@ -344,58 +343,5 @@
 
 .panel-header-tabs .workspace-tab:hover .tab-icon {
   opacity: 1;
-}
-
-@container inspector (max-width: 250px) {
-  .panel-header-tabs.inspector-tabbar {
-    justify-content: space-around;
-  }
-  .panel-header-tabs .inspector-tab {
-    flex: 1;
-    min-width: 0;
-    padding: 0 4px !important;
-    gap: 0 !important;
-    justify-content: center !important;
-  }
-  .panel-header-tabs .tab-title {
-    display: none !important;
-  }
-  .panel-header-tabs .tab-context {
-    justify-content: center !important;
-    gap: 0 !important;
-  }
-  .inspector-sub-title {
-    font-size: 10px;
-  }
-  .inspector-sub-badge {
-    max-width: 75px;
-    font-size: 10px;
-  }
-  .properties-container {
-    padding: 10px;
-  }
-  .property-row {
-    padding: 4px 6px;
-    gap: 4px;
-  }
-  .property-name {
-    font-size: 11.5px;
-    gap: 5px;
-  }
-  .property-value-wrapper {
-    font-size: 11.5px;
-  }
-}
-
-@container inspector (max-width: 190px) {
-  .inspector-sub-badge {
-    display: none !important;
-  }
-  .inspector-sub-header {
-    padding: 0 8px;
-  }
-  .properties-container {
-    padding: 6px;
-  }
 }
 

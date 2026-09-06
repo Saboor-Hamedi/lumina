@@ -259,7 +259,6 @@ body.is-global-resizing .cm-editor {
   transform: translateZ(0);
   display: flex;
   flex-direction: column;
-  /* NO contain: inline-size — it breaks the inner width lock */
 }
 
 .app-shell.right-open .shell-sidebar-right {
@@ -272,8 +271,18 @@ body.is-global-resizing .cm-editor {
 }
 
 .shell-sidebar-right .inspector-panel,
-.shell-sidebar-right .error-boundary,
-.shell-sidebar-right > div,
+.shell-sidebar-right .error-boundary {
+  flex-shrink: 0 !important;
+  min-width: 300px !important;
+  width: var(--right-sidebar-content-width, var(--right-sidebar-width, 300px)) !important;
+  max-width: none !important;
+  height: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
 .shell-sidebar-right .panel-header-tabs,
 .shell-sidebar-right .inspector-sub-header,
 .shell-sidebar-right .panel-content,
@@ -285,8 +294,8 @@ body.is-global-resizing .cm-editor {
 .shell-sidebar-right .chat-input-area {
   flex-shrink: 0 !important;
   min-width: 300px !important;
-  width: var(--right-sidebar-content-width, 300px) !important;
   max-width: none !important;
+  width: 100% !important;
   box-sizing: border-box !important;
 }
 

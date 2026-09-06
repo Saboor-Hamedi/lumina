@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
 import { Download } from 'lucide-react'
+import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import UpdateHeader from './UpdateHeader'
 import UpdateFooter from './UpdateFooter'
 import ToolTip from '../atoms/ToolTip'
@@ -11,6 +12,15 @@ const UpdateDetails = () => {
   const [currentVersion, setCurrentVersion] = useState('1.0.0')
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef(null)
+
+  useKeyboardShortcuts({
+    onEscape: isOpen
+      ? () => {
+          setIsOpen(false)
+          return true
+        }
+      : null
+  })
 
   useEffect(() => {
     if (window.api?.getVersion) {
@@ -33,8 +43,14 @@ const UpdateDetails = () => {
 
   const newVersion = updateInfo?.version || currentVersion
   
+  const isGenericNote =
+    !updateInfo?.releaseNotes ||
+    typeof updateInfo.releaseNotes !== 'string' ||
+    updateInfo.releaseNotes.includes('latest development build') ||
+    updateInfo.releaseNotes.includes('latest version')
+
   const rawNotes =
-    updateInfo?.releaseNotes ||
+    !isGenericNote ? updateInfo.releaseNotes :
     `New
 - Redesigned Update Window: A wider, cleaner popover with an organized layout, simplified channel switcher, and instant update checks.
 - Vault Insights & Live Stats: Click the note counter in the Explorer header to see your total notes, folders, word counts, and disk storage.

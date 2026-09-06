@@ -111,7 +111,8 @@ export function useExplorerOperations({
     if (!selectedSnippetId) return
     if (lastAutoExpandedSnippetRef.current === selectedSnippetId) return
     const activeSnippet = snippets.find((s) => s.id === selectedSnippetId)
-    if (!activeSnippet || !activeSnippet.folderId) {
+    if (!activeSnippet) return
+    if (!activeSnippet.folderId) {
       lastAutoExpandedSnippetRef.current = selectedSnippetId
       return
     }

@@ -39,6 +39,17 @@ const DailyNotes = memo(() => {
       }
     }
 
+    try {
+      const cached = localStorage.getItem('lumina-expanded-folders')
+      let arr = cached ? JSON.parse(cached) : []
+      if (!Array.isArray(arr)) arr = []
+      if (!arr.includes('DailyNotes')) {
+        arr.push('DailyNotes')
+        localStorage.setItem('lumina-expanded-folders', JSON.stringify(arr))
+        useSettingsStore.getState().updateSetting('expandedFolders', arr)
+      }
+    } catch (e) {}
+
     const newNote = {
       id: crypto.randomUUID(),
       title: finalTitle,

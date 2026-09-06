@@ -94,9 +94,10 @@ All three header bars must be exactly **32px tall** to stay perfectly aligned:
 - Tab bar: `TabBar.jsx` / `TabBar.css` → `height: 32px`.
 - Right sidebar: `.panel-header-tabs` in `NoteDetails.css` → `height: 32px !important`.
 
-### Responsive Sidebar Behavior
-- Left sidebar uses container queries (`@container sidebar (max-width: Xpx)`) to shrink button labels at small widths.
-- Right sidebar uses `@container inspector (max-width: 250px)` to collapse tab labels to icon-only.
+### Responsive Sidebar Behavior & Curtain Mechanic
+- Left sidebar clips its stationary content from right-to-left using `overflow: hidden`, behaving like a curtain.
+- Right sidebar clips its stationary content from left-to-right using `overflow: hidden`, `align-items: flex-end`, and `margin-left: auto`, docking against the right window edge so it acts as an identical stationary curtain.
+- Tab labels and content inside `.shell-sidebar-right` maintain fixed 300px min-width with no container query collapses so tabs do not squish or disappear during drag or closing.
 - Sidebar closes automatically when window width crosses below 700px (handled in `AppShell.jsx` resize event).
 
 ---

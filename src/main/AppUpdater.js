@@ -54,8 +54,7 @@ class AppUpdater {
       if (!app.isPackaged) {
         setTimeout(() => {
           this.sendStatusToWindow('not-available', {
-            version: app.getVersion(),
-            releaseNotes: 'You are running the latest development build.'
+            version: app.getVersion()
           })
         }, 500)
         return
@@ -64,8 +63,7 @@ class AppUpdater {
       autoUpdater.checkForUpdates().catch((err) => {
         console.error('Check for updates failed:', err)
         this.sendStatusToWindow('not-available', {
-          version: app.getVersion(),
-          releaseNotes: 'You are running the latest version.'
+          version: app.getVersion()
         })
       })
     })

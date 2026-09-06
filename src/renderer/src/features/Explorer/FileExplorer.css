@@ -102,6 +102,7 @@
 .start-menu-body {
   flex: 1;
   overflow-y: hidden; /* Let Virtuoso handle scroll */
+  overflow-x: hidden !important;
   padding: 0 4px;
   display: flex;
   flex-direction: column;
@@ -113,8 +114,13 @@
 }
 
 /* Embedded overrides to fix scroll gap and bottom gap */
+.explorer-embedded-container {
+  overflow-x: hidden !important;
+}
+
 .explorer-embedded-container .start-menu-body {
   padding: 0 4px;
+  overflow-x: hidden !important;
 }
 
 .explorer-embedded-container .start-menu-search {
@@ -127,11 +133,16 @@
   flex-direction: column;
   flex: 1;
   min-height: 0; /* Crucial for nested flex scrolling */
+  overflow-x: hidden !important;
 }
 
 /* Custom Scrollbar for Body */
 .start-menu-body::-webkit-scrollbar {
   width: 5px;
+}
+.start-menu-body::-webkit-scrollbar:horizontal {
+  display: none !important;
+  height: 0px !important;
 }
 .start-menu-body::-webkit-scrollbar-track {
   background: transparent;
@@ -142,6 +153,17 @@
 }
 .start-menu-body::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
+}
+
+.explorer-embedded-container *::-webkit-scrollbar:horizontal,
+.start-menu-container *::-webkit-scrollbar:horizontal,
+[data-virtuoso-scroller="true"]::-webkit-scrollbar:horizontal {
+  display: none !important;
+  height: 0px !important;
+}
+
+[data-virtuoso-scroller="true"] {
+  overflow-x: hidden !important;
 }
 
 /* Sections */
