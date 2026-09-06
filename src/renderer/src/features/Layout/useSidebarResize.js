@@ -1,23 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 
-const MIN_SIDEBAR_CONTENT_WIDTH = 150 // Hard floor: content never shrinks below 150px
-const CLOSE_DRAG_THRESHOLD = 150      // Dragging below 150px and releasing snaps to close
+const CLOSE_DRAG_THRESHOLD = 180
 const DEFAULT_LEFT_WIDTH = 260
 const DEFAULT_RIGHT_WIDTH = 300
 const MAX_LEFT_WIDTH = 600
 const MAX_RIGHT_WIDTH = 750
 
-/**
- * High-performance, zero-lag sidebar resize engine.
- *
- * Mechanics:
- * - >= 150px: Sidebar content resizes dynamically alongside the drag.
- * - < 150px: Content stays rigidly locked at 150px while outer container tracks inward,
- *            smoothly covering the sidebar like a sliding door.
- * - < 100px on release: Directly closes the sidebar, restoring pre-drag width for next open.
- * - >= 100px on release: Clamps to min 150px with zero elastic snap or sudden reflow.
- */
 export function useSidebarResize({
   appShellRef,
   isLeftSidebarOpen,
@@ -30,13 +19,13 @@ export function useSidebarResize({
       const saved = localStorage.getItem('lumina_left_sidebar_width')
       if (saved) {
         const parsed = parseInt(saved, 10)
-        if (!isNaN(parsed) && parsed >= MIN_SIDEBAR_CONTENT_WIDTH && parsed <= MAX_LEFT_WIDTH) {
+        if (!isNaN(parsed) && parsed >= DEFAULT_LEFT_WIDTH && parsed <= MAX_LEFT_WIDTH) {
           return parsed
         }
       }
     }
     const storeVal = useSettingsStore.getState().settings?.sidebar?.width
-    if (typeof storeVal === 'number' && storeVal >= MIN_SIDEBAR_CONTENT_WIDTH && storeVal <= MAX_LEFT_WIDTH) {
+    if (typeof storeVal === 'number' && storeVal >= DEFAULT_LEFT_WIDTH && storeVal <= MAX_LEFT_WIDTH) {
       return storeVal
     }
     return DEFAULT_LEFT_WIDTH
@@ -47,13 +36,13 @@ export function useSidebarResize({
       const saved = localStorage.getItem('lumina_right_sidebar_width')
       if (saved) {
         const parsed = parseInt(saved, 10)
-        if (!isNaN(parsed) && parsed >= MIN_SIDEBAR_CONTENT_WIDTH && parsed <= MAX_RIGHT_WIDTH) {
+        if (!isNaN(parsed) && parsed >= DEFAULT_RIGHT_WIDTH && parsed <= MAX_RIGHT_WIDTH) {
           return parsed
         }
       }
     }
     const storeVal = useSettingsStore.getState().settings?.rightSidebar?.width
-    if (typeof storeVal === 'number' && storeVal >= MIN_SIDEBAR_CONTENT_WIDTH && storeVal <= MAX_RIGHT_WIDTH) {
+    if (typeof storeVal === 'number' && storeVal >= DEFAULT_RIGHT_WIDTH && storeVal <= MAX_RIGHT_WIDTH) {
       return storeVal
     }
     return DEFAULT_RIGHT_WIDTH
@@ -72,7 +61,7 @@ export function useSidebarResize({
   useEffect(() => {
     widthRef.current.left = leftWidth
     initialWidthRef.current.left = leftWidth
-    const contentWidth = Math.max(MIN_SIDEBAR_CONTENT_WIDTH, leftWidth)
+    const contentWidth = Math.max(DEFAULT_LEFT_WIDTH, leftWidth)
     if (appShellRef.current) {
       appShellRef.current.style.setProperty('--left-sidebar-width', `${leftWidth}px`)
       appShellRef.current.style.setProperty('--left-sidebar-content-width', `${contentWidth}px`)
@@ -88,7 +77,7 @@ export function useSidebarResize({
   useEffect(() => {
     widthRef.current.right = rightWidth
     initialWidthRef.current.right = rightWidth
-    const contentWidth = Math.max(MIN_SIDEBAR_CONTENT_WIDTH, rightWidth)
+    const contentWidth = Math.max(DEFAULT_RIGHT_WIDTH, rightWidth)
     if (appShellRef.current) {
       appShellRef.current.style.setProperty('--right-sidebar-width', `${rightWidth}px`)
       appShellRef.current.style.setProperty('--right-sidebar-content-width', `${contentWidth}px`)
@@ -134,10 +123,8 @@ export function useSidebarResize({
         if (activeSide === 'left') {
           const rawWidth = clientX - rect.left
           widthRef.current.left = rawWidth
-          // Outer container follows the drag handle freely (can shrink below 150px — curtain outer edge)
           const outerWidth = Math.max(0, Math.min(MAX_LEFT_WIDTH, rawWidth))
-          // Inner content stays locked at 150px min (curtain inner content — never squished)
-          const contentWidth = Math.max(MIN_SIDEBAR_CONTENT_WIDTH, Math.min(MAX_LEFT_WIDTH, rawWidth))
+          const contentWidth = Math.max(DEFAULT_LEFT_WIDTH, Math.min(MAX_LEFT_WIDTH, rawWidth))
           shell.style.setProperty('--left-sidebar-width', `${outerWidth}px`)
           shell.style.setProperty('--left-sidebar-content-width', `${contentWidth}px`)
           document.documentElement.style.setProperty('--left-sidebar-width', `${outerWidth}px`)
@@ -145,10 +132,8 @@ export function useSidebarResize({
         } else if (activeSide === 'right') {
           const rawWidth = rect.right - clientX
           widthRef.current.right = rawWidth
-          // Outer container follows the drag handle freely (can shrink below 150px — curtain outer edge)
           const outerWidth = Math.max(0, Math.min(MAX_RIGHT_WIDTH, rawWidth))
-          // Inner content stays locked at 150px min (curtain inner content — never squished)
-          const contentWidth = Math.max(MIN_SIDEBAR_CONTENT_WIDTH, Math.min(MAX_RIGHT_WIDTH, rawWidth))
+          const contentWidth = Math.max(DEFAULT_RIGHT_WIDTH, Math.min(MAX_RIGHT_WIDTH, rawWidth))
           shell.style.setProperty('--right-sidebar-width', `${outerWidth}px`)
           shell.style.setProperty('--right-sidebar-content-width', `${contentWidth}px`)
           document.documentElement.style.setProperty('--right-sidebar-width', `${outerWidth}px`)
@@ -171,15 +156,12 @@ export function useSidebarResize({
           const initialLeft = initialWidthRef.current.left || DEFAULT_LEFT_WIDTH
 
           if (raw < CLOSE_DRAG_THRESHOLD) {
-            // Dragged below 100px: directly close sidebar
             updateLeftSidebarOpen(false)
             const restoreWidth = Math.max(DEFAULT_LEFT_WIDTH, initialLeft)
-            // Keep content width locked at 120px during the close slide to prevent sudden jumps
             if (shell) {
-              shell.style.setProperty('--left-sidebar-content-width', `${MIN_SIDEBAR_CONTENT_WIDTH}px`)
+              shell.style.setProperty('--left-sidebar-content-width', `${DEFAULT_LEFT_WIDTH}px`)
             }
-            document.documentElement.style.setProperty('--left-sidebar-content-width', `${MIN_SIDEBAR_CONTENT_WIDTH}px`)
-            // Once closed, update state to restoreWidth for the next open
+            document.documentElement.style.setProperty('--left-sidebar-content-width', `${DEFAULT_LEFT_WIDTH}px`)
             setTimeout(() => {
               setLeftWidth(restoreWidth)
               if (shell) {
@@ -190,8 +172,7 @@ export function useSidebarResize({
               document.documentElement.style.setProperty('--left-sidebar-content-width', `${restoreWidth}px`)
             }, 250)
           } else {
-            // Stay open at user's resized width (minimum 120px)
-            const finalWidth = Math.max(MIN_SIDEBAR_CONTENT_WIDTH, Math.min(MAX_LEFT_WIDTH, Math.round(raw)))
+            const finalWidth = Math.max(DEFAULT_LEFT_WIDTH, Math.min(MAX_LEFT_WIDTH, Math.round(raw)))
             setLeftWidth(finalWidth)
             if (shell) {
               shell.style.setProperty('--left-sidebar-width', `${finalWidth}px`)
@@ -219,15 +200,12 @@ export function useSidebarResize({
           const initialRight = initialWidthRef.current.right || DEFAULT_RIGHT_WIDTH
 
           if (raw < CLOSE_DRAG_THRESHOLD) {
-            // Dragged below 100px: directly close right sidebar
             handleCloseRightSidebar()
             const restoreWidth = Math.max(DEFAULT_RIGHT_WIDTH, initialRight)
-            // Keep content width locked at 120px during the close slide to prevent sudden jumps
             if (shell) {
-              shell.style.setProperty('--right-sidebar-content-width', `${MIN_SIDEBAR_CONTENT_WIDTH}px`)
+              shell.style.setProperty('--right-sidebar-content-width', `${DEFAULT_RIGHT_WIDTH}px`)
             }
-            document.documentElement.style.setProperty('--right-sidebar-content-width', `${MIN_SIDEBAR_CONTENT_WIDTH}px`)
-            // Once closed, update state to restoreWidth for the next open
+            document.documentElement.style.setProperty('--right-sidebar-content-width', `${DEFAULT_RIGHT_WIDTH}px`)
             setTimeout(() => {
               setRightWidth(restoreWidth)
               if (shell) {
@@ -238,8 +216,7 @@ export function useSidebarResize({
               document.documentElement.style.setProperty('--right-sidebar-content-width', `${restoreWidth}px`)
             }, 250)
           } else {
-            // Stay open at user's resized width (minimum 120px)
-            const finalWidth = Math.max(MIN_SIDEBAR_CONTENT_WIDTH, Math.min(MAX_RIGHT_WIDTH, Math.round(raw)))
+            const finalWidth = Math.max(DEFAULT_RIGHT_WIDTH, Math.min(MAX_RIGHT_WIDTH, Math.round(raw)))
             setRightWidth(finalWidth)
             if (shell) {
               shell.style.setProperty('--right-sidebar-width', `${finalWidth}px`)

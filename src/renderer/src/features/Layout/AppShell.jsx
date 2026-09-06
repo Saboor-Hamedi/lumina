@@ -753,9 +753,9 @@ const AppShell = () => {
       className={`app-shell ${isLeftSidebarOpen ? 'left-open' : 'left-closed'} ${isRightSidebarOpen ? 'right-open' : 'right-closed'}`}
       style={{
         '--left-sidebar-width': `${leftWidth}px`,
-        '--left-sidebar-content-width': `${Math.max(150, leftWidth)}px`,
+        '--left-sidebar-content-width': `${Math.max(260, leftWidth)}px`,
         '--right-sidebar-width': `${rightWidth}px`,
-        '--right-sidebar-content-width': `${Math.max(150, rightWidth)}px`
+        '--right-sidebar-content-width': `${Math.max(300, rightWidth)}px`
       }}
     >
       <aside className="shell-sidebar-left">

@@ -177,12 +177,10 @@ body.is-global-resizing .cm-editor {
   transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Curtain inner: never compresses — flex-shrink:0 + min-width locks it at 150px+
-   The outer overflow:hidden masks it as the drag handle moves inward */
 .shell-sidebar-left .unified-sidebar,
 .shell-sidebar-left .error-boundary {
   flex-shrink: 0 !important;
-  min-width: 150px !important;
+  min-width: 260px !important;
   width: var(--left-sidebar-content-width, var(--left-sidebar-width, 260px)) !important;
   max-width: none !important;
   height: 100% !important;
@@ -200,7 +198,7 @@ body.is-global-resizing .cm-editor {
 .shell-sidebar-left .start-menu-body,
 .shell-sidebar-left .sidebar-footer-section {
   flex-shrink: 0 !important;
-  min-width: 150px !important;
+  min-width: 260px !important;
   max-width: none !important;
   width: 100% !important;
   box-sizing: border-box !important;
@@ -273,13 +271,11 @@ body.is-global-resizing .cm-editor {
   transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Curtain inner: never compresses — flex-shrink:0 + min-width locks it at 150px+
-   The outer overflow:hidden masks it as the drag handle moves inward */
 .shell-sidebar-right .inspector-panel,
 .shell-sidebar-right .error-boundary,
 .shell-sidebar-right > div {
   flex-shrink: 0 !important;
-  min-width: 150px !important;
+  min-width: 300px !important;
   width: var(--right-sidebar-content-width, var(--right-sidebar-width, 300px)) !important;
   max-width: none !important;
   height: 100% !important;
