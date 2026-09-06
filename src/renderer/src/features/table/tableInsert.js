@@ -186,10 +186,15 @@ export function setupTableInsertion(wrap, view) {
       rows: model.rows.map((r) => [...r])
     }
 
+    const targetRowIdx = index - 1
     const newRow = Array(nextModel.header.length).fill('')
-    nextModel.rows.splice(index - 1, 0, newRow)
+    nextModel.rows.splice(targetRowIdx, 0, newRow)
 
-    dispatchModel(view, wrap, nextModel)
+    dispatchModel(view, wrap, nextModel, {
+      isHeader: false,
+      rowIdx: targetRowIdx,
+      colIdx: 0
+    })
   })
 
   colInsertHandle.addEventListener('mousedown', (e) => {
@@ -209,6 +214,10 @@ export function setupTableInsertion(wrap, view) {
     nextModel.alignments.splice(index, 0, 'left')
     nextModel.rows.forEach((r) => r.splice(index, 0, ''))
 
-    dispatchModel(view, wrap, nextModel)
+    dispatchModel(view, wrap, nextModel, {
+      isHeader: true,
+      rowIdx: 0,
+      colIdx: index
+    })
   })
 }

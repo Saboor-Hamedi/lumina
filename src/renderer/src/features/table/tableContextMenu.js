@@ -82,7 +82,11 @@ export function openCellMenu(view, cell, x, y) {
       createItem('Add Row Below', icons.addDown, () => {
         const m = readModelFromDom(wrap)
         m.rows.unshift(m.header.map(() => ''))
-        dispatchModel(view, wrap, m)
+        dispatchModel(view, wrap, m, {
+          isHeader: false,
+          rowIdx: 0,
+          colIdx: Math.max(0, targetCol)
+        })
       })
     )
   } else {
@@ -95,7 +99,11 @@ export function openCellMenu(view, cell, x, y) {
           0,
           m.header.map(() => '')
         )
-        dispatchModel(view, wrap, m)
+        dispatchModel(view, wrap, m, {
+          isHeader: false,
+          rowIdx: rIdx,
+          colIdx: Math.max(0, targetCol)
+        })
       }),
       createItem('Add Row Below', icons.addDown, () => {
         const m = readModelFromDom(wrap)
@@ -105,7 +113,11 @@ export function openCellMenu(view, cell, x, y) {
           0,
           m.header.map(() => '')
         )
-        dispatchModel(view, wrap, m)
+        dispatchModel(view, wrap, m, {
+          isHeader: false,
+          rowIdx: rIdx + 1,
+          colIdx: Math.max(0, targetCol)
+        })
       }),
       createSeparator(),
       createItem('Duplicate Row', icons.duplicate, () => {
@@ -113,7 +125,11 @@ export function openCellMenu(view, cell, x, y) {
         const rIdx = targetRow >= 0 ? targetRow : 0
         if (m.rows[rIdx]) {
           m.rows.splice(rIdx + 1, 0, [...m.rows[rIdx]])
-          dispatchModel(view, wrap, m)
+          dispatchModel(view, wrap, m, {
+            isHeader: false,
+            rowIdx: rIdx + 1,
+            colIdx: Math.max(0, targetCol)
+          })
         }
       }),
       createItem('Move Row Up', icons.moveUp, () => {
@@ -122,7 +138,11 @@ export function openCellMenu(view, cell, x, y) {
         const temp = m.rows[targetRow]
         m.rows[targetRow] = m.rows[targetRow - 1]
         m.rows[targetRow - 1] = temp
-        dispatchModel(view, wrap, m)
+        dispatchModel(view, wrap, m, {
+          isHeader: false,
+          rowIdx: targetRow - 1,
+          colIdx: Math.max(0, targetCol)
+        })
       }),
       createItem('Move Row Down', icons.moveDown, () => {
         const m = readModelFromDom(wrap)
@@ -130,7 +150,11 @@ export function openCellMenu(view, cell, x, y) {
         const temp = m.rows[targetRow]
         m.rows[targetRow] = m.rows[targetRow + 1]
         m.rows[targetRow + 1] = temp
-        dispatchModel(view, wrap, m)
+        dispatchModel(view, wrap, m, {
+          isHeader: false,
+          rowIdx: targetRow + 1,
+          colIdx: Math.max(0, targetCol)
+        })
       }),
       createSeparator(),
       createItem(
@@ -140,7 +164,11 @@ export function openCellMenu(view, cell, x, y) {
           const m = readModelFromDom(wrap)
           if (targetRow >= 0 && targetRow < m.rows.length) {
             m.rows.splice(targetRow, rowDeleteCount)
-            dispatchModel(view, wrap, m)
+            const nextRow = Math.min(targetRow, m.rows.length - 1)
+            const focusInfo = m.rows.length > 0
+              ? { isHeader: false, rowIdx: Math.max(0, nextRow), colIdx: Math.max(0, targetCol) }
+              : { isHeader: true, rowIdx: 0, colIdx: Math.max(0, targetCol) }
+            dispatchModel(view, wrap, m, focusInfo)
           }
         }
       )
@@ -155,7 +183,11 @@ export function openCellMenu(view, cell, x, y) {
       m.header.splice(cIdx, 0, '')
       m.alignments.splice(cIdx, 0, '')
       for (const r of m.rows) r.splice(cIdx, 0, '')
-      dispatchModel(view, wrap, m)
+      dispatchModel(view, wrap, m, {
+        isHeader,
+        rowIdx: Math.max(0, targetRow),
+        colIdx: cIdx
+      })
     }),
     createItem('Add Column Right', icons.addRight, () => {
       const m = readModelFromDom(wrap)
@@ -163,7 +195,11 @@ export function openCellMenu(view, cell, x, y) {
       m.header.splice(cIdx + 1, 0, '')
       m.alignments.splice(cIdx + 1, 0, '')
       for (const r of m.rows) r.splice(cIdx + 1, 0, '')
-      dispatchModel(view, wrap, m)
+      dispatchModel(view, wrap, m, {
+        isHeader,
+        rowIdx: Math.max(0, targetRow),
+        colIdx: cIdx + 1
+      })
     }),
     createSeparator(),
     createItem('Duplicate Column', icons.duplicate, () => {
@@ -173,7 +209,11 @@ export function openCellMenu(view, cell, x, y) {
         m.header.splice(cIdx + 1, 0, m.header[cIdx])
         m.alignments.splice(cIdx + 1, 0, m.alignments[cIdx])
         for (const r of m.rows) r.splice(cIdx + 1, 0, r[cIdx])
-        dispatchModel(view, wrap, m)
+        dispatchModel(view, wrap, m, {
+          isHeader,
+          rowIdx: Math.max(0, targetRow),
+          colIdx: cIdx + 1
+        })
       }
     }),
     createItem('Move Column Left', icons.moveLeft, () => {
@@ -190,7 +230,11 @@ export function openCellMenu(view, cell, x, y) {
         r[targetCol] = r[targetCol - 1]
         r[targetCol - 1] = temp
       }
-      dispatchModel(view, wrap, m)
+      dispatchModel(view, wrap, m, {
+        isHeader,
+        rowIdx: Math.max(0, targetRow),
+        colIdx: targetCol - 1
+      })
     }),
     createItem('Move Column Right', icons.moveRight, () => {
       const m = readModelFromDom(wrap)
@@ -206,7 +250,11 @@ export function openCellMenu(view, cell, x, y) {
         r[targetCol] = r[targetCol + 1]
         r[targetCol + 1] = temp
       }
-      dispatchModel(view, wrap, m)
+      dispatchModel(view, wrap, m, {
+        isHeader,
+        rowIdx: Math.max(0, targetRow),
+        colIdx: targetCol + 1
+      })
     }),
     createSeparator(),
     createItem(
@@ -237,7 +285,13 @@ export function openCellMenu(view, cell, x, y) {
             for (const r of m.rows) {
               if (r.length > targetCol) r.splice(targetCol, deleteCount)
             }
-            dispatchModel(view, wrap, m)
+            const nextCol = Math.max(0, Math.min(targetCol, m.header.length - 1))
+            const focusInfo = {
+              isHeader,
+              rowIdx: Math.max(0, targetRow),
+              colIdx: nextCol
+            }
+            dispatchModel(view, wrap, m, focusInfo)
           }
         }
       }

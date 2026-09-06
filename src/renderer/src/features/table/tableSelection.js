@@ -59,8 +59,8 @@ export function setupTableSelection(wrap, view) {
     const minC = Math.min(start.c, end.c)
     const maxC = Math.max(start.c, end.c)
 
-    // If it's just one cell, we don't render grid selection so users can edit text normally.
-    if (minR === maxR && minC === maxC) return
+    // If it's just one cell and mouse is dragging, wait until dragging across multiple cells
+    if (isDragging && minR === maxR && minC === maxC) return
 
     hasSelection = true
 
@@ -319,7 +319,8 @@ export function setupTableSelection(wrap, view) {
       const minC = Math.min(start.c, end.c)
       const maxC = Math.max(start.c, end.c)
       const colTotal = wrap.querySelectorAll('thead th').length
-      const rowTotal = wrap.querySelectorAll('tbody tr').length
+      const tbody = wrap.querySelector('tbody')
+      const rowTotal = tbody ? tbody.querySelectorAll('tr:not(.cm-table-empty-row)').length : 0
 
       // If full row(s) are selected (and not the header row), delete the row(s)!
       if (minR >= 0 && minC === 0 && maxC >= colTotal - 1) {
@@ -329,12 +330,17 @@ export function setupTableSelection(wrap, view) {
         clearSelectionVisuals()
         startCell = null
         endCell = null
-        dispatchModel(view, wrap, m)
+        const nextRowIdx = Math.min(minR, m.rows.length - 1)
+        const focusInfo = m.rows.length > 0
+          ? { isHeader: false, rowIdx: Math.max(0, nextRowIdx), colIdx: 0 }
+          : { isHeader: true, rowIdx: 0, colIdx: 0 }
+        dispatchModel(view, wrap, m, focusInfo)
         return
       }
 
       // If full column(s) are selected (from header to bottom), delete the column(s)!
-      if (minR === -1 && maxR === rowTotal - 1) {
+      const isFullCol = minR === -1 && (rowTotal === 0 ? maxR === -1 : maxR === rowTotal - 1)
+      if (isFullCol) {
         if (colTotal <= (maxC - minC + 1)) {
           // Entire table is selected: delete the entire table
           const range = findCurrentTableRange(view, wrap)
@@ -359,16 +365,28 @@ export function setupTableSelection(wrap, view) {
         clearSelectionVisuals()
         startCell = null
         endCell = null
-        dispatchModel(view, wrap, m)
+        const nextCol = Math.max(0, Math.min(minC, m.header.length - 1))
+        const focusInfo = { isHeader: true, rowIdx: 0, colIdx: nextCol }
+        dispatchModel(view, wrap, m, focusInfo)
         return
       }
 
+      // If not a full row and not a full column: clear content of selected cells
       selected.forEach((cell) => {
+        cell.dataset.raw = ''
         const source = cell.querySelector('.cm-atomic-table-cell-source')
         if (source) source.textContent = ''
       })
+      clearSelectionVisuals()
+      startCell = null
+      endCell = null
       const m = readModelFromDom(wrap)
-      dispatchModel(view, wrap, m)
+      const focusInfo = {
+        isHeader: minR === -1,
+        rowIdx: Math.max(0, minR),
+        colIdx: Math.max(0, minC)
+      }
+      dispatchModel(view, wrap, m, focusInfo)
       return
     }
 
@@ -383,7 +401,8 @@ export function setupTableSelection(wrap, view) {
 
       if (e.key === 'ArrowUp') r = Math.max(-1, r - 1)
       if (e.key === 'ArrowDown') {
-        const rowCount = wrap.querySelectorAll('tbody tr').length
+        const tbody = wrap.querySelector('tbody')
+        const rowCount = tbody ? tbody.querySelectorAll('tr:not(.cm-table-empty-row)').length : 0
         r = Math.min(rowCount - 1, r + 1)
       }
       if (e.key === 'ArrowLeft') c = Math.max(0, c - 1)
@@ -401,12 +420,26 @@ export function setupTableSelection(wrap, view) {
       return
     }
 
-    // If they press an un-shifted arrow key, start typing, or hit Escape,
-    // we MUST clear the grid selection and return control to the native text cursor.
+    // If they press an un-shifted arrow key, return control to cell editing
     if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
-      clearSelectionVisuals()
-      startCell = null
-      endCell = null
+      if (e.key.startsWith('Arrow') || e.key === 'Escape') {
+        const target = endCell || startCell
+        clearSelectionVisuals()
+        startCell = null
+        endCell = null
+        if (target) {
+          const source = target.querySelector('.cm-atomic-table-cell-source')
+          if (source) {
+            source.focus()
+            placeCaretAtEnd(source)
+          }
+        }
+        e.preventDefault()
+      } else {
+        clearSelectionVisuals()
+        startCell = null
+        endCell = null
+      }
     }
   })
 
@@ -423,7 +456,9 @@ export function setupTableSelection(wrap, view) {
     wrap.focus({ preventScroll: true })
   }
 
+  wrap.__getCoords = getCoords
   wrap.__getCellAt = getCellAt
+  wrap.__clearSelectionVisuals = clearSelectionVisuals
   wrap.__getGridSelection = () => {
     if (!hasSelection || !startCell || !endCell) return null
     const start = getCoords(startCell)

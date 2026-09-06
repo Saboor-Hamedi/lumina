@@ -311,11 +311,7 @@ export class TableWidget extends WidgetType {
         const m = readModelFromDom(wrap)
         const cols = m.header.length > 0 ? m.header.length : (colCount || 1)
         m.rows = [Array(cols).fill('')]
-        dispatchModel(view, wrap, m)
-        requestAnimationFrame(() => {
-          const firstCell = wrap.querySelector('tbody td .cm-atomic-table-cell-source')
-          if (firstCell) firstCell.focus()
-        })
+        dispatchModel(view, wrap, m, { isHeader: false, rowIdx: 0, colIdx: 0 })
       }
       addBtn.addEventListener('mousedown', handleAddRow)
       addBtn.addEventListener('click', handleAddRow)
@@ -465,15 +461,15 @@ export function cellColIndex(cell) {
   return Array.from(tr.querySelectorAll('th, td')).indexOf(targetCell)
 }
 
-export function dispatchModel(view, wrap, nextModel) {
+export function dispatchModel(view, wrap, nextModel, explicitFocusInfo = null) {
   const range = findCurrentTableRange(view, wrap)
   if (!range) return
 
   // Track focused cell before transaction so we can restore focus
   const activeEl = document.activeElement
   const wasInsideTable = wrap && wrap.contains(activeEl)
-  let cellInfo = null
-  if (wasInsideTable && activeEl) {
+  let cellInfo = explicitFocusInfo
+  if (!cellInfo && wasInsideTable && activeEl) {
     const cell = activeEl.closest('th, td')
     if (cell) {
       cellInfo = {
@@ -493,8 +489,8 @@ export function dispatchModel(view, wrap, nextModel) {
     annotations: Transaction.userEvent.of('input')
   })
 
-  // Re-focus the cell if one was active, even across widget DOM rebuilds
-  if (wasInsideTable && cellInfo) {
+  // Re-focus the cell if one was active or explicitly requested
+  if (cellInfo) {
     const fromPos = range.from
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -505,13 +501,24 @@ export function dispatchModel(view, wrap, nextModel) {
         })
         if (!target) return
         const allRows = target.querySelectorAll('tr')
-        const targetTr = cellInfo.isHeader ? allRows[0] : allRows[cellInfo.rowIdx + 1]
+        if (!allRows.length) return
+        let targetTr = null
+        if (cellInfo.isHeader) {
+          targetTr = allRows[0]
+        } else {
+          const maxBodyIdx = Math.max(0, allRows.length - 2)
+          const safeBodyIdx = Math.max(0, Math.min(cellInfo.rowIdx, maxBodyIdx))
+          targetTr = allRows[safeBodyIdx + 1]
+        }
         if (targetTr) {
           const cells = targetTr.querySelectorAll('.cm-atomic-table-cell-source')
-          const targetCell = cells[cellInfo.colIdx] || cells[0]
-          if (targetCell && document.activeElement !== targetCell) {
-            targetCell.focus()
-            placeCaretAtEnd(targetCell)
+          if (cells.length > 0) {
+            const colIdx = Math.max(0, Math.min(cellInfo.colIdx, cells.length - 1))
+            const targetCell = cells[colIdx]
+            if (targetCell) {
+              targetCell.focus()
+              placeCaretAtEnd(targetCell)
+            }
           }
         }
       })
@@ -625,41 +632,12 @@ export function moveCellFocus(view, cell, dir, opts = { appendOnOverflow: true }
   }
 }
 export function appendRow(view, wrap, focusColIndex = 0) {
-  const range = findCurrentTableRange(view, wrap)
-  if (!range) return
   const model = readModelFromDom(wrap)
   model.rows.push(model.header.map(() => ''))
-  const next = serializeTable(model)
-  view.dispatch({
-    changes: { from: range.from, to: range.to, insert: next },
-    // Keep CM6 selection anchored at the end of the table so the editor
-    // doesn't snap to pos 0 while the widget DOM is being rebuilt.
-    selection: { anchor: range.from },
-    annotations: Transaction.userEvent.of('input')
-  })
-  // Adding a row changes the widget's row count, so `eq` returns
-  // false and CM6 rebuilds the widget DOM. The old `wrap` reference
-  // is now detached. Wait for the paint that attaches the new DOM,
-  // then look up the fresh widget by position and focus its new
-  // last-row cell. Double-rAF because the first rAF only guarantees
-  // CM6 has processed the dispatch; the second ensures the layout
-  // has painted so focus commands don't get lost.
-  const { from } = range
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      const tables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
-      const target = tables.find(t => {
-        const r = findCurrentTableRange(view, t)
-        return r && r.from === from
-      })
-      if (!target) return
-      const rows = target.querySelectorAll('tbody tr')
-      if (!rows.length) return
-      const lastRow = rows[rows.length - 1]
-      const newCells = lastRow.querySelectorAll('.cm-atomic-table-cell-source')
-      const cellToFocus = newCells[focusColIndex] || newCells[0]
-      if (cellToFocus) cellToFocus.focus()
-    })
+  dispatchModel(view, wrap, model, {
+    isHeader: false,
+    rowIdx: model.rows.length - 1,
+    colIdx: focusColIndex
   })
 }
 // Backspace at the line immediately after a table normally deletes

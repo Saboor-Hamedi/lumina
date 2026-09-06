@@ -657,7 +657,32 @@ export function makeCell(tag, text, view) {
       return
     }
 
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      event.stopPropagation()
+      const wrap = cell.closest('.cm-atomic-table')
+      if (wrap && wrap.__setGridSelection) {
+        wrap.__setGridSelection(cell, cell)
+      }
+      return
+    }
+
     if (event.key === 'ArrowUp') {
+      if (event.shiftKey) {
+        event.preventDefault()
+        event.stopPropagation()
+        const wrap = cell.closest('.cm-atomic-table')
+        if (wrap && wrap.__setGridSelection && wrap.__getCoords && wrap.__getCellAt) {
+          const coords = wrap.__getCoords(cell)
+          if (coords && coords.c !== -1) {
+            const targetR = Math.max(-1, coords.r - 1)
+            const targetCell = wrap.__getCellAt(targetR, coords.c) || cell
+            wrap.__setGridSelection(cell, targetCell)
+          }
+        }
+        return
+      }
+
       const thead = cell.closest('table')?.querySelector('thead tr')
       const colCount = thead ? thead.querySelectorAll('th').length : 1
       const wrap = cell.closest('.cm-atomic-table')
@@ -673,6 +698,23 @@ export function makeCell(tag, text, view) {
       return
     }
     if (event.key === 'ArrowDown') {
+      if (event.shiftKey) {
+        event.preventDefault()
+        event.stopPropagation()
+        const wrap = cell.closest('.cm-atomic-table')
+        if (wrap && wrap.__setGridSelection && wrap.__getCoords && wrap.__getCellAt) {
+          const coords = wrap.__getCoords(cell)
+          if (coords && coords.c !== -1) {
+            const tbody = wrap.querySelector('tbody')
+            const rowCount = tbody ? tbody.querySelectorAll('tr:not(.cm-table-empty-row)').length : 0
+            const targetR = Math.min(rowCount - 1, coords.r + 1)
+            const targetCell = wrap.__getCellAt(targetR, coords.c) || cell
+            wrap.__setGridSelection(cell, targetCell)
+          }
+        }
+        return
+      }
+
       const thead = cell.closest('table')?.querySelector('thead tr')
       const colCount = thead ? thead.querySelectorAll('th').length : 1
       const wrap = cell.closest('.cm-atomic-table')
@@ -703,6 +745,27 @@ export function makeCell(tag, text, view) {
       return
     }
     if (event.key === 'ArrowLeft') {
+      if (event.shiftKey) {
+        const offset = getCaretCharOffset(source) || 0
+        const textLen = source.textContent?.length || 0
+        const sel = window.getSelection()
+        const isCollapsed = !sel || sel.isCollapsed
+        if (textLen === 0 || (isCollapsed && offset <= 0)) {
+          event.preventDefault()
+          event.stopPropagation()
+          const wrap = cell.closest('.cm-atomic-table')
+          if (wrap && wrap.__setGridSelection && wrap.__getCoords && wrap.__getCellAt) {
+            const coords = wrap.__getCoords(cell)
+            if (coords && coords.c !== -1) {
+              const targetC = Math.max(0, coords.c - 1)
+              const targetCell = wrap.__getCellAt(coords.r, targetC) || cell
+              wrap.__setGridSelection(cell, targetCell)
+            }
+          }
+          return
+        }
+      }
+
       const offset = getCaretCharOffset(source) || 0
       if (offset === 0 || event.ctrlKey || event.metaKey) {
         moveCellFocus(view, cell, -1, { appendOnOverflow: false })
@@ -712,6 +775,28 @@ export function makeCell(tag, text, view) {
       }
     }
     if (event.key === 'ArrowRight') {
+      if (event.shiftKey) {
+        const offset = getCaretCharOffset(source) || 0
+        const textLen = source.textContent?.length || 0
+        const sel = window.getSelection()
+        const isCollapsed = !sel || sel.isCollapsed
+        if (textLen === 0 || (isCollapsed && offset >= textLen)) {
+          event.preventDefault()
+          event.stopPropagation()
+          const wrap = cell.closest('.cm-atomic-table')
+          if (wrap && wrap.__setGridSelection && wrap.__getCoords && wrap.__getCellAt) {
+            const coords = wrap.__getCoords(cell)
+            if (coords && coords.c !== -1) {
+              const colCount = wrap.querySelectorAll('thead th').length
+              const targetC = Math.min(colCount - 1, coords.c + 1)
+              const targetCell = wrap.__getCellAt(coords.r, targetC) || cell
+              wrap.__setGridSelection(cell, targetCell)
+            }
+          }
+          return
+        }
+      }
+
       const offset = getCaretCharOffset(source) || 0
       const textLen = source.textContent?.length || 0
       if (offset >= textLen || event.ctrlKey || event.metaKey) {
