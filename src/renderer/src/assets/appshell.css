@@ -273,14 +273,35 @@ body.is-global-resizing .cm-editor {
 
 .shell-sidebar-right .inspector-panel,
 .shell-sidebar-right .error-boundary,
-.shell-sidebar-right > div {
+.shell-sidebar-right > div,
+.shell-sidebar-right .panel-header-tabs,
+.shell-sidebar-right .inspector-sub-header,
+.shell-sidebar-right .panel-content,
+.shell-sidebar-right .details-modal-body,
+.shell-sidebar-right .properties-container,
+.shell-sidebar-right .note-outline,
+.shell-sidebar-right .lumina-chat-container,
+.shell-sidebar-right .chat-messages-scroll-area,
+.shell-sidebar-right .chat-input-area {
   flex-shrink: 0 !important;
   min-width: 300px !important;
-  width: var(--right-sidebar-content-width, var(--right-sidebar-width, 300px)) !important;
+  width: var(--right-sidebar-content-width, 300px) !important;
   max-width: none !important;
-  height: 100% !important;
   box-sizing: border-box !important;
-  overflow: hidden;
+}
+
+.shell-sidebar-right .inspector-panel,
+.shell-sidebar-right .panel-content,
+.shell-sidebar-right .details-modal-body,
+.shell-sidebar-right .properties-container,
+.shell-sidebar-right .note-outline,
+.shell-sidebar-right .lumina-chat-container {
+  overflow-x: hidden !important;
+}
+
+.shell-sidebar-right *::-webkit-scrollbar:horizontal {
+  display: none !important;
+  height: 0px !important;
 }
 
 

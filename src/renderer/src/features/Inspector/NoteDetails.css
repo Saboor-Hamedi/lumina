@@ -7,6 +7,7 @@
 .details-modal-body {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden !important;
   padding: 0;
 }
 
@@ -123,6 +124,7 @@
 .note-outline {
   padding: 16px;
   overflow-y: auto;
+  overflow-x: hidden !important;
   height: 100%;
   padding-bottom: 32px;
 }
@@ -198,7 +200,7 @@
   flex-direction: column;
   height: 100%;
   width: 100%;
-  min-width: 150px;
+  min-width: 300px;
   background: var(--bg-sidebar);
   color: var(--text-main);
   box-sizing: border-box;
