@@ -97,7 +97,10 @@ export function exportTableAsCSV(model) {
  * Duplicates the current table at the current cursor position (or directly below if cursor is inside table).
  */
 export function duplicateTable(view, wrap, model) {
-  const tableText = serializeTable(model)
+  // Strip the caption so the duplicate doesn't share the same "id" as the
+  // original. Two tables with identical captions confuse the range-finder.
+  const duplicateModel = { ...model, caption: '' }
+  const tableText = serializeTable(duplicateModel)
   const sel = view.state.selection.main
   const range = findCurrentTableRange(view, wrap)
 
@@ -111,8 +114,23 @@ export function duplicateTable(view, wrap, model) {
   }
 
   const doc = view.state.doc
-  const prefix = insertPos > 0 && doc.sliceString(insertPos - 1, insertPos) !== '\n' ? '\n\n' : ''
-  const suffix = insertPos < doc.length && doc.sliceString(insertPos, insertPos + 1) !== '\n' ? '\n\n' : ''
+  let prefix = '\n\n'
+  if (insertPos === 0) {
+    prefix = ''
+  } else if (insertPos >= 2 && doc.sliceString(insertPos - 2, insertPos) === '\n\n') {
+    prefix = ''
+  } else if (insertPos >= 1 && doc.sliceString(insertPos - 1, insertPos) === '\n') {
+    prefix = '\n'
+  }
+
+  let suffix = '\n\n'
+  if (insertPos === doc.length) {
+    suffix = ''
+  } else if (insertPos + 2 <= doc.length && doc.sliceString(insertPos, insertPos + 2) === '\n\n') {
+    suffix = ''
+  } else if (insertPos + 1 <= doc.length && doc.sliceString(insertPos, insertPos + 1) === '\n') {
+    suffix = '\n'
+  }
 
   view.dispatch({
     changes: { from: insertPos, to: insertPos, insert: prefix + tableText + suffix },

@@ -29,9 +29,25 @@ export function findCurrentTableRange(view, dom) {
   const tree = syntaxTree(view.state)
 
   let pos = -1
-  try {
-    pos = view.posAtDOM(wrap)
-  } catch {}
+  if (wrap.dataset && wrap.dataset.tableFrom != null) {
+    const parsedFrom = parseInt(wrap.dataset.tableFrom, 10)
+    if (!isNaN(parsedFrom) && parsedFrom >= 0 && parsedFrom <= doc.length) {
+      pos = parsedFrom
+    }
+  }
+
+  if (pos < 0) {
+    try {
+      const block = view.lineBlockAtElement(wrap)
+      if (block) pos = block.from
+    } catch {}
+  }
+
+  if (pos < 0) {
+    try {
+      pos = view.posAtDOM(wrap)
+    } catch {}
+  }
 
   if (pos < 0) {
     const child = wrap.querySelector('th, td, .cm-atomic-table-cell-source')
@@ -57,27 +73,48 @@ export function findCurrentTableRange(view, dom) {
 
   let targetNode = null
 
-  // 1. If pos is valid, find the Table node that directly matches or is nearest to pos
+  // 1. If pos is valid, find the Table node that directly matches or contains/is closest to pos
   if (pos >= 0) {
-    let closest = null
-    let minDist = Infinity
+    // First check exact start line match (since pos is startLine.from)
     for (const n of tableNodes) {
-      if (pos >= n.from && pos <= n.to) {
+      const sLine = doc.lineAt(n.from)
+      let tableFrom = sLine.from
+      if (sLine.number > 1) {
+        const prevLine = doc.line(sLine.number - 1)
+        if (
+          prevLine.text.trim().match(/^<!--\s*table:\s*(.*?)\s*-->$/i) ||
+          prevLine.text.trim().match(/^Table:\s*(.+)$/i)
+        ) {
+          tableFrom = prevLine.from
+        }
+      }
+      if (pos === tableFrom || pos === n.from) {
         targetNode = n
         break
       }
-      const dist = Math.min(Math.abs(n.from - pos), Math.abs(n.to - pos))
-      if (dist < minDist) {
-        minDist = dist
-        closest = n
-      }
     }
-    if (!targetNode && closest && minDist <= 250) {
-      targetNode = closest
+
+    if (!targetNode) {
+      let closest = null
+      let minDist = Infinity
+      for (const n of tableNodes) {
+        if (pos >= n.from && pos <= n.to) {
+          targetNode = n
+          break
+        }
+        const dist = Math.min(Math.abs(n.from - pos), Math.abs(n.to - pos))
+        if (dist < minDist) {
+          minDist = dist
+          closest = n
+        }
+      }
+      if (!targetNode && closest && minDist <= 500) {
+        targetNode = closest
+      }
     }
   }
 
-  // 2. Fallback: match by DOM index among all rendered tables in document
+  // 2. Fallback: match by exact DOM order among all rendered tables in document
   if (!targetNode) {
     const allTables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
     const tableIdx = allTables.indexOf(wrap)
@@ -130,8 +167,10 @@ export function getAllCells(wrap) {
 }
 // ---- widget ---------------------------------------------------------
 export class TableWidget extends WidgetType {
-  constructor(model) {
+  constructor(model, from = -1, to = -1) {
     super()
+    this.from = from
+    this.to = to
     Object.defineProperty(this, 'model', {
       enumerable: true,
       configurable: true,
@@ -153,6 +192,12 @@ export class TableWidget extends WidgetType {
     const wrap = document.createElement('div')
     wrap.className = 'cm-atomic-table'
     wrap.tabIndex = -1
+    if (this.from >= 0) {
+      wrap.dataset.tableFrom = String(this.from)
+    }
+    if (this.to >= 0) {
+      wrap.dataset.tableTo = String(this.to)
+    }
     if (this.model.caption) {
       wrap.dataset.caption = this.model.caption
     }
@@ -196,24 +241,15 @@ export class TableWidget extends WidgetType {
     header.className = 'cm-table-ui-header'
     header.contentEditable = 'false'
 
-    // Left group: Editable Table Title Trigger + [Table | Source] View Toggle
+    // Left group: Editable Table Title Trigger
     const leftGroup = document.createElement('div')
     leftGroup.className = 'cm-table-ui-left'
     leftGroup.appendChild(createTableTitleDOM(view, wrap, this.model))
-    leftGroup.appendChild(createTableViewModeToggleDOM(view, wrap, this.model))
 
-    // Right group: Dimension Badge + Quick Actions/Export + Delete button
+    // Right group: [Table | Source] View Toggle + Quick Actions/Export + Delete button
     const rightGroup = document.createElement('div')
     rightGroup.className = 'cm-table-ui-right'
-
-    // Dimension Badge: "3 Rows • 4 Cols"
-    const dimBadge = document.createElement('div')
-    dimBadge.className = 'cm-table-dim-badge'
-    const rowCount = this.model.rows.length
-    const colCount = this.model.header.length
-    dimBadge.textContent = `${rowCount} ${rowCount === 1 ? 'Row' : 'Rows'} • ${colCount} ${colCount === 1 ? 'Col' : 'Cols'}`
-    rightGroup.appendChild(dimBadge)
-
+    rightGroup.appendChild(createTableViewModeToggleDOM(view, wrap, this.model))
     rightGroup.appendChild(createTableQuickActionsDOM(view, wrap, this.model))
 
     const deleteBtn = document.createElement('button')
@@ -249,6 +285,9 @@ export class TableWidget extends WidgetType {
     const table = document.createElement('table')
     scrollContainer.appendChild(table)
     wrap.appendChild(scrollContainer)
+
+    const rowCount = this.model.rows ? this.model.rows.length : 0
+    const colCount = this.model.header ? this.model.header.length : 0
 
     const thead = document.createElement('thead')
 
@@ -321,6 +360,17 @@ export class TableWidget extends WidgetType {
     }
     table.appendChild(tbody)
 
+    const footer = document.createElement('div')
+    footer.className = 'cm-table-ui-footer'
+    footer.contentEditable = 'false'
+    
+    const countSpan = document.createElement('span')
+    countSpan.className = 'cm-table-ui-footer-count'
+    countSpan.textContent = `${rowCount} ${rowCount === 1 ? 'row' : 'rows'} · ${colCount} ${colCount === 1 ? 'col' : 'cols'}`
+    footer.appendChild(countSpan)
+
+    wrap.appendChild(footer)
+
     setupTableFormattingToolbar(wrap, view)
     setupTableSelection(wrap, view)
     setupTableDragAndDrop(wrap, view)
@@ -367,14 +417,6 @@ export class TableWidget extends WidgetType {
     const trs = Array.from(tbody.querySelectorAll('tr:not(.cm-table-empty-row)'))
     if (trs.length !== this.model.rows.length) return false
 
-    // Update dimension badge if present
-    const dimBadge = dom.querySelector('.cm-table-dim-badge')
-    if (dimBadge) {
-      const rowCount = this.model.rows.length
-      const colCount = this.model.header.length
-      dimBadge.textContent = `${rowCount} ${rowCount === 1 ? 'Row' : 'Rows'} • ${colCount} ${colCount === 1 ? 'Col' : 'Cols'}`
-    }
-
     for (let r = 0; r < trs.length; r++) {
       const tds = Array.from(trs[r].querySelectorAll('td'))
       for (let c = 0; c < tds.length; c++) {
@@ -398,6 +440,21 @@ export class TableWidget extends WidgetType {
         }
       }
     }
+
+    if (this.from >= 0) {
+      dom.dataset.tableFrom = String(this.from)
+    }
+    if (this.to >= 0) {
+      dom.dataset.tableTo = String(this.to)
+    }
+
+    const countSpan = dom.querySelector('.cm-table-ui-footer-count')
+    if (countSpan) {
+      const rowCount = this.model.rows ? this.model.rows.length : 0
+      const colCount = this.model.header ? this.model.header.length : 0
+      countSpan.textContent = `${rowCount} ${rowCount === 1 ? 'row' : 'rows'} · ${colCount} ${colCount === 1 ? 'col' : 'cols'}`
+    }
+
     return true
   }
   // All cell interactions are handled by the listeners we attach in
@@ -766,7 +823,7 @@ export function buildTableWidgets(state) {
       }
       ranges.push(
         Decoration.replace({
-          widget: new TableWidget(model),
+          widget: new TableWidget(model, fromPos, lastTableLine.to),
           block: true
         }).range(fromPos, lastTableLine.to)
       )

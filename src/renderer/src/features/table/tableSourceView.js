@@ -1,4 +1,4 @@
-import { serializeTableOnly, readModelFromDom, parseMarkdownTableText } from './tableModel.js'
+import { serializeTable, serializeTableOnly, readModelFromDom, parseMarkdownTableText } from './tableModel.js'
 import { findCurrentTableRange, dispatchModel } from './tableExtension.js'
 
 /**
@@ -72,7 +72,12 @@ export function createTableViewModeToggleDOM(view, wrap, model) {
       })
 
       sourceContainer.appendChild(sourceTextarea)
-      wrap.appendChild(sourceContainer)
+      const footer = wrap.querySelector('.cm-table-ui-footer')
+      if (footer) {
+        wrap.insertBefore(sourceContainer, footer)
+      } else {
+        wrap.appendChild(sourceContainer)
+      }
     }
     return { sourceContainer, sourceTextarea }
   }
@@ -81,6 +86,9 @@ export function createTableViewModeToggleDOM(view, wrap, model) {
     e.preventDefault()
     e.stopPropagation()
     if (tableBtn.classList.contains('active')) return
+
+    const scroller = wrap.closest('.editor-scroller') || view.dom.closest('.editor-scroller')
+    const savedScrollTop = scroller ? scroller.scrollTop : null
 
     tableBtn.classList.add('active')
     sourceBtn.classList.remove('active')
@@ -93,15 +101,36 @@ export function createTableViewModeToggleDOM(view, wrap, model) {
       if (rawText) {
         const parsed = parseMarkdownTableText(rawText, currentCaption)
         if (parsed) {
-          dispatchModel(view, wrap, parsed)
+          const range = findCurrentTableRange(view, wrap)
+          if (range) {
+            const next = serializeTable(parsed)
+            view.dispatch({
+              changes: { from: range.from, to: range.to, insert: next }
+            })
+          }
         }
       }
     }
 
-    const scrollContainer = wrap.querySelector('.cm-table-scroll-container')
-    if (scrollContainer) scrollContainer.style.display = ''
+    // Hide any source container and reveal visual table
+    const sc = wrap.querySelector('.cm-table-source-container')
+    if (sc) sc.style.display = 'none'
 
-    if (sourceContainer) sourceContainer.style.display = 'none'
+    const scrollContainer = wrap.querySelector('.cm-table-scroll-container')
+    if (scrollContainer) scrollContainer.style.display = 'block'
+
+    // Seamlessly focus inside the table without scrolling or jumping
+    const firstCell = wrap.querySelector('.cm-atomic-table-cell-source')
+    if (firstCell) {
+      firstCell.focus({ preventScroll: true })
+    }
+
+    if (scroller && savedScrollTop !== null) {
+      scroller.scrollTop = savedScrollTop
+      requestAnimationFrame(() => {
+        scroller.scrollTop = savedScrollTop
+      })
+    }
   })
 
   sourceBtn.addEventListener('click', (e) => {
@@ -109,10 +138,14 @@ export function createTableViewModeToggleDOM(view, wrap, model) {
     e.stopPropagation()
     if (sourceBtn.classList.contains('active')) return
 
+    const scroller = wrap.closest('.editor-scroller') || view.dom.closest('.editor-scroller')
+    const savedScrollTop = scroller ? scroller.scrollTop : null
+
     sourceBtn.classList.add('active')
     tableBtn.classList.remove('active')
 
     const scrollContainer = wrap.querySelector('.cm-table-scroll-container')
+    const currentHeight = scrollContainer ? scrollContainer.offsetHeight : null
     if (scrollContainer) scrollContainer.style.display = 'none'
 
     const { sourceContainer: sc, sourceTextarea: st } = getOrCreateSourceContainer()
@@ -121,8 +154,16 @@ export function createTableViewModeToggleDOM(view, wrap, model) {
     const currentModel = readModelFromDom(wrap)
     st.value = serializeTableOnly(currentModel)
     st.style.height = 'auto'
-    st.style.height = `${st.scrollHeight}px`
-    st.focus()
+    const targetHeight = Math.max(st.scrollHeight, currentHeight || 40)
+    st.style.height = `${targetHeight}px`
+    st.focus({ preventScroll: true })
+
+    if (scroller && savedScrollTop !== null) {
+      scroller.scrollTop = savedScrollTop
+      requestAnimationFrame(() => {
+        scroller.scrollTop = savedScrollTop
+      })
+    }
   })
 
   return container

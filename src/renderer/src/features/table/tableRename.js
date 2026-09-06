@@ -34,8 +34,8 @@ export function createTableTitleDOM(view, wrap, model) {
   labelSpan.className = 'cm-table-title-label'
   labelSpan.textContent = currentTitle || 'Table'
 
-  titleBtn.appendChild(iconSpan)
   titleBtn.appendChild(labelSpan)
+  titleBtn.appendChild(iconSpan)
   container.appendChild(titleBtn)
 
   let dropdown = null
