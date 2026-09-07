@@ -133,6 +133,12 @@ class VoiceService {
         error: null
       })
 
+      this.lastSpeechTime = Date.now()
+      this.segmentStartTime = Date.now()
+      this.hasSpokenInSegment = false
+      this.isFlushingSegment = false
+      this.lastTranscribedText = ''
+
       if (this.timerInterval) clearInterval(this.timerInterval)
       this.timerInterval = setInterval(() => {
         this.updateState({ recordingDuration: this.state.recordingDuration + 1 })
@@ -140,6 +146,27 @@ class VoiceService {
 
       await this.recorder.start((level) => {
         this.updateState({ audioLevel: level })
+
+        const now = Date.now()
+        if (level > 0.07) {
+          this.hasSpokenInSegment = true
+          this.lastSpeechTime = now
+        }
+
+        const segmentDuration = now - this.segmentStartTime
+        const silenceDuration = now - this.lastSpeechTime
+
+        // Progressive live typing trigger:
+        // Flush segment when user has spoken and pauses (silence >= 480ms after speaking >= 2000ms),
+        // or if continuous speech reaches 5000ms
+        if (
+          this.hasSpokenInSegment &&
+          !this.isFlushingSegment &&
+          this.state.isRecording &&
+          ((silenceDuration >= 480 && segmentDuration >= 2000) || segmentDuration >= 5000)
+        ) {
+          this.flushSegment()
+        }
       })
     } catch (err) {
       if (this.timerInterval) {
@@ -156,6 +183,53 @@ class VoiceService {
       throw err
     } finally {
       this.isStarting = false
+    }
+  }
+
+  async flushSegment() {
+    if (this.isFlushingSegment || !this.state.isRecording) return
+    this.isFlushingSegment = true
+    this.segmentStartTime = Date.now()
+    this.hasSpokenInSegment = false
+
+    const groqKey = typeof localStorage !== 'undefined' ? localStorage.getItem('lumina_groq_key') : null
+    if (!groqKey || !groqKey.trim()) {
+      this.isFlushingSegment = false
+      return
+    }
+
+    try {
+      const segmentBlob = await this.recorder.flushSegment()
+      if (!segmentBlob || segmentBlob.size < 2500) {
+        this.isFlushingSegment = false
+        return
+      }
+
+      const instanceId = this.state.activeInstanceId || 'editor-voice'
+      const promptContext = this.lastTranscribedText
+
+      transcribeWithGroq(segmentBlob, groqKey, promptContext)
+        .then((text) => {
+          if (text && text.trim().length > 0) {
+            const cleanText = text.trim()
+            this.lastTranscribedText = cleanText
+            console.log(`[VoiceService] Live segment typed: "${cleanText}"`)
+            window.dispatchEvent(
+              new CustomEvent('voice-insert-text', {
+                detail: { text: cleanText, instanceId, isSegment: true }
+              })
+            )
+          }
+        })
+        .catch((err) => {
+          console.debug('[VoiceService] Segment transcription error:', err)
+        })
+        .finally(() => {
+          this.isFlushingSegment = false
+        })
+    } catch (err) {
+      console.debug('[VoiceService] flushSegment error:', err)
+      this.isFlushingSegment = false
     }
   }
 
@@ -187,6 +261,12 @@ class VoiceService {
         return null
       }
 
+      // If nothing new was spoken in this final segment, no need to call Groq
+      if (!this.hasSpokenInSegment) {
+        this.updateState({ isTranscribing: false, interimText: '', error: null })
+        return null
+      }
+
       const groqKey = typeof localStorage !== 'undefined' ? localStorage.getItem('lumina_groq_key') : null
       if (!groqKey || !groqKey.trim()) {
         this.updateState({
@@ -196,8 +276,8 @@ class VoiceService {
         return null
       }
 
-      console.log(`[VoiceService] Sending audio blob (${audioData.size} bytes) to Groq Whisper Large v3...`)
-      const text = await transcribeWithGroq(audioData, groqKey)
+      console.log(`[VoiceService] Sending final audio segment (${audioData.size} bytes) to Groq Whisper...`)
+      const text = await transcribeWithGroq(audioData, groqKey, this.lastTranscribedText)
       this.updateState({ isTranscribing: false, interimText: '', error: null })
       return text || null
     } catch (err) {

@@ -79,6 +79,47 @@ export class AudioRecorder {
     this.mediaRecorder.start(100) // Collect 100ms slices
   }
 
+  async flushSegment() {
+    if (!this.mediaRecorder || this.mediaRecorder.state === 'inactive' || !this.stream) {
+      return null
+    }
+
+    return new Promise((resolve) => {
+      const prevRecorder = this.mediaRecorder
+      const prevChunks = this.audioChunks
+      this.audioChunks = []
+
+      prevRecorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          prevChunks.push(event.data)
+        }
+      }
+
+      prevRecorder.onstop = () => {
+        const mimeType = prevRecorder?.mimeType || 'audio/webm'
+        const segmentBlob = new Blob(prevChunks, { type: mimeType })
+        resolve(segmentBlob)
+      }
+
+      try {
+        const mimeType = prevRecorder?.mimeType || 'audio/webm;codecs=opus'
+        const options = mimeType ? { mimeType } : {}
+        const nextRecorder = new MediaRecorder(this.stream, options)
+        nextRecorder.ondataavailable = (event) => {
+          if (event.data && event.data.size > 0) {
+            this.audioChunks.push(event.data)
+          }
+        }
+        this.mediaRecorder = nextRecorder
+        nextRecorder.start(100)
+        prevRecorder.stop()
+      } catch (e) {
+        console.warn('[AudioRecorder] flushSegment error:', e)
+        resolve(null)
+      }
+    })
+  }
+
   async stop() {
     return new Promise((resolve) => {
       if (!this.mediaRecorder || this.mediaRecorder.state === 'inactive') {

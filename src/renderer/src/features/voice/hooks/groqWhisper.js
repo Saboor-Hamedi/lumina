@@ -50,7 +50,7 @@ function isSilenceHallucination(rawText) {
 }
 
 // Service to transcribe audio using Groq's ultra-fast Whisper Large v3 Turbo API
-export async function transcribeWithGroq(audioBlob, apiKey) {
+export async function transcribeWithGroq(audioBlob, apiKey, prompt = '') {
   if (!apiKey || !apiKey.trim()) {
     throw new Error('Please enter your Groq API key in Settings > Intelligence.')
   }
@@ -75,6 +75,9 @@ export async function transcribeWithGroq(audioBlob, apiKey) {
   formData.append('model', 'whisper-large-v3-turbo')
   formData.append('temperature', '0')
   formData.append('response_format', 'json')
+  if (prompt && prompt.trim()) {
+    formData.append('prompt', prompt.trim().slice(-220))
+  }
 
   const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
     method: 'POST',
