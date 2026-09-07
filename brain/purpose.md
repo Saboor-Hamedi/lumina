@@ -415,3 +415,34 @@ Sidebars previously shrank/compressed their content when dragged inward. The tar
 - **Never use `contain: inline-size` on sidebar outer containers** — it prevents the inner `flex-shrink: 0` / `min-width` lock from working correctly.
 - **Inner sidebar content must always have `flex-shrink: 0` + `min-width: 260px`** at every layer of the flex tree.
 - **Only `.shell-main` should have `min-width: 0`** among direct children of `.app-shell`.
+
+---
+
+## 11. Recent Enhancements & Bug Fixes (Session Log)
+
+### A. RightSidebar Stationary Curtain Architecture
+- **Problem**: Dragging the right sidebar inward previously pushed the entire `.inspector-panel` inward against the right screen edge, causing tabs to visually translate or hide against the window boundary instead of acting as a true stationary curtain.
+- **Solution**:
+  - Positioned `.shell-sidebar-right .inspector-panel` at `position: absolute !important; right: 0 !important; top: 0 !important; bottom: 0 !important; width: var(--right-sidebar-content-width, 300px) !important;` inside `appshell.css`.
+  - When the right sidebar is resized, the outer container clips the content from left-to-right as a stationary curtain docked to the right edge.
+  - Tab headers (`Details`, `Outline`, `Chat`) remain pinned to the left edge of the inspector header (`justify-content: flex-start`), matching the left-aligned layout convention.
+
+### B. AI Composer Layout & Aesthetic Refinements (`Composer.jsx` & `Composer.css`)
+- **Expanded Dimensions**: Increased minimum textarea height to 48px, line-height to 21px, and font size to 13.5px for improved readability and comfort when composing complex prompts.
+- **Subtle, Borderless Aesthetics**: Removed harsh saturated inline borders and bright backgrounds on the active mode pill in the composer footer. Replaced with clean, borderless, theme-integrated pill states with subtle hover styling.
+
+### C. Update Details Modal (`UpdateDetails.jsx`)
+- **Escape Key Dismissal**: Added Escape key handler using the global LIFO keyboard shortcut manager (`window.luminaKeyboardShortcuts`) and a window-level fallback to ensure pressing `Esc` reliably closes the update details modal.
+- **Clean Release Notes Formatting**: Filtered out raw internal development status strings (e.g. `"You are running the latest development build."`) in favor of clear, non-technical release notes categorizing new features, usability improvements, and stability fixes.
+
+### D. SettingsManager Debounced IPC Resolution Fix
+- **Error**: `Uncaught (in promise) Error: Error invoking remote method 'db:saveSetting': reply was never sent`.
+- **Root Cause**: In `SettingsManager.js`, `queueSave()` previously overwrote `this.saveTimeout` with `clearTimeout` when multiple `db:saveSetting` calls arrived in the same synchronous tick. The Promise created by the cancelled timeout was never resolved, leaving Electron's IPC handle channel hung until it timed out or was dropped.
+- **Fix**:
+  - Implemented a `this.pendingResolvers` queue in `SettingsManager.js` that collects all pending Promise resolvers and cleanly resolves every caller once disk write finishes.
+  - Ensured no-op cache checks in `set()` and `setMultiple()` immediately return `true` instead of `undefined`.
+  - Added `.catch(() => null)` wrappers in `src/preload/index.js` and `.catch?.(() => {})` in `workspaceStore.js` to guard against unhandled rejections during window reloads.
+
+### E. In-Memory Daily Note Seeding & Test Isolation
+- Replaced physical starter vault disk seeding in `DailyNotes.jsx` with isolated in-memory templates, preventing unexpected disk file writes during test suite execution and keeping tests reproducible and hermetic.
+

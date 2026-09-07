@@ -34,10 +34,27 @@ const UpdateDetails = () => {
         setIsOpen(false)
       }
     }
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' || e.key === 'Esc') {
+        setIsOpen((open) => {
+          if (open) {
+            e.preventDefault()
+            e.stopPropagation()
+            return false
+          }
+          return open
+        })
+      }
+    }
     
     document.addEventListener('pointerdown', handleClickOutside, { capture: true })
+    window.addEventListener('keydown', handleKeyDown, true)
+    document.addEventListener('keydown', handleKeyDown, true)
     return () => {
       document.removeEventListener('pointerdown', handleClickOutside, { capture: true })
+      window.removeEventListener('keydown', handleKeyDown, true)
+      document.removeEventListener('keydown', handleKeyDown, true)
     }
   }, [])
 
@@ -52,23 +69,19 @@ const UpdateDetails = () => {
   const rawNotes =
     !isGenericNote ? updateInfo.releaseNotes :
     `New
-- Redesigned Update Window: A wider, cleaner popover with an organized layout, simplified channel switcher, and instant update checks.
-- Vault Insights & Live Stats: Click the note counter in the Explorer header to see your total notes, folders, word counts, and disk storage.
-- Multi-Item Selection: Select multiple notes and folders easily using click-and-drag, Shift+Click, or Ctrl+A.
-- Interactive Image & Diagram Viewer: Open images and diagrams in a smooth fullscreen viewer with zoom and pan controls.
+- Smooth Curtain Sidebars: Resizing or closing sidebars now feels like a smooth sliding curtain. Your notes, chat, and tabs stay rock-solid in place instead of being squished or pushed off-screen.
+- Quick Escape Key: Press the Escape key anytime to instantly close the update window and popovers.
 
 Improved
-- Cleaner Header & Action Buttons: Moved 'Check for Updates' to the top header with a sleek accent hover and no distracting glows.
-- Sleeker Badges & Tags: Modern, compact 5px rounded badges for update categories and cleaner status indicators.
-- Fresher Explorer Icons: Modernized New Note, New Folder, and Collapse All icons in the file explorer.
-- Compact Window Titlebar: Refined the update button to a neat 22px icon placed comfortably right next to the Lumina logo.
-- Responsive AI Composer: The AI Assistant composer now adapts cleanly when your sidebar is resized or narrowed.
-- Balanced Footer: Moved version and check time neatly to the bottom-right corner for a distraction-free experience.
+- Roomy AI Chat Box: Made the chat box taller and much more comfortable to type in, with larger readable text and plenty of breathing room.
+- Subtle & Clean Footer: Replaced harsh, bright borders and buttons in the AI composer with a subtle, unified design that stays out of your way.
+- Built-In Note Templates: All starter templates are now kept neatly inside the app, so your workspace stays clean without unwanted template files appearing on your disk.
+- Effortless Window Resizing: Enjoy instant, super-fast sidebar dragging with zero stutter or lag.
 
 Fixed
-- Update Window Stays Open: The update details window now stays open when switching between Lumina and other desktop apps.
-- Smoother Note Links: Fixed link hover previews so your note connections and wikilinks open reliably.
-- Folder Deletion: Fixed issues where deleted folders occasionally left traces behind.`
+- Right Sidebar Moving Out: Fixed an issue where the right panel pushed your text and tabs into the screen edge instead of smoothly sliding.
+- Cluttered Daily Notes: Daily Notes now opens cleanly without downloading extra template files into your note list.
+- Unwanted Horizontal Scrollbars: Removed distracting horizontal scrollbars from the bottom of your sidebars.`
   
   const parseNotes = (text) => {
     const categories = []

@@ -525,13 +525,13 @@ useWorkspaceStore.subscribe((state) => {
     return
   }
   if (state.openTabs !== lastVaultState.openTabs) {
-    window.api?.saveSetting('openTabs', state.openTabs)
+    window.api?.saveSetting('openTabs', state.openTabs)?.catch?.(() => {})
   }
   if (state.pinnedTabIds !== lastVaultState.pinnedTabIds) {
-    window.api?.saveSetting('pinnedTabIds', state.pinnedTabIds)
+    window.api?.saveSetting('pinnedTabIds', state.pinnedTabIds)?.catch?.(() => {})
   }
   if (state.activeTabId !== lastVaultState.activeTabId) {
-    window.api?.saveSetting('lastSnippetId', state.activeTabId)
+    window.api?.saveSetting('lastSnippetId', state.activeTabId)?.catch?.(() => {})
   }
   lastVaultState = state
 })

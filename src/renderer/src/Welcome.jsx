@@ -35,9 +35,8 @@ const Welcome = ({ onNew, onLoadStarterVault }) => {
         >
           <defs>
             <linearGradient id="neonGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#8b5cf6" />
-              <stop offset="50%" stopColor="#3b82f6" />
-              <stop offset="100%" stopColor="#10b981" />
+              <stop offset="0%" stopColor="var(--text-accent, #40bafa)" stopOpacity="0.9" />
+              <stop offset="100%" stopColor="var(--text-accent, #40bafa)" stopOpacity="0.3" />
             </linearGradient>
             <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
               <feGaussianBlur stdDeviation="4" result="blur" />
@@ -64,7 +63,7 @@ const Welcome = ({ onNew, onLoadStarterVault }) => {
           <path
             d="M 25 45 L 50 30 M 25 80 L 15 65 M 50 80 L 70 50"
             fill="none"
-            stroke="url(#neonGradient)"
+            stroke="var(--text-accent, #40bafa)"
             strokeWidth="1.5"
             strokeLinecap="round"
             strokeDasharray="4 6"
@@ -72,16 +71,16 @@ const Welcome = ({ onNew, onLoadStarterVault }) => {
           />
 
           {/* Nodes */}
-          <circle cx="25" cy="15" r="5" fill="#8b5cf6" filter="url(#glow)" />
-          <circle cx="25" cy="45" r="3.5" fill="#6366f1" filter="url(#glow)" />
-          <circle cx="25" cy="80" r="6" fill="#3b82f6" filter="url(#glow)" />
-          <circle cx="50" cy="80" r="4" fill="#0ea5e9" filter="url(#glow)" />
-          <circle cx="80" cy="80" r="5" fill="#10b981" filter="url(#glow)" />
+          <circle cx="25" cy="15" r="5" fill="var(--text-accent, #40bafa)" filter="url(#glow)" />
+          <circle cx="25" cy="45" r="3.5" fill="var(--text-accent, #40bafa)" filter="url(#glow)" />
+          <circle cx="25" cy="80" r="6" fill="var(--text-accent, #40bafa)" filter="url(#glow)" />
+          <circle cx="50" cy="80" r="4" fill="var(--text-accent, #40bafa)" filter="url(#glow)" />
+          <circle cx="80" cy="80" r="5" fill="var(--text-accent, #40bafa)" filter="url(#glow)" />
 
           {/* Satellite nodes */}
-          <circle cx="50" cy="30" r="2.5" fill="#a855f7" opacity="0.6" />
-          <circle cx="15" cy="65" r="2" fill="#8b5cf6" opacity="0.6" />
-          <circle cx="70" cy="50" r="2.5" fill="#14b8a6" opacity="0.6" />
+          <circle cx="50" cy="30" r="2.5" fill="var(--text-accent, #40bafa)" opacity="0.6" />
+          <circle cx="15" cy="65" r="2" fill="var(--text-accent, #40bafa)" opacity="0.6" />
+          <circle cx="70" cy="50" r="2.5" fill="var(--text-accent, #40bafa)" opacity="0.6" />
         </svg>
       </div>
 
@@ -99,7 +98,7 @@ const Welcome = ({ onNew, onLoadStarterVault }) => {
         <div className="welcome-bottom-group">
           <div className="welcome-actions-grid">
             <button className="welcome-action-card" onClick={onNew}>
-              <div className="action-card-icon" style={{ color: 'var(--text-accent, #3b82f6)' }}>
+              <div className="action-card-icon" style={{ color: 'var(--text-accent, #40bafa)' }}>
                 <FileText size={12} />
               </div>
               <div className="action-card-content">
@@ -111,7 +110,7 @@ const Welcome = ({ onNew, onLoadStarterVault }) => {
 
             {onLoadStarterVault && (
               <button className="welcome-action-card" onClick={onLoadStarterVault}>
-                <div className="action-card-icon" style={{ color: '#ec4899' }}>
+                <div className="action-card-icon" style={{ color: 'var(--text-accent, #40bafa)' }}>
                   <BookOpen size={12} />
                 </div>
                 <div className="action-card-content">
@@ -123,7 +122,7 @@ const Welcome = ({ onNew, onLoadStarterVault }) => {
             )}
 
             <button className="welcome-action-card" onClick={handlePalette}>
-              <div className="action-card-icon" style={{ color: '#10b981' }}>
+              <div className="action-card-icon" style={{ color: 'var(--text-accent, #40bafa)' }}>
                 <Search size={12} />
               </div>
               <div className="action-card-content">
@@ -139,7 +138,7 @@ const Welcome = ({ onNew, onLoadStarterVault }) => {
                 window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }))
               }
             >
-              <div className="action-card-icon" style={{ color: '#f59e0b' }}>
+              <div className="action-card-icon" style={{ color: 'var(--text-accent, #40bafa)' }}>
                 <FolderTree size={12} />
               </div>
               <div className="action-card-content">
@@ -150,7 +149,7 @@ const Welcome = ({ onNew, onLoadStarterVault }) => {
             </button>
 
             <button className="welcome-action-card" onClick={handleAIChat}>
-              <div className="action-card-icon" style={{ color: '#8b5cf6' }}>
+              <div className="action-card-icon" style={{ color: 'var(--text-accent, #40bafa)' }}>
                 <Sparkles size={12} />
               </div>
               <div className="action-card-content">

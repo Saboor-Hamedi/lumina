@@ -48,8 +48,10 @@ const api = {
 
   // Settings & Theme
   getSetting: (key) => electronAPI.ipcRenderer.invoke('db:getSetting', key),
-  saveSetting: (key, value) => electronAPI.ipcRenderer.invoke('db:saveSetting', key, value),
-  saveSettings: (settings) => electronAPI.ipcRenderer.invoke('db:saveSettings', settings),
+  saveSetting: (key, value) =>
+    electronAPI.ipcRenderer.invoke('db:saveSetting', key, value).catch(() => null),
+  saveSettings: (settings) =>
+    electronAPI.ipcRenderer.invoke('db:saveSettings', settings).catch(() => null),
   getTheme: () => electronAPI.ipcRenderer.invoke('db:getTheme'),
   saveTheme: (theme) => electronAPI.ipcRenderer.invoke('db:saveTheme', theme),
   onSettingsChanged: (callback) => {

@@ -54,34 +54,19 @@ describe('DailyNotes', () => {
     expect(screen.getByRole('button', { name: /Daily/ })).toBeInTheDocument()
   })
 
-  it('seeds all default templates and opens the modal on first click', async () => {
+  it('opens the template modal on first click without saving template files to disk', async () => {
     render(<DailyNotes />)
     clickDaily()
 
-    await waitFor(() => {
-      expect(global.window.api.createFolder).toHaveBeenCalledWith('Templates')
-    })
-    await waitFor(() => {
-      expect(global.window.api.saveSnippet.mock.calls.length).toBeGreaterThan(0)
-    })
+    expect(await screen.findByTestId('template-modal')).toBeInTheDocument()
     const templateSaves = global.window.api.saveSnippet.mock.calls.filter(
       ([snip]) => snip.folderId === 'Templates'
     )
-    expect(templateSaves.length).toBe(TEMPLATE_COUNT)
-    expect(templateSaves[0][0].language).toBe('markdown')
-    expect(await screen.findByTestId('template-modal')).toBeInTheDocument()
+    expect(templateSaves.length).toBe(0)
+    expect(global.window.api.createFolder).not.toHaveBeenCalledWith('Templates')
   })
 
-  it('does not re-seed templates when all are already present', async () => {
-    useVaultStore.setState({
-      snippets: defaultTemplates.map((t, i) => ({
-        id: `tpl-${i}`,
-        title: t.title,
-        code: t.code,
-        folderId: 'Templates',
-        timestamp: Date.now()
-      }))
-    })
+  it('does not create template files on disk when modal opens', async () => {
     render(<DailyNotes />)
     clickDaily()
 
@@ -92,30 +77,6 @@ describe('DailyNotes', () => {
       ([snip]) => snip.folderId === 'Templates'
     )
     expect(templateSaves.length).toBe(0)
-  })
-
-  it('seeds only the missing templates when the folder is partially populated', async () => {
-    useVaultStore.setState({
-      snippets: [
-        {
-          id: 'existing-template',
-          title: defaultTemplates[0].title,
-          code: '# l',
-          folderId: 'Templates',
-          timestamp: Date.now()
-        }
-      ]
-    })
-    render(<DailyNotes />)
-    clickDaily()
-
-    await waitFor(() => {
-      expect(screen.getByTestId('template-modal')).toBeInTheDocument()
-    })
-    const templateSaves = global.window.api.saveSnippet.mock.calls.filter(
-      ([snip]) => snip.folderId === 'Templates'
-    )
-    expect(templateSaves.length).toBe(TEMPLATE_COUNT - 1)
   })
 
   it('creates a titled note when a template is selected', async () => {

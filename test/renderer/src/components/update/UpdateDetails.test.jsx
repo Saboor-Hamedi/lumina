@@ -95,4 +95,13 @@ describe('UpdateDetails', () => {
       expect(screen.getByText('v0.9.9')).toBeInTheDocument()
     })
   })
+
+  it('closes when pressing Escape', () => {
+    render(<UpdateDetails />)
+    fireEvent.click(screen.getByLabelText('Check for updates'))
+    expect(screen.getByTestId('update-details')).toBeInTheDocument()
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByTestId('update-details')).toBeNull()
+  })
 })

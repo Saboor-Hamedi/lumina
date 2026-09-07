@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import SettingColorPicker from './SettingColorPicker'
+import AccentColor from '../theme/AccentColor'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useFontSettings } from '../../core/hooks/useFontSettings'
 
@@ -51,7 +51,7 @@ export const ColorPickerInput = ({
         />
       </div>
 
-      <SettingColorPicker
+      <AccentColor
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         initialColor={displayColor}

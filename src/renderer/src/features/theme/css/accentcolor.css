@@ -1,0 +1,215 @@
+.color-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100000;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.color-modal-container {
+  background: var(--bg-app);
+  border: 1px solid var(--border-main);
+  border-radius: var(--radius-main, 8px);
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+  animation: fadeIn 0.15s ease-out;
+}
+
+.color-modal-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.color-modal-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.color-modal-section-title {
+  font-size: 10px !important;
+  font-weight: 800;
+  color: var(--text-faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Curated Palette Grid (Theme Mode) */
+.color-picker-presets-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.color-picker-preset-item {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none !important;
+  outline: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.color-picker-preset-item:hover {
+  transform: scale(1.08);
+  filter: brightness(1.1);
+}
+
+.color-picker-preset-item.selected {
+  border: none !important;
+  transform: scale(1.08);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+/* Hex Input Wrapper */
+.color-picker-hex-wrapper {
+  display: flex;
+  align-items: center;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  border-radius: 6px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.color-picker-hex-wrapper:focus-within {
+  border-color: var(--text-accent);
+}
+
+.color-picker-hex-prefix {
+  color: var(--text-faint);
+  font-family: monospace;
+  font-size: 13px !important;
+  font-weight: 700;
+  user-select: none;
+}
+
+.color-picker-hex-input {
+  width: 100%;
+  padding: 6px 0 6px 4px;
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  font-family: monospace;
+  font-size: 12px !important;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.color-picker-modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+/* TitleBar Dropdown Variant */
+.accent-titlebar-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  -webkit-app-region: no-drag;
+}
+
+.accent-titlebar-btn {
+  width: 32px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  transition: background 0.15s ease;
+}
+
+.accent-titlebar-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.accent-titlebar-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.accent-titlebar-btn:hover .accent-titlebar-swatch {
+  transform: scale(1.12);
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+.accent-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 236px;
+  background: var(--bg-panel, #18181b);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  border-radius: 10px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  z-index: 100000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 12px;
+  gap: 12px;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.accent-dropdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.accent-dropdown-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted, #94a3b8);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.accent-dropdown-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  color: var(--text-faint, #94a3b8);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 2px 7px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+
+.accent-dropdown-reset:hover {
+  color: var(--text-main, #ffffff);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.accent-reset-icon {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+}
+

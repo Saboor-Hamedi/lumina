@@ -336,9 +336,9 @@
 }
 
 .hero-title {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--text-main);
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--text-accent);
   margin: 0;
   letter-spacing: -0.03em;
 }
@@ -361,7 +361,7 @@
   height: 55vh;
   max-width: 520px;
   max-height: 520px;
-  opacity: 0.07;
+  opacity: 0.12;
   pointer-events: none;
   z-index: 0;
   display: flex;
@@ -411,9 +411,9 @@
 
 .welcome-action-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(var(--text-accent-rgb, 139, 92, 246), 0.3);
-  box-shadow: 0 8px 24px rgba(var(--text-accent-rgb, 139, 92, 246), 0.1);
-  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(var(--text-accent-rgb, 64, 186, 250), 0.35);
+  box-shadow: 0 8px 24px rgba(var(--text-accent-rgb, 64, 186, 250), 0.12);
+  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.04);
 }
 
 .action-card-icon {
@@ -423,8 +423,14 @@
   width: 22px;
   height: 22px;
   border-radius: 5px;
-  background: var(--bg-app);
+  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.1);
+  color: var(--text-accent);
   flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.welcome-action-card:hover .action-card-icon {
+  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.2);
 }
 
 .action-card-content {
@@ -465,6 +471,12 @@
   border: 1px solid var(--border-dim);
   flex-shrink: 0;
   white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.welcome-action-card:hover .action-shortcut {
+  color: var(--text-accent);
+  border-color: rgba(var(--text-accent-rgb, 64, 186, 250), 0.4);
 }
 
 .welcome-footer-hint {
@@ -476,8 +488,12 @@
   animation: fadeUp 0.6s ease-out 0.2s both;
 }
 
+.welcome-footer-hint svg {
+  color: var(--text-accent);
+}
+
 .welcome-footer-hint strong {
-  color: var(--text-main);
+  color: var(--text-accent);
 }
 
 @keyframes fadeUp {

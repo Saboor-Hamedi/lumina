@@ -117,7 +117,7 @@ class SettingsManager {
     }
 
     if (this.cache && JSON.stringify(this.cache[key]) === JSON.stringify(value)) {
-      return
+      return true
     }
 
     if (this.cache) {
@@ -145,7 +145,7 @@ class SettingsManager {
       }
     }
 
-    if (!changed) return
+    if (!changed) return true
     this.cache = current
     return this.queueSave()
   }
@@ -155,11 +155,20 @@ class SettingsManager {
       clearTimeout(this.saveTimeout)
     }
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      this.pendingResolvers = this.pendingResolvers || []
+      this.pendingResolvers.push({ resolve, reject })
+
       this.saveTimeout = setTimeout(async () => {
         this.saveTimeout = null
-        await this.save()
-        resolve()
+        const resolvers = this.pendingResolvers
+        this.pendingResolvers = []
+        try {
+          await this.save()
+          resolvers.forEach(({ resolve: res }) => res(true))
+        } catch (err) {
+          resolvers.forEach(({ reject: rej }) => rej(err))
+        }
       }, 50)
     })
   }

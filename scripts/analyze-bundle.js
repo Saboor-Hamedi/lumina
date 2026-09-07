@@ -208,10 +208,6 @@ function generateReport() {
   console.log('')
 }
 
-/**
- * Main execution
- * Runs the bundle analysis and handles errors gracefully
- */
 function main() {
   try {
     generateReport()
@@ -227,3 +223,4 @@ function main() {
 
 // Run analysis
 main()
+

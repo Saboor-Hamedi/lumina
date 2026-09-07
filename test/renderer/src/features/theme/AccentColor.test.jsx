@@ -1,22 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import SettingColorPicker from '../../../../../src/renderer/src/features/Settings/SettingColorPicker'
+import AccentColor from '../../../../../src/renderer/src/features/theme/AccentColor'
 
-describe('SettingColorPicker', () => {
+describe('AccentColor', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
   it('renders nothing when isOpen is false', () => {
     const { container } = render(
-      <SettingColorPicker isOpen={false} onClose={vi.fn()} onSelect={vi.fn()} />
+      <AccentColor isOpen={false} onClose={vi.fn()} onSelect={vi.fn()} />
     )
     expect(container.firstChild).toBeNull()
   })
 
   it('renders modal when isOpen is true with preset palette', () => {
     render(
-      <SettingColorPicker
+      <AccentColor
         isOpen={true}
         onClose={vi.fn()}
         onSelect={vi.fn()}
@@ -32,7 +32,7 @@ describe('SettingColorPicker', () => {
     const onSelect = vi.fn()
     const onClose = vi.fn()
     render(
-      <SettingColorPicker
+      <AccentColor
         isOpen={true}
         initialColor="#3b82f6"
         onClose={onClose}
@@ -48,7 +48,7 @@ describe('SettingColorPicker', () => {
   it('calls onClose when close button is clicked', () => {
     const onClose = vi.fn()
     render(
-      <SettingColorPicker
+      <AccentColor
         isOpen={true}
         onClose={onClose}
         onSelect={vi.fn()}

@@ -4,6 +4,8 @@ import { useVaultStore } from '../../core/store/workspaceStore'
 import logoUrl from '../../assets/logo.png'
 import ToolTip from '../../components/atoms/ToolTip'
 import UpdateDetails from '../../components/update/UpdateDetails'
+import AccentColor from '../theme/AccentColor'
+import { useFontSettings } from '../../core/hooks/useFontSettings'
 import '../../assets/titlebar.css'
 
 const TitleBar = ({ onToggleAIChat }) => {
@@ -12,6 +14,8 @@ const TitleBar = ({ onToggleAIChat }) => {
   const handleClose = () => window.api?.closeWindow()
 
   const [version, setVersion] = React.useState('')
+  const [isAccentOpen, setIsAccentOpen] = React.useState(false)
+  const { themeAccentColor, updateThemeAccentColor } = useFontSettings()
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = React.useState(() => {
     if (typeof localStorage !== 'undefined') {
       const saved = localStorage.getItem('lumina_left_sidebar_open')
@@ -109,6 +113,33 @@ const TitleBar = ({ onToggleAIChat }) => {
               <MessageSquare size={14} strokeWidth={2} />
             </button>
           </ToolTip>
+          <div className="accent-titlebar-container">
+            <ToolTip text="Accent Color" position="bottom">
+              <button
+                type="button"
+                className="accent-titlebar-btn"
+                onClick={() => setIsAccentOpen((prev) => !prev)}
+                aria-label="Customize accent color"
+              >
+                <div
+                  className="accent-titlebar-swatch"
+                  style={{ backgroundColor: themeAccentColor || 'var(--text-accent)' }}
+                />
+              </button>
+            </ToolTip>
+            <AccentColor
+              isOpen={isAccentOpen}
+              onClose={() => setIsAccentOpen(false)}
+              initialColor={themeAccentColor}
+              defaultColor="#40bafa"
+              onSelect={(color) => {
+                updateThemeAccentColor(color)
+              }}
+              previewProperty="--text-accent"
+              title="Theme Accent"
+              variant="dropdown"
+            />
+          </div>
           <ToolTip text="Minimize" position="bottom">
             <button onClick={handleMinimize} className="control-btn">
               <Minus size={14} strokeWidth={2} />
