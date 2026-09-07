@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
-import { Folder, Code as CodeIcon, Copy, Check } from 'lucide-react'
+import { Folder, Code as CodeIcon, Copy, Check, ChevronDown } from 'lucide-react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 export const ChatPreBlock = React.memo(({ children, ...props }) => {
   const [copied, setCopied] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(true)
 
   let codeString = ''
   let className = ''
@@ -33,10 +34,19 @@ export const ChatPreBlock = React.memo(({ children, ...props }) => {
 
   return (
     <div className={`chat-code-block ${isTree ? 'is-tree' : ''}`}>
-      <div className="chat-code-header">
+      <div
+        className={`chat-code-header ${isTree ? 'is-tree-header' : ''}`}
+        onClick={isTree ? () => setIsExpanded((prev) => !prev) : undefined}
+      >
         <div className="chat-code-header-left">
           {isTree ? (
-            <Folder size={11} style={{ color: 'var(--text-accent)', opacity: 0.85 }} />
+            <>
+              <ChevronDown
+                size={12}
+                className={`chat-tree-chevron ${isExpanded ? 'is-open' : ''}`}
+              />
+              <Folder size={11} style={{ color: 'var(--text-accent)', opacity: 0.85 }} />
+            </>
           ) : (
             <CodeIcon size={11} style={{ color: 'var(--text-faint)', opacity: 0.8 }} />
           )}
@@ -48,7 +58,8 @@ export const ChatPreBlock = React.memo(({ children, ...props }) => {
         {!isDelete && (
           <button
             className="chat-code-copy-btn"
-            onClick={async () => {
+            onClick={async (e) => {
+              e.stopPropagation()
               try {
                 await navigator.clipboard.writeText(codeString)
                 setCopied(true)
@@ -72,18 +83,31 @@ export const ChatPreBlock = React.memo(({ children, ...props }) => {
           </button>
         )}
       </div>
-      {!isDelete && isTree ? (
+      {!isDelete && isTree && isExpanded ? (
         <div className="chat-tree-display seamless-scrollbar">
           {codeString.split('\n').map((line, idx) => {
             const isFolder = /📁/.test(line) || line.trim().endsWith('/')
+            const branchMatch = line.match(/^([│├└┌─\s]+)(.*)$/)
+            if (branchMatch) {
+              return (
+                <div key={idx} className="chat-tree-line">
+                  <span className="chat-tree-branch">{branchMatch[1]}</span>
+                  <span className={`chat-tree-label ${isFolder ? 'is-folder' : 'is-file'}`}>
+                    {branchMatch[2]}
+                  </span>
+                </div>
+              )
+            }
             return (
-              <div key={idx} className={`chat-tree-line ${isFolder ? 'is-folder' : 'is-file'}`}>
-                {line}
+              <div key={idx} className="chat-tree-line">
+                <span className={`chat-tree-label ${isFolder ? 'is-folder' : 'is-file'}`}>
+                  {line}
+                </span>
               </div>
             )
           })}
         </div>
-      ) : !isDelete ? (
+      ) : !isDelete && !isTree ? (
         <SyntaxHighlighter
           style={vscDarkPlus}
           language={lang === 'text' ? 'markdown' : lang}

@@ -18,11 +18,27 @@ export const getReadFileTool = (blockReadFile) => {
       const vs = useVaultStore.getState()
       const snippets = Array.isArray(vs.snippets) ? vs.snippets : Object.values(vs.snippets || {})
 
-      const cleanTitle = title.trim().toLowerCase().replace(/\.md$/, '')
-      let target = snippets.find((s) => s.title.toLowerCase().replace(/\.md$/, '') === cleanTitle)
-      if (!target) {
-        target = snippets.find((s) => s.title.toLowerCase().includes(cleanTitle))
+      const normalizedInput = title.trim().toLowerCase().replace(/\\/g, '/').replace(/\.md$/, '')
+      const baseName = normalizedInput.split('/').pop() || normalizedInput
+
+      let target = snippets.find((s) => {
+        const noteFolder = (s.folderId || '').toLowerCase().replace(/\\/g, '/')
+        const noteTitle = (s.title || '').toLowerCase().replace(/\.md$/, '')
+        const fullPath = noteFolder ? `${noteFolder}/${noteTitle}` : noteTitle
+        return fullPath === normalizedInput || noteTitle === normalizedInput
+      })
+
+      if (!target && baseName) {
+        target = snippets.find((s) => (s.title || '').toLowerCase().replace(/\.md$/, '') === baseName)
       }
+
+      if (!target) {
+        target = snippets.find((s) => {
+          const noteTitle = (s.title || '').toLowerCase()
+          return noteTitle.includes(baseName) || baseName.includes(noteTitle)
+        })
+      }
+
       if (!target) return { success: false, error: `File "${title}" not found.` }
 
       const rawCode =

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useDeferredValue } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback, useDeferredValue } from 'react'
 import { createPortal } from 'react-dom'
 import {
   Search,
@@ -31,7 +31,7 @@ import { useMention } from '../../core/hooks/useMention'
 import { useShallow } from 'zustand/react/shallow'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useAIStore } from '../AI/tools/lumina'
-import { MessageContent, ThinkingIndicator } from '../AI/Lumina'
+import { MessageContent, ThinkingIndicator, ChatMessageRow } from '../AI/Lumina'
 import { useVaultStore } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { PreviewCommandPalette } from './PreviewCommandPalette'
@@ -677,6 +677,37 @@ const CommandPalette = React.memo(
       return item.code || item.matchSnippet || ''
     }, [filtered, selectedIndex])
 
+    const handleCopy = useCallback((text) => {
+      navigator.clipboard.writeText(text)
+    }, [])
+
+    const handleRating = useCallback(
+      (index, type) => {
+        const current = chatMessages[index]?.rating
+        const newRating = current === type ? null : type
+        const updated = [...chatMessages]
+        if (updated[index]) {
+          updated[index] = { ...updated[index], rating: newRating }
+          useAIStore.setState({ chatMessages: updated })
+        }
+      },
+      [chatMessages]
+    )
+
+    const userMentionRegex = useMemo(() => {
+      const list = items || []
+      const titles = list
+        .map((s) => s.title)
+        .filter(Boolean)
+        .sort((a, b) => b.length - a.length)
+        .map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+
+      if (titles.length > 0) {
+        return new RegExp(`(@(?:${titles.join('|')}|[a-zA-Z0-9_\\-./]+))`, 'gi')
+      }
+      return /(@[a-zA-Z0-9_\-./]+)/g
+    }, [items])
+
     const chatContent = useMemo(
       () => (
         <div className="palette-chat-messages seamless-scrollbar" ref={chatScrollRef}>
@@ -689,24 +720,24 @@ const CommandPalette = React.memo(
               </p>
             </div>
           ) : (
-            chatMessages.map((msg, i) => (
-              <div key={i} className={`chat-bubble ${msg.role}`} style={{ padding: '0 12px' }}>
-                {msg.role === 'assistant' &&
-                !msg.content?.trim() &&
-                !msg.imageUrl &&
-                ((i === chatMessages.length - 1 && isChatLoading) || msg.isGenerating) ? (
-                  <ThinkingIndicator isGenerating={msg.isGenerating} />
-                ) : msg.role === 'assistant' ? (
-                  <MessageContent content={msg.content} />
-                ) : (
-                  msg.content
-                )}
-              </div>
-            ))
+            <div className="chat-msg-list" style={{ width: '100%', padding: '8px 12px' }}>
+              {chatMessages.map((msg, i) => (
+                <ChatMessageRow
+                  key={msg.id || i}
+                  msg={msg}
+                  index={i}
+                  isLast={i === chatMessages.length - 1}
+                  isChatLoading={isChatLoading}
+                  userMentionRegex={userMentionRegex}
+                  handleCopy={handleCopy}
+                  handleRating={handleRating}
+                />
+              ))}
+            </div>
           )}
         </div>
       ),
-      [chatMessages, isChatLoading]
+      [chatMessages, isChatLoading, userMentionRegex, handleCopy, handleRating]
     )
 
     if (!isOpen) return null

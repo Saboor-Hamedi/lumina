@@ -10,6 +10,7 @@ import ModalHeader from '../modals/ModalHeader'
 import { LuminaChatContent } from './components/LuminaChatContent'
 import { MessageContent } from './components/MessageContent'
 import { ThinkingIndicator } from './components/ThinkingIndicator'
+import { ChatMessageRow } from './components/ChatMessageRow'
 import { useModalWindow } from './hooks/useModalWindow'
 import '../../assets/appshell.css'
 import './lumina.css'
@@ -166,5 +167,5 @@ const LuminaChat = ({ isOpen, onClose, onDock, onUnfloat }) => {
   )
 }
 
-export { LuminaChatContent, MessageContent, ThinkingIndicator }
+export { LuminaChatContent, MessageContent, ThinkingIndicator, ChatMessageRow }
 export default React.memo(LuminaChat)

@@ -616,7 +616,7 @@ export const useAIStore = create((set, get) => {
           }
 
           const escaped = rawTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-          const pattern = new RegExp(`(?:^|\\s|["'\`\\[])${escaped}(?:$|\\s|["'\`\\]?!.,;:)]`, 'i')
+          const pattern = new RegExp(`(^|[^a-zA-Z0-9_-])${escaped}([^a-zA-Z0-9_-]|$)`, 'i')
           if (pattern.test(cleanMsg)) {
             requestedFiles.push(s)
           }
@@ -871,7 +871,7 @@ ${vaultAccessNote}`
           '7. If asked to DRAFT/CREATE A PLAN, TRIP ITINERARY, STUDY CURRICULUM, EXPENSE TRACKER, BUSINESS STRUCTURE, CODING ARCHITECTURE, OR CLOUD PLAN: if the user explicitly asked for folders (e.g. "in a folder called Trip"), call createFolder; otherwise, create the notes directly at root level or in the current active folder. Continue calling createFile sequentially until ALL requested files exist!\n' +
           '8. If asked to CREATE A VAULT SUMMARY OR WORKSPACE DASHBOARD → create the summary note directly at root level (folder="") or requested folder.\n' +
           '9. If asked to CREATE A NOTE IN A FOLDER OR NESTED FOLDER → call createFile with folder="<Folder Path>" (e.g. folder="Database/Schema", folder="src/components/ui"). The folder will be created automatically if it does not exist.\n' +
-          '10. If asked to MOVE A FOLDER (e.g. "move folder Science to Archive", "move folder 1-src to src") → call moveFolder with sourceFolder="<Source Folder>" and targetFolder="<Target Folder>" directly! Do NOT move files one-by-one when moving an entire folder!\n' +
+          '10. If asked to MOVE A FOLDER (e.g. "move folder Science to Archive", "move folder 1-src to src") → call moveFolder with sourceFolder="<Source Folder>" and targetFolder="<Target Folder>" directly! Do NOT call readFile before or after moving folders. moveFolder moves all files automatically, so never inspect or read notes inside a folder when simply moving it. Do NOT move files one-by-one when moving an entire folder!\n' +
           '10b. If asked to MOVE A FILE OR FILES (e.g. "move to folder Science", "move this note to Docs", "put in Archive") → call moveFile immediately with title="current" (or note title, or "all") and folder="<Destination Folder>". Moving files does NOT open tabs!\n' +
           '11. If asked to RENAME a file or RENAME FILES IN A FOLDER (e.g. "rename this note to App Architecture", "inside my 1-src folder rename the files keep them a single word", "rename files in 1-src to be concise") → find all matching files in the workspace (or inside that folder from EXISTING FILES) and call renameFile for EACH file with oldTitle="<current title or folder/title>" and newTitle="<New Name>". NEVER say "Done!" without calling renameFile for all target files!\n' +
           '12. If asked to RENAME A FOLDER or MAKE ALL FOLDERS LOWERCASE/UPPERCASE (e.g. "all folder must be lowercase", "rename all folders to lowercase", "rename folder 1-Src to 1-src") → find all matching folders from EXISTING FOLDERS and call renameFolder for EACH folder directly!\n' +
@@ -880,7 +880,7 @@ ${vaultAccessNote}`
           '15. If asked to ADD or WRITE content to the end of a note → call appendToFile DIRECTLY.\n' +
           '16. If asked to CLEAR or EMPTY a file → call updateFile with content: "" DIRECTLY.\n' +
           '17. If asked to EXPLAIN a file → call readFile DIRECTLY.\n' +
-          '18. When outputting folder/file trees or hierarchies in chat responses, ALWAYS wrap them in a code block with language text (e.g. ```text\\n📁 Root\\n├── 📁 01_Folder\\n└── 📁 02_Folder\\n```) with each branch on its own separate line so it renders cleanly.\n' +
+          '18. When outputting folder/file trees or hierarchies in chat responses, ALWAYS wrap them in a code block with language text (e.g. ```text\n📁 Root\n├── 📁 src\n│   └── 📁 js\n│       ├── 📄 Introduction to JavaScript\n│       ├── 📄 JavaScript Roadmap\n│       └── 📁 fundamentals\n│           └── 📄 Variables and Data Types\n├── 📁 HTTP\n└── 📁 SQLite\n```). CRITICAL INDENTATION RULE: Every file and subfolder inside a folder MUST be indented with additional tree levels (e.g. `│   └──` for the subfolder, and `│       ├──` for items inside that subfolder). NEVER list files inside a folder at the same indentation level as the folder itself! Each level of nesting MUST add 4 characters (`│   ` or `    `) of indentation!\n' +
           '19. After performing tool operations, write a clear, high-value walkthrough in chat explaining what was built or modified, highlighting key topics and wikilinks. Do NOT repeat a raw list of "Created folder X" or "Created file Y" in your text response — the UI activity card already displays every created folder and note cleanly with interactive links.\n' +
           '20. NATURAL FILE TITLES WITH SPACES: Lumina natively supports natural titles with spaces (e.g. "Today Log", "Tomorrow Expenses", "Afghanistan Trip Plan", "System Architecture", "Market Strategy"). NEVER use underscores ("_") or dashes ("-") in file titles unless the user explicitly requested them.\n' +
           '21. ZERO TAB OPENINGS ON CREATE OR MOVE: Created notes and moved notes/folders are saved silently in the workspace in the background and must NEVER open new tabs. Only if a note is ALREADY open in the user\'s active editor tab may you write directly to that open tab.\n' +
@@ -1020,12 +1020,16 @@ ${vaultAccessNote}`
 
             const executedActions = []
             let activeToolStatus = ''
+            let reasoningText = ''
             let beforeToolText = ''
             let afterToolText = ''
             let hasToolCalled = false
 
             const buildRealtimeDisplay = () => {
               const blocks = []
+              if (reasoningText.trim()) {
+                blocks.push(`<think>\n${reasoningText.trim()}\n</think>`)
+              }
               if (beforeToolText.trim()) {
                 blocks.push(beforeToolText.trim())
               }
@@ -1118,6 +1122,10 @@ ${vaultAccessNote}`
                     msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: fullContent }
                   return { chatMessages: msgs }
                 })
+              } else if (chunk.type === 'reasoning' || chunk.type === 'reasoning-delta') {
+                const rDelta = chunk.textDelta || chunk.text || chunk.delta || ''
+                reasoningText += rDelta
+                fullContent = buildRealtimeDisplay()
               } else if (chunk.type === 'text-delta') {
                 const delta = chunk.textDelta || chunk.text || chunk.delta || ''
                 if (hasToolCalled) {

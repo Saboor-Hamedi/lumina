@@ -14,7 +14,17 @@ import { openNoteInEditor } from './ChatLink'
 import { LuminaTimer } from './luminaTimer.jsx'
 
 export const ActivityCard = React.memo(({ rawContent, isStreaming = false }) => {
-  const [isExpanded, setIsExpanded] = useState(true)
+  const [isExpanded, setIsExpanded] = useState(isStreaming)
+  const prevStreamingRef = React.useRef(isStreaming)
+
+  React.useEffect(() => {
+    if (prevStreamingRef.current && !isStreaming) {
+      setIsExpanded(false)
+    } else if (!prevStreamingRef.current && isStreaming) {
+      setIsExpanded(true)
+    }
+    prevStreamingRef.current = isStreaming
+  }, [isStreaming])
 
   const items = useMemo(() => {
     if (!rawContent) return []

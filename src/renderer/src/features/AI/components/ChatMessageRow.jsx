@@ -93,6 +93,7 @@ export const ChatMessageRow = React.memo(
       prevProps.msg.role === nextProps.msg.role &&
       prevProps.msg.imageUrl === nextProps.msg.imageUrl &&
       prevProps.msg.rating === nextProps.msg.rating &&
+      prevProps.msg.timestamp === nextProps.msg.timestamp &&
       prevProps.msg.isGenerating === nextProps.msg.isGenerating &&
       prevProps.isLast === nextProps.isLast &&
       prevProps.isChatLoading === nextProps.isChatLoading

@@ -26,8 +26,7 @@ export const processMarkdownContent = (raw) => {
     return `[${displayText}](wikilink:${encodeURIComponent(cleanTarget)})`
   })
 
-  processed = processed.replace(/([^\n])\s*([├└]──|│\s+[├└]──)/g, '$1\n$2')
-  processed = processed.replace(/([├└]──[^\n]+?)\s+([├└]──)/g, '$1\n$2')
+  processed = processed.replace(/([^\n│├└─\s])\s*([├└]──)/g, '$1\n$2')
 
   const rawLines = processed.split('\n')
   let inFence = false
@@ -167,6 +166,7 @@ export const MessageContent = React.memo(
         code: ChatInlineCode,
         blockquote: ChatBlockquote,
         a: ChatLink,
+        hr: ({ ...props }) => <hr className="horizontal" {...props} />,
         table: ({ children }) => (
           <div className="table-wrapper chat-table-wrapper">
             <table>{children}</table>
