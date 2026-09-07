@@ -1,6 +1,22 @@
 import { AudioRecorder } from './audioRecorder'
 import { transcribeWithGroq } from './groqWhisper'
 
+function removePrefixOverlap(newText, prevText) {
+  if (!prevText || !newText) return newText ? newText.trim() : ''
+  const pWords = prevText.trim().toLowerCase().split(/\s+/)
+  const nWords = newText.trim().split(/\s+/)
+
+  const maxOverlap = Math.min(4, pWords.length, nWords.length)
+  for (let len = maxOverlap; len > 0; len--) {
+    const prevSlice = pWords.slice(-len).join(' ')
+    const nextSlice = nWords.slice(0, len).map((w) => w.toLowerCase()).join(' ')
+    if (prevSlice === nextSlice) {
+      return nWords.slice(len).join(' ')
+    }
+  }
+  return newText.trim()
+}
+
 class VoiceService {
   constructor() {
     this.recorder = new AudioRecorder()
@@ -19,6 +35,7 @@ class VoiceService {
     }
 
     this.isStarting = false
+    this.isQuotaExhausted = false
     this.lastToggleTime = 0
     this.recordingStartTime = 0
 
@@ -41,21 +58,18 @@ class VoiceService {
   toggleDictation(targetHint = null) {
     const now = Date.now()
     if (now - this.lastToggleTime < 450) {
-      console.debug('[VoiceService] Ignoring rapid toggle request (debounced)')
       return
     }
     this.lastToggleTime = now
 
     // If currently starting, do not immediately stop
     if (this.isStarting) {
-      console.debug('[VoiceService] Still starting, ignoring toggle')
       return
     }
 
     if (this.state.isRecording) {
       // Prevent stopping if recording was started just a split second ago
       if (now - this.recordingStartTime < 500) {
-        console.debug('[VoiceService] Recording just started, ignoring toggle')
         return
       }
 
@@ -91,7 +105,7 @@ class VoiceService {
     }
 
     this.setActiveInstance(target)
-    this.startRecording().catch((e) => console.error('[VoiceService] Toggle error:', e))
+    this.startRecording().catch(() => {})
   }
 
   subscribe(listener) {
@@ -123,6 +137,7 @@ class VoiceService {
     }
 
     this.isStarting = true
+    this.isQuotaExhausted = false
     try {
       this.recordingStartTime = Date.now()
       this.updateState({
@@ -148,7 +163,7 @@ class VoiceService {
         this.updateState({ audioLevel: level })
 
         const now = Date.now()
-        if (level > 0.07) {
+        if (level > 0.05) {
           this.hasSpokenInSegment = true
           this.lastSpeechTime = now
         }
@@ -156,14 +171,15 @@ class VoiceService {
         const segmentDuration = now - this.segmentStartTime
         const silenceDuration = now - this.lastSpeechTime
 
-        // Progressive live typing trigger:
-        // Flush segment when user has spoken and pauses (silence >= 480ms after speaking >= 2000ms),
-        // or if continuous speech reaches 5000ms
+        // Silky smooth progressive typing condition:
+        // Trigger segment flush when user has spoken and takes a brief breath (silence >= 380ms after 1.6s speech),
+        // or when continuous speaking reaches 4.2 seconds
         if (
           this.hasSpokenInSegment &&
           !this.isFlushingSegment &&
+          !this.isQuotaExhausted &&
           this.state.isRecording &&
-          ((silenceDuration >= 480 && segmentDuration >= 2000) || segmentDuration >= 5000)
+          ((silenceDuration >= 380 && segmentDuration >= 1600) || segmentDuration >= 4200)
         ) {
           this.flushSegment()
         }
@@ -187,7 +203,7 @@ class VoiceService {
   }
 
   async flushSegment() {
-    if (this.isFlushingSegment || !this.state.isRecording) return
+    if (this.isFlushingSegment || !this.state.isRecording || this.isQuotaExhausted) return
     this.isFlushingSegment = true
     this.segmentStartTime = Date.now()
     this.hasSpokenInSegment = false
@@ -200,7 +216,7 @@ class VoiceService {
 
     try {
       const segmentBlob = await this.recorder.flushSegment()
-      if (!segmentBlob || segmentBlob.size < 2500) {
+      if (!segmentBlob || segmentBlob.size < 2200) {
         this.isFlushingSegment = false
         return
       }
@@ -211,24 +227,32 @@ class VoiceService {
       transcribeWithGroq(segmentBlob, groqKey, promptContext)
         .then((text) => {
           if (text && text.trim().length > 0) {
-            const cleanText = text.trim()
-            this.lastTranscribedText = cleanText
-            console.log(`[VoiceService] Live segment typed: "${cleanText}"`)
-            window.dispatchEvent(
-              new CustomEvent('voice-insert-text', {
-                detail: { text: cleanText, instanceId, isSegment: true }
-              })
-            )
+            const rawClean = text.trim()
+            const smoothedText = removePrefixOverlap(rawClean, this.lastTranscribedText)
+            if (smoothedText && smoothedText.length > 0) {
+              this.lastTranscribedText = rawClean
+              window.dispatchEvent(
+                new CustomEvent('voice-insert-text', {
+                  detail: { text: smoothedText, instanceId, isSegment: true }
+                })
+              )
+            }
           }
         })
         .catch((err) => {
-          console.debug('[VoiceService] Segment transcription error:', err)
+          // If quota or auth limit reached, safely stop and notify without crashing
+          if (err?.isQuotaError || err?.isAuthError) {
+            this.isQuotaExhausted = true
+            this.cancelRecording()
+            this.updateState({
+              error: err.message || 'Groq API quota exceeded. Please check your account.'
+            })
+          }
         })
         .finally(() => {
           this.isFlushingSegment = false
         })
-    } catch (err) {
-      console.debug('[VoiceService] flushSegment error:', err)
+    } catch (e) {
       this.isFlushingSegment = false
     }
   }
@@ -255,13 +279,12 @@ class VoiceService {
       }
 
       const durationMs = Date.now() - (this.recordingStartTime || 0)
-      if (durationMs < 400 || audioData.size < 2500) {
-        console.debug(`[VoiceService] Clip too short (${durationMs}ms, ${audioData.size}b), discarding`)
+      if (durationMs < 400 || audioData.size < 2200) {
         this.updateState({ isTranscribing: false, interimText: '', error: null })
         return null
       }
 
-      // If nothing new was spoken in this final segment, no need to call Groq
+      // If nothing new was spoken in this final segment, complete gracefully
       if (!this.hasSpokenInSegment) {
         this.updateState({ isTranscribing: false, interimText: '', error: null })
         return null
@@ -276,12 +299,11 @@ class VoiceService {
         return null
       }
 
-      console.log(`[VoiceService] Sending final audio segment (${audioData.size} bytes) to Groq Whisper...`)
       const text = await transcribeWithGroq(audioData, groqKey, this.lastTranscribedText)
       this.updateState({ isTranscribing: false, interimText: '', error: null })
-      return text || null
+      const smoothed = removePrefixOverlap(text || '', this.lastTranscribedText)
+      return smoothed || null
     } catch (err) {
-      console.error('[VoiceService] Groq transcription failed:', err)
       this.updateState({
         isTranscribing: false,
         error: err?.message || 'Transcription failed'

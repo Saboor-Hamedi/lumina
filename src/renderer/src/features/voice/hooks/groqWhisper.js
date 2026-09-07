@@ -56,7 +56,6 @@ export async function transcribeWithGroq(audioBlob, apiKey, prompt = '') {
   }
 
   if (!audioBlob || audioBlob.size < 1200) {
-    console.debug('[GroqWhisper] Audio is too small / empty, ignoring')
     return ''
   }
 
@@ -79,31 +78,65 @@ export async function transcribeWithGroq(audioBlob, apiKey, prompt = '') {
     formData.append('prompt', prompt.trim().slice(-220))
   }
 
-  const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey.trim()}`
-    },
-    body: formData
-  })
+  let response
+  try {
+    response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey.trim()}`
+      },
+      body: formData
+    })
+  } catch (networkErr) {
+    const err = new Error('Network error connecting to Groq. Please check your internet connection.')
+    err.isNetworkError = true
+    throw err
+  }
 
   if (!response.ok) {
     let errMsg = 'Groq transcription request failed'
+    let isQuotaError = false
+    let isAuthError = false
+
     try {
       const errJson = await response.json()
       errMsg = errJson?.error?.message || errMsg
+      const errLower = errMsg.toLowerCase()
+      if (
+        response.status === 429 ||
+        errLower.includes('rate limit') ||
+        errLower.includes('quota') ||
+        errLower.includes('tokens per') ||
+        errLower.includes('credits')
+      ) {
+        isQuotaError = true
+        errMsg = 'Groq API rate limit or quota exceeded. Please check your Groq limits.'
+      } else if (response.status === 401 || response.status === 403 || errLower.includes('api key')) {
+        isAuthError = true
+        errMsg = 'Invalid Groq API key. Please check your key in Settings > Intelligence.'
+      }
     } catch (e) {
       errMsg = `HTTP ${response.status}: ${response.statusText}`
     }
-    throw new Error(errMsg)
+
+    const error = new Error(errMsg)
+    error.status = response.status
+    error.isQuotaError = isQuotaError
+    error.isAuthError = isAuthError
+    throw error
   }
 
-  const data = await response.json()
+  let data
+  try {
+    data = await response.json()
+  } catch (parseErr) {
+    return ''
+  }
+
   const rawText = (data?.text || '').trim()
 
   // Clean hallucination if Whisper outputs a known filler on silence
   if (isSilenceHallucination(rawText)) {
-    console.debug('[GroqWhisper] Filtered out silence hallucination:', rawText)
     return ''
   }
 

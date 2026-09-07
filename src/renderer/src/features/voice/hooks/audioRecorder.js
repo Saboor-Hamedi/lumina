@@ -51,9 +51,7 @@ export class AudioRecorder {
         this.animFrameId = requestAnimationFrame(checkVolume)
       }
       checkVolume()
-    } catch (e) {
-      console.warn('[AudioRecorder] Visualizer analyser setup warning:', e)
-    }
+    } catch (e) {}
 
     // Determine supported mimeType for clean, uncorrupted recording
     let mimeType = 'audio/webm;codecs=opus'
@@ -114,7 +112,6 @@ export class AudioRecorder {
         nextRecorder.start(100)
         prevRecorder.stop()
       } catch (e) {
-        console.warn('[AudioRecorder] flushSegment error:', e)
         resolve(null)
       }
     })
