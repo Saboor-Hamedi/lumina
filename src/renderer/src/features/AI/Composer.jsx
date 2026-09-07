@@ -20,6 +20,7 @@ import LuminaMention from './LuminaMention'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useVaultStore } from '../../core/store/workspaceStore'
 import ToolTip from '../../components/atoms/ToolTip'
+import VoiceButton from '../voice'
 import './Composer.css'
 
 export const Composer = ({ onSend, onStop, onCancel, isLoading = false, isSidebar = false }) => {
@@ -33,6 +34,7 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false, isSideba
   const handleStop = onStop || onCancel
 
   const textareaRef = useRef(null)
+  const baselineInputRef = useRef(null)
 
   const snippets = useVaultStore((state) => state.snippets) || []
 
@@ -125,6 +127,35 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false, isSideba
       clearTimeout(timer)
     }
   }, [])
+
+  useEffect(() => {
+    const handleLiveText = (e) => {
+      if (e.detail?.instanceId !== 'composer-voice') return
+      const live = e.detail?.text
+      if (!live) return
+      if (baselineInputRef.current === null) {
+        baselineInputRef.current = input
+      }
+      const base = baselineInputRef.current
+      const needsSpace = base && !base.endsWith(' ') && !base.endsWith('\n')
+      setInput(base ? `${base}${needsSpace ? ' ' : ''}${live}` : live)
+    }
+
+    const handleLiveCancel = (e) => {
+      if (e.detail?.instanceId !== 'composer-voice') return
+      if (baselineInputRef.current !== null) {
+        setInput(baselineInputRef.current)
+        baselineInputRef.current = null
+      }
+    }
+
+    window.addEventListener('voice-live-text', handleLiveText)
+    window.addEventListener('voice-live-cancel', handleLiveCancel)
+    return () => {
+      window.removeEventListener('voice-live-text', handleLiveText)
+      window.removeEventListener('voice-live-cancel', handleLiveCancel)
+    }
+  }, [input])
 
   const handleOnChange = (e) => {
     const newVal = e.target.value
@@ -332,6 +363,18 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false, isSideba
                 })()}
               </span>
             )}
+
+            <VoiceButton
+              id="composer-voice"
+              onInsert={(text) => {
+                const base = baselineInputRef.current !== null ? baselineInputRef.current : input
+                baselineInputRef.current = null
+                const needsSpace = base && !base.endsWith(' ') && !base.endsWith('\n')
+                setInput(base ? `${base}${needsSpace ? ' ' : ''}${text}` : text)
+                setTimeout(() => textareaRef.current?.focus(), 10)
+              }}
+              tooltipPosition="top"
+            />
 
             {isLoading ? (
               <ToolTip text="Stop generation" position="top">

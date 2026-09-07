@@ -107,15 +107,6 @@ export async function summarizeNotes(inputNotes) {
   await useVaultStore.getState().saveSnippet(newSnippet)
   useVaultStore.getState().setSelectedSnippet(newSnippet)
 
-  window.dispatchEvent(
-    new CustomEvent('show-toast', {
-      detail: {
-        message: `Summarizing ${validNotes.length > 1 ? `${validNotes.length} notes` : validNotes[0].title}...`,
-        type: 'info'
-      }
-    })
-  )
-
   try {
     const systemPrompt = `You are Lumina AI, an intelligent personal knowledge assistant.
 Analyze the provided note(s) and generate an insightful, highly adaptive, and compact summary in clean Markdown.

@@ -157,6 +157,89 @@ const Editor = React.memo(
       return () => window.removeEventListener('open-inline-ai', handleOpenAIEvent)
     }, [isActive])
 
+    const interimVoiceRangeRef = useRef(null)
+
+    useEffect(() => {
+      const handleLiveText = (e) => {
+        if (!isActive || !realViewRef.current) return
+        if (e.detail?.instanceId && e.detail.instanceId !== 'editor-voice') return
+        const text = e.detail?.text
+        if (!text) return
+        const view = realViewRef.current
+        const docLen = view.state.doc.length
+
+        if (!interimVoiceRangeRef.current) {
+          const sel = view.state.selection?.main
+          const from = sel ? sel.from : docLen
+          const to = sel ? sel.to : docLen
+          const prevChar = from > 0 ? view.state.doc.sliceString(from - 1, from) : ''
+          const insertText = prevChar && !prevChar.match(/\s/) ? ' ' + text : text
+          view.dispatch({
+            changes: { from, to, insert: insertText },
+            selection: { anchor: from + insertText.length }
+          })
+          interimVoiceRangeRef.current = { from, to: from + insertText.length }
+        } else {
+          const { from, to } = interimVoiceRangeRef.current
+          const prevChar = from > 0 ? view.state.doc.sliceString(from - 1, from) : ''
+          const insertText = prevChar && !prevChar.match(/\s/) ? ' ' + text : text
+          view.dispatch({
+            changes: { from, to, insert: insertText },
+            selection: { anchor: from + insertText.length }
+          })
+          interimVoiceRangeRef.current = { from, to: from + insertText.length }
+        }
+      }
+
+      const handleLiveCancel = (e) => {
+        if (!isActive || !realViewRef.current) return
+        if (e.detail?.instanceId && e.detail.instanceId !== 'editor-voice') return
+        if (interimVoiceRangeRef.current) {
+          const { from, to } = interimVoiceRangeRef.current
+          realViewRef.current.dispatch({ changes: { from, to, insert: '' } })
+          interimVoiceRangeRef.current = null
+        }
+      }
+
+      const handleVoiceInsert = (e) => {
+        if (!isActive || !realViewRef.current) return
+        const text = e.detail?.text
+        if (!text) return
+        const view = realViewRef.current
+        if (interimVoiceRangeRef.current) {
+          const { from, to } = interimVoiceRangeRef.current
+          const prevChar = from > 0 ? view.state.doc.sliceString(from - 1, from) : ''
+          const insertText = prevChar && !prevChar.match(/\s/) ? ' ' + text : text
+          view.dispatch({
+            changes: { from, to, insert: insertText },
+            selection: { anchor: from + insertText.length }
+          })
+          interimVoiceRangeRef.current = null
+        } else {
+          const selection = view.state.selection?.main
+          const from = selection ? selection.from : view.state.doc.length
+          const to = selection ? selection.to : view.state.doc.length
+          const prevChar = from > 0 ? view.state.doc.sliceString(from - 1, from) : ''
+          const insertText = prevChar && !prevChar.match(/\s/) ? ' ' + text : text
+          view.dispatch({
+            changes: { from, to, insert: insertText },
+            selection: { anchor: from + insertText.length }
+          })
+        }
+        view.focus()
+        setIsDirty(true)
+      }
+
+      window.addEventListener('voice-live-text', handleLiveText)
+      window.addEventListener('voice-live-cancel', handleLiveCancel)
+      window.addEventListener('voice-insert-text', handleVoiceInsert)
+      return () => {
+        window.removeEventListener('voice-live-text', handleLiveText)
+        window.removeEventListener('voice-live-cancel', handleLiveCancel)
+        window.removeEventListener('voice-insert-text', handleVoiceInsert)
+      }
+    }, [isActive, setIsDirty])
+
     // Inline Lumina AI Handlers
     const handleInlineAIInsert = useCallback((text, range = null) => {
       if (!realViewRef.current) return
