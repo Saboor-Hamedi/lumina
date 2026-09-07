@@ -197,18 +197,25 @@
   flex-direction: column;
   position: relative;
   height: 100%;
+  transition: margin-left 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-left: 0;
+}
+
+.docs-container.sidebar-open .docs-content {
+  margin-left: 280px;
 }
 
 .docs-container .preview-body {
-  padding: 32px 32px 48px 32px !important;
+  padding: 24px 24px 48px 24px !important;
 }
 
 .docs-container .editor-canvas-wrap {
-  padding-top: 16px !important;
+  padding-top: 0 !important;
 }
 
 .docs-container .cm-content {
-  padding-top: 12px !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
 /* Document Footer Navigation (Next / Previous Chapter Pagination) */

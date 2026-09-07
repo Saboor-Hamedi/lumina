@@ -372,7 +372,7 @@ const Documentation = ({ isOpen, onClose }) => {
           }
         />
 
-        <div className="docs-container">
+        <div className={`docs-container ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
           <DocSidebar
             docs={docs}
             selectedDoc={selectedDoc}
