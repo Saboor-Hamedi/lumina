@@ -686,6 +686,8 @@
   overflow-x: hidden;
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
+  padding: 0 16px;
+  box-sizing: border-box;
 }
 
 .editor-scroller::-webkit-scrollbar {
