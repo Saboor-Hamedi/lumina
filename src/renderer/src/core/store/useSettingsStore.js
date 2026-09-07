@@ -45,6 +45,7 @@ export const useSettingsStore = create((set, get) => ({
     // Desktop Integration
     launchOnStartup: false,
     globalShortcut: 'Ctrl+Space',
+    windowOpacity: 1.0,
 
     // Favorites & Ordering
     pinnedFolders: [],

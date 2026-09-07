@@ -114,12 +114,12 @@ const TitleBar = ({ onToggleAIChat }) => {
             </button>
           </ToolTip>
           <div className="accent-titlebar-container">
-            <ToolTip text="Accent Color" position="bottom">
+            <ToolTip text="Appearance & Quick Controls" position="bottom">
               <button
                 type="button"
                 className="accent-titlebar-btn"
                 onClick={() => setIsAccentOpen((prev) => !prev)}
-                aria-label="Customize accent color"
+                aria-label="Appearance and quick controls"
               >
                 <div
                   className="accent-titlebar-swatch"

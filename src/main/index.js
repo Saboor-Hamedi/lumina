@@ -23,6 +23,7 @@ import { setupGoogleAuth } from './auth/googleAuth'
 import { backupToDrive } from './backup/googleDriveBackup'
 import { registerOpenNoteHandler } from './handlers/useOpenNote'
 import { useResizeWindowValue } from './handlers/useResizeWindowValue'
+import { useWindowOpacity } from './handlers/useWindowOpacity'
 import { useGlobalShortcut } from './handlers/useGlobalShortcut'
 import { useTrayIcon, isAppQuitting, setAppQuitting } from './handlers/useTrayIcon'
 import { updateAutoLauncher } from './handlers/useAutoLauncher'
@@ -106,18 +107,16 @@ async function createWindow() {
     }
   }
 
-  if (app.isPackaged) {
-    mainWindow.webContents.on('before-input-event', (event, input) => {
-      if (!allowDevTools) {
-        if (
-          (input.control && input.shift && input.key.toLowerCase() === 'i') ||
-          input.key === 'F12'
-        ) {
-          event.preventDefault()
-        }
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (!allowDevTools) {
+      if (
+        (input.control && input.shift && input.key.toLowerCase() === 'i') ||
+        input.key === 'F12'
+      ) {
+        event.preventDefault()
       }
-    })
-  }
+    }
+  })
 
   mainWindow.on('ready-to-show', async () => {
     await showWindowSafely()
@@ -126,6 +125,9 @@ async function createWindow() {
 
     SettingsManager.onChange((settings) => {
       allowDevTools = settings.enableDevTools === true
+      if (!allowDevTools && mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents.isDevToolsOpened()) {
+        mainWindow.webContents.closeDevTools()
+      }
       useGlobalShortcut(mainWindow, settings)
       updateAutoLauncher(settings.launchOnStartup)
     })
@@ -172,6 +174,7 @@ async function createWindow() {
   })
 
   useResizeWindowValue(mainWindow)
+  useWindowOpacity(mainWindow)
 
   const isDev = !app.isPackaged
   if (isDev && process.env['ELECTRON_RENDERER_URL']) {

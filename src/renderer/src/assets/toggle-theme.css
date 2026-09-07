@@ -1,21 +1,200 @@
+/* ==========================================================================
+   Lumina Theme & Quick Controls Switch Styling (toggle-theme.css)
+   ========================================================================== */
+
+/* Theme Toggle Button */
 .theme-toggle {
-  background: var(--color-bg-tertiary);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 0.5rem;
+  background: var(--bg-panel, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.1));
+  border-radius: 6px;
+  padding: 6px;
   cursor: pointer;
-  font-size: 1.1rem;
-  transition: all 0.3s ease;
-  width: 42px;
-  height: 42px;
+  color: var(--text-muted);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  outline: none;
+  box-sizing: border-box;
 }
 
 .theme-toggle:hover {
-  background: var(--color-accent-primary);
-  transform: scale(1.05);
-  border-color: var(--color-accent-primary);
+  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  color: var(--text-accent);
+  border-color: var(--text-accent);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.theme-toggle:active {
+  transform: translateY(0);
+}
+
+.theme-toggle.active {
+  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.15);
+  border-color: var(--text-accent);
+  color: var(--text-accent);
+}
+
+/* ==========================================================================
+   Lumina Toggle Switch (Tactile iOS / macOS Aesthetic)
+   ========================================================================== */
+.lumina-switch {
+  position: relative;
+  display: inline-block;
+  width: 32px;
+  height: 18px;
+  flex-shrink: 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.lumina-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.lumina-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--bg-active, rgba(255, 255, 255, 0.1));
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.12));
+  border-radius: 18px;
+  transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+
+.lumina-slider::before {
+  position: absolute;
+  content: "";
+  height: 12px;
+  width: 12px;
+  left: 2px;
+  bottom: 2px;
+  background-color: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lumina-switch input:checked + .lumina-slider {
+  background-color: var(--text-accent);
+  border-color: var(--text-accent);
+  box-shadow: 0 0 8px rgba(var(--text-accent-rgb, 64, 186, 250), 0.3);
+}
+
+.lumina-switch input:checked + .lumina-slider::before {
+  transform: translateX(14px);
+  background-color: #ffffff;
+}
+
+.lumina-switch:hover .lumina-slider {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.lumina-switch input:focus,
+.lumina-switch input:focus-visible,
+.lumina-switch input:focus-visible + .lumina-slider {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* ==========================================================================
+   Lumina Quick Toggle Row (used in Appearance & Settings panels)
+   ========================================================================== */
+.lumina-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
+  user-select: none;
+}
+
+.lumina-toggle-row:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.lumina-toggle-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.lumina-toggle-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+
+.lumina-toggle-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ==========================================================================
+   Lumina Range Slider (for App Opacity / Thickness)
+   ========================================================================== */
+.lumina-range-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 5px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.14);
+  outline: none !important;
+  border: none !important;
+  cursor: pointer;
+  transition: none !important;
+}
+
+.lumina-range-slider:focus,
+.lumina-range-slider:focus-visible,
+.lumina-range-slider:active {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.lumina-range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text-accent);
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: none !important;
+  outline: none !important;
+}
+
+.lumina-range-slider::-webkit-slider-thumb:focus,
+.lumina-range-slider::-webkit-slider-thumb:focus-visible,
+.lumina-range-slider::-webkit-slider-thumb:active {
+  outline: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+  cursor: grabbing;
 }

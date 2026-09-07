@@ -29,6 +29,7 @@ class SettingsManager {
       enableDevTools: true,
       launchOnStartup: false,
       globalShortcut: 'Ctrl+Space',
+      windowOpacity: 1.0,
       // AI Settings
       deepSeekKey: null,
       deepSeekModel: 'deepseek-chat',
