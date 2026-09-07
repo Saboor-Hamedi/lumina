@@ -19,6 +19,9 @@ function isSilenceHallucination(rawText) {
     'subscribe',
     'like',
     'and',
+    'to',
+    'my',
+    'channel',
     'bye',
     'goodbye',
     'see',
@@ -40,6 +43,7 @@ function isSilenceHallucination(rawText) {
   if (
     /^(thank\s*you\s*)+$/i.test(cleaned) ||
     /^(thanks\s*)+$/i.test(cleaned) ||
+    /subscribe(\s+to)?(\s+my)?(\s+channel)?/i.test(cleaned) ||
     /subtitles?\s*(by|created|community)/i.test(cleaned) ||
     /amara\.org/i.test(rawText)
   ) {
