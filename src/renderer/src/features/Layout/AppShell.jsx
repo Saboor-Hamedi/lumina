@@ -24,6 +24,7 @@ import GlobalErrorHandler from '../../components/GlobalErrorHandler'
 import '../../assets/appshell.css'
 import '../modals/css/confirmModal.css'
 import '../modals/css/renameModal.css'
+import { VoiceCapsule } from '../voice'
 
 const LuminaChat = React.lazy(() => import('../AI/Lumina'))
 import { useAIStore } from '../AI/tools/lumina'
@@ -1025,6 +1026,7 @@ const AppShell = () => {
       )}
       <ToastNotification toast={toast} onClose={clearToast} />
       <Indexing />
+      <VoiceCapsule />
     </div>
   )
 }

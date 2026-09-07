@@ -149,11 +149,24 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false, isSideba
       }
     }
 
+    const handleVoiceInsert = (e) => {
+      if (e.detail?.instanceId !== 'composer-voice') return
+      const text = e.detail?.text
+      if (!text) return
+      const base = baselineInputRef.current !== null ? baselineInputRef.current : input
+      baselineInputRef.current = null
+      const needsSpace = base && !base.endsWith(' ') && !base.endsWith('\n')
+      setInput(base ? `${base}${needsSpace ? ' ' : ''}${text}` : text)
+      setTimeout(() => textareaRef.current?.focus(), 10)
+    }
+
     window.addEventListener('voice-live-text', handleLiveText)
     window.addEventListener('voice-live-cancel', handleLiveCancel)
+    window.addEventListener('voice-insert-text', handleVoiceInsert)
     return () => {
       window.removeEventListener('voice-live-text', handleLiveText)
       window.removeEventListener('voice-live-cancel', handleLiveCancel)
+      window.removeEventListener('voice-insert-text', handleVoiceInsert)
     }
   }, [input])
 

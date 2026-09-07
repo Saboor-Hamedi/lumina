@@ -1,22 +1,14 @@
 import { AudioRecorder } from './audioRecorder'
-
-const STORAGE_KEY = 'lumina_whisper_downloaded'
+import { transcribeWithGroq } from './groqWhisper'
 
 class VoiceService {
   constructor() {
-    this.worker = null
     this.recorder = new AudioRecorder()
     this.listeners = new Set()
     this.timerInterval = null
-    this.liveInterval = null
-    this.isInterimBusy = false
     this.activeRequestId = 0
 
     this.state = {
-      isDownloaded: localStorage.getItem(STORAGE_KEY) === 'true',
-      isDownloading: false,
-      downloadProgress: 0,
-      downloadFile: '',
       isRecording: false,
       isTranscribing: false,
       recordingDuration: 0,
@@ -25,51 +17,81 @@ class VoiceService {
       interimText: '',
       error: null
     }
-  }
 
-  getWorker() {
-    if (!this.worker) {
-      this.worker = new Worker(new URL('./voice.worker.js', import.meta.url), {
-        type: 'module'
+    this.isStarting = false
+    this.lastToggleTime = 0
+    this.recordingStartTime = 0
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('toggle-voice-dictation', (e) => {
+        this.toggleDictation(e?.detail?.target)
       })
 
-      this.worker.onmessage = (event) => {
-        const { type, progress, file, text, error } = event.data || {}
-
-        if (type === 'download-progress') {
-          this.updateState({
-            downloadProgress: progress,
-            downloadFile: file || ''
-          })
-        } else if (type === 'download-ready' || type === 'download-complete') {
-          localStorage.setItem(STORAGE_KEY, 'true')
-          this.updateState({
-            isDownloaded: true,
-            isDownloading: false,
-            downloadProgress: 100,
-            downloadFile: ''
-          })
-        } else if (type === 'interim-complete') {
-          this.isInterimBusy = false
-          if (this.state.isRecording) {
-            this.updateState({ interimText: text || '' })
-            window.dispatchEvent(
-              new CustomEvent('voice-live-text', {
-                detail: { text: text || '', instanceId: this.state.activeInstanceId }
-              })
-            )
-          }
-        } else if (type === 'error') {
-          this.isInterimBusy = false
-          this.updateState({
-            isDownloading: false,
-            isTranscribing: false,
-            error: error || 'Voice processing error'
-          })
+      // Track cursor focus so Ctrl+Shift+V automatically knows where to type
+      document.addEventListener('focusin', (e) => {
+        if (e.target?.closest?.('.composer-container, .composer-textarea, .lumina-chat') || e.target?.classList?.contains('composer-textarea')) {
+          window.__luminaLastVoiceTarget = 'composer-voice'
+        } else if (e.target?.closest?.('.cm-editor, .cm-content, .editor-container')) {
+          window.__luminaLastVoiceTarget = 'editor-voice'
         }
+      }, true)
+    }
+  }
+
+  toggleDictation(targetHint = null) {
+    const now = Date.now()
+    if (now - this.lastToggleTime < 450) {
+      console.debug('[VoiceService] Ignoring rapid toggle request (debounced)')
+      return
+    }
+    this.lastToggleTime = now
+
+    // If currently starting, do not immediately stop
+    if (this.isStarting) {
+      console.debug('[VoiceService] Still starting, ignoring toggle')
+      return
+    }
+
+    if (this.state.isRecording) {
+      // Prevent stopping if recording was started just a split second ago
+      if (now - this.recordingStartTime < 500) {
+        console.debug('[VoiceService] Recording just started, ignoring toggle')
+        return
+      }
+
+      this.stopRecordingAndTranscribe().then((text) => {
+        if (text && text.trim().length > 0) {
+          window.dispatchEvent(
+            new CustomEvent('voice-insert-text', {
+              detail: { text: text.trim(), instanceId: this.state.activeInstanceId || 'editor-voice' }
+            })
+          )
+        }
+      })
+      return
+    }
+
+    if (this.state.isTranscribing) return
+
+    let target = targetHint
+    if (!target) {
+      const activeEl = typeof document !== 'undefined' ? document.activeElement : null
+      if (
+        activeEl?.closest?.('.composer-container, .composer-textarea, .lumina-chat') ||
+        activeEl?.classList?.contains?.('composer-textarea')
+      ) {
+        target = 'composer-voice'
+      } else if (activeEl?.closest?.('.cm-editor, .cm-content, .editor-container')) {
+        target = 'editor-voice'
+      } else if (typeof window !== 'undefined' && window.__luminaLastVoiceTarget) {
+        target = window.__luminaLastVoiceTarget
+      } else {
+        target = 'editor-voice'
       }
     }
-    return this.worker
+
+    this.setActiveInstance(target)
+    this.startRecording().catch((e) => console.error('[VoiceService] Toggle error:', e))
   }
 
   subscribe(listener) {
@@ -89,51 +111,20 @@ class VoiceService {
     this.updateState({ activeInstanceId: id })
   }
 
-  downloadModel() {
-    if (this.state.isDownloading) return
-    this.updateState({
-      isDownloading: true,
-      downloadProgress: 0,
-      downloadFile: '',
-      error: null
-    })
-
-    const worker = this.getWorker()
-    worker.postMessage({ type: 'download' })
-  }
-
-  async uninstallModel() {
-    if (this.state.isRecording) {
-      this.cancelRecording()
-    }
-    if (typeof window !== 'undefined' && 'caches' in window) {
-      try {
-        await caches.delete('transformers-cache')
-      } catch (e) {}
-    }
-    localStorage.removeItem(STORAGE_KEY)
-    if (this.worker) {
-      this.worker.terminate()
-      this.worker = null
-    }
-    this.updateState({
-      isDownloaded: false,
-      isDownloading: false,
-      downloadProgress: 0,
-      downloadFile: '',
-      interimText: '',
-      error: null
-    })
-  }
-
   async startRecording() {
-    if (this.state.isRecording || this.state.isTranscribing) return
-    if (!this.state.isDownloaded) {
-      this.downloadModel()
+    if (this.state.isRecording || this.state.isTranscribing || this.isStarting) return
+
+    const groqKey = typeof localStorage !== 'undefined' ? localStorage.getItem('lumina_groq_key') : null
+    if (!groqKey || !groqKey.trim()) {
+      this.updateState({
+        error: 'Please add your free Groq API key in Settings > Intelligence to enable instant voice dictation.'
+      })
       return
     }
 
+    this.isStarting = true
     try {
+      this.recordingStartTime = Date.now()
       this.updateState({
         isRecording: true,
         recordingDuration: 0,
@@ -150,28 +141,10 @@ class VoiceService {
       await this.recorder.start((level) => {
         this.updateState({ audioLevel: level })
       })
-
-      this.isInterimBusy = false
-      if (this.liveInterval) clearInterval(this.liveInterval)
-      this.liveInterval = setInterval(() => {
-        if (!this.state.isRecording || this.isInterimBusy) return
-        const pcm = this.recorder.getRecordedPCM()
-        if (!pcm || pcm.length < 12000) return
-        this.isInterimBusy = true
-        const worker = this.getWorker()
-        worker.postMessage({
-          type: 'transcribe-interim',
-          payload: { audio: pcm }
-        })
-      }, 1400)
     } catch (err) {
       if (this.timerInterval) {
         clearInterval(this.timerInterval)
         this.timerInterval = null
-      }
-      if (this.liveInterval) {
-        clearInterval(this.liveInterval)
-        this.liveInterval = null
       }
       this.updateState({
         isRecording: false,
@@ -181,6 +154,8 @@ class VoiceService {
         error: err?.message || 'Could not access microphone'
       })
       throw err
+    } finally {
+      this.isStarting = false
     }
   }
 
@@ -192,58 +167,46 @@ class VoiceService {
       this.timerInterval = null
     }
 
-    if (this.liveInterval) {
-      clearInterval(this.liveInterval)
-      this.liveInterval = null
-    }
-
-    this.isInterimBusy = false
     this.updateState({
       isRecording: false,
       isTranscribing: true,
-      audioLevel: 0,
-      interimText: ''
+      audioLevel: 0
     })
 
     try {
       const audioData = await this.recorder.stop()
-      if (!audioData || audioData.length === 0) {
+      if (!audioData || audioData.size === 0) {
         this.updateState({ isTranscribing: false })
         return null
       }
 
-      const worker = this.getWorker()
-      const reqId = ++this.activeRequestId
+      const durationMs = Date.now() - (this.recordingStartTime || 0)
+      if (durationMs < 400 || audioData.size < 2500) {
+        console.debug(`[VoiceService] Clip too short (${durationMs}ms, ${audioData.size}b), discarding`)
+        this.updateState({ isTranscribing: false, interimText: '', error: null })
+        return null
+      }
 
-      return new Promise((resolve, reject) => {
-        const handler = (event) => {
-          const { id, type, text, error } = event.data || {}
-          if (id === reqId) {
-            worker.removeEventListener('message', handler)
-            this.updateState({ isTranscribing: false })
-
-            if (type === 'transcribe-complete') {
-              resolve(text)
-            } else if (type === 'error') {
-              this.updateState({ error: error || 'Transcription failed' })
-              reject(new Error(error || 'Transcription failed'))
-            }
-          }
-        }
-
-        worker.addEventListener('message', handler)
-        worker.postMessage({
-          id: reqId,
-          type: 'transcribe',
-          payload: { audio: audioData }
+      const groqKey = typeof localStorage !== 'undefined' ? localStorage.getItem('lumina_groq_key') : null
+      if (!groqKey || !groqKey.trim()) {
+        this.updateState({
+          isTranscribing: false,
+          error: 'Please add your free Groq API key in Settings > Intelligence.'
         })
-      })
+        return null
+      }
+
+      console.log(`[VoiceService] Sending audio blob (${audioData.size} bytes) to Groq Whisper Large v3...`)
+      const text = await transcribeWithGroq(audioData, groqKey)
+      this.updateState({ isTranscribing: false, interimText: '', error: null })
+      return text || null
     } catch (err) {
+      console.error('[VoiceService] Groq transcription failed:', err)
       this.updateState({
         isTranscribing: false,
         error: err?.message || 'Transcription failed'
       })
-      throw err
+      return null
     }
   }
 
@@ -252,11 +215,6 @@ class VoiceService {
       clearInterval(this.timerInterval)
       this.timerInterval = null
     }
-    if (this.liveInterval) {
-      clearInterval(this.liveInterval)
-      this.liveInterval = null
-    }
-    this.isInterimBusy = false
     this.recorder.cancel()
     const currentInstanceId = this.state.activeInstanceId
     this.updateState({

@@ -9,10 +9,6 @@ export function useVoice() {
     return unsubscribe
   }, [])
 
-  const downloadModel = useCallback(() => {
-    voiceService.downloadModel()
-  }, [])
-
   const startRecording = useCallback(async () => {
     return voiceService.startRecording()
   }, [])
@@ -39,15 +35,9 @@ export function useVoice() {
     voiceService.setActiveInstance(id)
   }, [])
 
-  const uninstallModel = useCallback(async () => {
-    return voiceService.uninstallModel()
-  }, [])
-
   return {
     ...state,
     formattedDuration: formatDuration(state.recordingDuration),
-    downloadModel,
-    uninstallModel,
     startRecording,
     stopRecording,
     cancelRecording,

@@ -242,14 +242,28 @@ export const useKeyboardShortcuts = (shortcuts) => {
         }
       }
 
-      // Toggle Preview: Ctrl+\ or Ctrl+Shift+V
-      const triggerPreview = (isCmd && !e.shiftKey && isBackslash) || (isCmd && e.shiftKey && key === 'v')
+      // Toggle Preview: Ctrl+\
+      const triggerPreview = isCmd && !e.shiftKey && isBackslash
 
       if (triggerPreview) {
         if (shortcutsRef.current.onTogglePreview) {
           e.preventDefault()
           shortcutsRef.current.onTogglePreview()
         }
+      }
+
+      // Voice Dictation (Whisper / Groq): Ctrl+Shift+V
+      if (isCmd && e.shiftKey && key === 'v') {
+        e.preventDefault()
+        e.stopPropagation()
+        if (e.repeat) return
+        const now = Date.now()
+        if (window.__lastVoiceToggleDispatch && now - window.__lastVoiceToggleDispatch < 450) {
+          return
+        }
+        window.__lastVoiceToggleDispatch = now
+        window.dispatchEvent(new CustomEvent('toggle-voice-dictation'))
+        return
       }
       // Toggle Sidebar: Ctrl+B
       if (isCmd && !e.shiftKey && key === 'b') {

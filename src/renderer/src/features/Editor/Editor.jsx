@@ -203,6 +203,7 @@ const Editor = React.memo(
 
       const handleVoiceInsert = (e) => {
         if (!isActive || !realViewRef.current) return
+        if (e.detail?.instanceId && e.detail.instanceId !== 'editor-voice') return
         const text = e.detail?.text
         if (!text) return
         const view = realViewRef.current
