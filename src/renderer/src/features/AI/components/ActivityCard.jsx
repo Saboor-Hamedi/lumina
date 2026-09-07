@@ -29,6 +29,12 @@ export const ActivityCard = React.memo(({ rawContent, isStreaming = false }) => 
         parsed.push({ type: 'folder', target, isActive: true })
         continue
       }
+      if (line.includes('*Moving folder') || line.includes('📁 *Moving folder')) {
+        const m = line.match(/`([^`]+)`/)
+        const target = m ? m[1] : '...'
+        parsed.push({ type: 'folder', target, isActive: true })
+        continue
+      }
       if (line.includes('*Drafting') || line.includes('📝 *Drafting')) {
         const titleMatch = line.match(/`([^`]+)`/)
         const folderMatch = line.match(/in\s+([^\s.*]+)/i)
@@ -59,6 +65,26 @@ export const ActivityCard = React.memo(({ rawContent, isStreaming = false }) => 
         if (clean && !seen.has(`folder:${clean}`)) {
           seen.add(`folder:${clean}`)
           parsed.push({ type: 'folder', target: clean, action: 'create', isActive: false })
+        }
+        continue
+      }
+
+      if (line.toLowerCase().includes('moved folder')) {
+        let clean = line
+          .replace(/^[-*•\s📁]+/, '')
+          .replace(/moved folder/i, '')
+          .replace(/[`*]/g, '')
+          .replace(/\.$/, '')
+          .trim()
+        if (clean && !seen.has(`folder:${clean}`)) {
+          seen.add(`folder:${clean}`)
+          parsed.push({
+            type: 'folder',
+            target: clean,
+            rawText: line.replace(/^[-*•\s📁]+/, ''),
+            action: 'move',
+            isActive: false
+          })
         }
         continue
       }

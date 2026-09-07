@@ -9,6 +9,7 @@ import { moveFileTool } from './moveFile'
 import { createFolderTool } from './createFolder'
 import { renameFolderTool } from './renameFolder'
 import { deleteFolderTool } from './deleteFolder'
+import { moveFolderTool } from './moveFolder'
 import { checkFileTool } from './checkFile'
 import { clearFileTool } from './clearFile'
 
@@ -25,6 +26,7 @@ export const getAITools = (blockReadFile) => {
     createFolder: createFolderTool,
     renameFolder: renameFolderTool,
     deleteFolder: deleteFolderTool,
+    moveFolder: moveFolderTool,
     moveFile: moveFileTool
   }
 }

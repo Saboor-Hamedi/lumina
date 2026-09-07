@@ -2,7 +2,7 @@ import * as aiSdk from 'ai'
 
 export const createFileTool = aiSdk.tool({
   description:
-    'Create a new note or document in the workspace editor. If the destination folder does not exist, it will be automatically created. You can call createFile multiple times in a single turn to create all requested notes, expense logs, plans, and summaries at once.',
+    'Create a new note or document in the workspace. If the destination folder does not exist, it will be automatically created. You can call createFile multiple times in a single turn to create all requested notes, expense logs, plans, and summaries at once. Note: created files are saved silently in the workspace in the background and are NOT opened as tabs.',
   inputSchema: aiSdk.jsonSchema({
     type: 'object',
     properties: {
@@ -74,14 +74,6 @@ export const createFileTool = aiSdk.tool({
         })
       )
 
-      if (cleanFolder) {
-        window.dispatchEvent(
-          new CustomEvent('reveal-folder-in-explorer', {
-            detail: { folderId: cleanFolder }
-          })
-        )
-      }
-
       const headers = (content.match(/^#{1,3}\s+(.+)$/gm) || []).map((h) =>
         h.replace(/^#{1,3}\s+/, '')
       )
@@ -101,7 +93,7 @@ export const createFileTool = aiSdk.tool({
         topics: headers.slice(0, 8),
         wikilinks: wikilinks.slice(0, 10),
         summary: `📝 Created [[${targetSnippet.title}]]${folderContext}`,
-        instruction_to_ai: `File "${targetSnippet.title}" was created${folderContext} and opened in the editor. If additional files, plans, expenses, or summaries were requested, continue calling createFile for each remaining file now. Once all files are created, provide a rich, structured feedback walkthrough in chat.`
+        instruction_to_ai: `File "${targetSnippet.title}" was created${folderContext} in the workspace in the background. It is NOT opened as a tab. Do not call openFile. If additional files, plans, expenses, or summaries were requested, continue calling createFile for each remaining file now. Once all files are created, provide a rich, structured feedback walkthrough in chat.`
       }
     } catch (err) {
       return { success: false, error: err.message || 'Failed to create file' }

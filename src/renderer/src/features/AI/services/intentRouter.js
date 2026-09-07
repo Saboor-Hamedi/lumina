@@ -23,13 +23,20 @@ export const detectUserIntent = (message, mentionedSnippets = [], activeSnippet 
 
   const hasMentions = mentionedSnippets && mentionedSnippets.length > 0
   const clearPatterns = /\b(clear|empty|wipe|erase|reset)\b/i
-  const renamePatterns = /\b(rename|change name of|make|set)\b[\s\S]*\b(folder|folders|directory|file|files|note|notes|lowercase|uppercase)\b/i
-  const movePatterns = /\b(move|put|place|transfer|relocate)\b[\s\S]*\b(folder|directory|root|into|to)\b/i
-  const organizePatterns = /\b(organize|sort|group|categorize|arrange)\b[\s\S]*\b(notes|files|workspace|folders)\b/i
-  const vaultSummaryPatterns = /\b(summary of (my |the )?(vault|workspace|projects?|notes)|summarize (my |the )?(vault|workspace|projects?|everything)|create (a )?summary|generate (a )?(vault |workspace )?summary|vault summary|workspace dashboard|vault overview)\b/i
-  const planScaffoldPatterns = /\b(create|make|build|draft|generate|set up|scaffold|design)\b[\s\S]*\b(plan|structure|architecture|roadmap|curriculum|tracker|budget|expenses?|spend|spending|rupiah|trip|travel|itinerary|business|study|coding|cloud|devops|finance|daily log|workflow)\b/i
-  const compoundWorkflowPatterns = /\b(folder|directory)\b[\s\S]*\b(files?|notes?|plan|expenses?|today|tomorrow|summary|graph)\b/i
-  const createFolderPatterns = /\b(create|make|add|new)\b[\s\S]*\b(folder|directory)\b/i
+  const renamePatterns =
+    /\b(rename|change name of)\b[^.!?\n]{0,80}\b(folder|folders|directory|file|files|note|notes|lowercase|uppercase)\b/i
+  const movePatterns =
+    /\b(move|put|place|transfer|relocate)\b[^.!?\n]{0,80}\b(folder|directory|root|into|to)\b/i
+  const organizePatterns =
+    /\b(organize|sort|group|categorize|arrange)\b[^.!?\n]{0,80}\b(notes|files|workspace|folders)\b/i
+  const vaultSummaryPatterns =
+    /\b(summary of (my |the )?(vault|workspace|projects?|notes)|summarize (my |the )?(vault|workspace|projects?|everything)|create (a )?summary|generate (a )?(vault |workspace )?summary|vault summary|workspace dashboard|vault overview)\b/i
+  const planScaffoldPatterns =
+    /\b(create|make|build|draft|generate|set up|scaffold|design)\b[^.!?\n]{0,80}\b(plan|structure|architecture|roadmap|curriculum|tracker|budget|expenses?|spend|spending|rupiah|trip|travel|itinerary|business|study|coding|cloud|devops|finance|daily log|workflow)\b/i
+  const compoundWorkflowPatterns =
+    /\b(folder|directory)\b[^.!?\n]{0,80}\b(files?|notes?|plan|expenses?|today|tomorrow|summary|graph)\b/i
+  const createFolderPatterns =
+    /\b(create|make|add|new)\b[^.!?\n]{0,80}\b(folder|directory)\b/i
   const editVerbs =
     /\b(edit|change|replace|modify|update|fix|refactor|rewrite|remove|delete|strip|clean|clean up|deduplicate|dedup|prune|trim|simplify|correct|format)\b/i
   const writeVerbs = /\b(write|add|append|insert|put|include|compose)\b/i
@@ -38,7 +45,8 @@ export const detectUserIntent = (message, mentionedSnippets = [], activeSnippet 
   const newNotePatterns =
     /\b(write a draft|write a note|create a note|create a file|make a file|write topic|comprehensive note on|write about)\b/i
 
-  const linkPatterns = /\b(link|connect|cross-link|wikilink|reference)\b[\s\S]*\b(together|both|notes?|files?|them|each other|purchases?|expenses?|all)\b|^link\b/i
+  const linkPatterns =
+    /\b(link|connect|cross-link|wikilink|reference)\b[^.!?\n]{0,80}\b(together|both|notes?|files?|them|each other|purchases?|expenses?|all)\b|^link\b/i
 
   if (linkPatterns.test(clean)) {
     return IntentCategory.TARGETED_EDIT

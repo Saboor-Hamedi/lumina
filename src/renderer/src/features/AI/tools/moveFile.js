@@ -140,11 +140,8 @@ export const moveFileTool = aiSdk.tool({
         await vs.loadVault()
       }
 
-      if (vs.setSelectedSnippet) {
+      if (vs.selectedSnippet?.id === finalSnippet.id && vs.setSelectedSnippet) {
         vs.setSelectedSnippet(finalSnippet)
-      }
-      if (vs.setActiveTabId) {
-        vs.setActiveTabId(finalSnippet.id)
       }
 
       window.dispatchEvent(
@@ -160,7 +157,7 @@ export const moveFileTool = aiSdk.tool({
         title: finalSnippet.title,
         folder: targetFolder,
         summary: `Moved **${finalSnippet.title}** to ${destName}.`,
-        instruction_to_ai: `Note "${finalSnippet.title}" was moved to ${destName} successfully. Inform the user in a short and friendly sentence.`
+        instruction_to_ai: `Note "${finalSnippet.title}" was moved to ${destName} successfully in the background without opening tabs. Inform the user concisely.`
       }
     } catch (err) {
       return { success: false, error: err.message || 'Failed to move file' }

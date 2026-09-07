@@ -25,13 +25,20 @@ export const getReadFileTool = (blockReadFile) => {
       }
       if (!target) return { success: false, error: `File "${title}" not found.` }
 
-      const currentCode =
+      const rawCode =
         vs.drafts?.[target.id] !== undefined ? vs.drafts[target.id] : target.code || ''
+      const MAX_READ_CHARS = 25000
+      const isTruncated = rawCode.length > MAX_READ_CHARS
+      const safeCode = isTruncated
+        ? rawCode.slice(0, MAX_READ_CHARS) +
+          `\n\n*(Content truncated for performance: showing first 25,000 of ${rawCode.length} characters. Use sectionHeader or targeted queries to read or update specific parts.)*`
+        : rawCode
+
       return {
         success: true,
         title: target.title,
-        content: currentCode,
-        writtenContent: `### 📄 ${target.title}\n\n${currentCode}`,
+        content: safeCode,
+        writtenContent: `### 📄 ${target.title}\n\n${safeCode}`,
         instruction_to_ai:
           'File read successfully. You MUST now respond to the user and answer based on this content.'
       }
