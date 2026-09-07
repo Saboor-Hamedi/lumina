@@ -57,7 +57,7 @@ const TitleBar = ({ onToggleAIChat }) => {
             {isLeftSidebarOpen ? <PanelLeftClose size={15} /> : <PanelLeftOpen size={15} />}
           </button>
         </ToolTip>
-        <div className="app-logo-wrapper" style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+        <div className="app-logo-wrapper" style={{ display: 'flex', alignItems: 'center', position: 'relative', flexShrink: 0 }}>
           <div className="app-logo">
             <div
               style={{

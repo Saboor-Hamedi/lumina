@@ -161,12 +161,14 @@
   display: flex;
   align-items: center;
   height: 100%;
+  flex-shrink: 0;
   -webkit-app-region: no-drag;
 }
 
 .accent-titlebar-btn {
   width: 32px;
   height: 100%;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -184,6 +186,7 @@
 .accent-titlebar-swatch {
   width: 14px;
   height: 14px;
+  flex-shrink: 0;
   border-radius: 50%;
   border: 1.5px solid rgba(255, 255, 255, 0.35);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);

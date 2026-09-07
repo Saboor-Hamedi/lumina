@@ -53,10 +53,10 @@ export function showDomTooltip(targetEl, text, position = 'top') {
 
   if (isTop) {
     bottomStyle = `${Math.round(window.innerHeight - rect.top + gap)}px`
-    arrowPos.bottom = '-4px'
+    arrowPos.bottom = '-3px'
   } else if (isBottom) {
     topStyle = `${Math.round(rect.bottom + gap)}px`
-    arrowPos.top = '-4px'
+    arrowPos.top = '-3px'
   }
 
   const elemCenterX = rect.left + rect.width / 2
@@ -65,25 +65,22 @@ export function showDomTooltip(targetEl, text, position = 'top') {
     topStyle = `${Math.round(rect.top + rect.height / 2)}px`
     rightStyle = `${Math.round(window.innerWidth - rect.left + gap)}px`
     transformStyle = 'translateY(-50%)'
-    arrowPos = { right: '-4px', top: '50%', marginTop: '-3px' }
+    arrowPos = { right: '-3px', top: '50%', marginTop: '-3px' }
   } else if (isRight) {
     topStyle = `${Math.round(rect.top + rect.height / 2)}px`
     leftStyle = `${Math.round(rect.right + gap)}px`
     transformStyle = 'translateY(-50%)'
-    arrowPos = { left: '-4px', top: '50%', marginTop: '-3px' }
+    arrowPos = { left: '-3px', top: '50%', marginTop: '-3px' }
   } else {
-    // Horizontal alignment for Top & Bottom tooltips
-    if (elemCenterX > window.innerWidth - 130) {
-      const rightPad = Math.max(8, window.innerWidth - rect.right)
-      rightStyle = `${Math.round(rightPad)}px`
+    if (elemCenterX > window.innerWidth - 45) {
+      rightStyle = '8px'
       transformStyle = 'none'
-      const knobRight = Math.max(10, Math.round(rect.right - elemCenterX + 8))
+      const knobRight = Math.max(8, Math.min(24, Math.round(window.innerWidth - elemCenterX - 8)))
       arrowPos.right = `${knobRight}px`
-    } else if (elemCenterX < 130) {
-      const leftPad = Math.max(8, rect.left)
-      leftStyle = `${Math.round(leftPad)}px`
+    } else if (elemCenterX < 45) {
+      leftStyle = '8px'
       transformStyle = 'none'
-      const knobLeft = Math.max(10, Math.round(elemCenterX - rect.left + 8))
+      const knobLeft = Math.max(8, Math.min(24, Math.round(elemCenterX - 8)))
       arrowPos.left = `${knobLeft}px`
     } else {
       leftStyle = `${Math.round(elemCenterX)}px`

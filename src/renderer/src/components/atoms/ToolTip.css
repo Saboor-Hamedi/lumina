@@ -76,6 +76,7 @@
   background: var(--bg-card, #18181f);
   border: none;
   transform: rotate(45deg);
+  pointer-events: none;
 }
 
 /* Top Tooltip (Arrow at bottom pointing down) */
