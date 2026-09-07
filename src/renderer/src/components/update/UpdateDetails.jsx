@@ -69,19 +69,22 @@ const UpdateDetails = () => {
   const rawNotes =
     !isGenericNote ? updateInfo.releaseNotes :
     `New
-- Smooth Curtain Sidebars: Resizing or closing sidebars now feels like a smooth sliding curtain. Your notes, chat, and tabs stay rock-solid in place instead of being squished or pushed off-screen.
-- Quick Escape Key: Press the Escape key anytime to instantly close the update window and popovers.
+- Mathematical Formulas (KaTeX): Write beautiful mathematical equations in your notes with block ($$...$$) and inline ($...$) syntax with instant rendering.
+- Clean Code Blocks: Enjoy seamless syntax-highlighted code blocks with one-click copy and copy-as-image options.
+- Smooth Curtain Sidebars: Resizing or closing sidebars feels like a smooth sliding curtain without squishing your notes or tabs.
 
 Improved
-- Roomy AI Chat Box: Made the chat box taller and much more comfortable to type in, with larger readable text and plenty of breathing room.
-- Subtle & Clean Footer: Replaced harsh, bright borders and buttons in the AI composer with a subtle, unified design that stays out of your way.
-- Built-In Note Templates: All starter templates are now kept neatly inside the app, so your workspace stays clean without unwanted template files appearing on your disk.
-- Effortless Window Resizing: Enjoy instant, super-fast sidebar dragging with zero stutter or lag.
+- Unified Code Block Background: Active lines maintain the code block's seamless background without jarring color splits or border artifacts.
+- Crisp Code Selection: Double-clicking and selecting code is now single-layered and crisp, preserving your syntax highlight colors without ghost shadows or white halos.
+- Responsive Small-Screen Margins: The editor maintains comfortable horizontal margins on compact screens when sidebars are open.
+- Refined Learning Tracker: Cleaned up the "Mark as Learned" button styling with an accent checkmark and subtle borders.
+- Roomy AI Chat Box: Made the chat composer taller and more comfortable to type in with clean, borderless mode pills.
 
 Fixed
-- Right Sidebar Moving Out: Fixed an issue where the right panel pushed your text and tabs into the screen edge instead of smoothly sliding.
-- Cluttered Daily Notes: Daily Notes now opens cleanly without downloading extra template files into your note list.
-- Unwanted Horizontal Scrollbars: Removed distracting horizontal scrollbars from the bottom of your sidebars.`
+- Math Block Component Error: Resolved an issue where KaTeX formula blocks could throw a sliceDoc exception in the editor.
+- Code Block Dual Backgrounds: Eliminated mismatched active-line background highlights and indicator lines inside code blocks.
+- Blurry Selection Shadows: Fixed double-selection ghosting and white text glow when selecting words in code blocks.
+- Quick Escape Key: Press the Escape key anytime to instantly close the update window and popovers.`
   
   const parseNotes = (text) => {
     const categories = []

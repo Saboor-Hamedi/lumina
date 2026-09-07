@@ -60,12 +60,8 @@ export function LearnedButton({ snippet }) {
       <button
         onClick={toggleLearned}
         style={{
-          background: isLearned
-            ? 'rgba(34, 197, 94, 0.08)'
-            : 'transparent',
-          border: isLearned
-            ? '1px solid rgba(34, 197, 94, 0.25)'
-            : '1px solid transparent',
+          background: 'transparent',
+          border: '1px solid transparent',
           borderRadius: '5px',
           height: '21px',
           display: 'inline-flex',
@@ -80,50 +76,20 @@ export function LearnedButton({ snippet }) {
           fontWeight: isLearned ? 500 : 400
         }}
         onMouseEnter={(e) => {
-          if (!isLearned) {
-            e.currentTarget.style.color = 'var(--text-main, #f8fafc)'
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'
-            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)'
-          }
+          e.currentTarget.style.color = 'var(--text-main, #f8fafc)'
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'
+          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)'
         }}
         onMouseLeave={(e) => {
-          if (!isLearned) {
-            e.currentTarget.style.color = 'var(--text-muted, #94a3b8)'
-            e.currentTarget.style.background = 'transparent'
-            e.currentTarget.style.borderColor = 'transparent'
-          }
+          e.currentTarget.style.color = isLearned ? 'var(--text-main, #f8fafc)' : 'var(--text-muted, #94a3b8)'
+          e.currentTarget.style.background = 'transparent'
+          e.currentTarget.style.borderColor = 'transparent'
         }}
       >
         {isLearned ? (
-          <span
-            style={{
-              width: '12px',
-              height: '12px',
-              borderRadius: '50%',
-              background: '#22c55e',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0
-            }}
-          >
-            <Check size={8} strokeWidth={3.5} color="#000" />
-          </span>
+          <Check size={12} strokeWidth={2.5} color="var(--text-accent)" style={{ flexShrink: 0 }} />
         ) : (
-          <span
-            style={{
-              width: '12px',
-              height: '12px',
-              borderRadius: '50%',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0
-            }}
-          >
-            <Check size={7} strokeWidth={2.5} style={{ opacity: 0.4 }} />
-          </span>
+          <Check size={12} strokeWidth={2.5} style={{ opacity: 0.4, flexShrink: 0 }} />
         )}
         <span>{isLearned ? 'Learned' : 'Learn'}</span>
       </button>

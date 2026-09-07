@@ -299,6 +299,10 @@
 .cm-editor:has(.cm-selectionBackground) .cm-cursorLayer {
   opacity: 0 !important;
 }
+.markdown-editor:has(.cm-selectionBackground) .cm-cursor,
+.cm-editor:has(.cm-selectionBackground) .cm-cursor {
+  display: none !important;
+}
 
 /* Sharp cursor */
 [data-caret-style="sharp"] .cm-cursor,

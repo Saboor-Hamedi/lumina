@@ -137,7 +137,7 @@ function buildKaTeXDecorations(state) {
       const lineFrom = state.doc.lineAt(item.from)
       const lineTo = state.doc.lineAt(item.to)
       const lineText = lineFrom.text.trim()
-      const mathText = state.doc.sliceDoc(item.from, item.to).trim()
+      const mathText = state.sliceDoc(item.from, item.to).trim()
       const isSoloLine = lineText === mathText
 
       if (isSoloLine || lineFrom.number !== lineTo.number) {

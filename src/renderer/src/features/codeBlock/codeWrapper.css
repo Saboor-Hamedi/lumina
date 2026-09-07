@@ -86,7 +86,23 @@
 }
 
 .cm-line.cm-atomic-fenced-code.cm-activeLine {
-  background-color: var(--bg-active, #2a2a2a) !important;
+  background: rgba(0, 0, 0, 0.15) !important;
+  background-color: rgba(0, 0, 0, 0.15) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+html[data-use-active-line-border="true"] .cm-line.cm-atomic-fenced-code.cm-activeLine,
+html[data-use-active-line-border="true"] .cm-line.cm-atomic-fenced-code {
+  box-shadow: none !important;
+}
+
+/* Prevent native selection from doubling over CodeMirror's selection layer and eliminate ghosting/white halo */
+.cm-line.cm-atomic-fenced-code::selection,
+.cm-line.cm-atomic-fenced-code *::selection {
+  background: transparent !important;
+  color: inherit !important;
+  text-shadow: none !important;
 }
 
 /* Opening fence styling */
@@ -117,9 +133,12 @@
   padding: 2px 10px !important;
 }
 
-/* When active, highlight the closing fence text */
+/* When active, highlight the closing fence text while maintaining consistent background */
 .cm-line.cm-atomic-fenced-code:has(+ :not(.cm-atomic-fenced-code)).cm-activeLine,
 .cm-line.cm-atomic-fenced-code:last-child.cm-activeLine {
+  background: rgba(0, 0, 0, 0.15) !important;
+  background-color: rgba(0, 0, 0, 0.15) !important;
+  box-shadow: none !important;
   color: var(--text-muted, #999) !important;
 }
 
@@ -186,7 +205,10 @@
 }
 
 [data-theme='light'] .cm-line.cm-atomic-fenced-code.cm-activeLine {
-  background-color: #f0f0f0 !important;
+  background: #f7f7f7 !important;
+  background-color: #f7f7f7 !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 [data-theme='light'] .cm-line.cm-atomic-fenced-code:has(+ :not(.cm-atomic-fenced-code)),
@@ -194,6 +216,13 @@
   background: #f7f7f7 !important;
   border-color: #e5e7eb !important;
   color: #94a3b8 !important;
+}
+
+[data-theme='light'] .cm-line.cm-atomic-fenced-code:has(+ :not(.cm-atomic-fenced-code)).cm-activeLine,
+[data-theme='light'] .cm-line.cm-atomic-fenced-code:last-child.cm-activeLine {
+  background: #f7f7f7 !important;
+  background-color: #f7f7f7 !important;
+  box-shadow: none !important;
 }
 
 [data-theme='light'] .cm-line.cm-atomic-fenced-code span[class*='string'] {
