@@ -9,22 +9,36 @@
   position: relative;
 }
 
-/* Sidebar Styling */
 .docs-sidebar {
-  width: 270px;
-  min-width: 240px;
-  background: var(--bg-sidebar, #18181b);
-  border-right: 1px solid var(--border-dim);
+  width: 260px;
+  background: var(--bg-sidebar, #121218);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
-  backdrop-filter: blur(10px);
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  bottom: 12px;
+  height: calc(100% - 24px);
+  z-index: 50;
+  backdrop-filter: blur(12px);
+}
+
+.docs-sidebar.closed {
+  transform: translateX(calc(-100% - 20px));
+  opacity: 0;
+  pointer-events: none;
 }
 
 .docs-sidebar-header {
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border-subtle);
-  background: var(--bg-panel, rgba(255, 255, 255, 0.02));
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: transparent;
 }
 
 .docs-search-wrapper {
@@ -61,47 +75,46 @@
 
 .docs-search-input {
   width: 100%;
-  background: var(--bg-app, #121214);
-  border: 1px solid var(--border-dim);
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
   color: var(--text-main);
-  padding: 6px 28px 6px 30px;
+  padding: 6px 26px 6px 28px;
   font-size: 12px;
   outline: none;
   transition: all 0.2s ease;
 }
 
 .docs-search-input:focus {
-  border-color: var(--text-accent);
-  box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb, 64, 186, 250), 0.15);
+  border-color: rgba(64, 186, 250, 0.5);
+  box-shadow: 0 0 0 2px rgba(64, 186, 250, 0.15);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .docs-sidebar-scrollable {
   flex: 1;
   overflow-y: auto;
-  padding: 12px 0;
+  padding: 8px;
 }
 
-/* Groups */
 .docs-sidebar-group {
-  margin-bottom: 14px;
+  margin-bottom: 6px;
 }
 
 .docs-sidebar-group-title {
   font-size: 10px;
   text-transform: uppercase;
   color: var(--text-faint, rgba(255, 255, 255, 0.4));
-  padding: 6px 16px 4px 16px;
+  padding: 4px 8px 2px 8px;
   font-weight: 700;
   letter-spacing: 0.8px;
   display: flex;
   align-items: center;
 }
 
-/* Interactive Folder Dropdown Item */
 .docs-sidebar-folder {
-  height: 30px;
-  padding: 0 16px;
+  height: 28px;
+  padding: 0 8px;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-main);
@@ -111,11 +124,11 @@
   justify-content: space-between;
   transition: all 0.12s ease;
   user-select: none;
-  border-left: 3px solid transparent;
+  border-radius: 6px;
 }
 
 .docs-sidebar-folder:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--text-accent);
 }
 
@@ -128,10 +141,9 @@
   transform: rotate(-90deg);
 }
 
-/* Nav Item (Document Link) */
 .docs-sidebar-item {
   height: 28px;
-  padding: 0 16px;
+  padding: 0 8px;
   font-size: 12px;
   font-weight: 500;
   color: var(--text-muted);
@@ -140,28 +152,27 @@
   align-items: center;
   transition: all 0.12s ease;
   position: relative;
-  border-left: 3px solid transparent;
+  border-radius: 6px;
   user-select: none;
+  margin: 1px 0;
 }
 
 .docs-sidebar-subitem {
-  padding-left: 30px !important;
+  padding-left: 22px !important;
   font-size: 11.5px !important;
 }
 
 .docs-sidebar-item:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--text-main);
 }
 
 .docs-sidebar-item.active {
-  background: var(--bg-active, rgba(64, 186, 250, 0.1));
-  color: var(--text-accent);
+  background: rgba(64, 186, 250, 0.12);
+  color: var(--text-accent, #40bafa);
   font-weight: 600;
-  border-left-color: var(--text-accent);
 }
 
-/* Sub-items Container with subtle left tree line */
 .docs-sidebar-subitems-wrap {
   position: relative;
   margin-top: 1px;
@@ -170,14 +181,13 @@
 .docs-sidebar-subitems-wrap::before {
   content: '';
   position: absolute;
-  left: 21px;
+  left: 14px;
   top: 4px;
   bottom: 6px;
   width: 1px;
   background: var(--border-subtle, rgba(255, 255, 255, 0.08));
 }
 
-/* Content Pane */
 .docs-content {
   flex: 1;
   overflow-y: auto;
@@ -185,6 +195,20 @@
   background: var(--bg-app);
   display: flex;
   flex-direction: column;
+  position: relative;
+  height: 100%;
+}
+
+.docs-container .preview-body {
+  padding: 32px 32px 48px 32px !important;
+}
+
+.docs-container .editor-canvas-wrap {
+  padding-top: 16px !important;
+}
+
+.docs-container .cm-content {
+  padding-top: 12px !important;
 }
 
 /* Document Footer Navigation (Next / Previous Chapter Pagination) */

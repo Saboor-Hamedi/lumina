@@ -7,8 +7,7 @@ import { PreviewCommandPalette } from '../commandpalette/PreviewCommandPalette'
 import '../preview/preview.css'
 import './Documentation.css'
 
-// Use Vite's glob import to read all markdown files in brain/ directory as raw strings
-const markdownFiles = import.meta.glob(['../../../../../brain/**/*.md', '../../../../../brain/*.md'], {
+const markdownFiles = import.meta.glob('../../../../../brain/**/*.md', {
   query: '?raw',
   eager: true,
   import: 'default'
@@ -162,10 +161,11 @@ const Documentation = ({ isOpen, onClose }) => {
   // Ordered list of docs for next/prev navigation
   const sortedDocList = useMemo(() => {
     const list = []
-    const ignored = ['refrences.md', 'lumina.md', 'scope.md']
+    const ignored = ['refrences.md', 'lumina.md', 'scope.md', 'purpose.md']
     Object.keys(docs)
       .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
       .forEach((path) => {
+        if (path.startsWith('specs/')) return
         const filename = path.split('/').pop()
         if (!ignored.includes(filename.toLowerCase())) {
           list.push(path)
@@ -373,9 +373,12 @@ const Documentation = ({ isOpen, onClose }) => {
         />
 
         <div className="docs-container">
-          {isSidebarOpen && (
-            <DocSidebar docs={docs} selectedDoc={selectedDoc} setSelectedDoc={setSelectedDoc} />
-          )}
+          <DocSidebar
+            docs={docs}
+            selectedDoc={selectedDoc}
+            setSelectedDoc={setSelectedDoc}
+            isOpen={isSidebarOpen}
+          />
 
           <DocsContent
             content={content}

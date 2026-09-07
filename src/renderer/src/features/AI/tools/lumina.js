@@ -626,6 +626,17 @@ export const useAIStore = create((set, get) => {
         console.warn('[AIStore] File mention detection failed:', err)
       }
 
+      const requestedBrainDocs = []
+      try {
+        const { retrieveRelevantKnowledge } = await import('../services/brainKnowledge')
+        const matches = retrieveRelevantKnowledge(message || '', 2)
+        if (matches && matches.length > 0) {
+          requestedBrainDocs.push(...matches)
+        }
+      } catch (err) {
+        console.warn('[AIStore] Knowledge retrieval failed:', err)
+      }
+
       const assistantMsg = {
         id: crypto.randomUUID(),
         role: 'assistant',
@@ -745,6 +756,7 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
 
 **TOOLS AVAILABLE** (use these for file operations):
 - 'readFile' — read a workspace file by title (only use when you do NOT already have the file content)
+- 'readBrainFile' — retrieve built-in product documentation, guides, shortcuts, and feature details about Lumina
 - 'appendToFile' — add new content to the END of an existing file
 - 'createFile' — create a brand new workspace file (provide title + content, optional folder). Created files are saved in the background and DO NOT open tabs.
 - 'updateFile' — targeted update to an existing note. If the note is already open in the editor tab, it updates directly on that open tab; if closed, it updates silently in the background without opening a tab.
@@ -798,7 +810,11 @@ ${vaultAccessNote}`
             '\n\n**🎯 PRIMARY TARGET FILES (@-MENTIONED BY USER — YOUR HIGHEST FOCUS):**\n'
           mentionedSnippets.forEach((snip) => {
             const currentContent =
-              vs.drafts?.[snip.id] !== undefined ? vs.drafts[snip.id] : snip.code || ''
+              snip.isBrain
+                ? snip.code
+                : vs.drafts?.[snip.id] !== undefined
+                  ? vs.drafts[snip.id]
+                  : snip.code || ''
             systemPrompt += `[Target Note: ${snip.title}]\n${truncateForContext(currentContent, 25000)}\n\n`
           })
           systemPrompt +=
@@ -858,6 +874,27 @@ ${vaultAccessNote}`
             systemPrompt += `[${i + 1}] source: ${ctx.file}\n${ctx.text}\n\n`
           })
         }
+
+        try {
+          const { getBrainSummaryList } = await import('../services/brainKnowledge')
+          const topics = getBrainSummaryList()
+          systemPrompt +=
+            `\n\n**LUMINA BUILT-IN KNOWLEDGE BASE (RAG)**:\n` +
+            `You have comprehensive built-in knowledge about Lumina (product vision, philosophy, keyboard shortcuts, markdown features like mermaid diagrams, LaTeX math, tables, callouts, and design specifications).\n` +
+            `Documented Topics Available in Knowledge Base:\n${topics}\n` +
+            `CRITICAL PRESENTATION RULES:\n` +
+            `- This is your native knowledge base. NEVER mention internal backend folders, paths like "brain/", "backend directory", or filesystem locations to the user.\n` +
+            `- When the user asks about Lumina (e.g., "tell me about lumina documentation", "how do shortcuts work?", "what is lumina's vision?"), synthesize the information directly, warmly, and authoritatively from a user perspective.\n`
+
+          if (requestedBrainDocs.length > 0) {
+            systemPrompt += '\n\n**Retrieved Documentation Context (ALREADY PROVIDED FOR IMMEDIATE USE):**\n'
+            requestedBrainDocs.forEach((b) => {
+              systemPrompt += `--- [Topic: ${b.name}] ---\n${truncateForContext(b.content, 25000)}\n\n`
+            })
+            systemPrompt +=
+              'CRITICAL: The reference documentation above is already provided. Answer the user\'s question immediately and naturally from a user perspective without mentioning file names, paths, or backend folders.\n'
+          }
+        } catch (_) {}
 
         if (isExecutionMode) {
         systemPrompt +=
@@ -1087,6 +1124,8 @@ ${vaultAccessNote}`
                   }
                 } else if (chunk.toolName === 'clearFile') {
                   activeToolStatus = `🧹 *Clearing \`${args.title || 'note'}\`...*`
+                } else if (chunk.toolName === 'readBrainFile') {
+                  activeToolStatus = `📖 *Checking documentation...*`
                 } else if (chunk.toolName === 'readFile') {
                   activeToolStatus = `📄 *Reading \`${args.title || 'note'}\`...*`
                 } else if (chunk.toolName === 'openFile') {

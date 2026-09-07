@@ -12,11 +12,13 @@ import { deleteFolderTool } from './deleteFolder'
 import { moveFolderTool } from './moveFolder'
 import { checkFileTool } from './checkFile'
 import { clearFileTool } from './clearFile'
+import { readBrainFileTool } from './readBrainFile'
 
 export const getAITools = (blockReadFile) => {
   return {
     createFile: createFileTool,
     readFile: getReadFileTool(blockReadFile),
+    readBrainFile: readBrainFileTool,
     clearFile: clearFileTool,
     openFile: openFileTool,
     updateFile: updateFileTool,

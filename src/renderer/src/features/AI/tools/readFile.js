@@ -39,7 +39,27 @@ export const getReadFileTool = (blockReadFile) => {
         })
       }
 
-      if (!target) return { success: false, error: `File "${title}" not found.` }
+      if (!target) {
+        const { getBrainFile } = await import('../services/brainKnowledge')
+        const brainDoc = getBrainFile(title)
+        if (brainDoc) {
+          const rawCode = brainDoc.content || ''
+          const MAX_READ_CHARS = 25000
+          const isTruncated = rawCode.length > MAX_READ_CHARS
+          const safeCode = isTruncated
+            ? rawCode.slice(0, MAX_READ_CHARS) + `\n\n*(Content truncated for performance)*`
+            : rawCode
+          return {
+            success: true,
+            title: `brain/${brainDoc.path}`,
+            content: safeCode,
+            writtenContent: `### 🧠 brain/${brainDoc.path}\n\n${safeCode}`,
+            instruction_to_ai:
+              'Brain file read successfully. You MUST now respond to the user and answer based on this content.'
+          }
+        }
+        return { success: false, error: `File "${title}" not found.` }
+      }
 
       const rawCode =
         vs.drafts?.[target.id] !== undefined ? vs.drafts[target.id] : target.code || ''

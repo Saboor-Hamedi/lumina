@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react'
-import { FileText } from 'lucide-react'
+import React, { useEffect, useState, useMemo } from 'react'
+import { FileText, Brain } from 'lucide-react'
 import { useVaultStore } from '../../core/store/workspaceStore'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
-import './luminSlash.css' // We can reuse the same CSS structure
+import { getBrainDocuments } from './services/brainKnowledge'
+import './luminSlash.css'
 
 export const LuminaMention = ({ isOpen, filterText, onSelect, onClose }) => {
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -22,13 +23,29 @@ export const LuminaMention = ({ isOpen, filterText, onSelect, onClose }) => {
       : null
   })
 
-  // Filter snippets based on filterText (up to 5 results)
-  const filteredSnippets = snippets
-    .filter((snippet) => {
-      if (!snippet.title) return false
-      return snippet.title.toLowerCase().includes(filterText.toLowerCase())
+  const brainDocs = useMemo(() => getBrainDocuments(), [])
+
+  const allItems = useMemo(() => {
+    const list = [...(snippets || [])]
+    brainDocs.forEach((bd) => {
+      list.push({
+        id: bd.id,
+        title: bd.title,
+        name: bd.name,
+        code: bd.content,
+        isBrain: true
+      })
     })
-    .slice(0, 5)
+    return list
+  }, [snippets, brainDocs])
+
+  const filteredSnippets = allItems
+    .filter((item) => {
+      if (!item.title) return false
+      const query = filterText.toLowerCase()
+      return item.title.toLowerCase().includes(query) || (item.name && item.name.toLowerCase().includes(query))
+    })
+    .slice(0, 6)
 
   useEffect(() => {
     setSelectedIndex(0)
@@ -89,11 +106,17 @@ export const LuminaMention = ({ isOpen, filterText, onSelect, onClose }) => {
           onMouseEnter={() => setSelectedIndex(index)}
         >
           <div className="slash-icon">
-            <FileText size={14} />
+            {snippet.isBrain ? (
+              <Brain size={14} style={{ color: 'var(--text-accent)' }} />
+            ) : (
+              <FileText size={14} />
+            )}
           </div>
           <div className="slash-content">
             <span className="slash-label">{snippet.title}</span>
-            <span className="slash-desc">Includes full file content</span>
+            <span className="slash-desc">
+              {snippet.isBrain ? 'Lumina Documentation' : 'Includes full file content'}
+            </span>
           </div>
         </div>
       ))}
