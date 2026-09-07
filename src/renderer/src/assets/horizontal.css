@@ -67,7 +67,7 @@ hr {
   background: transparent !important;
   width: 100% !important;
   max-width: 280px !important;
-  margin: 16px auto !important;
+  margin: 0px auto !important;
   height: 20px !important;
   min-height: 20px !important;
   position: relative !important;
@@ -113,7 +113,6 @@ hr {
   height: 2px !important;
   background: linear-gradient(to right, transparent 0%, var(--text-accent) 25%, transparent 40%, transparent 60%, var(--text-accent) 75%, transparent 100%) !important;
   pointer-events: none !important; 
-  box-shadow: 0 0 8px rgba(var(--text-accent-rgb), 0.15);
   border: none !important;
 }
 
