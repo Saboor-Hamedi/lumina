@@ -76,9 +76,14 @@ const AppShell = () => {
         showToast(message, type, duration)
       }
     }
+    const handleClearToast = () => clearToast()
     window.addEventListener('show-toast', handleGlobalToast)
-    return () => window.removeEventListener('show-toast', handleGlobalToast)
-  }, [showToast])
+    window.addEventListener('clear-toast', handleClearToast)
+    return () => {
+      window.removeEventListener('show-toast', handleGlobalToast)
+      window.removeEventListener('clear-toast', handleClearToast)
+    }
+  }, [showToast, clearToast])
 
   useTypingSound()
   const [settingsInitialTab, setSettingsInitialTab] = useState('look-and-feel')

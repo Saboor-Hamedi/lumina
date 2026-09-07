@@ -14,11 +14,13 @@ import {
   ChevronRight,
   Palette,
   Check,
-  X
+  X,
+  Sparkles
 } from 'lucide-react'
 import { useVaultStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
 import { useShallow } from 'zustand/react/shallow'
+import { summarizeNotes } from '../../AI/services/summarizeNotes'
 
 
 
@@ -166,6 +168,14 @@ export function useContextMenu({ item, type, callbacks }) {
               window.api.openFile()
             }
             callbacks.onClose?.()
+          }
+        },
+        {
+          label: 'Summarize with Lumina',
+          icon: <Sparkles size={14} />,
+          onClick: () => {
+            callbacks.onClose?.()
+            summarizeNotes(item)
           }
         },
         {
