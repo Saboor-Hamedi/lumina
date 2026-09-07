@@ -49,6 +49,10 @@ class CodeBlockHeaderWidget extends WidgetType {
     this.lang = (lang || 'CODE').toUpperCase()
   }
 
+  get estimatedHeight() {
+    return 30
+  }
+
   eq(other) {
     return other.lang === this.lang
   }
@@ -245,6 +249,10 @@ class CodeBlockHeaderWidget extends WidgetType {
     }
 
     root.render(React.createElement(ActionsOverlay))
+
+    requestAnimationFrame(() => {
+      view.requestMeasure()
+    })
 
     return wrap
   }

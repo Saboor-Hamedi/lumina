@@ -57,7 +57,17 @@ hr {
 
 .cm-line.cm-atomic-hr,
 .cm-line:has(.cm-hr),
-.cm-line:has(hr),
+.cm-line:has(hr) {
+  border: none !important;
+  border-top: none !important;
+  padding: 0 !important;
+  background: transparent !important;
+  width: 100% !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+  color: transparent !important;
+}
+
 .chat-bubble hr,
 .lumina-chat hr,
 .inline-lumina-response-content hr {
@@ -129,8 +139,8 @@ hr {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  background: var(--bg-sidebar, var(--bg-editor, var(--bg-app))) !important;
-  padding: 0 12px !important;
+  background: transparent !important;
+  padding: 0 !important;
   font-size: 12px !important;
   opacity: 0.3 !important;
   pointer-events: none !important;

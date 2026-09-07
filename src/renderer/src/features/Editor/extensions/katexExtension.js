@@ -12,6 +12,10 @@ class KaTeXWidget extends WidgetType {
     this.to = to
   }
 
+  get estimatedHeight() {
+    return this.isBlock ? 60 : -1
+  }
+
   eq(other) {
     return other.latex === this.latex && other.isBlock === this.isBlock
   }
@@ -132,7 +136,9 @@ function buildKaTeXDecorations(state) {
     if (item.isBlock) {
       const lineFrom = state.doc.lineAt(item.from)
       const lineTo = state.doc.lineAt(item.to)
-      const isSoloLine = lineFrom.from === item.from && lineTo.to === item.to
+      const lineText = lineFrom.text.trim()
+      const mathText = state.doc.sliceDoc(item.from, item.to).trim()
+      const isSoloLine = lineText === mathText
 
       if (isSoloLine || lineFrom.number !== lineTo.number) {
         builder.add(
@@ -148,7 +154,7 @@ function buildKaTeXDecorations(state) {
           item.from,
           item.to,
           Decoration.replace({
-            widget: new KaTeXWidget(item.latex, true, item.from, item.to)
+            widget: new KaTeXWidget(item.latex, false, item.from, item.to)
           })
         )
       }
