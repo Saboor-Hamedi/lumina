@@ -535,7 +535,7 @@
   gap: 6px;
   flex: 1;
   overflow: hidden;
-  padding: 0 6px;
+  padding: 0 8px;
   height: 28px;
   margin: 1px 4px;
   border-radius: 6px;
@@ -647,7 +647,7 @@
 .folder-tree-main .hover-actions:not(.is-pinned),
 .tree-item .hover-actions:not(.is-pinned) {
   position: absolute;
-  right: 6px;
+  right: 8px;
   top: 50%;
   transform: translateY(-50%);
   display: flex;

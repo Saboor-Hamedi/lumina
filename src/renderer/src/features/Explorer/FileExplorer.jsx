@@ -539,7 +539,6 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
               padding: '2px 6px',
               borderRadius: '4px',
               background: 'transparent',
-              marginLeft: '5px',
               paddingLeft: '1px'
             }}
           >
