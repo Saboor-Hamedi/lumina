@@ -91,14 +91,6 @@ const Template = ({
         ref={containerRef}
         className={`template-modal-container${isMaximized ? ' maximized' : ''}`}
         onClick={(e) => e.stopPropagation()}
-        style={{
-          width: isMaximized ? '100vw' : '90vw',
-          height: isMaximized ? '100vh' : '85vh',
-          maxWidth: isMaximized ? 'none' : '860px',
-          maxHeight: isMaximized ? 'none' : '88vh',
-          transition: 'width 0.2s cubic-bezier(0.16, 1, 0.3, 1), height 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-radius 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-          borderRadius: isMaximized ? '0' : '12px'
-        }}
       >
         {/* Header */}
         <div

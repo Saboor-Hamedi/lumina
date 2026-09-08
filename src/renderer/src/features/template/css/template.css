@@ -1,9 +1,10 @@
 /* Template Modal Styles - Matches Documentation.jsx Architecture */
 .template-modal-container {
-  width: 90vw;
-  max-width: 860px;
-  height: 85vh;
-  max-height: 88vh;
+  width: 86vw;
+  max-width: 740px;
+  height: 76vh;
+  min-height: 480px;
+  max-height: 78vh;
   background: var(--bg-panel, #16161e);
   border: 1px solid var(--border-card, rgba(255, 255, 255, 0.1));
   border-radius: 12px;
@@ -15,6 +16,7 @@
   overflow: hidden;
   position: relative;
   animation: guideSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1), height 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-radius 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .template-modal-container.maximized {
@@ -50,6 +52,9 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 10.5px !important;
+  border-radius: 2px !important;
+  padding: 1.5px 6px !important;
 }
 
 .template-header-right {
@@ -568,6 +573,37 @@
 
 .template-preview-wrapper .preview-body::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.28);
+}
+
+/* Maximize constraints - Keeps reading width centered and constrained to 850px like Preview.jsx */
+.template-modal-container.maximized .template-container .preview-body {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+.template-modal-container.maximized .template-container .editor-scroller {
+  width: 100% !important;
+  max-width: 850px !important;
+  margin: 0 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+.template-modal-container.maximized .template-container .editor-canvas-wrap {
+  width: 100% !important;
+  max-width: 850px !important;
+  margin: 0 auto !important;
+  padding: 0 16px 40px 16px !important;
+}
+
+.template-modal-container.maximized .template-content-footer {
+  width: 100% !important;
+  max-width: 850px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  box-sizing: border-box !important;
 }
 
 /* Blank Note State */
