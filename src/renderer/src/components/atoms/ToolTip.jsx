@@ -1,4 +1,4 @@
-import React, { useState, useRef, cloneElement, useMemo } from 'react'
+import React, { useState, useRef, cloneElement, useMemo, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import './ToolTip.css'
 
@@ -13,6 +13,7 @@ const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
   const [isVisible, setIsVisible] = useState(false)
   const [coords, setCoords] = useState(null)
   const childRef = useRef(null)
+  const tooltipRef = useRef(null)
   const timeoutRef = useRef(null)
 
   const formattedContent = useMemo(() => {
@@ -99,7 +100,7 @@ const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
           arrowPos = { right: '-3px', top: '50%', marginTop: '-3px' }
         } else if (isRight) {
           const sidebarContainer = childRef.current.closest(
-            '.shell-sidebar-left, aside, .app-sidebar, .sidebar, .sidebar-body, .sidebar-nav, .start-menu-panel, .start-menu-left, .file-explorer-sidebar, .left-sidebar, .explorer-panel'
+            '.shell-sidebar-left, aside, .app-sidebar, .sidebar, .sidebar-body, .sidebar-nav, .start-menu-panel, .start-menu-left, .file-explorer-sidebar, .left-sidebar, .explorer-panel, .unified-sidebar, .sidebar-scrollable-content, .start-menu-modal, .start-menu-body'
           )
           const effectiveRight = sidebarContainer
             ? sidebarContainer.getBoundingClientRect().right
@@ -124,25 +125,11 @@ const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
             arrowPos = { left: '-3px', top: '50%', marginTop: '-3px' }
           }
         } else {
-          // Standard top or bottom positioning with viewport edge protection:
-          // Estimate half-width buffer (170px for 320px max-width + margin)
-          const halfWidthBuffer = 170
-          if (elemCenterX + halfWidthBuffer > window.innerWidth) {
-            rightStyle = '12px'
-            transformStyle = 'none'
-            const knobRight = Math.max(8, Math.min(300, Math.round(window.innerWidth - elemCenterX - 12)))
-            arrowPos.right = `${knobRight}px`
-          } else if (elemCenterX - halfWidthBuffer < 0) {
-            leftStyle = '12px'
-            transformStyle = 'none'
-            const knobLeft = Math.max(8, Math.min(300, Math.round(elemCenterX - 12)))
-            arrowPos.left = `${knobLeft}px`
-          } else {
-            leftStyle = `${Math.round(elemCenterX)}px`
-            transformStyle = 'translateX(-50%)'
-            arrowPos.left = '50%'
-            arrowPos.marginLeft = '-3px'
-          }
+          // Standard top or bottom positioning centered on target element
+          leftStyle = `${Math.round(elemCenterX)}px`
+          transformStyle = 'translateX(-50%)'
+          arrowPos.left = '50%'
+          arrowPos.marginLeft = '-3px'
         }
 
         setCoords({
@@ -182,6 +169,40 @@ const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
     setIsVisible(false)
   }
 
+  useLayoutEffect(() => {
+    if (isVisible && tooltipRef.current && childRef.current && (coords?.isTop || coords?.isBottom)) {
+      const tooltipRect = tooltipRef.current.getBoundingClientRect()
+      const targetRect = childRef.current.getBoundingClientRect()
+      const elemCenterX = targetRect.left + targetRect.width / 2
+
+      const halfWidth = tooltipRect.width / 2
+      const minCenter = 8 + halfWidth
+      const maxCenter = window.innerWidth - 8 - halfWidth
+
+      if (elemCenterX < minCenter) {
+        // Shift tooltip right so it stays on screen with 8px margin
+        tooltipRef.current.style.left = `${Math.round(minCenter)}px`
+        // Point arrow to target element center
+        const arrowX = Math.max(6, Math.min(tooltipRect.width - 6, elemCenterX - 8))
+        const arrowEl = tooltipRef.current.querySelector('.tooltip-arrow')
+        if (arrowEl) {
+          arrowEl.style.left = `${Math.round(arrowX)}px`
+          arrowEl.style.marginLeft = '-3px'
+        }
+      } else if (elemCenterX > maxCenter) {
+        // Shift tooltip left so it stays on screen with 8px margin
+        tooltipRef.current.style.left = `${Math.round(maxCenter)}px`
+        const tooltipLeft = maxCenter - halfWidth
+        const arrowX = Math.max(6, Math.min(tooltipRect.width - 6, elemCenterX - tooltipLeft))
+        const arrowEl = tooltipRef.current.querySelector('.tooltip-arrow')
+        if (arrowEl) {
+          arrowEl.style.left = `${Math.round(arrowX)}px`
+          arrowEl.style.marginLeft = '-3px'
+        }
+      }
+    }
+  }, [isVisible, coords])
+
   if (!React.isValidElement(children) || !text) {
     return children
   }
@@ -208,6 +229,7 @@ const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
       {isVisible && coords &&
         createPortal(
           <div
+            ref={tooltipRef}
             className={`tooltip-portal ${coords.isTop ? 'tooltip-pos-top' : coords.isBottom ? 'tooltip-pos-bottom' : coords.isLeft ? 'tooltip-pos-left' : 'tooltip-pos-right'}`}
             style={{
               top: coords.top,

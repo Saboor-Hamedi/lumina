@@ -140,21 +140,15 @@ const TitleBar = ({ onToggleAIChat }) => {
               variant="dropdown"
             />
           </div>
-          <ToolTip text="Minimize" position="bottom">
-            <button onClick={handleMinimize} className="control-btn">
-              <Minus size={14} strokeWidth={2} />
-            </button>
-          </ToolTip>
-          <ToolTip text="Maximize" position="bottom">
-            <button onClick={handleToggleMaximize} className="control-btn">
-              <Square size={14} strokeWidth={2} />
-            </button>
-          </ToolTip>
-          <ToolTip text="Close" position="bottom">
-            <button onClick={handleClose} className="control-btn close">
-              <X size={14} strokeWidth={2} />
-            </button>
-          </ToolTip>
+          <button onClick={handleMinimize} className="control-btn" aria-label="Minimize">
+            <Minus size={14} strokeWidth={2} />
+          </button>
+          <button onClick={handleToggleMaximize} className="control-btn" aria-label="Maximize">
+            <Square size={14} strokeWidth={2} />
+          </button>
+          <button onClick={handleClose} className="control-btn close" aria-label="Close">
+            <X size={14} strokeWidth={2} />
+          </button>
         </div>
       </div>
     </div>
