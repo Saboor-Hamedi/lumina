@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { AlertCircle } from 'lucide-react'
 import './css/confirm.css'
 
-const ConfirmModal = ({
+const Confirm = ({
   isOpen,
   onClose,
   onConfirm,
@@ -13,18 +13,35 @@ const ConfirmModal = ({
   cancelText = 'Cancel',
   danger = true
 }) => {
+  const confirmBtnRef = useRef(null)
+
   useEffect(() => {
     if (!isOpen) return
+
+    // Focus confirm button when opened
+    const timer = setTimeout(() => {
+      confirmBtnRef.current?.focus()
+    }, 10)
+
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         e.preventDefault()
         e.stopPropagation()
-        onClose()
+        onClose?.()
+      } else if (e.key === 'Enter') {
+        e.preventDefault()
+        e.stopPropagation()
+        onConfirm?.()
+        onClose?.()
       }
     }
+
     window.addEventListener('keydown', handleKeyDown, { capture: true })
-    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true })
-  }, [isOpen, onClose])
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener('keydown', handleKeyDown, { capture: true })
+    }
+  }, [isOpen, onClose, onConfirm])
 
   if (!isOpen) return null
 
@@ -41,15 +58,16 @@ const ConfirmModal = ({
         <p className="confirm-message">{message}</p>
 
         <div className="confirm-footer">
-          <button className="btn confirm-cancel" onClick={onClose}>
+          <button type="button" className="btn confirm-cancel" onClick={onClose}>
             {cancelText}
           </button>
           <button
-            autoFocus
+            ref={confirmBtnRef}
+            type="button"
             className="btn btn-primary"
             onClick={() => {
-              onConfirm()
-              onClose()
+              onConfirm?.()
+              onClose?.()
             }}
           >
             {confirmText}
@@ -61,4 +79,5 @@ const ConfirmModal = ({
   )
 }
 
-export default ConfirmModal
+export default Confirm
+

@@ -39,7 +39,7 @@ import { Virtuoso } from 'react-virtuoso'
 import SidebarItem from '../Navigation/components/SidebarItem'
 import { useResizable } from '../../core/utils/useResizable'
 import { ChevronRight, ChevronDown, Folder, FolderOpen } from 'lucide-react'
-import ConfirmModal from '../modals/ConfirmModal'
+import Confirm from '../modals/Confirm'
 import ContextMenu from '../modals/ContextMenu'
 import ToolTip from '../../components/atoms/ToolTip'
 import { FixedSizeList as List } from '../../components/utils/VirtualList'
@@ -1036,23 +1036,27 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
         />
       )}
 
-      <ConfirmModal
-        isOpen={!!deleteConfirmFolder}
-        onClose={() => setDeleteConfirmFolder(null)}
-        onConfirm={handleConfirmDeleteFolder}
-        title="Delete Folder"
-        message={`Are you sure you want to delete '${deleteConfirmFolder}' and all its contents? This action cannot be undone.`}
-        confirmText="Delete Folder"
-      />
+      {!!deleteConfirmFolder && (
+        <Confirm
+          isOpen={!!deleteConfirmFolder}
+          onClose={() => setDeleteConfirmFolder(null)}
+          onConfirm={handleConfirmDeleteFolder}
+          title="Delete Folder"
+          message={`Are you sure you want to delete '${deleteConfirmFolder}' and all its contents? This action cannot be undone.`}
+          confirmText="Delete Folder"
+        />
+      )}
 
-      <ConfirmModal
-        isOpen={bulkDeleteModalOpen}
-        onClose={() => setBulkDeleteModalOpen(false)}
-        onConfirm={handleConfirmBulkDelete}
-        title={`Delete ${totalSelectedCount} Selected ${totalSelectedCount === 1 ? 'Item' : 'Items'}?`}
-        message={`Are you sure you want to permanently delete ${selectedFolderIds.size > 0 ? `${selectedFolderIds.size} folder${selectedFolderIds.size > 1 ? 's' : ''}` : ''}${selectedFolderIds.size > 0 && selectedNoteIds.size > 0 ? ' and ' : ''}${selectedNoteIds.size > 0 ? `${selectedNoteIds.size} note${selectedNoteIds.size > 1 ? 's' : ''}` : ''} and all nested files? This action cannot be undone.`}
-        confirmText="Delete All"
-      />
+      {bulkDeleteModalOpen && (
+        <Confirm
+          isOpen={bulkDeleteModalOpen}
+          onClose={() => setBulkDeleteModalOpen(false)}
+          onConfirm={handleConfirmBulkDelete}
+          title={`Delete ${totalSelectedCount} Selected ${totalSelectedCount === 1 ? 'Item' : 'Items'}?`}
+          message={`Are you sure you want to permanently delete ${selectedFolderIds.size > 0 ? `${selectedFolderIds.size} folder${selectedFolderIds.size > 1 ? 's' : ''}` : ''}${selectedFolderIds.size > 0 && selectedNoteIds.size > 0 ? ' and ' : ''}${selectedNoteIds.size > 0 ? `${selectedNoteIds.size} note${selectedNoteIds.size > 1 ? 's' : ''}` : ''} and all nested files? This action cannot be undone.`}
+          confirmText="Delete All"
+        />
+      )}
     </>
   )
   

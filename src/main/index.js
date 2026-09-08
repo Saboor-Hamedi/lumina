@@ -407,8 +407,10 @@ app.whenReady().then(async () => {
     try {
       const deletedPath = await WorkspaceManager.deleteSnippet(id)
       if (deletedPath && typeof deletedPath === 'string') {
-        await WorkspaceIndexer.deleteChunksForFile(deletedPath)
-        await WorkspaceSearch.reload()
+        // Run index cleanup in background without blocking the IPC return
+        WorkspaceIndexer.deleteChunksForFile(deletedPath)
+          .then(() => WorkspaceSearch.reload())
+          .catch((err) => console.error('[Main] Search index cleanup error:', err))
       }
       return true
     } catch (err) {
@@ -417,12 +419,14 @@ app.whenReady().then(async () => {
   })
   registerWorkspaceHandle('deleteChunks', async (_, target) => {
     try {
-      if (Array.isArray(target)) {
-        await WorkspaceIndexer.deleteChunksForFiles(target)
-      } else {
-        await WorkspaceIndexer.deleteChunksForFile(target)
-      }
-      await WorkspaceSearch.reload()
+      const deletePromise = Array.isArray(target)
+        ? WorkspaceIndexer.deleteChunksForFiles(target)
+        : WorkspaceIndexer.deleteChunksForFile(target)
+
+      deletePromise
+        .then(() => WorkspaceSearch.reload())
+        .catch((err) => console.error('[Main] Failed to reload search after deleteChunks:', err))
+
       return true
     } catch (err) {
       console.error('[Main] Failed to delete chunks:', err)

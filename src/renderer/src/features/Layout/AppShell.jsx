@@ -15,7 +15,7 @@ import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
 import { useToast } from '../../core/hooks/useToast'
 import ToastNotification from '../../core/notification'
-import ConfirmModal from '../modals/ConfirmModal'
+import Confirm from '../modals/Confirm'
 import RenameModal from '../modals/RenameModal'
 import Guide from '../modals/Guide'
 import IconPicker from '../Icons/IconPicker'
@@ -1000,13 +1000,15 @@ const AppShell = () => {
         onLoadStarterNotes={handleLoadStarterWorkspace}
         onOpenDocs={() => setShowDocsModal(true)}
       />
-      <ConfirmModal
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={handleConfirmDelete}
-        title="Delete Note?"
-        message={`Are you sure you want to delete "${snippetToDelete?.title || 'this note'}"? This cannot be undone.`}
-      />
+      {showDeleteConfirm && (
+        <Confirm
+          isOpen={showDeleteConfirm}
+          onClose={() => setShowDeleteConfirm(false)}
+          onConfirm={handleConfirmDelete}
+          title="Delete Note?"
+          message={`Are you sure you want to delete "${snippetToDelete?.title || 'this note'}"? This cannot be undone.`}
+        />
+      )}
       <RenameModal
         isOpen={renameModal.isOpen}
         initialName={renameModal.newName}

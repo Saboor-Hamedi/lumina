@@ -19,7 +19,7 @@ import {
 import { useVaultStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
 import ContextMenu from '../../modals/ContextMenu'
-import ConfirmModal from '../../modals/ConfirmModal'
+import Confirm from '../../modals/Confirm'
 import IconPicker from '../../Icons/IconPicker'
 import ToolTip from '../../../components/atoms/ToolTip'
 import { getSnippetIcon } from '../../Icons/FileIcon'
@@ -351,20 +351,24 @@ const SidebarItem = ({
         <ContextMenu {...contextMenu} options={menuOptions} onClose={() => setContextMenu(null)} />
       )}
 
-      <IconPicker
-        isOpen={showIconPicker}
-        onClose={() => setShowIconPicker(false)}
-        currentIcon={snippet.customIcon}
-        onSelect={(iconName) => saveSnippet({ ...snippet, customIcon: iconName })}
-      />
+      {showIconPicker && (
+        <IconPicker
+          isOpen={showIconPicker}
+          onClose={() => setShowIconPicker(false)}
+          currentIcon={snippet.customIcon}
+          onSelect={(iconName) => saveSnippet({ ...snippet, customIcon: iconName })}
+        />
+      )}
 
-      <ConfirmModal
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={handleDeleteConfirm}
-        title="Delete Note?"
-        message={`Are you sure you want to delete "${snippet.title}"? This cannot be undone.`}
-      />
+      {showDeleteConfirm && (
+        <Confirm
+          isOpen={showDeleteConfirm}
+          onClose={() => setShowDeleteConfirm(false)}
+          onConfirm={handleDeleteConfirm}
+          title="Delete Note?"
+          message={`Are you sure you want to delete "${snippet.title}"? This cannot be undone.`}
+        />
+      )}
     </>
   )
 
