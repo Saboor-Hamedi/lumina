@@ -27,8 +27,18 @@ const getMentionIcon = (target) => {
 }
 
 export const ChatMessageRow = React.memo(
-  ({ msg, index, isLast, isChatLoading, userMentionRegex, handleCopy, handleRating }) => {
-    const activeThinkingStatus = useAIStore((s) => s.activeThinkingStatus)
+  ({
+    msg,
+    index,
+    isLast,
+    isChatLoading,
+    activeThinkingStatus: propThinkingStatus,
+    userMentionRegex,
+    handleCopy,
+    handleRating
+  }) => {
+    const storeThinkingStatus = useAIStore((s) => s.activeThinkingStatus)
+    const activeThinkingStatus = propThinkingStatus ?? storeThinkingStatus
     return (
       <div
         className={`chat-row ${msg.role}`}
@@ -98,10 +108,10 @@ export const ChatMessageRow = React.memo(
             ) : msg.role === 'assistant' &&
               !msg.content?.trim() &&
               !msg.imageUrl &&
-              (isLast && isChatLoading) ? (
+              (isLast && (isChatLoading || msg.isGenerating)) ? (
               <ThinkingIndicator
                 isGenerating={msg.isGenerating}
-                label={activeThinkingStatus || 'Thinking...'}
+                label={activeThinkingStatus || (msg.isGenerating ? 'Generating image...' : 'Thinking...')}
               />
             ) : (
               <>
@@ -127,11 +137,13 @@ export const ChatMessageRow = React.memo(
       prevProps.msg.content === nextProps.msg.content &&
       prevProps.msg.role === nextProps.msg.role &&
       prevProps.msg.imageUrl === nextProps.msg.imageUrl &&
+      prevProps.msg.isGenerating === nextProps.msg.isGenerating &&
       prevProps.msg.rating === nextProps.msg.rating &&
       prevProps.msg.timestamp === nextProps.msg.timestamp &&
       prevProps.isLast === nextProps.isLast &&
       prevProps.isChatLoading === nextProps.isChatLoading &&
-      prevProps.activeThinkingStatus === nextProps.activeThinkingStatus
+      prevProps.activeThinkingStatus === nextProps.activeThinkingStatus &&
+      prevProps.userMentionRegex === nextProps.userMentionRegex
     )
   }
 )

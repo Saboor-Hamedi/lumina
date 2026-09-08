@@ -14,7 +14,7 @@ import { ChatMessageRow } from './components/ChatMessageRow'
 import { useModalWindow } from './hooks/useModalWindow'
 import { useScopedSelectAll } from './hooks/useScopedSelectAll'
 import '../../assets/appshell.css'
-import './lumina.css'
+import './css/lumina.css'
 
 /**
  * LuminaChat Floating Modal Component

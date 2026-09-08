@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { GripVertical, X, Check, Copy, Loader2 } from 'lucide-react'
-import './InlineLumina.css'
+import './css/inlineLumina.css'
 
 const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title, cursorPosition }) => {
   const [query, setQuery] = useState('')

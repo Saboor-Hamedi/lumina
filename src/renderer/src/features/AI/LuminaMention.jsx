@@ -3,7 +3,7 @@ import { FileText, Brain } from 'lucide-react'
 import { useVaultStore } from '../../core/store/workspaceStore'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { getBrainDocuments } from './services/brainKnowledge'
-import './luminSlash.css'
+import './css/luminSlash.css'
 
 export const LuminaMention = ({ isOpen, filterText, onSelect, onClose }) => {
   const [selectedIndex, setSelectedIndex] = useState(0)

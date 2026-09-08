@@ -14,6 +14,7 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, onPopOut = nul
   const {
     chatMessages,
     isChatLoading,
+    activeThinkingStatus,
     chatError,
     sendChatMessage,
     cancelChat,
@@ -109,12 +110,17 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, onPopOut = nul
   )
 
   const visibleMessages = useMemo(() => {
-    return chatMessages.filter(
-      (m) =>
-        m.role === 'user' ||
-        (m.role === 'assistant' && (m.content?.trim() || m.isGenerating || m.imageUrl))
-    )
-  }, [chatMessages])
+    return chatMessages.filter((msg, index) => {
+      const isEmptyAssistant = msg.role === 'assistant' && !msg.content?.trim() && !msg.imageUrl
+      const isLastMessage = index === chatMessages.length - 1
+
+      if (isEmptyAssistant) {
+        if (!isLastMessage) return false
+        if (!isChatLoading && !msg.isGenerating) return false
+      }
+      return true
+    })
+  }, [chatMessages, isChatLoading])
 
   const renderedMessages = useMemo(() => {
     const total = visibleMessages.length
@@ -125,12 +131,13 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, onPopOut = nul
         index={index}
         isLast={index === total - 1}
         isChatLoading={isChatLoading}
+        activeThinkingStatus={activeThinkingStatus}
         userMentionRegex={userMentionRegex}
         handleCopy={handleCopy}
         handleRating={handleRating}
       />
     ))
-  }, [visibleMessages, isChatLoading, userMentionRegex, handleCopy, handleRating])
+  }, [visibleMessages, isChatLoading, activeThinkingStatus, userMentionRegex, handleCopy, handleRating])
 
   return (
     <div
@@ -181,6 +188,7 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, onPopOut = nul
                 <ChatFooterStatus
                   chatMessages={chatMessages}
                   isChatLoading={isChatLoading}
+                  activeThinkingStatus={activeThinkingStatus}
                   chatError={chatError}
                 />
               </div>

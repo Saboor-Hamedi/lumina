@@ -8,7 +8,7 @@ import VoiceButton from '../voice'
 import { useComposerTextarea } from './hooks/useComposerTextarea'
 import { useComposerVoice } from './hooks/useComposerVoice'
 import { useComposerAutocomplete } from './hooks/useComposerAutocomplete'
-import './Composer.css'
+import './css/composer.css'
 
 export const Composer = ({ onSend, onStop, onCancel, isLoading = false, isSidebar = false }) => {
   const [input, setInput] = useState('')

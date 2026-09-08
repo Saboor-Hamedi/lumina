@@ -35,7 +35,7 @@ import { MessageContent, ThinkingIndicator, ChatMessageRow } from '../AI/Lumina'
 import { useVaultStore } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { PreviewCommandPalette } from './PreviewCommandPalette'
-import '../AI/lumina.css'
+import '../AI/css/lumina.css'
 import './commandPalette.css'
 
 /**

@@ -6,7 +6,7 @@ import { MessageContent } from './MessageContent'
 /**
  * Renders the bottom status area of the chat list: thinking indicator or API error alert.
  */
-export const ChatFooterStatus = React.memo(({ chatMessages, isChatLoading, chatError }) => {
+export const ChatFooterStatus = React.memo(({ chatMessages, isChatLoading, activeThinkingStatus, chatError }) => {
   const lastMessage = chatMessages[chatMessages.length - 1]
   const hasAssistantMessage = lastMessage && lastMessage.role === 'assistant'
   const showTyping = isChatLoading && !hasAssistantMessage
@@ -25,7 +25,7 @@ export const ChatFooterStatus = React.memo(({ chatMessages, isChatLoading, chatE
             alignItems: 'flex-start'
           }}
         >
-          <ThinkingIndicator />
+          <ThinkingIndicator label={activeThinkingStatus} />
         </div>
       )}
       {chatError && (
