@@ -5,6 +5,7 @@ import InlineGraph from '../../Graph/InlineGraph'
 import { useVaultStore } from '../../../core/store/workspaceStore'
 import { useKeyboardShortcuts } from '../../../core/hooks/useKeyboardShortcuts'
 import ProgressTracker, { LearnedButton, LearningTrackBadge } from '../../roadmap/ProgressTracker'
+import VoiceButton from '../../voice'
 
 const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef, onInlineAI, editorMenu }) => {
   const [error, setError] = useState(false)
@@ -135,6 +136,8 @@ const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef, onInli
             <span>Ask AI</span>
           </button>
         </ToolTip>
+
+        <VoiceButton id="editor-voice" />
 
         <ToolTip text="Linked Mentions" position="bottom">
           <button

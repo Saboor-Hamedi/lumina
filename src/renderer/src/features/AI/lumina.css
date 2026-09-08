@@ -1061,14 +1061,15 @@ lumina-activity {
 }
 
 /* Horizontal Rule - Subtle, elegant separator */
-.chat-bubble hr {
+.chat-bubble hr,
+.lumina-chat hr {
   border: none !important;
   height: 20px !important;
   min-height: 20px !important;
   padding: 0 !important;
   background: transparent !important;
   width: 100% !important;
-  max-width: 260px !important;
+  max-width: 280px !important;
   margin: 16px auto !important;
   position: relative !important;
   display: flex !important;
@@ -1077,20 +1078,23 @@ lumina-activity {
   box-sizing: border-box !important;
 }
 
-.chat-bubble hr::before {
+.chat-bubble hr::before,
+.lumina-chat hr::before {
   content: '' !important;
   position: absolute !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
   top: 50% !important;
-  width: 220px !important;
-  height: 1px !important;
-  background: linear-gradient(to right, transparent 0%, var(--border-dim, rgba(255, 255, 255, 0.15)) 25%, transparent 40%, transparent 60%, var(--border-dim, rgba(255, 255, 255, 0.15)) 75%, transparent 100%) !important;
+  width: 250px !important;
+  height: 2px !important;
+  background: linear-gradient(to right, transparent 0%, var(--text-accent) 25%, transparent 40%, transparent 60%, var(--text-accent) 75%, transparent 100%) !important;
   pointer-events: none !important; 
-  box-shadow: none !important;
+  box-shadow: 0 0 8px rgba(var(--text-accent-rgb), 0.15) !important;
+  border: none !important;
 }
 
-.chat-bubble hr::after {
+.chat-bubble hr::after,
+.lumina-chat hr::after {
   content: '✦ ✦ ✦' !important;
   position: absolute !important;
   left: 50% !important;
@@ -1100,13 +1104,14 @@ lumina-activity {
   align-items: center !important;
   justify-content: center !important;
   background: var(--bg-sidebar, var(--bg-app)) !important;
-  padding: 0 8px !important;
-  font-size: 10px !important;
+  padding: 0 12px !important;
+  font-size: 12px !important;
   line-height: 1 !important;
-  opacity: 0.28 !important;
+  opacity: 0.3 !important;
   pointer-events: none !important;
-  color: var(--text-faint) !important;
+  color: var(--text-main) !important;
   letter-spacing: 3px !important;
+  border: none !important;
 }
 
 .chat-bubble h1,
@@ -1310,29 +1315,63 @@ lumina-activity {
   opacity: 0.75;
 }
 
-/* Tree-specific styling inside code block */
+.chat-code-header.is-tree-header {
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.chat-code-header.is-tree-header:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+[data-theme='light'] .chat-code-header.is-tree-header:hover {
+  background: #e2e8f0 !important;
+}
+
+.chat-tree-chevron {
+  color: var(--text-accent);
+  transition: transform 0.2s ease;
+}
+
 .chat-tree-display {
-  padding: 10px 14px;
+  padding: 8px 12px;
   font-family: var(--font-mono, monospace);
   font-size: 11.5px;
-  line-height: 1.6;
+  line-height: 1.5;
   color: var(--text-main);
   overflow-x: auto;
   white-space: pre;
 }
 
 .chat-tree-line {
-  display: block;
+  display: flex;
+  align-items: center;
   font-family: var(--font-mono, monospace);
   letter-spacing: 0.01em;
+  white-space: pre;
+  min-height: 20px;
 }
 
-.chat-tree-line.is-folder {
+.chat-tree-branch {
+  color: var(--text-accent);
+  opacity: 0.85;
+  font-family: var(--font-mono, monospace);
+  user-select: none;
+  flex-shrink: 0;
+  white-space: pre;
+}
+
+.chat-tree-label {
+  white-space: pre;
+}
+
+.chat-tree-label.is-folder {
   color: var(--text-main);
   font-weight: 500;
 }
 
-.chat-tree-line.is-file {
+.chat-tree-label.is-file {
   color: var(--text-muted);
 }
 
@@ -1628,14 +1667,23 @@ lumina-activity {
 .chat-response-actions {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 3px;
+  padding: 0 4px;
+}
+
+.chat-action-buttons {
+  display: flex;
+  align-items: center;
   gap: 2px;
-  margin-top: 2px;
-  margin-left: 4px;
   opacity: 0.5;
   transition: opacity 0.2s;
 }
 
-.chat-response-actions:hover {
+.chat-response-actions:hover .chat-action-buttons,
+.chat-row.assistant:hover .chat-action-buttons {
   opacity: 1;
 }
 
@@ -1659,6 +1707,22 @@ lumina-activity {
 
 .chat-response-actions button.active {
   color: var(--text-accent);
+}
+
+.chat-response-time {
+  font-size: 10px;
+  font-family: var(--font-sans, inherit);
+  color: var(--text-faint);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  user-select: none;
+  letter-spacing: 0.02em;
+}
+
+.chat-response-actions:hover .chat-response-time,
+.chat-row.assistant:hover .chat-response-time {
+  opacity: 0.75;
 }
 
 .action-divider {
@@ -1741,4 +1805,4 @@ lumina-activity {
     opacity: 0;
   }
 }
-
+

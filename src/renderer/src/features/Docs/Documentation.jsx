@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback, startTransition, useMemo } from 'react'
-import { Square, Copy, Book, PanelLeftClose, PanelLeftOpen, FileText, Clock, ChevronLeft, ChevronRight } from 'lucide-react'
-import ModalHeader from '../modals/ModalHeader'
+import { Square, Copy, Book, PanelLeftClose, PanelLeftOpen, FileText, Clock, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
+import ToolTip from '../../components/atoms/ToolTip'
 import DocSidebar from './DocSidebar'
 import { PreviewCommandPalette } from '../commandpalette/PreviewCommandPalette'
+import '../modals/css/guide.css'
 import '../preview/preview.css'
 import './Documentation.css'
 
-// Use Vite's glob import to read all markdown files in brain/ directory as raw strings
-const markdownFiles = import.meta.glob(['../../../../../brain/**/*.md', '../../../../../brain/*.md'], {
+const markdownFiles = import.meta.glob('../../../../../brain/**/*.md', {
   query: '?raw',
   eager: true,
   import: 'default'
@@ -121,51 +121,64 @@ const DocsContent = React.memo(({ content, setSelectedDoc, docs, selectedDoc, pr
   )
 })
 
+const getInitialDocs = () => {
+  const loaded = {}
+  for (const path in markdownFiles) {
+    const nameMatch = path.match(/brain\/(.*\.md)$/)
+    if (nameMatch) {
+      loaded[nameMatch[1]] = markdownFiles[path]
+    }
+  }
+  return loaded
+}
+
+const INITIAL_DOCS = getInitialDocs()
+const INITIAL_DEFAULT_DOC =
+  Object.keys(INITIAL_DOCS).find((k) => k.toLowerCase().includes('introduction')) ||
+  Object.keys(INITIAL_DOCS).find((k) => k.includes('01-basic-syntax')) ||
+  Object.keys(INITIAL_DOCS)[0] ||
+  null
+const INITIAL_CONTENT = INITIAL_DEFAULT_DOC ? INITIAL_DOCS[INITIAL_DEFAULT_DOC] : ''
+
 const Documentation = ({ isOpen, onClose }) => {
-  const [docs, setDocs] = useState({})
-  const [selectedDoc, setSelectedDoc] = useState(null)
-  const [content, setContent] = useState('')
+  const [docs, setDocs] = useState(INITIAL_DOCS)
+  const [selectedDoc, setSelectedDoc] = useState(INITIAL_DEFAULT_DOC)
+  const [content, setContent] = useState(INITIAL_CONTENT)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isMaximized, setIsMaximized] = useState(false)
-  const [isDraggingModal, setIsDraggingModal] = useState(false)
 
   const containerRef = useRef()
-  const modalPos = useRef(JSON.parse(localStorage.getItem('docs-modal-pos') || '{"x":0,"y":0}'))
-  const dragStart = useRef({ x: 0, y: 0 })
-  const rafId = useRef(null)
 
-  // Load all docs on mount
+  // Clean up any previously stored drag positions so modal is always perfectly centered
   useEffect(() => {
-    const loadDocs = async () => {
-      const loadedDocs = {}
-      for (const path in markdownFiles) {
-        // Extract the relative path part after 'brain/'
-        const nameMatch = path.match(/brain\/(.*\.md)$/)
-        if (nameMatch) {
-          loadedDocs[nameMatch[1]] = markdownFiles[path]
-        }
-      }
-      setDocs(loadedDocs)
-
-      // Select default doc (prefer introduction.md or 01-basic-syntax.md)
-      const introDoc = Object.keys(loadedDocs).find((k) => k.toLowerCase().includes('introduction'))
-      const syntaxDoc = Object.keys(loadedDocs).find((k) => k.includes('01-basic-syntax'))
-      const defaultDoc = introDoc || syntaxDoc || Object.keys(loadedDocs)[0]
-
-      if (defaultDoc) {
-        setSelectedDoc(defaultDoc)
-      }
+    try {
+      localStorage.removeItem('docs-modal-pos')
+    } catch {
+      // ignore
     }
-    loadDocs()
+  }, [])
+
+  // Ensure docs are synced if hot-reloaded
+  useEffect(() => {
+    const loaded = getInitialDocs()
+    setDocs(loaded)
+    if (!selectedDoc) {
+      const defaultDoc =
+        Object.keys(loaded).find((k) => k.toLowerCase().includes('introduction')) ||
+        Object.keys(loaded).find((k) => k.includes('01-basic-syntax')) ||
+        Object.keys(loaded)[0]
+      if (defaultDoc) setSelectedDoc(defaultDoc)
+    }
   }, [])
 
   // Ordered list of docs for next/prev navigation
   const sortedDocList = useMemo(() => {
     const list = []
-    const ignored = ['refrences.md', 'lumina.md', 'scope.md']
+    const ignored = ['refrences.md', 'lumina.md', 'scope.md', 'purpose.md']
     Object.keys(docs)
       .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
       .forEach((path) => {
+        if (path.startsWith('specs/')) return
         const filename = path.split('/').pop()
         if (!ignored.includes(filename.toLowerCase())) {
           list.push(path)
@@ -225,59 +238,6 @@ const Documentation = ({ isOpen, onClose }) => {
     setIsSidebarOpen((prev) => !prev)
   }, [])
 
-  // Drag logic
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (!isDraggingModal || isMaximized) return
-
-      const newX = e.clientX - dragStart.current.x
-      const newY = e.clientY - dragStart.current.y
-      modalPos.current = { x: newX, y: newY }
-
-      if (rafId.current) cancelAnimationFrame(rafId.current)
-
-      rafId.current = requestAnimationFrame(() => {
-        if (containerRef.current) {
-          containerRef.current.style.transform = `translate3d(${newX}px, ${newY}px, 0)`
-        }
-      })
-    }
-
-    const handleMouseUp = () => {
-      setIsDraggingModal(false)
-      if (rafId.current) cancelAnimationFrame(rafId.current)
-      if (containerRef.current && !isMaximized) {
-        containerRef.current.style.transition = 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
-        localStorage.setItem('docs-modal-pos', JSON.stringify(modalPos.current))
-      }
-    }
-
-    window.addEventListener('mousemove', handleMouseMove, { passive: true })
-    window.addEventListener('mouseup', handleMouseUp)
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
-      if (rafId.current) cancelAnimationFrame(rafId.current)
-    }
-  }, [isMaximized, isDraggingModal])
-
-  const handleModalHeaderMouseDown = useCallback(
-    (e) => {
-      if (isMaximized) return
-      setIsDraggingModal(true)
-
-      if (containerRef.current) {
-        containerRef.current.style.transition = 'none'
-      }
-
-      dragStart.current = {
-        x: e.clientX - modalPos.current.x,
-        y: e.clientY - modalPos.current.y
-      }
-    },
-    [isMaximized]
-  )
-
   useKeyboardShortcuts({
     onEscape: () => {
       if (isOpen && onClose) {
@@ -294,88 +254,86 @@ const Documentation = ({ isOpen, onClose }) => {
     return { words, minutes }
   }, [content])
 
-  const headerStats = (
-    <div className="preview-stats-bar" style={{ marginRight: '16px' }}>
-      <span className="preview-indicator-tag">DOCS</span>
-      <div className="preview-stat-sep" />
-      <div className="preview-stat-item">
-        <FileText size={12} /> {readingStats.words} words
-      </div>
-      <div className="preview-stat-sep" />
-      <div className="preview-stat-item">
-        <Clock size={12} /> ~{readingStats.minutes} min read
-      </div>
-    </div>
-  )
-
   if (!isOpen) return null
 
   return (
     <div
-      className="nexus-overlay preview-overlay-glass"
+      className="guide-modal-overlay"
       onClick={onClose}
     >
       <div
         ref={containerRef}
-        className={`nexus-container modal-container preview-modal-container${isMaximized ? ' maximized' : ''}`}
+        className={`docs-modal-container${isMaximized ? ' maximized' : ''}`}
         onClick={(e) => e.stopPropagation()}
-        style={{
-          flexDirection: 'column',
-          width: isMaximized ? '100vw' : '92vw',
-          height: isMaximized ? '100vh' : '88vh',
-          maxWidth: isMaximized ? 'none' : '1100px',
-          maxHeight: isMaximized ? 'none' : '90vh',
-          transform: isMaximized
-            ? 'none'
-            : `translate3d(${modalPos.current.x}px, ${modalPos.current.y}px, 0)`,
-          transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-          boxShadow: '0 30px 60px rgba(0, 0, 0, 0.6)',
-          overflow: 'hidden',
-          borderRadius: isMaximized ? '0' : '6px'
-        }}
       >
-        <ModalHeader
-          title="Lumina Documentation"
-          icon={<Book size={16} />}
-          onClose={onClose}
-          onMouseDown={handleModalHeaderMouseDown}
-          style={{ cursor: isMaximized ? 'default' : 'grab' }}
-          left={
-            <button
-              className="win-btn"
-              onClick={handleToggleSidebar}
-              title={isSidebarOpen ? 'Close Sidebar' : 'Open Sidebar'}
-              style={{ marginLeft: '-10px' }}
-            >
-              {isSidebarOpen ? (
-                <PanelLeftClose size={12} strokeWidth={2} />
-              ) : (
-                <PanelLeftOpen size={12} strokeWidth={2} />
-              )}
-            </button>
-          }
-          right={
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              {headerStats}
+        <div
+          className="docs-modal-header"
+          style={{ cursor: 'default' }}
+        >
+          <div className="docs-header-left">
+            <ToolTip text={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'} position="bottom">
               <button
-                className="win-btn"
-                onClick={handleToggleMaximize}
-                title={isMaximized ? 'Restore' : 'Maximize'}
+                className="docs-sidebar-toggle-btn"
+                onClick={handleToggleSidebar}
+                aria-label={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
               >
-                {isMaximized ? (
-                  <Copy size={12} strokeWidth={2} />
+                {isSidebarOpen ? (
+                  <PanelLeftClose size={15} strokeWidth={2} />
                 ) : (
-                  <Square size={12} strokeWidth={2} />
+                  <PanelLeftOpen size={15} strokeWidth={2} />
                 )}
               </button>
+            </ToolTip>
+            <div className="guide-logo-badge">
+              <Book size={15} />
             </div>
-          }
-        />
+            <div className="guide-header-title">Documentation</div>
+            {selectedDoc && (
+              <div className="guide-step-counter docs-header-active-doc">
+                {formatDocTitle(selectedDoc.split('/').pop().replace('.md', ''))}
+              </div>
+            )}
+          </div>
 
-        <div className="docs-container">
-          {isSidebarOpen && (
-            <DocSidebar docs={docs} selectedDoc={selectedDoc} setSelectedDoc={setSelectedDoc} />
-          )}
+          <div className="docs-header-right">
+            <ToolTip text={`${readingStats.words} words`} position="bottom">
+              <div className="docs-header-stat">
+                <Clock size={12} />
+                <span>~{readingStats.minutes} min read</span>
+              </div>
+            </ToolTip>
+            <ToolTip text={isMaximized ? 'Restore Window' : 'Maximize Window'} position="bottom">
+              <button
+                className="docs-window-btn"
+                onClick={handleToggleMaximize}
+                aria-label={isMaximized ? 'Restore Window' : 'Maximize Window'}
+              >
+                {isMaximized ? (
+                  <Copy size={13} strokeWidth={2} />
+                ) : (
+                  <Square size={13} strokeWidth={2} />
+                )}
+              </button>
+            </ToolTip>
+            <ToolTip text="Close (Esc)" position="bottom">
+              <button
+                className="guide-close-btn"
+                onClick={onClose}
+                aria-label="Close Documentation (Esc)"
+              >
+                <X size={17} />
+              </button>
+            </ToolTip>
+          </div>
+        </div>
+
+        <div className={`docs-container ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+          <DocSidebar
+            docs={docs}
+            selectedDoc={selectedDoc}
+            setSelectedDoc={setSelectedDoc}
+            isOpen={isSidebarOpen}
+          />
 
           <DocsContent
             content={content}

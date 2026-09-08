@@ -14,7 +14,17 @@ import { openNoteInEditor } from './ChatLink'
 import { LuminaTimer } from './luminaTimer.jsx'
 
 export const ActivityCard = React.memo(({ rawContent, isStreaming = false }) => {
-  const [isExpanded, setIsExpanded] = useState(true)
+  const [isExpanded, setIsExpanded] = useState(isStreaming)
+  const prevStreamingRef = React.useRef(isStreaming)
+
+  React.useEffect(() => {
+    if (prevStreamingRef.current && !isStreaming) {
+      setIsExpanded(false)
+    } else if (!prevStreamingRef.current && isStreaming) {
+      setIsExpanded(true)
+    }
+    prevStreamingRef.current = isStreaming
+  }, [isStreaming])
 
   const items = useMemo(() => {
     if (!rawContent) return []
@@ -24,6 +34,12 @@ export const ActivityCard = React.memo(({ rawContent, isStreaming = false }) => 
 
     for (const line of lines) {
       if (line.includes('*Creating folder') || line.includes('📁 *Creating')) {
+        const m = line.match(/`([^`]+)`/)
+        const target = m ? m[1] : '...'
+        parsed.push({ type: 'folder', target, isActive: true })
+        continue
+      }
+      if (line.includes('*Moving folder') || line.includes('📁 *Moving folder')) {
         const m = line.match(/`([^`]+)`/)
         const target = m ? m[1] : '...'
         parsed.push({ type: 'folder', target, isActive: true })
@@ -59,6 +75,26 @@ export const ActivityCard = React.memo(({ rawContent, isStreaming = false }) => 
         if (clean && !seen.has(`folder:${clean}`)) {
           seen.add(`folder:${clean}`)
           parsed.push({ type: 'folder', target: clean, action: 'create', isActive: false })
+        }
+        continue
+      }
+
+      if (line.toLowerCase().includes('moved folder')) {
+        let clean = line
+          .replace(/^[-*•\s📁]+/, '')
+          .replace(/moved folder/i, '')
+          .replace(/[`*]/g, '')
+          .replace(/\.$/, '')
+          .trim()
+        if (clean && !seen.has(`folder:${clean}`)) {
+          seen.add(`folder:${clean}`)
+          parsed.push({
+            type: 'folder',
+            target: clean,
+            rawText: line.replace(/^[-*•\s📁]+/, ''),
+            action: 'move',
+            isActive: false
+          })
         }
         continue
       }

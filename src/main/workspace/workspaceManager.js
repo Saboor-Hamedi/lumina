@@ -8,54 +8,161 @@ import { WorkspaceOperations } from './workspaceOperations'
 
 export { safeParseFrontmatter }
 
+/**
+ * WorkspaceManager Singleton
+ *
+ * Central orchestrator for local-first workspace operations in Lumina.
+ *
+ * Core Responsibilities:
+ * 1. File Lifecycle & State: Manages in-memory maps of notes (`snippets`) and folders.
+ * 2. Real-time File System Watcher: Monitors workspace directory via Chokidar with debounced
+ *    incremental scans, ignoring editor temporary saves and build artifacts.
+ * 3. Atomic File Operations: Delegates note creation, updates, renaming, moving, and deletions
+ *    to `WorkspaceOperations` while maintaining thread-safe ignore windows for saving.
+ * 4. IPC Broadcasts: Emits `workspace:updated` (and backwards-compatible `vault:updated`)
+ *    events to all active BrowserWindow instances upon file modifications.
+ * 5. Startup & Reload Optimization: Implements non-blocking concurrent scanning with in-flight
+ *    promise coalescing so IPC `getSnippets` never returns partial or empty data.
+ */
 class WorkspaceManager {
   constructor() {
-    this.vaultPath = null
+    /** @type {string|null} Absolute path to the active workspace on disk */
+    this.workspacePath = null
+
+    /** @type {Map<string, any>} In-memory map of snippetId -> Snippet object */
     this.snippets = new Map()
+
+    /** @type {Set<string>} Set of known relative folder paths */
     this.folders = new Set()
+
+    /** @type {import('chokidar').FSWatcher|null} Active Chokidar file system watcher */
     this.watcher = null
+
+    /** @type {boolean} Indicates whether a disk scan is currently in progress */
     this.isScanning = false
+
+    /** @type {Promise<{ snippets: Array<any>, folders: Array<string> }>|null} Active scan promise coalescing concurrent callers */
+    this.scanPromise = null
+
+    /** @type {NodeJS.Timeout|null} Debounce timer handle for file system change events */
     this.scanDebounceTimeout = null
+
+    /** @type {Map<string, number>} Lowercase normalized file paths ignored temporarily after programmatic writes */
     this.ignoredPaths = new Map()
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Backwards Compatibility Accessors (Legacy "Vault" terminology)
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Deprecated alias for `workspacePath`.
+   * @deprecated Use `workspacePath` instead.
+   */
+  get vaultPath() {
+    return this.workspacePath
+  }
+
+  /**
+   * Deprecated setter for `workspacePath`.
+   * @deprecated Use `workspacePath` instead.
+   */
+  set vaultPath(val) {
+    this.workspacePath = val
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Lifecycle & Initialization
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Initializes the workspace manager with a target workspace directory.
+   * Creates the folder if it does not exist, triggers the initial scan,
+   * sets up the file watcher, and broadcasts readiness.
+   *
+   * @param {string} [customPath] - Explicit path requested by user or saved in app config.
+   * @param {string} [fallbackDocumentsPath] - System Documents directory for default folder creation.
+   * @returns {Promise<string>} The resolved absolute workspace path.
+   */
   async init(customPath, fallbackDocumentsPath) {
     let targetPath = customPath
     if (!targetPath && fallbackDocumentsPath) {
       targetPath = path.join(fallbackDocumentsPath, 'lumina')
     }
     if (!targetPath) {
-      targetPath = path.join(process.env.HOME || process.env.USERPROFILE || '.', 'Documents', 'lumina')
+      targetPath = path.join(
+        process.env.HOME || process.env.USERPROFILE || '.',
+        'Documents',
+        'lumina'
+      )
     }
+
     await fs.mkdir(targetPath, { recursive: true })
-    this.setVaultPath(targetPath)
-    await this.scanVault()
+    this.setWorkspacePath(targetPath)
+
+    // Execute initial scan and await completion
+    await this.scanWorkspace()
+
+    // Initialize file watcher after initial scan to prevent race conditions
     this.setupWatcher()
+
+    // Notify any open renderer windows that the workspace is ready
+    this.notifyWindows('workspace:updated')
+    this.notifyWindows('vault:updated')
+
     return targetPath
   }
 
-  setVaultPath(dir) {
-    this.vaultPath = dir
+  /**
+   * Sets or switches the active workspace directory, resetting existing cache.
+   *
+   * @param {string} dir - Absolute path to the new workspace directory.
+   */
+  setWorkspacePath(dir) {
+    this.workspacePath = dir
     this.snippets.clear()
     this.folders.clear()
     this.ignoredPaths.clear()
+    this.scanPromise = null
+
     if (this.watcher) {
       this.watcher.close()
       this.watcher = null
     }
   }
 
+  /**
+   * Deprecated alias for `setWorkspacePath`.
+   * @deprecated Use `setWorkspacePath` instead.
+   */
+  setVaultPath(dir) {
+    return this.setWorkspacePath(dir)
+  }
+
+  /**
+   * Sanitizes a title string into a safe file name across all operating systems.
+   * @param {string} title - User-entered note title.
+   * @returns {string} Sanitized filename without extension.
+   */
   sanitizeTitleForFilename(title) {
     return WorkspaceOperations.sanitizeTitleForFilename(title)
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // File System Watcher & Notifications
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Sets up Chokidar file watcher to listen for external file system changes
+   * (e.g. Git pulls, external edits, file manager drops).
+   */
   setupWatcher() {
-    if (!this.vaultPath) return
+    if (!this.workspacePath) return
     if (this.watcher) {
       this.watcher.close()
     }
 
-    this.watcher = chokidar.watch(this.vaultPath, {
+    this.watcher = chokidar.watch(this.workspacePath, {
       ignored: [
         /(^|[/\\])\../,
         '**/node_modules/**',
@@ -76,14 +183,25 @@ class WorkspaceManager {
     const triggerScan = () => {
       clearTimeout(this.scanDebounceTimeout)
       this.scanDebounceTimeout = setTimeout(async () => {
-        await this.scanVault()
+        await this.scanWorkspace()
+        this.notifyWindows('workspace:updated')
         this.notifyWindows('vault:updated')
-      }, 50)
+      }, 75)
     }
 
     const VALID_EXTS = new Set([
-      '.md', '.markdown', '.txt',
-      '.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg', '.bmp', '.ico', '.avif'
+      '.md',
+      '.markdown',
+      '.txt',
+      '.png',
+      '.jpg',
+      '.jpeg',
+      '.webp',
+      '.gif',
+      '.svg',
+      '.bmp',
+      '.ico',
+      '.avif'
     ])
 
     this.watcher.on('add', (filePath) => {
@@ -94,6 +212,7 @@ class WorkspaceManager {
     this.watcher.on('unlink', triggerScan)
     this.watcher.on('addDir', triggerScan)
     this.watcher.on('unlinkDir', triggerScan)
+
     this.watcher.on('change', (filePath) => {
       const norm = path.resolve(filePath).toLowerCase()
       const expiry = this.ignoredPaths.get(norm)
@@ -106,6 +225,12 @@ class WorkspaceManager {
     })
   }
 
+  /**
+   * Sends an IPC message to all non-destroyed Electron BrowserWindows.
+   *
+   * @param {string} channel - IPC channel name.
+   * @param {any} [data] - Optional payload.
+   */
   notifyWindows(channel, data) {
     const wins = BrowserWindow.getAllWindows()
     wins.forEach((win) => {
@@ -115,52 +240,116 @@ class WorkspaceManager {
     })
   }
 
-  async scanVault() {
-    if (!this.vaultPath || this.isScanning) {
+  // ──────────────────────────────────────────────────────────────────────────
+  // Workspace Scanning
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Scans the workspace directory for markdown notes and media assets.
+   * Utilizes in-flight promise coalescing to guarantee that concurrent callers
+   * receive the same complete scan results without performing duplicate work.
+   *
+   * @returns {Promise<{ snippets: Array<any>, folders: Array<string> }>}
+   */
+  async scanWorkspace() {
+    if (!this.workspacePath) {
       return { snippets: Array.from(this.snippets.values()), folders: Array.from(this.folders) }
     }
 
-    this.isScanning = true
-    try {
-      const { snippets, folders } = await WorkspaceScanner.scan(this.vaultPath)
-      this.snippets = new Map(snippets.map((s) => [s.id, s]))
-      this.folders = new Set(folders)
-      return { snippets, folders }
-    } finally {
-      this.isScanning = false
+    // Coalesce concurrent calls into the existing active scan promise
+    if (this.scanPromise) {
+      return await this.scanPromise
     }
+
+    this.isScanning = true
+    this.scanPromise = (async () => {
+      try {
+        const { snippets, folders } = await WorkspaceScanner.scan(
+          this.workspacePath,
+          this.snippets
+        )
+        this.snippets = new Map(snippets.map((s) => [s.id, s]))
+        this.folders = new Set(folders)
+        return { snippets, folders }
+      } catch (err) {
+        console.error('[WorkspaceManager] ✗ Scan failed:', err)
+        return {
+          snippets: Array.from(this.snippets.values()),
+          folders: Array.from(this.folders)
+        }
+      } finally {
+        this.isScanning = false
+        this.scanPromise = null
+      }
+    })()
+
+    return await this.scanPromise
   }
 
+  /**
+   * Deprecated alias for `scanWorkspace`.
+   * @deprecated Use `scanWorkspace` instead.
+   */
+  async scanVault() {
+    return await this.scanWorkspace()
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Snippet Operations
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Persists a note (snippet) to disk and updates in-memory cache.
+   * Temporarily ignores watcher events for this file to avoid self-triggering scans.
+   *
+   * @param {any} snippet - Snippet data to save.
+   * @returns {Promise<any>} The saved snippet with updated timestamps and paths.
+   */
   async saveSnippet(snippet) {
     const oldSnippet = snippet?.id ? this.snippets.get(snippet.id) : null
     const result = await WorkspaceOperations.saveSnippet(
-      this.vaultPath,
+      this.workspacePath,
       this.snippets,
       this.folders,
       snippet,
       oldSnippet
     )
-    if (this.vaultPath && result?.fileName) {
-      const savedPath = path.join(this.vaultPath, result.folderId || '', result.fileName)
+
+    if (this.workspacePath && result?.fileName) {
+      const savedPath = path.join(this.workspacePath, result.folderId || '', result.fileName)
       this.ignoredPaths.set(path.resolve(savedPath).toLowerCase(), Date.now() + 600)
     }
+
     return result
   }
 
+  /**
+   * Deletes a snippet from disk and cache by ID.
+   *
+   * @param {string} id - Snippet ID.
+   * @returns {Promise<boolean>}
+   */
   async deleteSnippet(id) {
-    return await WorkspaceOperations.deleteSnippet(this.vaultPath, this.snippets, id)
+    return await WorkspaceOperations.deleteSnippet(this.workspacePath, this.snippets, id)
   }
 
+  /**
+   * Performs bulk deletion of folders and/or snippets atomically.
+   *
+   * @param {{ folderIds?: string[], snippetIds?: string[] }} params
+   * @returns {Promise<any>}
+   */
   async bulkDelete({ folderIds = [], snippetIds = [] }) {
     if (this.watcher) await this.watcher.close()
     try {
       const result = await WorkspaceOperations.bulkDelete(
-        this.vaultPath,
+        this.workspacePath,
         this.snippets,
         this.folders,
         { folderIds, snippetIds }
       )
-      await this.scanVault()
+      await this.scanWorkspace()
+      this.notifyWindows('workspace:updated')
       this.notifyWindows('vault:updated')
       return result
     } finally {
@@ -168,30 +357,60 @@ class WorkspaceManager {
     }
   }
 
+  /**
+   * Moves a file from one relative path to another.
+   *
+   * @param {string} oldRelPath
+   * @param {string} newRelPath
+   * @returns {Promise<any>}
+   */
   async moveFile(oldRelPath, newRelPath) {
-    const result = await WorkspaceOperations.moveFile(this.vaultPath, oldRelPath, newRelPath)
-    await this.scanVault()
+    const result = await WorkspaceOperations.moveFile(this.workspacePath, oldRelPath, newRelPath)
+    await this.scanWorkspace()
     return result
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Folder Operations
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Creates a new folder on disk and tracks it in the workspace folder registry.
+   *
+   * @param {string} folderPath - Relative folder path to create.
+   * @returns {Promise<any>}
+   */
   async createFolder(folderPath) {
-    const result = await WorkspaceOperations.createFolder(this.vaultPath, this.folders, folderPath)
-    await this.scanVault()
+    const result = await WorkspaceOperations.createFolder(
+      this.workspacePath,
+      this.folders,
+      folderPath
+    )
+    await this.scanWorkspace()
+    this.notifyWindows('workspace:updated')
     this.notifyWindows('vault:updated')
     return result
   }
 
+  /**
+   * Renames an existing folder, updating all child notes and links.
+   *
+   * @param {string} oldPath - Old relative folder path.
+   * @param {string} newPath - New relative folder path.
+   * @returns {Promise<any>}
+   */
   async renameFolder(oldPath, newPath) {
     if (this.watcher) await this.watcher.close()
     try {
       const result = await WorkspaceOperations.renameFolder(
-        this.vaultPath,
+        this.workspacePath,
         this.snippets,
         this.folders,
         oldPath,
         newPath
       )
-      await this.scanVault()
+      await this.scanWorkspace()
+      this.notifyWindows('workspace:updated')
       this.notifyWindows('vault:updated')
       return result
     } finally {
@@ -199,16 +418,23 @@ class WorkspaceManager {
     }
   }
 
+  /**
+   * Deletes a folder and all its contents recursively.
+   *
+   * @param {string} folderPath - Relative folder path to remove.
+   * @returns {Promise<any>}
+   */
   async deleteFolder(folderPath) {
     if (this.watcher) await this.watcher.close()
     try {
       const result = await WorkspaceOperations.deleteFolder(
-        this.vaultPath,
+        this.workspacePath,
         this.snippets,
         this.folders,
         folderPath
       )
-      await this.scanVault()
+      await this.scanWorkspace()
+      this.notifyWindows('workspace:updated')
       this.notifyWindows('vault:updated')
       return result
     } finally {
@@ -216,17 +442,24 @@ class WorkspaceManager {
     }
   }
 
+  /**
+   * Imports external files or folders from the host operating system into the workspace.
+   *
+   * @param {string[]} [sourcePaths=[]]
+   * @param {string} [targetFolderId='']
+   * @returns {Promise<any>}
+   */
   async importExternalPaths(sourcePaths = [], targetFolderId = '') {
     if (this.watcher) await this.watcher.close()
     try {
       const opResult = await WorkspaceOperations.importExternalPaths(
-        this.vaultPath,
+        this.workspacePath,
         this.folders,
         sourcePaths,
         targetFolderId
       )
 
-      const scanResult = await this.scanVault()
+      const scanResult = await this.scanWorkspace()
       if (scanResult && Array.isArray(scanResult.snippets)) {
         scanResult.snippets.forEach((s) => {
           const sFolder = (s.folderId || '').replace(/\\/g, '/')
@@ -242,6 +475,7 @@ class WorkspaceManager {
         })
       }
 
+      this.notifyWindows('workspace:updated')
       this.notifyWindows('vault:updated')
       return opResult
     } finally {
@@ -249,37 +483,92 @@ class WorkspaceManager {
     }
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Media & Asset Management
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Saves an image buffer to the workspace's root assets folder.
+   * @param {Buffer} buffer
+   * @param {string} originalName
+   * @returns {Promise<any>}
+   */
   async saveImage(buffer, originalName) {
-    const result = await WorkspaceMediaManager.saveImage(this.vaultPath, buffer, originalName)
-    await this.scanVault()
+    const result = await WorkspaceMediaManager.saveImage(this.workspacePath, buffer, originalName)
+    await this.scanWorkspace()
     return result
   }
 
-  async saveVaultImage(buffer, targetFolder = '', name = '') {
+  /**
+   * Saves an image into a designated folder inside the workspace.
+   * @param {Buffer} buffer
+   * @param {string} [targetFolder='']
+   * @param {string} [name='']
+   * @returns {Promise<any>}
+   */
+  async saveWorkspaceImage(buffer, targetFolder = '', name = '') {
     const result = await WorkspaceMediaManager.saveVaultImage(
-      this.vaultPath,
+      this.workspacePath,
       buffer,
       targetFolder,
       name
     )
-    await this.scanVault()
+    await this.scanWorkspace()
+    this.notifyWindows('workspace:updated')
     this.notifyWindows('vault:updated')
     return result
   }
 
+  /**
+   * Deprecated alias for `saveWorkspaceImage`.
+   * @deprecated Use `saveWorkspaceImage` instead.
+   */
+  async saveVaultImage(buffer, targetFolder = '', name = '') {
+    return await this.saveWorkspaceImage(buffer, targetFolder, name)
+  }
+
+  /**
+   * Reads an asset file from disk as a base64 data URL.
+   * @param {string} relativePath
+   * @returns {Promise<any>}
+   */
   async readAsset(relativePath) {
-    return await WorkspaceMediaManager.readAsset(this.vaultPath, relativePath)
+    return await WorkspaceMediaManager.readAsset(this.workspacePath, relativePath)
   }
 
+  /**
+   * Deletes an asset file from disk.
+   * @param {string} relativePath
+   * @returns {Promise<any>}
+   */
   async deleteAsset(relativePath) {
-    return await WorkspaceMediaManager.deleteAsset(this.vaultPath, relativePath)
+    return await WorkspaceMediaManager.deleteAsset(this.workspacePath, relativePath)
   }
 
+  /**
+   * Scans and removes orphaned media assets not linked by any markdown note.
+   * @returns {Promise<any>}
+   */
   async cleanOrphanedAssets() {
-    return await WorkspaceMediaManager.cleanOrphanedAssets(this.vaultPath, this.snippets)
+    return await WorkspaceMediaManager.cleanOrphanedAssets(this.workspacePath, this.snippets)
   }
 
-  getSnippets() {
+  // ──────────────────────────────────────────────────────────────────────────
+  // Data Access for Preload / Renderer
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Retrieves all snippets and folders currently tracked by the workspace.
+   * If an initial or active scan is in progress, awaits the scan promise to ensure
+   * complete, un-truncated data is always returned to the renderer.
+   *
+   * @returns {Promise<{ snippets: Array<any>, folders: Array<string> }>}
+   */
+  async getSnippets() {
+    if (this.scanPromise) {
+      await this.scanPromise
+    }
+
     const list = Array.from(this.snippets.values())
     return {
       snippets: list

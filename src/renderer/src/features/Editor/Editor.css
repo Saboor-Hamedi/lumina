@@ -299,6 +299,10 @@
 .cm-editor:has(.cm-selectionBackground) .cm-cursorLayer {
   opacity: 0 !important;
 }
+.markdown-editor:has(.cm-selectionBackground) .cm-cursor,
+.cm-editor:has(.cm-selectionBackground) .cm-cursor {
+  display: none !important;
+}
 
 /* Sharp cursor */
 [data-caret-style="sharp"] .cm-cursor,
@@ -686,6 +690,8 @@
   overflow-x: hidden;
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
+  padding: 0 16px;
+  box-sizing: border-box;
 }
 
 .editor-scroller::-webkit-scrollbar {

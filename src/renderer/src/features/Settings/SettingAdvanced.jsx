@@ -21,13 +21,14 @@ const SettingAdvanced = () => {
     }
   }, [])
 
-  const handleSwitchVault = async () => {
+  const handleSwitchWorkspace = async () => {
     try {
-      if (!window.api?.selectVault) {
+      const selectFn = window.api?.selectWorkspace || window.api?.selectVault
+      if (!selectFn) {
         showToast('❌ API Error: Restart App')
         return
       }
-      const newPath = await window.api.selectVault()
+      const newPath = await selectFn()
       if (newPath) {
         showToast(`✓ Switched to: ${newPath}`)
         setTimeout(() => window.location.reload(), 1000)
@@ -38,8 +39,9 @@ const SettingAdvanced = () => {
   }
 
   const handleOpenFolder = () => {
-    if (window.api?.openVaultFolder) {
-      window.api.openVaultFolder()
+    const openFn = window.api?.openWorkspaceFolder || window.api?.openVaultFolder
+    if (openFn) {
+      openFn()
     } else {
       showToast('❌ API Error: Restart App')
     }
@@ -139,7 +141,7 @@ const SettingAdvanced = () => {
               <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
             </svg>
             <span className="path-text">
-              {settings.vaultPath || 'No workspace selected (using default)'}
+              {settings.workspacePath || settings.vaultPath || 'No workspace selected (using default)'}
             </span>
           </div>
 
@@ -147,7 +149,7 @@ const SettingAdvanced = () => {
             <button className="btn btn-outline" onClick={handleOpenFolder}>
               Open in Explorer
             </button>
-            <button className="btn btn-primary" onClick={handleSwitchVault}>
+            <button className="btn btn-primary" onClick={handleSwitchWorkspace}>
               Change Location
             </button>
           </div>

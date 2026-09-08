@@ -1,37 +1,35 @@
-/**
- * AccentColor
- * System color picker used in TitleBar dropdown and Settings modal.
- * Directly customizes and live-previews application accent colors.
- */
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { Check, RotateCcw } from 'lucide-react'
+import { Check, RotateCcw, Terminal, Power } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import ModalHeader from '../modals/ModalHeader'
 import { useDraggableModal } from '../../core/utils/useDraggableModal'
+import { useOpacity } from './hooks/useOpacity'
+import { useSettingsStore } from '../../core/store/useSettingsStore'
 import './css/accentcolor.css'
+import '../../assets/toggle-theme.css'
 
 const PRESET_PALETTE = [
-  '#40bafa', // Lumina Sky
-  '#3b82f6', // Electric Blue
-  '#2563eb', // Royal Blue
-  '#06b6d4', // Cyan
-  '#14b8a6', // Teal
-  '#10b981', // Emerald
-  '#22c55e', // Vibrant Green
-  '#84cc16', // Lime
-  '#eab308', // Yellow
-  '#f59e0b', // Amber
-  '#f97316', // Orange
-  '#ef4444', // Red
-  '#f43f5e', // Rose
-  '#ec4899', // Pink
-  '#d946ef', // Fuchsia
-  '#a855f7', // Purple
-  '#8b5cf6', // Violet
-  '#6366f1', // Indigo
-  '#64748b', // Slate
-  '#ffffff'  // Pure White
+  '#40bafa',
+  '#3b82f6',
+  '#2563eb',
+  '#06b6d4',
+  '#14b8a6',
+  '#10b981',
+  '#22c55e',
+  '#84cc16',
+  '#eab308',
+  '#f59e0b',
+  '#f97316',
+  '#ef4444',
+  '#f43f5e',
+  '#ec4899',
+  '#d946ef',
+  '#a855f7',
+  '#8b5cf6',
+  '#6366f1',
+  '#64748b',
+  '#ffffff'
 ]
 
 const getContrastCheckColor = (hex) => {
@@ -51,6 +49,115 @@ const getContrastCheckColor = (hex) => {
   const b = parseInt(clean.substring(4, 6), 16) || 0
   return (r * 299 + g * 587 + b * 114) / 1000 >= 160 ? '#09090b' : '#ffffff'
 }
+
+const PresetSwatch = React.memo(({ preset, isSelected, onClick, contrastColor }) => {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`color-picker-preset-item ${isSelected ? 'selected' : ''}`}
+      style={{
+        backgroundColor: preset,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+      title={preset}
+    >
+      {isSelected && (
+        <Check
+          size={13}
+          color={contrastColor}
+          strokeWidth={3}
+          style={{
+            filter:
+              contrastColor === '#ffffff'
+                ? 'drop-shadow(0px 1px 2px rgba(0,0,0,0.7))'
+                : 'none'
+          }}
+        />
+      )}
+    </button>
+  )
+})
+
+const OpacityControl = React.memo(({ percentage, onInput, onChange, onReset }) => {
+  return (
+    <div className="accent-dropdown-section">
+      <div className="accent-dropdown-section-header">
+        <span className="accent-dropdown-title">App Transparency</span>
+        <button
+          type="button"
+          className="accent-dropdown-reset"
+          onClick={onReset}
+          title="Reset opacity to 100%"
+        >
+          <RotateCcw size={11} className="accent-reset-icon" />
+          <span>100%</span>
+        </button>
+      </div>
+
+      <div className="accent-opacity-control">
+        <input
+          type="range"
+          min="70"
+          max="100"
+          step="1"
+          value={percentage}
+          onInput={onInput}
+          onChange={onChange}
+          className="lumina-range-slider"
+          title={`App Transparency: ${percentage}%`}
+        />
+        <span className="accent-opacity-badge">{percentage}%</span>
+      </div>
+    </div>
+  )
+})
+
+const QuickControls = React.memo(({ enableDevTools, launchOnStartup, onToggleDevTools, onToggleStartup }) => {
+  return (
+    <div className="accent-dropdown-section">
+      <div className="accent-dropdown-section-header">
+        <span className="accent-dropdown-title">Quick Controls</span>
+      </div>
+
+      <div className="lumina-toggle-row" onClick={() => onToggleDevTools()}>
+        <div className="lumina-toggle-info">
+          <span className="lumina-toggle-icon">
+            <Terminal size={14} />
+          </span>
+          <span className="lumina-toggle-label">Enable DevTools</span>
+        </div>
+        <label className="lumina-switch" onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            checked={enableDevTools}
+            onChange={(e) => onToggleDevTools(e.target.checked)}
+          />
+          <span className="lumina-slider"></span>
+        </label>
+      </div>
+
+      <div className="lumina-toggle-row" onClick={() => onToggleStartup()}>
+        <div className="lumina-toggle-info">
+          <span className="lumina-toggle-icon">
+            <Power size={14} />
+          </span>
+          <span className="lumina-toggle-label">Launch on Startup</span>
+        </div>
+        <label className="lumina-switch" onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            checked={launchOnStartup}
+            onChange={(e) => onToggleStartup(e.target.checked)}
+          />
+          <span className="lumina-slider"></span>
+        </label>
+      </div>
+    </div>
+  )
+})
 
 export const AccentColor = ({
   isOpen,
@@ -76,6 +183,10 @@ export const AccentColor = ({
   const dropdownRef = useRef(null)
   const hexInputRef = useRef(null)
   const { style: dragStyle, handleDragStart } = useDraggableModal()
+  const { percentage, setOpacity, resetOpacity } = useOpacity()
+  const enableDevTools = useSettingsStore((s) => s.settings?.enableDevTools ?? true)
+  const launchOnStartup = useSettingsStore((s) => s.settings?.launchOnStartup ?? false)
+  const updateSetting = useSettingsStore((s) => s.updateSetting)
 
   const handleCancel = useCallback(() => {
     if (previewProperty && initialColorRef.current) {
@@ -160,6 +271,49 @@ export const AccentColor = ({
     [previewProperty, onSelect]
   )
 
+  const contrastMap = useMemo(() => {
+    const map = {}
+    for (let i = 0; i < PRESET_PALETTE.length; i++) {
+      const p = PRESET_PALETTE[i]
+      map[p] = getContrastCheckColor(p)
+    }
+    return map
+  }, [])
+
+  const handleOpacityInput = useCallback((e) => {
+    setOpacity(parseInt(e.target.value, 10))
+  }, [setOpacity])
+
+  const handleOpacityChange = useCallback((e) => {
+    setOpacity(parseInt(e.target.value, 10))
+  }, [setOpacity])
+
+  const handleToggleDevTools = useCallback((val) => {
+    const next = typeof val === 'boolean' ? val : !enableDevTools
+    updateSetting('enableDevTools', next)
+  }, [enableDevTools, updateSetting])
+
+  const handleToggleStartup = useCallback((val) => {
+    const next = typeof val === 'boolean' ? val : !launchOnStartup
+    updateSetting('launchOnStartup', next)
+  }, [launchOnStartup, updateSetting])
+
+  const renderedPresets = useMemo(() => {
+    const isDropdown = variant === 'dropdown'
+    return PRESET_PALETTE.map((preset) => {
+      const isSelected = localColor.toLowerCase() === preset.toLowerCase()
+      return (
+        <PresetSwatch
+          key={preset}
+          preset={preset}
+          isSelected={isSelected}
+          onClick={() => applyColor(preset, isDropdown)}
+          contrastColor={contrastMap[preset]}
+        />
+      )
+    })
+  }, [localColor, applyColor, variant, contrastMap])
+
   if (!isOpen) return null
 
   const handleDone = () => {
@@ -188,38 +342,7 @@ export const AccentColor = ({
         </div>
 
         <div className="color-picker-presets-grid">
-          {PRESET_PALETTE.map((preset) => {
-            const isSelected = localColor.toLowerCase() === preset.toLowerCase()
-            return (
-              <button
-                type="button"
-                key={preset}
-                onClick={() => applyColor(preset, true)}
-                className={`color-picker-preset-item ${isSelected ? 'selected' : ''}`}
-                style={{
-                  backgroundColor: preset,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-                title={preset}
-              >
-                {isSelected && (
-                  <Check
-                    size={15}
-                    color={getContrastCheckColor(preset)}
-                    strokeWidth={3.5}
-                    style={{
-                      filter:
-                        getContrastCheckColor(preset) === '#ffffff'
-                          ? 'drop-shadow(0px 1px 2px rgba(0,0,0,0.7))'
-                          : 'none'
-                    }}
-                  />
-                )}
-              </button>
-            )
-          })}
+          {renderedPresets}
         </div>
 
         <div className="color-picker-hex-wrapper">
@@ -242,7 +365,29 @@ export const AccentColor = ({
             placeholder="40BAFA"
             spellCheck={false}
           />
+          <div
+            className="color-picker-hex-preview"
+            style={{ backgroundColor: localColor || defaultColor }}
+          />
         </div>
+
+        <div className="accent-dropdown-divider" />
+
+        <OpacityControl
+          percentage={percentage}
+          onInput={handleOpacityInput}
+          onChange={handleOpacityChange}
+          onReset={resetOpacity}
+        />
+
+        <div className="accent-dropdown-divider" />
+
+        <QuickControls
+          enableDevTools={enableDevTools}
+          launchOnStartup={launchOnStartup}
+          onToggleDevTools={handleToggleDevTools}
+          onToggleStartup={handleToggleStartup}
+        />
       </div>
     )
   }
@@ -261,38 +406,7 @@ export const AccentColor = ({
           <div className="color-modal-section">
             <div className="color-modal-section-title">CURATED PALETTE</div>
             <div className="color-picker-presets-grid">
-              {PRESET_PALETTE.map((preset) => {
-                const isSelected = localColor.toLowerCase() === preset.toLowerCase()
-                return (
-                  <button
-                    type="button"
-                    key={preset}
-                    onClick={() => applyColor(preset, false)}
-                    className={`color-picker-preset-item ${isSelected ? 'selected' : ''}`}
-                    style={{
-                      backgroundColor: preset,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                    title={preset}
-                  >
-                    {isSelected && (
-                      <Check
-                        size={16}
-                        color={getContrastCheckColor(preset)}
-                        strokeWidth={3.5}
-                        style={{
-                          filter:
-                            getContrastCheckColor(preset) === '#ffffff'
-                              ? 'drop-shadow(0px 1px 2px rgba(0,0,0,0.7))'
-                              : 'none'
-                        }}
-                      />
-                    )}
-                  </button>
-                )
-              })}
+              {renderedPresets}
             </div>
           </div>
 
@@ -316,6 +430,10 @@ export const AccentColor = ({
                 maxLength={6}
                 placeholder="40BAFA"
                 spellCheck={false}
+              />
+              <div
+                className="color-picker-hex-preview"
+                style={{ backgroundColor: localColor || defaultColor }}
               />
             </div>
           </div>

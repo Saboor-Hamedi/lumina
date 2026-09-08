@@ -3,11 +3,15 @@ import { Brain, ChevronDown } from 'lucide-react'
 
 export const ThinkingBlock = React.memo(({ thinkContent, isStreaming = false }) => {
   const [isOpen, setIsOpen] = useState(isStreaming)
+  const prevStreamingRef = React.useRef(isStreaming)
 
   useEffect(() => {
-    if (isStreaming) {
+    if (prevStreamingRef.current && !isStreaming) {
+      setIsOpen(false)
+    } else if (!prevStreamingRef.current && isStreaming) {
       setIsOpen(true)
     }
+    prevStreamingRef.current = isStreaming
   }, [isStreaming])
 
   if (!thinkContent?.trim()) return null

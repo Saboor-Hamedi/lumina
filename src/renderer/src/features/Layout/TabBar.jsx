@@ -6,7 +6,8 @@ import {
   ArrowRight,
   Trash2,
   Image,
-  Network
+  Network,
+  Sparkles
 } from 'lucide-react'
 import { DndContext, closestCenter, useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
 import {
@@ -25,6 +26,7 @@ import IconPicker from '../Icons/IconPicker'
 import { getSnippetIcon } from '../Icons/FileIcon'
 import ToolTip from '../../components/atoms/ToolTip'
 import { useExternalFileDrop } from '../Explorer/hooks/useExternalFileDrop'
+import { summarizeNotes } from '../AI/services/summarizeNotes'
 
 /**
  * SortableTabItem — draggable tab using @dnd-kit/sortable
@@ -355,6 +357,19 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
               icon: <Image size={14} />,
               onClick: () => setIconPickerId(contextMenu.id)
             },
+            ...(snippetMap.get(contextMenu.id) && contextMenu.id !== GRAPH_TAB_ID
+              ? [
+                  {
+                    label: 'Summarize with Lumina',
+                    icon: <Sparkles size={14} />,
+                    onClick: () => {
+                      const s = snippetMap.get(contextMenu.id)
+                      setContextMenu(null)
+                      if (s) summarizeNotes(s)
+                    }
+                  }
+                ]
+              : []),
             { type: 'divider' },
             {
               label: 'Close',

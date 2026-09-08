@@ -9,7 +9,7 @@
   <img src="https://img.shields.io/badge/license-MIT-green" alt="license">
 </p>
 
-lumina is a premium, AI-powered thinking environment. features a multi-tab workspace, knowledge graph, ai semantic search (local + cloud), 18 themes, and a beautiful editor with wikilinks, mermaid diagrams, callouts, and progressive disclosure formatting.
+lumina is a premium, AI-powered thinking environment. features a multi-tab workspace, knowledge graph, ai semantic search (local + cloud), 21 themes, and a beautiful editor with wikilinks, mermaid diagrams, KaTeX math formulas, code blocks with image export, callouts, and progressive disclosure formatting.
 
 ---
 
@@ -31,10 +31,13 @@ lumina is a premium, AI-powered thinking environment. features a multi-tab works
 ### editor
 
 - **codemirror 6** — advanced text editor with 100+ language syntax highlighting
+- **mathematical formulas (KaTeX)** — render block (`$$...$$`) and inline (`$...$`) math formulas with seamless click-to-edit
+- **fenced code blocks** — unified themes, crisp selection without ghost halos, copy-to-clipboard, and copy-as-image
 - **mermaid diagrams** — render ```` ```mermaid ```` blocks inline
 - **callouts** — `> [!note]`, `> [!warning]`, `> [!tip]` etc.
 - **wikilinks** — autocomplete, preview, bidirectional linking
 - **image paste** — drag-and-drop images, auto-saved to `.lumina/assets/`
+- **responsive layout** — padded scroller with comfortable margins across compact and widescreen displays
 - **auto-save** — debounced write to disk on every change
 - **caret persistence** — remembers cursor position per file
 
@@ -49,7 +52,8 @@ lumina is a premium, AI-powered thinking environment. features a multi-tab works
 
 ### ui
 
-- **18 themes** — dark, light, high-contrast, nature-inspired palettes
+- **21 themes** — dark, light, high-contrast, nature-inspired palettes
+- **curtain sidebars** — smooth sliding curtain resize mechanic that protects notes and tabs from squishing
 - **glassmorphism** — mirror mode with backdrop blur and translucency
 - **resizable sidebars** — left explorer + right panels, fully configurable
 - **quick search / spotlight** — `ctrl+space` for the global "ask anything" bar; `ctrl/cmd+p` for instant note access
@@ -142,40 +146,51 @@ click the graph icon in the activity bar. nodes are notes, edges are wikilinks. 
 lumina/
 ├── src/
 │   ├── main/                    # electron main process
-│   │   ├── index.js             # main entry point
-│   │   ├── vaultmanager.js      # file i/o, chokidar watcher
-│   │   ├── vaultindexer.js      # onnx semantic indexing
-│   │   ├── vaultsearch.js       # cosine similarity search
-│   │   └── settingsmanager.js   # settings persistence
-│   ├── preload/                 # preload bridge (ipc)
+│   │   ├── index.js             # main entry point, IPC, window lifecycle
+│   │   ├── SettingsManager.js   # settings persistence to .lumina/settings.json
+│   │   ├── FloatingWindowManager.js # draggable floating AI chat window manager
+│   │   ├── AppUpdater.js        # background auto-update engine
+│   │   ├── indexer-worker.js    # semantic vector indexing worker
+│   │   ├── workspace/           # workspace operations, scanner, indexer, search
+│   │   ├── auth/                # authentication handlers
+│   │   ├── backup/              # workspace backup & recovery
+│   │   └── handlers/            # dialog, window & system event IPC handlers
+│   ├── preload/                 # secure context bridge (IPC)
 │   │   └── index.js
-│   └── renderer/                # react application
+│   └── renderer/                # react 19 frontend application
 │       └── src/
-│           ├── core/
-│           │   ├── store/       # zustand stores
-│           │   │   ├── usevaultstore.js
-│           │   │   └── usesettingsstore.js
-│           │   └── AI/
-│           │       └── LuminaChat.js   # ai store (tools, search, history)
-│           ├── features/
-│           │   ├── ai/          # chat panel, composer, providers, worker
-│           │   ├── workspace/   # codemirror editor + extensions
-│           │   ├── explorer/    # file tree
-│           │   ├── graph/       # knowledge graph
-│           │   ├── settings/    # settings modal
-│           │   └── overlays/    # modals, command palette
-│           └── components/      # shared ui components
+│           ├── core/            # application core
+│           │   ├── store/       # zustand stores (workspaceStore, useSettingsStore, useUpdateStore)
+│           │   ├── hooks/       # keyboard shortcuts, font settings, theme hooks
+│           │   ├── ai/          # AI provider adapters, tool registry, token streaming
+│           │   └── db/          # client database & local storage models
+│           ├── features/        # domain feature modules
+│           │   ├── Editor/      # CodeMirror 6 markdown editor, KaTeX, callouts, wikilinks
+│           │   ├── AI/          # Lumina AI copilot, composer, prompt modes, activity cards
+│           │   ├── Layout/      # AppShell 3-pane layout, curtain resizing, TabBar, StatusBar
+│           │   ├── Navigation/  # left sidebar shell, 32px aligned header, sidebar footer
+│           │   ├── Explorer/    # virtualized file explorer, drag & drop, favorites, folder colors
+│           │   ├── Inspector/   # right sidebar (Note Details, Outline, Chat panels)
+│           │   ├── Graph/       # interactive 2D (Canvas) & 3D (Three.js) knowledge graph
+│           │   ├── commandpalette/ # global spotlight, fuzzy & semantic search, quick actions
+│           │   ├── codeBlock/   # syntax-highlighted code blocks, copy-to-clipboard, image export
+│           │   ├── table/       # interactive markdown table editor & column sorting
+│           │   ├── mermaid/     # inline mermaid diagram renderer & lightbox
+│           │   ├── media/       # media viewer, lightbox, and clipboard image pasting
+│           │   ├── roadmap/     # learning curriculum tracker & progress indicators
+│           │   ├── Settings/    # settings dialog & configuration panels
+│           │   └── Docs/        # in-app documentation & guides
+│           ├── components/      # shared UI primitives, atoms, and error boundaries
+│           └── assets/          # global styles, 21 themes, and layout rules
 ├── test/
-│   ├── main/                    # unit tests — main process
-│   ├── renderer/                # unit tests — react/hooks/stores
-│   └── e2e/                     # end-to-end tests (playwright)
-│       ├── helpers/launch.js    # app launcher + ipc helpers
-│       ├── app.e2e.test.js      # app launch & window tests
-│       ├── vault.e2e.test.js    # vault directory tests
-│       └── note.e2e.test.js     # note create/rename/delete
-├── brain/                       # project documentation
-│   └── introduction.md
-└── scripts/
+│   ├── main/                    # unit tests — main process & workspace manager
+│   ├── renderer/                # unit tests — react components, hooks, stores
+│   └── e2e/                     # end-to-end tests (playwright — 14 test suites)
+├── brain/                       # project architecture & developer documentation
+│   ├── Introduction.md          # onboarding guide & table of contents
+│   ├── purpose.md               # single source of truth for architecture & invariants
+│   └── shortcuts.md             # keyboard shortcuts reference
+└── scripts/                     # build, package, and developer automation scripts
 ```
 
 ### scripts
@@ -272,6 +287,8 @@ the `brain/` directory contains the core project documentation:
 | path | covers |
 |------|--------|
 | `brain/introduction.md` | entry point, table of contents |
+| `brain/purpose.md` | comprehensive architecture, state flow, layout system, and developer reference |
+| `brain/shortcuts.md` | complete keyboard shortcuts and navigation map |
 
 ---
 

@@ -13,7 +13,7 @@ const Indexing = () => {
       // Ignore backup events — those are handled inline in the SettingDropdown
       if (newStats?.type === 'backup') return
 
-      // Don't pop up the toast if the vault is already up-to-date with 0 files to index
+      // Don't pop up the toast if the workspace is already up-to-date with 0 files to index
       if (newStats?.stage === 'up-to-date') {
         setIsVisible(false)
         setStats(null)

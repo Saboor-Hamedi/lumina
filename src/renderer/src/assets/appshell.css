@@ -195,12 +195,20 @@ body.is-global-resizing .cm-editor {
 .shell-sidebar-left .explorer-embedded-container,
 .shell-sidebar-left .explorer-header-container,
 .shell-sidebar-left .start-section,
-.shell-sidebar-left .start-menu-body,
-.shell-sidebar-left .sidebar-footer-section {
+.shell-sidebar-left .start-menu-body {
   flex-shrink: 0 !important;
   min-width: 260px !important;
   max-width: none !important;
   width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.shell-sidebar-left .sidebar-footer-section {
+  flex-shrink: 0 !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  width: calc(100% - 16px) !important;
+  margin: 4px 8px 8px 8px !important;
   box-sizing: border-box !important;
 }
 

@@ -67,6 +67,7 @@ import { useExplorerOperations } from './hooks/useExplorerOperations'
 import { useFolderContextMenu } from './hooks/useFolderContextMenu'
 import { useExternalFileDrop } from './hooks/useExternalFileDrop'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
+import { summarizeNotes } from '../AI/services/summarizeNotes'
 
 const VirtuosoFooter = ({ context }) => (
   <div
@@ -488,6 +489,11 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     setExpandedFolders
   })
 
+  const selectedNotes = useMemo(() => {
+    if (!selectedNoteIds || selectedNoteIds.size === 0) return []
+    return (allSnippets || snippets || []).filter((s) => selectedNoteIds.has(s.id))
+  }, [allSnippets, snippets, selectedNoteIds])
+
   const {
     folderContext,
     setFolderContext,
@@ -505,6 +511,8 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     setRenamingValue,
     loadVault,
     selectedCount: totalSelectedCount,
+    selectedNotes,
+    onSummarizeSelected: (notes) => summarizeNotes(notes),
     onRequestBulkDelete: () => setBulkDeleteModalOpen(true),
     clearSelection
   })
@@ -539,7 +547,6 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
               padding: '2px 6px',
               borderRadius: '4px',
               background: 'transparent',
-              marginLeft: '5px',
               paddingLeft: '1px'
             }}
           >

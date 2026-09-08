@@ -3,7 +3,7 @@ import fs from 'fs/promises'
 import { Marked } from 'marked'
 import { markedHighlight } from 'marked-highlight'
 import hljs from 'highlight.js'
-import VaultManager from '../main/workspace/workspaceManager.js'
+import WorkspaceManager from '../main/workspace/workspaceManager.js'
 
 export const handleExportPDF = async (mainWindow, payload) => {
   try {
@@ -66,7 +66,7 @@ export const handleExportPDF = async (mainWindow, payload) => {
           }
           cleanUrl = decodeURIComponent(cleanUrl)
 
-          const buffer = await VaultManager.readAsset(cleanUrl)
+          const buffer = await WorkspaceManager.readAsset(cleanUrl)
 
           let mimeType = 'image/png'
           const lowerUrl = cleanUrl.toLowerCase()

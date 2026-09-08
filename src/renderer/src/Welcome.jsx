@@ -1,10 +1,16 @@
 import React from 'react'
-import { FileText, Search, Sparkles, FolderTree, Command, BookOpen } from 'lucide-react'
+import { FileText, Search, Sparkles, FolderTree, Command, Book, Compass } from 'lucide-react'
 import { useExternalFileDrop } from './features/Explorer/hooks/useExternalFileDrop'
 import ExternalDropOverlay from './features/Explorer/components/ExternalDropOverlay'
+import ToolTip from './components/atoms/ToolTip'
 import './assets/welcome.css'
 
-const Welcome = ({ onNew, onLoadStarterVault }) => {
+const Welcome = ({
+  onNew,
+  onOpenDocs,
+  onOpenGuide,
+  onToggleAIChat
+}) => {
   const {
     isDraggingExternal,
     handleDragEnter,
@@ -15,8 +21,13 @@ const Welcome = ({ onNew, onLoadStarterVault }) => {
 
   const handlePalette = () =>
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
-  const handleAIChat = () =>
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: '\\', ctrlKey: true, shiftKey: true }))
+  const handleAIChat = () => {
+    if (onToggleAIChat) {
+      onToggleAIChat()
+    } else {
+      window.dispatchEvent(new CustomEvent('open-ai-chat'))
+    }
+  }
 
   return (
     <div
@@ -27,6 +38,34 @@ const Welcome = ({ onNew, onLoadStarterVault }) => {
       onDrop={(e) => handleDrop(e, '')}
     >
       {isDraggingExternal && <ExternalDropOverlay targetName="Lumina" />}
+
+      {/* Top-Right Action Buttons */}
+      <div className="welcome-top-actions">
+        {onOpenDocs && (
+          <ToolTip text="Documentation (Ctrl + D)" position="bottom">
+            <button
+              className="welcome-top-btn"
+              onClick={onOpenDocs}
+              aria-label="Documentation (Ctrl + D)"
+            >
+              <Book size={13} className="welcome-top-btn-icon" />
+              <span>Docs</span>
+            </button>
+          </ToolTip>
+        )}
+        {onOpenGuide && (
+          <ToolTip text="Lumina Guide" position="bottom">
+            <button
+              className="welcome-top-btn"
+              onClick={onOpenGuide}
+              aria-label="Lumina Guide"
+            >
+              <Compass size={13} className="welcome-top-btn-icon" />
+              <span>Guide</span>
+            </button>
+          </ToolTip>
+        )}
+      </div>
       <div className="welcome-watermark">
         <svg
           viewBox="0 0 100 100"
@@ -107,19 +146,6 @@ const Welcome = ({ onNew, onLoadStarterVault }) => {
               </div>
               <div className="action-shortcut">Ctrl + N</div>
             </button>
-
-            {onLoadStarterVault && (
-              <button className="welcome-action-card" onClick={onLoadStarterVault}>
-                <div className="action-card-icon" style={{ color: 'var(--text-accent, #40bafa)' }}>
-                  <BookOpen size={12} />
-                </div>
-                <div className="action-card-content">
-                  <h3>Explore Starter Vault</h3>
-                  <p>Interactive guides & samples</p>
-                </div>
-                <div className="action-shortcut">Samples</div>
-              </button>
-            )}
 
             <button className="welcome-action-card" onClick={handlePalette}>
               <div className="action-card-icon" style={{ color: 'var(--text-accent, #40bafa)' }}>

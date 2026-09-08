@@ -1,11 +1,11 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react'
 import { Check } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
-import { useVaultStore } from '../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../core/store/workspaceStore'
 
 export function LearnedButton({ snippet }) {
-  const saveSnippet = useVaultStore((state) => state.saveSnippet)
-  const isStoreLearned = useVaultStore((state) => {
+  const saveSnippet = useWorkspaceStore((state) => state.saveSnippet)
+  const isStoreLearned = useWorkspaceStore((state) => {
     const s = state.snippets.find((item) => item.id === snippet?.id)
     return s ? !!s.isLearned : !!snippet?.isLearned
   })
@@ -26,10 +26,10 @@ export function LearnedButton({ snippet }) {
       setLocalLearned(nextLearnedState)
 
       requestAnimationFrame(() => {
-        const state = useVaultStore.getState()
+        const state = useWorkspaceStore.getState()
         const targetSnippet = state.snippets.find((s) => s.id === snippet.id) || snippet
 
-        useVaultStore.setState({
+        useWorkspaceStore.setState({
           snippets: state.snippets.map((s) =>
             s.id === snippet.id ? { ...s, isLearned: nextLearnedState } : s
           ),
@@ -60,12 +60,8 @@ export function LearnedButton({ snippet }) {
       <button
         onClick={toggleLearned}
         style={{
-          background: isLearned
-            ? 'rgba(34, 197, 94, 0.08)'
-            : 'transparent',
-          border: isLearned
-            ? '1px solid rgba(34, 197, 94, 0.25)'
-            : '1px solid transparent',
+          background: 'transparent',
+          border: '1px solid transparent',
           borderRadius: '5px',
           height: '21px',
           display: 'inline-flex',
@@ -80,50 +76,20 @@ export function LearnedButton({ snippet }) {
           fontWeight: isLearned ? 500 : 400
         }}
         onMouseEnter={(e) => {
-          if (!isLearned) {
-            e.currentTarget.style.color = 'var(--text-main, #f8fafc)'
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'
-            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)'
-          }
+          e.currentTarget.style.color = 'var(--text-main, #f8fafc)'
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'
+          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)'
         }}
         onMouseLeave={(e) => {
-          if (!isLearned) {
-            e.currentTarget.style.color = 'var(--text-muted, #94a3b8)'
-            e.currentTarget.style.background = 'transparent'
-            e.currentTarget.style.borderColor = 'transparent'
-          }
+          e.currentTarget.style.color = isLearned ? 'var(--text-main, #f8fafc)' : 'var(--text-muted, #94a3b8)'
+          e.currentTarget.style.background = 'transparent'
+          e.currentTarget.style.borderColor = 'transparent'
         }}
       >
         {isLearned ? (
-          <span
-            style={{
-              width: '12px',
-              height: '12px',
-              borderRadius: '50%',
-              background: '#22c55e',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0
-            }}
-          >
-            <Check size={8} strokeWidth={3.5} color="#000" />
-          </span>
+          <Check size={12} strokeWidth={2.5} color="var(--text-accent)" style={{ flexShrink: 0 }} />
         ) : (
-          <span
-            style={{
-              width: '12px',
-              height: '12px',
-              borderRadius: '50%',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0
-            }}
-          >
-            <Check size={7} strokeWidth={2.5} style={{ opacity: 0.4 }} />
-          </span>
+          <Check size={12} strokeWidth={2.5} style={{ opacity: 0.4, flexShrink: 0 }} />
         )}
         <span>{isLearned ? 'Learned' : 'Learn'}</span>
       </button>
@@ -132,16 +98,16 @@ export function LearnedButton({ snippet }) {
 }
 
 export function LearningTrackBadge({ snippetId }) {
-  const snippets = useVaultStore((state) => state.snippets)
-  const selectedSnippet = useVaultStore(
+  const snippets = useWorkspaceStore((state) => state.snippets)
+  const selectedSnippet = useWorkspaceStore(
     (state) => (snippetId ? state.snippets.find((s) => s.id === snippetId) : state.selectedSnippet)
   )
 
   const stats = useMemo(() => {
     if (!snippets || snippets.length === 0) return null
 
-    const totalVault = snippets.length
-    const learnedVault = snippets.filter((s) => !!s.isLearned).length
+    const totalWorkspace = snippets.length
+    const learnedWorkspace = snippets.filter((s) => !!s.isLearned).length
 
     const folderId = selectedSnippet?.folderId
     const folderSnippets = folderId ? snippets.filter((s) => (s.folderId || '') === folderId) : null
@@ -155,24 +121,24 @@ export function LearningTrackBadge({ snippetId }) {
         learned: folderLearned,
         total: folderTotal,
         percentage: folderPercent,
-        vaultLearned: learnedVault,
-        vaultTotal: totalVault
+        workspaceLearned: learnedWorkspace,
+        workspaceTotal: totalWorkspace
       }
     }
 
-    const vaultPercent = totalVault > 0 ? (learnedVault / totalVault) * 100 : 0
+    const workspacePercent = totalWorkspace > 0 ? (learnedWorkspace / totalWorkspace) * 100 : 0
     const displayPercent =
-      vaultPercent >= 10 || vaultPercent === 0
-        ? Math.round(vaultPercent)
-        : parseFloat(vaultPercent.toFixed(1))
+      workspacePercent >= 10 || workspacePercent === 0
+        ? Math.round(workspacePercent)
+        : parseFloat(workspacePercent.toFixed(1))
 
     return {
       isFolder: false,
-      learned: learnedVault,
-      total: totalVault,
+      learned: learnedWorkspace,
+      total: totalWorkspace,
       percentage: displayPercent,
-      vaultLearned: learnedVault,
-      vaultTotal: totalVault
+      workspaceLearned: learnedWorkspace,
+      workspaceTotal: totalWorkspace
     }
   }, [snippets, selectedSnippet])
 

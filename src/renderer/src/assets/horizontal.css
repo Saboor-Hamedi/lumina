@@ -6,7 +6,8 @@
 
 .horizontal:not(hr)::after,
 .horizontal-line:not(hr)::after,
-.toast-notification::after {
+.toast-notification::after,
+.ai-chat-modal-container .pane-header::after {
   content: '';
   position: absolute;
   bottom: 0;
@@ -42,6 +43,9 @@ div.horizontal-divider {
 .cm-line:has(.cm-hr),
 .cm-line:has(hr),
 .cm-hr,
+.chat-bubble hr,
+.lumina-chat hr,
+.inline-lumina-response-content hr,
 hr {
   border: none !important;
   border-top: none !important;
@@ -59,9 +63,28 @@ hr {
   padding: 0 !important;
   background: transparent !important;
   width: 100% !important;
-  max-width: none !important;
-  margin: 0 !important;
   position: relative !important;
+  box-sizing: border-box !important;
+  color: transparent !important;
+}
+
+.chat-bubble hr,
+.lumina-chat hr,
+.inline-lumina-response-content hr {
+  border: none !important;
+  border-top: none !important;
+  padding: 0 !important;
+  background: transparent !important;
+  width: 100% !important;
+  max-width: 280px !important;
+  margin: 0px auto !important;
+  height: 20px !important;
+  min-height: 20px !important;
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
   color: transparent !important;
 }
 
@@ -73,7 +96,10 @@ hr {
 .cm-line.cm-atomic-hr,
 .cm-line.cm-atomic-hr *,
 .cm-line:has(.cm-hr),
-.cm-line:has(.cm-hr) * {
+.cm-line:has(.cm-hr) *,
+.chat-bubble hr *,
+.lumina-chat hr *,
+.inline-lumina-response-content hr * {
   border: none !important;
   border-top: none !important;
   box-shadow: none !important;
@@ -84,22 +110,27 @@ hr {
 }
 
 .cm-line.cm-atomic-hr::before,
-.cm-line:has(.cm-hr)::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  top: 50%;
-  width: 250px;
-  height: 2px;
+.cm-line:has(.cm-hr)::before,
+.chat-bubble hr::before,
+.lumina-chat hr::before,
+.inline-lumina-response-content hr::before {
+  content: '' !important;
+  position: absolute !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  top: 50% !important;
+  width: 250px !important;
+  height: 2px !important;
   background: linear-gradient(to right, transparent 0%, var(--text-accent) 25%, transparent 40%, transparent 60%, var(--text-accent) 75%, transparent 100%) !important;
   pointer-events: none !important; 
-  box-shadow: 0 0 8px rgba(var(--text-accent-rgb), 0.15);
   border: none !important;
 }
 
 .cm-line.cm-atomic-hr::after,
-.cm-line:has(.cm-hr)::after {
+.cm-line:has(.cm-hr)::after,
+.chat-bubble hr::after,
+.lumina-chat hr::after,
+.inline-lumina-response-content hr::after {
   content: '✦ ✦ ✦' !important;
   position: absolute !important;
   left: 50% !important;
@@ -108,11 +139,12 @@ hr {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  background: var(--bg-editor, var(--bg-app)) !important;
-  padding: 0 12px !important;
+  background: transparent !important;
+  padding: 0 !important;
   font-size: 12px !important;
   opacity: 0.3 !important;
   pointer-events: none !important;
   color: var(--text-main) !important;
   border: none !important;
+  letter-spacing: 3px !important;
 }

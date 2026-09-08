@@ -446,3 +446,27 @@ Sidebars previously shrank/compressed their content when dragged inward. The tar
 ### E. In-Memory Daily Note Seeding & Test Isolation
 - Replaced physical starter vault disk seeding in `DailyNotes.jsx` with isolated in-memory templates, preventing unexpected disk file writes during test suite execution and keeping tests reproducible and hermetic.
 
+### F. KaTeX Math Block & Inline Formula Support (`katexExtension.js`)
+- **Problem**: Attempting to render block math formulas (e.g., `$$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$$`) threw `TypeError: state.doc.sliceDoc is not a function at buildKaTeXDecorations (katexExtension.js:140:34)`.
+- **Root Cause**: In CodeMirror 6, `sliceDoc` exists on `EditorState` (`state.sliceDoc(from, to)`), whereas `state.doc` is a `Text` instance without a `sliceDoc` method.
+- **Fix**: Replaced `state.doc.sliceDoc(item.from, item.to)` with `state.sliceDoc(item.from, item.to)` in `katexExtension.js`. Block and inline KaTeX formulas now render stably without crashing the editor boundary.
+
+### G. Fenced Code Block Geometry & Selection Polish (`codeWrapper.css` & `Editor.css`)
+- **Split Backgrounds**:
+  - Previously, `.cm-line.cm-atomic-fenced-code.cm-activeLine` applied `background-color: var(--bg-active, #2a2a2a)` (and `#f0f0f0` in light mode), causing the active line inside a code block to appear as an incongruous contrasting stripe across the block.
+  - Fix: Updated `.cm-line.cm-atomic-fenced-code.cm-activeLine` and its closing fence selectors to preserve the unified code block background (`rgba(0, 0, 0, 0.15)` in dark theme, `#f7f7f7` in light theme).
+  - Suppressed active line `box-shadow` and `outline` on fenced code lines (`html[data-use-active-line-border="true"] .cm-line.cm-atomic-fenced-code`) to prevent the purple indicator notch from leaking into code blocks.
+- **Double Selection & Blurry Ghost Halo**:
+  - When double-clicking or selecting words in code blocks, both native browser `::selection` and CodeMirror's `.cm-selectionBackground` painted simultaneously. Due to line-height and font metric discrepancies, this produced a blurry "dropdown" ghost shadow with a white text halo.
+  - Fix: Silenced native selection inside fenced code (`.cm-line.cm-atomic-fenced-code::selection { background: transparent !important; color: inherit !important; text-shadow: none !important; }`), allowing CodeMirror's `.cm-selectionBackground` to cleanly handle the selection with crisp rounded corners and preserved syntax highlighting.
+  - Added direct `display: none !important` to `.cm-cursor` when `.cm-selectionBackground` is present in `Editor.css` to prevent block cursors from clashing with active text selections.
+
+### H. Small-Screen Editor Scroller Margins (`Editor.css`)
+- **Problem**: When both the left sidebar and right sidebar were open on smaller screens, the markdown editor scroller lacked horizontal padding, causing text to run flush against the resizer edges.
+- **Fix**: Added `padding: 0 16px; box-sizing: border-box;` to `.editor-scroller` in `Editor.css`, providing consistent, comfortable breathing room across all screen widths.
+
+### I. Roadmap & ProgressTracker Visual Polish (`ProgressTracker.jsx`)
+- **Problem**: The "Mark as Learned" button previously rendered with a heavy green background and border, clashing with user theme accent colors.
+- **Fix**: Removed the prominent green background and border from the learned button state, transitioning to a clean surface and coloring the checkmark icon with `var(--text-accent)` to harmonize with the active theme.
+
+

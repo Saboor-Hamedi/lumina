@@ -34,11 +34,9 @@ export const appendToFileTool = aiSdk.tool({
     const newCode = currentCode + separator + content
 
     const updated = await vs.saveSnippet({ ...target, code: newCode })
-    if (vs.setSelectedSnippet) {
+    const isCurrentlySelected = vs.selectedSnippet?.id === target.id
+    if (isCurrentlySelected && vs.setSelectedSnippet) {
       vs.setSelectedSnippet(updated || { ...target, code: newCode })
-    }
-    if (vs.setActiveTabId) {
-      vs.setActiveTabId(target.id)
     }
 
     window.dispatchEvent(

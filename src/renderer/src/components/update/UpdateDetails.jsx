@@ -69,19 +69,23 @@ const UpdateDetails = () => {
   const rawNotes =
     !isGenericNote ? updateInfo.releaseNotes :
     `New
-- Smooth Curtain Sidebars: Resizing or closing sidebars now feels like a smooth sliding curtain. Your notes, chat, and tabs stay rock-solid in place instead of being squished or pushed off-screen.
-- Quick Escape Key: Press the Escape key anytime to instantly close the update window and popovers.
+- Math Equations: Write mathematical formulas and scientific equations directly in your notes with instant visual previews.
+- Template Gallery: Browse and apply beautiful ready-made templates for your notes — meeting notes, daily logs, research, and more.
+- Documentation Guide: Access Lumina's built-in help and learning guides anytime from the app, without leaving your workspace.
+- Image Viewer: View, zoom, pan, and copy any image saved in your workspace in a full-featured image viewer.
 
 Improved
-- Roomy AI Chat Box: Made the chat box taller and much more comfortable to type in, with larger readable text and plenty of breathing room.
-- Subtle & Clean Footer: Replaced harsh, bright borders and buttons in the AI composer with a subtle, unified design that stays out of your way.
-- Built-In Note Templates: All starter templates are now kept neatly inside the app, so your workspace stays clean without unwanted template files appearing on your disk.
-- Effortless Window Resizing: Enjoy instant, super-fast sidebar dragging with zero stutter or lag.
+- Smoother Modals: All pop-up windows open centered on screen with a polished slide-in animation and no jumping.
+- Consistent Window Sizes: The Guide, Documentation, and Template panels all share the same comfortable size and layout.
+- Readable Wide Screens: On large or maximized windows, content stays centered at a comfortable reading width instead of stretching edge-to-edge.
+- Cleaner Sidebars: Sidebar scroll bars are now invisible while still scrolling smoothly — no visual clutter.
+- Polished Template Cards: Template cards in the gallery now show a visual preview of the note layout before you pick one.
 
 Fixed
-- Right Sidebar Moving Out: Fixed an issue where the right panel pushed your text and tabs into the screen edge instead of smoothly sliding.
-- Cluttered Daily Notes: Daily Notes now opens cleanly without downloading extra template files into your note list.
-- Unwanted Horizontal Scrollbars: Removed distracting horizontal scrollbars from the bottom of your sidebars.`
+- Images Not Loading: Dropping or pasting an image into a note now correctly saves and displays it every time.
+- Image Viewer Blank Screen: Opening an image file from your workspace now loads and shows the image properly.
+- Popup Jumping: Fixed panels and menus jumping to the top of the screen when first opened.
+- Window Dismissal: Press the Escape key anytime to instantly close menus, dialogs, and this update window.`
   
   const parseNotes = (text) => {
     const categories = []

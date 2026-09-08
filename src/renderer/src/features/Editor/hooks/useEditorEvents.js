@@ -222,8 +222,30 @@ export function useEditorEvents({
         const current = view.state.doc.toString()
         if (current !== newCode) {
           view.dispatch({
-            changes: { from: 0, to: view.state.doc.length, insert: newCode }
+            changes: { from: 0, to: view.state.doc.length, insert: newCode },
+            selection: { anchor: newCode.length, head: newCode.length },
+            scrollIntoView: true
           })
+
+          const performScroll = () => {
+            const scroller =
+              view.dom?.closest('.editor-scroller') || document.querySelector('.editor-scroller')
+            if (scroller) {
+              scroller.scrollTop = scroller.scrollHeight
+            }
+            if (view.scrollDOM) {
+              view.scrollDOM.scrollTop = view.scrollDOM.scrollHeight
+            }
+          }
+
+          performScroll()
+          requestAnimationFrame(performScroll)
+          setTimeout(performScroll, 20)
+        }
+      } else {
+        const scroller = document.querySelector('.editor-scroller')
+        if (scroller) {
+          scroller.scrollTop = scroller.scrollHeight
         }
       }
     }

@@ -149,6 +149,34 @@ const SettingAssistant = () => {
         </section>
       )}
 
+      {/* Groq Speech Dictation Configuration */}
+      <section style={{ marginTop: '24px' }}>
+        <h3>Voice Dictation (Groq Whisper Cloud)</h3>
+        <div className="settings-row">
+          <div className="row-info">
+            <div className="row-label">Groq API Key (Free)</div>
+            <div className="row-hint">
+              Enables instant ~300ms speech-to-text with Whisper Large v3.{' '}
+              <a
+                href="https://console.groq.com/keys"
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: 'var(--text-accent)' }}
+              >
+                Get free key from console.groq.com
+              </a>
+            </div>
+          </div>
+          <input
+            type="password"
+            className="settings-select"
+            value={settings.groqKey || ''}
+            onChange={(e) => updateSetting('groqKey', e.target.value.trim() || null)}
+            placeholder="gsk_..."
+          />
+        </div>
+      </section>
+
       <section style={{ marginTop: '32px' }}>
         <h3>Local Features</h3>
         <div className="settings-row">

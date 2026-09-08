@@ -131,17 +131,18 @@ export const useAIStore = create((set, get) => {
       })
     },
 
-    // Search vault using persistent index (main process)
+    // Search workspace using persistent index (main process)
     searchNotes: async (query, threshold = 0.3) => {
       if (!query || !query.trim()) return []
 
       try {
-        if (!window.api?.searchVault) {
-          console.warn('[AIStore] Vault search API not available')
+        const searchFn = window.api?.searchWorkspace || window.api?.searchVault
+        if (!searchFn) {
+          console.warn('[AIStore] Workspace search API not available')
           return []
         }
 
-        const results = await window.api.searchVault(query, {
+        const results = await searchFn(query, {
           threshold,
           limit: 20,
           rerank: true
@@ -154,23 +155,25 @@ export const useAIStore = create((set, get) => {
           chunk: result // Include full chunk data
         }))
       } catch (err) {
-        console.error('[AIStore] Vault search failed:', err)
+        console.error('[AIStore] Workspace search failed:', err)
         return []
       }
     },
 
-    // Index vault (triggers main process indexing)
-    indexVault: async (vaultPath, options = {}) => {
+    // Index workspace (triggers main process indexing)
+    indexWorkspace: async (workspacePath, options = {}) => {
       try {
-        if (!window.api?.indexVault) {
+        const indexFn = window.api?.indexWorkspace || window.api?.indexVault
+        if (!indexFn) {
           console.warn('[AIStore] Index API not available')
           return { success: false }
         }
 
-        // Validate vaultPath - if not provided or invalid, pass null to let main process use VaultManager.vaultPath
-        const validVaultPath = vaultPath && typeof vaultPath === 'string' ? vaultPath : null
+        // Validate workspacePath - if not provided or invalid, pass null to let main process use default workspacePath
+        const validPath =
+          workspacePath && typeof workspacePath === 'string' ? workspacePath : null
 
-        return await window.api.indexVault(validVaultPath, {
+        return await indexFn(validPath, {
           force: options.force || false,
           onProgress: options.onProgress || null
         })
@@ -178,6 +181,10 @@ export const useAIStore = create((set, get) => {
         console.error('[AIStore] Indexing failed:', err)
         throw err
       }
+    },
+
+    indexVault: async (vaultPath, options = {}) => {
+      return get().indexWorkspace(vaultPath, options)
     },
 
     // Get index statistics
@@ -478,13 +485,11 @@ export const useAIStore = create((set, get) => {
             timestamp: Date.now()
           }
           await vaultStore.saveSnippet(newSnippet)
-          vaultStore.setSelectedSnippet(newSnippet)
 
-          // Update chat
           const successMsg = {
             id: crypto.randomUUID(),
             role: 'assistant',
-            content: `I have generated and created the file: **${topic}**. It is now open in your editor!`,
+            content: `I have generated and created the file: **${topic}**. You can find it in your workspace!`,
             timestamp: Date.now()
           }
           const current = get().chatMessages
@@ -602,26 +607,41 @@ export const useAIStore = create((set, get) => {
         console.warn('[AIStore] Mention scan failed:', err)
       }
 
-      // 1. Auto-detect file mentions by name (e.g. "What do you know about QuickNote?")
       const requestedFiles = []
       try {
         const vaultModule = await import('../../../core/store/workspaceStore')
-        const vaultSnippets = vaultModule.useVaultStore.getState().snippets
-        const queryNorm = normalize(message)
+        const vaultSnippets = vaultModule.useVaultStore.getState().snippets || []
+        const cleanMsg = message || ''
         vaultSnippets.forEach((s) => {
-          const normTitle = normalize(s.title || '')
-          if (normTitle && normTitle.length >= 3 && queryNorm.includes(normTitle)) {
-            if (
-              !mentionedSnippets.some((m) => m.id === s.id) &&
-              !requestedFiles.some((f) => f.id === s.id)
-            ) {
-              requestedFiles.push(s)
-            }
+          const rawTitle = (s.title || '').trim()
+          if (!rawTitle || rawTitle.length < 3) return
+          if (
+            mentionedSnippets.some((m) => m.id === s.id) ||
+            requestedFiles.some((f) => f.id === s.id)
+          ) {
+            return
+          }
+
+          const escaped = rawTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+          const pattern = new RegExp(`(^|[^a-zA-Z0-9_-])${escaped}([^a-zA-Z0-9_-]|$)`, 'i')
+          if (pattern.test(cleanMsg)) {
+            requestedFiles.push(s)
           }
         })
         if (requestedFiles.length > 5) requestedFiles.length = 5
       } catch (err) {
         console.warn('[AIStore] File mention detection failed:', err)
+      }
+
+      const requestedBrainDocs = []
+      try {
+        const { retrieveRelevantKnowledge } = await import('../services/brainKnowledge')
+        const matches = retrieveRelevantKnowledge(message || '', 2)
+        if (matches && matches.length > 0) {
+          requestedBrainDocs.push(...matches)
+        }
+      } catch (err) {
+        console.warn('[AIStore] Knowledge retrieval failed:', err)
       }
 
       const assistantMsg = {
@@ -645,30 +665,33 @@ export const useAIStore = create((set, get) => {
         let vaultContext = []
         let vaultAccessNote = ''
         try {
-          if (window.api?.searchVault) {
+          const searchFn = window.api?.searchWorkspace || window.api?.searchVault
+          if (searchFn) {
             const queryLength = message.trim().length
-            const adaptiveThreshold = queryLength > 50 ? 0.2 : 0.3
-            const searchResults = await window.api.searchVault(message, {
+            const adaptiveThreshold = queryLength > 100 ? 0.35 : 0.3
+            const cleanQuery = queryLength > 250 ? message.trim().slice(0, 250) : message.trim()
+            const searchResults = await searchFn(cleanQuery, {
               threshold: adaptiveThreshold,
-              limit: 10,
+              limit: 6,
               rerank: true
             })
 
             if (searchResults?.length > 0) {
               vaultContext = searchResults
+                .filter((chunk) => (chunk?.finalScore || chunk?.score || 0) >= 0.32)
                 .map((chunk) => ({
                   file: chunk?.metadata?.fileName || 'Unknown',
-                  text: String(chunk?.text || '').trim(),
+                  text: String(chunk?.text || '').trim().slice(0, 1000),
                   score: chunk?.finalScore || 0
                 }))
-                .slice(0, 8)
+                .slice(0, 5)
               vaultAccessNote = `Retrieved relevant context from workspace.`
             } else {
               vaultAccessNote = 'Synthesizing from general knowledge and active context.'
             }
           }
         } catch (searchErr) {
-          console.warn('[AIStore] Vault search failed:', searchErr)
+          console.warn('[AIStore] Workspace search failed:', searchErr)
         }
 
         const { getAIMode } = await import('../modes/index.js')
@@ -741,16 +764,18 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
 
 **TOOLS AVAILABLE** (use these for file operations):
 - 'readFile' — read a workspace file by title (only use when you do NOT already have the file content)
+- 'readBrainFile' — retrieve built-in product documentation, guides, shortcuts, and feature details about Lumina
 - 'appendToFile' — add new content to the END of an existing file
-- 'createFile' — create a brand new workspace file (provide title + content, optional folder)
-- 'updateFile' — targeted update to an existing note.
+- 'createFile' — create a brand new workspace file (provide title + content, optional folder). Created files are saved in the background and DO NOT open tabs.
+- 'updateFile' — targeted update to an existing note. If the note is already open in the editor tab, it updates directly on that open tab; if closed, it updates silently in the background without opening a tab.
 - 'clearFile' — clear the content of a file or reset it cleanly
 - 'renameFile' — rename a file (preserves folder and content) — ALWAYS use this instead of delete+create
 - 'deleteFile' — delete a workspace file by title
 - 'createFolder' — create a new folder in the workspace (provide path)
+- 'moveFolder' — move an entire folder into another folder or root without opening tabs (provide sourceFolder and targetFolder)
 - 'deleteFolder' — delete a folder and ALL its contents from the workspace (provide path)
-- 'moveFile' — move a file into a specific folder (provide title and newFolderId)
-- 'openFile' — open a file in the user's editor tab so they can see it
+- 'moveFile' — move a file into a specific folder (provide title and folder) without opening tabs
+- 'openFile' — open a file in the user's editor tab only if the user explicitly asks to view/open it
 
 **HOW TO USE TOOLS & ROUTE INTENT**:
 1. WHEN THE USER ASKS TO UPDATE, EDIT, MODIFY, FIX, CLEAN UP, REMOVE DUPLICATES, OR DEDUPLICATE A NOTE:
@@ -758,20 +783,32 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
 2. WHEN THE USER ASKS WHAT IS IN A NOTE OR TO EXPLAIN/SUMMARIZE:
    - Do not call writing tools. Explain content in chat.
 3. WHEN THE USER ASKS TO CREATE A NOTE OR TOPIC FILE:
-   - Call createFile to create and open that note in the workspace editor.
-4. WHEN THE USER ASKS A CONVERSATIONAL OR CONCEPTUAL QUESTION:
+   - Call createFile to create that note in the workspace. Do NOT open tabs or call openFile on creation — notes are saved silently in the background.
+4. WHEN THE USER ASKS TO MOVE A FOLDER:
+   - Call moveFolder with sourceFolder and targetFolder directly. Do NOT move files one-by-one or open tabs.
+5. WHEN THE USER ASKS A CONVERSATIONAL OR CONCEPTUAL QUESTION:
    - Answer directly in chat without modifying files.
-5. FOR "clear", "empty", or "wipe" → call clearFile directly.
-6. FOR "rename" → call renameFile.
-7. WHEN THE USER ASKS "WHAT HAVE YOU DONE?", "WHAT DID YOU DO?", "WHAT HAPPENED?", OR ASKS FOR A RECAP:
+6. FOR "clear", "empty", or "wipe" → call clearFile directly.
+7. FOR "rename" → call renameFile.
+8. WHEN THE USER ASKS "WHAT HAVE YOU DONE?", "WHAT DID YOU DO?", "WHAT HAPPENED?", OR ASKS FOR A RECAP:
    - Interpret this as a straightforward status request to clearly summarize recent workspace actions, files, or folders created or modified.
    - DO NOT assume the user is upset or accusing you of overreaching. DO NOT grovel, make defensive apologies, or assume you made a mistake.
    - Simply provide a concise, well-structured breakdown of what was accomplished and ask if they would like to refine anything.
-8. FOR "delete" → call deleteFile.
-9. FOR "open" → call openFile.
+9. FOR "delete" → call deleteFile.
+10. FOR "open" → call openFile only if explicitly requested by user.
+11. NO UNWANTED TAB OPENS: Never open new editor tabs when creating, moving, or updating files. If a note is already open in the editor tab, write directly to that open tab. Closed notes must update silently in the background.
 
 **CONTEXT**:
 ${vaultAccessNote}`
+        }
+
+        const truncateForContext = (text, limit = 25000) => {
+          if (!text || typeof text !== 'string') return ''
+          if (text.length <= limit) return text
+          return (
+            text.slice(0, limit) +
+            `\n\n*(Content truncated for performance: showing first ${limit} of ${text.length} characters)*`
+          )
         }
 
         if (mentionedSnippets.length > 0) {
@@ -781,8 +818,12 @@ ${vaultAccessNote}`
             '\n\n**🎯 PRIMARY TARGET FILES (@-MENTIONED BY USER — YOUR HIGHEST FOCUS):**\n'
           mentionedSnippets.forEach((snip) => {
             const currentContent =
-              vs.drafts?.[snip.id] !== undefined ? vs.drafts[snip.id] : snip.code || ''
-            systemPrompt += `[Target Note: ${snip.title}]\n${currentContent}\n\n`
+              snip.isBrain
+                ? snip.code
+                : vs.drafts?.[snip.id] !== undefined
+                  ? vs.drafts[snip.id]
+                  : snip.code || ''
+            systemPrompt += `[Target Note: ${snip.title}]\n${truncateForContext(currentContent, 25000)}\n\n`
           })
           systemPrompt +=
             'CRITICAL DIRECTIVE:\n' +
@@ -800,7 +841,7 @@ ${vaultAccessNote}`
             if (!mentionedSnippets.some((m) => m.id === f.id)) {
               const currentContent =
                 vs.drafts?.[f.id] !== undefined ? vs.drafts[f.id] : f.code || ''
-              systemPrompt += `--- ${f.title} ---\n${currentContent}\n`
+              systemPrompt += `--- ${f.title} ---\n${truncateForContext(currentContent, 25000)}\n`
             }
           })
           systemPrompt +=
@@ -818,7 +859,7 @@ ${vaultAccessNote}`
               : activeNote.code || ''
           systemPrompt +=
             `\n\n**🎯 CURRENTLY OPEN ACTIVE NOTE IN EDITOR: [Note: ${activeNote.title}]**\n` +
-            `${activeCode}\n\n` +
+            `${truncateForContext(activeCode, 25000)}\n\n` +
             `CRITICAL DIRECTIVE:\n` +
             `1. The user is currently viewing this open note in their workspace editor.\n` +
             `2. When they ask "what do you see", "what do you read", "what is this", or ask questions about their note, the content is ALREADY provided above. Answer and explain immediately based on this content without calling readFile or saying "let me read it"!\n`
@@ -830,7 +871,7 @@ ${vaultAccessNote}`
           contextSnippets.forEach((snip) => {
             const currentCode =
               vs.drafts?.[snip.id] !== undefined ? vs.drafts[snip.id] : snip.code || ''
-            systemPrompt += `[File: ${snip.title}]\n${currentCode.slice(0, 1500)}\n\n`
+            systemPrompt += `[File: ${snip.title}]\n${truncateForContext(currentCode, 1500)}\n\n`
           })
         }
 
@@ -841,6 +882,27 @@ ${vaultAccessNote}`
             systemPrompt += `[${i + 1}] source: ${ctx.file}\n${ctx.text}\n\n`
           })
         }
+
+        try {
+          const { getBrainSummaryList } = await import('../services/brainKnowledge')
+          const topics = getBrainSummaryList()
+          systemPrompt +=
+            `\n\n**LUMINA BUILT-IN KNOWLEDGE BASE (RAG)**:\n` +
+            `You have comprehensive built-in knowledge about Lumina (product vision, philosophy, keyboard shortcuts, markdown features like mermaid diagrams, LaTeX math, tables, callouts, and design specifications).\n` +
+            `Documented Topics Available in Knowledge Base:\n${topics}\n` +
+            `CRITICAL PRESENTATION RULES:\n` +
+            `- This is your native knowledge base. NEVER mention internal backend folders, paths like "brain/", "backend directory", or filesystem locations to the user.\n` +
+            `- When the user asks about Lumina (e.g., "tell me about lumina documentation", "how do shortcuts work?", "what is lumina's vision?"), synthesize the information directly, warmly, and authoritatively from a user perspective.\n`
+
+          if (requestedBrainDocs.length > 0) {
+            systemPrompt += '\n\n**Retrieved Documentation Context (ALREADY PROVIDED FOR IMMEDIATE USE):**\n'
+            requestedBrainDocs.forEach((b) => {
+              systemPrompt += `--- [Topic: ${b.name}] ---\n${truncateForContext(b.content, 25000)}\n\n`
+            })
+            systemPrompt +=
+              'CRITICAL: The reference documentation above is already provided. Answer the user\'s question immediately and naturally from a user perspective without mentioning file names, paths, or backend folders.\n'
+          }
+        } catch (_) {}
 
         if (isExecutionMode) {
         systemPrompt +=
@@ -854,7 +916,8 @@ ${vaultAccessNote}`
           '7. If asked to DRAFT/CREATE A PLAN, TRIP ITINERARY, STUDY CURRICULUM, EXPENSE TRACKER, BUSINESS STRUCTURE, CODING ARCHITECTURE, OR CLOUD PLAN: if the user explicitly asked for folders (e.g. "in a folder called Trip"), call createFolder; otherwise, create the notes directly at root level or in the current active folder. Continue calling createFile sequentially until ALL requested files exist!\n' +
           '8. If asked to CREATE A VAULT SUMMARY OR WORKSPACE DASHBOARD → create the summary note directly at root level (folder="") or requested folder.\n' +
           '9. If asked to CREATE A NOTE IN A FOLDER OR NESTED FOLDER → call createFile with folder="<Folder Path>" (e.g. folder="Database/Schema", folder="src/components/ui"). The folder will be created automatically if it does not exist.\n' +
-          '10. If asked to MOVE A FILE OR FILES (e.g. "move to folder Science", "move this note to Docs", "put in Archive") → call moveFile immediately with title="current" (or note title, or "all") and folder="<Destination Folder>" on step 1 without pre-text narration!\n' +
+          '10. If asked to MOVE A FOLDER (e.g. "move folder Science to Archive", "move folder 1-src to src") → call moveFolder with sourceFolder="<Source Folder>" and targetFolder="<Target Folder>" directly! Do NOT call readFile before or after moving folders. moveFolder moves all files automatically, so never inspect or read notes inside a folder when simply moving it. Do NOT move files one-by-one when moving an entire folder!\n' +
+          '10b. If asked to MOVE A FILE OR FILES (e.g. "move to folder Science", "move this note to Docs", "put in Archive") → call moveFile immediately with title="current" (or note title, or "all") and folder="<Destination Folder>". Moving files does NOT open tabs!\n' +
           '11. If asked to RENAME a file or RENAME FILES IN A FOLDER (e.g. "rename this note to App Architecture", "inside my 1-src folder rename the files keep them a single word", "rename files in 1-src to be concise") → find all matching files in the workspace (or inside that folder from EXISTING FILES) and call renameFile for EACH file with oldTitle="<current title or folder/title>" and newTitle="<New Name>". NEVER say "Done!" without calling renameFile for all target files!\n' +
           '12. If asked to RENAME A FOLDER or MAKE ALL FOLDERS LOWERCASE/UPPERCASE (e.g. "all folder must be lowercase", "rename all folders to lowercase", "rename folder 1-Src to 1-src") → find all matching folders from EXISTING FOLDERS and call renameFolder for EACH folder directly!\n' +
           '13. If asked to DELETE A FOLDER (or folders) → call deleteFolder DIRECTLY for each requested folder.\n' +
@@ -862,11 +925,13 @@ ${vaultAccessNote}`
           '15. If asked to ADD or WRITE content to the end of a note → call appendToFile DIRECTLY.\n' +
           '16. If asked to CLEAR or EMPTY a file → call updateFile with content: "" DIRECTLY.\n' +
           '17. If asked to EXPLAIN a file → call readFile DIRECTLY.\n' +
-          '18. When outputting folder/file trees or hierarchies in chat responses, ALWAYS wrap them in a code block with language text (e.g. ```text\\n📁 Root\\n├── 📁 01_Folder\\n└── 📁 02_Folder\\n```) with each branch on its own separate line so it renders cleanly.\n' +
+          '18. When outputting folder/file trees or hierarchies in chat responses, ALWAYS wrap them in a code block with language text (e.g. ```text\n📁 Root\n├── 📁 src\n│   └── 📁 js\n│       ├── 📄 Introduction to JavaScript\n│       ├── 📄 JavaScript Roadmap\n│       └── 📁 fundamentals\n│           └── 📄 Variables and Data Types\n├── 📁 HTTP\n└── 📁 SQLite\n```). CRITICAL INDENTATION RULE: Every file and subfolder inside a folder MUST be indented with additional tree levels (e.g. `│   └──` for the subfolder, and `│       ├──` for items inside that subfolder). NEVER list files inside a folder at the same indentation level as the folder itself! Each level of nesting MUST add 4 characters (`│   ` or `    `) of indentation!\n' +
           '19. After performing tool operations, write a clear, high-value walkthrough in chat explaining what was built or modified, highlighting key topics and wikilinks. Do NOT repeat a raw list of "Created folder X" or "Created file Y" in your text response — the UI activity card already displays every created folder and note cleanly with interactive links.\n' +
           '20. NATURAL FILE TITLES WITH SPACES: Lumina natively supports natural titles with spaces (e.g. "Today Log", "Tomorrow Expenses", "Afghanistan Trip Plan", "System Architecture", "Market Strategy"). NEVER use underscores ("_") or dashes ("-") in file titles unless the user explicitly requested them.\n' +
+          '21. ZERO TAB OPENINGS ON CREATE OR MOVE: Created notes and moved notes/folders are saved silently in the workspace in the background and must NEVER open new tabs. Only if a note is ALREADY open in the user\'s active editor tab may you write directly to that open tab.\n' +
           '\n' +
           'EXAMPLES:\n' +
+          'User: "Move folder Science to Archive" → [Call moveFolder with sourceFolder="Science" targetFolder="Archive" immediately]\n' +
           'User: "link the files together" → [Call updateFile on each target note with position="top" and replace="> 🔗 **Related:** [[Other Note]]" immediately on step 1]\n' +
           'User: "link both of my purchases link them together" → [Call updateFile on each purchase note with position="top" and replace="> 🔗 **Related:** [[Other Purchase]]" immediately]\n' +
           'User: "Move to folder Science" → [Call moveFile with title="current" and folder="Science" immediately]\n' +
@@ -1000,12 +1065,16 @@ ${vaultAccessNote}`
 
             const executedActions = []
             let activeToolStatus = ''
+            let reasoningText = ''
             let beforeToolText = ''
             let afterToolText = ''
             let hasToolCalled = false
 
             const buildRealtimeDisplay = () => {
               const blocks = []
+              if (reasoningText.trim()) {
+                blocks.push(`<think>\n${reasoningText.trim()}\n</think>`)
+              }
               if (beforeToolText.trim()) {
                 blocks.push(beforeToolText.trim())
               }
@@ -1031,6 +1100,8 @@ ${vaultAccessNote}`
                 const args = chunk.input || chunk.args || {}
                 if (chunk.toolName === 'createFolder') {
                   activeToolStatus = `📁 *Creating folder \`${args.path || '...'}\`...*`
+                } else if (chunk.toolName === 'moveFolder') {
+                  activeToolStatus = `📁 *Moving folder \`${args.sourceFolder || '...'}\` to \`${args.targetFolder || 'root'}\`...*`
                 } else if (chunk.toolName === 'createFile') {
                   activeToolStatus = `📝 *Drafting \`${args.title || 'note'}\`${args.folder ? ' in ' + args.folder : ''}...*`
                 } else if (chunk.toolName === 'moveFile') {
@@ -1061,6 +1132,8 @@ ${vaultAccessNote}`
                   }
                 } else if (chunk.toolName === 'clearFile') {
                   activeToolStatus = `🧹 *Clearing \`${args.title || 'note'}\`...*`
+                } else if (chunk.toolName === 'readBrainFile') {
+                  activeToolStatus = `📖 *Checking documentation...*`
                 } else if (chunk.toolName === 'readFile') {
                   activeToolStatus = `📄 *Reading \`${args.title || 'note'}\`...*`
                 } else if (chunk.toolName === 'openFile') {
@@ -1096,6 +1169,10 @@ ${vaultAccessNote}`
                     msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: fullContent }
                   return { chatMessages: msgs }
                 })
+              } else if (chunk.type === 'reasoning' || chunk.type === 'reasoning-delta') {
+                const rDelta = chunk.textDelta || chunk.text || chunk.delta || ''
+                reasoningText += rDelta
+                fullContent = buildRealtimeDisplay()
               } else if (chunk.type === 'text-delta') {
                 const delta = chunk.textDelta || chunk.text || chunk.delta || ''
                 if (hasToolCalled) {

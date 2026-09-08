@@ -13,7 +13,7 @@ import fs from 'fs/promises'
 import { Marked } from 'marked'
 import { markedHighlight } from 'marked-highlight'
 import hljs from 'highlight.js'
-import VaultManager from '../main/workspace/workspaceManager.js'
+import WorkspaceManager from '../main/workspace/workspaceManager.js'
 
 /**
  * Builds a self-contained, beautifully styled HTML document from markdown.
@@ -49,7 +49,7 @@ export async function generateCleanHTML(title, content) {
         }
         cleanUrl = decodeURIComponent(cleanUrl)
 
-        const buffer = await VaultManager.readAsset(cleanUrl)
+        const buffer = await WorkspaceManager.readAsset(cleanUrl)
         let mimeType = 'image/png'
         const lowerUrl = cleanUrl.toLowerCase()
         if (lowerUrl.endsWith('.jpg') || lowerUrl.endsWith('.jpeg')) mimeType = 'image/jpeg'
@@ -269,7 +269,7 @@ export async function handleExportMarkdownBundle(mainWindow, payload) {
           }
           cleanUrl = decodeURIComponent(cleanUrl)
 
-          const buffer = await VaultManager.readAsset(cleanUrl)
+          const buffer = await WorkspaceManager.readAsset(cleanUrl)
           if (buffer) {
             if (!hasCopiedAssets) {
               await fs.mkdir(assetsDir, { recursive: true })

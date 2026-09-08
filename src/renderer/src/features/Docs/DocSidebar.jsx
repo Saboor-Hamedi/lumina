@@ -21,6 +21,23 @@ const formatDocTitle = (name) => {
     .replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
+const formatFolderName = (folder) => {
+  const customFolderNames = {
+    references: 'Learning Markdown',
+    reference: 'Learning Markdown',
+    guides: 'Guides & Tutorials',
+    tutorials: 'Tutorials',
+    faq: 'FAQ',
+    api: 'API Reference'
+  }
+  if (customFolderNames[folder.toLowerCase()]) return customFolderNames[folder.toLowerCase()]
+  return folder
+    .replace(/^[0-9]+-/, '')
+    .replace(/-/g, ' ')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
 const getDocIcon = (path, name) => {
   if (name.toLowerCase().includes('shortcut')) {
     return <Keyboard size={13} style={{ marginRight: '8px', opacity: 0.7 }} />
@@ -31,26 +48,32 @@ const getDocIcon = (path, name) => {
   return <Book size={13} style={{ marginRight: '8px', opacity: 0.7 }} />
 }
 
-const DocSidebar = ({ docs, selectedDoc, setSelectedDoc }) => {
+const DocSidebar = ({ docs, selectedDoc, setSelectedDoc, isOpen = true }) => {
   const [searchQuery, setSearchQuery] = useState('')
-  const [isMarkdownCollapsed, setIsMarkdownCollapsed] = useState(false)
+  const [collapsedFolders, setCollapsedFolders] = useState({})
 
-  // Filter and organize docs into clean sections
-  const { generalDocs, referenceDocs } = useMemo(() => {
+  const toggleFolder = (folderKey) => {
+    setCollapsedFolders((prev) => ({
+      ...prev,
+      [folderKey]: !prev[folderKey]
+    }))
+  }
+
+  const { generalDocs, folderSections, totalResults } = useMemo(() => {
     const general = []
-    const references = []
+    const sections = {}
     const query = searchQuery.toLowerCase().trim()
-
-    // Exclude old/duplicate non-doc files
-    const ignoredFiles = ['refrences.md', 'lumina.md', 'scope.md']
+    const ignoredFiles = ['refrences.md', 'lumina.md', 'scope.md', 'purpose.md']
 
     Object.keys(docs)
       .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
       .forEach((path) => {
-        const filename = path.split('/').pop()
+        if (path.startsWith('specs/')) return
+        const parts = path.split('/')
+        const filename = parts[parts.length - 1]
         if (ignoredFiles.includes(filename.toLowerCase())) return
 
-        const name = filename.replace('.md', '')
+        const name = filename.replace(/\.md$/, '')
         const formattedTitle = formatDocTitle(name)
 
         if (
@@ -62,21 +85,27 @@ const DocSidebar = ({ docs, selectedDoc, setSelectedDoc }) => {
           return
         }
 
-        if (path.startsWith('references/') || path.startsWith('reference/')) {
-          references.push({ path, name, formattedTitle })
+        if (parts.length > 1) {
+          const folderKey = parts[0]
+          if (!sections[folderKey]) {
+            sections[folderKey] = []
+          }
+          sections[folderKey].push({ path, name, formattedTitle })
         } else {
           general.push({ path, name, formattedTitle })
         }
       })
 
-    return { generalDocs: general, referenceDocs: references }
+    let count = general.length
+    for (const key in sections) {
+      count += sections[key].length
+    }
+
+    return { generalDocs: general, folderSections: sections, totalResults: count }
   }, [docs, searchQuery])
 
-  const totalResults = generalDocs.length + referenceDocs.length
-
   return (
-    <div className="docs-sidebar">
-      {/* Search Header */}
+    <div className={`docs-sidebar ${isOpen ? '' : 'closed'}`}>
       <div className="docs-sidebar-header">
         <div className="docs-search-wrapper">
           <Search size={13} className="docs-search-icon" />
@@ -95,9 +124,7 @@ const DocSidebar = ({ docs, selectedDoc, setSelectedDoc }) => {
         </div>
       </div>
 
-      {/* Navigable Sidebar Tree */}
       <div className="docs-sidebar-scrollable">
-        {/* 1. GENERAL SECTION */}
         {generalDocs.length > 0 && (
           <div className="docs-sidebar-group">
             <div className="docs-sidebar-group-title">
@@ -120,59 +147,61 @@ const DocSidebar = ({ docs, selectedDoc, setSelectedDoc }) => {
           </div>
         )}
 
-        {/* 2. LEARNING MARKDOWN (COLLAPSIBLE DROPDOWN FOLDER) */}
-        {referenceDocs.length > 0 && (
-          <div className="docs-sidebar-group">
-            <div
-              className="docs-sidebar-folder"
-              onClick={() => setIsMarkdownCollapsed((prev) => !prev)}
-              title="Toggle Markdown Guide"
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Folder size={14} style={{ color: 'var(--text-accent)' }} />
-                <span>Learning Markdown</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span
-                  style={{
-                    fontSize: '10px',
-                    opacity: 0.6,
-                    fontWeight: 700,
-                    padding: '1px 5px',
-                    borderRadius: '2px',
-                    background: 'rgba(255,255,255,0.06)'
-                  }}
-                >
-                  {referenceDocs.length}
-                </span>
-                <ChevronDown
-                  size={13}
-                  className={`docs-folder-chevron ${isMarkdownCollapsed && !searchQuery ? 'collapsed' : ''}`}
-                />
-              </div>
-            </div>
-
-            {/* Chapters with tree line */}
-            {(!isMarkdownCollapsed || searchQuery) && (
-              <div className="docs-sidebar-subitems-wrap">
-                {referenceDocs.map(({ path, name, formattedTitle }) => (
-                  <div
-                    key={path}
-                    className={`docs-sidebar-item docs-sidebar-subitem ${selectedDoc === path ? 'active' : ''}`}
-                    onClick={() => setSelectedDoc(path)}
+        {Object.entries(folderSections).map(([folderKey, items]) => {
+          const isCollapsed = Boolean(collapsedFolders[folderKey])
+          return (
+            <div className="docs-sidebar-group" key={folderKey}>
+              <div
+                className="docs-sidebar-folder"
+                onClick={() => toggleFolder(folderKey)}
+                aria-label={`Toggle ${formatFolderName(folderKey)}`}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
+                  <Folder size={14} style={{ color: 'var(--text-accent)', flexShrink: 0 }} />
+                  <span style={{ whiteSpace: 'nowrap', fontSize: '12px', fontWeight: 600, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {formatFolderName(folderKey)}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                  <span
+                    style={{
+                      fontSize: '10px',
+                      opacity: 0.6,
+                      fontWeight: 700,
+                      padding: '1px 5px',
+                      borderRadius: '2px',
+                      background: 'rgba(255,255,255,0.06)'
+                    }}
                   >
-                    {getDocIcon(path, name)}
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {formattedTitle}
-                    </span>
-                  </div>
-                ))}
+                    {items.length}
+                  </span>
+                  <ChevronDown
+                    size={13}
+                    className={`docs-folder-chevron ${isCollapsed && !searchQuery ? 'collapsed' : ''}`}
+                  />
+                </div>
               </div>
-            )}
-          </div>
-        )}
 
-        {/* Empty State */}
+              {(!isCollapsed || searchQuery) && (
+                <div className="docs-sidebar-subitems-wrap">
+                  {items.map(({ path, name, formattedTitle }) => (
+                    <div
+                      key={path}
+                      className={`docs-sidebar-item docs-sidebar-subitem ${selectedDoc === path ? 'active' : ''}`}
+                      onClick={() => setSelectedDoc(path)}
+                    >
+                      {getDocIcon(path, name)}
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, flex: 1 }}>
+                        {formattedTitle}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
+
         {totalResults === 0 && (
           <div
             style={{

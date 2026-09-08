@@ -108,18 +108,19 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
       style={{
         position: 'absolute',
         bottom: 'calc(100% + 6px)',
-        left: 0,
-        right: 0,
-        width: '100%',
+        left: '8px',
+        right: '8px',
+        width: 'auto',
         backgroundColor: 'var(--bg-panel, #18181b)',
         border: '0.5px solid var(--border-dim, rgba(255, 255, 255, 0.15))',
-        borderRadius: '2px',
+        borderRadius: '6px',
         boxShadow: 'none',
-        padding: '5px',
+        overflow: 'hidden',
+        padding: '3px 0',
         zIndex: 9999,
         display: 'flex',
         flexDirection: 'column',
-        gap: '2px',
+        gap: '0px',
         boxSizing: 'border-box'
       }}
     >
@@ -130,8 +131,8 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '10px',
-              padding: '8px 10px 6px',
+              gap: '8px',
+              padding: '8px 8px 6px',
               borderBottom: '1px solid var(--border-dim)',
               marginBottom: '4px'
             }}
@@ -142,8 +143,8 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
                 alt="Profile"
                 referrerPolicy="no-referrer"
                 style={{
-                  width: '28px',
-                  height: '28px',
+                  width: '24px',
+                  height: '24px',
                   borderRadius: '50%',
                   objectFit: 'cover',
                   flexShrink: 0
@@ -154,8 +155,8 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
               />
             ) : (
               <svg
-                width="28"
-                height="28"
+                width="24"
+                height="24"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -171,7 +172,7 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
             <div style={{ overflow: 'hidden' }}>
               <div
                 style={{
-                  fontSize: '12px',
+                  fontSize: '11.5px',
                   fontWeight: '600',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
@@ -310,8 +311,8 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
               position: 'relative',
               display: 'flex',
               alignItems: 'center',
-              gap: '10px',
-              padding: '7px 10px',
+              gap: '8px',
+              padding: '7px 8px',
               border: 'none',
               background: 'transparent',
               color:
@@ -323,7 +324,7 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
               fontSize: '12px',
               fontWeight: '500',
               cursor: isBackingUp ? 'default' : 'pointer',
-              borderRadius: '2px',
+              borderRadius: '0',
               textAlign: 'left',
               width: '100%',
               transition: 'background-color 0.15s, color 0.3s'
@@ -428,15 +429,15 @@ const DropdownItem = ({ icon, label, shortcut, onClick, highlight }) => {
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '10px',
-        padding: '6px 10px',
+        gap: '8px',
+        padding: '7px 8px',
         border: 'none',
         background: 'transparent',
         color: highlight ? 'var(--text-accent)' : 'var(--text-main)',
         fontSize: '12px',
         fontWeight: '500',
         cursor: 'pointer',
-        borderRadius: '2px',
+        borderRadius: '0',
         textAlign: 'left',
         width: '100%',
         transition: 'background-color 0.1s, color 0.1s'

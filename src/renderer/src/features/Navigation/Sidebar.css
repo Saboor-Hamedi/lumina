@@ -98,14 +98,14 @@
   align-items: center;
   height: 42px;
   min-height: 42px;
-  margin: 4px 4px 8px 4px;
-  padding: 0 10px;
-  border-radius: 2px;
+  margin: 4px 8px 8px 8px;
+  padding: 0 8px;
+  border-radius: 6px;
   border: 0.5px solid var(--border-dim, rgba(255, 255, 255, 0.15));
   background: var(--bg-panel);
   box-sizing: border-box;
   flex-shrink: 0;
-  min-width: 260px;
+  min-width: 0;
   transition: all 0.15s ease;
   cursor: pointer;
 }

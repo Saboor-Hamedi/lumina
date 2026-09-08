@@ -246,7 +246,17 @@ export const useWorkspaceStore = create((set, get) => ({
       return { dirtySnippetIds: next }
     }),
 
-  loadVault: async () => {
+  /**
+   * Synchronizes workspace data (snippets, folders, tab state) from the main process.
+   *
+   * Optimizations:
+   * - Retrieves current settings from in-memory `useSettingsStore` before issuing IPC calls.
+   * - Restores persisted open tabs, pinned tabs, and last active note during initial load.
+   * - Maps custom note colors and folder highlight colors seamlessly into state.
+   *
+   * @returns {Promise<void>}
+   */
+  loadWorkspace: async () => {
     const isInitialLoad = get().snippets.length === 0
     if (isInitialLoad) {
       set({ isLoading: true })
@@ -264,7 +274,11 @@ export const useWorkspaceStore = create((set, get) => ({
           let persistedActiveId = get().activeTabId
 
           try {
-            const allSettings = (await window.api.getSetting()) || {}
+            // Prefer existing in-memory settings to avoid redundant IPC call
+            let allSettings = useSettingsStore.getState().settings
+            if (!allSettings || Object.keys(allSettings).length === 0) {
+              allSettings = (await window.api.getSetting()) || {}
+            }
             const noteColors = allSettings.noteColors || {}
             folderColors = allSettings.folderColors || {}
             merged = freshData.snippets.map((s) => ({
@@ -319,6 +333,14 @@ export const useWorkspaceStore = create((set, get) => ({
     } finally {
       set({ isLoading: false })
     }
+  },
+
+  /**
+   * Deprecated alias for `loadWorkspace`.
+   * @deprecated Use `loadWorkspace` instead.
+   */
+  loadVault: function () {
+    return get().loadWorkspace()
   },
 
   saveSnippet: async (snippet) => {
@@ -513,27 +535,27 @@ export const useWorkspaceStore = create((set, get) => ({
 }))
 
 let isStoreInitialized = false
-let lastVaultState = useWorkspaceStore.getState()
+let lastWorkspaceState = useWorkspaceStore.getState()
 
 useWorkspaceStore.subscribe((state) => {
   if (state.isLoading) return
   if (!isStoreInitialized) {
     if (state.snippets.length > 0) {
       isStoreInitialized = true
-      lastVaultState = state
+      lastWorkspaceState = state
     }
     return
   }
-  if (state.openTabs !== lastVaultState.openTabs) {
+  if (state.openTabs !== lastWorkspaceState.openTabs) {
     window.api?.saveSetting('openTabs', state.openTabs)?.catch?.(() => {})
   }
-  if (state.pinnedTabIds !== lastVaultState.pinnedTabIds) {
+  if (state.pinnedTabIds !== lastWorkspaceState.pinnedTabIds) {
     window.api?.saveSetting('pinnedTabIds', state.pinnedTabIds)?.catch?.(() => {})
   }
-  if (state.activeTabId !== lastVaultState.activeTabId) {
+  if (state.activeTabId !== lastWorkspaceState.activeTabId) {
     window.api?.saveSetting('lastSnippetId', state.activeTabId)?.catch?.(() => {})
   }
-  lastVaultState = state
+  lastWorkspaceState = state
 })
 
 export const useVaultStore = useWorkspaceStore

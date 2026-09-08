@@ -1,6 +1,6 @@
 import React from 'react'
 import { Square, X, Minus, Search, MessageSquare, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
-import { useVaultStore } from '../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import logoUrl from '../../assets/logo.png'
 import ToolTip from '../../components/atoms/ToolTip'
 import UpdateDetails from '../../components/update/UpdateDetails'
@@ -23,7 +23,7 @@ const TitleBar = ({ onToggleAIChat }) => {
     }
     return true
   })
-  const selectedSnippet = useVaultStore((s) => s.selectedSnippet)
+  const selectedSnippet = useWorkspaceStore((s) => s.selectedSnippet)
   const isMac = typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('mac')
 
   React.useEffect(() => {
@@ -57,7 +57,7 @@ const TitleBar = ({ onToggleAIChat }) => {
             {isLeftSidebarOpen ? <PanelLeftClose size={15} /> : <PanelLeftOpen size={15} />}
           </button>
         </ToolTip>
-        <div className="app-logo-wrapper" style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+        <div className="app-logo-wrapper" style={{ display: 'flex', alignItems: 'center', position: 'relative', flexShrink: 0 }}>
           <div className="app-logo">
             <div
               style={{
@@ -114,12 +114,12 @@ const TitleBar = ({ onToggleAIChat }) => {
             </button>
           </ToolTip>
           <div className="accent-titlebar-container">
-            <ToolTip text="Accent Color" position="bottom">
+            <ToolTip text="Appearance & Quick Controls" position="bottom">
               <button
                 type="button"
                 className="accent-titlebar-btn"
                 onClick={() => setIsAccentOpen((prev) => !prev)}
-                aria-label="Customize accent color"
+                aria-label="Appearance and quick controls"
               >
                 <div
                   className="accent-titlebar-swatch"

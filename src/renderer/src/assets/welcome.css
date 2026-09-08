@@ -572,3 +572,52 @@
     margin-left: auto;
   }
 }
+
+/* Subtle Top-Right Action Buttons (Docs & Guide) on Welcome Page */
+.welcome-top-actions {
+  position: absolute;
+  top: 22px;
+  right: 26px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.welcome-top-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted, #94a3b8);
+  background: var(--bg-card, rgba(255, 255, 255, 0.035));
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
+  border-radius: 8px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.welcome-top-btn:hover {
+  color: var(--text-accent, #40bafa);
+  background: var(--bg-hover, rgba(255, 255, 255, 0.07));
+  border-color: var(--text-accent, #40bafa);
+  transform: translateY(-1px);
+}
+
+.welcome-top-btn:active {
+  transform: translateY(0);
+}
+
+.welcome-top-btn-icon {
+  color: var(--text-accent, #40bafa);
+  transition: transform 0.25s ease;
+}
+
+.welcome-top-btn:hover .welcome-top-btn-icon {
+  transform: scale(1.15) rotate(10deg);
+}
+

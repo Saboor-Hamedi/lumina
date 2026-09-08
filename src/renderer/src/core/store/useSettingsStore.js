@@ -36,6 +36,7 @@ export const useSettingsStore = create((set, get) => ({
     aiChatDisplayMode: 'sidebar',
     openaiKey: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_openai_key')) || null,
     anthropicKey: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_anthropic_key')) || null,
+    groqKey: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_groq_key')) || null,
     ollamaUrl: 'http://localhost:11434/api/chat',
 
     // Command Palette
@@ -45,6 +46,7 @@ export const useSettingsStore = create((set, get) => ({
     // Desktop Integration
     launchOnStartup: false,
     globalShortcut: 'Ctrl+Space',
+    windowOpacity: 1.0,
 
     // Favorites & Ordering
     pinnedFolders: [],
@@ -141,6 +143,9 @@ export const useSettingsStore = create((set, get) => ({
       } else if (key === 'anthropicKey') {
         if (value) localStorage.setItem('lumina_anthropic_key', value)
         else localStorage.removeItem('lumina_anthropic_key')
+      } else if (key === 'groqKey') {
+        if (value) localStorage.setItem('lumina_groq_key', value)
+        else localStorage.removeItem('lumina_groq_key')
       } else if (key === 'activeProvider') {
         if (value) localStorage.setItem('lumina_active_provider', value)
       }

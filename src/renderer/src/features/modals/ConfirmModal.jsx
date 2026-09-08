@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { AlertCircle } from 'lucide-react'
-import './css/confirmModal.css'
+import './css/confirm.css'
 
 const ConfirmModal = ({
   isOpen,

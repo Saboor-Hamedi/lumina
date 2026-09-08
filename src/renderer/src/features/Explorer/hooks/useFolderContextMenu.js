@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react'
-import { Trash2, X } from 'lucide-react'
+import { Trash2, X, Sparkles } from 'lucide-react'
 import { useContextMenu } from '../../Navigation/hooks/useContextMenu'
 
 export function useFolderContextMenu({
@@ -11,6 +11,8 @@ export function useFolderContextMenu({
   setRenamingValue,
   loadVault,
   selectedCount = 0,
+  selectedNotes = [],
+  onSummarizeSelected,
   onRequestBulkDelete,
   clearSelection
 }) {
@@ -68,7 +70,20 @@ export function useFolderContextMenu({
 
   const contextMenuOptions = useMemo(() => {
     if (selectedCount > 1) {
-      return [
+      const options = []
+      if (selectedNotes && selectedNotes.length > 0) {
+        options.push({
+          label: selectedNotes.length > 1 ? `Summarize ${selectedNotes.length} Notes` : 'Summarize Note',
+          icon: React.createElement(Sparkles, { size: 14, className: 'text-primary' }),
+          onClick: () => {
+            setFolderContext(null)
+            clearSelection?.()
+            onSummarizeSelected?.(selectedNotes)
+          }
+        })
+        options.push({ type: 'divider' })
+      }
+      options.push(
         {
           label: `Delete ${selectedCount} Items`,
           icon: React.createElement(Trash2, { size: 14, className: 'text-danger' }),
@@ -86,10 +101,11 @@ export function useFolderContextMenu({
             clearSelection?.()
           }
         }
-      ]
+      )
+      return options
     }
     return defaultMenuOptions
-  }, [selectedCount, defaultMenuOptions, onRequestBulkDelete, clearSelection])
+  }, [selectedCount, selectedNotes, onSummarizeSelected, defaultMenuOptions, onRequestBulkDelete, clearSelection])
 
   const handleConfirmDeleteFolder = useCallback(async () => {
     if (!deleteConfirmFolder) return

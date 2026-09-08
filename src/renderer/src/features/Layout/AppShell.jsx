@@ -17,13 +17,15 @@ import { useToast } from '../../core/hooks/useToast'
 import ToastNotification from '../../core/notification'
 import ConfirmModal from '../modals/ConfirmModal'
 import RenameModal from '../modals/RenameModal'
+import Guide from '../modals/Guide'
 import IconPicker from '../Icons/IconPicker'
 import { handleRenameSnippet } from '../../core/hooks/handleRenameSnippet'
-import { populateStarterVault } from '../../core/utils/starterVault'
+import { populateStarterWorkspace } from '../../core/utils/starterWorkspace'
 import GlobalErrorHandler from '../../components/GlobalErrorHandler'
 import '../../assets/appshell.css'
-import '../modals/css/confirmModal.css'
+import '../modals/css/confirm.css'
 import '../modals/css/renameModal.css'
+import { VoiceCapsule } from '../voice'
 
 const LuminaChat = React.lazy(() => import('../AI/Lumina'))
 import { useAIStore } from '../AI/tools/lumina'
@@ -76,9 +78,14 @@ const AppShell = () => {
         showToast(message, type, duration)
       }
     }
+    const handleClearToast = () => clearToast()
     window.addEventListener('show-toast', handleGlobalToast)
-    return () => window.removeEventListener('show-toast', handleGlobalToast)
-  }, [showToast])
+    window.addEventListener('clear-toast', handleClearToast)
+    return () => {
+      window.removeEventListener('show-toast', handleGlobalToast)
+      window.removeEventListener('clear-toast', handleClearToast)
+    }
+  }, [showToast, clearToast])
 
   useTypingSound()
   const [settingsInitialTab, setSettingsInitialTab] = useState('look-and-feel')
@@ -91,6 +98,7 @@ const AppShell = () => {
   const [paletteInitialQuery, setPaletteInitialQuery] = useState('')
   const [showGraph, setShowGraph] = useState(false)
   const [showDocsModal, setShowDocsModal] = useState(false)
+  const [showGuideModal, setShowGuideModal] = useState(false)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [showAIChatModal, setShowAIChatModal] = useState(() => {
     return useSettingsStore.getState().settings?.aiChatModalState?.isOpen || false
@@ -223,18 +231,12 @@ const AppShell = () => {
      */
     const initApp = async () => {
       try {
-        await useSettingsStore.getState().init()
-        await loadVault()
+        await Promise.all([
+          useSettingsStore.getState().init(),
+          loadVault()
+        ])
 
-        let actualSettings = useSettingsStore.getState().settings || {}
-        try {
-          const backendSettings = await window.api.getSetting()
-          if (backendSettings) {
-            actualSettings = { ...actualSettings, ...backendSettings }
-          }
-        } catch (err) {
-          console.error('Failed to fetch backend settings during init:', err)
-        }
+        const actualSettings = useSettingsStore.getState().settings || {}
 
         if (actualSettings.openTabs && Array.isArray(actualSettings.openTabs)) {
           useVaultStore
@@ -324,6 +326,12 @@ const AppShell = () => {
     }
     window.addEventListener('open-ai-settings', handleOpenAISettings)
 
+    // Listen for Guide modal open event
+    const handleOpenGuide = () => {
+      setShowGuideModal(true)
+    }
+    window.addEventListener('open-guide', handleOpenGuide)
+
     // Listen for Global Shortcut from Main Process
     let cleanupGlobalShortcut = null
     if (window.api?.onToggleCommandPalette) {
@@ -336,6 +344,7 @@ const AppShell = () => {
       unsub && unsub()
       window.removeEventListener('open-details-modal', handleOpenDetailsModal)
       window.removeEventListener('open-ai-settings', handleOpenAISettings)
+      window.removeEventListener('open-guide', handleOpenGuide)
       if (cleanupGlobalShortcut) cleanupGlobalShortcut()
     }
   }, [updateRightSidebarOpen])
@@ -353,25 +362,6 @@ const AppShell = () => {
   const pinnedTabIds = useVaultStore((state) => state.pinnedTabIds)
 
 
-  // Ctrl+Shift+\ - Open AI Chat Modal and focus Composer textarea
-  useEffect(() => {
-    const handleAIChatShortcut = (e) => {
-      const key = e.key && e.key.toLowerCase()
-      if (
-        (e.ctrlKey || e.metaKey) &&
-        e.shiftKey &&
-        (key === '\\' || key === '|' || e.code === 'Backslash')
-      ) {
-        e.preventDefault()
-        setShowAIChatModal(true)
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('focus-ai-composer'))
-        }, 50)
-      }
-    }
-    window.addEventListener('keydown', handleAIChatShortcut)
-    return () => window.removeEventListener('keydown', handleAIChatShortcut)
-  }, [])
 
   // Ctrl+R - rename selected folder or note
   useEffect(() => {
@@ -635,16 +625,16 @@ const AppShell = () => {
     }
   }
 
-  const handleLoadStarterVault = useCallback(async () => {
+  const handleLoadStarterWorkspace = useCallback(async () => {
     try {
-      const created = await populateStarterVault((snippet) => saveSnippet(snippet))
+      const created = await populateStarterWorkspace((snippet) => saveSnippet(snippet))
       if (created && created.length > 0) {
         const welcomeSnippet = created.find((s) => s.id === 'starter-welcome') || created[0]
         setSelectedSnippet(welcomeSnippet)
         setActiveTab('files')
       }
     } catch (error) {
-      console.error('[AppShell] Failed to populate starter vault:', error)
+      console.error('[AppShell] Failed to populate starter workspace:', error)
       showToast('Failed to load starter notes', 'error')
     }
   }, [saveSnippet, setSelectedSnippet, setActiveTab, showToast])
@@ -659,14 +649,17 @@ const AppShell = () => {
     if (currentMode === 'modal') {
       setShowAIChatModal((prev) => !prev)
     } else {
-      if (isRightSidebarOpenRef.current) {
+      if (isRightSidebarOpenRef.current && rightSidebarTab === 'chat') {
         updateRightSidebarOpen(false)
       } else {
         setRightSidebarTab('chat')
         updateRightSidebarOpen(true)
       }
     }
-  }, [updateRightSidebarOpen])
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('focus-ai-composer'))
+    }, 50)
+  }, [updateRightSidebarOpen, rightSidebarTab])
 
   useEffect(() => {
     const handleAskAnything = (e) => {
@@ -829,7 +822,13 @@ const AppShell = () => {
           </div>
         ) : (
           <GlobalErrorHandler>
-            <Welcome onNew={handleNew} onLoadStarterVault={handleLoadStarterVault} />
+            <Welcome
+              onNew={handleNew}
+              onOpenGuide={() => setShowGuideModal(true)}
+              onOpenDocs={handleOpenDocs}
+              onLoadStarterWorkspace={handleLoadStarterWorkspace}
+              onToggleAIChat={handleToggleAIChat}
+            />
           </GlobalErrorHandler>
         )}
 
@@ -962,6 +961,12 @@ const AppShell = () => {
       {showDocsModal && (
         <Documentation isOpen={showDocsModal} onClose={() => setShowDocsModal(false)} />
       )}
+      <Guide
+        isOpen={showGuideModal}
+        onClose={() => setShowGuideModal(false)}
+        onLoadStarterNotes={handleLoadStarterWorkspace}
+        onOpenDocs={() => setShowDocsModal(true)}
+      />
       <ConfirmModal
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
@@ -1020,6 +1025,7 @@ const AppShell = () => {
       )}
       <ToastNotification toast={toast} onClose={clearToast} />
       <Indexing />
+      <VoiceCapsule />
     </div>
   )
 }

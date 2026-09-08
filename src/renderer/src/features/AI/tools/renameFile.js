@@ -116,7 +116,8 @@ export const renameFileTool = aiSdk.tool({
         await vs.loadVault()
       }
 
-      if (vs.setSelectedSnippet) {
+      const isCurrentlySelected = vs.selectedSnippet?.id === target.id
+      if (isCurrentlySelected && vs.setSelectedSnippet) {
         vs.setSelectedSnippet(finalSnippet)
       }
 

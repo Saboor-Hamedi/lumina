@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
-import { useVaultStore } from '../store/workspaceStore'
+import { useWorkspaceStore } from '../store/workspaceStore'
 
 export const useMention = () => {
-  const snippets = useVaultStore((state) => state.snippets)
+  const snippets = useWorkspaceStore((state) => state.snippets)
 
   const mentions = useMemo(() => {
     const mentionSet = new Set()

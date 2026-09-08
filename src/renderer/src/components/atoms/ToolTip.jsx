@@ -72,10 +72,10 @@ const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
 
         if (isTop) {
           bottomStyle = `${Math.round(window.innerHeight - rect.top + gap)}px`
-          arrowPos = { bottom: '-4px' }
+          arrowPos = { bottom: '-3px' }
         } else if (isBottom) {
           topStyle = `${Math.round(rect.bottom + gap)}px`
-          arrowPos = { top: '-4px' }
+          arrowPos = { top: '-3px' }
         }
 
         const elemCenterX = rect.left + rect.width / 2
@@ -85,9 +85,8 @@ const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
           topStyle = `${Math.round(elemCenterY)}px`
           rightStyle = `${Math.round(window.innerWidth - rect.left + gap)}px`
           transformStyle = 'translateY(-50%)'
-          arrowPos = { right: '-4px', top: '50%', marginTop: '-3px' }
+          arrowPos = { right: '-3px', top: '50%', marginTop: '-3px' }
         } else if (isRight) {
-          // Push tooltip completely outside to the right of the sidebar container
           const sidebarContainer = childRef.current.closest(
             '.shell-sidebar-left, aside, .app-sidebar, .sidebar, .sidebar-body, .sidebar-nav, .start-menu-panel, .start-menu-left, .file-explorer-sidebar, .left-sidebar, .explorer-panel'
           )
@@ -101,31 +100,28 @@ const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
             topStyle = '16px'
             transformStyle = 'none'
             const knobTop = Math.max(12, Math.round(elemCenterY - 16))
-            arrowPos = { left: '-4px', top: `${knobTop}px` }
+            arrowPos = { left: '-3px', top: `${knobTop}px` }
           } else if (elemCenterY > window.innerHeight - 100) {
             bottomStyle = '16px'
             topStyle = 'auto'
             transformStyle = 'none'
             const knobBottom = Math.max(12, Math.round(window.innerHeight - elemCenterY - 16))
-            arrowPos = { left: '-4px', bottom: `${knobBottom}px` }
+            arrowPos = { left: '-3px', bottom: `${knobBottom}px` }
           } else {
             topStyle = `${Math.round(elemCenterY)}px`
             transformStyle = 'translateY(-50%)'
-            arrowPos = { left: '-4px', top: '50%', marginTop: '-3px' }
+            arrowPos = { left: '-3px', top: '50%', marginTop: '-3px' }
           }
         } else {
-          // Horizontal alignment for Top & Bottom tooltips:
-          if (elemCenterX > window.innerWidth - 130) {
-            const rightPad = Math.max(8, window.innerWidth - rect.right)
-            rightStyle = `${Math.round(rightPad)}px`
+          if (elemCenterX > window.innerWidth - 45) {
+            rightStyle = '8px'
             transformStyle = 'none'
-            const knobRight = Math.max(10, Math.round(rect.right - elemCenterX + 8))
+            const knobRight = Math.max(8, Math.min(24, Math.round(window.innerWidth - elemCenterX - 8)))
             arrowPos.right = `${knobRight}px`
-          } else if (elemCenterX < 130) {
-            const leftPad = Math.max(8, rect.left)
-            leftStyle = `${Math.round(leftPad)}px`
+          } else if (elemCenterX < 45) {
+            leftStyle = '8px'
             transformStyle = 'none'
-            const knobLeft = Math.max(10, Math.round(elemCenterX - rect.left + 8))
+            const knobLeft = Math.max(8, Math.min(24, Math.round(elemCenterX - 8)))
             arrowPos.left = `${knobLeft}px`
           } else {
             leftStyle = `${Math.round(elemCenterX)}px`

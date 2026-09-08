@@ -118,7 +118,6 @@ export const DroppableFolderItem = React.memo(
           style={{
             cursor: 'pointer',
             userSelect: 'none',
-            marginLeft: '5px',
             paddingLeft: '3px'
           }}
           onMouseEnter={() => setIsHovered(true)}

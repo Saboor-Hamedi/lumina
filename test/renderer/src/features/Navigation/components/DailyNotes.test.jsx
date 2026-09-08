@@ -4,7 +4,7 @@ import DailyNotes from '../../../../../../src/renderer/src/features/Navigation/c
 import { useVaultStore } from '../../../../../../src/renderer/src/core/store/workspaceStore'
 import { defaultTemplates } from '../../../../../../src/renderer/src/features/Navigation/components/defaultTemplates'
 
-vi.mock('../../../../../../src/renderer/src/features/Navigation/components/TemplateModal', () => ({
+vi.mock('../../../../../../src/renderer/src/features/template/Template', () => ({
   default: ({ isOpen, onClose, templates, onSelectTemplate }) =>
     isOpen ? (
       <div data-testid="template-modal">

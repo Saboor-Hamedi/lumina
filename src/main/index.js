@@ -23,6 +23,7 @@ import { setupGoogleAuth } from './auth/googleAuth'
 import { backupToDrive } from './backup/googleDriveBackup'
 import { registerOpenNoteHandler } from './handlers/useOpenNote'
 import { useResizeWindowValue } from './handlers/useResizeWindowValue'
+import { useWindowOpacity } from './handlers/useWindowOpacity'
 import { useGlobalShortcut } from './handlers/useGlobalShortcut'
 import { useTrayIcon, isAppQuitting, setAppQuitting } from './handlers/useTrayIcon'
 import { updateAutoLauncher } from './handlers/useAutoLauncher'
@@ -106,18 +107,16 @@ async function createWindow() {
     }
   }
 
-  if (app.isPackaged) {
-    mainWindow.webContents.on('before-input-event', (event, input) => {
-      if (!allowDevTools) {
-        if (
-          (input.control && input.shift && input.key.toLowerCase() === 'i') ||
-          input.key === 'F12'
-        ) {
-          event.preventDefault()
-        }
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (!allowDevTools) {
+      if (
+        (input.control && input.shift && input.key.toLowerCase() === 'i') ||
+        input.key === 'F12'
+      ) {
+        event.preventDefault()
       }
-    })
-  }
+    }
+  })
 
   mainWindow.on('ready-to-show', async () => {
     await showWindowSafely()
@@ -126,6 +125,9 @@ async function createWindow() {
 
     SettingsManager.onChange((settings) => {
       allowDevTools = settings.enableDevTools === true
+      if (!allowDevTools && mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents.isDevToolsOpened()) {
+        mainWindow.webContents.closeDevTools()
+      }
       useGlobalShortcut(mainWindow, settings)
       updateAutoLauncher(settings.launchOnStartup)
     })
@@ -172,6 +174,7 @@ async function createWindow() {
   })
 
   useResizeWindowValue(mainWindow)
+  useWindowOpacity(mainWindow)
 
   const isDev = !app.isPackaged
   if (isDev && process.env['ELECTRON_RENDERER_URL']) {
@@ -286,9 +289,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('db:saveTheme', (_, theme) => SettingsManager.set('theme', theme))
   ipcMain.handle('backup:start', (event) => backupToDrive(VaultManager.vaultPath, event.sender))
 
-  ipcMain.handle('vault:readAsset', async (_, relativePath) => {
-    return VaultManager.readAsset(relativePath)
-  })
+
   ipcMain.handle('clipboard:writeImage', async (_, dataUrl) => {
     try {
       const img = nativeImage.createFromDataURL(dataUrl)
@@ -358,91 +359,101 @@ app.whenReady().then(async () => {
     }
   })
 
-  ipcMain.handle('vault:getSnippets', () => VaultManager.getSnippets())
-  ipcMain.handle('vault:saveSnippet', async (_, snippet) => {
-    const updatedSnippet = await VaultManager.saveSnippet(snippet)
-    if (VaultManager.vaultPath && updatedSnippet?.fileName) {
+  // Workspace IPC Handlers (dual registered for backwards compatibility)
+  const registerWorkspaceHandle = (channelSuffix, handler) => {
+    ipcMain.handle(`workspace:${channelSuffix}`, handler)
+    ipcMain.handle(`vault:${channelSuffix}`, handler)
+  }
+
+  registerWorkspaceHandle('getSnippets', () => WorkspaceManager.getSnippets())
+  registerWorkspaceHandle('saveSnippet', async (_, snippet) => {
+    const updatedSnippet = await WorkspaceManager.saveSnippet(snippet)
+    if (WorkspaceManager.workspacePath && updatedSnippet?.fileName) {
       const filePath = path.join(
-        VaultManager.vaultPath,
+        WorkspaceManager.workspacePath,
         updatedSnippet.folderId || '',
         updatedSnippet.fileName
       )
-      VaultIndexer.indexFile(filePath, true)
-        .then(() => VaultSearch.reload())
+      WorkspaceIndexer.indexFile(filePath, true)
+        .then(() => WorkspaceSearch.reload())
         .catch((err) => {
           console.error('[Main] Auto-index failed:', err)
         })
     }
     return updatedSnippet
   })
-  ipcMain.handle('vault:saveImage', (_, { buffer, name }) => VaultManager.saveImage(buffer, name))
-  ipcMain.handle('vault:saveVaultImage', (_, { buffer, targetFolder, name }) =>
-    VaultManager.saveVaultImage(buffer, targetFolder, name)
+  registerWorkspaceHandle('saveImage', (_, { buffer, name }) => WorkspaceManager.saveImage(buffer, name))
+  registerWorkspaceHandle('saveWorkspaceImage', (_, { buffer, targetFolder, name }) =>
+    WorkspaceManager.saveWorkspaceImage(buffer, targetFolder, name)
   )
-  ipcMain.handle('vault:deleteAsset', (_, relPath) => VaultManager.deleteAsset(relPath))
-  ipcMain.handle('vault:deleteSnippet', async (_, id) => {
+  registerWorkspaceHandle('saveVaultImage', (_, { buffer, targetFolder, name }) =>
+    WorkspaceManager.saveWorkspaceImage(buffer, targetFolder, name)
+  )
+  registerWorkspaceHandle('readAsset', (_, relPath) => WorkspaceManager.readAsset(relPath))
+  registerWorkspaceHandle('deleteAsset', (_, relPath) => WorkspaceManager.deleteAsset(relPath))
+  registerWorkspaceHandle('deleteSnippet', async (_, id) => {
     try {
-      const deletedPath = await VaultManager.deleteSnippet(id)
+      const deletedPath = await WorkspaceManager.deleteSnippet(id)
       if (deletedPath && typeof deletedPath === 'string') {
-        await VaultIndexer.deleteChunksForFile(deletedPath)
-        await VaultSearch.reload()
+        await WorkspaceIndexer.deleteChunksForFile(deletedPath)
+        await WorkspaceSearch.reload()
       }
       return true
     } catch (err) {
       throw err
     }
   })
-  ipcMain.handle('vault:deleteChunks', async (_, target) => {
+  registerWorkspaceHandle('deleteChunks', async (_, target) => {
     try {
       if (Array.isArray(target)) {
-        await VaultIndexer.deleteChunksForFiles(target)
+        await WorkspaceIndexer.deleteChunksForFiles(target)
       } else {
-        await VaultIndexer.deleteChunksForFile(target)
+        await WorkspaceIndexer.deleteChunksForFile(target)
       }
-      await VaultSearch.reload()
+      await WorkspaceSearch.reload()
       return true
     } catch (err) {
       console.error('[Main] Failed to delete chunks:', err)
       return false
     }
   })
-  ipcMain.handle('vault:cleanOrphans', async () => await VaultManager.cleanOrphanedAssets())
+  registerWorkspaceHandle('cleanOrphans', async () => await WorkspaceManager.cleanOrphanedAssets())
 
-  ipcMain.handle('vault:createFolder', async (_, path) => await VaultManager.createFolder(path))
-  ipcMain.handle(
-    'vault:renameFolder',
-    async (_, oldPath, newPath) => await VaultManager.renameFolder(oldPath, newPath)
+  registerWorkspaceHandle('createFolder', async (_, path) => await WorkspaceManager.createFolder(path))
+  registerWorkspaceHandle(
+    'renameFolder',
+    async (_, oldPath, newPath) => await WorkspaceManager.renameFolder(oldPath, newPath)
   )
-  ipcMain.handle('vault:moveFile', async (_, oldRelPath, newRelPath) => {
-    const result = await VaultManager.moveFile(oldRelPath, newRelPath)
-    if (VaultManager.vaultPath) {
-      const oldFullPath = path.join(VaultManager.vaultPath, oldRelPath)
-      const newFullPath = path.join(VaultManager.vaultPath, newRelPath)
-      await VaultIndexer.deleteChunksForFile(oldFullPath)
+  registerWorkspaceHandle('moveFile', async (_, oldRelPath, newRelPath) => {
+    const result = await WorkspaceManager.moveFile(oldRelPath, newRelPath)
+    if (WorkspaceManager.workspacePath) {
+      const oldFullPath = path.join(WorkspaceManager.workspacePath, oldRelPath)
+      const newFullPath = path.join(WorkspaceManager.workspacePath, newRelPath)
+      await WorkspaceIndexer.deleteChunksForFile(oldFullPath)
       if (newFullPath.endsWith('.md')) {
-        await VaultIndexer.indexFile(newFullPath, true)
+        await WorkspaceIndexer.indexFile(newFullPath, true)
       }
-      await VaultSearch.reload()
+      await WorkspaceSearch.reload()
     }
     return result
   })
-  ipcMain.handle('vault:deleteFolder', async (_, folderPath) => {
-    const result = await VaultManager.deleteFolder(folderPath)
+  registerWorkspaceHandle('deleteFolder', async (_, folderPath) => {
+    const result = await WorkspaceManager.deleteFolder(folderPath)
     if (result?.deletedFilePaths && Array.isArray(result.deletedFilePaths)) {
-      await VaultIndexer.removeFiles(result.deletedFilePaths)
-      await VaultSearch.reload()
+      await WorkspaceIndexer.removeFiles(result.deletedFilePaths)
+      await WorkspaceSearch.reload()
     }
     return result
   })
-  ipcMain.handle('vault:bulkDelete', async (_, { folderIds, snippetIds }) => {
-    const result = await VaultManager.bulkDelete({ folderIds, snippetIds })
+  registerWorkspaceHandle('bulkDelete', async (_, { folderIds, snippetIds }) => {
+    const result = await WorkspaceManager.bulkDelete({ folderIds, snippetIds })
     if (result?.deletedFilePaths && Array.isArray(result.deletedFilePaths)) {
-      await VaultIndexer.removeFiles(result.deletedFilePaths)
-      await VaultSearch.reload()
+      await WorkspaceIndexer.removeFiles(result.deletedFilePaths)
+      await WorkspaceSearch.reload()
     }
     return result
   })
-  ipcMain.handle('vault:importExternalPaths', async (_, { sourcePaths, targetFolderId }) => {
+  registerWorkspaceHandle('importExternalPaths', async (_, { sourcePaths, targetFolderId }) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('index:progress', {
         stage: 'scanning',
@@ -451,16 +462,16 @@ app.whenReady().then(async () => {
         found: sourcePaths?.length || 0
       })
     }
-    const result = await VaultManager.importExternalPaths(sourcePaths, targetFolderId)
-    if (VaultManager.vaultPath) {
-      VaultIndexer.indexVault(VaultManager.vaultPath, {
+    const result = await WorkspaceManager.importExternalPaths(sourcePaths, targetFolderId)
+    if (WorkspaceManager.workspacePath) {
+      WorkspaceIndexer.indexWorkspace(WorkspaceManager.workspacePath, {
         onProgress: (prog) => {
           if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.webContents.send('index:progress', prog)
           }
         }
       })
-        .then(() => VaultSearch.reload())
+        .then(() => WorkspaceSearch.reload())
         .catch((err) => {
           console.error('[Main] Indexing imported files failed:', err)
         })
@@ -469,18 +480,18 @@ app.whenReady().then(async () => {
   })
 
   // System
-  ipcMain.handle('vault:open-folder', async (_, relativePath) => {
-    if (VaultManager.vaultPath) {
+  registerWorkspaceHandle('open-folder', async (_, relativePath) => {
+    if (WorkspaceManager.workspacePath) {
       if (relativePath) {
         const { join } = require('path')
-        shell.showItemInFolder(join(VaultManager.vaultPath, relativePath))
+        shell.showItemInFolder(join(WorkspaceManager.workspacePath, relativePath))
       } else {
-        await shell.openPath(VaultManager.vaultPath)
+        await shell.openPath(WorkspaceManager.workspacePath)
       }
     }
   })
 
-  ipcMain.handle('vault:select-folder', async () => {
+  registerWorkspaceHandle('select-folder', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({ properties: ['openDirectory'] })
     if (canceled) return null
     const newPath = filePaths[0]
@@ -489,15 +500,16 @@ app.whenReady().then(async () => {
     const userDataPath = app.getPath('userData')
     await fs.writeFile(
       join(userDataPath, 'app_config.json'),
-      JSON.stringify({ lastVaultOpened: newPath }, null, 2)
+      JSON.stringify({ lastWorkspaceOpened: newPath, lastVaultOpened: newPath }, null, 2)
     )
 
     await SettingsManager.init(newPath)
-    await VaultManager.init(newPath)
+    await WorkspaceManager.init(newPath)
+    await SettingsManager.set('workspacePath', newPath)
     await SettingsManager.set('vaultPath', newPath)
 
-    // Index new vault in background
-    VaultIndexer.indexVault(newPath, {
+    // Index new workspace in background
+    WorkspaceIndexer.indexWorkspace(newPath, {
       force: false,
       onProgress: (stats) => {
         if (mainWindow && !mainWindow.isDestroyed()) {
@@ -506,27 +518,23 @@ app.whenReady().then(async () => {
       }
     })
       .then(() => {
-        console.info('[Main] New vault indexing complete, reloading search index...')
-        return VaultSearch.reload()
+        return WorkspaceSearch.reload()
       })
       .catch((err) => {
-        console.error('[Main] Vault indexing failed:', err)
+        console.error('[Main] Workspace indexing failed:', err)
       })
     return newPath
   })
 
-  // Vault Indexing IPC Handlers
-  ipcMain.handle('vault:index', async (_, vaultPath, options = {}) => {
+  // Workspace Indexing IPC Handlers
+  registerWorkspaceHandle('index', async (_, workspacePath, options = {}) => {
     try {
-      // Use provided vaultPath or fallback to VaultManager's vaultPath
-      const targetPath = vaultPath || VaultManager.vaultPath
-
-      // Validate path before indexing
+      const targetPath = workspacePath || WorkspaceManager.workspacePath
       if (!targetPath || typeof targetPath !== 'string') {
-        throw new Error('Vault path must be a string. Please select a vault folder first.')
+        throw new Error('Workspace path must be a string. Please select a workspace folder first.')
       }
 
-      const result = await VaultIndexer.indexVault(targetPath, {
+      const result = await WorkspaceIndexer.indexWorkspace(targetPath, {
         ...options,
         onProgress: (stats) => {
           if (mainWindow && !mainWindow.isDestroyed()) {
@@ -535,8 +543,7 @@ app.whenReady().then(async () => {
           if (options.onProgress) options.onProgress(stats)
         }
       })
-      // Reload search index after indexing completes
-      await VaultSearch.reload()
+      await WorkspaceSearch.reload()
       return result
     } catch (err) {
       console.error('[Main] Index request failed:', err)
@@ -544,18 +551,17 @@ app.whenReady().then(async () => {
     }
   })
 
-  ipcMain.handle('vault:rebuild-index', async (_, vaultPath) => {
+  registerWorkspaceHandle('rebuild-index', async (_, workspacePath) => {
     try {
-      const targetPath = vaultPath || VaultManager.vaultPath
-      const result = await VaultIndexer.rebuildIndex(targetPath, {
+      const targetPath = workspacePath || WorkspaceManager.workspacePath
+      const result = await WorkspaceIndexer.rebuildIndex(targetPath, {
         onProgress: (stats) => {
           if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.webContents.send('index:progress', stats)
           }
         }
       })
-      // Reload search index after rebuild
-      await VaultSearch.reload()
+      await WorkspaceSearch.reload()
       return result
     } catch (err) {
       console.error('[Main] Rebuild index failed:', err)
@@ -563,22 +569,21 @@ app.whenReady().then(async () => {
     }
   })
 
-  ipcMain.handle('vault:index-stats', async () => {
+  registerWorkspaceHandle('index-stats', async () => {
     try {
-      return await VaultIndexer.getStats()
+      return await WorkspaceIndexer.getStats()
     } catch (err) {
       console.error('[Main] Get index stats failed:', err)
       return { error: err.message }
     }
   })
 
-  // Vault Search IPC Handlers
-  ipcMain.handle('vault:search', async (_, query, options = {}) => {
+  // Workspace Search IPC Handlers
+  registerWorkspaceHandle('search', async (_, query, options = {}) => {
     try {
-      // Trigger indexing lazily on first search
-      if (!hasIndexed && VaultManager.vaultPath) {
+      if (!hasIndexed && WorkspaceManager.workspacePath) {
         hasIndexed = true
-        VaultIndexer.indexVault(VaultManager.vaultPath, {
+        WorkspaceIndexer.indexWorkspace(WorkspaceManager.workspacePath, {
           force: false,
           onProgress: (stats) => {
             if (mainWindow && !mainWindow.isDestroyed()) {
@@ -586,28 +591,28 @@ app.whenReady().then(async () => {
             }
           }
         })
-          .then(() => VaultSearch.reload())
+          .then(() => WorkspaceSearch.reload())
           .catch((err) => console.error('[Main] Lazy indexing failed:', err))
       }
 
-      return await VaultSearch.search(query, options)
+      return await WorkspaceSearch.search(query, options)
     } catch (err) {
       console.error('[Main] Search failed:', err)
       return []
     }
   })
 
-  ipcMain.handle('vault:search-stats', () => {
+  registerWorkspaceHandle('search-stats', () => {
     try {
-      return VaultSearch.getStats()
+      return WorkspaceSearch.getStats()
     } catch (err) {
       return { error: err.message }
     }
   })
 
-  ipcMain.handle('vault:find-similar', async (_, chunkId, limit = 10) => {
+  registerWorkspaceHandle('find-similar', async (_, chunkId, limit = 10) => {
     try {
-      return await VaultSearch.findSimilar(chunkId, limit)
+      return await WorkspaceSearch.findSimilar(chunkId, limit)
     } catch (err) {
       console.error('[Main] Find similar failed:', err)
       return []
@@ -638,24 +643,25 @@ app.whenReady().then(async () => {
     const userDataPath = app.getPath('userData')
     const appConfigPath = join(userDataPath, 'app_config.json')
 
-    let savedVaultPath = null
+    let savedWorkspacePath = null
 
     // ── E2E test mode ──────────────────────────────────────────────────────────
-    // When launched by Playwright, LUMINA_TEST_VAULT points to a fresh temp dir.
-    // Skip reading app_config.json so the app starts with a clean empty vault
+    // When launched by Playwright, LUMINA_TEST_WORKSPACE / LUMINA_TEST_VAULT points to a fresh temp dir.
+    // Skip reading app_config.json so the app starts with a clean empty workspace
     // and shows the welcome page, exactly as a brand-new user would see it.
-    if (process.env.LUMINA_TEST_VAULT) {
-      savedVaultPath = process.env.LUMINA_TEST_VAULT
-      console.info('[Main] E2E test mode — using temp vault:', savedVaultPath)
+    if (process.env.LUMINA_TEST_WORKSPACE || process.env.LUMINA_TEST_VAULT) {
+      savedWorkspacePath = process.env.LUMINA_TEST_WORKSPACE || process.env.LUMINA_TEST_VAULT
     } else {
       try {
         const configData = await fs.readFile(appConfigPath, 'utf8')
-        savedVaultPath = JSON.parse(configData).lastVaultOpened
+        const cfg = JSON.parse(configData)
+        savedWorkspacePath = cfg.lastWorkspaceOpened || cfg.lastVaultOpened
       } catch (e) {
         // Fallback migration: read from old settings.json
         try {
           const oldSettings = await fs.readFile(join(userDataPath, 'settings.json'), 'utf8')
-          savedVaultPath = JSON.parse(oldSettings).vaultPath
+          const oldCfg = JSON.parse(oldSettings)
+          savedWorkspacePath = oldCfg.workspacePath || oldCfg.vaultPath
         } catch (err) {}
       }
     }
@@ -664,39 +670,39 @@ app.whenReady().then(async () => {
     const oldDefaultPath = join(app.getPath('documents'), 'Lumina Vault')
     const newDefaultPath = join(app.getPath('documents'), 'lumina')
 
-    if (!savedVaultPath || savedVaultPath === oldDefaultPath) {
-      savedVaultPath = newDefaultPath
+    if (!savedWorkspacePath || savedWorkspacePath === oldDefaultPath) {
+      savedWorkspacePath = newDefaultPath
       await fs.writeFile(
         appConfigPath,
-        JSON.stringify({ lastVaultOpened: savedVaultPath }, null, 2)
+        JSON.stringify({ lastWorkspaceOpened: savedWorkspacePath, lastVaultOpened: savedWorkspacePath }, null, 2)
       )
     }
 
-    // Initialize SettingsManager inside the vault
-    await SettingsManager.init(savedVaultPath)
-    await SettingsManager.set('vaultPath', savedVaultPath)
+    // Initialize SettingsManager inside the workspace
+    await SettingsManager.init(savedWorkspacePath)
+    await SettingsManager.set('workspacePath', savedWorkspacePath)
+    await SettingsManager.set('vaultPath', savedWorkspacePath)
 
-    // Initialize vault indexer and search
-    await VaultIndexer.init(userDataPath)
-    await VaultSearch.init(userDataPath)
+    // Initialize workspace indexer and search
+    await WorkspaceIndexer.init(userDataPath)
+    await WorkspaceSearch.init(userDataPath)
 
-    await VaultManager.init(savedVaultPath, app.getPath('documents'))
+    await WorkspaceManager.init(savedWorkspacePath, app.getPath('documents'))
     await migrateFromSQLite()
 
     // Defer indexing until the renderer is initialized so progress events are received reliably.
-    const startupVaultPath = savedVaultPath
+    const startupWorkspacePath = savedWorkspacePath
 
     await createWindow()
 
     mainWindow.webContents.once('did-finish-load', () => {
-      VaultIndexer.warmWorker().catch((err) => console.error('[Main] Worker pre-warm failed:', err))
+      WorkspaceIndexer.warmWorker().catch((err) => console.error('[Main] Worker pre-warm failed:', err))
 
-      if (startupVaultPath && typeof startupVaultPath === 'string') {
+      if (startupWorkspacePath && typeof startupWorkspacePath === 'string') {
         hasIndexed = true
 
         setTimeout(() => {
-          console.info('[Main] Starting background indexing after renderer ready...')
-          VaultIndexer.indexVault(startupVaultPath, {
+          WorkspaceIndexer.indexWorkspace(startupWorkspacePath, {
             force: false,
             onProgress: (stats) => {
               if (mainWindow && !mainWindow.isDestroyed()) {
@@ -705,11 +711,10 @@ app.whenReady().then(async () => {
             }
           })
             .then(() => {
-              console.info('[Main] Background indexing complete, reloading search index...')
-              return VaultSearch.reload()
+              return WorkspaceSearch.reload()
             })
             .catch((err) => {
-              console.error('[Main] Background indexing failed:', err)
+              console.error('[Main] Startup workspace indexing failed:', err)
             })
         }, 250)
       }

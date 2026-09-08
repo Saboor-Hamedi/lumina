@@ -13,37 +13,55 @@ const api = {
     }
   },
 
-  getSnippets: () => electronAPI.ipcRenderer.invoke('vault:getSnippets'),
-  saveSnippet: (snippet) => electronAPI.ipcRenderer.invoke('vault:saveSnippet', snippet),
-  saveImage: (buffer, name) => electronAPI.ipcRenderer.invoke('vault:saveImage', { buffer, name }),
+  getSnippets: () => electronAPI.ipcRenderer.invoke('workspace:getSnippets'),
+  saveSnippet: (snippet) => electronAPI.ipcRenderer.invoke('workspace:saveSnippet', snippet),
+  saveImage: (buffer, name) => electronAPI.ipcRenderer.invoke('workspace:saveImage', { buffer, name }),
+  saveWorkspaceImage: (buffer, targetFolder, name) =>
+    electronAPI.ipcRenderer.invoke('workspace:saveWorkspaceImage', { buffer, targetFolder, name }),
   saveVaultImage: (buffer, targetFolder, name) =>
-    electronAPI.ipcRenderer.invoke('vault:saveVaultImage', { buffer, targetFolder, name }),
-  deleteAsset: (relativePath) => electronAPI.ipcRenderer.invoke('vault:deleteAsset', relativePath),
-  deleteSnippet: (id) => electronAPI.ipcRenderer.invoke('vault:deleteSnippet', id),
-  readAsset: (relativePath) => electronAPI.ipcRenderer.invoke('vault:readAsset', relativePath),
+    electronAPI.ipcRenderer.invoke('workspace:saveWorkspaceImage', { buffer, targetFolder, name }),
+  deleteAsset: (relativePath) => electronAPI.ipcRenderer.invoke('workspace:deleteAsset', relativePath),
+  deleteSnippet: (id) => electronAPI.ipcRenderer.invoke('workspace:deleteSnippet', id),
+  readAsset: (relativePath) => electronAPI.ipcRenderer.invoke('workspace:readAsset', relativePath),
   writeImageToClipboard: (dataUrl) =>
     electronAPI.ipcRenderer.invoke('clipboard:writeImage', dataUrl),
-  cleanOrphans: () => electronAPI.ipcRenderer.invoke('vault:cleanOrphans'),
+  cleanOrphans: () => electronAPI.ipcRenderer.invoke('workspace:cleanOrphans'),
+  openWorkspaceFolder: (relativePath) =>
+    electronAPI.ipcRenderer.invoke('workspace:open-folder', relativePath),
   openVaultFolder: (relativePath) =>
-    electronAPI.ipcRenderer.invoke('vault:open-folder', relativePath),
-  selectVault: () => electronAPI.ipcRenderer.invoke('vault:select-folder'),
+    electronAPI.ipcRenderer.invoke('workspace:open-folder', relativePath),
+  selectWorkspace: () => electronAPI.ipcRenderer.invoke('workspace:select-folder'),
+  selectVault: () => electronAPI.ipcRenderer.invoke('workspace:select-folder'),
 
-  createFolder: (path) => electronAPI.ipcRenderer.invoke('vault:createFolder', path),
+  createFolder: (path) => electronAPI.ipcRenderer.invoke('workspace:createFolder', path),
   renameFolder: (oldPath, newPath) =>
-    electronAPI.ipcRenderer.invoke('vault:renameFolder', oldPath, newPath),
+    electronAPI.ipcRenderer.invoke('workspace:renameFolder', oldPath, newPath),
   moveFile: (oldRelPath, newRelPath) =>
-    electronAPI.ipcRenderer.invoke('vault:moveFile', oldRelPath, newRelPath),
-  deleteFolder: (path) => electronAPI.ipcRenderer.invoke('vault:deleteFolder', path),
+    electronAPI.ipcRenderer.invoke('workspace:moveFile', oldRelPath, newRelPath),
+  deleteFolder: (path) => electronAPI.ipcRenderer.invoke('workspace:deleteFolder', path),
   bulkDelete: ({ folderIds, snippetIds }) =>
-    electronAPI.ipcRenderer.invoke('vault:bulkDelete', { folderIds, snippetIds }),
-  deleteChunks: (target) => electronAPI.ipcRenderer.invoke('vault:deleteChunks', target),
+    electronAPI.ipcRenderer.invoke('workspace:bulkDelete', { folderIds, snippetIds }),
+  deleteChunks: (target) => electronAPI.ipcRenderer.invoke('workspace:deleteChunks', target),
   importExternalPaths: (sourcePaths, targetFolderId) =>
-    electronAPI.ipcRenderer.invoke('vault:importExternalPaths', { sourcePaths, targetFolderId }),
+    electronAPI.ipcRenderer.invoke('workspace:importExternalPaths', { sourcePaths, targetFolderId }),
 
+  onWorkspaceUpdated: (cb) => {
+    const listener = () => cb()
+    electronAPI.ipcRenderer.on('workspace:updated', listener)
+    electronAPI.ipcRenderer.on('vault:updated', listener)
+    return () => {
+      electronAPI.ipcRenderer.removeListener('workspace:updated', listener)
+      electronAPI.ipcRenderer.removeListener('vault:updated', listener)
+    }
+  },
   onVaultUpdated: (cb) => {
     const listener = () => cb()
+    electronAPI.ipcRenderer.on('workspace:updated', listener)
     electronAPI.ipcRenderer.on('vault:updated', listener)
-    return () => electronAPI.ipcRenderer.removeListener('vault:updated', listener)
+    return () => {
+      electronAPI.ipcRenderer.removeListener('workspace:updated', listener)
+      electronAPI.ipcRenderer.removeListener('vault:updated', listener)
+    }
   },
 
   // Settings & Theme
@@ -68,6 +86,8 @@ const api = {
   minimize: () => electronAPI.ipcRenderer.invoke('window:minimize'),
   toggleMaximize: () => electronAPI.ipcRenderer.invoke('window:toggle-maximize'),
   closeWindow: () => electronAPI.ipcRenderer.invoke('window:close'),
+  setWindowOpacity: (opacity) => electronAPI.ipcRenderer.invoke('window:set-opacity', opacity),
+  getWindowOpacity: () => electronAPI.ipcRenderer.invoke('window:get-opacity'),
   onToggleCommandPalette: (cb) => {
     const listener = () => cb()
     electronAPI.ipcRenderer.on('window:toggle-command-palette', listener)
@@ -93,22 +113,25 @@ const api = {
   exportText: (payload) => electronAPI.ipcRenderer.invoke('window:export-text', payload),
   exportDocs: (payload) => electronAPI.ipcRenderer.invoke('window:export-docs', payload),
 
-  // Vault Indexing
-  indexVault: (vaultPath, options) =>
-    electronAPI.ipcRenderer.invoke('vault:index', vaultPath, options),
-  rebuildIndex: (vaultPath) => electronAPI.ipcRenderer.invoke('vault:rebuild-index', vaultPath),
-  getIndexStats: () => electronAPI.ipcRenderer.invoke('vault:index-stats'),
+  // Workspace Indexing
+  indexWorkspace: (workspacePath, options) =>
+    electronAPI.ipcRenderer.invoke('workspace:index', workspacePath, options),
+  indexVault: (workspacePath, options) =>
+    electronAPI.ipcRenderer.invoke('workspace:index', workspacePath, options),
+  rebuildIndex: (workspacePath) => electronAPI.ipcRenderer.invoke('workspace:rebuild-index', workspacePath),
+  getIndexStats: () => electronAPI.ipcRenderer.invoke('workspace:index-stats'),
   onIndexProgress: (cb) => {
     const listener = (_, stats) => cb(stats)
     electronAPI.ipcRenderer.on('index:progress', listener)
     return () => electronAPI.ipcRenderer.removeListener('index:progress', listener)
   },
 
-  // Vault Search
-  searchVault: (query, options) => electronAPI.ipcRenderer.invoke('vault:search', query, options),
-  getSearchStats: () => electronAPI.ipcRenderer.invoke('vault:search-stats'),
+  // Workspace Search
+  searchWorkspace: (query, options) => electronAPI.ipcRenderer.invoke('workspace:search', query, options),
+  searchVault: (query, options) => electronAPI.ipcRenderer.invoke('workspace:search', query, options),
+  getSearchStats: () => electronAPI.ipcRenderer.invoke('workspace:search-stats'),
   findSimilar: (chunkId, limit) =>
-    electronAPI.ipcRenderer.invoke('vault:find-similar', chunkId, limit),
+    electronAPI.ipcRenderer.invoke('workspace:find-similar', chunkId, limit),
 
   // Error Logging
   logError: (errorData) => electronAPI.ipcRenderer.invoke('error:log', errorData),

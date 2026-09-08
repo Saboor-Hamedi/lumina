@@ -62,6 +62,7 @@ async function launchOnce(vaultPath) {
     env: {
       ...process.env,
       NODE_ENV: 'test',
+      LUMINA_TEST_WORKSPACE: vaultPath,
       LUMINA_TEST_VAULT: vaultPath,
       LUMINA_TEST_USERDATA: userDataPath,
       ELECTRON_DISABLE_GPU: '1'
@@ -106,7 +107,7 @@ async function launchOnce(vaultPath) {
     })
   }
 
-  return { app: appInstance, page, vaultPath, cleanup }
+  return { app: appInstance, page, workspacePath: vaultPath, vaultPath, cleanup }
 }
 
 /**

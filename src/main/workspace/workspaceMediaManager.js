@@ -87,7 +87,8 @@ export class WorkspaceMediaManager {
   static async readAsset(vaultPath, relativePath) {
     if (!vaultPath) throw new Error('No vault open')
     try {
-      const finalPath = path.join(vaultPath, relativePath)
+      const cleanRel = decodeURIComponent(relativePath || '').replace(/^[/\\]+/, '')
+      const finalPath = path.join(vaultPath, cleanRel)
       if (!fsSync.existsSync(finalPath)) {
         throw new Error(`Asset not found: ${relativePath}`)
       }
@@ -131,8 +132,11 @@ export class WorkspaceMediaManager {
   static async deleteAsset(vaultPath, relativePath) {
     if (!vaultPath) throw new Error('No vault open')
     try {
-      const finalPath = path.join(vaultPath, relativePath)
-      if (!finalPath.startsWith(vaultPath)) {
+      const cleanRel = decodeURIComponent(relativePath || '').replace(/^[/\\]+/, '')
+      const finalPath = path.join(vaultPath, cleanRel)
+      const resolvedFinal = path.resolve(finalPath)
+      const resolvedVault = path.resolve(vaultPath)
+      if (!resolvedFinal.startsWith(resolvedVault)) {
         throw new Error('Invalid asset path')
       }
       if (fsSync.existsSync(finalPath)) {

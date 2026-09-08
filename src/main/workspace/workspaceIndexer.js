@@ -145,14 +145,15 @@ class WorkspaceIndexer {
       }
 
       const stats = await fs.stat(this.embeddingsPath)
-      if (stats.size === 0) {
-        console.warn('[WorkspaceIndexer] Embeddings file is empty, will rebuild')
+      const expectedChunks = state?.stats?.totalChunks || 0
+      if (expectedChunks > 0 && stats.size === 0) {
+        console.warn('[WorkspaceIndexer] Embeddings file is empty when chunks expected, will rebuild')
         return { valid: false, reason: 'empty_embeddings' }
       }
 
       const indexStats = await fs.stat(this.indexPath)
-      if (indexStats.size === 0) {
-        console.warn('[WorkspaceIndexer] Index file is empty, will rebuild')
+      if (expectedChunks > 0 && indexStats.size === 0) {
+        console.warn('[WorkspaceIndexer] Index file is empty when chunks expected, will rebuild')
         return { valid: false, reason: 'empty_index' }
       }
 
@@ -650,6 +651,10 @@ class WorkspaceIndexer {
       await this.removeFiles(targets)
     }
     return true
+  }
+
+  async indexWorkspace(workspacePath, options = {}) {
+    return await this.indexVault(workspacePath, options)
   }
 
   async indexVault(vaultPath, options = {}) {

@@ -17,6 +17,7 @@ import {
   copyCodeAsImage
 } from '../codeBlock/codeBlockHeader'
 import { Sparkles } from 'lucide-react'
+import { ThinkingBlock } from '../AI/components/ThinkingBlock'
 
 import '@atomic-editor/editor/styles.css'
 import '../Editor/Editor.css'
@@ -98,6 +99,18 @@ export const PreviewCommandPalette = React.memo(({ content, onClose, customLinkH
     [handleLinkClick]
   )
 
+  const { thinkContent, cleanContent } = useMemo(() => {
+    if (!content) return { thinkContent: '', cleanContent: '' }
+    let think = ''
+    let remaining = content
+    const thinkMatch = content.match(/<think>([\s\S]*?)(?:<\/think>|$)/i)
+    if (thinkMatch) {
+      think = thinkMatch[1].trim()
+      remaining = remaining.replace(/<think>[\s\S]*?(?:<\/think>|$)/i, '').trim()
+    }
+    return { thinkContent: think, cleanContent: remaining }
+  }, [content])
+
   return (
     <div
       ref={scrollerRef}
@@ -139,9 +152,14 @@ export const PreviewCommandPalette = React.memo(({ content, onClose, customLinkH
             }
           }}
         >
+          {thinkContent && (
+            <div style={{ marginBottom: '12px' }}>
+              <ThinkingBlock thinkContent={thinkContent} isStreaming={false} />
+            </div>
+          )}
           {shouldRenderEditor ? (
             <AtomicCodeMirrorEditor
-              markdownSource={content || ''}
+              markdownSource={cleanContent || ''}
               codeLanguages={languages}
               extensions={extensions}
               blurEditorOnMount={true}

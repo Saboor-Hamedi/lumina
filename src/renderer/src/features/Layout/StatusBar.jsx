@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { BookOpen, PanelRight, Keyboard, FileText, Hash, Clock, Navigation } from 'lucide-react'
-import { useVaultStore } from '../../core/store/workspaceStore'
+import { BookOpen, PanelRight, Keyboard, FileText, Hash, Clock, Navigation, Compass } from 'lucide-react'
+import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import ToolTip from '../../components/atoms/ToolTip'
 import '../../assets/statusbar.css'
 
@@ -9,7 +9,7 @@ const StatusBar = ({
   onDocsClick,
   onShortcutsClick
 }) => {
-  const selectedSnippet = useVaultStore((s) => s.selectedSnippet)
+  const selectedSnippet = useWorkspaceStore((s) => s.selectedSnippet)
   const [cursorPos, setCursorPos] = useState({ line: 1, col: 1, selectedChars: 0 })
 
   // Listen for active editor cursor movements and selection changes
@@ -83,6 +83,18 @@ const StatusBar = ({
           <button className="status-bar-btn" onClick={onDocsClick}>
             <BookOpen size={12} />
             <span>Docs</span>
+          </button>
+        </ToolTip>
+
+        <span className="status-bar-divider" />
+
+        <ToolTip text="Interactive Guide" position="top">
+          <button
+            className="status-bar-btn"
+            onClick={() => window.dispatchEvent(new CustomEvent('open-guide'))}
+          >
+            <Compass size={12} />
+            <span>Guide</span>
           </button>
         </ToolTip>
 

@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
-import { useVaultStore } from '../store/workspaceStore'
+import { useWorkspaceStore } from '../store/workspaceStore'
 
 export const useTag = () => {
-  const snippets = useVaultStore((state) => state.snippets)
+  const snippets = useWorkspaceStore((state) => state.snippets)
 
   const tags = useMemo(() => {
     const tagSet = new Set()
