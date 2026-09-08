@@ -289,9 +289,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('db:saveTheme', (_, theme) => SettingsManager.set('theme', theme))
   ipcMain.handle('backup:start', (event) => backupToDrive(VaultManager.vaultPath, event.sender))
 
-  ipcMain.handle('vault:readAsset', async (_, relativePath) => {
-    return VaultManager.readAsset(relativePath)
-  })
+
   ipcMain.handle('clipboard:writeImage', async (_, dataUrl) => {
     try {
       const img = nativeImage.createFromDataURL(dataUrl)
@@ -391,6 +389,7 @@ app.whenReady().then(async () => {
   registerWorkspaceHandle('saveVaultImage', (_, { buffer, targetFolder, name }) =>
     WorkspaceManager.saveWorkspaceImage(buffer, targetFolder, name)
   )
+  registerWorkspaceHandle('readAsset', (_, relPath) => WorkspaceManager.readAsset(relPath))
   registerWorkspaceHandle('deleteAsset', (_, relPath) => WorkspaceManager.deleteAsset(relPath))
   registerWorkspaceHandle('deleteSnippet', async (_, id) => {
     try {

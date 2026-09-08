@@ -69,22 +69,23 @@ const UpdateDetails = () => {
   const rawNotes =
     !isGenericNote ? updateInfo.releaseNotes :
     `New
-- Mathematical Formulas (KaTeX): Write beautiful mathematical equations in your notes with block ($$...$$) and inline ($...$) syntax with instant rendering.
-- Clean Code Blocks: Enjoy seamless syntax-highlighted code blocks with one-click copy and copy-as-image options.
-- Smooth Curtain Sidebars: Resizing or closing sidebars feels like a smooth sliding curtain without squishing your notes or tabs.
+- Math Equations: Write mathematical formulas and scientific equations directly in your notes with instant visual previews.
+- Template Gallery: Browse and apply beautiful ready-made templates for your notes — meeting notes, daily logs, research, and more.
+- Documentation Guide: Access Lumina's built-in help and learning guides anytime from the app, without leaving your workspace.
+- Image Viewer: View, zoom, pan, and copy any image saved in your workspace in a full-featured image viewer.
 
 Improved
-- Unified Code Block Background: Active lines maintain the code block's seamless background without jarring color splits or border artifacts.
-- Crisp Code Selection: Double-clicking and selecting code is now single-layered and crisp, preserving your syntax highlight colors without ghost shadows or white halos.
-- Responsive Small-Screen Margins: The editor maintains comfortable horizontal margins on compact screens when sidebars are open.
-- Refined Learning Tracker: Cleaned up the "Mark as Learned" button styling with an accent checkmark and subtle borders.
-- Roomy AI Chat Box: Made the chat composer taller and more comfortable to type in with clean, borderless mode pills.
+- Smoother Modals: All pop-up windows open centered on screen with a polished slide-in animation and no jumping.
+- Consistent Window Sizes: The Guide, Documentation, and Template panels all share the same comfortable size and layout.
+- Readable Wide Screens: On large or maximized windows, content stays centered at a comfortable reading width instead of stretching edge-to-edge.
+- Cleaner Sidebars: Sidebar scroll bars are now invisible while still scrolling smoothly — no visual clutter.
+- Polished Template Cards: Template cards in the gallery now show a visual preview of the note layout before you pick one.
 
 Fixed
-- Math Block Component Error: Resolved an issue where KaTeX formula blocks could throw a sliceDoc exception in the editor.
-- Code Block Dual Backgrounds: Eliminated mismatched active-line background highlights and indicator lines inside code blocks.
-- Blurry Selection Shadows: Fixed double-selection ghosting and white text glow when selecting words in code blocks.
-- Quick Escape Key: Press the Escape key anytime to instantly close the update window and popovers.`
+- Images Not Loading: Dropping or pasting an image into a note now correctly saves and displays it every time.
+- Image Viewer Blank Screen: Opening an image file from your workspace now loads and shows the image properly.
+- Popup Jumping: Fixed panels and menus jumping to the top of the screen when first opened.
+- Window Dismissal: Press the Escape key anytime to instantly close menus, dialogs, and this update window.`
   
   const parseNotes = (text) => {
     const categories = []

@@ -72,7 +72,11 @@ const Template = ({
     }
 
     window.addEventListener('keydown', handleKeyDown, { capture: true })
-    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true })
+    document.addEventListener('keydown', handleKeyDown, { capture: true })
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, { capture: true })
+      document.removeEventListener('keydown', handleKeyDown, { capture: true })
+    }
   }, [isOpen, onClose, filteredTemplates, selectedId, handleApply, setSelectedId])
 
   const handleToggleSidebar = useCallback(() => {

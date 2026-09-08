@@ -2,6 +2,8 @@ import { expect, afterEach, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
 import * as matchers from '@testing-library/jest-dom/matchers'
 
+import React from 'react'
+
 // Extend Vitest's expect with jest-dom matchers
 expect.extend(matchers)
 
@@ -9,6 +11,13 @@ expect.extend(matchers)
 afterEach(() => {
   cleanup()
 })
+
+// Mock @atomic-editor/editor for virtual/test environments
+vi.mock('@atomic-editor/editor', () => ({
+  AtomicCodeMirrorEditor: ({ markdownSource }) =>
+    React.createElement('div', { 'data-testid': 'atomic-editor' }, markdownSource),
+  wikiLinks: () => []
+}))
 
 // Mock window.api for Electron
 global.window = global.window || {}

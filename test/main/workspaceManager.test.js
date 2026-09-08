@@ -182,7 +182,7 @@ describe('VaultManager', () => {
         language: 'markdown',
         timestamp: 2000
       })
-      const { snippets } = VaultManager.getSnippets()
+      const { snippets } = await VaultManager.getSnippets()
       expect(snippets[0].id).toBe('2')
       expect(snippets[1].id).toBe('1')
     })
@@ -190,8 +190,23 @@ describe('VaultManager', () => {
     it('filters out invalid snippets', async () => {
       VaultManager.snippets.set('invalid', null)
       VaultManager.snippets.set('valid', { id: 'valid', timestamp: 1000 })
-      const { snippets } = VaultManager.getSnippets()
+      const { snippets } = await VaultManager.getSnippets()
       expect(snippets.every((s) => s && s.id)).toBe(true)
+    })
+  })
+
+  describe('assets', () => {
+    it('saves image and reads it back via readAsset', async () => {
+      const buffer = Buffer.from('fake-png-data')
+      const relativePath = await VaultManager.saveImage(buffer, 'test-image.png')
+      expect(relativePath).toContain('.lumina/assets/test-image-')
+      expect(relativePath.endsWith('.png')).toBe(true)
+
+      const asset = await VaultManager.readAsset(relativePath)
+      expect(asset).toBeDefined()
+      expect(asset.mimeType).toBe('image/png')
+      expect(asset.dataUrl).toContain('data:image/png;base64,')
+      expect(asset.buffer.toString()).toBe('fake-png-data')
     })
   })
 })

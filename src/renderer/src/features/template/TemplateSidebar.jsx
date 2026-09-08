@@ -146,7 +146,7 @@ const TemplateSidebar = ({
   const activeItemRef = useRef(null)
 
   useEffect(() => {
-    if (activeItemRef.current) {
+    if (activeItemRef.current && typeof activeItemRef.current.scrollIntoView === 'function') {
       activeItemRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
     }
   }, [selectedId])
