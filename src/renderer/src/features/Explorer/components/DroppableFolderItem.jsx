@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { useDroppable, useDraggable } from '@dnd-kit/core'
 import { ChevronRight, ChevronDown, Folder, FolderOpen } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
@@ -28,7 +28,7 @@ export const DroppableFolderItem = React.memo(
     const { isOver, setNodeRef: setDroppableRef } = useDroppable({ id: `folder-${item.id}` })
     const [isHovered, setIsHovered] = useState(false)
 
-    const getFolderTooltipContent = () => {
+    const getFolderTooltipContent = useCallback(() => {
       const allSnippets = useVaultStore.getState().snippets || []
       const targetFolderId = (item.id || '').replace(/\\/g, '/')
       const folderSnippets = allSnippets.filter((s) => {
@@ -72,7 +72,7 @@ export const DroppableFolderItem = React.memo(
           )}
         </div>
       )
-    }
+    }, [item.id, item.name])
 
     const highlightText = (text, query) => {
       if (!query || !text) return text
@@ -182,7 +182,7 @@ export const DroppableFolderItem = React.memo(
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (
-              <ToolTip text={getFolderTooltipContent()} position="right" delay={100}>
+              <ToolTip text={isHovered ? getFolderTooltipContent : null} position="right" delay={100}>
                 <span
                   className="folder-name"
                   style={{

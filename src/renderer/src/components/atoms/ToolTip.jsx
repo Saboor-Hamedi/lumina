@@ -16,14 +16,22 @@ const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
   const tooltipRef = useRef(null)
   const timeoutRef = useRef(null)
 
-  const formattedContent = useMemo(() => {
+  const rawText = useMemo(() => {
     if (!text) return null
-    if (React.isValidElement(text)) return text
-    if (typeof text !== 'string') return text
+    if (typeof text === 'function') {
+      return isVisible ? text() : null
+    }
+    return text
+  }, [text, isVisible])
+
+  const formattedContent = useMemo(() => {
+    if (!rawText) return null
+    if (React.isValidElement(rawText)) return rawText
+    if (typeof rawText !== 'string') return rawText
 
     // Prevent absurdly long single-line titles by truncating if longer than 120 chars
     const MAX_TOOLTIP_CHARS = 120
-    const match = text.match(/^(.*?)(?:\s*\(([^)]+)\))?$/)
+    const match = rawText.match(/^(.*?)(?:\s*\(([^)]+)\))?$/)
     if (match && match[2]) {
       const labelText = match[1].length > MAX_TOOLTIP_CHARS
         ? match[1].slice(0, MAX_TOOLTIP_CHARS - 1).trim() + '…'
@@ -36,12 +44,12 @@ const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
       )
     }
 
-    const displayText = text.length > MAX_TOOLTIP_CHARS
-      ? text.slice(0, MAX_TOOLTIP_CHARS - 1).trim() + '…'
-      : text
+    const displayText = rawText.length > MAX_TOOLTIP_CHARS
+      ? rawText.slice(0, MAX_TOOLTIP_CHARS - 1).trim() + '…'
+      : rawText
 
     return <span className="tooltip-label">{displayText}</span>
-  }, [text])
+  }, [rawText])
 
   const handleMouseEnter = (e) => {
     if (children?.props?.onMouseEnter) {

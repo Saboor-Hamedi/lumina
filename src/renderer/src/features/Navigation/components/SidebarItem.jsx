@@ -411,7 +411,7 @@ const SidebarItem = ({
             onPointerDown={(e) => e.stopPropagation()}
           />
         ) : (
-          <ToolTip text={getNoteTooltipContent(snippet)} position="bottom" delay={100}>
+          <ToolTip text={isHovered ? () => getNoteTooltipContent(snippet) : null} position="bottom" delay={100}>
             <span className="item-label" style={displayColor ? { color: displayColor } : undefined}>
               {highlightText(snippet.title || 'Untitled', searchQuery)}
             </span>
@@ -477,7 +477,7 @@ const SidebarItem = ({
           className="item-title-col"
           style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}
         >
-          <ToolTip text={getNoteTooltipContent(snippet)} position="right" delay={100}>
+          <ToolTip text={isHovered ? () => getNoteTooltipContent(snippet) : null} position="right" delay={100}>
             <span
               className="item-title"
               style={{

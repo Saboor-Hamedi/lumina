@@ -2,7 +2,12 @@ export async function copyImageToClipboard(imgUrl, onSuccess, onError) {
   try {
     let dataUrl = imgUrl
 
-    if (!imgUrl.startsWith('data:') && !imgUrl.startsWith('blob:') && !imgUrl.startsWith('http')) {
+    if (
+      !imgUrl.startsWith('data:') &&
+      !imgUrl.startsWith('blob:') &&
+      !imgUrl.startsWith('http') &&
+      !imgUrl.startsWith('asset:')
+    ) {
       const cleanUrl = imgUrl.startsWith('/') ? imgUrl.slice(1) : imgUrl
       const res = await window.api?.readAsset?.(cleanUrl)
       if (res?.dataUrl) {
@@ -17,7 +22,12 @@ export async function copyImageToClipboard(imgUrl, onSuccess, onError) {
     }
 
     let blob
-    if (dataUrl.startsWith('blob:') || dataUrl.startsWith('data:') || dataUrl.startsWith('http')) {
+    if (
+      dataUrl.startsWith('blob:') ||
+      dataUrl.startsWith('data:') ||
+      dataUrl.startsWith('http') ||
+      dataUrl.startsWith('asset:')
+    ) {
       const response = await fetch(dataUrl)
       blob = await response.blob()
     } else {

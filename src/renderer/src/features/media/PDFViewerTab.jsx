@@ -75,10 +75,15 @@ export const PDFViewerTab = ({ snippet }) => {
       if (!blob && window.api?.readAsset) {
         try {
           const asset = await window.api.readAsset(relPath)
-          if (asset?.base64) {
+          if (asset?.buffer) {
+            // Direct zero-copy binary buffer without string serialization overhead
+            blob = new Blob([asset.buffer], { type: 'application/pdf' })
+          } else if (asset?.base64) {
+            // Efficient base64 to Uint8Array decoding fallback
             const binary = atob(asset.base64)
-            const bytes = new Uint8Array(binary.length)
-            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+            const len = binary.length
+            const bytes = new Uint8Array(len)
+            for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i)
             blob = new Blob([bytes], { type: 'application/pdf' })
           }
         } catch (err) {
@@ -89,16 +94,22 @@ export const PDFViewerTab = ({ snippet }) => {
       if (!active) return
 
       if (blob) {
-        const url = URL.createObjectURL(blob)
+        // Revoke any previous URL for the same path
+        const existingUrl = pdfBlobCache.get(relPath)
+        if (existingUrl) {
+          URL.revokeObjectURL(existingUrl)
+          pdfBlobCache.delete(relPath)
+        }
 
-        // Evict oldest entry if cache exceeds 15 PDFs to prevent memory leaks
-        if (pdfBlobCache.size >= 15) {
+        // Evict oldest entries if cache exceeds 6 PDFs to prevent memory bloat
+        while (pdfBlobCache.size >= 6) {
           const oldestKey = pdfBlobCache.keys().next().value
           const oldUrl = pdfBlobCache.get(oldestKey)
           if (oldUrl) URL.revokeObjectURL(oldUrl)
           pdfBlobCache.delete(oldestKey)
         }
 
+        const url = URL.createObjectURL(blob)
         pdfBlobCache.set(relPath, url)
         setBlobUrl(url)
         setLoading(false)

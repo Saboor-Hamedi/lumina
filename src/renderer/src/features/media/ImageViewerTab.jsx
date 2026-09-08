@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import {
   ZoomIn,
   ZoomOut,
@@ -13,9 +13,22 @@ import { copyImageToClipboard } from './hooks/imageClipboard'
 import './css/imageViewTab.css'
 
 export const ImageViewerTab = ({ snippet }) => {
-  const [assetData, setAssetData] = useState(null)
+  const relPath =
+    snippet?.relativePath ||
+    (snippet?.folderId ? `${snippet.folderId}/${snippet.fileName}` : snippet?.fileName)
+
+  // Direct asset:// streaming URL (zero IPC base64 overhead)
+  const assetUrl = React.useMemo(() => {
+    if (!relPath) return null
+    const clean = String(relPath).replace(/^[/\\]+/, '').replace(/\\/g, '/')
+    const encodedSegments = clean.split('/').map(encodeURIComponent).join('/')
+    return `asset://local/${encodedSegments}`
+  }, [relPath])
+
+  const [imageSrc, setImageSrc] = useState(() => assetUrl)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [fallbackAttempted, setFallbackAttempted] = useState(false)
   const [scale, setScale] = useState(1)
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
@@ -27,48 +40,53 @@ export const ImageViewerTab = ({ snippet }) => {
   const posStartRef = useRef({ x: 0, y: 0 })
 
   useEffect(() => {
-    let active = true
+    if (!relPath) {
+      setLoading(false)
+      setError('Invalid file path')
+      setImageSrc(null)
+      return
+    }
+
     setLoading(true)
     setError(null)
     setScale(1)
     setPosition({ x: 0, y: 0 })
-
-    const relPath =
-      snippet?.relativePath ||
-      (snippet?.folderId ? `${snippet.folderId}/${snippet.fileName}` : snippet?.fileName)
-    if (!relPath) {
-      setLoading(false)
-      setError('Invalid file path')
-      return
-    }
-
-    window.api?.readAsset?.(relPath)
-      .then((res) => {
-        if (!active) return
-        if (res?.dataUrl) {
-          setAssetData(res)
-        } else if (res) {
-          setAssetData({ dataUrl: `data:image/png;base64,${res}` })
-        }
-        setLoading(false)
-      })
-      .catch((err) => {
-        if (!active) return
-        console.error('Failed to load image:', err)
-        setError('Failed to load image from workspace')
-        setLoading(false)
-      })
-
-    return () => {
-      active = false
-    }
-  }, [snippet?.relativePath, snippet?.folderId, snippet?.fileName])
+    setFallbackAttempted(false)
+    setImageSrc(assetUrl)
+  }, [relPath, assetUrl])
 
   const handleImageLoad = (e) => {
+    setLoading(false)
     setDimensions({
       width: e.target.naturalWidth,
       height: e.target.naturalHeight
     })
+  }
+
+  const handleImageError = () => {
+    // If protocol stream fails, gracefully fallback once to IPC readAsset
+    if (!fallbackAttempted && window.api?.readAsset && relPath) {
+      setFallbackAttempted(true)
+      window.api.readAsset(relPath)
+        .then((res) => {
+          if (res?.dataUrl) {
+            setImageSrc(res.dataUrl)
+          } else if (res) {
+            setImageSrc(`data:image/png;base64,${res}`)
+          } else {
+            setError('Failed to load image from workspace')
+            setLoading(false)
+          }
+        })
+        .catch((err) => {
+          console.error('[ImageViewerTab] Fallback readAsset error:', err)
+          setError('Failed to load image from workspace')
+          setLoading(false)
+        })
+    } else {
+      setError('Failed to load image from workspace')
+      setLoading(false)
+    }
   }
 
   const handleZoomIn = useCallback(() => {
@@ -129,12 +147,12 @@ export const ImageViewerTab = ({ snippet }) => {
   }, [])
 
   const handleCopyImage = useCallback(() => {
-    if (!assetData?.dataUrl) return
-    copyImageToClipboard(assetData.dataUrl, () => {
+    if (!imageSrc) return
+    copyImageToClipboard(imageSrc, () => {
       setCopied(true)
       setTimeout(() => setCopied(false), 1500)
     })
-  }, [assetData])
+  }, [imageSrc])
 
   const handleOpenInFolder = useCallback(() => {
     const relFolder = snippet?.folderId || ''
@@ -175,7 +193,7 @@ export const ImageViewerTab = ({ snippet }) => {
       </div>
 
       <div className="image-viewer-canvas">
-        {loading ? (
+        {loading && !imageSrc ? (
           <div className="image-viewer-loading">
             <ImageIcon size={28} className="image-viewer-spin-icon" />
             <span>Loading image...</span>
@@ -184,13 +202,16 @@ export const ImageViewerTab = ({ snippet }) => {
           <div className="image-viewer-error">{error}</div>
         ) : (
           <img
-            src={assetData?.dataUrl}
+            src={imageSrc}
             alt={snippet?.title || 'Workspace Image'}
             className="image-viewer-img"
             onLoad={handleImageLoad}
+            onError={handleImageError}
             style={{
               transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-              cursor: isDragging ? 'grabbing' : 'grab'
+              cursor: isDragging ? 'grabbing' : 'grab',
+              opacity: loading ? 0 : 1,
+              transition: 'opacity 0.15s ease'
             }}
             draggable={false}
           />

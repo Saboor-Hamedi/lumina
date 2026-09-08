@@ -68,15 +68,14 @@ export function useExplorerOperations({
       return nextSet
     })
     if (nextArr) {
-      try {
-        localStorage.setItem('lumina-expanded-folders', JSON.stringify(nextArr))
-      } catch (e) {}
-
-      // Debounce SQLite setting update to prevent IPC churn and frame drops
+      // Debounce localStorage and SQLite setting updates to prevent sync I/O churn and frame drops
       if (persistTimerRef.current) clearTimeout(persistTimerRef.current)
       persistTimerRef.current = setTimeout(() => {
+        try {
+          localStorage.setItem('lumina-expanded-folders', JSON.stringify(nextArr))
+        } catch (e) {}
         useSettingsStore.getState().updateSetting('expandedFolders', nextArr)
-      }, 400)
+      }, 350)
     }
   }, [])
 

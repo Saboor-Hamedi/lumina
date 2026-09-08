@@ -88,7 +88,13 @@ export class WorkspaceMediaManager {
     if (!vaultPath) throw new Error('No vault open')
     try {
       const cleanRel = decodeURIComponent(relativePath || '').replace(/^[/\\]+/, '')
-      const finalPath = path.join(vaultPath, cleanRel)
+      const vaultRoot = path.resolve(vaultPath)
+      const finalPath = path.resolve(vaultRoot, cleanRel)
+
+      if (!finalPath.startsWith(vaultRoot + path.sep) && finalPath !== vaultRoot) {
+        throw new Error('Access denied: path traversal detected')
+      }
+
       if (!fsSync.existsSync(finalPath)) {
         throw new Error(`Asset not found: ${relativePath}`)
       }
@@ -134,11 +140,11 @@ export class WorkspaceMediaManager {
     if (!vaultPath) throw new Error('No vault open')
     try {
       const cleanRel = decodeURIComponent(relativePath || '').replace(/^[/\\]+/, '')
-      const finalPath = path.join(vaultPath, cleanRel)
-      const resolvedFinal = path.resolve(finalPath)
-      const resolvedVault = path.resolve(vaultPath)
-      if (!resolvedFinal.startsWith(resolvedVault)) {
-        throw new Error('Invalid asset path')
+      const vaultRoot = path.resolve(vaultPath)
+      const finalPath = path.resolve(vaultRoot, cleanRel)
+
+      if (!finalPath.startsWith(vaultRoot + path.sep) && finalPath !== vaultRoot) {
+        throw new Error('Access denied: path traversal detected')
       }
       if (fsSync.existsSync(finalPath)) {
         await fs.unlink(finalPath)

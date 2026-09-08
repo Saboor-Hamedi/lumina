@@ -205,8 +205,29 @@ export class WorkspaceOperations {
   static isProtectedPath(relPath) {
     if (!relPath) return true
     const norm = relPath.replace(/\\/g, '/').replace(/^\/+/, '')
-    const firstSegment = norm.split('/')[0]
-    return firstSegment.startsWith('.') || norm.startsWith('.')
+    const segments = norm.split('/')
+    return segments.some((segment) => segment.startsWith('.'))
+  }
+
+  /**
+   * Asserts that a path resolves strictly inside the workspace directory.
+   * Throws an Error if path traversal is detected or if target equals the workspace root itself (when allowRoot is false).
+   *
+   * @param {string} workspacePath - Root workspace directory.
+   * @param {string} relativePath - Relative file or folder path.
+   * @param {boolean} [allowRoot=false] - Whether resolving to workspace root itself is permitted.
+   * @returns {string} Fully resolved safe absolute path.
+   */
+  static assertSafeWorkspacePath(workspacePath, relativePath, allowRoot = false) {
+    if (!workspacePath) throw new Error('No workspace open')
+    const root = path.resolve(workspacePath)
+    const resolved = path.resolve(root, relativePath || '')
+    const isInside = resolved.startsWith(root + path.sep)
+    const isRoot = resolved === root
+    if (!isInside && !(allowRoot && isRoot)) {
+      throw new Error(`Security Violation: Path escapes workspace boundaries: ${relativePath}`)
+    }
+    return resolved
   }
 
   /**
@@ -234,7 +255,13 @@ export class WorkspaceOperations {
         return null
       }
 
-      const filePath = path.join(workspacePath, snippet.folderId || '', fileName)
+      let filePath
+      try {
+        filePath = this.assertSafeWorkspacePath(workspacePath, relPath)
+      } catch {
+        return null
+      }
+
       try {
         if (fsSync.existsSync(filePath)) {
           await fs.unlink(filePath)
@@ -251,14 +278,14 @@ export class WorkspaceOperations {
       return null
     }
 
-    const directPath = path.join(workspacePath, id)
-    if (fsSync.existsSync(directPath)) {
-      try {
+    try {
+      const directPath = this.assertSafeWorkspacePath(workspacePath, id)
+      if (fsSync.existsSync(directPath)) {
         await fs.unlink(directPath)
         return directPath
-      } catch (e) {
-        return null
       }
+    } catch {
+      return null
     }
 
     return null
@@ -393,8 +420,8 @@ export class WorkspaceOperations {
    */
   static async moveFile(workspacePath, oldRelPath, newRelPath) {
     if (!workspacePath) throw new Error('No workspace open')
-    const fullOldPath = path.join(workspacePath, oldRelPath)
-    const fullNewPath = path.join(workspacePath, newRelPath)
+    const fullOldPath = this.assertSafeWorkspacePath(workspacePath, oldRelPath)
+    const fullNewPath = this.assertSafeWorkspacePath(workspacePath, newRelPath)
 
     if (fullOldPath === fullNewPath) return true
     if (!fsSync.existsSync(fullOldPath)) {
@@ -435,7 +462,8 @@ export class WorkspaceOperations {
   static async createFolder(workspacePath, foldersSet, folderPath) {
     if (!workspacePath) throw new Error('No workspace open')
     const normalized = (folderPath || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
-    const fullPath = path.join(workspacePath, normalized)
+    if (!normalized) return true
+    const fullPath = this.assertSafeWorkspacePath(workspacePath, normalized)
     await fs.mkdir(fullPath, { recursive: true })
 
     let current = ''
@@ -458,8 +486,8 @@ export class WorkspaceOperations {
    */
   static async renameFolder(workspacePath, snippetsMap, foldersSet, oldPath, newPath) {
     if (!workspacePath) throw new Error('No workspace open')
-    const fullOldPath = path.join(workspacePath, oldPath)
-    const fullNewPath = path.join(workspacePath, newPath)
+    const fullOldPath = this.assertSafeWorkspacePath(workspacePath, oldPath)
+    const fullNewPath = this.assertSafeWorkspacePath(workspacePath, newPath)
     await fs.mkdir(path.dirname(fullNewPath), { recursive: true })
     await fs.rename(fullOldPath, fullNewPath)
 
@@ -495,11 +523,15 @@ export class WorkspaceOperations {
    */
   static async deleteFolder(workspacePath, snippetsMap, foldersSet, folderPath) {
     if (!workspacePath) throw new Error('No workspace open')
+    if (!folderPath || folderPath === '.' || folderPath === '/' || folderPath === '\\') {
+      return { success: false, deletedFilePaths: [] }
+    }
     if (this.isProtectedPath(folderPath)) {
       return { success: false, deletedFilePaths: [] }
     }
     const normalized = (folderPath || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
-    const fullPath = path.join(workspacePath, normalized)
+    if (!normalized) return { success: false, deletedFilePaths: [] }
+    const fullPath = this.assertSafeWorkspacePath(workspacePath, normalized)
     try {
       await fs.rm(fullPath, { recursive: true, force: true })
     } catch (_) {}

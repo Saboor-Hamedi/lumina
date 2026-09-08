@@ -58,13 +58,16 @@ export function useFileTree({
 
     const flat = []
 
-    // Helper: recursively calculate total notes inside a folder hierarchy for collapsed item badges
-    const getNoteCount = (node) => {
-      return (
-        node.files.length +
-        Object.values(node.children).reduce((acc, child) => acc + getNoteCount(child), 0)
-      )
+    // Pre-calculate note count for every node in a single O(N) post-order pass
+    const calculateCounts = (node) => {
+      let count = node.files.length
+      for (const child of Object.values(node.children)) {
+        count += calculateCounts(child)
+      }
+      node.count = count
+      return count
     }
+    calculateCounts(root)
 
     const traverse = (node, depth, parentId = '') => {
       // 1. Inject folder creation input at top of folder list
@@ -82,7 +85,7 @@ export function useFileTree({
 
       folderNames.forEach((name) => {
         const folder = node.children[name]
-        const count = getNoteCount(folder)
+        const count = folder.count || 0
         flat.push({ type: 'folder', id: folder.id, name: folder.name, depth, count })
 
         const isExpanded = q

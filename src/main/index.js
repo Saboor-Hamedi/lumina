@@ -264,7 +264,14 @@ app.whenReady().then(async () => {
       if (!VaultManager.vaultPath || !relativePath)
         return new Response('Vault not open', { status: 404 })
 
-      const finalPath = join(VaultManager.vaultPath, relativePath)
+      const vaultRoot = path.resolve(VaultManager.vaultPath)
+      const finalPath = path.resolve(vaultRoot, relativePath)
+
+      // Strict containment check: prevent path traversal attacks outside workspace
+      if (!finalPath.startsWith(vaultRoot + path.sep) && finalPath !== vaultRoot) {
+        console.warn('[Protocol] Blocked path traversal attempt:', relativePath)
+        return new Response('Access Denied: Path Traversal Forbidden', { status: 403 })
+      }
 
       // Read file directly from disk to avoid Windows URI parsing bugs with net.fetch
       const data = await fs.readFile(finalPath)

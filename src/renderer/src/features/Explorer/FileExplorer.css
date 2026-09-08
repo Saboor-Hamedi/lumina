@@ -164,6 +164,28 @@
 
 [data-virtuoso-scroller="true"] {
   overflow-x: hidden !important;
+  overflow-y: auto !important;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  padding-right: 2px;
+}
+
+[data-virtuoso-scroller="true"]::-webkit-scrollbar {
+  width: 5px;
+}
+
+[data-virtuoso-scroller="true"]::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+[data-virtuoso-scroller="true"]::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+
+[data-virtuoso-scroller="true"]::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
 }
 
 /* Sections */
