@@ -330,14 +330,17 @@ CRITICAL INSTRUCTIONS:
           }
         }
 
-        let visibleKey = import.meta.env.VITE_DEEPSEEK_KEY
+        let visibleKey = null
         let model = 'deepseek-chat'
         try {
-          const settingsModule = await import('../../core/store/useSettingsStore')
-          const settings = settingsModule.useSettingsStore.getState()
-          const { deepSeekKey, deepSeekModel } = settings?.settings || {}
-          if (deepSeekKey) visibleKey = deepSeekKey
-          if (deepSeekModel) model = deepSeekModel
+          const [{ useSettingsStore }, { resolveProviderConfig }] = await Promise.all([
+            import('../../core/store/useSettingsStore'),
+            import('./providers/index.js')
+          ])
+          const settingsObj = useSettingsStore.getState().settings || {}
+          const cfg = resolveProviderConfig(settingsObj)
+          visibleKey = cfg.apiKey
+          model = cfg.activeModel || 'deepseek-chat'
         } catch (err) {}
 
         if (!visibleKey) {

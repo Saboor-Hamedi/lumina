@@ -50,6 +50,81 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, onPopOut = nul
   const [showSessions, setShowSessions] = useState(false)
   const { listRef, autoScrollRef, handleMessageScroll } = useChatScroll(chatMessages, isChatLoading)
 
+  const rootRef = useRef(null)
+  const isMouseInsideRef = useRef(false)
+  const isContentActiveRef = useRef(false)
+
+  // Track active state & scoped select-all for docked sidebar mode
+  useEffect(() => {
+    if (!isSidebar) return
+
+    const handlePointerDown = (e) => {
+      if (rootRef.current && rootRef.current.contains(e.target)) {
+        isContentActiveRef.current = true
+      } else {
+        isContentActiveRef.current = false
+      }
+    }
+
+    const handleKeyDownCapture = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key && e.key.toLowerCase() === 'a') {
+        const target = e.target
+        const activeEl = document.activeElement
+
+        const isTargetInRoot =
+          rootRef.current &&
+          (rootRef.current.contains(target) || rootRef.current.contains(activeEl))
+        const isHovered = isMouseInsideRef.current
+        const isActive = isContentActiveRef.current
+
+        if (isTargetInRoot || isHovered || isActive) {
+          const isEditable =
+            (target &&
+              (target.tagName === 'TEXTAREA' ||
+                target.tagName === 'INPUT' ||
+                target.isContentEditable)) ||
+            (activeEl &&
+              (activeEl.tagName === 'TEXTAREA' ||
+                activeEl.tagName === 'INPUT' ||
+                activeEl.isContentEditable))
+
+          if (isEditable) {
+            const el =
+              target?.tagName === 'TEXTAREA' || target?.tagName === 'INPUT' ? target : activeEl
+            if (el && typeof el.value === 'string' && el.value.length > 0) {
+              return
+            }
+          }
+
+          e.preventDefault()
+          e.stopPropagation()
+          e.stopImmediatePropagation()
+
+          const msgContainer =
+            rootRef.current?.querySelector('.chat-msg-list') ||
+            rootRef.current?.querySelector('.chat-messages')
+
+          if (msgContainer) {
+            const selection = window.getSelection()
+            if (selection) {
+              const range = document.createRange()
+              range.selectNodeContents(msgContainer)
+              selection.removeAllRanges()
+              selection.addRange(range)
+            }
+          }
+        }
+      }
+    }
+
+    window.addEventListener('pointerdown', handlePointerDown, true)
+    window.addEventListener('keydown', handleKeyDownCapture, true)
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDown, true)
+      window.removeEventListener('keydown', handleKeyDownCapture, true)
+    }
+  }, [isSidebar])
+
   // Load chat history on mount
   useEffect(() => {
     loadSessions()
@@ -152,13 +227,26 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, onPopOut = nul
 
   return (
     <div
+      ref={rootRef}
+      tabIndex={-1}
+      onPointerDown={() => {
+        if (isSidebar) isContentActiveRef.current = true
+      }}
+      onMouseEnter={() => {
+        isMouseInsideRef.current = true
+      }}
+      onMouseLeave={() => {
+        isMouseInsideRef.current = false
+      }}
       className={`ai-chat-content-root ${isSidebar ? 'is-sidebar-docked' : ''}`}
       style={{
+        outline: 'none',
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        fontFamily: 'var(--font-editor, inherit)'
       }}
     >
       <div className="chat-container" style={{ flex: 1, minHeight: 0, position: 'relative' }}>

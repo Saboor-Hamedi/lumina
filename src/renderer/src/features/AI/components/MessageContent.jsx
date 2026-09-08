@@ -115,8 +115,10 @@ export const MessageContent = React.memo(
       }
     }, [content])
 
-    const processedBefore = useMemo(() => processMarkdownContent(beforeContent), [beforeContent])
-    const processedAfter = useMemo(() => processMarkdownContent(afterContent), [afterContent])
+    const processedBody = useMemo(() => {
+      const combined = [beforeContent, afterContent].filter(Boolean).join('\n\n')
+      return processMarkdownContent(combined)
+    }, [beforeContent, afterContent])
 
     const markdownComponents = useMemo(
       () => ({
@@ -129,7 +131,21 @@ export const MessageContent = React.memo(
           <div className="table-wrapper chat-table-wrapper">
             <table>{children}</table>
           </div>
-        )
+        ),
+        input: ({ type, checked, ...props }) => {
+          if (type === 'checkbox') {
+            return (
+              <input
+                type="checkbox"
+                defaultChecked={checked}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => e.stopPropagation()}
+                {...props}
+              />
+            )
+          }
+          return <input type={type} {...props} />
+        }
       }),
       []
     )
@@ -139,17 +155,12 @@ export const MessageContent = React.memo(
         {thinkContent && (
           <ThinkingBlock thinkContent={thinkContent} isStreaming={isStreaming} />
         )}
-        {processedBefore && (
-          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-            {processedBefore}
-          </ReactMarkdown>
-        )}
         {activityContent && (
           <ActivityCard rawContent={activityContent} isStreaming={isStreaming} />
         )}
-        {processedAfter && (
+        {processedBody && (
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-            {processedAfter}
+            {processedBody}
           </ReactMarkdown>
         )}
       </>

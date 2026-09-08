@@ -22,22 +22,21 @@ export const ChatActions = ({ msg, index, onCopy, onRate }) => {
           title={copied ? 'Copied!' : 'Copy Response'}
           style={copied ? { color: '#4ade80' } : {}}
         >
-          {copied ? <Check size={12} /> : <Copy size={12} />}
+          {copied ? <Check size={13} /> : <Copy size={13} />}
         </button>
-        <div className="action-divider" />
         <button
           className={msg.rating === 'up' ? 'active' : ''}
           onClick={() => onRate(index, 'up')}
           title="Helpful"
         >
-          <ThumbsUp size={12} />
+          <ThumbsUp size={13} />
         </button>
         <button
           className={msg.rating === 'down' ? 'active' : ''}
           onClick={() => onRate(index, 'down')}
           title="Not Helpful"
         >
-          <ThumbsDown size={12} />
+          <ThumbsDown size={13} />
         </button>
       </div>
       {timeStr && (

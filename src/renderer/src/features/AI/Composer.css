@@ -30,14 +30,7 @@
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
-/* ─── Input Area & Attached Mentions ─── */
-.composer-attached-mentions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 8px 12px 2px;
-}
-
+/* ─── Input Area ─── */
 .composer-input-area-wrapper {
   position: relative;
   width: 100%;

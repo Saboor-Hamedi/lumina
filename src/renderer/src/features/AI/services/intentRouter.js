@@ -21,6 +21,19 @@ export const detectUserIntent = (message, mentionedSnippets = [], activeSnippet 
     return IntentCategory.CONVERSATIONAL_EXPLAIN
   }
 
+  const readQuestionPatterns =
+    /\b(what is|what are|what was|what do you see|what's in|what is in|what does|what do|why is|why does|how does|how do|how is|how can|tell me about|tell me what|tell me how|who is|show me|explain|summarize|review|check|analyze|look at|compare|difference between|difference)\b/i
+  const explicitFileDirective =
+    /\b(create|make|build|draft|save|write|put|drop|push|rename|move|delete|clear|empty|wipe)\b[^.!?\n]{0,60}\b(files?|notes?|folder|folders|directory|repo|workspace|vault)\b/i
+  const writeVerbs = /\b(write|add|append|insert|put|include|compose)\b/i
+  const editVerbs =
+    /\b(edit|change|replace|modify|update|fix|refactor|rewrite|remove|delete|strip|clean|clean up|deduplicate|dedup|prune|trim|simplify|correct|format)\b/i
+
+  // If the user is asking an explanation, conceptual, or question query without explicit file-mutation commands
+  if (readQuestionPatterns.test(clean) && !explicitFileDirective.test(clean) && !writeVerbs.test(clean) && !editVerbs.test(clean)) {
+    return IntentCategory.CONVERSATIONAL_EXPLAIN
+  }
+
   const hasMentions = mentionedSnippets && mentionedSnippets.length > 0
   const clearPatterns = /\b(clear|empty|wipe|erase|reset)\b/i
   const renamePatterns =
@@ -37,11 +50,6 @@ export const detectUserIntent = (message, mentionedSnippets = [], activeSnippet 
     /\b(folder|directory)\b[^.!?\n]{0,80}\b(files?|notes?|plan|expenses?|today|tomorrow|summary|graph)\b/i
   const createFolderPatterns =
     /\b(create|make|add|new)\b[^.!?\n]{0,80}\b(folder|directory)\b/i
-  const editVerbs =
-    /\b(edit|change|replace|modify|update|fix|refactor|rewrite|remove|delete|strip|clean|clean up|deduplicate|dedup|prune|trim|simplify|correct|format)\b/i
-  const writeVerbs = /\b(write|add|append|insert|put|include|compose)\b/i
-  const readQuestionPatterns =
-    /\b(what do you see|what's in|what is in|what does|show me|tell me about|what do you read|have you read|so when|did you read|explain|summarize|review|check|analyze|look at|how does|compare|difference)\b/i
   const newNotePatterns =
     /\b(write a draft|write a note|create a note|create a file|make a file|write topic|comprehensive note on|write about)\b/i
 

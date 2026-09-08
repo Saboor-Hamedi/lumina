@@ -1,9 +1,30 @@
 import React from 'react'
+import { FileText, Code } from 'lucide-react'
 import { MessageContent } from './MessageContent'
 import { ChatActions } from './ChatActions'
 import { ThinkingIndicator } from './ThinkingIndicator'
 import { openNoteInEditor } from './ChatLink'
 import { useAIStore } from '../tools/lumina'
+
+const getMentionIcon = (target) => {
+  const lower = (target || '').toLowerCase().trim()
+  if (lower.endsWith('.css') || lower.endsWith('.scss') || lower.endsWith('.less')) {
+    return <span className="chat-mention-symbol css-symbol">{'{ }'}</span>
+  }
+  if (lower.endsWith('.jsx') || lower.endsWith('.tsx')) {
+    return <span className="chat-mention-symbol react-symbol">⚛</span>
+  }
+  if (
+    lower.endsWith('.js') ||
+    lower.endsWith('.ts') ||
+    lower.endsWith('.mjs') ||
+    lower.endsWith('.cjs') ||
+    lower.endsWith('.py')
+  ) {
+    return <Code size={11.5} className="chat-mention-icon code-icon" />
+  }
+  return <FileText size={11.5} className="chat-mention-icon file-icon" />
+}
 
 export const ChatMessageRow = React.memo(
   ({ msg, index, isLast, isChatLoading, userMentionRegex, handleCopy, handleRating }) => {
@@ -33,10 +54,17 @@ export const ChatMessageRow = React.memo(
             minWidth: 0,
             flexShrink: 1,
             width: msg.role === 'user' ? 'auto' : '100%',
-            marginRight: msg.role === 'user' ? '4px' : '0'
+            marginLeft: msg.role === 'user' ? 'auto' : '0'
           }}
         >
-          <div className={`chat-bubble ${msg.role}`}>
+          <div
+            className={`chat-bubble ${msg.role}`}
+            style={{
+              padding: msg.role === 'user' ? '4px 0' : undefined,
+              width: 'auto',
+              maxWidth: '100%'
+            }}
+          >
             {msg.role === 'user' ? (
               <div
                 className="user-message-inline"
@@ -51,19 +79,15 @@ export const ChatMessageRow = React.memo(
                       return (
                         <span
                           key={pIdx}
-                          className="chat-user-mention"
+                          className="chat-user-mention-pill"
                           onClick={(e) => {
                             e.stopPropagation()
                             openNoteInEditor(cleanTarget)
                           }}
-                          style={{
-                            color: 'var(--text-accent)',
-                            fontWeight: 500,
-                            cursor: 'pointer'
-                          }}
-                          title={`Click to open ${cleanTarget} in editor`}
+                          title={`Click to open [[${cleanTarget}]] in editor`}
                         >
-                          {part}
+                          {getMentionIcon(cleanTarget)}
+                          <span className="chat-user-mention-text">{cleanTarget}</span>
                         </span>
                       )
                     }
@@ -74,7 +98,7 @@ export const ChatMessageRow = React.memo(
             ) : msg.role === 'assistant' &&
               !msg.content?.trim() &&
               !msg.imageUrl &&
-              (isLast && (isChatLoading || msg.isGenerating)) ? (
+              (isLast && isChatLoading) ? (
               <ThinkingIndicator
                 isGenerating={msg.isGenerating}
                 label={activeThinkingStatus || 'Thinking...'}
@@ -88,21 +112,10 @@ export const ChatMessageRow = React.memo(
                   imagePrompt={msg.imagePrompt}
                   onCopy={handleCopy}
                 />
-                {isLast && isChatLoading && (
-                  <div className="chat-interactive-cursor-row">
-                    <span className="chat-streaming-cursor" />
-                    {activeThinkingStatus && (
-                      <span className="chat-cursor-thought">
-                        <span className="thinking-dot-pulse" />
-                        <span className="chat-cursor-thought-text">{activeThinkingStatus}</span>
-                      </span>
-                    )}
-                  </div>
-                )}
               </>
             )}
           </div>
-          {msg.role === 'assistant' && !(isLast && isChatLoading) && !msg.isGenerating && (
+          {msg.role === 'assistant' && !(isLast && isChatLoading) && (
             <ChatActions msg={msg} index={index} onCopy={handleCopy} onRate={handleRating} />
           )}
         </div>
@@ -116,9 +129,9 @@ export const ChatMessageRow = React.memo(
       prevProps.msg.imageUrl === nextProps.msg.imageUrl &&
       prevProps.msg.rating === nextProps.msg.rating &&
       prevProps.msg.timestamp === nextProps.msg.timestamp &&
-      prevProps.msg.isGenerating === nextProps.msg.isGenerating &&
       prevProps.isLast === nextProps.isLast &&
-      prevProps.isChatLoading === nextProps.isChatLoading
+      prevProps.isChatLoading === nextProps.isChatLoading &&
+      prevProps.activeThinkingStatus === nextProps.activeThinkingStatus
     )
   }
 )

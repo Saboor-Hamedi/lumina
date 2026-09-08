@@ -205,17 +205,31 @@ export const updateFileTool = aiSdk.tool({
       }
     }
 
-    const updated = await vs.saveSnippet({ ...target, code: newCode })
     const isCurrentlySelected = vs.selectedSnippet?.id === target.id
+    if (isCurrentlySelected && vs.setSelectedSnippet) {
+      vs.setSelectedSnippet({ ...target, code: newCode })
+    }
+
+    try {
+      const { streamCodeToEditor } = await import('../services/editorStreamer.js')
+      await streamCodeToEditor({
+        targetId: target.id,
+        oldCode: currentCode,
+        newCode: newCode,
+        isCurrentlySelected
+      })
+    } catch (_) {
+      window.dispatchEvent(
+        new CustomEvent('ai-saved-snippet', {
+          detail: { id: target.id, code: newCode, title: target.title }
+        })
+      )
+    }
+
+    const updated = await vs.saveSnippet({ ...target, code: newCode })
     if (isCurrentlySelected && vs.setSelectedSnippet) {
       vs.setSelectedSnippet(updated || { ...target, code: newCode })
     }
-
-    window.dispatchEvent(
-      new CustomEvent('ai-saved-snippet', {
-        detail: { id: target.id, code: newCode, title: target.title }
-      })
-    )
 
     const oldWords = currentCode.trim() ? currentCode.trim().split(/\s+/).length : 0
     const newWords = newCode.trim() ? newCode.trim().split(/\s+/).length : 0

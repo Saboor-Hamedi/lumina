@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { db, openDb } from '../../../core/db/cache'
 import { extractGraphContext } from '../services/graphContext.js'
-import { detectUserIntent, getDynamicExemplars } from '../services/intentRouter.js'
+import { detectUserIntent, getDynamicExemplars, IntentCategory } from '../services/intentRouter.js'
 
 let aiSdk
 let createDeepseekProvider
@@ -969,6 +969,7 @@ ${vaultAccessNote}`
         }
 
         // --- Existing files list & Knowledge Graph Context ---
+        let detectedIntent = null
         try {
           const { useVaultStore } = await import('../../../core/store/workspaceStore')
           const vs = useVaultStore.getState()
@@ -995,33 +996,20 @@ ${vaultAccessNote}`
           }
 
           // Feature 3: Dynamic Intent Routing & Few-Shot Exemplars
-          const detectedIntent = detectUserIntent(message, mentionedSnippets, vs.selectedSnippet)
+          detectedIntent = detectUserIntent(message, mentionedSnippets, vs.selectedSnippet)
           const exemplars = getDynamicExemplars(detectedIntent)
           if (exemplars) {
             systemPrompt += exemplars
           }
-        } catch (_) {}
-
-        let providerType = 'deepseek'
-        let activeModel = deepSeekModel || 'deepseek-chat'
-        let apiKey = visibleKey
-
-        if (settingsObj.activeProvider) {
-          providerType = settingsObj.activeProvider
-          activeModel = settingsObj.activeModel || null
-
-          if (providerType === 'openai') apiKey = settingsObj.openaiKey
-          else if (providerType === 'anthropic') apiKey = settingsObj.anthropicKey
-          else if (providerType === 'ollama') apiKey = 'unused'
+        } catch (_) {
+          if (!detectedIntent) {
+            detectedIntent = detectUserIntent(message, mentionedSnippets, null)
+          }
         }
 
-        const { AIProviderFactory } = await import('../providers/index.js')
-        const providerConfig = {
-          apiKey,
-          baseUrl: settingsObj.ollamaUrl
-        }
-
-        const provider = AIProviderFactory.createProvider(providerType, providerConfig)
+        const { AIProviderFactory, resolveProviderConfig } = await import('../providers/index.js')
+        const { providerType, activeModel, apiKey, baseUrl } = resolveProviderConfig(settingsObj)
+        const provider = AIProviderFactory.createProvider(providerType, { apiKey, baseUrl })
 
         const finalMessages = newHistory
           .filter((m) => m.role !== 'system' && (m.content || m.role === 'user'))
@@ -1052,10 +1040,20 @@ ${vaultAccessNote}`
             await ensureAISdk()
 
             const { getAITools } = await import('./index.js')
-            const sdkTools =
-              modeCfg.enableTools !== false && !isConversationalOverride
-                ? getAITools(blockReadFile)
-                : {}
+            let sdkTools = {}
+            if (modeCfg.enableTools !== false && !isConversationalOverride) {
+              const allTools = getAITools(blockReadFile)
+              if (detectedIntent === IntentCategory.CONVERSATIONAL_EXPLAIN) {
+                // When explaining or asking questions, allow inspecting/reading notes but never mutating files
+                sdkTools = {
+                  readFile: allTools.readFile,
+                  checkFile: allTools.checkFile,
+                  readBrainFile: allTools.readBrainFile
+                }
+              } else {
+                sdkTools = allTools
+              }
+            }
 
             const result = aiSdk.streamText({
               model: createDeepseekProvider({ apiKey: visibleKey })(activeModel || 'deepseek-chat'),
@@ -1079,14 +1077,6 @@ ${vaultAccessNote}`
             })
 
             const executedActions = []
-            if (mentionedSnippets.length > 0) {
-              mentionedSnippets.forEach((snip) => {
-                const entry = `📄 Analyzed \`${snip.title}\``
-                if (!executedActions.includes(entry)) {
-                  executedActions.push(entry)
-                }
-              })
-            }
             let activeToolStatus = ''
             let reasoningText = ''
             let beforeToolText = ''
@@ -1098,9 +1088,6 @@ ${vaultAccessNote}`
               if (reasoningText.trim()) {
                 blocks.push(`<think>\n${reasoningText.trim()}\n</think>`)
               }
-              if (beforeToolText.trim()) {
-                blocks.push(beforeToolText.trim())
-              }
               if (executedActions.length > 0 || activeToolStatus) {
                 const actionLines = [...executedActions]
                 if (activeToolStatus) {
@@ -1108,8 +1095,9 @@ ${vaultAccessNote}`
                 }
                 blocks.push(`<lumina-activity>\n${actionLines.join('\n')}\n</lumina-activity>`)
               }
-              if (afterToolText.trim()) {
-                blocks.push(afterToolText.trim())
+              const responseText = [beforeToolText.trim(), afterToolText.trim()].filter(Boolean).join('\n\n')
+              if (responseText) {
+                blocks.push(responseText)
               }
               return blocks.join('\n\n')
             }
@@ -1122,47 +1110,35 @@ ${vaultAccessNote}`
                 hasToolCalled = true
                 const args = chunk.input || chunk.args || {}
                 if (chunk.toolName === 'createFolder') {
-                  activeToolStatus = `📁 *Creating folder \`${args.path || '...'}\`...*`
+                  activeToolStatus = `📁 *Creating folder '${args.path || '...'}'...*`
                 } else if (chunk.toolName === 'moveFolder') {
-                  activeToolStatus = `📁 *Moving folder \`${args.sourceFolder || '...'}\` to \`${args.targetFolder || 'root'}\`...*`
+                  activeToolStatus = `📁 *Moving folder '${args.sourceFolder || '...'}' to '${args.targetFolder || 'root'}'...*`
                 } else if (chunk.toolName === 'createFile') {
-                  activeToolStatus = `📝 *Drafting \`${args.title || 'note'}\`${args.folder ? ' in ' + args.folder : ''}...*`
+                  activeToolStatus = `📝 *Drafting '${args.title || 'note'}'${args.folder ? ' in ' + args.folder : ''}...*`
                 } else if (chunk.toolName === 'moveFile') {
-                  activeToolStatus = `📦 *Moving \`${args.title || 'note'}\` to \`${args.folder || 'root'}\`...*`
+                  activeToolStatus = `📦 *Moving '${args.title || 'note'}' to '${args.folder || 'root'}'...*`
                 } else if (chunk.toolName === 'deleteFolder') {
-                  activeToolStatus = `🗑️ *Deleting folder \`${args.path || '...'}\`...*`
+                  activeToolStatus = `🗑️ *Deleting folder '${args.path || '...'}'...*`
                 } else if (chunk.toolName === 'deleteFile') {
-                  activeToolStatus = `🗑️ *Deleting note \`${args.title || '...'}\`...*`
+                  activeToolStatus = `🗑️ *Deleting note '${args.title || '...'}'...*`
                 } else if (chunk.toolName === 'renameFolder') {
-                  activeToolStatus = `✏️ *Renaming folder \`${args.oldPath}\` to \`${args.newPath}\`...*`
+                  activeToolStatus = `✏️ *Renaming folder '${args.oldPath}' to '${args.newPath}'...*`
                 } else if (chunk.toolName === 'renameFile') {
-                  activeToolStatus = `✏️ *Renaming note \`${args.oldTitle}\` to \`${args.newTitle}\`...*`
+                  activeToolStatus = `✏️ *Renaming note '${args.oldTitle}' to '${args.newTitle}'...*`
                 } else if (chunk.toolName === 'appendToFile') {
-                  activeToolStatus = `✍️ *Writing content to \`${args.title || 'note'}\`...*`
+                  activeToolStatus = `✍️ *Writing content to '${args.title || 'note'}'...*`
                 } else if (chunk.toolName === 'updateFile') {
-                  if (args.sectionHeader) {
-                    activeToolStatus = `✏️ *Updating section \`${args.sectionHeader}\` in \`${args.title || 'note'}\`...*`
-                  } else if (args.search) {
-                    const preview = (args.search || '').trim().replace(/\n/g, ' ')
-                    const shortSearch = preview.length > 25 ? preview.slice(0, 25) + '...' : preview
-                    activeToolStatus = `✏️ *Modifying targeted part in \`${args.title || 'note'}\` (\`${shortSearch}\`)...*`
-                  } else if (args.insertAfter) {
-                    activeToolStatus = `✏️ *Inserting into \`${args.title || 'note'}\` after \`${(args.insertAfter || '').slice(0, 20)}...\`...*`
-                  } else if (args.insertBefore) {
-                    activeToolStatus = `✏️ *Inserting into \`${args.title || 'note'}\` before \`${(args.insertBefore || '').slice(0, 20)}...\`...*`
-                  } else {
-                    activeToolStatus = `✏️ *Updating \`${args.title || 'note'}\`...*`
-                  }
+                  activeToolStatus = `✏️ *Updating '${args.title || 'note'}'...*`
                 } else if (chunk.toolName === 'clearFile') {
-                  activeToolStatus = `🧹 *Clearing \`${args.title || 'note'}\`...*`
+                  activeToolStatus = `🧹 *Clearing '${args.title || 'note'}'...*`
                 } else if (chunk.toolName === 'readBrainFile') {
                   activeToolStatus = `📖 *Checking documentation...*`
                 } else if (chunk.toolName === 'readFile' || chunk.toolName === 'checkFile') {
-                  activeToolStatus = `📄 *Analyzing \`${args.title || 'note'}\`...*`
+                  activeToolStatus = `📄 *Reading '${args.title || 'note'}'...*`
                 } else if (chunk.toolName === 'openFile') {
-                  activeToolStatus = `📖 *Opening \`${args.title || 'note'}\`...*`
+                  activeToolStatus = `📖 *Opening '${args.title || 'note'}'...*`
                 } else {
-                  activeToolStatus = `⚙️ *Executing ${chunk.toolName}...*`
+                  activeToolStatus = `⚙️ *Working on ${chunk.toolName}...*`
                 }
 
                 fullContent = buildRealtimeDisplay()
@@ -1544,8 +1520,18 @@ ${vaultAccessNote}`
           if (timeoutId) clearTimeout(timeoutId)
         }
 
+        set((state) => {
+          const msgs = [...state.chatMessages]
+          if (msgs.length > 0) {
+            const lastIdx = msgs.length - 1
+            if (msgs[lastIdx].role === 'assistant' && msgs[lastIdx].isGenerating) {
+              msgs[lastIdx] = { ...msgs[lastIdx], isGenerating: false }
+            }
+          }
+          return { chatMessages: msgs, isChatLoading: false, activeThinkingStatus: '', chatController: null }
+        })
+
         get().saveChatHistory()
-        set({ isChatLoading: false, activeThinkingStatus: '', chatController: null })
       } catch (error) {
         if (error.name === 'AbortError') {
           console.log('[AIStore] Chat generation aborted by user.')
@@ -1558,7 +1544,7 @@ ${vaultAccessNote}`
           const msgs = [...state.chatMessages]
           if (msgs.length > 0) {
             const lastMsg = msgs[msgs.length - 1]
-            if (lastMsg.role === 'assistant' && !lastMsg.content && !lastMsg.imageUrl) {
+            if (lastMsg.role === 'assistant' && !lastMsg.content?.trim() && !lastMsg.imageUrl) {
               msgs.pop()
             }
           }
@@ -1572,7 +1558,26 @@ ${vaultAccessNote}`
         })
       } finally {
         if (timeoutId) clearTimeout(timeoutId)
-        set({ isChatLoading: false, activeThinkingStatus: '', chatController: null })
+        set((state) => {
+          const msgs = [...state.chatMessages]
+          if (msgs.length > 0) {
+            const lastIdx = msgs.length - 1
+            if (msgs[lastIdx].role === 'assistant') {
+              if (msgs[lastIdx].isGenerating) {
+                msgs[lastIdx] = { ...msgs[lastIdx], isGenerating: false }
+              }
+              if (!msgs[lastIdx].content?.trim() && !msgs[lastIdx].imageUrl) {
+                msgs.pop()
+              }
+            }
+          }
+          return {
+            chatMessages: msgs,
+            isChatLoading: false,
+            activeThinkingStatus: '',
+            chatController: null
+          }
+        })
       }
     }
   }

@@ -1,9 +1,26 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Brain, ChevronDown } from 'lucide-react'
+import { formatLuminaTime } from './luminaTimer.jsx'
 
 export const ThinkingBlock = React.memo(({ thinkContent, isStreaming = false }) => {
   const [isOpen, setIsOpen] = useState(isStreaming)
-  const prevStreamingRef = React.useRef(isStreaming)
+  const prevStreamingRef = useRef(isStreaming)
+  const [elapsed, setElapsed] = useState(0)
+  const startTimeRef = useRef(Date.now())
+
+  useEffect(() => {
+    let interval = null
+    if (isStreaming) {
+      startTimeRef.current = Date.now()
+      setElapsed(0)
+      interval = setInterval(() => {
+        setElapsed(Math.floor((Date.now() - startTimeRef.current) / 1000))
+      }, 500)
+    }
+    return () => {
+      if (interval) clearInterval(interval)
+    }
+  }, [isStreaming])
 
   useEffect(() => {
     if (prevStreamingRef.current && !isStreaming) {
@@ -16,6 +33,10 @@ export const ThinkingBlock = React.memo(({ thinkContent, isStreaming = false }) 
 
   if (!thinkContent?.trim()) return null
 
+  const timerText = isStreaming
+    ? `Thinking (${formatLuminaTime(elapsed)})`
+    : `Thought for ${formatLuminaTime(Math.max(1, elapsed))}`
+
   return (
     <div className={`chat-thinking-container ${isOpen ? 'open' : 'collapsed'}`}>
       <button
@@ -26,7 +47,7 @@ export const ThinkingBlock = React.memo(({ thinkContent, isStreaming = false }) 
         <div className="chat-thinking-header-left">
           <Brain size={13} className={`chat-thinking-brain-icon ${isStreaming ? 'pulsing' : ''}`} />
           <span className="chat-thinking-title">
-            {isStreaming ? 'Thinking in background...' : 'Thought Process'}
+            {timerText}
           </span>
           <span className="preview-indicator-tag chat-thinking-pill">
             {isStreaming ? 'REASONING' : 'THOUGHT'}

@@ -1,6 +1,6 @@
 import { useVaultStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
-import { AIProviderFactory } from '../providers/index.js'
+import { AIProviderFactory, resolveProviderConfig } from '../providers/index.js'
 
 function sanitizeTitle(str) {
   return (str || 'Untitled').replace(/[/\\:*?"<>|]/g, '').trim()
@@ -28,38 +28,12 @@ function resolveTargetFolder(notes) {
   return same ? firstFolder : ''
 }
 
-function getProviderConfig(settingsObj) {
-  let providerType = settingsObj.activeProvider || 'deepseek'
-  let activeModel = settingsObj.activeModel || null
-  let apiKey =
-    settingsObj.deepSeekKey ||
-    (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_deepseek_key')) ||
-    import.meta.env.VITE_DEEPSEEK_KEY ||
-    null
-
-  if (providerType === 'openai') {
-    apiKey =
-      settingsObj.openaiKey ||
-      (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_openai_key')) ||
-      null
-  } else if (providerType === 'anthropic') {
-    apiKey =
-      settingsObj.anthropicKey ||
-      (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_anthropic_key')) ||
-      null
-  } else if (providerType === 'ollama') {
-    apiKey = 'unused'
-  }
-
-  return { providerType, activeModel, apiKey, baseUrl: settingsObj.ollamaUrl }
-}
-
-export async function summarizeNotes(inputNotes) {
+export async function summarizeNotes(inputNotes, options = {}) {
   const validNotes = (Array.isArray(inputNotes) ? inputNotes : [inputNotes]).filter(Boolean)
   if (validNotes.length === 0) return null
 
   const settingsObj = useSettingsStore.getState().settings || {}
-  const { providerType, activeModel, apiKey, baseUrl } = getProviderConfig(settingsObj)
+  const { providerType, activeModel, apiKey, baseUrl } = resolveProviderConfig(settingsObj)
 
   if (providerType !== 'ollama' && !apiKey) {
     window.dispatchEvent(
@@ -150,7 +124,12 @@ Formatting & Length Guidelines:
     let lastUpdateTime = Date.now()
     const UPDATE_INTERVAL = 100
 
-    for await (const chunk of provider.chatStream(messages, { model: activeModel, max_tokens: 1024 })) {
+    for await (const chunk of provider.chatStream(messages, {
+      model: activeModel,
+      max_tokens: 1024,
+      signal: options.signal
+    })) {
+      if (options.signal?.aborted) break
       streamed += chunk
       const currentFull = `${headerSection}${streamed}`
       if (Date.now() - lastUpdateTime > UPDATE_INTERVAL) {
