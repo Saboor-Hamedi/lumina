@@ -94,7 +94,9 @@ async function createWindow() {
       devTools: true,
       cache: true,
       partition: 'persist:main',
-      allowRunningInsecureContent: false
+      allowRunningInsecureContent: false,
+      // Required for Chromium's built-in PDF viewer to render PDFs in iframes
+      plugins: true
     }
   })
 
@@ -179,7 +181,9 @@ async function createWindow() {
   const isDev = !app.isPackaged
   if (isDev && process.env['ELECTRON_RENDERER_URL']) {
     let retryCount = 0
-    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+      // Never trigger full-window reloads for subframes/iframes that fail to load
+      if (!isMainFrame) return
       if (retryCount < 5 && !mainWindow.isDestroyed()) {
         retryCount++
         setTimeout(() => {
@@ -271,6 +275,7 @@ app.whenReady().then(async () => {
       else if (ext === '.gif') mimeType = 'image/gif'
       else if (ext === '.webp') mimeType = 'image/webp'
       else if (ext === '.svg') mimeType = 'image/svg+xml'
+      else if (ext === '.pdf') mimeType = 'application/pdf'
 
       const arrayBuffer = new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
       return new Response(arrayBuffer, {

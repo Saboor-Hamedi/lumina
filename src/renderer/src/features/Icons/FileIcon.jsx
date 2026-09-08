@@ -15,6 +15,7 @@ import {
   FileCode,
   FileJson,
   ImageIcon,
+  BookText,
   Folder,
   FolderOpen,
   FolderCode,
@@ -65,6 +66,12 @@ export const getFileIcon = (title = '', language = '') => {
   if (lang === 'image') {
     _iconCache.set(cacheKey, ImageIcon)
     return ImageIcon
+  }
+
+  // PDFs use BookText to stay visually distinct from plain text notes
+  if (lang === 'pdf') {
+    _iconCache.set(cacheKey, BookText)
+    return BookText
   }
 
   // Base name without extension

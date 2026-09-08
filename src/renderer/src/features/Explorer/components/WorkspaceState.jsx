@@ -11,20 +11,22 @@ import {
   X
 } from 'lucide-react'
 import { useVaultStore } from '../../../core/store/workspaceStore'
-import './VaultStats.css'
+import './workspacestat.css'
 
-export const VaultStats = ({ isOpen, onClose, anchorRef }) => {
+export const WorkspaceState = ({ isOpen, onClose, anchorRef }) => {
   const popoverRef = useRef(null)
   const snippets = useVaultStore((state) => state.snippets)
   const folders = useVaultStore((state) => state.folders)
   const [coords, setCoords] = useState(null)
 
   const stats = useMemo(() => {
-    const noteSnippets = snippets.filter((s) => s.type !== 'image')
+    const noteSnippets = snippets.filter((s) => s.type !== 'image' && s.type !== 'pdf')
     const imageSnippets = snippets.filter((s) => s.type === 'image')
+    const pdfSnippets = snippets.filter((s) => s.type === 'pdf')
 
     const totalNotes = noteSnippets.length
     const totalImages = imageSnippets.length
+    const totalPdfs = pdfSnippets.length
     const folderSet = new Set(folders || [])
 
     snippets.forEach((s) => {
@@ -60,6 +62,10 @@ export const VaultStats = ({ isOpen, onClose, anchorRef }) => {
       totalMediaBytes += img.size || 0
     })
 
+    pdfSnippets.forEach((pdf) => {
+      totalMediaBytes += pdf.size || 0
+    })
+
     const formatBytes = (bytes) => {
       if (!bytes || bytes === 0) return '0 B'
       const k = 1024
@@ -77,6 +83,7 @@ export const VaultStats = ({ isOpen, onClose, anchorRef }) => {
     return {
       totalNotes: formatNumber(totalNotes),
       totalImages: formatNumber(totalImages),
+      totalPdfs: formatNumber(totalPdfs),
       totalFolders: formatNumber(totalFolders),
       pinnedCount: formatNumber(pinnedCount),
       learnedCount: formatNumber(learnedCount),
@@ -258,4 +265,8 @@ export const VaultStats = ({ isOpen, onClose, anchorRef }) => {
   )
 }
 
-export default React.memo(VaultStats)
+// Aliases for compatibility
+export const WorkspaceStats = WorkspaceState
+export const VaultStats = WorkspaceState
+
+export default React.memo(WorkspaceState)

@@ -108,6 +108,44 @@ const SidebarItem = ({
             console.error('Failed to rename image:', err)
           }
         }
+      } else if (snippet.type === 'pdf') {
+        // PDFs: always enforce .pdf extension — strip whatever the user typed and re-append
+        const base = trimmed.replace(/\.[^/.]+$/, '')
+        const targetFileName = `${base}.pdf`
+        const oldRel = snippet.folderId ? `${snippet.folderId}/${snippet.fileName}` : snippet.fileName
+        const newRel = snippet.folderId ? `${snippet.folderId}/${targetFileName}` : targetFileName
+        if (oldRel !== newRel) {
+          try {
+            await window.api?.moveFile?.(oldRel, newRel)
+            const loadVault = useVaultStore.getState().loadVault
+            await loadVault?.()
+
+            const freshSnippets = useVaultStore.getState().snippets || []
+            const newSnippet = freshSnippets.find(
+              (s) =>
+                s.relativePath === newRel ||
+                (s.fileName === targetFileName && (s.folderId || '') === (snippet.folderId || ''))
+            )
+
+            if (newSnippet) {
+              useVaultStore.setState((state) => {
+                const nextTabs = state.openTabs.map((tid) => (tid === snippet.id ? newSnippet.id : tid))
+                const nextActiveId = state.activeTabId === snippet.id ? newSnippet.id : state.activeTabId
+                const nextPinned = state.pinnedTabIds.map((pid) => (pid === snippet.id ? newSnippet.id : pid))
+                const nextSelected =
+                  state.selectedSnippet?.id === snippet.id ? newSnippet : state.selectedSnippet
+                return {
+                  openTabs: nextTabs,
+                  activeTabId: nextActiveId,
+                  pinnedTabIds: nextPinned,
+                  selectedSnippet: nextSelected
+                }
+              })
+            }
+          } catch (err) {
+            console.error('Failed to rename PDF:', err)
+          }
+        }
       } else {
         await saveSnippet({ ...snippet, title: trimmed })
       }
@@ -136,7 +174,7 @@ const SidebarItem = ({
       togglePinnedFolder(snippet.id)
       return
     }
-    if (snippet.type === 'image') return
+    if (snippet.type === 'image' || snippet.type === 'pdf') return
     try {
       await saveSnippet({ ...snippet, isPinned: !snippet.isPinned })
       setContextMenu(null)
@@ -204,6 +242,25 @@ const SidebarItem = ({
             <span className="tooltip-badge-folder">🖼️ Image</span>
             {item.size ? <span>· {formatSize(item.size)}</span> : null}
             {item.ext ? <span className="uppercase">· {item.ext.replace('.', '')}</span> : null}
+          </div>
+        </div>
+      )
+    }
+    if (item.type === 'pdf') {
+      const formatSize = (bytes) => {
+        if (!bytes) return ''
+        if (bytes < 1024) return `${bytes} B`
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+      }
+      return (
+        <div className="tooltip-card-preview">
+          <div className="tooltip-card-header">
+            <span className="tooltip-card-title">{item.title || 'PDF Document'}</span>
+          </div>
+          <div className="tooltip-card-meta">
+            <span className="tooltip-badge-folder">📄 PDF</span>
+            {item.size ? <span>· {formatSize(item.size)}</span> : null}
           </div>
         </div>
       )

@@ -674,6 +674,13 @@ const CommandPalette = React.memo(
         return `![${item.title || item.fileName}](${relPath})`
       }
 
+      if (item.type === 'pdf') {
+        const relPath =
+          item.relativePath ||
+          (item.folderId ? `${item.folderId}/${item.fileName}` : item.fileName)
+        return `[📄 ${item.title || item.fileName}](${relPath})`
+      }
+
       return item.code || item.matchSnippet || ''
     }, [filtered, selectedIndex])
 

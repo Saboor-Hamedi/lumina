@@ -35,6 +35,14 @@ const Preview = ({ isOpen, onClose, title, content, snippetId }) => {
           : activeSnippet.fileName)
       return `![${activeSnippet.title || activeSnippet.fileName}](${relPath})`
     }
+    if (activeSnippet?.type === 'pdf') {
+      const relPath =
+        activeSnippet.relativePath ||
+        (activeSnippet.folderId
+          ? `${activeSnippet.folderId}/${activeSnippet.fileName}`
+          : activeSnippet.fileName)
+      return `[📄 ${activeSnippet.title || activeSnippet.fileName}](${relPath})`
+    }
     return draft !== undefined
       ? draft
       : activeSnippet?.code !== undefined

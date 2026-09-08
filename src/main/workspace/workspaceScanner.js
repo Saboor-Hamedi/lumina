@@ -21,6 +21,13 @@ const IMAGE_EXTS = new Set([
 ])
 
 /**
+ * Recognized PDF file extensions for document attachments within the workspace.
+ * PDFs are tracked separately from images and notes — they open in the native PDF viewer tab.
+ * @type {Set<string>}
+ */
+const PDF_EXTS = new Set(['.pdf'])
+
+/**
  * Recognized text note extensions.
  * Files matching these extensions are parsed for frontmatter, markdown wikilinks, and plain text content.
  * @type {Set<string>}
@@ -141,6 +148,7 @@ export class WorkspaceScanner {
     try {
       const textFiles = []
       const imageFiles = []
+      const pdfFiles = [] // PDFs tracked separately — open in native PDF viewer tab
       const foundFolders = new Set()
 
       // Build a fast lookup map for unchanged snippets by relative path
@@ -200,6 +208,9 @@ export class WorkspaceScanner {
               textFiles.push({ fileName: name, folderId: relativePath, ext, fullPath, relPath })
             } else if (IMAGE_EXTS.has(ext)) {
               imageFiles.push({ fileName: name, folderId: relativePath, ext, fullPath, relPath })
+            } else if (PDF_EXTS.has(ext)) {
+              // PDFs get their own bucket — same metadata shape as images but type: 'pdf'
+              pdfFiles.push({ fileName: name, folderId: relativePath, ext, fullPath, relPath })
             }
           }
         }
@@ -336,6 +347,46 @@ export class WorkspaceScanner {
                 customIcon: null,
                 color: null,
                 type: 'image',
+                ext,
+                size: stats.size,
+                is_draft: 0,
+                fileName,
+                folderId: folderId || '',
+                relativePath: relPath
+              }
+            } catch (err) {
+              return null
+            }
+          })
+        )
+
+        newSnippets.push(...batchResults.filter(Boolean))
+      }
+
+      // Batch process PDF documents — same shape as images but type: 'pdf', language: 'pdf'
+      for (let i = 0; i < pdfFiles.length; i += BATCH_SIZE) {
+        const batch = pdfFiles.slice(i, i + BATCH_SIZE)
+
+        const batchResults = await Promise.all(
+          batch.map(async ({ fileName, folderId, ext, fullPath, relPath }) => {
+            try {
+              const stats = await fs.stat(fullPath)
+              // Use 'pdf-' prefix to keep IDs separate from images and notes
+              const id = `pdf-${crypto.createHash('md5').update(relPath).digest('hex')}`
+
+              return {
+                id,
+                title: fileName,
+                code: '',
+                language: 'pdf',
+                tags: '',
+                timestamp: stats.mtimeMs,
+                selection: null,
+                isPinned: false,
+                isLearned: false,
+                customIcon: null,
+                color: null,
+                type: 'pdf',
                 ext,
                 size: stats.size,
                 is_draft: 0,

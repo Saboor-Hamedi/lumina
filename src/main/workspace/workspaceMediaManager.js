@@ -103,7 +103,8 @@ export class WorkspaceMediaManager {
         '.svg': 'image/svg+xml',
         '.bmp': 'image/bmp',
         '.ico': 'image/x-icon',
-        '.avif': 'image/avif'
+        '.avif': 'image/avif',
+        '.pdf': 'application/pdf'
       }
       const mimeType = mimeTypes[ext] || 'application/octet-stream'
       const base64 = buffer.toString('base64')

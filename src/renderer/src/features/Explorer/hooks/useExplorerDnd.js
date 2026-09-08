@@ -128,7 +128,7 @@ export function useExplorerDnd({
           for (const s of snippetsToMove) {
             if (s.folderId !== '') {
               try {
-                if (s.type === 'image') {
+                if (s.type === 'image' || s.type === 'pdf') {
                   const oldRel = s.folderId ? `${s.folderId}/${s.fileName}` : s.fileName
                   const newRel = s.fileName
                   if (oldRel !== newRel) {
@@ -212,7 +212,7 @@ export function useExplorerDnd({
           for (const s of snippetsToMove) {
             if (s.folderId !== targetFolderId) {
               try {
-                if (s.type === 'image') {
+                if (s.type === 'image' || s.type === 'pdf') {
                   const oldRel = s.folderId ? `${s.folderId}/${s.fileName}` : s.fileName
                   const newRel = targetFolderId ? `${targetFolderId}/${s.fileName}` : s.fileName
                   if (oldRel !== newRel) {

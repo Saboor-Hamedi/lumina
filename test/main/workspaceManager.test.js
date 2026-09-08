@@ -208,5 +208,23 @@ describe('VaultManager', () => {
       expect(asset.dataUrl).toContain('data:image/png;base64,')
       expect(asset.buffer.toString()).toBe('fake-png-data')
     })
+
+    it('scans PDF files and reads them back via readAsset', async () => {
+      const pdfPath = path.join(tempDir, 'manual.pdf')
+      await fs.writeFile(pdfPath, '%PDF-1.4 fake pdf data')
+
+      const scanResult = await VaultManager.scanWorkspace()
+      const pdfSnippet = scanResult.snippets.find((s) => s.fileName === 'manual.pdf')
+      expect(pdfSnippet).toBeDefined()
+      expect(pdfSnippet.type).toBe('pdf')
+      expect(pdfSnippet.language).toBe('pdf')
+      expect(pdfSnippet.ext).toBe('.pdf')
+
+      const asset = await VaultManager.readAsset('manual.pdf')
+      expect(asset).toBeDefined()
+      expect(asset.mimeType).toBe('application/pdf')
+      expect(asset.dataUrl).toContain('data:application/pdf;base64,')
+      expect(asset.buffer.toString()).toBe('%PDF-1.4 fake pdf data')
+    })
   })
 })

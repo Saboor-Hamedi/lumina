@@ -8,7 +8,7 @@ import Documentation from '../Docs/Documentation'
 import Graph from '../Graph/Graph'
 import Welcome from '../../Welcome'
 import TabBar from './TabBar'
-import { ImageViewerTab } from '../media'
+import { ImageViewerTab, PDFViewerTab } from '../media'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useVaultStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
@@ -711,6 +711,8 @@ const AppShell = () => {
           <GlobalErrorHandler>
             {snippet.type === 'image' ? (
               <ImageViewerTab snippet={snippet} />
+            ) : snippet.type === 'pdf' ? (
+              <PDFViewerTab snippet={snippet} />
             ) : (
               <Editor
                 snippet={snippet}
