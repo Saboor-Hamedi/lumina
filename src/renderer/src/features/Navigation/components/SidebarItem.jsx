@@ -26,6 +26,7 @@ import { getSnippetIcon } from '../../Icons/FileIcon'
 import { useShallow } from 'zustand/react/shallow'
 import { getHighlightRegex } from '../../../core/utils/searchRanker'
 import { useContextMenu } from '../hooks/useContextMenu'
+import { isSnippetActive } from '../../Explorer/utils/explorerSelectionHelper'
 
 const SidebarItem = ({
   snippet,
@@ -38,11 +39,13 @@ const SidebarItem = ({
   searchQuery,
   matchSnippet
 }) => {
-  const { dirtySnippetIds, deleteSnippet, saveSnippet } = useVaultStore(
+  const { dirtySnippetIds, deleteSnippet, saveSnippet, selectedSnippet, activeTabId } = useVaultStore(
     useShallow((state) => ({
       dirtySnippetIds: state.dirtySnippetIds,
       deleteSnippet: state.deleteSnippet,
-      saveSnippet: state.saveSnippet
+      saveSnippet: state.saveSnippet,
+      selectedSnippet: state.selectedSnippet,
+      activeTabId: state.activeTabId
     }))
   )
   const { togglePinnedFolder } = useSettingsStore(
@@ -53,6 +56,14 @@ const SidebarItem = ({
   const isDirty = dirtySnippetIds.includes(snippet.id)
   const displayColor = snippet.color || null
   const isItemPinned = snippet.isPinned === true || snippet.isPinned === 'true'
+
+  const computedIsActive =
+    isActive !== undefined
+      ? isActive
+      : isSnippetActive({
+          snippetId: snippet?.id,
+          activeSnippetId: selectedSnippet?.id || (activeTabId !== '__graph__' ? activeTabId : null)
+        })
 
   const [isRenaming, setIsRenaming] = useState(false)
   const [renameValue, setRenameValue] = useState(snippet.title)
@@ -77,8 +88,9 @@ const SidebarItem = ({
         if (ext && !targetFileName.toLowerCase().endsWith(ext.toLowerCase())) {
           targetFileName = `${targetFileName}${ext}`
         }
-        const oldRel = snippet.folderId ? `${snippet.folderId}/${snippet.fileName}` : snippet.fileName
-        const newRel = snippet.folderId ? `${snippet.folderId}/${targetFileName}` : targetFileName
+        const normFolder = (snippet.folderId || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
+        const oldRel = snippet.relativePath || (normFolder ? `${normFolder}/${snippet.fileName}` : snippet.fileName)
+        const newRel = normFolder ? `${normFolder}/${targetFileName}` : targetFileName
         if (oldRel !== newRel) {
           try {
             await window.api?.moveFile?.(oldRel, newRel)
@@ -110,10 +122,11 @@ const SidebarItem = ({
         }
       } else if (snippet.type === 'pdf') {
         // PDFs: always enforce .pdf extension — strip whatever the user typed and re-append
-        const base = trimmed.replace(/\.[^/.]+$/, '')
+        const base = trimmed.replace(/\.[^/.]+$/, '').trim() || 'Untitled'
         const targetFileName = `${base}.pdf`
-        const oldRel = snippet.folderId ? `${snippet.folderId}/${snippet.fileName}` : snippet.fileName
-        const newRel = snippet.folderId ? `${snippet.folderId}/${targetFileName}` : targetFileName
+        const normFolder = (snippet.folderId || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
+        const oldRel = snippet.relativePath || (normFolder ? `${normFolder}/${snippet.fileName}` : snippet.fileName)
+        const newRel = normFolder ? `${normFolder}/${targetFileName}` : targetFileName
         if (oldRel !== newRel) {
           try {
             await window.api?.moveFile?.(oldRel, newRel)
@@ -359,7 +372,7 @@ const SidebarItem = ({
     return (
       <div
         ref={dndProps?.setNodeRef}
-        className="start-grid-item"
+        className={`start-grid-item ${computedIsActive ? 'active' : ''}`}
         onClick={(e) => {
           if (e.button !== 0) return // Ensure only left clicks trigger selection
           if (!isRenaming && onClick) onClick(e)
@@ -413,7 +426,7 @@ const SidebarItem = ({
   return (
     <div
       ref={dndProps?.setNodeRef}
-      className={`tree-item ${isActive ? 'active' : ''} ${isDirty ? 'is-dirty' : ''}`}
+      className={`tree-item ${computedIsActive ? 'active' : ''} ${isDirty ? 'is-dirty' : ''}`}
       onClick={(e) => {
         if (e.button !== 0) return
         if (!isRenaming && onClick) onClick(e)

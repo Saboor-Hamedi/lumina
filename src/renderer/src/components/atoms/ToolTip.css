@@ -10,12 +10,16 @@
   pointer-events: none;
   background: var(--bg-card, #18181f);
   color: var(--text-main, #f1f5f9);
-  border: none;
-  padding: 3px 8px;
-  border-radius: 2px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  padding: 4px 8px;
+  border-radius: 4px;
   font-size: 10px;
   font-weight: 500;
-  white-space: nowrap;
+  max-width: 320px;
+  width: max-content;
+  box-sizing: border-box;
+  word-break: break-word;
+  overflow-wrap: break-word;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -40,13 +44,21 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  max-width: 100%;
 }
 
 .tooltip-label {
   font-size: 10px;
-  line-height: 1.2;
+  line-height: 1.35;
   color: var(--text-main, #f1f5f9);
   letter-spacing: 0.01em;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .tooltip-kbd {
@@ -111,11 +123,13 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  max-width: 250px;
+  max-width: 280px;
   min-width: 170px;
   white-space: normal;
   text-align: left;
   padding: 2px 1px;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .tooltip-card-header {
@@ -129,9 +143,14 @@
   font-weight: 600;
   font-size: 11.5px;
   color: var(--text-main, #f8fafc);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.3;
 }
 
 .tooltip-card-meta {

@@ -332,6 +332,16 @@ export class WorkspaceScanner {
           batch.map(async ({ fileName, folderId, ext, fullPath, relPath }) => {
             try {
               const stats = await fs.stat(fullPath)
+              const cached = cacheByRelPath.get(relPath)
+              if (
+                cached &&
+                cached.timestamp === stats.mtimeMs &&
+                cached.fileName === fileName &&
+                cached.size === stats.size
+              ) {
+                return cached
+              }
+
               const id = `img-${crypto.createHash('md5').update(relPath).digest('hex')}`
 
               return {
@@ -371,6 +381,16 @@ export class WorkspaceScanner {
           batch.map(async ({ fileName, folderId, ext, fullPath, relPath }) => {
             try {
               const stats = await fs.stat(fullPath)
+              const cached = cacheByRelPath.get(relPath)
+              if (
+                cached &&
+                cached.timestamp === stats.mtimeMs &&
+                cached.fileName === fileName &&
+                cached.size === stats.size
+              ) {
+                return cached
+              }
+
               // Use 'pdf-' prefix to keep IDs separate from images and notes
               const id = `pdf-${crypto.createHash('md5').update(relPath).digest('hex')}`
 

@@ -19,16 +19,27 @@ const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
     if (!text) return null
     if (React.isValidElement(text)) return text
     if (typeof text !== 'string') return text
+
+    // Prevent absurdly long single-line titles by truncating if longer than 120 chars
+    const MAX_TOOLTIP_CHARS = 120
     const match = text.match(/^(.*?)(?:\s*\(([^)]+)\))?$/)
     if (match && match[2]) {
+      const labelText = match[1].length > MAX_TOOLTIP_CHARS
+        ? match[1].slice(0, MAX_TOOLTIP_CHARS - 1).trim() + '…'
+        : match[1]
       return (
         <span className="tooltip-content-wrap">
-          <span className="tooltip-label">{match[1]}</span>
+          <span className="tooltip-label">{labelText}</span>
           <kbd className="tooltip-kbd">{match[2]}</kbd>
         </span>
       )
     }
-    return <span className="tooltip-label">{text}</span>
+
+    const displayText = text.length > MAX_TOOLTIP_CHARS
+      ? text.slice(0, MAX_TOOLTIP_CHARS - 1).trim() + '…'
+      : text
+
+    return <span className="tooltip-label">{displayText}</span>
   }, [text])
 
   const handleMouseEnter = (e) => {
@@ -113,15 +124,18 @@ const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
             arrowPos = { left: '-3px', top: '50%', marginTop: '-3px' }
           }
         } else {
-          if (elemCenterX > window.innerWidth - 45) {
-            rightStyle = '8px'
+          // Standard top or bottom positioning with viewport edge protection:
+          // Estimate half-width buffer (170px for 320px max-width + margin)
+          const halfWidthBuffer = 170
+          if (elemCenterX + halfWidthBuffer > window.innerWidth) {
+            rightStyle = '12px'
             transformStyle = 'none'
-            const knobRight = Math.max(8, Math.min(24, Math.round(window.innerWidth - elemCenterX - 8)))
+            const knobRight = Math.max(8, Math.min(300, Math.round(window.innerWidth - elemCenterX - 12)))
             arrowPos.right = `${knobRight}px`
-          } else if (elemCenterX < 45) {
-            leftStyle = '8px'
+          } else if (elemCenterX - halfWidthBuffer < 0) {
+            leftStyle = '12px'
             transformStyle = 'none'
-            const knobLeft = Math.max(8, Math.min(24, Math.round(elemCenterX - 8)))
+            const knobLeft = Math.max(8, Math.min(300, Math.round(elemCenterX - 12)))
             arrowPos.left = `${knobLeft}px`
           } else {
             leftStyle = `${Math.round(elemCenterX)}px`

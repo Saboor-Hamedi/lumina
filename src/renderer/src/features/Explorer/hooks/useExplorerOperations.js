@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useVaultStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
+import { revealSnippetFolders } from '../utils/explorerSelectionHelper'
 
 /**
  * @typedef {Object} CreatingItemState
@@ -53,7 +54,9 @@ export function useExplorerOperations({
   })
   const [collapsedDuringSearch, setCollapsedDuringSearch] = useState(() => new Set())
   const expandedFoldersRef = useRef(expandedFolders)
-  const lastAutoExpandedSnippetRef = useRef(null)
+
+  const persistTimerRef = useRef(null)
+  const lastRevealedSnippetRef = useRef(null)
 
   const setExpandedFolders = useCallback((updater) => {
     let nextArr = null
@@ -68,9 +71,18 @@ export function useExplorerOperations({
       try {
         localStorage.setItem('lumina-expanded-folders', JSON.stringify(nextArr))
       } catch (e) {}
-      queueMicrotask(() => {
+
+      // Debounce SQLite setting update to prevent IPC churn and frame drops
+      if (persistTimerRef.current) clearTimeout(persistTimerRef.current)
+      persistTimerRef.current = setTimeout(() => {
         useSettingsStore.getState().updateSetting('expandedFolders', nextArr)
-      })
+      }, 400)
+    }
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (persistTimerRef.current) clearTimeout(persistTimerRef.current)
     }
   }, [])
 
@@ -87,6 +99,15 @@ export function useExplorerOperations({
     }
   }, [expandedFoldersSetting])
 
+  // Smart reveal: ensure active snippet's parent folders are open without layout churn
+  useEffect(() => {
+    if (!selectedSnippetId) return
+    const activeSnippet = snippets.find((s) => s.id === selectedSnippetId)
+    if (!activeSnippet || !activeSnippet.folderId) return
+
+    revealSnippetFolders(activeSnippet, setExpandedFolders)
+  }, [selectedSnippetId, snippets, setExpandedFolders])
+
   const [creating, setCreating] = useState(null) // { type: 'file' | 'folder', parentId: string } | null
   const [creatingValue, setCreatingValue] = useState('')
 
@@ -99,51 +120,11 @@ export function useExplorerOperations({
     if (creating && flatTree && flatTree.length > 0) {
       const idx = flatTree.findIndex((item) => item.type === 'input')
       if (idx !== -1 && virtuosoRef.current) {
-        setTimeout(() => {
-          virtuosoRef.current?.scrollToIndex({ index: idx, align: 'center' })
-        }, 50)
+        virtuosoRef.current?.scrollToIndex({ index: idx, align: 'nearest' })
       }
     }
   }, [creating, flatTree, virtuosoRef])
 
-  // Auto-expand parent folders of active snippet when switching notes
-  useEffect(() => {
-    if (!selectedSnippetId) return
-    if (lastAutoExpandedSnippetRef.current === selectedSnippetId) return
-    const activeSnippet = snippets.find((s) => s.id === selectedSnippetId)
-    if (!activeSnippet) return
-    if (!activeSnippet.folderId) {
-      lastAutoExpandedSnippetRef.current = selectedSnippetId
-      return
-    }
-
-    lastAutoExpandedSnippetRef.current = selectedSnippetId
-
-    const foldersToExpand = []
-    const cleanFolderId = activeSnippet.folderId.replace(/\\/g, '/')
-    const parts = cleanFolderId.split('/').filter(Boolean)
-    let currentPath = ''
-
-    for (const part of parts) {
-      currentPath = currentPath ? `${currentPath}/${part}` : part
-      foldersToExpand.push(currentPath)
-    }
-
-    const currentSet = expandedFoldersRef.current
-    const next = new Set(currentSet)
-    let changed = false
-
-    for (const id of foldersToExpand) {
-      if (!next.has(id)) {
-        next.add(id)
-        changed = true
-      }
-    }
-
-    if (changed) {
-      setExpandedFolders(next)
-    }
-  }, [selectedSnippetId, snippets, setExpandedFolders])
 
   useEffect(() => {
     const handleTriggerNewNote = () => {

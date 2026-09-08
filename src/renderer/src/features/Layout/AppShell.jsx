@@ -40,6 +40,64 @@ import StatusBar from './StatusBar'
 import { useSidebarResize } from './useSidebarResize'
 
 /**
+ * TabContentPane — Memoized pane wrapper for open tabs.
+ * Ensures switching tabs only updates the active and previous tabs,
+ * preventing unnecessary background editor/viewer re-renders.
+ */
+const TabContentPane = React.memo(
+  ({
+    snippet,
+    isSelected,
+    onSave,
+    onToggleInspector,
+    onToggleExplorerModal,
+    onSettingsClick,
+    onThemeClick,
+    onGraphClick
+  }) => {
+    if (!snippet) return null
+
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          opacity: isSelected ? 1 : 0,
+          pointerEvents: isSelected ? 'auto' : 'none',
+          visibility: isSelected ? 'visible' : 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          zIndex: isSelected ? 10 : 1
+        }}
+      >
+        <GlobalErrorHandler>
+          {snippet.type === 'image' ? (
+            <ImageViewerTab snippet={snippet} />
+          ) : snippet.type === 'pdf' ? (
+            <PDFViewerTab snippet={snippet} />
+          ) : (
+            <Editor
+              snippet={snippet}
+              onSave={onSave}
+              onToggleInspector={onToggleInspector}
+              isActive={isSelected}
+              onToggleExplorerModal={onToggleExplorerModal}
+              onSettingsClick={onSettingsClick}
+              onThemeClick={onThemeClick}
+              onGraphClick={onGraphClick}
+            />
+          )}
+        </GlobalErrorHandler>
+      </div>
+    )
+  }
+)
+
+/**
  * AppShell Component
  * Main application shell that manages the overall layout, sidebars, modals, and state.
  * Handles three-pane layout (left sidebar, main content, right sidebar), keyboard shortcuts,
@@ -684,49 +742,22 @@ const AppShell = () => {
   }, [handleToggleAIChat, handleToggleLeftSidebar])
 
   const renderedEditors = useMemo(() => {
+    const effectiveSelectedId = selectedSnippet?.id || activeTabId || openTabs[0]
     return openTabs.map((tabId) => {
-      let snippet = snippets.find((s) => s.id === tabId)
+      const snippet = snippets.find((s) => s.id === tabId)
       if (!snippet) return null
-      const effectiveSelectedId = selectedSnippet?.id || activeTabId || openTabs[0]
-      const isSelected = effectiveSelectedId === tabId
-
       return (
-        <div
+        <TabContentPane
           key={tabId}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            opacity: isSelected ? 1 : 0,
-            pointerEvents: isSelected ? 'auto' : 'none',
-            visibility: isSelected ? 'visible' : 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            zIndex: isSelected ? 10 : 1
-          }}
-        >
-          <GlobalErrorHandler>
-            {snippet.type === 'image' ? (
-              <ImageViewerTab snippet={snippet} />
-            ) : snippet.type === 'pdf' ? (
-              <PDFViewerTab snippet={snippet} />
-            ) : (
-              <Editor
-                snippet={snippet}
-                onSave={saveSnippet}
-                onToggleInspector={handleToggleInspector}
-                isActive={isSelected}
-                onToggleExplorerModal={handleToggleExplorerModal}
-                onSettingsClick={handleOpenSettings}
-                onThemeClick={handleOpenTheme}
-                onGraphClick={handleToggleGraph}
-              />
-            )}
-          </GlobalErrorHandler>
-        </div>
+          snippet={snippet}
+          isSelected={effectiveSelectedId === tabId}
+          onSave={saveSnippet}
+          onToggleInspector={handleToggleInspector}
+          onToggleExplorerModal={handleToggleExplorerModal}
+          onSettingsClick={handleOpenSettings}
+          onThemeClick={handleOpenTheme}
+          onGraphClick={handleToggleGraph}
+        />
       )
     })
   }, [

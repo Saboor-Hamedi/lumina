@@ -49,6 +49,7 @@ export const ExplorerHeader = ({
   setQuery,
   setCollapsedDuringSearch,
   setSelectedIndex,
+  selectItemAtIndex,
   setSidebarFocus,
   virtuosoRef,
   flatTree,
@@ -88,11 +89,15 @@ export const ExplorerHeader = ({
           placeholder="Search notes..."
           value={displayQuery}
           onFocus={() => {
-            if (setSidebarFocus) setSidebarFocus(null)
+            if (displayQuery.trim() && setSidebarFocus) {
+              setSidebarFocus('note')
+            }
           }}
           onClick={(e) => {
             e.stopPropagation()
-            if (setSidebarFocus) setSidebarFocus(null)
+            if (displayQuery.trim() && setSidebarFocus) {
+              setSidebarFocus('note')
+            }
           }}
           onChange={(e) => {
             const v = e.target.value
@@ -106,18 +111,24 @@ export const ExplorerHeader = ({
           onKeyDown={(e) => {
             if (e.key === 'ArrowDown') {
               e.preventDefault()
-              setSelectedIndex((prev) => {
-                const next = prev < 0 ? 0 : Math.min(prev + 1, flatTree.length - 1)
-                virtuosoRef.current?.scrollToIndex({ index: next, align: 'center' })
-                return next
-              })
+              if (!flatTree || flatTree.length === 0) return
+              const next = selectedIndex < 0 ? 0 : Math.min(selectedIndex + 1, flatTree.length - 1)
+              if (selectItemAtIndex) {
+                selectItemAtIndex(next)
+              } else {
+                setSelectedIndex?.(next)
+              }
+              virtuosoRef.current?.scrollToIndex({ index: next, align: 'center' })
             } else if (e.key === 'ArrowUp') {
               e.preventDefault()
-              setSelectedIndex((prev) => {
-                const next = Math.max(prev - 1, 0)
-                virtuosoRef.current?.scrollToIndex({ index: next, align: 'center' })
-                return next
-              })
+              if (!flatTree || flatTree.length === 0) return
+              const next = Math.max(selectedIndex - 1, 0)
+              if (selectItemAtIndex) {
+                selectItemAtIndex(next)
+              } else {
+                setSelectedIndex?.(next)
+              }
+              virtuosoRef.current?.scrollToIndex({ index: next, align: 'center' })
             } else if (e.key === 'Enter') {
               e.preventDefault()
               if (selectedIndex >= 0 && selectedIndex < flatTree.length) {

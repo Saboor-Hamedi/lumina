@@ -10,6 +10,7 @@ import {
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { pointerWithin } from '@dnd-kit/core'
 import SortableListItem from './SortableListItem'
+import { isSnippetActive } from '../utils/explorerSelectionHelper'
 
 /**
  * Favorites panel shown when the 'favorites' tab is active in the File Explorer.
@@ -17,6 +18,7 @@ import SortableListItem from './SortableListItem'
  *
  * @param {Object} props
  * @param {Array<Object>} props.pinnedItems - Pinned notes/folders to display
+ * @param {string|null} [props.selectedSnippetId] - Currently active snippet ID
  * @param {Array} props.sensors - DnD Kit sensors array
  * @param {Function} props.handleSortDragEnd - Drag-end handler for reordering pinned items
  * @param {Function} props.setExpandedFolders - Setter to expand a folder when clicked
@@ -25,6 +27,7 @@ import SortableListItem from './SortableListItem'
  */
 export const ExplorerFavorites = ({
   pinnedItems,
+  selectedSnippetId,
   sensors,
   handleSortDragEnd,
   setExpandedFolders,
@@ -70,7 +73,10 @@ export const ExplorerFavorites = ({
                         handleSelect(item)
                       }
                     }}
-                    isActive={false}
+                    isActive={isSnippetActive({
+                      snippetId: item.id,
+                      activeSnippetId: selectedSnippetId
+                    })}
                   />
                 </div>
               ))}

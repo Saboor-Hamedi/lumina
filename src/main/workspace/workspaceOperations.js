@@ -395,9 +395,28 @@ export class WorkspaceOperations {
     if (!workspacePath) throw new Error('No workspace open')
     const fullOldPath = path.join(workspacePath, oldRelPath)
     const fullNewPath = path.join(workspacePath, newRelPath)
+
+    if (fullOldPath === fullNewPath) return true
+    if (!fsSync.existsSync(fullOldPath)) {
+      throw new Error(`Source file does not exist: ${oldRelPath}`)
+    }
+
+    // Prevent overwriting existing files in the workspace (unless it's a case-only rename of the same file)
+    if (fsSync.existsSync(fullNewPath) && fullOldPath.toLowerCase() !== fullNewPath.toLowerCase()) {
+      throw new Error(`A file named "${path.basename(fullNewPath)}" already exists in this folder.`)
+    }
+
     try {
       await fs.mkdir(path.dirname(fullNewPath), { recursive: true })
-      await fs.rename(fullOldPath, fullNewPath)
+
+      // Windows case-only rename support (e.g. doc.pdf -> Doc.pdf)
+      if (process.platform === 'win32' && fullOldPath.toLowerCase() === fullNewPath.toLowerCase()) {
+        const tempPath = `${fullOldPath}.__lumina_tmp_${Date.now()}`
+        await fs.rename(fullOldPath, tempPath)
+        await fs.rename(tempPath, fullNewPath)
+      } else {
+        await fs.rename(fullOldPath, fullNewPath)
+      }
       return true
     } catch (err) {
       console.error('[WorkspaceOperations] Move file failed:', err)
@@ -539,72 +558,81 @@ export class WorkspaceOperations {
     const importedFileNames = []
     const sanitizeName = (name) => name.replace(/[<>:"/\\|?*]/g, '_').trim()
 
-    await Promise.all(
-      sourcePaths.map(async (srcPath) => {
-        try {
-          if (!fsSync.existsSync(srcPath)) return
-          const stat = await fs.stat(srcPath)
-          const rawBaseName = path.basename(srcPath)
-          const baseName = sanitizeName(rawBaseName) || 'Imported'
+    const BATCH_SIZE = 4
+    for (let i = 0; i < sourcePaths.length; i += BATCH_SIZE) {
+      const batch = sourcePaths.slice(i, i + BATCH_SIZE)
 
-          if (stat.isDirectory()) {
-            let destDir = path.join(targetBaseDir, baseName)
-            let folderRelativePath = normalizedTargetFolder
-              ? `${normalizedTargetFolder}/${baseName}`
-              : baseName
-            folderRelativePath = folderRelativePath.replace(/\\/g, '/')
+      await Promise.all(
+        batch.map(async (srcPath) => {
+          try {
+            if (!fsSync.existsSync(srcPath)) return
+            const stat = await fs.stat(srcPath)
+            const rawBaseName = path.basename(srcPath)
+            const baseName = sanitizeName(rawBaseName) || 'Imported'
 
-            const isDotFolder = baseName.startsWith('.')
+            if (stat.isDirectory()) {
+              let destDir = path.join(targetBaseDir, baseName)
+              let folderRelativePath = normalizedTargetFolder
+                ? `${normalizedTargetFolder}/${baseName}`
+                : baseName
+              folderRelativePath = folderRelativePath.replace(/\\/g, '/')
 
-            if (!isDotFolder) {
+              const isDotFolder = baseName.startsWith('.')
+
+              if (!isDotFolder) {
+                let counter = 1
+                while (fsSync.existsSync(destDir)) {
+                  const newName = `${baseName} (${counter})`
+                  destDir = path.join(targetBaseDir, newName)
+                  folderRelativePath = normalizedTargetFolder
+                    ? `${normalizedTargetFolder}/${newName}`
+                    : newName
+                  folderRelativePath = folderRelativePath.replace(/\\/g, '/')
+                  counter++
+                }
+              }
+
+              await fs.cp(srcPath, destDir, {
+                recursive: true,
+                filter: (source) => {
+                  const base = path.basename(source).toLowerCase()
+                  return (
+                    base !== '.git' &&
+                    base !== 'node_modules' &&
+                    base !== '.ds_store' &&
+                    base !== 'thumbs.db'
+                  )
+                }
+              })
+
+              foldersSet.add(folderRelativePath)
+              importedFolderIds.push(folderRelativePath)
+            } else if (stat.isFile()) {
+              const ext = path.extname(baseName)
+              const nameWithoutExt = path.basename(baseName, ext)
+              let finalFileName = baseName
+              let destFilePath = path.join(targetBaseDir, finalFileName)
+
               let counter = 1
-              while (fsSync.existsSync(destDir)) {
-                const newName = `${baseName} (${counter})`
-                destDir = path.join(targetBaseDir, newName)
-                folderRelativePath = normalizedTargetFolder
-                  ? `${normalizedTargetFolder}/${newName}`
-                  : newName
-                folderRelativePath = folderRelativePath.replace(/\\/g, '/')
+              while (fsSync.existsSync(destFilePath)) {
+                finalFileName = `${nameWithoutExt} (${counter})${ext}`
+                destFilePath = path.join(targetBaseDir, finalFileName)
                 counter++
               }
+
+              importedFileNames.push({ fileName: finalFileName, folderId: normalizedTargetFolder })
+              await fs.copyFile(srcPath, destFilePath)
             }
-
-            await fs.cp(srcPath, destDir, {
-              recursive: true,
-              filter: (source) => {
-                const base = path.basename(source).toLowerCase()
-                return (
-                  base !== '.git' &&
-                  base !== 'node_modules' &&
-                  base !== '.ds_store' &&
-                  base !== 'thumbs.db'
-                )
-              }
-            })
-
-            foldersSet.add(folderRelativePath)
-            importedFolderIds.push(folderRelativePath)
-          } else if (stat.isFile()) {
-            const ext = path.extname(baseName)
-            const nameWithoutExt = path.basename(baseName, ext)
-            let finalFileName = baseName
-            let destFilePath = path.join(targetBaseDir, finalFileName)
-
-            let counter = 1
-            while (fsSync.existsSync(destFilePath)) {
-              finalFileName = `${nameWithoutExt} (${counter})${ext}`
-              destFilePath = path.join(targetBaseDir, finalFileName)
-              counter++
-            }
-
-            importedFileNames.push({ fileName: finalFileName, folderId: normalizedTargetFolder })
-            await fs.copyFile(srcPath, destFilePath)
+          } catch (err) {
+            console.error('[WorkspaceOperations] Error importing path:', srcPath, err)
           }
-        } catch (err) {
-          console.error('[WorkspaceOperations] Error importing path:', srcPath, err)
-        }
-      })
-    )
+        })
+      )
+
+      if (i + BATCH_SIZE < sourcePaths.length) {
+        await new Promise((r) => setImmediate(r))
+      }
+    }
 
     return {
       importedSnippetIds,

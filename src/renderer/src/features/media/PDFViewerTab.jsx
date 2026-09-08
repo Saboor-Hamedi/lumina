@@ -1,82 +1,119 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { FileText, FolderOpen, Loader } from 'lucide-react'
 import './css/pdfViewerTab.css'
 
 /**
+ * Module-level Blob URL cache.
+ * Keyed by relativePath so switching between PDF tabs is 100% instant (0ms delay)
+ * without re-fetching or re-decoding.
+ */
+const pdfBlobCache = new Map()
+
+/**
  * PDFViewerTab
  *
- * Renders a workspace PDF file using Chromium's native PDF engine.
- * Flow:
- *   1. Calls `window.api.readAsset` to get the raw base64 from the main process.
- *   2. Converts base64 → Uint8Array → Blob (application/pdf).
- *   3. Creates a temporary blob URL and hands it to an <iframe>.
- *   4. Revokes the blob URL when the component unmounts or the file changes.
- *
- * Kept entirely separate from ImageViewerTab — no shared state or logic.
+ * Renders workspace PDFs using Chromium's native PDF engine via blob URLs.
+ * High-performance architecture:
+ *   1. Checks in-memory cache for instant 0ms tab switching.
+ *   2. Fetches binary directly via `asset://local/...` (zero IPC serialization overhead).
+ *   3. Falls back gracefully to `window.api.readAsset` if needed.
+ *   4. Feeds the blob URL to the <iframe> so Chromium renders it natively without
+ *      triggering Windows external protocol dialogs.
  */
 export const PDFViewerTab = ({ snippet }) => {
-  const [blobUrl, setBlobUrl] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const relPath =
+    snippet?.relativePath ||
+    (snippet?.folderId ? `${snippet.folderId}/${snippet.fileName}` : snippet?.fileName)
+
+  // Direct asset:// URL for zero-copy binary streaming
+  const assetUrl = useMemo(() => {
+    if (!relPath) return null
+    const clean = String(relPath).replace(/^[/\\]+/, '').replace(/\\/g, '/')
+    const encodedSegments = clean.split('/').map(encodeURIComponent).join('/')
+    return `asset://local/${encodedSegments}`
+  }, [relPath])
+
+  // If already cached, start with the cached blob URL immediately (0ms delay)
+  const [blobUrl, setBlobUrl] = useState(() => (relPath ? pdfBlobCache.get(relPath) || null : null))
+  const [loading, setLoading] = useState(() => !pdfBlobCache.has(relPath))
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    let active = true
-    let createdUrl = null
-
-    setLoading(true)
-    setError(null)
-    setBlobUrl(null)
-
-    // Resolve the relative path the same way ImageViewerTab does
-    const relPath =
-      snippet?.relativePath ||
-      (snippet?.folderId ? `${snippet.folderId}/${snippet.fileName}` : snippet?.fileName)
-
     if (!relPath) {
       setError('Invalid file path')
       setLoading(false)
       return
     }
 
-    window.api
-      ?.readAsset?.(relPath)
-      .then((res) => {
-        if (!active) return
+    // Already cached — no work needed!
+    if (pdfBlobCache.has(relPath)) {
+      setBlobUrl(pdfBlobCache.get(relPath))
+      setLoading(false)
+      return
+    }
 
-        const base64 = res?.base64
-        if (!base64) {
-          setError('Could not read PDF data')
-          setLoading(false)
-          return
+    let active = true
+    setLoading(true)
+    setError(null)
+
+    const loadBlob = async () => {
+      let blob = null
+
+      // Strategy 1: Fetch directly from custom asset:// protocol (zero-copy binary stream)
+      if (assetUrl) {
+        try {
+          const res = await fetch(assetUrl)
+          if (res.ok) {
+            blob = await res.blob()
+          }
+        } catch {
+          // Protocol fetch fallback
+        }
+      }
+
+      // Strategy 2: Fallback to IPC readAsset if protocol is unavailable
+      if (!blob && window.api?.readAsset) {
+        try {
+          const asset = await window.api.readAsset(relPath)
+          if (asset?.base64) {
+            const binary = atob(asset.base64)
+            const bytes = new Uint8Array(binary.length)
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+            blob = new Blob([bytes], { type: 'application/pdf' })
+          }
+        } catch (err) {
+          console.error('[PDFViewerTab] readAsset fallback error:', err)
+        }
+      }
+
+      if (!active) return
+
+      if (blob) {
+        const url = URL.createObjectURL(blob)
+
+        // Evict oldest entry if cache exceeds 15 PDFs to prevent memory leaks
+        if (pdfBlobCache.size >= 15) {
+          const oldestKey = pdfBlobCache.keys().next().value
+          const oldUrl = pdfBlobCache.get(oldestKey)
+          if (oldUrl) URL.revokeObjectURL(oldUrl)
+          pdfBlobCache.delete(oldestKey)
         }
 
-        // Decode base64 → binary → Blob so Chromium's PDF plugin can render it
-        const binaryStr = atob(base64)
-        const bytes = new Uint8Array(binaryStr.length)
-        for (let i = 0; i < binaryStr.length; i++) {
-          bytes[i] = binaryStr.charCodeAt(i)
-        }
-        const blob = new Blob([bytes], { type: 'application/pdf' })
-        createdUrl = URL.createObjectURL(blob)
-
-        if (active) {
-          setBlobUrl(createdUrl)
-          setLoading(false)
-        }
-      })
-      .catch((err) => {
-        if (!active) return
-        console.error('[PDFViewerTab] Failed to load PDF:', err)
-        setError('Failed to load PDF from workspace')
+        pdfBlobCache.set(relPath, url)
+        setBlobUrl(url)
         setLoading(false)
-      })
+      } else {
+        setError('Could not load PDF data')
+        setLoading(false)
+      }
+    }
+
+    loadBlob()
 
     return () => {
       active = false
-      // Always revoke the blob URL to avoid memory leaks
-      if (createdUrl) URL.revokeObjectURL(createdUrl)
     }
-  }, [snippet?.relativePath, snippet?.folderId, snippet?.fileName])
+  }, [relPath, assetUrl])
 
   /** Open the containing folder in the system explorer */
   const handleOpenInFolder = useCallback(() => {
@@ -102,7 +139,7 @@ export const PDFViewerTab = ({ snippet }) => {
         <span className="pdf-viewer-badge uppercase">PDF</span>
       </div>
 
-      {/* Loading state */}
+      {/* Loading state (only shown on initial first fetch) */}
       {loading && (
         <div className="pdf-viewer-loading">
           <Loader size={28} className="pdf-viewer-spin-icon" />
@@ -118,7 +155,7 @@ export const PDFViewerTab = ({ snippet }) => {
         </div>
       )}
 
-      {/* Native Chromium PDF renderer via blob URL */}
+      {/* Native Chromium PDF iframe via Blob URL */}
       {!loading && !error && blobUrl && (
         <iframe
           src={blobUrl}

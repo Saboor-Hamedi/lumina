@@ -68,6 +68,7 @@ import { useFolderContextMenu } from './hooks/useFolderContextMenu'
 import { useExternalFileDrop } from './hooks/useExternalFileDrop'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { summarizeNotes } from '../AI/services/summarizeNotes'
+import { isSnippetActive } from './utils/explorerSelectionHelper'
 
 const VirtuosoFooter = ({ context }) => (
   <div
@@ -349,6 +350,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     setSidebarFocus,
     selectAll,
     clearSelection,
+    selectItemAtIndex,
     handleSelect,
     handleNoteClick,
     handleFolderClick,
@@ -626,12 +628,16 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
         </div>
       )
     } else {
-      const isMultiSelected = selectedNoteIds.has(item.snippet.id)
-      const isNoteActive =
-        (sidebarFocus === 'note' || sidebarFocus === 'multi') &&
-        (isMultiSelected ||
-          (selectedNoteIds.size === 0 && selectedFolderIds.size === 0 && item.snippet.id === selectedSnippetId) ||
-          index === selectedIndex)
+      const isNoteActive = isSnippetActive({
+        snippetId: item.snippet.id,
+        activeSnippetId: selectedSnippetId,
+        selectedNoteIds,
+        selectedFolderIds,
+        itemIndex: index,
+        selectedIndex,
+        sidebarFocus,
+        isQueryActive: Boolean(query.trim())
+      })
       const filePaddingLeft = `${item.depth * 10 + 18}px`
 
       return (
@@ -797,6 +803,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
           setQuery={setQuery}
           setCollapsedDuringSearch={setCollapsedDuringSearch}
           setSelectedIndex={setSelectedIndex}
+          selectItemAtIndex={selectItemAtIndex}
           setSidebarFocus={setSidebarFocus}
           virtuosoRef={virtuosoRef}
           flatTree={flatTree}
@@ -838,6 +845,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
           {activeTab === 'favorites' && (
             <ExplorerFavorites
               pinnedItems={pinnedItems}
+              selectedSnippetId={selectedSnippetId}
               sensors={sensors}
               handleSortDragEnd={handleSortDragEnd}
               setExpandedFolders={setExpandedFolders}

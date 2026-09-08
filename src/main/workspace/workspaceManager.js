@@ -367,6 +367,8 @@ class WorkspaceManager {
   async moveFile(oldRelPath, newRelPath) {
     const result = await WorkspaceOperations.moveFile(this.workspacePath, oldRelPath, newRelPath)
     await this.scanWorkspace()
+    this.notifyWindows('workspace:updated')
+    this.notifyWindows('vault:updated')
     return result
   }
 

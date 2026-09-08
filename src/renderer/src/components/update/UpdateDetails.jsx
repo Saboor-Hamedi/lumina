@@ -1,15 +1,129 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useMemo } from 'react'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
-import { Download } from 'lucide-react'
+import { Download, Loader2, CheckCircle2, Sparkles } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import UpdateHeader from './UpdateHeader'
 import UpdateFooter from './UpdateFooter'
 import ToolTip from '../atoms/ToolTip'
 import './UpdateDetails.css'
 
+export const DEFAULT_RELEASE_NOTES = `New
+- PDF Workspace & Native Viewer: Open, zoom, pan, and read PDF documents directly in workspace tabs with fast text search, thumbnail previews, and high-DPI rendering.
+- Whisper Voice Dictation: Speak your thoughts directly into notes or Lumina composer with offline Whisper speech-to-text and a live floating soundwave capsule.
+- Smart File Tree & Navigation: Seamlessly manage nested folders with drag-and-drop, folder pinning, smart auto-reveal, and instant keyboard navigation.
+- Multi-Note AI Summarizer: Select single or multiple notes across folders and generate structured AI summaries, insights, and key takeaways with one click.
+- Interactive Graph View: Explore connections, backlinks, and tags across your entire workspace in a fluid 2D network graph.
+- KaTeX Math Formulas: Insert scientific formulas and mathematical equations with real-time rendering and syntax previews.
+
+Improved
+- Lightning-Fast Tab Switching: Move instantly between notes, PDFs, images, and graph view with zero UI lag or layout stutter.
+- Search & Arrow Navigation: Search notes across nested folders with live highlighting, smooth arrow key traversal, and Enter to open.
+- Editor Margins & Layout: Balanced sidebar margins and responsive padding when toggling sidebars or working in split views.
+- Consistent Centered Windows: Settings, Documentation, and Template dialogs open centered on screen with smooth slide animations.
+- Modern Glassmorphic UI: Polished dark theme styling, refined badge accents, and custom minimal scrollbars.
+
+Fixed
+- Active Note Synchronization: Switching tabs or opening search matches now reliably highlights and scrolls to the active note in the folder tree.
+- PDF Security & Framing: Eliminated Content Security Policy conflicts and reload loops when loading workspace PDF files.
+- In-Place File Renaming: Renaming notes, images, or PDFs in the workspace now renames entries directly without duplicating files or affecting source paths.
+- Tooltip Bounds & Text Clamping: Long file and folder names now clamp neatly with ellipsis and stay within screen boundaries without clipping.
+- Popup & Window Stability: Prevented dropdowns and dialogs from shifting positions or misaligning when opening.`
+
+/**
+ * Robust release notes parser handling markdown headings, bullets, HTML, and plain lists.
+ */
+export const parseReleaseNotes = (notes) => {
+  if (!notes) return []
+
+  let text = ''
+  if (Array.isArray(notes)) {
+    text = notes
+      .map((n) => (typeof n === 'string' ? n : n?.note || n?.version || ''))
+      .filter(Boolean)
+      .join('\n\n')
+  } else if (typeof notes === 'string') {
+    text = notes
+  } else {
+    return []
+  }
+
+  // Strip HTML tags if HTML is detected
+  if (/<[a-z][\s\S]*>/i.test(text)) {
+    text = text
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n\n')
+      .replace(/<\/li>/gi, '\n')
+      .replace(/<li>/gi, '- ')
+      .replace(/<h[1-6][^>]*>(.*?)<\/h[1-6]>/gi, '\n$1\n')
+      .replace(/<[^>]+>/g, '')
+  }
+
+  const categories = []
+  let currentCategory = null
+
+  const lines = text.split('\n')
+  for (let rawLine of lines) {
+    const trimmed = rawLine.trim()
+    if (!trimmed) continue
+
+    // Detect markdown headings: # Title, ## Title, ### Title
+    const isHeading = /^#{1,6}\s+/.test(trimmed)
+    if (isHeading) {
+      const headingTitle = trimmed.replace(/^#{1,6}\s+/, '').replace(/\*\*/g, '').trim()
+      currentCategory = { title: headingTitle, items: [] }
+      categories.push(currentCategory)
+      continue
+    }
+
+    // Detect bullet points: - item, * item, • item, + item, 1. item
+    const isBullet = /^[-*•+]\s+/.test(trimmed) || /^\d+\.\s+/.test(trimmed)
+    if (isBullet) {
+      const itemContent = trimmed.replace(/^[-*•+]\s+/, '').replace(/^\d+\.\s+/, '').trim()
+      if (itemContent) {
+        if (!currentCategory) {
+          currentCategory = { title: 'Highlights', items: [] }
+          categories.push(currentCategory)
+        }
+        currentCategory.items.push(itemContent)
+      }
+      continue
+    }
+
+    // Category header without markdown (e.g. "New", "Improved", "Fixed")
+    const cleanHeader = trimmed.replace(/[:：]$/, '').replace(/\*\*/g, '').trim()
+    const lower = cleanHeader.toLowerCase()
+    const isCommonCategory =
+      lower === 'new' ||
+      lower === 'improved' ||
+      lower === 'improvements' ||
+      lower === 'fixes' ||
+      lower === 'fixed' ||
+      lower === 'highlights' ||
+      lower === 'features' ||
+      lower === 'changes' ||
+      lower.startsWith('what')
+
+    if (isCommonCategory || (!currentCategory && !trimmed.startsWith('-'))) {
+      currentCategory = { title: cleanHeader, items: [] }
+      categories.push(currentCategory)
+      continue
+    }
+
+    // Fallback item in current or default category
+    if (currentCategory) {
+      currentCategory.items.push(trimmed)
+    } else {
+      currentCategory = { title: 'Updates', items: [trimmed] }
+      categories.push(currentCategory)
+    }
+  }
+
+  return categories.length > 0 ? categories : [{ title: 'Notes', items: [text] }]
+}
+
 const UpdateDetails = () => {
   const { status, updateInfo, progress, download, install, check, lastChecked } = useUpdateStore()
-  const [currentVersion, setCurrentVersion] = useState('1.0.0')
+  const [currentVersion, setCurrentVersion] = useState('1.0.40')
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef(null)
 
@@ -24,7 +138,12 @@ const UpdateDetails = () => {
 
   useEffect(() => {
     if (window.api?.getVersion) {
-      window.api.getVersion().then(setCurrentVersion)
+      window.api
+        .getVersion()
+        .then((ver) => {
+          if (ver) setCurrentVersion(ver)
+        })
+        .catch(() => {})
     }
   }, [])
 
@@ -47,80 +166,99 @@ const UpdateDetails = () => {
         })
       }
     }
-    
+
     document.addEventListener('pointerdown', handleClickOutside, { capture: true })
     window.addEventListener('keydown', handleKeyDown, true)
-    document.addEventListener('keydown', handleKeyDown, true)
+
     return () => {
       document.removeEventListener('pointerdown', handleClickOutside, { capture: true })
       window.removeEventListener('keydown', handleKeyDown, true)
-      document.removeEventListener('keydown', handleKeyDown, true)
     }
   }, [])
 
   const newVersion = updateInfo?.version || currentVersion
-  
-  const isGenericNote =
-    !updateInfo?.releaseNotes ||
-    typeof updateInfo.releaseNotes !== 'string' ||
-    updateInfo.releaseNotes.includes('latest development build') ||
-    updateInfo.releaseNotes.includes('latest version')
 
-  const rawNotes =
-    !isGenericNote ? updateInfo.releaseNotes :
-    `New
-- Math Equations: Write mathematical formulas and scientific equations directly in your notes with instant visual previews.
-- Template Gallery: Browse and apply beautiful ready-made templates for your notes — meeting notes, daily logs, research, and more.
-- Documentation Guide: Access Lumina's built-in help and learning guides anytime from the app, without leaving your workspace.
-- Image Viewer: View, zoom, pan, and copy any image saved in your workspace in a full-featured image viewer.
+  // Resolve release notes string from updateInfo or fallback
+  const resolvedNotes = useMemo(() => {
+    let raw = updateInfo?.releaseNotes
+    if (Array.isArray(raw)) {
+      raw = raw
+        .map((r) => (typeof r === 'string' ? r : r?.note || r?.version || ''))
+        .filter(Boolean)
+        .join('\n')
+    }
 
-Improved
-- Smoother Modals: All pop-up windows open centered on screen with a polished slide-in animation and no jumping.
-- Consistent Window Sizes: The Guide, Documentation, and Template panels all share the same comfortable size and layout.
-- Readable Wide Screens: On large or maximized windows, content stays centered at a comfortable reading width instead of stretching edge-to-edge.
-- Cleaner Sidebars: Sidebar scroll bars are now invisible while still scrolling smoothly — no visual clutter.
-- Polished Template Cards: Template cards in the gallery now show a visual preview of the note layout before you pick one.
-
-Fixed
-- Images Not Loading: Dropping or pasting an image into a note now correctly saves and displays it every time.
-- Image Viewer Blank Screen: Opening an image file from your workspace now loads and shows the image properly.
-- Popup Jumping: Fixed panels and menus jumping to the top of the screen when first opened.
-- Window Dismissal: Press the Escape key anytime to instantly close menus, dialogs, and this update window.`
-  
-  const parseNotes = (text) => {
-    const categories = []
-    let currentCategory = null
-    
-    text.split('\n').forEach(line => {
-      const trimmed = line.trim()
-      if (!trimmed) return
-      
-      const cleanLine = trimmed.replace(/^[^\w\s-]/, '').trim()
-      
-      if (!cleanLine.startsWith('-') && !cleanLine.startsWith('•')) {
-        currentCategory = { title: cleanLine, items: [] }
-        categories.push(currentCategory)
-      } else if (currentCategory) {
-        currentCategory.items.push(cleanLine.replace(/^[-•]\s*/, ''))
-      } else {
-        categories.push({ title: 'Updates', items: [cleanLine.replace(/^[-•]\s*/, '')] })
+    if (typeof raw === 'string' && raw.trim()) {
+      const lower = raw.toLowerCase()
+      const isGeneric =
+        lower.includes('latest development build') ||
+        lower.includes('latest version') ||
+        raw.trim().length < 15
+      if (!isGeneric) {
+        return raw
       }
-    })
-    return categories.length > 0 ? categories : [{ title: 'Notes', items: [text] }]
-  }
+    }
 
-  const parsedNotes = parseNotes(rawNotes)
+    return DEFAULT_RELEASE_NOTES
+  }, [updateInfo?.releaseNotes])
+
+  const parsedNotes = useMemo(() => parseReleaseNotes(resolvedNotes), [resolvedNotes])
+
+  // Compute trigger button icon and tooltip dynamically
+  const { triggerIcon, triggerTooltip, triggerClass } = useMemo(() => {
+    const percentValue =
+      typeof progress === 'number'
+        ? progress
+        : typeof progress?.percent === 'number'
+          ? progress.percent
+          : 0
+    const safePercent = isNaN(percentValue) ? 0 : Math.round(percentValue)
+
+    if (status === 'ready') {
+      return {
+        triggerIcon: <CheckCircle2 size={13} strokeWidth={2.2} />,
+        triggerTooltip: 'Update ready — click to restart & install',
+        triggerClass: 'has-update is-ready'
+      }
+    }
+    if (status === 'downloading') {
+      return {
+        triggerIcon: <Loader2 size={13} strokeWidth={2.2} className="spin-animation" />,
+        triggerTooltip: `Downloading update (${safePercent}%)...`,
+        triggerClass: 'has-update is-downloading'
+      }
+    }
+    if (status === 'available') {
+      return {
+        triggerIcon: <Sparkles size={13} strokeWidth={2.2} />,
+        triggerTooltip: `Update available (${newVersion})`,
+        triggerClass: 'has-update'
+      }
+    }
+    if (status === 'checking') {
+      return {
+        triggerIcon: <Loader2 size={13} strokeWidth={2} className="spin-animation" />,
+        triggerTooltip: 'Checking for updates...',
+        triggerClass: 'is-checking'
+      }
+    }
+    return {
+      triggerIcon: <Download size={13} strokeWidth={2} />,
+      triggerTooltip: 'Check for updates',
+      triggerClass: ''
+    }
+  }, [status, progress, newVersion])
 
   return (
     <div className="update-details-container" ref={dropdownRef}>
-      <ToolTip text="Check for updates" position="bottom">
-        <button 
-          className={`update-trigger-btn ${status === 'available' || status === 'downloading' || status === 'ready' ? 'has-update' : ''}`}
+      <ToolTip text={triggerTooltip} position="bottom">
+        <button
+          className={`update-trigger-btn ${triggerClass}`}
           onClick={() => setIsOpen(!isOpen)}
           aria-label="Check for updates"
           aria-expanded={isOpen}
         >
-          <Download size={13} strokeWidth={2} />
+          {triggerIcon}
         </button>
       </ToolTip>
 
@@ -134,24 +272,25 @@ Fixed
             download={download}
             install={install}
             check={check}
+            onClose={() => setIsOpen(false)}
           />
 
           <div className="update-details-body selectable-text">
             {parsedNotes.map((category, i) => {
               const catKey = category.title.toLowerCase()
-              const isNew = catKey.includes('new')
+              const isNew = catKey.includes('new') || catKey.includes('feature')
               const isFixed = catKey.includes('fix')
-              const isImproved = catKey.includes('improv')
+              const isImproved = catKey.includes('improv') || catKey.includes('enhanc')
+
+              const badgeType = isNew ? 'new' : isFixed ? 'fixed' : isImproved ? 'improved' : 'default'
 
               return (
                 <div
                   key={i}
-                  className={`release-category release-category-${isNew ? 'new' : isFixed ? 'fixed' : isImproved ? 'improved' : 'default'}`}
+                  className={`release-category release-category-${badgeType}`}
                 >
                   <div className="category-header">
-                    <span
-                      className={`category-badge badge-${isNew ? 'new' : isFixed ? 'fixed' : isImproved ? 'improved' : 'default'}`}
-                    >
+                    <span className={`category-badge badge-${badgeType}`}>
                       {category.title}
                     </span>
                   </div>
@@ -212,3 +351,4 @@ Fixed
 }
 
 export default UpdateDetails
+

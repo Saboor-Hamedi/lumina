@@ -6,29 +6,30 @@ import { PDFViewerTab } from '../../../../../src/renderer/src/features/media/PDF
 describe('PDFViewerTab Component', () => {
   const originalCreateObjectURL = window.URL.createObjectURL
   const originalRevokeObjectURL = window.URL.revokeObjectURL
+  const originalFetch = window.fetch
 
   beforeEach(() => {
     window.URL.createObjectURL = vi.fn(() => 'blob:mock-pdf-url')
     window.URL.revokeObjectURL = vi.fn()
+    window.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      blob: () => Promise.resolve(new Blob(['fake-pdf'], { type: 'application/pdf' }))
+    })
+    window.api = {
+      openWorkspaceFolder: vi.fn(),
+      openVaultFolder: vi.fn(),
+      readAsset: vi.fn()
+    }
   })
 
   afterEach(() => {
     window.URL.createObjectURL = originalCreateObjectURL
     window.URL.revokeObjectURL = originalRevokeObjectURL
+    window.fetch = originalFetch
     vi.restoreAllMocks()
   })
 
-  it('renders loading state initially and then displays the PDF iframe', async () => {
-    const fakeBase64 = btoa('%PDF-1.4 test')
-    window.api = {
-      readAsset: vi.fn().mockResolvedValue({
-        base64: fakeBase64,
-        size: 1024,
-        mimeType: 'application/pdf'
-      }),
-      openWorkspaceFolder: vi.fn()
-    }
-
+  it('fetches PDF and renders native blob iframe without external protocol dialog', async () => {
     const snippet = {
       id: 'pdf-123',
       title: 'manual.pdf',
@@ -40,8 +41,6 @@ describe('PDFViewerTab Component', () => {
 
     render(<PDFViewerTab snippet={snippet} />)
 
-    expect(screen.getByText(/Loading PDF/i)).toBeInTheDocument()
-
     await waitFor(() => {
       const iframe = document.querySelector('iframe.pdf-viewer-frame')
       expect(iframe).toBeInTheDocument()
@@ -52,38 +51,20 @@ describe('PDFViewerTab Component', () => {
     expect(screen.getByText('PDF')).toBeInTheDocument()
   })
 
-  it('displays error state when asset loading fails', async () => {
-    window.api = {
-      readAsset: vi.fn().mockRejectedValue(new Error('File not found')),
-      openWorkspaceFolder: vi.fn()
-    }
-
+  it('displays error state when snippet has no valid file path', () => {
     const snippet = {
       id: 'pdf-error',
-      title: 'broken.pdf',
-      fileName: 'broken.pdf',
-      relativePath: 'broken.pdf',
+      title: 'invalid',
       type: 'pdf'
     }
 
     render(<PDFViewerTab snippet={snippet} />)
-
-    await waitFor(() => {
-      expect(screen.getByText(/Failed to load PDF/i)).toBeInTheDocument()
-    })
+    expect(screen.getByText(/Invalid file path/i)).toBeInTheDocument()
   })
 
-  it('calls openWorkspaceFolder when toolbar folder button is clicked', async () => {
-    const fakeBase64 = btoa('%PDF-1.4 test')
+  it('calls openWorkspaceFolder when toolbar folder button is clicked', () => {
     const openFolderMock = vi.fn()
-    window.api = {
-      readAsset: vi.fn().mockResolvedValue({
-        base64: fakeBase64,
-        size: 2048,
-        mimeType: 'application/pdf'
-      }),
-      openWorkspaceFolder: openFolderMock
-    }
+    window.api.openWorkspaceFolder = openFolderMock
 
     const snippet = {
       id: 'pdf-folder',

@@ -133,6 +133,28 @@ export function useExplorerSelection({
     [clearSelection]
   )
 
+  // Sync selection when active note changes (e.g. switching tabs in TabBar)
+  useEffect(() => {
+    if (!selectedSnippetId) {
+      if (!query.trim()) {
+        setSelectedNoteIds(new Set())
+        setSelectedIndex(-1)
+      }
+      return
+    }
+
+    // Keep selectedNoteIds in sync with active note unless a multi-note selection is active
+    setSelectedNoteIds((prev) => {
+      if (prev.size <= 1) {
+        return new Set([selectedSnippetId])
+      }
+      return prev
+    })
+    setSelectedFolderIds(new Set())
+    setLastClickedNoteId(selectedSnippetId)
+    setSidebarFocus('note')
+  }, [selectedSnippetId, query])
+
   // Intelligent selection on query changes
   useEffect(() => {
     if (query.trim() && flatTree.length > 0) {
@@ -144,37 +166,74 @@ export function useExplorerSelection({
         bestIndex = flatTree.findIndex((item) => item.type === 'file')
       }
       if (bestIndex === -1) bestIndex = 0
+
       setSelectedIndex(bestIndex)
+      setSidebarFocus('note')
+
+      const targetItem = flatTree[bestIndex]
+      if (targetItem?.type === 'file' && targetItem.snippet) {
+        setSelectedNoteIds(new Set([targetItem.snippet.id]))
+        setLastClickedNoteId(targetItem.snippet.id)
+      } else if (targetItem?.type === 'folder') {
+        setSelectedFolderIds(new Set([targetItem.id]))
+        setLastClickedFolder(targetItem.id)
+        setSidebarFocus('folder')
+      }
     } else if (!query.trim()) {
-      setSelectedIndex(-1)
+      if (selectedSnippetId && flatTree.length > 0) {
+        const idx = flatTree.findIndex(
+          (item) => item.type === 'file' && item.snippet?.id === selectedSnippetId
+        )
+        setSelectedIndex(idx)
+        setSelectedNoteIds(new Set([selectedSnippetId]))
+        setSidebarFocus('note')
+      } else {
+        setSelectedIndex(-1)
+        setSelectedNoteIds(new Set())
+      }
     }
-  }, [query, flatTree])
+  }, [query, flatTree, selectedSnippetId])
 
   // Auto-scroll to active snippet
   useEffect(() => {
-    if (!selectedSnippetId || !virtuosoRef.current || flatTree.length === 0) return
-    if (lastScrolledSnippetRef.current === selectedSnippetId) return
+    if (!selectedSnippetId || !flatTree || flatTree.length === 0) return
 
     const idx = flatTree.findIndex(
       (item) => item.type === 'file' && item.snippet && item.snippet.id === selectedSnippetId
     )
 
-    if (Date.now() - clickedInExplorerRef.current < 200) {
-      lastScrolledSnippetRef.current = selectedSnippetId
-      if (idx !== -1) setSelectedIndex(idx)
-      return
-    }
-
     if (idx !== -1) {
-      lastScrolledSnippetRef.current = selectedSnippetId
-      setTimeout(() => {
-        virtuosoRef.current?.scrollToIndex({ index: idx, align: 'center', behavior: 'smooth' })
-        setSelectedIndex(idx)
-      }, 50)
+      setSelectedIndex(idx)
+      if (lastScrolledSnippetRef.current !== selectedSnippetId) {
+        lastScrolledSnippetRef.current = selectedSnippetId
+        if (Date.now() - clickedInExplorerRef.current >= 200) {
+          virtuosoRef.current?.scrollToIndex({ index: idx, align: 'nearest' })
+        }
+      }
     }
   }, [selectedSnippetId, flatTree, virtuosoRef])
 
   const [anchorIndex, setAnchorIndex] = useState(null)
+
+  const selectItemAtIndex = useCallback(
+    (index) => {
+      if (index < 0 || !flatTree || index >= flatTree.length) return
+      setSelectedIndex(index)
+      const item = flatTree[index]
+      if (item?.type === 'file' && item.snippet) {
+        setSelectedNoteIds(new Set([item.snippet.id]))
+        setSelectedFolderIds(new Set())
+        setLastClickedNoteId(item.snippet.id)
+        setSidebarFocus('note')
+      } else if (item?.type === 'folder') {
+        setSelectedFolderIds(new Set([item.id]))
+        setSelectedNoteIds(new Set())
+        setLastClickedFolder(item.id)
+        setSidebarFocus('folder')
+      }
+    },
+    [flatTree]
+  )
 
   const handleSelect = useCallback(
     (snippet) => {
@@ -182,6 +241,9 @@ export function useExplorerSelection({
       clickedInExplorerRef.current = Date.now()
       setLastClickedFolder(snippet.folderId || '')
       setSelectedFolder(null)
+      setSelectedNoteIds(new Set([snippet.id]))
+      setSelectedFolderIds(new Set())
+      setLastClickedNoteId(snippet.id)
       setSidebarFocus('note')
       setSelectedSnippet(snippet)
       onClose?.()
@@ -321,6 +383,7 @@ export function useExplorerSelection({
     setSidebarFocus,
     selectAll,
     clearSelection,
+    selectItemAtIndex,
     handleSelect,
     handleNoteClick,
     handleFolderClick,
