@@ -92,7 +92,6 @@ export function useWikilinkCompletion({ showToast }) {
         )
 
         if (!targetSnippet) {
-          showToast?.(`Creating new note: ${target}`, 'info')
           targetSnippet = {
             id: crypto.randomUUID(),
             title: target,

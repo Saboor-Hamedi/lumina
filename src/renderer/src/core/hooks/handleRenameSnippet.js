@@ -64,7 +64,6 @@ export const handleRenameSnippet = async ({
           }
         })
       }
-      if (showToast) showToast('✓ PDF renamed successfully', 'success')
     } catch (err) {
       console.error('Failed to rename PDF:', err)
       if (showToast) showToast(err?.message || '❌ Failed to rename PDF.', 'error')
@@ -117,7 +116,6 @@ export const handleRenameSnippet = async ({
           }
         })
       }
-      if (showToast) showToast('✓ Image renamed successfully', 'success')
     } catch (err) {
       console.error('Failed to rename image:', err)
       if (showToast) showToast(err?.message || '❌ Failed to rename image.', 'error')
@@ -129,23 +127,22 @@ export const handleRenameSnippet = async ({
   }
 
   // --- Standard Note Rename Logic ---
-  const hasExt = /\.[0-9a-z]+$/i.test(baseName)
   const extMap = {
-    md: 'markdown',
-    markdown: 'markdown',
     js: 'javascript',
     jsx: 'javascript',
     ts: 'typescript',
     tsx: 'typescript',
-    json: 'json',
+    py: 'python',
     html: 'html',
     css: 'css',
-    py: 'python'
+    json: 'json',
+    md: 'markdown'
   }
-  let lang = item.language || 'markdown'
 
-  if (hasExt) {
-    const ext = baseName.split('.').pop().toLowerCase()
+  let lang = item.language || 'markdown'
+  const match = baseName.match(/\.([a-zA-Z0-9]+)$/)
+  if (match) {
+    const ext = match[1].toLowerCase()
     if (extMap[ext]) {
       lang = extMap[ext]
     }
@@ -163,7 +160,6 @@ export const handleRenameSnippet = async ({
 
   try {
     await saveSnippet(updatedItem)
-    if (showToast) showToast('✓ Note renamed successfully', 'success')
   } catch (error) {
     console.error('Failed to save item after rename:', error)
     if (showToast) showToast('❌ Failed to rename note.', 'error')

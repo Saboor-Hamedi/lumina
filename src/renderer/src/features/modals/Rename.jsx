@@ -1,8 +1,25 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, memo } from 'react'
 import { createPortal } from 'react-dom'
 import './css/renameModal.css'
 
-const RenameModal = ({ isOpen, onClose, onRename, initialName = '', itemType = 'note' }) => {
+/**
+ * Rename Modal Component
+ *
+ * Renders an inline modal dialog for quickly renaming notes or folders.
+ * Features auto-focus, text selection upon opening, Esc to dismiss,
+ * and Enter to submit the renamed title.
+ *
+ * Wrapped in React.memo to prevent unnecessary re-renders when parent state updates.
+ *
+ * @param {Object} props
+ * @param {boolean} props.isOpen - Whether the rename modal is currently visible.
+ * @param {() => void} props.onClose - Callback triggered when modal is closed/dismissed.
+ * @param {(newName: string) => void} props.onRename - Callback triggered with the validated new name.
+ * @param {string} [props.initialName=''] - Initial name of the item being renamed.
+ * @param {'note' | 'folder'} [props.itemType='note'] - Type of item being renamed ('note' or 'folder').
+ * @returns {React.ReactPortal | null}
+ */
+const Rename = ({ isOpen, onClose, onRename, initialName = '', itemType = 'note' }) => {
   const inputRef = useRef(null)
 
   useEffect(() => {
@@ -60,4 +77,4 @@ const RenameModal = ({ isOpen, onClose, onRename, initialName = '', itemType = '
   )
 }
 
-export default RenameModal
+export default React.memo(Rename)

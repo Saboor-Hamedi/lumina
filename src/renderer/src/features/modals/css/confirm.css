@@ -133,11 +133,34 @@
   background: #ef4444;
   color: white;
   border: none;
+  cursor: pointer;
+  transition: transform 0.05s ease, background 0.1s ease;
 }
 
 .btn-danger:hover {
   background: #dc2626;
   filter: brightness(1.1);
+}
+
+.btn-danger:active {
+  transform: scale(0.97);
+}
+
+.confirm-modal .btn-primary {
+  background: var(--text-accent);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.05s ease, background 0.1s ease;
+}
+
+.confirm-modal .btn-primary:hover {
+  background: var(--text-accent-hover, var(--text-accent));
+  filter: brightness(1.1);
+}
+
+.confirm-modal .btn-primary:active {
+  transform: scale(0.97);
 }
 
 .btn-warning {

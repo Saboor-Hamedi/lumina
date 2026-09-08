@@ -16,7 +16,7 @@ import { useUpdateStore } from '../../core/store/useUpdateStore'
 import { useToast } from '../../core/hooks/useToast'
 import ToastNotification from '../../core/notification'
 import Confirm from '../modals/Confirm'
-import RenameModal from '../modals/RenameModal'
+import Rename from '../modals/Rename'
 import Guide from '../modals/Guide'
 import IconPicker from '../Icons/IconPicker'
 import { handleRenameSnippet } from '../../core/hooks/handleRenameSnippet'
@@ -1009,7 +1009,7 @@ const AppShell = () => {
           message={`Are you sure you want to delete "${snippetToDelete?.title || 'this note'}"? This cannot be undone.`}
         />
       )}
-      <RenameModal
+      <Rename
         isOpen={renameModal.isOpen}
         initialName={renameModal.newName}
         itemType={renameModal.item?.type === 'folder' ? 'folder' : 'note'}
@@ -1026,7 +1026,6 @@ const AppShell = () => {
                 await window.api.renameFolder(folderId, newFolderPath)
                 useVaultStore.getState().setSelectedFolder(newFolderPath)
                 await loadVault()
-                showToast('✓ Folder renamed successfully', 'success')
               } catch (err) {
                 console.error('Failed to rename folder:', err)
                 showToast('❌ Failed to rename folder', 'error')

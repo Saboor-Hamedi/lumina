@@ -209,7 +209,15 @@ class WorkspaceManager {
       if (VALID_EXTS.has(ext)) triggerScan()
     })
 
-    this.watcher.on('unlink', triggerScan)
+    this.watcher.on('unlink', (filePath) => {
+      const norm = path.resolve(filePath).toLowerCase()
+      const expiry = this.ignoredPaths.get(norm)
+      if (expiry) {
+        if (Date.now() < expiry) return
+        this.ignoredPaths.delete(norm)
+      }
+      triggerScan()
+    })
     this.watcher.on('addDir', triggerScan)
     this.watcher.on('unlinkDir', triggerScan)
 
@@ -330,7 +338,11 @@ class WorkspaceManager {
    * @returns {Promise<boolean>}
    */
   async deleteSnippet(id) {
-    return await WorkspaceOperations.deleteSnippet(this.workspacePath, this.snippets, id)
+    const deletedPath = await WorkspaceOperations.deleteSnippet(this.workspacePath, this.snippets, id)
+    if (deletedPath && typeof deletedPath === 'string') {
+      this.ignoredPaths.set(path.resolve(deletedPath).toLowerCase(), Date.now() + 1500)
+    }
+    return deletedPath
   }
 
   /**
