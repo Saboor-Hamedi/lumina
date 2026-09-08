@@ -14,7 +14,7 @@ export const useSnippetData = () => {
       }
     } catch (error) {
       console.error('Failed to load data:', error)
-      showToast('❌ Failed to load vault')
+      showToast('❌ Failed to load workspace')
     }
   }, [showToast])
 
@@ -35,7 +35,7 @@ export const useSnippetData = () => {
             setSelectedSnippet(snippet)
           }
         }
-        showToast('✓ Saved to Vault')
+        showToast('✓ Saved to Workspace')
       }
     } catch (error) {
       console.error('Failed to save snippet:', error)
@@ -58,7 +58,7 @@ export const useSnippetData = () => {
         if (selectedSnippet?.id === id) {
           setSelectedSnippet(next.length ? next[0] : null)
         }
-        showToast('✓ Removed from Vault')
+        showToast('✓ Removed from Workspace')
       }
     } catch (error) {
       console.error('Failed to delete item:', error)
@@ -73,6 +73,7 @@ export const useSnippetData = () => {
     setSelectedSnippet,
     saveSnippet,
     deleteItem,
+    refreshWorkspace: loadData,
     refreshVault: loadData
   }
 }

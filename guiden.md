@@ -1,49 +1,45 @@
-Connecting to 'https://api.groq.com/openai/v1/audio/transcriptions' violates the following Content Security Policy directive: "connect-src 'self' https://api.deepseek.com https://router.huggingface.co https://api-inference.huggingface.co". The action has been blocked.
-transcribeWithGroq @ groqWhisper.js:15
-stopRecordingAndTranscribe @ voiceService.js:111
-await in stopRecordingAndTranscribe
-(anonymous) @ useVoice.js:17
-handleStop @ VoiceButton.jsx:113
-handleSpeakerClick @ VoiceModal.jsx:63
-handleClick @ ToolTip.jsx:165
-executeDispatch @ react-dom_client.js?v=93d379b5:13622
-runWithFiberInDEV @ react-dom_client.js?v=93d379b5:997
-processDispatchQueue @ react-dom_client.js?v=93d379b5:13658
-(anonymous) @ react-dom_client.js?v=93d379b5:14071
-batchedUpdates$1 @ react-dom_client.js?v=93d379b5:2626
-dispatchEventForPluginEventSystem @ react-dom_client.js?v=93d379b5:13763
-dispatchEvent @ react-dom_client.js?v=93d379b5:16784
-dispatchDiscreteEvent @ react-dom_client.js?v=93d379b5:16765
-groqWhisper.js:15 Fetch API cannot load https://api.groq.com/openai/v1/audio/transcriptions. Refused to connect because it violates the document's Content Security Policy.
-transcribeWithGroq @ groqWhisper.js:15
-stopRecordingAndTranscribe @ voiceService.js:111
-await in stopRecordingAndTranscribe
-(anonymous) @ useVoice.js:17
-handleStop @ VoiceButton.jsx:113
-handleSpeakerClick @ VoiceModal.jsx:63
-handleClick @ ToolTip.jsx:165
-executeDispatch @ react-dom_client.js?v=93d379b5:13622
-runWithFiberInDEV @ react-dom_client.js?v=93d379b5:997
-processDispatchQueue @ react-dom_client.js?v=93d379b5:13658
-(anonymous) @ react-dom_client.js?v=93d379b5:14071
-batchedUpdates$1 @ react-dom_client.js?v=93d379b5:2626
-dispatchEventForPluginEventSystem @ react-dom_client.js?v=93d379b5:13763
-dispatchEvent @ react-dom_client.js?v=93d379b5:16784
-dispatchDiscreteEvent @ react-dom_client.js?v=93d379b5:16765
-voiceService.js:115 [VoiceService] Groq transcription failed: TypeError: Failed to fetch. Refused to connect because it violates the document's Content Security Policy.
-    at transcribeWithGroq (groqWhisper.js:15:26)
-    at VoiceService.stopRecordingAndTranscribe (voiceService.js:111:26)
-stopRecordingAndTranscribe @ voiceService.js:115
-await in stopRecordingAndTranscribe
-(anonymous) @ useVoice.js:17
-handleStop @ VoiceButton.jsx:113
-handleSpeakerClick @ VoiceModal.jsx:63
-handleClick @ ToolTip.jsx:165
-executeDispatch @ react-dom_client.js?v=93d379b5:13622
-runWithFiberInDEV @ react-dom_client.js?v=93d379b5:997
-processDispatchQueue @ react-dom_client.js?v=93d379b5:13658
-(anonymous) @ react-dom_client.js?v=93d379b5:14071
-batchedUpdates$1 @ react-dom_client.js?v=93d379b5:2626
-dispatchEventForPluginEventSystem @ react-dom_client.js?v=93d379b5:13763
-dispatchEvent @ react-dom_client.js?v=93d379b5:16784
-dispatchDiscreteEvent @ react-dom_client.js?v=93d379b5:16765
+Here are the **4 biggest game-changer updates** we can build next to take Lumina from a great note/code tool to an unforgettable, tier-one product:
+
+---
+
+### 1. Voice-to-Action & Voice Commands ("Speak & Transform")
+Right now, voice writes what you say. The next evolution is **talking directly to your document**:
+* **How it works:** While dictating, if you say:
+  * *"Turn this list into a clean markdown table"*
+  * *"Summarize this meeting into 3 key takeaways"*
+  * *"Extract all action items and add #todo tags"*
+  * *"Translate this paragraph to German"*
+* **Why it’s huge:** Instead of manually copying text into the AI chat and pasting it back, Lumina listens, understands intent, and executes edits right in place in your document.
+
+---
+
+### 2. Conversational Voice Mode (Like ChatGPT Voice / Gemini Live)
+Take the voice engine we just built and make it a **two-way voice brainstormer**:
+* **How it works:** You press a shortcut and talk naturally out loud about an idea, a bug, or an essay outline.
+* Lumina speaks back in real time with ultra-low latency voice (via Groq/Cartesia/ElevenLabs), brainstorming with you and automatically dropping notes, summaries, and code blocks into your active file.
+* **Why it’s huge:** Total hands-free thinking while walking, pacing, or brainstorming away from the keyboard.
+
+---
+
+### 3. "Ask Your Vault" — Full Semantic RAG (Knowledge Nexus)
+Make Lumina understand everything you've ever written:
+* **How it works:** Vector embeddings across your entire vault.
+* You can ask questions in the Composer or Chat like:
+  * *"What were the key decisions we made about database indexing last month?"*
+  * *"Find all notes where I mentioned API authentication and synthesize a summary."*
+* Lumina responds with exact citations linking directly to your local markdown files.
+
+---
+
+### 4. Lumina Spatial Canvas (Infinite Visual Thinking Board)
+Transform Lumina into a visual mind-mapping & spatial thinking workspace (like Obsidian Canvas / Heptabase):
+* **How it works:** An infinite 2D zoomable whiteboard where you can drag and drop notes, cards, web bookmarks, AI chat responses, and diagrams, connecting them with smart lines.
+* **Why it’s huge:** Notes aren’t just flat lists anymore; you can map out complex architectures, storyboards, and project roadmaps visually.
+
+---
+
+### Which one excites you the most?
+1. **Voice-to-Action (In-place document voice edits)**
+2. **Interactive 2-Way Voice Mode (Spoken AI brainstorm partner)**
+3. **Semantic Vault RAG ("Ask Your Notes Anything")**
+4. **Infinite Spatial Canvas (Visual mind workspace)**

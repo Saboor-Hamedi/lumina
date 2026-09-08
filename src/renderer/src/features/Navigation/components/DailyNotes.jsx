@@ -2,7 +2,7 @@ import React, { memo, useState, useMemo } from 'react'
 import { Calendar } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
 import { useVaultStore } from '../../../core/store/workspaceStore'
-import TemplateModal from './TemplateModal'
+import Template from '../../template/Template'
 import { defaultTemplates } from './defaultTemplates'
 
 const DailyNotes = memo(() => {
@@ -78,7 +78,7 @@ const DailyNotes = memo(() => {
       </ToolTip>
 
       {isModalOpen && (
-        <TemplateModal
+        <Template
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           templates={virtualTemplates}

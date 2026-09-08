@@ -1,10 +1,10 @@
 import React from 'react'
-import { useVaultStore } from '../../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 
 export const openNoteInEditor = (rawTitle) => {
   if (!rawTitle) return
   try {
-    const { snippets, setSelectedSnippet, setActiveTabId } = useVaultStore.getState()
+    const { snippets, setSelectedSnippet, setActiveTabId } = useWorkspaceStore.getState()
     const snippetList = Array.isArray(snippets) ? snippets : Object.values(snippets || {})
     const clean = decodeURIComponent(rawTitle)
       .toLowerCase()

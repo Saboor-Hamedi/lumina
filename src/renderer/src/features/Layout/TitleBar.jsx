@@ -1,6 +1,6 @@
 import React from 'react'
 import { Square, X, Minus, Search, MessageSquare, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
-import { useVaultStore } from '../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import logoUrl from '../../assets/logo.png'
 import ToolTip from '../../components/atoms/ToolTip'
 import UpdateDetails from '../../components/update/UpdateDetails'
@@ -23,7 +23,7 @@ const TitleBar = ({ onToggleAIChat }) => {
     }
     return true
   })
-  const selectedSnippet = useVaultStore((s) => s.selectedSnippet)
+  const selectedSnippet = useWorkspaceStore((s) => s.selectedSnippet)
   const isMac = typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('mac')
 
   React.useEffect(() => {

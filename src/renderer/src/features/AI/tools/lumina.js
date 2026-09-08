@@ -131,17 +131,18 @@ export const useAIStore = create((set, get) => {
       })
     },
 
-    // Search vault using persistent index (main process)
+    // Search workspace using persistent index (main process)
     searchNotes: async (query, threshold = 0.3) => {
       if (!query || !query.trim()) return []
 
       try {
-        if (!window.api?.searchVault) {
-          console.warn('[AIStore] Vault search API not available')
+        const searchFn = window.api?.searchWorkspace || window.api?.searchVault
+        if (!searchFn) {
+          console.warn('[AIStore] Workspace search API not available')
           return []
         }
 
-        const results = await window.api.searchVault(query, {
+        const results = await searchFn(query, {
           threshold,
           limit: 20,
           rerank: true
@@ -154,23 +155,25 @@ export const useAIStore = create((set, get) => {
           chunk: result // Include full chunk data
         }))
       } catch (err) {
-        console.error('[AIStore] Vault search failed:', err)
+        console.error('[AIStore] Workspace search failed:', err)
         return []
       }
     },
 
-    // Index vault (triggers main process indexing)
-    indexVault: async (vaultPath, options = {}) => {
+    // Index workspace (triggers main process indexing)
+    indexWorkspace: async (workspacePath, options = {}) => {
       try {
-        if (!window.api?.indexVault) {
+        const indexFn = window.api?.indexWorkspace || window.api?.indexVault
+        if (!indexFn) {
           console.warn('[AIStore] Index API not available')
           return { success: false }
         }
 
-        // Validate vaultPath - if not provided or invalid, pass null to let main process use VaultManager.vaultPath
-        const validVaultPath = vaultPath && typeof vaultPath === 'string' ? vaultPath : null
+        // Validate workspacePath - if not provided or invalid, pass null to let main process use default workspacePath
+        const validPath =
+          workspacePath && typeof workspacePath === 'string' ? workspacePath : null
 
-        return await window.api.indexVault(validVaultPath, {
+        return await indexFn(validPath, {
           force: options.force || false,
           onProgress: options.onProgress || null
         })
@@ -178,6 +181,10 @@ export const useAIStore = create((set, get) => {
         console.error('[AIStore] Indexing failed:', err)
         throw err
       }
+    },
+
+    indexVault: async (vaultPath, options = {}) => {
+      return get().indexWorkspace(vaultPath, options)
     },
 
     // Get index statistics
@@ -658,11 +665,12 @@ export const useAIStore = create((set, get) => {
         let vaultContext = []
         let vaultAccessNote = ''
         try {
-          if (window.api?.searchVault) {
+          const searchFn = window.api?.searchWorkspace || window.api?.searchVault
+          if (searchFn) {
             const queryLength = message.trim().length
             const adaptiveThreshold = queryLength > 100 ? 0.35 : 0.3
             const cleanQuery = queryLength > 250 ? message.trim().slice(0, 250) : message.trim()
-            const searchResults = await window.api.searchVault(cleanQuery, {
+            const searchResults = await searchFn(cleanQuery, {
               threshold: adaptiveThreshold,
               limit: 6,
               rerank: true
@@ -683,7 +691,7 @@ export const useAIStore = create((set, get) => {
             }
           }
         } catch (searchErr) {
-          console.warn('[AIStore] Vault search failed:', searchErr)
+          console.warn('[AIStore] Workspace search failed:', searchErr)
         }
 
         const { getAIMode } = await import('../modes/index.js')

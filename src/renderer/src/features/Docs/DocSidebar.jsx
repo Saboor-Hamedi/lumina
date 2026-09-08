@@ -154,13 +154,15 @@ const DocSidebar = ({ docs, selectedDoc, setSelectedDoc, isOpen = true }) => {
               <div
                 className="docs-sidebar-folder"
                 onClick={() => toggleFolder(folderKey)}
-                title={`Toggle ${formatFolderName(folderKey)}`}
+                aria-label={`Toggle ${formatFolderName(folderKey)}`}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Folder size={14} style={{ color: 'var(--text-accent)' }} />
-                  <span>{formatFolderName(folderKey)}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
+                  <Folder size={14} style={{ color: 'var(--text-accent)', flexShrink: 0 }} />
+                  <span style={{ whiteSpace: 'nowrap', fontSize: '12px', fontWeight: 600, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {formatFolderName(folderKey)}
+                  </span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                   <span
                     style={{
                       fontSize: '10px',
@@ -189,7 +191,7 @@ const DocSidebar = ({ docs, selectedDoc, setSelectedDoc, isOpen = true }) => {
                       onClick={() => setSelectedDoc(path)}
                     >
                       {getDocIcon(path, name)}
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, flex: 1 }}>
                         {formattedTitle}
                       </span>
                     </div>

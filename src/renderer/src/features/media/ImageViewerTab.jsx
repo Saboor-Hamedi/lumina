@@ -55,7 +55,7 @@ export const ImageViewerTab = ({ snippet }) => {
       .catch((err) => {
         if (!active) return
         console.error('Failed to load image:', err)
-        setError('Failed to load image from vault')
+        setError('Failed to load image from workspace')
         setLoading(false)
       })
 
@@ -138,7 +138,8 @@ export const ImageViewerTab = ({ snippet }) => {
 
   const handleOpenInFolder = useCallback(() => {
     const relFolder = snippet?.folderId || ''
-    window.api?.openVaultFolder?.(relFolder)
+    const openFn = window.api?.openWorkspaceFolder || window.api?.openVaultFolder
+    openFn?.(relFolder)
   }, [snippet?.folderId])
 
   const formatFileSize = (bytes) => {
@@ -184,7 +185,7 @@ export const ImageViewerTab = ({ snippet }) => {
         ) : (
           <img
             src={assetData?.dataUrl}
-            alt={snippet?.title || 'Vault Image'}
+            alt={snippet?.title || 'Workspace Image'}
             className="image-viewer-img"
             onLoad={handleImageLoad}
             style={{
