@@ -47,6 +47,7 @@ export const checkFileTool = aiSdk.tool({
 
       return {
         success: true,
+        summary: `📄 Analyzed \`${target.title}\``,
         file: {
           id: target.id,
           title: target.title,

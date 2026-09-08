@@ -48,6 +48,7 @@ export const clearFileTool = aiSdk.tool({
         return { success: false, error: `File "${title}" not found.` }
       }
 
+      const oldWords = (target.code || '').trim() ? (target.code || '').trim().split(/\s+/).length : 0
       const newCode = keepHeader ? `# ${target.title}\n\n` : ''
 
       if (vs.setDraft) {
@@ -63,6 +64,7 @@ export const clearFileTool = aiSdk.tool({
       return {
         success: true,
         title: target.title,
+        summary: `🧹 Cleared [[${target.title}]] (-${oldWords || 1})`,
         instruction_to_ai: `File "${target.title}" was completely cleared. Inform the user.`
       }
     } catch (err) {

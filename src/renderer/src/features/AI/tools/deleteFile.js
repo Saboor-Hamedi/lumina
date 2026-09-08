@@ -54,6 +54,7 @@ export const deleteFileTool = aiSdk.tool({
       }
 
       const deletedTitle = target.title || target.fileName || rawTitle
+      const removedWords = (target.code || '').trim() ? (target.code || '').trim().split(/\s+/).length : 0
       await vs.deleteSnippet(target.id, true)
 
       if (window.api?.deleteChunks) {
@@ -71,7 +72,7 @@ export const deleteFileTool = aiSdk.tool({
       return {
         success: true,
         title: deletedTitle,
-        summary: `Deleted note **${deletedTitle}**.`,
+        summary: `🗑️ Deleted [[${deletedTitle}]] (-${removedWords || 1})`,
         instruction_to_ai: `Note "${deletedTitle}" was deleted successfully. Confirm to user.`
       }
     } catch (err) {

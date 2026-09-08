@@ -204,6 +204,7 @@ export const useAIStore = create((set, get) => {
     activeSessionId: null,
     chatMessages: [],
     isChatLoading: false,
+    activeThinkingStatus: '',
     chatError: null,
 
     // Initial load of sessions
@@ -657,6 +658,7 @@ export const useAIStore = create((set, get) => {
       set({
         chatMessages: [...newHistory, assistantMsg],
         isChatLoading: true,
+        activeThinkingStatus: 'Thinking...',
         chatError: null,
         chatController: controller
       })
@@ -732,10 +734,13 @@ ${modeCfg.systemAddon}
 CRITICAL MANDATORY EXECUTION DIRECTIVE:
 1. CONVERSATIONAL OVERRIDE:
    - If the user says "let's talk", "talk first", "just talk", "don't write", "do not write", "don't create yet", "no files", "just brainstorm", "in chat", or asks to discuss without saving to workspace, DO NOT call any workspace file tools. Respond purely in chat conversation.
-2. OPT-IN FOLDER CREATION (DO NOT CREATE FOLDERS UNLESS EXPLICITLY ASKED):
+2. DIRECT WORKSPACE CREATION BY DEFAULT (NOT IN PLAN MODE):
+   - You are in an execution mode. When the user says "go create the files/project", "create the project", "put all the files in the workspace / explorer / vault", "create me files/notes/folder", or asks to build/draft something, THEY WANT REAL FILES CREATED IN THE WORKSPACE DIRECTLY — NOT just talking or theoretical chat explanations!
+   - Invoke \`createFolder\` and \`createFile\` immediately to scaffold the files in their workspace. Never just describe the files in chat when the user asked to create or put them in the workspace.
+3. OPT-IN FOLDER CREATION (DO NOT CREATE FOLDERS UNLESS EXPLICITLY ASKED):
    - ONLY call \`createFolder\` or put notes in a subfolder if the user EXPLICITLY asks to create a folder (e.g. "create folder Stories", "in a folder called Trip", "add a folder", or specifies a slash path like "Stories/Chapter 1").
    - If the user asks for a story, article, note, plan, or tracker WITHOUT explicitly mentioning a folder, CREATE THE NOTE DIRECTLY AT ROOT LEVEL (folder="") or in the current active folder. NEVER invent or create new folders automatically!
-3. WHEN THE USER ASKS TO CREATE OR DRAFT FILES/FOLDERS:
+4. WHEN THE USER ASKS TO CREATE OR DRAFT FILES/FOLDERS:
    - You MUST invoke all required tool calls (createFolder, createFile, updateFile, moveFile, renameFile) FIRST and SEQUENTIALLY on this turn.
    - ZERO PREAMBLE / ZERO CONVERSATIONAL FILLER: NEVER output text like "I'll create the folder and all the files now...", "Let me set up...", "I will generate...", "Let me organize..." before calling tools. Output the tool calls immediately.
    - MULTI-FILE WORKFLOWS: If the user explicitly requested a folder and multiple files, never stop after creating only a folder. After calling createFolder, immediately call createFile for EACH requested note/plan/expense/summary file in sequence until ALL requested items are created.
@@ -907,7 +912,11 @@ ${vaultAccessNote}`
         if (isExecutionMode) {
         systemPrompt +=
           '\n\nCRITICAL RULES FOR FILE & FOLDER TOOLS:\n' +
-          '1. ZERO TOLERANCE FOR STREAM-OF-CONSCIOUSNESS MONOLOGUES OR PRE-TOOL NARRATION. NEVER output thinking narration before calling tools (e.g. "Let me organize what you mentioned:", "Let me tally everything up first", "Let me first check the current state...", "Let me pick clear names...", "I\'ll rename them... wait..."). When ANY tool operation is needed (creating, updating, renaming, linking, deleting, moving), invoke the tool IMMEDIATELY on step 1 without ANY conversational pre-text!\n' +
+          '1. REAL-TIME THINKING & REASONING (TALK TO YOURSELF IN <think> TAGS):\n' +
+          '   - Before invoking tools or answering complex requests, express your brief internal thinking and reasoning inside <think>...</think> tags.\n' +
+          '   - Think out loud: assess what the user is asking, plan the folder/file names, and outline your execution steps (e.g. "<think>The user wants to create a folder called Trip and add today and tomorrow notes. I will create the folder Trip first, then createFile for each note sequentially...</think>").\n' +
+          '   - Lumina automatically streams your thoughts inside an interactive thinking dropdown so the user can see you reasoning through the task in real time!\n' +
+          '   - NEVER output conversational preamble outside <think> tags before calling tools. Put your reflections inside <think>...</think>, then immediately invoke the workspace tools.\n' +
           '2. If the user asks to create a folder with a specific name or path (e.g. "create folder Science", "create folder src/database", "add the react js folder structure with all folders") → call createFolder directly with the path (or call createFolder for each folder in the structure).\n' +
           '3. If the user asks to create a folder WITHOUT specifying a name (e.g. "create a folder", "make a new folder") → politely ask the user: "What would you like to name the folder?" Do NOT create a folder called "New Folder" unless the user explicitly asked for that name.\n' +
           '4. If the user asks to create a note or file WITHOUT specifying a title/topic (e.g. "create a file", "create a note", "make a new note") → politely ask the user: "What should the note be named, and what topic would you like it to cover?" If the user explicitly asks for a random note (e.g. "create a random note", "draft any note") or provides a title/topic, call createFile immediately.\n' +
@@ -925,7 +934,7 @@ ${vaultAccessNote}`
           '15. If asked to ADD or WRITE content to the end of a note → call appendToFile DIRECTLY.\n' +
           '16. If asked to CLEAR or EMPTY a file → call updateFile with content: "" DIRECTLY.\n' +
           '17. If asked to EXPLAIN a file → call readFile DIRECTLY.\n' +
-          '18. When outputting folder/file trees or hierarchies in chat responses, ALWAYS wrap them in a code block with language text (e.g. ```text\n📁 Root\n├── 📁 src\n│   └── 📁 js\n│       ├── 📄 Introduction to JavaScript\n│       ├── 📄 JavaScript Roadmap\n│       └── 📁 fundamentals\n│           └── 📄 Variables and Data Types\n├── 📁 HTTP\n└── 📁 SQLite\n```). CRITICAL INDENTATION RULE: Every file and subfolder inside a folder MUST be indented with additional tree levels (e.g. `│   └──` for the subfolder, and `│       ├──` for items inside that subfolder). NEVER list files inside a folder at the same indentation level as the folder itself! Each level of nesting MUST add 4 characters (`│   ` or `    `) of indentation!\n' +
+          '18. The UI activity card automatically displays all created folders, notes, and analyzed files with interactive links. You do NOT need to generate raw code wrappers for trees unless the user specifically asks for an ASCII tree diagram. Focus your chat response on a helpful, high-value walkthrough explaining what was created, highlighting key wikilinks and next steps.\n' +
           '19. After performing tool operations, write a clear, high-value walkthrough in chat explaining what was built or modified, highlighting key topics and wikilinks. Do NOT repeat a raw list of "Created folder X" or "Created file Y" in your text response — the UI activity card already displays every created folder and note cleanly with interactive links.\n' +
           '20. NATURAL FILE TITLES WITH SPACES: Lumina natively supports natural titles with spaces (e.g. "Today Log", "Tomorrow Expenses", "Afghanistan Trip Plan", "System Architecture", "Market Strategy"). NEVER use underscores ("_") or dashes ("-") in file titles unless the user explicitly requested them.\n' +
           '21. ZERO TAB OPENINGS ON CREATE OR MOVE: Created notes and moved notes/folders are saved silently in the workspace in the background and must NEVER open new tabs. Only if a note is ALREADY open in the user\'s active editor tab may you write directly to that open tab.\n' +
@@ -1036,7 +1045,7 @@ ${vaultAccessNote}`
 
         let fullContent = ''
         let lastUpdateTime = Date.now()
-        const UPDATE_INTERVAL = 100
+        const UPDATE_INTERVAL = 40
 
         try {
           if (providerType === 'deepseek') {
@@ -1060,10 +1069,24 @@ ${vaultAccessNote}`
               ),
               toolChoice: 'auto',
               stopWhen: aiSdk.stepCountIs ? aiSdk.stepCountIs(30) : ({ steps }) => steps.length >= 30,
-              maxSteps: 30
+              maxSteps: 30,
+              experimental_transform: aiSdk.smoothStream
+                ? aiSdk.smoothStream({
+                    chunking: 'word',
+                    delayInMs: 15
+                  })
+                : undefined
             })
 
             const executedActions = []
+            if (mentionedSnippets.length > 0) {
+              mentionedSnippets.forEach((snip) => {
+                const entry = `📄 Analyzed \`${snip.title}\``
+                if (!executedActions.includes(entry)) {
+                  executedActions.push(entry)
+                }
+              })
+            }
             let activeToolStatus = ''
             let reasoningText = ''
             let beforeToolText = ''
@@ -1134,8 +1157,8 @@ ${vaultAccessNote}`
                   activeToolStatus = `🧹 *Clearing \`${args.title || 'note'}\`...*`
                 } else if (chunk.toolName === 'readBrainFile') {
                   activeToolStatus = `📖 *Checking documentation...*`
-                } else if (chunk.toolName === 'readFile') {
-                  activeToolStatus = `📄 *Reading \`${args.title || 'note'}\`...*`
+                } else if (chunk.toolName === 'readFile' || chunk.toolName === 'checkFile') {
+                  activeToolStatus = `📄 *Analyzing \`${args.title || 'note'}\`...*`
                 } else if (chunk.toolName === 'openFile') {
                   activeToolStatus = `📖 *Opening \`${args.title || 'note'}\`...*`
                 } else {
@@ -1143,12 +1166,25 @@ ${vaultAccessNote}`
                 }
 
                 fullContent = buildRealtimeDisplay()
+                const cleanToolStatus = activeToolStatus.replace(/[*_`]/g, '').trim()
                 set((state) => {
                   const msgs = [...state.chatMessages]
                   if (msgs.length > 0)
                     msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: fullContent }
-                  return { chatMessages: msgs }
+                  return { chatMessages: msgs, activeThinkingStatus: cleanToolStatus }
                 })
+              } else if (chunk.type === 'tool-input-start') {
+                const toolName = chunk.toolName || ''
+                let inputStatus = 'Thinking...'
+                if (toolName === 'createFolder') inputStatus = 'Planning folder creation...'
+                else if (toolName === 'createFile') inputStatus = 'Drafting new note in workspace...'
+                else if (toolName === 'updateFile') inputStatus = 'Targeting note updates...'
+                else if (toolName === 'renameFile' || toolName === 'renameFolder') inputStatus = 'Preparing rename...'
+                else if (toolName === 'deleteFile' || toolName === 'deleteFolder') inputStatus = 'Preparing deletion...'
+                else if (toolName === 'readFile' || toolName === 'checkFile') inputStatus = 'Analyzing workspace file...'
+                else if (toolName === 'readBrainFile') inputStatus = 'Consulting documentation...'
+                else if (toolName) inputStatus = `Preparing ${toolName}...`
+                set({ activeThinkingStatus: inputStatus })
               } else if (chunk.type === 'tool-result') {
                 activeToolStatus = ''
                 const res = chunk.output || chunk.result
@@ -1167,12 +1203,22 @@ ${vaultAccessNote}`
                   const msgs = [...state.chatMessages]
                   if (msgs.length > 0)
                     msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: fullContent }
-                  return { chatMessages: msgs }
+                  return { chatMessages: msgs, activeThinkingStatus: 'Reflecting on workspace changes...' }
                 })
+              } else if (chunk.type === 'start-step') {
+                if (hasToolCalled) {
+                  set({ activeThinkingStatus: 'Synthesizing changes...' })
+                }
               } else if (chunk.type === 'reasoning' || chunk.type === 'reasoning-delta') {
                 const rDelta = chunk.textDelta || chunk.text || chunk.delta || ''
                 reasoningText += rDelta
                 fullContent = buildRealtimeDisplay()
+                set((state) => {
+                  const msgs = [...state.chatMessages]
+                  if (msgs.length > 0)
+                    msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: fullContent }
+                  return { chatMessages: msgs, activeThinkingStatus: 'Reasoning...' }
+                })
               } else if (chunk.type === 'text-delta') {
                 const delta = chunk.textDelta || chunk.text || chunk.delta || ''
                 if (hasToolCalled) {
@@ -1181,6 +1227,17 @@ ${vaultAccessNote}`
                   beforeToolText += delta
                 }
                 fullContent = buildRealtimeDisplay()
+                const currentText = hasToolCalled ? afterToolText : beforeToolText
+                const shouldClearThought = currentText.trim().length > 30
+                set((state) => {
+                  const msgs = [...state.chatMessages]
+                  if (msgs.length > 0)
+                    msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: fullContent }
+                  return {
+                    chatMessages: msgs,
+                    activeThinkingStatus: shouldClearThought ? '' : state.activeThinkingStatus
+                  }
+                })
               } else if (chunk.type === 'tool-error') {
                 const errMsg = chunk.error?.message || chunk.error || 'Unknown tool error'
                 console.warn(`[AIStore] Tool ${chunk.toolName} errored:`, errMsg)
@@ -1190,21 +1247,10 @@ ${vaultAccessNote}`
                 console.error('Stream error:', chunk.error)
                 fullContent += `\n\n*(❌ Stream error: ${chunk.error?.message || chunk.error})*`
               }
-
-              const now = Date.now()
-              if (now - lastUpdateTime >= UPDATE_INTERVAL) {
-                lastUpdateTime = now
-                fullContent = buildRealtimeDisplay()
-                set((state) => {
-                  const msgs = [...state.chatMessages]
-                  if (msgs.length > 0)
-                    msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: fullContent }
-                  return { chatMessages: msgs }
-                })
-              }
             }
 
             activeToolStatus = ''
+            set({ activeThinkingStatus: '' })
 
             try {
               const steps = await result.steps
@@ -1252,18 +1298,16 @@ ${vaultAccessNote}`
               if (controller.signal.aborted) break
               if (chunk) {
                 fullContent += chunk
-
-                const now = Date.now()
-                if (now - lastUpdateTime >= UPDATE_INTERVAL) {
-                  lastUpdateTime = now
-                  set((state) => {
-                    const msgs = [...state.chatMessages]
-                    if (msgs.length > 0) {
-                      msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: fullContent }
-                    }
-                    return { chatMessages: msgs }
-                  })
-                }
+                set((state) => {
+                  const msgs = [...state.chatMessages]
+                  if (msgs.length > 0) {
+                    msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: fullContent }
+                  }
+                  return {
+                    chatMessages: msgs,
+                    activeThinkingStatus: fullContent.trim().length > 30 ? '' : 'Writing...'
+                  }
+                })
               }
             }
           }
@@ -1501,7 +1545,7 @@ ${vaultAccessNote}`
         }
 
         get().saveChatHistory()
-        set({ isChatLoading: false, chatController: null })
+        set({ isChatLoading: false, activeThinkingStatus: '', chatController: null })
       } catch (error) {
         if (error.name === 'AbortError') {
           console.log('[AIStore] Chat generation aborted by user.')
@@ -1521,13 +1565,14 @@ ${vaultAccessNote}`
           return {
             chatMessages: msgs,
             isChatLoading: false,
+            activeThinkingStatus: '',
             chatError: error.name === 'AbortError' ? null : error.message,
             chatController: null
           }
         })
       } finally {
         if (timeoutId) clearTimeout(timeoutId)
-        set({ isChatLoading: false, chatController: null })
+        set({ isChatLoading: false, activeThinkingStatus: '', chatController: null })
       }
     }
   }

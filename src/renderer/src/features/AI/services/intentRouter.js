@@ -48,6 +48,40 @@ export const detectUserIntent = (message, mentionedSnippets = [], activeSnippet 
   const linkPatterns =
     /\b(link|connect|cross-link|wikilink|reference)\b[^.!?\n]{0,80}\b(together|both|notes?|files?|them|each other|purchases?|expenses?|all)\b|^link\b/i
 
+  const directWorkspaceCreationPatterns =
+    /\b(go\s+create|create\s+(?:me\s+)?|make\s+(?:me\s+)?|build\s+(?:me\s+)?|add\s+(?:me\s+)?|generate\s+(?:me\s+)?|put\s+(?:all\s+)?(?:the\s+)?files|put\s+all\s+(?:the\s+)?notes|draft\s+(?:me\s+)?|save\s+(?:the\s+)?files|write\s+(?:the\s+)?files|drop\s+(?:the\s+)?files|push\s+(?:the\s+)?files)\b[^.!?\n]{0,120}\b(files?|notes?|folder|folders|project|workspace|vault|explorer|code|repo|scaffold|structure|app)\b/i
+  const directProjectCreate =
+    /\b(go\s+create\s+(?:the\s+)?project|create\s+(?:the\s+|a\s+|me\s+a\s+)?project|build\s+(?:the\s+|a\s+|me\s+)?project|make\s+(?:the\s+|a\s+|me\s+)?project|set\s*up\s+(?:the\s+|a\s+)?project|scaffold\s+(?:the\s+|a\s+)?project|generate\s+(?:the\s+|a\s+|me\s+)?project)\b/i
+  const workspaceDestinationPatterns =
+    /\b(put|save|drop|push|add|create|make|write)\b[^.!?\n]{0,80}\b(in|into|to|on)\s+(?:the\s+)?(workspace|explorer|vault)\b/i
+
+  if (directProjectCreate.test(clean)) {
+    return IntentCategory.PLAN_SCAFFOLD
+  }
+
+  if (workspaceDestinationPatterns.test(clean)) {
+    if (/\b(folder|folders|directory|directories)\b/i.test(clean) && !/\b(file|files|notes?)\b/i.test(clean)) {
+      return IntentCategory.CREATE_FOLDER
+    }
+    if (/\b(folder|folders)\b/i.test(clean) || /\b(project|all\s+the\s+files|all\s+files)\b/i.test(clean)) {
+      return IntentCategory.PLAN_SCAFFOLD
+    }
+    return IntentCategory.CREATE_NOTE
+  }
+
+  if (directWorkspaceCreationPatterns.test(clean)) {
+    if (/\b(folder|folders|directory|directories)\b/i.test(clean) && !/\b(file|files|notes?)\b/i.test(clean)) {
+      return IntentCategory.CREATE_FOLDER
+    }
+    if (
+      (/\b(files?|notes?|docs?)\b/i.test(clean) && /\b(folder|folders)\b/i.test(clean)) ||
+      /\b(project|all\s+files|all\s+the\s+files)\b/i.test(clean)
+    ) {
+      return IntentCategory.PLAN_SCAFFOLD
+    }
+    return IntentCategory.CREATE_NOTE
+  }
+
   if (linkPatterns.test(clean)) {
     return IntentCategory.TARGETED_EDIT
   }
@@ -182,7 +216,13 @@ Execution: Call \`updateFile\` with title="Config", search="3000", and replace="
 User: "create a file"
 Response: "What should the note be named, and what topic would you like it to cover?"
 User: "Write a comprehensive note on Graph RAG inside the AI folder"
-Execution: Call \`createFile\` with title="Graph RAG", folder="AI", and full markdown content. Render the full guide in chat and editor.`
+Execution: Call \`createFile\` with title="Graph RAG", folder="AI", and full markdown content. Render the full guide in chat and editor.
+User: "go create the files for my express api"
+Execution: Call \`createFile\` directly for each required file (e.g. \`Server\`, \`Routes\`, \`Models\`, \`README\`) with complete markdown implementation and code blocks.
+User: "put all the files in the workspace/explorer/vault"
+Execution: Call \`createFile\` for each file directly into the workspace root or requested folder with full substantive content!
+User: "create me file Notes and folder Archives"
+Execution: Call \`createFolder\` with path="Archives", then call \`createFile\` with title="Notes", folder="Archives", and full content.`
 
     case IntentCategory.CLEAR_FILE:
       return `\n**EXEMPLAR FOR CLEARING A FILE**:

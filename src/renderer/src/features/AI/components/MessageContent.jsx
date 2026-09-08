@@ -28,49 +28,7 @@ export const processMarkdownContent = (raw) => {
 
   processed = processed.replace(/([^\n│├└─\s])\s*([├└]──)/g, '$1\n$2')
 
-  const rawLines = processed.split('\n')
-  let inFence = false
-  const resultLines = []
-  let treeBuffer = []
-
-  for (let i = 0; i < rawLines.length; i++) {
-    const line = rawLines[i]
-    if (line.trim().startsWith('```')) {
-      if (treeBuffer.length > 0) {
-        resultLines.push('```lumina-tree\n' + treeBuffer.join('\n') + '\n```')
-        treeBuffer = []
-      }
-      inFence = !inFence
-      resultLines.push(line)
-      continue
-    }
-
-    if (!inFence) {
-      const isTreeLine =
-        /[├└]──/.test(line) ||
-        (treeBuffer.length > 0 && (/^[│\s]*[├└─]/.test(line) || /^📁/.test(line.trim()))) ||
-        (/^📁\s+[^/\n]+\s*(?:\(root\)|→|--|\/)/i.test(line.trim()) &&
-          i + 1 < rawLines.length &&
-          /[├└]──/.test(rawLines[i + 1]))
-
-      if (isTreeLine) {
-        treeBuffer.push(line)
-        continue
-      }
-    }
-
-    if (treeBuffer.length > 0) {
-      resultLines.push('```lumina-tree\n' + treeBuffer.join('\n') + '\n```')
-      treeBuffer = []
-    }
-    resultLines.push(line)
-  }
-
-  if (treeBuffer.length > 0) {
-    resultLines.push('```lumina-tree\n' + treeBuffer.join('\n') + '\n```')
-  }
-
-  return resultLines.join('\n')
+  return processed
 }
 
 export const MessageContent = React.memo(

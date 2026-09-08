@@ -45,11 +45,13 @@ export const appendToFileTool = aiSdk.tool({
       })
     )
 
+    const addedWords = (content || '').trim() ? (content || '').trim().split(/\s+/).length : 0
+
     return {
       success: true,
       title: target.title,
       writtenContent: content,
-      summary: `Wrote content into **${target.title}**!`,
+      summary: `✍️ Appended to [[${target.title}]] (+${addedWords})`,
       instruction_to_ai:
         'Content written successfully. Give a friendly summary of what was written and highlight key wikilinks.'
     }

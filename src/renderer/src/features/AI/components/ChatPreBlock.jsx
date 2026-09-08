@@ -27,10 +27,10 @@ export const ChatPreBlock = React.memo(({ children, ...props }) => {
   const match = /language-([a-zA-Z0-9-]+)/.exec(className)
   const lang = match ? match[1] : 'text'
   const isDelete = lang.startsWith('lumina-delete')
-  const isTree = lang === 'lumina-tree' || (lang === 'text' && /[├└]──/.test(codeString))
+  const isTree = lang === 'lumina-tree'
   const lineCount = codeString ? codeString.split('\n').length : 0
 
-  const displayTag = isTree ? 'STRUCTURE' : lang.toUpperCase()
+  const displayTag = lang.toUpperCase()
 
   return (
     <div className={`chat-code-block ${isTree ? 'is-tree' : ''}`}>

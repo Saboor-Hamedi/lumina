@@ -2,9 +2,12 @@ import React from 'react'
 import { MessageContent } from './MessageContent'
 import { ChatActions } from './ChatActions'
 import { ThinkingIndicator } from './ThinkingIndicator'
+import { openNoteInEditor } from './ChatLink'
+import { useAIStore } from '../tools/lumina'
 
 export const ChatMessageRow = React.memo(
   ({ msg, index, isLast, isChatLoading, userMentionRegex, handleCopy, handleRating }) => {
+    const activeThinkingStatus = useAIStore((s) => s.activeThinkingStatus)
     return (
       <div
         className={`chat-row ${msg.role}`}
@@ -44,13 +47,21 @@ export const ChatMessageRow = React.memo(
                   const parts = content.split(userMentionRegex)
                   return parts.map((part, pIdx) => {
                     if (part.startsWith('@') && part.length > 1) {
+                      const cleanTarget = part.slice(1).trim().replace(/[.,!?:;)]+$/, '')
                       return (
                         <span
                           key={pIdx}
+                          className="chat-user-mention"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            openNoteInEditor(cleanTarget)
+                          }}
                           style={{
                             color: 'var(--text-accent)',
-                            fontWeight: 500
+                            fontWeight: 500,
+                            cursor: 'pointer'
                           }}
+                          title={`Click to open ${cleanTarget} in editor`}
                         >
                           {part}
                         </span>
@@ -64,7 +75,10 @@ export const ChatMessageRow = React.memo(
               !msg.content?.trim() &&
               !msg.imageUrl &&
               (isLast && (isChatLoading || msg.isGenerating)) ? (
-              <ThinkingIndicator isGenerating={msg.isGenerating} />
+              <ThinkingIndicator
+                isGenerating={msg.isGenerating}
+                label={activeThinkingStatus || 'Thinking...'}
+              />
             ) : (
               <>
                 <MessageContent
@@ -75,7 +89,15 @@ export const ChatMessageRow = React.memo(
                   onCopy={handleCopy}
                 />
                 {isLast && isChatLoading && (
-                  <span className="chat-streaming-cursor" />
+                  <div className="chat-interactive-cursor-row">
+                    <span className="chat-streaming-cursor" />
+                    {activeThinkingStatus && (
+                      <span className="chat-cursor-thought">
+                        <span className="thinking-dot-pulse" />
+                        <span className="chat-cursor-thought-text">{activeThinkingStatus}</span>
+                      </span>
+                    )}
+                  </div>
                 )}
               </>
             )}

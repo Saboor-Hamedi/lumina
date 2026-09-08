@@ -72,6 +72,7 @@ export const updateFileTool = aiSdk.tool({
     let writtenText = replace || content || ''
     let diffPreview = ''
     let summaryText = `Updated **${target.title}**`
+    let oldSectionContent = ''
 
     if (position === 'top' && replace !== undefined) {
       const titleMatch = currentCode.match(/^#\s+[^\r\n]+[\r\n]*/m)
@@ -101,7 +102,7 @@ export const updateFileTool = aiSdk.tool({
         const nextMatch = nextSectionRegex.exec(currentCode)
         const endIndex = nextMatch ? nextMatch.index : currentCode.length
 
-        const oldSectionContent = currentCode.slice(startIndex, endIndex).trim()
+        oldSectionContent = currentCode.slice(startIndex, endIndex).trim()
         const newSectionContent = `${fullHeader}\n\n${replace.trim()}\n`
 
         newCode = currentCode.slice(0, startIndex) + newSectionContent + (nextMatch ? '\n' + currentCode.slice(endIndex + 1) : '')
@@ -216,12 +217,39 @@ export const updateFileTool = aiSdk.tool({
       })
     )
 
+    const oldWords = currentCode.trim() ? currentCode.trim().split(/\s+/).length : 0
+    const newWords = newCode.trim() ? newCode.trim().split(/\s+/).length : 0
+
+    let addedWords = 0
+    let removedWords = 0
+    if (search !== undefined && replace !== undefined) {
+      removedWords = search.trim() ? search.trim().split(/\s+/).length : 0
+      addedWords = replace.trim() ? replace.trim().split(/\s+/).length : 0
+    } else if (sectionHeader && replace !== undefined) {
+      const oldSectionWords = oldSectionContent ? oldSectionContent.trim().split(/\s+/).length : 0
+      removedWords = oldSectionWords
+      addedWords = replace.trim() ? replace.trim().split(/\s+/).length : 0
+    } else if (content !== undefined) {
+      removedWords = oldWords
+      addedWords = newWords
+    } else {
+      const diff = newWords - oldWords
+      if (diff >= 0) addedWords = diff
+      else removedWords = Math.abs(diff)
+    }
+
+    if (addedWords === 0 && removedWords === 0 && newCode !== currentCode) {
+      addedWords = Math.max(1, Math.abs(newWords - oldWords))
+    }
+
+    const diffBadge = `(+${addedWords}${removedWords > 0 ? `, -${removedWords}` : ''})`
+
     return {
       success: true,
       title: target.title,
       writtenContent: writtenText || newCode,
       diffPreview: diffPreview,
-      summary: summaryText,
+      summary: `✏️ Updated [[${target.title}]] ${diffBadge}`,
       instruction_to_ai:
         'Targeted update applied successfully. In your chat walkthrough, highlight the exact updated part or diff and explain the improvements.'
     }
