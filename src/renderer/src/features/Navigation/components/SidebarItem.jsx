@@ -479,7 +479,7 @@ const SidebarItem = ({
       ) : (
         <div
           className="item-title-col"
-          style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}
+          style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, overflow: 'hidden' }}
         >
           <ToolTip text={isHovered ? () => getNoteTooltipContent(snippet) : null} position="right" delay={100}>
             <span
@@ -489,6 +489,7 @@ const SidebarItem = ({
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
                 display: 'block',
+                width: '100%',
                 ...(displayColor
                   ? { color: displayColor }
                   : isActive
@@ -519,31 +520,25 @@ const SidebarItem = ({
         </div>
       )}
 
-      <div className="item-meta-right" style={{ height: '100%', display: 'flex', alignItems: 'center' }}>
-        {(isHovered || isItemPinned) && !isRenaming && (
-          <div className={`hover-actions ${isItemPinned ? 'is-pinned' : ''}`} style={{ height: '100%', display: 'flex', alignItems: 'center' }}>
+      {(((isHovered || isItemPinned) && !isRenaming) || isDirty) && (
+        <div className="item-meta-right" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, gap: '4px' }}>
+          {(isHovered || isItemPinned) && !isRenaming && (
             <ToolTip text={isItemPinned ? 'Remove from Favorites' : 'Add to Favorites'}>
-              <button
-                className="action-btn"
+              <span
+                className={`item-icon-wrap item-favorite-icon ${isItemPinned ? 'is-pinned' : ''}`}
                 onClick={handleTogglePin}
                 onMouseDown={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
-                style={{
-                  color: isItemPinned ? '#fbbf24' : undefined,
-                  height: '24px',
-                  width: '24px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
+                role="button"
+                tabIndex={-1}
               >
-                <Star size={13} strokeWidth={2.2} fill={isItemPinned ? 'currentColor' : 'none'} />
-              </button>
+                <Star size={13} strokeWidth={2} fill={isItemPinned ? 'currentColor' : 'none'} />
+              </span>
             </ToolTip>
-          </div>
-        )}
-        {isDirty && <div className="dirty-indicator" />}
-      </div>
+          )}
+          {isDirty && <div className="dirty-indicator" />}
+        </div>
+      )}
 
       {modals}
     </div>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Zap, Brain, Palette, Image as ImageIcon, Code, Eraser, Check } from 'lucide-react'
+import { Zap, Brain, Palette, Image as ImageIcon, Code, Eraser, Check, Search } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import './css/luminSlash.css'
 
@@ -17,6 +17,13 @@ export const SLASH_COMMANDS = [
     desc: 'Deep step-by-step reasoning (CoT).',
     icon: <Brain size={14} />,
     action: (setMode) => setMode('Deep')
+  },
+  {
+    id: 'research',
+    label: 'Research',
+    desc: 'Deep research, analysis, and information gathering.',
+    icon: <Search size={14} />,
+    action: (setMode) => setMode('Research')
   },
   {
     id: 'creative',

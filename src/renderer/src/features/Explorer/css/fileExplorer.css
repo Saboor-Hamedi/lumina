@@ -475,6 +475,7 @@
   cursor: pointer;
   transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  overflow: hidden;
 }
 
 .tree-item:hover,
@@ -518,6 +519,7 @@
   justify-content: center;
   flex: 1;
   min-width: 0;
+  overflow: hidden;
 }
 
 .tree-item .item-title,
@@ -530,8 +532,9 @@
   font-weight: 450;
   color: var(--text-main, #f1f5f9);
   line-height: 1.2;
-  display: flex;
-  align-items: center;
+  display: block;
+  width: 100%;
+  max-width: 100%;
 }
 
 .tree-item .folder-name,
@@ -651,6 +654,36 @@
   align-items: center;
   gap: 4px;
   margin-left: auto;
+  flex-shrink: 0;
+}
+
+.tree-item .item-favorite-icon,
+.start-section .tree-item .item-favorite-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  padding: 0;
+  border-radius: 3px;
+  transition: color 0.12s ease, transform 0.12s ease;
+}
+
+.tree-item .item-favorite-icon.is-pinned,
+.start-section .tree-item .item-favorite-icon.is-pinned {
+  color: #fbbf24;
+}
+
+.tree-item .item-favorite-icon:hover,
+.start-section .tree-item .item-favorite-icon:hover {
+  color: #fbbf24;
+  transform: scale(1.15);
 }
 
 .pin-icon {
@@ -661,22 +694,10 @@
 .start-section .tree-item .hover-actions,
 .folder-tree-main .hover-actions,
 .tree-item .hover-actions {
-  display: flex;
-  align-items: center;
-}
-
-.start-section .tree-item .hover-actions:not(.is-pinned),
-.folder-tree-main .hover-actions:not(.is-pinned),
-.tree-item .hover-actions:not(.is-pinned) {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
-  z-index: 10;
+  flex-shrink: 0;
 }
 
 .start-section .tree-item .action-btn,
@@ -686,13 +707,14 @@
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 16px;
+  height: 16px;
   padding: 0;
   border-radius: 4px;
+  flex-shrink: 0;
   transition: all 0.12s ease;
 }
 
