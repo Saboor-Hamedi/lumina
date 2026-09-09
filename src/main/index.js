@@ -344,7 +344,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('window:export-text', async (_, payload) => handleExportText(mainWindow, payload))
 
   // Setup Google Auth
-  setupGoogleAuth()
+  setupGoogleAuth(() => mainWindow)
 
   // Receive renderer logs and append to a file in userData
   ipcMain.on('renderer:log', async (_, payload) => {

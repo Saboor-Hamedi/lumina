@@ -1,6 +1,7 @@
-import { syntaxTree } from '@codemirror/language'
-import { Decoration, WidgetType, EditorView } from '@codemirror/view'
+import { ensureSyntaxTree, syntaxTree } from '@codemirror/language'
+import { Decoration, WidgetType, EditorView, ViewPlugin } from '@codemirror/view'
 import { StateField, StateEffect } from '@codemirror/state'
+import { treeGrowthEffect } from '../table/tableParserProgress'
 import mermaid from 'mermaid'
 import { copyMermaidAsImage } from './mermaidAsImage'
 import { openMermaidLightbox } from './mermaidBox'
@@ -26,7 +27,7 @@ export const editingMermaidField = StateField.define({
 
     if (value !== null) {
       const currentPos = tr.docChanged ? tr.changes.mapPos(value) : value
-      const tree = syntaxTree(tr.state)
+      const tree = ensureSyntaxTree(tr.state, currentPos, 100) ?? syntaxTree(tr.state)
       const node = tree.resolveInner(currentPos, 1)
       let fenced = node
       while (fenced && fenced.name !== 'FencedCode') {
@@ -494,21 +495,66 @@ export function renderMermaidToElement(container, code, uniqueId) {
   }, 0)
 }
 
+export const refreshMermaidEffect = StateEffect.define()
+
+const mermaidTreeWatcher = ViewPlugin.fromClass(
+  class {
+    constructor(view) {
+      this.view = view
+      this._idleHandle = null
+      this._destroyed = false
+      this._check(view.state)
+    }
+
+    update(update) {
+      if (update.docChanged || update.viewportChanged) {
+        this._check(update.state)
+      }
+    }
+
+    destroy() {
+      this._destroyed = true
+      if (this._idleHandle !== null) {
+        cancelAnimationFrame(this._idleHandle)
+        this._idleHandle = null
+      }
+    }
+
+    _check(state) {
+      const tree = syntaxTree(state)
+      if (tree.length < state.doc.length) {
+        if (this._idleHandle !== null) return
+        this._idleHandle = requestAnimationFrame(() => {
+          this._idleHandle = null
+          if (this._destroyed) return
+          const ensured = ensureSyntaxTree(this.view.state, this.view.state.doc.length, 150)
+          if (ensured) {
+            this.view.dispatch({ effects: refreshMermaidEffect.of(null) })
+          } else {
+            this._check(this.view.state)
+          }
+        })
+      }
+    }
+  }
+)
+
 function buildMermaidDecorations(state) {
   const widgets = []
-  const tree = syntaxTree(state)
+  const tree = ensureSyntaxTree(state, state.doc.length, 250) ?? syntaxTree(state)
   const editingPos = state.field(editingMermaidField, false)
 
   tree.iterate({
     enter(node) {
       if (node.name === 'FencedCode') {
         const text = state.sliceDoc(node.from, node.to)
-        if (text.startsWith('```mermaid') || text.startsWith('~~~mermaid')) {
+        const firstLine = (text.split(/\r?\n/)[0] || '').trim()
+        if (/^(`{3,}|~{3,})\s*mermaid\b/i.test(firstLine)) {
           if (editingPos !== null && editingPos === node.from) {
             return
           }
 
-          const lines = text.split('\n')
+          const lines = text.split(/\r?\n/)
           const codeLines = lines.slice(1, -1)
           const code = codeLines.join('\n').trim()
 
@@ -534,7 +580,16 @@ const mermaidDecorationsField = StateField.define({
   update(value, tr) {
     const prevEditing = tr.startState.field(editingMermaidField, false)
     const nextEditing = tr.state.field(editingMermaidField, false)
-    if (tr.docChanged || prevEditing !== nextEditing || tr.effects.some((e) => e.is(setEditingMermaid))) {
+    if (
+      tr.docChanged ||
+      prevEditing !== nextEditing ||
+      tr.effects.some(
+        (e) =>
+          e.is(setEditingMermaid) ||
+          e.is(refreshMermaidEffect) ||
+          e.is(treeGrowthEffect)
+      )
+    ) {
       return buildMermaidDecorations(tr.state)
     }
     return value
@@ -542,6 +597,10 @@ const mermaidDecorationsField = StateField.define({
   provide: (f) => EditorView.decorations.from(f)
 })
 
-export const mermaidWidgetExtension = [editingMermaidField, mermaidDecorationsField]
+export const mermaidWidgetExtension = [
+  editingMermaidField,
+  mermaidDecorationsField,
+  mermaidTreeWatcher
+]
 
 export default mermaidWidgetExtension

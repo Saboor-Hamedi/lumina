@@ -144,6 +144,7 @@ click the graph icon in the activity bar. nodes are notes, edges are wikilinks. 
 
 ```
 lumina/
+├── resources/                   # application icon (.png, .ico) and desktop packaging assets
 ├── src/
 │   ├── main/                    # electron main process
 │   │   ├── index.js             # main entry point, IPC, window lifecycle
@@ -151,24 +152,27 @@ lumina/
 │   │   ├── FloatingWindowManager.js # draggable floating AI chat window manager
 │   │   ├── AppUpdater.js        # background auto-update engine
 │   │   ├── indexer-worker.js    # semantic vector indexing worker
-│   │   ├── workspace/           # workspace operations, scanner, indexer, search
-│   │   ├── auth/                # authentication handlers
-│   │   ├── backup/              # workspace backup & recovery
-│   │   └── handlers/            # dialog, window & system event IPC handlers
-│   ├── preload/                 # secure context bridge (IPC)
+│   │   ├── workspace/           # workspace operations, scanner, indexer, search, media
+│   │   ├── auth/                # Google OAuth authentication & token exchange
+│   │   ├── backup/              # Google Drive cloud backup & recovery
+│   │   └── handlers/            # shortcuts, tray icon, auto-launcher, window resize & opacity
+│   ├── export/                  # note & bundle export engines (PDF, DOCX, Markdown, HTML)
+│   ├── preload/                 # secure context bridge (IPC exposed APIs)
 │   │   └── index.js
 │   └── renderer/                # react 19 frontend application
 │       └── src/
-│           ├── core/            # application core
-│           │   ├── store/       # zustand stores (workspaceStore, useSettingsStore, useUpdateStore)
+│           ├── core/            # core state, hooks, and client utilities
+│           │   ├── store/       # zustand stores (workspaceStore, useSettingsStore, etc.)
 │           │   ├── hooks/       # keyboard shortcuts, font settings, theme hooks
 │           │   ├── ai/          # AI provider adapters, tool registry, token streaming
+│           │   ├── notification/# in-app banner, toast & status notifications
+│           │   ├── utils/       # helper utilities, starters, and file helpers
 │           │   └── db/          # client database & local storage models
 │           ├── features/        # domain feature modules
-│           │   ├── Editor/      # CodeMirror 6 markdown editor, KaTeX, callouts, wikilinks
-│           │   ├── AI/          # Lumina AI copilot, composer, prompt modes, activity cards
+│           │   ├── Editor/      # CodeMirror 6 markdown editor, KaTeX math, callouts, wikilinks
+│           │   ├── AI/          # Lumina AI copilot, session history, composer, prompt modes
 │           │   ├── Layout/      # AppShell 3-pane layout, curtain resizing, TabBar, StatusBar
-│           │   ├── Navigation/  # left sidebar shell, 32px aligned header, sidebar footer
+│           │   ├── Navigation/  # activity sidebar, vault switcher, quick navigation
 │           │   ├── Explorer/    # virtualized file explorer, drag & drop, favorites, folder colors
 │           │   ├── Inspector/   # right sidebar (Note Details, Outline, Chat panels)
 │           │   ├── Graph/       # interactive 2D (Canvas) & 3D (Three.js) knowledge graph
@@ -179,18 +183,22 @@ lumina/
 │           │   ├── media/       # media viewer, lightbox, and clipboard image pasting
 │           │   ├── roadmap/     # learning curriculum tracker & progress indicators
 │           │   ├── Settings/    # settings dialog & configuration panels
-│           │   └── Docs/        # in-app documentation & guides
+│           │   ├── Docs/        # in-app documentation & guides
+│           │   ├── Breadcrumbs/ # active note path and hierarchy breadcrumb navigation
+│           │   ├── voice/       # voice recording, transcription & speech recognition
+│           │   ├── preview/     # markdown live preview rendering components
+│           │   ├── modals/      # modal dialogs (Guide, About, Prompts, Confirmations)
+│           │   ├── slash/       # slash command registry and interactive palette
+│           │   ├── template/    # note templates & creation wizard
+│           │   ├── theme/       # 21 custom themes, theme engine & CSS variables
+│           │   └── Icons/       # application iconography & svg glyphs
 │           ├── components/      # shared UI primitives, atoms, and error boundaries
-│           └── assets/          # global styles, 21 themes, and layout rules
+│           └── assets/          # global styles, base fonts, and layout rules
 ├── test/
 │   ├── main/                    # unit tests — main process & workspace manager
 │   ├── renderer/                # unit tests — react components, hooks, stores
-│   └── e2e/                     # end-to-end tests (playwright — 14 test suites)
-├── brain/                       # project architecture & developer documentation
-│   ├── Introduction.md          # onboarding guide & table of contents
-│   ├── purpose.md               # single source of truth for architecture & invariants
-│   └── shortcuts.md             # keyboard shortcuts reference
-└── scripts/                     # build, package, and developer automation scripts
+│   └── e2e/                     # end-to-end tests (playwright test suites)
+└── scripts/                     # build, package, workbench, and bundle analyzer scripts
 ```
 
 ### scripts
