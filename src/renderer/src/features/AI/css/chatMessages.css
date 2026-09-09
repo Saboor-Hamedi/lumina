@@ -440,7 +440,8 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  overflow-anchor: auto;
+  overflow-anchor: none !important;
+  overscroll-behavior-y: contain;
   scroll-behavior: auto !important;
   display: flex;
   flex-direction: column;
@@ -783,8 +784,8 @@
 }
 
 [data-theme='light'] .chat-code-block {
-  background: #f8fafc !important;
-  border-color: #e2e8f0 !important;
+  background: var(--bg-card, var(--bg-panel)) !important;
+  border-color: var(--border-card, var(--border-subtle)) !important;
 }
 
 .chat-code-header {
@@ -802,15 +803,15 @@
 }
 
 [data-theme='light'] .chat-code-header {
-  background: #f1f5f9 !important;
-  border-color: #e2e8f0 !important;
-  color: #475569 !important;
+  background: var(--bg-panel, var(--bg-sidebar)) !important;
+  border-color: var(--border-subtle) !important;
+  color: var(--text-muted) !important;
 }
 
 [data-theme='light'] .chat-inline-code {
   background: transparent !important;
   border: none !important;
-  color: var(--text-accent, #0284c7) !important;
+  color: var(--text-accent) !important;
 }
 
 .chat-code-header-left {
@@ -854,7 +855,7 @@
 }
 
 [data-theme='light'] .chat-code-header.is-tree-header:hover {
-  background: #e2e8f0 !important;
+  background: var(--border-subtle) !important;
 }
 
 .chat-tree-chevron {
@@ -1181,27 +1182,27 @@
 }
 
 [data-theme='light'] .chat-table-wrapper {
-  background: #ffffff;
-  border-color: #e2e8f0;
+  background: var(--bg-panel, var(--bg-card));
+  border-color: var(--border-subtle);
 }
 
 [data-theme='light'] .chat-table-wrapper th {
-  background: #f8fafc;
-  border-bottom-color: #e2e8f0;
-  color: #0f172a;
+  background: var(--bg-sidebar, var(--bg-panel));
+  border-bottom-color: var(--border-subtle);
+  color: var(--text-main);
 }
 
 [data-theme='light'] .chat-table-wrapper td {
-  border-bottom-color: #f1f5f9;
-  color: #334155;
+  border-bottom-color: var(--border-subtle);
+  color: var(--text-muted);
 }
 
 [data-theme='light'] .chat-table-wrapper tr:nth-child(even) td {
-  background: #f8fafc;
+  background: var(--bg-sidebar, var(--bg-panel));
 }
 
 [data-theme='light'] .chat-table-wrapper tr:hover td {
-  background: #f1f5f9;
+  background: var(--bg-hover, var(--border-subtle));
 }
 
 /* Chat Response Actions (Like/Dislike/Copy) */

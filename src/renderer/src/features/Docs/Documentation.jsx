@@ -270,7 +270,7 @@ const Documentation = ({ isOpen, onClose }) => {
           className="docs-modal-header"
           style={{ cursor: 'default' }}
         >
-          <div className="docs-header-left">
+          <div className="docs-header-left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <ToolTip text={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'} position="bottom">
               <button
                 className="docs-sidebar-toggle-btn"
@@ -284,14 +284,38 @@ const Documentation = ({ isOpen, onClose }) => {
                 )}
               </button>
             </ToolTip>
-            <div className="guide-logo-badge">
-              <Book size={15} />
-            </div>
-            <div className="guide-header-title">Documentation</div>
+            <span
+              style={{
+                fontSize: '13px',
+                fontWeight: 600,
+                color: 'var(--text-main)',
+                letterSpacing: '-0.01em',
+                background: 'transparent',
+                padding: 0
+              }}
+            >
+              Documentation
+            </span>
             {selectedDoc && (
-              <div className="guide-step-counter docs-header-active-doc">
-                {formatDocTitle(selectedDoc.split('/').pop().replace('.md', ''))}
-              </div>
+              <>
+                <span style={{ opacity: 0.35, color: 'var(--text-muted)', fontSize: '12px' }}>/</span>
+                <span
+                  style={{
+                    fontSize: '12px',
+                    fontWeight: 450,
+                    color: 'var(--text-muted)',
+                    maxWidth: '240px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    background: 'transparent',
+                    padding: 0
+                  }}
+                  title={formatDocTitle(selectedDoc.split('/').pop().replace('.md', ''))}
+                >
+                  {formatDocTitle(selectedDoc.split('/').pop().replace('.md', ''))}
+                </span>
+              </>
             )}
           </div>
 

@@ -375,22 +375,38 @@ const Guide = ({ isOpen, onClose, onLoadStarterNotes, onOpenDocs }) => {
     <div className="guide-modal-overlay" onClick={onClose}>
       <div className="guide-modal-container" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="guide-modal-header">
-          <div className="guide-header-left">
-            <div className="guide-logo-badge">
-              <Compass size={16} />
-            </div>
-            <div className="guide-header-title">Lumina Guide</div>
-            <span className="guide-step-counter">
+        <div className="guide-modal-header" style={{ cursor: 'default' }}>
+          <div className="guide-header-left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span
+              style={{
+                fontSize: '13px',
+                fontWeight: 600,
+                color: 'var(--text-main)',
+                letterSpacing: '-0.01em',
+                background: 'transparent',
+                padding: 0
+              }}
+            >
+              Lumina Guide
+            </span>
+            <span style={{ opacity: 0.35, color: 'var(--text-muted)', fontSize: '12px' }}>/</span>
+            <span
+              style={{
+                fontSize: '12px',
+                fontWeight: 450,
+                color: 'var(--text-muted)',
+                background: 'transparent',
+                padding: 0
+              }}
+            >
               Step {step + 1} of {GUIDE_STEPS.length}
             </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {onOpenDocs && (
               <ToolTip text="Documentation (Ctrl + D)" position="bottom">
                 <button
-                  className="guide-btn guide-btn-secondary"
-                  style={{ padding: '4px 10px', fontSize: '12px' }}
+                  className="guide-header-btn"
                   onClick={handleOpenDocs}
                   aria-label="Documentation (Ctrl + D)"
                 >
@@ -405,7 +421,7 @@ const Guide = ({ isOpen, onClose, onLoadStarterNotes, onOpenDocs }) => {
                 onClick={onClose}
                 aria-label="Close Guide (Esc)"
               >
-                <X size={18} />
+                <X size={17} />
               </button>
             </ToolTip>
           </div>

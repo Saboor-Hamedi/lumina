@@ -203,8 +203,8 @@ const LuminaChat = ({ isOpen, onClose, onDock, onUnfloat }) => {
           </div>
         </div>
 
-        {/* Modal Body with Flex Sidebar & Content */}
-        <div className="lumina-ai-container">
+        {/* Modal Body with Floating Card Sidebar & Content */}
+        <div className={`lumina-ai-container ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
           <LuminaSession
             isOpen={isSidebarOpen}
             sessions={sessions}

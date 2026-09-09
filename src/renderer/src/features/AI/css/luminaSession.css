@@ -37,37 +37,57 @@
   overflow: hidden;
   position: relative;
   background: var(--bg-app);
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: margin-left 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-left: 0;
 }
 
-/* Sidebar */
+.lumina-ai-container.sidebar-open .lumina-ai-content {
+  margin-left: 238px;
+}
+
+/* Sidebar - Matches Documentation.jsx floating card style */
 .lumina-session-sidebar {
-  width: 236px;
-  min-width: 236px;
-  max-width: 236px;
-  height: 100%;
+  width: 218px;
   background: var(--bg-sidebar, #121218);
-  border-right: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
+  border-radius: 8px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
-  position: relative;
-  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-              min-width 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-              max-width 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 0.18s ease;
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  bottom: 10px;
+  height: calc(100% - 20px);
+  z-index: 50;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   user-select: none;
-  z-index: 20;
 }
 
 .lumina-session-sidebar.closed {
-  width: 0 !important;
-  min-width: 0 !important;
-  max-width: 0 !important;
-  opacity: 0 !important;
-  border-right: none !important;
-  pointer-events: none !important;
+  transform: translateX(calc(-100% - 20px));
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Docked RightSidebar Mode adjustments */
+.is-sidebar-docked .lumina-session-sidebar {
+  left: 8px;
+  top: 8px;
+  bottom: 8px;
+  height: calc(100% - 16px);
+  width: calc(100% - 16px);
+  max-width: 280px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.55);
+}
+
+.is-sidebar-docked .lumina-ai-content,
+.is-sidebar-docked .chat-main {
+  margin-left: 0 !important;
 }
 
 /* Search Wrapper */
@@ -378,3 +398,63 @@
   background: rgba(239, 68, 68, 0.16);
   color: #fca5a5;
 }
+
+/* Light Theme Variable Support */
+[data-theme='light'] .lumina-session-sidebar {
+  background: var(--bg-sidebar);
+  border-color: var(--border-subtle);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme='light'] .lumina-session-search-wrapper {
+  border-bottom-color: var(--border-subtle);
+}
+
+[data-theme='light'] .lumina-session-search-input {
+  background: var(--bg-app);
+  border-color: var(--border-subtle);
+  color: var(--text-main);
+}
+
+[data-theme='light'] .lumina-session-search-input:focus {
+  background: var(--bg-panel);
+  border-color: var(--text-accent);
+}
+
+[data-theme='light'] .lumina-session-new-btn {
+  background: var(--bg-panel);
+  border-color: var(--border-subtle);
+  color: var(--text-main);
+}
+
+[data-theme='light'] .lumina-session-new-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--text-accent);
+  color: var(--text-accent);
+}
+
+[data-theme='light'] .lumina-session-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-main);
+}
+
+[data-theme='light'] .lumina-session-item.active {
+  background: var(--accent-subtle);
+  color: var(--text-accent);
+}
+
+[data-theme='light'] .lumina-session-menu {
+  background: var(--bg-panel);
+  border-color: var(--border-subtle);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme='light'] .lumina-session-menu-divider {
+  background: var(--border-subtle);
+}
+
+[data-theme='light'] .lumina-session-menu-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-main);
+}
+

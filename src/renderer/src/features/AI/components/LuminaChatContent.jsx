@@ -163,7 +163,7 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, isModal = fals
         color: 'var(--text-main)'
       }}
     >
-      <div className="chat-container" style={{ flex: 1, height: '100%', minHeight: 0, width: '100%', display: 'flex', position: 'relative' }}>
+      <div className={`chat-container ${showSessions ? 'sidebar-open' : 'sidebar-closed'}`} style={{ flex: 1, height: '100%', minHeight: 0, width: '100%', display: 'flex', position: 'relative' }}>
         {/* Sessions Sidebar (rendered in docked sidebar mode) */}
         {!isModal && (
           <LuminaSession
