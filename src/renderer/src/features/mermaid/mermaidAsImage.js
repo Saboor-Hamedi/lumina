@@ -14,14 +14,23 @@ export async function copyMermaidAsImage(svgElement) {
       clonedSvg.setAttribute('width', String(width))
       clonedSvg.setAttribute('height', String(height))
 
+      // Gather styling from document head if not already embedded
       const svgId = svgElement.id || svgElement.getAttribute('id')
       if (svgId) {
         const headStyle =
           document.getElementById(svgId) ||
           document.getElementById(`style-${svgId}`) ||
           document.querySelector(`style[id*="${svgId}"]`)
-        if (headStyle && !clonedSvg.querySelector(`style[id*="${svgId}"]`)) {
+        if (headStyle && !clonedSvg.querySelector('style')) {
           clonedSvg.prepend(headStyle.cloneNode(true))
+        }
+      }
+
+      // If svg inside contains duplicate style elements, keep only the first
+      const styles = clonedSvg.querySelectorAll('style')
+      if (styles.length > 1) {
+        for (let i = 1; i < styles.length; i++) {
+          styles[i].remove()
         }
       }
 
@@ -49,7 +58,9 @@ export async function copyMermaidAsImage(svgElement) {
           const ctx = canvas.getContext('2d')
           ctx.scale(scale, scale)
 
-          ctx.fillStyle = '#18181b'
+          const computed = getComputedStyle(document.documentElement)
+          const bgColor = computed.getPropertyValue('--bg-panel').trim() || '#18181b'
+          ctx.fillStyle = bgColor
           ctx.fillRect(0, 0, width, height)
 
           ctx.drawImage(img, 0, 0, width, height)

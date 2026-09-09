@@ -133,6 +133,84 @@
   }
 }
 
+/* Mindmap Sleek UI & Theme Styling */
+.cm-mermaid-widget svg .mindmap-node rect,
+.cm-mermaid-widget svg .mindmap-node circle,
+.cm-mermaid-widget svg .mindmap-node polygon,
+.cm-mermaid-widget svg .mindmap-node path,
+.mermaid-lightbox-canvas svg .mindmap-node rect,
+.mermaid-lightbox-canvas svg .mindmap-node circle,
+.mermaid-lightbox-canvas svg .mindmap-node polygon,
+.mermaid-lightbox-canvas svg .mindmap-node path {
+  rx: 6px !important;
+  ry: 6px !important;
+  stroke-width: 1px !important;
+}
+
+.cm-mermaid-widget svg .mindmap-node.section-root rect,
+.cm-mermaid-widget svg .mindmap-node.section-root circle,
+.cm-mermaid-widget svg .mindmap-node.section-root polygon,
+.mermaid-lightbox-canvas svg .mindmap-node.section-root rect,
+.mermaid-lightbox-canvas svg .mindmap-node.section-root circle,
+.mermaid-lightbox-canvas svg .mindmap-node.section-root polygon {
+  rx: 8px !important;
+  ry: 8px !important;
+  fill: var(--text-accent, #40bafa) !important;
+  stroke: transparent !important;
+}
+
+.cm-mermaid-widget svg .mindmap-node.section-root text,
+.cm-mermaid-widget svg .mindmap-node.section-root tspan,
+.mermaid-lightbox-canvas svg .mindmap-node.section-root text,
+.mermaid-lightbox-canvas svg .mindmap-node.section-root tspan {
+  fill: var(--bg-primary, #121212) !important;
+  font-weight: 600 !important;
+}
+
+.cm-mermaid-widget svg .mindmap-node:not(.section-root) rect,
+.cm-mermaid-widget svg .mindmap-node:not(.section-root) circle,
+.cm-mermaid-widget svg .mindmap-node:not(.section-root) polygon,
+.mermaid-lightbox-canvas svg .mindmap-node:not(.section-root) rect,
+.mermaid-lightbox-canvas svg .mindmap-node:not(.section-root) circle,
+.mermaid-lightbox-canvas svg .mindmap-node:not(.section-root) polygon {
+  fill: var(--bg-panel, #1e1e1e) !important;
+  stroke: var(--border-dim, rgba(255, 255, 255, 0.12)) !important;
+}
+
+.cm-mermaid-widget svg .mindmap-node:not(.section-root) text,
+.cm-mermaid-widget svg .mindmap-node:not(.section-root) tspan,
+.mermaid-lightbox-canvas svg .mindmap-node:not(.section-root) text,
+.mermaid-lightbox-canvas svg .mindmap-node:not(.section-root) tspan {
+  fill: var(--text-main, #e0e0e0) !important;
+}
+
+.cm-mermaid-widget svg .mindmap-edges path,
+.cm-mermaid-widget svg path.edge,
+.mermaid-lightbox-canvas svg .mindmap-edges path,
+.mermaid-lightbox-canvas svg path.edge {
+  stroke: var(--text-faint, #888888) !important;
+  stroke-width: 1.5px !important;
+  stroke-opacity: 0.6 !important;
+  fill: none !important;
+}
+
+/* Sequence diagram actor clean borders */
+.cm-mermaid-widget svg rect.actor,
+.mermaid-lightbox-canvas svg rect.actor {
+  rx: 4px !important;
+  ry: 4px !important;
+  fill: var(--bg-panel, #1e1e1e) !important;
+  stroke: var(--border-dim, rgba(255, 255, 255, 0.15)) !important;
+}
+
+.cm-mermaid-widget svg line.actor-line,
+.mermaid-lightbox-canvas svg line.actor-line {
+  stroke: var(--text-faint, #888888) !important;
+  stroke-width: 1px !important;
+  stroke-dasharray: 4, 4;
+  stroke-opacity: 0.6;
+}
+
 .cm-mermaid-widget .mermaid-loading {
   display: flex;
   align-items: center;

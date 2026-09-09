@@ -358,25 +358,37 @@ export function renderMermaidToElement(container, code, uniqueId) {
         useMaxWidth: false,
         htmlLabels: false,
         flowchart: { htmlLabels: false, curve: 'basis' },
-        sequence: { htmlLabels: false },
+        sequence: {
+          htmlLabels: false,
+          mirrorActors: false,
+          actorMargin: 50,
+          boxMargin: 10,
+          boxTextMargin: 5,
+          noteMargin: 10,
+          messageMargin: 35
+        },
+        mindmap: {
+          padding: 16,
+          maxNodeWidth: 200
+        },
         state: { htmlLabels: false },
         class: { htmlLabels: false },
         themeVariables: {
           fontFamily: fontEditor,
           primaryColor: bgPanel,
-          primaryBorderColor: 'rgba(255, 255, 255, 0.1)',
+          primaryBorderColor: 'rgba(255, 255, 255, 0.12)',
           primaryTextColor: accent,
           lineColor: textFaint,
           textColor: textMain,
           mainBkg: bgPrimary,
           nodeBkg: bgPanel,
-          nodeBorder: 'rgba(255, 255, 255, 0.1)',
+          nodeBorder: 'rgba(255, 255, 255, 0.12)',
           nodeTextColor: accent,
           clusterBkg: 'rgba(255, 255, 255, 0.02)',
           clusterBorder: 'rgba(255, 255, 255, 0.08)',
           edgeLabelBackground: bgPanel,
           actorBkg: bgPanel,
-          actorBorder: 'rgba(255, 255, 255, 0.1)',
+          actorBorder: 'rgba(255, 255, 255, 0.15)',
           actorTextColor: accent,
           actorLineColor: textFaint,
           signalColor: textFaint,
@@ -385,12 +397,26 @@ export function renderMermaidToElement(container, code, uniqueId) {
           noteTextColor: bgPrimary,
           noteBorderColor: 'transparent',
           labelBoxBkg: bgPanel,
-          labelBoxBorderColor: 'rgba(255, 255, 255, 0.1)',
+          labelBoxBorderColor: 'rgba(255, 255, 255, 0.12)',
           labelTextColor: textMain,
           loopTextColor: textMain,
           activationBkgColor: accent,
           activationBorderColor: 'transparent',
-          sequenceNumberColor: bgPrimary
+          sequenceNumberColor: bgPrimary,
+          git0: accent,
+          gitBranchLabel0: bgPrimary,
+          cScale0: accent,
+          cScaleLabel0: bgPrimary,
+          cScale1: 'rgba(255, 255, 255, 0.06)',
+          cScaleLabel1: textMain,
+          cScale2: 'rgba(255, 255, 255, 0.04)',
+          cScaleLabel2: textMain,
+          cScale3: 'rgba(255, 255, 255, 0.04)',
+          cScaleLabel3: textMain,
+          cScale4: 'rgba(255, 255, 255, 0.04)',
+          cScaleLabel4: textMain,
+          cScale5: 'rgba(255, 255, 255, 0.04)',
+          cScaleLabel5: textMain
         },
         themeCSS: `
           .node rect, .node circle, .node ellipse, .node polygon, .node path {
@@ -398,6 +424,64 @@ export function renderMermaidToElement(container, code, uniqueId) {
           }
           .node .label, .node .label text {
             font-family: ${fontEditor};
+          }
+          /* Mindmap sleek nodes & lines styling */
+          .mindmap-node rect,
+          .mindmap-node circle,
+          .mindmap-node polygon,
+          .mindmap-node path {
+            rx: 6px !important;
+            ry: 6px !important;
+            stroke-width: 1px !important;
+            stroke: rgba(255, 255, 255, 0.12) !important;
+          }
+          .mindmap-node.section-root rect,
+          .mindmap-node.section-root circle,
+          .mindmap-node.section-root polygon {
+            fill: ${accent} !important;
+            rx: 8px !important;
+            ry: 8px !important;
+            stroke: transparent !important;
+          }
+          .mindmap-node.section-root text,
+          .mindmap-node.section-root tspan {
+            fill: ${bgPrimary} !important;
+            font-weight: 600 !important;
+          }
+          .mindmap-node:not(.section-root) rect,
+          .mindmap-node:not(.section-root) circle,
+          .mindmap-node:not(.section-root) polygon {
+            fill: ${bgPanel} !important;
+            stroke: rgba(255, 255, 255, 0.12) !important;
+          }
+          .mindmap-node:not(.section-root) text,
+          .mindmap-node:not(.section-root) tspan {
+            fill: ${textMain} !important;
+            font-size: 13px !important;
+          }
+          .mindmap-edges path,
+          path.edge {
+            stroke: ${textFaint} !important;
+            stroke-width: 1.5px !important;
+            stroke-opacity: 0.7 !important;
+            fill: none !important;
+          }
+          /* Sequence diagram actor & figure styling */
+          rect.actor {
+            fill: ${bgPanel} !important;
+            stroke: rgba(255, 255, 255, 0.15) !important;
+            rx: 4px !important;
+            ry: 4px !important;
+          }
+          text.actor, text.actor > tspan {
+            fill: ${accent} !important;
+            font-family: ${fontEditor} !important;
+          }
+          line.actor-line {
+            stroke: ${textFaint} !important;
+            stroke-width: 1px !important;
+            stroke-dasharray: 4, 4;
+            stroke-opacity: 0.6;
           }
         `
       })
