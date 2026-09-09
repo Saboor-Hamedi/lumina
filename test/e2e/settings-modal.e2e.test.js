@@ -32,6 +32,16 @@ async function openSettings() {
   await page.keyboard.press('Control+,')
   await page.waitForTimeout(300)
   if (!(await modal().isVisible())) {
+    const footerBtn = page.locator('.sidebar-footer-section').first()
+    if (await footerBtn.isVisible()) {
+      await footerBtn.click()
+      const settingsItem = page.locator('button:has-text("Settings")').first()
+      if (await settingsItem.isVisible()) {
+        await settingsItem.click()
+      }
+    }
+  }
+  if (!(await modal().isVisible())) {
     await page.evaluate(() => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: ',', ctrlKey: true, bubbles: true }))
     })
@@ -41,7 +51,7 @@ async function openSettings() {
 
 test('opens the Settings modal with Ctrl+,', async () => {
   await openSettings()
-  await expect(modal().locator('.theme-modal-title, text=Settings').first()).toBeVisible()
+  await expect(modal().locator('.theme-modal-title').getByText('Settings')).toBeVisible()
 })
 
 test('shows the three friendly tabs', async () => {
@@ -54,19 +64,20 @@ test('shows the three friendly tabs', async () => {
 test('Look & Feel tab renders the appearance section', async () => {
   await openSettings()
   await modal().locator('button:has-text("Look & Feel")').first().click()
-  await expect(modal().locator('text=Appearance, text=Theme Gallery').first()).toBeVisible()
+  await expect(modal().getByRole('heading', { name: 'Appearance' })).toBeVisible()
+  await expect(modal().getByText('Theme Gallery')).toBeVisible()
 })
 
 test('switches to the AI Assistant tab', async () => {
   await openSettings()
-  await modal().getByRole('button', { name: 'AI Assistant' }).click()
+  await modal().locator('button:has-text("AI Assistant")').first().click()
   await expect(modal().getByText('Active Intelligence Provider')).toBeVisible()
   await expect(modal().getByText('Primary AI Brain')).toBeVisible()
 })
 
 test('AI Assistant shows the friendly provider labels', async () => {
   await openSettings()
-  await modal().getByRole('button', { name: 'AI Assistant' }).click()
+  await modal().locator('button:has-text("AI Assistant")').first().click()
   const select = modal().locator('select')
   await expect(select.locator('option', { hasText: 'DeepSeek (Default)' })).toHaveCount(1)
   await expect(select.locator('option', { hasText: 'OpenAI (GPT-4o)' })).toHaveCount(1)

@@ -92,9 +92,8 @@ describe('Documentation Component Suite', () => {
       render(<Documentation isOpen={true} onClose={vi.fn()} />)
       expect(screen.getByText('Documentation')).toBeInTheDocument()
 
-      const activeBadge = document.querySelector('.docs-header-active-doc')
-      expect(activeBadge).toBeInTheDocument()
-
+      // .docs-header-active-doc is only shown when a doc is selected; on initial
+      // render no doc is selected so it is absent — just verify the stat badge.
       const statBadge = document.querySelector('.docs-header-stat')
       expect(statBadge).toBeInTheDocument()
       expect(statBadge.textContent).toContain('read')

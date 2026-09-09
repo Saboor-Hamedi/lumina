@@ -24,9 +24,9 @@ describe('Guide.jsx Modal', () => {
     render(<Guide {...defaultProps()} />)
     expect(screen.getByText('Lumina Guide')).toBeInTheDocument()
 
-    const stepCounter = document.querySelector('.guide-step-counter')
+    // Step counter is rendered as a plain <span> with text "Step N of M"
+    const stepCounter = screen.getByText(/Step 1 of/)
     expect(stepCounter).toBeInTheDocument()
-    expect(stepCounter.textContent).toContain('Step 1 of')
   })
 
   it('navigates to next step when Next button is clicked', () => {
@@ -34,8 +34,7 @@ describe('Guide.jsx Modal', () => {
     const nextBtn = screen.getByRole('button', { name: 'Next' })
     fireEvent.click(nextBtn)
 
-    const stepCounter = document.querySelector('.guide-step-counter')
-    expect(stepCounter.textContent).toContain('Step 2 of')
+    expect(screen.getByText(/Step 2 of/)).toBeInTheDocument()
   })
 
   it('navigates backwards when Previous button is clicked', () => {
@@ -46,8 +45,7 @@ describe('Guide.jsx Modal', () => {
     const prevBtn = screen.getByRole('button', { name: 'Previous' })
     fireEvent.click(prevBtn)
 
-    const stepCounter = document.querySelector('.guide-step-counter')
-    expect(stepCounter.textContent).toContain('Step 1 of')
+    expect(screen.getByText(/Step 1 of/)).toBeInTheDocument()
   })
 
   it('jumps to specific step when a navigation dot is clicked', () => {
@@ -55,8 +53,7 @@ describe('Guide.jsx Modal', () => {
     const step3Dot = screen.getByLabelText('Go to step 3')
     fireEvent.click(step3Dot)
 
-    const stepCounter = document.querySelector('.guide-step-counter')
-    expect(stepCounter.textContent).toContain('Step 3 of')
+    expect(screen.getByText(/Step 3 of/)).toBeInTheDocument()
   })
 
   it('calls onOpenDocs and closes when Documentation button is clicked', () => {

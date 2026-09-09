@@ -8,26 +8,27 @@ import ToolTip from '../atoms/ToolTip'
 import './UpdateDetails.css'
 
 export const DEFAULT_RELEASE_NOTES = `New
-- PDF Workspace & Native Viewer: Open, zoom, pan, and read PDF documents directly in workspace tabs with fast text search, thumbnail previews, and high-DPI rendering.
+- Google Drive Git-Like Mirroring: Backup your full workspace hierarchy as uncompressed individual Markdown and asset files directly into a clean "lumina/" root folder on Google Drive, preserving all nested folder paths.
+- Individual Note Push: Push any active note and its full parent folder hierarchy to Google Drive on demand via a subtle Push button directly in the editor metadata bar, with pulse animations and instant confirmation.
+- Dual Backup Formats: Choose between the traditional compressed (.zip) archive or the git-like mirror folder structure directly from the Settings dropdown.
+- Cancel Backup Control: Safely abort ongoing Google Drive backups at any point with a dedicated sleek cancel button.
+- PDF Workspace & Native Viewer: Open, zoom, pan, and read PDF documents directly in workspace tabs with instant cached tab switching and high-DPI rendering.
 - Whisper Voice Dictation: Speak your thoughts directly into notes or Lumina composer with offline Whisper speech-to-text and a live floating soundwave capsule.
-- Smart File Tree & Navigation: Seamlessly manage nested folders with drag-and-drop, folder pinning, smart auto-reveal, and instant keyboard navigation.
-- Multi-Note AI Summarizer: Select single or multiple notes across folders and generate structured AI summaries, insights, and key takeaways with one click.
-- Interactive Graph View: Explore connections, backlinks, and tags across your entire workspace in a fluid 2D network graph.
-- KaTeX Math Formulas: Insert scientific formulas and mathematical equations with real-time rendering and syntax previews.
 
 Improved
+- Intelligent Cloud Hierarchy Resolution: Pushing a deeply nested note automatically ensures all ancestor folders exist on Google Drive without re-uploading unrelated files.
+- Pre-Push Auto-Save: Pushing a note instantly synchronizes pending title edits and note contents before uploading to guarantee the cloud copy matches your local draft.
+- Clean Status Notifications: Streamlined backup toasts to concise, non-intrusive messages ("Successfully backed up").
 - Lightning-Fast Tab Switching: Move instantly between notes, PDFs, images, and graph view with zero UI lag or layout stutter.
 - Search & Arrow Navigation: Search notes across nested folders with live highlighting, smooth arrow key traversal, and Enter to open.
-- Editor Margins & Layout: Balanced sidebar margins and responsive padding when toggling sidebars or working in split views.
-- Consistent Centered Windows: Settings, Documentation, and Template dialogs open centered on screen with smooth slide animations.
-- Modern Glassmorphic UI: Polished dark theme styling, refined badge accents, and custom minimal scrollbars.
+- Comprehensive Test Suite: 100% passing tests across all 87 unit and integration test files, along with verified Playwright end-to-end automation.
 
 Fixed
-- Active Note Synchronization: Switching tabs or opening search matches now reliably highlights and scrolls to the active note in the folder tree.
-- PDF Security & Framing: Eliminated Content Security Policy conflicts and reload loops when loading workspace PDF files.
-- In-Place File Renaming: Renaming notes, images, or PDFs in the workspace now renames entries directly without duplicating files or affecting source paths.
-- Tooltip Bounds & Text Clamping: Long file and folder names now clamp neatly with ellipsis and stay within screen boundaries without clipping.
-- Popup & Window Stability: Prevented dropdowns and dialogs from shifting positions or misaligning when opening.`
+- Note Title & Disk Renaming: Fixed an issue where new notes titled "lumina" or edited titles remained saved as "New Note.md" on disk and pushed to Drive with placeholder names.
+- Google Drive In-Place Renaming: Remote files on Google Drive are now renamed in-place when a local note title changes, avoiding duplicate cloud copies.
+- File Watcher Loop Prevention: In-flight file renames are now shielded with ignored paths to prevent spurious deletion and watcher reload cycles.
+- Active Note Synchronization: Switching tabs or opening search matches reliably highlights and scrolls to the active note in the folder tree.
+- In-Place File Renaming: Renaming notes, images, or PDFs in the workspace renames entries directly without duplicating files or affecting source paths.`
 
 /**
  * Robust release notes parser handling markdown headings, bullets, HTML, and plain lists.

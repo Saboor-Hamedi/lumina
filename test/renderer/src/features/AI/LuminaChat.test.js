@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { useAIStore } from '../../../../../src/renderer/src/features/AI/tools/lumina'
+import { getPendingTasks } from '../../../../../src/renderer/src/features/AI/services/aiWorkerManager.js'
 
 // Worker is mocked in setup.js
 
@@ -18,12 +19,13 @@ global.window = {
 describe('useAIStore', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    // Reset store state
+    // Reset store state and pending tasks map
+    getPendingTasks().clear()
     useAIStore.setState({
       aiError: null,
       isModelReady: false,
       modelLoadingProgress: 0,
-      pendingTasks: new Map(),
+      pendingTasks: getPendingTasks(),
       embeddingsCache: {},
       chatMessages: [],
       isChatLoading: false,

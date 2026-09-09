@@ -84,9 +84,9 @@ This document outlines the strategic vision and feature scope for the evolution 
 * **Concept:** Expand semantic vector search beyond markdown text to include all visual and PDF assets.
 * **Mechanics:** When PDFs or images are dropped into the vault (`/assets`), a background worker runs local OCR (`Tesseract.js` or `ONNX vision models`) and text extraction (`pdf-parse`). The extracted text is indexed into `VaultIndexer`, enabling users to ask LuminaChat questions that synthesize across both written notes and downloaded research literature.
 
-### 4.3 Git-Backed Vault Version Control & Snapshot Engine
-* **Concept:** Bulletproof local history, visual diff browsing, and branch experimentation.
-* **Mechanics:** Native integration with local Git repositories (`isomorphic-git` / simple `child_process` hooks). Lumina creates automatic background commits on configurable intervals (`every 30 mins` or `on save`). An interactive timeline panel lets users browse past snapshots, inspect visual diffs, and restore previous states with one click.
+### 4.3 Cloud Sync & Git-Like Google Drive Mirroring
+* **Status:** Implemented & Verified.
+* **Mechanics:** Vault mirroring directly to Google Drive under a clean `lumina/` root folder with preserved directory trees. Individual notes can be pushed on-demand via the editor metadata toolbar (`DrivePushButton`) with ancestor tree auto-creation, in-place title rename synchronization, and cancellation support. Future expansion includes native local git commit hooks and diff timeline browsing.
 
 ### 4.4 Custom Protocol Handler & Deep Linking (`lumina://`)
 * **Concept:** Connect Lumina to the broader desktop ecosystem.

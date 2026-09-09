@@ -42,6 +42,16 @@
 - Live accent color picker allowing instant interface personalization across buttons, highlights, graphs, and the welcome dashboard.
 - Configurable cursor styles, font families, and preview typography.
 
+### F. Google Drive Git-Like Mirroring & Note Push
+- **Uncompressed Hierarchy Mirror:** Mirror your complete local vault hierarchy into a clean `lumina/` root folder on Google Drive as individual Markdown and asset files.
+- **Dedicated Push Button:** Push individual notes with automatic parent directory creation on Drive directly from the editor metadata toolbar.
+- **Dual Backup Modes:** Switch effortlessly between compressed (.zip) snapshot archives and live uncompressed git-like folder mirroring.
+- **In-Place Title Synchronization:** Renaming note titles updates both the local disk file and the remote Google Drive file without creating orphan drafts.
+
+### G. Native PDF & Voice Dictation
+- **Chromium Native PDF Engine:** High-performance PDF reader tabs with zero external protocol dialogs, instant zero-copy in-memory caching, zoom, and text search.
+- **Offline Whisper Dictation:** Real-time speech-to-text with animated soundwave capsule feedback for hands-free thought capture.
+
 ---
 
 ## 3. Getting Started

@@ -44,6 +44,10 @@ Lumina is designed to be highly keyboard-accessible. Here is a comprehensive lis
 | `Ctrl + Shift + Tab` | Switch to Previous Tab |
 | `Ctrl + W` | Close Active Tab |
 | `Ctrl + ,` | Open Settings |
+| `Ctrl + D` | Open Documentation Modal |
+| `Ctrl + T` | Open Theme Gallery |
+| `Ctrl + /` / `Ctrl + ?` | Open Shortcuts Dialog |
+| `Ctrl + Shift + .` | Change Note Icon |
 | `Escape` | Close active modal, palette, or preview card |
 
 ---

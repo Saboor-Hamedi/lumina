@@ -210,7 +210,7 @@ describe('VaultManager', () => {
     })
 
     it('scans PDF files and reads them back via readAsset', async () => {
-      const pdfPath = path.join(tempDir, 'manual.pdf')
+      const pdfPath = path.join(testVaultPath, 'manual.pdf')
       await fs.writeFile(pdfPath, '%PDF-1.4 fake pdf data')
 
       const scanResult = await VaultManager.scanWorkspace()

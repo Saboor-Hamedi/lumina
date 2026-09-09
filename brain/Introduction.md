@@ -7,6 +7,9 @@
 ## Core Capabilities
 
 - **Rich Live Preview Editor:** Powered by CodeMirror 6 with live-rendered widgets for interactive tables, Mermaid diagrams, Obsidian-style callouts (`[!NOTE]`, `[!TIP]`), KaTeX mathematical expressions, syntax-highlighted code blocks, and task lists.
+- **Google Drive Git-Like Sync & Push:** Mirror your complete workspace hierarchy into a clean `lumina/` folder on Google Drive. Push individual notes with ancestor folder tree resolution on demand via the editor header.
+- **Native PDF & Asset Workspace:** View and read PDF documents natively inside workspace tabs with instant zero-copy caching, zoom/pan controls, and high-DPI rendering.
+- **Whisper Voice Dictation:** Speak your thoughts directly into notes or the Lumina composer using offline Whisper speech recognition with dynamic soundwave feedback.
 - **Deep AI Integration:** Lumina includes an integrated AI research partner with full context of your workspace. Summarize folders, brainstorm connections, extract tasks, and chat with your notes.
 - **Visual Knowledge Graph:** Explore your ideas visually through an interactive physics-driven graph that maps how notes link together.
 - **Spotlight Quick Switcher (`Ctrl + Space` / `Ctrl + P`):** Instantly navigate notes, search document text, or ask the AI questions with live preview cards.
@@ -20,8 +23,9 @@
 1. **Create a Note** — Press `Ctrl + N` to create a new note.
 2. **Find Anything** — Press `Ctrl + Space` or `Ctrl + P` to search notes across your entire vault.
 3. **Link Notes** — Type `[[` to trigger wikilink autocompletion and connect related concepts.
-4. **Open Knowledge Graph** — Press `Ctrl + G` to view your connected graph.
-5. **Open Documentation** — Access the complete **Learning Markdown** guides and cheat sheets from the Help menu.
+4. **Push to Cloud** — Click the subtle **Push** button in the note header to backup the active note directly to Google Drive.
+5. **Open Knowledge Graph** — Press `Ctrl + G` to view your connected graph.
+6. **Open Documentation** — Access the complete **Learning Markdown** guides and cheat sheets from the Help menu.
 
 ---
 

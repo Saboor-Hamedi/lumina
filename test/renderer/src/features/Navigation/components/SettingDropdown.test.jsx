@@ -79,12 +79,13 @@ describe('SettingDropdown', () => {
     })
 
     render(<SettingDropdown {...defaultProps()} />)
-    expect(screen.getAllByText('Backup Workspace to Drive')).toHaveLength(1)
+    // Button text is "Backup Workspace (Zip)" or "Backup Workspace (lumina/)" depending on mode
+    expect(screen.getAllByText(/Backup Workspace/)).toHaveLength(1)
   })
 
   it('does not show backup button when logged out', () => {
     render(<SettingDropdown {...defaultProps()} />)
-    expect(screen.queryByText('Backup Workspace to Drive')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Backup Workspace/)).not.toBeInTheDocument()
   })
 
   it('calls onSettingsClick when Settings clicked', () => {
@@ -231,7 +232,8 @@ describe('SettingDropdown', () => {
       global.window.api.backupWorkspace.mockResolvedValue({})
 
       render(<SettingDropdown {...defaultProps()} />)
-      fireEvent.click(screen.getByText('Backup Workspace to Drive'))
+      // Button label is "Backup Workspace (Zip)" or "Backup Workspace (lumina/)" depending on mode
+      fireEvent.click(screen.getByText(/Backup Workspace/))
 
       expect(global.window.api.backupWorkspace).toHaveBeenCalled()
     })
@@ -243,7 +245,7 @@ describe('SettingDropdown', () => {
       render(<SettingDropdown {...defaultProps()} />)
 
       const progressCb = global.window.api.onIndexProgress.mock.calls[0][0]
-      fireEvent.click(screen.getByText('Backup Workspace to Drive'))
+      fireEvent.click(screen.getByText(/Backup Workspace/))
 
       await vi.waitFor(() => {
         progressCb({ type: 'backup', stage: 'completed', progress: 100 })
@@ -253,3 +255,4 @@ describe('SettingDropdown', () => {
     })
   })
 })
+

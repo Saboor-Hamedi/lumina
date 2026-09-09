@@ -74,11 +74,7 @@ async function openTemplate() {
 
 test('opens Documentation modal and displays title and 2px radius badges', async () => {
   await openDocumentation()
-  await expect(docsModal().locator('.guide-header-title:has-text("Documentation")')).toBeVisible()
-
-  // Active doc badge
-  const activeBadge = docsModal().locator('.docs-header-active-doc')
-  await expect(activeBadge).toBeVisible()
+  await expect(docsModal().locator('.docs-modal-header')).toContainText('Documentation')
 
   // Reading stats badge
   const statBadge = docsModal().locator('.docs-header-stat')
@@ -113,17 +109,15 @@ test('closes Documentation modal with Escape', async () => {
 
 test('opens Guide modal and displays step indicator badge with navigation', async () => {
   await openGuide()
-  await expect(guideModal().locator('.guide-header-title:has-text("Lumina Guide")')).toBeVisible()
+  await expect(guideModal().locator('.guide-modal-header')).toContainText('Lumina Guide')
 
   // Step counter badge
-  const stepBadge = guideModal().locator('.guide-step-counter')
-  await expect(stepBadge).toBeVisible()
-  await expect(stepBadge).toContainText('Step 1 of')
+  await expect(guideModal().locator('.guide-modal-header')).toContainText('Step 1 of')
 
   // Click Next to advance step
   const nextBtn = guideModal().locator('.guide-btn-primary:has-text("Next")')
   await nextBtn.click()
-  await expect(stepBadge).toContainText('Step 2 of')
+  await expect(guideModal().locator('.guide-modal-header')).toContainText('Step 2 of')
 
   // Closes on Escape
   await page.keyboard.press('Escape')

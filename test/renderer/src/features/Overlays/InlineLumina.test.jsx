@@ -42,15 +42,17 @@ function makeEditorView({
 
 function mockStreamingResponse(chunks = []) {
   const encoder = new TextEncoder()
-  const stream = new ReadableStream({
-    start(controller) {
-      for (const c of chunks) controller.enqueue(encoder.encode(c))
-      controller.close()
-    }
-  })
-  global.fetch = vi.fn().mockResolvedValue({
-    ok: true,
-    body: { getReader: () => stream.getReader() }
+  global.fetch = vi.fn().mockImplementation(() => {
+    const stream = new ReadableStream({
+      start(controller) {
+        for (const c of chunks) controller.enqueue(encoder.encode(c))
+        controller.close()
+      }
+    })
+    return Promise.resolve({
+      ok: true,
+      body: stream
+    })
   })
 }
 
@@ -70,7 +72,18 @@ describe('InlineLumina', () => {
       ...global.navigator,
       clipboard: { writeText: vi.fn().mockResolvedValue(true) }
     }
-    useSettingsStore.setState({ settings: { deepSeekKey: null, deepSeekModel: 'deepseek-chat' } })
+    if (typeof localStorage !== 'undefined' && localStorage.clear) {
+      localStorage.clear()
+    }
+    useSettingsStore.setState({
+      settings: {
+        activeProvider: 'deepseek',
+        deepSeekKey: null,
+        openaiKey: null,
+        anthropicKey: null,
+        deepSeekModel: 'deepseek-chat'
+      }
+    })
   })
 
   afterEach(() => {

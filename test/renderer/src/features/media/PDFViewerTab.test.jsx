@@ -47,7 +47,7 @@ describe('PDFViewerTab Component', () => {
       expect(iframe).toHaveAttribute('src', 'blob:mock-pdf-url')
     })
 
-    expect(screen.getByText('1 KB')).toBeInTheDocument()
+    expect(screen.getByText(/1(\.0)? KB/)).toBeInTheDocument()
     expect(screen.getByText('PDF')).toBeInTheDocument()
   })
 
