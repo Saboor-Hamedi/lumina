@@ -283,7 +283,7 @@ body.is-global-resizing .cm-editor {
   top: 0 !important;
   bottom: 0 !important;
   flex-shrink: 0 !important;
-  min-width: 300px !important;
+  min-width: 200px !important;
   width: var(--right-sidebar-content-width, var(--right-sidebar-width, 300px)) !important;
   max-width: none !important;
   height: 100% !important;
@@ -303,7 +303,7 @@ body.is-global-resizing .cm-editor {
 .shell-sidebar-right .chat-messages-scroll-area,
 .shell-sidebar-right .chat-input-area {
   flex-shrink: 0 !important;
-  min-width: 300px !important;
+  min-width: 200px !important;
   max-width: none !important;
   width: 100% !important;
   box-sizing: border-box !important;

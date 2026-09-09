@@ -332,10 +332,29 @@ const AppShell = () => {
           }
         }
 
+        let savedLeftWidth = null
+        let savedRightWidth = null
+        if (typeof localStorage !== 'undefined') {
+          const rawL = localStorage.getItem('lumina_left_sidebar_width')
+          if (rawL) {
+            const parsedL = parseInt(rawL, 10)
+            if (!isNaN(parsedL) && parsedL >= 180 && parsedL <= 600) {
+              savedLeftWidth = parsedL
+            }
+          }
+          const rawR = localStorage.getItem('lumina_right_sidebar_width')
+          if (rawR) {
+            const parsedR = parseInt(rawR, 10)
+            if (!isNaN(parsedR) && parsedR >= 200 && parsedR <= 750) {
+              savedRightWidth = parsedR
+            }
+          }
+        }
+
         const rawLeftWidth =
-          legacySidebar.width || legacySidebar.leftWidth || actualSettings.leftWidth
+          savedLeftWidth || legacySidebar.width || legacySidebar.leftWidth || actualSettings.leftWidth
         if (rawLeftWidth) {
-          const clampedLeft = Math.min(500, Math.max(150, Number(rawLeftWidth)))
+          const clampedLeft = Math.min(600, Math.max(180, Number(rawLeftWidth)))
           setLeftWidth(clampedLeft)
         }
 
@@ -355,9 +374,9 @@ const AppShell = () => {
         }
 
         const rawRightWidth =
-          legacyRSidebar.width || legacyRSidebar.rightWidth || actualSettings.rightWidth
+          savedRightWidth || legacyRSidebar.width || legacyRSidebar.rightWidth || actualSettings.rightWidth
         if (rawRightWidth) {
-          const clampedRight = Math.min(500, Math.max(150, Number(rawRightWidth)))
+          const clampedRight = Math.min(750, Math.max(200, Number(rawRightWidth)))
           setRightWidth(clampedRight)
         }
       } catch (err) {
@@ -779,9 +798,9 @@ const AppShell = () => {
       className={`app-shell ${isLeftSidebarOpen ? 'left-open' : 'left-closed'} ${isRightSidebarOpen ? 'right-open' : 'right-closed'}`}
       style={{
         '--left-sidebar-width': `${leftWidth}px`,
-        '--left-sidebar-content-width': `${Math.max(260, leftWidth)}px`,
+        '--left-sidebar-content-width': `${Math.max(180, leftWidth)}px`,
         '--right-sidebar-width': `${rightWidth}px`,
-        '--right-sidebar-content-width': `${Math.max(300, rightWidth)}px`
+        '--right-sidebar-content-width': `${Math.max(200, rightWidth)}px`
       }}
     >
       <aside className="shell-sidebar-left">

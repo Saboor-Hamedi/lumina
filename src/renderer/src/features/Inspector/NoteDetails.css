@@ -200,7 +200,7 @@
   flex-direction: column;
   height: 100%;
   width: 100%;
-  min-width: 300px;
+  min-width: 200px;
   background: var(--bg-sidebar) !important;
   color: var(--text-main) !important;
   box-sizing: border-box;
