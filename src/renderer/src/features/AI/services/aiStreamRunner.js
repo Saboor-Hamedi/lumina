@@ -82,16 +82,18 @@ export const buildRealtimeDisplay = ({
   beforeToolText = '',
   afterToolText = ''
 }) => {
+  const stripDSML = (text) =>
+    (text || '')
+      .replace(/<[^>]*[｜|][^>]*>/g, '')
+      .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*>/gi, '')
+      .replace(/<[｜|][^>]*$/g, '')
+      .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*$/gi, '')
+      .trim()
+
   const blocks = []
-  if (reasoningText.trim()) {
-    blocks.push(`<think>\n${reasoningText.trim()}\n</think>`)
-  }
-  if (executedActions.length > 0 || activeToolStatus) {
-    const actionLines = [...executedActions]
-    if (activeToolStatus) {
-      actionLines.push(activeToolStatus)
-    }
-    blocks.push(`<lumina-activity>\n${actionLines.join('\n')}\n</lumina-activity>`)
+  const cleanReasoning = stripDSML(reasoningText)
+  if (cleanReasoning) {
+    blocks.push(`<think>\n${cleanReasoning}\n</think>`)
   }
 
   // Normalize non-standard code-block language ids to avoid ugly "N lines / Copy" labels
@@ -100,13 +102,167 @@ export const buildRealtimeDisplay = ({
     return text.replace(/```(TEXT|MARKDOWN|PLAINTEXT|TREE|PLAIN|MD)\b/gi, '```')
   }
 
-  const responseText = [normalizeCodeBlocks(beforeToolText.trim()), normalizeCodeBlocks(afterToolText.trim())]
-    .filter(Boolean)
-    .join('\n\n')
-  if (responseText) {
-    blocks.push(responseText)
+  if (beforeToolText.trim()) {
+    blocks.push(normalizeCodeBlocks(beforeToolText.trim()))
   }
+
+  if (executedActions.length > 0 || activeToolStatus) {
+    const actionLines = [...executedActions]
+    if (activeToolStatus) {
+      actionLines.push(activeToolStatus)
+    }
+    blocks.push(`<lumina-activity>\n${actionLines.join('\n')}\n</lumina-activity>`)
+  }
+
+  if (afterToolText.trim()) {
+    blocks.push(normalizeCodeBlocks(afterToolText.trim()))
+  }
+
   return blocks.join('\n\n')
+}
+
+export const generateInitialThought = (prompt = '') => {
+  const p = (prompt || '').trim()
+  const lower = p.toLowerCase()
+  if (lower.includes('journal')) {
+    return `Planning a thoughtful journal with daily focus, morning intentions, and reflection prompts. Preparing workspace note...`
+  }
+  if (lower.includes('research') || lower.includes('paper') || lower.includes('rag')) {
+    return `Outlining research structure: abstract, background, architecture, and findings. Preparing workspace note...`
+  }
+  if (lower.includes('plan') || lower.includes('itinerary')) {
+    return `Organizing structured plan with milestones, timeline, and actionable items. Preparing workspace note...`
+  }
+  if (lower.includes('expense') || lower.includes('budget') || lower.includes('finance')) {
+    return `Organizing budget categories, calculations, and tables. Preparing workspace note...`
+  }
+  if (lower.includes('folder') || lower.includes('structure')) {
+    return `Evaluating workspace hierarchy and organizing folder layout...`
+  }
+  if (lower.includes('clean') || lower.includes('duplicate') || lower.includes('remove')) {
+    return `Analyzing target notes to identify redundant sections and clean up content...`
+  }
+  if (lower.includes('rename')) {
+    return `Inspecting workspace items for rename operations...`
+  }
+  if (lower.includes('delete')) {
+    return `Targeting workspace items for deletion...`
+  }
+  const cleanSnippet = p.replace(/[\r\n]+/g, ' ').slice(0, 80)
+  return `Analyzing request: "${cleanSnippet}"... Determining necessary workspace actions.`
+}
+
+export const getToolStartThought = (toolName) => {
+  switch (toolName) {
+    case 'createFile':
+      return `Creating note in workspace...`
+    case 'createFolder':
+      return `Setting up folder structure in workspace...`
+    case 'updateFile':
+      return `Targeting note for updates in workspace...`
+    case 'deleteFile':
+      return `Removing note from workspace...`
+    case 'deleteFolder':
+      return `Removing folder from workspace...`
+    case 'moveFile':
+    case 'moveFolder':
+      return `Moving workspace items to target destination...`
+    case 'readFile':
+    case 'checkFile':
+      return `Reading note content to fulfill request...`
+    default:
+      return `Executing ${toolName}...`
+  }
+}
+
+export const getToolResultThought = (toolName, res, target = '') => {
+  if (res && res.success === false) {
+    return `Encountered an issue executing ${toolName}: ${res.error || 'Failed'}.`
+  }
+  const name = target || 'target'
+  switch (toolName) {
+    case 'createFile':
+      return `Successfully created '${name}'. Note saved.\nReviewing structure and preparing walkthrough...`
+    case 'createFolder':
+      return `Successfully created folder '${name}'. Workspace updated.`
+    case 'updateFile':
+      return `Successfully updated '${name}'. Changes saved.`
+    case 'deleteFile':
+    case 'deleteFolder':
+      return `Successfully removed '${name}'.`
+    case 'moveFile':
+    case 'moveFolder':
+      return `Successfully moved '${name}' to destination.`
+    case 'readFile':
+    case 'checkFile':
+      return `Retrieved content from '${name}'. Synthesizing answer...`
+    default:
+      return `Completed ${toolName}. Preparing walkthrough...`
+  }
+}
+
+/**
+ * Fallback parser for leaked DeepSeek Markup Language (DSML) tool invocations.
+ * Intercepts tool calls if the model streamed them into text instead of API tool_calls.
+ */
+export const parseAndExecuteDSML = async (text, sdkTools, executedActions) => {
+  if (!text || (!text.includes('DSML') && !text.includes('tool_calls') && !text.includes('｜') && !text.includes('|'))) {
+    return {
+      cleanedText: text
+        ? text
+            .replace(/<[^>]*[｜|][^>]*>/g, '')
+            .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*>/gi, '')
+            .trim()
+        : '',
+      didExecute: false
+    }
+  }
+
+  let didExecute = false
+
+  const invokeRegex =
+    /<[｜|]{1,2}(?:DSML[｜|]{1,2})?invoke:?([a-zA-Z0-9_-]*)[\s\S]*?>([\s\S]*?)(?:<\/[｜|]{1,2}(?:DSML[｜|]{1,2})?invoke>|$)/gi
+
+  const matches = [...text.matchAll(invokeRegex)]
+  for (const match of matches) {
+    let toolName = (match[1] || '').trim()
+    const body = match[2] || ''
+
+    if (!toolName) {
+      const nameMatch = match[0].match(/name=["']([a-zA-Z0-9_-]+)["']/i)
+      if (nameMatch) toolName = nameMatch[1].trim()
+    }
+
+    if (toolName && sdkTools && sdkTools[toolName]?.execute) {
+      const params = {}
+      const paramRegex =
+        /<[｜|]{1,2}(?:DSML[｜|]{1,2})?parameter\s+name=["']([a-zA-Z0-9_-]+)["']>([\s\S]*?)(?:<\/[｜|]{1,2}(?:DSML[｜|]{1,2})?parameter>|$)/gi
+      const paramMatches = [...body.matchAll(paramRegex)]
+      for (const pMatch of paramMatches) {
+        const paramName = pMatch[1]
+        const paramVal = pMatch[2].trim()
+        params[paramName] = paramVal
+      }
+
+      try {
+        console.log(`[StreamRunner] Intercepted leaked DSML tool: ${toolName}`, params)
+        const res = await sdkTools[toolName].execute(params)
+        if (res?.summary && !executedActions.includes(res.summary)) {
+          executedActions.push(res.summary)
+        }
+        didExecute = true
+      } catch (err) {
+        console.warn(`[StreamRunner] Error executing DSML tool ${toolName}:`, err)
+      }
+    }
+  }
+
+  const cleanedText = text
+    .replace(/<[^>]*[｜|][^>]*>/g, '')
+    .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*>/gi, '')
+    .trim()
+
+  return { cleanedText, didExecute }
 }
 
 export const runDeepSeekStream = async ({
@@ -145,10 +301,15 @@ export const runDeepSeekStream = async ({
 
   const executedActions = []
   let activeToolStatus = ''
-  let reasoningText = ''
+  const lastUserMsg =
+    [...finalMessages].reverse().find((m) => m.role === 'user')?.content || ''
+  let reasoningText = generateInitialThought(lastUserMsg)
   let beforeToolText = ''
   let afterToolText = ''
   let hasToolCalled = false
+  let recordedTarget = ''
+  let isParsingModelThink = false
+  let hasReceivedModelReasoning = false
 
   const updateDisplay = () => {
     const content = buildRealtimeDisplay({
@@ -161,21 +322,75 @@ export const runDeepSeekStream = async ({
     onContentUpdate(content)
   }
 
+  // Initial trigger to render thinking dropdown right away
+  updateDisplay()
+  onThinkingStatusUpdate('Reasoning...')
+
+  let streamingToolName = ''
+  let streamingArgsRaw = ''
+
   for await (const chunk of result.fullStream) {
     if (controller.signal.aborted) break
     if (!chunk || typeof chunk.type !== 'string') continue
 
-    if (chunk.type === 'tool-call') {
+    if (chunk.type === 'tool-input-start' || chunk.type === 'tool-call-streaming-start') {
+      hasToolCalled = true
+      streamingToolName = chunk.toolName || ''
+      streamingArgsRaw = ''
+      recordedTarget = ''
+      activeToolStatus = getToolStatusDescription(streamingToolName, { title: 'note' })
+      const startThought = getToolStartThought(streamingToolName)
+      if (!reasoningText.includes(startThought)) {
+        reasoningText += (reasoningText ? '\n\n' : '') + startThought
+      }
+      updateDisplay()
+      const cleanToolStatus = activeToolStatus.replace(/[*_`]/g, '').trim()
+      onThinkingStatusUpdate(cleanToolStatus)
+    } else if (chunk.type === 'tool-input-delta' || chunk.type === 'tool-call-delta') {
+      const delta = chunk.argsTextDelta || chunk.delta || chunk.textDelta || ''
+      if (delta) {
+        streamingArgsRaw += delta
+        const titleMatch = streamingArgsRaw.match(/"title"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"?/i)
+        const folderMatch = streamingArgsRaw.match(/"folder"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"?/i)
+        const pathMatch = streamingArgsRaw.match(/"path"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"?/i)
+
+        const extractedTitle = titleMatch ? titleMatch[1] : ''
+        const extractedFolder = folderMatch ? folderMatch[1] : ''
+        const extractedPath = pathMatch ? pathMatch[1] : ''
+        const currentTarget = extractedTitle || extractedPath
+
+        if (currentTarget && currentTarget !== recordedTarget) {
+          recordedTarget = currentTarget
+          activeToolStatus = getToolStatusDescription(streamingToolName, {
+            title: extractedTitle || 'note',
+            folder: extractedFolder,
+            path: extractedPath
+          })
+          const thoughtLine =
+            streamingToolName === 'createFile'
+              ? `Drafting '${currentTarget}'${extractedFolder ? ' in ' + extractedFolder : ''}... Organizing structured sections and wikilinks.`
+              : `Targeting '${currentTarget}'...`
+          if (!reasoningText.includes(`'${currentTarget}'`)) {
+            reasoningText += '\n' + thoughtLine
+          }
+          updateDisplay()
+          const cleanToolStatus = activeToolStatus.replace(/[*_`]/g, '').trim()
+          onThinkingStatusUpdate(cleanToolStatus)
+        }
+      }
+    } else if (chunk.type === 'tool-call') {
       hasToolCalled = true
       const args = chunk.input || chunk.args || {}
+      const target = args.title || args.path || args.newTitle || args.targetFolder || recordedTarget
+      if (target) recordedTarget = target
       activeToolStatus = getToolStatusDescription(chunk.toolName, args)
       updateDisplay()
       const cleanToolStatus = activeToolStatus.replace(/[*_`]/g, '').trim()
       onThinkingStatusUpdate(cleanToolStatus)
-    } else if (chunk.type === 'tool-input-start') {
-      onThinkingStatusUpdate(getToolInputStartStatus(chunk.toolName))
     } else if (chunk.type === 'tool-result') {
       activeToolStatus = ''
+      streamingToolName = ''
+      streamingArgsRaw = ''
       const res = chunk.output || chunk.result
       if (res && res.success === false) {
         console.warn(`[StreamRunner] Tool ${chunk.toolName} failed:`, res.error)
@@ -186,29 +401,77 @@ export const runDeepSeekStream = async ({
           executedActions.push(entry)
         }
       }
+      const resTarget = res?.title || recordedTarget
+      const resultThought = getToolResultThought(chunk.toolName, res, resTarget)
+      if (!reasoningText.includes(resultThought.split('\n')[0])) {
+        reasoningText += (reasoningText ? '\n\n' : '') + resultThought
+      }
       updateDisplay()
       onThinkingStatusUpdate('Reflecting on workspace changes...')
     } else if (chunk.type === 'start-step') {
       if (hasToolCalled) {
-        onThinkingStatusUpdate('Synthesizing changes...')
+        onThinkingStatusUpdate('Synthesizing response...')
       }
     } else if (chunk.type === 'reasoning' || chunk.type === 'reasoning-delta') {
       const rDelta = chunk.textDelta || chunk.text || chunk.delta || ''
-      reasoningText += rDelta
-      updateDisplay()
-      onThinkingStatusUpdate('Reasoning...')
+      if (rDelta) {
+        if (!hasReceivedModelReasoning) {
+          reasoningText += (reasoningText ? '\n\n' : '') + rDelta
+          hasReceivedModelReasoning = true
+        } else {
+          reasoningText += rDelta
+        }
+        updateDisplay()
+        onThinkingStatusUpdate('Reasoning...')
+      }
     } else if (chunk.type === 'text-delta') {
-      const delta = chunk.textDelta || chunk.text || chunk.delta || ''
-      if (hasToolCalled) {
-        afterToolText += delta
-      } else {
-        beforeToolText += delta
+      let delta = chunk.textDelta || chunk.text || chunk.delta || ''
+      if (isParsingModelThink) {
+        if (delta.includes('</think>')) {
+          const [thinkPart, afterPart] = delta.split('</think>')
+          reasoningText += thinkPart
+          isParsingModelThink = false
+          delta = afterPart || ''
+        } else {
+          reasoningText += delta
+          delta = ''
+        }
+      } else if (delta.includes('<think>')) {
+        const [beforePart, thinkPart] = delta.split('<think>')
+        if (hasToolCalled) {
+          afterToolText += beforePart
+        } else {
+          beforeToolText += beforePart
+        }
+        if (thinkPart.includes('</think>')) {
+          const [innerThink, rest] = thinkPart.split('</think>')
+          reasoningText += (reasoningText ? '\n\n' : '') + innerThink
+          delta = rest || ''
+        } else {
+          reasoningText += (reasoningText ? '\n\n' : '') + thinkPart
+          isParsingModelThink = true
+          delta = ''
+        }
+      }
+
+      // Strip any raw DSML tokens or unclosed tags from delta so they never appear in chat
+      if (delta) {
+        delta = delta
+          .replace(/<[^>]*[｜|][^>]*>/g, '')
+          .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*>/gi, '')
+          .replace(/<[｜|][^>]*$/g, '')
+          .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*$/gi, '')
+      }
+
+      if (delta) {
+        if (hasToolCalled) {
+          afterToolText += delta
+        } else {
+          beforeToolText += delta
+        }
       }
       updateDisplay()
-      const currentText = hasToolCalled ? afterToolText : beforeToolText
-      if (currentText.trim().length > 30) {
-        onThinkingStatusUpdate('')
-      }
+      onThinkingStatusUpdate('')
     } else if (chunk.type === 'tool-error') {
       const errMsg = chunk.error?.message || chunk.error || 'Unknown tool error'
       console.warn(`[StreamRunner] Tool ${chunk.toolName} errored:`, errMsg)
@@ -235,19 +498,52 @@ export const runDeepSeekStream = async ({
         }
       })
     }
-    const finalText = await result.text
-    if (finalText && finalText.trim()) {
-      if (hasToolCalled) {
-        if (!afterToolText.trim() && finalText.trim() !== beforeToolText.trim()) {
-          afterToolText = finalText.trim()
-        }
-      } else {
-        if (!beforeToolText.trim() || finalText.length > beforeToolText.length) {
-          beforeToolText = finalText.trim()
+
+    const rawFinalText = await result.text
+    if (rawFinalText && rawFinalText.trim()) {
+      // Intercept any leaked DSML tool calls as fallback
+      const { cleanedText, didExecute } = await parseAndExecuteDSML(
+        rawFinalText,
+        sdkTools,
+        executedActions
+      )
+      if (didExecute) {
+        hasToolCalled = true
+      }
+
+      // Strip all <think> blocks and DSML tokens from final text so they NEVER leak to body
+      const cleanFinal = cleanedText
+        .replace(/<think>[\s\S]*?<\/think>/gi, '')
+        .replace(/<\/?think>/gi, '')
+        .replace(/<[^>]*[｜|][^>]*>/g, '')
+        .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*>/gi, '')
+        .trim()
+
+      if (cleanFinal) {
+        if (hasToolCalled) {
+          if (!afterToolText.trim() || cleanFinal.length > afterToolText.length) {
+            afterToolText = cleanFinal
+          }
+        } else {
+          if (!beforeToolText.trim() || cleanFinal.length > beforeToolText.length) {
+            beforeToolText = cleanFinal
+          }
         }
       }
     }
   } catch (_) {}
+
+  // Final cleanup: ensure beforeToolText and afterToolText have NO think tags or DSML
+  const stripStray = (txt) =>
+    (txt || '')
+      .replace(/<think>[\s\S]*?<\/think>/gi, '')
+      .replace(/<\/?think>/gi, '')
+      .replace(/<[^>]*[｜|][^>]*>/g, '')
+      .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*>/gi, '')
+      .trim()
+
+  beforeToolText = stripStray(beforeToolText)
+  afterToolText = stripStray(afterToolText)
 
   updateDisplay()
 }

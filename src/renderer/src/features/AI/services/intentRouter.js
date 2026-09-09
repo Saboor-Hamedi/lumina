@@ -126,6 +126,12 @@ export const detectUserIntent = (message, mentionedSnippets = [], activeSnippet 
     return IntentCategory.TARGETED_EDIT
   }
 
+  const updateAgainPatterns =
+    /\b(update\s+ag?ai?n|rewrite\s+ag?ai?n|change\s+ag?ai?n|try\s+ag?ai?n|do\s+it\s+ag?ai?n|improve\s+ag?ai?n|one\s+more\s+time|another\s+(?:version|pass|try))\b/i
+  if (updateAgainPatterns.test(clean)) {
+    return IntentCategory.TARGETED_EDIT
+  }
+
   if (editVerbs.test(clean) && (hasMentions || activeSnippet || /\b(duplicates?|extra|repeated|section|header|tree|link|links|list|them)\b/i.test(clean))) {
     return IntentCategory.TARGETED_EDIT
   }
@@ -206,6 +212,8 @@ Execution: First call \`createFolder\` for each directory in the plan, then call
 
     case IntentCategory.TARGETED_EDIT:
       return `\n**EXEMPLAR FOR TARGETED EDIT & CLEANUP**:
+User: "please update again" or "update again" or "rewrite again"
+Execution: The user wants another refined iteration or revision of the open note! DO NOT ask questions, request guidance, or talk about tone. Take initiative immediately to elevate the prose, rhythm, and clarity, and call \`updateFile\` with title="current" and the polished text!
 User: "link the files together"
 Execution: Identify the target notes in the workspace (e.g. NoteA, NoteB, NoteC). For EACH note, call \`updateFile\` with title="<Note Title>", position="top", and replace="> 🔗 **Related:** [[Linked Note A]] | [[Linked Note B]]" immediately on step 1 without talking out loud!
 User: "link both of my purchases"

@@ -122,6 +122,11 @@ export const ChatMessageRow = React.memo(
                   imagePrompt={msg.imagePrompt}
                   onCopy={handleCopy}
                 />
+                {isLast && isChatLoading && activeThinkingStatus && !msg.content?.includes('<lumina-activity>') && (
+                  <div style={{ marginTop: '6px' }}>
+                    <ThinkingIndicator label={activeThinkingStatus} />
+                  </div>
+                )}
               </>
             )}
           </div>

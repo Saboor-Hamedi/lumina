@@ -212,7 +212,7 @@ export const ActivityCard = React.memo(({ rawContent, isStreaming = false }) => 
                 </span>
                 {item.isActive && isStreaming ? (
                   <span className="lumina-activity-item-title">
-                    Working on '{item.target}'...
+                    Drafting '{item.target}'...
                   </span>
                 ) : item.type === 'folder' ? (
                   <div className="lumina-activity-folder-title">

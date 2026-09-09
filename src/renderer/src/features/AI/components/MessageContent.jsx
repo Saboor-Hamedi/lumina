@@ -17,10 +17,13 @@ export const MessageContent = React.memo(
       return parseMessageSections(content)
     }, [content])
 
-    const processedBody = useMemo(() => {
-      const combined = [beforeContent, afterContent].filter(Boolean).join('\n\n')
-      return processMarkdownContent(combined)
-    }, [beforeContent, afterContent])
+    const processedBefore = useMemo(() => {
+      return beforeContent ? processMarkdownContent(beforeContent) : ''
+    }, [beforeContent])
+
+    const processedAfter = useMemo(() => {
+      return afterContent ? processMarkdownContent(afterContent) : ''
+    }, [afterContent])
 
     const markdownComponents = useMemo(
       () => ({
@@ -57,12 +60,17 @@ export const MessageContent = React.memo(
         {thinkContent && (
           <ThinkingBlock thinkContent={thinkContent} isStreaming={isStreaming} />
         )}
+        {processedBefore && (
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+            {processedBefore}
+          </ReactMarkdown>
+        )}
         {activityContent && (
           <ActivityCard rawContent={activityContent} isStreaming={isStreaming} />
         )}
-        {processedBody && (
+        {processedAfter && (
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-            {processedBody}
+            {processedAfter}
           </ReactMarkdown>
         )}
       </>

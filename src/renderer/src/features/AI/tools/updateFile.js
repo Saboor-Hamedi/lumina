@@ -49,17 +49,33 @@ export const updateFileTool = aiSdk.tool({
     const cleanTitle = (title || '').trim().toLowerCase().replace(/^@/, '').replace(/\.md$/, '')
     let target = null
 
-    if (cleanTitle === 'current' || !cleanTitle) {
-      target = vs.selectedSnippet || (snippets.length > 0 ? snippets[0] : null)
-    } else {
-      target = snippets.find(
-        (s) => (s.title || '').toLowerCase().replace(/\.md$/, '') === cleanTitle
-      )
-      if (!target) {
-        target = snippets.find((s) => (s.title || '').toLowerCase().includes(cleanTitle))
-      }
-      if (!target && vs.selectedSnippet) {
+    // Prefer active open note if it matches or if requested as 'current'
+    if (vs.selectedSnippet) {
+      const activeTitle = (vs.selectedSnippet.title || '').toLowerCase().replace(/\.md$/, '')
+      if (
+        cleanTitle === 'current' ||
+        !cleanTitle ||
+        activeTitle === cleanTitle ||
+        activeTitle.includes(cleanTitle) ||
+        cleanTitle.includes(activeTitle)
+      ) {
         target = vs.selectedSnippet
+      }
+    }
+
+    if (!target) {
+      if (cleanTitle === 'current' || !cleanTitle) {
+        target = vs.selectedSnippet || (snippets.length > 0 ? snippets[0] : null)
+      } else {
+        target = snippets.find(
+          (s) => (s.title || '').toLowerCase().replace(/\.md$/, '') === cleanTitle
+        )
+        if (!target) {
+          target = snippets.find((s) => (s.title || '').toLowerCase().includes(cleanTitle))
+        }
+        if (!target && vs.selectedSnippet) {
+          target = vs.selectedSnippet
+        }
       }
     }
 
@@ -68,54 +84,147 @@ export const updateFileTool = aiSdk.tool({
     const currentCode =
       vs.drafts?.[target.id] !== undefined ? vs.drafts[target.id] : target.code || ''
 
+    const normalize = (str) =>
+      (str || '')
+        .replace(/\r\n/g, '\n')
+        .replace(/[“”]/g, '"')
+        .replace(/[‘’]/g, "'")
+        .replace(/[—–]/g, '--')
+        .replace(/[ \t]+/g, ' ')
+
     let newCode = currentCode
     let writtenText = replace || content || ''
     let diffPreview = ''
     let summaryText = `Updated **${target.title}**`
     let oldSectionContent = ''
 
+    let changePos = null
+    let changeLine = null
+
     if (position === 'top' && replace !== undefined) {
       const titleMatch = currentCode.match(/^#\s+[^\r\n]+[\r\n]*/m)
       if (titleMatch) {
         const afterTitleIndex = titleMatch.index + titleMatch[0].length
         newCode = currentCode.slice(0, afterTitleIndex) + '\n' + replace.trim() + '\n\n' + currentCode.slice(afterTitleIndex).replace(/^\n+/, '')
+        changePos = afterTitleIndex + 1
+        changeLine = 2
       } else {
         newCode = replace.trim() + '\n\n' + currentCode
+        changePos = 0
+        changeLine = 1
       }
       writtenText = replace.trim()
       summaryText = `Added top references to **${target.title}**`
       diffPreview = `\`\`\`markdown\n${replace.trim()}\n\`\`\``
     } else if (sectionHeader && replace !== undefined) {
       const cleanHeader = sectionHeader.trim()
-      const headerTitle = cleanHeader.replace(/^#{1,6}\s*/, '').trim()
-      const headerRegex = new RegExp(`^(#{1,6})\\s+${headerTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`, 'im')
-      const match = currentCode.match(headerRegex)
+      const headerTitle = cleanHeader.replace(/^#{1,6}\s*/, '').trim().toLowerCase()
+      const isIntroRequest =
+        /^(intro|introduction|opening|opening paragraph|first paragraph|overview|summary|lead|top)$/i.test(
+          headerTitle
+        ) || headerTitle === (target.title || '').toLowerCase()
 
-      if (match) {
-        const headerLevel = match[1].length
-        const fullHeader = match[0]
-        const startIndex = match.index
-        const afterHeaderIndex = startIndex + fullHeader.length
+      const lines = currentCode.split('\n')
 
-        const nextSectionRegex = new RegExp(`\\n(?=#{1,${headerLevel}}\\s)`, 'g')
-        nextSectionRegex.lastIndex = afterHeaderIndex
-        const nextMatch = nextSectionRegex.exec(currentCode)
-        const endIndex = nextMatch ? nextMatch.index : currentCode.length
+      let matchLineIndex = -1
+      let matchHeaderLevel = 2
+      let matchFullHeader = ''
 
-        oldSectionContent = currentCode.slice(startIndex, endIndex).trim()
-        const newSectionContent = `${fullHeader}\n\n${replace.trim()}\n`
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i]
+        const hMatch = line.match(/^(#{1,6})\s+(.*)$/)
+        if (hMatch) {
+          const level = hMatch[1].length
+          const lineText = hMatch[2].trim().toLowerCase()
+          const cleanLineText = lineText.replace(/^[0-9.\s\-_:]+/, '').trim()
 
-        newCode = currentCode.slice(0, startIndex) + newSectionContent + (nextMatch ? '\n' + currentCode.slice(endIndex + 1) : '')
-        writtenText = newSectionContent
-        summaryText = `Updated section \`${fullHeader}\` in **${target.title}**`
-        diffPreview = `\`\`\`markdown\n${newSectionContent}\n\`\`\``
+          if (
+            lineText === headerTitle ||
+            cleanLineText === headerTitle ||
+            lineText.includes(headerTitle) ||
+            headerTitle.includes(cleanLineText)
+          ) {
+            matchLineIndex = i
+            matchHeaderLevel = level
+            matchFullHeader = line
+            break
+          }
+        }
+      }
+
+      if (matchLineIndex !== -1) {
+        let endLineIndex = lines.length
+        for (let j = matchLineIndex + 1; j < lines.length; j++) {
+          const nextH = lines[j].match(/^(#{1,6})\s+/)
+          if (nextH) {
+            if (matchHeaderLevel === 1 || nextH[1].length <= matchHeaderLevel) {
+              endLineIndex = j
+              break
+            }
+          }
+        }
+
+        let cleanBody = replace.trim()
+        const leadingHeadingMatch = cleanBody.match(/^#{1,6}\s+[^\r\n]+[\r\n]*/)
+        if (leadingHeadingMatch) {
+          const headingText = leadingHeadingMatch[0].replace(/^#{1,6}\s*/, '').trim().toLowerCase()
+          if (
+            headingText === headerTitle ||
+            headerTitle.includes(headingText) ||
+            headingText.includes(headerTitle) ||
+            headingText === (target.title || '').toLowerCase()
+          ) {
+            cleanBody = cleanBody.slice(leadingHeadingMatch[0].length).trim()
+          }
+        }
+
+        const beforeLines = lines.slice(0, matchLineIndex + 1)
+        const afterLines = lines.slice(endLineIndex)
+        newCode = [...beforeLines, '', cleanBody, '', ...afterLines].join('\n')
+        writtenText = `${matchFullHeader}\n\n${cleanBody}`
+        summaryText = `Updated section \`${matchFullHeader}\` in **${target.title}**`
+        diffPreview = `\`\`\`markdown\n${matchFullHeader}\n\n${cleanBody}\n\`\`\``
+        changeLine = matchLineIndex + 1
+        changePos = beforeLines.join('\n').length + 1
+      } else if (isIntroRequest) {
+        // Smart update for opening/introduction before first heading
+        let titleLineIdx = -1
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].match(/^#\s+/)) {
+            titleLineIdx = i
+            break
+          }
+        }
+
+        let firstSubheadingIdx = lines.length
+        const searchStart = titleLineIdx !== -1 ? titleLineIdx + 1 : 0
+        for (let j = searchStart; j < lines.length; j++) {
+          if (lines[j].match(/^#{1,6}\s+/)) {
+            firstSubheadingIdx = j
+            break
+          }
+        }
+
+        let cleanBody = replace.trim()
+        // Strip duplicate main title from replacement if beforeLines already has it
+        cleanBody = cleanBody.replace(/^#\s+[^\r\n]+[\r\n]*/, '').trim()
+
+        const beforeLines = titleLineIdx !== -1 ? lines.slice(0, titleLineIdx + 1) : []
+        const afterLines = lines.slice(firstSubheadingIdx)
+        newCode = [...beforeLines, '', cleanBody, '', ...afterLines].join('\n')
+        writtenText = cleanBody
+        summaryText = `Updated opening section in **${target.title}**`
+        diffPreview = `\`\`\`markdown\n${cleanBody}\n\`\`\``
+        changeLine = titleLineIdx !== -1 ? titleLineIdx + 2 : 1
+        changePos = beforeLines.length > 0 ? beforeLines.join('\n').length + 1 : 0
       } else {
-        const formattedHeader = cleanHeader.startsWith('#') ? cleanHeader : `## ${cleanHeader}`
+        const formattedHeader = cleanHeader.startsWith('#') ? cleanHeader : `## ${sectionHeader.trim()}`
         const newSection = `\n\n${formattedHeader}\n\n${replace.trim()}\n`
         newCode = currentCode.trimEnd() + newSection
         writtenText = newSection
         summaryText = `Added section \`${formattedHeader}\` to **${target.title}**`
         diffPreview = `\`\`\`markdown\n${formattedHeader}\n\n${replace.trim()}\n\`\`\``
+        changePos = currentCode.trimEnd().length + 2
       }
     } else if (insertAfter !== undefined && replace !== undefined) {
       const trimmedTarget = insertAfter.trim()
@@ -129,15 +238,33 @@ export const updateFileTool = aiSdk.tool({
       if (index !== -1) {
         const insertionPoint = index + trimmedTarget.length
         newCode = currentCode.slice(0, insertionPoint) + '\n\n' + replace.trim() + '\n' + currentCode.slice(insertionPoint)
-        writtenText = replace.trim()
-        summaryText = `Inserted updates into **${target.title}**`
-        diffPreview = `\`\`\`markdown\n${replace.trim()}\n\`\`\``
+        changePos = insertionPoint + 2
       } else {
-        newCode = currentCode.trimEnd() + '\n\n' + replace.trim() + '\n'
-        writtenText = replace.trim()
-        summaryText = `Appended updates to **${target.title}**`
-        diffPreview = `\`\`\`markdown\n${replace.trim()}\n\`\`\``
+        // Try finding heading or line containing insertAfter
+        const lines = currentCode.split('\n')
+        const lowerTarget = trimmedTarget.toLowerCase()
+        let foundLine = -1
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].toLowerCase().includes(lowerTarget)) {
+            foundLine = i
+            break
+          }
+        }
+
+        if (foundLine !== -1) {
+          const beforeLines = lines.slice(0, foundLine + 1)
+          const afterLines = lines.slice(foundLine + 1)
+          newCode = [...beforeLines, '', replace.trim(), '', ...afterLines].join('\n')
+          changeLine = foundLine + 2
+          changePos = beforeLines.join('\n').length + 1
+        } else {
+          newCode = currentCode.trimEnd() + '\n\n' + replace.trim() + '\n'
+          changePos = currentCode.trimEnd().length + 2
+        }
       }
+      writtenText = replace.trim()
+      summaryText = `Inserted updates into **${target.title}**`
+      diffPreview = `\`\`\`markdown\n${replace.trim()}\n\`\`\``
     } else if (insertBefore !== undefined && replace !== undefined) {
       const trimmedTarget = insertBefore.trim()
       let index = currentCode.indexOf(trimmedTarget)
@@ -149,61 +276,232 @@ export const updateFileTool = aiSdk.tool({
 
       if (index !== -1) {
         newCode = currentCode.slice(0, index) + replace.trim() + '\n\n' + currentCode.slice(index)
-        writtenText = replace.trim()
-        summaryText = `Inserted updates before targeted line in **${target.title}**`
-        diffPreview = `\`\`\`markdown\n${replace.trim()}\n\`\`\``
+        changePos = index
       } else {
-        newCode = replace.trim() + '\n\n' + currentCode
-        writtenText = replace.trim()
-        summaryText = `Prepended updates to **${target.title}**`
-        diffPreview = `\`\`\`markdown\n${replace.trim()}\n\`\`\``
+        const lines = currentCode.split('\n')
+        const lowerTarget = trimmedTarget.toLowerCase()
+        let foundLine = -1
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].toLowerCase().includes(lowerTarget)) {
+            foundLine = i
+            break
+          }
+        }
+
+        if (foundLine !== -1) {
+          const beforeLines = lines.slice(0, foundLine)
+          const afterLines = lines.slice(foundLine)
+          newCode = [...beforeLines, replace.trim(), '', ...afterLines].join('\n')
+          changeLine = foundLine + 1
+          changePos = beforeLines.join('\n').length
+        } else {
+          newCode = replace.trim() + '\n\n' + currentCode
+          changePos = 0
+          changeLine = 1
+        }
       }
+      writtenText = replace.trim()
+      summaryText = `Prepended updates to **${target.title}**`
+      diffPreview = `\`\`\`markdown\n${replace.trim()}\n\`\`\``
     } else if (search !== undefined) {
+      const normCurrent = normalize(currentCode)
+      const normSearch = normalize(search).trim()
+      const words = normSearch.split(/\s+/).filter(Boolean)
+
       if (search === '') {
         newCode = (replace ?? '') + '\n' + currentCode
         writtenText = replace ?? ''
         summaryText = `Updated top of **${target.title}**`
-        diffPreview = `\`\`\`markdown\n${replace ?? ''}\n\`\`\``
+        changePos = 0
+        changeLine = 1
       } else if (currentCode.includes(search)) {
+        changePos = currentCode.indexOf(search)
         newCode = currentCode.replace(search, replace ?? '')
         writtenText = replace ?? ''
         summaryText = `Updated targeted section in **${target.title}**`
-        diffPreview = `\`\`\`markdown\n${replace ?? ''}\n\`\`\``
       } else {
-        const normCurrent = currentCode.replace(/\r\n/g, '\n')
-        const normSearch = search.replace(/\r\n/g, '\n')
-        if (normCurrent.includes(normSearch)) {
-          newCode = normCurrent.replace(normSearch, replace ?? '')
-          writtenText = replace ?? ''
-          summaryText = `Updated targeted section in **${target.title}**`
-          diffPreview = `\`\`\`markdown\n${replace ?? ''}\n\`\`\``
+        // Safe block-level paragraph replacement (prevents duplicate or sliced words)
+        const blocks = currentCode.split(/\n{2,}/)
+        let matchedBlockIdx = -1
+
+        for (let i = 0; i < blocks.length; i++) {
+          const block = blocks[i]
+          const normBlock = normalize(block).trim()
+
+          if (normBlock === normSearch || normBlock.includes(normSearch) || normSearch.includes(normBlock)) {
+            matchedBlockIdx = i
+            break
+          }
+
+          if (words.length >= 4) {
+            const startWords = words.slice(0, Math.min(5, words.length)).join(' ').toLowerCase()
+            const endWords = words.slice(-Math.min(4, words.length)).join(' ').toLowerCase()
+            const lowerBlock = normBlock.toLowerCase()
+            if (lowerBlock.includes(startWords) && lowerBlock.includes(endWords)) {
+              matchedBlockIdx = i
+              break
+            }
+          }
+        }
+
+        if (matchedBlockIdx !== -1) {
+          let lineCount = 1
+          for (let k = 0; k < matchedBlockIdx; k++) {
+            lineCount += blocks[k].split('\n').length + 1
+          }
+          changeLine = lineCount
+
+          let cleanReplace = (replace ?? '').trim()
+          const blockHeading = blocks[matchedBlockIdx].match(/^(#{1,6}\s+[^\r\n]+[\r\n]*)/)
+          if (blockHeading && !/^#{1,6}\s+/.test(cleanReplace)) {
+            cleanReplace = blockHeading[1].trim() + '\n\n' + cleanReplace
+          }
+
+          blocks[matchedBlockIdx] = cleanReplace
+          newCode = blocks.join('\n\n')
+          writtenText = cleanReplace
+          summaryText = `Updated targeted paragraph in **${target.title}**`
+          changePos = blocks.slice(0, matchedBlockIdx).join('\n\n').length + 2
         } else {
-          const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-          const regex = new RegExp(escaped, 'i')
-          if (regex.test(currentCode)) {
-            newCode = currentCode.replace(regex, replace ?? '')
+          // Line-by-line whitespace-insensitive block matching
+          const currentLines = currentCode.split('\n')
+          const searchLines = normSearch.split('\n').map((l) => l.trim()).filter(Boolean)
+          let matchIdx = -1
+          let matchLen = 0
+
+          if (searchLines.length > 0) {
+            for (let i = 0; i <= currentLines.length - searchLines.length; i++) {
+              let allMatch = true
+              for (let j = 0; j < searchLines.length; j++) {
+                if (normalize(currentLines[i + j]).trim() !== searchLines[j]) {
+                  allMatch = false
+                  break
+                }
+              }
+              if (allMatch) {
+                matchIdx = i
+                matchLen = searchLines.length
+                break
+              }
+            }
+          }
+
+          if (matchIdx !== -1) {
+            const before = currentLines.slice(0, matchIdx).join('\n')
+            const after = currentLines.slice(matchIdx + matchLen).join('\n')
+            newCode = (before ? before + '\n' : '') + (replace ?? '') + (after ? '\n' + after : '')
             writtenText = replace ?? ''
-            summaryText = `Updated targeted section in **${target.title}**`
-            diffPreview = `\`\`\`markdown\n${replace ?? ''}\n\`\`\``
+            summaryText = `Updated targeted block in **${target.title}**`
+            changeLine = matchIdx + 1
+            changePos = before ? before.length + 1 : 0
           } else {
-            return {
-              success: false,
-              error: `Target text to replace was not found in "${target.title}".`
+            const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+            const regex = new RegExp(escaped, 'i')
+            if (regex.test(currentCode)) {
+              changePos = currentCode.search(regex)
+              newCode = currentCode.replace(regex, replace ?? '')
+              writtenText = replace ?? ''
+              summaryText = `Updated targeted section in **${target.title}**`
+            } else {
+              return {
+                success: false,
+                error: `Target text to replace was not found in "${target.title}". Tip: specify sectionHeader to update by heading.`
+              }
             }
           }
         }
       }
+      diffPreview = `\`\`\`markdown\n${replace ?? ''}\n\`\`\``
     } else if (content !== undefined) {
-      newCode = content
-      writtenText = content
-      summaryText = `Updated entire document for **${target.title}**`
-      diffPreview = `\`\`\`markdown\n${content.slice(0, 300)}${content.length > 300 ? '...' : ''}\n\`\`\``
+      const trimmedContent = content.trim()
+      const contentLines = trimmedContent.split('\n')
+      const firstLine = contentLines[0] || ''
+      const hasHeading = /^#{1,6}\s+/.test(firstLine)
+
+      // Guard: If content is much shorter than currentCode and does NOT start with # Title,
+      // it is a partial section update that should NOT wipe the rest of the document!
+      const isMuchShorter = currentCode.length > 400 && trimmedContent.length < currentCode.length * 0.5
+      const isMissingMainTitle = !firstLine.startsWith('# ')
+
+      if (isMuchShorter && isMissingMainTitle) {
+        const currentLines = currentCode.split('\n')
+        if (hasHeading) {
+          const hMatch = firstLine.match(/^(#{1,6})\s+(.*)$/)
+          const level = hMatch[1].length
+          const hText = hMatch[2].trim().toLowerCase()
+
+          let matchIdx = -1
+          for (let i = 0; i < currentLines.length; i++) {
+            const lMatch = currentLines[i].match(/^(#{1,6})\s+(.*)$/)
+            if (lMatch && (lMatch[2].toLowerCase().includes(hText) || hText.includes(lMatch[2].toLowerCase()))) {
+              matchIdx = i
+              break
+            }
+          }
+
+          if (matchIdx !== -1) {
+            let endIdx = currentLines.length
+            for (let j = matchIdx + 1; j < currentLines.length; j++) {
+              const nH = currentLines[j].match(/^(#{1,6})\s+/)
+              if (nH && nH[1].length <= level) {
+                endIdx = j
+                break
+              }
+            }
+            const beforeLines = currentLines.slice(0, matchIdx)
+            newCode = [...beforeLines, trimmedContent, '', ...currentLines.slice(endIdx)].join('\n')
+            writtenText = trimmedContent
+            summaryText = `Updated section \`${firstLine}\` in **${target.title}**`
+            changeLine = matchIdx + 1
+            changePos = beforeLines.length > 0 ? beforeLines.join('\n').length + 1 : 0
+          } else {
+            newCode = currentCode.trimEnd() + '\n\n' + trimmedContent + '\n'
+            writtenText = trimmedContent
+            summaryText = `Appended updates to **${target.title}**`
+            changePos = currentCode.trimEnd().length + 2
+          }
+        } else {
+          // Content is a partial paragraph without heading - update opening section or match paragraph!
+          let titleLineIdx = -1
+          for (let i = 0; i < currentLines.length; i++) {
+            if (currentLines[i].match(/^#\s+/)) {
+              titleLineIdx = i
+              break
+            }
+          }
+
+          let firstSubheadingIdx = currentLines.length
+          const searchStart = titleLineIdx !== -1 ? titleLineIdx + 1 : 0
+          for (let j = searchStart; j < currentLines.length; j++) {
+            if (currentLines[j].match(/^#{1,6}\s+/)) {
+              firstSubheadingIdx = j
+              break
+            }
+          }
+
+          const beforeLines = titleLineIdx !== -1 ? currentLines.slice(0, titleLineIdx + 1) : []
+          const afterLines = currentLines.slice(firstSubheadingIdx)
+          newCode = [...beforeLines, '', trimmedContent, '', ...afterLines].join('\n')
+          writtenText = trimmedContent
+          summaryText = `Updated opening section in **${target.title}**`
+          changeLine = titleLineIdx !== -1 ? titleLineIdx + 2 : 1
+          changePos = beforeLines.length > 0 ? beforeLines.join('\n').length + 1 : 0
+        }
+      } else {
+        newCode = content
+        writtenText = content
+        summaryText = `Updated **${target.title}**`
+      }
+      diffPreview = `\`\`\`markdown\n${writtenText.slice(0, 300)}${writtenText.length > 300 ? '...' : ''}\n\`\`\``
     } else {
       return {
         success: false,
         error: 'Must provide `sectionHeader`, `search` & `replace`, `insertAfter`, `insertBefore`, or `content`'
       }
     }
+
+    // Auto-heal duplicate consecutive headings if any were created
+    newCode = newCode.replace(/^(#{1,6}\s+[^\r\n]+)\r?\n+(?:\1\r?\n*)+/gm, '$1\n\n')
 
     const isCurrentlySelected = vs.selectedSnippet?.id === target.id
     if (isCurrentlySelected && vs.setSelectedSnippet) {
@@ -216,12 +514,22 @@ export const updateFileTool = aiSdk.tool({
         targetId: target.id,
         oldCode: currentCode,
         newCode: newCode,
+        changePos,
+        changeLine,
+        scrollToBottom: false,
         isCurrentlySelected
       })
     } catch (_) {
       window.dispatchEvent(
         new CustomEvent('ai-saved-snippet', {
-          detail: { id: target.id, code: newCode, title: target.title }
+          detail: {
+            id: target.id,
+            code: newCode,
+            title: target.title,
+            changePos,
+            changeLine,
+            scrollToBottom: false
+          }
         })
       )
     }

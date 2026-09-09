@@ -44,12 +44,18 @@ export const appendToFileTool = aiSdk.tool({
         targetId: target.id,
         oldCode: currentCode,
         newCode: newCode,
+        changePos: currentCode.trimEnd().length,
         isCurrentlySelected
       })
     } catch (_) {
       window.dispatchEvent(
         new CustomEvent('ai-saved-snippet', {
-          detail: { id: target.id, code: newCode, title: target.title }
+          detail: {
+            id: target.id,
+            code: newCode,
+            title: target.title,
+            changePos: currentCode.trimEnd().length
+          }
         })
       )
     }

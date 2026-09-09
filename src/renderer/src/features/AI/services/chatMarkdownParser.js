@@ -71,11 +71,27 @@ export const parseMessageSections = (content) => {
   let think = ''
   let remaining = content
 
-  const thinkMatch = content.match(/<think>([\s\S]*?)(?:<\/think>|$)/i)
-  if (thinkMatch) {
-    think = thinkMatch[1]
-    remaining = remaining.replace(/<think>[\s\S]*?(?:<\/think>|$)/i, '').trim()
+  // Match all <think>...</think> blocks globally
+  const thinkMatches = [...content.matchAll(/<think>([\s\S]*?)(?:<\/think>|$)/gi)]
+  if (thinkMatches.length > 0) {
+    think = thinkMatches
+      .map((m) =>
+        (m[1] || '')
+          .replace(/<[^>]*[｜|][^>]*>/g, '')
+          .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*>/gi, '')
+          .trim()
+      )
+      .filter(Boolean)
+      .join('\n\n')
+    remaining = remaining.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '').trim()
   }
+
+  // Strip any stray opening/closing tags or DSML tokens that might leak
+  remaining = remaining
+    .replace(/<\/?think>/gi, '')
+    .replace(/<[^>]*[｜|][^>]*>/g, '')
+    .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*>/gi, '')
+    .trim()
 
   let beforeText = ''
   let activityText = ''
@@ -121,8 +137,16 @@ export const parseMessageSections = (content) => {
     }
   }
 
-  beforeText = beforeText.replace(/<\/?lumina-activity>/gi, '').trim()
-  afterText = afterText.replace(/<\/?lumina-activity>/gi, '').trim()
+  const cleanSection = (txt) =>
+    (txt || '')
+      .replace(/<\/?lumina-activity>/gi, '')
+      .replace(/<\/?think>/gi, '')
+      .replace(/<[｜|]{1,2}[^>]+[｜|]{1,2}>/g, '')
+      .replace(/<\/[｜|]{1,2}[^>]+[｜|]{1,2}>/g, '')
+      .trim()
+
+  beforeText = cleanSection(beforeText)
+  afterText = cleanSection(afterText)
 
   return {
     thinkContent: think,

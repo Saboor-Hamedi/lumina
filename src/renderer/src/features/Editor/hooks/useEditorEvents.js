@@ -209,6 +209,9 @@ export function useEditorEvents({
     const handleAISave = (e) => {
       if (e.detail?.id !== snippet?.id) return
       const newCode = e.detail?.code ?? ''
+      const explicitPos = e.detail?.changePos
+      const explicitLine = e.detail?.changeLine
+      const scrollToBottom = e.detail?.scrollToBottom === true
 
       lastSaveTimeRef.current = Date.now()
       lastSavedCodeRef.current = newCode
@@ -221,31 +224,65 @@ export function useEditorEvents({
         const view = realViewRef.current
         const current = view.state.doc.toString()
         if (current !== newCode) {
+          // Locate where the update occurred in the document
+          let targetPos = null
+          if (typeof explicitPos === 'number') {
+            targetPos = Math.max(0, Math.min(explicitPos, newCode.length))
+          } else if (typeof explicitLine === 'number') {
+            // will resolve after dispatch
+          } else if (!scrollToBottom) {
+            // Compute the first difference between current text and newCode
+            let diffIdx = 0
+            const minLen = Math.min(current.length, newCode.length)
+            while (diffIdx < minLen && current[diffIdx] === newCode[diffIdx]) {
+              diffIdx++
+            }
+            targetPos = diffIdx
+          }
+
+          const selectionPos = scrollToBottom
+            ? newCode.length
+            : (targetPos ?? Math.min(view.state.selection.main.head, newCode.length))
+
           view.dispatch({
             changes: { from: 0, to: view.state.doc.length, insert: newCode },
-            selection: { anchor: newCode.length, head: newCode.length },
-            scrollIntoView: true
+            selection: { anchor: selectionPos, head: selectionPos }
           })
 
           const performScroll = () => {
+            if (!realViewRef.current) return
+            const activeView = realViewRef.current
             const scroller =
-              view.dom?.closest('.editor-scroller') || document.querySelector('.editor-scroller')
-            if (scroller) {
-              scroller.scrollTop = scroller.scrollHeight
+              activeView.dom?.closest('.editor-scroller') || document.querySelector('.editor-scroller')
+
+            if (scrollToBottom) {
+              if (scroller) scroller.scrollTop = scroller.scrollHeight
+              if (activeView.scrollDOM) activeView.scrollDOM.scrollTop = activeView.scrollDOM.scrollHeight
+              return
             }
-            if (view.scrollDOM) {
-              view.scrollDOM.scrollTop = view.scrollDOM.scrollHeight
+
+            try {
+              let scrollLine = null
+              if (typeof explicitLine === 'number') {
+                const targetLineNum = Math.max(1, Math.min(explicitLine, activeView.state.doc.lines))
+                scrollLine = activeView.state.doc.line(targetLineNum)
+              } else if (typeof selectionPos === 'number') {
+                scrollLine = activeView.state.doc.lineAt(selectionPos)
+              }
+
+              if (scrollLine && scroller) {
+                const lineBlock = activeView.lineBlockAt(scrollLine.from)
+                // Center the modified section vertically in the viewport so the user clearly sees the update
+                const scrollY = lineBlock.top - scroller.clientHeight / 2 + lineBlock.height / 2
+                scroller.scrollTo({ top: Math.max(0, scrollY), behavior: 'smooth' })
+              }
+            } catch (err) {
+              console.warn('[Editor] Scroll to change position error:', err)
             }
           }
 
-          performScroll()
           requestAnimationFrame(performScroll)
-          setTimeout(performScroll, 20)
-        }
-      } else {
-        const scroller = document.querySelector('.editor-scroller')
-        if (scroller) {
-          scroller.scrollTop = scroller.scrollHeight
+          setTimeout(performScroll, 50)
         }
       }
     }
