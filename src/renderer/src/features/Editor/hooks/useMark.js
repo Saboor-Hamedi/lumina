@@ -41,7 +41,7 @@ export function toggleTaskMark(view) {
   }
 
   if (changes.length > 0) {
-    view.dispatch({ changes })
+    view.dispatch({ changes, scrollIntoView: true })
     return true
   }
   return false
@@ -64,7 +64,8 @@ export function handleTaskEnter(view) {
   if (emptyTaskMatch && pos === line.to) {
     view.dispatch({
       changes: { from: line.from, to: line.to, insert: '' },
-      selection: { anchor: line.from }
+      selection: { anchor: line.from },
+      scrollIntoView: true
     })
     return true
   }
@@ -77,7 +78,8 @@ export function handleTaskEnter(view) {
     const insertText = `\n${indentAndBox} `
     view.dispatch({
       changes: { from: pos, insert: insertText },
-      selection: { anchor: pos + insertText.length }
+      selection: { anchor: pos + insertText.length },
+      scrollIntoView: true
     })
     return true
   }

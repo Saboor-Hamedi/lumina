@@ -133,7 +133,18 @@ export function useEditorExtensions({
               )
             }, 500)
 
-            if (update.docChanged || update.selectionSet || update.transactions.some((tr) => tr.scrollIntoView)) {
+            const hasExplicitScroll = update.transactions.some((tr) => tr.scrollIntoView)
+            const isInteractiveUserEdit =
+              update.view.hasFocus &&
+              update.transactions.some(
+                (tr) =>
+                  tr.isUserEvent('input') ||
+                  tr.isUserEvent('delete') ||
+                  tr.isUserEvent('keyboard') ||
+                  tr.isUserEvent('select')
+              )
+
+            if (hasExplicitScroll || isInteractiveUserEdit) {
               const v = update.view
               requestAnimationFrame(() => {
                 if (!v || v.isDestroyed) return
@@ -217,7 +228,8 @@ export function useEditorExtensions({
                 // Indent list or task item: add 2 spaces at line start
                 view.dispatch({
                   changes: { from: line.from, insert: '  ' },
-                  selection: { anchor: sel.head + 2 }
+                  selection: { anchor: sel.head + 2 },
+                  scrollIntoView: true
                 })
                 return true
               }
@@ -225,7 +237,8 @@ export function useEditorExtensions({
               // Standard Tab: insert 2 spaces at cursor / replace selection
               view.dispatch({
                 changes: { from: sel.from, to: sel.to, insert: '  ' },
-                selection: { anchor: sel.from + 2 }
+                selection: { anchor: sel.from + 2 },
+                scrollIntoView: true
               })
               return true
             }
@@ -251,7 +264,7 @@ export function useEditorExtensions({
                   }
                 }
                 if (changes.length > 0) {
-                  view.dispatch({ changes })
+                  view.dispatch({ changes, scrollIntoView: true })
                 }
                 return true
               }
@@ -260,13 +273,15 @@ export function useEditorExtensions({
               if (line.text.startsWith('  ')) {
                 view.dispatch({
                   changes: { from: line.from, to: line.from + 2, insert: '' },
-                  selection: { anchor: Math.max(line.from, sel.head - 2) }
+                  selection: { anchor: Math.max(line.from, sel.head - 2) },
+                  scrollIntoView: true
                 })
                 return true
               } else if (line.text.startsWith(' ')) {
                 view.dispatch({
                   changes: { from: line.from, to: line.from + 1, insert: '' },
-                  selection: { anchor: Math.max(line.from, sel.head - 1) }
+                  selection: { anchor: Math.max(line.from, sel.head - 1) },
+                  scrollIntoView: true
                 })
                 return true
               }
