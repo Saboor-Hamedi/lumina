@@ -1,0 +1,380 @@
+/**
+ * LuminaSession & LuminaSessionMenu Styles
+ * Modern integrated flex sidebar for Lumina AI chat history with context menu support.
+ */
+
+/* Container Layout */
+.ai-chat-docs-modal {
+  background: var(--bg-panel) !important;
+  border-color: var(--border-card) !important;
+  color: var(--text-main) !important;
+}
+
+.ai-chat-docs-modal .docs-modal-header {
+  background: var(--bg-panel) !important;
+  border-bottom: 1px solid var(--border-card) !important;
+  color: var(--text-main) !important;
+}
+
+.lumina-ai-container {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+  background: var(--bg-app);
+}
+
+.lumina-ai-content {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  background: var(--bg-app);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Sidebar */
+.lumina-session-sidebar {
+  width: 236px;
+  min-width: 236px;
+  max-width: 236px;
+  height: 100%;
+  background: var(--bg-sidebar, #121218);
+  border-right: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              min-width 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              max-width 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.18s ease;
+  user-select: none;
+  z-index: 20;
+}
+
+.lumina-session-sidebar.closed {
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  opacity: 0 !important;
+  border-right: none !important;
+  pointer-events: none !important;
+}
+
+/* Search Wrapper */
+.lumina-session-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.lumina-session-search-icon {
+  position: absolute;
+  left: 20px;
+  color: var(--text-muted, #888899);
+  pointer-events: none;
+}
+
+.lumina-session-search-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: var(--text-main, #ffffff);
+  padding: 6px 26px 6px 28px;
+  font-size: 11.5px;
+  outline: none;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.lumina-session-search-input:focus {
+  border-color: rgba(64, 186, 250, 0.5);
+  box-shadow: 0 0 0 2px rgba(64, 186, 250, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.lumina-session-search-clear {
+  position: absolute;
+  right: 18px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #888899);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  transition: color 0.15s ease;
+}
+
+.lumina-session-search-clear:hover {
+  color: var(--text-main, #ffffff);
+}
+
+/* New Chat Button */
+.lumina-session-new-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  margin: 8px 10px 4px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: var(--text-main, #ffffff);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.lumina-session-new-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(64, 186, 250, 0.35);
+  color: var(--text-accent, #40bafa);
+}
+
+/* Scrollable area */
+.lumina-session-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px 8px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.lumina-session-scrollable::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Groups */
+.lumina-session-group {
+  margin-bottom: 6px;
+}
+
+.lumina-session-group-title {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  color: var(--text-faint, rgba(255, 255, 255, 0.4));
+  padding: 6px 8px 3px 8px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+}
+
+/* Item */
+.lumina-session-item {
+  height: 28px;
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted, #888899);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: all 0.12s ease;
+  position: relative;
+  border-radius: 6px;
+  margin: 1px 0;
+}
+
+.lumina-session-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-main, #ffffff);
+}
+
+.lumina-session-item.active {
+  background: rgba(64, 186, 250, 0.12);
+  color: var(--text-accent, #40bafa);
+  font-weight: 600;
+}
+
+.lumina-session-item-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Action buttons on item */
+.lumina-session-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  margin-left: auto;
+  padding-left: 4px;
+}
+
+.lumina-session-item:hover .lumina-session-item-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.lumina-session-action-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #888899);
+  cursor: pointer;
+  padding: 3px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.lumina-session-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-main, #ffffff);
+}
+
+.lumina-session-action-btn.delete:hover {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+/* Inline rename */
+.lumina-session-rename-box {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.lumina-session-rename-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(64, 186, 250, 0.5);
+  border-radius: 4px;
+  color: var(--text-main, #ffffff);
+  padding: 2px 6px;
+  font-size: 11.5px;
+  outline: none;
+  font-family: inherit;
+}
+
+.lumina-session-rename-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #888899);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s ease;
+}
+
+.lumina-session-rename-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-main, #ffffff);
+}
+
+/* Empty state */
+.lumina-session-empty {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--text-faint, rgba(255, 255, 255, 0.4));
+  font-size: 11.5px;
+}
+
+/* Context Menu */
+.lumina-session-menu {
+  width: 184px;
+  background: var(--bg-panel, #181824);
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.12));
+  border-radius: 8px;
+  box-shadow: 0 14px 36px -6px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  padding: 4px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: menuFadeIn 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes menuFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.lumina-session-menu-header {
+  padding: 5px 8px 4px 8px;
+}
+
+.lumina-session-menu-title {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-faint, rgba(255, 255, 255, 0.4));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+
+.lumina-session-menu-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.07);
+  margin: 3px 0;
+}
+
+.lumina-session-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  color: var(--text-muted, #ccc);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  text-align: left;
+  user-select: none;
+}
+
+.lumina-session-menu-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main, #ffffff);
+}
+
+.lumina-session-menu-item.danger {
+  color: #f87171;
+}
+
+.lumina-session-menu-item.danger:hover {
+  background: rgba(239, 68, 68, 0.16);
+  color: #fca5a5;
+}

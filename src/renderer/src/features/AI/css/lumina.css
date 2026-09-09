@@ -3,5 +3,6 @@
  */
 @import './aiModal.css';
 @import './sessionsSidebar.css';
+@import './luminaSession.css';
 @import './activityCard.css';
 @import './chatMessages.css';

@@ -201,8 +201,8 @@
   height: 100%;
   width: 100%;
   min-width: 300px;
-  background: var(--bg-sidebar);
-  color: var(--text-main);
+  background: var(--bg-sidebar) !important;
+  color: var(--text-main) !important;
   box-sizing: border-box;
   user-select: none;
 }
@@ -215,8 +215,8 @@
   min-height: 32px !important;
   max-height: 32px !important;
   display: flex;
-  background: var(--bg-sidebar);
-  border-bottom: 1px solid var(--border-dim);
+  background: var(--bg-editor, var(--bg-sidebar)) !important;
+  border-bottom: 1px solid var(--border-dim) !important;
   flex-shrink: 0;
   box-sizing: border-box;
 }
@@ -224,6 +224,7 @@
 .panel-header-tabs.inspector-tabbar {
   padding: 0;
   overflow: hidden;
+  background: var(--bg-editor, var(--bg-sidebar)) !important;
 }
 
 .panel-header-tabs .inspector-tab {
@@ -256,10 +257,10 @@
 }
 
 .panel-header-tabs .inspector-tab.active {
-  background: transparent;
-  color: var(--text-main);
+  background: var(--bg-panel, var(--bg-sidebar)) !important;
+  color: var(--text-main) !important;
   font-weight: 600;
-  border-bottom: 2px solid var(--text-accent);
+  border-bottom: 2px solid var(--text-accent) !important;
 }
 
 .inspector-sub-header {
@@ -270,8 +271,9 @@
   height: 28px !important;
   min-height: 28px !important;
   max-height: 28px !important;
-  border-bottom: 1px solid var(--border-dim);
-  background: var(--bg-panel, var(--bg-sidebar));
+  border-bottom: 1px solid var(--border-dim) !important;
+  background: var(--bg-panel, var(--bg-sidebar)) !important;
+  color: var(--text-main) !important;
   flex-shrink: 0;
   box-sizing: border-box;
 }

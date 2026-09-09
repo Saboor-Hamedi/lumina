@@ -185,6 +185,137 @@
   transform: translateX(0);
 }
 
+/* AI Docs Modal Specific Sizing */
+.ai-chat-docs-modal {
+  width: 90vw !important;
+  max-width: 920px !important;
+  height: 84vh !important;
+  min-height: 520px !important;
+  max-height: 86vh !important;
+}
+
+.ai-chat-docs-modal.maximized {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  max-height: none !important;
+  border-radius: 0 !important;
+}
+
+/* Chat Sessions Sidebar - Styled exact to DocSidebar */
+.chat-sessions-sidebar.docs-sidebar {
+  width: 228px;
+}
+
+.session-new-chat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  margin: 4px 6px 8px 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: var(--text-main);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.session-new-chat-row:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--text-accent, #40bafa);
+}
+
+.session-item-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  margin-left: auto;
+  padding-left: 4px;
+}
+
+.docs-sidebar-item:hover .session-item-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.session-action-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 3px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.session-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-main);
+}
+
+.session-action-btn.delete:hover {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+/* Inline rename input */
+.session-rename-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.session-rename-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(64, 186, 250, 0.5);
+  border-radius: 4px;
+  color: var(--text-main);
+  padding: 2px 6px;
+  font-size: 11.5px;
+  outline: none;
+  font-family: inherit;
+}
+
+.session-rename-action-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 3px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.session-rename-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-main);
+}
+
 .sessions-header {
   padding: 0 16px;
   height: 40px;

@@ -72,6 +72,7 @@ class FloatingWindowManager {
         nodeIntegration: false,
         webSecurity: true,
         sandbox: false,
+        backgroundThrottling: false,
         devTools: !app.isPackaged
       },
       title: 'AI Chat - Lumina'

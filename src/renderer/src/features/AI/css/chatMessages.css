@@ -531,12 +531,25 @@
   color: var(--text-main);
 }
 
+.user-message-inline {
+  word-break: break-word;
+  white-space: pre-wrap;
+  text-align: left;
+  background: var(--bg-card, var(--bg-panel));
+  border: 1px solid var(--border-card, var(--border-subtle));
+  border-radius: 12px;
+  padding: 8px 14px;
+  color: var(--text-main);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
 .chat-bubble.assistant {
   background: transparent;
   white-space: normal;
   padding: 4px 8px;
   width: 100%;
   box-sizing: border-box;
+  color: var(--text-main);
 }
 
 .is-sidebar-docked .chat-bubble.assistant {

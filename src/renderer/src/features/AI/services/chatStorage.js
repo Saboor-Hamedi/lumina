@@ -110,6 +110,152 @@ export const deleteChatSession = async (sessionId, currentSessions) => {
   }
 }
 
+export const generateSmartChatTitle = (rawPrompt) => {
+  if (!rawPrompt || typeof rawPrompt !== 'string') return 'New Chat'
+
+  let text = rawPrompt
+    // Remove code blocks and backticks
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/`([^`]+)`/g, '$1')
+    // Remove wikilinks brackets [[Title|Alias]] -> Alias or Title
+    .replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, '$1')
+    // Remove @mentions symbol
+    .replace(/@([a-zA-Z0-9_\-./]+)/g, '$1')
+    // Remove URLs
+    .replace(/https?:\/\/\S+/gi, '')
+    // Remove markdown headers and blockquotes
+    .replace(/^[#>\-\s*]+/gm, '')
+    .trim()
+
+  // Remove common conversational command prefixes
+  const prefixRegex =
+    /^(?:hey\s+(?:lumina|ai)\s*,?|hi\s+(?:lumina|ai)?\s*,?|hello\s*,?|please\s+|can\s+you\s+(?:please\s+)?|could\s+you\s+(?:please\s+)?|i\s+(?:want|need)\s+to\s+|help\s+me\s+(?:to\s+)?|tell\s+me\s+about\s+|explain\s+(?:to\s+me\s+)?(?:about\s+)?|what\s+is\s+(?:the\s+)?|what\s+are\s+(?:the\s+)?|how\s+to\s+|how\s+do\s+i\s+|write\s+(?:a\s+|an\s+)?|create\s+(?:a\s+|an\s+)?|make\s+(?:a\s+|an\s+)?|draft\s+(?:a\s+|an\s+)?|build\s+(?:a\s+|an\s+)?|go\s+create\s+(?:a\s+|an\s+)?|go\s+draft\s+(?:a\s+|an\s+)?)/i
+
+  while (prefixRegex.test(text)) {
+    text = text.replace(prefixRegex, '').trim()
+  }
+
+  // Fallback if stripped everything
+  if (!text) {
+    text = rawPrompt.replace(/^[#>\-\s*]+/gm, '').trim()
+  }
+
+  // Capitalize first character
+  if (text.length > 0) {
+    text = text.charAt(0).toUpperCase() + text.slice(1)
+  }
+
+  // Truncate cleanly at word boundary up to ~34 characters
+  const MAX_LEN = 34
+  if (text.length > MAX_LEN) {
+    const cut = text.slice(0, MAX_LEN)
+    const lastSpace = cut.lastIndexOf(' ')
+    if (lastSpace > 16) {
+      text = cut.slice(0, lastSpace).trim() + '...'
+    } else {
+      text = cut.trim() + '...'
+    }
+  }
+
+  return text || 'New Chat'
+}
+
+export const renameChatSession = async (sessionId, newTitle, currentSessions) => {
+  const cleanTitle = (newTitle || '').trim() || 'New Chat'
+  let updatedSession = null
+  const updated = currentSessions.map((s) => {
+    if (s.id === sessionId) {
+      updatedSession = { ...s, title: cleanTitle }
+      return updatedSession
+    }
+    return s
+  })
+
+  if (updatedSession) {
+    try {
+      await openDb()
+      await db.chatSessions.put(updatedSession)
+    } catch (e) {
+      console.warn('[ChatStorage] Failed to rename session in db:', e)
+      localStorage.setItem('lumina-chat-sessions', JSON.stringify(updated))
+    }
+  }
+
+  return { sessions: updated, updatedSession }
+}
+
+export const togglePinChatSession = async (sessionId, currentSessions) => {
+  let updatedSession = null
+  const updated = currentSessions.map((s) => {
+    if (s.id === sessionId) {
+      updatedSession = { ...s, isPinned: !s.isPinned }
+      return updatedSession
+    }
+    return s
+  })
+
+  if (updatedSession) {
+    try {
+      await openDb()
+      await db.chatSessions.put(updatedSession)
+    } catch (e) {
+      console.warn('[ChatStorage] Failed to toggle pin in db:', e)
+      localStorage.setItem('lumina-chat-sessions', JSON.stringify(updated))
+    }
+  }
+
+  return { sessions: updated, updatedSession }
+}
+
+export const duplicateChatSession = async (sessionId, currentSessions) => {
+  const target = currentSessions.find((s) => s.id === sessionId)
+  if (!target) return { sessions: currentSessions, newSession: null }
+
+  const newSession = {
+    ...target,
+    id: crypto.randomUUID(),
+    title: `${target.title || 'Chat'} (Copy)`,
+    timestamp: Date.now(),
+    isPinned: false
+  }
+
+  const updated = [newSession, ...currentSessions]
+
+  try {
+    await openDb()
+    await db.chatSessions.add(newSession)
+  } catch (e) {
+    console.warn('[ChatStorage] Failed to duplicate session in db:', e)
+    localStorage.setItem('lumina-chat-sessions', JSON.stringify(updated))
+  }
+
+  localStorage.setItem('lumina-active-session-id', newSession.id)
+  return { sessions: updated, newSession }
+}
+
+export const clearChatSessionMessages = async (sessionId, currentSessions) => {
+  let updatedSession = null
+  const updated = currentSessions.map((s) => {
+    if (s.id === sessionId) {
+      updatedSession = { ...s, messages: [], timestamp: Date.now() }
+      return updatedSession
+    }
+    return s
+  })
+
+  if (updatedSession) {
+    try {
+      await openDb()
+      await db.chatSessions.put(updatedSession)
+    } catch (e) {
+      console.warn('[ChatStorage] Failed to clear session messages in db:', e)
+      localStorage.setItem('lumina-chat-sessions', JSON.stringify(updated))
+    }
+  }
+
+  return { sessions: updated, updatedSession }
+}
+
 export const persistChatHistory = async (sessions, activeSessionId, chatMessages) => {
   if (!activeSessionId) return { sessions }
 
@@ -117,12 +263,10 @@ export const persistChatHistory = async (sessions, activeSessionId, chatMessages
   const newSessions = sessions.map((s) => {
     if (s.id === activeSessionId) {
       let title = s.title
-      if (title === 'New Chat' && chatMessages.length > 0) {
+      if ((title === 'New Chat' || !title) && chatMessages.length > 0) {
         const firstUserMsg = chatMessages.find((m) => m.role === 'user')
         if (firstUserMsg && firstUserMsg.content) {
-          title =
-            firstUserMsg.content.slice(0, 30).trim() +
-            (firstUserMsg.content.length > 30 ? '...' : '')
+          title = generateSmartChatTitle(firstUserMsg.content)
         }
       }
       updatedSession = { ...s, messages: chatMessages, title, timestamp: Date.now() }

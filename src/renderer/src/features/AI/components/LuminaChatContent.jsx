@@ -4,13 +4,13 @@ import { useAIStore } from '../tools/lumina'
 import { useVaultStore } from '../../../core/store/workspaceStore'
 import { Composer } from '../Composer'
 import { ChatMessageRow } from './ChatMessageRow'
-import { ChatSessionsSidebar } from './ChatSessionsSidebar'
+import { LuminaSession } from './LuminaSession'
 import { ChatFooterStatus } from './ChatFooterStatus'
 import { ChatEmptyState } from './ChatEmptyState'
 import { useChatScroll } from '../hooks/useChatScroll'
 import { useScopedSelectAll } from '../hooks/useScopedSelectAll'
 
-export const LuminaChatContent = React.memo(({ isSidebar = false, onPopOut = null }) => {
+export const LuminaChatContent = React.memo(({ isSidebar = false, isModal = false, onPopOut = null }) => {
   const {
     chatMessages,
     isChatLoading,
@@ -23,7 +23,11 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, onPopOut = nul
     activeSessionId,
     createNewSession,
     switchSession,
-    deleteSession
+    deleteSession,
+    renameSession,
+    togglePinSession,
+    duplicateSession,
+    clearSessionMessages
   } = useAIStore()
 
   const { selectedSnippet, snippets } = useVaultStore(
@@ -53,10 +57,12 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, onPopOut = nul
   const rootRef = useRef(null)
   const { containerProps } = useScopedSelectAll({ containerRef: rootRef, isEnabled: isSidebar })
 
-  // Load chat history on mount
+  // Load chat history on mount only if not already initialized
   useEffect(() => {
-    loadSessions()
-  }, [loadSessions])
+    if ((!sessions || sessions.length === 0) && !isChatLoading) {
+      loadSessions()
+    }
+  }, [loadSessions, sessions, isChatLoading])
 
   // Listen for external toggle history event (from sidebar header)
   useEffect(() => {
@@ -152,24 +158,33 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, onPopOut = nul
         flexDirection: 'column',
         position: 'relative',
         overflow: 'hidden',
-        fontFamily: 'var(--font-editor, inherit)'
+        fontFamily: 'var(--font-editor, inherit)',
+        background: isSidebar ? 'var(--bg-sidebar)' : 'var(--bg-app)',
+        color: 'var(--text-main)'
       }}
     >
-      <div className="chat-container" style={{ flex: 1, minHeight: 0, position: 'relative' }}>
-        {/* Sessions Sidebar */}
-        <ChatSessionsSidebar
-          showSessions={showSessions}
-          setShowSessions={setShowSessions}
-          sessions={sessions}
-          activeSessionId={activeSessionId}
-          createNewSession={createNewSession}
-          switchSession={switchSession}
-          deleteSession={deleteSession}
-        />
+      <div className="chat-container" style={{ flex: 1, height: '100%', minHeight: 0, width: '100%', display: 'flex', position: 'relative' }}>
+        {/* Sessions Sidebar (rendered in docked sidebar mode) */}
+        {!isModal && (
+          <LuminaSession
+            isOpen={showSessions}
+            onClose={() => setShowSessions(false)}
+            sessions={sessions}
+            activeSessionId={activeSessionId}
+            createNewSession={createNewSession}
+            switchSession={switchSession}
+            deleteSession={deleteSession}
+            renameSession={renameSession}
+            togglePinSession={togglePinSession}
+            duplicateSession={duplicateSession}
+            clearSessionMessages={clearSessionMessages}
+          />
+        )}
 
         {/* Chat Main Area */}
         <div
           className="chat-main"
+          style={{ flex: 1, height: '100%', minHeight: 0, width: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}
           onClick={() => {
             if (showSessions) setShowSessions(false)
           }}

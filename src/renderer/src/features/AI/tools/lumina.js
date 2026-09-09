@@ -9,6 +9,10 @@ import {
   loadChatSessions,
   createNewChatSession,
   deleteChatSession,
+  renameChatSession,
+  togglePinChatSession,
+  duplicateChatSession,
+  clearChatSessionMessages,
   persistChatHistory
 } from '../services/chatStorage.js'
 import {
@@ -153,7 +157,13 @@ export const useAIStore = create((set, get) => {
 
     // --- Multi-Session Chat Management ---
     loadSessions: async () => {
+      const { isChatLoading } = get()
       const { sessions, activeSessionId } = await loadChatSessions()
+      // If actively generating, do NOT overwrite active messages in memory!
+      if (isChatLoading) {
+        set({ sessions, activeSessionId })
+        return
+      }
       const activeSession = sessions.find((s) => s.id === activeSessionId)
       set({
         sessions,
@@ -176,6 +186,39 @@ export const useAIStore = create((set, get) => {
       } else {
         get().switchSession(session.id)
       }
+    },
+
+    renameSession: async (sessionId, newTitle) => {
+      const { sessions } = get()
+      const { sessions: updatedSessions } = await renameChatSession(sessionId, newTitle, sessions)
+      set({ sessions: updatedSessions })
+    },
+
+    togglePinSession: async (sessionId) => {
+      const { sessions } = get()
+      const { sessions: updatedSessions } = await togglePinChatSession(sessionId, sessions)
+      set({ sessions: updatedSessions })
+    },
+
+    duplicateSession: async (sessionId) => {
+      const { sessions } = get()
+      const { sessions: updatedSessions, newSession } = await duplicateChatSession(sessionId, sessions)
+      if (newSession) {
+        set({
+          sessions: updatedSessions,
+          activeSessionId: newSession.id,
+          chatMessages: newSession.messages || []
+        })
+      }
+    },
+
+    clearSessionMessages: async (sessionId) => {
+      const { sessions, activeSessionId } = get()
+      const { sessions: updatedSessions } = await clearChatSessionMessages(sessionId, sessions)
+      set((state) => ({
+        sessions: updatedSessions,
+        ...(state.activeSessionId === sessionId ? { chatMessages: [] } : {})
+      }))
     },
 
     switchSession: (sessionId) => {

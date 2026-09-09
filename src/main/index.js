@@ -95,6 +95,7 @@ async function createWindow() {
       cache: true,
       partition: 'persist:main',
       allowRunningInsecureContent: false,
+      backgroundThrottling: false,
       // Required for Chromium's built-in PDF viewer to render PDFs in iframes
       plugins: true
     }

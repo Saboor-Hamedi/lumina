@@ -1,181 +1,226 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react'
 import {
-  History,
-  Minimize,
-  Maximize,
-  ArrowRightToLine
+  Square,
+  Copy,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ArrowRightToLine,
+  Plus,
+  X
 } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
-import ModalHeader from '../modals/ModalHeader'
+import ToolTip from '../../components/atoms/ToolTip'
+import { useAIStore } from './tools/lumina'
+import LuminaSession from './components/LuminaSession'
 import { LuminaChatContent } from './components/LuminaChatContent'
 import { MessageContent } from './components/MessageContent'
 import { ThinkingIndicator } from './components/ThinkingIndicator'
 import { ChatMessageRow } from './components/ChatMessageRow'
-import { useModalWindow } from './hooks/useModalWindow'
 import { useScopedSelectAll } from './hooks/useScopedSelectAll'
-import '../../assets/appshell.css'
+import '../modals/css/guide.css'
+import '../Docs/Documentation.css'
 import './css/lumina.css'
 
 /**
- * LuminaChat Floating Modal Component
+ * Lumina AI Chat Modal
+ * Matches Documentation.jsx modal container, header, and clean flex sidebar architecture.
  */
 const LuminaChat = ({ isOpen, onClose, onDock, onUnfloat }) => {
-  useKeyboardShortcuts({
-    onEscape: isOpen
-      ? () => {
-          const selection = window.getSelection()
-          if (selection && !selection.isCollapsed) {
-            selection.removeAllRanges()
-            return
-          }
-          onClose()
-        }
-      : null
-  })
-
-  const modalRef = useRef(null)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isMaximized, setIsMaximized] = useState(false)
-
-  const { containerProps } = useScopedSelectAll({ containerRef: modalRef, isEnabled: isOpen })
+  const containerRef = useRef(null)
 
   const {
-    modalState,
-    isDragging,
-    isResizing,
-    isMinimized,
-    handleDragStart,
-    handleResizeStart,
-    handleToggleMaximize,
-    handleToggleMinimize
-  } = useModalWindow({
-    isOpen,
-    isMaximized,
-    setIsMaximized,
-    modalRef
+    sessions,
+    activeSessionId,
+    createNewSession,
+    switchSession,
+    deleteSession,
+    renameSession,
+    togglePinSession,
+    duplicateSession,
+    clearSessionMessages,
+    loadSessions,
+    isChatLoading
+  } = useAIStore()
+
+  // Clean up any previously stored drag positions so modal is always centered
+  useEffect(() => {
+    try {
+      localStorage.removeItem('aiChatModalState')
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  // Ensure sessions are loaded
+  useEffect(() => {
+    if (isOpen && (!sessions || sessions.length === 0) && !isChatLoading) {
+      loadSessions()
+    }
+  }, [isOpen, sessions, isChatLoading, loadSessions])
+
+  const activeSession = useMemo(() => {
+    return sessions.find((s) => s.id === activeSessionId) || sessions[0] || null
+  }, [sessions, activeSessionId])
+
+  const handleToggleMaximize = useCallback(() => {
+    setIsMaximized((prev) => !prev)
+  }, [])
+
+  const handleToggleSidebar = useCallback(() => {
+    setIsSidebarOpen((prev) => !prev)
+  }, [])
+
+  const handleNewChat = useCallback(() => {
+    createNewSession()
+  }, [createNewSession])
+
+  const { containerProps } = useScopedSelectAll({ containerRef, isEnabled: isOpen })
+
+  useKeyboardShortcuts({
+    onEscape: () => {
+      if (isOpen && onClose) {
+        const selection = window.getSelection()
+        if (selection && !selection.isCollapsed) {
+          selection.removeAllRanges()
+          return true
+        }
+        onClose()
+        return true
+      }
+      return false
+    }
   })
 
   if (!isOpen) return null
 
   return (
-    <div className="modal-overlay ai-chat-modal-overlay" onClick={onClose}>
+    <div className="guide-modal-overlay" onClick={onClose}>
       <div
-        ref={modalRef}
+        ref={containerRef}
         tabIndex={-1}
         {...containerProps}
-        className={`modal-container ai-chat-modal-container ${isMaximized ? 'maximized' : ''} ${isMinimized ? 'minimized' : ''} ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''}`}
+        className={`docs-modal-container ai-chat-docs-modal${isMaximized ? ' maximized' : ''}`}
         onClick={(e) => e.stopPropagation()}
-        style={{
-          outline: 'none',
-          ...(isMaximized
-            ? { position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', borderRadius: 0 }
-            : isMinimized
-              ? { position: 'fixed', top: 'auto', left: 'auto', bottom: '26px', right: '14px', width: '220px' }
-              : {
-                  position: 'absolute',
-                  top: modalState.top,
-                  left: modalState.left,
-                  width: modalState.width,
-                  height: modalState.height
-                })
-        }}
+        style={{ outline: 'none' }}
       >
-        <ModalHeader
-          onMouseDown={handleDragStart}
-          onDoubleClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-          }}
-          style={{ cursor: 'move' }}
-          left={
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        {/* Modal Header */}
+        <div className="docs-modal-header" style={{ cursor: 'default' }}>
+          <div className="docs-header-left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <ToolTip text={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'} position="bottom">
               <button
-                className="modal-action-icon-btn"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  window.dispatchEvent(new CustomEvent('ai-toggle-history'))
-                }}
-                title="Toggle History Sidebar"
-                aria-label="Toggle History Sidebar"
+                className="docs-sidebar-toggle-btn"
+                onClick={handleToggleSidebar}
+                aria-label={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
               >
-                <History size={14} />
+                {isSidebarOpen ? (
+                  <PanelLeftClose size={15} strokeWidth={2} />
+                ) : (
+                  <PanelLeftOpen size={15} strokeWidth={2} />
+                )}
               </button>
-              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-main)' }}>
-                Lumina AI
-              </span>
-            </div>
-          }
-          right={
-            <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+            </ToolTip>
+            <span
+              style={{
+                fontSize: '13px',
+                fontWeight: 600,
+                color: 'var(--text-main)',
+                letterSpacing: '-0.01em',
+                background: 'transparent',
+                padding: 0
+              }}
+            >
+              Lumina AI
+            </span>
+            {activeSession?.title && (
+              <>
+                <span style={{ opacity: 0.35, color: 'var(--text-muted)', fontSize: '12px' }}>/</span>
+                <span
+                  style={{
+                    fontSize: '12px',
+                    fontWeight: 450,
+                    color: 'var(--text-muted)',
+                    maxWidth: '220px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    background: 'transparent',
+                    padding: 0
+                  }}
+                  title={activeSession.title}
+                >
+                  {activeSession.title}
+                </span>
+              </>
+            )}
+          </div>
+
+          <div className="docs-header-right">
+            <ToolTip text="New Chat" position="bottom">
               <button
-                className="modal-clear-btn"
-                onClick={(e) => {
-                  e.stopPropagation()
+                className="docs-window-btn"
+                onClick={handleNewChat}
+                aria-label="New Chat"
+              >
+                <Plus size={14} strokeWidth={2} />
+              </button>
+            </ToolTip>
+            <ToolTip text="Dock to Tab Sidebar" position="bottom">
+              <button
+                className="docs-window-btn"
+                onClick={() => {
                   if (onDock) onDock()
                   else if (onUnfloat) onUnfloat()
                 }}
-                title="Dock to Tab Sidebar"
                 aria-label="Dock to Tab Sidebar"
               >
-                <ArrowRightToLine size={13} />
+                <ArrowRightToLine size={13} strokeWidth={2} />
               </button>
+            </ToolTip>
+            <ToolTip text={isMaximized ? 'Restore Window' : 'Maximize Window'} position="bottom">
               <button
-                className="modal-minimize-btn"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleToggleMinimize()
-                }}
-                title={isMinimized ? 'Restore' : 'Minimize'}
-                aria-label={isMinimized ? 'Restore' : 'Minimize'}
+                className="docs-window-btn"
+                onClick={handleToggleMaximize}
+                aria-label={isMaximized ? 'Restore Window' : 'Maximize Window'}
               >
-                <Minimize size={13} />
+                {isMaximized ? (
+                  <Copy size={13} strokeWidth={2} />
+                ) : (
+                  <Square size={13} strokeWidth={2} />
+                )}
               </button>
+            </ToolTip>
+            <ToolTip text="Close (Esc)" position="bottom">
               <button
-                className="modal-maximize-btn"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleToggleMaximize()
-                }}
-                title={isMaximized ? 'Restore' : 'Maximize'}
-                aria-label={isMaximized ? 'Restore' : 'Maximize'}
+                className="guide-close-btn"
+                onClick={onClose}
+                aria-label="Close Lumina AI (Esc)"
               >
-                {isMaximized ? <Minimize size={13} /> : <Maximize size={13} />}
+                <X size={17} />
               </button>
-            </div>
-          }
-          onClose={onClose}
-        />
+            </ToolTip>
+          </div>
+        </div>
 
-        {/* Single Bottom-Right Resize Handle */}
-        {!isMaximized && (
-          <div
-            className="resize-handle resize-handle-bottom-right"
-            onMouseDown={handleResizeStart}
-            title="Resize window"
+        {/* Modal Body with Flex Sidebar & Content */}
+        <div className="lumina-ai-container">
+          <LuminaSession
+            isOpen={isSidebarOpen}
+            sessions={sessions}
+            activeSessionId={activeSessionId}
+            createNewSession={createNewSession}
+            switchSession={switchSession}
+            deleteSession={deleteSession}
+            renameSession={renameSession}
+            togglePinSession={togglePinSession}
+            duplicateSession={duplicateSession}
+            clearSessionMessages={clearSessionMessages}
           />
-        )}
 
-        {(isDragging || isResizing) && (
-          <div
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 99999,
-              cursor: isDragging ? 'grabbing' : 'nwse-resize'
-            }}
-          />
-        )}
-
-        <div
-          className="ai-chat-modal-body"
-          style={{
-            height: 'calc(100% - 40px)',
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            userSelect: 'text'
-          }}
-        >
-          <LuminaChatContent isSidebar={false} />
+          <div className="lumina-ai-content">
+            <LuminaChatContent isSidebar={false} isModal={true} />
+          </div>
         </div>
       </div>
     </div>
