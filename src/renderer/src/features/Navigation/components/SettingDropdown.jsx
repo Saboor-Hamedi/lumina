@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react'
-import { Settings, Palette, Cloud, RefreshCw, LogOut, Check, Loader2 } from 'lucide-react'
+import { Settings, Palette, Cloud, RefreshCw, LogOut, Check, Loader2, FileArchive, Folder, X } from 'lucide-react'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
 import { useUpdateStore } from '../../../core/store/useUpdateStore'
 
@@ -12,6 +12,20 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
   // Backup state
   const [backupState, setBackupState] = useState('idle') // 'idle' | 'zipping' | 'uploading' | 'done' | 'error'
   const [backupProgress, setBackupProgress] = useState(0)
+  const [backupMode, setBackupMode] = useState(() => {
+    try {
+      return localStorage.getItem('lumina_backup_mode') || 'zip'
+    } catch {
+      return 'zip'
+    }
+  })
+
+  const handleSetBackupMode = (mode) => {
+    setBackupMode(mode)
+    try {
+      localStorage.setItem('lumina_backup_mode', mode)
+    } catch {}
+  }
 
   // Listen to backup progress events
   useEffect(() => {
@@ -26,10 +40,21 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
       } else if (data.stage === 'uploading') {
         setBackupState('uploading')
         setBackupProgress(data.progress || 60)
+      } else if (data.stage === 'cancelled') {
+        setBackupState('idle')
+        setBackupProgress(0)
       } else if (data.stage === 'completed' || data.progress >= 100) {
         setBackupState('done')
         setBackupProgress(100)
         useSettingsStore.getState().updateSetting('lastSync', Date.now())
+        window.dispatchEvent(
+          new CustomEvent('show-toast', {
+            detail: {
+              message: 'Successfully backed up',
+              type: 'success'
+            }
+          })
+        )
         // Reset to idle after 3 seconds
         setTimeout(() => setBackupState('idle'), 3000)
       }
@@ -79,21 +104,50 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
   const handleBackup = async () => {
     if (backupState === 'zipping' || backupState === 'uploading') return // already running
     try {
-      setBackupState('zipping')
+      setBackupState(backupMode === 'zip' ? 'zipping' : 'uploading')
       setBackupProgress(5)
       if (window.api?.backupWorkspace) {
-        const res = await window.api.backupWorkspace()
+        const res = await window.api.backupWorkspace(backupMode)
+        if (res?.cancelled) {
+          setBackupState('idle')
+          setBackupProgress(0)
+          return
+        }
         if (res?.error) {
           console.error('Backup failed:', res.error)
           setBackupState('error')
           setTimeout(() => setBackupState('idle'), 3000)
         }
-        // success path handled by onIndexProgress listener above
       }
     } catch (err) {
       console.error('Backup error:', err)
       setBackupState('error')
       setTimeout(() => setBackupState('idle'), 3000)
+    }
+  }
+
+  const handleCancelBackup = async (e) => {
+    if (e) {
+      e.stopPropagation()
+      e.preventDefault()
+    }
+    try {
+      if (window.api?.cancelBackup) {
+        await window.api.cancelBackup()
+      }
+    } catch (err) {
+      console.error('Cancel backup error:', err)
+    } finally {
+      setBackupState('idle')
+      setBackupProgress(0)
+      window.dispatchEvent(
+        new CustomEvent('show-toast', {
+          detail: {
+            message: 'Backup cancelled',
+            type: 'info'
+          }
+        })
+      )
     }
   }
 
@@ -263,148 +317,263 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
       )}
 
       {googleUser && (
-        <div
-          style={{
-            position: 'relative',
-            borderRadius: '2px',
-            overflow: 'hidden'
-          }}
-        >
-          {/* Animated fill track */}
-          {(isBackingUp || backupState === 'done') && (
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                background:
-                  backupState === 'done'
-                    ? 'rgba(34,197,94,0.08)'
-                    : 'linear-gradient(90deg, var(--text-accent, #40bafa) 0%, transparent 100%)',
-                opacity: backupState === 'done' ? 1 : 0.1,
-                width: backupState === 'done' ? '100%' : `${backupProgress}%`,
-                transition: 'width 0.5s ease-out, opacity 0.3s',
-                pointerEvents: 'none'
-              }}
-            />
-          )}
-
-          {/* Bottom progress bar stripe */}
-          {isBackingUp && (
-            <div
-              style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                height: '2px',
-                width: `${backupProgress}%`,
-                backgroundColor: 'var(--text-accent, #40bafa)',
-                transition: 'width 0.5s ease-out',
-                borderRadius: '0 2px 2px 0'
-              }}
-            />
-          )}
-
-          <button
-            onClick={handleBackup}
-            disabled={isBackingUp}
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {/* Format Selector: Zip vs No Zip */}
+          <div
             style={{
-              position: 'relative',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              padding: '7px 8px',
-              border: 'none',
-              background: 'transparent',
-              color:
-                backupState === 'done'
-                  ? '#22c55e'
-                  : backupState === 'error'
-                    ? 'rgba(239,68,68,0.9)'
-                    : 'var(--text-main)',
-              fontSize: '12px',
-              fontWeight: '500',
-              cursor: isBackingUp ? 'default' : 'pointer',
-              borderRadius: '0',
-              textAlign: 'left',
-              width: '100%',
-              transition: 'background-color 0.15s, color 0.3s'
-            }}
-            onMouseEnter={(e) => {
-              if (!isBackingUp) e.currentTarget.style.backgroundColor = 'var(--bg-active)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent'
+              justifyContent: 'space-between',
+              gap: '6px',
+              padding: '6px 8px',
+              borderBottom: '0.5px solid var(--border-dim, rgba(255, 255, 255, 0.08))',
+              marginBottom: '2px'
             }}
           >
-            {/* Left icon */}
-            {isBackingUp ? (
-              <Loader2
-                size={14}
+            <span style={{ fontSize: '11px', color: 'var(--text-faint, #64748b)' }}>
+              Backup format
+            </span>
+            <div
+              style={{
+                display: 'inline-flex',
+                backgroundColor: 'var(--bg-primary, rgba(0, 0, 0, 0.25))',
+                padding: '2px',
+                borderRadius: '5px',
+                gap: '2px'
+              }}
+            >
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleSetBackupMode('zip')
+                }}
+                title="Saves as lumina-backup.zip"
                 style={{
-                  animation: 'spin 1s linear infinite',
-                  flexShrink: 0,
-                  color: 'var(--text-accent)'
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '2px 7px',
+                  fontSize: '11px',
+                  fontWeight: backupMode === 'zip' ? 500 : 400,
+                  borderRadius: '4px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  backgroundColor: backupMode === 'zip' ? 'var(--bg-panel-hover, rgba(255,255,255,0.1))' : 'transparent',
+                  color: backupMode === 'zip' ? 'var(--text-main, #f8fafc)' : 'var(--text-faint, #64748b)',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <FileArchive size={11} />
+                <span>Zip</span>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleSetBackupMode('folder')
+                }}
+                title="Saves directly inside lumina/ folder"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '2px 7px',
+                  fontSize: '11px',
+                  fontWeight: backupMode === 'folder' ? 500 : 400,
+                  borderRadius: '4px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  backgroundColor: backupMode === 'folder' ? 'var(--bg-panel-hover, rgba(255,255,255,0.1))' : 'transparent',
+                  color: backupMode === 'folder' ? 'var(--text-main, #f8fafc)' : 'var(--text-faint, #64748b)',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <Folder size={11} />
+                <span>No Zip</span>
+              </button>
+            </div>
+          </div>
+
+          <div
+            style={{
+              position: 'relative',
+              borderRadius: '2px',
+              overflow: 'hidden'
+            }}
+          >
+            {/* Animated fill track */}
+            {(isBackingUp || backupState === 'done') && (
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background:
+                    backupState === 'done'
+                      ? 'rgba(34,197,94,0.08)'
+                      : 'linear-gradient(90deg, var(--text-accent, #40bafa) 0%, transparent 100%)',
+                  opacity: backupState === 'done' ? 1 : 0.1,
+                  width: backupState === 'done' ? '100%' : `${backupProgress}%`,
+                  transition: 'width 0.5s ease-out, opacity 0.3s',
+                  pointerEvents: 'none'
                 }}
               />
-            ) : backupState === 'done' ? (
-              <Check size={14} style={{ flexShrink: 0, color: '#22c55e' }} />
-            ) : backupState === 'error' ? (
-              <Cloud size={14} style={{ flexShrink: 0, color: 'rgba(239,68,68,0.9)' }} />
-            ) : (
-              <Cloud size={14} style={{ flexShrink: 0 }} />
+            )}
+
+            {/* Bottom progress bar stripe */}
+            {isBackingUp && (
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  height: '2px',
+                  width: `${backupProgress}%`,
+                  backgroundColor: 'var(--text-accent, #40bafa)',
+                  transition: 'width 0.5s ease-out',
+                  borderRadius: '0 2px 2px 0'
+                }}
+              />
             )}
 
             <div
+              onClick={!isBackingUp ? handleBackup : undefined}
               style={{
-                flex: 1,
+                position: 'relative',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
-                minWidth: 0,
-                gap: '6px'
+                gap: '8px',
+                padding: '7px 8px',
+                border: 'none',
+                background: 'transparent',
+                color:
+                  backupState === 'done'
+                    ? '#22c55e'
+                    : backupState === 'error'
+                      ? 'rgba(239,68,68,0.9)'
+                      : 'var(--text-main)',
+                fontSize: '12px',
+                fontWeight: '500',
+                cursor: isBackingUp ? 'default' : 'pointer',
+                borderRadius: '0',
+                textAlign: 'left',
+                width: '100%',
+                boxSizing: 'border-box',
+                transition: 'background-color 0.15s, color 0.3s'
+              }}
+              onMouseEnter={(e) => {
+                if (!isBackingUp) e.currentTarget.style.backgroundColor = 'var(--bg-active)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent'
               }}
             >
-              <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <span
+              {/* Left icon */}
+              {isBackingUp ? (
+                <Loader2
+                  size={14}
                   style={{
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    lineHeight: 1.3
+                    animation: 'spin 1s linear infinite',
+                    flexShrink: 0,
+                    color: 'var(--text-accent)'
                   }}
-                >
-                  {backupState === 'zipping'
-                    ? 'Backup Workspace to Drive'
-                    : backupState === 'uploading'
-                      ? 'Backup Workspace to Drive'
-                      : backupState === 'done'
-                        ? 'Backup complete!'
-                        : backupState === 'error'
-                          ? 'Backup failed — retry?'
-                          : 'Backup Workspace to Drive'}
-                </span>
-                {isBackingUp && (
+                />
+              ) : backupState === 'done' ? (
+                <Check size={14} style={{ flexShrink: 0, color: '#22c55e' }} />
+              ) : backupState === 'error' ? (
+                <Cloud size={14} style={{ flexShrink: 0, color: 'rgba(239,68,68,0.9)' }} />
+              ) : (
+                <Cloud size={14} style={{ flexShrink: 0 }} />
+              )}
+
+              <div
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  minWidth: 0,
+                  gap: '6px'
+                }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                   <span
                     style={{
-                      fontSize: '10px',
-                      color: 'var(--text-accent)',
-                      fontWeight: 400,
-                      lineHeight: 1.2,
-                      marginTop: '1px'
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      lineHeight: 1.3
                     }}
                   >
                     {backupState === 'zipping'
                       ? 'Compressing workspace…'
-                      : `Uploading… ${Math.round(backupProgress)}%`}
+                      : backupState === 'uploading'
+                        ? (backupMode === 'zip' ? 'Uploading zip…' : 'Syncing files…')
+                        : backupState === 'done'
+                          ? 'Successfully backed up'
+                          : backupState === 'error'
+                            ? 'Backup failed — retry?'
+                            : backupMode === 'zip'
+                              ? 'Backup Workspace (Zip)'
+                              : 'Backup Workspace (lumina/)'}
                   </span>
+                  {isBackingUp && (
+                    <span
+                      style={{
+                        fontSize: '10px',
+                        color: 'var(--text-accent)',
+                        fontWeight: 400,
+                        lineHeight: 1.2,
+                        marginTop: '1px'
+                      }}
+                    >
+                      {backupState === 'zipping'
+                        ? 'Compressing workspace…'
+                        : backupMode === 'zip'
+                          ? `Uploading… ${Math.round(backupProgress)}%`
+                          : `Syncing files… ${Math.round(backupProgress)}%`}
+                    </span>
+                  )}
+                </div>
+                {/* Cancel icon button when backing up */}
+                {isBackingUp ? (
+                  <button
+                    type="button"
+                    onClick={handleCancelBackup}
+                    title="Cancel backup"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '4px',
+                      border: 'none',
+                      backgroundColor: 'transparent',
+                      color: 'var(--text-faint, #94a3b8)',
+                      cursor: 'pointer',
+                      flexShrink: 0,
+                      padding: 0,
+                      transition: 'all 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.stopPropagation()
+                      e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)'
+                      e.currentTarget.style.color = '#ef4444'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent'
+                      e.currentTarget.style.color = 'var(--text-faint, #94a3b8)'
+                    }}
+                  >
+                    <X size={13} strokeWidth={2.2} />
+                  </button>
+                ) : (
+                  backupState === 'idle' && isSynced && (
+                    <Check size={11} color="var(--text-accent)" style={{ flexShrink: 0 }} />
+                  )
                 )}
               </div>
-              {/* Synced tick when idle */}
-              {backupState === 'idle' && isSynced && (
-                <Check size={11} color="var(--text-accent)" style={{ flexShrink: 0 }} />
-              )}
             </div>
-          </button>
+          </div>
         </div>
       )}
 

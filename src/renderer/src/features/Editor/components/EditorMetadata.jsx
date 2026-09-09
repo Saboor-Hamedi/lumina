@@ -6,6 +6,7 @@ import { useVaultStore } from '../../../core/store/workspaceStore'
 import { useKeyboardShortcuts } from '../../../core/hooks/useKeyboardShortcuts'
 import ProgressTracker, { LearnedButton, LearningTrackBadge } from '../../roadmap/ProgressTracker'
 import VoiceButton from '../../voice'
+import DrivePushButton from './DrivePushButton'
 
 const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef, onInlineAI, editorMenu }) => {
   const [error, setError] = useState(false)
@@ -138,6 +139,7 @@ const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef, onInli
         </ToolTip>
 
         <VoiceButton id="editor-voice" />
+        <DrivePushButton snippet={snippet} title={title} />
 
         <ToolTip text="Linked Mentions" position="bottom">
           <button

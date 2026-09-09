@@ -328,6 +328,12 @@ class WorkspaceManager {
       this.ignoredPaths.set(path.resolve(savedPath).toLowerCase(), Date.now() + 600)
     }
 
+    if (this.workspacePath && oldSnippet?.fileName && oldSnippet.fileName !== result?.fileName) {
+      const oldRelativeFolder = (oldSnippet.folderId || '').replace(/\\/g, '/')
+      const oldPath = path.join(this.workspacePath, oldRelativeFolder, oldSnippet.fileName)
+      this.ignoredPaths.set(path.resolve(oldPath).toLowerCase(), Date.now() + 600)
+    }
+
     return result
   }
 

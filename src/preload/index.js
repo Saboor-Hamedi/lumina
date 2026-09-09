@@ -140,9 +140,11 @@ const api = {
   generateImage: (endpoint, headers, body) =>
     electronAPI.ipcRenderer.invoke('ai:generateImage', { endpoint, headers, body }),
 
-  // Google Auth
+  // Google Auth & Backup
   loginWithGoogle: (clientId) => electronAPI.ipcRenderer.invoke('auth:loginWithGoogle', clientId),
-  backupWorkspace: () => electronAPI.ipcRenderer.invoke('backup:start'),
+  backupWorkspace: (mode = 'zip') => electronAPI.ipcRenderer.invoke('backup:start', mode),
+  backupFile: (fileInput) => electronAPI.ipcRenderer.invoke('backup:file', fileInput),
+  cancelBackup: () => electronAPI.ipcRenderer.invoke('backup:cancel'),
   getGoogleUser: () => electronAPI.ipcRenderer.invoke('auth:getGoogleUser'),
   logoutFromGoogle: () => electronAPI.ipcRenderer.invoke('auth:logoutFromGoogle')
 }

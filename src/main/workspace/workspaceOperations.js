@@ -91,16 +91,53 @@ export class WorkspaceOperations {
 
     const rawTitle = (snippet.title || '').trim()
     const cleanedTitle = this.sanitizeTitleForFilename(rawTitle)
-    let newFileName = snippet.fileName || cleanedTitle
+
+    const rawExt = path.extname(snippet.fileName || (oldSnippet?.fileName || ''))
+    const ext = rawExt || '.md'
+    const isMarkdown =
+      !rawExt ||
+      ext.toLowerCase() === '.md' ||
+      ext.toLowerCase() === '.markdown' ||
+      ext.toLowerCase() === '.mdx'
+
+    let newFileName = snippet.fileName
+
+    if (oldSnippet) {
+      const oldRawTitle = (oldSnippet.title || '').trim()
+      const titleChanged = rawTitle && oldRawTitle && rawTitle !== oldRawTitle
+      const fileNameExplicitlyChanged =
+        snippet.fileName &&
+        oldSnippet.fileName &&
+        snippet.fileName !== oldSnippet.fileName
+
+      if (fileNameExplicitlyChanged) {
+        newFileName = snippet.fileName
+      } else if (titleChanged && isMarkdown) {
+        newFileName = `${cleanedTitle}${ext}`
+      } else if (!newFileName) {
+        newFileName = `${cleanedTitle}${ext}`
+      }
+    } else {
+      if (!newFileName) {
+        newFileName = `${cleanedTitle}${ext}`
+      } else if (isMarkdown) {
+        const fileBase = path.basename(newFileName, ext)
+        if (
+          fileBase.toLowerCase() === 'new note' ||
+          fileBase.toLowerCase() === 'untitled' ||
+          (cleanedTitle &&
+            cleanedTitle.toLowerCase() !== 'untitled' &&
+            fileBase.toLowerCase() !== cleanedTitle.toLowerCase())
+        ) {
+          newFileName = `${cleanedTitle}${ext}`
+        }
+      }
+    }
 
     if (!path.extname(newFileName) && !newFileName.startsWith('.')) {
       newFileName = `${newFileName}.md`
     }
 
-    const isMarkdown =
-      newFileName.toLowerCase().endsWith('.md') ||
-      newFileName.toLowerCase().endsWith('.markdown') ||
-      newFileName.toLowerCase().endsWith('.mdx')
     const relativeFolder = (snippet.folderId || '').replace(/\\/g, '/')
 
     // If the note was renamed or moved, delete the previous file

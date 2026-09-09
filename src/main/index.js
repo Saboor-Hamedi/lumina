@@ -20,7 +20,7 @@ import { handleExportText } from '../export/exportText'
 import { handleExportHTML } from '../export/exportHTML'
 import { handleExportCleanHTML, handleExportMarkdownBundle } from '../export/exportBundle'
 import { setupGoogleAuth } from './auth/googleAuth'
-import { backupToDrive } from './backup/googleDriveBackup'
+import { backupToDrive, backupFileToDrive, cancelBackup } from './backup/googleDriveBackup'
 import { registerOpenNoteHandler } from './handlers/useOpenNote'
 import { useResizeWindowValue } from './handlers/useResizeWindowValue'
 import { useWindowOpacity } from './handlers/useWindowOpacity'
@@ -300,7 +300,13 @@ app.whenReady().then(async () => {
   ipcMain.handle('db:saveSettings', (_, settings) => SettingsManager.setMultiple(settings))
   ipcMain.handle('db:getTheme', () => SettingsManager.get('theme'))
   ipcMain.handle('db:saveTheme', (_, theme) => SettingsManager.set('theme', theme))
-  ipcMain.handle('backup:start', (event) => backupToDrive(VaultManager.vaultPath, event.sender))
+  ipcMain.handle('backup:start', (event, mode) =>
+    backupToDrive(VaultManager.vaultPath, mode, event.sender)
+  )
+  ipcMain.handle('backup:file', (event, fileInput) =>
+    backupFileToDrive(fileInput, VaultManager.vaultPath, event.sender)
+  )
+  ipcMain.handle('backup:cancel', () => cancelBackup())
 
 
   ipcMain.handle('clipboard:writeImage', async (_, dataUrl) => {

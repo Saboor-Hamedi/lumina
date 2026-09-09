@@ -15,7 +15,8 @@ import {
   Palette,
   Check,
   X,
-  Sparkles
+  Sparkles,
+  CloudUpload
 } from 'lucide-react'
 import { useVaultStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
@@ -37,9 +38,10 @@ export function useContextMenu({ item, type, callbacks }) {
       }))
     )
 
-  const { togglePinnedFolder } = useSettingsStore(
+  const { togglePinnedFolder, googleUser } = useSettingsStore(
     useShallow((state) => ({
-      togglePinnedFolder: state.togglePinnedFolder
+      togglePinnedFolder: state.togglePinnedFolder,
+      googleUser: state.settings?.googleUser
     }))
   )
 
@@ -237,6 +239,48 @@ export function useContextMenu({ item, type, callbacks }) {
             callbacks.onClose?.()
           }
         },
+        ...(googleUser
+          ? [
+              {
+                label: 'Push to Google Drive',
+                icon: <CloudUpload size={14} />,
+                onClick: async () => {
+                  callbacks.onClose?.()
+                  const noteName = item?.title || item?.fileName || 'note'
+                  try {
+                    window.dispatchEvent(
+                      new CustomEvent('show-toast', {
+                        detail: { message: `Pushing "${noteName}" to Google Drive...`, type: 'info' }
+                      })
+                    )
+                    const res = await window.api?.backupFile(item)
+                    if (res?.success) {
+                      window.dispatchEvent(
+                        new CustomEvent('show-toast', {
+                          detail: {
+                            message: 'Successfully backed up',
+                            type: 'success'
+                          }
+                        })
+                      )
+                    } else {
+                      window.dispatchEvent(
+                        new CustomEvent('show-toast', {
+                          detail: { message: `❌ ${res?.error || 'Push failed'}`, type: 'error' }
+                        })
+                      )
+                    }
+                  } catch (err) {
+                    window.dispatchEvent(
+                      new CustomEvent('show-toast', {
+                        detail: { message: `❌ ${err.message || 'Push failed'}`, type: 'error' }
+                      })
+                    )
+                  }
+                }
+              }
+            ]
+          : []),
         {
           label: 'Delete',
           shortcut: 'Ctrl+Shift+D',
