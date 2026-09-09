@@ -10,7 +10,7 @@
 
 import React, { useState, useRef } from 'react'
 import ToolTip from '../../../components/atoms/ToolTip'
-import WorkspaceState from './WorkspaceState'
+import WorkspaceStat from './WorkspaceStat'
 
 export const NoteNumbers = ({ count = 0, total, isQueryActive }) => {
   const [isStatsOpen, setIsStatsOpen] = useState(false)
@@ -67,7 +67,7 @@ export const NoteNumbers = ({ count = 0, total, isQueryActive }) => {
         </button>
       </ToolTip>
 
-      <WorkspaceState
+      <WorkspaceStat
         isOpen={isStatsOpen}
         onClose={() => setIsStatsOpen(false)}
         anchorRef={badgeRef}

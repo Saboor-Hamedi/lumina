@@ -7,5 +7,5 @@ export { NoteNumbers } from './NoteNumbers'
 export { ExplorerHeader } from './ExplorerHeader'
 export { ExplorerFavorites } from './ExplorerFavorites'
 export { default as ExternalDropOverlay } from './ExternalDropOverlay'
-export { WorkspaceState, WorkspaceStats, VaultStats, default as WorkspaceStateDefault } from './WorkspaceState'
+export { WorkspaceStat, WorkspaceState, WorkspaceStats, VaultStats, default as WorkspaceStatDefault } from './WorkspaceStat'
 

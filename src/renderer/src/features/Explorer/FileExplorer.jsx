@@ -46,7 +46,7 @@ import { FixedSizeList as List } from '../../components/utils/VirtualList'
 import Version from '../../components/Version'
 import Fuse from 'fuse.js'
 import { rankSnippets } from '../../core/utils/searchRanker'
-import './FileExplorer.css'
+import './css/fileExplorer.css'
 
 import {
   SortableListItem,

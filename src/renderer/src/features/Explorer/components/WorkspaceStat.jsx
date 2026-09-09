@@ -11,9 +11,9 @@ import {
   X
 } from 'lucide-react'
 import { useVaultStore } from '../../../core/store/workspaceStore'
-import './workspacestat.css'
+import '../css/workspacestat.css'
 
-export const WorkspaceState = ({ isOpen, onClose, anchorRef }) => {
+export const WorkspaceStat = ({ isOpen, onClose, anchorRef }) => {
   const popoverRef = useRef(null)
   const snippets = useVaultStore((state) => state.snippets)
   const folders = useVaultStore((state) => state.folders)
@@ -266,7 +266,8 @@ export const WorkspaceState = ({ isOpen, onClose, anchorRef }) => {
 }
 
 // Aliases for compatibility
-export const WorkspaceStats = WorkspaceState
-export const VaultStats = WorkspaceState
+export const WorkspaceState = WorkspaceStat
+export const WorkspaceStats = WorkspaceStat
+export const VaultStats = WorkspaceStat
 
-export default React.memo(WorkspaceState)
+export default React.memo(WorkspaceStat)
