@@ -1196,21 +1196,29 @@
 .chat-response-actions {
   display: flex;
   align-items: center;
-  gap: 15px;
+  justify-content: space-between;
   width: 100%;
   box-sizing: border-box;
-  margin-top: 15px;
-  padding: 0 2px;
+  margin-top: 8px;
+  margin-bottom: 14px;
+  padding: 0 4px;
 }
 
 .chat-response-time {
   font-size: 11px;
   font-family: var(--font-sans, inherit);
   color: var(--text-faint);
-  opacity: 0.6;
+  opacity: 0;
   user-select: none;
   letter-spacing: 0.01em;
   line-height: 1;
+  margin-left: auto;
+  transition: opacity 0.2s ease;
+}
+
+.chat-row.assistant:hover .chat-response-time,
+.chat-response-actions:hover .chat-response-time {
+  opacity: 0.65;
 }
 
 .chat-action-buttons {

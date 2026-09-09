@@ -464,16 +464,9 @@ export const useAIStore = create((set, get) => {
 
         let sdkTools = {}
         if (modeCfg.enableTools !== false && !isConversationalOverride) {
-          const allTools = getAITools(blockReadFile)
-          if (detectedIntent === IntentCategory.CONVERSATIONAL_EXPLAIN) {
-            sdkTools = {
-              readFile: allTools.readFile,
-              checkFile: allTools.checkFile,
-              readBrainFile: allTools.readBrainFile
-            }
-          } else {
-            sdkTools = allTools
-          }
+          // Always pass all tools — let the AI decide based on the system prompt.
+          // CONVERSATIONAL_EXPLAIN only affects the exemplar shown, not actual tool availability.
+          sdkTools = getAITools(blockReadFile)
         }
 
         const handleContentUpdate = (content) => {

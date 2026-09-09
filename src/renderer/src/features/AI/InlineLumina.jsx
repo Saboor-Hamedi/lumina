@@ -1,435 +1,52 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { GripVertical, X, Check, Copy, Loader2 } from 'lucide-react'
+import { useInlineDragAndPosition } from './hooks/useInlineDragAndPosition'
+import { useInlineContextExtractor } from './hooks/useInlineContextExtractor'
+import { useInlineGeneration } from './hooks/useInlineGeneration'
 import './css/inlineLumina.css'
 
 const InlineLumina = ({ isOpen, onClose, onInsert, editorView, title, cursorPosition }) => {
-  const [query, setQuery] = useState('')
-  const [lastQuery, setLastQuery] = useState('')
-  const [response, setResponse] = useState('')
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [abortController, setAbortController] = useState(null)
-  const [copied, setCopied] = useState(false)
-  const getInitialPosition = useCallback(() => {
-    const modalWidth = 440
-    const defaultLeft = Math.round((window.innerWidth - modalWidth) / 2)
-    const defaultTop = 120
-
-    if (editorView?.hasFocus) {
-      try {
-        const selection = editorView.state.selection.main
-        const pos = selection.head || selection.from
-        const coords = editorView.coordsAtPos(pos)
-        if (coords && coords.top >= 40 && coords.top <= window.innerHeight - 100) {
-          let top = coords.bottom + 10
-          let left = coords.left
-
-          if (left + modalWidth > window.innerWidth - 20) {
-            left = window.innerWidth - modalWidth - 20
-          }
-          if (left < 20) left = 20
-
-          if (top + 50 > window.innerHeight - 20) {
-            top = Math.max(20, coords.top - 60)
-          }
-
-          return {
-            top: `${Math.round(top)}px`,
-            left: `${Math.round(left)}px`,
-            transform: 'none'
-          }
-        }
-      } catch {
-        // Fallback to upper center
-      }
-    }
-
-    return {
-      top: `${defaultTop}px`,
-      left: `${Math.max(20, defaultLeft)}px`,
-      transform: 'none'
-    }
-  }, [editorView])
-
-  const [modalPosition, setModalPosition] = useState(getInitialPosition)
-  const [contextRange, setContextRange] = useState(null)
-  const [isDragging, setIsDragging] = useState(false)
-
   const inputRef = useRef(null)
-  const modalRef = useRef(null)
 
-  // Silky-smooth Drag Handling
-  const handleDragStart = useCallback((e) => {
-    if (e.button !== 0) return
-    e.preventDefault()
-    e.stopPropagation()
+  const { modalRef, isDragging, handleDragStart, modalStyle } = useInlineDragAndPosition({
+    editorView,
+    isOpen
+  })
 
-    if (!modalRef.current) return
-    const rect = modalRef.current.getBoundingClientRect()
+  const { contextRange } = useInlineContextExtractor({
+    editorView,
+    isOpen,
+    cursorPosition
+  })
 
-    const startX = e.clientX
-    const startY = e.clientY
-    const initialLeft = rect.left
-    const initialTop = rect.top
+  const {
+    query,
+    setQuery,
+    response,
+    isGenerating,
+    copied,
+    handleCopy,
+    handleReplace,
+    handleCancel,
+    handleSubmit
+  } = useInlineGeneration({
+    isOpen,
+    onClose,
+    onInsert,
+    contextRange,
+    title,
+    inputRef
+  })
 
-    setModalPosition({
-      top: `${Math.round(initialTop)}px`,
-      left: `${Math.round(initialLeft)}px`,
-      transform: 'none'
-    })
-    setIsDragging(true)
-
-    let rafId = null
-
-    const onPointerMove = (moveEvent) => {
-      if (rafId) cancelAnimationFrame(rafId)
-      rafId = requestAnimationFrame(() => {
-        const deltaX = moveEvent.clientX - startX
-        const deltaY = moveEvent.clientY - startY
-
-        const modalWidth = rect.width
-        const modalHeight = rect.height
-        const maxLeft = window.innerWidth - modalWidth - 10
-        const maxTop = window.innerHeight - modalHeight - 10
-
-        const newLeft = Math.max(10, Math.min(maxLeft, initialLeft + deltaX))
-        const newTop = Math.max(10, Math.min(maxTop, initialTop + deltaY))
-
-        setModalPosition({
-          top: `${Math.round(newTop)}px`,
-          left: `${Math.round(newLeft)}px`,
-          transform: 'none'
-        })
-      })
-    }
-
-    const onPointerUp = () => {
-      if (rafId) cancelAnimationFrame(rafId)
-      setIsDragging(false)
-      window.removeEventListener('pointermove', onPointerMove)
-      window.removeEventListener('pointerup', onPointerUp)
-    }
-
-    window.addEventListener('pointermove', onPointerMove, { passive: true })
-    window.addEventListener('pointerup', onPointerUp, { once: true })
-  }, [])
-
-  useEffect(() => {
-    if (isOpen && !isDragging) {
-      setModalPosition(getInitialPosition())
-    }
-  }, [isOpen, getInitialPosition])
-
-  const getSelectedText = useCallback(() => {
-    if (!editorView) return null
-
-    const doc = editorView.state.doc
-    const selection = editorView.state.selection.main
-    const selectedText = doc.sliceString(selection.from, selection.to)
-    const fullDocumentText = doc.toString()
-
-    if (selectedText.trim()) {
-      return {
-        text: selectedText.trim(),
-        fullText: fullDocumentText,
-        from: selection.from,
-        to: selection.to,
-        isSelection: true
-      }
-    } else {
-      try {
-        const linePos = doc.lineAt(selection.from)
-        let startLineNumber = linePos.number
-        let endLineNumber = linePos.number
-
-        let codeStartNum = -1
-        let codeEndNum = -1
-
-        for (let i = startLineNumber; i >= 1; i--) {
-          const l = doc.line(i)
-          if (l.text.trim().startsWith('```')) {
-            codeStartNum = i
-            break
-          }
-        }
-        if (codeStartNum !== -1) {
-          for (let i = startLineNumber; i <= doc.lines; i++) {
-            const l = doc.line(i)
-            if (i !== codeStartNum && l.text.trim().startsWith('```')) {
-              codeEndNum = i
-              break
-            }
-          }
-        }
-
-        if (
-          codeStartNum !== -1 &&
-          codeEndNum !== -1 &&
-          codeStartNum <= startLineNumber &&
-          codeEndNum >= startLineNumber
-        ) {
-          startLineNumber = codeStartNum
-          endLineNumber = codeEndNum
-        } else {
-          while (startLineNumber > 1 && doc.line(startLineNumber - 1).text.trim() !== '') {
-            startLineNumber--
-          }
-          while (endLineNumber < doc.lines && doc.line(endLineNumber + 1).text.trim() !== '') {
-            endLineNumber++
-          }
-        }
-
-        const startLine = doc.line(startLineNumber)
-        const endLine = doc.line(endLineNumber)
-        const blockText = doc.sliceString(startLine.from, endLine.to)
-
-        return {
-          text: blockText.trim(),
-          fullText: fullDocumentText,
-          from: startLine.from,
-          to: endLine.to,
-          isSelection: false
-        }
-      } catch (err) {
-        console.warn('[InlineLumina] Smart context extraction failed:', err)
-      }
-    }
-    return {
-      text: '',
-      fullText: fullDocumentText,
-      from: selection.from,
-      to: selection.to,
-      isSelection: false
-    }
-  }, [editorView])
-
-
-
+  // Focus input when opened
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 100)
     }
   }, [isOpen])
-
-  useEffect(() => {
-    if (isOpen) {
-      setContextRange(getSelectedText())
-    }
-  }, [isOpen, getSelectedText, cursorPosition])
-
-  useEffect(() => {
-    if (!isOpen) {
-      setQuery('')
-      setLastQuery('')
-      setResponse('')
-      setIsGenerating(false)
-      setCopied(false)
-      setContextRange(null)
-    }
-  }, [isOpen])
-
-  const handleStop = useCallback(() => {
-    if (abortController) {
-      abortController.abort()
-      setAbortController(null)
-    }
-    setIsGenerating(false)
-  }, [abortController])
-
-  const handleCopy = useCallback(() => {
-    if (response) {
-      navigator.clipboard.writeText(response)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    }
-  }, [response])
-
-  const handleReplace = useCallback(() => {
-    if (response && onInsert && contextRange) {
-      onInsert(response, { from: contextRange.from, to: contextRange.to })
-      setTimeout(() => inputRef.current?.focus(), 50)
-    } else if (response && onInsert) {
-      onInsert(response)
-      setTimeout(() => inputRef.current?.focus(), 50)
-    }
-  }, [response, onInsert, contextRange])
-
-  const handleCancel = useCallback(() => {
-    handleStop()
-    onClose()
-  }, [handleStop, onClose])
-
-  useEffect(() => {
-    const handleGlobalKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen) {
-        e.preventDefault()
-        e.stopPropagation()
-        handleCancel()
-      }
-    }
-
-    if (isOpen) {
-      window.addEventListener('keydown', handleGlobalKeyDown, { capture: true })
-    }
-
-    return () => {
-      window.removeEventListener('keydown', handleGlobalKeyDown, { capture: true })
-    }
-  }, [isOpen, handleCancel])
-
-  const handleSubmit = useCallback(
-    async (e) => {
-      if (e) {
-        e.preventDefault()
-        e.stopPropagation()
-      }
-
-      if (!query || !query.trim() || isGenerating) return
-
-      const currentQuery = query.trim()
-      setLastQuery(currentQuery)
-      setQuery('')
-      setIsGenerating(true)
-      setResponse('')
-      setCopied(false)
-
-      const controller = new AbortController()
-      setAbortController(controller)
-
-      try {
-        let systemPrompt = `You are a premium AI writing assistant integrated directly into a user's text editor.
-
-CRITICAL INSTRUCTIONS:
-1. You have access to the Full File Contents. Use this to deeply understand the topic, links, tags, and tone of the entire document.
-2. When the user asks you to modify, expand, or rewrite the Target Block (their selection/cursor position), you MUST use the Full File Context to inform your changes. Ensure your output seamlessly integrates with the rest of the document.
-3. If modifying text, output ONLY the final text for the Target Block. DO NOT include conversational filler like "Here is the expanded text:".
-4. DO NOT wrap the text in markdown code blocks (\`\`\`) unless the user explicitly asks for code.
-5. If the user asks a general question (e.g., "what is this file about", "summarize", "what is the file name"), answer concisely based on the Full File Contents.`
-
-        if (title) {
-          systemPrompt += `\n\n**File Name / Title:** ${title}`
-        }
-
-        if (contextRange) {
-          if (contextRange.fullText) {
-            systemPrompt += `\n\n**Full File Contents (For deep context & understanding):**\n\`\`\`\n${contextRange.fullText}\n\`\`\``
-          }
-          if (contextRange.text) {
-            systemPrompt +=
-              "\n\n**Current Target Block (Where the user's cursor/selection is located):**\n" +
-              contextRange.text
-            if (contextRange.isSelection) {
-              systemPrompt +=
-                '\n\n*(The user has highlighted the Target Block above. You must operate strictly on replacing/expanding this selection, but use the Full File Contents for context).*'
-            } else {
-              systemPrompt +=
-                '\n\n*(This is the Target Block surrounding the user cursor. You must operate strictly on this block, but use the Full File Contents for context).*'
-            }
-          }
-        }
-
-        let visibleKey = null
-        let model = 'deepseek-chat'
-        try {
-          const [{ useSettingsStore }, { resolveProviderConfig }] = await Promise.all([
-            import('../../core/store/useSettingsStore'),
-            import('./providers/index.js')
-          ])
-          const settingsObj = useSettingsStore.getState().settings || {}
-          const cfg = resolveProviderConfig(settingsObj)
-          visibleKey = cfg.apiKey
-          model = cfg.activeModel || 'deepseek-chat'
-        } catch (err) {}
-
-        if (!visibleKey) {
-          setResponse('**Error:** Missing API Key. Please configure it in Settings.')
-          setIsGenerating(false)
-          return
-        }
-
-        const timeoutId = setTimeout(() => controller.abort(), 60000)
-
-        let apiResponse
-        try {
-          apiResponse = await fetch('https://api.deepseek.com/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${visibleKey}`
-            },
-            body: JSON.stringify({
-              model: model,
-              messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: currentQuery }
-              ],
-              temperature: 0.7,
-              stream: true
-            }),
-            signal: controller.signal
-          })
-        } catch (fetchErr) {
-          clearTimeout(timeoutId)
-          if (fetchErr.name === 'AbortError') throw new Error('Request timed out.')
-          throw fetchErr
-        }
-
-        clearTimeout(timeoutId)
-
-        if (!apiResponse.ok) {
-          const errData = await apiResponse.json().catch(() => ({}))
-          throw new Error(errData.error?.message || `API Error: ${apiResponse.status}`)
-        }
-
-        const reader = apiResponse.body.getReader()
-        const decoder = new TextDecoder('utf-8')
-        let fullResponse = ''
-
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-
-          const chunk = decoder.decode(value, { stream: true })
-          const lines = chunk.split('\n')
-
-          for (const line of lines) {
-            if (line.startsWith('data: ') && line !== 'data: [DONE]') {
-              try {
-                const data = JSON.parse(line.slice(6))
-                if (data.choices && data.choices[0].delta && data.choices[0].delta.content) {
-                  fullResponse += data.choices[0].delta.content
-                  setResponse(fullResponse)
-                }
-              } catch (e) {}
-            }
-          }
-        }
-      } catch (err) {
-        if (err.name === 'AbortError') {
-          setResponse((prev) => prev + '\n\n*(Generation stopped)*')
-        } else {
-          setResponse(`**Error:** ${err.message}`)
-        }
-      } finally {
-        setIsGenerating(false)
-        setAbortController(null)
-      }
-    },
-    [query, isGenerating, contextRange, title]
-  )
-
-  const modalStyle = React.useMemo(() => {
-    const style = {
-      top: typeof modalPosition.top === 'number' ? `${modalPosition.top}px` : modalPosition.top,
-      left: typeof modalPosition.left === 'number' ? `${modalPosition.left}px` : modalPosition.left
-    }
-    if (modalPosition.transform) {
-      style.transform = modalPosition.transform
-    }
-    return style
-  }, [modalPosition])
 
   if (!isOpen) return null
 

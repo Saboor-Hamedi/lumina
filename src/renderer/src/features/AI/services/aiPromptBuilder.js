@@ -175,6 +175,7 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
 - Structure your answers, roadmaps, outlines, and proposals using rich markdown, tables, headings, and bullet points.
 - Output all answers thoroughly and directly in the chat conversation.
 - Workspace file tools are disabled in ${modeCfg.name} Mode. All answers, blueprints, and ideas are provided directly in the chat conversation.
+- **CODE BLOCK LANGUAGE IDS**: Do NOT use \`\`\`TEXT, \`\`\`MARKDOWN, \`\`\`PLAINTEXT, \`\`\`TREE, or any non-standard identifier. Use \`\`\`bash for folder trees or plain indented lists. ONLY use real language ids like \`\`\`js, \`\`\`python, \`\`\`bash, \`\`\`json, etc.
 
 **🔗 WIKILINKS GUIDELINES**:
 - Lumina supports double-bracket wikilinks: \`[[Note Title]]\` or \`[[Note Title|Alias]]\`.
@@ -215,6 +216,7 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
 - Cite file names clearly when quoting specific context.
 - Follow EVERY instruction the user gives. If they ask for wikilinks, headers, formatting, or structure — do it without skipping.
 - Produce comprehensive, rich, detailed content.
+- **CODE BLOCK LANGUAGE IDS**: When showing file/folder trees or plain text structures, do NOT use \`\`\`TEXT, \`\`\`MARKDOWN, \`\`\`PLAINTEXT, \`\`\`TREE, or any non-standard language identifier. Use \`\`\`bash for folder trees or just write them as plain indented text/lists. ONLY use real language ids like \`\`\`js, \`\`\`python, \`\`\`sql, \`\`\`bash, \`\`\`json, etc.
 
 **🔗 WIKILINKS GUIDELINES**:
 - Lumina supports double-bracket wikilinks: \`[[Note Title]]\` or \`[[Note Title|Alias]]\`.

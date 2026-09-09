@@ -93,7 +93,16 @@ export const buildRealtimeDisplay = ({
     }
     blocks.push(`<lumina-activity>\n${actionLines.join('\n')}\n</lumina-activity>`)
   }
-  const responseText = [beforeToolText.trim(), afterToolText.trim()].filter(Boolean).join('\n\n')
+
+  // Normalize non-standard code-block language ids to avoid ugly "N lines / Copy" labels
+  const normalizeCodeBlocks = (text) => {
+    if (!text) return text
+    return text.replace(/```(TEXT|MARKDOWN|PLAINTEXT|TREE|PLAIN|MD)\b/gi, '```')
+  }
+
+  const responseText = [normalizeCodeBlocks(beforeToolText.trim()), normalizeCodeBlocks(afterToolText.trim())]
+    .filter(Boolean)
+    .join('\n\n')
   if (responseText) {
     blocks.push(responseText)
   }
