@@ -100,8 +100,12 @@ export const buildRealtimeDisplay = ({
   const blocks = []
   const topReasoning = initialReasoning || reasoningText
   const cleanInitial = stripDSML(topReasoning)
-  if (cleanInitial) {
-    blocks.push(`<think>\n${cleanInitial}\n</think>`)
+  const cleanPost = stripDSML(postToolReasoning)
+
+  // Consolidate ALL thinking (initial + post-tool) into ONE single dropdown at the top
+  const allReasoning = [cleanInitial, cleanPost].filter(Boolean).join('\n\n')
+  if (allReasoning) {
+    blocks.push(`<think>\n${allReasoning}\n</think>`)
   }
 
   if (beforeToolText.trim()) {
@@ -114,11 +118,6 @@ export const buildRealtimeDisplay = ({
       actionLines.push(activeToolStatus)
     }
     blocks.push(`<lumina-activity>\n${actionLines.join('\n')}\n</lumina-activity>`)
-  }
-
-  const cleanPost = stripDSML(postToolReasoning)
-  if (cleanPost) {
-    blocks.push(`<think>\n${cleanPost}\n</think>`)
   }
 
   if (afterToolText.trim()) {

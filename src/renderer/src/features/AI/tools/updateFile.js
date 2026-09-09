@@ -21,6 +21,10 @@ export const updateFileTool = aiSdk.tool({
         type: 'string',
         description: 'New text, section content, or code to insert in place of `search` or under `sectionHeader`.'
       },
+      text: {
+        type: 'string',
+        description: 'New text, paragraph, or section content to update into the note.'
+      },
       insertAfter: {
         type: 'string',
         description: 'Text, line, or heading in the file after which to insert the new content.'
@@ -41,7 +45,7 @@ export const updateFileTool = aiSdk.tool({
     },
     required: ['title']
   }),
-  execute: async ({ title, search, replace, insertAfter, insertBefore, position, content, sectionHeader }) => {
+  execute: async ({ title, search, replace, text, insertAfter, insertBefore, position, content, sectionHeader }) => {
     const { useVaultStore } = await import('../../../core/store/workspaceStore')
     const vs = useVaultStore.getState()
     const snippets = Array.isArray(vs.snippets) ? vs.snippets : Object.values(vs.snippets || {})
@@ -92,8 +96,23 @@ export const updateFileTool = aiSdk.tool({
         .replace(/[—–]/g, '--')
         .replace(/[ \t]+/g, ' ')
 
+    let effectiveReplace = replace !== undefined ? replace : text
+    let effectiveHeader = sectionHeader
+
+    if (
+      !effectiveHeader &&
+      search === undefined &&
+      insertAfter === undefined &&
+      insertBefore === undefined &&
+      position === undefined &&
+      content === undefined &&
+      effectiveReplace !== undefined
+    ) {
+      effectiveHeader = 'Opening'
+    }
+
     let newCode = currentCode
-    let writtenText = replace || content || ''
+    let writtenText = effectiveReplace || content || ''
     let diffPreview = ''
     let summaryText = `Updated **${target.title}**`
     let oldSectionContent = ''
@@ -101,23 +120,23 @@ export const updateFileTool = aiSdk.tool({
     let changePos = null
     let changeLine = null
 
-    if (position === 'top' && replace !== undefined) {
+    if (position === 'top' && effectiveReplace !== undefined) {
       const titleMatch = currentCode.match(/^#\s+[^\r\n]+[\r\n]*/m)
       if (titleMatch) {
         const afterTitleIndex = titleMatch.index + titleMatch[0].length
-        newCode = currentCode.slice(0, afterTitleIndex) + '\n' + replace.trim() + '\n\n' + currentCode.slice(afterTitleIndex).replace(/^\n+/, '')
+        newCode = currentCode.slice(0, afterTitleIndex) + '\n' + effectiveReplace.trim() + '\n\n' + currentCode.slice(afterTitleIndex).replace(/^\n+/, '')
         changePos = afterTitleIndex + 1
         changeLine = 2
       } else {
-        newCode = replace.trim() + '\n\n' + currentCode
+        newCode = effectiveReplace.trim() + '\n\n' + currentCode
         changePos = 0
         changeLine = 1
       }
-      writtenText = replace.trim()
+      writtenText = effectiveReplace.trim()
       summaryText = `Added top references to **${target.title}**`
-      diffPreview = `\`\`\`markdown\n${replace.trim()}\n\`\`\``
-    } else if (sectionHeader && replace !== undefined) {
-      const cleanHeader = sectionHeader.trim()
+      diffPreview = `\`\`\`markdown\n${effectiveReplace.trim()}\n\`\`\``
+    } else if (effectiveHeader && effectiveReplace !== undefined) {
+      const cleanHeader = effectiveHeader.trim()
       const headerTitle = cleanHeader.replace(/^#{1,6}\s*/, '').trim().toLowerCase()
       const isIntroRequest =
         /^(intro|introduction|opening|opening paragraph|first paragraph|overview|summary|lead|top)$/i.test(
@@ -126,67 +145,7 @@ export const updateFileTool = aiSdk.tool({
 
       const lines = currentCode.split('\n')
 
-      let matchLineIndex = -1
-      let matchHeaderLevel = 2
-      let matchFullHeader = ''
-
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i]
-        const hMatch = line.match(/^(#{1,6})\s+(.*)$/)
-        if (hMatch) {
-          const level = hMatch[1].length
-          const lineText = hMatch[2].trim().toLowerCase()
-          const cleanLineText = lineText.replace(/^[0-9.\s\-_:]+/, '').trim()
-
-          if (
-            lineText === headerTitle ||
-            cleanLineText === headerTitle ||
-            lineText.includes(headerTitle) ||
-            headerTitle.includes(cleanLineText)
-          ) {
-            matchLineIndex = i
-            matchHeaderLevel = level
-            matchFullHeader = line
-            break
-          }
-        }
-      }
-
-      if (matchLineIndex !== -1) {
-        let endLineIndex = lines.length
-        for (let j = matchLineIndex + 1; j < lines.length; j++) {
-          const nextH = lines[j].match(/^(#{1,6})\s+/)
-          if (nextH) {
-            if (matchHeaderLevel === 1 || nextH[1].length <= matchHeaderLevel) {
-              endLineIndex = j
-              break
-            }
-          }
-        }
-
-        let cleanBody = replace.trim()
-        const leadingHeadingMatch = cleanBody.match(/^#{1,6}\s+[^\r\n]+[\r\n]*/)
-        if (leadingHeadingMatch) {
-          const headingText = leadingHeadingMatch[0].replace(/^#{1,6}\s*/, '').trim().toLowerCase()
-          if (
-            headingText === headerTitle ||
-            headerTitle.includes(headingText) ||
-            headingText.includes(headerTitle) ||
-            headingText === (target.title || '').toLowerCase()
-          ) {
-            cleanBody = cleanBody.slice(leadingHeadingMatch[0].length).trim()
-          }
-        }
-
-        const beforeLines = lines.slice(0, matchLineIndex + 1)
-        const afterLines = lines.slice(endLineIndex)
-        newCode = [...beforeLines, '', cleanBody, '', ...afterLines].join('\n')
-        writtenText = `${matchFullHeader}\n\n${cleanBody}`
-        summaryText = `Updated section \`${matchFullHeader}\` in **${target.title}**`
-        diffPreview = `\`\`\`markdown\n${matchFullHeader}\n\n${cleanBody}\n\`\`\``
-        changeLine = matchLineIndex + 1
-        changePos = beforeLines.join('\n').length + 1
-      } else if (isIntroRequest) {
+      if (isIntroRequest) {
         // Smart update for opening/introduction before first heading
         let titleLineIdx = -1
         for (let i = 0; i < lines.length; i++) {
@@ -205,7 +164,7 @@ export const updateFileTool = aiSdk.tool({
           }
         }
 
-        let cleanBody = replace.trim()
+        let cleanBody = effectiveReplace.trim()
         // Strip duplicate main title from replacement if beforeLines already has it
         cleanBody = cleanBody.replace(/^#\s+[^\r\n]+[\r\n]*/, '').trim()
 
@@ -218,13 +177,75 @@ export const updateFileTool = aiSdk.tool({
         changeLine = titleLineIdx !== -1 ? titleLineIdx + 2 : 1
         changePos = beforeLines.length > 0 ? beforeLines.join('\n').length + 1 : 0
       } else {
-        const formattedHeader = cleanHeader.startsWith('#') ? cleanHeader : `## ${sectionHeader.trim()}`
-        const newSection = `\n\n${formattedHeader}\n\n${replace.trim()}\n`
-        newCode = currentCode.trimEnd() + newSection
-        writtenText = newSection
-        summaryText = `Added section \`${formattedHeader}\` to **${target.title}**`
-        diffPreview = `\`\`\`markdown\n${formattedHeader}\n\n${replace.trim()}\n\`\`\``
-        changePos = currentCode.trimEnd().length + 2
+        let matchLineIndex = -1
+        let matchHeaderLevel = 2
+        let matchFullHeader = ''
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i]
+          const hMatch = line.match(/^(#{1,6})\s+(.*)$/)
+          if (hMatch) {
+            const level = hMatch[1].length
+            const lineText = hMatch[2].trim().toLowerCase()
+            const cleanLineText = lineText.replace(/^[0-9.\s\-_:]+/, '').trim()
+
+            if (
+              lineText === headerTitle ||
+              cleanLineText === headerTitle ||
+              lineText.includes(headerTitle) ||
+              headerTitle.includes(cleanLineText)
+            ) {
+              matchLineIndex = i
+              matchHeaderLevel = level
+              matchFullHeader = line
+              break
+            }
+          }
+        }
+
+        if (matchLineIndex !== -1) {
+          let endLineIndex = lines.length
+          for (let j = matchLineIndex + 1; j < lines.length; j++) {
+            const nextH = lines[j].match(/^(#{1,6})\s+/)
+            if (nextH) {
+              if (matchHeaderLevel === 1 || nextH[1].length <= matchHeaderLevel) {
+                endLineIndex = j
+                break
+              }
+            }
+          }
+
+          let cleanBody = effectiveReplace.trim()
+          const leadingHeadingMatch = cleanBody.match(/^#{1,6}\s+[^\r\n]+[\r\n]*/)
+          if (leadingHeadingMatch) {
+            const headingText = leadingHeadingMatch[0].replace(/^#{1,6}\s*/, '').trim().toLowerCase()
+            if (
+              headingText === headerTitle ||
+              headerTitle.includes(headingText) ||
+              headingText.includes(headerTitle) ||
+              headingText === (target.title || '').toLowerCase()
+            ) {
+              cleanBody = cleanBody.slice(leadingHeadingMatch[0].length).trim()
+            }
+          }
+
+          const beforeLines = lines.slice(0, matchLineIndex + 1)
+          const afterLines = lines.slice(endLineIndex)
+          newCode = [...beforeLines, '', cleanBody, '', ...afterLines].join('\n')
+          writtenText = `${matchFullHeader}\n\n${cleanBody}`
+          summaryText = `Updated section \`${matchFullHeader}\` in **${target.title}**`
+          diffPreview = `\`\`\`markdown\n${matchFullHeader}\n\n${cleanBody}\n\`\`\``
+          changeLine = matchLineIndex + 1
+          changePos = beforeLines.join('\n').length + 1
+        } else {
+          const formattedHeader = cleanHeader.startsWith('#') ? cleanHeader : `## ${effectiveHeader.trim()}`
+          const newSection = `\n\n${formattedHeader}\n\n${effectiveReplace.trim()}\n`
+          newCode = currentCode.trimEnd() + newSection
+          writtenText = newSection
+          summaryText = `Added section \`${formattedHeader}\` to **${target.title}**`
+          diffPreview = `\`\`\`markdown\n${formattedHeader}\n\n${effectiveReplace.trim()}\n\`\`\``
+          changePos = currentCode.trimEnd().length + 2
+        }
       }
     } else if (insertAfter !== undefined && replace !== undefined) {
       const trimmedTarget = insertAfter.trim()
@@ -389,8 +410,8 @@ export const updateFileTool = aiSdk.tool({
           if (matchIdx !== -1) {
             const before = currentLines.slice(0, matchIdx).join('\n')
             const after = currentLines.slice(matchIdx + matchLen).join('\n')
-            newCode = (before ? before + '\n' : '') + (replace ?? '') + (after ? '\n' + after : '')
-            writtenText = replace ?? ''
+            newCode = (before ? before + '\n' : '') + (effectiveReplace ?? '') + (after ? '\n' + after : '')
+            writtenText = effectiveReplace ?? ''
             summaryText = `Updated targeted block in **${target.title}**`
             changeLine = matchIdx + 1
             changePos = before ? before.length + 1 : 0
@@ -399,9 +420,34 @@ export const updateFileTool = aiSdk.tool({
             const regex = new RegExp(escaped, 'i')
             if (regex.test(currentCode)) {
               changePos = currentCode.search(regex)
-              newCode = currentCode.replace(regex, replace ?? '')
-              writtenText = replace ?? ''
+              newCode = currentCode.replace(regex, effectiveReplace ?? '')
+              writtenText = effectiveReplace ?? ''
               summaryText = `Updated targeted section in **${target.title}**`
+            } else if (effectiveReplace !== undefined) {
+              // Graceful fallback: If search text wasn't found verbatim, update the opening section
+              const currentLines2 = currentCode.split('\n')
+              let titleLineIdx = -1
+              for (let i = 0; i < currentLines2.length; i++) {
+                if (currentLines2[i].match(/^#\s+/)) {
+                  titleLineIdx = i
+                  break
+                }
+              }
+              let firstSubheadingIdx = currentLines2.length
+              const searchStart = titleLineIdx !== -1 ? titleLineIdx + 1 : 0
+              for (let j = searchStart; j < currentLines2.length; j++) {
+                if (currentLines2[j].match(/^#{1,6}\s+/)) {
+                  firstSubheadingIdx = j
+                  break
+                }
+              }
+              const beforeLines = titleLineIdx !== -1 ? currentLines2.slice(0, titleLineIdx + 1) : []
+              const afterLines = currentLines2.slice(firstSubheadingIdx)
+              newCode = [...beforeLines, '', effectiveReplace.trim(), '', ...afterLines].join('\n')
+              writtenText = effectiveReplace.trim()
+              summaryText = `Updated opening section in **${target.title}**`
+              changeLine = titleLineIdx !== -1 ? titleLineIdx + 2 : 1
+              changePos = beforeLines.length > 0 ? beforeLines.join('\n').length + 1 : 0
             } else {
               return {
                 success: false,
@@ -411,7 +457,7 @@ export const updateFileTool = aiSdk.tool({
           }
         }
       }
-      diffPreview = `\`\`\`markdown\n${replace ?? ''}\n\`\`\``
+      diffPreview = `\`\`\`markdown\n${effectiveReplace ?? ''}\n\`\`\``
     } else if (content !== undefined) {
       const trimmedContent = content.trim()
       const contentLines = trimmedContent.split('\n')

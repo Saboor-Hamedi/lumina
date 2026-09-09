@@ -62,7 +62,7 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, isModal = fals
     if ((!sessions || sessions.length === 0) && !isChatLoading) {
       loadSessions()
     }
-  }, [loadSessions, sessions, isChatLoading])
+  }, [])
 
   // Listen for external toggle history event (from sidebar header)
   useEffect(() => {

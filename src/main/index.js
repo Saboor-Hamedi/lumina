@@ -63,6 +63,24 @@ async function migrateFromSQLite() {
   } catch (err) {}
 }
 
+async function autoRepairIndexedDB() {
+  try {
+    const partitionsDir = join(app.getPath('userData'), 'Partitions', 'main', 'IndexedDB')
+    const devDbDir = join(partitionsDir, 'http_localhost_5173.indexeddb.leveldb')
+    const currentFile = join(devDbDir, 'CURRENT')
+    const currentContent = await fs.readFile(currentFile, 'utf8').catch(() => null)
+    if (currentContent) {
+      const manifestName = currentContent.trim().replace(/^[\r\n]+|[\r\n]+$/g, '')
+      const manifestPath = join(devDbDir, manifestName)
+      const manifestExists = await fs.access(manifestPath).then(() => true).catch(() => false)
+      if (!manifestExists) {
+        console.warn('[IndexedDB] Corrupted LevelDB manifest detected, auto-healing cache:', devDbDir)
+        await fs.rm(devDbDir, { recursive: true, force: true }).catch(() => {})
+      }
+    }
+  } catch (_) {}
+}
+
 async function createWindow() {
   const iconPath = iconAsset
   const appIcon = electron.nativeImage.createFromPath(iconPath)
@@ -713,8 +731,10 @@ app.whenReady().then(async () => {
     await WorkspaceManager.init(savedWorkspacePath, app.getPath('documents'))
     await migrateFromSQLite()
 
-    // Defer indexing until the renderer is initialized so progress events are received reliably.
     const startupWorkspacePath = savedWorkspacePath
+
+    // Ensure IndexedDB LevelDB caches are healthy before creating window
+    await autoRepairIndexedDB()
 
     await createWindow()
 

@@ -7,6 +7,7 @@ import {
 } from '../services/aiWorkerManager.js'
 import {
   loadChatSessions,
+  saveChatSession,
   createNewChatSession,
   deleteChatSession,
   renameChatSession,
@@ -30,6 +31,8 @@ import { detectUserIntent, IntentCategory } from '../services/intentRouter.js'
 import { getAIMode } from '../modes/index.js'
 import { getAITools } from './index.js'
 import { AIProviderFactory, resolveProviderConfig } from '../providers/index.js'
+
+let loadSessionsPromise = null
 
 /**
  * Lumina AI Store (useAIStore)
@@ -157,32 +160,60 @@ export const useAIStore = create((set, get) => {
 
     // --- Multi-Session Chat Management ---
     loadSessions: async () => {
-      const { isChatLoading } = get()
-      const { sessions, activeSessionId } = await loadChatSessions()
-      // If actively generating, do NOT overwrite active messages in memory!
-      if (isChatLoading) {
-        set({ sessions, activeSessionId })
-        return
-      }
-      const activeSession = sessions.find((s) => s.id === activeSessionId)
-      set({
-        sessions,
-        activeSessionId,
-        chatMessages: activeSession?.messages || []
-      })
+      if (loadSessionsPromise) return loadSessionsPromise
+      loadSessionsPromise = (async () => {
+        try {
+          const { isChatLoading } = get()
+          const { sessions, activeSessionId } = await loadChatSessions()
+          // If actively generating, do NOT overwrite active messages in memory!
+          if (isChatLoading) {
+            set({ sessions, activeSessionId })
+            return
+          }
+          const activeSession = sessions.find((s) => s.id === activeSessionId)
+          set({
+            sessions,
+            activeSessionId,
+            chatMessages: activeSession?.messages || []
+          })
+        } finally {
+          loadSessionsPromise = null
+        }
+      })()
+      return loadSessionsPromise
     },
 
     saveSessions: async () => {},
 
     createNewSession: async () => {
-      const { sessions } = get()
+      const { sessions, activeSessionId } = get()
+      // If current active session is already empty, just keep it active
+      const currentActive = sessions.find((s) => s.id === activeSessionId)
+      if (currentActive && (!currentActive.messages || currentActive.messages.length === 0)) {
+        return
+      }
+
+      // If another empty session already exists, switch to it instead of creating duplicates
+      const existingEmpty = sessions.find(
+        (s) => (!s.messages || s.messages.length === 0) && (s.title === 'New Chat' || !s.title)
+      )
+      if (existingEmpty) {
+        get().switchSession(existingEmpty.id)
+        return
+      }
+
       const { session, isNew } = await createNewChatSession(sessions)
       if (isNew) {
-        set((state) => ({
-          sessions: [session, ...state.sessions],
-          activeSessionId: session.id,
-          chatMessages: []
-        }))
+        set((state) => {
+          if (state.sessions.some((s) => s.id === session.id)) {
+            return { activeSessionId: session.id, chatMessages: [] }
+          }
+          return {
+            sessions: [session, ...state.sessions],
+            activeSessionId: session.id,
+            chatMessages: []
+          }
+        })
       } else {
         get().switchSession(session.id)
       }
@@ -236,16 +267,28 @@ export const useAIStore = create((set, get) => {
 
     deleteSession: async (sessionId) => {
       const { sessions, activeSessionId } = get()
-      const remainingSessions = sessions.filter((s) => s.id !== sessionId)
-      let nextActiveId = activeSessionId
+      let remainingSessions = sessions.filter((s) => s.id !== sessionId)
 
-      if (activeSessionId === sessionId) {
-        nextActiveId = remainingSessions.length > 0 ? remainingSessions[0].id : null
+      // If deleting the last session, create a single clean session atomically
+      // so `sessions` is NEVER [] (which prevents cascading reloads or duplicate creation)
+      let freshSession = null
+      if (remainingSessions.length === 0) {
+        freshSession = {
+          id: crypto.randomUUID(),
+          title: 'New Chat',
+          messages: [],
+          timestamp: Date.now()
+        }
+        remainingSessions = [freshSession]
       }
 
-      const nextMessages = nextActiveId
-        ? remainingSessions.find((s) => s.id === nextActiveId)?.messages || []
-        : []
+      let nextActiveId = activeSessionId
+      if (activeSessionId === sessionId || !remainingSessions.some((s) => s.id === activeSessionId)) {
+        nextActiveId = remainingSessions[0].id
+      }
+
+      const nextMessages =
+        remainingSessions.find((s) => s.id === nextActiveId)?.messages || []
 
       set({
         sessions: remainingSessions,
@@ -253,12 +296,12 @@ export const useAIStore = create((set, get) => {
         chatMessages: nextMessages
       })
 
+      localStorage.setItem('lumina-active-session-id', nextActiveId)
+
       await deleteChatSession(sessionId, sessions)
 
-      if (nextActiveId) {
-        localStorage.setItem('lumina-active-session-id', nextActiveId)
-      } else {
-        get().createNewSession()
+      if (freshSession) {
+        await saveChatSession(freshSession)
       }
     },
 

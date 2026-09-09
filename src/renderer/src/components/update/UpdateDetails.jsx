@@ -8,27 +8,32 @@ import ToolTip from '../atoms/ToolTip'
 import './UpdateDetails.css'
 
 export const DEFAULT_RELEASE_NOTES = `New
+- Surgical In-Place AI Note Updates: Update specific paragraphs, opening introductions, and targeted sections without rewriting entire notes, preserving your formatting and frontmatter.
+- Unified Live AI Reasoning: Deep chain-of-thought thinking is now consolidated into a single live dropdown at the top of messages with real-time status and active timers.
 - Google Drive Git-Like Mirroring: Backup your full workspace hierarchy as uncompressed individual Markdown and asset files directly into a clean "lumina/" root folder on Google Drive, preserving all nested folder paths.
-- Individual Note Push: Push any active note and its full parent folder hierarchy to Google Drive on demand via a subtle Push button directly in the editor metadata bar, with pulse animations and instant confirmation.
+- Individual Note Cloud Push: Push any active note and its full parent folder hierarchy to Google Drive on demand via a subtle Push button directly in the editor metadata bar, with pulse animations and instant confirmation.
 - Dual Backup Formats: Choose between the traditional compressed (.zip) archive or the git-like mirror folder structure directly from the Settings dropdown.
-- Cancel Backup Control: Safely abort ongoing Google Drive backups at any point with a dedicated sleek cancel button.
 - PDF Workspace & Native Viewer: Open, zoom, pan, and read PDF documents directly in workspace tabs with instant cached tab switching and high-DPI rendering.
 - Whisper Voice Dictation: Speak your thoughts directly into notes or Lumina composer with offline Whisper speech-to-text and a live floating soundwave capsule.
 
 Improved
+- Targeted AI Note Replacements: AI-driven note updates cleanly isolate target headings and opening paragraphs while protecting frontmatter and surrounding document structures.
+- Instant CodeMirror Sync: AI edits and note updates stream into the active editor instantly with smart viewport centering and zero typewriter delay.
+- Multi-Session Chat Management: Deduplicated session state with in-flight mutex locking to prevent duplicate "New Chat" sessions on initial load or delete.
 - Intelligent Cloud Hierarchy Resolution: Pushing a deeply nested note automatically ensures all ancestor folders exist on Google Drive without re-uploading unrelated files.
 - Pre-Push Auto-Save: Pushing a note instantly synchronizes pending title edits and note contents before uploading to guarantee the cloud copy matches your local draft.
-- Clean Status Notifications: Streamlined backup toasts to concise, non-intrusive messages ("Successfully backed up").
 - Lightning-Fast Tab Switching: Move instantly between notes, PDFs, images, and graph view with zero UI lag or layout stutter.
-- Search & Arrow Navigation: Search notes across nested folders with live highlighting, smooth arrow key traversal, and Enter to open.
+- Clean Status Notifications: Streamlined backup toasts to concise, non-intrusive messages ("Successfully backed up").
 - Comprehensive Test Suite: 100% passing tests across all 87 unit and integration test files, along with verified Playwright end-to-end automation.
 
 Fixed
+- Sequential Thinking Dropdowns: Fixed an issue where multiple fragmented thinking dropdowns would appear across multi-step tool calls or after reflection delays.
+- Session Menu Duplication: Resolved a race condition where deleting the last session created two concurrent "New Chat" instances in the sidebar.
+- IndexedDB Manifest Self-Healing: Automatically repairs broken LevelDB sequential manifest pointers on startup, preventing Chromium storage crashes during rapid dev restarts.
 - Note Title & Disk Renaming: Fixed an issue where new notes titled "lumina" or edited titles remained saved as "New Note.md" on disk and pushed to Drive with placeholder names.
 - Google Drive In-Place Renaming: Remote files on Google Drive are now renamed in-place when a local note title changes, avoiding duplicate cloud copies.
 - File Watcher Loop Prevention: In-flight file renames are now shielded with ignored paths to prevent spurious deletion and watcher reload cycles.
-- Active Note Synchronization: Switching tabs or opening search matches reliably highlights and scrolls to the active note in the folder tree.
-- In-Place File Renaming: Renaming notes, images, or PDFs in the workspace renames entries directly without duplicating files or affecting source paths.`
+- Active Note Synchronization: Switching tabs or opening search matches reliably highlights and scrolls to the active note in the folder tree.`
 
 /**
  * Simple, clean release notes parser for our Markdown release notes.
@@ -102,7 +107,7 @@ export const parseReleaseNotes = (notes) => {
 
 const UpdateDetails = () => {
   const { status, updateInfo, progress, download, install, check, lastChecked } = useUpdateStore()
-  const [currentVersion, setCurrentVersion] = useState('1.0.42')
+  const [currentVersion, setCurrentVersion] = useState('1.0.43')
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef(null)
 

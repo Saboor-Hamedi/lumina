@@ -418,7 +418,7 @@ ${vaultAccessNote}`
       '      * NEVER just talk in chat without calling updateFile!\n' +
       '\n' +
       'EXAMPLES:\n' +
-      'User: "Go for option B" → [Call updateFile with title="current" and the Option B text immediately on step 1]\n' +
+      'User: "Go for option B" → [Call updateFile with title="current", sectionHeader="Opening", replace="<Option B text>" immediately on step 1]\n' +
       'User: "update that paragraph again, with different wordings" → [Call updateFile with title="current" sectionHeader="Opening" and fresh compelling wording immediately on step 1]\n' +
       'User: "Move folder Science to Archive" → [Call moveFolder with sourceFolder="Science" targetFolder="Archive" immediately]\n' +
       'User: "link the files together" → [Call updateFile on each target note with position="top" and replace="> 🔗 **Related:** [[Other Note]]" immediately on step 1]\n' +

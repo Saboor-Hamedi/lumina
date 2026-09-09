@@ -58,7 +58,7 @@ const LuminaChat = ({ isOpen, onClose, onDock, onUnfloat }) => {
     if (isOpen && (!sessions || sessions.length === 0) && !isChatLoading) {
       loadSessions()
     }
-  }, [isOpen, sessions, isChatLoading, loadSessions])
+  }, [isOpen, loadSessions])
 
   const activeSession = useMemo(() => {
     return sessions.find((s) => s.id === activeSessionId) || sessions[0] || null

@@ -126,8 +126,21 @@ When a message is sent, context is assembled in a multi-tier hierarchy:
 - XML Tag Fallback: If non-tool models output raw XML tags, regex handlers parse and execute them.
 
 ### E. Session Management & History
-- Multi-session chat support with persistent storage in `localStorage` (`lumina-chat-sessions`).
+- Multi-session chat support with persistent IndexedDB storage (`chatStorage.js`) and localStorage fallback.
 - History drawer for creating, switching, and deleting sessions.
+- In-flight promise locking (`loadSessionsPromise`) preventing concurrent multi-call race conditions on initial mount.
+
+### F. Surgical In-Place Note Updates & Editor Streamer (`updateFile.js` & `editorStreamer.js`)
+- **Targeted Precision Execution**: Instead of rewriting entire notes on edit or refinement requests, `updateFile` performs surgical updates:
+  - Updates specific sections via `sectionHeader` (e.g. `## Features`).
+  - Isolates opening paragraphs and introductory text via `isIntroRequest` (replacing text strictly between `# Title` and the first `## Subheading` while preserving frontmatter and all other sections).
+  - Performs surgical block and word-level search & replace via `search` and `replace`.
+- **Zero Typewriter Lag**: Dispatches changes through `streamCodeToEditor` directly to CodeMirror 6 with instant draft synchronization and intelligent vertical centering around the modified lines (`scrollToBottom: false`).
+
+### G. Unified Real-Time Reasoning & Single Thinking Stream (`aiStreamRunner.js` & `ThinkingBlock.jsx`)
+- Consolidates all Chain-of-Thought reasoning (initial assessment, tool selection, and post-tool reflection) into a single, unified `<think>` block at the top of the message.
+- Eliminates secondary fragmented thinking dropdowns appearing after tool execution.
+- Live elapsed timers (`Thinking (12s)`) keep the user visually informed during multi-step model reasoning without sudden delays or UI jumps.
 
 ---
 
@@ -289,6 +302,9 @@ const updateSetting = useSettingsStore((state) => state.updateSetting)
 - **Zero Code Comments Rule**: Never add code comments in modified or newly created files unless explicitly requested.
 - **Natural File Names**: Lumina supports spaces in file names. Do not force underscores or kebab-case.
 - **Local Settings Resilience**: AI keys and `activeAIMode` are dual-persisted to `settings.json` and `localStorage`.
+- **Surgical Updates Over Full Rewrites**: AI updates must never replace entire files on edit or polish requests. Always use targeted selectors (`sectionHeader`, `isIntroRequest`, or `search` & `replace`) to protect frontmatter and surrounding sections.
+- **Single Unified Thinking Block**: All AI reasoning tokens must stream into a single `<think>` block at the top of the message. Never generate fragmented or secondary thinking dropdowns across tool calls.
+- **Atomic Session Fallback**: When deleting the last chat session, never set `sessions: []` in store state. Always construct and persist the replacement session atomically (`remainingSessions = [freshSession]`) to prevent reactive re-render cascades.
 
 ---
 
@@ -468,5 +484,33 @@ Sidebars previously shrank/compressed their content when dragged inward. The tar
 ### I. Roadmap & ProgressTracker Visual Polish (`ProgressTracker.jsx`)
 - **Problem**: The "Mark as Learned" button previously rendered with a heavy green background and border, clashing with user theme accent colors.
 - **Fix**: Removed the prominent green background and border from the learned button state, transitioning to a clean surface and coloring the checkmark icon with `var(--text-accent)` to harmonize with the active theme.
+
+### J. Surgical In-Place AI Note Updates (`updateFile.js` & `editorStreamer.js`)
+- **Problem**: When prompted to update or refine specific paragraphs or sections in notes, earlier logic could rewrite the entire document or fail if `sectionHeader` matched the level-1 document title `# Title` and wiped subsequent sections. Furthermore, passing `text` or option selections (e.g. "Go for option B") failed if exact heading selectors were omitted.
+- **Solution**:
+  - Added support for `text` parameter in `updateFileTool` schema alongside `replace`.
+  - Added smart defaulting: calling `updateFile` without selectors defaults to updating the `Opening` section instead of returning an error.
+  - Prioritized `isIntroRequest` before general heading searches so requests targeting intro/opening text cleanly isolate lines between `# Title` and the first `## Subheading`, protecting frontmatter, titles, and all subsequent document content.
+  - Added a search fallback in `updateFile.js` to automatically update the opening section if the requested search text was not found verbatim.
+  - Integrated direct CodeMirror view dispatch via `streamCodeToEditor` with smart vertical centering and `scrollToBottom: false`.
+
+### K. Unified Single Thinking Stream Architecture (`aiStreamRunner.js` & `ThinkingBlock.jsx`)
+- **Problem**: Multi-step AI generations (tool execution followed by model reflection) generated two fragmented `<think>` tags — one at the top, and another below the activity card after a 30–40 second model reasoning delay. This caused user confusion and UI jumping.
+- **Solution**:
+  - Unified all reasoning (`initialReasoning` and `postToolReasoning`) in `buildRealtimeDisplay` into a single `<think>` block positioned at the top of the message.
+  - While the model reasons after tool calls, reasoning tokens continue accumulating in the existing top dropdown with active timer feedback.
+  - Updated `parseMessageBlocks` in `chatMarkdownParser.js` to merge multiple `<think>` tags into a single top thinking block for backward and historical message compatibility.
+
+### L. Multi-Session Chat Deduplication & Atomic Deletion (`lumina.js` & `chatStorage.js`)
+- **Problem**: When deleting the last chat session or on initial startup with empty sessions, two identical "New Chat" sessions appeared in the sidebar.
+- **Root Cause**: Deleting the last session set `sessions: []`, which triggered reactive `useEffect` hooks in both `Lumina.jsx` and `LuminaChatContent.jsx` to concurrently invoke `loadSessions()`. Concurrently, `deleteSession` invoked `createNewSession()`, generating duplicate UUIDs and saving two sessions to IndexedDB simultaneously.
+- **Solution**:
+  - Added `loadSessionsPromise` mutex in `lumina.js` to coalesce concurrent load requests.
+  - Updated `deleteSession` to atomically create and persist a single `freshSession` (`remainingSessions = [freshSession]`), preventing `sessions` from ever becoming `[]` and eliminating reactive re-fetch cascades.
+  - Added deduplication and consolidation of multiple empty "New Chat" sessions in `chatStorage.js` on load.
+
+### M. Self-Healing IndexedDB & Chromium Manifest Recovery (`src/main/index.js`)
+- **Problem**: Chromium console logged `Failed to open LevelDB database... Unable to create sequential file` during dev restarts when `CURRENT` pointed to a missing `MANIFEST-000001` file.
+- **Solution**: Implemented `autoRepairIndexedDB()` in `src/main/index.js` invoked before `createWindow()`. It detects corrupted dev LevelDB manifests and purges broken partitions so Chromium cleanly re-initializes a healthy IndexedDB store on boot.
 
 

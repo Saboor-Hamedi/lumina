@@ -225,13 +225,13 @@ Execution: First call \`createFolder\` for each directory in the plan, then call
     case IntentCategory.TARGETED_EDIT:
       return `\n**EXEMPLAR FOR TARGETED EDIT & CLEANUP**:
 User: "Go for option B" or "Option B" or "choose B" or "use option 2"
-Execution: The user has chosen an option for their note! DO NOT just talk or repeat Option B in chat. Immediately call \`updateFile\` with title="current" and the selected Option content to update the note in the editor!
+Execution: The user has chosen an option for their note! DO NOT just talk or repeat Option B in chat. Immediately call \`updateFile\` with title="current", sectionHeader="Opening", and replace="<selected Option content>" to update the note in the editor!
 
 User: "update that paragraph again, with different wordings" or "update Lumina"
-Execution: The user wants to update the note! NEVER offer choices like Option A, Option B, Option C in chat. NEVER ask "Which one do you want?". ALWAYS choose the most compelling, polished rewrite and call \`updateFile\` with title="current" directly on step 1 to update the file in the editor!
+Execution: The user wants to update the note! NEVER offer choices like Option A, Option B, Option C in chat. NEVER ask "Which one do you want?". ALWAYS choose the most compelling, polished rewrite and call \`updateFile\` with title="current", sectionHeader="Opening", and replace="<polished rewrite text>" directly on step 1 to update the file in the editor!
 
 User: "please update again" or "update again" or "rewrite again"
-Execution: The user wants another refined iteration or revision of the open note! DO NOT ask questions, request guidance, or talk about tone. Take initiative immediately to elevate the prose, rhythm, and clarity, and call \`updateFile\` with title="current" and the polished text!
+Execution: The user wants another refined iteration or revision of the open note! DO NOT ask questions, request guidance, or talk about tone. Take initiative immediately to elevate the prose, rhythm, and clarity, and call \`updateFile\` with title="current", sectionHeader="Opening", and replace="<polished text>"!
 User: "link the files together"
 Execution: Identify the target notes in the workspace (e.g. NoteA, NoteB, NoteC). For EACH note, call \`updateFile\` with title="<Note Title>", position="top", and replace="> 🔗 **Related:** [[Linked Note A]] | [[Linked Note B]]" immediately on step 1 without talking out loud!
 User: "link both of my purchases"

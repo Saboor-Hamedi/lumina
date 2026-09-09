@@ -34,13 +34,44 @@ export const loadChatSessions = async () => {
     }
 
     if (savedSessions.length > 0) {
+      // 1. Deduplicate sessions with identical IDs
+      const uniqueSessions = []
+      const seenIds = new Set()
+      for (const s of savedSessions) {
+        if (!seenIds.has(s.id)) {
+          seenIds.add(s.id)
+          uniqueSessions.push(s)
+        }
+      }
+
+      // 2. Consolidate multiple empty "New Chat" sessions
+      let hasEmptyNewChat = false
+      const cleanedSessions = uniqueSessions.filter((s) => {
+        const isEmptyNewChat =
+          (!s.messages || s.messages.length === 0) &&
+          (s.title === 'New Chat' || !s.title)
+        if (isEmptyNewChat) {
+          if (hasEmptyNewChat) return false
+          hasEmptyNewChat = true
+        }
+        return true
+      })
+
+      if (cleanedSessions.length < savedSessions.length) {
+        try {
+          await openDb()
+          await db.chatSessions.clear()
+          await db.chatSessions.bulkAdd(cleanedSessions)
+        } catch (_) {}
+      }
+
       const lastActive = localStorage.getItem('lumina-active-session-id')
       const activeId =
-        lastActive && savedSessions.some((s) => s.id === lastActive)
+        lastActive && cleanedSessions.some((s) => s.id === lastActive)
           ? lastActive
-          : savedSessions[0].id
+          : cleanedSessions[0].id
       localStorage.setItem('lumina-active-session-id', activeId)
-      return { sessions: savedSessions, activeSessionId: activeId }
+      return { sessions: cleanedSessions, activeSessionId: activeId }
     }
 
     // Initial default: create first session
@@ -72,8 +103,19 @@ export const loadChatSessions = async () => {
   }
 }
 
-export const createNewChatSession = async (existingSessions) => {
-  const emptySession = existingSessions.find((s) => s.messages.length === 0)
+export const saveChatSession = async (session) => {
+  try {
+    await openDb()
+    await db.chatSessions.put(session)
+  } catch (e) {
+    console.warn('[ChatStorage] Failed to save session to db:', e)
+  }
+}
+
+export const createNewChatSession = async (existingSessions = []) => {
+  const emptySession = (existingSessions || []).find(
+    (s) => (!s.messages || s.messages.length === 0) && (s.title === 'New Chat' || !s.title)
+  )
   if (emptySession) {
     localStorage.setItem('lumina-active-session-id', emptySession.id)
     return { session: emptySession, isNew: false }
