@@ -30,22 +30,15 @@ describe('UpdateDetails', () => {
     expect(screen.getByRole('button', { name: 'Check for Updates' })).toBeInTheDocument()
   })
 
-  it('renders parsed release note categories', async () => {
-    useUpdateStore.setState({
-      status: 'available',
-      updateInfo: {
-        version: '1.2.0',
-        releaseNotes: 'New\n- feature one\n- feature two\n\nFixed\n- bug one'
-      }
-    })
+  it('renders curated release note categories and items directly', async () => {
     render(<UpdateDetails />)
     fireEvent.click(screen.getByLabelText('Check for updates'))
 
     expect(screen.getByText('New')).toBeInTheDocument()
-    expect(screen.getByText('feature one')).toBeInTheDocument()
-    expect(screen.getByText('feature two')).toBeInTheDocument()
+    expect(screen.getByText('Improved')).toBeInTheDocument()
     expect(screen.getByText('Fixed')).toBeInTheDocument()
-    expect(screen.getByText('bug one')).toBeInTheDocument()
+    expect(screen.getByText(/Google Drive Git-Like Mirroring/)).toBeInTheDocument()
+    expect(screen.getByText(/Note Title & Disk Renaming/)).toBeInTheDocument()
   })
 
   it('renders default release notes when none provided', () => {

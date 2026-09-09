@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
-import { Download, Loader2, CheckCircle2, Sparkles } from 'lucide-react'
+import { Download, Loader2, CheckCircle2 } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import UpdateHeader from './UpdateHeader'
 import UpdateFooter from './UpdateFooter'
@@ -31,33 +31,16 @@ Fixed
 - In-Place File Renaming: Renaming notes, images, or PDFs in the workspace renames entries directly without duplicating files or affecting source paths.`
 
 /**
- * Robust release notes parser handling markdown headings, bullets, HTML, and plain lists.
+ * Simple, clean release notes parser for our Markdown release notes.
  */
 export const parseReleaseNotes = (notes) => {
   if (!notes) return []
 
-  let text = ''
-  if (Array.isArray(notes)) {
-    text = notes
-      .map((n) => (typeof n === 'string' ? n : n?.note || n?.version || ''))
-      .filter(Boolean)
-      .join('\n\n')
-  } else if (typeof notes === 'string') {
-    text = notes
-  } else {
-    return []
-  }
-
-  // Strip HTML tags if HTML is detected
-  if (/<[a-z][\s\S]*>/i.test(text)) {
-    text = text
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<\/p>/gi, '\n\n')
-      .replace(/<\/li>/gi, '\n')
-      .replace(/<li>/gi, '- ')
-      .replace(/<h[1-6][^>]*>(.*?)<\/h[1-6]>/gi, '\n$1\n')
-      .replace(/<[^>]+>/g, '')
-  }
+  const text = typeof notes === 'string'
+    ? notes
+    : Array.isArray(notes)
+      ? notes.map((n) => (typeof n === 'string' ? n : n?.note || n?.version || '')).filter(Boolean).join('\n\n')
+      : ''
 
   const categories = []
   let currentCategory = null
@@ -68,32 +51,28 @@ export const parseReleaseNotes = (notes) => {
     if (!trimmed) continue
 
     // Detect markdown headings: # Title, ## Title, ### Title
-    const isHeading = /^#{1,6}\s+/.test(trimmed)
-    if (isHeading) {
-      const headingTitle = trimmed.replace(/^#{1,6}\s+/, '').replace(/\*\*/g, '').trim()
-      currentCategory = { title: headingTitle, items: [] }
+    const headingMatch = trimmed.match(/^#{1,6}\s+(.+)$/)
+    if (headingMatch) {
+      currentCategory = { title: headingMatch[1].replace(/\*\*/g, '').trim(), items: [] }
       categories.push(currentCategory)
       continue
     }
 
-    // Detect bullet points: - item, * item, • item, + item, 1. item
-    const isBullet = /^[-*•+]\s+/.test(trimmed) || /^\d+\.\s+/.test(trimmed)
-    if (isBullet) {
-      const itemContent = trimmed.replace(/^[-*•+]\s+/, '').replace(/^\d+\.\s+/, '').trim()
-      if (itemContent) {
-        if (!currentCategory) {
-          currentCategory = { title: 'Highlights', items: [] }
-          categories.push(currentCategory)
-        }
-        currentCategory.items.push(itemContent)
+    // Detect bullet points: - item, * item, • item, + item
+    const bulletMatch = trimmed.match(/^[-*•+]\s+(.+)$/)
+    if (bulletMatch) {
+      if (!currentCategory) {
+        currentCategory = { title: 'Highlights', items: [] }
+        categories.push(currentCategory)
       }
+      currentCategory.items.push(bulletMatch[1].trim())
       continue
     }
 
     // Category header without markdown (e.g. "New", "Improved", "Fixed")
     const cleanHeader = trimmed.replace(/[:：]$/, '').replace(/\*\*/g, '').trim()
     const lower = cleanHeader.toLowerCase()
-    const isCommonCategory =
+    const isCategoryHeader =
       lower === 'new' ||
       lower === 'improved' ||
       lower === 'improvements' ||
@@ -101,10 +80,9 @@ export const parseReleaseNotes = (notes) => {
       lower === 'fixed' ||
       lower === 'highlights' ||
       lower === 'features' ||
-      lower === 'changes' ||
-      lower.startsWith('what')
+      lower === 'changes'
 
-    if (isCommonCategory || (!currentCategory && !trimmed.startsWith('-'))) {
+    if (isCategoryHeader) {
       currentCategory = { title: cleanHeader, items: [] }
       categories.push(currentCategory)
       continue
@@ -114,7 +92,7 @@ export const parseReleaseNotes = (notes) => {
     if (currentCategory) {
       currentCategory.items.push(trimmed)
     } else {
-      currentCategory = { title: 'Updates', items: [trimmed] }
+      currentCategory = { title: 'Highlights', items: [trimmed] }
       categories.push(currentCategory)
     }
   }
@@ -124,7 +102,7 @@ export const parseReleaseNotes = (notes) => {
 
 const UpdateDetails = () => {
   const { status, updateInfo, progress, download, install, check, lastChecked } = useUpdateStore()
-  const [currentVersion, setCurrentVersion] = useState('1.0.40')
+  const [currentVersion, setCurrentVersion] = useState('1.0.42')
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef(null)
 
@@ -179,31 +157,8 @@ const UpdateDetails = () => {
 
   const newVersion = updateInfo?.version || currentVersion
 
-  // Resolve release notes string from updateInfo or fallback
-  const resolvedNotes = useMemo(() => {
-    let raw = updateInfo?.releaseNotes
-    if (Array.isArray(raw)) {
-      raw = raw
-        .map((r) => (typeof r === 'string' ? r : r?.note || r?.version || ''))
-        .filter(Boolean)
-        .join('\n')
-    }
-
-    if (typeof raw === 'string' && raw.trim()) {
-      const lower = raw.toLowerCase()
-      const isGeneric =
-        lower.includes('latest development build') ||
-        lower.includes('latest version') ||
-        raw.trim().length < 15
-      if (!isGeneric) {
-        return raw
-      }
-    }
-
-    return DEFAULT_RELEASE_NOTES
-  }, [updateInfo?.releaseNotes])
-
-  const parsedNotes = useMemo(() => parseReleaseNotes(resolvedNotes), [resolvedNotes])
+  // Always use our curated release notes directly in the body (ignoring GitHub tag blurbs)
+  const parsedNotes = useMemo(() => parseReleaseNotes(DEFAULT_RELEASE_NOTES), [])
 
   // Compute trigger button icon and tooltip dynamically
   const { triggerIcon, triggerTooltip, triggerClass } = useMemo(() => {
@@ -231,7 +186,7 @@ const UpdateDetails = () => {
     }
     if (status === 'available') {
       return {
-        triggerIcon: <Sparkles size={13} strokeWidth={2.2} />,
+        triggerIcon: <Download size={13} strokeWidth={2.2} />,
         triggerTooltip: `Update available (${newVersion})`,
         triggerClass: 'has-update'
       }
