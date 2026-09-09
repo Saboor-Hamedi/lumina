@@ -132,6 +132,18 @@ export const detectUserIntent = (message, mentionedSnippets = [], activeSnippet 
     return IntentCategory.TARGETED_EDIT
   }
 
+  const optionSelectionPatterns =
+    /\b(go\s+for\s+option|option\s+[a-d1-4]|choose\s+(?:option\s+)?[a-d1-4]|pick\s+(?:option\s+)?[a-d1-4]|use\s+(?:option\s+)?[a-d1-4]|apply\s+(?:option\s+)?[a-d1-4]|take\s+(?:option\s+)?[a-d1-4]|i\s+(?:like|want|prefer)\s+option\s+[a-d1-4]|^[a-d1-4]$)\b/i
+  if (optionSelectionPatterns.test(clean)) {
+    return IntentCategory.TARGETED_EDIT
+  }
+
+  const directUpdatePatterns =
+    /\b(update|rewrite|improve|polish|refine|edit|change)\b[^.!?\n]{0,80}\b(paragraph|intro|introduction|opening|section|heading|header|top|first|line|code|note|file|wording|wordings|lumina)\b/i
+  if (directUpdatePatterns.test(clean)) {
+    return IntentCategory.TARGETED_EDIT
+  }
+
   if (editVerbs.test(clean) && (hasMentions || activeSnippet || /\b(duplicates?|extra|repeated|section|header|tree|link|links|list|them)\b/i.test(clean))) {
     return IntentCategory.TARGETED_EDIT
   }
@@ -212,6 +224,12 @@ Execution: First call \`createFolder\` for each directory in the plan, then call
 
     case IntentCategory.TARGETED_EDIT:
       return `\n**EXEMPLAR FOR TARGETED EDIT & CLEANUP**:
+User: "Go for option B" or "Option B" or "choose B" or "use option 2"
+Execution: The user has chosen an option for their note! DO NOT just talk or repeat Option B in chat. Immediately call \`updateFile\` with title="current" and the selected Option content to update the note in the editor!
+
+User: "update that paragraph again, with different wordings" or "update Lumina"
+Execution: The user wants to update the note! NEVER offer choices like Option A, Option B, Option C in chat. NEVER ask "Which one do you want?". ALWAYS choose the most compelling, polished rewrite and call \`updateFile\` with title="current" directly on step 1 to update the file in the editor!
+
 User: "please update again" or "update again" or "rewrite again"
 Execution: The user wants another refined iteration or revision of the open note! DO NOT ask questions, request guidance, or talk about tone. Take initiative immediately to elevate the prose, rhythm, and clarity, and call \`updateFile\` with title="current" and the polished text!
 User: "link the files together"

@@ -7,23 +7,23 @@ import { ChatBlockquote } from './ChatBlockquote'
 import { ChatLink } from './ChatLink'
 import { ThinkingBlock } from './ThinkingBlock'
 import { ActivityCard } from './ActivityCard'
-import { processMarkdownContent, parseMessageSections } from '../services/chatMarkdownParser'
+import { processMarkdownContent, parseMessageSections, parseMessageBlocks } from '../services/chatMarkdownParser'
 
-export { processMarkdownContent, parseMessageSections }
+export { processMarkdownContent, parseMessageSections, parseMessageBlocks }
 
 export const MessageContent = React.memo(
   ({ content, isStreaming = false }) => {
-    const { thinkContent, beforeContent, activityContent, afterContent } = useMemo(() => {
-      return parseMessageSections(content)
+    const blocks = useMemo(() => {
+      return parseMessageBlocks(content)
     }, [content])
 
-    const processedBefore = useMemo(() => {
-      return beforeContent ? processMarkdownContent(beforeContent) : ''
-    }, [beforeContent])
-
-    const processedAfter = useMemo(() => {
-      return afterContent ? processMarkdownContent(afterContent) : ''
-    }, [afterContent])
+    const lastThinkIdx = useMemo(() => {
+      let idx = -1
+      for (let i = 0; i < blocks.length; i++) {
+        if (blocks[i].type === 'think') idx = i
+      }
+      return idx
+    }, [blocks])
 
     const markdownComponents = useMemo(
       () => ({
@@ -57,22 +57,36 @@ export const MessageContent = React.memo(
 
     return (
       <>
-        {thinkContent && (
-          <ThinkingBlock thinkContent={thinkContent} isStreaming={isStreaming} />
-        )}
-        {processedBefore && (
-          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-            {processedBefore}
-          </ReactMarkdown>
-        )}
-        {activityContent && (
-          <ActivityCard rawContent={activityContent} isStreaming={isStreaming} />
-        )}
-        {processedAfter && (
-          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-            {processedAfter}
-          </ReactMarkdown>
-        )}
+        {blocks.map((block, idx) => {
+          if (block.type === 'think') {
+            return (
+              <ThinkingBlock
+                key={`think-${idx}`}
+                thinkContent={block.content}
+                isStreaming={isStreaming && idx === lastThinkIdx}
+              />
+            )
+          }
+          if (block.type === 'activity') {
+            return (
+              <ActivityCard
+                key={`act-${idx}`}
+                rawContent={block.content}
+                isStreaming={isStreaming}
+              />
+            )
+          }
+          const processed = processMarkdownContent(block.content)
+          return (
+            <ReactMarkdown
+              key={`md-${idx}`}
+              remarkPlugins={[remarkGfm]}
+              components={markdownComponents}
+            >
+              {processed}
+            </ReactMarkdown>
+          )
+        })}
       </>
     )
   },

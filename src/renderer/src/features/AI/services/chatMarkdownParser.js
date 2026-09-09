@@ -55,10 +55,88 @@ const isActionLine = (l) => {
 }
 
 /**
- * Parses a raw assistant message into structured segments:
- * - thinkContent: Deep reasoning inside <think>...</think>
- * - activityContent: File mutations inside <lumina-activity> or implicit action lines
- * - beforeContent / afterContent: Conversational markdown surrounding activities
+ * Parses a raw assistant message into ordered sequential blocks:
+ * - think: Deep reasoning inside <think>...</think> (can appear multiple times in sequence)
+ * - activity: File mutations inside <lumina-activity> or implicit action lines
+ * - markdown: Conversational text / walkthrough
+ *
+ * @param {string} content
+ * @returns {Array<{ type: 'think' | 'activity' | 'markdown', content: string }>}
+ */
+export const parseMessageBlocks = (content) => {
+  if (!content || typeof content !== 'string') return []
+
+  const stripDSML = (txt) =>
+    (txt || '')
+      .replace(/<[^>]*[｜|][^>]*>/g, '')
+      .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*>/gi, '')
+      .trim()
+
+  const blocks = []
+  const tagRegex = /(?:<think>([\s\S]*?)(?:<\/think>|$))|(?:<lumina-activity>([\s\S]*?)(?:<\/lumina-activity>|$))/gi
+  let lastIndex = 0
+  let match
+
+  while ((match = tagRegex.exec(content)) !== null) {
+    const textBefore = content.slice(lastIndex, match.index)
+    const cleanBefore = stripDSML(textBefore).replace(/<\/?(?:think|lumina-activity)>/gi, '').trim()
+    if (cleanBefore) {
+      blocks.push({ type: 'markdown', content: cleanBefore })
+    }
+
+    if (match[1] !== undefined) {
+      const thinkText = stripDSML(match[1])
+      if (thinkText) {
+        blocks.push({ type: 'think', content: thinkText })
+      }
+    } else if (match[2] !== undefined) {
+      const actText = (match[2] || '').trim()
+      if (actText) {
+        blocks.push({ type: 'activity', content: actText })
+      }
+    }
+
+    lastIndex = tagRegex.lastIndex
+  }
+
+  const trailingText = content.slice(lastIndex)
+  const cleanTrailing = stripDSML(trailingText).replace(/<\/?(?:think|lumina-activity)>/gi, '').trim()
+  if (cleanTrailing) {
+    blocks.push({ type: 'markdown', content: cleanTrailing })
+  }
+
+  // Fallback for raw action lines without <lumina-activity> tags
+  if (blocks.length === 1 && blocks[0].type === 'markdown') {
+    const lines = blocks[0].content.split('\n')
+    const actionLines = []
+    let firstActionIdx = -1
+    let lastActionIdx = -1
+    for (let i = 0; i < lines.length; i++) {
+      const l = lines[i].trim()
+      if (l && isActionLine(l)) {
+        if (firstActionIdx === -1) firstActionIdx = i
+        lastActionIdx = i
+        actionLines.push(l)
+      } else if (firstActionIdx !== -1) {
+        break
+      }
+    }
+    if (actionLines.length > 0 && firstActionIdx !== -1) {
+      const before = lines.slice(0, firstActionIdx).join('\n').trim()
+      const after = lines.slice(lastActionIdx + 1).join('\n').trim()
+      const fallbackBlocks = []
+      if (before) fallbackBlocks.push({ type: 'markdown', content: before })
+      fallbackBlocks.push({ type: 'activity', content: actionLines.join('\n') })
+      if (after) fallbackBlocks.push({ type: 'markdown', content: after })
+      return fallbackBlocks
+    }
+  }
+
+  return blocks
+}
+
+/**
+ * Parses a raw assistant message into structured segments (legacy compatibility).
  *
  * @param {string} content
  * @returns {{ thinkContent: string, beforeContent: string, activityContent: string, afterContent: string }}
@@ -68,88 +146,30 @@ export const parseMessageSections = (content) => {
     return { thinkContent: '', beforeContent: '', activityContent: '', afterContent: '' }
   }
 
-  let think = ''
-  let remaining = content
-
-  // Match all <think>...</think> blocks globally
-  const thinkMatches = [...content.matchAll(/<think>([\s\S]*?)(?:<\/think>|$)/gi)]
-  if (thinkMatches.length > 0) {
-    think = thinkMatches
-      .map((m) =>
-        (m[1] || '')
-          .replace(/<[^>]*[｜|][^>]*>/g, '')
-          .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*>/gi, '')
-          .trim()
-      )
-      .filter(Boolean)
-      .join('\n\n')
-    remaining = remaining.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '').trim()
-  }
-
-  // Strip any stray opening/closing tags or DSML tokens that might leak
-  remaining = remaining
-    .replace(/<\/?think>/gi, '')
-    .replace(/<[^>]*[｜|][^>]*>/g, '')
-    .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*>/gi, '')
-    .trim()
-
+  const blocks = parseMessageBlocks(content)
+  const thinks = []
   let beforeText = ''
   let activityText = ''
   let afterText = ''
+  let foundActivity = false
 
-  const actMatches = [...remaining.matchAll(/<lumina-activity>([\s\S]*?)<\/lumina-activity>/gi)]
-  if (actMatches.length > 0) {
-    activityText = actMatches.map((m) => (m[1] || '').trim()).filter(Boolean).join('\n')
-    const firstIdx = remaining.search(/<lumina-activity>/i)
-    const lastIdx = remaining.toLowerCase().lastIndexOf('</lumina-activity>')
-    beforeText = firstIdx !== -1 ? remaining.slice(0, firstIdx).trim() : ''
-    afterText = lastIdx !== -1 ? remaining.slice(lastIdx + '</lumina-activity>'.length).trim() : ''
-  } else {
-    const partialAct = remaining.match(/([\s\S]*?)<lumina-activity>([\s\S]*)$/i)
-    if (partialAct) {
-      beforeText = (partialAct[1] || '').trim()
-      activityText = (partialAct[2] || '').trim()
-    } else {
-      const lines = remaining.split('\n')
-      const actionLines = []
-      let firstActionIdx = -1
-      let lastActionIdx = -1
-
-      for (let i = 0; i < lines.length; i++) {
-        const l = lines[i].trim()
-        if (!l) continue
-        if (isActionLine(l)) {
-          if (firstActionIdx === -1) firstActionIdx = i
-          lastActionIdx = i
-          actionLines.push(l)
-        } else if (firstActionIdx !== -1) {
-          break
-        }
-      }
-
-      if (actionLines.length >= 1 && firstActionIdx !== -1) {
-        activityText = actionLines.join('\n')
-        beforeText = lines.slice(0, firstActionIdx).join('\n').trim()
-        afterText = lines.slice(lastActionIdx + 1).join('\n').trim()
+  for (const block of blocks) {
+    if (block.type === 'think') {
+      thinks.push(block.content)
+    } else if (block.type === 'activity') {
+      activityText = activityText ? `${activityText}\n${block.content}` : block.content
+      foundActivity = true
+    } else if (block.type === 'markdown') {
+      if (!foundActivity) {
+        beforeText = beforeText ? `${beforeText}\n\n${block.content}` : block.content
       } else {
-        beforeText = remaining
+        afterText = afterText ? `${afterText}\n\n${block.content}` : block.content
       }
     }
   }
 
-  const cleanSection = (txt) =>
-    (txt || '')
-      .replace(/<\/?lumina-activity>/gi, '')
-      .replace(/<\/?think>/gi, '')
-      .replace(/<[｜|]{1,2}[^>]+[｜|]{1,2}>/g, '')
-      .replace(/<\/[｜|]{1,2}[^>]+[｜|]{1,2}>/g, '')
-      .trim()
-
-  beforeText = cleanSection(beforeText)
-  afterText = cleanSection(afterText)
-
   return {
-    thinkContent: think,
+    thinkContent: thinks.join('\n\n'),
     beforeContent: beforeText,
     activityContent: activityText,
     afterContent: afterText

@@ -23,9 +23,7 @@ export const ThinkingBlock = React.memo(({ thinkContent, isStreaming = false }) 
   }, [isStreaming])
 
   useEffect(() => {
-    if (prevStreamingRef.current && !isStreaming) {
-      setIsOpen(false)
-    } else if (!prevStreamingRef.current && isStreaming) {
+    if (!prevStreamingRef.current && isStreaming) {
       setIsOpen(true)
     }
     prevStreamingRef.current = isStreaming

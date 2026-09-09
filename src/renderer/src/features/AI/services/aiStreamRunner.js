@@ -76,6 +76,8 @@ export const getToolInputStartStatus = (toolName) => {
 }
 
 export const buildRealtimeDisplay = ({
+  initialReasoning = '',
+  postToolReasoning = '',
   reasoningText = '',
   executedActions = [],
   activeToolStatus = '',
@@ -90,16 +92,16 @@ export const buildRealtimeDisplay = ({
       .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*$/gi, '')
       .trim()
 
-  const blocks = []
-  const cleanReasoning = stripDSML(reasoningText)
-  if (cleanReasoning) {
-    blocks.push(`<think>\n${cleanReasoning}\n</think>`)
-  }
-
-  // Normalize non-standard code-block language ids to avoid ugly "N lines / Copy" labels
   const normalizeCodeBlocks = (text) => {
     if (!text) return text
     return text.replace(/```(TEXT|MARKDOWN|PLAINTEXT|TREE|PLAIN|MD)\b/gi, '```')
+  }
+
+  const blocks = []
+  const topReasoning = initialReasoning || reasoningText
+  const cleanInitial = stripDSML(topReasoning)
+  if (cleanInitial) {
+    blocks.push(`<think>\n${cleanInitial}\n</think>`)
   }
 
   if (beforeToolText.trim()) {
@@ -112,6 +114,11 @@ export const buildRealtimeDisplay = ({
       actionLines.push(activeToolStatus)
     }
     blocks.push(`<lumina-activity>\n${actionLines.join('\n')}\n</lumina-activity>`)
+  }
+
+  const cleanPost = stripDSML(postToolReasoning)
+  if (cleanPost) {
+    blocks.push(`<think>\n${cleanPost}\n</think>`)
   }
 
   if (afterToolText.trim()) {
@@ -303,17 +310,20 @@ export const runDeepSeekStream = async ({
   let activeToolStatus = ''
   const lastUserMsg =
     [...finalMessages].reverse().find((m) => m.role === 'user')?.content || ''
-  let reasoningText = generateInitialThought(lastUserMsg)
+  let initialReasoning = generateInitialThought(lastUserMsg)
+  let postToolReasoning = ''
   let beforeToolText = ''
   let afterToolText = ''
   let hasToolCalled = false
   let recordedTarget = ''
   let isParsingModelThink = false
   let hasReceivedModelReasoning = false
+  let hasReceivedPostToolReasoning = false
 
   const updateDisplay = () => {
     const content = buildRealtimeDisplay({
-      reasoningText,
+      initialReasoning,
+      postToolReasoning,
       executedActions,
       activeToolStatus,
       beforeToolText,
@@ -340,8 +350,8 @@ export const runDeepSeekStream = async ({
       recordedTarget = ''
       activeToolStatus = getToolStatusDescription(streamingToolName, { title: 'note' })
       const startThought = getToolStartThought(streamingToolName)
-      if (!reasoningText.includes(startThought)) {
-        reasoningText += (reasoningText ? '\n\n' : '') + startThought
+      if (!initialReasoning.includes(startThought)) {
+        initialReasoning += (initialReasoning ? '\n\n' : '') + startThought
       }
       updateDisplay()
       const cleanToolStatus = activeToolStatus.replace(/[*_`]/g, '').trim()
@@ -370,8 +380,8 @@ export const runDeepSeekStream = async ({
             streamingToolName === 'createFile'
               ? `Drafting '${currentTarget}'${extractedFolder ? ' in ' + extractedFolder : ''}... Organizing structured sections and wikilinks.`
               : `Targeting '${currentTarget}'...`
-          if (!reasoningText.includes(`'${currentTarget}'`)) {
-            reasoningText += '\n' + thoughtLine
+          if (!initialReasoning.includes(`'${currentTarget}'`)) {
+            initialReasoning += '\n' + thoughtLine
           }
           updateDisplay()
           const cleanToolStatus = activeToolStatus.replace(/[*_`]/g, '').trim()
@@ -388,9 +398,6 @@ export const runDeepSeekStream = async ({
       const cleanToolStatus = activeToolStatus.replace(/[*_`]/g, '').trim()
       onThinkingStatusUpdate(cleanToolStatus)
     } else if (chunk.type === 'tool-result') {
-      activeToolStatus = ''
-      streamingToolName = ''
-      streamingArgsRaw = ''
       const res = chunk.output || chunk.result
       if (res && res.success === false) {
         console.warn(`[StreamRunner] Tool ${chunk.toolName} failed:`, res.error)
@@ -401,10 +408,14 @@ export const runDeepSeekStream = async ({
           executedActions.push(entry)
         }
       }
+      activeToolStatus = ''
+      streamingToolName = ''
+      streamingArgsRaw = ''
+
       const resTarget = res?.title || recordedTarget
       const resultThought = getToolResultThought(chunk.toolName, res, resTarget)
-      if (!reasoningText.includes(resultThought.split('\n')[0])) {
-        reasoningText += (reasoningText ? '\n\n' : '') + resultThought
+      if (!postToolReasoning.includes(resultThought.split('\n')[0])) {
+        postToolReasoning += (postToolReasoning ? '\n\n' : '') + resultThought
       }
       updateDisplay()
       onThinkingStatusUpdate('Reflecting on workspace changes...')
@@ -415,11 +426,20 @@ export const runDeepSeekStream = async ({
     } else if (chunk.type === 'reasoning' || chunk.type === 'reasoning-delta') {
       const rDelta = chunk.textDelta || chunk.text || chunk.delta || ''
       if (rDelta) {
-        if (!hasReceivedModelReasoning) {
-          reasoningText += (reasoningText ? '\n\n' : '') + rDelta
-          hasReceivedModelReasoning = true
+        if (hasToolCalled) {
+          if (!hasReceivedPostToolReasoning) {
+            postToolReasoning += (postToolReasoning ? '\n\n' : '') + rDelta
+            hasReceivedPostToolReasoning = true
+          } else {
+            postToolReasoning += rDelta
+          }
         } else {
-          reasoningText += rDelta
+          if (!hasReceivedModelReasoning) {
+            initialReasoning += (initialReasoning ? '\n\n' : '') + rDelta
+            hasReceivedModelReasoning = true
+          } else {
+            initialReasoning += rDelta
+          }
         }
         updateDisplay()
         onThinkingStatusUpdate('Reasoning...')
@@ -429,11 +449,19 @@ export const runDeepSeekStream = async ({
       if (isParsingModelThink) {
         if (delta.includes('</think>')) {
           const [thinkPart, afterPart] = delta.split('</think>')
-          reasoningText += thinkPart
+          if (hasToolCalled) {
+            postToolReasoning += thinkPart
+          } else {
+            initialReasoning += thinkPart
+          }
           isParsingModelThink = false
           delta = afterPart || ''
         } else {
-          reasoningText += delta
+          if (hasToolCalled) {
+            postToolReasoning += delta
+          } else {
+            initialReasoning += delta
+          }
           delta = ''
         }
       } else if (delta.includes('<think>')) {
@@ -445,10 +473,18 @@ export const runDeepSeekStream = async ({
         }
         if (thinkPart.includes('</think>')) {
           const [innerThink, rest] = thinkPart.split('</think>')
-          reasoningText += (reasoningText ? '\n\n' : '') + innerThink
+          if (hasToolCalled) {
+            postToolReasoning += (postToolReasoning ? '\n\n' : '') + innerThink
+          } else {
+            initialReasoning += (initialReasoning ? '\n\n' : '') + innerThink
+          }
           delta = rest || ''
         } else {
-          reasoningText += (reasoningText ? '\n\n' : '') + thinkPart
+          if (hasToolCalled) {
+            postToolReasoning += (postToolReasoning ? '\n\n' : '') + thinkPart
+          } else {
+            initialReasoning += (initialReasoning ? '\n\n' : '') + thinkPart
+          }
           isParsingModelThink = true
           delta = ''
         }

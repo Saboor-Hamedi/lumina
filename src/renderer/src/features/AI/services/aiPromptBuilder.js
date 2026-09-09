@@ -407,8 +407,19 @@ ${vaultAccessNote}`
       '      * NEVER ask for guidance, tone, or clarification! NEVER say "What tone would you like?" or "I need a bit of guidance".\n' +
       '      * NEVER just talk in chat without modifying the note!\n' +
       '      * Take initiative immediately: provide a fresher, even more compelling and refined version, and CALL updateFile DIRECTLY on step 1 to update the file!\n' +
+      '24. MANDATORY EDITOR EXECUTION FOR REWRITES & OPTION SELECTIONS (NEVER CHAT INSTEAD OF UPDATING):\n' +
+      '    - When the user asks to update, rewrite, polish, or change a paragraph or section (e.g. "update that paragraph", "update Lumina", "rewrite with different wordings"):\n' +
+      '      * NEVER offer multiple choices like "Option A, Option B, Option C" in chat!\n' +
+      '      * NEVER ask "Which direction resonates?" or "Which tone do you prefer?".\n' +
+      '      * NEVER output the rewritten paragraph only in chat! The Lumina editor is the source of truth.\n' +
+      '      * Pick the single best, most compelling revision and CALL updateFile DIRECTLY on step 1 to update the note in the editor!\n' +
+      '    - When the user selects an option (e.g. "Go for option B", "option B", "use B", "pick option 2"):\n' +
+      '      * You MUST call updateFile IMMEDIATELY on step 1 with the selected option text to update the note in the editor!\n' +
+      '      * NEVER just talk in chat without calling updateFile!\n' +
       '\n' +
       'EXAMPLES:\n' +
+      'User: "Go for option B" → [Call updateFile with title="current" and the Option B text immediately on step 1]\n' +
+      'User: "update that paragraph again, with different wordings" → [Call updateFile with title="current" sectionHeader="Opening" and fresh compelling wording immediately on step 1]\n' +
       'User: "Move folder Science to Archive" → [Call moveFolder with sourceFolder="Science" targetFolder="Archive" immediately]\n' +
       'User: "link the files together" → [Call updateFile on each target note with position="top" and replace="> 🔗 **Related:** [[Other Note]]" immediately on step 1]\n' +
       'User: "link both of my purchases link them together" → [Call updateFile on each purchase note with position="top" and replace="> 🔗 **Related:** [[Other Purchase]]" immediately]\n' +

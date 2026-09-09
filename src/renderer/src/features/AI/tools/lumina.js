@@ -487,10 +487,18 @@ export const useAIStore = create((set, get) => {
         const finalMessages = newHistory
           .filter((m) => m.role !== 'system' && (m.content || m.role === 'user'))
           .slice(-6)
-          .map((m) => ({
-            role: m.role,
-            content: m.content || ''
-          }))
+          .map((m) => {
+            const cleanText = (m.content || '')
+              .replace(/<think>[\s\S]*?<\/think>/gi, '')
+              .replace(/<lumina-activity>[\s\S]*?<\/lumina-activity>/gi, '')
+              .replace(/<[^>]*[｜|][^>]*>/g, '')
+              .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*>/gi, '')
+              .trim()
+            return {
+              role: m.role,
+              content: cleanText || (m.role === 'assistant' ? 'Completed requested workspace actions.' : '')
+            }
+          })
 
         const hasPreloadedFiles = mentionedSnippets.length > 0 || requestedFiles.length > 0
         const writeIntentKeywords =
