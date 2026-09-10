@@ -557,9 +557,13 @@ export const useAIStore = create((set, get) => {
           /\b(let'?s talk|just talk|talk first|don'?t write|do not write|don'?t create|do not create|no files?( yet)?|don'?t save|do not save|just discuss|discuss first|in chat( only)?|brainstorm(ing)? (in|only in) chat|keep (it )?in chat|without (writing|creating|saving))\b/i
         const isConversationalOverride = conversationalOverridePatterns.test(cleanMessage)
 
+        const openIntentKeywords =
+          /\b(open|open up|open the tab|show tab|switch to tab|show in editor|view in editor)\b/i
+        const isOpenIntent = openIntentKeywords.test(cleanMessage)
+
         let sdkTools = getMemoryTools()
         if (modeCfg.enableTools !== false && !isConversationalOverride) {
-          sdkTools = getAITools(blockReadFile)
+          sdkTools = getAITools(blockReadFile, isOpenIntent)
         }
 
         const handleContentUpdate = (content) => {

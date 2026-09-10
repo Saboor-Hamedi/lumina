@@ -5,7 +5,7 @@
 @import './callout.css';
 @import './quote.css';
 @import './unsave.css';
-@import '../core/i18n/lumina-i18n.css';
+@import '../core/i18n/css/lumina-i18n.css';
 @import '../features/profile/profile.css';
 @tailwind base;
 @tailwind components;

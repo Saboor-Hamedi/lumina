@@ -98,9 +98,18 @@ export function useExplorerOperations({
     }
   }, [expandedFoldersSetting])
 
-  // Smart reveal: ensure active snippet's parent folders are open without layout churn
+  const lastRevealedSnippetIdRef = useRef(null)
+
+  // Smart reveal: ensure active snippet's parent folders are open when switching notes
+  // without repeatedly forcing them open when the user collapses them or when snippets update.
   useEffect(() => {
-    if (!selectedSnippetId) return
+    if (!selectedSnippetId) {
+      lastRevealedSnippetIdRef.current = null
+      return
+    }
+    if (lastRevealedSnippetIdRef.current === selectedSnippetId) return
+    lastRevealedSnippetIdRef.current = selectedSnippetId
+
     const activeSnippet = snippets.find((s) => s.id === selectedSnippetId)
     if (!activeSnippet || !activeSnippet.folderId) return
 

@@ -4,6 +4,7 @@ import { useSettingsStore } from './useSettingsStore'
 export const GRAPH_TAB_ID = '__graph__'
 
 let selectionTimeout = null
+let hasLoadedWorkspaceOnce = false
 
 export const useWorkspaceStore = create((set, get) => ({
   snippets: [],
@@ -257,7 +258,7 @@ export const useWorkspaceStore = create((set, get) => ({
    * @returns {Promise<void>}
    */
   loadWorkspace: async () => {
-    const isInitialLoad = get().snippets.length === 0
+    const isInitialLoad = !hasLoadedWorkspaceOnce
     if (isInitialLoad) {
       set({ isLoading: true })
     }
@@ -267,6 +268,7 @@ export const useWorkspaceStore = create((set, get) => ({
         const freshData = await window.api.getSnippets()
 
         if (freshData && freshData.snippets) {
+          hasLoadedWorkspaceOnce = true
           let merged = freshData.snippets
           let folderColors = {}
           let persistedOpenTabs = get().openTabs
@@ -286,7 +288,7 @@ export const useWorkspaceStore = create((set, get) => ({
               color: s.color || noteColors[s.id] || null
             }))
 
-            if (isInitialLoad || persistedOpenTabs.length === 0) {
+            if (isInitialLoad) {
               if (Array.isArray(allSettings.openTabs) && allSettings.openTabs.length > 0) {
                 persistedOpenTabs = allSettings.openTabs
               }
@@ -540,19 +542,22 @@ let lastWorkspaceState = useWorkspaceStore.getState()
 useWorkspaceStore.subscribe((state) => {
   if (state.isLoading) return
   if (!isStoreInitialized) {
-    if (state.snippets.length > 0) {
+    if (state.snippets.length > 0 || hasLoadedWorkspaceOnce) {
       isStoreInitialized = true
       lastWorkspaceState = state
     }
     return
   }
   if (state.openTabs !== lastWorkspaceState.openTabs) {
+    useSettingsStore.getState().updateSetting?.('openTabs', state.openTabs)
     window.api?.saveSetting('openTabs', state.openTabs)?.catch?.(() => {})
   }
   if (state.pinnedTabIds !== lastWorkspaceState.pinnedTabIds) {
+    useSettingsStore.getState().updateSetting?.('pinnedTabIds', state.pinnedTabIds)
     window.api?.saveSetting('pinnedTabIds', state.pinnedTabIds)?.catch?.(() => {})
   }
   if (state.activeTabId !== lastWorkspaceState.activeTabId) {
+    useSettingsStore.getState().updateSetting?.('lastSnippetId', state.activeTabId)
     window.api?.saveSetting('lastSnippetId', state.activeTabId)?.catch?.(() => {})
   }
   lastWorkspaceState = state
