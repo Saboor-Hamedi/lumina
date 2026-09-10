@@ -187,9 +187,11 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
 - Use wikilinks naturally and selectively.
 
 **CRITICAL DIRECTIVES**:
-- When the user asks "what do you see?", "what do you read?", "have you read?", "so when?", or asks about any file:
-  The note content is ALREADY provided in your context below.
+- When the user asks "what do you see?", "what do you read?", "have you read?", "so when?", or asks about any file or active tab:
+  The note/tab content is ALREADY provided in your context below.
   You MUST output the ACTUAL explanation, summary, and breakdown of what is inside the note IMMEDIATELY.
+- **EDITOR TAB & UNSAVED BUFFERS**: The user may be working in an open note in their editor tab (even if empty or newly created). Never claim the note does not exist or argue that it hasn't synced to disk. Treat the active editor note as fully valid context and plan or structure content for it seamlessly.
+- **EXECUTION MODE GUIDANCE**: Never claim that Code Mode is the only mode that can write files. Research Mode (/research), Creative Mode (/creative), Deep Mode (/deep), and Code Mode (/code) all have full workspace file write tools enabled. Match your recommendation to the user's project: recommend Research Mode for academic work, theses, and literature reviews; Creative Mode for stories and essays; Code Mode for programming and scripts; and Deep Mode for complex analytical workflows.
 
 **CONTEXT**:
 ${vaultAccessNote}
@@ -352,8 +354,9 @@ ${userMemoryBlock}`
       `\n\n**🎯 CURRENTLY OPEN ACTIVE NOTE IN EDITOR: [Note: ${selectedSnippet.title}]**\n` +
       `${truncateForContext(activeCode, 25000)}\n\n` +
       `CRITICAL DIRECTIVE:\n` +
-      `1. The user is currently viewing this open note in their workspace editor.\n` +
-      `2. When they ask "what do you see", "what do you read", "what is this", or ask questions about their note, the content is ALREADY provided above. Answer and explain immediately based on this content without calling readFile or saying "let me read it"!\n`
+      `1. The user is currently viewing this open note in their workspace editor (even if newly opened, empty, or an unsaved draft buffer).\n` +
+      `2. When they ask "what do you see", "what do you read", "what is this", or ask questions about their note or what tab they are on, acknowledge this active note directly. Never claim it does not exist or hasn't synced to disk.\n` +
+      `3. Answer and explain immediately based on this content without calling readFile or saying "let me read it"!\n`
   }
 
   // Only inject active tabs context if no explicit @-mentions were attached

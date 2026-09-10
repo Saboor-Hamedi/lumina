@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { CloudUpload, Check, AlertCircle } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
 
@@ -7,6 +7,7 @@ export const DrivePushButton = ({ snippet, title }) => {
   const [isPushing, setIsPushing] = useState(false)
   const [justPushed, setJustPushed] = useState(false)
   const [pushError, setPushError] = useState(false)
+  const btnRef = useRef(null)
 
   // Check login state on mount and on window focus/user change
   useEffect(() => {
@@ -38,13 +39,25 @@ export const DrivePushButton = ({ snippet, title }) => {
     }
   }, [])
 
-  if (!isLoggedIn || !snippet) {
+  if (!snippet) {
     return null
   }
 
   const handlePush = async (e) => {
     e.preventDefault()
     e.stopPropagation()
+
+    if (!isLoggedIn) {
+      window.dispatchEvent(
+        new CustomEvent('show-toast', {
+          detail: {
+            message: 'Log in to Google Drive first',
+            type: 'info'
+          }
+        })
+      )
+      return
+    }
 
     if (isPushing) {
       try {
@@ -96,6 +109,10 @@ export const DrivePushButton = ({ snippet, title }) => {
 
         if (res?.success) {
           setJustPushed(true)
+          if (btnRef.current) {
+            btnRef.current.style.background = 'transparent'
+            btnRef.current.style.borderColor = 'transparent'
+          }
           window.dispatchEvent(
             new CustomEvent('show-toast', {
               detail: {
@@ -104,7 +121,13 @@ export const DrivePushButton = ({ snippet, title }) => {
               }
             })
           )
-          setTimeout(() => setJustPushed(false), 2500)
+          setTimeout(() => {
+            setJustPushed(false)
+            if (btnRef.current) {
+              btnRef.current.style.background = 'transparent'
+              btnRef.current.style.borderColor = 'transparent'
+            }
+          }, 2500)
         } else {
           setPushError(true)
           const errorMsg = res?.error || 'Failed to push note'
@@ -154,34 +177,25 @@ export const DrivePushButton = ({ snippet, title }) => {
       `}</style>
       <ToolTip
         text={
-          isPushing
-            ? `Pushing "${noteName}"... (Click to cancel)`
-            : justPushed
-              ? 'Successfully backed up'
-              : pushError
-                ? 'Failed to push — click to retry'
-                : `Push "${noteName}" to Google Drive`
+          !isLoggedIn
+            ? 'Log in to Google Drive first'
+            : isPushing
+              ? `Pushing "${noteName}"... (Click to cancel)`
+              : justPushed
+                ? 'Successfully backed up'
+                : pushError
+                  ? 'Failed to push — click to retry'
+                  : `Push "${noteName}" to Google Drive`
         }
         position="bottom"
       >
         <button
+          ref={btnRef}
           onClick={handlePush}
           disabled={justPushed}
           style={{
-            background: justPushed
-              ? 'rgba(34, 197, 94, 0.12)'
-              : pushError
-                ? 'rgba(239, 68, 68, 0.12)'
-                : isPushing
-                  ? 'rgba(var(--text-accent-rgb, 139, 92, 246), 0.12)'
-                  : 'transparent',
-            border: justPushed
-              ? '1px solid rgba(34, 197, 94, 0.3)'
-              : pushError
-                ? '1px solid rgba(239, 68, 68, 0.3)'
-                : isPushing
-                  ? '1px solid rgba(var(--text-accent-rgb, 139, 92, 246), 0.3)'
-                  : '1px solid transparent',
+            background: 'transparent',
+            border: '1px solid transparent',
             borderRadius: '5px',
             height: '21px',
             display: 'inline-flex',
@@ -227,7 +241,7 @@ export const DrivePushButton = ({ snippet, title }) => {
               style={{ opacity: isPushing ? 1 : 0.8 }}
             />
           )}
-          <span>{isPushing ? 'Pushing…' : justPushed ? 'Pushed' : 'Push'}</span>
+          <span>Push</span>
         </button>
       </ToolTip>
     </>
