@@ -1,3 +1,14 @@
+/**
+ * ============================================================================
+ * Lumina Canvas Tab Pane (CanvasTabPane)
+ * ============================================================================
+ * Tab pane container integrating CanvasView into Lumina's tabbed workspace:
+ * - Safely deserializes `.canvas` JSON data models from snippet.code
+ * - Debounces file persistence to disk (500ms delay) to prevent I/O thrashing
+ * - Flushes any pending unsaved mutations immediately on tab close or unmount
+ * ============================================================================
+ */
+
 import React, { useMemo, useRef, useCallback, useEffect } from 'react'
 import { CanvasView } from './CanvasView'
 import { CanvasData } from './types'
@@ -25,6 +36,7 @@ export const CanvasTabPane: React.FC<CanvasTabPaneProps> = ({
   const snippetRef = useRef(snippet)
   snippetRef.current = snippet
 
+  // Parse snippet JSON data model with fallback safe structures
   const parsedInitialData = useMemo<CanvasData>(() => {
     if (!snippet.code || typeof snippet.code !== 'string') {
       return { nodes: [], edges: [], viewport: { x: 0, y: 0, zoom: 1 } }
@@ -46,6 +58,7 @@ export const CanvasTabPane: React.FC<CanvasTabPaneProps> = ({
     return { nodes: [], edges: [], viewport: { x: 0, y: 0, zoom: 1 } }
   }, [snippet.id, snippet.code])
 
+  // Debounced auto-save handler to minimize disk I/O during interactions
   const handleCanvasChange = useCallback(
     (data: CanvasData) => {
       latestDataRef.current = data
@@ -69,7 +82,7 @@ export const CanvasTabPane: React.FC<CanvasTabPaneProps> = ({
     [onSave]
   )
 
-  // Flush pending save on unmount
+  // Flush any pending save on tab unmount
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) {

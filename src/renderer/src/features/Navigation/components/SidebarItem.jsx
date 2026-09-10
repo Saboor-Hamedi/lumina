@@ -470,6 +470,12 @@ const SidebarItem = ({
       }}
       {...(dndProps?.attributes || {})}
       {...(dndProps?.listeners || {})}
+      onDragStart={(e) => {
+        try {
+          e.dataTransfer.setData('application/lumina-snippet', JSON.stringify(snippet))
+          e.dataTransfer.setData('text/plain', snippet.title || '')
+        } catch (err) {}
+      }}
     >
       <span className="item-icon-wrap" style={{ flexShrink: 0 }}>
         {getIcon()}

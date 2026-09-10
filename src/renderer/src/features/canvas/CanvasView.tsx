@@ -1,22 +1,37 @@
-import React, { useRef, useCallback, useEffect, useState } from 'react'
-import {
-  Plus,
-  StickyNote,
-  Trash2,
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
-  Palette,
-  X,
-  MousePointer,
-  Hand,
-  ExternalLink,
-  Image as ImageIcon
-} from 'lucide-react'
+/**
+ * ============================================================================
+ * Lumina Spatial Canvas View (CanvasView)
+ * ============================================================================
+ * Infinite 2D interactive canvas for spatial thinking, note organizing,
+ * visual mind-mapping, and document interconnection.
+ *
+ * Key Capabilities:
+ * 1. Infinite Viewport: Hardware-accelerated zoom (0.1x - 2.5x) and smooth pan
+ * 2. Mixed Media Cards: Markdown notes, PDF documents, and image assets
+ * 3. Reactive Linking: Dynamic cubic Bézier wire connections between cards
+ * 4. Modular Toolbars:
+ *    - ConvasToolBarCenter (Bottom Center: Select, Hand, Sticky Note)
+ *    - ConvasToolBarRight (Right Edge: Vertical Zoom & Delete dock)
+ * 5. High-Performance Dragging:
+ *    - RAF-throttled pointer tracking
+ *    - Memoized markdown previews to prevent re-parsing large documents
+ *    - Batch addition for multi-file explorer drops
+ * ============================================================================
+ */
+
+import React, { useRef, useCallback, useEffect, useState, useMemo } from 'react'
 import { useCanvas } from './useCanvas'
-import { CanvasData, CanvasNode, CanvasNodeColor, CanvasEdge } from './types'
-import { useVaultStore } from '../../core/store/workspaceStore'
-import ToolTip from '../../components/atoms/ToolTip'
+import { CanvasData, CanvasNode, CanvasEdge, CanvasEdgeSide } from './types'
+import {
+  COLOR_CYCLE,
+  getNodePortCoord,
+  getBezierCurve,
+  normalizeNode
+} from './canvasUtils'
+import { CanvasNodeCard } from './CanvasNodeCard'
+import { CanvasEdgeItem } from './CanvasEdgeItem'
+import { ConvasToolBarCenter } from './ConvasToolBarCenter'
+import { ConvasToolBarRight } from './ConvasToolBarRight'
 import './canvas.css'
 
 export interface CanvasViewProps {
@@ -24,46 +39,67 @@ export interface CanvasViewProps {
   onChange?: (data: CanvasData) => void
 }
 
-const COLOR_CYCLE: CanvasNodeColor[] = [
-  'default',
-  'yellow',
-  'purple',
-  'cyan',
-  'green',
-  'orange',
-  'red'
-]
+interface ConnectingState {
+  fromNodeId: string
+  fromSide: CanvasEdgeSide
+  startX: number
+  startY: number
+}
+
+interface DraggingNodeInfo {
+  id: string
+  startX: number
+  startY: number
+  initialPositions: Map<string, { x: number; y: number }>
+}
+
+interface ResizingNodeInfo {
+  id: string
+  startX: number
+  startY: number
+  initialW: number
+  initialH: number
+}
 
 export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange }) => {
   const containerRef = useRef<HTMLDivElement>(null)
+
+  // Local editing states
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null)
   const [editingField, setEditingField] = useState<'title' | 'text' | null>(null)
   const [toolMode, setToolMode] = useState<'select' | 'hand'>('select')
   const [isSpacePressed, setIsSpacePressed] = useState(false)
   const [isPanningState, setIsPanningState] = useState(false)
 
+  // Interactive Linking / Wire connection state
+  const [connecting, setConnecting] = useState<ConnectingState | null>(null)
+  const connectingRef = useRef<ConnectingState | null>(null)
+  const [mouseCanvasPos, setMouseCanvasPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
+
+  // Drag and resize operation tracking refs
   const isPanningRef = useRef(false)
   const panPrevRef = useRef({ x: 0, y: 0 })
-  const draggingNodeRef = useRef<{
-    id: string
-    startX: number
-    startY: number
-    initialX: number
-    initialY: number
-  } | null>(null)
+  const draggingNodeRef = useRef<DraggingNodeInfo | null>(null)
+  const resizingNodeRef = useRef<ResizingNodeInfo | null>(null)
+  const rafIdRef = useRef<number | null>(null)
 
+  // Central Canvas State Hook
   const {
     nodes,
     edges,
     viewport,
     selectedNodeIds,
+    setEdges,
     setSelectedNodeIds,
     screenToCanvas,
     zoomAt,
     resetViewport,
     panBy,
     addNode,
+    addNodes,
     updateNodePosition,
+    updateNodesPositions,
+    updateNodeSize,
     updateNodeText,
     updateNodeTitle,
     updateNodeColor,
@@ -71,7 +107,86 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
     deleteSelected
   } = useCanvas({ initialData, onChange })
 
-  // Keyboard shortcut listener (Spacebar pan, Delete, Escape, Zoom reset)
+  // Synchronous state ref for stable event listeners
+  const stateRef = useRef({
+    viewport,
+    nodes,
+    selectedNodeIds,
+    toolMode,
+    isSpacePressed,
+    connecting
+  })
+  useEffect(() => {
+    stateRef.current = {
+      viewport,
+      nodes,
+      selectedNodeIds,
+      toolMode,
+      isSpacePressed,
+      connecting
+    }
+  }, [viewport, nodes, selectedNodeIds, toolMode, isSpacePressed, connecting])
+
+  // Fast O(1) node lookup map for instant edge & port resolution
+  const nodeMap = useMemo(() => {
+    const map = new Map<string, CanvasNode>()
+    for (let i = 0; i < nodes.length; i++) {
+      map.set(nodes[i].id, nodes[i])
+    }
+    return map
+  }, [nodes])
+
+  /**
+   * Completes creating a directional connection edge between two nodes.
+   */
+  const completeConnection = useCallback(
+    (
+      fromNodeId: string,
+      fromSide: CanvasEdgeSide,
+      toNodeId: string,
+      toSide: CanvasEdgeSide = 'left'
+    ) => {
+      // Prevent self-connection
+      if (fromNodeId === toNodeId) {
+        setConnecting(null)
+        connectingRef.current = null
+        return
+      }
+
+      const newEdge: CanvasEdge = {
+        id: `edge-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        fromNode: fromNodeId,
+        fromSide: fromSide,
+        toNode: toNodeId,
+        toSide: toSide,
+        lineStyle: 'curved'
+      }
+
+      setEdges((prev) => {
+        // Prevent duplicate edges between the exact same pair
+        const exists = prev.some(
+          (e) =>
+            (e.fromNode === fromNodeId && e.toNode === toNodeId) ||
+            (e.fromNode === toNodeId && e.toNode === fromNodeId)
+        )
+        if (exists) return prev
+        return [...prev, newEdge]
+      })
+
+      setConnecting(null)
+      connectingRef.current = null
+    },
+    [setEdges]
+  )
+
+  /**
+   * Global keyboard shortcut listener:
+   * - Spacebar (hold): activates temporary hand / pan tool
+   * - Delete / Backspace: deletes selected card(s)
+   * - Escape: cancels wire connecting, closes open inline editor, clears selection
+   * - Ctrl+0: resets viewport to 100% origin
+   * - V / H: switches tool mode
+   */
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeTag = (document.activeElement?.tagName || '').toLowerCase()
@@ -80,11 +195,13 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
       if (e.code === 'Space' && !isInputActive && !e.repeat) {
         setIsSpacePressed(true)
       } else if ((e.key === 'Delete' || e.key === 'Backspace') && !isInputActive) {
-        if (selectedNodeIds.length > 0) {
+        if (stateRef.current.selectedNodeIds.length > 0) {
           e.preventDefault()
           deleteSelected()
         }
       } else if (e.key === 'Escape') {
+        setConnecting(null)
+        connectingRef.current = null
         setEditingNodeId(null)
         setEditingField(null)
         setSelectedNodeIds([])
@@ -110,29 +227,113 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [selectedNodeIds, deleteSelected, setSelectedNodeIds, resetViewport])
+  }, [deleteSelected, setSelectedNodeIds, resetViewport])
 
-  // Global window pointermove and pointerup listeners for continuous panning and node dragging
+  /**
+   * High performance window-level pointermove and pointerup listeners.
+   * Throttled using requestAnimationFrame to match the monitor refresh rate
+   * without choking on high-polling gaming mice.
+   */
   useEffect(() => {
     const handleGlobalPointerMove = (e: PointerEvent) => {
-      if (isPanningRef.current) {
-        const dx = e.clientX - panPrevRef.current.x
-        const dy = e.clientY - panPrevRef.current.y
-        panPrevRef.current = { x: e.clientX, y: e.clientY }
-        panBy(dx, dy)
-      } else if (draggingNodeRef.current) {
-        const currentZoom = viewport.zoom || 1
-        const dx = (e.clientX - draggingNodeRef.current.startX) / currentZoom
-        const dy = (e.clientY - draggingNodeRef.current.startY) / currentZoom
-        updateNodePosition(
-          draggingNodeRef.current.id,
-          draggingNodeRef.current.initialX + dx,
-          draggingNodeRef.current.initialY + dy
-        )
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current)
       }
+
+      rafIdRef.current = requestAnimationFrame(() => {
+        rafIdRef.current = null
+        const currentZoom = stateRef.current.viewport.zoom || 1
+
+        // 1. Live wire connecting line projection
+        if (containerRef.current && connectingRef.current) {
+          const rect = containerRef.current.getBoundingClientRect()
+          setMouseCanvasPos(screenToCanvas(e.clientX, e.clientY, rect))
+        }
+
+        // 2. Card resizing
+        if (resizingNodeRef.current) {
+          const dx = (e.clientX - resizingNodeRef.current.startX) / currentZoom
+          const dy = (e.clientY - resizingNodeRef.current.startY) / currentZoom
+          updateNodeSize(
+            resizingNodeRef.current.id,
+            resizingNodeRef.current.initialW + dx,
+            resizingNodeRef.current.initialH + dy
+          )
+        } else if (isPanningRef.current) {
+          // 3. Canvas background panning
+          const dx = e.clientX - panPrevRef.current.x
+          const dy = e.clientY - panPrevRef.current.y
+          panPrevRef.current = { x: e.clientX, y: e.clientY }
+          panBy(dx, dy)
+        } else if (draggingNodeRef.current) {
+          // 4. Node dragging (supports multi-card selection drag)
+          const dx = (e.clientX - draggingNodeRef.current.startX) / currentZoom
+          const dy = (e.clientY - draggingNodeRef.current.startY) / currentZoom
+
+          if (draggingNodeRef.current.initialPositions.size > 1) {
+            const updates: { id: string; x: number; y: number }[] = []
+            draggingNodeRef.current.initialPositions.forEach((pos, id) => {
+              updates.push({ id, x: pos.x + dx, y: pos.y + dy })
+            })
+            updateNodesPositions(updates)
+          } else {
+            const initialPos = draggingNodeRef.current.initialPositions.get(
+              draggingNodeRef.current.id
+            )
+            if (initialPos) {
+              updateNodePosition(
+                draggingNodeRef.current.id,
+                initialPos.x + dx,
+                initialPos.y + dy
+              )
+            }
+          }
+        }
+      })
     }
 
-    const handleGlobalPointerUp = () => {
+    const handleGlobalPointerUp = (e: PointerEvent) => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current)
+        rafIdRef.current = null
+      }
+
+      if (resizingNodeRef.current) {
+        resizingNodeRef.current = null
+      }
+
+      // If user was dragging a wire from a port, resolve drop destination
+      if (connectingRef.current) {
+        const targetEl = document.elementFromPoint(e.clientX, e.clientY)
+        const targetPort = targetEl?.closest('.lumina-canvas-port') as HTMLElement | null
+        const targetNode = targetEl?.closest('.lumina-canvas-node') as HTMLElement | null
+
+        if (targetPort) {
+          const targetNodeId = targetPort.getAttribute('data-node-id')
+          const targetSide = (targetPort.getAttribute('data-port-side') || 'left') as CanvasEdgeSide
+          if (targetNodeId && targetNodeId !== connectingRef.current.fromNodeId) {
+            completeConnection(
+              connectingRef.current.fromNodeId,
+              connectingRef.current.fromSide,
+              targetNodeId,
+              targetSide
+            )
+            return
+          }
+        } else if (targetNode) {
+          const targetNodeId = targetNode.getAttribute('data-node-id')
+          if (targetNodeId && targetNodeId !== connectingRef.current.fromNodeId) {
+            completeConnection(
+              connectingRef.current.fromNodeId,
+              connectingRef.current.fromSide,
+              targetNodeId,
+              'left'
+            )
+            return
+          }
+        }
+      }
+
       if (isPanningRef.current) {
         isPanningRef.current = false
         setIsPanningState(false)
@@ -142,17 +343,48 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
       }
     }
 
-    window.addEventListener('pointermove', handleGlobalPointerMove)
+    window.addEventListener('pointermove', handleGlobalPointerMove, { passive: true })
     window.addEventListener('pointerup', handleGlobalPointerUp)
     return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current)
+      }
       window.removeEventListener('pointermove', handleGlobalPointerMove)
       window.removeEventListener('pointerup', handleGlobalPointerUp)
     }
-  }, [viewport.zoom, panBy, updateNodePosition])
+  }, [
+    panBy,
+    updateNodePosition,
+    updateNodesPositions,
+    updateNodeSize,
+    screenToCanvas,
+    completeConnection
+  ])
 
-  // Wheel zoom and infinite trackpad pan
+  /**
+   * Wheel event listener for canvas zoom & pan.
+   * Features intelligent passthrough: scrolling inside a note or PDF card
+   * scrolls the card body naturally rather than panning the entire canvas.
+   */
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
+      const target = e.target as HTMLElement
+      const nodeBody = target.closest('.lumina-canvas-node-body') as HTMLElement | null
+      if (nodeBody && !e.ctrlKey && !e.metaKey) {
+        const isScrollable = nodeBody.scrollHeight > nodeBody.clientHeight
+        if (isScrollable) {
+          const scrollingUp = e.deltaY < 0
+          const scrollingDown = e.deltaY > 0
+          const canScrollUp = scrollingUp && nodeBody.scrollTop > 0
+          const canScrollDown =
+            scrollingDown && nodeBody.scrollTop + nodeBody.clientHeight < nodeBody.scrollHeight - 1
+
+          if (canScrollUp || canScrollDown) {
+            return
+          }
+        }
+      }
+
       if (!containerRef.current) return
       e.preventDefault()
 
@@ -166,14 +398,77 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
     [zoomAt, panBy]
   )
 
-  // Mouse pan initiation on container or background
+  /**
+   * Starts or completes a wire connection from a card port.
+   */
+  const handlePortMouseDown = useCallback(
+    (e: React.MouseEvent, nodeId: string, side: CanvasEdgeSide) => {
+      e.stopPropagation()
+      e.preventDefault()
+      if (!containerRef.current) return
+
+      // If already connecting, complete to this port
+      if (connectingRef.current) {
+        if (connectingRef.current.fromNodeId !== nodeId) {
+          completeConnection(connectingRef.current.fromNodeId, connectingRef.current.fromSide, nodeId, side)
+        } else {
+          setConnecting(null)
+          connectingRef.current = null
+        }
+        return
+      }
+
+      const node = nodeMap.get(nodeId)
+      const portCoord = node ? getNodePortCoord(node, side) : { x: 0, y: 0 }
+      const rect = containerRef.current.getBoundingClientRect()
+      const canvasMouse = screenToCanvas(e.clientX, e.clientY, rect)
+
+      const connState: ConnectingState = {
+        fromNodeId: nodeId,
+        fromSide: side,
+        startX: portCoord.x,
+        startY: portCoord.y
+      }
+      setConnecting(connState)
+      connectingRef.current = connState
+      setMouseCanvasPos(canvasMouse)
+    },
+    [nodeMap, screenToCanvas, completeConnection]
+  )
+
+  /**
+   * Deletes a connector edge.
+   */
+  const handleDeleteEdge = useCallback(
+    (e: React.MouseEvent, edgeId: string) => {
+      e.stopPropagation()
+      setEdges((prev) => prev.filter((edge) => edge.id !== edgeId))
+    },
+    [setEdges]
+  )
+
+  /**
+   * Handles canvas background mouse down (initiates pan).
+   */
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       const target = e.target as HTMLElement
-      const isNodeOrToolbar = target.closest('.lumina-canvas-node, .lumina-canvas-toolbar')
+      const isNodeOrToolbar = target.closest(
+        '.lumina-canvas-node, .lumina-canvas-toolbar, .lumina-canvas-port, .lumina-canvas-resize-handle'
+      )
 
-      // Pan if: hand mode active, space pressed, middle click (button 1), or clicking canvas background
-      if (toolMode === 'hand' || isSpacePressed || e.button === 1 || (!isNodeOrToolbar && e.button === 0)) {
+      if (connectingRef.current && !isNodeOrToolbar) {
+        setConnecting(null)
+        connectingRef.current = null
+        return
+      }
+
+      if (
+        toolMode === 'hand' ||
+        isSpacePressed ||
+        e.button === 1 ||
+        (!isNodeOrToolbar && e.button === 0)
+      ) {
         e.preventDefault()
         isPanningRef.current = true
         setIsPanningState(true)
@@ -187,37 +482,98 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
     [toolMode, isSpacePressed, setSelectedNodeIds]
   )
 
-  // Dragging individual node card
+  /**
+   * Handles mouse down on a node card (initiates drag or connects on click).
+   */
   const handleNodeMouseDown = useCallback(
     (e: React.MouseEvent, node: CanvasNode) => {
-      // In hand mode or when holding space, background pan takes precedence
+      if (connectingRef.current) {
+        e.stopPropagation()
+        e.preventDefault()
+        completeConnection(connectingRef.current.fromNodeId, connectingRef.current.fromSide, node.id, 'left')
+        return
+      }
+
       if (toolMode === 'hand' || isSpacePressed) return
       if (e.button !== 0 || !containerRef.current) return
 
       const target = e.target as HTMLElement
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.closest('button')) {
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.closest('button') ||
+        target.closest('.lumina-canvas-port') ||
+        target.closest('.lumina-canvas-resize-handle')
+      ) {
         return
       }
 
       e.stopPropagation()
+
+      // Shift-click supports multi-card selection
+      const isCurrentlySelected = selectedNodeIds.includes(node.id)
+      let currentSelected = selectedNodeIds
+      if (e.shiftKey) {
+        if (isCurrentlySelected) {
+          currentSelected = selectedNodeIds.filter((id) => id !== node.id)
+        } else {
+          currentSelected = [...selectedNodeIds, node.id]
+        }
+        setSelectedNodeIds(currentSelected)
+      } else if (!isCurrentlySelected) {
+        currentSelected = [node.id]
+        setSelectedNodeIds([node.id])
+      }
+
+      const initialPositions = new Map<string, { x: number; y: number }>()
+      currentSelected.forEach((id) => {
+        const n = nodeMap.get(id)
+        if (n) initialPositions.set(id, { x: n.x, y: n.y })
+      })
+
+      if (!initialPositions.has(node.id)) {
+        initialPositions.set(node.id, { x: node.x, y: node.y })
+      }
+
       draggingNodeRef.current = {
         id: node.id,
         startX: e.clientX,
         startY: e.clientY,
-        initialX: node.x,
-        initialY: node.y
+        initialPositions
       }
-      setSelectedNodeIds([node.id])
     },
-    [toolMode, isSpacePressed, setSelectedNodeIds]
+    [toolMode, isSpacePressed, completeConnection, selectedNodeIds, setSelectedNodeIds, nodeMap]
   )
 
-  // Double click background creates new sticky note at mouse location
+  /**
+   * Initiates card resizing from the bottom-right corner handle.
+   */
+  const handleResizeMouseDown = useCallback((e: React.MouseEvent, node: CanvasNode) => {
+    e.stopPropagation()
+    e.preventDefault()
+    resizingNodeRef.current = {
+      id: node.id,
+      startX: e.clientX,
+      startY: e.clientY,
+      initialW: node.width,
+      initialH: node.height
+    }
+  }, [])
+
+  /**
+   * Double clicking the canvas background creates a new sticky note at cursor.
+   */
   const handleDoubleClick = useCallback(
     (e: React.MouseEvent) => {
       if (!containerRef.current) return
       const target = e.target as HTMLElement
-      if (target.closest('.lumina-canvas-node, .lumina-canvas-toolbar')) return
+      if (
+        target.closest(
+          '.lumina-canvas-node, .lumina-canvas-toolbar, .lumina-canvas-port, .lumina-canvas-resize-handle'
+        )
+      ) {
+        return
+      }
 
       const rect = containerRef.current.getBoundingClientRect()
       const pt = screenToCanvas(e.clientX, e.clientY, rect)
@@ -237,13 +593,79 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
     [screenToCanvas, addNode]
   )
 
-  // Dropping files or notes from FileExplorer via custom event
+  /**
+   * Unified parser to convert dropped workspace snippets into CanvasNode objects.
+   */
+  const buildNodeFromSnippet = useCallback((snippet: any, dropPt: { x: number; y: number }, offset: number = 0): CanvasNode => {
+    const fileName = String(snippet.fileName || snippet.title || '')
+    const isPdf =
+      snippet.type === 'pdf' ||
+      /\.pdf$/i.test(fileName) ||
+      String(snippet.relativePath || '').toLowerCase().endsWith('.pdf')
+
+    const isImage =
+      snippet.type === 'image' ||
+      /\.(png|jpe?g|svg|webp|gif|bmp|ico)$/i.test(fileName)
+
+    if (isPdf) {
+      return normalizeNode({
+        type: 'pdf',
+        title: snippet.title || fileName || 'Document.pdf',
+        text: snippet.relativePath || snippet.path || fileName,
+        file: snippet.id,
+        x: dropPt.x + offset - 140,
+        y: dropPt.y + offset - 80,
+        width: 280,
+        height: 160,
+        color: 'red'
+      })
+    } else if (isImage) {
+      const relPath =
+        snippet.relativePath ||
+        (snippet.folderId ? `${snippet.folderId}/${snippet.fileName}` : snippet.fileName)
+      const clean = String(relPath || '').replace(/^[/\\]+/, '').replace(/\\/g, '/')
+      const encoded = clean.split('/').map(encodeURIComponent).join('/')
+      const assetUrl = `asset://local/${encoded}`
+
+      return normalizeNode({
+        type: 'image',
+        title: snippet.title || fileName || 'Image',
+        url: assetUrl,
+        text: clean,
+        file: snippet.id,
+        x: dropPt.x + offset - 160,
+        y: dropPt.y + offset - 120,
+        width: 320,
+        height: 240,
+        color: 'cyan'
+      })
+    } else {
+      const textContent = snippet.content || snippet.code || ''
+      return normalizeNode({
+        type: 'note',
+        title: snippet.title || fileName || 'Note',
+        text: textContent,
+        file: snippet.id,
+        x: dropPt.x + offset - 140,
+        y: dropPt.y + offset - 100,
+        width: 280,
+        height: 200,
+        color: 'yellow'
+      })
+    }
+  }, [])
+
+  /**
+   * Listener for FileExplorer items dropped via Lumina internal DnD events.
+   * Uses batch addNodes for maximum performance.
+   */
   useEffect(() => {
     const handleDroppedExplorerItem = (e: Event) => {
       const customEvent = e as CustomEvent
       const detail = customEvent.detail || (e as any).data || {}
       const { snippets, clientX = 0, clientY = 0 } = detail
       if (!containerRef.current || !Array.isArray(snippets) || snippets.length === 0) return
+
       const rect = containerRef.current.getBoundingClientRect()
       const hasDimensions = rect.width > 0 && rect.height > 0
       const isInside =
@@ -255,46 +677,8 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
 
       if (isInside) {
         const pt = screenToCanvas(clientX, clientY, rect)
-        snippets.forEach((snippet: any, idx: number) => {
-          const offset = idx * 24
-          const isImage =
-            snippet.type === 'image' ||
-            /\.(png|jpe?g|svg|webp|gif|bmp|ico)$/i.test(snippet.fileName || '')
-
-          if (isImage) {
-            const relPath =
-              snippet.relativePath ||
-              (snippet.folderId ? `${snippet.folderId}/${snippet.fileName}` : snippet.fileName)
-            const clean = String(relPath || '').replace(/^[/\\]+/, '').replace(/\\/g, '/')
-            const encoded = clean.split('/').map(encodeURIComponent).join('/')
-            const assetUrl = `asset://local/${encoded}`
-
-            addNode({
-              type: 'image',
-              title: snippet.title || snippet.fileName || 'Image',
-              url: assetUrl,
-              file: snippet.id,
-              x: Math.round(pt.x + offset - 160),
-              y: Math.round(pt.y + offset - 120),
-              width: 320,
-              height: 240,
-              color: 'cyan'
-            })
-          } else {
-            const textContent = snippet.content || snippet.code || ''
-            addNode({
-              type: 'note',
-              title: snippet.title || snippet.fileName || 'Note',
-              text: textContent,
-              file: snippet.id,
-              x: Math.round(pt.x + offset - 140),
-              y: Math.round(pt.y + offset - 100),
-              width: 280,
-              height: 200,
-              color: 'yellow'
-            })
-          }
-        })
+        const batchNodes = snippets.map((s: any, idx: number) => buildNodeFromSnippet(s, pt, idx * 24))
+        addNodes(batchNodes)
       }
     }
 
@@ -302,9 +686,11 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
     return () => {
       window.removeEventListener('lumina:canvas-drop-item', handleDroppedExplorerItem as EventListener)
     }
-  }, [screenToCanvas, addNode])
+  }, [screenToCanvas, buildNodeFromSnippet, addNodes])
 
-  // Native HTML5 Drag and Drop for external files & images from Desktop / Explorer
+  /**
+   * Native HTML5 dragover & drop listeners for external desktop files.
+   */
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'copy'
@@ -317,44 +703,87 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
       const rect = containerRef.current.getBoundingClientRect()
       const pt = screenToCanvas(e.clientX, e.clientY, rect)
 
+      // 1. Check if dropped from Lumina FileExplorer (HTML5 dataTransfer)
+      const luminaSnippetData = e.dataTransfer.getData('application/lumina-snippet')
+      if (luminaSnippetData) {
+        try {
+          const snippet = JSON.parse(luminaSnippetData)
+          const node = buildNodeFromSnippet(snippet, pt)
+          addNode(node)
+          return
+        } catch (err) {}
+      }
+
+      // 2. Check if dropped from external OS filesystem (Windows Explorer, Desktop)
       const files = Array.from(e.dataTransfer.files)
       if (files.length > 0) {
-        files.forEach((file, idx) => {
-          const offset = idx * 24
-          const isImg =
-            file.type.startsWith('image/') ||
-            /\.(png|jpe?g|svg|webp|gif|bmp|ico)$/i.test(file.name)
+        Promise.all(
+          files.map(async (file, idx) => {
+            const offset = idx * 24
+            const fileName = file.name || ''
+            const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(fileName)
+            const isImg =
+              file.type.startsWith('image/') ||
+              /\.(png|jpe?g|svg|webp|gif|bmp|ico)$/i.test(fileName)
 
-          if (isImg) {
-            const filePath = (file as any).path
-            const url = filePath
-              ? `file://${filePath.replace(/\\/g, '/')}`
-              : URL.createObjectURL(file)
-            addNode({
-              type: 'image',
-              title: file.name,
-              url,
-              x: Math.round(pt.x + offset - 160),
-              y: Math.round(pt.y + offset - 120),
-              width: 320,
-              height: 240,
-              color: 'cyan'
-            })
-          } else {
-            const reader = new FileReader()
-            reader.onload = (re) => {
-              addNode({
-                type: 'text',
-                title: file.name,
-                text: (re.target?.result as string) || '',
-                x: Math.round(pt.x + offset - 130),
-                y: Math.round(pt.y + offset - 90),
-                width: 260,
-                height: 180,
-                color: 'default'
+            if (isPdf) {
+              const filePath = (file as any).path
+              return normalizeNode({
+                type: 'pdf',
+                title: fileName,
+                text: filePath || fileName,
+                url: filePath ? `file://${filePath.replace(/\\/g, '/')}` : undefined,
+                x: pt.x + offset - 140,
+                y: pt.y + offset - 80,
+                width: 280,
+                height: 160,
+                color: 'red'
               })
             }
-            reader.readAsText(file)
+
+            if (isImg) {
+              // Read image as Data URL so it loads 100% reliably with zero broken links
+              const dataUrl = await new Promise<string>((resolve) => {
+                const reader = new FileReader()
+                reader.onload = (re) => resolve((re.target?.result as string) || '')
+                reader.onerror = () => resolve('')
+                reader.readAsDataURL(file)
+              })
+
+              return normalizeNode({
+                type: 'image',
+                title: fileName,
+                url: dataUrl,
+                x: pt.x + offset - 160,
+                y: pt.y + offset - 120,
+                width: 320,
+                height: 240,
+                color: 'cyan'
+              })
+            }
+
+            // Plain text or markdown file
+            const textContent = await new Promise<string>((resolve) => {
+              const reader = new FileReader()
+              reader.onload = (re) => resolve((re.target?.result as string) || '')
+              reader.onerror = () => resolve('')
+              reader.readAsText(file)
+            })
+
+            return normalizeNode({
+              type: 'text',
+              title: fileName,
+              text: textContent,
+              x: pt.x + offset - 130,
+              y: pt.y + offset - 90,
+              width: 260,
+              height: 180,
+              color: 'default'
+            })
+          })
+        ).then((newNodes) => {
+          if (newNodes.length > 0) {
+            addNodes(newNodes)
           }
         })
       } else {
@@ -375,10 +804,13 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
         }
       }
     },
-    [screenToCanvas, addNode]
+    [screenToCanvas, buildNodeFromSnippet, addNode, addNodes]
   )
 
-  const handleAddSticky = () => {
+  /**
+   * Adds a new sticky note centered in the visible viewport.
+   */
+  const handleAddSticky = useCallback(() => {
     if (!containerRef.current) return
     const rect = containerRef.current.getBoundingClientRect()
     const center = screenToCanvas(
@@ -398,47 +830,57 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
     })
     setEditingNodeId(newNode.id)
     setEditingField('text')
-  }
+  }, [screenToCanvas, addNode])
 
-  const handleCycleColor = (e: React.MouseEvent, node: CanvasNode) => {
-    e.stopPropagation()
-    const currentColor = node.color || 'default'
-    const currentIndex = COLOR_CYCLE.indexOf(currentColor)
-    const nextColor = COLOR_CYCLE[(currentIndex + 1) % COLOR_CYCLE.length]
-    updateNodeColor(node.id, nextColor)
-  }
+  /**
+   * Cycles card colors on palette button click.
+   */
+  const handleCycleColor = useCallback(
+    (nodeId: string) => {
+      const node = nodeMap.get(nodeId)
+      if (!node) return
+      const currentColor = node.color || 'default'
+      const currentIndex = COLOR_CYCLE.indexOf(currentColor)
+      const nextColor = COLOR_CYCLE[(currentIndex + 1) % COLOR_CYCLE.length]
+      updateNodeColor(nodeId, nextColor)
+    },
+    [nodeMap, updateNodeColor]
+  )
 
-  // Calculate SVG connector curve between two nodes
-  const renderEdge = (edge: CanvasEdge) => {
-    const from = nodes.find((n) => n.id === edge.fromNode)
-    const to = nodes.find((n) => n.id === edge.toNode)
-    if (!from || !to) return null
+  const handleStartEditing = useCallback((nodeId: string, field: 'title' | 'text') => {
+    setEditingNodeId(nodeId)
+    setEditingField(field)
+  }, [])
 
-    const startX = from.x + from.width
-    const startY = from.y + from.height / 2
-    const endX = to.x
-    const endY = to.y + to.height / 2
+  const handleStopEditing = useCallback(() => {
+    setEditingNodeId(null)
+    setEditingField(null)
+  }, [])
 
-    const dx = Math.abs(endX - startX) * 0.5
-    const pathD = `M ${startX} ${startY} C ${startX + dx} ${startY}, ${endX - dx} ${endY}, ${endX} ${endY}`
-
-    return (
-      <g key={edge.id} className="lumina-canvas-edge-group">
-        <path d={pathD} className="lumina-canvas-edge-line" />
-      </g>
+  // Live connecting Bézier spline while dragging from a port
+  const liveConnectingLine = useMemo(() => {
+    if (!connecting) return null
+    const { pathD } = getBezierCurve(
+      { x: connecting.startX, y: connecting.startY },
+      connecting.fromSide,
+      mouseCanvasPos,
+      'left'
     )
-  }
+    return <path d={pathD} className="lumina-canvas-connecting-line" markerEnd="url(#arrow)" />
+  }, [connecting, mouseCanvasPos])
 
   const cursorStyle = isPanningState
     ? 'grabbing'
-    : toolMode === 'hand' || isSpacePressed
-      ? 'grab'
-      : 'default'
+    : connecting
+      ? 'crosshair'
+      : toolMode === 'hand' || isSpacePressed
+        ? 'grab'
+        : 'default'
 
   return (
     <div
       ref={containerRef}
-      className="lumina-canvas-container"
+      className={`lumina-canvas-container ${connecting ? 'is-connecting' : ''}`}
       style={{
         backgroundPosition: `${viewport.x}px ${viewport.y}px`,
         backgroundSize: `${24 * viewport.zoom}px ${24 * viewport.zoom}px`,
@@ -458,236 +900,79 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
         }}
       >
         {/* SVG Edges Layer */}
-        {edges.length > 0 && (
-          <svg className="lumina-canvas-edges-layer">
-            <defs>
-              <marker
-                id="arrow"
-                viewBox="0 0 10 10"
-                refX="6"
-                refY="5"
-                markerWidth="6"
-                markerHeight="6"
-                orient="auto-start-reverse"
-              >
-                <path d="M 0 1 L 8 5 L 0 9 z" fill="var(--text-accent, #38bdf8)" />
-              </marker>
-            </defs>
-            {edges.map(renderEdge)}
-          </svg>
-        )}
-
-        {/* Render Node Cards */}
-        {nodes.map((node) => {
-          const isSelected = selectedNodeIds.includes(node.id)
-          const nodeColorClass = node.color ? `color-${node.color}` : 'color-default'
-
-          return (
-            <div
-              key={node.id}
-              className={`lumina-canvas-node ${nodeColorClass} ${isSelected ? 'selected' : ''}`}
-              style={{
-                left: `${node.x}px`,
-                top: `${node.y}px`,
-                width: `${node.width}px`,
-                height: `${node.height}px`
-              }}
-              onMouseDown={(e) => handleNodeMouseDown(e, node)}
+        <svg className="lumina-canvas-edges-layer">
+          <defs>
+            <marker
+              id="arrow"
+              viewBox="0 0 10 10"
+              refX="6"
+              refY="5"
+              markerWidth="6"
+              markerHeight="6"
+              orient="auto-start-reverse"
             >
-              {/* Card Header */}
-              <div className="lumina-canvas-node-header">
-                {editingNodeId === node.id && editingField === 'title' ? (
-                  <input
-                    autoFocus
-                    className="lumina-canvas-title-input"
-                    defaultValue={node.title || ''}
-                    onBlur={(e) => {
-                      updateNodeTitle(node.id, e.target.value.trim() || 'Untitled')
-                      setEditingField(null)
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        updateNodeTitle(node.id, e.currentTarget.value.trim() || 'Untitled')
-                        setEditingField(null)
-                      }
-                      if (e.key === 'Escape') setEditingField(null)
-                    }}
-                  />
-                ) : (
-                  <span
-                    className="lumina-canvas-node-title"
-                    onDoubleClick={(e) => {
-                      e.stopPropagation()
-                      setEditingNodeId(node.id)
-                      setEditingField('title')
-                    }}
-                    title="Double-click to edit title"
-                  >
-                    {node.title || (node.type === 'image' ? 'Image' : 'Note Card')}
-                  </span>
-                )}
+              <path d="M 0 1 L 8 5 L 0 9 z" fill="var(--text-accent, #38bdf8)" />
+            </marker>
+          </defs>
+          {edges.map((edge) => (
+            <CanvasEdgeItem
+              key={edge.id}
+              edge={edge}
+              fromNode={nodeMap.get(edge.fromNode)}
+              toNode={nodeMap.get(edge.toNode)}
+              onDeleteEdge={handleDeleteEdge}
+            />
+          ))}
+          {liveConnectingLine}
+        </svg>
 
-                <div className="lumina-canvas-node-actions">
-                  {/* Open note/image in tab if linked */}
-                  {node.file && (
-                    <ToolTip text="Open in Tab" position="top">
-                      <button
-                        className="lumina-canvas-action-btn"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          useVaultStore.getState().setActiveTabId(node.file!)
-                        }}
-                      >
-                        <ExternalLink size={12} />
-                      </button>
-                    </ToolTip>
-                  )}
-
-                  <ToolTip text="Change Color" position="top">
-                    <button
-                      className="lumina-canvas-action-btn"
-                      onClick={(e) => handleCycleColor(e, node)}
-                    >
-                      <Palette size={12} />
-                    </button>
-                  </ToolTip>
-
-                  <ToolTip text="Delete Node" position="top">
-                    <button
-                      className="lumina-canvas-action-btn delete"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        deleteNode(node.id)
-                      }}
-                    >
-                      <X size={12} />
-                    </button>
-                  </ToolTip>
-                </div>
-              </div>
-
-              {/* Card Body: Text or Image */}
-              {node.type === 'image' && node.url ? (
-                <div className="lumina-canvas-node-image-wrap">
-                  <img src={node.url} alt={node.title || 'Canvas Image'} />
-                </div>
-              ) : (
-                <div
-                  className="lumina-canvas-node-body"
-                  onDoubleClick={(e) => {
-                    e.stopPropagation()
-                    setEditingNodeId(node.id)
-                    setEditingField('text')
-                  }}
-                >
-                  {editingNodeId === node.id && editingField === 'text' ? (
-                    <textarea
-                      autoFocus
-                      className="lumina-canvas-text-area"
-                      defaultValue={node.text || ''}
-                      onBlur={(e) => {
-                        updateNodeText(node.id, e.target.value)
-                        setEditingField(null)
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-                          updateNodeText(node.id, e.currentTarget.value)
-                          setEditingField(null)
-                        }
-                        if (e.key === 'Escape') setEditingField(null)
-                      }}
-                    />
-                  ) : (
-                    <p className="lumina-canvas-node-text">
-                      {node.text || <span className="placeholder">Double-click to type...</span>}
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          )
-        })}
+        {/* Render Node Cards (Memoized CanvasNodeCard components) */}
+        {nodes.map((node) => (
+          <CanvasNodeCard
+            key={node.id}
+            node={node}
+            isSelected={selectedNodeIds.includes(node.id)}
+            isEditing={editingNodeId === node.id}
+            editingField={editingNodeId === node.id ? editingField : null}
+            onNodeMouseDown={handleNodeMouseDown}
+            onPortMouseDown={handlePortMouseDown}
+            onResizeMouseDown={handleResizeMouseDown}
+            onStartEditing={handleStartEditing}
+            onStopEditing={handleStopEditing}
+            onUpdateTitle={updateNodeTitle}
+            onUpdateText={updateNodeText}
+            onCycleColor={handleCycleColor}
+            onDeleteNode={deleteNode}
+          />
+        ))}
       </div>
 
-      {/* Floating Canvas Toolbar */}
-      <div className="lumina-canvas-toolbar">
-        {/* Tool Mode Toggles: Select vs Hand (Pan) */}
-        <ToolTip text="Select Tool (V)" position="top">
-          <button
-            className={`lumina-canvas-tool-btn ${toolMode === 'select' ? 'active' : ''}`}
-            onClick={() => setToolMode('select')}
-          >
-            <MousePointer size={15} />
-          </button>
-        </ToolTip>
+      {/* Center Canvas Toolbar: Tool Mode (Select / Hand) & Sticky Note */}
+      <ConvasToolBarCenter
+        toolMode={toolMode}
+        setToolMode={setToolMode}
+        onAddSticky={handleAddSticky}
+      />
 
-        <ToolTip text="Hand / Pan Tool (H or hold Space)" position="top">
-          <button
-            className={`lumina-canvas-tool-btn ${toolMode === 'hand' ? 'active' : ''}`}
-            onClick={() => setToolMode('hand')}
-          >
-            <Hand size={15} />
-          </button>
-        </ToolTip>
-
-        <div className="lumina-canvas-divider" />
-
-        <ToolTip text="Add Sticky Note" position="top">
-          <button className="lumina-canvas-tool-btn" onClick={handleAddSticky}>
-            <StickyNote size={16} />
-          </button>
-        </ToolTip>
-
-        <ToolTip text="Delete Selected (Del)" position="top">
-          <button
-            className="lumina-canvas-tool-btn"
-            onClick={deleteSelected}
-            disabled={selectedNodeIds.length === 0}
-          >
-            <Trash2 size={16} />
-          </button>
-        </ToolTip>
-
-        <div className="lumina-canvas-divider" />
-
-        <ToolTip text="Zoom In (Ctrl + Scroll)" position="top">
-          <button
-            className="lumina-canvas-tool-btn"
-            onClick={() => {
-              if (containerRef.current) {
-                const rect = containerRef.current.getBoundingClientRect()
-                zoomAt(0.15, rect.left + rect.width / 2, rect.top + rect.height / 2, rect)
-              }
-            }}
-          >
-            <ZoomIn size={16} />
-          </button>
-        </ToolTip>
-
-        <span className="lumina-canvas-zoom-label">
-          {Math.round(viewport.zoom * 100)}%
-        </span>
-
-        <ToolTip text="Zoom Out" position="top">
-          <button
-            className="lumina-canvas-tool-btn"
-            onClick={() => {
-              if (containerRef.current) {
-                const rect = containerRef.current.getBoundingClientRect()
-                zoomAt(-0.15, rect.left + rect.width / 2, rect.top + rect.height / 2, rect)
-              }
-            }}
-          >
-            <ZoomOut size={16} />
-          </button>
-        </ToolTip>
-
-        <ToolTip text="Reset View (Ctrl+0)" position="top">
-          <button className="lumina-canvas-tool-btn" onClick={resetViewport}>
-            <RotateCcw size={14} />
-          </button>
-        </ToolTip>
-      </div>
+      {/* Right Canvas Toolbar: Zoom & Delete Selected (vertical, parallel to RightSidebar) */}
+      <ConvasToolBarRight
+        zoom={viewport.zoom}
+        onZoomIn={() => {
+          if (containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect()
+            zoomAt(0.10, rect.left + rect.width / 2, rect.top + rect.height / 2, rect)
+          }
+        }}
+        onZoomOut={() => {
+          if (containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect()
+            zoomAt(-0.10, rect.left + rect.width / 2, rect.top + rect.height / 2, rect)
+          }
+        }}
+        onResetViewport={resetViewport}
+        onDeleteSelected={deleteSelected}
+        canDelete={selectedNodeIds.length > 0}
+      />
     </div>
   )
 }

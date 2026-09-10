@@ -7,7 +7,7 @@
  * ============================================================================
  */
 
-export type CanvasNodeType = 'note' | 'text' | 'file' | 'link' | 'group' | 'image'
+export type CanvasNodeType = 'note' | 'text' | 'file' | 'link' | 'group' | 'image' | 'pdf'
 
 export type CanvasNodeColor =
   | 'default'

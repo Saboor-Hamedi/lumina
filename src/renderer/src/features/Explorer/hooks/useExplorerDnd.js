@@ -117,17 +117,30 @@ export function useExplorerDnd({
       const { active, over } = event
 
       // Detect if user dropped onto an active Canvas tab in the workspace
-      const dropX = pointerPosRef.current.x
-      const dropY = pointerPosRef.current.y
-      if (dropX > 0 && dropY > 0) {
-        const dropTarget = document.elementFromPoint(dropX, dropY)
-        const canvasContainer = dropTarget?.closest('.lumina-canvas-container')
-        if (canvasContainer) {
-          const idsToDrop = dragItem?.draggedSnippetIds?.length
-            ? dragItem.draggedSnippetIds
-            : [active.id]
-          const snippetsToDrop = allSnippets.filter((s) => idsToDrop.includes(s.id))
+      const dropX =
+        pointerPosRef.current.x ||
+        (event.activatorEvent?.clientX ? event.activatorEvent.clientX + (event.delta?.x || 0) : 0)
+      const dropY =
+        pointerPosRef.current.y ||
+        (event.activatorEvent?.clientY ? event.activatorEvent.clientY + (event.delta?.y || 0) : 0)
 
+      let targetCanvas = null
+      const canvasContainers = document.querySelectorAll('.lumina-canvas-container')
+      for (const canvas of canvasContainers) {
+        const r = canvas.getBoundingClientRect()
+        if (dropX >= r.left && dropX <= r.right && dropY >= r.top && dropY <= r.bottom) {
+          targetCanvas = canvas
+          break
+        }
+      }
+
+      if (targetCanvas) {
+        const idsToDrop = dragItem?.draggedSnippetIds?.length
+          ? dragItem.draggedSnippetIds
+          : [active.id]
+        const snippetsToDrop = allSnippets.filter((s) => idsToDrop.includes(s.id))
+
+        if (snippetsToDrop.length > 0) {
           window.dispatchEvent(
             new CustomEvent('lumina:canvas-drop-item', {
               detail: {

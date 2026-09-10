@@ -31,8 +31,8 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 10000px;
-  height: 10000px;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
   overflow: visible;
   z-index: 1;
@@ -49,19 +49,68 @@
 /* Canvas Toolbar */
 .lumina-canvas-toolbar {
   position: absolute;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
   background-color: color-mix(in srgb, var(--bg-panel, #18181b) 92%, transparent);
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
   border-radius: 10px;
   box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(12px);
   z-index: 100;
+}
+
+.lumina-canvas-toolbar-center {
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  height: 36px;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+.lumina-canvas-toolbar-center .lumina-canvas-tool-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+}
+
+.lumina-canvas-toolbar-center .lumina-canvas-divider {
+  width: 1px;
+  height: 14px;
+  margin: 0 2px;
+}
+
+.lumina-canvas-toolbar-right {
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 5px;
+  border-radius: 12px;
+  width: 36px;
+}
+
+.lumina-canvas-toolbar-right .lumina-canvas-tool-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+}
+
+.lumina-canvas-toolbar-right .lumina-canvas-divider.horizontal {
+  width: 14px;
+  height: 1px;
+  margin: 3px 0;
+}
+
+.lumina-canvas-toolbar-right .lumina-canvas-zoom-label {
+  font-size: 10px;
+  min-width: 28px;
+  padding: 1px 0;
 }
 
 .lumina-canvas-divider {
@@ -129,6 +178,36 @@
   pointer-events: none;
 }
 
+.lumina-canvas-image-error {
+  width: 100%;
+  height: calc(100% - 34px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 16px;
+  background-color: rgba(0, 0, 0, 0.25);
+  border-radius: 0 0 7px 7px;
+  text-align: center;
+  user-select: none;
+}
+
+.lumina-canvas-image-error-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-main, #e2e8f0);
+  max-width: 85%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lumina-canvas-image-error-hint {
+  font-size: 10.5px;
+  color: var(--text-muted, #94a3b8);
+}
+
 /* Canvas Node Card */
 .lumina-canvas-node {
   position: absolute;
@@ -142,6 +221,8 @@
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
   cursor: move;
   z-index: 5;
+  contain: layout style paint;
+  will-change: left, top;
 }
 
 .lumina-canvas-node.selected {
@@ -278,4 +359,235 @@
   font-size: 12px;
   line-height: 1.5;
   padding: 0;
+}
+
+/* Node Connection Ports (Knobs) */
+.lumina-canvas-port {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background-color: var(--bg-panel, #18181b);
+  border: 2px solid var(--text-accent, #38bdf8);
+  border-radius: 50%;
+  cursor: crosshair;
+  z-index: 25;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease, background-color 0.15s ease;
+  pointer-events: auto;
+}
+
+.lumina-canvas-node:hover .lumina-canvas-port,
+.lumina-canvas-container.is-connecting .lumina-canvas-port {
+  opacity: 1;
+}
+
+.lumina-canvas-port:hover {
+  transform: scale(1.35);
+  background-color: var(--text-accent, #38bdf8);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+}
+
+.lumina-canvas-port.port-top {
+  top: -6px;
+  left: 50%;
+  margin-left: -6px;
+}
+.lumina-canvas-port.port-bottom {
+  bottom: -6px;
+  left: 50%;
+  margin-left: -6px;
+}
+.lumina-canvas-port.port-left {
+  left: -6px;
+  top: 50%;
+  margin-top: -6px;
+}
+.lumina-canvas-port.port-right {
+  right: -6px;
+  top: 50%;
+  margin-top: -6px;
+}
+
+/* Connecting temporary line */
+.lumina-canvas-connecting-line {
+  fill: none;
+  stroke: var(--text-accent, #38bdf8);
+  stroke-width: 2.5px;
+  stroke-dasharray: 6 4;
+  stroke-linecap: round;
+  animation: canvasDash 0.8s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes canvasDash {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+/* PDF Card Styling */
+.lumina-canvas-pdf-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.lumina-canvas-pdf-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 120px;
+  gap: 12px;
+  padding: 16px;
+  background: color-mix(in srgb, var(--bg-card, #20232b) 40%, transparent);
+}
+
+.lumina-canvas-pdf-open-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: color-mix(in srgb, var(--bg-card, #20232b) 90%, transparent);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.15));
+  border-radius: 6px;
+  color: var(--text-main, #ffffff);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lumina-canvas-pdf-open-btn:hover {
+  background: var(--bg-active, rgba(255, 255, 255, 0.1));
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+/* Edge delete button on hover */
+.lumina-canvas-edge-hitbox {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 14px;
+  cursor: pointer;
+  pointer-events: stroke;
+}
+
+.lumina-canvas-edge-delete {
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.lumina-canvas-edge-group:hover .lumina-canvas-edge-delete {
+  opacity: 1;
+}
+
+/* Markdown Preview inside Node Card */
+.lumina-canvas-markdown {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-main, #f8fafc);
+  word-break: break-word;
+}
+
+.lumina-canvas-markdown h1,
+.lumina-canvas-markdown h2,
+.lumina-canvas-markdown h3,
+.lumina-canvas-markdown h4 {
+  margin: 4px 0 6px 0;
+  font-weight: 600;
+  color: var(--text-main, #ffffff);
+}
+
+.lumina-canvas-markdown h1 { font-size: 15px; }
+.lumina-canvas-markdown h2 { font-size: 14px; }
+.lumina-canvas-markdown h3 { font-size: 13px; }
+
+.lumina-canvas-markdown p {
+  margin: 0 0 6px 0;
+}
+.lumina-canvas-markdown p:last-child {
+  margin-bottom: 0;
+}
+
+.lumina-canvas-markdown ul,
+.lumina-canvas-markdown ol {
+  margin: 0 0 6px 0;
+  padding-left: 18px;
+}
+
+.lumina-canvas-markdown li {
+  margin-bottom: 2px;
+}
+
+.lumina-canvas-markdown code {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 11px;
+}
+
+.lumina-canvas-markdown pre {
+  background: rgba(0, 0, 0, 0.35);
+  padding: 6px 8px;
+  border-radius: 5px;
+  overflow-x: auto;
+  margin: 4px 0 6px 0;
+}
+
+.lumina-canvas-markdown blockquote {
+  border-left: 3px solid var(--text-accent, #38bdf8);
+  margin: 4px 0 6px 0;
+  padding-left: 8px;
+  color: var(--text-muted, #94a3b8);
+}
+
+.lumina-canvas-markdown a {
+  color: var(--text-accent, #38bdf8);
+  text-decoration: underline;
+}
+
+/* Card Resize Handle */
+.lumina-canvas-resize-handle {
+  position: absolute;
+  background: transparent;
+  z-index: 30;
+}
+
+.lumina-canvas-resize-handle.handle-br {
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+}
+
+.lumina-canvas-resize-handle.handle-br::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid var(--text-muted, #94a3b8);
+  border-bottom: 2px solid var(--text-muted, #94a3b8);
+  opacity: 0.3;
+  transition: opacity 0.15s ease, border-color 0.15s ease;
+}
+
+.lumina-canvas-node:hover .lumina-canvas-resize-handle.handle-br::after,
+.lumina-canvas-node.selected .lumina-canvas-resize-handle.handle-br::after {
+  opacity: 1;
+  border-color: var(--text-accent, #38bdf8);
 }
