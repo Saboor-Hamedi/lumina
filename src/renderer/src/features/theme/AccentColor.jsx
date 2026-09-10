@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, RotateCcw, Terminal, Power } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
+import Profile from '../profile/Profile'
 import ModalHeader from '../modals/ModalHeader'
 import { useDraggableModal } from '../../core/utils/useDraggableModal'
 import { useOpacity } from './hooks/useOpacity'
@@ -328,6 +329,13 @@ export const AccentColor = ({
   if (variant === 'dropdown') {
     return (
       <div className="accent-dropdown-menu" ref={dropdownRef} onClick={(e) => e.stopPropagation()}>
+        <Profile
+          accentColor={localColor || defaultColor}
+          onActionComplete={onClose}
+        />
+
+        <div className="accent-dropdown-divider" />
+
         <div className="accent-dropdown-header">
           <span className="accent-dropdown-title">{title}</span>
           <button

@@ -18,6 +18,11 @@ import { useVaultStore } from '../../../core/store/workspaceStore'
 
 export function useEditorState({ snippet, onSave, showToast, realViewRef, editorHandleRef }) {
   const [title, setTitle] = useState(snippet?.title || '')
+  const titleStateRef = useRef(title)
+  useEffect(() => {
+    titleStateRef.current = title
+  }, [title])
+
   const [isDirty, setIsDirty] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [editorKey, setEditorKey] = useState(Date.now())
@@ -90,8 +95,15 @@ export function useEditorState({ snippet, onSave, showToast, realViewRef, editor
   const handleMarkdownChange = useCallback(
     (md) => {
       latestCodeRef.current = md
-      setIsDirty(true)
-      setDirty(snippet?.id, true)
+      const originalCode = lastSavedCodeRef.current ?? snippetRef.current?.code ?? ''
+      const isContentClean = md === originalCode
+      const currentTitle = (titleStateRef.current ?? snippetRef.current?.title ?? '').trim()
+      const originalTitle = (snippetRef.current?.title ?? '').trim()
+      const isTitleClean = currentTitle === originalTitle
+
+      const isClean = isContentClean && isTitleClean
+      setIsDirty(!isClean)
+      setDirty(snippet?.id, !isClean)
       useVaultStore.getState().setDraft(snippet?.id, md)
 
       const settings = useSettingsStore.getState().settings

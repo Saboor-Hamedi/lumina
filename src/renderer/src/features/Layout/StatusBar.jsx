@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { BookOpen, PanelRight, Keyboard, FileText, Hash, Clock, Navigation, Compass, Cloud } from 'lucide-react'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
+import { useCurrentUser } from '../../core/hooks/useCurrentUser'
 import ToolTip from '../../components/atoms/ToolTip'
 import '../../assets/statusbar.css'
 
@@ -11,29 +12,7 @@ const StatusBar = ({
 }) => {
   const selectedSnippet = useWorkspaceStore((s) => s.selectedSnippet)
   const [cursorPos, setCursorPos] = useState({ line: 1, col: 1, selectedChars: 0 })
-  const [driveUser, setDriveUser] = useState(null)
-
-  useEffect(() => {
-    let mounted = true
-    const checkUser = async () => {
-      try {
-        if (window.api?.getGoogleUser) {
-          const user = await window.api.getGoogleUser()
-          if (mounted) setDriveUser(user && user.token ? user : null)
-        }
-      } catch {
-        if (mounted) setDriveUser(null)
-      }
-    }
-    checkUser()
-
-    const handleUserChanged = () => checkUser()
-    window.addEventListener('google-user-changed', handleUserChanged)
-    return () => {
-      mounted = false
-      window.removeEventListener('google-user-changed', handleUserChanged)
-    }
-  }, [])
+  const { user: driveUser } = useCurrentUser()
 
   // Listen for active editor cursor movements and selection changes
   useEffect(() => {

@@ -1,11 +1,13 @@
 import React, { useRef, useEffect, useState } from 'react'
-import { Settings, Palette, Cloud, RefreshCw, LogOut, Check, Loader2, FileArchive, Folder, X } from 'lucide-react'
+import { Settings, Palette, Cloud, RefreshCw, Check, Loader2, FileArchive, Folder, X } from 'lucide-react'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
+import { useCurrentUser } from '../../../core/hooks/useCurrentUser'
 import { useUpdateStore } from '../../../core/store/useUpdateStore'
+import Profile from '../../profile/Profile'
 
 const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, anchorRef }) => {
   const dropdownRef = useRef(null)
-  const googleUser = useSettingsStore((state) => state.settings?.googleUser)
+  const { user: googleUser } = useCurrentUser()
   const lastSync = useSettingsStore((state) => state.settings?.lastSync)
   const { status, progress, download, install } = useUpdateStore()
 
@@ -178,81 +180,12 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
         boxSizing: 'border-box'
       }}
     >
-      {/* ── Profile header (when logged in) ── */}
-      {googleUser && (
-        <>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 8px 6px',
-              borderBottom: '1px solid var(--border-dim)',
-              marginBottom: '4px'
-            }}
-          >
-            {googleUser.picture ? (
-              <img
-                src={googleUser.picture}
-                alt="Profile"
-                referrerPolicy="no-referrer"
-                style={{
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: '50%',
-                  objectFit: 'cover',
-                  flexShrink: 0
-                }}
-                onError={(e) => {
-                  e.target.style.display = 'none'
-                }}
-              />
-            ) : (
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ flexShrink: 0 }}
-              >
-                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-            )}
-            <div style={{ overflow: 'hidden' }}>
-              <div
-                style={{
-                  fontSize: '11.5px',
-                  fontWeight: '600',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  color: 'var(--text-main)'
-                }}
-              >
-                {googleUser.name}
-              </div>
-              {googleUser.email && (
-                <div
-                  style={{
-                    fontSize: '10px',
-                    color: 'var(--text-faint)',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
-                  }}
-                >
-                  {googleUser.email}
-                </div>
-              )}
-            </div>
-          </div>
-        </>
-      )}
+      {/* ── Unified Profile header ── */}
+      <div style={{ padding: '4px 6px' }}>
+        <Profile onActionComplete={onClose} />
+      </div>
+
+      <div style={{ height: '1px', backgroundColor: 'var(--border-dim)', margin: '4px 0' }} />
 
       <DropdownItem
         icon={<Settings size={14} />}
@@ -290,29 +223,6 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
           }
           onClick={handleUpdateClick}
           highlight
-        />
-      )}
-
-      {!googleUser && (
-        <DropdownItem
-          icon={<Cloud size={14} />}
-          label="Sign In to Sync"
-          onClick={async () => {
-            try {
-              if (window.api?.loginWithGoogle) {
-                const clientId =
-                  '736587690312-33s4trbiculu5dvctb92lkl6njgc14ae.apps.googleusercontent.com'
-                const userInfo = await window.api.loginWithGoogle(clientId)
-                if (userInfo && !userInfo.error) {
-                  useSettingsStore.getState().updateSetting('googleUser', userInfo)
-                }
-              }
-            } catch (err) {
-              console.error('Login failed', err)
-            } finally {
-              onClose()
-            }
-          }}
         />
       )}
 
@@ -575,17 +485,6 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
             </div>
           </div>
         </div>
-      )}
-
-      {googleUser && (
-        <DropdownItem
-          icon={<LogOut size={14} />}
-          label="Sign Out"
-          onClick={() => {
-            useSettingsStore.getState().updateSetting('googleUser', null)
-            onClose()
-          }}
-        />
       )}
     </div>
   )

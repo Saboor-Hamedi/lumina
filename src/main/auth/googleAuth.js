@@ -411,7 +411,7 @@ export function setupGoogleAuth(getMainWindow) {
 
   ipcMain.handle('auth:logoutFromGoogle', async () => {
     try {
-      await SettingsManager.save('googleUser', null)
+      await SettingsManager.set('googleUser', null)
       return true
     } catch (e) {
       return false

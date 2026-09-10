@@ -206,3 +206,69 @@
   background: #bf0f1d;
   color: white;
 }
+
+/* TitleBar Profile & Accent Trigger Button */
+.accent-titlebar-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  flex-shrink: 0;
+  -webkit-app-region: no-drag;
+}
+
+.accent-titlebar-btn {
+  width: 32px;
+  height: 100%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  transition: background 0.15s ease;
+}
+
+.accent-titlebar-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.accent-titlebar-avatar-wrap {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--text-accent, #40bafa);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: var(--bg-panel, #18181b);
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.accent-titlebar-btn:hover .accent-titlebar-avatar-wrap {
+  transform: scale(1.08);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--text-accent, #40bafa) 45%, transparent);
+}
+
+.accent-titlebar-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+.accent-titlebar-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--text-main, #f8fafc);
+}
+

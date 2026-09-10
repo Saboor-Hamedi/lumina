@@ -69,13 +69,11 @@ export const useUnsaved = (snippetId) => {
  * Styled via unsave.css (.dirty-indicator).
  */
 export const UnsavedIndicator = React.memo(({ style, className = '', title = 'Unsaved changes' }) => {
-  return (
-    <div
-      className={`dirty-indicator ${className}`.trim()}
-      style={style}
-      title={title}
-    />
-  )
+  return React.createElement('div', {
+    className: `dirty-indicator ${className}`.trim(),
+    style,
+    title
+  })
 })
 
 UnsavedIndicator.displayName = 'UnsavedIndicator'

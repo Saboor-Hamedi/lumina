@@ -1,0 +1,154 @@
+/* ==========================================================================
+   Profile Component Styling (Profile.jsx) - Compact & Sleek
+   ========================================================================== */
+
+.sidebar-footer-section {
+  position: relative;
+  z-index: 50;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 38px;
+  min-height: 38px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 0.5px solid var(--border-dim, rgba(255, 255, 255, 0.15));
+  background: var(--bg-panel);
+  box-sizing: border-box;
+  flex-shrink: 0;
+  min-width: 0;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.sidebar-footer-section:hover {
+  background: var(--bg-active);
+  border-color: var(--border-subtle);
+}
+
+.user-profile-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  background: transparent;
+  border-radius: 6px;
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  transition: background 0.12s ease;
+}
+
+.user-profile-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.profile-avatar-wrap {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  min-height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--text-accent, #40bafa);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: var(--bg-panel, #18181b);
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.sidebar-footer-section:hover .profile-avatar-wrap {
+  transform: scale(1.08);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--text-accent, #40bafa) 45%, transparent);
+}
+
+.profile-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+.profile-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--text-main, #f8fafc);
+}
+
+.user-profile-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  line-height: 1.15;
+}
+
+.user-profile-name {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-main, #f8fafc);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-profile-email {
+  font-size: 10px;
+  color: var(--text-faint, #64748b);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.user-profile-logout-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-faint, #64748b);
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.user-profile-logout-btn:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
+.user-profile-signin-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 28px;
+  padding: 0 6px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-main, #f8fafc);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: background 0.12s ease, color 0.12s ease;
+  text-align: left;
+}
+
+.user-profile-signin-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-accent, #40bafa);
+}

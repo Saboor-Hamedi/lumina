@@ -27,6 +27,7 @@ import { getSnippetIcon } from '../Icons/FileIcon'
 import ToolTip from '../../components/atoms/ToolTip'
 import { useExternalFileDrop } from '../Explorer/hooks/useExternalFileDrop'
 import { summarizeNotes } from '../AI/services/summarizeNotes'
+import { UnsavedIndicator } from '../../core/hooks/unsave'
 
 /**
  * SortableTabItem — draggable tab using @dnd-kit/sortable
@@ -72,7 +73,9 @@ const SortableTabItem = memo(
 
           <div className="tab-actions">
             {isDirty ? (
-              <div className="dirty-indicator tab-dirty" onClick={(e) => onClose(e, id)} />
+              <div onClick={(e) => onClose(e, id)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                <UnsavedIndicator className="tab-dirty" />
+              </div>
             ) : (
               !isPinned && (
                 <button className="tab-close-btn" onClick={(e) => onClose(e, id)}>

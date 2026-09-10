@@ -27,6 +27,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { getHighlightRegex } from '../../../core/utils/searchRanker'
 import { useContextMenu } from '../hooks/useContextMenu'
 import { isSnippetActive } from '../../Explorer/utils/explorerSelectionHelper'
+import { useUnsaved, UnsavedIndicator } from '../../../core/hooks/unsave'
 
 const SidebarItem = ({
   snippet,
@@ -39,9 +40,8 @@ const SidebarItem = ({
   searchQuery,
   matchSnippet
 }) => {
-  const { dirtySnippetIds, deleteSnippet, saveSnippet, selectedSnippet, activeTabId } = useVaultStore(
+  const { deleteSnippet, saveSnippet, selectedSnippet, activeTabId } = useVaultStore(
     useShallow((state) => ({
-      dirtySnippetIds: state.dirtySnippetIds,
       deleteSnippet: state.deleteSnippet,
       saveSnippet: state.saveSnippet,
       selectedSnippet: state.selectedSnippet,
@@ -53,7 +53,7 @@ const SidebarItem = ({
       togglePinnedFolder: state.togglePinnedFolder
     }))
   )
-  const isDirty = dirtySnippetIds.includes(snippet.id)
+  const { isUnsaved: isDirty } = useUnsaved(snippet?.id)
   const displayColor = snippet.color || null
   const isItemPinned = snippet.isPinned === true || snippet.isPinned === 'true'
 
@@ -536,7 +536,7 @@ const SidebarItem = ({
               </span>
             </ToolTip>
           )}
-          {isDirty && <div className="dirty-indicator" />}
+          {isDirty && <UnsavedIndicator />}
         </div>
       )}
 

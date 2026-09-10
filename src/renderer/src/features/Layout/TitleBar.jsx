@@ -1,6 +1,7 @@
 import React from 'react'
-import { Square, X, Minus, Search, MessageSquare, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { Square, X, Minus, Search, MessageSquare, PanelLeftClose, PanelLeftOpen, CircleUser } from 'lucide-react'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
+import { useCurrentUser } from '../../core/hooks/useCurrentUser'
 import logoUrl from '../../assets/logo.png'
 import ToolTip from '../../components/atoms/ToolTip'
 import UpdateDetails from '../../components/update/UpdateDetails'
@@ -16,6 +17,13 @@ const TitleBar = ({ onToggleAIChat }) => {
   const [version, setVersion] = React.useState('')
   const [isAccentOpen, setIsAccentOpen] = React.useState(false)
   const { themeAccentColor, updateThemeAccentColor } = useFontSettings()
+  const { user, isLoggedIn } = useCurrentUser()
+  const [imgError, setImgError] = React.useState(false)
+
+  React.useEffect(() => {
+    setImgError(false)
+  }, [user?.picture])
+
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = React.useState(() => {
     if (typeof localStorage !== 'undefined') {
       const saved = localStorage.getItem('lumina_left_sidebar_open')
@@ -114,7 +122,14 @@ const TitleBar = ({ onToggleAIChat }) => {
             </button>
           </ToolTip>
           <div className="accent-titlebar-container">
-            <ToolTip text="Appearance & Quick Controls" position="bottom">
+            <ToolTip
+              text={
+                isLoggedIn && (user?.name || user?.email)
+                  ? `${user.name || user.email} • Appearance & Controls`
+                  : 'Appearance & Quick Controls'
+              }
+              position="bottom"
+            >
               <button
                 type="button"
                 className="accent-titlebar-btn"
@@ -122,9 +137,30 @@ const TitleBar = ({ onToggleAIChat }) => {
                 aria-label="Appearance and quick controls"
               >
                 <div
-                  className="accent-titlebar-swatch"
-                  style={{ backgroundColor: themeAccentColor || 'var(--text-accent)' }}
-                />
+                  className="accent-titlebar-avatar-wrap"
+                  style={{
+                    borderColor: themeAccentColor || 'var(--text-accent, #40bafa)',
+                    borderWidth: '1.5px',
+                    borderStyle: 'solid'
+                  }}
+                >
+                  {isLoggedIn && user?.picture && !imgError ? (
+                    <img
+                      src={user.picture}
+                      alt={user.name || 'User'}
+                      className="accent-titlebar-avatar-img"
+                      referrerPolicy="no-referrer"
+                      onError={() => setImgError(true)}
+                    />
+                  ) : (
+                    <div className="accent-titlebar-avatar-fallback">
+                      <CircleUser
+                        size={12}
+                        style={{ color: themeAccentColor || 'var(--text-accent, #40bafa)' }}
+                      />
+                    </div>
+                  )}
+                </div>
               </button>
             </ToolTip>
             <AccentColor

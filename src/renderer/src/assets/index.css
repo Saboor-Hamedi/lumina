@@ -4,6 +4,8 @@
 @import './lists.css';
 @import './callout.css';
 @import './quote.css';
+@import './unsave.css';
+@import '../features/profile/profile.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

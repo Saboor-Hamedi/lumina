@@ -543,11 +543,14 @@ Sidebars previously shrank/compressed their content when dragged inward. The tar
 - **Form Layout & Auto-Save as You Type**: Structured User Identity with a single-line input for Name, and matching 2-row non-resizable textareas for Role and Bio. Eliminated manual Save buttons in favor of debounced auto-saving on input with subtle non-intrusive status feedback (`Saving...` / `Saved automatically`).
 - **Inline Editing & Robust Validation**: Added inline item editing (`Edit2`, `Check`, `X`) with Enter/Escape keyboard handling, duplicate prevention, whitespace trimming, and `wordBreak: 'break-word'` to prevent UI overflow on long strings.
 
-### P. Multi-Disciplinary Mode System & Plan Mode De-Biasing (`luminaPlanMode.js`, `aiPromptBuilder.js`)
-- **Problem**: Plan Mode previously claimed that Code Mode was the only mode capable of executing tasks, causing bias toward code execution even for academic thesis writing, research, or creative prose.
-- **Solution**:
-  - Re-anchored Plan Mode to recommend specialized modes based on task domain (`/research` for thesis and academic writing, `/creative` for storytelling, `/code` for software architecture).
-  - Banned claiming Code Mode is the exclusive execution mode.
-  - Added open editor tab awareness so unsaved active drafts serve as authoritative context for AI responses.
+### Q. Unified Unsaved State Architecture (`unsave.js` & `unsave.css`)
+- **Centralized Extraction**: Extracted the unsaved / dirty indicator logic and styling into dedicated modular files:
+  - [`unsave.css`](file:///b:/electron/lumina/src/renderer/src/assets/unsave.css): Definitive styling for the `.dirty-indicator` blob with pulsating warning amber animation (`#eab308`).
+  - [`unsave.js`](file:///b:/electron/lumina/src/renderer/src/core/hooks/unsave.js): `useUnsaved(snippetId)` hook providing `isUnsaved`, `markUnsaved()`, and `clearUnsaved()`, plus the `<UnsavedIndicator />` component.
+- **Three-Way Cohesion**: Applied identically across:
+  1. **FileExplorer**: [`SidebarItem.jsx`](file:///b:/electron/lumina/src/renderer/src/features/Navigation/components/SidebarItem.jsx)
+  2. **Workspace Tab Bar**: [`TabBar.jsx`](file:///b:/electron/lumina/src/renderer/src/features/Layout/TabBar.jsx)
+  3. **Editor Push Button**: [`DrivePushButton.jsx`](file:///b:/electron/lumina/src/renderer/src/features/Editor/components/DrivePushButton.jsx)
+- **Synchronized Clearance**: Pushing a note or saving it to disk immediately clears the dirty state across all three UI locations simultaneously.
 
 
