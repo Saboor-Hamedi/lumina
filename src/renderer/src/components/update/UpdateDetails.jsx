@@ -8,32 +8,23 @@ import ToolTip from '../atoms/ToolTip'
 import './UpdateDetails.css'
 
 export const DEFAULT_RELEASE_NOTES = `New
-- World-Class Multilingual Typography: Paired all user fonts with an enterprise-grade fallback cascade: Vazirmatn, Segoe UI Variable Text, Geeza Pro, Tahoma, PingFang SC, Hiragino Sans, Microsoft YaHei, Yu Gothic UI, and Malgun Gothic. Added Vazirmatn (premier modern Persian/Arabic font) directly to Settings and Google Fonts.
-- Dynamic Bidirectional (RTL/LTR) Editor: Viewport-scoped CodeMirror 6 extension automatically detects line direction using the Unicode Bidirectional Algorithm ("first strong" heuristic). Persian, Arabic, Hebrew, and Urdu paragraphs align right naturally while code and English stay left-aligned at smooth 60 FPS.
-- Resilient Bidi Wikilinks: Bracket syntax is isolated with unicode-bidi: isolate, preventing [[ and ]] from visually inverting or mirroring in RTL text. Notes link by canonical keys so Persian and Arabic letter variations (ی/ک vs ي/ك, ZWNJ) resolve to the exact same note without altering displayed titles.
-- CJK IME Composition Guard: Chinese (Pinyin) and Japanese (Kana/Romaji) typing sessions are guarded—autocomplete popups and Enter/Escape/Tab keys never cancel or steal active candidate selection.
-- Infinite Canvas Multi-Script Cards: Note cards on the spatial canvas now automatically detect text direction (dir="auto") across card titles, markdown body previews, and inline editing textareas with comfortable 1.65 line-height.
-- Connected Knowledge Graph & Search: 2D & 3D Knowledge Graph builder links notes via canonical keys, eliminating ghost nodes from spelling variations. Command Palette (Ctrl+P) and Sidebar Search rank Persian, Arabic, and CJK notes instantly.
-- Draggable Modals & Position Memory: Theme and Icon Picker modals now feature zero-latency GPU-accelerated dragging via their header bars. Position is remembered across selections and actions without snapping back to center.
-- Guide-Matched Premium Modal Architecture: Rebuilt both Theme and Icon Picker modals to mirror the exact typography, breadcrumbs, step counters, and clean geometry of the Lumina Guide modal.
-- 50+ New Curated Lucide Icons: Greatly expanded the workspace icon library with new categories for Science & Math, Nature & Travel, Hardware, and Productivity Symbols.
-- AI Memory Profile & Management: Dedicated AI Memory tab in Settings to inspect, edit, and curate persistent memory stored in memory.json. Customize your User Identity, User Preferences, and Learned Facts with instant inline editing.
+- Floating Card UI Mode: Added a new "Floating Dock & Gaps UI" toggle in Settings → Look & Feel. When enabled, all panels — left sidebar, editor, right sidebar, and status bar — float as distinct rounded cards with 5px uniform gaps on every side, giving the workspace a modern, breathing layout.
+- Uniform 5px Gap System: Every edge of every card (top, bottom, left, right) now uses exactly 5px of space — outer shell padding, inter-panel resizer width, and the gap between the workspace card and the status bar dock are all precisely 5px for a perfectly consistent layout.
+- Floating Status Bar Dock: The status bar renders as a standalone rounded card (5px radius) floating at the bottom of the center column, fully separated from the editor — matching the visual language of the sidebar and workspace cards.
+- Aligned Top Header Row: The left sidebar header, tab bar, and right sidebar header are all locked to 32px height, ensuring a perfectly level top edge across all three columns regardless of content.
+- Sidebar Footer Gap: Added a clean 5px inner gap between the sidebar scrollable body and the profile footer card so the profile is visually separated and easy to click.
 
 Improved
-- Zero-Blur Crisp Modals: Removed disruptive backdrop filters from Theme and Icon modals in favor of clean, performant high-contrast dark backdrops for instant rendering and readability.
-- Comfortable Reading Line-Height: Optimized editor and canvas line-height to 1.65, giving breathing room to Arabic/Persian diacritics (tashkeel), high dots, and CJK ideograms.
-- Weak & Neutral Script Skipping: First-strong direction detection looks past wikilink brackets, inline code, whitespace, and both ASCII and Persian/Arabic-Indic digits (۱۲۳ سلام correctly resolves to RTL).
-- Ergonomic Theme Palettes: Softened Gruvbox Dark into a soothing retro amber palette; calibrated Dark, Cyberpunk, One Monokai, and Minimal Light to prevent eye fatigue.
-- Tactile Smooth Toggle Switches: Redesigned the Quick Controls switch housing with a centered 18px knob, eliminating unwanted click deform/stretch animations for a solid tactile feel.
-- Ultra-Slim Modal Scrollbars: Reduced scrollbar width in Theme and Icon grids to a sleek 5px transparent track with soft rounded pill thumbs.
+- Sidebar Footer Profile Card: The profile card in the sidebar footer is now 28px — matching the status bar height — so the entire bottom row of the app looks visually balanced. Removed conflicting inline height styles from Profile.jsx so CSS controls sizing cleanly across all render contexts.
+- 5px Border Radius Everywhere: All floating cards — left sidebar, right sidebar, center workspace, status bar, welcome cards, composer card, session sidebar — use a consistent 5px border radius. No more mismatched 6px or 8px values.
+- Status Bar Scrolling: The status bar now supports effortless horizontal scrolling (auto overflow with smooth scroll behavior and touch-action pan-x) so long status content is always accessible.
+- Panel Gap Precision: The sidebar drag resizer is exactly 5px wide with zero flex gap, making the visual separation between sidebar cards and the editor card a clean, predictable 5px slot.
+- Profile Card Radius Consistency: The profile footer card border radius is now 5px in all three CSS sources (profile.css, Sidebar.css, and the inline style in Profile.jsx) — no more competing values causing visual inconsistency.
 
 Fixed
-- Drive Push Runtime Reference Error: Fixed a ReferenceError crash (\`setWasPushedSinceEdit is not defined\`) that prevented the Google Drive Push button from completing successfully.
-- Cross-Script Wikilink Duplication: Resolved an issue where linking notes using Arabic keyboard letters created duplicate orphan notes instead of resolving to existing Persian notes.
-- RTL Wikilink Bracket Flipping: Fixed visual bracket inversion where typing [[ in Persian or Arabic caused brackets to mirror to the opposite side of the text.
-- Icon Picker Modal Snap-Back: Resolved an issue where selecting or previewing an icon reset container coordinates and caused the window to jump back to center.
-- Drive Push State Sticky Hover: Resolved an issue where the push button retained green background hover highlights after a successful upload.
-- Sequential Thinking Dropdowns: Fixed an issue where multiple fragmented thinking dropdowns would appear across multi-step tool calls or after reflection delays.`
+- Sidebar Bottom Gap Mismatch: Removed explicit height: 100% from sidebar card rules that caused sidebars to overflow the flex padding zone, making the bottom gap larger than the top/left/right 5px gaps. Flex stretch now handles height naturally and all four sides are equal.
+- Status Bar Vertical Alignment: Removed a double-applied bottom padding (app-shell padding + shell-main padding) that pushed the status bar 10px from the window bottom instead of 5px, misaligning it with the sidebar card bottoms.
+- Profile Height Conflict: Resolved a three-way height conflict (profile.css: 34px, Sidebar.css: 42px, Profile.jsx inline: 34px) by unifying all sources to 28px, ensuring the footer card is consistent everywhere it renders.`
 
 /**
  * Simple, clean release notes parser for our Markdown release notes.

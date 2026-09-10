@@ -48,6 +48,8 @@ export const useSettingsStore = create((set, get) => ({
     globalShortcut: 'Ctrl+Space',
     windowOpacity: 1.0,
 
+    modernUi: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_modern_ui') === 'true') || false,
+
     // Favorites & Ordering
     pinnedFolders: [],
     folderOrder: [],
@@ -70,6 +72,7 @@ export const useSettingsStore = create((set, get) => ({
 
           const root = document.documentElement
           root.setAttribute('data-theme', mergedSettings.theme)
+          root.setAttribute('data-modern-ui', String(Boolean(mergedSettings.modernUi)))
           root.style.setProperty('--font-editor', mergedSettings.fontFamily)
           root.style.setProperty('--font-size-editor', `${mergedSettings.fontSize}px`)
           if (window.api && typeof window.api.onSettingsChanged === 'function') {
@@ -82,6 +85,7 @@ export const useSettingsStore = create((set, get) => ({
 
                   const root = document.documentElement
                   root.setAttribute('data-theme', updatedParams.theme)
+                  root.setAttribute('data-modern-ui', String(Boolean(updatedParams.modernUi)))
                   root.style.setProperty('--font-editor', updatedParams.fontFamily)
                   root.style.setProperty('--font-size-editor', `${updatedParams.fontSize}px`)
                   root.style.setProperty('--cursor-style', updatedParams.cursorStyle)
@@ -106,6 +110,7 @@ export const useSettingsStore = create((set, get) => ({
               set({ settings: mergedSettings })
               const root = document.documentElement
               root.setAttribute('data-theme', mergedSettings.theme)
+              root.setAttribute('data-modern-ui', String(Boolean(mergedSettings.modernUi)))
               root.style.setProperty('--font-editor', mergedSettings.fontFamily)
               root.style.setProperty('--font-size-editor', `${mergedSettings.fontSize}px`)
             }
@@ -128,6 +133,10 @@ export const useSettingsStore = create((set, get) => ({
     // Apply specific side effects
     const root = document.documentElement
     if (key === 'theme') root.setAttribute('data-theme', value)
+    if (key === 'modernUi') {
+      root.setAttribute('data-modern-ui', String(Boolean(value)))
+      localStorage.setItem('lumina_modern_ui', String(Boolean(value)))
+    }
     if (key === 'fontFamily') root.style.setProperty('--font-editor', value)
     if (key === 'fontSize') root.style.setProperty('--font-size-editor', `${value}px`)
 

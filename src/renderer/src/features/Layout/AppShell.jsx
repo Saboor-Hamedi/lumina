@@ -835,57 +835,59 @@ const AppShell = () => {
         </div>
       </div>
       <main className="shell-main">
-        {(activeTab === 'files' || activeTab === 'search') && (
-          <>
-            <TabBar
-              isSidebarOpen={isRightSidebarOpen}
-              onToggleSidebar={handleToggleRightSidebar}
-              isLeftSidebarOpen={isLeftSidebarOpen}
-              onToggleLeftSidebar={handleToggleLeftSidebar}
-            />
-            {selectedSnippet &&
-              activeTabId !== GRAPH_TAB_ID &&
-              snippets.some((s) => s.id === selectedSnippet.id) && (
-                <Breadcrumbs snippet={selectedSnippet} />
-              )}
-          </>
-        )}
+        <div className="shell-center-workspace">
+          {(activeTab === 'files' || activeTab === 'search') && (
+            <>
+              <TabBar
+                isSidebarOpen={isRightSidebarOpen}
+                onToggleSidebar={handleToggleRightSidebar}
+                isLeftSidebarOpen={isLeftSidebarOpen}
+                onToggleLeftSidebar={handleToggleLeftSidebar}
+              />
+              {selectedSnippet &&
+                activeTabId !== GRAPH_TAB_ID &&
+                snippets.some((s) => s.id === selectedSnippet.id) && (
+                  <Breadcrumbs snippet={selectedSnippet} />
+                )}
+            </>
+          )}
 
-        {openTabs.filter((id) => id === GRAPH_TAB_ID || snippets.some((s) => s.id === id)).length >
-        0 ? (
-          <div
-            className="workspace-container"
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              flex: 1,
-              overflow: 'hidden',
-              position: 'relative'
-            }}
-          >
+          {openTabs.filter((id) => id === GRAPH_TAB_ID || snippets.some((s) => s.id === id)).length >
+          0 ? (
             <div
+              className="workspace-container"
               style={{
-                position: 'relative',
-                flex: 1,
                 display: 'flex',
-                flexDirection: 'column',
-                overflow: 'hidden'
+                flexDirection: 'row',
+                flex: 1,
+                overflow: 'hidden',
+                position: 'relative'
               }}
             >
-              {renderedEditors}
+              <div
+                style={{
+                  position: 'relative',
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden'
+                }}
+              >
+                {renderedEditors}
+              </div>
             </div>
-          </div>
-        ) : (
-          <GlobalErrorHandler>
-            <Welcome
-              onNew={handleNew}
-              onOpenGuide={() => setShowGuideModal(true)}
-              onOpenDocs={handleOpenDocs}
-              onLoadStarterWorkspace={handleLoadStarterWorkspace}
-              onToggleAIChat={handleToggleAIChat}
-            />
-          </GlobalErrorHandler>
-        )}
+          ) : (
+            <GlobalErrorHandler>
+              <Welcome
+                onNew={handleNew}
+                onOpenGuide={() => setShowGuideModal(true)}
+                onOpenDocs={handleOpenDocs}
+                onLoadStarterWorkspace={handleLoadStarterWorkspace}
+                onToggleAIChat={handleToggleAIChat}
+              />
+            </GlobalErrorHandler>
+          )}
+        </div>
 
         <StatusBar
           onToggleInspector={handleToggleInspector}

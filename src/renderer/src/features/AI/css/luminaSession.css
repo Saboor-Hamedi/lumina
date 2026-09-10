@@ -42,26 +42,26 @@
 }
 
 .lumina-ai-container.sidebar-open .lumina-ai-content {
-  margin-left: 238px;
+  margin-left: 0;
 }
 
-/* Sidebar - Matches Documentation.jsx floating card style */
 .lumina-session-sidebar {
-  width: 218px;
+  width: 240px;
   background: var(--bg-sidebar, #121218);
-  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--border-dim);
   border-radius: 8px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  box-shadow: none;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
   position: absolute;
-  left: 10px;
-  top: 10px;
-  bottom: 10px;
-  height: calc(100% - 20px);
+  left: 20px;
+  top: 8px;
+  bottom: 102px;
+  height: calc(100% - 110px);
+  min-height: 180px;
   z-index: 50;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -69,20 +69,20 @@
 }
 
 .lumina-session-sidebar.closed {
-  transform: translateX(calc(-100% - 20px));
+  transform: translateX(calc(-100% - 30px));
   opacity: 0;
   pointer-events: none;
 }
 
-/* Docked RightSidebar Mode adjustments */
 .is-sidebar-docked .lumina-session-sidebar {
   left: 8px;
-  top: 8px;
-  bottom: 8px;
-  height: calc(100% - 16px);
+  top: 5px;
+  bottom: 94px;
+  height: calc(100% - 99px);
+  min-height: 180px;
   width: calc(100% - 16px);
   max-width: 280px;
-  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.55);
+  box-shadow: none;
 }
 
 .is-sidebar-docked .lumina-ai-content,
@@ -403,7 +403,7 @@
 [data-theme='light'] .lumina-session-sidebar {
   background: var(--bg-sidebar);
   border-color: var(--border-subtle);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  box-shadow: none;
 }
 
 [data-theme='light'] .lumina-session-search-wrapper {

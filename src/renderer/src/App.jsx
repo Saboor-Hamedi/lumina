@@ -5,6 +5,7 @@ import { useTheme } from './features/theme/hooks/useTheme'
 import { applyTheme } from './features/theme/hooks/themeDefinitions'
 import GlobalErrorHandler from './components/GlobalErrorHandler'
 import './assets/globalErrorHandler.css'
+import './assets/modernUi.css'
 
 function App() {
   const { theme } = useTheme()
@@ -12,6 +13,8 @@ function App() {
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme-id') || 'dark'
     applyTheme(savedTheme)
+    const isModern = localStorage.getItem('lumina_modern_ui') === 'true'
+    document.documentElement.setAttribute('data-modern-ui', String(isModern))
   }, [])
 
   useEffect(() => {

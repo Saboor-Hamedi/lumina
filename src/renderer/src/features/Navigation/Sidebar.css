@@ -96,11 +96,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 42px;
-  min-height: 42px;
+  height: 28px;
+  min-height: 28px;
   margin: 4px 8px 8px 8px;
   padding: 0 8px;
-  border-radius: 6px;
+  border-radius: 5px;
   border: 0.5px solid var(--border-dim, rgba(255, 255, 255, 0.15));
   background: var(--bg-panel);
   box-sizing: border-box;

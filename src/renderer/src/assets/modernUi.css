@@ -1,0 +1,183 @@
+[data-modern-ui='true'] .app-shell {
+  padding: 5px;
+  gap: 0;
+  background: var(--bg-app);
+  box-sizing: border-box;
+}
+
+[data-modern-ui='true'] .sidebar-resizer {
+  width: 5px !important;
+}
+
+[data-modern-ui='true'] .app-shell.left-open .shell-sidebar-left {
+  border-radius: 5px;
+  border: 1px solid var(--border-dim);
+  background: var(--bg-sidebar) !important;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+[data-modern-ui='true'] .shell-sidebar-left .unified-sidebar {
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+[data-modern-ui='true'] .shell-sidebar-left .sidebar-header-section {
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  box-sizing: border-box;
+}
+
+[data-modern-ui='true'] .shell-sidebar-left .sidebar-footer-section {
+  margin: 5px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  padding: 0 8px !important;
+  box-sizing: border-box;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+[data-modern-ui='true'] .app-shell.right-open .shell-sidebar-right {
+  border-radius: 5px;
+  border: 1px solid var(--border-dim);
+  background: var(--bg-sidebar) !important;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-panel {
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .panel-header-tabs {
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  box-sizing: border-box;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-tab {
+  height: 32px !important;
+  box-sizing: border-box;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-sub-header {
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  box-sizing: border-box;
+}
+
+[data-modern-ui='true'] .shell-main {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  overflow: hidden;
+  background: transparent;
+  border: none !important;
+  box-sizing: border-box;
+}
+
+[data-modern-ui='true'] .shell-center-workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  border-radius: 5px;
+  border: 1px solid var(--border-dim);
+  background: var(--bg-editor, var(--bg-app));
+  overflow: hidden;
+  box-sizing: border-box;
+
+}
+
+[data-modern-ui='true'] .tabbar-outer-wrapper {
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  box-sizing: border-box;
+}
+
+[data-modern-ui='true'] .workspace-tabbar {
+  height: 32px !important;
+}
+
+[data-modern-ui='true'] .workspace-tab {
+  height: 32px !important;
+}
+
+[data-modern-ui='true'] .editor-breadcrumbs-bar {
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  box-sizing: border-box;
+}
+
+[data-modern-ui='true'] .workspace-container {
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+[data-modern-ui='true'] .welcome-page,
+[data-modern-ui='true'] .welcome-container {
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+[data-modern-ui='true'] .status-bar {
+  margin: 0 !important;
+  border-radius: 5px;
+  border: 1px solid var(--border-dim);
+  background: var(--bg-panel);
+  height: 28px;
+  min-height: 28px;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: none;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  margin-bottom: 2px !important;
+}
+
+[data-modern-ui='true'] .status-bar-btn {
+  border-radius: 4px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+[data-modern-ui='true'] .status-bar-btn:hover {
+  background: var(--bg-active);
+  color: var(--text-accent);
+}
+
+[data-modern-ui='true'] .welcome-card {
+  border-radius: 5px;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+[data-modern-ui='true'] .welcome-card:hover {
+  transform: translateY(-1px);
+}
+
+[data-modern-ui='true'] .composer-card {
+  border-radius: 5px;
+}
+
+[data-modern-ui='true'] .lumina-session-sidebar {
+  border-radius: 5px;
+}
