@@ -84,6 +84,7 @@ export const createFileTool = aiSdk.tool({
 
       const folderContext = cleanFolder ? ` in \`${cleanFolder}\`` : ''
       const wordCount = (content || '').trim() ? (content || '').trim().split(/\s+/).length : 0
+      const charCount = (content || '').length
 
       return {
         success: true,
@@ -93,7 +94,7 @@ export const createFileTool = aiSdk.tool({
         writtenContent: content,
         topics: headers.slice(0, 8),
         wikilinks: wikilinks.slice(0, 10),
-        summary: `📝 Created [[${targetSnippet.title}]]${folderContext} (+${wordCount})`,
+        summary: `📝 Created [[${targetSnippet.title}]]${folderContext} (+${wordCount} words, ${charCount} chars)`,
         instruction_to_ai: `File "${targetSnippet.title}" was created${folderContext} in the workspace in the background. It is NOT opened as a tab. Do not call openFile. If more files are needed, output a brief narration line for the next file and invoke createFile for it. Once all requested items are created, provide a final short walkthrough in chat.`
       }
     } catch (err) {

@@ -735,17 +735,20 @@
 }
 
 .chat-blockquote {
-  margin: 10px 0;
-  padding: 8px 12px;
-  border-left: 3px solid var(--text-accent);
-  background: rgba(var(--text-accent-rgb, 100, 100, 100), 0.05);
-  border-radius: 0 4px 4px 0;
-  color: var(--text-muted);
+  margin: 6px 0 8px;
+  padding: 4px 10px;
+  border-left: 2px solid var(--border-subtle, rgba(255, 255, 255, 0.15));
+  background: transparent;
+  border-radius: 0;
+  color: var(--text-faint, rgba(255, 255, 255, 0.55));
+  font-size: 12.5px;
+  line-height: 1.55;
   font-style: italic;
 }
 
 .chat-blockquote p {
   margin: 0;
+  color: inherit;
 }
 
 .chat-bubble strong {

@@ -46,7 +46,7 @@ export const createFolderTool = aiSdk.tool({
         success: true,
         path: cleanPath,
         summary: `📁 Created folder \`${cleanPath}\``,
-        instruction_to_ai: `Folder "${cleanPath}" created successfully. Now output a narration line and call createFile for the first note inside "${cleanPath}".`
+        instruction_to_ai: `Folder "${cleanPath}" created successfully. Now in chat, speak and acknowledge that folder "${cleanPath}" is created, narrate what the first note is, and invoke createFile for it. Continue creating all requested files!`
       }
     } catch (err) {
       return { success: false, error: err.message || 'Failed to create folder' }

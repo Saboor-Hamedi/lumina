@@ -81,37 +81,15 @@ export const ActivityCard = React.memo(({ rawContent, isStreaming = false }) => 
           <span className="lumina-activity-main-title">
             {hasActive ? headerTitle : completedSummary}
           </span>
-          {!hasActive && (totalAdded > 0 || totalRemoved > 0) && (
-            <span className="lumina-activity-diff-totals">
-              {totalAdded > 0 && (
-                <span className="lumina-diff-pill added">+{totalAdded}</span>
-              )}
-              {totalRemoved > 0 && (
-                <span className="lumina-diff-pill removed">-{totalRemoved}</span>
-              )}
-            </span>
-          )}
           <span className="lumina-activity-chevron-inline">
             {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
           </span>
         </div>
         <div className="lumina-activity-controls">
-          {hasActive ? (
+          {hasActive && (
             <span className="lumina-activity-badge streaming">
               <LuminaTimer isRunning={hasActive} />
             </span>
-          ) : (
-            <button
-              type="button"
-              className="lumina-activity-review-btn"
-              onClick={(e) => {
-                e.stopPropagation()
-                setIsExpanded((prev) => !prev)
-              }}
-            >
-              <Eye size={11} />
-              <span>Review</span>
-            </button>
           )}
         </div>
       </div>
@@ -170,13 +148,16 @@ export const ActivityCard = React.memo(({ rawContent, isStreaming = false }) => 
                         )}
                       </div>
                       <div className="lumina-activity-item-right">
-                        {(child.added > 0 || child.removed > 0) && (
+                        {(child.added > 0 || child.removed > 0 || child.chars > 0) && (
                           <div className="lumina-activity-item-diff">
+                            {child.chars > 0 && (
+                              <span className="lumina-diff-badge chars">{child.chars} chars</span>
+                            )}
                             {child.added > 0 && (
-                              <span className="lumina-diff-badge added">+{child.added}</span>
+                              <span className="lumina-diff-badge added">+{child.added}w</span>
                             )}
                             {child.removed > 0 && (
-                              <span className="lumina-diff-badge removed">-{child.removed}</span>
+                              <span className="lumina-diff-badge removed">-{child.removed}w</span>
                             )}
                           </div>
                         )}
@@ -233,13 +214,16 @@ export const ActivityCard = React.memo(({ rawContent, isStreaming = false }) => 
                 )}
               </div>
               <div className="lumina-activity-item-right">
-                {(item.added > 0 || item.removed > 0) && (
+                {(item.added > 0 || item.removed > 0 || item.chars > 0) && (
                   <div className="lumina-activity-item-diff">
+                    {item.chars > 0 && (
+                      <span className="lumina-diff-badge chars">{item.chars} chars</span>
+                    )}
                     {item.added > 0 && (
-                      <span className="lumina-diff-badge added">+{item.added}</span>
+                      <span className="lumina-diff-badge added">+{item.added}w</span>
                     )}
                     {item.removed > 0 && (
-                      <span className="lumina-diff-badge removed">-{item.removed}</span>
+                      <span className="lumina-diff-badge removed">-{item.removed}w</span>
                     )}
                   </div>
                 )}

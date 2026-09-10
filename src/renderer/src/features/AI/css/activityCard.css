@@ -79,7 +79,7 @@ lumina-activity {
 .lumina-activity-header {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 8px;
   padding: 3px 0;
   background: transparent !important;
@@ -353,6 +353,11 @@ lumina-activity {
 .lumina-diff-badge.removed {
   color: #f87171;
   background: rgba(248, 113, 113, 0.08);
+}
+
+.lumina-diff-badge.chars {
+  color: var(--text-faint, rgba(255, 255, 255, 0.45));
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .lumina-activity-diff-totals {

@@ -18,12 +18,18 @@ export const parseActivityItems = (rawContent) => {
     }
     let added = 0
     let removed = 0
+    let chars = 0
     let cleanLine = line
+    const wordCharMatch = cleanLine.match(/\(\+([0-9]+)\s*words?(?:,\s*([0-9]+)\s*chars?)?\)/i)
     const diffMatch =
       cleanLine.match(/\(\+([0-9]+)(?:,\s*-([0-9]+))?\)/) ||
       cleanLine.match(/\(-([0-9]+)\)/)
 
-    if (diffMatch) {
+    if (wordCharMatch) {
+      added = parseInt(wordCharMatch[1], 10) || 0
+      chars = parseInt(wordCharMatch[2], 10) || 0
+      cleanLine = cleanLine.replace(wordCharMatch[0], '').trim()
+    } else if (diffMatch) {
       if (diffMatch[0].startsWith('(-')) {
         removed = parseInt(diffMatch[1], 10) || 0
       } else {
@@ -143,7 +149,7 @@ export const parseActivityItems = (rawContent) => {
       const target = extractTarget(cleanLine)
       if (target && !seen.has(`file:update:${target}`)) {
         seen.add(`file:update:${target}`)
-        parsed.push({ type: 'file', target, action: 'update', added, removed, isActive: false })
+        parsed.push({ type: 'file', target, action: 'update', added, removed, chars, isActive: false })
         continue
       }
     }
@@ -152,7 +158,7 @@ export const parseActivityItems = (rawContent) => {
       const target = extractTarget(cleanLine)
       if (target && !seen.has(`file:delete:${target}`)) {
         seen.add(`file:delete:${target}`)
-        parsed.push({ type: 'file', target, action: 'delete', added, removed, isActive: false })
+        parsed.push({ type: 'file', target, action: 'delete', added, removed, chars, isActive: false })
         continue
       }
     }
@@ -161,7 +167,7 @@ export const parseActivityItems = (rawContent) => {
       const target = extractTarget(cleanLine)
       if (target && !seen.has(`file:create:${target}`)) {
         seen.add(`file:create:${target}`)
-        parsed.push({ type: 'file', target, folder, action: 'create', added, removed, isActive: false })
+        parsed.push({ type: 'file', target, folder, action: 'create', added, removed, chars, isActive: false })
         continue
       }
     }
