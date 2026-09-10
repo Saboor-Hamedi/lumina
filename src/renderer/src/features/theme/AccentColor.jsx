@@ -332,6 +332,7 @@ export const AccentColor = ({
         <Profile
           accentColor={localColor || defaultColor}
           onActionComplete={onClose}
+          style={{ border: 'none', background: 'transparent', height: '32px' }}
         />
 
         <div className="accent-dropdown-divider" />

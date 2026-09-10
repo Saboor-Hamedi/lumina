@@ -194,7 +194,6 @@
 }
 
 .accent-titlebar-btn:hover .accent-titlebar-swatch {
-  transform: scale(1.12);
   border-color: rgba(255, 255, 255, 0.8);
 }
 
@@ -210,12 +209,11 @@
   box-sizing: border-box;
   overflow: hidden;
   background: var(--bg-card, #18181b);
-  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s ease, border-color 0.15s ease;
+  transition: border-color 0.15s ease;
 }
 
 .accent-titlebar-btn:hover .accent-titlebar-avatar-wrap {
-  transform: scale(1.1);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--text-accent, #40bafa) 45%, transparent);
+  border-color: var(--text-accent, #40bafa);
 }
 
 .accent-titlebar-avatar-img {
@@ -232,7 +230,9 @@
   justify-content: center;
   width: 100%;
   height: 100%;
-  color: var(--text-main, #f8fafc);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted, #94a3b8);
 }
 
 .accent-dropdown-menu {

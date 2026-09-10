@@ -169,23 +169,24 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
         width: 'auto',
         backgroundColor: 'var(--bg-panel, #18181b)',
         border: '0.5px solid var(--border-dim, rgba(255, 255, 255, 0.15))',
-        borderRadius: '6px',
-        boxShadow: 'none',
+        borderRadius: '8px',
+        boxShadow: '0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06)',
         overflow: 'hidden',
-        padding: '3px 0',
+        padding: '4px',
         zIndex: 9999,
         display: 'flex',
         flexDirection: 'column',
-        gap: '0px',
+        gap: '2px',
         boxSizing: 'border-box'
       }}
     >
       {/* ── Unified Profile header ── */}
-      <div style={{ padding: '4px 6px' }}>
-        <Profile onActionComplete={onClose} />
-      </div>
+      <Profile
+        onActionComplete={onClose}
+        style={{ border: 'none', background: 'transparent', height: '32px' }}
+      />
 
-      <div style={{ height: '1px', backgroundColor: 'var(--border-dim)', margin: '4px 0' }} />
+      <div style={{ height: '1px', backgroundColor: 'var(--border-dim, rgba(255, 255, 255, 0.08))', margin: '2px 0' }} />
 
       <DropdownItem
         icon={<Settings size={14} />}
@@ -306,7 +307,7 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
           <div
             style={{
               position: 'relative',
-              borderRadius: '2px',
+              borderRadius: '6px',
               overflow: 'hidden'
             }}
           >
@@ -351,7 +352,8 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                padding: '7px 8px',
+                height: '32px',
+                padding: '0 8px',
                 border: 'none',
                 background: 'transparent',
                 color:
@@ -360,10 +362,10 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
                     : backupState === 'error'
                       ? 'rgba(239,68,68,0.9)'
                       : 'var(--text-main)',
-                fontSize: '12px',
+                fontSize: '11.5px',
                 fontWeight: '500',
                 cursor: isBackingUp ? 'default' : 'pointer',
-                borderRadius: '0',
+                borderRadius: '6px',
                 textAlign: 'left',
                 width: '100%',
                 boxSizing: 'border-box',
@@ -498,17 +500,19 @@ const DropdownItem = ({ icon, label, shortcut, onClick, highlight }) => {
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
-        padding: '7px 8px',
+        height: '32px',
+        padding: '0 8px',
         border: 'none',
         background: 'transparent',
         color: highlight ? 'var(--text-accent)' : 'var(--text-main)',
-        fontSize: '12px',
+        fontSize: '11.5px',
         fontWeight: '500',
         cursor: 'pointer',
-        borderRadius: '0',
+        borderRadius: '6px',
         textAlign: 'left',
         width: '100%',
-        transition: 'background-color 0.1s, color 0.1s'
+        boxSizing: 'border-box',
+        transition: 'background-color 0.15s ease, color 0.15s ease'
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.backgroundColor = 'var(--bg-active)'
@@ -517,17 +521,40 @@ const DropdownItem = ({ icon, label, shortcut, onClick, highlight }) => {
         e.currentTarget.style.backgroundColor = 'transparent'
       }}
     >
-      {icon}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>{label}</div>
+      <span
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: highlight ? 'var(--text-accent)' : 'var(--text-muted)',
+          flexShrink: 0
+        }}
+      >
+        {icon}
+      </span>
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          minWidth: 0,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap'
+        }}
+      >
+        {label}
+      </div>
       {shortcut && (
         <span
           style={{
-            fontSize: '11px',
+            fontSize: '10.5px',
             color: 'var(--text-faint, #64748b)',
             fontFamily: 'inherit',
             marginLeft: 'auto',
             letterSpacing: '0.02em',
-            userSelect: 'none'
+            userSelect: 'none',
+            flexShrink: 0
           }}
         >
           {shortcut}

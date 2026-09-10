@@ -1,5 +1,5 @@
 import React from 'react'
-import { Square, X, Minus, Search, MessageSquare, PanelLeftClose, PanelLeftOpen, CircleUser } from 'lucide-react'
+import { Square, X, Minus, Search, MessageSquare, PanelLeftOpen, PanelLeftClose, User } from 'lucide-react'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { useCurrentUser } from '../../core/hooks/useCurrentUser'
 import logoUrl from '../../assets/logo.png'
@@ -154,9 +154,10 @@ const TitleBar = ({ onToggleAIChat }) => {
                     />
                   ) : (
                     <div className="accent-titlebar-avatar-fallback">
-                      <CircleUser
-                        size={12}
-                        style={{ color: themeAccentColor || 'var(--text-accent, #40bafa)' }}
+                      <User
+                        size={16}
+                        strokeWidth={2}
+                        style={{ color: 'var(--text-muted, #94a3b8)', flexShrink: 0 }}
                       />
                     </div>
                   )}

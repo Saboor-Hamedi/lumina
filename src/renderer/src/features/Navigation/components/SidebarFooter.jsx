@@ -1,5 +1,4 @@
 import React, { memo, useState, useRef } from 'react'
-import { Settings } from 'lucide-react'
 import Profile from '../../profile/Profile'
 import SettingDropdown from './SettingDropdown'
 
@@ -18,7 +17,6 @@ const SidebarFooter = memo(({ onThemeClick, onSettingsClick }) => {
         onClick={toggleDropdown}
         showLogout={false}
         fallbackName="Settings"
-        fallbackIcon={<Settings size={15} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />}
         style={{ margin: '4px 8px 8px 8px' }}
       />
 

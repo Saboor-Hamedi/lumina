@@ -8,16 +8,16 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 38px;
-  min-height: 38px;
+  height: 34px;
+  min-height: 34px;
   padding: 0 8px;
   border-radius: 6px;
   border: 0.5px solid var(--border-dim, rgba(255, 255, 255, 0.15));
-  background: var(--bg-panel);
+  background: transparent;
   box-sizing: border-box;
   flex-shrink: 0;
   min-width: 0;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
   cursor: pointer;
 }
 
@@ -57,12 +57,6 @@
   flex-shrink: 0;
   overflow: hidden;
   background: var(--bg-panel, #18181b);
-  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s ease, border-color 0.15s ease;
-}
-
-.sidebar-footer-section:hover .profile-avatar-wrap {
-  transform: scale(1.08);
-  box-shadow: 0 0 6px color-mix(in srgb, var(--text-accent, #40bafa) 45%, transparent);
 }
 
 .profile-avatar-img {
@@ -79,7 +73,9 @@
   justify-content: center;
   width: 100%;
   height: 100%;
-  color: var(--text-main, #f8fafc);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted, #94a3b8);
 }
 
 .user-profile-info {

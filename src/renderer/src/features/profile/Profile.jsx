@@ -14,7 +14,7 @@
  */
 
 import React, { useState, useEffect, memo } from 'react'
-import { CircleUser, LogOut } from 'lucide-react'
+import { User, LogOut } from 'lucide-react'
 import { useCurrentUser } from '../../core/hooks/useCurrentUser'
 import Version from '../../components/Version'
 import './profile.css'
@@ -81,15 +81,15 @@ export const Profile = memo(({
           justifyContent: 'space-between',
           cursor: 'pointer',
           gap: '8px',
-          height: '38px',
-          minHeight: '38px',
+          height: '34px',
+          minHeight: '34px',
           margin: 0,
           borderRadius: '6px',
           border: '0.5px solid var(--border-dim, rgba(255, 255, 255, 0.15))',
-          background: isHovered ? 'var(--bg-active)' : 'var(--bg-panel)',
+          background: isHovered ? 'var(--bg-active)' : 'transparent',
           boxSizing: 'border-box',
           padding: '0 8px',
-          transition: 'all 0.15s ease',
+          transition: 'background-color 0.15s ease, border-color 0.15s ease',
           ...style
         }}
       >
@@ -99,8 +99,7 @@ export const Profile = memo(({
             alignItems: 'center',
             gap: '8px',
             minWidth: 0,
-            flex: '1 1 0%',
-            overflow: 'hidden'
+            flex: '1 1 0%'
           }}
         >
           <div
@@ -108,11 +107,7 @@ export const Profile = memo(({
             style={{
               borderColor: activeAccent,
               borderWidth: '1.5px',
-              borderStyle: 'solid',
-              boxShadow: isHovered
-                ? `0 0 6px color-mix(in srgb, ${activeAccent} 45%, transparent)`
-                : 'none',
-              transform: isHovered ? 'scale(1.08)' : 'scale(1)'
+              borderStyle: 'solid'
             }}
           >
             {isLoggedIn && user?.picture && !imgError ? (
@@ -127,10 +122,11 @@ export const Profile = memo(({
               fallbackIcon
             ) : (
               <div className="profile-avatar-fallback">
-                <CircleUser
-                  size={13}
+                <User
+                  size={18}
+                  strokeWidth={2}
                   style={{
-                    color: activeAccent,
+                    color: 'var(--text-muted, #94a3b8)',
                     flexShrink: 0
                   }}
                 />
