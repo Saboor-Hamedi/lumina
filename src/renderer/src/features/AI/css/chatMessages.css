@@ -1424,4 +1424,52 @@
   color: #7dd3fc;
 }
 
+.lumina-memory-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 8px;
+  margin: 2px 0 8px;
+  border-radius: 9999px;
+  background: rgba(168, 85, 247, 0.08);
+  border: 1px solid rgba(168, 85, 247, 0.22);
+  user-select: none;
+  animation: fadeInMemoryBadge 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  width: fit-content;
+  cursor: default;
+  transition: all 0.15s ease;
+}
+
+.lumina-memory-badge:hover {
+  background: rgba(168, 85, 247, 0.14);
+  border-color: rgba(168, 85, 247, 0.4);
+}
+
+.lumina-memory-badge-icon {
+  color: #c084fc;
+}
+
+.lumina-memory-badge-text {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.lumina-memory-badge-check {
+  color: #34d399;
+  margin-left: 2px;
+}
+
+@keyframes fadeInMemoryBadge {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 

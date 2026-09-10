@@ -13,6 +13,7 @@ import { moveFolderTool } from './moveFolder'
 import { checkFileTool } from './checkFile'
 import { clearFileTool } from './clearFile'
 import { readBrainFileTool } from './readBrainFile'
+import { saveMemoryTool, updateMemoryTool, forgetMemoryTool } from '../../../core/ai/memory'
 
 export const getAITools = (blockReadFile) => {
   return {
@@ -20,6 +21,10 @@ export const getAITools = (blockReadFile) => {
     readFile: getReadFileTool(blockReadFile),
     checkFile: checkFileTool,
     readBrainFile: readBrainFileTool,
+    saveMemory: saveMemoryTool,
+    updateMemory: updateMemoryTool,
+    forgetMemory: forgetMemoryTool,
+    forgeMemory: forgetMemoryTool,
     clearFile: clearFileTool,
     openFile: openFileTool,
     updateFile: updateFileTool,
@@ -31,5 +36,14 @@ export const getAITools = (blockReadFile) => {
     deleteFolder: deleteFolderTool,
     moveFolder: moveFolderTool,
     moveFile: moveFileTool
+  }
+}
+
+export const getMemoryTools = () => {
+  return {
+    saveMemory: saveMemoryTool,
+    updateMemory: updateMemoryTool,
+    forgetMemory: forgetMemoryTool,
+    forgeMemory: forgetMemoryTool
   }
 }

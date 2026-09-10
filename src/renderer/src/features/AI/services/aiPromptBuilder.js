@@ -1,5 +1,6 @@
 import { extractGraphContext } from './graphContext.js'
 import { getDynamicExemplars } from './intentRouter.js'
+import { luminaMemory } from '../../../core/ai/memory'
 
 /**
  * AI Prompt Builder Service
@@ -162,6 +163,9 @@ export const buildSystemPrompt = async ({
   const isExecutionMode = modeCfg.enableTools !== false
   let systemPrompt = ''
 
+  await luminaMemory.loadMemory()
+  const userMemoryBlock = luminaMemory.getPromptBlock()
+
   if (!isExecutionMode) {
     systemPrompt = `CURRENT ACTIVE MODE: ${modeCfg.name.toUpperCase()} MODE.
 ${modeCfg.systemAddon}
@@ -187,7 +191,9 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
   You MUST output the ACTUAL explanation, summary, and breakdown of what is inside the note IMMEDIATELY.
 
 **CONTEXT**:
-${vaultAccessNote}`
+${vaultAccessNote}
+
+${userMemoryBlock}`
   } else {
     systemPrompt = `CURRENT ACTIVE MODE: ${modeCfg.name.toUpperCase()} MODE.
 ${modeCfg.systemAddon}
@@ -250,10 +256,14 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
   The note content is ALREADY provided in your context below.
   You MUST output the ACTUAL explanation, summary, and breakdown of what is inside the note IMMEDIATELY.
   NEVER promise to read it — simply deliver the actual answer right now!
+- ABSOLUTE BAN ON VERBAL-ONLY MEMORY CLAIMS: NEVER say "I've saved your name to memory", "I'll remember that", or "Saved to memory" in chat without ACTUALLY invoking the saveMemory, updateMemory, or forgetMemory tool call! If you claim you saved or remembered something without executing the tool call, it is completely lost and never saved to disk. Whenever the user shares personal details (name, role, bio), preferences, or asks you to remember or forget something, you MUST execute saveMemory / updateMemory / forgetMemory immediately!
 
 **TOOLS AVAILABLE** (use these for file operations):
 - 'readFile' — read a workspace file by title (only use when you do NOT already have the file content)
 - 'readBrainFile' — retrieve built-in product documentation, guides, shortcuts, and feature details about Lumina
+- 'saveMemory' — permanently save a user profile detail, preference, or fact into memory.json across all sessions
+- 'updateMemory' — update an existing fact, preference, or profile detail in memory.json
+- 'forgetMemory' — remove or forget a specific fact, preference, or detail from memory.json
 - 'appendToFile' — add new content to the END of an existing file
 - 'createFile' — create a brand new workspace file (provide title + content, optional folder). Created files are saved in the background and DO NOT open tabs.
 - 'updateFile' — targeted update to an existing note. If the note is already open in the editor tab, it updates directly on that open tab; if closed, it updates silently in the background without opening a tab.
@@ -286,9 +296,14 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
 9. FOR "delete" → call deleteFile.
 10. FOR "open" → call openFile only if explicitly requested by user.
 11. NO UNWANTED TAB OPENS: Never open new editor tabs when creating, moving, or updating files. If a note is already open in the editor tab, write directly to that open tab. Closed notes must update silently in the background.
+12. FOR "remember", "save to memory", or when the user shares personal identity or preferences → call saveMemory immediately! NEVER confirm saving in chat without calling the saveMemory tool.
+13. FOR "update memory", "change preference", or refining facts → call updateMemory immediately.
+14. FOR "forget", "remove from memory", "delete memory" → call forgetMemory immediately.
 
 **CONTEXT**:
-${vaultAccessNote}`
+${vaultAccessNote}
+
+${userMemoryBlock}`
   }
 
   if (mentionedSnippets.length > 0) {
@@ -459,7 +474,10 @@ ${vaultAccessNote}`
       'User: "Rename this note to App Architecture" → [Call renameFile with oldTitle="current" newTitle="App Architecture"]\n' +
       'User: "inside my 1-src folder rename the files keep them a single word" → [Look at files in 1-src from EXISTING FILES and call renameFile for EACH file in 1-src with concise single-word names!]\n' +
       'User: "Write hello world" → [Call appendToFile immediately]\n' +
-      'User: "Clear Grammars" → [Call updateFile with title="Grammars" content="" immediately]'
+      'User: "Clear Grammars" → [Call updateFile with title="Grammars" content="" immediately]\n' +
+      'User: "okay, remember my name , its saboor" → [Call saveMemory with category="user", key="name", fact="Saboor" immediately]\n' +
+      'User: "remember that I prefer short answers" → [Call saveMemory with category="preferences", fact="Prefers short answers" immediately]\n' +
+      'User: "forget my name" → [Call forgetMemory with target="name", key="name" immediately]'
   }
 
   // Existing files list & Knowledge Graph Context

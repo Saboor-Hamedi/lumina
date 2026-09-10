@@ -46,6 +46,13 @@ export const getToolStatusDescription = (toolName, args = {}) => {
       return `📄 *Reading '${args.title || 'note'}'...*`
     case 'openFile':
       return `📖 *Opening '${args.title || 'note'}'...*`
+    case 'saveMemory':
+      return `🧠 *Saving to memory...*`
+    case 'updateMemory':
+      return `🧠 *Updating memory...*`
+    case 'forgetMemory':
+    case 'forgeMemory':
+      return `🧠 *Removing from memory...*`
     default:
       return `⚙️ *Working on ${toolName}...*`
   }
@@ -70,6 +77,13 @@ export const getToolInputStartStatus = (toolName) => {
       return 'Analyzing workspace file...'
     case 'readBrainFile':
       return 'Consulting documentation...'
+    case 'saveMemory':
+      return 'Saving to memory...'
+    case 'updateMemory':
+      return 'Updating memory...'
+    case 'forgetMemory':
+    case 'forgeMemory':
+      return 'Removing from memory...'
     default:
       return toolName ? `Preparing ${toolName}...` : 'Thinking...'
   }
@@ -80,6 +94,7 @@ export const buildRealtimeDisplay = ({
   postToolReasoning = '',
   reasoningText = '',
   executedActions = [],
+  memoryActions = [],
   activeToolStatus = '',
   beforeToolText = '',
   afterToolText = ''
@@ -98,26 +113,34 @@ export const buildRealtimeDisplay = ({
   }
 
   const blocks = []
-  const topReasoning = initialReasoning || reasoningText
-  const cleanInitial = stripDSML(topReasoning)
-  const cleanPost = stripDSML(postToolReasoning)
 
-  // Consolidate ALL thinking (initial + post-tool) into ONE single dropdown at the top
-  const allReasoning = [cleanInitial, cleanPost].filter(Boolean).join('\n\n')
-  if (allReasoning) {
-    blocks.push(`<think>\n${allReasoning}\n</think>`)
+  if (memoryActions.length > 0) {
+    blocks.push(`<lumina-memory>\n${memoryActions.join('\n')}\n</lumina-memory>`)
+  }
+
+  if (memoryActions.length === 0) {
+    const topReasoning = initialReasoning || reasoningText
+    const cleanInitial = stripDSML(topReasoning)
+    const cleanPost = stripDSML(postToolReasoning)
+
+    const allReasoning = [cleanInitial, cleanPost].filter(Boolean).join('\n\n')
+    if (allReasoning) {
+      blocks.push(`<think>\n${allReasoning}\n</think>`)
+    }
   }
 
   if (beforeToolText.trim()) {
     blocks.push(normalizeCodeBlocks(beforeToolText.trim()))
   }
 
-  if (executedActions.length > 0 || activeToolStatus) {
+  if (executedActions.length > 0 || (activeToolStatus && !activeToolStatus.includes('memory'))) {
     const actionLines = [...executedActions]
-    if (activeToolStatus) {
+    if (activeToolStatus && !activeToolStatus.includes('memory')) {
       actionLines.push(activeToolStatus)
     }
-    blocks.push(`<lumina-activity>\n${actionLines.join('\n')}\n</lumina-activity>`)
+    if (actionLines.length > 0) {
+      blocks.push(`<lumina-activity>\n${actionLines.join('\n')}\n</lumina-activity>`)
+    }
   }
 
   if (afterToolText.trim()) {
@@ -130,6 +153,9 @@ export const buildRealtimeDisplay = ({
 export const generateInitialThought = (prompt = '') => {
   const p = (prompt || '').trim()
   const lower = p.toLowerCase()
+  if (lower.includes('remember') || lower.includes('memory') || lower.includes('forget')) {
+    return `Accessing persistent memory to update user context and preferences...`
+  }
   if (lower.includes('journal')) {
     return `Planning a thoughtful journal with daily focus, morning intentions, and reflection prompts. Preparing workspace note...`
   }
@@ -176,6 +202,13 @@ export const getToolStartThought = (toolName) => {
     case 'readFile':
     case 'checkFile':
       return `Reading note content to fulfill request...`
+    case 'saveMemory':
+      return `Persisting context to memory.json...`
+    case 'updateMemory':
+      return `Refining stored context in memory.json...`
+    case 'forgetMemory':
+    case 'forgeMemory':
+      return `Removing specified items from memory.json...`
     default:
       return `Executing ${toolName}...`
   }
@@ -202,6 +235,13 @@ export const getToolResultThought = (toolName, res, target = '') => {
     case 'readFile':
     case 'checkFile':
       return `Retrieved content from '${name}'. Synthesizing answer...`
+    case 'saveMemory':
+      return `Committed to memory.json.`
+    case 'updateMemory':
+      return `Updated memory.json.`
+    case 'forgetMemory':
+    case 'forgeMemory':
+      return `Removed from memory.json.`
     default:
       return `Completed ${toolName}. Preparing walkthrough...`
   }
@@ -306,6 +346,7 @@ export const runDeepSeekStream = async ({
   })
 
   const executedActions = []
+  const memoryActions = []
   let activeToolStatus = ''
   const lastUserMsg =
     [...finalMessages].reverse().find((m) => m.role === 'user')?.content || ''
@@ -319,11 +360,20 @@ export const runDeepSeekStream = async ({
   let hasReceivedModelReasoning = false
   let hasReceivedPostToolReasoning = false
 
-  const updateDisplay = () => {
+  let rafId = null
+  let pendingDisplayUpdate = false
+
+  const flushDisplay = () => {
+    if (rafId) {
+      cancelAnimationFrame(rafId)
+      rafId = null
+    }
+    pendingDisplayUpdate = false
     const content = buildRealtimeDisplay({
       initialReasoning,
       postToolReasoning,
       executedActions,
+      memoryActions,
       activeToolStatus,
       beforeToolText,
       afterToolText
@@ -331,8 +381,20 @@ export const runDeepSeekStream = async ({
     onContentUpdate(content)
   }
 
-  // Initial trigger to render thinking dropdown right away
-  updateDisplay()
+  const updateDisplay = (immediate = false) => {
+    if (immediate) {
+      flushDisplay()
+      return
+    }
+    if (!pendingDisplayUpdate) {
+      pendingDisplayUpdate = true
+      rafId = requestAnimationFrame(() => {
+        flushDisplay()
+      })
+    }
+  }
+
+  updateDisplay(true)
   onThinkingStatusUpdate('Reasoning...')
 
   let streamingToolName = ''
@@ -352,7 +414,7 @@ export const runDeepSeekStream = async ({
       if (!initialReasoning.includes(startThought)) {
         initialReasoning += (initialReasoning ? '\n\n' : '') + startThought
       }
-      updateDisplay()
+      updateDisplay(true)
       const cleanToolStatus = activeToolStatus.replace(/[*_`]/g, '').trim()
       onThinkingStatusUpdate(cleanToolStatus)
     } else if (chunk.type === 'tool-input-delta' || chunk.type === 'tool-call-delta') {
@@ -382,7 +444,7 @@ export const runDeepSeekStream = async ({
           if (!initialReasoning.includes(`'${currentTarget}'`)) {
             initialReasoning += '\n' + thoughtLine
           }
-          updateDisplay()
+          updateDisplay(true)
           const cleanToolStatus = activeToolStatus.replace(/[*_`]/g, '').trim()
           onThinkingStatusUpdate(cleanToolStatus)
         }
@@ -393,18 +455,29 @@ export const runDeepSeekStream = async ({
       const target = args.title || args.path || args.newTitle || args.targetFolder || recordedTarget
       if (target) recordedTarget = target
       activeToolStatus = getToolStatusDescription(chunk.toolName, args)
-      updateDisplay()
+      updateDisplay(true)
       const cleanToolStatus = activeToolStatus.replace(/[*_`]/g, '').trim()
       onThinkingStatusUpdate(cleanToolStatus)
     } else if (chunk.type === 'tool-result') {
       const res = chunk.output || chunk.result
+      const isMemoryTool = ['saveMemory', 'updateMemory', 'forgetMemory', 'forgeMemory'].includes(chunk.toolName)
       if (res && res.success === false) {
         console.warn(`[StreamRunner] Tool ${chunk.toolName} failed:`, res.error)
-        executedActions.push(`⚠️ ${chunk.toolName} failed: ${res.error}`)
+        if (isMemoryTool) {
+          memoryActions.push(`⚠️ ${res.error || 'Failed to save memory'}`)
+        } else {
+          executedActions.push(`⚠️ ${chunk.toolName} failed: ${res.error}`)
+        }
       } else if (res && res.summary) {
         const entry = res.summary
-        if (!executedActions.includes(entry)) {
-          executedActions.push(entry)
+        if (isMemoryTool) {
+          if (!memoryActions.includes(entry)) {
+            memoryActions.push(entry)
+          }
+        } else {
+          if (!executedActions.includes(entry)) {
+            executedActions.push(entry)
+          }
         }
       }
       activeToolStatus = ''
@@ -416,7 +489,7 @@ export const runDeepSeekStream = async ({
       if (!postToolReasoning.includes(resultThought.split('\n')[0])) {
         postToolReasoning += (postToolReasoning ? '\n\n' : '') + resultThought
       }
-      updateDisplay()
+      updateDisplay(true)
       onThinkingStatusUpdate('Reflecting on workspace changes...')
     } else if (chunk.type === 'start-step') {
       if (hasToolCalled) {
@@ -511,13 +584,14 @@ export const runDeepSeekStream = async ({
       const errMsg = chunk.error?.message || chunk.error || 'Unknown tool error'
       console.warn(`[StreamRunner] Tool ${chunk.toolName} errored:`, errMsg)
       executedActions.push(`⚠️ Tool error: ${errMsg}`)
-      updateDisplay()
+      updateDisplay(true)
     } else if (chunk.type === 'error') {
       console.error('Stream error:', chunk.error)
-      updateDisplay()
+      updateDisplay(true)
     }
   }
 
+  flushDisplay()
   activeToolStatus = ''
   onThinkingStatusUpdate('')
 
@@ -536,7 +610,6 @@ export const runDeepSeekStream = async ({
 
     const rawFinalText = await result.text
     if (rawFinalText && rawFinalText.trim()) {
-      // Intercept any leaked DSML tool calls as fallback
       const { cleanedText, didExecute } = await parseAndExecuteDSML(
         rawFinalText,
         sdkTools,
@@ -546,7 +619,6 @@ export const runDeepSeekStream = async ({
         hasToolCalled = true
       }
 
-      // Strip all <think> blocks and DSML tokens from final text so they NEVER leak to body
       const cleanFinal = cleanedText
         .replace(/<think>[\s\S]*?<\/think>/gi, '')
         .replace(/<\/?think>/gi, '')
@@ -568,11 +640,12 @@ export const runDeepSeekStream = async ({
     }
   } catch (_) {}
 
-  // Final cleanup: ensure beforeToolText and afterToolText have NO think tags or DSML
   const stripStray = (txt) =>
     (txt || '')
       .replace(/<think>[\s\S]*?<\/think>/gi, '')
       .replace(/<\/?think>/gi, '')
+      .replace(/<lumina-activity>[\s\S]*?<\/lumina-activity>/gi, '')
+      .replace(/<lumina-memory>[\s\S]*?<\/lumina-memory>/gi, '')
       .replace(/<[^>]*[｜|][^>]*>/g, '')
       .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*>/gi, '')
       .trim()
@@ -580,7 +653,7 @@ export const runDeepSeekStream = async ({
   beforeToolText = stripStray(beforeToolText)
   afterToolText = stripStray(afterToolText)
 
-  updateDisplay()
+  updateDisplay(true)
 }
 
 export const runFallbackProviderStream = async ({
@@ -600,14 +673,35 @@ export const runFallbackProviderStream = async ({
     signal: controller.signal
   })
 
+  let rafId = null
+  let pendingUpdate = false
+
+  const flush = () => {
+    if (rafId) {
+      cancelAnimationFrame(rafId)
+      rafId = null
+    }
+    pendingUpdate = false
+    onContentUpdate(fullContent)
+    onThinkingStatusUpdate(fullContent.trim().length > 30 ? '' : 'Writing...')
+  }
+
+  const scheduleUpdate = () => {
+    if (!pendingUpdate) {
+      pendingUpdate = true
+      rafId = requestAnimationFrame(flush)
+    }
+  }
+
   for await (const chunk of stream) {
     if (controller.signal.aborted) break
     if (chunk) {
       fullContent += chunk
-      onContentUpdate(fullContent)
-      onThinkingStatusUpdate(fullContent.trim().length > 30 ? '' : 'Writing...')
+      scheduleUpdate()
     }
   }
+
+  flush()
 
   return fullContent
 }

@@ -8,11 +8,19 @@ export const IntentCategory = {
   CREATE_FOLDER: 'CREATE_FOLDER',
   ORGANIZE_FILES: 'ORGANIZE_FILES',
   VAULT_SUMMARY: 'VAULT_SUMMARY',
-  PLAN_SCAFFOLD: 'PLAN_SCAFFOLD'
+  PLAN_SCAFFOLD: 'PLAN_SCAFFOLD',
+  MEMORY_OP: 'MEMORY_OP'
 }
 
 export const detectUserIntent = (message, mentionedSnippets = [], activeSnippet = null) => {
   const clean = (message || '').trim().toLowerCase()
+
+  const memoryPatterns =
+    /\b(remember|save (?:this )?to (?:your )?memory|save (?:this )?in (?:your )?memory|keep in mind|store in memory|don'?t forget|my name is|call me|i am called|forget (?:my )?|remove (?:this )?from (?:your )?memory|delete (?:this )?from (?:your )?memory|erase (?:this )?from memory|update (?:my )?memory)\b/i
+
+  if (memoryPatterns.test(clean)) {
+    return IntentCategory.MEMORY_OP
+  }
 
   const conversationalOverridePatterns =
     /\b(let'?s talk|just talk|talk first|don'?t write|do not write|don'?t create|do not create|no files?( yet)?|don'?t save|do not save|just discuss|discuss first|in chat( only)?|brainstorm(ing)? (in|only in) chat|keep (it )?in chat|without (writing|creating|saving))\b/i
@@ -274,6 +282,28 @@ User: "Rename @OldTitle to NewTitle"
 Execution: Call \`renameFile\` with oldTitle="OldTitle" and newTitle="NewTitle" immediately.
 User: "inside my 1-src folder rename the files keep them a single word"
 Execution: Call \`renameFile\` for each file in folder \`1-src\` with simplified single-word names (e.g. oldTitle="1-src/React Components", newTitle="Components").`
+
+    case IntentCategory.MEMORY_OP:
+      return `\n**EXEMPLAR FOR MEMORY OPERATIONS**:
+User: "okay, remember my name , its saboor"
+Execution:
+1. Call \`saveMemory\` with category="user", key="name", fact="Saboor".
+2. Response in chat: "Got it, Saboor! 🎉 I've saved your name to memory — I'll remember it from now on."
+
+User: "remember that I prefer short answers"
+Execution:
+1. Call \`saveMemory\` with category="preferences", fact="Prefers short answers".
+2. Response in chat: "I've saved that preference to memory. I will keep responses concise."
+
+User: "remember my role is fullstack developer"
+Execution:
+1. Call \`saveMemory\` with category="user", key="role", fact="Fullstack Developer".
+2. Response in chat: "Saved! I'll remember that you are a fullstack developer."
+
+User: "forget my name"
+Execution:
+1. Call \`forgetMemory\` with target="name", key="name".
+2. Response in chat: "I've removed your name from memory."`
 
     case IntentCategory.CONVERSATIONAL_EXPLAIN:
     default:

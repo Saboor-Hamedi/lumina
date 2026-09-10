@@ -29,7 +29,7 @@ import {
 } from '../services/aiStreamRunner.js'
 import { detectUserIntent, IntentCategory } from '../services/intentRouter.js'
 import { getAIMode } from '../modes/index.js'
-import { getAITools } from './index.js'
+import { getAITools, getMemoryTools } from './index.js'
 import { AIProviderFactory, resolveProviderConfig } from '../providers/index.js'
 
 let loadSessionsPromise = null
@@ -534,6 +534,7 @@ export const useAIStore = create((set, get) => {
             const cleanText = (m.content || '')
               .replace(/<think>[\s\S]*?<\/think>/gi, '')
               .replace(/<lumina-activity>[\s\S]*?<\/lumina-activity>/gi, '')
+              .replace(/<lumina-memory>[\s\S]*?<\/lumina-memory>/gi, '')
               .replace(/<[^>]*[｜|][^>]*>/g, '')
               .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*>/gi, '')
               .trim()
@@ -556,10 +557,8 @@ export const useAIStore = create((set, get) => {
           /\b(let'?s talk|just talk|talk first|don'?t write|do not write|don'?t create|do not create|no files?( yet)?|don'?t save|do not save|just discuss|discuss first|in chat( only)?|brainstorm(ing)? (in|only in) chat|keep (it )?in chat|without (writing|creating|saving))\b/i
         const isConversationalOverride = conversationalOverridePatterns.test(cleanMessage)
 
-        let sdkTools = {}
+        let sdkTools = getMemoryTools()
         if (modeCfg.enableTools !== false && !isConversationalOverride) {
-          // Always pass all tools — let the AI decide based on the system prompt.
-          // CONVERSATIONAL_EXPLAIN only affects the exemplar shown, not actual tool availability.
           sdkTools = getAITools(blockReadFile)
         }
 

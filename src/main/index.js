@@ -537,12 +537,18 @@ app.whenReady().then(async () => {
     if (canceled) return null
     const newPath = filePaths[0]
 
-    // Save to global config
     const userDataPath = app.getPath('userData')
-    await fs.writeFile(
-      join(userDataPath, 'app_config.json'),
-      JSON.stringify({ lastWorkspaceOpened: newPath, lastVaultOpened: newPath }, null, 2)
-    )
+    try {
+      const appConfigPath = join(userDataPath, 'app_config.json')
+      let existing = {}
+      try {
+        existing = JSON.parse(await fs.readFile(appConfigPath, 'utf8'))
+      } catch (_) {}
+      await fs.writeFile(
+        appConfigPath,
+        JSON.stringify({ ...existing, lastWorkspaceOpened: newPath, lastVaultOpened: newPath }, null, 2)
+      )
+    } catch (_) {}
 
     await SettingsManager.init(newPath)
     await WorkspaceManager.init(newPath)
@@ -665,6 +671,39 @@ app.whenReady().then(async () => {
     return canceled ? null : filePaths[0]
   })
 
+  const memoryFilePath = join(app.getPath('userData'), 'memory.json')
+
+  ipcMain.handle('memory:load', async () => {
+    try {
+      const data = await fs.readFile(memoryFilePath, 'utf8')
+      return JSON.parse(data)
+    } catch (_) {
+      const defaultMemory = {
+        user: { name: null, role: null, bio: null },
+        preferences: [],
+        facts: []
+      }
+      try {
+        await fs.mkdir(path.dirname(memoryFilePath), { recursive: true })
+        await fs.writeFile(memoryFilePath, JSON.stringify(defaultMemory, null, 2), 'utf8')
+      } catch (err) {
+        console.error('[Main] Failed to create default memory.json:', err)
+      }
+      return defaultMemory
+    }
+  })
+
+  ipcMain.handle('memory:save', async (_, memory) => {
+    try {
+      await fs.mkdir(path.dirname(memoryFilePath), { recursive: true })
+      await fs.writeFile(memoryFilePath, JSON.stringify(memory, null, 2), 'utf8')
+      return true
+    } catch (err) {
+      console.error('[Main] Failed to save memory.json:', err)
+      return false
+    }
+  })
+
   registerOpenNoteHandler()
 
   ipcMain.handle('confirm-delete', async (event, message) => {
@@ -713,10 +752,16 @@ app.whenReady().then(async () => {
 
     if (!savedWorkspacePath || savedWorkspacePath === oldDefaultPath) {
       savedWorkspacePath = newDefaultPath
-      await fs.writeFile(
-        appConfigPath,
-        JSON.stringify({ lastWorkspaceOpened: savedWorkspacePath, lastVaultOpened: savedWorkspacePath }, null, 2)
-      )
+      try {
+        let existing = {}
+        try {
+          existing = JSON.parse(await fs.readFile(appConfigPath, 'utf8'))
+        } catch (_) {}
+        await fs.writeFile(
+          appConfigPath,
+          JSON.stringify({ ...existing, lastWorkspaceOpened: savedWorkspacePath, lastVaultOpened: savedWorkspacePath }, null, 2)
+        )
+      } catch (_) {}
     }
 
     // Initialize SettingsManager inside the workspace

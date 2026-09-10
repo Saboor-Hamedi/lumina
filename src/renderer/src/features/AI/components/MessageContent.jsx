@@ -7,6 +7,7 @@ import { ChatBlockquote } from './ChatBlockquote'
 import { ChatLink } from './ChatLink'
 import { ThinkingBlock } from './ThinkingBlock'
 import { ActivityCard } from './ActivityCard'
+import { MemoryBadge } from './MemoryBadge'
 import { processMarkdownContent, parseMessageSections, parseMessageBlocks } from '../services/chatMarkdownParser'
 
 export { processMarkdownContent, parseMessageSections, parseMessageBlocks }
@@ -16,6 +17,22 @@ export const MessageContent = React.memo(
     const blocks = useMemo(() => {
       return parseMessageBlocks(content)
     }, [content])
+
+    const hasMemoryBlock = useMemo(() => {
+      return (
+        blocks.some((b) => b.type === 'memory') ||
+        (content &&
+          /\b(memory\.json|Saved to memory|Updated user (?:name|role|bio)|Cleared user (?:name|role|bio)|Updated preference:)\b/i.test(content) &&
+          !content.includes('```'))
+      )
+    }, [blocks, content])
+
+    const memoryContent = useMemo(() => {
+      const memBlock = blocks.find((b) => b.type === 'memory')
+      if (memBlock) return memBlock.content
+      const m = content?.match(/(?:Updated user [^\n]+|Saved to memory[^\n]*|Saved preference:[^\n]+|Cleared user [^\n]+|Removed "[^"]+" from memory)/i)
+      return m ? m[0] : ''
+    }, [blocks, content])
 
     const lastThinkIdx = useMemo(() => {
       let idx = -1
@@ -57,8 +74,13 @@ export const MessageContent = React.memo(
 
     return (
       <>
+        {hasMemoryBlock && <MemoryBadge content={memoryContent} />}
         {blocks.map((block, idx) => {
+          if (block.type === 'memory') {
+            return null
+          }
           if (block.type === 'think') {
+            if (hasMemoryBlock) return null
             return (
               <ThinkingBlock
                 key={`think-${idx}`}

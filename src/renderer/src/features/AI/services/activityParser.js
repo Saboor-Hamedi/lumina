@@ -10,6 +10,12 @@ export const parseActivityItems = (rawContent) => {
   const seen = new Set()
 
   for (const line of lines) {
+    if (
+      /\b(memory|user\s+name|user\s+role|user\s+bio|preference)\b/i.test(line) ||
+      line.includes('🧠')
+    ) {
+      continue
+    }
     let added = 0
     let removed = 0
     let cleanLine = line

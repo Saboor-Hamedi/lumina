@@ -78,6 +78,11 @@ const api = {
     return () => electronAPI.ipcRenderer.removeListener('settings:changed', listener)
   },
 
+  loadMemory: () => electronAPI.ipcRenderer.invoke('memory:load'),
+  saveMemory: (memory) => electronAPI.ipcRenderer.invoke('memory:save', memory),
+  getUserMemory: () => electronAPI.ipcRenderer.invoke('memory:load'),
+  saveUserMemory: (memory) => electronAPI.ipcRenderer.invoke('memory:save', memory),
+
   // Dialogs
   confirmDelete: (msg) => electronAPI.ipcRenderer.invoke('confirm-delete', msg),
   openFile: () => electronAPI.ipcRenderer.invoke('dialog:openFile'),
@@ -146,7 +151,9 @@ const api = {
   backupFile: (fileInput) => electronAPI.ipcRenderer.invoke('backup:file', fileInput),
   cancelBackup: () => electronAPI.ipcRenderer.invoke('backup:cancel'),
   getGoogleUser: () => electronAPI.ipcRenderer.invoke('auth:getGoogleUser'),
-  logoutFromGoogle: () => electronAPI.ipcRenderer.invoke('auth:logoutFromGoogle')
+  logoutFromGoogle: () => electronAPI.ipcRenderer.invoke('auth:logoutFromGoogle'),
+  loadMemory: () => electronAPI.ipcRenderer.invoke('memory:load'),
+  saveMemory: (memory) => electronAPI.ipcRenderer.invoke('memory:save', memory)
 }
 
 // Expose APIs

@@ -73,13 +73,13 @@ export const parseMessageBlocks = (content) => {
       .trim()
 
   const blocks = []
-  const tagRegex = /(?:<think>([\s\S]*?)(?:<\/think>|$))|(?:<lumina-activity>([\s\S]*?)(?:<\/lumina-activity>|$))/gi
+  const tagRegex = /(?:<think>([\s\S]*?)(?:<\/think>|$))|(?:<lumina-activity>([\s\S]*?)(?:<\/lumina-activity>|$))|(?:<lumina-memory>([\s\S]*?)(?:<\/lumina-memory>|$))/gi
   let lastIndex = 0
   let match
 
   while ((match = tagRegex.exec(content)) !== null) {
     const textBefore = content.slice(lastIndex, match.index)
-    const cleanBefore = stripDSML(textBefore).replace(/<\/?(?:think|lumina-activity)>/gi, '').trim()
+    const cleanBefore = stripDSML(textBefore).replace(/<\/?(?:think|lumina-activity|lumina-memory)>/gi, '').trim()
     if (cleanBefore) {
       blocks.push({ type: 'markdown', content: cleanBefore })
     }
@@ -94,13 +94,18 @@ export const parseMessageBlocks = (content) => {
       if (actText) {
         blocks.push({ type: 'activity', content: actText })
       }
+    } else if (match[3] !== undefined) {
+      const memText = (match[3] || '').trim()
+      if (memText) {
+        blocks.push({ type: 'memory', content: memText })
+      }
     }
 
     lastIndex = tagRegex.lastIndex
   }
 
   const trailingText = content.slice(lastIndex)
-  const cleanTrailing = stripDSML(trailingText).replace(/<\/?(?:think|lumina-activity)>/gi, '').trim()
+  const cleanTrailing = stripDSML(trailingText).replace(/<\/?(?:think|lumina-activity|lumina-memory)>/gi, '').trim()
   if (cleanTrailing) {
     blocks.push({ type: 'markdown', content: cleanTrailing })
   }
