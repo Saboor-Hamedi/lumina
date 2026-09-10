@@ -28,10 +28,12 @@
 - Powered by bidirectional wikilinks (`[[Note Name]]`).
 - Filter nodes by tags, search queries, or connection clusters to discover hidden relationships across your vault.
 
-### C. Context-Aware AI Assistant
+### C. Context-Aware AI Assistant & Persistent Memory
 - **Lumina AI Chat (`Ctrl + Shift + \`):** A dedicated sidebar AI partner capable of analyzing your active notes, summarizing folder contents, and answering questions grounded in your workspace.
+- **Persistent AI Memory (`memory.json`):** Remembers your name, role, bio, personal preferences, and learned facts & knowledge across chats with natural name addressing and dedicated Settings management.
+- **Multi-Disciplinary Plan Intelligence:** Mode-aware planning that recommends Research Mode for academic and thesis writing, Creative Mode for storytelling, and Code Mode for software implementation.
 - **Deep Workspace Synthesis:** Connect ideas across multiple notes, generate outlines, draft sections, and find missing links in your research.
-- **Flexible Models:** Plug in your own preferred AI model providers and keys seamlessly.
+- **Flexible Models:** Plug in your own preferred AI model providers (DeepSeek, OpenAI, Anthropic, Ollama) seamlessly.
 
 ### D. Keyboard-Driven Navigation
 - **Spotlight Search (`Ctrl + P` / `Ctrl + Space`):** Jump between notes instantly or search your entire workspace with fuzzy matching.

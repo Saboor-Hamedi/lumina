@@ -186,6 +186,12 @@ class LuminaMemory {
     return { success: false, error: `No matching memory found for "${target}"` }
   }
 
+  async clearAllMemory() {
+    this.cache = JSON.parse(JSON.stringify(DEFAULT_MEMORY))
+    await this.persist()
+    return { success: true }
+  }
+
   getPromptBlock() {
     if (!this.cache) return ''
     const lines = []

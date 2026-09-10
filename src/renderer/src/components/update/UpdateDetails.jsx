@@ -8,32 +8,34 @@ import ToolTip from '../atoms/ToolTip'
 import './UpdateDetails.css'
 
 export const DEFAULT_RELEASE_NOTES = `New
+- AI Memory Profile & Management: Dedicated AI Memory tab in Settings to inspect, edit, and curate persistent memory stored in memory.json. Customize your User Identity (Name, Role, Bio), User Preferences, and Learned Facts & Knowledge with instant inline editing.
+- Natural Name & Context Addressing: Lumina naturally addresses you by your name and weaves your background, role, and active projects smoothly into chat and recommendations.
+- Multi-Mode Plan Intelligence: Plan Mode now intelligently guides you to specialized modes across all disciplines—recommending Research Mode for academic and thesis writing, Creative Mode for storytelling, and Code Mode for software architecture.
+- Real-Time Drive Push Status: The Google Drive Push button in the editor metadata bar now tracks the exact push timestamp ("Pushed 10:45 AM"), remains accessible without shifting toolbar layouts, and notifies unauthenticated users cleanly.
 - Surgical In-Place AI Note Updates: Update specific paragraphs, opening introductions, and targeted sections without rewriting entire notes, preserving your formatting and frontmatter.
-- Unified Live AI Reasoning: Deep chain-of-thought thinking is now consolidated into a single live dropdown at the top of messages with real-time status and active timers.
+- Unified Live AI Reasoning: Deep chain-of-thought thinking is consolidated into a single live dropdown at the top of messages with real-time status and active timers.
 - Google Drive Git-Like Mirroring: Backup your full workspace hierarchy as uncompressed individual Markdown and asset files directly into a clean "lumina/" root folder on Google Drive, preserving all nested folder paths.
-- Individual Note Cloud Push: Push any active note and its full parent folder hierarchy to Google Drive on demand via a subtle Push button directly in the editor metadata bar, with pulse animations and instant confirmation.
-- Dual Backup Formats: Choose between the traditional compressed (.zip) archive or the git-like mirror folder structure directly from the Settings dropdown.
 - PDF Workspace & Native Viewer: Open, zoom, pan, and read PDF documents directly in workspace tabs with instant cached tab switching and high-DPI rendering.
 - Whisper Voice Dictation: Speak your thoughts directly into notes or Lumina composer with offline Whisper speech-to-text and a live floating soundwave capsule.
 
 Improved
+- Memory Settings Layout & Validation: User Identity displays your name in a clean input while Role and Bio use fixed-height textareas with Ctrl+Enter save shortcuts. Full duplicate detection and text-wrap protection prevent overflow.
+- Non-Code & Academic Plan Awareness: Clarified mode descriptions across slash commands and prompt builders so Code Mode no longer claims a monopoly over creating notes or documents.
+- Open Editor Tab Context: AI prompt engine treats open editor tabs and active unsaved buffers as immediate workspace context, ensuring current drafts inform answers.
+- Drive Push Toolbar Geometry: Eliminated button width shifts and background flashes on push success. The button maintains a stable "Push" label, transparent hover states, and fixed dimensions.
 - Targeted AI Note Replacements: AI-driven note updates cleanly isolate target headings and opening paragraphs while protecting frontmatter and surrounding document structures.
 - Instant CodeMirror Sync: AI edits and note updates stream into the active editor instantly with smart viewport centering and zero typewriter delay.
 - Multi-Session Chat Management: Deduplicated session state with in-flight mutex locking to prevent duplicate "New Chat" sessions on initial load or delete.
-- Intelligent Cloud Hierarchy Resolution: Pushing a deeply nested note automatically ensures all ancestor folders exist on Google Drive without re-uploading unrelated files.
 - Pre-Push Auto-Save: Pushing a note instantly synchronizes pending title edits and note contents before uploading to guarantee the cloud copy matches your local draft.
-- Lightning-Fast Tab Switching: Move instantly between notes, PDFs, images, and graph view with zero UI lag or layout stutter.
-- Clean Status Notifications: Streamlined backup toasts to concise, non-intrusive messages ("Successfully backed up").
-- Comprehensive Test Suite: 100% passing tests across all 87 unit and integration test files, along with verified Playwright end-to-end automation.
 
 Fixed
+- Drive Push State Sticky Hover: Resolved an issue where the push button retained green background hover highlights after a successful upload.
 - Sequential Thinking Dropdowns: Fixed an issue where multiple fragmented thinking dropdowns would appear across multi-step tool calls or after reflection delays.
 - Session Menu Duplication: Resolved a race condition where deleting the last session created two concurrent "New Chat" instances in the sidebar.
 - IndexedDB Manifest Self-Healing: Automatically repairs broken LevelDB sequential manifest pointers on startup, preventing Chromium storage crashes during rapid dev restarts.
 - Note Title & Disk Renaming: Fixed an issue where new notes titled "lumina" or edited titles remained saved as "New Note.md" on disk and pushed to Drive with placeholder names.
 - Google Drive In-Place Renaming: Remote files on Google Drive are now renamed in-place when a local note title changes, avoiding duplicate cloud copies.
-- File Watcher Loop Prevention: In-flight file renames are now shielded with ignored paths to prevent spurious deletion and watcher reload cycles.
-- Active Note Synchronization: Switching tabs or opening search matches reliably highlights and scrolls to the active note in the folder tree.`
+- File Watcher Loop Prevention: In-flight file renames are now shielded with ignored paths to prevent spurious deletion and watcher reload cycles.`
 
 /**
  * Simple, clean release notes parser for our Markdown release notes.

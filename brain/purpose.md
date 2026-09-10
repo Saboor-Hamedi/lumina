@@ -142,6 +142,22 @@ When a message is sent, context is assembled in a multi-tier hierarchy:
 - Eliminates secondary fragmented thinking dropdowns appearing after tool execution.
 - Live elapsed timers (`Thinking (12s)`) keep the user visually informed during multi-step model reasoning without sudden delays or UI jumps.
 
+### H. Persistent AI Memory & User Profiling (`luminaMemory.js` & `SettingMemory.jsx`)
+- **Three-Tier Memory Pool (`memory.json`)**:
+  1. **User Identity**: User name, role/occupation, and bio/context.
+  2. **User Preferences**: Explicit styling and interaction rules (e.g. response length, language, preferred tech stack).
+  3. **Learned Facts & Knowledge**: Dynamic knowledge points extracted during conversations or manually curated.
+- **Natural Personalization**: Automatically addresses the user naturally by name during conversations without robotic repetition. Injects active role and background context into prompts to calibrate explanation depth and recommendations.
+- **Dedicated Settings Management**: Full UI in `SettingMemory.jsx` allowing users to view, add, inline-edit, and delete identity, preferences, and learned facts with validation, overflow protection, and keyboard shortcuts (`Ctrl+Enter`).
+
+### I. Multi-Disciplinary Mode System & Open Tab Awareness (`aiPromptBuilder.js`)
+- **Domain-Specific Plan Routing**: Plan Mode advises execution modes tailored to the domain:
+  - `/research` & Research Mode for academic, thesis, literature, and scholarly work.
+  - `/creative` & Creative Mode for narrative essays, prose, and conceptual brainstorming.
+  - `/code` & Code Mode for software architecture and codebase implementation.
+- **No Code Bias**: Eradicated the false assumption that Code Mode is the sole file-creation mode. All relevant modes can create notes and files.
+- **Active Tab & Buffer Context**: Open editor tabs and unsaved memory buffers are treated as immediate, valid workspace context, enabling the assistant to answer questions about in-progress drafts.
+
 ---
 
 ## 5. State Management Architecture
@@ -512,5 +528,26 @@ Sidebars previously shrank/compressed their content when dragged inward. The tar
 ### M. Self-Healing IndexedDB & Chromium Manifest Recovery (`src/main/index.js`)
 - **Problem**: Chromium console logged `Failed to open LevelDB database... Unable to create sequential file` during dev restarts when `CURRENT` pointed to a missing `MANIFEST-000001` file.
 - **Solution**: Implemented `autoRepairIndexedDB()` in `src/main/index.js` invoked before `createWindow()`. It detects corrupted dev LevelDB manifests and purges broken partitions so Chromium cleanly re-initializes a healthy IndexedDB store on boot.
+
+### N. Google Drive Push Button Polish & Toolbar Stability (`DrivePushButton.jsx`)
+- **Problem**: The Push button previously disappeared when unauthenticated, shifted adjacent editor metadata buttons when toggling states ("Pushing...", "Pushed"), and had a sticky green hover background after successful push.
+- **Solution**:
+  - Maintained constant visibility whenever an active note exists; clicking while unauthenticated shows a clean toast: `"Log in to Google Drive first"`.
+  - Fixed button label strictly to `"Push"` with fixed height (21px), preventing toolbar jittering or button shifts.
+  - Removed disruptive background and border coloring on pushing and success states (remains transparent).
+  - Used button ref to actively clear inline hover background on success, preventing sticky hover states.
+  - Implemented push timestamp tracking (`lastPushedAt`), displaying human-readable timestamps in tooltips (e.g. `"Pushed 10:45 AM"`).
+
+### O. AI Memory Profile Management & UI Polish (`SettingMemory.jsx`)
+- **Three-Tier Architecture**: Built a dedicated settings pane allowing users to inspect, modify, and manage their AI memory (`memory.json`): User Identity (Name, Role, Bio), Preferences, and Learned Facts & Knowledge.
+- **Form Layout & Auto-Save as You Type**: Structured User Identity with a single-line input for Name, and matching 2-row non-resizable textareas for Role and Bio. Eliminated manual Save buttons in favor of debounced auto-saving on input with subtle non-intrusive status feedback (`Saving...` / `Saved automatically`).
+- **Inline Editing & Robust Validation**: Added inline item editing (`Edit2`, `Check`, `X`) with Enter/Escape keyboard handling, duplicate prevention, whitespace trimming, and `wordBreak: 'break-word'` to prevent UI overflow on long strings.
+
+### P. Multi-Disciplinary Mode System & Plan Mode De-Biasing (`luminaPlanMode.js`, `aiPromptBuilder.js`)
+- **Problem**: Plan Mode previously claimed that Code Mode was the only mode capable of executing tasks, causing bias toward code execution even for academic thesis writing, research, or creative prose.
+- **Solution**:
+  - Re-anchored Plan Mode to recommend specialized modes based on task domain (`/research` for thesis and academic writing, `/creative` for storytelling, `/code` for software architecture).
+  - Banned claiming Code Mode is the exclusive execution mode.
+  - Added open editor tab awareness so unsaved active drafts serve as authoritative context for AI responses.
 
 

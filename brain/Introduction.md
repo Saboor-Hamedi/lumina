@@ -10,7 +10,8 @@
 - **Google Drive Git-Like Sync & Push:** Mirror your complete workspace hierarchy into a clean `lumina/` folder on Google Drive. Push individual notes with ancestor folder tree resolution on demand via the editor header.
 - **Native PDF & Asset Workspace:** View and read PDF documents natively inside workspace tabs with instant zero-copy caching, zoom/pan controls, and high-DPI rendering.
 - **Whisper Voice Dictation:** Speak your thoughts directly into notes or the Lumina composer using offline Whisper speech recognition with dynamic soundwave feedback.
-- **Deep AI Integration:** Lumina includes an integrated AI research partner with full context of your workspace. Summarize folders, brainstorm connections, extract tasks, and chat with your notes.
+- **Deep AI Integration & Persistent Memory:** Lumina includes an integrated AI research partner with full context of your workspace. With persistent memory (`memory.json`), it remembers your identity, personal preferences, and learned project knowledge across conversations, naturally addressing you by name without repetitive prompts.
+- **Multi-Disciplinary Modes:** Tailored planning and execution modes for research, thesis work, creative writing, and software implementation.
 - **Visual Knowledge Graph:** Explore your ideas visually through an interactive physics-driven graph that maps how notes link together.
 - **Spotlight Quick Switcher (`Ctrl + Space` / `Ctrl + P`):** Instantly navigate notes, search document text, or ask the AI questions with live preview cards.
 - **Roadmap & Progress Views:** Track project milestones and tasks with automated roadmap completion progress bars.

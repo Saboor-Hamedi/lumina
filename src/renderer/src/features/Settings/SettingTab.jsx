@@ -1,5 +1,5 @@
 import React from 'react'
-import { Palette, Sparkles, Keyboard, SlidersHorizontal } from 'lucide-react'
+import { Palette, Sparkles, Keyboard, SlidersHorizontal, Brain } from 'lucide-react'
 
 const SettingTab = ({ activeTab, setActiveTab }) => {
   return (
@@ -35,6 +35,13 @@ const SettingTab = ({ activeTab, setActiveTab }) => {
           >
             <Sparkles size={14} style={{ flexShrink: 0 }} />
             <span>Lumina AI Assistant</span>
+          </button>
+          <button
+            className={`nav-item ${activeTab === 'memory' ? 'active' : ''}`}
+            onClick={() => setActiveTab('memory')}
+          >
+            <Brain size={14} style={{ flexShrink: 0 }} />
+            <span>AI Memory</span>
           </button>
           <button
             className={`nav-item ${activeTab === 'advanced' ? 'active' : ''}`}

@@ -7,6 +7,7 @@ export const DrivePushButton = ({ snippet, title }) => {
   const [isPushing, setIsPushing] = useState(false)
   const [justPushed, setJustPushed] = useState(false)
   const [pushError, setPushError] = useState(false)
+  const [lastPushedAt, setLastPushedAt] = useState(null)
   const btnRef = useRef(null)
 
   // Check login state on mount and on window focus/user change
@@ -109,6 +110,7 @@ export const DrivePushButton = ({ snippet, title }) => {
 
         if (res?.success) {
           setJustPushed(true)
+          setLastPushedAt(Date.now())
           if (btnRef.current) {
             btnRef.current.style.background = 'transparent'
             btnRef.current.style.borderColor = 'transparent'
@@ -185,7 +187,9 @@ export const DrivePushButton = ({ snippet, title }) => {
                 ? 'Successfully backed up'
                 : pushError
                   ? 'Failed to push — click to retry'
-                  : `Push "${noteName}" to Google Drive`
+                  : lastPushedAt
+                    ? `Backed up (${new Date(lastPushedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}) — click to re-push`
+                    : `Push "${noteName}" to Google Drive`
         }
         position="bottom"
       >
