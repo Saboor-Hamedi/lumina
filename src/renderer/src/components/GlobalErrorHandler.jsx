@@ -55,7 +55,48 @@ class GlobalErrorHandler extends React.Component {
     }))
   }
 
+  componentDidMount() {
+    if (this.props.isRoot) {
+      this.handleWindowError = (event) => {
+        if (this.state.hasError) return
+        const error = event.error || new Error(event.message || 'Script error')
+        this.setState({
+          hasError: true,
+          error,
+          errorInfo: { componentStack: error.stack || '' },
+          errorId: `error-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+        })
+        event.preventDefault?.()
+      }
+
+      this.handleUnhandledRejection = (event) => {
+        if (this.state.hasError) return
+        const reason = event.reason
+        const error =
+          reason instanceof Error
+            ? reason
+            : new Error(
+                typeof reason === 'string'
+                  ? reason
+                  : JSON.stringify(reason) || 'Unhandled Promise Rejection'
+              )
+        this.setState({
+          hasError: true,
+          error,
+          errorInfo: { componentStack: error.stack || '' },
+          errorId: `error-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+        })
+        event.preventDefault?.()
+      }
+
+      window.addEventListener('error', this.handleWindowError)
+      window.addEventListener('unhandledrejection', this.handleUnhandledRejection)
+    }
+  }
+
   componentWillUnmount() {
+    if (this.handleWindowError) window.removeEventListener('error', this.handleWindowError)
+    if (this.handleUnhandledRejection) window.removeEventListener('unhandledrejection', this.handleUnhandledRejection)
     if (this.resetTimeoutRef) clearTimeout(this.resetTimeoutRef)
     if (this.copyTimeoutRef) clearTimeout(this.copyTimeoutRef)
   }

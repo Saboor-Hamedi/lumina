@@ -225,21 +225,26 @@ Execution: First call \`createFolder\` for each directory in the plan, then call
     case IntentCategory.TARGETED_EDIT:
       return `\n**EXEMPLAR FOR TARGETED EDIT & CLEANUP**:
 User: "Go for option B" or "Option B" or "choose B" or "use option 2"
-Execution: The user has chosen an option for their note! DO NOT just talk or repeat Option B in chat. Immediately call \`updateFile\` with title="current", sectionHeader="Opening", and replace="<selected Option content>" to update the note in the editor!
+Execution: The user has chosen an option for their note! In <think>, acknowledge the choice, verify the target section, and immediately call \`updateFile\` with title="current", sectionHeader="Opening", and replace="<selected Option content>" to update the note in the editor!
 
 User: "update that paragraph again, with different wordings" or "update Lumina"
-Execution: The user wants to update the note! NEVER offer choices like Option A, Option B, Option C in chat. NEVER ask "Which one do you want?". ALWAYS choose the most compelling, polished rewrite and call \`updateFile\` with title="current", sectionHeader="Opening", and replace="<polished rewrite text>" directly on step 1 to update the file in the editor!
+Execution: The user wants to update the note! NEVER offer choices like Option A, Option B in chat.
+In <think>:
+- User asked to: update the opening paragraph with refined phrasing.
+- Self-debate: If I change the vocabulary, does it maintain the original thesis? Yes. What about the following sections? The next section covers technical specifics, so the opening must stay high-level and punchy without duplicating technical details.
+- Section-awareness: Confine changes strictly to sectionHeader="Opening" between the title and the first subheading.
+Action: Call \`updateFile\` with title="current", sectionHeader="Opening", and replace="<polished rewrite text>" directly on step 1 to update the file in the editor!
 
 User: "please update again" or "update again" or "rewrite again"
-Execution: The user wants another refined iteration or revision of the open note! DO NOT ask questions, request guidance, or talk about tone. Take initiative immediately to elevate the prose, rhythm, and clarity, and call \`updateFile\` with title="current", sectionHeader="Opening", and replace="<polished text>"!
+Execution: The user wants another refined iteration or revision of the open note! DO NOT ask questions, request guidance, or talk about tone. In <think>, debate the best stylistic angle and section boundary, then take initiative immediately to elevate the prose, rhythm, and clarity, and call \`updateFile\` with title="current", sectionHeader="Opening", and replace="<polished text>"!
 User: "link the files together"
 Execution: Identify the target notes in the workspace (e.g. NoteA, NoteB, NoteC). For EACH note, call \`updateFile\` with title="<Note Title>", position="top", and replace="> 🔗 **Related:** [[Linked Note A]] | [[Linked Note B]]" immediately on step 1 without talking out loud!
 User: "link both of my purchases"
 Execution: Look at the matching notes in the workspace (e.g. "Daily Expenses" and "Big Purchases"). Call \`updateFile\` with title="Daily Expenses", position="top", replace="> 🔗 **Related:** [[Big Purchases]]", and call \`updateFile\` with title="Big Purchases", position="top", replace="> 🔗 **Related:** [[Daily Expenses]]" immediately!
 User: "Update the Architecture section in @System Design"
-Execution: Call \`updateFile\` with title="System Design", sectionHeader="## Architecture", and replace="[Updated Architecture Section Content]".
+Execution: In <think>, reason about ## Architecture specifically without touching earlier or later sections. Call \`updateFile\` with title="System Design", sectionHeader="## Architecture", and replace="[Updated Architecture Section Content]".
 User: "Go fix @summary remove the duplicates"
-Execution: Look at the content of @summary provided above. Remove the duplicated blocks and call \`updateFile\` with title="summary" and full cleaned content (or search & replace to delete the duplicates) immediately!
+Execution: Look at the content of @summary provided above. In <think>, isolate the exact duplicated blocks, verify the unique sections to preserve, and call \`updateFile\` with title="summary" and full cleaned content (or search & replace to delete the duplicates) immediately!
 User: "remove them" (referring to repeated sections in open note)
 Execution: Call \`updateFile\` with title="current" and the cleaned note content without the repeated sections immediately!
 User: "Change port 3000 to 8080 in @Config"

@@ -301,3 +301,7 @@
     flex: 1;
   }
 }
+
+vite-error-overlay {
+  display: none !important;
+}

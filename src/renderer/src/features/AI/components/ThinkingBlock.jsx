@@ -22,12 +22,20 @@ export const ThinkingBlock = React.memo(({ thinkContent, isStreaming = false }) 
     }
   }, [isStreaming])
 
+  const bodyRef = useRef(null)
+
   useEffect(() => {
     if (!prevStreamingRef.current && isStreaming) {
       setIsOpen(true)
     }
     prevStreamingRef.current = isStreaming
   }, [isStreaming])
+
+  useEffect(() => {
+    if (isStreaming && isOpen && bodyRef.current) {
+      bodyRef.current.scrollTop = bodyRef.current.scrollHeight
+    }
+  }, [thinkContent, isStreaming, isOpen])
 
   if (!thinkContent?.trim()) return null
 
@@ -60,7 +68,7 @@ export const ThinkingBlock = React.memo(({ thinkContent, isStreaming = false }) 
       </button>
 
       {isOpen && (
-        <div className="chat-thinking-body seamless-scrollbar">
+        <div ref={bodyRef} className="chat-thinking-body seamless-scrollbar">
           <div className="chat-thinking-content">
             {thinkContent.trim()}
           </div>

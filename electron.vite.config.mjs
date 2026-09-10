@@ -37,6 +37,11 @@ export default defineConfig(({ mode }) => ({
     css: {
       postcss: './postcss.config.js'
     },
+    server: {
+      hmr: {
+        overlay: false
+      }
+    },
     optimizeDeps: {
       include: ['react-window']
     }

@@ -46,7 +46,7 @@ if (import.meta.env.PROD) {
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <GlobalErrorHandler>
+    <GlobalErrorHandler isRoot={true}>
       <App />
     </GlobalErrorHandler>
   </StrictMode>

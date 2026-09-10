@@ -934,7 +934,7 @@
 
 .chat-thinking-container {
   margin: 4px 0 8px;
-  border-radius: 4px;
+  border-radius: 6px;
   background: transparent;
   border: 1px solid transparent;
   overflow: hidden;
@@ -942,7 +942,7 @@
 }
 
 .chat-thinking-container.open {
-  background: var(--bg-surface, rgba(255, 255, 255, 0.015));
+  background: var(--bg-surface, rgba(255, 255, 255, 0.02));
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.05));
 }
 
@@ -951,13 +951,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 3px 6px;
+  padding: 4px 8px;
   background: transparent;
   border: none;
   cursor: pointer;
   color: var(--text-muted);
   transition: background 0.15s ease, color 0.15s ease;
-  border-radius: 4px;
+  border-radius: 5px;
 }
 
 .chat-thinking-header:hover {
@@ -1017,22 +1017,25 @@
 }
 
 .chat-thinking-body {
-  padding: 6px 10px 8px;
-  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.05));
-  max-height: 240px;
+  padding: 8px 12px 10px;
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.04));
+  max-height: 280px;
   overflow-y: auto;
   background: transparent;
+  scroll-behavior: smooth;
 }
 
 .chat-thinking-content {
-  font-size: 11px;
-  line-height: 1.6;
-  color: var(--text-muted, rgba(255, 255, 255, 0.6));
-  font-style: italic;
+  font-size: 11.5px;
+  line-height: 1.65;
+  color: var(--text-faint, rgba(255, 255, 255, 0.45));
+  font-style: normal;
   white-space: pre-wrap;
   word-break: break-word;
-  border-left: 2px solid rgba(var(--text-accent-rgb, 64, 186, 250), 0.4);
-  padding-left: 8px;
+  border-left: 2px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  padding-left: 10px;
+  margin: 2px 0;
+  letter-spacing: 0.01em;
 }
 
 /* Callout Cards */

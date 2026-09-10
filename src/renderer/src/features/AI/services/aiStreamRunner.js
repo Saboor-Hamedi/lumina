@@ -501,12 +501,12 @@ export const runDeepSeekStream = async ({
       if (delta) {
         if (hasToolCalled) {
           afterToolText += delta
+          onThinkingStatusUpdate('Synthesizing response...')
         } else {
           beforeToolText += delta
         }
       }
       updateDisplay()
-      onThinkingStatusUpdate('')
     } else if (chunk.type === 'tool-error') {
       const errMsg = chunk.error?.message || chunk.error || 'Unknown tool error'
       console.warn(`[StreamRunner] Tool ${chunk.toolName} errored:`, errMsg)
