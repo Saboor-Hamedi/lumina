@@ -21,21 +21,21 @@ export const SLASH_COMMANDS = [
   {
     id: 'research',
     label: 'Research',
-    desc: 'Deep research, analysis, and information gathering.',
+    desc: 'Deep research, thesis guidance, academic writing, and analysis.',
     icon: <Search size={14} />,
     action: (setMode) => setMode('Research')
   },
   {
     id: 'creative',
     label: 'Creative',
-    desc: 'Storytelling and metaphors.',
+    desc: 'Storytelling, expressive writing, and metaphors.',
     icon: <Palette size={14} />,
     action: (setMode) => setMode('Creative')
   },
   {
     id: 'code',
     label: 'Code',
-    desc: 'Specialized for programming and file execution.',
+    desc: 'Specialized for programming, scripts, and software engineering.',
     icon: <Code size={14} />,
     action: (setMode) => setMode('Code')
   }

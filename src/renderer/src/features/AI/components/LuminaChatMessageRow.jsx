@@ -1,9 +1,9 @@
 import React from 'react'
 import { FileText, Code } from 'lucide-react'
-import { MessageContent } from './MessageContent'
-import { ChatActions } from './ChatActions'
-import { ThinkingIndicator } from './ThinkingIndicator'
-import { openNoteInEditor } from './ChatLink'
+import { MessageContent } from './LuminaMessageContent'
+import { ChatActions } from './LuminaChatActions'
+import { ThinkingIndicator } from './LuminaThinkingIndicator'
+import { openNoteInEditor } from './LuminaChatLink'
 import { useAIStore } from '../tools/lumina'
 
 const getMentionIcon = (target) => {
@@ -160,4 +160,5 @@ export const ChatMessageRow = React.memo(
   }
 )
 
+export const LuminaChatMessageRow = ChatMessageRow
 export default ChatMessageRow

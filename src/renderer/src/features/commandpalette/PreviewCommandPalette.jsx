@@ -17,7 +17,7 @@ import {
   copyCodeAsImage
 } from '../codeBlock/codeBlockHeader'
 import { Sparkles } from 'lucide-react'
-import { ThinkingBlock } from '../AI/components/ThinkingBlock'
+import { ThinkingBlock } from '../AI/components/LuminaThinkingBlock'
 
 import '@atomic-editor/editor/styles.css'
 import '../Editor/Editor.css'

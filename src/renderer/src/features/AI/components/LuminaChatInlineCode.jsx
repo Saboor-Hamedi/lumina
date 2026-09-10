@@ -1,5 +1,5 @@
 import React from 'react'
-import { ChatLink } from './ChatLink'
+import { ChatLink } from './LuminaChatLink'
 
 export const ChatInlineCode = React.memo(({ className, children, ...props }) => {
   const textContent = String(children || '')

@@ -14,11 +14,12 @@ export const MemoryBadge = React.memo(({ content = '' }) => {
 
   return (
     <div className="lumina-memory-badge" title={tooltip}>
-      <Brain size={12} className="lumina-memory-badge-icon" />
+      <Brain size={11} className="lumina-memory-badge-icon" />
       <span className="lumina-memory-badge-text">{text}</span>
-      <Check size={11} className="lumina-memory-badge-check" />
+      <Check size={10} className="lumina-memory-badge-check" />
     </div>
   )
 })
 
+export const LuminaMemoryBadge = MemoryBadge
 export default MemoryBadge

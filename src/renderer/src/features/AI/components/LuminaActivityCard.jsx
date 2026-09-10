@@ -12,8 +12,8 @@ import {
   ChevronRight,
   Eye
 } from 'lucide-react'
-import { openNoteInEditor } from './ChatLink'
-import { LuminaTimer } from './luminaTimer.jsx'
+import { openNoteInEditor } from './LuminaChatLink'
+import { LuminaTimer } from './LuminaTimer.jsx'
 import { parseActivityItems, buildActivityTree } from '../services/activityParser.js'
 
 export const ActivityCard = React.memo(({ rawContent, isStreaming = false }) => {
@@ -259,4 +259,5 @@ export const ActivityCard = React.memo(({ rawContent, isStreaming = false }) => 
   )
 })
 
+export const LuminaActivityCard = ActivityCard
 export default ActivityCard

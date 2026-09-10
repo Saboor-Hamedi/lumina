@@ -1,7 +1,7 @@
 import React from 'react'
 import { Settings as SettingsIcon } from 'lucide-react'
-import { ThinkingIndicator } from './ThinkingIndicator'
-import { MessageContent } from './MessageContent'
+import { ThinkingIndicator } from './LuminaThinkingIndicator'
+import { MessageContent } from './LuminaMessageContent'
 
 /**
  * Renders the bottom status area of the chat list: thinking indicator or API error alert.

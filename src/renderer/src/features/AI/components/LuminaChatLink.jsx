@@ -81,4 +81,5 @@ export const ChatLink = ({ href, children, ...props }) => {
   )
 }
 
+export const LuminaChatLink = ChatLink
 export default ChatLink

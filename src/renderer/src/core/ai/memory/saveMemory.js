@@ -42,7 +42,7 @@ export const saveMemoryTool = aiSdk.tool({
     return {
       success: true,
       summary: res.summary,
-      instruction_to_ai: 'Memory saved. Acknowledge naturally or continue assisting the user.'
+      instruction_to_ai: 'Memory saved. Respond with a single brief, warm sentence (e.g. "Got it! I\'ve saved that to memory."). NEVER output a table, bulleted dump, or list of memory details unless the user explicitly asked to see their memory.'
     }
   }
 })

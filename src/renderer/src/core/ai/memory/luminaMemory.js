@@ -214,9 +214,15 @@ class LuminaMemory {
 - When the user asks to forget or remove something, call 'forgetMemory'.`
     }
 
+    const nameInstruction = user.name
+      ? `- Address the user naturally by their name ("${user.name}") occasionally during conversation (e.g., when greeting, opening a thoughtful response, or wrapping up a recommendation). Do not repeat their name in every single sentence, but weave it naturally into conversation as a warm, personalized touch.`
+      : `- If the user introduces themselves or gives their name, save it to memory immediately.`
+
     return `**PERSISTENT MEMORY (memory.json)**:
 ${lines.join('\n')}
-- Instruction: Use these persistent facts and preferences naturally. When the user shares new details, update memory with 'saveMemory' or 'updateMemory'. When asked to forget something, call 'forgetMemory'.`
+- Instruction: Use these persistent facts and preferences naturally.
+${nameInstruction}
+- When saving or updating memory, give ONLY a short 1-sentence confirmation (or continue assisting). NEVER output a table or list of memory items unless the user explicitly asks "what do you remember?" or "what is in your memory?".`
   }
 }
 

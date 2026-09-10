@@ -288,7 +288,7 @@ Execution: Call \`renameFile\` for each file in folder \`1-src\` with simplified
 User: "okay, remember my name , its saboor"
 Execution:
 1. Call \`saveMemory\` with category="user", key="name", fact="Saboor".
-2. Response in chat: "Got it, Saboor! 🎉 I've saved your name to memory — I'll remember it from now on."
+2. Response in chat: "Got it, Saboor! 🎉 I've saved your name to memory." (Never output tables or lists of memory details when saving!)
 
 User: "remember that I prefer short answers"
 Execution:
@@ -303,7 +303,10 @@ Execution:
 User: "forget my name"
 Execution:
 1. Call \`forgetMemory\` with target="name", key="name".
-2. Response in chat: "I've removed your name from memory."`
+2. Response in chat: "I've removed your name from memory."
+
+User: "what do you know about me?"
+Execution: DO NOT call saveMemory. Answer warmly based on the persistent memory block provided in context.`
 
     case IntentCategory.CONVERSATIONAL_EXPLAIN:
     default:

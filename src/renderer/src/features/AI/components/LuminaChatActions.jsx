@@ -48,4 +48,5 @@ export const ChatActions = ({ msg, index, onCopy, onRate }) => {
   )
 }
 
+export const LuminaChatActions = ChatActions
 export default ChatActions

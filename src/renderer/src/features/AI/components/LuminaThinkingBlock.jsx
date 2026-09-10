@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Brain, ChevronDown } from 'lucide-react'
-import { formatLuminaTime } from './luminaTimer.jsx'
+import { formatLuminaTime } from './LuminaTimer.jsx'
 
 export const ThinkingBlock = React.memo(({ thinkContent, isStreaming = false }) => {
   const [isOpen, setIsOpen] = useState(isStreaming)
@@ -78,4 +78,5 @@ export const ThinkingBlock = React.memo(({ thinkContent, isStreaming = false }) 
   )
 })
 
+export const LuminaThinkingBlock = ThinkingBlock
 export default ThinkingBlock

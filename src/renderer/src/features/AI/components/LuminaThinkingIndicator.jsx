@@ -18,4 +18,5 @@ export const ThinkingIndicator = ({ isGenerating = false, label = null }) => {
   )
 }
 
+export const LuminaThinkingIndicator = ThinkingIndicator
 export default ThinkingIndicator

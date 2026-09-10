@@ -1,13 +1,13 @@
 import React, { useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { ChatPreBlock } from './ChatPreBlock'
-import { ChatInlineCode } from './ChatInlineCode'
-import { ChatBlockquote } from './ChatBlockquote'
-import { ChatLink } from './ChatLink'
-import { ThinkingBlock } from './ThinkingBlock'
-import { ActivityCard } from './ActivityCard'
-import { MemoryBadge } from './MemoryBadge'
+import { ChatPreBlock } from './LuminaChatPreBlock'
+import { ChatInlineCode } from './LuminaChatInlineCode'
+import { ChatBlockquote } from './LuminaChatBlockquote'
+import { ChatLink } from './LuminaChatLink'
+import { ThinkingBlock } from './LuminaThinkingBlock'
+import { ActivityCard } from './LuminaActivityCard'
+import { MemoryBadge } from './LuminaMemoryBadge'
 import { processMarkdownContent, parseMessageSections, parseMessageBlocks } from '../services/chatMarkdownParser'
 
 export { processMarkdownContent, parseMessageSections, parseMessageBlocks }
@@ -117,4 +117,5 @@ export const MessageContent = React.memo(
   }
 )
 
+export const LuminaMessageContent = MessageContent
 export default MessageContent

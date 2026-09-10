@@ -1,7 +1,7 @@
 export const luminaCodeMode = {
   id: 'Code',
   name: 'Code',
-  description: 'Senior Software Engineer with full file, folder, and scaffolding execution.',
+  description: 'Senior Software Engineer specialized in code implementation, scripts, and software architecture.',
   temperature: 0.2,
   max_tokens: 4000,
   enableTools: true,

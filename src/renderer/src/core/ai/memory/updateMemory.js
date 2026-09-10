@@ -35,7 +35,7 @@ export const updateMemoryTool = aiSdk.tool({
     return {
       success: true,
       summary: res.summary,
-      instruction_to_ai: 'Memory updated successfully. Acknowledge and proceed.'
+      instruction_to_ai: 'Memory updated. Respond with a single brief, warm sentence. NEVER output a table, dump, or list of memory details unless the user explicitly asked to see their memory.'
     }
   }
 })

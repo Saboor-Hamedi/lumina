@@ -26,7 +26,7 @@ export const forgetMemoryTool = aiSdk.tool({
     return {
       success: true,
       summary: res.summary,
-      instruction_to_ai: 'Memory removed. Confirm warmly to the user.'
+      instruction_to_ai: 'Memory removed. Confirm with a single brief, warm sentence. NEVER output a table or list of memory details.'
     }
   }
 })
