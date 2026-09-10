@@ -2,7 +2,7 @@ import * as aiSdk from 'ai'
 
 export const createFileTool = aiSdk.tool({
   description:
-    'Create a new note or document in the workspace. If the destination folder does not exist, it will be automatically created. You can call createFile multiple times in a single turn to create all requested notes, expense logs, plans, and summaries at once. Note: created files are saved silently in the workspace in the background and are NOT opened as tabs.',
+    'Create a new note or document in the workspace. If the destination folder does not exist, it will be automatically created. When creating multiple files, output a short narration line before creating each file, invoke createFile, and repeat. Note: created files are saved silently in the workspace in the background and are NOT opened as tabs.',
   inputSchema: aiSdk.jsonSchema({
     type: 'object',
     properties: {
@@ -94,7 +94,7 @@ export const createFileTool = aiSdk.tool({
         topics: headers.slice(0, 8),
         wikilinks: wikilinks.slice(0, 10),
         summary: `📝 Created [[${targetSnippet.title}]]${folderContext} (+${wordCount})`,
-        instruction_to_ai: `File "${targetSnippet.title}" was created${folderContext} in the workspace in the background. It is NOT opened as a tab. Do not call openFile. If additional files, plans, expenses, or summaries were requested, continue calling createFile for each remaining file now. Once all files are created, provide a rich, structured feedback walkthrough in chat.`
+        instruction_to_ai: `File "${targetSnippet.title}" was created${folderContext} in the workspace in the background. It is NOT opened as a tab. Do not call openFile. If more files are needed, output a brief narration line for the next file and invoke createFile for it. Once all requested items are created, provide a final short walkthrough in chat.`
       }
     } catch (err) {
       return { success: false, error: err.message || 'Failed to create file' }

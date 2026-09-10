@@ -137,13 +137,13 @@ export const parseMessageBlocks = (content) => {
     }
   }
 
-  // Consolidate all think blocks into a single top think block
   const thinkBlocks = blocks.filter((b) => b.type === 'think')
-  const nonThinkBlocks = blocks.filter((b) => b.type !== 'think')
-
   if (thinkBlocks.length > 0) {
     const mergedThink = thinkBlocks.map((b) => b.content).filter(Boolean).join('\n\n')
-    return [{ type: 'think', content: mergedThink }, ...nonThinkBlocks]
+    const firstThinkIdx = blocks.findIndex((b) => b.type === 'think')
+    const beforeFirstThink = blocks.slice(0, firstThinkIdx).filter((b) => b.type !== 'think')
+    const afterFirstThink = blocks.slice(firstThinkIdx + 1).filter((b) => b.type !== 'think')
+    return [...beforeFirstThink, { type: 'think', content: mergedThink }, ...afterFirstThink]
   }
 
   return blocks

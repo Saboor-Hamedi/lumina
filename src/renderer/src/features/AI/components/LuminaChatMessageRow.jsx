@@ -71,8 +71,9 @@ export const ChatMessageRow = React.memo(
             className={`chat-bubble ${msg.role}`}
             style={{
               padding: msg.role === 'user' ? '4px 0' : undefined,
-              width: 'auto',
-              maxWidth: '100%'
+              width: msg.role === 'user' ? 'auto' : '100%',
+              maxWidth: '100%',
+              boxSizing: 'border-box'
             }}
           >
             {msg.role === 'user' ? (

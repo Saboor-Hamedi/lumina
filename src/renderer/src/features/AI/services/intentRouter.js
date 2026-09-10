@@ -195,7 +195,7 @@ Execution:
 3. Call \`createFile\` with folder="Trip", title="today", and markdown content detailing today's 1,000,000 IDR expenses itemized in a calculation table.
 4. Call \`createFile\` with folder="Trip", title="tomorrow", and markdown content detailing tomorrow's planned 2,000,000 IDR expenses.
 5. Call \`createFile\` with folder="", title="Trip Summary", containing a mermaid chart comparing expenses (\`\`\`mermaid\\npie title Expenses\\n  \"Today\" : 1000000\\n  \"Tomorrow\" : 2000000\\n\`\`\`) and reciprocal [[Wikilinks]] to [[Afghanistan Trip Plan]], [[today]], and [[tomorrow]].
-6. Never stop after creating only the folder! Execute all tool calls sequentially until all files are created.
+6. For each file in the plan, output a brief narration sentence, invoke createFile for that item, and repeat until all requested files are created. Never batch all tool calls silently without narration.
 
 User: "Create my business plan structure"
 Execution: Call \`createFile\` with folder="" (root level) for notes like \`Business Strategy\`, \`Product Roadmap\`, \`Market Analysis\`, and \`Financial Plan\` with rich tables, templates, and wikilinks. (Folders are only created if explicitly requested).
@@ -228,7 +228,7 @@ Execution: Call \`moveFile\` with title="Physics" and folder="Mathematics/Advanc
 User: "Organize my notes into Physics and Literature folders"
 Execution: First call \`createFolder\` for each folder needed, then call \`moveFile\` for the corresponding notes into their destination folders.
 User: "Draft this study plan into my vault"
-Execution: First call \`createFolder\` for each directory in the plan, then call \`createFile\` for each note inside its respective folder with full structured markdown content.`
+Execution: First call \`createFolder\` for each directory in the plan, then for EACH note, output a brief narration sentence and call \`createFile\` for that note inside its respective folder with full structured markdown content adhering strictly to any requested word counts.`
 
     case IntentCategory.TARGETED_EDIT:
       return `\n**EXEMPLAR FOR TARGETED EDIT & CLEANUP**:

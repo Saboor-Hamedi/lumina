@@ -3,7 +3,7 @@ import { Brain, ChevronDown } from 'lucide-react'
 import { formatLuminaTime } from './LuminaTimer.jsx'
 
 export const ThinkingBlock = React.memo(({ thinkContent, isStreaming = false }) => {
-  const [isOpen, setIsOpen] = useState(isStreaming)
+  const [isOpen, setIsOpen] = useState(false)
   const prevStreamingRef = useRef(isStreaming)
   const [elapsed, setElapsed] = useState(0)
   const startTimeRef = useRef(Date.now())
@@ -25,9 +25,6 @@ export const ThinkingBlock = React.memo(({ thinkContent, isStreaming = false }) 
   const bodyRef = useRef(null)
 
   useEffect(() => {
-    if (!prevStreamingRef.current && isStreaming) {
-      setIsOpen(true)
-    }
     prevStreamingRef.current = isStreaming
   }, [isStreaming])
 
@@ -44,7 +41,10 @@ export const ThinkingBlock = React.memo(({ thinkContent, isStreaming = false }) 
     : `Thought for ${formatLuminaTime(Math.max(1, elapsed))}`
 
   return (
-    <div className={`chat-thinking-container ${isOpen ? 'open' : 'collapsed'}`}>
+    <div
+      className={`chat-thinking-container ${isOpen ? 'open' : 'collapsed'}`}
+      style={{ width: '100%', boxSizing: 'border-box' }}
+    >
       <button
         type="button"
         className="chat-thinking-header"

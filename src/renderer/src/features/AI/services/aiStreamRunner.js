@@ -90,6 +90,7 @@ export const getToolInputStartStatus = (toolName) => {
 }
 
 export const buildRealtimeDisplay = ({
+  timeline = null,
   initialReasoning = '',
   postToolReasoning = '',
   reasoningText = '',
@@ -110,6 +111,36 @@ export const buildRealtimeDisplay = ({
   const normalizeCodeBlocks = (text) => {
     if (!text) return text
     return text.replace(/```(TEXT|MARKDOWN|PLAINTEXT|TREE|PLAIN|MD)\b/gi, '```')
+  }
+
+  if (Array.isArray(timeline) && timeline.length > 0) {
+    const blocks = []
+    for (const seg of timeline) {
+      if (seg.type === 'memory') {
+        const memText = (seg.content || '').trim()
+        if (memText) {
+          blocks.push(`<lumina-memory>\n${memText}\n</lumina-memory>`)
+        }
+      } else if (seg.type === 'think') {
+        const cleanThink = stripDSML(seg.content).trim()
+        if (cleanThink) {
+          blocks.push(`<think>\n${cleanThink}\n</think>`)
+        }
+      } else if (seg.type === 'activity') {
+        const lines = []
+        if (seg.summary?.trim()) lines.push(seg.summary.trim())
+        if (seg.activeStatus?.trim()) lines.push(seg.activeStatus.trim())
+        if (lines.length > 0) {
+          blocks.push(`<lumina-activity>\n${lines.join('\n')}\n</lumina-activity>`)
+        }
+      } else if (seg.type === 'text') {
+        const clean = stripDSML(seg.content).trim()
+        if (clean) {
+          blocks.push(normalizeCodeBlocks(clean))
+        }
+      }
+    }
+    return blocks.join('\n\n')
   }
 
   const blocks = []
@@ -345,20 +376,35 @@ export const runDeepSeekStream = async ({
       : undefined
   })
 
-  const executedActions = []
-  const memoryActions = []
+  const timeline = []
   let activeToolStatus = ''
-  const lastUserMsg =
-    [...finalMessages].reverse().find((m) => m.role === 'user')?.content || ''
-  let initialReasoning = generateInitialThought(lastUserMsg)
-  let postToolReasoning = ''
-  let beforeToolText = ''
-  let afterToolText = ''
-  let hasToolCalled = false
+  let streamingToolName = ''
+  let streamingArgsRaw = ''
   let recordedTarget = ''
   let isParsingModelThink = false
-  let hasReceivedModelReasoning = false
-  let hasReceivedPostToolReasoning = false
+
+  const getOrCreateThinkSegment = () => {
+    let thinkSeg = timeline.find((s) => s.type === 'think')
+    if (!thinkSeg) {
+      thinkSeg = { type: 'think', content: '' }
+      if (timeline.length > 0 && timeline[0].type === 'text') {
+        timeline.splice(1, 0, thinkSeg)
+      } else {
+        timeline.unshift(thinkSeg)
+      }
+    }
+    return thinkSeg
+  }
+
+  const appendTextDelta = (text) => {
+    if (!text) return
+    const lastSeg = timeline[timeline.length - 1]
+    if (lastSeg && lastSeg.type === 'text') {
+      lastSeg.content += text
+    } else {
+      timeline.push({ type: 'text', content: text })
+    }
+  }
 
   let rafId = null
   let pendingDisplayUpdate = false
@@ -369,15 +415,7 @@ export const runDeepSeekStream = async ({
       rafId = null
     }
     pendingDisplayUpdate = false
-    const content = buildRealtimeDisplay({
-      initialReasoning,
-      postToolReasoning,
-      executedActions,
-      memoryActions,
-      activeToolStatus,
-      beforeToolText,
-      afterToolText
-    })
+    const content = buildRealtimeDisplay({ timeline })
     onContentUpdate(content)
   }
 
@@ -394,25 +432,34 @@ export const runDeepSeekStream = async ({
     }
   }
 
-  updateDisplay(true)
-  onThinkingStatusUpdate('Reasoning...')
-
-  let streamingToolName = ''
-  let streamingArgsRaw = ''
+  onThinkingStatusUpdate('Thinking...')
 
   for await (const chunk of result.fullStream) {
     if (controller.signal.aborted) break
     if (!chunk || typeof chunk.type !== 'string') continue
 
     if (chunk.type === 'tool-input-start' || chunk.type === 'tool-call-streaming-start') {
-      hasToolCalled = true
+      isParsingModelThink = false
       streamingToolName = chunk.toolName || ''
       streamingArgsRaw = ''
       recordedTarget = ''
       activeToolStatus = getToolStatusDescription(streamingToolName, { title: 'note' })
-      const startThought = getToolStartThought(streamingToolName)
-      if (!initialReasoning.includes(startThought)) {
-        initialReasoning += (initialReasoning ? '\n\n' : '') + startThought
+      const isMemoryTool = ['saveMemory', 'updateMemory', 'forgetMemory', 'forgeMemory'].includes(streamingToolName)
+      if (isMemoryTool) {
+        timeline.push({
+          type: 'memory',
+          toolName: streamingToolName,
+          content: activeToolStatus,
+          isExecuting: true
+        })
+      } else {
+        timeline.push({
+          type: 'activity',
+          toolName: streamingToolName,
+          summary: '',
+          activeStatus: activeToolStatus,
+          isExecuting: true
+        })
       }
       updateDisplay(true)
       const cleanToolStatus = activeToolStatus.replace(/[*_`]/g, '').trim()
@@ -437,12 +484,9 @@ export const runDeepSeekStream = async ({
             folder: extractedFolder,
             path: extractedPath
           })
-          const thoughtLine =
-            streamingToolName === 'createFile'
-              ? `Drafting '${currentTarget}'${extractedFolder ? ' in ' + extractedFolder : ''}... Organizing structured sections and wikilinks.`
-              : `Targeting '${currentTarget}'...`
-          if (!initialReasoning.includes(`'${currentTarget}'`)) {
-            initialReasoning += '\n' + thoughtLine
+          const lastActivitySeg = timeline.slice().reverse().find((s) => s.type === 'activity' && s.isExecuting)
+          if (lastActivitySeg) {
+            lastActivitySeg.activeStatus = activeToolStatus
           }
           updateDisplay(true)
           const cleanToolStatus = activeToolStatus.replace(/[*_`]/g, '').trim()
@@ -450,69 +494,75 @@ export const runDeepSeekStream = async ({
         }
       }
     } else if (chunk.type === 'tool-call') {
-      hasToolCalled = true
+      isParsingModelThink = false
       const args = chunk.input || chunk.args || {}
       const target = args.title || args.path || args.newTitle || args.targetFolder || recordedTarget
       if (target) recordedTarget = target
       activeToolStatus = getToolStatusDescription(chunk.toolName, args)
+      const isMemoryTool = ['saveMemory', 'updateMemory', 'forgetMemory', 'forgeMemory'].includes(chunk.toolName)
+
+      let targetSeg = timeline.slice().reverse().find(
+        (s) => s.isExecuting && (isMemoryTool ? s.type === 'memory' : s.type === 'activity')
+      )
+      if (!targetSeg) {
+        targetSeg = isMemoryTool
+          ? { type: 'memory', toolName: chunk.toolName, content: activeToolStatus, isExecuting: true }
+          : { type: 'activity', toolName: chunk.toolName, summary: '', activeStatus: activeToolStatus, isExecuting: true }
+        timeline.push(targetSeg)
+      } else if (targetSeg.type === 'activity') {
+        targetSeg.activeStatus = activeToolStatus
+      }
       updateDisplay(true)
       const cleanToolStatus = activeToolStatus.replace(/[*_`]/g, '').trim()
       onThinkingStatusUpdate(cleanToolStatus)
     } else if (chunk.type === 'tool-result') {
       const res = chunk.output || chunk.result
       const isMemoryTool = ['saveMemory', 'updateMemory', 'forgetMemory', 'forgeMemory'].includes(chunk.toolName)
-      if (res && res.success === false) {
-        console.warn(`[StreamRunner] Tool ${chunk.toolName} failed:`, res.error)
-        if (isMemoryTool) {
-          memoryActions.push(`⚠️ ${res.error || 'Failed to save memory'}`)
-        } else {
-          executedActions.push(`⚠️ ${chunk.toolName} failed: ${res.error}`)
-        }
-      } else if (res && res.summary) {
-        const entry = res.summary
-        if (isMemoryTool) {
-          if (!memoryActions.includes(entry)) {
-            memoryActions.push(entry)
-          }
-        } else {
-          if (!executedActions.includes(entry)) {
-            executedActions.push(entry)
-          }
-        }
+
+      let targetSeg = timeline.slice().reverse().find(
+        (s) => s.isExecuting && (isMemoryTool ? s.type === 'memory' : s.type === 'activity')
+      )
+      if (!targetSeg) {
+        targetSeg = isMemoryTool
+          ? { type: 'memory', toolName: chunk.toolName, content: '', isExecuting: false }
+          : { type: 'activity', toolName: chunk.toolName, summary: '', activeStatus: '', isExecuting: false }
+        timeline.push(targetSeg)
       }
+
+      if (isMemoryTool) {
+        if (res && res.success === false) {
+          targetSeg.content = `⚠️ ${res.error || 'Failed to save memory'}`
+        } else if (res?.summary) {
+          targetSeg.content = res.summary
+        }
+        targetSeg.isExecuting = false
+      } else {
+        if (res && res.success === false) {
+          console.warn(`[StreamRunner] Tool ${chunk.toolName} failed:`, res.error)
+          targetSeg.summary = `⚠️ ${chunk.toolName} failed: ${res.error}`
+        } else if (res?.summary) {
+          targetSeg.summary = res.summary
+        }
+        targetSeg.activeStatus = ''
+        targetSeg.isExecuting = false
+      }
+
       activeToolStatus = ''
       streamingToolName = ''
       streamingArgsRaw = ''
 
-      const resTarget = res?.title || recordedTarget
-      const resultThought = getToolResultThought(chunk.toolName, res, resTarget)
-      if (!postToolReasoning.includes(resultThought.split('\n')[0])) {
-        postToolReasoning += (postToolReasoning ? '\n\n' : '') + resultThought
-      }
       updateDisplay(true)
       onThinkingStatusUpdate('Reflecting on workspace changes...')
     } else if (chunk.type === 'start-step') {
-      if (hasToolCalled) {
+      const hasExecutedTools = timeline.some((s) => s.type === 'activity')
+      if (hasExecutedTools) {
         onThinkingStatusUpdate('Synthesizing response...')
       }
     } else if (chunk.type === 'reasoning' || chunk.type === 'reasoning-delta') {
       const rDelta = chunk.textDelta || chunk.text || chunk.delta || ''
       if (rDelta) {
-        if (hasToolCalled) {
-          if (!hasReceivedPostToolReasoning) {
-            postToolReasoning += (postToolReasoning ? '\n\n' : '') + rDelta
-            hasReceivedPostToolReasoning = true
-          } else {
-            postToolReasoning += rDelta
-          }
-        } else {
-          if (!hasReceivedModelReasoning) {
-            initialReasoning += (initialReasoning ? '\n\n' : '') + rDelta
-            hasReceivedModelReasoning = true
-          } else {
-            initialReasoning += rDelta
-          }
-        }
+        const thinkSeg = getOrCreateThinkSegment()
+        thinkSeg.content += rDelta
         updateDisplay()
         onThinkingStatusUpdate('Reasoning...')
       }
@@ -521,48 +571,32 @@ export const runDeepSeekStream = async ({
       if (isParsingModelThink) {
         if (delta.includes('</think>')) {
           const [thinkPart, afterPart] = delta.split('</think>')
-          if (hasToolCalled) {
-            postToolReasoning += thinkPart
-          } else {
-            initialReasoning += thinkPart
-          }
+          const thinkSeg = getOrCreateThinkSegment()
+          thinkSeg.content += thinkPart
           isParsingModelThink = false
           delta = afterPart || ''
         } else {
-          if (hasToolCalled) {
-            postToolReasoning += delta
-          } else {
-            initialReasoning += delta
-          }
+          const thinkSeg = getOrCreateThinkSegment()
+          thinkSeg.content += delta
           delta = ''
         }
       } else if (delta.includes('<think>')) {
         const [beforePart, thinkPart] = delta.split('<think>')
-        if (hasToolCalled) {
-          afterToolText += beforePart
-        } else {
-          beforeToolText += beforePart
+        if (beforePart) {
+          appendTextDelta(beforePart)
         }
+        const thinkSeg = getOrCreateThinkSegment()
         if (thinkPart.includes('</think>')) {
           const [innerThink, rest] = thinkPart.split('</think>')
-          if (hasToolCalled) {
-            postToolReasoning += (postToolReasoning ? '\n\n' : '') + innerThink
-          } else {
-            initialReasoning += (initialReasoning ? '\n\n' : '') + innerThink
-          }
+          thinkSeg.content += (thinkSeg.content ? '\n\n' : '') + innerThink
           delta = rest || ''
         } else {
-          if (hasToolCalled) {
-            postToolReasoning += (postToolReasoning ? '\n\n' : '') + thinkPart
-          } else {
-            initialReasoning += (initialReasoning ? '\n\n' : '') + thinkPart
-          }
+          thinkSeg.content += (thinkSeg.content ? '\n\n' : '') + thinkPart
           isParsingModelThink = true
           delta = ''
         }
       }
 
-      // Strip any raw DSML tokens or unclosed tags from delta so they never appear in chat
       if (delta) {
         delta = delta
           .replace(/<[^>]*[｜|][^>]*>/g, '')
@@ -572,18 +606,26 @@ export const runDeepSeekStream = async ({
       }
 
       if (delta) {
-        if (hasToolCalled) {
-          afterToolText += delta
+        appendTextDelta(delta)
+        const hasExecutedTools = timeline.some((s) => s.type === 'activity')
+        if (hasExecutedTools) {
           onThinkingStatusUpdate('Synthesizing response...')
         } else {
-          beforeToolText += delta
+          onThinkingStatusUpdate('')
         }
       }
       updateDisplay()
     } else if (chunk.type === 'tool-error') {
       const errMsg = chunk.error?.message || chunk.error || 'Unknown tool error'
       console.warn(`[StreamRunner] Tool ${chunk.toolName} errored:`, errMsg)
-      executedActions.push(`⚠️ Tool error: ${errMsg}`)
+      const lastTool = timeline.slice().reverse().find((s) => s.type === 'activity' && s.isExecuting)
+      if (lastTool) {
+        lastTool.summary = `⚠️ Tool error: ${errMsg}`
+        lastTool.activeStatus = ''
+        lastTool.isExecuting = false
+      } else {
+        timeline.push({ type: 'activity', summary: `⚠️ Tool error: ${errMsg}`, activeStatus: '', isExecuting: false })
+      }
       updateDisplay(true)
     } else if (chunk.type === 'error') {
       console.error('Stream error:', chunk.error)
@@ -602,21 +644,24 @@ export const runDeepSeekStream = async ({
       toolResults.forEach((t) => {
         const res = t.output || t.result
         const sum = res?.summary
-        if (sum && !executedActions.includes(sum)) {
-          executedActions.push(sum)
+        if (sum && !timeline.some((s) => s.type === 'activity' && s.summary === sum)) {
+          timeline.push({ type: 'activity', summary: sum, activeStatus: '', isExecuting: false })
         }
       })
     }
 
     const rawFinalText = await result.text
     if (rawFinalText && rawFinalText.trim()) {
-      const { cleanedText, didExecute } = await parseAndExecuteDSML(
+      const executedActions = []
+      const { cleanedText } = await parseAndExecuteDSML(
         rawFinalText,
         sdkTools,
         executedActions
       )
-      if (didExecute) {
-        hasToolCalled = true
+      for (const act of executedActions) {
+        if (!timeline.some((s) => s.type === 'activity' && s.summary === act)) {
+          timeline.push({ type: 'activity', summary: act, activeStatus: '', isExecuting: false })
+        }
       }
 
       const cleanFinal = cleanedText
@@ -627,13 +672,20 @@ export const runDeepSeekStream = async ({
         .trim()
 
       if (cleanFinal) {
-        if (hasToolCalled) {
-          if (!afterToolText.trim() || cleanFinal.length > afterToolText.length) {
-            afterToolText = cleanFinal
+        const existingText = timeline
+          .filter((s) => s.type === 'text')
+          .map((s) => s.content)
+          .join(' ')
+          .trim()
+        if (!existingText) {
+          timeline.push({ type: 'text', content: cleanFinal })
+        } else if (cleanFinal.length > existingText.length && !existingText.includes(cleanFinal)) {
+          let extra = cleanFinal
+          if (extra.startsWith(existingText)) {
+            extra = extra.slice(existingText.length).trim()
           }
-        } else {
-          if (!beforeToolText.trim() || cleanFinal.length > beforeToolText.length) {
-            beforeToolText = cleanFinal
+          if (extra) {
+            appendTextDelta(extra)
           }
         }
       }
@@ -650,8 +702,11 @@ export const runDeepSeekStream = async ({
       .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*>/gi, '')
       .trim()
 
-  beforeToolText = stripStray(beforeToolText)
-  afterToolText = stripStray(afterToolText)
+  for (const seg of timeline) {
+    if (seg.type === 'text') {
+      seg.content = stripStray(seg.content)
+    }
+  }
 
   updateDisplay(true)
 }
@@ -707,6 +762,7 @@ export const runFallbackProviderStream = async ({
 }
 
 export const applyLegacyMarkdownBlocks = async (fullContent, vaultStore) => {
+  const contentOutsideThink = (fullContent || '').replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<think>[\s\S]*$/gi, '')
   const allSnippets = vaultStore.snippets || []
   let appliedCreations = 0
   let appliedUpdates = 0
@@ -761,7 +817,7 @@ export const applyLegacyMarkdownBlocks = async (fullContent, vaultStore) => {
   }
 
   // 1. Process lumina-create
-  const createMatches = parseLuminaBlocks(fullContent, 'lumina-create')
+  const createMatches = parseLuminaBlocks(contentOutsideThink, 'lumina-create')
   for (const { title, content } of createMatches) {
     const newSnippet = {
       id: crypto.randomUUID(),
@@ -777,7 +833,7 @@ export const applyLegacyMarkdownBlocks = async (fullContent, vaultStore) => {
 
   // 1b. Fallback XML pseudo tags: <createFile title="..." ...>content</createFile>
   const xmlCreateMatches = [
-    ...fullContent.matchAll(
+    ...contentOutsideThink.matchAll(
       /<create(?:File|_file)\s+title=["']([^"']+)["'](?:\s+folder=["']([^"']*)["'])?[^>]*>([\s\S]*?)<\/create(?:File|_file)>/gi
     )
   ]
@@ -808,7 +864,7 @@ export const applyLegacyMarkdownBlocks = async (fullContent, vaultStore) => {
 
   // 1c. Process <createFolder path="..."> pseudo tags
   const xmlFolderMatches = [
-    ...fullContent.matchAll(/<create(?:Folder|_folder)\s+path=["']([^"']+)["'][^>]*>/gi)
+    ...contentOutsideThink.matchAll(/<create(?:Folder|_folder)\s+path=["']([^"']+)["'][^>]*>/gi)
   ]
   for (const match of xmlFolderMatches) {
     const folderPath = match[1].trim()
@@ -820,7 +876,7 @@ export const applyLegacyMarkdownBlocks = async (fullContent, vaultStore) => {
   }
 
   // 2. Process lumina-update
-  const updateMatches = parseLuminaBlocks(fullContent, 'lumina-update')
+  const updateMatches = parseLuminaBlocks(contentOutsideThink, 'lumina-update')
   for (const { title, content } of updateMatches) {
     const cleanTitle = title.toLowerCase().replace(/\.md$/, '')
     const targetSnippet = allSnippets.find((s) => {
@@ -839,7 +895,7 @@ export const applyLegacyMarkdownBlocks = async (fullContent, vaultStore) => {
   }
 
   // 3. Process lumina-delete
-  const deleteMatches = [...fullContent.matchAll(/```lumina-delete\s+([^\n]+?)\s*```/g)]
+  const deleteMatches = [...contentOutsideThink.matchAll(/```lumina-delete\s+([^\n]+?)\s*```/g)]
   for (const match of deleteMatches) {
     const title = match[1].trim()
     const cleanTitle = title.toLowerCase().replace(/\.md$/, '')

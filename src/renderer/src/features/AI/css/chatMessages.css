@@ -933,6 +933,8 @@
 }
 
 .chat-thinking-container {
+  width: 100% !important;
+  box-sizing: border-box !important;
   margin: 4px 0 8px;
   border-radius: 6px;
   background: transparent;
@@ -942,6 +944,8 @@
 }
 
 .chat-thinking-container.open {
+  width: 100% !important;
+  box-sizing: border-box !important;
   background: var(--bg-surface, rgba(255, 255, 255, 0.02));
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.05));
 }
@@ -1017,6 +1021,8 @@
 }
 
 .chat-thinking-body {
+  width: 100% !important;
+  box-sizing: border-box !important;
   padding: 8px 12px 10px;
   border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.04));
   max-height: 280px;
@@ -1026,6 +1032,8 @@
 }
 
 .chat-thinking-content {
+  width: 100% !important;
+  box-sizing: border-box !important;
   font-size: 11.5px;
   line-height: 1.65;
   color: var(--text-faint, rgba(255, 255, 255, 0.45));

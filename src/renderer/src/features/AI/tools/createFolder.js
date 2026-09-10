@@ -2,7 +2,7 @@ import * as aiSdk from 'ai'
 
 export const createFolderTool = aiSdk.tool({
   description:
-    'Create a new folder in the workspace. IMPORTANT: If the user asked to create a folder AND notes/plans/expenses/summaries inside or outside of it, you MUST also call createFile for each requested note in this turn. Do not stop after creating only the folder.',
+    'Create a new folder in the workspace. IMPORTANT: If the user asked to create a folder AND notes/plans/expenses/summaries inside or outside of it, you must output a narration line for each file and call createFile for each requested note. Do not stop after creating only the folder.',
   inputSchema: aiSdk.jsonSchema({
     type: 'object',
     properties: {
@@ -46,7 +46,7 @@ export const createFolderTool = aiSdk.tool({
         success: true,
         path: cleanPath,
         summary: `📁 Created folder \`${cleanPath}\``,
-        instruction_to_ai: `Folder "${cleanPath}" created successfully. Now continue calling createFile for each requested note inside "${cleanPath}".`
+        instruction_to_ai: `Folder "${cleanPath}" created successfully. Now output a narration line and call createFile for the first note inside "${cleanPath}".`
       }
     } catch (err) {
       return { success: false, error: err.message || 'Failed to create folder' }
