@@ -8,7 +8,7 @@ import ProgressTracker, { LearnedButton, LearningTrackBadge } from '../../roadma
 import VoiceButton from '../../voice'
 import DrivePushButton from './DrivePushButton'
 
-const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef, onInlineAI, editorMenu }) => {
+const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, isDirty, titleRef, onInlineAI, editorMenu }) => {
   const [error, setError] = useState(false)
   const [showLocalGraph, setShowLocalGraph] = useState(false)
   const containerRef = useRef(null)
@@ -139,7 +139,7 @@ const EditorMetadata = ({ snippet, title, setTitle, setIsDirty, titleRef, onInli
         </ToolTip>
 
         <VoiceButton id="editor-voice" />
-        <DrivePushButton snippet={snippet} title={title} />
+        <DrivePushButton snippet={snippet} title={title} isDirty={isDirty} />
 
         <ToolTip text="Linked Mentions" position="bottom">
           <button

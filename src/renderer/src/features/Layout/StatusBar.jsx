@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { BookOpen, PanelRight, Keyboard, FileText, Hash, Clock, Navigation, Compass } from 'lucide-react'
+import { BookOpen, PanelRight, Keyboard, FileText, Hash, Clock, Navigation, Compass, Cloud } from 'lucide-react'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import ToolTip from '../../components/atoms/ToolTip'
 import '../../assets/statusbar.css'
@@ -11,6 +11,29 @@ const StatusBar = ({
 }) => {
   const selectedSnippet = useWorkspaceStore((s) => s.selectedSnippet)
   const [cursorPos, setCursorPos] = useState({ line: 1, col: 1, selectedChars: 0 })
+  const [driveUser, setDriveUser] = useState(null)
+
+  useEffect(() => {
+    let mounted = true
+    const checkUser = async () => {
+      try {
+        if (window.api?.getGoogleUser) {
+          const user = await window.api.getGoogleUser()
+          if (mounted) setDriveUser(user && user.token ? user : null)
+        }
+      } catch {
+        if (mounted) setDriveUser(null)
+      }
+    }
+    checkUser()
+
+    const handleUserChanged = () => checkUser()
+    window.addEventListener('google-user-changed', handleUserChanged)
+    return () => {
+      mounted = false
+      window.removeEventListener('google-user-changed', handleUserChanged)
+    }
+  }, [])
 
   // Listen for active editor cursor movements and selection changes
   useEffect(() => {
@@ -168,6 +191,34 @@ const StatusBar = ({
                 <span>Markdown</span>
                 <span style={{ opacity: 0.5 }}>•</span>
                 <span>UTF-8</span>
+              </span>
+            </ToolTip>
+
+            <span className="status-bar-divider" />
+
+            <ToolTip
+              text={
+                driveUser
+                  ? `Google Drive connected (${driveUser.email || 'Active'}) • Click to configure`
+                  : 'Google Drive disconnected • Click to connect in Settings'
+              }
+              position="top"
+            >
+              <span
+                className="status-bar-item interactive"
+                onClick={() => window.dispatchEvent(new CustomEvent('open-settings', { detail: { tab: 'advanced' } }))}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+              >
+                <Cloud
+                  size={11}
+                  style={{
+                    color: driveUser ? 'var(--text-accent, #a78bfa)' : 'var(--text-muted, #94a3b8)',
+                    opacity: driveUser ? 0.9 : 0.6
+                  }}
+                />
+                <span style={{ color: driveUser ? 'var(--text-main)' : 'var(--text-muted)' }}>
+                  {driveUser ? 'Drive Synced' : 'Drive'}
+                </span>
               </span>
             </ToolTip>
           </>

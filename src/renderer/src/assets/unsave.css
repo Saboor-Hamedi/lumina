@@ -1,0 +1,40 @@
+/**
+ * =========================================================================
+ * Unsaved / Dirty Status Indicator Styles (unsave.css)
+ * =========================================================================
+ * 
+ * This visual indicator dot (blob) represents unpersisted, unsaved,
+ * or unpushed modifications across the Lumina workspace.
+ * 
+ * It appears in three key areas:
+ * 1. FileExplorer Sidebar Items (SidebarItem.jsx) — indicates the note has unsaved changes on disk.
+ * 2. Workspace Tabs (TabBar.jsx) — indicates the open tab has pending edits.
+ * 3. Drive Push Button (DrivePushButton.jsx) — indicates the note has edits pending upload to Google Drive.
+ * 
+ * The dot uses Lumina's global warning amber (#eab308) with a soft pulsing glow
+ * so users can quickly see which documents need saving or pushing.
+ * =========================================================================
+ */
+
+@keyframes unsavedStatusPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+    box-shadow: 0 0 10px rgba(234, 179, 8, 0.6);
+  }
+}
+
+.dirty-indicator {
+  width: 6px;
+  height: 6px;
+  background: #eab308; /* Lumina Warning Amber */
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(234, 179, 8, 0.4);
+  animation: unsavedStatusPulse 2s infinite ease-in-out;
+  flex-shrink: 0;
+  display: inline-block;
+}

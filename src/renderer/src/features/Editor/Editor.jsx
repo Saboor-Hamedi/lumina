@@ -363,6 +363,7 @@ const Editor = React.memo(
             setTitle={setTitle}
             onSave={onSave}
             setIsDirty={setIsDirty}
+            isDirty={isDirty}
             showToast={showToast}
             onInlineAI={() => setIsInlineAIOpen(true)}
             editorMenu={

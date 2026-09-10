@@ -1,14 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { CloudUpload, Check, AlertCircle } from 'lucide-react'
+import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import ToolTip from '../../../components/atoms/ToolTip'
 
-export const DrivePushButton = ({ snippet, title }) => {
+export const DrivePushButton = ({ snippet, title, isDirty: propIsDirty = false }) => {
+  const dirtySnippetIds = useWorkspaceStore((s) => s.dirtySnippetIds)
+  const isDirty = Boolean(propIsDirty || (snippet?.id && dirtySnippetIds.includes(snippet.id)))
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isPushing, setIsPushing] = useState(false)
   const [justPushed, setJustPushed] = useState(false)
   const [pushError, setPushError] = useState(false)
   const [lastPushedAt, setLastPushedAt] = useState(null)
+  const [wasPushedSinceEdit, setWasPushedSinceEdit] = useState(true)
   const btnRef = useRef(null)
+
+  useEffect(() => {
+    if (isDirty) {
+      setWasPushedSinceEdit(false)
+    }
+  }, [isDirty])
 
   // Check login state on mount and on window focus/user change
   useEffect(() => {
@@ -111,6 +121,10 @@ export const DrivePushButton = ({ snippet, title }) => {
         if (res?.success) {
           setJustPushed(true)
           setLastPushedAt(Date.now())
+          setWasPushedSinceEdit(true)
+          if (snippet?.id) {
+            useWorkspaceStore.getState().setDirty(snippet.id, false)
+          }
           if (btnRef.current) {
             btnRef.current.style.background = 'transparent'
             btnRef.current.style.borderColor = 'transparent'
@@ -187,9 +201,11 @@ export const DrivePushButton = ({ snippet, title }) => {
                 ? 'Successfully backed up'
                 : pushError
                   ? 'Failed to push — click to retry'
-                  : lastPushedAt
-                    ? `Backed up (${new Date(lastPushedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}) — click to re-push`
-                    : `Push "${noteName}" to Google Drive`
+                  : (!wasPushedSinceEdit || isDirty)
+                    ? `Push changes to Google Drive (Unsaved edits pending push)`
+                    : lastPushedAt
+                      ? `Backed up (${new Date(lastPushedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}) — click to re-push`
+                      : `Push "${noteName}" to Google Drive`
         }
         position="bottom"
       >
@@ -205,6 +221,7 @@ export const DrivePushButton = ({ snippet, title }) => {
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
+            position: 'relative',
             cursor: justPushed ? 'default' : 'pointer',
             color: justPushed
               ? '#22c55e'
@@ -212,12 +229,14 @@ export const DrivePushButton = ({ snippet, title }) => {
                 ? '#ef4444'
                 : isPushing
                   ? 'var(--text-accent, #a78bfa)'
-                  : 'var(--text-muted, #94a3b8)',
+                  : (!wasPushedSinceEdit || isDirty)
+                    ? 'var(--text-main, #f8fafc)'
+                    : 'var(--text-muted, #94a3b8)',
             transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
             padding: '0 6px',
             gap: '4px',
             fontSize: '11px',
-            fontWeight: 400
+            fontWeight: (!wasPushedSinceEdit || isDirty) ? 500 : 400
           }}
           onMouseEnter={(e) => {
             if (!isPushing && !justPushed && !pushError) {
@@ -228,7 +247,9 @@ export const DrivePushButton = ({ snippet, title }) => {
           }}
           onMouseLeave={(e) => {
             if (!isPushing && !justPushed && !pushError) {
-              e.currentTarget.style.color = 'var(--text-muted, #94a3b8)'
+              e.currentTarget.style.color = (!wasPushedSinceEdit || isDirty)
+                ? 'var(--text-main, #f8fafc)'
+                : 'var(--text-muted, #94a3b8)'
               e.currentTarget.style.background = 'transparent'
               e.currentTarget.style.borderColor = 'transparent'
             }
@@ -242,10 +263,22 @@ export const DrivePushButton = ({ snippet, title }) => {
             <CloudUpload
               size={11}
               className={isPushing ? 'drive-push-icon-rotating' : ''}
-              style={{ opacity: isPushing ? 1 : 0.8 }}
+              style={{
+                opacity: isPushing ? 1 : (!wasPushedSinceEdit || isDirty) ? 1 : 0.8,
+                color: (!wasPushedSinceEdit || isDirty) ? 'var(--text-accent, #a78bfa)' : 'inherit'
+              }}
             />
           )}
           <span>Push</span>
+          {(!wasPushedSinceEdit || isDirty) && !justPushed && !pushError && !isPushing && (
+            <div
+              className="dirty-indicator"
+              style={{
+                marginLeft: '-1px'
+              }}
+              title="Unsaved changes pending push"
+            />
+          )}
         </button>
       </ToolTip>
     </>

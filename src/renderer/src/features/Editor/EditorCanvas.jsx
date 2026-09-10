@@ -35,6 +35,7 @@ export const EditorCanvas = React.memo(
     setTitle,
     onSave,
     setIsDirty,
+    isDirty,
     showToast,
     onInlineAI,
     editorMenu
@@ -83,6 +84,7 @@ export const EditorCanvas = React.memo(
             title={title}
             setTitle={setTitle}
             setIsDirty={setIsDirty}
+            isDirty={isDirty}
             onInlineAI={onInlineAI}
             editorMenu={editorMenu}
           />
