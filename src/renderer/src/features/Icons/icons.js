@@ -166,9 +166,66 @@ export const EMOJI_LIST = [
   { char: 'HelpCircle', name: 'Help', tags: ['info', 'faq', 'support', 'question'] },
   { char: 'Info', name: 'Info', tags: ['details', 'about', 'note', 'notice'] },
   { char: 'AlertTriangle', name: 'Warning', tags: ['caution', 'alert', 'important', 'danger'] },
+  { char: 'AlertCircle', name: 'Alert Circle', tags: ['warning', 'error', 'notice'] },
   { char: 'Coffee', name: 'Coffee', tags: ['break', 'relax', 'cafe', 'morning', 'scratch'] },
   { char: 'Utensils', name: 'Food', tags: ['restaurant', 'cooking', 'dining', 'recipe'] },
-  { char: 'Smile', name: 'Smile', tags: ['happy', 'fun', 'emoji', 'personal'] }
+  { char: 'Smile', name: 'Smile', tags: ['happy', 'fun', 'emoji', 'personal'] },
+
+  // 🔬 Science, Math & Education
+  { char: 'Atom', name: 'Atom', tags: ['physics', 'science', 'quantum', 'chemistry', 'react'] },
+  { char: 'FlaskConical', name: 'Flask', tags: ['chemistry', 'experiment', 'lab', 'test', 'research'] },
+  { char: 'Dna', name: 'DNA', tags: ['biology', 'genetics', 'life', 'science', 'health'] },
+  { char: 'Microscope', name: 'Microscope', tags: ['science', 'research', 'lab', 'biology', 'inspect'] },
+  { char: 'Calculator', name: 'Calculator', tags: ['math', 'finance', 'accounting', 'calculate'] },
+  { char: 'Pi', name: 'Pi', tags: ['math', 'formula', 'constant', 'geometry'] },
+  { char: 'Sigma', name: 'Sigma', tags: ['sum', 'math', 'statistics', 'formula'] },
+  { char: 'Binary', name: 'Binary Data', tags: ['data', 'bytes', 'hex', 'bits', 'encoding'] },
+  { char: 'GraduationCap', name: 'Graduation Cap', tags: ['education', 'study', 'university', 'degree', 'learn'] },
+  { char: 'School', name: 'School', tags: ['education', 'academic', 'college', 'learn'] },
+
+  // 🌿 Nature, Travel & Weather
+  { char: 'Sun', name: 'Sun', tags: ['light', 'day', 'warm', 'weather', 'morning'] },
+  { char: 'Moon', name: 'Moon', tags: ['dark', 'night', 'sleep', 'lunar', 'evening'] },
+  { char: 'CloudRain', name: 'Rain', tags: ['weather', 'water', 'storm', 'rainy'] },
+  { char: 'Wind', name: 'Wind', tags: ['weather', 'breeze', 'air', 'flow', 'fast'] },
+  { char: 'Snowflake', name: 'Snowflake', tags: ['cold', 'winter', 'ice', 'weather'] },
+  { char: 'TreePine', name: 'Pine Tree', tags: ['nature', 'forest', 'wood', 'outdoor', 'park'] },
+  { char: 'Leaf', name: 'Leaf', tags: ['nature', 'plant', 'green', 'eco', 'organic'] },
+  { char: 'Flower2', name: 'Flower', tags: ['nature', 'garden', 'bloom', 'beauty'] },
+  { char: 'Mountain', name: 'Mountain', tags: ['nature', 'peak', 'hike', 'climb', 'summit'] },
+  { char: 'MapPin', name: 'Map Pin', tags: ['location', 'place', 'geo', 'address', 'marker'] },
+  { char: 'Map', name: 'Map', tags: ['navigation', 'travel', 'world', 'guide', 'route'] },
+  { char: 'Plane', name: 'Plane', tags: ['flight', 'travel', 'vacation', 'trip', 'airline'] },
+  { char: 'Car', name: 'Car', tags: ['vehicle', 'transport', 'drive', 'road'] },
+  { char: 'Anchor', name: 'Anchor', tags: ['ship', 'nautical', 'sea', 'secure', 'harbor'] },
+
+  // ⚙️ Hardware, Electronics & Systems
+  { char: 'Monitor', name: 'Monitor', tags: ['screen', 'desktop', 'display', 'computer'] },
+  { char: 'Laptop', name: 'Laptop', tags: ['computer', 'portable', 'notebook', 'macbook'] },
+  { char: 'Smartphone', name: 'Smartphone', tags: ['mobile', 'phone', 'ios', 'android', 'device'] },
+  { char: 'Tablet', name: 'Tablet', tags: ['ipad', 'touch', 'screen', 'device'] },
+  { char: 'Watch', name: 'Watch', tags: ['time', 'smartwatch', 'clock', 'wrist'] },
+  { char: 'Tv', name: 'TV', tags: ['screen', 'television', 'display', 'media'] },
+  { char: 'Wifi', name: 'Wifi', tags: ['internet', 'wireless', 'network', 'connection', 'signal'] },
+  { char: 'Radio', name: 'Radio', tags: ['signal', 'broadcast', 'frequency', 'transmission'] },
+  { char: 'Bluetooth', name: 'Bluetooth', tags: ['wireless', 'connect', 'device', 'pair'] },
+  { char: 'BatteryCharging', name: 'Battery Charging', tags: ['power', 'energy', 'charge'] },
+  { char: 'Plug', name: 'Power Plug', tags: ['power', 'electricity', 'socket', 'connect'] },
+  { char: 'Usb', name: 'USB', tags: ['cable', 'port', 'hardware', 'drive'] },
+
+  // 🔣 Miscellaneous & Symbols
+  { char: 'BookmarkCheck', name: 'Bookmark Check', tags: ['saved', 'done', 'read later'] },
+  { char: 'Quote', name: 'Quote', tags: ['citation', 'mention', 'block', 'testimonial'] },
+  { char: 'Scissors', name: 'Scissors', tags: ['cut', 'trim', 'snip', 'edit'] },
+  { char: 'Glasses', name: 'Glasses', tags: ['read', 'vision', 'study', 'focus'] },
+  { char: 'Crown', name: 'Crown', tags: ['king', 'vip', 'premium', 'royal', 'leader'] },
+  { char: 'Gem', name: 'Gem', tags: ['diamond', 'valuable', 'rare', 'crypto', 'luxury'] },
+  { char: 'Package', name: 'Package', tags: ['box', 'delivery', 'bundle', 'shipment'] },
+  { char: 'ShieldAlert', name: 'Shield Alert', tags: ['security', 'warning', 'breach', 'vulnerability'] },
+  { char: 'RefreshCw', name: 'Refresh', tags: ['sync', 'reload', 'update', 'loop'] },
+  { char: 'History', name: 'History', tags: ['past', 'recent', 'backup', 'undo', 'timeline'] },
+  { char: 'ExternalLink', name: 'External Link', tags: ['open', 'link', 'new tab', 'url'] },
+  { char: 'LifeBuoy', name: 'Support', tags: ['help', 'lifesaver', 'assistance', 'rescue'] }
 ]
 
 // Create a highly optimized searchable index

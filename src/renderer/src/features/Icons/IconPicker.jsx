@@ -11,9 +11,9 @@
 
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { Search, X, Sparkles } from 'lucide-react'
+import { Search, X, Sparkles, Check } from 'lucide-react'
 import * as LucideIcons from 'lucide-react'
-import ModalHeader from '../modals/ModalHeader'
+import ToolTip from '../../components/atoms/ToolTip'
 import { EMOJI_INDEX } from './icons'
 import './IconPicker.css'
 
@@ -35,9 +35,14 @@ const IconItem = React.memo(({ item, index, isActive, isFocused, onSelect }) => 
     >
       <div className="icon-swatch">
         {IconComponent ? (
-          <IconComponent size={18} />
+          <IconComponent size={21} strokeWidth={1.8} />
         ) : (
-          <Sparkles size={18} />
+          <Sparkles size={21} strokeWidth={1.8} />
+        )}
+        {isActive && (
+          <span className="icon-check-badge">
+            <Check size={8} strokeWidth={3.5} color="#ffffff" />
+          </span>
         )}
       </div>
     </button>
@@ -144,8 +149,6 @@ const IconPicker = ({ isOpen, onClose, currentIcon, onSelect }) => {
   useEffect(() => {
     if (!isOpen) return
 
-    const COLUMNS = 7
-
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' || e.key === 'Esc') {
         e.preventDefault()
@@ -156,6 +159,11 @@ const IconPicker = ({ isOpen, onClose, currentIcon, onSelect }) => {
 
       if (filteredIcons.length === 0) return
 
+      // Dynamically calculate columns based on actual rendered grid width
+      const gridEl = modalContainerRef.current?.querySelector('.icon-modal-grid')
+      const width = gridEl ? gridEl.clientWidth - 40 : 640
+      const columns = Math.max(1, Math.floor(width / 66))
+
       if (e.key === 'ArrowRight') {
         e.preventDefault()
         setSelectedIndex((prev) => Math.min(filteredIcons.length - 1, prev + 1))
@@ -164,10 +172,10 @@ const IconPicker = ({ isOpen, onClose, currentIcon, onSelect }) => {
         setSelectedIndex((prev) => Math.max(0, prev - 1))
       } else if (e.key === 'ArrowDown') {
         e.preventDefault()
-        setSelectedIndex((prev) => Math.min(filteredIcons.length - 1, prev + COLUMNS))
+        setSelectedIndex((prev) => Math.min(filteredIcons.length - 1, prev + columns))
       } else if (e.key === 'ArrowUp') {
         e.preventDefault()
-        setSelectedIndex((prev) => Math.max(0, prev - COLUMNS))
+        setSelectedIndex((prev) => Math.max(0, prev - columns))
       } else if (e.key === 'Enter') {
         e.preventDefault()
         if (filteredIcons[selectedIndex]) {
@@ -189,7 +197,7 @@ const IconPicker = ({ isOpen, onClose, currentIcon, onSelect }) => {
   if (!isOpen) return null
 
   return createPortal(
-    <div className="modal-overlay icon-modal-overlay">
+    <div className="icon-modal-overlay" onClick={onClose}>
       <div
         ref={modalContainerRef}
         className="icon-modal-container"
@@ -200,34 +208,62 @@ const IconPicker = ({ isOpen, onClose, currentIcon, onSelect }) => {
           willChange: 'transform'
         }}
       >
-        <ModalHeader
-          title="Choose Icon"
-          icon={<Sparkles size={14} />}
-          onClose={onClose}
+        {/* Header matching Guide.jsx */}
+        <div
+          className="icon-modal-header"
           onMouseDown={handleDragStart}
           style={{ cursor: 'grab' }}
-        />
+        >
+          <div className="icon-header-left">
+            <span className="icon-header-title">
+              Workspace Icons
+            </span>
+            <span className="icon-header-divider">/</span>
+            <span className="icon-header-subtitle">
+              Choose Icon
+            </span>
+            <span className="icon-step-counter">
+              {filteredIcons.length} icons
+            </span>
+          </div>
 
-        {/* Compact Search Bar */}
-        <div className="icon-modal-search">
-          <Search size={13} className="icon-modal-search-icon" />
-          <input
-            ref={inputRef}
-            type="text"
-            placeholder="Search icons (e.g., folder, star, tech)..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          {search && (
-            <button
-              type="button"
-              className="icon-search-clear-btn"
-              onClick={() => setSearch('')}
-              title="Clear search"
-            >
-              <X size={12} />
-            </button>
-          )}
+          <div className="icon-header-right">
+            <ToolTip text="Close (Esc)" position="bottom">
+              <button
+                className="icon-close-btn"
+                onClick={onClose}
+                aria-label="Close Icons (Esc)"
+              >
+                <X size={17} />
+              </button>
+            </ToolTip>
+          </div>
+        </div>
+
+        {/* Search Toolbar */}
+        <div className="icon-modal-toolbar">
+          <div className="icon-search-wrapper">
+            <Search size={13} className="icon-search-icon" />
+            <input
+              ref={inputRef}
+              type="text"
+              className="icon-search-input"
+              placeholder="Search icons (e.g., folder, star, science, code)..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            {search && (
+              <button
+                type="button"
+                className="icon-search-clear-btn"
+                onClick={() => setSearch('')}
+                title="Clear search"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+          <div className="icon-modal-stats">Showing {filteredIcons.length} of {EMOJI_INDEX.length}</div>
         </div>
 
         {/* Grid Container */}
@@ -262,7 +298,7 @@ const IconPicker = ({ isOpen, onClose, currentIcon, onSelect }) => {
         {/* Empty State */}
         {filteredIcons.length === 0 && (
           <div className="icon-modal-empty">
-            <span>No icons found. Try <em>"file"</em>, <em>"star"</em>, or <em>"code"</em>.</span>
+            <span>No icons found. Try searching for <em>"code"</em>, <em>"file"</em>, <em>"science"</em>, or <em>"cloud"</em>.</span>
           </div>
         )}
       </div>

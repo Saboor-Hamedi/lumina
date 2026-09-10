@@ -553,4 +553,25 @@ Sidebars previously shrank/compressed their content when dragged inward. The tar
   3. **Editor Push Button**: [`DrivePushButton.jsx`](file:///b:/electron/lumina/src/renderer/src/features/Editor/components/DrivePushButton.jsx)
 - **Synchronized Clearance**: Pushing a note or saving it to disk immediately clears the dirty state across all three UI locations simultaneously.
 
+### R. Zero-Latency Draggable Modal Architecture & Guide Parity (`Theme.jsx` & `IconPicker.jsx`)
+- **Direct GPU-Accelerated Dragging**: Modal headers act as hardware-accelerated drag handles with `cursor: grab` (switching to `grabbing` during active movement). Drag movements update `translate3d(Xpx, Ypx, 0)` directly with zero React re-renders, delivering 0ms latency.
+- **Position State Preservation**: Fixed a snap-back bug where selecting or previewing items triggered `useEffect` resets that snapped modal windows back to the center of the screen. Coordinated via `wasOpenRef` so position resets only occur on initial modal open transitions.
+- **Guide Layout & Aesthetic Parity**: Unified both modals with the design language of `Guide.jsx`:
+  - Consistent dimensions: `width: 86vw; max-width: 740px; height: 76vh; min-height: 480px; max-height: 78vh; border-radius: 12px;`.
+  - Clean breadcrumb navigation headers (`Title / Subtitle`) with live available item counter badges.
+  - Minimal rounded close button with bottom-positioned tooltips.
+  - Zero backdrop blur (`backdrop-filter: none`) with high-contrast solid dark backdrops (`rgba(0, 0, 0, 0.72)`) for instant rendering and clean readability.
+  - Ultra-slim 5px scrollbars with transparent tracks and rounded pill thumbs.
+
+### S. Theme Ergonomics & UI Control Polish (`themeDefinitions.js` & `toggle-theme.css`)
+- **Theme Palette Refinement**:
+  - Softened Gruvbox Dark into a soothing retro amber palette (`#d79921` accent, `#a89984` secondary text, warm olive and brick red syntax) to eliminate eye fatigue.
+  - Replaced harsh OLED blacks (`#000000`) in Dark theme with a balanced slate background (`#0c0d10` editor, `#08080a` sidebar, `#13151a` panel).
+  - Fine-tuned Minimal Light, One Monokai, and Cyberpunk for optimal contrast and long-session comfort.
+- **Switch Knob Centering & Stability**:
+  - Scaled Quick Controls toggle switches to `38px × 22px` with a prominent centered `18px` circular knob.
+  - Centered vertically using `top: 50%; transform: translateY(-50%)`.
+  - Removed unwanted click shrink/stretch distortion animations so the knob slides cleanly without deforming.
+- **Drive Push Runtime Reference Error**: Removed an undefined `setWasPushedSinceEdit` call inside `DrivePushButton.jsx` that previously threw an unhandled runtime error on successful push completion.
+
 

@@ -1,40 +1,19 @@
 /* ==========================================================================
-   IconModal Styling (Non-blocking, Lightweight, Modern)
+   IconModal Styling (Matching Guide.jsx Premium Aesthetic)
    ========================================================================== */
 
 .icon-modal-overlay {
-  z-index: 10008;
   position: fixed;
   inset: 0;
-  width: 100vw;
-  height: 100vh;
+  background: rgba(0, 0, 0, 0.72);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent !important;
-  backdrop-filter: none !important;
-  pointer-events: none; /* Allow typing in editor and clicks in background */
+  z-index: 10008;
+  animation: iconFadeIn 0.18s ease-out;
 }
 
-.icon-modal-container {
-  pointer-events: auto; /* Modal remains fully interactive */
-  position: relative;
-  margin: 0;
-  width: 360px;
-  max-width: 90vw;
-  height: 400px;
-  max-height: 75vh;
-  background: var(--bg-app, #14141e);
-  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.1));
-  border-radius: 10px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  animation: icon-modal-fade 0.08s ease-out;
-}
-
-@keyframes icon-modal-fade {
+@keyframes iconFadeIn {
   from {
     opacity: 0;
   }
@@ -43,38 +22,153 @@
   }
 }
 
-/* Compact Search Bar */
-.icon-modal-search {
+.icon-modal-container {
+  width: 86vw;
+  max-width: 740px;
+  height: 76vh;
+  min-height: 480px;
+  max-height: 78vh;
+  background: var(--bg-panel, #16161e);
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.1));
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  box-shadow:
+    0 20px 40px -12px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  position: relative;
+  animation: iconSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes iconSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Header identical to Guide.jsx */
+.icon-modal-header {
   display: flex;
   align-items: center;
-  padding: 0 12px;
-  height: 38px;
-  border-bottom: 1px solid var(--border-dim, rgba(255, 255, 255, 0.06));
-  background: rgba(0, 0, 0, 0.18);
+  justify-content: space-between;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.icon-header-left {
+  display: flex;
+  align-items: center;
   gap: 8px;
-  flex-shrink: 0;
 }
 
-.icon-modal-search-icon {
-  color: var(--text-faint, #64748b);
-  flex-shrink: 0;
+.icon-header-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  letter-spacing: -0.01em;
 }
 
-.icon-modal-search input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--text-main, #f8fafc);
-  font-family: inherit;
+.icon-header-divider {
+  opacity: 0.35;
+  color: var(--text-muted);
   font-size: 12px;
 }
 
-.icon-modal-search input::placeholder {
-  color: var(--text-faint, #64748b);
+.icon-header-subtitle {
+  font-size: 12px;
+  font-weight: 450;
+  color: var(--text-muted);
+}
+
+.icon-step-counter {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--text-muted, #888899);
+  background: var(--bg-card, rgba(255, 255, 255, 0.04));
+  padding: 1.5px 6px;
+  border-radius: 2px;
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.06));
+}
+
+.icon-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #888899);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.icon-close-btn:hover {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.08));
+  color: var(--text-main, #ffffff);
+}
+
+/* Search Toolbar */
+.icon-modal-toolbar {
+  padding: 10px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.12);
+  border-bottom: 1px solid var(--border-card, rgba(255, 255, 255, 0.06));
+}
+
+.icon-search-wrapper {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  max-width: 340px;
+  position: relative;
+}
+
+.icon-search-icon {
+  position: absolute;
+  left: 10px;
+  color: var(--text-muted, #888899);
+  pointer-events: none;
+}
+
+.icon-search-input {
+  width: 100%;
+  background: var(--bg-card, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
+  border-radius: 6px;
+  color: var(--text-main);
+  padding: 7px 30px 7px 32px;
+  font-size: 12px;
+  outline: none;
+  transition: all 0.15s;
+}
+
+.icon-search-input:focus {
+  border-color: var(--text-accent, #40bafa);
+  background: var(--bg-panel, #16161e);
+  box-shadow: 0 0 0 1px var(--text-accent, #40bafa);
 }
 
 .icon-search-clear-btn {
+  position: absolute;
+  right: 8px;
   background: transparent;
   border: none;
   color: var(--text-muted, #94a3b8);
@@ -84,85 +178,108 @@
   justify-content: center;
   padding: 2px;
   border-radius: 4px;
-  transition: color 0.12s ease;
 }
 
 .icon-search-clear-btn:hover {
-  color: var(--text-main, #f8fafc);
+  color: var(--text-main, #ffffff);
 }
 
-/* Icon Grid */
+.icon-modal-stats {
+  font-size: 12px;
+  color: var(--text-muted, #888899);
+}
+
+/* Icon Grid - Zero Enlargement, Stable Proportions */
 .icon-modal-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
-  grid-auto-rows: max-content;
+  grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
   align-content: start;
-  gap: 6px;
-  padding: 12px;
+  gap: 10px;
+  padding: 18px 20px;
   flex: 1;
   overflow-y: auto;
 }
 
 .icon-modal-grid::-webkit-scrollbar {
-  width: 4px;
+  width: 6px;
 }
 
 .icon-modal-grid::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.12);
   border-radius: 4px;
+}
+
+.icon-modal-grid::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
 }
 
 .icon-swatch-wrap {
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   background: transparent;
   border: none;
   padding: 0;
   cursor: pointer;
-  border-radius: 6px;
   outline: none;
+  position: relative;
 }
 
 .icon-swatch {
-  width: 40px;
-  height: 40px;
-  border-radius: 6px;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
   color: var(--text-muted, #94a3b8);
-  transition: all 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  position: relative;
 }
 
+/* Stable hover: NO transform/scaling, NO jumping, crisp light highlight */
 .icon-swatch-wrap:hover .icon-swatch {
   background: rgba(255, 255, 255, 0.08);
   color: var(--text-main, #ffffff);
-  border-color: rgba(255, 255, 255, 0.15);
-  transform: scale(1.1);
+  border-color: rgba(255, 255, 255, 0.24);
 }
 
 .icon-swatch-wrap.active .icon-swatch {
-  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.12);
-  color: var(--text-accent, #a78bfa);
-  border-color: var(--text-accent, #a78bfa);
-  box-shadow: none;
+  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.14);
+  color: var(--text-accent, #40bafa);
+  border-color: var(--text-accent, #40bafa);
+  box-shadow: 0 0 0 1px var(--text-accent, #40bafa);
 }
 
 .icon-swatch-wrap.focused:not(.active) .icon-swatch {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.07);
   color: var(--text-main, #ffffff);
-  border-color: rgba(255, 255, 255, 0.25);
+  border-color: var(--text-accent, #40bafa);
+  box-shadow: 0 0 0 1px var(--text-accent, #40bafa);
+}
+
+.icon-check-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #22c55e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
 .icon-swatch-auto {
-  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
 }
 
 .icon-auto-text {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--text-faint, #64748b);
   letter-spacing: 0.02em;

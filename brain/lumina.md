@@ -39,14 +39,16 @@
 - **Spotlight Search (`Ctrl + P` / `Ctrl + Space`):** Jump between notes instantly or search your entire workspace with fuzzy matching.
 - **Global Shortcuts:** Fast hotkeys for formatting, toggling sidebars, navigating tabs, and opening previews. See [[shortcuts]] for the complete cheat sheet.
 
-### E. Theme & Accent Customization
-- Built-in theme collection designed for focus during day or night.
-- Live accent color picker allowing instant interface personalization across buttons, highlights, graphs, and the welcome dashboard.
-- Configurable cursor styles, font families, and preview typography.
+### E. Theme, Modals & Visual Personalization
+- **Harmonious Theme Collection:** 21 meticulously tuned dark and light themes (Gruvbox Dark with soothing retro amber, deep slate Dark, Minimal Light, One Monokai, Dracula, Tokyo Night, and Cyberpunk) designed for zero eye fatigue.
+- **Draggable Guide-Matched Modals:** Theme and Workspace Icon modals feature zero-latency GPU-accelerated header dragging, persistent coordinates during item previews, clean breadcrumb headers, zero backdrop blur, and ultra-slim 5px scrollbars.
+- **Rich Workspace Icon Library:** 200+ curated Lucide icons with comprehensive semantic search covering Documents, Development, AI, Security, Productivity, Science & Math, Nature & Travel, and Systems.
+- **Tactile Interface Controls:** Smooth 4-way arrow key grid navigation with <kbd>Enter</kbd> commits, centered tactile toggle switches, and real-time live previewing.
+- **Accent Color Engine:** Instant interface personalization across buttons, highlights, graphs, and the welcome dashboard with round green circular status badges.
 
 ### F. Google Drive Git-Like Mirroring & Note Push
 - **Uncompressed Hierarchy Mirror:** Mirror your complete local vault hierarchy into a clean `lumina/` root folder on Google Drive as individual Markdown and asset files.
-- **Dedicated Push Button:** Push individual notes with automatic parent directory creation on Drive directly from the editor metadata toolbar.
+- **Dedicated Push Button:** Push individual notes with automatic parent directory creation on Drive directly from the editor metadata toolbar with instant timestamp feedback.
 - **Dual Backup Modes:** Switch effortlessly between compressed (.zip) snapshot archives and live uncompressed git-like folder mirroring.
 - **In-Place Title Synchronization:** Renaming note titles updates both the local disk file and the remote Google Drive file without creating orphan drafts.
 

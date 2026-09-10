@@ -90,7 +90,6 @@ export const DrivePushButton = ({ snippet, title, isDirty: propIsDirty = false }
         if (res?.success) {
           setJustPushed(true)
           setLastPushedAt(Date.now())
-          setWasPushedSinceEdit(true)
           clearUnsaved()
           if (btnRef.current) {
             btnRef.current.style.background = 'transparent'

@@ -92,6 +92,13 @@ This document outlines the strategic vision and feature scope for the evolution 
 * **Concept:** Connect Lumina to the broader desktop ecosystem.
 * **Mechanics:** Register the `lumina://open?path=Folder/Note.md&line=42` custom URI scheme in OS registries (`app.setAsDefaultProtocolClient`). External applications, scripts, browser bookmarks, and task managers can open notes directly to specific lines or trigger specific AI prompt templates from external workflows.
 
+### 4.5 Smart Web Clipper & Rich Link Previews
+* **Concept:** Effortlessly convert external research, articles, and bookmarks into clean, permanent local Markdown notes without clutter or browser lock-in.
+* **Mechanics:** 
+  - **Main-Process Scraping:** Leveraging Electron's main process (`net`/Node `fetch`) to bypass browser CORS restrictions and securely scrape OpenGraph metadata (title, description, author, hero image, site favicon).
+  - **Notion-Style Rich Bookmark Cards:** Pasting a URL or triggering `/bookmark` auto-generates an interactive inline card showing site favicon, title, snippet, and thumbnail.
+  - **Reader-Mode Article Clipping:** 1-click modal to extract clean, ad-free article text via Mozilla Readability / Turndown, formatting it into a complete local `.md` note with frontmatter metadata (`source`, `clippedAt`, `author`).
+
 ---
 
 ## 5. Architectural Implementation Phasing
@@ -100,5 +107,5 @@ This document outlines the strategic vision and feature scope for the evolution 
 | :--- | :--- | :--- |
 | **Phase 1** | **Surgical AI & Diff Engine** | Replace full-file overwrites in `updateFile` with line-range diff patching; inline hunk review widgets inside CodeMirror; exact URI/ID checking before deletions. |
 | **Phase 2** | **Block & Live Intelligence** | Block-level IDs (`^block-id`) and transclusion rendering; `\`\`\`query` live frontmatter table widgets; multi-column split workspace grids. |
-| **Phase 3** | **Desktop & Asset Mastery** | Global `Alt+Space` quick-capture overlay; background PDF/image OCR indexing; visual Git snapshot timeline. |
+| **Phase 3** | **Desktop, Web & Asset Mastery** | Smart Web Clipper & Rich Link Previews; Global `Alt+Space` quick-capture overlay; background PDF/image OCR indexing; visual Git snapshot timeline. |
 | **Phase 4** | **Spatial & Graph Evolution** | 2D Spatial Whiteboard (`Canvas Mode`); time-travel graph playback slider; autonomous scheduled `/agents/*.md` workflows. |

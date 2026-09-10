@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react'
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useTheme } from './hooks/useTheme'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { X, Check, Palette } from 'lucide-react'
@@ -10,6 +10,47 @@ const Theme = ({ isOpen, onClose }) => {
   const [searchQuery, setSearchQuery] = useState('')
   const searchInputRef = useRef(null)
   const cardsRef = useRef([])
+  const modalContainerRef = useRef(null)
+  const posRef = useRef({ x: 0, y: 0 })
+  const isDraggingRef = useRef(false)
+  const dragStartRef = useRef({ x: 0, y: 0 })
+  const initialPosRef = useRef({ x: 0, y: 0 })
+  const wasOpenRef = useRef(false)
+
+  // Direct GPU-accelerated 0-latency drag handler
+  const handleDragStart = useCallback((e) => {
+    if (e.button !== 0) return
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur()
+    }
+    e.preventDefault()
+    e.stopPropagation()
+
+    isDraggingRef.current = true
+    dragStartRef.current = { x: e.clientX, y: e.clientY }
+    initialPosRef.current = { x: posRef.current.x, y: posRef.current.y }
+    document.body.style.userSelect = 'none'
+
+    const handleMouseMove = (moveEvent) => {
+      if (!isDraggingRef.current || !modalContainerRef.current) return
+      const deltaX = moveEvent.clientX - dragStartRef.current.x
+      const deltaY = moveEvent.clientY - dragStartRef.current.y
+      const nextX = initialPosRef.current.x + deltaX
+      const nextY = initialPosRef.current.y + deltaY
+      posRef.current = { x: nextX, y: nextY }
+      modalContainerRef.current.style.transform = `translate3d(${nextX}px, ${nextY}px, 0)`
+    }
+
+    const handleMouseUp = () => {
+      isDraggingRef.current = false
+      document.body.style.userSelect = ''
+      window.removeEventListener('mousemove', handleMouseMove, { capture: true })
+      window.removeEventListener('mouseup', handleMouseUp, { capture: true })
+    }
+
+    window.addEventListener('mousemove', handleMouseMove, { capture: true, passive: true })
+    window.addEventListener('mouseup', handleMouseUp, { capture: true })
+  }, [])
 
   useKeyboardShortcuts({
     onEscape: onClose
@@ -29,13 +70,21 @@ const Theme = ({ isOpen, onClose }) => {
     return idx !== -1 ? idx : 0
   })
 
-  // Synchronize focusedIndex with active theme on open
+  // Synchronize focusedIndex with active theme and reset position ONLY on modal open transition
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !wasOpenRef.current) {
       const idx = filteredThemes.findIndex((t) => t.id === theme)
       setFocusedIndex(idx !== -1 ? idx : 0)
+      setSearchQuery('')
+      posRef.current = { x: 0, y: 0 }
+      if (modalContainerRef.current) {
+        modalContainerRef.current.style.transform = 'translate3d(0px, 0px, 0)'
+      }
+      wasOpenRef.current = true
+    } else if (!isOpen) {
+      wasOpenRef.current = false
     }
-  }, [isOpen, theme])
+  }, [isOpen])
 
   // Keep focusedIndex within range when filtered list updates
   useEffect(() => {
@@ -120,8 +169,21 @@ const Theme = ({ isOpen, onClose }) => {
 
   return (
     <div className="theme-modal-overlay" onClick={onClose}>
-      <div className="theme-modal-container" onClick={(e) => e.stopPropagation()}>
-        <div className="theme-modal-header" style={{ cursor: 'default' }}>
+      <div
+        ref={modalContainerRef}
+        className="theme-modal-container"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          transform: `translate3d(${posRef.current.x}px, ${posRef.current.y}px, 0)`,
+          position: 'relative',
+          willChange: 'transform'
+        }}
+      >
+        <div
+          className="theme-modal-header"
+          onMouseDown={handleDragStart}
+          style={{ cursor: 'grab' }}
+        >
           <div className="theme-header-left">
             <span className="theme-header-title">
               Theme & Appearance
