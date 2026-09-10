@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react'
+import React, { useRef, useEffect, useState, useMemo } from 'react'
 import { Settings, Palette, Cloud, RefreshCw, Check, Loader2, FileArchive, Folder, X } from 'lucide-react'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
 import { useCurrentUser } from '../../../core/hooks/useCurrentUser'
@@ -21,6 +21,7 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
       return 'zip'
     }
   })
+  const [focusedIndex, setFocusedIndex] = useState(-1)
 
   const handleSetBackupMode = (mode) => {
     setBackupMode(mode)
@@ -66,36 +67,6 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
       if (unsubscribe) unsubscribe()
     }
   }, [])
-
-  // Click-outside & escape to close
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target) &&
-        anchorRef.current &&
-        !anchorRef.current.contains(e.target)
-      ) {
-        onClose()
-      }
-    }
-
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onClose()
-    }
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-      document.addEventListener('keydown', handleKeyDown)
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [isOpen, onClose, anchorRef])
-
-  if (!isOpen) return null
 
   const handleUpdateClick = () => {
     if (status === 'available') download()
@@ -156,6 +127,88 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
   const isSynced = lastSync && Date.now() - lastSync < 86400000
   const isBackingUp = backupState === 'zipping' || backupState === 'uploading'
 
+  // Keyboard navigation items list
+  const menuItems = useMemo(() => {
+    const list = [
+      {
+        id: 'settings',
+        action: () => {
+          onClose()
+          onSettingsClick && onSettingsClick()
+        }
+      },
+      {
+        id: 'theme',
+        action: () => {
+          onClose()
+          onThemeClick && onThemeClick()
+        }
+      }
+    ]
+    if (status === 'available' || status === 'ready' || status === 'downloading') {
+      list.push({
+        id: 'update',
+        action: handleUpdateClick
+      })
+    }
+    if (googleUser) {
+      list.push({
+        id: 'backup',
+        action: () => {
+          if (!isBackingUp) handleBackup()
+        }
+      })
+    }
+    return list
+  }, [onClose, onSettingsClick, onThemeClick, status, googleUser, isBackingUp, backupMode])
+
+  useEffect(() => {
+    setFocusedIndex(-1)
+  }, [isOpen])
+
+  // Click-outside & keyboard navigation
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target) &&
+        anchorRef.current &&
+        !anchorRef.current.contains(e.target)
+      ) {
+        onClose()
+      }
+    }
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose()
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setFocusedIndex((prev) => (menuItems.length > 0 ? (prev + 1) % menuItems.length : -1))
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setFocusedIndex((prev) => (menuItems.length > 0 ? (prev <= 0 ? menuItems.length - 1 : prev - 1) : -1))
+      } else if (e.key === 'Enter') {
+        if (focusedIndex >= 0 && focusedIndex < menuItems.length) {
+          e.preventDefault()
+          menuItems[focusedIndex].action()
+        }
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('keydown', handleKeyDown)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isOpen, onClose, anchorRef, menuItems, focusedIndex])
+
+  if (!isOpen) return null
+
   return (
     <div
       ref={dropdownRef}
@@ -167,17 +220,20 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
         left: '8px',
         right: '8px',
         width: 'auto',
-        backgroundColor: 'var(--bg-panel, #18181b)',
+        backgroundColor: 'color-mix(in srgb, var(--bg-panel, #18181b) 92%, transparent)',
+        backdropFilter: 'blur(24px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(24px) saturate(180%)',
         border: '0.5px solid var(--border-dim, rgba(255, 255, 255, 0.15))',
         borderRadius: '8px',
-        boxShadow: '0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06)',
+        boxShadow: '0 16px 40px -4px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.06)',
         overflow: 'hidden',
         padding: '4px',
         zIndex: 9999,
         display: 'flex',
         flexDirection: 'column',
         gap: '2px',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        animation: 'settingDropdownFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1)'
       }}
     >
       {/* ── Unified Profile header ── */}
@@ -192,6 +248,7 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
         icon={<Settings size={14} />}
         label="Settings"
         shortcut="Ctrl+,"
+        isFocused={focusedIndex === 0}
         onClick={() => {
           onClose()
           onSettingsClick && onSettingsClick()
@@ -201,6 +258,7 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
         icon={<Palette size={14} />}
         label="Theme"
         shortcut="Ctrl+T"
+        isFocused={focusedIndex === 1}
         onClick={() => {
           onClose()
           onThemeClick && onThemeClick()
@@ -222,6 +280,7 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
               ? `Downloading... ${Math.round(progress?.percent || 0)}%`
               : 'Update Available'
           }
+          isFocused={focusedIndex === 2}
           onClick={handleUpdateClick}
           highlight
         />
@@ -355,7 +414,7 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
                 height: '32px',
                 padding: '0 8px',
                 border: 'none',
-                background: 'transparent',
+                background: focusedIndex === menuItems.length - 1 ? 'var(--bg-active)' : 'transparent',
                 color:
                   backupState === 'done'
                     ? '#22c55e'
@@ -375,7 +434,9 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
                 if (!isBackingUp) e.currentTarget.style.backgroundColor = 'var(--bg-active)'
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent'
+                if (focusedIndex !== menuItems.length - 1) {
+                  e.currentTarget.style.backgroundColor = 'transparent'
+                }
               }}
             >
               {/* Left icon */}
@@ -492,9 +553,10 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
   )
 }
 
-const DropdownItem = ({ icon, label, shortcut, onClick, highlight }) => {
+const DropdownItem = ({ icon, label, shortcut, onClick, highlight, isFocused }) => {
   return (
     <button
+      type="button"
       onClick={onClick}
       style={{
         display: 'flex',
@@ -503,7 +565,7 @@ const DropdownItem = ({ icon, label, shortcut, onClick, highlight }) => {
         height: '32px',
         padding: '0 8px',
         border: 'none',
-        background: 'transparent',
+        background: isFocused ? 'var(--bg-active)' : 'transparent',
         color: highlight ? 'var(--text-accent)' : 'var(--text-main)',
         fontSize: '11.5px',
         fontWeight: '500',
@@ -512,13 +574,16 @@ const DropdownItem = ({ icon, label, shortcut, onClick, highlight }) => {
         textAlign: 'left',
         width: '100%',
         boxSizing: 'border-box',
-        transition: 'background-color 0.15s ease, color 0.15s ease'
+        transition: 'background-color 0.15s ease, color 0.15s ease',
+        outline: 'none'
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.backgroundColor = 'var(--bg-active)'
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = 'transparent'
+        if (!isFocused) {
+          e.currentTarget.style.backgroundColor = 'transparent'
+        }
       }}
     >
       <span

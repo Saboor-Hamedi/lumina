@@ -17,6 +17,7 @@ import React, { useState, useEffect, memo } from 'react'
 import { User, LogOut } from 'lucide-react'
 import { useCurrentUser } from '../../core/hooks/useCurrentUser'
 import Version from '../../components/Version'
+import ToolTip from '../../components/atoms/ToolTip'
 import './profile.css'
 
 export const Profile = memo(({
@@ -134,22 +135,30 @@ export const Profile = memo(({
             )}
           </div>
 
-          <span
-            title={displayName}
-            style={{
-              fontSize: '11.5px',
-              fontWeight: '500',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              color: isHovered ? 'var(--text-main)' : 'var(--text-muted)',
-              transition: 'color 0.15s ease',
-              flex: '1 1 0%',
-              minWidth: 0
-            }}
+          <ToolTip
+            text={
+              isLoggedIn && user
+                ? (user.email && user.name ? `${user.name} • ${user.email}` : user.name || user.email || 'Google User')
+                : (fallbackName || (isLoading ? 'Signing in…' : 'Sign in with Google'))
+            }
+            position="top"
           >
-            {displayName}
-          </span>
+            <span
+              style={{
+                fontSize: '11.5px',
+                fontWeight: '500',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                color: isHovered ? 'var(--text-main)' : 'var(--text-muted)',
+                transition: 'color 0.15s ease',
+                flex: '1 1 0%',
+                minWidth: 0
+              }}
+            >
+              {displayName}
+            </span>
+          </ToolTip>
         </div>
 
         <div
@@ -166,34 +175,38 @@ export const Profile = memo(({
           </div>
 
           {isLoggedIn && showLogout && (
-            <button
-              type="button"
-              onClick={handleLogout}
-              title="Sign out"
-              aria-label="Sign out"
-              style={{
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '2px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: isHovered ? 'var(--text-muted)' : 'transparent',
-                pointerEvents: isHovered ? 'auto' : 'none',
-                transition: 'color 0.15s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.stopPropagation()
-                e.currentTarget.style.color = '#ef4444'
-              }}
-              onMouseLeave={(e) => {
-                e.stopPropagation()
-                e.currentTarget.style.color = 'var(--text-muted)'
-              }}
-            >
-              <LogOut size={12} />
-            </button>
+            <ToolTip text="Sign out of Google" position="top">
+              <button
+                type="button"
+                onClick={handleLogout}
+                aria-label="Sign out of Google"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  borderRadius: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: isHovered ? 'var(--text-muted)' : 'transparent',
+                  pointerEvents: isHovered ? 'auto' : 'none',
+                  transition: 'color 0.15s ease, background-color 0.15s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.stopPropagation()
+                  e.currentTarget.style.color = '#ef4444'
+                  e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.12)'
+                }}
+                onMouseLeave={(e) => {
+                  e.stopPropagation()
+                  e.currentTarget.style.color = 'var(--text-muted)'
+                  e.currentTarget.style.backgroundColor = 'transparent'
+                }}
+              >
+                <LogOut size={12} strokeWidth={2} />
+              </button>
+            </ToolTip>
           )}
         </div>
       </div>
