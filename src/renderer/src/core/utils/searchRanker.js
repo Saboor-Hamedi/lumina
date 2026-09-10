@@ -7,6 +7,8 @@
  * and extracts clean markdown content previews around hits.
  */
 
+import { normalizeForMatching, matchesNormalized } from '../i18n'
+
 const STOP_WORDS = new Set([
   'how',
   'the',
@@ -157,20 +159,26 @@ export function scoreSnippet(snippet, searchInfo, fuseScore = 1) {
   const folderId = (snippet.folderId || '').toLowerCase()
   const fullText = `${title} ${folderId} ${body}`
 
+  const nRaw = normalizeForMatching(raw)
+  const nTitle = normalizeForMatching(snippet.title || '')
+
   // ── Title signals ──────────────────────────────────────────────────────────
-  if (title === raw) {
+  if (title === raw || (nTitle && nTitle === nRaw)) {
     score += 120
-  } else if (title.startsWith(raw)) {
+  } else if (title.startsWith(raw) || (nTitle && nTitle.startsWith(nRaw))) {
     score += 90
-  } else if (title.includes(raw)) {
+  } else if (title.includes(raw) || (nTitle && nTitle.includes(nRaw))) {
     score += 70
+  } else if (matchesNormalized(snippet.title || '', raw)) {
+    score += 55
   } else if (fuseScore < 1) {
     score += Math.round((1 - fuseScore) * 60)
   }
 
   // Title keyword bonus
   significantTokens.forEach((token) => {
-    if (title.includes(token)) score += 25
+    const nToken = normalizeForMatching(token)
+    if (title.includes(token) || (nTitle && nTitle.includes(nToken))) score += 25
   })
 
   // ── Content signals ────────────────────────────────────────────────────────

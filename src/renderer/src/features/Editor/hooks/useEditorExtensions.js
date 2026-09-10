@@ -47,6 +47,7 @@ import { handleCodeFenceEnter } from './useCodeFence'
 import { handleArrowUp, handleArrowDown } from './useArrowNavigation'
 import { useWikilinkCompletion } from '../wikilink/useWikilinkCompletion'
 import { createEditorSlashPlugin } from '../../slash'
+import { bidiExtension, isComposing } from '../../../core/i18n'
 
 export const updateSearchHighlights = StateEffect.define()
 
@@ -200,6 +201,7 @@ export function useEditorExtensions({
           {
             key: 'Tab',
             run: (view) => {
+              if (isComposing(view)) return false
               if (slashHandlerRef?.current?.isOpen) {
                 return Boolean(slashHandlerRef.current.onEnter?.())
               }
@@ -246,6 +248,7 @@ export function useEditorExtensions({
           {
             key: 'Shift-Tab',
             run: (view) => {
+              if (isComposing(view)) return false
               if (!isActiveRef.current) return false
               const state = view.state
               const sel = state.selection.main
@@ -353,6 +356,7 @@ export function useEditorExtensions({
           {
             key: 'Enter',
             run: (view) => {
+              if (isComposing(view)) return false
               if (slashHandlerRef?.current?.isOpen) {
                 const handled = slashHandlerRef.current.onEnter?.()
                 if (handled) return true
@@ -440,7 +444,8 @@ export function useEditorExtensions({
           { key: 'Mod-Alt-f', run: () => isActiveRef.current && showFindWidgetRef.current },
           {
             key: 'Escape',
-            run: () => {
+            run: (view) => {
+              if (isComposing(view)) return false
               if (slashHandlerRef?.current?.isOpen) {
                 slashHandlerRef.current.onClose?.()
                 return true
@@ -467,6 +472,7 @@ export function useEditorExtensions({
       tagMentionExtension,
       emptyLineSelectionFix,
       wikiLinksExtension,
+      bidiExtension,
       taskMarkKeymap(isActiveRef),
       ...(onSlashStateChange ? createEditorSlashPlugin({ onSlashStateChange, slashHandlerRef }) : [])
     ],

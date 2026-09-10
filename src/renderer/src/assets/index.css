@@ -5,6 +5,7 @@
 @import './callout.css';
 @import './quote.css';
 @import './unsave.css';
+@import '../core/i18n/lumina-i18n.css';
 @import '../features/profile/profile.css';
 @tailwind base;
 @tailwind components;
@@ -18,9 +19,9 @@
 
 :root {
   /* Typography */
-  --font-editor: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-heading: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: 'JetBrains Mono', 'JetBrainsMono Nerd Font', 'Fira Code', 'Cascadia Code', 'SF Mono', 'Segoe UI Mono', 'Roboto Mono', Menlo, Monaco, Consolas, 'Liberation Mono', 'DejaVu Sans Mono', 'Ubuntu Mono', 'Courier New', monospace;
+  --font-editor: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', Roboto, 'Vazirmatn', 'Geeza Pro', 'Tahoma', 'PingFang SC', 'Hiragino Sans', 'Microsoft YaHei', 'Yu Gothic UI', 'Malgun Gothic', sans-serif;
+  --font-heading: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', Roboto, 'Vazirmatn', 'Geeza Pro', 'Tahoma', 'PingFang SC', 'Hiragino Sans', 'Microsoft YaHei', 'Yu Gothic UI', 'Malgun Gothic', sans-serif;
+  --font-mono: 'Cascadia Code', 'Fira Code', Consolas, 'JetBrains Mono', 'Vazirmatn', 'Geeza Pro', 'Tahoma', 'PingFang SC', 'Hiragino Sans', 'Microsoft YaHei', 'Yu Gothic UI', 'Malgun Gothic', monospace;
 
   /* Dimensions & Layout */
   --header-height: 32px;

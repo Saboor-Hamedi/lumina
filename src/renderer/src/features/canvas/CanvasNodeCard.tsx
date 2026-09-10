@@ -33,7 +33,7 @@ const MemoizedMarkdownPreview = React.memo<{ text: string }>(({ text }) => {
     return <span className="placeholder">Double-click to type...</span>
   }
   return (
-    <div className="lumina-canvas-markdown">
+    <div className="lumina-canvas-markdown" dir="auto">
       <ReactMarkdown remarkPlugins={[remarkGfm]}>
         {strippedText}
       </ReactMarkdown>
@@ -123,6 +123,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
           {isEditing && editingField === 'title' ? (
             <input
               autoFocus
+              dir="auto"
               className="lumina-canvas-title-input"
               defaultValue={node.title || ''}
               onBlur={(e) => {
@@ -140,6 +141,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
           ) : (
             <span
               className="lumina-canvas-node-title"
+              dir="auto"
               onDoubleClick={(e) => {
                 e.stopPropagation()
                 onStartEditing(node.id, 'title')
@@ -244,6 +246,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
             {isEditing && editingField === 'text' ? (
               <textarea
                 autoFocus
+                dir="auto"
                 className="lumina-canvas-text-area"
                 defaultValue={node.text || ''}
                 onBlur={(e) => {

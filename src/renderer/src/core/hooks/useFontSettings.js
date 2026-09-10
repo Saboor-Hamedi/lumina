@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { getTheme } from '../../features/theme/hooks/themeDefinitions'
+import { buildFontFamilyStack } from '../i18n'
 
 /**
  * Default configuration constants for font and caret settings
@@ -410,15 +411,18 @@ export const useFontSettings = () => {
         // Force immediate application
         void root.offsetHeight
 
-        // Apply font settings to root
-        root.style.setProperty('--font-editor', ef)
+        // Apply font settings to root with multilingual fallback cascade
+        const isMono = (f) => f && (f.toLowerCase().includes('mono') || f.toLowerCase().includes('code'))
+        const efStack = buildFontFamilyStack(ef, isMono(ef))
+        const pfStack = buildFontFamilyStack(pf, false)
+        root.style.setProperty('--font-editor', efStack)
         root.style.setProperty('--font-size-editor', `${isNaN(es) ? DEFAULTS.FONT_SIZE : es}px`)
-        root.style.setProperty('--editor-font-family', ef)
+        root.style.setProperty('--editor-font-family', efStack)
         root.style.setProperty(
           '--editor-font-size',
           `${(isNaN(es) ? DEFAULTS.FONT_SIZE : es) / 16}rem`
         )
-        root.style.setProperty('--preview-font-family', pf)
+        root.style.setProperty('--preview-font-family', pfStack)
         root.style.setProperty(
           '--preview-font-size',
           `${(isNaN(ps) ? DEFAULTS.FONT_SIZE : ps) / 16}rem`
@@ -609,13 +613,19 @@ export const useFontSettings = () => {
             )
           }
 
-          // Apply font/preview sizes if provided
-          if (incoming.editorFontFamily)
-            root.style.setProperty('--editor-font-family', incoming.editorFontFamily)
+          // Apply font/preview sizes if provided with multilingual fallbacks
+          const isMono = (f) => f && (f.toLowerCase().includes('mono') || f.toLowerCase().includes('code'))
+          if (incoming.editorFontFamily) {
+            const efStack = buildFontFamilyStack(incoming.editorFontFamily, isMono(incoming.editorFontFamily))
+            root.style.setProperty('--font-editor', efStack)
+            root.style.setProperty('--editor-font-family', efStack)
+          }
           if (incoming.editorFontSize)
             root.style.setProperty('--editor-font-size', `${incoming.editorFontSize / 16}rem`)
-          if (incoming.previewFontFamily)
-            root.style.setProperty('--preview-font-family', incoming.previewFontFamily)
+          if (incoming.previewFontFamily) {
+            const pfStack = buildFontFamilyStack(incoming.previewFontFamily, false)
+            root.style.setProperty('--preview-font-family', pfStack)
+          }
           if (incoming.previewFontSize)
             root.style.setProperty('--preview-font-size', `${incoming.previewFontSize / 16}rem`)
 
@@ -673,14 +683,18 @@ export const useFontSettings = () => {
     const sizePx = `${editorFontSize}px`
     const pSizePx = `${previewFontSize}px`
 
-    // Editor Font Variables
-    root.style.setProperty('--font-editor', editorFontFamily)
+    // Editor Font Variables with multilingual fallback cascade
+    const isMono = (f) => f && (f.toLowerCase().includes('mono') || f.toLowerCase().includes('code'))
+    const editorFontStack = buildFontFamilyStack(editorFontFamily, isMono(editorFontFamily))
+    const previewFontStack = buildFontFamilyStack(previewFontFamily, false)
+
+    root.style.setProperty('--font-editor', editorFontStack)
     root.style.setProperty('--font-size-editor', sizePx)
-    root.style.setProperty('--editor-font-family', editorFontFamily)
+    root.style.setProperty('--editor-font-family', editorFontStack)
     root.style.setProperty('--editor-font-size', sizeRem)
 
     // Preview Font Variables
-    root.style.setProperty('--preview-font-family', previewFontFamily)
+    root.style.setProperty('--preview-font-family', previewFontStack)
     root.style.setProperty('--preview-font-size', pSizeRem)
     root.style.setProperty('--preview-font-size-px', pSizePx)
 

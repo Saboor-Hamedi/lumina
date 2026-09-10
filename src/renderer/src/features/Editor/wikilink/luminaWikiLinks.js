@@ -1,6 +1,7 @@
 import { RangeSetBuilder, StateField } from '@codemirror/state'
 import { Decoration, EditorView } from '@codemirror/view'
 import { useVaultStore } from '../../../core/store/workspaceStore'
+import { normalizeWikilinkTarget } from '../../../core/i18n'
 
 const WIKILINK_REGEX = /\[\[([^\]\n|]+)(?:\|([^\]\n]+))?\]\]/g
 
@@ -134,16 +135,20 @@ export function createLuminaWikiLinks(config = {}) {
   async function openNote(target) {
     try {
       const { snippets: allSnippets, saveSnippet, setSelectedSnippet } = useVaultStore.getState()
-      const targetLower = target.toLowerCase()
-      let targetSnippet = allSnippets.find((s) => {
+      const targetKey = normalizeWikilinkTarget(target)
+      let targetSnippet = (allSnippets || []).find((s) => {
         if (!s.title) return false
-        const titleLower = s.title.toLowerCase()
-        const fullPathLower = s.folderId ? `${s.folderId}/${s.title}`.toLowerCase() : titleLower
+        const titleKey = normalizeWikilinkTarget(s.title)
+        const titleWithoutMdKey = normalizeWikilinkTarget(s.title.replace(/\.md$/i, ''))
+        const fullPathKey = s.folderId ? normalizeWikilinkTarget(`${s.folderId}/${s.title}`) : titleKey
+        const fullPathWithoutMdKey = s.folderId
+          ? normalizeWikilinkTarget(`${s.folderId}/${s.title.replace(/\.md$/i, '')}`)
+          : titleWithoutMdKey
         return (
-          titleLower === targetLower ||
-          titleLower === `${targetLower}.md` ||
-          fullPathLower === targetLower ||
-          fullPathLower === `${targetLower}.md`
+          titleKey === targetKey ||
+          titleWithoutMdKey === targetKey ||
+          fullPathKey === targetKey ||
+          fullPathWithoutMdKey === targetKey
         )
       })
 

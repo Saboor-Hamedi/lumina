@@ -3,12 +3,15 @@ import { EditorView } from '@codemirror/view'
 import { startCompletion } from '@codemirror/autocomplete'
 import { createLuminaWikiLinks } from './luminaWikiLinks'
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
+import { shouldTriggerWikilinkCompletion, matchesNormalized, normalizeWikilinkTarget } from '../../../core/i18n'
 
 export function useWikilinkCompletion({ showToast }) {
   const autocompleteTriggerListener = useCallback(
     EditorView.updateListener.of((update) => {
       if (update.docChanged) {
         const view = update.view
+        if (!shouldTriggerWikilinkCompletion(view)) return
+
         const head = view.state.selection.main.head
         const line = view.state.doc.lineAt(head)
         const col = head - line.from
@@ -19,7 +22,7 @@ export function useWikilinkCompletion({ showToast }) {
           const lastClose = textBefore.lastIndexOf(']]')
           if (lastOpen > lastClose) {
             setTimeout(() => {
-              if (!view.isDestroyed) {
+              if (!view.isDestroyed && shouldTriggerWikilinkCompletion(view)) {
                 startCompletion(view)
               }
             }, 10)
@@ -34,13 +37,16 @@ export function useWikilinkCompletion({ showToast }) {
     if (document.activeElement?.classList.contains('cm-atomic-table-cell-source')) {
       return null
     }
+    if (!shouldTriggerWikilinkCompletion(context.view)) {
+      return null
+    }
 
     const match = context.matchBefore(/\[\[([^\]]*)/)
     if (!match) return null
     if (match.from === match.to && !context.explicit) return null
 
     const { snippets } = useWorkspaceStore.getState()
-    const query = match[1] ? match[1].toLowerCase() : ''
+    const query = match[1] || ''
 
     const opts = (snippets || [])
       .filter(
@@ -48,7 +54,7 @@ export function useWikilinkCompletion({ showToast }) {
           s.title &&
           s.type !== 'image' &&
           (!s.folderId || !s.folderId.startsWith('.lumina')) &&
-          (!query || s.title.toLowerCase().includes(query))
+          (!query || matchesNormalized(s.title, query))
       )
       .map((s) => ({
         label: s.title,
@@ -82,14 +88,13 @@ export function useWikilinkCompletion({ showToast }) {
     async (target) => {
       try {
         const { snippets, saveSnippet, setSelectedSnippet } = useWorkspaceStore.getState()
-        const targetLower = target.toLowerCase()
-        let targetSnippet = snippets.find(
-          (s) =>
-            s.title &&
-            s.type !== 'image' &&
-            (s.title.toLowerCase() === targetLower ||
-              s.title.toLowerCase() === `${targetLower}.md`)
-        )
+        const targetKey = normalizeWikilinkTarget(target)
+        let targetSnippet = (snippets || []).find((s) => {
+          if (!s.title || s.type === 'image') return false
+          const titleKey = normalizeWikilinkTarget(s.title)
+          const titleWithoutMdKey = normalizeWikilinkTarget(s.title.replace(/\.md$/i, ''))
+          return titleKey === targetKey || titleWithoutMdKey === targetKey
+        })
 
         if (!targetSnippet) {
           targetSnippet = {

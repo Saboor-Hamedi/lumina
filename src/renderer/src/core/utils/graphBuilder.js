@@ -1,13 +1,10 @@
-/**
- * Graph Data Builder
- * Parses all snippets to generate a node/link graph for visualization.
- */
+import { normalizeWikilinkTarget } from '../i18n'
 
 export const buildGraphData = (snippets) => {
   const nodes = []
   const links = []
   const nodeMap = new Map()
-  const nodeMapLower = new Map() // Optimization for O(1) case-insensitive lookups
+  const nodeMapLower = new Map() // Optimization for O(1) normalized canonical lookups
 
   // 1. Create Nodes (Existing Notes)
   snippets.forEach((snippet) => {
@@ -15,7 +12,7 @@ export const buildGraphData = (snippets) => {
     if (!nodeMap.has(id)) {
       const node = { id, group: 'note', val: 1, snippetId: snippet.id }
       nodeMap.set(id, node)
-      nodeMapLower.set(id.toLowerCase(), node)
+      nodeMapLower.set(normalizeWikilinkTarget(id), node)
       nodes.push(node)
     }
   })
@@ -33,21 +30,22 @@ export const buildGraphData = (snippets) => {
     let match
     while ((match = wikiRegex.exec(code)) !== null) {
       const targetTitle = match[1].trim()
+      const targetKey = normalizeWikilinkTarget(targetTitle)
 
       // If target doesn't exist as a node yet (Ghost Node), create it
       // but mark it as 'ghost' (not a real file yet)
-      let targetNode = nodeMapLower.get(targetTitle.toLowerCase())
+      let targetNode = nodeMapLower.get(targetKey)
 
       if (!targetNode) {
         // Create a ghost node
         const ghostId = targetTitle // Use the casing from the link
-        if (!nodeMap.has(ghostId)) {
+        if (!nodeMapLower.has(targetKey)) {
           const ghostNode = { id: ghostId, group: 'ghost', val: 0.5 }
           nodeMap.set(ghostId, ghostNode)
-          nodeMapLower.set(ghostId.toLowerCase(), ghostNode)
+          nodeMapLower.set(targetKey, ghostNode)
           nodes.push(ghostNode)
         }
-        targetNode = nodeMap.get(ghostId)
+        targetNode = nodeMapLower.get(targetKey)
       }
 
       // Create Link

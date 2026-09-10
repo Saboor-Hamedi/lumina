@@ -1,0 +1,66 @@
+/* lumina-i18n.css
+ * Additive styles: typography fallbacks, RTL/bidi line rules, wikilink
+ * bidi-isolation, and canvas card RTL support.
+ * Merge these blocks into index.css / Editor.css / wikilink.css / canvas.css
+ * respectively — kept together here for review.
+ */
+
+/* ---- index.css : root font variables ------------------------------- */
+:root {
+  --font-editor: "Inter", -apple-system, BlinkMacSystemFont,
+    "Segoe UI Variable Text", "Segoe UI", Roboto, "Vazirmatn", "Geeza Pro",
+    "Tahoma", "PingFang SC", "Hiragino Sans", "Microsoft YaHei",
+    "Yu Gothic UI", "Malgun Gothic", sans-serif;
+
+  --font-mono: "Cascadia Code", "Fira Code", Consolas, "Vazirmatn",
+    "Geeza Pro", "Tahoma", "PingFang SC", "Hiragino Sans",
+    "Microsoft YaHei", "Yu Gothic UI", "Malgun Gothic", monospace;
+}
+
+/* ---- Editor.css : line height + RTL line rules ----------------------- */
+.cm-editor .cm-line {
+  line-height: 1.65;
+}
+
+.cm-line[dir="rtl"],
+.cm-rtl-line {
+  text-align: right;
+  direction: rtl;
+}
+
+.cm-line[dir="ltr"],
+.cm-ltr-line {
+  text-align: left;
+  direction: ltr;
+}
+
+/* ---- wikilink.css : bidi isolation so brackets never invert ---------- */
+.cm-wikilink-syntax,
+.cm-atomic-wiki-link {
+  unicode-bidi: isolate;
+  direction: ltr;
+}
+
+/* ---- canvas.css : RTL cards + shared line-height --------------------- */
+.lumina-canvas-node-title,
+.lumina-canvas-markdown,
+.lumina-canvas-text-area {
+  line-height: 1.65;
+}
+
+.lumina-canvas-node-card [dir="rtl"],
+.lumina-canvas-node [dir="rtl"],
+.lumina-canvas-markdown[dir="rtl"],
+.lumina-canvas-text-area[dir="rtl"] {
+  text-align: right;
+  direction: rtl;
+}
+
+.lumina-canvas-node-card [dir="ltr"],
+.lumina-canvas-node [dir="ltr"],
+.lumina-canvas-markdown[dir="ltr"],
+.lumina-canvas-text-area[dir="ltr"] {
+  text-align: left;
+  direction: ltr;
+}
+

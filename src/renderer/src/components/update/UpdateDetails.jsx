@@ -8,31 +8,32 @@ import ToolTip from '../atoms/ToolTip'
 import './UpdateDetails.css'
 
 export const DEFAULT_RELEASE_NOTES = `New
+- World-Class Multilingual Typography: Paired all user fonts with an enterprise-grade fallback cascade: Vazirmatn, Segoe UI Variable Text, Geeza Pro, Tahoma, PingFang SC, Hiragino Sans, Microsoft YaHei, Yu Gothic UI, and Malgun Gothic. Added Vazirmatn (premier modern Persian/Arabic font) directly to Settings and Google Fonts.
+- Dynamic Bidirectional (RTL/LTR) Editor: Viewport-scoped CodeMirror 6 extension automatically detects line direction using the Unicode Bidirectional Algorithm ("first strong" heuristic). Persian, Arabic, Hebrew, and Urdu paragraphs align right naturally while code and English stay left-aligned at smooth 60 FPS.
+- Resilient Bidi Wikilinks: Bracket syntax is isolated with unicode-bidi: isolate, preventing [[ and ]] from visually inverting or mirroring in RTL text. Notes link by canonical keys so Persian and Arabic letter variations (ی/ک vs ي/ك, ZWNJ) resolve to the exact same note without altering displayed titles.
+- CJK IME Composition Guard: Chinese (Pinyin) and Japanese (Kana/Romaji) typing sessions are guarded—autocomplete popups and Enter/Escape/Tab keys never cancel or steal active candidate selection.
+- Infinite Canvas Multi-Script Cards: Note cards on the spatial canvas now automatically detect text direction (dir="auto") across card titles, markdown body previews, and inline editing textareas with comfortable 1.65 line-height.
+- Connected Knowledge Graph & Search: 2D & 3D Knowledge Graph builder links notes via canonical keys, eliminating ghost nodes from spelling variations. Command Palette (Ctrl+P) and Sidebar Search rank Persian, Arabic, and CJK notes instantly.
 - Draggable Modals & Position Memory: Theme and Icon Picker modals now feature zero-latency GPU-accelerated dragging via their header bars. Position is remembered across selections and actions without snapping back to center.
 - Guide-Matched Premium Modal Architecture: Rebuilt both Theme and Icon Picker modals to mirror the exact typography, breadcrumbs, step counters, and clean geometry of the Lumina Guide modal.
-- 50+ New Curated Lucide Icons: Greatly expanded the workspace icon library with new categories for Science & Math (Atom, Flask, DNA, Microscope, Pi, Sigma), Nature & Travel (Sun, Mountain, Map, Plane), Hardware, and Productivity Symbols.
-- AI Memory Profile & Management: Dedicated AI Memory tab in Settings to inspect, edit, and curate persistent memory stored in memory.json. Customize your User Identity (Name, Role, Bio), User Preferences, and Learned Facts with instant inline editing.
-- Natural Name & Context Addressing: Lumina naturally addresses you by your name and weaves your background, role, and active projects smoothly into chat and recommendations.
-- Multi-Mode Plan Intelligence: Plan Mode now intelligently guides you to specialized modes across all disciplines—recommending Research Mode for academic and thesis writing, Creative Mode for storytelling, and Code Mode for software architecture.
-- Real-Time Drive Push Status: The Google Drive Push button in the editor metadata bar now tracks the exact push timestamp ("Pushed 10:45 AM"), remains accessible without shifting toolbar layouts, and notifies unauthenticated users cleanly.
-- Surgical In-Place AI Note Updates: Update specific paragraphs, opening introductions, and targeted sections without rewriting entire notes, preserving your formatting and frontmatter.
+- 50+ New Curated Lucide Icons: Greatly expanded the workspace icon library with new categories for Science & Math, Nature & Travel, Hardware, and Productivity Symbols.
+- AI Memory Profile & Management: Dedicated AI Memory tab in Settings to inspect, edit, and curate persistent memory stored in memory.json. Customize your User Identity, User Preferences, and Learned Facts with instant inline editing.
 
 Improved
 - Zero-Blur Crisp Modals: Removed disruptive backdrop filters from Theme and Icon modals in favor of clean, performant high-contrast dark backdrops for instant rendering and readability.
-- Stable Icon Swatches: Removed intrusive hover scaling and transform jumps from icon swatches. Swatches now feature clean surface illumination and a green circular active checkmark badge.
-- Ergonomic Theme Palettes: Softened Gruvbox Dark into a soothing retro amber palette; calibrated Dark, Cyberpunk, One Monokai, and Minimal Light to prevent eye fatigue across day and night sessions.
+- Comfortable Reading Line-Height: Optimized editor and canvas line-height to 1.65, giving breathing room to Arabic/Persian diacritics (tashkeel), high dots, and CJK ideograms.
+- Weak & Neutral Script Skipping: First-strong direction detection looks past wikilink brackets, inline code, whitespace, and both ASCII and Persian/Arabic-Indic digits (۱۲۳ سلام correctly resolves to RTL).
+- Ergonomic Theme Palettes: Softened Gruvbox Dark into a soothing retro amber palette; calibrated Dark, Cyberpunk, One Monokai, and Minimal Light to prevent eye fatigue.
 - Tactile Smooth Toggle Switches: Redesigned the Quick Controls switch housing with a centered 18px knob, eliminating unwanted click deform/stretch animations for a solid tactile feel.
 - Ultra-Slim Modal Scrollbars: Reduced scrollbar width in Theme and Icon grids to a sleek 5px transparent track with soft rounded pill thumbs.
-- Non-Code & Academic Plan Awareness: Clarified mode descriptions across slash commands and prompt builders so Code Mode no longer claims a monopoly over creating notes or documents.
-- Open Editor Tab Context: AI prompt engine treats open editor tabs and active unsaved buffers as immediate workspace context, ensuring current drafts inform answers.
 
 Fixed
 - Drive Push Runtime Reference Error: Fixed a ReferenceError crash (\`setWasPushedSinceEdit is not defined\`) that prevented the Google Drive Push button from completing successfully.
+- Cross-Script Wikilink Duplication: Resolved an issue where linking notes using Arabic keyboard letters created duplicate orphan notes instead of resolving to existing Persian notes.
+- RTL Wikilink Bracket Flipping: Fixed visual bracket inversion where typing [[ in Persian or Arabic caused brackets to mirror to the opposite side of the text.
 - Icon Picker Modal Snap-Back: Resolved an issue where selecting or previewing an icon reset container coordinates and caused the window to jump back to center.
 - Drive Push State Sticky Hover: Resolved an issue where the push button retained green background hover highlights after a successful upload.
-- Sequential Thinking Dropdowns: Fixed an issue where multiple fragmented thinking dropdowns would appear across multi-step tool calls or after reflection delays.
-- Session Menu Duplication: Resolved a race condition where deleting the last session created two concurrent "New Chat" instances in the sidebar.
-- IndexedDB Manifest Self-Healing: Automatically repairs broken LevelDB sequential manifest pointers on startup, preventing Chromium storage crashes during rapid dev restarts.`
+- Sequential Thinking Dropdowns: Fixed an issue where multiple fragmented thinking dropdowns would appear across multi-step tool calls or after reflection delays.`
 
 /**
  * Simple, clean release notes parser for our Markdown release notes.
