@@ -97,13 +97,23 @@ export function useFileTree({
         }
       })
 
-      // 2. Inject note/file creation input at top of file list
+      // 2. Inject note/file/canvas creation input at top of file list
       if (
         creating &&
         (creating.parentId || '') === parentId &&
-        (creating.type === 'note' || creating.type === 'file' || creating.kind === 'note' || creating.kind === 'file')
+        (creating.type === 'note' ||
+          creating.type === 'file' ||
+          creating.type === 'canvas' ||
+          creating.kind === 'note' ||
+          creating.kind === 'file' ||
+          creating.kind === 'canvas')
       ) {
-        flat.push({ type: 'input', kind: 'note', parentId, depth })
+        flat.push({
+          type: 'input',
+          kind: creating.type === 'canvas' || creating.kind === 'canvas' ? 'canvas' : 'note',
+          parentId,
+          depth
+        })
       }
 
       // Files in this level

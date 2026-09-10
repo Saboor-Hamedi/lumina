@@ -29,6 +29,33 @@ import { useContextMenu } from '../hooks/useContextMenu'
 import { isSnippetActive } from '../../Explorer/utils/explorerSelectionHelper'
 import { useUnsaved, UnsavedIndicator } from '../../../core/hooks/unsave'
 
+const SnippetContextMenu = ({
+  contextMenu,
+  snippet,
+  onClick,
+  setIsRenaming,
+  setShowIconPicker,
+  handleTogglePin,
+  setShowDeleteConfirm,
+  onClose
+}) => {
+  const menuOptions = useContextMenu({
+    item: snippet,
+    type: 'file',
+    callbacks: {
+      onOpen: onClick,
+      onRename: () => setIsRenaming(true),
+      onChangeIcon: () => setShowIconPicker(true),
+      onTogglePin: handleTogglePin,
+      onDelete: () => setShowDeleteConfirm(true),
+      onCloseNote: () => useVaultStore.getState().closeTab(snippet.id),
+      onClose
+    }
+  })
+
+  return <ContextMenu {...contextMenu} options={menuOptions} onClose={onClose} />
+}
+
 const SidebarItem = ({
   snippet,
   isActive,
@@ -331,26 +358,20 @@ const SidebarItem = ({
     )
   }
 
-  const menuOptions = useContextMenu({
-    item: snippet,
-    type: 'file',
-    callbacks: {
-      onOpen: onClick,
-      onRename: () => setIsRenaming(true),
-      onChangeIcon: () => setShowIconPicker(true),
-      onTogglePin: handleTogglePin,
-      onDelete: () => setShowDeleteConfirm(true),
-      onCloseNote: () => useVaultStore.getState().closeTab(snippet.id),
-      onClose: () => setContextMenu(null)
-    }
-  })
-
   const modals = (
     <>
       {contextMenu && (
-        <ContextMenu {...contextMenu} options={menuOptions} onClose={() => setContextMenu(null)} />
+        <SnippetContextMenu
+          contextMenu={contextMenu}
+          snippet={snippet}
+          onClick={onClick}
+          setIsRenaming={setIsRenaming}
+          setShowIconPicker={setShowIconPicker}
+          handleTogglePin={handleTogglePin}
+          setShowDeleteConfirm={setShowDeleteConfirm}
+          onClose={() => setContextMenu(null)}
+        />
       )}
-
       {showIconPicker && (
         <IconPicker
           isOpen={showIconPicker}

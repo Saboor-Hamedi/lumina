@@ -9,6 +9,7 @@ import Graph from '../Graph/Graph'
 import Welcome from '../../Welcome'
 import TabBar from './TabBar'
 import { ImageViewerTab, PDFViewerTab } from '../media'
+import { CanvasTabPane } from '../canvas'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useVaultStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
@@ -79,6 +80,8 @@ const TabContentPane = React.memo(
             <ImageViewerTab snippet={snippet} />
           ) : snippet.type === 'pdf' ? (
             <PDFViewerTab snippet={snippet} />
+          ) : snippet.type === 'canvas' || snippet.language === 'canvas' || snippet.fileName?.endsWith('.canvas') ? (
+            <CanvasTabPane snippet={snippet} onSave={onSave} isSelected={isSelected} />
           ) : (
             <Editor
               snippet={snippet}

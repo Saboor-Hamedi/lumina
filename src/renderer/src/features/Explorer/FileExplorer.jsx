@@ -12,7 +12,8 @@ import {
   Trash2,
   Check,
   X,
-  Clipboard
+  Clipboard,
+  LayoutDashboard
 } from 'lucide-react'
 import { useVaultStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
@@ -20,6 +21,7 @@ import {
   DndContext,
   closestCenter,
   pointerWithin,
+  rectIntersection,
   useDraggable,
   useDroppable,
   DragOverlay,
@@ -530,6 +532,85 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
 
   const { size, handleResizeStart } = useResizable(modalRef)
 
+  const explorerCollisionDetection = useCallback((args) => {
+    const pointerCollisions = pointerWithin(args)
+    if (pointerCollisions.length > 0) {
+      const folderMatch = pointerCollisions.find((c) => String(c.id).startsWith('folder-'))
+      if (folderMatch) return [folderMatch]
+
+      const noteMatch = pointerCollisions.find(
+        (c) => c.id !== args.active.id && c.id !== 'root-drop-zone'
+      )
+      if (noteMatch) return [noteMatch]
+
+      return pointerCollisions
+    }
+    return rectIntersection(args)
+  }, [])
+
+  const virtuosoContext = useMemo(
+    () => ({
+      creatingValue,
+      setCreatingValue,
+      submitCreation,
+      setCreating,
+      query,
+      collapsedDuringSearch,
+      expandedFolders,
+      selectedIndex,
+      selectedSnippetId,
+      selectedNoteIds,
+      lastClickedFolder,
+      sidebarFocus,
+      setSidebarFocus,
+      setLastClickedFolder,
+      folderColors,
+      renamingFolder,
+      renamingValue,
+      setRenamingValue,
+      submitRename,
+      cancelRename,
+      pinnedFolders,
+      togglePinnedFolder,
+      setSelectedIndex,
+      toggleFolder,
+      handleFolderContextMenu,
+      handleNoteClick,
+      handleSelect,
+      handleBackgroundClick
+    }),
+    [
+      creatingValue,
+      setCreatingValue,
+      submitCreation,
+      setCreating,
+      query,
+      collapsedDuringSearch,
+      expandedFolders,
+      selectedIndex,
+      selectedSnippetId,
+      selectedNoteIds,
+      lastClickedFolder,
+      sidebarFocus,
+      setSidebarFocus,
+      setLastClickedFolder,
+      folderColors,
+      renamingFolder,
+      renamingValue,
+      setRenamingValue,
+      submitRename,
+      cancelRename,
+      pinnedFolders,
+      togglePinnedFolder,
+      setSelectedIndex,
+      toggleFolder,
+      handleFolderContextMenu,
+      handleNoteClick,
+      handleSelect,
+      handleBackgroundClick
+    ]
+  )
+
   const renderItemContent = useCallback((index, item, context) => {
     if (item.type === 'input') {
       return (
@@ -554,6 +635,8 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
           >
             {item.kind === 'folder' ? (
               <Folder size={14} fill="#e8a825" color="#e8a825" className="folder-icon-color" />
+            ) : item.kind === 'canvas' ? (
+              <LayoutDashboard size={14} className="icon-blue" />
             ) : (
               <FileText size={14} className="icon-blue" />
             )}
@@ -567,7 +650,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
               }}
               onBlur={(e) => context.submitCreation(e.target.value)}
               onClick={(e) => e.stopPropagation()}
-              placeholder={`New ${item.kind}...`}
+              placeholder={item.kind === 'canvas' ? 'New Canvas...' : `New ${item.kind}...`}
             />
           </div>
         </div>
@@ -863,81 +946,47 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
 
               <DndContext
                 sensors={sensors}
-                collisionDetection={pointerWithin}
+                collisionDetection={explorerCollisionDetection}
                 onDragStart={handleListDragStart}
                 onDragEnd={handleListDragEnd}
               >
-                <SortableContext
-                  items={allSnippets.map((s) => s.id)}
-                  strategy={verticalListSortingStrategy}
+                <DroppableVirtuosoWrapper
+                  isDragging={!!activeListDragItem}
+                  isRootFocused={sidebarFocus === 'root'}
+                  onClick={handleBackgroundClick}
+                  onDragEnter={(e) => handleExternalDragEnter(e, '')}
+                  onDragOver={(e) => handleExternalDragOver(e, '')}
+                  onDragLeave={handleExternalDragLeave}
+                  onDrop={(e) => handleExternalDrop(e, '')}
                 >
-                  <DroppableVirtuosoWrapper
-                    isDragging={!!activeListDragItem}
-                    isRootFocused={sidebarFocus === 'root'}
-                    onClick={handleBackgroundClick}
-                    onDragEnter={(e) => handleExternalDragEnter(e, '')}
-                    onDragOver={(e) => handleExternalDragOver(e, '')}
-                    onDragLeave={handleExternalDragLeave}
-                    onDrop={(e) => handleExternalDrop(e, '')}
-                  >
-                    {isDraggingExternal && !hoveredFolderId && (
-                      <ExternalDropOverlay targetName="Vault Root" />
-                    )}
-                    {flatTree.length === 0 ? (
-                      <div className="empty-state" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        No notes or folders found
-                      </div>
-                    ) : (
-                      <Virtuoso
-                        ref={virtuosoRef}
-                        style={{ flex: 1, height: '100%' }}
-                        data={flatTree}
-                        overscan={400}
-                        computeItemKey={(index, item) => {
-                          if (item.type === 'file') return item.snippet.id
-                          if (item.type === 'folder') return item.id
-                          if (item.type === 'input') return `input-${item.parentId}`
-                          if (item.type === 'root-drop') return 'root-drop-zone'
-                          return index
-                        }}
-                        context={{
-                          creatingValue,
-                          setCreatingValue,
-                          submitCreation,
-                          setCreating,
-                          query,
-                          collapsedDuringSearch,
-                          expandedFolders,
-                          selectedIndex,
-                          selectedSnippetId,
-                          selectedNoteIds,
-                          lastClickedFolder,
-                          sidebarFocus,
-                          setSidebarFocus,
-                          setLastClickedFolder,
-                          folderColors,
-                          renamingFolder,
-                          renamingValue,
-                          setRenamingValue,
-                          submitRename,
-                          cancelRename,
-                          pinnedFolders,
-                          togglePinnedFolder,
-                          setSelectedIndex,
-                          toggleFolder,
-                          handleFolderContextMenu,
-                          handleNoteClick,
-                          handleSelect,
-                          handleBackgroundClick
-                        }}
-                        components={{
-                          Footer: VirtuosoFooter
-                        }}
-                        itemContent={renderItemContent}
-                      />
-                    )}
-                  </DroppableVirtuosoWrapper>
-                  </SortableContext>
+                  {isDraggingExternal && !hoveredFolderId && (
+                    <ExternalDropOverlay targetName="Vault Root" />
+                  )}
+                  {flatTree.length === 0 ? (
+                    <div className="empty-state" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      No notes or folders found
+                    </div>
+                  ) : (
+                    <Virtuoso
+                      ref={virtuosoRef}
+                      style={{ flex: 1, height: '100%' }}
+                      data={flatTree}
+                      overscan={120}
+                      computeItemKey={(index, item) => {
+                        if (item.type === 'file') return item.snippet.id
+                        if (item.type === 'folder') return item.id
+                        if (item.type === 'input') return `input-${item.parentId}`
+                        if (item.type === 'root-drop') return 'root-drop-zone'
+                        return index
+                      }}
+                      context={virtuosoContext}
+                      components={{
+                        Footer: VirtuosoFooter
+                      }}
+                      itemContent={renderItemContent}
+                    />
+                  )}
+                </DroppableVirtuosoWrapper>
                   {createPortal(
                     <DragOverlay
                       zIndex={9999}

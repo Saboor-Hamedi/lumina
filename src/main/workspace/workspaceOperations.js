@@ -93,12 +93,17 @@ export class WorkspaceOperations {
     const cleanedTitle = this.sanitizeTitleForFilename(rawTitle)
 
     const rawExt = path.extname(snippet.fileName || (oldSnippet?.fileName || ''))
-    const ext = rawExt || '.md'
+    const isCanvas =
+      rawExt.toLowerCase() === '.canvas' ||
+      snippet.type === 'canvas' ||
+      snippet.language === 'canvas'
+    const ext = rawExt || (isCanvas ? '.canvas' : '.md')
     const isMarkdown =
-      !rawExt ||
-      ext.toLowerCase() === '.md' ||
-      ext.toLowerCase() === '.markdown' ||
-      ext.toLowerCase() === '.mdx'
+      !isCanvas &&
+      (!rawExt ||
+        ext.toLowerCase() === '.md' ||
+        ext.toLowerCase() === '.markdown' ||
+        ext.toLowerCase() === '.mdx')
 
     let newFileName = snippet.fileName
 
@@ -112,7 +117,7 @@ export class WorkspaceOperations {
 
       if (fileNameExplicitlyChanged) {
         newFileName = snippet.fileName
-      } else if (titleChanged && isMarkdown) {
+      } else if (titleChanged && (isMarkdown || isCanvas)) {
         newFileName = `${cleanedTitle}${ext}`
       } else if (!newFileName) {
         newFileName = `${cleanedTitle}${ext}`
@@ -120,11 +125,12 @@ export class WorkspaceOperations {
     } else {
       if (!newFileName) {
         newFileName = `${cleanedTitle}${ext}`
-      } else if (isMarkdown) {
+      } else if (isMarkdown || isCanvas) {
         const fileBase = path.basename(newFileName, ext)
         if (
           fileBase.toLowerCase() === 'new note' ||
           fileBase.toLowerCase() === 'untitled' ||
+          fileBase.toLowerCase() === 'untitled canvas' ||
           (cleanedTitle &&
             cleanedTitle.toLowerCase() !== 'untitled' &&
             fileBase.toLowerCase() !== cleanedTitle.toLowerCase())
@@ -135,7 +141,7 @@ export class WorkspaceOperations {
     }
 
     if (!path.extname(newFileName) && !newFileName.startsWith('.')) {
-      newFileName = `${newFileName}.md`
+      newFileName = isCanvas ? `${newFileName}.canvas` : `${newFileName}.md`
     }
 
     const relativeFolder = (snippet.folderId || '').replace(/\\/g, '/')
@@ -223,10 +229,12 @@ export class WorkspaceOperations {
 
     const updatedSnippet = {
       ...snippet,
-      title: isMarkdown ? cleanedTitle : newFileName,
+      title: isMarkdown || isCanvas ? cleanedTitle : newFileName,
       timestamp: newTimestamp,
       fileName: newFileName,
-      folderId: relativeFolder
+      folderId: relativeFolder,
+      type: isCanvas ? 'canvas' : snippet.type || 'snippet',
+      language: isCanvas ? 'canvas' : snippet.language || (isMarkdown ? 'markdown' : 'text')
     }
     snippetsMap.set(snippet.id, updatedSnippet)
     return updatedSnippet

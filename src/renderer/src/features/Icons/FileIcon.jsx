@@ -74,6 +74,12 @@ export const getFileIcon = (title = '', language = '') => {
     return BookText
   }
 
+  // Canvas files use LayoutDashboard
+  if (lang === 'canvas' || titleLower.endsWith('.canvas')) {
+    _iconCache.set(cacheKey, LayoutDashboard)
+    return LayoutDashboard
+  }
+
   // Base name without extension
   const baseName = titleLower.includes('.') ? titleLower.slice(0, titleLower.lastIndexOf('.')) : titleLower
   const ext = titleLower.includes('.') ? titleLower.slice(titleLower.lastIndexOf('.') + 1) : ''
@@ -198,7 +204,8 @@ export const getFileIcon = (title = '', language = '') => {
     txt: FileText,
     pdf: FileText,
     doc: FileText,
-    docx: FileText
+    docx: FileText,
+    canvas: LayoutDashboard
   }
 
   if (ext && extensionMap[ext]) {

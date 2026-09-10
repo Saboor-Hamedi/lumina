@@ -49,6 +49,13 @@ export function useFolderContextMenu({
         setCreating({ type: 'folder', parentId: folderContext?.folderId || null })
         setCreatingValue('')
       },
+      onCreateCanvas: () => {
+        if (folderContext?.folderId) {
+          setExpandedFolders((prev) => new Set(prev).add(folderContext.folderId))
+        }
+        setCreating({ type: 'canvas', parentId: folderContext?.folderId || null })
+        setCreatingValue('')
+      },
       onRename: () => {
         if (folderContext?.folderId) {
           const parts = folderContext.folderId.split('/')

@@ -140,6 +140,20 @@ export function useExplorerOperations({
       setCreatingValue('')
     }
 
+    const handleTriggerNewCanvas = () => {
+      let targetFolderId = lastClickedFolder
+      if (targetFolderId === null) {
+        const activeSnippet = snippets.find((s) => s.id === selectedSnippetId)
+        targetFolderId = activeSnippet?.folderId || ''
+      }
+
+      if (targetFolderId) {
+        setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
+      }
+      setCreating({ type: 'canvas', parentId: targetFolderId })
+      setCreatingValue('')
+    }
+
     const handleRevealFolder = (e) => {
       const raw = e.detail?.folderId || e.detail
       if (!raw) return
@@ -179,11 +193,13 @@ export function useExplorerOperations({
     }
 
     window.addEventListener('trigger-new-note', handleTriggerNewNote)
+    window.addEventListener('trigger-new-canvas', handleTriggerNewCanvas)
     window.addEventListener('reveal-folder-in-explorer', handleRevealFolder)
     window.addEventListener('focus-explorer-root', handleFocusRoot)
 
     return () => {
       window.removeEventListener('trigger-new-note', handleTriggerNewNote)
+      window.removeEventListener('trigger-new-canvas', handleTriggerNewCanvas)
       window.removeEventListener('reveal-folder-in-explorer', handleRevealFolder)
       window.removeEventListener('focus-explorer-root', handleFocusRoot)
     }
@@ -244,6 +260,44 @@ export function useExplorerOperations({
           await window.api.createFolder(folderPath)
           setExpandedFolders((prev) => new Set(prev).add(folderPath))
           await loadVault()
+        } else if (creating.type === 'canvas') {
+          const newId = crypto.randomUUID
+            ? crypto.randomUUID()
+            : Math.random().toString(36).substring(2, 15)
+          const folderId = creating.parentId || ''
+          const defaultCanvasData = {
+            nodes: [
+              {
+                id: `node-${Date.now()}`,
+                type: 'text',
+                title: 'Idea Board',
+                text: 'Welcome to Lumina Canvas! Double-click to add ideas or connect cards.',
+                x: 120,
+                y: 120,
+                width: 260,
+                height: 160,
+                color: 'default'
+              }
+            ],
+            edges: [],
+            viewport: { x: 0, y: 0, zoom: 1 }
+          }
+          const newSnippet = {
+            id: newId,
+            title: sanitizedName,
+            fileName: `${sanitizedName}.canvas`,
+            code: JSON.stringify(defaultCanvasData, null, 2),
+            language: 'canvas',
+            type: 'canvas',
+            tags: '',
+            folderId: folderId,
+            timestamp: Date.now(),
+            isPinned: false,
+            isLearned: false
+          }
+          await saveSnippet(newSnippet)
+          if (folderId) setExpandedFolders((prev) => new Set(prev).add(folderId))
+          handleSelect(newSnippet)
         } else {
           const newId = crypto.randomUUID
             ? crypto.randomUUID()

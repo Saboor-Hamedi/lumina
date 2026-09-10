@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import {
   useSensor,
   useSensors,
@@ -42,6 +42,17 @@ export function useExplorerDnd({
   setExpandedFolders
 }) {
   const [activeListDragItem, setActiveListDragItem] = useState(null)
+  const pointerPosRef = useRef({ x: 0, y: 0 })
+
+  // Track cursor position during drag to detect cross-pane drops (e.g. dropping onto Canvas)
+  useEffect(() => {
+    if (!activeListDragItem) return
+    const onPointerMove = (e) => {
+      pointerPosRef.current = { x: e.clientX, y: e.clientY }
+    }
+    window.addEventListener('pointermove', onPointerMove, { passive: true })
+    return () => window.removeEventListener('pointermove', onPointerMove)
+  }, [activeListDragItem])
 
   // Configure sensors with activation constraints to prevent unintentional dragging during clicks
   const sensors = useSensors(
@@ -97,12 +108,39 @@ export function useExplorerDnd({
    * 2. Dropping a folder onto another folder (nests folder inside target)
    * 3. Dropping note(s) onto a folder (moves notes into target folder)
    * 4. Dropping note onto another note (reorders notes and updates custom sort order)
+   * 5. Dropping note(s) or images onto an active Canvas tab
    */
   const handleListDragEnd = useCallback(
     async (event) => {
       const dragItem = activeListDragItem
       setActiveListDragItem(null)
       const { active, over } = event
+
+      // Detect if user dropped onto an active Canvas tab in the workspace
+      const dropX = pointerPosRef.current.x
+      const dropY = pointerPosRef.current.y
+      if (dropX > 0 && dropY > 0) {
+        const dropTarget = document.elementFromPoint(dropX, dropY)
+        const canvasContainer = dropTarget?.closest('.lumina-canvas-container')
+        if (canvasContainer) {
+          const idsToDrop = dragItem?.draggedSnippetIds?.length
+            ? dragItem.draggedSnippetIds
+            : [active.id]
+          const snippetsToDrop = allSnippets.filter((s) => idsToDrop.includes(s.id))
+
+          window.dispatchEvent(
+            new CustomEvent('lumina:canvas-drop-item', {
+              detail: {
+                snippets: snippetsToDrop,
+                clientX: dropX,
+                clientY: dropY
+              }
+            })
+          )
+          return
+        }
+      }
+
       if (!over || active.id === over.id) return
 
       // Destination 1: Root Drop Zone (Move to workspace root)

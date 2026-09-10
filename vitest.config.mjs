@@ -10,10 +10,10 @@ export default defineConfig({
     testTimeout: 20000,
     setupFiles: ['./src/test/setup.js'],
     include: [
-      '**/*.{test,spec}.{js,jsx}',
-      'src/**/*.test.{js,jsx}',
-      'src/main/**/*.test.js',
-      'src/renderer/**/*.test.{js,jsx}'
+      '**/*.{test,spec}.{js,jsx,ts,tsx}',
+      'src/**/*.test.{js,jsx,ts,tsx}',
+      'src/main/**/*.test.{js,ts}',
+      'src/renderer/**/*.test.{js,jsx,ts,tsx}'
     ],
     exclude: ['node_modules', 'out', 'build', 'dist', 'test/e2e'],
     coverage: {

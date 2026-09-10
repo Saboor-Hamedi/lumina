@@ -32,7 +32,7 @@ const PDF_EXTS = new Set(['.pdf'])
  * Files matching these extensions are parsed for frontmatter, markdown wikilinks, and plain text content.
  * @type {Set<string>}
  */
-const TEXT_EXTS = new Set(['.md', '.markdown', '.txt'])
+const TEXT_EXTS = new Set(['.md', '.markdown', '.txt', '.canvas'])
 
 /**
  * Safely parses YAML frontmatter from raw markdown content without throwing fatal errors.
@@ -285,7 +285,8 @@ export class WorkspaceScanner {
               }
               seenIds.add(finalId)
 
-              const defaultLang = isMarkdown ? 'markdown' : 'text'
+              const isCanvas = ext === '.canvas'
+              const defaultLang = isCanvas ? 'canvas' : isMarkdown ? 'markdown' : 'text'
 
               return {
                 id: finalId,
@@ -304,7 +305,7 @@ export class WorkspaceScanner {
                     ? null
                     : String(data.customIcon),
                 color: null,
-                type: 'snippet',
+                type: isCanvas ? 'canvas' : 'snippet',
                 is_draft: 0,
                 fileName,
                 folderId: folderId || '',

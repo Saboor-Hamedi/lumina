@@ -16,7 +16,8 @@ import {
   Check,
   X,
   Sparkles,
-  CloudUpload
+  CloudUpload,
+  LayoutDashboard
 } from 'lucide-react'
 import { useVaultStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
@@ -313,6 +314,14 @@ export function useContextMenu({ item, type, callbacks }) {
           icon: <FilePlus size={14} />,
           onClick: () => {
             callbacks.onCreateNote?.()
+            callbacks.onClose?.()
+          }
+        },
+        {
+          label: 'New Canvas',
+          icon: <LayoutDashboard size={14} />,
+          onClick: () => {
+            callbacks.onCreateCanvas?.()
             callbacks.onClose?.()
           }
         },

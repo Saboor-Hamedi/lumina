@@ -1,0 +1,281 @@
+/* ==========================================================================
+   Lumina Canvas Styles
+   ========================================================================== */
+
+.lumina-canvas-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  user-select: none;
+  background-color: var(--bg-app, #0c0d10);
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--border-subtle, rgba(255, 255, 255, 0.15)) 50%, transparent) 1.2px,
+    transparent 1.2px
+  );
+  background-size: 24px 24px;
+}
+
+.lumina-canvas-viewport {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+/* SVG Edges Layer */
+.lumina-canvas-edges-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 10000px;
+  height: 10000px;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 1;
+}
+
+.lumina-canvas-edge-line {
+  fill: none;
+  stroke: color-mix(in srgb, var(--text-accent, #38bdf8) 60%, rgba(255, 255, 255, 0.2));
+  stroke-width: 2px;
+  stroke-linecap: round;
+  marker-end: url(#arrow);
+}
+
+/* Canvas Toolbar */
+.lumina-canvas-toolbar {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background-color: color-mix(in srgb, var(--bg-panel, #18181b) 92%, transparent);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  border-radius: 10px;
+  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(12px);
+  z-index: 100;
+}
+
+.lumina-canvas-divider {
+  width: 1px;
+  height: 18px;
+  background-color: var(--border-subtle, rgba(255, 255, 255, 0.12));
+  margin: 0 2px;
+}
+
+.lumina-canvas-zoom-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted, #94a3b8);
+  min-width: 38px;
+  text-align: center;
+  user-select: none;
+}
+
+.lumina-canvas-tool-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lumina-canvas-tool-btn:hover:not(:disabled) {
+  color: var(--text-main, #ffffff);
+  background-color: var(--bg-active, rgba(255, 255, 255, 0.08));
+}
+
+.lumina-canvas-tool-btn.active {
+  color: var(--text-accent, #38bdf8);
+  background-color: color-mix(in srgb, var(--text-accent, #38bdf8) 18%, transparent);
+}
+
+.lumina-canvas-tool-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Image Node Styling */
+.lumina-canvas-node-image-wrap {
+  width: 100%;
+  height: calc(100% - 34px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  border-radius: 0 0 7px 7px;
+}
+
+.lumina-canvas-node-image-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Canvas Node Card */
+.lumina-canvas-node {
+  position: absolute;
+  border-radius: 8px;
+  background-color: var(--bg-panel, #18181b);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  cursor: move;
+  z-index: 5;
+}
+
+.lumina-canvas-node.selected {
+  border-color: var(--text-accent, #38bdf8) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--text-accent, #38bdf8) 40%, transparent),
+    0 12px 32px -4px rgba(0, 0, 0, 0.6);
+  z-index: 10;
+}
+
+/* Node Color Themes */
+.lumina-canvas-node.color-yellow {
+  border-top: 3px solid #eab308;
+}
+.lumina-canvas-node.color-purple {
+  border-top: 3px solid #a855f7;
+}
+.lumina-canvas-node.color-cyan {
+  border-top: 3px solid #06b6d4;
+}
+.lumina-canvas-node.color-green {
+  border-top: 3px solid #22c55e;
+}
+.lumina-canvas-node.color-orange {
+  border-top: 3px solid #f97316;
+}
+.lumina-canvas-node.color-red {
+  border-top: 3px solid #ef4444;
+}
+.lumina-canvas-node.color-default {
+  border-top: 3px solid var(--border-subtle, rgba(255, 255, 255, 0.2));
+}
+
+.lumina-canvas-node-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background-color: color-mix(in srgb, var(--bg-card, #20232b) 80%, transparent);
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-main, #f8fafc);
+  gap: 8px;
+}
+
+.lumina-canvas-node-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: text;
+}
+
+.lumina-canvas-title-input {
+  flex: 1;
+  background: var(--bg-app, #0c0d10);
+  border: 1px solid var(--text-accent, #38bdf8);
+  border-radius: 4px;
+  color: var(--text-main, #f8fafc);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 2px 6px;
+  outline: none;
+}
+
+.lumina-canvas-node-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.lumina-canvas-node:hover .lumina-canvas-node-actions,
+.lumina-canvas-node.selected .lumina-canvas-node-actions {
+  opacity: 1;
+}
+
+.lumina-canvas-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.lumina-canvas-action-btn:hover {
+  color: var(--text-main, #ffffff);
+  background-color: var(--bg-active, rgba(255, 255, 255, 0.1));
+}
+
+.lumina-canvas-action-btn.delete:hover {
+  color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.15);
+}
+
+.lumina-canvas-node-body {
+  padding: 10px 12px;
+  flex: 1;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted, #94a3b8);
+  overflow-y: auto;
+  cursor: text;
+}
+
+.lumina-canvas-node-text {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.lumina-canvas-node-text .placeholder {
+  opacity: 0.4;
+  font-style: italic;
+}
+
+.lumina-canvas-text-area {
+  width: 100%;
+  height: 100%;
+  min-height: 80px;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  color: var(--text-main, #f8fafc);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 0;
+}

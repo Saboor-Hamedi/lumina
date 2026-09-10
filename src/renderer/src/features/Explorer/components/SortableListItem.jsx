@@ -1,28 +1,61 @@
-import React from 'react'
-import { useSortable } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
+import React, { useRef, useEffect, useCallback } from 'react'
+import { useDraggable, useDroppable } from '@dnd-kit/core'
 import SidebarItem from '../../Navigation/components/SidebarItem'
 
 export const SortableListItem = React.memo(
   ({ snippet, isActive, onClick, onContextMenu, searchQuery, matchSnippet, depth }) => {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-      id: snippet.id
+    const {
+      attributes,
+      listeners,
+      setNodeRef: setDragRef,
+      isDragging
+    } = useDraggable({
+      id: snippet.id,
+      data: {
+        type: 'file',
+        snippet
+      }
     })
 
-    const style = {
-      transform: CSS.Transform.toString(transform),
-      transition,
-      opacity: isDragging ? 0.5 : 1,
-      zIndex: isDragging ? 99 : 1,
-      position: 'relative'
-    }
+    const { setNodeRef: setDropRef, isOver } = useDroppable({
+      id: snippet.id,
+      data: {
+        type: 'file',
+        snippet
+      }
+    })
 
-    const handleClick = React.useCallback(
+    const wasDraggingRef = useRef(false)
+    useEffect(() => {
+      if (isDragging) {
+        wasDraggingRef.current = true
+      }
+    }, [isDragging])
+
+    const setCombinedRef = useCallback(
+      (node) => {
+        setDragRef(node)
+        setDropRef(node)
+      },
+      [setDragRef, setDropRef]
+    )
+
+    const handleClick = useCallback(
       (e) => {
+        if (wasDraggingRef.current) {
+          wasDraggingRef.current = false
+          return
+        }
         if (onClick) onClick(snippet, e)
       },
       [onClick, snippet]
     )
+
+    const style = {
+      opacity: isDragging ? 0.35 : 1,
+      zIndex: isDragging ? 99 : 1,
+      position: 'relative'
+    }
 
     return (
       <SidebarItem
@@ -33,7 +66,7 @@ export const SortableListItem = React.memo(
         isActive={isActive}
         searchQuery={searchQuery}
         matchSnippet={matchSnippet}
-        dndProps={{ attributes, listeners, setNodeRef }}
+        dndProps={{ attributes, listeners, setNodeRef: setCombinedRef }}
         style={style}
       />
     )
