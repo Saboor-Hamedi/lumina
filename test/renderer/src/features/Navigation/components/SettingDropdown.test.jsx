@@ -38,10 +38,10 @@ describe('SettingDropdown', () => {
     expect(screen.getByText('Theme')).toBeInTheDocument()
   })
 
-  it('shows Sign In to Sync when no google user', () => {
+  it('shows Sign in with Google when no google user', () => {
     render(<SettingDropdown {...defaultProps()} />)
-    expect(screen.getByText('Sign In to Sync')).toBeInTheDocument()
-    expect(screen.queryByText('Sign Out')).not.toBeInTheDocument()
+    expect(screen.getByText('Sign in with Google')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Sign out of Google')).not.toBeInTheDocument()
   })
 
   it('shows google user name when logged in', () => {
@@ -54,8 +54,8 @@ describe('SettingDropdown', () => {
 
     render(<SettingDropdown {...defaultProps()} />)
     expect(screen.getByText('John Doe')).toBeInTheDocument()
-    expect(screen.getByText('john@example.com')).toBeInTheDocument()
-    expect(screen.getByText('Sign Out')).toBeInTheDocument()
+    expect(screen.getByLabelText(/john@example\.com/)).toBeInTheDocument()
+    expect(screen.getByLabelText('Sign out of Google')).toBeInTheDocument()
   })
 
   it('does not show Sign In when logged in', () => {
@@ -67,7 +67,7 @@ describe('SettingDropdown', () => {
     })
 
     render(<SettingDropdown {...defaultProps()} />)
-    expect(screen.queryByText('Sign In to Sync')).not.toBeInTheDocument()
+    expect(screen.queryByText('Sign in with Google')).not.toBeInTheDocument()
   })
 
   it('shows backup button when logged in', () => {
@@ -135,7 +135,7 @@ describe('SettingDropdown', () => {
       const props = defaultProps()
 
       render(<SettingDropdown {...props} />)
-      fireEvent.click(screen.getByText('Sign In to Sync'))
+      fireEvent.click(screen.getByText('Sign in with Google'))
 
       await vi.waitFor(() => {
         expect(global.window.api.loginWithGoogle).toHaveBeenCalled()
@@ -151,10 +151,10 @@ describe('SettingDropdown', () => {
       const props = defaultProps()
 
       render(<SettingDropdown {...props} />)
-      fireEvent.click(screen.getByText('Sign In to Sync'))
+      fireEvent.click(screen.getByText('Sign in with Google'))
 
       await vi.waitFor(() => {
-        expect(props.onClose).toHaveBeenCalled()
+        expect(global.window.api.loginWithGoogle).toHaveBeenCalled()
       })
       expect(useSettingsStore.getState().settings.googleUser).toBeNull()
     })
@@ -171,9 +171,11 @@ describe('SettingDropdown', () => {
       const props = defaultProps()
 
       render(<SettingDropdown {...props} />)
-      fireEvent.click(screen.getByText('Sign Out'))
+      fireEvent.click(screen.getByLabelText('Sign out of Google'))
 
-      expect(useSettingsStore.getState().settings.googleUser).toBeNull()
+      await vi.waitFor(() => {
+        expect(useSettingsStore.getState().settings.googleUser).toBeNull()
+      })
       expect(props.onClose).toHaveBeenCalled()
     })
   })

@@ -9,7 +9,7 @@ describe('themeDefinitions', () => {
 
     it('dark theme is present with expected colors', () => {
       expect(THEMES.dark).toBeDefined()
-      expect(THEMES.dark.colors['--bg-app']).toBe('#000000')
+      expect(THEMES.dark.colors['--bg-app']).toBe('#0c0d10')
       expect(THEMES.dark.colors['--text-accent']).toBe('#38bdf8')
     })
 
@@ -58,7 +58,7 @@ describe('themeDefinitions', () => {
     it('applies theme variables to document root', () => {
       applyTheme('dark')
       const root = document.documentElement
-      expect(root.style.getPropertyValue('--bg-app')).toBe('#000000')
+      expect(root.style.getPropertyValue('--bg-app')).toBe('#0c0d10')
       expect(root.style.getPropertyValue('--text-accent')).toBe('#38bdf8')
     })
 

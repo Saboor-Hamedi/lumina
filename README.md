@@ -3,13 +3,13 @@
 ![banner](./banner.png?v=2)
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.0.2-blue" alt="version">
-  <img src="https://img.shields.io/badge/unit%20tests-117%20passed-success" alt="unit tests">
+  <img src="https://img.shields.io/badge/version-1.0.44-blue" alt="version">
+  <img src="https://img.shields.io/badge/unit%20tests-757%20passed-success" alt="unit tests">
   <img src="https://img.shields.io/badge/e2e%20tests-23%20tests-blue" alt="e2e tests">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="license">
 </p>
 
-lumina is a premium, AI-powered thinking environment. features a multi-tab workspace, knowledge graph, ai semantic search (local + cloud), 21 themes, and a beautiful editor with wikilinks, mermaid diagrams, KaTeX math formulas, code blocks with image export, callouts, and progressive disclosure formatting.
+lumina is a premium, AI-powered thinking environment and personal intelligence cockpit. Features a multi-tab workspace, interactive knowledge graph, AI semantic search (local + cloud), 21 ergonomic themes, persistent AI Memory profiles, Google Drive sync mirroring, draggable modals, and a beautiful editor with wikilinks, mermaid diagrams, KaTeX math formulas, code blocks with image export, callouts, and progressive disclosure formatting.
 
 ---
 
@@ -17,55 +17,56 @@ lumina is a premium, AI-powered thinking environment. features a multi-tab works
 
 ### core
 
-- **workspace-first** — all notes are stored locally as plain text files. you own your data.
-- **"Ask Anything" bar (spotlight)** — press `ctrl+space` anywhere (even when the window is hidden) to search notes or ask the AI from one place
-- **global spotlight** — summon the command palette from anywhere on your computer, even when lumina is in the background
-- **multi-tab workspace** — open many notes at once with pinned tabs, drag reorder, dirty indicators
-- **live preview** — wysiwym editing with intelligent syntax hiding
-- **wikilinks** — `[[link]]` and `[[link|display]]` with auto-update on rename
-- **knowledge graph** — interactive force-directed graph visualisation of note connections
-- **ai semantic search** — local embeddings via onnx (privacy-first) or cloud providers
-- **daily notes** — one-click journal creation with auto-date
-- **multi-workspace** — switch between workspace directories
+- **workspace-first** — all notes are stored locally as plain text files on disk. you own 100% of your data.
+- **"Ask Anything" bar (spotlight)** — press `ctrl+space` anywhere (even when the window is hidden) to search notes or ask the AI from one place.
+- **global spotlight** — summon the command palette from anywhere on your computer, even when lumina is in the background.
+- **multi-tab workspace** — open many notes at once with pinned tabs, drag reorder, dirty indicators, and caret memory.
+- **google drive sync & push** — seamless git-like cloud backup with real-time push timestamps, auto-zip or folder sync, and non-blocking uploads.
+- **live preview** — wysiwym editing with intelligent syntax hiding.
+- **wikilinks** — `[[link]]` and `[[link|display]]` with auto-update on rename and hover preview cards.
+- **knowledge graph** — interactive force-directed graph visualisation of note connections (2D Canvas & 3D WebGL).
+- **ai semantic search** — local embeddings via onnx (privacy-first) or cloud providers.
+- **daily notes** — one-click journal creation with auto-date and starter templates.
+- **multi-workspace** — instantly switch between workspace directories.
 
 ### editor
 
-- **codemirror 6** — advanced text editor with 100+ language syntax highlighting
-- **mathematical formulas (KaTeX)** — render block (`$$...$$`) and inline (`$...$`) math formulas with seamless click-to-edit
-- **fenced code blocks** — unified themes, crisp selection without ghost halos, copy-to-clipboard, and copy-as-image
-- **mermaid diagrams** — render ```` ```mermaid ```` blocks inline
-- **callouts** — `> [!note]`, `> [!warning]`, `> [!tip]` etc.
-- **wikilinks** — autocomplete, preview, bidirectional linking
-- **image paste** — drag-and-drop images, auto-saved to `.lumina/assets/`
-- **responsive layout** — padded scroller with comfortable margins across compact and widescreen displays
-- **auto-save** — debounced write to disk on every change
-- **caret persistence** — remembers cursor position per file
+- **codemirror 6** — advanced text editor with 100+ language syntax highlighting.
+- **mathematical formulas (KaTeX)** — render block (`$$...$$`) and inline (`$...$`) math formulas with seamless click-to-edit.
+- **fenced code blocks** — unified themes, crisp selection without ghost halos, copy-to-clipboard, and copy-as-image.
+- **mermaid diagrams** — render inline diagrams with zoom and full lightbox view.
+- **callouts** — `> [!note]`, `> [!warning]`, `> [!tip]`, `> [!important]`, `> [!caution]`.
+- **wikilinks** — autocomplete, preview, bidirectional linking.
+- **image paste** — drag-and-drop images, auto-saved to `.lumina/assets/`.
+- **responsive layout** — padded scroller with comfortable margins across compact and widescreen displays.
+- **auto-save** — debounced write to disk on every change.
+- **caret persistence** — remembers exact cursor line and column per file across restarts.
 
-### ai
+### ai & memory
 
-- **multi-model** — deepseek (v3 / r1), openai (gpt-4o), anthropic (claude), ollama (local)
-- **chat panel + modal** — sidebar chat or floating modal overlay
-- **composer with slash commands** — `/fast`, `/think`, `/creative`, `/code`, `/image`, `/clear`
-- **rag context** — optional semantic search over your workspace as context for every query
-- **image generation** — huggingface inference api
-- **local embeddings** — `all-minilm-l6-v2` via @xenova/transformers in a web worker
+- **multi-model** — deepseek (v3 / r1), openai (gpt-4o), anthropic (claude), ollama (local).
+- **ai memory profile** — persistent `memory.json` store tracking user identity, bio, preferences, and learned facts with inline editor in Settings.
+- **natural context addressing** — lumina naturally addresses you by name and weaves your background, role, and active projects smoothly into chat and recommendations.
+- **multi-mode plan intelligence** — plan mode intelligently routes to specialized disciplines (Research Mode, Creative Mode, Code Mode).
+- **chat panel + modal** — sidebar chat or floating draggable modal overlay.
+- **composer with slash commands** — `/fast`, `/think`, `/creative`, `/code`, `/image`, `/clear`.
+- **rag context** — semantic search over your workspace as real-time context for every query.
+- **open editor tab context** — ai prompt engine treats active unsaved buffers as immediate workspace context.
+- **image generation** — huggingface inference api integration.
+- **local embeddings** — `all-minilm-l6-v2` via @xenova/transformers in a web worker.
 
-### ui
+### ui & ergonomics
 
-- **21 themes** — dark, light, high-contrast, nature-inspired palettes
-- **curtain sidebars** — smooth sliding curtain resize mechanic that protects notes and tabs from squishing
-- **glassmorphism** — mirror mode with backdrop blur and translucency
-- **resizable sidebars** — left explorer + right panels, fully configurable
-- **quick search / spotlight** — `ctrl+space` for the global "ask anything" bar; `ctrl/cmd+p` for instant note access
-- **keyboard-first** — comprehensive shortcuts (customisable)
-- **tab management** — pin, reorder, close to right, close others
-
-### search
-
-- **full-text** — fast keyword search via flexsearch
-- **semantic** — vector similarity search over your entire workspace
-- **tags** — visual tag pills with autocomplete
-- **file explorer** — familiar tree view with folder colours
+- **21 curated themes** — dark, light, high-contrast, and retro amber palettes with calibrated contrast for long sessions.
+- **zero-latency draggable modals** — theme selector and icon picker feature direct GPU-accelerated header drag handling with position memory.
+- **crisp zero-blur backdrops** — high-contrast dark backdrops for instant rendering and readability.
+- **curtain sidebars** — smooth sliding curtain resize mechanic that protects notes and tabs from squishing.
+- **glassmorphism** — mirror mode with backdrop blur and translucency.
+- **resizable sidebars** — left explorer + right panels, fully configurable.
+- **quick search / spotlight** — `ctrl+space` for global spotlight; `ctrl/cmd+p` for instant note search.
+- **keyboard-first** — comprehensive shortcuts across all modes and dialogs.
+- **tab management** — pin, reorder, close to right, close others.
+- **tactile controls** — smooth centered toggle switches without click distortion.
 
 ---
 
@@ -144,35 +145,36 @@ click the graph icon in the activity bar. nodes are notes, edges are wikilinks. 
 
 ```
 lumina/
-├── resources/                   # application icon (.png, .ico) and desktop packaging assets
+├── resources/                   # application icons (.png, .ico) and desktop packaging assets
 ├── src/
 │   ├── main/                    # electron main process
-│   │   ├── index.js             # main entry point, IPC, window lifecycle
-│   │   ├── SettingsManager.js   # settings persistence to .lumina/settings.json
+│   │   ├── index.js             # main entry point, IPC registry, window lifecycle
+│   │   ├── SettingsManager.js   # settings persistence (.lumina/settings.json)
 │   │   ├── FloatingWindowManager.js # draggable floating AI chat window manager
 │   │   ├── AppUpdater.js        # background auto-update engine
 │   │   ├── indexer-worker.js    # semantic vector indexing worker
-│   │   ├── workspace/           # workspace operations, scanner, indexer, search, media
+│   │   ├── workspace/           # workspace operations, file watcher, scanner, indexer, search, media
 │   │   ├── auth/                # Google OAuth authentication & token exchange
-│   │   ├── backup/              # Google Drive cloud backup & recovery
+│   │   ├── backup/              # Google Drive cloud backup & recovery engine
 │   │   └── handlers/            # shortcuts, tray icon, auto-launcher, window resize & opacity
 │   ├── export/                  # note & bundle export engines (PDF, DOCX, Markdown, HTML)
 │   ├── preload/                 # secure context bridge (IPC exposed APIs)
 │   │   └── index.js
 │   └── renderer/                # react 19 frontend application
 │       └── src/
-│           ├── core/            # core state, hooks, and client utilities
-│           │   ├── store/       # zustand stores (workspaceStore, useSettingsStore, etc.)
-│           │   ├── hooks/       # keyboard shortcuts, font settings, theme hooks
+│           ├── core/            # core state, hooks, and client infrastructure
+│           │   ├── store/       # zustand stores (workspaceStore, useSettingsStore, useUpdateStore, etc.)
+│           │   ├── hooks/       # keyboard shortcuts, font settings, theme hooks, unsaved state
 │           │   ├── ai/          # AI provider adapters, tool registry, token streaming
 │           │   ├── notification/# in-app banner, toast & status notifications
-│           │   ├── utils/       # helper utilities, starters, and file helpers
-│           │   └── db/          # client database & local storage models
+│           │   ├── themes/      # theme definitions, palette mappings, CSS variable injector
+│           │   ├── utils/       # helper utilities, search rankers, graph builders, starters
+│           │   └── db/          # client database & local storage models (Dexie / IndexedDB)
 │           ├── features/        # domain feature modules
-│           │   ├── Editor/      # CodeMirror 6 markdown editor, KaTeX math, callouts, wikilinks
-│           │   ├── AI/          # Lumina AI copilot, session history, composer, prompt modes
+│           │   ├── Editor/      # CodeMirror 6 markdown editor, KaTeX math, callouts, wikilinks, Drive push
+│           │   ├── AI/          # Lumina AI copilot, session history, composer, prompt modes, InlineLumina
 │           │   ├── Layout/      # AppShell 3-pane layout, curtain resizing, TabBar, StatusBar
-│           │   ├── Navigation/  # activity sidebar, vault switcher, quick navigation
+│           │   ├── Navigation/  # activity sidebar, vault switcher, quick navigation, SettingDropdown
 │           │   ├── Explorer/    # virtualized file explorer, drag & drop, favorites, folder colors
 │           │   ├── Inspector/   # right sidebar (Note Details, Outline, Chat panels)
 │           │   ├── Graph/       # interactive 2D (Canvas) & 3D (Three.js) knowledge graph
@@ -181,23 +183,26 @@ lumina/
 │           │   ├── table/       # interactive markdown table editor & column sorting
 │           │   ├── mermaid/     # inline mermaid diagram renderer & lightbox
 │           │   ├── media/       # media viewer, lightbox, and clipboard image pasting
+│           │   ├── profile/     # unified Google user profile, avatar tooltip, and auth actions
 │           │   ├── roadmap/     # learning curriculum tracker & progress indicators
-│           │   ├── Settings/    # settings dialog & configuration panels
+│           │   ├── Settings/    # settings dialog & configuration panels (AI Memory, Appearance, etc.)
 │           │   ├── Docs/        # in-app documentation & guides
 │           │   ├── Breadcrumbs/ # active note path and hierarchy breadcrumb navigation
-│           │   ├── voice/       # voice recording, transcription & speech recognition
+│           │   ├── voice/       # voice recording, transcription & speech recognition (Groq Whisper)
 │           │   ├── preview/     # markdown live preview rendering components
 │           │   ├── modals/      # modal dialogs (Guide, About, Prompts, Confirmations)
 │           │   ├── slash/       # slash command registry and interactive palette
 │           │   ├── template/    # note templates & creation wizard
-│           │   ├── theme/       # 21 custom themes, theme engine & CSS variables
-│           │   └── Icons/       # application iconography & svg glyphs
+│           │   ├── theme/       # 21 custom themes, draggable Theme modal & grid selector
+│           │   └── Icons/       # 190+ curated icons & draggable IconPicker modal
 │           ├── components/      # shared UI primitives, atoms, and error boundaries
+│           │   └── update/      # update notification banner, release notes dropdown (UpdateDetails)
 │           └── assets/          # global styles, base fonts, and layout rules
 ├── test/
-│   ├── main/                    # unit tests — main process & workspace manager
-│   ├── renderer/                # unit tests — react components, hooks, stores
+│   ├── main/                    # unit tests — main process, export engines, workspace manager
+│   ├── renderer/                # unit tests — react components, hooks, stores, modals (757 tests)
 │   └── e2e/                     # end-to-end tests (playwright test suites)
+├── brain/                       # system design specifications, memory docs, and roadmap
 └── scripts/                     # build, package, workbench, and bundle analyzer scripts
 ```
 
@@ -229,7 +234,7 @@ npm run test:all         # unit tests + e2e back to back
 ### tech stack
 
 **main process:**
-electron 39.2.4 · chokidar 5 · gray-matter 4 · better-sqlite3 (legacy)
+electron 39.2.4 · chokidar 5 · gray-matter 4 · better-sqlite3
 
 **renderer:**
 react 19.1.1 · codemirror 6 · zustand 5 · dexie 4 · marked 17 · highlight.js 11 · lucide-react · @xenova/transformers 2 · react-force-graph-2d · flexsearch
@@ -243,30 +248,15 @@ vite 7 · electron-vite · vitest · tailwindcss 3 · electron-builder 26
 
 lumina has two test layers that run independently:
 
-### unit tests — 117 tests across 12 files
+### unit tests — 757 tests across 90 test suites (100% passing)
 
-covers components, hooks, stores, utils, and main-process modules. uses **vitest** with jsdom. no electron, no disk i/o (mocked).
+covers components, hooks, stores, utils, and main-process modules. uses **vitest** with jsdom.
 
 ```bash
 npm test                        # watch mode
 npm run test:run                # single run (ci)
 npm run test:coverage           # with v8 coverage report
 ```
-
-| suite | tests |
-|---|---|
-| VaultSearch | 21 |
-| useVaultStore | 16 |
-| graphBuilder | 13 |
-| useSettingsStore | 11 |
-| LuminaChat | 10 |
-| useUpdateStore | 9 |
-| VaultManager | 7 |
-| Button | 6 |
-| stringUtils | 6 |
-| useTheme | 6 |
-| useToast | 6 |
-| ToastNotification | 6 |
 
 ### e2e tests — 23 tests across 3 files
 
@@ -296,7 +286,10 @@ the `brain/` directory contains the core project documentation:
 |------|--------|
 | `brain/introduction.md` | entry point, table of contents |
 | `brain/purpose.md` | comprehensive architecture, state flow, layout system, and developer reference |
+| `brain/lumina.md` | high-level system guide, theme definitions, and UX principles |
+| `brain/specs/scope.md` | feature specifications, roadmap deliverables, and phased milestones |
 | `brain/shortcuts.md` | complete keyboard shortcuts and navigation map |
+| `bugs.md` | master Life & Work Cockpit roadmap and upcoming feature specs |
 
 ---
 

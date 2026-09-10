@@ -95,3 +95,26 @@ const originalAddEventListener = document.addEventListener
 const originalRemoveEventListener = document.removeEventListener
 document.addEventListener = vi.fn(originalAddEventListener)
 document.removeEventListener = vi.fn(originalRemoveEventListener)
+
+// Polyfill Range getClientRects and getBoundingClientRect for jsdom (used by CodeMirror)
+if (typeof Range !== 'undefined') {
+  if (!Range.prototype.getClientRects) {
+    Range.prototype.getClientRects = () => []
+  }
+  if (!Range.prototype.getBoundingClientRect) {
+    Range.prototype.getBoundingClientRect = () => ({
+      top: 0,
+      bottom: 0,
+      left: 0,
+      right: 0,
+      width: 0,
+      height: 0
+    })
+  }
+}
+
+// Polyfill scrollIntoView on Element for jsdom
+if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = vi.fn()
+}
+

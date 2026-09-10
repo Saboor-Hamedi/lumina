@@ -37,8 +37,8 @@ describe('UpdateDetails', () => {
     expect(screen.getByText('New')).toBeInTheDocument()
     expect(screen.getByText('Improved')).toBeInTheDocument()
     expect(screen.getByText('Fixed')).toBeInTheDocument()
-    expect(screen.getByText(/Google Drive Git-Like Mirroring/)).toBeInTheDocument()
-    expect(screen.getByText(/Note Title & Disk Renaming/)).toBeInTheDocument()
+    expect(screen.getByText(/Draggable Modals & Position Memory/)).toBeInTheDocument()
+    expect(screen.getByText(/Zero-Blur Crisp Modals/)).toBeInTheDocument()
   })
 
   it('renders default release notes when none provided', () => {

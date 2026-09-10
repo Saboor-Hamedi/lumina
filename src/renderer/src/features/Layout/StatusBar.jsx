@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { BookOpen, PanelRight, Keyboard, FileText, Hash, Clock, Navigation, Compass, Cloud } from 'lucide-react'
+import { BookOpen, PanelRight, Keyboard, FileText, Hash, Clock, Navigation, Compass } from 'lucide-react'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
-import { useCurrentUser } from '../../core/hooks/useCurrentUser'
 import ToolTip from '../../components/atoms/ToolTip'
 import '../../assets/statusbar.css'
 
@@ -12,7 +11,6 @@ const StatusBar = ({
 }) => {
   const selectedSnippet = useWorkspaceStore((s) => s.selectedSnippet)
   const [cursorPos, setCursorPos] = useState({ line: 1, col: 1, selectedChars: 0 })
-  const { user: driveUser } = useCurrentUser()
 
   // Listen for active editor cursor movements and selection changes
   useEffect(() => {
@@ -119,7 +117,7 @@ const StatusBar = ({
                 className="status-bar-item interactive"
                 onClick={() => window.dispatchEvent(new CustomEvent('editor-scroll-to-cursor'))}
               >
-                <Navigation size={11} style={{ opacity: 0.7 }} />
+                <Navigation size={12} />
                 <span>
                   Ln {cursorPos.line}, Col {cursorPos.col}
                   {cursorPos.selectedChars > 0 && ` (${cursorPos.selectedChars} sel)`}
@@ -134,7 +132,7 @@ const StatusBar = ({
                 className="status-bar-item interactive"
                 onClick={onToggleInspector}
               >
-                <FileText size={11} style={{ opacity: 0.7 }} />
+                <FileText size={12} />
                 <span>{stats.words} words</span>
               </span>
             </ToolTip>
@@ -146,7 +144,7 @@ const StatusBar = ({
                 className="status-bar-item interactive"
                 onClick={onToggleInspector}
               >
-                <Hash size={11} style={{ opacity: 0.7 }} />
+                <Hash size={12} />
                 <span>{stats.chars} chars</span>
               </span>
             </ToolTip>
@@ -158,7 +156,7 @@ const StatusBar = ({
                 className="status-bar-item interactive"
                 onClick={onToggleInspector}
               >
-                <Clock size={11} style={{ opacity: 0.7 }} />
+                <Clock size={12} />
                 <span>{stats.readTime}</span>
               </span>
             </ToolTip>
@@ -170,34 +168,6 @@ const StatusBar = ({
                 <span>Markdown</span>
                 <span style={{ opacity: 0.5 }}>•</span>
                 <span>UTF-8</span>
-              </span>
-            </ToolTip>
-
-            <span className="status-bar-divider" />
-
-            <ToolTip
-              text={
-                driveUser
-                  ? `Google Drive connected (${driveUser.email || 'Active'}) • Click to configure`
-                  : 'Google Drive disconnected • Click to connect in Settings'
-              }
-              position="top"
-            >
-              <span
-                className="status-bar-item interactive"
-                onClick={() => window.dispatchEvent(new CustomEvent('open-settings', { detail: { tab: 'advanced' } }))}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-              >
-                <Cloud
-                  size={11}
-                  style={{
-                    color: driveUser ? 'var(--text-accent, #a78bfa)' : 'var(--text-muted, #94a3b8)',
-                    opacity: driveUser ? 0.9 : 0.6
-                  }}
-                />
-                <span style={{ color: driveUser ? 'var(--text-main)' : 'var(--text-muted)' }}>
-                  {driveUser ? 'Drive Synced' : 'Drive'}
-                </span>
               </span>
             </ToolTip>
           </>

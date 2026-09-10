@@ -63,15 +63,28 @@
   border: none;
   background: transparent;
   color: var(--text-muted);
+  font-family: inherit;
   font-size: 11px;
   font-weight: 500;
+  letter-spacing: 0.01em;
   cursor: pointer;
   transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.status-bar-btn svg {
+  flex-shrink: 0;
+  opacity: 0.75;
+  transition: opacity 0.12s ease;
 }
 
 .status-bar-btn:hover {
   color: var(--text-main);
   background: var(--bg-active);
+}
+
+.status-bar-btn:hover svg {
+  opacity: 1;
 }
 
 .status-bar-divider {
@@ -88,12 +101,20 @@
   padding: 1px 6px;
   height: 18px;
   border-radius: 4px;
-  color: var(--text-faint);
+  color: var(--text-muted);
+  font-family: inherit;
   font-size: 11px;
   font-weight: 500;
+  letter-spacing: 0.01em;
   transition: all 0.12s ease;
   cursor: default;
   white-space: nowrap;
+}
+
+.status-bar-item svg {
+  flex-shrink: 0;
+  opacity: 0.75;
+  transition: opacity 0.12s ease;
 }
 
 .status-bar-item.interactive {
@@ -103,4 +124,8 @@
 .status-bar-item.interactive:hover {
   color: var(--text-main);
   background: var(--bg-active);
+}
+
+.status-bar-item.interactive:hover svg {
+  opacity: 1;
 }
