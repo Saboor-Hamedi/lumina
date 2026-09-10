@@ -51,12 +51,12 @@ const getContrastCheckColor = (hex) => {
   return (r * 299 + g * 587 + b * 114) / 1000 >= 160 ? '#09090b' : '#ffffff'
 }
 
-const PresetSwatch = React.memo(({ preset, isSelected, onClick, contrastColor }) => {
+const PresetSwatch = React.memo(({ preset, isSelected, isFocused, onClick, contrastColor }) => {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`color-picker-preset-item ${isSelected ? 'selected' : ''}`}
+      className={`color-picker-preset-item ${isSelected ? 'selected' : ''} ${isFocused ? 'focused' : ''}`.trim()}
       style={{
         backgroundColor: preset,
         display: 'flex',
@@ -66,17 +66,25 @@ const PresetSwatch = React.memo(({ preset, isSelected, onClick, contrastColor })
       title={preset}
     >
       {isSelected && (
-        <Check
-          size={13}
-          color={contrastColor}
-          strokeWidth={3}
+        <span
           style={{
-            filter:
-              contrastColor === '#ffffff'
-                ? 'drop-shadow(0px 1px 2px rgba(0,0,0,0.7))'
-                : 'none'
+            width: '12px',
+            height: '12px',
+            borderRadius: '50%',
+            backgroundColor: '#22c55e',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.45)',
+            flexShrink: 0
           }}
-        />
+        >
+          <Check
+            size={8}
+            color="#ffffff"
+            strokeWidth={3.5}
+          />
+        </span>
       )}
     </button>
   )
@@ -178,6 +186,11 @@ export const AccentColor = ({
   const [localColor, setLocalColor] = useState(() => {
     return startColor.startsWith('#') ? startColor : `#${startColor}`
   })
+  const [focusedIndex, setFocusedIndex] = useState(() => {
+    const col = startColor
+    const idx = PRESET_PALETTE.findIndex((p) => p.toLowerCase() === col.toLowerCase())
+    return idx !== -1 ? idx : 0
+  })
 
   const localColorRef = useRef(localColor)
   const initialColorRef = useRef(localColor)
@@ -206,18 +219,14 @@ export const AccentColor = ({
 
   useKeyboardShortcuts({ onEscape: isOpen ? handleEscape : null })
 
+  // Synchronize focusedIndex with active color when opening
   useEffect(() => {
-    if (!isOpen) return
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape' || e.key === 'Esc') {
-        e.preventDefault()
-        e.stopPropagation()
-        handleEscape()
-      }
+    if (isOpen) {
+      const col = localColor || initialColor || defaultColor || '#40bafa'
+      const idx = PRESET_PALETTE.findIndex((p) => p.toLowerCase() === col.toLowerCase())
+      setFocusedIndex(idx !== -1 ? idx : 0)
     }
-    window.addEventListener('keydown', handleKeyDown, true)
-    return () => window.removeEventListener('keydown', handleKeyDown, true)
-  }, [isOpen, handleEscape])
+  }, [isOpen])
 
   useEffect(() => {
     if (!isOpen) return
@@ -272,6 +281,62 @@ export const AccentColor = ({
     [previewProperty, onSelect]
   )
 
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleKeyDown = (e) => {
+      // If typing in the hex text input, allow normal cursor movement and typing
+      if (document.activeElement === hexInputRef.current) {
+        if (e.key === 'Escape' || e.key === 'Esc') {
+          e.preventDefault()
+          e.stopPropagation()
+          handleEscape()
+        }
+        return
+      }
+
+      if (e.key === 'Escape' || e.key === 'Esc') {
+        e.preventDefault()
+        e.stopPropagation()
+        handleEscape()
+        return
+      }
+
+      const total = PRESET_PALETTE.length // 20
+      const cols = 5
+
+      if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        e.stopPropagation()
+        setFocusedIndex((prev) => (prev + 1) % total)
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        e.stopPropagation()
+        setFocusedIndex((prev) => (prev - 1 + total) % total)
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        e.stopPropagation()
+        setFocusedIndex((prev) => (prev + cols) % total)
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        e.stopPropagation()
+        setFocusedIndex((prev) => (prev - cols + total) % total)
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        e.stopPropagation()
+        if (focusedIndex >= 0 && focusedIndex < total) {
+          const selectedPreset = PRESET_PALETTE[focusedIndex]
+          const isDropdown = variant === 'dropdown'
+          applyColor(selectedPreset, isDropdown)
+          // Do NOT close dropdown on Enter; user can keep moving with arrow keys
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown, true)
+    return () => window.removeEventListener('keydown', handleKeyDown, true)
+  }, [isOpen, handleEscape, focusedIndex, variant, applyColor])
+
   const contrastMap = useMemo(() => {
     const map = {}
     for (let i = 0; i < PRESET_PALETTE.length; i++) {
@@ -301,19 +366,24 @@ export const AccentColor = ({
 
   const renderedPresets = useMemo(() => {
     const isDropdown = variant === 'dropdown'
-    return PRESET_PALETTE.map((preset) => {
+    return PRESET_PALETTE.map((preset, index) => {
       const isSelected = localColor.toLowerCase() === preset.toLowerCase()
+      const isFocused = focusedIndex === index
       return (
         <PresetSwatch
           key={preset}
           preset={preset}
           isSelected={isSelected}
-          onClick={() => applyColor(preset, isDropdown)}
+          isFocused={isFocused}
+          onClick={() => {
+            setFocusedIndex(index)
+            applyColor(preset, isDropdown)
+          }}
           contrastColor={contrastMap[preset]}
         />
       )
     })
-  }, [localColor, applyColor, variant, contrastMap])
+  }, [localColor, applyColor, variant, contrastMap, focusedIndex])
 
   if (!isOpen) return null
 
