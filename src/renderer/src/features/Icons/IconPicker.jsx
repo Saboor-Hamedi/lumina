@@ -99,9 +99,12 @@ const IconPicker = ({ isOpen, onClose, currentIcon, onSelect }) => {
     })
   }, [search])
 
-  // Reset search, position, autofocus and selected index on open
+  // Track whether modal was previously open
+  const wasOpenRef = useRef(false)
+
+  // Reset search, position, autofocus and selected index ONLY when opening modal
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !wasOpenRef.current) {
       setSearch('')
       posRef.current = { x: 0, y: 0 }
       if (modalContainerRef.current) {
@@ -115,9 +118,12 @@ const IconPicker = ({ isOpen, onClose, currentIcon, onSelect }) => {
       const timer = setTimeout(() => {
         inputRef.current?.focus({ preventScroll: true })
       }, 20)
+      wasOpenRef.current = true
       return () => clearTimeout(timer)
+    } else if (!isOpen) {
+      wasOpenRef.current = false
     }
-  }, [isOpen, currentIcon])
+  }, [isOpen])
 
   // Reset selected index on search change
   useEffect(() => {
@@ -189,7 +195,7 @@ const IconPicker = ({ isOpen, onClose, currentIcon, onSelect }) => {
         className="icon-modal-container"
         onClick={(e) => e.stopPropagation()}
         style={{
-          transform: 'translate3d(0px, 0px, 0)',
+          transform: `translate3d(${posRef.current.x}px, ${posRef.current.y}px, 0)`,
           position: 'relative',
           willChange: 'transform'
         }}
