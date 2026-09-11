@@ -19,30 +19,30 @@
 .cm-line.cm-atomic-h1,
 .cm-line:has(.cm-heading1) {
   font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
-  font-size: 1.4em !important;
+  font-size: 19px !important;
   font-weight: 700 !important;
   line-height: 1.35 !important;
-  letter-spacing: -0.025em !important;
+  letter-spacing: -0.02em !important;
   color: var(--text-main, #ffffff) !important;
 }
 
 .cm-line.cm-atomic-h2,
 .cm-line:has(.cm-heading2) {
   font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
-  font-size: 1.22em !important;
+  font-size: 17px !important;
   font-weight: 650 !important;
   line-height: 1.4 !important;
-  letter-spacing: -0.02em !important;
+  letter-spacing: -0.015em !important;
   color: var(--text-main, #f8fafc) !important;
 }
 
 .cm-line.cm-atomic-h3,
 .cm-line:has(.cm-heading3) {
   font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
-  font-size: 1.1em !important;
+  font-size: 15px !important;
   font-weight: 600 !important;
   line-height: 1.45 !important;
-  letter-spacing: -0.015em !important;
+  letter-spacing: -0.01em !important;
   color: var(--text-main, #f1f5f9) !important;
 }
 
@@ -789,19 +789,22 @@
 }
 
 .editor-large-title {
+  font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
   font-size: 19px !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
   letter-spacing: -0.02em !important;
-  border: none;
-  background: transparent;
-  color: var(--text-main, #f3f4f6);
-  padding: 2px 0;
-  line-height: 1.3;
-  margin-top: 0;
+  border: none !important;
+  background: transparent !important;
+  color: var(--text-main, #ffffff) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 1.35;
   width: 100%;
-  font-family: var(--font-editor, 'Inter', system-ui, sans-serif) !important;
-  outline: none;
+  outline: none !important;
   text-align: left;
+  box-sizing: border-box !important;
+  -webkit-appearance: none;
+  appearance: none;
   transition: color 0.15s ease;
 }
 
@@ -1051,15 +1054,15 @@
   flex-direction: column;
   align-items: stretch;
   gap: 2px;
-  padding: 0 0 6px 0;
-  margin: -6px 0 0 0;
+  padding: 0 0 6px 0 !important;
+  margin: 0 !important;
   border-bottom: none;
   font-size: 12px !important;
   line-height: 1.1;
   color: var(--text-muted);
   min-height: 0;
   box-sizing: border-box;
-  background: var(--bg-app);
+  background: transparent !important;
   z-index: 10;
   flex-shrink: 0;
   --font-size-editor: 16px;

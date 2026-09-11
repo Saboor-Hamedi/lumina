@@ -66,10 +66,10 @@ export const EditorActionBar = ({
         alignItems: 'center',
         justifyContent: 'space-between',
         width: '100%',
-        margin: '2px 0 4px -6px'
+        margin: '4px 0 2px 0'
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap', marginLeft: '-6px' }}>
         <ToolTip text="Ask AI (Ctrl+K)" position="bottom">
           <button
             onClick={(e) => {
