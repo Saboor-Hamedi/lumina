@@ -1,0 +1,388 @@
+/**
+ * ============================================================================
+ * Lumina Breadcrumb Dropdown Navigation (`BreadcrumbDropdown.css`)
+ * Modern, High-Performance, VS Code-Superior Folder Picker
+ * ============================================================================
+ */
+
+.bc-dropdown-card {
+  position: fixed;
+  z-index: 99999;
+  background: var(--bg-panel, #18181f);
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.1));
+  border-radius: 6px;
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.55),
+    0 4px 14px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  animation: bcDropdownFadeIn 0.1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes bcDropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-3px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── Header Bar ─────────────────────────────────────────── */
+
+.bc-header-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--border-dim, rgba(255, 255, 255, 0.07));
+  flex-shrink: 0;
+  min-height: 32px;
+}
+
+.bc-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted, #94a3b8);
+  transition: all 0.12s ease;
+}
+
+.bc-nav-btn:hover {
+  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  color: var(--text-main, #f8fafc);
+}
+
+.bc-trail {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  white-space: nowrap;
+}
+
+.bc-trail::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.bc-trail-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 5px;
+  height: 20px;
+  border-radius: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted, #94a3b8);
+  font-size: 11.5px;
+  font-weight: 500;
+  transition: all 0.12s ease;
+  flex-shrink: 0;
+}
+
+.bc-trail-item:hover {
+  background: var(--bg-active, rgba(255, 255, 255, 0.07));
+  color: var(--text-main, #f8fafc);
+}
+
+.bc-trail-item.active {
+  color: var(--text-main, #f8fafc);
+  font-weight: 600;
+}
+
+.bc-trail-root-icon {
+  color: var(--text-accent, #8b5cf6);
+  flex-shrink: 0;
+}
+
+.bc-trail-folder-icon {
+  color: var(--text-accent, #8b5cf6);
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
+.bc-trail-sep {
+  color: var(--text-faint, #64748b);
+  opacity: 0.45;
+  flex-shrink: 0;
+}
+
+.bc-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.bc-count-pill {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted, #94a3b8);
+  letter-spacing: 0.02em;
+}
+
+.bc-header-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted, #94a3b8);
+  transition: all 0.12s ease;
+}
+
+.bc-header-icon-btn:hover {
+  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  color: var(--text-main, #f8fafc);
+}
+
+.bc-header-icon-btn.copied {
+  color: #10b981;
+}
+
+/* ── Instant Filter Box ──────────────────────────────────── */
+
+.bc-search-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  margin: 5px 8px 3px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.08));
+  border-radius: 5px;
+  flex-shrink: 0;
+  transition: border-color 0.12s ease;
+}
+
+.bc-search-box:focus-within {
+  border-color: var(--text-accent, #8b5cf6);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.bc-search-icon {
+  color: var(--text-muted, #94a3b8);
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.bc-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-main, #f8fafc);
+  font-size: 11.5px;
+  padding: 0;
+  line-height: 1.4;
+}
+
+.bc-search-input::placeholder {
+  color: var(--text-faint, #64748b);
+}
+
+.bc-search-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted, #94a3b8);
+  opacity: 0.7;
+  padding: 0;
+}
+
+.bc-search-clear:hover {
+  opacity: 1;
+  color: var(--text-main, #f8fafc);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.bc-search-hints {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.bc-kbd-hint {
+  font-size: 9px;
+  font-family: inherit;
+  font-weight: 500;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-faint, #64748b);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  line-height: 1.2;
+}
+
+/* ── Items List ─────────────────────────────────────────── */
+
+.bc-items-list {
+  list-style: none;
+  margin: 0;
+  padding: 3px 6px 6px;
+  overflow-y: auto;
+  flex: 1;
+  /* Completely invisible scrollbar */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.bc-items-list::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.bc-list-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  height: 28px;
+  cursor: pointer;
+  color: var(--text-muted, #94a3b8);
+  font-size: 12px;
+  border-radius: 5px;
+  margin: 1px 0;
+  transition: all 0.08s ease;
+}
+
+.bc-list-item:hover,
+.bc-list-item.is-active {
+  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  color: var(--text-main, #f8fafc);
+}
+
+.bc-list-item.is-current {
+  color: var(--text-main, #f8fafc);
+  font-weight: 500;
+}
+
+.bc-item-leading-icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  opacity: 0.75;
+}
+
+.bc-list-item:hover .bc-item-leading-icon,
+.bc-list-item.is-active .bc-item-leading-icon {
+  opacity: 1;
+}
+
+.bc-icon-folder {
+  color: var(--text-accent, #8b5cf6);
+}
+
+.bc-icon-note {
+  color: #38bdf8;
+}
+
+.bc-icon-canvas {
+  color: #f59e0b;
+}
+
+.bc-icon-image {
+  color: #34d399;
+}
+
+.bc-item-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+.bc-current-indicator {
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(139, 92, 246, 0.18);
+  color: var(--text-accent, #a78bfa);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.bc-folder-trailing {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.bc-item-subcount {
+  font-size: 10px;
+  color: var(--text-faint, #64748b);
+  padding: 0 4px;
+  opacity: 0.7;
+}
+
+.bc-list-item:hover .bc-item-subcount,
+.bc-list-item.is-active .bc-item-subcount {
+  opacity: 1;
+  color: var(--text-muted, #94a3b8);
+}
+
+.bc-item-chevron-icon {
+  color: var(--text-faint, #64748b);
+  opacity: 0.5;
+  transition: transform 0.1s ease, opacity 0.1s ease;
+}
+
+.bc-list-item:hover .bc-item-chevron-icon,
+.bc-list-item.is-active .bc-item-chevron-icon {
+  opacity: 0.9;
+  transform: translateX(1px);
+  color: var(--text-accent, #8b5cf6);
+}
+
+/* ── Empty State ─────────────────────────────────────────── */
+
+.bc-empty-notice {
+  padding: 18px 12px;
+  font-size: 11.5px;
+  color: var(--text-faint, #64748b);
+  text-align: center;
+  font-style: italic;
+}

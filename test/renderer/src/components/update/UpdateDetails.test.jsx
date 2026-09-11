@@ -37,8 +37,8 @@ describe('UpdateDetails', () => {
     expect(screen.getByText('New')).toBeInTheDocument()
     expect(screen.getByText('Improved')).toBeInTheDocument()
     expect(screen.getByText('Fixed')).toBeInTheDocument()
-    expect(screen.getByText(/Draggable Modals & Position Memory/)).toBeInTheDocument()
-    expect(screen.getByText(/Zero-Blur Crisp Modals/)).toBeInTheDocument()
+    expect(screen.getByText(/Rich Word\/HTML Paste with Format Preservation/)).toBeInTheDocument()
+    expect(screen.getByText(/Breadcrumbs Long-Title Truncation/)).toBeInTheDocument()
   })
 
   it('renders default release notes when none provided', () => {

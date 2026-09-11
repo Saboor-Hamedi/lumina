@@ -622,3 +622,14 @@ Sidebars previously shrank/compressed their content when dragged inward. The tar
   - Tooltip on the active note shows the full title + *(Click to copy path)* on hover.
 - **Unit Tests**: 3 passing tests including a new 80-word-title case in `test/renderer/src/features/Breadcrumbs/Breadcrumbs.test.jsx`.
 - **Full Suite**: 96 test files · 818 tests · 0 failures.
+
+### X. Interactive Breadcrumb Navigation & Sibling Dropdown Picker (`Breadcrumbs.jsx`, `BreadcrumbDropdown.jsx`, `breadcrumbUtils.js`)
+- **VS Code-Superior Navigation Architecture**: Re-engineered breadcrumb navigation from passive path labels into an interactive exploration suite. Clicking Workspace, any folder segment, or the active note opens a portal dropdown showing sibling items at that directory level for instantaneous lateral navigation.
+- **Interactive Breadcrumb Trail Header**: The dropdown header displays the active folder hierarchy (`Workspace › folder › subfolder`) with clickable ancestry buttons. Users can jump directly back to any ancestor folder in one click or use the Back arrow button (`ChevronLeft`).
+- **Instant Search & Filter**: Integrated search bar with case-insensitive instant filtering across both folders and notes.
+- **Zero-Shrink Layout & Completely Invisible Scrollbars**: Generous responsive card width (`clamp(320px, 35vw, 460px)`) ensures long file names never aggressively truncate or shrink. Applied `scrollbar-width: none; -ms-overflow-style: none; ::-webkit-scrollbar { display: none; }` across all dropdown lists and trails.
+- **Unified Path Traversal Engine (`breadcrumbUtils.js`)**: Resolves directory hierarchies seamlessly across both string path representations (`"src/features/Breadcrumbs"`) and object-based trees. Provides deterministic child folder and note resolution with `Intl.Collator` sorting.
+- **Dedicated Copy Path Action**: Extracted path copying out of the note title into an independent icon button with instant `<Check />` confirmation feedback and tooltip.
+- **Full Keyboard Mastery**: Full arrow key navigation (`Up`/`Down`), `Enter` to open notes or drill in, `ArrowRight` to drill into folders, `ArrowLeft`/`Backspace` to drill out, and `Escape` to dismiss.
+- **Unit Tests**: 25/25 passing tests across `Breadcrumbs.test.jsx`, `BreadcrumbDropdown.test.jsx`, and `breadcrumbUtils.test.js`.
+

@@ -1,70 +1,68 @@
-import React, { useState, useCallback } from 'react'
-import { Folder, ChevronRight, FileText, Database, Check } from 'lucide-react'
+import React, { useState, useCallback, useMemo } from 'react'
+import { Folder, ChevronRight, FileText, Database, Copy, Check } from 'lucide-react'
 import { useVaultStore } from '../../core/store/workspaceStore'
 import ToolTip from '../../components/atoms/ToolTip'
+import BreadcrumbDropdown from './BreadcrumbDropdown'
+import { getFolderPath } from './breadcrumbUtils'
 import './Breadcrumbs.css'
 
 export const Breadcrumbs = ({ snippet, className = '' }) => {
-  const folders = useVaultStore((state) => state.folders)
+  const folders = useVaultStore((state) => state.folders) || []
   const snippets = useVaultStore((state) => state.snippets) || []
   const selectedSnippet = useVaultStore((state) => state.selectedSnippet)
   const currentSnippet = snippet || selectedSnippet
   const [copied, setCopied] = useState(false)
+  const [dropdown, setDropdown] = useState(null)
 
   if (!currentSnippet) return null
   if (Array.isArray(snippets) && snippets.length === 0 && !snippet) return null
   if (Array.isArray(snippets) && snippets.length > 0 && !snippets.some((s) => s.id === currentSnippet.id)) return null
 
-  const folderPath = []
-  let currentFolderId = currentSnippet.folderId
-  const visited = new Set()
-  let depth = 0
+  // Resolve hierarchical folder chain from root down to note's immediate folder
+  const folderPath = useMemo(() => {
+    return getFolderPath(currentSnippet.folderId, folders)
+  }, [currentSnippet.folderId, folders])
 
-  while (
-    currentFolderId &&
-    currentFolderId !== '/' &&
-    currentFolderId !== 'root' &&
-    !visited.has(currentFolderId) &&
-    depth < 50
-  ) {
-    visited.add(currentFolderId)
-    depth++
-    const folderObj = folders?.find((f) => f.id === currentFolderId || f.name === currentFolderId)
-    if (folderObj) {
-      folderPath.unshift({ id: folderObj.id, name: folderObj.name })
-      currentFolderId = folderObj.parentId
-    } else {
-      folderPath.unshift({ id: currentFolderId, name: currentFolderId })
-      break
-    }
-  }
+  const openDropdown = useCallback((e, parentFolderId, currentId, activeSegmentKey) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    setDropdown({
+      parentFolderId: parentFolderId ?? null,
+      currentId: currentId ?? null,
+      activeSegmentKey,
+      anchorRect: rect
+    })
+  }, [])
 
-  const handleCopyPath = useCallback(async () => {
+  const closeDropdown = useCallback(() => setDropdown(null), [])
+
+  const handleCopyPath = useCallback(async (e) => {
+    e.stopPropagation()
     const fullPath =
       currentSnippet.relativePath ||
       [...folderPath.map((f) => f.name), currentSnippet.title || 'Untitled'].join('/')
-
     try {
       if (navigator?.clipboard?.writeText) {
         await navigator.clipboard.writeText(fullPath)
       }
       setCopied(true)
       setTimeout(() => setCopied(false), 1800)
-    } catch (err) {
-      console.error('Failed to copy path:', err)
-    }
+    } catch {}
   }, [currentSnippet, folderPath])
+
+  const rootTargetId = folderPath[0]?.id ?? currentSnippet.id
+  const isWorkspaceOpen = dropdown?.activeSegmentKey === '__workspace__'
 
   return (
     <nav className={`editor-breadcrumbs-bar ${className}`} aria-label="Breadcrumbs">
-      <ToolTip text="Vault Root" position="bottom">
+      {/* Workspace root button */}
+      <ToolTip text="Browse workspace root" position="bottom">
         <button
           type="button"
-          className="breadcrumb-item"
-          onClick={() => window.dispatchEvent(new CustomEvent('focus-explorer-root'))}
+          className={`breadcrumb-item${isWorkspaceOpen ? ' bc-open' : ''}`}
+          onClick={(e) => openDropdown(e, null, rootTargetId, '__workspace__')}
         >
           <Database size={11.5} className="breadcrumb-icon" />
-          <span>Vault</span>
+          <span>Workspace</span>
         </button>
       </ToolTip>
 
@@ -72,49 +70,66 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
         <ChevronRight size={11} />
       </span>
 
-      {folderPath.map((folder, index) => (
-        <React.Fragment key={folder.id || index}>
-          <ToolTip text={`Folder: ${folder.name}`} position="bottom">
-            <button
-              type="button"
-              className="breadcrumb-item"
-              onClick={() => {
-                window.dispatchEvent(
-                  new CustomEvent('reveal-folder-in-explorer', { detail: folder.id })
-                )
-              }}
-            >
-              <Folder size={11.5} className="breadcrumb-icon" />
-              <span className="breadcrumb-folder-text">{folder.name}</span>
-            </button>
-          </ToolTip>
-          <span className="breadcrumb-separator" aria-hidden="true">
-            <ChevronRight size={11} />
-          </span>
-        </React.Fragment>
-      ))}
+      {/* Hierarchical folder segments */}
+      {folderPath.map((folder, index) => {
+        const parentId = index > 0 ? folderPath[index - 1].id : null
+        const isFolderOpen = dropdown?.activeSegmentKey === folder.id
 
-      <ToolTip
-        text={
-          copied
-            ? 'Copied to clipboard!'
-            : `${currentSnippet.title || 'Untitled'} (Click to copy path)`
-        }
-        position="bottom"
-      >
+        return (
+          <React.Fragment key={folder.id || index}>
+            <ToolTip text={`Folder: ${folder.name}`} position="bottom">
+              <button
+                type="button"
+                className={`breadcrumb-item${isFolderOpen ? ' bc-open' : ''}`}
+                onClick={(e) => openDropdown(e, parentId, folder.id, folder.id)}
+              >
+                <Folder size={11.5} className="breadcrumb-icon" />
+                <span className="breadcrumb-folder-text">{folder.name}</span>
+              </button>
+            </ToolTip>
+            <span className="breadcrumb-separator" aria-hidden="true">
+              <ChevronRight size={11} />
+            </span>
+          </React.Fragment>
+        )
+      })}
+
+      {/* Active note segment — opens sibling picker */}
+      <ToolTip text={currentSnippet.title || 'Untitled'} position="bottom">
         <button
           type="button"
-          className={`breadcrumb-item active ${copied ? 'copied' : ''}`}
-          onClick={handleCopyPath}
+          className={`breadcrumb-item active${dropdown?.activeSegmentKey === currentSnippet.id ? ' bc-open' : ''}`}
+          onClick={(e) => {
+            const lastFolderId = folderPath.length > 0 ? folderPath[folderPath.length - 1].id : null
+            openDropdown(e, lastFolderId, currentSnippet.id, currentSnippet.id)
+          }}
         >
-          {copied ? (
-            <Check size={11.5} className="breadcrumb-icon" />
-          ) : (
-            <FileText size={11.5} className="breadcrumb-icon" />
-          )}
+          <FileText size={11.5} className="breadcrumb-icon" />
           <span className="breadcrumb-title-text">{currentSnippet.title || 'Untitled'}</span>
         </button>
       </ToolTip>
+
+      {/* Dedicated copy path button */}
+      <ToolTip text={copied ? 'Copied to clipboard!' : 'Copy note path'} position="bottom">
+        <button
+          type="button"
+          className={`breadcrumb-copy-btn${copied ? ' copied' : ''}`}
+          onClick={handleCopyPath}
+          aria-label="Copy note path"
+        >
+          {copied ? <Check size={11} /> : <Copy size={11} />}
+        </button>
+      </ToolTip>
+
+      {/* Dropdown portal */}
+      {dropdown && (
+        <BreadcrumbDropdown
+          parentFolderId={dropdown.parentFolderId}
+          currentId={dropdown.currentId}
+          anchorRect={dropdown.anchorRect}
+          onClose={closeDropdown}
+        />
+      )}
     </nav>
   )
 }

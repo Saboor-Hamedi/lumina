@@ -78,6 +78,11 @@
   color: #10b981;
 }
 
+.breadcrumb-item.bc-open {
+  color: var(--text-main, #f8fafc);
+  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+}
+
 .breadcrumb-separator {
   display: inline-flex;
   align-items: center;
@@ -92,3 +97,33 @@
   opacity: 0.75;
   flex-shrink: 0;
 }
+
+.breadcrumb-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  color: var(--text-muted, #94a3b8);
+  opacity: 0.6;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  margin-left: 2px;
+  padding: 0;
+  transition: all 0.12s ease;
+  flex-shrink: 0;
+}
+
+.breadcrumb-copy-btn:hover {
+  opacity: 1;
+  color: var(--text-main, #f8fafc);
+  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+}
+
+.breadcrumb-copy-btn.copied {
+  opacity: 1;
+  color: #10b981;
+}
+
