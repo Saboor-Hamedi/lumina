@@ -311,6 +311,7 @@ export class WorkspaceScanner {
                 language: data.language || defaultLang,
                 tags: data.tags || '',
                 timestamp: data.timestamp || stats.mtimeMs,
+                createdAt: data.createdAt || new Date(stats.birthtimeMs || stats.mtimeMs).toISOString(),
                 selection: data.selection || null,
                 isPinned: data.isPinned === true || data.isPinned === 'true',
                 isLearned: data.isLearned === true || data.isLearned === 'true',

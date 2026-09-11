@@ -27,6 +27,7 @@ import { useEditorExports } from './hooks/useEditorExports'
 import { useEditorEvents } from './hooks/useEditorEvents'
 import { useEditorExtensions } from './hooks/useEditorExtensions'
 import { EditorSlash } from '../slash'
+import EditorCreatedAt from './components/EditorCreatedAt'
 
 import './Editor.css'
 import '../codeBlock/codeWrapper.css'
@@ -263,9 +264,17 @@ const Editor = React.memo(
       <div
         className="markdown-editor mode-source"
         ref={zoomContainerRef}
-        style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          position: 'relative',
+          overflow: 'hidden'
+        }}
       >
         {zoomBadge && <div className="editor-zoom-hud">{zoomBadge}</div>}
+
+        <EditorCreatedAt snippet={snippet} scrollerRef={scrollerRef} />
 
         {showFindWidget && realViewRef.current && (
           <Find
@@ -402,6 +411,7 @@ const Editor = React.memo(
       prevSnippet?.color === nextSnippet?.color &&
       prevSnippet?.isPinned === nextSnippet?.isPinned &&
       prevSnippet?.isLearned === nextSnippet?.isLearned &&
+      prevSnippet?.createdAt === nextSnippet?.createdAt &&
       prevProps.onSave === nextProps.onSave &&
       prevProps.onToggleInspector === nextProps.onToggleInspector &&
       prevProps.isActive === nextProps.isActive

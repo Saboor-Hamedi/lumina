@@ -220,6 +220,7 @@ export class WorkspaceOperations {
           isPinned: !!snippet.isPinned,
           isLearned: !!snippet.isLearned,
           customIcon: snippet.customIcon || null,
+          createdAt: snippet.createdAt || new Date().toISOString(),
           timestamp: newTimestamp
         })
       } catch (strErr) {
@@ -248,6 +249,7 @@ export class WorkspaceOperations {
       ...snippet,
       title: isMarkdown || isCanvas ? (rawTitle || cleanedTitle) : newFileName,
       timestamp: newTimestamp,
+      createdAt: snippet.createdAt || new Date().toISOString(),
       fileName: newFileName,
       folderId: relativeFolder,
       type: isCanvas ? 'canvas' : snippet.type || 'snippet',
