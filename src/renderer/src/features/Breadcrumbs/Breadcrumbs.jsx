@@ -1,30 +1,58 @@
-import React, { useState, useCallback, useMemo } from 'react'
-import { Folder, ChevronRight, FileText, Database, Copy, Check } from 'lucide-react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { Folder, ChevronRight, FileText, Database, Copy, Check, Hash } from 'lucide-react'
 import { useVaultStore } from '../../core/store/workspaceStore'
 import ToolTip from '../../components/atoms/ToolTip'
 import BreadcrumbDropdown from './BreadcrumbDropdown'
-import { getFolderPath } from './breadcrumbUtils'
+import BreadcrumbOutlineDropdown from './BreadcrumbOutlineDropdown'
+import {
+  getFolderPath,
+  extractHeadings,
+  findActiveHeading,
+  normalizePath
+} from './breadcrumbUtils'
 import './Breadcrumbs.css'
 
 export const Breadcrumbs = ({ snippet, className = '' }) => {
   const folders = useVaultStore((state) => state.folders) || []
   const snippets = useVaultStore((state) => state.snippets) || []
   const selectedSnippet = useVaultStore((state) => state.selectedSnippet)
+  const saveSnippet = useVaultStore((state) => state.saveSnippet)
   const currentSnippet = snippet || selectedSnippet
+
   const [copied, setCopied] = useState(false)
   const [dropdown, setDropdown] = useState(null)
+  const [outlineDropdown, setOutlineDropdown] = useState(null)
+  const [dragOverTarget, setDragOverTarget] = useState(null)
+  const [cursorLine, setCursorLine] = useState(1)
 
-  if (!currentSnippet) return null
-  if (Array.isArray(snippets) && snippets.length === 0 && !snippet) return null
-  if (Array.isArray(snippets) && snippets.length > 0 && !snippets.some((s) => s.id === currentSnippet.id)) return null
+  useEffect(() => {
+    const handleCursorPos = (e) => {
+      if (e.detail && (!e.detail.snippetId || e.detail.snippetId === currentSnippet?.id)) {
+        setCursorLine(e.detail.line || 1)
+      }
+    }
+    window.addEventListener('editor-cursor-pos', handleCursorPos)
+    return () => window.removeEventListener('editor-cursor-pos', handleCursorPos)
+  }, [currentSnippet?.id])
+
+  // Extract all Markdown headings from the current document
+  const headings = useMemo(() => {
+    return extractHeadings(currentSnippet?.code || '')
+  }, [currentSnippet?.code])
+
+  // Compute the active heading corresponding to the cursor position
+  const activeHeading = useMemo(() => {
+    return findActiveHeading(headings, cursorLine)
+  }, [headings, cursorLine])
 
   // Resolve hierarchical folder chain from root down to note's immediate folder
   const folderPath = useMemo(() => {
-    return getFolderPath(currentSnippet.folderId, folders)
-  }, [currentSnippet.folderId, folders])
+    return getFolderPath(currentSnippet?.folderId, folders)
+  }, [currentSnippet?.folderId, folders])
 
   const openDropdown = useCallback((e, parentFolderId, currentId, activeSegmentKey) => {
     const rect = e.currentTarget.getBoundingClientRect()
+    setOutlineDropdown(null)
     setDropdown({
       parentFolderId: parentFolderId ?? null,
       currentId: currentId ?? null,
@@ -35,11 +63,19 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
 
   const closeDropdown = useCallback(() => setDropdown(null), [])
 
+  const openOutlineDropdown = useCallback((e) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    setDropdown(null)
+    setOutlineDropdown({ anchorRect: rect })
+  }, [])
+
+  const closeOutlineDropdown = useCallback(() => setOutlineDropdown(null), [])
+
   const handleCopyPath = useCallback(async (e) => {
     e.stopPropagation()
     const fullPath =
-      currentSnippet.relativePath ||
-      [...folderPath.map((f) => f.name), currentSnippet.title || 'Untitled'].join('/')
+      currentSnippet?.relativePath ||
+      [...folderPath.map((f) => f.name), currentSnippet?.title || 'Untitled'].join('/')
     try {
       if (navigator?.clipboard?.writeText) {
         await navigator.clipboard.writeText(fullPath)
@@ -49,8 +85,91 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
     } catch {}
   }, [currentSnippet, folderPath])
 
+  const folderPathRef = useRef(folderPath)
+  folderPathRef.current = folderPath
+  const currentSnippetRef = useRef(currentSnippet)
+  currentSnippetRef.current = currentSnippet
+
+  // Keyboard shortcut focus listener
+  useEffect(() => {
+    const handleFocusBreadcrumbs = () => {
+      const activeEl = document.querySelector('.breadcrumb-item.active')
+      const rect = activeEl
+        ? activeEl.getBoundingClientRect()
+        : { left: 100, top: 28, bottom: 48, right: 200, width: 100, height: 20 }
+      const fp = folderPathRef.current || []
+      const lastFolderId = fp.length > 0 ? fp[fp.length - 1].id : null
+      const targetId = currentSnippetRef.current?.id || (fp[0]?.id ?? null)
+      setOutlineDropdown(null)
+      setDropdown({
+        parentFolderId: lastFolderId,
+        currentId: targetId,
+        activeSegmentKey: targetId,
+        anchorRect: rect
+      })
+    }
+    window.addEventListener('focus-breadcrumbs', handleFocusBreadcrumbs)
+    document.addEventListener('focus-breadcrumbs', handleFocusBreadcrumbs)
+    return () => {
+      window.removeEventListener('focus-breadcrumbs', handleFocusBreadcrumbs)
+      document.removeEventListener('focus-breadcrumbs', handleFocusBreadcrumbs)
+    }
+  }, [])
+
+  // Drag and drop onto folder segments
+  const handleDragOver = useCallback((e, targetKey) => {
+    e.preventDefault()
+    e.stopPropagation()
+    e.dataTransfer.dropEffect = 'move'
+    setDragOverTarget(targetKey)
+  }, [])
+
+  const handleDragLeave = useCallback((e, targetKey) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragOverTarget((prev) => (prev === targetKey ? null : prev))
+  }, [])
+
+  const handleDrop = useCallback(
+    async (e, targetFolderId) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setDragOverTarget(null)
+
+      const raw = e.dataTransfer.getData('application/lumina-snippet')
+      if (raw && saveSnippet) {
+        try {
+          const droppedSnippet = JSON.parse(raw)
+          if (droppedSnippet && droppedSnippet.id) {
+            const nextFolderId = targetFolderId ? normalizePath(targetFolderId) : ''
+            if (droppedSnippet.folderId !== nextFolderId) {
+              const updated = { ...droppedSnippet, folderId: nextFolderId }
+              await saveSnippet(updated)
+              window.dispatchEvent(
+                new CustomEvent('show-toast', {
+                  detail: {
+                    message: `Moved to ${nextFolderId || 'Workspace'}`,
+                    type: 'success'
+                  }
+                })
+              )
+            }
+          }
+        } catch (err) {
+          console.error('[Breadcrumbs] Drop error:', err)
+        }
+      }
+    },
+    [saveSnippet]
+  )
+
+  if (!currentSnippet) return null
+  if (Array.isArray(snippets) && snippets.length === 0 && !snippet) return null
+  if (Array.isArray(snippets) && snippets.length > 0 && !snippets.some((s) => s.id === currentSnippet.id)) return null
+
   const rootTargetId = folderPath[0]?.id ?? currentSnippet.id
   const isWorkspaceOpen = dropdown?.activeSegmentKey === '__workspace__'
+  const isWorkspaceDragOver = dragOverTarget === '__workspace__'
 
   return (
     <nav className={`editor-breadcrumbs-bar ${className}`} aria-label="Breadcrumbs">
@@ -58,8 +177,17 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
       <ToolTip text="Browse workspace root" position="bottom">
         <button
           type="button"
-          className={`breadcrumb-item${isWorkspaceOpen ? ' bc-open' : ''}`}
+          className={[
+            'breadcrumb-item',
+            isWorkspaceOpen ? 'bc-open' : '',
+            isWorkspaceDragOver ? 'drag-over' : ''
+          ]
+            .filter(Boolean)
+            .join(' ')}
           onClick={(e) => openDropdown(e, null, rootTargetId, '__workspace__')}
+          onDragOver={(e) => handleDragOver(e, '__workspace__')}
+          onDragLeave={(e) => handleDragLeave(e, '__workspace__')}
+          onDrop={(e) => handleDrop(e, null)}
         >
           <Database size={11.5} className="breadcrumb-icon" />
           <span>Workspace</span>
@@ -74,14 +202,24 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
       {folderPath.map((folder, index) => {
         const parentId = index > 0 ? folderPath[index - 1].id : null
         const isFolderOpen = dropdown?.activeSegmentKey === folder.id
+        const isFolderDragOver = dragOverTarget === folder.id
 
         return (
           <React.Fragment key={folder.id || index}>
             <ToolTip text={`Folder: ${folder.name}`} position="bottom">
               <button
                 type="button"
-                className={`breadcrumb-item${isFolderOpen ? ' bc-open' : ''}`}
+                className={[
+                  'breadcrumb-item',
+                  isFolderOpen ? 'bc-open' : '',
+                  isFolderDragOver ? 'drag-over' : ''
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
                 onClick={(e) => openDropdown(e, parentId, folder.id, folder.id)}
+                onDragOver={(e) => handleDragOver(e, folder.id)}
+                onDragLeave={(e) => handleDragLeave(e, folder.id)}
+                onDrop={(e) => handleDrop(e, folder.id)}
               >
                 <Folder size={11.5} className="breadcrumb-icon" />
                 <span className="breadcrumb-folder-text">{folder.name}</span>
@@ -109,6 +247,25 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
         </button>
       </ToolTip>
 
+      {/* Outline / Heading segment (VS Code breadcrumb symbol) */}
+      {activeHeading && (
+        <>
+          <span className="breadcrumb-separator" aria-hidden="true">
+            <ChevronRight size={11} />
+          </span>
+          <ToolTip text={`Section: ${activeHeading.text} (Click for outline)`} position="bottom">
+            <button
+              type="button"
+              className={`breadcrumb-item breadcrumb-heading-item${outlineDropdown ? ' bc-open' : ''}`}
+              onClick={openOutlineDropdown}
+            >
+              <Hash size={11} className="breadcrumb-icon" />
+              <span className="breadcrumb-heading-text">{activeHeading.text}</span>
+            </button>
+          </ToolTip>
+        </>
+      )}
+
       {/* Dedicated copy path button */}
       <ToolTip text={copied ? 'Copied to clipboard!' : 'Copy note path'} position="bottom">
         <button
@@ -121,13 +278,23 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
         </button>
       </ToolTip>
 
-      {/* Dropdown portal */}
+      {/* Folder Sibling Dropdown portal */}
       {dropdown && (
         <BreadcrumbDropdown
           parentFolderId={dropdown.parentFolderId}
           currentId={dropdown.currentId}
           anchorRect={dropdown.anchorRect}
           onClose={closeDropdown}
+        />
+      )}
+
+      {/* Heading Outline Dropdown portal */}
+      {outlineDropdown && (
+        <BreadcrumbOutlineDropdown
+          headings={headings}
+          activeHeading={activeHeading}
+          anchorRect={outlineDropdown.anchorRect}
+          onClose={closeOutlineDropdown}
         />
       )}
     </nav>

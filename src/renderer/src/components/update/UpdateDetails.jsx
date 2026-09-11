@@ -8,12 +8,18 @@ import ToolTip from '../atoms/ToolTip'
 import './UpdateDetails.css'
 
 export const DEFAULT_RELEASE_NOTES = `New
+- Interactive Breadcrumbs & Heading Outline: Breadcrumbs now feature an active heading segment (# Section) dynamically tracking the editor cursor. Clicking it opens a Table of Contents outline dropdown with H1-H6 level badges, line numbers, and instant search filter that smooth-scrolls directly to that line.
+- Unified Dropdown Geometry (320px × 340px): Dropdowns for Workspace, folder siblings, and heading outlines now share identical, rock-solid dimensions matching the Workspace dropdown width, with invisible scrollbars and elegant ellipsis truncation on long titles.
+- Quick Note Creation in Folders: Add a new note directly inside any folder via the + button in the dropdown header or on individual folder rows.
+- Breadcrumb Drag-and-Drop: Drag notes or tabs directly onto Workspace or folder segments in the breadcrumb bar to move files instantly.
+- Focus Breadcrumbs Shortcut: Focus and open breadcrumb navigation instantly with Ctrl + Shift + . (or Ctrl + Shift + ;). Note/Tab icon picker updated to Ctrl + Win + . to prevent key conflicts.
 - Rich Word/HTML Paste with Format Preservation: Pasting from Microsoft Word (Ctrl + V) now preserves tables, headings, bold/italic, images, table of contents, references, and figure captions — converting them seamlessly to clean Markdown.
 - Word Image Extraction: Images copied from Word documents are automatically saved to .lumina/assets/ and embedded inline. Supports VML (v:imagedata), standard img tags with file:/// paths, and system clipboard image buffer fallback.
 - Paste as Plain Text: Ctrl + Shift + V now pastes raw unformatted text, bypassing all HTML conversion — useful for pasting code snippets or raw content without any rich formatting.
 - Breadcrumbs Long-Title Truncation: Note titles of any length are now gracefully truncated in the breadcrumbs bar with ellipsis (…). Hovering reveals the full title. Scales responsively with the viewport (clamp 140px → 380px).
 
 Improved
+- Standardized Custom ToolTips: All breadcrumb actions, navigation buttons, and counter pills now use Lumina's high-precision <ToolTip /> component with zero-background shortcut styling.
 - Word Table Cell Cleaning: Table cells from Word paste are fully sanitized — no more raw <u>, <span>, <font>, or <br> tags leaking into Markdown tables. Names like Dr. Sajarwo Anggai., S.ST., M.T. paste correctly.
 - Figure Captions Preserved: Figure numbers, captions, and the text between figures are now correctly extracted. The non-greedy VML conditional comment regex was hardened to never bridge across multiple figures.
 - Table of Contents Formatting: Word TOC entries are converted to clean hierarchical Markdown lists (- and  -) with dot leaders stripped and tight vertical spacing.
@@ -23,6 +29,7 @@ Improved
 - Breadcrumbs Icon Stability: Breadcrumb icons now have flex-shrink: 0 and never collapse under layout pressure.
 
 Fixed
+- Dropdown Width Auto-Expansion: Breadcrumb dropdowns no longer resize or balloon to 480px based on filename length. All dropdowns strictly adhere to the polished 320px width standard with ellipsis truncation.
 - YAML Title Reversion Bug: Note titles containing YAML block scalar characters (>-, |, >, |+) no longer revert to - when renamed. safeParseFrontmatter correctly handles these as literal strings and sanitizeTitleForFilename preserves the raw title in frontmatter while only cleaning the disk filename.
 - Figure Text Deletion: The conditional VML comment regex previously used a greedy pattern that bridged across multiple figures, consuming all text and captions between Figure 1 and Figure 2. Fixed with a negative lookahead so each comment block terminates strictly at its own closing delimiter.
 - Jump Anchor Links in Paste: Internal Word anchor links (e.g. [1](#_Ref...)) that jumped to the next image are now flattened to clean plain text (1) with no clickable href.`

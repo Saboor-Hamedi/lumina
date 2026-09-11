@@ -1,7 +1,7 @@
 /* Documentation Modal Container - Matches Guide Modal exactly */
 .docs-modal-container {
-  width: 86vw;
-  max-width: 740px;
+  width: 900px;
+  max-width: 94vw;
   height: 76vh;
   min-height: 480px;
   max-height: 78vh;
@@ -331,6 +331,54 @@
   overflow-x: hidden !important;
   padding: 24px 32px 56px 32px !important;
   box-sizing: border-box !important;
+  --font-size-editor: 12px !important;
+  --editor-font-size: 12px !important;
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+}
+
+.docs-container .cm-editor,
+.docs-container .cm-content,
+.docs-container .cm-line {
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+}
+
+.docs-container p,
+.docs-container li,
+.docs-container blockquote,
+.docs-container table,
+.docs-container td,
+.docs-container th {
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+}
+
+/* Headings strictly 14px as requested */
+.docs-container h1,
+.docs-container h2,
+.docs-container h3,
+.docs-container h4,
+.docs-container h5,
+.docs-container h6,
+.docs-container .cm-line.cm-atomic-h1,
+.docs-container .cm-line.cm-atomic-h2,
+.docs-container .cm-line.cm-atomic-h3,
+.docs-container .cm-line.cm-atomic-h4,
+.docs-container .cm-line.cm-atomic-h5,
+.docs-container .cm-line.cm-atomic-h6,
+.docs-container .cm-line:has(.cm-heading1),
+.docs-container .cm-line:has(.cm-heading2),
+.docs-container .cm-line:has(.cm-heading3),
+.docs-container .cm-line:has(.cm-heading4),
+.docs-container .cm-line:has(.cm-heading5),
+.docs-container .cm-line:has(.cm-heading6),
+.docs-container .cm-heading,
+.docs-container .cm-header {
+  font-size: 14px !important;
+  font-weight: 650 !important;
+  line-height: 1.4 !important;
+  letter-spacing: -0.015em !important;
 }
 
 .docs-container .preview-body::-webkit-scrollbar {
@@ -389,27 +437,27 @@
   margin-right: auto !important;
 }
 
-/* Document Footer Navigation (Next / Previous Chapter Pagination) */
+/* Document Footer Navigation (Next / Previous Chapter Pagination) - Compact & Sleek */
 .docs-nav-footer {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 10px;
   width: 100%;
-  margin-top: 56px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border-dim);
+  margin-top: 28px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-dim, rgba(255, 255, 255, 0.08));
   box-sizing: border-box;
 }
 
 .docs-nav-btn {
   display: flex;
   flex-direction: column;
-  padding: 14px 18px;
+  padding: 8px 12px;
   background: var(--bg-panel, rgba(255, 255, 255, 0.02));
-  border: 1px solid var(--border-dim);
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.08));
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   text-decoration: none;
   width: 100%;
   box-sizing: border-box;
@@ -429,33 +477,33 @@
 
 .docs-nav-btn:hover {
   background: rgba(255, 255, 255, 0.05);
-  border-color: var(--text-accent);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-  transform: translateY(-2px);
+  border-color: var(--text-accent, #8b5cf6);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
 }
 
 .docs-nav-btn-label {
-  font-size: 10px;
+  font-size: 9px;
   text-transform: uppercase;
   font-weight: 700;
-  letter-spacing: 0.8px;
-  color: var(--text-faint);
-  margin-bottom: 6px;
+  letter-spacing: 0.6px;
+  color: var(--text-faint, #64748b);
+  margin-bottom: 2px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   transition: color 0.15s ease;
 }
 
 .docs-nav-btn:hover .docs-nav-btn-label {
-  color: var(--text-accent);
+  color: var(--text-accent, #8b5cf6);
 }
 
 .docs-nav-btn-title {
-  font-size: 13px;
+  font-size: 11.5px;
   font-weight: 600;
-  color: var(--text-main);
-  line-height: 1.4;
+  color: var(--text-main, #f8fafc);
+  line-height: 1.35;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

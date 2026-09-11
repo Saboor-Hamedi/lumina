@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import BreadcrumbDropdown from '../../../../../src/renderer/src/features/Breadcrumbs/BreadcrumbDropdown'
 
 const mockFolders = [
@@ -15,13 +15,15 @@ const mockSnippets = [
 ]
 
 const mockSetSelectedSnippet = vi.fn()
+const mockSaveSnippet = vi.fn().mockResolvedValue({})
 
 vi.mock('../../../../../src/renderer/src/core/store/workspaceStore', () => ({
   useVaultStore: (selector) =>
     selector({
       folders: mockFolders,
       snippets: mockSnippets,
-      setSelectedSnippet: mockSetSelectedSnippet
+      setSelectedSnippet: mockSetSelectedSnippet,
+      saveSnippet: mockSaveSnippet
     })
 }))
 
@@ -37,6 +39,7 @@ const anchorRect = {
 describe('BreadcrumbDropdown', () => {
   beforeEach(() => {
     mockSetSelectedSnippet.mockClear()
+    mockSaveSnippet.mockClear()
   })
 
   it('renders root-level folders and notes when parentFolderId is null', () => {
@@ -83,6 +86,23 @@ describe('BreadcrumbDropdown', () => {
     render(<BreadcrumbDropdown parentFolderId="f1" anchorRect={anchorRect} onClose={onClose} />)
     fireEvent.click(screen.getByText('README'))
     expect(mockSetSelectedSnippet).toHaveBeenCalledWith(mockSnippets[0])
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  it('creates new note in folder when plus button is clicked', async () => {
+    const onClose = vi.fn()
+    render(<BreadcrumbDropdown parentFolderId="f1" anchorRect={anchorRect} onClose={onClose} />)
+    const plusBtn = screen.getByLabelText('New note in components')
+    await act(async () => {
+      fireEvent.click(plusBtn)
+    })
+    expect(mockSaveSnippet).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Untitled',
+        folderId: 'f2'
+      })
+    )
+    expect(mockSetSelectedSnippet).toHaveBeenCalled()
     expect(onClose).toHaveBeenCalled()
   })
 

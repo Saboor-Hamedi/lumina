@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import {
   Folder,
@@ -10,16 +10,19 @@ import {
   Check,
   Copy,
   X,
+  Plus,
   Image as ImageIcon,
   LayoutGrid
 } from 'lucide-react'
 import { useVaultStore } from '../../core/store/workspaceStore'
+import ToolTip from '../../components/atoms/ToolTip'
 import {
   getChildFolders,
   getChildNotes,
   getFolderPath,
   isRootPath,
-  normalizePath
+  normalizePath,
+  createUntitledSnippet
 } from './breadcrumbUtils'
 import './BreadcrumbDropdown.css'
 
@@ -38,6 +41,7 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
   const folders = useVaultStore((state) => state.folders) || []
   const snippets = useVaultStore((state) => state.snippets) || []
   const setSelectedSnippet = useVaultStore((state) => state.setSelectedSnippet)
+  const saveSnippet = useVaultStore((state) => state.saveSnippet)
 
   // Navigation stack: array of folder IDs
   const [stack, setStack] = useState(() => [isRootPath(parentFolderId) ? null : normalizePath(parentFolderId)])
@@ -45,7 +49,6 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
   const isInitialLevel = stack.length === 1
 
   const [searchQuery, setSearchQuery] = useState('')
-  const [activeIndex, setActiveIndex] = useState(0)
   const [pathCopied, setPathCopied] = useState(false)
   const [activeNoteId, setActiveNoteId] = useState(currentId)
 
@@ -89,6 +92,18 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
     return [...folderList, ...noteList]
   }, [allFolders, allNotes, searchQuery])
 
+  const [activeIndex, setActiveIndex] = useState(() => {
+    if (isInitialLevel && currentId) {
+      const initialFolder = isRootPath(parentFolderId) ? null : normalizePath(parentFolderId)
+      const rawFolders = getChildFolders(initialFolder, folders)
+      const rawNotes = getChildNotes(initialFolder, snippets)
+      const all = [...rawFolders, ...rawNotes]
+      const idx = all.findIndex((it) => it.id === currentId)
+      return idx >= 0 ? idx : 0
+    }
+    return 0
+  })
+
   // Current highlighted item
   const highlightId = isInitialLevel && !searchQuery ? currentId : activeNoteId
 
@@ -97,15 +112,17 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
     if (isInitialLevel && currentId && !searchQuery) {
       const idx = items.findIndex((it) => it.id === currentId)
       setActiveIndex(idx >= 0 ? idx : 0)
-    } else {
+    } else if (searchQuery) {
       setActiveIndex(0)
     }
   }, [currentFolderId, searchQuery]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Scroll active item into view
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = listRef.current?.children[activeIndex]
-    el?.scrollIntoView({ block: 'nearest' })
+    if (el && typeof el.scrollIntoView === 'function') {
+      el.scrollIntoView({ block: 'nearest' })
+    }
   }, [activeIndex])
 
   const drillIn = useCallback((folderId) => {
@@ -142,7 +159,6 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
       if (item.kind === 'folder') {
         drillIn(item.id)
       } else {
-        // When searching, pressing Enter or clicking keeps the dropdown open unless dismissed by Escape/outside click
         const keepOpen = Boolean(searchQuery.trim()) || isEnterKey && Boolean(searchQuery)
         handleSelectNote(item.snippet, keepOpen)
       }
@@ -161,6 +177,19 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
       setTimeout(() => setPathCopied(false), 1600)
     } catch {}
   }, [currentFolderId])
+
+  const handleCreateNoteInFolder = useCallback(
+    async (folderId, e) => {
+      if (e) e.stopPropagation()
+      const newSnippet = createUntitledSnippet(folderId, snippets)
+      if (saveSnippet) {
+        await saveSnippet(newSnippet)
+      }
+      setSelectedSnippet(newSnippet)
+      onClose()
+    },
+    [snippets, saveSnippet, setSelectedSnippet, onClose]
+  )
 
   // Keyboard navigation
   useEffect(() => {
@@ -214,9 +243,8 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
   // Floating portal layout calculation
   const style = useMemo(() => {
     if (!anchorRect) return {}
-    const minW = 320
-    const maxW = 480
-    const maxH = 400
+    const width = 320
+    const maxH = 340
     const gap = 5
 
     let top = anchorRect.bottom + gap
@@ -225,20 +253,21 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
     const spaceBelow = window.innerHeight - anchorRect.bottom - gap
     const spaceAbove = anchorRect.top - gap
 
-    if (spaceBelow < 240 && spaceAbove > spaceBelow) {
+    if (spaceBelow < 220 && spaceAbove > spaceBelow) {
       top = Math.max(10, anchorRect.top - maxH - gap)
     }
 
-    if (left + minW > window.innerWidth - 12) {
-      left = window.innerWidth - minW - 12
+    if (left + width > window.innerWidth - 12) {
+      left = window.innerWidth - width - 12
     }
     if (left < 12) left = 12
 
     return {
       top: Math.round(top),
       left: Math.round(left),
-      minWidth: minW,
-      maxWidth: maxW,
+      width,
+      minWidth: width,
+      maxWidth: width,
       maxHeight: maxH
     }
   }, [anchorRect])
@@ -256,15 +285,16 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
       {/* Header bar with trail and action icons */}
       <div className="bc-header-bar">
         {isNested && (
-          <button
-            type="button"
-            className="bc-nav-btn"
-            onClick={drillOut}
-            aria-label="Navigate to parent folder"
-            title="Go back (Left Arrow)"
-          >
-            <ChevronLeft size={13} />
-          </button>
+          <ToolTip text="Go back (Left Arrow)" position="bottom">
+            <button
+              type="button"
+              className="bc-nav-btn"
+              onClick={drillOut}
+              aria-label="Navigate to parent folder"
+            >
+              <ChevronLeft size={13} />
+            </button>
+          </ToolTip>
         )}
 
         <div className="bc-trail" title={isRootPath(currentFolderId) ? 'Workspace' : currentFolderId}>
@@ -296,18 +326,31 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
         </div>
 
         <div className="bc-header-actions">
-          <span className="bc-count-pill" title={`${items.length} items`}>
-            {items.length}
-          </span>
-          <button
-            type="button"
-            className={`bc-header-icon-btn${pathCopied ? ' copied' : ''}`}
-            onClick={handleCopyCurrentPath}
-            title={pathCopied ? 'Path copied!' : 'Copy folder path'}
-            aria-label="Copy folder path"
-          >
-            {pathCopied ? <Check size={11} /> : <Copy size={11} />}
-          </button>
+          <ToolTip text={`${items.length} items`} position="bottom">
+            <span className="bc-count-pill">
+              {items.length}
+            </span>
+          </ToolTip>
+          <ToolTip text="New note in folder" position="bottom">
+            <button
+              type="button"
+              className="bc-header-icon-btn"
+              onClick={(e) => handleCreateNoteInFolder(currentFolderId, e)}
+              aria-label="New note in folder"
+            >
+              <Plus size={12} />
+            </button>
+          </ToolTip>
+          <ToolTip text={pathCopied ? 'Path copied!' : 'Copy folder path'} position="bottom">
+            <button
+              type="button"
+              className={`bc-header-icon-btn${pathCopied ? ' copied' : ''}`}
+              onClick={handleCopyCurrentPath}
+              aria-label="Copy folder path"
+            >
+              {pathCopied ? <Check size={11} /> : <Copy size={11} />}
+            </button>
+          </ToolTip>
         </div>
       </div>
 
@@ -325,14 +368,16 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
           autoComplete="off"
         />
         {searchQuery ? (
-          <button
-            type="button"
-            className="bc-search-clear"
-            onClick={() => setSearchQuery('')}
-            aria-label="Clear filter"
-          >
-            <X size={11} />
-          </button>
+          <ToolTip text="Clear filter" position="bottom">
+            <button
+              type="button"
+              className="bc-search-clear"
+              onClick={() => setSearchQuery('')}
+              aria-label="Clear filter"
+            >
+              <X size={11} />
+            </button>
+          </ToolTip>
         ) : (
           <div className="bc-search-hints">
             <kbd className="bc-kbd-hint">Esc</kbd>
@@ -388,6 +433,16 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
 
                 {isFolder && (
                   <span className="bc-folder-trailing">
+                    <ToolTip text={`New note in ${item.name}`} position="top">
+                      <button
+                        type="button"
+                        className="bc-item-add-note"
+                        onClick={(e) => handleCreateNoteInFolder(item.id, e)}
+                        aria-label={`New note in ${item.name}`}
+                      >
+                        <Plus size={11} />
+                      </button>
+                    </ToolTip>
                     {item.itemCount > 0 && (
                       <span className="bc-item-subcount">
                         {item.itemCount}

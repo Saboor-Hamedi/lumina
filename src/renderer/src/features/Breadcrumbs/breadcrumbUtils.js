@@ -136,3 +136,75 @@ export function getChildNotes(parentFolderId, snippets = []) {
 
   return result.sort((a, b) => COLLATOR.compare(a.name || '', b.name || ''))
 }
+
+export function extractHeadings(code = '') {
+  if (!code || typeof code !== 'string') return []
+  const lines = code.split('\n')
+  const extracted = []
+  let insideCodeBlock = false
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    const trimmed = line.trim()
+    if (trimmed.startsWith('```')) {
+      insideCodeBlock = !insideCodeBlock
+      continue
+    }
+    if (insideCodeBlock) continue
+
+    const match = line.match(/^(#{1,6})\s+(.+)$/)
+    if (match) {
+      extracted.push({
+        level: match[1].length,
+        text: match[2].trim(),
+        line: i + 1
+      })
+    }
+  }
+
+  return extracted
+}
+
+export function findActiveHeading(headings = [], currentLine = 1) {
+  if (!Array.isArray(headings) || headings.length === 0) return null
+  let active = null
+  for (const h of headings) {
+    if (h.line <= currentLine) {
+      active = h
+    } else {
+      break
+    }
+  }
+  return active || headings[0] || null
+}
+
+export function createUntitledSnippet(targetFolderId = '', snippets = []) {
+  const baseName = 'Untitled'
+  let name = baseName
+  let counter = 1
+
+  const existingNames = new Set(
+    (snippets || []).map((s) => (s.title || s.fileName || '').toLowerCase())
+  )
+
+  while (
+    existingNames.has(name.toLowerCase()) ||
+    existingNames.has(`${name}.md`.toLowerCase())
+  ) {
+    name = `${baseName} ${counter++}`
+  }
+
+  const id =
+    typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : Math.random().toString(36).substring(2, 15)
+
+  return {
+    id,
+    title: name,
+    fileName: `${name}.md`,
+    code: '',
+    folderId: targetFolderId ? normalizePath(targetFolderId) : '',
+    tags: []
+  }
+}

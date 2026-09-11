@@ -127,3 +127,28 @@
   color: #10b981;
 }
 
+.breadcrumb-heading-item {
+  color: var(--text-accent, #8b5cf6);
+  max-width: 220px;
+}
+
+.breadcrumb-heading-item:hover,
+.breadcrumb-heading-item.bc-open {
+  color: var(--text-accent, #a78bfa);
+}
+
+.breadcrumb-heading-text {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.breadcrumb-item.drag-over {
+  background: rgba(139, 92, 246, 0.2) !important;
+  color: var(--text-accent, #a78bfa) !important;
+  outline: 1px dashed var(--text-accent, #8b5cf6);
+  outline-offset: -1px;
+}
+
+

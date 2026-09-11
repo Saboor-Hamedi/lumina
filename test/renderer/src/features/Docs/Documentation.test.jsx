@@ -7,12 +7,33 @@ import Documentation from '../../../../../src/renderer/src/features/Docs/Documen
 describe('Documentation Component Suite', () => {
   const mockDocs = {
     'introduction.md': '# Introduction to Lumina\n\nWelcome to Lumina note taking.',
+    'purpose.md': '# Lumina — Comprehensive Project Architecture, Purpose & Developer Reference',
     'references/01-basic-syntax.md': '# 1. Basic Syntax\n\nLearn markdown easily.',
     'references/02-code-and-syntax.md': '# 2. Code & Syntax Highlighting\n\nCode blocks.',
     'features/01-architecture.md': '# Architecture\n\nSystem design.'
   }
 
   describe('DocSidebar.jsx', () => {
+    it('renders Technical folder before Learning Markdown containing purpose.md', () => {
+      const setSelectedDoc = vi.fn()
+      render(<DocSidebar docs={mockDocs} selectedDoc="introduction.md" setSelectedDoc={setSelectedDoc} />)
+
+      const technicalFolder = screen.getByText('Technical')
+      const learningFolder = screen.getByText('Learning Markdown')
+      expect(technicalFolder).toBeInTheDocument()
+      expect(learningFolder).toBeInTheDocument()
+
+      expect(technicalFolder.compareDocumentPosition(learningFolder)).toBe(
+        Node.DOCUMENT_POSITION_FOLLOWING
+      )
+
+      const purposeItem = screen.getByText('Purpose & Architecture')
+      expect(purposeItem).toBeInTheDocument()
+
+      fireEvent.click(purposeItem)
+      expect(setSelectedDoc).toHaveBeenCalledWith('purpose.md')
+    })
+
     it('renders categorized doc groups and formatted doc titles', () => {
       const setSelectedDoc = vi.fn()
       render(<DocSidebar docs={mockDocs} selectedDoc="introduction.md" setSelectedDoc={setSelectedDoc} />)

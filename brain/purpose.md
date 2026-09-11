@@ -47,12 +47,12 @@ Lumina uses a **flex-row three-pane layout** inside `AppShell.jsx`:
 All three panes are direct children of `.app-shell` (a flex container). The resizers are also **direct flex siblings** — not nested inside the sidebars.
 
 ### Key Layout Files
-- `src/renderer/src/features/Layout/AppShell.jsx` — Central orchestrator managing the 3-pane layout, modals, tabs, sidebar state, and resizing engine.
-- `src/renderer/src/assets/appshell.css` — Layout, sidebar widths, transitions, resizer knob styles.
-- `src/renderer/src/features/Navigation/Sidebar.jsx` — Left sidebar shell (header + FileExplorer + footer).
-- `src/renderer/src/features/Navigation/Sidebar.css` — Left sidebar styles including `.sidebar-header-section` (32px).
-- `src/renderer/src/features/Inspector/RightSidebar.jsx` — Right sidebar with Details/Outline/Chat tabs.
-- `src/renderer/src/features/Inspector/NoteDetails.css` — Inspector panel, tab bar, and property row styles.
+- `AppShell.jsx` — Central orchestrator managing the 3-pane layout, modals, tabs, sidebar state, and resizing engine.
+- `appshell.css` — Layout, sidebar widths, transitions, resizer knob styles.
+- `Sidebar.jsx` — Left sidebar shell (header + FileExplorer + footer).
+- `Sidebar.css` — Left sidebar styles including `.sidebar-header-section` (32px).
+- `RightSidebar.jsx` — Right sidebar with Details/Outline/Chat tabs.
+- `NoteDetails.css` — Inspector panel, tab bar, and property row styles.
 
 ### Sidebar Open/Close State — Source of Truth
 **Local React state + localStorage** is the sole source of truth for sidebar open/closed state. The settings store is a secondary persistence target only.
@@ -109,7 +109,7 @@ All three header bars must be exactly **32px tall** to stay perfectly aligned:
 2. **Floating Draggable Modal (`aiChatDisplayMode: 'modal'`)**: Draggable, resizable, and maximizable window overlaying the workspace.
 
 ### B. The Unified Composer & Slash Command Architecture
-Located in `src/renderer/src/features/AI/Composer.jsx`:
+Located in `Composer.jsx`:
 - Auto-expanding textarea, slash commands (`/`), note mentions (`@`), and mode selector.
 
 ### C. Context Engine & Prompt Assembly
@@ -138,7 +138,7 @@ When a message is sent, context is assembled in a multi-tier hierarchy:
 - **Zero Typewriter Lag**: Dispatches changes through `streamCodeToEditor` directly to CodeMirror 6 with instant draft synchronization and intelligent vertical centering around the modified lines (`scrollToBottom: false`).
 
 ### G. Unified Real-Time Reasoning & Single Thinking Stream (`aiStreamRunner.js` & `ThinkingBlock.jsx`)
-- Consolidates all Chain-of-Thought reasoning (initial assessment, tool selection, and post-tool reflection) into a single, unified `<think>` block at the top of the message.
+- Consolidates all Chain-of-Thought reasoning (initial assessment, tool selection, and post-tool reflection) into a single, unified ``thinking-block`` block at the top of the message.
 - Eliminates secondary fragmented thinking dropdowns appearing after tool execution.
 - Live elapsed timers (`Thinking (12s)`) keep the user visually informed during multi-step model reasoning without sudden delays or UI jumps.
 
@@ -216,55 +216,55 @@ const updateSetting = useSettingsStore((state) => state.updateSetting)
 
 ---
 
-## 6. Directory & File Address Architecture
+## 6. Subsystem & Component Architecture
 
 ### Application Core & Main Process
-- `src/main/index.js` — Application lifecycle, window creation, IPC handlers, protocol handlers.
-- `src/main/SettingsManager.js` — Persists settings to `.lumina/settings.json`.
-- `src/preload/index.js` — Secure context bridge exposing filesystem, dialog, and settings APIs.
+- `index.js` — Application lifecycle, window creation, IPC handlers, protocol handlers.
+- `SettingsManager.js` — Persists settings to `.lumina/settings.json`.
+- `index.js` — Secure context bridge exposing filesystem, dialog, and settings APIs.
 
 ### UI Shell & Workspace Layout
-- `src/renderer/src/App.jsx` — Root component, global error handler, theme loader.
-- `src/renderer/src/features/Layout/AppShell.jsx` — Central orchestrator (3-pane layout, modals, tabs, sidebar state, resizing engine).
-- `src/renderer/src/features/Layout/TabBar.jsx` — Tabbed document navigation, 32px height, pinned tabs, graph view tab.
-- `src/renderer/src/features/Layout/StatusBar.jsx` — Bottom status bar with invisible horizontal scroll.
-- `src/renderer/src/features/Layout/Breadcrumbs.jsx` — Note breadcrumb path below TabBar.
-- `src/renderer/src/features/Navigation/Sidebar.jsx` — Left sidebar shell.
-- `src/renderer/src/features/Navigation/Sidebar.css` — Left sidebar styles.
-- `src/renderer/src/features/Navigation/components/SidebarHeader.jsx` — New Note, Daily Note, Graph buttons — 32px aligned header.
-- `src/renderer/src/assets/appshell.css` — App shell layout, sidebar transitions, resizer knob styles.
+- `App.jsx` — Root component, global error handler, theme loader.
+- `AppShell.jsx` — Central orchestrator (3-pane layout, modals, tabs, sidebar state, resizing engine).
+- `TabBar.jsx` — Tabbed document navigation, 32px height, pinned tabs, graph view tab.
+- `StatusBar.jsx` — Bottom status bar with invisible horizontal scroll.
+- `Breadcrumbs.jsx` — Note breadcrumb path below TabBar.
+- `Sidebar.jsx` — Left sidebar shell.
+- `Sidebar.css` — Left sidebar styles.
+- `components/SidebarHeader.jsx` — New Note, Daily Note, Graph buttons — 32px aligned header.
+- `appshell.css` — App shell layout, sidebar transitions, resizer knob styles.
 
 ### Editor & Document Workspace
-- `src/renderer/src/features/Editor/Editor.jsx` — Markdown editor with live preview, syntax highlighting, callouts, checklists.
-- `src/renderer/src/core/store/workspaceStore.js` — Vault state store.
+- `Editor.jsx` — Markdown editor with live preview, syntax highlighting, callouts, checklists.
+- `workspaceStore.js` — Vault state store.
 
 ### Right Inspector Sidebar
-- `src/renderer/src/features/Inspector/RightSidebar.jsx` — Tab bar (Details / Outline / Chat) + panel content switcher.
-- `src/renderer/src/features/Inspector/NoteDetails.jsx` — Note metadata properties.
-- `src/renderer/src/features/Inspector/NoteOutline.jsx` — Live heading outline extracted from active note.
-- `src/renderer/src/features/Inspector/NoteDetails.css` — Inspector panel, tab bar, and property row styles.
+- `RightSidebar.jsx` — Tab bar (Details / Outline / Chat) + panel content switcher.
+- `NoteDetails.jsx` — Note metadata properties.
+- `NoteOutline.jsx` — Live heading outline extracted from active note.
+- `NoteDetails.css` — Inspector panel, tab bar, and property row styles.
 
 ### File Explorer
-- `src/renderer/src/features/Explorer/FileExplorer.jsx` — Left sidebar file tree with DnD, virtual list, search, folder colors.
-- `src/renderer/src/features/Explorer/hooks/useExplorerSelection.js` — Multi-select, keyboard navigation, auto-scroll.
-- `src/renderer/src/features/Explorer/hooks/useExplorerOperations.js` — Folder create/rename, note creation, expand/collapse state.
-- `src/renderer/src/features/Explorer/hooks/useExplorerDnd.js` — Drag-and-drop reordering logic.
-- `src/renderer/src/features/Explorer/hooks/useFileSearch.js` — Fuse.js fuzzy search, ranking, pinned items.
-- `src/renderer/src/features/Explorer/hooks/useFileTree.js` — Flat tree generation for the virtual list.
+- `FileExplorer.jsx` — Left sidebar file tree with DnD, virtual list, search, folder colors.
+- `hooks/useExplorerSelection.js` — Multi-select, keyboard navigation, auto-scroll.
+- `hooks/useExplorerOperations.js` — Folder create/rename, note creation, expand/collapse state.
+- `hooks/useExplorerDnd.js` — Drag-and-drop reordering logic.
+- `hooks/useFileSearch.js` — Fuse.js fuzzy search, ranking, pinned items.
+- `hooks/useFileTree.js` — Flat tree generation for the virtual list.
 
 ### AI Engine, Modes & Execution Tools
-- `src/renderer/src/features/AI/Lumina.jsx` — AI chat interface (sidebar and floating window modes).
-- `src/renderer/src/features/AI/Composer.jsx` — AI prompt composer with slash commands and note mentions.
-- `src/renderer/src/features/AI/tools/lumina.js` — Core AI streaming pipeline, context injection, prompt engineering.
-- Tool registry (`src/renderer/src/features/AI/tools/index.js`): `createFile`, `createFolder`, `updateFile`, `appendToFile`, `renameFile`, `renameFolder`, `deleteFile`, `deleteFolder`, `moveFile`, `readFile`, `openFile`.
+- `Lumina.jsx` — AI chat interface (sidebar and floating window modes).
+- `Composer.jsx` — AI prompt composer with slash commands and note mentions.
+- `tools/lumina.js` — Core AI streaming pipeline, context injection, prompt engineering.
+- Tool registry (`tools/index.js`): `createFile`, `createFolder`, `updateFile`, `appendToFile`, `renameFile`, `renameFolder`, `deleteFile`, `deleteFolder`, `moveFile`, `readFile`, `openFile`.
 
 ### Graph & Analytics
-- `src/renderer/src/features/Graph/Graph.jsx` — 2D/3D force-directed interactive knowledge graph.
-- `src/renderer/src/features/AI/services/graphContext.js` — Graph topology scanner for AI context.
+- `Graph.jsx` — 2D/3D force-directed interactive knowledge graph.
+- `services/graphContext.js` — Graph topology scanner for AI context.
 
 ### State & Settings
-- `src/renderer/src/core/store/useSettingsStore.js` — Settings store.
-- `src/renderer/src/features/Settings/Settings.jsx` — Settings modal.
+- `useSettingsStore.js` — Settings store.
+- `Settings.jsx` — Settings modal.
 
 ---
 
@@ -313,13 +313,13 @@ const updateSetting = useSettingsStore((state) => state.updateSetting)
 - **Never use `useShallow` with an inline object literal selector** — always use individual primitive selectors or stable references.
 - **Sidebar open/close source of truth is `localStorage`** — the Zustand settings store is write-through only. Never read `sidebarSetting.isLeftOpen` from the store for rendering.
 - **All three header bars must be exactly 32px**: left sidebar header, TabBar, right sidebar tab bar.
-- **`src/renderer/src/components/Indexing.jsx` must never be modified** under any circumstances.
+- **`components/Indexing.jsx` must never be modified** under any circumstances.
 - **No Git commits or pushes unless explicitly requested by the user.**
 - **Zero Code Comments Rule**: Never add code comments in modified or newly created files unless explicitly requested.
 - **Natural File Names**: Lumina supports spaces in file names. Do not force underscores or kebab-case.
 - **Local Settings Resilience**: AI keys and `activeAIMode` are dual-persisted to `settings.json` and `localStorage`.
 - **Surgical Updates Over Full Rewrites**: AI updates must never replace entire files on edit or polish requests. Always use targeted selectors (`sectionHeader`, `isIntroRequest`, or `search` & `replace`) to protect frontmatter and surrounding sections.
-- **Single Unified Thinking Block**: All AI reasoning tokens must stream into a single `<think>` block at the top of the message. Never generate fragmented or secondary thinking dropdowns across tool calls.
+- **Single Unified Thinking Block**: All AI reasoning tokens must stream into a single ``thinking-block`` block at the top of the message. Never generate fragmented or secondary thinking dropdowns across tool calls.
 - **Atomic Session Fallback**: When deleting the last chat session, never set `sessions: []` in store state. Always construct and persist the replacement session atomically (`remainingSessions = [freshSession]`) to prevent reactive re-render cascades.
 
 ---
@@ -398,7 +398,7 @@ Sidebars previously shrank/compressed their content when dragged inward. The tar
 
 ### Files Changed
 
-#### `src/renderer/src/features/Layout/useSidebarResize.js`
+#### `useSidebarResize.js`
 - Extracted all sidebar resize logic out of `AppShell.jsx` into a dedicated hook.
 - `handleStartResize(side, e)` — attaches `mousemove` / `mouseup` / `blur` listeners imperatively (zero React re-renders during drag, maximum performance).
 - **`onMouseMove` — curtain mechanic**: decouples two CSS variables:
@@ -407,23 +407,23 @@ Sidebars previously shrank/compressed their content when dragged inward. The tar
 - `onMouseUp` — commits final width to React state + localStorage. If released below `CLOSE_DRAG_THRESHOLD` (180px), sidebar snaps fully closed.
 - Constants: `CLOSE_DRAG_THRESHOLD = 180`, `DEFAULT_LEFT_WIDTH = 260`, `DEFAULT_RIGHT_WIDTH = 300`, `MAX_LEFT_WIDTH = 600`, `MAX_RIGHT_WIDTH = 750`.
 
-#### `src/renderer/src/assets/appshell.css`
+#### `appshell.css`
 - **Removed `contain: inline-size layout`** from both `.shell-sidebar-left` and `.shell-sidebar-right`.
 - **Switched inner container approach** to `flex-shrink: 0 !important` + `min-width: 260px !important` (300px for right sidebar). Outer clips via `overflow: hidden`, inner remains uncompressed.
 - **Fixed blanket `min-width: 0` rule**: only applied to `.app-shell > .shell-main`.
 - **Added `display: flex; flex-direction: column;`** to `.shell-sidebar-left` and `.shell-sidebar-right` outer containers.
 - **Full 260px Floor Across All 5 Sidebar Components**: Added `flex-shrink: 0 !important; min-width: 260px !important; width: 100% !important; box-sizing: border-box !important;` to `.sidebar-header-section`, `.sidebar-scrollable-content`, `.explorer-embedded-container`, `.explorer-header-container`, `.start-section`, `.start-menu-body`, and `.sidebar-footer-section` so no component squishes during drag.
 
-#### `src/renderer/src/features/Navigation/Sidebar.css`
+#### `Sidebar.css`
 - `.unified-sidebar`: `min-width: 260px`.
 - `.sidebar-header-section`: `min-width: 260px; flex-shrink: 0;`.
 - `.sidebar-scrollable-content`: `min-width: 260px; flex-shrink: 0;`.
 - `.sidebar-footer-section`: `min-width: 260px; flex-shrink: 0;`.
 
-#### `src/renderer/src/features/Explorer/FileExplorer.css`
+#### `FileExplorer.css`
 - `.explorer-header-container`: `min-width: 260px; flex-shrink: 0; box-sizing: border-box;`.
 
-#### `src/renderer/src/features/Inspector/NoteDetails.css`
+#### `NoteDetails.css`
 - `.inspector-panel`: `min-width: 300px`.
 
 ### How the Curtain Works (Architecture)
@@ -473,7 +473,7 @@ Sidebars previously shrank/compressed their content when dragged inward. The tar
 - **Fix**:
   - Implemented a `this.pendingResolvers` queue in `SettingsManager.js` that collects all pending Promise resolvers and cleanly resolves every caller once disk write finishes.
   - Ensured no-op cache checks in `set()` and `setMultiple()` immediately return `true` instead of `undefined`.
-  - Added `.catch(() => null)` wrappers in `src/preload/index.js` and `.catch?.(() => {})` in `workspaceStore.js` to guard against unhandled rejections during window reloads.
+  - Added `.catch(() => null)` wrappers in `index.js` and `.catch?.(() => {})` in `workspaceStore.js` to guard against unhandled rejections during window reloads.
 
 ### E. In-Memory Daily Note Seeding & Test Isolation
 - Replaced physical starter vault disk seeding in `DailyNotes.jsx` with isolated in-memory templates, preventing unexpected disk file writes during test suite execution and keeping tests reproducible and hermetic.
@@ -511,11 +511,11 @@ Sidebars previously shrank/compressed their content when dragged inward. The tar
   - Integrated direct CodeMirror view dispatch via `streamCodeToEditor` with smart vertical centering and `scrollToBottom: false`.
 
 ### K. Unified Single Thinking Stream Architecture (`aiStreamRunner.js` & `ThinkingBlock.jsx`)
-- **Problem**: Multi-step AI generations (tool execution followed by model reflection) generated two fragmented `<think>` tags — one at the top, and another below the activity card after a 30–40 second model reasoning delay. This caused user confusion and UI jumping.
+- **Problem**: Multi-step AI generations (tool execution followed by model reflection) generated two fragmented ``thinking-block`` tags — one at the top, and another below the activity card after a 30–40 second model reasoning delay. This caused user confusion and UI jumping.
 - **Solution**:
-  - Unified all reasoning (`initialReasoning` and `postToolReasoning`) in `buildRealtimeDisplay` into a single `<think>` block positioned at the top of the message.
+  - Unified all reasoning (`initialReasoning` and `postToolReasoning`) in `buildRealtimeDisplay` into a single ``thinking-block`` block positioned at the top of the message.
   - While the model reasons after tool calls, reasoning tokens continue accumulating in the existing top dropdown with active timer feedback.
-  - Updated `parseMessageBlocks` in `chatMarkdownParser.js` to merge multiple `<think>` tags into a single top thinking block for backward and historical message compatibility.
+  - Updated `parseMessageBlocks` in `chatMarkdownParser.js` to merge multiple ``thinking-block`` tags into a single top thinking block for backward and historical message compatibility.
 
 ### L. Multi-Session Chat Deduplication & Atomic Deletion (`lumina.js` & `chatStorage.js`)
 - **Problem**: When deleting the last chat session or on initial startup with empty sessions, two identical "New Chat" sessions appeared in the sidebar.
@@ -525,9 +525,9 @@ Sidebars previously shrank/compressed their content when dragged inward. The tar
   - Updated `deleteSession` to atomically create and persist a single `freshSession` (`remainingSessions = [freshSession]`), preventing `sessions` from ever becoming `[]` and eliminating reactive re-fetch cascades.
   - Added deduplication and consolidation of multiple empty "New Chat" sessions in `chatStorage.js` on load.
 
-### M. Self-Healing IndexedDB & Chromium Manifest Recovery (`src/main/index.js`)
+### M. Self-Healing IndexedDB & Chromium Manifest Recovery (`index.js`)
 - **Problem**: Chromium console logged `Failed to open LevelDB database... Unable to create sequential file` during dev restarts when `CURRENT` pointed to a missing `MANIFEST-000001` file.
-- **Solution**: Implemented `autoRepairIndexedDB()` in `src/main/index.js` invoked before `createWindow()`. It detects corrupted dev LevelDB manifests and purges broken partitions so Chromium cleanly re-initializes a healthy IndexedDB store on boot.
+- **Solution**: Implemented `autoRepairIndexedDB()` in `index.js` invoked before `createWindow()`. It detects corrupted dev LevelDB manifests and purges broken partitions so Chromium cleanly re-initializes a healthy IndexedDB store on boot.
 
 ### N. Google Drive Push Button Polish & Toolbar Stability (`DrivePushButton.jsx`)
 - **Problem**: The Push button previously disappeared when unauthenticated, shifted adjacent editor metadata buttons when toggling states ("Pushing...", "Pushed"), and had a sticky green hover background after successful push.
@@ -545,12 +545,12 @@ Sidebars previously shrank/compressed their content when dragged inward. The tar
 
 ### Q. Unified Unsaved State Architecture (`unsave.js` & `unsave.css`)
 - **Centralized Extraction**: Extracted the unsaved / dirty indicator logic and styling into dedicated modular files:
-  - [`unsave.css`](file:///b:/electron/lumina/src/renderer/src/assets/unsave.css): Definitive styling for the `.dirty-indicator` blob with pulsating warning amber animation (`#eab308`).
-  - [`unsave.js`](file:///b:/electron/lumina/src/renderer/src/core/hooks/unsave.js): `useUnsaved(snippetId)` hook providing `isUnsaved`, `markUnsaved()`, and `clearUnsaved()`, plus the `<UnsavedIndicator />` component.
+  - `unsave.css`: Definitive styling for the `.dirty-indicator` blob with pulsating warning amber animation (`#eab308`).
+  - `unsave.js`: `useUnsaved(snippetId)` hook providing `isUnsaved`, `markUnsaved()`, and `clearUnsaved()`, plus the `<UnsavedIndicator />` component.
 - **Three-Way Cohesion**: Applied identically across:
-  1. **FileExplorer**: [`SidebarItem.jsx`](file:///b:/electron/lumina/src/renderer/src/features/Navigation/components/SidebarItem.jsx)
-  2. **Workspace Tab Bar**: [`TabBar.jsx`](file:///b:/electron/lumina/src/renderer/src/features/Layout/TabBar.jsx)
-  3. **Editor Push Button**: [`DrivePushButton.jsx`](file:///b:/electron/lumina/src/renderer/src/features/Editor/components/DrivePushButton.jsx)
+  1. **FileExplorer**: `SidebarItem.jsx`
+  2. **Workspace Tab Bar**: `TabBar.jsx`
+  3. **Editor Push Button**: `DrivePushButton.jsx`
 - **Synchronized Clearance**: Pushing a note or saving it to disk immediately clears the dirty state across all three UI locations simultaneously.
 
 ### R. Zero-Latency Draggable Modal Architecture & Guide Parity (`Theme.jsx` & `IconPicker.jsx`)
@@ -574,8 +574,8 @@ Sidebars previously shrank/compressed their content when dragged inward. The tar
   - Removed unwanted click shrink/stretch distortion animations so the knob slides cleanly without deforming.
 - **Drive Push Runtime Reference Error**: Removed an undefined `setWasPushedSinceEdit` call inside `DrivePushButton.jsx` that previously threw an unhandled runtime error on successful push completion.
 
-### T. World-Class Multilingual Typography, RTL/Bidi, and Resilient Wikilinks (`src/renderer/src/core/i18n/`)
-- **Centralized Single-Folder Architecture**: All internationalization, Unicode text normalization, Bidi/RTL detection, font cascade builders, and IME guards are consolidated into a single solid module directory: [`src/renderer/src/core/i18n/`](file:///b:/electron/lumina/src/renderer/src/core/i18n).
+### T. World-Class Multilingual Typography, RTL/Bidi, and Resilient Wikilinks (``)
+- **Centralized Single-Folder Architecture**: All internationalization, Unicode text normalization, Bidi/RTL detection, font cascade builders, and IME guards are consolidated into a single solid module directory: ``.
 - **Viewport-Scoped CodeMirror 6 Bidi Line Extension (`bidiExtension.ts`)**:
   - Dynamically assigns per-line `dir="rtl"` / `dir="ltr"` attributes using Unicode Bidirectional Algorithm ("first strong" character heuristic).
   - Strictly scoped to visible lines inside `view.visibleRanges` and recomputed only on viewport/document/geometry changes. Never scans the full document on keystrokes, guaranteeing solid 60 FPS typing even on 10,000+ line notes.

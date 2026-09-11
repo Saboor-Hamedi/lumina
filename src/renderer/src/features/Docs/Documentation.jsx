@@ -18,6 +18,7 @@ const formatDocTitle = (name) => {
   const customTitles = {
     introduction: 'Introduction to Lumina',
     shortcuts: 'Keyboard Shortcuts',
+    purpose: 'Purpose & Architecture',
     'quick-start': 'Quick Start Guide',
     '01-basic-syntax': '1. Basic Syntax',
     '02-code-and-syntax': '2. Code & Syntax Highlighting',
@@ -56,6 +57,11 @@ const DocsContent = React.memo(({ content, setSelectedDoc, docs, selectedDoc, pr
     },
     [docs, setSelectedDoc]
   )
+
+  const sanitizedContent = useMemo(() => {
+    if (!content) return ''
+    return content.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<\/?think>/gi, '')
+  }, [content])
 
   if (!content) {
     return (
@@ -113,7 +119,7 @@ const DocsContent = React.memo(({ content, setSelectedDoc, docs, selectedDoc, pr
       }}
     >
       <PreviewCommandPalette
-        content={content}
+        content={sanitizedContent}
         customLinkHandler={handleCustomLink}
         footerNav={footerNav}
       />
@@ -171,20 +177,32 @@ const Documentation = ({ isOpen, onClose }) => {
     }
   }, [])
 
-  // Ordered list of docs for next/prev navigation
+  // Ordered list of docs for next/prev navigation matching sidebar visual order
   const sortedDocList = useMemo(() => {
-    const list = []
-    const ignored = ['refrences.md', 'lumina.md', 'scope.md', 'purpose.md']
+    const general = []
+    const technical = []
+    const references = []
+    const others = []
+    const ignored = ['refrences.md', 'lumina.md', 'scope.md']
+
     Object.keys(docs)
       .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
       .forEach((path) => {
         if (path.startsWith('specs/')) return
         const filename = path.split('/').pop()
-        if (!ignored.includes(filename.toLowerCase())) {
-          list.push(path)
+        if (ignored.includes(filename.toLowerCase())) return
+
+        if (filename.toLowerCase() === 'purpose.md' || path.startsWith('technical/')) {
+          technical.push(path)
+        } else if (path.includes('references/') || path.includes('reference/')) {
+          references.push(path)
+        } else if (!path.includes('/')) {
+          general.push(path)
+        } else {
+          others.push(path)
         }
       })
-    return list
+    return [...general, ...technical, ...references, ...others]
   }, [docs])
 
   const currentIndex = sortedDocList.indexOf(selectedDoc)

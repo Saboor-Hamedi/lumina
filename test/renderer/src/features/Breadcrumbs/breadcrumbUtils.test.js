@@ -4,7 +4,10 @@ import {
   isRootPath,
   getFolderPath,
   getChildFolders,
-  getChildNotes
+  getChildNotes,
+  extractHeadings,
+  findActiveHeading,
+  createUntitledSnippet
 } from '../../../../../src/renderer/src/features/Breadcrumbs/breadcrumbUtils'
 
 describe('breadcrumbUtils', () => {
@@ -90,6 +93,49 @@ describe('breadcrumbUtils', () => {
     it('filters notes in specific folder', () => {
       const srcNotes = getChildNotes('src', snippets)
       expect(srcNotes.map((n) => n.id)).toEqual(['s2'])
+    })
+  })
+
+  describe('extractHeadings', () => {
+    it('extracts Markdown headings while ignoring code blocks', () => {
+      const md = `# Title\nSome text\n\`\`\`\n# Code comment\n\`\`\`\n## Subheading\n### Deep section`
+      const headings = extractHeadings(md)
+      expect(headings).toEqual([
+        { level: 1, text: 'Title', line: 1 },
+        { level: 2, text: 'Subheading', line: 6 },
+        { level: 3, text: 'Deep section', line: 7 }
+      ])
+    })
+
+    it('returns empty array when code is empty or has no headings', () => {
+      expect(extractHeadings('')).toEqual([])
+      expect(extractHeadings('Just plain text')).toEqual([])
+    })
+  })
+
+  describe('findActiveHeading', () => {
+    const headings = [
+      { level: 1, text: 'Title', line: 1 },
+      { level: 2, text: 'Installation', line: 10 },
+      { level: 2, text: 'Usage', line: 25 }
+    ]
+
+    it('returns heading matching cursor line range', () => {
+      expect(findActiveHeading(headings, 5)?.text).toBe('Title')
+      expect(findActiveHeading(headings, 10)?.text).toBe('Installation')
+      expect(findActiveHeading(headings, 18)?.text).toBe('Installation')
+      expect(findActiveHeading(headings, 30)?.text).toBe('Usage')
+    })
+  })
+
+  describe('createUntitledSnippet', () => {
+    it('creates untitled snippet avoiding title collisions', () => {
+      const existing = [{ id: 's1', title: 'Untitled' }, { id: 's2', title: 'Untitled 1' }]
+      const snippet = createUntitledSnippet('docs', existing)
+      expect(snippet.title).toBe('Untitled 2')
+      expect(snippet.fileName).toBe('Untitled 2.md')
+      expect(snippet.folderId).toBe('docs')
+      expect(snippet.id).toBeDefined()
     })
   })
 })

@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react'
-import { Book, Search, FileText, ChevronDown, Folder, X, Keyboard } from 'lucide-react'
+import { Book, Search, FileText, ChevronDown, Folder, X, Keyboard, Code2 } from 'lucide-react'
 
 const formatDocTitle = (name) => {
   const customTitles = {
     introduction: 'Introduction to Lumina',
     shortcuts: 'Keyboard Shortcuts',
+    purpose: 'Purpose & Architecture',
     'quick-start': 'Quick Start Guide',
     '01-basic-syntax': '1. Basic Syntax',
     '02-code-and-syntax': '2. Code & Syntax Highlighting',
@@ -23,6 +24,7 @@ const formatDocTitle = (name) => {
 
 const formatFolderName = (folder) => {
   const customFolderNames = {
+    technical: 'Technical',
     references: 'Learning Markdown',
     reference: 'Learning Markdown',
     guides: 'Guides & Tutorials',
@@ -41,6 +43,9 @@ const formatFolderName = (folder) => {
 const getDocIcon = (path, name) => {
   if (name.toLowerCase().includes('shortcut')) {
     return <Keyboard size={13} style={{ marginRight: '8px', opacity: 0.7 }} />
+  }
+  if (name.toLowerCase().includes('purpose') || path.includes('technical')) {
+    return <Code2 size={13} style={{ marginRight: '8px', opacity: 0.75, color: 'var(--text-accent)' }} />
   }
   if (path.includes('references/') || path.includes('reference/')) {
     return <FileText size={13} style={{ marginRight: '8px', opacity: 0.75 }} />
@@ -63,7 +68,7 @@ const DocSidebar = ({ docs, selectedDoc, setSelectedDoc, isOpen = true }) => {
     const general = []
     const sections = {}
     const query = searchQuery.toLowerCase().trim()
-    const ignoredFiles = ['refrences.md', 'lumina.md', 'scope.md', 'purpose.md']
+    const ignoredFiles = ['refrences.md', 'lumina.md', 'scope.md']
 
     Object.keys(docs)
       .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
@@ -85,7 +90,13 @@ const DocSidebar = ({ docs, selectedDoc, setSelectedDoc, isOpen = true }) => {
           return
         }
 
-        if (parts.length > 1) {
+        if (filename.toLowerCase() === 'purpose.md' || parts[0].toLowerCase() === 'technical') {
+          const folderKey = 'technical'
+          if (!sections[folderKey]) {
+            sections[folderKey] = []
+          }
+          sections[folderKey].push({ path, name, formattedTitle })
+        } else if (parts.length > 1) {
           const folderKey = parts[0]
           if (!sections[folderKey]) {
             sections[folderKey] = []
@@ -103,6 +114,19 @@ const DocSidebar = ({ docs, selectedDoc, setSelectedDoc, isOpen = true }) => {
 
     return { generalDocs: general, folderSections: sections, totalResults: count }
   }, [docs, searchQuery])
+
+  const FOLDER_ORDER = ['technical', 'references', 'reference', 'guides', 'tutorials', 'faq', 'api']
+
+  const sortedFolderEntries = useMemo(() => {
+    return Object.entries(folderSections).sort(([a], [b]) => {
+      const idxA = FOLDER_ORDER.indexOf(a.toLowerCase())
+      const idxB = FOLDER_ORDER.indexOf(b.toLowerCase())
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB
+      if (idxA !== -1) return -1
+      if (idxB !== -1) return 1
+      return a.localeCompare(b)
+    })
+  }, [folderSections])
 
   return (
     <div className={`docs-sidebar ${isOpen ? '' : 'closed'}`}>
@@ -147,7 +171,7 @@ const DocSidebar = ({ docs, selectedDoc, setSelectedDoc, isOpen = true }) => {
           </div>
         )}
 
-        {Object.entries(folderSections).map(([folderKey, items]) => {
+        {sortedFolderEntries.map(([folderKey, items]) => {
           const isCollapsed = Boolean(collapsedFolders[folderKey])
           return (
             <div className="docs-sidebar-group" key={folderKey}>

@@ -1,44 +1,63 @@
-# Lumina — Your AI-Powered Thinking Workspace
+# Welcome to Lumina — A Thinking Environment for Humans
 
-**Lumina** is a high-performance, privacy-focused knowledge workspace for your notes, ideas, and research. Built entirely on local-first principles, Lumina stores everything directly on your computer in plain Markdown notes. Your data belongs to you—always fast, offline-first, and completely secure.
-
----
-
-## Core Capabilities
-
-- **Rich Live Preview Editor:** Powered by CodeMirror 6 with live-rendered widgets for interactive tables, Mermaid diagrams, Obsidian-style callouts (`[!NOTE]`, `[!TIP]`), KaTeX mathematical expressions, syntax-highlighted code blocks, and task lists.
-- **Google Drive Git-Like Sync & Push:** Mirror your complete workspace hierarchy into a clean `lumina/` folder on Google Drive. Push individual notes with ancestor folder tree resolution on demand via the editor header.
-- **Native PDF & Asset Workspace:** View and read PDF documents natively inside workspace tabs with instant zero-copy caching, zoom/pan controls, and high-DPI rendering.
-- **Whisper Voice Dictation:** Speak your thoughts directly into notes or the Lumina composer using offline Whisper speech recognition with dynamic soundwave feedback.
-- **Deep AI Integration & Persistent Memory:** Lumina includes an integrated AI research partner with full context of your workspace. With persistent memory (`memory.json`), it remembers your identity, personal preferences, and learned project knowledge across conversations, naturally addressing you by name without repetitive prompts.
-- **Multi-Disciplinary Modes:** Tailored planning and execution modes for research, thesis work, creative writing, and software implementation.
-- **Visual Knowledge Graph:** Explore your ideas visually through an interactive physics-driven graph that maps how notes link together.
-- **Spotlight Quick Switcher (`Ctrl + Space` / `Ctrl + P`):** Instantly navigate notes, search document text, or ask the AI questions with live preview cards.
-- **Roadmap & Progress Views:** Track project milestones and tasks with automated roadmap completion progress bars.
-- **Interactive Markdown Tables:** Create, resize, format, and organize tabular data with full keyboard navigation and cell formatting.
+> **"Lumina isn't just another note app. It's a thinking environment built for humans, not engineers. Every feature exists to remove friction, protect your data, and amplify your focus—so you can do your best work without ever leaving."**
 
 ---
 
-## Getting Started
+## What is Lumina?
 
-1. **Create a Note** — Press `Ctrl + N` to create a new note.
-2. **Find Anything** — Press `Ctrl + Space` or `Ctrl + P` to search notes across your entire vault.
-3. **Link Notes** — Type `[[` to trigger wikilink autocompletion and connect related concepts.
-4. **Push to Cloud** — Click the subtle **Push** button in the note header to backup the active note directly to Google Drive.
-5. **Open Knowledge Graph** — Press `Ctrl + G` to view your connected graph.
-6. **Open Documentation** — Access the complete **Learning Markdown** guides and cheat sheets from the Help menu.
+Lumina is a quiet, beautiful workspace for your thoughts, ideas, study notes, and creative projects. 
+
+Most modern tools are either too complicated or lock your words behind expensive subscriptions and distant cloud servers. Lumina is different: it saves everything directly onto your computer as simple, open text files that you own forever. It is fast, works completely offline, and respects your privacy by default.
+
+Whether you are writing a book, organizing family projects, taking class notes, or untangling complex research, Lumina gives you a calm digital desk with zero distractions.
 
 ---
 
-## Learning Markdown
+## What Makes Lumina Special
 
-Explore the organized chapters in the sidebar under **Learning Markdown**:
-1. [Basic Syntax](references/01-basic-syntax.md) — Headings, formatting, lists, links, and blockquotes.
-2. [Code & Syntax](references/02-code-and-syntax.md) — Fenced code blocks and language highlighting.
-3. [Tables & Task Lists](references/03-tables-and-tasklists.md) — Interactive tables and checklists.
-4. [Mermaid Diagrams](references/04-mermaid-diagrams.md) — Flowcharts, sequence diagrams, and ERDs.
-5. [Math & HTML](references/05-math-and-html.md) — KaTeX equations and HTML elements.
-6. [Callouts & Admonitions](references/06-admonitions-and-advanced.md) — Alert callouts, YAML metadata, and footnotes.
-7. [Best Practices & Cheat Sheet](references/07-best-practices.md) — Structuring tips and quick reference card.
+### ✍️ Notes That Feel Alive
+Type naturally without thinking about complicated formatting. As you write, Lumina turns your words into beautiful pages:
+- **Interactive Checklists:** Tap or click to check items off your to-do lists.
+- **Easy Tables:** Organize schedules and budgets into clean tables you can type straight into.
+- **Drawings & Diagrams:** Turn text descriptions into flowcharts and visual diagrams automatically.
+- **Clear Headings & Callouts:** Highlight key reminders, tips, and important thoughts in eye-catching colored boxes.
 
-For the full list of keyboard shortcuts, see [Keyboard Shortcuts](shortcuts.md).
+### 🧠 An AI Companion That Truly Knows You
+Lumina comes with an intelligent writing assistant that stays by your side:
+- **Remembers Who You Are:** It naturally remembers your name, goals, and preferences across chats, so you never have to re-introduce yourself or repeat context.
+- **Understands Your Notes:** Ask questions about what you've already written, generate outlines, or ask for help polishing a rough draft.
+- **Private & Respectful:** The assistant only reads what you ask it to and never uses your personal thoughts to train public systems.
+
+### 🎙️ Talk Out Loud When Typing is Too Slow
+Have a sudden flash of insight while walking around the room? Turn on voice dictation (`Shift + Alt + V`) and speak your mind. Lumina accurately transcribes your spoken words into writing right on your machine, with complete privacy.
+
+### 🕸️ See How Your Ideas Connect
+In Lumina, ideas don't get lost in forgotten folders. Type `[[` to link one note to another. Over time, Lumina automatically builds an interactive **Knowledge Graph** (`Ctrl + G`)—a visual mind map where you can explore how all your thoughts, memories, and projects relate to one another.
+
+### 📄 Read PDFs Right Next to Your Notes
+No need to juggle multiple windows or switch back and forth between apps. Open books, manuals, or research papers directly inside Lumina tabs and take notes right alongside them.
+
+### ☁️ Simple, One-Click Google Drive Backup
+Keep your notes safe without headaches. With a single click of the **Push** button in your note header, Lumina saves a safe copy directly to your personal Google Drive, keeping your folder structure tidy and organized.
+
+### 🎨 Beautiful Themes for Every Mood
+Your workspace should match how you feel. Choose from over 20 handcrafted dark and light themes—from soft slate and soothing warm ambers to crisp paper whites—all crafted to keep your eyes relaxed during long writing sessions.
+
+---
+
+## Getting Started in 5 Simple Steps
+
+1. **Write a note** — Press `Ctrl + N` (or click **+ New** in the sidebar) to begin a blank page.
+2. **Find anything instantly** — Press `Ctrl + Space` to search across all your notes or ask the AI a question.
+3. **Connect your notes** — Type `[[` anywhere in a note to create a link to another note.
+4. **Speak your thoughts** — Press `Shift + Alt + V` to dictate notes with your voice.
+5. **Back up your work** — Click the **Push** button at the top right of any note to save a copy to your Google Drive.
+
+---
+
+## Explore More
+
+- [Keyboard Shortcuts Guide](shortcuts.md) — Simple hotkeys to navigate Lumina with ease.
+- [About Lumina](lumina.md) — The philosophy and design behind your thinking environment.
+- [Help & Formatting Guides](references/01-basic-syntax.md) — Visual guides on styling text, tables, and notes.

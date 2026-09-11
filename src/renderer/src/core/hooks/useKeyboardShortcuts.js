@@ -108,6 +108,34 @@ export const useKeyboardShortcuts = (shortcuts) => {
         return
       }
 
+      // Focus Breadcrumbs: Ctrl+Shift+. (or Ctrl+Shift+;)
+      if (
+        isCmd &&
+        e.shiftKey &&
+        (key === '.' || e.code === 'Period' || e.key === '>' || key === ';' || e.code === 'Semicolon')
+      ) {
+        e.preventDefault()
+        e.stopPropagation()
+        if (shortcutsRef.current.onFocusBreadcrumbs) {
+          shortcutsRef.current.onFocusBreadcrumbs()
+        } else {
+          window.dispatchEvent(new CustomEvent('focus-breadcrumbs'))
+        }
+        return
+      }
+
+      // Change Note / Tab Icon: Ctrl + Win + . (Ctrl + Meta + .)
+      if (
+        e.ctrlKey &&
+        e.metaKey &&
+        (key === '.' || e.code === 'Period' || e.key === '>') &&
+        shortcutsRef.current.onChangeIcon
+      ) {
+        e.preventDefault()
+        e.stopPropagation()
+        shortcutsRef.current.onChangeIcon()
+      }
+
       // Save: Ctrl+S (Strictly no Shift)
       if (isCmd && !e.shiftKey && key === 's' && shortcutsRef.current.onSave) {
         e.preventDefault()
@@ -167,12 +195,7 @@ export const useKeyboardShortcuts = (shortcuts) => {
         shortcutsRef.current.onOpenShortcuts()
       }
 
-      // Change Note / Tab Icon: Ctrl + Shift + . (or Cmd + Shift + .)
-      if (isCmd && e.shiftKey && (key === '.' || e.code === 'Period' || e.key === '>') && shortcutsRef.current.onChangeIcon) {
-        e.preventDefault()
-        e.stopPropagation()
-        shortcutsRef.current.onChangeIcon()
-      }
+
 
       // Toggle Theme: Ctrl+T
       if (isCmd && !e.shiftKey && key === 't' && shortcutsRef.current.onToggleTheme) {
@@ -311,7 +334,7 @@ export const SHORTCUT_DISPLAY_GROUPS = [
       { label: 'New Note', key: 'Ctrl + N' },
       { label: 'Open File', key: 'Ctrl + O' },
       { label: 'Save', key: 'Ctrl + S' },
-      { label: 'Change Note / Tab Icon', key: 'Ctrl + Shift + .' },
+      { label: 'Change Note / Tab Icon', key: 'Ctrl + Win + .' },
       { label: 'Close Tab', key: 'Ctrl + W' },
       { label: 'Close Window', key: 'Ctrl + Shift + W' },
       { label: 'Delete Note', key: 'Ctrl + Shift + D', isDanger: true }
@@ -320,6 +343,7 @@ export const SHORTCUT_DISPLAY_GROUPS = [
   {
     title: 'Navigation',
     items: [
+      { label: 'Focus Breadcrumbs', key: 'Ctrl + Shift + .' },
       { label: 'Toggle Left Sidebar', key: 'Ctrl + B' },
       { label: 'Toggle Inspector', key: 'Ctrl + I' },
       { label: 'Graph View', key: 'Ctrl + G' },
