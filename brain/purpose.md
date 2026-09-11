@@ -633,3 +633,29 @@ Sidebars previously shrank/compressed their content when dragged inward. The tar
 - **Full Keyboard Mastery**: Full arrow key navigation (`Up`/`Down`), `Enter` to open notes or drill in, `ArrowRight` to drill into folders, `ArrowLeft`/`Backspace` to drill out, and `Escape` to dismiss.
 - **Unit Tests**: 25/25 passing tests across `Breadcrumbs.test.jsx`, `BreadcrumbDropdown.test.jsx`, and `breadcrumbUtils.test.js`.
 
+### Y. Unified Modal Dialog Architecture & State Persistence
+- **Standardized Geometry (900px × 76vh)**: Preview, Settings, Theme, Graph, Documentation, Guide, Template, and Lumina AI Chat modals are unified into identical viewport-responsive dimensions:
+  - Width: `900px` (clamped to `max-width: 94vw`)
+  - Height: `76vh` (bounded between `min-height: 480px` and `max-height: 78vh`)
+  - Geometry: `border-radius: 12px`, elevated glass drop-shadow `0 30px 60px rgba(0, 0, 0, 0.6)`.
+- **Persistent Maximize/Restore Window States**:
+  - Modal maximized/restored states (`previewModalMaximized`, `settingsModalMaximized`, `themeModalMaximized`, `graphModalMaximized`, `docsModalMaximized`, `guideModalMaximized`, `templateModalMaximized`, `aiModalMaximized`) are centrally managed in `useSettingsStore` and synced immediately to `localStorage` and Electron `settings.json`.
+  - Reopening any modal remembers its previous window geometry without resetting.
+- **Unified Glass Overlay Blur**:
+  - Applied `backdrop-filter: blur(12px) saturate(180%) !important; background: rgba(0, 0, 0, 0.4) !important; z-index: 10005 !important;` across all modal backdrops (`.preview-overlay-glass`, `.settings-overlay`, `.theme-modal-overlay`, `.nexus-overlay`, `.guide-modal-overlay`).
+  - Strict exception: `IconPicker` (`.icon-modal-overlay`) retains its dedicated light popover presentation.
+
+### Z. Centralized Premium Scrollbar System (`premimum-scroll.css`)
+- **Universal Design Standard**: Replaced fragmented, custom 4px/5px/8px scrollbars across the codebase with a centralized, ultra-sleek engine modeled after `preview.css`:
+  - 10px width/height, fully transparent tracks, pill-rounded thumb (`border-radius: 10px`) with 3px border-inset offset against `--bg-app`.
+  - Subtle hover feedback transitioning to `--text-faint`.
+  - Standards-compliant Firefox support via `scrollbar-width: thin; scrollbar-color: var(--border-subtle) transparent;`.
+- **Global & Class Application**: Automatically active on all scrollable elements, with explicit targeting for `.preview-modal-body`, `.settings-body`, `.theme-modal-grid`, `.docs-modal-body`, `.template-modal-body`, `.guide-modal-body`, `.chat-messages-container`, and `.update-details-body`.
+
+### AA. Breadcrumbs Horizontal Keyboard Navigation (`Ctrl + ArrowLeft` / `Ctrl + ArrowRight`)
+- **Linear Segment Traversal**: When breadcrumbs is active or a dropdown is open, users can seamlessly step horizontally across segments:
+  - `Workspace` ↔ `Folder(s)` ↔ `Active Note` ↔ `Heading Outline (# Section)`
+  - Pressing `Ctrl + ArrowLeft` steps left to the parent folder or Workspace.
+  - Pressing `Ctrl + ArrowRight` steps right towards the note or heading outline.
+- **Capture Phase Handling**: Intercepted in capture phase with `e.stopPropagation()` so internal search inputs and folder drill-in keys never conflict with breadcrumb segment switching.
+

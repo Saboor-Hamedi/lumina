@@ -8,6 +8,11 @@ import ToolTip from '../atoms/ToolTip'
 import './UpdateDetails.css'
 
 export const DEFAULT_RELEASE_NOTES = `New
+- Breadcrumbs Horizontal Keyboard Navigation: Smoothly jump across breadcrumb segments (Workspace → Folders → Note → Heading Outline) by pressing Ctrl + Left Arrow and Ctrl + Right Arrow with immediate dropdown activation.
+- Unified Modal Geometry (900px × 76vh): Standardized all major modal dialogs (Preview, Settings, Theme, Graph, Documentation, Guide, Template, and Lumina AI) to identical dimensions, responsive maximums (94vw × 78vh), and 12px rounded glass cards.
+- Persistent Modal Maximize/Restore State: Window states for Preview, Settings, Theme, Graph, Documentation, Guide, Template, and Lumina AI are now remembered persistently across sessions via the settings engine.
+- Unified Glass Overlay Blur: Elevated all modal backdrops (Preview, Settings, Theme, Graph, Documentation, Guide, Template, and Lumina AI) to an identical glass blur aesthetic (blur(12px) saturate(180%)) while preserving IconPicker's dedicated light modal design.
+- Premium Unified Scrollbar Engine (premimum-scroll.css): Centralized all custom scrollbar rules across modals and panels into an ultra-sleek, premium scrollbar design modeled after the preview modal.
 - Interactive Breadcrumbs & Heading Outline: Breadcrumbs now feature an active heading segment (# Section) dynamically tracking the editor cursor. Clicking it opens a Table of Contents outline dropdown with H1-H6 level badges, line numbers, and instant search filter that smooth-scrolls directly to that line.
 - Unified Dropdown Geometry (320px × 340px): Dropdowns for Workspace, folder siblings, and heading outlines now share identical, rock-solid dimensions matching the Workspace dropdown width, with invisible scrollbars and elegant ellipsis truncation on long titles.
 - Quick Note Creation in Folders: Add a new note directly inside any folder via the + button in the dropdown header or on individual folder rows.
@@ -19,6 +24,10 @@ export const DEFAULT_RELEASE_NOTES = `New
 - Breadcrumbs Long-Title Truncation: Note titles of any length are now gracefully truncated in the breadcrumbs bar with ellipsis (…). Hovering reveals the full title. Scales responsively with the viewport (clamp 140px → 380px).
 
 Improved
+- Template Modal Architecture: Templates modal now shares the 900px × 76vh geometry, custom window header buttons, and seamless maximize behavior.
+- Guide Modal Elevation: Guide modal now supports window maximize/restore toggling with persistent state and updated overlay styling.
+- Responsive Scrollbar Aesthetics: High-resolution scrollbar tracks and custom offset thumbs with smooth hover transitions everywhere across the application.
+- Interactive Breadcrumb Key Interception: Ctrl + ArrowLeft and Ctrl + ArrowRight events are intelligently captured before internal list/search handlers can interfere.
 - Standardized Custom ToolTips: All breadcrumb actions, navigation buttons, and counter pills now use Lumina's high-precision <ToolTip /> component with zero-background shortcut styling.
 - Word Table Cell Cleaning: Table cells from Word paste are fully sanitized — no more raw <u>, <span>, <font>, or <br> tags leaking into Markdown tables. Names like Dr. Sajarwo Anggai., S.ST., M.T. paste correctly.
 - Figure Captions Preserved: Figure numbers, captions, and the text between figures are now correctly extracted. The non-greedy VML conditional comment regex was hardened to never bridge across multiple figures.

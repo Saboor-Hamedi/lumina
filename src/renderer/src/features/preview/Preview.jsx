@@ -6,9 +6,10 @@ import ToolTip from '../../components/atoms/ToolTip'
 import './preview.css'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useVaultStore } from '../../core/store/workspaceStore'
+import { useSettingsStore } from '../../core/store/useSettingsStore'
 
 const Preview = ({ isOpen, onClose, title, content, snippetId }) => {
-  const [isMaximized, setIsMaximized] = useState(false)
+  const isMaximized = useSettingsStore((s) => s.settings.previewModalMaximized ?? false)
   const [isDraggingModal, setIsDraggingModal] = useState(false)
 
   const containerRef = useRef(null)
@@ -17,7 +18,8 @@ const Preview = ({ isOpen, onClose, title, content, snippetId }) => {
   const rafId = useRef(null)
 
   const handleToggleMaximize = useCallback(() => {
-    setIsMaximized((prev) => !prev)
+    const { settings, updateSettings } = useSettingsStore.getState()
+    updateSettings({ previewModalMaximized: !(settings.previewModalMaximized ?? false) })
   }, [])
 
   // Drag logic
@@ -72,6 +74,15 @@ const Preview = ({ isOpen, onClose, title, content, snippetId }) => {
     },
     [isMaximized]
   )
+
+  useEffect(() => {
+    if (isMaximized) {
+      modalPos.current = { x: 0, y: 0 }
+      if (containerRef.current) {
+        containerRef.current.style.transform = 'none'
+      }
+    }
+  }, [isMaximized, isOpen])
 
   useKeyboardShortcuts({
     onEscape: isOpen

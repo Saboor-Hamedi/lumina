@@ -1,0 +1,175 @@
+/* ==========================================================================
+   LUMINA PREMIUM SCROLLBAR SYSTEM (premimum-scroll.css)
+   Centralized, unified ultra-sleek scrollbar styling matching preview.css
+   ========================================================================== */
+
+/* Universal sleek scrollbars across all scrollable containers */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--border-subtle, rgba(255, 255, 255, 0.12));
+  border-radius: 10px;
+  border: 3px solid var(--bg-app, #16161e);
+  transition: background 0.2s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--text-faint, rgba(255, 255, 255, 0.28));
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox Standard Scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-subtle, rgba(255, 255, 255, 0.12)) transparent;
+}
+
+/* Explicit Utility Classes */
+.seamless-scrollbar,
+.premium-scrollbar,
+.premimum-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-subtle, rgba(255, 255, 255, 0.12)) transparent;
+}
+
+.seamless-scrollbar::-webkit-scrollbar,
+.premium-scrollbar::-webkit-scrollbar,
+.premimum-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.seamless-scrollbar::-webkit-scrollbar-track,
+.premium-scrollbar::-webkit-scrollbar-track,
+.premimum-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.seamless-scrollbar::-webkit-scrollbar-thumb,
+.premium-scrollbar::-webkit-scrollbar-thumb,
+.premimum-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--border-subtle, rgba(255, 255, 255, 0.12));
+  border-radius: 10px;
+  border: 3px solid var(--bg-app, #16161e);
+}
+
+.seamless-scrollbar::-webkit-scrollbar-thumb:hover,
+.premium-scrollbar::-webkit-scrollbar-thumb:hover,
+.premimum-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--text-faint, rgba(255, 255, 255, 0.28));
+}
+
+/* Modal-Specific Targets to Guarantee Consistent Elevation & Visual Elegance */
+.preview-modal-body,
+.settings-body,
+.settings-sidebar-scrollable,
+.theme-modal-grid,
+.docs-modal-body,
+.docs-modal-content,
+.docs-sidebar,
+.template-modal-body,
+.template-sidebar,
+.guide-modal-body,
+.guide-content-col,
+.update-details-body,
+.chat-messages-container,
+.lumina-session-scrollable,
+.editor-scroller,
+.editor-breadcrumbs-bar,
+.bc-outline-items-list {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-subtle, rgba(255, 255, 255, 0.12)) transparent;
+}
+
+.preview-modal-body::-webkit-scrollbar,
+.settings-body::-webkit-scrollbar,
+.settings-sidebar-scrollable::-webkit-scrollbar,
+.theme-modal-grid::-webkit-scrollbar,
+.docs-modal-body::-webkit-scrollbar,
+.docs-modal-content::-webkit-scrollbar,
+.docs-sidebar::-webkit-scrollbar,
+.template-modal-body::-webkit-scrollbar,
+.template-sidebar::-webkit-scrollbar,
+.guide-modal-body::-webkit-scrollbar,
+.guide-content-col::-webkit-scrollbar,
+.update-details-body::-webkit-scrollbar,
+.chat-messages-container::-webkit-scrollbar,
+.lumina-session-scrollable::-webkit-scrollbar,
+.editor-scroller::-webkit-scrollbar,
+.editor-breadcrumbs-bar::-webkit-scrollbar,
+.bc-outline-items-list::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.preview-modal-body::-webkit-scrollbar-track,
+.settings-body::-webkit-scrollbar-track,
+.settings-sidebar-scrollable::-webkit-scrollbar-track,
+.theme-modal-grid::-webkit-scrollbar-track,
+.docs-modal-body::-webkit-scrollbar-track,
+.docs-modal-content::-webkit-scrollbar-track,
+.docs-sidebar::-webkit-scrollbar-track,
+.template-modal-body::-webkit-scrollbar-track,
+.template-sidebar::-webkit-scrollbar-track,
+.guide-modal-body::-webkit-scrollbar-track,
+.guide-content-col::-webkit-scrollbar-track,
+.update-details-body::-webkit-scrollbar-track,
+.chat-messages-container::-webkit-scrollbar-track,
+.lumina-session-scrollable::-webkit-scrollbar-track,
+.editor-scroller::-webkit-scrollbar-track,
+.editor-breadcrumbs-bar::-webkit-scrollbar-track,
+.bc-outline-items-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.preview-modal-body::-webkit-scrollbar-thumb,
+.settings-body::-webkit-scrollbar-thumb,
+.settings-sidebar-scrollable::-webkit-scrollbar-thumb,
+.theme-modal-grid::-webkit-scrollbar-thumb,
+.docs-modal-body::-webkit-scrollbar-thumb,
+.docs-modal-content::-webkit-scrollbar-thumb,
+.docs-sidebar::-webkit-scrollbar-thumb,
+.template-modal-body::-webkit-scrollbar-thumb,
+.template-sidebar::-webkit-scrollbar-thumb,
+.guide-modal-body::-webkit-scrollbar-thumb,
+.guide-content-col::-webkit-scrollbar-thumb,
+.update-details-body::-webkit-scrollbar-thumb,
+.chat-messages-container::-webkit-scrollbar-thumb,
+.lumina-session-scrollable::-webkit-scrollbar-thumb,
+.editor-scroller::-webkit-scrollbar-thumb,
+.editor-breadcrumbs-bar::-webkit-scrollbar-thumb,
+.bc-outline-items-list::-webkit-scrollbar-thumb {
+  background: var(--border-subtle, rgba(255, 255, 255, 0.12));
+  border-radius: 10px;
+  border: 3px solid var(--bg-app, #16161e);
+}
+
+.preview-modal-body::-webkit-scrollbar-thumb:hover,
+.settings-body::-webkit-scrollbar-thumb:hover,
+.settings-sidebar-scrollable::-webkit-scrollbar-thumb:hover,
+.theme-modal-grid::-webkit-scrollbar-thumb:hover,
+.docs-modal-body::-webkit-scrollbar-thumb:hover,
+.docs-modal-content::-webkit-scrollbar-thumb:hover,
+.docs-sidebar::-webkit-scrollbar-thumb:hover,
+.template-modal-body::-webkit-scrollbar-thumb:hover,
+.template-sidebar::-webkit-scrollbar-thumb:hover,
+.guide-modal-body::-webkit-scrollbar-thumb:hover,
+.guide-content-col::-webkit-scrollbar-thumb:hover,
+.update-details-body::-webkit-scrollbar-thumb:hover,
+.chat-messages-container::-webkit-scrollbar-thumb:hover,
+.lumina-session-scrollable::-webkit-scrollbar-thumb:hover,
+.editor-scroller::-webkit-scrollbar-thumb:hover,
+.editor-breadcrumbs-bar::-webkit-scrollbar-thumb:hover,
+.bc-outline-items-list::-webkit-scrollbar-thumb:hover {
+  background: var(--text-faint, rgba(255, 255, 255, 0.28));
+}

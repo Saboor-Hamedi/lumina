@@ -1,10 +1,9 @@
 .theme-modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.72);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4) !important;
+  backdrop-filter: blur(12px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -353,23 +352,7 @@
   }
 }
 
-/* Scrollbar styling */
-.theme-modal-grid::-webkit-scrollbar {
-  width: 5px;
-}
 
-.theme-modal-grid::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.theme-modal-grid::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 9999px;
-}
-
-.theme-modal-grid::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.24);
-}
 
 /* Match premium modal close icon hover */
 .premium-preview-card .modal-close.modal-close-top:hover {

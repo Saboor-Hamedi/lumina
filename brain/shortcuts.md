@@ -12,6 +12,7 @@ Lumina is designed so you can navigate and write smoothly without your hands eve
 | `Ctrl + P` | **Quick Note Switcher** — Quickly jump between your recently opened notes |
 | `Ctrl + Shift + F` | **Search Everywhere** — Search for any word or sentence across all your notes |
 | `Ctrl + Shift + .` | **Jump to Folder Path** — Browse through notes in the current folder using your arrow keys |
+| `Ctrl + Left / Right` | **Navigate Breadcrumb Segments** — Step horizontally between Workspace, Folders, Note, and Outline dropdowns |
 | `Ctrl + G` | **Open Knowledge Graph** — View your notes as an interactive visual map of connections |
 | `Ctrl + Tab` | **Next Tab** — Move to the next open note tab |
 | `Ctrl + Shift + Tab` | **Previous Tab** — Move to the previous open note tab |

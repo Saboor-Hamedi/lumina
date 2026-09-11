@@ -255,17 +255,7 @@
   gap: 10px;
 }
 
-/* Slim elegant scrollbar */
-.update-details-body::-webkit-scrollbar {
-  width: 4px;
-}
-.update-details-body::-webkit-scrollbar-track {
-  background: transparent;
-}
-.update-details-body::-webkit-scrollbar-thumb {
-  background: var(--border-dim, rgba(255, 255, 255, 0.15));
-  border-radius: 4px;
-}
+
 
 /* Category Card Container */
 .release-category {

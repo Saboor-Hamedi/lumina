@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, startTransition, useMemo } from 'react'
 import { Square, Copy, Book, PanelLeftClose, PanelLeftOpen, FileText, Clock, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
+import { useSettingsStore } from '../../core/store/useSettingsStore'
 import ToolTip from '../../components/atoms/ToolTip'
 import DocSidebar from './DocSidebar'
 import { PreviewCommandPalette } from '../commandpalette/PreviewCommandPalette'
@@ -151,7 +152,7 @@ const Documentation = ({ isOpen, onClose }) => {
   const [selectedDoc, setSelectedDoc] = useState(INITIAL_DEFAULT_DOC)
   const [content, setContent] = useState(INITIAL_CONTENT)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-  const [isMaximized, setIsMaximized] = useState(false)
+  const isMaximized = useSettingsStore((s) => s.settings.docsModalMaximized ?? false)
 
   const containerRef = useRef()
 
@@ -249,7 +250,8 @@ const Documentation = ({ isOpen, onClose }) => {
   }, [selectedDoc, docs])
 
   const handleToggleMaximize = useCallback(() => {
-    setIsMaximized((prev) => !prev)
+    const { settings, updateSettings } = useSettingsStore.getState()
+    updateSettings({ docsModalMaximized: !(settings.docsModalMaximized ?? false) })
   }, [])
 
   const handleToggleSidebar = useCallback(() => {

@@ -2,13 +2,13 @@
 .guide-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.4) !important;
+  backdrop-filter: blur(12px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10005;
+  z-index: 10005 !important;
   animation: guideFadeIn 0.2s ease-out;
 }
 
@@ -38,6 +38,15 @@
   overflow: hidden;
   position: relative;
   animation: guideSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.guide-modal-container.maximized {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  max-height: none !important;
+  border-radius: 0 !important;
+  transform: none !important;
 }
 
 @keyframes guideSlideUp {
@@ -86,6 +95,31 @@
 .guide-header-btn:hover {
   background: var(--bg-hover, rgba(255, 255, 255, 0.08));
   color: var(--text-main, #ffffff);
+}
+
+.guide-window-btn,
+.guide-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #888899);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  -webkit-app-region: no-drag !important;
+}
+
+.guide-window-btn:hover {
+  background: var(--bg-card, rgba(255, 255, 255, 0.08));
+  color: var(--text-main, #ffffff);
+}
+
+.guide-close-btn:hover {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #ef4444 !important;
 }
 
 .guide-logo-badge {

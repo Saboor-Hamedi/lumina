@@ -50,6 +50,43 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
     return getFolderPath(currentSnippet?.folderId, folders)
   }, [currentSnippet?.folderId, folders])
 
+  // Ordered list of interactive breadcrumb segments for linear keyboard navigation
+  const segments = useMemo(() => {
+    if (!currentSnippet) return []
+    const rootTargetId = folderPath[0]?.id ?? currentSnippet.id
+    const list = [
+      {
+        key: '__workspace__',
+        type: 'workspace',
+        parentFolderId: null,
+        currentId: rootTargetId
+      }
+    ]
+    folderPath.forEach((folder, index) => {
+      const parentId = index > 0 ? folderPath[index - 1].id : null
+      list.push({
+        key: folder.id,
+        type: 'folder',
+        parentFolderId: parentId,
+        currentId: folder.id
+      })
+    })
+    const lastFolderId = folderPath.length > 0 ? folderPath[folderPath.length - 1].id : null
+    list.push({
+      key: currentSnippet.id,
+      type: 'note',
+      parentFolderId: lastFolderId,
+      currentId: currentSnippet.id
+    })
+    if (activeHeading) {
+      list.push({
+        key: '__outline__',
+        type: 'outline'
+      })
+    }
+    return list
+  }, [currentSnippet, folderPath, activeHeading])
+
   const openDropdown = useCallback((e, parentFolderId, currentId, activeSegmentKey) => {
     const rect = e.currentTarget.getBoundingClientRect()
     setOutlineDropdown(null)
@@ -70,6 +107,65 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
   }, [])
 
   const closeOutlineDropdown = useCallback(() => setOutlineDropdown(null), [])
+
+  const navigateSegment = useCallback(
+    (direction) => {
+      if (!segments.length) return
+      const currentKey = outlineDropdown
+        ? '__outline__'
+        : dropdown
+          ? dropdown.activeSegmentKey
+          : currentSnippet?.id
+
+      let currentIndex = segments.findIndex((s) => s.key === currentKey)
+      if (currentIndex === -1) currentIndex = segments.findIndex((s) => s.type === 'note')
+      if (currentIndex === -1) currentIndex = 0
+
+      const nextIndex = Math.max(0, Math.min(segments.length - 1, currentIndex + direction))
+      const targetSegment = segments[nextIndex]
+      if (!targetSegment) return
+
+      const btn = document.querySelector(`[data-bc-key="${targetSegment.key}"]`)
+      const rect = btn
+        ? btn.getBoundingClientRect()
+        : { left: 100, top: 28, bottom: 48, right: 200, width: 100, height: 20 }
+
+      if (targetSegment.type === 'outline') {
+        setDropdown(null)
+        setOutlineDropdown({ anchorRect: rect })
+      } else {
+        setOutlineDropdown(null)
+        setDropdown({
+          parentFolderId: targetSegment.parentFolderId,
+          currentId: targetSegment.currentId,
+          activeSegmentKey: targetSegment.key,
+          anchorRect: rect
+        })
+      }
+    },
+    [segments, outlineDropdown, dropdown, currentSnippet?.id]
+  )
+
+  // Keyboard navigation across breadcrumb segments (Ctrl + ArrowLeft / Ctrl + ArrowRight)
+  useEffect(() => {
+    if (!dropdown && !outlineDropdown) return
+
+    const handleKeyDown = (e) => {
+      const isCmdOrCtrl = e.ctrlKey || e.metaKey
+      if (isCmdOrCtrl && e.key === 'ArrowLeft') {
+        e.preventDefault()
+        e.stopPropagation()
+        navigateSegment(-1)
+      } else if (isCmdOrCtrl && e.key === 'ArrowRight') {
+        e.preventDefault()
+        e.stopPropagation()
+        navigateSegment(1)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown, { capture: true })
+    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true })
+  }, [dropdown, outlineDropdown, navigateSegment])
 
   const handleCopyPath = useCallback(async (e) => {
     e.stopPropagation()
@@ -177,6 +273,7 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
       <ToolTip text="Browse workspace root" position="bottom">
         <button
           type="button"
+          data-bc-key="__workspace__"
           className={[
             'breadcrumb-item',
             isWorkspaceOpen ? 'bc-open' : '',
@@ -209,6 +306,7 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
             <ToolTip text={`Folder: ${folder.name}`} position="bottom">
               <button
                 type="button"
+                data-bc-key={folder.id}
                 className={[
                   'breadcrumb-item',
                   isFolderOpen ? 'bc-open' : '',
@@ -236,6 +334,7 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
       <ToolTip text={currentSnippet.title || 'Untitled'} position="bottom">
         <button
           type="button"
+          data-bc-key={currentSnippet.id}
           className={`breadcrumb-item active${dropdown?.activeSegmentKey === currentSnippet.id ? ' bc-open' : ''}`}
           onClick={(e) => {
             const lastFolderId = folderPath.length > 0 ? folderPath[folderPath.length - 1].id : null
@@ -256,6 +355,7 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
           <ToolTip text={`Section: ${activeHeading.text} (Click for outline)`} position="bottom">
             <button
               type="button"
+              data-bc-key="__outline__"
               className={`breadcrumb-item breadcrumb-heading-item${outlineDropdown ? ' bc-open' : ''}`}
               onClick={openOutlineDropdown}
             >

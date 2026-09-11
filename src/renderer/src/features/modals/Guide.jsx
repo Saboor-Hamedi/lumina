@@ -16,9 +16,12 @@ import {
   Terminal,
   Layers,
   Bot,
-  Workflow
+  Workflow,
+  Square,
+  Copy
 } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
+import { useSettingsStore } from '../../core/store/useSettingsStore'
 import './css/guide.css'
 
 /**
@@ -365,6 +368,13 @@ const Guide = ({ isOpen, onClose, onLoadStarterNotes, onOpenDocs }) => {
     }
   }
 
+  const isMaximized = useSettingsStore((s) => s.settings.guideModalMaximized ?? false)
+
+  const handleToggleMaximize = React.useCallback(() => {
+    const { settings, updateSettings } = useSettingsStore.getState()
+    updateSettings({ guideModalMaximized: !(settings.guideModalMaximized ?? false) })
+  }, [])
+
   if (!isOpen) return null
 
   const currentStepData = GUIDE_STEPS[step]
@@ -373,7 +383,7 @@ const Guide = ({ isOpen, onClose, onLoadStarterNotes, onOpenDocs }) => {
 
   return createPortal(
     <div className="guide-modal-overlay" onClick={onClose}>
-      <div className="guide-modal-container" onClick={(e) => e.stopPropagation()}>
+      <div className={`guide-modal-container${isMaximized ? ' maximized' : ''}`} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="guide-modal-header" style={{ cursor: 'default' }}>
           <div className="guide-header-left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -415,6 +425,19 @@ const Guide = ({ isOpen, onClose, onLoadStarterNotes, onOpenDocs }) => {
                 </button>
               </ToolTip>
             )}
+            <ToolTip text={isMaximized ? 'Restore Window' : 'Maximize Window'} position="bottom">
+              <button
+                className="guide-window-btn"
+                onClick={handleToggleMaximize}
+                aria-label={isMaximized ? 'Restore Window' : 'Maximize Window'}
+              >
+                {isMaximized ? (
+                  <Copy size={13} style={{ transform: 'rotate(90deg)' }} />
+                ) : (
+                  <Square size={13} />
+                )}
+              </button>
+            </ToolTip>
             <ToolTip text="Close (Esc)" position="bottom">
               <button
                 className="guide-close-btn"

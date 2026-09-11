@@ -9,6 +9,7 @@ import {
   X
 } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
+import { useSettingsStore } from '../../core/store/useSettingsStore'
 import ToolTip from '../../components/atoms/ToolTip'
 import { useAIStore } from './tools/lumina'
 import LuminaSession from './components/LuminaSession'
@@ -27,8 +28,73 @@ import './css/lumina.css'
  */
 const LuminaChat = ({ isOpen, onClose, onDock, onUnfloat }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-  const [isMaximized, setIsMaximized] = useState(false)
+  const isMaximized = useSettingsStore((s) => s.settings.aiModalMaximized ?? false)
+  const [isDraggingModal, setIsDraggingModal] = useState(false)
   const containerRef = useRef(null)
+  const modalPos = useRef({ x: 0, y: 0 })
+  const dragStart = useRef({ x: 0, y: 0 })
+  const rafId = useRef(null)
+
+  // Drag logic
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isDraggingModal || isMaximized) return
+
+      const newX = e.clientX - dragStart.current.x
+      const newY = e.clientY - dragStart.current.y
+      modalPos.current = { x: newX, y: newY }
+
+      if (rafId.current) cancelAnimationFrame(rafId.current)
+      rafId.current = requestAnimationFrame(() => {
+        if (containerRef.current) {
+          containerRef.current.style.transform = `translate3d(${newX}px, ${newY}px, 0)`
+        }
+      })
+    }
+
+    const handleMouseUp = () => {
+      setIsDraggingModal(false)
+      if (rafId.current) cancelAnimationFrame(rafId.current)
+      if (containerRef.current && !isMaximized) {
+        containerRef.current.style.transition = '0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+      }
+    }
+
+    window.addEventListener('mousemove', handleMouseMove, { passive: true })
+    window.addEventListener('mouseup', handleMouseUp)
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+      if (rafId.current) cancelAnimationFrame(rafId.current)
+    }
+  }, [isMaximized, isDraggingModal])
+
+  const handleModalHeaderMouseDown = useCallback(
+    (e) => {
+      if (isMaximized) return
+      if (e.target.closest('button')) return
+      setIsDraggingModal(true)
+
+      if (containerRef.current) {
+        containerRef.current.style.transition = 'none'
+      }
+
+      dragStart.current = {
+        x: e.clientX - modalPos.current.x,
+        y: e.clientY - modalPos.current.y
+      }
+    },
+    [isMaximized]
+  )
+
+  useEffect(() => {
+    if (isMaximized) {
+      modalPos.current = { x: 0, y: 0 }
+      if (containerRef.current) {
+        containerRef.current.style.transform = 'none'
+      }
+    }
+  }, [isMaximized, isOpen])
 
   const {
     sessions,
@@ -65,7 +131,8 @@ const LuminaChat = ({ isOpen, onClose, onDock, onUnfloat }) => {
   }, [sessions, activeSessionId])
 
   const handleToggleMaximize = useCallback(() => {
-    setIsMaximized((prev) => !prev)
+    const { settings, updateSettings } = useSettingsStore.getState()
+    updateSettings({ aiModalMaximized: !(settings.aiModalMaximized ?? false) })
   }, [])
 
   const handleToggleSidebar = useCallback(() => {
@@ -103,10 +170,20 @@ const LuminaChat = ({ isOpen, onClose, onDock, onUnfloat }) => {
         {...containerProps}
         className={`docs-modal-container ai-chat-docs-modal${isMaximized ? ' maximized' : ''}`}
         onClick={(e) => e.stopPropagation()}
-        style={{ outline: 'none' }}
+        style={{
+          outline: 'none',
+          transform: isMaximized
+            ? 'none'
+            : `translate3d(${modalPos.current.x}px, ${modalPos.current.y}px, 0)`,
+          transition: '0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+        }}
       >
         {/* Modal Header */}
-        <div className="docs-modal-header" style={{ cursor: 'default' }}>
+        <div
+          className="docs-modal-header"
+          onMouseDown={handleModalHeaderMouseDown}
+          style={{ cursor: isMaximized ? 'default' : 'grab' }}
+        >
           <div className="docs-header-left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <ToolTip text={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'} position="bottom">
               <button

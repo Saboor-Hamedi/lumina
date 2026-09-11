@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Square, Copy, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
+import { useSettingsStore } from '../../core/store/useSettingsStore'
 import ToolTip from '../../components/atoms/ToolTip'
 import SettingTab from './SettingTab'
 import SettingLookAndFeel from './SettingLookAndFeel'
@@ -29,7 +30,7 @@ const Settings = ({ onClose, onOpenTheme, initialTab = 'look-and-feel' }) => {
   }
 
   const [activeTab, setActiveTab] = useState(mapInitialTab(initialTab))
-  const [isMaximized, setIsMaximized] = useState(false)
+  const isMaximized = useSettingsStore((s) => s.settings.settingsModalMaximized ?? false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isDraggingModal, setIsDraggingModal] = useState(false)
 
@@ -39,7 +40,8 @@ const Settings = ({ onClose, onOpenTheme, initialTab = 'look-and-feel' }) => {
   const rafId = useRef(null)
 
   const handleToggleMaximize = useCallback(() => {
-    setIsMaximized((prev) => !prev)
+    const { settings, updateSettings } = useSettingsStore.getState()
+    updateSettings({ settingsModalMaximized: !(settings.settingsModalMaximized ?? false) })
   }, [])
 
   const handleToggleSidebar = useCallback(() => {
@@ -97,6 +99,15 @@ const Settings = ({ onClose, onOpenTheme, initialTab = 'look-and-feel' }) => {
     },
     [isMaximized]
   )
+
+  useEffect(() => {
+    if (isMaximized) {
+      modalPos.current = { x: 0, y: 0 }
+      if (containerRef.current) {
+        containerRef.current.style.transform = 'none'
+      }
+    }
+  }, [isMaximized])
 
   useKeyboardShortcuts({
     onEscape: () => {

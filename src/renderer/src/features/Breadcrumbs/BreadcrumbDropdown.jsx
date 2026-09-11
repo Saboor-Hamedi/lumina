@@ -24,6 +24,7 @@ import {
   normalizePath,
   createUntitledSnippet
 } from './breadcrumbUtils'
+import { rankSnippets } from '../../core/utils/searchRanker'
 import './BreadcrumbDropdown.css'
 
 const getFileIcon = (fileName = '') => {
@@ -79,18 +80,50 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
     return { allFolders: enrichedFolders, allNotes: rawNotes }
   }, [currentFolderId, folders, snippets])
 
-  // Filtered items based on search query
+  // Filtered items based on search query — consolidated with CommandPalette search engine
   const items = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase()
-    const folderList = q
-      ? allFolders.filter((f) => (f.name || '').toLowerCase().includes(q))
-      : allFolders
-    const noteList = q
-      ? allNotes.filter((n) => (n.name || '').toLowerCase().includes(q))
-      : allNotes
+    const q = searchQuery.trim()
+    if (!q) {
+      return [...allFolders, ...allNotes]
+    }
 
-    return [...folderList, ...noteList]
-  }, [allFolders, allNotes, searchQuery])
+    const lowerQ = q.toLowerCase()
+
+    // 1. Matched folders across the entire workspace/vault
+    const matchedFolders = (folders || [])
+      .filter((f) => {
+        const name = (f.name || '').toLowerCase()
+        const id = (f.id || '').toLowerCase()
+        return name.includes(lowerQ) || id.includes(lowerQ)
+      })
+      .map((f) => {
+        const subFolders = getChildFolders(f.id, folders)
+        const subNotes = getChildNotes(f.id, snippets)
+        return {
+          id: f.id,
+          name: f.name,
+          kind: 'folder',
+          itemCount: subFolders.length + subNotes.length,
+          folderPath: f.id
+        }
+      })
+
+    // 2. High-power ranked snippets across the entire workspace via rankSnippets
+    const { results } = rankSnippets(snippets || [], q)
+    const matchedNotes = results.map((s) => {
+      const folderName = s.folderId ? s.folderId.split('/').pop() : ''
+      return {
+        id: s.id,
+        name: s.title || s.fileName || 'Untitled',
+        kind: 'note',
+        snippet: s,
+        folderName: folderName,
+        relativePath: s.relativePath || s.folderId || ''
+      }
+    })
+
+    return [...matchedFolders, ...matchedNotes]
+  }, [allFolders, allNotes, searchQuery, folders, snippets])
 
   const [activeIndex, setActiveIndex] = useState(() => {
     if (isInitialLevel && currentId) {
@@ -213,11 +246,13 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
           handleActivate(items[activeIndex], true)
         }
       } else if (e.key === 'ArrowRight') {
+        if (e.ctrlKey || e.metaKey) return
         if (items[activeIndex]?.kind === 'folder') {
           e.preventDefault()
           drillIn(items[activeIndex].id)
         }
       } else if (e.key === 'ArrowLeft' || (e.key === 'Backspace' && !searchQuery)) {
+        if (e.ctrlKey || e.metaKey) return
         if (stack.length > 1 && (!searchInputRef.current || document.activeElement !== searchInputRef.current || !searchQuery)) {
           e.preventDefault()
           drillOut()
@@ -424,6 +459,12 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
                 <span className="bc-item-label" title={item.name}>
                   {item.name}
                 </span>
+
+                {item.folderName && Boolean(searchQuery.trim()) && (
+                  <span className="bc-item-folder-badge" title={item.relativePath || item.folderName}>
+                    {item.folderName}
+                  </span>
+                )}
 
                 {isCurrent && (
                   <span className="bc-current-indicator" title="Active note">

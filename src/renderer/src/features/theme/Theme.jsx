@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useTheme } from './hooks/useTheme'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
+import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { X, Check, Palette, Square, Copy } from 'lucide-react'
 import './css/theme.css'
 import ToolTip from '../../components/atoms/ToolTip'
@@ -8,7 +9,7 @@ import ToolTip from '../../components/atoms/ToolTip'
 const Theme = ({ isOpen, onClose }) => {
   const { theme, setTheme, allThemes } = useTheme()
   const [searchQuery, setSearchQuery] = useState('')
-  const [isMaximized, setIsMaximized] = useState(false)
+  const isMaximized = useSettingsStore((s) => s.settings.themeModalMaximized ?? false)
   const searchInputRef = useRef(null)
   const cardsRef = useRef([])
   const modalContainerRef = useRef(null)
@@ -19,8 +20,18 @@ const Theme = ({ isOpen, onClose }) => {
   const wasOpenRef = useRef(false)
 
   const handleToggleMaximize = useCallback(() => {
-    setIsMaximized((prev) => !prev)
+    const { settings, updateSettings } = useSettingsStore.getState()
+    updateSettings({ themeModalMaximized: !(settings.themeModalMaximized ?? false) })
   }, [])
+
+  useEffect(() => {
+    if (isMaximized) {
+      posRef.current = { x: 0, y: 0 }
+      if (modalContainerRef.current) {
+        modalContainerRef.current.style.transform = 'none'
+      }
+    }
+  }, [isMaximized, isOpen])
 
   // Direct GPU-accelerated 0-latency drag handler
   const handleDragStart = useCallback((e) => {

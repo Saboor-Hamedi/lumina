@@ -78,6 +78,9 @@
 }
 
 .settings-overlay {
+  background: rgba(0, 0, 0, 0.4) !important;
+  backdrop-filter: blur(12px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
   z-index: 10005 !important;
 }
 

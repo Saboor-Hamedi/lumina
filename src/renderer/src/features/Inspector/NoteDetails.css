@@ -387,6 +387,11 @@
   box-sizing: border-box !important;
 }
 
+.inspector-footer-section.is-chat-composer.is-modal-composer {
+  background: var(--bg-panel, #16161e) !important;
+  border-top: 1px solid var(--border-card, rgba(255, 255, 255, 0.08)) !important;
+}
+
 .inspector-footer-section.is-chat-composer .composer-container {
   padding: 0 !important;
   border-top: none !important;

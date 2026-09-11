@@ -271,21 +271,7 @@
   background: var(--bg-app);
 }
 
-/* Custom Scrollbar */
-.seamless-scrollbar::-webkit-scrollbar {
-  width: 10px;
-}
-.seamless-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.seamless-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--border-subtle);
-  border-radius: 10px;
-  border: 3px solid var(--bg-app);
-}
-.seamless-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--text-faint);
-}
+
 
 /* Responsive expansion and zero/minimal padding for medium screens */
 @media (max-width: 900px) {

@@ -353,6 +353,21 @@
   flex-shrink: 0;
 }
 
+.bc-item-folder-badge {
+  font-size: 10px;
+  color: var(--text-muted, #94a3b8);
+  opacity: 0.75;
+  margin-left: auto;
+  background: var(--bg-hover, rgba(255, 255, 255, 0.06));
+  padding: 1px 5px;
+  border-radius: 4px;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .bc-folder-trailing {
   display: flex;
   align-items: center;

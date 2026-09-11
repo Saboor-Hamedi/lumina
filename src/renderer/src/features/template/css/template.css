@@ -1,22 +1,20 @@
 /* Template Modal Styles - Matches Documentation.jsx Architecture */
 .template-modal-container {
-  width: 86vw;
-  max-width: 740px;
-  height: 76vh;
-  min-height: 480px;
-  max-height: 78vh;
-  background: var(--bg-panel, #16161e);
-  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.1));
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  box-shadow:
-    0 20px 40px -12px rgba(0, 0, 0, 0.7),
-    0 0 0 1px rgba(255, 255, 255, 0.06);
-  overflow: hidden;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 900px !important;
+  height: 76vh !important;
+  max-width: 94vw !important;
+  min-height: 480px !important;
+  max-height: 78vh !important;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6) !important;
+  overflow: hidden !important;
+  border-radius: 12px !important;
+  background: var(--bg-panel, #16161e) !important;
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.1)) !important;
   position: relative;
   animation: guideSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1), height 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-radius 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .template-modal-container.maximized {

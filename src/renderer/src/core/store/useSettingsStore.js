@@ -53,7 +53,17 @@ export const useSettingsStore = create((set, get) => ({
     // Favorites & Ordering
     pinnedFolders: [],
     folderOrder: [],
-    expandedFolders: []
+    expandedFolders: [],
+
+    // Modal Window Persistence (remembers maximized state across opens)
+    previewModalMaximized: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_modal_maximized_preview') === 'true') || false,
+    settingsModalMaximized: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_modal_maximized_settings') === 'true') || false,
+    themeModalMaximized: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_modal_maximized_theme') === 'true') || false,
+    graphModalMaximized: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_modal_maximized_graph') === 'true') || false,
+    docsModalMaximized: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_modal_maximized_docs') === 'true') || false,
+    guideModalMaximized: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_modal_maximized_guide') === 'true') || false,
+    templateModalMaximized: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_modal_maximized_template') === 'true') || false,
+    aiModalMaximized: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_modal_maximized_ai') === 'true') || false
   },
 
   isLoading: true,
@@ -191,6 +201,26 @@ export const useSettingsStore = create((set, get) => ({
     set((state) => ({
       settings: { ...state.settings, ...settings }
     }))
+
+    // Save modal maximized states to localStorage as instant sync
+    if (typeof localStorage !== 'undefined') {
+      const modalKeys = [
+        'previewModalMaximized',
+        'settingsModalMaximized',
+        'themeModalMaximized',
+        'graphModalMaximized',
+        'docsModalMaximized',
+        'guideModalMaximized',
+        'templateModalMaximized',
+        'aiModalMaximized'
+      ]
+      modalKeys.forEach((key) => {
+        if (key in settings) {
+          const suffix = key.replace('ModalMaximized', '').toLowerCase()
+          localStorage.setItem(`lumina_modal_maximized_${suffix}`, String(Boolean(settings[key])))
+        }
+      })
+    }
 
     // Persist to settings.json
     try {

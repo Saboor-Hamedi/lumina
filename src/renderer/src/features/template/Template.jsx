@@ -5,6 +5,7 @@ import ToolTip from '../../components/atoms/ToolTip'
 import TemplateSidebar from './TemplateSidebar'
 import TemplateContent from './TemplateContent'
 import useTemplate from './hooks/useTemplate'
+import { useSettingsStore } from '../../core/store/useSettingsStore'
 import '../modals/css/guide.css'
 import '../preview/preview.css'
 import './css/template.css'
@@ -16,7 +17,7 @@ const Template = ({
   onSelectTemplate = () => {}
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-  const [isMaximized, setIsMaximized] = useState(false)
+  const isMaximized = useSettingsStore((s) => s.settings.templateModalMaximized ?? false)
 
   const containerRef = useRef(null)
 
@@ -84,7 +85,8 @@ const Template = ({
   }, [])
 
   const handleToggleMaximize = useCallback(() => {
-    setIsMaximized((prev) => !prev)
+    const { settings, updateSettings } = useSettingsStore.getState()
+    updateSettings({ templateModalMaximized: !(settings.templateModalMaximized ?? false) })
   }, [])
 
   if (!isOpen) return null
@@ -93,8 +95,21 @@ const Template = ({
     <div className="guide-modal-overlay" onClick={onClose}>
       <div
         ref={containerRef}
-        className={`template-modal-container${isMaximized ? ' maximized' : ''}`}
+        className={`template-modal-container modal-container${isMaximized ? ' maximized' : ''}`}
         onClick={(e) => e.stopPropagation()}
+        style={{
+          flexDirection: 'column',
+          width: isMaximized ? '100vw' : '900px',
+          height: isMaximized ? '100vh' : '76vh',
+          maxWidth: isMaximized ? 'none' : '94vw',
+          minHeight: isMaximized ? 'none' : '480px',
+          maxHeight: isMaximized ? 'none' : '78vh',
+          transform: isMaximized ? 'none' : 'translate3d(0px, 0px, 0px)',
+          transition: '0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+          boxShadow: 'rgba(0, 0, 0, 0.6) 0px 30px 60px',
+          overflow: 'hidden',
+          borderRadius: isMaximized ? '0' : '12px'
+        }}
       >
         {/* Header */}
         <div
