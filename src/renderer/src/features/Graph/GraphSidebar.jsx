@@ -3,6 +3,7 @@ import { Network, RefreshCw, Layers, Check } from 'lucide-react'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import './GraphSidebar.css'
 import '../../assets/toggle-theme.css'
+import Toggle from '../../components/toggle'
 
 const GraphSidebar = ({
   isOpen = true,
@@ -102,14 +103,10 @@ const GraphSidebar = ({
               }}
             >
               <span>Show Tags</span>
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  checked={!settings.graphHideTags}
-                  onChange={(e) => updateSetting('graphHideTags', !e.target.checked)}
-                />
-                <span className="slider round"></span>
-              </label>
+              <Toggle
+                checked={!settings.graphHideTags}
+                onChange={(e) => updateSetting('graphHideTags', !e.target.checked)}
+              />
             </div>
             <div
               style={{
@@ -121,14 +118,10 @@ const GraphSidebar = ({
               }}
             >
               <span>Show Unresolved Links</span>
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  checked={!settings.graphHideGhosts}
-                  onChange={(e) => updateSetting('graphHideGhosts', !e.target.checked)}
-                />
-                <span className="slider round"></span>
-              </label>
+              <Toggle
+                checked={!settings.graphHideGhosts}
+                onChange={(e) => updateSetting('graphHideGhosts', !e.target.checked)}
+              />
             </div>
             <div
               style={{
@@ -140,14 +133,10 @@ const GraphSidebar = ({
               }}
             >
               <span>Show Orphans</span>
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  checked={!settings.graphHideOrphans}
-                  onChange={(e) => updateSetting('graphHideOrphans', !e.target.checked)}
-                />
-                <span className="slider round"></span>
-              </label>
+              <Toggle
+                checked={!settings.graphHideOrphans}
+                onChange={(e) => updateSetting('graphHideOrphans', !e.target.checked)}
+              />
             </div>
             <div
               style={{
@@ -159,14 +148,10 @@ const GraphSidebar = ({
               }}
             >
               <span>3D Sphere Mode</span>
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  checked={settings.graph3DMode ?? false}
-                  onChange={(e) => updateSetting('graph3DMode', e.target.checked)}
-                />
-                <span className="slider round"></span>
-              </label>
+              <Toggle
+                checked={settings.graph3DMode ?? false}
+                onChange={(e) => updateSetting('graph3DMode', e.target.checked)}
+              />
             </div>
           </div>
         </div>

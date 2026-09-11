@@ -7,6 +7,7 @@ import ModalHeader from '../modals/ModalHeader'
 import { useDraggableModal } from '../../core/utils/useDraggableModal'
 import { useOpacity } from './hooks/useOpacity'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
+import Toggle from '../../components/toggle'
 import './css/accentcolor.css'
 import '../../assets/toggle-theme.css'
 
@@ -142,38 +143,26 @@ const QuickControls = React.memo(
         <div className="quick-controls-grid">
           <div className="quick-control-col" onClick={() => onToggleDevTools()}>
             <span className="quick-control-label">DevTools</span>
-            <label className="lumina-switch" onClick={(e) => e.stopPropagation()}>
-              <input
-                type="checkbox"
-                checked={enableDevTools}
-                onChange={(e) => onToggleDevTools(e.target.checked)}
-              />
-              <span className="lumina-slider"></span>
-            </label>
+            <Toggle
+              checked={enableDevTools}
+              onChange={(e) => onToggleDevTools(e.target.checked)}
+            />
           </div>
 
           <div className="quick-control-col" onClick={() => onToggleStartup()}>
             <span className="quick-control-label">Startup</span>
-            <label className="lumina-switch" onClick={(e) => e.stopPropagation()}>
-              <input
-                type="checkbox"
-                checked={launchOnStartup}
-                onChange={(e) => onToggleStartup(e.target.checked)}
-              />
-              <span className="lumina-slider"></span>
-            </label>
+            <Toggle
+              checked={launchOnStartup}
+              onChange={(e) => onToggleStartup(e.target.checked)}
+            />
           </div>
 
           <div className="quick-control-col" onClick={() => onToggleModernUi()}>
             <span className="quick-control-label">Modern UI</span>
-            <label className="lumina-switch" onClick={(e) => e.stopPropagation()}>
-              <input
-                type="checkbox"
-                checked={modernUi}
-                onChange={(e) => onToggleModernUi(e.target.checked)}
-              />
-              <span className="lumina-slider"></span>
-            </label>
+            <Toggle
+              checked={modernUi}
+              onChange={(e) => onToggleModernUi(e.target.checked)}
+            />
           </div>
         </div>
       </div>

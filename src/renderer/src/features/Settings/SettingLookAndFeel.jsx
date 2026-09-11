@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import AccentColor from '../theme/AccentColor'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useFontSettings } from '../../core/hooks/useFontSettings'
+import Toggle from '../../components/toggle'
 
 export const ColorPickerInput = ({
   initialColor,
@@ -254,20 +255,16 @@ const SettingLookAndFeel = ({ onOpenTheme }) => {
               Show a colored left border on the line where the cursor is currently placed.
             </div>
           </div>
-          <label className="switch">
-            <input
-              type="checkbox"
-              checked={(settings.cursor && settings.cursor.useBorderLeft) ?? true}
-              onChange={(e) => {
-                const next = {
-                  ...(settings.cursor || {}),
-                  useBorderLeft: e.target.checked
-                }
-                updateSetting('cursor', next)
-              }}
-            />
-            <span className="slider round"></span>
-          </label>
+          <Toggle
+            checked={(settings.cursor && settings.cursor.useBorderLeft) ?? true}
+            onChange={(e) => {
+              const next = {
+                ...(settings.cursor || {}),
+                useBorderLeft: e.target.checked
+              }
+              updateSetting('cursor', next)
+            }}
+          />
         </div>
 
         <div className="settings-row">
@@ -275,14 +272,10 @@ const SettingLookAndFeel = ({ onOpenTheme }) => {
             <div className="row-label">Mechanical Keyboard Sound</div>
             <div className="row-hint">Play an ASMR-style mechanical click when typing.</div>
           </div>
-          <label className="switch">
-            <input
-              type="checkbox"
-              checked={settings.typeSound || false}
-              onChange={(e) => updateSetting('typeSound', e.target.checked)}
-            />
-            <span className="slider round"></span>
-          </label>
+          <Toggle
+            checked={settings.typeSound || false}
+            onChange={(e) => updateSetting('typeSound', e.target.checked)}
+          />
         </div>
 
         {settings.typeSound && (
@@ -310,14 +303,10 @@ const SettingLookAndFeel = ({ onOpenTheme }) => {
             <div className="row-label">Auto-Save</div>
             <div className="row-hint">Automatically save changes while typing.</div>
           </div>
-          <label className="switch">
-            <input
-              type="checkbox"
-              checked={settings.autoSave}
-              onChange={(e) => updateSetting('autoSave', e.target.checked)}
-            />
-            <span className="slider round"></span>
-          </label>
+          <Toggle
+            checked={settings.autoSave}
+            onChange={(e) => updateSetting('autoSave', e.target.checked)}
+          />
         </div>
 
         <div className="settings-row">
@@ -325,14 +314,10 @@ const SettingLookAndFeel = ({ onOpenTheme }) => {
             <div className="row-label">Note Title Input</div>
             <div className="row-hint">Show the editable title header inside the editor.</div>
           </div>
-          <label className="switch">
-            <input
-              type="checkbox"
-              checked={settings.inlineTitle !== false}
-              onChange={(e) => updateSetting('inlineTitle', e.target.checked)}
-            />
-            <span className="slider round"></span>
-          </label>
+          <Toggle
+            checked={settings.inlineTitle !== false}
+            onChange={(e) => updateSetting('inlineTitle', e.target.checked)}
+          />
         </div>
 
         <div className="settings-row">
@@ -340,14 +325,10 @@ const SettingLookAndFeel = ({ onOpenTheme }) => {
             <div className="row-label">Editor Action Buttons</div>
             <div className="row-hint">Show quick actions (AI, Voice, Drive, Local Graph) inside the editor.</div>
           </div>
-          <label className="switch">
-            <input
-              type="checkbox"
-              checked={settings.inlineMetadata !== false}
-              onChange={(e) => updateSetting('inlineMetadata', e.target.checked)}
-            />
-            <span className="slider round"></span>
-          </label>
+          <Toggle
+            checked={settings.inlineMetadata !== false}
+            onChange={(e) => updateSetting('inlineMetadata', e.target.checked)}
+          />
         </div>
       </section>
     </div>

@@ -1,3 +1,5 @@
+@import '../../components/toggle/toggle.css';
+
 /* --- Robust & Premium Settings Modal --- */
 .settings-container,
 .nexus-container.settings-container,
@@ -524,60 +526,6 @@
   background: var(--bg-active);
   border-color: var(--border-main);
   color: var(--text-main);
-}
-
-/* --- Switch Toggle (Premium iOS Knob Style) --- */
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 34px;
-  height: 18px;
-  flex-shrink: 0;
-}
-
-.switch input { 
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(255, 255, 255, 0.08);
-  transition: .4s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: 18px;
-  border: 1px solid var(--border-dim);
-}
-
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 14px;
-  width: 14px;
-  left: 1px;
-  bottom: 1px;
-  background-color: white;
-  transition: .4s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-}
-
-input:checked + .slider {
-  background-color: var(--text-accent);
-  border-color: var(--text-accent);
-}
-
-input:focus + .slider {
-  box-shadow: 0 0 1px var(--text-accent);
-}
-
-input:checked + .slider:before {
-  transform: translateX(16px);
 }
 
 /* Shortcut Badge */

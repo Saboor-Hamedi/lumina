@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
 import { useToast } from '../../core/hooks/useToast'
+import Toggle from '../../components/toggle'
 
 const SettingAdvanced = () => {
   const { settings, updateSetting } = useSettingsStore()
@@ -166,14 +167,10 @@ const SettingAdvanced = () => {
               Automatically start Lumina silently in the background when your computer boots up.
             </div>
           </div>
-          <label className="switch">
-            <input
-              type="checkbox"
-              checked={settings.launchOnStartup === true}
-              onChange={(e) => updateSetting('launchOnStartup', e.target.checked)}
-            />
-            <span className="slider round"></span>
-          </label>
+          <Toggle
+            checked={settings.launchOnStartup === true}
+            onChange={(e) => updateSetting('launchOnStartup', e.target.checked)}
+          />
         </div>
 
         <div className="settings-row">
@@ -219,14 +216,10 @@ const SettingAdvanced = () => {
             <div className="row-label">Show Node Texts</div>
             <div className="row-hint">Display titles on graph nodes.</div>
           </div>
-          <label className="switch">
-            <input
-              type="checkbox"
-              checked={settings.graphShowTexts !== false && settings.graphShowTexts !== 'false'}
-              onChange={(e) => updateSetting('graphShowTexts', e.target.checked)}
-            />
-            <span className="slider round"></span>
-          </label>
+          <Toggle
+            checked={settings.graphShowTexts !== false && settings.graphShowTexts !== 'false'}
+            onChange={(e) => updateSetting('graphShowTexts', e.target.checked)}
+          />
         </div>
 
         <div className="settings-row">
@@ -271,14 +264,10 @@ const SettingAdvanced = () => {
               Allow toggling Developer Tools (Ctrl+Shift+I / F12) in production mode.
             </div>
           </div>
-          <label className="switch">
-            <input
-              type="checkbox"
-              checked={settings.enableDevTools ?? true}
-              onChange={(e) => updateSetting('enableDevTools', e.target.checked)}
-            />
-            <span className="slider round"></span>
-          </label>
+          <Toggle
+            checked={settings.enableDevTools ?? true}
+            onChange={(e) => updateSetting('enableDevTools', e.target.checked)}
+          />
         </div>
       </section>
     </div>

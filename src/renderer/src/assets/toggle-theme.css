@@ -39,85 +39,8 @@
   color: var(--text-accent);
 }
 
-/* ==========================================================================
-   Lumina Toggle Switch (Tactile iOS / macOS Aesthetic)
-   ========================================================================== */
-.lumina-switch {
-  position: relative;
-  display: inline-block;
-  width: 38px;
-  height: 22px;
-  flex-shrink: 0;
-  cursor: pointer;
-  user-select: none;
-}
-
-.lumina-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-  position: absolute;
-}
-
-.lumina-slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 22px;
-  transition: background-color 0.22s cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 0.22s cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-  box-sizing: border-box;
-}
-
-.lumina-slider::before {
-  position: absolute;
-  content: "";
-  height: 18px;
-  width: 18px;
-  left: 1px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
-  border-radius: 50%;
-  box-shadow:
-    0 2px 6px rgba(0, 0, 0, 0.35),
-    0 1px 2px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0.5px #ffffff;
-  transition: transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.lumina-switch:hover .lumina-slider {
-  border-color: rgba(255, 255, 255, 0.28);
-  background-color: rgba(255, 255, 255, 0.15);
-}
-
-.lumina-switch input:checked + .lumina-slider {
-  background-color: var(--text-accent);
-  border-color: var(--text-accent);
-  box-shadow: 0 0 12px color-mix(in srgb, var(--text-accent) 45%, transparent);
-}
-
-.lumina-switch input:checked + .lumina-slider::before {
-  transform: translate3d(16px, -50%, 0);
-  background: #ffffff;
-  box-shadow:
-    0 2px 6px rgba(0, 0, 0, 0.38),
-    0 1px 3px rgba(0, 0, 0, 0.24),
-    inset 0 1px 0.5px #ffffff;
-}
-
-.lumina-switch input:focus,
-.lumina-switch input:focus-visible,
-.lumina-switch input:focus-visible + .lumina-slider {
-  outline: none !important;
-  box-shadow: none !important;
-}
+/* Import Canonical Toggle Switch Styles */
+@import '../components/toggle/toggle.css';
 
 /* ==========================================================================
    Lumina Quick Toggle Row (used in Appearance & Settings panels)

@@ -1,5 +1,6 @@
 import React from 'react'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
+import Toggle from '../../components/toggle'
 
 const SettingAssistant = () => {
   const { settings, updateSetting } = useSettingsStore()
@@ -184,14 +185,10 @@ const SettingAssistant = () => {
             <div className="row-label">Smart Search (learns as you write)</div>
             <div className="row-hint">Improve answers using your notes.</div>
           </div>
-          <label className="switch">
-            <input
-              type="checkbox"
-              checked={settings.enableLocalAI ?? true}
-              onChange={(e) => updateSetting('enableLocalAI', e.target.checked)}
-            />
-            <span className="slider round"></span>
-          </label>
+          <Toggle
+            checked={settings.enableLocalAI ?? true}
+            onChange={(e) => updateSetting('enableLocalAI', e.target.checked)}
+          />
         </div>
       </section>
     </div>
