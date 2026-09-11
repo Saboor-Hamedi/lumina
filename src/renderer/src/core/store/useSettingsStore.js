@@ -20,6 +20,7 @@ export const useSettingsStore = create((set, get) => ({
     sortDirection: 'asc',
     noteOrder: null, // Array of snippet IDs for custom drag sort order
     inlineMetadata: true,
+    inlineTitle: true,
     graphTheme: 'default',
     graphNodeSize: 1.5,
     graphShowTexts: true,

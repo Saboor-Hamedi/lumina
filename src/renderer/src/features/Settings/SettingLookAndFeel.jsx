@@ -322,13 +322,28 @@ const SettingLookAndFeel = ({ onOpenTheme }) => {
 
         <div className="settings-row">
           <div className="row-info">
-            <div className="row-label">Inline Metadata</div>
-            <div className="row-hint">Show tags and properties bar inside the editor.</div>
+            <div className="row-label">Note Title Input</div>
+            <div className="row-hint">Show the editable title header inside the editor.</div>
           </div>
           <label className="switch">
             <input
               type="checkbox"
-              checked={settings.inlineMetadata}
+              checked={settings.inlineTitle !== false}
+              onChange={(e) => updateSetting('inlineTitle', e.target.checked)}
+            />
+            <span className="slider round"></span>
+          </label>
+        </div>
+
+        <div className="settings-row">
+          <div className="row-info">
+            <div className="row-label">Editor Action Buttons</div>
+            <div className="row-hint">Show quick actions (AI, Voice, Drive, Local Graph) inside the editor.</div>
+          </div>
+          <label className="switch">
+            <input
+              type="checkbox"
+              checked={settings.inlineMetadata !== false}
               onChange={(e) => updateSetting('inlineMetadata', e.target.checked)}
             />
             <span className="slider round"></span>

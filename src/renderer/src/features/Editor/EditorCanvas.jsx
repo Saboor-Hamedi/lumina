@@ -43,6 +43,7 @@ export const EditorCanvas = React.memo(
     const [contextMenu, setContextMenu] = useState(null)
     const editorWrapperRef = useRef(null)
 
+    const inlineTitle = useSettingsStore((state) => state.settings?.inlineTitle !== false)
     const inlineMetadata = useSettingsStore((state) => state.settings?.inlineMetadata !== false)
     const snippets = useVaultStore((state) => state.snippets)
 
@@ -75,7 +76,7 @@ export const EditorCanvas = React.memo(
             onClose={() => setContextMenu(null)}
           />
         )}
-        {inlineMetadata && (
+        {(inlineTitle || inlineMetadata) && (
           <EditorMetadata
             titleRef={titleRef}
             snippet={snippet}
@@ -87,9 +88,11 @@ export const EditorCanvas = React.memo(
             isDirty={isDirty}
             onInlineAI={onInlineAI}
             editorMenu={editorMenu}
+            showTitle={inlineTitle}
+            showActions={inlineMetadata}
           />
         )}
-        {!inlineMetadata && editorMenu && (
+        {!inlineTitle && !inlineMetadata && editorMenu && (
           <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '4px 0', width: '100%' }}>
             {editorMenu}
           </div>
