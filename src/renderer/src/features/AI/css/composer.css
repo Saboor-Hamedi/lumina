@@ -358,16 +358,16 @@
 }
 
 .is-sidebar-docked .composer-input-area-wrapper {
-  min-height: 48px;
+  min-height: 84px;
 }
 
 .is-sidebar-docked .composer-textarea {
-  font-size: 13px !important;
-  line-height: 20px !important;
+  font-size: 13.5px !important;
+  line-height: 21px !important;
   padding: 10px 12px 6px !important;
-  height: 48px;
-  min-height: 48px;
-  max-height: 150px;
+  height: 84px;
+  min-height: 84px;
+  max-height: 260px;
 }
 
 .is-sidebar-docked .composer-inner-footer {

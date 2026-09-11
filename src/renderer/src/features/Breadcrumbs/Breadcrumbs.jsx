@@ -381,6 +381,7 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
       {/* Folder Sibling Dropdown portal */}
       {dropdown && (
         <BreadcrumbDropdown
+          key={dropdown.activeSegmentKey || dropdown.parentFolderId || '__root__'}
           parentFolderId={dropdown.parentFolderId}
           currentId={dropdown.currentId}
           anchorRect={dropdown.anchorRect}

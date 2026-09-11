@@ -180,9 +180,9 @@ const LuminaChat = ({ isOpen, onClose, onDock, onUnfloat }) => {
       >
         {/* Modal Header */}
         <div
-          className="docs-modal-header"
+          className={`docs-modal-header${isDraggingModal ? ' is-dragging' : ''}`}
           onMouseDown={handleModalHeaderMouseDown}
-          style={{ cursor: isMaximized ? 'default' : 'grab' }}
+          style={{ cursor: isMaximized ? 'default' : isDraggingModal ? 'grabbing' : 'grab' }}
         >
           <div className="docs-header-left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <ToolTip text={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'} position="bottom">

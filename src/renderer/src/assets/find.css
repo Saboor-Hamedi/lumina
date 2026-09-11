@@ -1,13 +1,14 @@
-/**
+/*
  * =========================================================================================
  * Pixel-Perfect VS Code Find & Replace Widget Styles (`FindWidget.css`)
  * =========================================================================================
+ 
  */
 
 .vs-find-part {
   position: absolute;
-  top: 5px;
-  right: 24px;
+  top: 0px;
+  right: 15px;
   z-index: 1000;
   display: flex;
   align-items: flex-start;

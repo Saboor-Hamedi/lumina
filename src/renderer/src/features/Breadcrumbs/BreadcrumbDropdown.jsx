@@ -53,6 +53,14 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
   const [pathCopied, setPathCopied] = useState(false)
   const [activeNoteId, setActiveNoteId] = useState(currentId)
 
+  // Reset navigation stack and search query when parentFolderId changes
+  useEffect(() => {
+    const nextInitial = isRootPath(parentFolderId) ? null : normalizePath(parentFolderId)
+    setStack([nextInitial])
+    setSearchQuery('')
+    setActiveNoteId(currentId)
+  }, [parentFolderId, currentId])
+
   const listRef = useRef(null)
   const dropdownRef = useRef(null)
   const searchInputRef = useRef(null)
@@ -112,11 +120,12 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
     const { results } = rankSnippets(snippets || [], q)
     const matchedNotes = results.map((s) => {
       const folderName = s.folderId ? s.folderId.split('/').pop() : ''
+      const rawSnippet = (snippets || []).find((orig) => orig.id === s.id) || s
       return {
         id: s.id,
         name: s.title || s.fileName || 'Untitled',
         kind: 'note',
-        snippet: s,
+        snippet: rawSnippet,
         folderName: folderName,
         relativePath: s.relativePath || s.folderId || ''
       }

@@ -14,6 +14,15 @@
   background: var(--bg-panel) !important;
   border-bottom: 1px solid var(--border-card) !important;
   color: var(--text-main) !important;
+  cursor: grab !important;
+}
+
+.ai-chat-docs-modal.maximized .docs-modal-header {
+  cursor: default !important;
+}
+
+.ai-chat-docs-modal .docs-modal-header.is-dragging {
+  cursor: grabbing !important;
 }
 
 .lumina-ai-container {
@@ -38,11 +47,11 @@
   position: relative;
   background: var(--bg-app);
   transition: margin-left 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  margin-left: 0;
+  margin-left: 0 !important;
 }
 
 .lumina-ai-container.sidebar-open .lumina-ai-content {
-  margin-left: 0;
+  margin-left: 0 !important;
 }
 
 .lumina-session-sidebar {
@@ -50,17 +59,17 @@
   background: var(--bg-sidebar, #121218);
   border: 1px solid var(--border-dim);
   border-radius: 8px;
-  box-shadow: none;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
-  position: absolute;
-  left: 20px;
-  top: 8px;
-  bottom: 102px;
-  height: calc(100% - 110px);
+  position: absolute !important;
+  left: 14px;
+  top: 10px;
+  bottom: 14px;
+  height: calc(100% - 24px);
   min-height: 180px;
   z-index: 50;
   backdrop-filter: blur(12px);
@@ -69,25 +78,49 @@
 }
 
 .lumina-session-sidebar.closed {
-  transform: translateX(calc(-100% - 30px));
-  opacity: 0;
-  pointer-events: none;
+  transform: translateX(calc(-100% - 30px)) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 .is-sidebar-docked .lumina-session-sidebar {
   left: 8px;
-  top: 5px;
-  bottom: 94px;
-  height: calc(100% - 99px);
+  top: 6px;
+  bottom: 6px;
+  height: calc(100% - 12px);
   min-height: 180px;
   width: calc(100% - 16px);
   max-width: 280px;
-  box-shadow: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 .is-sidebar-docked .lumina-ai-content,
 .is-sidebar-docked .chat-main {
   margin-left: 0 !important;
+}
+
+/* Maximized layout constraints - Keeps chat content and docked composer centered at 800px */
+.ai-chat-docs-modal.maximized .chat-msg-list {
+  max-width: 800px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
+.ai-chat-docs-modal.maximized .inspector-footer-section.is-chat-composer.is-modal-composer,
+.ai-chat-docs-modal.maximized .is-modal-composer {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  max-width: 800px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
+.ai-chat-docs-modal.maximized .is-modal-composer .composer-container {
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
 }
 
 /* Search Wrapper */

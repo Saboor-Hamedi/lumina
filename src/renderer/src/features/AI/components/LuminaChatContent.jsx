@@ -211,14 +211,40 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, isModal = fals
           </div>
 
           {!isSidebar && (
-            <div className="inspector-footer-section is-chat-composer is-modal-composer">
-              <Composer
-                isSidebar={true}
-                onSend={handleSendMessage}
-                isLoading={isChatLoading}
-                onStop={cancelChat}
-                onCancel={cancelChat}
-              />
+            <div
+              className="modal-composer-dock-wrapper"
+              style={{
+                width: '100%',
+                background: 'transparent',
+                display: 'flex',
+                justifyContent: 'center',
+                padding: '0 16px 14px 16px',
+                boxSizing: 'border-box',
+                flexShrink: 0
+              }}
+            >
+              <div
+                className="inspector-footer-section is-chat-composer is-modal-composer"
+                style={{
+                  maxWidth: '800px',
+                  width: '100%',
+                  margin: '0 auto',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-card, rgba(255, 255, 255, 0.12))',
+                  background: 'var(--bg-panel, #16161e)',
+                  overflow: 'hidden',
+                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+                  boxSizing: 'border-box'
+                }}
+              >
+                <Composer
+                  isSidebar={true}
+                  onSend={handleSendMessage}
+                  isLoading={isChatLoading}
+                  onStop={cancelChat}
+                  onCancel={cancelChat}
+                />
+              </div>
             </div>
           )}
         </div>
