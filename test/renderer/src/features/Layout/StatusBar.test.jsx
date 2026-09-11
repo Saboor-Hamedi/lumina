@@ -18,10 +18,23 @@ describe('StatusBar.jsx', () => {
 
   it('renders left utility buttons', () => {
     render(<StatusBar {...defaultProps()} />)
+    expect(screen.getByText('Settings')).toBeInTheDocument()
     expect(screen.getByText('Details')).toBeInTheDocument()
     expect(screen.getByText('Docs')).toBeInTheDocument()
     expect(screen.getByText('Guide')).toBeInTheDocument()
     expect(screen.getByText('Shortcuts')).toBeInTheDocument()
+  })
+
+  it('toggles settings dropdown when Settings button is clicked', () => {
+    const props = {
+      ...defaultProps(),
+      onSettingsClick: vi.fn(),
+      onThemeClick: vi.fn()
+    }
+    render(<StatusBar {...props} />)
+    const settingsBtn = screen.getByTestId('status-bar-settings-btn')
+    fireEvent.click(settingsBtn)
+    expect(screen.getByRole('button', { name: /Theme/i })).toBeInTheDocument()
   })
 
   it('calls onToggleInspector when Details button is clicked', () => {

@@ -84,8 +84,6 @@ export const Profile = memo(({
           gap: '8px',
           margin: 0,
           borderRadius: '5px',
-          border: '0.5px solid var(--border-dim, rgba(255, 255, 255, 0.15))',
-          background: isHovered ? 'var(--bg-active)' : 'transparent',
           boxSizing: 'border-box',
           padding: '0 8px',
           transition: 'background-color 0.15s ease, border-color 0.15s ease',
@@ -104,8 +102,8 @@ export const Profile = memo(({
           <div
             className="profile-avatar-wrap"
             style={{
-              borderColor: activeAccent,
-              borderWidth: '1.5px',
+              borderColor: 'var(--border-dim)',
+              borderWidth: '1px',
               borderStyle: 'solid'
             }}
           >

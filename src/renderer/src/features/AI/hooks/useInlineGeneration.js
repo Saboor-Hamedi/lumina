@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useSettingsStore } from '../../../core/store/useSettingsStore'
+import { resolveProviderConfig } from '../providers/index.js'
 
 /**
  * Custom hook to manage prompt submission, streaming AI generation, replacement and clipboard actions for InlineLumina.
@@ -137,10 +139,6 @@ CRITICAL INSTRUCTIONS:
         let visibleKey = null
         let model = 'deepseek-chat'
         try {
-          const [{ useSettingsStore }, { resolveProviderConfig }] = await Promise.all([
-            import('../../../core/store/useSettingsStore'),
-            import('../providers/index.js')
-          ])
           const settingsObj = useSettingsStore.getState().settings || {}
           const cfg = resolveProviderConfig(settingsObj)
           visibleKey = cfg.apiKey

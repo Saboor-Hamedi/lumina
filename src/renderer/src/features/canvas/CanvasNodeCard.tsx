@@ -95,6 +95,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
           data-port-side="top"
           title="Connect top"
           onMouseDown={(e) => onPortMouseDown(e, node.id, 'top')}
+          onClick={(e) => onPortMouseDown(e, node.id, 'top')}
         />
         <div
           className="lumina-canvas-port port-right"
@@ -102,6 +103,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
           data-port-side="right"
           title="Connect right"
           onMouseDown={(e) => onPortMouseDown(e, node.id, 'right')}
+          onClick={(e) => onPortMouseDown(e, node.id, 'right')}
         />
         <div
           className="lumina-canvas-port port-bottom"
@@ -109,6 +111,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
           data-port-side="bottom"
           title="Connect bottom"
           onMouseDown={(e) => onPortMouseDown(e, node.id, 'bottom')}
+          onClick={(e) => onPortMouseDown(e, node.id, 'bottom')}
         />
         <div
           className="lumina-canvas-port port-left"
@@ -116,6 +119,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
           data-port-side="left"
           title="Connect left"
           onMouseDown={(e) => onPortMouseDown(e, node.id, 'left')}
+          onClick={(e) => onPortMouseDown(e, node.id, 'left')}
         />
 
         {/* Card Header */}

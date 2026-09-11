@@ -1,4 +1,5 @@
-import React, { useRef, useEffect, useState, useMemo } from 'react'
+import React, { useRef, useEffect, useState, useMemo, useLayoutEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Settings, Palette, Cloud, RefreshCw, Check, Loader2, FileArchive, Folder, X } from 'lucide-react'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
 import { useCurrentUser } from '../../../core/hooks/useCurrentUser'
@@ -22,6 +23,22 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
     }
   })
   const [focusedIndex, setFocusedIndex] = useState(-1)
+  const [coords, setCoords] = useState(null)
+
+  useLayoutEffect(() => {
+    if (!isOpen || !anchorRef?.current) return
+
+    const updatePosition = () => {
+      const rect = anchorRef.current.getBoundingClientRect()
+      const bottom = Math.round(window.innerHeight - rect.top + 6)
+      const left = Math.max(6, Math.min(Math.round(rect.left), window.innerWidth - 266))
+      setCoords({ bottom, left })
+    }
+
+    updatePosition()
+    window.addEventListener('resize', updatePosition)
+    return () => window.removeEventListener('resize', updatePosition)
+  }, [isOpen, anchorRef])
 
   const handleSetBackupMode = (mode) => {
     setBackupMode(mode)
@@ -209,17 +226,16 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
 
   if (!isOpen) return null
 
-  return (
+  const dropdownElement = (
     <div
       ref={dropdownRef}
       className="setting-dropdown-menu"
       onClick={(e) => e.stopPropagation()}
       style={{
-        position: 'absolute',
-        bottom: 'calc(100% + 6px)',
-        left: '8px',
-        right: '8px',
-        width: 'auto',
+        position: 'fixed',
+        bottom: coords ? `${coords.bottom}px` : '36px',
+        left: coords ? `${coords.left}px` : '8px',
+        width: '260px',
         backgroundColor: 'color-mix(in srgb, var(--bg-panel, #18181b) 92%, transparent)',
         backdropFilter: 'blur(24px) saturate(180%)',
         WebkitBackdropFilter: 'blur(24px) saturate(180%)',
@@ -551,6 +567,12 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
       )}
     </div>
   )
+
+  if (typeof document !== 'undefined') {
+    return createPortal(dropdownElement, document.body)
+  }
+
+  return dropdownElement
 }
 
 const DropdownItem = ({ icon, label, shortcut, onClick, highlight, isFocused }) => {

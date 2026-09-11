@@ -806,137 +806,139 @@ const AppShell = () => {
         '--right-sidebar-content-width': `${Math.max(200, rightWidth)}px`
       }}
     >
-      <aside className="shell-sidebar-left">
-        <GlobalErrorHandler>
-          <Sidebar
-            onSettingsClick={handleOpenSettings}
-            onThemeClick={handleOpenTheme}
-            onToggleGraph={handleToggleGraph}
-            onToggleAIChat={handleToggleAIChat}
-            onDocsClick={handleOpenDocs}
-          />
-        </GlobalErrorHandler>
-      </aside>
-      <div
-        className={`sidebar-resizer left ${isLeftSidebarOpen ? 'open' : 'closed'}`}
-        title="Double-click to reset default width (260px)"
-        onMouseDown={(e) => handleStartResize('left', e)}
-        onDoubleClick={(e) => {
-          if (!isLeftSidebarOpen) return
-          e.preventDefault()
-          e.stopPropagation()
-          handleResetSidebar('left')
-        }}
-      >
-        <div className="resizer-knob">
-          <span className="knob-dot" />
-          <span className="knob-dot" />
-          <span className="knob-dot" />
+      <div className="shell-body">
+        <aside className="shell-sidebar-left">
+          <GlobalErrorHandler>
+            <Sidebar
+              onSettingsClick={handleOpenSettings}
+              onThemeClick={handleOpenTheme}
+              onToggleGraph={handleToggleGraph}
+              onToggleAIChat={handleToggleAIChat}
+              onDocsClick={handleOpenDocs}
+            />
+          </GlobalErrorHandler>
+        </aside>
+        <div
+          className={`sidebar-resizer left ${isLeftSidebarOpen ? 'open' : 'closed'}`}
+          title="Double-click to reset default width (260px)"
+          onMouseDown={(e) => handleStartResize('left', e)}
+          onDoubleClick={(e) => {
+            if (!isLeftSidebarOpen) return
+            e.preventDefault()
+            e.stopPropagation()
+            handleResetSidebar('left')
+          }}
+        >
+          <div className="resizer-knob">
+            <span className="knob-dot" />
+            <span className="knob-dot" />
+            <span className="knob-dot" />
+          </div>
         </div>
-      </div>
-      <main className="shell-main">
-        <div className="shell-center-workspace">
-          {(activeTab === 'files' || activeTab === 'search') && (
-            <>
-              <TabBar
-                isSidebarOpen={isRightSidebarOpen}
-                onToggleSidebar={handleToggleRightSidebar}
-                isLeftSidebarOpen={isLeftSidebarOpen}
-                onToggleLeftSidebar={handleToggleLeftSidebar}
-              />
-              {selectedSnippet &&
-                activeTabId !== GRAPH_TAB_ID &&
-                snippets.some((s) => s.id === selectedSnippet.id) && (
-                  <Breadcrumbs snippet={selectedSnippet} />
-                )}
-            </>
-          )}
+        <main className="shell-main">
+          <div className="shell-center-workspace">
+            {(activeTab === 'files' || activeTab === 'search') && (
+              <>
+                <TabBar
+                  isSidebarOpen={isRightSidebarOpen}
+                  onToggleSidebar={handleToggleRightSidebar}
+                  isLeftSidebarOpen={isLeftSidebarOpen}
+                  onToggleLeftSidebar={handleToggleLeftSidebar}
+                />
+                {selectedSnippet &&
+                  activeTabId !== GRAPH_TAB_ID &&
+                  snippets.some((s) => s.id === selectedSnippet.id) && (
+                    <Breadcrumbs snippet={selectedSnippet} />
+                  )}
+              </>
+            )}
 
-          {openTabs.filter((id) => id === GRAPH_TAB_ID || snippets.some((s) => s.id === id)).length >
-          0 ? (
-            <div
-              className="workspace-container"
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                flex: 1,
-                overflow: 'hidden',
-                position: 'relative'
-              }}
-            >
+            {openTabs.filter((id) => id === GRAPH_TAB_ID || snippets.some((s) => s.id === id)).length >
+            0 ? (
               <div
+                className="workspace-container"
                 style={{
-                  position: 'relative',
-                  flex: 1,
                   display: 'flex',
-                  flexDirection: 'column',
-                  overflow: 'hidden'
+                  flexDirection: 'row',
+                  flex: 1,
+                  overflow: 'hidden',
+                  position: 'relative'
                 }}
               >
-                {renderedEditors}
+                <div
+                  style={{
+                    position: 'relative',
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden'
+                  }}
+                >
+                  {renderedEditors}
+                </div>
               </div>
-            </div>
-          ) : (
-            <GlobalErrorHandler>
-              <Welcome
-                onNew={handleNew}
-                onOpenGuide={() => setShowGuideModal(true)}
-                onOpenDocs={handleOpenDocs}
-                onLoadStarterWorkspace={handleLoadStarterWorkspace}
-                onToggleAIChat={handleToggleAIChat}
-              />
-            </GlobalErrorHandler>
-          )}
-        </div>
+            ) : (
+              <GlobalErrorHandler>
+                <Welcome
+                  onNew={handleNew}
+                  onOpenGuide={() => setShowGuideModal(true)}
+                  onOpenDocs={handleOpenDocs}
+                  onLoadStarterWorkspace={handleLoadStarterWorkspace}
+                  onToggleAIChat={handleToggleAIChat}
+                />
+              </GlobalErrorHandler>
+            )}
+          </div>
+        </main>
 
-        <StatusBar
-          onToggleInspector={handleToggleInspector}
-          onToggleExplorerModal={handleToggleExplorerModal}
-          onSettingsClick={handleOpenSettings}
-          onThemeClick={handleOpenTheme}
-          onGraphClick={handleToggleGraph}
-          onDocsClick={handleOpenDocs}
-          onShortcutsClick={() => {
-            setSettingsInitialTab('shortcuts')
-            setShowSettings(true)
+        <div
+          className={`sidebar-resizer right ${isRightSidebarOpen ? 'open' : 'closed'}`}
+          title="Double-click to reset default width (300px)"
+          onMouseDown={(e) => handleStartResize('right', e)}
+          onDoubleClick={(e) => {
+            if (!isRightSidebarOpen) return
+            e.preventDefault()
+            e.stopPropagation()
+            handleResetSidebar('right')
           }}
-        />
-      </main>
-
-      <div
-        className={`sidebar-resizer right ${isRightSidebarOpen ? 'open' : 'closed'}`}
-        title="Double-click to reset default width (300px)"
-        onMouseDown={(e) => handleStartResize('right', e)}
-        onDoubleClick={(e) => {
-          if (!isRightSidebarOpen) return
-          e.preventDefault()
-          e.stopPropagation()
-          handleResetSidebar('right')
-        }}
-      >
-        <div className="resizer-knob">
-          <span className="knob-dot" />
-          <span className="knob-dot" />
-          <span className="knob-dot" />
+        >
+          <div className="resizer-knob">
+            <span className="knob-dot" />
+            <span className="knob-dot" />
+            <span className="knob-dot" />
+          </div>
         </div>
+        <aside className="shell-sidebar-right">
+          <GlobalErrorHandler>
+            <RightSidebar
+              rightSidebarTab={rightSidebarTab}
+              setRightSidebarTab={setRightSidebarTab}
+              setSettingsInitialTab={setSettingsInitialTab}
+              setShowSettings={setShowSettings}
+              setSavedRightSidebarState={setSavedRightSidebarState}
+              isRightSidebarOpen={isRightSidebarOpen}
+              rightWidth={rightWidth}
+              setIsRightSidebarOpen={handleCloseRightSidebar}
+              setShowAIChatModal={setShowAIChatModal}
+              selectedSnippet={selectedSnippet}
+              isLoading={isLoading}
+            />
+          </GlobalErrorHandler>
+        </aside>
       </div>
-      <aside className="shell-sidebar-right">
-        <GlobalErrorHandler>
-          <RightSidebar
-            rightSidebarTab={rightSidebarTab}
-            setRightSidebarTab={setRightSidebarTab}
-            setSettingsInitialTab={setSettingsInitialTab}
-            setShowSettings={setShowSettings}
-            setSavedRightSidebarState={setSavedRightSidebarState}
-            isRightSidebarOpen={isRightSidebarOpen}
-            rightWidth={rightWidth}
-            setIsRightSidebarOpen={handleCloseRightSidebar}
-            setShowAIChatModal={setShowAIChatModal}
-            selectedSnippet={selectedSnippet}
-            isLoading={isLoading}
-          />
-        </GlobalErrorHandler>
-      </aside>
+
+      <StatusBar
+        onToggleInspector={handleToggleInspector}
+        onToggleExplorerModal={handleToggleExplorerModal}
+        onSettingsClick={handleOpenSettings}
+        onThemeClick={handleOpenTheme}
+        onGraphClick={handleToggleGraph}
+        onDocsClick={handleOpenDocs}
+        onShortcutsClick={() => {
+          setSettingsInitialTab('shortcuts')
+          setShowSettings(true)
+        }}
+      />
       {showSettings && (
         <Settings
           onClose={() => {

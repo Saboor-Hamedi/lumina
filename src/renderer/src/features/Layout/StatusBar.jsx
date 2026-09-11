@@ -1,16 +1,29 @@
-import React, { useState, useEffect, useMemo } from 'react'
-import { BookOpen, PanelRight, Keyboard, FileText, Hash, Clock, Navigation, Compass } from 'lucide-react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
+import { BookOpen, PanelRight, Keyboard, FileText, Hash, Clock, Navigation, Compass, Settings } from 'lucide-react'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
+import { useCurrentUser } from '../../core/hooks/useCurrentUser'
+import SettingDropdown from '../Navigation/components/SettingDropdown'
 import ToolTip from '../../components/atoms/ToolTip'
 import '../../assets/statusbar.css'
 
 const StatusBar = ({
   onToggleInspector,
   onDocsClick,
-  onShortcutsClick
+  onShortcutsClick,
+  onSettingsClick,
+  onThemeClick
 }) => {
   const selectedSnippet = useWorkspaceStore((s) => s.selectedSnippet)
   const [cursorPos, setCursorPos] = useState({ line: 1, col: 1, selectedChars: 0 })
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [imgError, setImgError] = useState(false)
+  const settingsBtnRef = useRef(null)
+  const { user, isLoggedIn } = useCurrentUser()
+
+  const toggleDropdown = (e) => {
+    if (e) e.stopPropagation()
+    setIsDropdownOpen((prev) => !prev)
+  }
 
   // Listen for active editor cursor movements and selection changes
   useEffect(() => {
@@ -70,6 +83,50 @@ const StatusBar = ({
     <div className="status-bar" ref={statusBarRef} data-testid="status-bar">
       {/* Left utility buttons */}
       <div className="status-bar-left">
+        <ToolTip
+          text={
+            isLoggedIn && user
+              ? (user.name || user.email || 'Settings & Account')
+              : 'Settings & Account (Ctrl + ,)'
+          }
+          position="top"
+        >
+          <button
+            ref={settingsBtnRef}
+            className={`status-bar-btn status-bar-profile-btn ${isDropdownOpen ? 'active' : ''}`}
+            onClick={toggleDropdown}
+            data-testid="status-bar-settings-btn"
+          >
+            {isLoggedIn && user?.picture && !imgError ? (
+              <img
+                src={user.picture}
+                alt=""
+                onError={() => setImgError(true)}
+                style={{
+                  width: '13px',
+                  height: '13px',
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  flexShrink: 0
+                }}
+              />
+            ) : (
+              <Settings size={12} />
+            )}
+            <span>{isLoggedIn && user?.name ? user.name.split(' ')[0] : 'Settings'}</span>
+          </button>
+        </ToolTip>
+
+        <SettingDropdown
+          isOpen={isDropdownOpen}
+          onClose={() => setIsDropdownOpen(false)}
+          onSettingsClick={onSettingsClick}
+          onThemeClick={onThemeClick}
+          anchorRef={settingsBtnRef}
+        />
+
+        <span className="status-bar-divider" />
+
         <ToolTip text="Toggle Details & Outline (Ctrl + \)" position="top">
           <button className="status-bar-btn" onClick={onToggleInspector}>
             <PanelRight size={12} />

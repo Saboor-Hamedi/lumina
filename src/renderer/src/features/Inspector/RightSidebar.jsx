@@ -9,6 +9,7 @@ import GlobalErrorHandler from '../../components/GlobalErrorHandler'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import ToolTip from '../../components/atoms/ToolTip'
+import RightSidebarFooter from './RightSidebarFooter'
 import './NoteDetails.css'
 
 export const RightSidebar = React.memo(({
@@ -94,92 +95,99 @@ export const RightSidebar = React.memo(({
       </div>
 
       {/* Sub-header under the tabs */}
-      {rightSidebarTab === 'details' && (
-        <div className="inspector-sub-header">
-          <span className="inspector-sub-title">Note Details</span>
-          {selectedSnippet?.title && (
-            <span className="inspector-sub-badge" title={selectedSnippet.title}>
-              {selectedSnippet.title}
-            </span>
-          )}
-        </div>
-      )}
+      <div className="inspector-body-card">
+        {rightSidebarTab === 'details' && (
+          <div className="inspector-sub-header">
+            <span className="inspector-sub-title">Note Details</span>
+            {selectedSnippet?.title && (
+              <span className="inspector-sub-badge" title={selectedSnippet.title}>
+                {selectedSnippet.title}
+              </span>
+            )}
+          </div>
+        )}
 
-      {rightSidebarTab === 'outline' && (
-        <div className="inspector-sub-header">
-          <span className="inspector-sub-title">Note Outline</span>
-          {selectedSnippet?.title && (
-            <span className="inspector-sub-badge" title={selectedSnippet.title}>
-              {selectedSnippet.title}
-            </span>
-          )}
-        </div>
-      )}
+        {rightSidebarTab === 'outline' && (
+          <div className="inspector-sub-header">
+            <span className="inspector-sub-title">Note Outline</span>
+            {selectedSnippet?.title && (
+              <span className="inspector-sub-badge" title={selectedSnippet.title}>
+                {selectedSnippet.title}
+              </span>
+            )}
+          </div>
+        )}
 
-      {rightSidebarTab === 'chat' && (
-        <div className="inspector-sub-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <ToolTip text="Toggle History" position="bottom">
+        {rightSidebarTab === 'chat' && (
+          <div className="inspector-sub-header">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <ToolTip text="Toggle History" position="bottom">
+                <button
+                  className="inspector-action-btn"
+                  onClick={() => window.dispatchEvent(new CustomEvent('ai-toggle-history'))}
+                  aria-label="Toggle History"
+                >
+                  <History size={13} />
+                </button>
+              </ToolTip>
+              <span className="inspector-sub-title">Lumina AI Assistant</span>
+            </div>
+            <ToolTip text="Pop out to floating window" position="bottom-right">
               <button
                 className="inspector-action-btn"
-                onClick={() => window.dispatchEvent(new CustomEvent('ai-toggle-history'))}
-                aria-label="Toggle History"
+                onClick={handlePopOut}
+                aria-label="Pop out to floating window"
               >
-                <History size={13} />
+                <ExternalLink size={13} />
               </button>
             </ToolTip>
-            <span className="inspector-sub-title">Lumina AI Assistant</span>
           </div>
-          <ToolTip text="Pop out to floating window" position="bottom-right">
-            <button
-              className="inspector-action-btn"
-              onClick={handlePopOut}
-              aria-label="Pop out to floating window"
-            >
-              <ExternalLink size={13} />
-            </button>
-          </ToolTip>
-        </div>
-      )}
+        )}
 
-      {/* Panel content */}
-      <div
-        className="panel-content"
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          flex: 1,
-          overflow: 'hidden',
-          minHeight: 0
-        }}
-      >
-        <GlobalErrorHandler>
-          {rightSidebarTab === 'outline' ? (
-            <NoteOutline snippet={selectedSnippet} />
-          ) : rightSidebarTab === 'chat' ? (
-            <React.Suspense
-              fallback={
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: '100%',
-                    color: 'var(--text-muted, #888)',
-                    fontSize: 12
-                  }}
-                >
-                  Loading Lumina AI...
-                </div>
-              }
-            >
-              <LuminaChatContent isSidebar={true} onPopOut={handlePopOut} />
-            </React.Suspense>
-          ) : (
-            <NoteDetails snippet={selectedSnippet} isLoading={isLoading} />
-          )}
-        </GlobalErrorHandler>
+        <div
+          className="panel-content"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            flex: 1,
+            overflow: 'hidden',
+            minHeight: 0
+          }}
+        >
+          <GlobalErrorHandler>
+            {rightSidebarTab === 'outline' ? (
+              <NoteOutline snippet={selectedSnippet} />
+            ) : rightSidebarTab === 'chat' ? (
+              <React.Suspense
+                fallback={
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      height: '100%',
+                      color: 'var(--text-muted, #888)',
+                      fontSize: 12
+                    }}
+                  >
+                    Loading Lumina AI...
+                  </div>
+                }
+              >
+                <LuminaChatContent isSidebar={true} onPopOut={handlePopOut} />
+              </React.Suspense>
+            ) : (
+              <NoteDetails snippet={selectedSnippet} isLoading={isLoading} />
+            )}
+          </GlobalErrorHandler>
+        </div>
       </div>
+
+      <RightSidebarFooter
+        selectedSnippet={selectedSnippet}
+        rightSidebarTab={rightSidebarTab}
+        onClose={() => setIsRightSidebarOpen?.(false)}
+      />
     </div>
   )
 })

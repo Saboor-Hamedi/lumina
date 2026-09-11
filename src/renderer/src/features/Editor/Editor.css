@@ -324,6 +324,11 @@
   transition: border-left-color 0.15s ease, border-left-width 0.15s ease !important;
 }
 
+.tabbar-outer-wrapper {
+  border-top-left-radius: 5px;
+  overflow: hidden;
+}
+
 /* --- WORKSPACE TABBAR --- */
 .workspace-tabbar {
   height: 32px;
@@ -333,6 +338,7 @@
   overflow-x: auto; overflow-y: hidden;
   user-select: none;
   flex-shrink: 0;
+  border-top-left-radius: 5px;
 }
 
 .workspace-tabbar::-webkit-scrollbar {
@@ -343,6 +349,13 @@
   display: flex;
   height: 100%;
   align-items: stretch;
+  border-top-left-radius: 5px;
+}
+
+.tabs-container > :first-child .workspace-tab,
+.tabs-container > .workspace-tab:first-child,
+.workspace-tab:first-child {
+  border-top-left-radius: 5px;
 }
 
 .workspace-tab {
@@ -376,7 +389,7 @@
 .workspace-tab.active {
   background: var(--bg-panel);
   color: var(--text-main);
-  box-shadow: inset 0 0 0 1px var(--border-dim);
+  border-top: 2px solid var(--text-accent);
 }
 
 .workspace-tab.active::after {
@@ -384,11 +397,10 @@
   position: absolute;
   bottom: 0;
   left: 0;
-  height: 2px;
+  height: 1px;
   width: 100%;
-  background: var(--text-accent);
-  box-shadow: 0 0 6px rgba(var(--text-accent-rgb), 0.35);
-  opacity: 0.9;
+  background: var(--border-dim);
+  opacity: 1;
   pointer-events: none;
 }
 

@@ -81,13 +81,20 @@
   transition: opacity 0.12s ease;
 }
 
-.status-bar-btn:hover {
+.status-bar-btn:hover,
+.status-bar-btn.active {
   color: var(--text-main);
   background: var(--bg-active);
 }
 
-.status-bar-btn:hover svg {
+.status-bar-btn:hover svg,
+.status-bar-btn.active svg {
   opacity: 1;
+}
+
+.status-bar-profile-btn img {
+  border-radius: 50%;
+  border: 1px solid var(--border-dim);
 }
 
 .status-bar-divider {

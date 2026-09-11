@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { Check, RotateCcw, Terminal, Power } from 'lucide-react'
+import { Check, RotateCcw } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import Profile from '../profile/Profile'
 import ModalHeader from '../modals/ModalHeader'
@@ -124,49 +124,62 @@ const OpacityControl = React.memo(({ percentage, onInput, onChange, onReset }) =
   )
 })
 
-const QuickControls = React.memo(({ enableDevTools, launchOnStartup, onToggleDevTools, onToggleStartup }) => {
-  return (
-    <div className="accent-dropdown-section">
-      <div className="accent-dropdown-section-header">
-        <span className="accent-dropdown-title">Quick Controls</span>
-      </div>
-
-      <div className="lumina-toggle-row" onClick={() => onToggleDevTools()}>
-        <div className="lumina-toggle-info">
-          <span className="lumina-toggle-icon">
-            <Terminal size={14} />
-          </span>
-          <span className="lumina-toggle-label">Enable DevTools</span>
+const QuickControls = React.memo(
+  ({
+    enableDevTools,
+    launchOnStartup,
+    modernUi,
+    onToggleDevTools,
+    onToggleStartup,
+    onToggleModernUi
+  }) => {
+    return (
+      <div className="accent-dropdown-section">
+        <div className="accent-dropdown-section-header">
+          <span className="accent-dropdown-title">Quick Controls</span>
         </div>
-        <label className="lumina-switch" onClick={(e) => e.stopPropagation()}>
-          <input
-            type="checkbox"
-            checked={enableDevTools}
-            onChange={(e) => onToggleDevTools(e.target.checked)}
-          />
-          <span className="lumina-slider"></span>
-        </label>
-      </div>
 
-      <div className="lumina-toggle-row" onClick={() => onToggleStartup()}>
-        <div className="lumina-toggle-info">
-          <span className="lumina-toggle-icon">
-            <Power size={14} />
-          </span>
-          <span className="lumina-toggle-label">Launch on Startup</span>
+        <div className="quick-controls-grid">
+          <div className="quick-control-col" onClick={() => onToggleDevTools()}>
+            <span className="quick-control-label">DevTools</span>
+            <label className="lumina-switch" onClick={(e) => e.stopPropagation()}>
+              <input
+                type="checkbox"
+                checked={enableDevTools}
+                onChange={(e) => onToggleDevTools(e.target.checked)}
+              />
+              <span className="lumina-slider"></span>
+            </label>
+          </div>
+
+          <div className="quick-control-col" onClick={() => onToggleStartup()}>
+            <span className="quick-control-label">Startup</span>
+            <label className="lumina-switch" onClick={(e) => e.stopPropagation()}>
+              <input
+                type="checkbox"
+                checked={launchOnStartup}
+                onChange={(e) => onToggleStartup(e.target.checked)}
+              />
+              <span className="lumina-slider"></span>
+            </label>
+          </div>
+
+          <div className="quick-control-col" onClick={() => onToggleModernUi()}>
+            <span className="quick-control-label">Modern UI</span>
+            <label className="lumina-switch" onClick={(e) => e.stopPropagation()}>
+              <input
+                type="checkbox"
+                checked={modernUi}
+                onChange={(e) => onToggleModernUi(e.target.checked)}
+              />
+              <span className="lumina-slider"></span>
+            </label>
+          </div>
         </div>
-        <label className="lumina-switch" onClick={(e) => e.stopPropagation()}>
-          <input
-            type="checkbox"
-            checked={launchOnStartup}
-            onChange={(e) => onToggleStartup(e.target.checked)}
-          />
-          <span className="lumina-slider"></span>
-        </label>
       </div>
-    </div>
-  )
-})
+    )
+  }
+)
 
 export const AccentColor = ({
   isOpen,
@@ -200,6 +213,7 @@ export const AccentColor = ({
   const { percentage, setOpacity, resetOpacity } = useOpacity()
   const enableDevTools = useSettingsStore((s) => s.settings?.enableDevTools ?? true)
   const launchOnStartup = useSettingsStore((s) => s.settings?.launchOnStartup ?? false)
+  const modernUi = useSettingsStore((s) => s.settings?.modernUi ?? false)
   const updateSetting = useSettingsStore((s) => s.updateSetting)
 
   const handleCancel = useCallback(() => {
@@ -364,6 +378,11 @@ export const AccentColor = ({
     updateSetting('launchOnStartup', next)
   }, [launchOnStartup, updateSetting])
 
+  const handleToggleModernUi = useCallback((val) => {
+    const next = typeof val === 'boolean' ? val : !modernUi
+    updateSetting('modernUi', next)
+  }, [modernUi, updateSetting])
+
   const renderedPresets = useMemo(() => {
     const isDropdown = variant === 'dropdown'
     return PRESET_PALETTE.map((preset, index) => {
@@ -464,8 +483,10 @@ export const AccentColor = ({
         <QuickControls
           enableDevTools={enableDevTools}
           launchOnStartup={launchOnStartup}
+          modernUi={modernUi}
           onToggleDevTools={handleToggleDevTools}
           onToggleStartup={handleToggleStartup}
+          onToggleModernUi={handleToggleModernUi}
         />
       </div>
     )

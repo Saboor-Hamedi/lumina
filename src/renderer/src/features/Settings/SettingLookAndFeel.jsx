@@ -93,21 +93,6 @@ const SettingLookAndFeel = ({ onOpenTheme }) => {
         <h3>Appearance</h3>
         <div className="settings-row">
           <div className="row-info">
-            <div className="row-label">Floating Dock & Gaps UI</div>
-            <div className="row-hint">Enable floating status bar and layout gaps while keeping your active theme and accent.</div>
-          </div>
-          <label className="switch">
-            <input
-              type="checkbox"
-              checked={settings.modernUi ?? false}
-              onChange={(e) => updateSetting('modernUi', e.target.checked)}
-            />
-            <span className="slider round"></span>
-          </label>
-        </div>
-
-        <div className="settings-row">
-          <div className="row-info">
             <div className="row-label">Base Theme</div>
             <div className="row-hint">Choose between light, dark, and rugged tones.</div>
           </div>

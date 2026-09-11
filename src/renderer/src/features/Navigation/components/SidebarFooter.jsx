@@ -17,7 +17,6 @@ const SidebarFooter = memo(({ onThemeClick, onSettingsClick }) => {
         onClick={toggleDropdown}
         showLogout={false}
         fallbackName="Settings"
-        style={{ margin: '4px 8px 8px 8px' }}
       />
 
       <SettingDropdown
