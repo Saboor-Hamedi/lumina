@@ -1,15 +1,62 @@
 /**
- * searchRanker.js
+ * searchRanker.ts
  *
- * Shared relevance-ranking and keyword extraction utility used across
- * FileExplorer (sidebar search) and CommandPalette (Ctrl+P).
- * Supports multi-word queries, keyword matching, Fuse fuzzy matches,
+ * Shared relevance-ranking, keyword extraction, and fuzzy scoring engine
+ * used across FileExplorer (sidebar search), CommandPalette (Ctrl+P), and Breadcrumbs.
+ * Supports multi-word queries, keyword relevance, Fuse.js fuzzy matches,
  * and extracts clean markdown content previews around hits.
  */
 
 import { normalizeForMatching, matchesNormalized } from '../i18n'
 
-const STOP_WORDS = new Set([
+export interface SearchableNote {
+  id: string
+  title?: string
+  fileName?: string
+  code?: string
+  content?: string
+  body?: string
+  folderId?: string | null
+  relativePath?: string
+  tags?: string[] | string
+  timestamp?: number
+  isPinned?: boolean | string
+  [key: string]: any
+}
+
+export type MatchType = 'title' | 'content' | 'fuzzy'
+
+export interface MatchMeta {
+  matchType: MatchType
+  matchSnippet: string
+  score: number
+}
+
+export interface SearchTokens {
+  raw: string
+  tokens: string[]
+  significantTokens: string[]
+}
+
+export interface RankedItem<T extends SearchableNote = SearchableNote> {
+  matchType: MatchType
+  matchSnippet: string
+  score: number
+}
+
+export type ScoredNote<T extends SearchableNote = SearchableNote> = T & RankedItem<T>
+
+export interface RankResult<T extends SearchableNote = SearchableNote> {
+  results: ScoredNote<T>[]
+  fuseScoreMap: Map<string, number>
+  matchMetaMap: Map<string, MatchMeta>
+}
+
+export interface FuseLikeIndex<T = any> {
+  search: (query: string) => Array<{ item: T; score?: number }>
+}
+
+const STOP_WORDS = new Set<string>([
   'how',
   'the',
   'a',
@@ -62,15 +109,17 @@ const STOP_WORDS = new Set([
   'among'
 ])
 
-export function escapeRegExp(string) {
+export function escapeRegExp(string: string): string {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 /**
  * Get tokenized search info from a query string.
  */
-export function getSearchTokens(query) {
-  if (!query || !query.trim()) return { raw: '', tokens: [], significantTokens: [] }
+export function getSearchTokens(query: string | null | undefined): SearchTokens {
+  if (!query || !query.trim()) {
+    return { raw: '', tokens: [], significantTokens: [] }
+  }
   const raw = query.trim().toLowerCase()
   const tokens = raw.split(/\s+/).filter((w) => w.length > 1)
   const significantTokens = tokens.filter((w) => !STOP_WORDS.has(w))
@@ -84,7 +133,7 @@ export function getSearchTokens(query) {
 /**
  * Build a RegExp to highlight matched search terms across title/preview.
  */
-export function getHighlightRegex(query) {
+export function getHighlightRegex(query: string | null | undefined): RegExp | null {
   const { significantTokens, tokens } = getSearchTokens(query)
   const toHighlight = significantTokens.length > 0 ? significantTokens : tokens
   if (toHighlight.length === 0) return null
@@ -96,7 +145,7 @@ export function getHighlightRegex(query) {
 /**
  * Strip markdown syntax to produce clean plaintext for previews.
  */
-export function stripMarkdown(text) {
+export function stripMarkdown(text: string | null | undefined): string {
   if (!text) return ''
   return text
     .replace(/^---\n[\s\S]*?\n---\n/, '') // remove YAML frontmatter
@@ -109,19 +158,23 @@ export function stripMarkdown(text) {
 /**
  * Extract a clean preview snippet around the matched terms in body.
  */
-export function extractContentSnippet(body, rawQuery, significantTokens) {
+export function extractContentSnippet(
+  body: string | null | undefined,
+  rawQuery?: string,
+  significantTokens?: string[]
+): string {
   if (!body) return ''
   const lowerBody = body.toLowerCase()
 
   // 1. Try exact phrase match
-  let idx = rawQuery ? lowerBody.indexOf(rawQuery) : -1
+  let idx = rawQuery ? lowerBody.indexOf(rawQuery.toLowerCase()) : -1
   let hitTokenLength = rawQuery ? rawQuery.length : 0
 
   // 2. If no exact phrase match, find earliest significant token in body
   if (idx === -1 && significantTokens && significantTokens.length > 0) {
     let earliest = -1
     for (const token of significantTokens) {
-      const pos = lowerBody.indexOf(token)
+      const pos = lowerBody.indexOf(token.toLowerCase())
       if (pos !== -1 && (earliest === -1 || pos < earliest)) {
         earliest = pos
         hitTokenLength = token.length
@@ -147,20 +200,23 @@ export function extractContentSnippet(body, rawQuery, significantTokens) {
 /**
  * Score a single snippet against search tokens.
  */
-export function scoreSnippet(snippet, searchInfo, fuseScore = 1) {
+export function scoreSnippet(
+  snippet: SearchableNote,
+  searchInfo: string | SearchTokens,
+  fuseScore: number = 1
+): number {
   const { raw, significantTokens } =
     typeof searchInfo === 'string' ? getSearchTokens(searchInfo) : searchInfo
 
   if (!raw) return 0
 
   let score = 0
-  const title = (snippet.title || '').toLowerCase()
-  const body = (snippet.code || snippet.content || '').toLowerCase()
-  const folderId = (snippet.folderId || '').toLowerCase()
-  const fullText = `${title} ${folderId} ${body}`
+  const title = (snippet.title || snippet.fileName || '').toLowerCase()
+  const body = (snippet.code || snippet.content || snippet.body || '').toLowerCase()
+  const folderId = (snippet.folderId || snippet.relativePath || '').toLowerCase()
 
   const nRaw = normalizeForMatching(raw)
-  const nTitle = normalizeForMatching(snippet.title || '')
+  const nTitle = normalizeForMatching(snippet.title || snippet.fileName || '')
 
   // ── Title signals ──────────────────────────────────────────────────────────
   if (title === raw || (nTitle && nTitle === nRaw)) {
@@ -169,7 +225,7 @@ export function scoreSnippet(snippet, searchInfo, fuseScore = 1) {
     score += 90
   } else if (title.includes(raw) || (nTitle && nTitle.includes(nRaw))) {
     score += 70
-  } else if (matchesNormalized(snippet.title || '', raw)) {
+  } else if (matchesNormalized(snippet.title || snippet.fileName || '', raw)) {
     score += 55
   } else if (fuseScore < 1) {
     score += Math.round((1 - fuseScore) * 60)
@@ -215,6 +271,11 @@ export function scoreSnippet(snippet, searchInfo, fuseScore = 1) {
     score += count * 2
   }
 
+  // Folder path matches
+  if (folderId && (folderId.includes(raw) || significantTokens.some((t) => folderId.includes(t)))) {
+    score += 15
+  }
+
   // ── Recency bonus (0–25) ───────────────────────────────────────────────────
   if (snippet.timestamp) {
     const daysSince = (Date.now() - snippet.timestamp) / 86_400_000
@@ -227,41 +288,65 @@ export function scoreSnippet(snippet, searchInfo, fuseScore = 1) {
 /**
  * Filter + rank an array of snippets against a query.
  */
-export function rankSnippets(snippets, query, fuseIndex) {
+export function rankSnippets<T extends SearchableNote>(
+  snippets: T[],
+  query: string,
+  fuseIndex?: FuseLikeIndex<T>
+): RankResult<T> {
   const searchInfo = getSearchTokens(query)
   const { raw, significantTokens } = searchInfo
-  if (!raw) return { results: snippets, fuseScoreMap: new Map(), matchMetaMap: new Map() }
-
-  const fuseScoreMap = new Map()
-  if (fuseIndex) {
-    const fuseResults = fuseIndex.search(raw)
-    if (significantTokens.length > 0 && significantTokens.join(' ') !== raw) {
-      const moreResults = fuseIndex.search(significantTokens.join(' '))
-      moreResults.forEach((r) => {
-        if (!fuseScoreMap.has(r.item.id) || (r.score ?? 1) < fuseScoreMap.get(r.item.id)) {
-          fuseScoreMap.set(r.item.id, r.score ?? 1)
-        }
-      })
+  if (!raw) {
+    return {
+      results: snippets as ScoredNote<T>[],
+      fuseScoreMap: new Map<string, number>(),
+      matchMetaMap: new Map<string, MatchMeta>()
     }
-    fuseResults.forEach((r) => {
-      if (!fuseScoreMap.has(r.item.id) || (r.score ?? 1) < fuseScoreMap.get(r.item.id)) {
-        fuseScoreMap.set(r.item.id, r.score ?? 1)
-      }
-    })
   }
 
-  const matchMetaMap = new Map()
-  const scored = []
+  const fuseScoreMap = new Map<string, number>()
+  if (fuseIndex) {
+    try {
+      const fuseResults = fuseIndex.search(raw)
+      if (significantTokens.length > 0 && significantTokens.join(' ') !== raw) {
+        const moreResults = fuseIndex.search(significantTokens.join(' '))
+        moreResults.forEach((r) => {
+          if (r?.item?.id) {
+            const cur = fuseScoreMap.get(r.item.id)
+            const s = r.score ?? 1
+            if (cur === undefined || s < cur) {
+              fuseScoreMap.set(r.item.id, s)
+            }
+          }
+        })
+      }
+      fuseResults.forEach((r) => {
+        if (r?.item?.id) {
+          const cur = fuseScoreMap.get(r.item.id)
+          const s = r.score ?? 1
+          if (cur === undefined || s < cur) {
+            fuseScoreMap.set(r.item.id, s)
+          }
+        }
+      })
+    } catch {
+      // fuse error fallback
+    }
+  }
+
+  const matchMetaMap = new Map<string, MatchMeta>()
+  const scored: ScoredNote<T>[] = []
 
   snippets.forEach((snippet) => {
-    const title = (snippet.title || '').toLowerCase()
-    const body = (snippet.code || snippet.content || '').toLowerCase()
-    const folderId = (snippet.folderId || '').toLowerCase()
+    if (!snippet) return
+
+    const title = (snippet.title || snippet.fileName || '').toLowerCase()
+    const body = (snippet.code || snippet.content || snippet.body || '').toLowerCase()
+    const folderId = (snippet.folderId || snippet.relativePath || '').toLowerCase()
     const fullText = `${title} ${folderId} ${body}`
 
     const fuseScore = fuseScoreMap.get(snippet.id) ?? 1
     const hasFuseMatch = fuseScore < 1
-    const hasExactPhrase = raw && fullText.indexOf(raw) !== -1
+    const hasExactPhrase = Boolean(raw && fullText.indexOf(raw) !== -1)
     const matchingTokensCount = significantTokens.filter(
       (token) => fullText.indexOf(token) !== -1
     ).length
@@ -275,11 +360,12 @@ export function rankSnippets(snippets, query, fuseIndex) {
     if (score <= 0 && !hasFuseMatch) return
 
     const matchSnippet = extractContentSnippet(
-      snippet.code || snippet.content || '',
+      snippet.code || snippet.content || snippet.body || '',
       raw,
       significantTokens
     )
-    let matchType = 'content'
+
+    let matchType: MatchType = 'content'
     if (hasExactPhrase && title.indexOf(raw) !== -1) {
       matchType = 'title'
     } else if (
@@ -290,7 +376,7 @@ export function rankSnippets(snippets, query, fuseIndex) {
       matchType = 'title'
     }
 
-    const enriched = {
+    const enriched: ScoredNote<T> = {
       ...snippet,
       matchType,
       matchSnippet,

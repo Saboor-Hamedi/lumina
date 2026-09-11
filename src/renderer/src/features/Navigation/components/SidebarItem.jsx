@@ -448,10 +448,12 @@ const SidebarItem = ({
     )
   }
 
+  const hasSearchPreview = Boolean(matchSnippet && searchQuery?.trim())
+
   return (
     <div
       ref={dndProps?.setNodeRef}
-      className={`tree-item ${computedIsActive ? 'active' : ''} ${isDirty ? 'is-dirty' : ''}`}
+      className={`tree-item ${computedIsActive ? 'active' : ''} ${isDirty ? 'is-dirty' : ''} ${hasSearchPreview ? 'has-search-preview' : ''}`}
       onClick={(e) => {
         if (e.button !== 0) return
         if (!isRenaming && onClick) onClick(e)
@@ -527,13 +529,13 @@ const SidebarItem = ({
               {highlightText(snippet.title || 'Untitled', searchQuery)}
             </span>
           </ToolTip>
-          {matchSnippet && searchQuery?.trim() && (
+          {hasSearchPreview && (
             <span
               className="item-search-preview"
               style={{
-                fontSize: '10px',
-                color: 'var(--text-faint)',
-                opacity: 0.65,
+                fontSize: '11px',
+                color: 'var(--text-muted, #94a3b8)',
+                opacity: 0.8,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',

@@ -537,6 +537,44 @@
   max-width: 100%;
 }
 
+.tree-item.has-search-preview,
+.start-section .tree-item.has-search-preview {
+  height: auto !important;
+  min-height: 40px !important;
+  padding: 5px 8px !important;
+  align-items: flex-start !important;
+}
+
+.tree-item.has-search-preview .item-icon-wrap,
+.start-section .tree-item.has-search-preview .item-icon-wrap {
+  margin-top: 2px !important;
+}
+
+.tree-item.has-search-preview .item-meta-right,
+.start-section .tree-item.has-search-preview .item-meta-right {
+  margin-top: 2px !important;
+}
+
+.tree-item.has-search-preview .item-title-col,
+.start-section .tree-item.has-search-preview .item-title-col {
+  justify-content: flex-start !important;
+  gap: 2px !important;
+}
+
+.tree-item.has-search-preview .item-title,
+.start-section .tree-item.has-search-preview .item-title {
+  line-height: 1.3 !important;
+}
+
+.tree-item.has-search-preview .item-search-preview,
+.start-section .tree-item.has-search-preview .item-search-preview {
+  font-size: 11px !important;
+  color: var(--text-muted, #888899) !important;
+  opacity: 0.8 !important;
+  line-height: 1.3 !important;
+  margin-top: 1px !important;
+}
+
 .tree-item .folder-name,
 .start-section .tree-item .folder-name {
   flex: 1;

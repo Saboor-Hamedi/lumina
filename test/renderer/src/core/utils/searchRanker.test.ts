@@ -6,7 +6,9 @@ import {
   stripMarkdown,
   extractContentSnippet,
   scoreSnippet,
-  rankSnippets
+  rankSnippets,
+  type SearchableNote,
+  type ScoredNote
 } from '../../../../../src/renderer/src/core/utils/searchRanker'
 
 describe('searchRanker', () => {
@@ -63,14 +65,14 @@ describe('searchRanker', () => {
     it('builds regex from significant tokens', () => {
       const regex = getHighlightRegex('hello world')
       expect(regex).toBeInstanceOf(RegExp)
-      expect('hello').toMatch(regex)
-      expect('world').toMatch(regex)
+      expect('hello').toMatch(regex!)
+      expect('world').toMatch(regex!)
     })
 
     it('matches case-insensitively', () => {
       const regex = getHighlightRegex('Hello')
-      expect('hello').toMatch(regex)
-      expect('HELLO').toMatch(regex)
+      expect('hello').toMatch(regex!)
+      expect('HELLO').toMatch(regex!)
     })
   })
 
@@ -127,36 +129,36 @@ describe('searchRanker', () => {
 
   describe('scoreSnippet', () => {
     it('returns 0 for empty query', () => {
-      expect(scoreSnippet({ title: 'test' }, '')).toBe(0)
+      expect(scoreSnippet({ id: '1', title: 'test' }, '')).toBe(0)
     })
 
     it('scores exact title match highest', () => {
-      const snippet = { title: 'Exact Match', code: '' }
+      const snippet: SearchableNote = { id: '1', title: 'Exact Match', code: '' }
       const score = scoreSnippet(snippet, 'exact match')
       expect(score).toBeGreaterThanOrEqual(120)
     })
 
     it('scores title prefix match', () => {
-      const snippet = { title: 'Hello World', code: '' }
+      const snippet: SearchableNote = { id: '1', title: 'Hello World', code: '' }
       const score = scoreSnippet(snippet, 'hello')
       expect(score).toBeGreaterThanOrEqual(90)
     })
 
     it('gives keyword bonus for tokens in title', () => {
-      const snippet = { title: 'JavaScript Guide', code: '' }
+      const snippet: SearchableNote = { id: '1', title: 'JavaScript Guide', code: '' }
       const score = scoreSnippet(snippet, 'guide javascript')
       expect(score).toBeGreaterThanOrEqual(25)
     })
 
     it('scores body content matches', () => {
-      const snippet = { title: 'Note', code: 'This is about javascript programming' }
+      const snippet: SearchableNote = { id: '1', title: 'Note', code: 'This is about javascript programming' }
       const score = scoreSnippet(snippet, 'javascript')
       expect(score).toBeGreaterThan(0)
     })
 
     it('applies recency bonus for recent snippets', () => {
-      const recent = { title: 'Recent', code: '', timestamp: Date.now() }
-      const old = { title: 'Old', code: '', timestamp: Date.now() - 86400000 * 30 }
+      const recent: SearchableNote = { id: '1', title: 'Recent', code: '', timestamp: Date.now() }
+      const old: SearchableNote = { id: '2', title: 'Old', code: '', timestamp: Date.now() - 86400000 * 30 }
 
       const recentScore = scoreSnippet(recent, 'test')
       const oldScore = scoreSnippet(old, 'test')
@@ -165,20 +167,20 @@ describe('searchRanker', () => {
     })
 
     it('applies frequency bonus', () => {
-      const snippet = { title: 'Note', code: 'keyword '.repeat(5) }
+      const snippet: SearchableNote = { id: '1', title: 'Note', code: 'keyword '.repeat(5) }
       const score = scoreSnippet(snippet, 'keyword')
       expect(score).toBeGreaterThan(0)
     })
 
     it('uses content field when code is not present', () => {
-      const snippet = { title: 'Note', content: 'test content' }
+      const snippet: SearchableNote = { id: '1', title: 'Note', content: 'test content' }
       const score = scoreSnippet(snippet, 'test')
       expect(score).toBeGreaterThan(0)
     })
   })
 
   describe('rankSnippets', () => {
-    const snippets = [
+    const snippets: SearchableNote[] = [
       { id: '1', title: 'JavaScript Guide', code: 'Learn javascript programming', tags: 'js' },
       { id: '2', title: 'Python Tutorial', code: 'Learn python programming', tags: 'python' },
       { id: '3', title: 'React Notes', code: 'React component design patterns', tags: 'react' }
@@ -197,7 +199,7 @@ describe('searchRanker', () => {
 
     it('attaches matchType and matchSnippet to results', () => {
       const { results } = rankSnippets(snippets, 'javascript')
-      const match = results.find((r) => r.id === '1')
+      const match = results.find((r) => r.id === '1') as ScoredNote
       expect(match).toHaveProperty('matchType')
       expect(match).toHaveProperty('matchSnippet')
       expect(match).toHaveProperty('score')
