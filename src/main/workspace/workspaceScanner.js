@@ -77,6 +77,12 @@ export function safeParseFrontmatter(rawContent) {
           val !== 'false' &&
           val !== 'null' &&
           val !== '~' &&
+          val !== '>' &&
+          val !== '|' &&
+          val !== '>-' &&
+          val !== '|-' &&
+          val !== '>+' &&
+          val !== '|+' &&
           !/^-?\d+(\.\d+)?$/.test(val) &&
           !val.startsWith('[') &&
           !val.startsWith('{') &&
@@ -273,6 +279,16 @@ export class WorkspaceScanner {
                   .replace(/^"(.*)"$/, '$1')
                   .replace(/^'(.*)'$/, '$1')
                   .trim()
+                if (
+                  displayTitle === '>-' ||
+                  displayTitle === '>' ||
+                  displayTitle === '|' ||
+                  displayTitle === '|-' ||
+                  displayTitle === '-'
+                ) {
+                  const headingMatch = content.match(/^#+\s+(.+)$/m)
+                  displayTitle = headingMatch ? headingMatch[1].trim() : fileName.replace(/\.[^/.]+$/, '')
+                }
                 if (displayTitle) {
                   data.title = displayTitle
                 }

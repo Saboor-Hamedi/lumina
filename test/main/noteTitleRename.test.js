@@ -257,6 +257,48 @@ describe('WorkspaceOperations.saveSnippet — file renaming on title change', ()
     expect(savedContent).toContain('id: content-1')
     expect(savedContent).toContain('title: lumina')
   })
+
+  it('recovers real title from heading when raw title is >- or -', async () => {
+    const snippetsMap = new Map()
+    const snippet = {
+      id: 'recover-1',
+      title: '>-',
+      code: '# My Real AI Title\n\nSome body text',
+      language: 'markdown',
+      tags: ''
+    }
+
+    const result = await WorkspaceOperations.saveSnippet(
+      tmpDir, snippetsMap, new Set(), snippet, null
+    )
+
+    expect(result.title).toBe('My Real AI Title')
+    expect(result.fileName).toBe('My Real AI Title.md')
+    expect(await fileExists(path.join(tmpDir, 'My Real AI Title.md'))).toBe(true)
+  })
+
+  it('preserves user-edited title without mutating it back to -', async () => {
+    const snippetsMap = new Map()
+    const oldSnippet = {
+      id: 'user-edit-1',
+      title: '>-',
+      fileName: 'test.md',
+      code: 'some text',
+      language: 'markdown',
+      tags: ''
+    }
+    snippetsMap.set('user-edit-1', oldSnippet)
+
+    const updatedSnippet = { ...oldSnippet, title: 'My Custom Title' }
+
+    const result = await WorkspaceOperations.saveSnippet(
+      tmpDir, snippetsMap, new Set(), updatedSnippet, oldSnippet
+    )
+
+    expect(result.title).toBe('My Custom Title')
+    expect(result.fileName).toBe('My Custom Title.md')
+    expect(await fileExists(path.join(tmpDir, 'My Custom Title.md'))).toBe(true)
+  })
 })
 
 // ─── Section 2: Drive filename resolution (pure function) ───────────────────

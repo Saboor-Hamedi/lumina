@@ -8,28 +8,24 @@ import ToolTip from '../atoms/ToolTip'
 import './UpdateDetails.css'
 
 export const DEFAULT_RELEASE_NOTES = `New
-- Floating Card UI Mode: Added a "Modern UI" toggle directly inside the TitleBar Quick Controls dropdown. When enabled, all panels — left sidebar, editor, right sidebar, and status bar — float as distinct rounded cards with 5px uniform gaps on every side, giving the workspace a modern, breathing layout.
-- Quick Controls 3-Column Layout: Redesigned the Quick Controls section in the Accent Color menu into a sleek, symmetrical 3-column grid featuring small, clean labels for DevTools, Startup, and Modern UI.
-- Uniform 5px Gap System: Every edge of every card (top, bottom, left, right) now uses exactly 5px of space — outer shell padding, inter-panel resizer width, and the gap between the workspace card and the status bar dock are all precisely 5px for a perfectly consistent layout.
-- Floating Status Bar Dock: The status bar renders as a standalone rounded card (5px radius) floating at the bottom of the center column, fully separated from the editor — matching the visual language of the sidebar and workspace cards.
-- Aligned Top Header Row: The left sidebar header, tab bar, and right sidebar header are all locked to 32px height, ensuring a perfectly level top edge across all three columns regardless of content.
-- Sidebar Footer Gap: Added a clean 5px inner gap between the sidebar scrollable body and the profile footer card so the profile is visually separated and easy to click.
-- Draggable Modals & Position Memory: Theme and Icon Picker modals now feature zero-latency GPU-accelerated dragging via their header bars. Position is remembered across selections and actions without snapping back to center.
+- Rich Word/HTML Paste with Format Preservation: Pasting from Microsoft Word (Ctrl + V) now preserves tables, headings, bold/italic, images, table of contents, references, and figure captions — converting them seamlessly to clean Markdown.
+- Word Image Extraction: Images copied from Word documents are automatically saved to .lumina/assets/ and embedded inline. Supports VML (v:imagedata), standard img tags with file:/// paths, and system clipboard image buffer fallback.
+- Paste as Plain Text: Ctrl + Shift + V now pastes raw unformatted text, bypassing all HTML conversion — useful for pasting code snippets or raw content without any rich formatting.
+- Breadcrumbs Long-Title Truncation: Note titles of any length are now gracefully truncated in the breadcrumbs bar with ellipsis (…). Hovering reveals the full title. Scales responsively with the viewport (clamp 140px → 380px).
 
 Improved
-- Zero-Blur Crisp Modals: Removed disruptive backdrop filters from Theme and Icon modals in favor of clean, performant high-contrast dark backdrops for instant rendering and readability.
-- Tab Bar Top Border & Rounded Corners: The active tab border indicator now sits consistently on top in both Normal and Modern UI modes, and the first tab and tabbar container smoothly clip to the 5px rounded corners of the editor card.
-- Sidebar Footer Profile Card: The profile card in the sidebar footer is now 28px — matching the status bar height — so the entire bottom row of the app looks visually balanced. Removed conflicting inline height styles from Profile.jsx so CSS controls sizing cleanly across all render contexts.
-- 5px Border Radius Everywhere: All floating cards — left sidebar, right sidebar, center workspace, status bar, welcome cards, composer card, session sidebar — use a consistent 5px border radius. No more mismatched 6px or 8px values.
-- Status Bar Scrolling: The status bar now supports effortless horizontal scrolling (auto overflow with smooth scroll behavior and touch-action pan-x) so long status content is always accessible.
-- Panel Gap Precision: The sidebar drag resizer is exactly 5px wide with zero flex gap, making the visual separation between sidebar cards and the editor card a clean, predictable 5px slot.
-- Profile Card Radius Consistency: The profile footer card border radius is now 5px in all three CSS sources (profile.css, Sidebar.css, and the inline style in Profile.jsx) — no more competing values causing visual inconsistency.
+- Word Table Cell Cleaning: Table cells from Word paste are fully sanitized — no more raw <u>, <span>, <font>, or <br> tags leaking into Markdown tables. Names like Dr. Sajarwo Anggai., S.ST., M.T. paste correctly.
+- Figure Captions Preserved: Figure numbers, captions, and the text between figures are now correctly extracted. The non-greedy VML conditional comment regex was hardened to never bridge across multiple figures.
+- Table of Contents Formatting: Word TOC entries are converted to clean hierarchical Markdown lists (- and  -) with dot leaders stripped and tight vertical spacing.
+- References Auto-Linking: Plain text URLs in references sections are auto-detected and formatted as Markdown hyperlinks, keeping references tight and readable.
+- Paragraph Justification: Ragged mid-sentence line breaks from Word are normalized into continuous, smooth paragraphs.
+- Voice Dictation Shortcut: Moved to Shift + Alt + V to free Ctrl + Shift + V for plain-text paste. Updated everywhere: keyboard engine, settings panel, tooltip, and documentation.
+- Breadcrumbs Icon Stability: Breadcrumb icons now have flex-shrink: 0 and never collapse under layout pressure.
 
 Fixed
-- Tab Bar Corner Clipping: Fixed square edges on the first and last tabs by applying top-left and top-right 5px radii with overflow clipping across both Normal and Modern UI modes.
-- Sidebar Bottom Gap Mismatch: Removed explicit height: 100% from sidebar card rules that caused sidebars to overflow the flex padding zone, making the bottom gap larger than the top/left/right 5px gaps. Flex stretch now handles height naturally and all four sides are equal.
-- Status Bar Vertical Alignment: Removed a double-applied bottom padding (app-shell padding + shell-main padding) that pushed the status bar 10px from the window bottom instead of 5px, misaligning it with the sidebar card bottoms.
-- Profile Height Conflict: Resolved a three-way height conflict (profile.css: 34px, Sidebar.css: 42px, Profile.jsx inline: 34px) by unifying all sources to 28px, ensuring the footer card is consistent everywhere it renders.`
+- YAML Title Reversion Bug: Note titles containing YAML block scalar characters (>-, |, >, |+) no longer revert to - when renamed. safeParseFrontmatter correctly handles these as literal strings and sanitizeTitleForFilename preserves the raw title in frontmatter while only cleaning the disk filename.
+- Figure Text Deletion: The conditional VML comment regex previously used a greedy pattern that bridged across multiple figures, consuming all text and captions between Figure 1 and Figure 2. Fixed with a negative lookahead so each comment block terminates strictly at its own closing delimiter.
+- Jump Anchor Links in Paste: Internal Word anchor links (e.g. [1](#_Ref...)) that jumped to the next image are now flattened to clean plain text (1) with no clickable href.`
 
 /**
  * Simple, clean release notes parser for our Markdown release notes.

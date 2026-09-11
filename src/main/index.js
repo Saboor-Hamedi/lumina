@@ -337,6 +337,18 @@ app.whenReady().then(async () => {
       throw err
     }
   })
+  ipcMain.handle('clipboard:readImageBuffer', async () => {
+    try {
+      const img = clipboard.readImage()
+      if (img && !img.isEmpty()) {
+        return img.toPNG()
+      }
+      return null
+    } catch (err) {
+      console.error('[Main] Failed to read image from clipboard:', err)
+      return null
+    }
+  })
   ipcMain.handle('app:getVersion', () => app.getVersion()) // show the version
 
   ipcMain.handle('window:minimize', () => mainWindow?.minimize())
@@ -420,6 +432,46 @@ app.whenReady().then(async () => {
     return updatedSnippet
   })
   registerWorkspaceHandle('saveImage', (_, { buffer, name }) => WorkspaceManager.saveImage(buffer, name))
+  registerWorkspaceHandle('saveImageFromPath', async (_, { filePath, name }) => {
+    try {
+      if (!filePath) return null
+      let cleanPath = String(filePath).trim().replace(/^["']|["']$/g, '')
+      cleanPath = cleanPath.split('?')[0].split('#')[0]
+
+      if (/^file:\/\//i.test(cleanPath)) {
+        cleanPath = cleanPath.replace(/^file:\/\/(localhost\/)?/i, '')
+        try {
+          cleanPath = decodeURIComponent(cleanPath)
+        } catch (_) {}
+      }
+
+      if (/^[/\\][a-zA-Z]:/.test(cleanPath)) {
+        cleanPath = cleanPath.slice(1)
+      }
+
+      cleanPath = path.normalize(cleanPath)
+
+      try {
+        await fs.access(cleanPath)
+      } catch {
+        return null
+      }
+      const buffer = await fs.readFile(cleanPath)
+      let fileName = name || path.basename(cleanPath) || `Pasted image ${Date.now()}.png`
+      const ext = path.extname(fileName).toLowerCase()
+      if (!ext || ext === '.tmp') {
+        let detectedExt = '.png'
+        if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) detectedExt = '.jpg'
+        else if (buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46) detectedExt = '.gif'
+        else if (buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46) detectedExt = '.webp'
+        fileName = `${path.basename(fileName, ext)}${detectedExt}`
+      }
+      return await WorkspaceManager.saveImage(buffer, fileName)
+    } catch (err) {
+      console.error('[Main] saveImageFromPath error:', err)
+      return null
+    }
+  })
   registerWorkspaceHandle('saveWorkspaceImage', (_, { buffer, targetFolder, name }) =>
     WorkspaceManager.saveWorkspaceImage(buffer, targetFolder, name)
   )

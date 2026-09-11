@@ -85,7 +85,7 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
               }}
             >
               <Folder size={11.5} className="breadcrumb-icon" />
-              <span>{folder.name}</span>
+              <span className="breadcrumb-folder-text">{folder.name}</span>
             </button>
           </ToolTip>
           <span className="breadcrumb-separator" aria-hidden="true">
@@ -94,7 +94,14 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
         </React.Fragment>
       ))}
 
-      <ToolTip text={copied ? 'Copied to clipboard!' : 'Click to copy path'} position="bottom">
+      <ToolTip
+        text={
+          copied
+            ? 'Copied to clipboard!'
+            : `${currentSnippet.title || 'Untitled'} (Click to copy path)`
+        }
+        position="bottom"
+      >
         <button
           type="button"
           className={`breadcrumb-item active ${copied ? 'copied' : ''}`}
@@ -105,7 +112,7 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
           ) : (
             <FileText size={11.5} className="breadcrumb-icon" />
           )}
-          <span>{currentSnippet.title || 'Untitled'}</span>
+          <span className="breadcrumb-title-text">{currentSnippet.title || 'Untitled'}</span>
         </button>
       </ToolTip>
     </nav>

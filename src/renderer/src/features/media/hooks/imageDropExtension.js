@@ -1,6 +1,7 @@
 import { EditorView } from '@codemirror/view'
 import { useVaultStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
+import { htmlToMarkdown, applyRichPasteToView } from '../../Editor/utils/htmlToMarkdown'
 
 export const imageDropExtension = () =>
   EditorView.domEventHandlers({
@@ -84,6 +85,12 @@ export const imageDropExtension = () =>
     },
 
     paste(event, view) {
+      // 1. Shift key bypass: Ctrl+Shift+V / Cmd+Shift+V pastes as raw plain text
+      if (event.shiftKey) {
+        return false
+      }
+
+      // 2. Direct image file paste (e.g. copied image or screenshot from clipboard)
       const items = Array.from(event.clipboardData?.items || [])
       const fileFromItems = items
         .filter((it) => it.kind === 'file' && it.type.startsWith('image/'))
@@ -130,6 +137,18 @@ export const imageDropExtension = () =>
 
         return true
       }
+
+      // 3. Rich HTML / Word Paste: convert tables, formatting & extract images
+      const rawHtml = event.clipboardData?.getData('text/html')
+      if (rawHtml && rawHtml.trim()) {
+        event.preventDefault()
+        event.stopPropagation()
+
+        const rawText = event.clipboardData?.getData('text/plain') || ''
+        applyRichPasteToView(view, rawHtml, rawText)
+        return true
+      }
+
       return false
     }
   })

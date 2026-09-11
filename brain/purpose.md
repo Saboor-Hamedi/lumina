@@ -594,5 +594,31 @@ Sidebars previously shrank/compressed their content when dragged inward. The tar
 - **Infinite Spatial Canvas Multi-Script Support (`CanvasNodeCard.tsx` & `canvas.css`)**:
   - Added `dir="auto"` to note card title inputs, title spans, markdown preview containers, and inline editing textareas with matching `[dir="rtl"]` alignment and 1.65 line-height.
 
+### U. Rich Word/HTML Paste Engine (`htmlToMarkdown.js`)
+- **Paste with Formatting (`Ctrl + V`)**: Converts HTML/Word clipboard content into clean Markdown — tables, headings, bold/italic, TOC, references, and figure captions.
+- **Paste as Plain Text (`Ctrl + Shift + V`)**: Bypasses all HTML conversion and inserts raw unformatted text. Voice dictation moved to `Shift + Alt + V`.
+- **Word Image Extraction**: Detects `<v:imagedata>`, `<img src="file:///...">`, and `<base href="...">` in Word HTML. Local image paths are copied from Windows temp (`%LOCALAPPDATA%\Temp\msohtmlclip1\...`) into `.lumina/assets/` via secure IPC (`window.api.saveImageFromPath`), with system clipboard buffer as fallback.
+- **VML Conditional Comment Regex Hardening**: Replaced greedy `[\s\S]*?` with a negative lookahead `(?:(?!<![endif]-->)[\s\S])*?` so VML blocks terminate strictly at their own closing `<![endif]-->` without bridging across multiple figures and consuming inter-figure text.
+- **`<v:textbox>` Caption Preservation**: VML textbox content (figure captions inside drawing shapes) is unwrapped before comment stripping so captions are preserved.
+- **Jump Anchor Elimination**: Internal Word `href="#_Ref..."` anchor links are flattened to plain text, preventing `[1](#_Ref...)` clickable jumps in pasted content.
+- **Table Cell Sanitization**: Strips `<u>`, `<span>`, `<font>`, `<br>` from table cells so names like `<u>Dr. Sajarwo Anggai., S.ST., M.T.</u>` paste as clean plain text.
+- **TOC & Reference Formatting**: Word TOC dot leaders stripped, hierarchical indent levels preserved. Plain text URLs in references auto-linked as `[url](url)`.
+- **Paragraph Justification**: Ragged mid-sentence line breaks from Word normalized into continuous sentences.
+- **Unit Tests**: 28 passing tests in `test/renderer/src/features/Editor/utils/htmlToMarkdown.test.js`.
 
+### V. YAML Title Reversion Fix (`workspaceScanner.js` & `workspaceOperations.js`)
+- **Root Cause**: `safeParseFrontmatter` in `workspaceScanner.js` wrapped `title: >-` in quotes (`title: ">-"`), mistaking YAML block scalar indicators for literal values. `sanitizeTitleForFilename` then stripped `>` as an invalid Windows filename character, leaving `-`, which was written back into the frontmatter.
+- **Fix in `workspaceScanner.js`**: Excluded YAML block scalars (`>`, `|`, `>-`, `|-`, `>+`, `|+`) from the quote-wrapping logic. Added fallback recovery for corrupted `>-`, `>`, `|`, `-` titles using `# Heading` or filename.
+- **Fix in `workspaceOperations.js`**: Sanitized only the disk `fileName` while preserving `rawTitle` in frontmatter `title` field. Added automatic title recovery from `# Heading` when title is a YAML indicator artifact.
+- **Unit Tests**: 27 passing tests in `test/main/noteTitleRename.test.js`.
 
+### W. Breadcrumbs Long-Title Truncation (`Breadcrumbs.jsx` & `Breadcrumbs.css`)
+- **Problem**: Note titles of 80+ words stretched the breadcrumbs bar beyond the screen with no truncation.
+- **Fix**:
+  - Folder `<span>` elements capped at `max-width: 140px` with `text-overflow: ellipsis; overflow: hidden; white-space: nowrap`.
+  - Active note title `<span className="breadcrumb-title-text">` limited to `max-width: clamp(140px, 32vw, 380px)` — scales responsively with the viewport.
+  - Active `.breadcrumb-item` gains `flex-shrink: 1; min-width: 0` to compress gracefully under layout pressure.
+  - `.breadcrumb-icon` gets `flex-shrink: 0` so icons never collapse.
+  - Tooltip on the active note shows the full title + *(Click to copy path)* on hover.
+- **Unit Tests**: 3 passing tests including a new 80-word-title case in `test/renderer/src/features/Breadcrumbs/Breadcrumbs.test.jsx`.
+- **Full Suite**: 96 test files · 818 tests · 0 failures.

@@ -36,4 +36,24 @@ describe('Breadcrumbs Component', () => {
 
     expect(writeTextMock).toHaveBeenCalledWith('src/documentation')
   })
+
+  it('handles extremely long titles (80 words) with proper title text class and copy path', () => {
+    const longTitle = Array(80).fill('word').join(' ')
+    const longSnippet = { id: 's1', title: longTitle, folderId: 'f1' }
+
+    const writeTextMock = vi.fn()
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: writeTextMock
+      }
+    })
+
+    const { container } = render(<Breadcrumbs snippet={longSnippet} />)
+    const titleSpan = container.querySelector('.breadcrumb-title-text')
+    expect(titleSpan).toBeDefined()
+    expect(titleSpan.textContent).toBe(longTitle)
+
+    fireEvent.click(titleSpan.closest('button'))
+    expect(writeTextMock).toHaveBeenCalledWith(`src/${longTitle}`)
+  })
 })

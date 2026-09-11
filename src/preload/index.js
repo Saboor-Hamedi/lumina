@@ -16,6 +16,8 @@ const api = {
   getSnippets: () => electronAPI.ipcRenderer.invoke('workspace:getSnippets'),
   saveSnippet: (snippet) => electronAPI.ipcRenderer.invoke('workspace:saveSnippet', snippet),
   saveImage: (buffer, name) => electronAPI.ipcRenderer.invoke('workspace:saveImage', { buffer, name }),
+  saveImageFromPath: (filePath, name) =>
+    electronAPI.ipcRenderer.invoke('workspace:saveImageFromPath', { filePath, name }),
   saveWorkspaceImage: (buffer, targetFolder, name) =>
     electronAPI.ipcRenderer.invoke('workspace:saveWorkspaceImage', { buffer, targetFolder, name }),
   saveVaultImage: (buffer, targetFolder, name) =>
@@ -25,6 +27,8 @@ const api = {
   readAsset: (relativePath) => electronAPI.ipcRenderer.invoke('workspace:readAsset', relativePath),
   writeImageToClipboard: (dataUrl) =>
     electronAPI.ipcRenderer.invoke('clipboard:writeImage', dataUrl),
+  readClipboardImageBuffer: () =>
+    electronAPI.ipcRenderer.invoke('clipboard:readImageBuffer'),
   cleanOrphans: () => electronAPI.ipcRenderer.invoke('workspace:cleanOrphans'),
   openWorkspaceFolder: (relativePath) =>
     electronAPI.ipcRenderer.invoke('workspace:open-folder', relativePath),

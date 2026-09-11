@@ -78,7 +78,7 @@ export const VoiceButton = ({
     ? 'Stop recording'
     : isThisTranscribing
       ? 'Transcribing audio with Groq...'
-      : 'Voice Dictation'
+      : 'Voice Dictation (Shift+Alt+V)'
 
   return (
     <div style={{ display: 'inline-flex', alignItems: 'center' }}>

@@ -252,8 +252,8 @@ export const useKeyboardShortcuts = (shortcuts) => {
         }
       }
 
-      // Voice Dictation (Whisper / Groq): Ctrl+Shift+V
-      if (isCmd && e.shiftKey && key === 'v') {
+      // Voice Dictation (Whisper / Groq): Shift+Alt+V
+      if (e.altKey && e.shiftKey && key === 'v') {
         e.preventDefault()
         e.stopPropagation()
         if (e.repeat) return
@@ -301,7 +301,8 @@ export const SHORTCUT_DISPLAY_GROUPS = [
       { label: 'Quick Search', key: 'Ctrl + P' },
       { label: 'Global Search', key: 'Ctrl + Shift + F' },
       { label: 'Toggle Theme', key: 'Ctrl + T' },
-      { label: 'AI Chat', key: 'Ctrl + Shift + \\' }
+      { label: 'AI Chat', key: 'Ctrl + Shift + \\' },
+      { label: 'Voice Dictation', key: 'Shift + Alt + V' }
     ]
   },
   {
@@ -329,6 +330,10 @@ export const SHORTCUT_DISPLAY_GROUPS = [
   },
   {
     title: 'Editor',
-    items: [{ label: 'Inline AI', key: 'Ctrl + K' }]
+    items: [
+      { label: 'Inline AI', key: 'Ctrl + K' },
+      { label: 'Paste with Formatting', key: 'Ctrl + V' },
+      { label: 'Paste as Plain Text', key: 'Ctrl + Shift + V' }
+    ]
   }
 ]

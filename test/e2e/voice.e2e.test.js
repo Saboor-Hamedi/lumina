@@ -41,7 +41,7 @@ test('renders voice capsule with dynamic waveform when recording is activated', 
   })
 
   // Dispatch toggle event
-  await page.keyboard.press('Control+Shift+V')
+  await page.keyboard.press('Alt+Shift+V')
   await page.waitForTimeout(300)
 
   // Verify app remains responsive without crashes

@@ -89,7 +89,29 @@ export class WorkspaceOperations {
       return updated
     }
 
-    const rawTitle = (snippet.title || '').trim()
+    let cleanCode = snippet.code || ''
+    if (/^---\r?\n/.test(cleanCode)) {
+      cleanCode = cleanCode.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '')
+    }
+
+    let rawTitle = (snippet.title || '').trim()
+    if (
+      rawTitle === '>-' ||
+      rawTitle === '>' ||
+      rawTitle === '|' ||
+      rawTitle === '|-' ||
+      rawTitle === '-'
+    ) {
+      const headingMatch = cleanCode.match(/^#+\s+(.+)$/m)
+      if (headingMatch && headingMatch[1].trim()) {
+        rawTitle = headingMatch[1].trim()
+      } else if (snippet.fileName) {
+        rawTitle = path.basename(snippet.fileName, path.extname(snippet.fileName))
+      } else {
+        rawTitle = 'Untitled'
+      }
+    }
+
     const cleanedTitle = this.sanitizeTitleForFilename(rawTitle)
 
     const rawExt = path.extname(snippet.fileName || (oldSnippet?.fileName || ''))
@@ -186,17 +208,12 @@ export class WorkspaceOperations {
       ? Date.now()
       : oldSnippet?.timestamp || snippet.timestamp || Date.now()
 
-    let cleanCode = snippet.code || ''
-    if (/^---\r?\n/.test(cleanCode)) {
-      cleanCode = cleanCode.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '')
-    }
-
     let fileContent = ''
     if (isMarkdown) {
       try {
         fileContent = matter.stringify(cleanCode, {
           id: snippet.id,
-          title: cleanedTitle,
+          title: rawTitle || cleanedTitle,
           language: snippet.language || 'markdown',
           tags: snippet.tags || '',
           selection: snippet.selection || null,
@@ -206,7 +223,7 @@ export class WorkspaceOperations {
           timestamp: newTimestamp
         })
       } catch (strErr) {
-        const safeTitle = JSON.stringify(cleanedTitle || '')
+        const safeTitle = JSON.stringify(rawTitle || cleanedTitle || '')
         fileContent = `---\nid: ${snippet.id}\ntitle: ${safeTitle}\nlanguage: ${snippet.language || 'markdown'}\ntags: ${JSON.stringify(snippet.tags || '')}\nisPinned: ${!!snippet.isPinned}\nisLearned: ${!!snippet.isLearned}\ntimestamp: ${newTimestamp}\n---\n\n${cleanCode}`
       }
     } else {
@@ -229,7 +246,7 @@ export class WorkspaceOperations {
 
     const updatedSnippet = {
       ...snippet,
-      title: isMarkdown || isCanvas ? cleanedTitle : newFileName,
+      title: isMarkdown || isCanvas ? (rawTitle || cleanedTitle) : newFileName,
       timestamp: newTimestamp,
       fileName: newFileName,
       folderId: relativeFolder,

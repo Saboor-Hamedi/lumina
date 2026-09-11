@@ -45,6 +45,16 @@
   border: none;
   text-decoration: none;
   flex-shrink: 0;
+  min-width: 0;
+}
+
+.breadcrumb-item span {
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+  max-width: 140px;
 }
 
 .breadcrumb-item:hover {
@@ -55,6 +65,13 @@
 .breadcrumb-item.active {
   color: var(--text-main, #f8fafc);
   font-weight: 500;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.breadcrumb-item.active span,
+.breadcrumb-item .breadcrumb-title-text {
+  max-width: clamp(140px, 32vw, 380px);
 }
 
 .breadcrumb-item.copied {
@@ -73,4 +90,5 @@
 
 .breadcrumb-icon {
   opacity: 0.75;
+  flex-shrink: 0;
 }

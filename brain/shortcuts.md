@@ -30,6 +30,9 @@ Lumina is designed to be highly keyboard-accessible. Here is a comprehensive lis
 | `Tab` | Indent line / list item |
 | `Shift + Tab` | Unindent line / list item |
 | `Alt + Up / Down` | Move current line up / down |
+| `Ctrl + V` | **Paste with Formatting** — preserves Word tables, headings, images |
+| `Ctrl + Shift + V` | **Paste as Plain Text** — strips all formatting |
+| `Shift + Alt + V` | **Voice Dictation** — toggle speech-to-text recording |
 
 ---
 
@@ -38,7 +41,7 @@ Lumina is designed to be highly keyboard-accessible. Here is a comprehensive lis
 | Shortcut | Action |
 |----------|--------|
 | `Ctrl + G` | Open Knowledge Graph |
-| `Ctrl + \` / `Ctrl + Shift + V` | Toggle Markdown Preview |
+| `Ctrl + \` | Toggle Markdown Preview |
 | `Ctrl + B` | Toggle Sidebar visibility |
 | `Ctrl + Tab` | Switch to Next Tab |
 | `Ctrl + Shift + Tab` | Switch to Previous Tab |

@@ -44,7 +44,7 @@ class VoiceService {
         this.toggleDictation(e?.detail?.target)
       })
 
-      // Track cursor focus so Ctrl+Shift+V automatically knows where to type
+      // Track cursor focus so Shift+Alt+V automatically knows where to type
       document.addEventListener('focusin', (e) => {
         if (e.target?.closest?.('.composer-container, .composer-textarea, .lumina-chat') || e.target?.classList?.contains('composer-textarea')) {
           window.__luminaLastVoiceTarget = 'composer-voice'

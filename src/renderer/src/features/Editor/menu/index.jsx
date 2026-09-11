@@ -15,7 +15,7 @@ import { toggleMark, clearFormatting } from './formatActions'
 import { togglePrefix } from './paragraphActions'
 import { toggleQuoteMark } from '../hooks/useQuote'
 import { insertSnippet } from './insertActions'
-import { selectAll, cutText, copyText, pastePlainText } from './clipboardActions'
+import { selectAll, cutText, copyText, pastePlainText, pasteRichText } from './clipboardActions'
 
 export const getEditorContextMenuOptions = (view) => {
   const selectedText = view ? view.state.sliceDoc(view.state.selection.main.from, view.state.selection.main.to) : ''
@@ -102,7 +102,7 @@ export const getEditorContextMenuOptions = (view) => {
     { divider: true },
     { id: 'cut', label: 'Cut', icon: <Scissors size={14} />, shortcut: '⌘X', action: () => cutText() },
     { id: 'copy', label: 'Copy', icon: <Copy size={14} />, shortcut: '⌘C', action: () => copyText() },
-    { id: 'paste', label: 'Paste', icon: <ClipboardPaste size={14} />, shortcut: '⌘V', action: () => pastePlainText(view) },
+    { id: 'paste', label: 'Paste', icon: <ClipboardPaste size={14} />, shortcut: '⌘V', action: () => pasteRichText(view) },
     { id: 'paste-plain', label: 'Paste as plain text', icon: <ClipboardType size={14} />, shortcut: '⇧⌘V', action: () => pastePlainText(view) },
     { divider: true },
     { id: 'select-all', label: 'Select all', icon: <MousePointerSquareDashed size={14} />, shortcut: '⌘A', action: () => selectAll(view) }
