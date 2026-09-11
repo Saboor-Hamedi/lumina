@@ -96,7 +96,7 @@ export const Composer = ({ onSend, onStop, onCancel, isLoading = false, isSideba
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             placeholder={isSidebar ? "Ask AI... ('@', '/')" : "Ask Lumina AI... ('@' note, '/' cmd)"}
-            rows={1}
+            rows={isSidebar ? 3 : 1}
             disabled={isLoading}
             spellCheck="false"
             autoComplete="off"

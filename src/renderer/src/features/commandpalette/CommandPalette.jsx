@@ -265,21 +265,13 @@ const CommandPalette = React.memo(
     const { mentions } = useMention()
 
     useKeyboardShortcuts({
-      onEscape: null
+      onEscape: isOpen
+        ? () => {
+            onClose()
+            return true
+          }
+        : null
     })
-
-    useEffect(() => {
-      if (!isOpen) return
-      const handler = (e) => {
-        if (e.key === 'Escape') {
-          e.preventDefault()
-          e.stopPropagation()
-          onClose()
-        }
-      }
-      window.addEventListener('keydown', handler, { capture: true })
-      return () => window.removeEventListener('keydown', handler, { capture: true })
-    }, [isOpen, onClose])
 
     useEffect(() => {
       if (isOpen) {
@@ -614,6 +606,8 @@ const CommandPalette = React.memo(
           onClose()
         }
       } else if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
         onClose()
       }
     }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { FileText, FolderOpen, Loader } from 'lucide-react'
+import { FileText, Loader } from 'lucide-react'
+import { PDFToolbar } from './PDFToolbar'
 import './css/pdfViewerTab.css'
 
 /**
@@ -133,23 +134,8 @@ export const PDFViewerTab = ({ snippet }) => {
     openFn?.(relFolder)
   }, [snippet?.folderId])
 
-  const formatFileSize = (bytes) => {
-    if (!bytes) return ''
-    if (bytes < 1024) return `${bytes} B`
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-  }
-
   return (
     <div className="pdf-viewer-container">
-      {/* Top-right info badges — file size and extension */}
-      <div className="pdf-viewer-header-info">
-        {snippet?.size && (
-          <span className="pdf-viewer-badge">{formatFileSize(snippet.size)}</span>
-        )}
-        <span className="pdf-viewer-badge uppercase">PDF</span>
-      </div>
-
       {/* Loading state (only shown on initial first fetch) */}
       {loading && (
         <div className="pdf-viewer-loading">
@@ -175,16 +161,8 @@ export const PDFViewerTab = ({ snippet }) => {
         />
       )}
 
-      {/* Floating toolbar — open in folder button */}
-      <div className="pdf-viewer-toolbar">
-        <button
-          className="pdf-viewer-btn"
-          title="Open Containing Folder"
-          onClick={handleOpenInFolder}
-        >
-          <FolderOpen size={14} />
-        </button>
-      </div>
+      {/* Floating toolbar — open/close expandable panel */}
+      <PDFToolbar snippet={snippet} onOpenInFolder={handleOpenInFolder} />
     </div>
   )
 }

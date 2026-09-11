@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import AppShell from './features/Layout/AppShell'
+import MainLayout from './features/Layout/MainLayout'
 import TitleBar from './features/Layout/TitleBar'
 import { useTheme } from './features/theme/hooks/useTheme'
 import { applyTheme } from './features/theme/hooks/themeDefinitions'
@@ -43,7 +43,7 @@ function App() {
       >
         <TitleBar />
         <GlobalErrorHandler>
-          <AppShell />
+          <MainLayout />
         </GlobalErrorHandler>
       </div>
     </GlobalErrorHandler>

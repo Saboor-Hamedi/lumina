@@ -24,6 +24,9 @@ export const RightSidebar = React.memo(({
   useKeyboardShortcuts({
     onEscape: isRightSidebarOpen
       ? () => {
+          if (document.querySelector('.command-palette-overlay, .command-palette-container, .modal-overlay')) {
+            return false
+          }
           setIsRightSidebarOpen(false)
           return true
         }

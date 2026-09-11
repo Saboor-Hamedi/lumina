@@ -375,3 +375,40 @@ export function LicenseSettingsTab() {
    * Reddit (`r/indonesia`, `r/productivity`)
    * LinkedIn (Indonesian tech and developer networks)
    * Discord / Telegram productivity groups.
+
+---
+
+## 10. UI & Experience Polish Roadmap
+
+A consolidated wishlist and backlog of candidate polish tasks across Lumina's interface and workflows:
+
+### 1. Media & Viewer Experience (Following PDF Viewer Tab)
+* **`ImageViewerTab.jsx` alignment**:
+  * Adopt the extracted floating collapsible toolbar pattern (similar to `PDFToolbar.jsx`).
+  * Replace hardcoded rgba values with theme tokens (`var(--bg-sidebar)`, `var(--border-dim)`, `var(--text-muted)`).
+  * Add zoom presets (25%, 50%, 100%, 200%) and smooth pinch-to-zoom gestures.
+* **PDF Navigation & Enhancements**:
+  * Add page jump/quick-info indicator inside the toolbar.
+  * Add an "Open in Default System Viewer" action alongside the current "Open Containing Folder".
+
+### 2. Modern UI & Theme Consistency
+* **Modal Consistency**:
+  * Audit modals (`Settings`, `Theme`, `Confirm`, `PromptModal`) in Modern UI mode (`[data-modern-ui='true']`).
+  * Ensure uniform `5px` border radius, consistent glassmorphic blur, and padding hierarchy across all dialogs.
+* **Status Bar & TabBar Transitions**:
+  * Polish tab hover effects and horizontal scroll behavior when 15+ tabs are open.
+  * Align right-click tab context menu styling and borders with Modern UI tokens.
+
+### 3. AI Chat & Right Sidebar Polish
+* **Composer Interaction Details**:
+  * Add quick slash command autocomplete popup inside the sidebar composer (`/summarize`, `/explain`, `/fix`).
+  * Add a clear message history button or session switcher right from the sidebar header.
+* **Smooth Resizing & Min-Width Enforcements**:
+  * Ensure the right sidebar transition between tabs (`details` ↔ `outline` ↔ `chat`) is seamless with zero layout flicker or content jump.
+
+### 4. Keyboard Shortcuts & Command Palette
+* **Search Recents & History**:
+  * Keep track of recently opened files in the Command Palette so pressing `Ctrl+P` immediately surfaces the last 3–5 visited notes before typing.
+* **Action Mode Polish**:
+  * When typing `>`, group all available shortcuts, tabs, and workspace commands with clean category badges.
+

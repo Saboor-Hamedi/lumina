@@ -1,9 +1,40 @@
-import React, { useState } from 'react'
-import { Copy, Check, X, Sparkles, FileText } from 'lucide-react'
+import React, { useState, useCallback } from 'react'
+import { Copy, Check, X, FileText } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
+import { Composer } from '../AI/Composer'
+import { useAIStore } from '../AI/tools/lumina'
 
 export const RightSidebarFooter = ({ selectedSnippet, rightSidebarTab, onClose }) => {
   const [copied, setCopied] = useState(false)
+  const sendChatMessage = useAIStore((state) => state.sendChatMessage)
+  const isChatLoading = useAIStore((state) => state.isChatLoading)
+  const cancelChat = useAIStore((state) => state.cancelChat)
+
+  const handleSendMessage = useCallback(
+    async (text, mode = 'Standard', attachedMentions = []) => {
+      if (!text.trim() && attachedMentions.length === 0) return
+
+      try {
+        const contextSnippets = []
+        const addedIds = new Set()
+
+        if (attachedMentions.length > 0) {
+          attachedMentions.forEach((snippet) => {
+            contextSnippets.push(snippet)
+            addedIds.add(snippet.id)
+          })
+        } else if (selectedSnippet && !addedIds.has(selectedSnippet.id)) {
+          contextSnippets.push(selectedSnippet)
+          addedIds.add(selectedSnippet.id)
+        }
+
+        await sendChatMessage(text, contextSnippets, mode, attachedMentions)
+      } catch (err) {
+        console.error('Error sending message:', err)
+      }
+    },
+    [selectedSnippet, sendChatMessage]
+  )
 
   const wordCount = selectedSnippet?.code
     ? selectedSnippet.code.trim().split(/\s+/).filter(Boolean).length
@@ -17,17 +48,24 @@ export const RightSidebarFooter = ({ selectedSnippet, rightSidebarTab, onClose }
     setTimeout(() => setCopied(false), 1500)
   }
 
+  if (rightSidebarTab === 'chat') {
+    return (
+      <div className="inspector-footer-section is-chat-composer">
+        <Composer
+          isSidebar={true}
+          onSend={handleSendMessage}
+          isLoading={isChatLoading}
+          onStop={cancelChat}
+          onCancel={cancelChat}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="inspector-footer-section">
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
-        {rightSidebarTab === 'chat' ? (
-          <>
-            <Sparkles size={12} style={{ color: 'var(--text-accent)', flexShrink: 0 }} />
-            <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-muted)' }}>
-              Lumina AI
-            </span>
-          </>
-        ) : selectedSnippet ? (
+        {selectedSnippet ? (
           <>
             <FileText size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
             <span
@@ -51,7 +89,7 @@ export const RightSidebarFooter = ({ selectedSnippet, rightSidebarTab, onClose }
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-        {selectedSnippet?.code && rightSidebarTab !== 'chat' && (
+        {selectedSnippet?.code && (
           <ToolTip text={copied ? 'Copied!' : 'Copy Markdown'} position="top">
             <button
               className="inspector-footer-btn"

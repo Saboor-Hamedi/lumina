@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 
 /**
  * Hook for managing Composer textarea resizing, focus shortcuts, and lifecycle.
@@ -8,20 +8,20 @@ export const useComposerTextarea = ({ input, isSidebar, isLoading }) => {
   const prevIsLoading = useRef(isLoading)
 
   // Auto-resize textarea based on content
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = textareaRef.current
     if (!el) return
 
+    const minH = isSidebar ? 84 : 52
+    const maxH = isSidebar ? 260 : 220
+
     if (!input || !input.trim()) {
-      const minH = 48
       el.style.height = `${minH}px`
       el.style.overflowY = 'hidden'
       return
     }
 
-    el.style.height = '0px'
-    const minH = 48
-    const maxH = isSidebar ? 150 : 180
+    el.style.height = `${minH}px`
     const newHeight = Math.min(Math.max(el.scrollHeight, minH), maxH)
     el.style.height = `${newHeight}px`
     el.style.overflowY = el.scrollHeight > maxH ? 'auto' : 'hidden'

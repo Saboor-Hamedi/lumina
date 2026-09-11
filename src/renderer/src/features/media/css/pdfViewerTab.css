@@ -53,15 +53,43 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 8px;
-  background: rgba(24, 24, 27, 0.85);
+  padding: 4px 6px;
+  background: var(--bg-sidebar, var(--bg-panel, #181d27));
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 2px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.1));
+  border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
   z-index: 20;
   pointer-events: all;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pdf-viewer-toolbar.collapsed {
+  padding: 4px 4px;
+  gap: 0;
+}
+
+.pdf-viewer-toolbar-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  animation: pdfToolbarFadeIn 0.18s ease-out;
+}
+
+@keyframes pdfToolbarFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+[data-modern-ui='true'] .pdf-viewer-toolbar {
+  border-radius: 5px;
 }
 
 .pdf-viewer-btn {
@@ -72,44 +100,37 @@
   height: 28px;
   background: transparent;
   border: none;
-  border-radius: 2px;
+  border-radius: 4px;
   color: var(--text-muted, #94a3b8);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
+[data-modern-ui='true'] .pdf-viewer-btn {
+  border-radius: 5px;
+}
+
 .pdf-viewer-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-active, rgba(255, 255, 255, 0.08));
   color: var(--text-main, #ffffff);
 }
 
-/* Info badges — file size, page count, extension */
-.pdf-viewer-header-info {
-  position: absolute;
-  top: 14px;
-  right: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  z-index: 10;
-  pointer-events: none;
-}
-
 .pdf-viewer-badge {
-  padding: 0;
-  font-size: 10px;
+  padding: 0 4px;
+  font-size: 11px;
   font-weight: 500;
-  color: var(--text-faint, #64748b);
+  color: var(--text-muted, #94a3b8);
   background: transparent;
   border: none;
   letter-spacing: 0.03em;
-  opacity: 0.85;
+  line-height: 1;
+  user-select: none;
 }
 
 .pdf-viewer-divider {
   width: 1px;
   height: 14px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--border-dim, rgba(255, 255, 255, 0.12));
   margin: 0 2px;
 }
 

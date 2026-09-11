@@ -1,3 +1,13 @@
+/**
+ * mainlayout.css
+ * 
+ * Stylesheet for Lumina's 3-Pane Main Layout & Workspace Structure.
+ * - .app-shell: Master flex column container
+ * - .shell-body: Horizontal flex container dividing Left Sidebar, Resizers, Center Workspace, and Right Sidebar
+ * - .sidebar-resizer: Curtain split-pane draggable separator handles
+ * - [data-modern-ui="true"]: Modern floating card design with 5px radius & 5px spacing gaps
+ */
+
 .app-shell {
   display: flex;
   flex-direction: column;

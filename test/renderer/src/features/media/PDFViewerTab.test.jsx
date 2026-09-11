@@ -83,4 +83,31 @@ describe('PDFViewerTab Component', () => {
 
     expect(openFolderMock).toHaveBeenCalledWith('research')
   })
+
+  it('toggles toolbar open and close on toggle button click', () => {
+    const snippet = {
+      id: 'pdf-toggle',
+      title: 'document.pdf',
+      fileName: 'document.pdf',
+      relativePath: 'document.pdf',
+      type: 'pdf',
+      size: 1024
+    }
+
+    render(<PDFViewerTab snippet={snippet} />)
+
+    expect(screen.getByText('PDF')).toBeInTheDocument()
+    expect(screen.getByTitle('Open Containing Folder')).toBeInTheDocument()
+
+    const toggleBtn = screen.getByTitle('Collapse toolbar')
+    fireEvent.click(toggleBtn)
+
+    expect(screen.queryByText('PDF')).not.toBeInTheDocument()
+    expect(screen.queryByTitle('Open Containing Folder')).not.toBeInTheDocument()
+    expect(screen.getByTitle('Expand toolbar')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByTitle('Expand toolbar'))
+    expect(screen.getByText('PDF')).toBeInTheDocument()
+    expect(screen.getByTitle('Open Containing Folder')).toBeInTheDocument()
+  })
 })

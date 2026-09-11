@@ -1,114 +1,46 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import Editor from '../Editor/Editor'
-import Settings from '../Settings/Settings'
+/**
+ * MainLayout.jsx
+ * 
+ * Core 3-Pane Application Shell & Workspace Orchestrator for Lumina.
+ * 
+ * Architecture & Responsibilities:
+ * - Left Pane: Collapsible Navigation Sidebar (Vault file tree, tags, quick actions, settings).
+ * - Center Pane: 
+ *     - TabBar: Multi-tab management (reorder, close, pin, preview, new tab).
+ *     - Breadcrumbs: File path hierarchy navigation and quick rename.
+ *     - TabContentPane: Mounted pane routing (Markdown Editor, Canvas, PDF, Image, or Welcome).
+ *     - StatusBar: Document metadata, word counts, sync state, and zoom controls.
+ * - Right Pane: Collapsible Inspector Sidebar (Document outline, backlinks, AI assistant).
+ * - Modals Layer: Offloaded to AppModals to maintain rendering isolation.
+ * - Resizing: Curtain drag resizers with double-click reset and snap-to-close behavior.
+ */
+
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import Sidebar from '../Navigation/Sidebar'
-import Theme from '../theme/Theme'
-import CommandPalette from '../commandpalette/CommandPalette'
-import Documentation from '../Docs/Documentation'
-import Graph from '../Graph/Graph'
 import Welcome from '../../Welcome'
 import TabBar from './TabBar'
-import { ImageViewerTab, PDFViewerTab } from '../media'
-import { CanvasTabPane } from '../canvas'
+import TabContentPane from './TabContentPane'
+import AppModals from './AppModals'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useVaultStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
 import { useToast } from '../../core/hooks/useToast'
-import ToastNotification from '../../core/notification'
-import Confirm from '../modals/Confirm'
-import Rename from '../modals/Rename'
-import Guide from '../modals/Guide'
-import IconPicker from '../Icons/IconPicker'
-import { handleRenameSnippet } from '../../core/hooks/handleRenameSnippet'
 import { populateStarterWorkspace } from '../../core/utils/starterWorkspace'
 import GlobalErrorHandler from '../../components/GlobalErrorHandler'
-import '../../assets/appshell.css'
+import '../../assets/mainlayout.css'
 import '../modals/css/confirm.css'
 import '../modals/css/renameModal.css'
-import { VoiceCapsule } from '../voice'
 
-const LuminaChat = React.lazy(() => import('../AI/Lumina'))
-import { useAIStore } from '../AI/tools/lumina'
 import { useTypingSound } from '../../core/hooks/useTypingSound'
 import { useShallow } from 'zustand/react/shallow'
-import { X, Maximize2, Trash2, History, Bot, Info, MessageSquare } from 'lucide-react'
 
 import RightSidebar from '../Inspector/RightSidebar'
 import Breadcrumbs from '../Breadcrumbs'
-import Indexing from '../../components/Indexing'
 import StatusBar from './StatusBar'
 import { useSidebarResize } from './useSidebarResize'
 
-/**
- * TabContentPane — Memoized pane wrapper for open tabs.
- * Ensures switching tabs only updates the active and previous tabs,
- * preventing unnecessary background editor/viewer re-renders.
- */
-const TabContentPane = React.memo(
-  ({
-    snippet,
-    isSelected,
-    onSave,
-    onToggleInspector,
-    onToggleExplorerModal,
-    onSettingsClick,
-    onThemeClick,
-    onGraphClick
-  }) => {
-    if (!snippet) return null
-
-    return (
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          opacity: isSelected ? 1 : 0,
-          pointerEvents: isSelected ? 'auto' : 'none',
-          visibility: isSelected ? 'visible' : 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          zIndex: isSelected ? 10 : 1
-        }}
-      >
-        <GlobalErrorHandler>
-          {snippet.type === 'image' ? (
-            <ImageViewerTab snippet={snippet} />
-          ) : snippet.type === 'pdf' ? (
-            <PDFViewerTab snippet={snippet} />
-          ) : snippet.type === 'canvas' || snippet.language === 'canvas' || snippet.fileName?.endsWith('.canvas') ? (
-            <CanvasTabPane snippet={snippet} onSave={onSave} isSelected={isSelected} />
-          ) : (
-            <Editor
-              snippet={snippet}
-              onSave={onSave}
-              onToggleInspector={onToggleInspector}
-              isActive={isSelected}
-              onToggleExplorerModal={onToggleExplorerModal}
-              onSettingsClick={onSettingsClick}
-              onThemeClick={onThemeClick}
-              onGraphClick={onGraphClick}
-            />
-          )}
-        </GlobalErrorHandler>
-      </div>
-    )
-  }
-)
-
-/**
- * AppShell Component
- * Main application shell that manages the overall layout, sidebars, modals, and state.
- * Handles three-pane layout (left sidebar, main content, right sidebar), keyboard shortcuts,
- * sidebar resizing, and modal management.
- *
- * @returns {JSX.Element} The main application shell component
- */
-const AppShell = () => {
+export const MainLayout = () => {
   const {
     snippets,
     selectedSnippet,
@@ -187,16 +119,11 @@ const AppShell = () => {
   })
   const [rightSidebarTab, setRightSidebarTab] = useState('details')
   const [renameModal, setRenameModal] = useState({ isOpen: false, item: null, newName: '' })
-  /**
-   * Stores the right sidebar state (open/closed and width) when AI chat modal is opened.
-   * Used to restore the sidebar to its previous state when the modal is closed.
-   * @type {Object|null} { isOpen: boolean, width: number } | null
-   */
   const [savedRightSidebarState, setSavedRightSidebarState] = useState(null)
-  const appShellRef = React.useRef(null)
+  const appShellRef = useRef(null)
 
-  const isLeftSidebarOpenRef = React.useRef(isLeftSidebarOpen)
-  const isRightSidebarOpenRef = React.useRef(isRightSidebarOpen)
+  const isLeftSidebarOpenRef = useRef(isLeftSidebarOpen)
+  const isRightSidebarOpenRef = useRef(isRightSidebarOpen)
 
   useEffect(() => {
     isLeftSidebarOpenRef.current = isLeftSidebarOpen
@@ -259,11 +186,22 @@ const AppShell = () => {
     updateRightSidebarOpen(false)
   }, [updateRightSidebarOpen])
 
-  // Deletion State
+  const handleToggleInspector = useCallback(() => {
+    if (!isRightSidebarOpenRef.current) {
+      setRightSidebarTab('details')
+      updateRightSidebarOpen(true)
+    } else {
+      if (rightSidebarTab !== 'details') {
+        setRightSidebarTab('details')
+      } else {
+        updateRightSidebarOpen(false)
+      }
+    }
+  }, [rightSidebarTab, updateRightSidebarOpen])
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [snippetToDelete, setSnippetToDelete] = useState(null)
 
-  // High-performance sidebar resizing engine extracted to useSidebarResize
   const {
     leftWidth,
     rightWidth,
@@ -279,17 +217,7 @@ const AppShell = () => {
     handleCloseRightSidebar
   })
 
-  // Initialize vault & settings on mount
-  // Initialize vault & settings on mount
-  /**
-   * Initialize application on mount.
-   * Restores saved settings, vault state, tabs, and sidebar configurations.
-   */
   useEffect(() => {
-    /**
-     * Initializes the application state from persisted settings.
-     * @returns {Promise<void>}
-     */
     const initApp = async () => {
       try {
         await Promise.all([
@@ -383,36 +311,33 @@ const AppShell = () => {
           setRightWidth(clampedRight)
         }
       } catch (err) {
-        console.error('AppShell initApp error:', err)
+        console.error('MainLayout initApp error:', err)
       }
     }
 
     initApp()
 
-    // Start listening for updates
     const unsub = useUpdateStore.getState().init()
 
-    // Listen for details modal open event from EditorTitleBar
     const handleOpenDetailsModal = () => {
       setRightSidebarTab('details')
       updateRightSidebarOpen(true)
     }
     window.addEventListener('open-details-modal', handleOpenDetailsModal)
 
-    // Listen for AI settings shortcut from Composer
     const handleOpenAISettings = () => {
       setSettingsInitialTab('ai')
       setShowSettings(true)
     }
     window.addEventListener('open-ai-settings', handleOpenAISettings)
 
-    // Listen for Guide modal open event
     const handleOpenGuide = () => {
       setShowGuideModal(true)
     }
     window.addEventListener('open-guide', handleOpenGuide)
 
-    // Listen for Global Shortcut from Main Process
+    window.addEventListener('toggle-inspector', handleToggleInspector)
+
     let cleanupGlobalShortcut = null
     if (window.api?.onToggleCommandPalette) {
       cleanupGlobalShortcut = window.api.onToggleCommandPalette(() => {
@@ -425,11 +350,11 @@ const AppShell = () => {
       window.removeEventListener('open-details-modal', handleOpenDetailsModal)
       window.removeEventListener('open-ai-settings', handleOpenAISettings)
       window.removeEventListener('open-guide', handleOpenGuide)
+      window.removeEventListener('toggle-inspector', handleToggleInspector)
       if (cleanupGlobalShortcut) cleanupGlobalShortcut()
     }
-  }, [updateRightSidebarOpen])
+  }, [updateRightSidebarOpen, handleToggleInspector])
 
-  // Listen for external vault updates
   useEffect(() => {
     if (window.api?.onVaultUpdated) {
       const cleanup = window.api.onVaultUpdated(() => {
@@ -441,15 +366,11 @@ const AppShell = () => {
 
   const pinnedTabIds = useVaultStore((state) => state.pinnedTabIds)
 
-
-
-  // Ctrl+R - rename selected folder or note
   useEffect(() => {
     const handleRenameShortcut = (e) => {
       const key = e.key && e.key.toLowerCase()
-      // Make sure we only catch standard Ctrl+R without shift/alt to allow other shortcuts
       if ((e.ctrlKey || e.metaKey) && key === 'r' && !e.shiftKey && !e.altKey) {
-        e.preventDefault() // prevent browser reload
+        e.preventDefault()
         const currentSelectedFolder = useVaultStore.getState().selectedFolder
         if (currentSelectedFolder) {
           const folderName = currentSelectedFolder.split('/').pop()
@@ -473,12 +394,10 @@ const AppShell = () => {
     return () => window.removeEventListener('keydown', handleRenameShortcut)
   }, [selectedSnippet, showToast])
 
-  // Close sidebar automatically only when crossing the 700px threshold downwards
   useEffect(() => {
     let wasLarge = window.innerWidth > 700
     const handleResize = () => {
       const isLarge = window.innerWidth > 700
-      // If we just shrank from large to small, close the sidebar
       if (wasLarge && !isLarge) {
         updateLeftSidebarOpen(false)
       }
@@ -488,35 +407,11 @@ const AppShell = () => {
     return () => window.removeEventListener('resize', handleResize)
   }, [updateLeftSidebarOpen])
 
-  // Trigger AI Indexing when snippets change (Background)
-  // Note: Vault indexing is handled automatically by main process on vault selection/save
-  // This effect is disabled to prevent passing invalid vaultPath
-  // useEffect(() => {
-  //   if (snippets.length > 0) {
-  //     // Vault indexing is handled by main process automatically
-  //     // Don't call indexVault here as it requires a valid vaultPath string
-  //   }
-  // }, [snippets])
-
-  // Close Inspector when switching to Graph
   useEffect(() => {
     if (activeTab === 'graph') {
       updateRightSidebarOpen(false)
     }
   }, [activeTab, updateRightSidebarOpen])
-
-  const handleToggleInspector = useCallback(() => {
-    if (!isRightSidebarOpenRef.current) {
-      setRightSidebarTab('details')
-      updateRightSidebarOpen(true)
-    } else {
-      if (rightSidebarTab !== 'details') {
-        setRightSidebarTab('details')
-      } else {
-        updateRightSidebarOpen(false)
-      }
-    }
-  }, [rightSidebarTab, updateRightSidebarOpen])
 
   useKeyboardShortcuts({
     onGlobalSearch: () => {
@@ -546,7 +441,6 @@ const AppShell = () => {
       try {
         if (!window.api?.openFile) return
         const file = await window.api.openFile()
-        // file.content can be an empty string, so check typeof
         if (file && typeof file.content === 'string') {
           const newSnippet = {
             id: Date.now().toString(),
@@ -605,6 +499,9 @@ const AppShell = () => {
         return true
       }
       if (isRightSidebarOpen) {
+        if (showPalette || document.querySelector('.command-palette-overlay, .command-palette-container, .modal-overlay')) {
+          return false
+        }
         updateRightSidebarOpen(false)
         return true
       }
@@ -636,7 +533,7 @@ const AppShell = () => {
       if (window.api?.closeWindow) {
         window.api.closeWindow()
       } else {
-        console.error('[AppShell] Close window API not available')
+        console.error('[MainLayout] Close window API not available')
       }
     },
     onNextTab: () => {
@@ -662,10 +559,6 @@ const AppShell = () => {
     }
   })
 
-  /**
-   * Creates a new note snippet and selects it.
-   * @returns {Promise<void>}
-   */
   const handleNew = async () => {
     try {
       const newSnippet = {
@@ -684,22 +577,18 @@ const AppShell = () => {
         window.dispatchEvent(new CustomEvent('focus-title-input'))
       }, 50)
     } catch (error) {
-      console.error('[AppShell] Failed to create new note:', error)
+      console.error('[MainLayout] Failed to create new note:', error)
       showToast('Failed to create note. Please try again.', 'error')
     }
   }
 
-  /**
-   * Confirms and executes the deletion of a snippet.
-   * @returns {Promise<void>}
-   */
   const handleConfirmDelete = async () => {
     if (snippetToDelete) {
       try {
         await useVaultStore.getState().deleteSnippet(snippetToDelete.id, true)
         setSnippetToDelete(null)
       } catch (error) {
-        console.error('[AppShell] Failed to delete snippet:', error)
+        console.error('[MainLayout] Failed to delete snippet:', error)
         showToast('Failed to delete note. Please try again.', 'error')
       }
     }
@@ -714,7 +603,7 @@ const AppShell = () => {
         setActiveTab('files')
       }
     } catch (error) {
-      console.error('[AppShell] Failed to populate starter workspace:', error)
+      console.error('[MainLayout] Failed to populate starter workspace:', error)
       showToast('Failed to load starter notes', 'error')
     }
   }, [saveSnippet, setSelectedSnippet, setActiveTab, showToast])
@@ -939,155 +828,51 @@ const AppShell = () => {
           setShowSettings(true)
         }}
       />
-      {showSettings && (
-        <Settings
-          onClose={() => {
-            setShowSettings(false)
-            setSettingsInitialTab('look-and-feel') // Reset to default
-          }}
-          onOpenTheme={() => {
-            setShowSettings(false)
-            setShowThemeModal(true)
-          }}
-          initialTab={settingsInitialTab}
-        />
-      )}
-      {showThemeModal && (
-        <Theme isOpen={showThemeModal} onClose={() => setShowThemeModal(false)} />
-      )}
-      {showAIChatModal && (
-        <GlobalErrorHandler>
-          <React.Suspense fallback={null}>
-            <LuminaChat
-              isOpen={showAIChatModal}
-              onClose={() => {
-                setShowAIChatModal(false)
-                setSavedRightSidebarState(null)
-              }}
-              onDock={() => {
-                setShowAIChatModal(false)
-                useSettingsStore.getState().updateSetting('aiChatDisplayMode', 'sidebar')
-                setRightSidebarTab('chat')
-                updateRightSidebarOpen(true)
-              }}
-              onUnfloat={() => {
-                setShowAIChatModal(false)
-                useSettingsStore.getState().updateSetting('aiChatDisplayMode', 'sidebar')
-                setRightSidebarTab('chat')
-                updateRightSidebarOpen(true)
-              }}
-            />
-          </React.Suspense>
-        </GlobalErrorHandler>
-      )}
-      <CommandPalette
-        isOpen={showPalette}
-        initialQuery={paletteInitialQuery}
-        onClose={() => setShowPalette(false)}
-        items={snippets}
-        onSelect={(snippet) => {
-          setSelectedSnippet(snippet)
-          setActiveTab('files')
-        }}
-        onNew={handleNew}
-        onToggleSettings={(tab) => {
-          setSettingsInitialTab(tab || 'look-and-feel')
-          setShowSettings(true)
-        }}
-        onToggleGraph={() => setShowGraph(true)}
-        onToggleChat={() => setShowAIChatModal(true)}
-        onToggleDocs={() => setShowDocsModal(true)}
-        onRename={() => {
-          if (selectedSnippet) {
-            setRenameModal({ isOpen: true, item: selectedSnippet, newName: selectedSnippet.title })
-          }
-        }}
+
+      <AppModals
+        showSettings={showSettings}
+        setShowSettings={setShowSettings}
+        settingsInitialTab={settingsInitialTab}
+        setSettingsInitialTab={setSettingsInitialTab}
+        showThemeModal={showThemeModal}
+        setShowThemeModal={setShowThemeModal}
+        showAIChatModal={showAIChatModal}
+        setShowAIChatModal={setShowAIChatModal}
+        setSavedRightSidebarState={setSavedRightSidebarState}
+        setRightSidebarTab={setRightSidebarTab}
+        updateRightSidebarOpen={updateRightSidebarOpen}
+        showPalette={showPalette}
+        setShowPalette={setShowPalette}
+        paletteInitialQuery={paletteInitialQuery}
+        snippets={snippets}
+        selectedSnippet={selectedSnippet}
+        setSelectedSnippet={setSelectedSnippet}
+        setActiveTab={setActiveTab}
+        handleNew={handleNew}
+        renameModal={renameModal}
+        setRenameModal={setRenameModal}
+        showGraph={showGraph}
+        setShowGraph={setShowGraph}
+        showDocsModal={showDocsModal}
+        setShowDocsModal={setShowDocsModal}
+        showGuideModal={showGuideModal}
+        setShowGuideModal={setShowGuideModal}
+        handleLoadStarterWorkspace={handleLoadStarterWorkspace}
+        showDeleteConfirm={showDeleteConfirm}
+        setShowDeleteConfirm={setShowDeleteConfirm}
+        snippetToDelete={snippetToDelete}
+        handleConfirmDelete={handleConfirmDelete}
+        saveSnippet={saveSnippet}
+        loadVault={loadVault}
+        showToast={showToast}
+        showActiveIconPicker={showActiveIconPicker}
+        setShowActiveIconPicker={setShowActiveIconPicker}
+        activeTabId={activeTabId}
+        toast={toast}
+        clearToast={clearToast}
       />
-      {/* Graph Modal */}
-      {showGraph && (
-        <GlobalErrorHandler>
-          <Graph
-            isOpen={showGraph}
-            onClose={() => setShowGraph(false)}
-            onNavigate={(snippet) => {
-              setSelectedSnippet(snippet)
-              setActiveTab('files')
-              setShowGraph(false)
-            }}
-          />
-        </GlobalErrorHandler>
-      )}
-      {showDocsModal && (
-        <Documentation isOpen={showDocsModal} onClose={() => setShowDocsModal(false)} />
-      )}
-      <Guide
-        isOpen={showGuideModal}
-        onClose={() => setShowGuideModal(false)}
-        onLoadStarterNotes={handleLoadStarterWorkspace}
-        onOpenDocs={() => setShowDocsModal(true)}
-      />
-      {showDeleteConfirm && (
-        <Confirm
-          isOpen={showDeleteConfirm}
-          onClose={() => setShowDeleteConfirm(false)}
-          onConfirm={handleConfirmDelete}
-          title="Delete Note?"
-          message={`Are you sure you want to delete "${snippetToDelete?.title || 'this note'}"? This cannot be undone.`}
-        />
-      )}
-      <Rename
-        isOpen={renameModal.isOpen}
-        initialName={renameModal.newName}
-        itemType={renameModal.item?.type === 'folder' ? 'folder' : 'note'}
-        onClose={() => setRenameModal({ isOpen: false, item: null, newName: '' })}
-        onRename={async (newName) => {
-          if (renameModal.item?.type === 'folder') {
-            const folderId = renameModal.item.id
-            const parentPath = folderId.includes('/')
-              ? folderId.substring(0, folderId.lastIndexOf('/'))
-              : ''
-            const newFolderPath = parentPath ? `${parentPath}/${newName}` : newName
-            if (newFolderPath !== folderId) {
-              try {
-                await window.api.renameFolder(folderId, newFolderPath)
-                useVaultStore.getState().setSelectedFolder(newFolderPath)
-                await loadVault()
-              } catch (err) {
-                console.error('Failed to rename folder:', err)
-                showToast('❌ Failed to rename folder', 'error')
-              }
-            }
-            setRenameModal({ isOpen: false, item: null, newName: '' })
-          } else {
-            handleRenameSnippet({
-              renameModal: { ...renameModal, newName },
-              saveSnippet,
-              setSelectedSnippet,
-              setRenameModal,
-              setIsCreatingSnippet: () => {},
-              showToast
-            })
-          }
-        }}
-      />
-      {showActiveIconPicker && (
-        <IconPicker
-          isOpen={showActiveIconPicker}
-          onClose={() => setShowActiveIconPicker(false)}
-          currentIcon={(selectedSnippet || snippets.find((s) => s.id === activeTabId))?.customIcon}
-          onSelect={(iconName) => {
-            const active = selectedSnippet || snippets.find((s) => s.id === activeTabId)
-            if (active) {
-              saveSnippet({ ...active, customIcon: iconName })
-            }
-          }}
-        />
-      )}
-      <ToastNotification toast={toast} onClose={clearToast} />
-      <Indexing />
-      <VoiceCapsule />
     </div>
   )
 }
 
-export default AppShell
+export default MainLayout

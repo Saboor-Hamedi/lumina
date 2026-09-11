@@ -30,7 +30,7 @@
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
-  overflow: visible;
+  overflow: hidden !important;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -41,7 +41,7 @@
   background: transparent !important;
   border: none !important;
   border-radius: 0;
-  overflow: visible;
+  overflow: hidden !important;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -118,7 +118,7 @@
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
-  overflow: visible;
+  overflow: hidden !important;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -129,7 +129,7 @@
   background: transparent !important;
   border: none !important;
   border-radius: 0;
-  overflow: visible;
+  overflow: hidden !important;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -188,6 +188,61 @@
   justify-content: space-between;
   padding: 0 8px;
   flex-shrink: 0;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer {
+  height: auto !important;
+  min-height: 116px !important;
+  max-height: 300px !important;
+  border-radius: 5px !important;
+  border: 1px solid var(--border-dim) !important;
+  background: var(--bg-sidebar) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18) !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: visible !important;
+  flex-shrink: 0 !important;
+  width: 100% !important;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer .composer-container {
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer .composer-card,
+[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer .composer-card:focus-within {
+  border: none !important;
+  border-radius: 5px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer .composer-input-area-wrapper {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer .composer-textarea {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  flex: 1 !important;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer:focus-within {
+  outline: none !important;
 }
 
 [data-modern-ui='true'] .shell-sidebar-right .inspector-footer-btn {

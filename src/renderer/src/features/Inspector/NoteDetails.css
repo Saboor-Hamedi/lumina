@@ -372,6 +372,59 @@
   flex-shrink: 0;
 }
 
+.inspector-footer-section.is-chat-composer {
+  height: auto !important;
+  min-height: 116px !important;
+  max-height: 300px !important;
+  padding: 0 !important;
+  background: var(--bg-sidebar) !important;
+  border-top: 1px solid var(--border-dim) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: visible !important;
+  flex-shrink: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.inspector-footer-section.is-chat-composer .composer-container {
+  padding: 0 !important;
+  border-top: none !important;
+  background: transparent !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.inspector-footer-section.is-chat-composer .composer-card,
+.inspector-footer-section.is-chat-composer .composer-card:focus-within {
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+}
+
+.inspector-footer-section.is-chat-composer .composer-input-area-wrapper {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+}
+
+.inspector-footer-section.is-chat-composer .composer-textarea {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  flex: 1 !important;
+}
+
+.inspector-footer-section.is-chat-composer:focus-within {
+  outline: none !important;
+}
+
 .inspector-footer-btn {
   display: flex;
   align-items: center;
