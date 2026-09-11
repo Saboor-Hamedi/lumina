@@ -21,7 +21,7 @@ import PerformancePanel from './PerformancePanel'
 import { buildGraphData, buildSemanticLinks } from '../../core/utils/graphBuilder'
 import { forceRadial, forceManyBody, forceCollide, forceCenter, forceX, forceY } from 'd3-force'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
-import ModalHeader from '../modals/ModalHeader'
+import ToolTip from '../../components/atoms/ToolTip'
 import GraphThemeSelector from './GraphThemeSelector'
 import GraphSidebar from './GraphSidebar'
 import GraphMiniMap from './GraphMiniMap'
@@ -88,8 +88,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   const containerRef = useRef()
   const [isEngineReady, setIsEngineReady] = useState(false)
   const [dimensions, setDimensions] = useState({
-    width: embedded ? 800 : window.innerWidth * 0.95,
-    height: embedded ? 600 : window.innerHeight * 0.92
+    width: embedded ? 800 : Math.min(900, typeof window !== 'undefined' ? window.innerWidth * 0.94 : 900),
+    height: embedded ? 600 : Math.min(typeof window !== 'undefined' ? window.innerHeight * 0.76 : 600, typeof window !== 'undefined' ? window.innerHeight * 0.78 : 600)
   })
 
   const handleToggleMaximize = useCallback(() => {
@@ -178,35 +178,35 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
         }
   })
 
-  // Handle Resize - different logic for embedded vs modal
+  // Handle Resize - dynamic measurement for both embedded and modal
   useEffect(() => {
-    if (embedded) {
-      // For embedded mode, use container dimensions
-      const updateDimensions = () => {
-        if (containerRef.current) {
-          const rect = containerRef.current.getBoundingClientRect()
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect()
+        if (rect.width > 0 && rect.height > 0) {
           setDimensions({
             width: rect.width,
             height: rect.height
           })
+          return
         }
       }
-      updateDimensions()
-      const resizeObserver = new ResizeObserver(updateDimensions)
-      if (containerRef.current) {
-        resizeObserver.observe(containerRef.current)
-      }
-      return () => resizeObserver.disconnect()
-    } else {
-      const handleResize = () => {
+      if (!embedded) {
         setDimensions({
-          width: isMaximized ? window.innerWidth : window.innerWidth * 0.95,
-          height: isMaximized ? window.innerHeight : window.innerHeight * 0.92
+          width: isMaximized ? window.innerWidth : Math.min(900, window.innerWidth * 0.94),
+          height: isMaximized ? window.innerHeight : Math.min(Math.max(480, window.innerHeight * 0.76), window.innerHeight * 0.78)
         })
       }
-      handleResize()
-      window.addEventListener('resize', handleResize)
-      return () => window.removeEventListener('resize', handleResize)
+    }
+    updateDimensions()
+    const resizeObserver = new ResizeObserver(updateDimensions)
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current)
+    }
+    window.addEventListener('resize', updateDimensions)
+    return () => {
+      resizeObserver.disconnect()
+      window.removeEventListener('resize', updateDimensions)
     }
   }, [embedded, isMaximized])
 
@@ -659,60 +659,95 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   const container = (
     <div
       ref={containerRef}
-      className={`nexus-container${isMaximized ? ' maximized' : ''}`}
+      className={`nexus-container modal-container${isMaximized ? ' maximized' : ''}`}
       onClick={(e) => e.stopPropagation()}
       data-graph-theme={graphTheme}
       style={{
         flexDirection: 'column',
+        width: isMaximized ? '100vw' : '900px',
+        height: isMaximized ? '100vh' : '76vh',
+        maxWidth: isMaximized ? 'none' : '94vw',
+        minHeight: isMaximized ? 'none' : '480px',
+        maxHeight: isMaximized ? 'none' : '78vh',
         transform: isMaximized
           ? 'none'
           : `translate3d(${modalPos.current.x}px, ${modalPos.current.y}px, 0)`,
+        transition: '0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+        boxShadow: '0 30px 60px rgba(0, 0, 0, 0.6)',
+        overflow: 'hidden',
+        borderRadius: isMaximized ? '0' : '12px',
         position: 'relative',
         willChange: 'transform'
       }}
     >
-      <ModalHeader
-        title=""
-        onClose={onClose}
+      <div
+        data-testid="modal-header"
+        className="graph-modal-header"
         onMouseDown={handleModalHeaderMouseDown}
         style={{ cursor: isMaximized ? 'default' : 'grab' }}
-        left={
-          <button
-            className="win-btn"
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation()
-              handleToggleSidebar(e)
-              e.currentTarget.blur()
-            }}
-            title={graphSidebarOpen ? 'Close Sidebar' : 'Open Sidebar'}
-            style={{ marginLeft: '-10px' }}
-          >
-            {graphSidebarOpen ? (
-              <PanelLeftClose size={12} strokeWidth={2} />
-            ) : (
-              <PanelLeftOpen size={12} strokeWidth={2} />
-            )}
-          </button>
-        }
-        right={
-          <button
-            className="win-btn"
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation()
-              handleToggleMaximize()
-            }}
-            title={isMaximized ? 'Restore' : 'Maximize'}
-          >
-            {isMaximized ? (
-              <Copy size={12} strokeWidth={2} />
-            ) : (
-              <Square size={12} strokeWidth={2} />
-            )}
-          </button>
-        }
-      />
+      >
+        <div className="graph-header-left">
+          <ToolTip text={graphSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'} position="bottom">
+            <button
+              className="graph-sidebar-toggle-btn"
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleToggleSidebar(e)
+                e.currentTarget.blur()
+              }}
+              aria-label={graphSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
+            >
+              {graphSidebarOpen ? (
+                <PanelLeftClose size={15} strokeWidth={2} />
+              ) : (
+                <PanelLeftOpen size={15} strokeWidth={2} />
+              )}
+            </button>
+          </ToolTip>
+          <span className="graph-header-title">
+            Graph View
+          </span>
+          <span className="graph-header-divider">/</span>
+          <span className="graph-header-subtitle">
+            {is3DMode ? '3D Cosmos' : '2D Nexus'}
+          </span>
+          <span className="graph-step-counter">
+            {rawGraphData.nodes.length} nodes
+          </span>
+        </div>
+
+        <div className="graph-header-right">
+          <ToolTip text={isMaximized ? 'Restore Window' : 'Maximize Window'} position="bottom">
+            <button
+              className="graph-window-btn"
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleToggleMaximize()
+              }}
+              aria-label={isMaximized ? 'Restore Window' : 'Maximize Window'}
+            >
+              {isMaximized ? (
+                <Copy size={13} strokeWidth={2} />
+              ) : (
+                <Square size={13} strokeWidth={2} />
+              )}
+            </button>
+          </ToolTip>
+          <ToolTip text="Close (Esc)" position="bottom">
+            <button
+              className="graph-close-btn"
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={onClose}
+              aria-label="Close"
+            >
+              <span className="sr-only" style={{ display: 'none' }}>Close</span>
+              <X size={17} />
+            </button>
+          </ToolTip>
+        </div>
+      </div>
 
       <div className="nexus-main" style={{ position: 'relative', flex: 1, overflow: 'hidden' }}>
         <PerformancePanel onRecenter={handleRecenter} />

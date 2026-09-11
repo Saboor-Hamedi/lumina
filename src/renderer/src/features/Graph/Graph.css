@@ -5,7 +5,7 @@
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.85);
-  z-index: 9999;
+  z-index: 10005 !important;
   animation: nexusFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -14,17 +14,120 @@
   to { opacity: 1; }
 }
 
-/* Nexus Container */
+/* Nexus / Graph Modal Container */
 .nexus-container {
-  width: 95vw;
-  height: 92vh;
-  background: var(--bg-primary) !important;
-  border: 1px solid var(--border-color);
-  border-radius: 5px;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 900px !important;
+  height: 76vh !important;
+  max-width: 94vw !important;
+  min-height: 480px !important;
+  max-height: 78vh !important;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6) !important;
+  overflow: hidden !important;
+  border-radius: 12px !important;
+  background: var(--bg-panel, #16161e) !important;
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.1)) !important;
+  position: relative;
+  transition: 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: nexusSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nexus-container.maximized {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  max-height: none !important;
+  border-radius: 0 !important;
+  transform: none !important;
+}
+
+@keyframes nexusSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Graph Modal Header matching Documentation exactly */
+.graph-modal-header {
   display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: var(--bg-panel, #16161e);
+  border-bottom: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
+  user-select: none;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.graph-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.graph-header-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  letter-spacing: -0.01em;
+}
+
+.graph-header-divider {
+  opacity: 0.35;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.graph-header-subtitle {
+  font-size: 12px;
+  font-weight: 450;
+  color: var(--text-muted);
+}
+
+.graph-step-counter {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--text-muted, #888899);
+  background: var(--bg-card, rgba(255, 255, 255, 0.04));
+  padding: 1.5px 6px;
+  border-radius: 2px;
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.06));
+}
+
+.graph-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.graph-sidebar-toggle-btn,
+.graph-window-btn,
+.graph-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #888899);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  -webkit-app-region: no-drag !important;
+}
+
+.graph-sidebar-toggle-btn:hover,
+.graph-window-btn:hover,
+.graph-close-btn:hover {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.08));
+  color: var(--text-main, #ffffff);
 }
 
 /* Embedded mode (for tabs) - Just the graph visualization */

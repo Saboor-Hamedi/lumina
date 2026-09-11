@@ -1,13 +1,78 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { FileText } from 'lucide-react'
-import ModalHeader from '../modals/ModalHeader'
+import { FileText, Square, Copy, X } from 'lucide-react'
 import { PreviewCommandPalette } from '../commandpalette/PreviewCommandPalette'
+import ToolTip from '../../components/atoms/ToolTip'
 import './preview.css'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useVaultStore } from '../../core/store/workspaceStore'
 
 const Preview = ({ isOpen, onClose, title, content, snippetId }) => {
+  const [isMaximized, setIsMaximized] = useState(false)
+  const [isDraggingModal, setIsDraggingModal] = useState(false)
+
+  const containerRef = useRef(null)
+  const modalPos = useRef({ x: 0, y: 0 })
+  const dragStart = useRef({ x: 0, y: 0 })
+  const rafId = useRef(null)
+
+  const handleToggleMaximize = useCallback(() => {
+    setIsMaximized((prev) => !prev)
+  }, [])
+
+  // Drag logic
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isDraggingModal || isMaximized) return
+
+      const newX = e.clientX - dragStart.current.x
+      const newY = e.clientY - dragStart.current.y
+      modalPos.current = { x: newX, y: newY }
+
+      if (rafId.current) cancelAnimationFrame(rafId.current)
+
+      rafId.current = requestAnimationFrame(() => {
+        if (containerRef.current) {
+          containerRef.current.style.transform = `translate3d(${newX}px, ${newY}px, 0)`
+        }
+      })
+    }
+
+    const handleMouseUp = () => {
+      setIsDraggingModal(false)
+      if (rafId.current) cancelAnimationFrame(rafId.current)
+      if (containerRef.current && !isMaximized) {
+        containerRef.current.style.transition = '0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+      }
+    }
+
+    window.addEventListener('mousemove', handleMouseMove, { passive: true })
+    window.addEventListener('mouseup', handleMouseUp)
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+      if (rafId.current) cancelAnimationFrame(rafId.current)
+    }
+  }, [isMaximized, isDraggingModal])
+
+  const handleModalHeaderMouseDown = useCallback(
+    (e) => {
+      if (isMaximized) return
+      if (e.target.closest('button')) return
+      setIsDraggingModal(true)
+
+      if (containerRef.current) {
+        containerRef.current.style.transition = 'none'
+      }
+
+      dragStart.current = {
+        x: e.clientX - modalPos.current.x,
+        y: e.clientY - modalPos.current.y
+      }
+    },
+    [isMaximized]
+  )
+
   useKeyboardShortcuts({
     onEscape: isOpen
       ? () => {
@@ -54,28 +119,78 @@ const Preview = ({ isOpen, onClose, title, content, snippetId }) => {
 
   const wordCount = liveContent ? liveContent.split(/\s+/).filter(Boolean).length : 0
 
-  const headerStats = (
-    <div className="preview-stats-bar">
-      <span className="preview-indicator-tag">PREVIEW</span>
-      <div className="preview-stat-sep" />
-      <div className="preview-stat-item">
-        <FileText size={12} /> {wordCount} words
-      </div>
-    </div>
-  )
-
   return createPortal(
-    <div className="modal-overlay theme-modal-overlay" onClick={onClose}>
+    <div className="preview-overlay-glass" onClick={onClose}>
       <div
-        className="modal-container theme-modal-container preview-modal-container"
+        ref={containerRef}
+        className={`preview-modal-container modal-container${isMaximized ? ' maximized' : ''}`}
         onClick={(e) => e.stopPropagation()}
+        style={{
+          flexDirection: 'column',
+          width: isMaximized ? '100vw' : '900px',
+          height: isMaximized ? '100vh' : '76vh',
+          maxWidth: isMaximized ? 'none' : '94vw',
+          minHeight: isMaximized ? 'none' : '480px',
+          maxHeight: isMaximized ? 'none' : '78vh',
+          transform: isMaximized
+            ? 'none'
+            : `translate3d(${modalPos.current.x}px, ${modalPos.current.y}px, 0)`,
+          transition: '0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+          boxShadow: '0 30px 60px rgba(0, 0, 0, 0.6)',
+          overflow: 'hidden',
+          borderRadius: isMaximized ? '0' : '12px',
+          position: 'relative',
+          willChange: 'transform'
+        }}
       >
-        <ModalHeader
-          title={title}
-          right={headerStats}
-          icon={<FileText size={14} />}
-          onClose={onClose}
-        />
+        <div
+          className="preview-modal-header"
+          onMouseDown={handleModalHeaderMouseDown}
+          style={{ cursor: isMaximized ? 'default' : 'grab' }}
+        >
+          <div className="preview-header-left">
+            <span className="preview-header-title">
+              Preview
+            </span>
+            {title && (
+              <>
+                <span className="preview-header-divider">/</span>
+                <span className="preview-header-subtitle" title={title}>
+                  {title}
+                </span>
+              </>
+            )}
+          </div>
+
+          <div className="preview-header-right">
+            <div className="preview-header-stat">
+              <FileText size={12} />
+              <span>{wordCount} words</span>
+            </div>
+            <ToolTip text={isMaximized ? 'Restore Window' : 'Maximize Window'} position="bottom">
+              <button
+                className="preview-window-btn"
+                onClick={handleToggleMaximize}
+                aria-label={isMaximized ? 'Restore Window' : 'Maximize Window'}
+              >
+                {isMaximized ? (
+                  <Copy size={13} strokeWidth={2} />
+                ) : (
+                  <Square size={13} strokeWidth={2} />
+                )}
+              </button>
+            </ToolTip>
+            <ToolTip text="Close (Esc)" position="bottom">
+              <button
+                className="preview-close-btn"
+                onClick={onClose}
+                aria-label="Close Preview (Esc)"
+              >
+                <X size={17} />
+              </button>
+            </ToolTip>
+          </div>
+        </div>
 
         <PreviewCommandPalette content={liveContent} onClose={onClose} />
       </div>

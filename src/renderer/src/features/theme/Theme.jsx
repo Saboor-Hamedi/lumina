@@ -1,13 +1,14 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useTheme } from './hooks/useTheme'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
-import { X, Check, Palette } from 'lucide-react'
+import { X, Check, Palette, Square, Copy } from 'lucide-react'
 import './css/theme.css'
 import ToolTip from '../../components/atoms/ToolTip'
 
 const Theme = ({ isOpen, onClose }) => {
   const { theme, setTheme, allThemes } = useTheme()
   const [searchQuery, setSearchQuery] = useState('')
+  const [isMaximized, setIsMaximized] = useState(false)
   const searchInputRef = useRef(null)
   const cardsRef = useRef([])
   const modalContainerRef = useRef(null)
@@ -17,9 +18,13 @@ const Theme = ({ isOpen, onClose }) => {
   const initialPosRef = useRef({ x: 0, y: 0 })
   const wasOpenRef = useRef(false)
 
+  const handleToggleMaximize = useCallback(() => {
+    setIsMaximized((prev) => !prev)
+  }, [])
+
   // Direct GPU-accelerated 0-latency drag handler
   const handleDragStart = useCallback((e) => {
-    if (e.button !== 0) return
+    if (e.button !== 0 || isMaximized) return
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur()
     }
@@ -171,10 +176,12 @@ const Theme = ({ isOpen, onClose }) => {
     <div className="theme-modal-overlay" onClick={onClose}>
       <div
         ref={modalContainerRef}
-        className="theme-modal-container"
+        className={`theme-modal-container${isMaximized ? ' maximized' : ''}`}
         onClick={(e) => e.stopPropagation()}
         style={{
-          transform: `translate3d(${posRef.current.x}px, ${posRef.current.y}px, 0)`,
+          transform: isMaximized
+            ? 'none'
+            : `translate3d(${posRef.current.x}px, ${posRef.current.y}px, 0)`,
           position: 'relative',
           willChange: 'transform'
         }}
@@ -182,7 +189,7 @@ const Theme = ({ isOpen, onClose }) => {
         <div
           className="theme-modal-header"
           onMouseDown={handleDragStart}
-          style={{ cursor: 'grab' }}
+          style={{ cursor: isMaximized ? 'default' : 'grab' }}
         >
           <div className="theme-header-left">
             <span className="theme-header-title">
@@ -198,6 +205,19 @@ const Theme = ({ isOpen, onClose }) => {
           </div>
 
           <div className="theme-header-right">
+            <ToolTip text={isMaximized ? 'Restore Window' : 'Maximize Window'} position="bottom">
+              <button
+                className="theme-window-btn"
+                onClick={handleToggleMaximize}
+                aria-label={isMaximized ? 'Restore Window' : 'Maximize Window'}
+              >
+                {isMaximized ? (
+                  <Copy size={13} strokeWidth={2} />
+                ) : (
+                  <Square size={13} strokeWidth={2} />
+                )}
+              </button>
+            </ToolTip>
             <ToolTip text="Close (Esc)" position="bottom">
               <button
                 className="theme-close-btn"

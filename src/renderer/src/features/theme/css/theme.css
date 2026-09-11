@@ -8,27 +8,35 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10000;
+  z-index: 10005 !important;
   animation: fadeIn 0.18s ease-out;
 }
 
 .theme-modal-container {
-  background: var(--bg-panel, #16161e);
-  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.1));
-  border-radius: 12px;
-  box-shadow:
-    0 20px 40px -12px rgba(0, 0, 0, 0.7),
-    0 0 0 1px rgba(255, 255, 255, 0.06);
-  width: 86vw;
-  max-width: 740px;
-  height: 76vh;
-  min-height: 480px;
-  max-height: 78vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  background: var(--bg-panel, #16161e) !important;
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.1)) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6) !important;
+  width: 900px !important;
+  max-width: 94vw !important;
+  height: 76vh !important;
+  min-height: 480px !important;
+  max-height: 78vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
   position: relative;
+  transition: 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   animation: themeSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.theme-modal-container.maximized {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  max-height: none !important;
+  border-radius: 0 !important;
+  transform: none !important;
 }
 
 @keyframes themeSlideUp {
@@ -94,6 +102,7 @@
   gap: 8px;
 }
 
+.theme-window-btn,
 .theme-close-btn {
   background: transparent;
   border: none;
@@ -105,8 +114,10 @@
   align-items: center;
   justify-content: center;
   transition: all 0.15s ease;
+  -webkit-app-region: no-drag !important;
 }
 
+.theme-window-btn:hover,
 .theme-close-btn:hover {
   background: var(--bg-hover, rgba(255, 255, 255, 0.08));
   color: var(--text-main, #ffffff);

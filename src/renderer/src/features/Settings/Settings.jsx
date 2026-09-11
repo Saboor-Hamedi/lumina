@@ -1,15 +1,22 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { Settings as SettingsIcon, Square, Copy, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
-import ModalHeader from '../modals/ModalHeader'
+import { Square, Copy, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
+import ToolTip from '../../components/atoms/ToolTip'
 import SettingTab from './SettingTab'
 import SettingLookAndFeel from './SettingLookAndFeel'
 import SettingAssistant from './SettingAssistant'
 import SettingMemory from './SettingMemory'
 import SettingShortcuts from './SettingShortcuts'
 import SettingAdvanced from './SettingAdvanced'
-import '../preview/preview.css'
 import './Settings.css'
+
+const TAB_LABELS = {
+  'look-and-feel': 'Look & Feel',
+  shortcuts: 'Shortcuts',
+  assistant: 'Lumina AI Assistant',
+  memory: 'AI Memory',
+  advanced: 'Advanced'
+}
 
 const Settings = ({ onClose, onOpenTheme, initialTab = 'look-and-feel' }) => {
   const mapInitialTab = (tab) => {
@@ -61,7 +68,7 @@ const Settings = ({ onClose, onOpenTheme, initialTab = 'look-and-feel' }) => {
       setIsDraggingModal(false)
       if (rafId.current) cancelAnimationFrame(rafId.current)
       if (containerRef.current && !isMaximized) {
-        containerRef.current.style.transition = 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+        containerRef.current.style.transition = '0.2s cubic-bezier(0.16, 1, 0.3, 1)'
       }
     }
 
@@ -102,63 +109,83 @@ const Settings = ({ onClose, onOpenTheme, initialTab = 'look-and-feel' }) => {
   })
 
   return (
-    <div className="nexus-overlay preview-overlay-glass" onClick={onClose}>
+    <div className="nexus-overlay preview-overlay-glass settings-overlay" onClick={onClose}>
       <div
         ref={containerRef}
-        className={`nexus-container modal-container preview-modal-container settings-container${isMaximized ? ' maximized' : ''}`}
+        className={`modal-container settings-container${isMaximized ? ' maximized' : ''}`}
         onClick={(e) => e.stopPropagation()}
         style={{
           flexDirection: 'column',
-          width: isMaximized ? '100vw' : '92vw',
-          height: isMaximized ? '100vh' : '88vh',
-          maxWidth: isMaximized ? 'none' : '1100px',
-          maxHeight: isMaximized ? 'none' : '90vh',
+          width: isMaximized ? '100vw' : '900px',
+          height: isMaximized ? '100vh' : '76vh',
+          maxWidth: isMaximized ? 'none' : '94vw',
+          minHeight: isMaximized ? 'none' : '480px',
+          maxHeight: isMaximized ? 'none' : '78vh',
           transform: isMaximized
             ? 'none'
             : `translate3d(${modalPos.current.x}px, ${modalPos.current.y}px, 0)`,
-          transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+          transition: '0.2s cubic-bezier(0.16, 1, 0.3, 1)',
           boxShadow: '0 30px 60px rgba(0, 0, 0, 0.6)',
           overflow: 'hidden',
-          borderRadius: isMaximized ? '0' : '6px'
+          borderRadius: isMaximized ? '0' : '12px'
         }}
       >
-        <ModalHeader
-          title="Settings"
-          icon={<SettingsIcon size={16} />}
-          onClose={onClose}
+        <div
+          className="settings-modal-header"
           onMouseDown={handleModalHeaderMouseDown}
           style={{ cursor: isMaximized ? 'default' : 'grab' }}
-          left={
-            <button
-              className="win-btn"
-              onClick={handleToggleSidebar}
-              title={isSidebarOpen ? 'Close Sidebar' : 'Open Sidebar'}
-              style={{ marginLeft: '-10px' }}
-            >
-              {isSidebarOpen ? (
-                <PanelLeftClose size={12} strokeWidth={2} />
-              ) : (
-                <PanelLeftOpen size={12} strokeWidth={2} />
-              )}
-            </button>
-          }
-          right={
-            <button
-              className="win-btn"
-              onClick={handleToggleMaximize}
-              title={isMaximized ? 'Restore' : 'Maximize'}
-            >
-              {isMaximized ? (
-                <Copy size={12} strokeWidth={2} />
-              ) : (
-                <Square size={12} strokeWidth={2} />
-              )}
-            </button>
-          }
-        />
+        >
+          <div className="settings-header-left">
+            <ToolTip text={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'} position="bottom">
+              <button
+                className="settings-sidebar-toggle-btn"
+                onClick={handleToggleSidebar}
+                aria-label={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
+              >
+                {isSidebarOpen ? (
+                  <PanelLeftClose size={15} strokeWidth={2} />
+                ) : (
+                  <PanelLeftOpen size={15} strokeWidth={2} />
+                )}
+              </button>
+            </ToolTip>
+            <span className="settings-header-title">
+              Settings
+            </span>
+            <span className="settings-header-divider">/</span>
+            <span className="settings-header-subtitle">
+              {TAB_LABELS[activeTab] || 'Preferences'}
+            </span>
+          </div>
 
-        <div className="settings-layout">
-          {isSidebarOpen && <SettingTab activeTab={activeTab} setActiveTab={setActiveTab} />}
+          <div className="settings-header-right">
+            <ToolTip text={isMaximized ? 'Restore Window' : 'Maximize Window'} position="bottom">
+              <button
+                className="settings-window-btn"
+                onClick={handleToggleMaximize}
+                aria-label={isMaximized ? 'Restore Window' : 'Maximize Window'}
+              >
+                {isMaximized ? (
+                  <Copy size={13} strokeWidth={2} />
+                ) : (
+                  <Square size={13} strokeWidth={2} />
+                )}
+              </button>
+            </ToolTip>
+            <ToolTip text="Close (Esc)" position="bottom">
+              <button
+                className="settings-close-btn"
+                onClick={onClose}
+                aria-label="Close"
+              >
+                <X size={17} />
+              </button>
+            </ToolTip>
+          </div>
+        </div>
+
+        <div className={`settings-layout ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+          <SettingTab activeTab={activeTab} setActiveTab={setActiveTab} isOpen={isSidebarOpen} />
 
           <main className="settings-body seamless-scrollbar">
             <div className="settings-content-wrap">

@@ -1,9 +1,9 @@
 import React from 'react'
 import { Palette, Sparkles, Keyboard, SlidersHorizontal, Brain } from 'lucide-react'
 
-const SettingTab = ({ activeTab, setActiveTab }) => {
+const SettingTab = ({ activeTab, setActiveTab, isOpen = true }) => {
   return (
-    <aside className="settings-sidebar">
+    <aside className={`settings-sidebar ${isOpen ? '' : 'closed'}`}>
       <div className="settings-sidebar-header">
         <span className="settings-sidebar-title">Preferences</span>
       </div>
