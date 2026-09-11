@@ -35,14 +35,23 @@ export const CapsLock: React.FC<CapsLockProps> = React.memo(
       // Passive listeners on window for instant, non-blocking state updates
       const opts: AddEventListenerOptions = { passive: true, capture: true }
 
+      const handleBlur = () => {
+        if (stateRef.current) {
+          stateRef.current = false
+          setIsCapsLockOn(false)
+        }
+      }
+
       window.addEventListener('keydown', checkCapsLock, opts)
       window.addEventListener('keyup', checkCapsLock, opts)
       window.addEventListener('pointerdown', checkCapsLock, opts)
+      window.addEventListener('blur', handleBlur, opts)
 
       return () => {
         window.removeEventListener('keydown', checkCapsLock, opts)
         window.removeEventListener('keyup', checkCapsLock, opts)
         window.removeEventListener('pointerdown', checkCapsLock, opts)
+        window.removeEventListener('blur', handleBlur, opts)
       }
     }, [checkCapsLock])
 
