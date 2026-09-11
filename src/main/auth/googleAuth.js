@@ -46,7 +46,15 @@ export function setupGoogleAuth(getMainWindow) {
       }
 
       const redirectUri = 'http://localhost:3000/oauth2callback'
-      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&access_type=offline&prompt=consent&scope=https://www.googleapis.com/auth/drive.file email profile`
+      const scopes = [
+        'https://www.googleapis.com/auth/drive.file',
+        'https://www.googleapis.com/auth/gmail.readonly',
+        'https://www.googleapis.com/auth/gmail.send',
+        'https://www.googleapis.com/auth/gmail.modify',
+        'email',
+        'profile'
+      ].join(' ')
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&access_type=offline&prompt=consent&scope=${encodeURIComponent(scopes)}`
 
       // Try reading app icon from resources for browser display
       let iconBase64 = ''

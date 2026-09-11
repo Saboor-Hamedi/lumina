@@ -157,7 +157,15 @@ const api = {
   getGoogleUser: () => electronAPI.ipcRenderer.invoke('auth:getGoogleUser'),
   logoutFromGoogle: () => electronAPI.ipcRenderer.invoke('auth:logoutFromGoogle'),
   loadMemory: () => electronAPI.ipcRenderer.invoke('memory:load'),
-  saveMemory: (memory) => electronAPI.ipcRenderer.invoke('memory:save', memory)
+  saveMemory: (memory) => electronAPI.ipcRenderer.invoke('memory:save', memory),
+
+  // Gmail & Email Client
+  listEmails: (params) => electronAPI.ipcRenderer.invoke('email:listMessages', params),
+  getEmailDetails: (params) => electronAPI.ipcRenderer.invoke('email:getMessageDetails', params),
+  sendEmail: (params) => electronAPI.ipcRenderer.invoke('email:sendMessage', params),
+  modifyEmailLabels: (params) => electronAPI.ipcRenderer.invoke('email:modifyLabels', params),
+  trashEmail: (params) => electronAPI.ipcRenderer.invoke('email:trashMessage', params),
+  pickEmailAttachments: () => electronAPI.ipcRenderer.invoke('email:pickAttachments')
 }
 
 // Expose APIs

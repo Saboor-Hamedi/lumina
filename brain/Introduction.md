@@ -44,6 +44,9 @@ Keep your notes safe without headaches. With a single click of the **Push** butt
 ### 🎨 Beautiful Themes for Every Mood
 Your workspace should match how you feel. Choose from over 20 handcrafted dark and light themes—from soft slate and soothing warm ambers to crisp paper whites—all crafted to keep your eyes relaxed during long writing sessions.
 
+### ✉️ Lumina Mail: Integrated Gmail Client
+Check your inbox and reply without context switching. Open your emails directly inside a beautiful glass modal, compose new messages with file attachments, and attach your current active note as Markdown with a single click.
+
 ### 💡 Ambient Caps Lock Indicator & Distraction-Free Status Bar
 Never accidentally shout in your notes. Lumina features a subtle, glowing organic blob light centered right in your status bar that illuminates in your accent color when Caps Lock is on, and disappears the instant it is turned off.
 

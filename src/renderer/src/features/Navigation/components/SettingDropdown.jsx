@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useMemo, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { Settings, Palette, Cloud, RefreshCw, Check, Loader2, FileArchive, Folder, X } from 'lucide-react'
+import { Settings, Palette, Cloud, RefreshCw, Check, Loader2, FileArchive, Folder, X, Mail } from 'lucide-react'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
 import { useCurrentUser } from '../../../core/hooks/useCurrentUser'
 import { useUpdateStore } from '../../../core/store/useUpdateStore'
@@ -160,6 +160,13 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
           onClose()
           onThemeClick && onThemeClick()
         }
+      },
+      {
+        id: 'mail',
+        action: () => {
+          onClose()
+          window.dispatchEvent(new CustomEvent('open-email'))
+        }
       }
     ]
     if (status === 'available' || status === 'ready' || status === 'downloading') {
@@ -280,6 +287,16 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
           onThemeClick && onThemeClick()
         }}
       />
+      <DropdownItem
+        icon={<Mail size={14} style={{ color: 'var(--text-accent)' }} />}
+        label="Lumina Mail"
+        shortcut="Inbox"
+        isFocused={focusedIndex === 2}
+        onClick={() => {
+          onClose()
+          window.dispatchEvent(new CustomEvent('open-email'))
+        }}
+      />
 
       <div style={{ height: '1px', backgroundColor: 'var(--border-dim)', margin: '4px 0' }} />
 
@@ -296,7 +313,7 @@ const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, ancho
               ? `Downloading... ${Math.round(progress?.percent || 0)}%`
               : 'Update Available'
           }
-          isFocused={focusedIndex === 2}
+          isFocused={focusedIndex === 3}
           onClick={handleUpdateClick}
           highlight
         />

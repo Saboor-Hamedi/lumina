@@ -1,3 +1,6 @@
+/* Import Canonical Toggle Switch Styles */
+@import '../components/toggle/toggle.css';
+
 /* ==========================================================================
    Lumina Theme & Quick Controls Switch Styling (toggle-theme.css)
    ========================================================================== */
@@ -38,9 +41,6 @@
   border-color: var(--text-accent);
   color: var(--text-accent);
 }
-
-/* Import Canonical Toggle Switch Styles */
-@import '../components/toggle/toggle.css';
 
 /* ==========================================================================
    Lumina Quick Toggle Row (used in Appearance & Settings panels)

@@ -20,6 +20,7 @@ import { handleExportText } from '../export/exportText'
 import { handleExportHTML } from '../export/exportHTML'
 import { handleExportCleanHTML, handleExportMarkdownBundle } from '../export/exportBundle'
 import { setupGoogleAuth } from './auth/googleAuth'
+import { setupGmailIpc } from './email/gmailService'
 import { backupToDrive, backupFileToDrive, cancelBackup } from './backup/googleDriveBackup'
 import { registerOpenNoteHandler } from './handlers/useOpenNote'
 import { useResizeWindowValue } from './handlers/useResizeWindowValue'
@@ -379,8 +380,9 @@ app.whenReady().then(async () => {
   )
   ipcMain.handle('window:export-text', async (_, payload) => handleExportText(mainWindow, payload))
 
-  // Setup Google Auth
+  // Setup Google Auth & Gmail
   setupGoogleAuth(() => mainWindow)
+  setupGmailIpc()
 
   // Receive renderer logs and append to a file in userData
   ipcMain.on('renderer:log', async (_, payload) => {

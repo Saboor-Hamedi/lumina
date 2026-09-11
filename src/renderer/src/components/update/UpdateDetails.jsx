@@ -8,6 +8,7 @@ import ToolTip from '../atoms/ToolTip'
 import './UpdateDetails.css'
 
 export const DEFAULT_RELEASE_NOTES = `New
+- Lumina Mail Client (Gmail Integration): A full-featured, private email modal seamlessly integrated into Lumina. Access your Gmail inbox, sent messages, drafts, and starred emails with rich HTML rendering, search filtering, one-click star/unread toggles, and a built-in composer with support for attachments and one-click "Attach Current Note" as Markdown.
 - CapsLock Organic Blob Indicator: When Caps Lock is active, a glowing organic blob light illuminates at the very center of the status bar. Styled using the active accent color with soft ambient light reflections and zero boxy borders, it automatically turns off when Caps Lock is disabled.
 - Compact Responsive StatusBar: Streamlined status bar metrics with 10px typography, compact icons, and responsive breakpoints, keeping the center strictly dedicated to the glowing indicator while preserving the exact profile button dimensions.
 - Breadcrumbs Horizontal Keyboard Navigation: Smoothly jump across breadcrumb segments (Workspace → Folders → Note → Heading Outline) by pressing Ctrl + Left Arrow and Ctrl + Right Arrow with immediate dropdown activation.

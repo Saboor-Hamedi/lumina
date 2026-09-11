@@ -430,6 +430,12 @@ const CommandPalette = React.memo(
           shortcut: 'Ctrl + G'
         },
         {
+          id: 'action-mail',
+          title: 'Mail: Open Lumina Mail (Gmail)',
+          matchType: 'action',
+          action: 'mail'
+        },
+        {
           id: 'action-update',
           title: 'App: Check for Updates',
           matchType: 'action',
@@ -592,6 +598,7 @@ const CommandPalette = React.memo(
             else if (item.action === 'chat') onToggleChat?.()
             else if (item.action === 'docs') onToggleDocs?.()
             else if (item.action === 'rename') onRename?.()
+            else if (item.action === 'mail') window.dispatchEvent(new CustomEvent('open-email'))
             else if (item.action === 'update') window.electron?.ipcRenderer.send('check-for-updates')
             else if (item.action === 'reload-window') window.location.reload()
             else if (item.action === 'toggle-type-sound') {

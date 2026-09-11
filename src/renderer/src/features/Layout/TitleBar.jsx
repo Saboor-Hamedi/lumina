@@ -1,5 +1,5 @@
 import React from 'react'
-import { Square, X, Minus, Search, MessageSquare, PanelLeftOpen, PanelLeftClose, User } from 'lucide-react'
+import { Square, X, Minus, Search, MessageSquare, PanelLeftOpen, PanelLeftClose, User, Mail } from 'lucide-react'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { useCurrentUser } from '../../core/hooks/useCurrentUser'
 import logoUrl from '../../assets/logo.png'
@@ -112,6 +112,17 @@ const TitleBar = ({ onToggleAIChat }) => {
 
       <div className="title-right">
         <div className="window-controls" data-testid="window-controls">
+          <ToolTip text="Lumina Mail" position="bottom">
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('open-email'))}
+              className="control-btn"
+              style={{ color: 'var(--text-muted)' }}
+              aria-label="Open Lumina Mail"
+            >
+              <Mail size={14} strokeWidth={2} />
+            </button>
+          </ToolTip>
           <ToolTip text={isMac ? "Toggle AI Chat (⌘ + Shift + \\)" : "Toggle AI Chat (Ctrl + Shift + \\)"} position="bottom">
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('open-ai-chat'))}

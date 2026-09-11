@@ -72,6 +72,7 @@ Never worry about losing your work:
 ### 🎨 A Space That Matches Your Style
 Personalize your digital desk to suit your taste:
 - **20+ Beautiful Themes (`Ctrl + T`):** From warm amber tones for late-night journaling to calm slates and crisp day themes.
+- **Lumina Mail Client:** Access your Gmail directly in an elegant glass modal to read messages, send replies, and attach your notes as Markdown.
 - **Ambient Caps Lock Indicator:** A glowing fluid blob light in your accent color breathes at the center of the status bar whenever Caps Lock is on, keeping typing distraction-free.
 - **Streamlined Status Bar:** Compact, non-intrusive status metrics (word count, reading time, line/column) designed to stay clean across all screen sizes.
 - **Expressive Note Icons (`Ctrl + Win + .`):** Pick from hundreds of clear, friendly icons to give each note or project its own personality.
