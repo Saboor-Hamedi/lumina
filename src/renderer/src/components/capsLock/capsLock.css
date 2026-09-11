@@ -1,0 +1,93 @@
+/* ==========================================================================
+   CapsLock Organic Glowing Blob Light
+   Organic tactile droplet/blob light with accent color, no background, no border.
+   ========================================================================== */
+
+@keyframes capsLockBlobFluid {
+  0% {
+    border-radius: 50% 50% 50% 50%;
+    transform: scale(0.95);
+    box-shadow:
+      0 0 4px var(--text-accent, #40bafa),
+      0 0 9px var(--text-accent, #40bafa),
+      0 0 16px color-mix(in srgb, var(--text-accent, #40bafa) 50%, transparent);
+  }
+  25% {
+    border-radius: 58% 42% 54% 46% / 48% 56% 44% 52%;
+    transform: scale(1.08) rotate(5deg);
+    box-shadow:
+      0 0 6px var(--text-accent, #40bafa),
+      0 0 13px var(--text-accent, #40bafa),
+      0 0 20px color-mix(in srgb, var(--text-accent, #40bafa) 60%, transparent);
+  }
+  50% {
+    border-radius: 46% 54% 42% 58% / 54% 46% 56% 44%;
+    transform: scale(1.02) rotate(-4deg);
+    box-shadow:
+      0 0 5px var(--text-accent, #40bafa),
+      0 0 11px var(--text-accent, #40bafa),
+      0 0 18px color-mix(in srgb, var(--text-accent, #40bafa) 55%, transparent);
+  }
+  75% {
+    border-radius: 52% 48% 57% 43% / 44% 54% 46% 56%;
+    transform: scale(1.06) rotate(3deg);
+    box-shadow:
+      0 0 7px var(--text-accent, #40bafa),
+      0 0 14px var(--text-accent, #40bafa),
+      0 0 22px color-mix(in srgb, var(--text-accent, #40bafa) 65%, transparent);
+  }
+  100% {
+    border-radius: 50% 50% 50% 50%;
+    transform: scale(0.95);
+    box-shadow:
+      0 0 4px var(--text-accent, #40bafa),
+      0 0 9px var(--text-accent, #40bafa),
+      0 0 16px color-mix(in srgb, var(--text-accent, #40bafa) 50%, transparent);
+  }
+}
+
+.caps-lock-blob-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  min-width: 14px;
+  min-height: 14px;
+  max-width: 14px;
+  max-height: 14px;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  cursor: default;
+  user-select: none;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+/* Organic liquid droplet core with ambient accent halo */
+.caps-lock-blob-light {
+  width: 7px;
+  height: 7px;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 35% 35%,
+    #ffffff 0%,
+    var(--text-accent, #40bafa) 45%,
+    var(--text-accent, #40bafa) 100%
+  );
+  display: block;
+  flex-shrink: 0;
+  animation: capsLockBlobFluid 3.2s ease-in-out infinite;
+  will-change: transform, border-radius, box-shadow;
+  border: none !important;
+  outline: none !important;
+}
+
+.caps-lock-blob-text {
+  display: none !important;
+}

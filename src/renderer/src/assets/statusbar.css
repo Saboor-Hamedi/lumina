@@ -1,24 +1,25 @@
 /* ==========================================================================
    StatusBar Component Styling
+   Sleek, tactile, and responsive with guaranteed open center
    ========================================================================== */
 
 .status-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  height: 28px;
-  min-height: 28px;
-  padding: 0 12px;
+  gap: 8px;
+  height: 26px;
+  min-height: 26px;
+  padding: 0 10px;
   background: var(--bg-app);
   border-top: 1px solid var(--border-subtle);
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-faint);
   z-index: 100;
   flex-shrink: 0;
   width: 100%;
   box-sizing: border-box;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.015em;
   user-select: none;
   overflow-x: auto;
   overflow-y: hidden;
@@ -39,7 +40,7 @@
 .status-bar-right {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   flex-shrink: 0;
   white-space: nowrap;
 }
@@ -49,25 +50,32 @@
   margin-left: auto;
 }
 
+/* Center contains only the glowing CapsLock blob */
 .status-bar-center {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 24px;
 }
 
+.status-bar-center > * {
+  pointer-events: auto;
+}
+
+/* Compact utility button (a little smaller) */
 .status-bar-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 1px 6px;
-  height: 18px;
+  gap: 3.5px;
+  padding: 1px 5px;
+  height: 17px;
   border-radius: 4px;
   border: none;
   background: transparent;
   color: var(--text-muted);
   font-family: inherit;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.01em;
   cursor: pointer;
@@ -92,28 +100,40 @@
   opacity: 1;
 }
 
+/* Profile button preserved at its original size */
+.status-bar-btn.status-bar-profile-btn {
+  font-size: 11px !important;
+  height: 18px !important;
+  padding: 1px 6px !important;
+  gap: 5px !important;
+}
+
 .status-bar-profile-btn img {
+  width: 13px !important;
+  height: 13px !important;
   border-radius: 50%;
   border: 1px solid var(--border-dim);
 }
 
 .status-bar-divider {
   width: 1px;
-  height: 10px;
+  height: 9px;
   background: var(--border-subtle, var(--border-dim));
   margin: 0 1px;
+  flex-shrink: 0;
 }
 
+/* Compact metrics item */
 .status-bar-item {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 1px 6px;
-  height: 18px;
+  gap: 3.5px;
+  padding: 1px 5px;
+  height: 17px;
   border-radius: 4px;
   color: var(--text-muted);
   font-family: inherit;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.01em;
   transition: all 0.12s ease;
@@ -138,4 +158,26 @@
 
 .status-bar-item.interactive:hover svg {
   opacity: 1;
+}
+
+/* Responsive resilience on smaller viewports */
+@media (max-width: 980px) {
+  .status-bar-hide-md {
+    display: none !important;
+  }
+}
+
+@media (max-width: 860px) {
+  .status-bar-hide-sm {
+    display: none !important;
+  }
+  .status-bar-label-collapse {
+    display: none !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .status-bar-hide-xs {
+    display: none !important;
+  }
 }

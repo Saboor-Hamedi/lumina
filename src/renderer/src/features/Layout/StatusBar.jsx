@@ -4,6 +4,7 @@ import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { useCurrentUser } from '../../core/hooks/useCurrentUser'
 import SettingDropdown from '../Navigation/components/SettingDropdown'
 import ToolTip from '../../components/atoms/ToolTip'
+import CapsLock from '../../components/capsLock'
 import '../../assets/statusbar.css'
 
 const StatusBar = ({
@@ -129,7 +130,7 @@ const StatusBar = ({
 
         <ToolTip text="Toggle Details & Outline (Ctrl + \)" position="top">
           <button className="status-bar-btn" onClick={onToggleInspector}>
-            <PanelRight size={12} />
+            <PanelRight size={11} />
             <span>Details</span>
           </button>
         </ToolTip>
@@ -138,31 +139,37 @@ const StatusBar = ({
 
         <ToolTip text="Documentation (Ctrl + D)" position="top">
           <button className="status-bar-btn" onClick={onDocsClick}>
-            <BookOpen size={12} />
+            <BookOpen size={11} />
             <span>Docs</span>
           </button>
         </ToolTip>
 
-        <span className="status-bar-divider" />
+        <span className="status-bar-divider status-bar-hide-sm" />
 
         <ToolTip text="Interactive Guide" position="top">
           <button
             className="status-bar-btn"
             onClick={() => window.dispatchEvent(new CustomEvent('open-guide'))}
           >
-            <Compass size={12} />
-            <span>Guide</span>
+            <Compass size={11} />
+            <span className="status-bar-label-collapse">Guide</span>
           </button>
         </ToolTip>
 
-        <span className="status-bar-divider" />
+        <span className="status-bar-divider status-bar-hide-sm" />
 
         <ToolTip text="Keyboard Shortcuts (Ctrl + /)" position="top">
           <button className="status-bar-btn" onClick={onShortcutsClick}>
-            <Keyboard size={12} />
-            <span>Shortcuts</span>
+            <Keyboard size={11} />
+            <span className="status-bar-label-collapse">Shortcuts</span>
           </button>
         </ToolTip>
+      </div>
+
+      {/* Guaranteed open & empty center */}
+      {/* Center contains exclusively the glowing CapsLock blob with no text */}
+      <div className="status-bar-center">
+        <CapsLock showLabel={false} />
       </div>
 
       {/* Right document & editor metrics */}
@@ -174,7 +181,7 @@ const StatusBar = ({
                 className="status-bar-item interactive"
                 onClick={() => window.dispatchEvent(new CustomEvent('editor-scroll-to-cursor'))}
               >
-                <Navigation size={12} />
+                <Navigation size={11} />
                 <span>
                   Ln {cursorPos.line}, Col {cursorPos.col}
                   {cursorPos.selectedChars > 0 && ` (${cursorPos.selectedChars} sel)`}
@@ -189,39 +196,39 @@ const StatusBar = ({
                 className="status-bar-item interactive"
                 onClick={onToggleInspector}
               >
-                <FileText size={12} />
+                <FileText size={11} />
                 <span>{stats.words} words</span>
               </span>
             </ToolTip>
 
-            <span className="status-bar-divider" />
+            <span className="status-bar-divider status-bar-hide-sm" />
 
             <ToolTip text="Click to view Details & Statistics" position="top">
               <span
-                className="status-bar-item interactive"
+                className="status-bar-item interactive status-bar-hide-sm"
                 onClick={onToggleInspector}
               >
-                <Hash size={12} />
+                <Hash size={11} />
                 <span>{stats.chars} chars</span>
               </span>
             </ToolTip>
 
-            <span className="status-bar-divider" />
+            <span className="status-bar-divider status-bar-hide-md" />
 
             <ToolTip text="Estimated Reading Time • 200 WPM" position="top">
               <span
-                className="status-bar-item interactive"
+                className="status-bar-item interactive status-bar-hide-md"
                 onClick={onToggleInspector}
               >
-                <Clock size={12} />
+                <Clock size={11} />
                 <span>{stats.readTime}</span>
               </span>
             </ToolTip>
 
-            <span className="status-bar-divider" />
+            <span className="status-bar-divider status-bar-hide-xs" />
 
             <ToolTip text="Document Format • UTF-8" position="top">
-              <span className="status-bar-item">
+              <span className="status-bar-item status-bar-hide-xs">
                 <span>Markdown</span>
                 <span style={{ opacity: 0.5 }}>•</span>
                 <span>UTF-8</span>
