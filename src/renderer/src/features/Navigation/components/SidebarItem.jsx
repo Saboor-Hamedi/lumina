@@ -250,9 +250,9 @@ const SidebarItem = ({
       <>
         {parts.map((part, i) =>
           regex.test(part) ? (
-            <span key={i} className="cm-search-highlight">
+            <mark key={i} className="palette-match">
               {part}
-            </span>
+            </mark>
           ) : (
             part
           )
@@ -521,7 +521,7 @@ const SidebarItem = ({
                 width: '100%',
                 ...(displayColor
                   ? { color: displayColor }
-                  : isActive
+                  : (!searchQuery?.trim() && isActive)
                     ? { color: 'var(--text-accent)' }
                     : {})
               }}

@@ -49,6 +49,7 @@ import Version from '../../components/Version'
 import Fuse from 'fuse.js'
 import { rankSnippets } from '../../core/utils/searchRanker'
 import './css/fileExplorer.css'
+import '../../assets/premimum-scroll.css'
 
 import {
   SortableListItem,
@@ -969,6 +970,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                   ) : (
                     <Virtuoso
                       ref={virtuosoRef}
+                      className="premimum-scrollbar"
                       style={{ flex: 1, height: '100%' }}
                       data={flatTree}
                       overscan={120}

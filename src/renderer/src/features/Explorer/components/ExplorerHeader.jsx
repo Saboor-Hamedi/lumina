@@ -107,7 +107,7 @@ export const ExplorerHeader = ({
             debounceTimerRef.current = setTimeout(() => {
               setQuery(v)
               setCollapsedDuringSearch(new Set())
-            }, 300)
+            }, 60)
           }}
           onKeyDown={(e) => {
             if (e.key === 'ArrowDown') {

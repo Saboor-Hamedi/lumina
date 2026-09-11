@@ -82,7 +82,7 @@ export const DroppableFolderItem = React.memo(
       return (
         <>
           {text.substring(0, idx)}
-          <span className="cm-search-highlight">{text.substring(idx, idx + query.length)}</span>
+          <mark className="palette-match">{text.substring(idx, idx + query.length)}</mark>
           {text.substring(idx + query.length)}
         </>
       )

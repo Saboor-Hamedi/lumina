@@ -575,6 +575,15 @@
   margin-top: 1px !important;
 }
 
+.tree-item .palette-match,
+.start-section .tree-item .palette-match,
+.folder-tree-item .palette-match {
+  background: transparent !important;
+  color: var(--text-accent) !important;
+  font-weight: 700 !important;
+  padding: 0 !important;
+}
+
 .tree-item .folder-name,
 .start-section .tree-item .folder-name {
   flex: 1;
