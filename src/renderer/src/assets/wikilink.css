@@ -10,6 +10,9 @@
 /* Base Wikilink Text (100% Native Document Text) */
 .cm-atomic-wiki-link {
   display: inline !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
   color: var(--text-accent, #40bafa) !important;
   text-decoration: underline !important;
   text-decoration-thickness: 1px !important;

@@ -53,14 +53,16 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
 
       const headerTitle = document.createElement('div')
       headerTitle.textContent = title
+      headerTitle.title = title
       headerTitle.style.fontSize = '12px'
       headerTitle.style.fontWeight = '600'
-      headerTitle.style.lineHeight = '1'
+      headerTitle.style.lineHeight = '1.3'
       headerTitle.style.color = 'var(--text-faint)'
       headerTitle.style.overflow = 'hidden'
       headerTitle.style.textOverflow = 'ellipsis'
       headerTitle.style.whiteSpace = 'nowrap'
       headerTitle.style.flex = '1'
+      headerTitle.style.minWidth = '0'
       headerTitle.style.transform = 'translateY(1px)'
 
       header.appendChild(headerTitle)
@@ -327,6 +329,7 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
       const titleEl = document.createElement('div')
       titleEl.className = 'not-found-rename-title'
       titleEl.textContent = title
+      titleEl.title = title
 
       const subtitleEl = document.createElement('div')
       subtitleEl.className = 'not-found-rename-subtitle'

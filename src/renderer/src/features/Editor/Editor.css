@@ -249,7 +249,9 @@
 .cm-atomic-wiki-link,
 .cm-atomic-wikilink-wrap {
   display: inline !important;
-  white-space: nowrap !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
   padding-right: 0 !important;
   margin-right: 0 !important;
   user-select: text !important;
@@ -1578,12 +1580,19 @@ html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {
   border: none;
   color: var(--text-main);
   font-family: var(--font-editor, 'Inter'), sans-serif;
-  font-size: 18px;
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.35;
   outline: none;
   padding: 4px 0 6px 0;
   text-align: center;
   word-break: break-word;
+  overflow-wrap: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .not-found-rename-subtitle {
