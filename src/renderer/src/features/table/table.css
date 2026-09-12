@@ -708,6 +708,47 @@
   position: relative;
 }
 
+.cm-atomic-table.is-resizing-table,
+.cm-atomic-table.is-resizing-table * {
+  user-select: none !important;
+}
+
+.cm-atomic-table.is-resizing-table th,
+.cm-atomic-table.is-resizing-table td {
+  transition: none !important;
+}
+
+.cm-table-resize-grip {
+  position: absolute;
+  z-index: 120;
+  pointer-events: none;
+  opacity: 0;
+  background: var(--text-accent, #818cf8);
+  transition: opacity 0.12s ease;
+}
+
+.cm-table-resize-grip.visible {
+  opacity: 0.9;
+  pointer-events: auto;
+}
+
+/* Resize Grips table */
+.cm-table-column-resize-grip {
+  top: 0;
+  width: 2px;
+  height: 18px;
+  cursor: col-resize;
+  box-shadow: 0 0 6px var(--text-accent, #818cf8);
+}
+
+.cm-table-row-resize-grip {
+  left: 0;
+  width: 18px;
+  height: 2px;
+  cursor: row-resize;
+  box-shadow: 0 0 6px var(--text-accent, #818cf8);
+}
+
 
 
 .cm-atomic-table-cell-source {
@@ -1086,7 +1127,18 @@
 }
 
 .cm-table-insert-marker {
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  background-color: var(--text-accent, #818cf8) !important;
+  color: var(--text-on-accent, #ffffff) !important;
+  border: none !important;
+  background-clip: border-box !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--text-accent, #818cf8) 45%, transparent),
+    0 2px 8px color-mix(in srgb, var(--text-accent, #818cf8) 35%, transparent);
+}
+
+.cm-table-insert-marker:hover {
+  filter: brightness(1.12);
+  box-shadow: 0 0 0 1px var(--text-accent, #818cf8),
+    0 2px 10px color-mix(in srgb, var(--text-accent, #818cf8) 55%, transparent);
 }
 
 .cm-atomic-table-menu-item:hover {

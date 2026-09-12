@@ -10,6 +10,7 @@ import './table.css'
 import { openCellMenu } from './tableMenu'
 import { setupTableSelection } from './tableSelection'
 import { setupTableDragAndDrop } from './tableDragDrop'
+import { setupTableColResizing } from './tableResize'
 import { setupTableInsertion } from './tableInsert'
 import { createTableHeaderDOM } from './tableHeader.js'
 import { createTableFooterDOM, updateTableFooterCount } from './tableFooter.js'
@@ -186,6 +187,16 @@ export function scrollCellIntoView(scrollContainer, targetCell) {
 export function getAllCells(wrap) {
   return Array.from(wrap.querySelectorAll('thead th, tbody tr:not(.cm-table-empty-row) td'))
 }
+
+function tableModelSignature(model) {
+  return [
+    model.caption || '',
+    ...(model.alignments || []),
+    ...(model.header || []),
+    ...(model.rows || []).flat()
+  ].join('\u0001')
+}
+
 // ---- widget ---------------------------------------------------------
 export class TableWidget extends WidgetType {
   constructor(model, from = -1, to = -1) {
@@ -198,16 +209,15 @@ export class TableWidget extends WidgetType {
       writable: true,
       value: model
     })
+    this.signature = tableModelSignature(model)
   }
   
   get estimatedHeight() {
     return Math.min(450, this.model.rows.length * 35 + 80)
   }
 
-  // Return false so CodeMirror calls updateDOM(dom, view) on changes.
-  // updateDOM will then update cell contents in-place and return true to keep the DOM stable.
   eq(other) {
-    return false
+    return other instanceof TableWidget && this.signature === other.signature
   }
   toDOM(view) {
     const wrap = document.createElement('div')
@@ -364,6 +374,7 @@ export class TableWidget extends WidgetType {
     setupTableFormattingToolbar(wrap, view)
     setupTableSelection(wrap, view)
     setupTableDragAndDrop(wrap, view)
+    setupTableColResizing(wrap)
     setupTableInsertion(wrap, view)
 
     return wrap
