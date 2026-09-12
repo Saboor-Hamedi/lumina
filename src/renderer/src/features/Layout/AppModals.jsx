@@ -33,7 +33,7 @@ import IconPicker from '../Icons/IconPicker'
 import ToastNotification from '../../core/notification'
 import Indexing from '../../components/Indexing'
 import { VoiceCapsule } from '../voice'
-import { EmailModal } from '../email'
+
 import GlobalErrorHandler from '../../components/GlobalErrorHandler'
 import { useVaultStore } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
@@ -84,18 +84,7 @@ export const AppModals = ({
   toast,
   clearToast
 }) => {
-  const [showEmailModal, setShowEmailModal] = React.useState(false)
 
-  React.useEffect(() => {
-    const handleOpenEmail = () => setShowEmailModal(true)
-    const handleCloseEmail = () => setShowEmailModal(false)
-    window.addEventListener('open-email', handleOpenEmail)
-    window.addEventListener('close-email', handleCloseEmail)
-    return () => {
-      window.removeEventListener('open-email', handleOpenEmail)
-      window.removeEventListener('close-email', handleCloseEmail)
-    }
-  }, [])
 
   return (
     <>
@@ -271,13 +260,7 @@ export const AppModals = ({
       {/* Voice Capsule Recording Assistant */}
       <VoiceCapsule />
 
-      {/* Lumina Mail Client Modal */}
-      {showEmailModal && (
-        <EmailModal
-          isOpen={showEmailModal}
-          onClose={() => setShowEmailModal(false)}
-        />
-      )}
+
     </>
   )
 }

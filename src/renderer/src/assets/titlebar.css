@@ -202,7 +202,20 @@
   color: white;
 }
 
-/* Mail Badge on Titlebar */
+/* Mail Container & Badge on Titlebar */
+.mail-titlebar-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  flex-shrink: 0;
+  -webkit-app-region: no-drag;
+}
+
+.mail-control-btn {
+  position: relative;
+}
+
 .mail-btn-wrap {
   position: relative;
   display: flex;
@@ -214,7 +227,7 @@
 .mail-unread-badge {
   position: absolute;
   top: 4px;
-  right: 4px;
+  right: 5px;
   min-width: 15px;
   height: 15px;
   padding: 0 3.5px;

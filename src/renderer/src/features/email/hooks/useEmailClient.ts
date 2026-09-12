@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useCurrentUser } from '../../../core/hooks/useCurrentUser'
 import { EmailFolder, EmailMessageSummary, EmailMessageDetails, EmailComposeDraft, EmailAttachment, EmailLabelItem } from '../types'
+import { compileDraftToHtml } from '../services/emailMarkdownService'
 
 export function useEmailClient() {
   const { user: googleUser, isLoggedIn, login } = useCurrentUser()
@@ -182,7 +183,13 @@ export function useEmailClient() {
   const sendCurrentDraft = useCallback(async () => {
     if (!window.api?.sendEmail) return
     if (!draft.to.trim()) {
-      setErrorMessage('Please specify at least one recipient.')
+      const msg = 'Please specify at least one recipient.'
+      setErrorMessage(msg)
+      window.dispatchEvent(
+        new CustomEvent('show-toast', {
+          detail: { message: msg, type: 'error' }
+        })
+      )
       return
     }
 
@@ -190,12 +197,10 @@ export function useEmailClient() {
     setErrorMessage(null)
 
     try {
-      let finalBody = draft.bodyHtml || ''
-      if (draft.quotedText) {
-        finalBody = `${finalBody}\n\n<br/><br/><div style="border-left: 2px solid #cbd5e1; padding-left: 10px; color: #64748b; font-size: 12px;">${draft.quotedText.replace(/\n/g, '<br/>')}</div>`
-      } else {
-        finalBody = finalBody.replace(/\n/g, '<br/>')
-      }
+      const finalBody = compileDraftToHtml(draft.bodyHtml, draft.quotedText)
+
+      const recipient = draft.to
+      const subject = draft.subject ? `"${draft.subject}"` : 'Email'
 
       const res = await window.api.sendEmail({
         to: draft.to,
@@ -210,7 +215,23 @@ export function useEmailClient() {
       })
 
       if (res?.error) {
-        setErrorMessage(res.error)
+        const errorMsg = res.error || 'Failed to send email'
+        setErrorMessage(errorMsg)
+        window.dispatchEvent(
+          new CustomEvent('show-toast', {
+            detail: { message: `Email failed to send: ${errorMsg}`, type: 'error' }
+          })
+        )
+        if (window.api?.showEmailNotification) {
+          window.api.showEmailNotification({
+            title: 'Email Failed to Send',
+            body: errorMsg
+          })
+        } else if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+          try {
+            new Notification('Email Failed to Send', { body: errorMsg })
+          } catch {}
+        }
       } else {
         setIsComposeOpen(false)
         setDraft({
@@ -226,13 +247,47 @@ export function useEmailClient() {
         })
         setSuccessToast('Email sent successfully!')
         setTimeout(() => setSuccessToast(null), 3000)
+
+        // Show success notification (toast + native notification)
+        window.dispatchEvent(
+          new CustomEvent('show-toast', {
+            detail: { message: 'Email sent successfully', type: 'success' }
+          })
+        )
+        if (window.api?.showEmailNotification) {
+          window.api.showEmailNotification({
+            title: 'Email Sent',
+            body: `Your message ${subject} to ${recipient} was sent successfully.`
+          })
+        } else if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+          try {
+            new Notification('Email Sent', { body: `Your message ${subject} to ${recipient} was sent successfully.` })
+          } catch {}
+        }
+
         // Refresh Sent folder or current list
         if (currentFolder === 'SENT') {
           fetchEmails('SENT')
         }
       }
     } catch (err: any) {
-      setErrorMessage(err?.message || 'Failed to send email')
+      const errorMsg = err?.message || 'Failed to send email'
+      setErrorMessage(errorMsg)
+      window.dispatchEvent(
+        new CustomEvent('show-toast', {
+          detail: { message: `Email failed to send: ${errorMsg}`, type: 'error' }
+        })
+      )
+      if (window.api?.showEmailNotification) {
+        window.api.showEmailNotification({
+          title: 'Email Failed to Send',
+          body: errorMsg
+        })
+      } else if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+        try {
+          new Notification('Email Failed to Send', { body: errorMsg })
+        } catch {}
+      }
     } finally {
       setIsSending(false)
     }
@@ -337,7 +392,33 @@ export function useEmailClient() {
     }
   }, [])
 
-  // Initial load
+  // Track previously authenticated user email to prevent leaking emails across accounts
+  const prevUserEmailRef = useRef<string | null>(null)
+
+  // Reset all state when user logs out or account changes
+  useEffect(() => {
+    const currentEmail = googleUser?.email || null
+    if (!isLoggedIn || (prevUserEmailRef.current && prevUserEmailRef.current !== currentEmail)) {
+      setEmails([])
+      setSelectedEmailId(null)
+      setActiveEmailDetails(null)
+      setUserLabels([])
+      setCurrentFolder('INBOX')
+      setSearchQuery('')
+      setErrorMessage(null)
+      setDraft({
+        to: '',
+        cc: '',
+        bcc: '',
+        subject: '',
+        bodyHtml: '',
+        attachments: []
+      })
+    }
+    prevUserEmailRef.current = currentEmail
+  }, [isLoggedIn, googleUser?.email])
+
+  // Initial and reactive load
   useEffect(() => {
     if (isLoggedIn) {
       fetchEmails(currentFolder, searchQuery)

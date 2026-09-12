@@ -7,7 +7,7 @@ import ToolTip from '../../components/atoms/ToolTip'
 import UpdateDetails from '../../components/update/UpdateDetails'
 import AccentColor from '../theme/AccentColor'
 import { useFontSettings } from '../../core/hooks/useFontSettings'
-import { playNewEmailTone } from '../email'
+import { EmailContainer, playNewEmailTone } from '../email'
 import '../../assets/titlebar.css'
 
 const TitleBar = ({ onToggleAIChat }) => {
@@ -17,6 +17,7 @@ const TitleBar = ({ onToggleAIChat }) => {
 
   const [version, setVersion] = React.useState('')
   const [isAccentOpen, setIsAccentOpen] = React.useState(false)
+  const [isMailOpen, setIsMailOpen] = React.useState(false)
   const { themeAccentColor, updateThemeAccentColor } = useFontSettings()
   const { user, isLoggedIn } = useCurrentUser()
   const [imgError, setImgError] = React.useState(false)
@@ -42,6 +43,7 @@ const TitleBar = ({ onToggleAIChat }) => {
   React.useEffect(() => {
     if (!isLoggedIn) {
       setUnreadEmailCount(0)
+      prevUnreadCountRef.current = -1
       return
     }
 
@@ -128,6 +130,18 @@ const TitleBar = ({ onToggleAIChat }) => {
     }
   }, [])
 
+  // Listen for open/close email events triggered from shortcuts or notifications
+  React.useEffect(() => {
+    const handleOpenEmail = () => setIsMailOpen(true)
+    const handleCloseEmail = () => setIsMailOpen(false)
+    window.addEventListener('open-email', handleOpenEmail)
+    window.addEventListener('close-email', handleCloseEmail)
+    return () => {
+      window.removeEventListener('open-email', handleOpenEmail)
+      window.removeEventListener('close-email', handleCloseEmail)
+    }
+  }, [])
+
   const handleToggleLeftSidebar = () => {
     window.dispatchEvent(new CustomEvent('toggle-left-sidebar'))
   }
@@ -190,30 +204,34 @@ const TitleBar = ({ onToggleAIChat }) => {
 
       <div className="title-right">
         <div className="window-controls" data-testid="window-controls">
-          <ToolTip text={unreadEmailCount > 0 ? `Lumina Mail (${unreadEmailCount} unread)` : "Lumina Mail"} position="bottom">
-            <div className="mail-btn-wrap">
+          <div className="mail-titlebar-container">
+            <ToolTip text={unreadEmailCount > 0 ? `Lumina Mail (${unreadEmailCount} unread)` : "Lumina Mail"} position="bottom">
               <button
                 type="button"
-                onClick={() => window.dispatchEvent(new CustomEvent('open-email'))}
-                className="control-btn"
-                style={{ color: unreadEmailCount > 0 ? 'var(--text-accent)' : 'var(--text-muted)' }}
+                onClick={() => setIsMailOpen((prev) => !prev)}
+                className="control-btn mail-control-btn"
+                style={{ color: isMailOpen || unreadEmailCount > 0 ? 'var(--text-accent)' : 'var(--text-faint, #64748b)' }}
                 aria-label="Open Lumina Mail"
               >
                 <Mail size={14} strokeWidth={2} />
+                {unreadEmailCount > 0 && (
+                  <span className="mail-unread-badge">
+                    {unreadEmailCount >= 1000000
+                      ? `${(unreadEmailCount / 1000000).toFixed(1).replace(/\.0$/, '')}M`
+                      : unreadEmailCount >= 1000
+                      ? `${(unreadEmailCount / 1000).toFixed(1).replace(/\.0$/, '')}K`
+                      : unreadEmailCount > 99
+                      ? '99+'
+                      : unreadEmailCount}
+                  </span>
+                )}
               </button>
-              {unreadEmailCount > 0 && (
-                <span className="mail-unread-badge">
-                  {unreadEmailCount >= 1000000
-                    ? `${(unreadEmailCount / 1000000).toFixed(1).replace(/\.0$/, '')}M`
-                    : unreadEmailCount >= 1000
-                    ? `${(unreadEmailCount / 1000).toFixed(1).replace(/\.0$/, '')}K`
-                    : unreadEmailCount > 99
-                    ? '99+'
-                    : unreadEmailCount}
-                </span>
-              )}
-            </div>
-          </ToolTip>
+            </ToolTip>
+            <EmailContainer
+              isOpen={isMailOpen}
+              onClose={() => setIsMailOpen(false)}
+            />
+          </div>
           <ToolTip text={isMac ? "Toggle AI Chat (⌘ + Shift + \\)" : "Toggle AI Chat (Ctrl + Shift + \\)"} position="bottom">
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('open-ai-chat'))}

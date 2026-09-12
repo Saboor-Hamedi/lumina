@@ -659,3 +659,27 @@ Sidebars previously shrank/compressed their content when dragged inward. The tar
   - Pressing `Ctrl + ArrowRight` steps right towards the note or heading outline.
 - **Capture Phase Handling**: Intercepted in capture phase with `e.stopPropagation()` so internal search inputs and folder drill-in keys never conflict with breadcrumb segment switching.
 
+### BB. Lumina Mail — Full Gmail Integration, TypeScript Migration & Modular Architecture
+- **Full-Featured Local Gmail Client**: Direct Google OAuth2 integration with automatic token refresh, supporting reading, searching, threading, replying, labeling, and composing messages.
+- **Expanded Mailbox Hierarchy & Categorization**:
+  - Primary mailboxes: `INBOX`, `ALL` (All Inboxes), `STARRED`, `IMPORTANT`, `SENT`, and `DRAFT`.
+  - Gmail System Categories: `CATEGORY_PROMOTIONS` (Promotions), `CATEGORY_SOCIAL` (Social), `CATEGORY_UPDATES` (Updates), and `CATEGORY_FORUMS` (Forums).
+  - Dynamic Custom Labels: Live query of user Gmail labels (`email:listLabels`) displaying custom label tags, assigned colors, and unread count badges.
+  - System cleanup: `SPAM` and `TRASH` with one-click direct trash actions (`email:trashMessage`).
+- **Main Process TypeScript Migration (`src/main/email/gmailService.ts`)**:
+  - Fully migrated from JavaScript to TypeScript with complete interface typing (`GmailUser`, `EmailAttachment`, `MimeMessageParams`, `MessageSummary`, `MessageDetails`, `SendMessageParams`, `ModifyLabelsParams`, `GmailLabel`).
+  - Strict RFC 2822 Base64URL MIME message generator supporting HTML body, file attachments, and thread-continuation headers (`In-Reply-To`, `References`).
+  - Automatic token refresh on 401 expiration with retry resilience.
+- **Modular Frontend Architecture (`src/renderer/src/features/email/components/`)**:
+  - Separated into three distinct, dedicated panel components:
+    - `EmailSidebar.tsx`: Dedicated left navigation pane with `.email-compose-wrapper`, primary mailboxes, collapsible categories, collapsible custom labels, and system folders.
+    - `EmailListPane.tsx`: Center message list with live instant search bar across any folder, unread badge/dot indicators, and fast deletion action without re-fetching whole lists.
+    - `EmailDetailPane.tsx`: Right reading pane with full thread details, sender avatars, timestamp & recipient meta, attachments bar, rich HTML email rendering, and action toolbar (Reply, Star/Unstar, Mark Unread, Delete).
+    - `EmailModal.tsx`: Pure orchestrator controlling modal geometry (900px × 76vh, responsive up to 100vw/100vh on maximize), drag-resizable middle pane width (persisted in localStorage), and keyboard navigation (ESC dismiss, focus traps).
+    - `EmailComposeModal.tsx`: Dedicated composer card with CC/BCC support, attachments picker, and instant 1-click note attachment (`Attach Note`) from active workspace note directly into email drafts.
+- **Isolated Crystal Web Audio Synthesizer (`emailSoundService.ts`)**:
+  - Clean separation of concerns with a zero-asset programmatic 3-note crystal chime using Web Audio API (`AudioContext`, gain envelopes, sine oscillators).
+- **Desktop Notifications & Compact Rounded Badge**:
+  - Native OS notifications on new incoming emails with click-to-focus and background unread polling counter with compact round badge supporting numbers into millions.
+
+

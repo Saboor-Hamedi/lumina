@@ -335,9 +335,10 @@ const MarkdownUtils = {
 }
 
 // Browser and Node.js compatibility
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { MarkdownFormatter, MarkdownUtils }
-} else {
+export { MarkdownFormatter, MarkdownUtils }
+export default MarkdownFormatter
+
+if (typeof window !== 'undefined') {
   window.MarkdownFormatter = MarkdownFormatter
   window.MarkdownUtils = MarkdownUtils
 }

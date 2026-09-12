@@ -8,16 +8,20 @@ import ToolTip from '../atoms/ToolTip'
 import './UpdateDetails.css'
 
 export const DEFAULT_RELEASE_NOTES = `New
-- Lumina Mail Client (Gmail Integration): A full-featured, private email modal seamlessly integrated into Lumina. Access your Gmail inbox, sent messages, drafts, and starred emails with rich HTML rendering, search filtering, one-click star/unread toggles, and a built-in composer with support for attachments and one-click "Attach Current Note" as Markdown.
+- Lumina Mail Client (Gmail Integration): A full-featured, private email suite seamlessly integrated into Lumina. Access your Gmail inbox, All Inboxes, Categories (Promotions, Social, Updates, Forums), custom labels, sent messages, drafts, and starred emails with rich HTML rendering, live search filtering, and one-click star/unread toggles.
+- Modular 3-Pane Email Architecture: Cleanly separated into dedicated components (EmailSidebar, EmailListPane, and EmailDetailPane) with an elevated Compose button container, live folder search bar, and resizable layout panes.
+- Programmatic Crystal Audio Synthesizer: Isolated Web Audio API engine (emailSoundService.ts) synthesizing a relaxing 3-note crystal chime on incoming email notifications with zero external audio dependencies and mute/unmute persistence.
+- Desktop Notifications & High-Capacity Rounded Badge: Native OS notifications for new emails with click-to-open window focus, paired with a compact rounded unread count badge supporting counts into the millions.
+- Email Composer with Note Attachment: Built-in composer with support for file attachments, CC/BCC, and one-click "Attach Current Note" directly from your active workspace note into email drafts.
 - CapsLock Organic Blob Indicator: When Caps Lock is active, a glowing organic blob light illuminates at the very center of the status bar. Styled using the active accent color with soft ambient light reflections and zero boxy borders, it automatically turns off when Caps Lock is disabled.
 - Compact Responsive StatusBar: Streamlined status bar metrics with 10px typography, compact icons, and responsive breakpoints, keeping the center strictly dedicated to the glowing indicator while preserving the exact profile button dimensions.
 - Breadcrumbs Horizontal Keyboard Navigation: Smoothly jump across breadcrumb segments (Workspace → Folders → Note → Heading Outline) by pressing Ctrl + Left Arrow and Ctrl + Right Arrow with immediate dropdown activation.
-- Unified Modal Geometry (900px × 76vh): Standardized all major modal dialogs (Preview, Settings, Theme, Graph, Documentation, Guide, Template, and Lumina AI) to identical dimensions, responsive maximums (94vw × 78vh), and 12px rounded glass cards.
-- Persistent Modal Maximize/Restore State: Window states for Preview, Settings, Theme, Graph, Documentation, Guide, Template, and Lumina AI are now remembered persistently across sessions via the settings engine.
-- Unified Glass Overlay Blur: Elevated all modal backdrops (Preview, Settings, Theme, Graph, Documentation, Guide, Template, and Lumina AI) to an identical glass blur aesthetic (blur(12px) saturate(180%)) while preserving IconPicker's dedicated light modal design.
+- Unified Modal Geometry (900px × 76vh): Standardized all major modal dialogs (Preview, Settings, Theme, Graph, Documentation, Guide, Template, Lumina AI, and Lumina Mail) to identical dimensions, responsive maximums (94vw × 78vh), and 12px rounded glass cards.
+- Persistent Modal Maximize/Restore State: Window states for Preview, Settings, Theme, Graph, Documentation, Guide, Template, Lumina AI, and Lumina Mail are remembered persistently across sessions via the settings engine.
+- Unified Glass Overlay Blur: Elevated all modal backdrops to an identical glass blur aesthetic (blur(12px) saturate(180%)) while preserving IconPicker's dedicated light modal design.
 - Premium Unified Scrollbar Engine (premimum-scroll.css): Centralized all custom scrollbar rules across modals and panels into an ultra-sleek, premium scrollbar design modeled after the preview modal.
-- Interactive Breadcrumbs & Heading Outline: Breadcrumbs now feature an active heading segment (# Section) dynamically tracking the editor cursor. Clicking it opens a Table of Contents outline dropdown with H1-H6 level badges, line numbers, and instant search filter that smooth-scrolls directly to that line.
-- Unified Dropdown Geometry (320px × 340px): Dropdowns for Workspace, folder siblings, and heading outlines now share identical, rock-solid dimensions matching the Workspace dropdown width, with invisible scrollbars and elegant ellipsis truncation on long titles.
+- Interactive Breadcrumbs & Heading Outline: Breadcrumbs feature an active heading segment (# Section) dynamically tracking the editor cursor with instant search filter and Table of Contents outline dropdown.
+- Unified Dropdown Geometry (320px × 340px): Dropdowns for Workspace, folder siblings, and heading outlines share identical, rock-solid dimensions matching the Workspace dropdown width, with invisible scrollbars and elegant ellipsis truncation on long titles.
 - Quick Note Creation in Folders: Add a new note directly inside any folder via the + button in the dropdown header or on individual folder rows.
 - Breadcrumb Drag-and-Drop: Drag notes or tabs directly onto Workspace or folder segments in the breadcrumb bar to move files instantly.
 - Focus Breadcrumbs Shortcut: Focus and open breadcrumb navigation instantly with Ctrl + Shift + . (or Ctrl + Shift + ;). Note/Tab icon picker updated to Ctrl + Win + . to prevent key conflicts.
@@ -27,6 +31,8 @@ export const DEFAULT_RELEASE_NOTES = `New
 - Breadcrumbs Long-Title Truncation: Note titles of any length are now gracefully truncated in the breadcrumbs bar with ellipsis (…). Hovering reveals the full title. Scales responsively with the viewport (clamp 140px → 380px).
 
 Improved
+- Email Service TypeScript Migration: Converted src/main/email/gmailService.ts to TypeScript with comprehensive interfaces for Gmail API models, RFC 2822 Base64URL MIME message serialization, and IPC handlers.
+- Instant Email Deletion & Thread Management: Email deletion executes optimistically without re-fetching entire mailbox lists, and email cards prevent layout shifts on hover.
 - Template Modal Architecture: Templates modal now shares the 900px × 76vh geometry, custom window header buttons, and seamless maximize behavior.
 - Guide Modal Elevation: Guide modal now supports window maximize/restore toggling with persistent state and updated overlay styling.
 - Responsive Scrollbar Aesthetics: High-resolution scrollbar tracks and custom offset thumbs with smooth hover transitions everywhere across the application.

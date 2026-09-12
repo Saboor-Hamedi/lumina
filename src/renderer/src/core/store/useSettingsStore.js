@@ -64,7 +64,15 @@ export const useSettingsStore = create((set, get) => ({
     docsModalMaximized: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_modal_maximized_docs') === 'true') || false,
     guideModalMaximized: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_modal_maximized_guide') === 'true') || false,
     templateModalMaximized: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_modal_maximized_template') === 'true') || false,
-    aiModalMaximized: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_modal_maximized_ai') === 'true') || false
+    aiModalMaximized: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_modal_maximized_ai') === 'true') || false,
+
+    // Email Modal Geometry & State Persistence (settings.json)
+    emailModalWidth: 840,
+    emailModalHeight: 510,
+    emailSidebarWidth: 195,
+    emailListWidth: 300,
+    emailSidebarOpen: true,
+    emailDetailOpen: true
   },
 
   isLoading: true,

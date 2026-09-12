@@ -1,7 +1,11 @@
 import React from 'react'
-import { Search, Loader2, Trash2, ShieldAlert } from 'lucide-react'
+import { Search, Loader2, Trash2, ShieldAlert, PanelLeftOpen, PanelLeftClose, PanelRightOpen, PanelRightClose } from 'lucide-react'
 import { EmailMessageSummary, EmailFolder } from '../types'
+import ToolTip from '../../../components/atoms/ToolTip'
 
+/**
+ * Props for the EmailListPane component
+ */
 export interface EmailListPaneProps {
   currentFolder: EmailFolder
   folderTitle: string
@@ -17,8 +21,24 @@ export interface EmailListPaneProps {
   errorMessage: string | null
   onGrantPermission: () => void
   listWidth: number
+  /** Whether the sidebar is currently open */
+  isSidebarOpen?: boolean
+  /** Callback to toggle the left sidebar */
+  onToggleSidebar?: () => void
+  /** Whether the right reading detail pane is currently open */
+  isDetailOpen?: boolean
+  /** Callback to toggle the right reading detail pane */
+  onToggleDetail?: () => void
+  /** Whether the container is in compact single-column mode */
+  isCompact?: boolean
 }
 
+/**
+ * EmailListPane Component
+ * 
+ * Center message list pane with live search, message cards, and collapse/expand controls
+ * for both the left navigation sidebar and the right detail reader pane.
+ */
 export const EmailListPane: React.FC<EmailListPaneProps> = ({
   folderTitle,
   searchQuery,
@@ -32,13 +52,36 @@ export const EmailListPane: React.FC<EmailListPaneProps> = ({
   isScopeError,
   errorMessage,
   onGrantPermission,
-  listWidth
+  listWidth,
+  isSidebarOpen = true,
+  onToggleSidebar,
+  isDetailOpen = true,
+  onToggleDetail,
+  isCompact = false
 }) => {
   return (
-    <section className="email-list-pane" style={{ width: `${listWidth}px` }} aria-label="Email message list">
-      {/* Search Header */}
+    <section
+      className={`email-list-pane ${!isDetailOpen ? 'full-width' : ''}`}
+      style={{ width: isDetailOpen && !isCompact ? `${listWidth}px` : '100%' }}
+      aria-label="Email message list"
+    >
+      {/* Search Header with Sidebar and Detail Toggle Controls */}
       <div className="email-search-bar">
-        <Search size={13} style={{ color: 'var(--text-faint, #64748b)' }} />
+        {/* Toggle Left Sidebar */}
+        {onToggleSidebar && (
+          <ToolTip text={isSidebarOpen ? "Collapse Sidebar" : "Open Sidebar"} position="bottom">
+            <button
+              type="button"
+              className={`email-pane-toggle-btn ${!isSidebarOpen ? 'active' : ''}`}
+              onClick={onToggleSidebar}
+              aria-label={isSidebarOpen ? "Collapse Sidebar" : "Open Sidebar"}
+            >
+              {isSidebarOpen ? <PanelLeftClose size={13} /> : <PanelLeftOpen size={13} />}
+            </button>
+          </ToolTip>
+        )}
+
+        <Search size={13} style={{ color: 'var(--text-faint, #64748b)', flexShrink: 0 }} />
         <input
           type="text"
           className="email-search-input"
@@ -51,6 +94,20 @@ export const EmailListPane: React.FC<EmailListPaneProps> = ({
             }
           }}
         />
+
+        {/* Toggle Right Reading Pane (shown when collapsed to open) */}
+        {onToggleDetail && !isDetailOpen && (
+          <ToolTip text="Open Reader" position="bottom">
+            <button
+              type="button"
+              className="email-pane-toggle-btn active"
+              onClick={onToggleDetail}
+              aria-label="Open Reader"
+            >
+              <PanelRightOpen size={13} />
+            </button>
+          </ToolTip>
+        )}
       </div>
 
       {/* Emails Scroll List */}
@@ -101,19 +158,21 @@ export const EmailListPane: React.FC<EmailListPaneProps> = ({
                 <span className="email-item-from">{msg.from}</span>
                 <div className="email-item-meta-row">
                   <span className="email-item-date">{msg.date.split(',')[0]}</span>
-                  <button
-                    type="button"
-                    className="email-item-delete-btn"
-                    title="Delete email"
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      onDeleteEmail(msg.id, e)
-                    }}
-                  >
-                    <Trash2 size={12} />
-                  </button>
+                  <ToolTip text="Delete email" position="left">
+                    <button
+                      type="button"
+                      className="email-item-delete-btn"
+                      aria-label="Delete email"
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        onDeleteEmail(msg.id, e)
+                      }}
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </ToolTip>
                 </div>
               </div>
               <div className="email-item-subject">{msg.subject}</div>
@@ -125,3 +184,5 @@ export const EmailListPane: React.FC<EmailListPaneProps> = ({
     </section>
   )
 }
+
+export default EmailListPane

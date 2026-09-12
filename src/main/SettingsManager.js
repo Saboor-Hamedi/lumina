@@ -92,7 +92,13 @@ class SettingsManager {
       graphLinkForce: 0.05,
       graph3DMode: false,
       graphAnimate: false,
-      windowBounds: { width: 900, height: 700, x: null, y: null }
+      windowBounds: { width: 900, height: 700, x: null, y: null },
+      emailModalWidth: 840,
+      emailModalHeight: 510,
+      emailSidebarWidth: 195,
+      emailListWidth: 300,
+      emailSidebarOpen: true,
+      emailDetailOpen: true
     }
     this.cache = null
     this.onChangeCallbacks = []

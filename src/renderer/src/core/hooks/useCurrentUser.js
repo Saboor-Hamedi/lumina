@@ -78,31 +78,13 @@ export function useCurrentUser() {
           useSettingsStore.getState().updateSetting('googleUser', userInfo)
           setUser(userInfo)
           window.dispatchEvent(new CustomEvent('google-user-changed', { detail: userInfo }))
-          window.dispatchEvent(
-            new CustomEvent('show-toast', {
-              detail: {
-                message: `Signed in as ${userInfo.name || userInfo.email}`,
-                type: 'success'
-              }
-            })
-          )
           return { success: true, user: userInfo }
         } else {
           const errMsg = userInfo?.error || 'Sign in failed'
-          window.dispatchEvent(
-            new CustomEvent('show-toast', {
-              detail: { message: errMsg, type: 'error' }
-            })
-          )
           return { error: errMsg }
         }
       } catch (err) {
         console.error('[useCurrentUser] Login failed:', err)
-        window.dispatchEvent(
-          new CustomEvent('show-toast', {
-            detail: { message: err?.message || 'Login failed', type: 'error' }
-          })
-        )
         return { error: err?.message || 'Login failed' }
       } finally {
         setIsLoading(false)
@@ -120,11 +102,6 @@ export function useCurrentUser() {
       useSettingsStore.getState().updateSetting('googleUser', null)
       setUser(null)
       window.dispatchEvent(new CustomEvent('google-user-changed', { detail: null }))
-      window.dispatchEvent(
-        new CustomEvent('show-toast', {
-          detail: { message: 'Signed out of Google Account', type: 'info' }
-        })
-      )
       return { success: true }
     } catch (err) {
       console.error('[useCurrentUser] Logout error:', err)

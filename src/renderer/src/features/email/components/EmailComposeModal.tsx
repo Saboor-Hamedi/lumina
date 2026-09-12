@@ -1,20 +1,42 @@
-import React, { useState } from 'react'
-import { X, Send, Paperclip, FileText, Loader2, Trash2 } from 'lucide-react'
+import React, { useState, useRef } from 'react'
+import { X, Send, Paperclip, FileText, Loader2, Bold, Italic, Code, Link2, Eye, Edit3 } from 'lucide-react'
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { EmailComposeDraft, EmailAttachment } from '../types'
+import ToolTip from '../../../components/atoms/ToolTip'
+import { insertMarkdownSyntax, renderEmailBody } from '../services/emailMarkdownService'
 
-interface EmailComposeModalProps {
+/**
+ * Props for the EmailComposeModal component
+ */
+export interface EmailComposeModalProps {
+  /** Whether the composer is open */
   isOpen: boolean
+  /** Callback to close or dismiss the composer */
   onClose: () => void
+  /** Active draft state (to, cc, bcc, subject, bodyHtml, attachments) */
   draft: EmailComposeDraft
+  /** State setter for active draft */
   setDraft: React.Dispatch<React.SetStateAction<EmailComposeDraft>>
+  /** Action to submit and send the current draft via Gmail API */
   onSend: () => void
+  /** Action to trigger native OS file picker for attachments */
   onAddAttachments: () => void
+  /** Action to inject active workspace note content as an attachment or markdown snippet */
   onAttachNote: (title: string, content: string) => void
+  /** Action to remove a specific attachment by index */
   onRemoveAttachment: (index: number) => void
+  /** Whether sending is in progress */
   isSending: boolean
 }
 
+/**
+ * EmailComposeModal Component
+ * 
+ * Container-scoped email draft composer.
+ * Non-blocking to the rest of Lumina: rendered inside EmailContainer's relative content
+ * boundary, allowing the user to simultaneously view notes, AI chat, or knowledge graph
+ * without whole-screen modality lockouts.
+ */
 export const EmailComposeModal: React.FC<EmailComposeModalProps> = ({
   isOpen,
   onClose,
@@ -27,6 +49,8 @@ export const EmailComposeModal: React.FC<EmailComposeModalProps> = ({
   isSending
 }) => {
   const [showCcBcc, setShowCcBcc] = useState<boolean>(false)
+  const [isPreview, setIsPreview] = useState<boolean>(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const selectedSnippet = useWorkspaceStore((s) => s.selectedSnippet)
 
   if (!isOpen) return null
@@ -35,6 +59,13 @@ export const EmailComposeModal: React.FC<EmailComposeModalProps> = ({
     if (selectedSnippet) {
       onAttachNote(selectedSnippet.title || 'Note', selectedSnippet.code || '')
     }
+  }
+
+  const handleApplyMarkdown = (syntaxType: 'bold' | 'italic' | 'code' | 'link') => {
+    if (isPreview) setIsPreview(false)
+    insertMarkdownSyntax(textareaRef.current, syntaxType, (newVal) => {
+      setDraft((d) => ({ ...d, bodyHtml: newVal }))
+    })
   }
 
   const formatFileSize = (bytes: number) => {
@@ -46,17 +77,19 @@ export const EmailComposeModal: React.FC<EmailComposeModalProps> = ({
   return (
     <div className="email-compose-overlay" onClick={onClose}>
       <div className="email-compose-card" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
+        {/* Header (Exact 34px aligned with other headers) */}
         <div className="email-compose-header">
-          <span>New Message</span>
-          <button
-            type="button"
-            className="email-header-btn"
-            onClick={onClose}
-            aria-label="Close compose"
-          >
-            <X size={15} />
-          </button>
+          <span className="email-compose-title">New Message</span>
+          <ToolTip text="Close draft" position="bottom">
+            <button
+              type="button"
+              className="email-pane-toggle-btn"
+              onClick={onClose}
+              aria-label="Close compose"
+            >
+              <X size={13} />
+            </button>
+          </ToolTip>
         </div>
 
         {/* Fields */}
@@ -95,6 +128,7 @@ export const EmailComposeModal: React.FC<EmailComposeModalProps> = ({
                   onChange={(e) => setDraft((d) => ({ ...d, cc: e.target.value }))}
                 />
               </div>
+
               <div className="email-field-row">
                 <span className="email-field-label">Bcc</span>
                 <input
@@ -120,38 +154,46 @@ export const EmailComposeModal: React.FC<EmailComposeModalProps> = ({
           </div>
         </div>
 
-        {/* Text Area */}
-        <textarea
-          className="email-compose-textarea"
-          placeholder="Write your email here... (Press Ctrl+Enter or ⌘+Enter to send)"
-          value={draft.bodyHtml}
-          onChange={(e) => setDraft((d) => ({ ...d, bodyHtml: e.target.value }))}
-          onKeyDown={(e) => {
-            // Tab key support for natural writing
-            if (e.key === 'Tab') {
-              e.preventDefault()
-              const target = e.currentTarget
-              const start = target.selectionStart
-              const end = target.selectionEnd
-              const val = target.value
-              setDraft((d) => ({
-                ...d,
-                bodyHtml: val.substring(0, start) + '  ' + val.substring(end)
-              }))
-              setTimeout(() => {
-                target.selectionStart = target.selectionEnd = start + 2
-              }, 0)
-            }
-            // Ctrl+Enter or Cmd+Enter to send instantly (Gmail style)
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-              e.preventDefault()
-              if (!isSending && draft.to.trim()) {
-                onSend()
+        {/* Compose Body Area: Textarea or Formatted Preview */}
+        {isPreview ? (
+          <div
+            className="email-compose-preview email-detail-body"
+            dangerouslySetInnerHTML={{ __html: renderEmailBody(draft.bodyHtml) }}
+          />
+        ) : (
+          <textarea
+            ref={textareaRef}
+            className="email-compose-textarea"
+            placeholder="Write in Markdown... (e.g. **bold**, *italic*, `code`, [link](url)) - Press Ctrl+Enter to send"
+            value={draft.bodyHtml}
+            onChange={(e) => setDraft((d) => ({ ...d, bodyHtml: e.target.value }))}
+            onKeyDown={(e) => {
+              // Tab key support for natural writing
+              if (e.key === 'Tab') {
+                e.preventDefault()
+                const target = e.currentTarget
+                const start = target.selectionStart
+                const end = target.selectionEnd
+                const val = target.value
+                setDraft((d) => ({
+                  ...d,
+                  bodyHtml: val.substring(0, start) + '  ' + val.substring(end)
+                }))
+                setTimeout(() => {
+                  target.selectionStart = target.selectionEnd = start + 2
+                }, 0)
               }
-            }
-          }}
-          spellCheck
-        />
+              // Ctrl+Enter or Cmd+Enter to send instantly (Gmail style)
+              if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault()
+                if (!isSending && draft.to.trim()) {
+                  onSend()
+                }
+              }
+            }}
+            spellCheck
+          />
+        )}
 
         {/* Dimmed & Disabled Quoted Previous Email Container */}
         {draft.quotedText && (
@@ -202,28 +244,96 @@ export const EmailComposeModal: React.FC<EmailComposeModalProps> = ({
           </div>
         )}
 
-        {/* Footer Actions */}
+        {/* Footer Actions (Compact 36px bar matching container footer) */}
         <div className="email-compose-footer">
           <div className="email-compose-actions">
-            <button
-              type="button"
-              className="email-tool-btn"
-              onClick={onAddAttachments}
-            >
-              <Paperclip size={13} />
-              <span>Attach Files</span>
-            </button>
+            {/* Markdown quick formatters */}
+            <div className="email-markdown-toolbar">
+              <ToolTip text="Bold (**text**)" position="top">
+                <button
+                  type="button"
+                  className="email-composer-icon-btn"
+                  onClick={() => handleApplyMarkdown('bold')}
+                  aria-label="Bold"
+                >
+                  <Bold size={11} />
+                </button>
+              </ToolTip>
 
-            {selectedSnippet && (
+              <ToolTip text="Italic (*text*)" position="top">
+                <button
+                  type="button"
+                  className="email-composer-icon-btn"
+                  onClick={() => handleApplyMarkdown('italic')}
+                  aria-label="Italic"
+                >
+                  <Italic size={11} />
+                </button>
+              </ToolTip>
+
+              <ToolTip text="Inline code (`code`)" position="top">
+                <button
+                  type="button"
+                  className="email-composer-icon-btn"
+                  onClick={() => handleApplyMarkdown('code')}
+                  aria-label="Code"
+                >
+                  <Code size={11} />
+                </button>
+              </ToolTip>
+
+              <ToolTip text="Link ([text](url))" position="top">
+                <button
+                  type="button"
+                  className="email-composer-icon-btn"
+                  onClick={() => handleApplyMarkdown('link')}
+                  aria-label="Link"
+                >
+                  <Link2 size={11} />
+                </button>
+              </ToolTip>
+
+              <div className="email-toolbar-separator" />
+
+              <ToolTip text={isPreview ? "Back to Editor" : "Preview Markdown"} position="top">
+                <button
+                  type="button"
+                  className={`email-tool-btn ${isPreview ? 'active' : ''}`}
+                  onClick={() => setIsPreview(!isPreview)}
+                  aria-label="Toggle Markdown Preview"
+                >
+                  {isPreview ? <Edit3 size={11} /> : <Eye size={11} />}
+                  <span>{isPreview ? 'Edit' : 'Preview'}</span>
+                </button>
+              </ToolTip>
+            </div>
+
+            <div className="email-toolbar-separator" />
+
+            <ToolTip text="Attach local files" position="top">
               <button
                 type="button"
                 className="email-tool-btn"
-                onClick={handleAttachCurrentNote}
-                title={`Attach current note "${selectedSnippet.title}" as .md`}
+                onClick={onAddAttachments}
+                aria-label="Attach Files"
               >
-                <FileText size={13} style={{ color: 'var(--text-accent)' }} />
-                <span>Attach Note ({selectedSnippet.title || 'Untitled'})</span>
+                <Paperclip size={11} />
+                <span>Files</span>
               </button>
+            </ToolTip>
+
+            {selectedSnippet && (
+              <ToolTip text={`Attach note "${selectedSnippet.title || 'Untitled'}" as .md`} position="top">
+                <button
+                  type="button"
+                  className="email-tool-btn"
+                  onClick={handleAttachCurrentNote}
+                  aria-label="Attach Note"
+                >
+                  <FileText size={11} style={{ color: 'var(--text-accent)' }} />
+                  <span>Note</span>
+                </button>
+              </ToolTip>
             )}
           </div>
 
@@ -235,12 +345,12 @@ export const EmailComposeModal: React.FC<EmailComposeModalProps> = ({
           >
             {isSending ? (
               <>
-                <Loader2 size={13} className="animate-spin" />
+                <Loader2 size={12} className="animate-spin" />
                 <span>Sending...</span>
               </>
             ) : (
               <>
-                <Send size={13} />
+                <Send size={12} />
                 <span>Send</span>
               </>
             )}
