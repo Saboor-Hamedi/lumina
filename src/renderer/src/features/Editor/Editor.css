@@ -734,6 +734,18 @@
   transition: none !important;
 }
 
+.editor-large-note-warning {
+  margin: 0 0 10px;
+  padding: 7px 10px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  border-radius: 5px;
+  color: var(--text-muted, #94a3b8);
+  background: var(--bg-card, rgba(255, 255, 255, 0.04));
+  font-size: 11px;
+  line-height: 1.4;
+  cursor: default;
+}
+
 .markdown-editor .atomic-cm-editor {
   flex: 1;
   display: flex;

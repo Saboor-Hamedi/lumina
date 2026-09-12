@@ -92,6 +92,11 @@ export const EditorCanvas = React.memo(
             showActions={inlineMetadata}
           />
         )}
+        {snippet?.isPartial && (
+          <div className="editor-large-note-warning" role="status">
+            Showing the first part of this large note. Editing and saving are disabled to protect the workspace.
+          </div>
+        )}
         {!inlineTitle && !inlineMetadata && editorMenu && (
           <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '4px 0', width: '100%' }}>
             {editorMenu}

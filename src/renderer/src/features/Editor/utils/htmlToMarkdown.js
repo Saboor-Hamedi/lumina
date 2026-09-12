@@ -239,11 +239,36 @@ export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0
 
   const tagName = node.tagName.toLowerCase()
 
-  // Process children recursively
-  const childResults = await Promise.all(
-    Array.from(node.childNodes).map((child) => convertDomNodeToMarkdown(child, options, listDepth))
-  )
-  const innerMarkdown = childResults.join('')
+  if (tagName === 'table') {
+    return convertTableToMarkdown(node, options)
+  }
+
+  if (tagName === 'pre') {
+    const codeText = node.textContent || ''
+    return `\n\n\`\`\`\n${codeText.replace(/\r\n/g, '\n').trim()}\n\`\`\`\n\n`
+  }
+
+  if (tagName === 'ul' || tagName === 'ol') {
+    const indent = '  '.repeat(listDepth)
+    const items = Array.from(node.children).filter((child) => child.tagName.toLowerCase() === 'li')
+    const listLines = []
+
+    for (let index = 0; index < items.length; index += 1) {
+      const itemMarkdown = await convertDomNodeToMarkdown(items[index], options, listDepth + 1)
+      const marker = tagName === 'ul' ? '-' : `${index + 1}.`
+      listLines.push(`${indent}${marker} ${itemMarkdown.trim()}`)
+    }
+
+    return `\n\n${listLines.join('\n')}\n\n`
+  }
+
+  // Walk children in document order without creating a promise for every node.
+  // Large Word pastes can contain tens of thousands of nodes; recursive Promise.all
+  // creates a large transient promise tree and delays the first editor update.
+  let innerMarkdown = ''
+  for (const child of node.childNodes) {
+    innerMarkdown += await convertDomNodeToMarkdown(child, options, listDepth)
+  }
 
   // Headings: H1 - H6 or Word MsoHeading / MsoTitle classes
   const classNameLower = (node.className || '').toLowerCase()
@@ -315,11 +340,6 @@ export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0
     return wrapFormattedText(innerMarkdown, '`')
   }
 
-  if (tagName === 'pre') {
-    const codeText = node.textContent || ''
-    return `\n\n\`\`\`\n${codeText.replace(/\r\n/g, '\n').trim()}\n\`\`\`\n\n`
-  }
-
   // Blockquote
   if (tagName === 'blockquote') {
     const lines = innerMarkdown.trim().split('\n')
@@ -347,8 +367,26 @@ export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0
 
   // Images
   if (tagName === 'img') {
+    const imageState = options.imageState || (options.imageState = { seen: new Set(), saved: 0 })
     let src = node.getAttribute('src') || ''
     const alt = node.getAttribute('alt') || 'image'
+
+    if (!src || imageState.seen.has(src)) return ''
+    imageState.seen.add(src)
+
+    const width = Number.parseInt(node.getAttribute('width') || '', 10)
+    const height = Number.parseInt(node.getAttribute('height') || '', 10)
+    const style = node.getAttribute('style') || ''
+    if (
+      (width > 0 && width <= 1) ||
+      (height > 0 && height <= 1) ||
+      /display\s*:\s*none|visibility\s*:\s*hidden|opacity\s*:\s*0/i.test(style)
+    ) {
+      return ''
+    }
+
+    const maxImages = options.maxImages ?? 100
+    if (imageState.saved >= maxImages) return alt && alt !== 'image' ? alt : ''
 
     // If a baseHref was provided or found in HTML, resolve relative src
     if (options.baseHref && src && !/^https?:\/\//i.test(src) && !src.startsWith('data:') && !isLocalPath(src)) {
@@ -367,6 +405,7 @@ export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0
             const filename = `Pasted image ${Date.now()}.${ext}`
             const savedPath = await onSaveImage(uint8Array, filename)
             if (savedPath) {
+              imageState.saved += 1
               return `![${alt}](${savedPath})`
             }
           }
@@ -383,6 +422,7 @@ export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0
           const filename = alt && alt !== 'image' ? alt : undefined
           const savedPath = await options.onSaveImageFromPath(src, filename)
           if (savedPath) {
+            imageState.saved += 1
             return `![${alt}](${savedPath})`
           }
         } catch (err) {
@@ -395,6 +435,7 @@ export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0
         try {
           const savedPath = await options.onGetClipboardImage()
           if (savedPath) {
+            imageState.saved += 1
             return `![${alt}](${savedPath})`
           }
         } catch (err) {
@@ -404,6 +445,7 @@ export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0
     }
 
     if (src) {
+      imageState.saved += 1
       return `![${alt}](${src})`
     }
     return ''
@@ -421,30 +463,6 @@ export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0
   // Lists: UL / OL / LI
   if (tagName === 'li') {
     return innerMarkdown.trim()
-  }
-
-  if (tagName === 'ul') {
-    const indent = '  '.repeat(listDepth)
-    const items = Array.from(node.children).filter((c) => c.tagName.toLowerCase() === 'li')
-    const listLines = await Promise.all(
-      items.map(async (li) => {
-        const itemMd = await convertDomNodeToMarkdown(li, options, listDepth + 1)
-        return `${indent}- ${itemMd.trim()}`
-      })
-    )
-    return `\n\n${listLines.join('\n')}\n\n`
-  }
-
-  if (tagName === 'ol') {
-    const indent = '  '.repeat(listDepth)
-    const items = Array.from(node.children).filter((c) => c.tagName.toLowerCase() === 'li')
-    const listLines = await Promise.all(
-      items.map(async (li, idx) => {
-        const itemMd = await convertDomNodeToMarkdown(li, options, listDepth + 1)
-        return `${indent}${idx + 1}. ${itemMd.trim()}`
-      })
-    )
-    return `\n\n${listLines.join('\n')}\n\n`
   }
 
   // Word List Paragraphs (<p class="MsoListParagraph">)
@@ -490,11 +508,6 @@ export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0
 
   if (tagName === 'div') {
     return innerMarkdown
-  }
-
-  // Tables: TABLE / THEAD / TBODY / TR / TH / TD
-  if (tagName === 'table') {
-    return convertTableToMarkdown(node, options)
   }
 
   return innerMarkdown

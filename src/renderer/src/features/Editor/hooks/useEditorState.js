@@ -43,6 +43,7 @@ export function useEditorState({ snippet, onSave, showToast, realViewRef, editor
     if (
       !isMountedRef.current ||
       !snippetRef.current ||
+      snippetRef.current.isOversized ||
       !snippet?.id ||
       !editorHandleRef.current
     ) {
@@ -94,6 +95,7 @@ export function useEditorState({ snippet, onSave, showToast, realViewRef, editor
   // --- Markdown Change Handler ---
   const handleMarkdownChange = useCallback(
     (md) => {
+      if (snippet?.isOversized) return
       latestCodeRef.current = md
       const originalCode = lastSavedCodeRef.current ?? snippetRef.current?.code ?? ''
       const isContentClean = md === originalCode

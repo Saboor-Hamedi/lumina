@@ -86,6 +86,21 @@ describe('VaultManager', () => {
       expect(snippets[0].title).toBe('Test Note')
       expect(snippets[0].code.trim()).toBe('Test content')
     })
+
+    it('protects oversized text files from full startup reads', async () => {
+      const oversizedContent = Buffer.alloc(5 * 1024 * 1024 + 1, 'x')
+      await fs.writeFile(path.join(testVaultPath, 'Large Note.md'), oversizedContent)
+
+      const { snippets } = await VaultManager.scanVault()
+      const largeSnippet = snippets.find((snippet) => snippet.fileName === 'Large Note.md')
+
+      expect(largeSnippet).toEqual(expect.objectContaining({
+        title: 'Large Note',
+        code: '',
+        size: oversizedContent.length,
+        isOversized: true
+      }))
+    })
   })
 
   describe('saveSnippet', () => {

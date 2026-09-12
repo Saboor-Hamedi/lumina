@@ -47,6 +47,9 @@ class WorkspaceManager {
     /** @type {NodeJS.Timeout|null} Debounce timer handle for file system change events */
     this.scanDebounceTimeout = null
 
+    /** @type {Promise<string>|null} Active workspace initialization promise */
+    this.initializationPromise = null
+
     /** @type {Map<string, number>} Lowercase normalized file paths ignored temporarily after programmatic writes */
     this.ignoredPaths = new Map()
   }
@@ -85,6 +88,17 @@ class WorkspaceManager {
    * @returns {Promise<string>} The resolved absolute workspace path.
    */
   async init(customPath, fallbackDocumentsPath) {
+    if (this.initializationPromise) return this.initializationPromise
+
+    this.initializationPromise = this.initialize(customPath, fallbackDocumentsPath)
+    try {
+      return await this.initializationPromise
+    } finally {
+      this.initializationPromise = null
+    }
+  }
+
+  async initialize(customPath, fallbackDocumentsPath) {
     let targetPath = customPath
     if (!targetPath && fallbackDocumentsPath) {
       targetPath = path.join(fallbackDocumentsPath, 'lumina')
@@ -315,6 +329,13 @@ class WorkspaceManager {
    */
   async saveSnippet(snippet) {
     const oldSnippet = snippet?.id ? this.snippets.get(snippet.id) : null
+    if (oldSnippet?.isPartial) {
+      throw new Error('This large note is open in preview mode and cannot be saved.')
+    }
+    if (oldSnippet?.isOversized && snippet.code === '') {
+      throw new Error('This oversized note is protected from blank saves. Open it after loading its content.')
+    }
+
     const result = await WorkspaceOperations.saveSnippet(
       this.workspacePath,
       this.snippets,
@@ -585,6 +606,10 @@ class WorkspaceManager {
    * @returns {Promise<{ snippets: Array<any>, folders: Array<string> }>}
    */
   async getSnippets() {
+    if (this.initializationPromise) {
+      await this.initializationPromise
+    }
+
     if (this.scanPromise) {
       await this.scanPromise
     }
@@ -595,6 +620,66 @@ class WorkspaceManager {
         .filter((s) => s && s.id)
         .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)),
       folders: Array.from(this.folders)
+    }
+  }
+
+  async readSnippet(id) {
+    if (this.initializationPromise) {
+      await this.initializationPromise
+    }
+
+    const snippet = this.snippets.get(id)
+    if (!snippet || !this.workspacePath || !snippet.relativePath) {
+      throw new Error('Snippet not found')
+    }
+
+    const filePath = path.resolve(this.workspacePath, snippet.relativePath)
+    const workspaceRoot = path.resolve(this.workspacePath)
+    if (!filePath.startsWith(workspaceRoot + path.sep)) {
+      throw new Error('Invalid snippet path')
+    }
+
+    const rawContent = await fs.readFile(filePath, 'utf-8')
+    const parsed = safeParseFrontmatter(rawContent)
+    const loadedSnippet = {
+      ...snippet,
+      code: parsed.content || '',
+      isOversized: false
+    }
+    this.snippets.set(id, loadedSnippet)
+    return loadedSnippet
+  }
+
+  async readSnippetPreview(id, maxBytes = 512 * 1024) {
+    if (this.initializationPromise) {
+      await this.initializationPromise
+    }
+
+    const snippet = this.snippets.get(id)
+    if (!snippet || !this.workspacePath || !snippet.relativePath) {
+      throw new Error('Snippet not found')
+    }
+
+    const filePath = path.resolve(this.workspacePath, snippet.relativePath)
+    const workspaceRoot = path.resolve(this.workspacePath)
+    if (!filePath.startsWith(workspaceRoot + path.sep)) {
+      throw new Error('Invalid snippet path')
+    }
+
+    const handle = await fs.open(filePath, 'r')
+    try {
+      const buffer = Buffer.alloc(Math.max(1, maxBytes))
+      const { bytesRead } = await handle.read(buffer, 0, buffer.length, 0)
+      const parsed = safeParseFrontmatter(buffer.subarray(0, bytesRead).toString('utf-8'))
+      return {
+        ...snippet,
+        code: parsed.content || '',
+        isOversized: true,
+        isPartial: true,
+        previewBytes: bytesRead
+      }
+    } finally {
+      await handle.close()
     }
   }
 }

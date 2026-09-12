@@ -11,7 +11,6 @@ import WorkspaceSearch from './workspace/workspaceSearch'
 const VaultManager = WorkspaceManager
 const VaultIndexer = WorkspaceIndexer
 const VaultSearch = WorkspaceSearch
-import Database from 'better-sqlite3'
 import iconAsset from '../../resources/icon.png?asset'
 import { handleExportDocs } from '../export/exportDocs'
 import { handleExportPDF } from '../export/exportPDF'
@@ -40,29 +39,6 @@ if (process.env.LUMINA_TEST_USERDATA) {
 
 let mainWindow
 let hasIndexed = false
-
-async function migrateFromSQLite() {
-  const dbPath = join(app.getPath('userData'), 'snippets.db')
-  try {
-    await fs.access(dbPath)
-    const db = new Database(dbPath)
-    const snippets = db.prepare('SELECT * FROM snippets').all()
-
-    for (const snippet of snippets) {
-      await VaultManager.saveSnippet({
-        id: snippet.id,
-        title: snippet.title,
-        code: snippet.code,
-        language: snippet.language,
-        tags: snippet.tags,
-        timestamp: snippet.timestamp
-      })
-    }
-
-    await fs.rename(dbPath, dbPath + '.bak')
-    console.info('Migration complete.')
-  } catch (err) {}
-}
 
 async function autoRepairIndexedDB() {
   try {
@@ -417,6 +393,8 @@ app.whenReady().then(async () => {
   }
 
   registerWorkspaceHandle('getSnippets', () => WorkspaceManager.getSnippets())
+  registerWorkspaceHandle('readSnippet', async (_, id) => WorkspaceManager.readSnippet(id))
+  registerWorkspaceHandle('readSnippetPreview', async (_, id) => WorkspaceManager.readSnippetPreview(id))
   registerWorkspaceHandle('saveSnippet', async (_, snippet) => {
     const updatedSnippet = await WorkspaceManager.saveSnippet(snippet)
     if (WorkspaceManager.workspacePath && updatedSnippet?.fileName) {
@@ -827,8 +805,7 @@ app.whenReady().then(async () => {
     await WorkspaceIndexer.init(userDataPath)
     await WorkspaceSearch.init(userDataPath)
 
-    await WorkspaceManager.init(savedWorkspacePath, app.getPath('documents'))
-    await migrateFromSQLite()
+    const workspaceInitPromise = WorkspaceManager.init(savedWorkspacePath, app.getPath('documents'))
 
     const startupWorkspacePath = savedWorkspacePath
 
@@ -844,14 +821,15 @@ app.whenReady().then(async () => {
         hasIndexed = true
 
         setTimeout(() => {
-          WorkspaceIndexer.indexWorkspace(startupWorkspacePath, {
+          workspaceInitPromise
+            .then(() => WorkspaceIndexer.indexWorkspace(startupWorkspacePath, {
             force: false,
             onProgress: (stats) => {
               if (mainWindow && !mainWindow.isDestroyed()) {
                 mainWindow.webContents.send('index:progress', stats)
               }
             }
-          })
+          }))
             .then(() => {
               return WorkspaceSearch.reload()
             })

@@ -4,8 +4,11 @@
  */
 
 import { MarkdownFormatter } from '../../../core/hooks/useMarkdown'
+import { cleanEmailMarkdown, cleanEmailText, sanitizeRichEmailHtml } from './emailContentCleaner'
 
 const formatter = new MarkdownFormatter()
+
+export { cleanEmailMarkdown, cleanEmailText, sanitizeRichEmailHtml }
 
 /**
  * Auto-links bare URLs in text that are not already enclosed in an <a> tag.
@@ -38,12 +41,11 @@ export function renderEmailBody(content: string | undefined | null): string {
 
   // If the email already has full HTML formatting from the sender
   if (isRichHtml(content)) {
-    // Autolink any bare URLs in text nodes and return
-    return autolinkUrls(content)
+    return autolinkUrls(sanitizeRichEmailHtml(content))
   }
 
   // Plain text email: First normalize <br/> back to newlines if created by Gmail fetcher
-  let plainText = content.replace(/<br\s*\/?>/gi, '\n')
+  let plainText = cleanEmailMarkdown(content.replace(/<br\s*\/?>/gi, '\n'))
 
   // Convert markdown to clean HTML
   let html = formatter.toHTML(plainText)

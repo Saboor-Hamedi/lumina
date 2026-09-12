@@ -983,6 +983,8 @@
 .email-detail-body {
   flex: 1;
   overflow-y: auto;
+  content-visibility: auto;
+  contain-intrinsic-size: 0 800px;
   padding: 16px 20px;
   background: var(--bg-editor, var(--bg-panel));
   color: var(--text-main, #e2e8f0);

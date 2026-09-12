@@ -2,6 +2,7 @@ import fs from 'fs/promises'
 import fsSync from 'fs'
 import path from 'path'
 import { createHash } from 'crypto'
+import { MAX_WORKSPACE_TEXT_BYTES } from './workspaceScanner'
 
 class Mutex {
   constructor() {
@@ -301,6 +302,34 @@ class WorkspaceIndexer {
     try {
       const stats = await fs.stat(filePath)
       state = state || (await this.loadState())
+
+      if (stats.size > MAX_WORKSPACE_TEXT_BYTES) {
+        const fileState = state?.files?.[filePath]
+        if (
+          !force &&
+          fileState?.size === stats.size &&
+          fileState?.mtime === stats.mtimeMs &&
+          fileState?.indexed &&
+          fileState?.oversized
+        ) {
+          return { indexed: false, reason: 'oversized_unchanged' }
+        }
+
+        return {
+          indexed: true,
+          chunkCount: 0,
+          reason: 'oversized',
+          stateUpdate: {
+            mtime: stats.mtimeMs,
+            size: stats.size,
+            checksum: null,
+            indexed: true,
+            oversized: true,
+            chunkCount: 0,
+            lastIndexed: Date.now()
+          }
+        }
+      }
 
       if (!force && state?.files?.[filePath]) {
         const fileState = state.files[filePath]

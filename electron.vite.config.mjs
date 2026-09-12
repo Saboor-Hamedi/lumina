@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => ({
     plugins: [externalizeDepsPlugin()],
     build: {
       rollupOptions: {
-        external: ['electron', 'better-sqlite3'],
+        external: ['electron'],
         input: {
           index: resolve('src/main/index.js'),
           'indexer-worker': resolve('src/main/indexer-worker.js')

@@ -27,6 +27,8 @@ const IMAGE_EXTS = new Set([
  */
 const PDF_EXTS = new Set(['.pdf'])
 
+export const MAX_WORKSPACE_TEXT_BYTES = 5 * 1024 * 1024
+
 /**
  * Recognized text note extensions.
  * Files matching these extensions are parsed for frontmatter, markdown wikilinks, and plain text content.
@@ -242,6 +244,32 @@ export class WorkspaceScanner {
             try {
               const stats = await fs.stat(fullPath)
               const isMarkdown = ext === '.md' || ext === '.markdown'
+              const isOversized = stats.size > MAX_WORKSPACE_TEXT_BYTES
+
+              if (isOversized) {
+                const id = `note-${crypto.createHash('md5').update(relPath).digest('hex')}`
+                return {
+                  id,
+                  title: fileName.replace(/\.[^/.]+$/, ''),
+                  code: '',
+                  language: isMarkdown ? 'markdown' : 'text',
+                  tags: '',
+                  timestamp: stats.mtimeMs,
+                  createdAt: new Date(stats.birthtimeMs || stats.mtimeMs).toISOString(),
+                  selection: null,
+                  isPinned: false,
+                  isLearned: false,
+                  customIcon: null,
+                  color: null,
+                  type: 'snippet',
+                  is_draft: 0,
+                  fileName,
+                  folderId: folderId || '',
+                  relativePath: relPath,
+                  size: stats.size,
+                  isOversized: true
+                }
+              }
 
               // Cache Check: If file mtime matches cached snippet, reuse it directly
               const cached = cacheByRelPath.get(relPath)

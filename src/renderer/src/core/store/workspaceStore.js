@@ -66,9 +66,11 @@ export const useWorkspaceStore = create((set, get) => ({
         activeTabId: snippet.id
       }
     })
+
   },
 
   setActiveTabId: (id) => {
+    let selectedSnippet = null
     set((state) => {
       if (id === GRAPH_TAB_ID) {
         const isAlreadyOpen = state.openTabs.includes(GRAPH_TAB_ID)
@@ -85,12 +87,14 @@ export const useWorkspaceStore = create((set, get) => ({
       const snippet = state.snippets.find((s) => s.id === id) || null
       const isAlreadyOpen = state.openTabs.includes(id)
       const nextTabs = isAlreadyOpen ? state.openTabs : [...state.openTabs, id]
+      selectedSnippet = snippet
       return {
         activeTabId: id,
-        selectedSnippet: snippet,
+        selectedSnippet,
         openTabs: nextTabs
       }
     })
+
   },
 
   closeTab: (id) =>

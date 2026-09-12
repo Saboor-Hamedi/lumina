@@ -111,7 +111,6 @@ function getLargeDependencies() {
     'react-markdown', // Markdown rendering
     'highlight.js', // Syntax highlighting
     'pdf-lib', // PDF generation
-    'better-sqlite3', // Database
     'electron' // Electron runtime
   ]
 

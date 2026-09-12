@@ -234,7 +234,7 @@ npm run test:all         # unit tests + e2e back to back
 ### tech stack
 
 **main process:**
-electron 39.2.4 · chokidar 5 · gray-matter 4 · better-sqlite3
+electron 39.2.4 · chokidar 5 · gray-matter 4
 
 **renderer:**
 react 19.1.1 · codemirror 6 · zustand 5 · dexie 4 · marked 17 · highlight.js 11 · lucide-react · @xenova/transformers 2 · react-force-graph-2d · flexsearch
