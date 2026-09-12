@@ -677,7 +677,7 @@
 /* Table cells */
 .cm-atomic-table th,
 .cm-atomic-table td {
-  min-width: 110px !important;
+  min-width: 0 !important;
   padding: 0 !important;
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08)) !important;
   border-top: none !important;
@@ -822,7 +822,7 @@
   font-size: 11px !important;
   font-weight: 650 !important;
   letter-spacing: 0.05em !important;
-  text-transform: uppercase !important;
+  text-transform: none !important;
   color: var(--text-muted, #94a3b8) !important;
 }
 

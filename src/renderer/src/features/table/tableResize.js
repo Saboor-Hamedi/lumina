@@ -1,3 +1,5 @@
+import { readModelFromDom } from './tableModel.js'
+
 const MIN_COLUMN_WIDTH = 72
 const MIN_ROW_HEIGHT = 32
 const RESIZE_ZONE = 10
@@ -32,7 +34,7 @@ function setRowHeight(row, height) {
   })
 }
 
-export function setupTableColResizing(wrap) {
+export function setupTableColResizing(wrap, onCommit = null) {
   const table = wrap?.querySelector('table')
   if (!table) return () => {}
 
@@ -59,7 +61,7 @@ export function setupTableColResizing(wrap) {
       for (let index = 0; index < cells.length - 1; index += 1) {
         const rect = cells[index].getBoundingClientRect()
         if (Math.abs(event.clientX - rect.right) <= RESIZE_ZONE) {
-          return { type: 'column', index, size: rect.width }
+          return { type: 'column', index, size: rect.width, cell: cells[index] }
         }
       }
     }
@@ -89,13 +91,14 @@ export function setupTableColResizing(wrap) {
     columnGrip.classList.toggle('visible', Boolean(target?.type === 'column'))
     rowGrip.classList.toggle('visible', Boolean(target?.type === 'row'))
     if (target?.type === 'column') {
-      const cell = table.querySelector(`thead th:nth-child(${target.index + 1})`)
+      const cell = target.cell || table.querySelector(`thead th:nth-child(${target.index + 1})`)
       if (!cell) return
       const rect = cell.getBoundingClientRect()
       const wrapRect = wrap.getBoundingClientRect()
       columnGrip.style.left = `${rect.right - wrapRect.left - 1}px`
       columnGrip.style.top = `${rect.top - wrapRect.top + rect.height / 2 - 9}px`
       columnGrip.dataset.index = String(target.index)
+      columnGrip._cell = target.cell || cell
     } else if (target?.type === 'row') {
       if (!target.row) return
       const rect = target.row.getBoundingClientRect()
@@ -116,7 +119,7 @@ export function setupTableColResizing(wrap) {
     if (!target) return
 
     if (target.type === 'column') {
-      const cell = table.querySelector(`thead th:nth-child(${target.index + 1})`)
+      const cell = target.cell || columnGrip._cell || table.querySelector(`thead th:nth-child(${target.index + 1})`)
       if (!cell) return
       target.size = cell.getBoundingClientRect().width
     } else if (!target.row) {
@@ -160,6 +163,18 @@ export function setupTableColResizing(wrap) {
 
   const onMouseUp = () => {
     if (!resizeType) return
+    if (resizeType === 'column') {
+      const model = readModelFromDom(wrap)
+      model.columnWidths = Array.from(table.querySelectorAll('thead th')).map(
+        (cell) => cell.getBoundingClientRect().width
+      )
+      onCommit?.(model)
+    } else if (resizeType === 'row') {
+      const model = readModelFromDom(wrap)
+      model.rowHeights = Array.from(table.querySelectorAll('tbody tr:not(.cm-table-empty-row)'))
+        .map((row) => row.getBoundingClientRect().height)
+      onCommit?.(model)
+    }
     resizeType = null
     resizeIndex = -1
     activeRow = null

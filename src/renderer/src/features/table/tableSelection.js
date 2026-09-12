@@ -1,4 +1,4 @@
-import { dispatchModel } from './tableExtension.js'
+import { dispatchModel, placeCaretAtEnd } from './tableExtension.js'
 import { readModelFromDom } from './tableModel.js'
 
 export function setupTableSelection(wrap, view) {
@@ -321,6 +321,24 @@ export function setupTableSelection(wrap, view) {
       const colTotal = wrap.querySelectorAll('thead th').length
       const tbody = wrap.querySelector('tbody')
       const rowTotal = tbody ? tbody.querySelectorAll('tr:not(.cm-table-empty-row)').length : 0
+
+      // Backspace/Delete clears selected cells. Structural row/column deletion
+      // remains available through the table menu, so keyboard editing is safe.
+      selected.forEach((cell) => {
+        cell.dataset.raw = ''
+        const source = cell.querySelector('.cm-atomic-table-cell-source')
+        if (source) source.textContent = ''
+      })
+      clearSelectionVisuals()
+      startCell = null
+      endCell = null
+      const clearedModel = readModelFromDom(wrap)
+      dispatchModel(view, wrap, clearedModel, {
+        isHeader: minR === -1,
+        rowIdx: Math.max(0, minR),
+        colIdx: Math.max(0, minC)
+      })
+      return
 
       // If full row(s) are selected (and not the header row), delete the row(s)!
       if (minR >= 0 && minC === 0 && maxC >= colTotal - 1) {

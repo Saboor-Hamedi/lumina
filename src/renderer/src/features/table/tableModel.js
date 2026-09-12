@@ -85,13 +85,17 @@ export function parseTable(state, tableNode) {
   while (alignments.length < header.length) alignments.push('')
 
   let caption = ''
+  let columnWidths = []
+  let rowHeights = []
   const startLine = state.doc.lineAt(tableNode.from)
-  if (startLine.number > 1) {
-    const prevLine = state.doc.line(startLine.number - 1).text.trim()
+  for (let lineNumber = startLine.number - 1; lineNumber >= Math.max(1, startLine.number - 3); lineNumber -= 1) {
+    const prevLine = state.doc.line(lineNumber).text.trim()
     const titleMatch = prevLine.match(/^<!--\s*table:\s*(.*?)\s*-->$/i) || prevLine.match(/^Table:\s*(.+)$/i)
-    if (titleMatch) {
-      caption = titleMatch[1].trim()
-    }
+    if (titleMatch) caption = titleMatch[1].trim()
+    const widthMatch = prevLine.match(/^<!--\s*table-widths:\s*([\d, ]+)\s*-->$/i)
+    if (widthMatch) columnWidths = widthMatch[1].split(',').map((value) => Number(value.trim())).filter(Number.isFinite)
+    const heightMatch = prevLine.match(/^<!--\s*table-heights:\s*([\d, ]+)\s*-->$/i)
+    if (heightMatch) rowHeights = heightMatch[1].split(',').map((value) => Number(value.trim())).filter(Number.isFinite)
   }
 
   // Ensure all rows match the header cell count
@@ -99,7 +103,7 @@ export function parseTable(state, tableNode) {
     while (rows[r].length < header.length) rows[r].push('')
   }
 
-  return { header, rows, alignments, caption }
+  return { header, rows, alignments, caption, columnWidths, rowHeights }
 }
 // Escape cell content so it can't break the row's GFM structure: an
 // unescaped `|` would split the cell into two columns, and a stray
@@ -125,6 +129,12 @@ export function serializeTable(model) {
 
   if (model.caption && model.caption.trim()) {
     lines.push(`<!-- table: ${model.caption.trim()} -->`)
+  }
+  if (model.columnWidths?.length) {
+    lines.push(`<!-- table-widths: ${model.columnWidths.map((width) => Math.round(width)).join(', ')} -->`)
+  }
+  if (model.rowHeights?.length) {
+    lines.push(`<!-- table-heights: ${model.rowHeights.map((height) => Math.round(height)).join(', ')} -->`)
   }
 
   lines.push('| ' + model.header.map(escapeCell).join(' | ') + ' |')
@@ -159,7 +169,15 @@ export function readModelFromDom(wrap) {
   )
   const titleInput = wrap.querySelector('.cm-table-ui-title-input')
   const caption = titleInput ? titleInput.value.trim() : (wrap.dataset.caption || '')
-  return { header, rows, alignments, caption }
+  const widthData = wrap.dataset.columnWidths || ''
+  const columnWidths = widthData
+    ? widthData.split(',').map((value) => Number(value.trim())).filter(Number.isFinite)
+    : Array.from(wrap.querySelectorAll('thead th')).map((cell) => cell.getBoundingClientRect().width)
+  const heightData = wrap.dataset.rowHeights || ''
+  const rowHeights = heightData
+    ? heightData.split(',').map((value) => Number(value.trim())).filter(Number.isFinite)
+    : Array.from(wrap.querySelectorAll('tbody tr:not(.cm-table-empty-row)')).map((row) => row.getBoundingClientRect().height)
+  return { header, rows, alignments, caption, columnWidths, rowHeights }
 }
 // A cell's raw markdown lives in `dataset.raw` — the source of truth
 // that `readModelFromDom` reads when serializing the table back to

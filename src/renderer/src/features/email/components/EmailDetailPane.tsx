@@ -48,6 +48,23 @@ export const EmailDetailPane: React.FC<EmailDetailPaneProps> = ({
   isCompact = false,
   isNarrow = false
 }) => {
+  const [bodyZoom, setBodyZoom] = React.useState(0.9)
+  const bodyRef = React.useRef<HTMLDivElement>(null)
+
+  React.useEffect(() => {
+    const body = bodyRef.current
+    if (!body) return
+
+    const handleWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey && !event.metaKey) return
+      event.preventDefault()
+      setBodyZoom((current) => Math.min(1.2, Math.max(0.75, current - event.deltaY * 0.002)))
+    }
+
+    body.addEventListener('wheel', handleWheel, { passive: false })
+    return () => body.removeEventListener('wheel', handleWheel)
+  }, [])
+
   if (!isOpen) return null
 
   // Safely format email body with markdown and link support
@@ -203,7 +220,9 @@ export const EmailDetailPane: React.FC<EmailDetailPaneProps> = ({
             {/* Rich formatted HTML / Markdown body */}
             <div
               className="email-detail-body"
+              ref={bodyRef}
               onClick={handleBodyClick}
+              style={{ zoom: bodyZoom }}
               dangerouslySetInnerHTML={{ __html: renderedHtml }}
             />
           </>

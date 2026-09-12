@@ -18,6 +18,50 @@ import { createTableFooterDOM, updateTableFooterCount } from './tableFooter.js'
 import { parseTable, serializeTable, readModelFromDom, getCellSource } from './tableModel'
 import { renderCellSourceDecorated, makeCell } from './tableCell'
 
+function tableStartFrom(doc, startLine) {
+  let from = startLine.from
+  for (let lineNumber = startLine.number - 1; lineNumber >= Math.max(1, startLine.number - 3); lineNumber -= 1) {
+    const text = doc.line(lineNumber).text.trim()
+    if (
+      text.match(/^<!--\s*table:\s*(.*?)\s*-->$/i) ||
+      text.match(/^Table:\s*(.+)$/i) ||
+      text.match(/^<!--\s*table-widths:\s*[\d, ]+\s*-->$/i)
+      || text.match(/^<!--\s*table-heights:\s*[\d, ]+\s*-->$/i)
+    ) {
+      from = doc.line(lineNumber).from
+    } else if (from !== startLine.from) {
+      break
+    }
+  }
+  return from
+}
+
+function applyTableGeometry(table, model) {
+  const widths = model.columnWidths || []
+  if (widths.length) {
+    const totalWidth = widths.reduce((sum, width) => sum + width, 0)
+    table.style.setProperty('width', `${totalWidth}px`, 'important')
+    table.style.setProperty('min-width', `${totalWidth}px`, 'important')
+    Array.from(table.querySelectorAll('tr')).forEach((row) => {
+      Array.from(row.children).forEach((cell, index) => {
+        const width = widths[index]
+        if (width) {
+          cell.style.setProperty('width', `${width}px`, 'important')
+          cell.style.setProperty('min-width', `${width}px`, 'important')
+          cell.style.setProperty('max-width', `${width}px`, 'important')
+        }
+      })
+    })
+  }
+
+  if (model.rowHeights?.length) {
+    Array.from(table.querySelectorAll('tbody tr:not(.cm-table-empty-row)')).forEach((row, index) => {
+      const height = model.rowHeights[index]
+      if (height) row.style.height = `${height}px`
+    })
+  }
+}
+
 export function findCurrentTableRange(view, dom) {
   if (!dom) return null
   const wrap = dom.closest ? (dom.closest('.cm-atomic-table') || dom) : dom
@@ -76,16 +120,7 @@ export function findCurrentTableRange(view, dom) {
     // First check exact start line match (since pos is startLine.from)
     for (const n of tableNodes) {
       const sLine = doc.lineAt(n.from)
-      let tableFrom = sLine.from
-      if (sLine.number > 1) {
-        const prevLine = doc.line(sLine.number - 1)
-        if (
-          prevLine.text.trim().match(/^<!--\s*table:\s*(.*?)\s*-->$/i) ||
-          prevLine.text.trim().match(/^Table:\s*(.+)$/i)
-        ) {
-          tableFrom = prevLine.from
-        }
-      }
+      const tableFrom = tableStartFrom(doc, sLine)
       if (pos === tableFrom || pos === n.from) {
         targetNode = n
         break
@@ -125,16 +160,7 @@ export function findCurrentTableRange(view, dom) {
 
   if (targetNode) {
     const startLine = doc.lineAt(targetNode.from)
-    let fromPos = startLine.from
-    if (startLine.number > 1) {
-      const prevLine = doc.line(startLine.number - 1)
-      if (
-        prevLine.text.trim().match(/^<!--\s*table:\s*(.*?)\s*-->$/i) ||
-        prevLine.text.trim().match(/^Table:\s*(.+)$/i)
-      ) {
-        fromPos = prevLine.from
-      }
-    }
+    const fromPos = tableStartFrom(doc, startLine)
     const endLine = doc.lineAt(targetNode.to)
     let lastTableLine = startLine
     for (let n = startLine.number; n <= endLine.number; n++) {
@@ -232,6 +258,10 @@ export class TableWidget extends WidgetType {
     if (this.model.caption) {
       wrap.dataset.caption = this.model.caption
     }
+    if (this.model.columnWidths?.length) {
+      wrap.dataset.columnWidths = this.model.columnWidths.join(',')
+    }
+    if (this.model.rowHeights?.length) wrap.dataset.rowHeights = this.model.rowHeights.join(',')
 
     wrap.addEventListener('keydown', (event) => {
       if (view.state.readOnly) return
@@ -369,12 +399,14 @@ export class TableWidget extends WidgetType {
     }
     table.appendChild(tbody)
 
+    applyTableGeometry(table, this.model)
+
     wrap.appendChild(createTableFooterDOM(this.model))
 
     setupTableFormattingToolbar(wrap, view)
     setupTableSelection(wrap, view)
     setupTableDragAndDrop(wrap, view)
-    setupTableColResizing(wrap)
+    setupTableColResizing(wrap, (model) => dispatchModel(view, wrap, model))
     setupTableInsertion(wrap, view)
 
     return wrap
@@ -391,6 +423,7 @@ export class TableWidget extends WidgetType {
     if (colCount > 0) {
       table.style.minWidth = `${colCount * 110}px`
     }
+
 
     // 1. Sync header row (ths)
     let ths = Array.from(theadTr.querySelectorAll('th'))
@@ -549,6 +582,12 @@ export class TableWidget extends WidgetType {
       }
     }
 
+    if (this.model.columnWidths?.length) {
+      dom.dataset.columnWidths = this.model.columnWidths.join(',')
+    }
+    if (this.model.rowHeights?.length) dom.dataset.rowHeights = this.model.rowHeights.join(',')
+
+    applyTableGeometry(table, this.model)
     updateTableFooterCount(dom, this.model)
 
     return true
@@ -956,16 +995,7 @@ export function buildTableWidgets(state) {
       if (!model) return
       const startLine = doc.lineAt(node.from)
       const endLine = doc.lineAt(node.to)
-      let fromPos = startLine.from
-      if (startLine.number > 1) {
-        const prevLine = doc.line(startLine.number - 1)
-        if (
-          prevLine.text.trim().match(/^<!--\s*table:\s*(.*?)\s*-->$/i) ||
-          prevLine.text.trim().match(/^Table:\s*(.+)$/i)
-        ) {
-          fromPos = prevLine.from
-        }
-      }
+      const fromPos = tableStartFrom(doc, startLine)
       let lastTableLine = startLine
       for (let n = startLine.number; n <= endLine.number; n++) {
         const l = doc.line(n)

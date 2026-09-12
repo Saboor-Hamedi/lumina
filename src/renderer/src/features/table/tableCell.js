@@ -808,6 +808,11 @@ export function makeCell(tag, text, view) {
     }
 
     if (event.key === 'Backspace') {
+      const selection = source.ownerDocument?.defaultView?.getSelection()
+      if (selection && !selection.isCollapsed && source.contains(selection.anchorNode)) {
+        return
+      }
+
       const offset = getCaretCharOffset(source)
       const text = source.textContent || ''
       if (offset > 0 && offset < text.length && text[offset - 1] === '`' && text[offset] === '`') {
@@ -823,6 +828,12 @@ export function makeCell(tag, text, view) {
       }
 
       if (offset === 0) {
+        if (text.length > 0) {
+          event.preventDefault()
+          event.stopPropagation()
+          return
+        }
+
         event.preventDefault()
         event.stopPropagation()
 
