@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useCurrentUser } from '../../../core/hooks/useCurrentUser'
-import { EmailFolder, EmailMessageSummary, EmailMessageDetails, EmailComposeDraft, EmailAttachment } from '../types'
+import { EmailFolder, EmailMessageSummary, EmailMessageDetails, EmailComposeDraft, EmailAttachment, EmailLabelItem } from '../types'
 
 export function useEmailClient() {
-  const { user: googleUser, isLoggedIn } = useCurrentUser()
+  const { user: googleUser, isLoggedIn, login } = useCurrentUser()
   const [currentFolder, setCurrentFolder] = useState<EmailFolder>('INBOX')
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [emails, setEmails] = useState<EmailMessageSummary[]>([])
+  const [userLabels, setUserLabels] = useState<EmailLabelItem[]>([])
   const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null)
   const [activeEmailDetails, setActiveEmailDetails] = useState<EmailMessageDetails | null>(null)
   const [isLoadingList, setIsLoadingList] = useState<boolean>(false)
@@ -45,16 +46,19 @@ export function useEmailClient() {
       } else {
         setEmails(res?.messages || [])
         // Auto-select first email if none selected
-        if ((res?.messages || []).length > 0 && !selectedEmailId) {
-          setSelectedEmailId(res.messages[0].id)
-        }
+        setSelectedEmailId((curr) => {
+          if (!curr && (res?.messages || []).length > 0) {
+            return res.messages[0].id
+          }
+          return curr
+        })
       }
     } catch (err: any) {
       setErrorMessage(err?.message || 'Failed to fetch emails')
     } finally {
       setIsLoadingList(false)
     }
-  }, [currentFolder, searchQuery, selectedEmailId])
+  }, [currentFolder, searchQuery])
 
   // Fetch full details of selected email
   useEffect(() => {
@@ -83,6 +87,8 @@ export function useEmailClient() {
           window.api.modifyEmailLabels({
             id: selectedEmailId,
             removeLabelIds: ['UNREAD']
+          }).then(() => {
+            window.dispatchEvent(new CustomEvent('refresh-unread-count'))
           })
         }
       }
@@ -136,24 +142,31 @@ export function useEmailClient() {
       addLabelIds: newUnread ? ['UNREAD'] : [],
       removeLabelIds: newUnread ? [] : ['UNREAD']
     })
+    window.dispatchEvent(new CustomEvent('refresh-unread-count'))
   }, [activeEmailDetails])
 
   // Delete / Trash email
   const deleteEmail = useCallback(async (msgId: string, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation()
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     if (!window.api?.trashEmail) return
 
-    // Immediately remove from local email list
-    setEmails((prev) => prev.filter((m) => m.id !== msgId))
+    // Optimistically remove from local email list and select adjacent email
+    setEmails((prev) => {
+      const idx = prev.findIndex((m) => m.id === msgId)
+      const remaining = prev.filter((m) => m.id !== msgId)
 
-    // If currently viewing this email, clear or pick next
-    if (selectedEmailId === msgId) {
-      setSelectedEmailId((prevSelected) => {
-        const remaining = emails.filter((m) => m.id !== msgId)
-        return remaining.length > 0 ? remaining[0].id : null
+      setSelectedEmailId((curr) => {
+        if (curr !== msgId) return curr
+        if (remaining.length === 0) return null
+        const nextIdx = Math.min(idx, remaining.length - 1)
+        return remaining[nextIdx]?.id || null
       })
-      setActiveEmailDetails(null)
-    }
+
+      return remaining
+    })
 
     try {
       const res = await window.api.trashEmail({ id: msgId })
@@ -163,7 +176,7 @@ export function useEmailClient() {
     } catch (err: any) {
       setErrorMessage(err?.message || 'Failed to delete email')
     }
-  }, [selectedEmailId, emails])
+  }, [])
 
   // Send draft email
   const sendCurrentDraft = useCallback(async () => {
@@ -177,13 +190,23 @@ export function useEmailClient() {
     setErrorMessage(null)
 
     try {
+      let finalBody = draft.bodyHtml || ''
+      if (draft.quotedText) {
+        finalBody = `${finalBody}\n\n<br/><br/><div style="border-left: 2px solid #cbd5e1; padding-left: 10px; color: #64748b; font-size: 12px;">${draft.quotedText.replace(/\n/g, '<br/>')}</div>`
+      } else {
+        finalBody = finalBody.replace(/\n/g, '<br/>')
+      }
+
       const res = await window.api.sendEmail({
         to: draft.to,
         cc: draft.cc,
         bcc: draft.bcc,
         subject: draft.subject || '(No Subject)',
-        bodyHtml: draft.bodyHtml.replace(/\n/g, '<br/>'),
-        attachments: draft.attachments
+        bodyHtml: finalBody,
+        attachments: draft.attachments,
+        threadId: draft.threadId || undefined,
+        inReplyTo: draft.inReplyTo || undefined,
+        references: draft.references || undefined
       })
 
       if (res?.error) {
@@ -196,7 +219,10 @@ export function useEmailClient() {
           bcc: '',
           subject: '',
           bodyHtml: '',
-          attachments: []
+          attachments: [],
+          threadId: null,
+          inReplyTo: '',
+          references: ''
         })
         setSuccessToast('Email sent successfully!')
         setTimeout(() => setSuccessToast(null), 3000)
@@ -240,6 +266,53 @@ export function useEmailClient() {
     }))
   }, [])
 
+  // Reply to an email in the same thread
+  const replyToEmail = useCallback((emailDetails: EmailMessageDetails) => {
+    // Determine clean sender and recipient addresses
+    const extractEmail = (str: string) => {
+      if (!str) return ''
+      const match = str.match(/<([^>]+)>/)
+      return (match && match[1] ? match[1] : str).trim()
+    }
+
+    const senderEmail = extractEmail(emailDetails.from)
+    const myEmail = (googleUser?.email || '').trim().toLowerCase()
+
+    // If this message was sent by the user themselves, reply to the recipient in `to`, not to own self!
+    let replyTo = senderEmail
+    if (myEmail && senderEmail.toLowerCase() === myEmail && emailDetails.to) {
+      replyTo = extractEmail(emailDetails.to)
+    }
+
+    const subjectPrefix = emailDetails.subject.toLowerCase().startsWith('re:') ? '' : 'Re: '
+    const replySubject = `${subjectPrefix}${emailDetails.subject}`
+
+    const inReplyTo = emailDetails.messageIdHeader || ''
+    const references = emailDetails.referencesHeader 
+      ? `${emailDetails.referencesHeader} ${inReplyTo}`.trim()
+      : inReplyTo
+
+    // Build clean quoted text
+    const dateStr = emailDetails.date || ''
+    const quoteHeader = `---------- On ${dateStr}, ${emailDetails.from} wrote: ----------`
+    const quoteContent = emailDetails.snippet ? emailDetails.snippet : ''
+    const quotedBlock = `${quoteHeader}\n${quoteContent}`
+
+    setDraft({
+      to: replyTo,
+      cc: '',
+      bcc: '',
+      subject: replySubject,
+      bodyHtml: '',
+      quotedText: quotedBlock,
+      attachments: [],
+      threadId: emailDetails.threadId || null,
+      inReplyTo,
+      references
+    })
+    setIsComposeOpen(true)
+  }, [googleUser])
+
   // Remove attachment
   const removeAttachment = useCallback((index: number) => {
     setDraft((prev) => ({
@@ -248,21 +321,41 @@ export function useEmailClient() {
     }))
   }, [])
 
+  // Fetch all Gmail labels
+  const fetchLabels = useCallback(async () => {
+    if (!window.api?.listEmailLabels) return
+    try {
+      const res = await window.api.listEmailLabels()
+      if (res?.labels) {
+        const userOnly = res.labels
+          .filter((l: any) => l.type === 'user')
+          .sort((a: any, b: any) => a.name.localeCompare(b.name))
+        setUserLabels(userOnly)
+      }
+    } catch (err) {
+      console.warn('Failed to fetch Gmail labels:', err)
+    }
+  }, [])
+
   // Initial load
   useEffect(() => {
     if (isLoggedIn) {
       fetchEmails(currentFolder, searchQuery)
+      fetchLabels()
     }
-  }, [isLoggedIn, currentFolder, fetchEmails])
+  }, [isLoggedIn, currentFolder, fetchEmails, fetchLabels])
 
   return {
     googleUser,
     isLoggedIn,
+    login,
     currentFolder,
     setCurrentFolder,
     searchQuery,
     setSearchQuery,
     emails,
+    userLabels,
+    fetchLabels,
     selectedEmailId,
     setSelectedEmailId,
     activeEmailDetails,
@@ -280,6 +373,7 @@ export function useEmailClient() {
     toggleStar,
     toggleUnread,
     deleteEmail,
+    replyToEmail,
     sendCurrentDraft,
     addAttachments,
     attachNote,

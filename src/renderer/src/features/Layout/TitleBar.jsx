@@ -7,6 +7,7 @@ import ToolTip from '../../components/atoms/ToolTip'
 import UpdateDetails from '../../components/update/UpdateDetails'
 import AccentColor from '../theme/AccentColor'
 import { useFontSettings } from '../../core/hooks/useFontSettings'
+import { playNewEmailTone } from '../email'
 import '../../assets/titlebar.css'
 
 const TitleBar = ({ onToggleAIChat }) => {
@@ -33,6 +34,83 @@ const TitleBar = ({ onToggleAIChat }) => {
   })
   const selectedSnippet = useWorkspaceStore((s) => s.selectedSnippet)
   const isMac = typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('mac')
+
+  const [unreadEmailCount, setUnreadEmailCount] = React.useState(0)
+  const prevUnreadCountRef = React.useRef(-1)
+
+  // Poll for unread emails and trigger desktop notifications if new mail arrives
+  React.useEffect(() => {
+    if (!isLoggedIn) {
+      setUnreadEmailCount(0)
+      return
+    }
+
+    let isMounted = true
+
+    // Request Web Notification permission if needed
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+      try {
+        Notification.requestPermission()
+      } catch {}
+    }
+
+    const checkUnread = async () => {
+      try {
+        if (window.api?.getUnreadEmailCount) {
+          const res = await window.api.getUnreadEmailCount()
+          if (!isMounted) return
+          const newCount = res?.count || 0
+          setUnreadEmailCount(newCount)
+
+          // If new unread mail arrived and increased count, trigger notification if not muted
+          if (prevUnreadCountRef.current >= 0 && newCount > prevUnreadCountRef.current) {
+            const isMuted = localStorage.getItem('lumina_email_notifications') === 'false'
+            if (!isMuted) {
+              const title = 'New Email'
+              const body = 'New Email'
+
+              // Play gentle email chime tone via isolated sound service
+              playNewEmailTone()
+
+              // 1. Native Electron OS Notification
+              if (window.api?.showEmailNotification) {
+                window.api.showEmailNotification({ title, body })
+              }
+              // 2. Web Notification API fallback
+              if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+                try {
+                  new Notification(title, { body })
+                } catch {}
+              }
+              // 3. In-app toast banner
+              window.dispatchEvent(
+                new CustomEvent('show-toast', {
+                  detail: { message: '📬 New Email', type: 'info', duration: 3500 }
+                })
+              )
+            }
+          }
+          prevUnreadCountRef.current = newCount
+        }
+      } catch (err) {
+        // Silently catch in polling loop
+      }
+    }
+
+    checkUnread()
+    // Poll every 15 seconds for real-time live inbox updates
+    const interval = setInterval(checkUnread, 15000)
+
+    // Listen for instant refresh events
+    const handleEmailRefresh = () => checkUnread()
+    window.addEventListener('refresh-unread-count', handleEmailRefresh)
+
+    return () => {
+      isMounted = false
+      clearInterval(interval)
+      window.removeEventListener('refresh-unread-count', handleEmailRefresh)
+    }
+  }, [isLoggedIn])
 
   React.useEffect(() => {
     if (window.api?.getVersion) {
@@ -112,16 +190,29 @@ const TitleBar = ({ onToggleAIChat }) => {
 
       <div className="title-right">
         <div className="window-controls" data-testid="window-controls">
-          <ToolTip text="Lumina Mail" position="bottom">
-            <button
-              type="button"
-              onClick={() => window.dispatchEvent(new CustomEvent('open-email'))}
-              className="control-btn"
-              style={{ color: 'var(--text-muted)' }}
-              aria-label="Open Lumina Mail"
-            >
-              <Mail size={14} strokeWidth={2} />
-            </button>
+          <ToolTip text={unreadEmailCount > 0 ? `Lumina Mail (${unreadEmailCount} unread)` : "Lumina Mail"} position="bottom">
+            <div className="mail-btn-wrap">
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent('open-email'))}
+                className="control-btn"
+                style={{ color: unreadEmailCount > 0 ? 'var(--text-accent)' : 'var(--text-muted)' }}
+                aria-label="Open Lumina Mail"
+              >
+                <Mail size={14} strokeWidth={2} />
+              </button>
+              {unreadEmailCount > 0 && (
+                <span className="mail-unread-badge">
+                  {unreadEmailCount >= 1000000
+                    ? `${(unreadEmailCount / 1000000).toFixed(1).replace(/\.0$/, '')}M`
+                    : unreadEmailCount >= 1000
+                    ? `${(unreadEmailCount / 1000).toFixed(1).replace(/\.0$/, '')}K`
+                    : unreadEmailCount > 99
+                    ? '99+'
+                    : unreadEmailCount}
+                </span>
+              )}
+            </div>
           </ToolTip>
           <ToolTip text={isMac ? "Toggle AI Chat (⌘ + Shift + \\)" : "Toggle AI Chat (Ctrl + Shift + \\)"} position="bottom">
             <button

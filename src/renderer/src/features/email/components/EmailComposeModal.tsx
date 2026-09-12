@@ -123,10 +123,56 @@ export const EmailComposeModal: React.FC<EmailComposeModalProps> = ({
         {/* Text Area */}
         <textarea
           className="email-compose-textarea"
-          placeholder="Write your email here..."
+          placeholder="Write your email here... (Press Ctrl+Enter or ⌘+Enter to send)"
           value={draft.bodyHtml}
           onChange={(e) => setDraft((d) => ({ ...d, bodyHtml: e.target.value }))}
+          onKeyDown={(e) => {
+            // Tab key support for natural writing
+            if (e.key === 'Tab') {
+              e.preventDefault()
+              const target = e.currentTarget
+              const start = target.selectionStart
+              const end = target.selectionEnd
+              const val = target.value
+              setDraft((d) => ({
+                ...d,
+                bodyHtml: val.substring(0, start) + '  ' + val.substring(end)
+              }))
+              setTimeout(() => {
+                target.selectionStart = target.selectionEnd = start + 2
+              }, 0)
+            }
+            // Ctrl+Enter or Cmd+Enter to send instantly (Gmail style)
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+              e.preventDefault()
+              if (!isSending && draft.to.trim()) {
+                onSend()
+              }
+            }
+          }}
+          spellCheck
         />
+
+        {/* Dimmed & Disabled Quoted Previous Email Container */}
+        {draft.quotedText && (
+          <div className="email-quoted-history-box">
+            <div className="email-quoted-history-header">
+              <span>Previous Message History</span>
+              <button
+                type="button"
+                className="email-quoted-remove-btn"
+                onClick={() => setDraft((d) => ({ ...d, quotedText: undefined }))}
+                title="Remove quoted history from this reply"
+              >
+                <X size={12} />
+                <span>Remove Quote</span>
+              </button>
+            </div>
+            <div className="email-quoted-history-body">
+              {draft.quotedText}
+            </div>
+          </div>
+        )}
 
         {/* Attachments preview list */}
         {draft.attachments.length > 0 && (

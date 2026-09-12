@@ -165,7 +165,10 @@ const api = {
   sendEmail: (params) => electronAPI.ipcRenderer.invoke('email:sendMessage', params),
   modifyEmailLabels: (params) => electronAPI.ipcRenderer.invoke('email:modifyLabels', params),
   trashEmail: (params) => electronAPI.ipcRenderer.invoke('email:trashMessage', params),
-  pickEmailAttachments: () => electronAPI.ipcRenderer.invoke('email:pickAttachments')
+  getUnreadEmailCount: () => electronAPI.ipcRenderer.invoke('email:getUnreadCount'),
+  showEmailNotification: (params) => electronAPI.ipcRenderer.invoke('email:showNotification', params),
+  pickEmailAttachments: () => electronAPI.ipcRenderer.invoke('email:pickAttachments'),
+  listEmailLabels: () => electronAPI.ipcRenderer.invoke('email:listLabels')
 }
 
 // Expose APIs

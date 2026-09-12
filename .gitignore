@@ -8,6 +8,8 @@ build
 
 .env
 .antigravityignore
+.vercel
+**/.vercel
 
 # notes/
 

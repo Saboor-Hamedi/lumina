@@ -331,5 +331,45 @@ export const EDITOR_SLASH_COMMANDS = [
       })
       view.focus()
     }
+  },
+  {
+    id: 'google',
+    label: 'Google Login',
+    keywords: ['google', 'login', 'auth', 'signin', 'account'],
+    desc: 'Log in with Google Account or open auth',
+    icon: 'Globe',
+    category: SLASH_CATEGORIES.AI_TOOLS,
+    execute: (view, from, to) => {
+      const range = safeRange(view, from, to)
+      // Erase the slash query text from editor
+      view.dispatch({
+        changes: { from: range.from, to: range.to, insert: '' },
+        selection: { anchor: range.from }
+      })
+      // Trigger Google Login
+      if (window.api?.loginWithGoogle) {
+        window.api.loginWithGoogle('736587690312-33s4trbiculu5dvctb92lkl6njgc14ae.apps.googleusercontent.com')
+      } else {
+        window.dispatchEvent(new CustomEvent('open-google-login'))
+      }
+    }
+  },
+  {
+    id: 'email',
+    label: 'Lumina Mail',
+    keywords: ['email', 'mail', 'gmail', 'inbox', 'compose'],
+    desc: 'Open Lumina Mail modal',
+    icon: 'Mail',
+    category: SLASH_CATEGORIES.AI_TOOLS,
+    execute: (view, from, to) => {
+      const range = safeRange(view, from, to)
+      // Erase the slash query text from editor
+      view.dispatch({
+        changes: { from: range.from, to: range.to, insert: '' },
+        selection: { anchor: range.from }
+      })
+      // Trigger Email Modal
+      window.dispatchEvent(new CustomEvent('open-email'))
+    }
   }
 ]

@@ -27,7 +27,9 @@ import {
   Calendar,
   Clock,
   Link,
-  HelpCircle
+  HelpCircle,
+  Globe,
+  Mail
 } from 'lucide-react'
 import { EDITOR_SLASH_COMMANDS, filterSlashCommands } from './slashCommands'
 import './editorSlash.css'
@@ -50,7 +52,9 @@ const ICON_MAP = {
   Sparkles: <Sparkles size={13} />,
   Calendar: <Calendar size={13} />,
   Clock: <Clock size={13} />,
-  Link: <Link size={13} />
+  Link: <Link size={13} />,
+  Globe: <Globe size={13} />,
+  Mail: <Mail size={13} />
 }
 
 export const EditorSlash = ({

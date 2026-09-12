@@ -245,7 +245,7 @@ if (!app.isPackaged) {
 
 app.whenReady().then(async () => {
   if (process.platform === 'win32') {
-    app.setAppUserModelId('io.lumina.app.v2')
+    app.setAppUserModelId(app.isPackaged ? 'io.lumina.app' : process.execPath)
   }
 
   // Suppress console errors for harmless cache/quota warnings (dev only)
