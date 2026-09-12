@@ -1,6 +1,6 @@
 {
   "name": "lumina",
-  "version": "1.0.48",
+  "version": "1.0.49",
   "description": "Lumina - A premium, AI-powered thinking environment.",
   "main": "./out/main/index.js",
   "author": "Saboor Hamedi",
@@ -12,7 +12,7 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "rebuild": "electron-rebuild -f",
-    "postinstall": "patch-package && electron-builder install-app-deps",
+    "postinstall": "electron-builder install-app-deps",
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "npm run build && electron-builder --mac",
@@ -127,7 +127,7 @@
     "vitest": "^4.0.17"
   },
   "win": {
-    "icon": "build/icons/win/icon.ico",
+    "icon": "resources/icon.ico",
     "publish": [
       {
         "provider": "github",

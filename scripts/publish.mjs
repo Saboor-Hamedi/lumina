@@ -23,11 +23,12 @@ try {
     console.log(`📌 Creating Git tag: ${tagName}`)
     execSync(`git tag -a ${tagName} -m "Release ${tagName}"`, { stdio: 'inherit' })
   } else {
-    console.log(`ℹ️ Git tag ${tagName} already exists.`)
+    console.log(`ℹ️ Git tag ${tagName} already exists. Updating tag to current commit...`)
+    execSync(`git tag -f -a ${tagName} -m "Release ${tagName}"`, { stdio: 'inherit' })
   }
 
   console.log(`📤 Pushing ${tagName} to GitHub...`)
-  execSync(`git push origin ${tagName}`, { stdio: 'inherit' })
+  execSync(`git push origin ${tagName} --force`, { stdio: 'inherit' })
 
   console.log(`\n✅ CI/CD Pipeline Triggered Successfully!`)
   console.log(`──────────────────────────────────────────`)

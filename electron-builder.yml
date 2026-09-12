@@ -2,7 +2,7 @@ appId: io.lumina.app
 productName: Lumina
 icon: resources/icon.png
 directories:
-  buildResources: build
+  buildResources: resources
 files:
   - '!**/.vscode/*'
   - '!src/*'
@@ -17,7 +17,7 @@ extraResources:
     filter:
       - "**/*"
 win:
-  icon: resources/icon.png
+  icon: resources/icon.ico
   executableName: Lumina
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
@@ -28,7 +28,6 @@ nsis:
   perMachine: false
 mac:
   icon: resources/icon.png
-  entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
     - NSCameraUsageDescription: Application requests access to the device's camera.
     - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
@@ -40,7 +39,6 @@ dmg:
 linux:
   target:
     - AppImage
-    - snap
     - deb
   maintainer: electronjs.org
   category: Utility
