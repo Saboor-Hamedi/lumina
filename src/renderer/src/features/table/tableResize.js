@@ -5,16 +5,15 @@ const MIN_ROW_HEIGHT = 32
 const RESIZE_ZONE = 10
 
 function setColumnWidths(table, columnIndex, delta, initialWidths) {
+  if (columnIndex < 0 || columnIndex >= initialWidths.length) return
   const rows = table.querySelectorAll('tr')
   const nextWidths = [...initialWidths]
-  const neighborIndex = columnIndex + 1
-  if (neighborIndex < 0 || neighborIndex >= nextWidths.length) return
+  nextWidths[columnIndex] = Math.max(MIN_COLUMN_WIDTH, initialWidths[columnIndex] + delta)
 
-  const maxPositiveDelta = nextWidths[neighborIndex] - MIN_COLUMN_WIDTH
-  const maxNegativeDelta = nextWidths[columnIndex] - MIN_COLUMN_WIDTH
-  const appliedDelta = Math.max(-maxNegativeDelta, Math.min(delta, maxPositiveDelta))
-  nextWidths[columnIndex] += appliedDelta
-  nextWidths[neighborIndex] -= appliedDelta
+  const totalWidth = nextWidths.reduce((sum, width) => sum + width, 0)
+  table.style.setProperty('width', `${totalWidth}px`, 'important')
+  table.style.setProperty('min-width', `${totalWidth}px`, 'important')
+
   rows.forEach((row) => {
     Array.from(row.children).forEach((cell, index) => {
       const nextWidth = nextWidths[index]
@@ -58,7 +57,7 @@ export function setupTableColResizing(wrap, onCommit = null) {
       if (event.clientY < row.getBoundingClientRect().top - RESIZE_ZONE || event.clientY > row.getBoundingClientRect().bottom + RESIZE_ZONE) {
         continue
       }
-      for (let index = 0; index < cells.length - 1; index += 1) {
+      for (let index = 0; index < cells.length; index += 1) {
         const rect = cells[index].getBoundingClientRect()
         if (Math.abs(event.clientX - rect.right) <= RESIZE_ZONE) {
           return { type: 'column', index, size: rect.width, cell: cells[index] }
@@ -164,15 +163,22 @@ export function setupTableColResizing(wrap, onCommit = null) {
   const onMouseUp = () => {
     if (!resizeType) return
     if (resizeType === 'column') {
+      const ths = Array.from(table.querySelectorAll('thead th'))
+      const widths = ths.map((cell) => Math.round(cell.getBoundingClientRect().width))
+      if (widths.length) {
+        wrap.dataset.columnWidths = widths.join(',')
+      }
       const model = readModelFromDom(wrap)
-      model.columnWidths = Array.from(table.querySelectorAll('thead th')).map(
-        (cell) => cell.getBoundingClientRect().width
-      )
+      model.columnWidths = widths
       onCommit?.(model)
     } else if (resizeType === 'row') {
+      const rows = Array.from(table.querySelectorAll('tbody tr:not(.cm-table-empty-row)'))
+      const heights = rows.map((row) => Math.round(row.getBoundingClientRect().height))
+      if (heights.length) {
+        wrap.dataset.rowHeights = heights.join(',')
+      }
       const model = readModelFromDom(wrap)
-      model.rowHeights = Array.from(table.querySelectorAll('tbody tr:not(.cm-table-empty-row)'))
-        .map((row) => row.getBoundingClientRect().height)
+      model.rowHeights = heights
       onCommit?.(model)
     }
     resizeType = null

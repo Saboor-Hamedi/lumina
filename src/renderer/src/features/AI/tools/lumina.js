@@ -34,6 +34,72 @@ import { AIProviderFactory, resolveProviderConfig } from '../providers/index.js'
 
 let loadSessionsPromise = null
 
+function loadStoredAIUsage() {
+  try {
+    const raw = localStorage.getItem('lumina_ai_usage_stats')
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      return {
+        totalTokens: parsed.totalTokens || 0,
+        promptTokens: parsed.promptTokens || 0,
+        completionTokens: parsed.completionTokens || 0,
+        totalTimeMs: parsed.totalTimeMs || 0,
+        totalCostUSD: parsed.totalCostUSD || 0,
+        totalPrompts: parsed.totalPrompts || 0
+      }
+    }
+  } catch (e) {
+    // fallback
+  }
+  return {
+    totalTokens: 0,
+    promptTokens: 0,
+    completionTokens: 0,
+    totalTimeMs: 0,
+    totalCostUSD: 0,
+    totalPrompts: 0
+  }
+}
+
+export function computeUsageFromSessions(sessions = []) {
+  let promptTokens = 0
+  let completionTokens = 0
+  let totalPrompts = 0
+
+  if (Array.isArray(sessions)) {
+    for (const session of sessions) {
+      if (Array.isArray(session?.messages)) {
+        for (const msg of session.messages) {
+          const text = msg.content || ''
+          if (!text.trim()) continue
+          const approxTokens = Math.max(1, Math.ceil(text.length / 4))
+          if (msg.role === 'user') {
+            promptTokens += approxTokens
+          } else if (msg.role === 'assistant') {
+            completionTokens += approxTokens
+            totalPrompts++
+          }
+        }
+      }
+    }
+  }
+
+  const totalTokens = promptTokens + completionTokens
+  const promptCost = (promptTokens / 1000) * 0.00014
+  const completionCost = (completionTokens / 1000) * 0.00028
+  const totalCostUSD = promptCost + completionCost
+  const totalTimeMs = totalPrompts * 2800
+
+  return {
+    totalTokens,
+    promptTokens,
+    completionTokens,
+    totalTimeMs,
+    totalCostUSD,
+    totalPrompts
+  }
+}
+
 /**
  * Lumina AI Store (useAIStore)
  * Central Zustand store for AI interactions, multi-session chat, and workspace agent tasks.
@@ -100,6 +166,82 @@ export const useAIStore = create((set, get) => {
     chatMessages: [],
     activeThinkingStatus: '',
 
+    // Usage & Workbench Stats
+    aiUsageStats: loadStoredAIUsage(),
+
+    recordAIUsage: ({ promptTokens = 0, completionTokens = 0, timeMs = 0, provider = '', model = '' }) => {
+      const current = get().aiUsageStats || loadStoredAIUsage()
+      const totalTokens = (current.totalTokens || 0) + promptTokens + completionTokens
+      const newPromptTokens = (current.promptTokens || 0) + promptTokens
+      const newCompletionTokens = (current.completionTokens || 0) + completionTokens
+      const newTotalTimeMs = (current.totalTimeMs || 0) + timeMs
+      const newTotalPrompts = (current.totalPrompts || 0) + 1
+
+      // Accurate pricing per 1,000 tokens based on active provider and model
+      const p = (provider || '').toLowerCase()
+      const m = (model || '').toLowerCase()
+
+      let promptRate = 0.00014 // DeepSeek V3 default ($0.14 / 1M)
+      let completionRate = 0.00028 // DeepSeek V3 default ($0.28 / 1M)
+
+      if (p.includes('ollama') || m.includes('ollama')) {
+        promptRate = 0
+        completionRate = 0
+      } else if (m.includes('deepseek-reasoner') || m.includes('r1')) {
+        promptRate = 0.00055
+        completionRate = 0.00219
+      } else if (m.includes('gpt-4o-mini')) {
+        promptRate = 0.00015
+        completionRate = 0.00060
+      } else if (m.includes('gpt-4o') || m.includes('gpt-4')) {
+        promptRate = 0.0025
+        completionRate = 0.0100
+      } else if (p.includes('anthropic') || m.includes('claude')) {
+        promptRate = 0.0030
+        completionRate = 0.0150
+      } else if (p.includes('groq')) {
+        promptRate = 0.00005
+        completionRate = 0.00008
+      }
+
+      const promptCost = (promptTokens / 1000) * promptRate
+      const completionCost = (completionTokens / 1000) * completionRate
+      const newTotalCostUSD = (current.totalCostUSD || 0) + promptCost + completionCost
+
+      const updatedStats = {
+        totalTokens,
+        promptTokens: newPromptTokens,
+        completionTokens: newCompletionTokens,
+        totalTimeMs: newTotalTimeMs,
+        totalCostUSD: newTotalCostUSD,
+        totalPrompts: newTotalPrompts
+      }
+
+      set({ aiUsageStats: updatedStats })
+      try {
+        localStorage.setItem('lumina_ai_usage_stats', JSON.stringify(updatedStats))
+      } catch (err) {
+        console.warn('[AIStore] Failed to save AI usage stats:', err)
+      }
+    },
+
+    resetAIUsage: () => {
+      const resetStats = {
+        totalTokens: 0,
+        promptTokens: 0,
+        completionTokens: 0,
+        totalTimeMs: 0,
+        totalCostUSD: 0,
+        totalPrompts: 0
+      }
+      set({ aiUsageStats: resetStats })
+      try {
+        localStorage.setItem('lumina_ai_usage_stats', JSON.stringify(resetStats))
+      } catch (err) {
+        console.warn('[AIStore] Failed to reset AI usage stats:', err)
+      }
+    },
+
     // --- Offline Model Actions ---
     generateEmbedding,
     generateLocalText,
@@ -165,16 +307,37 @@ export const useAIStore = create((set, get) => {
         try {
           const { isChatLoading } = get()
           const { sessions, activeSessionId } = await loadChatSessions()
+
+          // Calculate and backfill usage stats from all stored chat sessions
+          const historicalUsage = computeUsageFromSessions(sessions)
+          const currentStats = get().aiUsageStats || loadStoredAIUsage()
+          let newUsageStats = currentStats
+
+          if (historicalUsage.totalTokens > (currentStats.totalTokens || 0)) {
+            newUsageStats = {
+              totalTokens: Math.max(historicalUsage.totalTokens, currentStats.totalTokens || 0),
+              promptTokens: Math.max(historicalUsage.promptTokens, currentStats.promptTokens || 0),
+              completionTokens: Math.max(historicalUsage.completionTokens, currentStats.completionTokens || 0),
+              totalTimeMs: Math.max(historicalUsage.totalTimeMs, currentStats.totalTimeMs || 0),
+              totalCostUSD: Math.max(historicalUsage.totalCostUSD, currentStats.totalCostUSD || 0),
+              totalPrompts: Math.max(historicalUsage.totalPrompts, currentStats.totalPrompts || 0)
+            }
+            try {
+              localStorage.setItem('lumina_ai_usage_stats', JSON.stringify(newUsageStats))
+            } catch (_) {}
+          }
+
           // If actively generating, do NOT overwrite active messages in memory!
           if (isChatLoading) {
-            set({ sessions, activeSessionId })
+            set({ sessions, activeSessionId, aiUsageStats: newUsageStats })
             return
           }
           const activeSession = sessions.find((s) => s.id === activeSessionId)
           set({
             sessions,
             activeSessionId,
-            chatMessages: activeSession?.messages || []
+            chatMessages: activeSession?.messages || [],
+            aiUsageStats: newUsageStats
           })
         } finally {
           loadSessionsPromise = null
@@ -489,6 +652,7 @@ export const useAIStore = create((set, get) => {
 
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller?.abort(), 180000)
+      const startTime = Date.now()
 
       set({
         chatMessages: [...newHistory, assistantMsg],
@@ -580,8 +744,9 @@ export const useAIStore = create((set, get) => {
           set({ activeThinkingStatus: status })
         }
 
+        let streamRes = null
         if (providerType === 'deepseek') {
-          await runDeepSeekStream({
+          streamRes = await runDeepSeekStream({
             apiKey: visibleKey,
             activeModel,
             systemPrompt,
@@ -608,6 +773,30 @@ export const useAIStore = create((set, get) => {
         }
 
         get().saveChatHistory()
+
+        const durationMs = Date.now() - startTime
+        const currentMsgs = get().chatMessages || []
+        const lastMsg = currentMsgs[currentMsgs.length - 1]
+        const outputText = lastMsg?.content || ''
+        const promptText = systemPrompt + cleanMessage
+
+        let promptTokens = Math.max(10, Math.ceil(promptText.length / 4))
+        let completionTokens = Math.max(1, Math.ceil(outputText.length / 4))
+
+        if (streamRes?.usage?.promptTokens) {
+          promptTokens = streamRes.usage.promptTokens
+        }
+        if (streamRes?.usage?.completionTokens) {
+          completionTokens = streamRes.usage.completionTokens
+        }
+
+        get().recordAIUsage({
+          promptTokens,
+          completionTokens,
+          timeMs: durationMs,
+          provider: providerType,
+          model: activeModel
+        })
       } catch (error) {
         if (error.name === 'AbortError') {
           console.log('[AIStore] Chat generation aborted by user.')

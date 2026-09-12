@@ -20,13 +20,13 @@ import { renderCellSourceDecorated, makeCell } from './tableCell'
 
 function tableStartFrom(doc, startLine) {
   let from = startLine.from
-  for (let lineNumber = startLine.number - 1; lineNumber >= Math.max(1, startLine.number - 3); lineNumber -= 1) {
+  for (let lineNumber = startLine.number - 1; lineNumber >= Math.max(1, startLine.number - 6); lineNumber -= 1) {
     const text = doc.line(lineNumber).text.trim()
     if (
       text.match(/^<!--\s*table:\s*(.*?)\s*-->$/i) ||
       text.match(/^Table:\s*(.+)$/i) ||
-      text.match(/^<!--\s*table-widths:\s*[\d, ]+\s*-->$/i)
-      || text.match(/^<!--\s*table-heights:\s*[\d, ]+\s*-->$/i)
+      text.match(/^<!--\s*table-widths:\s*[\d, ]+\s*-->$/i) ||
+      text.match(/^<!--\s*table-heights:\s*[\d, ]+\s*-->$/i)
     ) {
       from = doc.line(lineNumber).from
     } else if (from !== startLine.from) {
@@ -52,12 +52,26 @@ function applyTableGeometry(table, model) {
         }
       })
     })
+  } else {
+    table.style.removeProperty('width')
+    table.style.removeProperty('min-width')
+    Array.from(table.querySelectorAll('tr')).forEach((row) => {
+      Array.from(row.children).forEach((cell) => {
+        cell.style.removeProperty('width')
+        cell.style.removeProperty('min-width')
+        cell.style.removeProperty('max-width')
+      })
+    })
   }
 
   if (model.rowHeights?.length) {
     Array.from(table.querySelectorAll('tbody tr:not(.cm-table-empty-row)')).forEach((row, index) => {
       const height = model.rowHeights[index]
       if (height) row.style.height = `${height}px`
+    })
+  } else {
+    Array.from(table.querySelectorAll('tbody tr:not(.cm-table-empty-row)')).forEach((row) => {
+      row.style.removeProperty('height')
     })
   }
 }
@@ -219,7 +233,9 @@ function tableModelSignature(model) {
     model.caption || '',
     ...(model.alignments || []),
     ...(model.header || []),
-    ...(model.rows || []).flat()
+    ...(model.rows || []).flat(),
+    ...(model.columnWidths || []).map((w) => Math.round(w)),
+    ...(model.rowHeights || []).map((h) => Math.round(h))
   ].join('\u0001')
 }
 
@@ -336,7 +352,9 @@ export class TableWidget extends WidgetType {
     const headerRow = document.createElement('tr')
     for (let i = 0; i < colCount; i++) {
       const cell = makeCell('th', this.model.header[i], view)
-      cell.style.width = `${100 / colCount}%`
+      if (!this.model.columnWidths?.length) {
+        cell.style.width = `${100 / colCount}%`
+      }
       if (this.model.alignments?.[i]) {
         cell.style.textAlign = this.model.alignments[i]
         const source = cell.querySelector('.cm-atomic-table-cell-source')
@@ -440,8 +458,10 @@ export class TableWidget extends WidgetType {
 
     for (let i = 0; i < colCount; i++) {
       ths[i].__view = view
-      ths[i].style.width = `${100 / colCount}%`
-      ths[i].style.minWidth = ''
+      if (!this.model.columnWidths?.length) {
+        ths[i].style.width = `${100 / colCount}%`
+        ths[i].style.minWidth = ''
+      }
       const source = ths[i].querySelector('.cm-atomic-table-cell-source')
 
       // Sync alignments
@@ -453,8 +473,15 @@ export class TableWidget extends WidgetType {
       if (source && source.parentElement.dataset.raw !== textVal) {
         const isFocused = document.activeElement === source
         source.parentElement.dataset.raw = textVal
-        renderCellSourceDecorated(source)
-        if (isFocused) placeCaretAtEnd(source)
+        if (!isFocused) {
+          renderCellSourceDecorated(source)
+        } else {
+          const liveText = source.textContent ?? ''
+          if (liveText.trim() !== textVal.trim()) {
+            renderCellSourceDecorated(source)
+            placeCaretAtEnd(source)
+          }
+        }
       }
     }
 
@@ -556,8 +583,15 @@ export class TableWidget extends WidgetType {
           if (source && source.parentElement.dataset.raw !== textVal) {
             const isFocused = document.activeElement === source
             source.parentElement.dataset.raw = textVal
-            renderCellSourceDecorated(source)
-            if (isFocused) placeCaretAtEnd(source)
+            if (!isFocused) {
+              renderCellSourceDecorated(source)
+            } else {
+              const liveText = source.textContent ?? ''
+              if (liveText.trim() !== textVal.trim()) {
+                renderCellSourceDecorated(source)
+                placeCaretAtEnd(source)
+              }
+            }
           }
         }
       }
@@ -584,8 +618,14 @@ export class TableWidget extends WidgetType {
 
     if (this.model.columnWidths?.length) {
       dom.dataset.columnWidths = this.model.columnWidths.join(',')
+    } else {
+      delete dom.dataset.columnWidths
     }
-    if (this.model.rowHeights?.length) dom.dataset.rowHeights = this.model.rowHeights.join(',')
+    if (this.model.rowHeights?.length) {
+      dom.dataset.rowHeights = this.model.rowHeights.join(',')
+    } else {
+      delete dom.dataset.rowHeights
+    }
 
     applyTableGeometry(table, this.model)
     updateTableFooterCount(dom, this.model)
@@ -617,7 +657,19 @@ export function cellColIndex(cell) {
   return Array.from(tr.querySelectorAll('th, td')).indexOf(targetCell)
 }
 
+let pendingTableDispatch = null
+
+export function flushPendingTableDispatch() {
+  if (pendingTableDispatch) {
+    const { timer, view, cell } = pendingTableDispatch
+    clearTimeout(timer)
+    pendingTableDispatch = null
+    dispatchModelFromDomDirect(view, cell)
+  }
+}
+
 export function dispatchModel(view, wrap, nextModel, explicitFocusInfo = null) {
+  flushPendingTableDispatch()
   const range = findCurrentTableRange(view, wrap)
   if (!range) return
 
@@ -689,8 +741,27 @@ export function dispatchModel(view, wrap, nextModel, explicitFocusInfo = null) {
   }
 }
 
-export function dispatchModelFromDom(view, cell) {
-  const wrap = cell.closest('.cm-atomic-table')
+export function dispatchModelFromDom(view, cell, opts = {}) {
+  if (opts.immediate) {
+    flushPendingTableDispatch()
+    dispatchModelFromDomDirect(view, cell)
+    return
+  }
+
+  if (pendingTableDispatch) {
+    clearTimeout(pendingTableDispatch.timer)
+  }
+
+  const timer = setTimeout(() => {
+    pendingTableDispatch = null
+    dispatchModelFromDomDirect(view, cell)
+  }, 60)
+
+  pendingTableDispatch = { timer, view, cell }
+}
+
+function dispatchModelFromDomDirect(view, cell) {
+  const wrap = cell.closest ? cell.closest('.cm-atomic-table') : null
   if (!wrap) return
   const range = findCurrentTableRange(view, wrap)
   if (!range) return
@@ -726,6 +797,7 @@ export function dispatchModelFromDom(view, cell) {
   })
 }
 export function moveCellFocus(view, cell, dir, opts = { appendOnOverflow: true }) {
+  flushPendingTableDispatch()
   const wrap = cell.closest('.cm-atomic-table')
   if (!wrap) return
   const cells = getAllCells(wrap)

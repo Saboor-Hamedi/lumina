@@ -88,7 +88,7 @@ export function parseTable(state, tableNode) {
   let columnWidths = []
   let rowHeights = []
   const startLine = state.doc.lineAt(tableNode.from)
-  for (let lineNumber = startLine.number - 1; lineNumber >= Math.max(1, startLine.number - 3); lineNumber -= 1) {
+  for (let lineNumber = startLine.number - 1; lineNumber >= Math.max(1, startLine.number - 6); lineNumber -= 1) {
     const prevLine = state.doc.line(lineNumber).text.trim()
     const titleMatch = prevLine.match(/^<!--\s*table:\s*(.*?)\s*-->$/i) || prevLine.match(/^Table:\s*(.+)$/i)
     if (titleMatch) caption = titleMatch[1].trim()
@@ -96,6 +96,11 @@ export function parseTable(state, tableNode) {
     if (widthMatch) columnWidths = widthMatch[1].split(',').map((value) => Number(value.trim())).filter(Number.isFinite)
     const heightMatch = prevLine.match(/^<!--\s*table-heights:\s*([\d, ]+)\s*-->$/i)
     if (heightMatch) rowHeights = heightMatch[1].split(',').map((value) => Number(value.trim())).filter(Number.isFinite)
+  }
+
+  if (columnWidths.length > 0) {
+    while (columnWidths.length < header.length) columnWidths.push(110)
+    if (columnWidths.length > header.length) columnWidths = columnWidths.slice(0, header.length)
   }
 
   // Ensure all rows match the header cell count
@@ -169,14 +174,19 @@ export function readModelFromDom(wrap) {
   )
   const titleInput = wrap.querySelector('.cm-table-ui-title-input')
   const caption = titleInput ? titleInput.value.trim() : (wrap.dataset.caption || '')
+
+  let columnWidths = []
   const widthData = wrap.dataset.columnWidths || ''
-  const columnWidths = widthData
-    ? widthData.split(',').map((value) => Number(value.trim())).filter(Number.isFinite)
-    : Array.from(wrap.querySelectorAll('thead th')).map((cell) => cell.getBoundingClientRect().width)
+  if (widthData) {
+    columnWidths = widthData.split(',').map((value) => Number(value.trim())).filter(Number.isFinite)
+  }
+
+  let rowHeights = []
   const heightData = wrap.dataset.rowHeights || ''
-  const rowHeights = heightData
-    ? heightData.split(',').map((value) => Number(value.trim())).filter(Number.isFinite)
-    : Array.from(wrap.querySelectorAll('tbody tr:not(.cm-table-empty-row)')).map((row) => row.getBoundingClientRect().height)
+  if (heightData) {
+    rowHeights = heightData.split(',').map((value) => Number(value.trim())).filter(Number.isFinite)
+  }
+
   return { header, rows, alignments, caption, columnWidths, rowHeights }
 }
 // A cell's raw markdown lives in `dataset.raw` — the source of truth

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Info, List as ListIcon, MessageSquare, ExternalLink, History } from 'lucide-react'
+import { Info, List as ListIcon, MessageSquare, ExternalLink, History, BarChart3 } from 'lucide-react'
 import NoteDetails from './NoteDetails'
 import NoteOutline from './NoteOutline'
 const LuminaChatContent = React.lazy(() =>
@@ -131,6 +131,15 @@ export const RightSidebar = React.memo(({
                   aria-label="Toggle History"
                 >
                   <History size={13} />
+                </button>
+              </ToolTip>
+              <ToolTip text="AI Analytics & Usage" position="bottom">
+                <button
+                  className="inspector-action-btn"
+                  onClick={() => window.dispatchEvent(new CustomEvent('open-ai-workbench'))}
+                  aria-label="AI Analytics & Usage"
+                >
+                  <BarChart3 size={13} />
                 </button>
               </ToolTip>
               <span className="inspector-sub-title">Lumina AI Assistant</span>

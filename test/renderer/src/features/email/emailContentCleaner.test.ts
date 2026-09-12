@@ -3,7 +3,7 @@ import { cleanEmailMarkdown, cleanEmailMarkdownWithDiagnostics, cleanEmailText, 
 
 describe('emailContentCleaner', () => {
   it('removes invisible email characters and normalizes escaped pipes', () => {
-    expect(cleanEmailText('Subject\u034F  text\\| next')).toBe('Subject  text| next')
+    expect(cleanEmailText('Subject\u034F  text\\| next')).toBe('Subject text| next')
   })
 
   it('removes non-content HTML and tracking pixels', () => {

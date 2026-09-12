@@ -217,7 +217,9 @@ export const EmailContainer: React.FC<EmailContainerProps> = ({ isOpen, onClose 
   const handleToggleSidebar = useCallback(() => {
     setIsSidebarOpen((prev) => {
       const next = !prev
-      useSettingsStore.getState().updateSetting('emailSidebarOpen', next)
+      setTimeout(() => {
+        useSettingsStore.getState().updateSetting('emailSidebarOpen', next)
+      }, 0)
       try {
         localStorage.setItem('lumina_email_sidebar_open', String(next))
       } catch {}
@@ -228,7 +230,9 @@ export const EmailContainer: React.FC<EmailContainerProps> = ({ isOpen, onClose 
   const handleToggleDetail = useCallback(() => {
     setIsDetailOpen((prev) => {
       const next = !prev
-      useSettingsStore.getState().updateSetting('emailDetailOpen', next)
+      setTimeout(() => {
+        useSettingsStore.getState().updateSetting('emailDetailOpen', next)
+      }, 0)
       try {
         localStorage.setItem('lumina_email_detail_open', String(next))
       } catch {}
@@ -238,7 +242,9 @@ export const EmailContainer: React.FC<EmailContainerProps> = ({ isOpen, onClose 
 
   const handleCloseDetail = useCallback(() => {
     setIsDetailOpen(false)
-    useSettingsStore.getState().updateSetting('emailDetailOpen', false)
+    setTimeout(() => {
+      useSettingsStore.getState().updateSetting('emailDetailOpen', false)
+    }, 0)
     try {
       localStorage.setItem('lumina_email_detail_open', 'false')
     } catch {}
@@ -247,7 +253,9 @@ export const EmailContainer: React.FC<EmailContainerProps> = ({ isOpen, onClose 
   const handleSelectEmail = useCallback((id: string) => {
     setSelectedEmailId(id)
     setIsDetailOpen(true)
-    useSettingsStore.getState().updateSetting('emailDetailOpen', true)
+    setTimeout(() => {
+      useSettingsStore.getState().updateSetting('emailDetailOpen', true)
+    }, 0)
     try {
       localStorage.setItem('lumina_email_detail_open', 'true')
     } catch {}

@@ -11,6 +11,7 @@ import {
   placeCaretAtEnd,
   dispatchModel,
   dispatchModelFromDom,
+  flushPendingTableDispatch,
   moveCellFocus
 } from './tableExtension'
 
@@ -457,21 +458,24 @@ export function makeCell(tag, text, view) {
     return text || ''
   }
 
-  // Commit the cell's current DOM text to `dataset.raw`, re-render its
-  // decorated form (so marks the user just typed — e.g. a new `**` pair
-  // — decorate immediately), restore the caret across that rebuild, and
-  // push the change into the document.
+  // Commit the cell's current DOM text to `dataset.raw` and push the change
+  // into the document. To keep typing light and instant without DOM thrashing
+  // or caret jumps, we avoid tearing down the contenteditable DOM on every keypress.
+  // Full decorated rebuild runs on blur, paste, compositionend, or image widgets.
   let currentCellText = cell.dataset.raw
-  const commit = () => {
+  const commit = (forceDecorate = false) => {
     const newText = extractSourceText(source)
-    const offset = getCaretCharOffset(source)
     if (currentCellText !== newText) {
       currentCellText = newText
       cell.dataset.raw = newText
     }
-    renderCellSourceDecorated(source)
-    if (offset != null) setCaretCharOffset(source, offset)
-    updateActiveMarkForSource(source)
+    const hasImageWidget = source.querySelector('.cm-atomic-image-wrap')
+    if (forceDecorate || hasImageWidget) {
+      const offset = getCaretCharOffset(source)
+      renderCellSourceDecorated(source)
+      if (offset != null) setCaretCharOffset(source, offset)
+      updateActiveMarkForSource(source)
+    }
     dispatchModelFromDom(view, cell)
   }
 
@@ -493,7 +497,7 @@ export function makeCell(tag, text, view) {
   })
   source.addEventListener('compositionend', () => {
     composing = false
-    commit()
+    commit(true)
   })
 
   source.addEventListener('input', (event) => {
@@ -552,6 +556,7 @@ export function makeCell(tag, text, view) {
   source.addEventListener('keyup', () => updateActiveMarkForSource(source))
 
   source.addEventListener('blur', () => {
+    flushPendingTableDispatch()
     requestAnimationFrame(() => {
       if (
         !view.dom.contains(document.activeElement) ||
@@ -560,6 +565,9 @@ export function makeCell(tag, text, view) {
         view.dom.classList.remove('cm-table-focused')
       }
     })
+    const textVal = extractSourceText(source)
+    cell.dataset.raw = textVal
+    renderCellSourceDecorated(source)
     clearActiveMarksInSource(source)
     autocomplete.close()
   })

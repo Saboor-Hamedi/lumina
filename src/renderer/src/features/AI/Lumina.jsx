@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import {
   Square,
   Copy,
@@ -6,7 +7,9 @@ import {
   PanelLeftOpen,
   ArrowRightToLine,
   Plus,
-  X
+  X,
+  BarChart3,
+  MessageSquare
 } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
@@ -17,6 +20,7 @@ import { LuminaChatContent } from './components/LuminaChatContent'
 import { MessageContent } from './components/LuminaMessageContent'
 import { ThinkingIndicator } from './components/LuminaThinkingIndicator'
 import { ChatMessageRow } from './components/LuminaChatMessageRow'
+import { LuminaWorkbench } from './components/LuminaWorkbench'
 import { useScopedSelectAll } from './hooks/useScopedSelectAll'
 import '../modals/css/guide.css'
 import '../Docs/Documentation.css'
@@ -28,6 +32,7 @@ import './css/lumina.css'
  */
 const LuminaChat = ({ isOpen, onClose, onDock, onUnfloat }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [viewMode, setViewMode] = useState('chat')
   const isMaximized = useSettingsStore((s) => s.settings.aiModalMaximized ?? false)
   const [isDraggingModal, setIsDraggingModal] = useState(false)
   const containerRef = useRef(null)
@@ -108,7 +113,21 @@ const LuminaChat = ({ isOpen, onClose, onDock, onUnfloat }) => {
     clearSessionMessages,
     loadSessions,
     isChatLoading
-  } = useAIStore()
+  } = useAIStore(
+    useShallow((s) => ({
+      sessions: s.sessions,
+      activeSessionId: s.activeSessionId,
+      createNewSession: s.createNewSession,
+      switchSession: s.switchSession,
+      deleteSession: s.deleteSession,
+      renameSession: s.renameSession,
+      togglePinSession: s.togglePinSession,
+      duplicateSession: s.duplicateSession,
+      clearSessionMessages: s.clearSessionMessages,
+      loadSessions: s.loadSessions,
+      isChatLoading: s.isChatLoading
+    }))
+  )
 
   // Clean up any previously stored drag positions so modal is always centered
   useEffect(() => {
@@ -237,7 +256,10 @@ const LuminaChat = ({ isOpen, onClose, onDock, onUnfloat }) => {
             <ToolTip text="New Chat" position="bottom">
               <button
                 className="docs-window-btn"
-                onClick={handleNewChat}
+                onClick={() => {
+                  if (viewMode === 'workbench') setViewMode('chat')
+                  handleNewChat()
+                }}
                 aria-label="New Chat"
               >
                 <Plus size={14} strokeWidth={2} />
@@ -253,6 +275,15 @@ const LuminaChat = ({ isOpen, onClose, onDock, onUnfloat }) => {
                 aria-label="Dock to Tab Sidebar"
               >
                 <ArrowRightToLine size={13} strokeWidth={2} />
+              </button>
+            </ToolTip>
+            <ToolTip text={viewMode === 'workbench' ? 'Back to Chat' : 'AI Workbench & Analytics'} position="bottom">
+              <button
+                className={`docs-window-btn${viewMode === 'workbench' ? ' active' : ''}`}
+                onClick={() => setViewMode((prev) => (prev === 'workbench' ? 'chat' : 'workbench'))}
+                aria-label="AI Workbench & Analytics"
+              >
+                {viewMode === 'workbench' ? <MessageSquare size={13} strokeWidth={2} /> : <BarChart3 size={13} strokeWidth={2} />}
               </button>
             </ToolTip>
             <ToolTip text={isMaximized ? 'Restore Window' : 'Maximize Window'} position="bottom">
@@ -296,7 +327,11 @@ const LuminaChat = ({ isOpen, onClose, onDock, onUnfloat }) => {
           />
 
           <div className="lumina-ai-content">
-            <LuminaChatContent isSidebar={false} isModal={true} />
+            {viewMode === 'workbench' ? (
+              <LuminaWorkbench onClose={() => setViewMode('chat')} />
+            ) : (
+              <LuminaChatContent isSidebar={false} isModal={true} />
+            )}
           </div>
         </div>
       </div>

@@ -708,6 +708,13 @@ export const runDeepSeekStream = async ({
     }
   }
 
+  let apiUsage = null
+  try {
+    apiUsage = await result.usage
+  } catch (_) {}
+
+  return { usage: apiUsage }
+
   updateDisplay(true)
 }
 

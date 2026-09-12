@@ -189,6 +189,7 @@ export function cleanEmailMarkdownWithDiagnostics(
     }
   }
 
+  const linesIn = content ? content.split('\n').length : 0
   const bytesIn = content.length
   const invisibleCharacters = content.match(INVISIBLE_EMAIL_CHARACTERS)?.length || 0
   let working = cleanEmailText(content)
@@ -224,7 +225,6 @@ export function cleanEmailMarkdownWithDiagnostics(
     .map((line) => trimLineEdgeClutter(line.replace(/\s{2,}/g, ' ').trim()))
     .filter((line) => {
       const keep = line.length > 0 && !isNavOnlyLine(line) && !isSeparatorLine(line)
-      if (!keep) removedLines++
       return keep
     })
 
@@ -247,7 +247,7 @@ export function cleanEmailMarkdownWithDiagnostics(
       removedCharacters: Math.max(0, bytesIn - text.length),
       removedImages,
       removedLinks,
-      removedLines,
+      removedLines: Math.max(0, linesIn - (text ? text.split('\n').length : 0)),
       wasLarge: bytesIn >= 1024 * 1024
     }
   }

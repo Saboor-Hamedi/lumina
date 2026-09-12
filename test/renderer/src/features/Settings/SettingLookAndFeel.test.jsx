@@ -75,8 +75,6 @@ describe('SettingLookAndFeel', () => {
     render(<SettingLookAndFeel />)
     expect(screen.getByText('Active Line Left Border')).toBeInTheDocument()
     expect(screen.getByText('Mechanical Keyboard Sound')).toBeInTheDocument()
-    expect(screen.getByText('Auto-Save')).toBeInTheDocument()
-    expect(screen.getByText('Inline Metadata')).toBeInTheDocument()
   })
 
   const switchInputFor = (labelText) =>

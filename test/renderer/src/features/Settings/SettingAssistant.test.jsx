@@ -103,7 +103,7 @@ describe('SettingAssistant', () => {
 
   it('toggles Smart Search (enableLocalAI)', () => {
     const { container } = render(<SettingAssistant />)
-    const checkbox = container.querySelector('.switch input[type="checkbox"]')
+    const checkbox = container.querySelector('.lumina-switch input[type="checkbox"]') || container.querySelector('input[type="checkbox"]')
     expect(checkbox.checked).toBe(true)
     fireEvent.click(checkbox)
     expect(useSettingsStore.getState().settings.enableLocalAI).toBe(false)

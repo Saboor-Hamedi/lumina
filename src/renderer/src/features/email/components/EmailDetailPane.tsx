@@ -65,12 +65,12 @@ export const EmailDetailPane: React.FC<EmailDetailPaneProps> = ({
     return () => body.removeEventListener('wheel', handleWheel)
   }, [])
 
-  if (!isOpen) return null
-
   // Safely format email body with markdown and link support
   const renderedHtml = React.useMemo(() => {
     return renderEmailBody(activeEmailDetails?.bodyHtml)
   }, [activeEmailDetails?.bodyHtml])
+
+  if (!isOpen) return null
 
   // Open clicked email links in user's external system browser
   const handleBodyClick = (e: React.MouseEvent) => {

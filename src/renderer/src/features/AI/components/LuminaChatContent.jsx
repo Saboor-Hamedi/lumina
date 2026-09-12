@@ -7,6 +7,7 @@ import { ChatMessageRow } from './LuminaChatMessageRow'
 import { LuminaSession } from './LuminaSession'
 import { ChatFooterStatus } from './LuminaChatFooterStatus'
 import { ChatEmptyState } from './LuminaChatEmptyState'
+import { LuminaWorkbench } from './LuminaWorkbench'
 import { useChatScroll } from '../hooks/useChatScroll'
 import { useScopedSelectAll } from '../hooks/useScopedSelectAll'
 
@@ -28,7 +29,26 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, isModal = fals
     togglePinSession,
     duplicateSession,
     clearSessionMessages
-  } = useAIStore()
+  } = useAIStore(
+    useShallow((s) => ({
+      chatMessages: s.chatMessages,
+      isChatLoading: s.isChatLoading,
+      activeThinkingStatus: s.activeThinkingStatus,
+      chatError: s.chatError,
+      sendChatMessage: s.sendChatMessage,
+      cancelChat: s.cancelChat,
+      loadSessions: s.loadSessions,
+      sessions: s.sessions,
+      activeSessionId: s.activeSessionId,
+      createNewSession: s.createNewSession,
+      switchSession: s.switchSession,
+      deleteSession: s.deleteSession,
+      renameSession: s.renameSession,
+      togglePinSession: s.togglePinSession,
+      duplicateSession: s.duplicateSession,
+      clearSessionMessages: s.clearSessionMessages
+    }))
+  )
 
   const { selectedSnippet, snippets } = useVaultStore(
     useShallow((state) => ({
@@ -39,10 +59,12 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, isModal = fals
 
   const userMentionRegex = useMemo(() => {
     const list = snippets || []
+    if (list.length === 0) return /(@[a-zA-Z0-9_\-./]+)/g
     const titles = list
       .map((s) => s.title)
       .filter(Boolean)
       .sort((a, b) => b.length - a.length)
+      .slice(0, 80)
       .map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
 
     if (titles.length > 0) {
@@ -52,6 +74,7 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, isModal = fals
   }, [snippets])
 
   const [showSessions, setShowSessions] = useState(false)
+  const [isWorkbenchOpen, setIsWorkbenchOpen] = useState(false)
   const { listRef, autoScrollRef, handleMessageScroll } = useChatScroll(chatMessages, isChatLoading)
 
   const rootRef = useRef(null)
@@ -67,8 +90,13 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, isModal = fals
   // Listen for external toggle history event (from sidebar header)
   useEffect(() => {
     const handleToggle = () => setShowSessions((prev) => !prev)
+    const handleWorkbench = () => setIsWorkbenchOpen((prev) => !prev)
     window.addEventListener('ai-toggle-history', handleToggle)
-    return () => window.removeEventListener('ai-toggle-history', handleToggle)
+    window.addEventListener('open-ai-workbench', handleWorkbench)
+    return () => {
+      window.removeEventListener('ai-toggle-history', handleToggle)
+      window.removeEventListener('open-ai-workbench', handleWorkbench)
+    }
   }, [])
 
   const handleCopy = useCallback((text) => {
@@ -189,63 +217,69 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, isModal = fals
             if (showSessions) setShowSessions(false)
           }}
         >
-          <div className="chat-messages" ref={listRef} onScroll={handleMessageScroll}>
-            {visibleMessages.length === 0 ? (
-              <ChatEmptyState
-                selectedSnippet={selectedSnippet}
-                onSendSuggestion={(snip) =>
-                  sendChatMessage(`Explain the code in "${snip.title}"`, [snip])
-                }
-              />
-            ) : (
-              <div className="chat-msg-list">
-                {renderedMessages}
-                <ChatFooterStatus
-                  chatMessages={chatMessages}
-                  isChatLoading={isChatLoading}
-                  activeThinkingStatus={activeThinkingStatus}
-                  chatError={chatError}
-                />
+          {isWorkbenchOpen ? (
+            <LuminaWorkbench onClose={() => setIsWorkbenchOpen(false)} />
+          ) : (
+            <>
+              <div className="chat-messages" ref={listRef} onScroll={handleMessageScroll}>
+                {visibleMessages.length === 0 ? (
+                  <ChatEmptyState
+                    selectedSnippet={selectedSnippet}
+                    onSendSuggestion={(snip) =>
+                      sendChatMessage(`Explain the code in "${snip.title}"`, [snip])
+                    }
+                  />
+                ) : (
+                  <div className="chat-msg-list">
+                    {renderedMessages}
+                    <ChatFooterStatus
+                      chatMessages={chatMessages}
+                      isChatLoading={isChatLoading}
+                      activeThinkingStatus={activeThinkingStatus}
+                      chatError={chatError}
+                    />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {!isSidebar && (
-            <div
-              className="modal-composer-dock-wrapper"
-              style={{
-                width: '100%',
-                background: 'transparent',
-                display: 'flex',
-                justifyContent: 'center',
-                padding: '0 16px 14px 16px',
-                boxSizing: 'border-box',
-                flexShrink: 0
-              }}
-            >
-              <div
-                className="inspector-footer-section is-chat-composer is-modal-composer"
-                style={{
-                  maxWidth: '800px',
-                  width: '100%',
-                  margin: '0 auto',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-card, rgba(255, 255, 255, 0.12))',
-                  background: 'var(--bg-panel, #16161e)',
-                  overflow: 'hidden',
-                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
-                  boxSizing: 'border-box'
-                }}
-              >
-                <Composer
-                  isSidebar={true}
-                  onSend={handleSendMessage}
-                  isLoading={isChatLoading}
-                  onStop={cancelChat}
-                  onCancel={cancelChat}
-                />
-              </div>
-            </div>
+              {!isSidebar && (
+                <div
+                  className="modal-composer-dock-wrapper"
+                  style={{
+                    width: '100%',
+                    background: 'transparent',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    padding: '0 16px 14px 16px',
+                    boxSizing: 'border-box',
+                    flexShrink: 0
+                  }}
+                >
+                  <div
+                    className="inspector-footer-section is-chat-composer is-modal-composer"
+                    style={{
+                      maxWidth: '800px',
+                      width: '100%',
+                      margin: '0 auto',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-card, rgba(255, 255, 255, 0.12))',
+                      background: 'var(--bg-panel, #16161e)',
+                      overflow: 'hidden',
+                      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+                      boxSizing: 'border-box'
+                    }}
+                  >
+                    <Composer
+                      isSidebar={true}
+                      onSend={handleSendMessage}
+                      isLoading={isChatLoading}
+                      onStop={cancelChat}
+                      onCancel={cancelChat}
+                    />
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
