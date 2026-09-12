@@ -1,6 +1,6 @@
 {
   "name": "lumina",
-  "version": "1.0.47",
+  "version": "1.0.48",
   "description": "Lumina - A premium, AI-powered thinking environment.",
   "main": "./out/main/index.js",
   "author": "Saboor Hamedi",
@@ -32,6 +32,7 @@
     "e2e:list": "playwright test --list",
     "test:e2e": "playwright test",
     "test:all": "npm run test:run && npm run e2e",
+    "publish": "node scripts/publish.mjs",
     "publish:win": "npm run build && dotenv -- electron-builder --win --publish always",
     "publish:mac": "npm run build && dotenv -- electron-builder --mac --publish always",
     "publish:linux": "npm run build && dotenv -- electron-builder --linux --publish always",
