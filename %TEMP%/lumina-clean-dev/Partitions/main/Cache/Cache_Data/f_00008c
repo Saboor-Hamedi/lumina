@@ -1,0 +1,4001 @@
+import {
+  defaultKeymap,
+  history,
+  historyKeymap,
+  indentWithTab,
+  redo,
+  undo
+} from "/@fs/B:/electron/lumina/node_modules/.vite/deps/chunk-WJV2WL2Q.js?v=f41806ed";
+import {
+  require_jsx_runtime
+} from "/@fs/B:/electron/lumina/node_modules/.vite/deps/chunk-GKKD46LX.js?v=f41806ed";
+import {
+  require_react
+} from "/@fs/B:/electron/lumina/node_modules/.vite/deps/chunk-C4KFTZQU.js?v=f41806ed";
+import {
+  markdown,
+  markdownKeymap,
+  markdownLanguage
+} from "/@fs/B:/electron/lumina/node_modules/.vite/deps/chunk-EKWI5BYH.js?v=f41806ed";
+import "/@fs/B:/electron/lumina/node_modules/.vite/deps/chunk-DH3GZGPJ.js?v=f41806ed";
+import "/@fs/B:/electron/lumina/node_modules/.vite/deps/chunk-45PJKUUC.js?v=f41806ed";
+import "/@fs/B:/electron/lumina/node_modules/.vite/deps/chunk-IJFBDW6W.js?v=f41806ed";
+import "/@fs/B:/electron/lumina/node_modules/.vite/deps/chunk-VPTPGYLW.js?v=f41806ed";
+import {
+  autocompletion,
+  closeBrackets,
+  closeBracketsKeymap
+} from "/@fs/B:/electron/lumina/node_modules/.vite/deps/chunk-KUXVOLVX.js?v=f41806ed";
+import {
+  HighlightStyle,
+  ensureSyntaxTree,
+  indentOnInput,
+  syntaxHighlighting,
+  syntaxTree
+} from "/@fs/B:/electron/lumina/node_modules/.vite/deps/chunk-KSGG2BQ5.js?v=f41806ed";
+import {
+  tags
+} from "/@fs/B:/electron/lumina/node_modules/.vite/deps/chunk-PS4G4GFP.js?v=f41806ed";
+import {
+  Decoration,
+  EditorView,
+  ViewPlugin,
+  WidgetType,
+  crelt,
+  drawSelection,
+  dropCursor,
+  getPanel,
+  highlightActiveLine,
+  highlightSpecialChars,
+  keymap,
+  rectangularSelection,
+  runScopeHandlers,
+  showPanel
+} from "/@fs/B:/electron/lumina/node_modules/.vite/deps/chunk-A7FZOK5T.js?v=f41806ed";
+import {
+  CharCategory,
+  EditorSelection,
+  EditorState,
+  Facet,
+  Prec,
+  RangeSetBuilder,
+  StateEffect,
+  StateField,
+  Transaction,
+  codePointAt,
+  codePointSize,
+  combineConfig,
+  findClusterBreak,
+  fromCodePoint
+} from "/@fs/B:/electron/lumina/node_modules/.vite/deps/chunk-S7VNRGB4.js?v=f41806ed";
+import {
+  __toESM
+} from "/@fs/B:/electron/lumina/node_modules/.vite/deps/chunk-V4OQ3NZ2.js?v=f41806ed";
+
+// node_modules/@atomic-editor/editor/dist/AtomicCodeMirrorEditor.js
+var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
+var import_react = __toESM(require_react(), 1);
+
+// node_modules/@codemirror/search/dist/index.js
+var basicNormalize = typeof String.prototype.normalize == "function" ? (x) => x.normalize("NFKD") : (x) => x;
+var SearchCursor = class {
+  /**
+  Create a text cursor. The query is the search string, `from` to
+  `to` provides the region to search.
+  
+  When `normalize` is given, it will be called, on both the query
+  string and the content it is matched against, before comparing.
+  You can, for example, create a case-insensitive search by
+  passing `s => s.toLowerCase()`.
+  
+  Text is always normalized with
+  [`.normalize("NFKD")`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/normalize)
+  (when supported).
+  */
+  constructor(text, query, from = 0, to = text.length, normalize, test) {
+    this.test = test;
+    this.value = { from: 0, to: 0 };
+    this.done = false;
+    this.matches = [];
+    this.buffer = "";
+    this.bufferPos = 0;
+    this.iter = text.iterRange(from, to);
+    this.bufferStart = from;
+    this.normalize = normalize ? (x) => normalize(basicNormalize(x)) : basicNormalize;
+    this.query = this.normalize(query);
+  }
+  peek() {
+    if (this.bufferPos == this.buffer.length) {
+      this.bufferStart += this.buffer.length;
+      this.iter.next();
+      if (this.iter.done)
+        return -1;
+      this.bufferPos = 0;
+      this.buffer = this.iter.value;
+    }
+    return codePointAt(this.buffer, this.bufferPos);
+  }
+  /**
+  Look for the next match. Updates the iterator's
+  [`value`](https://codemirror.net/6/docs/ref/#search.SearchCursor.value) and
+  [`done`](https://codemirror.net/6/docs/ref/#search.SearchCursor.done) properties. Should be called
+  at least once before using the cursor.
+  */
+  next() {
+    while (this.matches.length)
+      this.matches.pop();
+    return this.nextOverlapping();
+  }
+  /**
+  The `next` method will ignore matches that partially overlap a
+  previous match. This method behaves like `next`, but includes
+  such matches.
+  */
+  nextOverlapping() {
+    for (; ; ) {
+      let next = this.peek();
+      if (next < 0) {
+        this.done = true;
+        return this;
+      }
+      let str = fromCodePoint(next), start = this.bufferStart + this.bufferPos;
+      this.bufferPos += codePointSize(next);
+      let norm = this.normalize(str);
+      if (norm.length)
+        for (let i = 0, pos = start; ; i++) {
+          let code = norm.charCodeAt(i);
+          let match = this.match(code, pos, this.bufferPos + this.bufferStart);
+          if (i == norm.length - 1) {
+            if (match) {
+              this.value = match;
+              return this;
+            }
+            break;
+          }
+          if (pos == start && i < str.length && str.charCodeAt(i) == code)
+            pos++;
+        }
+    }
+  }
+  match(code, pos, end) {
+    let match = null;
+    for (let i = 0; i < this.matches.length; i += 2) {
+      let index = this.matches[i], keep = false;
+      if (this.query.charCodeAt(index) == code) {
+        if (index == this.query.length - 1) {
+          match = { from: this.matches[i + 1], to: end };
+        } else {
+          this.matches[i]++;
+          keep = true;
+        }
+      }
+      if (!keep) {
+        this.matches.splice(i, 2);
+        i -= 2;
+      }
+    }
+    if (this.query.charCodeAt(0) == code) {
+      if (this.query.length == 1)
+        match = { from: pos, to: end };
+      else
+        this.matches.push(1, pos);
+    }
+    if (match && this.test && !this.test(match.from, match.to, this.buffer, this.bufferStart))
+      match = null;
+    return match;
+  }
+};
+if (typeof Symbol != "undefined")
+  SearchCursor.prototype[Symbol.iterator] = function() {
+    return this;
+  };
+var empty = { from: -1, to: -1, match: /.*/.exec("") };
+var baseFlags = "gm" + (/x/.unicode == null ? "" : "u");
+var RegExpCursor = class {
+  /**
+  Create a cursor that will search the given range in the given
+  document. `query` should be the raw pattern (as you'd pass it to
+  `new RegExp`).
+  */
+  constructor(text, query, options, from = 0, to = text.length) {
+    this.text = text;
+    this.to = to;
+    this.curLine = "";
+    this.done = false;
+    this.value = empty;
+    if (/\\[sWDnr]|\n|\r|\[\^/.test(query))
+      return new MultilineRegExpCursor(text, query, options, from, to);
+    this.re = new RegExp(query, baseFlags + ((options === null || options === void 0 ? void 0 : options.ignoreCase) ? "i" : ""));
+    this.test = options === null || options === void 0 ? void 0 : options.test;
+    this.iter = text.iter();
+    let startLine = text.lineAt(from);
+    this.curLineStart = startLine.from;
+    this.matchPos = toCharEnd(text, from);
+    this.getLine(this.curLineStart);
+  }
+  getLine(skip) {
+    this.iter.next(skip);
+    if (this.iter.lineBreak) {
+      this.curLine = "";
+    } else {
+      this.curLine = this.iter.value;
+      if (this.curLineStart + this.curLine.length > this.to)
+        this.curLine = this.curLine.slice(0, this.to - this.curLineStart);
+      this.iter.next();
+    }
+  }
+  nextLine() {
+    this.curLineStart = this.curLineStart + this.curLine.length + 1;
+    if (this.curLineStart > this.to)
+      this.curLine = "";
+    else
+      this.getLine(0);
+  }
+  /**
+  Move to the next match, if there is one.
+  */
+  next() {
+    for (let off = this.matchPos - this.curLineStart; ; ) {
+      this.re.lastIndex = off;
+      let match = this.matchPos <= this.to && this.re.exec(this.curLine);
+      if (match) {
+        let from = this.curLineStart + match.index, to = from + match[0].length;
+        this.matchPos = toCharEnd(this.text, to + (from == to ? 1 : 0));
+        if (from == this.curLineStart + this.curLine.length)
+          this.nextLine();
+        if ((from < to || from > this.value.to) && (!this.test || this.test(from, to, match))) {
+          this.value = { from, to, match };
+          return this;
+        }
+        off = this.matchPos - this.curLineStart;
+      } else if (this.curLineStart + this.curLine.length < this.to) {
+        this.nextLine();
+        off = 0;
+      } else {
+        this.done = true;
+        return this;
+      }
+    }
+  }
+};
+var flattened = /* @__PURE__ */ new WeakMap();
+var FlattenedDoc = class _FlattenedDoc {
+  constructor(from, text) {
+    this.from = from;
+    this.text = text;
+  }
+  get to() {
+    return this.from + this.text.length;
+  }
+  static get(doc, from, to) {
+    let cached = flattened.get(doc);
+    if (!cached || cached.from >= to || cached.to <= from) {
+      let flat = new _FlattenedDoc(from, doc.sliceString(from, to));
+      flattened.set(doc, flat);
+      return flat;
+    }
+    if (cached.from == from && cached.to == to)
+      return cached;
+    let { text, from: cachedFrom } = cached;
+    if (cachedFrom > from) {
+      text = doc.sliceString(from, cachedFrom) + text;
+      cachedFrom = from;
+    }
+    if (cached.to < to)
+      text += doc.sliceString(cached.to, to);
+    flattened.set(doc, new _FlattenedDoc(cachedFrom, text));
+    return new _FlattenedDoc(from, text.slice(from - cachedFrom, to - cachedFrom));
+  }
+};
+var MultilineRegExpCursor = class {
+  constructor(text, query, options, from, to) {
+    this.text = text;
+    this.to = to;
+    this.done = false;
+    this.value = empty;
+    this.matchPos = toCharEnd(text, from);
+    this.re = new RegExp(query, baseFlags + ((options === null || options === void 0 ? void 0 : options.ignoreCase) ? "i" : ""));
+    this.test = options === null || options === void 0 ? void 0 : options.test;
+    this.flat = FlattenedDoc.get(text, from, this.chunkEnd(
+      from + 5e3
+      /* Chunk.Base */
+    ));
+  }
+  chunkEnd(pos) {
+    return pos >= this.to ? this.to : this.text.lineAt(pos).to;
+  }
+  next() {
+    for (; ; ) {
+      let off = this.re.lastIndex = this.matchPos - this.flat.from;
+      let match = this.re.exec(this.flat.text);
+      if (match && !match[0] && match.index == off) {
+        this.re.lastIndex = off + 1;
+        match = this.re.exec(this.flat.text);
+      }
+      if (match) {
+        let from = this.flat.from + match.index, to = from + match[0].length;
+        if ((this.flat.to >= this.to || match.index + match[0].length <= this.flat.text.length - 10) && (!this.test || this.test(from, to, match))) {
+          this.value = { from, to, match };
+          this.matchPos = toCharEnd(this.text, to + (from == to ? 1 : 0));
+          return this;
+        }
+      }
+      if (this.flat.to == this.to) {
+        this.done = true;
+        return this;
+      }
+      this.flat = FlattenedDoc.get(this.text, this.flat.from, this.chunkEnd(this.flat.from + this.flat.text.length * 2));
+    }
+  }
+};
+if (typeof Symbol != "undefined") {
+  RegExpCursor.prototype[Symbol.iterator] = MultilineRegExpCursor.prototype[Symbol.iterator] = function() {
+    return this;
+  };
+}
+function validRegExp(source) {
+  try {
+    new RegExp(source, baseFlags);
+    return true;
+  } catch (_a) {
+    return false;
+  }
+}
+function toCharEnd(text, pos) {
+  if (pos >= text.length)
+    return pos;
+  let line = text.lineAt(pos), next;
+  while (pos < line.to && (next = line.text.charCodeAt(pos - line.from)) >= 56320 && next < 57344)
+    pos++;
+  return pos;
+}
+function createLineDialog(view) {
+  let line = String(view.state.doc.lineAt(view.state.selection.main.head).number);
+  let input = crelt("input", { class: "cm-textfield", name: "line", value: line });
+  let dom = crelt("form", {
+    class: "cm-gotoLine",
+    onkeydown: (event) => {
+      if (event.keyCode == 27) {
+        event.preventDefault();
+        view.dispatch({ effects: dialogEffect.of(false) });
+        view.focus();
+      } else if (event.keyCode == 13) {
+        event.preventDefault();
+        go();
+      }
+    },
+    onsubmit: (event) => {
+      event.preventDefault();
+      go();
+    }
+  }, crelt("label", view.state.phrase("Go to line"), ": ", input), " ", crelt("button", { class: "cm-button", type: "submit" }, view.state.phrase("go")), crelt("button", {
+    name: "close",
+    onclick: () => {
+      view.dispatch({ effects: dialogEffect.of(false) });
+      view.focus();
+    },
+    "aria-label": view.state.phrase("close"),
+    type: "button"
+  }, ["×"]));
+  function go() {
+    let match = /^([+-])?(\d+)?(:\d+)?(%)?$/.exec(input.value);
+    if (!match)
+      return;
+    let { state } = view, startLine = state.doc.lineAt(state.selection.main.head);
+    let [, sign, ln, cl, percent] = match;
+    let col = cl ? +cl.slice(1) : 0;
+    let line2 = ln ? +ln : startLine.number;
+    if (ln && percent) {
+      let pc = line2 / 100;
+      if (sign)
+        pc = pc * (sign == "-" ? -1 : 1) + startLine.number / state.doc.lines;
+      line2 = Math.round(state.doc.lines * pc);
+    } else if (ln && sign) {
+      line2 = line2 * (sign == "-" ? -1 : 1) + startLine.number;
+    }
+    let docLine = state.doc.line(Math.max(1, Math.min(state.doc.lines, line2)));
+    let selection = EditorSelection.cursor(docLine.from + Math.max(0, Math.min(col, docLine.length)));
+    view.dispatch({
+      effects: [dialogEffect.of(false), EditorView.scrollIntoView(selection.from, { y: "center" })],
+      selection
+    });
+    view.focus();
+  }
+  return { dom };
+}
+var dialogEffect = StateEffect.define();
+var dialogField = StateField.define({
+  create() {
+    return true;
+  },
+  update(value, tr) {
+    for (let e of tr.effects)
+      if (e.is(dialogEffect))
+        value = e.value;
+    return value;
+  },
+  provide: (f) => showPanel.from(f, (val) => val ? createLineDialog : null)
+});
+var gotoLine = (view) => {
+  let panel = getPanel(view, createLineDialog);
+  if (!panel) {
+    let effects = [dialogEffect.of(true)];
+    if (view.state.field(dialogField, false) == null)
+      effects.push(StateEffect.appendConfig.of([dialogField, baseTheme$1]));
+    view.dispatch({ effects });
+    panel = getPanel(view, createLineDialog);
+  }
+  if (panel)
+    panel.dom.querySelector("input").select();
+  return true;
+};
+var baseTheme$1 = EditorView.baseTheme({
+  ".cm-panel.cm-gotoLine": {
+    padding: "2px 6px 4px",
+    position: "relative",
+    "& label": { fontSize: "80%" },
+    "& [name=close]": {
+      position: "absolute",
+      top: "0",
+      bottom: "0",
+      right: "4px",
+      backgroundColor: "inherit",
+      border: "none",
+      font: "inherit",
+      padding: "0"
+    }
+  }
+});
+var defaultHighlightOptions = {
+  highlightWordAroundCursor: false,
+  minSelectionLength: 1,
+  maxMatches: 100,
+  wholeWords: false
+};
+var highlightConfig = Facet.define({
+  combine(options) {
+    return combineConfig(options, defaultHighlightOptions, {
+      highlightWordAroundCursor: (a, b) => a || b,
+      minSelectionLength: Math.min,
+      maxMatches: Math.min
+    });
+  }
+});
+var matchDeco = Decoration.mark({ class: "cm-selectionMatch" });
+var mainMatchDeco = Decoration.mark({ class: "cm-selectionMatch cm-selectionMatch-main" });
+function insideWordBoundaries(check, state, from, to) {
+  return (from == 0 || check(state.sliceDoc(from - 1, from)) != CharCategory.Word) && (to == state.doc.length || check(state.sliceDoc(to, to + 1)) != CharCategory.Word);
+}
+function insideWord(check, state, from, to) {
+  return check(state.sliceDoc(from, from + 1)) == CharCategory.Word && check(state.sliceDoc(to - 1, to)) == CharCategory.Word;
+}
+var matchHighlighter = ViewPlugin.fromClass(class {
+  constructor(view) {
+    this.decorations = this.getDeco(view);
+  }
+  update(update) {
+    if (update.selectionSet || update.docChanged || update.viewportChanged)
+      this.decorations = this.getDeco(update.view);
+  }
+  getDeco(view) {
+    let conf = view.state.facet(highlightConfig);
+    let { state } = view, sel = state.selection;
+    if (sel.ranges.length > 1)
+      return Decoration.none;
+    let range = sel.main, query, check = null;
+    if (range.empty) {
+      if (!conf.highlightWordAroundCursor)
+        return Decoration.none;
+      let word = state.wordAt(range.head);
+      if (!word)
+        return Decoration.none;
+      check = state.charCategorizer(range.head);
+      query = state.sliceDoc(word.from, word.to);
+    } else {
+      let len = range.to - range.from;
+      if (len < conf.minSelectionLength || len > 200)
+        return Decoration.none;
+      if (conf.wholeWords) {
+        query = state.sliceDoc(range.from, range.to);
+        check = state.charCategorizer(range.head);
+        if (!(insideWordBoundaries(check, state, range.from, range.to) && insideWord(check, state, range.from, range.to)))
+          return Decoration.none;
+      } else {
+        query = state.sliceDoc(range.from, range.to);
+        if (!query)
+          return Decoration.none;
+      }
+    }
+    let deco = [];
+    for (let part of view.visibleRanges) {
+      let cursor = new SearchCursor(state.doc, query, part.from, part.to);
+      while (!cursor.next().done) {
+        let { from, to } = cursor.value;
+        if (!check || insideWordBoundaries(check, state, from, to)) {
+          if (range.empty && from <= range.from && to >= range.to)
+            deco.push(mainMatchDeco.range(from, to));
+          else if (from >= range.to || to <= range.from)
+            deco.push(matchDeco.range(from, to));
+          if (deco.length > conf.maxMatches)
+            return Decoration.none;
+        }
+      }
+    }
+    return Decoration.set(deco);
+  }
+}, {
+  decorations: (v) => v.decorations
+});
+var defaultTheme = EditorView.baseTheme({
+  ".cm-selectionMatch": { backgroundColor: "#99ff7780" },
+  ".cm-searchMatch .cm-selectionMatch": { backgroundColor: "transparent" }
+});
+var selectWord = ({ state, dispatch }) => {
+  let { selection } = state;
+  let newSel = EditorSelection.create(selection.ranges.map((range) => state.wordAt(range.head) || EditorSelection.cursor(range.head)), selection.mainIndex);
+  if (newSel.eq(selection))
+    return false;
+  dispatch(state.update({ selection: newSel }));
+  return true;
+};
+function findNextOccurrence(state, query) {
+  let { main, ranges } = state.selection;
+  let word = state.wordAt(main.head), fullWord = word && word.from == main.from && word.to == main.to;
+  for (let cycled = false, cursor = new SearchCursor(state.doc, query, ranges[ranges.length - 1].to); ; ) {
+    cursor.next();
+    if (cursor.done) {
+      if (cycled)
+        return null;
+      cursor = new SearchCursor(state.doc, query, 0, Math.max(0, ranges[ranges.length - 1].from - 1));
+      cycled = true;
+    } else {
+      if (cycled && ranges.some((r) => r.from == cursor.value.from))
+        continue;
+      if (fullWord) {
+        let word2 = state.wordAt(cursor.value.from);
+        if (!word2 || word2.from != cursor.value.from || word2.to != cursor.value.to)
+          continue;
+      }
+      return cursor.value;
+    }
+  }
+}
+var selectNextOccurrence = ({ state, dispatch }) => {
+  let { ranges } = state.selection;
+  if (ranges.some((sel) => sel.from === sel.to))
+    return selectWord({ state, dispatch });
+  let searchedText = state.sliceDoc(ranges[0].from, ranges[0].to);
+  if (state.selection.ranges.some((r) => state.sliceDoc(r.from, r.to) != searchedText))
+    return false;
+  let range = findNextOccurrence(state, searchedText);
+  if (!range)
+    return false;
+  dispatch(state.update({
+    selection: state.selection.addRange(EditorSelection.range(range.from, range.to), false),
+    effects: EditorView.scrollIntoView(range.to)
+  }));
+  return true;
+};
+var searchConfigFacet = Facet.define({
+  combine(configs) {
+    return combineConfig(configs, {
+      top: false,
+      caseSensitive: false,
+      literal: false,
+      regexp: false,
+      wholeWord: false,
+      createPanel: (view) => new SearchPanel(view),
+      scrollToMatch: (range) => EditorView.scrollIntoView(range)
+    });
+  }
+});
+function search(config) {
+  return config ? [searchConfigFacet.of(config), searchExtensions] : searchExtensions;
+}
+var SearchQuery = class {
+  /**
+  Create a query object.
+  */
+  constructor(config) {
+    this.search = config.search;
+    this.caseSensitive = !!config.caseSensitive;
+    this.literal = !!config.literal;
+    this.regexp = !!config.regexp;
+    this.replace = config.replace || "";
+    this.valid = !!this.search && (!this.regexp || validRegExp(this.search));
+    this.unquoted = this.unquote(this.search);
+    this.wholeWord = !!config.wholeWord;
+  }
+  /**
+  @internal
+  */
+  unquote(text) {
+    return this.literal ? text : text.replace(/\\([nrt\\])/g, (_, ch) => ch == "n" ? "\n" : ch == "r" ? "\r" : ch == "t" ? "	" : "\\");
+  }
+  /**
+  Compare this query to another query.
+  */
+  eq(other) {
+    return this.search == other.search && this.replace == other.replace && this.caseSensitive == other.caseSensitive && this.regexp == other.regexp && this.wholeWord == other.wholeWord;
+  }
+  /**
+  @internal
+  */
+  create() {
+    return this.regexp ? new RegExpQuery(this) : new StringQuery(this);
+  }
+  /**
+  Get a search cursor for this query, searching through the given
+  range in the given state.
+  */
+  getCursor(state, from = 0, to) {
+    let st = state.doc ? state : EditorState.create({ doc: state });
+    if (to == null)
+      to = st.doc.length;
+    return this.regexp ? regexpCursor(this, st, from, to) : stringCursor(this, st, from, to);
+  }
+};
+var QueryType = class {
+  constructor(spec) {
+    this.spec = spec;
+  }
+};
+function stringCursor(spec, state, from, to) {
+  return new SearchCursor(state.doc, spec.unquoted, from, to, spec.caseSensitive ? void 0 : (x) => x.toLowerCase(), spec.wholeWord ? stringWordTest(state.doc, state.charCategorizer(state.selection.main.head)) : void 0);
+}
+function stringWordTest(doc, categorizer) {
+  return (from, to, buf, bufPos) => {
+    if (bufPos > from || bufPos + buf.length < to) {
+      bufPos = Math.max(0, from - 2);
+      buf = doc.sliceString(bufPos, Math.min(doc.length, to + 2));
+    }
+    return (categorizer(charBefore(buf, from - bufPos)) != CharCategory.Word || categorizer(charAfter(buf, from - bufPos)) != CharCategory.Word) && (categorizer(charAfter(buf, to - bufPos)) != CharCategory.Word || categorizer(charBefore(buf, to - bufPos)) != CharCategory.Word);
+  };
+}
+var StringQuery = class extends QueryType {
+  constructor(spec) {
+    super(spec);
+  }
+  nextMatch(state, curFrom, curTo) {
+    let cursor = stringCursor(this.spec, state, curTo, state.doc.length).nextOverlapping();
+    if (cursor.done) {
+      let end = Math.min(state.doc.length, curFrom + this.spec.unquoted.length);
+      cursor = stringCursor(this.spec, state, 0, end).nextOverlapping();
+    }
+    return cursor.done || cursor.value.from == curFrom && cursor.value.to == curTo ? null : cursor.value;
+  }
+  // Searching in reverse is, rather than implementing an inverted search
+  // cursor, done by scanning chunk after chunk forward.
+  prevMatchInRange(state, from, to) {
+    for (let pos = to; ; ) {
+      let start = Math.max(from, pos - 1e4 - this.spec.unquoted.length);
+      let cursor = stringCursor(this.spec, state, start, pos), range = null;
+      while (!cursor.nextOverlapping().done)
+        range = cursor.value;
+      if (range)
+        return range;
+      if (start == from)
+        return null;
+      pos -= 1e4;
+    }
+  }
+  prevMatch(state, curFrom, curTo) {
+    let found = this.prevMatchInRange(state, 0, curFrom);
+    if (!found)
+      found = this.prevMatchInRange(state, Math.max(0, curTo - this.spec.unquoted.length), state.doc.length);
+    return found && (found.from != curFrom || found.to != curTo) ? found : null;
+  }
+  getReplacement(_result) {
+    return this.spec.unquote(this.spec.replace);
+  }
+  matchAll(state, limit) {
+    let cursor = stringCursor(this.spec, state, 0, state.doc.length), ranges = [];
+    while (!cursor.next().done) {
+      if (ranges.length >= limit)
+        return null;
+      ranges.push(cursor.value);
+    }
+    return ranges;
+  }
+  highlight(state, from, to, add) {
+    let cursor = stringCursor(this.spec, state, Math.max(0, from - this.spec.unquoted.length), Math.min(to + this.spec.unquoted.length, state.doc.length));
+    while (!cursor.next().done)
+      add(cursor.value.from, cursor.value.to);
+  }
+};
+function regexpCursor(spec, state, from, to) {
+  return new RegExpCursor(state.doc, spec.search, {
+    ignoreCase: !spec.caseSensitive,
+    test: spec.wholeWord ? regexpWordTest(state.charCategorizer(state.selection.main.head)) : void 0
+  }, from, to);
+}
+function charBefore(str, index) {
+  return str.slice(findClusterBreak(str, index, false), index);
+}
+function charAfter(str, index) {
+  return str.slice(index, findClusterBreak(str, index));
+}
+function regexpWordTest(categorizer) {
+  return (_from, _to, match) => !match[0].length || (categorizer(charBefore(match.input, match.index)) != CharCategory.Word || categorizer(charAfter(match.input, match.index)) != CharCategory.Word) && (categorizer(charAfter(match.input, match.index + match[0].length)) != CharCategory.Word || categorizer(charBefore(match.input, match.index + match[0].length)) != CharCategory.Word);
+}
+var RegExpQuery = class extends QueryType {
+  nextMatch(state, curFrom, curTo) {
+    let cursor = regexpCursor(this.spec, state, curTo, state.doc.length).next();
+    if (cursor.done)
+      cursor = regexpCursor(this.spec, state, 0, curFrom).next();
+    return cursor.done ? null : cursor.value;
+  }
+  prevMatchInRange(state, from, to) {
+    for (let size = 1; ; size++) {
+      let start = Math.max(
+        from,
+        to - size * 1e4
+        /* FindPrev.ChunkSize */
+      );
+      let cursor = regexpCursor(this.spec, state, start, to), range = null;
+      while (!cursor.next().done)
+        range = cursor.value;
+      if (range && (start == from || range.from > start + 10))
+        return range;
+      if (start == from)
+        return null;
+    }
+  }
+  prevMatch(state, curFrom, curTo) {
+    return this.prevMatchInRange(state, 0, curFrom) || this.prevMatchInRange(state, curTo, state.doc.length);
+  }
+  getReplacement(result) {
+    return this.spec.unquote(this.spec.replace).replace(/\$([$&]|\d+)/g, (m, i) => {
+      if (i == "&")
+        return result.match[0];
+      if (i == "$")
+        return "$";
+      for (let l = i.length; l > 0; l--) {
+        let n = +i.slice(0, l);
+        if (n > 0 && n < result.match.length)
+          return result.match[n] + i.slice(l);
+      }
+      return m;
+    });
+  }
+  matchAll(state, limit) {
+    let cursor = regexpCursor(this.spec, state, 0, state.doc.length), ranges = [];
+    while (!cursor.next().done) {
+      if (ranges.length >= limit)
+        return null;
+      ranges.push(cursor.value);
+    }
+    return ranges;
+  }
+  highlight(state, from, to, add) {
+    let cursor = regexpCursor(this.spec, state, Math.max(
+      0,
+      from - 250
+      /* RegExp.HighlightMargin */
+    ), Math.min(to + 250, state.doc.length));
+    while (!cursor.next().done)
+      add(cursor.value.from, cursor.value.to);
+  }
+};
+var setSearchQuery = StateEffect.define();
+var togglePanel = StateEffect.define();
+var searchState = StateField.define({
+  create(state) {
+    return new SearchState(defaultQuery(state).create(), null);
+  },
+  update(value, tr) {
+    for (let effect of tr.effects) {
+      if (effect.is(setSearchQuery))
+        value = new SearchState(effect.value.create(), value.panel);
+      else if (effect.is(togglePanel))
+        value = new SearchState(value.query, effect.value ? createSearchPanel : null);
+    }
+    return value;
+  },
+  provide: (f) => showPanel.from(f, (val) => val.panel)
+});
+function getSearchQuery(state) {
+  let curState = state.field(searchState, false);
+  return curState ? curState.query.spec : defaultQuery(state);
+}
+function searchPanelOpen(state) {
+  var _a;
+  return ((_a = state.field(searchState, false)) === null || _a === void 0 ? void 0 : _a.panel) != null;
+}
+var SearchState = class {
+  constructor(query, panel) {
+    this.query = query;
+    this.panel = panel;
+  }
+};
+var matchMark = Decoration.mark({ class: "cm-searchMatch" });
+var selectedMatchMark = Decoration.mark({ class: "cm-searchMatch cm-searchMatch-selected" });
+var searchHighlighter = ViewPlugin.fromClass(class {
+  constructor(view) {
+    this.view = view;
+    this.decorations = this.highlight(view.state.field(searchState));
+  }
+  update(update) {
+    let state = update.state.field(searchState);
+    if (state != update.startState.field(searchState) || update.docChanged || update.selectionSet || update.viewportChanged)
+      this.decorations = this.highlight(state);
+  }
+  highlight({ query, panel }) {
+    if (!panel || !query.spec.valid)
+      return Decoration.none;
+    let { view } = this;
+    let builder = new RangeSetBuilder();
+    for (let i = 0, ranges = view.visibleRanges, l = ranges.length; i < l; i++) {
+      let { from, to } = ranges[i];
+      while (i < l - 1 && to > ranges[i + 1].from - 2 * 250)
+        to = ranges[++i].to;
+      query.highlight(view.state, from, to, (from2, to2) => {
+        let selected = view.state.selection.ranges.some((r) => r.from == from2 && r.to == to2);
+        builder.add(from2, to2, selected ? selectedMatchMark : matchMark);
+      });
+    }
+    return builder.finish();
+  }
+}, {
+  decorations: (v) => v.decorations
+});
+function searchCommand(f) {
+  return (view) => {
+    let state = view.state.field(searchState, false);
+    return state && state.query.spec.valid ? f(view, state) : openSearchPanel(view);
+  };
+}
+var findNext = searchCommand((view, { query }) => {
+  let { to } = view.state.selection.main;
+  let next = query.nextMatch(view.state, to, to);
+  if (!next)
+    return false;
+  let selection = EditorSelection.single(next.from, next.to);
+  let config = view.state.facet(searchConfigFacet);
+  view.dispatch({
+    selection,
+    effects: [announceMatch(view, next), config.scrollToMatch(selection.main, view)],
+    userEvent: "select.search"
+  });
+  selectSearchInput(view);
+  return true;
+});
+var findPrevious = searchCommand((view, { query }) => {
+  let { state } = view, { from } = state.selection.main;
+  let prev = query.prevMatch(state, from, from);
+  if (!prev)
+    return false;
+  let selection = EditorSelection.single(prev.from, prev.to);
+  let config = view.state.facet(searchConfigFacet);
+  view.dispatch({
+    selection,
+    effects: [announceMatch(view, prev), config.scrollToMatch(selection.main, view)],
+    userEvent: "select.search"
+  });
+  selectSearchInput(view);
+  return true;
+});
+var selectMatches = searchCommand((view, { query }) => {
+  let ranges = query.matchAll(view.state, 1e3);
+  if (!ranges || !ranges.length)
+    return false;
+  view.dispatch({
+    selection: EditorSelection.create(ranges.map((r) => EditorSelection.range(r.from, r.to))),
+    userEvent: "select.search.matches"
+  });
+  return true;
+});
+var selectSelectionMatches = ({ state, dispatch }) => {
+  let sel = state.selection;
+  if (sel.ranges.length > 1 || sel.main.empty)
+    return false;
+  let { from, to } = sel.main;
+  let ranges = [], main = 0;
+  for (let cur = new SearchCursor(state.doc, state.sliceDoc(from, to)); !cur.next().done; ) {
+    if (ranges.length > 1e3)
+      return false;
+    if (cur.value.from == from)
+      main = ranges.length;
+    ranges.push(EditorSelection.range(cur.value.from, cur.value.to));
+  }
+  dispatch(state.update({
+    selection: EditorSelection.create(ranges, main),
+    userEvent: "select.search.matches"
+  }));
+  return true;
+};
+var replaceNext = searchCommand((view, { query }) => {
+  let { state } = view, { from, to } = state.selection.main;
+  if (state.readOnly)
+    return false;
+  let match = query.nextMatch(state, from, from);
+  if (!match)
+    return false;
+  let next = match;
+  let changes = [], selection, replacement;
+  let effects = [];
+  if (next.from == from && next.to == to) {
+    replacement = state.toText(query.getReplacement(next));
+    changes.push({ from: next.from, to: next.to, insert: replacement });
+    next = query.nextMatch(state, next.from, next.to);
+    effects.push(EditorView.announce.of(state.phrase("replaced match on line $", state.doc.lineAt(from).number) + "."));
+  }
+  let changeSet = view.state.changes(changes);
+  if (next) {
+    selection = EditorSelection.single(next.from, next.to).map(changeSet);
+    effects.push(announceMatch(view, next));
+    effects.push(state.facet(searchConfigFacet).scrollToMatch(selection.main, view));
+  }
+  view.dispatch({
+    changes: changeSet,
+    selection,
+    effects,
+    userEvent: "input.replace"
+  });
+  return true;
+});
+var replaceAll = searchCommand((view, { query }) => {
+  if (view.state.readOnly)
+    return false;
+  let changes = query.matchAll(view.state, 1e9).map((match) => {
+    let { from, to } = match;
+    return { from, to, insert: query.getReplacement(match) };
+  });
+  if (!changes.length)
+    return false;
+  let announceText = view.state.phrase("replaced $ matches", changes.length) + ".";
+  view.dispatch({
+    changes,
+    effects: EditorView.announce.of(announceText),
+    userEvent: "input.replace.all"
+  });
+  return true;
+});
+function createSearchPanel(view) {
+  return view.state.facet(searchConfigFacet).createPanel(view);
+}
+function defaultQuery(state, fallback) {
+  var _a, _b, _c, _d, _e;
+  let sel = state.selection.main;
+  let selText = sel.empty || sel.to > sel.from + 100 ? "" : state.sliceDoc(sel.from, sel.to);
+  if (fallback && !selText)
+    return fallback;
+  let config = state.facet(searchConfigFacet);
+  return new SearchQuery({
+    search: ((_a = fallback === null || fallback === void 0 ? void 0 : fallback.literal) !== null && _a !== void 0 ? _a : config.literal) ? selText : selText.replace(/\n/g, "\\n"),
+    caseSensitive: (_b = fallback === null || fallback === void 0 ? void 0 : fallback.caseSensitive) !== null && _b !== void 0 ? _b : config.caseSensitive,
+    literal: (_c = fallback === null || fallback === void 0 ? void 0 : fallback.literal) !== null && _c !== void 0 ? _c : config.literal,
+    regexp: (_d = fallback === null || fallback === void 0 ? void 0 : fallback.regexp) !== null && _d !== void 0 ? _d : config.regexp,
+    wholeWord: (_e = fallback === null || fallback === void 0 ? void 0 : fallback.wholeWord) !== null && _e !== void 0 ? _e : config.wholeWord
+  });
+}
+function getSearchInput(view) {
+  let panel = getPanel(view, createSearchPanel);
+  return panel && panel.dom.querySelector("[main-field]");
+}
+function selectSearchInput(view) {
+  let input = getSearchInput(view);
+  if (input && input == view.root.activeElement)
+    input.select();
+}
+var openSearchPanel = (view) => {
+  let state = view.state.field(searchState, false);
+  if (state && state.panel) {
+    let searchInput = getSearchInput(view);
+    if (searchInput && searchInput != view.root.activeElement) {
+      let query = defaultQuery(view.state, state.query.spec);
+      if (query.valid)
+        view.dispatch({ effects: setSearchQuery.of(query) });
+      searchInput.focus();
+      searchInput.select();
+    }
+  } else {
+    view.dispatch({ effects: [
+      togglePanel.of(true),
+      state ? setSearchQuery.of(defaultQuery(view.state, state.query.spec)) : StateEffect.appendConfig.of(searchExtensions)
+    ] });
+  }
+  return true;
+};
+var closeSearchPanel = (view) => {
+  let state = view.state.field(searchState, false);
+  if (!state || !state.panel)
+    return false;
+  let panel = getPanel(view, createSearchPanel);
+  if (panel && panel.dom.contains(view.root.activeElement))
+    view.focus();
+  view.dispatch({ effects: togglePanel.of(false) });
+  return true;
+};
+var searchKeymap = [
+  { key: "Mod-f", run: openSearchPanel, scope: "editor search-panel" },
+  { key: "F3", run: findNext, shift: findPrevious, scope: "editor search-panel", preventDefault: true },
+  { key: "Mod-g", run: findNext, shift: findPrevious, scope: "editor search-panel", preventDefault: true },
+  { key: "Escape", run: closeSearchPanel, scope: "editor search-panel" },
+  { key: "Mod-Shift-l", run: selectSelectionMatches },
+  { key: "Mod-Alt-g", run: gotoLine },
+  { key: "Mod-d", run: selectNextOccurrence, preventDefault: true }
+];
+var SearchPanel = class {
+  constructor(view) {
+    this.view = view;
+    let query = this.query = view.state.field(searchState).query.spec;
+    this.commit = this.commit.bind(this);
+    this.searchField = crelt("input", {
+      value: query.search,
+      placeholder: phrase(view, "Find"),
+      "aria-label": phrase(view, "Find"),
+      class: "cm-textfield",
+      name: "search",
+      form: "",
+      "main-field": "true",
+      onchange: this.commit,
+      onkeyup: this.commit
+    });
+    this.replaceField = crelt("input", {
+      value: query.replace,
+      placeholder: phrase(view, "Replace"),
+      "aria-label": phrase(view, "Replace"),
+      class: "cm-textfield",
+      name: "replace",
+      form: "",
+      onchange: this.commit,
+      onkeyup: this.commit
+    });
+    this.caseField = crelt("input", {
+      type: "checkbox",
+      name: "case",
+      form: "",
+      checked: query.caseSensitive,
+      onchange: this.commit
+    });
+    this.reField = crelt("input", {
+      type: "checkbox",
+      name: "re",
+      form: "",
+      checked: query.regexp,
+      onchange: this.commit
+    });
+    this.wordField = crelt("input", {
+      type: "checkbox",
+      name: "word",
+      form: "",
+      checked: query.wholeWord,
+      onchange: this.commit
+    });
+    function button(name, onclick, content) {
+      return crelt("button", { class: "cm-button", name, onclick, type: "button" }, content);
+    }
+    this.dom = crelt("div", { onkeydown: (e) => this.keydown(e), class: "cm-search" }, [
+      this.searchField,
+      button("next", () => findNext(view), [phrase(view, "next")]),
+      button("prev", () => findPrevious(view), [phrase(view, "previous")]),
+      button("select", () => selectMatches(view), [phrase(view, "all")]),
+      crelt("label", null, [this.caseField, phrase(view, "match case")]),
+      crelt("label", null, [this.reField, phrase(view, "regexp")]),
+      crelt("label", null, [this.wordField, phrase(view, "by word")]),
+      ...view.state.readOnly ? [] : [
+        crelt("br"),
+        this.replaceField,
+        button("replace", () => replaceNext(view), [phrase(view, "replace")]),
+        button("replaceAll", () => replaceAll(view), [phrase(view, "replace all")])
+      ],
+      crelt("button", {
+        name: "close",
+        onclick: () => closeSearchPanel(view),
+        "aria-label": phrase(view, "close"),
+        type: "button"
+      }, ["×"])
+    ]);
+  }
+  commit() {
+    let query = new SearchQuery({
+      search: this.searchField.value,
+      caseSensitive: this.caseField.checked,
+      regexp: this.reField.checked,
+      wholeWord: this.wordField.checked,
+      replace: this.replaceField.value
+    });
+    if (!query.eq(this.query)) {
+      this.query = query;
+      this.view.dispatch({ effects: setSearchQuery.of(query) });
+    }
+  }
+  keydown(e) {
+    if (runScopeHandlers(this.view, e, "search-panel")) {
+      e.preventDefault();
+    } else if (e.keyCode == 13 && e.target == this.searchField) {
+      e.preventDefault();
+      (e.shiftKey ? findPrevious : findNext)(this.view);
+    } else if (e.keyCode == 13 && e.target == this.replaceField) {
+      e.preventDefault();
+      replaceNext(this.view);
+    }
+  }
+  update(update) {
+    for (let tr of update.transactions)
+      for (let effect of tr.effects) {
+        if (effect.is(setSearchQuery) && !effect.value.eq(this.query))
+          this.setQuery(effect.value);
+      }
+  }
+  setQuery(query) {
+    this.query = query;
+    this.searchField.value = query.search;
+    this.replaceField.value = query.replace;
+    this.caseField.checked = query.caseSensitive;
+    this.reField.checked = query.regexp;
+    this.wordField.checked = query.wholeWord;
+  }
+  mount() {
+    this.searchField.select();
+  }
+  get pos() {
+    return 80;
+  }
+  get top() {
+    return this.view.state.facet(searchConfigFacet).top;
+  }
+};
+function phrase(view, phrase2) {
+  return view.state.phrase(phrase2);
+}
+var AnnounceMargin = 30;
+var Break = /[\s\.,:;?!]/;
+function announceMatch(view, { from, to }) {
+  let line = view.state.doc.lineAt(from), lineEnd = view.state.doc.lineAt(to).to;
+  let start = Math.max(line.from, from - AnnounceMargin), end = Math.min(lineEnd, to + AnnounceMargin);
+  let text = view.state.sliceDoc(start, end);
+  if (start != line.from) {
+    for (let i = 0; i < AnnounceMargin; i++)
+      if (!Break.test(text[i + 1]) && Break.test(text[i])) {
+        text = text.slice(i);
+        break;
+      }
+  }
+  if (end != lineEnd) {
+    for (let i = text.length - 1; i > text.length - AnnounceMargin; i--)
+      if (!Break.test(text[i - 1]) && Break.test(text[i])) {
+        text = text.slice(0, i);
+        break;
+      }
+  }
+  return EditorView.announce.of(`${view.state.phrase("current match")}. ${text} ${view.state.phrase("on line")} ${line.number}.`);
+}
+var baseTheme = EditorView.baseTheme({
+  ".cm-panel.cm-search": {
+    padding: "2px 6px 4px",
+    position: "relative",
+    "& [name=close]": {
+      position: "absolute",
+      top: "0",
+      right: "4px",
+      backgroundColor: "inherit",
+      border: "none",
+      font: "inherit",
+      padding: 0,
+      margin: 0
+    },
+    "& input, & button, & label": {
+      margin: ".2em .6em .2em 0"
+    },
+    "& input[type=checkbox]": {
+      marginRight: ".2em"
+    },
+    "& label": {
+      fontSize: "80%",
+      whiteSpace: "pre"
+    }
+  },
+  "&light .cm-searchMatch": { backgroundColor: "#ffff0054" },
+  "&dark .cm-searchMatch": { backgroundColor: "#00ffff8a" },
+  "&light .cm-searchMatch-selected": { backgroundColor: "#ff6a0054" },
+  "&dark .cm-searchMatch-selected": { backgroundColor: "#ff00ff8a" }
+});
+var searchExtensions = [
+  searchState,
+  Prec.low(searchHighlighter),
+  baseTheme
+];
+
+// node_modules/@atomic-editor/editor/dist/atomic-theme.js
+var atomicEditorTheme = EditorView.theme({
+  "&": {
+    color: "var(--atomic-editor-fg, #dcddde)",
+    backgroundColor: "transparent",
+    fontFamily: "var(--atomic-editor-font, system-ui, -apple-system, BlinkMacSystemFont, sans-serif)",
+    fontSize: "var(--atomic-editor-body-size, 1rem)",
+    height: "100%"
+  },
+  ".cm-scroller": {
+    fontFamily: "var(--atomic-editor-font, system-ui, -apple-system, BlinkMacSystemFont, sans-serif)",
+    lineHeight: "var(--atomic-editor-body-leading, 1.7)",
+    overflow: "auto"
+  },
+  ".cm-content": {
+    caretColor: "var(--atomic-editor-accent-bright, #a78bfa)",
+    padding: "0",
+    paddingBottom: "40vh",
+    // CM6's base theme sets `min-width: max-content` on
+    // `.cm-content` so it always grows to fit its widest child.
+    // That defeats every width constraint on our block widgets
+    // (tables especially): a wide table tells `.cm-content`
+    // "I'm 800px", content grows to 800px, and the scroller
+    // shows horizontal scroll — the "editor overflows
+    // horizontally" behavior you see on mobile when a wide
+    // table enters the viewport. Forcing `min-width: 0` lets
+    // the content box stay at its parent width; wide children
+    // are expected to own their own horizontal scroll (see
+    // `.cm-atomic-table-scroll`) rather than pushing the
+    // content.
+    minWidth: "0"
+  },
+  ".cm-line": {
+    padding: "0",
+    // Force-wrap words that have no natural break opportunity —
+    // long URLs, base64 chunks, and code tokens that would
+    // otherwise overflow the line and push the scroll container
+    // wider than the viewport. Without this, long unbroken
+    // tokens blow past the reading column and we get the
+    // transient horizontal overflow on mobile.
+    overflowWrap: "anywhere"
+  },
+  "&.cm-focused": {
+    outline: "none"
+  },
+  ".cm-cursor, .cm-dropCursor": {
+    borderLeftColor: "var(--atomic-editor-accent-bright, #a78bfa)",
+    borderLeftWidth: "2px"
+  },
+  // The focused-selection selector must mirror CodeMirror's base-theme
+  // path (`&dark.cm-focused > .cm-scroller > .cm-selectionLayer
+  // .cm-selectionBackground`, which paints a default `#233`). A flat
+  // `.cm-selectionBackground` rule loses on specificity, so the
+  // `--atomic-editor-selection-bg` token silently had no effect. This
+  // matches the depth (the same approach oneDark uses) so the token
+  // actually wins, while keeping the unfocused + native fallbacks.
+  "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, ::selection": {
+    backgroundColor: "var(--atomic-editor-selection-bg, color-mix(in srgb, #7c3aed 28%, #1e1e1e 72%))"
+  },
+  ".cm-activeLine": {
+    backgroundColor: "transparent"
+  },
+  ".cm-gutters": {
+    display: "none"
+  },
+  ".cm-tooltip": {
+    backgroundColor: "var(--atomic-editor-bg-surface, #2d2d2d)",
+    color: "var(--atomic-editor-fg, #dcddde)",
+    border: "1px solid var(--atomic-editor-border, #3d3d3d)",
+    borderRadius: "6px"
+  },
+  ".cm-panels": {
+    backgroundColor: "var(--atomic-editor-bg-panel, #252525)",
+    color: "var(--atomic-editor-fg, #dcddde)",
+    borderColor: "var(--atomic-editor-border, #3d3d3d)"
+  },
+  ".cm-panel.cm-search": {
+    padding: "8px 12px",
+    fontFamily: "var(--atomic-editor-font, system-ui, sans-serif)"
+  },
+  ".cm-panel.cm-search input, .cm-panel.cm-search button, .cm-panel.cm-search label": {
+    fontFamily: "var(--atomic-editor-font, system-ui, sans-serif)",
+    fontSize: "0.8125rem"
+  },
+  ".cm-panel.cm-search input[type=text]": {
+    backgroundColor: "var(--atomic-editor-bg, #1e1e1e)",
+    color: "var(--atomic-editor-fg, #dcddde)",
+    border: "1px solid var(--atomic-editor-border, #3d3d3d)",
+    borderRadius: "4px",
+    padding: "4px 8px"
+  },
+  ".cm-panel.cm-search button": {
+    backgroundColor: "transparent",
+    color: "var(--atomic-editor-fg-muted, #888)",
+    border: "1px solid var(--atomic-editor-border, #3d3d3d)",
+    borderRadius: "4px",
+    padding: "4px 10px",
+    cursor: "pointer"
+  },
+  ".cm-searchMatch": {
+    backgroundColor: "var(--atomic-editor-search-bg, color-mix(in srgb, #7c3aed 26%, transparent 74%))",
+    borderRadius: "2px"
+  },
+  ".cm-searchMatch.cm-searchMatch-selected": {
+    backgroundColor: "var(--atomic-editor-search-bg-active, color-mix(in srgb, #7c3aed 60%, transparent 40%))",
+    outline: "1px solid var(--atomic-editor-accent-bright, #a78bfa)"
+  }
+}, { dark: true });
+var atomicMarkdownHighlight = HighlightStyle.define([
+  { tag: tags.heading1, fontWeight: "700" },
+  { tag: tags.heading2, fontWeight: "700" },
+  { tag: tags.heading3, fontWeight: "700" },
+  { tag: tags.heading4, fontWeight: "700" },
+  { tag: [tags.heading5, tags.heading6], fontWeight: "700" },
+  { tag: tags.strong, fontWeight: "700", color: "var(--atomic-editor-fg, #dcddde)" },
+  { tag: tags.emphasis, fontStyle: "italic", color: "var(--atomic-editor-fg, #dcddde)" },
+  { tag: tags.strikethrough, textDecoration: "line-through", color: "var(--atomic-editor-fg-muted, #888)" },
+  {
+    tag: [tags.monospace],
+    fontFamily: "var(--atomic-editor-font-mono, ui-monospace, monospace)",
+    color: "var(--atomic-editor-link, #818cf8)"
+  },
+  { tag: tags.link, color: "var(--atomic-editor-link, #818cf8)" },
+  { tag: tags.url, color: "var(--atomic-editor-link, #818cf8)" },
+  { tag: tags.processingInstruction, color: "var(--atomic-editor-fg-faint, #666)" },
+  { tag: tags.contentSeparator, color: "var(--atomic-editor-fg-faint, #666)" },
+  { tag: tags.quote, color: "var(--atomic-editor-fg-muted, #888)" },
+  { tag: tags.list, color: "var(--atomic-editor-fg, #dcddde)" },
+  { tag: tags.meta, color: "var(--atomic-editor-fg-faint, #666)" },
+  // Nested code-language tokens. `@codemirror/lang-markdown` wires the
+  // grammars from `code-languages.ts` into fenced blocks whose info
+  // string matches — each fence gets a real AST, so tags below apply.
+  {
+    tag: [tags.keyword, tags.modifier, tags.operatorKeyword, tags.controlKeyword, tags.definitionKeyword, tags.moduleKeyword, tags.self],
+    color: "var(--atomic-editor-hl-keyword, #c792ea)"
+  },
+  {
+    tag: [tags.string, tags.special(tags.string), tags.character, tags.attributeValue],
+    color: "var(--atomic-editor-hl-string, #c3e88d)"
+  },
+  {
+    tag: [tags.number, tags.integer, tags.float, tags.bool, tags.null, tags.atom],
+    color: "var(--atomic-editor-hl-number, #f78c6c)"
+  },
+  {
+    tag: [tags.comment, tags.lineComment, tags.blockComment, tags.docComment],
+    color: "var(--atomic-editor-hl-comment, #6a7a82)",
+    fontStyle: "italic"
+  },
+  {
+    tag: [tags.typeName, tags.className, tags.namespace, tags.standard(tags.variableName)],
+    color: "var(--atomic-editor-hl-type, #ffcb6b)"
+  },
+  {
+    tag: [tags.function(tags.variableName), tags.function(tags.propertyName), tags.macroName],
+    color: "var(--atomic-editor-hl-function, #82aaff)"
+  },
+  {
+    tag: [tags.propertyName, tags.attributeName, tags.definition(tags.propertyName)],
+    color: "var(--atomic-editor-hl-property, #82aaff)"
+  },
+  { tag: tags.regexp, color: "var(--atomic-editor-hl-regexp, #f07178)" },
+  { tag: tags.escape, color: "var(--atomic-editor-hl-escape, #89ddff)" },
+  {
+    tag: [tags.tagName, tags.angleBracket],
+    color: "var(--atomic-editor-hl-tag, #f07178)"
+  },
+  {
+    tag: [tags.variableName, tags.labelName, tags.definition(tags.variableName), tags.local(tags.variableName)],
+    color: "var(--atomic-editor-hl-variable, #eeffff)"
+  },
+  { tag: tags.operator, color: "var(--atomic-editor-hl-operator, #89ddff)" },
+  { tag: tags.invalid, color: "var(--atomic-editor-hl-invalid, #ff5370)" },
+  { tag: [tags.punctuation, tags.bracket, tags.squareBracket, tags.paren, tags.brace], color: "var(--atomic-editor-fg-muted, #888)" }
+]);
+var atomicMarkdownSyntax = syntaxHighlighting(atomicMarkdownHighlight);
+
+// node_modules/@atomic-editor/editor/dist/edit-helpers.js
+var extendEmphasisPair = Prec.high(EditorView.inputHandler.of((view, from, to, text) => {
+  if (text !== "*" && text !== "_")
+    return false;
+  const { state } = view;
+  const sel = state.selection.main;
+  if (!sel.empty || from !== to)
+    return false;
+  const before = state.doc.sliceString(Math.max(0, from - 1), from);
+  const after = state.doc.sliceString(from, Math.min(state.doc.length, from + 1));
+  if (before !== text || after !== text)
+    return false;
+  view.dispatch({
+    changes: { from, insert: text + text },
+    selection: { anchor: from + 1 }
+  });
+  return true;
+}));
+var autoCloseCodeFence = Prec.highest(EditorView.inputHandler.of(autoCloseCodeFenceInput));
+function autoCloseCodeFenceInput(view, from, to, text) {
+  if (text !== "`" || from !== to)
+    return false;
+  const { state } = view;
+  const line = state.doc.lineAt(from);
+  const before = state.doc.sliceString(line.from, from);
+  const after = state.doc.sliceString(from, line.to);
+  const match = before.match(/^(\s{0,3})``$/);
+  if (!match)
+    return false;
+  if (after !== "" && after !== "`")
+    return false;
+  if (isInsideFencedCodeBeforeLine(state.doc.toString(), line.number))
+    return false;
+  const indent = match[1];
+  const replaceTo = after === "`" ? from + 1 : from;
+  const insert = "`\n" + indent + "```";
+  view.dispatch({
+    changes: { from, to: replaceTo, insert },
+    selection: { anchor: from + 1 }
+  });
+  return true;
+}
+function isInsideFencedCodeBeforeLine(doc, lineNumber) {
+  const lines = doc.split("\n");
+  let marker = null;
+  let markerLength = 0;
+  for (let i = 0; i < lineNumber - 1; i++) {
+    const match = lines[i].match(/^ {0,3}(`{3,}|~{3,})/);
+    if (!match)
+      continue;
+    const currentMarker = match[1][0];
+    const currentLength = match[1].length;
+    if (!marker) {
+      marker = currentMarker;
+      markerLength = currentLength;
+    } else if (currentMarker === marker && currentLength >= markerLength) {
+      marker = null;
+      markerLength = 0;
+    }
+  }
+  return marker !== null;
+}
+
+// node_modules/@atomic-editor/editor/dist/tree-progress.js
+var treeGrowthEffect = StateEffect.define();
+var GROWTH_THRESHOLD = 8192;
+var TICK_BUDGET_MS = 30;
+function scheduleIdle(cb) {
+  if (typeof window.requestIdleCallback === "function") {
+    return { kind: "idle", id: window.requestIdleCallback(() => cb()) };
+  }
+  return { kind: "raf", id: window.requestAnimationFrame(() => cb()) };
+}
+function cancelIdle(handle) {
+  if (handle.kind === "idle" && typeof window.cancelIdleCallback === "function") {
+    window.cancelIdleCallback(handle.id);
+  } else if (handle.kind === "raf") {
+    window.cancelAnimationFrame(handle.id);
+  }
+}
+var treeProgressPlugin = ViewPlugin.fromClass(class {
+  constructor(view) {
+    Object.defineProperty(this, "view", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: void 0
+    });
+    Object.defineProperty(this, "_lastTreeLen", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: void 0
+    });
+    Object.defineProperty(this, "_idleHandle", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: null
+    });
+    Object.defineProperty(this, "_destroyed", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: false
+    });
+    this.view = view;
+    this._lastTreeLen = syntaxTree(view.state).length;
+    this._schedule();
+  }
+  update(update) {
+    if (update.docChanged) {
+      this._lastTreeLen = syntaxTree(update.state).length;
+      this._schedule();
+    }
+  }
+  destroy() {
+    this._destroyed = true;
+    if (this._idleHandle !== null) {
+      cancelIdle(this._idleHandle);
+      this._idleHandle = null;
+    }
+  }
+  _schedule() {
+    if (this._idleHandle !== null)
+      return;
+    this._idleHandle = scheduleIdle(() => {
+      this._idleHandle = null;
+      if (!this._destroyed)
+        this._tick();
+    });
+  }
+  _tick() {
+    const state = this.view.state;
+    const docLen = state.doc.length;
+    if (this._lastTreeLen >= docLen)
+      return;
+    const ensured = ensureSyntaxTree(state, docLen, TICK_BUDGET_MS);
+    const newLen = (ensured ?? syntaxTree(state)).length;
+    if (newLen >= this._lastTreeLen + GROWTH_THRESHOLD || newLen >= docLen) {
+      const previous = this._lastTreeLen;
+      this._lastTreeLen = newLen;
+      try {
+        this.view.dispatch({ effects: treeGrowthEffect.of(null) });
+      } catch {
+        this._lastTreeLen = previous;
+        return;
+      }
+    }
+    if (newLen < docLen)
+      this._schedule();
+  }
+});
+
+// node_modules/@atomic-editor/editor/dist/image-blocks.js
+var dimensionCache = /* @__PURE__ */ new Map();
+var ImageWidget = class extends WidgetType {
+  constructor(src, alt) {
+    super();
+    Object.defineProperty(this, "src", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: src
+    });
+    Object.defineProperty(this, "alt", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: alt
+    });
+  }
+  eq(other) {
+    return other.src === this.src && other.alt === this.alt;
+  }
+  toDOM(view) {
+    const wrap = document.createElement("div");
+    wrap.className = "cm-atomic-image";
+    const img = document.createElement("img");
+    img.src = this.src;
+    img.alt = this.alt;
+    img.loading = "lazy";
+    const cached = dimensionCache.get(this.src);
+    if (cached) {
+      img.width = cached.w;
+      img.height = cached.h;
+    } else {
+      img.addEventListener("load", () => {
+        if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+          dimensionCache.set(this.src, {
+            w: img.naturalWidth,
+            h: img.naturalHeight
+          });
+        }
+      });
+    }
+    wrap.appendChild(img);
+    const onPointer = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const pos = view.posAtDOM(wrap);
+      if (pos < 0)
+        return;
+      const target = Math.max(0, pos - 1);
+      view.focus();
+      view.dispatch({
+        selection: { anchor: target },
+        scrollIntoView: false
+      });
+    };
+    wrap.addEventListener("mousedown", onPointer);
+    return wrap;
+  }
+  // Block CM6's own mouse handling so our listener above is the sole
+  // thing deciding where the caret goes.
+  ignoreEvent(event) {
+    return event.type === "mousedown" || event.type === "click";
+  }
+};
+function buildImageBlocks(state) {
+  const ranges = [];
+  const tree = ensureSyntaxTree(state, state.doc.length, 200) ?? syntaxTree(state);
+  tree.iterate({
+    enter: (node) => {
+      if (node.name !== "Image")
+        return;
+      for (let p = node.node.parent; p; p = p.parent) {
+        if (p.name === "Table")
+          return;
+      }
+      const raw = state.doc.sliceString(node.from, node.to);
+      const match = raw.match(/^!\[([^\]]*)\]\(([^\s)"']+)(?:\s+["'][^)]*["'])?\)$/);
+      if (!match)
+        return;
+      const [, alt, src] = match;
+      if (!src)
+        return;
+      const line = state.doc.lineAt(node.from);
+      ranges.push(Decoration.widget({
+        widget: new ImageWidget(src, alt),
+        block: true,
+        // side: 1 places the block widget after the line's content,
+        // so the image appears below its source line.
+        side: 1
+      }).range(line.to));
+    }
+  });
+  return Decoration.set(ranges, true);
+}
+function changeAffectsImages(tr, existing) {
+  let affected = false;
+  tr.changes.iterChanges((fromA, toA) => {
+    if (affected)
+      return;
+    existing.between(fromA, toA, () => {
+      affected = true;
+      return false;
+    });
+  });
+  if (affected)
+    return true;
+  const state = tr.state;
+  tr.changes.iterChanges((_fromA, _toA, fromB, toB) => {
+    if (affected)
+      return;
+    const startLine = state.doc.lineAt(fromB);
+    const endLine = toB > startLine.to ? state.doc.lineAt(toB) : startLine;
+    for (let n = startLine.number; n <= endLine.number; n++) {
+      if (state.doc.line(n).text.includes("![")) {
+        affected = true;
+        break;
+      }
+    }
+  });
+  return affected;
+}
+var imageBlocksField = StateField.define({
+  create: (state) => buildImageBlocks(state),
+  update(deco, tr) {
+    for (const effect of tr.effects) {
+      if (effect.is(treeGrowthEffect))
+        return buildImageBlocks(tr.state);
+    }
+    if (!tr.docChanged)
+      return deco;
+    const mapped = deco.map(tr.changes);
+    if (!changeAffectsImages(tr, deco))
+      return mapped;
+    return buildImageBlocks(tr.state);
+  },
+  provide: (f) => EditorView.decorations.from(f)
+});
+function imageBlocks() {
+  return [imageBlocksField, treeProgressPlugin];
+}
+
+// node_modules/@atomic-editor/editor/dist/inline-preview.js
+function defaultOnLinkClick(url) {
+  try {
+    window.open(url, "_blank", "noopener,noreferrer");
+  } catch {
+  }
+}
+var FREEZE_TAIL_MS = 100;
+var setFrozen = StateEffect.define();
+var previewFrozenField = StateField.define({
+  create: () => false,
+  update(prev, tr) {
+    for (const effect of tr.effects) {
+      if (effect.is(setFrozen))
+        return effect.value;
+    }
+    return prev;
+  }
+});
+function linkIconHitTarget(event, root) {
+  const target = event.target;
+  if (!(target instanceof Element))
+    return null;
+  const linkEl = target.closest(".cm-atomic-link");
+  if (!linkEl || root && !root.contains(linkEl))
+    return null;
+  const rects = Array.from(linkEl.getClientRects());
+  if (rects.length === 0)
+    return null;
+  const lastRect = rects[rects.length - 1];
+  const emSize = parseFloat(window.getComputedStyle(linkEl).fontSize);
+  const iconZone = emSize * 1.25;
+  const onIcon = event.clientX >= lastRect.right - iconZone && event.clientX <= lastRect.right && event.clientY >= lastRect.top && event.clientY <= lastRect.bottom;
+  return onIcon ? linkEl : null;
+}
+var freezeMousePlugin = ViewPlugin.fromClass(class {
+  constructor(view) {
+    Object.defineProperty(this, "view", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: view
+    });
+    Object.defineProperty(this, "down", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: false
+    });
+    Object.defineProperty(this, "releaseTimer", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: null
+    });
+    Object.defineProperty(this, "onDown", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: (event) => {
+        if (event.button !== 0)
+          return;
+        const target = event.target;
+        if (!(target instanceof Node) || !this.view.contentDOM.contains(target)) {
+          return;
+        }
+        if (linkIconHitTarget(event, this.view.contentDOM)) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          return;
+        }
+        this.down = true;
+        if (this.releaseTimer != null) {
+          window.clearTimeout(this.releaseTimer);
+          this.releaseTimer = null;
+        }
+        if (!this.view.state.field(previewFrozenField)) {
+          this.view.dispatch({ effects: setFrozen.of(true) });
+        }
+      }
+    });
+    Object.defineProperty(this, "onUp", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: () => {
+        if (!this.down)
+          return;
+        this.down = false;
+        if (this.releaseTimer != null)
+          window.clearTimeout(this.releaseTimer);
+        this.releaseTimer = window.setTimeout(() => {
+          this.releaseTimer = null;
+          if (!this.view.state.field(previewFrozenField))
+            return;
+          try {
+            this.view.dispatch({ effects: setFrozen.of(false) });
+          } catch {
+          }
+        }, FREEZE_TAIL_MS);
+      }
+    });
+    view.dom.addEventListener("pointerdown", this.onDown, true);
+    window.addEventListener("pointerup", this.onUp);
+    window.addEventListener("pointercancel", this.onUp);
+  }
+  update(_) {
+  }
+  destroy() {
+    this.view.dom.removeEventListener("pointerdown", this.onDown, true);
+    window.removeEventListener("pointerup", this.onUp);
+    window.removeEventListener("pointercancel", this.onUp);
+    if (this.releaseTimer != null)
+      window.clearTimeout(this.releaseTimer);
+  }
+});
+var LINE_CLASS_BY_BLOCK = {
+  ATXHeading1: "cm-atomic-h1",
+  ATXHeading2: "cm-atomic-h2",
+  ATXHeading3: "cm-atomic-h3",
+  ATXHeading4: "cm-atomic-h4",
+  ATXHeading5: "cm-atomic-h5",
+  ATXHeading6: "cm-atomic-h6",
+  SetextHeading1: "cm-atomic-h1",
+  SetextHeading2: "cm-atomic-h2",
+  Blockquote: "cm-atomic-blockquote",
+  FencedCode: "cm-atomic-fenced-code"
+};
+var HIDEABLE_SYNTAX = /* @__PURE__ */ new Set([
+  "HeaderMark",
+  "EmphasisMark",
+  "CodeMark",
+  "CodeInfo",
+  "LinkMark",
+  "URL",
+  "LinkTitle",
+  "StrikethroughMark",
+  "QuoteMark"
+]);
+var LINK_CHILD_SYNTAX = /* @__PURE__ */ new Set(["LinkMark", "URL", "LinkTitle"]);
+var INLINE_MARK_CLASS = {
+  StrongEmphasis: "cm-atomic-strong",
+  Emphasis: "cm-atomic-em",
+  InlineCode: "cm-atomic-inline-code",
+  Strikethrough: "cm-atomic-strike",
+  Link: "cm-atomic-link"
+};
+var BulletWidget = class extends WidgetType {
+  eq() {
+    return true;
+  }
+  toDOM() {
+    const span = document.createElement("span");
+    span.className = "cm-atomic-list-marker cm-atomic-bullet";
+    span.textContent = "•";
+    return span;
+  }
+  ignoreEvent() {
+    return false;
+  }
+};
+var BULLET_WIDGET = new BulletWidget();
+var TaskCheckboxWidget = class extends WidgetType {
+  constructor(checked) {
+    super();
+    Object.defineProperty(this, "checked", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: checked
+    });
+  }
+  eq(other) {
+    return other.checked === this.checked;
+  }
+  toDOM(view) {
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.checked = this.checked;
+    input.className = "cm-atomic-list-marker cm-atomic-task-checkbox";
+    input.setAttribute("contenteditable", "false");
+    input.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+    input.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const pos = view.posAtDOM(input);
+      if (pos < 0)
+        return;
+      const current = view.state.doc.sliceString(pos, pos + 3);
+      const next = /\[x\]/i.test(current) ? "[ ]" : "[x]";
+      if (current === next)
+        return;
+      view.dispatch({ changes: { from: pos, to: pos + 3, insert: next } });
+    });
+    return input;
+  }
+  ignoreEvent(event) {
+    return event.type === "mousedown" || event.type === "click";
+  }
+};
+function pushReplace(ranges, doc, from, to, spec = {}) {
+  if (from >= to)
+    return;
+  const startLine = doc.lineAt(from);
+  if (to <= startLine.to) {
+    ranges.push(Decoration.replace(spec).range(from, to));
+    return;
+  }
+  let cursor = from;
+  let firstSegment = true;
+  while (cursor < to) {
+    const line = doc.lineAt(cursor);
+    const segEnd = Math.min(to, line.to);
+    if (segEnd > cursor) {
+      ranges.push(Decoration.replace(firstSegment ? spec : {}).range(cursor, segEnd));
+      firstSegment = false;
+    }
+    cursor = line.to + 1;
+  }
+}
+function buildInlineDecorations(view) {
+  const { state } = view;
+  const { doc } = state;
+  const ranges = [];
+  const activeLines = /* @__PURE__ */ new Set();
+  if (view.hasFocus) {
+    for (const r of state.selection.ranges) {
+      const firstLine = doc.lineAt(r.from).number;
+      const lastLine = doc.lineAt(r.to).number;
+      for (let n = firstLine; n <= lastLine; n++)
+        activeLines.add(n);
+    }
+  }
+  const tree = ensureSyntaxTree(state, state.doc.length, 200) ?? syntaxTree(state);
+  const activeLinkStarts = /* @__PURE__ */ new Set();
+  tree.iterate({
+    enter: (node) => {
+      if (node.name === "FencedCode") {
+        const firstLine = doc.lineAt(node.from).number;
+        const lastLine = doc.lineAt(node.to).number;
+        let anyActive = false;
+        for (let n = firstLine; n <= lastLine; n++) {
+          if (activeLines.has(n)) {
+            anyActive = true;
+            break;
+          }
+        }
+        if (anyActive) {
+          for (let n = firstLine; n <= lastLine; n++)
+            activeLines.add(n);
+        }
+      }
+      if (node.name === "Link" && view.hasFocus) {
+        for (const range of state.selection.ranges) {
+          if (range.from <= node.to && range.to >= node.from) {
+            activeLinkStarts.add(node.from);
+            break;
+          }
+        }
+      }
+      const lineClass = LINE_CLASS_BY_BLOCK[node.name];
+      if (lineClass) {
+        const firstLine = doc.lineAt(node.from);
+        const lastLine = doc.lineAt(node.to);
+        for (let n = firstLine.number; n <= lastLine.number; n++) {
+          const line = doc.line(n);
+          ranges.push(Decoration.line({ class: lineClass }).range(line.from));
+        }
+      }
+      const markClass = INLINE_MARK_CLASS[node.name];
+      if (markClass && node.from < node.to) {
+        ranges.push(Decoration.mark({ class: markClass }).range(node.from, node.to));
+      }
+      if (HIDEABLE_SYNTAX.has(node.name) && node.from < node.to) {
+        const lineNum = doc.lineAt(node.from).number;
+        let shouldHide;
+        if (LINK_CHILD_SYNTAX.has(node.name)) {
+          let parent = node.node.parent;
+          while (parent && parent.name !== "Link" && parent.name !== "Image") {
+            parent = parent.parent;
+          }
+          if (parent && parent.name === "Link") {
+            shouldHide = !activeLinkStarts.has(parent.from);
+          } else {
+            shouldHide = !activeLines.has(lineNum);
+          }
+        } else {
+          shouldHide = !activeLines.has(lineNum);
+        }
+        if (shouldHide) {
+          let hideTo = node.to;
+          if (node.name === "HeaderMark" || node.name === "QuoteMark") {
+            while (hideTo < doc.length && doc.sliceString(hideTo, hideTo + 1) === " ") {
+              hideTo++;
+            }
+          }
+          pushReplace(ranges, doc, node.from, hideTo);
+        }
+      }
+      if (node.name === "Escape" && node.to - node.from >= 2) {
+        const lineNum = doc.lineAt(node.from).number;
+        if (!activeLines.has(lineNum)) {
+          pushReplace(ranges, doc, node.from, node.from + 1);
+        }
+      }
+      if (node.name === "ListMark" && node.from < node.to) {
+        const line = doc.lineAt(node.from);
+        const taskLead = line.text.match(/^(\s*[-*+]\s+)\[[ xX]\]/);
+        const taskFrom = taskLead != null ? line.from + taskLead[1].length : void 0;
+        const rawIndent = node.from - line.from;
+        const depth = Math.max(0, Math.floor(rawIndent / 2));
+        const BASE_EM = 0.8;
+        const ALCOVE_EM = 1.2;
+        const LEVEL_EM = 0.6;
+        const padding = BASE_EM + ALCOVE_EM + depth * LEVEL_EM;
+        ranges.push(Decoration.line({
+          attributes: {
+            style: `padding-left: ${padding}em; text-indent: -${ALCOVE_EM}em`
+          }
+        }).range(line.from));
+        const hasTrailingSpace = doc.sliceString(node.to, node.to + 1) === " ";
+        const markEnd = hasTrailingSpace ? node.to + 1 : node.to;
+        if (taskFrom !== void 0) {
+          pushReplace(ranges, doc, node.from, taskFrom);
+        } else {
+          const markText = doc.sliceString(node.from, node.to);
+          if (markText === "-" || markText === "*" || markText === "+") {
+            pushReplace(ranges, doc, node.from, markEnd, { widget: BULLET_WIDGET });
+          } else {
+            ranges.push(Decoration.mark({ class: "cm-atomic-list-marker" }).range(node.from, node.to));
+            if (hasTrailingSpace) {
+              pushReplace(ranges, doc, node.to, markEnd);
+            }
+          }
+        }
+      }
+      if (node.name === "HorizontalRule") {
+        const line = doc.lineAt(node.from);
+        if (!activeLines.has(line.number)) {
+          ranges.push(Decoration.line({ class: "cm-atomic-hr" }).range(line.from));
+          pushReplace(ranges, doc, line.from, line.to);
+        }
+      }
+      if (node.name === "Image" && node.from < node.to) {
+        const imageLine = doc.lineAt(node.from);
+        const lineNum = imageLine.number;
+        if (!activeLines.has(lineNum)) {
+          pushReplace(ranges, doc, node.from, node.to);
+        }
+      }
+      if (node.name === "TaskMarker" && node.from < node.to) {
+        const markText = doc.sliceString(node.from, node.to);
+        const checked = /\[x\]/i.test(markText);
+        const hasTrailingSpace = node.to < doc.length && doc.sliceString(node.to, node.to + 1) === " ";
+        const replaceTo = hasTrailingSpace ? node.to + 1 : node.to;
+        pushReplace(ranges, doc, node.from, replaceTo, {
+          widget: new TaskCheckboxWidget(checked)
+        });
+        if (checked) {
+          const lineNum = doc.lineAt(node.from).number;
+          const line = doc.line(lineNum);
+          ranges.push(Decoration.line({ class: "cm-atomic-task-done" }).range(line.from));
+        }
+      }
+    }
+  });
+  if (view.hasFocus) {
+    const head = state.selection.main.head;
+    const line = doc.lineAt(head);
+    if (activeLines.has(line.number)) {
+      supplementMidTypingEmphasis(line.text, line.from, head - line.from, ranges);
+    }
+  }
+  return Decoration.set(ranges, true);
+}
+var MID_TYPING_DELIMITERS = [
+  { delim: "**", contentCls: "cm-atomic-strong", delimCls: "cm-atomic-strong-mark" },
+  { delim: "__", contentCls: "cm-atomic-strong", delimCls: "cm-atomic-strong-mark" },
+  { delim: "~~", contentCls: "cm-atomic-strike", delimCls: "cm-atomic-strike-mark" },
+  { delim: "*", contentCls: "cm-atomic-em", delimCls: "cm-atomic-em-mark" },
+  { delim: "_", contentCls: "cm-atomic-em", delimCls: "cm-atomic-em-mark" }
+];
+function supplementMidTypingEmphasis(text, lineFrom, localCursor, out) {
+  const consumed = new Uint8Array(text.length);
+  for (const { delim, contentCls, delimCls } of MID_TYPING_DELIMITERS) {
+    const dLen = delim.length;
+    const isUnderscore = delim === "_" || delim === "__";
+    let searchFrom = 0;
+    while (searchFrom < text.length) {
+      const open = indexOfUnconsumed(text, delim, searchFrom, consumed);
+      if (open < 0)
+        break;
+      if (isUnderscore && open > 0 && /\w/.test(text[open - 1])) {
+        searchFrom = open + dLen;
+        continue;
+      }
+      const close = indexOfUnconsumed(text, delim, open + dLen, consumed);
+      if (close < 0)
+        break;
+      for (let i = open; i < close + dLen; i++)
+        consumed[i] = 1;
+      const contentFrom = open + dLen;
+      const contentTo = close;
+      if (contentFrom < contentTo && localCursor > open && localCursor < close + dLen) {
+        out.push(Decoration.mark({ class: contentCls }).range(lineFrom + contentFrom, lineFrom + contentTo));
+        out.push(Decoration.mark({ class: delimCls }).range(lineFrom + open, lineFrom + contentFrom));
+        out.push(Decoration.mark({ class: delimCls }).range(lineFrom + contentTo, lineFrom + close + dLen));
+      }
+      searchFrom = close + dLen;
+    }
+  }
+}
+function indexOfUnconsumed(text, needle, from, consumed) {
+  let i = from;
+  while (i <= text.length - needle.length) {
+    const found = text.indexOf(needle, i);
+    if (found < 0)
+      return -1;
+    let isConsumed = false;
+    for (let k = found; k < found + needle.length; k++) {
+      if (consumed[k]) {
+        isConsumed = true;
+        break;
+      }
+    }
+    if (!isConsumed)
+      return found;
+    i = found + 1;
+  }
+  return -1;
+}
+var inlinePreviewPlugin = ViewPlugin.fromClass(class {
+  constructor(view) {
+    Object.defineProperty(this, "decorations", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: void 0
+    });
+    this.decorations = buildInlineDecorations(view);
+  }
+  update(update) {
+    const prevFrozen = update.startState.field(previewFrozenField);
+    const nextFrozen = update.state.field(previewFrozenField);
+    const justUnfroze = prevFrozen && !nextFrozen;
+    if (nextFrozen && !justUnfroze && !update.docChanged)
+      return;
+    let treeGrew = false;
+    for (const tr of update.transactions) {
+      for (const effect of tr.effects) {
+        if (effect.is(treeGrowthEffect)) {
+          treeGrew = true;
+          break;
+        }
+      }
+      if (treeGrew)
+        break;
+    }
+    if (justUnfroze || update.docChanged || update.selectionSet || update.focusChanged || treeGrew) {
+      this.decorations = buildInlineDecorations(update.view);
+    }
+  }
+}, {
+  decorations: (v) => v.decorations
+});
+function insertTightListItem(view) {
+  const { state } = view;
+  const sel = state.selection.main;
+  if (!sel.empty)
+    return false;
+  const from = sel.from;
+  const line = state.doc.lineAt(from);
+  const tree = syntaxTree(state);
+  let cursor = tree.resolveInner(from, -1).cursor();
+  let inBulletList = false;
+  for (; ; ) {
+    if (cursor.name === "BulletList") {
+      inBulletList = true;
+      break;
+    }
+    if (!cursor.parent())
+      break;
+  }
+  if (!inBulletList)
+    return false;
+  const lineText = state.doc.sliceString(line.from, line.to);
+  const prefix = lineText.match(/^(\s*)([-*+])(\s+)/);
+  if (!prefix)
+    return false;
+  const [whole, indent, marker] = prefix;
+  const rest = lineText.slice(whole.length);
+  const taskMatch = rest.match(/^(\[[ xX]\])(\s*)/);
+  const taskPrefixLen = taskMatch ? taskMatch[0].length : 0;
+  const contentAfterPrefix = rest.slice(taskPrefixLen);
+  if (!contentAfterPrefix.trim()) {
+    const depth = Math.floor(indent.length / 2);
+    if (depth >= 1) {
+      const outerIndent = indent.slice(0, indent.length - 2);
+      const continuation2 = taskMatch ? `${marker} [ ] ` : `${marker} `;
+      const replacement = `${outerIndent}${continuation2}`;
+      view.dispatch({
+        changes: { from: line.from, to: line.to, insert: replacement },
+        selection: EditorSelection.cursor(line.from + replacement.length)
+      });
+    } else {
+      view.dispatch({
+        changes: { from: line.from, to: line.to, insert: "" },
+        selection: EditorSelection.cursor(line.from)
+      });
+    }
+    return true;
+  }
+  const continuation = taskMatch ? `${marker} [ ] ` : `${marker} `;
+  const insert = `
+${indent}${continuation}`;
+  view.dispatch({
+    changes: { from, to: from, insert },
+    selection: EditorSelection.cursor(from + insert.length)
+  });
+  return true;
+}
+function makeLinkClickHandler(onLinkClick) {
+  return EditorView.domEventHandlers({
+    click: (event, view) => {
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+        return false;
+      if (event.button !== 0)
+        return false;
+      const linkEl = linkIconHitTarget(event, view.contentDOM);
+      if (!linkEl)
+        return false;
+      const pos = view.posAtDOM(linkEl);
+      if (pos < 0)
+        return false;
+      const tree = syntaxTree(view.state);
+      let node = tree.resolveInner(pos, 1);
+      while (node && node.name !== "Link")
+        node = node.parent;
+      if (!node)
+        return false;
+      const urlNode = node.getChild("URL");
+      if (!urlNode)
+        return false;
+      const url = view.state.doc.sliceString(urlNode.from, urlNode.to);
+      if (!url)
+        return false;
+      event.preventDefault();
+      event.stopPropagation();
+      onLinkClick(url);
+      return true;
+    }
+  });
+}
+function inlinePreview(config = {}) {
+  const { onLinkClick = defaultOnLinkClick } = config;
+  return [
+    previewFrozenField,
+    inlinePreviewPlugin,
+    freezeMousePlugin,
+    treeProgressPlugin,
+    makeLinkClickHandler(onLinkClick),
+    // Prec.highest to beat @codemirror/lang-markdown's own Enter
+    // handler, which is registered internally by the `markdown()`
+    // extension (not just via the exported markdownKeymap) and
+    // otherwise wins precedence.
+    Prec.highest(keymap.of([{ key: "Enter", run: insertTightListItem }]))
+  ];
+}
+
+// node_modules/@atomic-editor/editor/dist/table-widget.js
+function collectCells(state, rowNode) {
+  return splitRowCells(state.doc.lineAt(rowNode.from).text);
+}
+function splitRowCells(line) {
+  let s = line.trim();
+  if (s.startsWith("|"))
+    s = s.slice(1);
+  if (s.endsWith("|"))
+    s = s.slice(0, -1);
+  const cells = [];
+  let buf = "";
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (ch === "\\" && i + 1 < s.length) {
+      buf += ch + s[i + 1];
+      i++;
+      continue;
+    }
+    if (ch === "|") {
+      cells.push(buf.trim());
+      buf = "";
+      continue;
+    }
+    buf += ch;
+  }
+  cells.push(buf.trim());
+  return cells;
+}
+function parseTable(state, tableNode) {
+  const header = [];
+  const rows = [];
+  const cursor = tableNode.cursor();
+  if (!cursor.firstChild())
+    return null;
+  do {
+    if (cursor.name === "TableHeader") {
+      header.push(...collectCells(state, cursor.node));
+    } else if (cursor.name === "TableRow") {
+      rows.push(collectCells(state, cursor.node));
+    }
+  } while (cursor.nextSibling());
+  if (header.length === 0)
+    return null;
+  return { header, rows };
+}
+function escapeCell(text) {
+  return text.replace(/\r?\n/g, " ").replace(new RegExp("(?<!\\\\)\\|", "g"), "\\|");
+}
+function serializeTable(model) {
+  const columnCount = model.header.length;
+  const lines = [];
+  lines.push("| " + model.header.map(escapeCell).join(" | ") + " |");
+  lines.push("| " + model.header.map(() => "---").join(" | ") + " |");
+  for (const row of model.rows) {
+    const padded = [];
+    for (let c = 0; c < columnCount; c++)
+      padded.push(escapeCell(row[c] ?? ""));
+    lines.push("| " + padded.join(" | ") + " |");
+  }
+  return lines.join("\n");
+}
+function readModelFromDom(wrap) {
+  const header = Array.from(wrap.querySelectorAll("thead th")).map(readCellSource);
+  const rows = Array.from(wrap.querySelectorAll("tbody tr")).map((tr) => Array.from(tr.querySelectorAll("td")).map(readCellSource));
+  return { header, rows };
+}
+function readCellSource(cell) {
+  return (cell.dataset.raw ?? "").trim();
+}
+function getCellSource(cell) {
+  return cell.querySelector(".cm-atomic-table-cell-source");
+}
+function parseCellInline(raw) {
+  const tokens = [];
+  let textBuf = "";
+  let i = 0;
+  const flushText = () => {
+    if (textBuf.length) {
+      tokens.push({ type: "text", text: textBuf });
+      textBuf = "";
+    }
+  };
+  while (i < raw.length) {
+    if (raw[i] === "\\" && i + 1 < raw.length && /[!-/:-@[-`{-~]/.test(raw[i + 1])) {
+      textBuf += raw[i + 1];
+      i += 2;
+      continue;
+    }
+    const match = matchCellMarkAt(raw, i);
+    if (match) {
+      flushText();
+      tokens.push(match.token);
+      i = match.end;
+      continue;
+    }
+    textBuf += raw[i];
+    i++;
+  }
+  flushText();
+  return tokens;
+}
+function matchCellMarkAt(raw, from) {
+  const rest = raw.slice(from);
+  let m = rest.match(/^\*\*([\s\S]+?)\*\*/);
+  if (m) {
+    return {
+      token: { type: "strong", delim: "**", children: parseCellInline(m[1]) },
+      end: from + m[0].length
+    };
+  }
+  m = rest.match(/^__([\s\S]+?)__/);
+  if (m) {
+    return {
+      token: { type: "strong", delim: "__", children: parseCellInline(m[1]) },
+      end: from + m[0].length
+    };
+  }
+  m = rest.match(/^~~([\s\S]+?)~~/);
+  if (m) {
+    return {
+      token: { type: "strike", children: parseCellInline(m[1]) },
+      end: from + m[0].length
+    };
+  }
+  m = rest.match(/^\[([^\]\n]+)\]\(([^\s)"'\n]+)\)/);
+  if (m) {
+    return {
+      token: {
+        type: "link",
+        textChildren: parseCellInline(m[1]),
+        url: m[2]
+      },
+      end: from + m[0].length
+    };
+  }
+  m = rest.match(/^\*([^*\n]+?)\*/);
+  if (m) {
+    return {
+      token: { type: "em", delim: "*", children: parseCellInline(m[1]) },
+      end: from + m[0].length
+    };
+  }
+  const prev = from > 0 ? raw[from - 1] : "";
+  if (!/\w/.test(prev)) {
+    m = rest.match(/^_([^_\n]+?)_/);
+    if (m) {
+      return {
+        token: { type: "em", delim: "_", children: parseCellInline(m[1]) },
+        end: from + m[0].length
+      };
+    }
+  }
+  return null;
+}
+function buildCellSourceDom(raw) {
+  const frag = document.createDocumentFragment();
+  const tokens = parseCellInline(raw);
+  for (const tok of tokens)
+    frag.appendChild(renderCellToken(tok));
+  return frag;
+}
+function renderCellToken(tok) {
+  if (tok.type === "text") {
+    return document.createTextNode(tok.text);
+  }
+  if (tok.type === "strong") {
+    const wrap2 = document.createElement("span");
+    wrap2.className = "cm-atomic-strong-wrap";
+    wrap2.appendChild(makeCellMark(tok.delim));
+    const inner2 = document.createElement("span");
+    inner2.className = "cm-atomic-strong";
+    inner2.appendChild(renderTokensTo(tok.children));
+    wrap2.appendChild(inner2);
+    wrap2.appendChild(makeCellMark(tok.delim));
+    return wrap2;
+  }
+  if (tok.type === "em") {
+    const wrap2 = document.createElement("span");
+    wrap2.className = "cm-atomic-em-wrap";
+    wrap2.appendChild(makeCellMark(tok.delim));
+    const inner2 = document.createElement("span");
+    inner2.className = "cm-atomic-em";
+    inner2.appendChild(renderTokensTo(tok.children));
+    wrap2.appendChild(inner2);
+    wrap2.appendChild(makeCellMark(tok.delim));
+    return wrap2;
+  }
+  if (tok.type === "strike") {
+    const wrap2 = document.createElement("span");
+    wrap2.className = "cm-atomic-strike-wrap";
+    wrap2.appendChild(makeCellMark("~~"));
+    const inner2 = document.createElement("span");
+    inner2.className = "cm-atomic-strike";
+    inner2.appendChild(renderTokensTo(tok.children));
+    wrap2.appendChild(inner2);
+    wrap2.appendChild(makeCellMark("~~"));
+    return wrap2;
+  }
+  const wrap = document.createElement("span");
+  wrap.className = "cm-atomic-link-wrap";
+  wrap.dataset.url = tok.url;
+  wrap.appendChild(makeCellMark("["));
+  const inner = document.createElement("span");
+  inner.className = "cm-atomic-link";
+  inner.appendChild(renderTokensTo(tok.textChildren));
+  wrap.appendChild(inner);
+  wrap.appendChild(makeCellMark("]"));
+  wrap.appendChild(makeCellMark("("));
+  const urlMark = makeCellMark(tok.url);
+  urlMark.classList.add("cm-atomic-link-url");
+  wrap.appendChild(urlMark);
+  wrap.appendChild(makeCellMark(")"));
+  const icon = document.createElement("span");
+  icon.className = "cm-atomic-link-icon";
+  icon.contentEditable = "false";
+  icon.setAttribute("aria-hidden", "true");
+  wrap.appendChild(icon);
+  return wrap;
+}
+function renderTokensTo(tokens) {
+  const frag = document.createDocumentFragment();
+  for (const tok of tokens)
+    frag.appendChild(renderCellToken(tok));
+  return frag;
+}
+function makeCellMark(text) {
+  const el = document.createElement("span");
+  el.className = "cm-atomic-mark";
+  el.textContent = text;
+  return el;
+}
+function renderCellSourceDecorated(source) {
+  const raw = source.parentElement?.dataset.raw ?? "";
+  source.replaceChildren(buildCellSourceDom(raw));
+}
+function getCaretCharOffset(container) {
+  const selection = container.ownerDocument?.defaultView?.getSelection();
+  if (!selection || selection.rangeCount === 0)
+    return null;
+  const range = selection.getRangeAt(0);
+  if (!container.contains(range.startContainer))
+    return null;
+  const pre = range.cloneRange();
+  pre.selectNodeContents(container);
+  pre.setEnd(range.startContainer, range.startOffset);
+  return pre.toString().length;
+}
+function setCaretCharOffset(container, offset) {
+  const doc = container.ownerDocument;
+  if (!doc)
+    return;
+  const walker = doc.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  let remaining = offset;
+  let target = null;
+  let targetOffset = 0;
+  let node = walker.nextNode();
+  while (node) {
+    const len = node.data.length;
+    if (remaining <= len) {
+      target = node;
+      targetOffset = remaining;
+      break;
+    }
+    remaining -= len;
+    node = walker.nextNode();
+  }
+  const selection = doc.defaultView?.getSelection();
+  if (!selection)
+    return;
+  const range = doc.createRange();
+  if (target) {
+    range.setStart(target, targetOffset);
+  } else {
+    range.selectNodeContents(container);
+    range.collapse(false);
+  }
+  range.collapse(true);
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+var MARK_WRAP_CLASSES = [
+  "cm-atomic-strong-wrap",
+  "cm-atomic-em-wrap",
+  "cm-atomic-strike-wrap",
+  "cm-atomic-link-wrap"
+];
+function isMarkWrap(el) {
+  for (const c of MARK_WRAP_CLASSES)
+    if (el.classList.contains(c))
+      return true;
+  return false;
+}
+function updateActiveMarkForSource(source) {
+  for (const el of source.querySelectorAll(".active")) {
+    el.classList.remove("active");
+  }
+  const doc = source.ownerDocument;
+  if (!doc)
+    return;
+  const selection = doc.defaultView?.getSelection();
+  if (!selection || selection.rangeCount === 0)
+    return;
+  const anchor = selection.anchorNode;
+  if (!anchor || !source.contains(anchor))
+    return;
+  let node = anchor;
+  while (node && node !== source) {
+    if (node instanceof Element && isMarkWrap(node)) {
+      node.classList.add("active");
+    }
+    node = node.parentNode;
+  }
+}
+function clearActiveMarksInSource(source) {
+  for (const el of source.querySelectorAll(".active")) {
+    el.classList.remove("active");
+  }
+}
+function extractCellImages(text) {
+  const imgs = [];
+  const re = /!\[([^\]]*)\]\(([^\s)"']+)(?:\s+["'][^)]*["'])?\)/g;
+  for (const match of text.matchAll(re)) {
+    imgs.push({ alt: match[1] || "", src: match[2] });
+  }
+  return imgs;
+}
+function refreshCellPreview(cell) {
+  const existing = cell.querySelector(".cm-atomic-table-cell-preview");
+  if (existing)
+    existing.remove();
+  const text = cell.dataset.raw ?? "";
+  const imgs = extractCellImages(text);
+  if (imgs.length === 0) {
+    delete cell.dataset.hasImage;
+    return;
+  }
+  cell.dataset.hasImage = "true";
+  const preview = document.createElement("div");
+  preview.className = "cm-atomic-table-cell-preview";
+  preview.contentEditable = "false";
+  for (const { src, alt } of imgs) {
+    const img = document.createElement("img");
+    img.src = src;
+    img.alt = alt;
+    img.loading = "lazy";
+    img.className = "cm-atomic-table-cell-image";
+    img.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const source = getCellSource(cell);
+      if (!source)
+        return;
+      source.focus();
+      placeCaretAtEnd(source);
+    });
+    preview.appendChild(img);
+  }
+  cell.appendChild(preview);
+}
+function findCurrentTableRange(view, dom) {
+  const pos = view.posAtDOM(dom);
+  if (pos < 0)
+    return null;
+  const tree = syntaxTree(view.state);
+  let node = tree.resolveInner(pos, 1);
+  while (node && node.name !== "Table")
+    node = node.parent;
+  if (node)
+    return { from: node.from, to: node.to };
+  let found = null;
+  tree.iterate({
+    enter: (n) => {
+      if (n.name !== "Table")
+        return;
+      if (n.from <= pos && n.to >= pos) {
+        found = n.node;
+        return false;
+      }
+    }
+  });
+  if (found)
+    return { from: found.from, to: found.to };
+  return null;
+}
+function placeCaretAtEnd(el) {
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  range.collapse(false);
+  const sel = window.getSelection();
+  if (!sel)
+    return;
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+function getAllCells(wrap) {
+  return Array.from(wrap.querySelectorAll("th, td"));
+}
+var TableWidget = class extends WidgetType {
+  constructor(model) {
+    super();
+    Object.defineProperty(this, "model", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: model
+    });
+  }
+  // Structure-only equality. Typing in a cell produces a new
+  // TableWidget with the same dimensions but different cell contents.
+  // Returning true here means CM6 keeps the existing DOM instead of
+  // calling `toDOM` again — which is what lets the caret survive
+  // across the per-keystroke dispatch cycle.
+  eq(other) {
+    if (other.model.header.length !== this.model.header.length)
+      return false;
+    if (other.model.rows.length !== this.model.rows.length)
+      return false;
+    return true;
+  }
+  toDOM(view) {
+    const wrap = document.createElement("div");
+    wrap.className = "cm-atomic-table";
+    const table = document.createElement("table");
+    wrap.appendChild(table);
+    const thead = document.createElement("thead");
+    const headerRow = document.createElement("tr");
+    for (const text of this.model.header) {
+      headerRow.appendChild(makeCell("th", text, view));
+    }
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+    const tbody = document.createElement("tbody");
+    const colCount = this.model.header.length;
+    for (const row of this.model.rows) {
+      const tr = document.createElement("tr");
+      for (let c = 0; c < colCount; c++) {
+        tr.appendChild(makeCell("td", row[c] ?? "", view));
+      }
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+    return wrap;
+  }
+  // All cell interactions are handled by the listeners we attach in
+  // `makeCell`; tell CM6 to stay out of events within the widget so
+  // its own selection/click logic doesn't compete with contenteditable.
+  ignoreEvent() {
+    return true;
+  }
+};
+function makeCell(tag, text, view) {
+  const cell = document.createElement(tag);
+  cell.dataset.raw = text;
+  const source = document.createElement("div");
+  source.className = "cm-atomic-table-cell-source";
+  source.contentEditable = "true";
+  source.spellcheck = true;
+  cell.appendChild(source);
+  renderCellSourceDecorated(source);
+  const commit = () => {
+    const raw = (source.textContent ?? "").replace(/\s+/g, " ").trim();
+    cell.dataset.raw = raw;
+    const offset = getCaretCharOffset(source);
+    renderCellSourceDecorated(source);
+    if (offset != null)
+      setCaretCharOffset(source, offset);
+    updateActiveMarkForSource(source);
+    refreshCellPreview(cell);
+    dispatchModelFromDom(view, cell);
+  };
+  let composing = false;
+  source.addEventListener("compositionstart", () => {
+    composing = true;
+  });
+  source.addEventListener("compositionend", () => {
+    composing = false;
+    commit();
+  });
+  source.addEventListener("input", (event) => {
+    if (composing || event.isComposing)
+      return;
+    commit();
+  });
+  source.addEventListener("paste", (event) => {
+    event.preventDefault();
+    const text2 = (event.clipboardData?.getData("text/plain") ?? "").replace(/\s+/g, " ").trim();
+    const sel = source.ownerDocument.defaultView?.getSelection();
+    if (!sel || sel.rangeCount === 0)
+      return;
+    const range = sel.getRangeAt(0);
+    range.deleteContents();
+    range.insertNode(document.createTextNode(text2));
+    range.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    commit();
+  });
+  source.addEventListener("focus", () => updateActiveMarkForSource(source));
+  source.addEventListener("mouseup", () => updateActiveMarkForSource(source));
+  source.addEventListener("keyup", () => updateActiveMarkForSource(source));
+  source.addEventListener("blur", () => clearActiveMarksInSource(source));
+  source.addEventListener("keydown", (event) => {
+    if (event.key === "Tab" || event.key === "Enter") {
+      event.preventDefault();
+      event.stopPropagation();
+      moveCellFocus(view, cell, event.shiftKey ? -1 : 1);
+    }
+  });
+  cell.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    openCellMenu(view, cell, event.clientX, event.clientY);
+  });
+  const linkIconFromEvent = (event) => {
+    const target = event.target;
+    if (!(target instanceof Element))
+      return null;
+    return target.closest(".cm-atomic-link-icon");
+  };
+  source.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0)
+      return;
+    if (linkIconFromEvent(event))
+      event.preventDefault();
+  });
+  source.addEventListener("click", (event) => {
+    const icon = linkIconFromEvent(event);
+    if (!icon)
+      return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+      return;
+    const url = icon.closest(".cm-atomic-link-wrap")?.dataset.url;
+    if (!url)
+      return;
+    event.preventDefault();
+    event.stopPropagation();
+    view.state.facet(tableLinkClickFacet)(url);
+  });
+  cell.addEventListener("pointerdown", (event) => {
+    const target = event.target;
+    if (target instanceof Node && source.contains(target))
+      return;
+    event.preventDefault();
+    source.focus();
+    placeCaretAtEnd(source);
+  });
+  refreshCellPreview(cell);
+  return cell;
+}
+function cellRowIndex(cell) {
+  const tr = cell.closest("tr");
+  const tbody = tr?.closest("tbody");
+  if (!tr || !tbody)
+    return -1;
+  return Array.from(tbody.querySelectorAll("tr")).indexOf(tr);
+}
+function cellColIndex(cell) {
+  const tr = cell.closest("tr");
+  if (!tr)
+    return -1;
+  return Array.from(tr.querySelectorAll("th, td")).indexOf(cell);
+}
+function dispatchModel(view, wrap, nextModel) {
+  const range = findCurrentTableRange(view, wrap);
+  if (!range)
+    return;
+  const next = serializeTable(nextModel);
+  view.dispatch({
+    changes: { from: range.from, to: range.to, insert: next }
+  });
+}
+function openCellMenu(view, cell, x, y) {
+  const wrap = cell.closest(".cm-atomic-table");
+  if (!wrap)
+    return;
+  const isHeader = cell.tagName === "TH";
+  const row = cellRowIndex(cell);
+  const col = cellColIndex(cell);
+  const menu = document.createElement("div");
+  menu.className = "cm-atomic-table-menu";
+  menu.style.left = `${x}px`;
+  menu.style.top = `${y}px`;
+  const items = [];
+  if (!isHeader) {
+    items.push({
+      label: "Insert row above",
+      action: () => {
+        const m = readModelFromDom(wrap);
+        m.rows.splice(row, 0, m.header.map(() => ""));
+        dispatchModel(view, wrap, m);
+      }
+    });
+    items.push({
+      label: "Insert row below",
+      action: () => {
+        const m = readModelFromDom(wrap);
+        m.rows.splice(row + 1, 0, m.header.map(() => ""));
+        dispatchModel(view, wrap, m);
+      }
+    });
+    items.push({
+      label: "Delete row",
+      action: () => {
+        const m = readModelFromDom(wrap);
+        if (row >= 0 && row < m.rows.length)
+          m.rows.splice(row, 1);
+        dispatchModel(view, wrap, m);
+      }
+    });
+    items.push("separator");
+  }
+  items.push({
+    label: "Insert column left",
+    action: () => {
+      const m = readModelFromDom(wrap);
+      m.header.splice(col, 0, "");
+      for (const r of m.rows)
+        r.splice(col, 0, "");
+      dispatchModel(view, wrap, m);
+    }
+  });
+  items.push({
+    label: "Insert column right",
+    action: () => {
+      const m = readModelFromDom(wrap);
+      m.header.splice(col + 1, 0, "");
+      for (const r of m.rows)
+        r.splice(col + 1, 0, "");
+      dispatchModel(view, wrap, m);
+    }
+  });
+  items.push({
+    label: "Delete column",
+    action: () => {
+      const m = readModelFromDom(wrap);
+      if (m.header.length <= 1 || col < 0)
+        return;
+      m.header.splice(col, 1);
+      for (const r of m.rows)
+        r.splice(col, 1);
+      dispatchModel(view, wrap, m);
+    }
+  });
+  const dismiss = () => {
+    menu.remove();
+    document.removeEventListener("mousedown", onDocDown, true);
+    document.removeEventListener("keydown", onDocKey, true);
+  };
+  const onDocDown = (event) => {
+    if (event.target instanceof Node && menu.contains(event.target))
+      return;
+    dismiss();
+  };
+  const onDocKey = (event) => {
+    if (event.key === "Escape")
+      dismiss();
+  };
+  for (const item of items) {
+    if (item === "separator") {
+      const sep = document.createElement("div");
+      sep.className = "cm-atomic-table-menu-sep";
+      menu.appendChild(sep);
+      continue;
+    }
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "cm-atomic-table-menu-item";
+    btn.textContent = item.label;
+    btn.addEventListener("click", () => {
+      item.action();
+      dismiss();
+    });
+    menu.appendChild(btn);
+  }
+  document.body.appendChild(menu);
+  const rect = menu.getBoundingClientRect();
+  if (rect.right > window.innerWidth) {
+    menu.style.left = `${Math.max(4, window.innerWidth - rect.width - 4)}px`;
+  }
+  if (rect.bottom > window.innerHeight) {
+    menu.style.top = `${Math.max(4, window.innerHeight - rect.height - 4)}px`;
+  }
+  setTimeout(() => {
+    document.addEventListener("mousedown", onDocDown, true);
+    document.addEventListener("keydown", onDocKey, true);
+  }, 0);
+}
+function dispatchModelFromDom(view, cell) {
+  const wrap = cell.closest(".cm-atomic-table");
+  if (!wrap)
+    return;
+  const range = findCurrentTableRange(view, wrap);
+  if (!range)
+    return;
+  const model = readModelFromDom(wrap);
+  const next = serializeTable(model);
+  if (view.state.sliceDoc(range.from, range.to) === next)
+    return;
+  view.dispatch({
+    changes: { from: range.from, to: range.to, insert: next },
+    // Tag as typing so CM6's history coalesces consecutive cell edits
+    // into one undo group instead of one step per keystroke (each of
+    // which rewrites the whole table range).
+    annotations: Transaction.userEvent.of("input.type")
+  });
+}
+function moveCellFocus(view, cell, dir) {
+  const wrap = cell.closest(".cm-atomic-table");
+  if (!wrap)
+    return;
+  const cells = getAllCells(wrap);
+  const idx = cells.indexOf(cell);
+  if (idx < 0)
+    return;
+  const next = idx + dir;
+  if (next < 0) {
+    getCellSource(cell)?.blur();
+    return;
+  }
+  if (next >= cells.length) {
+    appendRow(view, wrap);
+    return;
+  }
+  const source = getCellSource(cells[next]);
+  if (!source)
+    return;
+  source.focus();
+  placeCaretAtEnd(source);
+}
+function appendRow(view, wrap) {
+  const range = findCurrentTableRange(view, wrap);
+  if (!range)
+    return;
+  const model = readModelFromDom(wrap);
+  model.rows.push(model.header.map(() => ""));
+  const next = serializeTable(model);
+  view.dispatch({
+    changes: { from: range.from, to: range.to, insert: next }
+  });
+  const { from } = range;
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const tables2 = Array.from(view.dom.querySelectorAll(".cm-atomic-table"));
+      let target = null;
+      for (const el of tables2) {
+        try {
+          if (view.posAtDOM(el) === from) {
+            target = el;
+            break;
+          }
+        } catch {
+        }
+      }
+      if (!target)
+        return;
+      const rows = target.querySelectorAll("tbody tr");
+      const newRow = rows[rows.length - 1];
+      const firstCell = newRow?.querySelector("td");
+      const firstSource = firstCell ? getCellSource(firstCell) : null;
+      if (!firstSource)
+        return;
+      firstSource.focus();
+      placeCaretAtEnd(firstSource);
+    });
+  });
+}
+function backspaceAtTableBoundary(view) {
+  const { state } = view;
+  const sel = state.selection.main;
+  if (!sel.empty)
+    return false;
+  const pos = sel.head;
+  if (pos === 0)
+    return false;
+  const tree = syntaxTree(state);
+  let tableBefore = null;
+  tree.iterate({
+    from: Math.max(0, pos - 2),
+    to: pos,
+    enter: (n) => {
+      if (n.name !== "Table")
+        return;
+      if (n.to === pos || n.to + 1 === pos) {
+        tableBefore = n.node;
+      }
+    }
+  });
+  if (!tableBefore)
+    return false;
+  const range = tableBefore;
+  view.dispatch({
+    selection: EditorSelection.range(range.from, range.to)
+  });
+  return true;
+}
+function buildTableWidgets(state) {
+  const ranges = [];
+  const tree = ensureSyntaxTree(state, state.doc.length, 200) ?? syntaxTree(state);
+  const doc = state.doc;
+  tree.iterate({
+    enter: (node) => {
+      if (node.name !== "Table")
+        return;
+      const model = parseTable(state, node.node);
+      if (!model)
+        return;
+      const startLine = doc.lineAt(node.from);
+      const endLine = doc.lineAt(node.to);
+      ranges.push(Decoration.replace({
+        widget: new TableWidget(model),
+        block: true
+      }).range(startLine.from, endLine.to));
+      return false;
+    }
+  });
+  return Decoration.set(ranges, true);
+}
+function changeAffectsTables(tr, existing) {
+  let affected = false;
+  tr.changes.iterChanges((fromA, toA) => {
+    if (affected)
+      return;
+    existing.between(fromA, toA, () => {
+      affected = true;
+      return false;
+    });
+  });
+  if (affected)
+    return true;
+  const state = tr.state;
+  tr.changes.iterChanges((_fromA, _toA, fromB, toB) => {
+    if (affected)
+      return;
+    const startLine = state.doc.lineAt(fromB);
+    const endLine = toB > startLine.to ? state.doc.lineAt(toB) : startLine;
+    for (let n = startLine.number; n <= endLine.number; n++) {
+      if (state.doc.line(n).text.includes("|")) {
+        affected = true;
+        break;
+      }
+    }
+  });
+  return affected;
+}
+var tableField = StateField.define({
+  create: (state) => buildTableWidgets(state),
+  update(deco, tr) {
+    for (const effect of tr.effects) {
+      if (effect.is(treeGrowthEffect))
+        return buildTableWidgets(tr.state);
+    }
+    if (!tr.docChanged)
+      return deco;
+    const mapped = deco.map(tr.changes);
+    if (!changeAffectsTables(tr, deco))
+      return mapped;
+    return buildTableWidgets(tr.state);
+  },
+  provide: (f) => EditorView.decorations.from(f)
+});
+var defaultLinkOpener = (url) => {
+  try {
+    window.open(url, "_blank", "noopener,noreferrer");
+  } catch {
+  }
+};
+var tableLinkClickFacet = Facet.define({
+  combine: (values) => values[0] ?? defaultLinkOpener
+});
+function tables(config = {}) {
+  return [
+    tableField,
+    treeProgressPlugin,
+    ...config.onLinkClick ? [tableLinkClickFacet.of(config.onLinkClick)] : [],
+    Prec.high(keymap.of([{ key: "Backspace", run: backspaceAtTableBoundary }]))
+  ];
+}
+
+// node_modules/@atomic-editor/editor/dist/AtomicCodeMirrorEditor.js
+var EMPTY_CODE_LANGUAGES = [];
+var EMPTY_EXTENSIONS = [];
+function AtomicCodeMirrorEditor({ markdownSource, documentId, initialSearchText, initialRevealText, blurEditorOnMount, onMarkdownChange, onLinkClick, editorHandleRef, codeLanguages = EMPTY_CODE_LANGUAGES, extensions = EMPTY_EXTENSIONS }) {
+  const rootRef = (0, import_react.useRef)(null);
+  const viewRef = (0, import_react.useRef)(null);
+  const clearRevealTimerRef = (0, import_react.useRef)(null);
+  const onMarkdownChangeRef = (0, import_react.useRef)(onMarkdownChange);
+  const onLinkClickRef = (0, import_react.useRef)(onLinkClick);
+  (0, import_react.useEffect)(() => {
+    onMarkdownChangeRef.current = onMarkdownChange;
+  }, [onMarkdownChange]);
+  (0, import_react.useEffect)(() => {
+    onLinkClickRef.current = onLinkClick;
+  }, [onLinkClick]);
+  const editorIdentity = documentId ?? markdownSource;
+  (0, import_react.useEffect)(() => {
+    const root = rootRef.current;
+    if (!root)
+      return;
+    const view = new EditorView({
+      parent: root,
+      state: EditorState.create({
+        doc: markdownSource,
+        extensions: [
+          highlightSpecialChars(),
+          history(),
+          drawSelection(),
+          dropCursor(),
+          EditorState.allowMultipleSelections.of(true),
+          indentOnInput(),
+          rectangularSelection(),
+          highlightActiveLine(),
+          // Obsidian-style bracket pairing.
+          closeBrackets(),
+          extendEmphasisPair,
+          autoCloseCodeFence,
+          EditorView.lineWrapping,
+          // Find-in-document. `top: true` drops the panel above the
+          // editor (matching Obsidian / the prior Milkdown panel).
+          // The createPanel wrapper adds a stable class that external
+          // code can query to detect "is search open?" without relying
+          // on CM6 internals.
+          search({
+            top: true,
+            createPanel: (innerView) => {
+              const panel = defaultSearchPanel(innerView);
+              panel.dom.classList.add("atomic-editor-search-panel");
+              return panel;
+            }
+          }),
+          // GFM via base: markdownLanguage — tables, strikethrough,
+          // task lists, autolinks. Without this, the parser is pure
+          // CommonMark and inline-preview never sees Task / Table.
+          markdown({ base: markdownLanguage, codeLanguages: [...codeLanguages] }),
+          // Extend closeBrackets to markdown's symmetric delimiters.
+          markdownLanguage.data.of({
+            closeBrackets: { brackets: ["(", "[", "{", "'", '"', "*", "_", "`"] }
+          }),
+          atomicMarkdownSyntax,
+          atomicEditorTheme,
+          keymap.of([
+            ...closeBracketsKeymap,
+            ...historyKeymap,
+            ...searchKeymap,
+            ...markdownKeymap,
+            indentWithTab,
+            ...defaultKeymap
+          ]),
+          tables({
+            onLinkClick: (url) => onLinkClickRef.current?.(url)
+          }),
+          imageBlocks(),
+          inlinePreview({
+            onLinkClick: (url) => onLinkClickRef.current?.(url)
+          }),
+          EditorView.updateListener.of((update) => {
+            if (!update.docChanged)
+              return;
+            onMarkdownChangeRef.current?.(update.state.doc.toString());
+          }),
+          initialRevealField,
+          // Consumer extensions last so they compose on top of the
+          // built-ins (e.g. a custom keymap wrapped in Prec.high will
+          // beat the default keymap above). Extensions intentionally
+          // trail the change listener so consumer update-listeners
+          // fire after onMarkdownChange.
+          ...extensions
+        ]
+      })
+    });
+    viewRef.current = view;
+    if (initialSearchText) {
+      queueMicrotask(() => {
+        if (viewRef.current !== view)
+          return;
+        view.dispatch({
+          effects: setSearchQuery.of(new SearchQuery({ search: initialSearchText }))
+        });
+        openSearchPanel(view);
+      });
+    }
+    if (blurEditorOnMount) {
+    }
+    return () => {
+      if (clearRevealTimerRef.current !== null) {
+        window.clearTimeout(clearRevealTimerRef.current);
+        clearRevealTimerRef.current = null;
+      }
+      view.destroy();
+      viewRef.current = null;
+    };
+  }, [editorIdentity]);
+  (0, import_react.useEffect)(() => {
+    const view = viewRef.current;
+    if (!view || !initialRevealText)
+      return;
+    revealInitialMatch(viewRef, view, initialRevealText, clearRevealTimerRef);
+  }, [editorIdentity, initialRevealText]);
+  (0, import_react.useEffect)(() => {
+    if (!editorHandleRef)
+      return;
+    editorHandleRef.current = {
+      focus: () => viewRef.current?.focus(),
+      undo: () => {
+        const view = viewRef.current;
+        if (view)
+          undo(view);
+      },
+      redo: () => {
+        const view = viewRef.current;
+        if (view)
+          redo(view);
+      },
+      openSearch: (query) => {
+        const view = viewRef.current;
+        if (!view)
+          return;
+        if (query !== void 0) {
+          view.dispatch({
+            effects: setSearchQuery.of(new SearchQuery({ search: query }))
+          });
+        }
+        openSearchPanel(view);
+      },
+      closeSearch: () => {
+        const view = viewRef.current;
+        if (view)
+          closeSearchPanel(view);
+      },
+      revealText: (query) => {
+        const view = viewRef.current;
+        if (!view || !query)
+          return;
+        revealInitialMatch(viewRef, view, query, clearRevealTimerRef);
+      },
+      isSearchOpen: () => {
+        const view = viewRef.current;
+        return view ? searchPanelOpen(view.state) : false;
+      },
+      getMarkdown: () => viewRef.current?.state.doc.toString() ?? "",
+      getContentDOM: () => viewRef.current?.contentDOM ?? null
+    };
+    return () => {
+      if (editorHandleRef.current)
+        editorHandleRef.current = null;
+    };
+  }, [editorHandleRef]);
+  return (0, import_jsx_runtime.jsx)("div", { ref: rootRef, className: "atomic-cm-editor" });
+}
+var setInitialReveal = StateEffect.define();
+var initialRevealField = StateField.define({
+  create() {
+    return Decoration.none;
+  },
+  update(decorations, tr) {
+    decorations = decorations.map(tr.changes);
+    for (const effect of tr.effects) {
+      if (!effect.is(setInitialReveal))
+        continue;
+      if (!effect.value) {
+        decorations = Decoration.none;
+        continue;
+      }
+      decorations = Decoration.set([
+        Decoration.mark({ class: "cm-initialRevealMatch" }).range(effect.value.from, effect.value.to)
+      ]);
+    }
+    return decorations;
+  },
+  provide: (field) => EditorView.decorations.from(field)
+});
+function revealInitialMatch(viewRef, view, queryText, clearRevealTimerRef) {
+  const match = findInitialRevealRange(view.state.doc, queryText);
+  if (!match)
+    return;
+  const { from, to } = match;
+  view.dispatch({
+    effects: [
+      setInitialReveal.of({ from, to }),
+      EditorView.scrollIntoView(from, { y: "start", yMargin: 72 })
+    ]
+  });
+  requestAnimationFrame(() => {
+    if (viewRef.current !== view)
+      return;
+    const el = view.dom.querySelector(".cm-initialRevealMatch")?.closest(".cm-line") ?? view.dom.querySelector(".cm-initialRevealMatch");
+    if (el instanceof HTMLElement) {
+      scrollMatchNearTop(el, 72);
+    }
+  });
+  if (clearRevealTimerRef.current !== null) {
+    window.clearTimeout(clearRevealTimerRef.current);
+  }
+  clearRevealTimerRef.current = window.setTimeout(() => {
+    if (viewRef.current !== view)
+      return;
+    view.dispatch({ effects: setInitialReveal.of(null) });
+    clearRevealTimerRef.current = null;
+  }, REVEAL_FADE_MS);
+}
+var REVEAL_FADE_MS = 3200;
+function findInitialRevealRange(docText, queryText) {
+  for (const candidate of buildRevealCandidates(queryText)) {
+    const query = new SearchQuery({ search: candidate });
+    if (!query.valid || !query.search)
+      continue;
+    const cursor = query.getCursor(docText);
+    const first = cursor.next();
+    if (!first.done && first.value.from !== first.value.to) {
+      return first.value;
+    }
+  }
+  return null;
+}
+function buildRevealCandidates(queryText) {
+  const candidates = /* @__PURE__ */ new Set();
+  const trimmed = queryText.trim();
+  if (!trimmed)
+    return [];
+  candidates.add(trimmed);
+  const collapsed = trimmed.replace(/\s+/g, " ").trim();
+  if (collapsed)
+    candidates.add(collapsed);
+  for (const line of trimmed.split("\n").map((part) => part.trim()).filter(Boolean)) {
+    candidates.add(line);
+    const lineCollapsed = line.replace(/\s+/g, " ").trim();
+    if (lineCollapsed)
+      candidates.add(lineCollapsed);
+  }
+  if (collapsed.length > 140)
+    candidates.add(collapsed.slice(0, 140).trim());
+  if (collapsed.length > 80)
+    candidates.add(collapsed.slice(0, 80).trim());
+  return [...candidates].filter((candidate) => candidate.length >= 12 || candidate === trimmed);
+}
+function scrollMatchNearTop(match, offset) {
+  const scrollParent = findScrollParent(match);
+  if (!scrollParent) {
+    match.scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+  const parentRect = scrollParent.getBoundingClientRect();
+  const matchRect = match.getBoundingClientRect();
+  const nextTop = scrollParent.scrollTop + (matchRect.top - parentRect.top) - offset;
+  scrollParent.scrollTo({ top: Math.max(0, nextTop), behavior: "smooth" });
+}
+function findScrollParent(node) {
+  let current = node.parentElement;
+  while (current) {
+    const { overflowY } = window.getComputedStyle(current);
+    if ((overflowY === "auto" || overflowY === "scroll") && current.scrollHeight > current.clientHeight) {
+      return current;
+    }
+    current = current.parentElement;
+  }
+  return null;
+}
+var SEARCH_ICON_PREV = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>`;
+var SEARCH_ICON_NEXT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
+var SEARCH_ICON_CLOSE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+function defaultSearchPanel(view) {
+  const dom = document.createElement("div");
+  dom.className = "cm-search";
+  dom.setAttribute("aria-label", "Find");
+  const form = document.createElement("form");
+  form.autocomplete = "off";
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    findNext(view);
+  });
+  const initial = getSearchQuery(view.state);
+  const searchInput = document.createElement("input");
+  searchInput.type = "text";
+  searchInput.placeholder = "Search";
+  searchInput.value = initial.search;
+  searchInput.className = "cm-atomic-search-input";
+  searchInput.setAttribute("main-field", "true");
+  searchInput.setAttribute("aria-label", "Search");
+  const count = document.createElement("span");
+  count.className = "cm-atomic-search-count";
+  count.setAttribute("aria-live", "polite");
+  const prevBtn = makeIconButton(SEARCH_ICON_PREV, "Previous match", () => findPrevious(view));
+  const nextBtn = makeIconButton(SEARCH_ICON_NEXT, "Next match", () => findNext(view));
+  const closeBtn = makeIconButton(SEARCH_ICON_CLOSE, "Close", () => closeSearchPanel(view));
+  const recomputeCount = (query) => {
+    if (!query.search) {
+      count.textContent = "";
+      return;
+    }
+    try {
+      if (!query.valid) {
+        count.textContent = "";
+        return;
+      }
+      let n = 0;
+      let capped = false;
+      const cursor = query.getCursor(view.state.doc);
+      while (!cursor.next().done) {
+        n++;
+        if (n >= 1e4) {
+          capped = true;
+          break;
+        }
+      }
+      count.textContent = capped ? "9999+ matches" : n === 0 ? "No matches" : n === 1 ? "1 match" : `${n} matches`;
+    } catch {
+      count.textContent = "";
+    }
+  };
+  const dispatchQuery = () => {
+    const query = new SearchQuery({
+      search: searchInput.value,
+      caseSensitive: initial.caseSensitive,
+      regexp: initial.regexp,
+      wholeWord: initial.wholeWord
+    });
+    view.dispatch({ effects: setSearchQuery.of(query) });
+    recomputeCount(query);
+  };
+  searchInput.addEventListener("input", dispatchQuery);
+  recomputeCount(initial);
+  form.append(searchInput, count, prevBtn, nextBtn, closeBtn);
+  dom.append(form);
+  return {
+    dom,
+    top: true,
+    mount: () => {
+      searchInput.focus();
+      searchInput.select();
+    },
+    update: (update) => {
+      const next = getSearchQuery(update.state);
+      const prev = getSearchQuery(update.startState);
+      if (next.search !== prev.search && searchInput.value !== next.search) {
+        searchInput.value = next.search;
+      }
+      if (update.docChanged || next.search !== prev.search) {
+        recomputeCount(next);
+      }
+    }
+  };
+}
+function makeIconButton(svg, label, onClick) {
+  const el = document.createElement("button");
+  el.type = "button";
+  el.className = "cm-atomic-search-btn";
+  el.innerHTML = svg;
+  el.setAttribute("aria-label", label);
+  el.title = label;
+  el.addEventListener("click", onClick);
+  return el;
+}
+
+// node_modules/@atomic-editor/editor/dist/wiki-links.js
+var WIKI_LINK_QUERY_RE = /\[\[[^\]\n|]*$/;
+var FENCE_RE = /^ {0,3}(`{3,}|~{3,})/;
+var MAX_RESOLVED_ENTRIES = 600;
+var wikiLinkResolved = StateEffect.define();
+var WikiLinkWidget = class extends WidgetType {
+  constructor(target, label, status) {
+    super();
+    Object.defineProperty(this, "target", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: target
+    });
+    Object.defineProperty(this, "label", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: label
+    });
+    Object.defineProperty(this, "status", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: status
+    });
+  }
+  eq(other) {
+    return this.target === other.target && this.label === other.label && this.status === other.status;
+  }
+  toDOM() {
+    const span = document.createElement("span");
+    span.className = `cm-atomic-wiki-link cm-atomic-wiki-link-${this.status}`;
+    span.dataset.wikiLinkTarget = this.target;
+    span.textContent = this.label;
+    return span;
+  }
+  ignoreEvent() {
+    return false;
+  }
+};
+var WikiLinkResolverPlugin = class {
+  constructor(view, config, decorationField) {
+    Object.defineProperty(this, "view", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: view
+    });
+    Object.defineProperty(this, "config", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: config
+    });
+    Object.defineProperty(this, "decorationField", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: decorationField
+    });
+    Object.defineProperty(this, "pending", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: /* @__PURE__ */ new Set()
+    });
+    Object.defineProperty(this, "destroyed", {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: false
+    });
+    this.resolveVisibleLinks();
+  }
+  update(update) {
+    if (update.docChanged || update.viewportChanged || update.selectionSet) {
+      this.resolveVisibleLinks();
+    }
+  }
+  destroy() {
+    this.destroyed = true;
+  }
+  resolveVisibleLinks() {
+    if (!this.config.resolve)
+      return;
+    const links = findWikiLinksInVisibleRanges(this.view.state.doc, this.view.visibleRanges);
+    const resolved = this.view.state.field(this.decorationField).resolved;
+    for (const link of links) {
+      if (link.label || isSelectionInsideLink(this.view.state, link) || !shouldResolveWikiLink(this.config, link.target) || this.pending.has(link.target) || resolved.has(link.target)) {
+        continue;
+      }
+      this.resolve(link.target);
+    }
+  }
+  resolve(target) {
+    if (!this.config.resolve)
+      return;
+    this.pending.add(target);
+    this.config.resolve(target).then((resolved) => {
+      if (!this.destroyed) {
+        this.view.dispatch({ effects: wikiLinkResolved.of({ target, resolved }) });
+      }
+    }).catch(() => {
+      if (!this.destroyed) {
+        this.view.dispatch({ effects: wikiLinkResolved.of({ target, resolved: null }) });
+      }
+    }).finally(() => {
+      this.pending.delete(target);
+    });
+  }
+};
+function wikiLinks(config = {}) {
+  const field = StateField.define({
+    create(state) {
+      const resolved = /* @__PURE__ */ new Map();
+      return { resolved, decorations: buildDecorations(state, resolved, config) };
+    },
+    update(value, transaction) {
+      let resolved = value.resolved;
+      let resolutionChanged = false;
+      for (const effect of transaction.effects) {
+        if (!effect.is(wikiLinkResolved))
+          continue;
+        if (resolved === value.resolved)
+          resolved = new Map(value.resolved);
+        resolved.set(effect.value.target, effect.value.resolved);
+        resolutionChanged = true;
+      }
+      if (resolutionChanged && resolved.size > MAX_RESOLVED_ENTRIES) {
+        let overflow = resolved.size - MAX_RESOLVED_ENTRIES;
+        for (const key of resolved.keys()) {
+          if (overflow-- <= 0)
+            break;
+          resolved.delete(key);
+        }
+      }
+      if (transaction.docChanged || transaction.selection || resolutionChanged) {
+        return { resolved, decorations: buildDecorations(transaction.state, resolved, config) };
+      }
+      return { resolved, decorations: value.decorations.map(transaction.changes) };
+    },
+    provide: (fieldValue) => EditorView.decorations.from(fieldValue, (value) => value.decorations)
+  });
+  return [
+    field,
+    ViewPlugin.define((view) => new WikiLinkResolverPlugin(view, config, field)),
+    makeWikiLinkPointerGuard(config),
+    wikiLinkEditKeymap(),
+    wikiLinkCompletions(config),
+    makeWikiLinkClickHandler(config)
+  ];
+}
+function wikiLinkEditKeymap() {
+  return Prec.highest(keymap.of([
+    {
+      key: "Backspace",
+      run: revealWikiLinkBeforeCursor
+    }
+  ]));
+}
+function wikiLinkCompletions(config) {
+  if (!config.suggest)
+    return [];
+  return autocompletion({
+    activateOnTyping: true,
+    icons: false,
+    override: [async (context) => completionSource(context, config)]
+  });
+}
+async function completionSource(context, config) {
+  if (!config.suggest)
+    return null;
+  const match = context.matchBefore(WIKI_LINK_QUERY_RE);
+  if (!match || match.from === match.to && !context.explicit)
+    return null;
+  const query = match.text.slice(2);
+  const debounceMs = config.debounceMs ?? 120;
+  if (debounceMs > 0) {
+    await delay(debounceMs);
+    if (context.aborted)
+      return null;
+  }
+  const suggestions = dedupeSuggestions(await config.suggest(query)).slice(0, config.maxSuggestions ?? 12);
+  if (context.aborted)
+    return null;
+  return {
+    from: match.from + 2,
+    to: context.pos,
+    options: suggestions.map((suggestion) => toCompletion(suggestion, config)),
+    validFor: /^[^\]\n|]*$/
+  };
+}
+function toCompletion(suggestion, config) {
+  return {
+    label: suggestion.label,
+    detail: suggestion.detail,
+    type: "text",
+    boost: suggestion.boost,
+    apply: (view, completion, from, to) => {
+      const selected = completion.suggestion;
+      const insert = (config.serializeSuggestion ?? defaultSerializeSuggestion)(selected);
+      const replaceTo = view.state.doc.sliceString(to, to + 2) === "]]" ? to + 2 : to;
+      view.dispatch({
+        changes: { from, to: replaceTo, insert },
+        selection: { anchor: from + insert.length }
+      });
+    },
+    suggestion
+  };
+}
+function makeWikiLinkClickHandler(config) {
+  return EditorView.domEventHandlers({
+    click(event) {
+      if (!shouldOpenFromEvent(config, event))
+        return false;
+      if (event.button !== 0)
+        return false;
+      const link = wikiLinkElementFromEvent(event);
+      const wikiTarget = link?.dataset.wikiLinkTarget;
+      if (!wikiTarget)
+        return false;
+      event.preventDefault();
+      event.stopPropagation();
+      config.onOpen(wikiTarget);
+      return true;
+    }
+  });
+}
+function makeWikiLinkPointerGuard(config) {
+  return ViewPlugin.fromClass(class {
+    constructor(view) {
+      Object.defineProperty(this, "view", {
+        enumerable: true,
+        configurable: true,
+        writable: true,
+        value: view
+      });
+      Object.defineProperty(this, "onPointerDown", {
+        enumerable: true,
+        configurable: true,
+        writable: true,
+        value: (event) => {
+          if (!shouldOpenFromEvent(config, event))
+            return;
+          if (event.button !== 0)
+            return;
+          const link = wikiLinkElementFromEvent(event, this.view.contentDOM);
+          if (!link)
+            return;
+          event.preventDefault();
+          event.stopImmediatePropagation();
+        }
+      });
+      view.dom.addEventListener("pointerdown", this.onPointerDown, true);
+    }
+    destroy() {
+      this.view.dom.removeEventListener("pointerdown", this.onPointerDown, true);
+    }
+  });
+}
+function shouldOpenFromEvent(config, event) {
+  if (!config.onOpen)
+    return false;
+  if (event.shiftKey || event.altKey)
+    return false;
+  return config.openOnClick !== false || event.metaKey || event.ctrlKey;
+}
+function wikiLinkElementFromEvent(event, root) {
+  const target = event.target;
+  if (!(target instanceof Element))
+    return null;
+  const link = target.closest("[data-wiki-link-target]");
+  if (!link || root && !root.contains(link))
+    return null;
+  return link;
+}
+function buildDecorations(state, resolved, config) {
+  const builder = new RangeSetBuilder();
+  const links = findWikiLinksInVisibleRanges(state.doc, [{ from: 0, to: state.doc.length }]);
+  for (const link of links) {
+    if (!isSingleLineRange(state, link.from, link.to))
+      continue;
+    if (isSelectionInsideLink(state, link)) {
+      builder.add(link.from, link.to, Decoration.mark({ class: "cm-atomic-wiki-link-active" }));
+      continue;
+    }
+    if (link.label && link.labelFrom != null && link.labelTo != null && link.labelFrom < link.labelTo) {
+      builder.add(link.from, link.labelFrom, Decoration.mark({ class: "cm-atomic-wiki-link-hidden-syntax" }));
+      builder.add(link.labelFrom, link.labelTo, Decoration.mark({
+        class: "cm-atomic-wiki-link cm-atomic-wiki-link-resolved",
+        attributes: { "data-wiki-link-target": link.target }
+      }));
+      builder.add(link.labelTo, link.to, Decoration.mark({ class: "cm-atomic-wiki-link-hidden-syntax" }));
+      continue;
+    }
+    if (!config.resolve || !shouldResolveWikiLink(config, link.target)) {
+      continue;
+    }
+    const target = resolved.get(link.target);
+    const label = target === void 0 ? "Wiki link" : target?.label.trim() || "Missing link";
+    const status = target === void 0 ? "loading" : target ? target.status ?? "resolved" : "missing";
+    builder.add(link.from, link.to, Decoration.mark({ class: "cm-atomic-wiki-link-hidden-syntax" }));
+    builder.add(link.to, link.to, Decoration.widget({
+      widget: new WikiLinkWidget(link.target, label, status),
+      side: -1
+    }));
+  }
+  return builder.finish();
+}
+function shouldResolveWikiLink(config, target) {
+  return config.shouldResolve?.(target) ?? true;
+}
+function revealWikiLinkBeforeCursor(view) {
+  const range = view.state.selection.main;
+  if (!range.empty)
+    return false;
+  const cursor = range.head;
+  const link = findWikiLinkEndingAt(view.state.doc, cursor);
+  if (!link || link.label)
+    return false;
+  view.dispatch({
+    selection: { anchor: Math.max(link.from + 2, link.to - 2) },
+    scrollIntoView: true
+  });
+  return true;
+}
+function findWikiLinkEndingAt(doc, pos) {
+  if (pos <= 0 || pos > doc.length)
+    return null;
+  const line = doc.lineAt(pos);
+  return findWikiLinksInLine(line.text, line.from).find((link) => link.to === pos) ?? null;
+}
+function findWikiLinksInVisibleRanges(doc, ranges) {
+  const links = [];
+  for (const range of ranges) {
+    const firstLine = doc.lineAt(range.from);
+    const lastLine = doc.lineAt(Math.max(range.from, range.to - 1));
+    const fence = fenceStateBeforeLine(doc, firstLine.number);
+    for (let lineNumber = firstLine.number; lineNumber <= lastLine.number; lineNumber++) {
+      const line = doc.line(lineNumber);
+      const text = line.text;
+      const fenceMatch = text.match(FENCE_RE);
+      if (!fence.marker && fenceMatch) {
+        fence.marker = fenceMatch[1][0];
+        fence.length = fenceMatch[1].length;
+        continue;
+      }
+      if (fence.marker) {
+        if (fenceMatch && fenceMatch[1][0] === fence.marker && fenceMatch[1].length >= fence.length) {
+          fence.marker = null;
+          fence.length = 0;
+        }
+        continue;
+      }
+      links.push(...findWikiLinksInLine(text, line.from));
+    }
+  }
+  return links;
+}
+function findWikiLinksInLine(text, lineStart) {
+  const links = [];
+  const codeSpans = inlineCodeSpans(text);
+  let searchFrom = 0;
+  while (searchFrom < text.length) {
+    const open = text.indexOf("[[", searchFrom);
+    if (open === -1)
+      break;
+    if (isInsideAny(open, codeSpans)) {
+      searchFrom = open + 2;
+      continue;
+    }
+    const close = text.indexOf("]]", open + 2);
+    if (close === -1)
+      break;
+    if (isInsideAny(close, codeSpans)) {
+      searchFrom = close + 2;
+      continue;
+    }
+    const body = text.slice(open + 2, close);
+    const pipe = body.indexOf("|");
+    const rawTarget = pipe === -1 ? body : body.slice(0, pipe);
+    const rawLabel = pipe === -1 ? null : body.slice(pipe + 1);
+    const target = rawTarget.trim();
+    if (!target) {
+      searchFrom = close + 2;
+      continue;
+    }
+    let label = null;
+    let labelFrom = null;
+    let labelTo = null;
+    if (rawLabel != null) {
+      const labelStart = leadingWhitespaceLength(rawLabel);
+      const labelEnd = rawLabel.length - trailingWhitespaceLength(rawLabel);
+      label = rawLabel.slice(labelStart, labelEnd);
+      labelFrom = lineStart + open + 2 + pipe + 1 + labelStart;
+      labelTo = lineStart + open + 2 + pipe + 1 + labelEnd;
+    }
+    links.push({
+      from: lineStart + open,
+      to: lineStart + close + 2,
+      target,
+      label,
+      labelFrom,
+      labelTo
+    });
+    searchFrom = close + 2;
+  }
+  return links;
+}
+function fenceStateBeforeLine(doc, lineNumber) {
+  const fence = { marker: null, length: 0 };
+  for (let current = 1; current < lineNumber; current++) {
+    const match = doc.line(current).text.match(FENCE_RE);
+    if (!match)
+      continue;
+    const marker = match[1][0];
+    const length = match[1].length;
+    if (!fence.marker) {
+      fence.marker = marker;
+      fence.length = length;
+    } else if (marker === fence.marker && length >= fence.length) {
+      fence.marker = null;
+      fence.length = 0;
+    }
+  }
+  return fence;
+}
+function inlineCodeSpans(text) {
+  const spans = [];
+  let pos = 0;
+  while (pos < text.length) {
+    const start = text.indexOf("`", pos);
+    if (start === -1)
+      break;
+    let tickCount = 1;
+    while (text[start + tickCount] === "`")
+      tickCount++;
+    const needle = "`".repeat(tickCount);
+    const end = text.indexOf(needle, start + tickCount);
+    if (end === -1)
+      break;
+    spans.push({ from: start, to: end + tickCount });
+    pos = end + tickCount;
+  }
+  return spans;
+}
+function isSelectionInsideLink(state, link) {
+  return state.selection.ranges.some((range) => {
+    const from = Math.min(range.from, range.to);
+    const to = Math.max(range.from, range.to);
+    if (from === to)
+      return from > link.from && from < link.to;
+    return from < link.to && to > link.from;
+  });
+}
+function isSingleLineRange(state, from, to) {
+  const end = Math.max(from, to - 1);
+  return state.doc.lineAt(from).number === state.doc.lineAt(end).number;
+}
+function dedupeSuggestions(suggestions) {
+  const seen = /* @__PURE__ */ new Set();
+  const deduped = [];
+  for (const suggestion of suggestions) {
+    if (seen.has(suggestion.target))
+      continue;
+    seen.add(suggestion.target);
+    deduped.push(suggestion);
+  }
+  return deduped;
+}
+function defaultSerializeSuggestion(suggestion) {
+  return `${suggestion.target}|${escapeLabel(suggestion.label)}]]`;
+}
+function escapeLabel(label) {
+  return label.replace(/[\]\|]/g, " ").replace(/\s+/g, " ").trim();
+}
+function delay(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+function isInsideAny(pos, spans) {
+  return spans.some((span) => pos >= span.from && pos < span.to);
+}
+function leadingWhitespaceLength(value) {
+  const match = value.match(/^\s*/);
+  return match?.[0].length ?? 0;
+}
+function trailingWhitespaceLength(value) {
+  const match = value.match(/\s*$/);
+  return match?.[0].length ?? 0;
+}
+export {
+  AtomicCodeMirrorEditor,
+  atomicEditorTheme,
+  atomicMarkdownSyntax,
+  autoCloseCodeFence,
+  extendEmphasisPair,
+  imageBlocks,
+  inlinePreview,
+  tables,
+  wikiLinks
+};
+//# sourceMappingURL=@atomic-editor_editor.js.map

@@ -1,0 +1,845 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/features/Settings/SettingLookAndFeel.jsx");import __vite__cjsImport0_react_jsxDevRuntime from "/@fs/B:/electron/lumina/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=f41806ed"; const Fragment = __vite__cjsImport0_react_jsxDevRuntime["Fragment"]; const jsxDEV = __vite__cjsImport0_react_jsxDevRuntime["jsxDEV"];
+var _s = $RefreshSig$(), _s2 = $RefreshSig$();
+import __vite__cjsImport1_react from "/@fs/B:/electron/lumina/node_modules/.vite/deps/react.js?v=f41806ed"; const React = __vite__cjsImport1_react.__esModule ? __vite__cjsImport1_react.default : __vite__cjsImport1_react; const useState = __vite__cjsImport1_react["useState"];
+import AccentColor from "/src/features/theme/AccentColor.jsx";
+import { useSettingsStore } from "/src/core/store/useSettingsStore.js";
+import { useFontSettings } from "/src/core/hooks/useFontSettings.js";
+import Toggle from "/src/components/toggle/index.js";
+export const ColorPickerInput = ({
+  initialColor,
+  defaultColor,
+  onColorChange,
+  previewProperty,
+  title,
+  ariaLabel
+}) => {
+  _s();
+  const [isOpen, setIsOpen] = useState(false);
+  const displayColor = initialColor ? initialColor.startsWith("#") ? initialColor : `#${initialColor}` : defaultColor;
+  return /* @__PURE__ */ jsxDEV(Fragment, { children: [
+    /* @__PURE__ */ jsxDEV(
+      "div",
+      {
+        className: "caret-color-reset",
+        onClick: (e) => {
+          e.stopPropagation();
+          setIsOpen(true);
+        },
+        style: {
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: "40px",
+          height: "28px",
+          padding: "1px",
+          cursor: "pointer",
+          overflow: "hidden",
+          boxSizing: "border-box"
+        },
+        title,
+        "aria-label": ariaLabel,
+        children: /* @__PURE__ */ jsxDEV(
+          "div",
+          {
+            style: {
+              width: "100%",
+              height: "100%",
+              backgroundColor: displayColor,
+              borderRadius: "3px",
+              boxShadow: "inset 0 0 0 1px rgba(0, 0, 0, 0.15)"
+            }
+          },
+          void 0,
+          false,
+          {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 44,
+            columnNumber: 9
+          },
+          this
+        )
+      },
+      void 0,
+      false,
+      {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+        lineNumber: 24,
+        columnNumber: 7
+      },
+      this
+    ),
+    /* @__PURE__ */ jsxDEV(
+      AccentColor,
+      {
+        isOpen,
+        onClose: () => setIsOpen(false),
+        initialColor: displayColor,
+        defaultColor,
+        onSelect: onColorChange,
+        previewProperty,
+        title
+      },
+      void 0,
+      false,
+      {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+        lineNumber: 55,
+        columnNumber: 7
+      },
+      this
+    )
+  ] }, void 0, true, {
+    fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+    lineNumber: 23,
+    columnNumber: 5
+  }, this);
+};
+_s(ColorPickerInput, "+sus0Lb0ewKHdwiUhiTAJFoFyQ0=");
+_c = ColorPickerInput;
+const SettingLookAndFeel = ({ onOpenTheme }) => {
+  _s2();
+  const { settings, updateSetting } = useSettingsStore();
+  const {
+    caretWidth,
+    caretColor,
+    caretStyle,
+    updateCaretWidth,
+    updateCaretColor,
+    updateCaretStyle,
+    editorFontFamily,
+    editorFontSize,
+    updateEditorFontFamily,
+    updateEditorFontSize,
+    themeAccentColor,
+    updateThemeAccentColor
+  } = useFontSettings();
+  const handleOpenTheme = () => {
+    if (onOpenTheme) {
+      onOpenTheme();
+    }
+  };
+  return /* @__PURE__ */ jsxDEV("div", { className: "settings-pane", children: [
+    /* @__PURE__ */ jsxDEV("section", { children: [
+      /* @__PURE__ */ jsxDEV("h3", { children: "Appearance" }, void 0, false, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+        lineNumber: 94,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("div", { className: "settings-row", children: [
+        /* @__PURE__ */ jsxDEV("div", { className: "row-info", children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "row-label", children: "Base Theme" }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 97,
+            columnNumber: 13
+          }, this),
+          /* @__PURE__ */ jsxDEV("div", { className: "row-hint", children: "Choose between light, dark, and rugged tones." }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 98,
+            columnNumber: 13
+          }, this)
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+          lineNumber: 96,
+          columnNumber: 11
+        }, this),
+        /* @__PURE__ */ jsxDEV("button", { className: "btn", onClick: handleOpenTheme, children: "Theme Gallery" }, void 0, false, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+          lineNumber: 100,
+          columnNumber: 11
+        }, this)
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+        lineNumber: 95,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("div", { className: "settings-row", children: [
+        /* @__PURE__ */ jsxDEV("div", { className: "row-info", children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "row-label", children: "Theme Accent Color" }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 107,
+            columnNumber: 13
+          }, this),
+          /* @__PURE__ */ jsxDEV("div", { className: "row-hint", children: "Pick the app's accent color. Leave default for theme accent." }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 108,
+            columnNumber: 13
+          }, this)
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+          lineNumber: 106,
+          columnNumber: 11
+        }, this),
+        /* @__PURE__ */ jsxDEV("div", { className: "caret-color-controls", children: [
+          /* @__PURE__ */ jsxDEV(
+            ColorPickerInput,
+            {
+              initialColor: themeAccentColor,
+              defaultColor: "#40bafa",
+              onColorChange: updateThemeAccentColor,
+              previewProperty: "--text-accent",
+              title: "Choose Theme Accent Color",
+              ariaLabel: "Theme accent color picker"
+            },
+            void 0,
+            false,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+              lineNumber: 113,
+              columnNumber: 13
+            },
+            this
+          ),
+          /* @__PURE__ */ jsxDEV(
+            "button",
+            {
+              onClick: () => updateThemeAccentColor(""),
+              className: "caret-color-reset",
+              title: "Reset to default theme color",
+              "aria-label": "Reset theme accent color to theme default",
+              children: "Reset"
+            },
+            void 0,
+            false,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+              lineNumber: 121,
+              columnNumber: 13
+            },
+            this
+          )
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+          lineNumber: 112,
+          columnNumber: 11
+        }, this)
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+        lineNumber: 105,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("div", { className: "settings-row", children: [
+        /* @__PURE__ */ jsxDEV("div", { className: "row-info", children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "row-label", children: "Font Family" }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 134,
+            columnNumber: 13
+          }, this),
+          /* @__PURE__ */ jsxDEV("div", { className: "row-hint", children: "The font used in the editor area." }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 135,
+            columnNumber: 13
+          }, this)
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+          lineNumber: 133,
+          columnNumber: 11
+        }, this),
+        /* @__PURE__ */ jsxDEV(
+          "select",
+          {
+            value: editorFontFamily || settings.fontFamily || "Inter",
+            onChange: (e) => {
+              updateSetting("fontFamily", e.target.value);
+              updateEditorFontFamily(e.target.value);
+            },
+            className: "settings-select",
+            children: [
+              /* @__PURE__ */ jsxDEV("option", { value: "Inter", children: "Inter (Default)" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+                lineNumber: 145,
+                columnNumber: 13
+              }, this),
+              /* @__PURE__ */ jsxDEV("option", { value: "Vazirmatn", children: "Vazirmatn (Arabic / Persian / Clean)" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+                lineNumber: 146,
+                columnNumber: 13
+              }, this),
+              /* @__PURE__ */ jsxDEV("option", { value: "Roboto", children: "Roboto" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+                lineNumber: 147,
+                columnNumber: 13
+              }, this),
+              /* @__PURE__ */ jsxDEV("option", { value: "JetBrains Mono", children: "JetBrains Mono" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+                lineNumber: 148,
+                columnNumber: 13
+              }, this),
+              /* @__PURE__ */ jsxDEV("option", { value: "Fira Code", children: "Fira Code" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+                lineNumber: 149,
+                columnNumber: 13
+              }, this),
+              /* @__PURE__ */ jsxDEV("option", { value: "System Default", children: "System Default" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+                lineNumber: 150,
+                columnNumber: 13
+              }, this)
+            ]
+          },
+          void 0,
+          true,
+          {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 137,
+            columnNumber: 11
+          },
+          this
+        )
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+        lineNumber: 132,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("div", { className: "settings-row", children: [
+        /* @__PURE__ */ jsxDEV("div", { className: "row-info", children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "row-label", children: "Font Size" }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 156,
+            columnNumber: 13
+          }, this),
+          /* @__PURE__ */ jsxDEV("div", { className: "row-hint", children: "Adjust the text size for readability." }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 157,
+            columnNumber: 13
+          }, this)
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+          lineNumber: 155,
+          columnNumber: 11
+        }, this),
+        /* @__PURE__ */ jsxDEV("div", { className: "range-wrap", children: [
+          /* @__PURE__ */ jsxDEV(
+            "input",
+            {
+              type: "range",
+              min: "12",
+              max: "28",
+              step: "1",
+              value: parseInt(editorFontSize) || settings.fontSize || 14,
+              onChange: (e) => {
+                const val = parseInt(e.target.value);
+                updateSetting("fontSize", val);
+                updateEditorFontSize(val);
+              }
+            },
+            void 0,
+            false,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+              lineNumber: 160,
+              columnNumber: 13
+            },
+            this
+          ),
+          /* @__PURE__ */ jsxDEV("span", { children: [
+            parseInt(editorFontSize) || settings.fontSize || 14,
+            "px"
+          ] }, void 0, true, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 172,
+            columnNumber: 13
+          }, this)
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+          lineNumber: 159,
+          columnNumber: 11
+        }, this)
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+        lineNumber: 154,
+        columnNumber: 9
+      }, this)
+    ] }, void 0, true, {
+      fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+      lineNumber: 93,
+      columnNumber: 7
+    }, this),
+    /* @__PURE__ */ jsxDEV("section", { style: { marginTop: "32px" }, children: [
+      /* @__PURE__ */ jsxDEV("h3", { children: "Caret & Cursor" }, void 0, false, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+        lineNumber: 178,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("div", { className: "settings-row", children: [
+        /* @__PURE__ */ jsxDEV("div", { className: "row-info", children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "row-label", children: "Caret Style" }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 181,
+            columnNumber: 13
+          }, this),
+          /* @__PURE__ */ jsxDEV("div", { className: "row-hint", children: "Customize the caret appearance (smooth, block, or sharp)." }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 182,
+            columnNumber: 13
+          }, this)
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+          lineNumber: 180,
+          columnNumber: 11
+        }, this),
+        /* @__PURE__ */ jsxDEV(
+          "select",
+          {
+            value: caretStyle || "smooth",
+            onChange: (e) => updateCaretStyle(e.target.value),
+            className: "settings-select",
+            children: [
+              /* @__PURE__ */ jsxDEV("option", { value: "smooth", children: "Smooth Line" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+                lineNumber: 191,
+                columnNumber: 13
+              }, this),
+              /* @__PURE__ */ jsxDEV("option", { value: "block", children: "Block" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+                lineNumber: 192,
+                columnNumber: 13
+              }, this),
+              /* @__PURE__ */ jsxDEV("option", { value: "sharp", children: "Sharp Line" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+                lineNumber: 193,
+                columnNumber: 13
+              }, this)
+            ]
+          },
+          void 0,
+          true,
+          {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 186,
+            columnNumber: 11
+          },
+          this
+        )
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+        lineNumber: 179,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("div", { className: "settings-row", children: [
+        /* @__PURE__ */ jsxDEV("div", { className: "row-info", children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "row-label", children: "Caret Width" }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 199,
+            columnNumber: 13
+          }, this),
+          /* @__PURE__ */ jsxDEV("div", { className: "row-hint", children: "Adjust the caret width (1px - 10px)." }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 200,
+            columnNumber: 13
+          }, this)
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+          lineNumber: 198,
+          columnNumber: 11
+        }, this),
+        /* @__PURE__ */ jsxDEV("div", { className: "range-wrap", children: [
+          /* @__PURE__ */ jsxDEV(
+            "input",
+            {
+              type: "range",
+              min: "1",
+              max: "10",
+              step: "1",
+              value: parseInt(caretWidth, 10) || 2,
+              onChange: (e) => {
+                const value = parseInt(e.target.value, 10);
+                if (!isNaN(value) && value >= 1 && value <= 10) {
+                  updateCaretWidth(value);
+                }
+              },
+              "aria-label": "Caret width slider"
+            },
+            void 0,
+            false,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+              lineNumber: 203,
+              columnNumber: 13
+            },
+            this
+          ),
+          /* @__PURE__ */ jsxDEV("span", { children: [
+            parseInt(caretWidth, 10) || 2,
+            "px"
+          ] }, void 0, true, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 217,
+            columnNumber: 13
+          }, this)
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+          lineNumber: 202,
+          columnNumber: 11
+        }, this)
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+        lineNumber: 197,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("div", { className: "settings-row", children: [
+        /* @__PURE__ */ jsxDEV("div", { className: "row-info", children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "row-label", children: "Caret Color" }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 223,
+            columnNumber: 13
+          }, this),
+          /* @__PURE__ */ jsxDEV("div", { className: "row-hint", children: "Enter hex color. Leave empty for theme accent." }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 224,
+            columnNumber: 13
+          }, this)
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+          lineNumber: 222,
+          columnNumber: 11
+        }, this),
+        /* @__PURE__ */ jsxDEV("div", { className: "caret-color-controls", children: [
+          /* @__PURE__ */ jsxDEV(
+            ColorPickerInput,
+            {
+              initialColor: caretColor,
+              defaultColor: "#ffffff",
+              onColorChange: updateCaretColor,
+              previewProperty: "--caret-color",
+              title: "Choose Caret Color",
+              ariaLabel: "Caret color picker"
+            },
+            void 0,
+            false,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+              lineNumber: 227,
+              columnNumber: 13
+            },
+            this
+          ),
+          /* @__PURE__ */ jsxDEV(
+            "button",
+            {
+              onClick: () => updateCaretColor(""),
+              className: "caret-color-reset",
+              title: "Reset to theme accent color",
+              "aria-label": "Reset caret color to theme default",
+              children: "Reset"
+            },
+            void 0,
+            false,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+              lineNumber: 235,
+              columnNumber: 13
+            },
+            this
+          )
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+          lineNumber: 226,
+          columnNumber: 11
+        }, this)
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+        lineNumber: 221,
+        columnNumber: 9
+      }, this)
+    ] }, void 0, true, {
+      fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+      lineNumber: 177,
+      columnNumber: 7
+    }, this),
+    /* @__PURE__ */ jsxDEV("section", { style: { marginTop: "32px" }, children: [
+      /* @__PURE__ */ jsxDEV("h3", { children: "Interface & Behavior" }, void 0, false, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+        lineNumber: 248,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("div", { className: "settings-row", children: [
+        /* @__PURE__ */ jsxDEV("div", { className: "row-info", children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "row-label", children: "Active Line Left Border" }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 253,
+            columnNumber: 13
+          }, this),
+          /* @__PURE__ */ jsxDEV("div", { className: "row-hint", children: "Show a colored left border on the line where the cursor is currently placed." }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 254,
+            columnNumber: 13
+          }, this)
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+          lineNumber: 252,
+          columnNumber: 11
+        }, this),
+        /* @__PURE__ */ jsxDEV(
+          Toggle,
+          {
+            checked: (settings.cursor && settings.cursor.useBorderLeft) ?? true,
+            onChange: (e) => {
+              const next = {
+                ...settings.cursor || {},
+                useBorderLeft: e.target.checked
+              };
+              updateSetting("cursor", next);
+            }
+          },
+          void 0,
+          false,
+          {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 258,
+            columnNumber: 11
+          },
+          this
+        )
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+        lineNumber: 251,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("div", { className: "settings-row", children: [
+        /* @__PURE__ */ jsxDEV("div", { className: "row-info", children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "row-label", children: "Mechanical Keyboard Sound" }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 272,
+            columnNumber: 13
+          }, this),
+          /* @__PURE__ */ jsxDEV("div", { className: "row-hint", children: "Play an ASMR-style mechanical click when typing." }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 273,
+            columnNumber: 13
+          }, this)
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+          lineNumber: 271,
+          columnNumber: 11
+        }, this),
+        /* @__PURE__ */ jsxDEV(
+          Toggle,
+          {
+            checked: settings.typeSound || false,
+            onChange: (e) => updateSetting("typeSound", e.target.checked)
+          },
+          void 0,
+          false,
+          {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 275,
+            columnNumber: 11
+          },
+          this
+        )
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+        lineNumber: 270,
+        columnNumber: 9
+      }, this),
+      settings.typeSound && /* @__PURE__ */ jsxDEV("div", { className: "settings-row", style: { animation: "fadeIn 0.2s ease-out" }, children: [
+        /* @__PURE__ */ jsxDEV("div", { className: "row-info", children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "row-label", children: "Typing Volume" }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 284,
+            columnNumber: 15
+          }, this),
+          /* @__PURE__ */ jsxDEV("div", { className: "row-hint", children: "Adjust how loud the mechanical clicks are." }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 285,
+            columnNumber: 15
+          }, this)
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+          lineNumber: 283,
+          columnNumber: 13
+        }, this),
+        /* @__PURE__ */ jsxDEV("div", { className: "range-wrap", children: [
+          /* @__PURE__ */ jsxDEV(
+            "input",
+            {
+              type: "range",
+              min: "0",
+              max: "100",
+              step: "1",
+              value: settings.typeSoundVolume ?? 50,
+              onChange: (e) => updateSetting("typeSoundVolume", parseInt(e.target.value, 10))
+            },
+            void 0,
+            false,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+              lineNumber: 288,
+              columnNumber: 15
+            },
+            this
+          ),
+          /* @__PURE__ */ jsxDEV("span", { children: [
+            settings.typeSoundVolume ?? 50,
+            "%"
+          ] }, void 0, true, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 296,
+            columnNumber: 15
+          }, this)
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+          lineNumber: 287,
+          columnNumber: 13
+        }, this)
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+        lineNumber: 282,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("div", { className: "settings-row", children: [
+        /* @__PURE__ */ jsxDEV("div", { className: "row-info", children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "row-label", children: "Auto-Save" }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 303,
+            columnNumber: 13
+          }, this),
+          /* @__PURE__ */ jsxDEV("div", { className: "row-hint", children: "Automatically save changes while typing." }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 304,
+            columnNumber: 13
+          }, this)
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+          lineNumber: 302,
+          columnNumber: 11
+        }, this),
+        /* @__PURE__ */ jsxDEV(
+          Toggle,
+          {
+            checked: settings.autoSave,
+            onChange: (e) => updateSetting("autoSave", e.target.checked)
+          },
+          void 0,
+          false,
+          {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 306,
+            columnNumber: 11
+          },
+          this
+        )
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+        lineNumber: 301,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("div", { className: "settings-row", children: [
+        /* @__PURE__ */ jsxDEV("div", { className: "row-info", children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "row-label", children: "Note Title Input" }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 314,
+            columnNumber: 13
+          }, this),
+          /* @__PURE__ */ jsxDEV("div", { className: "row-hint", children: "Show the editable title header inside the editor." }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 315,
+            columnNumber: 13
+          }, this)
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+          lineNumber: 313,
+          columnNumber: 11
+        }, this),
+        /* @__PURE__ */ jsxDEV(
+          Toggle,
+          {
+            checked: settings.inlineTitle !== false,
+            onChange: (e) => updateSetting("inlineTitle", e.target.checked)
+          },
+          void 0,
+          false,
+          {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 317,
+            columnNumber: 11
+          },
+          this
+        )
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+        lineNumber: 312,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("div", { className: "settings-row", children: [
+        /* @__PURE__ */ jsxDEV("div", { className: "row-info", children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "row-label", children: "Editor Action Buttons" }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 325,
+            columnNumber: 13
+          }, this),
+          /* @__PURE__ */ jsxDEV("div", { className: "row-hint", children: "Show quick actions (AI, Voice, Drive, Local Graph) inside the editor." }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 326,
+            columnNumber: 13
+          }, this)
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+          lineNumber: 324,
+          columnNumber: 11
+        }, this),
+        /* @__PURE__ */ jsxDEV(
+          Toggle,
+          {
+            checked: settings.inlineMetadata !== false,
+            onChange: (e) => updateSetting("inlineMetadata", e.target.checked)
+          },
+          void 0,
+          false,
+          {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+            lineNumber: 328,
+            columnNumber: 11
+          },
+          this
+        )
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+        lineNumber: 323,
+        columnNumber: 9
+      }, this)
+    ] }, void 0, true, {
+      fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+      lineNumber: 247,
+      columnNumber: 7
+    }, this)
+  ] }, void 0, true, {
+    fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx",
+    lineNumber: 92,
+    columnNumber: 5
+  }, this);
+};
+_s2(SettingLookAndFeel, "wVMZgtENRPLUmBxdzlI/Qnsj3SU=", false, function() {
+  return [useSettingsStore, useFontSettings];
+});
+_c2 = SettingLookAndFeel;
+export default _c3 = React.memo(SettingLookAndFeel);
+var _c, _c2, _c3;
+$RefreshReg$(_c, "ColorPickerInput");
+$RefreshReg$(_c2, "SettingLookAndFeel");
+$RefreshReg$(_c3, "%default%");
+import * as RefreshRuntime from "/@react-refresh";
+const inWebWorker = typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope;
+if (import.meta.hot && !inWebWorker) {
+  if (!window.$RefreshReg$) {
+    throw new Error(
+      "@vitejs/plugin-react can't detect preamble. Something is wrong."
+    );
+  }
+  RefreshRuntime.__hmr_import(import.meta.url).then((currentExports) => {
+    RefreshRuntime.registerExportsForReactRefresh("B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx", currentExports);
+    import.meta.hot.accept((nextExports) => {
+      if (!nextExports) return;
+      const invalidateMessage = RefreshRuntime.validateRefreshBoundaryAndEnqueueUpdate("B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx", currentExports, nextExports);
+      if (invalidateMessage) import.meta.hot.invalidate(invalidateMessage);
+    });
+  });
+}
+function $RefreshReg$(type, id) {
+  return RefreshRuntime.register(type, "B:/electron/lumina/src/renderer/src/features/Settings/SettingLookAndFeel.jsx " + id);
+}
+function $RefreshSig$() {
+  return RefreshRuntime.createSignatureFunctionForTransform();
+}
+
+//# sourceMappingURL=data:application/json;base64,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QjtBQUFDLElBQUFELElBQUFvQyxLQUFBQztBQUFBRSxhQUFBdkMsSUFBQTtBQUFBdUMsYUFBQUgsS0FBQTtBQUFBRyxhQUFBRixLQUFBIiwibmFtZXMiOlsiUmVhY3QiLCJ1c2VTdGF0ZSIsIkFjY2VudENvbG9yIiwidXNlU2V0dGluZ3NTdG9yZSIsInVzZUZvbnRTZXR0aW5ncyIsIlRvZ2dsZSIsIkNvbG9yUGlja2VySW5wdXQiLCJpbml0aWFsQ29sb3IiLCJkZWZhdWx0Q29sb3IiLCJvbkNvbG9yQ2hhbmdlIiwicHJldmlld1Byb3BlcnR5IiwidGl0bGUiLCJhcmlhTGFiZWwiLCJfcyIsImlzT3BlbiIsInNldElzT3BlbiIsImRpc3BsYXlDb2xvciIsInN0YXJ0c1dpdGgiLCJlIiwic3RvcFByb3BhZ2F0aW9uIiwiZGlzcGxheSIsImFsaWduSXRlbXMiLCJqdXN0aWZ5Q29udGVudCIsIndpZHRoIiwiaGVpZ2h0IiwicGFkZGluZyIsImN1cnNvciIsIm92ZXJmbG93IiwiYm94U2l6aW5nIiwiYmFja2dyb3VuZENvbG9yIiwiYm9yZGVyUmFkaXVzIiwiYm94U2hhZG93IiwiX2MiLCJTZXR0aW5nTG9va0FuZEZlZWwiLCJvbk9wZW5UaGVtZSIsIl9zMiIsInNldHRpbmdzIiwidXBkYXRlU2V0dGluZyIsImNhcmV0V2lkdGgiLCJjYXJldENvbG9yIiwiY2FyZXRTdHlsZSIsInVwZGF0ZUNhcmV0V2lkdGgiLCJ1cGRhdGVDYXJldENvbG9yIiwidXBkYXRlQ2FyZXRTdHlsZSIsImVkaXRvckZvbnRGYW1pbHkiLCJlZGl0b3JGb250U2l6ZSIsInVwZGF0ZUVkaXRvckZvbnRGYW1pbHkiLCJ1cGRhdGVFZGl0b3JGb250U2l6ZSIsInRoZW1lQWNjZW50Q29sb3IiLCJ1cGRhdGVUaGVtZUFjY2VudENvbG9yIiwiaGFuZGxlT3BlblRoZW1lIiwiZm9udEZhbWlseSIsInRhcmdldCIsInZhbHVlIiwicGFyc2VJbnQiLCJmb250U2l6ZSIsInZhbCIsIm1hcmdpblRvcCIsImlzTmFOIiwidXNlQm9yZGVyTGVmdCIsIm5leHQiLCJjaGVja2VkIiwidHlwZVNvdW5kIiwiYW5pbWF0aW9uIiwidHlwZVNvdW5kVm9sdW1lIiwiYXV0b1NhdmUiLCJpbmxpbmVUaXRsZSIsImlubGluZU1ldGFkYXRhIiwiX2MyIiwiX2MzIiwibWVtbyIsIiRSZWZyZXNoUmVnJCJdLCJpZ25vcmVMaXN0IjpbXSwic291cmNlcyI6WyJTZXR0aW5nTG9va0FuZEZlZWwuanN4Il0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCBSZWFjdCwgeyB1c2VTdGF0ZSB9IGZyb20gJ3JlYWN0J1xyXG5pbXBvcnQgQWNjZW50Q29sb3IgZnJvbSAnLi4vdGhlbWUvQWNjZW50Q29sb3InXHJcbmltcG9ydCB7IHVzZVNldHRpbmdzU3RvcmUgfSBmcm9tICcuLi8uLi9jb3JlL3N0b3JlL3VzZVNldHRpbmdzU3RvcmUnXHJcbmltcG9ydCB7IHVzZUZvbnRTZXR0aW5ncyB9IGZyb20gJy4uLy4uL2NvcmUvaG9va3MvdXNlRm9udFNldHRpbmdzJ1xyXG5pbXBvcnQgVG9nZ2xlIGZyb20gJy4uLy4uL2NvbXBvbmVudHMvdG9nZ2xlJ1xyXG5cclxuZXhwb3J0IGNvbnN0IENvbG9yUGlja2VySW5wdXQgPSAoe1xyXG4gIGluaXRpYWxDb2xvcixcclxuICBkZWZhdWx0Q29sb3IsXHJcbiAgb25Db2xvckNoYW5nZSxcclxuICBwcmV2aWV3UHJvcGVydHksXHJcbiAgdGl0bGUsXHJcbiAgYXJpYUxhYmVsXHJcbn0pID0+IHtcclxuICBjb25zdCBbaXNPcGVuLCBzZXRJc09wZW5dID0gdXNlU3RhdGUoZmFsc2UpXHJcbiAgY29uc3QgZGlzcGxheUNvbG9yID0gaW5pdGlhbENvbG9yXHJcbiAgICA/IGluaXRpYWxDb2xvci5zdGFydHNXaXRoKCcjJylcclxuICAgICAgPyBpbml0aWFsQ29sb3JcclxuICAgICAgOiBgIyR7aW5pdGlhbENvbG9yfWBcclxuICAgIDogZGVmYXVsdENvbG9yXHJcblxyXG4gIHJldHVybiAoXHJcbiAgICA8PlxyXG4gICAgICA8ZGl2XHJcbiAgICAgICAgY2xhc3NOYW1lPVwiY2FyZXQtY29sb3ItcmVzZXRcIlxyXG4gICAgICAgIG9uQ2xpY2s9eyhlKSA9PiB7XHJcbiAgICAgICAgICBlLnN0b3BQcm9wYWdhdGlvbigpXHJcbiAgICAgICAgICBzZXRJc09wZW4odHJ1ZSlcclxuICAgICAgICB9fVxyXG4gICAgICAgIHN0eWxlPXt7XHJcbiAgICAgICAgICBkaXNwbGF5OiAnaW5saW5lLWZsZXgnLFxyXG4gICAgICAgICAgYWxpZ25JdGVtczogJ2NlbnRlcicsXHJcbiAgICAgICAgICBqdXN0aWZ5Q29udGVudDogJ2NlbnRlcicsXHJcbiAgICAgICAgICB3aWR0aDogJzQwcHgnLFxyXG4gICAgICAgICAgaGVpZ2h0OiAnMjhweCcsXHJcbiAgICAgICAgICBwYWRkaW5nOiAnMXB4JyxcclxuICAgICAgICAgIGN1cnNvcjogJ3BvaW50ZXInLFxyXG4gICAgICAgICAgb3ZlcmZsb3c6ICdoaWRkZW4nLFxyXG4gICAgICAgICAgYm94U2l6aW5nOiAnYm9yZGVyLWJveCdcclxuICAgICAgICB9fVxyXG4gICAgICAgIHRpdGxlPXt0aXRsZX1cclxuICAgICAgICBhcmlhLWxhYmVsPXthcmlhTGFiZWx9XHJcbiAgICAgID5cclxuICAgICAgICA8ZGl2XHJcbiAgICAgICAgICBzdHlsZT17e1xyXG4gICAgICAgICAgICB3aWR0aDogJzEwMCUnLFxyXG4gICAgICAgICAgICBoZWlnaHQ6ICcxMDAlJyxcclxuICAgICAgICAgICAgYmFja2dyb3VuZENvbG9yOiBkaXNwbGF5Q29sb3IsXHJcbiAgICAgICAgICAgIGJvcmRlclJhZGl1czogJzNweCcsXHJcbiAgICAgICAgICAgIGJveFNoYWRvdzogJ2luc2V0IDAgMCAwIDFweCByZ2JhKDAsIDAsIDAsIDAuMTUpJ1xyXG4gICAgICAgICAgfX1cclxuICAgICAgICAvPlxyXG4gICAgICA8L2Rpdj5cclxuXHJcbiAgICAgIDxBY2NlbnRDb2xvclxyXG4gICAgICAgIGlzT3Blbj17aXNPcGVufVxyXG4gICAgICAgIG9uQ2xvc2U9eygpID0+IHNldElzT3BlbihmYWxzZSl9XHJcbiAgICAgICAgaW5pdGlhbENvbG9yPXtkaXNwbGF5Q29sb3J9XHJcbiAgICAgICAgZGVmYXVsdENvbG9yPXtkZWZhdWx0Q29sb3J9XHJcbiAgICAgICAgb25TZWxlY3Q9e29uQ29sb3JDaGFuZ2V9XHJcbiAgICAgICAgcHJldmlld1Byb3BlcnR5PXtwcmV2aWV3UHJvcGVydHl9XHJcbiAgICAgICAgdGl0bGU9e3RpdGxlfVxyXG4gICAgICAvPlxyXG4gICAgPC8+XHJcbiAgKVxyXG59XHJcblxyXG5jb25zdCBTZXR0aW5nTG9va0FuZEZlZWwgPSAoeyBvbk9wZW5UaGVtZSB9KSA9PiB7XHJcbiAgY29uc3QgeyBzZXR0aW5ncywgdXBkYXRlU2V0dGluZyB9ID0gdXNlU2V0dGluZ3NTdG9yZSgpXHJcbiAgY29uc3Qge1xyXG4gICAgY2FyZXRXaWR0aCxcclxuICAgIGNhcmV0Q29sb3IsXHJcbiAgICBjYXJldFN0eWxlLFxyXG4gICAgdXBkYXRlQ2FyZXRXaWR0aCxcclxuICAgIHVwZGF0ZUNhcmV0Q29sb3IsXHJcbiAgICB1cGRhdGVDYXJldFN0eWxlLFxyXG4gICAgZWRpdG9yRm9udEZhbWlseSxcclxuICAgIGVkaXRvckZvbnRTaXplLFxyXG4gICAgdXBkYXRlRWRpdG9yRm9udEZhbWlseSxcclxuICAgIHVwZGF0ZUVkaXRvckZvbnRTaXplLFxyXG4gICAgdGhlbWVBY2NlbnRDb2xvcixcclxuICAgIHVwZGF0ZVRoZW1lQWNjZW50Q29sb3JcclxuICB9ID0gdXNlRm9udFNldHRpbmdzKClcclxuXHJcbiAgY29uc3QgaGFuZGxlT3BlblRoZW1lID0gKCkgPT4ge1xyXG4gICAgaWYgKG9uT3BlblRoZW1lKSB7XHJcbiAgICAgIG9uT3BlblRoZW1lKClcclxuICAgIH1cclxuICB9XHJcblxyXG4gIHJldHVybiAoXHJcbiAgICA8ZGl2IGNsYXNzTmFtZT1cInNldHRpbmdzLXBhbmVcIj5cclxuICAgICAgPHNlY3Rpb24+XHJcbiAgICAgICAgPGgzPkFwcGVhcmFuY2U8L2gzPlxyXG4gICAgICAgIDxkaXYgY2xhc3NOYW1lPVwic2V0dGluZ3Mtcm93XCI+XHJcbiAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInJvdy1pbmZvXCI+XHJcbiAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwicm93LWxhYmVsXCI+QmFzZSBUaGVtZTwvZGl2PlxyXG4gICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInJvdy1oaW50XCI+Q2hvb3NlIGJldHdlZW4gbGlnaHQsIGRhcmssIGFuZCBydWdnZWQgdG9uZXMuPC9kaXY+XHJcbiAgICAgICAgICA8L2Rpdj5cclxuICAgICAgICAgIDxidXR0b24gY2xhc3NOYW1lPVwiYnRuXCIgb25DbGljaz17aGFuZGxlT3BlblRoZW1lfT5cclxuICAgICAgICAgICAgVGhlbWUgR2FsbGVyeVxyXG4gICAgICAgICAgPC9idXR0b24+XHJcbiAgICAgICAgPC9kaXY+XHJcblxyXG4gICAgICAgIDxkaXYgY2xhc3NOYW1lPVwic2V0dGluZ3Mtcm93XCI+XHJcbiAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInJvdy1pbmZvXCI+XHJcbiAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwicm93LWxhYmVsXCI+VGhlbWUgQWNjZW50IENvbG9yPC9kaXY+XHJcbiAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwicm93LWhpbnRcIj5cclxuICAgICAgICAgICAgICBQaWNrIHRoZSBhcHAncyBhY2NlbnQgY29sb3IuIExlYXZlIGRlZmF1bHQgZm9yIHRoZW1lIGFjY2VudC5cclxuICAgICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgICA8L2Rpdj5cclxuICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwiY2FyZXQtY29sb3ItY29udHJvbHNcIj5cclxuICAgICAgICAgICAgPENvbG9yUGlja2VySW5wdXRcclxuICAgICAgICAgICAgICBpbml0aWFsQ29sb3I9e3RoZW1lQWNjZW50Q29sb3J9XHJcbiAgICAgICAgICAgICAgZGVmYXVsdENvbG9yPVwiIzQwYmFmYVwiXHJcbiAgICAgICAgICAgICAgb25Db2xvckNoYW5nZT17dXBkYXRlVGhlbWVBY2NlbnRDb2xvcn1cclxuICAgICAgICAgICAgICBwcmV2aWV3UHJvcGVydHk9XCItLXRleHQtYWNjZW50XCJcclxuICAgICAgICAgICAgICB0aXRsZT1cIkNob29zZSBUaGVtZSBBY2NlbnQgQ29sb3JcIlxyXG4gICAgICAgICAgICAgIGFyaWFMYWJlbD1cIlRoZW1lIGFjY2VudCBjb2xvciBwaWNrZXJcIlxyXG4gICAgICAgICAgICAvPlxyXG4gICAgICAgICAgICA8YnV0dG9uXHJcbiAgICAgICAgICAgICAgb25DbGljaz17KCkgPT4gdXBkYXRlVGhlbWVBY2NlbnRDb2xvcignJyl9XHJcbiAgICAgICAgICAgICAgY2xhc3NOYW1lPVwiY2FyZXQtY29sb3ItcmVzZXRcIlxyXG4gICAgICAgICAgICAgIHRpdGxlPVwiUmVzZXQgdG8gZGVmYXVsdCB0aGVtZSBjb2xvclwiXHJcbiAgICAgICAgICAgICAgYXJpYS1sYWJlbD1cIlJlc2V0IHRoZW1lIGFjY2VudCBjb2xvciB0byB0aGVtZSBkZWZhdWx0XCJcclxuICAgICAgICAgICAgPlxyXG4gICAgICAgICAgICAgIFJlc2V0XHJcbiAgICAgICAgICAgIDwvYnV0dG9uPlxyXG4gICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgPC9kaXY+XHJcblxyXG4gICAgICAgIDxkaXYgY2xhc3NOYW1lPVwic2V0dGluZ3Mtcm93XCI+XHJcbiAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInJvdy1pbmZvXCI+XHJcbiAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwicm93LWxhYmVsXCI+Rm9udCBGYW1pbHk8L2Rpdj5cclxuICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJyb3ctaGludFwiPlRoZSBmb250IHVzZWQgaW4gdGhlIGVkaXRvciBhcmVhLjwvZGl2PlxyXG4gICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgICA8c2VsZWN0XHJcbiAgICAgICAgICAgIHZhbHVlPXtlZGl0b3JGb250RmFtaWx5IHx8IHNldHRpbmdzLmZvbnRGYW1pbHkgfHwgJ0ludGVyJ31cclxuICAgICAgICAgICAgb25DaGFuZ2U9eyhlKSA9PiB7XHJcbiAgICAgICAgICAgICAgdXBkYXRlU2V0dGluZygnZm9udEZhbWlseScsIGUudGFyZ2V0LnZhbHVlKVxyXG4gICAgICAgICAgICAgIHVwZGF0ZUVkaXRvckZvbnRGYW1pbHkoZS50YXJnZXQudmFsdWUpXHJcbiAgICAgICAgICAgIH19XHJcbiAgICAgICAgICAgIGNsYXNzTmFtZT1cInNldHRpbmdzLXNlbGVjdFwiXHJcbiAgICAgICAgICA+XHJcbiAgICAgICAgICAgIDxvcHRpb24gdmFsdWU9XCJJbnRlclwiPkludGVyIChEZWZhdWx0KTwvb3B0aW9uPlxyXG4gICAgICAgICAgICA8b3B0aW9uIHZhbHVlPVwiVmF6aXJtYXRuXCI+VmF6aXJtYXRuIChBcmFiaWMgLyBQZXJzaWFuIC8gQ2xlYW4pPC9vcHRpb24+XHJcbiAgICAgICAgICAgIDxvcHRpb24gdmFsdWU9XCJSb2JvdG9cIj5Sb2JvdG88L29wdGlvbj5cclxuICAgICAgICAgICAgPG9wdGlvbiB2YWx1ZT1cIkpldEJyYWlucyBNb25vXCI+SmV0QnJhaW5zIE1vbm88L29wdGlvbj5cclxuICAgICAgICAgICAgPG9wdGlvbiB2YWx1ZT1cIkZpcmEgQ29kZVwiPkZpcmEgQ29kZTwvb3B0aW9uPlxyXG4gICAgICAgICAgICA8b3B0aW9uIHZhbHVlPVwiU3lzdGVtIERlZmF1bHRcIj5TeXN0ZW0gRGVmYXVsdDwvb3B0aW9uPlxyXG4gICAgICAgICAgPC9zZWxlY3Q+XHJcbiAgICAgICAgPC9kaXY+XHJcblxyXG4gICAgICAgIDxkaXYgY2xhc3NOYW1lPVwic2V0dGluZ3Mtcm93XCI+XHJcbiAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInJvdy1pbmZvXCI+XHJcbiAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwicm93LWxhYmVsXCI+Rm9udCBTaXplPC9kaXY+XHJcbiAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwicm93LWhpbnRcIj5BZGp1c3QgdGhlIHRleHQgc2l6ZSBmb3IgcmVhZGFiaWxpdHkuPC9kaXY+XHJcbiAgICAgICAgICA8L2Rpdj5cclxuICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwicmFuZ2Utd3JhcFwiPlxyXG4gICAgICAgICAgICA8aW5wdXRcclxuICAgICAgICAgICAgICB0eXBlPVwicmFuZ2VcIlxyXG4gICAgICAgICAgICAgIG1pbj1cIjEyXCJcclxuICAgICAgICAgICAgICBtYXg9XCIyOFwiXHJcbiAgICAgICAgICAgICAgc3RlcD1cIjFcIlxyXG4gICAgICAgICAgICAgIHZhbHVlPXtwYXJzZUludChlZGl0b3JGb250U2l6ZSkgfHwgc2V0dGluZ3MuZm9udFNpemUgfHwgMTR9XHJcbiAgICAgICAgICAgICAgb25DaGFuZ2U9eyhlKSA9PiB7XHJcbiAgICAgICAgICAgICAgICBjb25zdCB2YWwgPSBwYXJzZUludChlLnRhcmdldC52YWx1ZSlcclxuICAgICAgICAgICAgICAgIHVwZGF0ZVNldHRpbmcoJ2ZvbnRTaXplJywgdmFsKVxyXG4gICAgICAgICAgICAgICAgdXBkYXRlRWRpdG9yRm9udFNpemUodmFsKVxyXG4gICAgICAgICAgICAgIH19XHJcbiAgICAgICAgICAgIC8+XHJcbiAgICAgICAgICAgIDxzcGFuPntwYXJzZUludChlZGl0b3JGb250U2l6ZSkgfHwgc2V0dGluZ3MuZm9udFNpemUgfHwgMTR9cHg8L3NwYW4+XHJcbiAgICAgICAgICA8L2Rpdj5cclxuICAgICAgICA8L2Rpdj5cclxuICAgICAgPC9zZWN0aW9uPlxyXG5cclxuICAgICAgPHNlY3Rpb24gc3R5bGU9e3sgbWFyZ2luVG9wOiAnMzJweCcgfX0+XHJcbiAgICAgICAgPGgzPkNhcmV0ICYgQ3Vyc29yPC9oMz5cclxuICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInNldHRpbmdzLXJvd1wiPlxyXG4gICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJyb3ctaW5mb1wiPlxyXG4gICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInJvdy1sYWJlbFwiPkNhcmV0IFN0eWxlPC9kaXY+XHJcbiAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwicm93LWhpbnRcIj5cclxuICAgICAgICAgICAgICBDdXN0b21pemUgdGhlIGNhcmV0IGFwcGVhcmFuY2UgKHNtb290aCwgYmxvY2ssIG9yIHNoYXJwKS5cclxuICAgICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgICA8L2Rpdj5cclxuICAgICAgICAgIDxzZWxlY3RcclxuICAgICAgICAgICAgdmFsdWU9e2NhcmV0U3R5bGUgfHwgJ3Ntb290aCd9XHJcbiAgICAgICAgICAgIG9uQ2hhbmdlPXsoZSkgPT4gdXBkYXRlQ2FyZXRTdHlsZShlLnRhcmdldC52YWx1ZSl9XHJcbiAgICAgICAgICAgIGNsYXNzTmFtZT1cInNldHRpbmdzLXNlbGVjdFwiXHJcbiAgICAgICAgICA+XHJcbiAgICAgICAgICAgIDxvcHRpb24gdmFsdWU9XCJzbW9vdGhcIj5TbW9vdGggTGluZTwvb3B0aW9uPlxyXG4gICAgICAgICAgICA8b3B0aW9uIHZhbHVlPVwiYmxvY2tcIj5CbG9jazwvb3B0aW9uPlxyXG4gICAgICAgICAgICA8b3B0aW9uIHZhbHVlPVwic2hhcnBcIj5TaGFycCBMaW5lPC9vcHRpb24+XHJcbiAgICAgICAgICA8L3NlbGVjdD5cclxuICAgICAgICA8L2Rpdj5cclxuXHJcbiAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJzZXR0aW5ncy1yb3dcIj5cclxuICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwicm93LWluZm9cIj5cclxuICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJyb3ctbGFiZWxcIj5DYXJldCBXaWR0aDwvZGl2PlxyXG4gICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInJvdy1oaW50XCI+QWRqdXN0IHRoZSBjYXJldCB3aWR0aCAoMXB4IC0gMTBweCkuPC9kaXY+XHJcbiAgICAgICAgICA8L2Rpdj5cclxuICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwicmFuZ2Utd3JhcFwiPlxyXG4gICAgICAgICAgICA8aW5wdXRcclxuICAgICAgICAgICAgICB0eXBlPVwicmFuZ2VcIlxyXG4gICAgICAgICAgICAgIG1pbj1cIjFcIlxyXG4gICAgICAgICAgICAgIG1heD1cIjEwXCJcclxuICAgICAgICAgICAgICBzdGVwPVwiMVwiXHJcbiAgICAgICAgICAgICAgdmFsdWU9e3BhcnNlSW50KGNhcmV0V2lkdGgsIDEwKSB8fCAyfVxyXG4gICAgICAgICAgICAgIG9uQ2hhbmdlPXsoZSkgPT4ge1xyXG4gICAgICAgICAgICAgICAgY29uc3QgdmFsdWUgPSBwYXJzZUludChlLnRhcmdldC52YWx1ZSwgMTApXHJcbiAgICAgICAgICAgICAgICBpZiAoIWlzTmFOKHZhbHVlKSAmJiB2YWx1ZSA+PSAxICYmIHZhbHVlIDw9IDEwKSB7XHJcbiAgICAgICAgICAgICAgICAgIHVwZGF0ZUNhcmV0V2lkdGgodmFsdWUpXHJcbiAgICAgICAgICAgICAgICB9XHJcbiAgICAgICAgICAgICAgfX1cclxuICAgICAgICAgICAgICBhcmlhLWxhYmVsPVwiQ2FyZXQgd2lkdGggc2xpZGVyXCJcclxuICAgICAgICAgICAgLz5cclxuICAgICAgICAgICAgPHNwYW4+e3BhcnNlSW50KGNhcmV0V2lkdGgsIDEwKSB8fCAyfXB4PC9zcGFuPlxyXG4gICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgPC9kaXY+XHJcblxyXG4gICAgICAgIDxkaXYgY2xhc3NOYW1lPVwic2V0dGluZ3Mtcm93XCI+XHJcbiAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInJvdy1pbmZvXCI+XHJcbiAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwicm93LWxhYmVsXCI+Q2FyZXQgQ29sb3I8L2Rpdj5cclxuICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJyb3ctaGludFwiPkVudGVyIGhleCBjb2xvci4gTGVhdmUgZW1wdHkgZm9yIHRoZW1lIGFjY2VudC48L2Rpdj5cclxuICAgICAgICAgIDwvZGl2PlxyXG4gICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJjYXJldC1jb2xvci1jb250cm9sc1wiPlxyXG4gICAgICAgICAgICA8Q29sb3JQaWNrZXJJbnB1dFxyXG4gICAgICAgICAgICAgIGluaXRpYWxDb2xvcj17Y2FyZXRDb2xvcn1cclxuICAgICAgICAgICAgICBkZWZhdWx0Q29sb3I9XCIjZmZmZmZmXCJcclxuICAgICAgICAgICAgICBvbkNvbG9yQ2hhbmdlPXt1cGRhdGVDYXJldENvbG9yfVxyXG4gICAgICAgICAgICAgIHByZXZpZXdQcm9wZXJ0eT1cIi0tY2FyZXQtY29sb3JcIlxyXG4gICAgICAgICAgICAgIHRpdGxlPVwiQ2hvb3NlIENhcmV0IENvbG9yXCJcclxuICAgICAgICAgICAgICBhcmlhTGFiZWw9XCJDYXJldCBjb2xvciBwaWNrZXJcIlxyXG4gICAgICAgICAgICAvPlxyXG4gICAgICAgICAgICA8YnV0dG9uXHJcbiAgICAgICAgICAgICAgb25DbGljaz17KCkgPT4gdXBkYXRlQ2FyZXRDb2xvcignJyl9XHJcbiAgICAgICAgICAgICAgY2xhc3NOYW1lPVwiY2FyZXQtY29sb3ItcmVzZXRcIlxyXG4gICAgICAgICAgICAgIHRpdGxlPVwiUmVzZXQgdG8gdGhlbWUgYWNjZW50IGNvbG9yXCJcclxuICAgICAgICAgICAgICBhcmlhLWxhYmVsPVwiUmVzZXQgY2FyZXQgY29sb3IgdG8gdGhlbWUgZGVmYXVsdFwiXHJcbiAgICAgICAgICAgID5cclxuICAgICAgICAgICAgICBSZXNldFxyXG4gICAgICAgICAgICA8L2J1dHRvbj5cclxuICAgICAgICAgIDwvZGl2PlxyXG4gICAgICAgIDwvZGl2PlxyXG4gICAgICA8L3NlY3Rpb24+XHJcblxyXG4gICAgICA8c2VjdGlvbiBzdHlsZT17eyBtYXJnaW5Ub3A6ICczMnB4JyB9fT5cclxuICAgICAgICA8aDM+SW50ZXJmYWNlICYgQmVoYXZpb3I8L2gzPlxyXG5cclxuXHJcbiAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJzZXR0aW5ncy1yb3dcIj5cclxuICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwicm93LWluZm9cIj5cclxuICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJyb3ctbGFiZWxcIj5BY3RpdmUgTGluZSBMZWZ0IEJvcmRlcjwvZGl2PlxyXG4gICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInJvdy1oaW50XCI+XHJcbiAgICAgICAgICAgICAgU2hvdyBhIGNvbG9yZWQgbGVmdCBib3JkZXIgb24gdGhlIGxpbmUgd2hlcmUgdGhlIGN1cnNvciBpcyBjdXJyZW50bHkgcGxhY2VkLlxyXG4gICAgICAgICAgICA8L2Rpdj5cclxuICAgICAgICAgIDwvZGl2PlxyXG4gICAgICAgICAgPFRvZ2dsZVxyXG4gICAgICAgICAgICBjaGVja2VkPXsoc2V0dGluZ3MuY3Vyc29yICYmIHNldHRpbmdzLmN1cnNvci51c2VCb3JkZXJMZWZ0KSA/PyB0cnVlfVxyXG4gICAgICAgICAgICBvbkNoYW5nZT17KGUpID0+IHtcclxuICAgICAgICAgICAgICBjb25zdCBuZXh0ID0ge1xyXG4gICAgICAgICAgICAgICAgLi4uKHNldHRpbmdzLmN1cnNvciB8fCB7fSksXHJcbiAgICAgICAgICAgICAgICB1c2VCb3JkZXJMZWZ0OiBlLnRhcmdldC5jaGVja2VkXHJcbiAgICAgICAgICAgICAgfVxyXG4gICAgICAgICAgICAgIHVwZGF0ZVNldHRpbmcoJ2N1cnNvcicsIG5leHQpXHJcbiAgICAgICAgICAgIH19XHJcbiAgICAgICAgICAvPlxyXG4gICAgICAgIDwvZGl2PlxyXG5cclxuICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInNldHRpbmdzLXJvd1wiPlxyXG4gICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJyb3ctaW5mb1wiPlxyXG4gICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInJvdy1sYWJlbFwiPk1lY2hhbmljYWwgS2V5Ym9hcmQgU291bmQ8L2Rpdj5cclxuICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJyb3ctaGludFwiPlBsYXkgYW4gQVNNUi1zdHlsZSBtZWNoYW5pY2FsIGNsaWNrIHdoZW4gdHlwaW5nLjwvZGl2PlxyXG4gICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgICA8VG9nZ2xlXHJcbiAgICAgICAgICAgIGNoZWNrZWQ9e3NldHRpbmdzLnR5cGVTb3VuZCB8fCBmYWxzZX1cclxuICAgICAgICAgICAgb25DaGFuZ2U9eyhlKSA9PiB1cGRhdGVTZXR0aW5nKCd0eXBlU291bmQnLCBlLnRhcmdldC5jaGVja2VkKX1cclxuICAgICAgICAgIC8+XHJcbiAgICAgICAgPC9kaXY+XHJcblxyXG4gICAgICAgIHtzZXR0aW5ncy50eXBlU291bmQgJiYgKFxyXG4gICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJzZXR0aW5ncy1yb3dcIiBzdHlsZT17eyBhbmltYXRpb246ICdmYWRlSW4gMC4ycyBlYXNlLW91dCcgfX0+XHJcbiAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwicm93LWluZm9cIj5cclxuICAgICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInJvdy1sYWJlbFwiPlR5cGluZyBWb2x1bWU8L2Rpdj5cclxuICAgICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInJvdy1oaW50XCI+QWRqdXN0IGhvdyBsb3VkIHRoZSBtZWNoYW5pY2FsIGNsaWNrcyBhcmUuPC9kaXY+XHJcbiAgICAgICAgICAgIDwvZGl2PlxyXG4gICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInJhbmdlLXdyYXBcIj5cclxuICAgICAgICAgICAgICA8aW5wdXRcclxuICAgICAgICAgICAgICAgIHR5cGU9XCJyYW5nZVwiXHJcbiAgICAgICAgICAgICAgICBtaW49XCIwXCJcclxuICAgICAgICAgICAgICAgIG1heD1cIjEwMFwiXHJcbiAgICAgICAgICAgICAgICBzdGVwPVwiMVwiXHJcbiAgICAgICAgICAgICAgICB2YWx1ZT17c2V0dGluZ3MudHlwZVNvdW5kVm9sdW1lID8/IDUwfVxyXG4gICAgICAgICAgICAgICAgb25DaGFuZ2U9eyhlKSA9PiB1cGRhdGVTZXR0aW5nKCd0eXBlU291bmRWb2x1bWUnLCBwYXJzZUludChlLnRhcmdldC52YWx1ZSwgMTApKX1cclxuICAgICAgICAgICAgICAvPlxyXG4gICAgICAgICAgICAgIDxzcGFuPntzZXR0aW5ncy50eXBlU291bmRWb2x1bWUgPz8gNTB9JTwvc3Bhbj5cclxuICAgICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgICA8L2Rpdj5cclxuICAgICAgICApfVxyXG5cclxuICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInNldHRpbmdzLXJvd1wiPlxyXG4gICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJyb3ctaW5mb1wiPlxyXG4gICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInJvdy1sYWJlbFwiPkF1dG8tU2F2ZTwvZGl2PlxyXG4gICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInJvdy1oaW50XCI+QXV0b21hdGljYWxseSBzYXZlIGNoYW5nZXMgd2hpbGUgdHlwaW5nLjwvZGl2PlxyXG4gICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgICA8VG9nZ2xlXHJcbiAgICAgICAgICAgIGNoZWNrZWQ9e3NldHRpbmdzLmF1dG9TYXZlfVxyXG4gICAgICAgICAgICBvbkNoYW5nZT17KGUpID0+IHVwZGF0ZVNldHRpbmcoJ2F1dG9TYXZlJywgZS50YXJnZXQuY2hlY2tlZCl9XHJcbiAgICAgICAgICAvPlxyXG4gICAgICAgIDwvZGl2PlxyXG5cclxuICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInNldHRpbmdzLXJvd1wiPlxyXG4gICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJyb3ctaW5mb1wiPlxyXG4gICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInJvdy1sYWJlbFwiPk5vdGUgVGl0bGUgSW5wdXQ8L2Rpdj5cclxuICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJyb3ctaGludFwiPlNob3cgdGhlIGVkaXRhYmxlIHRpdGxlIGhlYWRlciBpbnNpZGUgdGhlIGVkaXRvci48L2Rpdj5cclxuICAgICAgICAgIDwvZGl2PlxyXG4gICAgICAgICAgPFRvZ2dsZVxyXG4gICAgICAgICAgICBjaGVja2VkPXtzZXR0aW5ncy5pbmxpbmVUaXRsZSAhPT0gZmFsc2V9XHJcbiAgICAgICAgICAgIG9uQ2hhbmdlPXsoZSkgPT4gdXBkYXRlU2V0dGluZygnaW5saW5lVGl0bGUnLCBlLnRhcmdldC5jaGVja2VkKX1cclxuICAgICAgICAgIC8+XHJcbiAgICAgICAgPC9kaXY+XHJcblxyXG4gICAgICAgIDxkaXYgY2xhc3NOYW1lPVwic2V0dGluZ3Mtcm93XCI+XHJcbiAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInJvdy1pbmZvXCI+XHJcbiAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwicm93LWxhYmVsXCI+RWRpdG9yIEFjdGlvbiBCdXR0b25zPC9kaXY+XHJcbiAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwicm93LWhpbnRcIj5TaG93IHF1aWNrIGFjdGlvbnMgKEFJLCBWb2ljZSwgRHJpdmUsIExvY2FsIEdyYXBoKSBpbnNpZGUgdGhlIGVkaXRvci48L2Rpdj5cclxuICAgICAgICAgIDwvZGl2PlxyXG4gICAgICAgICAgPFRvZ2dsZVxyXG4gICAgICAgICAgICBjaGVja2VkPXtzZXR0aW5ncy5pbmxpbmVNZXRhZGF0YSAhPT0gZmFsc2V9XHJcbiAgICAgICAgICAgIG9uQ2hhbmdlPXsoZSkgPT4gdXBkYXRlU2V0dGluZygnaW5saW5lTWV0YWRhdGEnLCBlLnRhcmdldC5jaGVja2VkKX1cclxuICAgICAgICAgIC8+XHJcbiAgICAgICAgPC9kaXY+XHJcbiAgICAgIDwvc2VjdGlvbj5cclxuICAgIDwvZGl2PlxyXG4gIClcclxufVxyXG5cclxuZXhwb3J0IGRlZmF1bHQgUmVhY3QubWVtbyhTZXR0aW5nTG9va0FuZEZlZWwpXHJcbiJdLCJmaWxlIjoiQjovZWxlY3Ryb24vbHVtaW5hL3NyYy9yZW5kZXJlci9zcmMvZmVhdHVyZXMvU2V0dGluZ3MvU2V0dGluZ0xvb2tBbmRGZWVsLmpzeCJ9

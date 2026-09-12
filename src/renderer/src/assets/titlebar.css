@@ -226,22 +226,23 @@
 
 .mail-unread-badge {
   position: absolute;
-  top: 4px;
-  right: 5px;
-  min-width: 15px;
-  height: 15px;
-  padding: 0 3.5px;
+  top: 5px;
+  right: 6px;
+  width: 8px;
+  min-width: 8px;
+  height: 8px;
+  padding: 0;
   border-radius: 9999px;
   background: #ef4444;
   color: #ffffff;
-  font-size: 8px;
+  font-size: 0;
   font-weight: 700;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1.5px solid var(--bg-card, #16161e);
+  border: 1px solid var(--bg-card, #16161e);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
   pointer-events: none;
   animation: badgePop 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275);

@@ -253,6 +253,11 @@ export const EmailContainer: React.FC<EmailContainerProps> = ({ isOpen, onClose 
     } catch {}
   }, [setSelectedEmailId])
 
+  const handleSelectFolder = useCallback((folder: EmailFolder) => {
+    setCurrentFolder(folder)
+    setSelectedEmailId(null)
+  }, [setCurrentFolder, setSelectedEmailId])
+
   // Handle ESC key to dismiss compose or container
   useEffect(() => {
     if (!isOpen) return
@@ -369,10 +374,10 @@ export const EmailContainer: React.FC<EmailContainerProps> = ({ isOpen, onClose 
         setIsDetailOpen(false)
       } else {
         lastDetailOpen = true
-        setIsDetailOpen(true)
         const clamped = Math.min(Math.max(rawWidth, minListW), maxListW)
         lastWidth = clamped
-        setListWidth(clamped)
+        const listPane = containerRef.current?.querySelector<HTMLElement>('.email-list-pane')
+        if (listPane) listPane.style.width = `${clamped}px`
       }
     }
 
@@ -382,6 +387,9 @@ export const EmailContainer: React.FC<EmailContainerProps> = ({ isOpen, onClose 
       document.body.classList.remove('is-global-resizing')
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
+
+      setListWidth(lastWidth)
+      setIsDetailOpen(lastDetailOpen)
 
       // Persist to settings.json and localStorage
       useSettingsStore.getState().updateSettings({
@@ -434,8 +442,10 @@ export const EmailContainer: React.FC<EmailContainerProps> = ({ isOpen, onClose 
       lastWidth = newWidth
       lastHeight = newHeight
 
-      setContainerWidth(newWidth)
-      setContainerHeight(newHeight)
+      if (containerRef.current) {
+        containerRef.current.style.width = `${newWidth}px`
+        containerRef.current.style.height = `${newHeight}px`
+      }
     }
 
     const handleMouseUp = () => {
@@ -444,6 +454,9 @@ export const EmailContainer: React.FC<EmailContainerProps> = ({ isOpen, onClose 
       document.body.classList.remove('is-global-resizing')
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
+
+      setContainerWidth(lastWidth)
+      setContainerHeight(lastHeight)
 
       const payload: Record<string, any> = {
         emailModalWidth: lastWidth,
@@ -568,10 +581,7 @@ export const EmailContainer: React.FC<EmailContainerProps> = ({ isOpen, onClose 
             {/* 1. Left Navigation Sidebar (Collapsible Curtain) */}
             <EmailSidebar
               currentFolder={currentFolder}
-              onSelectFolder={(folder) => {
-                setCurrentFolder(folder)
-                setSelectedEmailId(null)
-              }}
+              onSelectFolder={handleSelectFolder}
               userLabels={userLabels}
               onOpenCompose={() => setIsComposeOpen(true)}
               isOpen={isSidebarOpen && (!isCompact || !isDetailOpen)}

@@ -1,0 +1,326 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/features/AI/components/LuminaSessionMenu.jsx");import __vite__cjsImport0_react_jsxDevRuntime from "/@fs/B:/electron/lumina/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=f41806ed"; const Fragment = __vite__cjsImport0_react_jsxDevRuntime["Fragment"]; const jsxDEV = __vite__cjsImport0_react_jsxDevRuntime["jsxDEV"];
+var _s = $RefreshSig$();
+import __vite__cjsImport1_react from "/@fs/B:/electron/lumina/node_modules/.vite/deps/react.js?v=f41806ed"; const React = __vite__cjsImport1_react.__esModule ? __vite__cjsImport1_react.default : __vite__cjsImport1_react; const useEffect = __vite__cjsImport1_react["useEffect"]; const useRef = __vite__cjsImport1_react["useRef"];
+import {
+  Pencil,
+  Pin,
+  PinOff,
+  Copy,
+  Download,
+  Eraser,
+  Trash2
+} from "/@fs/B:/electron/lumina/node_modules/.vite/deps/lucide-react.js?v=f41806ed";
+export const LuminaSessionMenu = ({
+  session,
+  position,
+  onClose,
+  onRename,
+  onTogglePin,
+  onDuplicate,
+  onClear,
+  onDelete
+}) => {
+  _s();
+  const menuRef = useRef(null);
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        onClose();
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("mousedown", handleOutsideClick);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("mousedown", handleOutsideClick);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose]);
+  if (!session || !position) return null;
+  const menuWidth = 190;
+  const menuHeight = 220;
+  const x = Math.min(position.x, window.innerWidth - menuWidth - 10);
+  const y = Math.min(position.y, window.innerHeight - menuHeight - 10);
+  const handleExport = (e) => {
+    e.stopPropagation();
+    const messages = session.messages || [];
+    if (messages.length === 0) {
+      onClose();
+      return;
+    }
+    const markdown = messages.map((m) => `### ${m.role === "user" ? "User" : "Lumina AI"}
+
+${m.content || ""}`).join("\n\n---\n\n");
+    navigator.clipboard.writeText(`# ${session.title || "Chat"}
+
+${markdown}`);
+    onClose();
+  };
+  return /* @__PURE__ */ jsxDEV(
+    "div",
+    {
+      ref: menuRef,
+      className: "lumina-session-menu",
+      style: {
+        position: "fixed",
+        top: `${y}px`,
+        left: `${x}px`,
+        zIndex: 100010
+      },
+      onClick: (e) => e.stopPropagation(),
+      children: [
+        /* @__PURE__ */ jsxDEV("div", { className: "lumina-session-menu-header", children: /* @__PURE__ */ jsxDEV("span", { className: "lumina-session-menu-title", title: session.title, children: session.title || "Chat" }, void 0, false, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+          lineNumber: 83,
+          columnNumber: 9
+        }, this) }, void 0, false, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+          lineNumber: 82,
+          columnNumber: 7
+        }, this),
+        /* @__PURE__ */ jsxDEV("div", { className: "lumina-session-menu-divider" }, void 0, false, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+          lineNumber: 88,
+          columnNumber: 7
+        }, this),
+        /* @__PURE__ */ jsxDEV(
+          "button",
+          {
+            className: "lumina-session-menu-item",
+            onClick: (e) => {
+              e.stopPropagation();
+              onRename();
+              onClose();
+            },
+            children: [
+              /* @__PURE__ */ jsxDEV(Pencil, { size: 13 }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+                lineNumber: 98,
+                columnNumber: 9
+              }, this),
+              /* @__PURE__ */ jsxDEV("span", { children: "Rename" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+                lineNumber: 99,
+                columnNumber: 9
+              }, this)
+            ]
+          },
+          void 0,
+          true,
+          {
+            fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+            lineNumber: 90,
+            columnNumber: 7
+          },
+          this
+        ),
+        /* @__PURE__ */ jsxDEV(
+          "button",
+          {
+            className: "lumina-session-menu-item",
+            onClick: (e) => {
+              e.stopPropagation();
+              onTogglePin();
+              onClose();
+            },
+            children: session.isPinned ? /* @__PURE__ */ jsxDEV(Fragment, { children: [
+              /* @__PURE__ */ jsxDEV(PinOff, { size: 13 }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+                lineNumber: 112,
+                columnNumber: 13
+              }, this),
+              /* @__PURE__ */ jsxDEV("span", { children: "Unpin" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+                lineNumber: 113,
+                columnNumber: 13
+              }, this)
+            ] }, void 0, true, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+              lineNumber: 111,
+              columnNumber: 9
+            }, this) : /* @__PURE__ */ jsxDEV(Fragment, { children: [
+              /* @__PURE__ */ jsxDEV(Pin, { size: 13 }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+                lineNumber: 117,
+                columnNumber: 13
+              }, this),
+              /* @__PURE__ */ jsxDEV("span", { children: "Pin to Top" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+                lineNumber: 118,
+                columnNumber: 13
+              }, this)
+            ] }, void 0, true, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+              lineNumber: 116,
+              columnNumber: 9
+            }, this)
+          },
+          void 0,
+          false,
+          {
+            fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+            lineNumber: 102,
+            columnNumber: 7
+          },
+          this
+        ),
+        /* @__PURE__ */ jsxDEV(
+          "button",
+          {
+            className: "lumina-session-menu-item",
+            onClick: (e) => {
+              e.stopPropagation();
+              onDuplicate();
+              onClose();
+            },
+            children: [
+              /* @__PURE__ */ jsxDEV(Copy, { size: 13 }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+                lineNumber: 131,
+                columnNumber: 9
+              }, this),
+              /* @__PURE__ */ jsxDEV("span", { children: "Duplicate" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+                lineNumber: 132,
+                columnNumber: 9
+              }, this)
+            ]
+          },
+          void 0,
+          true,
+          {
+            fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+            lineNumber: 123,
+            columnNumber: 7
+          },
+          this
+        ),
+        /* @__PURE__ */ jsxDEV("button", { className: "lumina-session-menu-item", onClick: handleExport, children: [
+          /* @__PURE__ */ jsxDEV(Download, { size: 13 }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+            lineNumber: 136,
+            columnNumber: 9
+          }, this),
+          /* @__PURE__ */ jsxDEV("span", { children: "Copy as Markdown" }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+            lineNumber: 137,
+            columnNumber: 9
+          }, this)
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+          lineNumber: 135,
+          columnNumber: 7
+        }, this),
+        /* @__PURE__ */ jsxDEV("div", { className: "lumina-session-menu-divider" }, void 0, false, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+          lineNumber: 140,
+          columnNumber: 7
+        }, this),
+        /* @__PURE__ */ jsxDEV(
+          "button",
+          {
+            className: "lumina-session-menu-item",
+            onClick: (e) => {
+              e.stopPropagation();
+              onClear();
+              onClose();
+            },
+            children: [
+              /* @__PURE__ */ jsxDEV(Eraser, { size: 13 }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+                lineNumber: 150,
+                columnNumber: 9
+              }, this),
+              /* @__PURE__ */ jsxDEV("span", { children: "Clear Messages" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+                lineNumber: 151,
+                columnNumber: 9
+              }, this)
+            ]
+          },
+          void 0,
+          true,
+          {
+            fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+            lineNumber: 142,
+            columnNumber: 7
+          },
+          this
+        ),
+        /* @__PURE__ */ jsxDEV(
+          "button",
+          {
+            className: "lumina-session-menu-item danger",
+            onClick: (e) => {
+              e.stopPropagation();
+              onDelete();
+              onClose();
+            },
+            children: [
+              /* @__PURE__ */ jsxDEV(Trash2, { size: 13 }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+                lineNumber: 162,
+                columnNumber: 9
+              }, this),
+              /* @__PURE__ */ jsxDEV("span", { children: "Delete Chat" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+                lineNumber: 163,
+                columnNumber: 9
+              }, this)
+            ]
+          },
+          void 0,
+          true,
+          {
+            fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+            lineNumber: 154,
+            columnNumber: 7
+          },
+          this
+        )
+      ]
+    },
+    void 0,
+    true,
+    {
+      fileName: "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx",
+      lineNumber: 71,
+      columnNumber: 5
+    },
+    this
+  );
+};
+_s(LuminaSessionMenu, "lbfKxozlpk19p2tUpYavRIkbEU0=");
+_c = LuminaSessionMenu;
+export default LuminaSessionMenu;
+var _c;
+$RefreshReg$(_c, "LuminaSessionMenu");
+import * as RefreshRuntime from "/@react-refresh";
+const inWebWorker = typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope;
+if (import.meta.hot && !inWebWorker) {
+  if (!window.$RefreshReg$) {
+    throw new Error(
+      "@vitejs/plugin-react can't detect preamble. Something is wrong."
+    );
+  }
+  RefreshRuntime.__hmr_import(import.meta.url).then((currentExports) => {
+    RefreshRuntime.registerExportsForReactRefresh("B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx", currentExports);
+    import.meta.hot.accept((nextExports) => {
+      if (!nextExports) return;
+      const invalidateMessage = RefreshRuntime.validateRefreshBoundaryAndEnqueueUpdate("B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx", currentExports, nextExports);
+      if (invalidateMessage) import.meta.hot.invalidate(invalidateMessage);
+    });
+  });
+}
+function $RefreshReg$(type, id) {
+  return RefreshRuntime.register(type, "B:/electron/lumina/src/renderer/src/features/AI/components/LuminaSessionMenu.jsx " + id);
+}
+function $RefreshSig$() {
+  return RefreshRuntime.createSignatureFunctionForTransform();
+}
+
+//# sourceMappingURL=data:application/json;base64,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QUFBO0FBQUE7QUFBQTtBQUFBLHFCQUFpQjtBQUFBLGNBQ2pCLHVCQUFDLFVBQUssMkJBQU47QUFBQTtBQUFBO0FBQUE7QUFBQSxxQkFBaUI7QUFBQTtBQUFBO0FBQUEsVUFUbkI7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBLFFBVUE7QUFBQTtBQUFBO0FBQUEsSUE3RkY7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBLEVBOEZBO0FBRUo7QUFBQ00sR0F4SllULG1CQUFpQjtBQUFBK0MsS0FBakIvQztBQTBKYixlQUFlQTtBQUFpQixJQUFBK0M7QUFBQUMsYUFBQUQsSUFBQSIsIm5hbWVzIjpbIlJlYWN0IiwidXNlRWZmZWN0IiwidXNlUmVmIiwiUGVuY2lsIiwiUGluIiwiUGluT2ZmIiwiQ29weSIsIkRvd25sb2FkIiwiRXJhc2VyIiwiVHJhc2gyIiwiTHVtaW5hU2Vzc2lvbk1lbnUiLCJzZXNzaW9uIiwicG9zaXRpb24iLCJvbkNsb3NlIiwib25SZW5hbWUiLCJvblRvZ2dsZVBpbiIsIm9uRHVwbGljYXRlIiwib25DbGVhciIsIm9uRGVsZXRlIiwiX3MiLCJtZW51UmVmIiwiaGFuZGxlT3V0c2lkZUNsaWNrIiwiZSIsImN1cnJlbnQiLCJjb250YWlucyIsInRhcmdldCIsImhhbmRsZUtleURvd24iLCJrZXkiLCJ3aW5kb3ciLCJhZGRFdmVudExpc3RlbmVyIiwicmVtb3ZlRXZlbnRMaXN0ZW5lciIsIm1lbnVXaWR0aCIsIm1lbnVIZWlnaHQiLCJ4IiwiTWF0aCIsIm1pbiIsImlubmVyV2lkdGgiLCJ5IiwiaW5uZXJIZWlnaHQiLCJoYW5kbGVFeHBvcnQiLCJzdG9wUHJvcGFnYXRpb24iLCJtZXNzYWdlcyIsImxlbmd0aCIsIm1hcmtkb3duIiwibWFwIiwibSIsInJvbGUiLCJjb250ZW50Iiwiam9pbiIsIm5hdmlnYXRvciIsImNsaXBib2FyZCIsIndyaXRlVGV4dCIsInRpdGxlIiwidG9wIiwibGVmdCIsInpJbmRleCIsImlzUGlubmVkIiwiX2MiLCIkUmVmcmVzaFJlZyQiXSwiaWdub3JlTGlzdCI6W10sInNvdXJjZXMiOlsiTHVtaW5hU2Vzc2lvbk1lbnUuanN4Il0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCBSZWFjdCwgeyB1c2VFZmZlY3QsIHVzZVJlZiB9IGZyb20gJ3JlYWN0J1xuaW1wb3J0IHtcbiAgUGVuY2lsLFxuICBQaW4sXG4gIFBpbk9mZixcbiAgQ29weSxcbiAgRG93bmxvYWQsXG4gIEVyYXNlcixcbiAgVHJhc2gyXG59IGZyb20gJ2x1Y2lkZS1yZWFjdCdcblxuLyoqXG4gKiBMdW1pbmFTZXNzaW9uTWVudSAtIENvbnRleHQgbWVudSBvbiByaWdodC1jbGlja2luZyBhIGNoYXQgc2Vzc2lvblxuICovXG5leHBvcnQgY29uc3QgTHVtaW5hU2Vzc2lvbk1lbnUgPSAoe1xuICBzZXNzaW9uLFxuICBwb3NpdGlvbixcbiAgb25DbG9zZSxcbiAgb25SZW5hbWUsXG4gIG9uVG9nZ2xlUGluLFxuICBvbkR1cGxpY2F0ZSxcbiAgb25DbGVhcixcbiAgb25EZWxldGVcbn0pID0+IHtcbiAgY29uc3QgbWVudVJlZiA9IHVzZVJlZihudWxsKVxuXG4gIHVzZUVmZmVjdCgoKSA9PiB7XG4gICAgY29uc3QgaGFuZGxlT3V0c2lkZUNsaWNrID0gKGUpID0+IHtcbiAgICAgIGlmIChtZW51UmVmLmN1cnJlbnQgJiYgIW1lbnVSZWYuY3VycmVudC5jb250YWlucyhlLnRhcmdldCkpIHtcbiAgICAgICAgb25DbG9zZSgpXG4gICAgICB9XG4gICAgfVxuXG4gICAgY29uc3QgaGFuZGxlS2V5RG93biA9IChlKSA9PiB7XG4gICAgICBpZiAoZS5rZXkgPT09ICdFc2NhcGUnKSB7XG4gICAgICAgIG9uQ2xvc2UoKVxuICAgICAgfVxuICAgIH1cblxuICAgIHdpbmRvdy5hZGRFdmVudExpc3RlbmVyKCdtb3VzZWRvd24nLCBoYW5kbGVPdXRzaWRlQ2xpY2spXG4gICAgd2luZG93LmFkZEV2ZW50TGlzdGVuZXIoJ2tleWRvd24nLCBoYW5kbGVLZXlEb3duKVxuICAgIHJldHVybiAoKSA9PiB7XG4gICAgICB3aW5kb3cucmVtb3ZlRXZlbnRMaXN0ZW5lcignbW91c2Vkb3duJywgaGFuZGxlT3V0c2lkZUNsaWNrKVxuICAgICAgd2luZG93LnJlbW92ZUV2ZW50TGlzdGVuZXIoJ2tleWRvd24nLCBoYW5kbGVLZXlEb3duKVxuICAgIH1cbiAgfSwgW29uQ2xvc2VdKVxuXG4gIGlmICghc2Vzc2lvbiB8fCAhcG9zaXRpb24pIHJldHVybiBudWxsXG5cbiAgLy8gRW5zdXJlIG1lbnUgc3RheXMgd2l0aGluIHNjcmVlbiB2aWV3cG9ydFxuICBjb25zdCBtZW51V2lkdGggPSAxOTBcbiAgY29uc3QgbWVudUhlaWdodCA9IDIyMFxuICBjb25zdCB4ID0gTWF0aC5taW4ocG9zaXRpb24ueCwgd2luZG93LmlubmVyV2lkdGggLSBtZW51V2lkdGggLSAxMClcbiAgY29uc3QgeSA9IE1hdGgubWluKHBvc2l0aW9uLnksIHdpbmRvdy5pbm5lckhlaWdodCAtIG1lbnVIZWlnaHQgLSAxMClcblxuICBjb25zdCBoYW5kbGVFeHBvcnQgPSAoZSkgPT4ge1xuICAgIGUuc3RvcFByb3BhZ2F0aW9uKClcbiAgICBjb25zdCBtZXNzYWdlcyA9IHNlc3Npb24ubWVzc2FnZXMgfHwgW11cbiAgICBpZiAobWVzc2FnZXMubGVuZ3RoID09PSAwKSB7XG4gICAgICBvbkNsb3NlKClcbiAgICAgIHJldHVyblxuICAgIH1cbiAgICBjb25zdCBtYXJrZG93biA9IG1lc3NhZ2VzXG4gICAgICAubWFwKChtKSA9PiBgIyMjICR7bS5yb2xlID09PSAndXNlcicgPyAnVXNlcicgOiAnTHVtaW5hIEFJJ31cXG5cXG4ke20uY29udGVudCB8fCAnJ31gKVxuICAgICAgLmpvaW4oJ1xcblxcbi0tLVxcblxcbicpXG4gICAgbmF2aWdhdG9yLmNsaXBib2FyZC53cml0ZVRleHQoYCMgJHtzZXNzaW9uLnRpdGxlIHx8ICdDaGF0J31cXG5cXG4ke21hcmtkb3dufWApXG4gICAgb25DbG9zZSgpXG4gIH1cblxuICByZXR1cm4gKFxuICAgIDxkaXZcbiAgICAgIHJlZj17bWVudVJlZn1cbiAgICAgIGNsYXNzTmFtZT1cImx1bWluYS1zZXNzaW9uLW1lbnVcIlxuICAgICAgc3R5bGU9e3tcbiAgICAgICAgcG9zaXRpb246ICdmaXhlZCcsXG4gICAgICAgIHRvcDogYCR7eX1weGAsXG4gICAgICAgIGxlZnQ6IGAke3h9cHhgLFxuICAgICAgICB6SW5kZXg6IDEwMDAxMFxuICAgICAgfX1cbiAgICAgIG9uQ2xpY2s9eyhlKSA9PiBlLnN0b3BQcm9wYWdhdGlvbigpfVxuICAgID5cbiAgICAgIDxkaXYgY2xhc3NOYW1lPVwibHVtaW5hLXNlc3Npb24tbWVudS1oZWFkZXJcIj5cbiAgICAgICAgPHNwYW4gY2xhc3NOYW1lPVwibHVtaW5hLXNlc3Npb24tbWVudS10aXRsZVwiIHRpdGxlPXtzZXNzaW9uLnRpdGxlfT5cbiAgICAgICAgICB7c2Vzc2lvbi50aXRsZSB8fCAnQ2hhdCd9XG4gICAgICAgIDwvc3Bhbj5cbiAgICAgIDwvZGl2PlxuXG4gICAgICA8ZGl2IGNsYXNzTmFtZT1cImx1bWluYS1zZXNzaW9uLW1lbnUtZGl2aWRlclwiIC8+XG5cbiAgICAgIDxidXR0b25cbiAgICAgICAgY2xhc3NOYW1lPVwibHVtaW5hLXNlc3Npb24tbWVudS1pdGVtXCJcbiAgICAgICAgb25DbGljaz17KGUpID0+IHtcbiAgICAgICAgICBlLnN0b3BQcm9wYWdhdGlvbigpXG4gICAgICAgICAgb25SZW5hbWUoKVxuICAgICAgICAgIG9uQ2xvc2UoKVxuICAgICAgICB9fVxuICAgICAgPlxuICAgICAgICA8UGVuY2lsIHNpemU9ezEzfSAvPlxuICAgICAgICA8c3Bhbj5SZW5hbWU8L3NwYW4+XG4gICAgICA8L2J1dHRvbj5cblxuICAgICAgPGJ1dHRvblxuICAgICAgICBjbGFzc05hbWU9XCJsdW1pbmEtc2Vzc2lvbi1tZW51LWl0ZW1cIlxuICAgICAgICBvbkNsaWNrPXsoZSkgPT4ge1xuICAgICAgICAgIGUuc3RvcFByb3BhZ2F0aW9uKClcbiAgICAgICAgICBvblRvZ2dsZVBpbigpXG4gICAgICAgICAgb25DbG9zZSgpXG4gICAgICAgIH19XG4gICAgICA+XG4gICAgICAgIHtzZXNzaW9uLmlzUGlubmVkID8gKFxuICAgICAgICAgIDw+XG4gICAgICAgICAgICA8UGluT2ZmIHNpemU9ezEzfSAvPlxuICAgICAgICAgICAgPHNwYW4+VW5waW48L3NwYW4+XG4gICAgICAgICAgPC8+XG4gICAgICAgICkgOiAoXG4gICAgICAgICAgPD5cbiAgICAgICAgICAgIDxQaW4gc2l6ZT17MTN9IC8+XG4gICAgICAgICAgICA8c3Bhbj5QaW4gdG8gVG9wPC9zcGFuPlxuICAgICAgICAgIDwvPlxuICAgICAgICApfVxuICAgICAgPC9idXR0b24+XG5cbiAgICAgIDxidXR0b25cbiAgICAgICAgY2xhc3NOYW1lPVwibHVtaW5hLXNlc3Npb24tbWVudS1pdGVtXCJcbiAgICAgICAgb25DbGljaz17KGUpID0+IHtcbiAgICAgICAgICBlLnN0b3BQcm9wYWdhdGlvbigpXG4gICAgICAgICAgb25EdXBsaWNhdGUoKVxuICAgICAgICAgIG9uQ2xvc2UoKVxuICAgICAgICB9fVxuICAgICAgPlxuICAgICAgICA8Q29weSBzaXplPXsxM30gLz5cbiAgICAgICAgPHNwYW4+RHVwbGljYXRlPC9zcGFuPlxuICAgICAgPC9idXR0b24+XG5cbiAgICAgIDxidXR0b24gY2xhc3NOYW1lPVwibHVtaW5hLXNlc3Npb24tbWVudS1pdGVtXCIgb25DbGljaz17aGFuZGxlRXhwb3J0fT5cbiAgICAgICAgPERvd25sb2FkIHNpemU9ezEzfSAvPlxuICAgICAgICA8c3Bhbj5Db3B5IGFzIE1hcmtkb3duPC9zcGFuPlxuICAgICAgPC9idXR0b24+XG5cbiAgICAgIDxkaXYgY2xhc3NOYW1lPVwibHVtaW5hLXNlc3Npb24tbWVudS1kaXZpZGVyXCIgLz5cblxuICAgICAgPGJ1dHRvblxuICAgICAgICBjbGFzc05hbWU9XCJsdW1pbmEtc2Vzc2lvbi1tZW51LWl0ZW1cIlxuICAgICAgICBvbkNsaWNrPXsoZSkgPT4ge1xuICAgICAgICAgIGUuc3RvcFByb3BhZ2F0aW9uKClcbiAgICAgICAgICBvbkNsZWFyKClcbiAgICAgICAgICBvbkNsb3NlKClcbiAgICAgICAgfX1cbiAgICAgID5cbiAgICAgICAgPEVyYXNlciBzaXplPXsxM30gLz5cbiAgICAgICAgPHNwYW4+Q2xlYXIgTWVzc2FnZXM8L3NwYW4+XG4gICAgICA8L2J1dHRvbj5cblxuICAgICAgPGJ1dHRvblxuICAgICAgICBjbGFzc05hbWU9XCJsdW1pbmEtc2Vzc2lvbi1tZW51LWl0ZW0gZGFuZ2VyXCJcbiAgICAgICAgb25DbGljaz17KGUpID0+IHtcbiAgICAgICAgICBlLnN0b3BQcm9wYWdhdGlvbigpXG4gICAgICAgICAgb25EZWxldGUoKVxuICAgICAgICAgIG9uQ2xvc2UoKVxuICAgICAgICB9fVxuICAgICAgPlxuICAgICAgICA8VHJhc2gyIHNpemU9ezEzfSAvPlxuICAgICAgICA8c3Bhbj5EZWxldGUgQ2hhdDwvc3Bhbj5cbiAgICAgIDwvYnV0dG9uPlxuICAgIDwvZGl2PlxuICApXG59XG5cbmV4cG9ydCBkZWZhdWx0IEx1bWluYVNlc3Npb25NZW51XG4iXSwiZmlsZSI6IkI6L2VsZWN0cm9uL2x1bWluYS9zcmMvcmVuZGVyZXIvc3JjL2ZlYXR1cmVzL0FJL2NvbXBvbmVudHMvTHVtaW5hU2Vzc2lvbk1lbnUuanN4In0=

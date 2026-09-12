@@ -1,0 +1,1040 @@
+import {
+  LanguageDescription,
+  LanguageSupport,
+  StreamLanguage
+} from "/@fs/B:/electron/lumina/node_modules/.vite/deps/chunk-KSGG2BQ5.js?v=f41806ed";
+import "/@fs/B:/electron/lumina/node_modules/.vite/deps/chunk-PS4G4GFP.js?v=f41806ed";
+import "/@fs/B:/electron/lumina/node_modules/.vite/deps/chunk-A7FZOK5T.js?v=f41806ed";
+import "/@fs/B:/electron/lumina/node_modules/.vite/deps/chunk-S7VNRGB4.js?v=f41806ed";
+import "/@fs/B:/electron/lumina/node_modules/.vite/deps/chunk-V4OQ3NZ2.js?v=f41806ed";
+
+// node_modules/@codemirror/language-data/dist/index.js
+function legacy(parser) {
+  return new LanguageSupport(StreamLanguage.define(parser));
+}
+function sql(dialectName) {
+  return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dist-CVLMAJQE.js?v=f41806ed").then((m) => m.sql({ dialect: m[dialectName] }));
+}
+var languages = [
+  // New-style language modes
+  LanguageDescription.of({
+    name: "C",
+    extensions: ["c", "h", "ino"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dist-M7754CRQ.js?v=f41806ed").then((m) => m.cpp());
+    }
+  }),
+  LanguageDescription.of({
+    name: "C++",
+    alias: ["cpp"],
+    extensions: ["cpp", "c++", "cc", "cxx", "hpp", "h++", "hh", "hxx"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dist-M7754CRQ.js?v=f41806ed").then((m) => m.cpp());
+    }
+  }),
+  LanguageDescription.of({
+    name: "CQL",
+    alias: ["cassandra"],
+    extensions: ["cql"],
+    load() {
+      return sql("Cassandra");
+    }
+  }),
+  LanguageDescription.of({
+    name: "CSS",
+    extensions: ["css"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dist-IZTKAXNL.js?v=f41806ed").then((m) => m.css());
+    }
+  }),
+  LanguageDescription.of({
+    name: "Go",
+    extensions: ["go"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dist-4YC6VOA2.js?v=f41806ed").then((m) => m.go());
+    }
+  }),
+  LanguageDescription.of({
+    name: "HTML",
+    alias: ["xhtml"],
+    extensions: ["html", "htm", "handlebars", "hbs"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dist-AKOCHVDL.js?v=f41806ed").then((m) => m.html());
+    }
+  }),
+  LanguageDescription.of({
+    name: "Java",
+    extensions: ["java"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dist-ADP7O27E.js?v=f41806ed").then((m) => m.java());
+    }
+  }),
+  LanguageDescription.of({
+    name: "JavaScript",
+    alias: ["ecmascript", "js", "node"],
+    extensions: ["js", "mjs", "cjs"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dist-POREKSWB.js?v=f41806ed").then((m) => m.javascript());
+    }
+  }),
+  LanguageDescription.of({
+    name: "Jinja",
+    extensions: ["j2", "jinja", "jinja2"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dist-JA3IE7O3.js?v=f41806ed").then((m) => m.jinja());
+    }
+  }),
+  LanguageDescription.of({
+    name: "JSON",
+    alias: ["json5"],
+    extensions: ["json", "map"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dist-QD6NH3ZV.js?v=f41806ed").then((m) => m.json());
+    }
+  }),
+  LanguageDescription.of({
+    name: "JSX",
+    extensions: ["jsx"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dist-POREKSWB.js?v=f41806ed").then((m) => m.javascript({ jsx: true }));
+    }
+  }),
+  LanguageDescription.of({
+    name: "LESS",
+    extensions: ["less"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dist-XAGP6KH6.js?v=f41806ed").then((m) => m.less());
+    }
+  }),
+  LanguageDescription.of({
+    name: "Liquid",
+    extensions: ["liquid"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dist-MX7FBKMB.js?v=f41806ed").then((m) => m.liquid());
+    }
+  }),
+  LanguageDescription.of({
+    name: "MariaDB SQL",
+    load() {
+      return sql("MariaSQL");
+    }
+  }),
+  LanguageDescription.of({
+    name: "Markdown",
+    extensions: ["md", "markdown", "mkd"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/@codemirror_lang-markdown.js?v=f41806ed").then((m) => m.markdown());
+    }
+  }),
+  LanguageDescription.of({
+    name: "MS SQL",
+    load() {
+      return sql("MSSQL");
+    }
+  }),
+  LanguageDescription.of({
+    name: "MySQL",
+    load() {
+      return sql("MySQL");
+    }
+  }),
+  LanguageDescription.of({
+    name: "PHP",
+    extensions: ["php", "php3", "php4", "php5", "php7", "phtml"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dist-SBBHZFE5.js?v=f41806ed").then((m) => m.php());
+    }
+  }),
+  LanguageDescription.of({
+    name: "PLSQL",
+    extensions: ["pls"],
+    load() {
+      return sql("PLSQL");
+    }
+  }),
+  LanguageDescription.of({
+    name: "PostgreSQL",
+    load() {
+      return sql("PostgreSQL");
+    }
+  }),
+  LanguageDescription.of({
+    name: "Python",
+    extensions: ["BUILD", "bzl", "py", "pyw"],
+    filename: /^(BUCK|BUILD)$/,
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dist-FKOJH2T3.js?v=f41806ed").then((m) => m.python());
+    }
+  }),
+  LanguageDescription.of({
+    name: "Rust",
+    extensions: ["rs"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dist-J7UF3YKM.js?v=f41806ed").then((m) => m.rust());
+    }
+  }),
+  LanguageDescription.of({
+    name: "Sass",
+    extensions: ["sass"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dist-G6NZMXQU.js?v=f41806ed").then((m) => m.sass({ indented: true }));
+    }
+  }),
+  LanguageDescription.of({
+    name: "SCSS",
+    extensions: ["scss"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dist-G6NZMXQU.js?v=f41806ed").then((m) => m.sass());
+    }
+  }),
+  LanguageDescription.of({
+    name: "SQL",
+    extensions: ["sql"],
+    load() {
+      return sql("StandardSQL");
+    }
+  }),
+  LanguageDescription.of({
+    name: "SQLite",
+    load() {
+      return sql("SQLite");
+    }
+  }),
+  LanguageDescription.of({
+    name: "TSX",
+    extensions: ["tsx"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dist-POREKSWB.js?v=f41806ed").then((m) => m.javascript({ jsx: true, typescript: true }));
+    }
+  }),
+  LanguageDescription.of({
+    name: "TypeScript",
+    alias: ["ts"],
+    extensions: ["ts", "mts", "cts"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dist-POREKSWB.js?v=f41806ed").then((m) => m.javascript({ typescript: true }));
+    }
+  }),
+  LanguageDescription.of({
+    name: "WebAssembly",
+    extensions: ["wat", "wast"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dist-CDJ2OHVB.js?v=f41806ed").then((m) => m.wast());
+    }
+  }),
+  LanguageDescription.of({
+    name: "XML",
+    alias: ["rss", "wsdl", "xsd"],
+    extensions: ["xml", "xsl", "xsd", "svg"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dist-SP5C7TS5.js?v=f41806ed").then((m) => m.xml());
+    }
+  }),
+  LanguageDescription.of({
+    name: "YAML",
+    alias: ["yml"],
+    extensions: ["yaml", "yml"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dist-WNYM46WF.js?v=f41806ed").then((m) => m.yaml());
+    }
+  }),
+  // Legacy modes ported from CodeMirror 5
+  LanguageDescription.of({
+    name: "APL",
+    extensions: ["dyalog", "apl"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/apl-I2QVXVB5.js?v=f41806ed").then((m) => legacy(m.apl));
+    }
+  }),
+  LanguageDescription.of({
+    name: "PGP",
+    alias: ["asciiarmor"],
+    extensions: ["asc", "pgp", "sig"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/asciiarmor-ULHYA6KM.js?v=f41806ed").then((m) => legacy(m.asciiArmor));
+    }
+  }),
+  LanguageDescription.of({
+    name: "ASN.1",
+    extensions: ["asn", "asn1"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/asn1-DAHPVMGZ.js?v=f41806ed").then((m) => legacy(m.asn1({})));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Asterisk",
+    filename: /^extensions\.conf$/i,
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/asterisk-RXKS2CE7.js?v=f41806ed").then((m) => legacy(m.asterisk));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Brainfuck",
+    extensions: ["b", "bf"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/brainfuck-XIRVJLV6.js?v=f41806ed").then((m) => legacy(m.brainfuck));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Cobol",
+    extensions: ["cob", "cpy"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/cobol-EQKCWZF3.js?v=f41806ed").then((m) => legacy(m.cobol));
+    }
+  }),
+  LanguageDescription.of({
+    name: "C#",
+    alias: ["csharp", "cs"],
+    extensions: ["cs"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/clike-PJKSPSFG.js?v=f41806ed").then((m) => legacy(m.csharp));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Clojure",
+    extensions: ["clj", "cljc", "cljx"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/clojure-2PLQGUZA.js?v=f41806ed").then((m) => legacy(m.clojure));
+    }
+  }),
+  LanguageDescription.of({
+    name: "ClojureScript",
+    extensions: ["cljs"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/clojure-2PLQGUZA.js?v=f41806ed").then((m) => legacy(m.clojure));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Closure Stylesheets (GSS)",
+    extensions: ["gss"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/css-AR3FFJ2T.js?v=f41806ed").then((m) => legacy(m.gss));
+    }
+  }),
+  LanguageDescription.of({
+    name: "CMake",
+    extensions: ["cmake", "cmake.in"],
+    filename: /^CMakeLists\.txt$/,
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/cmake-XKHVOXOR.js?v=f41806ed").then((m) => legacy(m.cmake));
+    }
+  }),
+  LanguageDescription.of({
+    name: "CoffeeScript",
+    alias: ["coffee", "coffee-script"],
+    extensions: ["coffee"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/coffeescript-GWUYU5WM.js?v=f41806ed").then((m) => legacy(m.coffeeScript));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Common Lisp",
+    alias: ["lisp"],
+    extensions: ["cl", "lisp", "el"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/commonlisp-WF4BVFLS.js?v=f41806ed").then((m) => legacy(m.commonLisp));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Cypher",
+    extensions: ["cyp", "cypher"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/cypher-T53KVEHO.js?v=f41806ed").then((m) => legacy(m.cypher));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Cython",
+    extensions: ["pyx", "pxd", "pxi"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/python-S75ZEJIF.js?v=f41806ed").then((m) => legacy(m.cython));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Crystal",
+    extensions: ["cr"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/crystal-GMC5RMOM.js?v=f41806ed").then((m) => legacy(m.crystal));
+    }
+  }),
+  LanguageDescription.of({
+    name: "D",
+    extensions: ["d"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/d-YQ7MMPNP.js?v=f41806ed").then((m) => legacy(m.d));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Dart",
+    extensions: ["dart"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/clike-PJKSPSFG.js?v=f41806ed").then((m) => legacy(m.dart));
+    }
+  }),
+  LanguageDescription.of({
+    name: "diff",
+    extensions: ["diff", "patch"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/diff-JP75XCR6.js?v=f41806ed").then((m) => legacy(m.diff));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Dockerfile",
+    filename: /^Dockerfile$/,
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dockerfile-2NDY4MCZ.js?v=f41806ed").then((m) => legacy(m.dockerFile));
+    }
+  }),
+  LanguageDescription.of({
+    name: "DTD",
+    extensions: ["dtd"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dtd-NBY5QMDB.js?v=f41806ed").then((m) => legacy(m.dtd));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Dylan",
+    extensions: ["dylan", "dyl", "intr"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dylan-D3KBSJLK.js?v=f41806ed").then((m) => legacy(m.dylan));
+    }
+  }),
+  LanguageDescription.of({
+    name: "EBNF",
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/ebnf-I6LWXIBN.js?v=f41806ed").then((m) => legacy(m.ebnf));
+    }
+  }),
+  LanguageDescription.of({
+    name: "ECL",
+    extensions: ["ecl"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/ecl-7VBKSSOL.js?v=f41806ed").then((m) => legacy(m.ecl));
+    }
+  }),
+  LanguageDescription.of({
+    name: "edn",
+    extensions: ["edn"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/clojure-2PLQGUZA.js?v=f41806ed").then((m) => legacy(m.clojure));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Eiffel",
+    extensions: ["e"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/eiffel-KPGSPJH3.js?v=f41806ed").then((m) => legacy(m.eiffel));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Elm",
+    extensions: ["elm"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/elm-SOV3PYXP.js?v=f41806ed").then((m) => legacy(m.elm));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Erlang",
+    extensions: ["erl"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/erlang-XIGBSKDW.js?v=f41806ed").then((m) => legacy(m.erlang));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Esper",
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/sql-NZFOSC5S.js?v=f41806ed").then((m) => legacy(m.esper));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Factor",
+    extensions: ["factor"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/factor-CKDHK2X2.js?v=f41806ed").then((m) => legacy(m.factor));
+    }
+  }),
+  LanguageDescription.of({
+    name: "FCL",
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/fcl-3OP2FSHE.js?v=f41806ed").then((m) => legacy(m.fcl));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Forth",
+    extensions: ["forth", "fth", "4th"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/forth-LEA52XVA.js?v=f41806ed").then((m) => legacy(m.forth));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Fortran",
+    extensions: ["f", "for", "f77", "f90", "f95"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/fortran-DA3U426F.js?v=f41806ed").then((m) => legacy(m.fortran));
+    }
+  }),
+  LanguageDescription.of({
+    name: "F#",
+    alias: ["fsharp"],
+    extensions: ["fs"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/mllike-UHX2XOV3.js?v=f41806ed").then((m) => legacy(m.fSharp));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Gas",
+    extensions: ["s"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/gas-VWYD7F7Z.js?v=f41806ed").then((m) => legacy(m.gas));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Gherkin",
+    extensions: ["feature"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/gherkin-PLJGO4OE.js?v=f41806ed").then((m) => legacy(m.gherkin));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Groovy",
+    extensions: ["groovy", "gradle"],
+    filename: /^Jenkinsfile$/,
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/groovy-YAMDBNU5.js?v=f41806ed").then((m) => legacy(m.groovy));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Haskell",
+    extensions: ["hs"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/haskell-BXUID6E6.js?v=f41806ed").then((m) => legacy(m.haskell));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Haxe",
+    extensions: ["hx"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/haxe-FVYKD5IG.js?v=f41806ed").then((m) => legacy(m.haxe));
+    }
+  }),
+  LanguageDescription.of({
+    name: "HXML",
+    extensions: ["hxml"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/haxe-FVYKD5IG.js?v=f41806ed").then((m) => legacy(m.hxml));
+    }
+  }),
+  LanguageDescription.of({
+    name: "HTTP",
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/http-B65JKWFR.js?v=f41806ed").then((m) => legacy(m.http));
+    }
+  }),
+  LanguageDescription.of({
+    name: "IDL",
+    extensions: ["pro"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/idl-BAEHQ4IA.js?v=f41806ed").then((m) => legacy(m.idl));
+    }
+  }),
+  LanguageDescription.of({
+    name: "JSON-LD",
+    alias: ["jsonld"],
+    extensions: ["jsonld"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/javascript-ABHMT7FD.js?v=f41806ed").then((m) => legacy(m.jsonld));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Julia",
+    extensions: ["jl"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/julia-U7CGNVL2.js?v=f41806ed").then((m) => legacy(m.julia));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Kotlin",
+    extensions: ["kt", "kts"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/clike-PJKSPSFG.js?v=f41806ed").then((m) => legacy(m.kotlin));
+    }
+  }),
+  LanguageDescription.of({
+    name: "LiveScript",
+    alias: ["ls"],
+    extensions: ["ls"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/livescript-5DGG42BE.js?v=f41806ed").then((m) => legacy(m.liveScript));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Lua",
+    extensions: ["lua"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/lua-JZDI3RRJ.js?v=f41806ed").then((m) => legacy(m.lua));
+    }
+  }),
+  LanguageDescription.of({
+    name: "mIRC",
+    extensions: ["mrc"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/mirc-VBIG7KKN.js?v=f41806ed").then((m) => legacy(m.mirc));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Mathematica",
+    extensions: ["m", "nb", "wl", "wls"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/mathematica-2BREXMM2.js?v=f41806ed").then((m) => legacy(m.mathematica));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Modelica",
+    extensions: ["mo"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/modelica-5ESNWJCC.js?v=f41806ed").then((m) => legacy(m.modelica));
+    }
+  }),
+  LanguageDescription.of({
+    name: "MUMPS",
+    extensions: ["mps"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/mumps-4Z67JYTB.js?v=f41806ed").then((m) => legacy(m.mumps));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Mbox",
+    extensions: ["mbox"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/mbox-JHEI6B5D.js?v=f41806ed").then((m) => legacy(m.mbox));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Nginx",
+    filename: /nginx.*\.conf$/i,
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/nginx-NQGJLNMI.js?v=f41806ed").then((m) => legacy(m.nginx));
+    }
+  }),
+  LanguageDescription.of({
+    name: "NSIS",
+    extensions: ["nsh", "nsi"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/nsis-GL3QMNHI.js?v=f41806ed").then((m) => legacy(m.nsis));
+    }
+  }),
+  LanguageDescription.of({
+    name: "NTriples",
+    extensions: ["nt", "nq"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/ntriples-JTFGICIC.js?v=f41806ed").then((m) => legacy(m.ntriples));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Objective-C",
+    alias: ["objective-c", "objc"],
+    extensions: ["m"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/clike-PJKSPSFG.js?v=f41806ed").then((m) => legacy(m.objectiveC));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Objective-C++",
+    alias: ["objective-c++", "objc++"],
+    extensions: ["mm"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/clike-PJKSPSFG.js?v=f41806ed").then((m) => legacy(m.objectiveCpp));
+    }
+  }),
+  LanguageDescription.of({
+    name: "OCaml",
+    extensions: ["ml", "mli", "mll", "mly"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/mllike-UHX2XOV3.js?v=f41806ed").then((m) => legacy(m.oCaml));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Octave",
+    extensions: ["m"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/octave-JJXPN2IC.js?v=f41806ed").then((m) => legacy(m.octave));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Oz",
+    extensions: ["oz"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/oz-AUJCJMZF.js?v=f41806ed").then((m) => legacy(m.oz));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Pascal",
+    extensions: ["p", "pas"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/pascal-I7JNJEFM.js?v=f41806ed").then((m) => legacy(m.pascal));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Perl",
+    extensions: ["pl", "pm"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/perl-CNG7VRFB.js?v=f41806ed").then((m) => legacy(m.perl));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Pig",
+    extensions: ["pig"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/pig-K6JFYODO.js?v=f41806ed").then((m) => legacy(m.pig));
+    }
+  }),
+  LanguageDescription.of({
+    name: "PowerShell",
+    extensions: ["ps1", "psd1", "psm1"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/powershell-3XCMSB7J.js?v=f41806ed").then((m) => legacy(m.powerShell));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Properties files",
+    alias: ["ini", "properties"],
+    extensions: ["properties", "ini", "in"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/properties-GJPQE2K2.js?v=f41806ed").then((m) => legacy(m.properties));
+    }
+  }),
+  LanguageDescription.of({
+    name: "ProtoBuf",
+    extensions: ["proto"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/protobuf-5IZSVDHV.js?v=f41806ed").then((m) => legacy(m.protobuf));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Pug",
+    alias: ["jade"],
+    extensions: ["pug", "jade"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/pug-DUYUDWA2.js?v=f41806ed").then((m) => legacy(m.pug));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Puppet",
+    extensions: ["pp"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/puppet-QN3C7B6I.js?v=f41806ed").then((m) => legacy(m.puppet));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Q",
+    extensions: ["q"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/q-ZHRYVCE7.js?v=f41806ed").then((m) => legacy(m.q));
+    }
+  }),
+  LanguageDescription.of({
+    name: "R",
+    alias: ["rscript"],
+    extensions: ["r", "R"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/r-WLMT7RVT.js?v=f41806ed").then((m) => legacy(m.r));
+    }
+  }),
+  LanguageDescription.of({
+    name: "RPM Changes",
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/rpm-KCIQSEYT.js?v=f41806ed").then((m) => legacy(m.rpmChanges));
+    }
+  }),
+  LanguageDescription.of({
+    name: "RPM Spec",
+    extensions: ["spec"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/rpm-KCIQSEYT.js?v=f41806ed").then((m) => legacy(m.rpmSpec));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Ruby",
+    alias: ["jruby", "macruby", "rake", "rb", "rbx"],
+    extensions: ["rb"],
+    filename: /^(Gemfile|Rakefile)$/,
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/ruby-VOAPDMYS.js?v=f41806ed").then((m) => legacy(m.ruby));
+    }
+  }),
+  LanguageDescription.of({
+    name: "SAS",
+    extensions: ["sas"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/sas-MBQNV5WU.js?v=f41806ed").then((m) => legacy(m.sas));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Scala",
+    extensions: ["scala"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/clike-PJKSPSFG.js?v=f41806ed").then((m) => legacy(m.scala));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Scheme",
+    extensions: ["scm", "ss"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/scheme-36FK7PH3.js?v=f41806ed").then((m) => legacy(m.scheme));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Shell",
+    alias: ["bash", "sh", "zsh"],
+    extensions: ["sh", "ksh", "bash"],
+    filename: /^PKGBUILD$/,
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/shell-IP22N7SI.js?v=f41806ed").then((m) => legacy(m.shell));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Sieve",
+    extensions: ["siv", "sieve"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/sieve-7D3K6YXP.js?v=f41806ed").then((m) => legacy(m.sieve));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Smalltalk",
+    extensions: ["st"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/smalltalk-YLYCVWTA.js?v=f41806ed").then((m) => legacy(m.smalltalk));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Solr",
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/solr-CI4U5ITA.js?v=f41806ed").then((m) => legacy(m.solr));
+    }
+  }),
+  LanguageDescription.of({
+    name: "SML",
+    extensions: ["sml", "sig", "fun", "smackspec"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/mllike-UHX2XOV3.js?v=f41806ed").then((m) => legacy(m.sml));
+    }
+  }),
+  LanguageDescription.of({
+    name: "SPARQL",
+    alias: ["sparul"],
+    extensions: ["rq", "sparql"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/sparql-NU2AEOAJ.js?v=f41806ed").then((m) => legacy(m.sparql));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Spreadsheet",
+    alias: ["excel", "formula"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/spreadsheet-ZNYBUFS7.js?v=f41806ed").then((m) => legacy(m.spreadsheet));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Squirrel",
+    extensions: ["nut"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/clike-PJKSPSFG.js?v=f41806ed").then((m) => legacy(m.squirrel));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Stylus",
+    extensions: ["styl"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/stylus-K37P5Q4O.js?v=f41806ed").then((m) => legacy(m.stylus));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Swift",
+    extensions: ["swift"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/swift-F6IOSM7Q.js?v=f41806ed").then((m) => legacy(m.swift));
+    }
+  }),
+  LanguageDescription.of({
+    name: "sTeX",
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/stex-KCECTX55.js?v=f41806ed").then((m) => legacy(m.stex));
+    }
+  }),
+  LanguageDescription.of({
+    name: "LaTeX",
+    alias: ["tex"],
+    extensions: ["text", "ltx", "tex"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/stex-KCECTX55.js?v=f41806ed").then((m) => legacy(m.stex));
+    }
+  }),
+  LanguageDescription.of({
+    name: "SystemVerilog",
+    extensions: ["v", "sv", "svh"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/verilog-UWHQBYQL.js?v=f41806ed").then((m) => legacy(m.verilog));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Tcl",
+    extensions: ["tcl"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/tcl-TLLZKG47.js?v=f41806ed").then((m) => legacy(m.tcl));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Textile",
+    extensions: ["textile"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/textile-7LDDXMO7.js?v=f41806ed").then((m) => legacy(m.textile));
+    }
+  }),
+  LanguageDescription.of({
+    name: "TiddlyWiki",
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/tiddlywiki-RW566FND.js?v=f41806ed").then((m) => legacy(m.tiddlyWiki));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Tiki wiki",
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/tiki-3OTTF2WP.js?v=f41806ed").then((m) => legacy(m.tiki));
+    }
+  }),
+  LanguageDescription.of({
+    name: "TOML",
+    extensions: ["toml"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/toml-MS25P7IF.js?v=f41806ed").then((m) => legacy(m.toml));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Troff",
+    extensions: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/troff-NNSQJ7UI.js?v=f41806ed").then((m) => legacy(m.troff));
+    }
+  }),
+  LanguageDescription.of({
+    name: "TTCN",
+    extensions: ["ttcn", "ttcn3", "ttcnpp"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/ttcn-QE72MGMA.js?v=f41806ed").then((m) => legacy(m.ttcn));
+    }
+  }),
+  LanguageDescription.of({
+    name: "TTCN_CFG",
+    extensions: ["cfg"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/ttcn-cfg-T6VZBTCG.js?v=f41806ed").then((m) => legacy(m.ttcnCfg));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Turtle",
+    extensions: ["ttl"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/turtle-DGI6FEAO.js?v=f41806ed").then((m) => legacy(m.turtle));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Web IDL",
+    extensions: ["webidl"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/webidl-QYDPCGMQ.js?v=f41806ed").then((m) => legacy(m.webIDL));
+    }
+  }),
+  LanguageDescription.of({
+    name: "VB.NET",
+    extensions: ["vb"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/vb-UJLOZAZ7.js?v=f41806ed").then((m) => legacy(m.vb));
+    }
+  }),
+  LanguageDescription.of({
+    name: "VBScript",
+    extensions: ["vbs"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/vbscript-N7QGQW2U.js?v=f41806ed").then((m) => legacy(m.vbScript));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Velocity",
+    extensions: ["vtl"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/velocity-3VECPTJJ.js?v=f41806ed").then((m) => legacy(m.velocity));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Verilog",
+    extensions: ["v"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/verilog-UWHQBYQL.js?v=f41806ed").then((m) => legacy(m.verilog));
+    }
+  }),
+  LanguageDescription.of({
+    name: "VHDL",
+    extensions: ["vhd", "vhdl"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/vhdl-2INU3ZW2.js?v=f41806ed").then((m) => legacy(m.vhdl));
+    }
+  }),
+  LanguageDescription.of({
+    name: "XQuery",
+    extensions: ["xy", "xquery", "xq", "xqm", "xqy"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/xquery-CL4GJ2UR.js?v=f41806ed").then((m) => legacy(m.xQuery));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Yacas",
+    extensions: ["ys"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/yacas-FMR3JH2Q.js?v=f41806ed").then((m) => legacy(m.yacas));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Z80",
+    extensions: ["z80"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/z80-WKLN6FQS.js?v=f41806ed").then((m) => legacy(m.z80));
+    }
+  }),
+  LanguageDescription.of({
+    name: "MscGen",
+    extensions: ["mscgen", "mscin", "msc"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/mscgen-FDMCKC5V.js?v=f41806ed").then((m) => legacy(m.mscgen));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Xù",
+    extensions: ["xu"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/mscgen-FDMCKC5V.js?v=f41806ed").then((m) => legacy(m.xu));
+    }
+  }),
+  LanguageDescription.of({
+    name: "MsGenny",
+    extensions: ["msgenny"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/mscgen-FDMCKC5V.js?v=f41806ed").then((m) => legacy(m.msgenny));
+    }
+  }),
+  LanguageDescription.of({
+    name: "Vue",
+    extensions: ["vue"],
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dist-VSJ6PCUV.js?v=f41806ed").then((m) => m.vue());
+    }
+  }),
+  LanguageDescription.of({
+    name: "Angular Template",
+    load() {
+      return import("/@fs/B:/electron/lumina/node_modules/.vite/deps/dist-XUXSW7N3.js?v=f41806ed").then((m) => m.angular());
+    }
+  })
+];
+export {
+  languages
+};
+//# sourceMappingURL=@codemirror_language-data.js.map

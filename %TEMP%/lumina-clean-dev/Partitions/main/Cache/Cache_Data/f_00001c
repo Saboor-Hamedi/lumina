@@ -1,0 +1,292 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/components/update/UpdateHeader.jsx");import __vite__cjsImport0_react_jsxDevRuntime from "/@fs/B:/electron/lumina/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=f41806ed"; const jsxDEV = __vite__cjsImport0_react_jsxDevRuntime["jsxDEV"];
+var _s = $RefreshSig$();
+import __vite__cjsImport1_react from "/@fs/B:/electron/lumina/node_modules/.vite/deps/react.js?v=f41806ed"; const React = __vite__cjsImport1_react.__esModule ? __vite__cjsImport1_react.default : __vite__cjsImport1_react; const useState = __vite__cjsImport1_react["useState"];
+import { ArrowRight, CheckCircle2, Download, Loader2, RefreshCw } from "/@fs/B:/electron/lumina/node_modules/.vite/deps/lucide-react.js?v=f41806ed";
+const UpdateHeader = ({
+  currentVersion,
+  newVersion,
+  status,
+  progress,
+  download,
+  install,
+  check
+}) => {
+  _s();
+  const [channel, setChannel] = useState("stable");
+  const isUpToDate = status === "idle" || status === "not-available" || currentVersion === newVersion && status !== "available" && status !== "downloading" && status !== "ready";
+  const percentValue = typeof progress === "number" ? progress : typeof progress?.percent === "number" ? progress.percent : typeof progress?.progress === "number" ? progress.progress : 0;
+  const safePercent = isNaN(percentValue) ? 0 : Math.min(100, Math.max(0, Math.round(percentValue)));
+  return /* @__PURE__ */ jsxDEV("div", { className: "update-details-header", children: /* @__PURE__ */ jsxDEV("div", { className: "update-channel-bar", children: [
+    /* @__PURE__ */ jsxDEV("div", { className: "header-left-group", children: /* @__PURE__ */ jsxDEV("div", { className: "channel-toggle", children: [
+      /* @__PURE__ */ jsxDEV(
+        "button",
+        {
+          className: `channel-btn ${channel === "stable" ? "active" : ""}`,
+          onClick: () => setChannel("stable"),
+          children: "Stable"
+        },
+        void 0,
+        false,
+        {
+          fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+          lineNumber: 34,
+          columnNumber: 13
+        },
+        this
+      ),
+      /* @__PURE__ */ jsxDEV(
+        "button",
+        {
+          className: `channel-btn ${channel === "beta" ? "active" : ""}`,
+          onClick: () => setChannel("beta"),
+          children: "Beta"
+        },
+        void 0,
+        false,
+        {
+          fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+          lineNumber: 40,
+          columnNumber: 13
+        },
+        this
+      )
+    ] }, void 0, true, {
+      fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+      lineNumber: 33,
+      columnNumber: 11
+    }, this) }, void 0, false, {
+      fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+      lineNumber: 32,
+      columnNumber: 9
+    }, this),
+    /* @__PURE__ */ jsxDEV("div", { className: "header-action-wrap", children: status === "available" ? /* @__PURE__ */ jsxDEV(
+      "button",
+      {
+        className: "header-action-btn update-download-btn",
+        onClick: download,
+        children: [
+          /* @__PURE__ */ jsxDEV(Download, { size: 12 }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+            lineNumber: 55,
+            columnNumber: 15
+          }, this),
+          /* @__PURE__ */ jsxDEV("span", { children: "Download" }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+            lineNumber: 56,
+            columnNumber: 15
+          }, this)
+        ]
+      },
+      void 0,
+      true,
+      {
+        fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+        lineNumber: 51,
+        columnNumber: 11
+      },
+      this
+    ) : status === "downloading" ? /* @__PURE__ */ jsxDEV(
+      "button",
+      {
+        className: "header-action-btn downloading-btn",
+        style: { cursor: "default" },
+        children: [
+          /* @__PURE__ */ jsxDEV(Loader2, { size: 12, className: "spin-animation" }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+            lineNumber: 63,
+            columnNumber: 15
+          }, this),
+          /* @__PURE__ */ jsxDEV("span", { children: [
+            safePercent,
+            "%"
+          ] }, void 0, true, {
+            fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+            lineNumber: 64,
+            columnNumber: 15
+          }, this)
+        ]
+      },
+      void 0,
+      true,
+      {
+        fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+        lineNumber: 59,
+        columnNumber: 11
+      },
+      this
+    ) : status === "ready" ? /* @__PURE__ */ jsxDEV(
+      "button",
+      {
+        className: "header-action-btn update-ready-btn",
+        onClick: install,
+        children: [
+          /* @__PURE__ */ jsxDEV(CheckCircle2, { size: 12 }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+            lineNumber: 71,
+            columnNumber: 15
+          }, this),
+          /* @__PURE__ */ jsxDEV("span", { children: "Restart & Install" }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+            lineNumber: 72,
+            columnNumber: 15
+          }, this)
+        ]
+      },
+      void 0,
+      true,
+      {
+        fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+        lineNumber: 67,
+        columnNumber: 11
+      },
+      this
+    ) : status === "checking" ? /* @__PURE__ */ jsxDEV(
+      "button",
+      {
+        className: "header-action-btn checking-btn",
+        disabled: true,
+        style: { cursor: "default" },
+        children: [
+          /* @__PURE__ */ jsxDEV(RefreshCw, { size: 11, className: "spin-animation" }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+            lineNumber: 80,
+            columnNumber: 15
+          }, this),
+          /* @__PURE__ */ jsxDEV("span", { children: "Checking..." }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+            lineNumber: 81,
+            columnNumber: 15
+          }, this)
+        ]
+      },
+      void 0,
+      true,
+      {
+        fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+        lineNumber: 75,
+        columnNumber: 11
+      },
+      this
+    ) : status === "not-available" ? /* @__PURE__ */ jsxDEV(
+      "button",
+      {
+        className: "header-action-btn check-update-btn is-up-to-date",
+        onClick: check,
+        children: [
+          /* @__PURE__ */ jsxDEV(CheckCircle2, { size: 12 }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+            lineNumber: 88,
+            columnNumber: 15
+          }, this),
+          /* @__PURE__ */ jsxDEV("span", { children: "Up to date" }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+            lineNumber: 89,
+            columnNumber: 15
+          }, this)
+        ]
+      },
+      void 0,
+      true,
+      {
+        fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+        lineNumber: 84,
+        columnNumber: 11
+      },
+      this
+    ) : status === "error" ? /* @__PURE__ */ jsxDEV(
+      "button",
+      {
+        className: "header-action-btn check-update-btn error-btn",
+        onClick: check,
+        children: [
+          /* @__PURE__ */ jsxDEV(RefreshCw, { size: 11 }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+            lineNumber: 96,
+            columnNumber: 15
+          }, this),
+          /* @__PURE__ */ jsxDEV("span", { children: "Retry" }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+            lineNumber: 97,
+            columnNumber: 15
+          }, this)
+        ]
+      },
+      void 0,
+      true,
+      {
+        fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+        lineNumber: 92,
+        columnNumber: 11
+      },
+      this
+    ) : /* @__PURE__ */ jsxDEV(
+      "button",
+      {
+        className: "header-action-btn check-update-btn",
+        onClick: check,
+        children: [
+          /* @__PURE__ */ jsxDEV(RefreshCw, { size: 11 }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+            lineNumber: 104,
+            columnNumber: 15
+          }, this),
+          /* @__PURE__ */ jsxDEV("span", { children: "Check for Updates" }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+            lineNumber: 105,
+            columnNumber: 15
+          }, this)
+        ]
+      },
+      void 0,
+      true,
+      {
+        fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+        lineNumber: 100,
+        columnNumber: 11
+      },
+      this
+    ) }, void 0, false, {
+      fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+      lineNumber: 49,
+      columnNumber: 9
+    }, this)
+  ] }, void 0, true, {
+    fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+    lineNumber: 31,
+    columnNumber: 7
+  }, this) }, void 0, false, {
+    fileName: "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx",
+    lineNumber: 30,
+    columnNumber: 5
+  }, this);
+};
+_s(UpdateHeader, "jMnh9bT5/cfCb2ltsZesUk1VIOU=");
+_c = UpdateHeader;
+export default UpdateHeader;
+var _c;
+$RefreshReg$(_c, "UpdateHeader");
+import * as RefreshRuntime from "/@react-refresh";
+const inWebWorker = typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope;
+if (import.meta.hot && !inWebWorker) {
+  if (!window.$RefreshReg$) {
+    throw new Error(
+      "@vitejs/plugin-react can't detect preamble. Something is wrong."
+    );
+  }
+  RefreshRuntime.__hmr_import(import.meta.url).then((currentExports) => {
+    RefreshRuntime.registerExportsForReactRefresh("B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx", currentExports);
+    import.meta.hot.accept((nextExports) => {
+      if (!nextExports) return;
+      const invalidateMessage = RefreshRuntime.validateRefreshBoundaryAndEnqueueUpdate("B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx", currentExports, nextExports);
+      if (invalidateMessage) import.meta.hot.invalidate(invalidateMessage);
+    });
+  });
+}
+function $RefreshReg$(type, id) {
+  return RefreshRuntime.register(type, "B:/electron/lumina/src/renderer/src/components/update/UpdateHeader.jsx " + id);
+}
+function $RefreshSig$() {
+  return RefreshRuntime.createSignatureFunctionForTransform();
+}
+
+//# sourceMappingURL=data:application/json;base64,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LFFBQ0MsV0FBVTtBQUFBLFFBQ1YsU0FBU0E7QUFBQUEsUUFFVDtBQUFBLGlDQUFDLGFBQVUsTUFBTSxNQUFqQjtBQUFBO0FBQUE7QUFBQTtBQUFBLGlCQUFvQjtBQUFBLFVBQ3BCLHVCQUFDLFVBQUssaUNBQU47QUFBQTtBQUFBO0FBQUE7QUFBQSxpQkFBdUI7QUFBQTtBQUFBO0FBQUEsTUFMekI7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBLElBTUEsS0F6REo7QUFBQTtBQUFBO0FBQUE7QUFBQSxXQTJEQTtBQUFBLE9BN0VGO0FBQUE7QUFBQTtBQUFBO0FBQUEsU0E4RUEsS0EvRUY7QUFBQTtBQUFBO0FBQUE7QUFBQSxTQWdGQTtBQUVKO0FBQUNDLEdBNUdLUixjQUFZO0FBQUFxQixLQUFackI7QUE4R04sZUFBZUE7QUFBWSxJQUFBcUI7QUFBQUMsYUFBQUQsSUFBQSIsIm5hbWVzIjpbIlJlYWN0IiwidXNlU3RhdGUiLCJBcnJvd1JpZ2h0IiwiQ2hlY2tDaXJjbGUyIiwiRG93bmxvYWQiLCJMb2FkZXIyIiwiUmVmcmVzaEN3IiwiVXBkYXRlSGVhZGVyIiwiY3VycmVudFZlcnNpb24iLCJuZXdWZXJzaW9uIiwic3RhdHVzIiwicHJvZ3Jlc3MiLCJkb3dubG9hZCIsImluc3RhbGwiLCJjaGVjayIsIl9zIiwiY2hhbm5lbCIsInNldENoYW5uZWwiLCJpc1VwVG9EYXRlIiwicGVyY2VudFZhbHVlIiwicGVyY2VudCIsInNhZmVQZXJjZW50IiwiaXNOYU4iLCJNYXRoIiwibWluIiwibWF4Iiwicm91bmQiLCJjdXJzb3IiLCJfYyIsIiRSZWZyZXNoUmVnJCJdLCJpZ25vcmVMaXN0IjpbXSwic291cmNlcyI6WyJVcGRhdGVIZWFkZXIuanN4Il0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCBSZWFjdCwgeyB1c2VTdGF0ZSB9IGZyb20gJ3JlYWN0J1xyXG5pbXBvcnQgeyBBcnJvd1JpZ2h0LCBDaGVja0NpcmNsZTIsIERvd25sb2FkLCBMb2FkZXIyLCBSZWZyZXNoQ3cgfSBmcm9tICdsdWNpZGUtcmVhY3QnXHJcblxyXG5jb25zdCBVcGRhdGVIZWFkZXIgPSAoe1xyXG4gIGN1cnJlbnRWZXJzaW9uLFxyXG4gIG5ld1ZlcnNpb24sXHJcbiAgc3RhdHVzLFxyXG4gIHByb2dyZXNzLFxyXG4gIGRvd25sb2FkLFxyXG4gIGluc3RhbGwsXHJcbiAgY2hlY2tcclxufSkgPT4ge1xyXG4gIGNvbnN0IFtjaGFubmVsLCBzZXRDaGFubmVsXSA9IHVzZVN0YXRlKCdzdGFibGUnKVxyXG4gIGNvbnN0IGlzVXBUb0RhdGUgPSBzdGF0dXMgPT09ICdpZGxlJyB8fCAoc3RhdHVzID09PSAnbm90LWF2YWlsYWJsZScpIHx8IChjdXJyZW50VmVyc2lvbiA9PT0gbmV3VmVyc2lvbiAmJiBzdGF0dXMgIT09ICdhdmFpbGFibGUnICYmIHN0YXR1cyAhPT0gJ2Rvd25sb2FkaW5nJyAmJiBzdGF0dXMgIT09ICdyZWFkeScpXHJcblxyXG4gIGNvbnN0IHBlcmNlbnRWYWx1ZSA9XHJcbiAgICB0eXBlb2YgcHJvZ3Jlc3MgPT09ICdudW1iZXInXHJcbiAgICAgID8gcHJvZ3Jlc3NcclxuICAgICAgOiB0eXBlb2YgcHJvZ3Jlc3M/LnBlcmNlbnQgPT09ICdudW1iZXInXHJcbiAgICAgICAgPyBwcm9ncmVzcy5wZXJjZW50XHJcbiAgICAgICAgOiB0eXBlb2YgcHJvZ3Jlc3M/LnByb2dyZXNzID09PSAnbnVtYmVyJ1xyXG4gICAgICAgICAgPyBwcm9ncmVzcy5wcm9ncmVzc1xyXG4gICAgICAgICAgOiAwXHJcblxyXG4gIGNvbnN0IHNhZmVQZXJjZW50ID0gaXNOYU4ocGVyY2VudFZhbHVlKVxyXG4gICAgPyAwXHJcbiAgICA6IE1hdGgubWluKDEwMCwgTWF0aC5tYXgoMCwgTWF0aC5yb3VuZChwZXJjZW50VmFsdWUpKSlcclxuXHJcbiAgcmV0dXJuIChcclxuICAgIDxkaXYgY2xhc3NOYW1lPVwidXBkYXRlLWRldGFpbHMtaGVhZGVyXCI+XHJcbiAgICAgIDxkaXYgY2xhc3NOYW1lPVwidXBkYXRlLWNoYW5uZWwtYmFyXCI+XHJcbiAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJoZWFkZXItbGVmdC1ncm91cFwiPlxyXG4gICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJjaGFubmVsLXRvZ2dsZVwiPlxyXG4gICAgICAgICAgICA8YnV0dG9uXHJcbiAgICAgICAgICAgICAgY2xhc3NOYW1lPXtgY2hhbm5lbC1idG4gJHtjaGFubmVsID09PSAnc3RhYmxlJyA/ICdhY3RpdmUnIDogJyd9YH1cclxuICAgICAgICAgICAgICBvbkNsaWNrPXsoKSA9PiBzZXRDaGFubmVsKCdzdGFibGUnKX1cclxuICAgICAgICAgICAgPlxyXG4gICAgICAgICAgICAgIFN0YWJsZVxyXG4gICAgICAgICAgICA8L2J1dHRvbj5cclxuICAgICAgICAgICAgPGJ1dHRvblxyXG4gICAgICAgICAgICAgIGNsYXNzTmFtZT17YGNoYW5uZWwtYnRuICR7Y2hhbm5lbCA9PT0gJ2JldGEnID8gJ2FjdGl2ZScgOiAnJ31gfVxyXG4gICAgICAgICAgICAgIG9uQ2xpY2s9eygpID0+IHNldENoYW5uZWwoJ2JldGEnKX1cclxuICAgICAgICAgICAgPlxyXG4gICAgICAgICAgICAgIEJldGFcclxuICAgICAgICAgICAgPC9idXR0b24+XHJcbiAgICAgICAgICA8L2Rpdj5cclxuICAgICAgICA8L2Rpdj5cclxuXHJcbiAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJoZWFkZXItYWN0aW9uLXdyYXBcIj5cclxuICAgICAgICAgIHtzdGF0dXMgPT09ICdhdmFpbGFibGUnID8gKFxyXG4gICAgICAgICAgICA8YnV0dG9uXHJcbiAgICAgICAgICAgICAgY2xhc3NOYW1lPVwiaGVhZGVyLWFjdGlvbi1idG4gdXBkYXRlLWRvd25sb2FkLWJ0blwiXHJcbiAgICAgICAgICAgICAgb25DbGljaz17ZG93bmxvYWR9XHJcbiAgICAgICAgICAgID5cclxuICAgICAgICAgICAgICA8RG93bmxvYWQgc2l6ZT17MTJ9IC8+XHJcbiAgICAgICAgICAgICAgPHNwYW4+RG93bmxvYWQ8L3NwYW4+XHJcbiAgICAgICAgICAgIDwvYnV0dG9uPlxyXG4gICAgICAgICAgKSA6IHN0YXR1cyA9PT0gJ2Rvd25sb2FkaW5nJyA/IChcclxuICAgICAgICAgICAgPGJ1dHRvblxyXG4gICAgICAgICAgICAgIGNsYXNzTmFtZT1cImhlYWRlci1hY3Rpb24tYnRuIGRvd25sb2FkaW5nLWJ0blwiXHJcbiAgICAgICAgICAgICAgc3R5bGU9e3sgY3Vyc29yOiAnZGVmYXVsdCcgfX1cclxuICAgICAgICAgICAgPlxyXG4gICAgICAgICAgICAgIDxMb2FkZXIyIHNpemU9ezEyfSBjbGFzc05hbWU9XCJzcGluLWFuaW1hdGlvblwiIC8+XHJcbiAgICAgICAgICAgICAgPHNwYW4+e3NhZmVQZXJjZW50fSU8L3NwYW4+XHJcbiAgICAgICAgICAgIDwvYnV0dG9uPlxyXG4gICAgICAgICAgKSA6IHN0YXR1cyA9PT0gJ3JlYWR5JyA/IChcclxuICAgICAgICAgICAgPGJ1dHRvblxyXG4gICAgICAgICAgICAgIGNsYXNzTmFtZT1cImhlYWRlci1hY3Rpb24tYnRuIHVwZGF0ZS1yZWFkeS1idG5cIlxyXG4gICAgICAgICAgICAgIG9uQ2xpY2s9e2luc3RhbGx9XHJcbiAgICAgICAgICAgID5cclxuICAgICAgICAgICAgICA8Q2hlY2tDaXJjbGUyIHNpemU9ezEyfSAvPlxyXG4gICAgICAgICAgICAgIDxzcGFuPlJlc3RhcnQgJiBJbnN0YWxsPC9zcGFuPlxyXG4gICAgICAgICAgICA8L2J1dHRvbj5cclxuICAgICAgICAgICkgOiBzdGF0dXMgPT09ICdjaGVja2luZycgPyAoXHJcbiAgICAgICAgICAgIDxidXR0b25cclxuICAgICAgICAgICAgICBjbGFzc05hbWU9XCJoZWFkZXItYWN0aW9uLWJ0biBjaGVja2luZy1idG5cIlxyXG4gICAgICAgICAgICAgIGRpc2FibGVkXHJcbiAgICAgICAgICAgICAgc3R5bGU9e3sgY3Vyc29yOiAnZGVmYXVsdCcgfX1cclxuICAgICAgICAgICAgPlxyXG4gICAgICAgICAgICAgIDxSZWZyZXNoQ3cgc2l6ZT17MTF9IGNsYXNzTmFtZT1cInNwaW4tYW5pbWF0aW9uXCIgLz5cclxuICAgICAgICAgICAgICA8c3Bhbj5DaGVja2luZy4uLjwvc3Bhbj5cclxuICAgICAgICAgICAgPC9idXR0b24+XHJcbiAgICAgICAgICApIDogc3RhdHVzID09PSAnbm90LWF2YWlsYWJsZScgPyAoXHJcbiAgICAgICAgICAgIDxidXR0b25cclxuICAgICAgICAgICAgICBjbGFzc05hbWU9XCJoZWFkZXItYWN0aW9uLWJ0biBjaGVjay11cGRhdGUtYnRuIGlzLXVwLXRvLWRhdGVcIlxyXG4gICAgICAgICAgICAgIG9uQ2xpY2s9e2NoZWNrfVxyXG4gICAgICAgICAgICA+XHJcbiAgICAgICAgICAgICAgPENoZWNrQ2lyY2xlMiBzaXplPXsxMn0gLz5cclxuICAgICAgICAgICAgICA8c3Bhbj5VcCB0byBkYXRlPC9zcGFuPlxyXG4gICAgICAgICAgICA8L2J1dHRvbj5cclxuICAgICAgICAgICkgOiBzdGF0dXMgPT09ICdlcnJvcicgPyAoXHJcbiAgICAgICAgICAgIDxidXR0b25cclxuICAgICAgICAgICAgICBjbGFzc05hbWU9XCJoZWFkZXItYWN0aW9uLWJ0biBjaGVjay11cGRhdGUtYnRuIGVycm9yLWJ0blwiXHJcbiAgICAgICAgICAgICAgb25DbGljaz17Y2hlY2t9XHJcbiAgICAgICAgICAgID5cclxuICAgICAgICAgICAgICA8UmVmcmVzaEN3IHNpemU9ezExfSAvPlxyXG4gICAgICAgICAgICAgIDxzcGFuPlJldHJ5PC9zcGFuPlxyXG4gICAgICAgICAgICA8L2J1dHRvbj5cclxuICAgICAgICAgICkgOiAoXHJcbiAgICAgICAgICAgIDxidXR0b25cclxuICAgICAgICAgICAgICBjbGFzc05hbWU9XCJoZWFkZXItYWN0aW9uLWJ0biBjaGVjay11cGRhdGUtYnRuXCJcclxuICAgICAgICAgICAgICBvbkNsaWNrPXtjaGVja31cclxuICAgICAgICAgICAgPlxyXG4gICAgICAgICAgICAgIDxSZWZyZXNoQ3cgc2l6ZT17MTF9IC8+XHJcbiAgICAgICAgICAgICAgPHNwYW4+Q2hlY2sgZm9yIFVwZGF0ZXM8L3NwYW4+XHJcbiAgICAgICAgICAgIDwvYnV0dG9uPlxyXG4gICAgICAgICAgKX1cclxuICAgICAgICA8L2Rpdj5cclxuICAgICAgPC9kaXY+XHJcbiAgICA8L2Rpdj5cclxuICApXHJcbn1cclxuXHJcbmV4cG9ydCBkZWZhdWx0IFVwZGF0ZUhlYWRlclxyXG4iXSwiZmlsZSI6IkI6L2VsZWN0cm9uL2x1bWluYS9zcmMvcmVuZGVyZXIvc3JjL2NvbXBvbmVudHMvdXBkYXRlL1VwZGF0ZUhlYWRlci5qc3gifQ==

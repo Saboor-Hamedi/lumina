@@ -1,0 +1,406 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/features/Inspector/RightSidebar.jsx");import __vite__cjsImport0_react_jsxDevRuntime from "/@fs/B:/electron/lumina/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=f41806ed"; const jsxDEV = __vite__cjsImport0_react_jsxDevRuntime["jsxDEV"];
+var _s = $RefreshSig$();
+import __vite__cjsImport1_react from "/@fs/B:/electron/lumina/node_modules/.vite/deps/react.js?v=f41806ed"; const React = __vite__cjsImport1_react.__esModule ? __vite__cjsImport1_react.default : __vite__cjsImport1_react;
+import { Info, List as ListIcon, MessageSquare, ExternalLink, History } from "/@fs/B:/electron/lumina/node_modules/.vite/deps/lucide-react.js?v=f41806ed";
+import NoteDetails from "/src/features/Inspector/NoteDetails.jsx";
+import NoteOutline from "/src/features/Inspector/NoteOutline.jsx";
+const LuminaChatContent = React.lazy(
+  _c = () => import("/src/features/AI/Lumina.jsx").then((m) => ({ default: m.LuminaChatContent }))
+);
+_c2 = LuminaChatContent;
+import GlobalErrorHandler from "/src/components/GlobalErrorHandler.jsx";
+import { useKeyboardShortcuts } from "/src/core/hooks/useKeyboardShortcuts.js";
+import { useSettingsStore } from "/src/core/store/useSettingsStore.js";
+import ToolTip from "/src/components/atoms/ToolTip.jsx";
+import RightSidebarFooter from "/src/features/Inspector/RightSidebarFooter.jsx";
+import "/src/features/Inspector/NoteDetails.css";
+export const RightSidebar = _s(React.memo(_c3 = _s(({
+  rightSidebarTab,
+  setRightSidebarTab,
+  selectedSnippet,
+  isLoading,
+  isRightSidebarOpen,
+  setIsRightSidebarOpen,
+  setShowAIChatModal
+}) => {
+  _s();
+  useKeyboardShortcuts({
+    onEscape: isRightSidebarOpen ? () => {
+      if (document.querySelector(".command-palette-overlay, .command-palette-container, .modal-overlay")) {
+        return false;
+      }
+      setIsRightSidebarOpen(false);
+      return true;
+    } : null
+  });
+  const updateSetting = useSettingsStore((state) => state.updateSetting);
+  const aiChatDisplayMode = useSettingsStore(
+    (state) => state.settings.aiChatDisplayMode || "sidebar"
+  );
+  const handlePopOut = () => {
+    updateSetting("aiChatDisplayMode", "modal");
+    setRightSidebarTab("details");
+    if (setIsRightSidebarOpen) {
+      setIsRightSidebarOpen(false);
+    }
+    if (setShowAIChatModal) {
+      setShowAIChatModal(true);
+    }
+  };
+  return /* @__PURE__ */ jsxDEV("div", { className: "inspector-panel", children: [
+    /* @__PURE__ */ jsxDEV("div", { className: "panel-header-tabs inspector-tabbar", children: [
+      /* @__PURE__ */ jsxDEV(
+        "div",
+        {
+          className: `inspector-tab ${rightSidebarTab === "details" ? "active" : ""}`,
+          onClick: () => setRightSidebarTab("details"),
+          children: /* @__PURE__ */ jsxDEV(ToolTip, { text: "Note Details", position: "bottom", children: /* @__PURE__ */ jsxDEV("div", { className: "tab-context", children: [
+            /* @__PURE__ */ jsxDEV(Info, { size: 13, className: "tab-icon" }, void 0, false, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+              lineNumber: 62,
+              columnNumber: 15
+            }, this),
+            /* @__PURE__ */ jsxDEV("span", { className: "tab-title", children: "Details" }, void 0, false, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+              lineNumber: 63,
+              columnNumber: 15
+            }, this)
+          ] }, void 0, true, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+            lineNumber: 61,
+            columnNumber: 13
+          }, this) }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+            lineNumber: 60,
+            columnNumber: 11
+          }, this)
+        },
+        void 0,
+        false,
+        {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+          lineNumber: 56,
+          columnNumber: 9
+        },
+        this
+      ),
+      /* @__PURE__ */ jsxDEV(
+        "div",
+        {
+          className: `inspector-tab ${rightSidebarTab === "outline" ? "active" : ""}`,
+          onClick: () => setRightSidebarTab("outline"),
+          children: /* @__PURE__ */ jsxDEV(ToolTip, { text: "Note Outline", position: "bottom", children: /* @__PURE__ */ jsxDEV("div", { className: "tab-context", children: [
+            /* @__PURE__ */ jsxDEV(ListIcon, { size: 13, className: "tab-icon" }, void 0, false, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+              lineNumber: 74,
+              columnNumber: 15
+            }, this),
+            /* @__PURE__ */ jsxDEV("span", { className: "tab-title", children: "Outline" }, void 0, false, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+              lineNumber: 75,
+              columnNumber: 15
+            }, this)
+          ] }, void 0, true, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+            lineNumber: 73,
+            columnNumber: 13
+          }, this) }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+            lineNumber: 72,
+            columnNumber: 11
+          }, this)
+        },
+        void 0,
+        false,
+        {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+          lineNumber: 68,
+          columnNumber: 9
+        },
+        this
+      ),
+      aiChatDisplayMode === "sidebar" && /* @__PURE__ */ jsxDEV(
+        "div",
+        {
+          className: `inspector-tab ${rightSidebarTab === "chat" ? "active" : ""}`,
+          onClick: () => {
+            setRightSidebarTab("chat");
+            updateSetting("aiChatDisplayMode", "sidebar");
+          },
+          children: /* @__PURE__ */ jsxDEV(ToolTip, { text: "AI Chat", position: "bottom", children: /* @__PURE__ */ jsxDEV("div", { className: "tab-context", children: [
+            /* @__PURE__ */ jsxDEV(MessageSquare, { size: 13, className: "tab-icon" }, void 0, false, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+              lineNumber: 90,
+              columnNumber: 17
+            }, this),
+            /* @__PURE__ */ jsxDEV("span", { className: "tab-title", children: "Chat" }, void 0, false, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+              lineNumber: 91,
+              columnNumber: 17
+            }, this)
+          ] }, void 0, true, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+            lineNumber: 89,
+            columnNumber: 15
+          }, this) }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+            lineNumber: 88,
+            columnNumber: 13
+          }, this)
+        },
+        void 0,
+        false,
+        {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+          lineNumber: 81,
+          columnNumber: 9
+        },
+        this
+      ),
+      /* @__PURE__ */ jsxDEV("div", { className: "flex-1", style: { height: "100%", pointerEvents: "none" } }, void 0, false, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+        lineNumber: 97,
+        columnNumber: 9
+      }, this)
+    ] }, void 0, true, {
+      fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+      lineNumber: 55,
+      columnNumber: 7
+    }, this),
+    /* @__PURE__ */ jsxDEV("div", { className: "inspector-body-card", children: [
+      rightSidebarTab === "details" && /* @__PURE__ */ jsxDEV("div", { className: "inspector-sub-header", children: [
+        /* @__PURE__ */ jsxDEV("span", { className: "inspector-sub-title", children: "Note Details" }, void 0, false, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+          lineNumber: 104,
+          columnNumber: 13
+        }, this),
+        selectedSnippet?.title && /* @__PURE__ */ jsxDEV("span", { className: "inspector-sub-badge", title: selectedSnippet.title, children: selectedSnippet.title }, void 0, false, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+          lineNumber: 106,
+          columnNumber: 11
+        }, this)
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+        lineNumber: 103,
+        columnNumber: 9
+      }, this),
+      rightSidebarTab === "outline" && /* @__PURE__ */ jsxDEV("div", { className: "inspector-sub-header", children: [
+        /* @__PURE__ */ jsxDEV("span", { className: "inspector-sub-title", children: "Note Outline" }, void 0, false, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+          lineNumber: 115,
+          columnNumber: 13
+        }, this),
+        selectedSnippet?.title && /* @__PURE__ */ jsxDEV("span", { className: "inspector-sub-badge", title: selectedSnippet.title, children: selectedSnippet.title }, void 0, false, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+          lineNumber: 117,
+          columnNumber: 11
+        }, this)
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+        lineNumber: 114,
+        columnNumber: 9
+      }, this),
+      rightSidebarTab === "chat" && /* @__PURE__ */ jsxDEV("div", { className: "inspector-sub-header", children: [
+        /* @__PURE__ */ jsxDEV("div", { style: { display: "flex", alignItems: "center", gap: "6px" }, children: [
+          /* @__PURE__ */ jsxDEV(ToolTip, { text: "Toggle History", position: "bottom", children: /* @__PURE__ */ jsxDEV(
+            "button",
+            {
+              className: "inspector-action-btn",
+              onClick: () => window.dispatchEvent(new CustomEvent("ai-toggle-history")),
+              "aria-label": "Toggle History",
+              children: /* @__PURE__ */ jsxDEV(History, { size: 13 }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+                lineNumber: 133,
+                columnNumber: 19
+              }, this)
+            },
+            void 0,
+            false,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+              lineNumber: 128,
+              columnNumber: 17
+            },
+            this
+          ) }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+            lineNumber: 127,
+            columnNumber: 15
+          }, this),
+          /* @__PURE__ */ jsxDEV("span", { className: "inspector-sub-title", children: "Lumina AI Assistant" }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+            lineNumber: 136,
+            columnNumber: 15
+          }, this)
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+          lineNumber: 126,
+          columnNumber: 13
+        }, this),
+        /* @__PURE__ */ jsxDEV(ToolTip, { text: "Pop out to floating window", position: "bottom-right", children: /* @__PURE__ */ jsxDEV(
+          "button",
+          {
+            className: "inspector-action-btn",
+            onClick: handlePopOut,
+            "aria-label": "Pop out to floating window",
+            children: /* @__PURE__ */ jsxDEV(ExternalLink, { size: 13 }, void 0, false, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+              lineNumber: 144,
+              columnNumber: 17
+            }, this)
+          },
+          void 0,
+          false,
+          {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+            lineNumber: 139,
+            columnNumber: 15
+          },
+          this
+        ) }, void 0, false, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+          lineNumber: 138,
+          columnNumber: 13
+        }, this)
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+        lineNumber: 125,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV(
+        "div",
+        {
+          className: "panel-content",
+          style: {
+            display: "flex",
+            flexDirection: "column",
+            flex: 1,
+            overflow: "hidden",
+            minHeight: 0
+          },
+          children: /* @__PURE__ */ jsxDEV(GlobalErrorHandler, { children: rightSidebarTab === "outline" ? /* @__PURE__ */ jsxDEV(NoteOutline, { snippet: selectedSnippet }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+            lineNumber: 162,
+            columnNumber: 13
+          }, this) : rightSidebarTab === "chat" ? /* @__PURE__ */ jsxDEV(
+            React.Suspense,
+            {
+              fallback: /* @__PURE__ */ jsxDEV(
+                "div",
+                {
+                  style: {
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: "100%",
+                    color: "var(--text-muted, #888)",
+                    fontSize: 12
+                  },
+                  children: "Loading Lumina AI..."
+                },
+                void 0,
+                false,
+                {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+                  lineNumber: 166,
+                  columnNumber: 15
+                },
+                this
+              ),
+              children: /* @__PURE__ */ jsxDEV(LuminaChatContent, { isSidebar: true, onPopOut: handlePopOut }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+                lineNumber: 180,
+                columnNumber: 17
+              }, this)
+            },
+            void 0,
+            false,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+              lineNumber: 164,
+              columnNumber: 13
+            },
+            this
+          ) : /* @__PURE__ */ jsxDEV(NoteDetails, { snippet: selectedSnippet, isLoading }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+            lineNumber: 183,
+            columnNumber: 13
+          }, this) }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+            lineNumber: 160,
+            columnNumber: 11
+          }, this)
+        },
+        void 0,
+        false,
+        {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+          lineNumber: 150,
+          columnNumber: 9
+        },
+        this
+      )
+    ] }, void 0, true, {
+      fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+      lineNumber: 101,
+      columnNumber: 7
+    }, this),
+    /* @__PURE__ */ jsxDEV(
+      RightSidebarFooter,
+      {
+        selectedSnippet,
+        rightSidebarTab,
+        onClose: () => setIsRightSidebarOpen?.(false)
+      },
+      void 0,
+      false,
+      {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+        lineNumber: 189,
+        columnNumber: 7
+      },
+      this
+    )
+  ] }, void 0, true, {
+    fileName: "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx",
+    lineNumber: 53,
+    columnNumber: 5
+  }, this);
+}, "GrQdNqW094zUoVx7YTvxOyPLktE=", false, function() {
+  return [useKeyboardShortcuts, useSettingsStore, useSettingsStore];
+})), "GrQdNqW094zUoVx7YTvxOyPLktE=", false, function() {
+  return [useKeyboardShortcuts, useSettingsStore, useSettingsStore];
+});
+_c4 = RightSidebar;
+RightSidebar.displayName = "RightSidebar";
+export default RightSidebar;
+var _c, _c2, _c3, _c4;
+$RefreshReg$(_c, "LuminaChatContent$React.lazy");
+$RefreshReg$(_c2, "LuminaChatContent");
+$RefreshReg$(_c3, "RightSidebar$React.memo");
+$RefreshReg$(_c4, "RightSidebar");
+import * as RefreshRuntime from "/@react-refresh";
+const inWebWorker = typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope;
+if (import.meta.hot && !inWebWorker) {
+  if (!window.$RefreshReg$) {
+    throw new Error(
+      "@vitejs/plugin-react can't detect preamble. Something is wrong."
+    );
+  }
+  RefreshRuntime.__hmr_import(import.meta.url).then((currentExports) => {
+    RefreshRuntime.registerExportsForReactRefresh("B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx", currentExports);
+    import.meta.hot.accept((nextExports) => {
+      if (!nextExports) return;
+      const invalidateMessage = RefreshRuntime.validateRefreshBoundaryAndEnqueueUpdate("B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx", currentExports, nextExports);
+      if (invalidateMessage) import.meta.hot.invalidate(invalidateMessage);
+    });
+  });
+}
+function $RefreshReg$(type, id) {
+  return RefreshRuntime.register(type, "B:/electron/lumina/src/renderer/src/features/Inspector/RightSidebar.jsx " + id);
+}
+function $RefreshSig$() {
+  return RefreshRuntime.createSignatureFunctionForTransform();
+}
+
+//# sourceMappingURL=data:application/json;base64,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QVksU0FBU1osaUJBQWlCLGFBQXZDO0FBQUE7QUFBQTtBQUFBO0FBQUEsaUJBQTRELEtBdkJoRTtBQUFBO0FBQUE7QUFBQTtBQUFBLGlCQXlCQTtBQUFBO0FBQUEsUUFuQ0Y7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBLE1Bb0NBO0FBQUEsU0FyRkY7QUFBQTtBQUFBO0FBQUE7QUFBQSxXQXNGQTtBQUFBLElBRUE7QUFBQSxNQUFDO0FBQUE7QUFBQSxRQUNDO0FBQUEsUUFDQTtBQUFBLFFBQ0EsU0FBUyxNQUFNRyx3QkFBd0IsS0FBSztBQUFBO0FBQUEsTUFIOUM7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBLElBR2dEO0FBQUEsT0EzSWxEO0FBQUE7QUFBQTtBQUFBO0FBQUEsU0E2SUE7QUFFSixHQUFDO0FBQUEsVUE1S0NiLHNCQVlzQkMsa0JBQ0lBLGdCQUFnQjtBQUFBLEVBK0ozQyxHQUFDO0FBQUEsVUE1S0FELHNCQVlzQkMsa0JBQ0lBLGdCQUFnQjtBQUFBO0FBK0oxQ3NDLE1BckxXbkM7QUF1TGJBLGFBQWFvQyxjQUFjO0FBRTNCLGVBQWVwQztBQUFZLElBQUFWLElBQUFJLEtBQUFTLEtBQUFnQztBQUFBRSxhQUFBL0MsSUFBQTtBQUFBK0MsYUFBQTNDLEtBQUE7QUFBQTJDLGFBQUFsQyxLQUFBO0FBQUFrQyxhQUFBRixLQUFBIiwibmFtZXMiOlsiUmVhY3QiLCJJbmZvIiwiTGlzdCIsIkxpc3RJY29uIiwiTWVzc2FnZVNxdWFyZSIsIkV4dGVybmFsTGluayIsIkhpc3RvcnkiLCJOb3RlRGV0YWlscyIsIk5vdGVPdXRsaW5lIiwiTHVtaW5hQ2hhdENvbnRlbnQiLCJsYXp5IiwiX2MiLCJ0aGVuIiwibSIsImRlZmF1bHQiLCJfYzIiLCJHbG9iYWxFcnJvckhhbmRsZXIiLCJ1c2VLZXlib2FyZFNob3J0Y3V0cyIsInVzZVNldHRpbmdzU3RvcmUiLCJUb29sVGlwIiwiUmlnaHRTaWRlYmFyRm9vdGVyIiwiUmlnaHRTaWRlYmFyIiwiX3MiLCJtZW1vIiwiX2MzIiwicmlnaHRTaWRlYmFyVGFiIiwic2V0UmlnaHRTaWRlYmFyVGFiIiwic2VsZWN0ZWRTbmlwcGV0IiwiaXNMb2FkaW5nIiwiaXNSaWdodFNpZGViYXJPcGVuIiwic2V0SXNSaWdodFNpZGViYXJPcGVuIiwic2V0U2hvd0FJQ2hhdE1vZGFsIiwib25Fc2NhcGUiLCJkb2N1bWVudCIsInF1ZXJ5U2VsZWN0b3IiLCJ1cGRhdGVTZXR0aW5nIiwic3RhdGUiLCJhaUNoYXREaXNwbGF5TW9kZSIsInNldHRpbmdzIiwiaGFuZGxlUG9wT3V0IiwiaGVpZ2h0IiwicG9pbnRlckV2ZW50cyIsInRpdGxlIiwiZGlzcGxheSIsImFsaWduSXRlbXMiLCJnYXAiLCJ3aW5kb3ciLCJkaXNwYXRjaEV2ZW50IiwiQ3VzdG9tRXZlbnQiLCJmbGV4RGlyZWN0aW9uIiwiZmxleCIsIm92ZXJmbG93IiwibWluSGVpZ2h0IiwianVzdGlmeUNvbnRlbnQiLCJjb2xvciIsImZvbnRTaXplIiwiX2M0IiwiZGlzcGxheU5hbWUiLCIkUmVmcmVzaFJlZyQiXSwiaWdub3JlTGlzdCI6W10sInNvdXJjZXMiOlsiUmlnaHRTaWRlYmFyLmpzeCJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgUmVhY3QgZnJvbSAncmVhY3QnXHJcbmltcG9ydCB7IEluZm8sIExpc3QgYXMgTGlzdEljb24sIE1lc3NhZ2VTcXVhcmUsIEV4dGVybmFsTGluaywgSGlzdG9yeSB9IGZyb20gJ2x1Y2lkZS1yZWFjdCdcclxuaW1wb3J0IE5vdGVEZXRhaWxzIGZyb20gJy4vTm90ZURldGFpbHMnXHJcbmltcG9ydCBOb3RlT3V0bGluZSBmcm9tICcuL05vdGVPdXRsaW5lJ1xyXG5jb25zdCBMdW1pbmFDaGF0Q29udGVudCA9IFJlYWN0LmxhenkoKCkgPT5cclxuICBpbXBvcnQoJy4uL0FJL0x1bWluYScpLnRoZW4oKG0pID0+ICh7IGRlZmF1bHQ6IG0uTHVtaW5hQ2hhdENvbnRlbnQgfSkpXHJcbilcclxuaW1wb3J0IEdsb2JhbEVycm9ySGFuZGxlciBmcm9tICcuLi8uLi9jb21wb25lbnRzL0dsb2JhbEVycm9ySGFuZGxlcidcclxuaW1wb3J0IHsgdXNlS2V5Ym9hcmRTaG9ydGN1dHMgfSBmcm9tICcuLi8uLi9jb3JlL2hvb2tzL3VzZUtleWJvYXJkU2hvcnRjdXRzJ1xyXG5pbXBvcnQgeyB1c2VTZXR0aW5nc1N0b3JlIH0gZnJvbSAnLi4vLi4vY29yZS9zdG9yZS91c2VTZXR0aW5nc1N0b3JlJ1xyXG5pbXBvcnQgVG9vbFRpcCBmcm9tICcuLi8uLi9jb21wb25lbnRzL2F0b21zL1Rvb2xUaXAnXHJcbmltcG9ydCBSaWdodFNpZGViYXJGb290ZXIgZnJvbSAnLi9SaWdodFNpZGViYXJGb290ZXInXHJcbmltcG9ydCAnLi9Ob3RlRGV0YWlscy5jc3MnXHJcblxyXG5leHBvcnQgY29uc3QgUmlnaHRTaWRlYmFyID0gUmVhY3QubWVtbygoe1xyXG4gIHJpZ2h0U2lkZWJhclRhYixcclxuICBzZXRSaWdodFNpZGViYXJUYWIsXHJcbiAgc2VsZWN0ZWRTbmlwcGV0LFxyXG4gIGlzTG9hZGluZyxcclxuICBpc1JpZ2h0U2lkZWJhck9wZW4sXHJcbiAgc2V0SXNSaWdodFNpZGViYXJPcGVuLFxyXG4gIHNldFNob3dBSUNoYXRNb2RhbFxyXG59KSA9PiB7XHJcbiAgdXNlS2V5Ym9hcmRTaG9ydGN1dHMoe1xyXG4gICAgb25Fc2NhcGU6IGlzUmlnaHRTaWRlYmFyT3BlblxyXG4gICAgICA/ICgpID0+IHtcclxuICAgICAgICAgIGlmIChkb2N1bWVudC5xdWVyeVNlbGVjdG9yKCcuY29tbWFuZC1wYWxldHRlLW92ZXJsYXksIC5jb21tYW5kLXBhbGV0dGUtY29udGFpbmVyLCAubW9kYWwtb3ZlcmxheScpKSB7XHJcbiAgICAgICAgICAgIHJldHVybiBmYWxzZVxyXG4gICAgICAgICAgfVxyXG4gICAgICAgICAgc2V0SXNSaWdodFNpZGViYXJPcGVuKGZhbHNlKVxyXG4gICAgICAgICAgcmV0dXJuIHRydWVcclxuICAgICAgICB9XHJcbiAgICAgIDogbnVsbFxyXG4gIH0pXHJcblxyXG4gIGNvbnN0IHVwZGF0ZVNldHRpbmcgPSB1c2VTZXR0aW5nc1N0b3JlKChzdGF0ZSkgPT4gc3RhdGUudXBkYXRlU2V0dGluZylcclxuICBjb25zdCBhaUNoYXREaXNwbGF5TW9kZSA9IHVzZVNldHRpbmdzU3RvcmUoXHJcbiAgICAoc3RhdGUpID0+IHN0YXRlLnNldHRpbmdzLmFpQ2hhdERpc3BsYXlNb2RlIHx8ICdzaWRlYmFyJ1xyXG4gIClcclxuXHJcbiAgY29uc3QgaGFuZGxlUG9wT3V0ID0gKCkgPT4ge1xyXG4gICAgdXBkYXRlU2V0dGluZygnYWlDaGF0RGlzcGxheU1vZGUnLCAnbW9kYWwnKVxyXG4gICAgc2V0UmlnaHRTaWRlYmFyVGFiKCdkZXRhaWxzJylcclxuICAgIGlmIChzZXRJc1JpZ2h0U2lkZWJhck9wZW4pIHtcclxuICAgICAgc2V0SXNSaWdodFNpZGViYXJPcGVuKGZhbHNlKVxyXG4gICAgfVxyXG4gICAgaWYgKHNldFNob3dBSUNoYXRNb2RhbCkge1xyXG4gICAgICBzZXRTaG93QUlDaGF0TW9kYWwodHJ1ZSlcclxuICAgIH1cclxuICB9XHJcblxyXG4gIHJldHVybiAoXHJcbiAgICA8ZGl2IGNsYXNzTmFtZT1cImluc3BlY3Rvci1wYW5lbFwiPlxyXG4gICAgICB7LyogVGFiLXN0eWxlIGhlYWRlciAqL31cclxuICAgICAgPGRpdiBjbGFzc05hbWU9XCJwYW5lbC1oZWFkZXItdGFicyBpbnNwZWN0b3ItdGFiYmFyXCI+XHJcbiAgICAgICAgPGRpdlxyXG4gICAgICAgICAgY2xhc3NOYW1lPXtgaW5zcGVjdG9yLXRhYiAke3JpZ2h0U2lkZWJhclRhYiA9PT0gJ2RldGFpbHMnID8gJ2FjdGl2ZScgOiAnJ31gfVxyXG4gICAgICAgICAgb25DbGljaz17KCkgPT4gc2V0UmlnaHRTaWRlYmFyVGFiKCdkZXRhaWxzJyl9XHJcbiAgICAgICAgPlxyXG4gICAgICAgICAgPFRvb2xUaXAgdGV4dD1cIk5vdGUgRGV0YWlsc1wiIHBvc2l0aW9uPVwiYm90dG9tXCI+XHJcbiAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwidGFiLWNvbnRleHRcIj5cclxuICAgICAgICAgICAgICA8SW5mbyBzaXplPXsxM30gY2xhc3NOYW1lPVwidGFiLWljb25cIiAvPlxyXG4gICAgICAgICAgICAgIDxzcGFuIGNsYXNzTmFtZT1cInRhYi10aXRsZVwiPkRldGFpbHM8L3NwYW4+XHJcbiAgICAgICAgICAgIDwvZGl2PlxyXG4gICAgICAgICAgPC9Ub29sVGlwPlxyXG4gICAgICAgIDwvZGl2PlxyXG5cclxuICAgICAgICA8ZGl2XHJcbiAgICAgICAgICBjbGFzc05hbWU9e2BpbnNwZWN0b3ItdGFiICR7cmlnaHRTaWRlYmFyVGFiID09PSAnb3V0bGluZScgPyAnYWN0aXZlJyA6ICcnfWB9XHJcbiAgICAgICAgICBvbkNsaWNrPXsoKSA9PiBzZXRSaWdodFNpZGViYXJUYWIoJ291dGxpbmUnKX1cclxuICAgICAgICA+XHJcbiAgICAgICAgICA8VG9vbFRpcCB0ZXh0PVwiTm90ZSBPdXRsaW5lXCIgcG9zaXRpb249XCJib3R0b21cIj5cclxuICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJ0YWItY29udGV4dFwiPlxyXG4gICAgICAgICAgICAgIDxMaXN0SWNvbiBzaXplPXsxM30gY2xhc3NOYW1lPVwidGFiLWljb25cIiAvPlxyXG4gICAgICAgICAgICAgIDxzcGFuIGNsYXNzTmFtZT1cInRhYi10aXRsZVwiPk91dGxpbmU8L3NwYW4+XHJcbiAgICAgICAgICAgIDwvZGl2PlxyXG4gICAgICAgICAgPC9Ub29sVGlwPlxyXG4gICAgICAgIDwvZGl2PlxyXG5cclxuICAgICAgICB7YWlDaGF0RGlzcGxheU1vZGUgPT09ICdzaWRlYmFyJyAmJiAoXHJcbiAgICAgICAgICA8ZGl2XHJcbiAgICAgICAgICAgIGNsYXNzTmFtZT17YGluc3BlY3Rvci10YWIgJHtyaWdodFNpZGViYXJUYWIgPT09ICdjaGF0JyA/ICdhY3RpdmUnIDogJyd9YH1cclxuICAgICAgICAgICAgb25DbGljaz17KCkgPT4ge1xyXG4gICAgICAgICAgICAgIHNldFJpZ2h0U2lkZWJhclRhYignY2hhdCcpXHJcbiAgICAgICAgICAgICAgdXBkYXRlU2V0dGluZygnYWlDaGF0RGlzcGxheU1vZGUnLCAnc2lkZWJhcicpXHJcbiAgICAgICAgICAgIH19XHJcbiAgICAgICAgICA+XHJcbiAgICAgICAgICAgIDxUb29sVGlwIHRleHQ9XCJBSSBDaGF0XCIgcG9zaXRpb249XCJib3R0b21cIj5cclxuICAgICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInRhYi1jb250ZXh0XCI+XHJcbiAgICAgICAgICAgICAgICA8TWVzc2FnZVNxdWFyZSBzaXplPXsxM30gY2xhc3NOYW1lPVwidGFiLWljb25cIiAvPlxyXG4gICAgICAgICAgICAgICAgPHNwYW4gY2xhc3NOYW1lPVwidGFiLXRpdGxlXCI+Q2hhdDwvc3Bhbj5cclxuICAgICAgICAgICAgICA8L2Rpdj5cclxuICAgICAgICAgICAgPC9Ub29sVGlwPlxyXG4gICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgKX1cclxuXHJcbiAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJmbGV4LTFcIiBzdHlsZT17eyBoZWlnaHQ6ICcxMDAlJywgcG9pbnRlckV2ZW50czogJ25vbmUnIH19IC8+XHJcbiAgICAgIDwvZGl2PlxyXG5cclxuICAgICAgey8qIFN1Yi1oZWFkZXIgdW5kZXIgdGhlIHRhYnMgKi99XHJcbiAgICAgIDxkaXYgY2xhc3NOYW1lPVwiaW5zcGVjdG9yLWJvZHktY2FyZFwiPlxyXG4gICAgICAgIHtyaWdodFNpZGViYXJUYWIgPT09ICdkZXRhaWxzJyAmJiAoXHJcbiAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cImluc3BlY3Rvci1zdWItaGVhZGVyXCI+XHJcbiAgICAgICAgICAgIDxzcGFuIGNsYXNzTmFtZT1cImluc3BlY3Rvci1zdWItdGl0bGVcIj5Ob3RlIERldGFpbHM8L3NwYW4+XHJcbiAgICAgICAgICAgIHtzZWxlY3RlZFNuaXBwZXQ/LnRpdGxlICYmIChcclxuICAgICAgICAgICAgICA8c3BhbiBjbGFzc05hbWU9XCJpbnNwZWN0b3Itc3ViLWJhZGdlXCIgdGl0bGU9e3NlbGVjdGVkU25pcHBldC50aXRsZX0+XHJcbiAgICAgICAgICAgICAgICB7c2VsZWN0ZWRTbmlwcGV0LnRpdGxlfVxyXG4gICAgICAgICAgICAgIDwvc3Bhbj5cclxuICAgICAgICAgICAgKX1cclxuICAgICAgICAgIDwvZGl2PlxyXG4gICAgICAgICl9XHJcblxyXG4gICAgICAgIHtyaWdodFNpZGViYXJUYWIgPT09ICdvdXRsaW5lJyAmJiAoXHJcbiAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cImluc3BlY3Rvci1zdWItaGVhZGVyXCI+XHJcbiAgICAgICAgICAgIDxzcGFuIGNsYXNzTmFtZT1cImluc3BlY3Rvci1zdWItdGl0bGVcIj5Ob3RlIE91dGxpbmU8L3NwYW4+XHJcbiAgICAgICAgICAgIHtzZWxlY3RlZFNuaXBwZXQ/LnRpdGxlICYmIChcclxuICAgICAgICAgICAgICA8c3BhbiBjbGFzc05hbWU9XCJpbnNwZWN0b3Itc3ViLWJhZGdlXCIgdGl0bGU9e3NlbGVjdGVkU25pcHBldC50aXRsZX0+XHJcbiAgICAgICAgICAgICAgICB7c2VsZWN0ZWRTbmlwcGV0LnRpdGxlfVxyXG4gICAgICAgICAgICAgIDwvc3Bhbj5cclxuICAgICAgICAgICAgKX1cclxuICAgICAgICAgIDwvZGl2PlxyXG4gICAgICAgICl9XHJcblxyXG4gICAgICAgIHtyaWdodFNpZGViYXJUYWIgPT09ICdjaGF0JyAmJiAoXHJcbiAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cImluc3BlY3Rvci1zdWItaGVhZGVyXCI+XHJcbiAgICAgICAgICAgIDxkaXYgc3R5bGU9e3sgZGlzcGxheTogJ2ZsZXgnLCBhbGlnbkl0ZW1zOiAnY2VudGVyJywgZ2FwOiAnNnB4JyB9fT5cclxuICAgICAgICAgICAgICA8VG9vbFRpcCB0ZXh0PVwiVG9nZ2xlIEhpc3RvcnlcIiBwb3NpdGlvbj1cImJvdHRvbVwiPlxyXG4gICAgICAgICAgICAgICAgPGJ1dHRvblxyXG4gICAgICAgICAgICAgICAgICBjbGFzc05hbWU9XCJpbnNwZWN0b3ItYWN0aW9uLWJ0blwiXHJcbiAgICAgICAgICAgICAgICAgIG9uQ2xpY2s9eygpID0+IHdpbmRvdy5kaXNwYXRjaEV2ZW50KG5ldyBDdXN0b21FdmVudCgnYWktdG9nZ2xlLWhpc3RvcnknKSl9XHJcbiAgICAgICAgICAgICAgICAgIGFyaWEtbGFiZWw9XCJUb2dnbGUgSGlzdG9yeVwiXHJcbiAgICAgICAgICAgICAgICA+XHJcbiAgICAgICAgICAgICAgICAgIDxIaXN0b3J5IHNpemU9ezEzfSAvPlxyXG4gICAgICAgICAgICAgICAgPC9idXR0b24+XHJcbiAgICAgICAgICAgICAgPC9Ub29sVGlwPlxyXG4gICAgICAgICAgICAgIDxzcGFuIGNsYXNzTmFtZT1cImluc3BlY3Rvci1zdWItdGl0bGVcIj5MdW1pbmEgQUkgQXNzaXN0YW50PC9zcGFuPlxyXG4gICAgICAgICAgICA8L2Rpdj5cclxuICAgICAgICAgICAgPFRvb2xUaXAgdGV4dD1cIlBvcCBvdXQgdG8gZmxvYXRpbmcgd2luZG93XCIgcG9zaXRpb249XCJib3R0b20tcmlnaHRcIj5cclxuICAgICAgICAgICAgICA8YnV0dG9uXHJcbiAgICAgICAgICAgICAgICBjbGFzc05hbWU9XCJpbnNwZWN0b3ItYWN0aW9uLWJ0blwiXHJcbiAgICAgICAgICAgICAgICBvbkNsaWNrPXtoYW5kbGVQb3BPdXR9XHJcbiAgICAgICAgICAgICAgICBhcmlhLWxhYmVsPVwiUG9wIG91dCB0byBmbG9hdGluZyB3aW5kb3dcIlxyXG4gICAgICAgICAgICAgID5cclxuICAgICAgICAgICAgICAgIDxFeHRlcm5hbExpbmsgc2l6ZT17MTN9IC8+XHJcbiAgICAgICAgICAgICAgPC9idXR0b24+XHJcbiAgICAgICAgICAgIDwvVG9vbFRpcD5cclxuICAgICAgICAgIDwvZGl2PlxyXG4gICAgICAgICl9XHJcblxyXG4gICAgICAgIDxkaXZcclxuICAgICAgICAgIGNsYXNzTmFtZT1cInBhbmVsLWNvbnRlbnRcIlxyXG4gICAgICAgICAgc3R5bGU9e3tcclxuICAgICAgICAgICAgZGlzcGxheTogJ2ZsZXgnLFxyXG4gICAgICAgICAgICBmbGV4RGlyZWN0aW9uOiAnY29sdW1uJyxcclxuICAgICAgICAgICAgZmxleDogMSxcclxuICAgICAgICAgICAgb3ZlcmZsb3c6ICdoaWRkZW4nLFxyXG4gICAgICAgICAgICBtaW5IZWlnaHQ6IDBcclxuICAgICAgICAgIH19XHJcbiAgICAgICAgPlxyXG4gICAgICAgICAgPEdsb2JhbEVycm9ySGFuZGxlcj5cclxuICAgICAgICAgICAge3JpZ2h0U2lkZWJhclRhYiA9PT0gJ291dGxpbmUnID8gKFxyXG4gICAgICAgICAgICAgIDxOb3RlT3V0bGluZSBzbmlwcGV0PXtzZWxlY3RlZFNuaXBwZXR9IC8+XHJcbiAgICAgICAgICAgICkgOiByaWdodFNpZGViYXJUYWIgPT09ICdjaGF0JyA/IChcclxuICAgICAgICAgICAgICA8UmVhY3QuU3VzcGVuc2VcclxuICAgICAgICAgICAgICAgIGZhbGxiYWNrPXtcclxuICAgICAgICAgICAgICAgICAgPGRpdlxyXG4gICAgICAgICAgICAgICAgICAgIHN0eWxlPXt7XHJcbiAgICAgICAgICAgICAgICAgICAgICBkaXNwbGF5OiAnZmxleCcsXHJcbiAgICAgICAgICAgICAgICAgICAgICBhbGlnbkl0ZW1zOiAnY2VudGVyJyxcclxuICAgICAgICAgICAgICAgICAgICAgIGp1c3RpZnlDb250ZW50OiAnY2VudGVyJyxcclxuICAgICAgICAgICAgICAgICAgICAgIGhlaWdodDogJzEwMCUnLFxyXG4gICAgICAgICAgICAgICAgICAgICAgY29sb3I6ICd2YXIoLS10ZXh0LW11dGVkLCAjODg4KScsXHJcbiAgICAgICAgICAgICAgICAgICAgICBmb250U2l6ZTogMTJcclxuICAgICAgICAgICAgICAgICAgICB9fVxyXG4gICAgICAgICAgICAgICAgICA+XHJcbiAgICAgICAgICAgICAgICAgICAgTG9hZGluZyBMdW1pbmEgQUkuLi5cclxuICAgICAgICAgICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgICAgICAgICB9XHJcbiAgICAgICAgICAgICAgPlxyXG4gICAgICAgICAgICAgICAgPEx1bWluYUNoYXRDb250ZW50IGlzU2lkZWJhcj17dHJ1ZX0gb25Qb3BPdXQ9e2hhbmRsZVBvcE91dH0gLz5cclxuICAgICAgICAgICAgICA8L1JlYWN0LlN1c3BlbnNlPlxyXG4gICAgICAgICAgICApIDogKFxyXG4gICAgICAgICAgICAgIDxOb3RlRGV0YWlscyBzbmlwcGV0PXtzZWxlY3RlZFNuaXBwZXR9IGlzTG9hZGluZz17aXNMb2FkaW5nfSAvPlxyXG4gICAgICAgICAgICApfVxyXG4gICAgICAgICAgPC9HbG9iYWxFcnJvckhhbmRsZXI+XHJcbiAgICAgICAgPC9kaXY+XHJcbiAgICAgIDwvZGl2PlxyXG5cclxuICAgICAgPFJpZ2h0U2lkZWJhckZvb3RlclxyXG4gICAgICAgIHNlbGVjdGVkU25pcHBldD17c2VsZWN0ZWRTbmlwcGV0fVxyXG4gICAgICAgIHJpZ2h0U2lkZWJhclRhYj17cmlnaHRTaWRlYmFyVGFifVxyXG4gICAgICAgIG9uQ2xvc2U9eygpID0+IHNldElzUmlnaHRTaWRlYmFyT3Blbj8uKGZhbHNlKX1cclxuICAgICAgLz5cclxuICAgIDwvZGl2PlxyXG4gIClcclxufSlcclxuXHJcblJpZ2h0U2lkZWJhci5kaXNwbGF5TmFtZSA9ICdSaWdodFNpZGViYXInXHJcblxyXG5leHBvcnQgZGVmYXVsdCBSaWdodFNpZGViYXJcclxuIl0sImZpbGUiOiJCOi9lbGVjdHJvbi9sdW1pbmEvc3JjL3JlbmRlcmVyL3NyYy9mZWF0dXJlcy9JbnNwZWN0b3IvUmlnaHRTaWRlYmFyLmpzeCJ9

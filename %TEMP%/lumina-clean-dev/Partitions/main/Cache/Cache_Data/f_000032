@@ -1,0 +1,394 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/features/email/components/EmailSidebar.tsx");import __vite__cjsImport0_react_jsxDevRuntime from "/@fs/B:/electron/lumina/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=f41806ed"; const jsxDEV = __vite__cjsImport0_react_jsxDevRuntime["jsxDEV"];
+var _s = $RefreshSig$();
+import __vite__cjsImport1_react from "/@fs/B:/electron/lumina/node_modules/.vite/deps/react.js?v=f41806ed"; const useState = __vite__cjsImport1_react["useState"];
+import {
+  Inbox,
+  Send,
+  FileText,
+  Star,
+  Trash2,
+  AlertOctagon,
+  Plus,
+  Tag,
+  Users,
+  MessageSquare,
+  Bookmark,
+  ChevronDown,
+  ChevronRight,
+  Bell
+} from "/@fs/B:/electron/lumina/node_modules/.vite/deps/lucide-react.js?v=f41806ed";
+export const EmailSidebar = ({
+  currentFolder,
+  onSelectFolder,
+  userLabels,
+  onOpenCompose,
+  isOpen = true,
+  onToggleOpen,
+  width = 195,
+  isResizing = false
+}) => {
+  _s();
+  const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(true);
+  const [isLabelsExpanded, setIsLabelsExpanded] = useState(true);
+  const primaryFolders = [
+    { id: "INBOX", label: "Inbox", icon: Inbox },
+    { id: "STARRED", label: "Starred", icon: Star },
+    { id: "IMPORTANT", label: "Important", icon: Bookmark },
+    { id: "SENT", label: "Sent", icon: Send },
+    { id: "DRAFT", label: "Drafts", icon: FileText }
+  ];
+  const categoryFolders = [
+    { id: "CATEGORY_PROMOTIONS", label: "Promotions", icon: Tag },
+    { id: "CATEGORY_SOCIAL", label: "Social", icon: Users },
+    { id: "CATEGORY_UPDATES", label: "Updates", icon: Bell },
+    { id: "CATEGORY_FORUMS", label: "Forums", icon: MessageSquare }
+  ];
+  const otherFolders = [
+    { id: "SPAM", label: "Spam", icon: AlertOctagon },
+    { id: "TRASH", label: "Trash", icon: Trash2 }
+  ];
+  return /* @__PURE__ */ jsxDEV(
+    "aside",
+    {
+      className: `email-sidebar ${!isOpen ? "closed" : "open"} ${isResizing ? "is-resizing" : ""}`,
+      style: {
+        width: isOpen ? `${width}px` : "0px",
+        minWidth: isOpen ? `${width}px` : "0px"
+      },
+      "aria-label": "Email folders and labels",
+      children: [
+        /* @__PURE__ */ jsxDEV("div", { className: "email-compose-wrapper", children: /* @__PURE__ */ jsxDEV(
+          "button",
+          {
+            type: "button",
+            className: "email-compose-btn",
+            onClick: onOpenCompose,
+            "aria-label": "Compose new email",
+            children: [
+              /* @__PURE__ */ jsxDEV(Plus, { size: 13 }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+                lineNumber: 106,
+                columnNumber: 11
+              }, this),
+              /* @__PURE__ */ jsxDEV("span", { children: "Compose" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+                lineNumber: 107,
+                columnNumber: 11
+              }, this)
+            ]
+          },
+          void 0,
+          true,
+          {
+            fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+            lineNumber: 100,
+            columnNumber: 9
+          },
+          this
+        ) }, void 0, false, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+          lineNumber: 99,
+          columnNumber: 7
+        }, this),
+        /* @__PURE__ */ jsxDEV("div", { className: "email-sidebar-scroll", children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "email-nav-group", children: primaryFolders.map((item) => {
+            const Icon = item.icon;
+            const isActive = currentFolder === item.id;
+            return /* @__PURE__ */ jsxDEV(
+              "button",
+              {
+                type: "button",
+                className: `email-nav-item ${isActive ? "active" : ""}`,
+                onClick: () => onSelectFolder(item.id),
+                children: [
+                  /* @__PURE__ */ jsxDEV(Icon, { size: 14 }, void 0, false, {
+                    fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+                    lineNumber: 125,
+                    columnNumber: 17
+                  }, this),
+                  /* @__PURE__ */ jsxDEV("span", { className: "email-nav-label-text", children: item.label }, void 0, false, {
+                    fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+                    lineNumber: 126,
+                    columnNumber: 17
+                  }, this)
+                ]
+              },
+              item.id,
+              true,
+              {
+                fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+                lineNumber: 119,
+                columnNumber: 15
+              },
+              this
+            );
+          }) }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+            lineNumber: 114,
+            columnNumber: 9
+          }, this),
+          /* @__PURE__ */ jsxDEV("div", { className: "email-nav-group", children: [
+            /* @__PURE__ */ jsxDEV(
+              "div",
+              {
+                className: "email-nav-section-title clickable",
+                onClick: () => setIsCategoriesExpanded(!isCategoriesExpanded),
+                title: "Toggle categories",
+                children: [
+                  /* @__PURE__ */ jsxDEV("span", { children: "Categories" }, void 0, false, {
+                    fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+                    lineNumber: 139,
+                    columnNumber: 13
+                  }, this),
+                  isCategoriesExpanded ? /* @__PURE__ */ jsxDEV(ChevronDown, { size: 12 }, void 0, false, {
+                    fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+                    lineNumber: 140,
+                    columnNumber: 37
+                  }, this) : /* @__PURE__ */ jsxDEV(ChevronRight, { size: 12 }, void 0, false, {
+                    fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+                    lineNumber: 140,
+                    columnNumber: 65
+                  }, this)
+                ]
+              },
+              void 0,
+              true,
+              {
+                fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+                lineNumber: 134,
+                columnNumber: 11
+              },
+              this
+            ),
+            isCategoriesExpanded && /* @__PURE__ */ jsxDEV("div", { className: "email-nav-subgroup", children: categoryFolders.map((item) => {
+              const Icon = item.icon;
+              const isActive = currentFolder === item.id;
+              return /* @__PURE__ */ jsxDEV(
+                "button",
+                {
+                  type: "button",
+                  className: `email-nav-item ${isActive ? "active" : ""}`,
+                  onClick: () => onSelectFolder(item.id),
+                  children: [
+                    /* @__PURE__ */ jsxDEV(Icon, { size: 14 }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+                      lineNumber: 154,
+                      columnNumber: 21
+                    }, this),
+                    /* @__PURE__ */ jsxDEV("span", { className: "email-nav-label-text", children: item.label }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+                      lineNumber: 155,
+                      columnNumber: 21
+                    }, this)
+                  ]
+                },
+                item.id,
+                true,
+                {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+                  lineNumber: 148,
+                  columnNumber: 17
+                },
+                this
+              );
+            }) }, void 0, false, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+              lineNumber: 143,
+              columnNumber: 11
+            }, this)
+          ] }, void 0, true, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+            lineNumber: 133,
+            columnNumber: 9
+          }, this),
+          /* @__PURE__ */ jsxDEV("div", { className: "email-nav-group", children: [
+            /* @__PURE__ */ jsxDEV(
+              "div",
+              {
+                className: "email-nav-section-title clickable",
+                onClick: () => setIsLabelsExpanded(!isLabelsExpanded),
+                title: "Toggle custom labels",
+                children: [
+                  /* @__PURE__ */ jsxDEV("span", { children: "Labels" }, void 0, false, {
+                    fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+                    lineNumber: 170,
+                    columnNumber: 13
+                  }, this),
+                  isLabelsExpanded ? /* @__PURE__ */ jsxDEV(ChevronDown, { size: 12 }, void 0, false, {
+                    fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+                    lineNumber: 171,
+                    columnNumber: 33
+                  }, this) : /* @__PURE__ */ jsxDEV(ChevronRight, { size: 12 }, void 0, false, {
+                    fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+                    lineNumber: 171,
+                    columnNumber: 61
+                  }, this)
+                ]
+              },
+              void 0,
+              true,
+              {
+                fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+                lineNumber: 165,
+                columnNumber: 11
+              },
+              this
+            ),
+            isLabelsExpanded && /* @__PURE__ */ jsxDEV("div", { className: "email-nav-subgroup", children: userLabels && userLabels.length > 0 ? userLabels.map((lbl) => {
+              const isActive = currentFolder === lbl.id;
+              return /* @__PURE__ */ jsxDEV(
+                "button",
+                {
+                  type: "button",
+                  className: `email-nav-item ${isActive ? "active" : ""}`,
+                  onClick: () => onSelectFolder(lbl.id),
+                  title: lbl.name,
+                  children: [
+                    /* @__PURE__ */ jsxDEV(
+                      Tag,
+                      {
+                        size: 13,
+                        style: { color: lbl.color?.backgroundColor || "var(--text-muted, #94a3b8)" }
+                      },
+                      void 0,
+                      false,
+                      {
+                        fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+                        lineNumber: 186,
+                        columnNumber: 23
+                      },
+                      this
+                    ),
+                    /* @__PURE__ */ jsxDEV("span", { className: "email-nav-label-text", children: lbl.name }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+                      lineNumber: 190,
+                      columnNumber: 23
+                    }, this),
+                    Boolean(lbl.messagesUnread && lbl.messagesUnread > 0) && /* @__PURE__ */ jsxDEV("span", { className: "email-nav-badge", children: lbl.messagesUnread }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+                      lineNumber: 192,
+                      columnNumber: 19
+                    }, this)
+                  ]
+                },
+                lbl.id,
+                true,
+                {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+                  lineNumber: 179,
+                  columnNumber: 17
+                },
+                this
+              );
+            }) : /* @__PURE__ */ jsxDEV("div", { className: "email-nav-empty-labels", children: "No custom labels" }, void 0, false, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+              lineNumber: 198,
+              columnNumber: 13
+            }, this) }, void 0, false, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+              lineNumber: 174,
+              columnNumber: 11
+            }, this)
+          ] }, void 0, true, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+            lineNumber: 164,
+            columnNumber: 9
+          }, this),
+          /* @__PURE__ */ jsxDEV("div", { className: "email-nav-group", children: [
+            /* @__PURE__ */ jsxDEV("div", { className: "email-nav-section-title", children: /* @__PURE__ */ jsxDEV("span", { children: "Other" }, void 0, false, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+              lineNumber: 207,
+              columnNumber: 13
+            }, this) }, void 0, false, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+              lineNumber: 206,
+              columnNumber: 11
+            }, this),
+            /* @__PURE__ */ jsxDEV("div", { className: "email-nav-subgroup", children: otherFolders.map((item) => {
+              const Icon = item.icon;
+              const isActive = currentFolder === item.id;
+              return /* @__PURE__ */ jsxDEV(
+                "button",
+                {
+                  type: "button",
+                  className: `email-nav-item ${isActive ? "active" : ""}`,
+                  onClick: () => onSelectFolder(item.id),
+                  children: [
+                    /* @__PURE__ */ jsxDEV(Icon, { size: 14 }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+                      lineNumber: 220,
+                      columnNumber: 19
+                    }, this),
+                    /* @__PURE__ */ jsxDEV("span", { className: "email-nav-label-text", children: item.label }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+                      lineNumber: 221,
+                      columnNumber: 19
+                    }, this)
+                  ]
+                },
+                item.id,
+                true,
+                {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+                  lineNumber: 214,
+                  columnNumber: 17
+                },
+                this
+              );
+            }) }, void 0, false, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+              lineNumber: 209,
+              columnNumber: 11
+            }, this)
+          ] }, void 0, true, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+            lineNumber: 205,
+            columnNumber: 9
+          }, this)
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+          lineNumber: 112,
+          columnNumber: 7
+        }, this)
+      ]
+    },
+    void 0,
+    true,
+    {
+      fileName: "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx",
+      lineNumber: 90,
+      columnNumber: 5
+    },
+    this
+  );
+};
+_s(EmailSidebar, "/3aVfvcUAVL/L7kt/2i3DMr+R6A=");
+_c = EmailSidebar;
+export default EmailSidebar;
+var _c;
+$RefreshReg$(_c, "EmailSidebar");
+import * as RefreshRuntime from "/@react-refresh";
+const inWebWorker = typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope;
+if (import.meta.hot && !inWebWorker) {
+  if (!window.$RefreshReg$) {
+    throw new Error(
+      "@vitejs/plugin-react can't detect preamble. Something is wrong."
+    );
+  }
+  RefreshRuntime.__hmr_import(import.meta.url).then((currentExports) => {
+    RefreshRuntime.registerExportsForReactRefresh("B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx", currentExports);
+    import.meta.hot.accept((nextExports) => {
+      if (!nextExports) return;
+      const invalidateMessage = RefreshRuntime.validateRefreshBoundaryAndEnqueueUpdate("B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx", currentExports, nextExports);
+      if (invalidateMessage) import.meta.hot.invalidate(invalidateMessage);
+    });
+  });
+}
+function $RefreshReg$(type, id) {
+  return RefreshRuntime.register(type, "B:/electron/lumina/src/renderer/src/features/email/components/EmailSidebar.tsx " + id);
+}
+function $RefreshSig$() {
+  return RefreshRuntime.createSignatureFunctionForTransform();
+}
+
+//# sourceMappingURL=data:application/json;base64,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QUFBQTtBQUFBO0FBQUE7QUFBQSxtQkFFQTtBQUFBLFlBQ0EsdUJBQUMsU0FBSSxXQUFVLHNCQUNaSSx1QkFBYUUsSUFBSSxDQUFDQyxTQUFTO0FBQzFCLG9CQUFNQyxPQUFPRCxLQUFLTDtBQUNsQixvQkFBTU8sV0FBV3ZCLGtCQUFrQnFCLEtBQUtQO0FBQ3hDLHFCQUNFO0FBQUEsZ0JBQUM7QUFBQTtBQUFBLGtCQUVDLE1BQUs7QUFBQSxrQkFDTCxXQUFXLGtCQUFrQlMsV0FBVyxXQUFXLEVBQUU7QUFBQSxrQkFDckQsU0FBUyxNQUFNdEIsZUFBZW9CLEtBQUtQLEVBQUU7QUFBQSxrQkFFckM7QUFBQSwyQ0FBQyxRQUFLLE1BQU0sTUFBWjtBQUFBO0FBQUE7QUFBQTtBQUFBLDJCQUFlO0FBQUEsb0JBQ2YsdUJBQUMsVUFBSyxXQUFVLHdCQUF3Qk8sZUFBS04sU0FBN0M7QUFBQTtBQUFBO0FBQUE7QUFBQSwyQkFBbUQ7QUFBQTtBQUFBO0FBQUEsZ0JBTjlDTSxLQUFLUDtBQUFBQSxnQkFEWjtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBLGNBUUE7QUFBQSxZQUVKLENBQUMsS0FmSDtBQUFBO0FBQUE7QUFBQTtBQUFBLG1CQWdCQTtBQUFBLGVBcEJGO0FBQUE7QUFBQTtBQUFBO0FBQUEsaUJBcUJBO0FBQUEsYUFsSEY7QUFBQTtBQUFBO0FBQUE7QUFBQSxlQW1IQTtBQUFBO0FBQUE7QUFBQSxJQXpJRjtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUEsRUEwSUE7QUFFSjtBQUFDTixHQTlLWVQsY0FBeUM7QUFBQWdDLEtBQXpDaEM7QUFnTGIsZUFBZUE7QUFBWSxJQUFBZ0M7QUFBQUMsYUFBQUQsSUFBQSIsIm5hbWVzIjpbInVzZVN0YXRlIiwiSW5ib3giLCJTZW5kIiwiRmlsZVRleHQiLCJTdGFyIiwiVHJhc2gyIiwiQWxlcnRPY3RhZ29uIiwiUGx1cyIsIlRhZyIsIlVzZXJzIiwiTWVzc2FnZVNxdWFyZSIsIkJvb2ttYXJrIiwiQ2hldnJvbkRvd24iLCJDaGV2cm9uUmlnaHQiLCJCZWxsIiwiRW1haWxTaWRlYmFyIiwiY3VycmVudEZvbGRlciIsIm9uU2VsZWN0Rm9sZGVyIiwidXNlckxhYmVscyIsIm9uT3BlbkNvbXBvc2UiLCJpc09wZW4iLCJvblRvZ2dsZU9wZW4iLCJ3aWR0aCIsImlzUmVzaXppbmciLCJfcyIsImlzQ2F0ZWdvcmllc0V4cGFuZGVkIiwic2V0SXNDYXRlZ29yaWVzRXhwYW5kZWQiLCJpc0xhYmVsc0V4cGFuZGVkIiwic2V0SXNMYWJlbHNFeHBhbmRlZCIsInByaW1hcnlGb2xkZXJzIiwiaWQiLCJsYWJlbCIsImljb24iLCJjYXRlZ29yeUZvbGRlcnMiLCJvdGhlckZvbGRlcnMiLCJtaW5XaWR0aCIsIm1hcCIsIml0ZW0iLCJJY29uIiwiaXNBY3RpdmUiLCJsZW5ndGgiLCJsYmwiLCJuYW1lIiwiY29sb3IiLCJiYWNrZ3JvdW5kQ29sb3IiLCJCb29sZWFuIiwibWVzc2FnZXNVbnJlYWQiLCJfYyIsIiRSZWZyZXNoUmVnJCJdLCJpZ25vcmVMaXN0IjpbXSwic291cmNlcyI6WyJFbWFpbFNpZGViYXIudHN4Il0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCBSZWFjdCwgeyB1c2VTdGF0ZSB9IGZyb20gJ3JlYWN0J1xuaW1wb3J0IHtcbiAgSW5ib3gsXG4gIFNlbmQsXG4gIEZpbGVUZXh0LFxuICBTdGFyLFxuICBUcmFzaDIsXG4gIEFsZXJ0T2N0YWdvbixcbiAgUGx1cyxcbiAgVGFnLFxuICBVc2VycyxcbiAgTWVzc2FnZVNxdWFyZSxcbiAgQm9va21hcmssXG4gIENoZXZyb25Eb3duLFxuICBDaGV2cm9uUmlnaHQsXG4gIEJlbGwsXG4gIFBhbmVsTGVmdENsb3NlXG59IGZyb20gJ2x1Y2lkZS1yZWFjdCdcbmltcG9ydCB7IEVtYWlsRm9sZGVyLCBFbWFpbExhYmVsSXRlbSB9IGZyb20gJy4uL3R5cGVzJ1xuaW1wb3J0IFRvb2xUaXAgZnJvbSAnLi4vLi4vLi4vY29tcG9uZW50cy9hdG9tcy9Ub29sVGlwJ1xuXG4vKipcbiAqIFByb3BzIGZvciB0aGUgRW1haWxTaWRlYmFyIGNvbXBvbmVudFxuICovXG5leHBvcnQgaW50ZXJmYWNlIEVtYWlsU2lkZWJhclByb3BzIHtcbiAgLyoqIEFjdGl2ZSBmb2xkZXIgb3IgbGFiZWwgaWRlbnRpZmllciAqL1xuICBjdXJyZW50Rm9sZGVyOiBFbWFpbEZvbGRlclxuICAvKiogQ2FsbGJhY2sgd2hlbiB1c2VyIHNlbGVjdHMgYSBtYWlsYm94L2ZvbGRlci9sYWJlbCAqL1xuICBvblNlbGVjdEZvbGRlcjogKGZvbGRlcjogRW1haWxGb2xkZXIpID0+IHZvaWRcbiAgLyoqIEN1c3RvbSB1c2VyIGxhYmVscyBmZXRjaGVkIGZyb20gR21haWwgQVBJICovXG4gIHVzZXJMYWJlbHM6IEVtYWlsTGFiZWxJdGVtW11cbiAgLyoqIFRyaWdnZXIgdG8gb3BlbiB0aGUgbmV3IGVtYWlsIGNvbXBvc2VyICovXG4gIG9uT3BlbkNvbXBvc2U6ICgpID0+IHZvaWRcbiAgLyoqIFdoZXRoZXIgdGhlIHNpZGViYXIgaXMgY3VycmVudGx5IG9wZW4vZXhwYW5kZWQgKi9cbiAgaXNPcGVuPzogYm9vbGVhblxuICAvKiogQ2FsbGJhY2sgdG8gdG9nZ2xlIG9yIGNvbGxhcHNlIHRoZSBzaWRlYmFyICovXG4gIG9uVG9nZ2xlT3Blbj86ICgpID0+IHZvaWRcbiAgLyoqIEN1cnJlbnQgc2lkZWJhciB3aWR0aCBpbiBwaXhlbHMgKi9cbiAgd2lkdGg/OiBudW1iZXJcbiAgLyoqIFdoZXRoZXIgZHJhZ2dpbmcgcmVzaXplIGlzIGN1cnJlbnRseSBhY3RpdmUgKi9cbiAgaXNSZXNpemluZz86IGJvb2xlYW5cbn1cblxuaW50ZXJmYWNlIE5hdkl0ZW0ge1xuICBpZDogRW1haWxGb2xkZXJcbiAgbGFiZWw6IHN0cmluZ1xuICBpY29uOiBSZWFjdC5Db21wb25lbnRUeXBlPHsgc2l6ZT86IG51bWJlcjsgY2xhc3NOYW1lPzogc3RyaW5nOyBzdHlsZT86IFJlYWN0LkNTU1Byb3BlcnRpZXMgfT5cbn1cblxuLyoqXG4gKiBFbWFpbFNpZGViYXIgQ29tcG9uZW50XG4gKiBcbiAqIENvbGxhcHNpYmxlIGxlZnQgbmF2aWdhdGlvbiBwYW5lIG1vZGVsZWQgYWZ0ZXIgTHVtaW5hJ3MgbWFpbiBTaWRlYmFyLlxuICogU3VwcG9ydHMgc21vb3RoIGN1cnRhaW4gY29sbGFwc2UsIGRyYWctdG8tcmVzaXplLCBhbmQgc25hcC10by1jbG9zZSB0aHJlc2hvbGQgbWVjaGFuaWNzLlxuICovXG5leHBvcnQgY29uc3QgRW1haWxTaWRlYmFyOiBSZWFjdC5GQzxFbWFpbFNpZGViYXJQcm9wcz4gPSAoe1xuICBjdXJyZW50Rm9sZGVyLFxuICBvblNlbGVjdEZvbGRlcixcbiAgdXNlckxhYmVscyxcbiAgb25PcGVuQ29tcG9zZSxcbiAgaXNPcGVuID0gdHJ1ZSxcbiAgb25Ub2dnbGVPcGVuLFxuICB3aWR0aCA9IDE5NSxcbiAgaXNSZXNpemluZyA9IGZhbHNlXG59KSA9PiB7XG4gIGNvbnN0IFtpc0NhdGVnb3JpZXNFeHBhbmRlZCwgc2V0SXNDYXRlZ29yaWVzRXhwYW5kZWRdID0gdXNlU3RhdGU8Ym9vbGVhbj4odHJ1ZSlcbiAgY29uc3QgW2lzTGFiZWxzRXhwYW5kZWQsIHNldElzTGFiZWxzRXhwYW5kZWRdID0gdXNlU3RhdGU8Ym9vbGVhbj4odHJ1ZSlcblxuICBjb25zdCBwcmltYXJ5Rm9sZGVyczogTmF2SXRlbVtdID0gW1xuICAgIHsgaWQ6ICdJTkJPWCcsIGxhYmVsOiAnSW5ib3gnLCBpY29uOiBJbmJveCB9LFxuICAgIHsgaWQ6ICdTVEFSUkVEJywgbGFiZWw6ICdTdGFycmVkJywgaWNvbjogU3RhciB9LFxuICAgIHsgaWQ6ICdJTVBPUlRBTlQnLCBsYWJlbDogJ0ltcG9ydGFudCcsIGljb246IEJvb2ttYXJrIH0sXG4gICAgeyBpZDogJ1NFTlQnLCBsYWJlbDogJ1NlbnQnLCBpY29uOiBTZW5kIH0sXG4gICAgeyBpZDogJ0RSQUZUJywgbGFiZWw6ICdEcmFmdHMnLCBpY29uOiBGaWxlVGV4dCB9XG4gIF1cblxuICBjb25zdCBjYXRlZ29yeUZvbGRlcnM6IE5hdkl0ZW1bXSA9IFtcbiAgICB7IGlkOiAnQ0FURUdPUllfUFJPTU9USU9OUycsIGxhYmVsOiAnUHJvbW90aW9ucycsIGljb246IFRhZyB9LFxuICAgIHsgaWQ6ICdDQVRFR09SWV9TT0NJQUwnLCBsYWJlbDogJ1NvY2lhbCcsIGljb246IFVzZXJzIH0sXG4gICAgeyBpZDogJ0NBVEVHT1JZX1VQREFURVMnLCBsYWJlbDogJ1VwZGF0ZXMnLCBpY29uOiBCZWxsIH0sXG4gICAgeyBpZDogJ0NBVEVHT1JZX0ZPUlVNUycsIGxhYmVsOiAnRm9ydW1zJywgaWNvbjogTWVzc2FnZVNxdWFyZSB9XG4gIF1cblxuICBjb25zdCBvdGhlckZvbGRlcnM6IE5hdkl0ZW1bXSA9IFtcbiAgICB7IGlkOiAnU1BBTScsIGxhYmVsOiAnU3BhbScsIGljb246IEFsZXJ0T2N0YWdvbiB9LFxuICAgIHsgaWQ6ICdUUkFTSCcsIGxhYmVsOiAnVHJhc2gnLCBpY29uOiBUcmFzaDIgfVxuICBdXG5cbiAgcmV0dXJuIChcbiAgICA8YXNpZGVcbiAgICAgIGNsYXNzTmFtZT17YGVtYWlsLXNpZGViYXIgJHshaXNPcGVuID8gJ2Nsb3NlZCcgOiAnb3Blbid9ICR7aXNSZXNpemluZyA/ICdpcy1yZXNpemluZycgOiAnJ31gfVxuICAgICAgc3R5bGU9e3tcbiAgICAgICAgd2lkdGg6IGlzT3BlbiA/IGAke3dpZHRofXB4YCA6ICcwcHgnLFxuICAgICAgICBtaW5XaWR0aDogaXNPcGVuID8gYCR7d2lkdGh9cHhgIDogJzBweCdcbiAgICAgIH19XG4gICAgICBhcmlhLWxhYmVsPVwiRW1haWwgZm9sZGVycyBhbmQgbGFiZWxzXCJcbiAgICA+XG4gICAgICB7LyogVG9wIENvbXBvc2VyIEFjdGlvbiBDb250YWluZXIgKi99XG4gICAgICA8ZGl2IGNsYXNzTmFtZT1cImVtYWlsLWNvbXBvc2Utd3JhcHBlclwiPlxuICAgICAgICA8YnV0dG9uXG4gICAgICAgICAgdHlwZT1cImJ1dHRvblwiXG4gICAgICAgICAgY2xhc3NOYW1lPVwiZW1haWwtY29tcG9zZS1idG5cIlxuICAgICAgICAgIG9uQ2xpY2s9e29uT3BlbkNvbXBvc2V9XG4gICAgICAgICAgYXJpYS1sYWJlbD1cIkNvbXBvc2UgbmV3IGVtYWlsXCJcbiAgICAgICAgPlxuICAgICAgICAgIDxQbHVzIHNpemU9ezEzfSAvPlxuICAgICAgICAgIDxzcGFuPkNvbXBvc2U8L3NwYW4+XG4gICAgICAgIDwvYnV0dG9uPlxuICAgICAgPC9kaXY+XG5cbiAgICAgIHsvKiBOYXZpZ2F0aW9uIFNlY3Rpb25zICovfVxuICAgICAgPGRpdiBjbGFzc05hbWU9XCJlbWFpbC1zaWRlYmFyLXNjcm9sbFwiPlxuICAgICAgICB7LyogUHJpbWFyeSBNYWlsYm94ZXMgKi99XG4gICAgICAgIDxkaXYgY2xhc3NOYW1lPVwiZW1haWwtbmF2LWdyb3VwXCI+XG4gICAgICAgICAge3ByaW1hcnlGb2xkZXJzLm1hcCgoaXRlbSkgPT4ge1xuICAgICAgICAgICAgY29uc3QgSWNvbiA9IGl0ZW0uaWNvblxuICAgICAgICAgICAgY29uc3QgaXNBY3RpdmUgPSBjdXJyZW50Rm9sZGVyID09PSBpdGVtLmlkXG4gICAgICAgICAgICByZXR1cm4gKFxuICAgICAgICAgICAgICA8YnV0dG9uXG4gICAgICAgICAgICAgICAga2V5PXtpdGVtLmlkfVxuICAgICAgICAgICAgICAgIHR5cGU9XCJidXR0b25cIlxuICAgICAgICAgICAgICAgIGNsYXNzTmFtZT17YGVtYWlsLW5hdi1pdGVtICR7aXNBY3RpdmUgPyAnYWN0aXZlJyA6ICcnfWB9XG4gICAgICAgICAgICAgICAgb25DbGljaz17KCkgPT4gb25TZWxlY3RGb2xkZXIoaXRlbS5pZCl9XG4gICAgICAgICAgICAgID5cbiAgICAgICAgICAgICAgICA8SWNvbiBzaXplPXsxNH0gLz5cbiAgICAgICAgICAgICAgICA8c3BhbiBjbGFzc05hbWU9XCJlbWFpbC1uYXYtbGFiZWwtdGV4dFwiPntpdGVtLmxhYmVsfTwvc3Bhbj5cbiAgICAgICAgICAgICAgPC9idXR0b24+XG4gICAgICAgICAgICApXG4gICAgICAgICAgfSl9XG4gICAgICAgIDwvZGl2PlxuXG4gICAgICAgIHsvKiBDYXRlZ29yaWVzIChQcm9tb3Rpb25zLCBTb2NpYWwsIFVwZGF0ZXMsIEZvcnVtcykgKi99XG4gICAgICAgIDxkaXYgY2xhc3NOYW1lPVwiZW1haWwtbmF2LWdyb3VwXCI+XG4gICAgICAgICAgPGRpdlxuICAgICAgICAgICAgY2xhc3NOYW1lPVwiZW1haWwtbmF2LXNlY3Rpb24tdGl0bGUgY2xpY2thYmxlXCJcbiAgICAgICAgICAgIG9uQ2xpY2s9eygpID0+IHNldElzQ2F0ZWdvcmllc0V4cGFuZGVkKCFpc0NhdGVnb3JpZXNFeHBhbmRlZCl9XG4gICAgICAgICAgICB0aXRsZT1cIlRvZ2dsZSBjYXRlZ29yaWVzXCJcbiAgICAgICAgICA+XG4gICAgICAgICAgICA8c3Bhbj5DYXRlZ29yaWVzPC9zcGFuPlxuICAgICAgICAgICAge2lzQ2F0ZWdvcmllc0V4cGFuZGVkID8gPENoZXZyb25Eb3duIHNpemU9ezEyfSAvPiA6IDxDaGV2cm9uUmlnaHQgc2l6ZT17MTJ9IC8+fVxuICAgICAgICAgIDwvZGl2PlxuICAgICAgICAgIHtpc0NhdGVnb3JpZXNFeHBhbmRlZCAmJiAoXG4gICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cImVtYWlsLW5hdi1zdWJncm91cFwiPlxuICAgICAgICAgICAgICB7Y2F0ZWdvcnlGb2xkZXJzLm1hcCgoaXRlbSkgPT4ge1xuICAgICAgICAgICAgICAgIGNvbnN0IEljb24gPSBpdGVtLmljb25cbiAgICAgICAgICAgICAgICBjb25zdCBpc0FjdGl2ZSA9IGN1cnJlbnRGb2xkZXIgPT09IGl0ZW0uaWRcbiAgICAgICAgICAgICAgICByZXR1cm4gKFxuICAgICAgICAgICAgICAgICAgPGJ1dHRvblxuICAgICAgICAgICAgICAgICAgICBrZXk9e2l0ZW0uaWR9XG4gICAgICAgICAgICAgICAgICAgIHR5cGU9XCJidXR0b25cIlxuICAgICAgICAgICAgICAgICAgICBjbGFzc05hbWU9e2BlbWFpbC1uYXYtaXRlbSAke2lzQWN0aXZlID8gJ2FjdGl2ZScgOiAnJ31gfVxuICAgICAgICAgICAgICAgICAgICBvbkNsaWNrPXsoKSA9PiBvblNlbGVjdEZvbGRlcihpdGVtLmlkKX1cbiAgICAgICAgICAgICAgICAgID5cbiAgICAgICAgICAgICAgICAgICAgPEljb24gc2l6ZT17MTR9IC8+XG4gICAgICAgICAgICAgICAgICAgIDxzcGFuIGNsYXNzTmFtZT1cImVtYWlsLW5hdi1sYWJlbC10ZXh0XCI+e2l0ZW0ubGFiZWx9PC9zcGFuPlxuICAgICAgICAgICAgICAgICAgPC9idXR0b24+XG4gICAgICAgICAgICAgICAgKVxuICAgICAgICAgICAgICB9KX1cbiAgICAgICAgICAgIDwvZGl2PlxuICAgICAgICAgICl9XG4gICAgICAgIDwvZGl2PlxuXG4gICAgICAgIHsvKiBDdXN0b20gTGFiZWxzICovfVxuICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cImVtYWlsLW5hdi1ncm91cFwiPlxuICAgICAgICAgIDxkaXZcbiAgICAgICAgICAgIGNsYXNzTmFtZT1cImVtYWlsLW5hdi1zZWN0aW9uLXRpdGxlIGNsaWNrYWJsZVwiXG4gICAgICAgICAgICBvbkNsaWNrPXsoKSA9PiBzZXRJc0xhYmVsc0V4cGFuZGVkKCFpc0xhYmVsc0V4cGFuZGVkKX1cbiAgICAgICAgICAgIHRpdGxlPVwiVG9nZ2xlIGN1c3RvbSBsYWJlbHNcIlxuICAgICAgICAgID5cbiAgICAgICAgICAgIDxzcGFuPkxhYmVsczwvc3Bhbj5cbiAgICAgICAgICAgIHtpc0xhYmVsc0V4cGFuZGVkID8gPENoZXZyb25Eb3duIHNpemU9ezEyfSAvPiA6IDxDaGV2cm9uUmlnaHQgc2l6ZT17MTJ9IC8+fVxuICAgICAgICAgIDwvZGl2PlxuICAgICAgICAgIHtpc0xhYmVsc0V4cGFuZGVkICYmIChcbiAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwiZW1haWwtbmF2LXN1Ymdyb3VwXCI+XG4gICAgICAgICAgICAgIHt1c2VyTGFiZWxzICYmIHVzZXJMYWJlbHMubGVuZ3RoID4gMCA/IChcbiAgICAgICAgICAgICAgICB1c2VyTGFiZWxzLm1hcCgobGJsKSA9PiB7XG4gICAgICAgICAgICAgICAgICBjb25zdCBpc0FjdGl2ZSA9IGN1cnJlbnRGb2xkZXIgPT09IGxibC5pZFxuICAgICAgICAgICAgICAgICAgcmV0dXJuIChcbiAgICAgICAgICAgICAgICAgICAgPGJ1dHRvblxuICAgICAgICAgICAgICAgICAgICAgIGtleT17bGJsLmlkfVxuICAgICAgICAgICAgICAgICAgICAgIHR5cGU9XCJidXR0b25cIlxuICAgICAgICAgICAgICAgICAgICAgIGNsYXNzTmFtZT17YGVtYWlsLW5hdi1pdGVtICR7aXNBY3RpdmUgPyAnYWN0aXZlJyA6ICcnfWB9XG4gICAgICAgICAgICAgICAgICAgICAgb25DbGljaz17KCkgPT4gb25TZWxlY3RGb2xkZXIobGJsLmlkKX1cbiAgICAgICAgICAgICAgICAgICAgICB0aXRsZT17bGJsLm5hbWV9XG4gICAgICAgICAgICAgICAgICAgID5cbiAgICAgICAgICAgICAgICAgICAgICA8VGFnXG4gICAgICAgICAgICAgICAgICAgICAgICBzaXplPXsxM31cbiAgICAgICAgICAgICAgICAgICAgICAgIHN0eWxlPXt7IGNvbG9yOiBsYmwuY29sb3I/LmJhY2tncm91bmRDb2xvciB8fCAndmFyKC0tdGV4dC1tdXRlZCwgIzk0YTNiOCknIH19XG4gICAgICAgICAgICAgICAgICAgICAgLz5cbiAgICAgICAgICAgICAgICAgICAgICA8c3BhbiBjbGFzc05hbWU9XCJlbWFpbC1uYXYtbGFiZWwtdGV4dFwiPntsYmwubmFtZX08L3NwYW4+XG4gICAgICAgICAgICAgICAgICAgICAge0Jvb2xlYW4obGJsLm1lc3NhZ2VzVW5yZWFkICYmIGxibC5tZXNzYWdlc1VucmVhZCA+IDApICYmIChcbiAgICAgICAgICAgICAgICAgICAgICAgIDxzcGFuIGNsYXNzTmFtZT1cImVtYWlsLW5hdi1iYWRnZVwiPntsYmwubWVzc2FnZXNVbnJlYWR9PC9zcGFuPlxuICAgICAgICAgICAgICAgICAgICAgICl9XG4gICAgICAgICAgICAgICAgICAgIDwvYnV0dG9uPlxuICAgICAgICAgICAgICAgICAgKVxuICAgICAgICAgICAgICAgIH0pXG4gICAgICAgICAgICAgICkgOiAoXG4gICAgICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJlbWFpbC1uYXYtZW1wdHktbGFiZWxzXCI+Tm8gY3VzdG9tIGxhYmVsczwvZGl2PlxuICAgICAgICAgICAgICApfVxuICAgICAgICAgICAgPC9kaXY+XG4gICAgICAgICAgKX1cbiAgICAgICAgPC9kaXY+XG5cbiAgICAgICAgey8qIE90aGVyIC8gU3lzdGVtIEZvbGRlcnMgKi99XG4gICAgICAgIDxkaXYgY2xhc3NOYW1lPVwiZW1haWwtbmF2LWdyb3VwXCI+XG4gICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJlbWFpbC1uYXYtc2VjdGlvbi10aXRsZVwiPlxuICAgICAgICAgICAgPHNwYW4+T3RoZXI8L3NwYW4+XG4gICAgICAgICAgPC9kaXY+XG4gICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJlbWFpbC1uYXYtc3ViZ3JvdXBcIj5cbiAgICAgICAgICAgIHtvdGhlckZvbGRlcnMubWFwKChpdGVtKSA9PiB7XG4gICAgICAgICAgICAgIGNvbnN0IEljb24gPSBpdGVtLmljb25cbiAgICAgICAgICAgICAgY29uc3QgaXNBY3RpdmUgPSBjdXJyZW50Rm9sZGVyID09PSBpdGVtLmlkXG4gICAgICAgICAgICAgIHJldHVybiAoXG4gICAgICAgICAgICAgICAgPGJ1dHRvblxuICAgICAgICAgICAgICAgICAga2V5PXtpdGVtLmlkfVxuICAgICAgICAgICAgICAgICAgdHlwZT1cImJ1dHRvblwiXG4gICAgICAgICAgICAgICAgICBjbGFzc05hbWU9e2BlbWFpbC1uYXYtaXRlbSAke2lzQWN0aXZlID8gJ2FjdGl2ZScgOiAnJ31gfVxuICAgICAgICAgICAgICAgICAgb25DbGljaz17KCkgPT4gb25TZWxlY3RGb2xkZXIoaXRlbS5pZCl9XG4gICAgICAgICAgICAgICAgPlxuICAgICAgICAgICAgICAgICAgPEljb24gc2l6ZT17MTR9IC8+XG4gICAgICAgICAgICAgICAgICA8c3BhbiBjbGFzc05hbWU9XCJlbWFpbC1uYXYtbGFiZWwtdGV4dFwiPntpdGVtLmxhYmVsfTwvc3Bhbj5cbiAgICAgICAgICAgICAgICA8L2J1dHRvbj5cbiAgICAgICAgICAgICAgKVxuICAgICAgICAgICAgfSl9XG4gICAgICAgICAgPC9kaXY+XG4gICAgICAgIDwvZGl2PlxuICAgICAgPC9kaXY+XG4gICAgPC9hc2lkZT5cbiAgKVxufVxuXG5leHBvcnQgZGVmYXVsdCBFbWFpbFNpZGViYXJcbiJdLCJmaWxlIjoiQjovZWxlY3Ryb24vbHVtaW5hL3NyYy9yZW5kZXJlci9zcmMvZmVhdHVyZXMvZW1haWwvY29tcG9uZW50cy9FbWFpbFNpZGViYXIudHN4In0=

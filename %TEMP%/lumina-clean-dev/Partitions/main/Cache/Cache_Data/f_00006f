@@ -1,0 +1,468 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/features/canvas/CanvasNodeCard.tsx");import __vite__cjsImport0_react_jsxDevRuntime from "/@fs/B:/electron/lumina/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=f41806ed"; const jsxDEV = __vite__cjsImport0_react_jsxDevRuntime["jsxDEV"];
+var _s = $RefreshSig$();
+import __vite__cjsImport1_react from "/@fs/B:/electron/lumina/node_modules/.vite/deps/react.js?v=f41806ed"; const React = __vite__cjsImport1_react.__esModule ? __vite__cjsImport1_react.default : __vite__cjsImport1_react; const useMemo = __vite__cjsImport1_react["useMemo"];
+import ReactMarkdown from "/@fs/B:/electron/lumina/node_modules/.vite/deps/react-markdown.js?v=f41806ed";
+import remarkGfm from "/@fs/B:/electron/lumina/node_modules/.vite/deps/remark-gfm.js?v=f41806ed";
+import { ExternalLink, Palette, X, FileText } from "/@fs/B:/electron/lumina/node_modules/.vite/deps/lucide-react.js?v=f41806ed";
+import { stripFrontmatter } from "/src/features/canvas/canvasUtils.ts";
+import { CanvasImagePreview } from "/src/features/canvas/CanvasImagePreview.tsx";
+import { useVaultStore } from "/src/core/store/workspaceStore.js";
+import ToolTip from "/src/components/atoms/ToolTip.jsx";
+const MemoizedMarkdownPreview = _s(React.memo(_c = _s(({ text }) => {
+  _s();
+  const strippedText = useMemo(() => stripFrontmatter(text || ""), [text]);
+  if (!strippedText) {
+    return /* @__PURE__ */ jsxDEV("span", { className: "placeholder", children: "Double-click to type..." }, void 0, false, {
+      fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+      lineNumber: 33,
+      columnNumber: 12
+    }, this);
+  }
+  return /* @__PURE__ */ jsxDEV("div", { className: "lumina-canvas-markdown", dir: "auto", children: /* @__PURE__ */ jsxDEV(ReactMarkdown, { remarkPlugins: [remarkGfm], children: strippedText }, void 0, false, {
+    fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+    lineNumber: 37,
+    columnNumber: 7
+  }, this) }, void 0, false, {
+    fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+    lineNumber: 36,
+    columnNumber: 5
+  }, this);
+}, "v6a1VSRSgQaco1Svijma0kkt1ho=")), "v6a1VSRSgQaco1Svijma0kkt1ho=");
+_c2 = MemoizedMarkdownPreview;
+MemoizedMarkdownPreview.displayName = "MemoizedMarkdownPreview";
+export const CanvasNodeCard = React.memo(
+  _c3 = ({
+    node,
+    isSelected,
+    isEditing,
+    editingField,
+    onNodeMouseDown,
+    onPortMouseDown,
+    onResizeMouseDown,
+    onStartEditing,
+    onStopEditing,
+    onUpdateTitle,
+    onUpdateText,
+    onCycleColor,
+    onDeleteNode
+  }) => {
+    const nodeColorClass = node.color ? `color-${node.color}` : "color-default";
+    return /* @__PURE__ */ jsxDEV(
+      "div",
+      {
+        "data-node-id": node.id,
+        className: `lumina-canvas-node ${nodeColorClass} ${isSelected ? "selected" : ""}`,
+        style: {
+          left: `${node.x}px`,
+          top: `${node.y}px`,
+          width: `${node.width}px`,
+          height: `${node.height}px`
+        },
+        onMouseDown: (e) => onNodeMouseDown(e, node),
+        children: [
+          /* @__PURE__ */ jsxDEV(
+            "div",
+            {
+              className: "lumina-canvas-port port-top",
+              "data-node-id": node.id,
+              "data-port-side": "top",
+              title: "Connect top",
+              onMouseDown: (e) => onPortMouseDown(e, node.id, "top"),
+              onClick: (e) => onPortMouseDown(e, node.id, "top")
+            },
+            void 0,
+            false,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+              lineNumber: 92,
+              columnNumber: 9
+            },
+            this
+          ),
+          /* @__PURE__ */ jsxDEV(
+            "div",
+            {
+              className: "lumina-canvas-port port-right",
+              "data-node-id": node.id,
+              "data-port-side": "right",
+              title: "Connect right",
+              onMouseDown: (e) => onPortMouseDown(e, node.id, "right"),
+              onClick: (e) => onPortMouseDown(e, node.id, "right")
+            },
+            void 0,
+            false,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+              lineNumber: 100,
+              columnNumber: 9
+            },
+            this
+          ),
+          /* @__PURE__ */ jsxDEV(
+            "div",
+            {
+              className: "lumina-canvas-port port-bottom",
+              "data-node-id": node.id,
+              "data-port-side": "bottom",
+              title: "Connect bottom",
+              onMouseDown: (e) => onPortMouseDown(e, node.id, "bottom"),
+              onClick: (e) => onPortMouseDown(e, node.id, "bottom")
+            },
+            void 0,
+            false,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+              lineNumber: 108,
+              columnNumber: 9
+            },
+            this
+          ),
+          /* @__PURE__ */ jsxDEV(
+            "div",
+            {
+              className: "lumina-canvas-port port-left",
+              "data-node-id": node.id,
+              "data-port-side": "left",
+              title: "Connect left",
+              onMouseDown: (e) => onPortMouseDown(e, node.id, "left"),
+              onClick: (e) => onPortMouseDown(e, node.id, "left")
+            },
+            void 0,
+            false,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+              lineNumber: 116,
+              columnNumber: 9
+            },
+            this
+          ),
+          /* @__PURE__ */ jsxDEV("div", { className: "lumina-canvas-node-header", children: [
+            isEditing && editingField === "title" ? /* @__PURE__ */ jsxDEV(
+              "input",
+              {
+                autoFocus: true,
+                dir: "auto",
+                className: "lumina-canvas-title-input",
+                defaultValue: node.title || "",
+                onBlur: (e) => {
+                  onUpdateTitle(node.id, e.target.value.trim() || "Untitled");
+                  onStopEditing();
+                },
+                onKeyDown: (e) => {
+                  if (e.key === "Enter") {
+                    onUpdateTitle(node.id, e.currentTarget.value.trim() || "Untitled");
+                    onStopEditing();
+                  }
+                  if (e.key === "Escape") onStopEditing();
+                }
+              },
+              void 0,
+              false,
+              {
+                fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+                lineNumber: 128,
+                columnNumber: 9
+              },
+              this
+            ) : /* @__PURE__ */ jsxDEV(
+              "span",
+              {
+                className: "lumina-canvas-node-title",
+                dir: "auto",
+                onDoubleClick: (e) => {
+                  e.stopPropagation();
+                  onStartEditing(node.id, "title");
+                },
+                title: "Double-click to edit title",
+                children: [
+                  node.type === "pdf" && /* @__PURE__ */ jsxDEV("span", { className: "lumina-canvas-pdf-badge", style: { marginRight: 6 }, children: "PDF" }, void 0, false, {
+                    fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+                    lineNumber: 156,
+                    columnNumber: 11
+                  }, this),
+                  node.title || (node.type === "image" ? "Image" : node.type === "pdf" ? "PDF Document" : "Note Card")
+                ]
+              },
+              void 0,
+              true,
+              {
+                fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+                lineNumber: 146,
+                columnNumber: 9
+              },
+              this
+            ),
+            /* @__PURE__ */ jsxDEV("div", { className: "lumina-canvas-node-actions", children: [
+              node.file && /* @__PURE__ */ jsxDEV(ToolTip, { text: "Open in Tab", position: "top", children: /* @__PURE__ */ jsxDEV(
+                "button",
+                {
+                  className: "lumina-canvas-action-btn",
+                  onClick: (e) => {
+                    e.stopPropagation();
+                    useVaultStore.getState().setActiveTabId(node.file);
+                  },
+                  children: /* @__PURE__ */ jsxDEV(ExternalLink, { size: 12 }, void 0, false, {
+                    fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+                    lineNumber: 180,
+                    columnNumber: 19
+                  }, this)
+                },
+                void 0,
+                false,
+                {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+                  lineNumber: 173,
+                  columnNumber: 17
+                },
+                this
+              ) }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+                lineNumber: 172,
+                columnNumber: 11
+              }, this),
+              /* @__PURE__ */ jsxDEV(ToolTip, { text: "Change Color", position: "top", children: /* @__PURE__ */ jsxDEV(
+                "button",
+                {
+                  className: "lumina-canvas-action-btn",
+                  onClick: (e) => {
+                    e.stopPropagation();
+                    onCycleColor(node.id);
+                  },
+                  children: /* @__PURE__ */ jsxDEV(Palette, { size: 12 }, void 0, false, {
+                    fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+                    lineNumber: 193,
+                    columnNumber: 17
+                  }, this)
+                },
+                void 0,
+                false,
+                {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+                  lineNumber: 186,
+                  columnNumber: 15
+                },
+                this
+              ) }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+                lineNumber: 185,
+                columnNumber: 13
+              }, this),
+              /* @__PURE__ */ jsxDEV(ToolTip, { text: "Delete Node", position: "top", children: /* @__PURE__ */ jsxDEV(
+                "button",
+                {
+                  className: "lumina-canvas-action-btn delete",
+                  onClick: (e) => {
+                    e.stopPropagation();
+                    onDeleteNode(node.id);
+                  },
+                  children: /* @__PURE__ */ jsxDEV(X, { size: 12 }, void 0, false, {
+                    fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+                    lineNumber: 205,
+                    columnNumber: 17
+                  }, this)
+                },
+                void 0,
+                false,
+                {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+                  lineNumber: 198,
+                  columnNumber: 15
+                },
+                this
+              ) }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+                lineNumber: 197,
+                columnNumber: 13
+              }, this)
+            ] }, void 0, true, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+              lineNumber: 169,
+              columnNumber: 11
+            }, this)
+          ] }, void 0, true, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+            lineNumber: 126,
+            columnNumber: 9
+          }, this),
+          node.type === "pdf" ? /* @__PURE__ */ jsxDEV(
+            "div",
+            {
+              className: "lumina-canvas-pdf-preview",
+              onWheel: (e) => e.stopPropagation(),
+              children: [
+                /* @__PURE__ */ jsxDEV(FileText, { size: 32, color: "#ef4444" }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+                  lineNumber: 217,
+                  columnNumber: 13
+                }, this),
+                node.file ? /* @__PURE__ */ jsxDEV(
+                  "button",
+                  {
+                    className: "lumina-canvas-pdf-open-btn",
+                    onClick: (e) => {
+                      e.stopPropagation();
+                      useVaultStore.getState().setActiveTabId(node.file);
+                    },
+                    children: [
+                      /* @__PURE__ */ jsxDEV(ExternalLink, { size: 13 }, void 0, false, {
+                        fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+                        lineNumber: 226,
+                        columnNumber: 17
+                      }, this),
+                      "Open PDF Tab"
+                    ]
+                  },
+                  void 0,
+                  true,
+                  {
+                    fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+                    lineNumber: 219,
+                    columnNumber: 9
+                  },
+                  this
+                ) : /* @__PURE__ */ jsxDEV("span", { style: { fontSize: "11px", color: "var(--text-muted)" }, children: node.title }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+                  lineNumber: 230,
+                  columnNumber: 9
+                }, this)
+              ]
+            },
+            void 0,
+            true,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+              lineNumber: 213,
+              columnNumber: 7
+            },
+            this
+          ) : node.type === "image" ? /* @__PURE__ */ jsxDEV(
+            CanvasImagePreview,
+            {
+              url: node.url,
+              relativePath: node.text || node.file,
+              title: node.title
+            },
+            void 0,
+            false,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+              lineNumber: 236,
+              columnNumber: 7
+            },
+            this
+          ) : /* @__PURE__ */ jsxDEV(
+            "div",
+            {
+              className: "lumina-canvas-node-body",
+              onWheel: (e) => e.stopPropagation(),
+              onDoubleClick: (e) => {
+                e.stopPropagation();
+                onStartEditing(node.id, "text");
+              },
+              children: isEditing && editingField === "text" ? /* @__PURE__ */ jsxDEV(
+                "textarea",
+                {
+                  autoFocus: true,
+                  dir: "auto",
+                  className: "lumina-canvas-text-area",
+                  defaultValue: node.text || "",
+                  onBlur: (e) => {
+                    onUpdateText(node.id, e.target.value);
+                    onStopEditing();
+                  },
+                  onKeyDown: (e) => {
+                    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                      onUpdateText(node.id, e.currentTarget.value);
+                      onStopEditing();
+                    }
+                    if (e.key === "Escape") onStopEditing();
+                  }
+                },
+                void 0,
+                false,
+                {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+                  lineNumber: 251,
+                  columnNumber: 9
+                },
+                this
+              ) : /* @__PURE__ */ jsxDEV(MemoizedMarkdownPreview, { text: node.text || "" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+                lineNumber: 269,
+                columnNumber: 9
+              }, this)
+            },
+            void 0,
+            false,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+              lineNumber: 242,
+              columnNumber: 7
+            },
+            this
+          ),
+          /* @__PURE__ */ jsxDEV(
+            "div",
+            {
+              className: "lumina-canvas-resize-handle handle-br",
+              title: "Drag to resize card",
+              onMouseDown: (e) => onResizeMouseDown(e, node)
+            },
+            void 0,
+            false,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+              lineNumber: 275,
+              columnNumber: 9
+            },
+            this
+          )
+        ]
+      },
+      void 0,
+      true,
+      {
+        fileName: "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx",
+        lineNumber: 80,
+        columnNumber: 5
+      },
+      this
+    );
+  },
+  (prev, next) => {
+    return prev.node === next.node && prev.isSelected === next.isSelected && prev.isEditing === next.isEditing && prev.editingField === next.editingField;
+  }
+);
+_c4 = CanvasNodeCard;
+CanvasNodeCard.displayName = "CanvasNodeCard";
+export default CanvasNodeCard;
+var _c, _c2, _c3, _c4;
+$RefreshReg$(_c, "MemoizedMarkdownPreview$React.memo");
+$RefreshReg$(_c2, "MemoizedMarkdownPreview");
+$RefreshReg$(_c3, "CanvasNodeCard$React.memo");
+$RefreshReg$(_c4, "CanvasNodeCard");
+import * as RefreshRuntime from "/@react-refresh";
+const inWebWorker = typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope;
+if (import.meta.hot && !inWebWorker) {
+  if (!window.$RefreshReg$) {
+    throw new Error(
+      "@vitejs/plugin-react can't detect preamble. Something is wrong."
+    );
+  }
+  RefreshRuntime.__hmr_import(import.meta.url).then((currentExports) => {
+    RefreshRuntime.registerExportsForReactRefresh("B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx", currentExports);
+    import.meta.hot.accept((nextExports) => {
+      if (!nextExports) return;
+      const invalidateMessage = RefreshRuntime.validateRefreshBoundaryAndEnqueueUpdate("B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx", currentExports, nextExports);
+      if (invalidateMessage) import.meta.hot.invalidate(invalidateMessage);
+    });
+  });
+}
+function $RefreshReg$(type, id) {
+  return RefreshRuntime.register(type, "B:/electron/lumina/src/renderer/src/features/canvas/CanvasNodeCard.tsx " + id);
+}
+function $RefreshSig$() {
+  return RefreshRuntime.createSignatureFunctionForTransform();
+}
+
+//# sourceMappingURL=data:application/json;base64,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ckMsY0FBY3NDLEtBQUt0QyxhQUN4QnFDLEtBQUtwQyxpQkFBaUJxQyxLQUFLckM7QUFBQUEsRUFFL0I7QUFDRjtBQUFDc0MsTUF2T1kzQztBQXlPYkEsZUFBZUQsY0FBYztBQUU3QixlQUFlQztBQUFjLElBQUFMLElBQUFHLEtBQUFHLEtBQUEwQztBQUFBQyxhQUFBakQsSUFBQTtBQUFBaUQsYUFBQTlDLEtBQUE7QUFBQThDLGFBQUEzQyxLQUFBO0FBQUEyQyxhQUFBRCxLQUFBIiwibmFtZXMiOlsiUmVhY3QiLCJ1c2VNZW1vIiwiUmVhY3RNYXJrZG93biIsInJlbWFya0dmbSIsIkV4dGVybmFsTGluayIsIlBhbGV0dGUiLCJYIiwiRmlsZVRleHQiLCJzdHJpcEZyb250bWF0dGVyIiwiQ2FudmFzSW1hZ2VQcmV2aWV3IiwidXNlVmF1bHRTdG9yZSIsIlRvb2xUaXAiLCJNZW1vaXplZE1hcmtkb3duUHJldmlldyIsIl9zIiwibWVtbyIsIl9jIiwidGV4dCIsInN0cmlwcGVkVGV4dCIsIl9jMiIsImRpc3BsYXlOYW1lIiwiQ2FudmFzTm9kZUNhcmQiLCJfYzMiLCJub2RlIiwiaXNTZWxlY3RlZCIsImlzRWRpdGluZyIsImVkaXRpbmdGaWVsZCIsIm9uTm9kZU1vdXNlRG93biIsIm9uUG9ydE1vdXNlRG93biIsIm9uUmVzaXplTW91c2VEb3duIiwib25TdGFydEVkaXRpbmciLCJvblN0b3BFZGl0aW5nIiwib25VcGRhdGVUaXRsZSIsIm9uVXBkYXRlVGV4dCIsIm9uQ3ljbGVDb2xvciIsIm9uRGVsZXRlTm9kZSIsIm5vZGVDb2xvckNsYXNzIiwiY29sb3IiLCJpZCIsImxlZnQiLCJ4IiwidG9wIiwieSIsIndpZHRoIiwiaGVpZ2h0IiwiZSIsInRpdGxlIiwidGFyZ2V0IiwidmFsdWUiLCJ0cmltIiwia2V5IiwiY3VycmVudFRhcmdldCIsInN0b3BQcm9wYWdhdGlvbiIsInR5cGUiLCJtYXJnaW5SaWdodCIsImZpbGUiLCJnZXRTdGF0ZSIsInNldEFjdGl2ZVRhYklkIiwiZm9udFNpemUiLCJ1cmwiLCJjdHJsS2V5IiwibWV0YUtleSIsInByZXYiLCJuZXh0IiwiX2M0IiwiJFJlZnJlc2hSZWckIl0sImlnbm9yZUxpc3QiOltdLCJzb3VyY2VzIjpbIkNhbnZhc05vZGVDYXJkLnRzeCJdLCJzb3VyY2VzQ29udGVudCI6WyIvKipcbiAqID09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiAqIEx1bWluYSBDYW52YXMgTm9kZSBDYXJkXG4gKiA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4gKiBNZW1vaXplZCBjYXJkIGNvbXBvbmVudCByZW5kZXJpbmcgdGV4dCBub3RlcywgbWFya2Rvd24gZG9jdW1lbnRzLCBpbWFnZXMsXG4gKiBhbmQgUERGIGZpbGVzIG9uIHRoZSBpbmZpbml0ZSBzcGF0aWFsIGNhbnZhcy5cbiAqXG4gKiBQZXJmb3JtYW5jZSBmZWF0dXJlczpcbiAqIC0gTWVtb2l6ZWRNYXJrZG93blByZXZpZXcgcHJldmVudHMgcmUtcGFyc2luZyBNYXJrZG93biBBU1Qgd2hlbiBtb3ZpbmcvZHJhZ2dpbmdcbiAqIC0gQ3VzdG9tIFJlYWN0Lm1lbW8gY29tcGFyYXRvciBhdm9pZHMgcmUtcmVuZGVycyB3aGVuIG90aGVyIGNhbnZhcyBlbGVtZW50cyBtb3ZlXG4gKiAtIElzb2xhdGVkIHNjcm9sbGluZyBwcmV2ZW50cyBjYW52YXMgd2hlZWwgcGFuIGhpamFja2luZ1xuICogLSBJbnRlcmFjdGl2ZSBjb25uZWN0aW9uIHBvcnRzIGFuZCBjb3JuZXIgcmVzaXplIGhhbmRsZXNcbiAqID09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiAqL1xuXG5pbXBvcnQgUmVhY3QsIHsgdXNlTWVtbyB9IGZyb20gJ3JlYWN0J1xuaW1wb3J0IFJlYWN0TWFya2Rvd24gZnJvbSAncmVhY3QtbWFya2Rvd24nXG5pbXBvcnQgcmVtYXJrR2ZtIGZyb20gJ3JlbWFyay1nZm0nXG5pbXBvcnQgeyBFeHRlcm5hbExpbmssIFBhbGV0dGUsIFgsIEZpbGVUZXh0IH0gZnJvbSAnbHVjaWRlLXJlYWN0J1xuaW1wb3J0IHsgQ2FudmFzTm9kZSwgQ2FudmFzRWRnZVNpZGUgfSBmcm9tICcuL3R5cGVzJ1xuaW1wb3J0IHsgc3RyaXBGcm9udG1hdHRlciB9IGZyb20gJy4vY2FudmFzVXRpbHMnXG5pbXBvcnQgeyBDYW52YXNJbWFnZVByZXZpZXcgfSBmcm9tICcuL0NhbnZhc0ltYWdlUHJldmlldydcbmltcG9ydCB7IHVzZVZhdWx0U3RvcmUgfSBmcm9tICcuLi8uLi9jb3JlL3N0b3JlL3dvcmtzcGFjZVN0b3JlJ1xuaW1wb3J0IFRvb2xUaXAgZnJvbSAnLi4vLi4vY29tcG9uZW50cy9hdG9tcy9Ub29sVGlwJ1xuXG4vKipcbiAqIElzb2xhdGVkIG1lbW9pemVkIHByZXZpZXcgZm9yIG1hcmtkb3duIG5vdGVzLlxuICogRW5zdXJlcyBsYXJnZSAoMiwwMDArIHdvcmRzKSBub3RlcyBkbyBub3QgcmUtcGFyc2UgTWFya2Rvd24gb24gbW91c2UgbW92ZW1lbnQuXG4gKi9cbmNvbnN0IE1lbW9pemVkTWFya2Rvd25QcmV2aWV3ID0gUmVhY3QubWVtbzx7IHRleHQ6IHN0cmluZyB9PigoeyB0ZXh0IH0pID0+IHtcbiAgY29uc3Qgc3RyaXBwZWRUZXh0ID0gdXNlTWVtbygoKSA9PiBzdHJpcEZyb250bWF0dGVyKHRleHQgfHwgJycpLCBbdGV4dF0pXG4gIGlmICghc3RyaXBwZWRUZXh0KSB7XG4gICAgcmV0dXJuIDxzcGFuIGNsYXNzTmFtZT1cInBsYWNlaG9sZGVyXCI+RG91YmxlLWNsaWNrIHRvIHR5cGUuLi48L3NwYW4+XG4gIH1cbiAgcmV0dXJuIChcbiAgICA8ZGl2IGNsYXNzTmFtZT1cImx1bWluYS1jYW52YXMtbWFya2Rvd25cIiBkaXI9XCJhdXRvXCI+XG4gICAgICA8UmVhY3RNYXJrZG93biByZW1hcmtQbHVnaW5zPXtbcmVtYXJrR2ZtXX0+XG4gICAgICAgIHtzdHJpcHBlZFRleHR9XG4gICAgICA8L1JlYWN0TWFya2Rvd24+XG4gICAgPC9kaXY+XG4gIClcbn0pXG5NZW1vaXplZE1hcmtkb3duUHJldmlldy5kaXNwbGF5TmFtZSA9ICdNZW1vaXplZE1hcmtkb3duUHJldmlldydcblxuZXhwb3J0IGludGVyZmFjZSBDYW52YXNOb2RlQ2FyZFByb3BzIHtcbiAgbm9kZTogQ2FudmFzTm9kZVxuICBpc1NlbGVjdGVkOiBib29sZWFuXG4gIGlzRWRpdGluZzogYm9vbGVhblxuICBlZGl0aW5nRmllbGQ6ICd0aXRsZScgfCAndGV4dCcgfCBudWxsXG4gIG9uTm9kZU1vdXNlRG93bjogKGU6IFJlYWN0Lk1vdXNlRXZlbnQsIG5vZGU6IENhbnZhc05vZGUpID0+IHZvaWRcbiAgb25Qb3J0TW91c2VEb3duOiAoZTogUmVhY3QuTW91c2VFdmVudCwgbm9kZUlkOiBzdHJpbmcsIHNpZGU6IENhbnZhc0VkZ2VTaWRlKSA9PiB2b2lkXG4gIG9uUmVzaXplTW91c2VEb3duOiAoZTogUmVhY3QuTW91c2VFdmVudCwgbm9kZTogQ2FudmFzTm9kZSkgPT4gdm9pZFxuICBvblN0YXJ0RWRpdGluZzogKG5vZGVJZDogc3RyaW5nLCBmaWVsZDogJ3RpdGxlJyB8ICd0ZXh0JykgPT4gdm9pZFxuICBvblN0b3BFZGl0aW5nOiAoKSA9PiB2b2lkXG4gIG9uVXBkYXRlVGl0bGU6IChub2RlSWQ6IHN0cmluZywgdGl0bGU6IHN0cmluZykgPT4gdm9pZFxuICBvblVwZGF0ZVRleHQ6IChub2RlSWQ6IHN0cmluZywgdGV4dDogc3RyaW5nKSA9PiB2b2lkXG4gIG9uQ3ljbGVDb2xvcjogKG5vZGVJZDogc3RyaW5nKSA9PiB2b2lkXG4gIG9uRGVsZXRlTm9kZTogKG5vZGVJZDogc3RyaW5nKSA9PiB2b2lkXG59XG5cbmV4cG9ydCBjb25zdCBDYW52YXNOb2RlQ2FyZDogUmVhY3QuRkM8Q2FudmFzTm9kZUNhcmRQcm9wcz4gPSBSZWFjdC5tZW1vKFxuICAoe1xuICAgIG5vZGUsXG4gICAgaXNTZWxlY3RlZCxcbiAgICBpc0VkaXRpbmcsXG4gICAgZWRpdGluZ0ZpZWxkLFxuICAgIG9uTm9kZU1vdXNlRG93bixcbiAgICBvblBvcnRNb3VzZURvd24sXG4gICAgb25SZXNpemVNb3VzZURvd24sXG4gICAgb25TdGFydEVkaXRpbmcsXG4gICAgb25TdG9wRWRpdGluZyxcbiAgICBvblVwZGF0ZVRpdGxlLFxuICAgIG9uVXBkYXRlVGV4dCxcbiAgICBvbkN5Y2xlQ29sb3IsXG4gICAgb25EZWxldGVOb2RlXG4gIH0pID0+IHtcbiAgICBjb25zdCBub2RlQ29sb3JDbGFzcyA9IG5vZGUuY29sb3IgPyBgY29sb3ItJHtub2RlLmNvbG9yfWAgOiAnY29sb3ItZGVmYXVsdCdcblxuICAgIHJldHVybiAoXG4gICAgICA8ZGl2XG4gICAgICAgIGRhdGEtbm9kZS1pZD17bm9kZS5pZH1cbiAgICAgICAgY2xhc3NOYW1lPXtgbHVtaW5hLWNhbnZhcy1ub2RlICR7bm9kZUNvbG9yQ2xhc3N9ICR7aXNTZWxlY3RlZCA/ICdzZWxlY3RlZCcgOiAnJ31gfVxuICAgICAgICBzdHlsZT17e1xuICAgICAgICAgIGxlZnQ6IGAke25vZGUueH1weGAsXG4gICAgICAgICAgdG9wOiBgJHtub2RlLnl9cHhgLFxuICAgICAgICAgIHdpZHRoOiBgJHtub2RlLndpZHRofXB4YCxcbiAgICAgICAgICBoZWlnaHQ6IGAke25vZGUuaGVpZ2h0fXB4YFxuICAgICAgICB9fVxuICAgICAgICBvbk1vdXNlRG93bj17KGUpID0+IG9uTm9kZU1vdXNlRG93bihlLCBub2RlKX1cbiAgICAgID5cbiAgICAgICAgey8qIENvbm5lY3Rpb24gUG9ydHMgKEtub2JzIGFwcGVhcmluZyBvbiBob3ZlciBmb3IgZHJhZy9jbGljayBsaW5raW5nKSAqL31cbiAgICAgICAgPGRpdlxuICAgICAgICAgIGNsYXNzTmFtZT1cImx1bWluYS1jYW52YXMtcG9ydCBwb3J0LXRvcFwiXG4gICAgICAgICAgZGF0YS1ub2RlLWlkPXtub2RlLmlkfVxuICAgICAgICAgIGRhdGEtcG9ydC1zaWRlPVwidG9wXCJcbiAgICAgICAgICB0aXRsZT1cIkNvbm5lY3QgdG9wXCJcbiAgICAgICAgICBvbk1vdXNlRG93bj17KGUpID0+IG9uUG9ydE1vdXNlRG93bihlLCBub2RlLmlkLCAndG9wJyl9XG4gICAgICAgICAgb25DbGljaz17KGUpID0+IG9uUG9ydE1vdXNlRG93bihlLCBub2RlLmlkLCAndG9wJyl9XG4gICAgICAgIC8+XG4gICAgICAgIDxkaXZcbiAgICAgICAgICBjbGFzc05hbWU9XCJsdW1pbmEtY2FudmFzLXBvcnQgcG9ydC1yaWdodFwiXG4gICAgICAgICAgZGF0YS1ub2RlLWlkPXtub2RlLmlkfVxuICAgICAgICAgIGRhdGEtcG9ydC1zaWRlPVwicmlnaHRcIlxuICAgICAgICAgIHRpdGxlPVwiQ29ubmVjdCByaWdodFwiXG4gICAgICAgICAgb25Nb3VzZURvd249eyhlKSA9PiBvblBvcnRNb3VzZURvd24oZSwgbm9kZS5pZCwgJ3JpZ2h0Jyl9XG4gICAgICAgICAgb25DbGljaz17KGUpID0+IG9uUG9ydE1vdXNlRG93bihlLCBub2RlLmlkLCAncmlnaHQnKX1cbiAgICAgICAgLz5cbiAgICAgICAgPGRpdlxuICAgICAgICAgIGNsYXNzTmFtZT1cImx1bWluYS1jYW52YXMtcG9ydCBwb3J0LWJvdHRvbVwiXG4gICAgICAgICAgZGF0YS1ub2RlLWlkPXtub2RlLmlkfVxuICAgICAgICAgIGRhdGEtcG9ydC1zaWRlPVwiYm90dG9tXCJcbiAgICAgICAgICB0aXRsZT1cIkNvbm5lY3QgYm90dG9tXCJcbiAgICAgICAgICBvbk1vdXNlRG93bj17KGUpID0+IG9uUG9ydE1vdXNlRG93bihlLCBub2RlLmlkLCAnYm90dG9tJyl9XG4gICAgICAgICAgb25DbGljaz17KGUpID0+IG9uUG9ydE1vdXNlRG93bihlLCBub2RlLmlkLCAnYm90dG9tJyl9XG4gICAgICAgIC8+XG4gICAgICAgIDxkaXZcbiAgICAgICAgICBjbGFzc05hbWU9XCJsdW1pbmEtY2FudmFzLXBvcnQgcG9ydC1sZWZ0XCJcbiAgICAgICAgICBkYXRhLW5vZGUtaWQ9e25vZGUuaWR9XG4gICAgICAgICAgZGF0YS1wb3J0LXNpZGU9XCJsZWZ0XCJcbiAgICAgICAgICB0aXRsZT1cIkNvbm5lY3QgbGVmdFwiXG4gICAgICAgICAgb25Nb3VzZURvd249eyhlKSA9PiBvblBvcnRNb3VzZURvd24oZSwgbm9kZS5pZCwgJ2xlZnQnKX1cbiAgICAgICAgICBvbkNsaWNrPXsoZSkgPT4gb25Qb3J0TW91c2VEb3duKGUsIG5vZGUuaWQsICdsZWZ0Jyl9XG4gICAgICAgIC8+XG5cbiAgICAgICAgey8qIENhcmQgSGVhZGVyICovfVxuICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cImx1bWluYS1jYW52YXMtbm9kZS1oZWFkZXJcIj5cbiAgICAgICAgICB7aXNFZGl0aW5nICYmIGVkaXRpbmdGaWVsZCA9PT0gJ3RpdGxlJyA/IChcbiAgICAgICAgICAgIDxpbnB1dFxuICAgICAgICAgICAgICBhdXRvRm9jdXNcbiAgICAgICAgICAgICAgZGlyPVwiYXV0b1wiXG4gICAgICAgICAgICAgIGNsYXNzTmFtZT1cImx1bWluYS1jYW52YXMtdGl0bGUtaW5wdXRcIlxuICAgICAgICAgICAgICBkZWZhdWx0VmFsdWU9e25vZGUudGl0bGUgfHwgJyd9XG4gICAgICAgICAgICAgIG9uQmx1cj17KGUpID0+IHtcbiAgICAgICAgICAgICAgICBvblVwZGF0ZVRpdGxlKG5vZGUuaWQsIGUudGFyZ2V0LnZhbHVlLnRyaW0oKSB8fCAnVW50aXRsZWQnKVxuICAgICAgICAgICAgICAgIG9uU3RvcEVkaXRpbmcoKVxuICAgICAgICAgICAgICB9fVxuICAgICAgICAgICAgICBvbktleURvd249eyhlKSA9PiB7XG4gICAgICAgICAgICAgICAgaWYgKGUua2V5ID09PSAnRW50ZXInKSB7XG4gICAgICAgICAgICAgICAgICBvblVwZGF0ZVRpdGxlKG5vZGUuaWQsIGUuY3VycmVudFRhcmdldC52YWx1ZS50cmltKCkgfHwgJ1VudGl0bGVkJylcbiAgICAgICAgICAgICAgICAgIG9uU3RvcEVkaXRpbmcoKVxuICAgICAgICAgICAgICAgIH1cbiAgICAgICAgICAgICAgICBpZiAoZS5rZXkgPT09ICdFc2NhcGUnKSBvblN0b3BFZGl0aW5nKClcbiAgICAgICAgICAgICAgfX1cbiAgICAgICAgICAgIC8+XG4gICAgICAgICAgKSA6IChcbiAgICAgICAgICAgIDxzcGFuXG4gICAgICAgICAgICAgIGNsYXNzTmFtZT1cImx1bWluYS1jYW52YXMtbm9kZS10aXRsZVwiXG4gICAgICAgICAgICAgIGRpcj1cImF1dG9cIlxuICAgICAgICAgICAgICBvbkRvdWJsZUNsaWNrPXsoZSkgPT4ge1xuICAgICAgICAgICAgICAgIGUuc3RvcFByb3BhZ2F0aW9uKClcbiAgICAgICAgICAgICAgICBvblN0YXJ0RWRpdGluZyhub2RlLmlkLCAndGl0bGUnKVxuICAgICAgICAgICAgICB9fVxuICAgICAgICAgICAgICB0aXRsZT1cIkRvdWJsZS1jbGljayB0byBlZGl0IHRpdGxlXCJcbiAgICAgICAgICAgID5cbiAgICAgICAgICAgICAge25vZGUudHlwZSA9PT0gJ3BkZicgJiYgKFxuICAgICAgICAgICAgICAgIDxzcGFuIGNsYXNzTmFtZT1cImx1bWluYS1jYW52YXMtcGRmLWJhZGdlXCIgc3R5bGU9e3sgbWFyZ2luUmlnaHQ6IDYgfX0+XG4gICAgICAgICAgICAgICAgICBQREZcbiAgICAgICAgICAgICAgICA8L3NwYW4+XG4gICAgICAgICAgICAgICl9XG4gICAgICAgICAgICAgIHtub2RlLnRpdGxlIHx8XG4gICAgICAgICAgICAgICAgKG5vZGUudHlwZSA9PT0gJ2ltYWdlJ1xuICAgICAgICAgICAgICAgICAgPyAnSW1hZ2UnXG4gICAgICAgICAgICAgICAgICA6IG5vZGUudHlwZSA9PT0gJ3BkZidcbiAgICAgICAgICAgICAgICAgICAgPyAnUERGIERvY3VtZW50J1xuICAgICAgICAgICAgICAgICAgICA6ICdOb3RlIENhcmQnKX1cbiAgICAgICAgICAgIDwvc3Bhbj5cbiAgICAgICAgICApfVxuXG4gICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJsdW1pbmEtY2FudmFzLW5vZGUtYWN0aW9uc1wiPlxuICAgICAgICAgICAgey8qIE9wZW4gbm90ZS9pbWFnZS9wZGYgaW4gd29ya3NwYWNlIHRhYiAqL31cbiAgICAgICAgICAgIHtub2RlLmZpbGUgJiYgKFxuICAgICAgICAgICAgICA8VG9vbFRpcCB0ZXh0PVwiT3BlbiBpbiBUYWJcIiBwb3NpdGlvbj1cInRvcFwiPlxuICAgICAgICAgICAgICAgIDxidXR0b25cbiAgICAgICAgICAgICAgICAgIGNsYXNzTmFtZT1cImx1bWluYS1jYW52YXMtYWN0aW9uLWJ0blwiXG4gICAgICAgICAgICAgICAgICBvbkNsaWNrPXsoZSkgPT4ge1xuICAgICAgICAgICAgICAgICAgICBlLnN0b3BQcm9wYWdhdGlvbigpXG4gICAgICAgICAgICAgICAgICAgIHVzZVZhdWx0U3RvcmUuZ2V0U3RhdGUoKS5zZXRBY3RpdmVUYWJJZChub2RlLmZpbGUhKVxuICAgICAgICAgICAgICAgICAgfX1cbiAgICAgICAgICAgICAgICA+XG4gICAgICAgICAgICAgICAgICA8RXh0ZXJuYWxMaW5rIHNpemU9ezEyfSAvPlxuICAgICAgICAgICAgICAgIDwvYnV0dG9uPlxuICAgICAgICAgICAgICA8L1Rvb2xUaXA+XG4gICAgICAgICAgICApfVxuXG4gICAgICAgICAgICA8VG9vbFRpcCB0ZXh0PVwiQ2hhbmdlIENvbG9yXCIgcG9zaXRpb249XCJ0b3BcIj5cbiAgICAgICAgICAgICAgPGJ1dHRvblxuICAgICAgICAgICAgICAgIGNsYXNzTmFtZT1cImx1bWluYS1jYW52YXMtYWN0aW9uLWJ0blwiXG4gICAgICAgICAgICAgICAgb25DbGljaz17KGUpID0+IHtcbiAgICAgICAgICAgICAgICAgIGUuc3RvcFByb3BhZ2F0aW9uKClcbiAgICAgICAgICAgICAgICAgIG9uQ3ljbGVDb2xvcihub2RlLmlkKVxuICAgICAgICAgICAgICAgIH19XG4gICAgICAgICAgICAgID5cbiAgICAgICAgICAgICAgICA8UGFsZXR0ZSBzaXplPXsxMn0gLz5cbiAgICAgICAgICAgICAgPC9idXR0b24+XG4gICAgICAgICAgICA8L1Rvb2xUaXA+XG5cbiAgICAgICAgICAgIDxUb29sVGlwIHRleHQ9XCJEZWxldGUgTm9kZVwiIHBvc2l0aW9uPVwidG9wXCI+XG4gICAgICAgICAgICAgIDxidXR0b25cbiAgICAgICAgICAgICAgICBjbGFzc05hbWU9XCJsdW1pbmEtY2FudmFzLWFjdGlvbi1idG4gZGVsZXRlXCJcbiAgICAgICAgICAgICAgICBvbkNsaWNrPXsoZSkgPT4ge1xuICAgICAgICAgICAgICAgICAgZS5zdG9wUHJvcGFnYXRpb24oKVxuICAgICAgICAgICAgICAgICAgb25EZWxldGVOb2RlKG5vZGUuaWQpXG4gICAgICAgICAgICAgICAgfX1cbiAgICAgICAgICAgICAgPlxuICAgICAgICAgICAgICAgIDxYIHNpemU9ezEyfSAvPlxuICAgICAgICAgICAgICA8L2J1dHRvbj5cbiAgICAgICAgICAgIDwvVG9vbFRpcD5cbiAgICAgICAgICA8L2Rpdj5cbiAgICAgICAgPC9kaXY+XG5cbiAgICAgICAgey8qIENhcmQgQm9keTogUERGLCBJbWFnZSwgb3IgTWFya2Rvd24gUHJldmlldyAqL31cbiAgICAgICAge25vZGUudHlwZSA9PT0gJ3BkZicgPyAoXG4gICAgICAgICAgPGRpdlxuICAgICAgICAgICAgY2xhc3NOYW1lPVwibHVtaW5hLWNhbnZhcy1wZGYtcHJldmlld1wiXG4gICAgICAgICAgICBvbldoZWVsPXsoZSkgPT4gZS5zdG9wUHJvcGFnYXRpb24oKX1cbiAgICAgICAgICA+XG4gICAgICAgICAgICA8RmlsZVRleHQgc2l6ZT17MzJ9IGNvbG9yPVwiI2VmNDQ0NFwiIC8+XG4gICAgICAgICAgICB7bm9kZS5maWxlID8gKFxuICAgICAgICAgICAgICA8YnV0dG9uXG4gICAgICAgICAgICAgICAgY2xhc3NOYW1lPVwibHVtaW5hLWNhbnZhcy1wZGYtb3Blbi1idG5cIlxuICAgICAgICAgICAgICAgIG9uQ2xpY2s9eyhlKSA9PiB7XG4gICAgICAgICAgICAgICAgICBlLnN0b3BQcm9wYWdhdGlvbigpXG4gICAgICAgICAgICAgICAgICB1c2VWYXVsdFN0b3JlLmdldFN0YXRlKCkuc2V0QWN0aXZlVGFiSWQobm9kZS5maWxlISlcbiAgICAgICAgICAgICAgICB9fVxuICAgICAgICAgICAgICA+XG4gICAgICAgICAgICAgICAgPEV4dGVybmFsTGluayBzaXplPXsxM30gLz5cbiAgICAgICAgICAgICAgICBPcGVuIFBERiBUYWJcbiAgICAgICAgICAgICAgPC9idXR0b24+XG4gICAgICAgICAgICApIDogKFxuICAgICAgICAgICAgICA8c3BhbiBzdHlsZT17eyBmb250U2l6ZTogJzExcHgnLCBjb2xvcjogJ3ZhcigtLXRleHQtbXV0ZWQpJyB9fT5cbiAgICAgICAgICAgICAgICB7bm9kZS50aXRsZX1cbiAgICAgICAgICAgICAgPC9zcGFuPlxuICAgICAgICAgICAgKX1cbiAgICAgICAgICA8L2Rpdj5cbiAgICAgICAgKSA6IG5vZGUudHlwZSA9PT0gJ2ltYWdlJyA/IChcbiAgICAgICAgICA8Q2FudmFzSW1hZ2VQcmV2aWV3XG4gICAgICAgICAgICB1cmw9e25vZGUudXJsfVxuICAgICAgICAgICAgcmVsYXRpdmVQYXRoPXtub2RlLnRleHQgfHwgbm9kZS5maWxlfVxuICAgICAgICAgICAgdGl0bGU9e25vZGUudGl0bGV9XG4gICAgICAgICAgLz5cbiAgICAgICAgKSA6IChcbiAgICAgICAgICA8ZGl2XG4gICAgICAgICAgICBjbGFzc05hbWU9XCJsdW1pbmEtY2FudmFzLW5vZGUtYm9keVwiXG4gICAgICAgICAgICBvbldoZWVsPXsoZSkgPT4gZS5zdG9wUHJvcGFnYXRpb24oKX1cbiAgICAgICAgICAgIG9uRG91YmxlQ2xpY2s9eyhlKSA9PiB7XG4gICAgICAgICAgICAgIGUuc3RvcFByb3BhZ2F0aW9uKClcbiAgICAgICAgICAgICAgb25TdGFydEVkaXRpbmcobm9kZS5pZCwgJ3RleHQnKVxuICAgICAgICAgICAgfX1cbiAgICAgICAgICA+XG4gICAgICAgICAgICB7aXNFZGl0aW5nICYmIGVkaXRpbmdGaWVsZCA9PT0gJ3RleHQnID8gKFxuICAgICAgICAgICAgICA8dGV4dGFyZWFcbiAgICAgICAgICAgICAgICBhdXRvRm9jdXNcbiAgICAgICAgICAgICAgICBkaXI9XCJhdXRvXCJcbiAgICAgICAgICAgICAgICBjbGFzc05hbWU9XCJsdW1pbmEtY2FudmFzLXRleHQtYXJlYVwiXG4gICAgICAgICAgICAgICAgZGVmYXVsdFZhbHVlPXtub2RlLnRleHQgfHwgJyd9XG4gICAgICAgICAgICAgICAgb25CbHVyPXsoZSkgPT4ge1xuICAgICAgICAgICAgICAgICAgb25VcGRhdGVUZXh0KG5vZGUuaWQsIGUudGFyZ2V0LnZhbHVlKVxuICAgICAgICAgICAgICAgICAgb25TdG9wRWRpdGluZygpXG4gICAgICAgICAgICAgICAgfX1cbiAgICAgICAgICAgICAgICBvbktleURvd249eyhlKSA9PiB7XG4gICAgICAgICAgICAgICAgICBpZiAoZS5rZXkgPT09ICdFbnRlcicgJiYgKGUuY3RybEtleSB8fCBlLm1ldGFLZXkpKSB7XG4gICAgICAgICAgICAgICAgICAgIG9uVXBkYXRlVGV4dChub2RlLmlkLCBlLmN1cnJlbnRUYXJnZXQudmFsdWUpXG4gICAgICAgICAgICAgICAgICAgIG9uU3RvcEVkaXRpbmcoKVxuICAgICAgICAgICAgICAgICAgfVxuICAgICAgICAgICAgICAgICAgaWYgKGUua2V5ID09PSAnRXNjYXBlJykgb25TdG9wRWRpdGluZygpXG4gICAgICAgICAgICAgICAgfX1cbiAgICAgICAgICAgICAgLz5cbiAgICAgICAgICAgICkgOiAoXG4gICAgICAgICAgICAgIDxNZW1vaXplZE1hcmtkb3duUHJldmlldyB0ZXh0PXtub2RlLnRleHQgfHwgJyd9IC8+XG4gICAgICAgICAgICApfVxuICAgICAgICAgIDwvZGl2PlxuICAgICAgICApfVxuXG4gICAgICAgIHsvKiBCb3R0b20tcmlnaHQgQ29ybmVyIFJlc2l6ZSBIYW5kbGUgKi99XG4gICAgICAgIDxkaXZcbiAgICAgICAgICBjbGFzc05hbWU9XCJsdW1pbmEtY2FudmFzLXJlc2l6ZS1oYW5kbGUgaGFuZGxlLWJyXCJcbiAgICAgICAgICB0aXRsZT1cIkRyYWcgdG8gcmVzaXplIGNhcmRcIlxuICAgICAgICAgIG9uTW91c2VEb3duPXsoZSkgPT4gb25SZXNpemVNb3VzZURvd24oZSwgbm9kZSl9XG4gICAgICAgIC8+XG4gICAgICA8L2Rpdj5cbiAgICApXG4gIH0sXG4gIChwcmV2LCBuZXh0KSA9PiB7XG4gICAgLy8gT25seSByZS1yZW5kZXIgaWYgbm9kZSBkYXRhLCBzZWxlY3Rpb24sIG9yIGVkaXRpbmcgc3RhdGUgc3BlY2lmaWNhbGx5IGNoYW5nZWRcbiAgICByZXR1cm4gKFxuICAgICAgcHJldi5ub2RlID09PSBuZXh0Lm5vZGUgJiZcbiAgICAgIHByZXYuaXNTZWxlY3RlZCA9PT0gbmV4dC5pc1NlbGVjdGVkICYmXG4gICAgICBwcmV2LmlzRWRpdGluZyA9PT0gbmV4dC5pc0VkaXRpbmcgJiZcbiAgICAgIHByZXYuZWRpdGluZ0ZpZWxkID09PSBuZXh0LmVkaXRpbmdGaWVsZFxuICAgIClcbiAgfVxuKVxuXG5DYW52YXNOb2RlQ2FyZC5kaXNwbGF5TmFtZSA9ICdDYW52YXNOb2RlQ2FyZCdcblxuZXhwb3J0IGRlZmF1bHQgQ2FudmFzTm9kZUNhcmRcbiJdLCJmaWxlIjoiQjovZWxlY3Ryb24vbHVtaW5hL3NyYy9yZW5kZXJlci9zcmMvZmVhdHVyZXMvY2FudmFzL0NhbnZhc05vZGVDYXJkLnRzeCJ9

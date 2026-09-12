@@ -1,0 +1,523 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/Welcome.jsx");import __vite__cjsImport0_react_jsxDevRuntime from "/@fs/B:/electron/lumina/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=f41806ed"; const jsxDEV = __vite__cjsImport0_react_jsxDevRuntime["jsxDEV"];
+var _s = $RefreshSig$();
+import __vite__cjsImport1_react from "/@fs/B:/electron/lumina/node_modules/.vite/deps/react.js?v=f41806ed"; const React = __vite__cjsImport1_react.__esModule ? __vite__cjsImport1_react.default : __vite__cjsImport1_react;
+import { FileText, Search, Sparkles, FolderTree, Command, Book, Compass } from "/@fs/B:/electron/lumina/node_modules/.vite/deps/lucide-react.js?v=f41806ed";
+import { useExternalFileDrop } from "/src/features/Explorer/hooks/useExternalFileDrop.js";
+import ExternalDropOverlay from "/src/features/Explorer/components/ExternalDropOverlay.jsx";
+import ToolTip from "/src/components/atoms/ToolTip.jsx";
+import "/src/assets/welcome.css";
+const Welcome = ({
+  onNew,
+  onOpenDocs,
+  onOpenGuide,
+  onToggleAIChat
+}) => {
+  _s();
+  const {
+    isDraggingExternal,
+    handleDragEnter,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop
+  } = useExternalFileDrop();
+  const handlePalette = () => window.dispatchEvent(new KeyboardEvent("keydown", { key: "p", ctrlKey: true }));
+  const handleAIChat = () => {
+    if (onToggleAIChat) {
+      onToggleAIChat();
+    } else {
+      window.dispatchEvent(new CustomEvent("open-ai-chat"));
+    }
+  };
+  return /* @__PURE__ */ jsxDEV(
+    "div",
+    {
+      className: "welcome-page",
+      onDragEnter: (e) => handleDragEnter(e, ""),
+      onDragOver: (e) => handleDragOver(e, ""),
+      onDragLeave: handleDragLeave,
+      onDrop: (e) => handleDrop(e, ""),
+      children: [
+        isDraggingExternal && /* @__PURE__ */ jsxDEV(ExternalDropOverlay, { targetName: "Lumina" }, void 0, false, {
+          fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+          lineNumber: 40,
+          columnNumber: 30
+        }, this),
+        /* @__PURE__ */ jsxDEV("div", { className: "welcome-top-actions", children: [
+          onOpenDocs && /* @__PURE__ */ jsxDEV(ToolTip, { text: "Documentation (Ctrl + D)", position: "bottom", children: /* @__PURE__ */ jsxDEV(
+            "button",
+            {
+              className: "welcome-top-btn",
+              onClick: onOpenDocs,
+              "aria-label": "Documentation (Ctrl + D)",
+              children: [
+                /* @__PURE__ */ jsxDEV(Book, { size: 13, className: "welcome-top-btn-icon" }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                  lineNumber: 51,
+                  columnNumber: 15
+                }, this),
+                /* @__PURE__ */ jsxDEV("span", { children: "Docs" }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                  lineNumber: 52,
+                  columnNumber: 15
+                }, this)
+              ]
+            },
+            void 0,
+            true,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+              lineNumber: 46,
+              columnNumber: 13
+            },
+            this
+          ) }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+            lineNumber: 45,
+            columnNumber: 9
+          }, this),
+          onOpenGuide && /* @__PURE__ */ jsxDEV(ToolTip, { text: "Lumina Guide", position: "bottom", children: /* @__PURE__ */ jsxDEV(
+            "button",
+            {
+              className: "welcome-top-btn",
+              onClick: onOpenGuide,
+              "aria-label": "Lumina Guide",
+              children: [
+                /* @__PURE__ */ jsxDEV(Compass, { size: 13, className: "welcome-top-btn-icon" }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                  lineNumber: 63,
+                  columnNumber: 15
+                }, this),
+                /* @__PURE__ */ jsxDEV("span", { children: "Guide" }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                  lineNumber: 64,
+                  columnNumber: 15
+                }, this)
+              ]
+            },
+            void 0,
+            true,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+              lineNumber: 58,
+              columnNumber: 13
+            },
+            this
+          ) }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+            lineNumber: 57,
+            columnNumber: 9
+          }, this)
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+          lineNumber: 43,
+          columnNumber: 7
+        }, this),
+        /* @__PURE__ */ jsxDEV("div", { className: "welcome-watermark", children: /* @__PURE__ */ jsxDEV(
+          "svg",
+          {
+            viewBox: "0 0 100 100",
+            xmlns: "http://www.w3.org/2000/svg",
+            className: "lumina-watermark-svg",
+            children: [
+              /* @__PURE__ */ jsxDEV("defs", { children: [
+                /* @__PURE__ */ jsxDEV("linearGradient", { id: "neonGradient", x1: "0%", y1: "0%", x2: "100%", y2: "100%", children: [
+                  /* @__PURE__ */ jsxDEV("stop", { offset: "0%", stopColor: "var(--text-accent, #40bafa)", stopOpacity: "0.9" }, void 0, false, {
+                    fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                    lineNumber: 77,
+                    columnNumber: 15
+                  }, this),
+                  /* @__PURE__ */ jsxDEV("stop", { offset: "100%", stopColor: "var(--text-accent, #40bafa)", stopOpacity: "0.3" }, void 0, false, {
+                    fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                    lineNumber: 78,
+                    columnNumber: 15
+                  }, this)
+                ] }, void 0, true, {
+                  fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                  lineNumber: 76,
+                  columnNumber: 13
+                }, this),
+                /* @__PURE__ */ jsxDEV("filter", { id: "glow", x: "-20%", y: "-20%", width: "140%", height: "140%", children: [
+                  /* @__PURE__ */ jsxDEV("feGaussianBlur", { stdDeviation: "4", result: "blur" }, void 0, false, {
+                    fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                    lineNumber: 81,
+                    columnNumber: 15
+                  }, this),
+                  /* @__PURE__ */ jsxDEV("feMerge", { children: [
+                    /* @__PURE__ */ jsxDEV("feMergeNode", { in: "blur" }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                      lineNumber: 83,
+                      columnNumber: 17
+                    }, this),
+                    /* @__PURE__ */ jsxDEV("feMergeNode", { in: "SourceGraphic" }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                      lineNumber: 84,
+                      columnNumber: 17
+                    }, this)
+                  ] }, void 0, true, {
+                    fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                    lineNumber: 82,
+                    columnNumber: 15
+                  }, this)
+                ] }, void 0, true, {
+                  fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                  lineNumber: 80,
+                  columnNumber: 13
+                }, this)
+              ] }, void 0, true, {
+                fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                lineNumber: 75,
+                columnNumber: 11
+              }, this),
+              /* @__PURE__ */ jsxDEV(
+                "path",
+                {
+                  d: "M 25 15 L 25 80 L 80 80",
+                  fill: "none",
+                  stroke: "url(#neonGradient)",
+                  strokeWidth: "4",
+                  strokeLinecap: "round",
+                  strokeLinejoin: "round",
+                  filter: "url(#glow)",
+                  opacity: "0.8"
+                },
+                void 0,
+                false,
+                {
+                  fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                  lineNumber: 90,
+                  columnNumber: 11
+                },
+                this
+              ),
+              /* @__PURE__ */ jsxDEV(
+                "path",
+                {
+                  d: "M 25 45 L 50 30 M 25 80 L 15 65 M 50 80 L 70 50",
+                  fill: "none",
+                  stroke: "var(--text-accent, #40bafa)",
+                  strokeWidth: "1.5",
+                  strokeLinecap: "round",
+                  strokeDasharray: "4 6",
+                  opacity: "0.4"
+                },
+                void 0,
+                false,
+                {
+                  fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                  lineNumber: 102,
+                  columnNumber: 11
+                },
+                this
+              ),
+              /* @__PURE__ */ jsxDEV("circle", { cx: "25", cy: "15", r: "5", fill: "var(--text-accent, #40bafa)", filter: "url(#glow)" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                lineNumber: 113,
+                columnNumber: 11
+              }, this),
+              /* @__PURE__ */ jsxDEV("circle", { cx: "25", cy: "45", r: "3.5", fill: "var(--text-accent, #40bafa)", filter: "url(#glow)" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                lineNumber: 114,
+                columnNumber: 11
+              }, this),
+              /* @__PURE__ */ jsxDEV("circle", { cx: "25", cy: "80", r: "6", fill: "var(--text-accent, #40bafa)", filter: "url(#glow)" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                lineNumber: 115,
+                columnNumber: 11
+              }, this),
+              /* @__PURE__ */ jsxDEV("circle", { cx: "50", cy: "80", r: "4", fill: "var(--text-accent, #40bafa)", filter: "url(#glow)" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                lineNumber: 116,
+                columnNumber: 11
+              }, this),
+              /* @__PURE__ */ jsxDEV("circle", { cx: "80", cy: "80", r: "5", fill: "var(--text-accent, #40bafa)", filter: "url(#glow)" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                lineNumber: 117,
+                columnNumber: 11
+              }, this),
+              /* @__PURE__ */ jsxDEV("circle", { cx: "50", cy: "30", r: "2.5", fill: "var(--text-accent, #40bafa)", opacity: "0.6" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                lineNumber: 120,
+                columnNumber: 11
+              }, this),
+              /* @__PURE__ */ jsxDEV("circle", { cx: "15", cy: "65", r: "2", fill: "var(--text-accent, #40bafa)", opacity: "0.6" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                lineNumber: 121,
+                columnNumber: 11
+              }, this),
+              /* @__PURE__ */ jsxDEV("circle", { cx: "70", cy: "50", r: "2.5", fill: "var(--text-accent, #40bafa)", opacity: "0.6" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                lineNumber: 122,
+                columnNumber: 11
+              }, this)
+            ]
+          },
+          void 0,
+          true,
+          {
+            fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+            lineNumber: 70,
+            columnNumber: 9
+          },
+          this
+        ) }, void 0, false, {
+          fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+          lineNumber: 69,
+          columnNumber: 7
+        }, this),
+        /* @__PURE__ */ jsxDEV("div", { className: "welcome-inner-centered", children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "welcome-header-hero", children: [
+            /* @__PURE__ */ jsxDEV("h1", { className: "hero-title", children: "Lumina" }, void 0, false, {
+              fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+              lineNumber: 130,
+              columnNumber: 11
+            }, this),
+            /* @__PURE__ */ jsxDEV("p", { className: "hero-subtitle", children: "Your personal AI-powered workspace for ideas, research, and writing." }, void 0, false, {
+              fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+              lineNumber: 131,
+              columnNumber: 11
+            }, this)
+          ] }, void 0, true, {
+            fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+            lineNumber: 129,
+            columnNumber: 9
+          }, this),
+          /* @__PURE__ */ jsxDEV("div", { className: "welcome-bottom-group", children: [
+            /* @__PURE__ */ jsxDEV("div", { className: "welcome-actions-grid", children: [
+              /* @__PURE__ */ jsxDEV("button", { className: "welcome-action-card", onClick: onNew, children: [
+                /* @__PURE__ */ jsxDEV("div", { className: "action-card-icon", style: { color: "var(--text-accent, #40bafa)" }, children: /* @__PURE__ */ jsxDEV(FileText, { size: 12 }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                  lineNumber: 141,
+                  columnNumber: 17
+                }, this) }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                  lineNumber: 140,
+                  columnNumber: 15
+                }, this),
+                /* @__PURE__ */ jsxDEV("div", { className: "action-card-content", children: [
+                  /* @__PURE__ */ jsxDEV("h3", { children: "Create a new note" }, void 0, false, {
+                    fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                    lineNumber: 144,
+                    columnNumber: 17
+                  }, this),
+                  /* @__PURE__ */ jsxDEV("p", { children: "Start writing instantly" }, void 0, false, {
+                    fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                    lineNumber: 145,
+                    columnNumber: 17
+                  }, this)
+                ] }, void 0, true, {
+                  fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                  lineNumber: 143,
+                  columnNumber: 15
+                }, this),
+                /* @__PURE__ */ jsxDEV("div", { className: "action-shortcut", children: "Ctrl + N" }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                  lineNumber: 147,
+                  columnNumber: 15
+                }, this)
+              ] }, void 0, true, {
+                fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                lineNumber: 139,
+                columnNumber: 13
+              }, this),
+              /* @__PURE__ */ jsxDEV("button", { className: "welcome-action-card", onClick: handlePalette, children: [
+                /* @__PURE__ */ jsxDEV("div", { className: "action-card-icon", style: { color: "var(--text-accent, #40bafa)" }, children: /* @__PURE__ */ jsxDEV(Search, { size: 12 }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                  lineNumber: 152,
+                  columnNumber: 17
+                }, this) }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                  lineNumber: 151,
+                  columnNumber: 15
+                }, this),
+                /* @__PURE__ */ jsxDEV("div", { className: "action-card-content", children: [
+                  /* @__PURE__ */ jsxDEV("h3", { children: "Quick Search" }, void 0, false, {
+                    fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                    lineNumber: 155,
+                    columnNumber: 17
+                  }, this),
+                  /* @__PURE__ */ jsxDEV("p", { children: "Find any note or command" }, void 0, false, {
+                    fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                    lineNumber: 156,
+                    columnNumber: 17
+                  }, this)
+                ] }, void 0, true, {
+                  fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                  lineNumber: 154,
+                  columnNumber: 15
+                }, this),
+                /* @__PURE__ */ jsxDEV("div", { className: "action-shortcut", children: "Ctrl + P" }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                  lineNumber: 158,
+                  columnNumber: 15
+                }, this)
+              ] }, void 0, true, {
+                fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                lineNumber: 150,
+                columnNumber: 13
+              }, this),
+              /* @__PURE__ */ jsxDEV(
+                "button",
+                {
+                  className: "welcome-action-card",
+                  onClick: () => window.dispatchEvent(new KeyboardEvent("keydown", { key: "b", ctrlKey: true })),
+                  children: [
+                    /* @__PURE__ */ jsxDEV("div", { className: "action-card-icon", style: { color: "var(--text-accent, #40bafa)" }, children: /* @__PURE__ */ jsxDEV(FolderTree, { size: 12 }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                      lineNumber: 168,
+                      columnNumber: 17
+                    }, this) }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                      lineNumber: 167,
+                      columnNumber: 15
+                    }, this),
+                    /* @__PURE__ */ jsxDEV("div", { className: "action-card-content", children: [
+                      /* @__PURE__ */ jsxDEV("h3", { children: "Toggle Sidebar" }, void 0, false, {
+                        fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                        lineNumber: 171,
+                        columnNumber: 17
+                      }, this),
+                      /* @__PURE__ */ jsxDEV("p", { children: "Browse your workspace" }, void 0, false, {
+                        fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                        lineNumber: 172,
+                        columnNumber: 17
+                      }, this)
+                    ] }, void 0, true, {
+                      fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                      lineNumber: 170,
+                      columnNumber: 15
+                    }, this),
+                    /* @__PURE__ */ jsxDEV("div", { className: "action-shortcut", children: "Ctrl + B" }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                      lineNumber: 174,
+                      columnNumber: 15
+                    }, this)
+                  ]
+                },
+                void 0,
+                true,
+                {
+                  fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                  lineNumber: 161,
+                  columnNumber: 13
+                },
+                this
+              ),
+              /* @__PURE__ */ jsxDEV("button", { className: "welcome-action-card", onClick: handleAIChat, children: [
+                /* @__PURE__ */ jsxDEV("div", { className: "action-card-icon", style: { color: "var(--text-accent, #40bafa)" }, children: /* @__PURE__ */ jsxDEV(Sparkles, { size: 12 }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                  lineNumber: 179,
+                  columnNumber: 17
+                }, this) }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                  lineNumber: 178,
+                  columnNumber: 15
+                }, this),
+                /* @__PURE__ */ jsxDEV("div", { className: "action-card-content", children: [
+                  /* @__PURE__ */ jsxDEV("h3", { children: "Lumina AI Assistant" }, void 0, false, {
+                    fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                    lineNumber: 182,
+                    columnNumber: 17
+                  }, this),
+                  /* @__PURE__ */ jsxDEV("p", { children: "Chat with your knowledge" }, void 0, false, {
+                    fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                    lineNumber: 183,
+                    columnNumber: 17
+                  }, this)
+                ] }, void 0, true, {
+                  fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                  lineNumber: 181,
+                  columnNumber: 15
+                }, this),
+                /* @__PURE__ */ jsxDEV("div", { className: "action-shortcut", children: "Ctrl+Shift+\\" }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                  lineNumber: 185,
+                  columnNumber: 15
+                }, this)
+              ] }, void 0, true, {
+                fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                lineNumber: 177,
+                columnNumber: 13
+              }, this)
+            ] }, void 0, true, {
+              fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+              lineNumber: 138,
+              columnNumber: 11
+            }, this),
+            /* @__PURE__ */ jsxDEV("div", { className: "welcome-footer-hint", children: [
+              /* @__PURE__ */ jsxDEV(Command, { size: 13 }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                lineNumber: 190,
+                columnNumber: 13
+              }, this),
+              /* @__PURE__ */ jsxDEV("span", { children: [
+                "Press ",
+                /* @__PURE__ */ jsxDEV("strong", { children: "Ctrl+P" }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                  lineNumber: 192,
+                  columnNumber: 21
+                }, this),
+                " anywhere to open Quick Search"
+              ] }, void 0, true, {
+                fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+                lineNumber: 191,
+                columnNumber: 13
+              }, this)
+            ] }, void 0, true, {
+              fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+              lineNumber: 189,
+              columnNumber: 11
+            }, this)
+          ] }, void 0, true, {
+            fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+            lineNumber: 137,
+            columnNumber: 9
+          }, this)
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+          lineNumber: 127,
+          columnNumber: 7
+        }, this)
+      ]
+    },
+    void 0,
+    true,
+    {
+      fileName: "B:/electron/lumina/src/renderer/src/Welcome.jsx",
+      lineNumber: 33,
+      columnNumber: 5
+    },
+    this
+  );
+};
+_s(Welcome, "m4CxOtKUMN/KWvfoWHc+vmL3ySI=", false, function() {
+  return [useExternalFileDrop];
+});
+_c = Welcome;
+export default Welcome;
+var _c;
+$RefreshReg$(_c, "Welcome");
+import * as RefreshRuntime from "/@react-refresh";
+const inWebWorker = typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope;
+if (import.meta.hot && !inWebWorker) {
+  if (!window.$RefreshReg$) {
+    throw new Error(
+      "@vitejs/plugin-react can't detect preamble. Something is wrong."
+    );
+  }
+  RefreshRuntime.__hmr_import(import.meta.url).then((currentExports) => {
+    RefreshRuntime.registerExportsForReactRefresh("B:/electron/lumina/src/renderer/src/Welcome.jsx", currentExports);
+    import.meta.hot.accept((nextExports) => {
+      if (!nextExports) return;
+      const invalidateMessage = RefreshRuntime.validateRefreshBoundaryAndEnqueueUpdate("B:/electron/lumina/src/renderer/src/Welcome.jsx", currentExports, nextExports);
+      if (invalidateMessage) import.meta.hot.invalidate(invalidateMessage);
+    });
+  });
+}
+function $RefreshReg$(type, id) {
+  return RefreshRuntime.register(type, "B:/electron/lumina/src/renderer/src/Welcome.jsx " + id);
+}
+function $RefreshSig$() {
+  return RefreshRuntime.createSignatureFunctionForTransform();
+}
+
+//# sourceMappingURL=data:application/json;base64,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QUFBO0FBQUE7QUFBQSxlQXFFQTtBQUFBO0FBQUE7QUFBQSxJQW5LRjtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUEsRUFvS0E7QUFFSjtBQUFDZixHQS9MS0wsU0FBTztBQUFBLFVBWVBILG1CQUFtQjtBQUFBO0FBQUF3QixLQVpuQnJCO0FBaU1OLGVBQWVBO0FBQU8sSUFBQXFCO0FBQUFDLGFBQUFELElBQUEiLCJuYW1lcyI6WyJSZWFjdCIsIkZpbGVUZXh0IiwiU2VhcmNoIiwiU3BhcmtsZXMiLCJGb2xkZXJUcmVlIiwiQ29tbWFuZCIsIkJvb2siLCJDb21wYXNzIiwidXNlRXh0ZXJuYWxGaWxlRHJvcCIsIkV4dGVybmFsRHJvcE92ZXJsYXkiLCJUb29sVGlwIiwiV2VsY29tZSIsIm9uTmV3Iiwib25PcGVuRG9jcyIsIm9uT3Blbkd1aWRlIiwib25Ub2dnbGVBSUNoYXQiLCJfcyIsImlzRHJhZ2dpbmdFeHRlcm5hbCIsImhhbmRsZURyYWdFbnRlciIsImhhbmRsZURyYWdPdmVyIiwiaGFuZGxlRHJhZ0xlYXZlIiwiaGFuZGxlRHJvcCIsImhhbmRsZVBhbGV0dGUiLCJ3aW5kb3ciLCJkaXNwYXRjaEV2ZW50IiwiS2V5Ym9hcmRFdmVudCIsImtleSIsImN0cmxLZXkiLCJoYW5kbGVBSUNoYXQiLCJDdXN0b21FdmVudCIsImUiLCJjb2xvciIsIl9jIiwiJFJlZnJlc2hSZWckIl0sImlnbm9yZUxpc3QiOltdLCJzb3VyY2VzIjpbIldlbGNvbWUuanN4Il0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCBSZWFjdCBmcm9tICdyZWFjdCdcclxuaW1wb3J0IHsgRmlsZVRleHQsIFNlYXJjaCwgU3BhcmtsZXMsIEZvbGRlclRyZWUsIENvbW1hbmQsIEJvb2ssIENvbXBhc3MgfSBmcm9tICdsdWNpZGUtcmVhY3QnXHJcbmltcG9ydCB7IHVzZUV4dGVybmFsRmlsZURyb3AgfSBmcm9tICcuL2ZlYXR1cmVzL0V4cGxvcmVyL2hvb2tzL3VzZUV4dGVybmFsRmlsZURyb3AnXHJcbmltcG9ydCBFeHRlcm5hbERyb3BPdmVybGF5IGZyb20gJy4vZmVhdHVyZXMvRXhwbG9yZXIvY29tcG9uZW50cy9FeHRlcm5hbERyb3BPdmVybGF5J1xyXG5pbXBvcnQgVG9vbFRpcCBmcm9tICcuL2NvbXBvbmVudHMvYXRvbXMvVG9vbFRpcCdcclxuaW1wb3J0ICcuL2Fzc2V0cy93ZWxjb21lLmNzcydcclxuXHJcbmNvbnN0IFdlbGNvbWUgPSAoe1xyXG4gIG9uTmV3LFxyXG4gIG9uT3BlbkRvY3MsXHJcbiAgb25PcGVuR3VpZGUsXHJcbiAgb25Ub2dnbGVBSUNoYXRcclxufSkgPT4ge1xyXG4gIGNvbnN0IHtcclxuICAgIGlzRHJhZ2dpbmdFeHRlcm5hbCxcclxuICAgIGhhbmRsZURyYWdFbnRlcixcclxuICAgIGhhbmRsZURyYWdPdmVyLFxyXG4gICAgaGFuZGxlRHJhZ0xlYXZlLFxyXG4gICAgaGFuZGxlRHJvcFxyXG4gIH0gPSB1c2VFeHRlcm5hbEZpbGVEcm9wKClcclxuXHJcbiAgY29uc3QgaGFuZGxlUGFsZXR0ZSA9ICgpID0+XHJcbiAgICB3aW5kb3cuZGlzcGF0Y2hFdmVudChuZXcgS2V5Ym9hcmRFdmVudCgna2V5ZG93bicsIHsga2V5OiAncCcsIGN0cmxLZXk6IHRydWUgfSkpXHJcbiAgY29uc3QgaGFuZGxlQUlDaGF0ID0gKCkgPT4ge1xyXG4gICAgaWYgKG9uVG9nZ2xlQUlDaGF0KSB7XHJcbiAgICAgIG9uVG9nZ2xlQUlDaGF0KClcclxuICAgIH0gZWxzZSB7XHJcbiAgICAgIHdpbmRvdy5kaXNwYXRjaEV2ZW50KG5ldyBDdXN0b21FdmVudCgnb3Blbi1haS1jaGF0JykpXHJcbiAgICB9XHJcbiAgfVxyXG5cclxuICByZXR1cm4gKFxyXG4gICAgPGRpdlxyXG4gICAgICBjbGFzc05hbWU9XCJ3ZWxjb21lLXBhZ2VcIlxyXG4gICAgICBvbkRyYWdFbnRlcj17KGUpID0+IGhhbmRsZURyYWdFbnRlcihlLCAnJyl9XHJcbiAgICAgIG9uRHJhZ092ZXI9eyhlKSA9PiBoYW5kbGVEcmFnT3ZlcihlLCAnJyl9XHJcbiAgICAgIG9uRHJhZ0xlYXZlPXtoYW5kbGVEcmFnTGVhdmV9XHJcbiAgICAgIG9uRHJvcD17KGUpID0+IGhhbmRsZURyb3AoZSwgJycpfVxyXG4gICAgPlxyXG4gICAgICB7aXNEcmFnZ2luZ0V4dGVybmFsICYmIDxFeHRlcm5hbERyb3BPdmVybGF5IHRhcmdldE5hbWU9XCJMdW1pbmFcIiAvPn1cclxuXHJcbiAgICAgIHsvKiBUb3AtUmlnaHQgQWN0aW9uIEJ1dHRvbnMgKi99XHJcbiAgICAgIDxkaXYgY2xhc3NOYW1lPVwid2VsY29tZS10b3AtYWN0aW9uc1wiPlxyXG4gICAgICAgIHtvbk9wZW5Eb2NzICYmIChcclxuICAgICAgICAgIDxUb29sVGlwIHRleHQ9XCJEb2N1bWVudGF0aW9uIChDdHJsICsgRClcIiBwb3NpdGlvbj1cImJvdHRvbVwiPlxyXG4gICAgICAgICAgICA8YnV0dG9uXHJcbiAgICAgICAgICAgICAgY2xhc3NOYW1lPVwid2VsY29tZS10b3AtYnRuXCJcclxuICAgICAgICAgICAgICBvbkNsaWNrPXtvbk9wZW5Eb2NzfVxyXG4gICAgICAgICAgICAgIGFyaWEtbGFiZWw9XCJEb2N1bWVudGF0aW9uIChDdHJsICsgRClcIlxyXG4gICAgICAgICAgICA+XHJcbiAgICAgICAgICAgICAgPEJvb2sgc2l6ZT17MTN9IGNsYXNzTmFtZT1cIndlbGNvbWUtdG9wLWJ0bi1pY29uXCIgLz5cclxuICAgICAgICAgICAgICA8c3Bhbj5Eb2NzPC9zcGFuPlxyXG4gICAgICAgICAgICA8L2J1dHRvbj5cclxuICAgICAgICAgIDwvVG9vbFRpcD5cclxuICAgICAgICApfVxyXG4gICAgICAgIHtvbk9wZW5HdWlkZSAmJiAoXHJcbiAgICAgICAgICA8VG9vbFRpcCB0ZXh0PVwiTHVtaW5hIEd1aWRlXCIgcG9zaXRpb249XCJib3R0b21cIj5cclxuICAgICAgICAgICAgPGJ1dHRvblxyXG4gICAgICAgICAgICAgIGNsYXNzTmFtZT1cIndlbGNvbWUtdG9wLWJ0blwiXHJcbiAgICAgICAgICAgICAgb25DbGljaz17b25PcGVuR3VpZGV9XHJcbiAgICAgICAgICAgICAgYXJpYS1sYWJlbD1cIkx1bWluYSBHdWlkZVwiXHJcbiAgICAgICAgICAgID5cclxuICAgICAgICAgICAgICA8Q29tcGFzcyBzaXplPXsxM30gY2xhc3NOYW1lPVwid2VsY29tZS10b3AtYnRuLWljb25cIiAvPlxyXG4gICAgICAgICAgICAgIDxzcGFuPkd1aWRlPC9zcGFuPlxyXG4gICAgICAgICAgICA8L2J1dHRvbj5cclxuICAgICAgICAgIDwvVG9vbFRpcD5cclxuICAgICAgICApfVxyXG4gICAgICA8L2Rpdj5cclxuICAgICAgPGRpdiBjbGFzc05hbWU9XCJ3ZWxjb21lLXdhdGVybWFya1wiPlxyXG4gICAgICAgIDxzdmdcclxuICAgICAgICAgIHZpZXdCb3g9XCIwIDAgMTAwIDEwMFwiXHJcbiAgICAgICAgICB4bWxucz1cImh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnXCJcclxuICAgICAgICAgIGNsYXNzTmFtZT1cImx1bWluYS13YXRlcm1hcmstc3ZnXCJcclxuICAgICAgICA+XHJcbiAgICAgICAgICA8ZGVmcz5cclxuICAgICAgICAgICAgPGxpbmVhckdyYWRpZW50IGlkPVwibmVvbkdyYWRpZW50XCIgeDE9XCIwJVwiIHkxPVwiMCVcIiB4Mj1cIjEwMCVcIiB5Mj1cIjEwMCVcIj5cclxuICAgICAgICAgICAgICA8c3RvcCBvZmZzZXQ9XCIwJVwiIHN0b3BDb2xvcj1cInZhcigtLXRleHQtYWNjZW50LCAjNDBiYWZhKVwiIHN0b3BPcGFjaXR5PVwiMC45XCIgLz5cclxuICAgICAgICAgICAgICA8c3RvcCBvZmZzZXQ9XCIxMDAlXCIgc3RvcENvbG9yPVwidmFyKC0tdGV4dC1hY2NlbnQsICM0MGJhZmEpXCIgc3RvcE9wYWNpdHk9XCIwLjNcIiAvPlxyXG4gICAgICAgICAgICA8L2xpbmVhckdyYWRpZW50PlxyXG4gICAgICAgICAgICA8ZmlsdGVyIGlkPVwiZ2xvd1wiIHg9XCItMjAlXCIgeT1cIi0yMCVcIiB3aWR0aD1cIjE0MCVcIiBoZWlnaHQ9XCIxNDAlXCI+XHJcbiAgICAgICAgICAgICAgPGZlR2F1c3NpYW5CbHVyIHN0ZERldmlhdGlvbj1cIjRcIiByZXN1bHQ9XCJibHVyXCIgLz5cclxuICAgICAgICAgICAgICA8ZmVNZXJnZT5cclxuICAgICAgICAgICAgICAgIDxmZU1lcmdlTm9kZSBpbj1cImJsdXJcIiAvPlxyXG4gICAgICAgICAgICAgICAgPGZlTWVyZ2VOb2RlIGluPVwiU291cmNlR3JhcGhpY1wiIC8+XHJcbiAgICAgICAgICAgICAgPC9mZU1lcmdlPlxyXG4gICAgICAgICAgICA8L2ZpbHRlcj5cclxuICAgICAgICAgIDwvZGVmcz5cclxuXHJcbiAgICAgICAgICB7LyogQWJzdHJhY3QgTmV0d29yayAnTCcgKi99XHJcbiAgICAgICAgICA8cGF0aFxyXG4gICAgICAgICAgICBkPVwiTSAyNSAxNSBMIDI1IDgwIEwgODAgODBcIlxyXG4gICAgICAgICAgICBmaWxsPVwibm9uZVwiXHJcbiAgICAgICAgICAgIHN0cm9rZT1cInVybCgjbmVvbkdyYWRpZW50KVwiXHJcbiAgICAgICAgICAgIHN0cm9rZVdpZHRoPVwiNFwiXHJcbiAgICAgICAgICAgIHN0cm9rZUxpbmVjYXA9XCJyb3VuZFwiXHJcbiAgICAgICAgICAgIHN0cm9rZUxpbmVqb2luPVwicm91bmRcIlxyXG4gICAgICAgICAgICBmaWx0ZXI9XCJ1cmwoI2dsb3cpXCJcclxuICAgICAgICAgICAgb3BhY2l0eT1cIjAuOFwiXHJcbiAgICAgICAgICAvPlxyXG5cclxuICAgICAgICAgIHsvKiBTdWItY29ubmVjdGlvbnMgZm9yIGdyYXBoIGVmZmVjdCAqL31cclxuICAgICAgICAgIDxwYXRoXHJcbiAgICAgICAgICAgIGQ9XCJNIDI1IDQ1IEwgNTAgMzAgTSAyNSA4MCBMIDE1IDY1IE0gNTAgODAgTCA3MCA1MFwiXHJcbiAgICAgICAgICAgIGZpbGw9XCJub25lXCJcclxuICAgICAgICAgICAgc3Ryb2tlPVwidmFyKC0tdGV4dC1hY2NlbnQsICM0MGJhZmEpXCJcclxuICAgICAgICAgICAgc3Ryb2tlV2lkdGg9XCIxLjVcIlxyXG4gICAgICAgICAgICBzdHJva2VMaW5lY2FwPVwicm91bmRcIlxyXG4gICAgICAgICAgICBzdHJva2VEYXNoYXJyYXk9XCI0IDZcIlxyXG4gICAgICAgICAgICBvcGFjaXR5PVwiMC40XCJcclxuICAgICAgICAgIC8+XHJcblxyXG4gICAgICAgICAgey8qIE5vZGVzICovfVxyXG4gICAgICAgICAgPGNpcmNsZSBjeD1cIjI1XCIgY3k9XCIxNVwiIHI9XCI1XCIgZmlsbD1cInZhcigtLXRleHQtYWNjZW50LCAjNDBiYWZhKVwiIGZpbHRlcj1cInVybCgjZ2xvdylcIiAvPlxyXG4gICAgICAgICAgPGNpcmNsZSBjeD1cIjI1XCIgY3k9XCI0NVwiIHI9XCIzLjVcIiBmaWxsPVwidmFyKC0tdGV4dC1hY2NlbnQsICM0MGJhZmEpXCIgZmlsdGVyPVwidXJsKCNnbG93KVwiIC8+XHJcbiAgICAgICAgICA8Y2lyY2xlIGN4PVwiMjVcIiBjeT1cIjgwXCIgcj1cIjZcIiBmaWxsPVwidmFyKC0tdGV4dC1hY2NlbnQsICM0MGJhZmEpXCIgZmlsdGVyPVwidXJsKCNnbG93KVwiIC8+XHJcbiAgICAgICAgICA8Y2lyY2xlIGN4PVwiNTBcIiBjeT1cIjgwXCIgcj1cIjRcIiBmaWxsPVwidmFyKC0tdGV4dC1hY2NlbnQsICM0MGJhZmEpXCIgZmlsdGVyPVwidXJsKCNnbG93KVwiIC8+XHJcbiAgICAgICAgICA8Y2lyY2xlIGN4PVwiODBcIiBjeT1cIjgwXCIgcj1cIjVcIiBmaWxsPVwidmFyKC0tdGV4dC1hY2NlbnQsICM0MGJhZmEpXCIgZmlsdGVyPVwidXJsKCNnbG93KVwiIC8+XHJcblxyXG4gICAgICAgICAgey8qIFNhdGVsbGl0ZSBub2RlcyAqL31cclxuICAgICAgICAgIDxjaXJjbGUgY3g9XCI1MFwiIGN5PVwiMzBcIiByPVwiMi41XCIgZmlsbD1cInZhcigtLXRleHQtYWNjZW50LCAjNDBiYWZhKVwiIG9wYWNpdHk9XCIwLjZcIiAvPlxyXG4gICAgICAgICAgPGNpcmNsZSBjeD1cIjE1XCIgY3k9XCI2NVwiIHI9XCIyXCIgZmlsbD1cInZhcigtLXRleHQtYWNjZW50LCAjNDBiYWZhKVwiIG9wYWNpdHk9XCIwLjZcIiAvPlxyXG4gICAgICAgICAgPGNpcmNsZSBjeD1cIjcwXCIgY3k9XCI1MFwiIHI9XCIyLjVcIiBmaWxsPVwidmFyKC0tdGV4dC1hY2NlbnQsICM0MGJhZmEpXCIgb3BhY2l0eT1cIjAuNlwiIC8+XHJcbiAgICAgICAgPC9zdmc+XHJcbiAgICAgIDwvZGl2PlxyXG5cclxuICAgICAgey8qIEFsbCBjb250ZW50IHNpdHMgaW5zaWRlIHRoZSB3YXRlcm1hcmsgYXJlYSwgc3ByZWFkIHRvcCB0byBib3R0b20gKi99XHJcbiAgICAgIDxkaXYgY2xhc3NOYW1lPVwid2VsY29tZS1pbm5lci1jZW50ZXJlZFwiPlxyXG4gICAgICAgIHsvKiBUaXRsZSBwdXNoZWQgdG93YXJkIHRvcCAqL31cclxuICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cIndlbGNvbWUtaGVhZGVyLWhlcm9cIj5cclxuICAgICAgICAgIDxoMSBjbGFzc05hbWU9XCJoZXJvLXRpdGxlXCI+THVtaW5hPC9oMT5cclxuICAgICAgICAgIDxwIGNsYXNzTmFtZT1cImhlcm8tc3VidGl0bGVcIj5cclxuICAgICAgICAgICAgWW91ciBwZXJzb25hbCBBSS1wb3dlcmVkIHdvcmtzcGFjZSBmb3IgaWRlYXMsIHJlc2VhcmNoLCBhbmQgd3JpdGluZy5cclxuICAgICAgICAgIDwvcD5cclxuICAgICAgICA8L2Rpdj5cclxuXHJcbiAgICAgICAgey8qIEJ1dHRvbnMgKyBoaW50IHB1c2hlZCB0b3dhcmQgYm90dG9tICovfVxyXG4gICAgICAgIDxkaXYgY2xhc3NOYW1lPVwid2VsY29tZS1ib3R0b20tZ3JvdXBcIj5cclxuICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwid2VsY29tZS1hY3Rpb25zLWdyaWRcIj5cclxuICAgICAgICAgICAgPGJ1dHRvbiBjbGFzc05hbWU9XCJ3ZWxjb21lLWFjdGlvbi1jYXJkXCIgb25DbGljaz17b25OZXd9PlxyXG4gICAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwiYWN0aW9uLWNhcmQtaWNvblwiIHN0eWxlPXt7IGNvbG9yOiAndmFyKC0tdGV4dC1hY2NlbnQsICM0MGJhZmEpJyB9fT5cclxuICAgICAgICAgICAgICAgIDxGaWxlVGV4dCBzaXplPXsxMn0gLz5cclxuICAgICAgICAgICAgICA8L2Rpdj5cclxuICAgICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cImFjdGlvbi1jYXJkLWNvbnRlbnRcIj5cclxuICAgICAgICAgICAgICAgIDxoMz5DcmVhdGUgYSBuZXcgbm90ZTwvaDM+XHJcbiAgICAgICAgICAgICAgICA8cD5TdGFydCB3cml0aW5nIGluc3RhbnRseTwvcD5cclxuICAgICAgICAgICAgICA8L2Rpdj5cclxuICAgICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cImFjdGlvbi1zaG9ydGN1dFwiPkN0cmwgKyBOPC9kaXY+XHJcbiAgICAgICAgICAgIDwvYnV0dG9uPlxyXG5cclxuICAgICAgICAgICAgPGJ1dHRvbiBjbGFzc05hbWU9XCJ3ZWxjb21lLWFjdGlvbi1jYXJkXCIgb25DbGljaz17aGFuZGxlUGFsZXR0ZX0+XHJcbiAgICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJhY3Rpb24tY2FyZC1pY29uXCIgc3R5bGU9e3sgY29sb3I6ICd2YXIoLS10ZXh0LWFjY2VudCwgIzQwYmFmYSknIH19PlxyXG4gICAgICAgICAgICAgICAgPFNlYXJjaCBzaXplPXsxMn0gLz5cclxuICAgICAgICAgICAgICA8L2Rpdj5cclxuICAgICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cImFjdGlvbi1jYXJkLWNvbnRlbnRcIj5cclxuICAgICAgICAgICAgICAgIDxoMz5RdWljayBTZWFyY2g8L2gzPlxyXG4gICAgICAgICAgICAgICAgPHA+RmluZCBhbnkgbm90ZSBvciBjb21tYW5kPC9wPlxyXG4gICAgICAgICAgICAgIDwvZGl2PlxyXG4gICAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwiYWN0aW9uLXNob3J0Y3V0XCI+Q3RybCArIFA8L2Rpdj5cclxuICAgICAgICAgICAgPC9idXR0b24+XHJcblxyXG4gICAgICAgICAgICA8YnV0dG9uXHJcbiAgICAgICAgICAgICAgY2xhc3NOYW1lPVwid2VsY29tZS1hY3Rpb24tY2FyZFwiXHJcbiAgICAgICAgICAgICAgb25DbGljaz17KCkgPT5cclxuICAgICAgICAgICAgICAgIHdpbmRvdy5kaXNwYXRjaEV2ZW50KG5ldyBLZXlib2FyZEV2ZW50KCdrZXlkb3duJywgeyBrZXk6ICdiJywgY3RybEtleTogdHJ1ZSB9KSlcclxuICAgICAgICAgICAgICB9XHJcbiAgICAgICAgICAgID5cclxuICAgICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cImFjdGlvbi1jYXJkLWljb25cIiBzdHlsZT17eyBjb2xvcjogJ3ZhcigtLXRleHQtYWNjZW50LCAjNDBiYWZhKScgfX0+XHJcbiAgICAgICAgICAgICAgICA8Rm9sZGVyVHJlZSBzaXplPXsxMn0gLz5cclxuICAgICAgICAgICAgICA8L2Rpdj5cclxuICAgICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cImFjdGlvbi1jYXJkLWNvbnRlbnRcIj5cclxuICAgICAgICAgICAgICAgIDxoMz5Ub2dnbGUgU2lkZWJhcjwvaDM+XHJcbiAgICAgICAgICAgICAgICA8cD5Ccm93c2UgeW91ciB3b3Jrc3BhY2U8L3A+XHJcbiAgICAgICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJhY3Rpb24tc2hvcnRjdXRcIj5DdHJsICsgQjwvZGl2PlxyXG4gICAgICAgICAgICA8L2J1dHRvbj5cclxuXHJcbiAgICAgICAgICAgIDxidXR0b24gY2xhc3NOYW1lPVwid2VsY29tZS1hY3Rpb24tY2FyZFwiIG9uQ2xpY2s9e2hhbmRsZUFJQ2hhdH0+XHJcbiAgICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJhY3Rpb24tY2FyZC1pY29uXCIgc3R5bGU9e3sgY29sb3I6ICd2YXIoLS10ZXh0LWFjY2VudCwgIzQwYmFmYSknIH19PlxyXG4gICAgICAgICAgICAgICAgPFNwYXJrbGVzIHNpemU9ezEyfSAvPlxyXG4gICAgICAgICAgICAgIDwvZGl2PlxyXG4gICAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwiYWN0aW9uLWNhcmQtY29udGVudFwiPlxyXG4gICAgICAgICAgICAgICAgPGgzPkx1bWluYSBBSSBBc3Npc3RhbnQ8L2gzPlxyXG4gICAgICAgICAgICAgICAgPHA+Q2hhdCB3aXRoIHlvdXIga25vd2xlZGdlPC9wPlxyXG4gICAgICAgICAgICAgIDwvZGl2PlxyXG4gICAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwiYWN0aW9uLXNob3J0Y3V0XCI+Q3RybCtTaGlmdCtcXDwvZGl2PlxyXG4gICAgICAgICAgICA8L2J1dHRvbj5cclxuICAgICAgICAgIDwvZGl2PlxyXG5cclxuICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwid2VsY29tZS1mb290ZXItaGludFwiPlxyXG4gICAgICAgICAgICA8Q29tbWFuZCBzaXplPXsxM30gLz5cclxuICAgICAgICAgICAgPHNwYW4+XHJcbiAgICAgICAgICAgICAgUHJlc3MgPHN0cm9uZz5DdHJsK1A8L3N0cm9uZz4gYW55d2hlcmUgdG8gb3BlbiBRdWljayBTZWFyY2hcclxuICAgICAgICAgICAgPC9zcGFuPlxyXG4gICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgPC9kaXY+XHJcbiAgICAgIDwvZGl2PlxyXG4gICAgPC9kaXY+XHJcbiAgKVxyXG59XHJcblxyXG5leHBvcnQgZGVmYXVsdCBXZWxjb21lXHJcbiJdLCJmaWxlIjoiQjovZWxlY3Ryb24vbHVtaW5hL3NyYy9yZW5kZXJlci9zcmMvV2VsY29tZS5qc3gifQ==

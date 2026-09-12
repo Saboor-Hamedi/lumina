@@ -47,13 +47,33 @@ interface NavItem {
   icon: React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>
 }
 
+const PRIMARY_FOLDERS: NavItem[] = [
+  { id: 'INBOX', label: 'Inbox', icon: Inbox },
+  { id: 'STARRED', label: 'Starred', icon: Star },
+  { id: 'IMPORTANT', label: 'Important', icon: Bookmark },
+  { id: 'SENT', label: 'Sent', icon: Send },
+  { id: 'DRAFT', label: 'Drafts', icon: FileText }
+]
+
+const CATEGORY_FOLDERS: NavItem[] = [
+  { id: 'CATEGORY_PROMOTIONS', label: 'Promotions', icon: Tag },
+  { id: 'CATEGORY_SOCIAL', label: 'Social', icon: Users },
+  { id: 'CATEGORY_UPDATES', label: 'Updates', icon: Bell },
+  { id: 'CATEGORY_FORUMS', label: 'Forums', icon: MessageSquare }
+]
+
+const OTHER_FOLDERS: NavItem[] = [
+  { id: 'SPAM', label: 'Spam', icon: AlertOctagon },
+  { id: 'TRASH', label: 'Trash', icon: Trash2 }
+]
+
 /**
  * EmailSidebar Component
  * 
  * Collapsible left navigation pane modeled after Lumina's main Sidebar.
  * Supports smooth curtain collapse, drag-to-resize, and snap-to-close threshold mechanics.
  */
-export const EmailSidebar: React.FC<EmailSidebarProps> = ({
+export const EmailSidebar = React.memo<EmailSidebarProps>(({ 
   currentFolder,
   onSelectFolder,
   userLabels,
@@ -65,26 +85,6 @@ export const EmailSidebar: React.FC<EmailSidebarProps> = ({
 }) => {
   const [isCategoriesExpanded, setIsCategoriesExpanded] = useState<boolean>(true)
   const [isLabelsExpanded, setIsLabelsExpanded] = useState<boolean>(true)
-
-  const primaryFolders: NavItem[] = [
-    { id: 'INBOX', label: 'Inbox', icon: Inbox },
-    { id: 'STARRED', label: 'Starred', icon: Star },
-    { id: 'IMPORTANT', label: 'Important', icon: Bookmark },
-    { id: 'SENT', label: 'Sent', icon: Send },
-    { id: 'DRAFT', label: 'Drafts', icon: FileText }
-  ]
-
-  const categoryFolders: NavItem[] = [
-    { id: 'CATEGORY_PROMOTIONS', label: 'Promotions', icon: Tag },
-    { id: 'CATEGORY_SOCIAL', label: 'Social', icon: Users },
-    { id: 'CATEGORY_UPDATES', label: 'Updates', icon: Bell },
-    { id: 'CATEGORY_FORUMS', label: 'Forums', icon: MessageSquare }
-  ]
-
-  const otherFolders: NavItem[] = [
-    { id: 'SPAM', label: 'Spam', icon: AlertOctagon },
-    { id: 'TRASH', label: 'Trash', icon: Trash2 }
-  ]
 
   return (
     <aside
@@ -112,7 +112,7 @@ export const EmailSidebar: React.FC<EmailSidebarProps> = ({
       <div className="email-sidebar-scroll">
         {/* Primary Mailboxes */}
         <div className="email-nav-group">
-          {primaryFolders.map((item) => {
+          {PRIMARY_FOLDERS.map((item) => {
             const Icon = item.icon
             const isActive = currentFolder === item.id
             return (
@@ -141,7 +141,7 @@ export const EmailSidebar: React.FC<EmailSidebarProps> = ({
           </div>
           {isCategoriesExpanded && (
             <div className="email-nav-subgroup">
-              {categoryFolders.map((item) => {
+              {CATEGORY_FOLDERS.map((item) => {
                 const Icon = item.icon
                 const isActive = currentFolder === item.id
                 return (
@@ -207,7 +207,7 @@ export const EmailSidebar: React.FC<EmailSidebarProps> = ({
             <span>Other</span>
           </div>
           <div className="email-nav-subgroup">
-            {otherFolders.map((item) => {
+            {OTHER_FOLDERS.map((item) => {
               const Icon = item.icon
               const isActive = currentFolder === item.id
               return (
@@ -227,6 +227,6 @@ export const EmailSidebar: React.FC<EmailSidebarProps> = ({
       </div>
     </aside>
   )
-}
+})
 
 export default EmailSidebar

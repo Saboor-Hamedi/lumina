@@ -1,0 +1,237 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/features/template/TemplateContent.jsx");import __vite__cjsImport0_react_jsxDevRuntime from "/@fs/B:/electron/lumina/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=f41806ed"; const jsxDEV = __vite__cjsImport0_react_jsxDevRuntime["jsxDEV"];
+var _s = $RefreshSig$();
+import __vite__cjsImport1_react from "/@fs/B:/electron/lumina/node_modules/.vite/deps/react.js?v=f41806ed"; const React = __vite__cjsImport1_react.__esModule ? __vite__cjsImport1_react.default : __vite__cjsImport1_react; const useMemo = __vite__cjsImport1_react["useMemo"];
+import { Check, FileText, Plus, Sparkles, Clock } from "/@fs/B:/electron/lumina/node_modules/.vite/deps/lucide-react.js?v=f41806ed";
+import { PreviewCommandPalette } from "/src/features/commandpalette/PreviewCommandPalette.jsx";
+const TemplateContent = ({ template, onApply }) => {
+  _s();
+  const isBlank = !template || template.id === "blank" || !template.code;
+  const stats = useMemo(() => {
+    if (!template?.code) return { words: 0, lines: 0, minutes: 1 };
+    const words = template.code.split(/\s+/).filter(Boolean).length;
+    const lines = template.code.split("\n").length;
+    const minutes = Math.max(1, Math.ceil(words / 200));
+    return { words, lines, minutes };
+  }, [template?.code]);
+  const footerAction = /* @__PURE__ */ jsxDEV("div", { className: "template-content-footer", children: [
+    /* @__PURE__ */ jsxDEV("div", { className: "template-footer-stats", children: [
+      /* @__PURE__ */ jsxDEV("span", { className: "template-stat-item", children: [
+        /* @__PURE__ */ jsxDEV(FileText, { size: 12 }, void 0, false, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+          lineNumber: 20,
+          columnNumber: 11
+        }, this),
+        " ",
+        stats.lines,
+        " lines"
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+        lineNumber: 19,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("span", { className: "template-stat-sep" }, void 0, false, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+        lineNumber: 22,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("span", { className: "template-stat-item", children: [
+        /* @__PURE__ */ jsxDEV(Sparkles, { size: 12 }, void 0, false, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+          lineNumber: 24,
+          columnNumber: 11
+        }, this),
+        " ",
+        stats.words,
+        " words"
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+        lineNumber: 23,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("span", { className: "template-stat-sep" }, void 0, false, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+        lineNumber: 26,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("span", { className: "template-stat-item", children: [
+        /* @__PURE__ */ jsxDEV(Clock, { size: 12 }, void 0, false, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+          lineNumber: 28,
+          columnNumber: 11
+        }, this),
+        " ~",
+        stats.minutes,
+        " min"
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+        lineNumber: 27,
+        columnNumber: 9
+      }, this)
+    ] }, void 0, true, {
+      fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+      lineNumber: 18,
+      columnNumber: 7
+    }, this),
+    /* @__PURE__ */ jsxDEV("div", { className: "template-footer-actions", children: [
+      /* @__PURE__ */ jsxDEV("span", { className: "template-footer-hint", children: [
+        "Press ",
+        /* @__PURE__ */ jsxDEV("kbd", { children: "Enter" }, void 0, false, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+          lineNumber: 33,
+          columnNumber: 54
+        }, this),
+        " to apply"
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+        lineNumber: 33,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV(
+        "button",
+        {
+          className: "template-primary-btn",
+          onClick: () => onApply(template),
+          "aria-label": "Use this template",
+          children: [
+            /* @__PURE__ */ jsxDEV(Check, { size: 14, strokeWidth: 2.5 }, void 0, false, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+              lineNumber: 39,
+              columnNumber: 11
+            }, this),
+            /* @__PURE__ */ jsxDEV("span", { children: "Use Template" }, void 0, false, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+              lineNumber: 40,
+              columnNumber: 11
+            }, this)
+          ]
+        },
+        void 0,
+        true,
+        {
+          fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+          lineNumber: 34,
+          columnNumber: 9
+        },
+        this
+      )
+    ] }, void 0, true, {
+      fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+      lineNumber: 32,
+      columnNumber: 7
+    }, this)
+  ] }, void 0, true, {
+    fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+    lineNumber: 17,
+    columnNumber: 3
+  }, this);
+  return /* @__PURE__ */ jsxDEV("div", { className: "template-content", children: isBlank ? /* @__PURE__ */ jsxDEV("div", { className: "template-blank-view", children: /* @__PURE__ */ jsxDEV("div", { className: "template-blank-card", children: [
+    /* @__PURE__ */ jsxDEV("div", { className: "template-blank-icon-wrap", children: /* @__PURE__ */ jsxDEV(Plus, { size: 32 }, void 0, false, {
+      fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+      lineNumber: 52,
+      columnNumber: 15
+    }, this) }, void 0, false, {
+      fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+      lineNumber: 51,
+      columnNumber: 13
+    }, this),
+    /* @__PURE__ */ jsxDEV("h3", { className: "template-blank-title", children: "Blank Canvas" }, void 0, false, {
+      fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+      lineNumber: 54,
+      columnNumber: 13
+    }, this),
+    /* @__PURE__ */ jsxDEV("p", { className: "template-blank-desc", children: "Start fresh with a clean, empty note. No predefined headings, tables, or boilerplate." }, void 0, false, {
+      fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+      lineNumber: 55,
+      columnNumber: 13
+    }, this),
+    /* @__PURE__ */ jsxDEV(
+      "button",
+      {
+        className: "template-primary-btn",
+        onClick: () => onApply(template),
+        style: { marginTop: "16px" },
+        children: [
+          /* @__PURE__ */ jsxDEV(Check, { size: 14, strokeWidth: 2.5 }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+            lineNumber: 63,
+            columnNumber: 15
+          }, this),
+          /* @__PURE__ */ jsxDEV("span", { children: "Create Blank Note" }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+            lineNumber: 64,
+            columnNumber: 15
+          }, this)
+        ]
+      },
+      void 0,
+      true,
+      {
+        fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+        lineNumber: 58,
+        columnNumber: 13
+      },
+      this
+    )
+  ] }, void 0, true, {
+    fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+    lineNumber: 50,
+    columnNumber: 11
+  }, this) }, void 0, false, {
+    fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+    lineNumber: 49,
+    columnNumber: 7
+  }, this) : /* @__PURE__ */ jsxDEV("div", { className: "template-preview-wrapper", children: /* @__PURE__ */ jsxDEV(
+    PreviewCommandPalette,
+    {
+      content: template.code,
+      footerNav: footerAction
+    },
+    void 0,
+    false,
+    {
+      fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+      lineNumber: 70,
+      columnNumber: 11
+    },
+    this
+  ) }, void 0, false, {
+    fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+    lineNumber: 69,
+    columnNumber: 7
+  }, this) }, void 0, false, {
+    fileName: "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx",
+    lineNumber: 47,
+    columnNumber: 5
+  }, this);
+};
+_s(TemplateContent, "3FvJDKtC3yF1gbNv5/WixcrN7Rs=");
+_c = TemplateContent;
+export default _c2 = React.memo(TemplateContent);
+var _c, _c2;
+$RefreshReg$(_c, "TemplateContent");
+$RefreshReg$(_c2, "%default%");
+import * as RefreshRuntime from "/@react-refresh";
+const inWebWorker = typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope;
+if (import.meta.hot && !inWebWorker) {
+  if (!window.$RefreshReg$) {
+    throw new Error(
+      "@vitejs/plugin-react can't detect preamble. Something is wrong."
+    );
+  }
+  RefreshRuntime.__hmr_import(import.meta.url).then((currentExports) => {
+    RefreshRuntime.registerExportsForReactRefresh("B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx", currentExports);
+    import.meta.hot.accept((nextExports) => {
+      if (!nextExports) return;
+      const invalidateMessage = RefreshRuntime.validateRefreshBoundaryAndEnqueueUpdate("B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx", currentExports, nextExports);
+      if (invalidateMessage) import.meta.hot.invalidate(invalidateMessage);
+    });
+  });
+}
+function $RefreshReg$(type, id) {
+  return RefreshRuntime.register(type, "B:/electron/lumina/src/renderer/src/features/template/TemplateContent.jsx " + id);
+}
+function $RefreshSig$() {
+  return RefreshRuntime.createSignatureFunctionForTransform();
+}
+
+//# sourceMappingURL=data:application/json;base64,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QkFBZTtBQUFBb0IsS0FBZnBCO0FBMkVOLGVBQUFxQixNQUFlN0IsTUFBTThCLEtBQUt0QixlQUFlO0FBQUMsSUFBQW9CLElBQUFDO0FBQUFFLGFBQUFILElBQUE7QUFBQUcsYUFBQUYsS0FBQSIsIm5hbWVzIjpbIlJlYWN0IiwidXNlTWVtbyIsIkNoZWNrIiwiRmlsZVRleHQiLCJQbHVzIiwiU3BhcmtsZXMiLCJDbG9jayIsIlByZXZpZXdDb21tYW5kUGFsZXR0ZSIsIlRlbXBsYXRlQ29udGVudCIsInRlbXBsYXRlIiwib25BcHBseSIsIl9zIiwiaXNCbGFuayIsImlkIiwiY29kZSIsInN0YXRzIiwid29yZHMiLCJsaW5lcyIsIm1pbnV0ZXMiLCJzcGxpdCIsImZpbHRlciIsIkJvb2xlYW4iLCJsZW5ndGgiLCJNYXRoIiwibWF4IiwiY2VpbCIsImZvb3RlckFjdGlvbiIsIm1hcmdpblRvcCIsIl9jIiwiX2MyIiwibWVtbyIsIiRSZWZyZXNoUmVnJCJdLCJpZ25vcmVMaXN0IjpbXSwic291cmNlcyI6WyJUZW1wbGF0ZUNvbnRlbnQuanN4Il0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCBSZWFjdCwgeyB1c2VNZW1vIH0gZnJvbSAncmVhY3QnXHJcbmltcG9ydCB7IENoZWNrLCBGaWxlVGV4dCwgUGx1cywgU3BhcmtsZXMsIENsb2NrIH0gZnJvbSAnbHVjaWRlLXJlYWN0J1xyXG5pbXBvcnQgeyBQcmV2aWV3Q29tbWFuZFBhbGV0dGUgfSBmcm9tICcuLi9jb21tYW5kcGFsZXR0ZS9QcmV2aWV3Q29tbWFuZFBhbGV0dGUnXHJcblxyXG5jb25zdCBUZW1wbGF0ZUNvbnRlbnQgPSAoeyB0ZW1wbGF0ZSwgb25BcHBseSB9KSA9PiB7XHJcbiAgY29uc3QgaXNCbGFuayA9ICF0ZW1wbGF0ZSB8fCB0ZW1wbGF0ZS5pZCA9PT0gJ2JsYW5rJyB8fCAhdGVtcGxhdGUuY29kZVxyXG5cclxuICBjb25zdCBzdGF0cyA9IHVzZU1lbW8oKCkgPT4ge1xyXG4gICAgaWYgKCF0ZW1wbGF0ZT8uY29kZSkgcmV0dXJuIHsgd29yZHM6IDAsIGxpbmVzOiAwLCBtaW51dGVzOiAxIH1cclxuICAgIGNvbnN0IHdvcmRzID0gdGVtcGxhdGUuY29kZS5zcGxpdCgvXFxzKy8pLmZpbHRlcihCb29sZWFuKS5sZW5ndGhcclxuICAgIGNvbnN0IGxpbmVzID0gdGVtcGxhdGUuY29kZS5zcGxpdCgnXFxuJykubGVuZ3RoXHJcbiAgICBjb25zdCBtaW51dGVzID0gTWF0aC5tYXgoMSwgTWF0aC5jZWlsKHdvcmRzIC8gMjAwKSlcclxuICAgIHJldHVybiB7IHdvcmRzLCBsaW5lcywgbWludXRlcyB9XHJcbiAgfSwgW3RlbXBsYXRlPy5jb2RlXSlcclxuXHJcbiAgY29uc3QgZm9vdGVyQWN0aW9uID0gKFxyXG4gICAgPGRpdiBjbGFzc05hbWU9XCJ0ZW1wbGF0ZS1jb250ZW50LWZvb3RlclwiPlxyXG4gICAgICA8ZGl2IGNsYXNzTmFtZT1cInRlbXBsYXRlLWZvb3Rlci1zdGF0c1wiPlxyXG4gICAgICAgIDxzcGFuIGNsYXNzTmFtZT1cInRlbXBsYXRlLXN0YXQtaXRlbVwiPlxyXG4gICAgICAgICAgPEZpbGVUZXh0IHNpemU9ezEyfSAvPiB7c3RhdHMubGluZXN9IGxpbmVzXHJcbiAgICAgICAgPC9zcGFuPlxyXG4gICAgICAgIDxzcGFuIGNsYXNzTmFtZT1cInRlbXBsYXRlLXN0YXQtc2VwXCIgLz5cclxuICAgICAgICA8c3BhbiBjbGFzc05hbWU9XCJ0ZW1wbGF0ZS1zdGF0LWl0ZW1cIj5cclxuICAgICAgICAgIDxTcGFya2xlcyBzaXplPXsxMn0gLz4ge3N0YXRzLndvcmRzfSB3b3Jkc1xyXG4gICAgICAgIDwvc3Bhbj5cclxuICAgICAgICA8c3BhbiBjbGFzc05hbWU9XCJ0ZW1wbGF0ZS1zdGF0LXNlcFwiIC8+XHJcbiAgICAgICAgPHNwYW4gY2xhc3NOYW1lPVwidGVtcGxhdGUtc3RhdC1pdGVtXCI+XHJcbiAgICAgICAgICA8Q2xvY2sgc2l6ZT17MTJ9IC8+IH57c3RhdHMubWludXRlc30gbWluXHJcbiAgICAgICAgPC9zcGFuPlxyXG4gICAgICA8L2Rpdj5cclxuXHJcbiAgICAgIDxkaXYgY2xhc3NOYW1lPVwidGVtcGxhdGUtZm9vdGVyLWFjdGlvbnNcIj5cclxuICAgICAgICA8c3BhbiBjbGFzc05hbWU9XCJ0ZW1wbGF0ZS1mb290ZXItaGludFwiPlByZXNzIDxrYmQ+RW50ZXI8L2tiZD4gdG8gYXBwbHk8L3NwYW4+XHJcbiAgICAgICAgPGJ1dHRvblxyXG4gICAgICAgICAgY2xhc3NOYW1lPVwidGVtcGxhdGUtcHJpbWFyeS1idG5cIlxyXG4gICAgICAgICAgb25DbGljaz17KCkgPT4gb25BcHBseSh0ZW1wbGF0ZSl9XHJcbiAgICAgICAgICBhcmlhLWxhYmVsPVwiVXNlIHRoaXMgdGVtcGxhdGVcIlxyXG4gICAgICAgID5cclxuICAgICAgICAgIDxDaGVjayBzaXplPXsxNH0gc3Ryb2tlV2lkdGg9ezIuNX0gLz5cclxuICAgICAgICAgIDxzcGFuPlVzZSBUZW1wbGF0ZTwvc3Bhbj5cclxuICAgICAgICA8L2J1dHRvbj5cclxuICAgICAgPC9kaXY+XHJcbiAgICA8L2Rpdj5cclxuICApXHJcblxyXG4gIHJldHVybiAoXHJcbiAgICA8ZGl2IGNsYXNzTmFtZT1cInRlbXBsYXRlLWNvbnRlbnRcIj5cclxuICAgICAge2lzQmxhbmsgPyAoXHJcbiAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJ0ZW1wbGF0ZS1ibGFuay12aWV3XCI+XHJcbiAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInRlbXBsYXRlLWJsYW5rLWNhcmRcIj5cclxuICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJ0ZW1wbGF0ZS1ibGFuay1pY29uLXdyYXBcIj5cclxuICAgICAgICAgICAgICA8UGx1cyBzaXplPXszMn0gLz5cclxuICAgICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgICAgIDxoMyBjbGFzc05hbWU9XCJ0ZW1wbGF0ZS1ibGFuay10aXRsZVwiPkJsYW5rIENhbnZhczwvaDM+XHJcbiAgICAgICAgICAgIDxwIGNsYXNzTmFtZT1cInRlbXBsYXRlLWJsYW5rLWRlc2NcIj5cclxuICAgICAgICAgICAgICBTdGFydCBmcmVzaCB3aXRoIGEgY2xlYW4sIGVtcHR5IG5vdGUuIE5vIHByZWRlZmluZWQgaGVhZGluZ3MsIHRhYmxlcywgb3IgYm9pbGVycGxhdGUuXHJcbiAgICAgICAgICAgIDwvcD5cclxuICAgICAgICAgICAgPGJ1dHRvblxyXG4gICAgICAgICAgICAgIGNsYXNzTmFtZT1cInRlbXBsYXRlLXByaW1hcnktYnRuXCJcclxuICAgICAgICAgICAgICBvbkNsaWNrPXsoKSA9PiBvbkFwcGx5KHRlbXBsYXRlKX1cclxuICAgICAgICAgICAgICBzdHlsZT17eyBtYXJnaW5Ub3A6ICcxNnB4JyB9fVxyXG4gICAgICAgICAgICA+XHJcbiAgICAgICAgICAgICAgPENoZWNrIHNpemU9ezE0fSBzdHJva2VXaWR0aD17Mi41fSAvPlxyXG4gICAgICAgICAgICAgIDxzcGFuPkNyZWF0ZSBCbGFuayBOb3RlPC9zcGFuPlxyXG4gICAgICAgICAgICA8L2J1dHRvbj5cclxuICAgICAgICAgIDwvZGl2PlxyXG4gICAgICAgIDwvZGl2PlxyXG4gICAgICApIDogKFxyXG4gICAgICAgIDxkaXYgY2xhc3NOYW1lPVwidGVtcGxhdGUtcHJldmlldy13cmFwcGVyXCI+XHJcbiAgICAgICAgICA8UHJldmlld0NvbW1hbmRQYWxldHRlXHJcbiAgICAgICAgICAgIGNvbnRlbnQ9e3RlbXBsYXRlLmNvZGV9XHJcbiAgICAgICAgICAgIGZvb3Rlck5hdj17Zm9vdGVyQWN0aW9ufVxyXG4gICAgICAgICAgLz5cclxuICAgICAgICA8L2Rpdj5cclxuICAgICAgKX1cclxuICAgIDwvZGl2PlxyXG4gIClcclxufVxyXG5cclxuZXhwb3J0IGRlZmF1bHQgUmVhY3QubWVtbyhUZW1wbGF0ZUNvbnRlbnQpXHJcbiJdLCJmaWxlIjoiQjovZWxlY3Ryb24vbHVtaW5hL3NyYy9yZW5kZXJlci9zcmMvZmVhdHVyZXMvdGVtcGxhdGUvVGVtcGxhdGVDb250ZW50LmpzeCJ9

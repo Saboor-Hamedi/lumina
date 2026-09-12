@@ -1,0 +1,401 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/features/Explorer/components/DroppableFolderItem.jsx");import __vite__cjsImport0_react_jsxDevRuntime from "/@fs/B:/electron/lumina/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=f41806ed"; const Fragment = __vite__cjsImport0_react_jsxDevRuntime["Fragment"]; const jsxDEV = __vite__cjsImport0_react_jsxDevRuntime["jsxDEV"];
+var _s = $RefreshSig$();
+import __vite__cjsImport1_react from "/@fs/B:/electron/lumina/node_modules/.vite/deps/react.js?v=f41806ed"; const React = __vite__cjsImport1_react.__esModule ? __vite__cjsImport1_react.default : __vite__cjsImport1_react; const useEffect = __vite__cjsImport1_react["useEffect"]; const useState = __vite__cjsImport1_react["useState"]; const useMemo = __vite__cjsImport1_react["useMemo"]; const useCallback = __vite__cjsImport1_react["useCallback"];
+import { useDroppable, useDraggable } from "/@fs/B:/electron/lumina/node_modules/.vite/deps/@dnd-kit_core.js?v=f41806ed";
+import { ChevronRight, ChevronDown, Folder, FolderOpen } from "/@fs/B:/electron/lumina/node_modules/.vite/deps/lucide-react.js?v=f41806ed";
+import ToolTip from "/src/components/atoms/ToolTip.jsx";
+import { useVaultStore } from "/src/core/store/workspaceStore.js";
+export const DroppableFolderItem = _s(React.memo(
+  _c = _s(
+    ({
+      item,
+      isExpanded,
+      onToggle,
+      onContextMenu,
+      folderColor,
+      isRenaming,
+      renameValue,
+      setRenameValue,
+      submitRename,
+      cancelRename,
+      isActive,
+      searchQuery,
+      isPinned,
+      onTogglePin,
+      isExternalOver,
+      onExternalDragEnter,
+      onExternalDragOver,
+      onExternalDrop
+    }) => {
+      _s();
+      const { isOver, setNodeRef: setDroppableRef } = useDroppable({ id: `folder-${item.id}` });
+      const [isHovered, setIsHovered] = useState(false);
+      const getFolderTooltipContent = useCallback(() => {
+        const allSnippets = useVaultStore.getState().snippets || [];
+        const targetFolderId = (item.id || "").replace(/\\/g, "/");
+        const folderSnippets = allSnippets.filter((s) => {
+          const sFolder = (s.folderId || "").replace(/\\/g, "/");
+          return sFolder === targetFolderId || sFolder.startsWith(targetFolderId + "/");
+        });
+        const noteCount = folderSnippets.length;
+        const totalWords = folderSnippets.reduce((acc, s) => {
+          const raw = s.code || s.content || s.body || "";
+          return acc + (raw.trim() ? raw.trim().split(/\s+/).length : 0);
+        }, 0);
+        const previewList = folderSnippets.slice(0, 5);
+        const remainingCount = noteCount - previewList.length;
+        return /* @__PURE__ */ jsxDEV("div", { className: "tooltip-card-preview tooltip-folder-preview", children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "tooltip-card-header", children: [
+            /* @__PURE__ */ jsxDEV("span", { className: "tooltip-card-title", children: item.name }, void 0, false, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx",
+              lineNumber: 50,
+              columnNumber: 13
+            }, this),
+            /* @__PURE__ */ jsxDEV("span", { className: "tooltip-folder-badge", children: [
+              noteCount,
+              " ",
+              noteCount === 1 ? "Note" : "Notes"
+            ] }, void 0, true, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx",
+              lineNumber: 51,
+              columnNumber: 13
+            }, this)
+          ] }, void 0, true, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx",
+            lineNumber: 49,
+            columnNumber: 11
+          }, this),
+          /* @__PURE__ */ jsxDEV("div", { className: "tooltip-folder-wordcount", children: [
+            totalWords.toLocaleString(),
+            " ",
+            totalWords === 1 ? "word" : "words",
+            " total"
+          ] }, void 0, true, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx",
+            lineNumber: 56,
+            columnNumber: 11
+          }, this),
+          previewList.length > 0 && /* @__PURE__ */ jsxDEV("div", { className: "tooltip-folder-snippets", children: [
+            previewList.map(
+              (snip) => /* @__PURE__ */ jsxDEV("div", { className: "tooltip-folder-snippet-row", children: [
+                /* @__PURE__ */ jsxDEV("span", { className: "tooltip-folder-snippet-dot" }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx",
+                  lineNumber: 64,
+                  columnNumber: 19
+                }, this),
+                /* @__PURE__ */ jsxDEV("span", { className: "tooltip-folder-snippet-name", children: snip.title }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx",
+                  lineNumber: 65,
+                  columnNumber: 19
+                }, this)
+              ] }, snip.id, true, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx",
+                lineNumber: 63,
+                columnNumber: 13
+              }, this)
+            ),
+            remainingCount > 0 && /* @__PURE__ */ jsxDEV("div", { className: "tooltip-folder-more", children: [
+              "+",
+              remainingCount,
+              " more notes..."
+            ] }, void 0, true, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx",
+              lineNumber: 69,
+              columnNumber: 13
+            }, this)
+          ] }, void 0, true, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx",
+            lineNumber: 61,
+            columnNumber: 11
+          }, this)
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx",
+          lineNumber: 48,
+          columnNumber: 9
+        }, this);
+      }, [item.id, item.name]);
+      const highlightText = (text, query) => {
+        if (!query || !text) return text;
+        const q = query.toLowerCase();
+        const idx = text.toLowerCase().indexOf(q);
+        if (idx === -1) return text;
+        return /* @__PURE__ */ jsxDEV(Fragment, { children: [
+          text.substring(0, idx),
+          /* @__PURE__ */ jsxDEV("mark", { className: "palette-match", children: text.substring(idx, idx + query.length) }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx",
+            lineNumber: 85,
+            columnNumber: 11
+          }, this),
+          text.substring(idx + query.length)
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx",
+          lineNumber: 83,
+          columnNumber: 9
+        }, this);
+      };
+      const {
+        attributes,
+        listeners,
+        setNodeRef: setDraggableRef,
+        isDragging
+      } = useDraggable({
+        id: `drag-folder-${item.id}`,
+        data: {
+          type: "folder",
+          item
+        }
+      });
+      return /* @__PURE__ */ jsxDEV(
+        "div",
+        {
+          ref: setDroppableRef,
+          className: "folder-tree-item",
+          style: {
+            position: "relative",
+            opacity: isDragging ? 0.5 : 1
+          },
+          onDragEnter: onExternalDragEnter,
+          onDragOver: onExternalDragOver,
+          onDrop: onExternalDrop,
+          children: /* @__PURE__ */ jsxDEV(
+            "div",
+            {
+              ref: setDraggableRef,
+              className: `folder-tree-main ${isOver || isExternalOver ? "folder-over" : ""} ${isActive ? "active" : ""}`,
+              style: {
+                cursor: "pointer",
+                userSelect: "none",
+                paddingLeft: "3px"
+              },
+              onMouseEnter: () => setIsHovered(true),
+              onMouseLeave: () => setIsHovered(false),
+              ...attributes,
+              ...listeners,
+              onClick: (e) => {
+                if (e.button !== 0) return;
+                if (!isRenaming) onToggle(item.id, e);
+              },
+              onContextMenu: (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onContextMenu(item.id, e);
+              },
+              children: [
+                /* @__PURE__ */ jsxDEV("span", { style: { display: "inline-flex", flexShrink: 0 }, children: isExpanded ? /* @__PURE__ */ jsxDEV(ChevronDown, { size: 14, className: "folder-chevron" }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx",
+                  lineNumber: 139,
+                  columnNumber: 13
+                }, this) : /* @__PURE__ */ jsxDEV(ChevronRight, { size: 14, className: "folder-chevron" }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx",
+                  lineNumber: 141,
+                  columnNumber: 13
+                }, this) }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx",
+                  lineNumber: 137,
+                  columnNumber: 11
+                }, this),
+                /* @__PURE__ */ jsxDEV(
+                  "div",
+                  {
+                    style: {
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      color: folderColor || void 0,
+                      padding: "2px 6px",
+                      marginLeft: "-6px",
+                      flex: 1,
+                      minWidth: 0,
+                      overflow: "hidden"
+                    },
+                    children: [
+                      /* @__PURE__ */ jsxDEV("span", { style: { display: "inline-flex", flexShrink: 0 }, children: isExpanded ? /* @__PURE__ */ jsxDEV(
+                        FolderOpen,
+                        {
+                          size: 14,
+                          fill: folderColor || "#e8a825",
+                          color: folderColor || "#e8a825"
+                        },
+                        void 0,
+                        false,
+                        {
+                          fileName: "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx",
+                          lineNumber: 159,
+                          columnNumber: 15
+                        },
+                        this
+                      ) : /* @__PURE__ */ jsxDEV(
+                        Folder,
+                        {
+                          size: 14,
+                          fill: folderColor || "#e8a825",
+                          color: folderColor || "#e8a825"
+                        },
+                        void 0,
+                        false,
+                        {
+                          fileName: "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx",
+                          lineNumber: 165,
+                          columnNumber: 15
+                        },
+                        this
+                      ) }, void 0, false, {
+                        fileName: "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx",
+                        lineNumber: 157,
+                        columnNumber: 13
+                      }, this),
+                      isRenaming ? /* @__PURE__ */ jsxDEV(
+                        "input",
+                        {
+                          autoFocus: true,
+                          className: "inline-create-input",
+                          defaultValue: renameValue,
+                          onKeyDown: (e) => {
+                            if (e.key === "Enter") submitRename(e.target.value);
+                            if (e.key === "Escape") cancelRename();
+                          },
+                          onBlur: (e) => submitRename(e.target.value),
+                          onClick: (e) => e.stopPropagation()
+                        },
+                        void 0,
+                        false,
+                        {
+                          fileName: "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx",
+                          lineNumber: 173,
+                          columnNumber: 13
+                        },
+                        this
+                      ) : /* @__PURE__ */ jsxDEV(ToolTip, { text: isHovered ? getFolderTooltipContent : null, position: "right", delay: 100, children: /* @__PURE__ */ jsxDEV(
+                        "span",
+                        {
+                          className: "folder-name",
+                          style: {
+                            flex: 1,
+                            minWidth: 0,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            display: "block"
+                          },
+                          children: highlightText(item.name, searchQuery)
+                        },
+                        void 0,
+                        false,
+                        {
+                          fileName: "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx",
+                          lineNumber: 186,
+                          columnNumber: 17
+                        },
+                        this
+                      ) }, void 0, false, {
+                        fileName: "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx",
+                        lineNumber: 185,
+                        columnNumber: 13
+                      }, this)
+                    ]
+                  },
+                  void 0,
+                  true,
+                  {
+                    fileName: "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx",
+                    lineNumber: 144,
+                    columnNumber: 11
+                  },
+                  this
+                ),
+                /* @__PURE__ */ jsxDEV("div", { className: "item-meta-right", children: !isExpanded && !isRenaming && item.count !== void 0 && item.count > 0 && /* @__PURE__ */ jsxDEV(
+                  "span",
+                  {
+                    style: {
+                      fontSize: "8px",
+                      lineHeight: "10px",
+                      color: "var(--text-accent)",
+                      background: "transparent",
+                      border: "none",
+                      padding: "0px 4px",
+                      borderRadius: "6px",
+                      marginRight: "4px",
+                      fontWeight: 600,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minWidth: "14px",
+                      height: "13px",
+                      opacity: 0.8
+                    },
+                    children: item.count
+                  },
+                  void 0,
+                  false,
+                  {
+                    fileName: "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx",
+                    lineNumber: 204,
+                    columnNumber: 13
+                  },
+                  this
+                ) }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx",
+                  lineNumber: 202,
+                  columnNumber: 11
+                }, this)
+              ]
+            },
+            void 0,
+            true,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx",
+              lineNumber: 115,
+              columnNumber: 9
+            },
+            this
+          )
+        },
+        void 0,
+        false,
+        {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx",
+          lineNumber: 104,
+          columnNumber: 7
+        },
+        this
+      );
+    },
+    "zB/5cz/sfM4lIrdO23ueNPbZ+sU=",
+    false,
+    function() {
+      return [useDroppable, useDraggable];
+    }
+  )
+), "zB/5cz/sfM4lIrdO23ueNPbZ+sU=", false, function() {
+  return [useDroppable, useDraggable];
+});
+_c2 = DroppableFolderItem;
+export default DroppableFolderItem;
+var _c, _c2;
+$RefreshReg$(_c, "DroppableFolderItem$React.memo");
+$RefreshReg$(_c2, "DroppableFolderItem");
+import * as RefreshRuntime from "/@react-refresh";
+const inWebWorker = typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope;
+if (import.meta.hot && !inWebWorker) {
+  if (!window.$RefreshReg$) {
+    throw new Error(
+      "@vitejs/plugin-react can't detect preamble. Something is wrong."
+    );
+  }
+  RefreshRuntime.__hmr_import(import.meta.url).then((currentExports) => {
+    RefreshRuntime.registerExportsForReactRefresh("B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx", currentExports);
+    import.meta.hot.accept((nextExports) => {
+      if (!nextExports) return;
+      const invalidateMessage = RefreshRuntime.validateRefreshBoundaryAndEnqueueUpdate("B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx", currentExports, nextExports);
+      if (invalidateMessage) import.meta.hot.invalidate(invalidateMessage);
+    });
+  });
+}
+function $RefreshReg$(type, id) {
+  return RefreshRuntime.register(type, "B:/electron/lumina/src/renderer/src/features/Explorer/components/DroppableFolderItem.jsx " + id);
+}
+function $RefreshSig$() {
+  return RefreshRuntime.createSignatureFunctionForTransform();
+}
+
+//# sourceMappingURL=data:application/json;base64,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O0FBQUEsc0JBQ1p2QixTQUFTO0FBQUEsc0JBQ1RFLFlBQVk7QUFBQSxzQkFDWnNCLGdCQUFnQjtBQUFBLHNCQUNoQmYsVUFBVTtBQUFBLHNCQUNWZ0IsUUFBUTtBQUFBLHNCQUNSakMsU0FBUztBQUFBLG9CQUNYO0FBQUEsb0JBRUN0RSxlQUFLOEY7QUFBQUE7QUFBQUEsa0JBbkJSO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQSxnQkFvQkEsS0F0Qko7QUFBQTtBQUFBO0FBQUE7QUFBQSx1QkF3QkE7QUFBQTtBQUFBO0FBQUEsWUEvR0Y7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBLFVBZ0hBO0FBQUE7QUFBQSxRQTNIRjtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUEsTUE0SEE7QUFBQSxJQUVKO0FBQUEsSUFBQztBQUFBO0FBQUE7QUFBQSxjQTFNaUQxRyxjQW1FNUNDLFlBQVk7QUFBQTtBQUFBO0FBd0lwQixHQUFDO0FBQUEsVUEzTW1ERCxjQW1FNUNDLFlBQVk7QUFBQTtBQXdJbkJtSCxNQWhPWTVHO0FBa09iLGVBQWVBO0FBQW1CLElBQUFHLElBQUF5RztBQUFBQyxhQUFBMUcsSUFBQTtBQUFBMEcsYUFBQUQsS0FBQSIsIm5hbWVzIjpbIlJlYWN0IiwidXNlRWZmZWN0IiwidXNlU3RhdGUiLCJ1c2VNZW1vIiwidXNlQ2FsbGJhY2siLCJ1c2VEcm9wcGFibGUiLCJ1c2VEcmFnZ2FibGUiLCJDaGV2cm9uUmlnaHQiLCJDaGV2cm9uRG93biIsIkZvbGRlciIsIkZvbGRlck9wZW4iLCJUb29sVGlwIiwidXNlVmF1bHRTdG9yZSIsIkRyb3BwYWJsZUZvbGRlckl0ZW0iLCJfcyIsIm1lbW8iLCJfYyIsIml0ZW0iLCJpc0V4cGFuZGVkIiwib25Ub2dnbGUiLCJvbkNvbnRleHRNZW51IiwiZm9sZGVyQ29sb3IiLCJpc1JlbmFtaW5nIiwicmVuYW1lVmFsdWUiLCJzZXRSZW5hbWVWYWx1ZSIsInN1Ym1pdFJlbmFtZSIsImNhbmNlbFJlbmFtZSIsImlzQWN0aXZlIiwic2VhcmNoUXVlcnkiLCJpc1Bpbm5lZCIsIm9uVG9nZ2xlUGluIiwiaXNFeHRlcm5hbE92ZXIiLCJvbkV4dGVybmFsRHJhZ0VudGVyIiwib25FeHRlcm5hbERyYWdPdmVyIiwib25FeHRlcm5hbERyb3AiLCJpc092ZXIiLCJzZXROb2RlUmVmIiwic2V0RHJvcHBhYmxlUmVmIiwiaWQiLCJpc0hvdmVyZWQiLCJzZXRJc0hvdmVyZWQiLCJnZXRGb2xkZXJUb29sdGlwQ29udGVudCIsImFsbFNuaXBwZXRzIiwiZ2V0U3RhdGUiLCJzbmlwcGV0cyIsInRhcmdldEZvbGRlcklkIiwicmVwbGFjZSIsImZvbGRlclNuaXBwZXRzIiwiZmlsdGVyIiwicyIsInNGb2xkZXIiLCJmb2xkZXJJZCIsInN0YXJ0c1dpdGgiLCJub3RlQ291bnQiLCJsZW5ndGgiLCJ0b3RhbFdvcmRzIiwicmVkdWNlIiwiYWNjIiwicmF3IiwiY29kZSIsImNvbnRlbnQiLCJib2R5IiwidHJpbSIsInNwbGl0IiwicHJldmlld0xpc3QiLCJzbGljZSIsInJlbWFpbmluZ0NvdW50IiwibmFtZSIsInRvTG9jYWxlU3RyaW5nIiwibWFwIiwic25pcCIsInRpdGxlIiwiaGlnaGxpZ2h0VGV4dCIsInRleHQiLCJxdWVyeSIsInEiLCJ0b0xvd2VyQ2FzZSIsImlkeCIsImluZGV4T2YiLCJzdWJzdHJpbmciLCJhdHRyaWJ1dGVzIiwibGlzdGVuZXJzIiwic2V0RHJhZ2dhYmxlUmVmIiwiaXNEcmFnZ2luZyIsImRhdGEiLCJ0eXBlIiwicG9zaXRpb24iLCJvcGFjaXR5IiwiY3Vyc29yIiwidXNlclNlbGVjdCIsInBhZGRpbmdMZWZ0IiwiZSIsImJ1dHRvbiIsInByZXZlbnREZWZhdWx0Iiwic3RvcFByb3BhZ2F0aW9uIiwiZGlzcGxheSIsImZsZXhTaHJpbmsiLCJhbGlnbkl0ZW1zIiwiZ2FwIiwiY29sb3IiLCJ1bmRlZmluZWQiLCJwYWRkaW5nIiwibWFyZ2luTGVmdCIsImZsZXgiLCJtaW5XaWR0aCIsIm92ZXJmbG93Iiwia2V5IiwidGFyZ2V0IiwidmFsdWUiLCJ0ZXh0T3ZlcmZsb3ciLCJ3aGl0ZVNwYWNlIiwiY291bnQiLCJmb250U2l6ZSIsImxpbmVIZWlnaHQiLCJiYWNrZ3JvdW5kIiwiYm9yZGVyIiwiYm9yZGVyUmFkaXVzIiwibWFyZ2luUmlnaHQiLCJmb250V2VpZ2h0IiwianVzdGlmeUNvbnRlbnQiLCJoZWlnaHQiLCJfYzIiLCIkUmVmcmVzaFJlZyQiXSwiaWdub3JlTGlzdCI6W10sInNvdXJjZXMiOlsiRHJvcHBhYmxlRm9sZGVySXRlbS5qc3giXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IFJlYWN0LCB7IHVzZUVmZmVjdCwgdXNlU3RhdGUsIHVzZU1lbW8sIHVzZUNhbGxiYWNrIH0gZnJvbSAncmVhY3QnXHJcbmltcG9ydCB7IHVzZURyb3BwYWJsZSwgdXNlRHJhZ2dhYmxlIH0gZnJvbSAnQGRuZC1raXQvY29yZSdcclxuaW1wb3J0IHsgQ2hldnJvblJpZ2h0LCBDaGV2cm9uRG93biwgRm9sZGVyLCBGb2xkZXJPcGVuIH0gZnJvbSAnbHVjaWRlLXJlYWN0J1xyXG5pbXBvcnQgVG9vbFRpcCBmcm9tICcuLi8uLi8uLi9jb21wb25lbnRzL2F0b21zL1Rvb2xUaXAnXHJcbmltcG9ydCB7IHVzZVZhdWx0U3RvcmUgfSBmcm9tICcuLi8uLi8uLi9jb3JlL3N0b3JlL3dvcmtzcGFjZVN0b3JlJ1xyXG5cclxuZXhwb3J0IGNvbnN0IERyb3BwYWJsZUZvbGRlckl0ZW0gPSBSZWFjdC5tZW1vKFxyXG4gICh7XHJcbiAgICBpdGVtLFxyXG4gICAgaXNFeHBhbmRlZCxcclxuICAgIG9uVG9nZ2xlLFxyXG4gICAgb25Db250ZXh0TWVudSxcclxuICAgIGZvbGRlckNvbG9yLFxyXG4gICAgaXNSZW5hbWluZyxcclxuICAgIHJlbmFtZVZhbHVlLFxyXG4gICAgc2V0UmVuYW1lVmFsdWUsXHJcbiAgICBzdWJtaXRSZW5hbWUsXHJcbiAgICBjYW5jZWxSZW5hbWUsXHJcbiAgICBpc0FjdGl2ZSxcclxuICAgIHNlYXJjaFF1ZXJ5LFxyXG4gICAgaXNQaW5uZWQsXHJcbiAgICBvblRvZ2dsZVBpbixcclxuICAgIGlzRXh0ZXJuYWxPdmVyLFxyXG4gICAgb25FeHRlcm5hbERyYWdFbnRlcixcclxuICAgIG9uRXh0ZXJuYWxEcmFnT3ZlcixcclxuICAgIG9uRXh0ZXJuYWxEcm9wXHJcbiAgfSkgPT4ge1xyXG4gICAgY29uc3QgeyBpc092ZXIsIHNldE5vZGVSZWY6IHNldERyb3BwYWJsZVJlZiB9ID0gdXNlRHJvcHBhYmxlKHsgaWQ6IGBmb2xkZXItJHtpdGVtLmlkfWAgfSlcclxuICAgIGNvbnN0IFtpc0hvdmVyZWQsIHNldElzSG92ZXJlZF0gPSB1c2VTdGF0ZShmYWxzZSlcclxuXHJcbiAgICBjb25zdCBnZXRGb2xkZXJUb29sdGlwQ29udGVudCA9IHVzZUNhbGxiYWNrKCgpID0+IHtcclxuICAgICAgY29uc3QgYWxsU25pcHBldHMgPSB1c2VWYXVsdFN0b3JlLmdldFN0YXRlKCkuc25pcHBldHMgfHwgW11cclxuICAgICAgY29uc3QgdGFyZ2V0Rm9sZGVySWQgPSAoaXRlbS5pZCB8fCAnJykucmVwbGFjZSgvXFxcXC9nLCAnLycpXHJcbiAgICAgIGNvbnN0IGZvbGRlclNuaXBwZXRzID0gYWxsU25pcHBldHMuZmlsdGVyKChzKSA9PiB7XHJcbiAgICAgICAgY29uc3Qgc0ZvbGRlciA9IChzLmZvbGRlcklkIHx8ICcnKS5yZXBsYWNlKC9cXFxcL2csICcvJylcclxuICAgICAgICByZXR1cm4gc0ZvbGRlciA9PT0gdGFyZ2V0Rm9sZGVySWQgfHwgc0ZvbGRlci5zdGFydHNXaXRoKHRhcmdldEZvbGRlcklkICsgJy8nKVxyXG4gICAgICB9KVxyXG4gICAgICBjb25zdCBub3RlQ291bnQgPSBmb2xkZXJTbmlwcGV0cy5sZW5ndGhcclxuICAgICAgY29uc3QgdG90YWxXb3JkcyA9IGZvbGRlclNuaXBwZXRzLnJlZHVjZSgoYWNjLCBzKSA9PiB7XHJcbiAgICAgICAgY29uc3QgcmF3ID0gcy5jb2RlIHx8IHMuY29udGVudCB8fCBzLmJvZHkgfHwgJydcclxuICAgICAgICByZXR1cm4gYWNjICsgKHJhdy50cmltKCkgPyByYXcudHJpbSgpLnNwbGl0KC9cXHMrLykubGVuZ3RoIDogMClcclxuICAgICAgfSwgMClcclxuXHJcbiAgICAgIGNvbnN0IHByZXZpZXdMaXN0ID0gZm9sZGVyU25pcHBldHMuc2xpY2UoMCwgNSlcclxuICAgICAgY29uc3QgcmVtYWluaW5nQ291bnQgPSBub3RlQ291bnQgLSBwcmV2aWV3TGlzdC5sZW5ndGhcclxuXHJcbiAgICAgIHJldHVybiAoXHJcbiAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJ0b29sdGlwLWNhcmQtcHJldmlldyB0b29sdGlwLWZvbGRlci1wcmV2aWV3XCI+XHJcbiAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInRvb2x0aXAtY2FyZC1oZWFkZXJcIj5cclxuICAgICAgICAgICAgPHNwYW4gY2xhc3NOYW1lPVwidG9vbHRpcC1jYXJkLXRpdGxlXCI+e2l0ZW0ubmFtZX08L3NwYW4+XHJcbiAgICAgICAgICAgIDxzcGFuIGNsYXNzTmFtZT1cInRvb2x0aXAtZm9sZGVyLWJhZGdlXCI+XHJcbiAgICAgICAgICAgICAge25vdGVDb3VudH0ge25vdGVDb3VudCA9PT0gMSA/ICdOb3RlJyA6ICdOb3Rlcyd9XHJcbiAgICAgICAgICAgIDwvc3Bhbj5cclxuICAgICAgICAgIDwvZGl2PlxyXG5cclxuICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwidG9vbHRpcC1mb2xkZXItd29yZGNvdW50XCI+XHJcbiAgICAgICAgICAgIHt0b3RhbFdvcmRzLnRvTG9jYWxlU3RyaW5nKCl9IHt0b3RhbFdvcmRzID09PSAxID8gJ3dvcmQnIDogJ3dvcmRzJ30gdG90YWxcclxuICAgICAgICAgIDwvZGl2PlxyXG5cclxuICAgICAgICAgIHtwcmV2aWV3TGlzdC5sZW5ndGggPiAwICYmIChcclxuICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJ0b29sdGlwLWZvbGRlci1zbmlwcGV0c1wiPlxyXG4gICAgICAgICAgICAgIHtwcmV2aWV3TGlzdC5tYXAoKHNuaXApID0+IChcclxuICAgICAgICAgICAgICAgIDxkaXYga2V5PXtzbmlwLmlkfSBjbGFzc05hbWU9XCJ0b29sdGlwLWZvbGRlci1zbmlwcGV0LXJvd1wiPlxyXG4gICAgICAgICAgICAgICAgICA8c3BhbiBjbGFzc05hbWU9XCJ0b29sdGlwLWZvbGRlci1zbmlwcGV0LWRvdFwiIC8+XHJcbiAgICAgICAgICAgICAgICAgIDxzcGFuIGNsYXNzTmFtZT1cInRvb2x0aXAtZm9sZGVyLXNuaXBwZXQtbmFtZVwiPntzbmlwLnRpdGxlfTwvc3Bhbj5cclxuICAgICAgICAgICAgICAgIDwvZGl2PlxyXG4gICAgICAgICAgICAgICkpfVxyXG4gICAgICAgICAgICAgIHtyZW1haW5pbmdDb3VudCA+IDAgJiYgKFxyXG4gICAgICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJ0b29sdGlwLWZvbGRlci1tb3JlXCI+K3tyZW1haW5pbmdDb3VudH0gbW9yZSBub3Rlcy4uLjwvZGl2PlxyXG4gICAgICAgICAgICAgICl9XHJcbiAgICAgICAgICAgIDwvZGl2PlxyXG4gICAgICAgICAgKX1cclxuICAgICAgICA8L2Rpdj5cclxuICAgICAgKVxyXG4gICAgfSwgW2l0ZW0uaWQsIGl0ZW0ubmFtZV0pXHJcblxyXG4gICAgY29uc3QgaGlnaGxpZ2h0VGV4dCA9ICh0ZXh0LCBxdWVyeSkgPT4ge1xyXG4gICAgICBpZiAoIXF1ZXJ5IHx8ICF0ZXh0KSByZXR1cm4gdGV4dFxyXG4gICAgICBjb25zdCBxID0gcXVlcnkudG9Mb3dlckNhc2UoKVxyXG4gICAgICBjb25zdCBpZHggPSB0ZXh0LnRvTG93ZXJDYXNlKCkuaW5kZXhPZihxKVxyXG4gICAgICBpZiAoaWR4ID09PSAtMSkgcmV0dXJuIHRleHRcclxuICAgICAgcmV0dXJuIChcclxuICAgICAgICA8PlxyXG4gICAgICAgICAge3RleHQuc3Vic3RyaW5nKDAsIGlkeCl9XHJcbiAgICAgICAgICA8bWFyayBjbGFzc05hbWU9XCJwYWxldHRlLW1hdGNoXCI+e3RleHQuc3Vic3RyaW5nKGlkeCwgaWR4ICsgcXVlcnkubGVuZ3RoKX08L21hcms+XHJcbiAgICAgICAgICB7dGV4dC5zdWJzdHJpbmcoaWR4ICsgcXVlcnkubGVuZ3RoKX1cclxuICAgICAgICA8Lz5cclxuICAgICAgKVxyXG4gICAgfVxyXG4gICAgY29uc3Qge1xyXG4gICAgICBhdHRyaWJ1dGVzLFxyXG4gICAgICBsaXN0ZW5lcnMsXHJcbiAgICAgIHNldE5vZGVSZWY6IHNldERyYWdnYWJsZVJlZixcclxuICAgICAgaXNEcmFnZ2luZ1xyXG4gICAgfSA9IHVzZURyYWdnYWJsZSh7XHJcbiAgICAgIGlkOiBgZHJhZy1mb2xkZXItJHtpdGVtLmlkfWAsXHJcbiAgICAgIGRhdGE6IHtcclxuICAgICAgICB0eXBlOiAnZm9sZGVyJyxcclxuICAgICAgICBpdGVtXHJcbiAgICAgIH1cclxuICAgIH0pXHJcblxyXG4gICAgcmV0dXJuIChcclxuICAgICAgPGRpdlxyXG4gICAgICAgIHJlZj17c2V0RHJvcHBhYmxlUmVmfVxyXG4gICAgICAgIGNsYXNzTmFtZT1cImZvbGRlci10cmVlLWl0ZW1cIlxyXG4gICAgICAgIHN0eWxlPXt7XHJcbiAgICAgICAgICBwb3NpdGlvbjogJ3JlbGF0aXZlJyxcclxuICAgICAgICAgIG9wYWNpdHk6IGlzRHJhZ2dpbmcgPyAwLjUgOiAxXHJcbiAgICAgICAgfX1cclxuICAgICAgICBvbkRyYWdFbnRlcj17b25FeHRlcm5hbERyYWdFbnRlcn1cclxuICAgICAgICBvbkRyYWdPdmVyPXtvbkV4dGVybmFsRHJhZ092ZXJ9XHJcbiAgICAgICAgb25Ecm9wPXtvbkV4dGVybmFsRHJvcH1cclxuICAgICAgPlxyXG4gICAgICAgIDxkaXZcclxuICAgICAgICAgIHJlZj17c2V0RHJhZ2dhYmxlUmVmfVxyXG4gICAgICAgICAgY2xhc3NOYW1lPXtgZm9sZGVyLXRyZWUtbWFpbiAke2lzT3ZlciB8fCBpc0V4dGVybmFsT3ZlciA/ICdmb2xkZXItb3ZlcicgOiAnJ30gJHtpc0FjdGl2ZSA/ICdhY3RpdmUnIDogJyd9YH1cclxuICAgICAgICAgIHN0eWxlPXt7XHJcbiAgICAgICAgICAgIGN1cnNvcjogJ3BvaW50ZXInLFxyXG4gICAgICAgICAgICB1c2VyU2VsZWN0OiAnbm9uZScsXHJcbiAgICAgICAgICAgIHBhZGRpbmdMZWZ0OiAnM3B4J1xyXG4gICAgICAgICAgfX1cclxuICAgICAgICAgIG9uTW91c2VFbnRlcj17KCkgPT4gc2V0SXNIb3ZlcmVkKHRydWUpfVxyXG4gICAgICAgICAgb25Nb3VzZUxlYXZlPXsoKSA9PiBzZXRJc0hvdmVyZWQoZmFsc2UpfVxyXG4gICAgICAgICAgey4uLmF0dHJpYnV0ZXN9XHJcbiAgICAgICAgICB7Li4ubGlzdGVuZXJzfVxyXG4gICAgICAgICAgb25DbGljaz17KGUpID0+IHtcclxuICAgICAgICAgICAgaWYgKGUuYnV0dG9uICE9PSAwKSByZXR1cm5cclxuICAgICAgICAgICAgaWYgKCFpc1JlbmFtaW5nKSBvblRvZ2dsZShpdGVtLmlkLCBlKVxyXG4gICAgICAgICAgfX1cclxuICAgICAgICAgIG9uQ29udGV4dE1lbnU9eyhlKSA9PiB7XHJcbiAgICAgICAgICAgIGUucHJldmVudERlZmF1bHQoKVxyXG4gICAgICAgICAgICBlLnN0b3BQcm9wYWdhdGlvbigpXHJcbiAgICAgICAgICAgIG9uQ29udGV4dE1lbnUoaXRlbS5pZCwgZSlcclxuICAgICAgICAgIH19XHJcbiAgICAgICAgPlxyXG4gICAgICAgICAgPHNwYW4gc3R5bGU9e3sgZGlzcGxheTogJ2lubGluZS1mbGV4JywgZmxleFNocmluazogMCB9fT5cclxuICAgICAgICAgICAge2lzRXhwYW5kZWQgPyAoXHJcbiAgICAgICAgICAgICAgPENoZXZyb25Eb3duIHNpemU9ezE0fSBjbGFzc05hbWU9XCJmb2xkZXItY2hldnJvblwiIC8+XHJcbiAgICAgICAgICAgICkgOiAoXHJcbiAgICAgICAgICAgICAgPENoZXZyb25SaWdodCBzaXplPXsxNH0gY2xhc3NOYW1lPVwiZm9sZGVyLWNoZXZyb25cIiAvPlxyXG4gICAgICAgICAgICApfVxyXG4gICAgICAgICAgPC9zcGFuPlxyXG4gICAgICAgICAgPGRpdlxyXG4gICAgICAgICAgICBzdHlsZT17e1xyXG4gICAgICAgICAgICAgIGRpc3BsYXk6ICdmbGV4JyxcclxuICAgICAgICAgICAgICBhbGlnbkl0ZW1zOiAnY2VudGVyJyxcclxuICAgICAgICAgICAgICBnYXA6ICc4cHgnLFxyXG4gICAgICAgICAgICAgIGNvbG9yOiBmb2xkZXJDb2xvciB8fCB1bmRlZmluZWQsXHJcbiAgICAgICAgICAgICAgcGFkZGluZzogJzJweCA2cHgnLFxyXG4gICAgICAgICAgICAgIG1hcmdpbkxlZnQ6ICctNnB4JyxcclxuICAgICAgICAgICAgICBmbGV4OiAxLFxyXG4gICAgICAgICAgICAgIG1pbldpZHRoOiAwLFxyXG4gICAgICAgICAgICAgIG92ZXJmbG93OiAnaGlkZGVuJ1xyXG4gICAgICAgICAgICB9fVxyXG4gICAgICAgICAgPlxyXG4gICAgICAgICAgICA8c3BhbiBzdHlsZT17eyBkaXNwbGF5OiAnaW5saW5lLWZsZXgnLCBmbGV4U2hyaW5rOiAwIH19PlxyXG4gICAgICAgICAgICAgIHtpc0V4cGFuZGVkID8gKFxyXG4gICAgICAgICAgICAgICAgPEZvbGRlck9wZW5cclxuICAgICAgICAgICAgICAgICAgc2l6ZT17MTR9XHJcbiAgICAgICAgICAgICAgICAgIGZpbGw9e2ZvbGRlckNvbG9yIHx8ICcjZThhODI1J31cclxuICAgICAgICAgICAgICAgICAgY29sb3I9e2ZvbGRlckNvbG9yIHx8ICcjZThhODI1J31cclxuICAgICAgICAgICAgICAgIC8+XHJcbiAgICAgICAgICAgICAgKSA6IChcclxuICAgICAgICAgICAgICAgIDxGb2xkZXJcclxuICAgICAgICAgICAgICAgICAgc2l6ZT17MTR9XHJcbiAgICAgICAgICAgICAgICAgIGZpbGw9e2ZvbGRlckNvbG9yIHx8ICcjZThhODI1J31cclxuICAgICAgICAgICAgICAgICAgY29sb3I9e2ZvbGRlckNvbG9yIHx8ICcjZThhODI1J31cclxuICAgICAgICAgICAgICAgIC8+XHJcbiAgICAgICAgICAgICAgKX1cclxuICAgICAgICAgICAgPC9zcGFuPlxyXG4gICAgICAgICAgICB7aXNSZW5hbWluZyA/IChcclxuICAgICAgICAgICAgICA8aW5wdXRcclxuICAgICAgICAgICAgICAgIGF1dG9Gb2N1c1xyXG4gICAgICAgICAgICAgICAgY2xhc3NOYW1lPVwiaW5saW5lLWNyZWF0ZS1pbnB1dFwiXHJcbiAgICAgICAgICAgICAgICBkZWZhdWx0VmFsdWU9e3JlbmFtZVZhbHVlfVxyXG4gICAgICAgICAgICAgICAgb25LZXlEb3duPXsoZSkgPT4ge1xyXG4gICAgICAgICAgICAgICAgICBpZiAoZS5rZXkgPT09ICdFbnRlcicpIHN1Ym1pdFJlbmFtZShlLnRhcmdldC52YWx1ZSlcclxuICAgICAgICAgICAgICAgICAgaWYgKGUua2V5ID09PSAnRXNjYXBlJykgY2FuY2VsUmVuYW1lKClcclxuICAgICAgICAgICAgICAgIH19XHJcbiAgICAgICAgICAgICAgICBvbkJsdXI9eyhlKSA9PiBzdWJtaXRSZW5hbWUoZS50YXJnZXQudmFsdWUpfVxyXG4gICAgICAgICAgICAgICAgb25DbGljaz17KGUpID0+IGUuc3RvcFByb3BhZ2F0aW9uKCl9XHJcbiAgICAgICAgICAgICAgLz5cclxuICAgICAgICAgICAgKSA6IChcclxuICAgICAgICAgICAgICA8VG9vbFRpcCB0ZXh0PXtpc0hvdmVyZWQgPyBnZXRGb2xkZXJUb29sdGlwQ29udGVudCA6IG51bGx9IHBvc2l0aW9uPVwicmlnaHRcIiBkZWxheT17MTAwfT5cclxuICAgICAgICAgICAgICAgIDxzcGFuXHJcbiAgICAgICAgICAgICAgICAgIGNsYXNzTmFtZT1cImZvbGRlci1uYW1lXCJcclxuICAgICAgICAgICAgICAgICAgc3R5bGU9e3tcclxuICAgICAgICAgICAgICAgICAgICBmbGV4OiAxLFxyXG4gICAgICAgICAgICAgICAgICAgIG1pbldpZHRoOiAwLFxyXG4gICAgICAgICAgICAgICAgICAgIG92ZXJmbG93OiAnaGlkZGVuJyxcclxuICAgICAgICAgICAgICAgICAgICB0ZXh0T3ZlcmZsb3c6ICdlbGxpcHNpcycsXHJcbiAgICAgICAgICAgICAgICAgICAgd2hpdGVTcGFjZTogJ25vd3JhcCcsXHJcbiAgICAgICAgICAgICAgICAgICAgZGlzcGxheTogJ2Jsb2NrJ1xyXG4gICAgICAgICAgICAgICAgICB9fVxyXG4gICAgICAgICAgICAgICAgPlxyXG4gICAgICAgICAgICAgICAgICB7aGlnaGxpZ2h0VGV4dChpdGVtLm5hbWUsIHNlYXJjaFF1ZXJ5KX1cclxuICAgICAgICAgICAgICAgIDwvc3Bhbj5cclxuICAgICAgICAgICAgICA8L1Rvb2xUaXA+XHJcbiAgICAgICAgICAgICl9XHJcbiAgICAgICAgICA8L2Rpdj5cclxuICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwiaXRlbS1tZXRhLXJpZ2h0XCI+XHJcbiAgICAgICAgICAgIHshaXNFeHBhbmRlZCAmJiAhaXNSZW5hbWluZyAmJiBpdGVtLmNvdW50ICE9PSB1bmRlZmluZWQgJiYgaXRlbS5jb3VudCA+IDAgJiYgKFxyXG4gICAgICAgICAgICAgIDxzcGFuXHJcbiAgICAgICAgICAgICAgICBzdHlsZT17e1xyXG4gICAgICAgICAgICAgICAgICBmb250U2l6ZTogJzhweCcsXHJcbiAgICAgICAgICAgICAgICAgIGxpbmVIZWlnaHQ6ICcxMHB4JyxcclxuICAgICAgICAgICAgICAgICAgY29sb3I6ICd2YXIoLS10ZXh0LWFjY2VudCknLFxyXG4gICAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kOiAndHJhbnNwYXJlbnQnLFxyXG4gICAgICAgICAgICAgICAgICBib3JkZXI6ICdub25lJyxcclxuICAgICAgICAgICAgICAgICAgcGFkZGluZzogJzBweCA0cHgnLFxyXG4gICAgICAgICAgICAgICAgICBib3JkZXJSYWRpdXM6ICc2cHgnLFxyXG4gICAgICAgICAgICAgICAgICBtYXJnaW5SaWdodDogJzRweCcsXHJcbiAgICAgICAgICAgICAgICAgIGZvbnRXZWlnaHQ6IDYwMCxcclxuICAgICAgICAgICAgICAgICAgZGlzcGxheTogJ2lubGluZS1mbGV4JyxcclxuICAgICAgICAgICAgICAgICAgYWxpZ25JdGVtczogJ2NlbnRlcicsXHJcbiAgICAgICAgICAgICAgICAgIGp1c3RpZnlDb250ZW50OiAnY2VudGVyJyxcclxuICAgICAgICAgICAgICAgICAgbWluV2lkdGg6ICcxNHB4JyxcclxuICAgICAgICAgICAgICAgICAgaGVpZ2h0OiAnMTNweCcsXHJcbiAgICAgICAgICAgICAgICAgIG9wYWNpdHk6IDAuOFxyXG4gICAgICAgICAgICAgICAgfX1cclxuICAgICAgICAgICAgICA+XHJcbiAgICAgICAgICAgICAgICB7aXRlbS5jb3VudH1cclxuICAgICAgICAgICAgICA8L3NwYW4+XHJcbiAgICAgICAgICAgICl9XHJcbiAgICAgICAgICA8L2Rpdj5cclxuICAgICAgICA8L2Rpdj5cclxuICAgICAgPC9kaXY+XHJcbiAgICApXHJcbiAgfVxyXG4pXHJcblxyXG5leHBvcnQgZGVmYXVsdCBEcm9wcGFibGVGb2xkZXJJdGVtXHJcbiJdLCJmaWxlIjoiQjovZWxlY3Ryb24vbHVtaW5hL3NyYy9yZW5kZXJlci9zcmMvZmVhdHVyZXMvRXhwbG9yZXIvY29tcG9uZW50cy9Ecm9wcGFibGVGb2xkZXJJdGVtLmpzeCJ9

@@ -1,0 +1,543 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/features/Editor/menu/EditorMenu.jsx");import __vite__cjsImport0_react_jsxDevRuntime from "/@fs/B:/electron/lumina/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=f41806ed"; const jsxDEV = __vite__cjsImport0_react_jsxDevRuntime["jsxDEV"];
+var _s = $RefreshSig$();
+import __vite__cjsImport1_react from "/@fs/B:/electron/lumina/node_modules/.vite/deps/react.js?v=f41806ed"; const React = __vite__cjsImport1_react.__esModule ? __vite__cjsImport1_react.default : __vite__cjsImport1_react; const useRef = __vite__cjsImport1_react["useRef"]; const useState = __vite__cjsImport1_react["useState"]; const useEffect = __vite__cjsImport1_react["useEffect"];
+import __vite__cjsImport2_reactDom from "/@fs/B:/electron/lumina/node_modules/.vite/deps/react-dom.js?v=f41806ed"; const createPortal = __vite__cjsImport2_reactDom["createPortal"];
+import {
+  Save,
+  Sidebar,
+  ChevronRight,
+  Hash,
+  FileCode,
+  FileJson,
+  FileType,
+  MoreVertical,
+  Copy,
+  Printer,
+  Zap,
+  FileText,
+  Loader2
+} from "/@fs/B:/electron/lumina/node_modules/.vite/deps/lucide-react.js?v=f41806ed";
+import { useToast } from "/src/core/hooks/useToast.js";
+import ToastNotification from "/src/core/notification/index.js";
+import ToolTip from "/src/components/atoms/ToolTip.jsx";
+const EditorMenu = ({
+  title,
+  snippet,
+  setSelectedSnippet,
+  isDirty,
+  isSaving = false,
+  viewMode,
+  setViewMode,
+  onSave,
+  onToggleInspector,
+  onExportHTML,
+  onExportPDF,
+  onExportMarkdown,
+  onExportMarkdownBundle,
+  onExportText,
+  onExportDocs,
+  onInlineAI,
+  onPreview
+}) => {
+  _s();
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const menuRef = useRef(null);
+  const buttonRef = useRef(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 });
+  const { toast, showToast, clearToast } = useToast();
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showMoreMenu && menuRef.current && !menuRef.current.contains(event.target) && buttonRef.current && !buttonRef.current.contains(event.target)) {
+        setShowMoreMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside, true);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside, true);
+    };
+  }, [showMoreMenu]);
+  useEffect(() => {
+    if (!showMoreMenu) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowMoreMenu(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown, { capture: true });
+    return () => window.removeEventListener("keydown", handleKeyDown, { capture: true });
+  }, [showMoreMenu]);
+  useEffect(() => {
+    if (showMoreMenu && buttonRef.current) {
+      const buttonRect = buttonRef.current.getBoundingClientRect();
+      setMenuPosition({
+        top: buttonRect.bottom + 6,
+        right: Math.max(8, window.innerWidth - buttonRect.right)
+      });
+    }
+  }, [showMoreMenu]);
+  useEffect(() => {
+    if (!showMoreMenu) return;
+    const handleResize = () => setShowMoreMenu(false);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [showMoreMenu]);
+  return /* @__PURE__ */ jsxDEV("div", { className: "editor-titlebar", style: { display: "inline-flex", alignItems: "center", position: "relative", top: "auto", right: "auto", zIndex: 20 }, children: [
+    /* @__PURE__ */ jsxDEV("div", { className: "editor-controls", style: { margin: 0, gap: 0 }, children: /* @__PURE__ */ jsxDEV("div", { className: "menu-container", children: [
+      /* @__PURE__ */ jsxDEV(ToolTip, { text: "More Options (Ctrl+I)", position: "bottom-right", children: /* @__PURE__ */ jsxDEV(
+        "button",
+        {
+          className: `icon-btn menu-trigger ${showMoreMenu ? "active" : ""}`,
+          ref: buttonRef,
+          onClick: (e) => {
+            e.stopPropagation();
+            setShowMoreMenu(!showMoreMenu);
+          },
+          style: {
+            width: "24px",
+            height: "24px",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: showMoreMenu ? "rgba(255, 255, 255, 0.08)" : "transparent",
+            border: "none",
+            borderRadius: "4px",
+            padding: 0,
+            cursor: "pointer",
+            color: showMoreMenu ? "var(--text-main, #f8fafc)" : "var(--text-muted, #94a3b8)",
+            transition: "all 0.15s ease"
+          },
+          onMouseEnter: (e) => {
+            e.currentTarget.style.color = "var(--text-main, #f8fafc)";
+            e.currentTarget.style.background = "rgba(255, 255, 255, 0.06)";
+          },
+          onMouseLeave: (e) => {
+            if (!showMoreMenu) {
+              e.currentTarget.style.color = "var(--text-muted, #94a3b8)";
+              e.currentTarget.style.background = "transparent";
+            }
+          },
+          children: /* @__PURE__ */ jsxDEV(MoreVertical, { size: 16 }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+            lineNumber: 133,
+            columnNumber: 15
+          }, this)
+        },
+        void 0,
+        false,
+        {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+          lineNumber: 101,
+          columnNumber: 13
+        },
+        this
+      ) }, void 0, false, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+        lineNumber: 100,
+        columnNumber: 11
+      }, this),
+      showMoreMenu && createPortal(
+        /* @__PURE__ */ jsxDEV(
+          "div",
+          {
+            className: "native-dropdown-menu",
+            ref: menuRef,
+            onClick: (e) => e.stopPropagation(),
+            style: {
+              position: "fixed",
+              top: `${menuPosition.top}px`,
+              right: `${menuPosition.right}px`
+            },
+            children: [
+              /* @__PURE__ */ jsxDEV(
+                "div",
+                {
+                  className: "dropdown-item",
+                  onClick: () => {
+                    if (onPreview) onPreview();
+                    setShowMoreMenu(false);
+                  },
+                  children: [
+                    /* @__PURE__ */ jsxDEV("span", { className: "menu-label", children: "Preview Note" }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+                      lineNumber: 156,
+                      columnNumber: 19
+                    }, this),
+                    /* @__PURE__ */ jsxDEV("span", { className: "shortcut-label", children: "Ctrl+\\" }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+                      lineNumber: 157,
+                      columnNumber: 19
+                    }, this),
+                    /* @__PURE__ */ jsxDEV(FileText, { size: 12, className: "menu-icon-right" }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+                      lineNumber: 158,
+                      columnNumber: 19
+                    }, this)
+                  ]
+                },
+                void 0,
+                true,
+                {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+                  lineNumber: 149,
+                  columnNumber: 17
+                },
+                this
+              ),
+              /* @__PURE__ */ jsxDEV("div", { className: "dropdown-divider" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+                lineNumber: 160,
+                columnNumber: 17
+              }, this),
+              /* @__PURE__ */ jsxDEV(
+                "div",
+                {
+                  className: "dropdown-item",
+                  onClick: async () => {
+                    try {
+                      if (snippet?.code) {
+                        await navigator.clipboard.writeText(snippet.code);
+                        showToast("Markdown copied to clipboard", "success");
+                      }
+                    } catch (error) {
+                      console.error("Failed to copy markdown:", error);
+                      showToast("Failed to copy markdown", "error");
+                    }
+                    setShowMoreMenu(false);
+                  },
+                  children: [
+                    /* @__PURE__ */ jsxDEV("span", { className: "menu-label", children: "Copy as Plain Text" }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+                      lineNumber: 176,
+                      columnNumber: 19
+                    }, this),
+                    /* @__PURE__ */ jsxDEV(Copy, { size: 12, className: "menu-icon-right" }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+                      lineNumber: 177,
+                      columnNumber: 19
+                    }, this)
+                  ]
+                },
+                void 0,
+                true,
+                {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+                  lineNumber: 161,
+                  columnNumber: 17
+                },
+                this
+              ),
+              /* @__PURE__ */ jsxDEV(
+                "div",
+                {
+                  className: "dropdown-item",
+                  onClick: async () => {
+                    try {
+                      if (onExportHTML && typeof onExportHTML === "function") {
+                        const result = await onExportHTML();
+                        if (result?.success) {
+                          showToast("HTML file exported successfully", "success");
+                        }
+                      }
+                    } catch (error) {
+                      console.error("Failed to export HTML:", error);
+                      showToast("Failed to export HTML", "error");
+                    }
+                    setShowMoreMenu(false);
+                  },
+                  children: [
+                    /* @__PURE__ */ jsxDEV("span", { className: "menu-label", children: "Export to HTML (.html)" }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+                      lineNumber: 196,
+                      columnNumber: 19
+                    }, this),
+                    /* @__PURE__ */ jsxDEV(FileCode, { size: 12, className: "menu-icon-right" }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+                      lineNumber: 197,
+                      columnNumber: 19
+                    }, this)
+                  ]
+                },
+                void 0,
+                true,
+                {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+                  lineNumber: 179,
+                  columnNumber: 17
+                },
+                this
+              ),
+              /* @__PURE__ */ jsxDEV(
+                "div",
+                {
+                  className: "dropdown-item",
+                  onClick: async () => {
+                    try {
+                      if (onExportPDF && typeof onExportPDF === "function") {
+                        const result = await onExportPDF();
+                        if (result?.success) {
+                          showToast("PDF exported successfully", "success");
+                        } else if (!result?.canceled) {
+                          showToast("Failed to export PDF", "error");
+                        }
+                      }
+                    } catch (error) {
+                      console.error("Failed to export PDF:", error);
+                      showToast("Failed to export PDF", "error");
+                    }
+                    setShowMoreMenu(false);
+                  },
+                  children: [
+                    /* @__PURE__ */ jsxDEV("span", { className: "menu-label", children: "Export to PDF" }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+                      lineNumber: 218,
+                      columnNumber: 19
+                    }, this),
+                    /* @__PURE__ */ jsxDEV(Printer, { size: 12, className: "menu-icon-right" }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+                      lineNumber: 219,
+                      columnNumber: 19
+                    }, this)
+                  ]
+                },
+                void 0,
+                true,
+                {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+                  lineNumber: 199,
+                  columnNumber: 17
+                },
+                this
+              ),
+              /* @__PURE__ */ jsxDEV(
+                "div",
+                {
+                  className: "dropdown-item",
+                  onClick: async () => {
+                    try {
+                      if (onExportMarkdown && typeof onExportMarkdown === "function") {
+                        const result = await onExportMarkdown();
+                        if (result?.success) {
+                          showToast("Markdown file exported successfully", "success");
+                        } else if (!result?.canceled) {
+                          showToast("Failed to export markdown file", "error");
+                        }
+                      }
+                    } catch (error) {
+                      console.error("Failed to export markdown file:", error);
+                      showToast("Failed to export markdown file", "error");
+                    }
+                    setShowMoreMenu(false);
+                  },
+                  children: [
+                    /* @__PURE__ */ jsxDEV("span", { className: "menu-label", children: "Save as Markdown (.md)" }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+                      lineNumber: 240,
+                      columnNumber: 19
+                    }, this),
+                    /* @__PURE__ */ jsxDEV(FileText, { size: 12, className: "menu-icon-right" }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+                      lineNumber: 241,
+                      columnNumber: 19
+                    }, this)
+                  ]
+                },
+                void 0,
+                true,
+                {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+                  lineNumber: 221,
+                  columnNumber: 17
+                },
+                this
+              ),
+              /* @__PURE__ */ jsxDEV(
+                "div",
+                {
+                  className: "dropdown-item",
+                  onClick: async () => {
+                    try {
+                      if (onExportMarkdownBundle && typeof onExportMarkdownBundle === "function") {
+                        const result = await onExportMarkdownBundle();
+                        if (result?.success) {
+                          showToast("Markdown bundle exported successfully", "success");
+                        }
+                      }
+                    } catch (error) {
+                      console.error("Failed to export markdown bundle:", error);
+                      showToast("Failed to export markdown bundle", "error");
+                    }
+                    setShowMoreMenu(false);
+                  },
+                  children: [
+                    /* @__PURE__ */ jsxDEV("span", { className: "menu-label", children: "Export Markdown Bundle" }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+                      lineNumber: 260,
+                      columnNumber: 19
+                    }, this),
+                    /* @__PURE__ */ jsxDEV(FileJson, { size: 12, className: "menu-icon-right" }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+                      lineNumber: 261,
+                      columnNumber: 19
+                    }, this)
+                  ]
+                },
+                void 0,
+                true,
+                {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+                  lineNumber: 243,
+                  columnNumber: 17
+                },
+                this
+              ),
+              /* @__PURE__ */ jsxDEV(
+                "div",
+                {
+                  className: "dropdown-item",
+                  onClick: async () => {
+                    try {
+                      if (onExportText && typeof onExportText === "function") {
+                        const result = await onExportText();
+                        if (result?.success) {
+                          showToast("Text file exported successfully", "success");
+                        } else if (!result?.canceled) {
+                          showToast("Failed to export text file", "error");
+                        }
+                      }
+                    } catch (error) {
+                      console.error("Failed to export text file:", error);
+                      showToast("Failed to export text file", "error");
+                    }
+                    setShowMoreMenu(false);
+                  },
+                  children: [
+                    /* @__PURE__ */ jsxDEV("span", { className: "menu-label", children: "Save as Text (.txt)" }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+                      lineNumber: 282,
+                      columnNumber: 19
+                    }, this),
+                    /* @__PURE__ */ jsxDEV(FileType, { size: 12, className: "menu-icon-right" }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+                      lineNumber: 283,
+                      columnNumber: 19
+                    }, this)
+                  ]
+                },
+                void 0,
+                true,
+                {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+                  lineNumber: 263,
+                  columnNumber: 17
+                },
+                this
+              ),
+              /* @__PURE__ */ jsxDEV(
+                "div",
+                {
+                  className: "dropdown-item",
+                  onClick: async () => {
+                    try {
+                      if (onExportDocs && typeof onExportDocs === "function") {
+                        const result = await onExportDocs();
+                        if (result?.success) {
+                          showToast("HTML Doc exported successfully", "success");
+                        } else if (!result?.canceled) {
+                          showToast("Failed to export Docs", "error");
+                        }
+                      }
+                    } catch (error) {
+                      console.error("Failed to export Docs:", error);
+                      showToast("Failed to export Docs", "error");
+                    }
+                    setShowMoreMenu(false);
+                  },
+                  children: [
+                    /* @__PURE__ */ jsxDEV("span", { className: "menu-label", children: "Save as Word Document" }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+                      lineNumber: 304,
+                      columnNumber: 19
+                    }, this),
+                    /* @__PURE__ */ jsxDEV(FileCode, { size: 12, className: "menu-icon-right" }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+                      lineNumber: 305,
+                      columnNumber: 19
+                    }, this)
+                  ]
+                },
+                void 0,
+                true,
+                {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+                  lineNumber: 285,
+                  columnNumber: 17
+                },
+                this
+              )
+            ]
+          },
+          void 0,
+          true,
+          {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+            lineNumber: 139,
+            columnNumber: 13
+          },
+          this
+        ),
+        document.body
+      )
+    ] }, void 0, true, {
+      fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+      lineNumber: 99,
+      columnNumber: 9
+    }, this) }, void 0, false, {
+      fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+      lineNumber: 98,
+      columnNumber: 7
+    }, this),
+    /* @__PURE__ */ jsxDEV(ToastNotification, { toast, onClose: clearToast }, void 0, false, {
+      fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+      lineNumber: 312,
+      columnNumber: 7
+    }, this)
+  ] }, void 0, true, {
+    fileName: "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx",
+    lineNumber: 97,
+    columnNumber: 5
+  }, this);
+};
+_s(EditorMenu, "VARkA9WQkc0fLRrW7/ooa7GaSKY=", false, function() {
+  return [useToast];
+});
+_c = EditorMenu;
+export default EditorMenu;
+var _c;
+$RefreshReg$(_c, "EditorMenu");
+import * as RefreshRuntime from "/@react-refresh";
+const inWebWorker = typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope;
+if (import.meta.hot && !inWebWorker) {
+  if (!window.$RefreshReg$) {
+    throw new Error(
+      "@vitejs/plugin-react can't detect preamble. Something is wrong."
+    );
+  }
+  RefreshRuntime.__hmr_import(import.meta.url).then((currentExports) => {
+    RefreshRuntime.registerExportsForReactRefresh("B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx", currentExports);
+    import.meta.hot.accept((nextExports) => {
+      if (!nextExports) return;
+      const invalidateMessage = RefreshRuntime.validateRefreshBoundaryAndEnqueueUpdate("B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx", currentExports, nextExports);
+      if (invalidateMessage) import.meta.hot.invalidate(invalidateMessage);
+    });
+  });
+}
+function $RefreshReg$(type, id) {
+  return RefreshRuntime.register(type, "B:/electron/lumina/src/renderer/src/features/Editor/menu/EditorMenu.jsx " + id);
+}
+function $RefreshSig$() {
+  return RefreshRuntime.createSignatureFunctionForTransform();
+}
+
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJtYXBwaW5ncyI6IkFBb0ljOztBQXBJZCxPQUFPQSxTQUFTQyxRQUFRQyxVQUFVQyxpQkFBaUI7QUFDbkQsU0FBU0Msb0JBQW9CO0FBQzdCO0FBQUEsRUFDRUM7QUFBQUEsRUFDQUM7QUFBQUEsRUFDQUM7QUFBQUEsRUFDQUM7QUFBQUEsRUFDQUM7QUFBQUEsRUFDQUM7QUFBQUEsRUFDQUM7QUFBQUEsRUFDQUM7QUFBQUEsRUFDQUM7QUFBQUEsRUFDQUM7QUFBQUEsRUFDQUM7QUFBQUEsRUFDQUM7QUFBQUEsRUFDQUM7QUFBQUEsT0FDSztBQUNQLFNBQVNDLGdCQUFnQjtBQUN6QixPQUFPQyx1QkFBdUI7QUFDOUIsT0FBT0MsYUFBYTtBQUVwQixNQUFNQyxhQUFhQSxDQUFDO0FBQUEsRUFDbEJDO0FBQUFBLEVBQ0FDO0FBQUFBLEVBQ0FDO0FBQUFBLEVBQ0FDO0FBQUFBLEVBQ0FDLFdBQVc7QUFBQSxFQUNYQztBQUFBQSxFQUNBQztBQUFBQSxFQUNBQztBQUFBQSxFQUNBQztBQUFBQSxFQUNBQztBQUFBQSxFQUNBQztBQUFBQSxFQUNBQztBQUFBQSxFQUNBQztBQUFBQSxFQUNBQztBQUFBQSxFQUNBQztBQUFBQSxFQUNBQztBQUFBQSxFQUNBQztBQUNGLE1BQU07QUFBQUMsS0FBQTtBQUNKLFFBQU0sQ0FBQ0MsY0FBY0MsZUFBZSxJQUFJdkMsU0FBUyxLQUFLO0FBQ3RELFFBQU13QyxVQUFVekMsT0FBTyxJQUFJO0FBQzNCLFFBQU0wQyxZQUFZMUMsT0FBTyxJQUFJO0FBQzdCLFFBQU0sQ0FBQzJDLGNBQWNDLGVBQWUsSUFBSTNDLFNBQVMsRUFBRTRDLEtBQUssR0FBR0MsT0FBTyxFQUFFLENBQUM7QUFDckUsUUFBTSxFQUFFQyxPQUFPQyxXQUFXQyxXQUFXLElBQUloQyxTQUFTO0FBRWxEZixZQUFVLE1BQU07QUFDZCxVQUFNZ0QscUJBQXFCQSxDQUFDQyxVQUFVO0FBQ3BDLFVBQ0VaLGdCQUNBRSxRQUFRVyxXQUNSLENBQUNYLFFBQVFXLFFBQVFDLFNBQVNGLE1BQU1HLE1BQU0sS0FDdENaLFVBQVVVLFdBQ1YsQ0FBQ1YsVUFBVVUsUUFBUUMsU0FBU0YsTUFBTUcsTUFBTSxHQUN4QztBQUNBZCx3QkFBZ0IsS0FBSztBQUFBLE1BQ3ZCO0FBQUEsSUFDRjtBQUVBZSxhQUFTQyxpQkFBaUIsYUFBYU4sb0JBQW9CLElBQUk7QUFDL0QsV0FBTyxNQUFNO0FBQ1hLLGVBQVNFLG9CQUFvQixhQUFhUCxvQkFBb0IsSUFBSTtBQUFBLElBQ3BFO0FBQUEsRUFDRixHQUFHLENBQUNYLFlBQVksQ0FBQztBQUVqQnJDLFlBQVUsTUFBTTtBQUNkLFFBQUksQ0FBQ3FDLGFBQWM7QUFDbkIsVUFBTW1CLGdCQUFnQkEsQ0FBQ0MsTUFBTTtBQUMzQixVQUFJQSxFQUFFQyxRQUFRLFVBQVU7QUFDdEJELFVBQUVFLGVBQWU7QUFDakJGLFVBQUVHLGdCQUFnQjtBQUNsQnRCLHdCQUFnQixLQUFLO0FBQUEsTUFDdkI7QUFBQSxJQUNGO0FBQ0F1QixXQUFPUCxpQkFBaUIsV0FBV0UsZUFBZSxFQUFFTSxTQUFTLEtBQUssQ0FBQztBQUNuRSxXQUFPLE1BQU1ELE9BQU9OLG9CQUFvQixXQUFXQyxlQUFlLEVBQUVNLFNBQVMsS0FBSyxDQUFDO0FBQUEsRUFDckYsR0FBRyxDQUFDekIsWUFBWSxDQUFDO0FBRWpCckMsWUFBVSxNQUFNO0FBQ2QsUUFBSXFDLGdCQUFnQkcsVUFBVVUsU0FBUztBQUNyQyxZQUFNYSxhQUFhdkIsVUFBVVUsUUFBUWMsc0JBQXNCO0FBQzNEdEIsc0JBQWdCO0FBQUEsUUFDZEMsS0FBS29CLFdBQVdFLFNBQVM7QUFBQSxRQUN6QnJCLE9BQU9zQixLQUFLQyxJQUFJLEdBQUdOLE9BQU9PLGFBQWFMLFdBQVduQixLQUFLO0FBQUEsTUFDekQsQ0FBQztBQUFBLElBQ0g7QUFBQSxFQUNGLEdBQUcsQ0FBQ1AsWUFBWSxDQUFDO0FBRWpCckMsWUFBVSxNQUFNO0FBQ2QsUUFBSSxDQUFDcUMsYUFBYztBQUNuQixVQUFNZ0MsZUFBZUEsTUFBTS9CLGdCQUFnQixLQUFLO0FBQ2hEdUIsV0FBT1AsaUJBQWlCLFVBQVVlLFlBQVk7QUFDOUMsV0FBTyxNQUFNUixPQUFPTixvQkFBb0IsVUFBVWMsWUFBWTtBQUFBLEVBQ2hFLEdBQUcsQ0FBQ2hDLFlBQVksQ0FBQztBQUVqQixTQUNFLHVCQUFDLFNBQUksV0FBVSxtQkFBa0IsT0FBTyxFQUFFaUMsU0FBUyxlQUFlQyxZQUFZLFVBQVVDLFVBQVUsWUFBWTdCLEtBQUssUUFBUUMsT0FBTyxRQUFRNkIsUUFBUSxHQUFHLEdBQ25KO0FBQUEsMkJBQUMsU0FBSSxXQUFVLG1CQUFrQixPQUFPLEVBQUVDLFFBQVEsR0FBR0MsS0FBSyxFQUFFLEdBQzFELGlDQUFDLFNBQUksV0FBVSxrQkFDYjtBQUFBLDZCQUFDLFdBQVEsTUFBSyx5QkFBd0IsVUFBUyxnQkFDN0M7QUFBQSxRQUFDO0FBQUE7QUFBQSxVQUNDLFdBQVcseUJBQXlCdEMsZUFBZSxXQUFXLEVBQUU7QUFBQSxVQUNoRSxLQUFLRztBQUFBQSxVQUNMLFNBQVMsQ0FBQ2lCLE1BQU07QUFDZEEsY0FBRUcsZ0JBQWdCO0FBQ2xCdEIsNEJBQWdCLENBQUNELFlBQVk7QUFBQSxVQUMvQjtBQUFBLFVBQ0EsT0FBTztBQUFBLFlBQ0x1QyxPQUFPO0FBQUEsWUFDUEMsUUFBUTtBQUFBLFlBQ1JQLFNBQVM7QUFBQSxZQUNUQyxZQUFZO0FBQUEsWUFDWk8sZ0JBQWdCO0FBQUEsWUFDaEJDLFlBQVkxQyxlQUFlLDhCQUE4QjtBQUFBLFlBQ3pEMkMsUUFBUTtBQUFBLFlBQ1JDLGNBQWM7QUFBQSxZQUNkQyxTQUFTO0FBQUEsWUFDVEMsUUFBUTtBQUFBLFlBQ1JDLE9BQU8vQyxlQUFlLDhCQUE4QjtBQUFBLFlBQ3BEZ0QsWUFBWTtBQUFBLFVBQ2Q7QUFBQSxVQUNBLGNBQWMsQ0FBQzVCLE1BQU07QUFDbkJBLGNBQUU2QixjQUFjQyxNQUFNSCxRQUFRO0FBQzlCM0IsY0FBRTZCLGNBQWNDLE1BQU1SLGFBQWE7QUFBQSxVQUNyQztBQUFBLFVBQ0EsY0FBYyxDQUFDdEIsTUFBTTtBQUNuQixnQkFBSSxDQUFDcEIsY0FBYztBQUNqQm9CLGdCQUFFNkIsY0FBY0MsTUFBTUgsUUFBUTtBQUM5QjNCLGdCQUFFNkIsY0FBY0MsTUFBTVIsYUFBYTtBQUFBLFlBQ3JDO0FBQUEsVUFDRjtBQUFBLFVBRUEsaUNBQUMsZ0JBQWEsTUFBTSxNQUFwQjtBQUFBO0FBQUE7QUFBQTtBQUFBLGlCQUF1QjtBQUFBO0FBQUEsUUFoQ3pCO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQSxNQWlDQSxLQWxDRjtBQUFBO0FBQUE7QUFBQTtBQUFBLGFBbUNBO0FBQUEsTUFFQzFDLGdCQUNDcEM7QUFBQUEsUUFDRTtBQUFBLFVBQUM7QUFBQTtBQUFBLFlBQ0MsV0FBVTtBQUFBLFlBQ1YsS0FBS3NDO0FBQUFBLFlBQ0wsU0FBUyxDQUFDa0IsTUFBTUEsRUFBRUcsZ0JBQWdCO0FBQUEsWUFDbEMsT0FBTztBQUFBLGNBQ0xZLFVBQVU7QUFBQSxjQUNWN0IsS0FBSyxHQUFHRixhQUFhRSxHQUFHO0FBQUEsY0FDeEJDLE9BQU8sR0FBR0gsYUFBYUcsS0FBSztBQUFBLFlBQzlCO0FBQUEsWUFFQTtBQUFBO0FBQUEsZ0JBQUM7QUFBQTtBQUFBLGtCQUNDLFdBQVU7QUFBQSxrQkFDVixTQUFTLE1BQU07QUFDYix3QkFBSVQsVUFBV0EsV0FBVTtBQUN6Qkcsb0NBQWdCLEtBQUs7QUFBQSxrQkFDdkI7QUFBQSxrQkFFQTtBQUFBLDJDQUFDLFVBQUssV0FBVSxjQUFhLDRCQUE3QjtBQUFBO0FBQUE7QUFBQTtBQUFBLDJCQUF5QztBQUFBLG9CQUN6Qyx1QkFBQyxVQUFLLFdBQVUsa0JBQWlCLHVCQUFqQztBQUFBO0FBQUE7QUFBQTtBQUFBLDJCQUF1QztBQUFBLG9CQUN2Qyx1QkFBQyxZQUFTLE1BQU0sSUFBSSxXQUFVLHFCQUE5QjtBQUFBO0FBQUE7QUFBQTtBQUFBLDJCQUErQztBQUFBO0FBQUE7QUFBQSxnQkFUakQ7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBLGNBVUE7QUFBQSxjQUNBLHVCQUFDLFNBQUksV0FBVSxzQkFBZjtBQUFBO0FBQUE7QUFBQTtBQUFBLHFCQUFpQztBQUFBLGNBQ2pDO0FBQUEsZ0JBQUM7QUFBQTtBQUFBLGtCQUNDLFdBQVU7QUFBQSxrQkFDVixTQUFTLFlBQVk7QUFDbkIsd0JBQUk7QUFDRiwwQkFBSWxCLFNBQVNvRSxNQUFNO0FBQ2pCLDhCQUFNQyxVQUFVQyxVQUFVQyxVQUFVdkUsUUFBUW9FLElBQUk7QUFDaEQxQyxrQ0FBVSxnQ0FBZ0MsU0FBUztBQUFBLHNCQUNyRDtBQUFBLG9CQUNGLFNBQVM4QyxPQUFPO0FBQ2RDLDhCQUFRRCxNQUFNLDRCQUE0QkEsS0FBSztBQUMvQzlDLGdDQUFVLDJCQUEyQixPQUFPO0FBQUEsb0JBQzlDO0FBQ0FSLG9DQUFnQixLQUFLO0FBQUEsa0JBQ3ZCO0FBQUEsa0JBRUE7QUFBQSwyQ0FBQyxVQUFLLFdBQVUsY0FBYSxrQ0FBN0I7QUFBQTtBQUFBO0FBQUE7QUFBQSwyQkFBK0M7QUFBQSxvQkFDL0MsdUJBQUMsUUFBSyxNQUFNLElBQUksV0FBVSxxQkFBMUI7QUFBQTtBQUFBO0FBQUE7QUFBQSwyQkFBMkM7QUFBQTtBQUFBO0FBQUEsZ0JBaEI3QztBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUEsY0FpQkE7QUFBQSxjQUNBO0FBQUEsZ0JBQUM7QUFBQTtBQUFBLGtCQUNDLFdBQVU7QUFBQSxrQkFDVixTQUFTLFlBQVk7QUFDbkIsd0JBQUk7QUFDRiwwQkFBSVYsZ0JBQWdCLE9BQU9BLGlCQUFpQixZQUFZO0FBQ3RELDhCQUFNa0UsU0FBUyxNQUFNbEUsYUFBYTtBQUNsQyw0QkFBSWtFLFFBQVFDLFNBQVM7QUFDbkJqRCxvQ0FBVSxtQ0FBbUMsU0FBUztBQUFBLHdCQUN4RDtBQUFBLHNCQUNGO0FBQUEsb0JBQ0YsU0FBUzhDLE9BQU87QUFDZEMsOEJBQVFELE1BQU0sMEJBQTBCQSxLQUFLO0FBQzdDOUMsZ0NBQVUseUJBQXlCLE9BQU87QUFBQSxvQkFDNUM7QUFDQVIsb0NBQWdCLEtBQUs7QUFBQSxrQkFDdkI7QUFBQSxrQkFFQTtBQUFBLDJDQUFDLFVBQUssV0FBVSxjQUFhLHNDQUE3QjtBQUFBO0FBQUE7QUFBQTtBQUFBLDJCQUFtRDtBQUFBLG9CQUNuRCx1QkFBQyxZQUFTLE1BQU0sSUFBSSxXQUFVLHFCQUE5QjtBQUFBO0FBQUE7QUFBQTtBQUFBLDJCQUErQztBQUFBO0FBQUE7QUFBQSxnQkFsQmpEO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQSxjQW1CQTtBQUFBLGNBQ0E7QUFBQSxnQkFBQztBQUFBO0FBQUEsa0JBQ0MsV0FBVTtBQUFBLGtCQUNWLFNBQVMsWUFBWTtBQUNuQix3QkFBSTtBQUNGLDBCQUFJVCxlQUFlLE9BQU9BLGdCQUFnQixZQUFZO0FBQ3BELDhCQUFNaUUsU0FBUyxNQUFNakUsWUFBWTtBQUNqQyw0QkFBSWlFLFFBQVFDLFNBQVM7QUFDbkJqRCxvQ0FBVSw2QkFBNkIsU0FBUztBQUFBLHdCQUNsRCxXQUFXLENBQUNnRCxRQUFRRSxVQUFVO0FBQzVCbEQsb0NBQVUsd0JBQXdCLE9BQU87QUFBQSx3QkFDM0M7QUFBQSxzQkFDRjtBQUFBLG9CQUNGLFNBQVM4QyxPQUFPO0FBQ2RDLDhCQUFRRCxNQUFNLHlCQUF5QkEsS0FBSztBQUM1QzlDLGdDQUFVLHdCQUF3QixPQUFPO0FBQUEsb0JBQzNDO0FBQ0FSLG9DQUFnQixLQUFLO0FBQUEsa0JBQ3ZCO0FBQUEsa0JBRUE7QUFBQSwyQ0FBQyxVQUFLLFdBQVUsY0FBYSw2QkFBN0I7QUFBQTtBQUFBO0FBQUE7QUFBQSwyQkFBMEM7QUFBQSxvQkFDMUMsdUJBQUMsV0FBUSxNQUFNLElBQUksV0FBVSxxQkFBN0I7QUFBQTtBQUFBO0FBQUE7QUFBQSwyQkFBOEM7QUFBQTtBQUFBO0FBQUEsZ0JBcEJoRDtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUEsY0FxQkE7QUFBQSxjQUNBO0FBQUEsZ0JBQUM7QUFBQTtBQUFBLGtCQUNDLFdBQVU7QUFBQSxrQkFDVixTQUFTLFlBQVk7QUFDbkIsd0JBQUk7QUFDRiwwQkFBSVIsb0JBQW9CLE9BQU9BLHFCQUFxQixZQUFZO0FBQzlELDhCQUFNZ0UsU0FBUyxNQUFNaEUsaUJBQWlCO0FBQ3RDLDRCQUFJZ0UsUUFBUUMsU0FBUztBQUNuQmpELG9DQUFVLHVDQUF1QyxTQUFTO0FBQUEsd0JBQzVELFdBQVcsQ0FBQ2dELFFBQVFFLFVBQVU7QUFDNUJsRCxvQ0FBVSxrQ0FBa0MsT0FBTztBQUFBLHdCQUNyRDtBQUFBLHNCQUNGO0FBQUEsb0JBQ0YsU0FBUzhDLE9BQU87QUFDZEMsOEJBQVFELE1BQU0sbUNBQW1DQSxLQUFLO0FBQ3REOUMsZ0NBQVUsa0NBQWtDLE9BQU87QUFBQSxvQkFDckQ7QUFDQVIsb0NBQWdCLEtBQUs7QUFBQSxrQkFDdkI7QUFBQSxrQkFFQTtBQUFBLDJDQUFDLFVBQUssV0FBVSxjQUFhLHNDQUE3QjtBQUFBO0FBQUE7QUFBQTtBQUFBLDJCQUFtRDtBQUFBLG9CQUNuRCx1QkFBQyxZQUFTLE1BQU0sSUFBSSxXQUFVLHFCQUE5QjtBQUFBO0FBQUE7QUFBQTtBQUFBLDJCQUErQztBQUFBO0FBQUE7QUFBQSxnQkFwQmpEO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQSxjQXFCQTtBQUFBLGNBQ0E7QUFBQSxnQkFBQztBQUFBO0FBQUEsa0JBQ0MsV0FBVTtBQUFBLGtCQUNWLFNBQVMsWUFBWTtBQUNuQix3QkFBSTtBQUNGLDBCQUFJUCwwQkFBMEIsT0FBT0EsMkJBQTJCLFlBQVk7QUFDMUUsOEJBQU0rRCxTQUFTLE1BQU0vRCx1QkFBdUI7QUFDNUMsNEJBQUkrRCxRQUFRQyxTQUFTO0FBQ25CakQsb0NBQVUseUNBQXlDLFNBQVM7QUFBQSx3QkFDOUQ7QUFBQSxzQkFDRjtBQUFBLG9CQUNGLFNBQVM4QyxPQUFPO0FBQ2RDLDhCQUFRRCxNQUFNLHFDQUFxQ0EsS0FBSztBQUN4RDlDLGdDQUFVLG9DQUFvQyxPQUFPO0FBQUEsb0JBQ3ZEO0FBQ0FSLG9DQUFnQixLQUFLO0FBQUEsa0JBQ3ZCO0FBQUEsa0JBRUE7QUFBQSwyQ0FBQyxVQUFLLFdBQVUsY0FBYSxzQ0FBN0I7QUFBQTtBQUFBO0FBQUE7QUFBQSwyQkFBbUQ7QUFBQSxvQkFDbkQsdUJBQUMsWUFBUyxNQUFNLElBQUksV0FBVSxxQkFBOUI7QUFBQTtBQUFBO0FBQUE7QUFBQSwyQkFBK0M7QUFBQTtBQUFBO0FBQUEsZ0JBbEJqRDtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUEsY0FtQkE7QUFBQSxjQUNBO0FBQUEsZ0JBQUM7QUFBQTtBQUFBLGtCQUNDLFdBQVU7QUFBQSxrQkFDVixTQUFTLFlBQVk7QUFDbkIsd0JBQUk7QUFDRiwwQkFBSU4sZ0JBQWdCLE9BQU9BLGlCQUFpQixZQUFZO0FBQ3RELDhCQUFNOEQsU0FBUyxNQUFNOUQsYUFBYTtBQUNsQyw0QkFBSThELFFBQVFDLFNBQVM7QUFDbkJqRCxvQ0FBVSxtQ0FBbUMsU0FBUztBQUFBLHdCQUN4RCxXQUFXLENBQUNnRCxRQUFRRSxVQUFVO0FBQzVCbEQsb0NBQVUsOEJBQThCLE9BQU87QUFBQSx3QkFDakQ7QUFBQSxzQkFDRjtBQUFBLG9CQUNGLFNBQVM4QyxPQUFPO0FBQ2RDLDhCQUFRRCxNQUFNLCtCQUErQkEsS0FBSztBQUNsRDlDLGdDQUFVLDhCQUE4QixPQUFPO0FBQUEsb0JBQ2pEO0FBQ0FSLG9DQUFnQixLQUFLO0FBQUEsa0JBQ3ZCO0FBQUEsa0JBRUE7QUFBQSwyQ0FBQyxVQUFLLFdBQVUsY0FBYSxtQ0FBN0I7QUFBQTtBQUFBO0FBQUE7QUFBQSwyQkFBZ0Q7QUFBQSxvQkFDaEQsdUJBQUMsWUFBUyxNQUFNLElBQUksV0FBVSxxQkFBOUI7QUFBQTtBQUFBO0FBQUE7QUFBQSwyQkFBK0M7QUFBQTtBQUFBO0FBQUEsZ0JBcEJqRDtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUEsY0FxQkE7QUFBQSxjQUNBO0FBQUEsZ0JBQUM7QUFBQTtBQUFBLGtCQUNDLFdBQVU7QUFBQSxrQkFDVixTQUFTLFlBQVk7QUFDbkIsd0JBQUk7QUFDRiwwQkFBSUwsZ0JBQWdCLE9BQU9BLGlCQUFpQixZQUFZO0FBQ3RELDhCQUFNNkQsU0FBUyxNQUFNN0QsYUFBYTtBQUNsQyw0QkFBSTZELFFBQVFDLFNBQVM7QUFDbkJqRCxvQ0FBVSxrQ0FBa0MsU0FBUztBQUFBLHdCQUN2RCxXQUFXLENBQUNnRCxRQUFRRSxVQUFVO0FBQzVCbEQsb0NBQVUseUJBQXlCLE9BQU87QUFBQSx3QkFDNUM7QUFBQSxzQkFDRjtBQUFBLG9CQUNGLFNBQVM4QyxPQUFPO0FBQ2RDLDhCQUFRRCxNQUFNLDBCQUEwQkEsS0FBSztBQUM3QzlDLGdDQUFVLHlCQUF5QixPQUFPO0FBQUEsb0JBQzVDO0FBQ0FSLG9DQUFnQixLQUFLO0FBQUEsa0JBQ3ZCO0FBQUEsa0JBRUE7QUFBQSwyQ0FBQyxVQUFLLFdBQVUsY0FBYSxxQ0FBN0I7QUFBQTtBQUFBO0FBQUE7QUFBQSwyQkFBa0Q7QUFBQSxvQkFDbEQsdUJBQUMsWUFBUyxNQUFNLElBQUksV0FBVSxxQkFBOUI7QUFBQTtBQUFBO0FBQUE7QUFBQSwyQkFBK0M7QUFBQTtBQUFBO0FBQUEsZ0JBcEJqRDtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUEsY0FxQkE7QUFBQTtBQUFBO0FBQUEsVUF2S0Y7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBLFFBd0tBO0FBQUEsUUFDQWUsU0FBUzRDO0FBQUFBLE1BQ1g7QUFBQSxTQWxOSjtBQUFBO0FBQUE7QUFBQTtBQUFBLFdBbU5BLEtBcE5GO0FBQUE7QUFBQTtBQUFBO0FBQUEsV0FxTkE7QUFBQSxJQUNBLHVCQUFDLHFCQUFrQixPQUFjLFNBQVNsRCxjQUExQztBQUFBO0FBQUE7QUFBQTtBQUFBLFdBQXFEO0FBQUEsT0F2TnZEO0FBQUE7QUFBQTtBQUFBO0FBQUEsU0F3TkE7QUFFSjtBQUFDWCxHQXJTS2xCLFlBQVU7QUFBQSxVQXVCMkJILFFBQVE7QUFBQTtBQUFBbUYsS0F2QjdDaEY7QUF1U04sZUFBZUE7QUFBVSxJQUFBZ0Y7QUFBQUMsYUFBQUQsSUFBQSIsIm5hbWVzIjpbIlJlYWN0IiwidXNlUmVmIiwidXNlU3RhdGUiLCJ1c2VFZmZlY3QiLCJjcmVhdGVQb3J0YWwiLCJTYXZlIiwiU2lkZWJhciIsIkNoZXZyb25SaWdodCIsIkhhc2giLCJGaWxlQ29kZSIsIkZpbGVKc29uIiwiRmlsZVR5cGUiLCJNb3JlVmVydGljYWwiLCJDb3B5IiwiUHJpbnRlciIsIlphcCIsIkZpbGVUZXh0IiwiTG9hZGVyMiIsInVzZVRvYXN0IiwiVG9hc3ROb3RpZmljYXRpb24iLCJUb29sVGlwIiwiRWRpdG9yTWVudSIsInRpdGxlIiwic25pcHBldCIsInNldFNlbGVjdGVkU25pcHBldCIsImlzRGlydHkiLCJpc1NhdmluZyIsInZpZXdNb2RlIiwic2V0Vmlld01vZGUiLCJvblNhdmUiLCJvblRvZ2dsZUluc3BlY3RvciIsIm9uRXhwb3J0SFRNTCIsIm9uRXhwb3J0UERGIiwib25FeHBvcnRNYXJrZG93biIsIm9uRXhwb3J0TWFya2Rvd25CdW5kbGUiLCJvbkV4cG9ydFRleHQiLCJvbkV4cG9ydERvY3MiLCJvbklubGluZUFJIiwib25QcmV2aWV3IiwiX3MiLCJzaG93TW9yZU1lbnUiLCJzZXRTaG93TW9yZU1lbnUiLCJtZW51UmVmIiwiYnV0dG9uUmVmIiwibWVudVBvc2l0aW9uIiwic2V0TWVudVBvc2l0aW9uIiwidG9wIiwicmlnaHQiLCJ0b2FzdCIsInNob3dUb2FzdCIsImNsZWFyVG9hc3QiLCJoYW5kbGVDbGlja091dHNpZGUiLCJldmVudCIsImN1cnJlbnQiLCJjb250YWlucyIsInRhcmdldCIsImRvY3VtZW50IiwiYWRkRXZlbnRMaXN0ZW5lciIsInJlbW92ZUV2ZW50TGlzdGVuZXIiLCJoYW5kbGVLZXlEb3duIiwiZSIsImtleSIsInByZXZlbnREZWZhdWx0Iiwic3RvcFByb3BhZ2F0aW9uIiwid2luZG93IiwiY2FwdHVyZSIsImJ1dHRvblJlY3QiLCJnZXRCb3VuZGluZ0NsaWVudFJlY3QiLCJib3R0b20iLCJNYXRoIiwibWF4IiwiaW5uZXJXaWR0aCIsImhhbmRsZVJlc2l6ZSIsImRpc3BsYXkiLCJhbGlnbkl0ZW1zIiwicG9zaXRpb24iLCJ6SW5kZXgiLCJtYXJnaW4iLCJnYXAiLCJ3aWR0aCIsImhlaWdodCIsImp1c3RpZnlDb250ZW50IiwiYmFja2dyb3VuZCIsImJvcmRlciIsImJvcmRlclJhZGl1cyIsInBhZGRpbmciLCJjdXJzb3IiLCJjb2xvciIsInRyYW5zaXRpb24iLCJjdXJyZW50VGFyZ2V0Iiwic3R5bGUiLCJjb2RlIiwibmF2aWdhdG9yIiwiY2xpcGJvYXJkIiwid3JpdGVUZXh0IiwiZXJyb3IiLCJjb25zb2xlIiwicmVzdWx0Iiwic3VjY2VzcyIsImNhbmNlbGVkIiwiYm9keSIsIl9jIiwiJFJlZnJlc2hSZWckIl0sImlnbm9yZUxpc3QiOltdLCJzb3VyY2VzIjpbIkVkaXRvck1lbnUuanN4Il0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCBSZWFjdCwgeyB1c2VSZWYsIHVzZVN0YXRlLCB1c2VFZmZlY3QgfSBmcm9tICdyZWFjdCdcclxuaW1wb3J0IHsgY3JlYXRlUG9ydGFsIH0gZnJvbSAncmVhY3QtZG9tJ1xyXG5pbXBvcnQge1xyXG4gIFNhdmUsXHJcbiAgU2lkZWJhcixcclxuICBDaGV2cm9uUmlnaHQsXHJcbiAgSGFzaCxcclxuICBGaWxlQ29kZSxcclxuICBGaWxlSnNvbixcclxuICBGaWxlVHlwZSxcclxuICBNb3JlVmVydGljYWwsXHJcbiAgQ29weSxcclxuICBQcmludGVyLFxyXG4gIFphcCxcclxuICBGaWxlVGV4dCxcclxuICBMb2FkZXIyXHJcbn0gZnJvbSAnbHVjaWRlLXJlYWN0J1xyXG5pbXBvcnQgeyB1c2VUb2FzdCB9IGZyb20gJy4uLy4uLy4uL2NvcmUvaG9va3MvdXNlVG9hc3QnXHJcbmltcG9ydCBUb2FzdE5vdGlmaWNhdGlvbiBmcm9tICcuLi8uLi8uLi9jb3JlL25vdGlmaWNhdGlvbidcclxuaW1wb3J0IFRvb2xUaXAgZnJvbSAnLi4vLi4vLi4vY29tcG9uZW50cy9hdG9tcy9Ub29sVGlwJ1xyXG5cclxuY29uc3QgRWRpdG9yTWVudSA9ICh7XHJcbiAgdGl0bGUsXHJcbiAgc25pcHBldCxcclxuICBzZXRTZWxlY3RlZFNuaXBwZXQsXHJcbiAgaXNEaXJ0eSxcclxuICBpc1NhdmluZyA9IGZhbHNlLFxyXG4gIHZpZXdNb2RlLFxyXG4gIHNldFZpZXdNb2RlLFxyXG4gIG9uU2F2ZSxcclxuICBvblRvZ2dsZUluc3BlY3RvcixcclxuICBvbkV4cG9ydEhUTUwsXHJcbiAgb25FeHBvcnRQREYsXHJcbiAgb25FeHBvcnRNYXJrZG93bixcclxuICBvbkV4cG9ydE1hcmtkb3duQnVuZGxlLFxyXG4gIG9uRXhwb3J0VGV4dCxcclxuICBvbkV4cG9ydERvY3MsXHJcbiAgb25JbmxpbmVBSSxcclxuICBvblByZXZpZXdcclxufSkgPT4ge1xyXG4gIGNvbnN0IFtzaG93TW9yZU1lbnUsIHNldFNob3dNb3JlTWVudV0gPSB1c2VTdGF0ZShmYWxzZSlcclxuICBjb25zdCBtZW51UmVmID0gdXNlUmVmKG51bGwpXHJcbiAgY29uc3QgYnV0dG9uUmVmID0gdXNlUmVmKG51bGwpXHJcbiAgY29uc3QgW21lbnVQb3NpdGlvbiwgc2V0TWVudVBvc2l0aW9uXSA9IHVzZVN0YXRlKHsgdG9wOiAwLCByaWdodDogMCB9KVxyXG4gIGNvbnN0IHsgdG9hc3QsIHNob3dUb2FzdCwgY2xlYXJUb2FzdCB9ID0gdXNlVG9hc3QoKVxyXG5cclxuICB1c2VFZmZlY3QoKCkgPT4ge1xyXG4gICAgY29uc3QgaGFuZGxlQ2xpY2tPdXRzaWRlID0gKGV2ZW50KSA9PiB7XHJcbiAgICAgIGlmIChcclxuICAgICAgICBzaG93TW9yZU1lbnUgJiZcclxuICAgICAgICBtZW51UmVmLmN1cnJlbnQgJiZcclxuICAgICAgICAhbWVudVJlZi5jdXJyZW50LmNvbnRhaW5zKGV2ZW50LnRhcmdldCkgJiZcclxuICAgICAgICBidXR0b25SZWYuY3VycmVudCAmJlxyXG4gICAgICAgICFidXR0b25SZWYuY3VycmVudC5jb250YWlucyhldmVudC50YXJnZXQpXHJcbiAgICAgICkge1xyXG4gICAgICAgIHNldFNob3dNb3JlTWVudShmYWxzZSlcclxuICAgICAgfVxyXG4gICAgfVxyXG5cclxuICAgIGRvY3VtZW50LmFkZEV2ZW50TGlzdGVuZXIoJ21vdXNlZG93bicsIGhhbmRsZUNsaWNrT3V0c2lkZSwgdHJ1ZSlcclxuICAgIHJldHVybiAoKSA9PiB7XHJcbiAgICAgIGRvY3VtZW50LnJlbW92ZUV2ZW50TGlzdGVuZXIoJ21vdXNlZG93bicsIGhhbmRsZUNsaWNrT3V0c2lkZSwgdHJ1ZSlcclxuICAgIH1cclxuICB9LCBbc2hvd01vcmVNZW51XSlcclxuXHJcbiAgdXNlRWZmZWN0KCgpID0+IHtcclxuICAgIGlmICghc2hvd01vcmVNZW51KSByZXR1cm5cclxuICAgIGNvbnN0IGhhbmRsZUtleURvd24gPSAoZSkgPT4ge1xyXG4gICAgICBpZiAoZS5rZXkgPT09ICdFc2NhcGUnKSB7XHJcbiAgICAgICAgZS5wcmV2ZW50RGVmYXVsdCgpXHJcbiAgICAgICAgZS5zdG9wUHJvcGFnYXRpb24oKVxyXG4gICAgICAgIHNldFNob3dNb3JlTWVudShmYWxzZSlcclxuICAgICAgfVxyXG4gICAgfVxyXG4gICAgd2luZG93LmFkZEV2ZW50TGlzdGVuZXIoJ2tleWRvd24nLCBoYW5kbGVLZXlEb3duLCB7IGNhcHR1cmU6IHRydWUgfSlcclxuICAgIHJldHVybiAoKSA9PiB3aW5kb3cucmVtb3ZlRXZlbnRMaXN0ZW5lcigna2V5ZG93bicsIGhhbmRsZUtleURvd24sIHsgY2FwdHVyZTogdHJ1ZSB9KVxyXG4gIH0sIFtzaG93TW9yZU1lbnVdKVxyXG5cclxuICB1c2VFZmZlY3QoKCkgPT4ge1xyXG4gICAgaWYgKHNob3dNb3JlTWVudSAmJiBidXR0b25SZWYuY3VycmVudCkge1xyXG4gICAgICBjb25zdCBidXR0b25SZWN0ID0gYnV0dG9uUmVmLmN1cnJlbnQuZ2V0Qm91bmRpbmdDbGllbnRSZWN0KClcclxuICAgICAgc2V0TWVudVBvc2l0aW9uKHtcclxuICAgICAgICB0b3A6IGJ1dHRvblJlY3QuYm90dG9tICsgNixcclxuICAgICAgICByaWdodDogTWF0aC5tYXgoOCwgd2luZG93LmlubmVyV2lkdGggLSBidXR0b25SZWN0LnJpZ2h0KVxyXG4gICAgICB9KVxyXG4gICAgfVxyXG4gIH0sIFtzaG93TW9yZU1lbnVdKVxyXG5cclxuICB1c2VFZmZlY3QoKCkgPT4ge1xyXG4gICAgaWYgKCFzaG93TW9yZU1lbnUpIHJldHVyblxyXG4gICAgY29uc3QgaGFuZGxlUmVzaXplID0gKCkgPT4gc2V0U2hvd01vcmVNZW51KGZhbHNlKVxyXG4gICAgd2luZG93LmFkZEV2ZW50TGlzdGVuZXIoJ3Jlc2l6ZScsIGhhbmRsZVJlc2l6ZSlcclxuICAgIHJldHVybiAoKSA9PiB3aW5kb3cucmVtb3ZlRXZlbnRMaXN0ZW5lcigncmVzaXplJywgaGFuZGxlUmVzaXplKVxyXG4gIH0sIFtzaG93TW9yZU1lbnVdKVxyXG5cclxuICByZXR1cm4gKFxyXG4gICAgPGRpdiBjbGFzc05hbWU9XCJlZGl0b3ItdGl0bGViYXJcIiBzdHlsZT17eyBkaXNwbGF5OiAnaW5saW5lLWZsZXgnLCBhbGlnbkl0ZW1zOiAnY2VudGVyJywgcG9zaXRpb246ICdyZWxhdGl2ZScsIHRvcDogJ2F1dG8nLCByaWdodDogJ2F1dG8nLCB6SW5kZXg6IDIwIH19PlxyXG4gICAgICA8ZGl2IGNsYXNzTmFtZT1cImVkaXRvci1jb250cm9sc1wiIHN0eWxlPXt7IG1hcmdpbjogMCwgZ2FwOiAwIH19PlxyXG4gICAgICAgIDxkaXYgY2xhc3NOYW1lPVwibWVudS1jb250YWluZXJcIj5cclxuICAgICAgICAgIDxUb29sVGlwIHRleHQ9XCJNb3JlIE9wdGlvbnMgKEN0cmwrSSlcIiBwb3NpdGlvbj1cImJvdHRvbS1yaWdodFwiPlxyXG4gICAgICAgICAgICA8YnV0dG9uXHJcbiAgICAgICAgICAgICAgY2xhc3NOYW1lPXtgaWNvbi1idG4gbWVudS10cmlnZ2VyICR7c2hvd01vcmVNZW51ID8gJ2FjdGl2ZScgOiAnJ31gfVxyXG4gICAgICAgICAgICAgIHJlZj17YnV0dG9uUmVmfVxyXG4gICAgICAgICAgICAgIG9uQ2xpY2s9eyhlKSA9PiB7XHJcbiAgICAgICAgICAgICAgICBlLnN0b3BQcm9wYWdhdGlvbigpXHJcbiAgICAgICAgICAgICAgICBzZXRTaG93TW9yZU1lbnUoIXNob3dNb3JlTWVudSlcclxuICAgICAgICAgICAgICB9fVxyXG4gICAgICAgICAgICAgIHN0eWxlPXt7XHJcbiAgICAgICAgICAgICAgICB3aWR0aDogJzI0cHgnLFxyXG4gICAgICAgICAgICAgICAgaGVpZ2h0OiAnMjRweCcsXHJcbiAgICAgICAgICAgICAgICBkaXNwbGF5OiAnaW5saW5lLWZsZXgnLFxyXG4gICAgICAgICAgICAgICAgYWxpZ25JdGVtczogJ2NlbnRlcicsXHJcbiAgICAgICAgICAgICAgICBqdXN0aWZ5Q29udGVudDogJ2NlbnRlcicsXHJcbiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kOiBzaG93TW9yZU1lbnUgPyAncmdiYSgyNTUsIDI1NSwgMjU1LCAwLjA4KScgOiAndHJhbnNwYXJlbnQnLFxyXG4gICAgICAgICAgICAgICAgYm9yZGVyOiAnbm9uZScsXHJcbiAgICAgICAgICAgICAgICBib3JkZXJSYWRpdXM6ICc0cHgnLFxyXG4gICAgICAgICAgICAgICAgcGFkZGluZzogMCxcclxuICAgICAgICAgICAgICAgIGN1cnNvcjogJ3BvaW50ZXInLFxyXG4gICAgICAgICAgICAgICAgY29sb3I6IHNob3dNb3JlTWVudSA/ICd2YXIoLS10ZXh0LW1haW4sICNmOGZhZmMpJyA6ICd2YXIoLS10ZXh0LW11dGVkLCAjOTRhM2I4KScsXHJcbiAgICAgICAgICAgICAgICB0cmFuc2l0aW9uOiAnYWxsIDAuMTVzIGVhc2UnXHJcbiAgICAgICAgICAgICAgfX1cclxuICAgICAgICAgICAgICBvbk1vdXNlRW50ZXI9eyhlKSA9PiB7XHJcbiAgICAgICAgICAgICAgICBlLmN1cnJlbnRUYXJnZXQuc3R5bGUuY29sb3IgPSAndmFyKC0tdGV4dC1tYWluLCAjZjhmYWZjKSdcclxuICAgICAgICAgICAgICAgIGUuY3VycmVudFRhcmdldC5zdHlsZS5iYWNrZ3JvdW5kID0gJ3JnYmEoMjU1LCAyNTUsIDI1NSwgMC4wNiknXHJcbiAgICAgICAgICAgICAgfX1cclxuICAgICAgICAgICAgICBvbk1vdXNlTGVhdmU9eyhlKSA9PiB7XHJcbiAgICAgICAgICAgICAgICBpZiAoIXNob3dNb3JlTWVudSkge1xyXG4gICAgICAgICAgICAgICAgICBlLmN1cnJlbnRUYXJnZXQuc3R5bGUuY29sb3IgPSAndmFyKC0tdGV4dC1tdXRlZCwgIzk0YTNiOCknXHJcbiAgICAgICAgICAgICAgICAgIGUuY3VycmVudFRhcmdldC5zdHlsZS5iYWNrZ3JvdW5kID0gJ3RyYW5zcGFyZW50J1xyXG4gICAgICAgICAgICAgICAgfVxyXG4gICAgICAgICAgICAgIH19XHJcbiAgICAgICAgICAgID5cclxuICAgICAgICAgICAgICA8TW9yZVZlcnRpY2FsIHNpemU9ezE2fSAvPlxyXG4gICAgICAgICAgICA8L2J1dHRvbj5cclxuICAgICAgICAgIDwvVG9vbFRpcD5cclxuXHJcbiAgICAgICAgICB7c2hvd01vcmVNZW51ICYmXHJcbiAgICAgICAgICAgIGNyZWF0ZVBvcnRhbChcclxuICAgICAgICAgICAgICA8ZGl2XHJcbiAgICAgICAgICAgICAgICBjbGFzc05hbWU9XCJuYXRpdmUtZHJvcGRvd24tbWVudVwiXHJcbiAgICAgICAgICAgICAgICByZWY9e21lbnVSZWZ9XHJcbiAgICAgICAgICAgICAgICBvbkNsaWNrPXsoZSkgPT4gZS5zdG9wUHJvcGFnYXRpb24oKX1cclxuICAgICAgICAgICAgICAgIHN0eWxlPXt7XHJcbiAgICAgICAgICAgICAgICAgIHBvc2l0aW9uOiAnZml4ZWQnLFxyXG4gICAgICAgICAgICAgICAgICB0b3A6IGAke21lbnVQb3NpdGlvbi50b3B9cHhgLFxyXG4gICAgICAgICAgICAgICAgICByaWdodDogYCR7bWVudVBvc2l0aW9uLnJpZ2h0fXB4YFxyXG4gICAgICAgICAgICAgICAgfX1cclxuICAgICAgICAgICAgICA+XHJcbiAgICAgICAgICAgICAgICA8ZGl2XHJcbiAgICAgICAgICAgICAgICAgIGNsYXNzTmFtZT1cImRyb3Bkb3duLWl0ZW1cIlxyXG4gICAgICAgICAgICAgICAgICBvbkNsaWNrPXsoKSA9PiB7XHJcbiAgICAgICAgICAgICAgICAgICAgaWYgKG9uUHJldmlldykgb25QcmV2aWV3KClcclxuICAgICAgICAgICAgICAgICAgICBzZXRTaG93TW9yZU1lbnUoZmFsc2UpXHJcbiAgICAgICAgICAgICAgICAgIH19XHJcbiAgICAgICAgICAgICAgICA+XHJcbiAgICAgICAgICAgICAgICAgIDxzcGFuIGNsYXNzTmFtZT1cIm1lbnUtbGFiZWxcIj5QcmV2aWV3IE5vdGU8L3NwYW4+XHJcbiAgICAgICAgICAgICAgICAgIDxzcGFuIGNsYXNzTmFtZT1cInNob3J0Y3V0LWxhYmVsXCI+Q3RybCtcXDwvc3Bhbj5cclxuICAgICAgICAgICAgICAgICAgPEZpbGVUZXh0IHNpemU9ezEyfSBjbGFzc05hbWU9XCJtZW51LWljb24tcmlnaHRcIiAvPlxyXG4gICAgICAgICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cImRyb3Bkb3duLWRpdmlkZXJcIiAvPlxyXG4gICAgICAgICAgICAgICAgPGRpdlxyXG4gICAgICAgICAgICAgICAgICBjbGFzc05hbWU9XCJkcm9wZG93bi1pdGVtXCJcclxuICAgICAgICAgICAgICAgICAgb25DbGljaz17YXN5bmMgKCkgPT4ge1xyXG4gICAgICAgICAgICAgICAgICAgIHRyeSB7XHJcbiAgICAgICAgICAgICAgICAgICAgICBpZiAoc25pcHBldD8uY29kZSkge1xyXG4gICAgICAgICAgICAgICAgICAgICAgICBhd2FpdCBuYXZpZ2F0b3IuY2xpcGJvYXJkLndyaXRlVGV4dChzbmlwcGV0LmNvZGUpXHJcbiAgICAgICAgICAgICAgICAgICAgICAgIHNob3dUb2FzdCgnTWFya2Rvd24gY29waWVkIHRvIGNsaXBib2FyZCcsICdzdWNjZXNzJylcclxuICAgICAgICAgICAgICAgICAgICAgIH1cclxuICAgICAgICAgICAgICAgICAgICB9IGNhdGNoIChlcnJvcikge1xyXG4gICAgICAgICAgICAgICAgICAgICAgY29uc29sZS5lcnJvcignRmFpbGVkIHRvIGNvcHkgbWFya2Rvd246JywgZXJyb3IpXHJcbiAgICAgICAgICAgICAgICAgICAgICBzaG93VG9hc3QoJ0ZhaWxlZCB0byBjb3B5IG1hcmtkb3duJywgJ2Vycm9yJylcclxuICAgICAgICAgICAgICAgICAgICB9XHJcbiAgICAgICAgICAgICAgICAgICAgc2V0U2hvd01vcmVNZW51KGZhbHNlKVxyXG4gICAgICAgICAgICAgICAgICB9fVxyXG4gICAgICAgICAgICAgICAgPlxyXG4gICAgICAgICAgICAgICAgICA8c3BhbiBjbGFzc05hbWU9XCJtZW51LWxhYmVsXCI+Q29weSBhcyBQbGFpbiBUZXh0PC9zcGFuPlxyXG4gICAgICAgICAgICAgICAgICA8Q29weSBzaXplPXsxMn0gY2xhc3NOYW1lPVwibWVudS1pY29uLXJpZ2h0XCIgLz5cclxuICAgICAgICAgICAgICAgIDwvZGl2PlxyXG4gICAgICAgICAgICAgICAgPGRpdlxyXG4gICAgICAgICAgICAgICAgICBjbGFzc05hbWU9XCJkcm9wZG93bi1pdGVtXCJcclxuICAgICAgICAgICAgICAgICAgb25DbGljaz17YXN5bmMgKCkgPT4ge1xyXG4gICAgICAgICAgICAgICAgICAgIHRyeSB7XHJcbiAgICAgICAgICAgICAgICAgICAgICBpZiAob25FeHBvcnRIVE1MICYmIHR5cGVvZiBvbkV4cG9ydEhUTUwgPT09ICdmdW5jdGlvbicpIHtcclxuICAgICAgICAgICAgICAgICAgICAgICAgY29uc3QgcmVzdWx0ID0gYXdhaXQgb25FeHBvcnRIVE1MKClcclxuICAgICAgICAgICAgICAgICAgICAgICAgaWYgKHJlc3VsdD8uc3VjY2Vzcykge1xyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIHNob3dUb2FzdCgnSFRNTCBmaWxlIGV4cG9ydGVkIHN1Y2Nlc3NmdWxseScsICdzdWNjZXNzJylcclxuICAgICAgICAgICAgICAgICAgICAgICAgfVxyXG4gICAgICAgICAgICAgICAgICAgICAgfVxyXG4gICAgICAgICAgICAgICAgICAgIH0gY2F0Y2ggKGVycm9yKSB7XHJcbiAgICAgICAgICAgICAgICAgICAgICBjb25zb2xlLmVycm9yKCdGYWlsZWQgdG8gZXhwb3J0IEhUTUw6JywgZXJyb3IpXHJcbiAgICAgICAgICAgICAgICAgICAgICBzaG93VG9hc3QoJ0ZhaWxlZCB0byBleHBvcnQgSFRNTCcsICdlcnJvcicpXHJcbiAgICAgICAgICAgICAgICAgICAgfVxyXG4gICAgICAgICAgICAgICAgICAgIHNldFNob3dNb3JlTWVudShmYWxzZSlcclxuICAgICAgICAgICAgICAgICAgfX1cclxuICAgICAgICAgICAgICAgID5cclxuICAgICAgICAgICAgICAgICAgPHNwYW4gY2xhc3NOYW1lPVwibWVudS1sYWJlbFwiPkV4cG9ydCB0byBIVE1MICguaHRtbCk8L3NwYW4+XHJcbiAgICAgICAgICAgICAgICAgIDxGaWxlQ29kZSBzaXplPXsxMn0gY2xhc3NOYW1lPVwibWVudS1pY29uLXJpZ2h0XCIgLz5cclxuICAgICAgICAgICAgICAgIDwvZGl2PlxyXG4gICAgICAgICAgICAgICAgPGRpdlxyXG4gICAgICAgICAgICAgICAgICBjbGFzc05hbWU9XCJkcm9wZG93bi1pdGVtXCJcclxuICAgICAgICAgICAgICAgICAgb25DbGljaz17YXN5bmMgKCkgPT4ge1xyXG4gICAgICAgICAgICAgICAgICAgIHRyeSB7XHJcbiAgICAgICAgICAgICAgICAgICAgICBpZiAob25FeHBvcnRQREYgJiYgdHlwZW9mIG9uRXhwb3J0UERGID09PSAnZnVuY3Rpb24nKSB7XHJcbiAgICAgICAgICAgICAgICAgICAgICAgIGNvbnN0IHJlc3VsdCA9IGF3YWl0IG9uRXhwb3J0UERGKClcclxuICAgICAgICAgICAgICAgICAgICAgICAgaWYgKHJlc3VsdD8uc3VjY2Vzcykge1xyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIHNob3dUb2FzdCgnUERGIGV4cG9ydGVkIHN1Y2Nlc3NmdWxseScsICdzdWNjZXNzJylcclxuICAgICAgICAgICAgICAgICAgICAgICAgfSBlbHNlIGlmICghcmVzdWx0Py5jYW5jZWxlZCkge1xyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIHNob3dUb2FzdCgnRmFpbGVkIHRvIGV4cG9ydCBQREYnLCAnZXJyb3InKVxyXG4gICAgICAgICAgICAgICAgICAgICAgICB9XHJcbiAgICAgICAgICAgICAgICAgICAgICB9XHJcbiAgICAgICAgICAgICAgICAgICAgfSBjYXRjaCAoZXJyb3IpIHtcclxuICAgICAgICAgICAgICAgICAgICAgIGNvbnNvbGUuZXJyb3IoJ0ZhaWxlZCB0byBleHBvcnQgUERGOicsIGVycm9yKVxyXG4gICAgICAgICAgICAgICAgICAgICAgc2hvd1RvYXN0KCdGYWlsZWQgdG8gZXhwb3J0IFBERicsICdlcnJvcicpXHJcbiAgICAgICAgICAgICAgICAgICAgfVxyXG4gICAgICAgICAgICAgICAgICAgIHNldFNob3dNb3JlTWVudShmYWxzZSlcclxuICAgICAgICAgICAgICAgICAgfX1cclxuICAgICAgICAgICAgICAgID5cclxuICAgICAgICAgICAgICAgICAgPHNwYW4gY2xhc3NOYW1lPVwibWVudS1sYWJlbFwiPkV4cG9ydCB0byBQREY8L3NwYW4+XHJcbiAgICAgICAgICAgICAgICAgIDxQcmludGVyIHNpemU9ezEyfSBjbGFzc05hbWU9XCJtZW51LWljb24tcmlnaHRcIiAvPlxyXG4gICAgICAgICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgICAgICAgICA8ZGl2XHJcbiAgICAgICAgICAgICAgICAgIGNsYXNzTmFtZT1cImRyb3Bkb3duLWl0ZW1cIlxyXG4gICAgICAgICAgICAgICAgICBvbkNsaWNrPXthc3luYyAoKSA9PiB7XHJcbiAgICAgICAgICAgICAgICAgICAgdHJ5IHtcclxuICAgICAgICAgICAgICAgICAgICAgIGlmIChvbkV4cG9ydE1hcmtkb3duICYmIHR5cGVvZiBvbkV4cG9ydE1hcmtkb3duID09PSAnZnVuY3Rpb24nKSB7XHJcbiAgICAgICAgICAgICAgICAgICAgICAgIGNvbnN0IHJlc3VsdCA9IGF3YWl0IG9uRXhwb3J0TWFya2Rvd24oKVxyXG4gICAgICAgICAgICAgICAgICAgICAgICBpZiAocmVzdWx0Py5zdWNjZXNzKSB7XHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgc2hvd1RvYXN0KCdNYXJrZG93biBmaWxlIGV4cG9ydGVkIHN1Y2Nlc3NmdWxseScsICdzdWNjZXNzJylcclxuICAgICAgICAgICAgICAgICAgICAgICAgfSBlbHNlIGlmICghcmVzdWx0Py5jYW5jZWxlZCkge1xyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIHNob3dUb2FzdCgnRmFpbGVkIHRvIGV4cG9ydCBtYXJrZG93biBmaWxlJywgJ2Vycm9yJylcclxuICAgICAgICAgICAgICAgICAgICAgICAgfVxyXG4gICAgICAgICAgICAgICAgICAgICAgfVxyXG4gICAgICAgICAgICAgICAgICAgIH0gY2F0Y2ggKGVycm9yKSB7XHJcbiAgICAgICAgICAgICAgICAgICAgICBjb25zb2xlLmVycm9yKCdGYWlsZWQgdG8gZXhwb3J0IG1hcmtkb3duIGZpbGU6JywgZXJyb3IpXHJcbiAgICAgICAgICAgICAgICAgICAgICBzaG93VG9hc3QoJ0ZhaWxlZCB0byBleHBvcnQgbWFya2Rvd24gZmlsZScsICdlcnJvcicpXHJcbiAgICAgICAgICAgICAgICAgICAgfVxyXG4gICAgICAgICAgICAgICAgICAgIHNldFNob3dNb3JlTWVudShmYWxzZSlcclxuICAgICAgICAgICAgICAgICAgfX1cclxuICAgICAgICAgICAgICAgID5cclxuICAgICAgICAgICAgICAgICAgPHNwYW4gY2xhc3NOYW1lPVwibWVudS1sYWJlbFwiPlNhdmUgYXMgTWFya2Rvd24gKC5tZCk8L3NwYW4+XHJcbiAgICAgICAgICAgICAgICAgIDxGaWxlVGV4dCBzaXplPXsxMn0gY2xhc3NOYW1lPVwibWVudS1pY29uLXJpZ2h0XCIgLz5cclxuICAgICAgICAgICAgICAgIDwvZGl2PlxyXG4gICAgICAgICAgICAgICAgPGRpdlxyXG4gICAgICAgICAgICAgICAgICBjbGFzc05hbWU9XCJkcm9wZG93bi1pdGVtXCJcclxuICAgICAgICAgICAgICAgICAgb25DbGljaz17YXN5bmMgKCkgPT4ge1xyXG4gICAgICAgICAgICAgICAgICAgIHRyeSB7XHJcbiAgICAgICAgICAgICAgICAgICAgICBpZiAob25FeHBvcnRNYXJrZG93bkJ1bmRsZSAmJiB0eXBlb2Ygb25FeHBvcnRNYXJrZG93bkJ1bmRsZSA9PT0gJ2Z1bmN0aW9uJykge1xyXG4gICAgICAgICAgICAgICAgICAgICAgICBjb25zdCByZXN1bHQgPSBhd2FpdCBvbkV4cG9ydE1hcmtkb3duQnVuZGxlKClcclxuICAgICAgICAgICAgICAgICAgICAgICAgaWYgKHJlc3VsdD8uc3VjY2Vzcykge1xyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIHNob3dUb2FzdCgnTWFya2Rvd24gYnVuZGxlIGV4cG9ydGVkIHN1Y2Nlc3NmdWxseScsICdzdWNjZXNzJylcclxuICAgICAgICAgICAgICAgICAgICAgICAgfVxyXG4gICAgICAgICAgICAgICAgICAgICAgfVxyXG4gICAgICAgICAgICAgICAgICAgIH0gY2F0Y2ggKGVycm9yKSB7XHJcbiAgICAgICAgICAgICAgICAgICAgICBjb25zb2xlLmVycm9yKCdGYWlsZWQgdG8gZXhwb3J0IG1hcmtkb3duIGJ1bmRsZTonLCBlcnJvcilcclxuICAgICAgICAgICAgICAgICAgICAgIHNob3dUb2FzdCgnRmFpbGVkIHRvIGV4cG9ydCBtYXJrZG93biBidW5kbGUnLCAnZXJyb3InKVxyXG4gICAgICAgICAgICAgICAgICAgIH1cclxuICAgICAgICAgICAgICAgICAgICBzZXRTaG93TW9yZU1lbnUoZmFsc2UpXHJcbiAgICAgICAgICAgICAgICAgIH19XHJcbiAgICAgICAgICAgICAgICA+XHJcbiAgICAgICAgICAgICAgICAgIDxzcGFuIGNsYXNzTmFtZT1cIm1lbnUtbGFiZWxcIj5FeHBvcnQgTWFya2Rvd24gQnVuZGxlPC9zcGFuPlxyXG4gICAgICAgICAgICAgICAgICA8RmlsZUpzb24gc2l6ZT17MTJ9IGNsYXNzTmFtZT1cIm1lbnUtaWNvbi1yaWdodFwiIC8+XHJcbiAgICAgICAgICAgICAgICA8L2Rpdj5cclxuICAgICAgICAgICAgICAgIDxkaXZcclxuICAgICAgICAgICAgICAgICAgY2xhc3NOYW1lPVwiZHJvcGRvd24taXRlbVwiXHJcbiAgICAgICAgICAgICAgICAgIG9uQ2xpY2s9e2FzeW5jICgpID0+IHtcclxuICAgICAgICAgICAgICAgICAgICB0cnkge1xyXG4gICAgICAgICAgICAgICAgICAgICAgaWYgKG9uRXhwb3J0VGV4dCAmJiB0eXBlb2Ygb25FeHBvcnRUZXh0ID09PSAnZnVuY3Rpb24nKSB7XHJcbiAgICAgICAgICAgICAgICAgICAgICAgIGNvbnN0IHJlc3VsdCA9IGF3YWl0IG9uRXhwb3J0VGV4dCgpXHJcbiAgICAgICAgICAgICAgICAgICAgICAgIGlmIChyZXN1bHQ/LnN1Y2Nlc3MpIHtcclxuICAgICAgICAgICAgICAgICAgICAgICAgICBzaG93VG9hc3QoJ1RleHQgZmlsZSBleHBvcnRlZCBzdWNjZXNzZnVsbHknLCAnc3VjY2VzcycpXHJcbiAgICAgICAgICAgICAgICAgICAgICAgIH0gZWxzZSBpZiAoIXJlc3VsdD8uY2FuY2VsZWQpIHtcclxuICAgICAgICAgICAgICAgICAgICAgICAgICBzaG93VG9hc3QoJ0ZhaWxlZCB0byBleHBvcnQgdGV4dCBmaWxlJywgJ2Vycm9yJylcclxuICAgICAgICAgICAgICAgICAgICAgICAgfVxyXG4gICAgICAgICAgICAgICAgICAgICAgfVxyXG4gICAgICAgICAgICAgICAgICAgIH0gY2F0Y2ggKGVycm9yKSB7XHJcbiAgICAgICAgICAgICAgICAgICAgICBjb25zb2xlLmVycm9yKCdGYWlsZWQgdG8gZXhwb3J0IHRleHQgZmlsZTonLCBlcnJvcilcclxuICAgICAgICAgICAgICAgICAgICAgIHNob3dUb2FzdCgnRmFpbGVkIHRvIGV4cG9ydCB0ZXh0IGZpbGUnLCAnZXJyb3InKVxyXG4gICAgICAgICAgICAgICAgICAgIH1cclxuICAgICAgICAgICAgICAgICAgICBzZXRTaG93TW9yZU1lbnUoZmFsc2UpXHJcbiAgICAgICAgICAgICAgICAgIH19XHJcbiAgICAgICAgICAgICAgICA+XHJcbiAgICAgICAgICAgICAgICAgIDxzcGFuIGNsYXNzTmFtZT1cIm1lbnUtbGFiZWxcIj5TYXZlIGFzIFRleHQgKC50eHQpPC9zcGFuPlxyXG4gICAgICAgICAgICAgICAgICA8RmlsZVR5cGUgc2l6ZT17MTJ9IGNsYXNzTmFtZT1cIm1lbnUtaWNvbi1yaWdodFwiIC8+XHJcbiAgICAgICAgICAgICAgICA8L2Rpdj5cclxuICAgICAgICAgICAgICAgIDxkaXZcclxuICAgICAgICAgICAgICAgICAgY2xhc3NOYW1lPVwiZHJvcGRvd24taXRlbVwiXHJcbiAgICAgICAgICAgICAgICAgIG9uQ2xpY2s9e2FzeW5jICgpID0+IHtcclxuICAgICAgICAgICAgICAgICAgICB0cnkge1xyXG4gICAgICAgICAgICAgICAgICAgICAgaWYgKG9uRXhwb3J0RG9jcyAmJiB0eXBlb2Ygb25FeHBvcnREb2NzID09PSAnZnVuY3Rpb24nKSB7XHJcbiAgICAgICAgICAgICAgICAgICAgICAgIGNvbnN0IHJlc3VsdCA9IGF3YWl0IG9uRXhwb3J0RG9jcygpXHJcbiAgICAgICAgICAgICAgICAgICAgICAgIGlmIChyZXN1bHQ/LnN1Y2Nlc3MpIHtcclxuICAgICAgICAgICAgICAgICAgICAgICAgICBzaG93VG9hc3QoJ0hUTUwgRG9jIGV4cG9ydGVkIHN1Y2Nlc3NmdWxseScsICdzdWNjZXNzJylcclxuICAgICAgICAgICAgICAgICAgICAgICAgfSBlbHNlIGlmICghcmVzdWx0Py5jYW5jZWxlZCkge1xyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIHNob3dUb2FzdCgnRmFpbGVkIHRvIGV4cG9ydCBEb2NzJywgJ2Vycm9yJylcclxuICAgICAgICAgICAgICAgICAgICAgICAgfVxyXG4gICAgICAgICAgICAgICAgICAgICAgfVxyXG4gICAgICAgICAgICAgICAgICAgIH0gY2F0Y2ggKGVycm9yKSB7XHJcbiAgICAgICAgICAgICAgICAgICAgICBjb25zb2xlLmVycm9yKCdGYWlsZWQgdG8gZXhwb3J0IERvY3M6JywgZXJyb3IpXHJcbiAgICAgICAgICAgICAgICAgICAgICBzaG93VG9hc3QoJ0ZhaWxlZCB0byBleHBvcnQgRG9jcycsICdlcnJvcicpXHJcbiAgICAgICAgICAgICAgICAgICAgfVxyXG4gICAgICAgICAgICAgICAgICAgIHNldFNob3dNb3JlTWVudShmYWxzZSlcclxuICAgICAgICAgICAgICAgICAgfX1cclxuICAgICAgICAgICAgICAgID5cclxuICAgICAgICAgICAgICAgICAgPHNwYW4gY2xhc3NOYW1lPVwibWVudS1sYWJlbFwiPlNhdmUgYXMgV29yZCBEb2N1bWVudDwvc3Bhbj5cclxuICAgICAgICAgICAgICAgICAgPEZpbGVDb2RlIHNpemU9ezEyfSBjbGFzc05hbWU9XCJtZW51LWljb24tcmlnaHRcIiAvPlxyXG4gICAgICAgICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgICAgICAgPC9kaXY+LFxyXG4gICAgICAgICAgICAgIGRvY3VtZW50LmJvZHlcclxuICAgICAgICAgICAgKX1cclxuICAgICAgICA8L2Rpdj5cclxuICAgICAgPC9kaXY+XHJcbiAgICAgIDxUb2FzdE5vdGlmaWNhdGlvbiB0b2FzdD17dG9hc3R9IG9uQ2xvc2U9e2NsZWFyVG9hc3R9IC8+XHJcbiAgICA8L2Rpdj5cclxuICApXHJcbn1cclxuXHJcbmV4cG9ydCBkZWZhdWx0IEVkaXRvck1lbnVcclxuIl0sImZpbGUiOiJCOi9lbGVjdHJvbi9sdW1pbmEvc3JjL3JlbmRlcmVyL3NyYy9mZWF0dXJlcy9FZGl0b3IvbWVudS9FZGl0b3JNZW51LmpzeCJ9

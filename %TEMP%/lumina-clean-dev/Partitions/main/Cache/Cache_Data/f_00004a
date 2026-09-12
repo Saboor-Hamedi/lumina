@@ -1,0 +1,1114 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/features/Settings/SettingMemory.jsx");import __vite__cjsImport0_react_jsxDevRuntime from "/@fs/B:/electron/lumina/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=f41806ed"; const Fragment = __vite__cjsImport0_react_jsxDevRuntime["Fragment"]; const jsxDEV = __vite__cjsImport0_react_jsxDevRuntime["jsxDEV"];
+var _s = $RefreshSig$();
+import __vite__cjsImport1_react from "/@fs/B:/electron/lumina/node_modules/.vite/deps/react.js?v=f41806ed"; const React = __vite__cjsImport1_react.__esModule ? __vite__cjsImport1_react.default : __vite__cjsImport1_react; const useState = __vite__cjsImport1_react["useState"]; const useEffect = __vite__cjsImport1_react["useEffect"]; const useRef = __vite__cjsImport1_react["useRef"];
+import { User, Heart, Brain, Trash2, Plus, Sparkles, RefreshCw, Check, Edit2, X } from "/@fs/B:/electron/lumina/node_modules/.vite/deps/lucide-react.js?v=f41806ed";
+import { luminaMemory } from "/src/core/ai/memory/index.js";
+import { useToast } from "/src/core/hooks/useToast.js";
+export const SettingMemory = () => {
+  _s();
+  const [memory, setMemory] = useState({
+    user: { name: "", role: "", bio: "" },
+    preferences: [],
+    facts: []
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [newPref, setNewPref] = useState("");
+  const [newFact, setNewFact] = useState("");
+  const [saveStatus, setSaveStatus] = useState(null);
+  const [editingPrefIndex, setEditingPrefIndex] = useState(null);
+  const [editingPrefValue, setEditingPrefValue] = useState("");
+  const [editingFactIndex, setEditingFactIndex] = useState(null);
+  const [editingFactValue, setEditingFactValue] = useState("");
+  const saveTimeoutRef = useRef(null);
+  const isInitialLoad = useRef(true);
+  const { showToast } = useToast();
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const data = await luminaMemory.loadMemory();
+      setMemory({
+        user: {
+          name: data?.user?.name || "",
+          role: data?.user?.role || "",
+          bio: data?.user?.bio || ""
+        },
+        preferences: Array.isArray(data?.preferences) ? data.preferences : [],
+        facts: Array.isArray(data?.facts) ? data.facts : []
+      });
+    } catch (err) {
+      console.error("[SettingMemory] Load failed:", err);
+    } finally {
+      setIsLoading(false);
+      setTimeout(() => {
+        isInitialLoad.current = false;
+      }, 100);
+    }
+  };
+  useEffect(() => {
+    loadData();
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, []);
+  const persistUserProfile = async (userObj) => {
+    try {
+      setSaveStatus("saving");
+      const cleanName = (userObj.name || "").trim();
+      const cleanRole = (userObj.role || "").trim();
+      const cleanBio = (userObj.bio || "").trim();
+      const mem = await luminaMemory.getMemory();
+      mem.user = {
+        name: cleanName || null,
+        role: cleanRole || null,
+        bio: cleanBio || null
+      };
+      await luminaMemory.persist();
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus(null), 1800);
+    } catch (err) {
+      setSaveStatus("error");
+      showToast("Failed to auto-save profile");
+    }
+  };
+  const handleUserChange = (field, value) => {
+    const updatedUser = { ...memory.user, [field]: value };
+    setMemory((prev) => ({
+      ...prev,
+      user: updatedUser
+    }));
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+      persistUserProfile(updatedUser);
+    }, 400);
+  };
+  const handleAddPreference = async (e) => {
+    e.preventDefault();
+    const clean = (newPref || "").trim();
+    if (!clean) {
+      showToast("Preference cannot be empty");
+      return;
+    }
+    if (memory.preferences.some((p) => p.toLowerCase() === clean.toLowerCase())) {
+      showToast("Preference already exists");
+      return;
+    }
+    await luminaMemory.saveFact({ fact: clean, category: "preferences" });
+    setNewPref("");
+    await loadData();
+    showToast("Preference saved");
+  };
+  const handleRemovePreference = async (prefText) => {
+    if (!prefText) return;
+    await luminaMemory.forgetFact({ target: prefText, category: "preferences" });
+    await loadData();
+    showToast("Preference removed");
+  };
+  const handleAddFact = async (e) => {
+    e.preventDefault();
+    const clean = (newFact || "").trim();
+    if (!clean) {
+      showToast("Fact cannot be empty");
+      return;
+    }
+    const exists = memory.facts.some((f) => {
+      const t = typeof f === "string" ? f : f?.text || "";
+      return t.toLowerCase() === clean.toLowerCase();
+    });
+    if (exists) {
+      showToast("Fact already exists");
+      return;
+    }
+    await luminaMemory.saveFact({ fact: clean, category: "facts" });
+    setNewFact("");
+    await loadData();
+    showToast("Learned fact saved");
+  };
+  const handleRemoveFact = async (factItem) => {
+    const text = typeof factItem === "string" ? factItem : factItem?.text;
+    if (!text) return;
+    await luminaMemory.forgetFact({ target: text, category: "facts" });
+    await loadData();
+    showToast("Memory item removed");
+  };
+  const handleCancelEditPref = () => {
+    setEditingPrefIndex(null);
+    setEditingPrefValue("");
+  };
+  const handleSaveEditPref = async (idx, oldVal) => {
+    const clean = (editingPrefValue || "").trim();
+    if (!clean) {
+      showToast("Preference cannot be empty");
+      return;
+    }
+    if (clean.toLowerCase() !== oldVal.toLowerCase() && memory.preferences.some((p) => p.toLowerCase() === clean.toLowerCase())) {
+      showToast("Preference already exists");
+      return;
+    }
+    await luminaMemory.updateFact({ oldFact: oldVal, newFact: clean, category: "preferences" });
+    setEditingPrefIndex(null);
+    setEditingPrefValue("");
+    await loadData();
+    showToast("Preference updated");
+  };
+  const handleStartEditFact = (idx, currentVal) => {
+    setEditingFactIndex(idx);
+    setEditingFactValue(currentVal);
+  };
+  const handleCancelEditFact = () => {
+    setEditingFactIndex(null);
+    setEditingFactValue("");
+  };
+  const handleSaveEditFact = async (idx, oldVal) => {
+    const clean = (editingFactValue || "").trim();
+    if (!clean) {
+      showToast("Fact cannot be empty");
+      return;
+    }
+    const exists = memory.facts.some((f, fIdx) => {
+      if (fIdx === idx) return false;
+      const t = typeof f === "string" ? f : f?.text || "";
+      return t.toLowerCase() === clean.toLowerCase();
+    });
+    if (exists) {
+      showToast("Fact already exists");
+      return;
+    }
+    await luminaMemory.updateFact({ oldFact: oldVal, newFact: clean, category: "facts" });
+    setEditingFactIndex(null);
+    setEditingFactValue("");
+    await loadData();
+    showToast("Fact updated");
+  };
+  const handleClearAll = async () => {
+    if (window.confirm("Are you sure you want to clear all learned memory? This will reset memory.json.")) {
+      await luminaMemory.clearAllMemory();
+      await loadData();
+      showToast("Memory reset");
+    }
+  };
+  return /* @__PURE__ */ jsxDEV("div", { className: "settings-pane", children: [
+    /* @__PURE__ */ jsxDEV("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }, children: [
+      /* @__PURE__ */ jsxDEV("div", { children: [
+        /* @__PURE__ */ jsxDEV("h2", { style: { fontSize: "18px", fontWeight: "600", color: "var(--text-main, #f8fafc)", margin: 0 }, children: "AI Memory Profile" }, void 0, false, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+          lineNumber: 214,
+          columnNumber: 11
+        }, this),
+        /* @__PURE__ */ jsxDEV("p", { style: { fontSize: "12px", color: "var(--text-muted, #94a3b8)", marginTop: "4px", marginBottom: 0 }, children: [
+          "Manage persistent knowledge, preferences, and details Lumina remembers about you in ",
+          /* @__PURE__ */ jsxDEV("code", { children: "memory.json" }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+            lineNumber: 218,
+            columnNumber: 97
+          }, this),
+          "."
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+          lineNumber: 217,
+          columnNumber: 11
+        }, this)
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+        lineNumber: 213,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("div", { style: { display: "flex", gap: "8px" }, children: [
+        /* @__PURE__ */ jsxDEV(
+          "button",
+          {
+            onClick: loadData,
+            title: "Refresh memory",
+            className: "btn btn-secondary",
+            style: { display: "inline-flex", alignItems: "center", gap: "6px", height: "28px", padding: "0 10px", fontSize: "11px" },
+            children: [
+              /* @__PURE__ */ jsxDEV(RefreshCw, { size: 12, className: isLoading ? "pulse-opacity" : "" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                lineNumber: 228,
+                columnNumber: 13
+              }, this),
+              /* @__PURE__ */ jsxDEV("span", { children: "Refresh" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                lineNumber: 229,
+                columnNumber: 13
+              }, this)
+            ]
+          },
+          void 0,
+          true,
+          {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+            lineNumber: 222,
+            columnNumber: 11
+          },
+          this
+        ),
+        /* @__PURE__ */ jsxDEV(
+          "button",
+          {
+            onClick: handleClearAll,
+            title: "Reset memory.json",
+            className: "btn btn-secondary",
+            style: { display: "inline-flex", alignItems: "center", gap: "6px", height: "28px", padding: "0 10px", fontSize: "11px", color: "#ef4444" },
+            children: [
+              /* @__PURE__ */ jsxDEV(Trash2, { size: 12 }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                lineNumber: 237,
+                columnNumber: 13
+              }, this),
+              /* @__PURE__ */ jsxDEV("span", { children: "Reset All" }, void 0, false, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                lineNumber: 238,
+                columnNumber: 13
+              }, this)
+            ]
+          },
+          void 0,
+          true,
+          {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+            lineNumber: 231,
+            columnNumber: 11
+          },
+          this
+        )
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+        lineNumber: 221,
+        columnNumber: 9
+      }, this)
+    ] }, void 0, true, {
+      fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+      lineNumber: 212,
+      columnNumber: 7
+    }, this),
+    /* @__PURE__ */ jsxDEV("section", { style: { marginBottom: "28px" }, children: [
+      /* @__PURE__ */ jsxDEV("div", { style: { display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }, children: [
+        /* @__PURE__ */ jsxDEV(User, { size: 14, style: { color: "var(--text-accent, #a78bfa)" } }, void 0, false, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+          lineNumber: 246,
+          columnNumber: 11
+        }, this),
+        /* @__PURE__ */ jsxDEV("h3", { style: { margin: 0, fontSize: "13px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.6px" }, children: "User Identity" }, void 0, false, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+          lineNumber: 247,
+          columnNumber: 11
+        }, this)
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+        lineNumber: 245,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("div", { className: "settings-block", style: { padding: "18px", background: "var(--bg-primary, rgba(255, 255, 255, 0.02))", borderRadius: "6px" }, children: /* @__PURE__ */ jsxDEV("div", { style: { display: "flex", flexDirection: "column", gap: "16px" }, children: [
+        /* @__PURE__ */ jsxDEV("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }, children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "row-info", style: { flex: 1, minWidth: "180px" }, children: [
+            /* @__PURE__ */ jsxDEV("div", { className: "row-label", children: "Your Name" }, void 0, false, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+              lineNumber: 257,
+              columnNumber: 17
+            }, this),
+            /* @__PURE__ */ jsxDEV("div", { className: "row-hint", children: "How Lumina addresses you in conversation." }, void 0, false, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+              lineNumber: 258,
+              columnNumber: 17
+            }, this)
+          ] }, void 0, true, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+            lineNumber: 256,
+            columnNumber: 15
+          }, this),
+          /* @__PURE__ */ jsxDEV(
+            "input",
+            {
+              type: "text",
+              className: "settings-select",
+              style: { width: "260px", textAlign: "left", padding: "7px 12px", fontSize: "12px" },
+              placeholder: "e.g. Saboor",
+              value: memory.user.name,
+              onChange: (e) => handleUserChange("name", e.target.value)
+            },
+            void 0,
+            false,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+              lineNumber: 260,
+              columnNumber: 15
+            },
+            this
+          )
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+          lineNumber: 255,
+          columnNumber: 13
+        }, this),
+        /* @__PURE__ */ jsxDEV("div", { style: { display: "flex", flexDirection: "column", gap: "6px", paddingTop: "10px", borderTop: "1px solid rgba(255, 255, 255, 0.04)" }, children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "row-info", children: [
+            /* @__PURE__ */ jsxDEV("div", { className: "row-label", children: "Role / Occupation" }, void 0, false, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+              lineNumber: 273,
+              columnNumber: 17
+            }, this),
+            /* @__PURE__ */ jsxDEV("div", { className: "row-hint", children: "Helps tailor explanations, complexity, and recommendations to your profession or academic field." }, void 0, false, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+              lineNumber: 274,
+              columnNumber: 17
+            }, this)
+          ] }, void 0, true, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+            lineNumber: 272,
+            columnNumber: 15
+          }, this),
+          /* @__PURE__ */ jsxDEV(
+            "textarea",
+            {
+              className: "settings-select",
+              rows: 2,
+              style: {
+                width: "100%",
+                textAlign: "left",
+                padding: "8px 12px",
+                fontSize: "12px",
+                lineHeight: "1.5",
+                resize: "none",
+                fontFamily: "inherit",
+                borderRadius: "5px"
+              },
+              placeholder: "e.g. Software Engineer building AI tools, Master in Management student",
+              value: memory.user.role,
+              onChange: (e) => handleUserChange("role", e.target.value)
+            },
+            void 0,
+            false,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+              lineNumber: 276,
+              columnNumber: 15
+            },
+            this
+          )
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+          lineNumber: 271,
+          columnNumber: 13
+        }, this),
+        /* @__PURE__ */ jsxDEV("div", { style: { display: "flex", flexDirection: "column", gap: "6px", paddingTop: "10px", borderTop: "1px solid rgba(255, 255, 255, 0.04)" }, children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "row-info", children: [
+            /* @__PURE__ */ jsxDEV("div", { className: "row-label", children: "Bio / Context" }, void 0, false, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+              lineNumber: 298,
+              columnNumber: 17
+            }, this),
+            /* @__PURE__ */ jsxDEV("div", { className: "row-hint", children: "Broad interests, current focus, research goals, or personal context Lumina should keep in mind." }, void 0, false, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+              lineNumber: 299,
+              columnNumber: 17
+            }, this)
+          ] }, void 0, true, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+            lineNumber: 297,
+            columnNumber: 15
+          }, this),
+          /* @__PURE__ */ jsxDEV(
+            "textarea",
+            {
+              className: "settings-select",
+              rows: 2,
+              style: {
+                width: "100%",
+                textAlign: "left",
+                padding: "8px 12px",
+                fontSize: "12px",
+                lineHeight: "1.5",
+                resize: "none",
+                fontFamily: "inherit",
+                borderRadius: "5px"
+              },
+              placeholder: "e.g. Working on a Master's thesis on character education in Indonesia, building offline RAG pipelines with JavaScript and SQLite.",
+              value: memory.user.bio,
+              onChange: (e) => handleUserChange("bio", e.target.value)
+            },
+            void 0,
+            false,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+              lineNumber: 301,
+              columnNumber: 15
+            },
+            this
+          )
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+          lineNumber: 296,
+          columnNumber: 13
+        }, this),
+        /* @__PURE__ */ jsxDEV("div", { style: { display: "flex", alignItems: "center", justifyContent: "flex-end", height: "18px", fontSize: "11px", color: "var(--text-muted, #94a3b8)" }, children: [
+          saveStatus === "saving" && /* @__PURE__ */ jsxDEV("span", { style: { display: "inline-flex", alignItems: "center", gap: "4px", opacity: 0.8 }, children: "Saving..." }, void 0, false, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+            lineNumber: 323,
+            columnNumber: 15
+          }, this),
+          saveStatus === "saved" && /* @__PURE__ */ jsxDEV("span", { style: { display: "inline-flex", alignItems: "center", gap: "4px", color: "#22c55e" }, children: [
+            /* @__PURE__ */ jsxDEV(Check, { size: 12 }, void 0, false, {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+              lineNumber: 329,
+              columnNumber: 19
+            }, this),
+            "Saved automatically"
+          ] }, void 0, true, {
+            fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+            lineNumber: 328,
+            columnNumber: 15
+          }, this)
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+          lineNumber: 321,
+          columnNumber: 13
+        }, this)
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+        lineNumber: 253,
+        columnNumber: 11
+      }, this) }, void 0, false, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+        lineNumber: 252,
+        columnNumber: 9
+      }, this)
+    ] }, void 0, true, {
+      fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+      lineNumber: 244,
+      columnNumber: 7
+    }, this),
+    /* @__PURE__ */ jsxDEV("section", { style: { marginBottom: "28px" }, children: [
+      /* @__PURE__ */ jsxDEV("div", { style: { display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }, children: [
+        /* @__PURE__ */ jsxDEV(Heart, { size: 14, style: { color: "#ec4899" } }, void 0, false, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+          lineNumber: 341,
+          columnNumber: 11
+        }, this),
+        /* @__PURE__ */ jsxDEV("h3", { style: { margin: 0, fontSize: "13px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.6px" }, children: [
+          "User Preferences (",
+          memory.preferences.length,
+          ")"
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+          lineNumber: 342,
+          columnNumber: 11
+        }, this)
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+        lineNumber: 340,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("p", { style: { fontSize: "11px", color: "var(--text-muted, #94a3b8)", marginTop: "0", marginBottom: "12px", lineHeight: "1.4" }, children: 'Your preferred styles or instructions for AI answers (e.g. "always explain simply", "favor TypeScript over JavaScript", "use Indonesian for explanations").' }, void 0, false, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+        lineNumber: 346,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("div", { className: "settings-block", style: { padding: "16px", background: "var(--bg-primary, rgba(255, 255, 255, 0.02))", borderRadius: "6px" }, children: [
+        /* @__PURE__ */ jsxDEV("form", { onSubmit: handleAddPreference, style: { display: "flex", gap: "8px", marginBottom: "14px" }, children: [
+          /* @__PURE__ */ jsxDEV(
+            "input",
+            {
+              type: "text",
+              className: "settings-select",
+              style: { flex: 1, textAlign: "left", padding: "6px 10px" },
+              placeholder: "Add a preference (e.g. 'Prefers concise responses with code examples')",
+              value: newPref,
+              onChange: (e) => setNewPref(e.target.value)
+            },
+            void 0,
+            false,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+              lineNumber: 352,
+              columnNumber: 13
+            },
+            this
+          ),
+          /* @__PURE__ */ jsxDEV(
+            "button",
+            {
+              type: "submit",
+              disabled: !newPref.trim(),
+              className: "btn btn-primary",
+              style: { height: "30px", padding: "0 12px", fontSize: "11px", display: "inline-flex", alignItems: "center", gap: "4px" },
+              children: [
+                /* @__PURE__ */ jsxDEV(Plus, { size: 12 }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                  lineNumber: 366,
+                  columnNumber: 15
+                }, this),
+                /* @__PURE__ */ jsxDEV("span", { children: "Add" }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                  lineNumber: 367,
+                  columnNumber: 15
+                }, this)
+              ]
+            },
+            void 0,
+            true,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+              lineNumber: 360,
+              columnNumber: 13
+            },
+            this
+          )
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+          lineNumber: 351,
+          columnNumber: 11
+        }, this),
+        memory.preferences.length === 0 ? /* @__PURE__ */ jsxDEV("div", { style: { fontSize: "12px", color: "var(--text-muted, #94a3b8)", fontStyle: "italic", padding: "8px 0" }, children: 'No custom preferences recorded yet. Tell Lumina "I prefer short answers" in chat or add one above.' }, void 0, false, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+          lineNumber: 372,
+          columnNumber: 11
+        }, this) : /* @__PURE__ */ jsxDEV("div", { style: { display: "flex", flexDirection: "column", gap: "6px" }, children: memory.preferences.map(
+          (pref, idx) => /* @__PURE__ */ jsxDEV(
+            "div",
+            {
+              style: {
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "8px 12px",
+                borderRadius: "5px",
+                background: "rgba(255, 255, 255, 0.03)",
+                border: "1px solid rgba(255, 255, 255, 0.05)",
+                fontSize: "12px",
+                color: "var(--text-main, #f8fafc)",
+                gap: "8px"
+              },
+              children: editingPrefIndex === idx ? /* @__PURE__ */ jsxDEV("div", { style: { display: "flex", alignItems: "center", gap: "6px", width: "100%" }, children: [
+                /* @__PURE__ */ jsxDEV(
+                  "input",
+                  {
+                    type: "text",
+                    autoFocus: true,
+                    className: "settings-select",
+                    style: { flex: 1, textAlign: "left", padding: "4px 8px", fontSize: "12px" },
+                    value: editingPrefValue,
+                    onChange: (e) => setEditingPrefValue(e.target.value),
+                    onKeyDown: (e) => {
+                      if (e.key === "Enter") handleSaveEditPref(idx, pref);
+                      if (e.key === "Escape") handleCancelEditPref();
+                    }
+                  },
+                  void 0,
+                  false,
+                  {
+                    fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                    lineNumber: 395,
+                    columnNumber: 23
+                  },
+                  this
+                ),
+                /* @__PURE__ */ jsxDEV(
+                  "button",
+                  {
+                    type: "button",
+                    onClick: () => handleSaveEditPref(idx, pref),
+                    title: "Save changes",
+                    style: {
+                      background: "transparent",
+                      border: "none",
+                      color: "#22c55e",
+                      cursor: "pointer",
+                      padding: "4px",
+                      display: "flex",
+                      alignItems: "center",
+                      flexShrink: 0
+                    },
+                    children: /* @__PURE__ */ jsxDEV(Check, { size: 13 }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                      lineNumber: 422,
+                      columnNumber: 25
+                    }, this)
+                  },
+                  void 0,
+                  false,
+                  {
+                    fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                    lineNumber: 407,
+                    columnNumber: 23
+                  },
+                  this
+                ),
+                /* @__PURE__ */ jsxDEV(
+                  "button",
+                  {
+                    type: "button",
+                    onClick: handleCancelEditPref,
+                    title: "Cancel",
+                    style: {
+                      background: "transparent",
+                      border: "none",
+                      color: "var(--text-muted, #94a3b8)",
+                      cursor: "pointer",
+                      padding: "4px",
+                      display: "flex",
+                      alignItems: "center",
+                      flexShrink: 0
+                    },
+                    children: /* @__PURE__ */ jsxDEV(X, { size: 13 }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                      lineNumber: 439,
+                      columnNumber: 25
+                    }, this)
+                  },
+                  void 0,
+                  false,
+                  {
+                    fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                    lineNumber: 424,
+                    columnNumber: 23
+                  },
+                  this
+                )
+              ] }, void 0, true, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                lineNumber: 394,
+                columnNumber: 15
+              }, this) : /* @__PURE__ */ jsxDEV(Fragment, { children: [
+                /* @__PURE__ */ jsxDEV("span", { style: { wordBreak: "break-word", overflowWrap: "anywhere", lineHeight: "1.45", flex: 1, marginRight: "12px" }, children: pref }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                  lineNumber: 444,
+                  columnNumber: 23
+                }, this),
+                /* @__PURE__ */ jsxDEV("div", { style: { display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }, children: [
+                  /* @__PURE__ */ jsxDEV(
+                    "button",
+                    {
+                      type: "button",
+                      onClick: () => handleStartEditPref(idx, pref),
+                      title: "Edit preference",
+                      style: {
+                        background: "transparent",
+                        border: "none",
+                        color: "var(--text-muted, #94a3b8)",
+                        cursor: "pointer",
+                        padding: "4px",
+                        display: "flex",
+                        alignItems: "center"
+                      },
+                      onMouseEnter: (e) => e.currentTarget.style.color = "var(--text-accent, #a78bfa)",
+                      onMouseLeave: (e) => e.currentTarget.style.color = "var(--text-muted, #94a3b8)",
+                      children: /* @__PURE__ */ jsxDEV(Edit2, { size: 12 }, void 0, false, {
+                        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                        lineNumber: 464,
+                        columnNumber: 27
+                      }, this)
+                    },
+                    void 0,
+                    false,
+                    {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                      lineNumber: 448,
+                      columnNumber: 25
+                    },
+                    this
+                  ),
+                  /* @__PURE__ */ jsxDEV(
+                    "button",
+                    {
+                      type: "button",
+                      onClick: () => handleRemovePreference(pref),
+                      title: "Remove preference",
+                      style: {
+                        background: "transparent",
+                        border: "none",
+                        color: "var(--text-muted, #94a3b8)",
+                        cursor: "pointer",
+                        padding: "4px",
+                        display: "flex",
+                        alignItems: "center"
+                      },
+                      onMouseEnter: (e) => e.currentTarget.style.color = "#ef4444",
+                      onMouseLeave: (e) => e.currentTarget.style.color = "var(--text-muted, #94a3b8)",
+                      children: /* @__PURE__ */ jsxDEV(Trash2, { size: 12 }, void 0, false, {
+                        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                        lineNumber: 482,
+                        columnNumber: 27
+                      }, this)
+                    },
+                    void 0,
+                    false,
+                    {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                      lineNumber: 466,
+                      columnNumber: 25
+                    },
+                    this
+                  )
+                ] }, void 0, true, {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                  lineNumber: 447,
+                  columnNumber: 23
+                }, this)
+              ] }, void 0, true, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                lineNumber: 443,
+                columnNumber: 15
+              }, this)
+            },
+            idx,
+            false,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+              lineNumber: 378,
+              columnNumber: 13
+            },
+            this
+          )
+        ) }, void 0, false, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+          lineNumber: 376,
+          columnNumber: 11
+        }, this)
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+        lineNumber: 350,
+        columnNumber: 9
+      }, this)
+    ] }, void 0, true, {
+      fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+      lineNumber: 339,
+      columnNumber: 7
+    }, this),
+    /* @__PURE__ */ jsxDEV("section", { style: { marginBottom: "20px" }, children: [
+      /* @__PURE__ */ jsxDEV("div", { style: { display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }, children: [
+        /* @__PURE__ */ jsxDEV(Brain, { size: 14, style: { color: "var(--text-accent, #a78bfa)" } }, void 0, false, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+          lineNumber: 497,
+          columnNumber: 11
+        }, this),
+        /* @__PURE__ */ jsxDEV("h3", { style: { margin: 0, fontSize: "13px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.6px" }, children: [
+          "Learned Facts & Knowledge (",
+          memory.facts.length,
+          ")"
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+          lineNumber: 498,
+          columnNumber: 11
+        }, this)
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+        lineNumber: 496,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("p", { style: { fontSize: "11px", color: "var(--text-muted, #94a3b8)", marginTop: "0", marginBottom: "12px", lineHeight: "1.4" }, children: "Key facts Lumina automatically learns from your conversations or notes (e.g. your active projects, technologies, or subjects) so you don't have to repeat them." }, void 0, false, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+        lineNumber: 502,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("div", { className: "settings-block", style: { padding: "16px", background: "var(--bg-primary, rgba(255, 255, 255, 0.02))", borderRadius: "6px" }, children: [
+        /* @__PURE__ */ jsxDEV("form", { onSubmit: handleAddFact, style: { display: "flex", gap: "8px", marginBottom: "14px" }, children: [
+          /* @__PURE__ */ jsxDEV(
+            "input",
+            {
+              type: "text",
+              className: "settings-select",
+              style: { flex: 1, textAlign: "left", padding: "6px 10px" },
+              placeholder: "Add a fact (e.g. 'Working on Indonesian thesis on character education')",
+              value: newFact,
+              onChange: (e) => setNewFact(e.target.value)
+            },
+            void 0,
+            false,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+              lineNumber: 508,
+              columnNumber: 13
+            },
+            this
+          ),
+          /* @__PURE__ */ jsxDEV(
+            "button",
+            {
+              type: "submit",
+              disabled: !newFact.trim(),
+              className: "btn btn-primary",
+              style: { height: "30px", padding: "0 12px", fontSize: "11px", display: "inline-flex", alignItems: "center", gap: "4px" },
+              children: [
+                /* @__PURE__ */ jsxDEV(Plus, { size: 12 }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                  lineNumber: 522,
+                  columnNumber: 15
+                }, this),
+                /* @__PURE__ */ jsxDEV("span", { children: "Add" }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                  lineNumber: 523,
+                  columnNumber: 15
+                }, this)
+              ]
+            },
+            void 0,
+            true,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+              lineNumber: 516,
+              columnNumber: 13
+            },
+            this
+          )
+        ] }, void 0, true, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+          lineNumber: 507,
+          columnNumber: 11
+        }, this),
+        memory.facts.length === 0 ? /* @__PURE__ */ jsxDEV("div", { style: { fontSize: "12px", color: "var(--text-muted, #94a3b8)", fontStyle: "italic", padding: "8px 0" }, children: 'No learned facts recorded yet. Lumina saves facts automatically when you ask it to "remember that..." in chat, or you can add them manually above.' }, void 0, false, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+          lineNumber: 528,
+          columnNumber: 11
+        }, this) : /* @__PURE__ */ jsxDEV("div", { style: { display: "flex", flexDirection: "column", gap: "6px" }, children: memory.facts.map((factItem, idx) => {
+          const text = typeof factItem === "string" ? factItem : factItem.text;
+          return /* @__PURE__ */ jsxDEV(
+            "div",
+            {
+              style: {
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "8px 12px",
+                borderRadius: "5px",
+                background: "rgba(255, 255, 255, 0.03)",
+                border: "1px solid rgba(255, 255, 255, 0.05)",
+                fontSize: "12px",
+                color: "var(--text-main, #f8fafc)",
+                gap: "8px"
+              },
+              children: editingFactIndex === idx ? /* @__PURE__ */ jsxDEV("div", { style: { display: "flex", alignItems: "center", gap: "6px", width: "100%" }, children: [
+                /* @__PURE__ */ jsxDEV(
+                  "input",
+                  {
+                    type: "text",
+                    autoFocus: true,
+                    className: "settings-select",
+                    style: { flex: 1, textAlign: "left", padding: "4px 8px", fontSize: "12px" },
+                    value: editingFactValue,
+                    onChange: (e) => setEditingFactValue(e.target.value),
+                    onKeyDown: (e) => {
+                      if (e.key === "Enter") handleSaveEditFact(idx, text);
+                      if (e.key === "Escape") handleCancelEditFact();
+                    }
+                  },
+                  void 0,
+                  false,
+                  {
+                    fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                    lineNumber: 553,
+                    columnNumber: 25
+                  },
+                  this
+                ),
+                /* @__PURE__ */ jsxDEV(
+                  "button",
+                  {
+                    type: "button",
+                    onClick: () => handleSaveEditFact(idx, text),
+                    title: "Save changes",
+                    style: {
+                      background: "transparent",
+                      border: "none",
+                      color: "#22c55e",
+                      cursor: "pointer",
+                      padding: "4px",
+                      display: "flex",
+                      alignItems: "center",
+                      flexShrink: 0
+                    },
+                    children: /* @__PURE__ */ jsxDEV(Check, { size: 13 }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                      lineNumber: 580,
+                      columnNumber: 27
+                    }, this)
+                  },
+                  void 0,
+                  false,
+                  {
+                    fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                    lineNumber: 565,
+                    columnNumber: 25
+                  },
+                  this
+                ),
+                /* @__PURE__ */ jsxDEV(
+                  "button",
+                  {
+                    type: "button",
+                    onClick: handleCancelEditFact,
+                    title: "Cancel",
+                    style: {
+                      background: "transparent",
+                      border: "none",
+                      color: "var(--text-muted, #94a3b8)",
+                      cursor: "pointer",
+                      padding: "4px",
+                      display: "flex",
+                      alignItems: "center",
+                      flexShrink: 0
+                    },
+                    children: /* @__PURE__ */ jsxDEV(X, { size: 13 }, void 0, false, {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                      lineNumber: 597,
+                      columnNumber: 27
+                    }, this)
+                  },
+                  void 0,
+                  false,
+                  {
+                    fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                    lineNumber: 582,
+                    columnNumber: 25
+                  },
+                  this
+                )
+              ] }, void 0, true, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                lineNumber: 552,
+                columnNumber: 19
+              }, this) : /* @__PURE__ */ jsxDEV(Fragment, { children: [
+                /* @__PURE__ */ jsxDEV("span", { style: { wordBreak: "break-word", overflowWrap: "anywhere", lineHeight: "1.45", flex: 1, marginRight: "12px" }, children: text }, void 0, false, {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                  lineNumber: 602,
+                  columnNumber: 25
+                }, this),
+                /* @__PURE__ */ jsxDEV("div", { style: { display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }, children: [
+                  /* @__PURE__ */ jsxDEV(
+                    "button",
+                    {
+                      type: "button",
+                      onClick: () => handleStartEditFact(idx, text),
+                      title: "Edit fact",
+                      style: {
+                        background: "transparent",
+                        border: "none",
+                        color: "var(--text-muted, #94a3b8)",
+                        cursor: "pointer",
+                        padding: "4px",
+                        display: "flex",
+                        alignItems: "center"
+                      },
+                      onMouseEnter: (e) => e.currentTarget.style.color = "var(--text-accent, #a78bfa)",
+                      onMouseLeave: (e) => e.currentTarget.style.color = "var(--text-muted, #94a3b8)",
+                      children: /* @__PURE__ */ jsxDEV(Edit2, { size: 12 }, void 0, false, {
+                        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                        lineNumber: 622,
+                        columnNumber: 29
+                      }, this)
+                    },
+                    void 0,
+                    false,
+                    {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                      lineNumber: 606,
+                      columnNumber: 27
+                    },
+                    this
+                  ),
+                  /* @__PURE__ */ jsxDEV(
+                    "button",
+                    {
+                      type: "button",
+                      onClick: () => handleRemoveFact(factItem),
+                      title: "Remove fact",
+                      style: {
+                        background: "transparent",
+                        border: "none",
+                        color: "var(--text-muted, #94a3b8)",
+                        cursor: "pointer",
+                        padding: "4px",
+                        display: "flex",
+                        alignItems: "center",
+                        flexShrink: 0
+                      },
+                      onMouseEnter: (e) => e.currentTarget.style.color = "#ef4444",
+                      onMouseLeave: (e) => e.currentTarget.style.color = "var(--text-muted, #94a3b8)",
+                      children: /* @__PURE__ */ jsxDEV(Trash2, { size: 12 }, void 0, false, {
+                        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                        lineNumber: 641,
+                        columnNumber: 29
+                      }, this)
+                    },
+                    void 0,
+                    false,
+                    {
+                      fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                      lineNumber: 624,
+                      columnNumber: 27
+                    },
+                    this
+                  )
+                ] }, void 0, true, {
+                  fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                  lineNumber: 605,
+                  columnNumber: 25
+                }, this)
+              ] }, void 0, true, {
+                fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+                lineNumber: 601,
+                columnNumber: 19
+              }, this)
+            },
+            idx,
+            false,
+            {
+              fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+              lineNumber: 536,
+              columnNumber: 17
+            },
+            this
+          );
+        }) }, void 0, false, {
+          fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+          lineNumber: 532,
+          columnNumber: 11
+        }, this)
+      ] }, void 0, true, {
+        fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+        lineNumber: 506,
+        columnNumber: 9
+      }, this)
+    ] }, void 0, true, {
+      fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+      lineNumber: 495,
+      columnNumber: 7
+    }, this)
+  ] }, void 0, true, {
+    fileName: "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx",
+    lineNumber: 211,
+    columnNumber: 5
+  }, this);
+};
+_s(SettingMemory, "nCK7QFFA2hktXQx/1MNR6oGooa4=", false, function() {
+  return [useToast];
+});
+_c = SettingMemory;
+export default _c2 = React.memo(SettingMemory);
+var _c, _c2;
+$RefreshReg$(_c, "SettingMemory");
+$RefreshReg$(_c2, "%default%");
+import * as RefreshRuntime from "/@react-refresh";
+const inWebWorker = typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope;
+if (import.meta.hot && !inWebWorker) {
+  if (!window.$RefreshReg$) {
+    throw new Error(
+      "@vitejs/plugin-react can't detect preamble. Something is wrong."
+    );
+  }
+  RefreshRuntime.__hmr_import(import.meta.url).then((currentExports) => {
+    RefreshRuntime.registerExportsForReactRefresh("B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx", currentExports);
+    import.meta.hot.accept((nextExports) => {
+      if (!nextExports) return;
+      const invalidateMessage = RefreshRuntime.validateRefreshBoundaryAndEnqueueUpdate("B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx", currentExports, nextExports);
+      if (invalidateMessage) import.meta.hot.invalidate(invalidateMessage);
+    });
+  });
+}
+function $RefreshReg$(type, id) {
+  return RefreshRuntime.register(type, "B:/electron/lumina/src/renderer/src/features/Settings/SettingMemory.jsx " + id);
+}
+function $RefreshSig$() {
+  return RefreshRuntime.createSignatureFunctionForTransform();
+}
+
+//# sourceMappingURL=data:application/json;base64,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QUFDckUsTUFBT0EsRUFBRTBFLGNBQWNDLE1BQU1sQyxRQUFRO0FBQUEsc0JBQ3BELGNBQWMsQ0FBQ3pDLE1BQU9BLEVBQUUwRSxjQUFjQyxNQUFNbEMsUUFBUTtBQUFBLHNCQUVwRCxpQ0FBQyxVQUFPLE1BQU0sTUFBZDtBQUFBO0FBQUE7QUFBQTtBQUFBLDZCQUFpQjtBQUFBO0FBQUEsb0JBakJuQjtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUEsa0JBa0JBO0FBQUEscUJBckNGO0FBQUE7QUFBQTtBQUFBO0FBQUEsdUJBc0NBO0FBQUEsbUJBMUNGO0FBQUE7QUFBQTtBQUFBO0FBQUEscUJBMkNBO0FBQUE7QUFBQSxZQTNHR25CO0FBQUFBLFlBRFA7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQSxVQThHQTtBQUFBLFFBRUosQ0FBQyxLQXBISDtBQUFBO0FBQUE7QUFBQTtBQUFBLGVBcUhBO0FBQUEsV0EvSUo7QUFBQTtBQUFBO0FBQUE7QUFBQSxhQWlKQTtBQUFBLFNBNUpGO0FBQUE7QUFBQTtBQUFBO0FBQUEsV0E2SkE7QUFBQSxPQXpiRjtBQUFBO0FBQUE7QUFBQTtBQUFBLFNBMGJBO0FBRUo7QUFBQzVFLEdBem9CWUQsZUFBYTtBQUFBLFVBZ0JGRCxRQUFRO0FBQUE7QUFBQW9JLEtBaEJuQm5JO0FBMm9CYixlQUFBb0ksTUFBZXBKLE1BQU1xSixLQUFLckksYUFBYTtBQUFDLElBQUFtSSxJQUFBQztBQUFBRSxhQUFBSCxJQUFBO0FBQUFHLGFBQUFGLEtBQUEiLCJuYW1lcyI6WyJSZWFjdCIsInVzZVN0YXRlIiwidXNlRWZmZWN0IiwidXNlUmVmIiwiVXNlciIsIkhlYXJ0IiwiQnJhaW4iLCJUcmFzaDIiLCJQbHVzIiwiU3BhcmtsZXMiLCJSZWZyZXNoQ3ciLCJDaGVjayIsIkVkaXQyIiwiWCIsImx1bWluYU1lbW9yeSIsInVzZVRvYXN0IiwiU2V0dGluZ01lbW9yeSIsIl9zIiwibWVtb3J5Iiwic2V0TWVtb3J5IiwidXNlciIsIm5hbWUiLCJyb2xlIiwiYmlvIiwicHJlZmVyZW5jZXMiLCJmYWN0cyIsImlzTG9hZGluZyIsInNldElzTG9hZGluZyIsIm5ld1ByZWYiLCJzZXROZXdQcmVmIiwibmV3RmFjdCIsInNldE5ld0ZhY3QiLCJzYXZlU3RhdHVzIiwic2V0U2F2ZVN0YXR1cyIsImVkaXRpbmdQcmVmSW5kZXgiLCJzZXRFZGl0aW5nUHJlZkluZGV4IiwiZWRpdGluZ1ByZWZWYWx1ZSIsInNldEVkaXRpbmdQcmVmVmFsdWUiLCJlZGl0aW5nRmFjdEluZGV4Iiwic2V0RWRpdGluZ0ZhY3RJbmRleCIsImVkaXRpbmdGYWN0VmFsdWUiLCJzZXRFZGl0aW5nRmFjdFZhbHVlIiwic2F2ZVRpbWVvdXRSZWYiLCJpc0luaXRpYWxMb2FkIiwic2hvd1RvYXN0IiwibG9hZERhdGEiLCJkYXRhIiwibG9hZE1lbW9yeSIsIkFycmF5IiwiaXNBcnJheSIsImVyciIsImNvbnNvbGUiLCJlcnJvciIsInNldFRpbWVvdXQiLCJjdXJyZW50IiwiY2xlYXJUaW1lb3V0IiwicGVyc2lzdFVzZXJQcm9maWxlIiwidXNlck9iaiIsImNsZWFuTmFtZSIsInRyaW0iLCJjbGVhblJvbGUiLCJjbGVhbkJpbyIsIm1lbSIsImdldE1lbW9yeSIsInBlcnNpc3QiLCJoYW5kbGVVc2VyQ2hhbmdlIiwiZmllbGQiLCJ2YWx1ZSIsInVwZGF0ZWRVc2VyIiwicHJldiIsImhhbmRsZUFkZFByZWZlcmVuY2UiLCJlIiwicHJldmVudERlZmF1bHQiLCJjbGVhbiIsInNvbWUiLCJwIiwidG9Mb3dlckNhc2UiLCJzYXZlRmFjdCIsImZhY3QiLCJjYXRlZ29yeSIsImhhbmRsZVJlbW92ZVByZWZlcmVuY2UiLCJwcmVmVGV4dCIsImZvcmdldEZhY3QiLCJ0YXJnZXQiLCJoYW5kbGVBZGRGYWN0IiwiZXhpc3RzIiwiZiIsInQiLCJ0ZXh0IiwiaGFuZGxlUmVtb3ZlRmFjdCIsImZhY3RJdGVtIiwiaGFuZGxlQ2FuY2VsRWRpdFByZWYiLCJoYW5kbGVTYXZlRWRpdFByZWYiLCJpZHgiLCJvbGRWYWwiLCJ1cGRhdGVGYWN0Iiwib2xkRmFjdCIsImhhbmRsZVN0YXJ0RWRpdEZhY3QiLCJjdXJyZW50VmFsIiwiaGFuZGxlQ2FuY2VsRWRpdEZhY3QiLCJoYW5kbGVTYXZlRWRpdEZhY3QiLCJmSWR4IiwiaGFuZGxlQ2xlYXJBbGwiLCJ3aW5kb3ciLCJjb25maXJtIiwiY2xlYXJBbGxNZW1vcnkiLCJkaXNwbGF5IiwiYWxpZ25JdGVtcyIsImp1c3RpZnlDb250ZW50IiwibWFyZ2luQm90dG9tIiwiZm9udFNpemUiLCJmb250V2VpZ2h0IiwiY29sb3IiLCJtYXJnaW4iLCJtYXJnaW5Ub3AiLCJnYXAiLCJoZWlnaHQiLCJwYWRkaW5nIiwidGV4dFRyYW5zZm9ybSIsImxldHRlclNwYWNpbmciLCJiYWNrZ3JvdW5kIiwiYm9yZGVyUmFkaXVzIiwiZmxleERpcmVjdGlvbiIsImZsZXgiLCJtaW5XaWR0aCIsIndpZHRoIiwidGV4dEFsaWduIiwicGFkZGluZ1RvcCIsImJvcmRlclRvcCIsImxpbmVIZWlnaHQiLCJyZXNpemUiLCJmb250RmFtaWx5Iiwib3BhY2l0eSIsImxlbmd0aCIsImZvbnRTdHlsZSIsIm1hcCIsInByZWYiLCJib3JkZXIiLCJrZXkiLCJjdXJzb3IiLCJmbGV4U2hyaW5rIiwid29yZEJyZWFrIiwib3ZlcmZsb3dXcmFwIiwibWFyZ2luUmlnaHQiLCJoYW5kbGVTdGFydEVkaXRQcmVmIiwiY3VycmVudFRhcmdldCIsInN0eWxlIiwiX2MiLCJfYzIiLCJtZW1vIiwiJFJlZnJlc2hSZWckIl0sImlnbm9yZUxpc3QiOltdLCJzb3VyY2VzIjpbIlNldHRpbmdNZW1vcnkuanN4Il0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCBSZWFjdCwgeyB1c2VTdGF0ZSwgdXNlRWZmZWN0LCB1c2VSZWYgfSBmcm9tICdyZWFjdCdcclxuaW1wb3J0IHsgVXNlciwgSGVhcnQsIEJyYWluLCBUcmFzaDIsIFBsdXMsIFNwYXJrbGVzLCBSZWZyZXNoQ3csIENoZWNrLCBFZGl0MiwgWCB9IGZyb20gJ2x1Y2lkZS1yZWFjdCdcclxuaW1wb3J0IHsgbHVtaW5hTWVtb3J5IH0gZnJvbSAnLi4vLi4vY29yZS9haS9tZW1vcnknXHJcbmltcG9ydCB7IHVzZVRvYXN0IH0gZnJvbSAnLi4vLi4vY29yZS9ob29rcy91c2VUb2FzdCdcclxuXHJcbmV4cG9ydCBjb25zdCBTZXR0aW5nTWVtb3J5ID0gKCkgPT4ge1xyXG4gIGNvbnN0IFttZW1vcnksIHNldE1lbW9yeV0gPSB1c2VTdGF0ZSh7XHJcbiAgICB1c2VyOiB7IG5hbWU6ICcnLCByb2xlOiAnJywgYmlvOiAnJyB9LFxyXG4gICAgcHJlZmVyZW5jZXM6IFtdLFxyXG4gICAgZmFjdHM6IFtdXHJcbiAgfSlcclxuICBjb25zdCBbaXNMb2FkaW5nLCBzZXRJc0xvYWRpbmddID0gdXNlU3RhdGUodHJ1ZSlcclxuICBjb25zdCBbbmV3UHJlZiwgc2V0TmV3UHJlZl0gPSB1c2VTdGF0ZSgnJylcclxuICBjb25zdCBbbmV3RmFjdCwgc2V0TmV3RmFjdF0gPSB1c2VTdGF0ZSgnJylcclxuICBjb25zdCBbc2F2ZVN0YXR1cywgc2V0U2F2ZVN0YXR1c10gPSB1c2VTdGF0ZShudWxsKVxyXG4gIGNvbnN0IFtlZGl0aW5nUHJlZkluZGV4LCBzZXRFZGl0aW5nUHJlZkluZGV4XSA9IHVzZVN0YXRlKG51bGwpXHJcbiAgY29uc3QgW2VkaXRpbmdQcmVmVmFsdWUsIHNldEVkaXRpbmdQcmVmVmFsdWVdID0gdXNlU3RhdGUoJycpXHJcbiAgY29uc3QgW2VkaXRpbmdGYWN0SW5kZXgsIHNldEVkaXRpbmdGYWN0SW5kZXhdID0gdXNlU3RhdGUobnVsbClcclxuICBjb25zdCBbZWRpdGluZ0ZhY3RWYWx1ZSwgc2V0RWRpdGluZ0ZhY3RWYWx1ZV0gPSB1c2VTdGF0ZSgnJylcclxuICBjb25zdCBzYXZlVGltZW91dFJlZiA9IHVzZVJlZihudWxsKVxyXG4gIGNvbnN0IGlzSW5pdGlhbExvYWQgPSB1c2VSZWYodHJ1ZSlcclxuICBjb25zdCB7IHNob3dUb2FzdCB9ID0gdXNlVG9hc3QoKVxyXG5cclxuICBjb25zdCBsb2FkRGF0YSA9IGFzeW5jICgpID0+IHtcclxuICAgIHNldElzTG9hZGluZyh0cnVlKVxyXG4gICAgdHJ5IHtcclxuICAgICAgY29uc3QgZGF0YSA9IGF3YWl0IGx1bWluYU1lbW9yeS5sb2FkTWVtb3J5KClcclxuICAgICAgc2V0TWVtb3J5KHtcclxuICAgICAgICB1c2VyOiB7XHJcbiAgICAgICAgICBuYW1lOiBkYXRhPy51c2VyPy5uYW1lIHx8ICcnLFxyXG4gICAgICAgICAgcm9sZTogZGF0YT8udXNlcj8ucm9sZSB8fCAnJyxcclxuICAgICAgICAgIGJpbzogZGF0YT8udXNlcj8uYmlvIHx8ICcnXHJcbiAgICAgICAgfSxcclxuICAgICAgICBwcmVmZXJlbmNlczogQXJyYXkuaXNBcnJheShkYXRhPy5wcmVmZXJlbmNlcykgPyBkYXRhLnByZWZlcmVuY2VzIDogW10sXHJcbiAgICAgICAgZmFjdHM6IEFycmF5LmlzQXJyYXkoZGF0YT8uZmFjdHMpID8gZGF0YS5mYWN0cyA6IFtdXHJcbiAgICAgIH0pXHJcbiAgICB9IGNhdGNoIChlcnIpIHtcclxuICAgICAgY29uc29sZS5lcnJvcignW1NldHRpbmdNZW1vcnldIExvYWQgZmFpbGVkOicsIGVycilcclxuICAgIH0gZmluYWxseSB7XHJcbiAgICAgIHNldElzTG9hZGluZyhmYWxzZSlcclxuICAgICAgc2V0VGltZW91dCgoKSA9PiB7XHJcbiAgICAgICAgaXNJbml0aWFsTG9hZC5jdXJyZW50ID0gZmFsc2VcclxuICAgICAgfSwgMTAwKVxyXG4gICAgfVxyXG4gIH1cclxuXHJcbiAgdXNlRWZmZWN0KCgpID0+IHtcclxuICAgIGxvYWREYXRhKClcclxuICAgIHJldHVybiAoKSA9PiB7XHJcbiAgICAgIGlmIChzYXZlVGltZW91dFJlZi5jdXJyZW50KSBjbGVhclRpbWVvdXQoc2F2ZVRpbWVvdXRSZWYuY3VycmVudClcclxuICAgIH1cclxuICB9LCBbXSlcclxuXHJcbiAgY29uc3QgcGVyc2lzdFVzZXJQcm9maWxlID0gYXN5bmMgKHVzZXJPYmopID0+IHtcclxuICAgIHRyeSB7XHJcbiAgICAgIHNldFNhdmVTdGF0dXMoJ3NhdmluZycpXHJcbiAgICAgIGNvbnN0IGNsZWFuTmFtZSA9ICh1c2VyT2JqLm5hbWUgfHwgJycpLnRyaW0oKVxyXG4gICAgICBjb25zdCBjbGVhblJvbGUgPSAodXNlck9iai5yb2xlIHx8ICcnKS50cmltKClcclxuICAgICAgY29uc3QgY2xlYW5CaW8gPSAodXNlck9iai5iaW8gfHwgJycpLnRyaW0oKVxyXG5cclxuICAgICAgY29uc3QgbWVtID0gYXdhaXQgbHVtaW5hTWVtb3J5LmdldE1lbW9yeSgpXHJcbiAgICAgIG1lbS51c2VyID0ge1xyXG4gICAgICAgIG5hbWU6IGNsZWFuTmFtZSB8fCBudWxsLFxyXG4gICAgICAgIHJvbGU6IGNsZWFuUm9sZSB8fCBudWxsLFxyXG4gICAgICAgIGJpbzogY2xlYW5CaW8gfHwgbnVsbFxyXG4gICAgICB9XHJcbiAgICAgIGF3YWl0IGx1bWluYU1lbW9yeS5wZXJzaXN0KClcclxuICAgICAgc2V0U2F2ZVN0YXR1cygnc2F2ZWQnKVxyXG4gICAgICBzZXRUaW1lb3V0KCgpID0+IHNldFNhdmVTdGF0dXMobnVsbCksIDE4MDApXHJcbiAgICB9IGNhdGNoIChlcnIpIHtcclxuICAgICAgc2V0U2F2ZVN0YXR1cygnZXJyb3InKVxyXG4gICAgICBzaG93VG9hc3QoJ0ZhaWxlZCB0byBhdXRvLXNhdmUgcHJvZmlsZScpXHJcbiAgICB9XHJcbiAgfVxyXG5cclxuICBjb25zdCBoYW5kbGVVc2VyQ2hhbmdlID0gKGZpZWxkLCB2YWx1ZSkgPT4ge1xyXG4gICAgY29uc3QgdXBkYXRlZFVzZXIgPSB7IC4uLm1lbW9yeS51c2VyLCBbZmllbGRdOiB2YWx1ZSB9XHJcbiAgICBzZXRNZW1vcnkoKHByZXYpID0+ICh7XHJcbiAgICAgIC4uLnByZXYsXHJcbiAgICAgIHVzZXI6IHVwZGF0ZWRVc2VyXHJcbiAgICB9KSlcclxuXHJcbiAgICBpZiAoc2F2ZVRpbWVvdXRSZWYuY3VycmVudCkgY2xlYXJUaW1lb3V0KHNhdmVUaW1lb3V0UmVmLmN1cnJlbnQpXHJcbiAgICBzYXZlVGltZW91dFJlZi5jdXJyZW50ID0gc2V0VGltZW91dCgoKSA9PiB7XHJcbiAgICAgIHBlcnNpc3RVc2VyUHJvZmlsZSh1cGRhdGVkVXNlcilcclxuICAgIH0sIDQwMClcclxuICB9XHJcblxyXG4gIGNvbnN0IGhhbmRsZUFkZFByZWZlcmVuY2UgPSBhc3luYyAoZSkgPT4ge1xyXG4gICAgZS5wcmV2ZW50RGVmYXVsdCgpXHJcbiAgICBjb25zdCBjbGVhbiA9IChuZXdQcmVmIHx8ICcnKS50cmltKClcclxuICAgIGlmICghY2xlYW4pIHtcclxuICAgICAgc2hvd1RvYXN0KCdQcmVmZXJlbmNlIGNhbm5vdCBiZSBlbXB0eScpXHJcbiAgICAgIHJldHVyblxyXG4gICAgfVxyXG5cclxuICAgIGlmIChtZW1vcnkucHJlZmVyZW5jZXMuc29tZSgocCkgPT4gcC50b0xvd2VyQ2FzZSgpID09PSBjbGVhbi50b0xvd2VyQ2FzZSgpKSkge1xyXG4gICAgICBzaG93VG9hc3QoJ1ByZWZlcmVuY2UgYWxyZWFkeSBleGlzdHMnKVxyXG4gICAgICByZXR1cm5cclxuICAgIH1cclxuXHJcbiAgICBhd2FpdCBsdW1pbmFNZW1vcnkuc2F2ZUZhY3QoeyBmYWN0OiBjbGVhbiwgY2F0ZWdvcnk6ICdwcmVmZXJlbmNlcycgfSlcclxuICAgIHNldE5ld1ByZWYoJycpXHJcbiAgICBhd2FpdCBsb2FkRGF0YSgpXHJcbiAgICBzaG93VG9hc3QoJ1ByZWZlcmVuY2Ugc2F2ZWQnKVxyXG4gIH1cclxuXHJcbiAgY29uc3QgaGFuZGxlUmVtb3ZlUHJlZmVyZW5jZSA9IGFzeW5jIChwcmVmVGV4dCkgPT4ge1xyXG4gICAgaWYgKCFwcmVmVGV4dCkgcmV0dXJuXHJcbiAgICBhd2FpdCBsdW1pbmFNZW1vcnkuZm9yZ2V0RmFjdCh7IHRhcmdldDogcHJlZlRleHQsIGNhdGVnb3J5OiAncHJlZmVyZW5jZXMnIH0pXHJcbiAgICBhd2FpdCBsb2FkRGF0YSgpXHJcbiAgICBzaG93VG9hc3QoJ1ByZWZlcmVuY2UgcmVtb3ZlZCcpXHJcbiAgfVxyXG5cclxuICBjb25zdCBoYW5kbGVBZGRGYWN0ID0gYXN5bmMgKGUpID0+IHtcclxuICAgIGUucHJldmVudERlZmF1bHQoKVxyXG4gICAgY29uc3QgY2xlYW4gPSAobmV3RmFjdCB8fCAnJykudHJpbSgpXHJcbiAgICBpZiAoIWNsZWFuKSB7XHJcbiAgICAgIHNob3dUb2FzdCgnRmFjdCBjYW5ub3QgYmUgZW1wdHknKVxyXG4gICAgICByZXR1cm5cclxuICAgIH1cclxuXHJcbiAgICBjb25zdCBleGlzdHMgPSBtZW1vcnkuZmFjdHMuc29tZSgoZikgPT4ge1xyXG4gICAgICBjb25zdCB0ID0gdHlwZW9mIGYgPT09ICdzdHJpbmcnID8gZiA6IGY/LnRleHQgfHwgJydcclxuICAgICAgcmV0dXJuIHQudG9Mb3dlckNhc2UoKSA9PT0gY2xlYW4udG9Mb3dlckNhc2UoKVxyXG4gICAgfSlcclxuICAgIGlmIChleGlzdHMpIHtcclxuICAgICAgc2hvd1RvYXN0KCdGYWN0IGFscmVhZHkgZXhpc3RzJylcclxuICAgICAgcmV0dXJuXHJcbiAgICB9XHJcblxyXG4gICAgYXdhaXQgbHVtaW5hTWVtb3J5LnNhdmVGYWN0KHsgZmFjdDogY2xlYW4sIGNhdGVnb3J5OiAnZmFjdHMnIH0pXHJcbiAgICBzZXROZXdGYWN0KCcnKVxyXG4gICAgYXdhaXQgbG9hZERhdGEoKVxyXG4gICAgc2hvd1RvYXN0KCdMZWFybmVkIGZhY3Qgc2F2ZWQnKVxyXG4gIH1cclxuXHJcbiAgY29uc3QgaGFuZGxlUmVtb3ZlRmFjdCA9IGFzeW5jIChmYWN0SXRlbSkgPT4ge1xyXG4gICAgY29uc3QgdGV4dCA9IHR5cGVvZiBmYWN0SXRlbSA9PT0gJ3N0cmluZycgPyBmYWN0SXRlbSA6IGZhY3RJdGVtPy50ZXh0XHJcbiAgICBpZiAoIXRleHQpIHJldHVyblxyXG4gICAgYXdhaXQgbHVtaW5hTWVtb3J5LmZvcmdldEZhY3QoeyB0YXJnZXQ6IHRleHQsIGNhdGVnb3J5OiAnZmFjdHMnIH0pXHJcbiAgICBhd2FpdCBsb2FkRGF0YSgpXHJcbiAgICBzaG93VG9hc3QoJ01lbW9yeSBpdGVtIHJlbW92ZWQnKVxyXG4gIH1cclxuXHJcbiAgY29uc3QgaGFuZGxlQ2FuY2VsRWRpdFByZWYgPSAoKSA9PiB7XHJcbiAgICBzZXRFZGl0aW5nUHJlZkluZGV4KG51bGwpXHJcbiAgICBzZXRFZGl0aW5nUHJlZlZhbHVlKCcnKVxyXG4gIH1cclxuXHJcbiAgY29uc3QgaGFuZGxlU2F2ZUVkaXRQcmVmID0gYXN5bmMgKGlkeCwgb2xkVmFsKSA9PiB7XHJcbiAgICBjb25zdCBjbGVhbiA9IChlZGl0aW5nUHJlZlZhbHVlIHx8ICcnKS50cmltKClcclxuICAgIGlmICghY2xlYW4pIHtcclxuICAgICAgc2hvd1RvYXN0KCdQcmVmZXJlbmNlIGNhbm5vdCBiZSBlbXB0eScpXHJcbiAgICAgIHJldHVyblxyXG4gICAgfVxyXG4gICAgaWYgKGNsZWFuLnRvTG93ZXJDYXNlKCkgIT09IG9sZFZhbC50b0xvd2VyQ2FzZSgpICYmIG1lbW9yeS5wcmVmZXJlbmNlcy5zb21lKChwKSA9PiBwLnRvTG93ZXJDYXNlKCkgPT09IGNsZWFuLnRvTG93ZXJDYXNlKCkpKSB7XHJcbiAgICAgIHNob3dUb2FzdCgnUHJlZmVyZW5jZSBhbHJlYWR5IGV4aXN0cycpXHJcbiAgICAgIHJldHVyblxyXG4gICAgfVxyXG5cclxuICAgIGF3YWl0IGx1bWluYU1lbW9yeS51cGRhdGVGYWN0KHsgb2xkRmFjdDogb2xkVmFsLCBuZXdGYWN0OiBjbGVhbiwgY2F0ZWdvcnk6ICdwcmVmZXJlbmNlcycgfSlcclxuICAgIHNldEVkaXRpbmdQcmVmSW5kZXgobnVsbClcclxuICAgIHNldEVkaXRpbmdQcmVmVmFsdWUoJycpXHJcbiAgICBhd2FpdCBsb2FkRGF0YSgpXHJcbiAgICBzaG93VG9hc3QoJ1ByZWZlcmVuY2UgdXBkYXRlZCcpXHJcbiAgfVxyXG5cclxuICBjb25zdCBoYW5kbGVTdGFydEVkaXRGYWN0ID0gKGlkeCwgY3VycmVudFZhbCkgPT4ge1xyXG4gICAgc2V0RWRpdGluZ0ZhY3RJbmRleChpZHgpXHJcbiAgICBzZXRFZGl0aW5nRmFjdFZhbHVlKGN1cnJlbnRWYWwpXHJcbiAgfVxyXG5cclxuICBjb25zdCBoYW5kbGVDYW5jZWxFZGl0RmFjdCA9ICgpID0+IHtcclxuICAgIHNldEVkaXRpbmdGYWN0SW5kZXgobnVsbClcclxuICAgIHNldEVkaXRpbmdGYWN0VmFsdWUoJycpXHJcbiAgfVxyXG5cclxuICBjb25zdCBoYW5kbGVTYXZlRWRpdEZhY3QgPSBhc3luYyAoaWR4LCBvbGRWYWwpID0+IHtcclxuICAgIGNvbnN0IGNsZWFuID0gKGVkaXRpbmdGYWN0VmFsdWUgfHwgJycpLnRyaW0oKVxyXG4gICAgaWYgKCFjbGVhbikge1xyXG4gICAgICBzaG93VG9hc3QoJ0ZhY3QgY2Fubm90IGJlIGVtcHR5JylcclxuICAgICAgcmV0dXJuXHJcbiAgICB9XHJcbiAgICBjb25zdCBleGlzdHMgPSBtZW1vcnkuZmFjdHMuc29tZSgoZiwgZklkeCkgPT4ge1xyXG4gICAgICBpZiAoZklkeCA9PT0gaWR4KSByZXR1cm4gZmFsc2VcclxuICAgICAgY29uc3QgdCA9IHR5cGVvZiBmID09PSAnc3RyaW5nJyA/IGYgOiBmPy50ZXh0IHx8ICcnXHJcbiAgICAgIHJldHVybiB0LnRvTG93ZXJDYXNlKCkgPT09IGNsZWFuLnRvTG93ZXJDYXNlKClcclxuICAgIH0pXHJcbiAgICBpZiAoZXhpc3RzKSB7XHJcbiAgICAgIHNob3dUb2FzdCgnRmFjdCBhbHJlYWR5IGV4aXN0cycpXHJcbiAgICAgIHJldHVyblxyXG4gICAgfVxyXG5cclxuICAgIGF3YWl0IGx1bWluYU1lbW9yeS51cGRhdGVGYWN0KHsgb2xkRmFjdDogb2xkVmFsLCBuZXdGYWN0OiBjbGVhbiwgY2F0ZWdvcnk6ICdmYWN0cycgfSlcclxuICAgIHNldEVkaXRpbmdGYWN0SW5kZXgobnVsbClcclxuICAgIHNldEVkaXRpbmdGYWN0VmFsdWUoJycpXHJcbiAgICBhd2FpdCBsb2FkRGF0YSgpXHJcbiAgICBzaG93VG9hc3QoJ0ZhY3QgdXBkYXRlZCcpXHJcbiAgfVxyXG5cclxuICBjb25zdCBoYW5kbGVDbGVhckFsbCA9IGFzeW5jICgpID0+IHtcclxuICAgIGlmICh3aW5kb3cuY29uZmlybSgnQXJlIHlvdSBzdXJlIHlvdSB3YW50IHRvIGNsZWFyIGFsbCBsZWFybmVkIG1lbW9yeT8gVGhpcyB3aWxsIHJlc2V0IG1lbW9yeS5qc29uLicpKSB7XHJcbiAgICAgIGF3YWl0IGx1bWluYU1lbW9yeS5jbGVhckFsbE1lbW9yeSgpXHJcbiAgICAgIGF3YWl0IGxvYWREYXRhKClcclxuICAgICAgc2hvd1RvYXN0KCdNZW1vcnkgcmVzZXQnKVxyXG4gICAgfVxyXG4gIH1cclxuXHJcbiAgcmV0dXJuIChcclxuICAgIDxkaXYgY2xhc3NOYW1lPVwic2V0dGluZ3MtcGFuZVwiPlxyXG4gICAgICA8ZGl2IHN0eWxlPXt7IGRpc3BsYXk6ICdmbGV4JywgYWxpZ25JdGVtczogJ2NlbnRlcicsIGp1c3RpZnlDb250ZW50OiAnc3BhY2UtYmV0d2VlbicsIG1hcmdpbkJvdHRvbTogJzIwcHgnIH19PlxyXG4gICAgICAgIDxkaXY+XHJcbiAgICAgICAgICA8aDIgc3R5bGU9e3sgZm9udFNpemU6ICcxOHB4JywgZm9udFdlaWdodDogJzYwMCcsIGNvbG9yOiAndmFyKC0tdGV4dC1tYWluLCAjZjhmYWZjKScsIG1hcmdpbjogMCB9fT5cclxuICAgICAgICAgICAgQUkgTWVtb3J5IFByb2ZpbGVcclxuICAgICAgICAgIDwvaDI+XHJcbiAgICAgICAgICA8cCBzdHlsZT17eyBmb250U2l6ZTogJzEycHgnLCBjb2xvcjogJ3ZhcigtLXRleHQtbXV0ZWQsICM5NGEzYjgpJywgbWFyZ2luVG9wOiAnNHB4JywgbWFyZ2luQm90dG9tOiAwIH19PlxyXG4gICAgICAgICAgICBNYW5hZ2UgcGVyc2lzdGVudCBrbm93bGVkZ2UsIHByZWZlcmVuY2VzLCBhbmQgZGV0YWlscyBMdW1pbmEgcmVtZW1iZXJzIGFib3V0IHlvdSBpbiA8Y29kZT5tZW1vcnkuanNvbjwvY29kZT4uXHJcbiAgICAgICAgICA8L3A+XHJcbiAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgPGRpdiBzdHlsZT17eyBkaXNwbGF5OiAnZmxleCcsIGdhcDogJzhweCcgfX0+XHJcbiAgICAgICAgICA8YnV0dG9uXHJcbiAgICAgICAgICAgIG9uQ2xpY2s9e2xvYWREYXRhfVxyXG4gICAgICAgICAgICB0aXRsZT1cIlJlZnJlc2ggbWVtb3J5XCJcclxuICAgICAgICAgICAgY2xhc3NOYW1lPVwiYnRuIGJ0bi1zZWNvbmRhcnlcIlxyXG4gICAgICAgICAgICBzdHlsZT17eyBkaXNwbGF5OiAnaW5saW5lLWZsZXgnLCBhbGlnbkl0ZW1zOiAnY2VudGVyJywgZ2FwOiAnNnB4JywgaGVpZ2h0OiAnMjhweCcsIHBhZGRpbmc6ICcwIDEwcHgnLCBmb250U2l6ZTogJzExcHgnIH19XHJcbiAgICAgICAgICA+XHJcbiAgICAgICAgICAgIDxSZWZyZXNoQ3cgc2l6ZT17MTJ9IGNsYXNzTmFtZT17aXNMb2FkaW5nID8gJ3B1bHNlLW9wYWNpdHknIDogJyd9IC8+XHJcbiAgICAgICAgICAgIDxzcGFuPlJlZnJlc2g8L3NwYW4+XHJcbiAgICAgICAgICA8L2J1dHRvbj5cclxuICAgICAgICAgIDxidXR0b25cclxuICAgICAgICAgICAgb25DbGljaz17aGFuZGxlQ2xlYXJBbGx9XHJcbiAgICAgICAgICAgIHRpdGxlPVwiUmVzZXQgbWVtb3J5Lmpzb25cIlxyXG4gICAgICAgICAgICBjbGFzc05hbWU9XCJidG4gYnRuLXNlY29uZGFyeVwiXHJcbiAgICAgICAgICAgIHN0eWxlPXt7IGRpc3BsYXk6ICdpbmxpbmUtZmxleCcsIGFsaWduSXRlbXM6ICdjZW50ZXInLCBnYXA6ICc2cHgnLCBoZWlnaHQ6ICcyOHB4JywgcGFkZGluZzogJzAgMTBweCcsIGZvbnRTaXplOiAnMTFweCcsIGNvbG9yOiAnI2VmNDQ0NCcgfX1cclxuICAgICAgICAgID5cclxuICAgICAgICAgICAgPFRyYXNoMiBzaXplPXsxMn0gLz5cclxuICAgICAgICAgICAgPHNwYW4+UmVzZXQgQWxsPC9zcGFuPlxyXG4gICAgICAgICAgPC9idXR0b24+XHJcbiAgICAgICAgPC9kaXY+XHJcbiAgICAgIDwvZGl2PlxyXG5cclxuICAgICAgey8qIFVzZXIgSWRlbnRpdHkgU2VjdGlvbiAqL31cclxuICAgICAgPHNlY3Rpb24gc3R5bGU9e3sgbWFyZ2luQm90dG9tOiAnMjhweCcgfX0+XHJcbiAgICAgICAgPGRpdiBzdHlsZT17eyBkaXNwbGF5OiAnZmxleCcsIGFsaWduSXRlbXM6ICdjZW50ZXInLCBnYXA6ICc4cHgnLCBtYXJnaW5Cb3R0b206ICcxMnB4JyB9fT5cclxuICAgICAgICAgIDxVc2VyIHNpemU9ezE0fSBzdHlsZT17eyBjb2xvcjogJ3ZhcigtLXRleHQtYWNjZW50LCAjYTc4YmZhKScgfX0gLz5cclxuICAgICAgICAgIDxoMyBzdHlsZT17eyBtYXJnaW46IDAsIGZvbnRTaXplOiAnMTNweCcsIGZvbnRXZWlnaHQ6ICc2MDAnLCB0ZXh0VHJhbnNmb3JtOiAndXBwZXJjYXNlJywgbGV0dGVyU3BhY2luZzogJzAuNnB4JyB9fT5cclxuICAgICAgICAgICAgVXNlciBJZGVudGl0eVxyXG4gICAgICAgICAgPC9oMz5cclxuICAgICAgICA8L2Rpdj5cclxuXHJcbiAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJzZXR0aW5ncy1ibG9ja1wiIHN0eWxlPXt7IHBhZGRpbmc6ICcxOHB4JywgYmFja2dyb3VuZDogJ3ZhcigtLWJnLXByaW1hcnksIHJnYmEoMjU1LCAyNTUsIDI1NSwgMC4wMikpJywgYm9yZGVyUmFkaXVzOiAnNnB4JyB9fT5cclxuICAgICAgICAgIDxkaXYgc3R5bGU9e3sgZGlzcGxheTogJ2ZsZXgnLCBmbGV4RGlyZWN0aW9uOiAnY29sdW1uJywgZ2FwOiAnMTZweCcgfX0+XHJcbiAgICAgICAgICAgIHsvKiBVc2VyIE5hbWUgLSBJbnB1dCAqL31cclxuICAgICAgICAgICAgPGRpdiBzdHlsZT17eyBkaXNwbGF5OiAnZmxleCcsIGFsaWduSXRlbXM6ICdjZW50ZXInLCBqdXN0aWZ5Q29udGVudDogJ3NwYWNlLWJldHdlZW4nLCBnYXA6ICcxNnB4JyB9fT5cclxuICAgICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInJvdy1pbmZvXCIgc3R5bGU9e3sgZmxleDogMSwgbWluV2lkdGg6ICcxODBweCcgfX0+XHJcbiAgICAgICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInJvdy1sYWJlbFwiPllvdXIgTmFtZTwvZGl2PlxyXG4gICAgICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJyb3ctaGludFwiPkhvdyBMdW1pbmEgYWRkcmVzc2VzIHlvdSBpbiBjb252ZXJzYXRpb24uPC9kaXY+XHJcbiAgICAgICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgICAgICAgPGlucHV0XHJcbiAgICAgICAgICAgICAgICB0eXBlPVwidGV4dFwiXHJcbiAgICAgICAgICAgICAgICBjbGFzc05hbWU9XCJzZXR0aW5ncy1zZWxlY3RcIlxyXG4gICAgICAgICAgICAgICAgc3R5bGU9e3sgd2lkdGg6ICcyNjBweCcsIHRleHRBbGlnbjogJ2xlZnQnLCBwYWRkaW5nOiAnN3B4IDEycHgnLCBmb250U2l6ZTogJzEycHgnIH19XHJcbiAgICAgICAgICAgICAgICBwbGFjZWhvbGRlcj1cImUuZy4gU2Fib29yXCJcclxuICAgICAgICAgICAgICAgIHZhbHVlPXttZW1vcnkudXNlci5uYW1lfVxyXG4gICAgICAgICAgICAgICAgb25DaGFuZ2U9eyhlKSA9PiBoYW5kbGVVc2VyQ2hhbmdlKCduYW1lJywgZS50YXJnZXQudmFsdWUpfVxyXG4gICAgICAgICAgICAgIC8+XHJcbiAgICAgICAgICAgIDwvZGl2PlxyXG5cclxuICAgICAgICAgICAgey8qIFJvbGUgLyBPY2N1cGF0aW9uIC0gVGV4dGFyZWEgKi99XHJcbiAgICAgICAgICAgIDxkaXYgc3R5bGU9e3sgZGlzcGxheTogJ2ZsZXgnLCBmbGV4RGlyZWN0aW9uOiAnY29sdW1uJywgZ2FwOiAnNnB4JywgcGFkZGluZ1RvcDogJzEwcHgnLCBib3JkZXJUb3A6ICcxcHggc29saWQgcmdiYSgyNTUsIDI1NSwgMjU1LCAwLjA0KScgfX0+XHJcbiAgICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJyb3ctaW5mb1wiPlxyXG4gICAgICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJyb3ctbGFiZWxcIj5Sb2xlIC8gT2NjdXBhdGlvbjwvZGl2PlxyXG4gICAgICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJyb3ctaGludFwiPkhlbHBzIHRhaWxvciBleHBsYW5hdGlvbnMsIGNvbXBsZXhpdHksIGFuZCByZWNvbW1lbmRhdGlvbnMgdG8geW91ciBwcm9mZXNzaW9uIG9yIGFjYWRlbWljIGZpZWxkLjwvZGl2PlxyXG4gICAgICAgICAgICAgIDwvZGl2PlxyXG4gICAgICAgICAgICAgIDx0ZXh0YXJlYVxyXG4gICAgICAgICAgICAgICAgY2xhc3NOYW1lPVwic2V0dGluZ3Mtc2VsZWN0XCJcclxuICAgICAgICAgICAgICAgIHJvd3M9ezJ9XHJcbiAgICAgICAgICAgICAgICBzdHlsZT17e1xyXG4gICAgICAgICAgICAgICAgICB3aWR0aDogJzEwMCUnLFxyXG4gICAgICAgICAgICAgICAgICB0ZXh0QWxpZ246ICdsZWZ0JyxcclxuICAgICAgICAgICAgICAgICAgcGFkZGluZzogJzhweCAxMnB4JyxcclxuICAgICAgICAgICAgICAgICAgZm9udFNpemU6ICcxMnB4JyxcclxuICAgICAgICAgICAgICAgICAgbGluZUhlaWdodDogJzEuNScsXHJcbiAgICAgICAgICAgICAgICAgIHJlc2l6ZTogJ25vbmUnLFxyXG4gICAgICAgICAgICAgICAgICBmb250RmFtaWx5OiAnaW5oZXJpdCcsXHJcbiAgICAgICAgICAgICAgICAgIGJvcmRlclJhZGl1czogJzVweCdcclxuICAgICAgICAgICAgICAgIH19XHJcbiAgICAgICAgICAgICAgICBwbGFjZWhvbGRlcj1cImUuZy4gU29mdHdhcmUgRW5naW5lZXIgYnVpbGRpbmcgQUkgdG9vbHMsIE1hc3RlciBpbiBNYW5hZ2VtZW50IHN0dWRlbnRcIlxyXG4gICAgICAgICAgICAgICAgdmFsdWU9e21lbW9yeS51c2VyLnJvbGV9XHJcbiAgICAgICAgICAgICAgICBvbkNoYW5nZT17KGUpID0+IGhhbmRsZVVzZXJDaGFuZ2UoJ3JvbGUnLCBlLnRhcmdldC52YWx1ZSl9XHJcbiAgICAgICAgICAgICAgLz5cclxuICAgICAgICAgICAgPC9kaXY+XHJcblxyXG4gICAgICAgICAgICB7LyogQmlvIC8gQ29udGV4dCAtIFRleHRhcmVhICovfVxyXG4gICAgICAgICAgICA8ZGl2IHN0eWxlPXt7IGRpc3BsYXk6ICdmbGV4JywgZmxleERpcmVjdGlvbjogJ2NvbHVtbicsIGdhcDogJzZweCcsIHBhZGRpbmdUb3A6ICcxMHB4JywgYm9yZGVyVG9wOiAnMXB4IHNvbGlkIHJnYmEoMjU1LCAyNTUsIDI1NSwgMC4wNCknIH19PlxyXG4gICAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwicm93LWluZm9cIj5cclxuICAgICAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwicm93LWxhYmVsXCI+QmlvIC8gQ29udGV4dDwvZGl2PlxyXG4gICAgICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJyb3ctaGludFwiPkJyb2FkIGludGVyZXN0cywgY3VycmVudCBmb2N1cywgcmVzZWFyY2ggZ29hbHMsIG9yIHBlcnNvbmFsIGNvbnRleHQgTHVtaW5hIHNob3VsZCBrZWVwIGluIG1pbmQuPC9kaXY+XHJcbiAgICAgICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgICAgICAgPHRleHRhcmVhXHJcbiAgICAgICAgICAgICAgICBjbGFzc05hbWU9XCJzZXR0aW5ncy1zZWxlY3RcIlxyXG4gICAgICAgICAgICAgICAgcm93cz17Mn1cclxuICAgICAgICAgICAgICAgIHN0eWxlPXt7XHJcbiAgICAgICAgICAgICAgICAgIHdpZHRoOiAnMTAwJScsXHJcbiAgICAgICAgICAgICAgICAgIHRleHRBbGlnbjogJ2xlZnQnLFxyXG4gICAgICAgICAgICAgICAgICBwYWRkaW5nOiAnOHB4IDEycHgnLFxyXG4gICAgICAgICAgICAgICAgICBmb250U2l6ZTogJzEycHgnLFxyXG4gICAgICAgICAgICAgICAgICBsaW5lSGVpZ2h0OiAnMS41JyxcclxuICAgICAgICAgICAgICAgICAgcmVzaXplOiAnbm9uZScsXHJcbiAgICAgICAgICAgICAgICAgIGZvbnRGYW1pbHk6ICdpbmhlcml0JyxcclxuICAgICAgICAgICAgICAgICAgYm9yZGVyUmFkaXVzOiAnNXB4J1xyXG4gICAgICAgICAgICAgICAgfX1cclxuICAgICAgICAgICAgICAgIHBsYWNlaG9sZGVyPVwiZS5nLiBXb3JraW5nIG9uIGEgTWFzdGVyJ3MgdGhlc2lzIG9uIGNoYXJhY3RlciBlZHVjYXRpb24gaW4gSW5kb25lc2lhLCBidWlsZGluZyBvZmZsaW5lIFJBRyBwaXBlbGluZXMgd2l0aCBKYXZhU2NyaXB0IGFuZCBTUUxpdGUuXCJcclxuICAgICAgICAgICAgICAgIHZhbHVlPXttZW1vcnkudXNlci5iaW99XHJcbiAgICAgICAgICAgICAgICBvbkNoYW5nZT17KGUpID0+IGhhbmRsZVVzZXJDaGFuZ2UoJ2JpbycsIGUudGFyZ2V0LnZhbHVlKX1cclxuICAgICAgICAgICAgICAvPlxyXG4gICAgICAgICAgICA8L2Rpdj5cclxuXHJcbiAgICAgICAgICAgIHsvKiBBdXRvLXNhdmUgc3RhdHVzIGZlZWRiYWNrICovfVxyXG4gICAgICAgICAgICA8ZGl2IHN0eWxlPXt7IGRpc3BsYXk6ICdmbGV4JywgYWxpZ25JdGVtczogJ2NlbnRlcicsIGp1c3RpZnlDb250ZW50OiAnZmxleC1lbmQnLCBoZWlnaHQ6ICcxOHB4JywgZm9udFNpemU6ICcxMXB4JywgY29sb3I6ICd2YXIoLS10ZXh0LW11dGVkLCAjOTRhM2I4KScgfX0+XHJcbiAgICAgICAgICAgICAge3NhdmVTdGF0dXMgPT09ICdzYXZpbmcnICYmIChcclxuICAgICAgICAgICAgICAgIDxzcGFuIHN0eWxlPXt7IGRpc3BsYXk6ICdpbmxpbmUtZmxleCcsIGFsaWduSXRlbXM6ICdjZW50ZXInLCBnYXA6ICc0cHgnLCBvcGFjaXR5OiAwLjggfX0+XHJcbiAgICAgICAgICAgICAgICAgIFNhdmluZy4uLlxyXG4gICAgICAgICAgICAgICAgPC9zcGFuPlxyXG4gICAgICAgICAgICAgICl9XHJcbiAgICAgICAgICAgICAge3NhdmVTdGF0dXMgPT09ICdzYXZlZCcgJiYgKFxyXG4gICAgICAgICAgICAgICAgPHNwYW4gc3R5bGU9e3sgZGlzcGxheTogJ2lubGluZS1mbGV4JywgYWxpZ25JdGVtczogJ2NlbnRlcicsIGdhcDogJzRweCcsIGNvbG9yOiAnIzIyYzU1ZScgfX0+XHJcbiAgICAgICAgICAgICAgICAgIDxDaGVjayBzaXplPXsxMn0gLz5cclxuICAgICAgICAgICAgICAgICAgU2F2ZWQgYXV0b21hdGljYWxseVxyXG4gICAgICAgICAgICAgICAgPC9zcGFuPlxyXG4gICAgICAgICAgICAgICl9XHJcbiAgICAgICAgICAgIDwvZGl2PlxyXG4gICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgPC9kaXY+XHJcbiAgICAgIDwvc2VjdGlvbj5cclxuXHJcbiAgICAgIHsvKiBQcmVmZXJlbmNlcyBTZWN0aW9uICovfVxyXG4gICAgICA8c2VjdGlvbiBzdHlsZT17eyBtYXJnaW5Cb3R0b206ICcyOHB4JyB9fT5cclxuICAgICAgICA8ZGl2IHN0eWxlPXt7IGRpc3BsYXk6ICdmbGV4JywgYWxpZ25JdGVtczogJ2NlbnRlcicsIGdhcDogJzhweCcsIG1hcmdpbkJvdHRvbTogJzZweCcgfX0+XHJcbiAgICAgICAgICA8SGVhcnQgc2l6ZT17MTR9IHN0eWxlPXt7IGNvbG9yOiAnI2VjNDg5OScgfX0gLz5cclxuICAgICAgICAgIDxoMyBzdHlsZT17eyBtYXJnaW46IDAsIGZvbnRTaXplOiAnMTNweCcsIGZvbnRXZWlnaHQ6ICc2MDAnLCB0ZXh0VHJhbnNmb3JtOiAndXBwZXJjYXNlJywgbGV0dGVyU3BhY2luZzogJzAuNnB4JyB9fT5cclxuICAgICAgICAgICAgVXNlciBQcmVmZXJlbmNlcyAoe21lbW9yeS5wcmVmZXJlbmNlcy5sZW5ndGh9KVxyXG4gICAgICAgICAgPC9oMz5cclxuICAgICAgICA8L2Rpdj5cclxuICAgICAgICA8cCBzdHlsZT17eyBmb250U2l6ZTogJzExcHgnLCBjb2xvcjogJ3ZhcigtLXRleHQtbXV0ZWQsICM5NGEzYjgpJywgbWFyZ2luVG9wOiAnMCcsIG1hcmdpbkJvdHRvbTogJzEycHgnLCBsaW5lSGVpZ2h0OiAnMS40JyB9fT5cclxuICAgICAgICAgIFlvdXIgcHJlZmVycmVkIHN0eWxlcyBvciBpbnN0cnVjdGlvbnMgZm9yIEFJIGFuc3dlcnMgKGUuZy4gXCJhbHdheXMgZXhwbGFpbiBzaW1wbHlcIiwgXCJmYXZvciBUeXBlU2NyaXB0IG92ZXIgSmF2YVNjcmlwdFwiLCBcInVzZSBJbmRvbmVzaWFuIGZvciBleHBsYW5hdGlvbnNcIikuXHJcbiAgICAgICAgPC9wPlxyXG5cclxuICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInNldHRpbmdzLWJsb2NrXCIgc3R5bGU9e3sgcGFkZGluZzogJzE2cHgnLCBiYWNrZ3JvdW5kOiAndmFyKC0tYmctcHJpbWFyeSwgcmdiYSgyNTUsIDI1NSwgMjU1LCAwLjAyKSknLCBib3JkZXJSYWRpdXM6ICc2cHgnIH19PlxyXG4gICAgICAgICAgPGZvcm0gb25TdWJtaXQ9e2hhbmRsZUFkZFByZWZlcmVuY2V9IHN0eWxlPXt7IGRpc3BsYXk6ICdmbGV4JywgZ2FwOiAnOHB4JywgbWFyZ2luQm90dG9tOiAnMTRweCcgfX0+XHJcbiAgICAgICAgICAgIDxpbnB1dFxyXG4gICAgICAgICAgICAgIHR5cGU9XCJ0ZXh0XCJcclxuICAgICAgICAgICAgICBjbGFzc05hbWU9XCJzZXR0aW5ncy1zZWxlY3RcIlxyXG4gICAgICAgICAgICAgIHN0eWxlPXt7IGZsZXg6IDEsIHRleHRBbGlnbjogJ2xlZnQnLCBwYWRkaW5nOiAnNnB4IDEwcHgnIH19XHJcbiAgICAgICAgICAgICAgcGxhY2Vob2xkZXI9XCJBZGQgYSBwcmVmZXJlbmNlIChlLmcuICdQcmVmZXJzIGNvbmNpc2UgcmVzcG9uc2VzIHdpdGggY29kZSBleGFtcGxlcycpXCJcclxuICAgICAgICAgICAgICB2YWx1ZT17bmV3UHJlZn1cclxuICAgICAgICAgICAgICBvbkNoYW5nZT17KGUpID0+IHNldE5ld1ByZWYoZS50YXJnZXQudmFsdWUpfVxyXG4gICAgICAgICAgICAvPlxyXG4gICAgICAgICAgICA8YnV0dG9uXHJcbiAgICAgICAgICAgICAgdHlwZT1cInN1Ym1pdFwiXHJcbiAgICAgICAgICAgICAgZGlzYWJsZWQ9eyFuZXdQcmVmLnRyaW0oKX1cclxuICAgICAgICAgICAgICBjbGFzc05hbWU9XCJidG4gYnRuLXByaW1hcnlcIlxyXG4gICAgICAgICAgICAgIHN0eWxlPXt7IGhlaWdodDogJzMwcHgnLCBwYWRkaW5nOiAnMCAxMnB4JywgZm9udFNpemU6ICcxMXB4JywgZGlzcGxheTogJ2lubGluZS1mbGV4JywgYWxpZ25JdGVtczogJ2NlbnRlcicsIGdhcDogJzRweCcgfX1cclxuICAgICAgICAgICAgPlxyXG4gICAgICAgICAgICAgIDxQbHVzIHNpemU9ezEyfSAvPlxyXG4gICAgICAgICAgICAgIDxzcGFuPkFkZDwvc3Bhbj5cclxuICAgICAgICAgICAgPC9idXR0b24+XHJcbiAgICAgICAgICA8L2Zvcm0+XHJcblxyXG4gICAgICAgICAge21lbW9yeS5wcmVmZXJlbmNlcy5sZW5ndGggPT09IDAgPyAoXHJcbiAgICAgICAgICAgIDxkaXYgc3R5bGU9e3sgZm9udFNpemU6ICcxMnB4JywgY29sb3I6ICd2YXIoLS10ZXh0LW11dGVkLCAjOTRhM2I4KScsIGZvbnRTdHlsZTogJ2l0YWxpYycsIHBhZGRpbmc6ICc4cHggMCcgfX0+XHJcbiAgICAgICAgICAgICAgTm8gY3VzdG9tIHByZWZlcmVuY2VzIHJlY29yZGVkIHlldC4gVGVsbCBMdW1pbmEgXCJJIHByZWZlciBzaG9ydCBhbnN3ZXJzXCIgaW4gY2hhdCBvciBhZGQgb25lIGFib3ZlLlxyXG4gICAgICAgICAgICA8L2Rpdj5cclxuICAgICAgICAgICkgOiAoXHJcbiAgICAgICAgICAgIDxkaXYgc3R5bGU9e3sgZGlzcGxheTogJ2ZsZXgnLCBmbGV4RGlyZWN0aW9uOiAnY29sdW1uJywgZ2FwOiAnNnB4JyB9fT5cclxuICAgICAgICAgICAgICB7bWVtb3J5LnByZWZlcmVuY2VzLm1hcCgocHJlZiwgaWR4KSA9PiAoXHJcbiAgICAgICAgICAgICAgICA8ZGl2XHJcbiAgICAgICAgICAgICAgICAgIGtleT17aWR4fVxyXG4gICAgICAgICAgICAgICAgICBzdHlsZT17e1xyXG4gICAgICAgICAgICAgICAgICAgIGRpc3BsYXk6ICdmbGV4JyxcclxuICAgICAgICAgICAgICAgICAgICBhbGlnbkl0ZW1zOiAnY2VudGVyJyxcclxuICAgICAgICAgICAgICAgICAgICBqdXN0aWZ5Q29udGVudDogJ3NwYWNlLWJldHdlZW4nLFxyXG4gICAgICAgICAgICAgICAgICAgIHBhZGRpbmc6ICc4cHggMTJweCcsXHJcbiAgICAgICAgICAgICAgICAgICAgYm9yZGVyUmFkaXVzOiAnNXB4JyxcclxuICAgICAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kOiAncmdiYSgyNTUsIDI1NSwgMjU1LCAwLjAzKScsXHJcbiAgICAgICAgICAgICAgICAgICAgYm9yZGVyOiAnMXB4IHNvbGlkIHJnYmEoMjU1LCAyNTUsIDI1NSwgMC4wNSknLFxyXG4gICAgICAgICAgICAgICAgICAgIGZvbnRTaXplOiAnMTJweCcsXHJcbiAgICAgICAgICAgICAgICAgICAgY29sb3I6ICd2YXIoLS10ZXh0LW1haW4sICNmOGZhZmMpJyxcclxuICAgICAgICAgICAgICAgICAgICBnYXA6ICc4cHgnXHJcbiAgICAgICAgICAgICAgICAgIH19XHJcbiAgICAgICAgICAgICAgICA+XHJcbiAgICAgICAgICAgICAgICAgIHtlZGl0aW5nUHJlZkluZGV4ID09PSBpZHggPyAoXHJcbiAgICAgICAgICAgICAgICAgICAgPGRpdiBzdHlsZT17eyBkaXNwbGF5OiAnZmxleCcsIGFsaWduSXRlbXM6ICdjZW50ZXInLCBnYXA6ICc2cHgnLCB3aWR0aDogJzEwMCUnIH19PlxyXG4gICAgICAgICAgICAgICAgICAgICAgPGlucHV0XHJcbiAgICAgICAgICAgICAgICAgICAgICAgIHR5cGU9XCJ0ZXh0XCJcclxuICAgICAgICAgICAgICAgICAgICAgICAgYXV0b0ZvY3VzXHJcbiAgICAgICAgICAgICAgICAgICAgICAgIGNsYXNzTmFtZT1cInNldHRpbmdzLXNlbGVjdFwiXHJcbiAgICAgICAgICAgICAgICAgICAgICAgIHN0eWxlPXt7IGZsZXg6IDEsIHRleHRBbGlnbjogJ2xlZnQnLCBwYWRkaW5nOiAnNHB4IDhweCcsIGZvbnRTaXplOiAnMTJweCcgfX1cclxuICAgICAgICAgICAgICAgICAgICAgICAgdmFsdWU9e2VkaXRpbmdQcmVmVmFsdWV9XHJcbiAgICAgICAgICAgICAgICAgICAgICAgIG9uQ2hhbmdlPXsoZSkgPT4gc2V0RWRpdGluZ1ByZWZWYWx1ZShlLnRhcmdldC52YWx1ZSl9XHJcbiAgICAgICAgICAgICAgICAgICAgICAgIG9uS2V5RG93bj17KGUpID0+IHtcclxuICAgICAgICAgICAgICAgICAgICAgICAgICBpZiAoZS5rZXkgPT09ICdFbnRlcicpIGhhbmRsZVNhdmVFZGl0UHJlZihpZHgsIHByZWYpXHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgaWYgKGUua2V5ID09PSAnRXNjYXBlJykgaGFuZGxlQ2FuY2VsRWRpdFByZWYoKVxyXG4gICAgICAgICAgICAgICAgICAgICAgICB9fVxyXG4gICAgICAgICAgICAgICAgICAgICAgLz5cclxuICAgICAgICAgICAgICAgICAgICAgIDxidXR0b25cclxuICAgICAgICAgICAgICAgICAgICAgICAgdHlwZT1cImJ1dHRvblwiXHJcbiAgICAgICAgICAgICAgICAgICAgICAgIG9uQ2xpY2s9eygpID0+IGhhbmRsZVNhdmVFZGl0UHJlZihpZHgsIHByZWYpfVxyXG4gICAgICAgICAgICAgICAgICAgICAgICB0aXRsZT1cIlNhdmUgY2hhbmdlc1wiXHJcbiAgICAgICAgICAgICAgICAgICAgICAgIHN0eWxlPXt7XHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgYmFja2dyb3VuZDogJ3RyYW5zcGFyZW50JyxcclxuICAgICAgICAgICAgICAgICAgICAgICAgICBib3JkZXI6ICdub25lJyxcclxuICAgICAgICAgICAgICAgICAgICAgICAgICBjb2xvcjogJyMyMmM1NWUnLFxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIGN1cnNvcjogJ3BvaW50ZXInLFxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIHBhZGRpbmc6ICc0cHgnLFxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIGRpc3BsYXk6ICdmbGV4JyxcclxuICAgICAgICAgICAgICAgICAgICAgICAgICBhbGlnbkl0ZW1zOiAnY2VudGVyJyxcclxuICAgICAgICAgICAgICAgICAgICAgICAgICBmbGV4U2hyaW5rOiAwXHJcbiAgICAgICAgICAgICAgICAgICAgICAgIH19XHJcbiAgICAgICAgICAgICAgICAgICAgICA+XHJcbiAgICAgICAgICAgICAgICAgICAgICAgIDxDaGVjayBzaXplPXsxM30gLz5cclxuICAgICAgICAgICAgICAgICAgICAgIDwvYnV0dG9uPlxyXG4gICAgICAgICAgICAgICAgICAgICAgPGJ1dHRvblxyXG4gICAgICAgICAgICAgICAgICAgICAgICB0eXBlPVwiYnV0dG9uXCJcclxuICAgICAgICAgICAgICAgICAgICAgICAgb25DbGljaz17aGFuZGxlQ2FuY2VsRWRpdFByZWZ9XHJcbiAgICAgICAgICAgICAgICAgICAgICAgIHRpdGxlPVwiQ2FuY2VsXCJcclxuICAgICAgICAgICAgICAgICAgICAgICAgc3R5bGU9e3tcclxuICAgICAgICAgICAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kOiAndHJhbnNwYXJlbnQnLFxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIGJvcmRlcjogJ25vbmUnLFxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIGNvbG9yOiAndmFyKC0tdGV4dC1tdXRlZCwgIzk0YTNiOCknLFxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIGN1cnNvcjogJ3BvaW50ZXInLFxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIHBhZGRpbmc6ICc0cHgnLFxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIGRpc3BsYXk6ICdmbGV4JyxcclxuICAgICAgICAgICAgICAgICAgICAgICAgICBhbGlnbkl0ZW1zOiAnY2VudGVyJyxcclxuICAgICAgICAgICAgICAgICAgICAgICAgICBmbGV4U2hyaW5rOiAwXHJcbiAgICAgICAgICAgICAgICAgICAgICAgIH19XHJcbiAgICAgICAgICAgICAgICAgICAgICA+XHJcbiAgICAgICAgICAgICAgICAgICAgICAgIDxYIHNpemU9ezEzfSAvPlxyXG4gICAgICAgICAgICAgICAgICAgICAgPC9idXR0b24+XHJcbiAgICAgICAgICAgICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgICAgICAgICAgICkgOiAoXHJcbiAgICAgICAgICAgICAgICAgICAgPD5cclxuICAgICAgICAgICAgICAgICAgICAgIDxzcGFuIHN0eWxlPXt7IHdvcmRCcmVhazogJ2JyZWFrLXdvcmQnLCBvdmVyZmxvd1dyYXA6ICdhbnl3aGVyZScsIGxpbmVIZWlnaHQ6ICcxLjQ1JywgZmxleDogMSwgbWFyZ2luUmlnaHQ6ICcxMnB4JyB9fT5cclxuICAgICAgICAgICAgICAgICAgICAgICAge3ByZWZ9XHJcbiAgICAgICAgICAgICAgICAgICAgICA8L3NwYW4+XHJcbiAgICAgICAgICAgICAgICAgICAgICA8ZGl2IHN0eWxlPXt7IGRpc3BsYXk6ICdmbGV4JywgYWxpZ25JdGVtczogJ2NlbnRlcicsIGdhcDogJzRweCcsIGZsZXhTaHJpbms6IDAgfX0+XHJcbiAgICAgICAgICAgICAgICAgICAgICAgIDxidXR0b25cclxuICAgICAgICAgICAgICAgICAgICAgICAgICB0eXBlPVwiYnV0dG9uXCJcclxuICAgICAgICAgICAgICAgICAgICAgICAgICBvbkNsaWNrPXsoKSA9PiBoYW5kbGVTdGFydEVkaXRQcmVmKGlkeCwgcHJlZil9XHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgdGl0bGU9XCJFZGl0IHByZWZlcmVuY2VcIlxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIHN0eWxlPXt7XHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kOiAndHJhbnNwYXJlbnQnLFxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgYm9yZGVyOiAnbm9uZScsXHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICBjb2xvcjogJ3ZhcigtLXRleHQtbXV0ZWQsICM5NGEzYjgpJyxcclxuICAgICAgICAgICAgICAgICAgICAgICAgICAgIGN1cnNvcjogJ3BvaW50ZXInLFxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgcGFkZGluZzogJzRweCcsXHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICBkaXNwbGF5OiAnZmxleCcsXHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICBhbGlnbkl0ZW1zOiAnY2VudGVyJ1xyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIH19XHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgb25Nb3VzZUVudGVyPXsoZSkgPT4gKGUuY3VycmVudFRhcmdldC5zdHlsZS5jb2xvciA9ICd2YXIoLS10ZXh0LWFjY2VudCwgI2E3OGJmYSknKX1cclxuICAgICAgICAgICAgICAgICAgICAgICAgICBvbk1vdXNlTGVhdmU9eyhlKSA9PiAoZS5jdXJyZW50VGFyZ2V0LnN0eWxlLmNvbG9yID0gJ3ZhcigtLXRleHQtbXV0ZWQsICM5NGEzYjgpJyl9XHJcbiAgICAgICAgICAgICAgICAgICAgICAgID5cclxuICAgICAgICAgICAgICAgICAgICAgICAgICA8RWRpdDIgc2l6ZT17MTJ9IC8+XHJcbiAgICAgICAgICAgICAgICAgICAgICAgIDwvYnV0dG9uPlxyXG4gICAgICAgICAgICAgICAgICAgICAgICA8YnV0dG9uXHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgdHlwZT1cImJ1dHRvblwiXHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgb25DbGljaz17KCkgPT4gaGFuZGxlUmVtb3ZlUHJlZmVyZW5jZShwcmVmKX1cclxuICAgICAgICAgICAgICAgICAgICAgICAgICB0aXRsZT1cIlJlbW92ZSBwcmVmZXJlbmNlXCJcclxuICAgICAgICAgICAgICAgICAgICAgICAgICBzdHlsZT17e1xyXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgYmFja2dyb3VuZDogJ3RyYW5zcGFyZW50JyxcclxuICAgICAgICAgICAgICAgICAgICAgICAgICAgIGJvcmRlcjogJ25vbmUnLFxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgY29sb3I6ICd2YXIoLS10ZXh0LW11dGVkLCAjOTRhM2I4KScsXHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICBjdXJzb3I6ICdwb2ludGVyJyxcclxuICAgICAgICAgICAgICAgICAgICAgICAgICAgIHBhZGRpbmc6ICc0cHgnLFxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgZGlzcGxheTogJ2ZsZXgnLFxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgYWxpZ25JdGVtczogJ2NlbnRlcidcclxuICAgICAgICAgICAgICAgICAgICAgICAgICB9fVxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIG9uTW91c2VFbnRlcj17KGUpID0+IChlLmN1cnJlbnRUYXJnZXQuc3R5bGUuY29sb3IgPSAnI2VmNDQ0NCcpfVxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIG9uTW91c2VMZWF2ZT17KGUpID0+IChlLmN1cnJlbnRUYXJnZXQuc3R5bGUuY29sb3IgPSAndmFyKC0tdGV4dC1tdXRlZCwgIzk0YTNiOCknKX1cclxuICAgICAgICAgICAgICAgICAgICAgICAgPlxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIDxUcmFzaDIgc2l6ZT17MTJ9IC8+XHJcbiAgICAgICAgICAgICAgICAgICAgICAgIDwvYnV0dG9uPlxyXG4gICAgICAgICAgICAgICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgICAgICAgICAgICAgPC8+XHJcbiAgICAgICAgICAgICAgICAgICl9XHJcbiAgICAgICAgICAgICAgICA8L2Rpdj5cclxuICAgICAgICAgICAgICApKX1cclxuICAgICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgICApfVxyXG4gICAgICAgIDwvZGl2PlxyXG4gICAgICA8L3NlY3Rpb24+XHJcblxyXG4gICAgICB7LyogTGVhcm5lZCBGYWN0cyBTZWN0aW9uICovfVxyXG4gICAgICA8c2VjdGlvbiBzdHlsZT17eyBtYXJnaW5Cb3R0b206ICcyMHB4JyB9fT5cclxuICAgICAgICA8ZGl2IHN0eWxlPXt7IGRpc3BsYXk6ICdmbGV4JywgYWxpZ25JdGVtczogJ2NlbnRlcicsIGdhcDogJzhweCcsIG1hcmdpbkJvdHRvbTogJzZweCcgfX0+XHJcbiAgICAgICAgICA8QnJhaW4gc2l6ZT17MTR9IHN0eWxlPXt7IGNvbG9yOiAndmFyKC0tdGV4dC1hY2NlbnQsICNhNzhiZmEpJyB9fSAvPlxyXG4gICAgICAgICAgPGgzIHN0eWxlPXt7IG1hcmdpbjogMCwgZm9udFNpemU6ICcxM3B4JywgZm9udFdlaWdodDogJzYwMCcsIHRleHRUcmFuc2Zvcm06ICd1cHBlcmNhc2UnLCBsZXR0ZXJTcGFjaW5nOiAnMC42cHgnIH19PlxyXG4gICAgICAgICAgICBMZWFybmVkIEZhY3RzICYgS25vd2xlZGdlICh7bWVtb3J5LmZhY3RzLmxlbmd0aH0pXHJcbiAgICAgICAgICA8L2gzPlxyXG4gICAgICAgIDwvZGl2PlxyXG4gICAgICAgIDxwIHN0eWxlPXt7IGZvbnRTaXplOiAnMTFweCcsIGNvbG9yOiAndmFyKC0tdGV4dC1tdXRlZCwgIzk0YTNiOCknLCBtYXJnaW5Ub3A6ICcwJywgbWFyZ2luQm90dG9tOiAnMTJweCcsIGxpbmVIZWlnaHQ6ICcxLjQnIH19PlxyXG4gICAgICAgICAgS2V5IGZhY3RzIEx1bWluYSBhdXRvbWF0aWNhbGx5IGxlYXJucyBmcm9tIHlvdXIgY29udmVyc2F0aW9ucyBvciBub3RlcyAoZS5nLiB5b3VyIGFjdGl2ZSBwcm9qZWN0cywgdGVjaG5vbG9naWVzLCBvciBzdWJqZWN0cykgc28geW91IGRvbid0IGhhdmUgdG8gcmVwZWF0IHRoZW0uXHJcbiAgICAgICAgPC9wPlxyXG5cclxuICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInNldHRpbmdzLWJsb2NrXCIgc3R5bGU9e3sgcGFkZGluZzogJzE2cHgnLCBiYWNrZ3JvdW5kOiAndmFyKC0tYmctcHJpbWFyeSwgcmdiYSgyNTUsIDI1NSwgMjU1LCAwLjAyKSknLCBib3JkZXJSYWRpdXM6ICc2cHgnIH19PlxyXG4gICAgICAgICAgPGZvcm0gb25TdWJtaXQ9e2hhbmRsZUFkZEZhY3R9IHN0eWxlPXt7IGRpc3BsYXk6ICdmbGV4JywgZ2FwOiAnOHB4JywgbWFyZ2luQm90dG9tOiAnMTRweCcgfX0+XHJcbiAgICAgICAgICAgIDxpbnB1dFxyXG4gICAgICAgICAgICAgIHR5cGU9XCJ0ZXh0XCJcclxuICAgICAgICAgICAgICBjbGFzc05hbWU9XCJzZXR0aW5ncy1zZWxlY3RcIlxyXG4gICAgICAgICAgICAgIHN0eWxlPXt7IGZsZXg6IDEsIHRleHRBbGlnbjogJ2xlZnQnLCBwYWRkaW5nOiAnNnB4IDEwcHgnIH19XHJcbiAgICAgICAgICAgICAgcGxhY2Vob2xkZXI9XCJBZGQgYSBmYWN0IChlLmcuICdXb3JraW5nIG9uIEluZG9uZXNpYW4gdGhlc2lzIG9uIGNoYXJhY3RlciBlZHVjYXRpb24nKVwiXHJcbiAgICAgICAgICAgICAgdmFsdWU9e25ld0ZhY3R9XHJcbiAgICAgICAgICAgICAgb25DaGFuZ2U9eyhlKSA9PiBzZXROZXdGYWN0KGUudGFyZ2V0LnZhbHVlKX1cclxuICAgICAgICAgICAgLz5cclxuICAgICAgICAgICAgPGJ1dHRvblxyXG4gICAgICAgICAgICAgIHR5cGU9XCJzdWJtaXRcIlxyXG4gICAgICAgICAgICAgIGRpc2FibGVkPXshbmV3RmFjdC50cmltKCl9XHJcbiAgICAgICAgICAgICAgY2xhc3NOYW1lPVwiYnRuIGJ0bi1wcmltYXJ5XCJcclxuICAgICAgICAgICAgICBzdHlsZT17eyBoZWlnaHQ6ICczMHB4JywgcGFkZGluZzogJzAgMTJweCcsIGZvbnRTaXplOiAnMTFweCcsIGRpc3BsYXk6ICdpbmxpbmUtZmxleCcsIGFsaWduSXRlbXM6ICdjZW50ZXInLCBnYXA6ICc0cHgnIH19XHJcbiAgICAgICAgICAgID5cclxuICAgICAgICAgICAgICA8UGx1cyBzaXplPXsxMn0gLz5cclxuICAgICAgICAgICAgICA8c3Bhbj5BZGQ8L3NwYW4+XHJcbiAgICAgICAgICAgIDwvYnV0dG9uPlxyXG4gICAgICAgICAgPC9mb3JtPlxyXG5cclxuICAgICAgICAgIHttZW1vcnkuZmFjdHMubGVuZ3RoID09PSAwID8gKFxyXG4gICAgICAgICAgICA8ZGl2IHN0eWxlPXt7IGZvbnRTaXplOiAnMTJweCcsIGNvbG9yOiAndmFyKC0tdGV4dC1tdXRlZCwgIzk0YTNiOCknLCBmb250U3R5bGU6ICdpdGFsaWMnLCBwYWRkaW5nOiAnOHB4IDAnIH19PlxyXG4gICAgICAgICAgICAgIE5vIGxlYXJuZWQgZmFjdHMgcmVjb3JkZWQgeWV0LiBMdW1pbmEgc2F2ZXMgZmFjdHMgYXV0b21hdGljYWxseSB3aGVuIHlvdSBhc2sgaXQgdG8gXCJyZW1lbWJlciB0aGF0Li4uXCIgaW4gY2hhdCwgb3IgeW91IGNhbiBhZGQgdGhlbSBtYW51YWxseSBhYm92ZS5cclxuICAgICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgICApIDogKFxyXG4gICAgICAgICAgICA8ZGl2IHN0eWxlPXt7IGRpc3BsYXk6ICdmbGV4JywgZmxleERpcmVjdGlvbjogJ2NvbHVtbicsIGdhcDogJzZweCcgfX0+XHJcbiAgICAgICAgICAgICAge21lbW9yeS5mYWN0cy5tYXAoKGZhY3RJdGVtLCBpZHgpID0+IHtcclxuICAgICAgICAgICAgICAgIGNvbnN0IHRleHQgPSB0eXBlb2YgZmFjdEl0ZW0gPT09ICdzdHJpbmcnID8gZmFjdEl0ZW0gOiBmYWN0SXRlbS50ZXh0XHJcbiAgICAgICAgICAgICAgICByZXR1cm4gKFxyXG4gICAgICAgICAgICAgICAgICA8ZGl2XHJcbiAgICAgICAgICAgICAgICAgICAga2V5PXtpZHh9XHJcbiAgICAgICAgICAgICAgICAgICAgc3R5bGU9e3tcclxuICAgICAgICAgICAgICAgICAgICAgIGRpc3BsYXk6ICdmbGV4JyxcclxuICAgICAgICAgICAgICAgICAgICAgIGFsaWduSXRlbXM6ICdjZW50ZXInLFxyXG4gICAgICAgICAgICAgICAgICAgICAganVzdGlmeUNvbnRlbnQ6ICdzcGFjZS1iZXR3ZWVuJyxcclxuICAgICAgICAgICAgICAgICAgICAgIHBhZGRpbmc6ICc4cHggMTJweCcsXHJcbiAgICAgICAgICAgICAgICAgICAgICBib3JkZXJSYWRpdXM6ICc1cHgnLFxyXG4gICAgICAgICAgICAgICAgICAgICAgYmFja2dyb3VuZDogJ3JnYmEoMjU1LCAyNTUsIDI1NSwgMC4wMyknLFxyXG4gICAgICAgICAgICAgICAgICAgICAgYm9yZGVyOiAnMXB4IHNvbGlkIHJnYmEoMjU1LCAyNTUsIDI1NSwgMC4wNSknLFxyXG4gICAgICAgICAgICAgICAgICAgICAgZm9udFNpemU6ICcxMnB4JyxcclxuICAgICAgICAgICAgICAgICAgICAgIGNvbG9yOiAndmFyKC0tdGV4dC1tYWluLCAjZjhmYWZjKScsXHJcbiAgICAgICAgICAgICAgICAgICAgICBnYXA6ICc4cHgnXHJcbiAgICAgICAgICAgICAgICAgICAgfX1cclxuICAgICAgICAgICAgICAgICAgPlxyXG4gICAgICAgICAgICAgICAgICAgIHtlZGl0aW5nRmFjdEluZGV4ID09PSBpZHggPyAoXHJcbiAgICAgICAgICAgICAgICAgICAgICA8ZGl2IHN0eWxlPXt7IGRpc3BsYXk6ICdmbGV4JywgYWxpZ25JdGVtczogJ2NlbnRlcicsIGdhcDogJzZweCcsIHdpZHRoOiAnMTAwJScgfX0+XHJcbiAgICAgICAgICAgICAgICAgICAgICAgIDxpbnB1dFxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIHR5cGU9XCJ0ZXh0XCJcclxuICAgICAgICAgICAgICAgICAgICAgICAgICBhdXRvRm9jdXNcclxuICAgICAgICAgICAgICAgICAgICAgICAgICBjbGFzc05hbWU9XCJzZXR0aW5ncy1zZWxlY3RcIlxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIHN0eWxlPXt7IGZsZXg6IDEsIHRleHRBbGlnbjogJ2xlZnQnLCBwYWRkaW5nOiAnNHB4IDhweCcsIGZvbnRTaXplOiAnMTJweCcgfX1cclxuICAgICAgICAgICAgICAgICAgICAgICAgICB2YWx1ZT17ZWRpdGluZ0ZhY3RWYWx1ZX1cclxuICAgICAgICAgICAgICAgICAgICAgICAgICBvbkNoYW5nZT17KGUpID0+IHNldEVkaXRpbmdGYWN0VmFsdWUoZS50YXJnZXQudmFsdWUpfVxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIG9uS2V5RG93bj17KGUpID0+IHtcclxuICAgICAgICAgICAgICAgICAgICAgICAgICAgIGlmIChlLmtleSA9PT0gJ0VudGVyJykgaGFuZGxlU2F2ZUVkaXRGYWN0KGlkeCwgdGV4dClcclxuICAgICAgICAgICAgICAgICAgICAgICAgICAgIGlmIChlLmtleSA9PT0gJ0VzY2FwZScpIGhhbmRsZUNhbmNlbEVkaXRGYWN0KClcclxuICAgICAgICAgICAgICAgICAgICAgICAgICB9fVxyXG4gICAgICAgICAgICAgICAgICAgICAgICAvPlxyXG4gICAgICAgICAgICAgICAgICAgICAgICA8YnV0dG9uXHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgdHlwZT1cImJ1dHRvblwiXHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgb25DbGljaz17KCkgPT4gaGFuZGxlU2F2ZUVkaXRGYWN0KGlkeCwgdGV4dCl9XHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgdGl0bGU9XCJTYXZlIGNoYW5nZXNcIlxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIHN0eWxlPXt7XHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kOiAndHJhbnNwYXJlbnQnLFxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgYm9yZGVyOiAnbm9uZScsXHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICBjb2xvcjogJyMyMmM1NWUnLFxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgY3Vyc29yOiAncG9pbnRlcicsXHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICBwYWRkaW5nOiAnNHB4JyxcclxuICAgICAgICAgICAgICAgICAgICAgICAgICAgIGRpc3BsYXk6ICdmbGV4JyxcclxuICAgICAgICAgICAgICAgICAgICAgICAgICAgIGFsaWduSXRlbXM6ICdjZW50ZXInLFxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgZmxleFNocmluazogMFxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIH19XHJcbiAgICAgICAgICAgICAgICAgICAgICAgID5cclxuICAgICAgICAgICAgICAgICAgICAgICAgICA8Q2hlY2sgc2l6ZT17MTN9IC8+XHJcbiAgICAgICAgICAgICAgICAgICAgICAgIDwvYnV0dG9uPlxyXG4gICAgICAgICAgICAgICAgICAgICAgICA8YnV0dG9uXHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgdHlwZT1cImJ1dHRvblwiXHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgb25DbGljaz17aGFuZGxlQ2FuY2VsRWRpdEZhY3R9XHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgdGl0bGU9XCJDYW5jZWxcIlxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIHN0eWxlPXt7XHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kOiAndHJhbnNwYXJlbnQnLFxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgYm9yZGVyOiAnbm9uZScsXHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICBjb2xvcjogJ3ZhcigtLXRleHQtbXV0ZWQsICM5NGEzYjgpJyxcclxuICAgICAgICAgICAgICAgICAgICAgICAgICAgIGN1cnNvcjogJ3BvaW50ZXInLFxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgcGFkZGluZzogJzRweCcsXHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICBkaXNwbGF5OiAnZmxleCcsXHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICBhbGlnbkl0ZW1zOiAnY2VudGVyJyxcclxuICAgICAgICAgICAgICAgICAgICAgICAgICAgIGZsZXhTaHJpbms6IDBcclxuICAgICAgICAgICAgICAgICAgICAgICAgICB9fVxyXG4gICAgICAgICAgICAgICAgICAgICAgICA+XHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgPFggc2l6ZT17MTN9IC8+XHJcbiAgICAgICAgICAgICAgICAgICAgICAgIDwvYnV0dG9uPlxyXG4gICAgICAgICAgICAgICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgICAgICAgICAgICAgKSA6IChcclxuICAgICAgICAgICAgICAgICAgICAgIDw+XHJcbiAgICAgICAgICAgICAgICAgICAgICAgIDxzcGFuIHN0eWxlPXt7IHdvcmRCcmVhazogJ2JyZWFrLXdvcmQnLCBvdmVyZmxvd1dyYXA6ICdhbnl3aGVyZScsIGxpbmVIZWlnaHQ6ICcxLjQ1JywgZmxleDogMSwgbWFyZ2luUmlnaHQ6ICcxMnB4JyB9fT5cclxuICAgICAgICAgICAgICAgICAgICAgICAgICB7dGV4dH1cclxuICAgICAgICAgICAgICAgICAgICAgICAgPC9zcGFuPlxyXG4gICAgICAgICAgICAgICAgICAgICAgICA8ZGl2IHN0eWxlPXt7IGRpc3BsYXk6ICdmbGV4JywgYWxpZ25JdGVtczogJ2NlbnRlcicsIGdhcDogJzRweCcsIGZsZXhTaHJpbms6IDAgfX0+XHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgPGJ1dHRvblxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgdHlwZT1cImJ1dHRvblwiXHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICBvbkNsaWNrPXsoKSA9PiBoYW5kbGVTdGFydEVkaXRGYWN0KGlkeCwgdGV4dCl9XHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICB0aXRsZT1cIkVkaXQgZmFjdFwiXHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICBzdHlsZT17e1xyXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kOiAndHJhbnNwYXJlbnQnLFxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICBib3JkZXI6ICdub25lJyxcclxuICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgY29sb3I6ICd2YXIoLS10ZXh0LW11dGVkLCAjOTRhM2I4KScsXHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGN1cnNvcjogJ3BvaW50ZXInLFxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICBwYWRkaW5nOiAnNHB4JyxcclxuICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgZGlzcGxheTogJ2ZsZXgnLFxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICBhbGlnbkl0ZW1zOiAnY2VudGVyJ1xyXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgfX1cclxuICAgICAgICAgICAgICAgICAgICAgICAgICAgIG9uTW91c2VFbnRlcj17KGUpID0+IChlLmN1cnJlbnRUYXJnZXQuc3R5bGUuY29sb3IgPSAndmFyKC0tdGV4dC1hY2NlbnQsICNhNzhiZmEpJyl9XHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICBvbk1vdXNlTGVhdmU9eyhlKSA9PiAoZS5jdXJyZW50VGFyZ2V0LnN0eWxlLmNvbG9yID0gJ3ZhcigtLXRleHQtbXV0ZWQsICM5NGEzYjgpJyl9XHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgPlxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgPEVkaXQyIHNpemU9ezEyfSAvPlxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIDwvYnV0dG9uPlxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgIDxidXR0b25cclxuICAgICAgICAgICAgICAgICAgICAgICAgICAgIHR5cGU9XCJidXR0b25cIlxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgb25DbGljaz17KCkgPT4gaGFuZGxlUmVtb3ZlRmFjdChmYWN0SXRlbSl9XHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICB0aXRsZT1cIlJlbW92ZSBmYWN0XCJcclxuICAgICAgICAgICAgICAgICAgICAgICAgICAgIHN0eWxlPXt7XHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGJhY2tncm91bmQ6ICd0cmFuc3BhcmVudCcsXHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGJvcmRlcjogJ25vbmUnLFxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICBjb2xvcjogJ3ZhcigtLXRleHQtbXV0ZWQsICM5NGEzYjgpJyxcclxuICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgY3Vyc29yOiAncG9pbnRlcicsXHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHBhZGRpbmc6ICc0cHgnLFxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICBkaXNwbGF5OiAnZmxleCcsXHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGFsaWduSXRlbXM6ICdjZW50ZXInLFxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICBmbGV4U2hyaW5rOiAwXHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICB9fVxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgb25Nb3VzZUVudGVyPXsoZSkgPT4gKGUuY3VycmVudFRhcmdldC5zdHlsZS5jb2xvciA9ICcjZWY0NDQ0Jyl9XHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICBvbk1vdXNlTGVhdmU9eyhlKSA9PiAoZS5jdXJyZW50VGFyZ2V0LnN0eWxlLmNvbG9yID0gJ3ZhcigtLXRleHQtbXV0ZWQsICM5NGEzYjgpJyl9XHJcbiAgICAgICAgICAgICAgICAgICAgICAgICAgPlxyXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgPFRyYXNoMiBzaXplPXsxMn0gLz5cclxuICAgICAgICAgICAgICAgICAgICAgICAgICA8L2J1dHRvbj5cclxuICAgICAgICAgICAgICAgICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgICAgICAgICAgICAgICA8Lz5cclxuICAgICAgICAgICAgICAgICAgICApfVxyXG4gICAgICAgICAgICAgICAgICA8L2Rpdj5cclxuICAgICAgICAgICAgICAgIClcclxuICAgICAgICAgICAgICB9KX1cclxuICAgICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgICApfVxyXG4gICAgICAgIDwvZGl2PlxyXG4gICAgICA8L3NlY3Rpb24+XHJcbiAgICA8L2Rpdj5cclxuICApXHJcbn1cclxuXHJcbmV4cG9ydCBkZWZhdWx0IFJlYWN0Lm1lbW8oU2V0dGluZ01lbW9yeSlcclxuIl0sImZpbGUiOiJCOi9lbGVjdHJvbi9sdW1pbmEvc3JjL3JlbmRlcmVyL3NyYy9mZWF0dXJlcy9TZXR0aW5ncy9TZXR0aW5nTWVtb3J5LmpzeCJ9
