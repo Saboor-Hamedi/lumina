@@ -1,5 +1,36 @@
 import './css/table.css'
 
+const WRAP_CLASSES = {
+  '**': 'cm-atomic-strong-wrap',
+  '_':  'cm-atomic-em-wrap',
+  '~~': 'cm-atomic-strike-wrap',
+  '`':  'cm-atomic-inline-code-wrap'
+}
+
+// Return the innermost mark-wrap the caret/selection sits in, plus its tag.
+function getActiveWrap(source) {
+  const sel = window.getSelection()
+  if (!sel || sel.rangeCount === 0) return null
+  const range = sel.getRangeAt(0)
+  let node = range.commonAncestorContainer
+  if (node.nodeType === Node.TEXT_NODE) node = node.parentElement
+  for (const [tag, cls] of Object.entries(WRAP_CLASSES)) {
+    const wrap = node?.closest('.' + cls)
+    if (wrap && source.contains(wrap)) return { tag, cls, wrap }
+  }
+  return null
+}
+
+// Find the .cm-atomic-table-cell-source the caret/selection is in.
+function getSourceFromSelection() {
+  const sel = window.getSelection()
+  if (!sel || sel.rangeCount === 0) return null
+  const range = sel.getRangeAt(0)
+  const anchor = range.startContainer
+  const el = anchor.nodeType === Node.TEXT_NODE ? anchor.parentElement : anchor
+  return el?.closest('.cm-atomic-table-cell-source') ?? null
+}
+
 export function setupTableFormattingToolbar() {
   if (document.getElementById('table-formatting-toolbar')) return
 
@@ -9,22 +40,25 @@ export function setupTableFormattingToolbar() {
   toolbar.style.display = 'none'
 
   const actions = [
-    { icon: '<b>B</b>', tag: '**', label: 'Bold' },
-    { icon: '<i>I</i>', tag: '_', label: 'Italic' },
-    { icon: '<s>S</s>', tag: '~~', label: 'Strikethrough' },
-    { icon: '<code>&lt;&gt;</code>', tag: '`', label: 'Code' }
+    { icon: '<b>B</b>',             tag: '**', label: 'Bold' },
+    { icon: '<i>I</i>',             tag: '_',  label: 'Italic' },
+    { icon: '<s>S</s>',             tag: '~~', label: 'Strikethrough' },
+    { icon: '<code>&lt;&gt;</code>', tag: '`',  label: 'Code' }
   ]
 
+  const buttons = {}
   actions.forEach(({ icon, tag, label }) => {
     const btn = document.createElement('button')
     btn.innerHTML = icon
     btn.setAttribute('data-tooltip', label)
+    btn.setAttribute('data-tag', tag)
     btn.type = 'button'
     btn.addEventListener('mousedown', (e) => {
-      e.preventDefault() // prevent losing selection
+      e.preventDefault() // keep caret/selection alive
       applyFormatting(tag)
     })
     toolbar.appendChild(btn)
+    buttons[tag] = btn
   })
 
   document.body.appendChild(toolbar)
@@ -68,80 +102,94 @@ function applyFormatting(tag) {
       range.startContainer.closest('.cm-atomic-table-cell-source'))
   if (!source) return
 
-  let wrapClass = ''
-  if (tag === '**') wrapClass = 'cm-atomic-strong-wrap'
-  else if (tag === '_') wrapClass = 'cm-atomic-em-wrap'
-  else if (tag === '~~') wrapClass = 'cm-atomic-strike-wrap'
-  else if (tag === '`') wrapClass = 'cm-atomic-inline-code-wrap'
+  // ── Toggle-off via rendered mark wrap ─────────────────────────────────────
+  // When the selection is inside (or spans) a rendered mark wrap of the same
+  // type, replace the whole wrap with the plain inner text.
+  const wrapClass =
+    tag === '**' ? 'cm-atomic-strong-wrap'
+    : tag === '_'  ? 'cm-atomic-em-wrap'
+    : tag === '~~' ? 'cm-atomic-strike-wrap'
+    : tag === '`'  ? 'cm-atomic-inline-code-wrap'
+    : ''
 
-  // Check if selection is inside or contains an existing mark wrap of this type
-  let wrap = null
   if (wrapClass) {
     let node = range.commonAncestorContainer
     if (node.nodeType === Node.TEXT_NODE) node = node.parentElement
-    wrap = node?.closest('.' + wrapClass)
-    if (!wrap && range.cloneContents) {
-      const fragment = range.cloneContents()
-      if (fragment.querySelector && fragment.querySelector('.' + wrapClass)) {
-        wrap = node?.querySelector('.' + wrapClass)
-      }
+    const markWrap = node?.closest('.' + wrapClass)
+    if (markWrap && source.contains(markWrap)) {
+      // The inner span (.cm-atomic-strong / .cm-atomic-inline-code etc.)
+      // holds the visible text without delimiters.
+      const innerEl = markWrap.querySelector(
+        '.cm-atomic-inline-code, .cm-atomic-strong, .cm-atomic-em, .cm-atomic-strike'
+      )
+      const innerContent = innerEl ? innerEl.textContent : markWrap.textContent
+      const newRange = document.createRange()
+      newRange.selectNode(markWrap)
+      sel.removeAllRanges()
+      sel.addRange(newRange)
+      document.execCommand('insertText', false, innerContent)
+      source.dispatchEvent(new Event('input', { bubbles: true }))
+      return
     }
   }
 
-  // If inside a rendered mark wrap, toggle off: replace the whole wrap with its clean inner content
-  if (wrap && source.contains(wrap)) {
-    // Extract inner content (excluding the mark delimiters or stripping tag if present)
-    const innerEl = wrap.querySelector('.cm-atomic-inline-code, .cm-atomic-strong, .cm-atomic-em, .cm-atomic-strike')
-    let innerContent = innerEl ? innerEl.textContent : wrap.textContent
-
-    // Ensure leading and trailing tags are cleanly stripped
-    while (innerContent.startsWith(tag)) {
-      innerContent = innerContent.substring(tag.length)
-    }
-    while (innerContent.endsWith(tag)) {
-      innerContent = innerContent.substring(0, innerContent.length - tag.length)
-    }
-
-    const newRange = document.createRange()
-    newRange.selectNode(wrap)
-    sel.removeAllRanges()
-    sel.addRange(newRange)
-
-    document.execCommand('insertText', false, innerContent)
-    source.dispatchEvent(new Event('input', { bubbles: true }))
-    return
-  }
-
+  // ── Toggle-off via raw text ───────────────────────────────────────────────
+  // Handles the case where the cell is in raw/unrendered mode and the user
+  // has selected text that already includes the tag delimiters (e.g. "`hello`").
   const text = sel.toString()
   const trimmed = text.trim()
-
-  // Case 1: Plain text selection containing the tag delimiters (e.g. "`word`" or "**word**")
-  if (trimmed.startsWith(tag) && trimmed.endsWith(tag) && trimmed.length >= tag.length * 2) {
-    const startIdx = text.indexOf(trimmed)
-    const endIdx = startIdx + trimmed.length
-    const leading = text.substring(0, startIdx)
-    const trailing = text.substring(endIdx)
-    
-    let inner = trimmed
-    if (inner.startsWith(tag)) inner = inner.substring(tag.length)
-    if (inner.endsWith(tag)) inner = inner.substring(0, inner.length - tag.length)
-
+  if (trimmed.startsWith(tag) && trimmed.endsWith(tag) && trimmed.length >= tag.length * 2 + 1) {
+    const inner = trimmed.substring(tag.length, trimmed.length - tag.length)
+    const leading = text.substring(0, text.indexOf(trimmed))
+    const trailing = text.substring(text.indexOf(trimmed) + trimmed.length)
     document.execCommand('insertText', false, leading + inner + trailing)
     source.dispatchEvent(new Event('input', { bubbles: true }))
     return
   }
 
-  // Case 2: If the selection itself starts with tag or ends with tag (partially selected delimiters)
-  if (trimmed.startsWith(tag) || trimmed.endsWith(tag)) {
-    let clean = trimmed
-    if (clean.startsWith(tag)) clean = clean.substring(tag.length)
-    if (clean.endsWith(tag)) clean = clean.substring(0, clean.length - tag.length)
-    document.execCommand('insertText', false, clean)
-    source.dispatchEvent(new Event('input', { bubbles: true }))
-    return
+  // ── Toggle-off via surrounding context ───────────────────────────────────
+  // The source's full raw text lets us check if the selection is surrounded
+  // by this tag even when the delimiters are hidden by the CSS.
+  const rawText = source.textContent
+  const selStr = sel.toString()
+  const idx = rawText.indexOf(tag + selStr + tag)
+  if (idx !== -1) {
+    // Find and select the full wrapped text in the DOM, then replace it
+    const fullWrapped = tag + selStr + tag
+    // Rebuild a range that covers the full wrap in the source textContent
+    const docRange = document.createRange()
+    let charCount = 0
+    let startNode = null, startOff = 0, endNode = null, endOff = 0
+    const walk = (node) => {
+      if (startNode && endNode) return
+      if (node.nodeType === Node.TEXT_NODE) {
+        const len = node.length
+        if (!startNode && charCount + len > idx) {
+          startNode = node
+          startOff = idx - charCount
+        }
+        if (!endNode && charCount + len >= idx + fullWrapped.length) {
+          endNode = node
+          endOff = idx + fullWrapped.length - charCount
+        }
+        charCount += len
+      } else {
+        for (const child of node.childNodes) walk(child)
+      }
+    }
+    walk(source)
+    if (startNode && endNode) {
+      docRange.setStart(startNode, startOff)
+      docRange.setEnd(endNode, endOff)
+      sel.removeAllRanges()
+      sel.addRange(docRange)
+      document.execCommand('insertText', false, selStr)
+      source.dispatchEvent(new Event('input', { bubbles: true }))
+      return
+    }
   }
 
-  // Case 3: Normal wrap
+  // ── Wrap — add the tag delimiters ────────────────────────────────────────
   document.execCommand('insertText', false, `${tag}${text}${tag}`)
   source.dispatchEvent(new Event('input', { bubbles: true }))
 }

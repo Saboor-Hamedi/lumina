@@ -33,3 +33,13 @@
 .table-formatting-toolbar button:hover {
   background: rgba(255, 255, 255, 0.2);
 }
+
+/* ── Inline code color in table cells ───────────────────────────────────────
+   .cm-atomic-table td { color: var(--text-main) !important } wins over
+   inlineMarks.css's single-class accent-color rule when both use !important.
+   This 3-class selector out-specifics the td rule while keeping the same
+   behaviour as bold: plain colour change, no background, marks hidden/revealed
+   by the existing .cm-atomic-mark rules in table.css. */
+.cm-atomic-table .cm-atomic-inline-code-wrap:not(.active) .cm-atomic-inline-code {
+  color: var(--text-accent, #e879f9) !important;
+}
