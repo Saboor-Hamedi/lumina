@@ -343,31 +343,33 @@ export function openCellMenu(view, cell, x, y) {
       () => {
         const m = readModelFromDom(wrap)
         if (targetCol >= 0 && targetCol < m.header.length) {
-          if (m.header.length <= 1) {
+          // Always keep at least 1 column — capping deleteCount ensures
+          // m.header never becomes empty (which would corrupt the markdown).
+          const deleteCount = Math.min(colDeleteCount, m.header.length - 1)
+
+          if (deleteCount <= 0) {
+            // Only 1 column left (or all selected) — clear content, keep structure
             m.header = ['']
             m.alignments = ['left']
-            if (m.columnWidths?.length) m.columnWidths = [110]
-            m.rows.forEach(r => { r[0] = '' })
+            if (m.columnWidths?.length) m.columnWidths = redistributeColumnWidths([110], wrap)
+            m.rows.forEach(r => { r.length = 1; r[0] = '' })
             dispatchModel(view, wrap, m, { isHeader: true, rowIdx: 0, colIdx: 0 })
           } else {
-            const deleteCount = Math.min(colDeleteCount, m.header.length)
             m.header.splice(targetCol, deleteCount)
             m.alignments.splice(targetCol, deleteCount)
             if (m.columnWidths?.length) {
               m.columnWidths.splice(targetCol, deleteCount)
-              // Redistribute freed space so remaining columns fill the container.
               m.columnWidths = redistributeColumnWidths(m.columnWidths, wrap)
             }
             for (const r of m.rows) {
               if (r.length > targetCol) r.splice(targetCol, deleteCount)
             }
             const nextCol = Math.max(0, Math.min(targetCol, m.header.length - 1))
-            const focusInfo = {
+            dispatchModel(view, wrap, m, {
               isHeader,
               rowIdx: Math.max(0, targetRow),
               colIdx: nextCol
-            }
-            dispatchModel(view, wrap, m, focusInfo)
+            })
           }
         }
       },
@@ -520,6 +522,102 @@ export function openCellMenu(view, cell, x, y) {
       applyColumnSort(view, wrap, cIdx, 'desc')
     })
   )
+
+  items.push(createSeparator())
+
+  // ── Select All & Delete (selection-scoped) ────────────────────────────────
+  items.push(
+    createItem(
+      'Select All',
+      `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke-dasharray="4 2"/><path d="M9 12l2 2 4-4"/></svg>`,
+      () => {
+        // Close the menu first so the overlay can position correctly
+        // against the visible (unobstructed) table cells.
+        setTimeout(() => {
+          if (wrap.__selectAll) wrap.__selectAll()
+        }, 50)
+      }
+    )
+  )
+
+  // "Delete" only appears when there is an active cell selection.
+  // It deletes the selected rows and columns structurally, but the
+  // table widget itself stays in the document.
+  if (selection) {
+    items.push(
+      createItem(
+        'Delete',
+        icons.delete,
+        () => {
+          const m = readModelFromDom(wrap)
+          const { minC: selMinC, maxC: selMaxC, minR: selMinR, maxR: selMaxR } = selection
+
+          const totalCols = m.header.length
+          const totalRows = m.rows.length   // only data rows, not placeholder rows
+
+          const allColsSelected = selMinC === 0 && selMaxC >= totalCols - 1
+          // Header (r=-1) included means the full vertical span is selected
+          const headerIncluded = selMinR === -1
+          // All data rows included when maxR covers the last real row index
+          const allRowsSelected = headerIncluded && selMaxR >= totalRows - 1
+
+          // ── Full-table clear ──────────────────────────────────────
+          // When every row and column is selected, clear all cell
+          // content but preserve the column structure (count, widths,
+          // alignments) — the table stays in the document.
+          if (allColsSelected && allRowsSelected) {
+            const colCount = m.header.length
+            m.header = Array(colCount).fill('')
+            // columnWidths and alignments are unchanged
+            m.rows = [Array(colCount).fill('')]
+            m.rowHeights = [28]
+            if (wrap.__clearSelectionVisuals) wrap.__clearSelectionVisuals()
+            dispatchModel(view, wrap, m, { isHeader: true, rowIdx: 0, colIdx: 0 })
+            return
+          }
+
+          // ── Partial column deletion ───────────────────────────────
+          const delColCount = selMaxC - selMinC + 1
+          if (delColCount < totalCols) {
+            m.header.splice(selMinC, delColCount)
+            m.alignments.splice(selMinC, delColCount)
+            if (m.columnWidths?.length) {
+              m.columnWidths.splice(selMinC, delColCount)
+              m.columnWidths = redistributeColumnWidths(m.columnWidths, wrap)
+            }
+            for (const r of m.rows) {
+              if (r.length > selMinC) r.splice(selMinC, delColCount)
+            }
+          }
+
+          // ── Partial row deletion ──────────────────────────────────
+          // minR=-1 means header is the top of the selection.
+          // Body row range: from max(selMinR, 0) to selMaxR.
+          const rowStart = Math.max(selMinR, 0)   // first body row index
+          if (rowStart <= selMaxR && selMaxR >= 0) {
+            const delRowCount = selMaxR - rowStart + 1
+            if (delRowCount >= totalRows) {
+              // All body rows selected — keep 1 empty row
+              m.rows = [m.header.map(() => '')]
+              if (m.rowHeights?.length) m.rowHeights = [28]
+            } else {
+              m.rows.splice(rowStart, delRowCount)
+              if (m.rowHeights?.length) m.rowHeights.splice(rowStart, delRowCount)
+            }
+          }
+
+          // Clear header content if header was in the selection
+          if (headerIncluded) {
+            m.header = m.header.map(() => '')
+          }
+
+          if (wrap.__clearSelectionVisuals) wrap.__clearSelectionVisuals()
+          dispatchModel(view, wrap, m, { isHeader: true, rowIdx: 0, colIdx: 0 })
+        },
+        { danger: true }
+      )
+    )
+  }
 
   // ── Build DOM Elements ───────────────────────────────────────────────────
   const checkIconSVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`

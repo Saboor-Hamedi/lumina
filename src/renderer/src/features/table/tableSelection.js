@@ -495,4 +495,25 @@ export function setupTableSelection(wrap, view) {
       maxC: Math.max(start.c, end.c)
     }
   }
+
+  /**
+   * Programmatically select all cells (header + all body rows).
+   * Called by the "Select All" menu item.
+   */
+  wrap.__selectAll = () => {
+    const firstTh = wrap.querySelector('thead th')
+    // Exclude placeholder/empty rows so selMaxR reflects real data rows only.
+    const dataRows = Array.from(
+      wrap.querySelectorAll('tbody tr:not(.cm-table-empty-row)')
+    )
+    const lastRow = dataRows.at(-1)
+    const lastTd = lastRow
+      ? Array.from(lastRow.querySelectorAll('td')).at(-1)
+      : null
+    if (!firstTh || !lastTd) return
+    startCell = firstTh
+    endCell = lastTd
+    isDragging = false
+    renderSelection()
+  }
 }
