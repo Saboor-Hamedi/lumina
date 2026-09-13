@@ -816,3 +816,28 @@
   flex-direction: column;
   justify-content: center;
 }
+
+/* Explicit button sizing to prevent any button shrinking or height jumping */
+.installer-modal-container .guide-modal-footer {
+  padding: 8px 14px !important;
+  min-height: 44px !important;
+  max-height: 44px !important;
+  box-sizing: border-box !important;
+}
+
+.installer-modal-container .guide-btn {
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  padding: 0 12px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  line-height: 28px !important;
+  box-sizing: border-box !important;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+

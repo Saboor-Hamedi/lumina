@@ -24,11 +24,11 @@ const FIRST_INSTALL_COMPLETED_KEY = 'lumina_first_install_completed'
  */
 const LUMINA_PICTURE_GUIDES = [
   {
-    id: 'local-vault',
+    id: 'local-workspace',
     tag: 'Local First',
-    title: 'Local-First Markdown Vault',
+    title: 'Local-First Markdown Workspace',
     text: 'Documents and assets remain 100% on your local disk in standard Markdown files with zero telemetry.',
-    barTitle: 'workspace/notes/vault/',
+    barTitle: 'workspace/notes/',
     renderMockup: () => (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#ffffff' }}>
@@ -211,11 +211,11 @@ const LUMINA_PICTURE_GUIDES = [
     id: 'breadcrumbs',
     tag: 'Navigation',
     title: 'Interactive Breadcrumb Bar',
-    text: 'Jump across hierarchy segments (Vault › Folders › Note › Heading) with keyboard navigation.',
+    text: 'Jump across hierarchy segments (Workspace › Folders › Note › Heading) with keyboard navigation.',
     barTitle: 'Breadcrumb Bar',
     renderMockup: () => (
       <div style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '9.5px' }}>
-        <span style={{ color: 'var(--text-muted)' }}>Vault</span>
+        <span style={{ color: 'var(--text-muted)' }}>Workspace</span>
         <span style={{ color: 'rgba(255,255,255,0.15)' }}>›</span>
         <span style={{ color: 'var(--text-muted)' }}>Engineering</span>
         <span style={{ color: 'rgba(255,255,255,0.15)' }}>›</span>
@@ -616,16 +616,6 @@ const UpdateGuide = () => {
               )
             })}
           </div>
-
-          <button
-            type="button"
-            className="guide-close-btn"
-            onClick={handleCancel}
-            aria-label="Close dialog"
-            style={{ padding: '2px', marginLeft: '10px' }}
-          >
-            <X size={13} />
-          </button>
         </div>
 
         {/* Modal Body with strictly locked content height & selectable text */}
@@ -757,7 +747,7 @@ const UpdateGuide = () => {
                   </div>
                   <div style={{ fontSize: '9.5px', color: 'var(--text-muted)', marginTop: '1px' }}>
                     {isFirstInstall
-                      ? 'Local vault initialized. Click Next to open your workspace.'
+                      ? 'Local workspace initialized. Click Finish to open your workspace.'
                       : 'Verified. Lumina will restart and restore your workspace.'}
                   </div>
                 </div>
@@ -828,26 +818,24 @@ const UpdateGuide = () => {
         </div>
 
         {/* Footer with small sharp Next-Next-Next buttons */}
-        <div className="guide-modal-footer" style={{ padding: '7px 12px' }}>
+        <div className="guide-modal-footer">
           {/* Cancel button */}
           <button
             type="button"
             className="guide-btn guide-btn-secondary"
             onClick={handleCancel}
-            style={{ fontSize: '10px', padding: '3px 8px', fontWeight: 600 }}
           >
             <span>{status === 'downloading' ? 'Cancel' : isFirstInstall ? 'Close' : 'Cancel'}</span>
           </button>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             {step > 0 && (
               <button
                 type="button"
                 className="guide-btn guide-btn-secondary"
                 onClick={() => setStep((s) => s - 1)}
-                style={{ fontSize: '10px', padding: '3px 7px', fontWeight: 600 }}
               >
-                <ChevronLeft size={10} />
+                <ChevronLeft size={12} />
                 <span>Back</span>
               </button>
             )}
@@ -857,10 +845,9 @@ const UpdateGuide = () => {
                 type="button"
                 className="guide-btn guide-btn-primary"
                 onClick={handleNextStep}
-                style={{ fontSize: '10px', padding: '3px 10px', fontWeight: 700 }}
               >
-                <span>{isFirstInstall ? 'Next' : 'Next'}</span>
-                <ChevronRight size={10} />
+                <span>{isFirstInstall ? 'Next' : 'Download Update'}</span>
+                <ChevronRight size={12} />
               </button>
             )}
 
@@ -870,21 +857,20 @@ const UpdateGuide = () => {
                 className="guide-btn guide-btn-primary"
                 onClick={handleNextStep}
                 disabled={!isFirstInstall && progressPercent < 100 && status !== 'ready'}
-                style={{ fontSize: '10px', padding: '3px 10px', fontWeight: 700 }}
               >
                 {isFirstInstall ? (
                   <>
                     <span>Next</span>
-                    <ChevronRight size={10} />
+                    <ChevronRight size={12} />
                   </>
                 ) : progressPercent >= 100 || status === 'ready' ? (
                   <>
                     <span>Next</span>
-                    <ChevronRight size={10} />
+                    <ChevronRight size={12} />
                   </>
                 ) : (
                   <>
-                    <Loader2 size={10} className="guide-spin" />
+                    <Loader2 size={12} className="guide-spin" />
                     <span>{progressPercent}%</span>
                   </>
                 )}
@@ -897,16 +883,15 @@ const UpdateGuide = () => {
                 className="guide-btn guide-btn-primary"
                 onClick={isFirstInstall ? handleFinishFirstInstall : handleInstallNow}
                 disabled={isInstallingAction}
-                style={{ fontSize: '10px', padding: '3px 10px', fontWeight: 700 }}
               >
                 {isFirstInstall ? (
                   <>
-                    <CheckCircle2 size={10} />
+                    <CheckCircle2 size={12} />
                     <span>Finish</span>
                   </>
                 ) : (
                   <>
-                    <RefreshCw size={10} className={isInstallingAction ? 'guide-spin' : ''} />
+                    <RefreshCw size={12} className={isInstallingAction ? 'guide-spin' : ''} />
                     <span>{isInstallingAction ? 'Restarting...' : 'Install & Restart'}</span>
                   </>
                 )}
