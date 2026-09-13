@@ -29,7 +29,7 @@ describe('SettingShortcuts', () => {
     fireEvent.change(searchInput, { target: { value: 'Settings' } })
     expect(searchInput.value).toBe('Settings')
 
-    const clearBtn = screen.getByRole('button')
+    const clearBtn = screen.getByRole('button', { name: /clear search/i })
     fireEvent.click(clearBtn)
 
     expect(searchInput.value).toBe('')

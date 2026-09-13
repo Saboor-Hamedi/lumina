@@ -598,7 +598,7 @@ export function makeCell(tag, text, view) {
             // Auto-pair
             const newText = text.slice(0, offset) + '``' + text.slice(offset)
             source.textContent = newText
-            commit()
+            commit(true)
             setCaretCharOffset(source, offset + 1)
             updateActiveMarkForSource(source)
             event.preventDefault()

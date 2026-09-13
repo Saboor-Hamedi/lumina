@@ -1354,7 +1354,7 @@ html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {
   width: 540px;
   max-width: calc(100vw - 48px);
   min-width: 320px;
-  z-index: var(--z-overlay, 1000);
+  z-index: 999999 !important;
   backdrop-filter: blur(24px);
   pointer-events: auto;
   display: flex;

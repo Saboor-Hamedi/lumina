@@ -90,21 +90,18 @@ export function matchesShortcut(e: KeyboardEvent, shortcutStr: string): boolean 
   }
 
   // Platform-aware modifier mapping:
-  // On macOS: Primary Cmd key is e.metaKey; Secondary modifier is e.ctrlKey.
-  // On Windows/Linux: Primary Ctrl key is e.ctrlKey; Secondary Win/Super key is e.metaKey.
-  const isMac = typeof navigator !== 'undefined' && /mac/i.test(navigator.userAgent)
-  const isPrimaryPressed = isMac ? e.metaKey : e.ctrlKey
-  const isSecondaryPressed = isMac ? e.ctrlKey : e.metaKey
+  // In cross-platform editors, Cmd/Meta on Mac and Ctrl on Win/Linux are interchangeable as primary command keys.
+  // We allow either e.ctrlKey or e.metaKey for primary actions (reqCtrl).
+  const isPrimaryPressed = e.ctrlKey || e.metaKey
+  const isSecondaryPressed = e.ctrlKey && e.metaKey
 
-  if (reqMeta) {
+  if (reqMeta && reqCtrl) {
     if (!isSecondaryPressed) return false
-    if (reqCtrl && !isPrimaryPressed) return false
-  } else if (reqCtrl) {
+  } else if (reqMeta || reqCtrl) {
     if (!isPrimaryPressed) return false
-    if (isSecondaryPressed) return false
   } else {
     // If neither was requested, neither should be pressed
-    if (isPrimaryPressed || isSecondaryPressed) return false
+    if (e.ctrlKey || e.metaKey) return false
   }
 
   // Main key matching

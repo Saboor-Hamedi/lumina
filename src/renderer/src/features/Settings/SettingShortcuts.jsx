@@ -450,6 +450,8 @@ const SettingShortcuts = () => {
           />
           {filterQuery && (
             <button
+              type="button"
+              aria-label="Clear search"
               onClick={() => setFilterQuery('')}
               style={{
                 position: 'absolute',

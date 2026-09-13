@@ -129,6 +129,10 @@ function applyFormatting(tag) {
       sel.addRange(newRange)
       document.execCommand('insertText', false, innerContent)
       source.dispatchEvent(new Event('input', { bubbles: true }))
+      const cell = source.closest('th, td')
+      if (cell) {
+        cell.dataset.raw = source.textContent || ''
+      }
       return
     }
   }

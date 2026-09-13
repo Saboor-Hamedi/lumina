@@ -204,9 +204,11 @@ export class WorkspaceOperations {
 
     const finalPath = path.join(workspacePath, relativeFolder, newFileName)
     const contentChanged = !oldSnippet || oldSnippet.code !== snippet.code
-    const newTimestamp = contentChanged
-      ? Date.now()
-      : oldSnippet?.timestamp || snippet.timestamp || Date.now()
+    const newTimestamp = snippet.timestamp !== undefined
+      ? snippet.timestamp
+      : contentChanged
+        ? Date.now()
+        : oldSnippet?.timestamp || Date.now()
 
     let fileContent = ''
     if (isMarkdown) {

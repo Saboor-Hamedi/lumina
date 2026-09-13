@@ -553,6 +553,8 @@ const UpdateGuide = () => {
       )
     }
 
+    // Floating trigger button commented out for dev testing
+    /*
     return (
       <button
         type="button"
@@ -583,6 +585,8 @@ const UpdateGuide = () => {
         <span>{isFirstInstall ? 'Setup' : 'Update'}</span>
       </button>
     )
+    */
+    return null
   }
 
   // Stepper pipeline headers

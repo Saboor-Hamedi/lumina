@@ -111,6 +111,15 @@ export class TableAutocomplete {
     this.close()
   }
 
+  updatePosition() {
+    if (!this.activeDropdown) return
+    const cellRect = this.cell.getBoundingClientRect()
+    this.activeDropdown.style.position = 'fixed'
+    this.activeDropdown.style.top = `${Math.round(cellRect.bottom + 4)}px`
+    this.activeDropdown.style.left = `${Math.round(cellRect.left)}px`
+    this.activeDropdown.style.zIndex = '999999'
+  }
+
   handleInput() {
     const text = this.source.textContent || ''
     const offset = this.getCaretCharOffset(this.source)
@@ -145,20 +154,20 @@ export class TableAutocomplete {
     if (!this.activeDropdown) {
       this.activeDropdown = document.createElement('div')
       this.activeDropdown.className = 'cm-tooltip cm-tooltip-autocomplete'
-      this.activeDropdown.style.position = 'absolute'
-      this.activeDropdown.style.top = '100%'
-      this.activeDropdown.style.left = '0'
-      this.activeDropdown.style.zIndex = '99999'
       this.activeDropdown.style.overflowY = 'auto'
       this.activeDropdown.style.overflowX = 'hidden'
       this.activeDropdown.style.minWidth = '250px'
       this.activeDropdown.style.maxWidth = '400px'
+      this.activeDropdown.style.maxHeight = '240px'
 
-      this.cell.style.position = 'relative'
-      this.cell.appendChild(this.activeDropdown)
+      document.body.appendChild(this.activeDropdown)
+      this.updatePosition()
       this.autocompleteIndex = 0
-    } else if (this.autocompleteIndex >= this.autocompleteMatches.length) {
-      this.autocompleteIndex = Math.max(0, this.autocompleteMatches.length - 1)
+    } else {
+      this.updatePosition()
+      if (this.autocompleteIndex >= this.autocompleteMatches.length) {
+        this.autocompleteIndex = Math.max(0, this.autocompleteMatches.length - 1)
+      }
     }
 
     this.render()
