@@ -11,6 +11,16 @@ try {
   console.log(`Version: ${version}`)
   console.log(`Tag:     ${tagName}\n`)
 
+  // Ensure working tree changes are committed so GitHub Actions receives the new version
+  const status = execSync('git status --porcelain', { encoding: 'utf8' }).trim()
+  if (status) {
+    console.log(`📝 Staging and committing changes for ${tagName}...`)
+    execSync('git add -A', { stdio: 'inherit' })
+    execSync(`git commit -m "chore(release): ${tagName}"`, { stdio: 'inherit' })
+    console.log(`📤 Pushing branch commits to origin...`)
+    execSync('git push', { stdio: 'inherit' })
+  }
+
   let tagExists = false
   try {
     const existingTags = execSync('git tag', { encoding: 'utf8' })
