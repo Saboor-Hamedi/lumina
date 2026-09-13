@@ -561,3 +561,258 @@
   background: rgba(34, 197, 94, 0.22);
   color: #4ade80;
 }
+
+@keyframes guideSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.guide-spin {
+  animation: guideSpin 1.2s linear infinite;
+}
+
+/* Installer Wizard Dialog (Borderless, Compact, No Titlebar) */
+.installer-modal-container {
+  width: 90vw;
+  max-width: 470px;
+  height: 410px;
+  max-height: 410px;
+  background: var(--bg-panel, #121217);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 9px;
+  display: flex;
+  flex-direction: column;
+  box-shadow:
+    0 24px 50px -10px rgba(0, 0, 0, 0.85),
+    0 0 0 1px rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+  position: relative;
+  animation: guideSlideUp 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.installer-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.installer-step-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted, #727282);
+  transition: all 0.15s ease;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.installer-step-pill.active {
+  color: var(--text-accent, #40bafa);
+}
+
+.installer-step-pill.completed {
+  color: #22c55e;
+}
+
+.installer-step-badge {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8.5px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+}
+
+.installer-step-pill.active .installer-step-badge {
+  background: var(--text-accent, #40bafa);
+  color: #0b0b12;
+}
+
+.installer-step-pill.completed .installer-step-badge {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.installer-step-divider {
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.05);
+  margin: 0 8px;
+}
+
+.installer-body {
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  justify-content: space-between;
+  overflow: hidden;
+  gap: 8px;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+
+.installer-selectable {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  cursor: text;
+}
+
+.installer-carousel {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+  padding: 8px 10px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1;
+  min-height: 0;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+
+.installer-slide-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 3px;
+}
+
+.installer-slide-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.installer-slide-tag {
+  font-size: 8.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 1px 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.installer-slide-text {
+  font-size: 10.5px;
+  line-height: 1.35;
+  color: var(--text-muted, #8a8a9a);
+  margin: 0;
+}
+
+.installer-carousel-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
+  user-select: none;
+}
+
+.installer-carousel-dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.installer-carousel-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+
+.installer-carousel-dot.active {
+  width: 14px;
+  background: var(--text-accent, #40bafa);
+}
+
+.installer-carousel-arrow {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 3px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.installer-carousel-arrow:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+/* Picture Mockup Card Styles */
+.installer-mockup-frame {
+  background: var(--bg-app, #0d0d12);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 8px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.installer-mockup-bar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.installer-mockup-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+}
+.installer-mockup-dot.red { background: #ef4444; }
+.installer-mockup-dot.yellow { background: #eab308; }
+.installer-mockup-dot.green { background: #22c55e; }
+
+.installer-mockup-title {
+  font-size: 10px;
+  color: var(--text-muted, #707080);
+  margin-left: 4px;
+}
+
+.installer-mockup-content {
+  padding: 9px 12px;
+  font-size: 11px;
+  min-height: 68px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}

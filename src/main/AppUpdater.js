@@ -1,4 +1,4 @@
-import { autoUpdater } from 'electron-updater'
+import { autoUpdater, CancellationToken } from 'electron-updater'
 import { ipcMain, app } from 'electron'
 
 /**
@@ -8,6 +8,7 @@ import { ipcMain, app } from 'electron'
 class AppUpdater {
   constructor(mainWindow) {
     this.mainWindow = mainWindow
+    this.cancellationToken = null
 
     autoUpdater.autoDownload = false
     autoUpdater.autoInstallOnAppQuit = true
@@ -70,7 +71,21 @@ class AppUpdater {
 
     ipcMain.removeHandler('update:download')
     ipcMain.handle('update:download', () => {
-      autoUpdater.downloadUpdate()
+      this.cancellationToken = new CancellationToken()
+      autoUpdater.downloadUpdate(this.cancellationToken)
+    })
+
+    ipcMain.removeHandler('update:cancel')
+    ipcMain.handle('update:cancel', () => {
+      if (this.cancellationToken) {
+        try {
+          this.cancellationToken.cancel()
+        } catch (e) {
+          console.warn('[AppUpdater] Failed to cancel token:', e)
+        }
+        this.cancellationToken = null
+      }
+      this.sendStatusToWindow('idle')
     })
 
     ipcMain.removeHandler('update:install')

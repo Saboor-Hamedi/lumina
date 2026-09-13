@@ -74,6 +74,11 @@ export const useUpdateStore = create((set, get) => ({
     await window.api?.downloadUpdate()
   },
 
+  cancel: async () => {
+    set({ status: 'idle', progress: null })
+    await window.api?.cancelUpdate?.()
+  },
+
   install: async () => {
     await window.api?.quitAndInstall()
   }

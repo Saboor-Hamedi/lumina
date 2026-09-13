@@ -108,6 +108,7 @@ const api = {
   // Auto-Updater
   checkForUpdates: () => electronAPI.ipcRenderer.invoke('update:check'),
   downloadUpdate: () => electronAPI.ipcRenderer.invoke('update:download'),
+  cancelUpdate: () => electronAPI.ipcRenderer.invoke('update:cancel'),
   quitAndInstall: () => electronAPI.ipcRenderer.invoke('update:install'),
   onUpdateStatus: (cb) => {
     const listener = (_, status) => cb(status)
