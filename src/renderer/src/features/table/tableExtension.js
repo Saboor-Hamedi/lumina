@@ -55,7 +55,7 @@ function applyTableGeometry(table, model) {
     Array.from(table.querySelectorAll('tr')).forEach((row) => {
       Array.from(row.children).forEach((cell, index) => {
         const width = widths[index]
-        if (width) {
+        if (width != null) {
           cell.style.setProperty('width', `${width}px`, 'important')
           cell.style.setProperty('min-width', `${width}px`, 'important')
           cell.style.setProperty('max-width', `${width}px`, 'important')

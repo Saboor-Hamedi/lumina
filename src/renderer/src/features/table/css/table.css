@@ -16,14 +16,13 @@
   caret-color: transparent !important;
 }
 
-/* --- TABLE CORE STRUCTURE --- */
 .cm-table-scroll-wrap {
   display: block;
   overflow: visible;
-  width: fit-content !important;
-  max-width: calc(100% - 4px) !important;
+  width: 100% !important;
+  max-width: 100% !important;
   margin: 2px 4px 2px 0 !important;
-  box-sizing: border-box;
+  box-sizing: border-box !important;
 }
 
 
