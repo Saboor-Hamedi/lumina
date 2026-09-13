@@ -1,0 +1,58 @@
+/*
+ * =========================================================================================
+ * Lumina Inline Marks Styles (`inlineMarks.css`)
+ * =========================================================================================
+ * Handles all inline markdown formatting: Bold (**), Italic (*), Strikethrough (~~),
+ * and Inline Code (`).
+ * =========================================================================================
+ */
+
+/* --- Bold (Strong) --- */
+.cm-atomic-strong,
+.cm-strong {
+  font-weight: 700;
+  color: var(--atomic-editor-fg, #dcddde);
+}
+
+.cm-atomic-strong-mark {
+  color: var(--atomic-editor-fg-faint, #666);
+  font-weight: 700;
+}
+
+/* --- Italic (Emphasis) --- */
+.cm-atomic-em,
+.cm-em {
+  font-style: italic;
+}
+
+.cm-atomic-em-mark {
+  color: var(--atomic-editor-fg-faint, #666);
+  font-style: italic;
+}
+
+/* --- Strikethrough --- */
+.cm-atomic-strike,
+.cm-strikethrough {
+  text-decoration: line-through;
+  color: var(--atomic-editor-fg-muted, #888);
+}
+
+.cm-atomic-strike-mark {
+  color: var(--atomic-editor-fg-faint, #666);
+  text-decoration: line-through;
+}
+
+/* --- Inline Code --- */
+.cm-atomic-inline-code {
+  background: transparent !important;
+  color: var(--text-accent, #ff79c6) !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+
+/* Remove highlight when actively editing so it looks like plain markdown */
+.cm-atomic-inline-code-wrap.active .cm-atomic-inline-code {
+  background: transparent !important;
+  color: inherit !important;
+  padding: 0 !important;
+}

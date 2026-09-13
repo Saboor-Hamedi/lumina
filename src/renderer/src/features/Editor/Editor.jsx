@@ -30,6 +30,7 @@ import { EditorSlash } from '../slash'
 import EditorCreatedAt from './components/EditorCreatedAt'
 
 import './Editor.css'
+import './inlineMarks.css'
 import '../codeBlock/codeWrapper.css'
 import '@atomic-editor/editor/styles.css'
 

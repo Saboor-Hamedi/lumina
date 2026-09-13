@@ -1,3 +1,5 @@
+@import './inlineMarks.css';
+
 .cm-editor {
   font-size: var(--font-size-editor, 16px) !important;
   font-variant-ligatures: normal !important;
@@ -89,21 +91,6 @@
 .cm-line:has(> br:only-child) {
   min-height: 1.6em !important;
   line-height: var(--line-height-editor, 1.6) !important;
-}
-
-/* Inline Code Pill Style */
-.cm-atomic-inline-code {
-  background: transparent !important;
-  color: var(--text-accent, #ff79c6) !important;
-  border-radius: 0 !important;
-  padding: 0 !important;
-}
-
-/* Remove highlight when actively editing so it looks like plain markdown */
-.cm-atomic-inline-code-wrap.active .cm-atomic-inline-code {
-  background: transparent !important;
-  color: inherit !important;
-  padding: 0 !important;
 }
 
 /* Inline Tag and Mention Styles - Connected, unified flat pills */
