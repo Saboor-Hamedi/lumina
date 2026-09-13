@@ -564,17 +564,19 @@ export function openCellMenu(view, cell, x, y) {
           // ── Full-table clear ──────────────────────────────────────
           // When every row and column is selected, clear all cell
           // content but preserve the column structure (count, widths,
-          // alignments) — the table stays in the document.
+          // alignments). Set rows to [] so the empty-table placeholder
+          // appears — same behaviour as deleting all rows via the Row menu.
           if (allColsSelected && allRowsSelected) {
             const colCount = m.header.length
             m.header = Array(colCount).fill('')
             // columnWidths and alignments are unchanged
-            m.rows = [Array(colCount).fill('')]
-            m.rowHeights = [28]
+            m.rows = []
+            m.rowHeights = []
             if (wrap.__clearSelectionVisuals) wrap.__clearSelectionVisuals()
             dispatchModel(view, wrap, m, { isHeader: true, rowIdx: 0, colIdx: 0 })
             return
           }
+
 
           // ── Partial column deletion ───────────────────────────────
           const delColCount = selMaxC - selMinC + 1
