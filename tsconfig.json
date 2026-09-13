@@ -15,12 +15,14 @@
     "isolatedModules": true,
     "noEmit": true,
     "ignoreDeprecations": "6.0",
-    "baseUrl": ".",
     "paths": {
-      "@renderer/*": ["src/renderer/src/*"]
-    }
+      "@renderer/*": ["./src/renderer/src/*"]
+    },
+    "types": ["vite/client", "@testing-library/jest-dom"]
   },
   "include": [
+    "src/main/**/*",
+    "src/preload/**/*",
     "src/renderer/src/**/*",
     "test/**/*"
   ],

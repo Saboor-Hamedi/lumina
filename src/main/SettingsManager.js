@@ -45,7 +45,9 @@ class SettingsManager {
     this.settingsPath = null
     this.appConfigPath = null
     this.globalApiKeys = {}
+    this.shortcuts = {}
     this.defaultSettings = {
+      shortcuts: {},
       theme: 'default',
       fontSize: 16,
       fontFamily: 'Inter',
@@ -108,10 +110,22 @@ class SettingsManager {
     this.saveTimeout = null
   }
 
+  getAppConfigPath() {
+    if (!this.appConfigPath) {
+      try {
+        this.appConfigPath = path.join(app.getPath('userData'), 'app_config.json')
+      } catch (_) {
+        this.appConfigPath = null
+      }
+    }
+    return this.appConfigPath
+  }
+
   async loadAppConfig() {
-    if (!this.appConfigPath) return
+    const configPath = this.getAppConfigPath()
+    if (!configPath) return
     try {
-      const data = await fs.readFile(this.appConfigPath, 'utf8')
+      const data = await fs.readFile(configPath, 'utf8')
       const cfg = JSON.parse(data)
       const apiKeys = cfg?.apiKeys || {}
       for (const [k, v] of Object.entries(apiKeys)) {
@@ -119,17 +133,21 @@ class SettingsManager {
           this.globalApiKeys[k] = decryptKey(v)
         }
       }
+      const shortcuts = cfg?.shortcuts || {}
+      this.shortcuts = typeof shortcuts === 'object' && shortcuts !== null ? shortcuts : {}
     } catch (_) {
       this.globalApiKeys = {}
+      this.shortcuts = {}
     }
   }
 
   async saveAppConfig() {
-    if (!this.appConfigPath) return
+    const configPath = this.getAppConfigPath()
+    if (!configPath) return
     try {
       let existing = {}
       try {
-        const data = await fs.readFile(this.appConfigPath, 'utf8')
+        const data = await fs.readFile(configPath, 'utf8')
         existing = JSON.parse(data)
       } catch (_) {}
 
@@ -142,11 +160,12 @@ class SettingsManager {
 
       const merged = {
         ...existing,
-        apiKeys: encryptedApiKeys
+        apiKeys: encryptedApiKeys,
+        shortcuts: this.shortcuts || {}
       }
 
-      await fs.mkdir(path.dirname(this.appConfigPath), { recursive: true })
-      await fs.writeFile(this.appConfigPath, JSON.stringify(merged, null, 2), 'utf8')
+      await fs.mkdir(path.dirname(configPath), { recursive: true })
+      await fs.writeFile(configPath, JSON.stringify(merged, null, 2), 'utf8')
     } catch (err) {
       console.error('[SettingsManager] Failed to save app_config.json:', err)
     }
@@ -202,7 +221,7 @@ class SettingsManager {
       await this.saveAppConfig()
     }
 
-    this.cache = { ...this.defaultSettings, ...vaultSettings, ...this.globalApiKeys }
+    this.cache = { ...this.defaultSettings, ...vaultSettings, ...this.globalApiKeys, shortcuts: this.shortcuts }
     this.lastWrittenData = JSON.stringify(this.getVaultSettingsToSave(), null, 2)
 
     if (needsVaultCleanup) {
@@ -215,6 +234,7 @@ class SettingsManager {
     for (const key of GLOBAL_API_KEYS) {
       delete current[key]
     }
+    delete current.shortcuts
     return current
   }
 
@@ -230,7 +250,7 @@ class SettingsManager {
       try {
         await this.init(this.vaultPath)
       } catch (_) {
-        this.cache = { ...this.defaultSettings, ...this.globalApiKeys }
+        this.cache = { ...this.defaultSettings, ...this.globalApiKeys, shortcuts: this.shortcuts }
       }
     }
     const current = this.getAll()
@@ -242,7 +262,7 @@ class SettingsManager {
       try {
         await this.init(this.vaultPath)
       } catch (_) {
-        this.cache = { ...this.defaultSettings, ...this.globalApiKeys }
+        this.cache = { ...this.defaultSettings, ...this.globalApiKeys, shortcuts: this.shortcuts }
       }
     }
 
@@ -252,6 +272,20 @@ class SettingsManager {
 
     if (this.cache) {
       this.cache[key] = value
+    }
+
+    if (key === 'shortcuts') {
+      this.shortcuts = value || {}
+      await this.saveAppConfig()
+      const fullSettings = this.getAll()
+      this.onChangeCallbacks.forEach((cb) => {
+        try {
+          cb(fullSettings)
+        } catch (err) {
+          console.error('[SettingsManager] Error in onChange callback:', err)
+        }
+      })
+      return true
     }
 
     if (GLOBAL_API_KEYS.includes(key)) {
@@ -276,7 +310,7 @@ class SettingsManager {
       try {
         await this.init(this.vaultPath)
       } catch (_) {
-        this.cache = { ...this.defaultSettings, ...this.globalApiKeys }
+        this.cache = { ...this.defaultSettings, ...this.globalApiKeys, shortcuts: this.shortcuts }
       }
     }
 
@@ -291,6 +325,10 @@ class SettingsManager {
           this.globalApiKeys[k] = v
           globalKeyChanged = true
         }
+        if (k === 'shortcuts') {
+          this.shortcuts = v || {}
+          globalKeyChanged = true
+        }
       }
     }
 
@@ -302,7 +340,7 @@ class SettingsManager {
     }
 
     const hasVaultSettingsChanged = Object.keys(settings).some(
-      (k) => !GLOBAL_API_KEYS.includes(k)
+      (k) => !GLOBAL_API_KEYS.includes(k) && k !== 'shortcuts'
     )
 
     if (hasVaultSettingsChanged) {
@@ -374,7 +412,7 @@ class SettingsManager {
   }
 
   getAll() {
-    return { ...(this.cache || this.defaultSettings), ...this.globalApiKeys }
+    return { ...(this.cache || this.defaultSettings), ...this.globalApiKeys, shortcuts: this.shortcuts || {} }
   }
 }
 

@@ -111,6 +111,12 @@ const Settings = ({ onClose, onOpenTheme, initialTab = 'look-and-feel' }) => {
 
   useKeyboardShortcuts({
     onEscape: () => {
+      if (
+        window.__isRecordingShortcut ||
+        document.querySelector('.shortcut-recording, .shortcut-inline-input, .shortcut-modal-overlay')
+      ) {
+        return false
+      }
       if (onClose) {
         onClose()
         return true

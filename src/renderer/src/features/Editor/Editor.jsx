@@ -148,6 +148,11 @@ const Editor = React.memo(
           return true
         }
         return false
+      },
+      onTogglePreview: () => {
+        if (isActive) {
+          setIsPreviewOpen((prev) => !prev)
+        }
       }
     })
 

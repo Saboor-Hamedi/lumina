@@ -24,7 +24,7 @@ import { backupToDrive, backupFileToDrive, cancelBackup } from './backup/googleD
 import { registerOpenNoteHandler } from './handlers/useOpenNote'
 import { useResizeWindowValue } from './handlers/useResizeWindowValue'
 import { useWindowOpacity } from './handlers/useWindowOpacity'
-import { useGlobalShortcut } from './handlers/useGlobalShortcut'
+import { useGlobalShortcut, pauseGlobalShortcut, resumeGlobalShortcut } from './shortcuts/useGlobalShortcut'
 import { useTrayIcon, isAppQuitting, setAppQuitting } from './handlers/useTrayIcon'
 import { updateAutoLauncher } from './handlers/useAutoLauncher'
 
@@ -342,6 +342,16 @@ app.whenReady().then(async () => {
     else mainWindow?.maximize()
   })
   ipcMain.handle('window:close', () => mainWindow?.close())
+
+  // Global shortcut pause/resume handlers for recording keyboard shortcuts
+  ipcMain.handle('shortcuts:pause-global', () => {
+    pauseGlobalShortcut()
+    return true
+  })
+  ipcMain.handle('shortcuts:resume-global', () => {
+    resumeGlobalShortcut()
+    return true
+  })
 
 
   // Export handlers

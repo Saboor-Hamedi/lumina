@@ -63,9 +63,6 @@ export function useEditorEvents({
         e.preventDefault()
         setReplaceModeActive(true)
         setShowFindWidget(true)
-      } else if (e.key === '\\' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault()
-        setIsPreviewOpen((prev) => !prev)
       }
     }
 

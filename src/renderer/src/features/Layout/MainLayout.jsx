@@ -341,6 +341,13 @@ export const MainLayout = () => {
     let cleanupGlobalShortcut = null
     if (window.api?.onToggleCommandPalette) {
       cleanupGlobalShortcut = window.api.onToggleCommandPalette(() => {
+        if (
+          window.__isRecordingShortcut ||
+          document.querySelector('.shortcut-recording, .shortcut-inline-input, .shortcut-modal-overlay') ||
+          (document.activeElement && document.activeElement.closest && document.activeElement.closest('.shortcut-inline-container, .shortcut-modal'))
+        ) {
+          return
+        }
         setShowPalette((prev) => !prev)
       })
     }
@@ -368,6 +375,13 @@ export const MainLayout = () => {
 
   useEffect(() => {
     const handleRenameShortcut = (e) => {
+      if (
+        window.__isRecordingShortcut ||
+        document.querySelector('.shortcut-recording, .shortcut-inline-input, .shortcut-modal-overlay') ||
+        (document.activeElement && document.activeElement.closest && document.activeElement.closest('.shortcut-inline-container, .shortcut-modal'))
+      ) {
+        return
+      }
       const key = e.key && e.key.toLowerCase()
       if ((e.ctrlKey || e.metaKey) && key === 'r' && !e.shiftKey && !e.altKey) {
         e.preventDefault()

@@ -170,7 +170,9 @@ const api = {
   getUnreadEmailCount: () => electronAPI.ipcRenderer.invoke('email:getUnreadCount'),
   showEmailNotification: (params) => electronAPI.ipcRenderer.invoke('email:showNotification', params),
   pickEmailAttachments: () => electronAPI.ipcRenderer.invoke('email:pickAttachments'),
-  listEmailLabels: () => electronAPI.ipcRenderer.invoke('email:listLabels')
+  listEmailLabels: () => electronAPI.ipcRenderer.invoke('email:listLabels'),
+  pauseGlobalShortcuts: () => electronAPI.ipcRenderer.invoke('shortcuts:pause-global'),
+  resumeGlobalShortcuts: () => electronAPI.ipcRenderer.invoke('shortcuts:resume-global')
 }
 
 // Expose APIs
