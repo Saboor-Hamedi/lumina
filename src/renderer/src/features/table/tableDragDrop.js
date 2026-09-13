@@ -427,6 +427,8 @@ export function setupTableDragAndDrop(wrap, view) {
       header: [...model.header],
       alignments: [...(model.alignments || [])],
       rows: model.rows.map((r) => [...r]),
+      columnWidths: model.columnWidths?.length ? [...model.columnWidths] : [],
+      rowHeights: model.rowHeights?.length ? [...model.rowHeights] : [],
       caption: model.caption
     }
 
@@ -434,6 +436,10 @@ export function setupTableDragAndDrop(wrap, view) {
       if (dragStartIndex < nextModel.rows.length && currentDropIndex < nextModel.rows.length) {
         const [movedRow] = nextModel.rows.splice(dragStartIndex, 1)
         nextModel.rows.splice(currentDropIndex, 0, movedRow)
+        if (nextModel.rowHeights.length) {
+          const [movedH] = nextModel.rowHeights.splice(dragStartIndex, 1)
+          nextModel.rowHeights.splice(currentDropIndex, 0, movedH)
+        }
         dispatchModel(view, wrap, nextModel)
       }
     } else if (dragType === 'col') {
@@ -444,6 +450,11 @@ export function setupTableDragAndDrop(wrap, view) {
         nextModel.header.splice(currentDropIndex, 0, movedHead)
         if (movedAlign !== undefined) {
           nextModel.alignments.splice(currentDropIndex, 0, movedAlign)
+        }
+
+        if (nextModel.columnWidths.length) {
+          const [movedWidth] = nextModel.columnWidths.splice(dragStartIndex, 1)
+          nextModel.columnWidths.splice(currentDropIndex, 0, movedWidth)
         }
 
         nextModel.rows.forEach((r) => {

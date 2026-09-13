@@ -104,6 +104,9 @@ export function openCellMenu(view, cell, x, y) {
       createItem('Add Row Below', icons.addDown, () => {
         const m = readModelFromDom(wrap)
         m.rows.unshift(m.header.map(() => ''))
+        if (m.rowHeights?.length) {
+          m.rowHeights.unshift(28)
+        }
         dispatchModel(view, wrap, m, {
           isHeader: false,
           rowIdx: 0,
@@ -117,6 +120,9 @@ export function openCellMenu(view, cell, x, y) {
         const m = readModelFromDom(wrap)
         const rIdx = targetRow >= 0 ? targetRow : 0
         m.rows.splice(rIdx, 0, m.header.map(() => ''))
+        if (m.rowHeights?.length) {
+          m.rowHeights.splice(rIdx, 0, 28)
+        }
         dispatchModel(view, wrap, m, {
           isHeader: false,
           rowIdx: rIdx,
@@ -127,6 +133,9 @@ export function openCellMenu(view, cell, x, y) {
         const m = readModelFromDom(wrap)
         const rIdx = targetRow >= 0 ? targetRow : m.rows.length - 1
         m.rows.splice(rIdx + 1, 0, m.header.map(() => ''))
+        if (m.rowHeights?.length) {
+          m.rowHeights.splice(rIdx + 1, 0, 28)
+        }
         dispatchModel(view, wrap, m, {
           isHeader: false,
           rowIdx: rIdx + 1,
@@ -139,6 +148,9 @@ export function openCellMenu(view, cell, x, y) {
         const rIdx = targetRow >= 0 ? targetRow : 0
         if (m.rows[rIdx]) {
           m.rows.splice(rIdx + 1, 0, [...m.rows[rIdx]])
+          if (m.rowHeights?.length) {
+            m.rowHeights.splice(rIdx + 1, 0, m.rowHeights[rIdx] || 28)
+          }
           dispatchModel(view, wrap, m, {
             isHeader: false,
             rowIdx: rIdx + 1,
@@ -155,6 +167,11 @@ export function openCellMenu(view, cell, x, y) {
           const temp = m.rows[targetRow]
           m.rows[targetRow] = m.rows[targetRow - 1]
           m.rows[targetRow - 1] = temp
+          if (m.rowHeights?.length) {
+            const tempH = m.rowHeights[targetRow]
+            m.rowHeights[targetRow] = m.rowHeights[targetRow - 1]
+            m.rowHeights[targetRow - 1] = tempH
+          }
           dispatchModel(view, wrap, m, {
             isHeader: false,
             rowIdx: targetRow - 1,
@@ -172,6 +189,11 @@ export function openCellMenu(view, cell, x, y) {
           const temp = m.rows[targetRow]
           m.rows[targetRow] = m.rows[targetRow + 1]
           m.rows[targetRow + 1] = temp
+          if (m.rowHeights?.length) {
+            const tempH = m.rowHeights[targetRow]
+            m.rowHeights[targetRow] = m.rowHeights[targetRow + 1]
+            m.rowHeights[targetRow + 1] = tempH
+          }
           dispatchModel(view, wrap, m, {
             isHeader: false,
             rowIdx: targetRow + 1,
@@ -188,6 +210,9 @@ export function openCellMenu(view, cell, x, y) {
           const m = readModelFromDom(wrap)
           if (targetRow >= 0 && targetRow < m.rows.length) {
             m.rows.splice(targetRow, rowDeleteCount)
+            if (m.rowHeights?.length) {
+              m.rowHeights.splice(targetRow, rowDeleteCount)
+            }
             const nextRow = Math.min(targetRow, m.rows.length - 1)
             const focusInfo = m.rows.length > 0
               ? { isHeader: false, rowIdx: Math.max(0, nextRow), colIdx: Math.max(0, targetCol) }
@@ -207,6 +232,9 @@ export function openCellMenu(view, cell, x, y) {
       const cIdx = targetCol >= 0 ? targetCol : 0
       m.header.splice(cIdx, 0, '')
       m.alignments.splice(cIdx, 0, '')
+      if (m.columnWidths?.length) {
+        m.columnWidths.splice(cIdx, 0, 110)
+      }
       for (const r of m.rows) r.splice(cIdx, 0, '')
       dispatchModel(view, wrap, m, {
         isHeader,
@@ -219,6 +247,9 @@ export function openCellMenu(view, cell, x, y) {
       const cIdx = targetCol >= 0 ? targetCol : m.header.length - 1
       m.header.splice(cIdx + 1, 0, '')
       m.alignments.splice(cIdx + 1, 0, '')
+      if (m.columnWidths?.length) {
+        m.columnWidths.splice(cIdx + 1, 0, 110)
+      }
       for (const r of m.rows) r.splice(cIdx + 1, 0, '')
       dispatchModel(view, wrap, m, {
         isHeader,
@@ -233,6 +264,9 @@ export function openCellMenu(view, cell, x, y) {
       if (cIdx >= 0 && cIdx < m.header.length) {
         m.header.splice(cIdx + 1, 0, m.header[cIdx])
         m.alignments.splice(cIdx + 1, 0, m.alignments[cIdx])
+        if (m.columnWidths?.length) {
+          m.columnWidths.splice(cIdx + 1, 0, m.columnWidths[cIdx] || 110)
+        }
         for (const r of m.rows) r.splice(cIdx + 1, 0, r[cIdx])
         dispatchModel(view, wrap, m, {
           isHeader,
@@ -253,6 +287,11 @@ export function openCellMenu(view, cell, x, y) {
         const tempA = m.alignments[targetCol]
         m.alignments[targetCol] = m.alignments[targetCol - 1]
         m.alignments[targetCol - 1] = tempA
+        if (m.columnWidths?.length) {
+          const tempW = m.columnWidths[targetCol]
+          m.columnWidths[targetCol] = m.columnWidths[targetCol - 1]
+          m.columnWidths[targetCol - 1] = tempW
+        }
         for (const r of m.rows) {
           const temp = r[targetCol]
           r[targetCol] = r[targetCol - 1]
@@ -278,6 +317,11 @@ export function openCellMenu(view, cell, x, y) {
         const tempA = m.alignments[targetCol]
         m.alignments[targetCol] = m.alignments[targetCol + 1]
         m.alignments[targetCol + 1] = tempA
+        if (m.columnWidths?.length) {
+          const tempW = m.columnWidths[targetCol]
+          m.columnWidths[targetCol] = m.columnWidths[targetCol + 1]
+          m.columnWidths[targetCol + 1] = tempW
+        }
         for (const r of m.rows) {
           const temp = r[targetCol]
           r[targetCol] = r[targetCol + 1]
@@ -301,12 +345,16 @@ export function openCellMenu(view, cell, x, y) {
           if (m.header.length <= 1) {
             m.header = ['']
             m.alignments = ['left']
+            if (m.columnWidths?.length) m.columnWidths = [110]
             m.rows.forEach(r => { r[0] = '' })
             dispatchModel(view, wrap, m, { isHeader: true, rowIdx: 0, colIdx: 0 })
           } else {
             const deleteCount = Math.min(colDeleteCount, m.header.length)
             m.header.splice(targetCol, deleteCount)
             m.alignments.splice(targetCol, deleteCount)
+            if (m.columnWidths?.length) {
+              m.columnWidths.splice(targetCol, deleteCount)
+            }
             for (const r of m.rows) {
               if (r.length > targetCol) r.splice(targetCol, deleteCount)
             }

@@ -99,8 +99,10 @@ export function parseTable(state, tableNode) {
   }
 
   if (columnWidths.length > 0) {
-    while (columnWidths.length < header.length) columnWidths.push(110)
-    if (columnWidths.length > header.length) columnWidths = columnWidths.slice(0, header.length)
+    columnWidths = reconcileColumnWidths(columnWidths, header.length)
+  }
+  if (rowHeights.length > 0) {
+    rowHeights = reconcileRowHeights(rowHeights, rows.length)
   }
 
   // Ensure all rows match the header cell count
@@ -161,6 +163,20 @@ export function serializeTable(model) {
   }
   return lines.join('\n')
 }
+export function reconcileColumnWidths(widths, colCount, defaultWidth = 110) {
+  const out = Array.isArray(widths) ? [...widths] : []
+  while (out.length < colCount) out.push(defaultWidth)
+  if (out.length > colCount) out.length = colCount
+  return out
+}
+
+export function reconcileRowHeights(heights, rowCount, defaultHeight = 28) {
+  const out = Array.isArray(heights) ? [...heights] : []
+  while (out.length < rowCount) out.push(defaultHeight)
+  if (out.length > rowCount) out.length = rowCount
+  return out
+}
+
 export function readModelFromDom(wrap) {
   const header = Array.from(wrap.querySelectorAll('thead th')).map(readCellSource)
   const alignments = Array.from(wrap.querySelectorAll('thead th')).map((th) => {
@@ -178,13 +194,21 @@ export function readModelFromDom(wrap) {
   let columnWidths = []
   const widthData = wrap.dataset.columnWidths || ''
   if (widthData) {
-    columnWidths = widthData.split(',').map((value) => Number(value.trim())).filter(Number.isFinite)
+    const raw = widthData.split(',').map((value) => Number(value.trim())).filter(Number.isFinite)
+    if (raw.length > 0) {
+      columnWidths = reconcileColumnWidths(raw, header.length)
+      wrap.dataset.columnWidths = columnWidths.join(',')
+    }
   }
 
   let rowHeights = []
   const heightData = wrap.dataset.rowHeights || ''
   if (heightData) {
-    rowHeights = heightData.split(',').map((value) => Number(value.trim())).filter(Number.isFinite)
+    const raw = heightData.split(',').map((value) => Number(value.trim())).filter(Number.isFinite)
+    if (raw.length > 0) {
+      rowHeights = reconcileRowHeights(raw, rows.length)
+      wrap.dataset.rowHeights = rowHeights.join(',')
+    }
   }
 
   return { header, rows, alignments, caption, columnWidths, rowHeights }

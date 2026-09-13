@@ -1,0 +1,41 @@
+/* ─── Table Cell & Row Resizing Grips ────────────────────────────────── */
+.cm-atomic-table.is-resizing-table,
+.cm-atomic-table.is-resizing-table * {
+  user-select: none !important;
+}
+
+.cm-atomic-table.is-resizing-table th,
+.cm-atomic-table.is-resizing-table td {
+  transition: none !important;
+}
+
+.cm-table-resize-grip {
+  position: absolute;
+  z-index: 120;
+  pointer-events: none;
+  opacity: 0;
+  background: var(--text-accent, #818cf8);
+  transition: opacity 0.12s ease;
+}
+
+.cm-table-resize-grip.visible {
+  opacity: 0.9;
+  pointer-events: auto;
+}
+
+/* Resize Grips table */
+.cm-table-column-resize-grip {
+  top: 0;
+  width: 2px;
+  height: 18px;
+  cursor: col-resize;
+  box-shadow: 0 0 6px var(--text-accent, #818cf8);
+}
+
+.cm-table-row-resize-grip {
+  left: 0;
+  width: 18px;
+  height: 2px;
+  cursor: row-resize;
+  box-shadow: 0 0 6px var(--text-accent, #818cf8);
+}

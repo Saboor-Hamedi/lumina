@@ -1,0 +1,46 @@
+/* ─── Table Drag & Drop Handles & Markers ────────────────────────────── */
+.cm-atomic-table.is-dragging-cols th,
+.cm-atomic-table.is-dragging-cols td {
+  position: relative;
+}
+
+.cm-atomic-table.is-dragging-rows tr {
+  position: relative;
+}
+
+.cm-table-drag-handle {
+  width: 15px;
+  height: 15px;
+  border-radius: 3px;
+  transition: opacity 0.15s ease, background-color 0.1s ease, color 0.1s ease;
+}
+
+.cm-table-drag-handle:hover {
+  background-color: var(--bg-secondary, rgba(255, 255, 255, 0.1));
+  color: var(--text-main, #fff) !important;
+}
+
+.cm-table-drop-indicator {
+  background: var(--text-accent, #2196f3);
+}
+
+.cm-table-dragging * {
+  cursor: grabbing !important;
+}
+
+.cm-table-corner-handle {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  background: transparent;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.cm-table-corner-handle:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+}

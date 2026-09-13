@@ -1,0 +1,225 @@
+/* ─── Table UI Header Bar ─────────────────────────────────────────── */
+.cm-table-ui-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 10px;
+  background: var(--bg-elevated, rgba(255, 255, 255, 0.035)) !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border-strong, rgba(255, 255, 255, 0.1)) !important;
+  border-top-left-radius: 4px !important;
+  border-top-right-radius: 4px !important;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  user-select: none;
+  min-height: 36px;
+  box-sizing: border-box;
+}
+
+.cm-atomic-table:hover .cm-table-ui-header,
+.cm-atomic-table:focus-within .cm-table-ui-header {
+  opacity: 1;
+}
+
+.cm-table-ui-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.cm-table-ui-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* Table title in header */
+.cm-table-title-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.cm-table-title-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 7px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-main, #e2e8f0);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s ease;
+  user-select: none;
+  min-width: 0;
+  flex-shrink: 1;
+  max-width: 130px;
+}
+
+.cm-table-title-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+.cm-table-title-icon {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted, #71717a);
+  opacity: 0.6;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.cm-table-title-btn:hover .cm-table-title-icon {
+  opacity: 1;
+  color: var(--text-accent, #818cf8);
+}
+
+.cm-table-title-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  min-width: 0;
+}
+
+/* Header Action Buttons */
+.cm-table-ui-search-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #71717a);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.cm-table-ui-search-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main, #e2e8f0);
+}
+
+.cm-table-ui-btn--active {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--text-accent, #818cf8) !important;
+}
+
+.cm-table-ui-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted, #71717a);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  padding: 3px 5px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.cm-table-ui-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
+/* Header Column Headers & Sorting (thead th) */
+.cm-atomic-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.cm-atomic-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg-app, #18181b) !important;
+}
+
+.cm-atomic-table th {
+  background: rgba(255, 255, 255, 0.025) !important;
+  color: var(--text-muted, #94a3b8) !important;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12)) !important;
+  border-radius: 0 !important;
+  position: relative;
+  transition: background 0.15s ease, color 0.15s ease;
+  padding-right: 24px !important;
+  resize: none !important;
+}
+
+.cm-table-header-sort-btn {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  margin: 0;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.15s ease;
+  z-index: 5;
+  user-select: none;
+}
+
+.cm-table-header-sort-btn svg {
+  pointer-events: none;
+  display: block;
+}
+
+.cm-atomic-table th:hover .cm-table-header-sort-btn,
+.cm-table-header-sort-btn.active {
+  opacity: 1;
+}
+
+.cm-table-header-sort-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main, #ffffff);
+}
+
+.cm-table-header-sort-btn.active {
+  color: var(--text-accent, #8b5cf6) !important;
+}
+
+.cm-atomic-table th .cm-atomic-table-cell-source {
+  font-size: 11px !important;
+  font-weight: 650 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: none !important;
+  color: var(--text-muted, #94a3b8) !important;
+}
+
+.cm-atomic-table th:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.cm-atomic-table th:hover .cm-atomic-table-cell-source {
+  color: var(--text-main, #ffffff) !important;
+}

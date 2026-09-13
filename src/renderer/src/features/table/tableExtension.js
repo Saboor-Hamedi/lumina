@@ -6,7 +6,14 @@ import { treeGrowthEffect, treeProgressPlugin } from './tableParserProgress'
 import { useVaultStore } from '../../core/store/workspaceStore'
 import { TableAutocomplete } from './tableAutocomplete'
 import { setupTableFormattingToolbar } from './tableToolbar'
-import './table.css'
+import './css/table.css'
+import './css/tableheader.css'
+import './css/tablefooter.css'
+import './css/tableplusbutton.css'
+import './css/tabledragcell.css'
+import './css/tableresizecell.css'
+import './css/tabletoolbar.css'
+import './css/tablemenu.css'
 import { openCellMenu } from './tableMenu'
 import { setupTableSelection } from './tableSelection'
 import { setupTableDragAndDrop } from './tableDragDrop'
@@ -40,7 +47,10 @@ function applyTableGeometry(table, model) {
   const widths = model.columnWidths || []
   if (widths.length) {
     const totalWidth = widths.reduce((sum, width) => sum + width, 0)
-    table.style.setProperty('width', `${totalWidth}px`, 'important')
+    // NEVER write table.style.width — the stylesheet's `width: 100%`
+    // is the authority for "fill the container". `min-width` is the
+    // authority for "scroll when columns are too wide".
+    table.style.removeProperty('width')
     table.style.setProperty('min-width', `${totalWidth}px`, 'important')
     Array.from(table.querySelectorAll('tr')).forEach((row) => {
       Array.from(row.children).forEach((cell, index) => {
@@ -343,7 +353,7 @@ export class TableWidget extends WidgetType {
     const rowCount = this.model.rows ? this.model.rows.length : 0
     const colCount = this.model.header ? this.model.header.length : 0
 
-    if (colCount > 0) {
+    if (colCount > 0 && !this.model.columnWidths?.length) {
       table.style.minWidth = `${colCount * 110}px`
     }
 
@@ -430,6 +440,13 @@ export class TableWidget extends WidgetType {
     return wrap
   }
   updateDOM(dom, view) {
+    // Skip geometry re-application while a resize drag is active — the
+    // grip owns the widths and re-applying from model.columnWidths
+    // would fight the in-flight delta.
+    if (dom.classList.contains('is-resizing-table')) {
+      return true
+    }
+
     const theadTr = dom.querySelector('thead tr')
     const tbody = dom.querySelector('tbody')
     const table = dom.querySelector('table')
@@ -438,7 +455,7 @@ export class TableWidget extends WidgetType {
     const colCount = this.model.header.length
     const rowCount = this.model.rows.length
 
-    if (colCount > 0) {
+    if (colCount > 0 && !this.model.columnWidths?.length) {
       table.style.minWidth = `${colCount * 110}px`
     }
 

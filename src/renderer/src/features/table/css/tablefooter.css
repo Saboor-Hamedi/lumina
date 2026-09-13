@@ -1,0 +1,38 @@
+/* ─── Table UI Footer Bar ─────────────────────────────────────────── */
+.cm-table-ui-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 10px;
+  /* Footer is darker/more recessed than the body — clearly separate */
+  background: var(--bg-elevated, rgba(255, 255, 255, 0.025)) !important;
+  border-top: 1px solid var(--border-strong, rgba(255, 255, 255, 0.1)) !important;
+  border-bottom-left-radius: 4px !important;
+  border-bottom-right-radius: 4px !important;
+  user-select: none;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.cm-table-ui-footer-words {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--text-muted, #71717a);
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+
+.cm-table-ui-footer-spacer {
+  flex: 1;
+}
+
+.cm-table-ui-footer-count {
+  font-size: 10.5px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted, #71717a);
+  letter-spacing: 0.01em;
+  opacity: 0.75;
+}
