@@ -318,7 +318,8 @@ const UpdateGuide = () => {
         if (!isSetupCompleted) {
           setIsFirstInstall(true)
           setStep(0)
-        } else if (lastSeen && lastSeen !== appVer) {
+          setIsOpen(true)
+        } else if (!lastSeen || lastSeen !== appVer) {
           setIsFirstInstall(false)
           setStep(2)
           setIsOpen(true)
@@ -553,39 +554,6 @@ const UpdateGuide = () => {
       )
     }
 
-    // Floating trigger button commented out for dev testing
-    /*
-    return (
-      <button
-        type="button"
-        onClick={openGuide}
-        aria-label="Open setup or updates"
-        title="Lumina Setup & Updates"
-        style={{
-          position: 'fixed',
-          right: '16px',
-          bottom: '40px',
-          zIndex: 1000,
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '5px',
-          padding: '4px 9px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          borderRadius: '5px',
-          background: 'var(--bg-surface, rgba(20, 20, 26, 0.94))',
-          color: 'var(--text-main, #f8fafc)',
-          fontSize: '10.5px',
-          fontWeight: 600,
-          cursor: 'pointer',
-          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
-          backdropFilter: 'blur(12px)'
-        }}
-      >
-        <FileText size={10} style={{ opacity: 0.7 }} />
-        <span>{isFirstInstall ? 'Setup' : 'Update'}</span>
-      </button>
-    )
-    */
     return null
   }
 
@@ -620,6 +588,27 @@ const UpdateGuide = () => {
               )
             })}
           </div>
+          <button
+            type="button"
+            onClick={handleCancel}
+            aria-label="Close"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-muted, #727282)',
+              cursor: 'pointer',
+              padding: '2px 4px',
+              borderRadius: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'color 0.15s ease'
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-main, #ffffff)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted, #727282)' }}
+          >
+            <X size={13} />
+          </button>
         </div>
 
         {/* Modal Body with strictly locked content height & selectable text */}

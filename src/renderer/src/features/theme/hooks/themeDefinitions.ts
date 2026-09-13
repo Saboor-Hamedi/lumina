@@ -4,7 +4,71 @@
  * readable typography, and harmonious palettes for long-session comfort.
  */
 
-export const THEMES = {
+export type ThemeColorKey =
+  | '--bg-app'
+  | '--bg-sidebar'
+  | '--bg-activitybar'
+  | '--bg-panel'
+  | '--bg-editor'
+  | '--bg-active'
+  | '--bg-card'
+  | '--text-main'
+  | '--text-muted'
+  | '--text-faint'
+  | '--text-accent'
+  | '--text-accent-rgb'
+  | '--border-dim'
+  | '--border-subtle'
+  | '--border-main'
+  | '--border-card'
+  | '--scroll-thumb'
+  | '--scroll-track'
+  | '--icon-primary'
+  | '--icon-secondary'
+  | '--icon-tertiary'
+  | '--icon-danger'
+  | '--icon-love'
+  | '--caret-width'
+  | '--caret-color'
+
+export type ThemeColors = Record<ThemeColorKey, string>
+
+export interface ThemeDefinition {
+  id: string
+  name: string
+  description: string
+  colors: ThemeColors
+}
+
+export type ThemeId =
+  | 'dark'
+  | 'dracula'
+  | 'jellyfish'
+  | 'one_monokai'
+  | 'mayukai'
+  | 'light'
+  | 'obsidian'
+  | 'tokyoNight'
+  | 'synthwave'
+  | 'rosePine'
+  | 'catppuccin'
+  | 'sunset'
+  | 'gruvbox'
+  | 'nord'
+  | 'githubDark'
+  | 'monokai'
+  | 'aura'
+  | 'cyberpunk'
+  | 'solarizedDark'
+  | 'nightOwl'
+  | 'everforest'
+  | 'ayuMirage'
+  | 'kanagawa'
+  | 'horizon'
+  | 'palenight'
+  | 'rosePineDawn'
+
+export const THEMES: Record<string, ThemeDefinition> = {
   dark: {
     id: 'dark',
     name: 'Dark',
@@ -867,21 +931,21 @@ export const THEMES = {
 /**
  * Get theme by ID
  */
-export const getTheme = (themeId) => {
-  return THEMES[themeId] || THEMES.dark
+export const getTheme = (themeId?: string): ThemeDefinition => {
+  return (themeId && THEMES[themeId]) || THEMES.dark
 }
 
 /**
  * Get all theme IDs
  */
-export const getThemeIds = () => {
+export const getThemeIds = (): string[] => {
   return Object.keys(THEMES)
 }
 
 /**
  * Convert hex color to rgb string
  */
-const hexToRgb = (hex) => {
+const hexToRgb = (hex: string): string | null => {
   if (!hex) return null
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
   return result
@@ -894,28 +958,28 @@ const hexToRgb = (hex) => {
  * Applies all theme colors including caret styling
  * Caret color matches theme accent unless user has set a custom color
  *
- * @param {string} themeId - Theme identifier
+ * @param themeId - Theme identifier
  */
-export const applyTheme = (themeId) => {
+export const applyTheme = (themeId: string): void => {
   const theme = getTheme(themeId)
   const root = document.documentElement
 
   // Check if user has custom caret color (from useFontSettings)
-  let customCaretColor = null
-  let customCaretWidth = null
-  let customThemeAccentColor = null
+  let customCaretColor: string | null = null
+  let customCaretWidth: string | null = null
+  let customThemeAccentColor: string | null = null
 
   try {
     const savedColors = localStorage.getItem('theme-colors')
     if (savedColors) {
       const parsed = JSON.parse(savedColors)
-      if (parsed.caretColor && parsed.caretColor.trim() !== '') {
+      if (parsed.caretColor && typeof parsed.caretColor === 'string' && parsed.caretColor.trim() !== '') {
         customCaretColor = parsed.caretColor
       }
       if (parsed.caretWidth && parsed.caretWidth !== '2px') {
         customCaretWidth = parsed.caretWidth
       }
-      if (parsed.themeAccentColor && parsed.themeAccentColor.trim() !== '') {
+      if (parsed.themeAccentColor && typeof parsed.themeAccentColor === 'string' && parsed.themeAccentColor.trim() !== '') {
         customThemeAccentColor = parsed.themeAccentColor
       }
     }
