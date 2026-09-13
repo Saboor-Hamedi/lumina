@@ -2,18 +2,50 @@
  * useArrowNavigation.js
  * 
  * Custom ArrowUp & ArrowDown navigation for CodeMirror 6:
- * Inspects the Markdown syntax tree to seamlessly step over multi-line replaced
- * widgets (Mermaid diagrams, Tables, Fenced Code widgets) without trapping the
- * caret inside hidden source lines.
+ * Respects visual soft-wrapped lines while seamlessly stepping over
+ * multi-line replaced widgets (Mermaid diagrams, Tables, Fenced Code widgets)
+ * without trapping the caret inside hidden source lines.
  */
 
 import { EditorView } from '@codemirror/view'
-import { cursorLineUp as defaultCursorLineUp, cursorLineDown as defaultCursorLineDown } from '@codemirror/commands'
+import {
+  cursorLineUp as defaultCursorLineUp,
+  cursorLineDown as defaultCursorLineDown
+} from '@codemirror/commands'
 import { syntaxTree } from '@codemirror/language'
 import { completionStatus } from '@codemirror/autocomplete'
 
 /**
- * Handles ArrowUp navigation with multi-line block widget bypass.
+ * Checks if a given position falls inside a replaced multi-line block widget.
+ */
+function getReplacedBlock(view, pos) {
+  const tree = syntaxTree(view.state)
+  let block = null
+  tree.iterate({
+    from: Math.max(0, pos - 5),
+    to: Math.min(view.state.doc.length, pos + 5),
+    enter(node) {
+      if (node.name === 'FencedCode') {
+        const text = view.state.sliceDoc(node.from, node.to)
+        if (text.startsWith('```mermaid') || text.startsWith('~~~mermaid')) {
+          if (pos >= node.from && pos <= node.to) {
+            block = { from: node.from, to: node.to }
+            return false
+          }
+        }
+      } else if (node.name === 'Table') {
+        if (pos >= node.from && pos <= node.to) {
+          block = { from: node.from, to: node.to }
+          return false
+        }
+      }
+    }
+  })
+  return block
+}
+
+/**
+ * Handles ArrowUp navigation by visual line, with multi-line block widget bypass.
  */
 export function handleArrowUp(view) {
   // If autocompletion list or slash popup is active, yield to completion keymap
@@ -24,65 +56,38 @@ export function handleArrowUp(view) {
   const sel = view.state.selection.main
   if (!sel.empty) return defaultCursorLineUp(view)
 
-  const pos = sel.head
-  const doc = view.state.doc
-  const currentLine = doc.lineAt(pos)
-
-  if (currentLine.number <= 1) {
-    if (pos !== currentLine.from) {
-      view.dispatch({ selection: { anchor: currentLine.from }, scrollIntoView: true })
+  // Move up by one visual line
+  const moved = defaultCursorLineUp(view)
+  if (!moved) {
+    // If at the very top, collapse to start of doc
+    if (sel.head !== 0) {
+      view.dispatch({
+        selection: { anchor: 0 },
+        scrollIntoView: true
+      })
       return true
     }
-    return defaultCursorLineUp(view)
+    return false
   }
 
-  const col = pos - currentLine.from
-  let targetLineNumber = currentLine.number - 1
-  let targetLine = doc.line(targetLineNumber)
-
-  // If target line is inside a multi-line replaced block widget (e.g. Mermaid or Table), step above the whole widget
-  const tree = syntaxTree(view.state)
-  let block = null
-  tree.iterate({
-    from: Math.max(0, targetLine.from - 5),
-    to: Math.min(doc.length, targetLine.to + 5),
-    enter(node) {
-      if (node.name === 'FencedCode') {
-        const text = view.state.sliceDoc(node.from, node.to)
-        if (text.startsWith('```mermaid') || text.startsWith('~~~mermaid')) {
-          if (targetLine.from >= node.from && targetLine.to <= node.to) {
-            block = { from: node.from, to: node.to }
-            return false
-          }
-        }
-      } else if (node.name === 'Table') {
-        if (targetLine.from >= node.from && targetLine.to <= node.to) {
-          block = { from: node.from, to: node.to }
-          return false
-        }
-      }
-    }
-  })
-
+  // If new position is inside a multi-line replaced widget, step above the entire widget
+  const newPos = view.state.selection.main.head
+  const block = getReplacedBlock(view, newPos)
   if (block) {
-    const blockStartLine = doc.lineAt(block.from)
-    targetLineNumber = blockStartLine.number > 1 ? blockStartLine.number - 1 : 1
-    targetLine = doc.line(targetLineNumber)
+    const targetPos = Math.max(0, block.from - 1)
+    view.dispatch({
+      selection: { anchor: targetPos },
+      effects: EditorView.scrollIntoView(targetPos, { y: 'nearest', yMargin: 40 }),
+      userEvent: 'select'
+    })
+    return true
   }
 
-  const targetCol = Math.min(col, targetLine.length)
-  const targetPos = targetLine.from + targetCol
-
-  view.dispatch({
-    selection: { anchor: targetPos },
-    effects: EditorView.scrollIntoView(targetPos, { y: 'nearest', yMargin: 40 }),
-    userEvent: 'select'
-  })
   return true
 }
 
 /**
- * Handles ArrowDown navigation with multi-line block widget bypass.
+ * Handles ArrowDown navigation by visual line, with multi-line block widget bypass.
  */
 export function handleArrowDown(view) {
   // If autocompletion list or slash popup is active, yield to completion keymap
@@ -93,62 +98,33 @@ export function handleArrowDown(view) {
   const sel = view.state.selection.main
   if (!sel.empty) return defaultCursorLineDown(view)
 
-  const pos = sel.head
-  const doc = view.state.doc
-  const currentLine = doc.lineAt(pos)
-
-  if (currentLine.number >= doc.lines) {
-    if (pos !== currentLine.to) {
+  // Move down by one visual line
+  const moved = defaultCursorLineDown(view)
+  if (!moved) {
+    // If at the very bottom, collapse to end of doc
+    const docLength = view.state.doc.length
+    if (sel.head !== docLength) {
       view.dispatch({
-        selection: { anchor: currentLine.to },
-        effects: EditorView.scrollIntoView(currentLine.to, { y: 'nearest', yMargin: 40 })
+        selection: { anchor: docLength },
+        scrollIntoView: true
       })
       return true
     }
-    return defaultCursorLineDown(view)
+    return false
   }
 
-  const col = pos - currentLine.from
-  let targetLineNumber = currentLine.number + 1
-  let targetLine = doc.line(targetLineNumber)
-
-  // If target line is inside a multi-line replaced block widget (e.g. Mermaid or Table), step below the whole widget
-  const tree = syntaxTree(view.state)
-  let block = null
-  tree.iterate({
-    from: Math.max(0, targetLine.from - 5),
-    to: Math.min(doc.length, targetLine.to + 5),
-    enter(node) {
-      if (node.name === 'FencedCode') {
-        const text = view.state.sliceDoc(node.from, node.to)
-        if (text.startsWith('```mermaid') || text.startsWith('~~~mermaid')) {
-          if (targetLine.from >= node.from && targetLine.to <= node.to) {
-            block = { from: node.from, to: node.to }
-            return false
-          }
-        }
-      } else if (node.name === 'Table') {
-        if (targetLine.from >= node.from && targetLine.to <= node.to) {
-          block = { from: node.from, to: node.to }
-          return false
-        }
-      }
-    }
-  })
-
+  // If new position is inside a multi-line replaced widget, step below the entire widget
+  const newPos = view.state.selection.main.head
+  const block = getReplacedBlock(view, newPos)
   if (block) {
-    const blockEndLine = doc.lineAt(block.to)
-    targetLineNumber = blockEndLine.number < doc.lines ? blockEndLine.number + 1 : doc.lines
-    targetLine = doc.line(targetLineNumber)
+    const targetPos = Math.min(view.state.doc.length, block.to + 1)
+    view.dispatch({
+      selection: { anchor: targetPos },
+      effects: EditorView.scrollIntoView(targetPos, { y: 'nearest', yMargin: 40 }),
+      userEvent: 'select'
+    })
+    return true
   }
 
-  const targetCol = Math.min(col, targetLine.length)
-  const targetPos = targetLine.from + targetCol
-
-  view.dispatch({
-    selection: { anchor: targetPos },
-    effects: EditorView.scrollIntoView(targetPos, { y: 'nearest', yMargin: 40 }),
-    userEvent: 'select'
-  })
   return true
 }
