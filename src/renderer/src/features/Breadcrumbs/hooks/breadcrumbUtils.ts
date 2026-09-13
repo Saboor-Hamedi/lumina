@@ -1,18 +1,65 @@
+export interface FolderItem {
+  id: string
+  name?: string
+  parentId?: string | null
+  [key: string]: unknown
+}
+
+export type FolderInput = string | FolderItem
+
+export interface SnippetItem {
+  id: string
+  folderId?: string | null
+  title?: string
+  fileName?: string
+  code?: string
+  tags?: string[]
+  [key: string]: unknown
+}
+
+export interface FolderPathItem {
+  id: string
+  name: string
+  parentId: string | null
+}
+
+export interface ChildFolderItem {
+  kind: 'folder'
+  id: string
+  name: string
+}
+
+export interface ChildNoteItem {
+  kind: 'note'
+  id: string
+  name: string
+  snippet: SnippetItem
+}
+
+export interface HeadingItem {
+  level: number
+  text: string
+  line: number
+}
+
 const COLLATOR = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true })
 
-export const normalizePath = (p) =>
+export const normalizePath = (p?: unknown): string =>
   p ? String(p).replace(/\\/g, '/').replace(/^[/\\]+|[/\\]+$/g, '') : ''
 
-export const isRootPath = (id) => {
+export const isRootPath = (id?: unknown): boolean => {
   if (!id) return true
   const clean = normalizePath(id)
   return !clean || clean === 'root'
 }
 
-export function getFolderPath(folderId, folders = []) {
+export function getFolderPath(
+  folderId?: string | null,
+  folders: FolderInput[] = []
+): FolderPathItem[] {
   if (isRootPath(folderId)) return []
 
-  const folderMap = new Map()
+  const folderMap = new Map<string, FolderItem>()
   let hasObjectHierarchy = false
 
   if (Array.isArray(folders)) {
@@ -26,10 +73,10 @@ export function getFolderPath(folderId, folders = []) {
     }
   }
 
-  if (hasObjectHierarchy && folderMap.has(folderId)) {
-    const path = []
-    let curr = folderMap.get(folderId)
-    const visited = new Set()
+  if (folderId && hasObjectHierarchy && folderMap.has(folderId)) {
+    const path: FolderPathItem[] = []
+    let curr: FolderItem | null | undefined = folderMap.get(folderId)
+    const visited = new Set<string>()
     while (curr && !visited.has(curr.id) && path.length < 50) {
       visited.add(curr.id)
       path.unshift({
@@ -46,7 +93,7 @@ export function getFolderPath(folderId, folders = []) {
   if (!clean) return []
 
   const parts = clean.split('/').filter(Boolean)
-  const path = []
+  const path: FolderPathItem[] = []
   let acc = ''
   for (let i = 0; i < parts.length; i++) {
     const parentId = acc || null
@@ -61,11 +108,14 @@ export function getFolderPath(folderId, folders = []) {
   return path
 }
 
-export function getChildFolders(parentFolderId, folders = []) {
+export function getChildFolders(
+  parentFolderId?: string | null,
+  folders: FolderInput[] = []
+): ChildFolderItem[] {
   if (!Array.isArray(folders)) return []
   const normParent = isRootPath(parentFolderId) ? null : normalizePath(parentFolderId)
-  const result = []
-  const seenIds = new Set()
+  const result: ChildFolderItem[] = []
+  const seenIds = new Set<string>()
 
   for (const f of folders) {
     if (!f) continue
@@ -114,10 +164,13 @@ export function getChildFolders(parentFolderId, folders = []) {
   return result.sort((a, b) => COLLATOR.compare(a.name || '', b.name || ''))
 }
 
-export function getChildNotes(parentFolderId, snippets = []) {
+export function getChildNotes(
+  parentFolderId?: string | null,
+  snippets: SnippetItem[] = []
+): ChildNoteItem[] {
   if (!Array.isArray(snippets)) return []
   const normParent = isRootPath(parentFolderId) ? null : normalizePath(parentFolderId)
-  const result = []
+  const result: ChildNoteItem[] = []
 
   for (const s of snippets) {
     if (!s || !s.id) continue
@@ -137,10 +190,10 @@ export function getChildNotes(parentFolderId, snippets = []) {
   return result.sort((a, b) => COLLATOR.compare(a.name || '', b.name || ''))
 }
 
-export function extractHeadings(code = '') {
+export function extractHeadings(code = ''): HeadingItem[] {
   if (!code || typeof code !== 'string') return []
   const lines = code.split('\n')
-  const extracted = []
+  const extracted: HeadingItem[] = []
   let insideCodeBlock = false
 
   for (let i = 0; i < lines.length; i++) {
@@ -165,9 +218,12 @@ export function extractHeadings(code = '') {
   return extracted
 }
 
-export function findActiveHeading(headings = [], currentLine = 1) {
+export function findActiveHeading(
+  headings: HeadingItem[] = [],
+  currentLine = 1
+): HeadingItem | null {
   if (!Array.isArray(headings) || headings.length === 0) return null
-  let active = null
+  let active: HeadingItem | null = null
   for (const h of headings) {
     if (h.line <= currentLine) {
       active = h
@@ -178,7 +234,10 @@ export function findActiveHeading(headings = [], currentLine = 1) {
   return active || headings[0] || null
 }
 
-export function createUntitledSnippet(targetFolderId = '', snippets = []) {
+export function createUntitledSnippet(
+  targetFolderId = '',
+  snippets: SnippetItem[] = []
+): SnippetItem {
   const baseName = 'Untitled'
   let name = baseName
   let counter = 1
@@ -208,3 +267,4 @@ export function createUntitledSnippet(targetFolderId = '', snippets = []) {
     tags: []
   }
 }
+

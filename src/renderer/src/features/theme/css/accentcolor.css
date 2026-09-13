@@ -55,9 +55,10 @@
 .color-picker-presets-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 10px 8px;
+  gap: 6px 5px;
   justify-items: center;
   align-items: center;
+  flex: 1;
 }
 
 .color-picker-preset-item {
@@ -372,21 +373,71 @@
   color: var(--text-main);
 }
 
-.accent-opacity-control {
+/* Palette with Vertical Opacity Slider */
+.accent-palette-with-slider {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 2px 0;
+  width: 100%;
 }
 
-.accent-opacity-badge {
-  font-size: 11px;
-  font-family: monospace;
-  font-weight: 600;
-  color: var(--text-accent);
-  min-width: 36px;
-  text-align: right;
-  user-select: none;
+.accent-vertical-slider-track-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 110px;
+  padding: 2px 2px;
+  flex-shrink: 0;
+}
+
+/* Vertical range slider */
+.lumina-vertical-range-slider {
+  -webkit-appearance: slider-vertical;
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 4px;
+  height: 110px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.1);
+  outline: none !important;
+  border: none !important;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.lumina-vertical-range-slider:focus,
+.lumina-vertical-range-slider:focus-visible,
+.lumina-vertical-range-slider:active {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.lumina-vertical-range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  cursor: grab;
+  outline: none !important;
+  transform: none !important;
+}
+
+.lumina-vertical-range-slider::-moz-range-thumb {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  cursor: grab;
+  outline: none !important;
+  transform: none !important;
 }
 
 /* Profile section inside Dropdown */

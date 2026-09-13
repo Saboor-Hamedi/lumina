@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { Hash, Search, X } from 'lucide-react'
-import ToolTip from '../../components/atoms/ToolTip'
-import './BreadcrumbOutlineDropdown.css'
+import ToolTip from '../../../components/atoms/ToolTip'
+import '../css/BreadcrumbOutlineDropdown.css'
 
 const BreadcrumbOutlineDropdown = ({ headings = [], activeHeading, anchorRect, onClose }) => {
   const [searchQuery, setSearchQuery] = useState('')

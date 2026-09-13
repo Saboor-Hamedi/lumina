@@ -91,36 +91,20 @@ const PresetSwatch = React.memo(({ preset, isSelected, isFocused, onClick, contr
   )
 })
 
-const OpacityControl = React.memo(({ percentage, onInput, onChange, onReset }) => {
+const VerticalOpacitySlider = React.memo(({ percentage, onInput, onChange }) => {
   return (
-    <div className="accent-dropdown-section">
-      <div className="accent-dropdown-section-header">
-        <span className="accent-dropdown-title">App Transparency</span>
-        <button
-          type="button"
-          className="accent-dropdown-reset"
-          onClick={onReset}
-          title="Reset opacity to 100%"
-        >
-          <RotateCcw size={11} className="accent-reset-icon" />
-          <span>100%</span>
-        </button>
-      </div>
-
-      <div className="accent-opacity-control">
-        <input
-          type="range"
-          min="70"
-          max="100"
-          step="1"
-          value={percentage}
-          onInput={onInput}
-          onChange={onChange}
-          className="lumina-range-slider"
-          title={`App Transparency: ${percentage}%`}
-        />
-        <span className="accent-opacity-badge">{percentage}%</span>
-      </div>
+    <div className="accent-vertical-slider-track-wrap" title={`App Transparency: ${percentage}%`}>
+      <input
+        type="range"
+        min="70"
+        max="100"
+        step="1"
+        value={percentage}
+        onInput={onInput}
+        onChange={onChange}
+        className="lumina-vertical-range-slider"
+        aria-label="App Transparency"
+      />
     </div>
   )
 })
@@ -199,7 +183,7 @@ export const AccentColor = ({
   const dropdownRef = useRef(null)
   const hexInputRef = useRef(null)
   const { style: dragStyle, handleDragStart } = useDraggableModal()
-  const { percentage, setOpacity, resetOpacity } = useOpacity()
+  const { percentage, setOpacity } = useOpacity()
   const enableDevTools = useSettingsStore((s) => s.settings?.enableDevTools ?? true)
   const launchOnStartup = useSettingsStore((s) => s.settings?.launchOnStartup ?? false)
   const modernUi = useSettingsStore((s) => s.settings?.modernUi ?? false)
@@ -428,8 +412,15 @@ export const AccentColor = ({
           </button>
         </div>
 
-        <div className="color-picker-presets-grid">
-          {renderedPresets}
+        <div className="accent-palette-with-slider">
+          <div className="color-picker-presets-grid">
+            {renderedPresets}
+          </div>
+          <VerticalOpacitySlider
+            percentage={percentage}
+            onInput={handleOpacityInput}
+            onChange={handleOpacityChange}
+          />
         </div>
 
         <div className="color-picker-hex-wrapper">
@@ -457,15 +448,6 @@ export const AccentColor = ({
             style={{ backgroundColor: localColor || defaultColor }}
           />
         </div>
-
-        <div className="accent-dropdown-divider" />
-
-        <OpacityControl
-          percentage={percentage}
-          onInput={handleOpacityInput}
-          onChange={handleOpacityChange}
-          onReset={resetOpacity}
-        />
 
         <div className="accent-dropdown-divider" />
 

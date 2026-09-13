@@ -1,7 +1,7 @@
 import React, { memo } from 'react'
 import FileExplorer from '../Explorer/FileExplorer'
 import SidebarHeader from './components/SidebarHeader'
-import './Sidebar.css'
+import './css/sidebar.css'
 
 const Sidebar = memo(({ onToggleGraph }) => {
   return (

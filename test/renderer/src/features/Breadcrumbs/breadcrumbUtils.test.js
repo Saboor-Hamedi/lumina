@@ -8,7 +8,7 @@ import {
   extractHeadings,
   findActiveHeading,
   createUntitledSnippet
-} from '../../../../../src/renderer/src/features/Breadcrumbs/breadcrumbUtils'
+} from '../../../../../src/renderer/src/features/Breadcrumbs/hooks/breadcrumbUtils'
 
 describe('breadcrumbUtils', () => {
   it('normalizes slashes and trimmed edges', () => {

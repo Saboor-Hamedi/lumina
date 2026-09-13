@@ -1,4 +1,4 @@
-/* Force Restart Timestamp: 2 */
+/* Force Restart Timestamp: 3 */
 import { resolve } from 'path'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import react from '@vitejs/plugin-react'

@@ -14,8 +14,8 @@ import {
   Image as ImageIcon,
   LayoutGrid
 } from 'lucide-react'
-import { useVaultStore } from '../../core/store/workspaceStore'
-import ToolTip from '../../components/atoms/ToolTip'
+import { useVaultStore } from '../../../core/store/workspaceStore'
+import ToolTip from '../../../components/atoms/ToolTip'
 import {
   getChildFolders,
   getChildNotes,
@@ -23,9 +23,9 @@ import {
   isRootPath,
   normalizePath,
   createUntitledSnippet
-} from './breadcrumbUtils'
-import { rankSnippets } from '../../core/utils/searchRanker'
-import './BreadcrumbDropdown.css'
+} from '../hooks/breadcrumbUtils'
+import { rankSnippets } from '../../../core/utils/searchRanker'
+import '../css/BreadcrumbDropdown.css'
 
 const getFileIcon = (fileName = '') => {
   const ext = fileName.slice(fileName.lastIndexOf('.')).toLowerCase()

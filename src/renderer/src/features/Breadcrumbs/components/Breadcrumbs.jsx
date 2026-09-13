@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Folder, ChevronRight, FileText, Database, Copy, Check, Hash } from 'lucide-react'
-import { useVaultStore } from '../../core/store/workspaceStore'
-import ToolTip from '../../components/atoms/ToolTip'
+import { useVaultStore } from '../../../core/store/workspaceStore'
+import ToolTip from '../../../components/atoms/ToolTip'
 import BreadcrumbDropdown from './BreadcrumbDropdown'
 import BreadcrumbOutlineDropdown from './BreadcrumbOutlineDropdown'
 import {
@@ -9,8 +9,8 @@ import {
   extractHeadings,
   findActiveHeading,
   normalizePath
-} from './breadcrumbUtils'
-import './Breadcrumbs.css'
+} from '../hooks/breadcrumbUtils'
+import '../css/Breadcrumbs.css'
 
 export const Breadcrumbs = ({ snippet, className = '' }) => {
   const folders = useVaultStore((state) => state.folders) || []

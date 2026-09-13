@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
-import { Prec } from '@codemirror/state'
+import { Prec, Extension } from '@codemirror/state'
 import { codeFolding } from '@codemirror/language'
 import { headingFoldPlugin } from './collapsible'
 
-export const useCollapsible = () => {
+export const useCollapsible = (): Extension[] => {
   return useMemo(
     () => [
       Prec.high(
@@ -13,7 +13,7 @@ export const useCollapsible = () => {
             span.className = 'cm-foldPlaceholder'
             span.textContent = '…'
             span.title = 'Click to expand'
-            span.onclick = (e) => {
+            span.onclick = (e: MouseEvent) => {
               e.preventDefault()
               e.stopPropagation()
               onclick(e)
@@ -27,3 +27,5 @@ export const useCollapsible = () => {
     []
   )
 }
+
+export default useCollapsible
