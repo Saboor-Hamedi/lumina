@@ -18,6 +18,37 @@ function getContainerContentWidth(scrollContainer) {
 }
 
 /**
+ * After deleting columns, scale the remaining widths proportionally so
+ * they still fill the container exactly — no blank gap on the right.
+ *
+ * @param {number[]} widths  - remaining widths (already spliced)
+ * @param {Element}  wrap    - the .cm-atomic-table element
+ * @param {number}   minColW - minimum per-column width (default MIN_COLUMN_WIDTH)
+ * @returns {number[]} new widths that sum to containerWidth
+ */
+export function redistributeColumnWidths(widths, wrap, minColW = MIN_COLUMN_WIDTH) {
+  if (!widths?.length) return widths
+  const scrollContainer = wrap?.querySelector('.cm-table-scroll-container')
+  const containerWidth = getContainerContentWidth(scrollContainer)
+  if (!containerWidth) return widths
+
+  const total = widths.reduce((s, w) => s + w, 0)
+  if (total === containerWidth) return widths   // already perfect
+
+  const scale = containerWidth / (total || 1)
+  const next = []
+  let distributed = 0
+  for (let i = 0; i < widths.length - 1; i++) {
+    const w = Math.max(minColW, Math.round(widths[i] * scale))
+    next.push(w)
+    distributed += w
+  }
+  // Give the remainder (positive or negative rounding error) to the last column
+  next.push(Math.max(minColW, containerWidth - distributed))
+  return next
+}
+
+/**
  * Apply a width vector to a table. Sets `min-width` on the table (for
  * the scroll threshold) and per-cell `width/min/max` for every cell.
  * NEVER sets table `width`.

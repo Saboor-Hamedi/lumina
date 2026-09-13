@@ -1,5 +1,6 @@
 import { dispatchModel, placeCaretAtEnd } from './tableExtension.js'
 import { readModelFromDom } from './tableModel.js'
+import { redistributeColumnWidths } from './tableResize.js'
 
 export function setupTableSelection(wrap, view) {
   let isDragging = false
@@ -379,6 +380,11 @@ export function setupTableSelection(wrap, view) {
         const deleteCount = maxC - minC + 1
         m.header.splice(minC, deleteCount)
         m.alignments.splice(minC, deleteCount)
+        if (m.columnWidths?.length) {
+          m.columnWidths.splice(minC, deleteCount)
+          // Redistribute freed space so remaining columns fill the container.
+          m.columnWidths = redistributeColumnWidths(m.columnWidths, wrap)
+        }
         for (const r of m.rows) r.splice(minC, deleteCount)
         clearSelectionVisuals()
         startCell = null

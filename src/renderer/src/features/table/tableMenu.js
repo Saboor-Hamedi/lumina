@@ -3,6 +3,7 @@ import { readModelFromDom } from './tableModel.js'
 import { icons } from './tableIcons.js'
 import { copyTableAs, exportTableAsCSV, duplicateTable } from './tableActions.js'
 import { applyColumnSort } from './tableSort.js'
+import { redistributeColumnWidths } from './tableResize.js'
 
 export function cellRowIndex(cell) {
   if (!cell) return -1
@@ -354,6 +355,8 @@ export function openCellMenu(view, cell, x, y) {
             m.alignments.splice(targetCol, deleteCount)
             if (m.columnWidths?.length) {
               m.columnWidths.splice(targetCol, deleteCount)
+              // Redistribute freed space so remaining columns fill the container.
+              m.columnWidths = redistributeColumnWidths(m.columnWidths, wrap)
             }
             for (const r of m.rows) {
               if (r.length > targetCol) r.splice(targetCol, deleteCount)
