@@ -22,19 +22,21 @@ export interface EmailContainerProps {
   isOpen: boolean
   /** Callback to close the email dropdown */
   onClose: () => void
+  /** Anchor position ('left' for ActivityBar, 'right' for TitleBar) */
+  anchor?: 'left' | 'right'
 }
 
 /**
  * EmailContainer Component
  * 
- * Non-blocking, resizable dropdown container anchored directly beneath the TitleBar.
+ * Non-blocking, resizable dropdown container anchored directly beneath the TitleBar or ActivityBar.
  * Parallel to AccentColor.jsx, this component allows users to browse mail, read threads,
  * and compose messages without blocking access to notes, editor tabs, or the AI sidebar.
  * 
  * Features Lumina-grade collapsible curtain mechanics for both EmailSidebar and EmailDetailPane,
  * complete with drag-to-resize handles, threshold snapping, and persistent geometry saved to settings.json.
  */
-export const EmailContainer: React.FC<EmailContainerProps> = ({ isOpen, onClose }) => {
+export const EmailContainer: React.FC<EmailContainerProps> = ({ isOpen, onClose, anchor = 'right' }) => {
   const containerRef = useRef<HTMLDivElement>(null)
 
   // Resizable container dimensions (persisted in settings.json with localStorage fallback)
@@ -433,8 +435,8 @@ export const EmailContainer: React.FC<EmailContainerProps> = ({ isOpen, onClose 
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       if (!isResizingContainerRef.current) return
-      // Moving left increases width because container is anchored to right
-      const deltaX = startX - moveEvent.clientX
+      // Moving left increases width if anchored right; moving right increases width if anchored left
+      const deltaX = anchor === 'left' ? moveEvent.clientX - startX : startX - moveEvent.clientX
       // Moving down increases height
       const deltaY = moveEvent.clientY - startY
       const newWidth = Math.min(Math.max(startWidth + deltaX, 300), Math.min(window.innerWidth - 40, 1600))
@@ -551,7 +553,7 @@ export const EmailContainer: React.FC<EmailContainerProps> = ({ isOpen, onClose 
   return (
     <div
       ref={containerRef}
-      className={`email-dropdown-container ${isResizingContainer ? 'resizing' : ''} ${isCompact ? 'compact' : ''}`}
+      className={`email-dropdown-container ${anchor === 'left' ? 'anchor-left' : ''} ${isResizingContainer ? 'resizing' : ''} ${isCompact ? 'compact' : ''}`}
       style={{
         width: `${containerWidth}px`,
         height: `${containerHeight}px`
@@ -559,9 +561,9 @@ export const EmailContainer: React.FC<EmailContainerProps> = ({ isOpen, onClose 
       onClick={(e) => e.stopPropagation()}
       aria-label="Lumina Email Dropdown"
     >
-      {/* Corner Resize Handle (bottom-left because container is anchored to top-right) */}
+      {/* Corner Resize Handle */}
       <div
-        className="email-container-corner-handle"
+        className={`email-container-corner-handle ${anchor === 'left' ? 'anchor-left' : ''}`}
         onMouseDown={handleMouseDownContainerResize}
         title="Drag to resize email container"
       />

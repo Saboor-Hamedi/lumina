@@ -5,6 +5,9 @@
   height: 100%;
   background: var(--bg-sidebar);
   border-right: 1px solid var(--border-dim);
+  border-left: none !important;
+  border-top: none !important;
+  border-bottom: none !important;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -64,4 +67,19 @@
 
 .activity-bar-btn svg {
   flex-shrink: 0;
+}
+
+.activity-bar-btn.mail-btn {
+  position: relative;
+}
+
+.activity-bar-btn .mail-unread-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: #ef4444;
+  box-shadow: 0 0 0 1.5px var(--bg-sidebar);
 }

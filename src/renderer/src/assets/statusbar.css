@@ -12,7 +12,10 @@
   min-height: 26px;
   padding: 0 10px;
   background: var(--bg-app);
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--border-dim);
+  border-bottom: none !important;
+  border-left: none !important;
+  border-right: none !important;
   font-size: 10px;
   color: var(--text-faint);
   z-index: 100;

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Square, X, Minus, Search, MessageSquare, PanelLeftOpen, PanelLeftClose, User, Mail } from 'lucide-react'
+import { Square, X, Minus, Search, PanelLeftOpen, PanelLeftClose, User } from 'lucide-react'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { useCurrentUser } from '../../core/hooks/useCurrentUser'
 import logoUrl from '../../assets/logo.png'
@@ -7,17 +7,15 @@ import ToolTip from '../../components/atoms/ToolTip'
 import UpdateDetails from '../../components/update/UpdateDetails'
 import AccentColor from '../theme/AccentColor'
 import { useFontSettings } from '../../core/hooks/useFontSettings'
-import { EmailContainer, playNewEmailTone } from '../email'
 import '../../assets/titlebar.css'
 
-const TitleBar = ({ onToggleAIChat }) => {
+const TitleBar = () => {
   const handleMinimize = () => window.api?.minimize()
   const handleToggleMaximize = () => window.api?.toggleMaximize()
   const handleClose = () => window.api?.closeWindow()
 
   const [version, setVersion] = React.useState('')
   const [isAccentOpen, setIsAccentOpen] = React.useState(false)
-  const [isMailOpen, setIsMailOpen] = React.useState(false)
   const { themeAccentColor, updateThemeAccentColor } = useFontSettings()
   const { user, isLoggedIn } = useCurrentUser()
   const [imgError, setImgError] = React.useState(false)
@@ -36,84 +34,6 @@ const TitleBar = ({ onToggleAIChat }) => {
   const selectedSnippet = useWorkspaceStore((s) => s.selectedSnippet)
   const isMac = typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('mac')
 
-  const [unreadEmailCount, setUnreadEmailCount] = React.useState(0)
-  const prevUnreadCountRef = React.useRef(-1)
-
-  // Poll for unread emails and trigger desktop notifications if new mail arrives
-  React.useEffect(() => {
-    if (!isLoggedIn) {
-      setUnreadEmailCount(0)
-      prevUnreadCountRef.current = -1
-      return
-    }
-
-    let isMounted = true
-
-    // Request Web Notification permission if needed
-    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
-      try {
-        Notification.requestPermission()
-      } catch {}
-    }
-
-    const checkUnread = async () => {
-      try {
-        if (window.api?.getUnreadEmailCount) {
-          const res = await window.api.getUnreadEmailCount()
-          if (!isMounted) return
-          const newCount = res?.count || 0
-          setUnreadEmailCount(newCount)
-
-          // If new unread mail arrived and increased count, trigger notification if not muted
-          if (prevUnreadCountRef.current >= 0 && newCount > prevUnreadCountRef.current) {
-            const isMuted = localStorage.getItem('lumina_email_notifications') === 'false'
-            if (!isMuted) {
-              const title = 'New Email'
-              const body = 'New Email'
-
-              // Play gentle email chime tone via isolated sound service
-              playNewEmailTone()
-
-              // 1. Native Electron OS Notification
-              if (window.api?.showEmailNotification) {
-                window.api.showEmailNotification({ title, body })
-              }
-              // 2. Web Notification API fallback
-              if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-                try {
-                  new Notification(title, { body })
-                } catch {}
-              }
-              // 3. In-app toast banner
-              window.dispatchEvent(
-                new CustomEvent('show-toast', {
-                  detail: { message: '📬 New Email', type: 'info', duration: 3500 }
-                })
-              )
-            }
-          }
-          prevUnreadCountRef.current = newCount
-        }
-      } catch (err) {
-        // Silently catch in polling loop
-      }
-    }
-
-    checkUnread()
-    // Poll every 15 seconds for real-time live inbox updates
-    const interval = setInterval(checkUnread, 15000)
-
-    // Listen for instant refresh events
-    const handleEmailRefresh = () => checkUnread()
-    window.addEventListener('refresh-unread-count', handleEmailRefresh)
-
-    return () => {
-      isMounted = false
-      clearInterval(interval)
-      window.removeEventListener('refresh-unread-count', handleEmailRefresh)
-    }
-  }, [isLoggedIn])
-
   React.useEffect(() => {
     if (window.api?.getVersion) {
       window.api.getVersion().then(setVersion)
@@ -127,18 +47,6 @@ const TitleBar = ({ onToggleAIChat }) => {
     window.addEventListener('left-sidebar-toggle', handleLeftSidebarChange)
     return () => {
       window.removeEventListener('left-sidebar-toggle', handleLeftSidebarChange)
-    }
-  }, [])
-
-  // Listen for open/close email events triggered from shortcuts or notifications
-  React.useEffect(() => {
-    const handleOpenEmail = () => setIsMailOpen(true)
-    const handleCloseEmail = () => setIsMailOpen(false)
-    window.addEventListener('open-email', handleOpenEmail)
-    window.addEventListener('close-email', handleCloseEmail)
-    return () => {
-      window.removeEventListener('open-email', handleOpenEmail)
-      window.removeEventListener('close-email', handleCloseEmail)
     }
   }, [])
 
@@ -204,43 +112,6 @@ const TitleBar = ({ onToggleAIChat }) => {
 
       <div className="title-right">
         <div className="window-controls" data-testid="window-controls">
-          <div className="mail-titlebar-container">
-            <ToolTip text={unreadEmailCount > 0 ? `Lumina Mail (${unreadEmailCount} unread)` : "Lumina Mail"} position="bottom">
-              <button
-                type="button"
-                onClick={() => setIsMailOpen((prev) => !prev)}
-                className="control-btn mail-control-btn"
-                style={{ color: isMailOpen || unreadEmailCount > 0 ? 'var(--text-accent)' : 'var(--text-faint, #64748b)' }}
-                aria-label="Open Lumina Mail"
-              >
-                <Mail size={14} strokeWidth={2} />
-                {unreadEmailCount > 0 && (
-                  <span className="mail-unread-badge">
-                    {unreadEmailCount >= 1000000
-                      ? `${(unreadEmailCount / 1000000).toFixed(1).replace(/\.0$/, '')}M`
-                      : unreadEmailCount >= 1000
-                      ? `${(unreadEmailCount / 1000).toFixed(1).replace(/\.0$/, '')}K`
-                      : unreadEmailCount > 99
-                      ? '99+'
-                      : unreadEmailCount}
-                  </span>
-                )}
-              </button>
-            </ToolTip>
-            <EmailContainer
-              isOpen={isMailOpen}
-              onClose={() => setIsMailOpen(false)}
-            />
-          </div>
-          <ToolTip text={isMac ? "Toggle AI Chat (⌘ + Shift + \\)" : "Toggle AI Chat (Ctrl + Shift + \\)"} position="bottom">
-            <button
-              onClick={() => window.dispatchEvent(new CustomEvent('open-ai-chat'))}
-              className="control-btn"
-              style={{ color: 'var(--text-accent)' }}
-            >
-              <MessageSquare size={14} strokeWidth={2} />
-            </button>
-          </ToolTip>
           <div className="accent-titlebar-container">
             <ToolTip
               text={

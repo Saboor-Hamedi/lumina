@@ -6,8 +6,7 @@ import {
   FilePenLine,
   FolderInput,
   RefreshCw,
-  FoldVertical,
-  LayoutDashboard
+  FoldVertical
 } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
 import NoteNumbers from './NoteNumbers'
@@ -227,22 +226,6 @@ export const ExplorerHeader = ({
                 style={{ opacity: isLoading ? 0.5 : 1 }}
               >
                 <RefreshCw size={14} className={isLoading ? 'spin-animation' : ''} />
-              </button>
-            </ToolTip>
-            <ToolTip text="New Canvas">
-              <button
-                className="sort-toggle-btn"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  const targetParent = lastClickedFolder || ''
-                  setCreating({ type: 'canvas', parentId: targetParent })
-                  if (targetParent) {
-                    setExpandedFolders((prev) => new Set(prev).add(targetParent))
-                  }
-                  window.dispatchEvent(new CustomEvent('trigger-new-canvas'))
-                }}
-              >
-                <LayoutDashboard size={14} />
               </button>
             </ToolTip>
             <ToolTip text="Collapse Folders in Explorer">

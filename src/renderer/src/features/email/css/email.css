@@ -132,6 +132,34 @@
   background: transparent;
 }
 
+/* Left-anchored Dropdown Variant (e.g. from ActivityBar) */
+.email-dropdown-container.anchor-left {
+  position: fixed;
+  top: 40px;
+  left: 48px;
+  right: auto;
+  animation: emailSlideRight 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes emailSlideRight {
+  from {
+    opacity: 0;
+    transform: translateX(-8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.email-container-corner-handle.anchor-left {
+  left: auto;
+  right: 0;
+  cursor: nwse-resize;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 12px;
+}
+
 /* Footer Control Bar */
 .email-footer-bar {
   height: 36px;

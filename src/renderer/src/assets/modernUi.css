@@ -27,6 +27,13 @@
   box-sizing: border-box;
 }
 
+[data-modern-ui='true'] .status-bar {
+  border-radius: 5px;
+  border: 1px solid var(--border-dim);
+  background: var(--bg-sidebar) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
 [data-modern-ui='true'] .sidebar-resizer {
   width: 5px !important;
   transition: background 0.15s ease;
