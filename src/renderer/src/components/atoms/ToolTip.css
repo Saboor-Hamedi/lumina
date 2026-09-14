@@ -95,24 +95,36 @@
 
 /* Top Tooltip (Arrow at bottom pointing down) */
 .tooltip-pos-top .tooltip-arrow {
+  bottom: -3px;
+  left: 50%;
+  margin-left: -3px;
   border-top: none;
   border-left: none;
 }
 
 /* Bottom Tooltip (Arrow at top pointing up) */
 .tooltip-pos-bottom .tooltip-arrow {
+  top: -3px;
+  left: 50%;
+  margin-left: -3px;
   border-bottom: none;
   border-right: none;
 }
 
 /* Left Tooltip (Arrow at right pointing right) */
 .tooltip-pos-left .tooltip-arrow {
+  right: -3px;
+  top: 50%;
+  margin-top: -3px;
   border-bottom: none;
   border-left: none;
 }
 
 /* Right Tooltip (Arrow at left pointing left) */
 .tooltip-pos-right .tooltip-arrow {
+  left: -3px;
+  top: 50%;
+  margin-top: -3px;
   border-top: none;
   border-right: none;
 }

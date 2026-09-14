@@ -17,6 +17,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import Sidebar from '../Navigation/Sidebar'
+import ActivityBar from '../Navigation/ActivityBar'
 import Welcome from '../../Welcome'
 import TabBar from './TabBar'
 import TabContentPane from './TabContentPane'
@@ -710,15 +711,10 @@ export const MainLayout = () => {
       }}
     >
       <div className="shell-body">
+        <ActivityBar onToggleGraph={handleToggleGraph} />
         <aside className="shell-sidebar-left">
           <GlobalErrorHandler>
-            <Sidebar
-              onSettingsClick={handleOpenSettings}
-              onThemeClick={handleOpenTheme}
-              onToggleGraph={handleToggleGraph}
-              onToggleAIChat={handleToggleAIChat}
-              onDocsClick={handleOpenDocs}
-            />
+            <Sidebar />
           </GlobalErrorHandler>
         </aside>
         <div

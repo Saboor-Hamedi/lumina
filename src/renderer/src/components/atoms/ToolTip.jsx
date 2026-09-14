@@ -115,23 +115,9 @@ const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
             : rect.right
 
           leftStyle = `${Math.round(effectiveRight + gap)}px`
-
-          if (elemCenterY < 80) {
-            topStyle = '16px'
-            transformStyle = 'none'
-            const knobTop = Math.max(12, Math.round(elemCenterY - 16))
-            arrowPos = { left: '-3px', top: `${knobTop}px` }
-          } else if (elemCenterY > window.innerHeight - 100) {
-            bottomStyle = '16px'
-            topStyle = 'auto'
-            transformStyle = 'none'
-            const knobBottom = Math.max(12, Math.round(window.innerHeight - elemCenterY - 16))
-            arrowPos = { left: '-3px', bottom: `${knobBottom}px` }
-          } else {
-            topStyle = `${Math.round(elemCenterY)}px`
-            transformStyle = 'translateY(-50%)'
-            arrowPos = { left: '-3px', top: '50%', marginTop: '-3px' }
-          }
+          topStyle = `${Math.round(elemCenterY)}px`
+          transformStyle = 'translateY(-50%)'
+          arrowPos = { left: '-3px', top: '50%', marginTop: '-3px' }
         } else {
           // Standard top or bottom positioning centered on target element
           leftStyle = `${Math.round(elemCenterX)}px`
@@ -178,11 +164,13 @@ const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
   }
 
   useLayoutEffect(() => {
-    if (isVisible && tooltipRef.current && childRef.current && (coords?.isTop || coords?.isBottom)) {
-      const tooltipRect = tooltipRef.current.getBoundingClientRect()
-      const targetRect = childRef.current.getBoundingClientRect()
-      const elemCenterX = targetRect.left + targetRect.width / 2
+    if (!isVisible || !tooltipRef.current || !childRef.current) return
 
+    const tooltipRect = tooltipRef.current.getBoundingClientRect()
+    const targetRect = childRef.current.getBoundingClientRect()
+
+    if (coords?.isTop || coords?.isBottom) {
+      const elemCenterX = targetRect.left + targetRect.width / 2
       const halfWidth = tooltipRect.width / 2
       const minCenter = 8 + halfWidth
       const maxCenter = window.innerWidth - 8 - halfWidth
@@ -206,6 +194,32 @@ const ToolTip = ({ text, children, position = 'top', delay = 150 }) => {
         if (arrowEl) {
           arrowEl.style.left = `${Math.round(arrowX)}px`
           arrowEl.style.marginLeft = '-3px'
+        }
+      }
+    } else if (coords?.isRight || coords?.isLeft) {
+      const elemCenterY = targetRect.top + targetRect.height / 2
+      const halfHeight = tooltipRect.height / 2
+      const minCenter = 8 + halfHeight
+      const maxCenter = window.innerHeight - 8 - halfHeight
+
+      if (elemCenterY < minCenter) {
+        // Shift tooltip down so top stays at 8px
+        tooltipRef.current.style.top = `${Math.round(minCenter)}px`
+        const arrowY = Math.max(6, Math.min(tooltipRect.height - 6, elemCenterY - 8))
+        const arrowEl = tooltipRef.current.querySelector('.tooltip-arrow')
+        if (arrowEl) {
+          arrowEl.style.top = `${Math.round(arrowY)}px`
+          arrowEl.style.marginTop = '-3px'
+        }
+      } else if (elemCenterY > maxCenter) {
+        // Shift tooltip up so bottom stays at window.innerHeight - 8
+        tooltipRef.current.style.top = `${Math.round(maxCenter)}px`
+        const tooltipTop = maxCenter - halfHeight
+        const arrowY = Math.max(6, Math.min(tooltipRect.height - 6, elemCenterY - tooltipTop))
+        const arrowEl = tooltipRef.current.querySelector('.tooltip-arrow')
+        if (arrowEl) {
+          arrowEl.style.top = `${Math.round(arrowY)}px`
+          arrowEl.style.marginTop = '-3px'
         }
       }
     }

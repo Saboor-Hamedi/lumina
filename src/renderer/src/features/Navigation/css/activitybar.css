@@ -1,0 +1,67 @@
+.lumina-activity-bar {
+  width: 40px;
+  min-width: 40px;
+  max-width: 40px;
+  height: 100%;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border-dim);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 8px 0;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  z-index: 20;
+  user-select: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.activity-bar-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: 6px;
+}
+
+.activity-bar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted, #71717a);
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.1s ease;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.activity-bar-btn:hover {
+  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  color: var(--text-main, #fafafa);
+  border-color: var(--border-subtle, rgba(255, 255, 255, 0.12));
+}
+
+.activity-bar-btn:active {
+  transform: scale(0.94);
+}
+
+.activity-bar-btn.active {
+  color: var(--text-accent, #a78bfa);
+  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  border-color: var(--border-dim, rgba(255, 255, 255, 0.1));
+}
+
+.activity-bar-btn svg {
+  flex-shrink: 0;
+}

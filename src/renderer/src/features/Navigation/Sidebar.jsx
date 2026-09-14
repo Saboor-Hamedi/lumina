@@ -1,13 +1,10 @@
 import React, { memo } from 'react'
 import FileExplorer from '../Explorer/FileExplorer'
-import SidebarHeader from './components/SidebarHeader'
 import './css/sidebar.css'
 
-const Sidebar = memo(({ onToggleGraph }) => {
+const Sidebar = memo(() => {
   return (
     <div className="unified-sidebar">
-      <SidebarHeader onToggleGraph={onToggleGraph} />
-
       <div className="sidebar-scrollable-content">
         <FileExplorer isEmbedded={true} />
       </div>

@@ -5,7 +5,7 @@ import { useVaultStore } from '../../../core/store/workspaceStore'
 import Template from '../../template/Template'
 import { defaultTemplates } from './defaultTemplates'
 
-const DailyNotes = memo(() => {
+const DailyNotes = memo(({ isActivityBar = false }) => {
   const saveSnippet = useVaultStore((state) => state.saveSnippet)
   const setSelectedSnippet = useVaultStore((state) => state.setSelectedSnippet)
 
@@ -64,16 +64,20 @@ const DailyNotes = memo(() => {
 
   return (
     <>
-      <ToolTip text="Daily Note" position="bottom">
+      <ToolTip text="Daily Note" position={isActivityBar ? 'right' : 'bottom'}>
         <button
-          className="new-note-btn"
+          type="button"
+          className={isActivityBar ? 'activity-bar-btn' : 'new-note-btn'}
           onClick={handleDailyNote}
-          style={{ flex: 1, minWidth: 0, justifyContent: 'center' }}
+          style={isActivityBar ? undefined : { flex: 1, minWidth: 0, justifyContent: 'center' }}
+          aria-label="Daily Note"
         >
-          <Calendar size={13} style={{ flexShrink: 0 }} />
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            Daily
-          </span>
+          <Calendar size={isActivityBar ? 16 : 13} style={{ flexShrink: 0 }} />
+          {!isActivityBar && (
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              Daily
+            </span>
+          )}
         </button>
       </ToolTip>
 
