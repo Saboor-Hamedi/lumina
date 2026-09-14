@@ -134,6 +134,14 @@
   padding: 14px 5px;
   border-radius: 12px;
   width: 36px;
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              padding 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              top 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              max-height 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.2s ease;
+  max-height: 90vh;
+  box-sizing: border-box;
 }
 
 .lumina-canvas-toolbar-right .lumina-canvas-tool-btn {
@@ -152,6 +160,578 @@
   font-size: 10px;
   min-width: 28px;
   padding: 1px 0;
+}
+
+/* ==========================================================================
+   Canvas Studio Mode (Expanded Right Toolbar)
+   ========================================================================== */
+.lumina-canvas-toolbar-right.is-expanded {
+  width: 290px;
+  top: 18px;
+  bottom: 18px;
+  transform: none;
+  max-height: calc(100vh - 36px);
+  padding: 0;
+  align-items: stretch;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background-color: color-mix(in srgb, var(--bg-card, var(--bg-panel, #121316)) 96%, transparent);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  box-shadow: 0 16px 42px -8px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='light'] .lumina-canvas-toolbar-right.is-expanded,
+.theme-light .lumina-canvas-toolbar-right.is-expanded {
+  background-color: color-mix(in srgb, var(--bg-card, #ffffff) 98%, transparent);
+  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.12));
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
+/* Studio Header */
+.lumina-canvas-studio-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  background: color-mix(in srgb, var(--bg-card, #18191d) 90%, transparent);
+}
+
+.lumina-canvas-studio-title-group {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.lumina-canvas-studio-title-icon {
+  color: var(--text-accent, #38bdf8);
+}
+
+.lumina-canvas-studio-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-main, #ffffff);
+  letter-spacing: -0.01em;
+}
+
+.lumina-canvas-studio-badge {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--text-accent, #38bdf8) 14%, transparent);
+  color: var(--text-accent, #38bdf8);
+}
+
+.lumina-canvas-studio-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lumina-canvas-studio-header-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lumina-canvas-studio-header-btn:hover {
+  color: var(--text-main, #ffffff);
+  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+}
+
+.lumina-canvas-studio-header-btn.close:hover {
+  color: #ef4444;
+  background: color-mix(in srgb, #ef4444 15%, transparent);
+}
+
+/* Studio Body */
+.lumina-canvas-studio-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lumina-canvas-studio-body::-webkit-scrollbar {
+  width: 4px;
+}
+.lumina-canvas-studio-body::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--border-subtle, rgba(255, 255, 255, 0.2)) 50%, transparent);
+  border-radius: 4px;
+}
+
+/* Accordion Section */
+.lumina-canvas-studio-section {
+  background: color-mix(in srgb, var(--bg-app, #000000) 24%, transparent);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.07));
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.lumina-canvas-studio-section:hover {
+  border-color: color-mix(in srgb, var(--border-subtle, rgba(255, 255, 255, 0.14)) 80%, transparent);
+}
+
+.lumina-canvas-studio-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-main, #ffffff);
+  font-size: 11.5px;
+  font-weight: 600;
+  text-align: left;
+  user-select: none;
+  transition: background 0.12s ease;
+}
+
+.lumina-canvas-studio-section-header:hover {
+  background: color-mix(in srgb, var(--text-muted, #ffffff) 6%, transparent);
+}
+
+.lumina-canvas-studio-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lumina-canvas-studio-section-title .section-icon {
+  color: var(--text-accent, #38bdf8);
+}
+
+.lumina-canvas-studio-section-content {
+  padding: 8px 10px 10px;
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.05));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Color Swatches Row */
+.lumina-canvas-studio-colors-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 3px 0 6px;
+}
+
+.lumina-canvas-studio-color-dot {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease;
+  padding: 0;
+}
+
+.lumina-canvas-studio-color-dot:hover {
+  transform: scale(1.18);
+}
+
+.lumina-canvas-studio-color-dot.active {
+  transform: scale(1.22);
+  border-color: #ffffff;
+  box-shadow: 0 0 6px currentColor;
+}
+
+/* Search input */
+.lumina-canvas-studio-input-wrap {
+  width: 100%;
+}
+
+.lumina-canvas-studio-search {
+  width: 100%;
+  padding: 5px 8px;
+  font-size: 10.5px;
+  background: color-mix(in srgb, var(--bg-card, #18191d) 70%, transparent);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  border-radius: 5px;
+  color: var(--text-main, #ffffff);
+  box-sizing: border-box;
+  outline: none;
+}
+
+.lumina-canvas-studio-search:focus {
+  border-color: var(--text-accent, #38bdf8);
+}
+
+/* Shapes Grid */
+.lumina-canvas-studio-shapes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+  max-height: 190px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.lumina-canvas-studio-shapes-grid::-webkit-scrollbar {
+  width: 3px;
+}
+.lumina-canvas-studio-shapes-grid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+.lumina-canvas-studio-shape-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 4px;
+  background: color-mix(in srgb, var(--bg-card, #18191d) 50%, transparent);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+}
+
+.lumina-canvas-studio-shape-card:hover {
+  background: color-mix(in srgb, var(--text-accent, #38bdf8) 12%, transparent);
+  border-color: var(--text-accent, #38bdf8);
+  transform: translateY(-1px);
+}
+
+.lumina-canvas-studio-shape-card .shape-preview-svg {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lumina-canvas-studio-shape-card .shape-preview-svg svg {
+  width: 100%;
+  height: 100%;
+}
+
+.lumina-canvas-studio-shape-card .shape-label {
+  font-size: 9.5px;
+  color: var(--text-muted, #94a3b8);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 68px;
+}
+
+/* Feature Chip Callout */
+.lumina-canvas-studio-chip-active {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 7px 9px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--text-accent, #38bdf8) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text-accent, #38bdf8) 25%, transparent);
+}
+
+.lumina-canvas-studio-chip-active .chip-icon {
+  color: var(--text-accent, #38bdf8);
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.lumina-canvas-studio-chip-active .chip-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.lumina-canvas-studio-chip-active .chip-title {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-accent, #38bdf8);
+}
+
+.lumina-canvas-studio-chip-active .chip-subtitle {
+  font-size: 9.5px;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.3;
+}
+
+/* Field Groups */
+.lumina-canvas-studio-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lumina-canvas-studio-field-group .field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lumina-canvas-studio-field-group .field-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted, #94a3b8);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.lumina-canvas-studio-field-group .field-sub {
+  font-size: 9.5px;
+  color: var(--text-dim, #64748b);
+}
+
+/* Button Toggle Group */
+.lumina-canvas-studio-btn-toggle-group {
+  display: flex;
+  background: color-mix(in srgb, var(--bg-card, #18191d) 70%, transparent);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.lumina-canvas-studio-btn-toggle-group .toggle-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 6px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.lumina-canvas-studio-btn-toggle-group .toggle-btn:hover {
+  color: var(--text-main, #ffffff);
+}
+
+.lumina-canvas-studio-btn-toggle-group .toggle-btn.active {
+  background: color-mix(in srgb, var(--text-accent, #38bdf8) 22%, transparent);
+  color: var(--text-accent, #38bdf8);
+  font-weight: 600;
+}
+
+/* Switch Row */
+.lumina-canvas-studio-row-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.lumina-canvas-studio-row-switch .switch-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.lumina-canvas-studio-row-switch .switch-title {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-main, #ffffff);
+}
+
+.lumina-canvas-studio-row-switch .switch-hint {
+  font-size: 9.5px;
+  color: var(--text-dim, #64748b);
+}
+
+.lumina-canvas-studio-switch-pill {
+  width: 32px;
+  height: 18px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--border-subtle, rgba(255, 255, 255, 0.2)) 50%, transparent);
+  border: none;
+  cursor: pointer;
+  position: relative;
+  padding: 2px;
+  transition: background 0.15s ease;
+}
+
+.lumina-canvas-studio-switch-pill.active {
+  background: var(--text-accent, #38bdf8);
+}
+
+.lumina-canvas-studio-switch-pill .switch-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lumina-canvas-studio-switch-pill.active .switch-thumb {
+  transform: translateX(14px);
+}
+
+/* Icon Button Group (Alignment & Distribution) */
+.lumina-canvas-studio-icon-group {
+  display: flex;
+  gap: 3px;
+  background: color-mix(in srgb, var(--bg-card, #18191d) 70%, transparent);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: 6px;
+  padding: 3px;
+}
+
+.studio-icon-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.studio-icon-btn:hover:not(:disabled) {
+  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  color: var(--text-main, #ffffff);
+}
+
+.studio-icon-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Action Button */
+.lumina-canvas-studio-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  background: color-mix(in srgb, var(--bg-card, #18191d) 75%, transparent);
+  color: var(--text-main, #ffffff);
+  font-size: 10.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lumina-canvas-studio-action-btn:hover {
+  background: color-mix(in srgb, var(--text-accent, #38bdf8) 16%, transparent);
+  border-color: var(--text-accent, #38bdf8);
+  color: var(--text-accent, #38bdf8);
+}
+
+/* Zoom Bar */
+.lumina-canvas-studio-zoom-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: color-mix(in srgb, var(--bg-card, #18191d) 70%, transparent);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: 6px;
+  padding: 3px 6px;
+}
+
+.lumina-canvas-studio-zoom-bar .zoom-value {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-main, #ffffff);
+}
+
+.lumina-canvas-studio-presets-row {
+  display: flex;
+  gap: 4px;
+}
+
+.lumina-canvas-studio-presets-row .preset-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 6px;
+  font-size: 10px;
+  border-radius: 5px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  background: color-mix(in srgb, var(--bg-card, #18191d) 65%, transparent);
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.lumina-canvas-studio-presets-row .preset-btn:hover {
+  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  color: var(--text-main, #ffffff);
+}
+
+.lumina-canvas-studio-presets-row .preset-btn.active {
+  background: color-mix(in srgb, var(--text-accent, #38bdf8) 18%, transparent);
+  border-color: var(--text-accent, #38bdf8);
+  color: var(--text-accent, #38bdf8);
+  font-weight: 600;
+}
+
+.lumina-canvas-studio-presets-row .preset-btn.secondary {
+  font-size: 10px;
+  padding: 5px 8px;
+}
+
+/* Stats Grid */
+.lumina-canvas-studio-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.lumina-canvas-studio-stats-grid .stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 4px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--bg-card, #18191d) 50%, transparent);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+}
+
+.lumina-canvas-studio-stats-grid .stat-card.full-width {
+  grid-column: span 2;
+}
+
+.lumina-canvas-studio-stats-grid .stat-number {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-accent, #38bdf8);
+}
+
+.lumina-canvas-studio-stats-grid .stat-label {
+  font-size: 9px;
+  color: var(--text-muted, #94a3b8);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .lumina-canvas-divider {
@@ -595,7 +1175,8 @@
   z-index: 60;
 }
 
-.lumina-canvas-edge-group:hover .lumina-canvas-edge-controls-container {
+.lumina-canvas-edge-group:hover .lumina-canvas-edge-controls-container,
+.lumina-canvas-edge-group.is-hovered .lumina-canvas-edge-controls-container {
   opacity: 1;
   pointer-events: auto;
 }
@@ -986,8 +1567,9 @@
 
 /* Shape Node on Canvas */
 .lumina-canvas-node.is-shape {
-  background: transparent !important;
-  background-color: transparent !important;
+  background: rgba(0, 0, 0, 0.001) !important;
+  background-color: rgba(0, 0, 0, 0.001) !important;
+  pointer-events: auto;
   border: none !important;
   border-top: none !important;
   border-radius: 0 !important;

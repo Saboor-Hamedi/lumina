@@ -120,8 +120,9 @@ function getShapeSvgMarkup(
       break
   }
 
+  const aspect = shapeType === 'actor' || shapeType === 'circle' ? 'xMidYMid meet' : 'none'
   return `
-    <svg x="0" y="0" width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">
+    <svg x="0" y="0" width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="${aspect}">
       ${shapeContent}
     </svg>
   `

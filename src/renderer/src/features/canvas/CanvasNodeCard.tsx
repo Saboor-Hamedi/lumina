@@ -151,7 +151,11 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
               viewBox="0 0 100 100"
               width="100%"
               height="100%"
-              preserveAspectRatio="none"
+              preserveAspectRatio={
+                node.shape === 'actor' || node.shape === 'circle'
+                  ? 'xMidYMid meet'
+                  : 'none'
+              }
             >
               {renderShapeSVG(
                 node.shape || 'rectangle',

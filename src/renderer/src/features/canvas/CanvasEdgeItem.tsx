@@ -61,6 +61,24 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
     if (!fromNode || !toNode) return null
 
     const [isEditingLabel, setIsEditingLabel] = useState(false)
+    const [isHovered, setIsHovered] = useState(false)
+    const hoverTimerRef = React.useRef<number | null>(null)
+
+    const handleMouseEnter = () => {
+      if (hoverTimerRef.current) {
+        clearTimeout(hoverTimerRef.current)
+        hoverTimerRef.current = null
+      }
+      setIsHovered(true)
+    }
+
+    const handleMouseLeave = () => {
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current)
+      hoverTimerRef.current = window.setTimeout(() => {
+        setIsHovered(false)
+      }, 450)
+    }
+
     const lineStyle: CanvasEdgeLineStyle = edge.lineStyle || 'curved'
 
     const { pathD, midX, midY } = useMemo(() => {
@@ -69,7 +87,8 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
         edge.fromSide,
         toNode,
         edge.toSide,
-        lineStyle
+        lineStyle,
+        edge.routing !== 'manual'
       )
     }, [
       fromNode.x,
@@ -86,7 +105,8 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
       toNode.shape,
       edge.fromSide,
       edge.toSide,
-      lineStyle
+      lineStyle,
+      edge.routing
     ])
 
     const targetColor = edge.color || toNode.color || 'default'
@@ -132,7 +152,11 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
     }
 
     return (
-      <g className="lumina-canvas-edge-group">
+      <g
+        className={`lumina-canvas-edge-group ${isHovered ? 'is-hovered' : ''}`}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
         {/* Invisible wider hit area for easy hover / click */}
         <path
           d={pathD}
@@ -142,6 +166,15 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
             e.stopPropagation()
             setIsEditingLabel(true)
           }}
+        />
+
+        {/* Generous hover retention bridge connecting midpoint to controls badge */}
+        <circle
+          cx={midX}
+          cy={edge.label ? midY - 20 : midY}
+          r={45}
+          fill="transparent"
+          style={{ pointerEvents: isHovered ? 'all' : 'none' }}
         />
 
         {/* Rendered SVG connector path with arrows matching target node color */}

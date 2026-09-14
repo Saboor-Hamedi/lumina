@@ -9,6 +9,7 @@
 
 export * from './types'
 export * from './useCanvas'
+export * from './ConvasContainer'
 export * from './CanvasView'
 export * from './CanvasTabPane'
 export * from './CanvasNodeCard'

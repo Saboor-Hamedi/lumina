@@ -33,16 +33,27 @@ export interface NodePositionUpdate {
 /**
  * Aligns selected nodes along a specified edge or center line based on their collective bounding box.
  * Returns updated positions for selected nodes, preserving unselected nodes.
+ * Supports both signatures:
+ * - computeAlignedNodePositions(selectedNodes, alignment)
+ * - computeAlignedNodePositions(nodes, selectedIds, alignment)
  */
 export function computeAlignedNodePositions(
   nodes: CanvasNode[],
-  selectedIds: string[],
-  alignment: CanvasAlignmentType
+  selectedIdsOrAlignment: string[] | CanvasAlignmentType,
+  alignment?: CanvasAlignmentType
 ): NodePositionUpdate[] {
-  if (selectedIds.length < 2) return []
+  let targetNodes: CanvasNode[] = []
+  let alignMode: CanvasAlignmentType
 
-  const selectedSet = new Set(selectedIds)
-  const targetNodes = nodes.filter((n) => selectedSet.has(n.id))
+  if (Array.isArray(selectedIdsOrAlignment)) {
+    alignMode = alignment || 'left'
+    const selectedSet = new Set(selectedIdsOrAlignment)
+    targetNodes = (nodes || []).filter((n) => selectedSet.has(n.id))
+  } else {
+    alignMode = selectedIdsOrAlignment
+    targetNodes = nodes || []
+  }
+
   if (targetNodes.length < 2) return []
 
   // Compute collective bounding box
@@ -60,7 +71,7 @@ export function computeAlignedNodePositions(
 
   const updates: NodePositionUpdate[] = []
 
-  switch (alignment) {
+  switch (alignMode) {
     case 'left':
       for (const n of targetNodes) {
         if (n.x !== minX) {
@@ -124,21 +135,32 @@ export function computeAlignedNodePositions(
 /**
  * Distributes nodes evenly along horizontal or vertical axes.
  * Requires at least 3 nodes to distribute spacing between outer-most anchors.
+ * Supports both signatures:
+ * - computeDistributedNodePositions(selectedNodes, direction)
+ * - computeDistributedNodePositions(nodes, selectedIds, direction)
  */
 export function computeDistributedNodePositions(
   nodes: CanvasNode[],
-  selectedIds: string[],
-  direction: CanvasDistributionType
+  selectedIdsOrDirection: string[] | CanvasDistributionType,
+  direction?: CanvasDistributionType
 ): NodePositionUpdate[] {
-  if (selectedIds.length < 3) return []
+  let targetNodes: CanvasNode[] = []
+  let distDirection: CanvasDistributionType
 
-  const selectedSet = new Set(selectedIds)
-  const targetNodes = nodes.filter((n) => selectedSet.has(n.id))
+  if (Array.isArray(selectedIdsOrDirection)) {
+    distDirection = direction || 'horizontal'
+    const selectedSet = new Set(selectedIdsOrDirection)
+    targetNodes = (nodes || []).filter((n) => selectedSet.has(n.id))
+  } else {
+    distDirection = selectedIdsOrDirection
+    targetNodes = nodes || []
+  }
+
   if (targetNodes.length < 3) return []
 
   const updates: NodePositionUpdate[] = []
 
-  if (direction === 'horizontal') {
+  if (distDirection === 'horizontal') {
     // Sort nodes by X coordinate left to right
     const sorted = [...targetNodes].sort((a, b) => a.x - b.x)
     const first = sorted[0]
@@ -215,14 +237,21 @@ export function computeDistributedNodePositions(
 
 /**
  * Calculates the bounding box containing all selected nodes in canvas coordinates.
+ * If selectedIds is omitted, computes bounding box of the given nodes array directly.
  */
 export function getSelectionBoundingBox(
   nodes: CanvasNode[],
-  selectedIds: string[]
+  selectedIds?: string[]
 ): { minX: number; minY: number; maxX: number; maxY: number; width: number; height: number } | null {
-  if (selectedIds.length === 0) return null
-  const selectedSet = new Set(selectedIds)
-  const targetNodes = nodes.filter((n) => selectedSet.has(n.id))
+  if (!nodes || nodes.length === 0) return null
+
+  let targetNodes = nodes
+  if (selectedIds && Array.isArray(selectedIds)) {
+    if (selectedIds.length === 0) return null
+    const selectedSet = new Set(selectedIds)
+    targetNodes = nodes.filter((n) => selectedSet.has(n.id))
+  }
+
   if (targetNodes.length === 0) return null
 
   let minX = Infinity

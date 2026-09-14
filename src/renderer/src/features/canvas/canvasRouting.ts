@@ -109,21 +109,29 @@ export function getStepPath(
 
 /**
  * Unified calculation function resolving the appropriate path for any lineStyle.
+ *
+ * Super Smart Dynamic Direction:
+ * When dynamicPortDirection is true (default), dynamically calculates optimal
+ * facing ports between fromNode and toNode in real-time as shapes are moved
+ * across 2D space (left, right, above, below), ensuring wires never wrap backwards
+ * or cross awkwardly through nodes.
  */
 export function calculateEdgePath(
   fromNode: { x: number; y: number; width?: number; height?: number; type?: string; shape?: CanvasShapeType },
   fromSide: CanvasEdgeSide | undefined,
   toNode: { x: number; y: number; width?: number; height?: number; type?: string; shape?: CanvasShapeType },
   toSide: CanvasEdgeSide | undefined,
-  lineStyle: CanvasEdgeLineStyle = 'curved'
+  lineStyle: CanvasEdgeLineStyle = 'curved',
+  dynamicPortDirection: boolean = true
 ): EdgePathResult {
-  // If sides aren't explicitly provided, calculate optimal facing ports
   let actualFromSide = fromSide
   let actualToSide = toSide
-  if (!actualFromSide || !actualToSide) {
+
+  // If dynamic routing is active (default for smart links) or sides are missing, resolve optimal facing ports
+  if (dynamicPortDirection || !actualFromSide || !actualToSide) {
     const optimal = getOptimalEdgePorts(fromNode, toNode)
-    actualFromSide = actualFromSide || optimal.fromSide
-    actualToSide = actualToSide || optimal.toSide
+    actualFromSide = optimal.fromSide
+    actualToSide = optimal.toSide
   }
 
   const fromPt = getNodePortCoord(fromNode, actualFromSide)

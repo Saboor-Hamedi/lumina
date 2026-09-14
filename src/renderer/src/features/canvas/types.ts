@@ -78,6 +78,7 @@ export interface CanvasEdge {
   label?: string
   color?: CanvasNodeColor
   lineStyle?: CanvasEdgeLineStyle
+  routing?: 'smart' | 'manual'
 }
 
 export interface CanvasViewport {
