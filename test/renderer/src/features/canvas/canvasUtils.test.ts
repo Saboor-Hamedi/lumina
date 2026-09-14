@@ -3,6 +3,7 @@ import {
   findClosestPort,
   getNodePortCoord,
   getBezierCurve,
+  getDragBezierCurve,
   COLOR_CYCLE,
   CANVAS_NODE_COLOR_HEX
 } from '../../../../../src/renderer/src/features/canvas/canvasUtils'
@@ -107,5 +108,11 @@ describe('canvasUtils - Magnetic Proximity & Colors', () => {
     expect(curve.pathD).toMatch(/^M 100 100 C/)
     expect(curve.midX).toBe(200)
     expect(curve.midY).toBe(100)
+  })
+
+  it('generates straight drag curves without curved heads at cursor', () => {
+    const dragCurve = getDragBezierCurve({ x: 100, y: 100 }, 'right', { x: 250, y: 180 })
+    expect(dragCurve.pathD).toMatch(/^M 100 100 C/)
+    expect(dragCurve.pathD).toContain('250 180')
   })
 })

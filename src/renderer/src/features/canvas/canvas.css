@@ -41,7 +41,7 @@
 .lumina-canvas-edge-line {
   fill: none;
   stroke: color-mix(in srgb, var(--text-accent, #38bdf8) 70%, rgba(255, 255, 255, 0.25));
-  stroke-width: 2.2px;
+  stroke-width: 1.6px;
   stroke-linecap: round;
   transition: stroke 0.2s ease, stroke-width 0.15s ease;
   marker-end: url(#arrow);
@@ -70,8 +70,8 @@
 }
 
 .lumina-canvas-edge-group:hover .lumina-canvas-edge-line {
-  stroke-width: 3px;
-  filter: drop-shadow(0 0 5px currentColor);
+  stroke-width: 2.2px;
+  filter: drop-shadow(0 0 4px currentColor);
 }
 
 /* Canvas Toolbar */
@@ -255,38 +255,38 @@
 
 .lumina-canvas-node.selected {
   border-color: var(--text-accent, #38bdf8) !important;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--text-accent, #38bdf8) 40%, transparent),
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--text-accent, #38bdf8) 40%, transparent),
     0 12px 32px -4px rgba(0, 0, 0, 0.6);
   z-index: 10;
 }
 
 /* Node Color Themes */
 .lumina-canvas-node.color-yellow {
-  border-top: 3px solid #eab308;
+  border-top: 2px solid #eab308;
   --node-accent: #eab308;
 }
 .lumina-canvas-node.color-purple {
-  border-top: 3px solid #a855f7;
+  border-top: 2px solid #a855f7;
   --node-accent: #a855f7;
 }
 .lumina-canvas-node.color-cyan {
-  border-top: 3px solid #06b6d4;
+  border-top: 2px solid #06b6d4;
   --node-accent: #06b6d4;
 }
 .lumina-canvas-node.color-green {
-  border-top: 3px solid #22c55e;
+  border-top: 2px solid #22c55e;
   --node-accent: #22c55e;
 }
 .lumina-canvas-node.color-orange {
-  border-top: 3px solid #f97316;
+  border-top: 2px solid #f97316;
   --node-accent: #f97316;
 }
 .lumina-canvas-node.color-red {
-  border-top: 3px solid #ef4444;
+  border-top: 2px solid #ef4444;
   --node-accent: #ef4444;
 }
 .lumina-canvas-node.color-default {
-  border-top: 3px solid var(--border-subtle, rgba(255, 255, 255, 0.2));
+  border-top: 2px solid var(--border-subtle, rgba(255, 255, 255, 0.2));
   --node-accent: var(--text-accent, #38bdf8);
 }
 
@@ -402,7 +402,7 @@
   width: 12px;
   height: 12px;
   background-color: var(--bg-panel, #18181b);
-  border: 2px solid var(--node-accent, var(--text-accent, #38bdf8));
+  border: 1.5px solid var(--node-accent, var(--text-accent, #38bdf8));
   border-radius: 50%;
   cursor: crosshair;
   z-index: 25;
@@ -418,20 +418,20 @@
 }
 
 .lumina-canvas-port:hover {
-  transform: scale(1.4);
+  transform: scale(1.25);
   background-color: var(--node-accent, var(--text-accent, #38bdf8));
-  box-shadow: 0 0 12px color-mix(in srgb, var(--node-accent, var(--text-accent, #38bdf8)) 70%, transparent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--node-accent, var(--text-accent, #38bdf8)) 70%, transparent);
 }
 
 /* When magnetically pulled / snapped (Key enters hole / Precision Docking Socket) */
 .lumina-canvas-port.is-magnetic-snap {
   opacity: 1 !important;
-  transform: scale(1.75) !important;
+  transform: scale(1.35) !important;
   background-color: var(--bg-panel, #18181b) !important;
   border-color: #ffffff !important;
-  border-width: 2px !important;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--node-accent, var(--text-accent, #38bdf8)) 80%, transparent),
-              0 0 18px var(--node-accent, var(--text-accent, #38bdf8)) !important;
+  border-width: 1.5px !important;
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--node-accent, var(--text-accent, #38bdf8)) 75%, transparent),
+              0 0 8px var(--node-accent, var(--text-accent, #38bdf8)) !important;
   animation: socketDockPulse 1.1s ease-in-out infinite alternate !important;
   z-index: 50;
 }
@@ -443,21 +443,21 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 3.5px;
-  height: 3.5px;
+  width: 2.5px;
+  height: 2.5px;
   border-radius: 50%;
   background-color: var(--node-accent, var(--text-accent, #38bdf8));
-  box-shadow: 0 0 4px #ffffff;
+  box-shadow: 0 0 3px #ffffff;
 }
 
 @keyframes socketDockPulse {
   0% {
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--node-accent, var(--text-accent, #38bdf8)) 75%, transparent),
-                0 0 12px var(--node-accent, var(--text-accent, #38bdf8));
+    box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--node-accent, var(--text-accent, #38bdf8)) 70%, transparent),
+                0 0 6px var(--node-accent, var(--text-accent, #38bdf8));
   }
   100% {
-    box-shadow: 0 0 0 5px color-mix(in srgb, var(--node-accent, var(--text-accent, #38bdf8)) 95%, transparent),
-                0 0 24px var(--node-accent, var(--text-accent, #38bdf8));
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--node-accent, var(--text-accent, #38bdf8)) 85%, transparent),
+                0 0 12px var(--node-accent, var(--text-accent, #38bdf8));
   }
 }
 
@@ -486,7 +486,7 @@
 .lumina-canvas-connecting-line {
   fill: none;
   stroke: var(--text-accent, #38bdf8);
-  stroke-width: 2.5px;
+  stroke-width: 1.6px;
   stroke-dasharray: 6 4;
   stroke-linecap: round;
   animation: canvasDash 0.8s linear infinite;
@@ -495,9 +495,9 @@
 }
 
 .lumina-canvas-connecting-line.snapped {
-  stroke-width: 3px;
+  stroke-width: 1.8px;
   stroke-dasharray: 5 3;
-  filter: drop-shadow(0 0 8px var(--snap-color, #38bdf8));
+  filter: drop-shadow(0 0 6px var(--snap-color, #38bdf8));
 }
 
 @keyframes canvasDash {

@@ -27,6 +27,7 @@ import {
   CANVAS_NODE_COLOR_HEX,
   getNodePortCoord,
   getBezierCurve,
+  getDragBezierCurve,
   normalizeNode,
   findClosestPort,
   SnappedPortTarget
@@ -915,15 +916,24 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
     if (!connecting) return null
     const targetColor = snappedTarget ? (snappedTarget.color || 'default') : 'default'
     const targetHex = CANVAS_NODE_COLOR_HEX[targetColor] || CANVAS_NODE_COLOR_HEX.default
-    const toSide = snappedTarget ? snappedTarget.side : 'left'
-    const targetPt = snappedTarget ? { x: snappedTarget.x, y: snappedTarget.y } : mouseCanvasPos
 
-    const { pathD } = getBezierCurve(
-      { x: connecting.startX, y: connecting.startY },
-      connecting.fromSide,
-      targetPt,
-      toSide
-    )
+    let pathD: string
+    if (snappedTarget) {
+      // Snapped to a port socket: route cleanly into the socket port
+      pathD = getBezierCurve(
+        { x: connecting.startX, y: connecting.startY },
+        connecting.fromSide,
+        { x: snappedTarget.x, y: snappedTarget.y },
+        snappedTarget.side
+      ).pathD
+    } else {
+      // Free dragging: head of line arrives straight into the cursor with zero unnatural curve
+      pathD = getDragBezierCurve(
+        { x: connecting.startX, y: connecting.startY },
+        connecting.fromSide,
+        mouseCanvasPos
+      ).pathD
+    }
 
     return (
       <path
@@ -976,26 +986,26 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
             <marker
               id="arrow"
               viewBox="0 0 10 10"
-              refX="7"
+              refX="6"
               refY="5"
-              markerWidth="6.5"
-              markerHeight="6.5"
+              markerWidth="5.5"
+              markerHeight="5.5"
               orient="auto-start-reverse"
             >
-              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="var(--text-accent, #38bdf8)" />
+              <path d="M 0 2 L 7 5 L 0 8 z" fill="var(--text-accent, #38bdf8)" />
             </marker>
             {(Object.keys(CANVAS_NODE_COLOR_HEX) as (keyof typeof CANVAS_NODE_COLOR_HEX)[]).map((cKey) => (
               <marker
                 key={cKey}
                 id={`arrow-${cKey}`}
                 viewBox="0 0 10 10"
-                refX="7"
+                refX="6"
                 refY="5"
-                markerWidth="6.5"
-                markerHeight="6.5"
+                markerWidth="5.5"
+                markerHeight="5.5"
                 orient="auto-start-reverse"
               >
-                <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill={CANVAS_NODE_COLOR_HEX[cKey]} />
+                <path d="M 0 2 L 7 5 L 0 8 z" fill={CANVAS_NODE_COLOR_HEX[cKey]} />
               </marker>
             ))}
           </defs>

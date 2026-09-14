@@ -139,7 +139,8 @@ export function getBezierCurve(
   toPt: { x: number; y: number },
   toSide: CanvasEdgeSide = 'left'
 ): { pathD: string; midX: number; midY: number } {
-  const dist = Math.max(Math.hypot(toPt.x - fromPt.x, toPt.y - fromPt.y) * 0.4, 40)
+  const rawDist = Math.hypot(toPt.x - fromPt.x, toPt.y - fromPt.y)
+  const dist = Math.max(Math.min(rawDist * 0.4, 140), 20)
   let cp1x = fromPt.x
   let cp1y = fromPt.y
   let cp2x = toPt.x
@@ -160,6 +161,35 @@ export function getBezierCurve(
   const pathD = `M ${fromPt.x} ${fromPt.y} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${toPt.x} ${toPt.y}`
 
   return { pathD, midX, midY }
+}
+
+/**
+ * Computes a smooth directional Bézier curve for freehand wire dragging.
+ * Exits the starting port smoothly along fromSide, while arriving straight into
+ * the mouse cursor (toPt) without awkward backwards curls, loops, or curved heads.
+ */
+export function getDragBezierCurve(
+  fromPt: { x: number; y: number },
+  fromSide: CanvasEdgeSide,
+  toPt: { x: number; y: number }
+): { pathD: string } {
+  const rawDist = Math.hypot(toPt.x - fromPt.x, toPt.y - fromPt.y)
+  const dist = Math.max(Math.min(rawDist * 0.35, 120), 20)
+  let cp1x = fromPt.x
+  let cp1y = fromPt.y
+
+  if (fromSide === 'right') cp1x += dist
+  else if (fromSide === 'left') cp1x -= dist
+  else if (fromSide === 'top') cp1y -= dist
+  else if (fromSide === 'bottom') cp1y += dist
+
+  // cp2 lies along the line between cp1 and toPt, ensuring the curve arrives
+  // completely straight at toPt so the arrowhead points cleanly in the direction of motion.
+  const cp2x = toPt.x - (toPt.x - cp1x) * 0.25
+  const cp2y = toPt.y - (toPt.y - cp1y) * 0.25
+
+  const pathD = `M ${fromPt.x} ${fromPt.y} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${toPt.x} ${toPt.y}`
+  return { pathD }
 }
 
 /**
