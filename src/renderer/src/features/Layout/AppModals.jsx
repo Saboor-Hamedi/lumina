@@ -33,7 +33,7 @@ import IconPicker from '../Icons/IconPicker'
 import ToastNotification from '../../core/notification'
 import Indexing from '../../components/Indexing'
 import { VoiceCapsule } from '../voice'
-import { InlineCanvasContainer } from '../inlineDrawing'
+import { CanvasDrawerModal } from '../canvas'
 
 import GlobalErrorHandler from '../../components/GlobalErrorHandler'
 import { useVaultStore } from '../../core/store/workspaceStore'
@@ -261,22 +261,10 @@ export const AppModals = ({
       {/* Voice Capsule Recording Assistant */}
       <VoiceCapsule />
 
-      {/* Detached Borderless Inline Drawing Whiteboard (Ctrl+Shift+/) */}
-      <InlineDrawingModal />
+      {/* Spatial Canvas Slide-up Drawer Modal */}
+      <CanvasDrawerModal />
     </>
   )
-}
-
-const InlineDrawingModal = () => {
-  const [isOpen, setIsOpen] = React.useState(false)
-
-  React.useEffect(() => {
-    const handleToggle = () => setIsOpen((prev) => !prev)
-    window.addEventListener('toggle-inline-drawing', handleToggle)
-    return () => window.removeEventListener('toggle-inline-drawing', handleToggle)
-  }, [])
-
-  return <InlineCanvasContainer isOpen={isOpen} onClose={() => setIsOpen(false)} />
 }
 
 export default React.memo(AppModals)

@@ -310,14 +310,14 @@ export const useKeyboardShortcuts = (shortcuts: KeyboardShortcutHandlers): void 
         return
       }
 
-      // Inline Drawing Canvas
-      if (matchesShortcut(e, getKey('inlineDrawing'))) {
+      // Spatial Canvas Drawer Modal
+      if (matchesShortcut(e, getKey('canvasDrawer'))) {
         e.preventDefault()
         e.stopPropagation()
-        if (shortcutsRef.current.onToggleInlineDrawing) {
-          shortcutsRef.current.onToggleInlineDrawing()
+        if (shortcutsRef.current.onToggleCanvasDrawer) {
+          shortcutsRef.current.onToggleCanvasDrawer()
         } else {
-          window.dispatchEvent(new CustomEvent('toggle-inline-drawing'))
+          window.dispatchEvent(new CustomEvent('toggle-canvas-drawer'))
         }
         return
       }

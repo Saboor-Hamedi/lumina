@@ -1,6 +1,0 @@
-export { InlineCanvasContainer, default } from './inlineCanvasContainer'
-export { InlineCanvasToolbar } from './inlineCanvasToolbar'
-export { InlineCanvasView } from './inlineCanvasView'
-export * from './inlineTypes'
-export * from './inlineShapes'
-export * from './inlineDrawingExport'

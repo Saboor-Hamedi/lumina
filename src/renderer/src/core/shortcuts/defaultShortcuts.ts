@@ -9,7 +9,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
   { id: 'globalSearch', label: 'Global Search', defaultKey: 'Ctrl + Shift + F', category: 'General' },
   { id: 'toggleTheme', label: 'Toggle Theme', defaultKey: 'Ctrl + T', category: 'General' },
   { id: 'aiChat', label: 'AI Chat', defaultKey: 'Ctrl + Shift + \\', category: 'General' },
-  { id: 'inlineDrawing', label: 'Inline Drawing Canvas', defaultKey: 'Ctrl + Shift + /', category: 'General' },
+  { id: 'canvasDrawer', label: 'Canvas Drawer', defaultKey: 'Ctrl + Shift + /', category: 'General' },
   { id: 'voiceDictation', label: 'Voice Dictation', defaultKey: 'Shift + Alt + V', category: 'General' },
 
   // File

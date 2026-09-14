@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
-import { BookOpen, PanelRight, Keyboard, FileText, Hash, Clock, Navigation, Compass, Settings, Shapes } from 'lucide-react'
+import { BookOpen, PanelRight, Keyboard, FileText, Hash, Clock, Navigation, Compass, Settings, LayoutGrid } from 'lucide-react'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { useCurrentUser } from '../../core/hooks/useCurrentUser'
 import SettingDropdown from '../Navigation/components/SettingDropdown'
@@ -167,13 +167,13 @@ const StatusBar = ({
 
         <span className="status-bar-divider status-bar-hide-sm" />
 
-        <ToolTip text="Inline Drawing Canvas (Ctrl + Shift + /)" position="top">
+        <ToolTip text="Canvas Drawer (Ctrl + Shift + /)" position="top">
           <button
             className="status-bar-btn"
-            onClick={() => window.dispatchEvent(new CustomEvent('toggle-inline-drawing'))}
+            onClick={() => window.dispatchEvent(new CustomEvent('toggle-canvas-drawer'))}
           >
-            <Shapes size={11} />
-            <span className="status-bar-label-collapse">Draw</span>
+            <LayoutGrid size={11} />
+            <span className="status-bar-label-collapse">Canvas</span>
           </button>
         </ToolTip>
       </div>

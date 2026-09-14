@@ -55,6 +55,6 @@ export interface KeyboardShortcutHandlers {
   onToggleAIChat?: () => void
   onTogglePreview?: () => void
   onToggleSidebar?: () => void
-  onToggleInlineDrawing?: () => void
+  onToggleCanvasDrawer?: () => void
   onInlineAI?: () => boolean | void
 }

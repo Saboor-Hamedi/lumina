@@ -409,19 +409,19 @@ export const MainLayout = () => {
     return () => window.removeEventListener('keydown', handleRenameShortcut)
   }, [selectedSnippet, showToast])
 
-  // Dedicated direct listener for Ctrl + Shift + / (Inline Drawing)
+  // Dedicated direct capturing listener for Ctrl + Shift + / (Canvas Drawer Modal)
   useEffect(() => {
-    const handleInlineDrawKey = (e) => {
+    const handleCanvasDrawerKey = (e) => {
       const isCtrl = e.ctrlKey || e.metaKey
       const isSlash = e.code === 'Slash' || e.key === '/' || e.key === '?'
       if (isCtrl && e.shiftKey && isSlash) {
         e.preventDefault()
         e.stopPropagation()
-        window.dispatchEvent(new CustomEvent('toggle-inline-drawing'))
+        window.dispatchEvent(new CustomEvent('toggle-canvas-drawer'))
       }
     }
-    window.addEventListener('keydown', handleInlineDrawKey, true)
-    return () => window.removeEventListener('keydown', handleInlineDrawKey, true)
+    window.addEventListener('keydown', handleCanvasDrawerKey, true)
+    return () => window.removeEventListener('keydown', handleCanvasDrawerKey, true)
   }, [])
 
   useEffect(() => {
@@ -547,8 +547,8 @@ export const MainLayout = () => {
     onToggleAIChat: () => handleToggleAIChat(),
     onToggleSidebar: () => updateLeftSidebarOpen((prev) => !prev),
     onToggleInspector: handleToggleInspector,
-    onToggleInlineDrawing: () => {
-      window.dispatchEvent(new CustomEvent('toggle-inline-drawing'))
+    onToggleCanvasDrawer: () => {
+      window.dispatchEvent(new CustomEvent('toggle-canvas-drawer'))
     },
     onNew: () => handleNew(),
     onDelete: () => {
