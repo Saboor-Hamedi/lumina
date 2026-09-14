@@ -205,7 +205,7 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
         if (stateRef.current.selectedNodeIds.length > 0) {
           e.preventDefault()
           e.stopPropagation()
-          deleteSelected()
+          deleteSelected(stateRef.current.selectedNodeIds)
         }
       } else if (e.key === 'Escape') {
         setConnecting(null)

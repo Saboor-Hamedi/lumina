@@ -266,8 +266,10 @@ describe('ConvasShapes Palette & Renderer', () => {
       expect(shapeNode).toHaveClass('selected')
     })
 
-    // Press Delete key
-    fireEvent.keyDown(window, { key: 'Delete' })
+    // Click the dedicated Delete Shape action button
+    const deleteBtn = shapeNode.querySelector('.lumina-canvas-action-btn.delete')!
+    expect(deleteBtn).toBeInTheDocument()
+    fireEvent.click(deleteBtn)
 
     // Verify ONLY the selected shape was removed
     await waitFor(() => {

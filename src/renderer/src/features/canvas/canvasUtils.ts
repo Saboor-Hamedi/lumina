@@ -7,7 +7,7 @@
  * ============================================================================
  */
 
-import { CanvasEdgeSide, CanvasNode, CanvasNodeColor } from './types'
+import { CanvasEdgeSide, CanvasNode, CanvasNodeColor, CanvasShapeType } from './types'
 
 /**
  * Standard palette color cycle for sticky notes and canvas cards.
@@ -63,17 +63,173 @@ export function stripFrontmatter(content: string): string {
 }
 
 /**
+ * Computes exact normalized percentage offset (0 to 1) for the 4 ports
+ * based on the geometric contours of vector shapes, ensuring zero air gap.
+ */
+export function getShapePortRatio(
+  shape: CanvasShapeType | undefined,
+  side: CanvasEdgeSide
+): { rx: number; ry: number } {
+  if (!shape) {
+    switch (side) {
+      case 'top': return { rx: 0.5, ry: 0 }
+      case 'bottom': return { rx: 0.5, ry: 1 }
+      case 'left': return { rx: 0, ry: 0.5 }
+      case 'right': default: return { rx: 1, ry: 0.5 }
+    }
+  }
+
+  switch (shape) {
+    case 'triangle':
+      // Triangle SVG points="50,6 95,94 5,94"
+      switch (side) {
+        case 'top': return { rx: 0.5, ry: 0.06 }
+        case 'bottom': return { rx: 0.5, ry: 0.94 }
+        case 'left': return { rx: 0.27, ry: 0.5 }
+        case 'right': return { rx: 0.73, ry: 0.5 }
+      }
+      break
+
+    case 'diamond':
+      // Diamond polygon points="50,4 96,50 50,96 4,50"
+      switch (side) {
+        case 'top': return { rx: 0.5, ry: 0.04 }
+        case 'bottom': return { rx: 0.5, ry: 0.96 }
+        case 'left': return { rx: 0.04, ry: 0.5 }
+        case 'right': return { rx: 0.96, ry: 0.5 }
+      }
+      break
+
+    case 'circle':
+      // Circle ellipse cx=50 cy=50 rx=46 ry=46
+      switch (side) {
+        case 'top': return { rx: 0.5, ry: 0.04 }
+        case 'bottom': return { rx: 0.5, ry: 0.96 }
+        case 'left': return { rx: 0.04, ry: 0.5 }
+        case 'right': return { rx: 0.96, ry: 0.5 }
+      }
+      break
+
+    case 'hexagon':
+      // Hexagon points="25,4 75,4 96,50 75,96 25,96 4,50"
+      switch (side) {
+        case 'top': return { rx: 0.5, ry: 0.04 }
+        case 'bottom': return { rx: 0.5, ry: 0.96 }
+        case 'left': return { rx: 0.04, ry: 0.5 }
+        case 'right': return { rx: 0.96, ry: 0.5 }
+      }
+      break
+
+    case 'cylinder':
+      // Cylinder top cap ellipse cy=22 ry=14 (top is at 22-14=8%), bottom arc at 90%
+      switch (side) {
+        case 'top': return { rx: 0.5, ry: 0.08 }
+        case 'bottom': return { rx: 0.5, ry: 0.90 }
+        case 'left': return { rx: 0.06, ry: 0.5 }
+        case 'right': return { rx: 0.94, ry: 0.5 }
+      }
+      break
+
+    case 'heart':
+      // Heart contour: tip at bottom 88%, cleft at top 16% (or top arc 4%), sides at 6% / 94%
+      switch (side) {
+        case 'top': return { rx: 0.5, ry: 0.16 }
+        case 'bottom': return { rx: 0.5, ry: 0.88 }
+        case 'left': return { rx: 0.06, ry: 0.45 }
+        case 'right': return { rx: 0.94, ry: 0.45 }
+      }
+      break
+
+    case 'shield':
+      // Shield: top at 4%, bottom tip at 96%, sides at 8% and 92%
+      switch (side) {
+        case 'top': return { rx: 0.5, ry: 0.04 }
+        case 'bottom': return { rx: 0.5, ry: 0.96 }
+        case 'left': return { rx: 0.08, ry: 0.45 }
+        case 'right': return { rx: 0.92, ry: 0.45 }
+      }
+      break
+
+    case 'star':
+      // Star: top tip at 4%, bottom indent at 75%, sides at 4% and 96%
+      switch (side) {
+        case 'top': return { rx: 0.5, ry: 0.04 }
+        case 'bottom': return { rx: 0.5, ry: 0.75 }
+        case 'left': return { rx: 0.12, ry: 0.5 }
+        case 'right': return { rx: 0.88, ry: 0.5 }
+      }
+      break
+
+    case 'cloud':
+      switch (side) {
+        case 'top': return { rx: 0.5, ry: 0.16 }
+        case 'bottom': return { rx: 0.5, ry: 0.74 }
+        case 'left': return { rx: 0.07, ry: 0.5 }
+        case 'right': return { rx: 0.93, ry: 0.5 }
+      }
+      break
+
+    case 'speech-bubble':
+      // Bubble body ends at 77% height with pointer at bottom
+      switch (side) {
+        case 'top': return { rx: 0.5, ry: 0.06 }
+        case 'bottom': return { rx: 0.5, ry: 0.77 }
+        case 'left': return { rx: 0.04, ry: 0.42 }
+        case 'right': return { rx: 0.96, ry: 0.42 }
+      }
+      break
+
+    case 'pill':
+      switch (side) {
+        case 'top': return { rx: 0.5, ry: 0.12 }
+        case 'bottom': return { rx: 0.5, ry: 0.88 }
+        case 'left': return { rx: 0.04, ry: 0.5 }
+        case 'right': return { rx: 0.96, ry: 0.5 }
+      }
+      break
+
+    case 'parallelogram':
+      // Parallelogram slanted: points="22,5 96,5 78,95 4,95"
+      switch (side) {
+        case 'top': return { rx: 0.59, ry: 0.05 }
+        case 'bottom': return { rx: 0.41, ry: 0.95 }
+        case 'left': return { rx: 0.13, ry: 0.5 }
+        case 'right': return { rx: 0.87, ry: 0.5 }
+      }
+      break
+
+    default:
+      break
+  }
+
+  switch (side) {
+    case 'top': return { rx: 0.5, ry: 0 }
+    case 'bottom': return { rx: 0.5, ry: 1 }
+    case 'left': return { rx: 0, ry: 0.5 }
+    case 'right': default: return { rx: 1, ry: 0.5 }
+  }
+}
+
+/**
  * Computes exact canvas-space coordinates for a specific connection port knob
- * ('top', 'bottom', 'left', 'right') on any given node.
+ * ('top', 'bottom', 'left', 'right') on any given node, accounting for shape geometry.
  */
 export function getNodePortCoord(
-  node: { x: number; y: number; width?: number; height?: number },
+  node: { x: number; y: number; width?: number; height?: number; type?: string; shape?: CanvasShapeType },
   side: CanvasEdgeSide
 ): { x: number; y: number } {
   const x = safeNumber(node.x, 0)
   const y = safeNumber(node.y, 0)
   const w = Math.max(safeNumber(node.width, 140), 30)
   const h = Math.max(safeNumber(node.height, 100), 30)
+
+  if (node.type === 'shape' && node.shape) {
+    const ratio = getShapePortRatio(node.shape, side)
+    return {
+      x: x + w * ratio.rx,
+      y: y + h * ratio.ry
+    }
+  }
 
   switch (side) {
     case 'top':

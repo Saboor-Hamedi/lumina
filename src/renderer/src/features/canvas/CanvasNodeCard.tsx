@@ -18,7 +18,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { ExternalLink, Palette, X, FileText } from 'lucide-react'
 import { CanvasNode, CanvasEdgeSide } from './types'
-import { stripFrontmatter } from './canvasUtils'
+import { stripFrontmatter, getShapePortRatio } from './canvasUtils'
 import { CanvasImagePreview } from './CanvasImagePreview'
 import { renderShapeSVG } from './ConvasShapes'
 import { useVaultStore } from '../../core/store/workspaceStore'
@@ -92,38 +92,54 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
         onMouseDown={(e) => onNodeMouseDown(e, node)}
       >
         {/* Connection Ports (Knobs appearing on hover for drag/click linking & magnetic socket docking) */}
-        <div
-          className={`lumina-canvas-port port-top ${snappedPortSide === 'top' ? 'is-magnetic-snap' : ''}`}
-          data-node-id={node.id}
-          data-port-side="top"
-          title="Connect top"
-          onMouseDown={(e) => onPortMouseDown(e, node.id, 'top')}
-          onClick={(e) => onPortMouseDown(e, node.id, 'top')}
-        />
-        <div
-          className={`lumina-canvas-port port-right ${snappedPortSide === 'right' ? 'is-magnetic-snap' : ''}`}
-          data-node-id={node.id}
-          data-port-side="right"
-          title="Connect right"
-          onMouseDown={(e) => onPortMouseDown(e, node.id, 'right')}
-          onClick={(e) => onPortMouseDown(e, node.id, 'right')}
-        />
-        <div
-          className={`lumina-canvas-port port-bottom ${snappedPortSide === 'bottom' ? 'is-magnetic-snap' : ''}`}
-          data-node-id={node.id}
-          data-port-side="bottom"
-          title="Connect bottom"
-          onMouseDown={(e) => onPortMouseDown(e, node.id, 'bottom')}
-          onClick={(e) => onPortMouseDown(e, node.id, 'bottom')}
-        />
-        <div
-          className={`lumina-canvas-port port-left ${snappedPortSide === 'left' ? 'is-magnetic-snap' : ''}`}
-          data-node-id={node.id}
-          data-port-side="left"
-          title="Connect left"
-          onMouseDown={(e) => onPortMouseDown(e, node.id, 'left')}
-          onClick={(e) => onPortMouseDown(e, node.id, 'left')}
-        />
+        {(() => {
+          const isShape = node.type === 'shape' && node.shape
+          const topRatio = isShape ? getShapePortRatio(node.shape, 'top') : null
+          const rightRatio = isShape ? getShapePortRatio(node.shape, 'right') : null
+          const bottomRatio = isShape ? getShapePortRatio(node.shape, 'bottom') : null
+          const leftRatio = isShape ? getShapePortRatio(node.shape, 'left') : null
+
+          return (
+            <>
+              <div
+                className={`lumina-canvas-port port-top ${snappedPortSide === 'top' ? 'is-magnetic-snap' : ''}`}
+                data-node-id={node.id}
+                data-port-side="top"
+                title="Connect top"
+                style={topRatio ? { left: `${topRatio.rx * 100}%`, top: `${topRatio.ry * 100}%`, transform: 'translate(-50%, -50%)', margin: 0 } : undefined}
+                onMouseDown={(e) => onPortMouseDown(e, node.id, 'top')}
+                onClick={(e) => onPortMouseDown(e, node.id, 'top')}
+              />
+              <div
+                className={`lumina-canvas-port port-right ${snappedPortSide === 'right' ? 'is-magnetic-snap' : ''}`}
+                data-node-id={node.id}
+                data-port-side="right"
+                title="Connect right"
+                style={rightRatio ? { left: `${rightRatio.rx * 100}%`, top: `${rightRatio.ry * 100}%`, transform: 'translate(-50%, -50%)', margin: 0 } : undefined}
+                onMouseDown={(e) => onPortMouseDown(e, node.id, 'right')}
+                onClick={(e) => onPortMouseDown(e, node.id, 'right')}
+              />
+              <div
+                className={`lumina-canvas-port port-bottom ${snappedPortSide === 'bottom' ? 'is-magnetic-snap' : ''}`}
+                data-node-id={node.id}
+                data-port-side="bottom"
+                title="Connect bottom"
+                style={bottomRatio ? { left: `${bottomRatio.rx * 100}%`, top: `${bottomRatio.ry * 100}%`, transform: 'translate(-50%, -50%)', margin: 0 } : undefined}
+                onMouseDown={(e) => onPortMouseDown(e, node.id, 'bottom')}
+                onClick={(e) => onPortMouseDown(e, node.id, 'bottom')}
+              />
+              <div
+                className={`lumina-canvas-port port-left ${snappedPortSide === 'left' ? 'is-magnetic-snap' : ''}`}
+                data-node-id={node.id}
+                data-port-side="left"
+                title="Connect left"
+                style={leftRatio ? { left: `${leftRatio.rx * 100}%`, top: `${leftRatio.ry * 100}%`, transform: 'translate(-50%, -50%)', margin: 0 } : undefined}
+                onMouseDown={(e) => onPortMouseDown(e, node.id, 'left')}
+                onClick={(e) => onPortMouseDown(e, node.id, 'left')}
+              />
+            </>
+          )
+        })()}
 
         {/* Shape Mode: Vector Graphic Background & Centered Content */}
         {node.type === 'shape' ? (

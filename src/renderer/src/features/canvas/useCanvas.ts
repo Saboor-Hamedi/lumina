@@ -44,6 +44,8 @@ export function useCanvas(options: UseCanvasOptions = {}) {
   })
 
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([])
+  const selectedNodeIdsRef = useRef<string[]>([])
+  selectedNodeIdsRef.current = selectedNodeIds
   const [isPanning, setIsPanning] = useState(false)
 
   const panStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
@@ -258,16 +260,15 @@ export function useCanvas(options: UseCanvasOptions = {}) {
   }, [])
 
   /**
-   * Deletes all currently selected nodes and cleans up connected edges.
+   * Deletes all currently selected nodes (or provided ids) and cleans up connected edges.
    */
-  const deleteSelected = useCallback(() => {
-    setSelectedNodeIds((selected) => {
-      if (selected.length === 0) return selected
-      const selectedSet = new Set(selected)
-      setNodes((prev) => prev.filter((n) => !selectedSet.has(n.id)))
-      setEdges((prev) => prev.filter((e) => !selectedSet.has(e.fromNode) && !selectedSet.has(e.toNode)))
-      return []
-    })
+  const deleteSelected = useCallback((targetIds?: string[]) => {
+    const toDelete = targetIds && targetIds.length > 0 ? targetIds : selectedNodeIdsRef.current
+    if (!toDelete || toDelete.length === 0) return
+    const selectedSet = new Set(toDelete)
+    setNodes((prev) => prev.filter((n) => !selectedSet.has(n.id)))
+    setEdges((prev) => prev.filter((e) => !selectedSet.has(e.fromNode) && !selectedSet.has(e.toNode)))
+    setSelectedNodeIds((prev) => prev.filter((id) => !selectedSet.has(id)))
   }, [])
 
   return {
