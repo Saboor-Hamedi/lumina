@@ -73,7 +73,6 @@ export const ActivityBar = memo(({
             type="button"
             className="activity-bar-btn"
             onClick={handleToggleAIChat}
-            style={{ color: 'var(--text-accent)' }}
             aria-label="Toggle AI Chat"
           >
             <MessageSquare size={16} />

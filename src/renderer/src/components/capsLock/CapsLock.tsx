@@ -32,25 +32,47 @@ export const CapsLock: React.FC<CapsLockProps> = React.memo(
     }, [])
 
     useEffect(() => {
+      // Query native CapsLock status from main process immediately upon mounting
+      let isMounted = true
+      if (typeof window !== 'undefined' && window.api?.isCapsLockOn) {
+        window.api.isCapsLockOn().then((active) => {
+          if (isMounted && typeof active === 'boolean') {
+            stateRef.current = active
+            setIsCapsLockOn(active)
+          }
+        }).catch(() => {})
+      }
+
       // Passive listeners on window for instant, non-blocking state updates
       const opts: AddEventListenerOptions = { passive: true, capture: true }
 
-      const handleBlur = () => {
-        if (stateRef.current) {
-          stateRef.current = false
-          setIsCapsLockOn(false)
+      const handleFocus = () => {
+        if (window.api?.isCapsLockOn) {
+          window.api.isCapsLockOn().then((active) => {
+            if (isMounted && typeof active === 'boolean' && stateRef.current !== active) {
+              stateRef.current = active
+              setIsCapsLockOn(active)
+            }
+          }).catch(() => {})
         }
+      }
+
+      const handleBlur = () => {
+        // When window loses focus, re-check or keep in sync on refocus
       }
 
       window.addEventListener('keydown', checkCapsLock, opts)
       window.addEventListener('keyup', checkCapsLock, opts)
       window.addEventListener('pointerdown', checkCapsLock, opts)
+      window.addEventListener('focus', handleFocus, opts)
       window.addEventListener('blur', handleBlur, opts)
 
       return () => {
+        isMounted = false
         window.removeEventListener('keydown', checkCapsLock, opts)
         window.removeEventListener('keyup', checkCapsLock, opts)
         window.removeEventListener('pointerdown', checkCapsLock, opts)
+        window.removeEventListener('focus', handleFocus, opts)
         window.removeEventListener('blur', handleBlur, opts)
       }
     }, [checkCapsLock])

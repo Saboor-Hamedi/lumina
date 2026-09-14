@@ -597,6 +597,48 @@ export const MainLayout = () => {
     }
   }
 
+  const handleNewCanvas = async () => {
+    try {
+      const defaultCanvasData = {
+        nodes: [
+          {
+            id: `node-${Date.now()}`,
+            type: 'text',
+            title: 'Idea Board',
+            text: 'Welcome to Lumina Canvas! Double-click to add ideas or connect cards.',
+            x: 120,
+            y: 120,
+            width: 260,
+            height: 160,
+            color: 'default'
+          }
+        ],
+        edges: [],
+        viewport: { x: 0, y: 0, zoom: 1 }
+      }
+      const newSnippet = {
+        id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+        title: 'Untitled Canvas',
+        fileName: 'Untitled Canvas.canvas',
+        code: JSON.stringify(defaultCanvasData, null, 2),
+        language: 'canvas',
+        type: 'canvas',
+        tags: '',
+        folderId: '',
+        timestamp: Date.now(),
+        isPinned: false,
+        isLearned: false
+      }
+      await saveSnippet(newSnippet)
+      setSelectedSnippet(newSnippet)
+      setActiveTab('files')
+      setShowPalette(false)
+    } catch (error) {
+      console.error('[MainLayout] Failed to create new canvas:', error)
+      showToast('Failed to create canvas. Please try again.', 'error')
+    }
+  }
+
   const handleConfirmDelete = async () => {
     if (snippetToDelete) {
       try {
@@ -657,15 +699,20 @@ export const MainLayout = () => {
     const handleToggleLeftSidebarEvent = () => {
       handleToggleLeftSidebar()
     }
+    const handleNewCanvasEvent = () => {
+      handleNewCanvas()
+    }
     window.addEventListener('open-ask-anything', handleAskAnything)
     window.addEventListener('open-ai-chat', handleAIChatEvent)
     window.addEventListener('toggle-left-sidebar', handleToggleLeftSidebarEvent)
+    window.addEventListener('trigger-new-canvas', handleNewCanvasEvent)
     return () => {
       window.removeEventListener('open-ask-anything', handleAskAnything)
       window.removeEventListener('open-ai-chat', handleAIChatEvent)
       window.removeEventListener('toggle-left-sidebar', handleToggleLeftSidebarEvent)
+      window.removeEventListener('trigger-new-canvas', handleNewCanvasEvent)
     }
-  }, [handleToggleAIChat, handleToggleLeftSidebar])
+  }, [handleToggleAIChat, handleToggleLeftSidebar, handleNewCanvas])
 
   const renderedEditors = useMemo(() => {
     const effectiveSelectedId = selectedSnippet?.id || activeTabId || openTabs[0]

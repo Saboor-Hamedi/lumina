@@ -9,8 +9,8 @@ describe('themeDefinitions', () => {
 
     it('dark theme is present with expected colors', () => {
       expect(THEMES.dark).toBeDefined()
-      expect(THEMES.dark.colors['--bg-app']).toBe('#0c0d10')
-      expect(THEMES.dark.colors['--text-accent']).toBe('#38bdf8')
+      expect(THEMES.dark.colors['--bg-app']).toBe('#15161c')
+      expect(THEMES.dark.colors['--text-accent']).toBe('#8b5cf6')
     })
 
     it('every theme has id, name, description and colors', () => {
@@ -58,8 +58,8 @@ describe('themeDefinitions', () => {
     it('applies theme variables to document root', () => {
       applyTheme('dark')
       const root = document.documentElement
-      expect(root.style.getPropertyValue('--bg-app')).toBe('#0c0d10')
-      expect(root.style.getPropertyValue('--text-accent')).toBe('#38bdf8')
+      expect(root.style.getPropertyValue('--bg-app')).toBe('#15161c')
+      expect(root.style.getPropertyValue('--text-accent')).toBe('#8b5cf6')
     })
 
     it('sets data-theme attribute', () => {

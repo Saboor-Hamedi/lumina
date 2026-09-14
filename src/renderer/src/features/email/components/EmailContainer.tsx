@@ -291,7 +291,13 @@ export const EmailContainer: React.FC<EmailContainerProps> = ({ isOpen, onClose,
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         // Prevent closing if interacting with native file dialogs or dropdown portals
         const targetEl = e.target as HTMLElement
-        if (targetEl.closest('.titlebar') || targetEl.closest('.mail-titlebar-container') || targetEl.closest('.control-btn')) {
+        if (
+          targetEl.closest('.titlebar') ||
+          targetEl.closest('.mail-titlebar-container') ||
+          targetEl.closest('.control-btn') ||
+          targetEl.closest('.activity-bar-mail-wrapper') ||
+          targetEl.closest('.mail-btn')
+        ) {
           return
         }
         onClose()

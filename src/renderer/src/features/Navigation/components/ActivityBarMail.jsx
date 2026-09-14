@@ -99,11 +99,8 @@ export const ActivityBarMail = memo(() => {
       >
         <button
           type="button"
-          className={`activity-bar-btn mail-btn ${isMailOpen || unreadEmailCount > 0 ? 'active' : ''}`}
+          className={`activity-bar-btn mail-btn ${isMailOpen ? 'active' : ''}`}
           onClick={() => setIsMailOpen((prev) => !prev)}
-          style={{
-            color: isMailOpen || unreadEmailCount > 0 ? 'var(--text-accent)' : undefined
-          }}
           aria-label="Open Lumina Mail"
         >
           <Mail size={16} />

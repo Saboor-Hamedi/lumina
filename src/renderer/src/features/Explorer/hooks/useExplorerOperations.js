@@ -202,13 +202,11 @@ export function useExplorerOperations({
     }
 
     window.addEventListener('trigger-new-note', handleTriggerNewNote)
-    window.addEventListener('trigger-new-canvas', handleTriggerNewCanvas)
     window.addEventListener('reveal-folder-in-explorer', handleRevealFolder)
     window.addEventListener('focus-explorer-root', handleFocusRoot)
 
     return () => {
       window.removeEventListener('trigger-new-note', handleTriggerNewNote)
-      window.removeEventListener('trigger-new-canvas', handleTriggerNewCanvas)
       window.removeEventListener('reveal-folder-in-explorer', handleRevealFolder)
       window.removeEventListener('focus-explorer-root', handleFocusRoot)
     }

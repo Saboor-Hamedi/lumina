@@ -746,6 +746,25 @@ app.whenReady().then(async () => {
     }
   })
 
+  ipcMain.handle('system:isCapsLockOn', () => {
+    try {
+      if (process.platform === 'win32') {
+        const { execSync } = require('child_process')
+        const out = execSync('powershell.exe -NoProfile -NonInteractive -Command [Console]::CapsLock', {
+          windowsHide: true,
+          timeout: 1000
+        })
+        return out.toString().trim().toLowerCase() === 'true'
+      }
+      if (typeof electron.keyboard?.isModifierKeyActive === 'function') {
+        return electron.keyboard.isModifierKeyActive('capsLock')
+      }
+      return false
+    } catch {
+      return false
+    }
+  })
+
   registerOpenNoteHandler()
 
   ipcMain.handle('confirm-delete', async (event, message) => {

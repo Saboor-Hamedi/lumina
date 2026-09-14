@@ -76,26 +76,29 @@
 }
 
 [data-theme='dark'] {
-  --bg-app-rgb: 30, 30, 30;
-  --bg-app: rgb(var(--bg-app-rgb));
-  --bg-sidebar-rgb: 25, 25, 25;
-  --bg-sidebar: rgb(var(--bg-sidebar-rgb));
-  --bg-activitybar: #191919;
-  --bg-panel: #111111;
+  --bg-app-rgb: 21, 22, 28;
+  --bg-app: #15161c;
+  --bg-sidebar-rgb: 17, 18, 23;
+  --bg-sidebar: #111217;
+  --bg-activitybar: #0d0e12;
+  --bg-panel: #1b1c24;
   --bg-editor: var(--bg-app);
-  --bg-active: rgba(255, 255, 255, 0.05);
+  --bg-active: rgba(139, 92, 246, 0.14);
+  --bg-card: #1f202a;
   --bg-overlay: rgba(0, 0, 0, 0.7);
 
-  --text-main: #dddddd;
-  --text-muted: #aaaaaa;
-  --text-faint: #666666;
-  --text-accent: #40bafa;
-  --text-accent-rgb: 64, 186, 250;
+  --text-main: #e4e6ed;
+  --text-muted: #9699a8;
+  --text-faint: #606374;
+  --text-accent: #8b5cf6;
+  --text-accent-rgb: 139, 92, 246;
 
-  --border-dim: rgba(255, 255, 255, 0.1);
-  --border-card: rgba(255, 255, 255, 0.05);
-  --scroll-thumb: rgba(255, 255, 255, 0.1);
-  --bg-selection: rgba(64, 186, 250, 0.3);
+  --border-dim: #21232d;
+  --border-subtle: #2a2d3a;
+  --border-main: #3d4154;
+  --border-card: #2a2d3a;
+  --scroll-thumb: #323545;
+  --bg-selection: rgba(139, 92, 246, 0.25);
 }
 
 [data-theme='obsidian-robust'] {

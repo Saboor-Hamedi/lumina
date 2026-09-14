@@ -109,9 +109,22 @@ export function useSidebarResize({
       }
       document.body.classList.add('is-global-resizing')
 
-      const currentWidth = side === 'left' ? leftWidth : rightWidth
-      initialWidthRef.current[side] = currentWidth
-      widthRef.current[side] = currentWidth
+      const startClientX = e.clientX
+      let measuredStartWidth = side === 'left' ? leftWidth : rightWidth
+      if (shellEl) {
+        const sidebarEl = side === 'left'
+          ? shellEl.querySelector('.shell-sidebar-left')
+          : shellEl.querySelector('.shell-sidebar-right')
+        if (sidebarEl) {
+          const rect = sidebarEl.getBoundingClientRect()
+          if (rect.width > 0) {
+            measuredStartWidth = rect.width
+          }
+        }
+      }
+      const startWidth = measuredStartWidth
+      initialWidthRef.current[side] = startWidth
+      widthRef.current[side] = startWidth
 
       const onMouseMove = (moveEvent) => {
         const activeSide = resizingSideRef.current
@@ -120,11 +133,10 @@ export function useSidebarResize({
         const shell = appShellRef.current
         if (!shell) return
 
-        const rect = shellRectRef.current
-        const clientX = moveEvent.clientX
+        const deltaX = moveEvent.clientX - startClientX
 
         if (activeSide === 'left') {
-          const rawWidth = clientX - rect.left
+          const rawWidth = startWidth + deltaX
           widthRef.current.left = rawWidth
           const outerWidth = Math.max(0, Math.min(MAX_LEFT_WIDTH, rawWidth))
           const contentWidth = Math.max(MIN_LEFT_WIDTH, Math.min(MAX_LEFT_WIDTH, rawWidth))
@@ -133,7 +145,7 @@ export function useSidebarResize({
           document.documentElement.style.setProperty('--left-sidebar-width', `${outerWidth}px`)
           document.documentElement.style.setProperty('--left-sidebar-content-width', `${contentWidth}px`)
         } else if (activeSide === 'right') {
-          const rawWidth = rect.right - clientX
+          const rawWidth = startWidth - deltaX
           widthRef.current.right = rawWidth
           const outerWidth = Math.max(0, Math.min(MAX_RIGHT_WIDTH, rawWidth))
           const contentWidth = Math.max(MIN_RIGHT_WIDTH, Math.min(MAX_RIGHT_WIDTH, rawWidth))

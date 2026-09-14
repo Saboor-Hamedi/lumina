@@ -173,7 +173,8 @@ const api = {
   pickEmailAttachments: () => electronAPI.ipcRenderer.invoke('email:pickAttachments'),
   listEmailLabels: () => electronAPI.ipcRenderer.invoke('email:listLabels'),
   pauseGlobalShortcuts: () => electronAPI.ipcRenderer.invoke('shortcuts:pause-global'),
-  resumeGlobalShortcuts: () => electronAPI.ipcRenderer.invoke('shortcuts:resume-global')
+  resumeGlobalShortcuts: () => electronAPI.ipcRenderer.invoke('shortcuts:resume-global'),
+  isCapsLockOn: () => electronAPI.ipcRenderer.invoke('system:isCapsLockOn')
 }
 
 // Expose APIs

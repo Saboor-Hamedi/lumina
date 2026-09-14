@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
-import BreadcrumbOutlineDropdown from '../../../../../src/renderer/src/features/Breadcrumbs/BreadcrumbOutlineDropdown'
+import BreadcrumbOutlineDropdown from '../../../../../src/renderer/src/features/Breadcrumbs/components/BreadcrumbOutlineDropdown'
 
 const mockHeadings = [
   { level: 1, text: 'Getting Started', line: 1 },

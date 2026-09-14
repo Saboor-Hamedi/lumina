@@ -56,7 +56,8 @@
 }
 
 .activity-bar-btn:active {
-  transform: scale(0.94);
+  /* No scale transform to avoid visual shaking */
+  background: var(--bg-active, rgba(255, 255, 255, 0.12));
 }
 
 .activity-bar-btn.active {
