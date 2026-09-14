@@ -1,19 +1,3 @@
-/**
- * =========================================================================================
- * Editor Extensions Hook (`useEditorExtensions.js`)
- * =========================================================================================
- *
- * Responsibilities:
- * - Assembles all CodeMirror extensions, keymaps, and autocompletion providers:
- *   - Universal line-by-line arrow navigation (with multi-line widget bypass)
- *   - Auto-closing and expanding fenced code blocks
- *   - List markup auto-continuation
- *   - Wikilink autocompletion (`[[...]]`)
- *   - Search highlighting & view reference capture
- *   - Live preview widgets (Images, Tables, Mermaid, HTML, Callouts, Tags, Highlighting)
- * =========================================================================================
- */
-
 import React, { useMemo } from 'react'
 import {
   autocompletion,
@@ -22,7 +6,7 @@ import {
   completionStatus,
   moveCompletionSelection
 } from '@codemirror/autocomplete'
-import { Prec, StateField, StateEffect } from '@codemirror/state'
+import { Prec, StateField, StateEffect, type Extension } from '@codemirror/state'
 import { EditorView, placeholder, keymap, ViewPlugin, Decoration } from '@codemirror/view'
 import { syntaxTree } from '@codemirror/language'
 import { insertNewlineContinueMarkup } from '@codemirror/lang-markdown'
@@ -30,32 +14,34 @@ import { insertNewlineContinueMarkup } from '@codemirror/lang-markdown'
 import {
   codeBlockDecorations,
   luminaSyntaxHighlighting
-} from '../../codeBlock/codeBlockHeader'
-import { imageDropExtension, imageWidgetExtension } from '../../media'
-import { htmlWidgetExtension } from '../extensions/htmlExtension'
-import { katexExtension } from '../extensions/katexExtension'
-import { tagMentionExtension } from '../extensions/tagMentionExtension'
-import { tables } from '../../table/tableExtension'
-import { mermaidWidgetExtension } from '../../mermaid'
+} from '../../features/codeBlock/codeBlockHeader'
+import { imageDropExtension, imageWidgetExtension } from '../../features/media'
+import { htmlWidgetExtension } from '../../features/Editor/extensions/htmlExtension'
+import { katexExtension } from '../../features/Editor/extensions/katexExtension'
+import { tagMentionExtension } from '../../features/Editor/extensions/tagMentionExtension'
+import { tables } from '../../features/table/tableExtension'
+import { mermaidWidgetExtension } from '../../features/mermaid'
 import { calloutExtension } from './useCallout'
-import { useCollapsible } from '../collapse/useCollapsible'
+import { useCollapsible } from '../../features/Editor/collapse/useCollapsible'
 import { emptyLineSelectionFix } from './useEmptyLine'
 import { handleTaskEnter, taskMarkKeymap } from './useMark'
 import { handleQuoteEnter } from './useQuote'
 import { handleListEnter, isListLine } from './useList'
 import { handleCodeFenceEnter } from './useCodeFence'
-import { handleArrowUp, handleArrowDown } from './useArrowNavigation'
-import { useWikilinkCompletion } from '../wikilink/useWikilinkCompletion'
-import { createEditorSlashPlugin } from '../../slash'
-import { bidiExtension, isComposing } from '../../../core/i18n'
+import { handleArrowUp, handleArrowDown } from './ArrowNavigation'
+import { useWikilinkCompletion } from '../../features/Editor/wikilink/useWikilinkCompletion'
+import { createEditorSlashPlugin } from '../../features/slash'
+import { bidiExtension, isComposing } from '../i18n'
+import type { Snippet } from './types'
+import type { ToastType } from '../notification'
 
-export const updateSearchHighlights = StateEffect.define()
+export const updateSearchHighlights = StateEffect.define<any>()
 
 const searchHighlightField = StateField.define({
   create() {
     return Decoration.none
   },
-  update(decos, tr) {
+  update(decos: any, tr: any) {
     for (const e of tr.effects) {
       if (e.is(updateSearchHighlights)) {
         return e.value
@@ -65,6 +51,23 @@ const searchHighlightField = StateField.define({
   },
   provide: (f) => EditorView.decorations.from(f)
 })
+
+export interface UseEditorExtensionsProps {
+  snippetRef: React.MutableRefObject<Snippet | null>
+  realViewRef: React.MutableRefObject<EditorView | null>
+  showToast: (message: string, type?: ToastType) => void
+  isActiveRef: React.MutableRefObject<boolean>
+  showFindWidgetRef: React.MutableRefObject<boolean>
+  setShowFindWidget: React.Dispatch<React.SetStateAction<boolean>>
+  setReplaceModeActive: React.Dispatch<React.SetStateAction<boolean>>
+  onSlashStateChange?: (state: any) => void
+  slashHandlerRef?: React.MutableRefObject<any>
+}
+
+export interface UseEditorExtensionsReturn {
+  finalExtensions: Extension[]
+  captureViewPlugin: Extension
+}
 
 export function useEditorExtensions({
   snippetRef,
@@ -76,18 +79,18 @@ export function useEditorExtensions({
   setReplaceModeActive,
   onSlashStateChange,
   slashHandlerRef
-}) {
+}: UseEditorExtensionsProps): UseEditorExtensionsReturn {
   // --- View Capture & Cursor Persistence Plugin ---
   const captureViewPlugin = useMemo(() => {
-    let saveTimeout
+    let saveTimeout: NodeJS.Timeout
     return ViewPlugin.fromClass(
       class {
-        constructor(view) {
+        constructor(view: EditorView) {
           realViewRef.current = view
           setTimeout(() => {
-            if (view && !view.isDestroyed && snippetRef.current?.code === '') {
+            if (view && !(view as any).isDestroyed && snippetRef.current?.code === '') {
               view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: '' } })
-            } else if (view && !view.isDestroyed && snippetRef.current?.id) {
+            } else if (view && !(view as any).isDestroyed && snippetRef.current?.id) {
               const savedSelection = localStorage.getItem(`cursor-${snippetRef.current.id}`)
               if (savedSelection) {
                 try {
@@ -111,7 +114,7 @@ export function useEditorExtensions({
             }
           }, 10)
         }
-        update(update) {
+        update(update: any) {
           if ((update.selectionSet || update.docChanged) && snippetRef.current?.id) {
             const { anchor, head, from, to } = update.state.selection.main
             const line = update.state.doc.lineAt(head)
@@ -128,17 +131,19 @@ export function useEditorExtensions({
 
             clearTimeout(saveTimeout)
             saveTimeout = setTimeout(() => {
-              localStorage.setItem(
-                `cursor-${snippetRef.current.id}`,
-                JSON.stringify({ anchor, head })
-              )
+              if (snippetRef.current?.id) {
+                localStorage.setItem(
+                  `cursor-${snippetRef.current.id}`,
+                  JSON.stringify({ anchor, head })
+                )
+              }
             }, 500)
 
-            const hasExplicitScroll = update.transactions.some((tr) => tr.scrollIntoView)
+            const hasExplicitScroll = update.transactions.some((tr: any) => tr.scrollIntoView)
             const isInteractiveUserEdit =
               update.view.hasFocus &&
               update.transactions.some(
-                (tr) =>
+                (tr: any) =>
                   tr.isUserEvent('input') ||
                   tr.isUserEvent('delete') ||
                   tr.isUserEvent('keyboard') ||
@@ -148,7 +153,7 @@ export function useEditorExtensions({
             if (hasExplicitScroll || isInteractiveUserEdit) {
               const v = update.view
               requestAnimationFrame(() => {
-                if (!v || v.isDestroyed) return
+                if (!v || (v as any).isDestroyed) return
                 const scroller = v.dom.closest('.editor-scroller')
                 if (!scroller) return
                 const currentHead = v.state.selection.main.head
@@ -174,7 +179,7 @@ export function useEditorExtensions({
           }
         }
         destroy() {
-          if (realViewRef.current === this.view) realViewRef.current = null
+          if (realViewRef.current === (this as any).view) realViewRef.current = null
           clearTimeout(saveTimeout)
         }
       }
@@ -200,7 +205,7 @@ export function useEditorExtensions({
         keymap.of([
           {
             key: 'Tab',
-            run: (view) => {
+            run: (view: EditorView) => {
               if (isComposing(view)) return false
               if (slashHandlerRef?.current?.isOpen) {
                 return Boolean(slashHandlerRef.current.onEnter?.())
@@ -247,7 +252,7 @@ export function useEditorExtensions({
           },
           {
             key: 'Shift-Tab',
-            run: (view) => {
+            run: (view: EditorView) => {
               if (isComposing(view)) return false
               if (!isActiveRef.current) return false
               const state = view.state
@@ -293,7 +298,7 @@ export function useEditorExtensions({
           },
           {
             key: 'ArrowUp',
-            run: (view) => {
+            run: (view: EditorView) => {
               if (slashHandlerRef?.current?.isOpen) {
                 slashHandlerRef.current.onArrowUp?.()
                 return true
@@ -306,7 +311,7 @@ export function useEditorExtensions({
           },
           {
             key: 'ArrowDown',
-            run: (view) => {
+            run: (view: EditorView) => {
               if (slashHandlerRef?.current?.isOpen) {
                 slashHandlerRef.current.onArrowDown?.()
                 return true
@@ -319,12 +324,12 @@ export function useEditorExtensions({
           },
           {
             key: 'Mod-Enter',
-            run: (view) => {
+            run: (view: EditorView) => {
               if (isActiveRef.current) {
                 const { state } = view
                 const selection = state.selection.main
                 const tree = syntaxTree(state)
-                let node = tree.resolveInner(selection.head, 1)
+                let node: any = tree.resolveInner(selection.head, 1)
 
                 while (
                   node &&
@@ -355,7 +360,7 @@ export function useEditorExtensions({
           },
           {
             key: 'Enter',
-            run: (view) => {
+            run: (view: EditorView) => {
               if (isComposing(view)) return false
               if (slashHandlerRef?.current?.isOpen) {
                 const handled = slashHandlerRef.current.onEnter?.()
@@ -444,7 +449,7 @@ export function useEditorExtensions({
           { key: 'Mod-Alt-f', run: () => isActiveRef.current && showFindWidgetRef.current },
           {
             key: 'Escape',
-            run: (view) => {
+            run: (view: EditorView) => {
               if (isComposing(view)) return false
               if (slashHandlerRef?.current?.isOpen) {
                 slashHandlerRef.current.onClose?.()
@@ -511,3 +516,7 @@ export function useEditorExtensions({
     captureViewPlugin
   }
 }
+
+// Named alias and default export
+export const EditorExtensions = useEditorExtensions
+export default useEditorExtensions

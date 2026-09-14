@@ -1,20 +1,17 @@
-/**
- * useMark.js
- * 
- * Modular helper and keymap extensions for Markdown Task Marks (`- [ ]`, `- [x]`).
- * Handles task creation, checkbox toggling, Enter auto-continuation, and multi-line batch conversion.
- */
-
-import { Prec } from '@codemirror/state'
-import { keymap } from '@codemirror/view'
+import React from 'react'
+import { Prec, type Extension } from '@codemirror/state'
+import { keymap, type EditorView } from '@codemirror/view'
 
 /**
  * Toggles or converts lines to markdown task items (`- [ ]` <-> `- [x]`).
  * Supports single line caret position and multi-line range selections.
  */
-export function toggleTaskMark(view) {
+export function toggleTaskMark(view: EditorView): boolean {
+  if (!view || !view.state) return false
+
   const state = view.state
-  const sel = state.selection.main
+  const sel = state.selection?.main
+  if (!sel) return false
 
   const startLine = state.doc.lineAt(sel.from)
   const endLine = state.doc.lineAt(sel.to)
@@ -53,9 +50,13 @@ export function toggleTaskMark(view) {
  * - If task line has content, auto-continues next line with `- [ ] `.
  * Returns true if handled, false otherwise.
  */
-export function handleTaskEnter(view) {
+export function handleTaskEnter(view: EditorView): boolean {
+  if (!view || !view.state) return false
+
   const state = view.state
-  const pos = state.selection.main.head
+  const pos = state.selection?.main?.head
+  if (typeof pos !== 'number') return false
+
   const line = state.doc.lineAt(pos)
   const lineText = line.text
 
@@ -90,20 +91,20 @@ export function handleTaskEnter(view) {
 /**
  * CodeMirror Keymap Extension for Task Marks (`Ctrl+Shift+X` / `Cmd+Shift+X`).
  */
-export function taskMarkKeymap(isActiveRef) {
+export function taskMarkKeymap(isActiveRef?: React.RefObject<boolean> | React.MutableRefObject<boolean>): Extension {
   return Prec.highest(
     keymap.of([
       {
         key: 'Mod-Shift-x',
-        run: (view) => {
-          if (!isActiveRef?.current) return false
+        run: (view: EditorView) => {
+          if (isActiveRef && !isActiveRef.current) return false
           return toggleTaskMark(view)
         }
       },
       {
         key: 'Mod-Shift-X',
-        run: (view) => {
-          if (!isActiveRef?.current) return false
+        run: (view: EditorView) => {
+          if (isActiveRef && !isActiveRef.current) return false
           return toggleTaskMark(view)
         }
       }

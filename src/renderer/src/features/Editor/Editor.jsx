@@ -21,11 +21,13 @@ import { EditorCanvas } from './EditorCanvas'
 import { useToast } from '../../core/notification'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useVaultStore } from '../../core/store/workspaceStore'
-import { useZoom } from './hooks/useZoom'
-import { useEditorState } from './hooks/useEditorState'
-import { useEditorExports } from './hooks/useEditorExports'
-import { useEditorEvents } from './hooks/useEditorEvents'
-import { useEditorExtensions } from './hooks/useEditorExtensions'
+import {
+  useZoom,
+  EditorState,
+  useEditorExports,
+  EditorEvent,
+  EditorExtensions
+} from '../../core/editor'
 import { EditorSlash } from '../slash'
 import EditorCreatedAt from './components/EditorCreatedAt'
 
@@ -84,7 +86,7 @@ const Editor = React.memo(
       handleMarkdownChange,
       handleOverwriteClose,
       handleOverwriteConfirm
-    } = useEditorState({
+    } = EditorState({
       snippet,
       onSave,
       showToast,
@@ -108,7 +110,7 @@ const Editor = React.memo(
     })
 
     // 3. Global Window & AI Event Subscriptions
-    const { isActiveRef } = useEditorEvents({
+    const { isActiveRef } = EditorEvent({
       isActive,
       realViewRef,
       titleRef,
@@ -125,7 +127,7 @@ const Editor = React.memo(
     })
 
     // 4. CodeMirror Extensions & Keymaps
-    const { finalExtensions } = useEditorExtensions({
+    const { finalExtensions } = EditorExtensions({
       snippetRef,
       realViewRef,
       showToast,

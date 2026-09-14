@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import { toggleMark, clearFormatting } from './formatActions'
 import { togglePrefix } from './paragraphActions'
-import { toggleQuoteMark } from '../hooks/useQuote'
+import { toggleQuoteMark } from '../../../core/editor'
 import { insertSnippet } from './insertActions'
 import { selectAll, cutText, copyText, pastePlainText, pasteRichText } from './clipboardActions'
 

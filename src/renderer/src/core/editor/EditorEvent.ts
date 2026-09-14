@@ -1,7 +1,32 @@
+import React, { useEffect, useRef } from 'react'
+import { Decoration, type EditorView } from '@codemirror/view'
+import { updateSearchHighlights } from './EditorExtensions'
+import { applyTableSearchHighlight, clearTableSearchHighlight } from '../../features/table/tableCell'
+import type { Snippet } from './types'
+import type { ToastType } from '../notification'
+
+export interface UseEditorEventsProps {
+  isActive?: boolean
+  realViewRef: React.MutableRefObject<EditorView | null>
+  titleRef: React.RefObject<HTMLInputElement | null>
+  snippet: Snippet | null
+  showToast: (message: string, type?: ToastType) => void
+  setShowFindWidget: React.Dispatch<React.SetStateAction<boolean>>
+  setReplaceModeActive: React.Dispatch<React.SetStateAction<boolean>>
+  setIsPreviewOpen?: React.Dispatch<React.SetStateAction<boolean>>
+  lastSaveTimeRef: React.MutableRefObject<number>
+  lastSavedCodeRef: React.MutableRefObject<string | undefined>
+  latestCodeRef: React.MutableRefObject<string>
+  setIsDirty: React.Dispatch<React.SetStateAction<boolean>>
+  setDirty: (id: string, isDirty: boolean) => void
+}
+
+export interface UseEditorEventsReturn {
+  isActiveRef: React.MutableRefObject<boolean>
+}
+
 /**
- * =========================================================================================
- * Editor Window Events Hook (`useEditorEvents.js`)
- * =========================================================================================
+ * Hardened Editor Window Events Hook (`EditorEvent.ts`)
  *
  * Responsibilities:
  * - Subscribes to global window events when the editor tab is active:
@@ -10,17 +35,10 @@
  *   - Scroll to line
  *   - Global toast dispatching
  *   - AI save synchronization
- *   - Global search/preview shortcuts (Ctrl+F, Ctrl+H, Ctrl+\)
- * =========================================================================================
+ *   - Global search/preview shortcuts (Ctrl+F, Ctrl+H)
  */
-
-import { useEffect, useRef } from 'react'
-import { Decoration } from '@codemirror/view'
-import { updateSearchHighlights } from './useEditorExtensions'
-import { applyTableSearchHighlight, clearTableSearchHighlight } from '../../table/tableCell'
-
 export function useEditorEvents({
-  isActive,
+  isActive = true,
   realViewRef,
   titleRef,
   snippet,
@@ -33,13 +51,13 @@ export function useEditorEvents({
   latestCodeRef,
   setIsDirty,
   setDirty
-}) {
-  const isActiveRef = useRef(isActive)
+}: UseEditorEventsProps): UseEditorEventsReturn {
+  const isActiveRef = useRef<boolean>(isActive)
   useEffect(() => {
     isActiveRef.current = isActive
   }, [isActive])
 
-  // --- Keyboard Shortcuts (Ctrl+F, Ctrl+H, Ctrl+\) & Measure ---
+  // --- Keyboard Shortcuts (Ctrl+F, Ctrl+H) & Measure ---
   useEffect(() => {
     if (!isActive) return
 
@@ -54,7 +72,7 @@ export function useEditorEvents({
       })
     }
 
-    const handleGlobalKeyDown = (e) => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'f' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault()
         setReplaceModeActive(false)
@@ -72,25 +90,28 @@ export function useEditorEvents({
 
   // --- Global Window Events ---
   useEffect(() => {
-    const handleSearchUpdate = (e) => {
+    const handleSearchUpdate = (e: Event) => {
       if (!isActiveRef.current || !realViewRef.current) return
       const view = realViewRef.current
-      const { pattern } = e.detail || {}
+      const customEvent = e as CustomEvent
+      const { pattern, searchQuery } = customEvent.detail || {}
 
-      if (!pattern || !e.detail.searchQuery) {
+      if (!pattern || !searchQuery) {
         view.dispatch({ effects: updateSearchHighlights.of(Decoration.none) })
         clearTableSearchHighlight(view.dom)
         return
       }
 
       const text = view.state.doc.toString()
-      const decorations = []
+      const decorations: any[] = []
       const mark = Decoration.mark({ class: 'cm-searchMatch' })
 
       try {
         const regex = pattern instanceof RegExp ? pattern : new RegExp(pattern, 'g')
         for (const match of text.matchAll(regex)) {
-          decorations.push(mark.range(match.index, match.index + match[0].length))
+          if (typeof match.index === 'number') {
+            decorations.push(mark.range(match.index, match.index + match[0].length))
+          }
         }
         view.dispatch({ effects: updateSearchHighlights.of(Decoration.set(decorations, true)) })
         applyTableSearchHighlight(view.dom, regex)
@@ -119,10 +140,11 @@ export function useEditorEvents({
       titleRef.current.select()
     }
 
-    const handleScrollToLine = (e) => {
+    const handleScrollToLine = (e: Event) => {
       if (!isActiveRef.current || !realViewRef.current) return
       const view = realViewRef.current
-      const lineNum = e.detail?.line
+      const customEvent = e as CustomEvent
+      const lineNum = customEvent.detail?.line
       if (typeof lineNum !== 'number') return
       try {
         const doc = view.state.doc
@@ -134,7 +156,7 @@ export function useEditorEvents({
         })
 
         const lineBlock = view.lineBlockAt(targetLine.from)
-        const scroller = view.dom.closest('.editor-scroller')
+        const scroller = view.dom.closest('.editor-scroller') as HTMLElement | null
 
         if (scroller) {
           const scrollY = lineBlock.top - scroller.clientHeight / 2 + lineBlock.height / 2
@@ -158,7 +180,7 @@ export function useEditorEvents({
         const head = view.state.selection.main.head
         const line = view.state.doc.lineAt(head)
         const lineBlock = view.lineBlockAt(line.from)
-        const scroller = view.dom.closest('.editor-scroller')
+        const scroller = view.dom.closest('.editor-scroller') as HTMLElement | null
 
         if (scroller) {
           const scrollY = lineBlock.top - scroller.clientHeight / 2 + lineBlock.height / 2
@@ -175,9 +197,10 @@ export function useEditorEvents({
       }
     }
 
-    const handleGlobalToast = (e) => {
+    const handleGlobalToast = (e: Event) => {
       if (!isActiveRef.current) return
-      const { message, type } = e.detail || {}
+      const customEvent = e as CustomEvent
+      const { message, type } = customEvent.detail || {}
       if (message) {
         showToast(message, type || 'info')
       }
@@ -203,26 +226,29 @@ export function useEditorEvents({
 
   // --- AI Save Synchronization ---
   useEffect(() => {
-    const handleAISave = (e) => {
-      if (e.detail?.id !== snippet?.id) return
-      const newCode = e.detail?.code ?? ''
-      const explicitPos = e.detail?.changePos
-      const explicitLine = e.detail?.changeLine
-      const scrollToBottom = e.detail?.scrollToBottom === true
+    const handleAISave = (e: Event) => {
+      const customEvent = e as CustomEvent
+      if (customEvent.detail?.id !== snippet?.id) return
+      const newCode = customEvent.detail?.code ?? ''
+      const explicitPos = customEvent.detail?.changePos
+      const explicitLine = customEvent.detail?.changeLine
+      const scrollToBottom = customEvent.detail?.scrollToBottom === true
 
       lastSaveTimeRef.current = Date.now()
       lastSavedCodeRef.current = newCode
       latestCodeRef.current = newCode
 
       setIsDirty(false)
-      setDirty(snippet?.id, false)
+      if (snippet?.id) {
+        setDirty(snippet.id, false)
+      }
 
       if (realViewRef.current) {
         const view = realViewRef.current
         const current = view.state.doc.toString()
         if (current !== newCode) {
           // Locate where the update occurred in the document
-          let targetPos = null
+          let targetPos: number | null = null
           if (typeof explicitPos === 'number') {
             targetPos = Math.max(0, Math.min(explicitPos, newCode.length))
           } else if (typeof explicitLine === 'number') {
@@ -250,7 +276,8 @@ export function useEditorEvents({
             if (!realViewRef.current) return
             const activeView = realViewRef.current
             const scroller =
-              activeView.dom?.closest('.editor-scroller') || document.querySelector('.editor-scroller')
+              (activeView.dom?.closest('.editor-scroller') as HTMLElement | null) ||
+              (document.querySelector('.editor-scroller') as HTMLElement | null)
 
             if (scrollToBottom) {
               if (scroller) scroller.scrollTop = scroller.scrollHeight
@@ -291,3 +318,7 @@ export function useEditorEvents({
     isActiveRef
   }
 }
+
+// Named alias and default export
+export const EditorEvent = useEditorEvents
+export default useEditorEvents

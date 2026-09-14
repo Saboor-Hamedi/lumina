@@ -1,7 +1,15 @@
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useSettingsStore } from '../store/useSettingsStore'
+import { useVaultStore } from '../store/workspaceStore'
+import type { UseEditorStateProps, UseEditorStateReturn, Snippet } from './types'
+
+export interface ConflictPrompt {
+  snippetCode?: string
+  snippetTitle?: string
+}
+
 /**
- * =========================================================================================
- * Editor State Hook (`useEditorState.js`)
- * =========================================================================================
+ * Hardened Editor State Hook (`EditorState.ts`)
  *
  * Responsibilities:
  * - Manages active snippet synchronization and tab switching
@@ -9,34 +17,34 @@
  * - Handles debounced auto-saving (1500ms) and unmount auto-saving
  * - Detects external file conflicts (suppresses chokidar watcher echoes)
  * - Manages conflict overwrite modal state
- * =========================================================================================
  */
-
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { useSettingsStore } from '../../../core/store/useSettingsStore'
-import { useVaultStore } from '../../../core/store/workspaceStore'
-
-export function useEditorState({ snippet, onSave, showToast, realViewRef, editorHandleRef }) {
-  const [title, setTitle] = useState(snippet?.title || '')
-  const titleStateRef = useRef(title)
+export function useEditorState({
+  snippet,
+  onSave,
+  showToast,
+  realViewRef,
+  editorHandleRef
+}: UseEditorStateProps): UseEditorStateReturn {
+  const [title, setTitle] = useState<string>(snippet?.title || '')
+  const titleStateRef = useRef<string>(title)
   useEffect(() => {
     titleStateRef.current = title
   }, [title])
 
-  const [isDirty, setIsDirty] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [editorKey, setEditorKey] = useState(Date.now())
-  const [conflictPrompt, setConflictPrompt] = useState(null)
+  const [isDirty, setIsDirty] = useState<boolean>(false)
+  const [isSaving, setIsSaving] = useState<boolean>(false)
+  const [editorKey, setEditorKey] = useState<number>(Date.now())
+  const [conflictPrompt, setConflictPrompt] = useState<ConflictPrompt | null>(null)
 
-  const isMountedRef = useRef(true)
-  const autoSaveTimerRef = useRef(null)
-  const handleSaveRef = useRef(null)
-  const snippetRef = useRef(snippet)
-  const latestCodeRef = useRef(snippet?.code || '')
-  const lastSavedCodeRef = useRef(snippet?.code)
-  const lastSaveTimeRef = useRef(0)
+  const isMountedRef = useRef<boolean>(true)
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const handleSaveRef = useRef<(() => Promise<void>) | null>(null)
+  const snippetRef = useRef<Snippet | null>(snippet)
+  const latestCodeRef = useRef<string>(snippet?.code || '')
+  const lastSavedCodeRef = useRef<string | undefined>(snippet?.code)
+  const lastSaveTimeRef = useRef<number>(0)
 
-  const setDirty = useVaultStore((state) => state.setDirty)
+  const setDirty = useVaultStore((state: any) => state.setDirty)
 
   // --- Save Logic ---
   const handleSave = useCallback(async () => {
@@ -56,7 +64,7 @@ export function useEditorState({ snippet, onSave, showToast, realViewRef, editor
       setIsSaving(true)
       const code = editorHandleRef.current.getMarkdown()
 
-      const snippetToSave = {
+      const snippetToSave: Snippet = {
         ...snippetRef.current,
         code: code || '',
         title: title || 'Untitled',
@@ -70,13 +78,13 @@ export function useEditorState({ snippet, onSave, showToast, realViewRef, editor
       const updatedSnippet = await onSave(snippetToSave)
 
       if (isMountedRef.current) {
-        if (updatedSnippet?.title && updatedSnippet.title !== title) {
+        if (updatedSnippet && typeof updatedSnippet === 'object' && 'title' in updatedSnippet && updatedSnippet.title && updatedSnippet.title !== title) {
           setTitle(updatedSnippet.title)
         }
         setIsDirty(false)
         setDirty(snippet.id, false)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save note:', error)
       if (isMountedRef.current) {
         showToast(`Failed to save note: ${error?.message || 'Unknown error'}`, 'error')
@@ -94,7 +102,7 @@ export function useEditorState({ snippet, onSave, showToast, realViewRef, editor
 
   // --- Markdown Change Handler ---
   const handleMarkdownChange = useCallback(
-    (md) => {
+    (md: string) => {
       if (snippet?.isOversized) return
       latestCodeRef.current = md
       const originalCode = lastSavedCodeRef.current ?? snippetRef.current?.code ?? ''
@@ -105,10 +113,12 @@ export function useEditorState({ snippet, onSave, showToast, realViewRef, editor
 
       const isClean = isContentClean && isTitleClean
       setIsDirty(!isClean)
-      setDirty(snippet?.id, !isClean)
-      useVaultStore.getState().setDraft(snippet?.id, md)
+      if (snippet?.id) {
+        setDirty(snippet.id, !isClean)
+        ;(useVaultStore.getState() as any).setDraft(snippet.id, md)
+      }
 
-      const settings = useSettingsStore.getState().settings
+      const settings = (useSettingsStore.getState() as any).settings
       if (settings?.autoSave) {
         if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
         autoSaveTimerRef.current = setTimeout(() => {
@@ -122,7 +132,7 @@ export function useEditorState({ snippet, onSave, showToast, realViewRef, editor
         }, 1500)
       }
     },
-    [snippet?.id, setDirty]
+    [snippet?.id, snippet?.isOversized, setDirty]
   )
 
   // --- Snippet Sync & External Conflict Detection ---
@@ -201,7 +211,7 @@ export function useEditorState({ snippet, onSave, showToast, realViewRef, editor
   // --- Auto-Save on State Change ---
   useEffect(() => {
     if (!snippet?.id || !isDirty) return
-    const settings = useSettingsStore.getState().settings
+    const settings = (useSettingsStore.getState() as any).settings
     if (!settings?.autoSave) return
 
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
@@ -225,24 +235,23 @@ export function useEditorState({ snippet, onSave, showToast, realViewRef, editor
       isMountedRef.current = false
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
 
-      const currentSettings = useSettingsStore.getState().settings
-      const dirtyIds = useVaultStore.getState().dirtySnippetIds || []
+      const currentSettings = (useSettingsStore.getState() as any).settings
+      const dirtyIds = (useVaultStore.getState() as any).dirtySnippetIds || []
 
       if (
-        currentSettings.autoSave &&
+        currentSettings?.autoSave &&
         snippetRef.current &&
         dirtyIds.includes(snippetRef.current.id)
       ) {
         const codeToSave = latestCodeRef.current
-        const snippetToSave = {
+        const snippetToSave: Snippet = {
           ...snippetRef.current,
           code: codeToSave || '',
           timestamp: Date.now()
         }
-        useVaultStore
-          .getState()
+        ;(useVaultStore.getState() as any)
           .saveSnippet(snippetToSave)
-          .catch((err) => console.error('[Unmount AutoSave] Failed:', err))
+          .catch((err: any) => console.error('[Unmount AutoSave] Failed:', err))
       }
     }
   }, [])
@@ -253,7 +262,7 @@ export function useEditorState({ snippet, onSave, showToast, realViewRef, editor
     setConflictPrompt(null)
   }, [conflictPrompt])
 
-  const handleOverwriteConfirm = useCallback(() => {
+  const handleOverwriteConfirm = useCallback(async () => {
     if (!conflictPrompt) return
     const code = conflictPrompt.snippetCode
     setIsDirty(false)
@@ -287,3 +296,7 @@ export function useEditorState({ snippet, onSave, showToast, realViewRef, editor
     handleOverwriteConfirm
   }
 }
+
+// Named alias and default export
+export const EditorState = useEditorState
+export default useEditorState

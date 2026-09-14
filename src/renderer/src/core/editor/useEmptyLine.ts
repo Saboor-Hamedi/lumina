@@ -1,6 +1,9 @@
+import { EditorView } from '@codemirror/view'
+import type { Extension } from '@codemirror/state'
+
 /**
  * =========================================================================================
- * Empty Line & Line Selection Fix Hook (`useEmptyLine.jsx`)
+ * Empty Line & Line Selection Fix Hook (`useEmptyLine.ts`)
  * =========================================================================================
  *
  * Purpose:
@@ -10,17 +13,14 @@
  * Ensures clicks in the empty trailing space of a line clamp to line.to rather than jumping to next line.
  * =========================================================================================
  */
-
-import { EditorView } from '@codemirror/view'
-
-export const emptyLineSelectionFix = EditorView.domEventHandlers({
-  mousedown(e, view) {
+export const emptyLineSelectionFix: Extension = EditorView.domEventHandlers({
+  mousedown(e: MouseEvent, view: EditorView) {
     // Only handle primary button single clicks
     if (e.button !== 0 || e.detail > 1) return false
-    const target = e.target
+    const target = e.target as HTMLElement | null
     if (!target || target.closest('.cm-atomic-table') || target.closest('.cm-button')) return false
 
-    const lineEl = target.closest('.cm-line')
+    const lineEl = target.closest('.cm-line') as HTMLElement | null
     if (!lineEl) return false
 
     try {
@@ -50,7 +50,7 @@ export const emptyLineSelectionFix = EditorView.domEventHandlers({
     return false
   },
 
-  dblclick(e, view) {
+  dblclick(e: MouseEvent, view: EditorView) {
     try {
       const coords = view.posAtCoords({ x: e.clientX, y: e.clientY })
       if (!coords || typeof coords.pos !== 'number') return false
@@ -80,7 +80,7 @@ export const emptyLineSelectionFix = EditorView.domEventHandlers({
     return false
   },
 
-  click(e, view) {
+  click(e: MouseEvent, view: EditorView) {
     // 3. Triple-click on a line: select strictly the line text without capturing trailing newline
     if (e.detail === 3) {
       try {

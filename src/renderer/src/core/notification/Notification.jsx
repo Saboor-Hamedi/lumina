@@ -32,7 +32,7 @@ const Notification = ({ toast, onClose }) => {
   if (!activeToast || !isVisible) return null
 
   const getIcon = () => {
-    switch (toast.type) {
+    switch (activeToast.type) {
       case 'success':
         return <CheckCircle2 size={15} />
       case 'error':
@@ -44,7 +44,7 @@ const Notification = ({ toast, onClose }) => {
 
   return createPortal(
     <div
-      className={`toast-notification horizontal toast-${toast.type} ${isExiting ? 'toast-exit' : ''}`}
+      className={`toast-notification horizontal toast-${activeToast.type} ${isExiting ? 'toast-exit' : ''}`}
       style={{
         color: 'var(--text-main)',
         backgroundColor: 'var(--bg-panel)'
@@ -53,7 +53,7 @@ const Notification = ({ toast, onClose }) => {
       <div className="toast-content" style={{ color: 'var(--text-main)' }}>
         <div className="toast-icon-wrapper">{getIcon()}</div>
         <span className="toast-message" style={{ color: 'var(--text-main)' }}>
-          {toast.message}
+          {activeToast.message}
         </span>
         <button className="toast-close" onClick={handleClose} aria-label="Close notification">
           <X size={14} />

@@ -1,9 +1,4 @@
-/**
- * useList.js
- * 
- * Modular helper for Markdown Lists (Bullets: `*`, `-`, `+`, Numbered: `1.`, `1-`, `1)`, Alphanumeric: `a.`, `a)`, `A.`):
- * Handles list auto-continuation, incrementing counters, clearing empty items, and level indentation.
- */
+import type { EditorView } from '@codemirror/view'
 
 /**
  * Handles Enter key on list lines:
@@ -11,9 +6,13 @@
  * - If list item has content, increments numeral/letter or repeats bullet marker.
  * Returns true if handled, false otherwise.
  */
-export function handleListEnter(view) {
+export function handleListEnter(view: EditorView): boolean {
+  if (!view || !view.state) return false
+
   const state = view.state
-  const pos = state.selection.main.head
+  const pos = state.selection?.main?.head
+  if (typeof pos !== 'number') return false
+
   const line = state.doc.lineAt(pos)
   const lineText = line.text
 
@@ -65,6 +64,7 @@ export function handleListEnter(view) {
 /**
  * Checks if line is a list item for Tab / Shift-Tab indentation.
  */
-export function isListLine(lineText) {
+export function isListLine(lineText: string): boolean {
+  if (!lineText) return false
   return Boolean(lineText.match(/^(\s*)([-*+](\s+\[[ xX]?\])?|\d+[.\-)]|[a-zA-Z][.\-)])\s+/))
 }

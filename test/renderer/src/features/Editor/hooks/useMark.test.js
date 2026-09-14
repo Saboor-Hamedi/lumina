@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { toggleTaskMark, handleTaskEnter } from '../../../../../../src/renderer/src/features/Editor/hooks/useMark'
+import { toggleTaskMark, handleTaskEnter } from '../../../../../../src/renderer/src/core/editor'
 
 function createTestView(docText, cursorPos = 0) {
   const state = EditorState.create({

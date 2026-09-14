@@ -4,7 +4,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: var(--bg-app, var(--bg-editor, #121214));
+  background: var(--bg-app, var(--bg-editor, #121214)) !important;
   overflow: hidden;
   user-select: none;
 }
@@ -68,64 +68,64 @@
 }
 
 .image-viewer-toolbar {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  left: auto;
-  transform: none;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  background: var(--bg-panel, #18181b);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-subtle, var(--border-dim, rgba(255, 255, 255, 0.12)));
-  border-radius: 2px;
-  box-shadow: var(--shadow-soft, 0 12px 32px rgba(0, 0, 0, 0.35));
-  z-index: 20;
-  color: var(--text-main);
+  position: absolute !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  left: auto !important;
+  transform: none !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 4px 8px !important;
+  background: var(--bg-panel, #18181b) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--border-subtle, var(--border-dim, rgba(255, 255, 255, 0.12))) !important;
+  border-radius: 2px !important;
+  box-shadow: var(--shadow-soft, 0 12px 32px rgba(0, 0, 0, 0.35)) !important;
+  z-index: 20 !important;
+  color: var(--text-main) !important;
 }
 
 .image-viewer-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  background: transparent;
-  border: none;
-  border-radius: 2px;
-  color: var(--text-muted, #94a3b8);
-  cursor: pointer;
-  transition: all 0.15s ease;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 28px !important;
+  height: 28px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 2px !important;
+  color: var(--text-muted, #94a3b8) !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
 }
 
 .image-viewer-btn:hover {
-  background: var(--bg-active, rgba(255, 255, 255, 0.08));
-  color: var(--text-main, #ffffff);
+  background: var(--bg-active, rgba(255, 255, 255, 0.08)) !important;
+  color: var(--text-main, #ffffff) !important;
 }
 
 .image-viewer-btn.copied {
-  color: #10b981;
+  color: #10b981 !important;
 }
 
 .image-viewer-zoom-text {
-  font-size: 12px;
-  font-weight: 600;
-  font-family: var(--font-editor, monospace);
-  color: var(--text-main, #ffffff);
-  padding: 0 6px;
-  min-width: 44px;
-  text-align: center;
-  cursor: pointer;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  font-family: var(--font-editor, monospace) !important;
+  color: var(--text-main, #ffffff) !important;
+  padding: 0 6px !important;
+  min-width: 44px !important;
+  text-align: center !important;
+  cursor: pointer !important;
 }
 
 .image-viewer-divider {
-  width: 1px;
-  height: 14px;
-  background: var(--border-subtle, var(--border-dim, rgba(255, 255, 255, 0.1)));
-  margin: 0 2px;
+  width: 1px !important;
+  height: 14px !important;
+  background: var(--border-subtle, var(--border-dim, rgba(255, 255, 255, 0.1))) !important;
+  margin: 0 2px !important;
 }
 
 @keyframes img-spin {

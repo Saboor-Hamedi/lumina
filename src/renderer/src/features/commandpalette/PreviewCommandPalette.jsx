@@ -9,7 +9,7 @@ import { htmlWidgetExtension } from '../Editor/extensions/htmlExtension'
 import { katexExtension } from '../Editor/extensions/katexExtension'
 import { tables } from '../table/tableExtension'
 import { mermaidWidgetExtension } from '../mermaid'
-import { calloutExtension } from '../Editor/hooks/useCallout'
+import { calloutExtension } from '../../core/editor'
 import {
   codeBlockDecorations,
   codeMap,

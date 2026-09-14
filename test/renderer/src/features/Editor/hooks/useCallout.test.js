@@ -6,7 +6,7 @@ import {
   CalloutHeaderWidget,
   insertCallout,
   calloutExtension
-} from '../../../../../../src/renderer/src/features/Editor/hooks/useCallout'
+} from '../../../../../../src/renderer/src/core/editor'
 
 describe('useCallout.js', () => {
   it('defines standard CALLOUT_TYPES with metadata', () => {

@@ -1,17 +1,11 @@
-/**
- * useQuote.js
- *
- * Modular helper for Markdown Blockquote Marks (`> `).
- * Handles blockquote creation, toggling, Enter auto-continuation, and empty quote clearing.
- */
+import type { EditorView } from '@codemirror/view'
 
 /**
  * Returns the blockquote depth (number of `>`) of a line, or 0 if not a blockquote.
  * Handles both `>>` and `> >` space-separated markdown syntaxes.
- * @param {string} text
- * @returns {number}
  */
-export function getQuoteDepth(text) {
+export function getQuoteDepth(text: string): number {
+  if (!text) return 0
   const match = text.match(/^(\s*(?:>\s*)+)/)
   if (!match) return 0
   const arrows = match[0].match(/>/g)
@@ -20,10 +14,8 @@ export function getQuoteDepth(text) {
 
 /**
  * Returns the blockquote prefix for a given depth, e.g. depth=2 → `>> `.
- * @param {number} depth
- * @returns {string}
  */
-export function quotePrefix(depth) {
+export function quotePrefix(depth: number): string {
   return depth > 0 ? '>'.repeat(depth) + ' ' : ''
 }
 
@@ -32,13 +24,13 @@ export function quotePrefix(depth) {
  * - If ALL selected lines are already quoted → removes the blockquote marker.
  * - Otherwise → adds `> ` to all selected lines.
  * Supports single caret and multi-line range selections.
- *
- * @param {import('@codemirror/view').EditorView} view
- * @returns {boolean}
  */
-export function toggleQuoteMark(view) {
+export function toggleQuoteMark(view: EditorView): boolean {
+  if (!view || !view.state) return false
+
   const state = view.state
-  const sel = state.selection.main
+  const sel = state.selection?.main
+  if (!sel) return false
 
   const startLine = state.doc.lineAt(sel.from)
   const endLine = state.doc.lineAt(sel.to)
@@ -72,13 +64,14 @@ export function toggleQuoteMark(view) {
  * Handles Enter key on blockquote lines:
  * - If the current quote line is empty (`> ` with no content) → clears the marker and exits.
  * - If the line has content → auto-continues the next line with the same depth marker.
- *
- * @param {import('@codemirror/view').EditorView} view
- * @returns {boolean}
  */
-export function handleQuoteEnter(view) {
+export function handleQuoteEnter(view: EditorView): boolean {
+  if (!view || !view.state) return false
+
   const state = view.state
-  const pos = state.selection.main.head
+  const pos = state.selection?.main?.head
+  if (typeof pos !== 'number') return false
+
   const line = state.doc.lineAt(pos)
   const lineText = line.text
 

@@ -1,7 +1,26 @@
-import { useEffect, useCallback, useRef, useState } from 'react'
+import React, { useEffect, useCallback, useRef, useState } from 'react'
 import { EditorView } from '@codemirror/view'
-import { useSettingsStore } from '../../../core/store/useSettingsStore'
-import { useFontSettings } from '../../../core/hooks/useFontSettings'
+import { useSettingsStore } from '../store/useSettingsStore'
+import { useFontSettings } from '../hooks/useFontSettings'
+
+export interface UseZoomOptions {
+  containerRef?: React.RefObject<HTMLElement | null>
+  realViewRef?: React.MutableRefObject<EditorView | null>
+  minSize?: number
+  maxSize?: number
+  step?: number
+  defaultSize?: number
+  isActive?: boolean
+}
+
+export interface UseZoomReturn {
+  fontSize: number
+  zoomIn: (delta?: number) => void
+  zoomOut: (delta?: number) => void
+  resetZoom: () => void
+  setZoom: (newSize: number) => void
+  zoomBadge: string | null
+}
 
 export const useZoom = ({
   containerRef,
@@ -11,30 +30,30 @@ export const useZoom = ({
   step = 1,
   defaultSize = 16,
   isActive = true
-} = {}) => {
-  const [zoomBadge, setZoomBadge] = useState(null)
-  const badgeTimerRef = useRef(null)
+}: UseZoomOptions = {}): UseZoomReturn => {
+  const [zoomBadge, setZoomBadge] = useState<string | null>(null)
+  const badgeTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-  const settingsFontSize = useSettingsStore((state) => state.settings?.fontSize)
-  const updateSetting = useSettingsStore((state) => state.updateSetting)
+  const settingsFontSize = useSettingsStore((state: any) => state.settings?.fontSize)
+  const updateSetting = useSettingsStore((state: any) => state.updateSetting)
   const { editorFontSize, updateEditorFontSize } = useFontSettings()
 
   const currentSize = settingsFontSize ?? editorFontSize ?? defaultSize
 
-  const sizeRef = useRef(currentSize)
+  const sizeRef = useRef<number>(currentSize)
   useEffect(() => {
     sizeRef.current = currentSize
   }, [currentSize])
 
-  const isActiveRef = useRef(isActive)
+  const isActiveRef = useRef<boolean>(isActive)
   useEffect(() => {
     isActiveRef.current = isActive
   }, [isActive])
 
-  const saveDebounceRef = useRef(null)
+  const saveDebounceRef = useRef<NodeJS.Timeout | null>(null)
 
   const setZoom = useCallback(
-    (newSize) => {
+    (newSize: number) => {
       const clamped = Math.max(minSize, Math.min(maxSize, Math.round(newSize)))
       if (clamped === sizeRef.current) return
 
@@ -122,10 +141,10 @@ export const useZoom = ({
   }, [setZoom, defaultSize])
 
   useEffect(() => {
-    const handleWheel = (e) => {
+    const handleWheel = (e: WheelEvent) => {
       if (!isActiveRef.current) return
       if (e.ctrlKey || e.metaKey) {
-        const target = e.target
+        const target = e.target as HTMLElement | null
         // If zooming inside graph (InlineGraph or canvas), let the graph handle its own zoom
         if (target && typeof target.closest === 'function' && target.closest('.inline-graph-container, .graph-container, canvas')) {
           return
@@ -150,7 +169,7 @@ export const useZoom = ({
   }, [containerRef, setZoom, step])
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (!isActiveRef.current) return
 
       const isCmd = e.ctrlKey || e.metaKey

@@ -1,9 +1,4 @@
-/**
- * useCodeFence.js
- * 
- * Modular helper for Markdown Fenced Code Blocks (```lang ... ```):
- * Handles auto-closing unclosed code fences and expanding inline single-line code fences on Enter.
- */
+import type { EditorView } from '@codemirror/view'
 
 /**
  * Handles Enter key on fenced code blocks:
@@ -11,9 +6,13 @@
  * 2. Auto-expands single-line code blocks: ```console.log('hi')``` + Enter -> expands to multi-line code block.
  * Returns true if handled, false otherwise.
  */
-export function handleCodeFenceEnter(view) {
+export function handleCodeFenceEnter(view: EditorView): boolean {
+  if (!view || !view.state) return false
+
   const state = view.state
-  const pos = state.selection.main.head
+  const pos = state.selection?.main?.head
+  if (typeof pos !== 'number') return false
+
   const line = state.doc.lineAt(pos)
 
   // 1. Auto-close unclosed fenced code blocks

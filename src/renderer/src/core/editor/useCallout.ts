@@ -1,35 +1,17 @@
-/**
- * =========================================================================================
- * Callout Extension & Helper Hook (`useCallout.js`)
- * =========================================================================================
- *
- * Responsibilities:
- * - Provides live preview widgets and line styling for Obsidian-style markdown callouts:
- *   `> [!note] Title`
- *   `> [!tip] Title`
- *   `> [!warning] Title`
- *   `> [!important] Title`
- *   `> [!caution] Title`
- *   `> [!info] Title`
- *   `> [!success] Title`
- *   `> [!question] Title`
- *   `> [!bug] Title`
- *   `> [!example] Title`
- *   `> [!quote] Title`
- *   `> [!todo] Title`
- *   `> [!danger] Title`
- * - Provides helper functions for inserting, converting, and toggling callouts
- * - Exposes `useCallout()` React hook
- * =========================================================================================
- */
-
 import { useCallback } from 'react'
-import { Decoration, ViewPlugin, WidgetType } from '@codemirror/view'
+import { Decoration, ViewPlugin, WidgetType, type EditorView, type ViewUpdate } from '@codemirror/view'
+import type { Extension } from '@codemirror/state'
+
+export interface CalloutMeta {
+  type: string
+  label: string
+  color: string
+}
 
 /**
  * Standard callout types with associated metadata and default icons
  */
-export const CALLOUT_TYPES = {
+export const CALLOUT_TYPES: Record<string, CalloutMeta> = {
   note: { type: 'note', label: 'Note', color: '#38bdf8' },
   tip: { type: 'tip', label: 'Tip', color: '#4ade80' },
   warning: { type: 'warning', label: 'Warning', color: '#fbbf24' },
@@ -49,17 +31,20 @@ export const CALLOUT_TYPES = {
  * CodeMirror Widget rendering the stylized header of a Callout block
  */
 export class CalloutHeaderWidget extends WidgetType {
-  constructor(type, title) {
+  readonly type: string
+  readonly title: string
+
+  constructor(type?: string, title?: string) {
     super()
     this.type = (type || 'note').toLowerCase()
     this.title = title || ''
   }
 
-  eq(other) {
+  eq(other: CalloutHeaderWidget): boolean {
     return other.type === this.type && other.title === this.title
   }
 
-  toDOM() {
+  toDOM(): HTMLElement {
     const wrap = document.createElement('span')
     wrap.className = `lumina-callout-header lumina-callout-${this.type}`
 
@@ -97,18 +82,20 @@ export class CalloutHeaderWidget extends WidgetType {
  */
 export const calloutPlugin = ViewPlugin.fromClass(
   class {
-    constructor(view) {
+    decorations: any
+
+    constructor(view: EditorView) {
       this.decorations = this.buildDecorations(view)
     }
 
-    update(update) {
+    update(update: ViewUpdate) {
       if (update.docChanged || update.viewportChanged || update.selectionSet) {
         this.decorations = this.buildDecorations(update.view)
       }
     }
 
-    buildDecorations(view) {
-      const builder = []
+    buildDecorations(view: EditorView) {
+      const builder: any[] = []
       const doc = view.state.doc
 
       for (let { from, to } of view.visibleRanges) {
@@ -126,7 +113,7 @@ export const calloutPlugin = ViewPlugin.fromClass(
           }
         }
 
-        let currentCalloutType = null
+        let currentCalloutType: string | null = null
         let currentCalloutLevel = 0
 
         for (let l = scanStart; l <= endLineIdx; l++) {
@@ -134,7 +121,7 @@ export const calloutPlugin = ViewPlugin.fromClass(
           const match = line.text.match(/^(>\s*)+/)
 
           if (match) {
-            const level = match[0].match(/>/g).length
+            const level = match[0].match(/>/g)?.length || 0
             const blockStart = line.text.match(/^(?:>\s*)+\[!([a-zA-Z]+)\](.*)/)
 
             if (blockStart) {
@@ -190,15 +177,17 @@ export const calloutPlugin = ViewPlugin.fromClass(
   }
 )
 
-export const calloutExtension = calloutPlugin
+export const calloutExtension: Extension = calloutPlugin
 
 /**
  * Inserts a new Callout block or wraps the current selection in a callout
  */
-export function insertCallout(view, type = 'note', title = '') {
-  if (!view) return false
+export function insertCallout(view: EditorView | null | undefined, type = 'note', title = ''): boolean {
+  if (!view || !view.state) return false
   const state = view.state
-  const sel = state.selection.main
+  const sel = state.selection?.main
+  if (!sel) return false
+
   const selectedText = state.sliceDoc(sel.from, sel.to)
 
   const calloutType = (type || 'note').toLowerCase()
@@ -207,11 +196,12 @@ export function insertCallout(view, type = 'note', title = '') {
   let content = selectedText || 'Content\n'
   if (!content.endsWith('\n')) content += '\n'
 
-  const formattedContent = content
-    .split('\n')
-    .filter((_, idx, arr) => idx < arr.length - 1 || _ !== '')
-    .map((line) => `> ${line}`)
-    .join('\n') + '\n'
+  const formattedContent =
+    content
+      .split('\n')
+      .filter((_, idx, arr) => idx < arr.length - 1 || _ !== '')
+      .map((line) => `> ${line}`)
+      .join('\n') + '\n'
 
   const insertText = `\n${header}${formattedContent}\n`
 
@@ -222,11 +212,17 @@ export function insertCallout(view, type = 'note', title = '') {
   return true
 }
 
+export interface UseCalloutReturn {
+  calloutExtension: Extension
+  insertCallout: (view: EditorView | null | undefined, type?: string, title?: string) => boolean
+  CALLOUT_TYPES: Record<string, CalloutMeta>
+}
+
 /**
  * React hook wrapping callout utilities and extensions
  */
-export function useCallout() {
-  const insert = useCallback((view, type = 'note', title = '') => {
+export function useCallout(): UseCalloutReturn {
+  const insert = useCallback((view: EditorView | null | undefined, type = 'note', title = '') => {
     return insertCallout(view, type, title)
   }, [])
 
