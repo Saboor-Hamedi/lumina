@@ -195,9 +195,68 @@ describe('CanvasView (TypeScript)', () => {
     const leftPort = n2.querySelector('.port-left')!
     fireEvent.click(leftPort)
 
-    // Verify an edge connector SVG line now exists
+    // Verify an edge connector SVG line now exists with color matching target note
     const edge = container.querySelector('.lumina-canvas-edge-line')
     expect(edge).toBeInTheDocument()
+    expect(edge?.getAttribute('marker-end')).toBe('url(#arrow-default)')
+  })
+
+  it('sets edge arrow and stroke color matching target sticky note color', () => {
+    const coloredNodesData: CanvasData = {
+      nodes: [
+        {
+          id: 'n-src',
+          type: 'text',
+          title: 'Source Note',
+          text: 'From here',
+          x: 100,
+          y: 100,
+          width: 200,
+          height: 120,
+          color: 'cyan'
+        },
+        {
+          id: 'n-dest',
+          type: 'text',
+          title: 'Target Yellow Note',
+          text: 'To here',
+          x: 400,
+          y: 100,
+          width: 200,
+          height: 120,
+          color: 'yellow'
+        }
+      ],
+      edges: [
+        {
+          id: 'e1',
+          fromNode: 'n-src',
+          toNode: 'n-dest'
+        }
+      ],
+      viewport: { x: 0, y: 0, zoom: 1 }
+    }
+
+    const { container } = render(<CanvasView initialData={coloredNodesData} />)
+    const edge = container.querySelector('.lumina-canvas-edge-line')
+
+    expect(edge).toBeInTheDocument()
+    // Arrow marker matches the target sticky note color (yellow)
+    expect(edge?.getAttribute('marker-end')).toBe('url(#arrow-yellow)')
+    // Edge class matches the target sticky note color
+    expect(edge?.classList.contains('edge-yellow')).toBe(true)
+  })
+
+  it('renders colored SVG arrow markers in defs for all node colors', () => {
+    const { container } = render(<CanvasView initialData={initialData} />)
+    const defs = container.querySelector('defs')!
+    expect(defs).toBeInTheDocument()
+
+    const colors = ['yellow', 'purple', 'cyan', 'green', 'orange', 'red', 'default']
+    colors.forEach((c) => {
+      const marker = defs.querySelector(`#arrow-${c}`)
+      expect(marker).toBeInTheDocument()
+    })
   })
 
   it('switches between Select and Hand/Pan tool modes', () => {

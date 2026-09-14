@@ -23,6 +23,28 @@ export const COLOR_CYCLE: CanvasNodeColor[] = [
 ]
 
 /**
+ * Direct hex color map for canvas node accents and edge markers.
+ */
+export const CANVAS_NODE_COLOR_HEX: Record<CanvasNodeColor, string> = {
+  default: '#38bdf8',
+  yellow: '#eab308',
+  purple: '#a855f7',
+  cyan: '#06b6d4',
+  green: '#22c55e',
+  orange: '#f97316',
+  red: '#ef4444'
+}
+
+export interface SnappedPortTarget {
+  nodeId: string
+  side: CanvasEdgeSide
+  x: number
+  y: number
+  color: CanvasNodeColor
+  distance: number
+}
+
+/**
  * Safely converts any input value into a finite number, with fallback default.
  * Prevents NaN and null bugs from corrupting SVG paths or CSS coordinate styles.
  */
@@ -159,3 +181,45 @@ export function normalizeNode(raw: Partial<CanvasNode> & { id?: string }): Canva
     file: raw.file
   }
 }
+
+/**
+ * Finds the closest connection port on any node (excluding excludeNodeId)
+ * within a given radius threshold (canvas coordinate space).
+ * Enables the magnetic "key in hole" pull effect and smooth auto-docking.
+ */
+export function findClosestPort(
+  pos: { x: number; y: number },
+  nodes: CanvasNode[],
+  excludeNodeId: string,
+  threshold: number = 42
+): SnappedPortTarget | null {
+  let closest: SnappedPortTarget | null = null
+  let minDistance = threshold
+
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i]
+    if (node.id === excludeNodeId) continue
+
+    const sides: CanvasEdgeSide[] = ['top', 'right', 'bottom', 'left']
+    for (let j = 0; j < sides.length; j++) {
+      const side = sides[j]
+      const portPt = getNodePortCoord(node, side)
+      const dist = Math.hypot(pos.x - portPt.x, pos.y - portPt.y)
+
+      if (dist < minDistance) {
+        minDistance = dist
+        closest = {
+          nodeId: node.id,
+          side,
+          x: portPt.x,
+          y: portPt.y,
+          color: node.color || 'default',
+          distance: dist
+        }
+      }
+    }
+  }
+
+  return closest
+}
+

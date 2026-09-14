@@ -49,6 +49,8 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
       toNode.height
     ])
 
+    const targetColor = edge.color || toNode.color || 'default'
+
     return (
       <g className="lumina-canvas-edge-group">
         {/* Invisible wider hit area for easy hover / click */}
@@ -57,8 +59,12 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
           className="lumina-canvas-edge-hitbox"
           onClick={(e) => onDeleteEdge(e, edge.id)}
         />
-        {/* Rendered curved SVG connector path */}
-        <path d={pathD} className="lumina-canvas-edge-line" />
+        {/* Rendered curved SVG connector path with arrow matching target note color */}
+        <path
+          d={pathD}
+          className={`lumina-canvas-edge-line edge-${targetColor}`}
+          markerEnd={`url(#arrow-${targetColor})`}
+        />
         {/* Delete Edge Button on hover */}
         <g
           className="lumina-canvas-edge-delete"
@@ -73,7 +79,7 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
     )
   },
   (prev, next) => {
-    // Only re-render if the edge definition or the connected nodes' bounding boxes changed
+    // Only re-render if the edge definition, colors, or bounding boxes changed
     if (prev.edge !== next.edge) return false
     if (!prev.fromNode || !next.fromNode || !prev.toNode || !next.toNode) return false
     return (
@@ -81,10 +87,12 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
       prev.fromNode.y === next.fromNode.y &&
       prev.fromNode.width === next.fromNode.width &&
       prev.fromNode.height === next.fromNode.height &&
+      prev.fromNode.color === next.fromNode.color &&
       prev.toNode.x === next.toNode.x &&
       prev.toNode.y === next.toNode.y &&
       prev.toNode.width === next.toNode.width &&
-      prev.toNode.height === next.toNode.height
+      prev.toNode.height === next.toNode.height &&
+      prev.toNode.color === next.toNode.color
     )
   }
 )

@@ -47,6 +47,7 @@ export interface CanvasNodeCardProps {
   isSelected: boolean
   isEditing: boolean
   editingField: 'title' | 'text' | null
+  snappedPortSide?: CanvasEdgeSide | null
   onNodeMouseDown: (e: React.MouseEvent, node: CanvasNode) => void
   onPortMouseDown: (e: React.MouseEvent, nodeId: string, side: CanvasEdgeSide) => void
   onResizeMouseDown: (e: React.MouseEvent, node: CanvasNode) => void
@@ -64,6 +65,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
     isSelected,
     isEditing,
     editingField,
+    snappedPortSide,
     onNodeMouseDown,
     onPortMouseDown,
     onResizeMouseDown,
@@ -88,9 +90,9 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
         }}
         onMouseDown={(e) => onNodeMouseDown(e, node)}
       >
-        {/* Connection Ports (Knobs appearing on hover for drag/click linking) */}
+        {/* Connection Ports (Knobs appearing on hover for drag/click linking & magnetic socket docking) */}
         <div
-          className="lumina-canvas-port port-top"
+          className={`lumina-canvas-port port-top ${snappedPortSide === 'top' ? 'is-magnetic-snap' : ''}`}
           data-node-id={node.id}
           data-port-side="top"
           title="Connect top"
@@ -98,7 +100,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
           onClick={(e) => onPortMouseDown(e, node.id, 'top')}
         />
         <div
-          className="lumina-canvas-port port-right"
+          className={`lumina-canvas-port port-right ${snappedPortSide === 'right' ? 'is-magnetic-snap' : ''}`}
           data-node-id={node.id}
           data-port-side="right"
           title="Connect right"
@@ -106,7 +108,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
           onClick={(e) => onPortMouseDown(e, node.id, 'right')}
         />
         <div
-          className="lumina-canvas-port port-bottom"
+          className={`lumina-canvas-port port-bottom ${snappedPortSide === 'bottom' ? 'is-magnetic-snap' : ''}`}
           data-node-id={node.id}
           data-port-side="bottom"
           title="Connect bottom"
@@ -114,7 +116,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
           onClick={(e) => onPortMouseDown(e, node.id, 'bottom')}
         />
         <div
-          className="lumina-canvas-port port-left"
+          className={`lumina-canvas-port port-left ${snappedPortSide === 'left' ? 'is-magnetic-snap' : ''}`}
           data-node-id={node.id}
           data-port-side="left"
           title="Connect left"
@@ -281,12 +283,13 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
     )
   },
   (prev, next) => {
-    // Only re-render if node data, selection, or editing state specifically changed
+    // Only re-render if node data, selection, editing state, or snapped port changed
     return (
       prev.node === next.node &&
       prev.isSelected === next.isSelected &&
       prev.isEditing === next.isEditing &&
-      prev.editingField === next.editingField
+      prev.editingField === next.editingField &&
+      prev.snappedPortSide === next.snappedPortSide
     )
   }
 )

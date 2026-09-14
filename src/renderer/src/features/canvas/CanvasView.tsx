@@ -24,9 +24,12 @@ import { useCanvas } from './useCanvas'
 import { CanvasData, CanvasNode, CanvasEdge, CanvasEdgeSide } from './types'
 import {
   COLOR_CYCLE,
+  CANVAS_NODE_COLOR_HEX,
   getNodePortCoord,
   getBezierCurve,
-  normalizeNode
+  normalizeNode,
+  findClosestPort,
+  SnappedPortTarget
 } from './canvasUtils'
 import { CanvasNodeCard } from './CanvasNodeCard'
 import { CanvasEdgeItem } from './CanvasEdgeItem'
@@ -75,6 +78,8 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
   const [connecting, setConnecting] = useState<ConnectingState | null>(null)
   const connectingRef = useRef<ConnectingState | null>(null)
   const [mouseCanvasPos, setMouseCanvasPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
+  const [snappedTarget, setSnappedTarget] = useState<SnappedPortTarget | null>(null)
+  const snappedTargetRef = useRef<SnappedPortTarget | null>(null)
 
   // Drag and resize operation tracking refs
   const isPanningRef = useRef(false)
@@ -175,6 +180,8 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
 
       setConnecting(null)
       connectingRef.current = null
+      setSnappedTarget(null)
+      snappedTargetRef.current = null
     },
     [setEdges]
   )
@@ -202,6 +209,8 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
       } else if (e.key === 'Escape') {
         setConnecting(null)
         connectingRef.current = null
+        setSnappedTarget(null)
+        snappedTargetRef.current = null
         setEditingNodeId(null)
         setEditingField(null)
         setSelectedNodeIds([])
@@ -244,10 +253,29 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
         rafIdRef.current = null
         const currentZoom = stateRef.current.viewport.zoom || 1
 
-        // 1. Live wire connecting line projection
+        // 1. Live wire connecting line projection & magnetic proximity docking
         if (containerRef.current && connectingRef.current) {
           const rect = containerRef.current.getBoundingClientRect()
-          setMouseCanvasPos(screenToCanvas(e.clientX, e.clientY, rect))
+          const canvasPos = screenToCanvas(e.clientX, e.clientY, rect)
+
+          // Adaptive magnetic threshold based on zoom level (feels like ~38-45 screen px)
+          const magneticThreshold = Math.max(28, Math.min(65, 40 / (currentZoom || 1)))
+          const snap = findClosestPort(
+            canvasPos,
+            stateRef.current.nodes,
+            connectingRef.current.fromNodeId,
+            magneticThreshold
+          )
+
+          if (snap) {
+            snappedTargetRef.current = snap
+            setSnappedTarget(snap)
+            setMouseCanvasPos({ x: snap.x, y: snap.y })
+          } else {
+            snappedTargetRef.current = null
+            setSnappedTarget(null)
+            setMouseCanvasPos(canvasPos)
+          }
         }
 
         // 2. Card resizing
@@ -304,6 +332,19 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
 
       // If user was dragging a wire from a port, resolve drop destination
       if (connectingRef.current) {
+        // Priority 1: If magnetically snapped to a port socket, immediately dock & connect!
+        if (snappedTargetRef.current) {
+          completeConnection(
+            connectingRef.current.fromNodeId,
+            connectingRef.current.fromSide,
+            snappedTargetRef.current.nodeId,
+            snappedTargetRef.current.side
+          )
+          snappedTargetRef.current = null
+          setSnappedTarget(null)
+          return
+        }
+
         const targetEl = document.elementFromPoint(e.clientX, e.clientY)
         const targetPort = targetEl?.closest('.lumina-canvas-port') as HTMLElement | null
         const targetNode = targetEl?.closest('.lumina-canvas-node') as HTMLElement | null
@@ -332,6 +373,12 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
             return
           }
         }
+
+        // Released in empty space - cancel connection
+        setConnecting(null)
+        connectingRef.current = null
+        setSnappedTarget(null)
+        snappedTargetRef.current = null
       }
 
       if (isPanningRef.current) {
@@ -414,6 +461,8 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
         } else {
           setConnecting(null)
           connectingRef.current = null
+          setSnappedTarget(null)
+          snappedTargetRef.current = null
         }
         return
       }
@@ -431,6 +480,8 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
       }
       setConnecting(connState)
       connectingRef.current = connState
+      setSnappedTarget(null)
+      snappedTargetRef.current = null
       setMouseCanvasPos(canvasMouse)
     },
     [nodeMap, screenToCanvas, completeConnection]
@@ -460,6 +511,8 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
       if (connectingRef.current && !isNodeOrToolbar) {
         setConnecting(null)
         connectingRef.current = null
+        setSnappedTarget(null)
+        snappedTargetRef.current = null
         return
       }
 
@@ -860,14 +913,32 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
   // Live connecting Bézier spline while dragging from a port
   const liveConnectingLine = useMemo(() => {
     if (!connecting) return null
+    const targetColor = snappedTarget ? (snappedTarget.color || 'default') : 'default'
+    const targetHex = CANVAS_NODE_COLOR_HEX[targetColor] || CANVAS_NODE_COLOR_HEX.default
+    const toSide = snappedTarget ? snappedTarget.side : 'left'
+    const targetPt = snappedTarget ? { x: snappedTarget.x, y: snappedTarget.y } : mouseCanvasPos
+
     const { pathD } = getBezierCurve(
       { x: connecting.startX, y: connecting.startY },
       connecting.fromSide,
-      mouseCanvasPos,
-      'left'
+      targetPt,
+      toSide
     )
-    return <path d={pathD} className="lumina-canvas-connecting-line" markerEnd="url(#arrow)" />
-  }, [connecting, mouseCanvasPos])
+
+    return (
+      <path
+        d={pathD}
+        className={`lumina-canvas-connecting-line ${snappedTarget ? 'snapped' : ''}`}
+        style={
+          {
+            stroke: targetHex,
+            '--snap-color': targetHex
+          } as React.CSSProperties
+        }
+        markerEnd={`url(#arrow-${targetColor})`}
+      />
+    )
+  }, [connecting, mouseCanvasPos, snappedTarget])
 
   const cursorStyle = isPanningState
     ? 'grabbing'
@@ -905,14 +976,28 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
             <marker
               id="arrow"
               viewBox="0 0 10 10"
-              refX="6"
+              refX="7"
               refY="5"
-              markerWidth="6"
-              markerHeight="6"
+              markerWidth="6.5"
+              markerHeight="6.5"
               orient="auto-start-reverse"
             >
-              <path d="M 0 1 L 8 5 L 0 9 z" fill="var(--text-accent, #38bdf8)" />
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="var(--text-accent, #38bdf8)" />
             </marker>
+            {(Object.keys(CANVAS_NODE_COLOR_HEX) as (keyof typeof CANVAS_NODE_COLOR_HEX)[]).map((cKey) => (
+              <marker
+                key={cKey}
+                id={`arrow-${cKey}`}
+                viewBox="0 0 10 10"
+                refX="7"
+                refY="5"
+                markerWidth="6.5"
+                markerHeight="6.5"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill={CANVAS_NODE_COLOR_HEX[cKey]} />
+              </marker>
+            ))}
           </defs>
           {edges.map((edge) => (
             <CanvasEdgeItem
@@ -934,6 +1019,7 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
             isSelected={selectedNodeIds.includes(node.id)}
             isEditing={editingNodeId === node.id}
             editingField={editingNodeId === node.id ? editingField : null}
+            snappedPortSide={snappedTarget?.nodeId === node.id ? snappedTarget.side : null}
             onNodeMouseDown={handleNodeMouseDown}
             onPortMouseDown={handlePortMouseDown}
             onResizeMouseDown={handleResizeMouseDown}
