@@ -1,16 +1,19 @@
 import React, { useRef } from 'react'
 import { Mic, Loader2 } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
-import { useVoice } from './hooks/useVoice'
+import { useVoice } from './hooks/Voice'
+import { useSettingsStore } from '../../core/store/useSettingsStore'
+import type { VoiceButtonProps } from './types'
 import './css/voice.css'
 
-export const VoiceButton = ({
+export const VoiceButton: React.FC<VoiceButtonProps> = ({
   id = 'voice-btn',
   onInsert,
   buttonStyle = null,
   tooltipPosition = 'bottom'
 }) => {
-  const buttonRef = useRef(null)
+  const buttonRef = useRef<HTMLButtonElement | null>(null)
+  const groqKey = useSettingsStore((state: any) => state.settings?.groqKey)
 
   const {
     isRecording,
@@ -29,9 +32,20 @@ export const VoiceButton = ({
   const isThisRecording = isRecording && isThisActive
   const isThisTranscribing = isTranscribing && isThisActive
 
-  const handleTriggerClick = async (e) => {
+  const handleTriggerClick = async (e: React.MouseEvent<HTMLButtonElement>): Promise<void> => {
     e.preventDefault()
     e.stopPropagation()
+
+    // If API key does not exist, notify the user with Notification toast
+    const activeKey = groqKey || (typeof localStorage !== 'undefined' ? localStorage.getItem('lumina_groq_key') : null)
+    if (!activeKey || !activeKey.trim()) {
+      window.dispatchEvent(
+        new CustomEvent('show-toast', {
+          detail: { message: 'Voice Key not found', type: 'error' }
+        })
+      )
+      return
+    }
 
     if (error) clearError()
 
@@ -55,7 +69,7 @@ export const VoiceButton = ({
     }
   }
 
-  const handleStop = async () => {
+  const handleStop = async (): Promise<void> => {
     try {
       const text = await stopRecording()
       if (text && text.length > 0) {

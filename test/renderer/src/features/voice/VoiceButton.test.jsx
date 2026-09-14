@@ -2,11 +2,18 @@ import React from 'react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, fireEvent, act } from '@testing-library/react'
 import { VoiceButton } from '../../../../../src/renderer/src/features/voice/VoiceButton'
-import { voiceService } from '../../../../../src/renderer/src/features/voice/hooks/voiceService'
+import { voiceService } from '../../../../../src/renderer/src/features/voice/hooks/Services'
+import { useSettingsStore } from '../../../../../src/renderer/src/core/store/useSettingsStore'
 
 describe('VoiceButton component', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    useSettingsStore.setState({
+      settings: {
+        ...useSettingsStore.getState().settings,
+        groqKey: 'gsk_test_mock_key'
+      }
+    })
     voiceService.updateState({
       isRecording: false,
       isTranscribing: false,
@@ -57,5 +64,28 @@ describe('VoiceButton component', () => {
 
     expect(setActiveSpy).toHaveBeenCalledWith('composer-voice')
     expect(startSpy).toHaveBeenCalled()
+  })
+
+  it('shows Voice Key not found toast if no Groq API key is configured when clicked', () => {
+    useSettingsStore.setState({
+      settings: {
+        ...useSettingsStore.getState().settings,
+        groqKey: null
+      }
+    })
+    const dispatchSpy = vi.spyOn(window, 'dispatchEvent')
+
+    const { container } = render(<VoiceButton id="editor-voice" />)
+    const btn = container.querySelector('.voice-trigger-btn')
+    expect(btn).toBeInTheDocument()
+
+    fireEvent.click(btn)
+
+    expect(dispatchSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'show-toast',
+        detail: { message: 'Voice Key not found', type: 'error' }
+      })
+    )
   })
 })

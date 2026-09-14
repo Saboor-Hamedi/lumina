@@ -1,5 +1,7 @@
+import type { GroqError } from '../types'
+
 // Function to detect and eliminate Whisper silence/background-noise hallucinations
-function isSilenceHallucination(rawText) {
+function isSilenceHallucination(rawText: string): boolean {
   if (!rawText) return true
   const cleaned = rawText
     .toLowerCase()
@@ -54,7 +56,11 @@ function isSilenceHallucination(rawText) {
 }
 
 // Service to transcribe audio using Groq's ultra-fast Whisper Large v3 Turbo API
-export async function transcribeWithGroq(audioBlob, apiKey, prompt = '') {
+export async function transcribeWithGroq(
+  audioBlob: Blob | null,
+  apiKey: string,
+  prompt = ''
+): Promise<string> {
   if (!apiKey || !apiKey.trim()) {
     throw new Error('Please enter your Groq API key in Settings > Intelligence.')
   }
@@ -82,7 +88,7 @@ export async function transcribeWithGroq(audioBlob, apiKey, prompt = '') {
     formData.append('prompt', prompt.trim().slice(-220))
   }
 
-  let response
+  let response: Response
   try {
     response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
       method: 'POST',
@@ -91,8 +97,8 @@ export async function transcribeWithGroq(audioBlob, apiKey, prompt = '') {
       },
       body: formData
     })
-  } catch (networkErr) {
-    const err = new Error('Network error connecting to Groq. Please check your internet connection.')
+  } catch {
+    const err: GroqError = new Error('Network error connecting to Groq. Please check your internet connection.')
     err.isNetworkError = true
     throw err
   }
@@ -119,21 +125,21 @@ export async function transcribeWithGroq(audioBlob, apiKey, prompt = '') {
         isAuthError = true
         errMsg = 'Invalid Groq API key. Please check your key in Settings > Intelligence.'
       }
-    } catch (e) {
+    } catch {
       errMsg = `HTTP ${response.status}: ${response.statusText}`
     }
 
-    const error = new Error(errMsg)
+    const error: GroqError = new Error(errMsg)
     error.status = response.status
     error.isQuotaError = isQuotaError
     error.isAuthError = isAuthError
     throw error
   }
 
-  let data
+  let data: { text?: string } | null = null
   try {
     data = await response.json()
-  } catch (parseErr) {
+  } catch {
     return ''
   }
 

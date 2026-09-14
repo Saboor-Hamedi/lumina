@@ -1,12 +1,30 @@
-import { AudioRecorder } from './audioRecorder'
-import { transcribeWithGroq } from './groqWhisper'
+/**
+ * Services.ts - Enterprise-grade Voice Orchestrator
+ *
+ * Coordinates live recording, progressive chunk streaming, Groq Whisper
+ * transcription, focus tracking, and smooth text stitching.
+ */
 
-function removePrefixOverlap(newText, prevText) {
+import { AudioRecorder } from './Record'
+import { transcribeWithGroq } from './groqWhisper'
+import type { VoiceState, VoiceListener, GroqError } from '../types'
+
+declare global {
+  interface Window {
+    __luminaLastVoiceTarget?: string
+  }
+}
+
+/**
+ * Intelligent suffix/prefix word alignment algorithm.
+ * Removes repeated boundary words between progressive audio chunk transcriptions.
+ */
+function removePrefixOverlap(newText: string, prevText: string): string {
   if (!prevText || !newText) return newText ? newText.trim() : ''
   const pWords = prevText.trim().toLowerCase().split(/\s+/)
   const nWords = newText.trim().split(/\s+/)
 
-  const maxOverlap = Math.min(4, pWords.length, nWords.length)
+  const maxOverlap = Math.min(6, pWords.length, nWords.length)
   for (let len = maxOverlap; len > 0; len--) {
     const prevSlice = pWords.slice(-len).join(' ')
     const nextSlice = nWords.slice(0, len).map((w) => w.toLowerCase()).join(' ')
@@ -17,59 +35,69 @@ function removePrefixOverlap(newText, prevText) {
   return newText.trim()
 }
 
-class VoiceService {
+export class VoiceService {
+  private recorder: AudioRecorder
+  private listeners: Set<VoiceListener> = new Set()
+  private timerInterval: ReturnType<typeof setInterval> | null = null
+
+  public state: VoiceState = {
+    isRecording: false,
+    isTranscribing: false,
+    recordingDuration: 0,
+    audioLevel: 0,
+    activeInstanceId: null,
+    interimText: '',
+    error: null
+  }
+
+  private isStarting: boolean = false
+  private isQuotaExhausted: boolean = false
+  private lastToggleTime: number = 0
+  private recordingStartTime: number = 0
+
+  private lastSpeechTime: number = 0
+  private segmentStartTime: number = 0
+  private hasSpokenInSegment: boolean = false
+  private isFlushingSegment: boolean = false
+  private lastTranscribedText: string = ''
+
   constructor() {
     this.recorder = new AudioRecorder()
-    this.listeners = new Set()
-    this.timerInterval = null
-    this.activeRequestId = 0
-
-    this.state = {
-      isRecording: false,
-      isTranscribing: false,
-      recordingDuration: 0,
-      audioLevel: 0,
-      activeInstanceId: null,
-      interimText: '',
-      error: null
-    }
-
-    this.isStarting = false
-    this.isQuotaExhausted = false
-    this.lastToggleTime = 0
-    this.recordingStartTime = 0
 
     if (typeof window !== 'undefined') {
-      window.addEventListener('toggle-voice-dictation', (e) => {
-        this.toggleDictation(e?.detail?.target)
+      window.addEventListener('toggle-voice-dictation', (e: Event) => {
+        const customEvent = e as CustomEvent<{ target?: string }>
+        this.toggleDictation(customEvent?.detail?.target)
       })
 
       // Track cursor focus so Shift+Alt+V automatically knows where to type
-      document.addEventListener('focusin', (e) => {
-        if (e.target?.closest?.('.composer-container, .composer-textarea, .lumina-chat') || e.target?.classList?.contains('composer-textarea')) {
+      document.addEventListener('focusin', (e: FocusEvent) => {
+        const target = e.target as HTMLElement | null
+        if (target?.closest?.('.composer-container, .composer-textarea, .lumina-chat') || target?.classList?.contains('composer-textarea')) {
           window.__luminaLastVoiceTarget = 'composer-voice'
-        } else if (e.target?.closest?.('.cm-editor, .cm-content, .editor-container')) {
+        } else if (target?.closest?.('.cm-editor, .cm-content, .editor-container')) {
           window.__luminaLastVoiceTarget = 'editor-voice'
         }
       }, true)
     }
   }
 
-  toggleDictation(targetHint = null) {
+  /**
+   * Toggles dictation on/off with debouncing to prevent audio hardware collision.
+   */
+  toggleDictation(targetHint: string | null = null): void {
     const now = Date.now()
-    if (now - this.lastToggleTime < 450) {
+    if (now - this.lastToggleTime < 400) {
       return
     }
     this.lastToggleTime = now
 
-    // If currently starting, do not immediately stop
     if (this.isStarting) {
       return
     }
 
     if (this.state.isRecording) {
-      // Prevent stopping if recording was started just a split second ago
-      if (now - this.recordingStartTime < 500) {
+      if (now - this.recordingStartTime < 450) {
         return
       }
 
@@ -89,7 +117,7 @@ class VoiceService {
 
     let target = targetHint
     if (!target) {
-      const activeEl = typeof document !== 'undefined' ? document.activeElement : null
+      const activeEl = typeof document !== 'undefined' ? (document.activeElement as HTMLElement | null) : null
       if (
         activeEl?.closest?.('.composer-container, .composer-textarea, .lumina-chat') ||
         activeEl?.classList?.contains?.('composer-textarea')
@@ -108,7 +136,7 @@ class VoiceService {
     this.startRecording().catch(() => {})
   }
 
-  subscribe(listener) {
+  subscribe(listener: VoiceListener): () => void {
     this.listeners.add(listener)
     listener(this.state)
     return () => {
@@ -116,22 +144,34 @@ class VoiceService {
     }
   }
 
-  updateState(partial) {
+  updateState(partial: Partial<VoiceState>): void {
     this.state = { ...this.state, ...partial }
     this.listeners.forEach((listener) => listener(this.state))
   }
 
-  setActiveInstance(id) {
+  setActiveInstance(id: string | null): void {
     this.updateState({ activeInstanceId: id })
   }
 
-  async startRecording() {
+  private getStoredGroqKey(): string | null {
+    if (typeof localStorage === 'undefined') return null
+    return localStorage.getItem('lumina_groq_key') || null
+  }
+
+  async startRecording(): Promise<void> {
     if (this.state.isRecording || this.state.isTranscribing || this.isStarting) return
 
-    const groqKey = typeof localStorage !== 'undefined' ? localStorage.getItem('lumina_groq_key') : null
+    const groqKey = this.getStoredGroqKey()
     if (!groqKey || !groqKey.trim()) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('show-toast', {
+            detail: { message: 'Voice Key not found', type: 'error' }
+          })
+        )
+      }
       this.updateState({
-        error: 'Please add your free Groq API key in Settings > Intelligence to enable instant voice dictation.'
+        error: 'Voice Key not found'
       })
       return
     }
@@ -163,7 +203,7 @@ class VoiceService {
         this.updateState({ audioLevel: level })
 
         const now = Date.now()
-        if (level > 0.05) {
+        if (level > 0.04) {
           this.hasSpokenInSegment = true
           this.lastSpeechTime = now
         }
@@ -171,30 +211,31 @@ class VoiceService {
         const segmentDuration = now - this.segmentStartTime
         const silenceDuration = now - this.lastSpeechTime
 
-        // Silky smooth progressive typing condition:
-        // Trigger segment flush when user has spoken and takes a brief breath (silence >= 380ms after 1.6s speech),
-        // or when continuous speaking reaches 4.2 seconds
+        // Progressive typing conditions:
+        // Flush on natural speech pauses (silence >= 320ms after 1.2s speaking)
+        // or hard segment boundary (3.8s) for maximum fluidity
         if (
           this.hasSpokenInSegment &&
           !this.isFlushingSegment &&
           !this.isQuotaExhausted &&
           this.state.isRecording &&
-          ((silenceDuration >= 380 && segmentDuration >= 1600) || segmentDuration >= 4200)
+          ((silenceDuration >= 320 && segmentDuration >= 1200) || segmentDuration >= 3800)
         ) {
           this.flushSegment()
         }
       })
-    } catch (err) {
+    } catch (err: unknown) {
       if (this.timerInterval) {
         clearInterval(this.timerInterval)
         this.timerInterval = null
       }
+      const message = err instanceof Error ? err.message : 'Could not access microphone'
       this.updateState({
         isRecording: false,
         recordingDuration: 0,
         audioLevel: 0,
         interimText: '',
-        error: err?.message || 'Could not access microphone'
+        error: message
       })
       throw err
     } finally {
@@ -202,13 +243,13 @@ class VoiceService {
     }
   }
 
-  async flushSegment() {
+  async flushSegment(): Promise<void> {
     if (this.isFlushingSegment || !this.state.isRecording || this.isQuotaExhausted) return
     this.isFlushingSegment = true
     this.segmentStartTime = Date.now()
     this.hasSpokenInSegment = false
 
-    const groqKey = typeof localStorage !== 'undefined' ? localStorage.getItem('lumina_groq_key') : null
+    const groqKey = this.getStoredGroqKey()
     if (!groqKey || !groqKey.trim()) {
       this.isFlushingSegment = false
       return
@@ -216,7 +257,7 @@ class VoiceService {
 
     try {
       const segmentBlob = await this.recorder.flushSegment()
-      if (!segmentBlob || segmentBlob.size < 2200) {
+      if (!segmentBlob || segmentBlob.size < 1800) {
         this.isFlushingSegment = false
         return
       }
@@ -239,8 +280,7 @@ class VoiceService {
             }
           }
         })
-        .catch((err) => {
-          // If quota or auth limit reached, safely stop and notify without crashing
+        .catch((err: GroqError) => {
           if (err?.isQuotaError || err?.isAuthError) {
             this.isQuotaExhausted = true
             this.cancelRecording()
@@ -252,12 +292,12 @@ class VoiceService {
         .finally(() => {
           this.isFlushingSegment = false
         })
-    } catch (e) {
+    } catch {
       this.isFlushingSegment = false
     }
   }
 
-  async stopRecordingAndTranscribe() {
+  async stopRecordingAndTranscribe(): Promise<string | null> {
     if (!this.state.isRecording) return null
 
     if (this.timerInterval) {
@@ -279,18 +319,18 @@ class VoiceService {
       }
 
       const durationMs = Date.now() - (this.recordingStartTime || 0)
-      if (durationMs < 400 || audioData.size < 2200) {
+      if (durationMs < 350 || audioData.size < 1800) {
         this.updateState({ isTranscribing: false, interimText: '', error: null })
         return null
       }
 
-      // If nothing new was spoken in this final segment, complete gracefully
+      // If no speech occurred in the final segment, complete gracefully
       if (!this.hasSpokenInSegment) {
         this.updateState({ isTranscribing: false, interimText: '', error: null })
         return null
       }
 
-      const groqKey = typeof localStorage !== 'undefined' ? localStorage.getItem('lumina_groq_key') : null
+      const groqKey = this.getStoredGroqKey()
       if (!groqKey || !groqKey.trim()) {
         this.updateState({
           isTranscribing: false,
@@ -303,16 +343,17 @@ class VoiceService {
       this.updateState({ isTranscribing: false, interimText: '', error: null })
       const smoothed = removePrefixOverlap(text || '', this.lastTranscribedText)
       return smoothed || null
-    } catch (err) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Transcription failed'
       this.updateState({
         isTranscribing: false,
-        error: err?.message || 'Transcription failed'
+        error: message
       })
       return null
     }
   }
 
-  cancelRecording() {
+  cancelRecording(): void {
     if (this.timerInterval) {
       clearInterval(this.timerInterval)
       this.timerInterval = null
@@ -333,7 +374,7 @@ class VoiceService {
     )
   }
 
-  clearError() {
+  clearError(): void {
     this.updateState({ error: null })
   }
 }

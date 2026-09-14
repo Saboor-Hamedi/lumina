@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react'
 import { Loader2 } from 'lucide-react'
-import { useVoice } from './hooks/useVoice'
+import { useVoice } from './hooks/Voice'
 import './css/voice.css'
 
-export const VoiceCapsule = () => {
+export const VoiceCapsule: React.FC = () => {
   const {
     isRecording,
     isTranscribing,
@@ -14,7 +14,7 @@ export const VoiceCapsule = () => {
 
   const isVisible = isRecording || isTranscribing
 
-  const handleStop = async (e) => {
+  const handleStop = async (e: React.MouseEvent<HTMLDivElement>): Promise<void> => {
     e?.preventDefault?.()
     e?.stopPropagation?.()
     if (!isRecording) return
