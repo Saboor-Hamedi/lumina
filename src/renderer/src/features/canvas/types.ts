@@ -21,6 +21,11 @@ export type CanvasShapeType =
   | 'star'
   | 'parallelogram'
   | 'speech-bubble'
+  | 'pill'
+  | 'document'
+  | 'step'
+  | 'shield'
+  | 'heart'
 
 export type CanvasNodeColor =
   | 'default'

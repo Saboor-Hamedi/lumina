@@ -139,16 +139,18 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
                 node.shape || 'rectangle',
                 'var(--node-accent, var(--text-accent, #38bdf8))',
                 'var(--node-accent, var(--text-accent, #38bdf8))',
-                0.12,
-                isSelected ? 2 : 1.5
+                0.04,
+                isSelected ? 1.35 : 1.2
               )}
             </svg>
 
             {/* Shape Floating Actions (Cycle Color & Delete) */}
-            <div className="lumina-canvas-shape-actions">
+            <div className={`lumina-canvas-shape-actions ${isSelected ? 'is-selected' : ''}`}>
               <ToolTip text="Change Color" position="top">
                 <button
                   className="lumina-canvas-action-btn"
+                  title="Change Color"
+                  aria-label="Change Color"
                   onClick={(e) => {
                     e.stopPropagation()
                     onCycleColor(node.id)
@@ -161,6 +163,8 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
               <ToolTip text="Delete Shape" position="top">
                 <button
                   className="lumina-canvas-action-btn delete"
+                  title="Delete Shape"
+                  aria-label="Delete Shape"
                   onClick={(e) => {
                     e.stopPropagation()
                     onDeleteNode(node.id)

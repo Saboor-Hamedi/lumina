@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { ConvasShapes, CANVAS_SHAPES, renderShapeSVG } from '../../../../../src/renderer/src/features/canvas/ConvasShapes'
 import { CanvasView } from '../../../../../src/renderer/src/features/canvas/CanvasView'
 import { CanvasData } from '../../../../../src/renderer/src/features/canvas/types'
@@ -63,8 +63,31 @@ describe('ConvasShapes Palette & Renderer', () => {
     const diamondBtn = screen.getByText('Diamond').closest('button')!
     fireEvent.click(diamondBtn)
 
-    expect(onSelectMock).toHaveBeenCalledWith('diamond', 130, 130)
+    expect(onSelectMock).toHaveBeenCalledWith('diamond', 130, 130, 'default')
     expect(onCloseMock).toHaveBeenCalled()
+  })
+
+  it('allows picking a color in the shapes palette and uses it when creating a shape', () => {
+    const onSelectMock = vi.fn()
+    const onCloseMock = vi.fn()
+
+    render(
+      <ConvasShapes
+        isOpen={true}
+        onClose={onCloseMock}
+        onSelectShape={onSelectMock}
+      />
+    )
+
+    // Click yellow color swatch
+    const yellowDot = screen.getByLabelText('Color: Yellow')
+    fireEvent.click(yellowDot)
+
+    // Click Circle shape
+    const circleBtn = screen.getByText('Circle').closest('button')!
+    fireEvent.click(circleBtn)
+
+    expect(onSelectMock).toHaveBeenCalledWith('circle', 120, 120, 'yellow')
   })
 
   it('supports drag-and-drop of shapes onto canvas', () => {
@@ -162,5 +185,95 @@ describe('ConvasShapes Palette & Renderer', () => {
     expect(shapeNode.querySelector('.port-right')).toBeInTheDocument()
     expect(shapeNode.querySelector('.port-bottom')).toBeInTheDocument()
     expect(shapeNode.querySelector('.port-left')).toBeInTheDocument()
+  })
+
+  it('renders visible Palette button and cycles shape color when clicked', async () => {
+    const shapeData: CanvasData = {
+      nodes: [
+        {
+          id: 'shape-1',
+          type: 'shape',
+          shape: 'rectangle',
+          title: '',
+          text: 'Process',
+          x: 100,
+          y: 100,
+          width: 140,
+          height: 100,
+          color: 'default'
+        }
+      ],
+      edges: [],
+      viewport: { x: 0, y: 0, zoom: 1 }
+    }
+
+    const { container } = render(<CanvasView initialData={shapeData} />)
+    const shapeNode = container.querySelector('.lumina-canvas-node.is-shape')!
+    expect(shapeNode).toHaveClass('color-default')
+
+    // Find palette button inside shape actions
+    const paletteBtn = shapeNode.querySelector('.lumina-canvas-shape-actions button[aria-label="Change Color"]')!
+    expect(paletteBtn).toBeInTheDocument()
+
+    // Click palette button to cycle color
+    fireEvent.click(paletteBtn)
+    await waitFor(() => {
+      expect(shapeNode).toHaveClass('color-yellow')
+    })
+  })
+
+  it('deletes ONLY the selected shape when Delete key is pressed and preserves other nodes', async () => {
+    const multiNodeData: CanvasData = {
+      nodes: [
+        {
+          id: 'shape-to-delete',
+          type: 'shape',
+          shape: 'diamond',
+          title: '',
+          text: 'Delete Me',
+          x: 50,
+          y: 50,
+          width: 120,
+          height: 120,
+          color: 'red'
+        },
+        {
+          id: 'sticky-keep',
+          type: 'text',
+          title: 'Preserve Me',
+          text: 'I must remain on canvas',
+          x: 300,
+          y: 50,
+          width: 200,
+          height: 120,
+          color: 'green'
+        }
+      ],
+      edges: [],
+      viewport: { x: 0, y: 0, zoom: 1 }
+    }
+
+    const { container } = render(<CanvasView initialData={multiNodeData} />)
+    expect(screen.getByText('Delete Me')).toBeInTheDocument()
+    expect(screen.getByText('Preserve Me')).toBeInTheDocument()
+
+    // Select the diamond shape node
+    const shapeNode = container.querySelector('[data-node-id="shape-to-delete"]')!
+    fireEvent.mouseDown(shapeNode, { button: 0, clientX: 60, clientY: 60 })
+
+    // Wait for node to have 'selected' class in DOM
+    await waitFor(() => {
+      expect(shapeNode).toHaveClass('selected')
+    })
+
+    // Press Delete key
+    fireEvent.keyDown(window, { key: 'Delete' })
+
+    // Verify ONLY the selected shape was removed
+    await waitFor(() => {
+      expect(screen.queryByText('Delete Me')).not.toBeInTheDocument()
+    })
+    // The other node is preserved
+    expect(screen.getByText('Preserve Me')).toBeInTheDocument()
   })
 })

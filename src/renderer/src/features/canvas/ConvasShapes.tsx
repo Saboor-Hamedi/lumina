@@ -6,15 +6,18 @@
  * mind-mapping, and spatial thinking.
  *
  * Supports:
- * - 11 distinct vector geometric shapes
+ * - 16 distinct lightweight vector geometric shapes
+ * - Interactive color palette picker right inside the menu
  * - Click-to-add (centered in viewport)
  * - Drag-and-drop onto arbitrary canvas coordinates
- * - Precision SVG rendering with non-scaling strokes and theme-adaptive fills
+ * - Precision SVG rendering with non-scaling strokes and airy translucent fills
+ * - Full scroll and pointer isolation so canvas never intercepts menu interaction
  * ============================================================================
  */
 
-import React, { useRef, useEffect } from 'react'
-import { CanvasShapeType } from './types'
+import React, { useRef, useEffect, useState } from 'react'
+import { Palette } from 'lucide-react'
+import { CanvasShapeType, CanvasNodeColor } from './types'
 
 export interface ShapeDefinition {
   id: CanvasShapeType
@@ -35,19 +38,36 @@ export const CANVAS_SHAPES: ShapeDefinition[] = [
   { id: 'cloud', label: 'Cloud', defaultWidth: 160, defaultHeight: 110, description: 'Cloud / External' },
   { id: 'star', label: 'Star', defaultWidth: 120, defaultHeight: 120, description: 'Goal / Priority' },
   { id: 'parallelogram', label: 'Parallel', defaultWidth: 160, defaultHeight: 100, description: 'Input / Output' },
-  { id: 'speech-bubble', label: 'Callout', defaultWidth: 150, defaultHeight: 110, description: 'Speech / Comment' }
+  { id: 'speech-bubble', label: 'Callout', defaultWidth: 150, defaultHeight: 110, description: 'Speech / Comment' },
+  { id: 'pill', label: 'Capsule', defaultWidth: 150, defaultHeight: 80, description: 'State / Terminal' },
+  { id: 'document', label: 'Document', defaultWidth: 140, defaultHeight: 110, description: 'File / Report' },
+  { id: 'step', label: 'Step Arrow', defaultWidth: 150, defaultHeight: 90, description: 'Process / Next' },
+  { id: 'shield', label: 'Shield', defaultWidth: 130, defaultHeight: 130, description: 'Security / Protect' },
+  { id: 'heart', label: 'Heart', defaultWidth: 130, defaultHeight: 120, description: 'Favorite / Priority' }
+]
+
+export const SHAPE_COLOR_OPTIONS: { id: CanvasNodeColor; label: string; hex: string }[] = [
+  { id: 'default', label: 'Default Accent', hex: 'var(--text-accent, #38bdf8)' },
+  { id: 'yellow', label: 'Yellow', hex: '#facc15' },
+  { id: 'blue', label: 'Blue', hex: '#60a5fa' },
+  { id: 'green', label: 'Green', hex: '#4ade80' },
+  { id: 'purple', label: 'Purple', hex: '#c084fc' },
+  { id: 'red', label: 'Red', hex: '#f87171' },
+  { id: 'orange', label: 'Orange', hex: '#fb923c' },
+  { id: 'cyan', label: 'Cyan', hex: '#22d3ee' }
 ]
 
 /**
- * Pure SVG vector path renderer for all 11 canvas shapes.
+ * Pure SVG vector path renderer for all 16 canvas shapes.
  * ViewBox 0 0 100 100 ensures responsive scaling with non-scaling-stroke.
+ * Designed with modern lightweight architectural line weights and soft fills.
  */
 export function renderShapeSVG(
   shape: CanvasShapeType,
   stroke: string = 'currentColor',
   fill: string = 'currentColor',
-  fillOpacity: number = 0.12,
-  strokeWidth: number = 1.6
+  fillOpacity: number = 0.04,
+  strokeWidth: number = 1.25
 ): React.ReactNode {
   switch (shape) {
     case 'rectangle':
@@ -57,8 +77,8 @@ export function renderShapeSVG(
           y="4"
           width="92"
           height="92"
-          rx="3"
-          ry="3"
+          rx="4"
+          ry="4"
           fill={fill}
           fillOpacity={fillOpacity}
           stroke={stroke}
@@ -74,8 +94,8 @@ export function renderShapeSVG(
           y="4"
           width="92"
           height="92"
-          rx="18"
-          ry="18"
+          rx="16"
+          ry="16"
           fill={fill}
           fillOpacity={fillOpacity}
           stroke={stroke}
@@ -115,7 +135,7 @@ export function renderShapeSVG(
     case 'triangle':
       return (
         <polygon
-          points="50,5 96,95 4,95"
+          points="50,6 95,94 5,94"
           fill={fill}
           fillOpacity={fillOpacity}
           stroke={stroke}
@@ -143,7 +163,7 @@ export function renderShapeSVG(
         <g stroke={stroke} strokeWidth={strokeWidth} vectorEffect="non-scaling-stroke">
           {/* Cylinder Body */}
           <path
-            d="M 5 22 L 5 78 C 5 91, 95 91, 95 78 L 95 22 Z"
+            d="M 6 22 L 6 78 C 6 90, 94 90, 94 78 L 94 22 Z"
             fill={fill}
             fillOpacity={fillOpacity}
           />
@@ -151,14 +171,14 @@ export function renderShapeSVG(
           <ellipse
             cx="50"
             cy="22"
-            rx="45"
+            rx="44"
             ry="14"
             fill={fill}
             fillOpacity={fillOpacity}
           />
-          {/* Bottom Rim */}
+          {/* Bottom Rim Arc */}
           <path
-            d="M 5 78 C 5 91, 95 91, 95 78"
+            d="M 6 78 C 6 90, 94 90, 94 78"
             fill="none"
           />
         </g>
@@ -216,6 +236,75 @@ export function renderShapeSVG(
         />
       )
 
+    case 'pill':
+      return (
+        <rect
+          x="4"
+          y="12"
+          width="92"
+          height="76"
+          rx="38"
+          ry="38"
+          fill={fill}
+          fillOpacity={fillOpacity}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          vectorEffect="non-scaling-stroke"
+        />
+      )
+
+    case 'document':
+      return (
+        <path
+          d="M 6 6 L 94 6 L 94 80 C 72 72, 50 94, 6 82 Z"
+          fill={fill}
+          fillOpacity={fillOpacity}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      )
+
+    case 'step':
+      return (
+        <polygon
+          points="4,6 74,6 96,50 74,94 4,94 22,50"
+          fill={fill}
+          fillOpacity={fillOpacity}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      )
+
+    case 'shield':
+      return (
+        <path
+          d="M 50 4 L 92 18 L 92 56 C 92 78, 50 96, 50 96 C 50 96, 8 78, 8 56 L 8 18 Z"
+          fill={fill}
+          fillOpacity={fillOpacity}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      )
+
+    case 'heart':
+      return (
+        <path
+          d="M 50 88 C 22 62, 6 44, 6 26 C 6 12, 16 4, 30 4 C 39 4, 46 9, 50 16 C 54 9, 61 4, 70 4 C 84 4, 94 12, 94 26 C 94 44, 78 62, 50 88 Z"
+          fill={fill}
+          fillOpacity={fillOpacity}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      )
+
     default:
       return (
         <rect
@@ -237,16 +326,20 @@ export function renderShapeSVG(
 
 export interface ConvasShapesProps {
   isOpen: boolean
+  position?: 'left' | 'top'
   onClose: () => void
-  onSelectShape: (shapeType: CanvasShapeType, width: number, height: number) => void
+  onSelectShape: (shapeType: CanvasShapeType, width: number, height: number, color?: CanvasNodeColor) => void
 }
 
 export const ConvasShapes: React.FC<ConvasShapesProps> = ({
   isOpen,
+  position = 'left',
   onClose,
   onSelectShape
 }) => {
   const panelRef = useRef<HTMLDivElement>(null)
+  const [selectedColor, setSelectedColor] = useState<CanvasNodeColor>('default')
+  const isDraggingRef = useRef(false)
 
   // Close when clicking outside or pressing Escape
   useEffect(() => {
@@ -260,6 +353,8 @@ export const ConvasShapes: React.FC<ConvasShapesProps> = ({
     }
 
     const handlePointerDown = (e: PointerEvent) => {
+      // Don't close if currently in a drag operation
+      if (isDraggingRef.current) return
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
         onClose()
       }
@@ -275,18 +370,51 @@ export const ConvasShapes: React.FC<ConvasShapesProps> = ({
 
   if (!isOpen) return null
 
+  const activeColorObj = SHAPE_COLOR_OPTIONS.find((c) => c.id === selectedColor)
+  const activeColorHex = activeColorObj ? activeColorObj.hex : 'var(--text-accent, #38bdf8)'
+
   return (
     <div
       ref={panelRef}
-      className="lumina-canvas-shapes-menu"
+      className={`lumina-canvas-shapes-menu pos-${position}`}
       onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+      onWheel={(e) => e.stopPropagation()}
     >
       <div className="lumina-canvas-shapes-header">
         <span className="lumina-canvas-shapes-title">Shapes</span>
         <span className="lumina-canvas-shapes-hint">Click or drag</span>
       </div>
 
-      <div className="lumina-canvas-shapes-grid">
+      {/* Color Selection Palette Row inside Shapes Panel */}
+      <div className="lumina-canvas-shapes-color-row" title="Pick Shape Color">
+        <div className="lumina-canvas-shapes-color-label">
+          <Palette size={11} />
+          <span>Color</span>
+        </div>
+        <div className="lumina-canvas-shapes-colors">
+          {SHAPE_COLOR_OPTIONS.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              className={`lumina-canvas-shape-color-dot ${selectedColor === c.id ? 'active' : ''}`}
+              style={{ backgroundColor: c.hex }}
+              title={`Color: ${c.label}`}
+              aria-label={`Color: ${c.label}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                setSelectedColor(c.id)
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div
+        className="lumina-canvas-shapes-grid"
+        onWheel={(e) => e.stopPropagation()}
+      >
         {CANVAS_SHAPES.map((s) => (
           <button
             key={s.id}
@@ -296,29 +424,35 @@ export const ConvasShapes: React.FC<ConvasShapesProps> = ({
             draggable={true}
             onDragStart={(e) => {
               e.stopPropagation()
+              isDraggingRef.current = true
               e.dataTransfer.setData(
                 'application/lumina-shape',
                 JSON.stringify({
                   shapeType: s.id,
                   width: s.defaultWidth,
-                  height: s.defaultHeight
+                  height: s.defaultHeight,
+                  color: selectedColor
                 })
               )
               e.dataTransfer.effectAllowed = 'copy'
             }}
+            onDragEnd={() => {
+              isDraggingRef.current = false
+              onClose()
+            }}
             onClick={() => {
-              onSelectShape(s.id, s.defaultWidth, s.defaultHeight)
+              onSelectShape(s.id, s.defaultWidth, s.defaultHeight, selectedColor)
               onClose()
             }}
           >
             <div className="lumina-canvas-shape-preview">
               <svg
                 viewBox="0 0 100 100"
-                width="24"
-                height="24"
+                width="22"
+                height="22"
                 preserveAspectRatio="none"
               >
-                {renderShapeSVG(s.id, 'currentColor', 'currentColor', 0.16, 2)}
+                {renderShapeSVG(s.id, activeColorHex, activeColorHex, 0.08, 1.25)}
               </svg>
             </div>
             <span className="lumina-canvas-shape-label">{s.label}</span>

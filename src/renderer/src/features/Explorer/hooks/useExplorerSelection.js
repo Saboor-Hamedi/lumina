@@ -89,7 +89,10 @@ export function useExplorerSelection({
 
       // Delete / Backspace -> Delete Selected Items
       if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (selectedNoteIds.size > 0 || selectedFolderIds.size > 0 || sidebarFocus === 'folder') {
+        const isExplorerActive =
+          modalRef?.current?.contains(document.activeElement) ||
+          Boolean(document.querySelector('.unified-sidebar:hover'))
+        if (isExplorerActive && (selectedNoteIds.size > 0 || selectedFolderIds.size > 0 || sidebarFocus === 'folder')) {
           e.preventDefault()
           onRequestBulkDelete?.()
         }

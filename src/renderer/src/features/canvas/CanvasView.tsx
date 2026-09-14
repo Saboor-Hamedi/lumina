@@ -81,6 +81,7 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
   const [mouseCanvasPos, setMouseCanvasPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
   const [snappedTarget, setSnappedTarget] = useState<SnappedPortTarget | null>(null)
   const snappedTargetRef = useRef<SnappedPortTarget | null>(null)
+  const connectingScreenStartRef = useRef<{ x: number; y: number } | null>(null)
 
   // Drag and resize operation tracking refs
   const isPanningRef = useRef(false)
@@ -122,16 +123,14 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
     isSpacePressed,
     connecting
   })
-  useEffect(() => {
-    stateRef.current = {
-      viewport,
-      nodes,
-      selectedNodeIds,
-      toolMode,
-      isSpacePressed,
-      connecting
-    }
-  }, [viewport, nodes, selectedNodeIds, toolMode, isSpacePressed, connecting])
+  stateRef.current = {
+    viewport,
+    nodes,
+    selectedNodeIds,
+    toolMode,
+    isSpacePressed,
+    connecting
+  }
 
   // Fast O(1) node lookup map for instant edge & port resolution
   const nodeMap = useMemo(() => {
@@ -205,6 +204,7 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
       } else if ((e.key === 'Delete' || e.key === 'Backspace') && !isInputActive) {
         if (stateRef.current.selectedNodeIds.length > 0) {
           e.preventDefault()
+          e.stopPropagation()
           deleteSelected()
         }
       } else if (e.key === 'Escape') {
@@ -333,6 +333,13 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
 
       // If user was dragging a wire from a port, resolve drop destination
       if (connectingRef.current) {
+        const dragDist = connectingScreenStartRef.current
+          ? Math.hypot(
+              e.clientX - connectingScreenStartRef.current.x,
+              e.clientY - connectingScreenStartRef.current.y
+            )
+          : 0
+
         // Priority 1: If magnetically snapped to a port socket, immediately dock & connect!
         if (snappedTargetRef.current) {
           completeConnection(
@@ -343,12 +350,12 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
           )
           snappedTargetRef.current = null
           setSnappedTarget(null)
+          connectingScreenStartRef.current = null
           return
         }
 
         const targetEl = document.elementFromPoint(e.clientX, e.clientY)
         const targetPort = targetEl?.closest('.lumina-canvas-port') as HTMLElement | null
-        const targetNode = targetEl?.closest('.lumina-canvas-node') as HTMLElement | null
 
         if (targetPort) {
           const targetNodeId = targetPort.getAttribute('data-node-id')
@@ -360,26 +367,20 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
               targetNodeId,
               targetSide
             )
-            return
-          }
-        } else if (targetNode) {
-          const targetNodeId = targetNode.getAttribute('data-node-id')
-          if (targetNodeId && targetNodeId !== connectingRef.current.fromNodeId) {
-            completeConnection(
-              connectingRef.current.fromNodeId,
-              connectingRef.current.fromSide,
-              targetNodeId,
-              'left'
-            )
+            connectingScreenStartRef.current = null
             return
           }
         }
 
-        // Released in empty space - cancel connection
-        setConnecting(null)
-        connectingRef.current = null
-        setSnappedTarget(null)
-        snappedTargetRef.current = null
+        // If the user actually dragged away (> 10px) and dropped in empty space/card body, cancel
+        if (dragDist > 10) {
+          setConnecting(null)
+          connectingRef.current = null
+          setSnappedTarget(null)
+          snappedTargetRef.current = null
+          connectingScreenStartRef.current = null
+        }
+        // If stationary click (<= 10px), keep connecting line following cursor until next port click
       }
 
       if (isPanningRef.current) {
@@ -468,6 +469,7 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
         return
       }
 
+      connectingScreenStartRef.current = { x: e.clientX, y: e.clientY }
       const node = nodeMap.get(nodeId)
       const portCoord = node ? getNodePortCoord(node, side) : { x: 0, y: 0 }
       const rect = containerRef.current.getBoundingClientRect()
@@ -541,16 +543,6 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
    */
   const handleNodeMouseDown = useCallback(
     (e: React.MouseEvent, node: CanvasNode) => {
-      if (connectingRef.current) {
-        e.stopPropagation()
-        e.preventDefault()
-        completeConnection(connectingRef.current.fromNodeId, connectingRef.current.fromSide, node.id, 'left')
-        return
-      }
-
-      if (toolMode === 'hand' || isSpacePressed) return
-      if (e.button !== 0 || !containerRef.current) return
-
       const target = e.target as HTMLElement
       if (
         target.tagName === 'INPUT' ||
@@ -561,6 +553,20 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
       ) {
         return
       }
+
+      // If user was in connecting mode and clicks the card body (not a port), cancel connecting
+      if (connectingRef.current) {
+        e.stopPropagation()
+        e.preventDefault()
+        setConnecting(null)
+        connectingRef.current = null
+        setSnappedTarget(null)
+        snappedTargetRef.current = null
+        return
+      }
+
+      if (toolMode === 'hand' || isSpacePressed) return
+      if (e.button !== 0 || !containerRef.current) return
 
       e.stopPropagation()
 
@@ -761,7 +767,7 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
       const luminaShapeData = e.dataTransfer.getData('application/lumina-shape')
       if (luminaShapeData) {
         try {
-          const { shapeType, width = 140, height = 100 } = JSON.parse(luminaShapeData)
+          const { shapeType, width = 140, height = 100, color = 'default' } = JSON.parse(luminaShapeData)
           const newNode = addNode({
             type: 'shape',
             shape: shapeType,
@@ -771,7 +777,7 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
             y: Math.round(pt.y - height / 2),
             width,
             height,
-            color: 'default'
+            color: color || 'default'
           })
           setEditingNodeId(newNode.id)
           setEditingField('text')
@@ -912,7 +918,7 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
    * Adds a new diagramming shape centered in the visible viewport.
    */
   const handleAddShape = useCallback(
-    (shapeType: CanvasShapeType, width: number, height: number) => {
+    (shapeType: CanvasShapeType, width: number, height: number, color?: CanvasNodeColor) => {
       if (!containerRef.current) return
       const rect = containerRef.current.getBoundingClientRect()
       const center = screenToCanvas(
@@ -929,7 +935,7 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
         y: Math.round(center.y - height / 2),
         width,
         height,
-        color: 'default'
+        color: color || 'default'
       })
       setEditingNodeId(newNode.id)
       setEditingField('text')
@@ -1094,11 +1100,12 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
         ))}
       </div>
 
-      {/* Center Canvas Toolbar: Tool Mode (Select / Hand) & Sticky Note */}
+      {/* Center Canvas Toolbar: Tool Mode (Select / Hand), Sticky Note & Shapes */}
       <ConvasToolBarCenter
         toolMode={toolMode}
         setToolMode={setToolMode}
         onAddSticky={handleAddSticky}
+        onAddShape={handleAddShape}
       />
 
       {/* Right Canvas Toolbar: Zoom & Delete Selected (vertical, parallel to RightSidebar) */}

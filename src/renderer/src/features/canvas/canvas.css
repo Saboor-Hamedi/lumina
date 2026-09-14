@@ -679,32 +679,54 @@
 
 /* Shapes Flyout Submenu Panel */
 .lumina-canvas-shapes-menu {
-  position: absolute;
-  right: 46px;
-  top: 0;
-  width: 204px;
+  width: 216px;
   background-color: color-mix(in srgb, var(--bg-panel, #18181b) 95%, transparent);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
   border-radius: 12px;
-  box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(16px);
   padding: 8px;
   z-index: 105;
   user-select: none;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  animation: shapesSlideIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  gap: 6px;
 }
 
-@keyframes shapesSlideIn {
+.lumina-canvas-shapes-menu.pos-left {
+  position: absolute;
+  right: 42px;
+  top: -6px;
+  animation: shapesSlideLeft 0.14s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lumina-canvas-shapes-menu.pos-top {
+  position: absolute;
+  bottom: 38px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: shapesSlideUp 0.14s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes shapesSlideLeft {
   from {
     opacity: 0;
-    transform: translateX(8px) scale(0.96);
+    transform: translateX(6px);
   }
   to {
     opacity: 1;
-    transform: translateX(0) scale(1);
+    transform: translateX(0);
+  }
+}
+
+@keyframes shapesSlideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
   }
 }
 
@@ -712,8 +734,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 2px 4px 6px 4px;
-  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  padding: 2px 4px 4px 4px;
 }
 
 .lumina-canvas-shapes-title {
@@ -726,6 +747,52 @@
 .lumina-canvas-shapes-hint {
   font-size: 9.5px;
   color: var(--text-muted, #94a3b8);
+}
+
+/* Color Selection Row in Shapes Panel */
+.lumina-canvas-shapes-color-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px 6px 6px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+}
+
+.lumina-canvas-shapes-color-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text-muted, #94a3b8);
+  font-weight: 500;
+}
+
+.lumina-canvas-shapes-colors {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lumina-canvas-shape-color-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+  box-sizing: border-box;
+}
+
+.lumina-canvas-shape-color-dot:hover {
+  transform: scale(1.2);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.lumina-canvas-shape-color-dot.active {
+  transform: scale(1.2);
+  border-color: #ffffff;
+  box-shadow: 0 0 0 1.5px var(--bg-panel, #18181b), 0 0 0 1px currentColor;
 }
 
 .lumina-canvas-shapes-grid {
@@ -812,34 +879,38 @@
   width: 100%;
   height: 100%;
   pointer-events: none;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.35));
+  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.16));
   transition: filter 0.15s ease;
 }
 
 .lumina-canvas-node.is-shape.selected .lumina-canvas-shape-svg {
-  filter: drop-shadow(0 0 6px var(--node-accent, #38bdf8)) drop-shadow(0 8px 20px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--node-accent, #38bdf8) 45%, transparent));
 }
 
 .lumina-canvas-shape-actions {
   position: absolute;
-  top: -14px;
-  right: 0;
+  top: 6px;
+  right: 6px;
   display: flex;
   align-items: center;
   gap: 2px;
   opacity: 0;
-  transition: opacity 0.15s ease;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
   background: color-mix(in srgb, var(--bg-panel, #18181b) 95%, transparent);
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.15));
   border-radius: 6px;
   padding: 2px 4px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  z-index: 35;
+  backdrop-filter: blur(8px);
+  z-index: 40;
 }
 
 .lumina-canvas-node.is-shape:hover .lumina-canvas-shape-actions,
-.lumina-canvas-node.is-shape.selected .lumina-canvas-shape-actions {
+.lumina-canvas-node.is-shape.selected .lumina-canvas-shape-actions,
+.lumina-canvas-shape-actions.is-selected {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .lumina-canvas-shape-content {
@@ -854,11 +925,12 @@
 }
 
 .lumina-canvas-shape-text {
-  font-size: 12.5px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.1px;
   color: var(--text-main, #f8fafc);
   word-break: break-word;
-  line-height: 1.4;
+  line-height: 1.45;
   max-width: 100%;
   max-height: 100%;
   overflow: hidden;
@@ -867,7 +939,7 @@
 }
 
 .lumina-canvas-shape-text .placeholder {
-  opacity: 0.35;
+  opacity: 0.28;
   font-style: italic;
   font-size: 11px;
 }
@@ -880,11 +952,12 @@
   text-align: center;
   color: var(--text-main, #f8fafc);
   font-family: inherit;
-  font-size: 12.5px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.1px;
   width: 100%;
   height: 100%;
-  line-height: 1.4;
+  line-height: 1.45;
   padding: 0;
 }
 

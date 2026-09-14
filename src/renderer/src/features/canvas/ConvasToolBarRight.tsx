@@ -17,8 +17,8 @@
 import React, { useState } from 'react'
 import { ZoomIn, ZoomOut, RotateCcw, Trash2, Shapes } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
-import { ConvasShapes } from './ConvasShapes'
-import { CanvasShapeType } from './types'
+import { CanvasShapeType, CanvasNodeColor } from './types'
+import ConvasShapes from './ConvasShapes'
 
 export interface ConvasToolBarRightProps {
   zoom: number
@@ -27,7 +27,7 @@ export interface ConvasToolBarRightProps {
   onResetViewport: () => void
   onDeleteSelected: () => void
   canDelete: boolean
-  onAddShape?: (shapeType: CanvasShapeType, width: number, height: number) => void
+  onAddShape?: (shapeType: CanvasShapeType, width: number, height: number, color?: CanvasNodeColor) => void
 }
 
 export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
@@ -47,26 +47,29 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
         {/* Shapes Menu Tool */}
         {onAddShape && (
           <>
-            <ToolTip text="Shapes & Diagrams" position="left">
-              <button
-                className={`lumina-canvas-tool-btn ${isShapesOpen ? 'active' : ''}`}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setIsShapesOpen((prev) => !prev)
-                }}
-                aria-label="Shapes & Diagrams"
-              >
-                <Shapes size={13} />
-              </button>
-            </ToolTip>
+            <div style={{ position: 'relative' }}>
+              <ToolTip text="Shapes & Diagrams" position="left">
+                <button
+                  className={`lumina-canvas-tool-btn ${isShapesOpen ? 'active' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsShapesOpen((prev) => !prev)
+                  }}
+                  aria-label="Shapes & Diagrams"
+                >
+                  <Shapes size={13} />
+                </button>
+              </ToolTip>
 
-            <ConvasShapes
-              isOpen={isShapesOpen}
-              onClose={() => setIsShapesOpen(false)}
-              onSelectShape={(shapeType, w, h) => {
-                onAddShape(shapeType, w, h)
-              }}
-            />
+              <ConvasShapes
+                isOpen={isShapesOpen}
+                position="left"
+                onClose={() => setIsShapesOpen(false)}
+                onSelectShape={(shapeType, w, h, color) => {
+                  onAddShape(shapeType, w, h, color)
+                }}
+              />
+            </div>
 
             <div className="lumina-canvas-divider horizontal" />
           </>

@@ -72,8 +72,8 @@ export function getNodePortCoord(
 ): { x: number; y: number } {
   const x = safeNumber(node.x, 0)
   const y = safeNumber(node.y, 0)
-  const w = Math.max(safeNumber(node.width, 240), 150)
-  const h = Math.max(safeNumber(node.height, 150), 80)
+  const w = Math.max(safeNumber(node.width, 140), 30)
+  const h = Math.max(safeNumber(node.height, 100), 30)
 
   switch (side) {
     case 'top':
@@ -99,10 +99,10 @@ export function getOptimalEdgePorts(
   fromNode: { x: number; y: number; width?: number; height?: number },
   toNode: { x: number; y: number; width?: number; height?: number }
 ): { fromSide: CanvasEdgeSide; toSide: CanvasEdgeSide } {
-  const fw = Math.max(safeNumber(fromNode.width, 240), 150)
-  const fh = Math.max(safeNumber(fromNode.height, 150), 80)
-  const tw = Math.max(safeNumber(toNode.width, 240), 150)
-  const th = Math.max(safeNumber(toNode.height, 150), 80)
+  const fw = Math.max(safeNumber(fromNode.width, 140), 30)
+  const fh = Math.max(safeNumber(fromNode.height, 100), 30)
+  const tw = Math.max(safeNumber(toNode.width, 140), 30)
+  const th = Math.max(safeNumber(toNode.height, 100), 30)
 
   const fcx = safeNumber(fromNode.x, 0) + fw / 2
   const fcy = safeNumber(fromNode.y, 0) + fh / 2
