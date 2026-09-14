@@ -308,6 +308,10 @@ const UpdateGuide = () => {
       if (!window.api?.getVersion || typeof localStorage === 'undefined') return
 
       try {
+        const isPackaged = window.api?.isPackaged ? await window.api.isPackaged() : true
+        // Do not automatically pop up update / restart guide during local development
+        if (!isPackaged) return
+
         const appVer = await window.api.getVersion()
         if (cancelled || !appVer) return
 
@@ -323,6 +327,7 @@ const UpdateGuide = () => {
           setIsFirstInstall(false)
           setStep(2)
           setIsOpen(true)
+          localStorage.setItem(LAST_SEEN_VERSION_KEY, appVer)
         }
       } catch (err) {
         console.warn('[UpdateGuide] Version fetch error:', err)
@@ -410,8 +415,13 @@ const UpdateGuide = () => {
         console.warn('[UpdateGuide] Failed to cancel download:', err)
       }
     }
+    localStorage.setItem(FIRST_INSTALL_COMPLETED_KEY, 'true')
+    if (currentVersion) {
+      localStorage.setItem(LAST_SEEN_VERSION_KEY, currentVersion)
+    }
     setIsOpen(false)
   }
+
 
   // Keyboard navigation
   useEffect(() => {

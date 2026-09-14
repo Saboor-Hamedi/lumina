@@ -327,6 +327,8 @@ app.whenReady().then(async () => {
     }
   })
   ipcMain.handle('app:getVersion', () => app.getVersion()) // show the version
+  ipcMain.handle('app:isPackaged', () => app.isPackaged)
+
 
   ipcMain.handle('window:minimize', () => mainWindow?.minimize())
   ipcMain.handle('window:open-devtools', () => {

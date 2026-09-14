@@ -58,8 +58,28 @@ class GlobalErrorHandler extends React.Component {
   componentDidMount() {
     if (this.props.isRoot) {
       this.handleWindowError = (event) => {
+        // Ignore benign ResizeObserver notification loops which are standard browser performance warnings
+        if (
+          event.message &&
+          (event.message.includes('ResizeObserver loop completed') ||
+            event.message.includes('ResizeObserver loop limit exceeded'))
+        ) {
+          event.stopImmediatePropagation?.()
+          event.preventDefault?.()
+          return
+        }
+
         if (this.state.hasError) return
         const error = event.error || new Error(event.message || 'Script error')
+        if (
+          error?.message &&
+          (error.message.includes('ResizeObserver loop completed') ||
+            error.message.includes('ResizeObserver loop limit exceeded'))
+        ) {
+          event.stopImmediatePropagation?.()
+          event.preventDefault?.()
+          return
+        }
         this.setState({
           hasError: true,
           error,

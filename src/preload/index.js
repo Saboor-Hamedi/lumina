@@ -105,6 +105,7 @@ const api = {
     return () => electronAPI.ipcRenderer.removeListener('window:toggle-command-palette', listener)
   },
   getVersion: () => electronAPI.ipcRenderer.invoke('app:getVersion'),
+  isPackaged: () => electronAPI.ipcRenderer.invoke('app:isPackaged'),
   // Auto-Updater
   checkForUpdates: () => electronAPI.ipcRenderer.invoke('update:check'),
   downloadUpdate: () => electronAPI.ipcRenderer.invoke('update:download'),
@@ -187,6 +188,13 @@ if (process.contextIsolated) {
       let devtoolsOpened = false
       window.addEventListener('error', (evt) => {
         try {
+          if (
+            evt.message &&
+            (evt.message.includes('ResizeObserver loop completed') ||
+              evt.message.includes('ResizeObserver loop limit exceeded'))
+          ) {
+            return
+          }
           const payload = {
             type: 'error',
             message: evt.message,
