@@ -474,6 +474,42 @@
   transform: translateY(0);
 }
 
+/* Lightweight Modal Drag Handle (Grip button beside compose) */
+.email-modal-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  color: var(--text-faint, #64748b);
+  border: 1px solid transparent;
+  border-radius: 5px;
+  cursor: grab;
+  padding: 0;
+  margin: 0;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  user-select: none;
+  touch-action: none;
+}
+
+.email-modal-drag-handle:hover {
+  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  color: var(--text-main, #ffffff);
+  border-color: var(--border-subtle, rgba(255, 255, 255, 0.1));
+}
+
+.email-modal-drag-handle:active {
+  cursor: grabbing;
+  background: var(--bg-active, rgba(255, 255, 255, 0.14));
+  color: var(--text-accent, #40bafa);
+}
+
+.email-dropdown-container.is-dragged {
+  animation: none !important;
+}
+
 .email-compose-btn svg {
   color: var(--text-accent, #40bafa);
   flex-shrink: 0;

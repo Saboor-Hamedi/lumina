@@ -67,6 +67,22 @@ export const EmailContainer: React.FC<EmailContainerProps> = ({ isOpen, onClose,
     }
   })
 
+  // Free-floating position offset (persisted in localStorage)
+  const [containerPos, setContainerPos] = useState<{ x: number; y: number } | null>(() => {
+    try {
+      const saved = localStorage.getItem('lumina_email_container_pos')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+          return parsed
+        }
+      }
+    } catch {}
+    return null
+  })
+
+  const isDraggingRef = useRef(false)
+
   // Left Sidebar Open/Closed State (persisted in settings.json)
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(() => {
     const storeVal = useSettingsStore.getState().settings?.emailSidebarOpen
@@ -422,6 +438,54 @@ export const EmailContainer: React.FC<EmailContainerProps> = ({ isOpen, onClose,
     window.addEventListener('mouseup', handleMouseUp)
   }
 
+  // Lightweight Modal Drag Handle (Grip icon next to Compose button)
+  const handleMouseDownDrag = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!containerRef.current) return
+    isDraggingRef.current = true
+    document.body.classList.add('is-global-resizing')
+    window.getSelection()?.removeAllRanges()
+
+    const rect = containerRef.current.getBoundingClientRect()
+    const offsetX = e.clientX - rect.left
+    const offsetY = e.clientY - rect.top
+
+    let lastX = rect.left
+    let lastY = rect.top
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!isDraggingRef.current) return
+      // Clamp to viewport
+      const clampedX = Math.max(10, Math.min(moveEvent.clientX - offsetX, window.innerWidth - 100))
+      const clampedY = Math.max(10, Math.min(moveEvent.clientY - offsetY, window.innerHeight - 80))
+      lastX = clampedX
+      lastY = clampedY
+
+      if (containerRef.current) {
+        containerRef.current.style.left = `${clampedX}px`
+        containerRef.current.style.top = `${clampedY}px`
+        containerRef.current.style.right = 'auto'
+        containerRef.current.style.transform = 'none'
+      }
+    }
+
+    const handleMouseUp = () => {
+      isDraggingRef.current = false
+      document.body.classList.remove('is-global-resizing')
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+
+      setContainerPos({ x: lastX, y: lastY })
+      try {
+        localStorage.setItem('lumina_email_container_pos', JSON.stringify({ x: lastX, y: lastY }))
+      } catch {}
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+  }
+
   // Container Corner Resizer (Anchored at top-right, dragging bottom-left expands it)
   const handleMouseDownContainerResize = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -559,10 +623,18 @@ export const EmailContainer: React.FC<EmailContainerProps> = ({ isOpen, onClose,
   return (
     <div
       ref={containerRef}
-      className={`email-dropdown-container ${anchor === 'left' ? 'anchor-left' : ''} ${isResizingContainer ? 'resizing' : ''} ${isCompact ? 'compact' : ''}`}
+      className={`email-dropdown-container ${anchor === 'left' ? 'anchor-left' : ''} ${isResizingContainer ? 'resizing' : ''} ${isCompact ? 'compact' : ''} ${containerPos ? 'is-dragged' : ''}`}
       style={{
         width: `${containerWidth}px`,
-        height: `${containerHeight}px`
+        height: `${containerHeight}px`,
+        ...(containerPos
+          ? {
+              left: `${containerPos.x}px`,
+              top: `${containerPos.y}px`,
+              right: 'auto',
+              transform: 'none'
+            }
+          : {})
       }}
       onClick={(e) => e.stopPropagation()}
       aria-label="Lumina Email Dropdown"
@@ -604,6 +676,7 @@ export const EmailContainer: React.FC<EmailContainerProps> = ({ isOpen, onClose,
               onToggleOpen={handleToggleSidebar}
               width={sidebarWidth}
               isResizing={isResizingSidebar}
+              onMouseDownDrag={handleMouseDownDrag}
             />
 
             {/* Left Sidebar Drag Resizer */}

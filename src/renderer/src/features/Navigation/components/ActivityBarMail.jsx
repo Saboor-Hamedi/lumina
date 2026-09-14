@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, memo } from 'react'
+import { createPortal } from 'react-dom'
 import { Mail } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
 import { useCurrentUser } from '../../../core/hooks/useCurrentUser'
@@ -107,11 +108,15 @@ export const ActivityBarMail = memo(() => {
           {unreadEmailCount > 0 && <span className="mail-unread-badge" />}
         </button>
       </ToolTip>
-      <EmailContainer
-        isOpen={isMailOpen}
-        onClose={() => setIsMailOpen(false)}
-        anchor="left"
-      />
+      {isMailOpen &&
+        createPortal(
+          <EmailContainer
+            isOpen={isMailOpen}
+            onClose={() => setIsMailOpen(false)}
+            anchor="left"
+          />,
+          document.body
+        )}
     </div>
   )
 })

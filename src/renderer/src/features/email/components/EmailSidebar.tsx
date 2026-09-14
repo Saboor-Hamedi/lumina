@@ -18,11 +18,14 @@ import {
 } from 'lucide-react'
 import { EmailFolder, EmailLabelItem } from '../types'
 import ToolTip from '../../../components/atoms/ToolTip'
+import WindowControls from '../../Layout/WindowControls'
 
 /**
  * Props for the EmailSidebar component
  */
 export interface EmailSidebarProps {
+  /** Callback to initiate modal dragging */
+  onMouseDownDrag?: (e: React.MouseEvent) => void
   /** Active folder or label identifier */
   currentFolder: EmailFolder
   /** Callback when user selects a mailbox/folder/label */
@@ -81,7 +84,8 @@ export const EmailSidebar = React.memo<EmailSidebarProps>(({
   isOpen = true,
   onToggleOpen,
   width = 195,
-  isResizing = false
+  isResizing = false,
+  onMouseDownDrag
 }) => {
   const [isCategoriesExpanded, setIsCategoriesExpanded] = useState<boolean>(true)
   const [isLabelsExpanded, setIsLabelsExpanded] = useState<boolean>(true)
@@ -95,8 +99,14 @@ export const EmailSidebar = React.memo<EmailSidebarProps>(({
       }}
       aria-label="Email folders and labels"
     >
-      {/* Top Composer Action Container */}
+      {/* Top Composer Action Container with WindowControls Drag Handle */}
       <div className="email-compose-wrapper">
+        {onMouseDownDrag && (
+          <WindowControls
+            onMouseDownDrag={onMouseDownDrag}
+            title="Drag modal"
+          />
+        )}
         <button
           type="button"
           className="email-compose-btn"
