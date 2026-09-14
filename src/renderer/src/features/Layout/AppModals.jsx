@@ -27,7 +27,6 @@ import CommandPalette from '../commandpalette/CommandPalette'
 import Documentation from '../Docs/Documentation'
 import Graph from '../Graph/Graph'
 import Guide from '../modals/Guide'
-import UpdateGuide from '../modals/UpdateGuide'
 import Confirm from '../modals/Confirm'
 import Rename from '../modals/Rename'
 import IconPicker from '../Icons/IconPicker'
@@ -188,9 +187,6 @@ export const AppModals = ({
         onLoadStarterNotes={handleLoadStarterWorkspace}
         onOpenDocs={() => setShowDocsModal(true)}
       />
-
-      {/* Automatic post-update walkthrough */}
-      <UpdateGuide />
 
       {/* Delete Item Confirmation Dialog */}
       {showDeleteConfirm && (

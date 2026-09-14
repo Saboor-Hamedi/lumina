@@ -45,4 +45,5 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
+          ELECTRON_BUILDER_BINARIES_DOWNLOAD_OVERRIDE_URL: https://github.com/electron-userland/electron-builder-binaries/releases/download/
         run: npx electron-builder --publish always

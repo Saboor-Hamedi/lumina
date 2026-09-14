@@ -144,7 +144,41 @@ const PreviewAI = () => (
 )
 
 /**
- * Visual Preview for Step 4: Ready to Start
+ * Visual Preview for Step 4: Mail & Spatial Canvas
+ */
+const PreviewMailCanvas = () => (
+  <div className="preview-card">
+    <div className="preview-top-bar">
+      <div className="preview-dot red" />
+      <div className="preview-dot yellow" />
+      <div className="preview-dot green" />
+      <span className="preview-top-title">Lumina Mail & Spatial Canvas</span>
+    </div>
+    <div className="preview-step-3" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div style={{ background: 'rgba(255, 255, 255, 0.04)', borderRadius: '6px', padding: '8px 10px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+          <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-main)' }}>Lumina Mail Client</span>
+          <span style={{ fontSize: '9.5px', color: 'var(--text-accent, #40bafa)', fontWeight: 600 }}>Gmail API</span>
+        </div>
+        <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+          Private Gmail suite in a draggable portal window with thread search & 1-click note attachment.
+        </div>
+      </div>
+      <div style={{ background: 'rgba(255, 255, 255, 0.04)', borderRadius: '6px', padding: '8px 10px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+          <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-main)' }}>Infinite Spatial Canvas</span>
+          <span style={{ fontSize: '9.5px', color: '#22c55e', fontWeight: 600 }}>2D Plane</span>
+        </div>
+        <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+          Mind-map thoughts visually with reactive bezier wires, markdown cards, and hardware zoom.
+        </div>
+      </div>
+    </div>
+  </div>
+)
+
+/**
+ * Visual Preview for Step 5: Ready to Start
  */
 const PreviewReady = () => (
   <div className="preview-card">
@@ -266,6 +300,30 @@ const GUIDE_STEPS = [
       }
     ],
     preview: PreviewAI
+  },
+  {
+    badge: 'Mail & Canvas',
+    badgeIcon: Compass,
+    title: 'Mail & Spatial Thinking',
+    subtitle: 'Private email and infinite 2D canvas workspace right inside your notebook.',
+    features: [
+      {
+        icon: Compass,
+        title: 'Infinite Spatial Canvas',
+        text: 'Launch an infinite canvas directly from the ActivityBar to map cards, diagrams, and files.'
+      },
+      {
+        icon: FileText,
+        title: 'Lumina Mail Client',
+        text: 'Search, read, star, and reply to Gmail messages with rich HTML rendering in a draggable window.'
+      },
+      {
+        icon: Zap,
+        title: 'Interactive Breadcrumbs',
+        text: 'Navigate folder hierarchies and section outlines seamlessly with keyboard shortcuts.'
+      }
+    ],
+    preview: PreviewMailCanvas
   },
   {
     badge: 'Ready to Start',
