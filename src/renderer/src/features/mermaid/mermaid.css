@@ -9,8 +9,8 @@
   position: relative;
   width: 100%;
   height: 30px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--border-dim);
+  background: var(--bg-card, var(--bg-panel, rgba(255, 255, 255, 0.04)));
+  border: 1px solid var(--border-subtle, var(--border-dim));
   border-radius: 2px 2px 0 0;
   display: flex;
   align-items: center;
@@ -58,15 +58,15 @@
 
 .mermaid-widget-header .mermaid-edit-btn:hover {
   color: var(--text-accent, #40bafa);
-  background: rgba(255, 255, 255, 0.08);
-  border-color: var(--border-dim, rgba(255, 255, 255, 0.1));
+  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  border-color: var(--border-subtle, var(--border-dim, rgba(255, 255, 255, 0.1)));
 }
 
 .mermaid-widget-body {
-  background: rgba(0, 0, 0, 0.15);
-  border-left: 1px solid var(--border-dim);
-  border-right: 1px solid var(--border-dim);
-  border-bottom: 1px solid var(--border-dim);
+  background: var(--bg-app, var(--bg-card, rgba(0, 0, 0, 0.15)));
+  border-left: 1px solid var(--border-subtle, var(--border-dim));
+  border-right: 1px solid var(--border-subtle, var(--border-dim));
+  border-bottom: 1px solid var(--border-subtle, var(--border-dim));
   border-radius: 0 0 2px 2px;
   overflow: hidden;
   display: block;
@@ -247,13 +247,13 @@
 
 .mermaid-lightbox-card {
   position: relative;
-  background: var(--bg-panel, #18181b);
-  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.12));
+  background: var(--bg-card, var(--bg-panel, #18181b));
+  border: 1px solid var(--border-subtle, var(--border-dim, rgba(255, 255, 255, 0.12)));
   border-radius: 2px;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+  box-shadow: var(--shadow-soft, 0 24px 64px rgba(0, 0, 0, 0.6));
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -303,18 +303,19 @@
   right: 24px;
   left: auto;
   transform: none;
-  background: var(--bg-panel, rgba(24, 24, 27, 0.92));
+  background: var(--bg-panel, #18181b);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.14));
+  border: 1px solid var(--border-subtle, var(--border-dim, rgba(255, 255, 255, 0.15)));
   border-radius: 2px;
   padding: 4px 6px;
   display: flex;
   align-items: center;
   gap: 4px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-soft, 0 8px 24px rgba(0, 0, 0, 0.4));
   z-index: 100;
   user-select: none;
+  color: var(--text-main);
 }
 
 .mermaid-toolbar-btn {
@@ -336,14 +337,14 @@
 .mermaid-toolbar-btn:hover {
   color: var(--text-accent, #40bafa);
   background: var(--bg-active, rgba(255, 255, 255, 0.08));
-  border-color: var(--border-dim, rgba(255, 255, 255, 0.15));
+  border-color: var(--border-subtle, var(--border-dim, rgba(255, 255, 255, 0.15)));
 }
 
 .mermaid-toolbar-zoom-text {
   font-size: 11px;
   font-weight: 600;
   font-family: var(--font-editor, monospace);
-  color: var(--text-muted, #a0a0a0);
+  color: var(--text-main, #a0a0a0);
   min-width: 44px;
   text-align: center;
   padding: 0 4px;
@@ -351,22 +352,4 @@
 
 .mermaid-lightbox-wrapper .image-lightbox-close {
   border-radius: 2px;
-}
-
-[data-theme='light'] .mermaid-widget-header {
-  background: #f7f7f7 !important;
-  border-color: #e5e7eb !important;
-}
-
-[data-theme='light'] .mermaid-widget-header .mermaid-widget-lang-label {
-  color: #64748b !important;
-}
-
-[data-theme='light'] .mermaid-widget-header .mermaid-edit-btn:hover {
-  background: rgba(0, 0, 0, 0.06) !important;
-}
-
-[data-theme='light'] .mermaid-diagram-container {
-  background: #f7f7f7 !important;
-  border-color: #e5e7eb !important;
 }

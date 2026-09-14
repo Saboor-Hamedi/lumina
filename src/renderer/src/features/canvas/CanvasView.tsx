@@ -36,6 +36,8 @@ import { CanvasNodeCard } from './CanvasNodeCard'
 import { CanvasEdgeItem } from './CanvasEdgeItem'
 import { ConvasToolBarCenter } from './ConvasToolBarCenter'
 import { ConvasToolBarRight } from './ConvasToolBarRight'
+import { copyCanvasAsImage, downloadCanvasPng, downloadCanvasSvg } from './canvasExport'
+import { Notification, useToast } from '../../core/notification'
 import './canvas.css'
 
 export interface CanvasViewProps {
@@ -215,6 +217,9 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
         setEditingNodeId(null)
         setEditingField(null)
         setSelectedNodeIds([])
+      } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'c' || e.key === 'C') && !isInputActive) {
+        e.preventDefault()
+        handleCopyImage()
       } else if ((e.ctrlKey || e.metaKey) && e.key === '0' && !isInputActive) {
         e.preventDefault()
         resetViewport()
@@ -968,6 +973,58 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
     setEditingField(null)
   }, [])
 
+  // Floating notification toast using unified notification system
+  const { toast, showToast, clearToast } = useToast()
+
+  const handleCopyImage = useCallback(async () => {
+    const isSelection = selectedNodeIds.length > 0
+    const success = await copyCanvasAsImage({
+      nodes,
+      edges,
+      selectedNodeIds: isSelection ? selectedNodeIds : undefined
+    })
+
+    if (success) {
+      showToast(isSelection ? 'Copied selection as image!' : 'Copied diagram to clipboard!', 'success')
+    } else {
+      showToast('Failed to copy diagram image', 'error')
+    }
+  }, [nodes, edges, selectedNodeIds, showToast])
+
+  const handleExportPNG = useCallback(async () => {
+    const isSelection = selectedNodeIds.length > 0
+    try {
+      await downloadCanvasPng(
+        {
+          nodes,
+          edges,
+          selectedNodeIds: isSelection ? selectedNodeIds : undefined
+        },
+        isSelection ? 'canvas-selection.png' : 'canvas-diagram.png'
+      )
+      showToast(isSelection ? 'Exported selected PNG!' : 'Exported diagram PNG!', 'success')
+    } catch {
+      showToast('Failed to export PNG', 'error')
+    }
+  }, [nodes, edges, selectedNodeIds, showToast])
+
+  const handleExportSVG = useCallback(() => {
+    const isSelection = selectedNodeIds.length > 0
+    try {
+      downloadCanvasSvg(
+        {
+          nodes,
+          edges,
+          selectedNodeIds: isSelection ? selectedNodeIds : undefined
+        },
+        isSelection ? 'canvas-selection.svg' : 'canvas-diagram.svg'
+      )
+      showToast(isSelection ? 'Exported vector SVG!' : 'Exported diagram SVG!', 'success')
+    } catch {
+      showToast('Failed to export SVG', 'error')
+    }
+  }, [nodes, edges, selectedNodeIds, showToast])
+
   // Live connecting Bézier spline while dragging from a port
   const liveConnectingLine = useMemo(() => {
     if (!connecting) return null
@@ -1108,7 +1165,7 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
         onAddShape={handleAddShape}
       />
 
-      {/* Right Canvas Toolbar: Zoom & Delete Selected (vertical, parallel to RightSidebar) */}
+      {/* Right Canvas Toolbar: Zoom, Export/Copy & Delete Selected */}
       <ConvasToolBarRight
         zoom={viewport.zoom}
         onZoomIn={() => {
@@ -1127,7 +1184,14 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
         onDeleteSelected={deleteSelected}
         canDelete={selectedNodeIds.length > 0}
         onAddShape={handleAddShape}
+        onCopyImage={handleCopyImage}
+        onExportPNG={handleExportPNG}
+        onExportSVG={handleExportSVG}
+        hasSelectedNodes={selectedNodeIds.length > 0}
       />
+
+      {/* Unified Notification Toast */}
+      <Notification toast={toast} onClose={clearToast} />
     </div>
   )
 }

@@ -63,4 +63,18 @@ describe('Notification', () => {
     // Should be removed after animation
     expect(screen.queryByText('Test')).not.toBeInTheDocument()
   })
+
+  it('should apply theme variables to notification container and message for light/white theme compatibility', () => {
+    const toast = { type: 'info', message: 'Theme contrast test' }
+    render(<Notification toast={toast} />)
+
+    const toastElement = document.body.querySelector('.toast-notification') as HTMLElement
+    expect(toastElement).toBeInTheDocument()
+    expect(toastElement.style.color).toBe('var(--text-main)')
+    expect(toastElement.style.backgroundColor).toBe('var(--bg-panel)')
+
+    const messageElement = document.body.querySelector('.toast-message') as HTMLElement
+    expect(messageElement).toBeInTheDocument()
+    expect(messageElement.style.color).toBe('var(--text-main)')
+  })
 })

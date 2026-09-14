@@ -378,9 +378,9 @@
   right: 10px;
   width: 24px;
   height: 24px;
-  border-radius: 5px;
-  background: rgba(24, 24, 27, 0.8);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  border-radius: 2px;
+  background: var(--bg-panel, #18181b);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.15));
   color: var(--text-muted, #94a3b8);
   display: flex;
   align-items: center;
@@ -388,7 +388,8 @@
   cursor: pointer;
   transition: all 0.15s ease;
   z-index: 1000000;
-  opacity: 0.85;
+  opacity: 0.9;
+  box-shadow: var(--shadow-soft, 0 2px 8px rgba(0, 0, 0, 0.2));
 }
 
 .image-lightbox-close svg {
@@ -401,8 +402,8 @@
 }
 
 .image-lightbox-close:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: var(--border-subtle, rgba(255, 255, 255, 0.2));
+  background: var(--bg-active, rgba(255, 255, 255, 0.1));
+  border-color: var(--border-subtle, rgba(255, 255, 255, 0.25));
   color: var(--text-main, #ffffff);
 }
 
@@ -413,16 +414,17 @@
   right: 24px !important;
   left: auto !important;
   transform: none !important;
-  background: var(--bg-panel, rgba(24, 24, 27, 0.92)) !important;
+  background: var(--bg-panel, #18181b) !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12)) !important;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.15)) !important;
   border-radius: 2px !important;
   padding: 4px 6px !important;
   display: flex !important;
   align-items: center !important;
   gap: 4px !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: var(--shadow-soft, 0 8px 24px rgba(0, 0, 0, 0.35)) !important;
   z-index: 100 !important;
   user-select: none !important;
+  color: var(--text-main) !important;
 }

@@ -4,16 +4,21 @@ import { CheckCircle2, XCircle, Info, X } from 'lucide-react'
 import './css/notification.css'
 
 const Notification = ({ toast, onClose }) => {
-  const [isVisible, setIsVisible] = useState(false)
+  const [activeToast, setActiveToast] = useState(toast)
+  const [isVisible, setIsVisible] = useState(!!toast)
   const [isExiting, setIsExiting] = useState(false)
 
   useEffect(() => {
     if (toast) {
+      setActiveToast(toast)
       setIsVisible(true)
       setIsExiting(false)
-    } else {
+    } else if (activeToast) {
       setIsExiting(true)
-      const timer = setTimeout(() => setIsVisible(false), 300)
+      const timer = setTimeout(() => {
+        setIsVisible(false)
+        setActiveToast(null)
+      }, 300)
       return () => clearTimeout(timer)
     }
   }, [toast])
@@ -24,7 +29,7 @@ const Notification = ({ toast, onClose }) => {
     }
   }
 
-  if (!toast || !isVisible) return null
+  if (!activeToast || !isVisible) return null
 
   const getIcon = () => {
     switch (toast.type) {
@@ -40,10 +45,16 @@ const Notification = ({ toast, onClose }) => {
   return createPortal(
     <div
       className={`toast-notification horizontal toast-${toast.type} ${isExiting ? 'toast-exit' : ''}`}
+      style={{
+        color: 'var(--text-main)',
+        backgroundColor: 'var(--bg-panel)'
+      }}
     >
-      <div className="toast-content">
+      <div className="toast-content" style={{ color: 'var(--text-main)' }}>
         <div className="toast-icon-wrapper">{getIcon()}</div>
-        <span className="toast-message">{toast.message}</span>
+        <span className="toast-message" style={{ color: 'var(--text-main)' }}>
+          {toast.message}
+        </span>
         <button className="toast-close" onClick={handleClose} aria-label="Close notification">
           <X size={14} />
         </button>

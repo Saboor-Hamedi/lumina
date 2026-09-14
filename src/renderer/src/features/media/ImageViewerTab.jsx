@@ -148,10 +148,25 @@ export const ImageViewerTab = ({ snippet }) => {
 
   const handleCopyImage = useCallback(() => {
     if (!imageSrc) return
-    copyImageToClipboard(imageSrc, () => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
-    })
+    copyImageToClipboard(
+      imageSrc,
+      () => {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 1500)
+        window.dispatchEvent(
+          new CustomEvent('show-toast', {
+            detail: { message: 'Image copied to clipboard', type: 'success' }
+          })
+        )
+      },
+      () => {
+        window.dispatchEvent(
+          new CustomEvent('show-toast', {
+            detail: { message: 'Failed to copy image', type: 'error' }
+          })
+        )
+      }
+    )
   }, [imageSrc])
 
   const handleOpenInFolder = useCallback(() => {

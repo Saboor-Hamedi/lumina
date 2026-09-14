@@ -40,11 +40,15 @@ export function useEditorExports({ snippet, title, editorHandleRef, showToast })
     if (!window.api?.exportPDF) return
     try {
       const code = editorHandleRef.current.getMarkdown()
-      return await window.api.exportPDF({
+      const res = await window.api.exportPDF({
         title: title || snippet.title || 'Untitled',
         content: code,
         language: snippet.language || 'markdown'
       })
+      if (res?.success) {
+        showToast('PDF exported successfully', 'success')
+      }
+      return res
     } catch (error) {
       showToast('Failed to export PDF', 'error')
       throw error
@@ -56,11 +60,15 @@ export function useEditorExports({ snippet, title, editorHandleRef, showToast })
     if (!window.api?.exportText) return
     try {
       const code = editorHandleRef.current.getMarkdown()
-      return await window.api.exportText({
+      const res = await window.api.exportText({
         title: title || snippet.title || 'Untitled',
         content: code,
         language: snippet.language || 'markdown'
       })
+      if (res?.success) {
+        showToast('Text file exported successfully', 'success')
+      }
+      return res
     } catch (error) {
       showToast('Failed to export text', 'error')
       throw error
@@ -72,11 +80,15 @@ export function useEditorExports({ snippet, title, editorHandleRef, showToast })
     if (!window.api?.exportDocs) return
     try {
       const code = editorHandleRef.current.getMarkdown()
-      return await window.api.exportDocs({
+      const res = await window.api.exportDocs({
         title: title || snippet.title || 'Untitled',
         content: code,
         language: snippet.language || 'markdown'
       })
+      if (res?.success) {
+        showToast('Word document exported successfully', 'success')
+      }
+      return res
     } catch (error) {
       showToast('Failed to export Docs', 'error')
       throw error
@@ -88,11 +100,15 @@ export function useEditorExports({ snippet, title, editorHandleRef, showToast })
     if (!window.api?.exportMarkdown) return
     try {
       const code = editorHandleRef.current.getMarkdown()
-      return await window.api.exportMarkdown({
+      const res = await window.api.exportMarkdown({
         title: title || snippet.title || 'Untitled',
         content: code,
         language: snippet.language || 'markdown'
       })
+      if (res?.success) {
+        showToast('Markdown file exported successfully', 'success')
+      }
+      return res
     } catch (error) {
       showToast('Failed to export markdown', 'error')
       throw error

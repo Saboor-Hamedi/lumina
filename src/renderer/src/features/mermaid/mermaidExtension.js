@@ -130,8 +130,18 @@ class MermaidWidget extends WidgetType {
             await copyMermaidAsImage(svgEl)
             setCopiedImage(true)
             setTimeout(() => setCopiedImage(false), 1500)
+            window.dispatchEvent(
+              new CustomEvent('show-toast', {
+                detail: { message: 'Mermaid diagram copied as image', type: 'success' }
+              })
+            )
           } catch (err) {
             console.error('Failed to copy mermaid image', err)
+            window.dispatchEvent(
+              new CustomEvent('show-toast', {
+                detail: { message: 'Failed to copy diagram image', type: 'error' }
+              })
+            )
           }
         }
       }
@@ -144,8 +154,18 @@ class MermaidWidget extends WidgetType {
           await navigator.clipboard.writeText(codeText)
           setCopiedSyntax(true)
           setTimeout(() => setCopiedSyntax(false), 1500)
+          window.dispatchEvent(
+            new CustomEvent('show-toast', {
+              detail: { message: 'Mermaid syntax copied to clipboard', type: 'success' }
+            })
+          )
         } catch (err) {
           console.error('Failed to copy mermaid syntax', err)
+          window.dispatchEvent(
+            new CustomEvent('show-toast', {
+              detail: { message: 'Failed to copy syntax', type: 'error' }
+            })
+          )
         }
       }
 
@@ -347,8 +367,11 @@ export function renderMermaidToElement(container, code, uniqueId) {
 
   let textFaint = computed.getPropertyValue('--text-faint').trim() || '#888888'
   let textMain = computed.getPropertyValue('--text-main').trim() || '#e0e0e0'
-  let bgPrimary = computed.getPropertyValue('--bg-primary').trim() || '#121212'
-  let bgPanel = computed.getPropertyValue('--bg-panel').trim() || '#1e1e1e'
+  let bgPrimary = computed.getPropertyValue('--bg-app').trim() || computed.getPropertyValue('--bg-primary').trim() || '#121212'
+  let bgPanel = computed.getPropertyValue('--bg-panel').trim() || computed.getPropertyValue('--bg-card').trim() || '#1e1e1e'
+  let bgCard = computed.getPropertyValue('--bg-card').trim() || bgPanel
+  let borderSubtle = computed.getPropertyValue('--border-subtle').trim() || computed.getPropertyValue('--border-dim').trim() || 'rgba(128, 128, 128, 0.2)'
+  let borderDim = computed.getPropertyValue('--border-dim').trim() || borderSubtle
   let fontEditor = computed.getPropertyValue('--font-editor').trim() || 'monospace'
 
   setTimeout(async () => {
@@ -376,20 +399,20 @@ export function renderMermaidToElement(container, code, uniqueId) {
         class: { htmlLabels: false },
         themeVariables: {
           fontFamily: fontEditor,
-          primaryColor: bgPanel,
-          primaryBorderColor: 'rgba(255, 255, 255, 0.12)',
+          primaryColor: bgCard,
+          primaryBorderColor: borderSubtle,
           primaryTextColor: accent,
           lineColor: textFaint,
           textColor: textMain,
           mainBkg: bgPrimary,
-          nodeBkg: bgPanel,
-          nodeBorder: 'rgba(255, 255, 255, 0.12)',
+          nodeBkg: bgCard,
+          nodeBorder: borderSubtle,
           nodeTextColor: accent,
-          clusterBkg: 'rgba(255, 255, 255, 0.02)',
-          clusterBorder: 'rgba(255, 255, 255, 0.08)',
-          edgeLabelBackground: bgPanel,
-          actorBkg: bgPanel,
-          actorBorder: 'rgba(255, 255, 255, 0.15)',
+          clusterBkg: bgPanel,
+          clusterBorder: borderDim,
+          edgeLabelBackground: bgCard,
+          actorBkg: bgCard,
+          actorBorder: borderSubtle,
           actorTextColor: accent,
           actorLineColor: textFaint,
           signalColor: textFaint,
@@ -397,8 +420,8 @@ export function renderMermaidToElement(container, code, uniqueId) {
           noteBkg: accent,
           noteTextColor: bgPrimary,
           noteBorderColor: 'transparent',
-          labelBoxBkg: bgPanel,
-          labelBoxBorderColor: 'rgba(255, 255, 255, 0.12)',
+          labelBoxBkg: bgCard,
+          labelBoxBorderColor: borderSubtle,
           labelTextColor: textMain,
           loopTextColor: textMain,
           activationBkgColor: accent,

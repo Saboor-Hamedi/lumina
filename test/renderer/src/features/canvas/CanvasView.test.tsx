@@ -270,6 +270,33 @@ describe('CanvasView (TypeScript)', () => {
     expect(selectBtn.classList.contains('active')).toBe(true)
     expect(handBtn.classList.contains('active')).toBe(false)
   })
+
+  it('renders Export / Copy as Image button and opens export flyout menu', () => {
+    render(<CanvasView initialData={initialData} />)
+    const exportBtn = screen.getByLabelText('Export / Copy as Image')
+    expect(exportBtn).toBeInTheDocument()
+
+    // Click to open export flyout
+    fireEvent.click(exportBtn)
+
+    expect(screen.getByText('Copy as Image')).toBeInTheDocument()
+    expect(screen.getByText('Export as PNG')).toBeInTheDocument()
+    expect(screen.getByText('Export as Vector SVG')).toBeInTheDocument()
+  })
+
+  it('triggers Notification when Copy as Image is clicked', async () => {
+    render(<CanvasView initialData={initialData} />)
+    const exportBtn = screen.getByLabelText('Export / Copy as Image')
+    fireEvent.click(exportBtn)
+
+    const copyBtn = screen.getByText('Copy as Image')
+    fireEvent.click(copyBtn)
+
+    await waitFor(() => {
+      // Notification component renders with .toast-notification and message text
+      expect(document.querySelector('.toast-notification')).toBeInTheDocument()
+    })
+  })
 })
 
 describe('CanvasTabPane (TypeScript)', () => {

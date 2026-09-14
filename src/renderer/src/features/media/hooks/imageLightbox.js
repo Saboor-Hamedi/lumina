@@ -21,6 +21,8 @@
  */
 
 import { copyImageToClipboard } from './imageClipboard'
+import '../css/imageExtension.css'
+import '../../mermaid/mermaid.css'
 
 /**
  * Creates the bottom-right floating control panel for zooming, resetting, and copying.
@@ -224,8 +226,18 @@ export function openImageLightbox(imgSource) {
           btn.style.color = '#4ade80'
           setTimeout(() => (btn.style.color = ''), 1500)
         })
+        window.dispatchEvent(
+          new CustomEvent('show-toast', {
+            detail: { message: 'Image copied to clipboard', type: 'success' }
+          })
+        )
       } catch (err) {
         console.error('Failed to copy image', err)
+        window.dispatchEvent(
+          new CustomEvent('show-toast', {
+            detail: { message: 'Failed to copy image', type: 'error' }
+          })
+        )
       }
     }
   })

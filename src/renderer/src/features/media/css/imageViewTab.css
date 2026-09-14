@@ -4,7 +4,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: var(--bg-editor, #121214);
+  background: var(--bg-app, var(--bg-editor, #121214));
   overflow: hidden;
   user-select: none;
 }
@@ -48,7 +48,7 @@
   max-height: 90%;
   object-fit: contain;
   transition: transform 0.05s linear;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--shadow-soft, 0 12px 36px rgba(0, 0, 0, 0.45));
   border-radius: 2px;
 }
 
@@ -77,13 +77,14 @@
   align-items: center;
   gap: 4px;
   padding: 4px 8px;
-  background: rgba(24, 24, 27, 0.85);
+  background: var(--bg-panel, #18181b);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--border-subtle, var(--border-dim, rgba(255, 255, 255, 0.12)));
   border-radius: 2px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-soft, 0 12px 32px rgba(0, 0, 0, 0.35));
   z-index: 20;
+  color: var(--text-main);
 }
 
 .image-viewer-btn {
@@ -101,7 +102,7 @@
 }
 
 .image-viewer-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-active, rgba(255, 255, 255, 0.08));
   color: var(--text-main, #ffffff);
 }
 
@@ -112,6 +113,7 @@
 .image-viewer-zoom-text {
   font-size: 12px;
   font-weight: 600;
+  font-family: var(--font-editor, monospace);
   color: var(--text-main, #ffffff);
   padding: 0 6px;
   min-width: 44px;
@@ -122,7 +124,7 @@
 .image-viewer-divider {
   width: 1px;
   height: 14px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--border-subtle, var(--border-dim, rgba(255, 255, 255, 0.1)));
   margin: 0 2px;
 }
 
