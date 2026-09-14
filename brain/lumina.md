@@ -72,8 +72,9 @@ Never worry about losing your work:
 ### 🎨 A Space That Matches Your Style
 Personalize your digital desk to suit your taste:
 - **20+ Beautiful Themes (`Ctrl + T`):** From warm amber tones for late-night journaling to calm slates and crisp day themes.
-- **Lumina Mail Client:** Access your Gmail directly in an elegant glass modal to read messages, send replies, and attach your notes as Markdown.
-- **Ambient Caps Lock Indicator:** A glowing fluid blob light in your accent color breathes at the center of the status bar whenever Caps Lock is on, keeping typing distraction-free.
+- **Unified ActivityBar Navigation:** Quick access to New Notes, Daily Notes, Knowledge Graph, Infinite Canvas (`.canvas`), AI Assistant, and Lumina Mail.
+- **Draggable Lumina Mail Client:** Access your Gmail directly in an elegant, fully draggable window with seamless note attachments.
+- **Ambient Caps Lock Indicator:** A glowing fluid blob light in your accent color breathes at the center of the status bar whenever Caps Lock is on, auto-detected from hardware on startup.
 - **Streamlined Status Bar:** Compact, non-intrusive status metrics (word count, reading time, line/column) designed to stay clean across all screen sizes.
 - **Expressive Note Icons (`Ctrl + Win + .`):** Pick from hundreds of clear, friendly icons to give each note or project its own personality.
 - **Comfort for Your Eyes:** Tuned contrast and typography make reading and writing pleasant for hours at a time.
@@ -82,11 +83,12 @@ Personalize your digital desk to suit your taste:
 
 ## 3. How to Start
 
-1. **Create a Note** — Press `Ctrl + N` or click **+ New** in the sidebar.
-2. **Search for Anything** — Press `Ctrl + Space` to open the Spotlight search bar.
-3. **Connect Two Notes** — Type `[[` and select any note.
-4. **Explore the Graph** — Press `Ctrl + G` to watch your thoughts connect.
-5. **Get AI Help** — Press `Ctrl + Shift + \` to chat with your AI assistant.
+1. **Create a Note** — Press `Ctrl + N` or click **+** in the ActivityBar.
+2. **Open Canvas** — Click the Canvas icon in the ActivityBar to start a visual whiteboard.
+3. **Search for Anything** — Press `Ctrl + Space` to open the Spotlight search bar.
+4. **Connect Two Notes** — Type `[[` and select any note.
+5. **Explore the Graph** — Press `Ctrl + G` to watch your thoughts connect.
+6. **Get AI Help** — Press `Ctrl + Shift + \` to chat with your AI assistant.
 
 ---
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
-import { useToast } from '../../core/hooks/useToast'
+import { useToast } from '../../core/notification'
 import Toggle from '../../components/toggle'
 
 const SettingAdvanced = () => {

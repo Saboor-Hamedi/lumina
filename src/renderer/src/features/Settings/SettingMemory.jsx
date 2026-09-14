@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { User, Heart, Brain, Trash2, Plus, Sparkles, RefreshCw, Check, Edit2, X } from 'lucide-react'
 import { luminaMemory } from '../../core/ai/memory'
-import { useToast } from '../../core/hooks/useToast'
+import { useToast } from '../../core/notification'
 
 export const SettingMemory = () => {
   const [memory, setMemory] = useState({

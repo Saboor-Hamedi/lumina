@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { useToast } from '../../../../../src/renderer/src/core/hooks/useToast'
+import { useToast, useNotification } from '../../../../../src/renderer/src/core/notification/hooks/useNotification'
 
-describe('useToast', () => {
+describe('useNotification', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.useFakeTimers()

@@ -3,7 +3,7 @@ import { Calendar } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
 import { useVaultStore } from '../../../core/store/workspaceStore'
 import Template from '../../template/Template'
-import { defaultTemplates } from './defaultTemplates'
+import { defaultTemplates } from '../../template/hooks/defaultTemplates'
 
 const DailyNotes = memo(({ isActivityBar = false }) => {
   const saveSnippet = useVaultStore((state) => state.saveSnippet)

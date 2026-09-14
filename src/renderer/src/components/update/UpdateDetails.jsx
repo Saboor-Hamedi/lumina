@@ -8,6 +8,12 @@ import ToolTip from '../atoms/ToolTip'
 import './UpdateDetails.css'
 
 export const DEFAULT_RELEASE_NOTES = `New
+- Standardized ActivityBar 6-Button Stack: ActivityBar navigation has been standardized with a dedicated 6-button stack: 1. New Note, 2. Daily Note, 3. Knowledge Graph, 4. Canvas, 5. Lumina AI Chat, and 6. Lumina Mail. AI Chat and Mail icons are presented in a clean, borderless unaccented style.
+- Instant Canvas Note Creation: Canvas button on the ActivityBar immediately creates a new .canvas note via saveSnippet and activates it directly in the editor workspace.
+- Draggable Gmail Portal Modal: EmailContainer now renders into document.body via React createPortal with z-index: 100000, preventing sidebar resizers from capturing clicks. Features a dedicated WindowControls drag handle beside the Compose button in EmailSidebar for free viewport repositioning with localStorage coordinate persistence.
+- Hardware Caps Lock Startup Detection: Added native Windows PowerShell hardware query ([Console]::CapsLock) via Electron IPC (system:isCapsLockOn) so the ambient glowing Caps Lock blob illuminates immediately on startup even before typing any keys.
+- Core Notification System Refactoring: ToastNotification has been promoted to a clean, modular Notification system (Notification.jsx, css/notification.css, useNotification.ts, and index.ts public exports).
+- TypeScript Template Architecture: Moved and typed template foundations (defaultTemplates.ts, useTemplate.ts) with full TypeScript interfaces and aligned test suites.
 - Lumina Mail Client (Gmail Integration): A full-featured, private email suite seamlessly integrated into Lumina. Access your Gmail inbox, All Inboxes, Categories (Promotions, Social, Updates, Forums), custom labels, sent messages, drafts, and starred emails with rich HTML rendering, live search filtering, and one-click star/unread toggles.
 - Modular 3-Pane Email Architecture: Cleanly separated into dedicated components (EmailSidebar, EmailListPane, and EmailDetailPane) with an elevated Compose button container, live folder search bar, and resizable layout panes.
 - Programmatic Crystal Audio Synthesizer: Isolated Web Audio API engine (emailSoundService.ts) synthesizing a relaxing 3-note crystal chime on incoming email notifications with zero external audio dependencies and mute/unmute persistence.
@@ -31,6 +37,9 @@ export const DEFAULT_RELEASE_NOTES = `New
 - Breadcrumbs Long-Title Truncation: Note titles of any length are now gracefully truncated in the breadcrumbs bar with ellipsis (…). Hovering reveals the full title. Scales responsively with the viewport (clamp 140px → 380px).
 
 Improved
+- Email Modal Viewport Dragging: Replaced bulky header drag bars with a sleek WindowControls button directly beside Compose, eliminating awkward modal shifting and providing smooth pointer tracking.
+- Outside-Click Email Modal Toggle: Fixed double-toggle conflict where clicking the ActivityBar mail button while the modal was open would trigger both outside-click close and button-click open.
+- TypeScript Migration Across Core Hooks: Converted useTemplate, defaultTemplates, and notification hooks to strict TypeScript types, improving developer ergonomics and runtime stability.
 - Email Service TypeScript Migration: Converted src/main/email/gmailService.ts to TypeScript with comprehensive interfaces for Gmail API models, RFC 2822 Base64URL MIME message serialization, and IPC handlers.
 - Instant Email Deletion & Thread Management: Email deletion executes optimistically without re-fetching entire mailbox lists, and email cards prevent layout shifts on hover.
 - Template Modal Architecture: Templates modal now shares the 900px × 76vh geometry, custom window header buttons, and seamless maximize behavior.
@@ -47,6 +56,8 @@ Improved
 - Breadcrumbs Icon Stability: Breadcrumb icons now have flex-shrink: 0 and never collapse under layout pressure.
 
 Fixed
+- Sidebar Resizer Overlapping Email Modal: Fixed issue where dragging the left sidebar resizer would capture pointer events or sit on top of the email modal by rendering EmailContainer into document.body via createPortal with z-index: 100000.
+- CapsLock Initial State on App Launch: Fixed issue where Caps Lock was not detected until the first keypress by adding native PowerShell query via IPC on mount and window focus.
 - Dropdown Width Auto-Expansion: Breadcrumb dropdowns no longer resize or balloon to 480px based on filename length. All dropdowns strictly adhere to the polished 320px width standard with ellipsis truncation.
 - YAML Title Reversion Bug: Note titles containing YAML block scalar characters (>-, |, >, |+) no longer revert to - when renamed. safeParseFrontmatter correctly handles these as literal strings and sanitizeTitleForFilename preserves the raw title in frontmatter while only cleaning the disk filename.
 - Figure Text Deletion: The conditional VML comment regex previously used a greedy pattern that bridged across multiple figures, consuming all text and captions between Figure 1 and Figure 2. Fixed with a negative lookahead so each comment block terminates strictly at its own closing delimiter.

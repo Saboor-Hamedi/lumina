@@ -226,13 +226,25 @@ const updateSetting = useSettingsStore((state) => state.updateSetting)
 ### UI Shell & Workspace Layout
 - `App.jsx` — Root component, global error handler, theme loader.
 - `AppShell.jsx` — Central orchestrator (3-pane layout, modals, tabs, sidebar state, resizing engine).
+- `ActivityBar.jsx` — Left activity bar with standardized 6-button stack (New Note, Daily Note, Graph, Canvas, AI Chat, Mail).
+- `ActivityBarMail.jsx` — Mail activity button with unread count badge, desktop notification triggering, and portal-rendered `EmailContainer`.
 - `TabBar.jsx` — Tabbed document navigation, 32px height, pinned tabs, graph view tab.
-- `StatusBar.jsx` — Bottom status bar with invisible horizontal scroll.
-- `Breadcrumbs.jsx` — Note breadcrumb path below TabBar.
+- `StatusBar.jsx` — Bottom status bar with responsive metrics and centered organic glowing Caps Lock indicator.
+- `CapsLock.tsx` — Hardware Caps Lock startup detection via PowerShell IPC query (`system:isCapsLockOn`) and ambient glowing accent blob light.
+- `Breadcrumbs.jsx` — Note breadcrumb path below TabBar with lateral drill-in navigation and outline dropdown.
 - `Sidebar.jsx` — Left sidebar shell.
 - `Sidebar.css` — Left sidebar styles.
 - `components/SidebarHeader.jsx` — New Note, Daily Note, Graph buttons — 32px aligned header.
 - `appshell.css` — App shell layout, sidebar transitions, resizer knob styles.
+
+### Core Utilities & Notification Engine
+- `core/notification/Notification.jsx` — Centralized toast notification renderer (`css/notification.css`).
+- `core/notification/hooks/useNotification.ts` — Fully-typed notification hook and event dispatcher (`showToast`, `showNotification`).
+- `core/notification/index.ts` — Unified public exports for the notification system.
+
+### Template Architecture
+- `features/template/hooks/defaultTemplates.ts` — Built-in templates definitions with TypeScript interfaces (`DefaultTemplate`).
+- `features/template/hooks/useTemplate.ts` — TypeScript hook managing custom and default note templates.
 
 ### Editor & Document Workspace
 - `Editor.jsx` — Markdown editor with live preview, syntax highlighting, callouts, checklists.
@@ -680,6 +692,37 @@ Sidebars previously shrank/compressed their content when dragged inward. The tar
 - **Isolated Crystal Web Audio Synthesizer (`emailSoundService.ts`)**:
   - Clean separation of concerns with a zero-asset programmatic 3-note crystal chime using Web Audio API (`AudioContext`, gain envelopes, sine oscillators).
 - **Desktop Notifications & Compact Rounded Badge**:
-  - Native OS notifications on new incoming emails with click-to-focus and background unread polling counter with compact round badge supporting numbers into millions.
+  - Native OS notifications on new incoming emails with click-to-open window focus, paired with a compact round badge supporting numbers into millions.
 
+### CC. ActivityBar Navigation Stack & Instant Canvas Creation (`ActivityBar.jsx`)
+- **Strict 6-Button Navigation Hierarchy**:
+  1. `+` New Note (`trigger-new-note`)
+  2. `Calendar` Daily Note (`DailyNotes.jsx`)
+  3. `Network` Knowledge Graph (`onToggleGraph`)
+  4. `LayoutDashboard` New Canvas (`trigger-new-canvas`)
+  5. `MessageSquare` Lumina AI Chat (`open-ai-chat` / `Ctrl + Shift + \`)
+  6. `Mail` Lumina Mail Client (`ActivityBarMail.jsx`)
+- **Clean Borderless Icons**: AI Chat and Lumina Mail action icons feature clean, unaccented visual weight matching the rest of the activity bar icons.
+- **Immediate Canvas Document Provisioning**: Clicking the Canvas button triggers `trigger-new-canvas`, instantly invoking `saveSnippet` to allocate an empty `.canvas` note and activating it in the workspace without modal round-trips.
 
+### DD. Draggable Email Modal & High-Priority Viewport Portaling (`ActivityBarMail.jsx`, `EmailContainer.tsx`, `EmailSidebar.tsx`)
+- **Root Body Portaling (`z-index: 100000`)**: `EmailContainer` is rendered directly into `document.body` using React's `createPortal`. This isolates the email modal from the AppShell layout tree, completely eliminating the bug where the left sidebar resizer overlaid and captured mouse clicks meant for the email window.
+- **Embedded WindowControls Drag Handle**: Rather than an intrusive, space-consuming top titlebar drag zone, `WindowControls.jsx` is seamlessly embedded into `EmailSidebar.tsx` immediately to the left of the `+ Compose` button.
+- **Free Floating Viewport Dragging**: Users can drag the email window anywhere across the screen. X and Y offsets are tracked via pointer capture and preserved across toggles in `localStorage` (`lumina_email_modal_pos_x`, `lumina_email_modal_pos_y`).
+- **Outside-Click Double-Toggle Prevention**: Clicking the ActivityBar mail button while the modal is open properly toggles it closed without racing against the backdrop's click dismissal listener.
+
+### EE. Hardware Caps Lock Startup & Focus State Detection (`index.js` & `CapsLock.tsx`)
+- **Problem**: Standard DOM `getModifierState('CapsLock')` only activates after a user physically presses a keyboard key inside the active window. On fresh application boot, the indicator remained dark even if Caps Lock was physically engaged on the keyboard.
+- **Native PowerShell Hardware Query**: In `src/main/index.js`, registered IPC handler `system:isCapsLockOn`. On Windows, it executes `powershell.exe -NoProfile -NonInteractive -Command [Console]::CapsLock` with `windowsHide: true` and 1000ms timeout, querying the physical BIOS/hardware keyboard state.
+- **Boot and Focus Invariants**: `CapsLock.tsx` queries `window.api.isCapsLockOn()` immediately upon component mount and re-queries whenever the Electron window regains focus (`window.addEventListener('focus')`). The ambient fluid accent blob immediately breathes whenever Caps Lock is engaged.
+
+### FF. Modular Notification Engine & Template System Refactoring
+- **Core Notification Migration (`src/renderer/src/core/notification/`)**:
+  - Replaced legacy `ToastNotification.jsx` with `Notification.jsx` and dedicated stylesheet `css/notification.css`.
+  - Converted toast hook to strict TypeScript: `hooks/useNotification.ts`, exporting typed helpers `useNotification` and backward-compatible `useToast`.
+  - Created public barrier module `src/renderer/src/core/notification/index.ts`.
+  - Aligned all consumer imports across `MainLayout.jsx`, `Editor.jsx`, `EditorMenu.jsx`, `SettingAdvanced.jsx`, `SettingMemory.jsx`, and `useSnippetData.js`.
+- **Template System TypeScript Migration (`src/renderer/src/features/template/`)**:
+  - Moved `defaultTemplates.js` into `features/template/hooks/defaultTemplates.ts` with strict `DefaultTemplate` TypeScript interfaces.
+  - Converted `useTemplate.js` into `features/template/hooks/useTemplate.ts`.
+  - Upgraded test harnesses (`Template.test.tsx`, `TemplateSidebar.test.tsx`, `DailyNotes.test.tsx`, `Notification.test.tsx`, `useNotification.test.ts`) to TypeScript with 100% test pass rate across all 102 test suites.

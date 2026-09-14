@@ -18,7 +18,7 @@ import RulerScrollbar from './RulerScrollbar'
 import Find from './components/Find'
 import { EditorCanvas } from './EditorCanvas'
 
-import { useToast } from '../../core/hooks/useToast'
+import { useToast } from '../../core/notification'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useVaultStore } from '../../core/store/workspaceStore'
 import { useZoom } from './hooks/useZoom'

@@ -15,7 +15,7 @@ import {
   FileText,
   Loader2
 } from 'lucide-react'
-import { useToast } from '../../../core/hooks/useToast'
+import { useToast } from '../../../core/notification'
 import ToastNotification from '../../../core/notification'
 import ToolTip from '../../../components/atoms/ToolTip'
 

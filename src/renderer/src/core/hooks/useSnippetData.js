@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useToast } from './useToast'
+import { useToast } from '../notification'
 
 export const useSnippetData = () => {
   const [snippets, setSnippets] = useState([])

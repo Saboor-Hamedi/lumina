@@ -188,21 +188,21 @@ const LUMINA_PICTURE_GUIDES = [
   },
   {
     id: 'mail',
-    tag: 'Mail',
-    title: 'Integrated Private Mail Client',
-    text: 'Manage email natively inside Lumina with Gmail synchronization and note attachments.',
-    barTitle: 'Lumina Mail - Inbox',
+    tag: 'Mail & Canvas',
+    title: 'Draggable Mail & Infinite Canvas',
+    text: 'Access Gmail in a fully draggable portal modal with WindowControls, and create visual infinite canvases instantly from the ActivityBar.',
+    barTitle: 'Lumina Mail & Canvas Studio',
     renderMockup: () => (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontWeight: 700, color: '#ffffff', fontSize: '9.5px' }}>Sarah Chen • Q4 Review Draft</span>
-          <span style={{ fontSize: '8.5px', color: 'var(--text-muted)' }}>10:14 AM</span>
+          <span style={{ fontWeight: 700, color: '#ffffff', fontSize: '9.5px' }}>Lumina Mail • Draggable Window</span>
+          <span style={{ fontSize: '8.5px', color: 'var(--text-accent)' }}>Portal z-100k</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
           <span style={{ fontSize: '8.5px', background: 'rgba(255,255,255,0.04)', padding: '1px 4px', borderRadius: '2px', color: 'var(--text-muted)' }}>
-            📎 Attached: Research.md
+            ✥ Drag Handle
           </span>
-          <span style={{ fontSize: '8.5px', color: '#22c55e', fontWeight: 600 }}>✔ Synchronized</span>
+          <span style={{ fontSize: '8.5px', color: '#22c55e', fontWeight: 600 }}>✔ .canvas Ready</span>
         </div>
       </div>
     )

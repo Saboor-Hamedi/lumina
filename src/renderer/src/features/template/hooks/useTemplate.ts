@@ -1,25 +1,59 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
-import { defaultTemplates } from '../../Navigation/components/defaultTemplates'
+import { defaultTemplates } from './defaultTemplates'
 
-export const BLANK_TEMPLATE = {
+export interface TemplateItem {
+  id: string
+  title: string
+  code: string
+  description?: string
+}
+
+export interface UseTemplateOptions {
+  templates?: Array<{
+    id?: string
+    title?: string
+    code?: string
+    description?: string
+  }>
+  onSelectTemplate?: (template: TemplateItem) => void
+  onClose?: () => void
+}
+
+export interface UseTemplateReturn {
+  searchQuery: string
+  setSearchQuery: (query: string) => void
+  selectedId: string
+  setSelectedId: (id: string) => void
+  allTemplates: TemplateItem[]
+  filteredTemplates: TemplateItem[]
+  selectedTemplate: TemplateItem
+  handleApply: (templateToApply?: TemplateItem) => void
+}
+
+export const BLANK_TEMPLATE: TemplateItem = {
   id: 'blank',
   title: 'Blank Note',
   code: '',
   description: 'Start with a completely empty note. No predefined structure.'
 }
 
-export function useTemplate({ templates: propTemplates, onSelectTemplate, onClose }) {
+export function useTemplate({
+  templates: propTemplates,
+  onSelectTemplate,
+  onClose
+}: UseTemplateOptions = {}): UseTemplateReturn {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedId, setSelectedId] = useState('blank')
 
   // Prepare all templates with blank note first
-  const allTemplates = useMemo(() => {
-    const list =
+  const allTemplates = useMemo<TemplateItem[]>(() => {
+    const list: TemplateItem[] =
       propTemplates && propTemplates.length > 0
         ? propTemplates.map((t, idx) => ({
             id: t.id || `template-${idx}`,
             title: (t.title || 'Untitled').replace(/\.md$/i, ''),
-            code: t.code || ''
+            code: t.code || '',
+            description: t.description
           }))
         : defaultTemplates.map((t, idx) => ({
             id: `template-${idx}`,
@@ -32,7 +66,7 @@ export function useTemplate({ templates: propTemplates, onSelectTemplate, onClos
   }, [propTemplates])
 
   // Filter templates by search query
-  const filteredTemplates = useMemo(() => {
+  const filteredTemplates = useMemo<TemplateItem[]>(() => {
     if (!searchQuery.trim()) return allTemplates
     const query = searchQuery.toLowerCase().trim()
     return allTemplates.filter(
@@ -43,7 +77,7 @@ export function useTemplate({ templates: propTemplates, onSelectTemplate, onClos
   }, [allTemplates, searchQuery])
 
   // Selected template object
-  const selectedTemplate = useMemo(() => {
+  const selectedTemplate = useMemo<TemplateItem>(() => {
     return (
       filteredTemplates.find((t) => t.id === selectedId) ||
       filteredTemplates[0] ||
@@ -59,7 +93,7 @@ export function useTemplate({ templates: propTemplates, onSelectTemplate, onClos
   }, [filteredTemplates, selectedId])
 
   const handleApply = useCallback(
-    (templateToApply) => {
+    (templateToApply?: TemplateItem) => {
       const target = templateToApply || selectedTemplate
       if (target && onSelectTemplate) {
         onSelectTemplate(target)

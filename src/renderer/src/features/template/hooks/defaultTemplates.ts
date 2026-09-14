@@ -1,4 +1,9 @@
-export const defaultTemplates = [
+export interface DefaultTemplate {
+  title: string
+  code: string
+}
+
+export const defaultTemplates: DefaultTemplate[] = [
   {
     title: 'Daily Log.md',
     code: `# 📅 Daily Log

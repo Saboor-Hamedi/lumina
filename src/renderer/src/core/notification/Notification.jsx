@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { CheckCircle2, XCircle, Info, X } from 'lucide-react'
-import './ToastNotification.css'
+import './css/notification.css'
 
-const ToastNotification = ({ toast, onClose }) => {
+const Notification = ({ toast, onClose }) => {
   const [isVisible, setIsVisible] = useState(false)
   const [isExiting, setIsExiting] = useState(false)
 
@@ -53,4 +53,5 @@ const ToastNotification = ({ toast, onClose }) => {
   )
 }
 
-export default ToastNotification
+export { Notification }
+export default Notification
