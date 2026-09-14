@@ -21,7 +21,7 @@
 
 import React, { useRef, useCallback, useEffect, useState, useMemo } from 'react'
 import { useCanvas } from './useCanvas'
-import { CanvasData, CanvasNode, CanvasEdge, CanvasEdgeSide } from './types'
+import { CanvasData, CanvasNode, CanvasEdge, CanvasEdgeSide, CanvasShapeType } from './types'
 import {
   COLOR_CYCLE,
   CANVAS_NODE_COLOR_HEX,
@@ -757,7 +757,29 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
       const rect = containerRef.current.getBoundingClientRect()
       const pt = screenToCanvas(e.clientX, e.clientY, rect)
 
-      // 1. Check if dropped from Lumina FileExplorer (HTML5 dataTransfer)
+      // 1. Check if dropped from ConvasShapes palette
+      const luminaShapeData = e.dataTransfer.getData('application/lumina-shape')
+      if (luminaShapeData) {
+        try {
+          const { shapeType, width = 140, height = 100 } = JSON.parse(luminaShapeData)
+          const newNode = addNode({
+            type: 'shape',
+            shape: shapeType,
+            title: '',
+            text: '',
+            x: Math.round(pt.x - width / 2),
+            y: Math.round(pt.y - height / 2),
+            width,
+            height,
+            color: 'default'
+          })
+          setEditingNodeId(newNode.id)
+          setEditingField('text')
+          return
+        } catch (err) {}
+      }
+
+      // 2. Check if dropped from Lumina FileExplorer (HTML5 dataTransfer)
       const luminaSnippetData = e.dataTransfer.getData('application/lumina-snippet')
       if (luminaSnippetData) {
         try {
@@ -885,6 +907,35 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
     setEditingNodeId(newNode.id)
     setEditingField('text')
   }, [screenToCanvas, addNode])
+
+  /**
+   * Adds a new diagramming shape centered in the visible viewport.
+   */
+  const handleAddShape = useCallback(
+    (shapeType: CanvasShapeType, width: number, height: number) => {
+      if (!containerRef.current) return
+      const rect = containerRef.current.getBoundingClientRect()
+      const center = screenToCanvas(
+        rect.left + rect.width / 2,
+        rect.top + rect.height / 2,
+        rect
+      )
+      const newNode = addNode({
+        type: 'shape',
+        shape: shapeType,
+        title: '',
+        text: '',
+        x: Math.round(center.x - width / 2),
+        y: Math.round(center.y - height / 2),
+        width,
+        height,
+        color: 'default'
+      })
+      setEditingNodeId(newNode.id)
+      setEditingField('text')
+    },
+    [screenToCanvas, addNode]
+  )
 
   /**
    * Cycles card colors on palette button click.
@@ -1068,6 +1119,7 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
         onResetViewport={resetViewport}
         onDeleteSelected={deleteSelected}
         canDelete={selectedNodeIds.length > 0}
+        onAddShape={handleAddShape}
       />
     </div>
   )

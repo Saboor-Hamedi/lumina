@@ -197,15 +197,22 @@ export function getDragBezierCurve(
  * Enforces valid coordinates, minimum dimensions, and safe fallback values.
  */
 export function normalizeNode(raw: Partial<CanvasNode> & { id?: string }): CanvasNode {
+  const isShape = raw.type === 'shape'
+  const minW = isShape ? 60 : 150
+  const minH = isShape ? 40 : 80
+  const defW = isShape ? 140 : 240
+  const defH = isShape ? 100 : 150
+
   return {
     id: raw.id || `node-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     type: raw.type || 'text',
+    shape: raw.shape,
     title: raw.title || '',
     text: raw.text || '',
     x: Math.round(safeNumber(raw.x, 0)),
     y: Math.round(safeNumber(raw.y, 0)),
-    width: Math.max(Math.round(safeNumber(raw.width, 240)), 150),
-    height: Math.max(Math.round(safeNumber(raw.height, 150)), 80),
+    width: Math.max(Math.round(safeNumber(raw.width, defW)), minW),
+    height: Math.max(Math.round(safeNumber(raw.height, defH)), minH),
     color: raw.color || 'default',
     url: raw.url,
     file: raw.file

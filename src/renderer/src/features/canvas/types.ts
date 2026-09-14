@@ -7,7 +7,20 @@
  * ============================================================================
  */
 
-export type CanvasNodeType = 'note' | 'text' | 'file' | 'link' | 'group' | 'image' | 'pdf'
+export type CanvasNodeType = 'note' | 'text' | 'file' | 'link' | 'group' | 'image' | 'pdf' | 'shape'
+
+export type CanvasShapeType =
+  | 'rectangle'
+  | 'rounded-rectangle'
+  | 'circle'
+  | 'diamond'
+  | 'triangle'
+  | 'hexagon'
+  | 'cylinder'
+  | 'cloud'
+  | 'star'
+  | 'parallelogram'
+  | 'speech-bubble'
 
 export type CanvasNodeColor =
   | 'default'
@@ -21,6 +34,7 @@ export type CanvasNodeColor =
 export interface CanvasNode {
   id: string
   type: CanvasNodeType
+  shape?: CanvasShapeType
   x: number
   y: number
   width: number

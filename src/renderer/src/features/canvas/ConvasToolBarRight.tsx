@@ -14,9 +14,11 @@
  * ============================================================================
  */
 
-import React from 'react'
-import { ZoomIn, ZoomOut, RotateCcw, Trash2 } from 'lucide-react'
+import React, { useState } from 'react'
+import { ZoomIn, ZoomOut, RotateCcw, Trash2, Shapes } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
+import { ConvasShapes } from './ConvasShapes'
+import { CanvasShapeType } from './types'
 
 export interface ConvasToolBarRightProps {
   zoom: number
@@ -25,6 +27,7 @@ export interface ConvasToolBarRightProps {
   onResetViewport: () => void
   onDeleteSelected: () => void
   canDelete: boolean
+  onAddShape?: (shapeType: CanvasShapeType, width: number, height: number) => void
 }
 
 export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
@@ -34,10 +37,41 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
     onZoomOut,
     onResetViewport,
     onDeleteSelected,
-    canDelete
+    canDelete,
+    onAddShape
   }) => {
+    const [isShapesOpen, setIsShapesOpen] = useState(false)
+
     return (
       <div className="lumina-canvas-toolbar lumina-canvas-toolbar-right">
+        {/* Shapes Menu Tool */}
+        {onAddShape && (
+          <>
+            <ToolTip text="Shapes & Diagrams" position="left">
+              <button
+                className={`lumina-canvas-tool-btn ${isShapesOpen ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIsShapesOpen((prev) => !prev)
+                }}
+                aria-label="Shapes & Diagrams"
+              >
+                <Shapes size={13} />
+              </button>
+            </ToolTip>
+
+            <ConvasShapes
+              isOpen={isShapesOpen}
+              onClose={() => setIsShapesOpen(false)}
+              onSelectShape={(shapeType, w, h) => {
+                onAddShape(shapeType, w, h)
+              }}
+            />
+
+            <div className="lumina-canvas-divider horizontal" />
+          </>
+        )}
+
         {/* Delete Selected Tool */}
         <ToolTip text="Delete Selected (Del)" position="left">
           <button

@@ -20,6 +20,7 @@ import { ExternalLink, Palette, X, FileText } from 'lucide-react'
 import { CanvasNode, CanvasEdgeSide } from './types'
 import { stripFrontmatter } from './canvasUtils'
 import { CanvasImagePreview } from './CanvasImagePreview'
+import { renderShapeSVG } from './ConvasShapes'
 import { useVaultStore } from '../../core/store/workspaceStore'
 import ToolTip from '../../components/atoms/ToolTip'
 
@@ -81,7 +82,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
     return (
       <div
         data-node-id={node.id}
-        className={`lumina-canvas-node ${nodeColorClass} ${isSelected ? 'selected' : ''}`}
+        className={`lumina-canvas-node ${nodeColorClass} ${node.type === 'shape' ? 'is-shape' : ''} ${isSelected ? 'selected' : ''}`}
         style={{
           left: `${node.x}px`,
           top: `${node.y}px`,
@@ -124,153 +125,236 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
           onClick={(e) => onPortMouseDown(e, node.id, 'left')}
         />
 
-        {/* Card Header */}
-        <div className="lumina-canvas-node-header">
-          {isEditing && editingField === 'title' ? (
-            <input
-              autoFocus
-              dir="auto"
-              className="lumina-canvas-title-input"
-              defaultValue={node.title || ''}
-              onBlur={(e) => {
-                onUpdateTitle(node.id, e.target.value.trim() || 'Untitled')
-                onStopEditing()
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  onUpdateTitle(node.id, e.currentTarget.value.trim() || 'Untitled')
-                  onStopEditing()
-                }
-                if (e.key === 'Escape') onStopEditing()
-              }}
-            />
-          ) : (
-            <span
-              className="lumina-canvas-node-title"
-              dir="auto"
-              onDoubleClick={(e) => {
-                e.stopPropagation()
-                onStartEditing(node.id, 'title')
-              }}
-              title="Double-click to edit title"
+        {/* Shape Mode: Vector Graphic Background & Centered Content */}
+        {node.type === 'shape' ? (
+          <>
+            <svg
+              className="lumina-canvas-shape-svg"
+              viewBox="0 0 100 100"
+              width="100%"
+              height="100%"
+              preserveAspectRatio="none"
             >
-              {node.type === 'pdf' && (
-                <span className="lumina-canvas-pdf-badge" style={{ marginRight: 6 }}>
-                  PDF
-                </span>
+              {renderShapeSVG(
+                node.shape || 'rectangle',
+                'var(--node-accent, var(--text-accent, #38bdf8))',
+                'var(--node-accent, var(--text-accent, #38bdf8))',
+                0.12,
+                isSelected ? 2 : 1.5
               )}
-              {node.title ||
-                (node.type === 'image'
-                  ? 'Image'
-                  : node.type === 'pdf'
-                    ? 'PDF Document'
-                    : 'Note Card')}
-            </span>
-          )}
+            </svg>
 
-          <div className="lumina-canvas-node-actions">
-            {/* Open note/image/pdf in workspace tab */}
-            {node.file && (
-              <ToolTip text="Open in Tab" position="top">
+            {/* Shape Floating Actions (Cycle Color & Delete) */}
+            <div className="lumina-canvas-shape-actions">
+              <ToolTip text="Change Color" position="top">
                 <button
                   className="lumina-canvas-action-btn"
                   onClick={(e) => {
                     e.stopPropagation()
-                    useVaultStore.getState().setActiveTabId(node.file!)
+                    onCycleColor(node.id)
                   }}
                 >
-                  <ExternalLink size={12} />
+                  <Palette size={12} />
                 </button>
               </ToolTip>
-            )}
 
-            <ToolTip text="Change Color" position="top">
-              <button
-                className="lumina-canvas-action-btn"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onCycleColor(node.id)
-                }}
-              >
-                <Palette size={12} />
-              </button>
-            </ToolTip>
+              <ToolTip text="Delete Shape" position="top">
+                <button
+                  className="lumina-canvas-action-btn delete"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onDeleteNode(node.id)
+                  }}
+                >
+                  <X size={12} />
+                </button>
+              </ToolTip>
+            </div>
 
-            <ToolTip text="Delete Node" position="top">
-              <button
-                className="lumina-canvas-action-btn delete"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onDeleteNode(node.id)
-                }}
-              >
-                <X size={12} />
-              </button>
-            </ToolTip>
-          </div>
-        </div>
-
-        {/* Card Body: PDF, Image, or Markdown Preview */}
-        {node.type === 'pdf' ? (
-          <div
-            className="lumina-canvas-pdf-preview"
-            onWheel={(e) => e.stopPropagation()}
-          >
-            <FileText size={32} color="#ef4444" />
-            {node.file ? (
-              <button
-                className="lumina-canvas-pdf-open-btn"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  useVaultStore.getState().setActiveTabId(node.file!)
-                }}
-              >
-                <ExternalLink size={13} />
-                Open PDF Tab
-              </button>
-            ) : (
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                {node.title}
-              </span>
-            )}
-          </div>
-        ) : node.type === 'image' ? (
-          <CanvasImagePreview
-            url={node.url}
-            relativePath={node.text || node.file}
-            title={node.title}
-          />
-        ) : (
-          <div
-            className="lumina-canvas-node-body"
-            onWheel={(e) => e.stopPropagation()}
-            onDoubleClick={(e) => {
-              e.stopPropagation()
-              onStartEditing(node.id, 'text')
-            }}
-          >
-            {isEditing && editingField === 'text' ? (
-              <textarea
-                autoFocus
-                dir="auto"
-                className="lumina-canvas-text-area"
-                defaultValue={node.text || ''}
-                onBlur={(e) => {
-                  onUpdateText(node.id, e.target.value)
-                  onStopEditing()
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-                    onUpdateText(node.id, e.currentTarget.value)
+            {/* Shape Centered Text */}
+            <div
+              className="lumina-canvas-shape-content"
+              onDoubleClick={(e) => {
+                e.stopPropagation()
+                onStartEditing(node.id, 'text')
+              }}
+            >
+              {isEditing && editingField === 'text' ? (
+                <textarea
+                  autoFocus
+                  dir="auto"
+                  className="lumina-canvas-shape-input"
+                  defaultValue={node.text || ''}
+                  onBlur={(e) => {
+                    onUpdateText(node.id, e.target.value)
                     onStopEditing()
-                  }
-                  if (e.key === 'Escape') onStopEditing()
-                }}
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                      onUpdateText(node.id, e.currentTarget.value)
+                      onStopEditing()
+                    }
+                    if (e.key === 'Escape') onStopEditing()
+                  }}
+                />
+              ) : (
+                <span className="lumina-canvas-shape-text" dir="auto">
+                  {node.text || <span className="placeholder">Double-click to type</span>}
+                </span>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Card Header */}
+            <div className="lumina-canvas-node-header">
+              {isEditing && editingField === 'title' ? (
+                <input
+                  autoFocus
+                  dir="auto"
+                  className="lumina-canvas-title-input"
+                  defaultValue={node.title || ''}
+                  onBlur={(e) => {
+                    onUpdateTitle(node.id, e.target.value.trim() || 'Untitled')
+                    onStopEditing()
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      onUpdateTitle(node.id, e.currentTarget.value.trim() || 'Untitled')
+                      onStopEditing()
+                    }
+                    if (e.key === 'Escape') onStopEditing()
+                  }}
+                />
+              ) : (
+                <span
+                  className="lumina-canvas-node-title"
+                  dir="auto"
+                  onDoubleClick={(e) => {
+                    e.stopPropagation()
+                    onStartEditing(node.id, 'title')
+                  }}
+                  title="Double-click to edit title"
+                >
+                  {node.type === 'pdf' && (
+                    <span className="lumina-canvas-pdf-badge" style={{ marginRight: 6 }}>
+                      PDF
+                    </span>
+                  )}
+                  {node.title ||
+                    (node.type === 'image'
+                      ? 'Image'
+                      : node.type === 'pdf'
+                        ? 'PDF Document'
+                        : 'Note Card')}
+                </span>
+              )}
+
+              <div className="lumina-canvas-node-actions">
+                {/* Open note/image/pdf in workspace tab */}
+                {node.file && (
+                  <ToolTip text="Open in Tab" position="top">
+                    <button
+                      className="lumina-canvas-action-btn"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        useVaultStore.getState().setActiveTabId(node.file!)
+                      }}
+                    >
+                      <ExternalLink size={12} />
+                    </button>
+                  </ToolTip>
+                )}
+
+                <ToolTip text="Change Color" position="top">
+                  <button
+                    className="lumina-canvas-action-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onCycleColor(node.id)
+                    }}
+                  >
+                    <Palette size={12} />
+                  </button>
+                </ToolTip>
+
+                <ToolTip text="Delete Node" position="top">
+                  <button
+                    className="lumina-canvas-action-btn delete"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onDeleteNode(node.id)
+                    }}
+                  >
+                    <X size={12} />
+                  </button>
+                </ToolTip>
+              </div>
+            </div>
+
+            {/* Card Body: PDF, Image, or Markdown Preview */}
+            {node.type === 'pdf' ? (
+              <div
+                className="lumina-canvas-pdf-preview"
+                onWheel={(e) => e.stopPropagation()}
+              >
+                <FileText size={32} color="#ef4444" />
+                {node.file ? (
+                  <button
+                    className="lumina-canvas-pdf-open-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      useVaultStore.getState().setActiveTabId(node.file!)
+                    }}
+                  >
+                    <ExternalLink size={13} />
+                    Open PDF Tab
+                  </button>
+                ) : (
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    {node.title}
+                  </span>
+                )}
+              </div>
+            ) : node.type === 'image' ? (
+              <CanvasImagePreview
+                url={node.url}
+                relativePath={node.text || node.file}
+                title={node.title}
               />
             ) : (
-              <MemoizedMarkdownPreview text={node.text || ''} />
+              <div
+                className="lumina-canvas-node-body"
+                onWheel={(e) => e.stopPropagation()}
+                onDoubleClick={(e) => {
+                  e.stopPropagation()
+                  onStartEditing(node.id, 'text')
+                }}
+              >
+                {isEditing && editingField === 'text' ? (
+                  <textarea
+                    autoFocus
+                    dir="auto"
+                    className="lumina-canvas-text-area"
+                    defaultValue={node.text || ''}
+                    onBlur={(e) => {
+                      onUpdateText(node.id, e.target.value)
+                      onStopEditing()
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                        onUpdateText(node.id, e.currentTarget.value)
+                        onStopEditing()
+                      }
+                      if (e.key === 'Escape') onStopEditing()
+                    }}
+                  />
+                ) : (
+                  <MemoizedMarkdownPreview text={node.text || ''} />
+                )}
+              </div>
             )}
-          </div>
+          </>
         )}
 
         {/* Bottom-right Corner Resize Handle */}
