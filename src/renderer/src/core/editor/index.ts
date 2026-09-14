@@ -8,7 +8,7 @@ export * from './types'
 
 // Navigation & Editing Helpers
 export * from './ArrowNavigation'
-export * from './useCodeFence'
+export * from '../code/CodeFence'
 export * from './useList'
 export * from './useMark'
 export * from './useQuote'

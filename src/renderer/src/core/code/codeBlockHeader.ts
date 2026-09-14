@@ -1,12 +1,26 @@
+/**
+ * =========================================================================================
+ * Code Block Header Widget & Extensions (`codeBlockHeader.ts`)
+ * =========================================================================================
+ *
+ * Purpose:
+ * Renders the top control header above markdown fenced code blocks:
+ * - Language badge
+ * - 1-click copy markdown code syntax
+ * - 1-click export code as image (with active theme support)
+ * - Custom syntax highlighting rules for Lumina
+ * =========================================================================================
+ */
+
 import { HighlightStyle, syntaxHighlighting, syntaxTree } from '@codemirror/language'
-import { RangeSetBuilder, StateField } from '@codemirror/state'
+import { RangeSetBuilder, StateField, type EditorState, type Extension } from '@codemirror/state'
 import { Decoration, EditorView, WidgetType } from '@codemirror/view'
 import { tags as t } from '@lezer/highlight'
 import React from 'react'
-import { createRoot } from 'react-dom/client'
+import { createRoot, type Root } from 'react-dom/client'
 import ToolTip from '../../components/atoms/ToolTip'
 import { copyCodeAsImage } from './copyCodeAsImage'
-import './codeWrapper.css'
+import '../../assets/codeWrapper.css'
 
 export { copyCodeAsImage } from './copyCodeAsImage'
 
@@ -26,15 +40,15 @@ export const luminaSyntaxHighlighting = syntaxHighlighting(
   ])
 )
 
-export const codeMap = new Map()
+export const codeMap = new Map<string, string>()
 
-function extractCode(state, from, to) {
+function extractCode(state: EditorState, from: number, to: number): string {
   const raw = state.sliceDoc(from, to)
   const lines = raw.split('\n')
   const firstLine = lines[0] || ''
   const fenceMatch = firstLine.match(/^(`{3,}|~{3,})\s*(\S+)?/)
   const fenceLen = fenceMatch ? fenceMatch[1].length : 3
-  let codeLines = []
+  const codeLines: string[] = []
   for (let i = 1; i < lines.length; i++) {
     const trimmed = lines[i].trimEnd()
     if (trimmed === '~'.repeat(fenceLen) || trimmed === '`'.repeat(fenceLen)) break
@@ -43,47 +57,35 @@ function extractCode(state, from, to) {
   return codeLines.join('\n')
 }
 
-class CodeBlockHeaderWidget extends WidgetType {
-  constructor(lang) {
+export class CodeBlockHeaderWidget extends WidgetType {
+  lang: string
+
+  constructor(lang?: string) {
     super()
     this.lang = (lang || 'CODE').toUpperCase()
   }
 
-  get estimatedHeight() {
+  get estimatedHeight(): number {
     return 30
   }
 
-  eq(other) {
+  eq(other: CodeBlockHeaderWidget): boolean {
     return other.lang === this.lang
   }
 
-  toDOM(view) {
-    const wrap = document.createElement('div')
-    wrap.className = 'mermaid-widget-header code-block-widget-header'
+  toDOM(view: EditorView): HTMLElement {
+    const wrap = document.createElement('div') as HTMLElement & { _reactRoot?: Root | null }
+    wrap.className = 'code-block-widget-header'
     wrap.setAttribute('contenteditable', 'false')
 
-    // Clicking the header or language badge jumps cursor directly after opening backticks (```|) to edit language
-    wrap.addEventListener('click', (e) => {
-      if (view.state.readOnly) return
-      if (e.target.closest('.mermaid-edit-btn')) return
-
+    wrap.addEventListener('mousedown', (e) => {
+      if ((e.target as HTMLElement | null)?.closest('.mermaid-edit-btn')) return
       const pos = view.posAtDOM(wrap)
       if (pos !== null) {
-        const tree = syntaxTree(view.state)
-        const node = tree.resolveInner(pos, 1)
-        let fenced = node
-        while (fenced && fenced.type.name !== 'FencedCode') {
-          fenced = fenced.parent
-        }
-        const from = fenced ? fenced.from : pos
-        const firstLine = view.state
-          .sliceDoc(from, Math.min(from + 50, view.state.doc.length))
-          .split('\n')[0]
-        const fenceMatch = firstLine.match(/^(`{3,}|~{3,})/)
-        const fenceLen = fenceMatch ? fenceMatch[1].length : 3
-        const targetPos = from + fenceLen
-
-        view.dispatch({ selection: { anchor: targetPos }, scrollIntoView: true })
+        view.dispatch({
+          selection: { anchor: pos },
+          scrollIntoView: true
+        })
         view.focus()
       }
     })
@@ -91,10 +93,28 @@ class CodeBlockHeaderWidget extends WidgetType {
     const langLabel = document.createElement('span')
     langLabel.className = 'mermaid-widget-lang-label'
     langLabel.textContent = this.lang
-    langLabel.title = 'Click to change language'
+    langLabel.setAttribute('contenteditable', 'false')
+
+    langLabel.addEventListener('mousedown', (e) => {
+      e.stopPropagation()
+      const pos = view.posAtDOM(wrap)
+      if (pos !== null) {
+        const line = view.state.doc.lineAt(pos)
+        const match = line.text.match(/^(`{3,}|~{3,})/)
+        if (match) {
+          const langStart = line.from + match[1].length
+          const langEnd = line.to
+          view.dispatch({
+            selection: { anchor: langStart, head: langEnd },
+            scrollIntoView: true
+          })
+          view.focus()
+        }
+      }
+    })
+
     wrap.appendChild(langLabel)
 
-    // Action Buttons Container (Exact match to Mermaid actions)
     const actionsWrap = document.createElement('div')
     actionsWrap.style.display = 'flex'
     actionsWrap.style.alignItems = 'center'
@@ -107,13 +127,13 @@ class CodeBlockHeaderWidget extends WidgetType {
       const [copiedImage, setCopiedImage] = React.useState(false)
       const [copiedSyntax, setCopiedSyntax] = React.useState(false)
 
-      const getCodeSnippet = () => {
+      const getCodeSnippet = (): string => {
         const pos = view.posAtDOM(wrap)
         if (pos !== null) {
           const tree = syntaxTree(view.state)
           const node = tree.resolveInner(pos, 1)
-          let fenced = node
-          while (fenced && fenced.type.name !== 'FencedCode') {
+          let fenced: any = node
+          while (fenced && fenced.type?.name !== 'FencedCode' && fenced.name !== 'FencedCode') {
             fenced = fenced.parent
           }
           if (fenced) {
@@ -123,7 +143,7 @@ class CodeBlockHeaderWidget extends WidgetType {
         return ''
       }
 
-      const handleCopyImage = async (e) => {
+      const handleCopyImage = async (e: React.MouseEvent) => {
         e.preventDefault()
         e.stopPropagation()
         try {
@@ -131,12 +151,22 @@ class CodeBlockHeaderWidget extends WidgetType {
           await copyCodeAsImage(code, this.lang)
           setCopiedImage(true)
           setTimeout(() => setCopiedImage(false), 1500)
+          window.dispatchEvent(
+            new CustomEvent('show-toast', {
+              detail: { message: 'Code snippet copied as image', type: 'success' }
+            })
+          )
         } catch (err) {
           console.error('Failed to copy code as image', err)
+          window.dispatchEvent(
+            new CustomEvent('show-toast', {
+              detail: { message: 'Failed to copy code as image', type: 'error' }
+            })
+          )
         }
       }
 
-      const handleCopySyntax = async (e) => {
+      const handleCopySyntax = async (e: React.MouseEvent) => {
         e.preventDefault()
         e.stopPropagation()
         try {
@@ -144,12 +174,16 @@ class CodeBlockHeaderWidget extends WidgetType {
           await navigator.clipboard.writeText(code)
           setCopiedSyntax(true)
           setTimeout(() => setCopiedSyntax(false), 1500)
+          window.dispatchEvent(
+            new CustomEvent('show-toast', {
+              detail: { message: 'Code copied to clipboard', type: 'success' }
+            })
+          )
         } catch (err) {
           console.error('Failed to copy syntax', err)
         }
       }
 
-      // Exact icons from Mermaid
       const copyIcon = React.createElement(
         'svg',
         {
@@ -257,29 +291,32 @@ class CodeBlockHeaderWidget extends WidgetType {
     return wrap
   }
 
-  destroy(dom) {
+  destroy(dom: HTMLElement & { _reactRoot?: Root | null }): void {
     if (dom._reactRoot) {
-      setTimeout(() => dom._reactRoot.unmount(), 0)
+      setTimeout(() => dom._reactRoot?.unmount(), 0)
     }
   }
 }
 
-let currentHoveredHeader = null
+let currentHoveredHeader: HTMLElement | null = null
 
 const codeBlockHoverHandler = EditorView.domEventHandlers({
-  mousemove(e) {
-    const line = e.target.closest('.cm-line.cm-atomic-fenced-code')
-    let header = null
+  mousemove(e: MouseEvent) {
+    const target = e.target as HTMLElement | null
+    if (!target) return
+
+    const line = target.closest('.cm-line.cm-atomic-fenced-code')
+    let header: HTMLElement | null = null
     if (line) {
-      let prev = line.previousElementSibling
+      let prev = line.previousElementSibling as HTMLElement | null
       while (prev && prev.classList.contains('cm-line')) {
-        prev = prev.previousElementSibling
+        prev = prev.previousElementSibling as HTMLElement | null
       }
       if (prev && prev.classList.contains('code-block-widget-header')) {
         header = prev
       }
     } else {
-      const h = e.target.closest('.code-block-widget-header')
+      const h = target.closest('.code-block-widget-header') as HTMLElement | null
       if (h) header = h
     }
     if (currentHoveredHeader !== header) {
@@ -296,8 +333,8 @@ const codeBlockHoverHandler = EditorView.domEventHandlers({
   }
 })
 
-function buildDecorations(state) {
-  const builder = new RangeSetBuilder()
+function buildDecorations(state: EditorState) {
+  const builder = new RangeSetBuilder<Decoration>()
   const tree = syntaxTree(state)
 
   tree.iterate({
@@ -334,7 +371,7 @@ function buildDecorations(state) {
   return builder.finish()
 }
 
-export const codeBlockDecorations = StateField.define({
+export const codeBlockDecorations: Extension = StateField.define({
   create(state) {
     return buildDecorations(state)
   },
@@ -344,3 +381,5 @@ export const codeBlockDecorations = StateField.define({
   },
   provide: (f) => [EditorView.decorations.from(f), codeBlockHoverHandler]
 })
+
+export default codeBlockDecorations

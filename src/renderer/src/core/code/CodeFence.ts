@@ -1,3 +1,19 @@
+/**
+ * =========================================================================================
+ * Code Fence Enter Handler (`CodeFence.ts`)
+ * =========================================================================================
+ *
+ * Purpose:
+ * Custom keyboard handler for fenced code blocks (` ``` `):
+ * 1. Auto-closes unclosed code fences:
+ *    When typing ```lang and pressing Enter at the end of the line, automatically inserts
+ *    the closing fence (```) below and positions the cursor inside the block.
+ * 2. Auto-expands single-line code blocks:
+ *    Expands single-line markdown blocks like ````js console.log('hello')``` ` into a proper
+ *    multi-line fenced block upon Enter key press.
+ * =========================================================================================
+ */
+
 import type { EditorView } from '@codemirror/view'
 
 /**
@@ -6,7 +22,7 @@ import type { EditorView } from '@codemirror/view'
  * 2. Auto-expands single-line code blocks: ```console.log('hi')``` + Enter -> expands to multi-line code block.
  * Returns true if handled, false otherwise.
  */
-export function handleCodeFenceEnter(view: EditorView): boolean {
+export function handleCodeFenceEnter(view: EditorView | null | undefined): boolean {
   if (!view || !view.state) return false
 
   const state = view.state
@@ -28,7 +44,8 @@ export function handleCodeFenceEnter(view: EditorView): boolean {
     if (!isClosed) {
       view.dispatch({
         changes: { from: line.to, insert: '\n\n```' },
-        selection: { anchor: line.to + 1 }
+        selection: { anchor: line.to + 1 },
+        scrollIntoView: true
       })
       return true
     }
@@ -87,10 +104,13 @@ export function handleCodeFenceEnter(view: EditorView): boolean {
         to: line.to,
         insert: insertText
       },
-      selection: { anchor: newCursorPos }
+      selection: { anchor: newCursorPos },
+      scrollIntoView: true
     })
     return true
   }
 
   return false
 }
+
+export default handleCodeFenceEnter

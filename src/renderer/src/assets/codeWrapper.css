@@ -1,12 +1,13 @@
 /*
   CODE BLOCK GEOMETRY — Exact match to Mermaid Code Wrapper
+  Themed dynamically with theme custom properties for flawless light & dark support.
 */
 
 .code-block-widget-header {
   margin: 0 !important;
   width: 100% !important;
   height: 30px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-card, rgba(255, 255, 255, 0.02));
   border: 1px solid var(--border-dim);
   border-radius: 2px 2px 0 0;
   display: flex;
@@ -59,8 +60,8 @@
 
 .code-block-widget-header .mermaid-edit-btn:hover {
   color: var(--text-accent, #40bafa);
-  background: rgba(255, 255, 255, 0.08);
-  border-color: var(--border-dim, rgba(255, 255, 255, 0.1));
+  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  border-color: var(--border-subtle, rgba(255, 255, 255, 0.1));
 }
 
 .cm-line.cm-atomic-fenced-code {
@@ -71,7 +72,7 @@
   display: block !important;
   padding: 2px 10px !important;
   line-height: 1.6 !important;
-  background: rgba(0, 0, 0, 0.15) !important;
+  background: var(--bg-panel, rgba(0, 0, 0, 0.15)) !important;
   box-shadow: none !important;
   font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', monospace) !important;
   font-variant-ligatures: normal !important;
@@ -86,8 +87,8 @@
 }
 
 .cm-line.cm-atomic-fenced-code.cm-activeLine {
-  background: rgba(0, 0, 0, 0.15) !important;
-  background-color: rgba(0, 0, 0, 0.15) !important;
+  background: var(--bg-panel, rgba(0, 0, 0, 0.15)) !important;
+  background-color: var(--bg-panel, rgba(0, 0, 0, 0.15)) !important;
   box-shadow: none !important;
   outline: none !important;
 }
@@ -127,7 +128,7 @@ html[data-use-active-line-border="true"] .cm-line.cm-atomic-fenced-code {
   margin-bottom: 0 !important;
   border-left: 1px solid var(--border-dim) !important;
   border-right: 1px solid var(--border-dim) !important;
-  background: rgba(0, 0, 0, 0.15) !important;
+  background: var(--bg-panel, rgba(0, 0, 0, 0.15)) !important;
   font-size: 13px !important;
   color: var(--text-faint, #666) !important;
   padding: 2px 10px !important;
@@ -136,8 +137,8 @@ html[data-use-active-line-border="true"] .cm-line.cm-atomic-fenced-code {
 /* When active, highlight the closing fence text while maintaining consistent background */
 .cm-line.cm-atomic-fenced-code:has(+ :not(.cm-atomic-fenced-code)).cm-activeLine,
 .cm-line.cm-atomic-fenced-code:last-child.cm-activeLine {
-  background: rgba(0, 0, 0, 0.15) !important;
-  background-color: rgba(0, 0, 0, 0.15) !important;
+  background: var(--bg-panel, rgba(0, 0, 0, 0.15)) !important;
+  background-color: var(--bg-panel, rgba(0, 0, 0, 0.15)) !important;
   box-shadow: none !important;
   color: var(--text-muted, #999) !important;
 }
@@ -184,44 +185,44 @@ html[data-use-active-line-border="true"] .cm-line.cm-atomic-fenced-code {
   color: #d4d4d4 !important;
 }
 
-/* Light theme support with #f7f7f7 */
+/* Light theme support: reads theme variables when light or minimal */
 [data-theme='light'] .code-block-widget-header {
-  background: #f7f7f7 !important;
-  border-color: #e5e7eb !important;
+  background: var(--bg-card, #f7f7f7) !important;
+  border-color: var(--border-dim, #e5e7eb) !important;
 }
 
 [data-theme='light'] .code-block-widget-header .mermaid-widget-lang-label {
-  color: #64748b !important;
+  color: var(--text-muted, #64748b) !important;
 }
 
 [data-theme='light'] .code-block-widget-header .mermaid-edit-btn:hover {
-  background: rgba(0, 0, 0, 0.06) !important;
+  background: var(--bg-active, rgba(0, 0, 0, 0.06)) !important;
 }
 
 [data-theme='light'] .cm-line.cm-atomic-fenced-code {
-  background: #f7f7f7 !important;
-  color: #1e293b !important;
-  border-color: #e5e7eb !important;
+  background: var(--bg-panel, #f7f7f7) !important;
+  color: var(--text-main, #1e293b) !important;
+  border-color: var(--border-dim, #e5e7eb) !important;
 }
 
 [data-theme='light'] .cm-line.cm-atomic-fenced-code.cm-activeLine {
-  background: #f7f7f7 !important;
-  background-color: #f7f7f7 !important;
+  background: var(--bg-panel, #f7f7f7) !important;
+  background-color: var(--bg-panel, #f7f7f7) !important;
   box-shadow: none !important;
   outline: none !important;
 }
 
 [data-theme='light'] .cm-line.cm-atomic-fenced-code:has(+ :not(.cm-atomic-fenced-code)),
 [data-theme='light'] .cm-line.cm-atomic-fenced-code:last-child {
-  background: #f7f7f7 !important;
-  border-color: #e5e7eb !important;
-  color: #94a3b8 !important;
+  background: var(--bg-panel, #f7f7f7) !important;
+  border-color: var(--border-dim, #e5e7eb) !important;
+  color: var(--text-faint, #94a3b8) !important;
 }
 
 [data-theme='light'] .cm-line.cm-atomic-fenced-code:has(+ :not(.cm-atomic-fenced-code)).cm-activeLine,
 [data-theme='light'] .cm-line.cm-atomic-fenced-code:last-child.cm-activeLine {
-  background: #f7f7f7 !important;
-  background-color: #f7f7f7 !important;
+  background: var(--bg-panel, #f7f7f7) !important;
+  background-color: var(--bg-panel, #f7f7f7) !important;
   box-shadow: none !important;
 }
 

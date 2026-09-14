@@ -3,7 +3,7 @@ import { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { handleCodeFenceEnter } from '../../../../../../src/renderer/src/core/code'
 
-function createTestView(docText, cursorPos = 0) {
+function createTestView(docText: string, cursorPos = 0): EditorView {
   const state = EditorState.create({
     doc: docText,
     selection: { anchor: cursorPos }
@@ -11,7 +11,7 @@ function createTestView(docText, cursorPos = 0) {
   return new EditorView({ state })
 }
 
-describe('useCodeFence.js', () => {
+describe('useCodeFence.ts', () => {
   describe('handleCodeFenceEnter', () => {
     it('auto-closes an unclosed code block on Enter', () => {
       const text = '```javascript'

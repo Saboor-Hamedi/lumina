@@ -9,6 +9,7 @@ import {
   FolderOpen,
   Image as ImageIcon
 } from 'lucide-react'
+// Hooks & styles
 import { copyImageToClipboard } from './hooks/imageClipboard'
 import './css/imageViewTab.css'
 

@@ -13,8 +13,10 @@ import { insertNewlineContinueMarkup } from '@codemirror/lang-markdown'
 
 import {
   codeBlockDecorations,
-  luminaSyntaxHighlighting
-} from '../../features/codeBlock/codeBlockHeader'
+  luminaSyntaxHighlighting,
+  handleCodeFenceEnter
+} from '../code'
+// Media extensions
 import { imageDropExtension, imageWidgetExtension } from '../../features/media'
 import { htmlWidgetExtension } from '../../features/Editor/extensions/htmlExtension'
 import { katexExtension } from '../../features/Editor/extensions/katexExtension'
@@ -27,7 +29,6 @@ import { emptyLineSelectionFix } from './useEmptyLine'
 import { handleTaskEnter, taskMarkKeymap } from './useMark'
 import { handleQuoteEnter } from './useQuote'
 import { handleListEnter, isListLine } from './useList'
-import { handleCodeFenceEnter } from './useCodeFence'
 import { handleArrowUp, handleArrowDown } from './ArrowNavigation'
 import { useWikilinkCompletion } from '../../features/Editor/wikilink/useWikilinkCompletion'
 import { createEditorSlashPlugin } from '../../features/slash'

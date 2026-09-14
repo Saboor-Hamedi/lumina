@@ -4,6 +4,7 @@ import { EditorState, Prec } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { languages } from '@codemirror/language-data'
 import { useVaultStore } from '../../core/store/workspaceStore'
+// Media & editor extensions
 import { imageWidgetExtension } from '../media'
 import { htmlWidgetExtension } from '../Editor/extensions/htmlExtension'
 import { katexExtension } from '../Editor/extensions/katexExtension'
@@ -15,13 +16,13 @@ import {
   codeMap,
   luminaSyntaxHighlighting,
   copyCodeAsImage
-} from '../codeBlock/codeBlockHeader'
+} from '../../core/code'
 import { Sparkles } from 'lucide-react'
 import { ThinkingBlock } from '../AI/components/LuminaThinkingBlock'
 
 import '@atomic-editor/editor/styles.css'
 import '../Editor/Editor.css'
-import '../codeBlock/codeWrapper.css'
+import '../../assets/codeWrapper.css'
 import '../media/css/imageExtension.css'
 
 /**

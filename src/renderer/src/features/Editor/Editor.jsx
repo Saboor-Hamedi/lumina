@@ -33,7 +33,7 @@ import EditorCreatedAt from './components/EditorCreatedAt'
 
 import './Editor.css'
 import './inlineMarks.css'
-import '../codeBlock/codeWrapper.css'
+import '../../assets/codeWrapper.css'
 import '@atomic-editor/editor/styles.css'
 
 const Editor = React.memo(
