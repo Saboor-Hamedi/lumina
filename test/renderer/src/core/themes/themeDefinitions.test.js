@@ -72,6 +72,15 @@ describe('themeDefinitions', () => {
       expect(localStorage.getItem('theme-id')).toBe('jellyfish')
     })
 
+    it('caches active theme colors to localStorage for anti-fouc on refresh', () => {
+      applyTheme('dracula')
+      const cached = localStorage.getItem('lumina_active_theme_colors')
+      expect(cached).toBeTruthy()
+      const parsed = JSON.parse(cached)
+      expect(parsed['--bg-activitybar']).toBe(THEMES.dracula.colors['--bg-activitybar'])
+      expect(parsed['--bg-app']).toBe(THEMES.dracula.colors['--bg-app'])
+    })
+
     it('applies custom caret color from localStorage', () => {
       localStorage.setItem('theme-colors', JSON.stringify({ caretColor: '#ff0000' }))
       applyTheme('dark')

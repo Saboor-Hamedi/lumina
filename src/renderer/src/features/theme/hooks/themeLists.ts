@@ -42,6 +42,7 @@ import { poimandres } from './themes/poimandres'
 import { edgeDark } from './themes/edgeDark'
 import { moonlight } from './themes/moonlight'
 import { materialPalenight } from './themes/materialPalenight'
+import { paddyEmerald } from './themes/paddyEmerald'
 import { vesper } from './themes/vesper'
 import { zenburn } from './themes/zenburn'
 import { iceberg } from './themes/iceberg'
@@ -107,6 +108,7 @@ export const THEMES: Record<string, ThemeDefinition> = {
   edgeDark,
   moonlight,
   materialPalenight,
+  paddyEmerald,
   vesper,
   zenburn,
   iceberg,

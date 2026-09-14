@@ -2,13 +2,14 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.4) !important;
-  backdrop-filter: blur(12px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+  backdrop-filter: blur(8px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(160%) !important;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10005 !important;
-  animation: fadeIn 0.18s ease-out;
+  animation: themeFadeIn 0.08s ease-out;
+  will-change: opacity;
 }
 
 .theme-modal-container {
@@ -25,8 +26,8 @@
   flex-direction: column !important;
   overflow: hidden !important;
   position: relative;
-  transition: 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  animation: themeSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+  animation: themePopQuick 0.09s cubic-bezier(0, 0, 0.2, 1);
 }
 
 .theme-modal-container.maximized {
@@ -38,16 +39,26 @@
   transform: none !important;
 }
 
-@keyframes themeSlideUp {
+@keyframes themeFadeIn {
   from {
     opacity: 0;
-    transform: translateY(12px) scale(0.99);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
   }
 }
+
+@keyframes themePopQuick {
+  0% {
+    opacity: 0;
+    transform: scale(0.975) translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 
 /* Header identical to Guide.jsx */
 .theme-modal-header {

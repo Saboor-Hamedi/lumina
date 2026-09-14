@@ -3,7 +3,7 @@
   min-width: 40px;
   max-width: 40px;
   height: 100%;
-  background: var(--bg-sidebar);
+  background: var(--bg-activitybar, var(--bg-sidebar));
   border-right: 1px solid var(--border-dim);
   border-left: none !important;
   border-top: none !important;
@@ -17,7 +17,6 @@
   flex-shrink: 0;
   z-index: 20;
   user-select: none;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .activity-bar-top {
@@ -82,5 +81,5 @@
   height: 7px;
   border-radius: 9999px;
   background: #ef4444;
-  box-shadow: 0 0 0 1.5px var(--bg-sidebar);
+  box-shadow: 0 0 0 1.5px var(--bg-activitybar, var(--bg-sidebar));
 }

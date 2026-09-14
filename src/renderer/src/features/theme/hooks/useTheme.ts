@@ -9,7 +9,7 @@ export interface UseThemeReturn {
 }
 
 // Static theme list reference (computed once at module load, zero allocation on renders)
-const ALL_THEMES_ARRAY = Object.values(THEMES)
+const ALL_THEMES_ARRAY = Array.from(new Set(Object.values(THEMES)))
 
 /**
  * useTheme Hook
@@ -32,9 +32,16 @@ export const useTheme = (): UseThemeReturn => {
    */
   const setTheme = useCallback((themeId: string): void => {
     let target = themeId
-    if (!THEMES[target]) {
+    let themeObj = THEMES[target] || Object.values(THEMES).find((t) => t.id === target)
+    if (!themeObj) {
+      const camel = target.replace(/_([a-z])/g, (_, g) => g.toUpperCase())
+      themeObj = THEMES[camel] || Object.values(THEMES).find((t) => t.id === camel)
+    }
+    if (!themeObj) {
       console.warn(`Theme "${target}" not found, using "dark"`)
       target = 'dark'
+    } else {
+      target = themeObj.id
     }
 
     setCurrentTheme(target)

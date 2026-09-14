@@ -79,7 +79,12 @@ export type ThemeId = keyof typeof THEMES | (string & {})
  * Get theme by ID
  */
 export const getTheme = (themeId?: string): ThemeDefinition => {
-  return (themeId && THEMES[themeId]) || THEMES.dark
+  if (!themeId) return THEMES.dark
+  if (THEMES[themeId]) return THEMES[themeId]
+  const found = Object.values(THEMES).find((t) => t.id === themeId)
+  if (found) return found
+  const camel = themeId.replace(/_([a-z])/g, (_, g) => g.toUpperCase())
+  return THEMES[camel] || Object.values(THEMES).find((t) => t.id === camel) || THEMES.dark
 }
 
 /**
@@ -141,19 +146,21 @@ export const applyTheme = (themeId: string): void => {
   })
 
   // Apply new theme
+  const computedColors: Record<string, string> = {}
   Object.entries(theme.colors).forEach(([varName, value]) => {
+    let finalVal = value
     if (varName === '--caret-color' && customCaretColor) {
-      root.style.setProperty(varName, customCaretColor)
+      finalVal = customCaretColor
     } else if (varName === '--caret-width' && customCaretWidth) {
-      root.style.setProperty(varName, customCaretWidth)
+      finalVal = customCaretWidth
     } else if (varName === '--text-accent' && customThemeAccentColor) {
-      root.style.setProperty(varName, customThemeAccentColor)
+      finalVal = customThemeAccentColor
     } else if (varName === '--text-accent-rgb' && customThemeAccentColor) {
       const rgb = hexToRgb(customThemeAccentColor)
-      root.style.setProperty(varName, rgb || value)
-    } else {
-      root.style.setProperty(varName, value)
+      finalVal = rgb || value
     }
+    root.style.setProperty(varName, finalVal)
+    computedColors[varName] = finalVal
   })
 
   // Set data attribute
@@ -161,4 +168,9 @@ export const applyTheme = (themeId: string): void => {
 
   // Persist to localStorage
   localStorage.setItem('theme-id', themeId)
+  try {
+    localStorage.setItem('lumina_active_theme_colors', JSON.stringify(computedColors))
+  } catch (e) {
+    // Ignore storage quota or disabled localStorage
+  }
 }

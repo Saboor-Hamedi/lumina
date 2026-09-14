@@ -68,4 +68,27 @@ describe('useTheme', () => {
       THEMES.dracula.colors['--bg-app']
     )
   })
+
+  it('selects paddyEmerald successfully and sets colors', () => {
+    const { result } = renderHook(() => useTheme())
+
+    act(() => {
+      result.current.setTheme('paddyEmerald')
+    })
+
+    expect(result.current.theme).toBe('paddyEmerald')
+    expect(document.documentElement.style.getPropertyValue('--bg-app')).toBe('#1e2a1e')
+    expect(document.documentElement.style.getPropertyValue('--text-accent')).toBe('#4ec9b0')
+  })
+
+  it('selects paddy_emerald alias successfully', () => {
+    const { result } = renderHook(() => useTheme())
+
+    act(() => {
+      result.current.setTheme('paddy_emerald')
+    })
+
+    expect(result.current.theme).toBe('paddyEmerald')
+    expect(document.documentElement.style.getPropertyValue('--bg-app')).toBe('#1e2a1e')
+  })
 })

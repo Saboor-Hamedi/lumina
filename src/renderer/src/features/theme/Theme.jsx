@@ -193,15 +193,16 @@ const Theme = ({ isOpen, onClose }) => {
     })
   }, [filteredThemes])
 
-  // Auto-scroll focused card into view smoothly
+  // Auto-scroll focused card into view instantly without delay
   useEffect(() => {
     if (focusedIndex >= 0 && cardsRef.current[focusedIndex]) {
       cardsRef.current[focusedIndex].scrollIntoView({
         block: 'nearest',
-        behavior: 'smooth'
+        behavior: 'auto'
       })
     }
   }, [focusedIndex])
+
 
   // 4-Way Arrow Key Navigation and Enter to Change Theme
   useEffect(() => {
@@ -278,10 +279,13 @@ const Theme = ({ isOpen, onClose }) => {
         style={{
           transform: isMaximized
             ? 'none'
-            : `translate3d(${posRef.current.x}px, ${posRef.current.y}px, 0)`,
+            : (posRef.current.x !== 0 || posRef.current.y !== 0)
+              ? `translate3d(${posRef.current.x}px, ${posRef.current.y}px, 0)`
+              : undefined,
           position: 'relative',
-          willChange: 'transform'
+          willChange: 'transform, opacity'
         }}
+
       >
         <div
           className="theme-modal-header"
