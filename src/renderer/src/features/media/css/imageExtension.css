@@ -414,17 +414,34 @@
   right: 24px !important;
   left: auto !important;
   transform: none !important;
-  background: var(--bg-panel, #18181b) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.15)) !important;
-  border-radius: 2px !important;
-  padding: 4px 6px !important;
+  background: var(--bg-card, var(--bg-panel, #18181b)) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid var(--border-subtle, var(--border-dim, rgba(255, 255, 255, 0.15))) !important;
+  border-radius: 8px !important;
+  padding: 4px 8px !important;
   display: flex !important;
   align-items: center !important;
   gap: 4px !important;
-  box-shadow: var(--shadow-soft, 0 8px 24px rgba(0, 0, 0, 0.35)) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
   z-index: 100 !important;
   user-select: none !important;
   color: var(--text-main) !important;
+}
+
+[data-theme='light'] .image-lightbox-toolbar-right,
+.theme-light .image-lightbox-toolbar-right {
+  background: var(--bg-card, var(--bg-panel, #ffffff)) !important;
+  border: 1px solid var(--border-subtle, var(--border-dim, rgba(0, 0, 0, 0.12))) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+  color: var(--text-main, #0f172a) !important;
+}
+
+.image-lightbox-toolbar-right .mermaid-toolbar-zoom-text {
+  color: var(--text-main, #e2e8f0) !important;
+}
+
+[data-theme='light'] .image-lightbox-toolbar-right .mermaid-toolbar-zoom-text,
+.theme-light .image-lightbox-toolbar-right .mermaid-toolbar-zoom-text {
+  color: var(--text-main, #0f172a) !important;
 }

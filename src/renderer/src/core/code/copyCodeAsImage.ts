@@ -75,16 +75,8 @@ export async function copyCodeAsImage(code: string, lang = 'CODE'): Promise<void
       // Check if light theme
       const isLightTheme = document.documentElement.getAttribute('data-theme') === 'light'
 
-      // Outer background: subtle gradient based on active app background
-      const bgGrad = ctx.createLinearGradient(0, 0, totalWidth, totalHeight)
-      if (isLightTheme) {
-        bgGrad.addColorStop(0, bgApp)
-        bgGrad.addColorStop(1, computed.getPropertyValue('--bg-sidebar').trim() || '#f1f5f9')
-      } else {
-        bgGrad.addColorStop(0, bgApp)
-        bgGrad.addColorStop(1, '#020617')
-      }
-      ctx.fillStyle = bgGrad
+      // Outer background: solid theme background (no gradient)
+      ctx.fillStyle = bgApp
       ctx.fillRect(0, 0, totalWidth, totalHeight)
 
       // Card container geometry

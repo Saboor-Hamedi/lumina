@@ -15,6 +15,7 @@
  */
 
 import type { EditorView } from '@codemirror/view'
+export { copyCodeAsImage } from './copyCodeAsImage'
 
 /**
  * Handles Enter key on fenced code blocks:

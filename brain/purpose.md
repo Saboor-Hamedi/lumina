@@ -726,3 +726,21 @@ Sidebars previously shrank/compressed their content when dragged inward. The tar
   - Moved `defaultTemplates.js` into `features/template/hooks/defaultTemplates.ts` with strict `DefaultTemplate` TypeScript interfaces.
   - Converted `useTemplate.js` into `features/template/hooks/useTemplate.ts`.
   - Upgraded test harnesses (`Template.test.tsx`, `TemplateSidebar.test.tsx`, `DailyNotes.test.tsx`, `Notification.test.tsx`, `useNotification.test.ts`) to TypeScript with 100% test pass rate across all 102 test suites.
+
+
+### GG. Markdown Highlights, Theme-Aware Code Export, Standalone Zoom HUD & Inline Code Typography
+- **Live-Preview Markdown Highlighting (`==highlight==` / `useHighlight.ts`)**:
+  - Implemented `useHighlight.ts` as a native CodeMirror 6 extension providing real-time live preview for `==text==` and `== text ==`.
+  - Delimiters collapse cleanly into highlighted spans (`.cm-highlight`) when the cursor is outside, and gently reveal (`.cm-highlight-mark`) when the cursor enters for fluid inline editing.
+  - Hardened with monotonically increasing range builders and line deduplication to eliminate out-of-order `RangeSetBuilder` errors during rapid typing or viewport folding.
+  - Bound `Ctrl + Shift + H` / `Cmd + Shift + H` for instant wrapping/unwrapping on selection.
+- **Theme-Aware Code Export & Gradient Removal (`copyCodeAsImage.ts` & `CodeFence.ts`)**:
+  - Replaced artificial dark gradient backgrounds in "Copy as Image" with solid, ergonomic backgrounds matching the user's active theme (`--bg-app`, `--bg-card`, `--border-dim`).
+  - Unified code block exports under `src/renderer/src/core/code/`, cleanly re-exporting `copyCodeAsImage` from `CodeFence.ts` and `index.ts`.
+  - Converted code block headers to TypeScript (`codeBlockHeader.ts`) and removed deprecated `features/codeBlock/` and stale `.js` files.
+- **Standalone Editor Zoom HUD (`EditorZoomHud.tsx`)**:
+  - Extracted the floating bottom-right zoom percentage badge into a dedicated standalone component (`EditorZoomHud.tsx`) with memoization, `role="status"`, and `aria-live="polite"`.
+  - Integrated official Lucide `ZoomIn` icon, unified flex layout, crisp typography, and full theme integration across both dark and light modes.
+- **Inline Backtick Code Typography & Font Synchronization (`inlineMarks.css` & `Editor.css`)**:
+  - Overrode hardcoded `font-size: 0.88em` from third-party editor packages on `.cm-atomic-inline-code` and `.cm-inline-code` with `font-size: inherit !important;`.
+  - Set `font-family: var(--font-editor, inherit) !important` across all inline code selectors so single backtick expressions (`inline code`) inherit and match the user's configured editor font family and size seamlessly.

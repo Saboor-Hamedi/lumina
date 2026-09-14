@@ -13,6 +13,7 @@ export * from './useList'
 export * from './useMark'
 export * from './useQuote'
 export * from './useCallout'
+export * from './useHighlight'
 export * from './useEmptyLine'
 export * from './useZoom'
 

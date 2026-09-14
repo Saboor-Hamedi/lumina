@@ -10,7 +10,7 @@ import { htmlWidgetExtension } from '../Editor/extensions/htmlExtension'
 import { katexExtension } from '../Editor/extensions/katexExtension'
 import { tables } from '../table/tableExtension'
 import { mermaidWidgetExtension } from '../../core/mermaid'
-import { calloutExtension } from '../../core/editor'
+import { calloutExtension, highlightExtension } from '../../core/editor'
 import {
   codeBlockDecorations,
   codeMap,
@@ -78,6 +78,7 @@ export const PreviewCommandPalette = React.memo(({ content, onClose, customLinkH
       katexExtension,
       mermaidWidgetExtension,
       calloutExtension,
+      highlightExtension,
       codeBlockDecorations,
       luminaSyntaxHighlighting,
       Prec.highest(tables({ onLinkClick: handleLinkClick })),

@@ -8,6 +8,9 @@ import ToolTip from '../atoms/ToolTip'
 import './UpdateDetails.css'
 
 export const DEFAULT_RELEASE_NOTES = `New
+- Live-Preview Markdown Highlighting (==highlight==): Real-time live preview for ==text== and == text == syntax in the markdown editor. Delimiters collapse into a clean, colored highlight span when the cursor is away, and gently reveal with Mod-Shift-H (Ctrl+Shift+H / Cmd+Shift+H) keyboard shortcut for quick toggling.
+- Theme-Aware Code Block Image Export: Code block "Copy as image" now uses solid theme backgrounds (--bg-app, --bg-card) from your active theme instead of an artificial gradient, perfectly matching your color palette.
+- Standalone Editor Zoom HUD Component: Extracted the bottom-right zoom percentage indicator into a standalone component with Lucide ZoomIn icon, theme-adaptive backdrop blur, and smooth entrance animation.
 - Standardized ActivityBar 6-Button Stack: ActivityBar navigation has been standardized with a dedicated 6-button stack: 1. New Note, 2. Daily Note, 3. Knowledge Graph, 4. Canvas, 5. Lumina AI Chat, and 6. Lumina Mail. AI Chat and Mail icons are presented in a clean, borderless unaccented style.
 - Instant Canvas Note Creation: Canvas button on the ActivityBar immediately creates a new .canvas note via saveSnippet and activates it directly in the editor workspace.
 - Draggable Gmail Portal Modal: EmailContainer now renders into document.body via React createPortal with z-index: 100000, preventing sidebar resizers from capturing clicks. Features a dedicated WindowControls drag handle beside the Compose button in EmailSidebar for free viewport repositioning with localStorage coordinate persistence.
@@ -37,6 +40,8 @@ export const DEFAULT_RELEASE_NOTES = `New
 - Breadcrumbs Long-Title Truncation: Note titles of any length are now gracefully truncated in the breadcrumbs bar with ellipsis (…). Hovering reveals the full title. Scales responsively with the viewport (clamp 140px → 380px).
 
 Improved
+- Unified Inline Code Typography: Single backtick inline code (\`code\`) now seamlessly inherits the user-configured editor font family and font size instead of switching to a smaller, disparate monospace font.
+- Code Block Architecture & TypeScript Migration: Consolidated all code block styling, headers, and image export mechanisms cleanly inside src/renderer/src/core/code/ with full TypeScript typings.
 - Email Modal Viewport Dragging: Replaced bulky header drag bars with a sleek WindowControls button directly beside Compose, eliminating awkward modal shifting and providing smooth pointer tracking.
 - Outside-Click Email Modal Toggle: Fixed double-toggle conflict where clicking the ActivityBar mail button while the modal was open would trigger both outside-click close and button-click open.
 - TypeScript Migration Across Core Hooks: Converted useTemplate, defaultTemplates, and notification hooks to strict TypeScript types, improving developer ergonomics and runtime stability.
@@ -56,6 +61,9 @@ Improved
 - Breadcrumbs Icon Stability: Breadcrumb icons now have flex-shrink: 0 and never collapse under layout pressure.
 
 Fixed
+- Inline Code Font Shrinking & Mismatched Typeface: Fixed issue where single backtick (\`code\`) rendered text noticeably smaller than surrounding body text due to third-party 0.88em CSS rules, and ensured it matches the configured editor font family.
+- Code Image Background Gradient Clashing: Removed artificial hardcoded gradient backgrounds from code-to-image export in favor of clean, solid active theme colors.
+- Media Extension 404 Route Resolutions: Removed stale .js file references in favor of strict TypeScript barrel exports in src/renderer/src/features/media/.
 - Sidebar Resizer Overlapping Email Modal: Fixed issue where dragging the left sidebar resizer would capture pointer events or sit on top of the email modal by rendering EmailContainer into document.body via createPortal with z-index: 100000.
 - CapsLock Initial State on App Launch: Fixed issue where Caps Lock was not detected until the first keypress by adding native PowerShell query via IPC on mount and window focus.
 - Dropdown Width Auto-Expansion: Breadcrumb dropdowns no longer resize or balloon to 480px based on filename length. All dropdowns strictly adhere to the polished 320px width standard with ellipsis truncation.

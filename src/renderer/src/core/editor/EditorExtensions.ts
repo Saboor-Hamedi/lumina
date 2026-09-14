@@ -24,6 +24,7 @@ import { tagMentionExtension } from '../../features/Editor/extensions/tagMention
 import { tables } from '../../features/table/tableExtension'
 import { mermaidWidgetExtension } from '../mermaid'
 import { calloutExtension } from './useCallout'
+import { highlightExtension } from './useHighlight'
 import { useCollapsible } from '../../features/Editor/collapse/useCollapsible'
 import { emptyLineSelectionFix } from './useEmptyLine'
 import { handleTaskEnter, taskMarkKeymap } from './useMark'
@@ -494,6 +495,7 @@ export function useEditorExtensions({
       htmlWidgetExtension,
       katexExtension,
       calloutExtension,
+      highlightExtension,
       Prec.highest(tables({ onLinkClick: handleTableLinkClick }))
     ],
     [editorExtensions, dropExtension, handleTableLinkClick]

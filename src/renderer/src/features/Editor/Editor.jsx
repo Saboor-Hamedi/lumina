@@ -30,6 +30,7 @@ import {
 } from '../../core/editor'
 import { EditorSlash } from '../slash'
 import EditorCreatedAt from './components/EditorCreatedAt'
+import EditorZoomHud from './components/EditorZoomHud'
 
 import './Editor.css'
 import './inlineMarks.css'
@@ -280,7 +281,7 @@ const Editor = React.memo(
           overflow: 'hidden'
         }}
       >
-        {zoomBadge && <div className="editor-zoom-hud">{zoomBadge}</div>}
+        <EditorZoomHud zoomBadge={zoomBadge} />
 
         <EditorCreatedAt snippet={snippet} scrollerRef={scrollerRef} />
 

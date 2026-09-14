@@ -42,8 +42,13 @@
   text-decoration: line-through;
 }
 
-/* --- Inline Code --- */
-.cm-atomic-inline-code {
+/* --- Inline Code (`code`) --- */
+.cm-atomic-inline-code,
+.cm-line .cm-atomic-inline-code,
+.cm-inline-code,
+.cm-line code {
+  font-size: inherit !important;
+  font-family: var(--font-editor, inherit) !important;
   background: transparent !important;
   color: var(--text-accent, #ff79c6) !important;
   border-radius: 0 !important;
@@ -52,7 +57,39 @@
 
 /* Remove highlight when actively editing so it looks like plain markdown */
 .cm-atomic-inline-code-wrap.active .cm-atomic-inline-code {
+  font-size: inherit !important;
+  font-family: var(--font-editor, inherit) !important;
   background: transparent !important;
   color: inherit !important;
   padding: 0 !important;
+}
+
+/* --- Highlight (==mark==) --- */
+.cm-highlight {
+  background: var(--highlight-bg, rgba(250, 204, 21, 0.28));
+  color: var(--highlight-fg, inherit);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* Radiant contrast in light themes */
+[data-theme='light'] .cm-highlight,
+.theme-light .cm-highlight {
+  background: var(--highlight-bg, rgba(254, 240, 138, 0.75));
+  color: var(--highlight-fg, #854d0e);
+}
+
+/* Highlight delimiters (==) */
+.cm-highlight-mark {
+  color: var(--atomic-editor-fg-faint, var(--text-muted, #71717a));
+  font-weight: 600;
+  font-size: 0.9em;
+  opacity: 0.6;
+}
+
+.cm-highlight-mark-active {
+  color: var(--text-accent, #eab308);
+  opacity: 0.85;
 }
