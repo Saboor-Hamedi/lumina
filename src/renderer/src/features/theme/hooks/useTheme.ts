@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { applyTheme as applyThemeUtil, getTheme, THEMES, ThemeDefinition } from './themeDefinitions'
 
 export interface UseThemeReturn {
@@ -7,6 +7,9 @@ export interface UseThemeReturn {
   themeData: ThemeDefinition
   allThemes: ThemeDefinition[]
 }
+
+// Static theme list reference (computed once at module load, zero allocation on renders)
+const ALL_THEMES_ARRAY = Object.values(THEMES)
 
 /**
  * useTheme Hook
@@ -40,12 +43,15 @@ export const useTheme = (): UseThemeReturn => {
     applyThemeUtil(target)
   }, [])
 
+  const themeData = useMemo(() => getTheme(currentTheme), [currentTheme])
+
   return {
     theme: currentTheme,
     setTheme,
-    themeData: getTheme(currentTheme),
-    allThemes: Object.values(THEMES)
+    themeData,
+    allThemes: ALL_THEMES_ARRAY
   }
 }
+
 
 export default useTheme

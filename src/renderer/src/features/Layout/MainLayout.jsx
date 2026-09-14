@@ -702,17 +702,23 @@ export const MainLayout = () => {
     const handleNewCanvasEvent = () => {
       handleNewCanvas()
     }
+    const handleOpenThemeEvent = () => {
+      handleOpenTheme()
+    }
     window.addEventListener('open-ask-anything', handleAskAnything)
     window.addEventListener('open-ai-chat', handleAIChatEvent)
     window.addEventListener('toggle-left-sidebar', handleToggleLeftSidebarEvent)
     window.addEventListener('trigger-new-canvas', handleNewCanvasEvent)
+    window.addEventListener('open-theme-modal', handleOpenThemeEvent)
     return () => {
       window.removeEventListener('open-ask-anything', handleAskAnything)
       window.removeEventListener('open-ai-chat', handleAIChatEvent)
       window.removeEventListener('toggle-left-sidebar', handleToggleLeftSidebarEvent)
       window.removeEventListener('trigger-new-canvas', handleNewCanvasEvent)
+      window.removeEventListener('open-theme-modal', handleOpenThemeEvent)
     }
-  }, [handleToggleAIChat, handleToggleLeftSidebar, handleNewCanvas])
+  }, [handleToggleAIChat, handleToggleLeftSidebar, handleNewCanvas, handleOpenTheme])
+
 
   const renderedEditors = useMemo(() => {
     const effectiveSelectedId = selectedSnippet?.id || activeTabId || openTabs[0]
@@ -758,7 +764,11 @@ export const MainLayout = () => {
       }}
     >
       <div className="shell-body">
-        <ActivityBar onToggleGraph={handleToggleGraph} />
+        <ActivityBar
+          onToggleGraph={handleToggleGraph}
+          onOpenTheme={handleOpenTheme}
+        />
+
         <aside className="shell-sidebar-left">
           <GlobalErrorHandler>
             <Sidebar />

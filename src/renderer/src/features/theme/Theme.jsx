@@ -4,10 +4,92 @@ import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { X, Check, Palette, Square, Copy } from 'lucide-react'
 import './css/theme.css'
+// Memoized theme card component to avoid re-rendering all 63 cards on keystrokes/focus shifts
+const ThemeCard = React.memo(
+  ({ themeData, isActive, isFocused, onSelect, setCardRef }) => {
+    return (
+      <div
+        ref={setCardRef}
+        className={`theme-modal-card ${isActive ? 'active' : ''} ${isFocused ? 'focused' : ''}`.trim()}
+        onClick={onSelect}
+      >
+        <div className="theme-card-header">
+          <div className="theme-title-row">
+            <span className="theme-modal-name">{themeData.name}</span>
+            {isActive ? (
+              <span className="theme-check-badge">
+                <Check size={10} strokeWidth={3} />
+              </span>
+            ) : (
+              <span className="theme-badge installed">INSTALLED</span>
+            )}
+          </div>
+        </div>
+
+        <div className="theme-modal-preview-wrapper">
+          <div className="theme-modal-preview" style={{ background: themeData.colors['--bg-app'] }}>
+            <div
+              className="theme-preview-sidebar"
+              style={{
+                background: themeData.colors['--bg-sidebar'],
+                borderRight: `1px solid ${themeData.colors['--border-dim']}`
+              }}
+            >
+              <div
+                className="theme-preview-sidebar-item"
+                style={{ background: themeData.colors['--bg-active'] }}
+              />
+              <div
+                className="theme-preview-sidebar-item"
+                style={{ background: themeData.colors['--border-subtle'] }}
+              />
+              <div
+                className="theme-preview-sidebar-item"
+                style={{ background: themeData.colors['--border-subtle'] }}
+              />
+            </div>
+            <div
+              className="theme-preview-editor"
+              style={{ background: themeData.colors['--bg-editor'] }}
+            >
+              <div
+                className="theme-preview-code-line"
+                style={{ background: themeData.colors['--text-accent'], width: '60%' }}
+              />
+              <div
+                className="theme-preview-code-line"
+                style={{ background: themeData.colors['--text-main'], width: '80%' }}
+              />
+              <div
+                className="theme-preview-code-line"
+                style={{ background: themeData.colors['--text-muted'], width: '40%' }}
+              />
+              <div
+                className="theme-preview-code-line"
+                style={{ background: themeData.colors['--text-main'], width: '70%' }}
+              />
+              <div
+                className="theme-preview-code-line"
+                style={{ background: themeData.colors['--icon-secondary'], width: '50%' }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  },
+  (prev, next) =>
+    prev.isActive === next.isActive &&
+    prev.isFocused === next.isFocused &&
+    prev.themeData === next.themeData &&
+    prev.onSelect === next.onSelect
+)
+
 import ToolTip from '../../components/atoms/ToolTip'
 
 const Theme = ({ isOpen, onClose }) => {
   const { theme, setTheme, allThemes } = useTheme()
+
   const [searchQuery, setSearchQuery] = useState('')
   const isMaximized = useSettingsStore((s) => s.settings.themeModalMaximized ?? false)
   const searchInputRef = useRef(null)
@@ -179,9 +261,13 @@ const Theme = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null
 
-  const handleThemeSelect = (themeId) => {
-    setTheme(themeId)
-  }
+  const handleThemeSelect = useCallback(
+    (themeId) => {
+      setTheme(themeId)
+    },
+    [setTheme]
+  )
+
 
   return (
     <div className="theme-modal-overlay" onClick={onClose}>
@@ -257,86 +343,21 @@ const Theme = ({ isOpen, onClose }) => {
         </div>
 
         <div className="theme-modal-grid">
-          {filteredThemes.map((t, idx) => {
-            const isActive = theme === t.id
-            const isFocused = focusedIndex === idx
-
-            return (
-              <div
-                key={t.id}
-                ref={(el) => (cardsRef.current[idx] = el)}
-                className={`theme-modal-card ${isActive ? 'active' : ''} ${isFocused ? 'focused' : ''}`.trim()}
-                onClick={() => {
-                  setFocusedIndex(idx)
-                  handleThemeSelect(t.id)
-                }}
-              >
-                <div className="theme-card-header">
-                  <div className="theme-title-row">
-                    <span className="theme-modal-name">{t.name}</span>
-                    {isActive ? (
-                      <span className="theme-check-badge">
-                        <Check size={10} strokeWidth={3} />
-                      </span>
-                    ) : (
-                      <span className="theme-badge installed">INSTALLED</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="theme-modal-preview-wrapper">
-                  <div className="theme-modal-preview" style={{ background: t.colors['--bg-app'] }}>
-                    <div
-                      className="theme-preview-sidebar"
-                      style={{
-                        background: t.colors['--bg-sidebar'],
-                        borderRight: `1px solid ${t.colors['--border-dim']}`
-                      }}
-                    >
-                      <div
-                        className="theme-preview-sidebar-item"
-                        style={{ background: t.colors['--bg-active'] }}
-                      />
-                      <div
-                        className="theme-preview-sidebar-item"
-                        style={{ background: t.colors['--border-subtle'] }}
-                      />
-                      <div
-                        className="theme-preview-sidebar-item"
-                        style={{ background: t.colors['--border-subtle'] }}
-                      />
-                    </div>
-                    <div
-                      className="theme-preview-editor"
-                      style={{ background: t.colors['--bg-editor'] }}
-                    >
-                      <div
-                        className="theme-preview-code-line"
-                        style={{ background: t.colors['--text-accent'], width: '60%' }}
-                      />
-                      <div
-                        className="theme-preview-code-line"
-                        style={{ background: t.colors['--text-main'], width: '80%' }}
-                      />
-                      <div
-                        className="theme-preview-code-line"
-                        style={{ background: t.colors['--text-muted'], width: '40%' }}
-                      />
-                      <div
-                        className="theme-preview-code-line"
-                        style={{ background: t.colors['--text-main'], width: '70%' }}
-                      />
-                      <div
-                        className="theme-preview-code-line"
-                        style={{ background: t.colors['--icon-secondary'], width: '50%' }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )
-          })}
+          {filteredThemes.map((t, idx) => (
+            <ThemeCard
+              key={t.id}
+              themeData={t}
+              isActive={theme === t.id}
+              isFocused={focusedIndex === idx}
+              setCardRef={(el) => (cardsRef.current[idx] = el)}
+              onSelect={() => {
+                setFocusedIndex(idx)
+                handleThemeSelect(t.id)
+              }}
+            />
+          ))}
         </div>
+
       </div>
     </div>
   )

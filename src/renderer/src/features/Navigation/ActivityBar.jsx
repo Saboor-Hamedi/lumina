@@ -1,14 +1,24 @@
 import React, { memo } from 'react'
-import { Plus, Network, LayoutDashboard, MessageSquare } from 'lucide-react'
+import { Plus, Network, LayoutDashboard, MessageSquare, Palette } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
 import DailyNotes from './components/DailyNotes'
 import ActivityBarMail from './components/ActivityBarMail'
 import './css/activitybar.css'
 
 export const ActivityBar = memo(({
-  onToggleGraph
+  onToggleGraph,
+  onOpenTheme
 }) => {
   const isMac = typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('mac')
+
+  const handleOpenTheme = () => {
+    if (onOpenTheme) {
+      onOpenTheme()
+    } else {
+      window.dispatchEvent(new CustomEvent('open-theme-modal'))
+    }
+  }
+
 
   const handleNewNote = () => {
     window.dispatchEvent(new CustomEvent('trigger-new-note'))
@@ -81,8 +91,21 @@ export const ActivityBar = memo(({
 
         {/* 6 Gmail icon */}
         <ActivityBarMail />
+
+        {/* 7 Theme & Appearance */}
+        <ToolTip text="Themes & Appearance" position="right">
+          <button
+            type="button"
+            className="activity-bar-btn"
+            onClick={handleOpenTheme}
+            aria-label="Themes & Appearance"
+          >
+            <Palette size={16} />
+          </button>
+        </ToolTip>
       </div>
     </aside>
+
   )
 })
 
