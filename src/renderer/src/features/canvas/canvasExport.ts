@@ -15,11 +15,9 @@
 import { CanvasNode, CanvasEdge, CanvasNodeColor } from './types'
 import {
   CANVAS_NODE_COLOR_HEX,
-  getNodePortCoord,
-  getBezierCurve,
-  getOptimalEdgePorts,
   safeNumber
 } from './canvasUtils'
+import { calculateEdgePath } from './canvasRouting'
 
 export interface ExportCanvasOptions {
   nodes: CanvasNode[]
@@ -302,10 +300,13 @@ export function buildCanvasSvg(options: ExportCanvasOptions): { svgString: strin
       const toNode = nodeMap.get(edge.toNode)
       if (!fromNode || !toNode) return ''
 
-      const optimal = getOptimalEdgePorts(fromNode, toNode)
-      const fromPt = getNodePortCoord(fromNode, optimal.fromSide)
-      const toPt = getNodePortCoord(toNode, optimal.toSide)
-      const { pathD } = getBezierCurve(fromPt, optimal.fromSide, toPt, optimal.toSide)
+      const { pathD } = calculateEdgePath(
+        fromNode,
+        edge.fromSide,
+        toNode,
+        edge.toSide,
+        edge.lineStyle || 'curved'
+      )
 
       const targetColor = (edge.color || toNode.color || 'default') as CanvasNodeColor
       const strokeColor = CANVAS_NODE_COLOR_HEX[targetColor] || CANVAS_NODE_COLOR_HEX.default

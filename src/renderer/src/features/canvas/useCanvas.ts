@@ -12,7 +12,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { CanvasViewport, CanvasNode, CanvasEdge, CanvasData, CanvasNodeColor } from './types'
+import { CanvasViewport, CanvasNode, CanvasEdge, CanvasData, CanvasNodeColor, CanvasEdgeLineStyle } from './types'
 import { normalizeNode, safeNumber } from './canvasUtils'
 
 export interface UseCanvasOptions {
@@ -321,6 +321,55 @@ export function useCanvas(options: UseCanvasOptions = {}) {
   }, [])
 
   /**
+   * Snaps selected nodes (or all nodes) to the nearest 20px grid.
+   */
+  const snapNodesToGrid = useCallback((targetIds?: string[]) => {
+    setNodes((prev) => {
+      const targetSet = targetIds && targetIds.length > 0 ? new Set(targetIds) : null
+      return prev.map((n) => {
+        if (targetSet && !targetSet.has(n.id)) return n
+        const snappedX = Math.round(n.x / 20) * 20
+        const snappedY = Math.round(n.y / 20) * 20
+        const snappedW = Math.round(n.width / 20) * 20
+        const snappedH = Math.round(n.height / 20) * 20
+        if (n.x === snappedX && n.y === snappedY && n.width === snappedW && n.height === snappedH) return n
+        return {
+          ...n,
+          x: snappedX,
+          y: snappedY,
+          width: Math.max(snappedW, 60),
+          height: Math.max(snappedH, 40)
+        }
+      })
+    })
+  }, [])
+
+  /**
+   * Updates connector line style (curved, step, straight).
+   */
+  const updateEdgeLineStyle = useCallback((edgeId: string, lineStyle: CanvasEdgeLineStyle) => {
+    setEdges((prev) =>
+      prev.map((e) => (e.id === edgeId ? { ...e, lineStyle } : e))
+    )
+  }, [])
+
+  /**
+   * Updates edge color theme.
+   */
+  const updateEdgeColor = useCallback((edgeId: string, color: CanvasNodeColor) => {
+    setEdges((prev) =>
+      prev.map((e) => (e.id === edgeId ? { ...e, color } : e))
+    )
+  }, [])
+
+  /**
+   * Deletes a single edge by ID.
+   */
+  const deleteEdge = useCallback((edgeId: string) => {
+    setEdges((prev) => prev.filter((e) => e.id !== edgeId))
+  }, [])
+
+  /**
    * Automatically calculates bounding box of all nodes and centers/zooms canvas to fit container.
    */
   const zoomToFit = useCallback((containerRect?: DOMRect | null) => {
@@ -392,6 +441,10 @@ export function useCanvas(options: UseCanvasOptions = {}) {
     updateNodeColor,
     deleteNode,
     deleteSelected,
-    duplicateNodes
+    duplicateNodes,
+    snapNodesToGrid,
+    updateEdgeLineStyle,
+    updateEdgeColor,
+    deleteEdge
   }
 }

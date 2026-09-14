@@ -31,7 +31,8 @@ import {
   Image as ImageIcon,
   PanelBottomOpen,
   Maximize2,
-  Grid
+  Grid,
+  Map as MapIcon
 } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
 import { CanvasShapeType, CanvasNodeColor } from './types'
@@ -53,6 +54,8 @@ export interface ConvasToolBarRightProps {
   hasSelectedNodes?: boolean
   snapToGrid?: boolean
   onToggleSnapToGrid?: () => void
+  isMiniMapOpen?: boolean
+  onToggleMiniMap?: () => void
 }
 
 export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
@@ -71,7 +74,9 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
     onOpenDrawer,
     hasSelectedNodes = false,
     snapToGrid = false,
-    onToggleSnapToGrid
+    onToggleSnapToGrid,
+    isMiniMapOpen = false,
+    onToggleMiniMap
   }) => {
     const [isShapesOpen, setIsShapesOpen] = useState(false)
     const [isExportOpen, setIsExportOpen] = useState(false)
@@ -165,6 +170,24 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
                 aria-label="Toggle Snap to Grid"
               >
                 <Grid size={13} />
+              </button>
+            </ToolTip>
+
+            <div className="lumina-canvas-divider horizontal" />
+          </>
+        )}
+
+        {/* Mini-Map Navigator Toggle */}
+        {onToggleMiniMap && (
+          <>
+            <ToolTip text={isMiniMapOpen ? "Mini-Map Navigator (Open)" : "Mini-Map Navigator (Closed)"} position="left">
+              <button
+                type="button"
+                className={`lumina-canvas-tool-btn ${isMiniMapOpen ? 'active' : ''}`}
+                onClick={onToggleMiniMap}
+                aria-label="Toggle Mini-Map Navigator"
+              >
+                <MapIcon size={13} />
               </button>
             </ToolTip>
 

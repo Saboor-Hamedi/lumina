@@ -1,55 +1,87 @@
 /**
  * ============================================================================
- * Lumina Canvas Edge Item
+ * Lumina Canvas Edge Item (CanvasEdgeItem.tsx)
  * ============================================================================
  * High-performance memoized SVG connector edge between two canvas nodes.
  *
  * Highlights:
  * - Dynamic port selection via `getOptimalEdgePorts()`: Wire automatically routes
  *   between the closest, natural facing sides without looping or twisting.
- * - Directional cubic Bézier spline with smooth curvature.
+ * - Multi-style path routing: Curved Bézier, Orthogonal Step, or Straight vector line.
  * - Expanded transparent hover hitbox for effortless click/hover interactions.
- * - Interactive midpoint delete button on hover.
+ * - Interactive hover action badge at midpoint:
+ *     * Line style switcher (Curved <-> Step <-> Straight)
+ *     * Edge color cycle (Palette)
+ *     * Delete edge (X)
  * - React.memo comparison prevents re-renders when unrelated canvas nodes move.
  * ============================================================================
  */
 
 import React, { useMemo } from 'react'
-import { CanvasEdge, CanvasNode } from './types'
-import { getNodePortCoord, getBezierCurve, getOptimalEdgePorts } from './canvasUtils'
+import { CanvasEdge, CanvasEdgeLineStyle, CanvasNode, CanvasNodeColor } from './types'
+import { calculateEdgePath } from './canvasRouting'
+import { COLOR_CYCLE } from './canvasUtils'
+import { Spline, CornerDownRight, Minus, Palette, X } from 'lucide-react'
 
 export interface CanvasEdgeItemProps {
   edge: CanvasEdge
   fromNode: CanvasNode | undefined
   toNode: CanvasNode | undefined
   onDeleteEdge: (e: React.MouseEvent, edgeId: string) => void
+  onUpdateLineStyle?: (edgeId: string, lineStyle: CanvasEdgeLineStyle) => void
+  onCycleColor?: (edgeId: string) => void
 }
 
 export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
-  ({ edge, fromNode, toNode, onDeleteEdge }) => {
+  ({ edge, fromNode, toNode, onDeleteEdge, onUpdateLineStyle, onCycleColor }) => {
     if (!fromNode || !toNode) return null
 
-    const { pathD, midX, midY } = useMemo(() => {
-      // Dynamically select the best facing ports based on the current relative positions
-      const optimal = getOptimalEdgePorts(fromNode, toNode)
-      const fromSide = optimal.fromSide
-      const toSide = optimal.toSide
+    const lineStyle: CanvasEdgeLineStyle = edge.lineStyle || 'curved'
 
-      const fromPt = getNodePortCoord(fromNode, fromSide)
-      const toPt = getNodePortCoord(toNode, toSide)
-      return getBezierCurve(fromPt, fromSide, toPt, toSide)
+    const { pathD, midX, midY } = useMemo(() => {
+      return calculateEdgePath(
+        fromNode,
+        edge.fromSide,
+        toNode,
+        edge.toSide,
+        lineStyle
+      )
     }, [
       fromNode.x,
       fromNode.y,
       fromNode.width,
       fromNode.height,
+      fromNode.type,
+      fromNode.shape,
       toNode.x,
       toNode.y,
       toNode.width,
-      toNode.height
+      toNode.height,
+      toNode.type,
+      toNode.shape,
+      edge.fromSide,
+      edge.toSide,
+      lineStyle
     ])
 
     const targetColor = edge.color || toNode.color || 'default'
+
+    const handleCycleLineStyle = (e: React.MouseEvent) => {
+      e.stopPropagation()
+      if (!onUpdateLineStyle) return
+      const nextStyle: Record<CanvasEdgeLineStyle, CanvasEdgeLineStyle> = {
+        curved: 'step',
+        step: 'straight',
+        straight: 'curved'
+      }
+      onUpdateLineStyle(edge.id, nextStyle[lineStyle] || 'curved')
+    }
+
+    const handleCycleColor = (e: React.MouseEvent) => {
+      e.stopPropagation()
+      if (!onCycleColor) return
+      onCycleColor(edge.id)
+    }
 
     return (
       <g className="lumina-canvas-edge-group">
@@ -59,27 +91,75 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
           className="lumina-canvas-edge-hitbox"
           onClick={(e) => onDeleteEdge(e, edge.id)}
         />
-        {/* Rendered curved SVG connector path with arrow matching target note color */}
+        {/* Rendered SVG connector path with arrow matching target note color */}
         <path
           d={pathD}
           className={`lumina-canvas-edge-line edge-${targetColor}`}
           markerEnd={`url(#arrow-${targetColor})`}
         />
-        {/* Delete Edge Button on hover */}
-        <g
-          className="lumina-canvas-edge-delete"
-          transform={`translate(${midX}, ${midY})`}
-          onClick={(e) => onDeleteEdge(e, edge.id)}
+
+        {/* Interactive hover controls badge at wire midpoint */}
+        <foreignObject
+          x={midX - 44}
+          y={midY - 14}
+          width={88}
+          height={28}
+          className="lumina-canvas-edge-controls-container"
         >
-          <circle r="10" fill="var(--bg-panel, #18181b)" stroke="#ef4444" strokeWidth="1.5" />
-          <line x1="-3.5" y1="-3.5" x2="3.5" y2="3.5" stroke="#ef4444" strokeWidth="1.5" />
-          <line x1="3.5" y1="-3.5" x2="-3.5" y2="3.5" stroke="#ef4444" strokeWidth="1.5" />
-        </g>
+          <div
+            className="lumina-canvas-edge-controls"
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            {/* Line Style Toggle Button */}
+            {onUpdateLineStyle && (
+              <button
+                type="button"
+                className="lumina-canvas-edge-btn"
+                title={`Line Style: ${lineStyle.toUpperCase()} (Click to toggle)`}
+                aria-label="Toggle line style"
+                onClick={handleCycleLineStyle}
+              >
+                {lineStyle === 'curved' ? (
+                  <Spline size={11} />
+                ) : lineStyle === 'step' ? (
+                  <CornerDownRight size={11} />
+                ) : (
+                  <Minus size={11} />
+                )}
+              </button>
+            )}
+
+            {/* Edge Color Toggle Button */}
+            {onCycleColor && (
+              <button
+                type="button"
+                className="lumina-canvas-edge-btn"
+                title="Change Edge Color"
+                aria-label="Change Edge Color"
+                onClick={handleCycleColor}
+              >
+                <Palette size={11} />
+              </button>
+            )}
+
+            {/* Delete Edge Button */}
+            <button
+              type="button"
+              className="lumina-canvas-edge-btn delete"
+              title="Delete Wire"
+              aria-label="Delete Wire"
+              onClick={(e) => onDeleteEdge(e, edge.id)}
+            >
+              <X size={11} />
+            </button>
+          </div>
+        </foreignObject>
       </g>
     )
   },
   (prev, next) => {
-    // Only re-render if the edge definition, colors, or bounding boxes changed
+    // Only re-render if edge attributes or connected nodes change
     if (prev.edge !== next.edge) return false
     if (!prev.fromNode || !next.fromNode || !prev.toNode || !next.toNode) return false
     return (
@@ -88,11 +168,13 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
       prev.fromNode.width === next.fromNode.width &&
       prev.fromNode.height === next.fromNode.height &&
       prev.fromNode.color === next.fromNode.color &&
+      prev.fromNode.shape === next.fromNode.shape &&
       prev.toNode.x === next.toNode.x &&
       prev.toNode.y === next.toNode.y &&
       prev.toNode.width === next.toNode.width &&
       prev.toNode.height === next.toNode.height &&
-      prev.toNode.color === next.toNode.color
+      prev.toNode.color === next.toNode.color &&
+      prev.toNode.shape === next.toNode.shape
     )
   }
 )

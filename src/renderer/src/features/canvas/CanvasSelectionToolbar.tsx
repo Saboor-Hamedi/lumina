@@ -22,7 +22,8 @@ import {
   AlignVerticalDistributeCenter,
   Copy,
   Palette,
-  Trash2
+  Trash2,
+  Grid
 } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
 import { CanvasAlignmentType, CanvasDistributionType } from './canvasAlignment'
@@ -35,6 +36,7 @@ export interface CanvasSelectionToolbarProps {
   onDuplicate: () => void
   onCycleColor: () => void
   onDelete: () => void
+  onSnapToGrid?: () => void
 }
 
 export const CanvasSelectionToolbar: React.FC<CanvasSelectionToolbarProps> = React.memo(
@@ -45,7 +47,8 @@ export const CanvasSelectionToolbar: React.FC<CanvasSelectionToolbarProps> = Rea
     onDistribute,
     onDuplicate,
     onCycleColor,
-    onDelete
+    onDelete,
+    onSnapToGrid
   }) => {
     // Dock 44px above the top-center of the selection bounding box
     const toolbarX = selectionBox.minX + selectionBox.width / 2
@@ -194,6 +197,20 @@ export const CanvasSelectionToolbar: React.FC<CanvasSelectionToolbarProps> = Rea
             <Palette size={13} />
           </button>
         </ToolTip>
+
+        {/* Snap Selection to Grid */}
+        {onSnapToGrid && (
+          <ToolTip text="Snap to Grid" position="top">
+            <button
+              type="button"
+              className="lumina-canvas-tool-btn"
+              onClick={onSnapToGrid}
+              aria-label="Snap to Grid"
+            >
+              <Grid size={13} />
+            </button>
+          </ToolTip>
+        )}
 
         {/* Multi-Node Delete */}
         <ToolTip text="Delete Selection (Del)" position="top">

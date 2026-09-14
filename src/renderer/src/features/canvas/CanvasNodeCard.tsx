@@ -84,7 +84,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
     return (
       <div
         data-node-id={node.id}
-        className={`lumina-canvas-node ${nodeColorClass} ${node.type === 'shape' ? 'is-shape' : ''} ${isSelected ? 'selected' : ''}`}
+        className={`lumina-canvas-node ${nodeColorClass} ${node.type === 'shape' ? `is-shape shape-${node.shape || 'rectangle'}` : ''} ${isSelected ? 'selected' : ''}`}
         style={{
           left: `${node.x}px`,
           top: `${node.y}px`,
@@ -223,6 +223,17 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
                   dir="auto"
                   className="lumina-canvas-shape-input"
                   defaultValue={node.text || ''}
+                  ref={(el) => {
+                    if (el) {
+                      el.style.height = 'auto'
+                      el.style.height = `${el.scrollHeight}px`
+                    }
+                  }}
+                  onInput={(e) => {
+                    const el = e.currentTarget
+                    el.style.height = 'auto'
+                    el.style.height = `${el.scrollHeight}px`
+                  }}
                   onBlur={(e) => {
                     onUpdateText(node.id, e.target.value)
                     onStopEditing()

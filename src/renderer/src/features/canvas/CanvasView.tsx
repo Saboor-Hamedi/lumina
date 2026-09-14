@@ -37,6 +37,7 @@ import { CanvasEdgeItem } from './CanvasEdgeItem'
 import { ConvasToolBarCenter } from './ConvasToolBarCenter'
 import { ConvasToolBarRight } from './ConvasToolBarRight'
 import { CanvasSelectionToolbar } from './CanvasSelectionToolbar'
+import { CanvasMiniMap } from './CanvasMiniMap'
 import {
   computeAlignedNodePositions,
   computeDistributedNodePositions,
@@ -86,6 +87,7 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange, o
   const [isSpacePressed, setIsSpacePressed] = useState(false)
   const [isPanningState, setIsPanningState] = useState(false)
   const [snapToGrid, setSnapToGrid] = useState(false)
+  const [isMiniMapOpen, setIsMiniMapOpen] = useState(false)
 
   // Interactive Linking / Wire connection state
   const [connecting, setConnecting] = useState<ConnectingState | null>(null)
@@ -109,6 +111,7 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange, o
     viewport,
     selectedNodeIds,
     setEdges,
+    setViewport,
     setSelectedNodeIds,
     screenToCanvas,
     zoomAt,
@@ -125,7 +128,11 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange, o
     updateNodeColor,
     deleteNode,
     deleteSelected,
-    duplicateNodes
+    duplicateNodes,
+    snapNodesToGrid,
+    updateEdgeLineStyle,
+    updateEdgeColor,
+    deleteEdge
   } = useCanvas({ initialData, onChange })
 
   // Synchronous state ref for stable event listeners
@@ -203,6 +210,37 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange, o
   )
 
   /**
+   * Toggles grid snapping. When enabled, immediately aligns selected nodes (or all nodes) to 20px grid.
+   */
+  const handleToggleSnapToGrid = useCallback(() => {
+    setSnapToGrid((prev) => {
+      const next = !prev
+      if (next) {
+        snapNodesToGrid(
+          stateRef.current.selectedNodeIds.length > 0 ? stateRef.current.selectedNodeIds : undefined
+        )
+      }
+      return next
+    })
+  }, [snapNodesToGrid])
+
+  /**
+   * Smoothly centers the camera viewport at target canvas coordinates (used by MiniMap Navigator).
+   */
+  const handlePanTo = useCallback(
+    (canvasCenterX: number, canvasCenterY: number) => {
+      if (!containerRef.current) return
+      const rect = containerRef.current.getBoundingClientRect()
+      setViewport((prev) => ({
+        ...prev,
+        x: Math.round(rect.width / 2 - canvasCenterX * prev.zoom),
+        y: Math.round(rect.height / 2 - canvasCenterY * prev.zoom)
+      }))
+    },
+    [setViewport]
+  )
+
+  /**
    * Global keyboard shortcut listener:
    * - Spacebar (hold): activates temporary hand / pan tool
    * - Delete / Backspace: deletes selected card(s)
@@ -242,7 +280,7 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange, o
         // Ctrl+' toggles 20px grid snapping
         e.preventDefault()
         e.stopPropagation()
-        setSnapToGrid((prev) => !prev)
+        handleToggleSnapToGrid()
       } else if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A') && !isInputActive) {
         e.preventDefault()
         e.stopPropagation()
@@ -795,7 +833,10 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange, o
           clientY <= rect.bottom)
 
       if (isInside) {
-        const pt = screenToCanvas(clientX, clientY, rect)
+        let pt = screenToCanvas(clientX, clientY, rect)
+        if (stateRef.current.snapToGrid) {
+          pt = { x: Math.round(pt.x / 20) * 20, y: Math.round(pt.y / 20) * 20 }
+        }
         const batchNodes = snippets.map((s: any, idx: number) => buildNodeFromSnippet(s, pt, idx * 24))
         addNodes(batchNodes)
       }
@@ -820,20 +861,33 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange, o
       e.preventDefault()
       if (!containerRef.current) return
       const rect = containerRef.current.getBoundingClientRect()
-      const pt = screenToCanvas(e.clientX, e.clientY, rect)
+      let pt = screenToCanvas(e.clientX, e.clientY, rect)
+      const shouldSnap = stateRef.current.snapToGrid
+      if (shouldSnap) {
+        pt = { x: Math.round(pt.x / 20) * 20, y: Math.round(pt.y / 20) * 20 }
+      }
 
       // 1. Check if dropped from ConvasShapes palette
       const luminaShapeData = e.dataTransfer.getData('application/lumina-shape')
       if (luminaShapeData) {
         try {
           const { shapeType, width = 140, height = 100, color = 'default' } = JSON.parse(luminaShapeData)
+          let newX = pt.x - width / 2
+          let newY = pt.y - height / 2
+          if (shouldSnap) {
+            newX = Math.round(newX / 20) * 20
+            newY = Math.round(newY / 20) * 20
+          } else {
+            newX = Math.round(newX)
+            newY = Math.round(newY)
+          }
           const newNode = addNode({
             type: 'shape',
             shape: shapeType,
             title: '',
             text: '',
-            x: Math.round(pt.x - width / 2),
-            y: Math.round(pt.y - height / 2),
+            x: newX,
+            y: newY,
             width,
             height,
             color: color || 'default'
@@ -1175,10 +1229,10 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange, o
   return (
     <div
       ref={containerRef}
-      className={`lumina-canvas-container ${connecting ? 'is-connecting' : ''}`}
+      className={`lumina-canvas-container ${connecting ? 'is-connecting' : ''} ${snapToGrid ? 'is-grid-snapping' : ''}`}
       style={{
         backgroundPosition: `${viewport.x}px ${viewport.y}px`,
-        backgroundSize: `${24 * viewport.zoom}px ${24 * viewport.zoom}px`,
+        backgroundSize: `${(snapToGrid ? 20 : 24) * viewport.zoom}px ${(snapToGrid ? 20 : 24) * viewport.zoom}px`,
         cursor: cursorStyle
       }}
       onWheel={handleWheel}
@@ -1230,6 +1284,15 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange, o
               fromNode={nodeMap.get(edge.fromNode)}
               toNode={nodeMap.get(edge.toNode)}
               onDeleteEdge={handleDeleteEdge}
+              onUpdateLineStyle={updateEdgeLineStyle}
+              onCycleColor={(edgeId) => {
+                const targetEdge = edges.find((e) => e.id === edgeId)
+                if (targetEdge) {
+                  const currIdx = COLOR_CYCLE.indexOf((targetEdge.color || 'default') as any)
+                  const nextColor = COLOR_CYCLE[(currIdx + 1) % COLOR_CYCLE.length]
+                  updateEdgeColor(edgeId, nextColor)
+                }
+              }}
             />
           ))}
           {liveConnectingLine}
@@ -1257,7 +1320,7 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange, o
           />
         ))}
 
-        {/* Floating Multi-Selection Action Bar (Alignment, Distribution, Duplicate, Color, Delete) */}
+        {/* Floating Multi-Selection Action Bar (Alignment, Distribution, Duplicate, Color, Delete, Snap) */}
         {selectionBox && selectedNodeIds.length > 1 && (
           <CanvasSelectionToolbar
             selectionBox={selectionBox}
@@ -1267,6 +1330,7 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange, o
             onDuplicate={() => duplicateNodes(selectedNodeIds)}
             onCycleColor={handleCycleSelectionColor}
             onDelete={() => deleteSelected(selectedNodeIds)}
+            onSnapToGrid={() => snapNodesToGrid(selectedNodeIds)}
           />
         )}
       </div>
@@ -1279,7 +1343,7 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange, o
         onAddShape={handleAddShape}
       />
 
-      {/* Right Canvas Toolbar: Zoom, Snap to Grid, Export/Copy & Delete Selected */}
+      {/* Right Canvas Toolbar: Zoom, Snap to Grid, MiniMap, Export/Copy & Delete Selected */}
       <ConvasToolBarRight
         zoom={viewport.zoom}
         onZoomIn={() => {
@@ -1305,7 +1369,23 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange, o
         onOpenDrawer={onOpenDrawer}
         hasSelectedNodes={selectedNodeIds.length > 0}
         snapToGrid={snapToGrid}
-        onToggleSnapToGrid={() => setSnapToGrid((prev) => !prev)}
+        onToggleSnapToGrid={handleToggleSnapToGrid}
+        isMiniMapOpen={isMiniMapOpen}
+        onToggleMiniMap={() => setIsMiniMapOpen((prev) => !prev)}
+      />
+
+      {/* Interactive Mini-Map Navigator */}
+      <CanvasMiniMap
+        nodes={nodes}
+        viewport={viewport}
+        containerRect={
+          containerRef.current
+            ? { width: containerRef.current.clientWidth, height: containerRef.current.clientHeight }
+            : null
+        }
+        onPanTo={handlePanTo}
+        isOpen={isMiniMapOpen}
+        onToggleOpen={() => setIsMiniMapOpen((prev) => !prev)}
       />
 
       {/* Unified Notification Toast */}
