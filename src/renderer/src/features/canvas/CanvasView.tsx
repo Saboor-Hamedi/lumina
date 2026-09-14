@@ -36,6 +36,14 @@ import { CanvasNodeCard } from './CanvasNodeCard'
 import { CanvasEdgeItem } from './CanvasEdgeItem'
 import { ConvasToolBarCenter } from './ConvasToolBarCenter'
 import { ConvasToolBarRight } from './ConvasToolBarRight'
+import { CanvasSelectionToolbar } from './CanvasSelectionToolbar'
+import {
+  computeAlignedNodePositions,
+  computeDistributedNodePositions,
+  getSelectionBoundingBox,
+  CanvasAlignmentType,
+  CanvasDistributionType
+} from './canvasAlignment'
 import { copyCanvasAsImage, downloadCanvasPng, downloadCanvasSvg } from './canvasExport'
 import { Notification, useToast } from '../../core/notification'
 import './canvas.css'
@@ -43,6 +51,7 @@ import './canvas.css'
 export interface CanvasViewProps {
   initialData?: CanvasData
   onChange?: (data: CanvasData) => void
+  onOpenDrawer?: () => void
 }
 
 interface ConnectingState {
@@ -67,7 +76,7 @@ interface ResizingNodeInfo {
   initialH: number
 }
 
-export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange }) => {
+export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange, onOpenDrawer }) => {
   const containerRef = useRef<HTMLDivElement>(null)
 
   // Local editing states
@@ -76,6 +85,7 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
   const [toolMode, setToolMode] = useState<'select' | 'hand'>('select')
   const [isSpacePressed, setIsSpacePressed] = useState(false)
   const [isPanningState, setIsPanningState] = useState(false)
+  const [snapToGrid, setSnapToGrid] = useState(false)
 
   // Interactive Linking / Wire connection state
   const [connecting, setConnecting] = useState<ConnectingState | null>(null)
@@ -103,6 +113,7 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
     screenToCanvas,
     zoomAt,
     resetViewport,
+    zoomToFit,
     panBy,
     addNode,
     addNodes,
@@ -113,7 +124,8 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
     updateNodeTitle,
     updateNodeColor,
     deleteNode,
-    deleteSelected
+    deleteSelected,
+    duplicateNodes
   } = useCanvas({ initialData, onChange })
 
   // Synchronous state ref for stable event listeners
@@ -123,7 +135,8 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
     selectedNodeIds,
     toolMode,
     isSpacePressed,
-    connecting
+    connecting,
+    snapToGrid
   })
   stateRef.current = {
     viewport,
@@ -131,7 +144,8 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
     selectedNodeIds,
     toolMode,
     isSpacePressed,
-    connecting
+    connecting,
+    snapToGrid
   }
 
   // Fast O(1) node lookup map for instant edge & port resolution
@@ -217,6 +231,27 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
         setEditingNodeId(null)
         setEditingField(null)
         setSelectedNodeIds([])
+      } else if (e.altKey && (e.key === 'd' || e.key === 'D') && !isInputActive) {
+        // Alt+D duplicates selected nodes (leaving Ctrl+D exclusively for Documentation!)
+        if (stateRef.current.selectedNodeIds.length > 0) {
+          e.preventDefault()
+          e.stopPropagation()
+          duplicateNodes(stateRef.current.selectedNodeIds)
+        }
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === "'" || e.key === '"') && !isInputActive) {
+        // Ctrl+' toggles 20px grid snapping
+        e.preventDefault()
+        e.stopPropagation()
+        setSnapToGrid((prev) => !prev)
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A') && !isInputActive) {
+        e.preventDefault()
+        e.stopPropagation()
+        setSelectedNodeIds(stateRef.current.nodes.map((n) => n.id))
+      } else if (((e.ctrlKey || e.metaKey) && e.key === '1') || (e.shiftKey && e.key === '!')) {
+        if (!isInputActive) {
+          e.preventDefault()
+          zoomToFit(containerRef.current?.getBoundingClientRect())
+        }
       } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'c' || e.key === 'C') && !isInputActive) {
         e.preventDefault()
         handleCopyImage()
@@ -288,10 +323,16 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
         if (resizingNodeRef.current) {
           const dx = (e.clientX - resizingNodeRef.current.startX) / currentZoom
           const dy = (e.clientY - resizingNodeRef.current.startY) / currentZoom
+          let newW = resizingNodeRef.current.initialW + dx
+          let newH = resizingNodeRef.current.initialH + dy
+          if (stateRef.current.snapToGrid) {
+            newW = Math.round(newW / 20) * 20
+            newH = Math.round(newH / 20) * 20
+          }
           updateNodeSize(
             resizingNodeRef.current.id,
-            resizingNodeRef.current.initialW + dx,
-            resizingNodeRef.current.initialH + dy
+            newW,
+            newH
           )
         } else if (isPanningRef.current) {
           // 3. Canvas background panning
@@ -300,14 +341,21 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
           panPrevRef.current = { x: e.clientX, y: e.clientY }
           panBy(dx, dy)
         } else if (draggingNodeRef.current) {
-          // 4. Node dragging (supports multi-card selection drag)
+          // 4. Node dragging (supports multi-card selection drag & optional 20px grid snapping)
           const dx = (e.clientX - draggingNodeRef.current.startX) / currentZoom
           const dy = (e.clientY - draggingNodeRef.current.startY) / currentZoom
+          const shouldSnap = stateRef.current.snapToGrid
 
           if (draggingNodeRef.current.initialPositions.size > 1) {
             const updates: { id: string; x: number; y: number }[] = []
             draggingNodeRef.current.initialPositions.forEach((pos, id) => {
-              updates.push({ id, x: pos.x + dx, y: pos.y + dy })
+              let targetX = pos.x + dx
+              let targetY = pos.y + dy
+              if (shouldSnap) {
+                targetX = Math.round(targetX / 20) * 20
+                targetY = Math.round(targetY / 20) * 20
+              }
+              updates.push({ id, x: targetX, y: targetY })
             })
             updateNodesPositions(updates)
           } else {
@@ -315,10 +363,16 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
               draggingNodeRef.current.id
             )
             if (initialPos) {
+              let targetX = initialPos.x + dx
+              let targetY = initialPos.y + dy
+              if (shouldSnap) {
+                targetX = Math.round(targetX / 20) * 20
+                targetY = Math.round(targetY / 20) * 20
+              }
               updateNodePosition(
                 draggingNodeRef.current.id,
-                initialPos.x + dx,
-                initialPos.y + dy
+                targetX,
+                targetY
               )
             }
           }
@@ -963,6 +1017,52 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
     [nodeMap, updateNodeColor]
   )
 
+  /**
+   * Cycles colors for all currently selected nodes.
+   */
+  const handleCycleSelectionColor = useCallback(() => {
+    if (selectedNodeIds.length === 0) return
+    const firstNode = nodeMap.get(selectedNodeIds[0])
+    const currentColor = firstNode?.color || 'default'
+    const currentIndex = COLOR_CYCLE.indexOf(currentColor)
+    const nextColor = COLOR_CYCLE[(currentIndex + 1) % COLOR_CYCLE.length]
+    selectedNodeIds.forEach((id) => {
+      updateNodeColor(id, nextColor)
+    })
+  }, [selectedNodeIds, nodeMap, updateNodeColor])
+
+  /**
+   * Aligns all selected nodes along specified edge or center line.
+   */
+  const handleAlignSelection = useCallback(
+    (alignment: CanvasAlignmentType) => {
+      const updates = computeAlignedNodePositions(nodes, selectedNodeIds, alignment)
+      if (updates.length > 0) {
+        updateNodesPositions(updates)
+      }
+    },
+    [nodes, selectedNodeIds, updateNodesPositions]
+  )
+
+  /**
+   * Distributes all selected nodes evenly along horizontal or vertical axes.
+   */
+  const handleDistributeSelection = useCallback(
+    (direction: CanvasDistributionType) => {
+      const updates = computeDistributedNodePositions(nodes, selectedNodeIds, direction)
+      if (updates.length > 0) {
+        updateNodesPositions(updates)
+      }
+    },
+    [nodes, selectedNodeIds, updateNodesPositions]
+  )
+
+  // Memoized selection bounding box for floating selection action bar
+  const selectionBox = useMemo(() => {
+    if (selectedNodeIds.length < 2) return null
+    return getSelectionBoundingBox(nodes, selectedNodeIds)
+  }, [nodes, selectedNodeIds])
+
   const handleStartEditing = useCallback((nodeId: string, field: 'title' | 'text') => {
     setEditingNodeId(nodeId)
     setEditingField(field)
@@ -1152,9 +1252,23 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
             onUpdateTitle={updateNodeTitle}
             onUpdateText={updateNodeText}
             onCycleColor={handleCycleColor}
+            onDuplicateNode={(id) => duplicateNodes([id])}
             onDeleteNode={deleteNode}
           />
         ))}
+
+        {/* Floating Multi-Selection Action Bar (Alignment, Distribution, Duplicate, Color, Delete) */}
+        {selectionBox && selectedNodeIds.length > 1 && (
+          <CanvasSelectionToolbar
+            selectionBox={selectionBox}
+            selectedCount={selectedNodeIds.length}
+            onAlign={handleAlignSelection}
+            onDistribute={handleDistributeSelection}
+            onDuplicate={() => duplicateNodes(selectedNodeIds)}
+            onCycleColor={handleCycleSelectionColor}
+            onDelete={() => deleteSelected(selectedNodeIds)}
+          />
+        )}
       </div>
 
       {/* Center Canvas Toolbar: Tool Mode (Select / Hand), Sticky Note & Shapes */}
@@ -1165,7 +1279,7 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
         onAddShape={handleAddShape}
       />
 
-      {/* Right Canvas Toolbar: Zoom, Export/Copy & Delete Selected */}
+      {/* Right Canvas Toolbar: Zoom, Snap to Grid, Export/Copy & Delete Selected */}
       <ConvasToolBarRight
         zoom={viewport.zoom}
         onZoomIn={() => {
@@ -1181,13 +1295,17 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange })
           }
         }}
         onResetViewport={resetViewport}
+        onZoomToFit={() => zoomToFit(containerRef.current?.getBoundingClientRect())}
         onDeleteSelected={deleteSelected}
         canDelete={selectedNodeIds.length > 0}
         onAddShape={handleAddShape}
         onCopyImage={handleCopyImage}
         onExportPNG={handleExportPNG}
         onExportSVG={handleExportSVG}
+        onOpenDrawer={onOpenDrawer}
         hasSelectedNodes={selectedNodeIds.length > 0}
+        snapToGrid={snapToGrid}
+        onToggleSnapToGrid={() => setSnapToGrid((prev) => !prev)}
       />
 
       {/* Unified Notification Toast */}

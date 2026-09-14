@@ -24,12 +24,14 @@ export interface CanvasTabPaneProps {
   }
   onSave?: (snippet: any) => Promise<any>
   isSelected?: boolean
+  isDrawer?: boolean
 }
 
 export const CanvasTabPane: React.FC<CanvasTabPaneProps> = ({
   snippet,
   onSave,
-  isSelected = true
+  isSelected = true,
+  isDrawer = false
 }) => {
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const latestDataRef = useRef<CanvasData | null>(null)
@@ -111,6 +113,16 @@ export const CanvasTabPane: React.FC<CanvasTabPaneProps> = ({
       <CanvasView
         initialData={parsedInitialData}
         onChange={handleCanvasChange}
+        onOpenDrawer={
+          !isDrawer
+            ? () =>
+                window.dispatchEvent(
+                  new CustomEvent('open-canvas-drawer', {
+                    detail: { snippetId: snippet.id }
+                  })
+                )
+            : undefined
+        }
       />
     </div>
   )

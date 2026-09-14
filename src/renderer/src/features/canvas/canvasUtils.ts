@@ -198,6 +198,66 @@ export function getShapePortRatio(
       }
       break
 
+    case 'octagon':
+      // Octagon points="30,4 70,4 96,30 96,70 70,96 30,96 4,70 4,30"
+      switch (side) {
+        case 'top': return { rx: 0.5, ry: 0.04 }
+        case 'bottom': return { rx: 0.5, ry: 0.96 }
+        case 'left': return { rx: 0.04, ry: 0.5 }
+        case 'right': return { rx: 0.96, ry: 0.5 }
+      }
+      break
+
+    case 'trapezoid':
+      // Trapezoid points="20,6 80,6 96,94 4,94"
+      switch (side) {
+        case 'top': return { rx: 0.5, ry: 0.06 }
+        case 'bottom': return { rx: 0.5, ry: 0.94 }
+        case 'left': return { rx: 0.12, ry: 0.5 }
+        case 'right': return { rx: 0.88, ry: 0.5 }
+      }
+      break
+
+    case 'cross':
+      // Cross points: top at 4%, bottom at 96%, left at 4%, right at 96%
+      switch (side) {
+        case 'top': return { rx: 0.5, ry: 0.04 }
+        case 'bottom': return { rx: 0.5, ry: 0.96 }
+        case 'left': return { rx: 0.04, ry: 0.5 }
+        case 'right': return { rx: 0.96, ry: 0.5 }
+      }
+      break
+
+    case 'pentagon':
+      // Pentagon points="50,4 96,38 78,94 22,94 4,38"
+      switch (side) {
+        case 'top': return { rx: 0.5, ry: 0.04 }
+        case 'bottom': return { rx: 0.5, ry: 0.94 }
+        case 'left': return { rx: 0.04, ry: 0.38 }
+        case 'right': return { rx: 0.96, ry: 0.38 }
+      }
+      break
+
+    case 'actor':
+      // UML Actor: head at 6%, feet at 95%, hands at 16% and 84%
+      switch (side) {
+        case 'top': return { rx: 0.5, ry: 0.06 }
+        case 'bottom': return { rx: 0.5, ry: 0.95 }
+        case 'left': return { rx: 0.16, ry: 0.46 }
+        case 'right': return { rx: 0.84, ry: 0.46 }
+      }
+      break
+
+    case 'envelope':
+      // Envelope rect x=4 y=14 w=92 h=72
+      switch (side) {
+        case 'top': return { rx: 0.5, ry: 0.14 }
+        case 'bottom': return { rx: 0.5, ry: 0.86 }
+        case 'left': return { rx: 0.04, ry: 0.5 }
+        case 'right': return { rx: 0.96, ry: 0.5 }
+      }
+      break
+
     default:
       break
   }

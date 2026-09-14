@@ -26,6 +26,12 @@ export type CanvasShapeType =
   | 'step'
   | 'shield'
   | 'heart'
+  | 'octagon'
+  | 'trapezoid'
+  | 'cross'
+  | 'pentagon'
+  | 'actor'
+  | 'envelope'
 
 export type CanvasNodeColor =
   | 'default'

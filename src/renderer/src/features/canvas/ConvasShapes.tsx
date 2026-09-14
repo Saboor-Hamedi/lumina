@@ -43,7 +43,13 @@ export const CANVAS_SHAPES: ShapeDefinition[] = [
   { id: 'document', label: 'Document', defaultWidth: 140, defaultHeight: 110, description: 'File / Report' },
   { id: 'step', label: 'Step Arrow', defaultWidth: 150, defaultHeight: 90, description: 'Process / Next' },
   { id: 'shield', label: 'Shield', defaultWidth: 130, defaultHeight: 130, description: 'Security / Protect' },
-  { id: 'heart', label: 'Heart', defaultWidth: 130, defaultHeight: 120, description: 'Favorite / Priority' }
+  { id: 'heart', label: 'Heart', defaultWidth: 130, defaultHeight: 120, description: 'Favorite / Priority' },
+  { id: 'octagon', label: 'Octagon', defaultWidth: 130, defaultHeight: 130, description: 'Stop / Critical / Halt' },
+  { id: 'trapezoid', label: 'Trapezoid', defaultWidth: 160, defaultHeight: 100, description: 'Manual / Operation' },
+  { id: 'cross', label: 'Cross', defaultWidth: 130, defaultHeight: 130, description: 'Plus / Health / Critical' },
+  { id: 'pentagon', label: 'Pentagon', defaultWidth: 140, defaultHeight: 130, description: 'Milestone / Stage' },
+  { id: 'actor', label: 'Actor', defaultWidth: 120, defaultHeight: 150, description: 'User / Person / Client' },
+  { id: 'envelope', label: 'Envelope', defaultWidth: 150, defaultHeight: 100, description: 'Message / Event / Mail' }
 ]
 
 export const SHAPE_COLOR_OPTIONS: { id: CanvasNodeColor; label: string; hex: string }[] = [
@@ -303,6 +309,85 @@ export function renderShapeSVG(
           strokeLinejoin="round"
           vectorEffect="non-scaling-stroke"
         />
+      )
+
+    case 'octagon':
+      return (
+        <polygon
+          points="30,4 70,4 96,30 96,70 70,96 30,96 4,70 4,30"
+          fill={fill}
+          fillOpacity={fillOpacity}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      )
+
+    case 'trapezoid':
+      return (
+        <polygon
+          points="20,6 80,6 96,94 4,94"
+          fill={fill}
+          fillOpacity={fillOpacity}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      )
+
+    case 'cross':
+      return (
+        <polygon
+          points="35,4 65,4 65,35 96,35 96,65 65,65 65,96 35,96 35,65 4,65 4,35 35,35"
+          fill={fill}
+          fillOpacity={fillOpacity}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      )
+
+    case 'pentagon':
+      return (
+        <polygon
+          points="50,4 96,38 78,94 22,94 4,38"
+          fill={fill}
+          fillOpacity={fillOpacity}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      )
+
+    case 'actor':
+      return (
+        <g stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke">
+          {/* Head */}
+          <circle cx="50" cy="20" r="14" fill={fill} fillOpacity={fillOpacity} />
+          {/* Spine */}
+          <line x1="50" y1="34" x2="50" y2="68" />
+          {/* Arms */}
+          <line x1="16" y1="46" x2="84" y2="46" />
+          {/* Left Leg */}
+          <line x1="50" y1="68" x2="24" y2="95" />
+          {/* Right Leg */}
+          <line x1="50" y1="68" x2="76" y2="95" />
+        </g>
+      )
+
+    case 'envelope':
+      return (
+        <g stroke={stroke} strokeWidth={strokeWidth} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke">
+          <rect x="4" y="14" width="92" height="72" rx="6" ry="6" fill={fill} fillOpacity={fillOpacity} />
+          {/* Flap fold lines */}
+          <path d="M 6 18 L 50 56 L 94 18" fill="none" />
+          <path d="M 6 82 L 38 48" fill="none" opacity={0.6} />
+          <path d="M 94 82 L 62 48" fill="none" opacity={0.6} />
+        </g>
       )
 
     default:

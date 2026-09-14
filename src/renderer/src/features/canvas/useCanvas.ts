@@ -271,6 +271,99 @@ export function useCanvas(options: UseCanvasOptions = {}) {
     setSelectedNodeIds((prev) => prev.filter((id) => !selectedSet.has(id)))
   }, [])
 
+  /**
+   * Duplicates specific nodes with an offset (+32, +32) and clones internal connecting edges.
+   */
+  const duplicateNodes = useCallback((targetIds?: string[]) => {
+    const toDup = targetIds && targetIds.length > 0 ? targetIds : selectedNodeIdsRef.current
+    if (!toDup || toDup.length === 0) return []
+
+    const dupSet = new Set(toDup)
+    const idMap = new Map<string, string>()
+    const duplicatedNodes: CanvasNode[] = []
+
+    setNodes((prev) => {
+      const existingToDup = prev.filter((n) => dupSet.has(n.id))
+      if (existingToDup.length === 0) return prev
+
+      existingToDup.forEach((n) => {
+        const newId = `node-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+        idMap.set(n.id, newId)
+        duplicatedNodes.push({
+          ...n,
+          id: newId,
+          x: n.x + 32,
+          y: n.y + 32
+        })
+      })
+
+      return [...prev, ...duplicatedNodes]
+    })
+
+    setEdges((prev) => {
+      const clonedEdges: CanvasEdge[] = []
+      prev.forEach((e) => {
+        if (idMap.has(e.fromNode) && idMap.has(e.toNode)) {
+          clonedEdges.push({
+            ...e,
+            id: `edge-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            fromNode: idMap.get(e.fromNode)!,
+            toNode: idMap.get(e.toNode)!
+          })
+        }
+      })
+      return clonedEdges.length > 0 ? [...prev, ...clonedEdges] : prev
+    })
+
+    const newIds = duplicatedNodes.map((n) => n.id)
+    setSelectedNodeIds(newIds)
+    return newIds
+  }, [])
+
+  /**
+   * Automatically calculates bounding box of all nodes and centers/zooms canvas to fit container.
+   */
+  const zoomToFit = useCallback((containerRect?: DOMRect | null) => {
+    setNodes((currentNodes) => {
+      if (currentNodes.length === 0) {
+        resetViewport()
+        return currentNodes
+      }
+
+      const rect = containerRect || { width: window.innerWidth, height: window.innerHeight }
+      let minX = Infinity
+      let minY = Infinity
+      let maxX = -Infinity
+      let maxY = -Infinity
+
+      currentNodes.forEach((n) => {
+        minX = Math.min(minX, n.x)
+        minY = Math.min(minY, n.y)
+        maxX = Math.max(maxX, n.x + (n.width || 160))
+        maxY = Math.max(maxY, n.y + (n.height || 100))
+      })
+
+      const contentW = maxX - minX + 160
+      const contentH = maxY - minY + 160
+      const scaleX = rect.width / contentW
+      const scaleY = rect.height / contentH
+      const targetZoom = Math.max(0.2, Math.min(1.4, Math.min(scaleX, scaleY)))
+
+      const midX = (minX + maxX) / 2
+      const midY = (minY + maxY) / 2
+      const targetX = rect.width / 2 - midX * targetZoom
+      const targetY = rect.height / 2 - midY * targetZoom
+
+      setViewport({
+        x: Math.round(targetX),
+        y: Math.round(targetY),
+        zoom: Math.round(targetZoom * 100) / 100
+      })
+
+      return currentNodes
+    })
+  }, [resetViewport])
+
   return {
     nodes,
     edges,
@@ -284,6 +377,7 @@ export function useCanvas(options: UseCanvasOptions = {}) {
     screenToCanvas,
     zoomAt,
     resetViewport,
+    zoomToFit,
     startPan,
     updatePan,
     endPan,
@@ -297,6 +391,7 @@ export function useCanvas(options: UseCanvasOptions = {}) {
     updateNodeTitle,
     updateNodeColor,
     deleteNode,
-    deleteSelected
+    deleteSelected,
+    duplicateNodes
   }
 }

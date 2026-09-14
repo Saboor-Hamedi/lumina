@@ -98,6 +98,24 @@ function getShapeSvgMarkup(
     case 'heart':
       shapeContent = `<path d="M 50 88 C 22 62, 6 44, 6 26 C 6 12, 16 4, 30 4 C 39 4, 46 9, 50 16 C 54 9, 61 4, 70 4 C 84 4, 94 12, 94 26 C 94 44, 78 62, 50 88 Z" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
       break
+    case 'octagon':
+      shapeContent = `<polygon points="30,4 70,4 96,30 96,70 70,96 30,96 4,70 4,30" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
+      break
+    case 'trapezoid':
+      shapeContent = `<polygon points="20,6 80,6 96,94 4,94" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
+      break
+    case 'cross':
+      shapeContent = `<polygon points="35,4 65,4 65,35 96,35 96,65 65,65 65,96 35,96 35,65 4,65 4,35 35,35" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
+      break
+    case 'pentagon':
+      shapeContent = `<polygon points="50,4 96,38 78,94 22,94 4,38" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
+      break
+    case 'actor':
+      shapeContent = `<g stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><circle cx="50" cy="20" r="14" fill="${fill}" fill-opacity="${fillOpacity}" /><line x1="50" y1="34" x2="50" y2="68" /><line x1="16" y1="46" x2="84" y2="46" /><line x1="50" y1="68" x2="24" y2="95" /><line x1="50" y1="68" x2="76" y2="95" /></g>`
+      break
+    case 'envelope':
+      shapeContent = `<g stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="14" width="92" height="72" rx="6" ry="6" fill="${fill}" fill-opacity="${fillOpacity}" /><path d="M 6 18 L 50 56 L 94 18" fill="none" /><path d="M 6 82 L 38 48" fill="none" opacity="0.6" /><path d="M 94 82 L 62 48" fill="none" opacity="0.6" /></g>`
+      break
     case 'rectangle':
     default:
       shapeContent = `<rect x="4" y="4" width="92" height="92" rx="4" ry="4" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" />`

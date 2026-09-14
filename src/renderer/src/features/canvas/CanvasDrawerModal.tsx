@@ -280,6 +280,7 @@ export const CanvasDrawerModal: React.FC<CanvasDrawerModalProps> = () => {
               snippet={currentSnippet}
               onSave={saveSnippet}
               isSelected={true}
+              isDrawer={true}
             />
           ) : (
             <div className="canvas-drawer-loading">

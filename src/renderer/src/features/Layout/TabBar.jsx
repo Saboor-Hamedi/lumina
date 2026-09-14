@@ -7,7 +7,8 @@ import {
   Trash2,
   Image,
   Network,
-  Sparkles
+  Sparkles,
+  PanelBottomOpen
 } from 'lucide-react'
 import { DndContext, closestCenter, useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
 import {
@@ -369,6 +370,24 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
                       const s = snippetMap.get(contextMenu.id)
                       setContextMenu(null)
                       if (s) summarizeNotes(s)
+                    }
+                  }
+                ]
+              : []),
+            ...(snippetMap.get(contextMenu.id)?.type === 'canvas' ||
+            snippetMap.get(contextMenu.id)?.language === 'canvas' ||
+            snippetMap.get(contextMenu.id)?.fileName?.endsWith('.canvas')
+              ? [
+                  {
+                    label: 'Open as Inline Canvas',
+                    icon: <PanelBottomOpen size={14} />,
+                    onClick: () => {
+                      window.dispatchEvent(
+                        new CustomEvent('open-canvas-drawer', {
+                          detail: { snippetId: contextMenu.id }
+                        })
+                      )
+                      setContextMenu(null)
                     }
                   }
                 ]

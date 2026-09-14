@@ -16,7 +16,7 @@
 import React, { useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { ExternalLink, Palette, X, FileText } from 'lucide-react'
+import { ExternalLink, Palette, X, FileText, Copy } from 'lucide-react'
 import { CanvasNode, CanvasEdgeSide } from './types'
 import { stripFrontmatter, getShapePortRatio } from './canvasUtils'
 import { CanvasImagePreview } from './CanvasImagePreview'
@@ -57,6 +57,7 @@ export interface CanvasNodeCardProps {
   onUpdateTitle: (nodeId: string, title: string) => void
   onUpdateText: (nodeId: string, text: string) => void
   onCycleColor: (nodeId: string) => void
+  onDuplicateNode?: (nodeId: string) => void
   onDeleteNode: (nodeId: string) => void
 }
 
@@ -75,6 +76,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
     onUpdateTitle,
     onUpdateText,
     onCycleColor,
+    onDuplicateNode,
     onDeleteNode
   }) => {
     const nodeColorClass = node.color ? `color-${node.color}` : 'color-default'
@@ -175,6 +177,22 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
                   <Palette size={12} />
                 </button>
               </ToolTip>
+
+              {onDuplicateNode && (
+                <ToolTip text="Duplicate Shape (Alt+D)" position="top">
+                  <button
+                    className="lumina-canvas-action-btn"
+                    title="Duplicate Shape (Alt+D)"
+                    aria-label="Duplicate Shape"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onDuplicateNode(node.id)
+                    }}
+                  >
+                    <Copy size={12} />
+                  </button>
+                </ToolTip>
+              )}
 
               <ToolTip text="Delete Shape" position="top">
                 <button
@@ -297,6 +315,20 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
                     <Palette size={12} />
                   </button>
                 </ToolTip>
+
+                {onDuplicateNode && (
+                  <ToolTip text="Duplicate Card (Alt+D)" position="top">
+                    <button
+                      className="lumina-canvas-action-btn"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onDuplicateNode(node.id)
+                      }}
+                    >
+                      <Copy size={12} />
+                    </button>
+                  </ToolTip>
+                )}
 
                 <ToolTip text="Delete Node" position="top">
                   <button
