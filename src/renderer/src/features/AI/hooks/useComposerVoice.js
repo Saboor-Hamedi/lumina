@@ -33,9 +33,18 @@ export const useComposerVoice = ({ input, setInput, textareaRef }) => {
       if (!text) return
       const base = baselineInputRef.current !== null ? baselineInputRef.current : input
       baselineInputRef.current = null
-      const needsSpace = base && !base.endsWith(' ') && !base.endsWith('\n')
-      setInput(base ? `${base}${needsSpace ? ' ' : ''}${text}` : text)
-      setTimeout(() => textareaRef.current?.focus(), 10)
+      const needsSpace = Boolean(base && !base.endsWith(' ') && !base.endsWith('\n'))
+      const nextText = base ? `${base}${needsSpace ? ' ' : ''}${text}` : text
+      setInput(nextText)
+      setTimeout(() => {
+        const el = textareaRef.current
+        if (el) {
+          el.focus()
+          const len = el.value.length
+          el.setSelectionRange(len, len)
+          el.scrollTop = el.scrollHeight
+        }
+      }, 10)
     }
 
     window.addEventListener('voice-live-text', handleLiveText)

@@ -34,7 +34,7 @@ import { handleArrowUp, handleArrowDown } from './ArrowNavigation'
 import { useWikilinkCompletion } from '../../features/Editor/wikilink/useWikilinkCompletion'
 import { createEditorSlashPlugin } from '../../features/slash'
 import { bidiExtension, isComposing } from '../i18n'
-import type { Snippet } from './types'
+import type { Snippet, UseEditorExtensionsProps, UseEditorExtensionsReturn } from './types'
 import type { ToastType } from '../notification'
 
 export const updateSearchHighlights = StateEffect.define<any>()
@@ -53,23 +53,6 @@ const searchHighlightField = StateField.define({
   },
   provide: (f) => EditorView.decorations.from(f)
 })
-
-export interface UseEditorExtensionsProps {
-  snippetRef: React.MutableRefObject<Snippet | null>
-  realViewRef: React.MutableRefObject<EditorView | null>
-  showToast: (message: string, type?: ToastType) => void
-  isActiveRef: React.MutableRefObject<boolean>
-  showFindWidgetRef: React.MutableRefObject<boolean>
-  setShowFindWidget: React.Dispatch<React.SetStateAction<boolean>>
-  setReplaceModeActive: React.Dispatch<React.SetStateAction<boolean>>
-  onSlashStateChange?: (state: any) => void
-  slashHandlerRef?: React.MutableRefObject<any>
-}
-
-export interface UseEditorExtensionsReturn {
-  finalExtensions: Extension[]
-  captureViewPlugin: Extension
-}
 
 export function useEditorExtensions({
   snippetRef,

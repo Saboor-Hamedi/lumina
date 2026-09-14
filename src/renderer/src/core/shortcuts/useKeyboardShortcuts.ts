@@ -108,8 +108,22 @@ export function matchesShortcut(e: KeyboardEvent, shortcutStr: string): boolean 
   const targetKey = reqKey.toLowerCase()
   const eventKey = e.key.toLowerCase()
 
-  const isSlashOrQuestion = targetKey === '/' || targetKey === '?'
-  if (!isSlashOrQuestion && Boolean(reqShift) !== Boolean(e.shiftKey)) return false
+  // For slash or question mark:
+  // Note: On standard US layouts, '?' is Shift + '/'.
+  // If targetKey is '?', it requires shift (either explicit 'Shift + ?' or implied by '?').
+  // If targetKey is '/', it should only match without shift unless reqShift is explicitly true.
+  const isTargetSlashOrQuestion = targetKey === '/' || targetKey === '?'
+  if (isTargetSlashOrQuestion) {
+    const isEventSlashOrQuestion = eventKey === '/' || eventKey === '?' || e.code === 'Slash'
+    if (!isEventSlashOrQuestion) return false
+
+    const expectsShift = reqShift || targetKey === '?'
+    if (expectsShift !== Boolean(e.shiftKey)) return false
+    if (Boolean(reqAlt) !== Boolean(e.altKey)) return false
+    return true
+  }
+
+  if (Boolean(reqShift) !== Boolean(e.shiftKey)) return false
   if (Boolean(reqAlt) !== Boolean(e.altKey)) return false
 
   if (targetKey === 'space' || targetKey === ' ') {
@@ -117,9 +131,6 @@ export function matchesShortcut(e: KeyboardEvent, shortcutStr: string): boolean 
   }
   if (targetKey === 'tab') {
     return e.key === 'Tab' || e.code === 'Tab'
-  }
-  if (isSlashOrQuestion) {
-    return eventKey === '/' || eventKey === '?' || e.code === 'Slash'
   }
   if (targetKey === '.') {
     return eventKey === '.' || eventKey === '>' || e.code === 'Period'
@@ -296,6 +307,18 @@ export const useKeyboardShortcuts = (shortcuts: KeyboardShortcutHandlers): void 
       if (matchesShortcut(e, docsKey) && shortcutsRef.current.onOpenDocs) {
         e.preventDefault()
         shortcutsRef.current.onOpenDocs()
+        return
+      }
+
+      // Inline Drawing Canvas
+      if (matchesShortcut(e, getKey('inlineDrawing'))) {
+        e.preventDefault()
+        e.stopPropagation()
+        if (shortcutsRef.current.onToggleInlineDrawing) {
+          shortcutsRef.current.onToggleInlineDrawing()
+        } else {
+          window.dispatchEvent(new CustomEvent('toggle-inline-drawing'))
+        }
         return
       }
 

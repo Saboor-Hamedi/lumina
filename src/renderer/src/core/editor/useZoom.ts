@@ -3,24 +3,7 @@ import { EditorView } from '@codemirror/view'
 import { useSettingsStore } from '../store/useSettingsStore'
 import { useFontSettings } from '../hooks/useFontSettings'
 
-export interface UseZoomOptions {
-  containerRef?: React.RefObject<HTMLElement | null>
-  realViewRef?: React.MutableRefObject<EditorView | null>
-  minSize?: number
-  maxSize?: number
-  step?: number
-  defaultSize?: number
-  isActive?: boolean
-}
-
-export interface UseZoomReturn {
-  fontSize: number
-  zoomIn: (delta?: number) => void
-  zoomOut: (delta?: number) => void
-  resetZoom: () => void
-  setZoom: (newSize: number) => void
-  zoomBadge: string | null
-}
+import type { UseZoomOptions, UseZoomReturn } from './types'
 
 export const useZoom = ({
   containerRef,

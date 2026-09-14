@@ -21,23 +21,46 @@ const isMac = typeof navigator !== 'undefined' && /mac/i.test(navigator.userAgen
 function normalizeCombo(str) {
   if (!str) return ''
   const parts = str.split('+').map((s) => s.trim().toLowerCase()).filter(Boolean)
-  const ctrl = parts.includes('ctrl') || parts.includes('control') || parts.includes('cmd') || parts.includes('command')
-  const alt = parts.includes('alt') || parts.includes('option')
-  const shift = parts.includes('shift')
-  const win = parts.includes('win') || parts.includes('meta') || parts.includes('super')
+  let ctrl = parts.includes('ctrl') || parts.includes('control') || parts.includes('cmd') || parts.includes('command')
+  let alt = parts.includes('alt') || parts.includes('option')
+  let shift = parts.includes('shift')
+  let win = parts.includes('win') || parts.includes('meta') || parts.includes('super')
 
   let mainKey = ''
   for (const p of parts) {
     if (['ctrl', 'control', 'cmd', 'command', 'alt', 'option', 'shift', 'win', 'meta', 'super'].includes(p)) {
       continue
     }
-    if (p === '?' || p === '/') mainKey = '/'
-    else if (p === '>' || p === '.') mainKey = '.'
-    else if (p === '<' || p === ',') mainKey = ','
-    else if (p === ':' || p === ';') mainKey = ';'
-    else if (p === '|' || p === '\\') mainKey = '\\'
-    else if (p === 'space' || p === ' ') mainKey = 'space'
-    else mainKey = p
+    if (p === '?') {
+      mainKey = '/'
+      shift = true // '?' implies shift on slash
+    } else if (p === '/') {
+      mainKey = '/'
+    } else if (p === '>') {
+      mainKey = '.'
+      shift = true
+    } else if (p === '.') {
+      mainKey = '.'
+    } else if (p === '<') {
+      mainKey = ','
+      shift = true
+    } else if (p === ',') {
+      mainKey = ','
+    } else if (p === ':') {
+      mainKey = ';'
+      shift = true
+    } else if (p === ';') {
+      mainKey = ';'
+    } else if (p === '|') {
+      mainKey = '\\'
+      shift = true
+    } else if (p === '\\') {
+      mainKey = '\\'
+    } else if (p === 'space' || p === ' ') {
+      mainKey = 'space'
+    } else {
+      mainKey = p
+    }
   }
 
   const result = []

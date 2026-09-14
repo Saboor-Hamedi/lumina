@@ -24,7 +24,13 @@ export const useComposerTextarea = ({ input, isSidebar, isLoading }) => {
     el.style.height = `${minH}px`
     const newHeight = Math.min(Math.max(el.scrollHeight, minH), maxH)
     el.style.height = `${newHeight}px`
-    el.style.overflowY = el.scrollHeight > maxH ? 'auto' : 'hidden'
+    const shouldScroll = el.scrollHeight > maxH
+    el.style.overflowY = shouldScroll ? 'auto' : 'hidden'
+
+    // Automatically follow incoming text down when voice note or long text is inserted
+    if (shouldScroll) {
+      el.scrollTop = el.scrollHeight
+    }
   }, [input, isSidebar])
 
   // Restore focus when AI finishes generating

@@ -81,14 +81,25 @@ export interface UseEditorStateReturn {
   handleOverwriteConfirm: () => Promise<void>
 }
 
-export interface UseZoomProps {
-  containerRef: React.RefObject<HTMLElement | null>
-  realViewRef: React.MutableRefObject<EditorView | null>
+export interface UseZoomOptions {
+  containerRef?: React.RefObject<HTMLElement | null>
+  realViewRef?: React.MutableRefObject<EditorView | null>
+  minSize?: number
+  maxSize?: number
+  step?: number
+  defaultSize?: number
   isActive?: boolean
 }
 
+export interface UseZoomProps extends UseZoomOptions {}
+
 export interface UseZoomReturn {
-  zoomBadge: React.ReactNode
+  fontSize: number
+  zoomIn: (delta?: number) => void
+  zoomOut: (delta?: number) => void
+  resetZoom: () => void
+  setZoom: (newSize: number) => void
+  zoomBadge: string | null
 }
 
 export interface UseEditorExtensionsProps {
@@ -98,10 +109,13 @@ export interface UseEditorExtensionsProps {
   isActiveRef: React.MutableRefObject<boolean>
   showFindWidgetRef: React.MutableRefObject<boolean>
   setShowFindWidget: React.Dispatch<React.SetStateAction<boolean>>
+  setReplaceModeActive: React.Dispatch<React.SetStateAction<boolean>>
+  onSlashStateChange?: (state: any) => void
   slashHandlerRef?: React.MutableRefObject<any>
   setSlashState?: React.Dispatch<React.SetStateAction<any>>
 }
 
 export interface UseEditorExtensionsReturn {
   finalExtensions: Extension[]
+  captureViewPlugin: Extension
 }
