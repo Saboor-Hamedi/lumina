@@ -12,7 +12,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { CanvasViewport, CanvasNode, CanvasEdge, CanvasData, CanvasNodeColor, CanvasEdgeLineStyle } from './types'
+import { CanvasViewport, CanvasNode, CanvasEdge, CanvasData, CanvasNodeColor, CanvasEdgeLineStyle, CanvasEdgeEnd } from './types'
 import { normalizeNode, safeNumber } from './canvasUtils'
 
 export interface UseCanvasOptions {
@@ -239,11 +239,14 @@ export function useCanvas(options: UseCanvasOptions = {}) {
    * Updates card dimensions with minimum size clamping.
    */
   const updateNodeSize = useCallback((id: string, width: number, height: number) => {
-    const clampedW = Math.max(Math.round(width), 150)
-    const clampedH = Math.max(Math.round(height), 80)
     setNodes((prev) =>
       prev.map((n) => {
         if (n.id !== id) return n
+        const isShape = n.type === 'shape'
+        const minW = isShape ? 36 : 120
+        const minH = isShape ? 36 : 60
+        const clampedW = Math.max(Math.round(width), minW)
+        const clampedH = Math.max(Math.round(height), minH)
         if (n.width === clampedW && n.height === clampedH) return n
         return { ...n, width: clampedW, height: clampedH }
       })
@@ -370,6 +373,27 @@ export function useCanvas(options: UseCanvasOptions = {}) {
   }, [])
 
   /**
+   * Updates connector edge text label (for research annotations).
+   */
+  const updateEdgeLabel = useCallback((edgeId: string, label: string) => {
+    setEdges((prev) =>
+      prev.map((e) => (e.id === edgeId ? { ...e, label } : e))
+    )
+  }, [])
+
+  /**
+   * Updates connector endpoints (directed, bidirectional, or plain line).
+   */
+  const updateEdgeEndpoints = useCallback(
+    (edgeId: string, fromEnd?: CanvasEdgeEnd, toEnd?: CanvasEdgeEnd) => {
+      setEdges((prev) =>
+        prev.map((e) => (e.id === edgeId ? { ...e, fromEnd, toEnd } : e))
+      )
+    },
+    []
+  )
+
+  /**
    * Automatically calculates bounding box of all nodes and centers/zooms canvas to fit container.
    */
   const zoomToFit = useCallback((containerRect?: DOMRect | null) => {
@@ -445,6 +469,8 @@ export function useCanvas(options: UseCanvasOptions = {}) {
     snapNodesToGrid,
     updateEdgeLineStyle,
     updateEdgeColor,
-    deleteEdge
+    deleteEdge,
+    updateEdgeLabel,
+    updateEdgeEndpoints
   }
 }

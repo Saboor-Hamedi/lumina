@@ -638,6 +638,58 @@
   background-color: rgba(239, 68, 68, 0.15);
 }
 
+/* Edge Label Badge */
+.lumina-canvas-edge-label-badge {
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s ease;
+}
+
+.lumina-canvas-edge-label-badge:hover {
+  transform: scale(1.06);
+}
+
+.lumina-canvas-edge-label-bg {
+  fill: color-mix(in srgb, var(--bg-panel, #18181b) 96%, transparent);
+  stroke: var(--border-subtle, rgba(255, 255, 255, 0.16));
+  stroke-width: 1px;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+  transition: stroke 0.15s ease, fill 0.15s ease;
+}
+
+.lumina-canvas-edge-label-badge:hover .lumina-canvas-edge-label-bg {
+  stroke: var(--text-accent, #38bdf8);
+}
+
+.lumina-canvas-edge-label-text {
+  font-size: 10.5px;
+  font-weight: 500;
+  fill: var(--text-main, #f8fafc);
+  letter-spacing: 0.2px;
+  pointer-events: none;
+}
+
+.lumina-canvas-edge-label-editor-container {
+  overflow: visible;
+  z-index: 65;
+}
+
+.lumina-canvas-edge-label-input {
+  width: 100%;
+  height: 24px;
+  background-color: var(--bg-panel, #18181b);
+  border: 1.5px solid var(--text-accent, #38bdf8);
+  border-radius: 12px;
+  color: var(--text-main, #f8fafc);
+  font-size: 10.5px;
+  font-weight: 500;
+  text-align: center;
+  padding: 0 10px;
+  outline: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  box-sizing: border-box;
+}
+
 /* Markdown Preview inside Node Card */
 .lumina-canvas-markdown {
   font-size: 12px;
@@ -993,8 +1045,42 @@
   pointer-events: auto;
 }
 
+/* Shape Corner Resize Handle */
+.lumina-canvas-node.is-shape .lumina-canvas-resize-handle.handle-br {
+  width: 22px;
+  height: 22px;
+  bottom: -4px;
+  right: -4px;
+  z-index: 35;
+  cursor: nwse-resize;
+}
+
 .lumina-canvas-node.is-shape .lumina-canvas-resize-handle.handle-br::after {
-  display: none;
+  content: '';
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background-color: var(--bg-panel, #18181b);
+  border: 1.5px solid var(--node-accent, var(--text-accent, #38bdf8));
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  transform: scale(0.85);
+}
+
+.lumina-canvas-node.is-shape:hover .lumina-canvas-resize-handle.handle-br::after,
+.lumina-canvas-node.is-shape.selected .lumina-canvas-resize-handle.handle-br::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.lumina-canvas-node.is-shape .lumina-canvas-resize-handle.handle-br:hover::after {
+  background-color: var(--node-accent, var(--text-accent, #38bdf8));
+  border-color: #ffffff;
+  transform: scale(1.2);
 }
 
 .lumina-canvas-shape-content {

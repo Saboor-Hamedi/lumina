@@ -289,6 +289,9 @@ export function buildCanvasSvg(options: ExportCanvasOptions): { svgString: strin
       <marker id="export-arrow-${cKey}" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
         <path d="M 0 2 L 7 5 L 0 8 z" fill="${CANVAS_NODE_COLOR_HEX[cKey]}" />
       </marker>
+      <marker id="export-arrow-start-${cKey}" viewBox="0 0 10 10" refX="3" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+        <path d="M 7 2 L 0 5 L 7 8 z" fill="${CANVAS_NODE_COLOR_HEX[cKey]}" />
+      </marker>
     `
     )
     .join('\n')
@@ -300,7 +303,7 @@ export function buildCanvasSvg(options: ExportCanvasOptions): { svgString: strin
       const toNode = nodeMap.get(edge.toNode)
       if (!fromNode || !toNode) return ''
 
-      const { pathD } = calculateEdgePath(
+      const { pathD, midX, midY } = calculateEdgePath(
         fromNode,
         edge.fromSide,
         toNode,
@@ -311,15 +314,48 @@ export function buildCanvasSvg(options: ExportCanvasOptions): { svgString: strin
       const targetColor = (edge.color || toNode.color || 'default') as CanvasNodeColor
       const strokeColor = CANVAS_NODE_COLOR_HEX[targetColor] || CANVAS_NODE_COLOR_HEX.default
 
+      const markerStartAttr = edge.fromEnd === 'arrow' ? `marker-start="url(#export-arrow-start-${targetColor})"` : ''
+      const markerEndAttr = edge.toEnd === 'none' ? '' : `marker-end="url(#export-arrow-${targetColor})"`
+
+      const labelSvg = edge.label
+        ? `
+        <g transform="translate(${midX}, ${midY})">
+          <rect
+            x="${-Math.max(24, edge.label.length * 4.2 + 10)}"
+            y="-10"
+            width="${Math.max(48, edge.label.length * 8.4 + 20)}"
+            height="20"
+            rx="10"
+            fill="#18181b"
+            stroke="${strokeColor}"
+            stroke-width="1"
+          />
+          <text
+            x="0"
+            y="3.5"
+            text-anchor="middle"
+            fill="#f8fafc"
+            font-size="10"
+            font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+            font-weight="500"
+          >${escapeXml(edge.label)}</text>
+        </g>
+      `
+        : ''
+
       return `
-      <path
-        d="${pathD}"
-        fill="none"
-        stroke="${strokeColor}"
-        stroke-width="1.8"
-        stroke-linecap="round"
-        marker-end="url(#export-arrow-${targetColor})"
-      />
+      <g>
+        <path
+          d="${pathD}"
+          fill="none"
+          stroke="${strokeColor}"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          ${markerStartAttr}
+          ${markerEndAttr}
+        />
+        ${labelSvg}
+      </g>
     `
     })
     .join('\n')

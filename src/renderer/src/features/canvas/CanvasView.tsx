@@ -75,6 +75,7 @@ interface ResizingNodeInfo {
   startY: number
   initialW: number
   initialH: number
+  type?: string
 }
 
 export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange, onOpenDrawer }) => {
@@ -132,7 +133,9 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange, o
     snapNodesToGrid,
     updateEdgeLineStyle,
     updateEdgeColor,
-    deleteEdge
+    deleteEdge,
+    updateEdgeLabel,
+    updateEdgeEndpoints
   } = useCanvas({ initialData, onChange })
 
   // Synchronous state ref for stable event listeners
@@ -357,12 +360,29 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange, o
           }
         }
 
-        // 2. Card resizing
+        // 2. Card / Shape resizing
         if (resizingNodeRef.current) {
           const dx = (e.clientX - resizingNodeRef.current.startX) / currentZoom
           const dy = (e.clientY - resizingNodeRef.current.startY) / currentZoom
-          let newW = resizingNodeRef.current.initialW + dx
-          let newH = resizingNodeRef.current.initialH + dy
+          const initialW = resizingNodeRef.current.initialW
+          const initialH = resizingNodeRef.current.initialH
+          const isShape = resizingNodeRef.current.type === 'shape'
+
+          let newW: number
+          let newH: number
+
+          if (isShape || e.shiftKey) {
+            // Uniform proportional scaling: preserves aspect ratio so all sides shrink and expand uniformly
+            const diag = Math.hypot(initialW, initialH) || 1
+            const projDelta = (dx * initialW + dy * initialH) / diag
+            const scale = Math.max(0.2, (diag + projDelta) / diag)
+            newW = Math.round(initialW * scale)
+            newH = Math.round(initialH * scale)
+          } else {
+            newW = Math.round(initialW + dx)
+            newH = Math.round(initialH + dy)
+          }
+
           if (stateRef.current.snapToGrid) {
             newW = Math.round(newW / 20) * 20
             newH = Math.round(newH / 20) * 20
@@ -469,7 +489,55 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange, o
           }
         }
 
-        // If the user actually dragged away (> 10px) and dropped in empty space/card body, cancel
+        // Smart Link Quick-Spawn: If dragging wire into open space (> 35px) and releasing:
+        // Automatically spawn a new connected node at the release position!
+        if (dragDist > 35 && containerRef.current) {
+          const rect = containerRef.current.getBoundingClientRect()
+          const canvasPt = screenToCanvas(e.clientX, e.clientY, rect)
+          const sourceNode = nodeMap.get(connectingRef.current.fromNodeId)
+          const sourceColor = sourceNode?.color || 'default'
+          const sourceIsShape = sourceNode?.type === 'shape'
+
+          const spawnW = sourceIsShape ? (sourceNode?.width || 140) : 260
+          const spawnH = sourceIsShape ? (sourceNode?.height || 100) : 140
+          let spawnX = canvasPt.x - spawnW / 2
+          let spawnY = canvasPt.y - spawnH / 2
+          if (stateRef.current.snapToGrid) {
+            spawnX = Math.round(spawnX / 20) * 20
+            spawnY = Math.round(spawnY / 20) * 20
+          }
+
+          const newNode = addNode({
+            type: sourceIsShape ? 'shape' : 'note',
+            shape: sourceIsShape ? (sourceNode?.shape || 'rectangle') : undefined,
+            x: Math.round(spawnX),
+            y: Math.round(spawnY),
+            width: spawnW,
+            height: spawnH,
+            color: sourceColor,
+            title: sourceIsShape ? '' : 'New Thought',
+            text: ''
+          })
+
+          completeConnection(
+            connectingRef.current.fromNodeId,
+            connectingRef.current.fromSide,
+            newNode.id,
+            undefined
+          )
+
+          setEditingNodeId(newNode.id)
+          setEditingField('text')
+
+          setConnecting(null)
+          connectingRef.current = null
+          setSnappedTarget(null)
+          snappedTargetRef.current = null
+          connectingScreenStartRef.current = null
+          return
+        }
+
+        // If stationary or tiny drag, cancel
         if (dragDist > 10) {
           setConnecting(null)
           connectingRef.current = null
@@ -713,7 +781,8 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange, o
       startX: e.clientX,
       startY: e.clientY,
       initialW: node.width,
-      initialH: node.height
+      initialH: node.height,
+      type: node.type
     }
   }, [])
 
@@ -1262,19 +1331,42 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange, o
             >
               <path d="M 0 2 L 7 5 L 0 8 z" fill="var(--text-accent, #38bdf8)" />
             </marker>
+            <marker
+              id="arrow-start"
+              viewBox="0 0 10 10"
+              refX="3"
+              refY="5"
+              markerWidth="5.5"
+              markerHeight="5.5"
+              orient="auto"
+            >
+              <path d="M 7 2 L 0 5 L 7 8 z" fill="var(--text-accent, #38bdf8)" />
+            </marker>
             {(Object.keys(CANVAS_NODE_COLOR_HEX) as (keyof typeof CANVAS_NODE_COLOR_HEX)[]).map((cKey) => (
-              <marker
-                key={cKey}
-                id={`arrow-${cKey}`}
-                viewBox="0 0 10 10"
-                refX="6"
-                refY="5"
-                markerWidth="5.5"
-                markerHeight="5.5"
-                orient="auto-start-reverse"
-              >
-                <path d="M 0 2 L 7 5 L 0 8 z" fill={CANVAS_NODE_COLOR_HEX[cKey]} />
-              </marker>
+              <React.Fragment key={cKey}>
+                <marker
+                  id={`arrow-${cKey}`}
+                  viewBox="0 0 10 10"
+                  refX="6"
+                  refY="5"
+                  markerWidth="5.5"
+                  markerHeight="5.5"
+                  orient="auto-start-reverse"
+                >
+                  <path d="M 0 2 L 7 5 L 0 8 z" fill={CANVAS_NODE_COLOR_HEX[cKey]} />
+                </marker>
+                <marker
+                  id={`arrow-start-${cKey}`}
+                  viewBox="0 0 10 10"
+                  refX="3"
+                  refY="5"
+                  markerWidth="5.5"
+                  markerHeight="5.5"
+                  orient="auto"
+                >
+                  <path d="M 7 2 L 0 5 L 7 8 z" fill={CANVAS_NODE_COLOR_HEX[cKey]} />
+                </marker>
+              </React.Fragment>
             ))}
           </defs>
           {edges.map((edge) => (
@@ -1285,6 +1377,8 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ initialData, onChange, o
               toNode={nodeMap.get(edge.toNode)}
               onDeleteEdge={handleDeleteEdge}
               onUpdateLineStyle={updateEdgeLineStyle}
+              onUpdateLabel={updateEdgeLabel}
+              onUpdateEndpoints={updateEdgeEndpoints}
               onCycleColor={(edgeId) => {
                 const targetEdge = edges.find((e) => e.id === edgeId)
                 if (targetEdge) {
