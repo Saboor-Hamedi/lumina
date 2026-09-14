@@ -1,4 +1,16 @@
-export async function copyImageToClipboard(imgUrl, onSuccess, onError) {
+/**
+ * =========================================================================================
+ * Image Clipboard Helper (`imageClipboard.ts`)
+ * =========================================================================================
+ *
+ * Copies local assets, base64 data URLs, or remote images to the system clipboard as PNGs.
+ */
+
+export async function copyImageToClipboard(
+  imgUrl: string,
+  onSuccess?: () => void,
+  onError?: (err: any) => void
+): Promise<void> {
   try {
     let dataUrl = imgUrl
 
@@ -9,19 +21,19 @@ export async function copyImageToClipboard(imgUrl, onSuccess, onError) {
       !imgUrl.startsWith('asset:')
     ) {
       const cleanUrl = imgUrl.startsWith('/') ? imgUrl.slice(1) : imgUrl
-      const res = await window.api?.readAsset?.(cleanUrl)
+      const res = await (window as any).api?.readAsset?.(cleanUrl)
       if (res?.dataUrl) {
         dataUrl = res.dataUrl
       }
     }
 
-    if (dataUrl?.startsWith('data:') && window.api?.writeImageToClipboard) {
-      await window.api.writeImageToClipboard(dataUrl)
+    if (dataUrl?.startsWith('data:') && (window as any).api?.writeImageToClipboard) {
+      await (window as any).api.writeImageToClipboard(dataUrl)
       if (onSuccess) onSuccess()
       return
     }
 
-    let blob
+    let blob: Blob
     if (
       dataUrl.startsWith('blob:') ||
       dataUrl.startsWith('data:') ||
@@ -32,13 +44,13 @@ export async function copyImageToClipboard(imgUrl, onSuccess, onError) {
       blob = await response.blob()
     } else {
       const cleanUrl = dataUrl.startsWith('/') ? dataUrl.slice(1) : dataUrl
-      const res = await window.api.readAsset(cleanUrl)
+      const res = await (window as any).api?.readAsset?.(cleanUrl)
       if (res?.dataUrl) {
         const response = await fetch(res.dataUrl)
         blob = await response.blob()
       } else {
         const buf = res?.buffer || res
-        const ext = cleanUrl.split('.').pop().toLowerCase()
+        const ext = cleanUrl.split('.').pop()?.toLowerCase()
         const mime =
           res?.mimeType ||
           (ext === 'png'
@@ -58,8 +70,12 @@ export async function copyImageToClipboard(imgUrl, onSuccess, onError) {
       canvas.width = bitmap.width
       canvas.height = bitmap.height
       const ctx = canvas.getContext('2d')
-      ctx.drawImage(bitmap, 0, 0)
-      blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
+      if (ctx) {
+        ctx.drawImage(bitmap, 0, 0)
+        blob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Failed to create blob'))), 'image/png')
+        })
+      }
     }
 
     await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
@@ -70,3 +86,5 @@ export async function copyImageToClipboard(imgUrl, onSuccess, onError) {
     if (onError) onError(err)
   }
 }
+
+export default copyImageToClipboard

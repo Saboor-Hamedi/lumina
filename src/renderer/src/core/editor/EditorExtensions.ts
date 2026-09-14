@@ -20,7 +20,7 @@ import { htmlWidgetExtension } from '../../features/Editor/extensions/htmlExtens
 import { katexExtension } from '../../features/Editor/extensions/katexExtension'
 import { tagMentionExtension } from '../../features/Editor/extensions/tagMentionExtension'
 import { tables } from '../../features/table/tableExtension'
-import { mermaidWidgetExtension } from '../../features/mermaid'
+import { mermaidWidgetExtension } from '../mermaid'
 import { calloutExtension } from './useCallout'
 import { useCollapsible } from '../../features/Editor/collapse/useCollapsible'
 import { emptyLineSelectionFix } from './useEmptyLine'
@@ -115,8 +115,11 @@ export function useEditorExtensions({
           }, 10)
         }
         update(update: any) {
-          if ((update.selectionSet || update.docChanged) && snippetRef.current?.id) {
-            const { anchor, head, from, to } = update.state.selection.main
+          if (update.docChanged || update.selectionSet) {
+            const sel = update.state.selection.main
+            const { anchor, head, from, to } = sel
+            if (!snippetRef.current?.id) return
+
             const line = update.state.doc.lineAt(head)
             window.dispatchEvent(
               new CustomEvent('editor-cursor-pos', {
@@ -140,17 +143,7 @@ export function useEditorExtensions({
             }, 500)
 
             const hasExplicitScroll = update.transactions.some((tr: any) => tr.scrollIntoView)
-            const isInteractiveUserEdit =
-              update.view.hasFocus &&
-              update.transactions.some(
-                (tr: any) =>
-                  tr.isUserEvent('input') ||
-                  tr.isUserEvent('delete') ||
-                  tr.isUserEvent('keyboard') ||
-                  tr.isUserEvent('select')
-              )
-
-            if (hasExplicitScroll || isInteractiveUserEdit) {
+            if (hasExplicitScroll) {
               const v = update.view
               requestAnimationFrame(() => {
                 if (!v || (v as any).isDestroyed) return
@@ -166,12 +159,6 @@ export function useEditorExtensions({
                     scroller.scrollTop += coords.bottom - (scrollerRect.bottom - bottomMargin)
                   } else if (coords.top < scrollerRect.top + topMargin) {
                     scroller.scrollTop -= (scrollerRect.top + topMargin) - coords.top
-                  }
-                } else {
-                  const lineDOM = v.domAtPos(currentHead)?.node
-                  const el = lineDOM instanceof Element ? lineDOM : lineDOM?.parentElement
-                  if (el && typeof el.scrollIntoView === 'function') {
-                    el.scrollIntoView({ block: 'nearest', inline: 'nearest' })
                   }
                 }
               })

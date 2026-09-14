@@ -1,21 +1,30 @@
-export async function copyMermaidAsImage(svgElement) {
+/**
+ * mermaidAsImage.ts
+ *
+ * Renders an offscreen SVG Mermaid diagram to a raster PNG and copies it to the system clipboard,
+ * adhering faithfully to the current active theme background (light, dark, rose-pine, etc.)
+ * rather than forcing a dark background.
+ */
+
+export async function copyMermaidAsImage(svgElement: SVGSVGElement | HTMLElement | null): Promise<void> {
   if (!svgElement) {
     throw new Error('SVG element not provided')
   }
 
   return new Promise((resolve, reject) => {
     try {
-      const viewBox = svgElement.viewBox?.baseVal
-      const rect = svgElement.getBoundingClientRect()
+      const svg = svgElement as SVGSVGElement
+      const viewBox = svg.viewBox?.baseVal
+      const rect = svg.getBoundingClientRect()
       const width = viewBox && viewBox.width > 0 ? viewBox.width : rect.width || 800
       const height = viewBox && viewBox.height > 0 ? viewBox.height : rect.height || 600
 
-      const clonedSvg = svgElement.cloneNode(true)
+      const clonedSvg = svg.cloneNode(true) as SVGSVGElement
       clonedSvg.setAttribute('width', String(width))
       clonedSvg.setAttribute('height', String(height))
 
       // Gather styling from document head if not already embedded
-      const svgId = svgElement.id || svgElement.getAttribute('id')
+      const svgId = svg.id || svg.getAttribute('id')
       if (svgId) {
         const headStyle =
           document.getElementById(svgId) ||
@@ -56,10 +65,19 @@ export async function copyMermaidAsImage(svgElement) {
           canvas.width = Math.round(width * scale)
           canvas.height = Math.round(height * scale)
           const ctx = canvas.getContext('2d')
+          if (!ctx) {
+            return reject(new Error('Failed to create canvas 2D context'))
+          }
           ctx.scale(scale, scale)
 
+          // Accurately resolve current theme background colors
           const computed = getComputedStyle(document.documentElement)
-          const bgColor = computed.getPropertyValue('--bg-panel').trim() || '#18181b'
+          const bgColor =
+            computed.getPropertyValue('--bg-panel').trim() ||
+            computed.getPropertyValue('--bg-card').trim() ||
+            computed.getPropertyValue('--bg-app').trim() ||
+            '#18181b'
+
           ctx.fillStyle = bgColor
           ctx.fillRect(0, 0, width, height)
 

@@ -8,7 +8,7 @@ import { imageWidgetExtension } from '../media'
 import { htmlWidgetExtension } from '../Editor/extensions/htmlExtension'
 import { katexExtension } from '../Editor/extensions/katexExtension'
 import { tables } from '../table/tableExtension'
-import { mermaidWidgetExtension } from '../mermaid'
+import { mermaidWidgetExtension } from '../../core/mermaid'
 import { calloutExtension } from '../../core/editor'
 import {
   codeBlockDecorations,

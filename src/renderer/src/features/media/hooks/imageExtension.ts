@@ -1,14 +1,30 @@
-import { WidgetType, EditorView, Decoration } from '@codemirror/view'
-import { StateField } from '@codemirror/state'
+/**
+ * =========================================================================================
+ * Markdown Image Widget Extension (`imageExtension.ts`)
+ * =========================================================================================
+ *
+ * Purpose:
+ * Renders Obsidian-style inline live-preview image cards for markdown `![alt|size|align](url)` tokens.
+ * Features:
+ * - Alignment controls (left, center, right)
+ * - Interactive drag resizing
+ * - Dual view toggle (rendered image view vs. raw markdown source view)
+ * - High-resolution pan & zoom lightbox modal via `attachLightbox`
+ * - Direct 1-click clipboard copying and deletion
+ * =========================================================================================
+ */
+
+import { WidgetType, EditorView, Decoration, type DecorationSet } from '@codemirror/view'
+import { StateField, type EditorState } from '@codemirror/state'
 import '../css/imageExtension.css'
-import { attachLightbox } from './imageLightbox'
+import { attachLightbox } from '../../../core/mermaid'
 import { copyImageToClipboard } from './imageClipboard'
 import { createCaptionElement } from './imageCaption'
 
-const urlCache = new Map()
+const urlCache = new Map<string, Promise<string | null>>()
 
-// Helper icons
-const createIcon = (svgString) => {
+// Helper icon parser
+const createIcon = (svgString: string): Node | null => {
   const template = document.createElement('template')
   template.innerHTML = svgString.trim()
   return template.content.firstChild
@@ -26,7 +42,23 @@ const icons = {
 }
 
 export class ImageWidget extends WidgetType {
-  constructor(altText, url, pos, originalLength, onUpdate = null) {
+  altText: string
+  url: string
+  pos: number
+  originalLength: number
+  onUpdate: ((newText: string) => void) | null
+  parts: string[]
+  actualAlt: string
+  width: string
+  align: string
+
+  constructor(
+    altText: string,
+    url: string,
+    pos: number,
+    originalLength: number,
+    onUpdate: ((newText: string) => void) | null = null
+  ) {
     super()
     this.altText = altText
     this.url = url
@@ -35,7 +67,7 @@ export class ImageWidget extends WidgetType {
     this.onUpdate = onUpdate
 
     // Unescape markdown pipes in alt text before parsing
-    const unescapedAltText = altText.replace(/\\\|/g, '|')
+    const unescapedAltText = (altText || '').replace(/\\\|/g, '|')
     this.parts = unescapedAltText.split('|')
     this.actualAlt = this.parts[0] ? this.parts[0].trim() : ''
 
@@ -59,19 +91,15 @@ export class ImageWidget extends WidgetType {
     }
   }
 
-  get estimatedHeight() {
-    // If we have a pixel width, assume roughly similar height (or just a safe default)
-    // If no width is specified, default to 300px which is a reasonable guess for an image block
-    const parsedWidth = parseInt(this.width)
+  get estimatedHeight(): number {
+    const parsedWidth = parseInt(this.width, 10)
     if (!isNaN(parsedWidth) && this.width.includes('px')) {
-      return parsedWidth * 0.75 // Assume 4:3 aspect ratio roughly
+      return parsedWidth * 0.75
     }
     return 300
   }
 
-  eq(other) {
-    // Only return true if ALL visual properties are identical!
-    // If we return false, CodeMirror calls updateDOM() to update the live elements without blinking.
+  eq(other: ImageWidget): boolean {
     return (
       other.url === this.url &&
       other.align === this.align &&
@@ -80,13 +108,12 @@ export class ImageWidget extends WidgetType {
     )
   }
 
-  updateDOM(dom, view) {
-    // Force a complete rebuild of the widget to guarantee all closures and DOM state are fresh.
+  updateDOM(): boolean {
     return false
   }
 
-  toDOM(view) {
-    const wrap = document.createElement('div')
+  toDOM(view: EditorView): HTMLElement {
+    const wrap = document.createElement('div') as HTMLElement & { __imageWidget?: ImageWidget }
     wrap.className = `cm-image-widget-wrapper align-${this.align}`
     wrap.setAttribute('contenteditable', 'false')
     wrap.__imageWidget = this
@@ -146,7 +173,12 @@ export class ImageWidget extends WidgetType {
 
     header.appendChild(leftGroup)
 
-    const updateImage = (newWidth, newAlign, newAltText, newUrl) => {
+    const updateImage = (
+      newWidth?: string,
+      newAlign?: string,
+      newAltText?: string,
+      newUrl?: string
+    ) => {
       let currentAltText = ''
       let currentUrl = ''
       let actualPos = 0
@@ -166,12 +198,12 @@ export class ImageWidget extends WidgetType {
         const windowStr = docStr.slice(searchStart, searchEnd)
 
         const regex = /!\[([^\]]*)\]\(([^)]+)\)/g
-        let match
-        let closestMatch = null
+        let match: RegExpExecArray | null = null
+        let closestMatch: { match: RegExpExecArray; pos: number } | null = null
         let minDistance = Infinity
 
         while ((match = regex.exec(windowStr)) !== null) {
-          if (match[2] === wrap.__imageWidget.url) {
+          if (match[2] === wrap.__imageWidget?.url) {
             const matchPos = searchStart + match.index
             const distance = Math.abs(matchPos - pos)
             if (distance < minDistance) {
@@ -274,9 +306,9 @@ export class ImageWidget extends WidgetType {
       if (this.onUpdate) {
         if (this.url && !this.url.startsWith('http') && !this.url.startsWith('data:')) {
           const cleanUrl = this.url.startsWith('/') ? this.url.slice(1) : this.url
-          if (window.api && window.api.deleteAsset) {
-            window.api.deleteAsset(cleanUrl).catch((err) => {
-              if (!err.message.includes('ENOENT')) {
+          if ((window as any).api && (window as any).api.deleteAsset) {
+            (window as any).api.deleteAsset(cleanUrl).catch((err: any) => {
+              if (!err.message?.includes('ENOENT')) {
                 console.error('Failed to delete asset:', err)
               }
             })
@@ -288,8 +320,8 @@ export class ImageWidget extends WidgetType {
 
       if (this.url && !this.url.startsWith('http') && !this.url.startsWith('data:')) {
         const cleanUrl = this.url.startsWith('/') ? this.url.slice(1) : this.url
-        if (window.api && window.api.deleteAsset) {
-          window.api.deleteAsset(cleanUrl).catch((err) => {
+        if ((window as any).api && (window as any).api.deleteAsset) {
+          (window as any).api.deleteAsset(cleanUrl).catch((err: any) => {
             console.error('Failed to delete asset:', err)
           })
         }
@@ -305,12 +337,12 @@ export class ImageWidget extends WidgetType {
       const windowStr = docStr.slice(searchStart, searchEnd)
 
       const regex = /!\[([^\]]*)\]\(([^)]+)\)/g
-      let match
-      let closestMatch = null
+      let match: RegExpExecArray | null = null
+      let closestMatch: { match: RegExpExecArray; pos: number } | null = null
       let minDistance = Infinity
 
       while ((match = regex.exec(windowStr)) !== null) {
-        if (match[2] === wrap.__imageWidget.url) {
+        if (match[2] === wrap.__imageWidget?.url) {
           const matchPos = searchStart + match.index
           const distance = Math.abs(matchPos - pos)
           if (distance < minDistance) {
@@ -351,7 +383,7 @@ export class ImageWidget extends WidgetType {
       sourceTextarea.style.height = `${sourceTextarea.scrollHeight}px`
     }
 
-    const stopPropagation = (e) => e.stopPropagation()
+    const stopPropagation = (e: Event) => e.stopPropagation()
     sourceTextarea.addEventListener('keydown', stopPropagation)
     sourceTextarea.addEventListener('keyup', stopPropagation)
     sourceTextarea.addEventListener('keypress', stopPropagation)
@@ -394,8 +426,8 @@ export class ImageWidget extends WidgetType {
         const newUrl = m[2]
         const parts = newAltFull.split('|')
         const newAltText = parts[0] ? parts[0].trim() : ''
-        let newWidth = undefined
-        let newAlign = undefined
+        let newWidth: string | undefined = undefined
+        let newAlign: string | undefined = undefined
         for (let i = 1; i < parts.length; i++) {
           const p = parts[i].toLowerCase().trim()
           if (['left', 'center', 'right'].includes(p)) newAlign = p
@@ -467,7 +499,7 @@ export class ImageWidget extends WidgetType {
       errorDiv.style.background = 'var(--bg-app, rgba(0,0,0,0.2))'
       errorDiv.style.borderRadius = '4px'
       errorDiv.style.border = '1px dashed var(--border-subtle, rgba(255,255,255,0.1))'
-      errorDiv.innerHTML = `🖼️ Image Not Found: <code>${widget.actualAlt || widget.url}</code>`
+      errorDiv.innerHTML = `🖼️ Image Not Found: <code>${widget?.actualAlt || widget?.url}</code>`
 
       if (img.parentNode) {
         body.replaceChild(errorDiv, img)
@@ -483,23 +515,23 @@ export class ImageWidget extends WidgetType {
 
       if (urlCache.has(this.url)) {
         urlCache
-          .get(this.url)
+          .get(this.url)!
           .then((objectUrl) => {
             if (objectUrl) {
               img.src = objectUrl
             } else {
-              img.onerror()
+              img.onerror?.(new Event('error'))
             }
           })
           .catch(() => {
-            img.onerror()
+            img.onerror?.(new Event('error'))
           })
       } else {
-        const fetchWithRetry = async (url, retries = 3, delay = 50) => {
-          if (!window.api || !window.api.readAsset) return null
+        const fetchWithRetry = async (url: string, retries = 3, delay = 50): Promise<string | null> => {
+          if (!(window as any).api || !(window as any).api.readAsset) return null
           for (let i = 0; i < retries; i++) {
             try {
-              const res = await window.api.readAsset(url)
+              const res = await (window as any).api.readAsset(url)
               if (!res) return null
               if (res.dataUrl) return res.dataUrl
               if (res.buffer) {
@@ -515,7 +547,7 @@ export class ImageWidget extends WidgetType {
                 return URL.createObjectURL(new Blob([res]))
               }
               return null
-            } catch (err) {
+            } catch {
               if (i === retries - 1) return null
               await new Promise((resolve) => setTimeout(resolve, delay))
             }
@@ -531,11 +563,11 @@ export class ImageWidget extends WidgetType {
             if (objectUrl) {
               img.src = objectUrl
             } else {
-              img.onerror()
+              img.onerror?.(new Event('error'))
             }
           })
           .catch(() => {
-            img.onerror()
+            img.onerror?.(new Event('error'))
           })
       }
     } else {
@@ -555,7 +587,7 @@ export class ImageWidget extends WidgetType {
     const handle = document.createElement('div')
     handle.className = 'image-widget-resize-handle'
 
-    handle.onmousedown = (e) => {
+    handle.onmousedown = (e: MouseEvent) => {
       if (view.state.readOnly) return
       e.preventDefault()
       e.stopPropagation()
@@ -564,10 +596,10 @@ export class ImageWidget extends WidgetType {
       const startWidth = body.offsetWidth
       wrap.classList.add('resizing')
 
-      const align = wrap.__imageWidget.align
-      let animationFrame = null
+      const align = wrap.__imageWidget?.align || 'center'
+      let animationFrame: number | null = null
 
-      const onMouseMove = (moveEvent) => {
+      const onMouseMove = (moveEvent: MouseEvent) => {
         if (animationFrame) cancelAnimationFrame(animationFrame)
 
         animationFrame = requestAnimationFrame(() => {
@@ -593,7 +625,9 @@ export class ImageWidget extends WidgetType {
 
         const finalWidth = body.offsetWidth
         const widget = wrap.__imageWidget
-        updateImage(`${finalWidth}px`, widget.align)
+        if (widget) {
+          updateImage(`${finalWidth}px`, widget.align)
+        }
       }
 
       window.addEventListener('mousemove', onMouseMove)
@@ -611,7 +645,7 @@ export class ImageWidget extends WidgetType {
     return wrap
   }
 
-  createBtn(content, title, onClick) {
+  createBtn(content: string | Node, title: string, onClick?: (e: MouseEvent) => void): HTMLButtonElement {
     const btn = document.createElement('button')
     btn.className = 'image-widget-btn'
     if (title) {
@@ -623,7 +657,7 @@ export class ImageWidget extends WidgetType {
       btn.style.fontSize = '11px'
       btn.style.fontWeight = '600'
     } else {
-      btn.appendChild(typeof content === 'string' ? createIcon(content) : content)
+      btn.appendChild(typeof content === 'string' ? createIcon(content)! : content)
     }
 
     btn.onmousedown = (e) => {
@@ -639,14 +673,13 @@ export class ImageWidget extends WidgetType {
     return btn
   }
 
-  ignoreEvent() {
+  ignoreEvent(): boolean {
     return true
   }
 }
 
-
-function buildDecorations(state) {
-  const widgets = []
+function buildDecorations(state: EditorState): DecorationSet {
+  const widgets: any[] = []
   const selection = state.selection.main
 
   // Iterate over visible doc lines
@@ -655,7 +688,7 @@ function buildDecorations(state) {
     const text = line.text
 
     const regex = /!\[([^\]]*)\]\(([^)]+)\)/g
-    let match
+    let match: RegExpExecArray | null = null
     while ((match = regex.exec(text)) !== null) {
       const matchFrom = line.from + match.index
       const matchTo = matchFrom + match[0].length
@@ -663,13 +696,8 @@ function buildDecorations(state) {
       // EXACT boundary checking.
       const intersects = selection.from < matchTo && selection.to > matchFrom
 
-      if (intersects) {
-        // Cursor is INSIDE the markdown text.
-        // OBSIDIAN STYLE: Do not render the image widget, do not hide the text.
-        // The text simply appears seamlessly in the editor.
-      } else {
-        // Cursor is OUTSIDE.
-        // OBSIDIAN STYLE: Render the image block widget, and COMPLETELY HIDE the raw text.
+      if (!intersects) {
+        // Cursor is OUTSIDE: render image block widget and hide raw markdown text
         const widget = new ImageWidget(match[1], match[2], matchFrom, match[0].length)
         widgets.push(
           Decoration.widget({
@@ -691,12 +719,12 @@ function buildDecorations(state) {
   return Decoration.set(widgets, true)
 }
 
-function lineHasImageSyntax(text) {
+function lineHasImageSyntax(text: string): boolean {
   return text.includes('![') && text.includes('](')
 }
 
-export const imageWidgetExtension = StateField.define({
-  create(state) {
+export const imageWidgetExtension = StateField.define<DecorationSet>({
+  create(state: EditorState) {
     return buildDecorations(state)
   },
   update(value, tr) {
@@ -714,3 +742,5 @@ export const imageWidgetExtension = StateField.define({
   },
   provide: (f) => EditorView.decorations.from(f)
 })
+
+export default imageWidgetExtension

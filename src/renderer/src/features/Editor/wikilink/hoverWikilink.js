@@ -1,5 +1,5 @@
 import { marked } from 'marked'
-import { renderMermaidToElement } from '../../mermaid'
+import { renderMermaidToElement } from '../../../core/mermaid'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/atom-one-dark.css'
 

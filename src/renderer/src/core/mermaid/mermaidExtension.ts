@@ -1,24 +1,24 @@
 import { ensureSyntaxTree, syntaxTree } from '@codemirror/language'
 import { Decoration, WidgetType, EditorView, ViewPlugin } from '@codemirror/view'
-import { StateField, StateEffect } from '@codemirror/state'
-import { treeGrowthEffect } from '../table/tableParserProgress'
+import { StateField, StateEffect, type Extension, type Transaction } from '@codemirror/state'
+import { treeGrowthEffect } from '../../features/table/tableParserProgress'
 import mermaid from 'mermaid'
 import { copyMermaidAsImage } from './mermaidAsImage'
 import { openMermaidLightbox } from './mermaidBox'
 import React from 'react'
-import { createRoot } from 'react-dom/client'
+import { createRoot, type Root } from 'react-dom/client'
 import ToolTip from '../../components/atoms/ToolTip'
-import './mermaid.css'
+import '../../assets/mermaid.css'
 
 let mermaidIdCounter = 0
 
-export const setEditingMermaid = StateEffect.define()
+export const setEditingMermaid = StateEffect.define<number>()
 
-export const editingMermaidField = StateField.define({
+export const editingMermaidField = StateField.define<number | null>({
   create() {
     return null
   },
-  update(value, tr) {
+  update(value, tr: Transaction) {
     for (const effect of tr.effects) {
       if (effect.is(setEditingMermaid)) {
         return effect.value
@@ -29,7 +29,7 @@ export const editingMermaidField = StateField.define({
       const currentPos = tr.docChanged ? tr.changes.mapPos(value) : value
       const tree = ensureSyntaxTree(tr.state, currentPos, 100) ?? syntaxTree(tr.state)
       const node = tree.resolveInner(currentPos, 1)
-      let fenced = node
+      let fenced: any = node
       while (fenced && fenced.name !== 'FencedCode') {
         fenced = fenced.parent
       }
@@ -47,9 +47,9 @@ export const editingMermaidField = StateField.define({
   }
 })
 
-const mermaidSvgCache = new Map()
+const mermaidSvgCache = new Map<string, string>()
 
-export function clearMermaidCache() {
+export function clearMermaidCache(): void {
   mermaidSvgCache.clear()
 }
 
@@ -58,21 +58,23 @@ if (typeof window !== 'undefined') {
 }
 
 class MermaidWidget extends WidgetType {
-  constructor(code) {
+  code: string
+
+  constructor(code: string) {
     super()
     this.code = code
   }
 
-  eq(other) {
+  eq(other: MermaidWidget): boolean {
     return other.code === this.code
   }
 
-  toDOM(view) {
-    const wrap = document.createElement('div')
+  toDOM(view: EditorView): HTMLElement {
+    const wrap = document.createElement('div') as HTMLElement & { _reactRoot?: Root | null }
     wrap.className = 'cm-mermaid-widget'
 
     wrap.addEventListener('mousedown', (e) => {
-      if (e.target.closest('.mermaid-edit-btn')) return
+      if ((e.target as HTMLElement | null)?.closest('.mermaid-edit-btn')) return
       e.stopPropagation()
     })
 
@@ -98,7 +100,7 @@ class MermaidWidget extends WidgetType {
       const [copiedImage, setCopiedImage] = React.useState(false)
       const [copiedSyntax, setCopiedSyntax] = React.useState(false)
 
-      const handleEdit = (e) => {
+      const handleEdit = (e: React.MouseEvent) => {
         if (view.state.readOnly) return
         e.preventDefault()
         e.stopPropagation()
@@ -106,7 +108,7 @@ class MermaidWidget extends WidgetType {
         if (pos !== null) {
           const tree = syntaxTree(view.state)
           const node = tree.resolveInner(pos, 1)
-          let fenced = node
+          let fenced: any = node
           while (fenced && fenced.name !== 'FencedCode') {
             fenced = fenced.parent
           }
@@ -121,10 +123,10 @@ class MermaidWidget extends WidgetType {
         }
       }
 
-      const handleCopyImage = async (e) => {
+      const handleCopyImage = async (e: React.MouseEvent) => {
         e.preventDefault()
         e.stopPropagation()
-        const svgEl = wrap.querySelector('.mermaid-scroll-wrap svg') || wrap.querySelector('svg')
+        const svgEl = (wrap.querySelector('.mermaid-scroll-wrap svg') || wrap.querySelector('svg')) as SVGSVGElement | null
         if (svgEl) {
           try {
             await copyMermaidAsImage(svgEl)
@@ -146,7 +148,7 @@ class MermaidWidget extends WidgetType {
         }
       }
 
-      const handleCopySyntax = async (e) => {
+      const handleCopySyntax = async (e: React.MouseEvent) => {
         e.preventDefault()
         e.stopPropagation()
         try {
@@ -349,7 +351,7 @@ class MermaidWidget extends WidgetType {
     return wrap
   }
 
-  destroy(dom) {
+  destroy(dom: HTMLElement & { _reactRoot?: Root | null }): void {
     if (dom._reactRoot) {
       const root = dom._reactRoot
       setTimeout(() => root.unmount(), 0)
@@ -358,12 +360,12 @@ class MermaidWidget extends WidgetType {
   }
 }
 
-export function renderMermaidToElement(container, code, uniqueId) {
+export function renderMermaidToElement(container: HTMLElement, code: string, uniqueId: string): void {
   const computed = getComputedStyle(document.documentElement)
 
   let accent = computed.getPropertyValue('--text-accent').trim()
   if (!accent) accent = '#40bafa'
-  if (!accent.startsWith('#')) accent = '#' + accent
+  if (!accent.startsWith('#') && !accent.startsWith('rgb')) accent = '#' + accent
 
   let textFaint = computed.getPropertyValue('--text-faint').trim() || '#888888'
   let textMain = computed.getPropertyValue('--text-main').trim() || '#e0e0e0'
@@ -512,24 +514,28 @@ export function renderMermaidToElement(container, code, uniqueId) {
       const { svg } = await mermaid.render(uniqueId, code)
       mermaidSvgCache.set(code, svg)
       container.innerHTML = svg
-    } catch (err) {
-      container.innerHTML = `<div class="mermaid-error"><strong>Mermaid Syntax Error</strong>\n${err.message}</div>`
+    } catch (err: any) {
+      container.innerHTML = `<div class="mermaid-error"><strong>Mermaid Syntax Error</strong>\n${err?.message || err}</div>`
     }
   }, 0)
 }
 
-export const refreshMermaidEffect = StateEffect.define()
+export const refreshMermaidEffect = StateEffect.define<null>()
 
 const mermaidTreeWatcher = ViewPlugin.fromClass(
   class {
-    constructor(view) {
+    view: EditorView
+    _idleHandle: number | null
+    _destroyed: boolean
+
+    constructor(view: EditorView) {
       this.view = view
       this._idleHandle = null
       this._destroyed = false
       this._check(view.state)
     }
 
-    update(update) {
+    update(update: any) {
       if (update.docChanged || update.viewportChanged) {
         this._check(update.state)
       }
@@ -543,7 +549,7 @@ const mermaidTreeWatcher = ViewPlugin.fromClass(
       }
     }
 
-    _check(state) {
+    _check(state: any) {
       const tree = syntaxTree(state)
       if (tree.length < state.doc.length) {
         if (this._idleHandle !== null) return
@@ -562,13 +568,13 @@ const mermaidTreeWatcher = ViewPlugin.fromClass(
   }
 )
 
-function buildMermaidDecorations(state) {
-  const widgets = []
+function buildMermaidDecorations(state: any) {
+  const widgets: any[] = []
   const tree = ensureSyntaxTree(state, state.doc.length, 250) ?? syntaxTree(state)
   const editingPos = state.field(editingMermaidField, false)
 
   tree.iterate({
-    enter(node) {
+    enter(node: any) {
       if (node.name === 'FencedCode') {
         const text = state.sliceDoc(node.from, node.to)
         const firstLine = (text.split(/\r?\n/)[0] || '').trim()
@@ -620,7 +626,7 @@ const mermaidDecorationsField = StateField.define({
   provide: (f) => EditorView.decorations.from(f)
 })
 
-export const mermaidWidgetExtension = [
+export const mermaidWidgetExtension: Extension = [
   editingMermaidField,
   mermaidDecorationsField,
   mermaidTreeWatcher

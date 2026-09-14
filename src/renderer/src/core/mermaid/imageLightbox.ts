@@ -1,9 +1,45 @@
-import { copyMermaidAsImage } from './mermaidAsImage'
+/**
+ * =========================================================================================
+ * Image Lightbox Module (`imageLightbox.ts`)
+ * =========================================================================================
+ * 
+ * Provides an interactive, full-screen pan & zoom lightbox modal for images,
+ * perfectly matching the interactive Mermaid diagram lightbox.
+ * 
+ * Key Features:
+ * 1. Pan & Zoom Engine:
+ *    - Click & drag on the canvas to pan across high-resolution images.
+ *    - Mouse wheel / trackpad pinch to zoom smoothly between 20% and 600%.
+ *    - Double-click anywhere on the canvas to reset zoom (100%) and re-center.
+ * 2. Bottom-Right Floating Control Panel (Theme-Aware):
+ *    - Zoom Out (-), Live Zoom % indicator, Zoom In (+), Reset View (↺), and 1-Click Copy Image.
+ * 3. Modal Geometry & Design:
+ *    - Uses a crisp 2px border radius on the modal card, control panel pill, and action buttons.
+ *    - Outer rounded card with overflow: hidden prevents scrollbars from bleeding over edges.
+ *    - Instant Escape key capture teardown and backdrop click to close.
+ * =========================================================================================
+ */
 
-function createMermaidToolbar({ onZoomIn, onZoomOut, onReset, onCopy, getScaleText }) {
+import { copyImageToClipboard } from '../../features/media/hooks/imageClipboard'
+import '../../features/media/css/imageExtension.css'
+import '../../assets/mermaid.css'
+
+interface CreateImageToolbarParams {
+  onZoomIn: () => void
+  onZoomOut: () => void
+  onReset: () => void
+  onCopy: (btn: HTMLElement) => Promise<void>
+  getScaleText: () => string
+}
+
+/**
+ * Creates the bottom-right floating control panel for zooming, resetting, and copying.
+ */
+function createImageToolbar({ onZoomIn, onZoomOut, onReset, onCopy, getScaleText }: CreateImageToolbarParams) {
   const toolbar = document.createElement('div')
   toolbar.className = 'mermaid-lightbox-toolbar image-lightbox-toolbar-right'
 
+  // Zoom Out Button
   const zoomOutBtn = document.createElement('button')
   zoomOutBtn.className = 'mermaid-toolbar-btn'
   zoomOutBtn.title = 'Zoom Out'
@@ -13,10 +49,12 @@ function createMermaidToolbar({ onZoomIn, onZoomOut, onReset, onCopy, getScaleTe
     onZoomOut()
   })
 
+  // Live Zoom Percentage Text Display
   const zoomLabel = document.createElement('span')
   zoomLabel.className = 'mermaid-toolbar-zoom-text'
   zoomLabel.textContent = getScaleText()
 
+  // Zoom In Button
   const zoomInBtn = document.createElement('button')
   zoomInBtn.className = 'mermaid-toolbar-btn'
   zoomInBtn.title = 'Zoom In'
@@ -26,6 +64,7 @@ function createMermaidToolbar({ onZoomIn, onZoomOut, onReset, onCopy, getScaleTe
     onZoomIn()
   })
 
+  // Reset View Button (Centers image and resets zoom to 100%)
   const resetBtn = document.createElement('button')
   resetBtn.className = 'mermaid-toolbar-btn'
   resetBtn.title = 'Reset View (100%)'
@@ -35,9 +74,10 @@ function createMermaidToolbar({ onZoomIn, onZoomOut, onReset, onCopy, getScaleTe
     onReset()
   })
 
+  // Copy Image Button
   const copyBtn = document.createElement('button')
   copyBtn.className = 'mermaid-toolbar-btn'
-  copyBtn.title = 'Copy as Image'
+  copyBtn.title = 'Copy Image'
   copyBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`
   copyBtn.addEventListener('click', async (e) => {
     e.stopPropagation()
@@ -52,93 +92,85 @@ function createMermaidToolbar({ onZoomIn, onZoomOut, onReset, onCopy, getScaleTe
 
   return {
     element: toolbar,
-    updateZoomText: (text) => {
+    updateZoomText: (text: string) => {
       zoomLabel.textContent = text
     }
   }
 }
 
-export function openMermaidLightbox(svgEl) {
-  if (!svgEl) return
+/**
+ * Opens an interactive, maximized lightbox modal for any image.
+ */
+export function openImageLightbox(imgSource: HTMLImageElement | string): void {
+  const imgSrc = typeof imgSource === 'string' ? imgSource : imgSource?.src
+  if (!imgSrc) return
 
+  // Fullscreen Backdrop Overlay with blur
   const overlay = document.createElement('div')
   overlay.className = 'image-lightbox-overlay mermaid-lightbox-overlay'
   overlay.tabIndex = 0
 
+  // Centered Modal Wrapper
   const wrapper = document.createElement('div')
   wrapper.className = 'image-lightbox-wrapper mermaid-lightbox-wrapper'
 
+  // Modal Container Card (2px border-radius)
   const card = document.createElement('div')
   card.className = 'mermaid-lightbox-card'
 
+  // Viewport Container (Handles pointer panning events)
   const viewport = document.createElement('div')
   viewport.className = 'mermaid-lightbox-viewport'
 
+  // Canvas Container (Receives CSS transform scale + translate)
   const canvas = document.createElement('div')
   canvas.className = 'mermaid-lightbox-canvas'
 
-  const clone = svgEl.cloneNode(true)
-  clone.removeAttribute('width')
-  clone.removeAttribute('height')
-  clone.style.width = '100%'
-  clone.style.height = 'auto'
+  // Image clone
+  const clone = document.createElement('img')
+  clone.src = imgSrc
+  clone.draggable = false
   clone.style.maxWidth = '100%'
+  clone.style.maxHeight = '100%'
+  clone.style.objectFit = 'contain'
   clone.style.display = 'block'
-
-  const svgId = svgEl.id || svgEl.getAttribute('id')
-  if (svgId) {
-    const headStyle =
-      document.getElementById(svgId) ||
-      document.getElementById(`style-${svgId}`) ||
-      document.querySelector(`style[id*="${svgId}"]`)
-    if (headStyle && !clone.querySelector('style')) {
-      const clonedStyle = headStyle.cloneNode(true)
-      clone.prepend(clonedStyle)
-    }
-  }
-
-  clone.style.pointerEvents = 'none'
   clone.style.userSelect = 'none'
-  clone.style.shapeRendering = 'geometricPrecision'
-  clone.style.textRendering = 'geometricPrecision'
 
   canvas.appendChild(clone)
   viewport.appendChild(canvas)
   card.appendChild(viewport)
 
+  // Pan & Zoom Coordinate State
   let scale = 1
   let panX = 0
   let panY = 0
   let isDragging = false
   let startX = 0
   let startY = 0
-  let rafId = null
 
-  let toolbarObj = null
+  let toolbarObj: ReturnType<typeof createImageToolbar> | null = null
 
+  // Applies current pan and zoom coordinates to the canvas
   const updateTransform = () => {
-    if (rafId) cancelAnimationFrame(rafId)
-    rafId = requestAnimationFrame(() => {
-      canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`
-      if (toolbarObj) {
-        toolbarObj.updateZoomText(`${Math.round(scale * 100)}%`)
-      }
-    })
+    canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`
+    if (toolbarObj) {
+      toolbarObj.updateZoomText(`${Math.round(scale * 100)}%`)
+    }
   }
 
-  viewport.addEventListener('mousedown', (e) => {
-    if (e.target.closest('.mermaid-lightbox-toolbar') || e.target.closest('.image-lightbox-close'))
+  // --- Mouse Drag-to-Pan Handlers ---
+  viewport.addEventListener('mousedown', (e: MouseEvent) => {
+    const target = e.target as HTMLElement | null
+    if (target?.closest('.mermaid-lightbox-toolbar') || target?.closest('.image-lightbox-close'))
       return
-    e.preventDefault()
     isDragging = true
     startX = e.clientX - panX
     startY = e.clientY - panY
     viewport.classList.add('is-panning')
   })
 
-  const onMouseMove = (e) => {
+  const onMouseMove = (e: MouseEvent) => {
     if (!isDragging) return
-    e.preventDefault()
     panX = e.clientX - startX
     panY = e.clientY - startY
     updateTransform()
@@ -154,26 +186,30 @@ export function openMermaidLightbox(svgEl) {
   window.addEventListener('mousemove', onMouseMove)
   window.addEventListener('mouseup', onMouseUp)
 
+  // --- Mouse Wheel Zoom Handler ---
   viewport.addEventListener(
     'wheel',
-    (e) => {
+    (e: WheelEvent) => {
       e.preventDefault()
       const delta = e.deltaY < 0 ? 1.15 : 0.85
-      scale = Math.min(Math.max(0.2, scale * delta), 6)
+      scale = Math.min(Math.max(0.2, scale * delta), 6) // Clamp zoom between 20% and 600%
       updateTransform()
     },
     { passive: false }
   )
 
-  viewport.addEventListener('dblclick', (e) => {
-    if (e.target.closest('.mermaid-lightbox-toolbar')) return
+  // --- Double-Click Reset Handler ---
+  viewport.addEventListener('dblclick', (e: MouseEvent) => {
+    const target = e.target as HTMLElement | null
+    if (target?.closest('.mermaid-lightbox-toolbar')) return
     scale = 1
     panX = 0
     panY = 0
     updateTransform()
   })
 
-  toolbarObj = createMermaidToolbar({
+  // --- Mount Floating Control Toolbar ---
+  toolbarObj = createImageToolbar({
     getScaleText: () => `${Math.round(scale * 100)}%`,
     onZoomIn: () => {
       scale = Math.min(6, scale * 1.15)
@@ -189,21 +225,22 @@ export function openMermaidLightbox(svgEl) {
       panY = 0
       updateTransform()
     },
-    onCopy: async (btn) => {
+    onCopy: async (btn: HTMLElement) => {
       try {
-        await copyMermaidAsImage(clone)
-        btn.style.color = '#4ade80'
-        setTimeout(() => (btn.style.color = ''), 1500)
+        await copyImageToClipboard(imgSrc, () => {
+          btn.style.color = '#4ade80'
+          setTimeout(() => (btn.style.color = ''), 1500)
+        })
         window.dispatchEvent(
           new CustomEvent('show-toast', {
-            detail: { message: 'Mermaid diagram copied as image', type: 'success' }
+            detail: { message: 'Image copied to clipboard', type: 'success' }
           })
         )
       } catch (err) {
-        console.error('Failed to copy mermaid diagram', err)
+        console.error('Failed to copy image', err)
         window.dispatchEvent(
           new CustomEvent('show-toast', {
-            detail: { message: 'Failed to copy diagram image', type: 'error' }
+            detail: { message: 'Failed to copy image', type: 'error' }
           })
         )
       }
@@ -211,16 +248,18 @@ export function openMermaidLightbox(svgEl) {
   })
   card.appendChild(toolbarObj.element)
 
+  // --- Top-Right Close Button (2px border radius) ---
   const closeBtn = document.createElement('div')
   closeBtn.className = 'image-lightbox-close'
   closeBtn.title = 'Close (Esc)'
   closeBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`
 
+  // Teardown and unmount cleanly
   const close = () => {
     overlay.classList.remove('show')
     window.removeEventListener('mousemove', onMouseMove)
     window.removeEventListener('mouseup', onMouseUp)
-    window.removeEventListener('keydown', onKeyDown, true)
+    window.removeEventListener('keydown', onKeyDown, { capture: true })
     window.removeEventListener('close-lightbox', close)
     setTimeout(() => overlay.remove(), 250)
   }
@@ -232,14 +271,15 @@ export function openMermaidLightbox(svgEl) {
     close()
   })
 
-  const onKeyDown = (k) => {
+  // Intercept Escape key globally while modal is active
+  const onKeyDown = (k: KeyboardEvent) => {
     if (k.key === 'Escape' || k.key === 'Esc' || k.keyCode === 27) {
       k.preventDefault()
       k.stopPropagation()
       close()
     }
   }
-  window.addEventListener('keydown', onKeyDown, true)
+  window.addEventListener('keydown', onKeyDown, { capture: true })
   window.addEventListener('close-lightbox', close)
 
   wrapper.appendChild(card)
@@ -253,4 +293,19 @@ export function openMermaidLightbox(svgEl) {
   })
 }
 
-export default openMermaidLightbox
+/**
+ * Attaches the interactive lightbox opener to an image DOM element.
+ */
+export function attachLightbox(imgElement: HTMLImageElement | null): void {
+  if (!imgElement) return
+  imgElement.style.cursor = 'zoom-in'
+  imgElement.title = 'Click to open image in full view'
+
+  imgElement.addEventListener('click', (e: MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    openImageLightbox(imgElement)
+  })
+}
+
+export default openImageLightbox

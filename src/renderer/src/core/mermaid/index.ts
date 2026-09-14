@@ -7,3 +7,4 @@ export {
 } from './mermaidExtension'
 export { copyMermaidAsImage } from './mermaidAsImage'
 export { openMermaidLightbox } from './mermaidBox'
+export { openImageLightbox, attachLightbox } from './imageLightbox'
