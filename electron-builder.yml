@@ -3,12 +3,21 @@ productName: Lumina
 icon: resources/icon.png
 directories:
   buildResources: resources
+electronLanguages:
+  - en-US
 files:
   - '!**/.vscode/*'
   - '!src/*'
+  - '!test/*'
   - '!electron.vite.config.{js,ts,mjs,cjs}'
   - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+  - '!node_modules/sharp/**'
+  - '!node_modules/onnxruntime-web/**'
+  - '!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}'
+  - '!**/node_modules/*/{test,__tests__,tests,example,examples,docs}'
+  - '!**/node_modules/*/*.d.ts'
+  - '!**/node_modules/*/*.map'
 asarUnpack:
   - resources/**
 extraResources:

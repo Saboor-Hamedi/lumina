@@ -76,9 +76,13 @@ describe('useTheme', () => {
       result.current.setTheme('paddyEmerald')
     })
 
-    expect(result.current.theme).toBe('paddyEmerald')
-    expect(document.documentElement.style.getPropertyValue('--bg-app')).toBe('#1e2a1e')
-    expect(document.documentElement.style.getPropertyValue('--text-accent')).toBe('#4ec9b0')
+    expect(result.current.theme).toBe('paddy_emerald')
+    expect(document.documentElement.style.getPropertyValue('--bg-app')).toBe(
+      THEMES.paddyEmerald.colors['--bg-app']
+    )
+    expect(document.documentElement.style.getPropertyValue('--text-accent')).toBe(
+      THEMES.paddyEmerald.colors['--text-accent']
+    )
   })
 
   it('selects paddy_emerald alias successfully', () => {
@@ -88,7 +92,9 @@ describe('useTheme', () => {
       result.current.setTheme('paddy_emerald')
     })
 
-    expect(result.current.theme).toBe('paddyEmerald')
-    expect(document.documentElement.style.getPropertyValue('--bg-app')).toBe('#1e2a1e')
+    expect(result.current.theme).toBe('paddy_emerald')
+    expect(document.documentElement.style.getPropertyValue('--bg-app')).toBe(
+      THEMES.paddyEmerald.colors['--bg-app']
+    )
   })
 })
