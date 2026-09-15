@@ -92,9 +92,6 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     height: typeof window !== 'undefined' ? (embedded ? window.innerHeight : Math.max(200, window.innerHeight * 0.94 - 34)) : 600
   })
 
-  const sidebarWidth = isSidebarOpen ? 300 : 44
-  const contentWidth = Math.max(100, dimensions.width - sidebarWidth)
-
   const handleToggleSidebar = useCallback(() => {
     const next = !isSidebarOpen
     setLocalSidebarOpen(next)
@@ -375,20 +372,36 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
 
   // Auto-Spin Logic removed to prevent CPU heavy continuous physics simulation
 
-  // Precompute line colors
+  // Precompute line colors based on Lumina theme accent
   const defaultLineColor = useMemo(() => {
-    if (is3DMode) {
-      return 'rgba(150, 150, 150, 0.15)'
+    let r = 64, g = 186, b = 250
+    const color = graphNodeColor || '#40bafa'
+    if (color.startsWith('#')) {
+      const clean = color.replace('#', '')
+      const bigint = parseInt(clean.length === 3 ? clean.split('').map(c => c + c).join('') : clean, 16)
+      if (!isNaN(bigint)) {
+        r = (bigint >> 16) & 255
+        g = (bigint >> 8) & 255
+        b = bigint & 255
+      }
     }
-    return 'rgba(150, 150, 150, 0.08)'
-  }, [is3DMode])
+    return `rgba(${r}, ${g}, ${b}, ${is3DMode ? 0.32 : 0.22})`
+  }, [graphNodeColor, is3DMode])
 
   const dimmedLineColor = useMemo(() => {
-    if (is3DMode) {
-      return 'rgba(150, 150, 150, 0.06)'
+    let r = 64, g = 186, b = 250
+    const color = graphNodeColor || '#40bafa'
+    if (color.startsWith('#')) {
+      const clean = color.replace('#', '')
+      const bigint = parseInt(clean.length === 3 ? clean.split('').map(c => c + c).join('') : clean, 16)
+      if (!isNaN(bigint)) {
+        r = (bigint >> 16) & 255
+        g = (bigint >> 8) & 255
+        b = bigint & 255
+      }
     }
-    return 'rgba(150, 150, 150, 0.02)'
-  }, [is3DMode])
+    return `rgba(${r}, ${g}, ${b}, ${is3DMode ? 0.08 : 0.04})`
+  }, [graphNodeColor, is3DMode])
 
   // Pre-compute neighbors for hover highlighting to prevent O(N^2) canvas lag
   const hoverNeighbors = useMemo(() => {
@@ -469,12 +482,12 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
         }}
       >
         <PerformancePanel onRecenter={handleRecenter} is3DMode={is3DMode} />
-        <div className="nexus-body" style={{ position: 'relative', width: `${contentWidth}px`, height: '100%', overflow: 'hidden' }}>
+        <div className="nexus-body" style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
           {is3DMode ? (
             <Graph3D
               key="3d-graph-embedded"
               ref={graphRef}
-              width={contentWidth}
+              width={dimensions.width}
               height={dimensions.height}
               graphData={graphData}
               nodeColor={nodeColorFn}
@@ -493,32 +506,32 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               linkColor={(link) => {
                 const isHoverConnected = hoverNode && (link.source === hoverNode || link.target === hoverNode);
                 const isSelectedConnected = selectedSnippet && ((link.source.snippetId === selectedSnippet.id) || (link.target.snippetId === selectedSnippet.id));
-                
-                if (!hoverNode && !selectedSnippet) return defaultLineColor;
-                
                 const isActive = hoverNode ? isHoverConnected : isSelectedConnected;
                 
                 const { settings } = useSettingsStore.getState();
-                const dimOpacity = settings.graphLinkDimOpacity ?? 0.05;
-                
-                if (!isActive) {
-                  return `rgba(150, 150, 150, ${dimOpacity})`;
+                const accentColor = settings.graphNodeColor || '#40bafa';
+                let r = 64, g = 186, b = 250;
+                if (accentColor.startsWith('#')) {
+                  const clean = accentColor.replace('#', '');
+                  const bigint = parseInt(clean.length === 3 ? clean.split('').map(c => c + c).join('') : clean, 16);
+                  if (!isNaN(bigint)) {
+                    r = (bigint >> 16) & 255;
+                    g = (bigint >> 8) & 255;
+                    b = bigint & 255;
+                  }
                 }
                 
-                const highlightOpacity = settings.graphLinkHighlightOpacity ?? 0.6;
-                const accentColor = settings.graphNodeColor || '#40bafa';
+                if (isActive) {
+                  const highlightOpacity = settings.graphLinkHighlightOpacity ?? 0.75;
+                  return `rgba(${r}, ${g}, ${b}, ${highlightOpacity})`;
+                }
                 
-                const hexToRgba = (hex, alpha) => {
-                  if (hex.startsWith('#')) {
-                    const r = parseInt(hex.slice(1, 3), 16);
-                    const g = parseInt(hex.slice(3, 5), 16);
-                    const b = parseInt(hex.slice(5, 7), 16);
-                    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-                  }
-                  return hex;
-                };
+                if (hoverNode || selectedSnippet) {
+                  const dimOpacity = settings.graphLinkDimOpacity ?? 0.04;
+                  return `rgba(${r}, ${g}, ${b}, ${dimOpacity})`;
+                }
 
-                return hexToRgba(accentColor, highlightOpacity);
+                return defaultLineColor;
               }}
               linkWidth={0.5}
               onNodeHover={(node) => setHoverNode(node)}
@@ -576,7 +589,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             <Graph2D
               key="2d-graph-embedded"
               ref={graphRef}
-              dimensions={{ width: contentWidth, height: dimensions.height }}
+              dimensions={dimensions}
               graphData={graphData}
               paintNode={paintNode}
               hoverNode={hoverNode}
@@ -671,7 +684,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
         <div className="canvas-drawer-body" style={{ position: 'relative', width: '100%', height: 'calc(100% - 34px)', overflow: 'hidden' }}>
           <PerformancePanel onRecenter={handleRecenter} is3DMode={is3DMode} />
 
-          <div className="nexus-body" style={{ position: 'relative', width: `${contentWidth}px`, height: '100%', overflow: 'hidden' }}>
+          <div className="nexus-body" style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
             <div className={`graph-initializer ${isEngineReady ? 'ready' : ''}`}>
               <div className="pulse-ring"></div>
               <div className="graph-initializer-text">Initializing Physics</div>
@@ -681,7 +694,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               <Graph3D
                 key="3d-graph-modal"
                 ref={graphRef}
-                width={contentWidth}
+                width={dimensions.width}
                 height={dimensions.height}
                 graphData={graphData}
                 nodeColor={nodeColorFn}
@@ -700,32 +713,32 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 linkColor={(link) => {
                   const isHoverConnected = hoverNode && (link.source === hoverNode || link.target === hoverNode);
                   const isSelectedConnected = selectedSnippet && ((link.source.snippetId === selectedSnippet.id) || (link.target.snippetId === selectedSnippet.id));
-                  
-                  if (!hoverNode && !selectedSnippet) return defaultLineColor;
-                  
                   const isActive = hoverNode ? isHoverConnected : isSelectedConnected;
                   
                   const { settings } = useSettingsStore.getState();
-                  const dimOpacity = settings.graphLinkDimOpacity ?? 0.05;
-                  
-                  if (!isActive) {
-                    return `rgba(150, 150, 150, ${dimOpacity})`;
+                  const accentColor = settings.graphNodeColor || '#40bafa';
+                  let r = 64, g = 186, b = 250;
+                  if (accentColor.startsWith('#')) {
+                    const clean = accentColor.replace('#', '');
+                    const bigint = parseInt(clean.length === 3 ? clean.split('').map(c => c + c).join('') : clean, 16);
+                    if (!isNaN(bigint)) {
+                      r = (bigint >> 16) & 255;
+                      g = (bigint >> 8) & 255;
+                      b = bigint & 255;
+                    }
                   }
                   
-                  const highlightOpacity = settings.graphLinkHighlightOpacity ?? 0.6;
-                  const accentColor = settings.graphNodeColor || '#40bafa';
+                  if (isActive) {
+                    const highlightOpacity = settings.graphLinkHighlightOpacity ?? 0.75;
+                    return `rgba(${r}, ${g}, ${b}, ${highlightOpacity})`;
+                  }
                   
-                  const hexToRgba = (hex, alpha) => {
-                    if (hex.startsWith('#')) {
-                      const r = parseInt(hex.slice(1, 3), 16);
-                      const g = parseInt(hex.slice(3, 5), 16);
-                      const b = parseInt(hex.slice(5, 7), 16);
-                      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-                    }
-                    return hex;
-                  };
+                  if (hoverNode || selectedSnippet) {
+                    const dimOpacity = settings.graphLinkDimOpacity ?? 0.04;
+                    return `rgba(${r}, ${g}, ${b}, ${dimOpacity})`;
+                  }
 
-                  return hexToRgba(accentColor, highlightOpacity);
+                  return defaultLineColor;
                 }}
                 linkWidth={0.5}
                 onNodeHover={(node) => setHoverNode(node)}
@@ -769,7 +782,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               <Graph2D
                 key="2d-graph-modal"
                 ref={graphRef}
-                dimensions={{ width: contentWidth, height: dimensions.height }}
+                dimensions={dimensions}
                 graphData={graphData}
                 paintNode={paintNode}
                 hoverNode={hoverNode}

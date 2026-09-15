@@ -1,89 +1,128 @@
-# Task: Improve edge (wire) rendering and alignment in Lumina's Canvas
+Viewed package.json:1-70
 
-## Context
-You are working on Lumina, an Electron + TypeScript + Tailwind knowledge workspace app.
-One feature is "Canvas" — a freeform diagramming surface (similar to Excalidraw / tldraw /
-React Flow). Users place shape nodes (rectangle, circle, cylinder, hexagon, diamond,
-triangle, heart, stick figure, etc.) and connect them with wires/edges. There is a right-hand
-"Canvas Studio" panel with tabs: Shapes, Wires, Layout, Export. The Layout tab already has
-20px grid snapping, "Snap All Nodes to 20px Grid", align-selected-cards, distribute-spacing,
-and viewport zoom controls. There is also a "Spatial Navigator" showing node count.
+Error: The stream was interrupted. Please continue the task you were working on. (Error ID: 679fddc9-d386-499f-87e0-11af7ff7a182-942-2010)
 
-## Current state of edges (the problem)
-In the current canvas:
-- Edges attach to arbitrary points on node boundaries rather than fixed anchor ports, so
-  lines leave shapes at random angles and the diagram looks accidental rather than deliberate.
-- Bezier control points are not derived from the exit direction, so curves wobble, bulge on
-  short edges, and flatten on long edges.
-- Edges cross over node labels and text (e.g. a wire passes through a shape's placeholder
-  text; an edge label chip sits on top of a line and is unreadable).
-- Arrowhead styling is inconsistent — some edges render an arrowhead, others do not.
-- Edge endpoints touch/overlap the node stroke instead of stopping just outside it.
-- Node positions snap to a 20px grid but edge segments do not, so horizontal/vertical runs
-  sit at off-grid coordinates and read as misaligned.
-- Only freeform curved routing exists; there is no orthogonal (right-angle) option, which is
-  what most technical diagrams (e.g. database diagrams) need to look clean.
+Error: The stream was interrupted. Please continue the task you were working on. (Error ID: 679fddc9-d386-499f-87e0-11af7ff7a182-944-2010)
 
-## Required changes
+Viewed package.json:71-139
+Searched for files: *vite.config*
+Viewed electron.vite.config.mjs:1-50
+Viewed App.jsx:1-54
+Viewed MainLayout.jsx:1-100
+Viewed AppModals.jsx:1-60
+Viewed workspaceStore.js:1-100
+Viewed workspaceStore.js:200-300
+Searched for "getSnippets"
+Viewed workspaceManager.js:605-640
 
-### 1. Fixed anchor ports
-Give every node a set of fixed connection ports (minimum N/E/S/W; ideally 8 with corners).
-Each port has a position and an outward normal direction vector.
-When an edge is created or a node is moved, automatically select the port pair that produces
-the shortest path AND whose normals face each other. Never attach to arbitrary boundary points.
+Error: The stream was interrupted. Please continue the task you were working on. (Error ID: 679fddc9-d386-499f-87e0-11af7ff7a182-966-2010)
 
-### 2. Direction-aware bezier curves
-Derive bezier control points from each port's outward normal. Offset magnitude should be
-proportional to endpoint distance but clamped (e.g. clamp(distance * 0.4, 40, 150)) so short
-edges do not bulge and long edges do not flatten. Every edge must leave and enter its node
-perpendicular to that node's boundary.
+Viewed workspaceManager.js:200-260
+Viewed workspaceManager.js:270-350
+Viewed workspaceScanner.js:1-80
+Viewed workspaceScanner.js:250-330
+Viewed Sidebar.jsx:1-17
+Searched for "useVaultStore"
+Viewed FileExplorer.jsx:520-580
+Viewed TabContentPane.jsx:1-83
+Viewed Editor.jsx:1-60
+Viewed B:\electron\lumina\src\renderer\src\features\Editor\EditorCanvas.jsx:2-61
+Searched for files: *EditorCanvas*
+Searched for "@xenova/transformers"
+Viewed analyze-bundle.js:1-60
+Ran command: `npm run analyze:bundle`
 
-### 3. Orthogonal (Manhattan) routing mode
-Add a routing mode toggle in the Wires tab with three options: Curved / Orthogonal / Straight.
-Orthogonal routing should exit the source port along its normal, travel to a midpoint on the
-dominant axis, turn at right angles, and arrive perpendicular at the target port. Round all
-corners with small arc segments (radius ≈ 8px) rather than hard 90° joins.
+I am analyzing the application dependencies and bundle metrics to identify real performance bottlenecks.
 
-### 4. Grid-snap edge segments
-Snap orthogonal segment positions to the same 20px grid the nodes use, respecting the existing
-"20px Grid Snapping" toggle and Ctrl+' shortcut. Horizontal and vertical runs must land on grid
-multiples so they visually align with node edges.
+Here is a comprehensive performance audit of the Lumina architecture (**Electron + React 19 + Zustand + Three.js + Vite**), categorized by impact.
 
-### 5. Fix overlaps and collisions
-- Inset edge endpoints ~6px outside the node boundary so arrowheads never touch the shape stroke.
-- Render edge label chips with an opaque background and padding, layered above edges but
-  below nodes, so labels are never crossed by wires.
-- When multiple edges connect the same node pair, fan them out with a perpendicular offset
-  (index * 12px) so they do not stack on top of each other.
-- Prefer routes that avoid passing through other nodes' bounding boxes where feasible.
+---
 
-### 6. Consistent stroke and arrowhead styling
-- One stroke width for all edges (1.5–2px), with stroke-linecap="round" and stroke-linejoin="round".
-- A single reusable SVG marker definition for arrowheads, sized relative to stroke width, applied
-  consistently to every directed edge.
-- Add an invisible transparent hit-area path (stroke-width ~12px) beneath each visible edge so
-  edges are easy to click and select.
+### 1. Initial Launch & Bundle Size (Highest Impact)
 
-### 7. Live alignment guides
-While dragging a node, detect when its center or any edge aligns with another node's center or
-edge (tolerance ~5px), snap to that alignment, and draw a temporary guide line. This prevents
-misalignment during placement rather than only correcting it afterward via the Layout panel.
+#### **Issue: Heavy dependencies are bundled into the initial startup chunk**
+- Currently, [MainLayout.jsx](file:///B:/electron/lumina/src/renderer/src/features/Layout/MainLayout.jsx) and [AppModals.jsx](file:///B:/electron/lumina/src/renderer/src/features/Layout/AppModals.jsx) statically import:
+  - `Graph` (pulls in `three`, `react-force-graph-2d`, `react-force-graph-3d`, `d3-force`)
+  - `CanvasDrawerModal` (pulls in the full infinite spatial canvas, geometric shape algorithms, SVG/PNG export engines)
+  - `PDFViewerTab` (pulls in `pdf-lib`)
+  - `Settings`, `Theme`, `Documentation`, `Guide` modals
+- Only `LuminaChat` is currently lazy-loaded with `React.lazy()`.
+- **Result**: On first app launch, the V8 engine has to parse and compile Three.js, PDF rendering engines, and the canvas system before showing the main window, adding noticeable startup latency.
 
-## Constraints
-- Match the existing Canvas Studio visual language and theming (the app supports light and
-  dark themes — do not hardcode colors; use the existing theme tokens/CSS variables).
-- Keep the canvas file format backward compatible: existing saved canvases must still open.
-  If new per-edge fields are needed (routing mode, port ids, label offset), make them optional
-  with sensible defaults derived from current behavior.
-- Rendering must stay smooth while dragging — recompute routes incrementally for affected
-  edges only, not the entire graph on every pointer move.
+#### **Recommended Action:**
+1. **Lazy-load heavy modals and viewers**:
+   ```javascript
+   const Graph = React.lazy(() => import('../Graph/Graph'))
+   const CanvasDrawerModal = React.lazy(() => import('../canvas/CanvasDrawerModal'))
+   const PDFViewerTab = React.lazy(() => import('../media/PDFViewerTab'))
+   const Settings = React.lazy(() => import('../Settings/Settings'))
+   const Documentation = React.lazy(() => import('../Docs/Documentation'))
+   ```
+2. **Configure manual Rollup chunks in [`electron.vite.config.mjs`](file:///B:/electron/lumina/electron.vite.config.mjs)**:
+   Isolate large vendor libraries (`three`, `codemirror`, `pdf-lib`, `mermaid`) into separate async chunks so the core renderer bundle stays ultra-slim.
 
-## Deliverables
-1. A port/anchor module that computes ports and selects the best port pair for an edge.
-2. A routing module exposing curved, orthogonal, and straight path generators returning SVG path strings.
-3. Updated edge rendering with consistent strokes, shared arrowhead markers, label chips, and hit areas.
-4. Routing mode toggle wired into the Wires tab of Canvas Studio.
-5. Live alignment guides during node drag.
+---
 
-Before writing code, inspect the existing canvas implementation and tell me which files you
-will change and how the current edge data model is structured.
+### 2. IPC & Vault Scaling (Scalability for large vaults)
+
+#### **Issue: Full file text broadcast across IPC on every change**
+- In [workspaceScanner.js](file:///B:/electron/lumina/src/main/workspace/workspaceScanner.js) and [workspaceManager.js](file:///B:/electron/lumina/src/main/workspace/workspaceManager.js):
+  - When scanning or watching the vault, the main process reads the **full text (`code`)** of every single file and passes the entire array across the Electron IPC bridge to the renderer (`useVaultStore.snippets`).
+- When a vault grows to 500–2,000+ notes or contains large canvas/markdown files, serializing and deserializing tens of megabytes of JSON over IPC on every file change causes micro-stutters.
+
+#### **Recommended Action:**
+- **Separate Metadata from Note Body**:
+  - `getSnippets()` should return note headers and metadata only: `{ id, title, relativePath, folderId, timestamp, tags, type, size }`.
+  - Fetch the actual document body `code` on-demand via `readSnippet(id)` only when a note is opened in a tab.
+- **Delta IPC updates**:
+  - Instead of re-broadcasting the full `snippets` array on every watcher event, emit incremental events: `{ action: 'updated', snippet }` or `{ action: 'deleted', id }`.
+
+---
+
+### 3. DOM & GPU Resource Management Across Tabs
+
+#### **Issue: All open tabs remain mounted in the DOM**
+- [TabContentPane.jsx](file:///B:/electron/lumina/src/renderer/src/features/Layout/TabContentPane.jsx) keeps all open tabs mounted in the DOM simultaneously using `opacity: 0; visibility: hidden;` to preserve scroll positions and editor history.
+- If a user opens 10+ tabs (including multiple spatial Canvases and Graph tabs), multiple WebGL contexts and CodeMirror DOM trees remain active in memory. Chromium has a hard limit of concurrent active WebGL contexts (~8 to 16) before context loss occurs.
+
+#### **Recommended Action:**
+- **LRU Tab Pool (e.g. 3–5 active tabs)**:
+  - Keep the active tab and the 2–3 most recently visited tabs mounted for instant switching.
+  - For older inactive tabs, unmount the heavy DOM node and store lightweight state (scroll percentage, cursor offset) in memory.
+- **Pause Inactive Tab Loops**:
+  - In inactive Canvas and Graph tabs, explicitly pause `requestAnimationFrame` loops when `!isSelected` so background tabs consume 0% GPU.
+
+---
+
+### 4. Zustand Store Granularity & Component Re-renders
+
+#### **Issue: Sidebar and file tree re-render on note content changes**
+- In [FileExplorer.jsx](file:///B:/electron/lumina/src/renderer/src/features/Explorer/FileExplorer.jsx), the component subscribes to `snippets = useVaultStore(s => s.snippets)`.
+- When a note is auto-saved while typing in the editor, `state.snippets` gets an updated reference, causing `FileExplorer` to re-evaluate its folder groupings and trigger re-renders even though the file tree structure hasn't changed.
+
+#### **Recommended Action:**
+- Split `useVaultStore`:
+  - **Tree Store (`vaultMetadata`)**: Contains paths, folder structures, file names, and file IDs. Updates only on create/rename/move/delete.
+  - **Editor Store (`activeDocument`)**: Contains dirty states, drafts, and active note content.
+- This ensures typing in an editor never triggers a render in the navigation sidebar or file tree.
+
+---
+
+### 5. Graphics & Three.js Cleanup
+
+#### **Current State & Opportunity:**
+- We already implemented floating sidebar overlays, link LOD culling, and hover caching in the Graph view.
+- To prevent long-term memory leaks during extended sessions:
+  - Ensure all Three.js geometries and textures in `Graph3D` call `.dispose()` when switching views or unmounting.
+  - Use `cancelAnimationFrame` consistently in custom animation hooks when windows are minimized or hidden.
+
+---
+
+### Summary Priority Matrix
+
+| Priority | Optimization | Effort | Impact |
+|---|---|---|---|
+| **P0** | **Lazy-load Graph, Canvas, PDF, Settings modals (`React.lazy`)** | Low | Cuts initial bundle size by ~50% & noticeably speeds up cold launch. |
+| **P1** | **Lazy-load note bodies on demand (Metadata vs. Body)** | Medium | Keeps RAM low and removes IPC serialization lag on large vaults. |
+| **P2** | **LRU Tab Mounting & Pause Inactive Canvas/Graph loops** | Medium | Drastically reduces GPU & memory consumption with many open tabs. |
+| **P3** | **Split Vault Tree Metadata from Active Editor Text** | Low-Medium | Eliminates unnecessary re-renders in the file tree while typing. |

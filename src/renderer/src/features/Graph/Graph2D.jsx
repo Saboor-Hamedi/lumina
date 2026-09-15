@@ -88,28 +88,35 @@ const Graph2D = forwardRef(
           
           const settings = useSettingsStore.getState().settings;
           const isGhost = link.source.group === 'ghost' || link.target.group === 'ghost';
+          const accentColor = settings.graphNodeColor || '#40bafa';
+          
+          let r = 64, g = 186, b = 250;
+          if (accentColor.startsWith('#')) {
+            const clean = accentColor.replace('#', '');
+            const bigint = parseInt(clean.length === 3 ? clean.split('').map(c => c + c).join('') : clean, 16);
+            if (!isNaN(bigint)) {
+              r = (bigint >> 16) & 255;
+              g = (bigint >> 8) & 255;
+              b = bigint & 255;
+            }
+          }
           
           if (isActive) {
-            const highlightOpacity = settings.graphLinkHighlightOpacity ?? 0.6;
-            const accentColor = settings.graphNodeColor || '#40bafa';
-            
-            if (accentColor.startsWith('#')) {
-              const r = parseInt(accentColor.slice(1, 3), 16);
-              const g = parseInt(accentColor.slice(3, 5), 16);
-              const b = parseInt(accentColor.slice(5, 7), 16);
-              return `rgba(${r}, ${g}, ${b}, ${highlightOpacity})`;
-            }
-            return accentColor;
+            const highlightOpacity = settings.graphLinkHighlightOpacity ?? 0.75;
+            return `rgba(${r}, ${g}, ${b}, ${highlightOpacity})`;
           }
           
           if (isGhost) {
             const ghostOpacity = settings.graphGhostLinkOpacity ?? 0.3;
-            // Exactly batch all ghost links with a single static string
-            return `rgba(255, 255, 255, ${ghostOpacity * 0.3})`;
+            return `rgba(${r}, ${g}, ${b}, ${ghostOpacity * 0.35})`;
           }
           
-          const dimOpacity = settings.graphLinkDimOpacity ?? 0.05;
-          return `rgba(150, 150, 150, ${dimOpacity})`;
+          if (hoverNode || selectedSnippet) {
+            const dimOpacity = settings.graphLinkDimOpacity ?? 0.04;
+            return `rgba(${r}, ${g}, ${b}, ${dimOpacity})`;
+          }
+
+          return defaultLineColor || `rgba(${r}, ${g}, ${b}, 0.22)`;
         }}
         linkWidth={(link) => {
           const isHoverConnected = hoverNode && (link.source.id === hoverNode.id || link.target.id === hoverNode.id);

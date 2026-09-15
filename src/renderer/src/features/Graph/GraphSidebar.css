@@ -30,6 +30,9 @@
 .lumina-canvas-toolbar-right {
   z-index: 200 !important;
   pointer-events: auto !important;
+  backdrop-filter: blur(16px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(150%) !important;
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, box-shadow 0.2s ease !important;
 }
 
 .lumina-canvas-toolbar-right:not(.is-expanded) {
@@ -37,13 +40,35 @@
   transform: none !important;
   opacity: 1 !important;
   pointer-events: auto !important;
+  background-color: color-mix(in srgb, var(--bg-card, var(--bg-panel, #18181b)) 75%, transparent) !important;
+  border: none !important;
+  border-left: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08)) !important;
+  box-shadow: -2px 0 16px rgba(0, 0, 0, 0.2) !important;
 }
 
 .lumina-canvas-toolbar-right.is-expanded {
-  width: 300px !important;
+  width: 280px !important;
   transform: none !important;
   opacity: 1 !important;
   pointer-events: auto !important;
+  background-color: color-mix(in srgb, var(--bg-card, var(--bg-panel, #121316)) 84%, transparent) !important;
+  border: none !important;
+  border-left: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08)) !important;
+  box-shadow: -6px 0 24px rgba(0, 0, 0, 0.25) !important;
+}
+
+[data-theme='light'] .lumina-canvas-toolbar-right:not(.is-expanded),
+.theme-light .lumina-canvas-toolbar-right:not(.is-expanded) {
+  background-color: color-mix(in srgb, var(--bg-card, var(--bg-panel, #ffffff)) 80%, transparent) !important;
+  border-left: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08)) !important;
+  box-shadow: -2px 0 12px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme='light'] .lumina-canvas-toolbar-right.is-expanded,
+.theme-light .lumina-canvas-toolbar-right.is-expanded {
+  background-color: color-mix(in srgb, var(--bg-card, var(--bg-panel, #ffffff)) 88%, transparent) !important;
+  border-left: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08)) !important;
+  box-shadow: -6px 0 20px rgba(0, 0, 0, 0.08) !important;
 }
 
 .nexus-main {
