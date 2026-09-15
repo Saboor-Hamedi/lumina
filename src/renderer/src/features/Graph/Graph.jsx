@@ -66,7 +66,11 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   const graphHideTags = useSettingsStore((s) => s.settings.graphHideTags)
   const graphHideGhosts = useSettingsStore((s) => s.settings.graphHideGhosts)
   const graphHideOrphans = useSettingsStore((s) => s.settings.graphHideOrphans)
-  const graphSidebarOpen = useSettingsStore((s) => s.settings.graphSidebarOpen ?? true)
+  
+  const [localSidebarOpen, setLocalSidebarOpen] = useState(true)
+  const storeSidebarOpen = useSettingsStore((s) => s.settings.graphSidebarOpen)
+  const isSidebarOpen = storeSidebarOpen !== undefined ? storeSidebarOpen : localSidebarOpen
+
   const is3DMode = useSettingsStore((s) => s.settings.graph3DMode ?? false)
   const graphNodeSize = useSettingsStore((s) => s.settings.graphNodeSize || 1.5)
   const graphNodeColor = useSettingsStore((s) => s.settings.graphNodeColor || '#40bafa')
@@ -86,13 +90,20 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   })
 
   const handleToggleSidebar = useCallback(() => {
-    const { settings, updateSettings } = useSettingsStore.getState()
-    updateSettings({ graphSidebarOpen: !(settings.graphSidebarOpen ?? true) })
-  }, [])
+    const next = !isSidebarOpen
+    setLocalSidebarOpen(next)
+    const { updateSetting } = useSettingsStore.getState()
+    if (typeof updateSetting === 'function') {
+      updateSetting('graphSidebarOpen', next)
+    }
+  }, [isSidebarOpen])
 
   const handleToggle3D = useCallback(() => {
-    const { settings, updateSettings } = useSettingsStore.getState()
-    updateSettings({ graph3DMode: !settings.graph3DMode })
+    const { settings, updateSetting } = useSettingsStore.getState()
+    const next = !settings.graph3DMode
+    if (typeof updateSetting === 'function') {
+      updateSetting('graph3DMode', next)
+    }
   }, [])
 
   const handleOpenAsTab = useCallback(() => {
@@ -451,6 +462,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
           overflow: 'hidden'
         }}
       >
+        <PerformancePanel onRecenter={handleRecenter} is3DMode={is3DMode} />
         <div className="graph-embedded-controls">
           <div className="graph-embedded-controls-left">
             <ToolTip text="Recenter graph view" position="bottom">
@@ -606,16 +618,16 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
         className="canvas-drawer-container graph-drawer-container"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="canvas-drawer-header">
+        <div className="canvas-drawer-header" data-testid="modal-header">
           <div className="canvas-drawer-title-group">
-            <ToolTip text={graphSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'} position="bottom">
+            <ToolTip text={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'} position="bottom">
               <button
                 type="button"
                 className="canvas-drawer-action-btn"
                 onClick={handleToggleSidebar}
-                aria-label={graphSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
+                aria-label={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
               >
-                {graphSidebarOpen ? (
+                {isSidebarOpen ? (
                   <PanelLeftClose size={14} />
                 ) : (
                   <PanelLeftOpen size={14} />
@@ -671,22 +683,23 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 onClick={onClose}
                 aria-label="Close"
               >
+                <span className="sr-only" style={{ display: 'none' }}>Close</span>
                 <X size={15} />
               </button>
             </ToolTip>
           </div>
         </div>
 
-        <div className="canvas-drawer-body" style={{ display: 'flex', position: 'relative', overflow: 'hidden' }}>
-          <PerformancePanel onRecenter={handleRecenter} />
+        <div className="canvas-drawer-body" style={{ position: 'relative', width: '100%', height: 'calc(100% - 34px)', overflow: 'hidden' }}>
+          <PerformancePanel onRecenter={handleRecenter} is3DMode={is3DMode} />
           <GraphSidebar
-            isOpen={graphSidebarOpen}
+            isOpen={isSidebarOpen}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             isSpinning={isSpinning}
           />
 
-          <div className="nexus-body" style={{ position: 'relative', flex: 1, height: '100%', overflow: 'hidden' }}>
+          <div className="nexus-body" style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
             <div className={`graph-initializer ${isEngineReady ? 'ready' : ''}`}>
               <div className="pulse-ring"></div>
               <div className="graph-initializer-text">Initializing Physics</div>

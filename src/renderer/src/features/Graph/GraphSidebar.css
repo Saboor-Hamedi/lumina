@@ -1,7 +1,7 @@
 .nexus-sidebar {
   width: 260px;
-  background: var(--bg-sidebar, #121218);
-  border: none;
+  background: var(--bg-sidebar, var(--bg-panel, #121218));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
   border-radius: 8px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
   display: flex;
@@ -14,7 +14,7 @@
   top: 12px;
   bottom: auto;
   max-height: calc(100% - 24px);
-  z-index: 50;
+  z-index: 200 !important;
 }
 
 .nexus-sidebar.closed {

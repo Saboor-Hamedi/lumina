@@ -25,6 +25,7 @@ export const useSettingsStore = create((set, get) => ({
     graphNodeSize: 1.5,
     graphShowTexts: true,
     graphNodeColor: '#40bafa',
+    graphSidebarOpen: true,
     // AI Settings - preserve these during hot reload
     deepSeekKey: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_deepseek_key')) || null,
     deepSeekModel: 'deepseek-chat',

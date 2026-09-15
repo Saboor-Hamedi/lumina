@@ -3,14 +3,14 @@ import { usePerformanceStore } from './usePerformanceStore'
 import { Target } from 'lucide-react'
 
 export default function PerformancePanel({ compact = false, is3DMode = false, onRecenter }) {
-  const [localMetrics, setLocalMetrics] = useState(null)
+  const [localMetrics, setLocalMetrics] = useState(() => usePerformanceStore.getState().metrics)
 
   useEffect(() => {
     let animationFrameId
-    let lastUpdate = 0
+    let lastUpdate = performance.now()
     
     const updateLoop = (timestamp) => {
-      if (timestamp - lastUpdate > 500) {
+      if (timestamp - lastUpdate > 300) {
         setLocalMetrics(usePerformanceStore.getState().metrics)
         lastUpdate = timestamp
       }
@@ -21,7 +21,7 @@ export default function PerformancePanel({ compact = false, is3DMode = false, on
     return () => cancelAnimationFrame(animationFrameId)
   }, [])
 
-  if (!localMetrics) return null
+  if (!localMetrics || (localMetrics.fps === 0 && localMetrics.frameTime === 0 && localMetrics.nodeCount === 0)) return null
 
   return (
     <div
@@ -30,18 +30,19 @@ export default function PerformancePanel({ compact = false, is3DMode = false, on
         top: '12px',
         left: '50%',
         transform: 'translateX(-50%)',
-        background: 'var(--bg-panel)',
-        color: 'var(--text-main)',
+        background: 'var(--bg-panel, #18181b)',
+        color: 'var(--text-main, #f8fafc)',
         fontFamily: 'monospace',
-        padding: '4px 6px 4px 12px',
+        padding: '4px 8px 4px 12px',
         borderRadius: '6px',
         fontSize: '11px',
-        zIndex: 9999,
-        border: '1px solid var(--border-dim)',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+        zIndex: 300,
+        border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.1))',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
         display: 'flex',
         alignItems: 'center',
-        gap: '12px'
+        gap: '12px',
+        pointerEvents: 'auto'
       }}
     >
       <span>FPS: {localMetrics.fps.toFixed(1)}</span>

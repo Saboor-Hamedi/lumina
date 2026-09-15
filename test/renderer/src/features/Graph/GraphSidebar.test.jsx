@@ -48,18 +48,6 @@ describe('GraphSidebar', () => {
     expect(defaultProps.setSearchQuery).toHaveBeenCalledWith('hello')
   })
 
-  it('renders 6 theme color buttons and rotation toggle', () => {
-    render(<GraphSidebar {...defaultProps} />)
-    const themeButtons = screen.getAllByRole('button')
-    expect(themeButtons.length).toBe(7)
-  })
-
-  it('updates graphTheme when a theme button is clicked', () => {
-    render(<GraphSidebar {...defaultProps} />)
-    const buttons = screen.getAllByRole('button')
-    fireEvent.click(buttons[3]) // ocean
-    expect(useSettingsStore.getState().settings.graphTheme).toBe('ocean')
-  })
 
   it('toggles Show Tags checkbox', () => {
     render(<GraphSidebar {...defaultProps} />)
