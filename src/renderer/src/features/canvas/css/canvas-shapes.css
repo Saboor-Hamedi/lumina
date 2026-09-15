@@ -247,11 +247,17 @@
   z-index: 50;
 }
 
-.lumina-canvas-node.is-shape:hover .lumina-canvas-shape-actions,
-.lumina-canvas-node.is-shape.selected .lumina-canvas-shape-actions,
+.lumina-canvas-node.is-shape:not(.is-multi-selected):hover .lumina-canvas-shape-actions,
+.lumina-canvas-node.is-shape.selected:not(.is-multi-selected) .lumina-canvas-shape-actions,
 .lumina-canvas-shape-actions.is-selected {
   opacity: 1;
   pointer-events: auto;
+}
+
+.lumina-canvas-node.is-shape.is-multi-selected .lumina-canvas-shape-actions {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* Shape Corner Resize Handle */

@@ -85,3 +85,8 @@
   stroke-width: 2.2px;
   filter: drop-shadow(0 0 4px currentColor);
 }
+
+.lumina-canvas-edge-group.is-selected .lumina-canvas-edge-line {
+  stroke-width: 2.6px;
+  filter: drop-shadow(0 0 6px var(--text-accent, #38bdf8));
+}

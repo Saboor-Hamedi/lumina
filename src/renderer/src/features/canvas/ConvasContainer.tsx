@@ -71,9 +71,11 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     edges,
     viewport,
     selectedNodeIds,
+    selectedEdgeId,
     setEdges,
     setViewport,
     setSelectedNodeIds,
+    setSelectedEdgeId,
     screenToCanvas,
     zoomAt,
     resetViewport,
@@ -191,12 +193,24 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     [nodeMap, setEdges, defaultLineStyle, defaultEndpoints]
   )
 
+  const handleSelectEdge = useCallback(
+    (e: React.MouseEvent, edgeId: string) => {
+      e.stopPropagation()
+      setSelectedEdgeId(edgeId)
+      setSelectedNodeIds([])
+    },
+    [setSelectedEdgeId, setSelectedNodeIds]
+  )
+
   const handleDeleteEdge = useCallback(
     (e: React.MouseEvent, edgeId: string) => {
       e.stopPropagation()
       deleteEdge(edgeId)
+      if (selectedEdgeId === edgeId) {
+        setSelectedEdgeId(null)
+      }
     },
-    [deleteEdge]
+    [deleteEdge, selectedEdgeId, setSelectedEdgeId]
   )
 
   /**
@@ -222,6 +236,8 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     nodeMap,
     viewport,
     selectedNodeIds,
+    selectedEdgeId,
+    setSelectedEdgeId,
     toolMode,
     isSpacePressed,
     snapToGrid,
@@ -299,6 +315,11 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
           e.preventDefault()
           e.stopPropagation()
           deleteSelected(selectedNodeIds)
+        } else if (selectedEdgeId) {
+          e.preventDefault()
+          e.stopPropagation()
+          deleteEdge(selectedEdgeId)
+          setSelectedEdgeId(null)
         }
       } else if (e.key === 'Escape') {
         setConnecting(null)
@@ -308,6 +329,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
         setEditingNodeId(null)
         setEditingField(null)
         setSelectedNodeIds([])
+        setSelectedEdgeId(null)
       } else if (e.altKey && (e.key === 'd' || e.key === 'D') && !isInputActive) {
         // Alt+D duplicates selected nodes (Ctrl+D reserved for Documentation!)
         if (selectedNodeIds.length > 0) {
@@ -323,6 +345,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
       } else if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A') && !isInputActive) {
         e.preventDefault()
         e.stopPropagation()
+        setSelectedEdgeId(null)
         setSelectedNodeIds(nodes.map((n) => n.id))
       } else if (((e.ctrlKey || e.metaKey) && e.key === '1') || (e.shiftKey && e.key === '!')) {
         if (!isInputActive) {
@@ -373,6 +396,9 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
   }, [
     deleteSelected,
     selectedNodeIds,
+    selectedEdgeId,
+    deleteEdge,
+    setSelectedEdgeId,
     duplicateNodes,
     handleToggleSnapToGrid,
     setSelectedNodeIds,
@@ -682,7 +708,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`lumina-canvas-container ${connecting ? 'is-connecting' : ''} ${snapToGrid ? 'is-grid-snapping' : ''}`}
+      className={`lumina-canvas-container ${connecting ? 'is-connecting' : ''} ${snapToGrid ? 'is-grid-snapping' : ''} ${selectedNodeIds.length > 1 ? 'is-multi-selecting' : ''}`}
       style={{
         backgroundPosition: `${viewport.x}px ${viewport.y}px`,
         backgroundSize: `${(snapToGrid ? 20 : 24) * viewport.zoom}px ${(snapToGrid ? 20 : 24) * viewport.zoom}px`,
@@ -708,6 +734,9 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
           connecting={connecting}
           snappedTarget={snappedTarget}
           mouseCanvasPos={mouseCanvasPos}
+          selectedEdgeId={selectedEdgeId}
+          isMultiSelectionActive={selectedNodeIds.length > 1}
+          onSelectEdge={handleSelectEdge}
           onDeleteEdge={handleDeleteEdge}
           onUpdateEdgeLineStyle={updateEdgeLineStyle}
           onUpdateEdgeLabel={updateEdgeLabel}
@@ -780,14 +809,14 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
         onZoomToFit={() => zoomToFit(containerRef.current?.getBoundingClientRect())}
         onSetZoom={handleSetZoom}
         onDeleteSelected={deleteSelected}
-        canDelete={selectedNodeIds.length > 0}
+        canDelete={selectedNodeIds.length > 0 || !!selectedEdgeId}
         onAddShape={handleAddShape}
         onCopyImage={handleCopyImage}
         onExportPNG={handleExportPNG}
         onExportSVG={handleExportSVG}
         onOpenDrawer={onOpenDrawer}
         hasSelectedNodes={selectedNodeIds.length > 0}
-        selectedCount={selectedNodeIds.length}
+        selectedCount={selectedNodeIds.length + (selectedEdgeId ? 1 : 0)}
         selectedColor={selectedColor}
         onUpdateSelectedColor={handleUpdateSelectionColor}
         snapToGrid={snapToGrid}

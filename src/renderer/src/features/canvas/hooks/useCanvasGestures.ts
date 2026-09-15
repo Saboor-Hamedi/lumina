@@ -64,6 +64,8 @@ export interface UseCanvasGesturesOptions {
   screenToCanvas: (screenX: number, screenY: number, containerRect?: DOMRect | null) => { x: number; y: number }
   panBy: (dx: number, dy: number) => void
   setSelectedNodeIds: React.Dispatch<React.SetStateAction<string[]>>
+  selectedEdgeId?: string | null
+  setSelectedEdgeId?: React.Dispatch<React.SetStateAction<string | null>>
   updateNodePosition: (id: string, x: number, y: number) => void
   updateNodesPositions: (updates: { id: string; x: number; y: number }[]) => void
   updateNodeSize: (id: string, width: number, height: number) => void
@@ -86,6 +88,8 @@ export function useCanvasGestures({
   screenToCanvas,
   panBy,
   setSelectedNodeIds,
+  selectedEdgeId,
+  setSelectedEdgeId,
   updateNodePosition,
   updateNodesPositions,
   updateNodeSize,
@@ -180,12 +184,13 @@ export function useCanvasGestures({
             document.activeElement.blur()
           }
           setSelectedNodeIds([])
+          setSelectedEdgeId?.(null)
           setEditingNodeId(null)
           setEditingField(null)
         }
       }
     },
-    [toolMode, isSpacePressed, setSelectedNodeIds, setEditingNodeId, setEditingField]
+    [toolMode, isSpacePressed, setSelectedNodeIds, setSelectedEdgeId, setEditingNodeId, setEditingField]
   )
 
   /**
@@ -218,6 +223,8 @@ export function useCanvasGestures({
 
       e.stopPropagation()
       e.preventDefault()
+
+      setSelectedEdgeId?.(null)
 
       const isMulti = e.shiftKey || e.ctrlKey || e.metaKey
       const isAlreadySelected = selectedNodeIds.includes(node.id)
@@ -252,7 +259,7 @@ export function useCanvasGestures({
         initialPositions
       }
     },
-    [toolMode, isSpacePressed, selectedNodeIds, nodeMap, setSelectedNodeIds]
+    [toolMode, isSpacePressed, selectedNodeIds, nodeMap, setSelectedNodeIds, setSelectedEdgeId]
   )
 
   /**

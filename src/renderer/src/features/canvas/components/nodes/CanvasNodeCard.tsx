@@ -46,6 +46,7 @@ MemoizedMarkdownPreview.displayName = 'MemoizedMarkdownPreview'
 export interface CanvasNodeCardProps {
   node: CanvasNode
   isSelected: boolean
+  isMultiSelection?: boolean
   isEditing: boolean
   editingField: 'title' | 'text' | null
   snappedPortSide?: CanvasEdgeSide | null
@@ -65,6 +66,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
   ({
     node,
     isSelected,
+    isMultiSelection = false,
     isEditing,
     editingField,
     snappedPortSide,
@@ -86,7 +88,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
     return (
       <div
         data-node-id={node.id}
-        className={`lumina-canvas-node ${nodeColorClass} ${isShapeNode ? `is-shape shape-${resolvedShape || 'rectangle'}` : ''} ${isSelected ? 'selected' : ''}`}
+        className={`lumina-canvas-node ${nodeColorClass} ${isShapeNode ? `is-shape shape-${resolvedShape || 'rectangle'}` : ''} ${isSelected ? (isMultiSelection ? 'selected is-multi-selected' : 'selected') : ''}`}
         style={{
           left: `${node.x}px`,
           top: `${node.y}px`,
@@ -176,52 +178,54 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
               )}
             </svg>
 
-            {/* Shape Floating Actions (Cycle Color & Delete) */}
-            <div className={`lumina-canvas-shape-actions ${isSelected ? 'is-selected' : ''}`}>
-              <ToolTip text="Change Color" position="top">
-                <button
-                  className="lumina-canvas-action-btn"
-                  title="Change Color"
-                  aria-label="Change Color"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onCycleColor(node.id)
-                  }}
-                >
-                  <Palette size={12} />
-                </button>
-              </ToolTip>
-
-              {onDuplicateNode && (
-                <ToolTip text="Duplicate Shape (Alt+D)" position="top">
+            {/* Shape Floating Actions (Cycle Color & Delete - suppressed during multi-selection) */}
+            {!isMultiSelection && (
+              <div className={`lumina-canvas-shape-actions ${isSelected ? 'is-selected' : ''}`}>
+                <ToolTip text="Change Color" position="top">
                   <button
                     className="lumina-canvas-action-btn"
-                    title="Duplicate Shape (Alt+D)"
-                    aria-label="Duplicate Shape"
+                    title="Change Color"
+                    aria-label="Change Color"
                     onClick={(e) => {
                       e.stopPropagation()
-                      onDuplicateNode(node.id)
+                      onCycleColor(node.id)
                     }}
                   >
-                    <Copy size={12} />
+                    <Palette size={12} />
                   </button>
                 </ToolTip>
-              )}
 
-              <ToolTip text="Delete Shape" position="top">
-                <button
-                  className="lumina-canvas-action-btn delete"
-                  title="Delete Shape"
-                  aria-label="Delete Shape"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onDeleteNode(node.id)
-                  }}
-                >
-                  <X size={12} />
-                </button>
-              </ToolTip>
-            </div>
+                {onDuplicateNode && (
+                  <ToolTip text="Duplicate Shape (Alt+D)" position="top">
+                    <button
+                      className="lumina-canvas-action-btn"
+                      title="Duplicate Shape (Alt+D)"
+                      aria-label="Duplicate Shape"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onDuplicateNode(node.id)
+                      }}
+                    >
+                      <Copy size={12} />
+                    </button>
+                  </ToolTip>
+                )}
+
+                <ToolTip text="Delete Shape" position="top">
+                  <button
+                    className="lumina-canvas-action-btn delete"
+                    title="Delete Shape"
+                    aria-label="Delete Shape"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onDeleteNode(node.id)
+                    }}
+                  >
+                    <X size={12} />
+                  </button>
+                </ToolTip>
+              </div>
+            )}
 
             {/* Shape Centered Text */}
             <div
@@ -350,60 +354,62 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
                 </span>
               )}
 
-              <div className="lumina-canvas-node-actions">
-                {/* Open note/image/pdf in workspace tab */}
-                {node.file && (
-                  <ToolTip text="Open in Tab" position="top">
+              {!isMultiSelection && (
+                <div className="lumina-canvas-node-actions">
+                  {/* Open note/image/pdf in workspace tab */}
+                  {node.file && (
+                    <ToolTip text="Open in Tab" position="top">
+                      <button
+                        className="lumina-canvas-action-btn"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          useVaultStore.getState().setActiveTabId(node.file!)
+                        }}
+                      >
+                        <ExternalLink size={12} />
+                      </button>
+                    </ToolTip>
+                  )}
+
+                  <ToolTip text="Change Color" position="top">
                     <button
                       className="lumina-canvas-action-btn"
                       onClick={(e) => {
                         e.stopPropagation()
-                        useVaultStore.getState().setActiveTabId(node.file!)
+                        onCycleColor(node.id)
                       }}
                     >
-                      <ExternalLink size={12} />
+                      <Palette size={12} />
                     </button>
                   </ToolTip>
-                )}
 
-                <ToolTip text="Change Color" position="top">
-                  <button
-                    className="lumina-canvas-action-btn"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onCycleColor(node.id)
-                    }}
-                  >
-                    <Palette size={12} />
-                  </button>
-                </ToolTip>
+                  {onDuplicateNode && (
+                    <ToolTip text="Duplicate Card (Alt+D)" position="top">
+                      <button
+                        className="lumina-canvas-action-btn"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onDuplicateNode(node.id)
+                        }}
+                      >
+                        <Copy size={12} />
+                      </button>
+                    </ToolTip>
+                  )}
 
-                {onDuplicateNode && (
-                  <ToolTip text="Duplicate Card (Alt+D)" position="top">
+                  <ToolTip text="Delete Node" position="top">
                     <button
-                      className="lumina-canvas-action-btn"
+                      className="lumina-canvas-action-btn delete"
                       onClick={(e) => {
                         e.stopPropagation()
-                        onDuplicateNode(node.id)
+                        onDeleteNode(node.id)
                       }}
                     >
-                      <Copy size={12} />
+                      <X size={12} />
                     </button>
                   </ToolTip>
-                )}
-
-                <ToolTip text="Delete Node" position="top">
-                  <button
-                    className="lumina-canvas-action-btn delete"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onDeleteNode(node.id)
-                    }}
-                  >
-                    <X size={12} />
-                  </button>
-                </ToolTip>
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Card Body: PDF, Image, or Markdown Preview */}
@@ -502,6 +508,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
     return (
       prev.node === next.node &&
       prev.isSelected === next.isSelected &&
+      prev.isMultiSelection === next.isMultiSelection &&
       prev.isEditing === next.isEditing &&
       prev.editingField === next.editingField &&
       prev.snappedPortSide === next.snappedPortSide

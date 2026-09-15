@@ -46,6 +46,9 @@ export function useCanvas(options: UseCanvasOptions = {}) {
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([])
   const selectedNodeIdsRef = useRef<string[]>([])
   selectedNodeIdsRef.current = selectedNodeIds
+  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null)
+  const selectedEdgeIdRef = useRef<string | null>(null)
+  selectedEdgeIdRef.current = selectedEdgeId
   const [isPanning, setIsPanning] = useState(false)
 
   const nodesRef = useRef<CanvasNode[]>(nodes)
@@ -319,19 +322,35 @@ export function useCanvas(options: UseCanvasOptions = {}) {
     setNodes((prev) => prev.filter((n) => n.id !== id))
     setEdges((prev) => prev.filter((e) => e.fromNode !== id && e.toNode !== id))
     setSelectedNodeIds((prev) => prev.filter((nid) => nid !== id))
+    if (selectedEdgeIdRef.current) {
+      const edge = edgesRef.current.find((e) => e.id === selectedEdgeIdRef.current)
+      if (edge && (edge.fromNode === id || edge.toNode === id)) {
+        setSelectedEdgeId(null)
+      }
+    }
   }, [pushHistory])
 
   /**
    * Deletes all currently selected nodes (or provided ids) and cleans up connected edges.
+   * If no nodes are selected but an edge is selected, deletes the selected edge.
    */
   const deleteSelected = useCallback((targetIds?: string[]) => {
     const toDelete = targetIds && targetIds.length > 0 ? targetIds : selectedNodeIdsRef.current
-    if (!toDelete || toDelete.length === 0) return
-    pushHistory()
-    const selectedSet = new Set(toDelete)
-    setNodes((prev) => prev.filter((n) => !selectedSet.has(n.id)))
-    setEdges((prev) => prev.filter((e) => !selectedSet.has(e.fromNode) && !selectedSet.has(e.toNode)))
-    setSelectedNodeIds((prev) => prev.filter((id) => !selectedSet.has(id)))
+    if (toDelete && toDelete.length > 0) {
+      pushHistory()
+      const selectedSet = new Set(toDelete)
+      setNodes((prev) => prev.filter((n) => !selectedSet.has(n.id)))
+      setEdges((prev) => prev.filter((e) => !selectedSet.has(e.fromNode) && !selectedSet.has(e.toNode)))
+      setSelectedNodeIds((prev) => prev.filter((id) => !selectedSet.has(id)))
+      if (selectedEdgeIdRef.current) {
+        setSelectedEdgeId(null)
+      }
+    } else if (selectedEdgeIdRef.current) {
+      pushHistory()
+      const edgeToDelete = selectedEdgeIdRef.current
+      setEdges((prev) => prev.filter((e) => e.id !== edgeToDelete))
+      setSelectedEdgeId(null)
+    }
   }, [pushHistory])
 
   /**
@@ -432,6 +451,9 @@ export function useCanvas(options: UseCanvasOptions = {}) {
   const deleteEdge = useCallback((edgeId: string) => {
     pushHistory()
     setEdges((prev) => prev.filter((e) => e.id !== edgeId))
+    if (selectedEdgeIdRef.current === edgeId) {
+      setSelectedEdgeId(null)
+    }
   }, [pushHistory])
 
   /**
@@ -504,11 +526,13 @@ export function useCanvas(options: UseCanvasOptions = {}) {
     edges,
     viewport,
     selectedNodeIds,
+    selectedEdgeId,
     isPanning,
     setNodes,
     setEdges,
     setViewport,
     setSelectedNodeIds,
+    setSelectedEdgeId,
     screenToCanvas,
     zoomAt,
     resetViewport,

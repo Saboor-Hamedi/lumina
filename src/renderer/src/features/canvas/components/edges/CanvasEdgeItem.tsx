@@ -40,6 +40,9 @@ export interface CanvasEdgeItemProps {
   edge: CanvasEdge
   fromNode: CanvasNode | undefined
   toNode: CanvasNode | undefined
+  isSelected?: boolean
+  isMultiSelectionActive?: boolean
+  onSelectEdge?: (e: React.MouseEvent, edgeId: string) => void
   onDeleteEdge: (e: React.MouseEvent, edgeId: string) => void
   onUpdateLineStyle?: (edgeId: string, lineStyle: CanvasEdgeLineStyle) => void
   onCycleColor?: (edgeId: string) => void
@@ -55,6 +58,9 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
     edge,
     fromNode,
     toNode,
+    isSelected = false,
+    isMultiSelectionActive = false,
+    onSelectEdge,
     onDeleteEdge,
     onUpdateLineStyle,
     onCycleColor,
@@ -205,21 +211,24 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
 
     return (
       <g
-        className={`lumina-canvas-edge-group ${isHovered ? 'is-hovered' : ''}`}
+        className={`lumina-canvas-edge-group ${isSelected ? 'is-selected' : ''} ${isHovered ? 'is-hovered' : ''}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        {/* Invisible wider hit area (12px stroke) for easy hover / click / selection */}
+        {/* Invisible wider hit area (14px stroke) for easy hover / click / selection */}
         <path
           d={pathD}
           className="lumina-canvas-edge-hitbox"
           fill="none"
           stroke="transparent"
-          strokeWidth={12}
+          strokeWidth={14}
           strokeLinecap="round"
           strokeLinejoin="round"
-          style={{ pointerEvents: 'stroke' }}
-          onClick={(e) => onDeleteEdge(e, edge.id)}
+          style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
+          onClick={(e) => {
+            e.stopPropagation()
+            onSelectEdge?.(e, edge.id)
+          }}
           onDoubleClick={(e) => {
             e.stopPropagation()
             setIsEditingLabel(true)
@@ -232,7 +241,7 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
           cy={edge.label ? midY - 20 : midY}
           r={45}
           fill="transparent"
-          style={{ pointerEvents: isHovered ? 'all' : 'none' }}
+          style={{ pointerEvents: (isHovered || isSelected) && !isMultiSelectionActive ? 'all' : 'none' }}
         />
 
         {/* Rendered SVG connector path with consistent 1.6px stroke and round caps/joins */}
@@ -245,6 +254,11 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
           strokeLinejoin="round"
           markerStart={edge.fromEnd === 'arrow' ? `url(#arrow-start-${targetColor})` : undefined}
           markerEnd={edge.toEnd === 'none' ? undefined : `url(#arrow-${targetColor})`}
+          style={{ cursor: 'pointer' }}
+          onClick={(e) => {
+            e.stopPropagation()
+            onSelectEdge?.(e, edge.id)
+          }}
         />
 
         {/* Opaque Edge Text Label Badge (Never crossed by lines) */}
@@ -325,8 +339,8 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
           </foreignObject>
         )}
 
-        {/* Interactive hover controls badge at wire midpoint */}
-        {!isEditingLabel && (
+        {/* Interactive hover / selection controls badge at wire midpoint (hidden during multi-selection) */}
+        {!isEditingLabel && !isMultiSelectionActive && (
           <foreignObject
             x={midX - 48}
             y={edge.label ? midY - 28 : midY - 11}
@@ -412,7 +426,10 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
                 className="lumina-canvas-edge-btn delete"
                 title="Delete Wire"
                 aria-label="Delete Wire"
-                onClick={(e) => onDeleteEdge(e, edge.id)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onDeleteEdge(e, edge.id)
+                }}
               >
                 <X size={10} />
               </button>
@@ -423,7 +440,9 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
     )
   },
   (prev, next) => {
-    // Re-render when edge attributes or attached node geometries change
+    // Re-render when edge attributes, selection, or attached node geometries change
+    if (prev.isSelected !== next.isSelected) return false
+    if (prev.isMultiSelectionActive !== next.isMultiSelectionActive) return false
     if (prev.edge !== next.edge) return false
     if (!prev.fromNode || !next.fromNode || !prev.toNode || !next.toNode) return false
     return (

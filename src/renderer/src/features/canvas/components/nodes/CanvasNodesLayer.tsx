@@ -73,6 +73,7 @@ export const CanvasNodesLayer: React.FC<CanvasNodesLayerProps> = React.memo(
             key={node.id}
             node={node}
             isSelected={selectedNodeIds.includes(node.id)}
+            isMultiSelection={selectedNodeIds.length > 1}
             isEditing={editingNodeId === node.id}
             editingField={editingNodeId === node.id ? editingField : null}
             snappedPortSide={snappedPortTargetNodeId === node.id ? snappedPortSide : null}

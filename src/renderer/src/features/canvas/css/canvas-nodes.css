@@ -403,9 +403,24 @@
 }
 
 .lumina-canvas-edge-group:hover .lumina-canvas-edge-controls-container,
-.lumina-canvas-edge-group.is-hovered .lumina-canvas-edge-controls-container {
+.lumina-canvas-edge-group.is-hovered .lumina-canvas-edge-controls-container,
+.lumina-canvas-edge-group.is-selected .lumina-canvas-edge-controls-container {
   opacity: 1;
   pointer-events: auto;
+}
+
+/* Suppress all edge controls when container is multi-selecting (Select All) */
+.lumina-canvas-container.is-multi-selecting .lumina-canvas-edge-controls-container {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Suppress individual node actions when node is multi-selected */
+.lumina-canvas-node.is-multi-selected .lumina-canvas-node-actions {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 .lumina-canvas-edge-controls {

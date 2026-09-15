@@ -22,6 +22,9 @@ export interface CanvasEdgesLayerProps {
   connecting: ConnectingState | null
   snappedTarget: SnappedPortTarget | null
   mouseCanvasPos: { x: number; y: number }
+  selectedEdgeId?: string | null
+  isMultiSelectionActive?: boolean
+  onSelectEdge?: (e: React.MouseEvent, edgeId: string) => void
   onDeleteEdge: (e: React.MouseEvent, edgeId: string) => void
   onUpdateEdgeLineStyle: (edgeId: string, lineStyle: CanvasEdgeLineStyle) => void
   onUpdateEdgeLabel: (edgeId: string, label: string) => void
@@ -37,6 +40,9 @@ export const CanvasEdgesLayer: React.FC<CanvasEdgesLayerProps> = React.memo(
     connecting,
     snappedTarget,
     mouseCanvasPos,
+    selectedEdgeId = null,
+    isMultiSelectionActive = false,
+    onSelectEdge,
     onDeleteEdge,
     onUpdateEdgeLineStyle,
     onUpdateEdgeLabel,
@@ -172,6 +178,9 @@ export const CanvasEdgesLayer: React.FC<CanvasEdgesLayerProps> = React.memo(
             fromNode={nodeMap.get(edge.fromNode)}
             toNode={nodeMap.get(edge.toNode)}
             snapToGrid={snapToGrid}
+            isSelected={selectedEdgeId === edge.id}
+            isMultiSelectionActive={isMultiSelectionActive}
+            onSelectEdge={onSelectEdge}
             parallelIndex={parallelEdgeMap.get(edge.id)?.index ?? 0}
             totalParallel={parallelEdgeMap.get(edge.id)?.total ?? 1}
             onDeleteEdge={onDeleteEdge}
