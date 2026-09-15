@@ -6,7 +6,8 @@ import {
   Layers,
   PanelLeftClose,
   PanelLeftOpen,
-  ExternalLink
+  ExternalLink,
+  SlidersHorizontal
 } from 'lucide-react'
 import * as THREE from 'three'
 import Graph3D from './Graph3D'
@@ -620,21 +621,6 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       >
         <div className="canvas-drawer-header" data-testid="modal-header">
           <div className="canvas-drawer-title-group">
-            <ToolTip text={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'} position="bottom">
-              <button
-                type="button"
-                className="canvas-drawer-action-btn"
-                onClick={handleToggleSidebar}
-                aria-label={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
-              >
-                {isSidebarOpen ? (
-                  <PanelLeftClose size={14} />
-                ) : (
-                  <PanelLeftOpen size={14} />
-                )}
-              </button>
-            </ToolTip>
-
             <div className="canvas-drawer-selector-btn">
               <Network size={14} className="canvas-drawer-icon" />
               <span className="canvas-drawer-title">Knowledge Graph</span>
@@ -662,6 +648,18 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               >
                 <RefreshCw size={13} />
                 <span>Recenter</span>
+              </button>
+            </ToolTip>
+
+            <ToolTip text={isSidebarOpen ? 'Hide Controls' : 'Show Controls'} position="bottom">
+              <button
+                type="button"
+                className={`canvas-drawer-action-btn ${isSidebarOpen ? 'active' : ''}`}
+                onClick={handleToggleSidebar}
+                aria-label={isSidebarOpen ? 'Hide Controls' : 'Show Controls'}
+              >
+                <SlidersHorizontal size={13} />
+                <span>Controls</span>
               </button>
             </ToolTip>
 
@@ -697,6 +695,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             isSpinning={isSpinning}
+            onClose={handleToggleSidebar}
           />
 
           <div className="nexus-body" style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>

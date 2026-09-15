@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Network, RefreshCw, Layers } from 'lucide-react'
+import { Network, RefreshCw, Layers, SlidersHorizontal, X } from 'lucide-react'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import './GraphSidebar.css'
 import '../../assets/toggle-theme.css'
@@ -8,7 +8,8 @@ import Toggle from '../../components/toggle'
 const GraphSidebar = ({
   isOpen = true,
   searchQuery,
-  setSearchQuery
+  setSearchQuery,
+  onClose
 }) => {
   const { settings, updateSetting } = useSettingsStore()
   
@@ -37,7 +38,25 @@ const GraphSidebar = ({
   }, [searchQuery])
 
   return (
-    <div className={`nexus-sidebar ${isOpen ? '' : 'closed'}`}>
+    <aside className={`nexus-sidebar ${isOpen ? '' : 'closed'}`} aria-label="Graph Controls">
+      <div className="nexus-sidebar-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <SlidersHorizontal size={14} style={{ color: 'var(--text-accent, #38bdf8)' }} />
+          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-main, #ffffff)' }}>Graph Controls</span>
+        </div>
+        {onClose && (
+          <button
+            type="button"
+            className="canvas-drawer-action-btn close-btn"
+            onClick={onClose}
+            title="Collapse Controls"
+            style={{ width: '22px', height: '22px', padding: 0, justifyContent: 'center' }}
+          >
+            <X size={13} />
+          </button>
+        )}
+      </div>
+
       <div className="nexus-sidebar-content">
         <div className="nexus-search-wrap">
           <input
@@ -329,7 +348,7 @@ const GraphSidebar = ({
           />
         </button>
       </div>
-    </div>
+    </aside>
   )
 }
 
