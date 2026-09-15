@@ -103,6 +103,16 @@
   border: 1px solid var(--border-card, rgba(255, 255, 255, 0.06));
 }
 
+.graph-drawer-badge {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted, #94a3b8);
+  background: color-mix(in srgb, var(--text-main, #ffffff) 8%, transparent);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
 .graph-header-right {
   display: flex;
   align-items: center;
@@ -148,29 +158,8 @@
   z-index: 1;
 }
 
-/* Apply theme backgrounds to embedded graph (tab view) */
-.nexus-embedded-graph[data-graph-theme='default'] {
-  background: var(--bg-app);
-}
-
-.nexus-embedded-graph[data-graph-theme='space'] {
-  background: #020617 !important;
-}
-
-.nexus-embedded-graph[data-graph-theme='nebula'] {
-  background: linear-gradient(135deg, #1f0b3b, #451b6e) !important;
-}
-
-.nexus-embedded-graph[data-graph-theme='ocean'] {
-  background: linear-gradient(135deg, #02111d, #073a5a) !important;
-}
-
-.nexus-embedded-graph[data-graph-theme='sunset'] {
-  background: linear-gradient(135deg, #2a0826, #6b1432) !important;
-}
-
-.nexus-embedded-graph[data-graph-theme='neural'] {
-  background: linear-gradient(135deg, #0a192f, #112240) !important;
+.nexus-embedded-graph {
+  background: var(--bg-app) !important;
 }
 
 /* Mode-specific styling for embedded graph */
@@ -330,34 +319,7 @@
   flex: 1;
   position: relative;
   overflow: hidden;
-  /* Standard Neutral Background */
-  background: radial-gradient(circle at center, rgba(var(--text-accent-rgb), 0.05) 0%, transparent 70%);
-}
-
-/* --- THEMED GRAPH BACKGROUNDS --- */
-
-.nexus-container[data-graph-theme='default'] .nexus-body {
   background: var(--bg-app) !important;
-}
-
-.nexus-container[data-graph-theme='space'] .nexus-body {
-  background: #020617 !important;
-}
-
-.nexus-container[data-graph-theme='nebula'] .nexus-body {
-  background: linear-gradient(135deg, #1f0b3b, #451b6e) !important;
-}
-
-.nexus-container[data-graph-theme='ocean'] .nexus-body {
-  background: linear-gradient(135deg, #02111d, #073a5a) !important;
-}
-
-.nexus-container[data-graph-theme='sunset'] .nexus-body {
-  background: linear-gradient(135deg, #2a0826, #6b1432) !important;
-}
-
-.nexus-container[data-graph-theme='neural'] .nexus-body {
-  background: linear-gradient(135deg, #0a192f, #112240) !important;
 }
 
 /* Mode-specific styling for modal container */

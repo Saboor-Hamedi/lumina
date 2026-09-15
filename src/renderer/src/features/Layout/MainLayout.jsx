@@ -22,6 +22,7 @@ import Welcome from '../../Welcome'
 import TabBar from './TabBar'
 import TabContentPane from './TabContentPane'
 import AppModals from './AppModals'
+import Graph from '../Graph/Graph'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
 import { useVaultStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
@@ -752,6 +753,27 @@ export const MainLayout = () => {
   const renderedEditors = useMemo(() => {
     const effectiveSelectedId = selectedSnippet?.id || activeTabId || openTabs[0]
     return openTabs.map((tabId) => {
+      if (tabId === GRAPH_TAB_ID) {
+        return (
+          <div
+            key={tabId}
+            style={{
+              display: effectiveSelectedId === tabId ? 'flex' : 'none',
+              flex: 1,
+              width: '100%',
+              height: '100%',
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+          >
+            <Graph
+              embedded={true}
+              isOpen={true}
+              onNavigate={(sn) => setSelectedSnippet(sn)}
+            />
+          </div>
+        )
+      }
       const snippet = snippets.find((s) => s.id === tabId)
       if (!snippet) return null
       return (

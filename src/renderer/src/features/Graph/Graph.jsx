@@ -1,30 +1,27 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import {
   X,
-  Square,
-  Copy,
   Network,
   RefreshCw,
   Layers,
-  Search,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  ExternalLink
 } from 'lucide-react'
 import * as THREE from 'three'
 import Graph3D from './Graph3D'
 import Graph2D from './Graph2D'
-import { useVaultStore } from '../../core/store/workspaceStore'
+import { useVaultStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
 import { useAIStore } from '../AI/tools/lumina'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { usePerformanceStore } from './usePerformanceStore'
 import PerformancePanel from './PerformancePanel'
 import { buildGraphData, buildSemanticLinks } from '../../core/utils/graphBuilder'
 import { forceRadial, forceManyBody, forceCollide, forceCenter, forceX, forceY } from 'd3-force'
-import { useKeyboardShortcuts } from '../../core/shortcuts'
 import ToolTip from '../../components/atoms/ToolTip'
-import GraphThemeSelector from './GraphThemeSelector'
 import GraphSidebar from './GraphSidebar'
 import GraphMiniMap from './GraphMiniMap'
+import '../canvas/css/canvas-drawer.css'
 import './Graph.css'
 import { getNodeColor, drawNode } from './graphs'
 
@@ -60,13 +57,10 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   const dirtySnippetIds = useVaultStore((s) => s.dirtySnippetIds)
   const embeddingsCache = useAIStore((s) => s.embeddingsCache)
 
-  // Granular subscriptions so physics sliders do not cause React re-renders!
-  const graphTheme = useSettingsStore((s) => s.settings.graphTheme || 'default')
-  
   const handleRecenter = (e) => {
     if (e) e.stopPropagation()
     if (graphRef.current && graphRef.current.zoomToFit) {
-      graphRef.current.zoomToFit(800, 100) // animate for 800ms with 100px padding
+      graphRef.current.zoomToFit(800, 100)
     }
   }
   const graphHideTags = useSettingsStore((s) => s.settings.graphHideTags)
@@ -81,104 +75,44 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   const [hoverNode, setHoverNode] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 })
-  const isMaximized = useSettingsStore((s) => s.settings.graphModalMaximized ?? false)
 
   const isSpinning = useSettingsStore((s) => s.settings.graphAnimate ?? false)
   const graphRef = useRef()
   const containerRef = useRef()
   const [isEngineReady, setIsEngineReady] = useState(false)
   const [dimensions, setDimensions] = useState({
-    width: embedded ? 800 : Math.min(900, typeof window !== 'undefined' ? window.innerWidth * 0.94 : 900),
-    height: embedded ? 600 : Math.min(typeof window !== 'undefined' ? window.innerHeight * 0.76 : 600, typeof window !== 'undefined' ? window.innerHeight * 0.78 : 600)
+    width: typeof window !== 'undefined' ? window.innerWidth : 800,
+    height: typeof window !== 'undefined' ? (embedded ? window.innerHeight : Math.max(200, window.innerHeight * 0.94 - 34)) : 600
   })
-
-  const handleToggleMaximize = useCallback(() => {
-    const { settings, updateSettings } = useSettingsStore.getState()
-    updateSettings({ graphModalMaximized: !(settings.graphModalMaximized ?? false) })
-  }, [])
 
   const handleToggleSidebar = useCallback(() => {
     const { settings, updateSettings } = useSettingsStore.getState()
     updateSettings({ graphSidebarOpen: !(settings.graphSidebarOpen ?? true) })
   }, [])
 
-  const modalPos = useRef({ x: 0, y: 0 })
-  const isDraggingModal = useRef(false)
-  const dragStart = useRef({ x: 0, y: 0 })
+  const handleToggle3D = useCallback(() => {
+    const { settings, updateSettings } = useSettingsStore.getState()
+    updateSettings({ graph3DMode: !settings.graph3DMode })
+  }, [])
 
-  const rafId = useRef(null)
-
-  useEffect(() => {
-    modalPos.current = { x: 0, y: 0 }
-    if (containerRef.current && !isMaximized) {
-      containerRef.current.style.transform = 'translate3d(0px, 0px, 0)'
-    }
-  }, [isOpen, isMaximized])
+  const handleOpenAsTab = useCallback(() => {
+    onClose?.()
+    useVaultStore.getState().setActiveTabId(GRAPH_TAB_ID)
+  }, [onClose])
 
   useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (!isDraggingModal.current || isMaximized) return
-
-      const newX = e.clientX - dragStart.current.x
-      const newY = e.clientY - dragStart.current.y
-      modalPos.current = { x: newX, y: newY }
-
-      if (rafId.current) cancelAnimationFrame(rafId.current)
-
-      rafId.current = requestAnimationFrame(() => {
-        if (containerRef.current) {
-          containerRef.current.style.transform = `translate3d(${newX}px, ${newY}px, 0)`
-        }
-      })
-    }
-
-    const handleMouseUp = () => {
-      isDraggingModal.current = false
-      if (rafId.current) cancelAnimationFrame(rafId.current)
-    }
-
-    window.addEventListener('mousemove', handleMouseMove, { passive: true })
-    window.addEventListener('mouseup', handleMouseUp)
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
-      if (rafId.current) cancelAnimationFrame(rafId.current)
-    }
-  }, [isMaximized])
-
-  const handleModalHeaderMouseDown = useCallback(
-    (e) => {
-      if (isMaximized) return
-      if (e.target.closest('button')) return // Do not drag if clicking a button
-      
-      isDraggingModal.current = true
-
-      if (containerRef.current) {
-        containerRef.current.style.transition = 'none'
+    if (embedded || !isOpen) return
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        onClose?.()
       }
+    }
+    window.addEventListener('keydown', handleKeyDown, true)
+    return () => window.removeEventListener('keydown', handleKeyDown, true)
+  }, [embedded, isOpen, onClose])
 
-      dragStart.current = {
-        x: e.clientX - modalPos.current.x,
-        y: e.clientY - modalPos.current.y
-      }
-    },
-    [isMaximized]
-  )
-
-  // Localized Escape Handler (only for modal mode)
-  useKeyboardShortcuts({
-    onEscape: embedded
-      ? null
-      : () => {
-          if (isOpen && onClose) {
-            onClose()
-            return true
-          }
-          return false
-        }
-  })
-
-  // Handle Resize - dynamic measurement for both embedded and modal
   useEffect(() => {
     const updateDimensions = () => {
       if (containerRef.current) {
@@ -186,17 +120,15 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
         if (rect.width > 0 && rect.height > 0) {
           setDimensions({
             width: rect.width,
-            height: rect.height
+            height: embedded ? rect.height : Math.max(200, rect.height - 34)
           })
           return
         }
       }
-      if (!embedded) {
-        setDimensions({
-          width: isMaximized ? window.innerWidth : Math.min(900, window.innerWidth * 0.94),
-          height: isMaximized ? window.innerHeight : Math.min(Math.max(480, window.innerHeight * 0.76), window.innerHeight * 0.78)
-        })
-      }
+      setDimensions({
+        width: typeof window !== 'undefined' ? window.innerWidth : 800,
+        height: typeof window !== 'undefined' ? (embedded ? window.innerHeight : Math.max(200, window.innerHeight * 0.94 - 34)) : 600
+      })
     }
     updateDimensions()
     const resizeObserver = new ResizeObserver(updateDimensions)
@@ -208,7 +140,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       resizeObserver.disconnect()
       window.removeEventListener('resize', updateDimensions)
     }
-  }, [embedded, isMaximized])
+  }, [embedded])
 
   const [rawGraphData, setRawGraphData] = useState({ nodes: [], links: [] })
   const [isBuildingGraph, setIsBuildingGraph] = useState(true)
@@ -426,22 +358,20 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
 
   // Auto-Spin Logic removed to prevent CPU heavy continuous physics simulation
 
-  // Precompute line colors to save 60,000+ calculations per second
+  // Precompute line colors
   const defaultLineColor = useMemo(() => {
-    const isSelectedTheme = graphTheme === 'space' || graphTheme === 'nebula'
     if (is3DMode) {
-      return isSelectedTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(150, 150, 150, 0.15)'
+      return 'rgba(150, 150, 150, 0.15)'
     }
-    return isSelectedTheme ? 'rgba(255, 255, 255, 0.04)' : 'rgba(150, 150, 150, 0.08)' // Extremely faint so it's not muddy
-  }, [graphTheme, is3DMode])
+    return 'rgba(150, 150, 150, 0.08)'
+  }, [is3DMode])
 
   const dimmedLineColor = useMemo(() => {
-    const isSelectedTheme = graphTheme === 'space' || graphTheme === 'nebula'
     if (is3DMode) {
-      return isSelectedTheme ? 'rgba(255, 255, 255, 0.05)' : 'rgba(150, 150, 150, 0.1)'
+      return 'rgba(150, 150, 150, 0.06)'
     }
-    return isSelectedTheme ? 'rgba(255, 255, 255, 0.01)' : 'rgba(150, 150, 150, 0.02)'
-  }, [graphTheme, is3DMode])
+    return 'rgba(150, 150, 150, 0.02)'
+  }, [is3DMode])
 
   // Pre-compute neighbors for hover highlighting to prevent O(N^2) canvas lag
   const hoverNeighbors = useMemo(() => {
@@ -478,8 +408,6 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       const isNeighborDimmed = hoverNode && hoverNode !== node && !hoverNeighbors.has(node.id)
 
       // LEVEL OF DETAIL (LOD) OPTIMIZATION:
-      // Canvas fillText is extremely expensive. For thousands of nodes, drawing text every frame kills FPS.
-      // Only draw text if explicitly hovered/active/searched, OR if the user is zoomed in close enough (globalScale > 1.5)
       const showText =
         graphShowTexts && (isActive || isHovered || isSearchMatch || globalScale >= 1.2)
 
@@ -511,13 +439,11 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   if (!isOpen && !embedded) return null
 
   // Render as embedded (tab) or modal
-  // When embedded, show only the graph visualization with controls overlay
   if (embedded) {
     return (
       <div
         ref={containerRef}
         className="nexus-embedded-graph"
-        data-graph-theme={graphTheme}
         style={{
           width: '100%',
           height: '100%',
@@ -525,10 +451,30 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
           overflow: 'hidden'
         }}
       >
-        {/* Embedded Controls Overlay */}
         <div className="graph-embedded-controls">
+          <div className="graph-embedded-controls-left">
+            <ToolTip text="Recenter graph view" position="bottom">
+              <button
+                type="button"
+                className="canvas-drawer-action-btn"
+                onClick={handleRecenter}
+              >
+                <RefreshCw size={13} />
+                <span>Recenter</span>
+              </button>
+            </ToolTip>
+          </div>
           <div className="graph-embedded-controls-right">
-            <GraphThemeSelector variant="button" size="small" />
+            <ToolTip text={is3DMode ? 'Switch to 2D Nexus' : 'Switch to 3D Cosmos'} position="bottom">
+              <button
+                type="button"
+                className="canvas-drawer-action-btn"
+                onClick={handleToggle3D}
+              >
+                <Layers size={13} />
+                <span>{is3DMode ? '3D' : '2D'}</span>
+              </button>
+            </ToolTip>
           </div>
         </div>
 
@@ -593,9 +539,6 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                   node,
                   1000
                 )
-              } else if (graphRef.current && !is3DMode) {
-                graphRef.current.centerAt(node.x, node.y, 1000)
-                graphRef.current.zoom(8, 1000)
               }
 
               setTimeout(() => {
@@ -655,232 +598,205 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     )
   }
 
-  // Modal mode - show full UI with header and footer
-  const container = (
-    <div
-      ref={containerRef}
-      className={`nexus-container modal-container${isMaximized ? ' maximized' : ''}`}
-      onClick={(e) => e.stopPropagation()}
-      data-graph-theme={graphTheme}
-      style={{
-        flexDirection: 'column',
-        width: isMaximized ? '100vw' : '900px',
-        height: isMaximized ? '100vh' : '76vh',
-        maxWidth: isMaximized ? 'none' : '94vw',
-        minHeight: isMaximized ? 'none' : '480px',
-        maxHeight: isMaximized ? 'none' : '78vh',
-        transform: isMaximized
-          ? 'none'
-          : `translate3d(${modalPos.current.x}px, ${modalPos.current.y}px, 0)`,
-        transition: '0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-        boxShadow: '0 30px 60px rgba(0, 0, 0, 0.6)',
-        overflow: 'hidden',
-        borderRadius: isMaximized ? '0' : '12px',
-        position: 'relative',
-        willChange: 'transform'
-      }}
-    >
+  // Modal mode - Slide-up Drawer matching CanvasDrawerModal exactly
+  return (
+    <div className="canvas-drawer-overlay graph-drawer-overlay" onClick={onClose}>
       <div
-        data-testid="modal-header"
-        className="graph-modal-header"
-        onMouseDown={handleModalHeaderMouseDown}
-        style={{ cursor: isMaximized ? 'default' : 'grab' }}
+        ref={containerRef}
+        className="canvas-drawer-container graph-drawer-container"
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="graph-header-left">
-          <ToolTip text={graphSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'} position="bottom">
-            <button
-              className="graph-sidebar-toggle-btn"
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation()
-                handleToggleSidebar(e)
-                e.currentTarget.blur()
-              }}
-              aria-label={graphSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
-            >
-              {graphSidebarOpen ? (
-                <PanelLeftClose size={15} strokeWidth={2} />
-              ) : (
-                <PanelLeftOpen size={15} strokeWidth={2} />
-              )}
-            </button>
-          </ToolTip>
-          <span className="graph-header-title">
-            Graph View
-          </span>
-          <span className="graph-header-divider">/</span>
-          <span className="graph-header-subtitle">
-            {is3DMode ? '3D Cosmos' : '2D Nexus'}
-          </span>
-          <span className="graph-step-counter">
-            {rawGraphData.nodes.length} nodes
-          </span>
-        </div>
+        <div className="canvas-drawer-header">
+          <div className="canvas-drawer-title-group">
+            <ToolTip text={graphSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'} position="bottom">
+              <button
+                type="button"
+                className="canvas-drawer-action-btn"
+                onClick={handleToggleSidebar}
+                aria-label={graphSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
+              >
+                {graphSidebarOpen ? (
+                  <PanelLeftClose size={14} />
+                ) : (
+                  <PanelLeftOpen size={14} />
+                )}
+              </button>
+            </ToolTip>
 
-        <div className="graph-header-right">
-          <ToolTip text={isMaximized ? 'Restore Window' : 'Maximize Window'} position="bottom">
-            <button
-              className="graph-window-btn"
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation()
-                handleToggleMaximize()
-              }}
-              aria-label={isMaximized ? 'Restore Window' : 'Maximize Window'}
-            >
-              {isMaximized ? (
-                <Copy size={13} strokeWidth={2} />
-              ) : (
-                <Square size={13} strokeWidth={2} />
-              )}
-            </button>
-          </ToolTip>
-          <ToolTip text="Close (Esc)" position="bottom">
-            <button
-              className="graph-close-btn"
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={onClose}
-              aria-label="Close"
-            >
-              <span className="sr-only" style={{ display: 'none' }}>Close</span>
-              <X size={17} />
-            </button>
-          </ToolTip>
-        </div>
-      </div>
-
-      <div className="nexus-main" style={{ position: 'relative', flex: 1, overflow: 'hidden' }}>
-        <PerformancePanel onRecenter={handleRecenter} />
-        <GraphSidebar
-          isOpen={graphSidebarOpen}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          isSpinning={isSpinning}
-          graphTheme={graphTheme}
-        />
-
-        <div className="nexus-body" style={{ position: 'relative' }}>
-          {/* Initializer Pulse Overlay */}
-          <div className={`graph-initializer ${isEngineReady ? 'ready' : ''}`}>
-            <div className="pulse-ring"></div>
-            <div className="graph-initializer-text">Initializing Physics</div>
+            <div className="canvas-drawer-selector-btn">
+              <Network size={14} className="canvas-drawer-icon" />
+              <span className="canvas-drawer-title">Knowledge Graph</span>
+              <span className="graph-drawer-badge">{rawGraphData.nodes.length} nodes</span>
+            </div>
           </div>
 
-          {is3DMode ? (
-            <Graph3D
-              key="3d-graph-modal"
-              ref={graphRef}
-              width={dimensions.width}
-              height={dimensions.height - 32}
-              graphData={graphData}
-              nodeColor={nodeColorFn}
-              nodeRelSize={4}
-              nodeThreeObject={(node) => {
-                const base = node.val ? Math.min(10, Math.max(3, Math.sqrt(node.val) * 2.8)) : 3
-                const r = base * graphNodeSize + 3
-                const mesh = new THREE.Mesh(sharedSphereGeometry, getMaterial(nodeColorFn(node)))
-                mesh.scale.set(r, r, r)
-                return mesh
-              }}
-              linkVisibility={(link) => {
-                if (!window._luminaIsDragging) return true
-                return link.source === hoverNode || link.target === hoverNode
-              }}
-              linkColor={(link) => {
-                const isHoverConnected = hoverNode && (link.source === hoverNode || link.target === hoverNode);
-                const isSelectedConnected = selectedSnippet && ((link.source.snippetId === selectedSnippet.id) || (link.target.snippetId === selectedSnippet.id));
-                
-                if (!hoverNode && !selectedSnippet) return defaultLineColor;
-                
-                const isActive = hoverNode ? isHoverConnected : isSelectedConnected;
-                
-                const { settings } = useSettingsStore.getState();
-                const dimOpacity = settings.graphLinkDimOpacity ?? 0.05;
-                
-                if (!isActive) {
-                  return `rgba(150, 150, 150, ${dimOpacity})`;
-                }
-                
-                const highlightOpacity = settings.graphLinkHighlightOpacity ?? 0.6;
-                const accentColor = settings.graphNodeColor || '#40bafa';
-                
-                const hexToRgba = (hex, alpha) => {
-                  if (hex.startsWith('#')) {
-                    const r = parseInt(hex.slice(1, 3), 16);
-                    const g = parseInt(hex.slice(3, 5), 16);
-                    const b = parseInt(hex.slice(5, 7), 16);
-                    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+          <div className="canvas-drawer-header-actions">
+            <ToolTip text={is3DMode ? 'Switch to 2D Nexus' : 'Switch to 3D Cosmos'} position="bottom">
+              <button
+                type="button"
+                className="canvas-drawer-action-btn"
+                onClick={handleToggle3D}
+              >
+                <Layers size={13} />
+                <span>{is3DMode ? '3D' : '2D'}</span>
+              </button>
+            </ToolTip>
+
+            <ToolTip text="Recenter Graph" position="bottom">
+              <button
+                type="button"
+                className="canvas-drawer-action-btn"
+                onClick={handleRecenter}
+              >
+                <RefreshCw size={13} />
+                <span>Recenter</span>
+              </button>
+            </ToolTip>
+
+            <ToolTip text="Open in Editor Tab" position="bottom">
+              <button
+                type="button"
+                className="canvas-drawer-action-btn"
+                onClick={handleOpenAsTab}
+              >
+                <ExternalLink size={13} />
+                <span>Open in Tab</span>
+              </button>
+            </ToolTip>
+
+            <ToolTip text="Close Drawer (Esc)" position="bottom">
+              <button
+                type="button"
+                className="canvas-drawer-action-btn close-btn"
+                onClick={onClose}
+                aria-label="Close"
+              >
+                <X size={15} />
+              </button>
+            </ToolTip>
+          </div>
+        </div>
+
+        <div className="canvas-drawer-body" style={{ display: 'flex', position: 'relative', overflow: 'hidden' }}>
+          <PerformancePanel onRecenter={handleRecenter} />
+          <GraphSidebar
+            isOpen={graphSidebarOpen}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            isSpinning={isSpinning}
+          />
+
+          <div className="nexus-body" style={{ position: 'relative', flex: 1, height: '100%', overflow: 'hidden' }}>
+            <div className={`graph-initializer ${isEngineReady ? 'ready' : ''}`}>
+              <div className="pulse-ring"></div>
+              <div className="graph-initializer-text">Initializing Physics</div>
+            </div>
+
+            {is3DMode ? (
+              <Graph3D
+                key="3d-graph-modal"
+                ref={graphRef}
+                width={dimensions.width}
+                height={dimensions.height}
+                graphData={graphData}
+                nodeColor={nodeColorFn}
+                nodeRelSize={4}
+                nodeThreeObject={(node) => {
+                  const base = node.val ? Math.min(10, Math.max(3, Math.sqrt(node.val) * 2.8)) : 3
+                  const r = base * graphNodeSize + 3
+                  const mesh = new THREE.Mesh(sharedSphereGeometry, getMaterial(nodeColorFn(node)))
+                  mesh.scale.set(r, r, r)
+                  return mesh
+                }}
+                linkVisibility={(link) => {
+                  if (!window._luminaIsDragging) return true
+                  return link.source === hoverNode || link.target === hoverNode
+                }}
+                linkColor={(link) => {
+                  const isHoverConnected = hoverNode && (link.source === hoverNode || link.target === hoverNode);
+                  const isSelectedConnected = selectedSnippet && ((link.source.snippetId === selectedSnippet.id) || (link.target.snippetId === selectedSnippet.id));
+                  
+                  if (!hoverNode && !selectedSnippet) return defaultLineColor;
+                  
+                  const isActive = hoverNode ? isHoverConnected : isSelectedConnected;
+                  
+                  const { settings } = useSettingsStore.getState();
+                  const dimOpacity = settings.graphLinkDimOpacity ?? 0.05;
+                  
+                  if (!isActive) {
+                    return `rgba(150, 150, 150, ${dimOpacity})`;
                   }
-                  return hex;
-                };
+                  
+                  const highlightOpacity = settings.graphLinkHighlightOpacity ?? 0.6;
+                  const accentColor = settings.graphNodeColor || '#40bafa';
+                  
+                  const hexToRgba = (hex, alpha) => {
+                    if (hex.startsWith('#')) {
+                      const r = parseInt(hex.slice(1, 3), 16);
+                      const g = parseInt(hex.slice(3, 5), 16);
+                      const b = parseInt(hex.slice(5, 7), 16);
+                      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                    }
+                    return hex;
+                  };
 
-                return hexToRgba(accentColor, highlightOpacity);
-              }}
-              linkWidth={0.5}
-              onNodeHover={(node) => setHoverNode(node)}
-              onNodeClick={(node) => {
-                if (graphRef.current) {
-                  // Obsidian-style camera fly-to
-                  const distance = 400
-                  const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z)
-                  graphRef.current.cameraPosition(
-                    { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
-                    node,
-                    1000
-                  )
-                }
-
-                // Wait 150ms before navigating so they see the start of the fly-to, 
-                // but don't hold them up too long
-                setTimeout(() => {
-                  if (node.snippetId) {
-                    const s = snippets.find((sn) => sn.id === node.snippetId)
-                    if (s) onNavigate(s)
+                  return hexToRgba(accentColor, highlightOpacity);
+                }}
+                linkWidth={0.5}
+                onNodeHover={(node) => setHoverNode(node)}
+                onNodeClick={(node) => {
+                  if (graphRef.current) {
+                    const distance = 400
+                    const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z)
+                    graphRef.current.cameraPosition(
+                      { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
+                      node,
+                      1000
+                    )
                   }
-                }, 150)
-              }}
-              onNodeDrag={(node) => {
-                window._luminaIsDragging = true
-                usePerformanceStore.getState().setDragging(true)
-              }}
-              onNodeDragEnd={(node) => {
-                window._luminaIsDragging = false
-                usePerformanceStore.getState().setDragging(false)
-                setHoverNode(null)
-                node.fx = null
-                node.fy = null
-                node.fz = null
-                if (graphRef.current) graphRef.current.d3ReheatSimulation()
-              }}
-              backgroundColor="rgba(0,0,0,0)"
-              d3AlphaDecay={0.05}
-              d3VelocityDecay={0.4}
-              showNavInfo={false}
 
-            />
-          ) : (
-            <Graph2D
-              key="2d-graph-modal"
-              ref={graphRef}
-              dimensions={{ width: dimensions.width, height: dimensions.height - 32 }}
-              graphData={graphData}
-              paintNode={paintNode}
-              hoverNode={hoverNode}
-              setHoverNode={setHoverNode}
-              defaultLineColor={defaultLineColor}
-              onNavigate={onNavigate}
-              setIsEngineReady={setIsEngineReady}
-            />
-          )}
+                  setTimeout(() => {
+                    if (node.snippetId) {
+                      const s = snippets.find((sn) => sn.id === node.snippetId)
+                      if (s) onNavigate(s)
+                    }
+                  }, 150)
+                }}
+                onNodeDrag={(node) => {
+                  window._luminaIsDragging = true
+                  usePerformanceStore.getState().setDragging(true)
+                }}
+                onNodeDragEnd={(node) => {
+                  window._luminaIsDragging = false
+                  usePerformanceStore.getState().setDragging(false)
+                  setHoverNode(null)
+                  node.fx = null
+                  node.fy = null
+                  node.fz = null
+                  if (graphRef.current) graphRef.current.d3ReheatSimulation()
+                }}
+                backgroundColor="rgba(0,0,0,0)"
+                d3AlphaDecay={0.05}
+                d3VelocityDecay={0.4}
+                showNavInfo={false}
+              />
+            ) : (
+              <Graph2D
+                key="2d-graph-modal"
+                ref={graphRef}
+                dimensions={{ width: dimensions.width, height: dimensions.height }}
+                graphData={graphData}
+                paintNode={paintNode}
+                hoverNode={hoverNode}
+                setHoverNode={setHoverNode}
+                defaultLineColor={defaultLineColor}
+                onNavigate={onNavigate}
+                setIsEngineReady={setIsEngineReady}
+              />
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  )
-
-  // Modal mode - wrap in overlay
-  return (
-    <div className="nexus-overlay" onClick={onClose}>
-      {container}
     </div>
   )
 })
