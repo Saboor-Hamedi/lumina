@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, startTransition, useMemo } from 'react'
 import { Square, Copy, Book, PanelLeftClose, PanelLeftOpen, FileText, Clock, ChevronLeft, ChevronRight, X } from 'lucide-react'
-import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
+import { useKeyboardShortcuts } from '../../core/shortcuts'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import ToolTip from '../../components/atoms/ToolTip'
 import DocSidebar from './DocSidebar'

@@ -6,7 +6,7 @@ const LuminaChatContent = React.lazy(() =>
   import('../AI/Lumina').then((m) => ({ default: m.LuminaChatContent }))
 )
 import GlobalErrorHandler from '../../components/GlobalErrorHandler'
-import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
+import { useKeyboardShortcuts } from '../../core/shortcuts'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import ToolTip from '../../components/atoms/ToolTip'
 import RightSidebarFooter from './RightSidebarFooter'

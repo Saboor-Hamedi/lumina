@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import { FileText, Brain } from 'lucide-react'
 import { useVaultStore } from '../../core/store/workspaceStore'
-import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
+import { useKeyboardShortcuts } from '../../core/shortcuts'
 import { getBrainDocuments } from './services/brainKnowledge'
 import './css/luminSlash.css'
 

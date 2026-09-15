@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, RotateCcw } from 'lucide-react'
-import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
+import { useKeyboardShortcuts } from '../../core/shortcuts'
 import Profile from '../profile/Profile'
 import ModalHeader from '../modals/ModalHeader'
 import { useDraggableModal } from '../../core/utils/useDraggableModal'

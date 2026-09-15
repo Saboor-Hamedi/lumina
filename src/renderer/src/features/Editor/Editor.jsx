@@ -19,7 +19,7 @@ import Find from './components/Find'
 import { EditorCanvas } from './EditorCanvas'
 
 import { useToast } from '../../core/notification'
-import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
+import { useKeyboardShortcuts } from '../../core/shortcuts'
 import { useVaultStore } from '../../core/store/workspaceStore'
 import {
   useZoom,

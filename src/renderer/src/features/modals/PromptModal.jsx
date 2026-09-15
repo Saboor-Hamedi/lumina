@@ -1,6 +1,6 @@
 import React from 'react'
 import { X, AlertTriangle } from 'lucide-react'
-import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
+import { useKeyboardShortcuts } from '../../core/shortcuts'
 import './css/promptModal.css'
 
 const PromptModal = ({

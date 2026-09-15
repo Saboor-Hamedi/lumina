@@ -69,7 +69,7 @@ import { useExplorerDnd } from './hooks/ExplorerDnd'
 import { useExplorerOperations } from './hooks/ExplorerOperations'
 import { useFolderContextMenu } from './hooks/FolderMenu'
 import { useExternalFileDrop } from './hooks/ExternalFileDrop'
-import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
+import { useKeyboardShortcuts } from '../../core/shortcuts'
 import { summarizeNotes } from '../AI/services/summarizeNotes'
 import { isSnippetActive } from './utils/explorerSelectionHelper'
 

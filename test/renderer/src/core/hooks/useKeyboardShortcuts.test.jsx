@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook } from '@testing-library/react'
-import { useKeyboardShortcuts } from '../../../../../src/renderer/src/core/hooks/useKeyboardShortcuts'
+import { useKeyboardShortcuts } from '../../../../../src/renderer/src/core/shortcuts'
 
 describe('useKeyboardShortcuts', () => {
   let keydownHandlers

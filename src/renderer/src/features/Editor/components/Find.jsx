@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Decoration } from '@codemirror/view'
-import { useKeyboardShortcuts } from '../../../core/hooks/useKeyboardShortcuts'
+import { useKeyboardShortcuts } from '../../../core/shortcuts'
 import { updateSearchHighlights } from '../../../core/editor'
 import { applyTableSearchHighlight, clearTableSearchHighlight } from '../../table/tableCell'
 import ToolTip from '../../../components/atoms/ToolTip'

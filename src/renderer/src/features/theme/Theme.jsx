@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useTheme } from './hooks/useTheme'
-import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
+import { useKeyboardShortcuts } from '../../core/shortcuts'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { X, Check, Palette, Square, Copy } from 'lucide-react'
 import './css/theme.css'

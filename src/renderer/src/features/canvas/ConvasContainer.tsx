@@ -314,6 +314,20 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
    */
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const isCtrl = e.ctrlKey || e.metaKey
+      const isSlash = e.code === 'Slash' || e.key === '/' || e.key === '?' || e.code === 'NumpadDivide'
+
+      if (isCtrl && e.shiftKey && isSlash) {
+        e.preventDefault()
+        e.stopPropagation()
+        if (onOpenDrawer) {
+          onOpenDrawer()
+        } else {
+          window.dispatchEvent(new CustomEvent('toggle-canvas-drawer'))
+        }
+        return
+      }
+
       const activeTag = (document.activeElement?.tagName || '').toLowerCase()
       const isInputActive = activeTag === 'input' || activeTag === 'textarea'
 

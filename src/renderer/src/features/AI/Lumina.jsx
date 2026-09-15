@@ -11,7 +11,7 @@ import {
   BarChart3,
   MessageSquare
 } from 'lucide-react'
-import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
+import { useKeyboardShortcuts } from '../../core/shortcuts'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import ToolTip from '../../components/atoms/ToolTip'
 import { useAIStore } from './tools/lumina'

@@ -4,7 +4,7 @@ import { FileText, Square, Copy, X } from 'lucide-react'
 import { PreviewCommandPalette } from '../commandpalette/PreviewCommandPalette'
 import ToolTip from '../../components/atoms/ToolTip'
 import './preview.css'
-import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
+import { useKeyboardShortcuts } from '../../core/shortcuts'
 import { useVaultStore } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 

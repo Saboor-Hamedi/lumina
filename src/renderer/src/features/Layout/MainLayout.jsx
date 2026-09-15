@@ -22,7 +22,7 @@ import Welcome from '../../Welcome'
 import TabBar from './TabBar'
 import TabContentPane from './TabContentPane'
 import AppModals from './AppModals'
-import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
+import { useKeyboardShortcuts } from '../../core/shortcuts'
 import { useVaultStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
@@ -418,7 +418,7 @@ export const MainLayout = () => {
   useEffect(() => {
     const handleCanvasDrawerKey = (e) => {
       const isCtrl = e.ctrlKey || e.metaKey
-      const isSlash = e.code === 'Slash' || e.key === '/' || e.key === '?'
+      const isSlash = e.code === 'Slash' || e.key === '/' || e.key === '?' || e.code === 'NumpadDivide' || e.key === 'Divide'
       if (isCtrl && e.shiftKey && isSlash) {
         e.preventDefault()
         e.stopPropagation()

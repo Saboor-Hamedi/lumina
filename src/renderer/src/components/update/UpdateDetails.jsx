@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
 import { Download, Loader2, CheckCircle2 } from 'lucide-react'
-import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
+import { useKeyboardShortcuts } from '../../core/shortcuts'
 import UpdateHeader from './UpdateHeader'
 import UpdateFooter from './UpdateFooter'
 import ToolTip from '../atoms/ToolTip'

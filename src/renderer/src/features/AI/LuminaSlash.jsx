@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Zap, Brain, Palette, Image as ImageIcon, Code, Eraser, Check, Search } from 'lucide-react'
-import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
+import { useKeyboardShortcuts } from '../../core/shortcuts'
 import './css/luminSlash.css'
 
 export const SLASH_COMMANDS = [
