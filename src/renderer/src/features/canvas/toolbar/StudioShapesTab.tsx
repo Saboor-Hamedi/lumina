@@ -9,40 +9,64 @@ export interface StudioShapesTabProps {
     height: number,
     color?: CanvasNodeColor
   ) => void
+  selectedColor?: CanvasNodeColor
+  onUpdateSelectedColor?: (color: CanvasNodeColor) => void
+  selectedCount?: number
 }
 
-export const StudioShapesTab: React.FC<StudioShapesTabProps> = React.memo(({ onAddShape }) => {
-  const [activeColor, setActiveColor] = useState<CanvasNodeColor>('default')
-  const [shapeSearch, setShapeSearch] = useState('')
-
-  const filteredShapes = useMemo(() => {
-    if (!shapeSearch.trim()) return CANVAS_SHAPES
-    const q = shapeSearch.toLowerCase()
-    return CANVAS_SHAPES.filter(
-      (s) => s.label.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)
+export const StudioShapesTab: React.FC<StudioShapesTabProps> = React.memo(
+  ({ onAddShape, selectedColor, onUpdateSelectedColor, selectedCount = 0 }) => {
+    const [activeColor, setActiveColor] = useState<CanvasNodeColor>(
+      selectedColor || 'default'
     )
-  }, [shapeSearch])
+    const [shapeSearch, setShapeSearch] = useState('')
 
-  return (
-    <div className="lumina-canvas-studio-tab-pane">
-      <div className="studio-section-banner">
-        <span className="banner-title">Geometric Shapes</span>
-        <span className="banner-sub">Click or drag directly into your diagram</span>
-      </div>
+    // Automatically sync activeColor with currently selected node's color
+    React.useEffect(() => {
+      if (selectedColor) {
+        setActiveColor(selectedColor)
+      }
+    }, [selectedColor])
 
-      {/* Color Swatches */}
-      <div className="lumina-canvas-studio-colors-row">
-        {SHAPE_COLOR_OPTIONS.map((c) => (
-          <button
-            key={c.id}
-            type="button"
-            className={`lumina-canvas-studio-color-dot ${activeColor === c.id ? 'active' : ''}`}
-            style={{ backgroundColor: c.hex }}
-            onClick={() => setActiveColor(c.id)}
-            title={c.label}
-          />
-        ))}
-      </div>
+    const handleColorClick = (colorId: CanvasNodeColor) => {
+      setActiveColor(colorId)
+      onUpdateSelectedColor?.(colorId)
+    }
+
+    const filteredShapes = useMemo(() => {
+      if (!shapeSearch.trim()) return CANVAS_SHAPES
+      const q = shapeSearch.toLowerCase()
+      return CANVAS_SHAPES.filter(
+        (s) => s.label.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)
+      )
+    }, [shapeSearch])
+
+    return (
+      <div className="lumina-canvas-studio-tab-pane">
+        <div className="studio-section-banner">
+          <span className="banner-title">
+            {selectedCount > 0 ? 'Theme & Shapes' : 'Geometric Shapes'}
+          </span>
+          <span className="banner-sub">
+            {selectedCount > 0
+              ? `Select a theme to color ${selectedCount > 1 ? `${selectedCount} selected items` : 'selected item'}`
+              : 'Click or drag directly into your diagram'}
+          </span>
+        </div>
+
+        {/* Color Swatches */}
+        <div className="lumina-canvas-studio-colors-row">
+          {SHAPE_COLOR_OPTIONS.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              className={`lumina-canvas-studio-color-dot ${activeColor === c.id ? 'active' : ''}`}
+              style={{ backgroundColor: c.hex }}
+              onClick={() => handleColorClick(c.id)}
+              title={`${c.label}${selectedCount > 0 ? ' (Apply to selection)' : ''}`}
+            />
+          ))}
+        </div>
 
       {/* Shapes Search */}
       <div className="lumina-canvas-studio-input-wrap">

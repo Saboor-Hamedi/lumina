@@ -21,7 +21,7 @@
  * ============================================================================
  */
 
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect, useRef } from 'react'
 import { CanvasEdge, CanvasEdgeEnd, CanvasEdgeLineStyle, CanvasNode, CanvasNodeColor } from './types'
 import { calculateEdgePath } from './canvasRouting'
 import { COLOR_CYCLE } from './canvasUtils'
@@ -62,7 +62,42 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
 
     const [isEditingLabel, setIsEditingLabel] = useState(false)
     const [isHovered, setIsHovered] = useState(false)
-    const hoverTimerRef = React.useRef<number | null>(null)
+    const hoverTimerRef = useRef<number | null>(null)
+    const labelInputRef = useRef<HTMLInputElement | null>(null)
+
+    // Ensure focus and handle Escape or outside clicks cleanly
+    useEffect(() => {
+      if (!isEditingLabel) return
+
+      // Explicitly focus and select input inside SVG foreignObject
+      requestAnimationFrame(() => {
+        labelInputRef.current?.focus()
+        labelInputRef.current?.select()
+      })
+
+      const handleGlobalKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          e.stopPropagation()
+          e.preventDefault()
+          setIsEditingLabel(false)
+        }
+      }
+
+      const handlePointerDownOutside = (e: MouseEvent | PointerEvent) => {
+        const target = e.target as HTMLElement | null
+        if (!target?.closest('.lumina-canvas-edge-label-editor-container')) {
+          setIsEditingLabel(false)
+        }
+      }
+
+      window.addEventListener('keydown', handleGlobalKeyDown, true)
+      window.addEventListener('pointerdown', handlePointerDownOutside, true)
+
+      return () => {
+        window.removeEventListener('keydown', handleGlobalKeyDown, true)
+        window.removeEventListener('pointerdown', handlePointerDownOutside, true)
+      }
+    }, [isEditingLabel])
 
     const handleMouseEnter = () => {
       if (hoverTimerRef.current) {
@@ -219,6 +254,7 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
             className="lumina-canvas-edge-label-editor-container"
           >
             <input
+              ref={labelInputRef}
               autoFocus
               className="lumina-canvas-edge-label-input"
               defaultValue={edge.label || ''}
@@ -229,10 +265,13 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
+                  e.stopPropagation()
+                  e.preventDefault()
                   onUpdateLabel?.(edge.id, e.currentTarget.value.trim())
                   setIsEditingLabel(false)
-                }
-                if (e.key === 'Escape') {
+                } else if (e.key === 'Escape') {
+                  e.stopPropagation()
+                  e.preventDefault()
                   setIsEditingLabel(false)
                 }
               }}

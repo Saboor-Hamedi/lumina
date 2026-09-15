@@ -39,6 +39,8 @@ export interface ConvasToolBarRightProps {
   onOpenDrawer?: () => void
   hasSelectedNodes?: boolean
   selectedCount?: number
+  selectedColor?: CanvasNodeColor
+  onUpdateSelectedColor?: (color: CanvasNodeColor) => void
   snapToGrid?: boolean
   onToggleSnapToGrid?: () => void
   onSnapAllToGrid?: () => void

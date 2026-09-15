@@ -51,6 +51,8 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
     onOpenDrawer,
     hasSelectedNodes = false,
     selectedCount = 0,
+    selectedColor,
+    onUpdateSelectedColor,
     snapToGrid = false,
     onToggleSnapToGrid,
     onSnapAllToGrid,
@@ -135,7 +137,14 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
 
           {/* Studio Scrollable Body with Clean Dedicated Subcomponents */}
           <div className="lumina-canvas-studio-body" onWheel={(e) => e.stopPropagation()}>
-            {activeTab === 'shapes' && <StudioShapesTab onAddShape={onAddShape} />}
+            {activeTab === 'shapes' && (
+              <StudioShapesTab
+                onAddShape={onAddShape}
+                selectedColor={selectedColor}
+                onUpdateSelectedColor={onUpdateSelectedColor}
+                selectedCount={selectedCount}
+              />
+            )}
 
             {activeTab === 'connectors' && (
               <StudioWiresTab

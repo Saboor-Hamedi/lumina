@@ -247,7 +247,11 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
                       onUpdateText(node.id, e.currentTarget.value)
                       onStopEditing()
                     }
-                    if (e.key === 'Escape') onStopEditing()
+                    if (e.key === 'Escape') {
+                      e.stopPropagation()
+                      e.preventDefault()
+                      onStopEditing()
+                    }
                   }}
                 />
               ) : (
@@ -276,7 +280,11 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
                       onUpdateTitle(node.id, e.currentTarget.value.trim() || 'Untitled')
                       onStopEditing()
                     }
-                    if (e.key === 'Escape') onStopEditing()
+                    if (e.key === 'Escape') {
+                      e.stopPropagation()
+                      e.preventDefault()
+                      onStopEditing()
+                    }
                   }}
                 />
               ) : (
@@ -413,7 +421,11 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
                         onUpdateText(node.id, e.currentTarget.value)
                         onStopEditing()
                       }
-                      if (e.key === 'Escape') onStopEditing()
+                      if (e.key === 'Escape') {
+                        e.stopPropagation()
+                        e.preventDefault()
+                        onStopEditing()
+                      }
                     }}
                   />
                 ) : (

@@ -18,7 +18,7 @@
 
 import React, { useRef, useCallback, useEffect, useState, useMemo } from 'react'
 import { useCanvas } from './useCanvas'
-import { CanvasData, CanvasNode, CanvasEdgeSide, CanvasShapeType } from './types'
+import { CanvasData, CanvasNode, CanvasEdgeSide, CanvasShapeType, CanvasNodeColor } from './types'
 import { COLOR_CYCLE, getNodePortCoord } from './canvasUtils'
 import { CanvasEdgesLayer } from './CanvasEdgesLayer'
 import { CanvasNodesLayer } from './CanvasNodesLayer'
@@ -510,6 +510,22 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     selectedNodes.forEach((n) => updateNodeColor(n.id, nextColor))
   }, [selectedNodes, updateNodeColor])
 
+  const selectedColor = useMemo(() => {
+    if (selectedNodes.length > 0) {
+      return (selectedNodes[0].color || 'default') as CanvasNodeColor
+    }
+    return undefined
+  }, [selectedNodes])
+
+  const handleUpdateSelectionColor = useCallback(
+    (color: CanvasNodeColor) => {
+      if (selectedNodes.length > 0) {
+        selectedNodes.forEach((n) => updateNodeColor(n.id, color))
+      }
+    },
+    [selectedNodes, updateNodeColor]
+  )
+
   const handleCycleColor = useCallback(
     (id: string) => {
       const node = nodeMap.get(id)
@@ -698,6 +714,8 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
         onOpenDrawer={onOpenDrawer}
         hasSelectedNodes={selectedNodeIds.length > 0}
         selectedCount={selectedNodeIds.length}
+        selectedColor={selectedColor}
+        onUpdateSelectedColor={handleUpdateSelectionColor}
         snapToGrid={snapToGrid}
         onToggleSnapToGrid={handleToggleSnapToGrid}
         onSnapAllToGrid={handleSnapAllToGrid}
