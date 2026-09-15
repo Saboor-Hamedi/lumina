@@ -133,6 +133,7 @@ describe('Graph', () => {
   it('renders embedded graph without overlay', async () => {
     render(<Graph isOpen={true} embedded={true} onNavigate={vi.fn()} />)
     expect(screen.getByTestId('graph-2d')).toBeInTheDocument()
+    expect(screen.getByTestId('graph-sidebar')).toBeInTheDocument()
   })
 
   it('renders performance panel in modal mode', async () => {

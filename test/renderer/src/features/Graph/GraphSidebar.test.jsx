@@ -83,4 +83,20 @@ describe('GraphSidebar', () => {
     const { container } = render(<GraphSidebar {...defaultProps} isOpen={false} />)
     expect(container.querySelector('.nexus-sidebar').className).toContain('closed')
   })
+
+  it('triggers onToggleExpand when clicking expand button while closed', () => {
+    const onToggleExpand = vi.fn()
+    render(<GraphSidebar {...defaultProps} isOpen={false} onToggleExpand={onToggleExpand} />)
+    const expandBtn = screen.getByLabelText('Expand Controls')
+    fireEvent.click(expandBtn)
+    expect(onToggleExpand).toHaveBeenCalledTimes(1)
+  })
+
+  it('triggers onToggleExpand when clicking collapse button while open', () => {
+    const onToggleExpand = vi.fn()
+    render(<GraphSidebar {...defaultProps} isOpen={true} onToggleExpand={onToggleExpand} />)
+    const collapseBtn = screen.getByLabelText('Collapse Controls')
+    fireEvent.click(collapseBtn)
+    expect(onToggleExpand).toHaveBeenCalledTimes(1)
+  })
 })
